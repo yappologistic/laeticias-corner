@@ -58,7 +58,6 @@ public:
     // Return the ops as they were applied (inverted for undo), for feedback; empty if nothing.
     std::span<const Op> undo(World& world);
     std::span<const Op> redo(World& world);
-    void clear();
 
 private:
     void record(const Op& op);

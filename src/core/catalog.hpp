@@ -1,6 +1,8 @@
 #pragma once
 // The content contract (assets/catalog.json) parsed and validated into plain structs.
 
+#include "core/iso.hpp"
+
 #include <cstdint>
 #include <expected>
 #include <filesystem>
@@ -78,11 +80,16 @@ struct AudioList {
     std::vector<std::string> sfx;
 };
 
+// Map limits: a continuous world of about 1024 x 512 tiles is planned; these leave headroom
+// while keeping tile indices and pixel extents far from overflow.
+inline constexpr int kMaxMapSide = 4096;
+inline constexpr long long kMaxMapTiles = 1LL << 22;
+
 struct Catalog {
-    int tileW = 32;
-    int tileH = 16;
-    int mapW = 20;
-    int mapH = 20;
+    int tileW = 64;
+    int tileH = 32;
+    int mapW = 40;
+    int mapH = 40;
     std::vector<TerrainDef> terrain;
     std::vector<CategoryDef> categories;
     std::vector<ItemDef> items;
@@ -91,6 +98,9 @@ struct Catalog {
     int baseTerrain = 0;
     int waterTerrain = 0;
 
+    [[nodiscard]] Iso iso() const {
+        return {static_cast<float>(tileW) * 0.5f, static_cast<float>(tileH) * 0.5f};
+    }
     [[nodiscard]] std::optional<int> findTerrain(std::string_view id) const;
     [[nodiscard]] std::optional<int> findItem(std::string_view id) const;
     [[nodiscard]] std::optional<int> findCategory(std::string_view id) const;

@@ -79,11 +79,14 @@ Catalog parse(const json& root) {
     const auto& tile = root.at("tile");
     cat.tileW = get<int>(tile, "w", "tile");
     cat.tileH = get<int>(tile, "h", "tile");
-    if (cat.tileW != 32 || cat.tileH != 16) fail("tile: the engine projection expects 32x16");
+    // 2:1 isometric cells with whole half-sizes, so tile vertices land on whole pixels.
+    if (cat.tileH < 4 || cat.tileH > 512 || cat.tileH % 2 != 0 || cat.tileW != 2 * cat.tileH)
+        fail("tile: expected a 2:1 cell with an even height between 4 and 512");
     const auto& map = root.at("map");
     cat.mapW = get<int>(map, "w", "map");
     cat.mapH = get<int>(map, "h", "map");
-    if (cat.mapW < 1 || cat.mapH < 1 || cat.mapW > 256 || cat.mapH > 256)
+    if (cat.mapW < 1 || cat.mapH < 1 || cat.mapW > kMaxMapSide || cat.mapH > kMaxMapSide ||
+        static_cast<long long>(cat.mapW) * cat.mapH > kMaxMapTiles)
         fail("map: size out of range");
 
     const auto& audio = root.at("audio");

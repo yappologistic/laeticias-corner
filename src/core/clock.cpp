@@ -32,12 +32,6 @@ std::string_view pinId(ClockPin p) {
     return kPinIds[static_cast<std::size_t>(p)];
 }
 
-std::optional<Phase> parsePhase(std::string_view id) {
-    for (std::size_t i = 0; i < kPhaseIds.size(); ++i)
-        if (kPhaseIds[i] == id) return static_cast<Phase>(i);
-    return std::nullopt;
-}
-
 std::optional<ClockPin> parsePin(std::string_view id) {
     for (std::size_t i = 0; i < kPinIds.size(); ++i)
         if (kPinIds[i] == id) return static_cast<ClockPin>(i);

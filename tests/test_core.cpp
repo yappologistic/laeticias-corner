@@ -25,12 +25,23 @@ int terrain(const Catalog& c, std::string_view id) {
     return *c.findTerrain(id);
 }
 
+// How many of a visitor the whole world attracts.
+int wants(const VisitorDef& def, const World& w, bool night) {
+    Tally t;
+    tallyArea(w, test::catalog(), w.bounds(), t);
+    return desiredCount(def, t, night);
+}
+
 } // namespace
 
 TEST_CASE("the shipped catalog parses and validates") {
     const Catalog& c = test::catalog();
-    CHECK(c.mapW == 20);
-    CHECK(c.mapH == 20);
+    CHECK(c.mapW == 40);
+    CHECK(c.mapH == 40);
+    CHECK(c.tileW == 64);
+    CHECK(c.tileH == 32);
+    CHECK(c.iso().hw == 32.0f);
+    CHECK(c.iso().hh == 16.0f);
     CHECK(c.terrain[static_cast<std::size_t>(c.baseTerrain)].id == "grass");
     CHECK(c.terrain[static_cast<std::size_t>(c.waterTerrain)].water);
     const auto& barn = c.items[static_cast<std::size_t>(item(c, "barn"))];
@@ -48,8 +59,8 @@ TEST_CASE("the shipped catalog parses and validates") {
     CHECK_FALSE(c.visitors[static_cast<std::size_t>(*c.findVisitor("duck"))].glow);
     const auto& cottage = c.items[static_cast<std::size_t>(item(c, "cottage"))];
     REQUIRE(cottage.smokeAt.size() == 4);
-    CHECK(cottage.smokeAt[0].x == 10);
-    CHECK(cottage.smokeAt[0].y == -19);
+    CHECK(cottage.smokeAt[0].x == 20);
+    CHECK(cottage.smokeAt[0].y == -38);
     CHECK(c.items[static_cast<std::size_t>(item(c, "barn"))].smokeAt.empty());
 }
 
@@ -69,26 +80,46 @@ TEST_CASE("catalog validation reports bad content") {
     CHECK_FALSE(broken("\"coop\": 1", "\"castle\": 1").has_value());
     CHECK_FALSE(broken("\"id\": \"pine\"", "\"id\": \"oak\"").has_value());
     CHECK_FALSE(broken("\"sfx/cat.wav\"", "\"sfx/dog.wav\"").has_value());
-    CHECK_FALSE(broken("[[10, -19], [-2, -15], [-10, -21], [2, -25]]", "[[10, -19]]").has_value());
-    CHECK_FALSE(broken("[[10, -19], [-2, -15]", "[[10], [-2, -15]").has_value());
+    CHECK_FALSE(broken("[[20, -38], [-4, -30], [-20, -42], [4, -50]]", "[[20, -38]]").has_value());
+    CHECK_FALSE(broken("[[20, -38], [-4, -30]", "[[20], [-4, -30]").has_value());
+    // The cell must be 2:1 with whole half sizes; the map must stay within the limits.
+    CHECK_FALSE(broken("\"w\": 64, \"h\": 32", "\"w\": 64, \"h\": 30").has_value());
+    CHECK_FALSE(broken("\"w\": 64, \"h\": 32", "\"w\": 33, \"h\": 16").has_value());
+    CHECK(broken("\"w\": 64, \"h\": 32", "\"w\": 32, \"h\": 16").has_value());
+    CHECK(broken("\"w\": 40, \"h\": 40", "\"w\": 1024, \"h\": 512").has_value());
+    CHECK_FALSE(broken("\"w\": 40, \"h\": 40", "\"w\": 4096, \"h\": 4096").has_value());
     const auto err = broken("\"layout\": \"connect\"", "\"layout\": \"spiral\"");
     REQUIRE_FALSE(err.has_value());
     CHECK(err.error().find("hedge") != std::string::npos);
 }
 
-TEST_CASE("projection matches the contract") {
-    CHECK(tileToWorld(0, 0).x == 0);
-    CHECK(tileToWorld(1, 0).x == 16);
-    CHECK(tileToWorld(1, 0).y == 8);
-    CHECK(tileToWorld(0, 1).x == -16);
-    CHECK(tileAt({0, 8}) == TilePos{0, 0});     // centre of tile 0,0
-    CHECK(tileAt({0, 0.5f}) == TilePos{0, 0});  // just under the top vertex
-    CHECK(tileAt({0, 15.5f}) == TilePos{0, 0}); // just above the bottom vertex
-    CHECK(tileAt({15.5f, 8}) == TilePos{0, 0}); // right corner
-    CHECK(tileAt({16.5f, 9}) == TilePos{1, 0}); // past it, inside the next tile
-    CHECK(tileAt({0, 16.5f}) == TilePos{1, 1});
-    const Vec2 w = tileToWorld(7, 3);
-    CHECK(tileAt({w.x, w.y + 8}) == TilePos{7, 3});
+TEST_CASE("projection matches the contract at any tile size") {
+    for (const Iso iso : {Iso{16, 8}, Iso{32, 16}, Iso{64, 32}}) {
+        CAPTURE(iso.hw);
+        const float hw = iso.hw;
+        const float hh = iso.hh;
+        CHECK(iso.toWorld(0, 0).x == 0);
+        CHECK(iso.toWorld(1, 0).x == hw);
+        CHECK(iso.toWorld(1, 0).y == hh);
+        CHECK(iso.toWorld(0, 1).x == -hw);
+        CHECK(iso.tileAt({0, hh}) == TilePos{0, 0});             // centre of tile 0,0
+        CHECK(iso.tileAt({0, 0.5f}) == TilePos{0, 0});           // just under the top vertex
+        CHECK(iso.tileAt({0, 2 * hh - 0.5f}) == TilePos{0, 0});  // just above the bottom
+        CHECK(iso.tileAt({hw - 0.5f, hh}) == TilePos{0, 0});     // right corner
+        CHECK(iso.tileAt({hw + 0.5f, hh + 1}) == TilePos{1, 0}); // past it, the next tile
+        CHECK(iso.tileAt({0, 2 * hh + 0.5f}) == TilePos{1, 1});
+        const Vec2 w = iso.toWorld(7, 3);
+        CHECK(iso.tileAt({w.x, w.y + hh}) == TilePos{7, 3});
+    }
+    // Picking stays exact at the far corner of a 1024 x 512 world of 64 x 32 tiles.
+    const Iso iso = test::catalog().iso();
+    for (const TilePos t :
+         {TilePos{1023, 511}, TilePos{1023, 0}, TilePos{0, 511}, TilePos{777, 333}}) {
+        const Vec2 c = iso.toWorld(static_cast<float>(t.x) + 0.5f, static_cast<float>(t.y) + 0.5f);
+        CHECK(iso.tileAt(c) == t);
+        const Vec2 near{c.x + iso.hw * 0.98f, c.y};
+        CHECK(iso.tileAt(near) == t);
+    }
 }
 
 TEST_CASE("rotated footprints swap width and height") {
@@ -106,16 +137,26 @@ TEST_CASE("placement rules: bounds, overlap, land and water") {
     const Catalog& c = test::catalog();
     World w(c);
     const int water = terrain(c, "water");
-    const Item barn = makeItem(c, item(c, "barn"), 0, {17, 18});
+    const int e = c.mapW - 3; // a 3x2 barn flush with the far corner
+    const Item barn = makeItem(c, item(c, "barn"), 0, {e, c.mapH - 2});
     CHECK(canPlace(w, c, barn) == PlaceResult::Ok);
-    CHECK(canPlace(w, c, makeItem(c, item(c, "barn"), 0, {18, 18})) == PlaceResult::OutOfBounds);
-    CHECK(canPlace(w, c, makeItem(c, item(c, "barn"), 1, {17, 18})) == PlaceResult::OutOfBounds);
+    CHECK(canPlace(w, c, makeItem(c, item(c, "barn"), 0, {e + 1, c.mapH - 2})) ==
+          PlaceResult::OutOfBounds);
+    CHECK(canPlace(w, c, makeItem(c, item(c, "barn"), 1, {e, c.mapH - 2})) ==
+          PlaceResult::OutOfBounds);
     CHECK(canPlace(w, c, makeItem(c, item(c, "oak"), 0, {-1, 0})) == PlaceResult::OutOfBounds);
+    // Coordinates near the int limits (a damaged save) are refused without overflowing.
+    CHECK(canPlace(w, c, makeItem(c, item(c, "barn"), 0, {2147483646, 0})) ==
+          PlaceResult::OutOfBounds);
+    CHECK(canPlace(w, c, makeItem(c, item(c, "barn"), 0, {0, -2147483647})) ==
+          PlaceResult::OutOfBounds);
     w.addItem(barn);
-    CHECK(canPlace(w, c, makeItem(c, item(c, "oak"), 0, {19, 19})) == PlaceResult::Occupied);
-    CHECK(canPlace(w, c, makeItem(c, item(c, "oak"), 0, {16, 19})) == PlaceResult::Ok);
+    CHECK(canPlace(w, c, makeItem(c, item(c, "oak"), 0, {c.mapW - 1, c.mapH - 1})) ==
+          PlaceResult::Occupied);
+    CHECK(canPlace(w, c, makeItem(c, item(c, "oak"), 0, {e - 1, c.mapH - 1})) == PlaceResult::Ok);
     // A 2x2 overlapping a single tile of the barn.
-    CHECK(canPlace(w, c, makeItem(c, item(c, "cottage"), 0, {16, 17})) == PlaceResult::Occupied);
+    CHECK(canPlace(w, c, makeItem(c, item(c, "cottage"), 0, {e - 1, c.mapH - 3})) ==
+          PlaceResult::Occupied);
 
     w.setTerrain({3, 3}, water);
     CHECK(canPlace(w, c, makeItem(c, item(c, "oak"), 0, {3, 3})) == PlaceResult::NeedsLand);
@@ -136,7 +177,8 @@ TEST_CASE("painting refuses to put the wrong ground under an item") {
     CHECK(canPaint(w, c, {5, 5}, water) == PaintResult::BlockedByItem);
     CHECK(canPaint(w, c, {5, 5}, path) == PaintResult::Ok);
     CHECK(canPaint(w, c, {5, 6}, c.baseTerrain) == PaintResult::Unchanged);
-    CHECK(canPaint(w, c, {20, 6}, path) == PaintResult::OutOfBounds);
+    CHECK(canPaint(w, c, {c.mapW, 6}, path) == PaintResult::OutOfBounds);
+    CHECK(canPaint(w, c, {5, 6}, 999) == PaintResult::OutOfBounds);
     w.setTerrain({8, 8}, water);
     w.addItem(makeItem(c, item(c, "bridge"), 0, {8, 8}));
     CHECK(canPaint(w, c, {8, 8}, path) == PaintResult::BlockedByItem);
@@ -190,7 +232,7 @@ TEST_CASE("undo and redo, including drags as one step") {
     // Failed actions leave no undo step behind.
     CHECK(ed.place(w, c, makeItem(c, item(c, "oak"), 0, {8, 8})) == PlaceResult::Occupied);
     ed.begin();
-    CHECK(ed.paint(w, c, {30, 30}, path) == PaintResult::OutOfBounds);
+    CHECK(ed.paint(w, c, {c.mapW + 10, 30}, path) == PaintResult::OutOfBounds);
     ed.commit();
     CHECK(w.revision() == rev);
 
@@ -242,9 +284,10 @@ TEST_CASE("clock phases, pinning and lighting") {
     CHECK(phaseAt(1.1) == Phase::Day);
     for (Phase p : {Phase::Day, Phase::Dusk, Phase::Night, Phase::Dawn})
         CHECK(phaseAt(phaseCentre(p)) == p);
-    CHECK(parsePhase("dusk") == Phase::Dusk);
-    CHECK_FALSE(parsePhase("noon"));
     CHECK(parsePin("auto") == ClockPin::Auto);
+    CHECK(parsePin("dawn") == ClockPin::Dawn);
+    CHECK_FALSE(parsePin("noon"));
+    CHECK(phaseId(Phase::Dusk) == "dusk");
 
     Clock clock;
     clock.setTime(0.49);
@@ -263,6 +306,9 @@ TEST_CASE("clock phases, pinning and lighting") {
     CHECK(day.glow == doctest::Approx(0.0));
     CHECK(night.glow == doctest::Approx(1.0));
     CHECK(night.ambient.b > night.ambient.r);
+    // Night is genuinely dark: well under half the day's light on every channel.
+    CHECK(night.ambient.r < 0.4f * day.ambient.r);
+    CHECK(night.ambient.g < 0.4f * day.ambient.g);
     CHECK(lightingAt(phaseCentre(Phase::Day), true).ambient.r < day.ambient.r);
     // Continuous across the wrap point.
     const Lighting a = lightingAt(0.9999, false);
@@ -279,27 +325,27 @@ TEST_CASE("visitor needs decide who comes") {
     const auto& cat = c.visitors[static_cast<std::size_t>(*c.findVisitor("cat"))];
     const int water = terrain(c, "water");
     for (int x = 0; x < 5; ++x) w.setTerrain({x, 0}, water);
-    CHECK(desiredCount(duck, w, false) == 0);
+    CHECK(wants(duck, w, false) == 0);
     w.setTerrain({5, 0}, water);
-    CHECK(desiredCount(duck, w, false) == tuning::kVisitorsPerNeed);
+    CHECK(wants(duck, w, false) == tuning::kVisitorsPerNeed);
     for (int x = 0; x < 20; ++x) w.setTerrain({x, 1}, water);
-    CHECK(desiredCount(duck, w, false) == duck.max);
+    CHECK(wants(duck, w, false) == duck.max);
 
     w.addItem(makeItem(c, item(c, "flowers_red"), 0, {5, 5}));
     w.addItem(makeItem(c, item(c, "flowers_white"), 0, {6, 5}));
     w.addItem(makeItem(c, item(c, "flowers_violet"), 0, {7, 5}));
-    CHECK(desiredCount(butterfly, w, false) == 0);
+    CHECK(wants(butterfly, w, false) == 0);
     w.addItem(makeItem(c, item(c, "flowers_red"), 0, {8, 5}));
-    CHECK(desiredCount(butterfly, w, false) > 0);
-    CHECK(desiredCount(butterfly, w, true) == 0); // day visitor
+    CHECK(wants(butterfly, w, false) > 0);
+    CHECK(wants(butterfly, w, true) == 0); // day visitor
 
     for (int x = 0; x < 3; ++x) w.addItem(makeItem(c, item(c, "tall_grass"), 0, {x, 8}));
-    CHECK(desiredCount(firefly, w, false) == 0);
-    CHECK(desiredCount(firefly, w, true) > 0);
+    CHECK(wants(firefly, w, false) == 0);
+    CHECK(wants(firefly, w, true) > 0);
 
     w.addItem(makeItem(c, item(c, "cottage"), 0, {10, 10}));
     w.addItem(makeItem(c, item(c, "cottage"), 0, {14, 10}));
-    CHECK(desiredCount(cat, w, true) == 1); // max 1
+    CHECK(wants(cat, w, true) == 1); // max 1
 }
 
 TEST_CASE("visitors arrive, stay in their habitat and leave when unwelcome") {
@@ -315,7 +361,7 @@ TEST_CASE("visitors arrive, stay in their habitat and leave when unwelcome") {
     bool firstSeen = false;
     int arrivals = 0;
     for (int i = 0; i < 60 * 30; ++i) {
-        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng);
+        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds());
         for (const auto& e : vis.events()) {
             if (e.kind != VisitorEvent::Kind::Arrived) continue;
             ++arrivals;
@@ -330,15 +376,14 @@ TEST_CASE("visitors arrive, stay in their habitat and leave when unwelcome") {
     }
     CHECK(firstSeen);
     CHECK(vis.seen(duckId));
-    CHECK(vis.present(duckId) ==
-          desiredCount(c.visitors[static_cast<std::size_t>(duckId)], w, false));
+    CHECK(vis.present(duckId) == wants(c.visitors[static_cast<std::size_t>(duckId)], w, false));
     CHECK(arrivals == vis.present(duckId));
 
     // Drain the pond: the ducks fade away.
     for (int y = 4; y < 8; ++y)
         for (int x = 4; x < 8; ++x) w.setTerrain({x, y}, c.baseTerrain);
     for (int i = 0; i < 60 * 5; ++i)
-        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng);
+        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds());
     CHECK(vis.critters().empty());
 }
 
@@ -347,7 +392,7 @@ TEST_CASE("populate spawns the full population without events") {
     const World w = makeStarterWorld(c);
     Rng rng(3);
     Visitors vis(c);
-    vis.populate(w, c, true, rng);
+    vis.populate(w, c, true, rng, w.bounds());
     CHECK(vis.events().empty());
     const int ducks = vis.present(*c.findVisitor("duck"));
     CHECK(ducks > 0);
@@ -363,8 +408,8 @@ TEST_CASE("the starter scene is pleasant and valid") {
     CHECK(w.terrainCount(terrain(c, "path")) > 10);
     for (const Item& it : w.items()) {
         World probe(c);
-        for (int y = 0; y < 20; ++y)
-            for (int x = 0; x < 20; ++x) probe.setTerrain({x, y}, w.terrainAt({x, y}));
+        for (int y = 0; y < c.mapH; ++y)
+            for (int x = 0; x < c.mapW; ++x) probe.setTerrain({x, y}, w.terrainAt({x, y}));
         CHECK(canPlace(probe, c, it) == PlaceResult::Ok);
     }
 }
@@ -372,7 +417,7 @@ TEST_CASE("the starter scene is pleasant and valid") {
 TEST_CASE("save round trip") {
     const Catalog& c = test::catalog();
     SaveData data(makeStarterWorld(c));
-    data.world.addItem(makeItem(c, item(c, "barn"), 3, {2, 17}));
+    data.world.addItem(makeItem(c, item(c, "barn"), 3, {2, c.mapH - 3}));
     data.clockTime = 0.7;
     data.pin = ClockPin::Night;
     data.rain = true;
@@ -388,8 +433,8 @@ TEST_CASE("save round trip") {
     CHECK(loaded->rain);
     CHECK(loaded->muted);
     CHECK(loaded->journal == data.journal);
-    for (int y = 0; y < 20; ++y)
-        for (int x = 0; x < 20; ++x)
+    for (int y = 0; y < c.mapH; ++y)
+        for (int x = 0; x < c.mapW; ++x)
             CHECK(loaded->world.terrainAt({x, y}) == data.world.terrainAt({x, y}));
     REQUIRE(loaded->world.items().size() == data.world.items().size());
     for (const Item& it : data.world.items()) {
@@ -407,7 +452,8 @@ TEST_CASE("corrupt, newer and odd saves are handled") {
     CHECK_FALSE(deserialize("[1,2,3]", c).has_value());
     CHECK_FALSE(deserialize("{\"items\": []}", c).has_value());
     CHECK_FALSE(deserialize("{\"version\": 99}", c).has_value());
-    CHECK_FALSE(deserialize("{\"version\": 1, \"map\": {\"w\": 5, \"h\": 5}}", c).has_value());
+    CHECK_FALSE(deserialize("{\"version\": 1, \"map\": {\"w\": 0, \"h\": 5}}", c).has_value());
+    CHECK_FALSE(deserialize("{\"version\": 1.5}", c).has_value());
 
     SaveData data(World{c});
     data.world.addItem(makeItem(c, item(c, "oak"), 0, {1, 1}));
@@ -422,6 +468,7 @@ TEST_CASE("corrupt, newer and odd saves are handled") {
     REQUIRE(loaded.has_value()); // unknown ids are skipped, not fatal
     CHECK(loaded->world.items().empty());
     CHECK(loaded->warnings.size() == 1);
+    CHECK(loaded->warnings[0].find("baobab") != std::string::npos);
 
     // Minimal file without the optional sections.
     const std::string minimal = R"({"version":1,"map":{"w":20,"h":20},"palette":["grass"],
@@ -434,6 +481,7 @@ TEST_CASE("corrupt, newer and odd saves are handled") {
     REQUIRE(min.has_value());
     CHECK(min->pin == ClockPin::Auto);
     CHECK_FALSE(min->rain);
+    CHECK(min->world.width() == c.mapW); // an older, smaller map loads into the current one
 }
 
 TEST_CASE("atomic write replaces the file and leaves no temp behind") {
@@ -462,4 +510,248 @@ TEST_CASE("rng is deterministic per seed") {
         CHECK(r <= 5);
     }
     CHECK(differs);
+}
+
+TEST_CASE("chunked world: area queries, tallies and revisions match brute force") {
+    const Catalog& c = test::catalog();
+    // Not a multiple of the chunk size, and far larger than the home map.
+    World w(c, 1000, 600);
+    CHECK(w.chunksX() == (1000 + kChunk - 1) / kChunk);
+    CHECK(w.landBounds() == TileRect{0, 0, 1000, 600});
+    Rng rng(11);
+    const int types = static_cast<int>(c.items.size());
+    for (int i = 0; i < 4000; ++i) {
+        const int type = rng.range(0, types - 1);
+        const auto& def = c.items[static_cast<std::size_t>(type)];
+        if (def.on == Surface::Water) continue;
+        const Item it =
+            makeItem(c, type, rng.range(0, def.count - 1), {rng.range(0, 999), rng.range(0, 599)});
+        if (canPlace(w, c, it) == PlaceResult::Ok) w.addItem(it);
+    }
+    // Remove a third, so swap-removals move items between chunk lists.
+    for (int i = 0; i < 1200 && !w.items().empty(); ++i)
+        w.removeItem(
+            static_cast<std::size_t>(rng.range(0, static_cast<int>(w.items().size()) - 1)));
+    for (std::size_t i = 0; i < w.items().size(); ++i) {
+        const Item& it = w.items()[i];
+        for (int y = it.pos.y; y < it.pos.y + it.h; ++y)
+            for (int x = it.pos.x; x < it.pos.x + it.w; ++x) REQUIRE(w.itemIndexAt({x, y}) == i);
+    }
+    for (const TileRect r : {TileRect{0, 0, 40, 40}, TileRect{31, 31, 33, 33},
+                             TileRect{500, 100, 640, 230}, TileRect{990, 590, 1200, 900}}) {
+        std::size_t viaChunks = 0;
+        w.forEachItemIn(r, [&](const Item& it) {
+            CHECK(it.rect().intersects(r));
+            ++viaChunks;
+        });
+        std::size_t brute = 0;
+        for (const Item& it : w.items()) brute += it.rect().intersects(r) ? 1 : 0;
+        CHECK(viaChunks == brute);
+    }
+    for (std::size_t t = 0; t < c.items.size(); ++t) {
+        int sum = 0;
+        for (int cy = 0; cy < w.chunksY(); ++cy)
+            for (int cx = 0; cx < w.chunksX(); ++cx)
+                sum += w.chunkItemCount(cx, cy, static_cast<int>(t));
+        CHECK(sum == w.itemCount(static_cast<int>(t)));
+    }
+    // A terrain change on a chunk edge invalidates the neighbour whose edges depend on it.
+    const auto before = w.chunkTerrainRevision(1, 0);
+    const auto other = w.chunkTerrainRevision(5, 5);
+    w.setTerrain({kChunk - 1, 3}, c.waterTerrain);
+    CHECK(w.chunkTerrainRevision(1, 0) != before);
+    CHECK(w.chunkTerrainRevision(5, 5) == other);
+    CHECK(w.chunkTerrainCount(0, 0, c.waterTerrain) == 1);
+    CHECK(w.terrainCount(c.waterTerrain) == 1);
+}
+
+TEST_CASE("tiles without ground shape the land: refused for edits, edges run into the rim") {
+    const Catalog& c = test::catalog();
+    World w(c);
+    for (int y = 0; y < c.mapH; ++y)
+        for (int x = 30; x < c.mapW; ++x) w.setTerrain({x, y}, kNoGround);
+    CHECK(w.landBounds() == TileRect{0, 0, 30, c.mapH});
+    CHECK_FALSE(w.hasGround({30, 4}));
+    CHECK(w.hasGround({29, 4}));
+    CHECK(canPlace(w, c, makeItem(c, item(c, "oak"), 0, {31, 4})) == PlaceResult::OutOfBounds);
+    CHECK(canPlace(w, c, makeItem(c, item(c, "cottage"), 0, {29, 4})) == PlaceResult::OutOfBounds);
+    CHECK(canPaint(w, c, {31, 4}, terrain(c, "path")) == PaintResult::OutOfBounds);
+    w.setTerrain({29, 4}, c.waterTerrain);
+    CHECK((w.terrainMask({29, 4}) & kMaskE) != 0); // open sky counts as "same"
+    CHECK(w.terrainCount(c.baseTerrain) == 30 * c.mapH - 1);
+    CHECK_FALSE(habitatAllows(Habitat::Air, w, c, {31.5f, 4.5f}));
+}
+
+TEST_CASE("critters never step onto tiles edited away under their walk") {
+    const Catalog& c = test::catalog();
+    World w(c);
+    const int water = terrain(c, "water");
+    for (int y = 10; y < 13; ++y)
+        for (int x = 4; x < 20; ++x) w.setTerrain({x, y}, water);
+    Rng rng(5);
+    Visitors vis(c);
+    vis.populate(w, c, false, rng, w.bounds());
+    REQUIRE(vis.present(*c.findVisitor("duck")) > 0);
+    // Let them swim, then drain the channel in stripes while they move.
+    for (int i = 0; i < 600; ++i) {
+        if (i % 50 == 25) {
+            const int x = 5 + (i / 50) % 14;
+            for (int y = 10; y < 13; ++y) w.setTerrain({x, y}, c.baseTerrain);
+        }
+        const auto before = std::vector<Critter>(vis.critters().begin(), vis.critters().end());
+        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds());
+        // Order is kept by update (new arrivals are appended, departures removed in order), so
+        // compare each surviving critter with its previous position.
+        std::size_t j = 0;
+        for (const Critter& now : vis.critters()) {
+            while (j < before.size() &&
+                   (before[j].visitor != now.visitor ||
+                    std::hypot(before[j].pos.x - now.pos.x, before[j].pos.y - now.pos.y) > 0.1f))
+                ++j;
+            if (j == before.size()) break; // a new arrival
+            const TilePos a{static_cast<int>(std::floor(before[j].pos.x)),
+                            static_cast<int>(std::floor(before[j].pos.y))};
+            const TilePos b{static_cast<int>(std::floor(now.pos.x)),
+                            static_cast<int>(std::floor(now.pos.y))};
+            if (!(a == b)) CHECK(habitatAllows(c.visitors[now.visitor].habitat, w, c, now.pos));
+            ++j;
+        }
+    }
+}
+
+TEST_CASE("a critter whose tile is edited away walks to an allowed neighbour") {
+    const Catalog& c = test::catalog();
+    World w(c);
+    const int cottage = item(c, "cottage");
+    w.addItem(makeItem(c, cottage, 0, {20, 20}));
+    Rng rng(9);
+    Visitors vis(c);
+    vis.populate(w, c, false, rng, w.bounds());
+    const int catId = *c.findVisitor("cat");
+    REQUIRE(vis.present(catId) == 1);
+    const auto catPos = [&] {
+        for (const Critter& cr : vis.critters())
+            if (cr.visitor == catId) return cr.pos;
+        return Vec2{-1, -1};
+    };
+    const Vec2 p = catPos();
+    const TilePos t{static_cast<int>(p.x), static_cast<int>(p.y)};
+    // Put a rock right under the cat (unless that is the cottage itself).
+    REQUIRE(w.itemAt(t) == nullptr);
+    w.addItem(makeItem(c, item(c, "rock"), 0, t));
+    for (int i = 0; i < 120; ++i)
+        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds());
+    REQUIRE(vis.present(catId) == 1); // it moved off instead of fading away
+    CHECK(habitatAllows(Habitat::Land, w, c, catPos()));
+}
+
+TEST_CASE("visitors live in the active area only") {
+    const Catalog& c = test::catalog();
+    World w(c, 200, 200);
+    const int water = terrain(c, "water");
+    for (int y = 150; y < 160; ++y)
+        for (int x = 150; x < 160; ++x) w.setTerrain({x, y}, water);
+    Rng rng(4);
+    Visitors vis(c);
+    const int duck = *c.findVisitor("duck");
+    vis.populate(w, c, false, rng, {0, 0, 64, 64});
+    CHECK(vis.present(duck) == 0); // the pond is outside the area: nobody is simulated there
+    vis.populate(w, c, false, rng, {128, 128, 192, 192});
+    CHECK(vis.present(duck) > 0);
+    vis.markSeen(duck);
+    // The view leaves: they are dropped silently; it comes back: they are simply there again.
+    vis.update(w, c, false, 0.01f, rng, {0, 0, 64, 64});
+    CHECK(vis.critters().empty());
+    CHECK(vis.events().empty());
+    vis.update(w, c, false, 0.01f, rng, {128, 128, 192, 192});
+    CHECK(vis.present(duck) > 0);
+    CHECK(vis.events().empty());
+    for (const Critter& cr : vis.critters()) CHECK(cr.pos.x >= 128);
+}
+
+TEST_CASE("a save from the old 20x20 map loads centred on the new map with nothing lost") {
+    const Catalog& c = test::catalog();
+    // Version 1 file as the previous release wrote it.
+    std::string terrainList;
+    for (int i = 0; i < 400; ++i) {
+        const int x = i % 20;
+        const int y = i / 20;
+        terrainList += (i ? "," : "") + std::string((x == 0 && y == 0)     ? "1"
+                                                    : (y == 19 && x == 19) ? "2"
+                                                                           : "0");
+    }
+    const std::string v1 = R"({"version":1,"map":{"w":20,"h":20},"palette":["grass","water","path"],
+        "terrain":[)" + terrainList +
+                           R"(],
+        "items":[{"id":"oak","x":0,"y":5,"v":2},{"id":"barn","x":17,"y":18,"v":0},
+                 {"id":"lily_pads","x":0,"y":0,"v":1}],
+        "clock":{"t":0.7,"pin":"night"},"settings":{"rain":true,"muted":false},
+        "journal":["duck"]})";
+    const auto loaded = deserialize(v1, c);
+    REQUIRE(loaded.has_value());
+    const TilePos o = centringOffset(20, 20, c.mapW, c.mapH);
+    CHECK(o == TilePos{10, 10});
+    const World& w = loaded->world;
+    CHECK(w.terrainAt({o.x, o.y}) == c.waterTerrain);
+    CHECK(w.terrainAt({o.x + 19, o.y + 19}) == terrain(c, "path"));
+    CHECK(w.items().size() == 3);
+    CHECK(w.itemAt({o.x, o.y + 5})->type == item(c, "oak"));
+    CHECK(w.itemAt({o.x + 19, o.y + 19})->type == item(c, "barn"));
+    CHECK(w.itemAt({o.x, o.y})->type == item(c, "lily_pads"));
+    CHECK(loaded->pin == ClockPin::Night);
+    CHECK(loaded->rain);
+    REQUIRE(loaded->warnings.size() == 1);
+    CHECK(loaded->warnings[0].find("centred") != std::string::npos);
+    // Written back as version 2 it round-trips exactly.
+    const std::string v2 = serialize(*loaded, c);
+    CHECK(v2.find("\"version\": 2") != std::string::npos);
+    const auto again = deserialize(v2, c);
+    REQUIRE(again.has_value());
+    CHECK(again->warnings.empty());
+    CHECK(serialize(*again, c) == v2);
+}
+
+TEST_CASE("damaged saves are repaired entry by entry, not rejected or overflowed") {
+    const Catalog& c = test::catalog();
+    SaveData data(World{c});
+    data.world.setTerrain({3, 3}, c.waterTerrain);
+    std::string text = serialize(data, c);
+    const auto pos = text.find("\"items\": []");
+    REQUIRE(pos != std::string::npos);
+    std::string items = "\"items\": [";
+    items += R"({"id":"oak","x":1.5,"y":2},{"id":"oak","x":2147483647,"y":0},)";
+    items += R"({"id":"oak","x":-2147483648,"y":-5},{"id":"oak","x":"7","y":0},{"id":"oak"},)";
+    for (int i = 0; i < 2000; ++i) items += R"({"id":"rock","x":5,"y":5},)";
+    items += R"({"id":"oak","x":8,"y":8}])";
+    text.replace(pos, std::string("\"items\": []").size(), items);
+    const auto loaded = deserialize(text, c);
+    REQUIRE(loaded.has_value());
+    CHECK(loaded->world.items().size() == 2); // one rock, one good oak
+    CHECK(loaded->world.itemAt({8, 8}) != nullptr);
+    // Warnings are grouped by kind: a handful of lines, not two thousand.
+    CHECK(loaded->warnings.size() <= 4);
+
+    // One bad terrain value no longer rejects the whole file.
+    std::string cells = "99";
+    for (int i = 1; i < c.mapW * c.mapH; ++i) cells += ",0";
+    const auto repaired = deserialize(R"({"version":1,"map":{"w":)" + std::to_string(c.mapW) +
+                                          R"(,"h":)" + std::to_string(c.mapH) +
+                                          R"(},"palette":["grass"],"terrain":[)" + cells + "]}",
+                                      c);
+    REQUIRE(repaired.has_value());
+    CHECK(repaired->world.terrainAt({0, 0}) == c.baseTerrain);
+    CHECK(repaired->warnings.size() == 1);
+}
+
+TEST_CASE("saves hold only what changed, so a huge world saves small") {
+    const Catalog& c = test::catalog();
+    SaveData data(World{c, 1024, 512});
+    data.world.setTerrain({700, 300}, terrain(c, "path"));
+    data.world.addItem(makeItem(c, item(c, "oak"), 0, {701, 300}));
+    const std::string text = serialize(data, c);
+    CHECK(text.size() < 8000);
+    CHECK(text.find("\"chunks\"") != std::string::npos);
+    // A chunk edited back to its original state is still fine to load.
+    data.world.setTerrain({700, 300}, c.baseTerrain);
+    CHECK(serialize(data, c).size() < 8000);
 }

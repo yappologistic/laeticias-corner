@@ -1,6 +1,7 @@
 #include "core/edit.hpp"
 
 #include <ranges>
+#include <utility>
 
 namespace lc {
 namespace {
@@ -42,18 +43,19 @@ Op inverted(const Op& op) {
 
 PlaceResult canPlace(const World& world, const Catalog& cat, const Item& item) {
     const auto& def = cat.items[item.type];
-    for (int y = item.pos.y; y < item.pos.y + item.h; ++y) {
-        for (int x = item.pos.x; x < item.pos.x + item.w; ++x) {
-            if (!world.inBounds({x, y})) return PlaceResult::OutOfBounds;
-        }
-    }
-    for (int y = item.pos.y; y < item.pos.y + item.h; ++y) {
-        for (int x = item.pos.x; x < item.pos.x + item.w; ++x) {
+    // Written so that coordinates near the int limits (from a damaged save) cannot overflow.
+    if (item.pos.x < 0 || item.pos.y < 0 || item.pos.x > world.width() - item.w ||
+        item.pos.y > world.height() - item.h)
+        return PlaceResult::OutOfBounds;
+    const TileRect r = item.rect();
+    for (int y = r.y0; y < r.y1; ++y)
+        for (int x = r.x0; x < r.x1; ++x)
+            if (!world.hasGround({x, y})) return PlaceResult::OutOfBounds;
+    for (int y = r.y0; y < r.y1; ++y)
+        for (int x = r.x0; x < r.x1; ++x)
             if (world.itemAt({x, y}) != nullptr) return PlaceResult::Occupied;
-        }
-    }
-    for (int y = item.pos.y; y < item.pos.y + item.h; ++y) {
-        for (int x = item.pos.x; x < item.pos.x + item.w; ++x) {
+    for (int y = r.y0; y < r.y1; ++y) {
+        for (int x = r.x0; x < r.x1; ++x) {
             if (!surfaceAllows(def.on, world.isWater({x, y})))
                 return def.on == Surface::Water ? PlaceResult::NeedsWater : PlaceResult::NeedsLand;
         }
@@ -62,7 +64,8 @@ PlaceResult canPlace(const World& world, const Catalog& cat, const Item& item) {
 }
 
 PaintResult canPaint(const World& world, const Catalog& cat, TilePos p, int terrain) {
-    if (!world.inBounds(p)) return PaintResult::OutOfBounds;
+    if (!world.hasGround(p) || terrain < 0 || std::cmp_greater_equal(terrain, cat.terrain.size()))
+        return PaintResult::OutOfBounds;
     if (world.terrainAt(p) == terrain) return PaintResult::Unchanged;
     if (const Item* it = world.itemAt(p)) {
         const bool water = terrain == cat.waterTerrain;
@@ -147,13 +150,6 @@ std::span<const Op> Editor::redo(World& world) {
     }
     undo_.push_back(std::move(step));
     return applied_;
-}
-
-void Editor::clear() {
-    grouping_ = false;
-    pending_.clear();
-    undo_.clear();
-    redo_.clear();
 }
 
 } // namespace lc

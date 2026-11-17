@@ -11,7 +11,6 @@ enum class Phase : std::uint8_t { Day, Dusk, Night, Dawn };
 enum class ClockPin : std::uint8_t { Auto, Day, Dusk, Night, Dawn };
 
 [[nodiscard]] std::string_view phaseId(Phase p);
-[[nodiscard]] std::optional<Phase> parsePhase(std::string_view id);
 [[nodiscard]] std::string_view pinId(ClockPin p);
 [[nodiscard]] std::optional<ClockPin> parsePin(std::string_view id);
 
