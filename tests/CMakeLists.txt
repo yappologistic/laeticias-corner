@@ -34,6 +34,7 @@ set(LC_SCRIPTS
   "clock_phases|clock_phases|1280x800"
   "photo_mode|photo_mode|1280x800"
   "ui_states|ui_states|1280x800"
+  "drawer_tabs|drawer_tabs|1280x800"
   "ui_small|ui_sizes|960x600"
   "ui_4k|ui_sizes|3840x2160"
   "corrupt_save|corrupt_save|1280x800"
