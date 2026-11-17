@@ -148,5 +148,34 @@ the clock, adds slight random pitch to placement sounds, and treats a missing fi
 
 ## Running
 
-Fill in by the engine owner once presets exist: configure, build, test, sanitizer run, headless
-scripted run with screenshots, asset regeneration commands.
+Presets: `release`, `asan` (Debug + ASan/UBSan) with GCC; `clang-release`, `clang-asan` with Clang.
+Build output goes to `build/<preset>/`.
+
+```sh
+cmake --preset release && cmake --build --preset release   # configure + build
+ctest --preset release                                     # unit + coverage + scripted runs
+cmake --preset asan && cmake --build --preset asan && ctest --preset asan
+LAETICIA_STRICT_COVERAGE=1 ctest --preset release -R coverage   # missing art/audio fails
+clang-format -i src/*/*.[ch]pp tests/*.[ch]pp
+run-clang-tidy -p build/clang-release "src/.*"
+```
+
+Headless runs (never a visible window or sound; `--script` and `--bench` imply `--headless`):
+
+```sh
+B=build/release/laeticias-corner
+$B --headless --size 1280x800 --save-dir /tmp/lc --frames 300           # just run
+$B --script tests/scripts/visitors.lcs --save-dir /tmp/lc               # scripted, shots to cwd
+$B --bench --frames 600 --renderer opengl --save-dir /tmp/lc-bench      # full-map timings
+```
+
+- The script language is documented at the top of `src/app/script.hpp`; scripted tests live in
+  `tests/scripts/` and write screenshots to `build/<preset>/shots/`.
+- Saves go to `--save-dir`, else `$LAETICIA_SAVE_DIR`, else SDL's pref path. Assets come from
+  `--assets`, `$LAETICIA_ASSETS_DIR`, `<exe dir>/assets`, then the source tree.
+- Headless uses the `dummy` video driver with the software renderer (reproducible screenshots);
+  `--renderer opengl` switches to the `offscreen` driver (EGL, still windowless) for GPU timings.
+- Interactive play: `$B` with no flags (opens a window; do not run from automation).
+
+Asset regeneration (owned by the art and audio agents): `tools/artgen/build.sh` and
+`tools/audiogen/generate.sh`.
