@@ -172,30 +172,47 @@ Presets: `release`, `asan` (Debug + ASan/UBSan) with GCC; `clang-release`, `clan
 Build output goes to `build/<preset>/`.
 
 ```sh
-cmake --preset release && cmake --build --preset release   # configure + build
-ctest --preset release                                     # unit + coverage + scripted runs
-cmake --preset asan && cmake --build --preset asan && ctest --preset asan
-LAETICIA_STRICT_COVERAGE=1 ctest --preset release -R coverage   # missing art/audio fails
+cmake --preset release && cmake --build --preset release -j4   # configure + build
+ctest --preset release            # unit, coverage, scripted runs, audio capture, GPU budget bench
+ctest --preset release-full       # also the "heavy" label: large window sizes, 1024x512 bench
+cmake --preset asan && cmake --build --preset asan -j4 && ctest --preset asan
 clang-format -i src/*/*.[ch]pp tests/*.[ch]pp
-run-clang-tidy -p build/clang-release "src/.*"
+run-clang-tidy -p <clang build dir> "src/.*"     # any clang configure under out/, then delete it
 ```
 
-Headless runs (never a visible window or sound; `--script` and `--bench` imply `--headless`):
+The default presets run two tests at a time and skip the `heavy` label (the software renderer is
+slow at big sizes); they finish in about two minutes. Coverage is strict: missing art or audio
+fails (shadow layers are optional). The `bench` tests use the windowless `opengl` driver, assert
+the frame budget, and are skipped (exit 77) where no GPU renderer can be created.
+
+Headless runs (never a visible window or sound; `--script`, `--bench` and `--audio-out` imply
+`--headless`):
 
 ```sh
 B=build/release/laeticias-corner
 $B --headless --size 1280x800 --save-dir /tmp/lc --frames 300           # just run
 $B --script tests/scripts/visitors.lcs --save-dir /tmp/lc               # scripted, shots to cwd
-$B --bench --frames 600 --renderer opengl --save-dir /tmp/lc-bench      # full-map timings
+$B --script tests/scripts/audio_capture.lcs --audio-out /tmp/lc/mix.wav --save-dir /tmp/lc
+$B --bench --renderer opengl --size 1920x1080 --save-dir /tmp/lc-bench  # 40x40 timings
+$B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-dir /tmp/lc-bench
 ```
 
-- The script language is documented at the top of `src/app/script.hpp`; scripted tests live in
-  `tests/scripts/` and write screenshots to `build/<preset>/shots/`.
+- Script language: documented at the top of `src/app/script.hpp`; scripted tests live in
+  `tests/scripts/` and write screenshots to `build/<preset>/shots/`. Besides input it can hold
+  keys and buttons (`press`, `keydown` ...) and assert state and image statistics.
+- Save format: documented at the top of `src/core/save.hpp` (versioned, chunked, tolerant).
 - Saves go to `--save-dir`, else `$LAETICIA_SAVE_DIR`, else SDL's pref path. Assets come from
   `--assets`, `$LAETICIA_ASSETS_DIR`, `<exe dir>/assets`, then the source tree.
 - Headless uses the `dummy` video driver with the software renderer (reproducible screenshots);
   `--renderer opengl` switches to the `offscreen` driver (EGL, still windowless) for GPU timings.
-- Interactive play: `$B` with no flags (opens a window; do not run from automation).
+  Without `--size` a headless window is 1280x800.
+- `--bench` fills the map (dense around the centre, sparse elsewhere), runs at night in the rain
+  with the drawer and journal open, and reports update/draw times (average, 95th percentile,
+  worst) at 1x and at the half-scale overview, plus memory; `--budget-ms` makes it exit 3 when
+  over budget.
+- Interactive play: `$B` with no flags. The window opens on a share of the display it is on and
+  remembers its size, place and fullscreen state (`window.json` beside the save). Do not run it
+  from automation.
 
 Asset regeneration (owned by the art and audio agents): `tools/artgen/build.sh` and
 `tools/audiogen/generate.sh`.
