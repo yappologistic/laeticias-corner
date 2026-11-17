@@ -88,6 +88,35 @@ The owner uses this computer while agents work, and disk space is limited.
   spacing in `src/ui/theme.hpp`, content in the catalog); a region's text lives in its file
   under `assets/regions/`.
 
+## Performance
+
+The game must feel smooth: **120 FPS as the target and never below 60**, at 1440p on a mid-range
+laptop GPU, in the busiest view the world has (a dense city centre with crowds, weather and UI
+open), and while travelling. Budgets, all measured, none assumed:
+
+- Whole frame (CPU + GPU, vsync off): 99th percentile ≤ 8.3 ms, worst frame ≤ 16.6 ms. Of that,
+  CPU update + draw submission ≤ 2 ms on average; simulation (actors, events, conditions) ≤ 0.6 ms.
+- No hitches: nothing on the main thread may block for more than a frame. Loading and evicting
+  atlas pages, decoding audio, saving and building chunk caches are amortised across frames or done
+  on a worker thread, with budgets per frame.
+- Memory is bounded and stated: texture memory by an LRU budget, no growth over a long session.
+- Start-up to a playable frame ≤ 3 s; fast travel between regions ≤ 1 s with no frozen frame.
+
+Standard techniques expected (use them before inventing others): view culling with spatial chunks;
+one draw per texture page per layer via batching; static geometry cached per chunk and rebuilt only
+when dirty; cached ground layers; level of detail by zoom (pre-rendered chunk impostors and the
+overview map instead of thousands of sprites when zoomed out); simulation level of detail and
+time-slicing (far actors abstract, near actors updated in round-robin buckets); flow fields or a
+precomputed graph instead of per-agent searches; pooled, contiguous data and no per-frame
+allocation; fixed-timestep simulation with interpolated rendering; texture streaming with a budget;
+frame pacing through vsync with adaptive sync left to the driver.
+
+Every engine round keeps the gates green: `--bench` cases for the home region, a dense city view
+and the overview assert the budgets (average, 95th and 99th percentile, worst), and a soak run
+asserts flat memory. A change that makes a budget fail is not done. The built-in profiler overlay
+(frame-time graph, per-system times, draw calls, actors, chunks, texture memory) and `--perf-log`
+are the tools for finding where time goes; guesses are not.
+
 ## Git
 
 - Branch `main`, local only. Small logical commits in Conventional Commits style
