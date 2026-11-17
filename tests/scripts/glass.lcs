@@ -1,0 +1,62 @@
+# Glass panels over the live scene in every light: each panel layer (title and docks, journal,
+# drawer, hint, toast, tooltip) samples the blurred backdrop, and the shots show the material by
+# day, dusk and night in the rain.
+set clock day
+wait 5
+click ui:build
+wait 15
+click ui:tab:nature
+wait 12
+click ui:tile:oak
+wait 5
+expect tool place
+expect drawer closed
+key b
+wait 15
+expect drawer open
+move ui:tile:pine
+wait 20
+shot shots/glass_nature.png
+# A tab switch never leaves a hover highlight on the tile that takes the hovered one's slot.
+click ui:tab:homes
+wait 3
+shot shots/glass_tab_switch.png
+move ui:tile:barn
+wait 20
+shot shots/glass_homes.png
+click ui:tab:garden
+wait 2
+move ui:tile:bench
+wait 20
+shot shots/glass_garden.png
+click ui:tab:terrain
+wait 2
+move ui:tile:water
+wait 20
+shot shots/glass_terrain.png
+key b
+wait 15
+expect drawer closed
+set clock dusk
+click ui:journal
+wait 20
+expect journal open
+move ui:rain
+wait 45
+shot shots/glass_dusk_journal.png
+click ui:journal
+wait 15
+expect journal closed
+set clock night
+set rain on
+key escape
+click ui:build
+wait 15
+click ui:tab:homes
+wait 2
+click ui:tile:cottage
+move @9,9
+wait 20
+expect tool place
+shot shots/glass_night_rain.png
+quit

@@ -8,20 +8,64 @@
 
 namespace lc::theme {
 
-// Palette: warm paper panels with dark cocoa ink and a muted teal accent.
-inline constexpr SDL_FColor kPanel{0.984f, 0.961f, 0.918f, 0.90f};
-inline constexpr SDL_FColor kPanelSolid{0.984f, 0.961f, 0.918f, 0.97f};
-inline constexpr SDL_FColor kShadow{0.10f, 0.07f, 0.05f, 0.22f};
-inline constexpr SDL_FColor kInk{0.24f, 0.19f, 0.17f, 1.0f};
-inline constexpr SDL_FColor kInkMuted{0.24f, 0.19f, 0.17f, 0.58f};
-inline constexpr SDL_FColor kHover{0.24f, 0.19f, 0.17f, 0.08f};
-inline constexpr SDL_FColor kPressed{0.24f, 0.19f, 0.17f, 0.16f};
-inline constexpr SDL_FColor kAccent{0.29f, 0.53f, 0.50f, 1.0f};
-inline constexpr SDL_FColor kOnAccent{0.99f, 0.98f, 0.95f, 1.0f};
-inline constexpr SDL_FColor kWarn{0.76f, 0.33f, 0.24f, 1.0f};
-inline constexpr SDL_FColor kDivider{0.24f, 0.19f, 0.17f, 0.12f};
-inline constexpr SDL_FColor kTileBack{0.24f, 0.19f, 0.17f, 0.05f};
+// Palette: dark smoky glass over the scene, off-white ink and one soft sage accent.
+inline constexpr SDL_FColor kInk{0.965f, 0.957f, 0.925f, 1.0f};
+inline constexpr SDL_FColor kInkMuted{0.965f, 0.957f, 0.925f, 0.66f};
+inline constexpr float kInkDisabled = 0.34f; // alpha factor on disabled icons
+inline constexpr SDL_FColor kHover{1.0f, 1.0f, 1.0f, 0.11f};
+inline constexpr SDL_FColor kPressed{0.0f, 0.0f, 0.0f, 0.20f};
+inline constexpr SDL_FColor kAccent{0.66f, 0.82f, 0.62f, 1.0f};
+inline constexpr SDL_FColor kAccentWash{0.60f, 0.78f, 0.56f, 0.26f};
+inline constexpr SDL_FColor kAccentRim{0.72f, 0.88f, 0.68f, 0.70f};
+inline constexpr SDL_FColor kWarn{1.0f, 0.66f, 0.56f, 1.0f};
+inline constexpr SDL_FColor kInset{1.0f, 1.0f, 1.0f, 0.06f};
+inline constexpr SDL_FColor kInsetRimTop{1.0f, 1.0f, 1.0f, 0.12f};
+inline constexpr SDL_FColor kInsetRimBottom{1.0f, 1.0f, 1.0f, 0.04f};
+inline constexpr SDL_FColor kChip{1.0f, 1.0f, 1.0f, 0.12f};
+inline constexpr SDL_FColor kDivider{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kFlash{1.0f, 1.0f, 1.0f, 1.0f};
+
+// The glass material, layered over the blurred scene: a dimmed copy of the blur, a dark green-grey
+// tint, a faint top-down sheen, a light rim that is brighter along the top, and a soft shadow.
+struct Glass {
+    SDL_FColor backdrop; // multiplies the blurred scene
+    SDL_FColor tint;
+    SDL_FColor sheenTop;
+    SDL_FColor sheenBottom;
+    SDL_FColor rimTop;
+    SDL_FColor rimBottom;
+    SDL_FColor shadow;
+    float shadowSoftness; // UI units
+    float shadowDrop;     // UI units
+};
+inline constexpr Glass kGlass{
+    .backdrop = {0.86f, 0.86f, 0.84f, 1.0f},
+    .tint = {0.075f, 0.090f, 0.080f, 0.58f},
+    .sheenTop = {1.0f, 1.0f, 1.0f, 0.07f},
+    .sheenBottom = {1.0f, 1.0f, 1.0f, 0.0f},
+    .rimTop = {1.0f, 1.0f, 1.0f, 0.30f},
+    .rimBottom = {1.0f, 1.0f, 1.0f, 0.09f},
+    .shadow = {0.02f, 0.03f, 0.02f, 0.22f},
+    .shadowSoftness = 14.0f,
+    .shadowDrop = 4.0f,
+};
+// Tooltips float over everything, so they are denser to stay readable over other glass.
+inline constexpr Glass kGlassTip{
+    .backdrop = {0.85f, 0.85f, 0.83f, 1.0f},
+    .tint = {0.070f, 0.082f, 0.075f, 0.72f},
+    .sheenTop = {1.0f, 1.0f, 1.0f, 0.06f},
+    .sheenBottom = {1.0f, 1.0f, 1.0f, 0.0f},
+    .rimTop = {1.0f, 1.0f, 1.0f, 0.24f},
+    .rimBottom = {1.0f, 1.0f, 1.0f, 0.08f},
+    .shadow = {0.02f, 0.03f, 0.02f, 0.32f},
+    .shadowSoftness = 10.0f,
+    .shadowDrop = 2.0f,
+};
+// Without a blurred backdrop (render targets unavailable) the glass falls back to this fill.
+inline constexpr SDL_FColor kGlassFallback{0.16f, 0.18f, 0.165f, 0.90f};
+// Backdrop blur radius (UI units) and the width of light rims.
+inline constexpr float kBlurRadius = 18.0f;
+inline constexpr float kRim = 1.0f;
 
 // Layout grid (UI units).
 inline constexpr float kUnit = 8.0f;
@@ -39,7 +83,7 @@ inline constexpr int kDrawerRows = 2;
 inline constexpr float kTabH = 32.0f;
 inline constexpr float kJournalW = 320.0f;
 inline constexpr float kJournalRow = 56.0f;
-inline constexpr float kShadowSoftness = 12.0f;
+inline constexpr float kTileRadius = 12.0f;
 
 // Type: two text sizes plus the icon size.
 inline constexpr float kTextBody = 15.0f;

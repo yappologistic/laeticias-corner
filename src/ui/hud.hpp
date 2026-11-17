@@ -104,14 +104,16 @@ public:
     void flash() { flash_ = 1.0f; }
     // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...).
     [[nodiscard]] std::optional<Vec2> widgetCentre(std::string_view name, const HudModel& m) const;
+    // Current hover highlight (0..1) of a named widget; 0 when it is not shown.
+    [[nodiscard]] float highlight(std::string_view name, const HudModel& m) const;
 
     // Entries of a drawer category: its items, or all terrain for the ground tab. Fills `out` in
     // place so the per-frame layout reuses its storage.
     static void categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out);
 
-    static constexpr int kMaxWidgets = 192;
-
 private:
+    // Room for every widget of a frame (docks, tabs and a full drawer page), reserved up front.
+    static constexpr std::size_t kWidgetReserve = 64;
     struct Widget {
         int id = 0;
         Box box;
@@ -126,25 +128,31 @@ private:
     struct Panel {
         Box box;
         float radius;
-        float alpha;
     };
 
     void layout(const HudModel& m, const Font& font, Vec2 screen, float s);
+    [[nodiscard]] const Widget* find(std::string_view name, const HudModel& m) const;
     void emit(HudAction::Kind kind, int arg = 0);
     Widget& add(int id, Box box);
+    // Tiles are keyed by what they stand for, not by their slot, so hover and press feedback
+    // never carry over to a different entry after a tab switch or scroll.
+    [[nodiscard]] static int tileId(const Catalog& cat, DrawerEntry e);
+    [[nodiscard]] float hoverOf(int id) const;
+    [[nodiscard]] float pressOf(int id) const;
     void drawButton(Painter& p, const Widget& w, float alpha) const;
+    void drawTab(Painter& p, const Widget& w, float alpha) const;
     void drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) const;
     void drawTitle(Painter& p, const HudModel& m) const;
     void drawJournal(Painter& p, const HudModel& m) const;
     void drawHint(Painter& p, const HudModel& m) const;
     void drawToast(Painter& p) const;
     void drawTooltip(Painter& p) const;
-    void drawPanel(Painter& p, Box b, float radius, float alpha) const;
 
     std::vector<Widget> widgets_;
-    std::vector<Panel> panels_;
-    std::array<float, kMaxWidgets> hover_{};
-    std::array<float, kMaxWidgets> press_{};
+    std::vector<Panel> panels_; // the docks; always shown, never overlapping
+    std::array<Box, 2> dividers_{};
+    std::vector<float> hover_; // per widget id
+    std::vector<float> press_;
     std::array<HudAction, 16> actions_{};
     std::size_t actionCount_ = 0;
     std::vector<int> scroll_; // first visible drawer row per category
@@ -173,6 +181,7 @@ private:
     Box journalBox_;
     Box drawerBox_;
     Box hintBox_;
+    Box toastBox_;
     float bottomTop_ = 0;
 };
 

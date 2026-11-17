@@ -1,10 +1,14 @@
 #pragma once
-// Anti-aliased UI shapes, text and sprite thumbnails drawn through one batch.
+// Anti-aliased UI shapes, glass panels, text and sprite thumbnails drawn through one batch.
 
+#include "core/iso.hpp"
 #include "render/atlas.hpp"
 #include "render/batch.hpp"
 #include "ui/font.hpp"
+#include "ui/theme.hpp"
 
+#include <array>
+#include <cstddef>
 #include <string_view>
 
 namespace lc {
@@ -21,28 +25,66 @@ struct Box {
     [[nodiscard]] float cy() const { return y + h * 0.5f; }
 };
 
+// The blurred scene behind the interface, sampled with screen-space UVs. A null texture makes
+// glass fall back to a plain translucent fill.
+struct Backdrop {
+    SDL_Texture* texture = nullptr;
+    Vec2 screen;
+};
+
+// Interface drawing goes in layers so the whole frame needs only a handful of texture switches:
+// queue a layer's glass panels with glass(), draw them with endGlass(), draw the layer's content,
+// then endLayer() draws the sprite thumbnails queued meanwhile. Panels in one layer must not
+// overlap; a later layer draws over earlier ones.
 class Painter {
 public:
-    Painter(Batch& batch, const Font& font, const Atlas& atlas)
-        : batch_(batch), font_(font), atlas_(atlas) {}
+    Painter(Batch& batch, const Font& font, const Atlas& atlas, Backdrop backdrop, float scale)
+        : batch_(batch), font_(font), atlas_(atlas), backdrop_(backdrop), scale_(scale) {}
 
     // Rounded rectangle with a feathered edge; a large feather gives a soft shadow.
     void roundRect(Box b, float radius, SDL_FColor color, float feather = 1.0f);
+    // Rounded rectangle shaded from `top` to `bottom`.
+    void gradient(Box b, float radius, SDL_FColor top, SDL_FColor bottom);
+    // Light line `width` px wide just inside the outline, shaded from `top` to `bottom`.
+    void rim(Box b, float radius, float width, SDL_FColor top, SDL_FColor bottom);
+    void glass(Box b, float radius, float alpha, const theme::Glass& style);
+    void endGlass();
     void text(Face face, std::string_view s, float x, float baseline, SDL_FColor color);
     // Word-wraps into at most maxLines lines; returns the height used.
     float wrapped(Face face, std::string_view s, float x, float top, float width, int maxLines,
                   SDL_FColor color);
     void icon(char32_t cp, float cx, float cy, SDL_FColor color);
-    // Draws an atlas sprite scaled by an integer factor to fit the box, centred.
+    // Queues an atlas sprite scaled by an integer factor to fit the box, centred.
     void thumbnail(SpriteId id, Box b, float alpha);
+    void endLayer();
 
     [[nodiscard]] const Font& font() const { return font_; }
-    void flush() { batch_.flush(); }
 
 private:
+    enum class Fill : std::uint8_t { Flat, Backdrop };
+    struct Pane {
+        Box box;
+        float radius;
+        float alpha;
+        const theme::Glass* style;
+    };
+    struct Thumb {
+        SpriteId id;
+        Box box;
+        float alpha;
+    };
+
+    void shape(Box b, float radius, float feather, SDL_FColor top, SDL_FColor bottom, Fill fill);
+
     Batch& batch_;
     const Font& font_;
     const Atlas& atlas_;
+    Backdrop backdrop_;
+    float scale_;
+    std::array<Pane, 16> panes_{};
+    std::size_t paneCount_ = 0;
+    std::array<Thumb, 64> thumbs_{};
+    std::size_t thumbCount_ = 0;
 };
 
 } // namespace lc

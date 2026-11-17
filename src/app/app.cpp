@@ -12,6 +12,7 @@
 #include "core/visitors.hpp"
 #include "core/world.hpp"
 #include "render/atlas.hpp"
+#include "render/blur.hpp"
 #include "render/camera.hpp"
 #include "render/scene.hpp"
 #include "render/sdl_ptr.hpp"
@@ -198,6 +199,7 @@ private:
     std::unique_ptr<Atlas> atlas_;
     std::unique_ptr<Scene> scene_;
     std::unique_ptr<Batch> uiBatch_;
+    std::unique_ptr<Blur> blur_;
     Font font_;
     Hud hud_;
     Mixer mixer_;
@@ -276,6 +278,7 @@ bool App::init() {
     atlas_ = std::make_unique<Atlas>(renderer_.get(), assets_);
     scene_ = std::make_unique<Scene>(renderer_.get(), *atlas_, cat_);
     uiBatch_ = std::make_unique<Batch>(renderer_.get());
+    blur_ = std::make_unique<Blur>(renderer_.get());
     if (!font_.load(assets_ / "fonts")) return false;
 
     mixer_.load(assets_ / "audio", cat_.audio);
@@ -841,8 +844,14 @@ void App::render() {
         capturePending_ = false;
         capturePhoto();
     }
+    // The glass panels show a blurred copy of the scene; photo mode has no panels to feed.
+    blur_->invalidate();
+    if (!photo_ && blur_->begin(p.screen, theme::kBlurRadius * uiScale_)) {
+        scene_->composite(p, blur_->sourceScale(), true);
+        blur_->end();
+    }
     if (font_.build(renderer_.get(), uiScale_)) {
-        Painter painter(*uiBatch_, font_, *atlas_);
+        Painter painter(*uiBatch_, font_, *atlas_, {blur_->result(), p.screen}, uiScale_);
         hud_.draw(painter, model());
         uiBatch_->flush();
     }
@@ -1150,7 +1159,7 @@ void App::runBench() {
                     static_cast<float>(tuning::kStepSeconds));
         render();
         const Uint64 t2 = SDL_GetPerformanceCounter();
-        calls = scene_->drawCalls() + uiBatch_->drawCalls();
+        calls = scene_->drawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
         uiBatch_->resetStats();
         if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
         if (f < 10) continue; // warm-up

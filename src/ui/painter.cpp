@@ -1,66 +1,203 @@
 #include "ui/painter.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <numbers>
 
 namespace lc {
 namespace {
 constexpr int kArcSegments = 10;
-constexpr int kRim = 4 * (kArcSegments + 1);
+constexpr int kOutline = 4 * (kArcSegments + 1);
+using Loop = std::array<SDL_FPoint, kOutline>;
+
+// Unit directions of the outline's vertices, computed once: outlines are rebuilt many times a
+// frame.
+const Loop& arcDirections() {
+    static const Loop table = [] {
+        Loop t{};
+        std::size_t k = 0;
+        for (int c = 0; c < 4; ++c) {
+            for (int s = 0; s <= kArcSegments; ++s) {
+                const float a =
+                    (static_cast<float>(c) - 1.0f + static_cast<float>(s) / kArcSegments) *
+                    std::numbers::pi_v<float> * 0.5f;
+                t[k++] = {std::cos(a), std::sin(a)};
+            }
+        }
+        return t;
+    }();
+    return table;
+}
+
+// Outline of a rounded rectangle inset by `d` (negative grows it), clockwise from the top-right
+// arc. `r` is the radius before insetting.
+void outline(Box b, float r, float d, Loop& out) {
+    const float ri = std::max(0.0f, r - d);
+    const Box in{b.x + d, b.y + d, b.w - 2 * d, b.h - 2 * d};
+    const SDL_FPoint centres[4] = {{in.x + in.w - ri, in.y + ri},
+                                   {in.x + in.w - ri, in.y + in.h - ri},
+                                   {in.x + ri, in.y + in.h - ri},
+                                   {in.x + ri, in.y + ri}};
+    const Loop& dir = arcDirections();
+    for (std::size_t k = 0; k < out.size(); ++k) {
+        const SDL_FPoint c = centres[k / (kArcSegments + 1)];
+        out[k] = {c.x + dir[k].x * ri, c.y + dir[k].y * ri};
+    }
+}
+
+SDL_FColor lerp(SDL_FColor a, SDL_FColor b, float k) {
+    return {a.r + (b.r - a.r) * k, a.g + (b.g - a.g) * k, a.b + (b.b - a.b) * k,
+            a.a + (b.a - a.a) * k};
+}
+
+SDL_FColor scaled(SDL_FColor c, float alpha) {
+    return {c.r, c.g, c.b, c.a * alpha};
+}
+
+// `top` composited over `under` (straight alpha).
+SDL_FColor over(SDL_FColor top, SDL_FColor under) {
+    const float a = top.a + under.a * (1 - top.a);
+    if (a <= 0) return {0, 0, 0, 0};
+    const float k = under.a * (1 - top.a);
+    return {(top.r * top.a + under.r * k) / a, (top.g * top.a + under.g * k) / a,
+            (top.b * top.a + under.b * k) / a, a};
+}
+
+// Vertical shading: the colour at height y of a box shaded from `top` to `bottom`.
+struct Shade {
+    Box b;
+    SDL_FColor top;
+    SDL_FColor bottom;
+    [[nodiscard]] SDL_FColor at(float y, float alpha = 1.0f) const {
+        const float k = b.h > 0 ? std::clamp((y - b.y) / b.h, 0.0f, 1.0f) : 0.0f;
+        return scaled(lerp(top, bottom, k), alpha);
+    }
+};
+
+// Index list joining loop `a` to loop `b` (vertex offsets) with one quad per outline segment.
+template <std::size_t N>
+std::size_t band(std::array<int, N>& idx, std::size_t n, int a, int b) {
+    for (int i = 0; i < kOutline; ++i) {
+        const int j = (i + 1) % kOutline;
+        idx[n++] = a + i;
+        idx[n++] = b + i;
+        idx[n++] = b + j;
+        idx[n++] = a + i;
+        idx[n++] = b + j;
+        idx[n++] = a + j;
+    }
+    return n;
+}
 } // namespace
 
-void Painter::roundRect(Box b, float radius, SDL_FColor color, float feather) {
-    if (b.w <= 0 || b.h <= 0 || color.a <= 0) return;
+void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FColor bottom,
+                    Fill fill) {
+    if (b.w <= 0 || b.h <= 0 || (top.a <= 0 && bottom.a <= 0)) return;
     radius = std::clamp(radius, 0.0f, std::min(b.w, b.h) * 0.5f);
-    // Inset by half the feather so the visible edge stays where the box says.
+    // The solid edge sits half the feather inside the box so the visible edge stays where the box
+    // says; the transparent edge half outside.
     const float inset = std::min(feather * 0.5f, radius);
-    const float r = std::max(0.0f, radius - inset);
-    const Box in{b.x + inset, b.y + inset, b.w - 2 * inset, b.h - 2 * inset};
-    const UvRect uv = font_.whiteUv();
-    const SDL_FPoint t{(uv.u0 + uv.u1) * 0.5f, (uv.v0 + uv.v1) * 0.5f};
-    SDL_FColor clear = color;
-    clear.a = 0;
+    Loop solid;
+    Loop clear;
+    outline(b, radius, inset, solid);
+    outline(b, radius, inset - feather, clear);
 
-    std::array<SDL_Vertex, 1 + 2 * kRim> v;
-    v[0] = {{in.cx(), in.cy()}, color, t};
-    const SDL_FPoint centres[4] = {{in.x + in.w - r, in.y + r},
-                                   {in.x + in.w - r, in.y + in.h - r},
-                                   {in.x + r, in.y + in.h - r},
-                                   {in.x + r, in.y + r}};
-    int k = 0;
-    for (int c = 0; c < 4; ++c) {
-        for (int s = 0; s <= kArcSegments; ++s) {
-            const float a = (static_cast<float>(c) - 1.0f + static_cast<float>(s) / kArcSegments) *
-                            std::numbers::pi_v<float> * 0.5f;
-            const float nx = std::cos(a);
-            const float ny = std::sin(a);
-            const SDL_FPoint p{centres[c].x + nx * r, centres[c].y + ny * r};
-            v[static_cast<std::size_t>(1 + k)] = {p, color, t};
-            v[static_cast<std::size_t>(1 + kRim + k)] = {
-                {p.x + nx * feather, p.y + ny * feather}, clear, t};
-            ++k;
-        }
+    SDL_Texture* texture = font_.texture();
+    const UvRect white = font_.whiteUv();
+    const SDL_FPoint whiteUv{(white.u0 + white.u1) * 0.5f, (white.v0 + white.v1) * 0.5f};
+    const bool sampled = fill == Fill::Backdrop && backdrop_.texture != nullptr;
+    if (sampled) texture = backdrop_.texture;
+    const auto uv = [&](SDL_FPoint p) {
+        if (!sampled) return whiteUv;
+        // Clamped: the feathered rim may poke past the window, where the blur has no data.
+        return SDL_FPoint{std::clamp(p.x / backdrop_.screen.x, 0.0f, 1.0f),
+                          std::clamp(p.y / backdrop_.screen.y, 0.0f, 1.0f)};
+    };
+    const Shade shade{b, top, bottom};
+
+    std::array<SDL_Vertex, 1 + 2 * kOutline> v;
+    const SDL_FPoint centre{b.cx(), b.cy()};
+    v[0] = {centre, shade.at(centre.y), uv(centre)};
+    for (std::size_t i = 0; i < kOutline; ++i) {
+        v[1 + i] = {solid[i], shade.at(solid[i].y), uv(solid[i])};
+        v[1 + kOutline + i] = {clear[i], shade.at(clear[i].y, 0.0f), uv(clear[i])};
     }
-    std::array<int, kRim * 9> idx;
+    std::array<int, kOutline * 9> idx;
     std::size_t n = 0;
-    for (int i = 0; i < kRim; ++i) {
-        const int a = 1 + i;
-        const int b2 = 1 + (i + 1) % kRim;
+    for (int i = 0; i < kOutline; ++i) {
         idx[n++] = 0;
-        idx[n++] = a;
-        idx[n++] = b2;
-        // Feather quad between the solid rim and the transparent outer rim.
-        idx[n++] = a;
-        idx[n++] = a + kRim;
-        idx[n++] = b2 + kRim;
-        idx[n++] = a;
-        idx[n++] = b2 + kRim;
-        idx[n++] = b2;
+        idx[n++] = 1 + i;
+        idx[n++] = 1 + (i + 1) % kOutline;
     }
+    n = band(idx, n, 1, 1 + kOutline);
+    batch_.use(texture, SDL_BLENDMODE_BLEND);
+    batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(), static_cast<int>(n));
+}
+
+void Painter::roundRect(Box b, float radius, SDL_FColor color, float feather) {
+    shape(b, radius, feather, color, color, Fill::Flat);
+}
+
+void Painter::gradient(Box b, float radius, SDL_FColor top, SDL_FColor bottom) {
+    shape(b, radius, 1.0f, top, bottom, Fill::Flat);
+}
+
+void Painter::rim(Box b, float radius, float width, SDL_FColor top, SDL_FColor bottom) {
+    if (b.w <= 0 || b.h <= 0 || (top.a <= 0 && bottom.a <= 0)) return;
+    radius = std::clamp(radius, 0.0f, std::min(b.w, b.h) * 0.5f);
+    // Three outlines, transparent-solid-transparent: an anti-aliased line covering about
+    // (width + 1) / 2 px, peaking half its width inside the edge.
+    const float d[3] = {-0.5f, width * 0.5f, width + 0.5f};
+    const float a[3] = {0, 1, 0};
+    const UvRect white = font_.whiteUv();
+    const SDL_FPoint t{(white.u0 + white.u1) * 0.5f, (white.v0 + white.v1) * 0.5f};
+    const Shade shade{b, top, bottom};
+    std::array<SDL_Vertex, 3 * kOutline> v;
+    Loop loop;
+    for (std::size_t l = 0; l < 3; ++l) {
+        outline(b, radius, d[l], loop);
+        for (std::size_t i = 0; i < kOutline; ++i)
+            v[l * kOutline + i] = {loop[i], shade.at(loop[i].y, a[l]), t};
+    }
+    std::array<int, kOutline * 12> idx;
+    std::size_t n = 0;
+    for (int l = 0; l < 2; ++l) n = band(idx, n, l * kOutline, (l + 1) * kOutline);
     batch_.use(font_.texture(), SDL_BLENDMODE_BLEND);
     batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(), static_cast<int>(n));
+}
+
+void Painter::glass(Box b, float radius, float alpha, const theme::Glass& style) {
+    if (alpha <= 0 || b.w <= 0 || b.h <= 0) return;
+    if (paneCount_ == panes_.size()) endGlass();
+    panes_[paneCount_++] = {b, radius, alpha, &style};
+}
+
+void Painter::endGlass() {
+    const std::span panes(panes_.data(), paneCount_);
+    paneCount_ = 0;
+    // Pass by pass rather than pane by pane: each pass uses one texture, so a layer of panels
+    // costs two texture switches however many panels it has.
+    for (const Pane& p : panes) {
+        const float soft = p.style->shadowSoftness * scale_;
+        roundRect({p.box.x - soft * 0.25f, p.box.y + p.style->shadowDrop * scale_ - soft * 0.25f,
+                   p.box.w + soft * 0.5f, p.box.h + soft * 0.5f},
+                  p.radius + soft * 0.5f, scaled(p.style->shadow, p.alpha), soft);
+    }
+    for (const Pane& p : panes) {
+        if (backdrop_.texture != nullptr) {
+            const SDL_FColor c = scaled(p.style->backdrop, p.alpha);
+            shape(p.box, p.radius, 1.0f, c, c, Fill::Backdrop);
+        } else {
+            roundRect(p.box, p.radius, scaled(theme::kGlassFallback, p.alpha));
+        }
+    }
+    for (const Pane& p : panes) {
+        const theme::Glass& g = *p.style;
+        gradient(p.box, p.radius, scaled(over(g.sheenTop, g.tint), p.alpha),
+                 scaled(over(g.sheenBottom, g.tint), p.alpha));
+        rim(p.box, p.radius, theme::kRim * scale_, scaled(g.rimTop, p.alpha),
+            scaled(g.rimBottom, p.alpha));
+    }
 }
 
 void Painter::text(Face face, std::string_view s, float x, float baseline, SDL_FColor color) {
@@ -107,13 +244,27 @@ void Painter::icon(char32_t cp, float cx, float cy, SDL_FColor color) {
 }
 
 void Painter::thumbnail(SpriteId id, Box b, float alpha) {
-    const Sprite& s = atlas_.sprite(id);
-    const float k = std::max(1.0f, std::floor(std::min(b.w / s.w, b.h / s.h)));
-    const float w = s.w * k;
-    const float h = s.h * k;
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
-    batch_.quad(SDL_FRect{std::round(b.cx() - w * 0.5f), std::round(b.cy() - h * 0.5f), w, h}, s.uv,
-                {1, 1, 1, alpha});
+    if (thumbCount_ == thumbs_.size()) endLayer();
+    thumbs_[thumbCount_++] = {id, b, alpha};
+}
+
+void Painter::endLayer() {
+    for (std::size_t i = 0; i < thumbCount_; ++i) {
+        const Thumb& t = thumbs_[i];
+        const Sprite& s = atlas_.sprite(t.id);
+        if (s.w <= 0 || s.h <= 0) continue;
+        // Whole multiples when the sprite fits, whole fractions when it does not, so pixel art
+        // stays even at any atlas resolution.
+        const float fit = std::min(t.box.w / s.w, t.box.h / s.h);
+        const float k = fit >= 1.0f ? std::floor(fit) : 1.0f / std::ceil(1.0f / fit);
+        const float w = s.w * k;
+        const float h = s.h * k;
+        batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+        batch_.quad(
+            SDL_FRect{std::round(t.box.cx() - w * 0.5f), std::round(t.box.cy() - h * 0.5f), w, h},
+            s.uv, {1, 1, 1, t.alpha});
+    }
+    thumbCount_ = 0;
 }
 
 } // namespace lc

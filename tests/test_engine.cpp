@@ -306,3 +306,61 @@ TEST_CASE("backdrop blur spreads an edge evenly without leaking across the frame
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
+
+TEST_CASE("drawer hover belongs to a tile's entry, not to its slot") {
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+    REQUIRE(SDL_InitSubSystem(SDL_INIT_VIDEO));
+    {
+        const WindowPtr window{SDL_CreateWindow("hud", 64, 64, SDL_WINDOW_HIDDEN)};
+        REQUIRE(window);
+        const RendererPtr renderer{SDL_CreateRenderer(window.get(), "software")};
+        REQUIRE(renderer);
+        Font font;
+        REQUIRE(font.load(test::assetsDir() / "fonts"));
+        REQUIRE(font.build(renderer.get(), 1.0f));
+        const Catalog& c = test::catalog();
+        HudModel m;
+        m.cat = &c;
+        m.drawerOpen = true;
+        m.category = *c.findCategory("nature");
+        Hud hud;
+        const Vec2 screen{1280, 800};
+        UiInput in;
+        in.inside = true;
+        const auto frames = [&](int n) {
+            for (int i = 0; i < n; ++i) hud.update(in, m, font, screen, 1.0f, 1.0f / 60.0f);
+        };
+        frames(30); // drawer fully open
+        const auto first = [&](int category) {
+            std::vector<DrawerEntry> e;
+            Hud::categoryEntries(c, category, e);
+            REQUIRE_FALSE(e.empty());
+            const auto i = static_cast<std::size_t>(e[0].index);
+            return "tile:" + (e[0].terrain ? c.terrain[i].id : c.items[i].id);
+        };
+        const std::string natureTile = first(m.category);
+        const auto at = hud.widgetCentre(natureTile, m);
+        REQUIRE(at);
+        in.x = at->x;
+        in.y = at->y;
+        frames(30);
+        CHECK(hud.highlight(natureTile, m) == doctest::Approx(1.0f));
+
+        // Switch tab with the pointer on the tab, as a click does: the tile now in the same slot
+        // must not inherit the fading highlight.
+        const int garden = *c.findCategory("garden");
+        const auto tab = hud.widgetCentre("tab:garden", m);
+        REQUIRE(tab);
+        in.x = tab->x;
+        in.y = tab->y;
+        m.category = garden;
+        frames(2);
+        const std::string gardenTile = first(garden);
+        const auto same = hud.widgetCentre(gardenTile, m);
+        REQUIRE(same);
+        REQUIRE(same->x == at->x);
+        REQUIRE(same->y == at->y);
+        CHECK(hud.highlight(gardenTile, m) == 0.0f);
+    }
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}

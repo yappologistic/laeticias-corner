@@ -37,6 +37,8 @@ set(LC_SCRIPTS
   "drawer_tabs|drawer_tabs|1280x800"
   "ui_small|ui_sizes|960x600"
   "ui_4k|ui_sizes|3840x2160"
+  "glass_small|glass|960x600"
+  "glass_hd|glass|1920x1080"
   "corrupt_save|corrupt_save|1280x800"
   "rain|rain|1280x800"
   "visitors|visitors|1280x800"
