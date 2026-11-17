@@ -60,13 +60,15 @@ def hen(anim, frame, frames):
     for side, phase in ((-0.9, 1), (0.9, -1)):
         lift = max(0.0, step * phase) * 1.2
         m.put(segment(X, Y, Z, (0.2, side, 3), (0.2 + step * phase * 0.8, side, lift), 0.5), "orange")
-    _blob(m, X, Y, Z, (0, 0, 4.4 + bob), (3.0, 2.2, 2.4), "ginger")
-    m.put(ellipsoid(X, Y, Z, -2.6, 0, 6.2 + bob, 1.4, 1.2, 1.9), "ginger", tone=-0.5)
-    m.put(ellipsoid(X, Y, Z, -0.4, 0, 4.8 + bob, 2.0, 2.4, 1.3) & (np.abs(Y) > 1.5), "ginger", tone=-0.8)
+    # A brown hen with a pale breast and a dark tail, so she never reads as a small ginger cat.
+    _blob(m, X, Y, Z, (0, 0, 4.4 + bob), (3.0, 2.2, 2.4), "wood_light", tone=-0.2)
+    m.put(ellipsoid(X, Y, Z, 1.6, 0, 4.2 + bob, 1.5, 1.8, 1.6), "straw", tone=0.6)
+    m.put(ellipsoid(X, Y, Z, -2.6, 0, 6.2 + bob, 1.4, 1.2, 1.9), "wood", tone=0.2)
+    m.put(ellipsoid(X, Y, Z, -0.4, 0, 4.8 + bob, 2.0, 2.4, 1.3) & (np.abs(Y) > 1.5), "wood", tone=0.6)
     hx, hz = (3.6, 3.6 + bob) if peck else (2.4, 7.0 + bob)
-    _blob(m, X, Y, Z, (hx, 0, hz), (1.4, 1.2, 1.4), "ginger", tone=0.4)
-    m.put(ellipsoid(X, Y, Z, hx - 0.2, 0, hz + 1.5, 0.9, 0.4, 0.7), "poppy", tone=0.5)
-    m.put(ellipsoid(X, Y, Z, hx + 1.3, 0, hz - 0.8, 0.4, 0.4, 0.6), "poppy", tone=0.2)
+    _blob(m, X, Y, Z, (hx, 0, hz), (1.4, 1.2, 1.4), "wood_light", tone=0.2)
+    m.put(ellipsoid(X, Y, Z, hx - 0.1, 0, hz + 1.5, 1.2, 0.55, 0.9), "poppy", tone=1.0)
+    m.put(ellipsoid(X, Y, Z, hx + 1.2, 0, hz - 0.9, 0.5, 0.5, 0.7), "poppy", tone=0.8)
     m.put(ellipsoid(X, Y, Z, hx + 1.6, 0, hz, 0.8, 0.5, 0.4), "yellow", tone=0.6)
     _put_points(m, [(hx + 0.4, 1.1, hz + 0.3)], "ink")
     return m

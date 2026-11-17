@@ -8,8 +8,8 @@ import math
 import numpy as np
 
 from palette import GLOW, _rgb
-from voxel import (Halo, Model, Rng, box, cylinder, cylinder_normal, ellipsoid, ellipsoid_normal,
-                   gable, hash01, segment, slope_normal, value_noise)
+from voxel import (Halo, Model, Rng, box, curve, cylinder, cylinder_normal, ellipsoid,
+                   ellipsoid_normal, gable, hash01, segment, slope_normal, value_noise)
 from models.nature import C, canopy
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
@@ -90,6 +90,9 @@ def planter(v, frame, frames):
     m.put(box(X, Y, Z, 0.5, 15.5, 0.5, 15.5, 4.5, 5.5) & ~inner, "wood_light", tone=0.3)
     m.put(inner & (Z < 4), "soil", tone=(hash01(np.floor(X).astype(np.int64),
                                                  np.floor(Y).astype(np.int64), 131) - 0.5))
+    # A little marker stake in the front corner.
+    m.put(box(X, Y, Z, 13.6, 14.3, 13.6, 14.3, 0, 8), "wood_light", tone=-0.2)
+    m.put(box(X, Y, Z, 12.4, 15.2, 14.3, 14.8, 5.8, 8.2), "cream", tone=0.3)
     spots = [(5, 5), (11, 5), (5, 11), (11, 11)]
     if v == 0:      # cabbages
         for x, y in spots:
@@ -144,11 +147,18 @@ def beehive(v, frame, frames):
     m.put(roof, "roof", tone=-0.8 * ((np.floor(Y) % 2) == 0),
           normal=slope_normal(X, Y, Z, 8, 8.5, 3.5 / 5.5, along_x=False))
     m.put(box(X, Y, Z, 2, 14, 2.5, 14.5, 17.5, 18.2), "wood", tone=-0.3)
+    # Lavender for the bees, growing at the hive's foot.
+    rng = Rng(141, v)
+    for k in range(5):
+        x, y, h = 14.2 + rng.uniform(-0.8, 0.8), 9.5 + k * 1.2, rng.uniform(4, 6.5)
+        m.put_points(curve((x, y, 0.2), (x + 0.3, y, h - 2)), "grass")
+        for j in range(4):
+            m.put_points([(x + 0.3, y, h - 2 + j * 0.7)], "violet", tone=0.3 + j * 0.25)
     return m
 
 
 def scarecrow(v, frame, frames):
-    m = Model.empty(-1, 17, 0, 16, 0, 31)
+    m = Model.empty(-1, 17, 0, 16, 0, 34)
     X, Y, Z = m.coords()
     m.put(box(X, Y, Z, 7.5, 8.5, 7.5, 8.5, 0, 24), "wood")
     shirt = box(X, Y, Z, 5.5, 10.5, 6.6, 9.6, 11, 20)
@@ -163,14 +173,20 @@ def scarecrow(v, frame, frames):
     for k in range(12):
         x, y = 8 + rng.uniform(-2.2, 2.2), 8 + rng.uniform(-1.2, 1.4)
         m.put_points([(x, y, z) for z in np.linspace(8.5, 11, 6)], "straw", tone=0.5)
-    head = ellipsoid(X, Y, Z, 8, 8, 22.5, 2.6, 2.4, 2.6)
-    m.put(head, "cream", normal=ellipsoid_normal(X, Y, Z, 8, 8, 22.5, 2.6, 2.4, 2.6))
+    head = ellipsoid(X, Y, Z, 8, 8, 21.8, 2.6, 2.4, 2.6)
+    m.put(head, "cream", normal=ellipsoid_normal(X, Y, Z, 8, 8, 21.8, 2.6, 2.4, 2.6))
     for x in (7, 9):
-        m.put_points([(x, 10.3, 23.0)], "ink")
-    m.put_points([(7.5, 10.3, 21.4), (8.5, 10.3, 21.4)], "ink")
-    m.put(cylinder(X, Y, Z, 8, 8, 4.6, 24.5, 25.3), "straw", tone=0.3)
+        m.put_points([(x, 10.3, 22.4)], "ink")
+    m.put_points([(7.5, 10.3, 20.8), (8.5, 10.3, 20.8)], "ink")
+    m.put(cylinder(X, Y, Z, 8, 8, 3.8, 24.5, 25.3), "straw", tone=0.3)
     m.put(cylinder(X, Y, Z, 8, 8, 2.5, 25.3, 28.5), "straw", normal=cylinder_normal(X, Y, Z, 8, 8))
     m.put(cylinder(X, Y, Z, 8, 8, 2.6, 25.3, 26.3), "red_paint")
+    # A crow perched on the hat, unimpressed.
+    m.put(ellipsoid(X, Y, Z, 8.2, 8, 29.8, 1.7, 1.1, 1.2), "ink", tone=0.3)
+    m.put(ellipsoid(X, Y, Z, 9.6, 8, 31.2, 0.9, 0.85, 0.85), "ink", tone=0.5)
+    m.put(segment(X, Y, Z, (6.8, 8, 30.0), (5.6, 8, 31.0), 0.55), "ink")
+    m.put_points([(10.5, 8, 31.1)], "yellow", tone=0.8)
+    m.put_points([(9.9, 8.8, 31.5)], "cream", tone=1.0)
     return m
 
 
@@ -195,6 +211,12 @@ def well(v, frame, frames):
     rows = (np.floor((19.5 + 6.5 - Z) / 1.7) % 2) == 0
     m.put(roof, "roof", tone=-0.7 * rows, normal=slope_normal(X, Y, Z, 8, 8, 6.5 / 5.5))
     m.put(roof & ((X < 0.5) | (X > 15.5)), "wood", tone=-0.3)
+    # A crank on the axle and moss in the stones' shady joints.
+    m.put(segment(X, Y, Z, (14.0, C, 16), (15.4, C, 16), 0.45), "metal", tone=0.4)
+    m.put(segment(X, Y, Z, (15.4, C, 16), (15.4, C, 13.2), 0.45), "metal", tone=0.4)
+    m.put(segment(X, Y, Z, (15.4, C, 13.2), (15.4, C + 1.6, 13.2), 0.5), "wood_light")
+    moss = ring & (Z > 2) & (value_noise(X, Y, Z, 1.8, 160) > 0.66)
+    m.put(moss, "grass", tone=-0.2, normal=cylinder_normal(X, Y, Z, C, C))
     return m
 
 
@@ -216,8 +238,9 @@ def lamp(v, frame, frames):
     m.put(box(X, Y, Z, C - 2.7, C + 2.7, C - 2.7, C + 2.7, 23, 28.5) & posts, "metal")
     m.put(box(X, Y, Z, C - 2.8, C + 2.8, C - 2.8, C + 2.8, 28.5, 29.3), "metal", tone=0.4)
     cap = np.maximum(np.abs(X - C), np.abs(Y - C)) <= 2.8 - (Z - 29.3) * 0.85
+    on_x = np.abs(X - C) > np.abs(Y - C)          # which of the four pyramid faces
     m.put(cap & (Z >= 29.3) & (Z < 32.5), "metal",
-          normal=(np.where(np.abs(X - C) > np.abs(Y - C), X - C, 0), np.where(np.abs(Y - C) >= np.abs(X - C), Y - C, 0), Z * 0 + 2.0))
+          normal=(np.where(on_x, X - C, 0), np.where(on_x, 0, Y - C), Z * 0 + 2.0))
     m.put(ellipsoid(X, Y, Z, C, C, 33.3, 0.9, 0.9, 0.9), "metal", tone=0.8)
     m.halos.append(Halo(C, C, 25.5, 20, _rgb(GLOW[1]), 1.0))
     m.halos.append(Halo(C, C, 0, 17, _rgb(GLOW[0]), 0.45))   # a pool of light on the ground
@@ -236,6 +259,9 @@ def bench(v, frame, frames):
     m.put(box(X, Y, Z, 1.5, 14.5, 6, 11.5, 5, 6), "wood_light", tone=slats)
     for z in (7, 9.5):
         m.put(box(X, Y, Z, 1.5, 14.5, 5.2, 6.2, z, z + 1.6), "wood_light", tone=0.2)
+    # Someone left their book.
+    m.put(box(X, Y, Z, 9, 12.5, 7.2, 10.2, 6, 7.0), "poppy", tone=0.3)
+    m.put(box(X, Y, Z, 9.2, 12.3, 10.0, 10.2, 6.1, 6.8), "cream", tone=0.6)
     return m
 
 
@@ -250,6 +276,15 @@ def picnic_table(v, frame, frames):
         for a, b in (((x, 1.5, 0), (x, 7.5, 9.5)), ((x, 14.5, 0), (x, 8.5, 9.5))):
             m.put(segment(X, Y, Z, a, b, 0.75), "wood")
         m.put(box(X, Y, Z, x - 0.6, x + 0.6, 0.5, 15.5, 4.2, 5), "wood")
+    # A check runner draped across the middle and a picnic basket.
+    check = ((np.floor(X / 1.4) + np.floor(Y / 1.4)) % 2) == 0
+    cloth = box(X, Y, Z, 12, 20, 3.6, 12.4, 10.2, 10.7) | \
+        (box(X, Y, Z, 12, 20, 3.2, 12.8, 8.0, 10.7) & ((Y < 3.7) | (Y >= 12.3)))
+    m.put(cloth & check, "red_paint", tone=0.6)
+    m.put(cloth & ~check, "cream", tone=0.3)
+    m.put(box(X, Y, Z, 22, 25.5, 6, 9, 10.2, 12.6), "straw", tone=((X % 1.2) < 0.4) * -0.6)
+    m.put(segment(X, Y, Z, (22.6, 7.5, 12.6), (23.75, 7.5, 14.4), 0.4) |
+          segment(X, Y, Z, (23.75, 7.5, 14.4), (24.9, 7.5, 12.6), 0.4), "wood", tone=0.3)
     return m
 
 
@@ -279,6 +314,11 @@ def campfire(v, frame, frames):
         tongue = ((X - cx) ** 2 + (Y - cy) ** 2 <= r * r) & (Z >= 1) & (Z < 1 + h)
         core = (X - cx) ** 2 + (Y - cy) ** 2 <= (r * 0.45) ** 2
         m.put(tongue, "fire", tone=frac * 2.6 - 1.6 + core * 1.2 + (flick - 0.5))
+    # Spare firewood stacked by the ring, cut ends showing.
+    for x, z in ((13.4, 0.75), (14.9, 0.75), (14.15, 2.0)):
+        log = (np.hypot(X - x, Z - z) <= 0.75) & (Y >= 10.5) & (Y < 15.5)
+        m.put(log, "bark", normal=(X - x, Y * 0, Z - z))
+        m.put(log & (Y >= 15), "wood_light", tone=0.4 - 0.8 * (np.hypot(X - x, Z - z) < 0.3))
     m.halos.append(Halo(C, C, 4, 18, _rgb(GLOW[0]), 0.9 + 0.1 * math.sin(t * 2)))
     return m
 

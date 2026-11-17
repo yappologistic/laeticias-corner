@@ -21,8 +21,10 @@ always produces byte-identical output. A full run takes a few seconds on a multi
   partition the screen), shades it with one sun from the upper left, ambient occlusion, cast
   self-shadows and selective outlines, and quantises to the material's ramp with a restrained
   4x4 ordered dither. It also produces the ground `shadow` layer and the emissive `glow` layer.
-- `models/` describe every item and visitor as voxel models; `terrain.py` and `fx.py` evaluate
-  ground tiles, cliff faces, cursor diamonds and effects directly per pixel.
+- `models/` describe every item and the walking visitors as voxel models; the tiny flyers
+  (butterfly, bee, firefly) are hand-drawn pixel stencils, since voxels would only make blobs at
+  that size. `terrain.py` and `fx.py` evaluate ground tiles, cliff faces, cursor diamonds and
+  effects directly per pixel.
 - `pack.py` trims each sprite, shelf-packs them with a 1 px gutter and writes the manifest.
 - `validate.py` checks keys, rects, anchors, frame counts and palette use.
 - `preview.py` composes test scenes from the packed atlas the way the engine draws them.
@@ -34,5 +36,10 @@ always produces byte-identical output. A full run takes a few seconds on a multi
 - Joined items (`hedge`, `fence`) are modelled with the neighbours' arms as unseen context, so
   light, leaves and outlines continue across the tile edge without a seam.
 - Rotatable pieces are modelled facing +y (the windmill faces +x so both rotations show sails).
+- Trees are clumps studded with small leaf clusters (`leaf_mass`); each cluster shades as its own
+  puff, so canopies read as lit tufts with dark crevices. Their crowns sway clump by clump.
+- Lawn grass is flat; variants differ only in a few hand-shaped marks and clumps, so a field of
+  randomly chosen variants shows gentle patches. Meadow and cliffs repeat exactly per tile, so
+  their marks are dense or hand-placed and smooth to keep the repeat from reading as a pattern.
 - Glow layers store halo strength in alpha; draw them with additive blending.
 - Flying visitors are anchored at the bottom of the body; the engine adds the altitude.

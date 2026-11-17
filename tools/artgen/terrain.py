@@ -146,7 +146,8 @@ def grass(variant: int) -> Sprite:
     level = _stamps(level, u, v, seed, tufts, TUFTS)
     level = _stamps(level, u, v, seed + 2, specks, SPECKS, cell=4)
     if light:
-        level = _stamps(level, u, v, seed + 3, _clump(seed + 3, light), BLADES, cell=2, interior=(2.0, 1.0))
+        level = _stamps(level, u, v, seed + 3, _clump(seed + 3, light), BLADES, cell=2,
+                        interior=(2.0, 1.0))
     if shade:
         level = _stamps(level, u, v, seed + 4, _clump(seed + 4, shade), SHADE_BLADES, cell=2,
                         interior=(2.0, 1.0))

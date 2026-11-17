@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 from render import SUN
-from voxel import (Model, Rng, curve, cylinder, cylinder_normal, ellipsoid, ellipsoid_normal,
+from voxel import (Model, Rng, box, curve, cylinder, cylinder_normal, ellipsoid, ellipsoid_normal,
                    hash01, segment, value_noise)
 
 C = 8.0  # centre of a 1x1 tile
@@ -112,7 +112,8 @@ def leaf_mass(m: Model, clumps, seed: int, materials=(("leaf", 1.0),), under="le
             blob = d <= rc
             if not blob.any():
                 continue
-            sn = np.stack(np.broadcast_arrays(X - px, Y - py, (Z - pz) / 0.85), -1) / np.maximum(d, 1e-3)[..., None]
+            sn = np.stack(np.broadcast_arrays(X - px, Y - py, (Z - pz) / 0.85), -1)
+            sn /= np.maximum(d, 1e-3)[..., None]
             cn = np.array([p[0] / r, p[1] / r, p[2] / rz], np.float32)
             cn /= np.linalg.norm(cn)
             n_vec = 0.45 * cn + 0.55 * sn
@@ -380,25 +381,36 @@ def flowers_violet(v, frame, frames):
     return _flower_patch(v, 109, _lavender)
 
 
+# Per variant: cap material and the cluster as (dx, dy, scale); the first is the biggest.
+MUSHROOMS = (
+    ("poppy", ((0.0, 0.0, 1.25), (3.6, 2.2, 0.7), (-2.6, 3.0, 0.5))),
+    ("bark", ((0.5, -0.5, 1.15), (-3.0, 1.6, 0.85), (3.0, 3.2, 0.6), (-0.4, 4.2, 0.42))),
+    ("poppy", ((-1.0, 0.0, 0.9), (2.6, 1.2, 0.72))),
+    ("yellow", ((0.0, 0.0, 1.0), (2.9, -1.4, 0.8), (-2.7, 1.8, 0.7), (1.6, 3.6, 0.55),
+                (-1.2, -3.2, 0.5))),
+)
+
+
 def mushrooms(v, frame, frames):
-    rng = Rng(110, v)
     m = Model.empty(-1, 17, -1, 17, 0, 12)
     X, Y, Z = m.coords()
-    cap_mat = ("poppy", "wood_light", "poppy", "straw")[v]
-    count = (3, 4, 2, 5)[v]
-    for n in range(count):
-        a, d = n * 2.4 + rng.uniform(0, 1), rng.uniform(0.5, 4.5)
-        x, y = C + d * math.cos(a), C + d * math.sin(a)
-        s = rng.uniform(0.7, 1.25) * (1.25 if n == 0 else 1.0)
-        sh = 3.2 * s
-        m.put(cylinder(X, Y, Z, x, y, 0.95 * s, 0, sh + 0.5), "cream",
-              normal=cylinder_normal(X, Y, Z, x, y))
-        rc = 2.6 * s
-        cap = ellipsoid(X, Y, Z, x, y, sh, rc, rc, 2.2 * s) & (Z >= sh - 0.3)
-        spots = (hash01(np.floor(X * 1.5).astype(np.int64), np.floor(Y * 1.5).astype(np.int64),
-                        np.floor(Z).astype(np.int64), 111 + n) < 0.16) & (cap_mat == "poppy")
-        m.put(cap, cap_mat, normal=ellipsoid_normal(X, Y, Z, x, y, sh - 0.6, rc, rc, 2.2 * s))
-        m.put(cap & spots, "cream", tone=0.8, normal=ellipsoid_normal(X, Y, Z, x, y, sh - 0.6, rc, rc, 2.2 * s))
+    cap_mat, cluster = MUSHROOMS[v]
+    for n, (dx, dy, sc) in enumerate(cluster):
+        x, y = C + dx, C + dy
+        top, rs = 1.5 + 3.6 * sc, 0.55 + 0.45 * sc
+        # Stem with a slight bulge at the foot, then a domed cap with a pale gill rim.
+        m.put(cylinder(X, Y, Z, x, y, rs + 0.3 * (Z < 1.2), 0, top + 0.5), "cream",
+              normal=cylinder_normal(X, Y, Z, x, y), tone=0.2)
+        rc, rz = 2.4 * sc + 0.3, 1.8 * sc + 0.3
+        cap = ellipsoid(X, Y, Z, x, y, top, rc, rc, rz) & (Z >= top - 0.2)
+        nrm = ellipsoid_normal(X, Y, Z, x, y, top - 0.6, rc, rc, rz)
+        m.put(cap, cap_mat, normal=nrm, tone=0.6 if cap_mat == "bark" else 0.0)
+        rim = cap & (Z < top + 0.6) & (np.hypot(X - x, Y - y) > rc - 1.0)
+        m.put(rim, "cream", tone=-0.6, normal=nrm)
+        if cap_mat == "poppy":
+            spots = (hash01(np.floor(X * 1.4).astype(np.int64), np.floor(Y * 1.4).astype(np.int64),
+                            np.floor(Z * 1.4).astype(np.int64), 111 + n) < 0.14) & (Z > top + 0.6)
+            m.put(cap & spots, "cream", tone=0.9, normal=nrm)
     return m
 
 
@@ -424,12 +436,20 @@ def rock(v, frame, frames):
         if v in (0, 2):
             moss = shape & (Z > rz * 0.75) & (value_noise(X, Y, Z, 2.0, 640 + v) > 0.45)
             m.put(moss, "grass", normal=norm, tone=-0.3)
+    if v in (1, 3):  # a few daisies tucked against the stone
+        for a in (0.5, 1.15, 1.9):
+            fx, fy = C + 6.3 * math.cos(a), C + 6.3 * math.sin(a)
+            h = 1.8 + rng.uniform(0, 1.5)
+            m.put_points(curve((fx, fy, 0.2), (fx, fy, h)), "grass")
+            petals = ((0.6, 0), (-0.6, 0), (0, 0.6), (0, -0.6))
+            m.put_points([(fx + dx, fy + dy, h + 0.5) for dx, dy in petals], "cream", tone=0.6)
+            m.put_points([(fx, fy, h + 0.6)], "yellow", tone=0.8)
     return m
 
 
 def stump(v, frame, frames):
     rng = Rng(113, v)
-    m = Model.empty(-3, 19, -3, 19, 0, 9)
+    m = Model.empty(-3, 19, -3, 19, 0, 14)
     X, Y, Z = m.coords()
     r, h = 4.3, 5.5 + v
     trunk(m, C, C, r, h, flare=1.4)
@@ -440,6 +460,10 @@ def stump(v, frame, frames):
         a = k * 1.6 + rng.uniform(0, 0.8)
         m.put(segment(X, Y, Z, (C, C, 1.5), (C + 7 * math.cos(a), C + 7 * math.sin(a), 0.3), 1.0),
               "bark")
+    if v == 0:  # an axe left in the stump
+        m.put(box(X, Y, Z, C - 0.2, C + 2.6, C - 0.5, C + 0.5, h - 1.6, h + 1.4), "metal", tone=0.8)
+        handle = segment(X, Y, Z, (C + 1.2, C, h + 0.6), (C + 5.5, C - 2.2, h + 5.5), 0.6)
+        m.put(handle, "wood", tone=0.6)
     if v == 1:
         moss = (m.mat > 0) & (Z > 1) & (Z < h - 1) & (value_noise(X, Y, Z, 2, 650) > 0.55)
         m.put(moss, "grass", tone=-0.2)
