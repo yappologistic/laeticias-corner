@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "tile": { "w": 32, "h": 16 },
-  "map": { "w": 20, "h": 20 },
+  "tile": { "w": 64, "h": 32 },
+  "map": { "w": 40, "h": 40 },
   "terrain": [
     { "id": "grass",  "name": "Grass",  "base": true, "variants": 4 },
     { "id": "meadow", "name": "Meadow", "edges": 16, "sound": "paint" },
@@ -43,7 +43,7 @@
     { "id": "campfire",      "name": "Campfire",       "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 1, "on": "land",  "sound": "wood",  "glow": true, "fps": 6 },
     { "id": "bridge",        "name": "Footbridge",     "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 2, "on": "water", "sound": "wood",  "walkable": true },
 
-    { "id": "cottage",       "name": "Cottage",        "category": "homes",  "footprint": [2, 2], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood",  "glow": true, "smoke_at": [[10, -19], [-2, -15], [-10, -21], [2, -25]] },
+    { "id": "cottage",       "name": "Cottage",        "category": "homes",  "footprint": [2, 2], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood",  "glow": true, "smoke_at": [[20, -38], [-4, -30], [-20, -42], [4, -50]] },
     { "id": "toolshed",      "name": "Tool shed",      "category": "homes",  "footprint": [1, 1], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood" },
     { "id": "coop",          "name": "Hen coop",       "category": "homes",  "footprint": [1, 1], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood" },
     { "id": "greenhouse",    "name": "Greenhouse",     "category": "homes",  "footprint": [2, 2], "layout": "rotate",  "count": 2, "on": "land",  "sound": "stone", "glow": true },

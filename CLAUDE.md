@@ -93,12 +93,15 @@ audio files. The engine loads it at runtime; the generators read it to know what
 
 ### Projection
 
-2:1 isometric. Tile cell is 32×16 px at 1×. The top vertex of tile `(tx, ty)` is at
-`sx = (tx - ty) * 16`, `sy = (tx + ty) * 8`; the rasterised ground diamond spans
-`x ∈ [sx-15, sx+15)`, `y ∈ [sy, sy+16)` (rows 2, 6, … 30, 30, … 2 px wide) so tiles meet with no
-gap or overlap. `+x` runs down-right, `+y` runs down-left. Neighbour bits for masks:
+2:1 isometric. The tile cell size comes from `tile` in the catalog (64×32 px at 1×; nothing in
+the engine or generators may hard-code it). With half-width `hw = tile.w / 2` and half-height
+`hh = tile.h / 2`, the top vertex of tile `(tx, ty)` is at `sx = (tx - ty) * hw`,
+`sy = (tx + ty) * hh`; the rasterised ground diamond spans `x ∈ [sx-hw+1, sx+hw-1)`,
+`y ∈ [sy, sy+tile.h)` (rows 2, 6, … wide, mirrored) so tiles meet with no gap or overlap.
+`+x` runs down-right, `+y` runs down-left. Neighbour bits for masks:
 N `(tx, ty-1)` = 1, E `(tx+1, ty)` = 2, S `(tx, ty+1)` = 4, W `(tx-1, ty)` = 8.
-The world is always drawn at an integer scale with nearest-neighbour sampling.
+The world is drawn at an integer scale with nearest-neighbour sampling; a half-scale overview
+level may use linear filtering. Map size comes from `map` in the catalog.
 
 ### Atlas (`assets/atlas.png` + `assets/atlas.json`)
 
@@ -127,6 +130,7 @@ visitors and effects it is the ground contact point. Keys:
 - `base` is lit for neutral daylight, sun from the upper-left. `shadow` is the cast shadow on the
   ground only (black with alpha). `glow` holds only the emissive pixels (windows, lamps, fire) and
   is drawn additively at dusk and night. Day/night grading is done by the engine, not baked.
+- The `shadow` layer is optional: flat things (lily pads, ground decals) have none.
 - Shadows are composited as one layer (overlapping shadows must not double-darken).
 - Emissive things are drawn after night grading: item `glow` layers (palette colour, halo strength
   in alpha, additive) and visitors marked `"glow": true` in the catalog.
@@ -147,7 +151,7 @@ the clock, adds slight random pitch to placement sounds, and treats a missing fi
 
 ## Game rules (v0)
 
-- Map is 20×20 tiles. Ground tools paint terrain by click-drag. Items occupy their footprint; one
+- The home map is 40×40 tiles. Ground tools paint terrain by click-drag. Items occupy their footprint; one
   item per tile; `on` says whether they need land, water or either. Painting water under a land
   item (or land under a water item) is refused.
 - Build menu → pick → ghost follows the cursor (valid/invalid tint) → click places, drag places
