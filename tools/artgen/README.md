@@ -3,24 +3,34 @@
 Deterministic generator for `assets/atlas.png` + `assets/atlas.json`.
 
 ```sh
-tools/artgen/build.sh            # regenerate assets/atlas.{png,json} and validate it
-tools/artgen/build.sh --preview  # also write preview scenes to out/artgen/ (3x, nearest)
-tools/artgen/build.sh --tile 64 --out out/artgen/hd --preview   # 64x32 tiles, elsewhere
+tools/artgen/build.sh            # regenerate assets/atlas.{png,json} from assets/catalog.json
+tools/artgen/build.sh --catalog docs/design/catalog.next.json --preview   # the batch-2 atlas
+tools/artgen/build.sh --tile 32 --out out/artgen/lo --preview   # 32x16 tiles, elsewhere
+tools/artgen/.venv/bin/python tools/artgen/validate.py --catalog assets/catalog.json --allow-extra
 ```
+
+`--catalog` picks the catalog the required keys are derived from (default `assets/catalog.json`).
+The standalone validator with `--allow-extra` checks that an atlas covers a catalog, so the
+batch-2 atlas can be checked against the live catalog.
 
 The tile size comes from `tile.w` in `assets/catalog.json` (`tile.h` is half of it) unless
 `--tile` overrides it; it must be a multiple of 32. `--out` writes the atlas and the previews
 to another directory (previews of finer tiles are written at 1x and, as `*_2x.png`, at 2x).
 
 The first run creates `tools/artgen/.venv` from the pinned `requirements.txt`. The same input
-always produces byte-identical output. A 32x16 run takes a few seconds on a multi-core
-machine; 64x32 needs about eight times the CPU (roughly ten seconds on 16 idle cores).
+always produces byte-identical output. The batch-2 atlas at 64x32 takes about a minute and a
+half with the four worker processes the machine-courtesy rules allow.
 
 ## How it works
 
-- `spec.py` lists every key the catalog implies (and our frame counts) and parses the build
-  options into a `Build`: tile width, output paths and `k`, the voxels per design unit.
-- `palette.py` holds the one curated palette (57 colours) and the material ramps built from it.
+- `spec.py` lists every key the catalog implies (items, season looks, growth stages, the four
+  base animations of every visitor) and parses the build options into a `Build`: catalog, tile
+  width, output paths and `k`, the voxels per design unit.
+- `art_list.json` holds the keys a catalog cannot imply (effects, rim edges, wild land, sky,
+  interface, extra animations and season looks), in groups gated on what the catalog contains.
+  `generate.py` turns the full key list into jobs; a key no builder makes is an error, and the
+  validator checks every animation the catalog's activities and routines name has frames.
+- `palette.py` holds the one curated palette (65 colours) and the material ramps built from it.
 - `voxel.py` is the modelling toolkit: a material grid with per-voxel normals and tone, boolean
   shape helpers (boxes, ellipsoids, cylinders, cones, capsules, gables), seeded noise, rotation.
   Models are written in design units, 16 per tile edge, and sampled with `k` voxels per unit
@@ -31,6 +41,10 @@ machine; 64x32 needs about eight times the CPU (roughly ten seconds on 16 idle c
   partition the screen), shades it with one sun from the upper left, ambient occlusion, cast
   self-shadows and selective outlines, and quantises to the material's ramp with a restrained
   4x4 ordered dither. It also produces the ground `shadow` layer and the emissive `glow` layer.
+- `models/resident.py` is Laeticia: one voxel figure built from parts evaluated in body space,
+  posed per frame (a `Pose` per animation), so seated, kneeling and lying poses reuse the same
+  parts; `models/wildlife.py` holds the rare visitors. `decor.py` draws the portrait, rainbow,
+  title logotype and postcard frames at pixel scale; `fx.py` the effects.
 - `models/` describe every item and the walking visitors as voxel models; the tiny flyers
   (butterfly, bee, firefly) are hand-drawn pixel stencils, since voxels would only make blobs at
   that size. Each stencil set is drawn for one pixel density (1 and 2 px per design unit, the
