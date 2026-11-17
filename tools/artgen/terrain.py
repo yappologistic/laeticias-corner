@@ -58,8 +58,10 @@ def _scatter(u, v, cell, seed, density, jitter=0.8, interior=None):
     """For each pixel, offset (dx, dy) in screen px to the nearest scattered point, and its hash.
 
     Points sit on a jittered lattice with `cell` voxels spacing (cell divides 16). With
-    `interior` set, only points at least that far inside the tile are kept, so variant-specific
-    marks never cross into a neighbour that might be a different variant.
+    `interior` = (lo, hi) set, only points in [lo, 16 - hi) along both axes are kept, so
+    variant-specific marks (which grow up the screen, towards low u and v) never cross into a
+    neighbour that might be a different variant. `density` is a number or a function of the
+    point's (u, v), so marks can gather into clumps.
     """
     best = np.full(u.shape, 1e9, np.float32)
     bdx = np.zeros(u.shape, np.float32)
@@ -71,11 +73,13 @@ def _scatter(u, v, cell, seed, density, jitter=0.8, interior=None):
         for dv in (-1, 0, 1):
             iu, iv = cu + du, cv + dv
             ku, kv = iu % n, iv % n
-            keep = hash01(ku, kv, seed, 1) < density
             pu = (iu + 0.5 + (hash01(ku, kv, seed, 2) - 0.5) * jitter) * cell
             pv = (iv + 0.5 + (hash01(ku, kv, seed, 3) - 0.5) * jitter) * cell
+            dens = density(pu % 16, pv % 16) if callable(density) else density
+            keep = hash01(ku, kv, seed, 1) < dens
             if interior is not None:
-                keep &= (pu >= interior) & (pu < 16 - interior) & (pv >= interior) & (pv < 16 - interior)
+                lo, hi = interior
+                keep &= (pu >= lo) & (pu < 16 - hi) & (pv >= lo) & (pv < 16 - hi)
             dx = (u - pu) - (v - pv)
             dy = ((u - pu) + (v - pv)) / 2
             d = dx * dx + 4 * dy * dy
@@ -87,35 +91,66 @@ def _scatter(u, v, cell, seed, density, jitter=0.8, interior=None):
     return bdx, bdy, bh, best < 1e8
 
 
-def _tufts(level, u, v, seed, density, cell=4, interior=None, strength=1.0):
-    """Grass tufts: a dark notch with a light tip just above it."""
+# Hand-drawn marks: rows top to bottom, the bottom row's middle pixel sits on the scattered
+# point. Each character is a ramp step relative to the ground under it; '.' leaves it alone.
+STEP = {"H": 2.0, "L": 1.0, "D": -1.0, "K": -1.6}
+
+
+def _stamps(level, u, v, seed, density, kinds, cell=4, interior=(3.0, 1.0)):
+    """Scatter `kinds` of marks (each also drawn mirrored) over the tile."""
+    kinds = list(kinds) + [tuple(row[::-1] for row in k) for k in kinds]
     dx, dy, h, ok = _scatter(u, v, cell, seed, density, interior=interior)
-    rx, ry = np.round(dx - 0.5), np.round(dy - 0.5)
-    tip = ok & (ry == -1) & ((rx == 0) | ((rx == -1) & (h > 0.5)))
-    base = ok & (ry == 0) & (np.abs(rx + 0.5) <= 1.0)
-    level = level - base * 1.2 * strength
-    return level + tip * 1.3 * strength
+    rx, ry = np.floor(dx + 0.5), np.floor(dy + 0.5)
+    pick = np.minimum((h * len(kinds)).astype(np.int64), len(kinds) - 1)
+    out = level.copy()
+    for i, rows in enumerate(kinds):
+        for r, row in enumerate(rows):
+            for c, ch in enumerate(row):
+                if ch != ".":
+                    hit = ok & (pick == i) & (ry == r - len(rows) + 1) & (rx == c - len(row) // 2)
+                    out = np.where(hit, level + STEP[ch], out)
+    return out
 
 
 # ---------- grass ----------
 
-def _grass_level(u, v):
-    patches = _pnoise(u, v, 2, 11) * 0.7 + _pnoise(u, v, 4, 12) * 0.3
-    return 2.0 + (patches - 0.5) * 1.6
+GRASS_LEVEL = 2.0
+TUFTS = (("H.L", ".LL", "DKD"), ("L..", "LH.", "DLD"), (".H.", "LLD", ".D."))
+BLADES = (("H",  "L"), ("H.", ".L"), ("L.H", "L.L"))
+SHADE_BLADES = (("D", "K"), ("D.", ".D"), ("D.D", "K.D"))
+SPECKS = ((".L.", "LDL"), ("K",), ("D.K",))
+# Per variant: densities of tufts and specks, a clump of light blades and a clump of shadowy
+# blades (peak density, 0 for none), and a sparse sprinkle of single pixels one step lighter
+# (+) or darker (-) over the whole tile. Variants are picked at random per tile, so sprinkles
+# and clumps add up to irregular, gentle patches across a field.
+GRASS_VARIANTS = (
+    (0.2, 0.08, 0.0, 0.0, 0.0),
+    (0.12, 0.0, 0.45, 0.0, 0.07),
+    (0.1, 0.1, 0.0, 0.32, -0.06),
+    (0.16, 0.04, 0.25, 0.0, 0.03),
+)
+
+
+def _clump(seed, peak):
+    """Density field for marks gathering in one soft blob inside the tile."""
+    cu, cv = 5 + 6 * float(hash01(seed, 1)), 5 + 6 * float(hash01(seed, 2))
+    return lambda u, v: peak * np.clip(1 - np.hypot(u - cu, v - cv) / 5.5, 0, 1) + 0.03 * peak
 
 
 def grass(variant: int) -> Sprite:
     px, py, u, v, inside = _grid()
-    level = _grass_level(u, v)
-    level = _tufts(level, u, v, 20, 0.35)                                 # shared, may cross edges
-    level = _tufts(level, u, v, 30 + variant, 0.55, cell=2, interior=1.5, strength=0.8)
-    rgb = _paint(GRASS, level, px, py)
-    # A few variant-specific specks: a clover, a pebble, a fallen petal.
-    dx, dy, h, ok = _scatter(u, v, 8, 40 + variant, 0.5, interior=3)
-    dot = ok & (np.abs(dx) < 1) & (np.abs(dy) < 0.5)
-    rgb = np.where((dot & (h < 0.3))[..., None], _rgb(LEAF[5]), rgb)
-    rgb = np.where((dot & (h > 0.85))[..., None], _rgb(STRAW[3]), rgb)
-    return _sprite(rgb, inside * 255)
+    tufts, specks, light, shade, sprinkle = GRASS_VARIANTS[variant]
+    seed = 30 + variant * 10
+    grain = hash01(px, py, seed + 5) < abs(sprinkle)
+    level = GRASS_LEVEL + np.sign(sprinkle) * grain
+    level = _stamps(level, u, v, seed, tufts, TUFTS)
+    level = _stamps(level, u, v, seed + 2, specks, SPECKS, cell=4)
+    if light:
+        level = _stamps(level, u, v, seed + 3, _clump(seed + 3, light), BLADES, cell=2, interior=(2.0, 1.0))
+    if shade:
+        level = _stamps(level, u, v, seed + 4, _clump(seed + 4, shade), SHADE_BLADES, cell=2,
+                        interior=(2.0, 1.0))
+    return _sprite(_paint(GRASS, level, px, py), inside * 255)
 
 
 # ---------- overlay shapes ----------
@@ -158,7 +193,8 @@ def shape_field(mask: int, u, v, inset: float, radius: float, wobble: float, see
 
 # ---------- meadow ----------
 
-FLOWER_COLORS = [PLASTER[4], STRAW[3], VIOLET[3], POPPY[1], PLASTER[4], STRAW[2]]
+FLOWER_COLORS = [PLASTER[4], STRAW[3], STRAW[2], PLASTER[3], VIOLET[3], STRAW[3], POPPY[1], PLASTER[4]]
+MEADOW_TUFTS = (("H..", "L.H", "LLL", "DLD"), (".H.", "HL.", "LLL", ".D."), ("L.H", "L.L", "DLD"))
 
 
 def meadow(mask: int) -> Sprite:
@@ -167,17 +203,22 @@ def meadow(mask: int) -> Sprite:
     # Soft border: dither the last voxel so meadow frays into the grass.
     edge_noise = hash01(np.floor(u * 2).astype(np.int64), np.floor(v * 2).astype(np.int64), 301)
     cover = inside & (f > 0.6 * edge_noise)
-    level = 2.0 + (_pnoise(u, v, 2, 310) - 0.5) * 1.0
-    level = _tufts(level, u, v, 311, 0.5, cell=2, strength=0.8)
-    level = _tufts(level, u, v, 312, 0.6, cell=4, strength=1.1)
+    level = 2.0 + (_pnoise(u, v, 2, 310) - 0.5) * 0.6
+    # Taller, lighter growth than lawn grass. The meadow has no per-tile variants, so marks may
+    # cross into the next meadow tile (the pattern repeats exactly) and stay irregular inside.
+    level = _stamps(level, u, v, 311, 0.2, MEADOW_TUFTS, cell=2, interior=None)
+    level = _stamps(level, u, v, 312, 0.12, BLADES, cell=2, interior=None)
     rgb = _paint(MEADOW, level, px, py)
-    dx, dy, h, ok = _scatter(u, v, 4, 320, 0.8, jitter=0.9)
-    head = ok & (np.round(dx - 0.5) == 0) & (np.round(dy - 0.5) == 0)
-    under = ok & (np.round(dx - 0.5) == 0) & (np.round(dy - 0.5) == 1)
+    # Wildflowers dense enough to read as a texture: every meadow tile is the same sprite, so
+    # sparse bright dots would line up into rows across a large patch.
+    dx, dy, h, ok = _scatter(u, v, 2, 320, 0.3, jitter=0.95)
+    rx, ry = np.floor(dx + 0.5), np.floor(dy + 0.5)
+    head = ok & (rx == 0) & (ry == -1)
+    stem = ok & (rx == 0) & (ry == 0)
     colors = np.array([_rgb(c) for c in FLOWER_COLORS], np.uint8)
     pick = colors[np.minimum((h * len(FLOWER_COLORS)).astype(np.int64), len(FLOWER_COLORS) - 1)]
     # Keep flowers off the frayed rim so they never float on plain grass.
-    rgb = np.where((under & (f > 1.5))[..., None], _rgb(LEAF[2]), rgb)
+    rgb = np.where((stem & (f > 1.5))[..., None], _rgb(LEAF[2]), rgb)
     rgb = np.where((head & (f > 1.5))[..., None], pick, rgb)
     return _sprite(rgb, cover * 255)
 
