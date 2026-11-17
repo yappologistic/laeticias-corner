@@ -75,9 +75,11 @@ def sample_peak_db(x):
 
 def limit(x, ceiling_db, loop):
     """Look-ahead peak limiter on the 4x-oversampled envelope. With loop=True the gain
-    curve is computed circularly so the seam stays seamless."""
+    curve is computed circularly so the seam stays seamless. Returns the limited signal
+    and the per-sample gain it applied."""
     ceiling = 10 ** (ceiling_db / 20)
     mode = "wrap" if loop else "nearest"
+    total = np.ones(len(x))
     for _ in range(4):
         x2 = x if x.ndim == 2 else x[:, None]
         up = np.abs(signal.resample_poly(x2, 4, 1, axis=0)).max(axis=1)
@@ -89,15 +91,21 @@ def limit(x, ceiling_db, loop):
         gain = minimum_filter1d(need, 2 * hold + 1, mode=mode)
         gain = uniform_filter1d(gain, hold + 1, mode=mode)
         x = x * (gain if x.ndim == 1 else gain[:, None]) * 0.999
-    return x
+        total *= gain * 0.999
+    return x, total
 
 
 def master_loop(x, target_lufs, ceiling_db=-1.5):
-    """Normalise a loop to the target integrated loudness under a true-peak ceiling."""
+    """Normalise a loop to the target integrated loudness under a true-peak ceiling.
+    Returns the mastered loop and the per-sample gain applied, so stems of the same
+    session can be given exactly the same treatment."""
+    total = np.ones(len(x))
     for _ in range(3):
-        x = x * 10 ** ((target_lufs - integrated_lufs(x)) / 20)
-        x = limit(x, ceiling_db, loop=True)
-    return x
+        k = 10 ** ((target_lufs - integrated_lufs(x)) / 20)
+        x = x * k
+        x, gain = limit(x, ceiling_db, loop=True)
+        total *= k * gain
+    return x, total
 
 
 def master_sfx(x, target_short_lufs, ceiling_db=-4.0):

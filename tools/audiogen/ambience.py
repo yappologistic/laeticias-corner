@@ -3,6 +3,7 @@ are periodic noise built in the frequency domain, events are scattered over the 
 and their tails folded back onto its start."""
 
 import numpy as np
+from scipy import signal
 
 from dsp import (SR, bandpass, circular, glide, highpass, impulse_response, line, lowpass, pan,
                  phase_of, place, ramp_in, secs, shaped_noise, smooth_random,
@@ -302,3 +303,166 @@ def water(rng, length=40.0):
     ir = impulse_response(rng, 1.0, 0.6, 0.35, predelay=0.008)
     out = wrap(with_reverb(mix, mix, ir, 0.25), loop_n)
     return circular(lambda y: highpass(y, 60, 2), out)
+
+
+# --- seasonal and night beds -----------------------------------------------------------
+
+
+def scatter(rng, length, voices, gaps, spread=0.8):
+    """Calls from `voices` [(song, pitch_hz, distance 0..1)] at random gaps over a loop,
+    as dry and reverb-send buffers; the caller wraps the tails."""
+    dry = np.zeros((secs(length + 6), 2))
+    send = np.zeros_like(dry)
+    t = rng.uniform(0, gaps[0])
+    while t < length:
+        song, f, dist = voices[int(rng.integers(len(voices)))]
+        call = song(rng, f * rng.uniform(0.96, 1.04))
+        call = lowpass(call, 7500 - 5000 * dist, 2) * (1 - 0.7 * dist) * rng.uniform(0.75, 1.0)
+        x = pan(call, rng.uniform(-spread, spread))
+        place(dry, x, secs(t))
+        place(send, x * (0.3 + 0.7 * dist), secs(t))
+        t += len(call) / SR + rng.uniform(*gaps)
+    return dry, send
+
+
+def crackle(n, rng, rate, lo, hi, grain=0.004):
+    """Dry-leaf rustle for a loop: band-limited periodic noise gated by a sparse train of
+    tiny random hits whose rate (per second) follows the curve `rate`."""
+    hits = (rng.random(n) < rate / SR) * rng.lognormal(0, 0.4, n)
+    win = np.exp(-np.arange(secs(grain * 5)) / secs(grain))
+    env = wrap(signal.oaconvolve(hits, win), n)
+    noise = shaped_noise(n, rng, lambda f: 1 / (1 + (lo / f) ** 4) / (1 + (f / hi) ** 4))
+    return noise * env
+
+
+def wind(n, rng, low, high, gust_hz, depth, channels=2):
+    """Periodic wind: band-limited noise that swells and falls with slow random gusts."""
+    air = shaped_noise(n, rng, lambda f: f**-0.5 / (1 + (low / f) ** 4) / (1 + (f / high) ** 2),
+                       channels)
+    gusts = np.clip(1 + depth * smooth_random(n, rng, gust_hz), 0.15, None)
+    return air * (gusts[:, None] if channels == 2 else gusts), gusts
+
+
+def skitter(rng):
+    """A single dry leaf tumbling a short way across the ground: irregular tiny scrapes."""
+    out = np.zeros(secs(1.0))
+    at = 0.0
+    for k in range(int(rng.integers(6, 12))):
+        g = secs(rng.uniform(0.008, 0.022))
+        grain = bandpass(rng.standard_normal(g), 1800, 5500) * np.hanning(g)
+        place(out, grain * rng.uniform(0.4, 1.0) * (1 - 0.05 * k), secs(at))
+        at += rng.uniform(0.03, 0.09)
+    return out
+
+
+def autumn(rng, length=60.0):
+    """Autumn day: wind moving through drying leaves in slow gusts, the rustle crisp and
+    following each gust, a few distant birds, now and then a leaf skittering past."""
+    n = secs(length)
+    air, gusts = wind(n, rng, 120, 900, 0.06, 0.6)
+    leaves = np.stack([crackle(n, rng, 40 * gusts**2, 1400, 4500) for _ in range(2)], axis=1)
+    voices = [(whistle, 2900, 0.7), (chips, 4400, 0.6), (coo, 480, 0.85), (carol, 2400, 0.75)]
+    dry, send = scatter(rng, length, voices, (5.0, 11.0))
+    for _ in range(5):
+        x = pan(skitter(rng) * rng.uniform(0.15, 0.3), rng.uniform(-0.7, 0.7))
+        place(dry, x, secs(rng.uniform(0, length)))
+    ir = impulse_response(rng, 2.0, 1.2, 0.6, predelay=0.02)
+    calls = wrap(with_reverb(dry, send, ir, 0.5), n)
+    out = 0.05 * air + 0.5 * leaves + calls
+    return circular(lambda y: lowpass(highpass(y, 60, 2), 6000, 4), out)
+
+
+def winter(rng, length=60.0):
+    """Winter day (also the snow bed): a soft, cold wind with a faint hollow whistle,
+    sparse small-bird calls far off, everything muffled as if by snow."""
+    n = secs(length)
+    air, gusts = wind(n, rng, 150, 1400, 0.05, 0.5)
+    whistle_band = shaped_noise(n, rng, lambda f: np.exp(-((f - 750) / 60) ** 2), 2)
+    whistle_band *= (np.clip(gusts - 1.0, 0, None) ** 2)[:, None]
+    voices = [(chips, 4300, 0.65), (chips, 3800, 0.75), (whistle, 3000, 0.8)]
+    dry, send = scatter(rng, length, voices, (7.0, 15.0))
+    ir = impulse_response(rng, 2.5, 1.4, 0.5, predelay=0.03)
+    calls = wrap(with_reverb(dry, send, ir, 0.6), n)
+    out = 0.06 * air + 0.004 * whistle_band + 0.8 * calls
+    return circular(lambda y: lowpass(highpass(y, 60, 2), 5000, 2), out)
+
+
+def tree_frog(rng, f):
+    """A tree frog's bout: a run of short buzzy 'krek' notes."""
+    parts = []
+    for _ in range(int(rng.integers(5, 11))):
+        n = secs(rng.uniform(0.025, 0.035))
+        t = times(n)
+        buzz = (0.5 + 0.5 * np.sin(2 * np.pi * 160 * t)) ** 2
+        parts.append((tone(np.full(n, f * rng.uniform(0.98, 1.02)), buzz * arch(n, 0.8), 0.2),
+                      rng.uniform(0.11, 0.16)))
+    return concat(parts)
+
+
+def night_spring(rng, length=60.0):
+    """Spring night: a light breeze and, very far off, a few tree frogs calling in bouts,
+    answering one another; no crickets yet."""
+    n = secs(length)
+    air, _ = wind(n, rng, 80, 600, 0.05, 0.4)
+    voices = [(tree_frog, f, d) for f, d in ((1900, 0.85), (2150, 0.9), (1750, 0.9), (2300, 0.95))]
+    dry, send = scatter(rng, length, voices, (0.8, 3.5), spread=0.9)
+    ir = impulse_response(rng, 3.0, 1.8, 0.8, predelay=0.03)
+    frogs = wrap(with_reverb(dry, send, ir, 0.7), n)
+    out = 0.05 * air + 0.5 * frogs
+    return circular(lambda y: lowpass(highpass(y, 50, 2), 5000, 2), out)
+
+
+def creak(rng):
+    """A bare branch creaking in the cold: stick-slip pulses of slowly changing rate
+    ringing the wood's resonances."""
+    dur = rng.uniform(0.5, 1.0)
+    n = secs(dur)
+    rate = glide(n, [(0, rng.uniform(35, 55)), (dur * 0.5, rng.uniform(70, 110)),
+                     (dur, rng.uniform(40, 60))])
+    cycle = np.cumsum(rate) / SR
+    hits = np.diff(np.floor(cycle), prepend=0.0) * rng.lognormal(0, 0.3, n)
+    m = secs(0.04)
+    tm = times(m)
+    body = sum(a * np.sin(2 * np.pi * f * tm) * np.exp(-tm / d)
+               for f, a, d in ((420, 1.0, 0.012), (760, 0.7, 0.009), (1180, 0.4, 0.006),
+                               (1750, 0.2, 0.004)))
+    return signal.oaconvolve(hits, body)[:n] * arch(n, 0.7)
+
+
+def night_winter(rng, length=60.0):
+    """Winter night: near silence. A faint low wind, and once in a while a branch
+    creaking somewhere in the cold."""
+    n = secs(length)
+    air, _ = wind(n, rng, 70, 450, 0.04, 0.6)
+    dry = np.zeros((n + secs(4), 2))
+    send = np.zeros_like(dry)
+    for k in range(4):
+        x = pan(creak(rng) * rng.uniform(0.5, 1.0), rng.uniform(-0.7, 0.7))
+        at = secs(length * (k + rng.uniform(0.1, 0.8)) / 4)
+        place(dry, x, at)
+        place(send, x, at)
+    ir = impulse_response(rng, 2.5, 1.5, 0.6, predelay=0.03)
+    creaks = wrap(with_reverb(dry, send, ir, 0.6), n)
+    out = 0.06 * air + 0.06 * creaks
+    return circular(lambda y: lowpass(highpass(y, 45, 2), 4000, 2), out)
+
+
+def waterfall(rng, length=32.0):
+    """A small waterfall close by: a steady broad fall with a slow surge, dense bright
+    splashing where it lands, and no rumble below 80 Hz."""
+    n = secs(length)
+    fall = shaped_noise(n, rng, lambda f: f**-0.3 / (1 + (f / 3000) ** 2) / (1 + (250 / f) ** 2),
+                        2)
+    fall *= np.clip(1 + 0.08 * smooth_random(n, rng, 0.3), 0.5, None)[:, None]
+    splash = np.zeros((n + secs(0.2), 2))
+    for _ in range(int(90 * length)):
+        f0 = np.exp(rng.uniform(np.log(500), np.log(2500)))
+        x = bubble(rng, f0) * rng.lognormal(-1.6, 0.6) * (600 / f0) ** 0.3
+        place(splash, pan(x, rng.uniform(-0.8, 0.8)), int(rng.integers(n)))
+    splash = wrap(splash, n)
+    spray = np.stack([crackle(n, rng, np.full(n, 300.0), 1500, 6000, 0.002) for _ in range(2)],
+                     axis=1)
+    out = 0.3 * fall + 0.25 * splash + 0.1 * spray
+    ir = impulse_response(rng, 0.8, 0.5, 0.3, predelay=0.006)
+    out = wrap(with_reverb(out, out, ir, 0.2), n)
+    return circular(lambda y: lowpass(highpass(y, 80, 4), 7000, 4), out)

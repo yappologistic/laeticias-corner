@@ -1,8 +1,11 @@
-"""Render every audio file named in assets/catalog.json into assets/audio/, then run
-the validator. Deterministic: each file's RNG is seeded from its own name.
+"""Render every audio file named in a catalog (default assets/catalog.json) into
+assets/audio/, then run the validator. Deterministic: each file's RNG is seeded from its
+own name.
 
-Usage: tools/audiogen/generate.sh [name-filter ...]   (e.g. `sfx/` or `music/day`)"""
+Usage: tools/audiogen/generate.sh [--catalog PATH] [name-filter ...]
+       (e.g. `sfx/` or `music/day`; a filter matching any stem renders its whole piece)"""
 
+import argparse
 import json
 import os
 import sys
@@ -23,8 +26,8 @@ import sfx  # noqa: E402
 import validate  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-CATALOG = ROOT / "assets" / "catalog.json"
 OUT = ROOT / "assets" / "audio"
+WORKERS = 4  # machine courtesy: the owner uses this computer while it renders
 
 # Loops: name -> (renderer, integrated loudness target in LUFS, Vorbis quality).
 LOOPS = {
@@ -34,7 +37,16 @@ LOOPS = {
     "amb/crickets.ogg": (ambience.crickets, -23.0, 3),
     "amb/rain.ogg": (ambience.rain, -21.0, 3),
     "amb/water.ogg": (ambience.water, -22.0, 3),
+    "amb/autumn.ogg": (ambience.autumn, -22.0, 1),
+    "amb/winter.ogg": (ambience.winter, -23.0, 1),
+    "amb/night_spring.ogg": (ambience.night_spring, -23.0, 1),
+    "amb/night_winter.ogg": (ambience.night_winter, -23.0, 1),
+    "amb/waterfall.ogg": (ambience.waterfall, -21.0, 1),
 }
+
+# Music pieces whose stems are rendered from the same session as the full mix.
+PIECES = {"music/day.ogg": music.DAY, "music/night.ogg": music.NIGHT}
+STEM_QUALITY = 2  # stems add up: q2 keeps the folder near 15 MB and attacks clean
 
 # Effects: name -> (renderer, loudest-100 ms target in LUFS). Relative levels are the
 # mix: placements sit a little under the music, UI ticks far under it.
@@ -58,12 +70,35 @@ EFFECTS = {
     "sfx/duck.wav": (sfx.duck, -21.0),
     "sfx/hen.wav": (sfx.hen, -21.0),
     "sfx/cat.wav": (sfx.cat, -21.0),
+    # Notes are played by the engine ~8 dB under the place sounds (kNoteLevel).
+    **{f"sfx/note_{i}.wav": (sfx.note(i), -21.0) for i in range(len(sfx.NOTES))},
+    "sfx/owl.wav": (sfx.owl, -23.0),
+    "sfx/heron.wav": (sfx.heron, -24.0),
+    "sfx/hedgehog.wav": (sfx.hedgehog, -24.0),
+    "sfx/fox.wav": (sfx.fox, -23.0),
+    "sfx/frog.wav": (sfx.frog, -23.0),
+    "sfx/robin.wav": (sfx.robin, -24.0),
+    "sfx/deer.wav": (sfx.deer, -24.0),
+    "sfx/laeticia_1.wav": (sfx.laeticia_1, -24.0),
+    "sfx/laeticia_2.wav": (sfx.laeticia_2, -24.0),
+    "sfx/laeticia_3.wav": (sfx.laeticia_3, -25.0),
+    "sfx/purr.wav": (sfx.purr, -25.0),
+    "sfx/pet.wav": (sfx.pet, -24.0),
+    "sfx/wish.wav": (sfx.wish, -22.0),
+    "sfx/wish_granted.wav": (sfx.wish_granted, -20.0),
+    "sfx/nook.wav": (sfx.nook, -20.0),
+    "sfx/land_open.wav": (sfx.land_open, -20.0),
+    "sfx/season.wav": (sfx.season, -21.0),
+    "sfx/harvest.wav": (sfx.harvest, -22.0),
+    "sfx/rustle.wav": (sfx.rustle, -25.0),
+    "sfx/flap.wav": (sfx.flap, -24.0),
+    "sfx/gust.wav": (sfx.gust, -24.0),
+    "sfx/rainbow.wav": (sfx.rainbow, -21.0),
+    "sfx/twinkle.wav": (sfx.twinkle, -24.0),
+    "sfx/well.wav": (sfx.well, -22.0),
+    "sfx/pick.wav": (sfx.pick, -25.0),
+    "sfx/page.wav": (sfx.page, -26.0),
 }
-
-
-def catalog_names():
-    audio = json.loads(CATALOG.read_text())["audio"]
-    return [name for group in ("music", "ambience", "sfx") for name in audio[group]]
 
 
 def alignment_lag(a, b, span=5 * mastering.SR):
@@ -75,38 +110,78 @@ def alignment_lag(a, b, span=5 * mastering.SR):
     return lag if lag < span else lag - 2 * span
 
 
-def build(name):
-    """Render, master and write one file; returns a one-line summary."""
-    rng = np.random.default_rng(zlib.crc32(name.encode()))
+def write_loop(name, x, quality):
+    """Encode a loop and prove the round trip kept its length and sample alignment."""
     path = OUT / name
     path.parent.mkdir(parents=True, exist_ok=True)
+    mastering.write_ogg(path, x, quality)
+    back = mastering.decode(path)
+    assert back.shape == x.shape, f"{name}: Ogg round trip changed length {x.shape} -> {back.shape}"
+    lag = alignment_lag(x, back)
+    assert lag == 0, f"{name}: Ogg round trip shifted the audio by {lag} samples"
+    return f"{name:26s} {len(x) / mastering.SR:7.2f} s"
+
+
+def build(job):
+    """Render, master and write one file (or a piece and its stems); returns summary lines."""
+    name, stems = job
+    rng = np.random.default_rng(zlib.crc32(name.encode()))
     if name in LOOPS:
         render, target, quality = LOOPS[name]
-        x = mastering.master_loop(render(rng), target)
-        mastering.write_ogg(path, x, quality)
-        back = mastering.decode(path)
-        assert back.shape == x.shape, f"{name}: Ogg round trip changed length {x.shape} -> {back.shape}"
-        lag = alignment_lag(x, back)
-        assert lag == 0, f"{name}: Ogg round trip shifted the audio by {lag} samples"
-    else:
-        render, target = EFFECTS[name]
-        x = mastering.master_sfx(render(rng), target)
-        mastering.write_wav16(path, x)
-    return f"{name:22s} {len(x) / mastering.SR:7.2f} s"
+        if not stems:
+            # Low-bitrate Vorbis overshoots more on transients, so give it more headroom.
+            ceiling = -1.5 if quality >= 2 else -2.5
+            x = mastering.master_loop(render(rng), target, ceiling)[0]
+            return [write_loop(name, x, quality)]
+        # Stems share the mix's mastering gain curve, so they still sum to it exactly.
+        colour_rng = np.random.default_rng(zlib.crc32(stems["colour"].encode()))
+        mix, parts = music.render(PIECES[name], rng, colour_rng)
+        x, gain = mastering.master_loop(mix, target)
+        lines = [write_loop(name, x, quality)]
+        for stem, file in stems.items():
+            lines.append(write_loop(file, parts[stem] * gain[:, None], STEM_QUALITY))
+        return lines
+    render, target = EFFECTS[name]
+    x = mastering.master_sfx(render(rng), target)
+    path = OUT / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mastering.write_wav16(path, x)
+    return [f"{name:26s} {len(x) / mastering.SR:7.2f} s"]
 
 
-def main(filters):
-    names = catalog_names()
-    missing = set(names) - set(LOOPS) - set(EFFECTS)
-    extra = (set(LOOPS) | set(EFFECTS)) - set(names)
-    if missing or extra:
-        sys.exit(f"catalog/generator mismatch: missing {sorted(missing)}, unknown {sorted(extra)}")
-    todo = [n for n in names if not filters or any(f in n for f in filters)]
-    with ProcessPoolExecutor() as pool:
-        for line in pool.map(build, todo):
-            print("rendered", line, flush=True)
-    sys.exit(validate.main())
+def jobs(audio):
+    """(name, {stem id: file}) for every renderable entry; stems ride with their piece."""
+    stems = {f"music/{piece}.ogg": {s["id"]: s["file"] for s in entries}
+             for piece, entries in audio.get("stems", {}).items()}
+    stem_files = {f: piece for piece, files in stems.items() for f in files.values()}
+    names = [n for group in ("music", "ambience", "sfx") for n in audio[group]]
+    unknown = [n for n in names if n not in LOOPS and n not in EFFECTS and n not in stem_files]
+    if unknown:
+        sys.exit(f"no renderer for {unknown}")
+    for piece, files in stems.items():
+        if piece not in PIECES or set(files) != set(music.STEMS) | {"colour"}:
+            sys.exit(f"stems of {piece} must be {sorted(set(music.STEMS) | {'colour'})}")
+    return [(n, stems.get(n, {})) for n in names if n not in stem_files], stem_files
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--catalog", type=Path, default=validate.CATALOG)
+    ap.add_argument("filters", nargs="*")
+    args = ap.parse_args()
+    todo, stem_files = jobs(json.loads(args.catalog.read_text())["audio"])
+    wanted = {piece for f, piece in stem_files.items() if any(x in f for x in args.filters)}
+
+    def selected(job):
+        name = job[0]
+        return not args.filters or name in wanted or any(f in name for f in args.filters)
+
+    with ProcessPoolExecutor(max_workers=WORKERS) as pool:
+        for lines in pool.map(build, [j for j in todo if selected(j)]):
+            for line in lines:
+                print("rendered", line, flush=True)
+    sys.exit(validate.main(["--catalog", str(args.catalog)]))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

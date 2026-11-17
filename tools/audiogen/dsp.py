@@ -95,6 +95,54 @@ def voiced(f0, formants, n_harm=40):
     return out
 
 
+def wobble(n, rng, depth, rate_hz):
+    """Random (non-periodic) multiplicative wander around 1: jitter and shimmer."""
+    w = lowpass(rng.standard_normal(n + secs(0.1)), rate_hz, 2)[secs(0.1):]
+    return 1 + depth * w / (np.std(w) + 1e-12)
+
+
+def formant_gain(freqs, formants, at=slice(None)):
+    """Summed resonance curves of (centre, bandwidth, gain) formants at `freqs`; each
+    entry may be a scalar or a per-sample curve, sampled at `at`."""
+    out = 0.0
+    for centre, bw, gain in formants:
+        c, b, g = (np.asarray(v, dtype=float) for v in (centre, bw, gain))
+        c, b, g = (v[at] if v.ndim else v for v in (c, b, g))
+        out = out + g / (1 + ((freqs - c) / (0.5 * b)) ** 2)
+    return out
+
+
+def formant_noise(n, formants, rng, nperseg=512):
+    """White noise through time-varying formants, filtered frame by frame in the STFT,
+    so breath and hiss follow the same mouth shape as the voiced part."""
+    f, tt, z = signal.stft(rng.standard_normal(n), SR, nperseg=nperseg)
+    at = np.clip(np.round(tt * SR).astype(int), 0, n - 1)
+    z *= formant_gain(f[:, None], formants, at)
+    return signal.istft(z, SR, nperseg=nperseg)[1][:n]
+
+
+def voice(f0, formants, rng, tilt=1.0, jitter=0.004, shimmer=0.06, breath=0.0, sub=0.0):
+    """A natural-sounding voiced call: harmonics with a glottal spectral tilt, random
+    pitch jitter and amplitude shimmer, optional period-doubling roughness (sub) and
+    aspiration noise through the same time-varying formants (breath, relative RMS)."""
+    n = len(f0)
+    f0 = f0 * wobble(n, rng, jitter, 40.0)
+    ph = phase_of(f0)
+    out = np.zeros(n)
+    partials = [(k, 1.0) for k in range(1, 60)] + [(k - 0.5, sub) for k in range(1, 60) if sub]
+    for k, level in partials:
+        fk = k * f0
+        if fk.min() > 8500:
+            continue
+        amp = level * k**-tilt * formant_gain(fk, formants) * (fk < 8500)
+        out += amp * np.sin(k * ph)
+    out *= wobble(n, rng, shimmer, 60.0)
+    if breath:
+        noise = formant_noise(n, formants, rng)
+        out += breath * noise * np.std(out) / (np.std(noise) + 1e-12)
+    return out
+
+
 # --- filters ---------------------------------------------------------------------------
 
 

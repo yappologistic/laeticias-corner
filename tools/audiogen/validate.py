@@ -1,10 +1,14 @@
-"""Check every audio file named in assets/catalog.json against the content contract:
-container, codec, sample rate, channels, loudness / true peak (measured by ffmpeg's
-own EBU R128 meter, independent of the generator), DC offset, clipping, loop seams,
-effect edges and durations. Exit status is the number of failing files.
+"""Check every audio file named in a catalog against the content contract: container,
+codec, sample rate, channels, loudness / true peak (measured by ffmpeg's own EBU R128
+meter, independent of the generator), DC offset, clipping, loop seams, effect edges and
+durations; then the groups: music stems must sum to their full mix and every unlockable
+subset must stay full enough, and the tuned notes must match each other in loudness.
+Exit status is the number of failures.
 
-Usage: tools/audiogen/.venv/bin/python tools/audiogen/validate.py"""
+Usage: tools/audiogen/.venv/bin/python tools/audiogen/validate.py [--catalog PATH]"""
 
+import argparse
+import itertools
 import json
 import re
 import subprocess
@@ -21,12 +25,21 @@ AUDIO = ROOT / "assets" / "audio"
 # group -> (format, codec, channels, duration window s, loudness window LUFS, peak ceiling dB)
 RULES = {
     "music": ("ogg", "vorbis", 2, (90, 150), (-19.0, -17.0), -1.0),
-    "ambience": ("ogg", "vorbis", 2, (30, 60), (-25.0, -17.0), -1.0),
-    "sfx": ("wav", "pcm_s16le", 1, (0.02, 2.0), None, -3.0),
+    "stem": ("ogg", "vorbis", 2, (90, 150), (-45.0, -17.0), -1.0),  # natural level in the mix
+    "ambience": ("ogg", "vorbis", 2, (30, 90), (-25.0, -17.0), -1.0),
+    "sfx": ("wav", "pcm_s16le", 1, (0.02, 3.2), None, -3.0),
 }
+MUSIC_SAMPLES = 4_704_000  # 32 bars at 72 bpm: the shared loop length of mixes and stems
+STEM_RESIDUAL_DB = -20.0  # base stems summed vs the full mix, both decoded (codec noise only)
+STEM_SUM_LUFS = (-19.0, -16.5)  # all stems together: the mix plus the colour layer
+SUBSET_MIN_LU = -6.0  # quietest unlockable subset relative to the full mix
+NOTE_SPREAD_DB = 1.0  # loudest 100 ms, max - min over the tuned notes
+NOTE_SECONDS = 1.2
 SFX_SHORT_LUFS = (-36.0, -17.0)  # loudest 100 ms: keeps effects mutually balanced
 SFX_MAX_SECONDS = {"ui_hover": 0.08, "ui_click": 0.08, "paint": 0.12, "rotate": 0.25,
-                   "place_soft": 0.35, "place_wood": 0.35, "place_stone": 0.35}
+                   "place_soft": 0.35, "place_wood": 0.35, "place_stone": 0.35,
+                   "pick": 0.25, "page": 0.35, "pet": 0.4, "deer": 0.5, "harvest": 0.5,
+                   "flap": 0.5, "laeticia_1": 0.5, "laeticia_2": 0.5, "laeticia_3": 0.5}
 
 
 def probe(path):
@@ -84,6 +97,8 @@ def check(group, name):
     dmax = SFX_MAX_SECONDS.get(stem, dmax) if group == "sfx" else dmax
     if not dmin <= seconds <= dmax:
         problems.append(f"duration {seconds:.3f} s outside [{dmin}, {dmax}]")
+    if group in ("music", "stem") and len(x) != MUSIC_SAMPLES:
+        problems.append(f"{len(x)} samples, not {MUSIC_SAMPLES}")
     lufs, true_peak = ebur128(path)
     sample_peak = mastering.sample_peak_db(x)
     if max(true_peak, sample_peak) > ceiling:
@@ -108,25 +123,93 @@ def check(group, name):
     return (seconds, loudness, max(true_peak, sample_peak)), problems
 
 
-def main():
-    audio = json.loads(CATALOG.read_text())["audio"]
+def db(x):
+    return float(10 * np.log10(x + 1e-30))
+
+
+def check_stems(piece, entries):
+    """All stems but colour must sum to the full mix; the full set sits near the mix level
+    under the peak ceiling; every subset the unlock conditions allow (the always-on stems
+    plus any combination of the others) stays within reach of the mix's loudness."""
+    files = [f"music/{piece}.ogg"] + [e["file"] for e in entries]
+    if not all((AUDIO / f).is_file() for f in files):
+        return [], ["files missing"]
+    stems = {e["id"]: mastering.decode(AUDIO / e["file"]) for e in entries}
+    mix = mastering.decode(AUDIO / f"music/{piece}.ogg")
+    lines, problems = [], []
+    base = sum(stems[s] for s in stems if s != "colour")
+    residual = db(np.sum((base - mix) ** 2)) - db(np.sum(mix**2))
+    mix_lufs = mastering.integrated_lufs(mix)
+    lines.append(f"stem sum vs mix residual {residual:6.1f} dB "
+                 f"(residual loudness {mastering.integrated_lufs(base - mix) - mix_lufs:6.1f} LU)")
+    if residual > STEM_RESIDUAL_DB:
+        problems.append(f"stems do not sum to the mix: residual {residual:.1f} dB")
+    always = [e["id"] for e in entries if "when" not in e]
+    optional = [e["id"] for e in entries if "when" in e]
+    for r in range(len(optional) + 1):
+        for extra in itertools.combinations(optional, r):
+            ids = always + list(extra)
+            y = sum(stems[s] for s in ids)
+            lufs, peak = mastering.integrated_lufs(y), mastering.true_peak_db(y)
+            lines.append(f"{'+'.join(ids):30s} {lufs:6.1f} LUFS {lufs - mix_lufs:+5.1f} LU "
+                         f"peak {peak:6.2f} dB")
+            if peak > RULES["music"][5]:
+                problems.append(f"{'+'.join(ids)} peaks at {peak:.2f} dB")
+            if lufs - mix_lufs < SUBSET_MIN_LU:
+                problems.append(f"{'+'.join(ids)} is {lufs - mix_lufs:.1f} LU under the mix")
+            if len(ids) == len(stems) and not STEM_SUM_LUFS[0] <= lufs <= STEM_SUM_LUFS[1]:
+                problems.append(f"all stems at {lufs:.1f} LUFS outside {STEM_SUM_LUFS}")
+    return lines, problems
+
+
+def check_notes(names):
+    """Tuned placement notes: same length, and level-matched by their loudest 100 ms."""
+    levels, problems = [], []
+    for name in names:
+        x = mastering.decode(AUDIO / name)
+        levels.append(mastering.max_short_lufs(x))
+        if abs(len(x) / mastering.SR - NOTE_SECONDS) > 0.01:
+            problems.append(f"{name} lasts {len(x) / mastering.SR:.3f} s, not {NOTE_SECONDS}")
+    spread = max(levels) - min(levels)
+    if spread > NOTE_SPREAD_DB:
+        problems.append(f"note loudness spread {spread:.2f} dB > {NOTE_SPREAD_DB}")
+    lines = [f"note loudness {min(levels):.2f} .. {max(levels):.2f} LUFS (spread {spread:.2f} dB)"]
+    return lines, problems
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--catalog", type=Path, default=CATALOG)
+    audio = json.loads(ap.parse_args(argv).catalog.read_text())["audio"]
+    stem_files = {e["file"] for entries in audio.get("stems", {}).values() for e in entries}
     listed = set()
     failures = 0
-    print(f"{'file':22s} {'seconds':>8s} {'LUFS':>7s} {'peak dB':>8s}  result")
+    print(f"{'file':26s} {'seconds':>8s} {'LUFS':>7s} {'peak dB':>8s}  result")
     for group in ("music", "ambience", "sfx"):
         for name in audio[group]:
             listed.add(name)
-            stats, problems = check(group, name)
+            stats, problems = check("stem" if name in stem_files else group, name)
             failures += bool(problems)
             cols = f"{stats[0]:8.2f} {stats[1]:7.1f} {stats[2]:8.2f}" if stats else " " * 25
-            print(f"{name:22s} {cols}  {'; '.join(problems) or 'ok'}")
+            print(f"{name:26s} {cols}  {'; '.join(problems) or 'ok'}")
+    groups = [(f"stems: {piece}", check_stems, (piece, entries))
+              for piece, entries in audio.get("stems", {}).items()]
+    if audio.get("notes"):
+        groups.append(("notes", check_notes, (audio["notes"],)))
+    for title, fn, fn_args in groups:
+        lines, problems = fn(*fn_args)
+        failures += len(problems)
+        print(f"{title}: {'; '.join(problems) or 'ok'}")
+        for line in lines:
+            print("   ", line)
+    # The folder may run ahead of a catalog during a batch: unlisted files are reported,
+    # not failed, so the live catalog still validates before the next one is promoted.
     for path in sorted(p for p in AUDIO.rglob("*") if p.is_file()):
         rel = path.relative_to(AUDIO).as_posix()
         if rel not in listed:
-            failures += 1
-            print(f"{rel:22s} not in the catalog")
+            print(f"{rel:26s} not in this catalog (ignored)")
     print("(sfx LUFS column = loudest 100 ms; loops = integrated)")
-    print("validation", "passed" if failures == 0 else f"FAILED for {failures} file(s)")
+    print("validation", "passed" if failures == 0 else f"FAILED ({failures} problem(s))")
     return failures
 
 
