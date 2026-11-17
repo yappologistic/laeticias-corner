@@ -16,7 +16,7 @@ User-facing text uses **British spelling** throughout (colour, favourite, cosy, 
 | You are | Read |
 |---|---|
 | Engine, task A (progress loop) | §1, §2, §3, §4 R1, R3, R4, R5, R7, R8, §5, §6 (marked **A**), §9, §11, §12, §13 |
-| Engine, task B (life and front door) | §1, §2.1, §3, §4 R2, R6, R9, R10, R11, R12, §5, §6 (marked **B**), §9, §11, §12, §13 |
+| Engine, task B (life and front door; items 1–3 are `living-world.md` W1–W3) | §1, §2.1, §3, §4 R2, R6, R9, R10, R11, R12, §5, §6 (marked **B**), §9, §11, §12, §13 |
 | Art | §1, §4 (skim R2, R4, R5, R6 for what the sprites do), §7 |
 | Audio | §1, §4 R8 and R9, §8 |
 
@@ -388,6 +388,9 @@ return), `.last_offer`; `progress.unlocked`, `.frames`, `.clues`, `.new`.
 
 ### R2 Visitors that use what you build
 
+> **Built on the shared actor system** (`living-world.md` §2, task W1). The catalog's visitor
+> entries are read as actor kinds there; the `activities` below are its `pick` options, unchanged.
+
 **R2.1 Activity model.** Each visitor has a list of **activities** in the catalog. A critter is
 always in one of these states:
 
@@ -516,7 +519,7 @@ have been seen. Common visitors also show their `hint` while undiscovered (today
 | Falling things | petals from blossom trees; leaves at 0.5× | leaves 1× | leaves 3× | none |
 | Day ambience | `amb/birds.ogg` | `amb/birds.ogg` | `amb/autumn.ogg` | `amb/winter.ogg` |
 | Night ambience | `amb/night_spring.ogg` | `amb/crickets.ogg` | `amb/crickets.ogg` | `amb/night_winter.ogg` |
-| Rain toggle | rain | rain | rain | **snow** (`fx/snowflake`, no rain bed, no ripples, winter ambience +3 dB) |
+| Rain toggle (until natural weather arrives with `living-world.md` task W3, which makes it Natural / Rain here / Clear here) | rain | rain | rain | **snow** (`fx/snowflake`, no rain bed, no ripples, winter ambience +3 dB) |
 | Visitors | all but fireflies; frog, hedgehog | all; frog, hedgehog | no butterflies; hedgehog, deer | no butterflies, bees, fireflies, hedgehog; robin, deer |
 | Beds | grow | grow | grow | paused unless within 2 tiles of a greenhouse |
 
@@ -649,6 +652,12 @@ string), nothing more.
 | The two south rims are the edge of everything | They meet the world: the design for the cities decides what lies there (a shore on the south-west, farmland on the south-east are the obvious fits for the streams and the stage-0 path) |
 
 ### R6 Laeticia
+
+> **Built on the shared actor system** (`living-world.md` §2.6, task W2). Her routine in R6.2 is
+> data in the catalog's `resident.schedule`, `routines` and `interrupts`, written in game hours
+> (`hour = (6 + 24 × t) mod 24`: dawn 03:00–06:00, day 06:00–18:00, dusk 18:00–21:00, night
+> 21:00–03:00). This section stays the authority for what the data does not express: movement
+> costs, interrupts' priorities, home choice, bubbles.
 
 **R6.1 Who she is.** Laeticia spent forty years as a botanical illustrator, drawing other people's
 gardens for books she never kept, and in her late sixties has finally got a scrap of land of her own.
@@ -808,6 +817,9 @@ on placement at time now:
 - The walker uses the game's seeded RNG, so scripted runs are reproducible.
 
 ### R9 Small moments of delight
+
+> **Built on the shared event scheduler** (`living-world.md` §5, events H1–H15, task W3). The
+> waterfall, lamp moths and the cat watching the cursor are states, not events, and stay as written.
 
 The full list with triggers, rarity and assets is in §5.8. Rules shared by all of them:
 
@@ -1701,13 +1713,14 @@ Bench: condition evaluation under 1 ms with a full map; frame budget unchanged.
 Makes it feel alive and finished: behaviours, Laeticia, delights, the title flow, builder comforts,
 postcards.
 
-1. **Activity system** for visitors (R2.1–R2.5): activities, `cycle`, `line`, `home`, `enter`,
-   `hide_in_rain`, perch heights, startle, petting with hit testing and cooldowns; rare visitor
-   behaviours (R3.3), `underwater` drawing, the `shore` habitat.
-2. **Laeticia** (R6): A* movement, schedule and blocks, activities, interrupts, home and bedroll,
-   speech bubbles, lines, reactions, giver availability for wishes; nook `prefer`, `routine`,
-   `fx` and `rare_rate` effects.
-3. **Delights** (§5.8).
+Items 1–3 are the first three tasks of the shared simulation layer and are specified and tested
+there (`living-world.md` §10); they are not built separately for the corner:
+
+1. **Visitor behaviours** (R2, R3.3) = task **W1 Actors**.
+2. **Laeticia** (R6) and the nook `prefer`, `routine`, `fx` and `rare_rate` effects = task
+   **W2 Laeticia and goods-lite**.
+3. **Delights** (§5.8) = task **W3 Events, wind, weather, sound**, which also brings natural weather
+   and positional sound.
 4. **Front door** (R10): title, worlds screen with thumbnails, new, rename and delete, pause,
    settings with the profile, reduce motion, text input.
 5. **Tour** (R10.5).
@@ -1756,7 +1769,7 @@ frame and the caption, postcard count.
 | Laeticia indoors, an interior view | A second renderer for one room; windows glowing says enough. |
 | Elevation, cliffs or terraces inside the map | Changes the projection contract; not needed for this loop. |
 | Season-specific music | Stems already make the music change; per-season variants would double the score. |
-| Positional (panned) sound | Mono effects at the centre are fine for a small diorama; revisit with the world map. |
+| ~~Positional (panned) sound~~ | No longer cut: designed in `living-world.md` §9 and built in task W3. |
 | Multi-select, copy and paste, blueprints | Move, line and rectangle cover the common needs. |
 | Custom key bindings | Not needed yet; every shortcut is listed in tooltips. |
 | Localisation | Strings are centralised so it stays possible. |
@@ -1784,7 +1797,7 @@ Everything in v1 keeps its meaning. New and changed fields:
 | `frames[]` | `id`, `name` of postcard frames |
 | `wishes[]` | R1.2 |
 | `nooks[]` | R7.1 |
-| `resident` | `id`, `name`, `voice` (list of sfx names; one is played per bubble), `blurb` (sketchbook front page), `lines` (context → list of lines; contexts in §5) |
+| `resident` | `id`, `name`, `voice` (list of sfx names; one is played per bubble), `blurb` (sketchbook front page), `lines` (context → list of lines; contexts in §5), `schedule`, `routines`, `interrupts` (her day as actor data, `living-world.md` §2.2 and §2.6) |
 
 **`items[]`** (all optional)
 
@@ -1795,6 +1808,7 @@ Everything in v1 keeps its meaning. New and changed fields:
 | `season_looks` | seasons for which the art supplies `@season` base sprites (R4.3) |
 | `growth` | `{stages, seconds, harvest}`: number of growth stages, play seconds per stage, whether a ripe item can be picked |
 | `click_sound` | sfx name played when the item is clicked with no tool |
+| `slots` | named interaction points (seat, door, tend, feed, entrance, warm, lie, light…), `living-world.md` §2.3; items without them get implicit `on` and `beside` slots |
 
 The cottage's `smoke_at` is now `[[20, -38], [-4, -30], [-20, -42], [4, -50]]` (64×32 density).
 

@@ -27,7 +27,7 @@
     {"id": "flowers_violet", "name": "Lavender", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land", "sound": "soft", "walkable": true, "tags": ["flower"], "perch": 8},
     {"id": "mushrooms", "name": "Mushrooms", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land", "sound": "soft", "walkable": true},
     {"id": "rock", "name": "Rock", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "any", "sound": "stone", "tags": ["stone"], "perch": 10},
-    {"id": "stump", "name": "Stump", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 2, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 10},
+    {"id": "stump", "name": "Stump", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 2, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 10, "slots": [{"id": "seat", "kind": "sit", "where": "on", "cap": 1}]},
     {"id": "reeds", "name": "Reeds", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "any", "sound": "soft", "walkable": true, "fps": 2},
     {"id": "lily_pads", "name": "Lily pads", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "water", "sound": "splash", "walkable": true, "perch": 0},
     {"id": "apple_tree", "name": "Apple tree", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 2, "on": "land", "sound": "soft", "fps": 2, "tags": ["tree"], "season_looks": ["spring", "autumn", "winter"]},
@@ -36,25 +36,25 @@
     {"id": "stepping_stones", "name": "Stepping stones", "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "water", "sound": "stone", "walkable": true, "tags": ["crossing"]},
     {"id": "hedge", "name": "Hedge", "category": "garden", "footprint": [1, 1], "layout": "connect", "on": "land", "sound": "soft", "tags": ["shrub", "line"]},
     {"id": "fence", "name": "Fence", "category": "garden", "footprint": [1, 1], "layout": "connect", "on": "land", "sound": "wood", "tags": ["line"], "perch": 12},
-    {"id": "planter", "name": "Veggie bed", "category": "garden", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land", "sound": "wood", "tags": ["crop"], "growth": {"stages": 4, "seconds": 180, "harvest": true}},
-    {"id": "beehive", "name": "Beehive", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood"},
+    {"id": "planter", "name": "Veggie bed", "category": "garden", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land", "sound": "wood", "tags": ["crop"], "growth": {"stages": 4, "seconds": 180, "harvest": true}, "slots": [{"id": "tend", "kind": "tend", "where": "beside", "cap": 1}]},
+    {"id": "beehive", "name": "Beehive", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "slots": [{"id": "entrance", "kind": "door", "where": "on", "cap": 6}]},
     {"id": "scarecrow", "name": "Scarecrow", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood"},
-    {"id": "well", "name": "Well", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "tags": ["stone"], "click_sound": "well"},
-    {"id": "lamp", "name": "Lamp post", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 1, "on": "land", "sound": "stone", "glow": true, "tags": ["light"]},
-    {"id": "bench", "name": "Bench", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 8},
-    {"id": "picnic_table", "name": "Picnic table", "category": "garden", "footprint": [2, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 10},
-    {"id": "campfire", "name": "Campfire", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 1, "on": "land", "sound": "wood", "glow": true, "fps": 6, "tags": ["light"]},
+    {"id": "well", "name": "Well", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "tags": ["stone"], "click_sound": "well", "slots": [{"id": "use", "kind": "stand", "where": "beside", "cap": 1, "facing": "item"}]},
+    {"id": "lamp", "name": "Lamp post", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 1, "on": "land", "sound": "stone", "glow": true, "tags": ["light"], "slots": [{"id": "light", "kind": "light", "where": "beside", "cap": 1, "states": ["unlit", "lit"]}]},
+    {"id": "bench", "name": "Bench", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 8, "slots": [{"id": "seat", "kind": "sit", "where": "on", "cap": 1, "facing": "rotation"}]},
+    {"id": "picnic_table", "name": "Picnic table", "category": "garden", "footprint": [2, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 10, "slots": [{"id": "seat", "kind": "sit", "where": "tile", "cap": 1, "facing": "item", "tiles": {"r0": [[0, 1], [1, 1], [0, -1], [1, -1]], "r1": [[1, 0], [1, 1], [-1, 0], [-1, 1]]}}]},
+    {"id": "campfire", "name": "Campfire", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 1, "on": "land", "sound": "wood", "glow": true, "fps": 6, "tags": ["light"], "slots": [{"id": "warm", "kind": "stand", "where": "beside", "cap": 4, "facing": "item"}]},
     {"id": "bridge", "name": "Footbridge", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 2, "on": "water", "sound": "wood", "walkable": true, "tags": ["crossing"]},
     {"id": "stone_wall", "name": "Stone wall", "category": "garden", "footprint": [1, 1], "layout": "connect", "on": "land", "sound": "stone", "tags": ["line", "stone"], "perch": 14},
     {"id": "arbor", "name": "Rose arch", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "wood", "walkable": true},
     {"id": "bird_feeder", "name": "Bird feeder", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 1, "on": "land", "sound": "wood", "perch": 34},
-    {"id": "hay_bale", "name": "Hay bale", "category": "garden", "footprint": [1, 1], "layout": "variant", "count": 2, "on": "land", "sound": "soft", "tags": ["seat"], "perch": 14},
-    {"id": "hammock", "name": "Hammock", "category": "garden", "footprint": [2, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "wood", "perch": 16},
+    {"id": "hay_bale", "name": "Hay bale", "category": "garden", "footprint": [1, 1], "layout": "variant", "count": 2, "on": "land", "sound": "soft", "tags": ["seat"], "perch": 14, "slots": [{"id": "seat", "kind": "sit", "where": "on", "cap": 1}]},
+    {"id": "hammock", "name": "Hammock", "category": "garden", "footprint": [2, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "wood", "perch": 16, "slots": [{"id": "lie", "kind": "lie", "where": "on", "cap": 1, "facing": "rotation"}]},
     {"id": "fountain", "name": "Fountain", "category": "garden", "footprint": [2, 2], "layout": "rotate", "count": 1, "on": "land", "sound": "stone", "fps": 4, "tags": ["stone"]},
     {"id": "rowboat", "name": "Rowing boat", "category": "garden", "footprint": [2, 1], "layout": "rotate", "count": 2, "on": "water", "sound": "wood"},
-    {"id": "cottage", "name": "Cottage", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "glow": true, "smoke_at": [[20, -38], [-4, -30], [-20, -42], [4, -50]], "tags": ["home"]},
+    {"id": "cottage", "name": "Cottage", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "glow": true, "smoke_at": [[20, -38], [-4, -30], [-20, -42], [4, -50]], "tags": ["home"], "slots": [{"id": "door", "kind": "door", "where": "tile", "tiles": {"r0": [[2, 1]], "r1": [[1, 2]], "r2": [[-1, 0]], "r3": [[0, -1]]}}]},
     {"id": "toolshed", "name": "Tool shed", "category": "homes", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["home"]},
-    {"id": "coop", "name": "Hen coop", "category": "homes", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["home"]},
+    {"id": "coop", "name": "Hen coop", "category": "homes", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["home"], "slots": [{"id": "door", "kind": "door", "where": "tile", "tiles": {"r0": [[1, 0]], "r1": [[0, 1]], "r2": [[-1, 0]], "r3": [[0, -1]]}}, {"id": "feed", "kind": "feed", "where": "beside", "cap": 1}]},
     {"id": "greenhouse", "name": "Greenhouse", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "glow": true, "tags": ["home"]},
     {"id": "barn", "name": "Barn", "category": "homes", "footprint": [3, 2], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "glow": true, "tags": ["home"]},
     {"id": "windmill", "name": "Windmill", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "glow": true, "fps": 6, "tags": ["home"]}
@@ -243,6 +243,19 @@
       "first_koi": ["Something orange in the deep water."],
       "first_robin": ["A robin. It thinks it owns the place."],
       "first_deer": ["Shh. A deer. Don't move."]
-    }
+    },
+    "schedule": [
+      {"hours": ["03:00", "04:30"], "routine": "wake"},
+      {"hours": ["04:30", "10:45"], "routine": "chores"},
+      {"hours": ["10:45", "14:30"], "routine": "leisure"},
+      {"hours": ["14:30", "18:00"], "routine": "stroll"},
+      {"hours": ["18:00", "21:00"], "routine": "evening"},
+      {"hours": ["21:00", "03:00"], "routine": "home"}
+    ],
+    "routines": {"wake": {"steps": [{"if": {"home": true}, "do": [{"exit": {"home": "door"}}]}, {"use": {"here": true}, "anim": "stretch", "dur": [2, 2]}, {"say": "morning"}]}, "chores": {"steps": [{"each": {"item": "planter", "slot": "tend", "max": 6, "order": "nearest"}, "do": [{"go": {"each": true}}, {"use": {"each": true}, "anim": "water", "dur": [3, 3], "effect": "water_bed"}]}, {"if": {"visitor": {"id": "hen"}}, "do": [{"go": {"item": "coop", "slot": "feed"}}, {"use": {"item": "coop", "slot": "feed"}, "anim": "scatter", "dur": [4, 4], "effect": "call_hens"}]}, {"routine": "leisure"}]}, "leisure": {"steps": [{"pick": [{"weight": 3, "steps": [{"go": {"slot_kind": "sit", "tag": "seat"}}, {"use": {"here": true}, "anim": "sit", "dur": [20, 40]}, {"pick": [{"weight": 1, "use": {"here": true}, "anim": "read", "dur": [20, 40]}, {"weight": 1, "wait": {"dur": [1, 1]}}]}]}, {"weight": 2, "when": {"count": {"item": "hammock", "min": 1}}, "steps": [{"go": {"item": "hammock", "slot": "lie"}}, {"use": {"item": "hammock", "slot": "lie"}, "anim": "lie", "dur": [30, 60]}]}, {"weight": 4, "when": {"all": [{"nook": "lakeside_lunch"}, {"harvested_today": true}]}, "steps": [{"go": {"item": "picnic_table", "slot": "seat"}}, {"use": {"item": "picnic_table", "slot": "seat"}, "anim": "sit", "dur": [40, 60]}]}]}]}, "stroll": {"steps": [{"each": {"poi": "stroll", "max": 4}, "do": [{"go": {"each": true}}, {"pick": [{"weight": 2, "use": {"here": true}, "anim": "idle", "dur": [2, 2]}, {"weight": 1, "use": {"here": true}, "anim": "sketch", "dur": [15, 25]}]}]}]}, "evening": {"steps": [{"say": "dusk"}, {"pick": [{"weight": 3, "when": {"count": {"item": "campfire", "min": 1}}, "steps": [{"go": {"item": "campfire", "slot": "warm"}}, {"use": {"item": "campfire", "slot": "warm"}, "anim": "warm", "dur": [20, 40]}]}, {"weight": 1, "steps": [{"go": {"slot_kind": "sit", "tag": "seat"}}, {"use": {"here": true}, "anim": "sit", "dur": [20, 40]}]}]}]}, "home": {"steps": [{"say": "night"}, {"if": {"home": true}, "do": [{"go": {"home": "door"}}, {"enter": {"home": "door"}, "until": {"hour": "03:00"}}], "else": [{"say": "no_cottage_night"}, {"go": {"bedroll": true}}, {"use": {"here": true}, "anim": "sleep", "until": {"hour": "03:00"}}]}]}, "shelter": {"steps": [{"say": "rain_start"}, {"if": {"home": true}, "do": [{"go": {"home": "door"}}, {"enter": {"home": "door"}, "until": {"weather": "clear"}}], "else": [{"go": {"tag": "tree", "slot": "beside"}}, {"wait": {"until": {"weather": "clear"}}}]}, {"say": "rain_stop"}]}, "react": {"steps": [{"use": {"here": true}, "anim": "idle", "dur": [2, 2], "effect": "react_line"}]}},
+    "interrupts": [
+      {"when": {"weather": "rain"}, "routine": "shelter", "priority": 3},
+      {"when": {"event": "placed_nearby"}, "routine": "react", "priority": 1, "chance": 0.3, "cooldown": 20}
+    ]
   }
 }
