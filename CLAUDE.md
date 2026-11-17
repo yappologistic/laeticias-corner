@@ -86,6 +86,10 @@ The owner uses this computer while agents work, and disk space is limited.
 - Several agents share this checkout. Stage and commit **only your own paths**
   (`git add <paths>` then `git commit -m … -- <paths>`); if `index.lock` is busy, wait and retry.
   Never `git add -A`, never rewrite history, never commit build output, virtualenvs or scratch files.
+- The working tree is shared and other agents have uncommitted work in it at all times. Never run
+  `git stash`, `git reset`, `git checkout -- <path>`, `git restore`, `git clean` or anything else that
+  changes or hides files you do not own. To compare against an older version, use
+  `git worktree add out/<name> <commit>` and delete it afterwards.
 
 ## Content contract
 
