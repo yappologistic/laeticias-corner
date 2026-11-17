@@ -99,6 +99,69 @@ MATERIALS = [
     _m("gold_leaf", [EARTH[1], EARTH[2], STRAW[0], STRAW[1], STRAW[2], STRAW[3], GLOW[2]], texture=0.4),
     _m("rust_leaf", [INK, ROOF[0], ROOF[1], ROOF[2], AUTUMN[0], ROOF[4]], texture=0.4),
 ]
+
+# ---- region extensions ----
+# Each region adds its own colours and materials; home sprites only ever use PALETTE, and
+# region pages may use PALETTE plus their region's colours (validate.py checks both). New
+# materials are appended, so the ids of the home materials never change.
+
+# Pārsa, spring c. 470 BC: warm polished limestone, painted and gilded stone, glazed brick,
+# cedar, buff mudbrick plaster, the dyes of the court robes and the skins of many peoples.
+LIMESTONE = ["#363542", "#4f4d58", "#6c6970", "#8b8784", "#aca69c", "#cdc6b6", "#e6dfcf"]
+DARKSTONE = ["#22212b", "#2f2e39", "#45434d"]          # the Tačara's dark polished stone
+LAPIS = ["#1f2557", "#2a3a85", "#3a56b0", "#5f7fd0"]
+EGYPT_BLUE = ["#2f6e9e", "#4d93c2", "#86bfdc"]
+CINNABAR = ["#6e1c22", "#9c2a2a", "#c63f30", "#e2663f"]
+HEMATITE = ["#4f2422", "#6e3329", "#8c4733"]           # red plastered floors
+GOLD = ["#6b4a1a", "#9a7226", "#c99d36", "#e8c75a", "#f8e9a0"]
+CEDAR = ["#3f241e", "#5f3626", "#834d33", "#a96c47"]
+MUDBRICK = ["#776049", "#9a7e62", "#bb9f7e", "#d5bd99", "#e9d8b6"]
+PURPLE = ["#341838", "#552452", "#7a346c", "#a14f86"]
+SAFFRON = ["#b67b1c", "#dca23a"]
+MALACHITE = ["#2c604c", "#468a68", "#74b38a"]
+SKIN_OLIVE = ["#6a4434", "#8d5f45", "#b07f5c", "#cc9c76"]
+SKIN_DARK = ["#33221f", "#4d3328", "#6c4734"]
+NAQSH = ["#5d4c50", "#80696a", "#a28a82", "#c2ab9c", "#dccabb"]   # Naqsh-e Rostam's pinkish cliff
+
+REGION_COLOURS = {
+    "parsa": [*LIMESTONE, *DARKSTONE, *LAPIS, *EGYPT_BLUE, *CINNABAR, *HEMATITE, *GOLD, *CEDAR,
+              *MUDBRICK, *PURPLE, *SAFFRON, *MALACHITE, *SKIN_OLIVE, *SKIN_DARK, *NAQSH],
+}
+for _cols in REGION_COLOURS.values():
+    assert len(set(_cols)) == len(_cols) and not set(_cols) & set(PALETTE)
+
+
+def palette_for(region: str | None) -> list[str]:
+    """Colours a sprite of `region` may use (None: the home region)."""
+    return PALETTE + REGION_COLOURS.get(region or "", [])
+
+
+MATERIALS += [
+    _m("limestone", LIMESTONE[:6], texture=0.25),
+    _m("ashlar", [INK, *LIMESTONE[:6]], texture=0.45),
+    _m("polished", [INK, *DARKSTONE, LIMESTONE[2], LIMESTONE[4]], texture=0.05),
+    _m("mudbrick", MUDBRICK, texture=0.3),
+    _m("hematite", [INK, *HEMATITE, CINNABAR[2]], texture=0.2),
+    _m("cinnabar", [INK, *CINNABAR], bias=0.2, texture=0.1),
+    _m("lapis", [INK, *LAPIS], bias=0.2, texture=0.1),
+    _m("eblue", [LAPIS[0], LAPIS[1], *EGYPT_BLUE], bias=0.2, texture=0.1),
+    _m("gold", GOLD, bias=0.4, texture=0.2),
+    _m("cedar", [INK, *CEDAR], texture=0.3),
+    _m("purple", [INK, *PURPLE], bias=0.2, texture=0.08),
+    _m("saffron", [EARTH[1], *SAFFRON, GOLD[3], GOLD[4]], bias=0.2, texture=0.08),
+    _m("malachite", [PINE[0], *MALACHITE, LEAF[6]], bias=0.2, texture=0.08),
+    _m("skin_olive", [*SKIN_OLIVE, SKIN[1]], bias=1.1),
+    _m("skin_dark", [*SKIN_DARK, SKIN_OLIVE[1], SKIN_OLIVE[2]], bias=1.0),
+    _m("hair_black", [INK, DARKSTONE[0], DARKSTONE[1], LAPIS[0], LAPIS[1]], bias=-0.3, texture=0.1),
+    _m("naqsh", NAQSH, texture=0.45),
+    _m("glaze_blue", [LAPIS[0], LAPIS[1], LAPIS[2], EGYPT_BLUE[1], EGYPT_BLUE[2]], bias=0.3, texture=0.05),
+    _m("glaze_yellow", [EARTH[2], SAFFRON[0], GOLD[3], GOLD[4], PLASTER[4]], bias=0.3, texture=0.05),
+    _m("wool", [EARTH[1], MUDBRICK[1], MUDBRICK[2], MUDBRICK[3], MUDBRICK[4]], bias=0.2, texture=0.08),
+    _m("felt", [INK, EARTH[0], EARTH[1], EARTH[2], MUDBRICK[2]], bias=0.2, texture=0.1),
+    _m("bronze", [INK, CEDAR[1], GOLD[0], GOLD[1], GOLD[2], GOLD[3]], bias=0.2, texture=0.1),
+]
 MAT = {m.name: i + 1 for i, m in enumerate(MATERIALS)}
+_ALL = set(PALETTE).union(*REGION_COLOURS.values())
 for _m_ in MATERIALS:
-    assert all("#%02x%02x%02x" % c in PALETTE for c in _m_.ramp), _m_.name
+    assert all("#%02x%02x%02x" % c in _ALL for c in _m_.ramp), _m_.name
+assert len(MATERIALS) < 255

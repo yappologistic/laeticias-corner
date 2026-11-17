@@ -77,6 +77,23 @@ class Model:
         X, Y, Z = axes
         return tuple(sl), X[:, None, None], Y[None, :, None], Z[None, None, :]
 
+    def box_window(self, x0, x1, y0, y1, z0, z1):
+        """Index slices of the voxels whose centres lie in [x0,x1)x[y0,y1)x[z0,z1) (design
+        units) and their centre coordinates, or None when the box misses the grid. Big models
+        are built chunk by chunk, so every shape evaluates only where it meets the chunk."""
+        k = self.k
+        sl, axes = [], []
+        for a, b, o, n in ((x0, x1, self.x0, self.mat.shape[0]), (y0, y1, self.y0, self.mat.shape[1]),
+                           (z0, z1, self.z0, self.mat.shape[2])):
+            i0 = max(int(np.ceil(a * k - 0.5)) - o, 0)
+            i1 = min(int(np.ceil(b * k - 0.5)) - o, n)
+            if i1 <= i0:
+                return None
+            sl.append(slice(i0, i1))
+            axes.append((np.arange(i0, i1, dtype=np.float32) + o + 0.5) / k)
+        X, Y, Z = axes
+        return tuple(sl), X[:, None, None], Y[None, :, None], Z[None, None, :]
+
     def put(self, mask, material: str, tone=0.0, normal=None, only_empty=False, sl=None):
         """Set `mask` to `material`. With `sl` (from `window()`) the mask, tone and normal are
         shaped like that window instead of the whole grid."""

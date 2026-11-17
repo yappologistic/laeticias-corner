@@ -9,6 +9,16 @@ tools/artgen/build.sh --tile 32 --out out/artgen/lo --preview   # 32x16 tiles, e
 tools/artgen/.venv/bin/python tools/artgen/validate.py --catalog assets/catalog.json --allow-extra
 ```
 
+Art sets beyond the home region (world-tech.md §1) build on their own, from their set catalog
+`assets/sets/<set>/catalog.json`, into `assets/atlas/<set>.<n>.png/json` plus
+`assets/atlas/<set>.geom.json`; the home atlas is never touched:
+
+```sh
+tools/artgen/build.sh --set parsa --preview          # pages, geometry, validation, previews
+tools/artgen/build.sh --set parsa --only apadana walker/parsa.usher   # a quick look, no geometry
+tools/artgen/.venv/bin/python tools/artgen/setvalidate.py parsa
+```
+
 `--catalog` picks the catalog the required keys are derived from (default `assets/catalog.json`).
 The standalone validator with `--allow-extra` checks that an atlas covers a catalog, so the
 batch-2 atlas can be checked against the live catalog.
@@ -58,6 +68,38 @@ half with the four worker processes the machine-courtesy rules allow.
 - `pack.py` trims each sprite, shelf-packs them with a 1 px gutter and writes the manifest.
 - `validate.py` checks keys, rects, anchors, frame counts and palette use.
 - `preview.py` composes test scenes from the packed atlas the way the engine draws them.
+
+## Sets, big landmarks and people
+
+- `setbuild.py` derives every key a set catalog implies (terrain, items with their layers,
+  rotations and states, actors in both facings at the pose library's frame counts, edges,
+  backdrops, effects), renders them with the set's package `sets/<set>/` (`LANDMARKS`,
+  `ITEMS`, `STATES`, `FRAMES`, `actor_sprite`, `carry_at`, `flat`, `preview`), cuts large
+  landmarks into pieces (walk tiles in runs of up to 8, the rest in rectangles of at most
+  8 x 8), packs pages (kit and actors first, landmark pieces by district, shadows and glows on
+  their own page when that costs no extra page) and writes the geometry file. `setvalidate.py`
+  checks keys, page limits, palette (`palette.palette_for(set)`: home colours plus the set's),
+  diamonds, frame counts, piece partitions, walk-tile headroom and reachability, slot and
+  emitter coverage, and warns when a measured height strays more than 15 % from the catalog's.
+- `bigrender.py` renders models too big for one grid: a builder fills whatever box it is
+  handed, every shape evaluating only where it meets that box (`Model.box_window`); pass one
+  builds each 4 x 4 tile chunk for its solid mask, pass two shades each chunk against the
+  assembled mask (so shadows and occlusion see the whole building), and chunks composite by
+  depth into exactly the image of the whole model, with each pixel's footprint tile recorded
+  for pieces. `render.py` is split into `shade` and `finish` for this; home output is
+  unchanged byte for byte.
+- `arch.py` holds the architectural primitives in grid axes with a landmark `Scale` (8 s
+  voxels per metre across, 10 s up): fluted columns with bell or square bases and bull, lion
+  or griffin protome capitals, flat roofs on cedar beams, stepped merlons, stone door and window
+  frames with cavetto cornices, painted relief registers, rosette and cypress bands,
+  inscription panels, glazed-brick panels, mudbrick walls on stone plinths, stairs with
+  parapets, tents, awnings, and `field_fill` for rough rock with smooth normals.
+- `rig.py` is the one walker rig: body types (man, woman, elder, child, king), the pose library
+  of world-tech.md §1.9 (`POSES`, fixed frame counts) and a `Dress` as data (garment, colours,
+  patterns, coat, cape, shawl, veil, headgear, hair, beard, footwear, jewellery, worn and held
+  things, how things are held, a mount). A set's people are lists of dresses
+  (`sets/parsa/people.py`); other sets reuse the rig with their own.
+- `setpreview.py` composes scenes from a set's pages with levels and stacked edge faces.
 
 ## Conventions worth knowing
 

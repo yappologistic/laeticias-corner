@@ -66,30 +66,56 @@ def _bounds(model: Model):
     return int(np.floor(min(sx))), int(np.ceil(max(sx))), int(np.floor(min(sy))), int(np.ceil(max(sy)))
 
 
-def _occupancy(model: Model, pad: int):
+@dataclass
+class Occupancy:
+    """A solid mask over voxels [x0, x0 + nx) x ... : the model's own (padded), or a window of
+    a larger shared grid when a big model is shaded one chunk at a time."""
+    grid: np.ndarray
+    x0: int
+    y0: int
+    z0: int
+
+    def window(self, x0, x1, y0, y1, z0, z1) -> np.ndarray:
+        """The mask over [x0, x1) x [y0, y1) x [z0, z1); empty space outside the grid."""
+        out = np.zeros((x1 - x0, y1 - y0, z1 - z0), bool)
+        src = [(max(a, o), min(b, o + n)) for (a, b), o, n in
+               zip(((x0, x1), (y0, y1), (z0, z1)), (self.x0, self.y0, self.z0), self.grid.shape)]
+        if all(a < b for a, b in src):
+            (a0, b0), (a1, b1), (a2, b2) = src
+            out[a0 - x0:b0 - x0, a1 - y0:b1 - y0, a2 - z0:b2 - z0] = \
+                self.grid[a0 - self.x0:b0 - self.x0, a1 - self.y0:b1 - self.y0, a2 - self.z0:b2 - self.z0]
+        return out
+
+
+def _occupancy(model: Model, pad: int, ctx: Occupancy | None = None) -> Occupancy:
     """Solid mask (context voxels included) padded by `pad`; below z = 0 is solid ground
-    unless the model hovers."""
-    occ = np.pad(model.mat > 0, pad)
+    unless the model hovers. With `ctx`, the solids come from that shared grid instead."""
+    if ctx is None:
+        occ = np.pad(model.mat > 0, pad)
+    else:
+        nx, ny, nz = model.mat.shape
+        occ = ctx.window(model.x0 - pad, model.x0 + nx + pad, model.y0 - pad, model.y0 + ny + pad,
+                         model.z0 - pad, model.z0 + nz + pad)
     if not model.hover:
         ground = np.arange(occ.shape[2]) + model.z0 - pad < 0
         occ[:, :, ground] = True
-    return occ
+    return Occupancy(occ, model.x0 - pad, model.y0 - pad, model.z0 - pad)
 
 
-def _sample(grid, p, x0, y0, z0, pad):
-    i = np.clip(np.floor(p[:, 0]).astype(np.int64) - x0 + pad, 0, grid.shape[0] - 1)
-    j = np.clip(np.floor(p[:, 1]).astype(np.int64) - y0 + pad, 0, grid.shape[1] - 1)
-    k = np.clip(np.floor(p[:, 2]).astype(np.int64) - z0 + pad, 0, grid.shape[2] - 1)
+def _sample(grid, p, x0, y0, z0):
+    i = np.clip(np.floor(p[:, 0]).astype(np.int64) - x0, 0, grid.shape[0] - 1)
+    j = np.clip(np.floor(p[:, 1]).astype(np.int64) - y0, 0, grid.shape[1] - 1)
+    k = np.clip(np.floor(p[:, 2]).astype(np.int64) - z0, 0, grid.shape[2] - 1)
     return grid[i, j, k]
 
 
-def _ambient_occlusion(model: Model, centre, nrm):
+def _ambient_occlusion(model: Model, centre, nrm, ctx=None):
     """How enclosed each surface point is: blurred solidity probed a little way along the normal."""
     k = model.k
-    pad = AO_PAD * k
-    occ = _occupancy(model, pad).astype(np.float32)
-    near, far = box_blur(occ, k), box_blur(occ, 3 * k)
-    args = (model.x0, model.y0, model.z0, pad)
+    occ = _occupancy(model, AO_PAD * k, ctx)
+    g = occ.grid.astype(np.float32)
+    near, far = box_blur(g, k), box_blur(g, 3 * k)
+    args = (occ.x0, occ.y0, occ.z0)
     a = _sample(near, centre + nrm * (1.6 * k), *args)
     b = _sample(far, centre + nrm * (3.5 * k), *args)
     return np.clip(1.08 - 0.55 * a - 0.75 * b, 0.5, 1.0)
@@ -135,15 +161,18 @@ def _raycast(model: Model, px, py, mat_grid):
     return mat, face, ii, jj, kk, depth
 
 
-def _shadowed(occ, origin, x0, y0, z0, pad, zmax, sun=SUN, step=0.5):
+def _shadowed(occ: Occupancy, origin, zmax, sun=SUN, step=0.5):
     """True where a ray from origin (N,3) toward the sun hits a solid voxel."""
     hit = np.zeros(len(origin), bool)
+    if len(origin) == 0:
+        return hit
+    x0, y0, z0, occ = occ.x0, occ.y0, occ.z0, occ.grid
     steps = int(np.ceil((zmax - origin[:, 2].min()) / (sun[2] * step))) + 1
     for s in range(1, steps + 1):
         p = origin + sun * (s * step)
-        i = np.floor(p[:, 0]).astype(np.int64) - x0 + pad
-        j = np.floor(p[:, 1]).astype(np.int64) - y0 + pad
-        k = np.floor(p[:, 2]).astype(np.int64) - z0 + pad
+        i = np.floor(p[:, 0]).astype(np.int64) - x0
+        j = np.floor(p[:, 1]).astype(np.int64) - y0
+        k = np.floor(p[:, 2]).astype(np.int64) - z0
         ok = ~hit & (i >= 0) & (i < occ.shape[0]) & (j >= 0) & (j < occ.shape[1]) & \
             (k >= 0) & (k < occ.shape[2])
         hit[ok] = occ[i[ok], j[ok], k[ok]]
@@ -154,8 +183,25 @@ def _texture_noise(ii, jj, kk, x0, y0, z0):
     return hash01(ii + x0, jj + y0, kk + z0, 7) - 0.5
 
 
-def render_base(model: Model):
-    """Return (rgba, glow_rgba or None, ox, oy) for the model's visible surfaces."""
+@dataclass
+class Shaded:
+    """A model ray cast and lit but not yet outlined or quantised, over the screen rect whose
+    top-left pixel is (c0, r0): per pixel the material, the fractional ramp level, the depth
+    along the view ray, the solid mask and depth outlines follow, and the hit voxel's (x, y)."""
+    c0: int
+    r0: int
+    mat: np.ndarray
+    level: np.ndarray
+    depth: np.ndarray
+    outline_solid: np.ndarray
+    outline_depth: np.ndarray
+    vx: np.ndarray
+    vy: np.ndarray
+
+
+def shade(model: Model, ctx: Occupancy | None = None, zmax: int | None = None) -> Shaded:
+    """Ray cast and light the model's visible surfaces. `ctx` supplies solids outside the
+    model (a big model shaded chunk by chunk) for occlusion and cast shadows up to `zmax`."""
     c0, c1, r0, r1 = _bounds(model)
     W, H = c1 - c0, r1 - r0
     py, px = np.mgrid[r0:r1, c0:c1]
@@ -181,12 +227,14 @@ def render_base(model: Model):
         nrm = np.where((nrm * fn).sum(1, keepdims=True) > -0.2, nrm, fn)
         centre = np.stack([ii[h] + model.x0 + 0.5, jj[h] + model.y0 + 0.5,
                            kk[h] + model.z0 + 0.5], 1).astype(np.float32)
-        ao = _ambient_occlusion(model, centre, nrm)
+        ao = _ambient_occlusion(model, centre, nrm, ctx)
         origin = centre + fn * 0.51 + SUN * 0.75
-        pad = 2
-        occ = _occupancy(model, pad)
-        lit = ~_shadowed(occ, origin, model.x0, model.y0, model.z0, pad,
-                         model.z0 + model.mat.shape[2])
+        if ctx is None:
+            occ = _occupancy(model, 2)
+            top = model.z0 + model.mat.shape[2]
+        else:  # the shared grid carries the ground plane itself
+            occ, top = ctx, zmax
+        lit = ~_shadowed(occ, origin, top)
         diffuse = np.clip(nrm @ SUN, 0, 1) * np.where(lit, 1.0, 0.25)
         light = (AMBIENT + DIFFUSE * diffuse) * ao
         n = RAMP_LEN[m]
@@ -195,37 +243,42 @@ def render_base(model: Model):
         # texture takes over.
         lv += TEXTURE[m] / model.k * _texture_noise(ii[h], jj[h], kk[h], model.x0, model.y0, model.z0)
         level[h] = lv
+    return Shaded(c0, r0, mat.reshape(H, W), level.reshape(H, W), depth.reshape(H, W),
+                  outline_solid.reshape(H, W), outline_depth.reshape(H, W),
+                  (ii + model.x0).reshape(H, W), (jj + model.y0).reshape(H, W))
 
-    mat2 = mat.reshape(H, W)
-    lvl = level.reshape(H, W)
-    dep = depth.reshape(H, W)
+
+def finish(sh: Shaded, k: int, halos=()):
+    """Outline and quantise a shaded image; returns (rgba, glow_rgba or None, ox, oy)."""
+    c0, r0 = sh.c0, sh.r0
+    mat2, lvl, dep = sh.mat, sh.level, sh.depth
+    H, W = mat2.shape
+    c1, r1 = c0 + W, r0 + H
     solid = mat2 > 0
     # Selective outline: darken the silhouette (more on the shadow side) and front edges.
-    pad_s = np.pad(outline_solid.reshape(H, W), 1)
-    pad_d = np.pad(np.where(outline_solid, outline_depth, -1e9).reshape(H, W), 1,
-                   constant_values=-1e9)
+    pad_s = np.pad(sh.outline_solid, 1)
+    pad_d = np.pad(np.where(sh.outline_solid, sh.outline_depth, -1e9), 1, constant_values=-1e9)
     up, down = ~pad_s[:-2, 1:-1], ~pad_s[2:, 1:-1]
     left, right = ~pad_s[1:-1, :-2], ~pad_s[1:-1, 2:]
     lvl = lvl - solid * (0.9 * (up | left) + 1.6 * (down | right))
     front = np.zeros_like(solid)
     for nb in (pad_d[:-2, 1:-1], pad_d[2:, 1:-1], pad_d[1:-1, :-2], pad_d[1:-1, 2:]):
-        front |= (nb > -1e8) & (dep - nb > 3.0 * model.k)
+        front |= (nb > -1e8) & (dep - nb > 3.0 * k)
     lvl = lvl - solid * front * 1.0
     pyy, pxx = np.mgrid[r0:r1, c0:c1]
     # Finer grids have smoother normals, so a narrower dither band keeps ramps in clean steps.
-    idx = np.clip(dither(lvl, pxx, pyy, 0.55 / model.k), 0, RAMP_LEN[mat2] - 1).astype(np.int64)
+    idx = np.clip(dither(lvl, pxx, pyy, 0.55 / k), 0, RAMP_LEN[mat2] - 1).astype(np.int64)
     rgba = np.zeros((H, W, 4), np.uint8)
     rgba[..., :3] = RAMPS[mat2, idx]
     rgba[..., 3] = np.where(solid, 255, 0)
 
     glow = None
-    if HAS_GLOW[mat2].any() or model.halos:
+    if HAS_GLOW[mat2].any() or halos:
         glow = np.zeros((H, W, 4), np.uint8)
         g = HAS_GLOW[mat2]
         glow[g, :3] = GLOWS[mat2[g]]
         glow[g, 3] = 255
-        k = model.k
-        for halo in model.halos:
+        for halo in halos:
             hx, hy = (halo.x - halo.y) * k, ((halo.x + halo.y) / 2 - halo.z) * k
             d = np.hypot(pxx + 0.5 - hx, (pyy + 0.5 - hy) * 1.6) / (halo.radius * k)
             inten = halo.strength * np.clip(1 - d, 0, 1) ** 1.6 * HALO_STEPS
@@ -236,6 +289,11 @@ def render_base(model: Model):
             glow[add, :3] = halo.rgb
             glow[add, 3] = alpha[add]
     return rgba, glow, -c0, -r0
+
+
+def render_base(model: Model):
+    """Return (rgba, glow_rgba or None, ox, oy) for the model's visible surfaces."""
+    return finish(shade(model), model.k, model.halos)
 
 
 def render_shadow(model: Model) -> Sprite:
@@ -255,9 +313,9 @@ def render_shadow(model: Model) -> Sprite:
     sx, sy = px + 0.5, py + 0.5
     gx, gy = (sy + sx / 2).ravel(), (sy - sx / 2).ravel()
     pad = 2
-    occ = np.pad(model.visible() > 0, pad)
+    occ = Occupancy(np.pad(model.visible() > 0, pad), model.x0 - pad, model.y0 - pad, model.z0 - pad)
     origin = np.stack([gx, gy, np.full_like(gx, 0.05)], 1).astype(np.float32)
-    cast = _shadowed(occ, origin, model.x0, model.y0, model.z0, pad, zmax, SHADOW_SUN)
+    cast = _shadowed(occ, origin, zmax, SHADOW_SUN)
     # Contact darkening: how much solid sits right next to this ground point.
     k = model.k
     k0 = -model.z0

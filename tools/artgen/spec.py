@@ -76,6 +76,10 @@ def parse_build(argv, validate_only=False) -> tuple[Build, argparse.Namespace]:
                         help="only check that the atlas covers the catalog (extra keys allowed)")
     else:
         ap.add_argument("--preview", action="store_true", help="also write preview scenes")
+        ap.add_argument("--set", help="build one art set's pages (assets/sets/<set>/catalog.json) "
+                        "instead of the home atlas")
+        ap.add_argument("--only", nargs="+", help="with --set: render only keys containing one of "
+                        "these strings (a quick look; no geometry, no validation)")
     args = ap.parse_args(argv)
     catalog = args.catalog.resolve()
     tile = load_catalog(catalog)["tile"]
@@ -84,6 +88,9 @@ def parse_build(argv, validate_only=False) -> tuple[Build, argparse.Namespace]:
     w = args.tile or tile["w"]
     if w <= 0 or w % (2 * DESIGN_TILE):
         ap.error(f"tile width {w} must be a positive multiple of {2 * DESIGN_TILE}")
+    if getattr(args, "set", None):
+        out = (args.out or ASSETS / "atlas").resolve()
+        return Build(w, out, out if args.out else PREVIEWS / args.set, catalog), args
     out = (args.out or ASSETS).resolve()
     return Build(w, out, out if args.out else PREVIEWS, catalog), args
 

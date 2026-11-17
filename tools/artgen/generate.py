@@ -1,6 +1,7 @@
 """Build the sprite atlas (atlas.png + atlas.json) from the catalog. Deterministic.
 
 Usage: tools/artgen/build.sh [--catalog PATH] [--tile W] [--out DIR] [--preview]
+       tools/artgen/build.sh --set parsa [--tile W] [--out DIR] [--preview] [--only KEY...]
 
 The required keys (spec.required_keys: what the catalog implies plus art_list.json) drive the
 whole build: every key is produced by exactly one job, and a key nobody can make is an error.
@@ -116,6 +117,9 @@ def build_sprites(cat: dict, k: int) -> dict[str, pack.Sprite]:
 
 def main(argv) -> int:
     build, args = spec.parse_build(argv)
+    if args.set:
+        import setbuild
+        return setbuild.main(build, args)
     t0 = time.time()
     sprites = build_sprites(build.load_catalog(), build.k)
     build.out.mkdir(parents=True, exist_ok=True)
