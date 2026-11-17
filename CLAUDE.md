@@ -71,8 +71,9 @@ The owner uses this computer while agents work, and disk space is limited.
   `std::unique_ptr` with custom deleters. Check every SDL call that can fail.
 - Value types and plain structs first; no inheritance where a `struct` + function does the job.
   No singletons or mutable globals. `const` and `[[nodiscard]]` where they help.
-- Fixed-timestep simulation (60 Hz) decoupled from rendering; one seeded RNG owned by the game so
-  scripted runs are reproducible.
+- Fixed-timestep simulation (60 Hz) decoupled from rendering; one seed owned by the game, from
+  which independent streams (per actor, per event, per chunk) may be derived, so scripted runs are
+  reproducible.
 - No per-frame heap allocation in the steady state. One texture atlas, sprites batched; draw calls
   stay in the low tens. Frame budget: under 2 ms CPU for update + draw submission with a full map.
 - Comments explain *why*, not what. Public headers get a one-line purpose comment.
