@@ -645,8 +645,8 @@ void Scene::draw(const FrameParams& p) {
 
     const auto z = static_cast<float>(p.camera->zoom());
     const Vec2 cam = p.camera->position();
-    const Vec2 topLeft{cam.x - p.screen.x * 0.5f / z, cam.y - p.screen.y * 0.5f / z};
-    origin_ = {std::floor(topLeft.x) - 1.0f, std::floor(topLeft.y) - 1.0f};
+    topLeft_ = {cam.x - p.screen.x * 0.5f / z, cam.y - p.screen.y * 0.5f / z};
+    origin_ = {std::floor(topLeft_.x) - 1.0f, std::floor(topLeft_.y) - 1.0f};
     ensureTargets(static_cast<int>(std::ceil(p.screen.x / z)) + 3,
                   static_cast<int>(std::ceil(p.screen.y / z)) + 3);
     if (!worldTarget_ || !lightTarget_ || !glowTarget_ || !shadowTarget_) return;
@@ -670,23 +670,37 @@ void Scene::draw(const FrameParams& p) {
     drawGlow(p);
 
     if (!SDL_SetRenderTarget(renderer_, nullptr)) SDL_Log("render: %s", SDL_GetError());
+    composite(p, {1, 1}, false);
+}
+
+void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
+    if (!worldTarget_) return;
+    const auto z = static_cast<float>(p.camera->zoom());
+    const float w = p.screen.x * scale.x;
+    const float h = p.screen.y * scale.y;
     // Sky gradient behind the floating island.
     const Rgb t = p.light.skyTop;
     const Rgb b = p.light.skyBottom;
     const SDL_Vertex sky[4] = {
         {{0, 0}, {t.r, t.g, t.b, 1}, {0, 0}},
-        {{p.screen.x, 0}, {t.r, t.g, t.b, 1}, {0, 0}},
-        {{p.screen.x, p.screen.y}, {b.r, b.g, b.b, 1}, {0, 0}},
-        {{0, p.screen.y}, {b.r, b.g, b.b, 1}, {0, 0}},
+        {{w, 0}, {t.r, t.g, t.b, 1}, {0, 0}},
+        {{w, h}, {b.r, b.g, b.b, 1}, {0, 0}},
+        {{0, h}, {b.r, b.g, b.b, 1}, {0, 0}},
     };
     static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
+    if (smooth && !SDL_SetTextureScaleMode(worldTarget_.get(), SDL_SCALEMODE_LINEAR))
+        SDL_Log("render: %s", SDL_GetError());
     batch_.use(worldTarget_.get(), SDL_BLENDMODE_BLEND);
-    batch_.quad(SDL_FRect{(origin_.x - topLeft.x) * z, (origin_.y - topLeft.y) * z,
-                          static_cast<float>(targetW_) * z, static_cast<float>(targetH_) * z},
+    batch_.quad(SDL_FRect{(origin_.x - topLeft_.x) * z * scale.x,
+                          (origin_.y - topLeft_.y) * z * scale.y,
+                          static_cast<float>(targetW_) * z * scale.x,
+                          static_cast<float>(targetH_) * z * scale.y},
                 {0, 0, 1, 1}, kWhite);
     batch_.flush();
+    if (smooth && !SDL_SetTextureScaleMode(worldTarget_.get(), SDL_SCALEMODE_NEAREST))
+        SDL_Log("render: %s", SDL_GetError());
 }
 
 } // namespace lc

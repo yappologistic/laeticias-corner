@@ -45,7 +45,11 @@ public:
     void onRemoved(const Item& item, float now);
     // Spawns and advances effects. Called once per simulation step.
     void update(float dt, const World& world, bool rain, Rng& rng);
+    // Renders the frame's layers and composites them onto the window.
     void draw(const FrameParams& p);
+    // Composites the layers rendered by the last draw() onto the current render target, scaled
+    // by `scale`; `smooth` filters the world linearly (for blurred copies).
+    void composite(const FrameParams& p, Vec2 scale, bool smooth);
 
     [[nodiscard]] int drawCalls() const { return batch_.drawCalls(); }
     [[nodiscard]] const SpriteTables& sprites() const { return tables_; }
@@ -116,7 +120,8 @@ private:
     std::uint64_t groundKey_ = ~0ULL;
     int targetW_ = 0;
     int targetH_ = 0;
-    Vec2 origin_; // world px of the target's top-left pixel
+    Vec2 origin_;  // world px of the target's top-left pixel
+    Vec2 topLeft_; // world px at the window's top-left corner
     float now_ = 0;
 
     std::uint64_t revision_ = ~0ULL;

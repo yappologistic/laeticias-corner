@@ -39,6 +39,7 @@ add_library(lc_engine STATIC
   src/audio/decode.cpp
   src/render/atlas.cpp
   src/render/batch.cpp
+  src/render/blur.cpp
   src/render/camera.cpp
   src/render/fx.cpp
   src/render/scene.cpp

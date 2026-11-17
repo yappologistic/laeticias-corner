@@ -3,6 +3,7 @@
 #include "audio/mixer.hpp"
 #include "core/tuning.hpp"
 #include "render/atlas.hpp"
+#include "render/blur.hpp"
 #include "render/camera.hpp"
 #include "render/fx.hpp"
 #include "render/sprites.hpp"
@@ -16,6 +17,7 @@
 
 #include <array>
 #include <cmath>
+#include <tuple>
 
 using namespace lc;
 
@@ -237,4 +239,70 @@ TEST_CASE("mixer loads the catalog's audio and plays through the dummy device") 
         }
     }
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
+TEST_CASE("backdrop blur spreads an edge evenly without leaking across the frame") {
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+    REQUIRE(SDL_InitSubSystem(SDL_INIT_VIDEO));
+    {
+        const WindowPtr window{SDL_CreateWindow("blur", 64, 64, SDL_WINDOW_HIDDEN)};
+        REQUIRE(window);
+        const RendererPtr renderer{SDL_CreateRenderer(window.get(), "software")};
+        REQUIRE(renderer);
+        Blur blur(renderer.get());
+        CHECK(blur.result() == nullptr);
+        // Two window sizes and blur strengths, as at small and large UI scales.
+        for (const auto& [w, h, radius] : {std::tuple{960, 600, 18.0f}, {1920, 1080, 45.0f}}) {
+            CAPTURE(w);
+            const Vec2 screen{static_cast<float>(w), static_cast<float>(h)};
+            REQUIRE(blur.begin(screen, radius));
+            // A dark left half and a light right half.
+            const Vec2 k = blur.sourceScale();
+            REQUIRE(SDL_SetRenderDrawColorFloat(renderer.get(), 0, 0, 0, 1));
+            REQUIRE(SDL_RenderClear(renderer.get()));
+            REQUIRE(SDL_SetRenderDrawColorFloat(renderer.get(), 1, 1, 1, 1));
+            const SDL_FRect light{screen.x * 0.5f * k.x, 0, screen.x * 0.5f * k.x, screen.y * k.y};
+            REQUIRE(SDL_RenderFillRect(renderer.get(), &light));
+            blur.end();
+            SDL_Texture* out = blur.result();
+            REQUIRE(out != nullptr);
+            CHECK(blur.drawCalls() == 2 * (blur.levels() - 1));
+
+            REQUIRE(SDL_SetRenderTarget(renderer.get(), out));
+            const SurfacePtr px{SDL_RenderReadPixels(renderer.get(), nullptr)};
+            REQUIRE(SDL_SetRenderTarget(renderer.get(), nullptr));
+            REQUIRE(px);
+            const auto at = [&](int x, int y) {
+                Uint8 r = 0, g = 0, b = 0, a = 0;
+                REQUIRE(SDL_ReadSurfacePixel(px.get(), x, y, &r, &g, &b, &a));
+                CHECK(a == 255); // opaque, so glass never shows holes
+                return static_cast<int>(r);
+            };
+            for (const int y : {0, px->h / 2, px->h - 1}) {
+                // The frame's far edges keep their own colour: nothing wraps around.
+                CHECK(at(0, y) <= 4);
+                CHECK(at(px->w - 1, y) >= 251);
+                // Rises steadily across the edge, with a spread near the requested radius.
+                int prev = 0;
+                int lo = -1;
+                int hi = -1;
+                for (int x = 0; x < px->w; ++x) {
+                    const int v = at(x, y);
+                    CHECK(v + 2 >= prev);
+                    prev = v;
+                    if (lo < 0 && v > 25) lo = x;
+                    if (hi < 0 && v > 230) hi = x;
+                }
+                const float spread =
+                    static_cast<float>(hi - lo) * screen.x / static_cast<float>(px->w);
+                // The chain deepens in powers of two, so the 10-90% rise lands within a factor of
+                // about 1.4 either side of 1.28 radii (a Gaussian whose radius is two sigma).
+                CHECK(spread > radius * 0.8f);
+                CHECK(spread < radius * 2.0f);
+            }
+        }
+        blur.invalidate();
+        CHECK(blur.result() == nullptr);
+    }
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
