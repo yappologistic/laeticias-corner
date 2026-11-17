@@ -162,6 +162,13 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                    ? std::nullopt
                    : std::optional(std::format("expected {} to {}exist", a[1], want ? "" : "not "));
     }
+    if (what == "widget") {
+        if (a.size() != 3) return std::string("expect widget NAME yes|no");
+        const bool have = hud_.widgetCentre(a[1], model()).has_value();
+        return have == (a[2] == "yes")
+                   ? std::nullopt
+                   : std::optional(std::format("widget {} {}shown", a[1], have ? "" : "not "));
+    }
     if (what == "zoom") return equal(scaleName(camera_.zoom()), a[1]);
     if (what == "toast") return yesNo(hud_.toastShowing());
     if (what == "panning") return yesNo(std::ranges::any_of(keyPan_, [](bool k) { return k; }));
@@ -337,6 +344,8 @@ bool App::scriptStep() {
                 const auto pin = parsePin(c.args[1]);
                 if (!pin) return fail("unknown clock value " + c.args[1]);
                 clock_.setPin(*pin, true);
+            } else if (c.args[0] == "unlock") {
+                progress_.unlockEverything(cat_);
             } else {
                 rain_ = c.args[1] == "on";
             }

@@ -42,6 +42,7 @@ set(LC_SCRIPTS
   "photo_mode|photo_mode|640x400|"
   "ui_states|ui_states|960x600|"
   "drawer_tabs|drawer_tabs|640x400|"
+  "drawer_unlocks|drawer_unlocks|960x600|"
   "ui_tiny|ui_sizes|320x240|"
   "ui_small|ui_sizes|960x600|"
   "glass_small|glass|960x600|heavy"

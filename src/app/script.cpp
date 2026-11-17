@@ -1,5 +1,6 @@
 #include "app/script.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <sstream>
 
@@ -116,8 +117,9 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             c.kind = ScriptCommand::Kind::Shot;
             c.args = {tok[1]};
         } else if (cmd == "set") {
-            if (tok.size() != 3 || (tok[1] != "clock" && tok[1] != "rain"))
-                return err("set clock|rain VALUE");
+            static constexpr std::string_view kKeys[] = {"clock", "rain", "unlock"};
+            if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys))
+                return err("set clock|rain|unlock VALUE");
             c.kind = ScriptCommand::Kind::Set;
             c.args = {tok[1], tok[2]};
         } else if (cmd == "expect") {

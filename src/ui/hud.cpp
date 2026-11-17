@@ -67,6 +67,14 @@ SDL_FColor withAlpha(SDL_FColor c, float a) {
     return {c.r, c.g, c.b, c.a * a};
 }
 
+// The small accent dot that marks something new.
+void drawDot(Painter& p, float cx, float cy, float s, float alpha) {
+    const float r = theme::kDotRadius * s;
+    p.roundRect({cx - r - s, cy - r - s, 2 * (r + s), 2 * (r + s)}, r + s,
+                withAlpha(theme::kDotRim, alpha));
+    p.roundRect({cx - r, cy - r, 2 * r, 2 * r}, r, withAlpha(theme::kAccent, alpha));
+}
+
 SDL_FColor mixColor(SDL_FColor a, SDL_FColor b, float k) {
     return {a.r + (b.r - a.r) * k, a.g + (b.g - a.g) * k, a.b + (b.b - a.b) * k,
             a.a + (b.a - a.a) * k};
@@ -116,6 +124,18 @@ std::string_view pinTooltip(ClockPin p) {
 
 } // namespace
 
+bool entryUnlocked(const Progress* p, DrawerEntry e) {
+    if (p == nullptr || e.locked) return true;
+    const auto i = static_cast<std::size_t>(e.index);
+    return (e.terrain ? p->terrain[i] : p->items[i]) != 0;
+}
+
+bool entryNew(const Progress* p, DrawerEntry e) {
+    if (p == nullptr || e.locked) return false;
+    const auto i = static_cast<std::size_t>(e.index);
+    return (e.terrain ? p->newTerrain[i] : p->newItems[i]) != 0;
+}
+
 bool isGroundCategory(const Catalog& cat, int category) {
     return category >= 0 && std::cmp_less(category, cat.categories.size()) &&
            cat.categories[static_cast<std::size_t>(category)].id == kGroundCategory;
@@ -128,21 +148,42 @@ Hud::Hud() {
     toast_.reserve(96);
     clockLabel_.reserve(64);
     hintText_.reserve(192);
+    lockLabel_.reserve(16);
+    lockTip_.reserve(96);
 }
 
-void Hud::categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out) {
+void Hud::categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out,
+                          const Progress* progress) {
     out.clear();
+    const auto offer = [&](DrawerEntry e) {
+        if (entryUnlocked(progress, e)) out.push_back(e);
+    };
     if (isGroundCategory(cat, category)) {
         for (std::size_t t = 0; t < cat.terrain.size(); ++t)
-            out.push_back({.terrain = true, .index = static_cast<int>(t)});
+            offer({.terrain = true, .index = static_cast<int>(t)});
     } else {
         for (std::size_t i = 0; i < cat.items.size(); ++i)
             if (cat.items[i].category == category)
-                out.push_back({.terrain = false, .index = static_cast<int>(i)});
+                offer({.terrain = false, .index = static_cast<int>(i)});
     }
+    if (lockedIn(cat, category, progress) > 0)
+        out.push_back({.terrain = false, .locked = true, .index = category});
+}
+
+int Hud::lockedIn(const Catalog& cat, int category, const Progress* progress) {
+    if (progress == nullptr) return 0;
+    int n = 0;
+    if (isGroundCategory(cat, category)) {
+        for (const std::uint8_t u : progress->terrain) n += u == 0 ? 1 : 0;
+    } else {
+        for (std::size_t i = 0; i < cat.items.size(); ++i)
+            n += cat.items[i].category == category && progress->items[i] == 0 ? 1 : 0;
+    }
+    return n;
 }
 
 int Hud::tileId(const Catalog& cat, DrawerEntry e) {
+    if (e.locked) return kTile0 + static_cast<int>(cat.items.size() + cat.terrain.size()) + e.index;
     return kTile0 + (e.terrain ? static_cast<int>(cat.items.size()) : 0) + e.index;
 }
 
@@ -202,6 +243,11 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         w.tooltip = strings::kBuild;
         w.shortcut = strings::kKeyBuild;
         w.selected = m.drawerOpen || m.tool == Tool::Place || m.tool == Tool::Paint;
+        w.dot =
+            m.progress != nullptr && (std::ranges::find(m.progress->newItems, std::uint8_t{1}) !=
+                                          m.progress->newItems.end() ||
+                                      std::ranges::find(m.progress->newTerrain, std::uint8_t{1}) !=
+                                          m.progress->newTerrain.end());
         panels_.push_back({w.box, dockH * 0.5f});
         Widget& r = add(kRemove, {margin + buildW + gap, leftY, dockH, dockH});
         r.icon = theme::icon::kEraser;
@@ -296,7 +342,7 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         const float avail = screen.x - 2 * margin - 2 * ppad;
         const int cols =
             std::clamp(static_cast<int>((avail + gap) / (tileW + gap)), 1, theme::kDrawerMaxCols);
-        categoryEntries(*m.cat, m.category, entries_);
+        categoryEntries(*m.cat, m.category, entries_, m.progress);
         const int total = static_cast<int>(entries_.size());
         const int rowsTotal = (total + cols - 1) / cols;
         const int rows = std::clamp(rowsTotal, 1, theme::kDrawerRows);
@@ -307,8 +353,14 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         canScrollUp_ = scroll > 0;
         canScrollDown_ = scroll < rowsTotal - rows;
 
-        const float w =
-            2 * ppad + static_cast<float>(cols) * tileW + static_cast<float>(cols - 1) * gap;
+        // As wide as its tiles need (a young world has few), but never narrower than the tabs.
+        float tabsW = -gap;
+        for (const auto& cdef : m.cat->categories)
+            tabsW += font.measure(Face::Body, cdef.name) + theme::kTabExtra * s + gap;
+        if (scrollable_) tabsW += 2 * theme::kTabH * s + gap * 1.5f;
+        const int used = std::clamp(total, 1, cols);
+        const float w = 2 * ppad + std::max(tabsW, static_cast<float>(used) * tileW +
+                                                       static_cast<float>(used - 1) * gap);
         const float h = 2 * ppad + theme::kTabH * s + gap + static_cast<float>(rows) * tileH +
                         static_cast<float>(rows - 1) * gap;
         const float slide = (1.0f - smooth(drawerT_)) * theme::kSlide * s;
@@ -322,6 +374,14 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
             Widget& t = add(kTab0 + static_cast<int>(c), {tx, ty, tabW, theme::kTabH * s});
             t.label = m.cat->categories[c].name;
             t.selected = static_cast<int>(c) == m.category;
+            if (m.progress != nullptr) {
+                const bool ground = isGroundCategory(*m.cat, static_cast<int>(c));
+                for (std::size_t i = 0; i < (ground ? m.cat->terrain.size() : m.cat->items.size());
+                     ++i)
+                    t.dot = t.dot || (ground ? m.progress->newTerrain[i] != 0
+                                             : m.cat->items[i].category == static_cast<int>(c) &&
+                                                   m.progress->newItems[i] != 0);
+            }
             tx += tabW + gap;
         }
         if (scrollable_) {
@@ -350,11 +410,21 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
                             {drawerBox_.x + ppad + static_cast<float>(col) * (tileW + gap),
                              gy + static_cast<float>(row) * (tileH + gap), tileW, tileH});
             t.entry = entry;
+            if (entry.locked) {
+                const int n = lockedIn(*m.cat, m.category, m.progress);
+                lockLabel_ = std::format("+{}", n);
+                lockTip_ = std::vformat(strings::kTipLocked, std::make_format_args(n));
+                t.label = lockLabel_;
+                t.tooltip = lockTip_;
+                t.icon = theme::icon::kLock;
+                continue;
+            }
             const auto idx = static_cast<std::size_t>(t.entry.index);
             t.label = t.entry.terrain ? std::string_view(m.cat->terrain[idx].name)
                                       : std::string_view(m.cat->items[idx].name);
             t.selected = (t.entry.terrain ? m.tool == Tool::Paint : m.tool == Tool::Place) &&
                          m.selection == t.entry.index;
+            t.dot = entryNew(m.progress, entry);
         }
     }
 
@@ -423,7 +493,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     actionCount_ = 0;
     scale_ = s;
     const auto ids = static_cast<std::size_t>(
-        tileId(*m.cat, {.terrain = true, .index = static_cast<int>(m.cat->terrain.size())}));
+        tileId(*m.cat, {.locked = true, .index = static_cast<int>(m.cat->categories.size())}));
     if (hover_.size() != ids) {
         hover_.assign(ids, 0.0f);
         press_.assign(ids, 0.0f);
@@ -478,7 +548,12 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         !m.drawerOpen)
         hovered = 0;
     if (hovered == kJournalClose && !m.journalOpen) hovered = 0;
-    if (hovered != hovered_ && hovered != 0) emit(HudAction::Kind::Hover);
+    if (hovered != hovered_ && hovered != 0) {
+        emit(HudAction::Kind::Hover);
+        for (const Widget& w : widgets_)
+            if (w.id == hovered && w.dot && hovered >= kTile0)
+                emit(HudAction::Kind::SeenNew, w.entry.code(*m.cat));
+    }
     if (pointed != pointed_) hoverTime_ = 0;
     hovered_ = hovered;
     pointed_ = pointed;
@@ -517,7 +592,9 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                 if (!scroll_.empty()) ++scroll_[static_cast<std::size_t>(m.category)];
                 break;
             default:
-                if (active_ >= kTile0) {
+                if (active_ >= kTile0 && entry.locked) {
+                    emit(HudAction::Kind::OpenWishes);
+                } else if (active_ >= kTile0) {
                     emit(entry.terrain ? HudAction::Kind::PickTerrain : HudAction::Kind::PickItem,
                          entry.index);
                 } else if (active_ >= kTab0) {
@@ -555,6 +632,10 @@ const Hud::Widget* Hud::find(std::string_view name, const HudModel& m) const {
     const auto tile = byPrefix("tile:");
     for (const Widget& w : widgets_) {
         if (tile && w.id >= kTile0) {
+            if (w.entry.locked) {
+                if (*tile == "locked") return &w;
+                continue;
+            }
             const auto i = static_cast<std::size_t>(w.entry.index);
             const auto& entryId = w.entry.terrain ? m.cat->terrain[i].id : m.cat->items[i].id;
             if (entryId == *tile) return &w;
@@ -620,6 +701,7 @@ void Hud::drawButton(Painter& p, const Widget& w, float alpha) const {
     } else {
         p.icon(w.icon, inner.cx(), inner.cy() + press, ink);
     }
+    if (w.dot) drawDot(p, inner.x + inner.w - ir * 0.55f, inner.y + ir * 0.45f, s, alpha);
 }
 
 void Hud::drawTab(Painter& p, const Widget& w, float alpha) const {
@@ -636,6 +718,7 @@ void Hud::drawTab(Painter& p, const Widget& w, float alpha) const {
     const SDL_FColor ink = w.selected ? theme::kInk : mixColor(theme::kInkMuted, theme::kInk, h);
     p.text(Face::Body, w.label, w.box.cx() - tw * 0.5f,
            w.box.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(ink, alpha));
+    if (w.dot) drawDot(p, w.box.x + w.box.w - r * 0.6f, w.box.y + r * 0.5f, scale_, alpha);
 }
 
 void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) const {
@@ -658,8 +741,18 @@ void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) 
     const float inset = theme::kTileInset * s;
     const Box box{w.box.x + inset, w.box.y + theme::kThumbTop * s - (h * theme::kTileLift - pr) * s,
                   w.box.w - 2 * inset, theme::kThumb * s};
+    if (w.entry.locked) {
+        // Pieces still to discover: a quiet lock and a count, no art.
+        const SDL_FColor muted = withAlpha(theme::kInkMuted, alpha);
+        p.icon(theme::icon::kLock, box.cx(), box.cy(), muted);
+        const Font& f = p.font();
+        p.text(Face::Body, w.label, w.box.cx() - f.measure(Face::Body, w.label) * 0.5f,
+               w.box.y + w.box.h - theme::kTileLabelBottom * s, muted);
+        return;
+    }
     const Thumbnailed t = thumbFor(m, w.entry, box.w);
     p.thumbnail(*t.sprite, box, t.maxScale, alpha);
+    if (w.dot) drawDot(p, w.box.x + w.box.w - r * 0.75f, w.box.y + r * 0.75f, s, alpha);
 
     const Font& f = p.font();
     std::string_view label = w.label;
@@ -825,8 +918,9 @@ void Hud::drawTooltip(Painter& p) const {
 bool Hud::reveal(std::string_view name, const HudModel& m) {
     if (!name.starts_with("tile:") || !m.drawerOpen) return false;
     const std::string_view id = name.substr(5);
-    categoryEntries(*m.cat, m.category, entries_);
+    categoryEntries(*m.cat, m.category, entries_, m.progress);
     const auto it = std::ranges::find_if(entries_, [&](const DrawerEntry& e) {
+        if (e.locked) return id == "locked";
         const auto i = static_cast<std::size_t>(e.index);
         return (e.terrain ? m.cat->terrain[i].id : m.cat->items[i].id) == id;
     });

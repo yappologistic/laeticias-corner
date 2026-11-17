@@ -1,4 +1,5 @@
 # First half: change things, then quit (which saves).
+set unlock all
 click ui:build
 wait 12
 click ui:tab:homes

@@ -725,6 +725,7 @@ HudModel App::model() const {
     m.cat = &cat_;
     m.thumbs = &thumbs_;
     m.visitors = &visitors_;
+    m.progress = &progress_;
     m.tool = tool_;
     m.selection = selection_;
     m.category = category_;
@@ -814,6 +815,19 @@ void App::applyHudActions() {
         case K::Recentre: frameCamera(); break;
         case K::ZoomOut: zoomBy(-1, centre); break;
         case K::ZoomIn: zoomBy(1, centre); break;
+        case K::SeenNew: {
+            const auto n = static_cast<std::size_t>(a.arg);
+            if (n < cat_.items.size())
+                progress_.newItems[n] = 0;
+            else
+                progress_.newTerrain[n - cat_.items.size()] = 0;
+            markDirty();
+            break;
+        }
+        case K::OpenWishes:
+            journalOpen_ = true;
+            play(sfx::kOpen, tuning::kUiSfxLevel);
+            break;
         case K::Hover: break;
         }
     }

@@ -30,6 +30,7 @@ inline constexpr std::string_view kZoomIn = "Zoom in";
 inline constexpr std::string_view kClose = "Close";
 inline constexpr std::string_view kScrollUp = "Previous row";
 inline constexpr std::string_view kScrollDown = "Next row";
+inline constexpr std::string_view kTipLocked = "{} more to discover. Grant wishes to unlock them.";
 
 // Shortcut labels shown in tooltips.
 inline constexpr std::string_view kKeyBuild = "B";

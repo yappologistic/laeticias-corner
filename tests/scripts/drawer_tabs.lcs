@@ -1,6 +1,7 @@
 # Regression: drawer tiles laid out for one tab must never be drawn or picked as another tab's
 # entries. Clicking the ground tab while an item tab was shown used to draw item tiles as terrain
 # in the same frame and crash.
+set unlock all
 click ui:build
 wait 2
 # Every tab after every other one, mid-animation and with no frames between clicks.

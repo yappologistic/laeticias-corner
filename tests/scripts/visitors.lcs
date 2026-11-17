@@ -1,5 +1,6 @@
 # Building what visitors need brings them in; they show up in the journal. Day visitors stay
 # through dusk; fireflies come out only at night.
+set unlock all
 click ui:build
 wait 12
 click ui:tab:homes

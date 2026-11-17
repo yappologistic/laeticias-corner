@@ -24,6 +24,7 @@ inline constexpr SDL_FColor kInsetRimBottom{1.0f, 1.0f, 1.0f, 0.04f};
 inline constexpr SDL_FColor kChip{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kDivider{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kFlash{1.0f, 1.0f, 1.0f, 1.0f};
+inline constexpr SDL_FColor kDotRim{0.06f, 0.08f, 0.07f, 0.7f};
 
 // The glass material, layered over the blurred scene: a dimmed copy of the blur, a dark green-grey
 // tint, a faint top-down sheen, a light rim that is brighter along the top, and a soft shadow.
@@ -119,6 +120,7 @@ inline constexpr float kTipSlide = 4.0f;
 inline constexpr float kChipPad = 6.0f;
 inline constexpr float kChipGap = 8.0f;
 inline constexpr float kChipRadius = 6.0f;
+inline constexpr float kDotRadius = 4.0f; // "new" marks
 // Text is centred on a line by putting its baseline this fraction of the ascent below it.
 inline constexpr float kBaselineCentre = 0.36f;
 
@@ -159,10 +161,19 @@ inline constexpr char32_t kClose = 0xE1B2;
 inline constexpr char32_t kSparkle = 0xE47E;
 inline constexpr char32_t kChevronUp = 0xE070;
 inline constexpr char32_t kChevronDown = 0xE06D;
-inline constexpr char32_t kAll[] = {kPlus,   kMinus,     kEraser,  kSoundOn,   kSoundOff,
-                                    kCamera, kClockAuto, kSun,     kSunset,    kSunrise,
-                                    kMoon,   kRain,      kJournal, kUndo,      kRedo,
-                                    kHome,   kClose,     kSparkle, kChevronUp, kChevronDown};
+inline constexpr char32_t kChevronLeft = 0xE06E;
+inline constexpr char32_t kChevronRight = 0xE06F;
+inline constexpr char32_t kLock = 0xE10B;
+inline constexpr char32_t kSparkles = 0xE412;
+inline constexpr char32_t kSnowflake = 0xE165;
+inline constexpr char32_t kLeaf = 0xE2DE;
+inline constexpr char32_t kFlower = 0xE2D3;
+inline constexpr char32_t kCheck = 0xE06C;
+inline constexpr char32_t kAll[] = {
+    kPlus,         kMinus,  kEraser,   kSoundOn,   kSoundOff,  kCamera,      kClockAuto,
+    kSun,          kSunset, kSunrise,  kMoon,      kRain,      kJournal,     kUndo,
+    kRedo,         kHome,   kClose,    kSparkle,   kChevronUp, kChevronDown, kChevronLeft,
+    kChevronRight, kLock,   kSparkles, kSnowflake, kLeaf,      kFlower,      kCheck};
 } // namespace icon
 
 } // namespace lc::theme

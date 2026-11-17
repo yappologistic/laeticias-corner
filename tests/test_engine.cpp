@@ -237,6 +237,36 @@ TEST_CASE("drawer categories list terrain for the ground tab") {
     }
 }
 
+TEST_CASE("the drawer lists unlocked pieces, then a lock tile while some are still to discover") {
+    const Catalog& c = test::catalog();
+    Progress p(c);
+    const int homes = *c.findCategory("homes");
+    const int ground = *c.findCategory(kGroundCategory);
+    std::vector<DrawerEntry> e;
+    Hud::categoryEntries(c, homes, e, &p);
+    // A new world has only the cottage among the homes.
+    REQUIRE(e.size() == 2);
+    CHECK(e[0] == DrawerEntry{.terrain = false, .index = *c.findItem("cottage")});
+    CHECK(e[1].locked);
+    CHECK(Hud::lockedIn(c, homes, &p) == 5);
+    Hud::categoryEntries(c, ground, e, &p);
+    CHECK(e.size() == 5); // grass, meadow, path, water, then the lock (cobble comes later)
+    CHECK(e.back().locked);
+    // Unlocking marks new pieces; a complete tab has no lock tile.
+    Reward r;
+    r.terrain = {*c.findTerrain("cobble")};
+    p.unlock(r, true);
+    CHECK(entryNew(&p, {.terrain = true, .index = *c.findTerrain("cobble")}));
+    CHECK_FALSE(entryNew(&p, {.terrain = true, .index = *c.findTerrain("grass")}));
+    Hud::categoryEntries(c, ground, e, &p);
+    CHECK(e.size() == 5);
+    CHECK_FALSE(e.back().locked);
+    CHECK(Hud::lockedIn(c, ground, &p) == 0);
+    p.unlockEverything(c);
+    for (std::size_t k = 0; k < c.categories.size(); ++k)
+        CHECK(Hud::lockedIn(c, static_cast<int>(k), &p) == 0);
+}
+
 TEST_CASE("thumbnails fall back to the placeholder instead of crashing") {
     SpriteTables t;
     t.placeholder = 7;

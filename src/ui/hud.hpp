@@ -6,6 +6,7 @@
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/iso.hpp"
+#include "core/progress.hpp"
 #include "core/visitors.hpp"
 #include "platform/sprite.hpp"
 #include "ui/painter.hpp"
@@ -34,6 +35,7 @@ struct HudModel {
     const Catalog* cat = nullptr;
     const ThumbSet* thumbs = nullptr;
     const Visitors* visitors = nullptr;
+    const Progress* progress = nullptr; // unlocks and new-piece dots; null: everything unlocked
     Tool tool = Tool::None;
     int selection = -1; // item index (Place) or terrain index (Paint)
     int category = 0;   // open drawer tab
@@ -80,6 +82,8 @@ struct HudAction {
         Recentre,
         ZoomOut,
         ZoomIn,
+        SeenNew,    // the pointer reached a tile with a "new" dot: `arg` is its entry code
+        OpenWishes, // the "+N" tile: more pieces come from wishes
         Hover
     };
     Kind kind;
@@ -94,9 +98,18 @@ inline constexpr std::string_view kGroundCategory = "terrain";
 // the open tab still being the one the drawer was laid out for.
 struct DrawerEntry {
     bool terrain = false; // `index` is a terrain index, else an item index
+    bool locked = false;  // the "+N" tile of category `index`: pieces still to discover
     int index = -1;
     friend bool operator==(const DrawerEntry&, const DrawerEntry&) = default;
+    // One integer per entry, for actions: items, then terrain (locked tiles are never sent).
+    [[nodiscard]] int code(const Catalog& cat) const {
+        return terrain ? static_cast<int>(cat.items.size()) + index : index;
+    }
 };
+
+// Whether a drawer entry's piece is unlocked / still shows its "new" dot.
+[[nodiscard]] bool entryUnlocked(const Progress* p, DrawerEntry e);
+[[nodiscard]] bool entryNew(const Progress* p, DrawerEntry e);
 
 class Hud {
 public:
@@ -126,9 +139,13 @@ public:
     // Current hover highlight (0..1) of a named widget; 0 when it is not shown.
     [[nodiscard]] float highlight(std::string_view name, const HudModel& m) const;
 
-    // Entries of a drawer category: its items, or all terrain for the ground tab. Fills `out` in
-    // place so the per-frame layout reuses its storage.
-    static void categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out);
+    // Entries of a drawer category: its unlocked items, or the unlocked terrain for the ground
+    // tab, then a "+N" tile while some are still locked. Fills `out` in place so the per-frame
+    // layout reuses its storage.
+    static void categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out,
+                                const Progress* progress = nullptr);
+    // Pieces of a category not unlocked yet.
+    [[nodiscard]] static int lockedIn(const Catalog& cat, int category, const Progress* progress);
 
 private:
     // Room for every widget of a frame (docks, tabs and a full drawer page), reserved up front.
@@ -147,6 +164,7 @@ private:
         std::string_view tooltip;  // empty: none
         std::string_view shortcut; // shown in the tooltip
         DrawerEntry entry;         // tile: what it stands for
+        bool dot = false;          // a newly unlocked piece inside
     };
     struct Panel {
         Box box;
@@ -203,6 +221,8 @@ private:
     float flash_ = 0;
     std::string clockLabel_;
     std::string hintText_;
+    std::string lockLabel_; // "+N" and its tooltip for the open tab's lock tile
+    std::string lockTip_;
     Box titleBox_;
     Box journalBox_;
     Box drawerBox_;

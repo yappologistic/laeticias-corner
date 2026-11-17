@@ -1,5 +1,6 @@
 # Large ghosts at every corner and edge, in every rotation, draw without touching memory outside
 # the map (run under the sanitizers), and only placements that fit are made.
+set unlock all
 click ui:build
 wait 12
 click ui:tab:homes

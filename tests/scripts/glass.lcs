@@ -1,6 +1,7 @@
 # Glass panels over the live scene in every light: each panel layer (title and docks, journal,
 # drawer, hint, toast, tooltip) samples the blurred backdrop, and the shots show the material by
 # day, dusk and night in the rain.
+set unlock all
 set clock day
 wait 5
 click ui:build
