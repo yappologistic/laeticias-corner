@@ -11,6 +11,7 @@
 
 #include <doctest.h>
 
+#include <charconv>
 #include <cstdlib>
 #include <filesystem>
 
@@ -57,11 +58,16 @@ TEST_CASE("coverage: catalog vs atlas") {
     std::vector<std::string> missing;
     for (const auto& key : requiredSpriteKeys(test::catalog()))
         if (!manifest->sprites.contains(key)) missing.push_back(key);
-    // Frame sequences must not have gaps (f0, f1, f3 would silently drop f3).
+    // Frame sequences must not have gaps (f0, f1, f3 would silently drop f3). Keys with other
+    // suffixes belong to later contract additions and are not frames of this catalog.
     for (const auto& [key, r] : manifest->sprites) {
         const auto f = key.rfind("/f");
-        if (f == std::string::npos || key.compare(f + 2, std::string::npos, "0") == 0) continue;
-        const int n = std::atoi(key.c_str() + f + 2);
+        if (f == std::string::npos) continue;
+        int n = 0;
+        const char* first = key.data() + f + 2;
+        const char* last = key.data() + key.size();
+        const auto [end, ec] = std::from_chars(first, last, n);
+        if (ec != std::errc{} || end != last || n == 0) continue;
         CHECK_MESSAGE(manifest->sprites.contains(key.substr(0, f) + "/f" + std::to_string(n - 1)),
                       key << " has a gap before it");
     }

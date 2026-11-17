@@ -1,0 +1,36 @@
+# Large ghosts at every corner and edge, in every rotation, draw without touching memory outside
+# the map (run under the sanitizers), and only placements that fit are made.
+click ui:build
+wait 12
+click ui:tab:homes
+wait 12
+click ui:tile:barn
+wait 12
+move @0,0
+wait 2
+move @39,0
+wait 2
+move @0,39
+wait 2
+move @39,39
+wait 2
+key r
+move @0,0
+wait 2
+move @39,39
+wait 2
+key r
+move @0,0
+wait 2
+move @0,39
+wait 2
+key r
+move @39,0
+wait 2
+move @0,0
+wait 2
+click @0,0
+expect count barn 0
+click @30,20
+expect count barn 1
+quit

@@ -1,0 +1,16 @@
+# A fresh corner shows the starter scene framed clear of the interface, and the ducks find the
+# pond on their own (their first sighting is announced).
+expect count all 39
+expect tile @25,14 water
+expect item @25,14 lily_pads
+expect item @22,17 bench
+expect item @25,18 lamp
+expect tile @21,19 path
+expect tool none
+expect phase day
+wait 120
+expect seen duck
+expect toast yes
+expect habitat ok
+shot shots/launch_@SIZE@.png
+quit

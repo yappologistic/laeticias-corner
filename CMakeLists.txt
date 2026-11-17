@@ -35,13 +35,20 @@ add_library(lc_engine STATIC
   src/app/app.cpp
   src/app/options.cpp
   src/app/script.cpp
+  src/app/app_script.cpp
+  src/app/app_bench.cpp
+  src/app/window_state.cpp
   src/audio/mixer.cpp
   src/audio/decode.cpp
+  src/audio/wav.cpp
   src/render/atlas.cpp
-  src/render/batch.cpp
+  src/platform/batch.cpp
   src/render/blur.cpp
   src/render/camera.cpp
+  src/render/depth.cpp
+  src/render/draw.cpp
   src/render/fx.cpp
+  src/render/ground.cpp
   src/render/scene.cpp
   src/render/sprites.cpp
   src/ui/font.cpp

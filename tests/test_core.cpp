@@ -1,3 +1,4 @@
+#include "core/autosave.hpp"
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/edit.hpp"
@@ -393,6 +394,9 @@ TEST_CASE("populate spawns the full population without events") {
     Rng rng(3);
     Visitors vis(c);
     vis.populate(w, c, true, rng, w.bounds());
+    CHECK(vis.critters().empty()); // nobody seen yet: first sightings must still be events
+    for (const char* id : {"duck", "firefly", "butterfly"}) vis.markSeen(*c.findVisitor(id));
+    vis.populate(w, c, true, rng, w.bounds());
     CHECK(vis.events().empty());
     const int ducks = vis.present(*c.findVisitor("duck"));
     CHECK(ducks > 0);
@@ -590,6 +594,7 @@ TEST_CASE("critters never step onto tiles edited away under their walk") {
         for (int x = 4; x < 20; ++x) w.setTerrain({x, y}, water);
     Rng rng(5);
     Visitors vis(c);
+    vis.markSeen(*c.findVisitor("duck"));
     vis.populate(w, c, false, rng, w.bounds());
     REQUIRE(vis.present(*c.findVisitor("duck")) > 0);
     // Let them swim, then drain the channel in stripes while they move.
@@ -626,8 +631,9 @@ TEST_CASE("a critter whose tile is edited away walks to an allowed neighbour") {
     w.addItem(makeItem(c, cottage, 0, {20, 20}));
     Rng rng(9);
     Visitors vis(c);
-    vis.populate(w, c, false, rng, w.bounds());
     const int catId = *c.findVisitor("cat");
+    vis.markSeen(catId);
+    vis.populate(w, c, false, rng, w.bounds());
     REQUIRE(vis.present(catId) == 1);
     const auto catPos = [&] {
         for (const Critter& cr : vis.critters())
@@ -654,11 +660,11 @@ TEST_CASE("visitors live in the active area only") {
     Rng rng(4);
     Visitors vis(c);
     const int duck = *c.findVisitor("duck");
+    vis.markSeen(duck);
     vis.populate(w, c, false, rng, {0, 0, 64, 64});
     CHECK(vis.present(duck) == 0); // the pond is outside the area: nobody is simulated there
     vis.populate(w, c, false, rng, {128, 128, 192, 192});
     CHECK(vis.present(duck) > 0);
-    vis.markSeen(duck);
     // The view leaves: they are dropped silently; it comes back: they are simply there again.
     vis.update(w, c, false, 0.01f, rng, {0, 0, 64, 64});
     CHECK(vis.critters().empty());
@@ -754,4 +760,37 @@ TEST_CASE("saves hold only what changed, so a huge world saves small") {
     // A chunk edited back to its original state is still fine to load.
     data.world.setTerrain({700, 300}, c.baseTerrain);
     CHECK(serialize(data, c).size() < 8000);
+}
+
+TEST_CASE("autosave fires under continuous editing, after quiet moments, and retries later") {
+    const double step = tuning::kStepSeconds;
+    AutosaveClock a;
+    CHECK_FALSE(a.due(step, false)); // nothing to save
+    // An edit every 50 frames never leaves a quiet moment, yet a save comes within the maximum.
+    double t = 0;
+    bool fired = false;
+    for (int f = 0; f < 60 * 60 && !fired; ++f) {
+        if (f % 50 == 0) a.changed();
+        fired = a.due(step, false);
+        t += step;
+    }
+    CHECK(fired);
+    CHECK(t <= tuning::kAutosaveMaxDelay + step * 2);
+    a.saved();
+    CHECK_FALSE(a.dirty());
+    // After one change, a quiet moment triggers it, but not during a drag.
+    a.changed();
+    int frames = 0;
+    while (!a.due(step, true) && frames < 60 * 30) ++frames;
+    CHECK(frames * step >= tuning::kAutosaveMaxDelay - step * 2); // only the deadline, mid-drag
+    a.saved();
+    a.changed();
+    frames = 0;
+    while (!a.due(step, false)) ++frames;
+    CHECK(frames * step == doctest::Approx(tuning::kAutosaveDelay).epsilon(0.05));
+    // A failure waits before the next attempt.
+    a.failed();
+    frames = 0;
+    while (!a.due(step, false)) ++frames;
+    CHECK(frames * step == doctest::Approx(tuning::kSaveRetrySeconds).epsilon(0.02));
 }

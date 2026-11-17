@@ -11,17 +11,25 @@
 
 namespace lc {
 
+struct Size {
+    int w = 0;
+    int h = 0;
+};
+
 struct Options {
     bool headless = false;
-    int width = 1280;
-    int height = 800;
+    std::optional<Size> size; // window size; unset: sized to the display (1280x800 headless)
     std::optional<std::filesystem::path> script;
     std::optional<std::filesystem::path> saveDir;
     std::optional<std::filesystem::path> assetsDir;
     std::optional<std::uint64_t> seed;
     std::string renderer; // SDL render driver; empty = software when headless, else SDL's choice
     int frames = 0;       // 0 = run until quit
+    std::optional<std::filesystem::path> audioOut; // capture the mix to a WAV file
     bool bench = false;
+    std::optional<Size> map; // bench: map size instead of the catalog's
+    float density = 0.5f;    // bench: share of tiles filled around the camera
+    double budgetMs = 0;     // bench: fail when update + draw averages more than this
     bool help = false;
 };
 

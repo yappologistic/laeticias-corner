@@ -14,11 +14,11 @@ click ui:tab:homes
 click ui:tab:garden
 click ui:tab:nature
 click ui:tab:homes
-wait 20
+wait 12
 click ui:tab:terrain
 wait 1
 click ui:tab:nature
-wait 20
+wait 12
 # Hover a tile, then switch away under the pointer.
 move ui:tile:lily_pads
 wait 10
@@ -35,10 +35,10 @@ key b
 wait 3
 click ui:tab:homes
 key b
-wait 20
+wait 12
 expect drawer closed
 key b
-wait 20
+wait 12
 expect drawer open
 # Tiles still pick what they show after all that.
 click ui:tab:terrain
@@ -46,13 +46,13 @@ wait 1
 click ui:tile:water
 expect tool paint
 key b
-wait 20
+wait 12
 click ui:tab:homes
 wait 1
 click ui:tile:windmill
 expect tool place
 key b
-wait 20
+wait 12
 click ui:tab:garden
 wait 2
 shot shots/drawer_tabs.png

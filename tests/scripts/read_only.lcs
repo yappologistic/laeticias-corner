@@ -1,0 +1,13 @@
+# A save directory that cannot be written: the player is told, and the game keeps trying.
+click ui:build
+wait 12
+click ui:tab:nature
+wait 12
+click ui:tile:rock
+wait 12
+click @12,16
+key escape
+wait 150
+expect saved no
+expect toast yes
+quit

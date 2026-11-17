@@ -1,22 +1,31 @@
 #include "app/options.hpp"
 #include "app/script.hpp"
+#include "app/window_state.hpp"
+#include "audio/decode.hpp"
 #include "audio/mixer.hpp"
+#include "audio/wav.hpp"
+#include "core/rng.hpp"
 #include "core/tuning.hpp"
 #include "render/atlas.hpp"
 #include "render/blur.hpp"
 #include "render/camera.hpp"
+#include "render/depth.hpp"
 #include "render/fx.hpp"
 #include "render/sprites.hpp"
 #include "test_support.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+#include "ui/painter.hpp"
 
 #include <SDL3/SDL.h>
 
 #include <doctest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
+#include <set>
 #include <tuple>
 
 using namespace lc;
@@ -29,8 +38,9 @@ TEST_CASE("options parse and reject bad input") {
                                              "--seed", "9",       "--frames", "30"};
     const auto o = parseOptions(ok);
     REQUIRE(o.has_value());
-    CHECK(o->width == 960);
-    CHECK(o->height == 600);
+    REQUIRE(o->size.has_value());
+    CHECK(o->size->w == 960);
+    CHECK(o->size->h == 600);
     CHECK(o->headless); // scripts always run headless
     CHECK(o->seed == 9u);
     CHECK(o->frames == 30);
@@ -40,6 +50,21 @@ TEST_CASE("options parse and reject bad input") {
     CHECK_FALSE(parseOptions(badSize).has_value());
     const std::array<std::string_view, 1> unknown{"--fly"};
     CHECK_FALSE(parseOptions(unknown).has_value());
+    const std::array<std::string_view, 1> none{"--headless"};
+    CHECK_FALSE(parseOptions(none)->size.has_value()); // sized to the display unless given
+    const std::array<std::string_view, 7> bench2{"--bench", "--map",       "1024x512", "--density",
+                                                 "0.4",     "--budget-ms", "2"};
+    const auto b = parseOptions(bench2);
+    REQUIRE(b.has_value());
+    CHECK(b->map->w == 1024);
+    CHECK(b->density == doctest::Approx(0.4f));
+    CHECK(b->budgetMs == doctest::Approx(2.0));
+    const std::array<std::string_view, 2> tooBig{"--map", "4096x4096"};
+    CHECK_FALSE(parseOptions(tooBig).has_value());
+    const std::array<std::string_view, 2> audio{"--audio-out", "a.wav"};
+    CHECK(parseOptions(audio)->headless);
+    const std::array<std::string_view, 2> dir{"--script", "."};
+    CHECK_FALSE(parseOptions(dir).has_value()); // a directory is not a script
 }
 
 TEST_CASE("script language parses every command") {
@@ -57,9 +82,16 @@ set rain on
 expect item @3,4 oak
 expect count all 12
 quit
+press @2,2
+release 10,10 right
+keydown ctrl
+keyup d
+expect luma 0,0,10,10 20 80
+expect color 5,5,4,4 10 20 30 8
+expect present duck 2
 )");
     REQUIRE(s.has_value());
-    REQUIRE(s->size() == 13);
+    REQUIRE(s->size() == 20);
     CHECK((*s)[0].kind == ScriptCommand::Kind::Move);
     CHECK((*s)[0].a.x == 10);
     CHECK((*s)[1].a.kind == ScriptPoint::Kind::Tile);
@@ -72,6 +104,16 @@ quit
     CHECK((*s)[6].amount == 30);
     CHECK((*s)[10].a.kind == ScriptPoint::Kind::Tile);
     CHECK((*s)[12].kind == ScriptCommand::Kind::Quit);
+    CHECK((*s)[13].kind == ScriptCommand::Kind::Press);
+    CHECK((*s)[14].kind == ScriptCommand::Kind::Release);
+    CHECK((*s)[14].right);
+    CHECK((*s)[15].kind == ScriptCommand::Kind::KeyDown);
+    CHECK((*s)[16].kind == ScriptCommand::Kind::KeyUp);
+    CHECK(parseScriptRect("1,2,3,4")->h == 4);
+    CHECK_FALSE(parseScriptRect("1,2,3").has_value());
+    CHECK_FALSE(parseScriptRect("1,2,0,4").has_value());
+    CHECK_FALSE(parseScript("expect luma 1,2,3 0 9").has_value());
+    CHECK_FALSE(parseScript("wait 99999999999").has_value()); // would overflow the frame count
 
     CHECK_FALSE(parseScript("hop 1,2").has_value());
     CHECK_FALSE(parseScript("move 1").has_value());
@@ -84,35 +126,63 @@ quit
 }
 
 TEST_CASE("camera maps screen and world consistently and zooms about the cursor") {
-    Camera cam(20, 20);
-    const Vec2 screen{1280, 800};
-    cam.recentre(screen);
-    CHECK(cam.zoom() == defaultZoom(screen, 20, 20));
+    const Iso iso = test::catalog().iso();
+    const TileRect land{0, 0, 40, 40};
+    Camera cam(iso, land, 66);
+    const Vec2 screen{1920, 1080};
+    cam.frame({16, 120, 1904, 940}, screen);
     const Vec2 px{300, 200};
     const Vec2 w = cam.screenToWorld(px, screen);
     const Vec2 back = cam.worldToScreen(w, screen);
     CHECK(back.x == doctest::Approx(px.x));
     CHECK(back.y == doctest::Approx(px.y));
 
-    const int z = cam.zoom();
-    cam.zoomAt(z + 1, px, screen);
-    CHECK(cam.zoom() == z + 1);
+    const int level = cam.level();
+    cam.zoomTo(level + 1, px, screen);
+    CHECK(cam.level() == level + 1);
+    CHECK_FALSE(cam.settled());
+    // The transition eases: halfway through it is between the two scales.
+    cam.update(1.0f / 60.0f, screen);
+    CHECK(cam.scale() > kZoomLevels[static_cast<std::size_t>(level)]);
+    CHECK(cam.scale() < kZoomLevels[static_cast<std::size_t>(level + 1)]);
+    for (int i = 0; i < 120; ++i) cam.update(1.0f / 60.0f, screen);
+    CHECK(cam.settled());
     const Vec2 w2 = cam.screenToWorld(px, screen);
     CHECK(w2.x == doctest::Approx(w.x).epsilon(0.001));
     CHECK(w2.y == doctest::Approx(w.y).epsilon(0.001));
-    cam.zoomAt(99, px, screen);
-    CHECK(cam.zoom() == tuning::kMaxZoom);
-    cam.zoomAt(-5, px, screen);
-    CHECK(cam.zoom() == tuning::kMinZoom);
+    cam.zoomTo(99, px, screen);
+    CHECK(cam.level() == static_cast<int>(kZoomLevels.size()) - 1);
+    cam.zoomTo(-5, px, screen);
+    CHECK(cam.level() == 0);
+}
 
-    // Panning is limited so the island cannot be lost.
-    for (int i = 0; i < 100; ++i) cam.dragBy({5000, 5000});
-    const WorldBounds b = islandBounds(20, 20);
-    CHECK(cam.position().x >= b.x0 - tuning::kCameraMargin - 0.01f);
-    CHECK(cam.position().y >= b.y0 - tuning::kCameraMargin - 0.01f);
-
-    CHECK(defaultZoom({960, 600}, 20, 20) >= 1);
-    CHECK(defaultZoom({3840, 2160}, 20, 20) > defaultZoom({1280, 800}, 20, 20));
+TEST_CASE("camera limits keep land on screen at every zoom and window size") {
+    const Iso iso = test::catalog().iso();
+    for (const TileRect land : {TileRect{0, 0, 40, 40}, TileRect{0, 0, 1024, 512}}) {
+        for (const Vec2 screen : {Vec2{960, 600}, Vec2{1920, 1080}, Vec2{3840, 2160}}) {
+            for (int level = 0; level < static_cast<int>(kZoomLevels.size()); ++level) {
+                for (const Vec2 d : {Vec2{1, 0}, Vec2{-1, 0}, Vec2{0, 1}, Vec2{0, -1}, Vec2{1, 1},
+                                     Vec2{-1, 1}, Vec2{1, -1}, Vec2{-1, -1}}) {
+                    CAPTURE(land.x1);
+                    CAPTURE(screen.x);
+                    CAPTURE(level);
+                    Camera cam(iso, land, 66);
+                    cam.zoomTo(level, {screen.x / 2, screen.y / 2}, screen);
+                    for (int i = 0; i < 200; ++i) cam.update(1.0f / 60.0f, screen);
+                    for (int i = 0; i < 400; ++i) cam.dragBy({d.x * 5000, d.y * 5000}, screen);
+                    cam.update(1.0f / 60.0f, screen);
+                    // The land point nearest the view centre must be well inside the window.
+                    Vec2 t = iso.toTile(cam.screenToWorld({screen.x / 2, screen.y / 2}, screen));
+                    t.x = std::clamp(t.x, static_cast<float>(land.x0), static_cast<float>(land.x1));
+                    t.y = std::clamp(t.y, static_cast<float>(land.y0), static_cast<float>(land.y1));
+                    const Vec2 p = cam.worldToScreen(iso.toWorld(t.x, t.y), screen);
+                    const bool visible = p.x > screen.x * 0.05f && p.x < screen.x * 0.95f &&
+                                         p.y > screen.y * 0.05f && p.y < screen.y * 0.95f;
+                    CHECK(visible);
+                }
+            }
+        }
+    }
 }
 
 TEST_CASE("atlas manifest parsing") {
@@ -196,9 +266,10 @@ TEST_CASE("particles expire and rain leaves ripples on water") {
     const Catalog& c = test::catalog();
     World w(c);
     w.setTerrain({0, 0}, c.waterTerrain);
-    Particles p;
-    p.spawn(Fx::Raindrop, tileToWorld(0.5f, 0.5f), {0, 0}, 0.1f);
-    p.spawn(Fx::Raindrop, tileToWorld(5.5f, 5.5f), {0, 0}, 0.1f);
+    const Iso iso = c.iso();
+    Particles p(iso);
+    p.spawn(Fx::Raindrop, iso.toWorld(0.5f, 0.5f), {0, 0}, 0.1f);
+    p.spawn(Fx::Raindrop, iso.toWorld(5.5f, 5.5f), {0, 0}, 0.1f);
     p.spawn(Fx::Smoke, {0, 0}, {0, -10}, 1.0f);
     p.update(0.2f, w);
     REQUIRE(p.all().size() == 3); // smoke, a ripple on the water and a splash on the grass
@@ -211,7 +282,7 @@ TEST_CASE("particles expire and rain leaves ripples on water") {
     CHECK(ripples == 1);
     CHECK(splashes == 1);
     // Off the map a drop simply disappears.
-    p.spawn(Fx::Raindrop, tileToWorld(-3.0f, -3.0f), {0, 0}, 0.1f);
+    p.spawn(Fx::Raindrop, iso.toWorld(-3.0f, -3.0f), {0, 0}, 0.1f);
     p.update(0.2f, w);
     CHECK(p.all().size() == 3);
     for (std::size_t i = 0; i < Particles::kCapacity + 10; ++i)
@@ -221,24 +292,162 @@ TEST_CASE("particles expire and rain leaves ripples on water") {
     CHECK(p.all().empty());
 }
 
-TEST_CASE("mixer loads the catalog's audio and plays through the dummy device") {
+TEST_CASE("mixer: effects pass untouched, pile-ups are limited, mute and loops ramp smoothly") {
     // Forced to the dummy driver even when run by hand: tests never reach the speakers.
     REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
     REQUIRE(SDL_Init(SDL_INIT_AUDIO));
     {
         Mixer mixer;
         mixer.load(test::assetsDir() / "audio", test::catalog().audio);
+        mixer.startCapture();
         CHECK(mixer.sfxIndex("sfx/not_a_sound.wav") == -1);
         const int click = mixer.sfxIndex("sfx/ui_click.wav");
-        if (mixer.open()) {
-            mixer.setLoopGain(Loop::DayMusic, 0.5f);
-            for (int i = 0; i < 100; ++i) mixer.play(click, 0.5f, 1.05f); // overflows the ring
-            mixer.setMuted(true);
-            SDL_Delay(50);
-            mixer.close();
+        REQUIRE(click >= 0);
+        const auto clickSamples = loadWavMono(test::assetsDir() / "audio/sfx/ui_click.wav");
+        REQUIRE(clickSamples.has_value());
+        constexpr int kFrames = 4096;
+        std::vector<float> out(kFrames * 2);
+        // The master gain fades in from silence over a few milliseconds.
+        mixer.render(out.data(), kFrames);
+        for (const float v : out) CHECK(v == 0.0f);
+        // A single effect below the limiter's ceiling comes out exactly scaled.
+        mixer.play(click, 0.5f, 1.0f);
+        mixer.render(out.data(), kFrames);
+        // (The voice ends one sample early: its last sample is the interpolation end point.)
+        const std::size_t n = std::min<std::size_t>(clickSamples->size() - 1, kFrames);
+        double err = 0;
+        for (std::size_t i = 0; i < n; ++i) {
+            err = std::max(err,
+                           static_cast<double>(std::abs(out[i * 2] - (*clickSamples)[i] * 0.5f)));
+            CHECK(out[i * 2] == out[i * 2 + 1]);
         }
+        CHECK(err < 1e-5);
+        // Twenty-four loud voices at once never exceed the ceiling.
+        for (int i = 0; i < 100; ++i) mixer.play(click, 4.0f, 1.0f); // also overflows the ring
+        float peak = 0;
+        for (int k = 0; k < 4; ++k) {
+            mixer.render(out.data(), kFrames);
+            for (const float v : out) peak = std::max(peak, std::abs(v));
+        }
+        CHECK(peak <= tuning::kLimiterCeiling + 1e-4f);
+        CHECK(peak > 0.5f);
+        // Music fades in without a jump, and mute fades the master out to silence.
+        mixer.setLoopGain(Loop::DayMusic, tuning::kMusicLevel);
+        float prev = 0;
+        float jump = 0;
+        for (int k = 0; k < 40; ++k) {
+            mixer.render(out.data(), kFrames);
+            for (std::size_t i = 0; i < out.size(); i += 2) {
+                jump = std::max(jump, std::abs(out[i] - prev));
+                prev = out[i];
+            }
+        }
+        CHECK(jump < 0.2f);
+        mixer.setMuted(true);
+        for (int k = 0; k < 3; ++k) mixer.render(out.data(), kFrames);
+        for (const float v : out) CHECK(v == 0.0f);
     }
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
+TEST_CASE("float WAV round trip") {
+    const auto file = test::tempDir("wav") / "a.wav";
+    const std::vector<float> s{0.0f, 0.25f, -0.5f, 1.0f, 0.125f, -1.0f};
+    REQUIRE(writeWavFloat(file, s).has_value());
+    const auto back = readWavFloat(file);
+    REQUIRE(back.has_value());
+    CHECK(*back == s);
+    CHECK_FALSE(readWavFloat(test::tempDir("wav2") / "missing.wav").has_value());
+}
+
+TEST_CASE("window placement: a share of the display, or the remembered spot if still visible") {
+    const WindowRect d{0, 0, 1920, 1040};
+    const WindowRect w = defaultWindow(d);
+    CHECK(w.w == static_cast<int>(1920 * kWindowFill));
+    CHECK(w.x == (1920 - w.w) / 2);
+    const WindowRect displays[] = {d, {1920, 0, 2560, 1400}};
+    CHECK(restoreWindow({2000, 100, 1600, 900}, displays) == WindowRect{2000, 100, 1600, 900});
+    // The second display is gone: the window no longer shows, so the default is used.
+    CHECK_FALSE(restoreWindow({2000, 100, 1600, 900}, std::span(displays, 1)).has_value());
+    // Larger than the display it is on: shrunk to fit.
+    const auto shrunk = restoreWindow({10, 10, 1900, 1200}, std::span(displays, 1));
+    REQUIRE(shrunk.has_value());
+    CHECK(shrunk->h == 1040);
+    const auto s = parseWindowState(serializeWindowState({{5, 6, 700, 500}, true}));
+    REQUIRE(s.has_value());
+    CHECK(s->windowed == WindowRect{5, 6, 700, 500});
+    CHECK(s->fullscreen);
+    CHECK_FALSE(parseWindowState("{").has_value());
+}
+
+TEST_CASE("depth order respects every overlapping pair and handles large footprints") {
+    const Iso iso = test::catalog().iso();
+    Rng rng(21);
+    // Random non-overlapping footprints up to 8x8, with screen boxes like real sprites.
+    std::vector<FRect> foot;
+    std::vector<FRect> screen;
+    std::vector<std::uint8_t> used(120 * 120, 0);
+    for (int attempt = 0; attempt < 3000; ++attempt) {
+        const int w = rng.chance(0.2f) ? rng.range(2, 8) : 1;
+        const int h = rng.chance(0.2f) ? rng.range(2, 8) : 1;
+        const int x = rng.range(0, 120 - w);
+        const int y = rng.range(0, 120 - h);
+        bool free = true;
+        for (int yy = y; yy < y + h; ++yy)
+            for (int xx = x; xx < x + w; ++xx)
+                free &= used[static_cast<std::size_t>(yy * 120 + xx)] == 0;
+        if (!free) continue;
+        for (int yy = y; yy < y + h; ++yy)
+            for (int xx = x; xx < x + w; ++xx) used[static_cast<std::size_t>(yy * 120 + xx)] = 1;
+        const auto f = [](int v) { return static_cast<float>(v); };
+        foot.push_back({f(x), f(y), f(x + w), f(y + h)});
+        const float left = iso.toWorld(f(x), f(y + h)).x;
+        const float right = iso.toWorld(f(x + w), f(y)).x;
+        const float bottom = iso.toWorld(f(x + w), f(y + h)).y;
+        const float tall = iso.tileH() * rng.range(1.0f, 4.0f) * f(std::max(w, h));
+        screen.push_back({left - 8, iso.toWorld(f(x), f(y)).y - tall, right + 8, bottom});
+    }
+    DepthSorter sorter;
+    std::vector<std::uint32_t> order;
+    sorter.sort(foot, screen, 2 * iso.tileW(), order);
+    REQUIRE(order.size() == foot.size());
+    std::vector<std::size_t> rank(foot.size());
+    for (std::size_t k = 0; k < order.size(); ++k) rank[order[k]] = k;
+    int pairs = 0;
+    for (std::size_t i = 0; i < foot.size(); ++i)
+        for (std::size_t j = i + 1; j < foot.size(); ++j) {
+            if (!screen[i].overlaps(screen[j])) continue;
+            ++pairs;
+            const bool ij = behind(foot[i], foot[j]);
+            CHECK((ij ? rank[i] < rank[j] : rank[j] < rank[i]));
+        }
+    CHECK(pairs > 1000);
+}
+
+TEST_CASE("screen grid finds every overlapping pair exactly once") {
+    Rng rng(3);
+    std::vector<FRect> boxes;
+    for (int i = 0; i < 600; ++i) {
+        const float x = rng.range(-500.0f, 5000.0f);
+        const float y = rng.range(-500.0f, 3000.0f);
+        boxes.push_back({x, y, x + rng.range(1.0f, 300.0f), y + rng.range(1.0f, 300.0f)});
+    }
+    ScreenGrid grid;
+    grid.build(boxes, 128);
+    std::set<std::pair<std::uint32_t, std::uint32_t>> found;
+    int calls = 0;
+    grid.pairs(boxes, [&](std::uint32_t i, std::uint32_t j) {
+        ++calls;
+        found.emplace(i, j);
+    });
+    int brute = 0;
+    for (std::uint32_t i = 0; i < boxes.size(); ++i)
+        for (std::uint32_t j = i + 1; j < boxes.size(); ++j)
+            if (boxes[i].overlaps(boxes[j])) {
+                ++brute;
+                CHECK(found.contains({i, j}));
+            }
+    CHECK(calls == brute);
 }
 
 TEST_CASE("backdrop blur spreads an edge evenly without leaking across the frame") {
@@ -363,4 +572,230 @@ TEST_CASE("drawer hover belongs to a tile's entry, not to its slot") {
         CHECK(hud.highlight(gardenTile, m) == 0.0f);
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
+namespace {
+
+// A hidden software-rendered window with the UI fonts, for interface tests.
+struct UiFixture {
+    UiFixture() {
+        REQUIRE(SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+        REQUIRE(SDL_InitSubSystem(SDL_INIT_VIDEO));
+        window.reset(SDL_CreateWindow("ui", 64, 64, SDL_WINDOW_HIDDEN));
+        REQUIRE(window);
+        renderer.reset(SDL_CreateRenderer(window.get(), "software"));
+        REQUIRE(renderer);
+        REQUIRE(font.load(test::assetsDir() / "fonts"));
+    }
+    ~UiFixture() {
+        renderer.reset();
+        window.reset();
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    }
+    UiFixture(const UiFixture&) = delete;
+    UiFixture& operator=(const UiFixture&) = delete;
+
+    WindowPtr window;
+    RendererPtr renderer;
+    Font font;
+};
+
+float uiScaleFor(Vec2 screen) {
+    return std::clamp(
+        std::round(std::max(1.0f, std::min(screen.x / 1600.0f, screen.y / 900.0f)) * 4.0f) / 4.0f,
+        1.0f, 3.0f);
+}
+
+bool overlap(const Box& a, const Box& b) {
+    return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+} // namespace
+
+TEST_CASE("first-launch framing shows the whole island clear of the interface at any size") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    const Iso iso = c.iso();
+    const World world(c);
+    Visitors vis(c);
+    for (const Vec2 screen : {Vec2{960, 600}, Vec2{1280, 800}, Vec2{1920, 1080}, Vec2{2560, 1440},
+                              Vec2{3840, 2160}, Vec2{1600, 1200}}) {
+        CAPTURE(screen.x);
+        const float s = uiScaleFor(screen);
+        REQUIRE(ui.font.build(ui.renderer.get(), s));
+        HudModel m;
+        m.cat = &c;
+        m.visitors = &vis;
+        Hud hud;
+        hud.update({}, m, ui.font, screen, s, 0);
+        const Box safe = hud.safeArea();
+        Camera cam(iso, world.landBounds(), 66);
+        cam.frame({safe.x, safe.y, safe.x + safe.w, safe.y + safe.h}, screen);
+        const WorldBounds b = landBox(iso, world.landBounds(), 66);
+        const Vec2 tl = cam.worldToScreen({b.x0, b.y0}, screen);
+        const Vec2 br = cam.worldToScreen({b.x1, b.y1}, screen);
+        CHECK(tl.x >= safe.x - 0.5f);
+        CHECK(tl.y >= safe.y - 0.5f);
+        CHECK(br.x <= safe.x + safe.w + 0.5f);
+        CHECK(br.y <= safe.y + safe.h + 0.5f);
+        // 1x on 1080p-class displays would crop a 40x40 island, so they open on an overview;
+        // 4K opens at the native 1x.
+        if (screen.x >= 3840) CHECK(cam.zoom() == 1.0f);
+    }
+}
+
+TEST_CASE("the toast and the hint line stop the pointer; small windows keep docks apart") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Visitors vis(c);
+    for (const Vec2 screen : {Vec2{320, 240}, Vec2{640, 400}, Vec2{960, 600}, Vec2{1280, 800}}) {
+        CAPTURE(screen.x);
+        REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+        HudModel m;
+        m.cat = &c;
+        m.visitors = &vis;
+        m.hint = "Click to place · Esc to cancel";
+        m.journalOpen = true;
+        m.drawerOpen = true;
+        m.category = *c.findCategory("nature");
+        Hud hud;
+        hud.toast("New visitor: Ducks");
+        UiInput in;
+        in.inside = true;
+        in.x = in.y = -100; // off the interface while things open
+        for (int i = 0; i < 30; ++i) hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+        // Every dock button is reachable and no two docks overlap.
+        std::vector<Box> buttons;
+        for (const char* name : {"build", "remove", "sound", "photo", "clock", "rain", "journal",
+                                 "undo", "redo", "recentre", "zoom_out", "zoom_in"}) {
+            const auto p = hud.widgetCentre(name, m);
+            REQUIRE(p);
+            CHECK(p->x > 0);
+            CHECK(p->x < screen.x);
+            CHECK(p->y > 0);
+            CHECK(p->y < screen.y);
+            buttons.push_back({p->x - 1, p->y - 1, 2, 2});
+        }
+        for (std::size_t i = 0; i < buttons.size(); ++i)
+            for (std::size_t j = i + 1; j < buttons.size(); ++j)
+                CHECK_FALSE(overlap(buttons[i], buttons[j]));
+        // The pointer on the toast or on the hint belongs to the interface.
+        const Box safe = hud.safeArea();
+        CHECK(safe.h >= 0);
+        if (screen.x >= 960) {
+            const auto toastAt = [&]() {
+                in.x = screen.x * 0.5f;
+                in.y = theme::kMargin + theme::kToastH * 0.5f;
+                hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+                return hud.wantsMouse();
+            };
+            CHECK(toastAt());
+        }
+    }
+}
+
+TEST_CASE("the drawer scrolls to tiles off its page and shows row arrows") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Visitors vis(c);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.drawerOpen = true;
+    m.category = *c.findCategory("nature");
+    Hud hud;
+    const Vec2 screen{640, 480};
+    UiInput in;
+    for (int i = 0; i < 30; ++i) hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    CHECK(hud.widgetCentre("scroll_down", m).has_value());
+    CHECK_FALSE(hud.widgetCentre("tile:lily_pads", m).has_value());
+    REQUIRE(hud.reveal("tile:lily_pads", m));
+    hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    CHECK(hud.widgetCentre("tile:lily_pads", m).has_value());
+    CHECK_FALSE(hud.reveal("tile:cottage", m)); // not in the open tab
+}
+
+TEST_CASE("glass keeps text contrast high over a white daytime sky") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    // A plain white backdrop (the brightest the blurred sky can be) behind one glass panel.
+    TexturePtr white{SDL_CreateTexture(ui.renderer.get(), SDL_PIXELFORMAT_RGBA8888,
+                                       SDL_TEXTUREACCESS_TARGET, 64, 64)};
+    REQUIRE(white);
+    REQUIRE(SDL_SetRenderTarget(ui.renderer.get(), white.get()));
+    REQUIRE(SDL_SetRenderDrawColorFloat(ui.renderer.get(), 1, 1, 1, 1));
+    REQUIRE(SDL_RenderClear(ui.renderer.get()));
+    REQUIRE(SDL_SetRenderTarget(ui.renderer.get(), nullptr));
+    REQUIRE(SDL_SetRenderDrawColorFloat(ui.renderer.get(), 1, 1, 1, 1));
+    REQUIRE(SDL_RenderClear(ui.renderer.get()));
+    Batch batch(ui.renderer.get());
+    Painter p(batch, ui.font, {white.get(), {64, 64}, 1.0f}, 1.0f);
+    p.glass({4, 4, 56, 56}, 8, 1.0f, theme::kGlass);
+    p.endGlass();
+    batch.flush();
+    const SDL_Rect r{32, 32, 1, 1};
+    const SurfacePtr px{SDL_RenderReadPixels(ui.renderer.get(), &r)};
+    REQUIRE(px);
+    Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+    REQUIRE(SDL_ReadSurfacePixel(px.get(), 0, 0, &cr, &cg, &cb, &ca));
+    const auto lin = [](double v) {
+        v /= 255.0;
+        return v <= 0.04045 ? v / 12.92 : std::pow((v + 0.055) / 1.055, 2.4);
+    };
+    const double bg = 0.2126 * lin(cr) + 0.7152 * lin(cg) + 0.0722 * lin(cb);
+    const auto& ink = theme::kInk;
+    const double fg =
+        0.2126 * lin(ink.r * 255) + 0.7152 * lin(ink.g * 255) + 0.0722 * lin(ink.b * 255);
+    const double contrast = (fg + 0.05) / (bg + 0.05);
+    CAPTURE(contrast);
+    CHECK(contrast >= 7.0);
+}
+
+TEST_CASE("text faces carry the minus sign and kerning") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    // A missing glyph would fall back to '?', which is far narrower than U+2212.
+    CHECK(ui.font.measure(Face::Body, "−") != ui.font.measure(Face::Body, "?"));
+    CHECK(ui.font.measure(Face::Body, "look") > ui.font.measure(Face::Body, "loo"));
+}
+
+// Analyses the mix captured by the audio_capture run (path in LC_AUDIO_CAPTURE): a drag-paint,
+// a mute toggle and a day/night crossfade must neither clip nor click.
+TEST_CASE("capture: the mix has no clipping and no clicks") {
+    const char* file = std::getenv("LC_AUDIO_CAPTURE");
+    if (file == nullptr) {
+        MESSAGE("LC_AUDIO_CAPTURE not set; run through ctest");
+        return;
+    }
+    const auto s = readWavFloat(file);
+    REQUIRE_MESSAGE(s.has_value(), s.error());
+    REQUIRE(s->size() > static_cast<std::size_t>(kMixRate) * 2 * 3);
+    float peak = 0;
+    double energy = 0;
+    for (const float v : *s) {
+        peak = std::max(peak, std::abs(v));
+        energy += static_cast<double>(v) * v;
+    }
+    CHECK(peak <= tuning::kLimiterCeiling + 1e-4f); // never reaches full scale
+    CHECK(energy > 0);                              // something was audible
+    // A click is a jump between neighbouring samples far beyond the local motion of the signal.
+    constexpr std::size_t kWindow = 512;
+    const std::size_t frames = s->size() / 2;
+    int clicks = 0;
+    for (int ch = 0; ch < 2; ++ch) {
+        std::vector<float> d(frames, 0);
+        for (std::size_t i = 1; i < frames; ++i)
+            d[i] = std::abs((*s)[i * 2 + static_cast<std::size_t>(ch)] -
+                            (*s)[(i - 1) * 2 + static_cast<std::size_t>(ch)]);
+        double sum = 0;
+        for (std::size_t i = 0; i < std::min(frames, 2 * kWindow); ++i) sum += d[i] * d[i];
+        for (std::size_t i = kWindow; i + kWindow < frames; ++i) {
+            const double local = std::sqrt((sum - d[i] * d[i]) / (2.0 * kWindow - 1));
+            if (d[i] > 0.05f && d[i] > 8.0 * local + 0.01) ++clicks;
+            sum += static_cast<double>(d[i + kWindow]) * d[i + kWindow] -
+                   static_cast<double>(d[i - kWindow]) * d[i - kWindow];
+        }
+    }
+    CHECK(clicks == 0);
 }

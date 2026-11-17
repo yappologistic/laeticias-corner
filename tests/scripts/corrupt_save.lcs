@@ -1,4 +1,4 @@
 # An unreadable save is moved aside and the starter scene loads instead.
-expect count all 28
+expect count all 39
 wait 3
 quit

@@ -10,21 +10,21 @@ click ui:tile:cottage
 wait 12
 expect tool place
 expect drawer closed
-move @6,12
+move @12,16
 wait 20
 shot shots/placing_cottage.png
 key r
-click @6,12
+click @12,16
 wait 4
-expect item @6,12 cottage
-expect item @7,13 cottage
+expect item @12,16 cottage
+expect item @13,17 cottage
 expect count cottage 1
-click @7,13
+click @13,17
 expect count cottage 1
-move @12,10
+move @25,14
 wait 4
 shot shots/placing_invalid.png
-click @12,10
+click @25,14
 expect count cottage 1
 key ctrl+z
 expect count cottage 0
@@ -33,10 +33,10 @@ key ctrl+shift+z
 expect count cottage 1
 key x
 expect tool remove
-move @7,12
+move @13,16
 wait 6
 shot shots/remove_hover.png
-click @7,12
+click @13,16
 expect count cottage 0
 key ctrl+z
 expect count cottage 1
@@ -48,7 +48,7 @@ click ui:tab:garden
 wait 12
 click ui:tile:fence
 wait 12
-drag @3,17 @8,17
+drag @8,31 @13,31
 wait 4
 expect count fence 6
 key ctrl+z

@@ -148,6 +148,7 @@ private:
     Target light_;
     Target glow_;
     Target shadow_;
+    TexturePtr white_; // one white texel, for flat multiplies
     int targetW_ = 0;
     int targetH_ = 0;
     Xform xf_; // world -> target for this frame

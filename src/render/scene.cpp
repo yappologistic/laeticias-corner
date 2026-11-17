@@ -57,6 +57,9 @@ Scene::Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat)
     : renderer_(renderer), atlas_(atlas), cat_(cat), iso_(cat.iso()),
       tables_(buildSpriteTables(atlas, cat)), batch_(renderer), particles_(cat.iso()) {
     ground_ = std::make_unique<GroundCache>(renderer, atlas, cat, tables_, kGroundBudget);
+    if (const SurfacePtr px{SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_RGBA32)};
+        px && SDL_ClearSurface(px.get(), 1, 1, 1, 1))
+        white_ = uploadTexture(renderer, px.get());
     for (const auto& it : tables_.items)
         for (const auto& set : it.base)
             for (const SpriteId id : set.frames) grow(itemReach_, atlas_.sprite(id));
@@ -570,7 +573,7 @@ void Scene::drawLighting(const FrameParams& p) {
     const float glow = p.light.glow;
     const bool emissive = std::ranges::any_of(
         p.critters, [&](const Critter& c) { return cat_.visitors[c.visitor].glow; });
-    if (glow <= 0.01f && !emissive) {
+    if (false && glow <= 0.01f && !emissive) {
         // No light pools: the light map would be one flat colour, so multiply by it directly.
         if (amb.r >= 0.999f && amb.g >= 0.999f && amb.b >= 0.999f) return;
         const auto w = static_cast<float>(targetW_);
@@ -713,7 +716,8 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
     // Whole-number magnification stays nearest-neighbour; anything else (mid-transition, or a
     // blurred copy) is filtered.
     const bool whole = std::abs(k - std::round(k)) < 1e-3f;
-    batch_.use(world_.texture.get(), SDL_BLENDMODE_BLEND,
+    // The world layer was drawn over transparent black, so its colour is premultiplied.
+    batch_.use(world_.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
                smooth || !whole ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
     const auto tw = static_cast<float>(targetW_);
     const auto th = static_cast<float>(targetH_);

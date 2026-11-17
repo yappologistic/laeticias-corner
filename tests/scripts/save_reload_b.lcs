@@ -1,11 +1,14 @@
-# Second half: everything from the first run is restored.
+# Second half: everything from the first run is restored, including the ducks (already seen, so
+# they are simply there).
 expect count coop 1
-expect item @15,15 coop
+expect item @13,15 coop
 expect rain on
 expect muted yes
 expect phase dusk
 expect seen duck
 expect undo no
+expect present duck 4
+expect toast no
 wait 30
 shot shots/reloaded.png
 quit

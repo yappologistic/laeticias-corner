@@ -62,7 +62,8 @@ public:
     // Advances everyone inside `area`; events() holds what happened during this call.
     void update(const World& world, const Catalog& cat, bool night, float dt, Rng& rng,
                 TileRect area);
-    // Spawns the desired population of `area` at once (used after loading) without events.
+    // Spawns the desired population of `area` at once (used after loading) without events, for
+    // the kinds already seen.
     void populate(const World& world, const Catalog& cat, bool night, Rng& rng, TileRect area);
 
     [[nodiscard]] std::span<const Critter> critters() const { return critters_; }

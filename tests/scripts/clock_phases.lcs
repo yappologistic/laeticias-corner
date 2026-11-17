@@ -1,6 +1,9 @@
+# Each phase, with the island centre measured: night is genuinely dark, day is bright.
 set clock day
 expect phase day
 wait 3
+expect luma 290,175,60,20 95 140
+expect luma 10,110,30,30 150 230
 shot shots/clock_day.png
 set clock dusk
 expect phase dusk
@@ -8,24 +11,29 @@ wait 3
 shot shots/clock_dusk.png
 set clock night
 expect phase night
-wait 90
+wait 30
+expect luma 290,175,60,20 25 55
+expect luma 10,110,30,30 5 35
 shot shots/clock_night.png
 set clock dawn
 expect phase dawn
 wait 3
 shot shots/clock_dawn.png
-# The dock button cycles auto -> day -> dusk -> night -> auto, gliding between phases.
+# The dock button cycles auto -> day -> dusk -> night -> dawn -> auto, gliding between phases.
 set clock auto
 click ui:clock
-wait 120
+wait 70
 expect phase day
 click ui:clock
-wait 120
+wait 70
 expect phase dusk
 click ui:clock
-wait 120
+wait 70
 expect phase night
 click ui:clock
+wait 70
+expect phase dawn
+click ui:clock
 wait 2
-expect phase night
+expect phase dawn
 quit

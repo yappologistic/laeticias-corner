@@ -209,6 +209,8 @@ void Visitors::populate(const World& world, const Catalog& cat, bool night, Rng&
     tallyArea(world, cat, area_, tally_);
     tallyRevision_ = world.revision();
     for (std::size_t v = 0; v < cat.visitors.size(); ++v) {
+        // Kinds never seen arrive the normal way, so their first sighting is still an event.
+        if (!seen(static_cast<int>(v))) continue;
         const int want = desiredCount(cat.visitors[v], tally_, night);
         for (int i = 0; i < want; ++i) (void)spawn(world, cat, static_cast<int>(v), rng, 1.0f);
         cooldown_[v] = tuning::kArrivalInterval;

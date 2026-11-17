@@ -6,59 +6,144 @@
       "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}",
-      "cacheVariables": { "CMAKE_EXPORT_COMPILE_COMMANDS": "ON" }
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
     },
     {
       "name": "gcc",
       "hidden": true,
-      "cacheVariables": { "CMAKE_C_COMPILER": "gcc", "CMAKE_CXX_COMPILER": "g++" }
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
     },
     {
       "name": "clang",
       "hidden": true,
-      "cacheVariables": { "CMAKE_C_COMPILER": "clang", "CMAKE_CXX_COMPILER": "clang++" }
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
     },
     {
       "name": "release",
       "displayName": "Release (GCC)",
-      "inherits": ["base", "gcc"],
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+      "inherits": [
+        "base",
+        "gcc"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     },
     {
       "name": "asan",
       "displayName": "Debug + ASan/UBSan (GCC)",
-      "inherits": ["base", "gcc"],
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "LC_SANITIZE": "ON" }
+      "inherits": [
+        "base",
+        "gcc"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LC_SANITIZE": "ON"
+      }
     },
     {
       "name": "clang-release",
       "displayName": "Release (Clang)",
-      "inherits": ["base", "clang"],
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+      "inherits": [
+        "base",
+        "clang"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     },
     {
       "name": "clang-asan",
       "displayName": "Debug + ASan/UBSan (Clang)",
-      "inherits": ["base", "clang"],
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "LC_SANITIZE": "ON" }
+      "inherits": [
+        "base",
+        "clang"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LC_SANITIZE": "ON"
+      }
     }
   ],
   "buildPresets": [
-    { "name": "release", "configurePreset": "release" },
-    { "name": "asan", "configurePreset": "asan" },
-    { "name": "clang-release", "configurePreset": "clang-release" },
-    { "name": "clang-asan", "configurePreset": "clang-asan" }
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "clang-release",
+      "configurePreset": "clang-release"
+    },
+    {
+      "name": "clang-asan",
+      "configurePreset": "clang-asan"
+    }
   ],
   "testPresets": [
     {
       "name": "base",
       "hidden": true,
-      "output": { "outputOnFailure": true },
-      "execution": { "jobs": 8, "timeout": 300 }
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 2,
+        "timeout": 600
+      }
     },
-    { "name": "release", "inherits": "base", "configurePreset": "release" },
-    { "name": "asan", "inherits": "base", "configurePreset": "asan" },
-    { "name": "clang-release", "inherits": "base", "configurePreset": "clang-release" },
-    { "name": "clang-asan", "inherits": "base", "configurePreset": "clang-asan" }
+    {
+      "name": "quick",
+      "hidden": true,
+      "inherits": "base",
+      "filter": {
+        "exclude": {
+          "label": "heavy"
+        }
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "quick",
+      "configurePreset": "release"
+    },
+    {
+      "name": "asan",
+      "inherits": "quick",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "clang-release",
+      "inherits": "quick",
+      "configurePreset": "clang-release"
+    },
+    {
+      "name": "clang-asan",
+      "inherits": "quick",
+      "configurePreset": "clang-asan"
+    },
+    {
+      "name": "release-full",
+      "displayName": "Release, including heavy runs",
+      "inherits": "base",
+      "configurePreset": "release"
+    },
+    {
+      "name": "asan-full",
+      "displayName": "ASan, including heavy runs",
+      "inherits": "base",
+      "configurePreset": "asan"
+    }
   ]
 }

@@ -1,0 +1,10 @@
+# A pan key released while Ctrl is held still stops the pan.
+keydown d
+wait 10
+expect panning yes
+keydown ctrl
+keyup d
+keyup ctrl
+wait 2
+expect panning no
+quit

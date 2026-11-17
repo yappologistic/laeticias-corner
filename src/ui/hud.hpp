@@ -119,7 +119,9 @@ public:
     bool reveal(std::string_view name, const HudModel& m);
     void toast(std::string text);
     void flash() { flash_ = 1.0f; }
-    // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...).
+    [[nodiscard]] bool toastShowing() const { return toastTime_ > 0.0f; }
+    // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...), or of
+    // the "toast" and "hint" panels while they show.
     [[nodiscard]] std::optional<Vec2> widgetCentre(std::string_view name, const HudModel& m) const;
     // Current hover highlight (0..1) of a named widget; 0 when it is not shown.
     [[nodiscard]] float highlight(std::string_view name, const HudModel& m) const;

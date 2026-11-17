@@ -7,32 +7,34 @@ shot shots/drawer_ground.png
 click ui:tile:water
 wait 12
 expect tool paint
-drag @2,2 @2,6
-expect tile @2,2 water
-expect tile @2,4 water
-expect tile @2,6 water
-# Tall grass at 2,7 and an oak at 2,9 refuse water underneath.
-drag @2,7 @2,10
-expect tile @2,7 grass
-expect tile @2,8 water
-expect tile @2,9 grass
-expect tile @2,10 water
-move @2,9
+drag @22,33 @22,37
+expect tile @22,33 water
+expect tile @22,35 water
+expect tile @22,37 water
+# Mushrooms at 9,24 and an oak at 9,26 refuse water underneath.
+drag @9,22 @9,27
+expect tile @9,22 water
+expect tile @9,23 water
+expect tile @9,24 grass
+expect tile @9,25 water
+expect tile @9,26 grass
+expect tile @9,27 water
+move @9,26
 wait 6
 shot shots/paint_refused.png
 key ctrl+z
-expect tile @2,8 grass
-expect tile @2,4 water
+expect tile @9,23 grass
+expect tile @22,35 water
 key ctrl+z
-expect tile @2,4 meadow
+expect tile @22,35 grass
 expect undo no
 click ui:build
 wait 12
 click ui:tile:path
 wait 12
-drag @5,8 @9,12
-expect tile @5,8 path
-expect tile @9,12 path
+drag @20,35 @24,39
+expect tile @20,35 path
+expect tile @24,39 path
 wait 10
 shot shots/paint_path.png
 quit

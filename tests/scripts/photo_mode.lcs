@@ -1,15 +1,27 @@
+# Photo mode hides the interface and says how to take the photo; the player frames the shot
+# (dragging pans), then takes it with Space or a click.
 expect photos 0
 key p
 wait 3
 expect photo on
+expect photos 0
+drag 400,300 300,300
+expect photos 0
+key space
+wait 3
 expect photos 1
 shot shots/photo_mode.png
+click 480,300
+wait 3
+expect photos 2
 key escape
 wait 20
 expect photo off
+expect toast yes
 shot shots/after_photo.png
 click ui:photo
 wait 3
-expect photos 2
+expect photo on
 key p
+expect photo off
 quit

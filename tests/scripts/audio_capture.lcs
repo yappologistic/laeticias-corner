@@ -1,0 +1,20 @@
+# Drives a drag-paint, a mute toggle and a day/night crossfade while the mix is captured.
+click ui:build
+wait 12
+click ui:tab:terrain
+wait 12
+click ui:tile:water
+wait 6
+drag @8,30 @14,36
+drag @26,30 @26,38
+key escape
+key m
+wait 30
+key m
+wait 30
+click ui:clock
+click ui:clock
+click ui:clock
+wait 150
+expect phase night
+quit

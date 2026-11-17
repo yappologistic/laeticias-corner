@@ -32,6 +32,21 @@ std::expected<ScriptPoint, std::string> point(std::string_view tok) {
 
 } // namespace
 
+std::optional<ScriptRect> parseScriptRect(std::string_view tok) {
+    ScriptRect r;
+    int* fields[4] = {&r.x, &r.y, &r.w, &r.h};
+    for (int i = 0; i < 4; ++i) {
+        const auto comma = tok.find(',');
+        const std::string_view part = tok.substr(0, comma);
+        const auto [p, ec] = std::from_chars(part.data(), part.data() + part.size(), *fields[i]);
+        if (ec != std::errc{} || p != part.data() + part.size()) return std::nullopt;
+        if ((i < 3) == (comma == std::string_view::npos)) return std::nullopt;
+        tok = comma == std::string_view::npos ? std::string_view{} : tok.substr(comma + 1);
+    }
+    if (r.w <= 0 || r.h <= 0) return std::nullopt;
+    return r;
+}
+
 std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_view text) {
     std::vector<ScriptCommand> out;
     std::istringstream in{std::string(text)};
@@ -57,10 +72,13 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             dst = std::move(*p);
             return {};
         };
-        if (cmd == "move" || cmd == "click" || cmd == "drag") {
-            c.kind = cmd == "move" ? ScriptCommand::Kind::Move
-                                   : (cmd == "click" ? ScriptCommand::Kind::Click
-                                                     : ScriptCommand::Kind::Drag);
+        if (cmd == "move" || cmd == "click" || cmd == "drag" || cmd == "press" ||
+            cmd == "release") {
+            c.kind = cmd == "move"      ? ScriptCommand::Kind::Move
+                     : cmd == "click"   ? ScriptCommand::Kind::Click
+                     : cmd == "press"   ? ScriptCommand::Kind::Press
+                     : cmd == "release" ? ScriptCommand::Kind::Release
+                                        : ScriptCommand::Kind::Drag;
             if (auto r = pointAt(1, c.a); !r) return err(r.error());
             std::size_t next = 2;
             if (c.kind == ScriptCommand::Kind::Drag) {
@@ -74,9 +92,11 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
                 ++next;
             }
             if (next != tok.size()) return err("too many arguments");
-        } else if (cmd == "key") {
-            if (tok.size() != 2) return err("key takes one combo");
-            c.kind = ScriptCommand::Kind::Key;
+        } else if (cmd == "key" || cmd == "keydown" || cmd == "keyup") {
+            if (tok.size() != 2) return err(cmd + " takes one combo");
+            c.kind = cmd == "key"       ? ScriptCommand::Kind::Key
+                     : cmd == "keydown" ? ScriptCommand::Kind::KeyDown
+                                        : ScriptCommand::Kind::KeyUp;
             c.args = {tok[1]};
         } else if (cmd == "wheel") {
             c.kind = ScriptCommand::Kind::Wheel;
@@ -88,7 +108,9 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             }
         } else if (cmd == "wait") {
             c.kind = ScriptCommand::Kind::Wait;
-            if (tok.size() != 2 || !number(tok[1], c.amount) || c.amount < 0) return err("wait N");
+            if (tok.size() != 2 || !number(tok[1], c.amount) || c.amount < 0 ||
+                c.amount > kScriptMaxWait)
+                return err("wait N (0 to 5000000 frames)");
         } else if (cmd == "shot") {
             if (tok.size() != 2) return err("shot FILE");
             c.kind = ScriptCommand::Kind::Shot;
@@ -105,6 +127,15 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             if (c.args[0] == "tile" || c.args[0] == "item") {
                 if (c.args.size() != 3) return err("expect " + c.args[0] + " P VALUE");
                 if (auto r = pointAt(2, c.a); !r) return err(r.error());
+            } else if (c.args[0] == "luma" || c.args[0] == "color") {
+                const std::size_t want = c.args[0] == "luma" ? 4 : 6;
+                if (c.args.size() != want || !parseScriptRect(c.args[1]))
+                    return err(c.args[0] == "luma" ? "expect luma X,Y,W,H MIN MAX"
+                                                   : "expect color X,Y,W,H R G B TOL");
+                for (std::size_t i = 2; i < want; ++i) {
+                    float v = 0;
+                    if (!number(c.args[i], v)) return err("bad number '" + c.args[i] + "'");
+                }
             }
         } else if (cmd == "quit") {
             c.kind = ScriptCommand::Kind::Quit;

@@ -566,6 +566,8 @@ const Hud::Widget* Hud::find(std::string_view name, const HudModel& m) const {
 }
 
 std::optional<Vec2> Hud::widgetCentre(std::string_view name, const HudModel& m) const {
+    if (name == "toast" && toastT_ > 0.5f) return Vec2{toastBox_.cx(), toastBox_.cy()};
+    if (name == "hint" && hintT_ > 0.5f) return Vec2{hintBox_.cx(), hintBox_.cy()};
     const Widget* w = find(name, m);
     if (w == nullptr) return std::nullopt;
     return Vec2{w->box.cx(), w->box.cy()};

@@ -1,8 +1,10 @@
 set rain on
-wait 120
+wait 90
+expect luma 290,175,60,20 78 110
 shot shots/rain_day.png
 set clock night
 wait 60
+expect luma 290,175,60,20 20 48
 shot shots/rain_night.png
 key n
 expect rain off

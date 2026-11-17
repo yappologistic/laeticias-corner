@@ -264,7 +264,10 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
         const Vec2 p = target.apply({box.x0, box.y0});
         const auto pw = static_cast<float>(slotW_ * slotsX_);
         const auto ph = static_cast<float>(slotH_ * slotsY_);
-        batch.use(pages_[static_cast<std::size_t>(s.page)].get(), SDL_BLENDMODE_BLEND, filter);
+        // Slots were drawn over transparent black, so they hold premultiplied colour (which is
+        // also what keeps filtered edges from darkening).
+        batch.use(pages_[static_cast<std::size_t>(s.page)].get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
+                  filter);
         batch.quad(
             SDL_FRect{p.x, p.y, static_cast<float>(slotW_) * k, static_cast<float>(slotH_) * k},
             {static_cast<float>(s.x) / pw, static_cast<float>(s.y) / ph,

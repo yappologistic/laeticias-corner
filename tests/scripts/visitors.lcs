@@ -1,42 +1,47 @@
-# Building what visitors need brings them in; they show up in the journal.
+# Building what visitors need brings them in; they show up in the journal. Day visitors stay
+# through dusk; fireflies come out only at night.
 click ui:build
 wait 12
 click ui:tab:homes
 wait 12
 click ui:tile:cottage
 wait 12
-click @6,12
+click @12,16
 click ui:build
 wait 12
 click ui:tile:coop
 wait 12
-click @11,15
+click @20,31
 click ui:build
 wait 12
 click ui:tab:garden
 wait 12
 click ui:tile:beehive
 wait 12
-click @5,6
+click @17,14
 click ui:build
 wait 12
 click ui:tab:nature
 wait 12
 click ui:tile:flowers_red
 wait 12
-drag @6,3 @6,5
+drag @16,12 @18,12
 key escape
-wait 600
+wait 150
 expect seen cat
 expect seen hen
 expect seen bee
 expect seen butterfly
+expect habitat ok
 key j
 wait 15
 shot shots/visitors_journal.png
 key j
+set clock dusk
+wait 60
+expect present firefly 0
 set clock night
-wait 300
+wait 90
 expect seen firefly
 shot shots/visitors_night.png
 quit

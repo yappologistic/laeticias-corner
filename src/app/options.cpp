@@ -17,14 +17,20 @@ std::string_view usage() {
     return "usage: laeticias-corner [options]\n"
            "  --headless          no visible window, no sound device (offscreen video, dummy "
            "audio)\n"
-           "  --size WxH          window size in pixels (default 1280x800)\n"
+           "  --size WxH          window size in pixels (default: fitted to the display, "
+           "1280x800 headless)\n"
            "  --script FILE       drive the game with an input script (implies --headless)\n"
            "  --save-dir DIR      where the corner and photos are saved (env LAETICIA_SAVE_DIR)\n"
            "  --assets DIR        asset directory (env LAETICIA_ASSETS_DIR)\n"
            "  --seed N            random seed (default: time, or 1 when headless)\n"
            "  --frames N          quit after N frames\n"
            "  --renderer NAME     SDL render driver (headless default: software)\n"
+           "  --audio-out FILE    write the mix to a 32-bit float WAV instead of a device "
+           "(implies --headless)\n"
            "  --bench             fill the map and report frame timings (implies --headless)\n"
+           "  --map WxH           bench: map size (default: the catalog's)\n"
+           "  --density D         bench: share of tiles filled near the camera, 0..1 (0.5)\n"
+           "  --budget-ms MS      bench: exit 3 when update + draw averages more than MS\n"
            "  --help              show this text\n";
 }
 
@@ -42,19 +48,44 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             o.bench = o.headless = true;
         } else if (a == "--help" || a == "-h") {
             o.help = true;
-        } else if (a == "--size") {
+        } else if (a == "--size" || a == "--map") {
             const auto v = value();
             if (!v) return std::unexpected(v.error());
             const auto x = v->find('x');
-            if (x == std::string_view::npos || !parseNumber(v->substr(0, x), o.width) ||
-                !parseNumber(v->substr(x + 1), o.height) || o.width < 320 || o.height < 240 ||
-                o.width > 8192 || o.height > 8192)
-                return std::unexpected("--size expects WxH between 320x240 and 8192x8192");
+            Size size;
+            const bool ok = x != std::string_view::npos && parseNumber(v->substr(0, x), size.w) &&
+                            parseNumber(v->substr(x + 1), size.h);
+            if (a == "--size") {
+                if (!ok || size.w < 320 || size.h < 240 || size.w > 8192 || size.h > 8192)
+                    return std::unexpected("--size expects WxH between 320x240 and 8192x8192");
+                o.size = size;
+            } else {
+                if (!ok || size.w < 1 || size.h < 1 || size.w > 4096 || size.h > 4096 ||
+                    static_cast<long long>(size.w) * size.h > (1LL << 22))
+                    return std::unexpected("--map expects WxH within 4096x4096 and 4M tiles");
+                o.map = size;
+            }
+        } else if (a == "--density") {
+            const auto v = value();
+            if (!v || !parseNumber(*v, o.density) || o.density < 0 || o.density > 1)
+                return std::unexpected("--density expects a number from 0 to 1");
+        } else if (a == "--budget-ms") {
+            const auto v = value();
+            if (!v || !parseNumber(*v, o.budgetMs) || o.budgetMs <= 0)
+                return std::unexpected("--budget-ms expects a positive number");
+        } else if (a == "--audio-out") {
+            const auto v = value();
+            if (!v) return std::unexpected(v.error());
+            o.audioOut = std::filesystem::path(*v);
+            o.headless = true;
         } else if (a == "--script") {
             const auto v = value();
             if (!v) return std::unexpected(v.error());
             o.script = std::filesystem::path(*v);
             o.headless = true;
+            std::error_code ec;
+            if (std::filesystem::is_directory(*o.script, ec))
+                return std::unexpected("--script expects a file, not a directory");
         } else if (a == "--save-dir") {
             const auto v = value();
             if (!v) return std::unexpected(v.error());
