@@ -1,13 +1,13 @@
 # Build drawer -> pick -> ghost -> place, rotate, refuse overlaps, remove, undo/redo,
 # and a drag of fences that undoes as one step.
 click ui:build
-wait 12
+wait 3
 expect drawer open
 click ui:tab:homes
-wait 12
+wait 3
 shot shots/drawer_homes.png
 click ui:tile:cottage
-wait 12
+wait 3
 expect tool place
 expect drawer closed
 move @24,32
@@ -43,11 +43,11 @@ expect count cottage 1
 key escape
 expect tool none
 click ui:build
-wait 12
+wait 3
 click ui:tab:garden
-wait 12
+wait 3
 click ui:tile:fence
-wait 12
+wait 3
 drag @32,30 @37,30
 wait 4
 expect count fence 6

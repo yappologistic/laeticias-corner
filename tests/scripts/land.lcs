@@ -7,18 +7,18 @@ move @12,30
 wait 30
 shot shots/land_wild_hover.png
 click ui:build
-wait 10
+wait 3
 click ui:tab:homes
-wait 10
+wait 3
 click ui:tile:cottage
-wait 10
+wait 3
 click @12,30
 expect count cottage 0
 click @28,31
 click ui:build
-wait 10
+wait 3
 click ui:tile:coop
-wait 10
+wait 3
 click @33,30
 key escape
 wait 120
@@ -26,11 +26,11 @@ expect seen cat
 expect seen hen
 expect stage 0
 click ui:build
-wait 10
+wait 3
 click ui:tab:nature
-wait 10
+wait 3
 click ui:tile:flowers_white
-wait 10
+wait 3
 click @24,34
 click @25,34
 key escape

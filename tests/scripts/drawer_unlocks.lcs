@@ -1,9 +1,9 @@
 # A new world builds with the starting pieces: the drawer lists only what is unlocked, ending
 # each unfinished tab with a lock tile that leads to the wishes.
 click ui:build
-wait 12
+wait 3
 click ui:tab:homes
-wait 12
+wait 3
 expect widget tile:cottage yes
 expect widget tile:barn no
 expect widget tile:locked yes
@@ -11,15 +11,15 @@ move ui:tile:locked
 wait 45
 shot shots/drawer_locked.png
 click ui:tile:locked
-wait 12
+wait 3
 expect journal open
 key escape
 key escape
 set unlock all
 click ui:build
-wait 12
+wait 3
 click ui:tab:homes
-wait 12
+wait 3
 expect widget tile:barn yes
 expect widget tile:locked no
 quit

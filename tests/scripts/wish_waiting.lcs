@@ -3,29 +3,29 @@
 # Everything is built first, before any ribbon covers the small window.
 set unlock all
 click ui:build
-wait 12
+wait 3
 click ui:tab:nature
-wait 12
+wait 3
 click ui:tile:flowers_white
-wait 12
+wait 3
 click @24,34
 click @25,34
 key escape
 # A cottage by the starter bench and path answers three wishes; the cat moves in.
 click ui:build
-wait 12
+wait 3
 click ui:tab:homes
-wait 12
+wait 3
 click ui:tile:cottage
-wait 12
+wait 3
 click @28,31
 key escape
 click ui:build
-wait 12
+wait 3
 click ui:tab:garden
-wait 12
+wait 3
 click ui:tile:lamp
-wait 12
+wait 3
 click @30,29
 key escape
 wait 90

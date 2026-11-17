@@ -514,8 +514,11 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         float bandR = trayLast_.w > 0 && !tray_.empty() ? trayLast_.x - gap : screen.x - margin;
         if (journalT_ > 0.0f) bandR = std::min(bandR, journalBox_.x - gap);
         const bool inBand = bandR - bandL >= theme::kRibbonMinW * s;
-        const float maxW =
-            std::min(theme::kRibbonMaxW * s, inBand ? bandR - bandL : screen.x - 2 * margin);
+        // Too narrow beside the title: under it, still clear of the tray and the sketchbook.
+        const bool under = !inBand && bandR - margin >= theme::kRibbonMinW * s;
+        const float maxW = std::min(theme::kRibbonMaxW * s, inBand  ? bandR - bandL
+                                                            : under ? bandR - margin
+                                                                    : screen.x - 2 * margin);
         const float quoteW = std::min(font.measure(Face::Body, ribbon_.quote), maxW - 2 * pad);
         const float w = std::min(maxW, std::max({line1, line2, quoteW}) + 2 * pad);
         const float lh = font.lineHeight(Face::Body);
@@ -523,9 +526,11 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
             ribbon_.quote.empty() ? 0 : wrapLines(font, Face::Body, ribbon_.quote, w - 2 * pad, 2);
         const float h = 2 * pad + font.lineHeight(Face::Title) + gap * 0.5f + std::max(icon, lh) +
                         (quoteLines > 0 ? gap * 0.5f + static_cast<float>(quoteLines) * lh : 0.0f);
-        const float x = inBand ? std::clamp(std::round((screen.x - w) * 0.5f), bandL, bandR - w)
-                               : std::round((screen.x - w) * 0.5f);
-        ribbonBox_ = {x, margin - (1 - smooth(ribbonT_)) * theme::kToastSlide * s, w, h};
+        const float x = inBand  ? std::clamp(std::round((screen.x - w) * 0.5f), bandL, bandR - w)
+                        : under ? margin
+                                : std::round((screen.x - w) * 0.5f);
+        const float y = under ? titleBox_.y + titleBox_.h + gap : margin;
+        ribbonBox_ = {x, y - (1 - smooth(ribbonT_)) * theme::kToastSlide * s, w, h};
     }
     // The toast sits in the free band between the title and the journal, or below the title
     // when that band is too narrow; below the ribbon while one shows.
@@ -645,7 +650,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         // Every visible panel stops the pointer, so neither clicks nor the placement ghost reach
         // the map through it.
         if (titleBox_.contains(in.x, in.y) ||
-            (drawerT_ > 0.5f && drawerBox_.contains(in.x, in.y)) ||
+            (m.drawerOpen && drawerT_ > 0.5f && drawerBox_.contains(in.x, in.y)) ||
             (journalT_ > 0.5f && journalBox_.contains(in.x, in.y)) ||
             (hintT_ > 0.5f && hintBox_.contains(in.x, in.y)) ||
             (toastT_ > 0.5f && !toast_.empty() && toastBox_.contains(in.x, in.y)) ||
@@ -653,7 +658,12 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             (ribbonT_ > 0.5f && ribbonBox_.contains(in.x, in.y)) ||
             (calendarT_ > 0.5f && calendarBox_.contains(in.x, in.y)))
             overUi_ = true;
+        // A drawer on its way out no longer holds the pointer: the map is usable at once after
+        // picking a piece.
+        const bool drawerLeaving = !m.drawerOpen && drawerT_ < 1.0f;
         for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
+            if (drawerLeaving && (it->id >= kTab0 || it->id == kScrollUp || it->id == kScrollDown))
+                continue;
             if (it->box.contains(in.x, in.y)) {
                 overUi_ = true;
                 pointed = it->id;

@@ -2,16 +2,16 @@
 # its first sighting announced; the sketchbook shows it among the rarer visitors.
 set unlock all
 click ui:build
-wait 10
+wait 3
 click ui:tab:nature
-wait 10
+wait 3
 click ui:tile:stump
-wait 10
+wait 3
 click @35,30
 click ui:build
-wait 10
+wait 3
 click ui:tile:pine
-wait 10
+wait 3
 click @34,29
 click @36,29
 click @36,31

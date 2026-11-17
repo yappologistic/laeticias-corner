@@ -1,10 +1,10 @@
 # A save directory that cannot be written: the player is told, and the game keeps trying.
 click ui:build
-wait 12
+wait 3
 click ui:tab:nature
-wait 12
+wait 3
 click ui:tile:rock
-wait 12
+wait 3
 click @12,16
 key escape
 wait 150

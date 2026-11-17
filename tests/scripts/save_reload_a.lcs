@@ -1,11 +1,11 @@
 # First half: change things, then quit (which saves).
 set unlock all
 click ui:build
-wait 12
+wait 3
 click ui:tab:homes
-wait 12
+wait 3
 click ui:tile:coop
-wait 12
+wait 3
 click @34,30
 key escape
 expect count coop 1

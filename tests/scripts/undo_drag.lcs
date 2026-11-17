@@ -1,11 +1,11 @@
 # Undo in the middle of a paint drag undoes the stroke so far and ends the drag: nothing more is
 # painted until the button is pressed again, and later strokes are separate steps.
 click ui:build
-wait 12
+wait 3
 click ui:tab:terrain
-wait 12
+wait 3
 click ui:tile:water
-wait 12
+wait 3
 press @33,28
 move @33,29
 move @33,30

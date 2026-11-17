@@ -3,11 +3,11 @@
 # the bed starts again.
 set unlock all
 click ui:build
-wait 10
+wait 3
 click ui:tab:garden
-wait 10
+wait 3
 click ui:tile:planter
-wait 10
+wait 3
 click @33,30
 click @34,30
 key escape

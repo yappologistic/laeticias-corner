@@ -2,11 +2,11 @@
 # the map (run under the sanitizers), and only placements that fit are made.
 set unlock all
 click ui:build
-wait 12
+wait 3
 click ui:tab:homes
-wait 12
+wait 3
 click ui:tile:barn
-wait 12
+wait 3
 move @0,0
 wait 2
 move @39,0

@@ -7,12 +7,12 @@ click ui:journal
 wait 15
 expect journal open
 click ui:build
-wait 12
+wait 3
 click ui:tab:homes
-wait 12
+wait 3
 shot shots/size_drawer.png
 click ui:tile:cottage
-wait 12
+wait 3
 expect tool place
 move @30,31
 wait 10

@@ -9,12 +9,12 @@ expect wish first_flowers open
 expect widget card:0 yes
 shot shots/wish_tray.png
 click ui:build
-wait 12
+wait 3
 click ui:tab:nature
-wait 12
+wait 3
 expect widget tile:flowers_violet no
 click ui:tile:flowers_white
-wait 12
+wait 3
 click @24,34
 click @25,34
 key escape
@@ -27,9 +27,9 @@ expect wishes 0
 wait 20
 shot shots/wish_granted.png
 click ui:build
-wait 12
+wait 3
 click ui:tab:nature
-wait 12
+wait 3
 expect widget tile:flowers_violet yes
 move ui:tile:flowers_violet
 wait 30

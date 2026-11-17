@@ -7,7 +7,7 @@ wait 5
 click ui:build
 wait 15
 click ui:tab:nature
-wait 12
+wait 3
 click ui:tile:oak
 wait 5
 expect tool place

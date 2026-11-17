@@ -15,11 +15,11 @@ click ui:tab:homes
 click ui:tab:garden
 click ui:tab:nature
 click ui:tab:homes
-wait 12
+wait 3
 click ui:tab:terrain
 wait 1
 click ui:tab:nature
-wait 12
+wait 3
 # Hover a tile, then switch away under the pointer.
 move ui:tile:lily_pads
 wait 10

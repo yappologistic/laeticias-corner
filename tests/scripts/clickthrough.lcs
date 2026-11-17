@@ -1,8 +1,8 @@
 # The toast and the hint line catch clicks: nothing is placed on the map under them.
 click ui:build
-wait 12
+wait 3
 click ui:tab:nature
-wait 12
+wait 3
 click ui:tile:rock
 wait 60
 expect toast yes

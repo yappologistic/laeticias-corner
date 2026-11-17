@@ -2,27 +2,27 @@
 # with hints until seen and, after four, the rarer ones as silhouettes; tabs by click or arrows.
 set unlock all
 click ui:build
-wait 10
+wait 3
 click ui:tab:homes
-wait 10
+wait 3
 click ui:tile:cottage
-wait 10
+wait 3
 click @28,31
 click ui:build
-wait 10
+wait 3
 click ui:tile:coop
-wait 10
+wait 3
 click @33,30
 click ui:build
-wait 10
+wait 3
 click ui:tab:nature
-wait 10
+wait 3
 click ui:tile:flowers_white
-wait 10
+wait 3
 click @24,34
 click @25,34
 key escape
-wait 150
+wait 100
 expect seen cat
 expect seen hen
 expect seen butterfly

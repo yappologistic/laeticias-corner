@@ -27,11 +27,11 @@ key home
 expect zoom 0.5
 # Clicks on the interface never reach the map behind it.
 click ui:build
-wait 12
+wait 3
 click ui:tab:nature
-wait 12
+wait 3
 click ui:tile:oak
-wait 12
+wait 3
 click ui:sound
 expect muted yes
 click ui:sound

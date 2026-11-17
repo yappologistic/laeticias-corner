@@ -3,20 +3,20 @@
 set unlock all
 set clock day
 click ui:build
-wait 12
+wait 3
 click ui:tab:nature
-wait 12
+wait 3
 click ui:tile:flowers_white
-wait 12
+wait 3
 click @24,34
 click @25,34
 click @26,34
 click ui:build
-wait 12
+wait 3
 click ui:tab:terrain
-wait 12
+wait 3
 click ui:tile:water
-wait 12
+wait 3
 drag @31,28 @36,33
 key escape
 set played 30
@@ -24,13 +24,13 @@ wait 2
 set played 34
 wait 2
 expect wish first_flowers done
-wait 300
+wait 210
 key m
 wait 30
 key m
 wait 30
 click ui:clock
 click ui:clock
-wait 150
+wait 110
 expect phase night
 quit

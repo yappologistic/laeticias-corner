@@ -4,25 +4,25 @@
 set unlock all
 expect nook reading_nook no
 click ui:build
-wait 10
+wait 3
 click ui:tab:garden
-wait 10
+wait 3
 click ui:tile:lamp
-wait 10
+wait 3
 click @30,29
 click ui:build
-wait 10
+wait 3
 click ui:tab:nature
-wait 10
+wait 3
 click ui:tile:oak
-wait 10
+wait 3
 click @28,28
 key escape
 wait 30
 expect nook reading_nook yes
 expect toast yes
 shot shots/nook_flourish.png
-wait 200
+wait 60
 move @29,29
 wait 40
 shot shots/nook_hover.png
