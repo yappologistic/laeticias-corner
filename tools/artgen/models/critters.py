@@ -9,6 +9,7 @@ import math
 import numpy as np
 
 from pack import Sprite
+from palette import GLOW, INK, PLASTER, ROOF, STONE, STRAW, WATER, _rgb
 from render import render_base
 from voxel import Model, ellipsoid, ellipsoid_normal, segment
 
@@ -106,62 +107,115 @@ def cat(anim, frame, frames):
     return m
 
 
+# ---- tiny flyers: hand-drawn at pixel scale, where voxels would only make blobs ----
+# Rows top to bottom; the anchor is the bottom-middle of the body (the engine adds altitude).
+# Fluttering flyers read best facing the viewer, so `back` frames reuse the same drawings.
+
+FLYER_INKS = {"K": (INK, 255), "O": (GLOW[0], 255), "R": (ROOF[2], 255), "Y": (STRAW[2], 255),
+              "y": (STRAW[3], 255), "W": (PLASTER[4], 255), "w": (WATER[5], 200),
+              "g": (STONE[2], 255), "1": (GLOW[2], 255), "2": (GLOW[1], 150), "3": (GLOW[0], 60)}
+
+BUTTERFLY = {
+    "open": ("K.K...K.K",
+             ".K.....K.",
+             "KOOK.KOOK",
+             "KWROKORWK",
+             ".KOOKOOK.",
+             ".KYYKYYK.",
+             "..KYKYK..",
+             "...K.K..."),
+    "half": ("..K...K..",
+             "...K.K...",
+             "..KOKOK..",
+             ".KWOKOWK.",
+             ".KROKORK.",
+             "..KYKYK..",
+             "..KYKYK..",
+             "...K.K..."),
+    "shut": ("...K.K...",
+             "....K....",
+             "...KOK...",
+             "...KOK...",
+             "...KRK...",
+             "...KYK...",
+             "...KYK...",
+             "....K...."),
+}
+BUTTERFLY_FRAMES = {"move": ("open", "half", "shut", "half"), "idle": ("open", "half")}
+
+BEE = {
+    "up":   ("...wW...",
+             "..wWw...",
+             ".KYYKYKK",
+             "KYyKYyKK",
+             ".KKKKKK."),
+    "down": ("........",
+             "........",
+             ".KYYKYKK",
+             "KYyKYyKK",
+             "wwKKKKw."),
+}
+
+FIREFLY = {
+    2: (".33333.",
+        "3322233",
+        "3221223",
+        "3212123",
+        "3221223",
+        "3322233",
+        ".3KgK3."),
+    1: (".......",
+        "..333..",
+        ".32223.",
+        ".32123.",
+        ".32223.",
+        "..333..",
+        "..KgK.."),
+    0: (".......",
+        ".......",
+        ".......",
+        "...3...",
+        "..323..",
+        "...3...",
+        "..KgK.."),
+}
+
+
+def _stencil(rows) -> Sprite:
+    h, w = len(rows), len(rows[0])
+    rgba = np.zeros((h, w, 4), np.uint8)
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                color, alpha = FLYER_INKS[ch]
+                rgba[y, x, :3] = _rgb(color)
+                rgba[y, x, 3] = alpha
+    return Sprite(rgba, w // 2, h - 1)
+
+
 def butterfly(anim, frame, frames):
-    m = _model(-5, 5, -7, 7, 0, 11)
-    X, Y, Z = (a / S for a in m.coords())
-    m.hover = True
-    flap = (0.15, 0.9, 1.35, 0.9)[frame % 4] if anim == "move" else (0.25, 0.6)[frame % 2]
-    m.put(segment(X, Y, Z, (-1.5, 0, 3), (1.5, 0, 3.2), 0.55), "ink")
-    for side in (-1, 1):
-        # Wing plane hinged at the body, raised by `flap` radians.
-        ny, nz = -math.sin(flap) * side, math.cos(flap)
-        across = (Y * math.cos(flap) * side + (Z - 3) * math.sin(flap))
-        plane = np.abs(Y * ny + (Z - 3) * nz) < 0.6
-        ell = lambda cx, cy, rx, ry: ((X - cx) / rx) ** 2 + ((across - cy) / ry) ** 2
-        upper = (ell(0.9, 2.9, 2.6, 2.9) <= 1) & (across > 0.3)
-        lower = (ell(-1.4, 1.9, 1.7, 1.9) <= 1) & (across > 0.3)
-        wing = plane & (upper | lower)
-        edge = wing & (ell(0.9, 2.9, 2.6, 2.9) > 0.6) & (ell(-1.4, 1.9, 1.7, 1.9) > 0.5)
-        lit = (X * 0 - 0.4, X * 0 + 0.3, X * 0 + 1.0)   # thin membranes: shade as if facing the sky
-        m.put(wing & upper, "orange", tone=0.8, normal=lit)
-        m.put(wing & lower & ~upper, "yellow", tone=0.4, normal=lit)
-        m.put(edge, "ink", tone=0.5, normal=lit)
-    return m
+    return _stencil(BUTTERFLY[BUTTERFLY_FRAMES[anim][frame % len(BUTTERFLY_FRAMES[anim])]])
 
 
 def bee(anim, frame, frames):
-    m = _model(-4, 4, -4, 4, 0, 8)
-    X, Y, Z = (a / S for a in m.coords())
-    m.hover = True
-    bob = (0, 0.5, 0, -0.5)[frame % 4] if anim == "move" else 0.0
-    body = ellipsoid(X, Y, Z, 0, 0, 3 + bob, 2.2, 1.5, 1.5)
-    stripe = (np.floor(X + 10) % 2) == 1
-    m.put(body & ~stripe, "yellow", normal=ellipsoid_normal(X, Y, Z, 0, 0, 3 + bob, 2.2, 1.5, 1.5))
-    m.put(body & stripe, "ink", normal=ellipsoid_normal(X, Y, Z, 0, 0, 3 + bob, 2.2, 1.5, 1.5))
-    m.put(ellipsoid(X, Y, Z, 2.2, 0, 3.2 + bob, 0.9, 1.0, 1.0), "ink")
-    up = frame % 2 == 0
-    for side in (-1, 1):
-        m.put(ellipsoid(X, Y, Z, -0.3, side * 1.6, 5.0 + bob if up else 4.2 + bob, 1.2, 1.0,
-                        0.5 if up else 0.4), "cream", tone=1.0)
-    return m
+    return _stencil(BEE["up" if frame % 2 == 0 else "down"])
 
 
 def firefly(anim, frame, frames):
-    m = _model(-3, 3, -3, 3, 0, 6)
-    X, Y, Z = (a / S for a in m.coords())
-    m.hover = True
-    bright = (1.5, 0.8, 0.0, 0.8)[frame % 4] if anim == "move" else (1.5, 0.5)[frame % 2]
-    m.put(ellipsoid(X, Y, Z, 0.6, 0, 2.6, 1.1, 0.8, 0.8), "ink")
-    m.put(ellipsoid(X, Y, Z, -0.9, 0, 2.3, 1.2, 1.0, 1.0), "lamp", tone=bright - 1.0)
-    m.put(ellipsoid(X, Y, Z, 0.2, 0, 3.6, 1.0, 1.4, 0.4), "cream", tone=0.5)
-    return m
+    """Emissive at night, so the glow is part of the sprite: a white-hot core in a warm halo
+    that pulses with the frames."""
+    pulse = (2, 1, 0, 1) if anim == "move" else (2, 1)
+    return _stencil(FIREFLY[pulse[frame % len(pulse)]])
 
 
-MODELS = {"duck": duck, "hen": hen, "cat": cat, "butterfly": butterfly, "bee": bee, "firefly": firefly}
+MODELS = {"duck": duck, "hen": hen, "cat": cat}
+FLYERS = {"butterfly": butterfly, "bee": bee, "firefly": firefly}
 
 
 def sprite(cid: str, anim: str, frame: int, frames: int) -> Sprite:
     kind, facing = anim.split("_")
+    if cid in FLYERS:
+        return FLYERS[cid](kind, frame, frames)
     model = MODELS[cid](kind, frame, frames)
     if facing == "back":
         model = model.rotated(3, 0, 0)

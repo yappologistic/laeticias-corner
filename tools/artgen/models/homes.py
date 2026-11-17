@@ -5,8 +5,8 @@ import math
 import numpy as np
 
 from palette import GLOW, _rgb
-from voxel import (Halo, Model, box, cone, slope_normal, cylinder_normal, ellipsoid, gable, hash01,
-                   segment, value_noise)
+from voxel import (Halo, Model, box, cone, cylinder, cylinder_normal, ellipsoid, gable, hash01,
+                   segment, slope_normal, value_noise)
 from models.nature import canopy
 
 
@@ -145,25 +145,47 @@ def cottage(v, frame, frames):
 
 
 def toolshed(v, frame, frames):
-    m = Model.empty(-2, 18, 0, 17, 0, 22)
+    """Lean-to shed: braced door at the front, windows at the side and back, tools leaning on
+    the other side, so every rotation shows something."""
+    m = Model.empty(-2, 18, -2, 18, 0, 22)
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 2.5, 13.5, 3, 13
     low, high = 12.5, 16.5
+    m.put(box(X, Y, Z, x0 - 0.5, x1 + 0.5, y0 - 0.5, y1 + 0.5, 0, 1.5), "stone",
+          tone=-0.6 * (((X + Y) % 3) < 0.6))
     top = low + (high - low) * (Y - y0) / (y1 - y0)
-    m.put(box(X, Y, Z, x0, x1, y0, y1, 0, 99) & (Z < top), "wood",
-          tone=((X % 2.0) < 0.45) * -0.8 + ((Y % 2.0) < 0.45) * -0.8)
+    # Vertical boards: seams run up each wall, every board a slightly different tone.
+    along = np.where((Y < y0 + 1) | (Y >= y1 - 1), X, Y)
+    board = np.floor(along / 2.2)
+    m.put(box(X, Y, Z, x0, x1, y0, y1, 1.5, 99) & (Z < top), "wood",
+          tone=((along % 2.2) < 0.5) * -0.9 + (hash01(board.astype(np.int64), 860) - 0.5) * 0.6)
+    corner = ((X < x0 + 1) | (X >= x1 - 1)) & ((Y < y0 + 1) | (Y >= y1 - 1))
+    m.put(box(X, Y, Z, x0, x1, y0, y1, 1.5, 99) & (Z < top) & corner, "wood_light", tone=-0.2)
     front = Facade(m, "+y", y1)
-    front.door(5.5, 10.5, 0, 10, material="wood_grey", frame="wood_light")
-    side = Facade(m, "+x", x1)
-    side.window(6, 10, 6, 9.5, cross=True, sill=True)
+    front.door(5.5, 10.5, 1.5, 11, material="wood_grey", frame="wood_light", knob=False)
+    # Z brace and a latch on the door.
+    a, z = front.along, Z
+    brace = np.abs((a - 5.5) - (z - 2.5) * 5 / 7.5) < 0.6
+    m.put(front._rect(5.5, 10.5, 2.5, 10) & front.layer(1) & brace, "wood_light", tone=-0.3)
+    m.put(front._rect(9, 10, 6, 7) & front.layer(0), "metal", tone=1.2)
+    Facade(m, "+x", x1).window(6, 10, 6, 9.5)
+    Facade(m, "-y", y0).window(6.5, 9.5, 8, 10.5, cross=False, sill=False)
     rtop = low + (high - low) * (Y - y0) / (y1 - y0) + 0.5
     roof = (X >= x0 - 1.2) & (X < x1 + 1.2) & (Y >= y0 - 1.2) & (Y < y1 + 1.8) & \
         (Z >= rtop - 0.2) & (Z < rtop + 1.3)
-    m.put(roof, "slate", tone=-0.8 * ((np.floor(Y) % 2) == 0) - 0.3 * (((X + np.floor(Y) * 1.5) % 3) < 0.6)
-          - 0.6)
-    # A rake leaning by the door.
-    m.put(segment(X, Y, Z, (12.0, 14.6, 0), (13.4, 14.0, 12), 0.5), "wood_light")
-    m.put(box(X, Y, Z, 10.5, 14.5, 14.2, 15.2, 0, 1), "metal")
+    rows = np.floor(Y / 1.6)
+    m.put(roof, "slate", tone=0.3 - 1.1 * ((Y % 1.6) < 0.5) - 0.5 * (((X + rows * 1.3) % 2.6) < 0.5)
+          + 0.4 * (rows % 2), normal=(X * 0, -(high - low) / (y1 - y0) + X * 0, X * 0 + 1.0))
+    m.put(roof & ((X < x0 - 0.2) | (X >= x1 + 0.2)), "wood_light", tone=-0.4)
+    # A shovel and a rake leaning on the far side wall, a watering can by the door.
+    m.put(segment(X, Y, Z, (x0 - 1.6, 5.0, 2.0), (x0 - 0.5, 6.0, 12.5), 0.5), "wood_light")
+    m.put(box(X, Y, Z, x0 - 1.9, x0 - 1.1, 4.4, 6.0, 0, 2.6), "metal", tone=1.2)
+    m.put(segment(X, Y, Z, (x0 - 1.4, 10.0, 0.5), (x0 - 0.5, 9.4, 12), 0.5), "wood_light")
+    m.put(box(X, Y, Z, x0 - 1.4, x0 - 0.6, 7.6, 11.6, 11.5, 12.5), "metal", tone=0.4)
+    can = (12.5, y1 + 2.2)
+    m.put(cylinder(X, Y, Z, *can, 1.4, 0, 3), "metal", tone=0.6, normal=cylinder_normal(X, Y, Z, *can))
+    m.put(segment(X, Y, Z, (11.3, y1 + 2.2, 1.5), (9.8, y1 + 2.4, 3.2), 0.45), "metal", tone=0.4)
+    m.put(segment(X, Y, Z, (12.5, y1 + 1.2, 3.0), (12.5, y1 + 3.2, 3.0), 0.35), "metal", tone=0.2)
     return m
 
 
@@ -269,13 +291,15 @@ def barn(v, frame, frames):
     roof_top = np.where(across > knee_a, eave + (knee_z - eave) * (half + 2 - across) / (half - knee_a),
                         knee_z + 0.9 + (ridge + 1 - knee_z) * (knee_a - across) / knee_a)
     roof = (X >= x0 - 1.5) & (X < x1 + 1.5) & (across < half + 2) & (Z < roof_top) & (Z >= roof_top - 2.2)
-    rows = np.floor(across / 1.8)
+    # Courses are spaced by height, so they stay evenly spaced on screen on the steep lower
+    # slope and the shallow upper one, lit or in shade.
+    course = np.floor(Z / 2.4)
     pitch = np.where(across > knee_a, (knee_z - eave) / (half - knee_a), (ridge - knee_z) / knee_a)
     zero = X * 0 + Z * 0
     roof_n = (zero, np.sign(Y - yc) * pitch + zero, zero + 1.0)
-    m.put(roof, "slate", normal=roof_n, tone=-1.2 * ((across % 1.8) < 0.5) + 0.5 * ((across % 1.8) > 1.3)
-          - 0.5 * (((X + rows * 1.5) % 3) < 0.6) - 0.5 * (across < 0.8)
-          + (value_noise(X, Y, Z, 2.5, 850) - 0.5) * 0.6)
+    m.put(roof, "slate", normal=roof_n, tone=-1.3 * ((Z % 2.4) < 0.7) + 0.5 * ((Z % 2.4) > 1.7)
+          - 0.6 * (((X + course * 1.5) % 3) < 0.6) - 0.5 * (across < 0.8)
+          + (value_noise(X, Y, Z, 2.5, 850) - 0.5) * 0.25)
     m.put(roof & ((X < x0 - 0.5) | (X >= x1 + 0.5)), "cream", tone=-0.3)
     m.halos.append(Halo(x1 + 1.5, 16, 17.5, 12, _rgb(GLOW[1]), 0.8))
     return m

@@ -22,6 +22,7 @@ SHADOW_SUN /= np.linalg.norm(SHADOW_SUN)
 AMBIENT, DIFFUSE = 0.42, 0.58
 FACE_NORMALS = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], np.float32)  # top, +x, +y
 SHADOW_ALPHA = (0, 58, 88, 116)
+HALO_STEPS = 6  # alpha levels of a glow halo, so light falls off softly
 AO_PAD = 5
 
 BAYER4 = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]],
@@ -219,11 +220,10 @@ def render_base(model: Model):
         for halo in model.halos:
             hx, hy = halo.x - halo.y, (halo.x + halo.y) / 2 - halo.z
             d = np.hypot(pxx + 0.5 - hx, (pyy + 0.5 - hy) * 1.6) / halo.radius
-            inten = halo.strength * np.clip(1 - d, 0, 1) ** 1.6 * 3
-            q = dither(inten, pxx, pyy)
-            q = np.clip(q, 0, 3)
+            inten = halo.strength * np.clip(1 - d, 0, 1) ** 1.6 * HALO_STEPS
+            q = np.clip(dither(inten, pxx, pyy), 0, HALO_STEPS)
             # Halo strength lives in alpha: additive blending scales the colour by it.
-            alpha = (q / 3 * 0.6 * 255).astype(np.uint8)
+            alpha = (q / HALO_STEPS * 0.6 * 255).astype(np.uint8)
             add = (alpha > glow[..., 3]) & ~g
             glow[add, :3] = halo.rgb
             glow[add, 3] = alpha[add]

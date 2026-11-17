@@ -59,8 +59,9 @@ class Scene:
     def add(self, item_id, variant, tx, ty, footprint=(1, 1)):
         self.items.append((item_id, variant, tx, ty, footprint))
 
-    def critter(self, key, x, y, z=0.0, mirror=False):
-        self.critters.append((key, x, y, z, mirror))
+    def critter(self, key, x, y, z=0.0, mirror=False, glow=False):
+        """`glow` critters are emissive: at night they are drawn after the grade."""
+        self.critters.append((key, x, y, z, mirror, glow))
 
     def anchor(self, tx, ty):
         return self.ox + (tx - ty) * 16, self.oy + (tx + ty) * 8
@@ -109,16 +110,20 @@ class Scene:
         drawables = []
         for item_id, var, tx, ty, (fw, fh) in self.items:
             drawables.append(((tx + fw - 1) + (ty + fh - 1), tx, 0, ("item", item_id, var, tx, ty)))
-        for key, x, y, z, mirror in self.critters:
-            drawables.append((x / 16 + y / 16 - 1, x / 16, 1, ("critter", key, x, y, z, mirror)))
+        for key, x, y, z, mirror, glow in self.critters:
+            if not (night and glow):
+                drawables.append((x / 16 + y / 16 - 1, x / 16, 1, ("critter", key, x, y, z, mirror)))
         drawables.sort(key=lambda d: d[:3])
+
+        def blit_critter(key, x, y, z, mirror, target=img):
+            blit(fkey(key), self.ox + (x - y), self.oy + (x + y) / 2 - z, mirror, target)
+
         for *_s, what in drawables:
             if what[0] == "item":
                 _, item_id, var, tx, ty = what
                 blit(fkey(f"item/{item_id}/base/{var}"), *self.anchor(tx, ty))
             else:
-                _, key, x, y, z, mirror = what
-                blit(fkey(key), self.ox + (x - y), self.oy + (x + y) / 2 - z, mirror)
+                blit_critter(*what[1:])
         if night:
             arr = np.asarray(img).astype(np.float32)
             arr[..., :3] *= NIGHT_TINT
@@ -130,6 +135,9 @@ class Scene:
             g = np.asarray(glow).astype(np.float32)
             arr[..., :3] += g[..., :3] * (g[..., 3:4] / 255)
             img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
+            for key, x, y, z, mirror, glow in self.critters:
+                if glow:
+                    blit_critter(key, x, y, z, mirror, img)
         return img
 
 
@@ -266,7 +274,7 @@ VILLAGE = [
 ]
 
 
-def village_scene():
+def village_scene(night=False):
     s = Scene(VILLAGE)
     for args in [("cottage", "r0", 2, 8, (2, 2)), ("toolshed", "r3", 5, 9, (1, 1)),
                  ("barn", "r0", 9, 13, (3, 2)), ("windmill", "r1", 16, 1, (2, 2)),
@@ -298,6 +306,10 @@ def village_scene():
     s.critter("critter/cat/idle_front", 4 * 16 + 8, 11 * 16 + 4)
     s.critter("critter/butterfly/move_front", 3 * 16, 3 * 16, z=14)
     s.critter("critter/bee/move_front", 3 * 16, 5 * 16, z=10)
+    if night:  # fireflies only come out at night
+        for x, y, z in ((10 * 16 + 4, 17 * 16 + 2, 12), (11 * 16 + 9, 18 * 16 + 6, 18),
+                        (15 * 16 + 9, 5 * 16 + 4, 10), (10 * 16 + 12, 2 * 16 + 9, 16)):
+            s.critter("critter/firefly/move_front", x, y, z=z, glow=True)
     return s
 
 
@@ -397,7 +409,7 @@ def main():
         save(pond_scene().render(atlas, frame=f), f"pond_f{f}.png")
     save(maze_scene().render(atlas), "maze.png")
     save(village_scene().render(atlas), "village.png")
-    save(village_scene().render(atlas, night=True), "village_night.png")
+    save(village_scene(night=True).render(atlas, night=True), "village_night.png")
     save(forest_scene().render(atlas), "forest.png")
     save(field_scene().render(atlas), "field.png")
     sheet = sprite_sheet(atlas, cat)

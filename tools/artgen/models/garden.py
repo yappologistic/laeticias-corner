@@ -199,17 +199,28 @@ def well(v, frame, frames):
 
 
 def lamp(v, frame, frames):
-    m = Model.empty(2, 14, 2, 14, 0, 33)
+    m = Model.empty(1, 15, 1, 15, 0, 36)
     X, Y, Z = m.coords()
-    m.put(cylinder(X, Y, Z, C, C, 2.2, 0, 2), "stone", normal=cylinder_normal(X, Y, Z, C, C))
-    m.put(cylinder(X, Y, Z, C, C, 0.95, 2, 24), "metal", normal=cylinder_normal(X, Y, Z, C, C))
-    m.put(box(X, Y, Z, 5.5, 10.5, 5.5, 10.5, 23.5, 24.5), "metal")
-    m.put(box(X, Y, Z, 6, 10, 6, 10, 24.5, 29), "lamp")
-    corners = (np.abs(np.abs(X - C) - 1.6) < 0.5) & (np.abs(np.abs(Y - C) - 1.6) < 0.5)
-    m.put(box(X, Y, Z, 5.8, 10.2, 5.8, 10.2, 24.5, 29) & corners, "metal")
-    m.put(box(X, Y, Z, C - 2.6, C + 2.6, C - 2.6, C + 2.6, 29, 30), "metal", tone=0.3)
-    m.put(box(X, Y, Z, C - 1, C + 1, C - 1, C + 1, 30, 31.5), "metal", tone=0.5)
-    m.halos.append(Halo(C, C, 26.5, 15, _rgb(GLOW[1]), 1.0))
+    cyl = cylinder_normal(X, Y, Z, C, C)
+    # Stepped stone plinth, then a slim post with collars.
+    m.put(box(X, Y, Z, C - 3, C + 3, C - 3, C + 3, 0, 2), "stone", tone=0.2 - 0.6 * (Z < 0.8))
+    m.put(box(X, Y, Z, C - 2, C + 2, C - 2, C + 2, 2, 3.5), "stone", tone=0.5)
+    m.put(cylinder(X, Y, Z, C, C, 1.3, 3.5, 6), "metal", normal=cyl)
+    m.put(cylinder(X, Y, Z, C, C, 0.8, 6, 22), "metal", normal=cyl)
+    m.put(cylinder(X, Y, Z, C, C, 1.4, 20.5, 22), "metal", normal=cyl, tone=0.3)
+    # Lantern: a tray, glowing panes inside a four-post cage, a pyramid cap and a finial.
+    m.put(box(X, Y, Z, C - 2.6, C + 2.6, C - 2.6, C + 2.6, 22, 23), "metal", tone=0.2)
+    pane = box(X, Y, Z, C - 2, C + 2, C - 2, C + 2, 23, 28.5)
+    m.put(pane, "lamp", tone=(Z > 26) * 0.6)
+    posts = (np.abs(np.abs(X - C) - 2.1) < 0.6) & (np.abs(np.abs(Y - C) - 2.1) < 0.6)
+    m.put(box(X, Y, Z, C - 2.7, C + 2.7, C - 2.7, C + 2.7, 23, 28.5) & posts, "metal")
+    m.put(box(X, Y, Z, C - 2.8, C + 2.8, C - 2.8, C + 2.8, 28.5, 29.3), "metal", tone=0.4)
+    cap = np.maximum(np.abs(X - C), np.abs(Y - C)) <= 2.8 - (Z - 29.3) * 0.85
+    m.put(cap & (Z >= 29.3) & (Z < 32.5), "metal",
+          normal=(np.where(np.abs(X - C) > np.abs(Y - C), X - C, 0), np.where(np.abs(Y - C) >= np.abs(X - C), Y - C, 0), Z * 0 + 2.0))
+    m.put(ellipsoid(X, Y, Z, C, C, 33.3, 0.9, 0.9, 0.9), "metal", tone=0.8)
+    m.halos.append(Halo(C, C, 25.5, 20, _rgb(GLOW[1]), 1.0))
+    m.halos.append(Halo(C, C, 0, 17, _rgb(GLOW[0]), 0.45))   # a pool of light on the ground
     return m
 
 

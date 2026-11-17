@@ -20,24 +20,31 @@ def _set(rgba, mask, color, alpha=255):
     rgba[mask, 3] = alpha
 
 
+# A puff is a few overlapping round lobes: (dx, dy) offsets in units of the puff radius.
+SMOKE_LOBES = ((0.0, 0.0, 1.0), (-0.55, 0.25, 0.7), (0.5, 0.3, 0.65), (0.1, -0.45, 0.6))
+
+
 def smoke(frame, frames):
-    """A puff that swells and thins out; the engine moves it upward."""
+    """A soft round puff that swells and thins out; the engine moves it upward."""
     t = frame / (frames - 1)
-    r = 2.0 + 3.2 * t
-    w = h = 14
+    r = 1.6 + 3.4 * t
+    w = h = 15
     px, py, rgba = _canvas(w, h)
-    cx, cy = 7, h - 1 - r
-    d = np.hypot(px + 0.5 - cx, (py + 0.5 - cy) * 1.1)
-    lobes = d < r + 0.6 * np.sin(np.arctan2(py - cy, px - cx) * 3 + frame)
-    lit = (px - cx) * -0.6 + (py - cy) * -0.8 > r * 0.15
-    level = np.where(lit, 2.0, 1.0) - t * 0.6
-    ramp = [STONE[3], STONE[4], PLASTER[3]]
-    idx = np.clip(dither(level, px, py), 0, 2).astype(np.int64)
-    rgba[..., :3] = np.array([_rgb(c) for c in ramp], np.uint8)[idx]
-    alpha = int(210 - 150 * t)
-    # Thin the puff out with an ordered pattern as it fades so it never looks like a disc.
-    keep = dither(np.full(px.shape, 1.6 - t), px, py) >= 1
-    rgba[..., 3] = np.where(lobes & keep, alpha, 0)
+    cx, cy = 7.5, h - 0.5 - r * 1.1
+    inside = np.zeros(px.shape, np.float32)       # 1 deep inside a lobe, 0 at its edge
+    for dx, dy, k in SMOKE_LOBES:
+        d = np.hypot(px + 0.5 - cx - dx * r, py + 0.5 - cy - dy * r) / (r * k)
+        inside = np.maximum(inside, 1 - d)
+    # Lit from the upper left: light cream top, grey belly.
+    lit = ((px + 0.5 - cx) * -0.6 + (py + 0.5 - cy) * -0.8) / r
+    level = 1.2 + lit * 1.2 + inside * 0.6 - t * 0.5
+    ramp = np.array([_rgb(c) for c in (STONE[3], STONE[4], PLASTER[3], PLASTER[4])], np.uint8)
+    rgba[..., :3] = ramp[np.clip(dither(level, px, py), 0, 3).astype(np.int64)]
+    # A soft rim one step fainter than the body; the whole puff fades and opens up with age.
+    body = int(225 - 150 * t)
+    alpha = np.where(inside > 0.22, body, np.where(inside > 0, body // 2, 0))
+    holes = dither(np.full(px.shape, 1.9 - t * 1.1), px, py) < 1
+    rgba[..., 3] = np.where(holes & (inside < 0.6), 0, alpha)
     return Sprite(rgba, 7, h)
 
 

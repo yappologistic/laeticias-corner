@@ -248,34 +248,57 @@ def path(mask: int) -> Sprite:
 
 # ---------- cobble ----------
 
-COBBLE = [INK, STONE[1], STONE[2], STONE[3], STONE[4], STONE[5]]
+# Each cobble picks one ramp: three parts warm grey, two cool grey, one sandstone.
+WARM_GREY = [STONE[1], STONE[2], PLASTER[1], STONE[4], PLASTER[2]]
+COOL_GREY = [STONE[0], STONE[1], STONE[2], STONE[3], STONE[4]]
+SANDSTONE = [EARTH[1], EARTH[2], EARTH[3], EARTH[4], EARTH[5]]
+COBBLE_RAMPS = (WARM_GREY,) * 3 + (COOL_GREY,) * 2 + (SANDSTONE,)
+MORTAR = [INK, EARTH[0], EARTH[1]]
+
+
+def _cells(u, v, cell, seed, jitter=0.8):
+    """Tile-periodic Voronoi cells: distance to the nearest and second nearest centre, the
+    offset (du, dv) from the nearest centre and its hash."""
+    n = int(16 // cell)
+    f1 = np.full(u.shape, 1e9, np.float32)
+    f2 = np.full(u.shape, 1e9, np.float32)
+    bdu, bdv, bh = (np.zeros(u.shape, np.float32) for _ in range(3))
+    cu, cv = np.floor(u / cell).astype(np.int64), np.floor(v / cell).astype(np.int64)
+    for du in (-1, 0, 1):
+        for dv in (-1, 0, 1):
+            iu, iv = cu + du, cv + dv
+            ku, kv = iu % n, iv % n
+            ou = u - (iu + 0.5 + (hash01(ku, kv, seed, 2) - 0.5) * jitter) * cell
+            ov = v - (iv + 0.5 + (hash01(ku, kv, seed, 3) - 0.5) * jitter) * cell
+            d = np.hypot(ou, ov)
+            nearer = d < f1
+            f2 = np.where(nearer, f1, np.minimum(f2, d))
+            f1 = np.where(nearer, d, f1)
+            bdu = np.where(nearer, ou, bdu)
+            bdv = np.where(nearer, ov, bdv)
+            bh = np.where(nearer, hash01(ku, kv, seed, 4), bh)
+    return f1, f2, bdu, bdv, bh
 
 
 def cobble(mask: int) -> Sprite:
     px, py, u, v, inside = _grid()
     f = shape_field(mask, u, v, 1.2, 4.0, 0.4, 500)
     cover = inside & (f > 0)
-    row_h, stone_w = 4.0, 16.0 / 3
-    row = np.floor(v / row_h)
-    off = (row % 2) * stone_w / 2
-    col = np.floor((u + off) / stone_w)
-    lu = (u + off) - col * stone_w          # position inside the stone
-    lv = v - row * row_h
-    key_u = (col % 3).astype(np.int64)
-    key_v = (row % 4).astype(np.int64)
-    tint = hash01(key_u, key_v, 510)
-    # Rounded-rectangle distance to the stone's edge, used for mortar and bevel.
-    eu = np.minimum(lu, stone_w - lu)
-    ev = np.minimum(lv, row_h - lv)
-    edge = np.minimum(eu, ev * 1.2)
-    mortar = edge < 0.55
-    level = 3.0 + (tint - 0.5) * 1.4
-    level = level + ((lu < 1.3) | (lv < 1.1)) * 0.8 - ((stone_w - lu < 1.3) | (row_h - lv < 1.1)) * 0.9
-    level = np.where(mortar, 1.0, level)
-    level = level - np.clip(1.2 - f, 0, 1) * 1.5
-    rgb = _paint(COBBLE, level, px, py, band=0.4)
+    f1, f2, du, dv, h = _cells(u, v, 4.0, 510)
+    mortar = (f2 - f1) < 0.5
+    # Each stone: lit on its sun side (-u, +v), shaded on the far side, a few lighter flecks.
+    side = (-du * 0.45 + dv * 0.28) / np.maximum(f1, 1e-3)
+    rim = np.clip((f1 - 0.6) / 1.4, 0, 1)
+    level = 2.3 + (h * 13 % 1 - 0.5) * 0.5 + side * rim * 1.3
+    level = level - np.clip(1.2 - f, 0, 1) * 1.2
+    ramp = np.minimum((h * len(COBBLE_RAMPS)).astype(np.int64), len(COBBLE_RAMPS) - 1)
+    rgb = np.zeros(u.shape + (3,), np.uint8)
+    for i, colors in enumerate(COBBLE_RAMPS):
+        rgb = np.where((ramp == i)[..., None], _paint(colors, level, px, py, band=0.4), rgb)
+    joint = 1.0 - np.clip(1.2 - f, 0, 1)
+    rgb = np.where(mortar[..., None], _paint(MORTAR, joint, px, py), rgb)
     # Moss creeping into a few joints.
-    moss = mortar & (_pnoise(u, v, 4, 520) > 0.66)
+    moss = mortar & (_pnoise(u, v, 4, 520) > 0.68)
     rgb = np.where(moss[..., None], _rgb(LEAF[2]), rgb)
     return _sprite(rgb, cover * 255)
 

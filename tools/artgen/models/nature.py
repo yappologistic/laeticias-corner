@@ -11,10 +11,6 @@ from voxel import (Model, Rng, curve, cylinder, cylinder_normal, ellipsoid, elli
 C = 8.0  # centre of a 1x1 tile
 
 
-def _sway(frame: int, frames: int, amount: float) -> float:
-    return amount * math.sin(2 * math.pi * frame / max(frames, 1))
-
-
 def canopy(m: Model, clumps, material: str, seed: int, leafy=0.35, light_tone=0.7):
     """Union of noisy ellipsoid clumps; each clump keeps its own normals so it reads as a puff."""
     X, Y, Z = m.coords()
@@ -298,7 +294,21 @@ def berry_bush(v, frame, frames):
     return m
 
 
-def _blades(m: Model, rng: Rng, count, radius, h0, h1, materials, shear, spread=3.0, tip=1.0):
+def _bend(pts, t, sway, h, phase):
+    """Sway one stem: its tip swings most, each stem on its own phase."""
+    lean = sway * math.sin(t + phase) * np.clip(pts[:, 2] / h, 0, 1) ** 1.5
+    pts[:, 0] += lean
+    pts[:, 1] -= 0.4 * lean
+    return pts
+
+
+def _gust_phase(rng: Rng, x, y):
+    """Phase of a gust crossing the patch, with a little lag per stem."""
+    return (x - y) * 0.18 + rng.uniform(0, 1.5)
+
+
+def _blades(m: Model, rng: Rng, count, radius, h0, h1, materials, t=0.0, sway=0.0, spread=3.0,
+            tip=1.0):
     for n in range(count):
         a, d = rng.uniform(0, 6.28), radius * math.sqrt(rng.uniform(0, 1))
         x, y = C + d * math.cos(a), C + d * math.sin(a)
@@ -306,7 +316,7 @@ def _blades(m: Model, rng: Rng, count, radius, h0, h1, materials, shear, spread=
         out = rng.uniform(0.3, 1.0) * spread
         top = (x + out * math.cos(a), y + out * math.sin(a), h)
         pts = curve((x, y, 0.2), top, bend=(rng.uniform(-1, 1), rng.uniform(-1, 1)))
-        pts[:, 0] += [shear(z) for z in pts[:, 2]]
+        pts = _bend(pts, t, sway * rng.uniform(0.6, 1.2), h, _gust_phase(rng, x, y))
         frac = pts[:, 2] / h
         m.put_points(pts, rng.choice(materials), tone=-0.8 + frac * (1.6 + tip))
 
@@ -314,15 +324,13 @@ def _blades(m: Model, rng: Rng, count, radius, h0, h1, materials, shear, spread=
 def tall_grass(v, frame, frames):
     rng = Rng(106, v)
     m = Model.empty(-4, 20, -4, 20, 0, 18)
-    sway = _sway(frame, frames, 1.0)
-    shear = lambda z: sway * (z / 14) ** 1.5
-    _blades(m, rng, 46, 6.0, 7, 14, ["grass", "grass", "leaf"], shear)
+    t = 2 * math.pi * frame / max(frames, 1)
+    _blades(m, rng, 46, 6.0, 7, 14, ["grass", "grass", "leaf"], t, 1.3)
     if v in (1, 3):  # a few seed heads
         for n in range(5):
             a, d = rng.uniform(0, 6.28), rng.uniform(0, 5)
             x, y, h = C + d * math.cos(a), C + d * math.sin(a), rng.uniform(12, 15)
-            pts = curve((x, y, 0.2), (x + 1, y, h))
-            pts[:, 0] += [shear(z) for z in pts[:, 2]]
+            pts = _bend(curve((x, y, 0.2), (x + 1, y, h)), t, 1.6, h, _gust_phase(rng, x, y))
             m.put_points(pts, "grass", tone=0.5)
             m.put_points(pts[-4:], "straw", tone=0.5)
     return m
@@ -331,7 +339,7 @@ def tall_grass(v, frame, frames):
 def _flower_patch(v, seed, head):
     rng = Rng(seed, v)
     m = Model.empty(-2, 18, -2, 18, 0, 14)
-    _blades(m, rng, 14, 5.5, 2, 4.5, ["grass", "leaf"], lambda z: 0.0, spread=2.0, tip=0.3)
+    _blades(m, rng, 14, 5.5, 2, 4.5, ["grass", "leaf"], spread=2.0, tip=0.3)
     X, Y, Z = m.coords()
     for n in range(rng.integers(7, 11)):
         a, d = rng.uniform(0, 6.28), 5.5 * math.sqrt(rng.uniform(0.05, 1))
@@ -444,14 +452,13 @@ def stump(v, frame, frames):
 def reeds(v, frame, frames):
     rng = Rng(114, v)
     m = Model.empty(-4, 20, -4, 20, 0, 22)
-    sway = _sway(frame, frames, 1.0)
-    shear = lambda z: sway * (z / 18) ** 1.5
-    _blades(m, rng, 18, 4.5, 9, 17, ["leaf_dark", "grass"], shear, spread=2.5)
+    t = 2 * math.pi * frame / max(frames, 1)
+    _blades(m, rng, 18, 4.5, 9, 17, ["leaf_dark", "grass"], t, 1.3, spread=2.5)
     for n in range(rng.integers(3, 6)):
         a, d = rng.uniform(0, 6.28), rng.uniform(0, 3.5)
         x, y, h = C + d * math.cos(a), C + d * math.sin(a), rng.uniform(13, 19)
         pts = curve((x, y, 0.2), (x + rng.uniform(-1, 1), y, h))
-        pts[:, 0] += [shear(z) for z in pts[:, 2]]
+        pts = _bend(pts, t, 1.1, h, _gust_phase(rng, x, y))
         m.put_points(pts, "leaf_dark", tone=0.3)
         head = pts[(pts[:, 2] > h - 5) & (pts[:, 2] < h - 1.5)]
         m.put_points(head, "bark", tone=1.2)
