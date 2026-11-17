@@ -151,14 +151,43 @@ TEST_CASE("utf-8 decoding") {
 
 TEST_CASE("drawer categories list terrain for the ground tab") {
     const Catalog& c = test::catalog();
-    std::vector<int> ground;
+    std::vector<DrawerEntry> ground;
     Hud::categoryEntries(c, *c.findCategory(kGroundCategory), ground);
-    CHECK(ground.size() == c.terrain.size());
-    std::vector<int> homes;
+    REQUIRE(ground.size() == c.terrain.size());
+    for (std::size_t t = 0; t < ground.size(); ++t)
+        CHECK(ground[t] == DrawerEntry{.terrain = true, .index = static_cast<int>(t)});
+    std::vector<DrawerEntry> homes;
     Hud::categoryEntries(c, *c.findCategory("homes"), homes);
     CHECK(homes.size() == 6);
-    for (int i : homes)
-        CHECK(c.items[static_cast<std::size_t>(i)].category == *c.findCategory("homes"));
+    for (const DrawerEntry& e : homes) {
+        CHECK_FALSE(e.terrain);
+        CHECK(c.items[static_cast<std::size_t>(e.index)].category == *c.findCategory("homes"));
+    }
+}
+
+TEST_CASE("thumbnails fall back to the placeholder instead of crashing") {
+    SpriteTables t;
+    t.placeholder = 7;
+    t.terrainBase = {{3}, {}};
+    t.terrainOverlay.resize(2);
+    t.terrainOverlay[1][15].frames = {4};
+    t.items.resize(3);
+    t.items[0].base = {FrameSet{{5}}};
+    t.items[1].base = {FrameSet{}}; // missing art
+    t.critters.resize(1);
+    t.critters[0][static_cast<std::size_t>(CritterAnim::IdleFront)].frames = {6};
+
+    CHECK(thumbnail(t, Thumb::Terrain, 0) == 3);
+    CHECK(thumbnail(t, Thumb::Terrain, 1) == 4);
+    CHECK(thumbnail(t, Thumb::Item, 0) == 5);
+    CHECK(thumbnail(t, Thumb::Visitor, 0) == 6);
+    CHECK(thumbnail(t, Thumb::Item, 1) == 7);     // empty frame set
+    CHECK(thumbnail(t, Thumb::Item, 2) == 7);     // no variants at all
+    CHECK(thumbnail(t, Thumb::Terrain, 25) == 7); // an item index used as terrain: out of range
+    CHECK(thumbnail(t, Thumb::Item, -1) == 7);
+    CHECK(thumbnail(t, Thumb::Visitor, 1) == 7);
+    t.terrainOverlay[1][15].frames.clear();
+    CHECK(thumbnail(t, Thumb::Terrain, 1) == 7);
 }
 
 TEST_CASE("particles expire and rain leaves ripples on water") {

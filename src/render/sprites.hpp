@@ -43,10 +43,17 @@ struct SpriteTables {
     SpriteId cliffSW = 0;
     SpriteId tileOk = 0;
     SpriteId tileBad = 0;
+    SpriteId placeholder = 0;    // drawn for anything that has no art
     float shadowOpacity = 0.35f; // opacity of the composited shadow layer
 };
 
 [[nodiscard]] SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat);
+
+enum class Thumb : std::uint8_t { Terrain, Item, Visitor };
+
+// First frame of a catalog entry's art for interface thumbnails. Falls back to the placeholder
+// when the entry has no frames or the index is out of range, so the UI never crashes on it.
+[[nodiscard]] SpriteId thumbnail(const SpriteTables& t, Thumb kind, int index);
 
 // The f0 key of every sprite the contract requires for this catalog (for coverage reports).
 [[nodiscard]] std::vector<std::string> requiredSpriteKeys(const Catalog& cat);

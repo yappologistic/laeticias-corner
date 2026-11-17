@@ -79,6 +79,14 @@ struct HudAction {
 // The drawer's category with this id lists terrain instead of items.
 inline constexpr std::string_view kGroundCategory = "terrain";
 
+// What a drawer tile stands for. Each tile carries its own, so drawing and picking never depend on
+// the open tab still being the one the drawer was laid out for.
+struct DrawerEntry {
+    bool terrain = false; // `index` is a terrain index, else an item index
+    int index = -1;
+    friend bool operator==(const DrawerEntry&, const DrawerEntry&) = default;
+};
+
 class Hud {
 public:
     Hud();
@@ -97,9 +105,9 @@ public:
     // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...).
     [[nodiscard]] std::optional<Vec2> widgetCentre(std::string_view name, const HudModel& m) const;
 
-    // Entries of a drawer category: item indices, or terrain indices for the ground tab. Fills
-    // `out` in place so the per-frame layout reuses its storage.
-    static void categoryEntries(const Catalog& cat, int category, std::vector<int>& out);
+    // Entries of a drawer category: its items, or all terrain for the ground tab. Fills `out` in
+    // place so the per-frame layout reuses its storage.
+    static void categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out);
 
     static constexpr int kMaxWidgets = 192;
 
@@ -113,7 +121,7 @@ private:
         std::string_view label;    // drawn next to the icon (pill buttons) or under a tile
         std::string_view tooltip;  // empty: none
         std::string_view shortcut; // shown in the tooltip
-        int ref = -1;              // tile: entry index in the catalog
+        DrawerEntry entry;         // tile: what it stands for
     };
     struct Panel {
         Box box;
@@ -140,7 +148,7 @@ private:
     std::array<HudAction, 16> actions_{};
     std::size_t actionCount_ = 0;
     std::vector<int> scroll_; // first visible drawer row per category
-    std::vector<int> entries_;
+    std::vector<DrawerEntry> entries_;
 
     float scale_ = 1;
     Vec2 screen_;

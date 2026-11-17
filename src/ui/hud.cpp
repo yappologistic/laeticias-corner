@@ -119,13 +119,15 @@ Hud::Hud() {
     hintText_.reserve(192);
 }
 
-void Hud::categoryEntries(const Catalog& cat, int category, std::vector<int>& out) {
+void Hud::categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out) {
     out.clear();
     if (cat.categories[static_cast<std::size_t>(category)].id == kGroundCategory) {
-        for (std::size_t t = 0; t < cat.terrain.size(); ++t) out.push_back(static_cast<int>(t));
+        for (std::size_t t = 0; t < cat.terrain.size(); ++t)
+            out.push_back({.terrain = true, .index = static_cast<int>(t)});
     } else {
         for (std::size_t i = 0; i < cat.items.size(); ++i)
-            if (cat.items[i].category == category) out.push_back(static_cast<int>(i));
+            if (cat.items[i].category == category)
+                out.push_back({.terrain = false, .index = static_cast<int>(i)});
     }
 }
 
@@ -270,8 +272,6 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
             tx += tabW + gap;
         }
         const float gy = ty + theme::kTabH * s + gap;
-        const bool ground =
-            m.cat->categories[static_cast<std::size_t>(m.category)].id == kGroundCategory;
         for (int i = 0; i < rows * cols; ++i) {
             const int e = scroll * cols + i;
             if (e >= total) break;
@@ -280,12 +280,12 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
             Widget& t = add(kTile0 + std::min(e, kMaxWidgets - kTile0 - 1),
                             {drawerBox_.x + ppad + static_cast<float>(col) * (tileW + gap),
                              gy + static_cast<float>(row) * (tileH + gap), tileW, tileH});
-            t.ref = entries_[static_cast<std::size_t>(e)];
-            t.label = ground
-                          ? std::string_view(m.cat->terrain[static_cast<std::size_t>(t.ref)].name)
-                          : std::string_view(m.cat->items[static_cast<std::size_t>(t.ref)].name);
-            t.selected =
-                (ground ? m.tool == Tool::Paint : m.tool == Tool::Place) && m.selection == t.ref;
+            t.entry = entries_[static_cast<std::size_t>(e)];
+            const auto idx = static_cast<std::size_t>(t.entry.index);
+            t.label = t.entry.terrain ? std::string_view(m.cat->terrain[idx].name)
+                                      : std::string_view(m.cat->items[idx].name);
+            t.selected = (t.entry.terrain ? m.tool == Tool::Paint : m.tool == Tool::Place) &&
+                         m.selection == t.entry.index;
         }
     }
 
@@ -365,10 +365,10 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     }
     if (in.released && captured_) {
         if (active_ != 0 && active_ == hovered) {
-            const auto ref = [&] {
+            const auto entry = [&] {
                 for (const Widget& w : widgets_)
-                    if (w.id == active_) return w.ref;
-                return -1;
+                    if (w.id == active_) return w.entry;
+                return DrawerEntry{};
             }();
             switch (active_) {
             case kBuild: emit(HudAction::Kind::ToggleBuild); break;
@@ -386,10 +386,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kZoomIn: emit(HudAction::Kind::ZoomIn); break;
             default:
                 if (active_ >= kTile0) {
-                    const bool ground =
-                        m.cat->categories[static_cast<std::size_t>(m.category)].id ==
-                        kGroundCategory;
-                    emit(ground ? HudAction::Kind::PickTerrain : HudAction::Kind::PickItem, ref);
+                    emit(entry.terrain ? HudAction::Kind::PickTerrain : HudAction::Kind::PickItem,
+                         entry.index);
                 } else if (active_ >= kTab0) {
                     emit(HudAction::Kind::Category, active_ - kTab0);
                 }
@@ -428,10 +426,8 @@ std::optional<Vec2> Hud::widgetCentre(std::string_view name, const HudModel& m) 
     const auto tile = byPrefix("tile:");
     for (const Widget& w : widgets_) {
         if (tile && w.id >= kTile0) {
-            const bool ground =
-                m.cat->categories[static_cast<std::size_t>(m.category)].id == kGroundCategory;
-            const auto& entryId = ground ? m.cat->terrain[static_cast<std::size_t>(w.ref)].id
-                                         : m.cat->items[static_cast<std::size_t>(w.ref)].id;
+            const auto i = static_cast<std::size_t>(w.entry.index);
+            const auto& entryId = w.entry.terrain ? m.cat->terrain[i].id : m.cat->items[i].id;
             if (entryId == *tile) return Vec2{w.box.cx(), w.box.cy()};
         } else if (id != 0 && w.id == id) {
             return Vec2{w.box.cx(), w.box.cy()};
@@ -498,17 +494,8 @@ void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) 
     if (h > 0) p.roundRect(w.box, r, withAlpha(theme::kHover, alpha * h));
     if (pr > 0) p.roundRect(w.box, r, withAlpha(theme::kPressed, alpha * pr));
 
-    const bool ground =
-        m.cat->categories[static_cast<std::size_t>(m.category)].id == kGroundCategory;
-    SpriteId thumb = 0;
-    const auto& spr = *m.sprites;
-    if (ground) {
-        const auto t = static_cast<std::size_t>(w.ref);
-        thumb = m.cat->terrain[t].base ? spr.terrainBase[t].front()
-                                       : spr.terrainOverlay[t][15].frames.front();
-    } else {
-        thumb = spr.items[static_cast<std::size_t>(w.ref)].base.front().frames.front();
-    }
+    const SpriteId thumb =
+        thumbnail(*m.sprites, w.entry.terrain ? Thumb::Terrain : Thumb::Item, w.entry.index);
     const float lift = h * 2.0f * s - pr * s;
     const float th = theme::kThumb * s;
     p.thumbnail(thumb, {w.box.x + 4 * s, w.box.y + 6 * s - lift, w.box.w - 8 * s, th}, alpha);
@@ -565,8 +552,7 @@ void Hud::drawJournal(Painter& p, const HudModel& m) const {
         const Box icon{b.x + pad, y + 6 * s, 40 * s, 40 * s};
         p.roundRect(icon, 20 * s, withAlpha(theme::kTileBack, a));
         if (seen) {
-            const auto anim = static_cast<std::size_t>(CritterAnim::IdleFront);
-            p.thumbnail(m.sprites->critters[v][anim].frames.front(),
+            p.thumbnail(thumbnail(*m.sprites, Thumb::Visitor, static_cast<int>(v)),
                         {icon.x + 4 * s, icon.y + 4 * s, 32 * s, 32 * s}, a);
         } else {
             p.text(Face::Body, "?", icon.cx() - f.measure(Face::Body, "?") * 0.5f,

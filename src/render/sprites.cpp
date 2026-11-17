@@ -88,8 +88,31 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
     t.cliffSW = atlas.resolve("edge/cliff_sw", atlas.placeholderTile());
     t.tileOk = atlas.resolve("ui/tile_ok", atlas.placeholderTile());
     t.tileBad = atlas.resolve("ui/tile_bad", atlas.placeholderTile());
+    t.placeholder = atlas.placeholderBox();
     if (shadowPeak > 0.0f) t.shadowOpacity = shadowPeak;
     return t;
+}
+
+SpriteId thumbnail(const SpriteTables& t, Thumb kind, int index) {
+    const auto i = static_cast<std::size_t>(index);
+    const auto first = [&](const auto& frames) {
+        return frames.empty() ? t.placeholder : frames.front();
+    };
+    if (index < 0) return t.placeholder;
+    switch (kind) {
+    case Thumb::Terrain:
+        if (i >= t.terrainBase.size() || i >= t.terrainOverlay.size()) break;
+        // Base terrain has variants; overlay terrain shows its fully surrounded piece.
+        return t.terrainBase[i].empty() ? first(t.terrainOverlay[i][15].frames)
+                                        : t.terrainBase[i].front();
+    case Thumb::Item:
+        if (i >= t.items.size() || t.items[i].base.empty()) break;
+        return first(t.items[i].base.front().frames);
+    case Thumb::Visitor:
+        if (i >= t.critters.size()) break;
+        return first(t.critters[i][static_cast<std::size_t>(CritterAnim::IdleFront)].frames);
+    }
+    return t.placeholder;
 }
 
 std::vector<std::string> requiredSpriteKeys(const Catalog& cat) {
