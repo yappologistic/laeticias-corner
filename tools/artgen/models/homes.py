@@ -102,8 +102,8 @@ def siding(Z, period=2.0):
     return ((Z % period) < 0.5) * -0.7
 
 
-def cottage(v, frame, frames):
-    m = Model.empty(0, 32, 0, 32, 0, 40)
+def cottage(v, frame, frames, k):
+    m = Model.empty(0, 32, 0, 32, 0, 40, k=k)
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 4, 28, 7, 25
     m.put(box(X, Y, Z, x0 - 1, x1 + 1, y0 - 1, y1 + 1, 0, 3), "stone",
@@ -144,10 +144,10 @@ def cottage(v, frame, frames):
     return m
 
 
-def toolshed(v, frame, frames):
+def toolshed(v, frame, frames, k):
     """Lean-to shed: braced door at the front, windows at the side and back, tools leaning on
     the other side, so every rotation shows something."""
-    m = Model.empty(-2, 18, -2, 18, 0, 22)
+    m = Model.empty(-2, 18, -2, 18, 0, 22, k=k)
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 2.5, 13.5, 3, 13
     low, high = 12.5, 16.5
@@ -189,8 +189,8 @@ def toolshed(v, frame, frames):
     return m
 
 
-def coop(v, frame, frames):
-    m = Model.empty(0, 16, 0, 17, 0, 24)
+def coop(v, frame, frames, k):
+    m = Model.empty(0, 16, 0, 17, 0, 24, k=k)
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 3, 13, 3.5, 11.5
     for x in (x0 + 0.5, x1 - 1.5):
@@ -216,8 +216,8 @@ def coop(v, frame, frames):
     return m
 
 
-def greenhouse(v, frame, frames):
-    m = Model.empty(0, 32, 0, 32, 0, 26)
+def greenhouse(v, frame, frames, k):
+    m = Model.empty(0, 32, 0, 32, 0, 26, k=k)
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 3, 29, 5, 27
     m.put(box(X, Y, Z, x0, x1, y0, y1, 0, 3), "stone", tone=-0.7 * (((X + Y) % 3) < 0.5))
@@ -246,8 +246,8 @@ def greenhouse(v, frame, frames):
     return m
 
 
-def barn(v, frame, frames):
-    m = Model.empty(0, 48, 0, 32, 0, 44)
+def barn(v, frame, frames, k):
+    m = Model.empty(0, 48, 0, 32, 0, 44, k=k)
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 3, 45, 4, 28
     m.put(box(X, Y, Z, x0 - 0.5, x1 + 0.5, y0 - 0.5, y1 + 0.5, 0, 2), "stone", tone=-0.6 * ((X % 3) < 0.5))
@@ -305,8 +305,8 @@ def barn(v, frame, frames):
     return m
 
 
-def windmill(v, frame, frames):
-    m = Model.empty(-12, 44, -12, 44, 0, 70)
+def windmill(v, frame, frames, k):
+    m = Model.empty(-12, 44, -12, 44, 0, 70, k=k)
     X, Y, Z = m.coords()
     cx = cy = 16.0
     r = 10.5 - Z * 0.07

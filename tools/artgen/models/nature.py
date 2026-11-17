@@ -4,8 +4,9 @@ import math
 
 import numpy as np
 
+from palette import MAT
 from render import SUN
-from voxel import (Model, Rng, box, curve, cylinder, cylinder_normal, ellipsoid, ellipsoid_normal,
+from voxel import (Model, Rng, box, cells3, curve, cylinder, cylinder_normal, ellipsoid, ellipsoid_normal,
                    hash01, segment, value_noise)
 
 C = 8.0  # centre of a 1x1 tile
@@ -14,6 +15,7 @@ C = 8.0  # centre of a 1x1 tile
 def canopy(m: Model, clumps, material: str, seed: int, leafy=0.35, light_tone=0.7):
     """Union of noisy ellipsoid clumps; each clump keeps its own normals so it reads as a puff."""
     X, Y, Z = m.coords()
+    grown = np.zeros(m.mat.shape, bool)
     for n, (cx, cy, cz, r) in enumerate(clumps):
         wob = (value_noise(X, Y, Z, 2.2, seed + n) - 0.5) * leafy * 2
         rz = r * 0.82
@@ -24,6 +26,9 @@ def canopy(m: Model, clumps, material: str, seed: int, leafy=0.35, light_tone=0.
         speck = value_noise(X, Y, Z, 1.6, seed + 50 + n)
         tone = np.where((sun_side > 0.35) & (speck > 0.45), light_tone, 0.0) + (speck - 0.5) * 0.4
         m.put(mask, material, tone=tone, normal=nrm)
+        grown |= mask
+    if m.fine:
+        m.carve(grown & ~_leaves(m, grown & (m.mat == MAT[material]), m.nrm, m.tone, seed))
 
 
 def trunk(m: Model, x, y, r, z1, material="bark", lean=(0.0, 0.0), flare=1.6, taper=0.0):
@@ -35,7 +40,11 @@ def trunk(m: Model, x, y, r, z1, material="bark", lean=(0.0, 0.0), flare=1.6, ta
     # Vertical bark grooves: noise stretched along the trunk.
     ang = np.arctan2(Y - cy, X - cx)
     bark = value_noise(np.cos(ang) * 4 + 10, np.sin(ang) * 4 + 10, Z * 0.25, 1.0, 11) - 0.5
-    m.put(mask, material, tone=bark * 1.2, normal=cylinder_normal(X, Y, Z, cx, cy))
+    tone = bark * 1.2
+    if m.fine:  # narrow ridged plates between the grooves, catching light on their edges
+        plates = value_noise(np.cos(ang) * 10 + 20, np.sin(ang) * 10 + 20, Z * 0.7, 1.0, 13)
+        tone = tone + (plates > 0.62) * 0.8 - (plates < 0.3) * 0.7
+    m.put(mask, material, tone=tone, normal=cylinder_normal(X, Y, Z, cx, cy))
 
 
 def roots(m: Model, rng: Rng, x, y, count, reach, r=1.1, material="bark"):
@@ -71,6 +80,8 @@ def leaf_mass(m: Model, clumps, seed: int, materials=(("leaf", 1.0),), under="le
     mass down the ramp so only sunlit tufts reach the lightest greens.
     """
     rng = Rng(seed)
+    # Clusters stay small in pixels on finer grids, so a canopy carries more of them.
+    cluster = tuple(c / m.k ** 0.5 for c in cluster)
     shape = m.mat.shape
     best = np.full(shape, -1.0, np.float32)
     second = np.full(shape, -1.0, np.float32)
@@ -132,18 +143,68 @@ def leaf_mass(m: Model, clumps, seed: int, materials=(("leaf", 1.0),), under="le
 
     solid = best > -1
     # Crevices: where two clusters meet with nearly equal claim, the gap between them is dark.
-    crevice = solid & (second > 0) & (best - second < 0.12)
-    tone -= crevice * 0.8
+    # On finer grids the gaps are kept a pixel or two wide and a little deeper.
+    crevice = solid & (second > 0) & (best - second < 0.12 * m.k)
+    tone -= crevice * (0.8 + 0.4 * (m.k - 1))
+    if m.fine:
+        solid = _leaves(m, solid, nrm, tone, seed)
+        # Limbs stay where they cross the foliage, glimpsed between the leaves.
+        solid &= m.mat != MAT["bark"]
     for i, name in enumerate(names):
         mask = solid & (own == i)
         if mask.any():
             m.put(mask, name, tone=tone, normal=(nrm[..., 0], nrm[..., 1], nrm[..., 2]))
 
 
+LEAF = 1.1  # leaf size in design units on fine grids
+
+
+def _leaves(m: Model, solid, nrm, tone, seed):
+    """Individual leaves over a canopy: each lit on its sun side, with a dark notch where it
+    overlaps the next, so tufts break into small shapes instead of smooth puffs. Notches on
+    the outer skin are cut away, which frays the silhouette into leaf tips. Returns the solid
+    mask that is left."""
+    pad = np.pad(solid, 1)
+    inner = pad[2:, 1:-1, 1:-1] & pad[:-2, 1:-1, 1:-1] & pad[1:-1, 2:, 1:-1] & \
+        pad[1:-1, :-2, 1:-1] & pad[1:-1, 1:-1, 2:] & pad[1:-1, 1:-1, :-2]
+    idx = np.nonzero(solid)
+    X, Y, Z = m.coords()
+    pts = np.stack([X[idx[0], 0, 0], Y[0, idx[1], 0], Z[0, 0, idx[2]]], 1)
+    f1, f2, off, h = cells3(pts * (1.0, 1.0, 1.3), LEAF, seed + 7)
+    side = (off @ SUN) / (LEAF * 0.5)
+    lit = np.clip(nrm[idx] @ SUN, 0, 1)
+    gap = (f2 - f1) < 0.18
+    # Shadowed leaves keep a gentler version of the same marks, lifted off the darkest ink.
+    t = side * (0.6 + 0.3 * lit) + (h - 0.5) * 0.5 + 1.1 * (1 - lit)
+    tone[idx] += t - gap * (0.6 + 0.6 * (side < 0))
+    keep = solid.copy()
+    keep[idx] = ~(gap & ~inner[idx] & (h > 0.35))
+    return keep
+
+
 def _branches(m: Model, base, clumps, r=1.2):
     X, Y, Z = m.coords()
     for cx, cy, cz, cr in clumps:
         m.put(segment(X, Y, Z, base, (cx, cy, cz - cr * 0.3), r), "bark", tone=-0.4)
+
+
+def _limbs(m: Model, rng: Rng, foot, top, trunk_h, clumps):
+    """Tapering limbs leaving the trunk below the crown and forking up into its lowest clumps,
+    so the branch structure shows under the canopy (fine grids only)."""
+    for cx, cy, cz, cr in sorted(clumps, key=lambda c: c[2])[:3]:
+        f = rng.uniform(0.4, 0.55)
+        p = np.array([foot[0] + (top[0] - foot[0]) * f, foot[1] + (top[1] - foot[1]) * f,
+                      trunk_h * f])
+        q = np.array([cx, cy, cz - cr * 0.4])
+        mid = (p + q) / 2 + (0, 0, rng.uniform(0.5, 2.0))
+        sl, X, Y, Z = m.window(*((p + q) / 2), np.linalg.norm(q - p) / 2 + 2)
+        m.put_window(sl, segment(X, Y, Z, p, mid, 1.0) | segment(X, Y, Z, mid, q, 0.65), "bark",
+                     tone=-0.2)
+        a = rng.uniform(0, 6.28)
+        twig = mid + (q - mid) * 0.5
+        tip = twig + (np.cos(a) * 2.5, np.sin(a) * 2.5, 2.5)
+        sl, X, Y, Z = m.window(*twig, 4)
+        m.put_window(sl, segment(X, Y, Z, twig, tip, 0.45), "bark", tone=0.1)
 
 
 # ---- broadleaf trees ----
@@ -159,11 +220,11 @@ BROADLEAF = (
 )
 
 
-def _broadleaf(v, frame, frames, seed, materials, under, level, scale=1.0):
+def _broadleaf(v, frame, frames, k, seed, materials, under, level, scale=1.0):
     rng = Rng(seed, v)
     p = BROADLEAF[v]
     R, zc = p["r"] * scale, p["z"] * scale
-    m = Model.empty(-18, 34, -18, 34, 0, int(zc + R * 1.6) + 4)
+    m = Model.empty(-18, 34, -18, 34, 0, int(zc + R * 1.6) + 4, k=k)
     lx, ly = p["lean"]
     top = (C + lx, C + ly)
     trunk_h = zc - R * 0.35
@@ -183,6 +244,8 @@ def _broadleaf(v, frame, frames, seed, materials, under, level, scale=1.0):
         clumps.append((top[0] + R * 0.35 * math.cos(a), top[1] + R * 0.35 * math.sin(a),
                        zc + R * rng.uniform(0.5, 0.7), R * rng.uniform(0.55, 0.65)))
     _branches(m, (top[0], top[1], trunk_h - 2), clumps[1:])
+    if m.fine:
+        _limbs(m, Rng(seed, v, 7), (C, C), top, trunk_h, clumps[1:])
     # Sway: each clump drifts on its own phase, more the higher it sits.
     t = 2 * math.pi * frame / max(frames, 1)
     swayed = []
@@ -195,12 +258,12 @@ def _broadleaf(v, frame, frames, seed, materials, under, level, scale=1.0):
     return m
 
 
-def oak(v, frame, frames):
-    return _broadleaf(v, frame, frames, 101, (("leaf", 1.0),), "leaf_dark", level=-1.2)
+def oak(v, frame, frames, k):
+    return _broadleaf(v, frame, frames, k, 101, (("leaf", 1.0),), "leaf_dark", level=-1.2)
 
 
-def blossom(v, frame, frames):
-    m = _broadleaf(v, frame, frames, 103, (("blossom", 0.95), ("leaf_dark", 0.05)), "leaf_dark",
+def blossom(v, frame, frames, k):
+    m = _broadleaf(v, frame, frames, k, 103, (("blossom", 0.95), ("leaf_dark", 0.05)), "leaf_dark",
                    level=-1.3, scale=0.92)
     # A few fallen petals on the ground under the crown, thicker near the trunk.
     X, Y, Z = m.coords()
@@ -218,10 +281,10 @@ PINES = ((60, 11.5, 7, (0.0, 0.0)), (54, 10.0, 6, (1.5, -1.5)), (50, 12.5, 6, (-
          (63, 10.5, 8, (-1.0, -1.5)))
 
 
-def pine(v, frame, frames):
+def pine(v, frame, frames, k):
     rng = Rng(102, v)
     h, r0, tiers, (lx, ly) = PINES[v]
-    m = Model.empty(-10, 26, -10, 26, 0, h + 3)
+    m = Model.empty(-10, 26, -10, 26, 0, h + 3, k=k)
     trunk(m, C, C, 1.7, h * 0.4, flare=1.6, taper=0.3)
     roots(m, rng, C, C, 4, 4.0, r=0.9)
     X, Y, Z = m.coords()
@@ -257,6 +320,13 @@ def pine(v, frame, frames):
         hem = (Z < z0 - droop + 1.8) & (rim > 0.4)
         tone = (0.7 * np.clip((rim - 0.45) * 2.5, 0, 1) - 0.3 + tips * 0.8
                 + (speck - 0.5) * 0.3 + (jag - 1) * 1.2 - hem * 1.8)
+        if m.fine:
+            # Needle sprays: streaks running out and down from the axis, so each tier reads
+            # as layered branch tips; the hem frays where a streak ends.
+            spray = value_noise(ang * rho * 1.8, (rho - Z * 0.6) * 0.45, np.full_like(Z, n * 7.0),
+                                1.0, 330 + v)
+            tone = tone + (spray - 0.5) * 1.8 + 0.35
+            mask = mask & ~(hem & (spray < 0.38))
         m.put(mask, "leaf_dark", tone=tone, normal=nrm)
     return m
 
@@ -273,16 +343,16 @@ def _bush_shape(m: Model, rng: Rng, material: str, seed: int, size=1.0):
     canopy(m, clumps, material, seed, leafy=0.45)
 
 
-def bush(v, frame, frames):
+def bush(v, frame, frames, k):
     rng = Rng(104, v)
-    m = Model.empty(-3, 19, -3, 19, 0, 15)
+    m = Model.empty(-3, 19, -3, 19, 0, 15, k=k)
     _bush_shape(m, rng, "leaf", 400 + v, (0.95, 1.05, 0.85, 1.0)[v])
     return m
 
 
-def berry_bush(v, frame, frames):
+def berry_bush(v, frame, frames, k):
     rng = Rng(105, v)
-    m = Model.empty(-3, 19, -3, 19, 0, 15)
+    m = Model.empty(-3, 19, -3, 19, 0, 15, k=k)
     _bush_shape(m, rng, "leaf_dark", 500 + v, (1.0, 0.92, 1.05, 0.95)[v])
     solid = m.mat > 0
     exposed = solid & ~np.pad(solid, 1)[1:-1, 1:-1, 2:] | solid & ~np.pad(solid, 1)[2:, 1:-1, 1:-1] \
@@ -322,9 +392,9 @@ def _blades(m: Model, rng: Rng, count, radius, h0, h1, materials, t=0.0, sway=0.
         m.put_points(pts, rng.choice(materials), tone=-0.8 + frac * (1.6 + tip))
 
 
-def tall_grass(v, frame, frames):
+def tall_grass(v, frame, frames, k):
     rng = Rng(106, v)
-    m = Model.empty(-4, 20, -4, 20, 0, 18)
+    m = Model.empty(-4, 20, -4, 20, 0, 18, k=k)
     t = 2 * math.pi * frame / max(frames, 1)
     _blades(m, rng, 46, 6.0, 7, 14, ["grass", "grass", "leaf"], t, 1.3)
     if v in (1, 3):  # a few seed heads
@@ -337,9 +407,9 @@ def tall_grass(v, frame, frames):
     return m
 
 
-def _flower_patch(v, seed, head):
+def _flower_patch(v, k, seed, head):
     rng = Rng(seed, v)
-    m = Model.empty(-2, 18, -2, 18, 0, 14)
+    m = Model.empty(-2, 18, -2, 18, 0, 14, k=k)
     _blades(m, rng, 14, 5.5, 2, 4.5, ["grass", "leaf"], spread=2.0, tip=0.3)
     X, Y, Z = m.coords()
     for n in range(rng.integers(7, 11)):
@@ -369,16 +439,16 @@ def _lavender(m, X, Y, Z, x, y, h, rng):
                      "violet", tone=0.2 + k * 0.25)
 
 
-def flowers_red(v, frame, frames):
-    return _flower_patch(v, 107, _poppy)
+def flowers_red(v, frame, frames, k):
+    return _flower_patch(v, k, 107, _poppy)
 
 
-def flowers_white(v, frame, frames):
-    return _flower_patch(v, 108, _daisy)
+def flowers_white(v, frame, frames, k):
+    return _flower_patch(v, k, 108, _daisy)
 
 
-def flowers_violet(v, frame, frames):
-    return _flower_patch(v, 109, _lavender)
+def flowers_violet(v, frame, frames, k):
+    return _flower_patch(v, k, 109, _lavender)
 
 
 # Per variant: cap material and the cluster as (dx, dy, scale); the first is the biggest.
@@ -391,8 +461,8 @@ MUSHROOMS = (
 )
 
 
-def mushrooms(v, frame, frames):
-    m = Model.empty(-1, 17, -1, 17, 0, 12)
+def mushrooms(v, frame, frames, k):
+    m = Model.empty(-1, 17, -1, 17, 0, 12, k=k)
     X, Y, Z = m.coords()
     cap_mat, cluster = MUSHROOMS[v]
     for n, (dx, dy, sc) in enumerate(cluster):
@@ -414,9 +484,9 @@ def mushrooms(v, frame, frames):
     return m
 
 
-def rock(v, frame, frames):
+def rock(v, frame, frames, k):
     rng = Rng(112, v)
-    m = Model.empty(-3, 19, -3, 19, 0, 11)
+    m = Model.empty(-3, 19, -3, 19, 0, 11, k=k)
     X, Y, Z = m.coords()
     stones = [(C, C, 5.5, 4.8, 5.0)] if v != 3 else [(C - 1.5, C - 1, 4.2, 3.6, 4.0),
                                                        (C + 3.5, C + 3, 2.8, 2.6, 2.6)]
@@ -447,9 +517,9 @@ def rock(v, frame, frames):
     return m
 
 
-def stump(v, frame, frames):
+def stump(v, frame, frames, k):
     rng = Rng(113, v)
-    m = Model.empty(-3, 19, -3, 19, 0, 14)
+    m = Model.empty(-3, 19, -3, 19, 0, 14, k=k)
     X, Y, Z = m.coords()
     r, h = 4.3, 5.5 + v
     trunk(m, C, C, r, h, flare=1.4)
@@ -473,9 +543,9 @@ def stump(v, frame, frames):
     return m
 
 
-def reeds(v, frame, frames):
+def reeds(v, frame, frames, k):
     rng = Rng(114, v)
-    m = Model.empty(-4, 20, -4, 20, 0, 22)
+    m = Model.empty(-4, 20, -4, 20, 0, 22, k=k)
     t = 2 * math.pi * frame / max(frames, 1)
     _blades(m, rng, 18, 4.5, 9, 17, ["leaf_dark", "grass"], t, 1.3, spread=2.5)
     for n in range(rng.integers(3, 6)):
@@ -490,9 +560,9 @@ def reeds(v, frame, frames):
     return m
 
 
-def lily_pads(v, frame, frames):
+def lily_pads(v, frame, frames, k):
     rng = Rng(115, v)
-    m = Model.empty(-2, 18, -2, 18, 0, 4)
+    m = Model.empty(-2, 18, -2, 18, 0, 4, k=k)
     X, Y, Z = m.coords()
     for n in range(rng.integers(2, 5)):
         a, d = n * 2.3 + rng.uniform(0, 1), rng.uniform(0, 4.5)

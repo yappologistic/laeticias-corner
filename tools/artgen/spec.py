@@ -1,14 +1,17 @@
-"""What the atlas must contain: every sprite key the catalog implies, with its frame count."""
+"""What the atlas must contain (every sprite key the catalog implies, with its frame count) and
+where and at which resolution it is built."""
 
+import argparse
 import json
 from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "assets" / "catalog.json"
-ATLAS_PNG = ROOT / "assets" / "atlas.png"
-ATLAS_JSON = ROOT / "assets" / "atlas.json"
-OUT = ROOT / "out" / "artgen"
+ASSETS = ROOT / "assets"
+PREVIEWS = ROOT / "out" / "artgen"
+# Models are authored in design units: 16 per tile edge, whatever the output resolution.
+DESIGN_TILE = 16
 
 # Frame counts are ours to choose (the manifest is authoritative); fps comes from the catalog.
 WATER_FRAMES = 4
@@ -22,6 +25,51 @@ NO_SHADOW = {"lily_pads"}
 
 def load_catalog() -> dict:
     return json.loads(CATALOG.read_text())
+
+
+@dataclass(frozen=True)
+class Build:
+    """One build: the tile size, where the atlas goes and where previews go.
+
+    A tile is `tile_w` x `tile_w / 2` pixels; `k` voxels (and pixels of height) per design
+    unit, so `16 k` voxels per tile edge. Everything resolution dependent derives from `k`.
+    """
+    tile_w: int
+    out: Path
+    previews: Path
+
+    @property
+    def k(self) -> int:
+        return self.tile_w // (2 * DESIGN_TILE)
+
+    @property
+    def tile_h(self) -> int:
+        return self.tile_w // 2
+
+    @property
+    def atlas_png(self) -> Path:
+        return self.out / "atlas.png"
+
+    @property
+    def atlas_json(self) -> Path:
+        return self.out / "atlas.json"
+
+
+def parse_build(argv) -> tuple[Build, argparse.Namespace]:
+    ap = argparse.ArgumentParser(description="Build the sprite atlas from the catalog.")
+    ap.add_argument("--tile", type=int, help="tile width in px (default: catalog tile.w)")
+    ap.add_argument("--out", type=Path, help="directory for atlas.png/atlas.json and previews "
+                    "(default: assets/, previews in out/artgen/)")
+    ap.add_argument("--preview", action="store_true", help="also write preview scenes")
+    args = ap.parse_args(argv)
+    tile = load_catalog()["tile"]
+    if args.tile is None and tile["h"] * 2 != tile["w"]:
+        ap.error(f"catalog tile {tile['w']}x{tile['h']} is not 2:1")
+    w = args.tile or tile["w"]
+    if w <= 0 or w % (2 * DESIGN_TILE):
+        ap.error(f"tile width {w} must be a positive multiple of {2 * DESIGN_TILE}")
+    out = (args.out or ASSETS).resolve()
+    return Build(w, out, out if args.out else PREVIEWS), args
 
 
 @dataclass(frozen=True)

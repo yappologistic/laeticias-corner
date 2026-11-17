@@ -1,7 +1,9 @@
 """Voxel models: a material grid plus optional per-voxel normals and tone, with shape helpers.
 
-World units are voxels, 16 per tile edge; z is up and one voxel tall projects to one pixel.
-Shapes are boolean masks over voxel centres so they compose with numpy operators.
+Models are written in design units, 16 per tile edge, and sampled on a grid of `k` voxels per
+design unit (k = 1 for 32x16 tiles, 2 for 64x32). z is up and one voxel tall projects to one
+pixel. Shapes are boolean masks over voxel centres (in design units) so they compose with numpy
+operators; the grid origin and shape are kept in voxels.
 """
 
 from dataclasses import dataclass, field
@@ -9,13 +11,12 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from palette import MAT
-
-TILE = 16
+from spec import DESIGN_TILE
 
 
 @dataclass
 class Halo:
-    """A soft additive light blob for the glow layer, at a world point."""
+    """A soft additive light blob for the glow layer, at a point in design units."""
     x: float
     y: float
     z: float
@@ -26,7 +27,7 @@ class Halo:
 
 @dataclass
 class Model:
-    x0: int
+    x0: int                              # grid origin, in voxels
     y0: int
     z0: int
     mat: np.ndarray                      # uint8 (nx, ny, nz), 0 = empty
@@ -36,29 +37,42 @@ class Model:
     hover: bool = False                  # True when nothing rests on the ground (no contact AO)
     # Context voxels (a neighbour's joining arm): they occlude light but are never drawn.
     ghost: np.ndarray | None = None
+    k: int = 1                           # voxels per design unit
 
     @classmethod
-    def empty(cls, x0, x1, y0, y1, z0, z1) -> "Model":
-        shape = (x1 - x0, y1 - y0, z1 - z0)
-        return cls(x0, y0, z0, np.zeros(shape, np.uint8), np.zeros(shape, np.float32),
-                   np.zeros(shape + (3,), np.float32))
+    def empty(cls, x0, x1, y0, y1, z0, z1, k=1) -> "Model":
+        """An empty model over the box [x0,x1)x[y0,y1)x[z0,z1), given in design units."""
+        shape = ((x1 - x0) * k, (y1 - y0) * k, (z1 - z0) * k)
+        return cls(x0 * k, y0 * k, z0 * k, np.zeros(shape, np.uint8), np.zeros(shape, np.float32),
+                   np.zeros(shape + (3,), np.float32), k=k)
+
+    @property
+    def fine(self) -> bool:
+        """True when the grid can carry detail finer than a design unit (k >= 2). Shingle
+        edges, hinges, mullions and the like are added only then: on the coarse grid they would
+        be blocks, and the 32x16 atlas keeps its established look."""
+        return self.k > 1
 
     def coords(self):
-        """Voxel-centre world coordinates as broadcastable (nx,1,1), (1,ny,1), (1,1,nz) arrays."""
+        """Voxel-centre coordinates in design units as broadcastable (nx,1,1), (1,ny,1), (1,1,nz)
+        arrays."""
         nx, ny, nz = self.mat.shape
-        X = (np.arange(nx, dtype=np.float32) + self.x0 + 0.5)[:, None, None]
-        Y = (np.arange(ny, dtype=np.float32) + self.y0 + 0.5)[None, :, None]
-        Z = (np.arange(nz, dtype=np.float32) + self.z0 + 0.5)[None, None, :]
+        X = ((np.arange(nx, dtype=np.float32) + self.x0 + 0.5) / self.k)[:, None, None]
+        Y = ((np.arange(ny, dtype=np.float32) + self.y0 + 0.5) / self.k)[None, :, None]
+        Z = ((np.arange(nz, dtype=np.float32) + self.z0 + 0.5) / self.k)[None, None, :]
         return X, Y, Z
 
     def window(self, cx, cy, cz, r):
-        """Index slices of the voxels within a box of half-size r around a point, and their
-        centre coordinates, so small shapes are evaluated locally instead of over the grid."""
+        """Index slices of the voxels within a box of half-size r around a point (design units),
+        and their centre coordinates, so small shapes are evaluated locally instead of over the
+        grid."""
         sl, axes = [], []
+        k = self.k
         for c, o, n in zip((cx, cy, cz), (self.x0, self.y0, self.z0), self.mat.shape):
-            a, b = max(int(np.floor(c - r)) - o, 0), min(int(np.ceil(c + r)) - o + 1, n)
+            a = max(int(np.floor((c - r) * k)) - o, 0)
+            b = min(int(np.ceil((c + r) * k)) - o + 1, n)
             sl.append(slice(a, max(a, b)))
-            axes.append(np.arange(a, max(a, b), dtype=np.float32) + o + 0.5)
+            axes.append((np.arange(a, max(a, b), dtype=np.float32) + o + 0.5) / k)
         X, Y, Z = axes
         return tuple(sl), X[:, None, None], Y[None, :, None], Z[None, None, :]
 
@@ -75,9 +89,16 @@ class Model:
             n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
             self.nrm[mask] = np.broadcast_to(n, self.mat.shape + (3,))[mask]
 
+    def put_window(self, sl, mask, material: str, tone=0.0):
+        """Set `mask` (shaped like the window `sl` from `window()`) to `material`."""
+        mask = np.broadcast_to(mask, self.mat[sl].shape)
+        self.mat[sl][mask] = MAT[material]
+        self.tone[sl][mask] = tone
+        self.nrm[sl][mask] = 0.0
+
     def put_points(self, pts, material: str, tone=0.0, normal=None):
-        """Set the voxels containing each world point (N, 3); for thin stems and blades."""
-        pts = np.asarray(pts, np.float32).reshape(-1, 3)
+        """Set the voxels containing each point (N, 3) in design units; for thin stems and blades."""
+        pts = np.asarray(pts, np.float32).reshape(-1, 3) * self.k
         i = np.floor(pts[:, 0]).astype(np.int64) - self.x0
         j = np.floor(pts[:, 1]).astype(np.int64) - self.y0
         k = np.floor(pts[:, 2]).astype(np.int64) - self.z0
@@ -93,19 +114,20 @@ class Model:
         self.mat[mask] = 0
         self.nrm[mask] = 0.0
 
-    def rotated(self, k: int, fw: int, fh: int) -> "Model":
-        """The model turned k x 90 degrees clockwise seen from above (N -> E -> S -> W)."""
+    def rotated(self, turns: int, fw: int, fh: int) -> "Model":
+        """The model turned `turns` x 90 degrees clockwise seen from above (N -> E -> S -> W)."""
         m = self
-        for _ in range(k % 4):
-            hf = TILE * fh
+        for _ in range(turns % 4):
+            hf = DESIGN_TILE * fh                 # design units, for the halos
+            hv = hf * m.k                         # voxels, for the grid
             nx, ny, _nz = m.mat.shape
             rot = lambda a: np.ascontiguousarray(a.transpose(1, 0, *range(2, a.ndim))[::-1])
             nrm = rot(m.nrm)
             # A normal (nx, ny) turns like a direction: (x, y) -> (-y, x).
             nrm = np.stack([-nrm[..., 1], nrm[..., 0], nrm[..., 2]], axis=-1)
-            m = Model(hf - m.y0 - ny, m.x0, m.z0, rot(m.mat), rot(m.tone), nrm,
+            m = Model(hv - m.y0 - ny, m.x0, m.z0, rot(m.mat), rot(m.tone), nrm,
                       [Halo(hf - h.y, h.x, h.z, h.radius, h.rgb, h.strength) for h in m.halos],
-                      m.hover, None if m.ghost is None else rot(m.ghost))
+                      m.hover, None if m.ghost is None else rot(m.ghost), m.k)
             fw, fh = fh, fw
         return m
 
@@ -120,7 +142,9 @@ class Model:
         return self.mat if self.ghost is None else np.where(self.ghost, 0, self.mat).astype(np.uint8)
 
     def density_normals(self, mask, radius=2):
-        """Set normals of `mask` voxels from the gradient of the blurred solid field."""
+        """Set normals of `mask` voxels from the gradient of the blurred solid field (radius in
+        design units)."""
+        radius *= self.k
         occ = box_blur(np.pad((self.mat > 0).astype(np.float32), radius + 1), radius)
         gx, gy, gz = np.gradient(occ)
         sl = (slice(radius + 1, -radius - 1),) * 3
@@ -231,6 +255,29 @@ def value_noise(x, y, z, scale, seed, period=None):
     x01 = lerp(h(0, 0, 1), h(1, 0, 1), sx)
     x11 = lerp(h(0, 1, 1), h(1, 1, 1), sx)
     return lerp(lerp(x00, x10, sy), lerp(x01, x11, sy), sz)
+
+
+def cells3(pts, cell, seed, jitter=0.9):
+    """3D Voronoi cells over points (N, 3): distance to the nearest and second nearest centre,
+    the offset (N, 3) from the nearest centre and its hash. Leaves, pebbles, shingles."""
+    q = np.asarray(pts, np.float32) / cell
+    base = np.floor(q).astype(np.int64)
+    f1 = np.full(len(q), 1e9, np.float32)
+    f2 = np.full(len(q), 1e9, np.float32)
+    off = np.zeros(q.shape, np.float32)
+    h = np.zeros(len(q), np.float32)
+    for d in np.ndindex(3, 3, 3):
+        c = base + np.array(d) - 1
+        centre = c + 0.5 + (np.stack([hash01(c[:, 0], c[:, 1], c[:, 2], seed, a) for a in range(3)], 1)
+                            - 0.5) * jitter
+        o = (q - centre) * cell
+        dist = np.sqrt((o * o).sum(1))
+        nearer = dist < f1
+        f2 = np.where(nearer, f1, np.minimum(f2, dist))
+        f1 = np.where(nearer, dist, f1)
+        off[nearer] = o[nearer]
+        h = np.where(nearer, hash01(c[:, 0], c[:, 1], c[:, 2], seed, 9), h)
+    return f1, f2, off, h
 
 
 class Rng:

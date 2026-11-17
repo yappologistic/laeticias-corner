@@ -1,4 +1,5 @@
-"""Compose test scenes from the packed atlas the way the engine draws them; write out/artgen/*.png.
+"""Compose test scenes from the packed atlas the way the engine draws them and write them next to
+the build's previews (out/artgen/ at 3x for the default build; 1x and 2x for finer tiles).
 
 Draw order: terrain row by row (grass base, then the overlay chosen by its neighbour mask), the
 rim cliffs, all item shadows, then items and critters back to front. Night multiplies the frame
@@ -13,16 +14,16 @@ from PIL import Image
 import spec
 from voxel import hash01
 
-SCALE = 3
 BG = (54, 62, 84)
 NIGHT_TINT = np.array([0.34, 0.38, 0.62])
 CHARS = {".": "grass", "m": "meadow", "p": "path", "c": "cobble", "w": "water"}
 
 
 class Atlas:
-    def __init__(self):
-        doc = json.loads(spec.ATLAS_JSON.read_text())
-        self.image = Image.open(spec.ATLAS_PNG).convert("RGBA")
+    def __init__(self, build: spec.Build):
+        doc = json.loads(build.atlas_json.read_text())
+        self.image = Image.open(build.atlas_png).convert("RGBA")
+        self.k = build.k
         self.rects = doc["sprites"]
         self.cache = {}
 
@@ -30,8 +31,9 @@ class Atlas:
         if key not in self.cache:
             r = self.rects.get(key)
             if r is None:
-                im = Image.new("RGBA", (8, 8), (255, 0, 255, 255))
-                self.cache[key] = (im, 4, 8)
+                k = self.k
+                im = Image.new("RGBA", (8 * k, 8 * k), (255, 0, 255, 255))
+                self.cache[key] = (im, 4 * k, 8 * k)
             else:
                 im = self.image.crop((r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"]))
                 self.cache[key] = (im, r["ox"], r["oy"])
@@ -45,6 +47,8 @@ class Atlas:
 
 
 class Scene:
+    """Tiles, items and critters; critter positions are in design units (16 per tile)."""
+
     def __init__(self, rows: list[str], cliffs=True, margin=24):
         self.h = len(rows)
         self.w = len(rows[0])
@@ -52,9 +56,7 @@ class Scene:
         self.items = []
         self.critters = []
         self.cliffs = cliffs
-        self.ox = 16 * self.h + margin
-        self.oy = margin + 70
-        self.size = (16 * (self.w + self.h) + 2 * margin, 8 * (self.w + self.h) + 2 * margin + 110)
+        self.margin = margin
 
     def add(self, item_id, variant, tx, ty, footprint=(1, 1)):
         self.items.append((item_id, variant, tx, ty, footprint))
@@ -64,7 +66,7 @@ class Scene:
         self.critters.append((key, x, y, z, mirror, glow))
 
     def anchor(self, tx, ty):
-        return self.ox + (tx - ty) * 16, self.oy + (tx + ty) * 8
+        return self.ox + (tx - ty) * 16 * self.k, self.oy + (tx + ty) * 8 * self.k
 
     def mask(self, tx, ty):
         t = self.terrain[tx][ty]
@@ -76,6 +78,12 @@ class Scene:
         return m
 
     def render(self, atlas: Atlas, frame=0, night=False) -> Image.Image:
+        k = self.k = atlas.k
+        margin = self.margin * k
+        self.ox = 16 * k * self.h + margin
+        self.oy = margin + 70 * k
+        self.size = (16 * k * (self.w + self.h) + 2 * margin,
+                     8 * k * (self.w + self.h) + 2 * margin + 110 * k)
         img = Image.new("RGBA", self.size, BG + (255,))
 
         def blit(key, ax, ay, mirror=False, target=img):
@@ -116,7 +124,7 @@ class Scene:
         drawables.sort(key=lambda d: d[:3])
 
         def blit_critter(key, x, y, z, mirror, target=img):
-            blit(fkey(key), self.ox + (x - y), self.oy + (x + y) / 2 - z, mirror, target)
+            blit(fkey(key), self.ox + (x - y) * k, self.oy + ((x + y) / 2 - z) * k, mirror, target)
 
         for *_s, what in drawables:
             if what[0] == "item":
@@ -141,9 +149,12 @@ class Scene:
         return img
 
 
-def save(img: Image.Image, name: str):
-    spec.OUT.mkdir(parents=True, exist_ok=True)
-    img.resize((img.width * SCALE, img.height * SCALE), Image.NEAREST).save(spec.OUT / name)
+def save(build: spec.Build, img: Image.Image, name: str):
+    """The default build's previews are enlarged 3x; finer builds are written at 1x and 2x."""
+    build.previews.mkdir(parents=True, exist_ok=True)
+    for scale, suffix in ((3, ""),) if build.k == 1 else ((1, ""), (2, "_2x")):
+        out = build.previews / name.replace(".png", f"{suffix}.png")
+        img.resize((img.width * scale, img.height * scale), Image.NEAREST).save(out)
 
 
 POND = [
@@ -374,7 +385,8 @@ def sprite_sheet(atlas: Atlas, cat) -> Image.Image:
             rows.append((f"critter/{v['id']}/{anim}", n, v["habitat"]))
     for name, n in spec.FX_FRAMES.items():
         rows.append((f"fx/{name}", n, "fx"))
-    cell = 28
+    k = atlas.k
+    cell = 28 * k
     img = Image.new("RGBA", (cell * 7, cell * len(rows)), BG + (255,))
     ground = {"water": (59, 114, 155), "land": (74, 125, 71), "air": (103, 154, 72), "fx": (70, 80, 110)}
     for r, (prefix, n, habitat) in enumerate(rows):
@@ -382,39 +394,42 @@ def sprite_sheet(atlas: Atlas, cat) -> Image.Image:
             x0, y0 = f * cell, r * cell
             img.paste(ground[habitat] + (255,), (x0, y0, x0 + cell - 1, y0 + cell - 1))
             im, ox, oy = atlas.get(f"{prefix}/f{f}")
-            img.alpha_composite(im, (x0 + cell // 2 - ox, y0 + cell - 6 - oy))
+            img.alpha_composite(im, (x0 + cell // 2 - ox, y0 + cell - 6 * k - oy))
             if habitat == "land" or habitat == "air":
                 im2 = im.transpose(Image.FLIP_LEFT_RIGHT)
                 if f == 0:
                     img.paste(ground[habitat] + (255,), (6 * cell, y0, 7 * cell - 1, y0 + cell - 1))
-                    img.alpha_composite(im2, (6 * cell + cell // 2 - (im.width - 1 - ox), y0 + cell - 6 - oy))
+                    img.alpha_composite(im2, (6 * cell + cell // 2 - (im.width - 1 - ox),
+                                              y0 + cell - 6 * k - oy))
     return img
 
 
-def main():
+def main(build: spec.Build):
     cat = spec.load_catalog()
-    atlas = Atlas()
-    save(terrain_scene().render(atlas), "terrain.png")
+    atlas = Atlas(build)
+    save(build, terrain_scene().render(atlas), "terrain.png")
     nature = ["oak", "pine", "blossom", "bush", "berry_bush", "tall_grass", "flowers_red",
               "flowers_white", "flowers_violet", "mushrooms", "rock", "stump", "reeds"]
-    save(item_sheet(nature, cat, gap=1).render(atlas), "nature.png")
+    save(build, item_sheet(nature, cat, gap=1).render(atlas), "nature.png")
     garden = ["planter", "beehive", "scarecrow", "well", "lamp", "bench", "picnic_table",
               "campfire"]
-    save(item_sheet(garden, cat, gap=1).render(atlas), "garden.png")
+    save(build, item_sheet(garden, cat, gap=1).render(atlas), "garden.png")
     homes = ["cottage", "toolshed", "coop", "greenhouse", "barn", "windmill"]
-    save(item_sheet(homes, cat, gap=1).render(atlas), "homes.png")
-    save(item_sheet(homes, cat, gap=1).render(atlas, night=True), "homes_night.png")
-    save(pond_scene().render(atlas), "pond.png")
+    save(build, item_sheet(homes, cat, gap=1).render(atlas), "homes.png")
+    save(build, item_sheet(homes, cat, gap=1).render(atlas, night=True), "homes_night.png")
+    save(build, pond_scene().render(atlas), "pond.png")
     for f in range(2):
-        save(pond_scene().render(atlas, frame=f), f"pond_f{f}.png")
-    save(maze_scene().render(atlas), "maze.png")
-    save(village_scene().render(atlas), "village.png")
-    save(village_scene(night=True).render(atlas, night=True), "village_night.png")
-    save(forest_scene().render(atlas), "forest.png")
-    save(field_scene().render(atlas), "field.png")
+        save(build, pond_scene().render(atlas, frame=f), f"pond_f{f}.png")
+    save(build, maze_scene().render(atlas), "maze.png")
+    save(build, village_scene().render(atlas), "village.png")
+    save(build, village_scene(night=True).render(atlas, night=True), "village_night.png")
+    save(build, forest_scene().render(atlas), "forest.png")
+    save(build, field_scene().render(atlas), "field.png")
     sheet = sprite_sheet(atlas, cat)
-    sheet.resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(spec.OUT / "sprites.png")
-    print(f"previews in {spec.OUT}")
+    zoom = max(1, 4 // build.k)
+    sheet.resize((sheet.width * zoom, sheet.height * zoom), Image.NEAREST).save(
+        build.previews / "sprites.png")
+    print(f"previews in {build.previews}")
 
 
 if __name__ == "__main__":

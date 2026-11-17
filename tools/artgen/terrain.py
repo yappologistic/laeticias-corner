@@ -1,11 +1,13 @@
 """Ground tiles, cliff faces and cursor diamonds, evaluated per pixel on the tile plane.
 
-Each pixel centre of a tile maps to one point (u, v) of the tile square [0, 16)^2 (u along +x,
-v along +y). Textures are functions of (u, v) that repeat every 16 voxels, so any arrangement of
+A tile sprite is 32k x 16k pixels (k pixels per design unit). Each pixel centre maps to one
+point (u, v) of the tile square [0, 16)^2 in design units (u along +x, v along +y). Textures are functions of (u, v) that repeat every 16 voxels, so any arrangement of
 tiles is seamless. Overlay shapes depend on the 4-bit mask only through each edge's own state:
 an open edge (same terrain beyond) is fully covered and every inset tapers to zero at a corner
 next to an open edge, so neighbouring tiles always agree along their shared edge.
 """
+
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -15,18 +17,28 @@ from render import dither
 from voxel import hash01, value_noise
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
-TW, TH = 32, 16
 GRASS = [LEAF[1], LEAF[2], LEAF[3], LEAF[4], LEAF[5]]
 MEADOW = [LEAF[2], LEAF[3], LEAF[4], LEAF[5], LEAF[6]]
 
 
-def _grid():
-    """Pixel grid of a tile sprite (32x16, anchor at (16, 0)) and its tile-plane coordinates."""
-    py, px = np.mgrid[0:TH, 0:TW]
-    sx, sy = px - 16 + 0.5, py + 0.5
-    u, v = sy + sx / 2, sy - sx / 2
+@dataclass
+class Grid:
+    """Pixel grid of a tile sprite (32k x 16k, anchor at (16k, 0)) and its tile-plane
+    coordinates in design units."""
+    k: int
+    px: np.ndarray
+    py: np.ndarray
+    u: np.ndarray
+    v: np.ndarray
+    inside: np.ndarray
+
+
+def _grid(k) -> Grid:
+    py, px = np.mgrid[0:16 * k, 0:32 * k]
+    sx, sy = px - 16 * k + 0.5, py + 0.5
+    u, v = (sy + sx / 2) / k, (sy - sx / 2) / k
     inside = (u >= 0) & (u < 16) & (v >= 0) & (v < 16)
-    return px, py, u, v, inside
+    return Grid(k, px, py, u, v, inside)
 
 
 def _ramp(colors):
@@ -45,16 +57,16 @@ def _pnoise(u, v, cells, seed, t=0.0):
     return value_noise(u, v, np.full_like(u, t), scale, seed, period=cells)
 
 
-def _sprite(rgb, alpha) -> Sprite:
-    rgba = np.zeros((TH, TW, 4), np.uint8)
+def _sprite(g: Grid, rgb, alpha) -> Sprite:
+    rgba = np.zeros(g.u.shape + (4,), np.uint8)
     rgba[..., :3] = rgb
     rgba[..., 3] = alpha
-    return Sprite(rgba, 16, 0)
+    return Sprite(rgba, 16 * g.k, 0)
 
 
 # ---------- stamps: little screen-space marks scattered on a periodic lattice ----------
 
-def _scatter(u, v, cell, seed, density, jitter=0.8, interior=None):
+def _scatter(g: Grid, cell, seed, density, jitter=0.8, interior=None):
     """For each pixel, offset (dx, dy) in screen px to the nearest scattered point, and its hash.
 
     Points sit on a jittered lattice with `cell` voxels spacing (cell divides 16). With
@@ -63,6 +75,7 @@ def _scatter(u, v, cell, seed, density, jitter=0.8, interior=None):
     neighbour that might be a different variant. `density` is a number or a function of the
     point's (u, v), so marks can gather into clumps.
     """
+    u, v = g.u, g.v
     best = np.full(u.shape, 1e9, np.float32)
     bdx = np.zeros(u.shape, np.float32)
     bdy = np.zeros(u.shape, np.float32)
@@ -80,8 +93,8 @@ def _scatter(u, v, cell, seed, density, jitter=0.8, interior=None):
             if interior is not None:
                 lo, hi = interior
                 keep &= (pu >= lo) & (pu < 16 - hi) & (pv >= lo) & (pv < 16 - hi)
-            dx = (u - pu) - (v - pv)
-            dy = ((u - pu) + (v - pv)) / 2
+            dx = ((u - pu) - (v - pv)) * g.k
+            dy = ((u - pu) + (v - pv)) / 2 * g.k
             d = dx * dx + 4 * dy * dy
             better = keep & (d < best)
             best = np.where(better, d, best)
@@ -96,10 +109,10 @@ def _scatter(u, v, cell, seed, density, jitter=0.8, interior=None):
 STEP = {"H": 2.0, "L": 1.0, "D": -1.0, "K": -1.6}
 
 
-def _stamps(level, u, v, seed, density, kinds, cell=4, interior=(3.0, 1.0)):
+def _stamps(g: Grid, level, seed, density, kinds, cell=4, interior=(3.0, 1.0)):
     """Scatter `kinds` of marks (each also drawn mirrored) over the tile."""
     kinds = list(kinds) + [tuple(row[::-1] for row in k) for k in kinds]
-    dx, dy, h, ok = _scatter(u, v, cell, seed, density, interior=interior)
+    dx, dy, h, ok = _scatter(g, cell, seed, density, interior=interior)
     rx, ry = np.floor(dx + 0.5), np.floor(dy + 0.5)
     pick = np.minimum((h * len(kinds)).astype(np.int64), len(kinds) - 1)
     out = level.copy()
@@ -137,21 +150,21 @@ def _clump(seed, peak):
     return lambda u, v: peak * np.clip(1 - np.hypot(u - cu, v - cv) / 5.5, 0, 1) + 0.03 * peak
 
 
-def grass(variant: int) -> Sprite:
-    px, py, u, v, inside = _grid()
+def grass(variant: int, k: int) -> Sprite:
+    g = _grid(k)
     tufts, specks, light, shade, sprinkle = GRASS_VARIANTS[variant]
     seed = 30 + variant * 10
-    grain = hash01(px, py, seed + 5) < abs(sprinkle)
+    grain = hash01(g.px, g.py, seed + 5) < abs(sprinkle)
     level = GRASS_LEVEL + np.sign(sprinkle) * grain
-    level = _stamps(level, u, v, seed, tufts, TUFTS)
-    level = _stamps(level, u, v, seed + 2, specks, SPECKS, cell=4)
+    level = _stamps(g, level, seed, tufts, TUFTS)
+    level = _stamps(g, level, seed + 2, specks, SPECKS, cell=4)
     if light:
-        level = _stamps(level, u, v, seed + 3, _clump(seed + 3, light), BLADES, cell=2,
+        level = _stamps(g, level, seed + 3, _clump(seed + 3, light), BLADES, cell=2,
                         interior=(2.0, 1.0))
     if shade:
-        level = _stamps(level, u, v, seed + 4, _clump(seed + 4, shade), SHADE_BLADES, cell=2,
+        level = _stamps(g, level, seed + 4, _clump(seed + 4, shade), SHADE_BLADES, cell=2,
                         interior=(2.0, 1.0))
-    return _sprite(_paint(GRASS, level, px, py), inside * 255)
+    return _sprite(g, _paint(GRASS, level, g.px, g.py), g.inside * 255)
 
 
 # ---------- overlay shapes ----------
@@ -198,8 +211,9 @@ FLOWER_COLORS = [PLASTER[4], STRAW[3], STRAW[2], PLASTER[3], VIOLET[3], STRAW[3]
 MEADOW_TUFTS = (("H..", "L.H", "LLL", "DLD"), (".H.", "HL.", "LLL", ".D."), ("L.H", "L.L", "DLD"))
 
 
-def meadow(mask: int) -> Sprite:
-    px, py, u, v, inside = _grid()
+def meadow(mask: int, k: int) -> Sprite:
+    g = _grid(k)
+    px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
     f = shape_field(mask, u, v, 1.4, 5.5, 0.9, 300)
     # Soft border: dither the last voxel so meadow frays into the grass.
     edge_noise = hash01(np.floor(u * 2).astype(np.int64), np.floor(v * 2).astype(np.int64), 301)
@@ -207,12 +221,12 @@ def meadow(mask: int) -> Sprite:
     level = 2.0 + (_pnoise(u, v, 2, 310) - 0.5) * 0.6
     # Taller, lighter growth than lawn grass. The meadow has no per-tile variants, so marks may
     # cross into the next meadow tile (the pattern repeats exactly) and stay irregular inside.
-    level = _stamps(level, u, v, 311, 0.2, MEADOW_TUFTS, cell=2, interior=None)
-    level = _stamps(level, u, v, 312, 0.12, BLADES, cell=2, interior=None)
+    level = _stamps(g, level, 311, 0.2, MEADOW_TUFTS, cell=2, interior=None)
+    level = _stamps(g, level, 312, 0.12, BLADES, cell=2, interior=None)
     rgb = _paint(MEADOW, level, px, py)
     # Wildflowers dense enough to read as a texture: every meadow tile is the same sprite, so
     # sparse bright dots would line up into rows across a large patch.
-    dx, dy, h, ok = _scatter(u, v, 2, 320, 0.3, jitter=0.95)
+    dx, dy, h, ok = _scatter(g, 2, 320, 0.3, jitter=0.95)
     rx, ry = np.floor(dx + 0.5), np.floor(dy + 0.5)
     head = ok & (rx == 0) & (ry == -1)
     stem = ok & (rx == 0) & (ry == 0)
@@ -221,7 +235,7 @@ def meadow(mask: int) -> Sprite:
     # Keep flowers off the frayed rim so they never float on plain grass.
     rgb = np.where((stem & (f > 1.5))[..., None], _rgb(LEAF[2]), rgb)
     rgb = np.where((head & (f > 1.5))[..., None], pick, rgb)
-    return _sprite(rgb, cover * 255)
+    return _sprite(g, rgb, cover * 255)
 
 
 # ---------- path ----------
@@ -229,13 +243,14 @@ def meadow(mask: int) -> Sprite:
 PATH = [EARTH[1], EARTH[2], EARTH[3], EARTH[4], EARTH[5]]
 
 
-def path(mask: int) -> Sprite:
-    px, py, u, v, inside = _grid()
+def path(mask: int, k: int) -> Sprite:
+    g = _grid(k)
+    px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
     f = shape_field(mask, u, v, 1.6, 5.5, 0.7, 400)
     cover = inside & (f > 0)
     level = 2.3 + (_pnoise(u, v, 4, 410) - 0.5) * 1.0 + (_pnoise(u, v, 8, 411) - 0.5) * 0.5
     # Pebbles: light top, dark underside.
-    dx, dy, h, ok = _scatter(u, v, 2, 420, 0.2)
+    dx, dy, h, ok = _scatter(g, 2, 420, 0.2)
     rx, ry = np.round(dx - 0.5), np.round(dy - 0.5)
     big = h > 0.7
     top = ok & (ry == 0) & ((rx == 0) | (big & (rx == -1)))
@@ -244,7 +259,7 @@ def path(mask: int) -> Sprite:
     # Worn rim: darker earth just inside the border, with a lighter crest before it.
     level = level - np.clip(1.4 - f, 0, 1) * 1.6 + ((f > 1.4) & (f < 2.2)) * 0.5
     rgb = _paint(PATH, level, px, py)
-    return _sprite(rgb, cover * 255)
+    return _sprite(g, rgb, cover * 255)
 
 
 # ---------- cobble ----------
@@ -281,8 +296,9 @@ def _cells(u, v, cell, seed, jitter=0.8):
     return f1, f2, bdu, bdv, bh
 
 
-def cobble(mask: int) -> Sprite:
-    px, py, u, v, inside = _grid()
+def cobble(mask: int, k: int) -> Sprite:
+    g = _grid(k)
+    px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
     f = shape_field(mask, u, v, 1.2, 4.0, 0.4, 500)
     cover = inside & (f > 0)
     f1, f2, du, dv, h = _cells(u, v, 4.0, 510)
@@ -301,7 +317,7 @@ def cobble(mask: int) -> Sprite:
     # Moss creeping into a few joints.
     moss = mortar & (_pnoise(u, v, 4, 520) > 0.68)
     rgb = np.where(moss[..., None], _rgb(LEAF[2]), rgb)
-    return _sprite(rgb, cover * 255)
+    return _sprite(g, rgb, cover * 255)
 
 
 # ---------- water ----------
@@ -310,8 +326,9 @@ WALL = [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]]
 GLINT_LEN = (0, 1, 3, 1)
 
 
-def water(mask: int, frame: int, frames: int) -> Sprite:
-    px, py, u, v, inside = _grid()
+def water(mask: int, frame: int, frames: int, k: int) -> Sprite:
+    g = _grid(k)
+    px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
     field = lambda du: shape_field(mask, u - du, v - du, 1.4, 5.5, 0.7, 600)
     f = field(0)
     cover = inside & (f > 0)
@@ -322,7 +339,7 @@ def water(mask: int, frame: int, frames: int) -> Sprite:
     depth = np.clip(f / 6, 0, 1)
     level = 3.2 - depth * 1.5 + (_pnoise(u, v, 2, 610) - 0.5) * 0.5
     level = level - shade * 1.0              # the bank's shadow on the water
-    dx, dy, h, ok = _scatter(u, v, 4, 620, 0.45, jitter=0.9)
+    dx, dy, h, ok = _scatter(g, 4, 620, 0.45, jitter=0.9)
     length = np.array(GLINT_LEN)[(frame * len(GLINT_LEN) // frames + (h * 4).astype(np.int64)) % 4]
     rx, ry = np.round(dx - 0.5), np.round(dy - 0.5)
     glint = ok & (ry == 0) & (np.abs(rx + 0.5) < length / 2) & (f > 2.0)
@@ -331,7 +348,7 @@ def water(mask: int, frame: int, frames: int) -> Sprite:
     rgb = np.where((lip & ~wall2)[..., None], _rgb(WATER[4]), rgb)
     wall_level = np.where(wall1, 3.2, 2.0) - (_pnoise(u, v, 8, 640) - 0.5) * 0.8
     rgb = np.where((wall2 | lip & (f < 0.25))[..., None], _paint(WALL, wall_level, px, py), rgb)
-    return _sprite(rgb, cover * 255)
+    return _sprite(g, rgb, cover * 255)
 
 
 # ---------- cliffs ----------
@@ -363,20 +380,21 @@ def _wrapped(s, s0):
     return (s - s0 + 8) % 16 - 8
 
 
-def cliff(face: str) -> Sprite:
+def cliff(face: str, k: int) -> Sprite:
     """The earth face under one rim tile: 'se' is the +x face, 'sw' the +y face (sun side).
 
     Everything is a function of (s, depth) with s the position along the rim, repeating every
     tile, so the faces join seamlessly along the whole rim and at the bottom corner."""
-    W, H = TW, 8 + CLIFF_DEPTH + 10
+    W, H = 32 * k, (8 + CLIFF_DEPTH + 10) * k
     py, px = np.mgrid[0:H, 0:W]
-    sx, sy = px - 16 + 0.5, py + 0.5
+    sx = (px - 16 * k + 0.5) / k
     s = 16 - sx if face == "se" else sx + 16      # planes u = 16 and v = 16
     shade = -0.9 if face == "se" else 0.0
-    # Depth in whole pixels below each column's first face pixel: measured from the exact rim
-    # line it would step by half a pixel per column and every band would turn into teeth.
-    first_row = np.floor((16 + s) / 2 - 0.5) + 1
-    depth = py - first_row + 0.5
+    # Depth (design units) in whole pixels below each column's first face pixel: measured from
+    # the exact rim line it would step by half a pixel per column and every band would turn
+    # into teeth.
+    first_row = np.floor((16 + s) / 2 * k - 0.5) + 1
+    depth = (py - first_row + 0.5) / k
     on = (s >= 0) & (s < 16) & (depth > 0)
     # A ragged, tapering underside: smooth lumps plus a few hanging drips.
     bottom = CLIFF_DEPTH - 3.0 - _wave(s, CLIFF_UNDERSIDE)
@@ -423,39 +441,40 @@ def cliff(face: str) -> Sprite:
     rgba = np.zeros((H, W, 4), np.uint8)
     rgba[..., :3] = rgb
     rgba[..., 3] = on * 255
-    return Sprite(rgba, 16, 0)
+    return Sprite(rgba, 16 * k, 0)
 
 
 # ---------- placement cursor ----------
 
-def cursor(ok: bool) -> Sprite:
-    px, py, u, v, inside = _grid()
+def cursor(ok: bool, k: int) -> Sprite:
+    g = _grid(k)
+    inside = g.inside
     pad = np.pad(inside, 1)
     border = inside & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
     line = _rgb(PLASTER[4]) if ok else _rgb(POPPY[1])
     fill = _rgb(LEAF[6]) if ok else _rgb(ROOF[2])
     rgb = np.where(border[..., None], line, fill)
     alpha = np.where(border, 230, np.where(inside, 72, 0))
-    return _sprite(rgb, alpha)
+    return _sprite(g, rgb, alpha)
 
 
-def build(cat: dict, water_frames: int) -> dict[str, Sprite]:
+def build(cat: dict, water_frames: int, k: int) -> dict[str, Sprite]:
     out = {}
     builders = {"meadow": meadow, "path": path, "cobble": cobble}
     for t in cat["terrain"]:
         tid = t["id"]
         if t.get("base"):
             for n in range(t["variants"]):
-                out[f"terrain/{tid}/v{n}"] = grass(n)
+                out[f"terrain/{tid}/v{n}"] = grass(n, k)
         elif tid == "water":
             for m in range(16):
                 for fr in range(water_frames):
-                    out[f"terrain/water/m{m}/f{fr}"] = water(m, fr, water_frames)
+                    out[f"terrain/water/m{m}/f{fr}"] = water(m, fr, water_frames, k)
         else:
             for m in range(16):
-                out[f"terrain/{tid}/m{m}/f0"] = builders[tid](m)
-    out["edge/cliff_se"] = cliff("se")
-    out["edge/cliff_sw"] = cliff("sw")
-    out["ui/tile_ok"] = cursor(True)
-    out["ui/tile_bad"] = cursor(False)
+                out[f"terrain/{tid}/m{m}/f0"] = builders[tid](m, k)
+    out["edge/cliff_se"] = cliff("se", k)
+    out["edge/cliff_sw"] = cliff("sw", k)
+    out["ui/tile_ok"] = cursor(True, k)
+    out["ui/tile_bad"] = cursor(False, k)
     return out

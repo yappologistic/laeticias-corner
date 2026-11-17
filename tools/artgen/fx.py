@@ -104,5 +104,10 @@ def leaf(frame, frames):
 EFFECTS = {"smoke": smoke, "ripple": ripple, "sparkle": sparkle, "raindrop": raindrop, "leaf": leaf}
 
 
-def build(frames: dict[str, int]) -> dict[str, Sprite]:
-    return {f"fx/{name}/f{f}": EFFECTS[name](f, n) for name, n in frames.items() for f in range(n)}
+def _scaled(s: Sprite, k: int) -> Sprite:
+    return Sprite(s.rgba.repeat(k, 0).repeat(k, 1), s.ox * k, s.oy * k)
+
+
+def build(frames: dict[str, int], k: int) -> dict[str, Sprite]:
+    return {f"fx/{name}/f{f}": _scaled(EFFECTS[name](f, n), k)
+            for name, n in frames.items() for f in range(n)}

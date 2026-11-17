@@ -17,9 +17,9 @@ from voxel import Model, ellipsoid, ellipsoid_normal, segment
 S = 1.35  # critters are modelled at life-ish size and enlarged so they read at 1x
 
 
-def _model(x0, x1, y0, y1, z0, z1) -> Model:
+def _model(k, x0, x1, y0, y1, z0, z1) -> Model:
     return Model.empty(*(int(math.floor(v * S)) if v < 0 else int(math.ceil(v * S))
-                         for v in (x0, x1, y0, y1, z0, z1)))
+                         for v in (x0, x1, y0, y1, z0, z1)), k=k)
 
 
 def _put_points(m, pts, material, **kw):
@@ -30,8 +30,8 @@ def _blob(m, X, Y, Z, c, r, material, tone=0.0):
     m.put(ellipsoid(X, Y, Z, *c, *r), material, tone=tone, normal=ellipsoid_normal(X, Y, Z, *c, *r))
 
 
-def duck(anim, frame, frames):
-    m = _model(-6, 7, -4, 5, 0, 10)
+def duck(anim, frame, frames, k):
+    m = _model(k, -6, 7, -4, 5, 0, 10)
     X, Y, Z = (a / S for a in m.coords())
     moving = anim == "move"
     bob = 0.5 * math.sin(2 * math.pi * frame / frames) if moving else 0.0
@@ -50,8 +50,8 @@ def duck(anim, frame, frames):
     return m
 
 
-def hen(anim, frame, frames):
-    m = _model(-5, 6, -4, 5, 0, 11)
+def hen(anim, frame, frames, k):
+    m = _model(k, -5, 6, -4, 5, 0, 11)
     X, Y, Z = (a / S for a in m.coords())
     moving = anim == "move"
     step = math.sin(2 * math.pi * frame / frames) if moving else 0.0
@@ -74,8 +74,8 @@ def hen(anim, frame, frames):
     return m
 
 
-def cat(anim, frame, frames):
-    m = _model(-7, 8, -4, 5, 0, 12)
+def cat(anim, frame, frames, k):
+    m = _model(k, -7, 8, -4, 5, 0, 12)
     X, Y, Z = (a / S for a in m.coords())
     moving = anim == "move"
     t = 2 * math.pi * frame / frames
@@ -183,7 +183,7 @@ FIREFLY = {
 }
 
 
-def _stencil(rows) -> Sprite:
+def _stencil(rows, k) -> Sprite:
     h, w = len(rows), len(rows[0])
     rgba = np.zeros((h, w, 4), np.uint8)
     for y, row in enumerate(rows):
@@ -192,33 +192,34 @@ def _stencil(rows) -> Sprite:
                 color, alpha = FLYER_INKS[ch]
                 rgba[y, x, :3] = _rgb(color)
                 rgba[y, x, 3] = alpha
-    return Sprite(rgba, w // 2, h - 1)
+    rgba = rgba.repeat(k, 0).repeat(k, 1)
+    return Sprite(rgba, w // 2 * k, h * k - 1)
 
 
-def butterfly(anim, frame, frames):
-    return _stencil(BUTTERFLY[BUTTERFLY_FRAMES[anim][frame % len(BUTTERFLY_FRAMES[anim])]])
+def butterfly(anim, frame, frames, k):
+    return _stencil(BUTTERFLY[BUTTERFLY_FRAMES[anim][frame % len(BUTTERFLY_FRAMES[anim])]], k)
 
 
-def bee(anim, frame, frames):
-    return _stencil(BEE["up" if frame % 2 == 0 else "down"])
+def bee(anim, frame, frames, k):
+    return _stencil(BEE["up" if frame % 2 == 0 else "down"], k)
 
 
-def firefly(anim, frame, frames):
+def firefly(anim, frame, frames, k):
     """Emissive at night, so the glow is part of the sprite: a white-hot core in a warm halo
     that pulses with the frames."""
     pulse = (2, 1, 0, 1) if anim == "move" else (2, 1)
-    return _stencil(FIREFLY[pulse[frame % len(pulse)]])
+    return _stencil(FIREFLY[pulse[frame % len(pulse)]], k)
 
 
 MODELS = {"duck": duck, "hen": hen, "cat": cat}
 FLYERS = {"butterfly": butterfly, "bee": bee, "firefly": firefly}
 
 
-def sprite(cid: str, anim: str, frame: int, frames: int) -> Sprite:
+def sprite(cid: str, anim: str, frame: int, frames: int, k: int) -> Sprite:
     kind, facing = anim.split("_")
     if cid in FLYERS:
-        return FLYERS[cid](kind, frame, frames)
-    model = MODELS[cid](kind, frame, frames)
+        return FLYERS[cid](kind, frame, frames, k)
+    model = MODELS[cid](kind, frame, frames, k)
     if facing == "back":
         model = model.rotated(3, 0, 0)
     rgba, _glow, ox, oy = render_base(model)

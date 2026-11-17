@@ -1,4 +1,5 @@
-"""Check the committed atlas against the catalog: keys, rects, anchors, frame counts."""
+"""Check an atlas against the catalog and the tile size: keys, rects, anchors, ground diamonds,
+frame counts and palette use."""
 
 import json
 import re
@@ -12,13 +13,22 @@ import spec
 from palette import PALETTE
 
 
-def validate() -> list[str]:
+def diamond(tile_w: int) -> np.ndarray:
+    """The contract's ground diamond as a (tile_w/2, tile_w - 2) mask with the top vertex at
+    column tile_w/2 - 1: rows 2, 6, ... tile_w - 2, tile_w - 2, ... 2 px wide."""
+    h, w = tile_w // 2, tile_w - 2
+    y = np.arange(h)[:, None]
+    half = np.minimum(y, h - 1 - y) * 2 + 1
+    return np.abs(np.arange(w)[None, :] + 0.5 - w / 2) < half
+
+
+def validate(build: spec.Build) -> list[str]:
     cat = spec.load_catalog()
-    doc = json.loads(spec.ATLAS_JSON.read_text())
+    doc = json.loads(build.atlas_json.read_text())
     errors = []
     if set(doc) != {"version", "image", "sprites"} or doc["version"] != 1:
         errors.append("manifest must be exactly {version: 1, image, sprites}")
-    img = Image.open(spec.ATLAS_PNG)
+    img = Image.open(build.atlas_png)
     if img.mode != "RGBA":
         errors.append(f"atlas mode is {img.mode}, expected RGBA")
     W, H = img.size
@@ -32,6 +42,7 @@ def validate() -> list[str]:
     errors += [f"unexpected sprite {k}" for k in extra]
 
     alpha = img.getchannel("A")
+    reach = 160 * build.k
     for k, r in sprites.items():
         x, y, w, h, ox, oy = (r[f] for f in ("x", "y", "w", "h", "ox", "oy"))
         if w < 1 or h < 1 or x < 0 or y < 0 or x + w > W or y + h > H:
@@ -39,14 +50,25 @@ def validate() -> list[str]:
             continue
         # Anchors may legitimately sit outside a trimmed rect (a shadow cast away from the
         # footprint), but never absurdly far from it.
-        if not (-160 <= ox <= w + 160 and -160 <= oy <= h + 160):
+        if not (-reach <= ox <= w + reach and -reach <= oy <= h + reach):
             errors.append(f"{k}: anchor ({ox},{oy}) far outside {w}x{h}")
         if k.startswith(("item/", "terrain/", "critter/", "edge/")) and w * h > 1:
             if alpha.crop((x, y, x + w, y + h)).getbbox() is None:
                 errors.append(f"{k}: sprite is fully transparent")
 
-    # Every coloured pixel comes from the palette; shadows are pure black with alpha.
+    # Whole-tile ground sprites cover exactly the contract diamond, anchored at its top vertex.
     rgba = np.asarray(img)
+    want = diamond(build.tile_w)
+    full = [k for k in sprites if re.fullmatch(r"terrain/[^/]+/(v\d+|m15/f\d+)|ui/tile_\w+", k)]
+    for k in full:
+        r = sprites[k]
+        if (r["w"], r["h"], r["ox"], r["oy"]) != (want.shape[1], want.shape[0], build.tile_w // 2 - 1, 0):
+            errors.append(f"{k}: {r['w']}x{r['h']} anchored ({r['ox']},{r['oy']}) is not the "
+                          f"{build.tile_w}x{build.tile_h} tile diamond")
+        elif not np.array_equal(rgba[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"], 3] > 0, want):
+            errors.append(f"{k}: coverage differs from the tile diamond")
+
+    # Every coloured pixel comes from the palette; shadows are pure black with alpha.
     allowed = {int(c[1:], 16) for c in PALETTE}
     for k, r in sprites.items():
         px = rgba[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]].reshape(-1, 4)
@@ -72,14 +94,14 @@ def validate() -> list[str]:
     return errors
 
 
-def main() -> int:
-    errors = validate()
+def main(build: spec.Build) -> int:
+    errors = validate(build)
     for e in errors:
         print("atlas:", e, file=sys.stderr)
-    n = len(json.loads(spec.ATLAS_JSON.read_text())["sprites"])
+    n = len(json.loads(build.atlas_json.read_text())["sprites"])
     print(f"validate: {n} sprites, {len(errors)} problems")
     return 1 if errors else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(spec.parse_build(sys.argv[1:])[0]))

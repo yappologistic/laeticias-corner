@@ -39,8 +39,8 @@ def _joined(mask: int, m: Model, part):
     m.ghost_outside(0, 16, 0, 16)
 
 
-def hedge(mask, frame, frames):
-    m = Model.empty(-8, 24, -8, 24, 0, 16)
+def hedge(mask, frame, frames, k):
+    m = Model.empty(-8, 24, -8, 24, 0, 16, k=k)
     X, Y, Z = m.coords()
     # Leaf texture repeats every tile so neighbouring hedges continue each other exactly.
     wob = (value_noise(X, Y, Z, 2.0, 700, period=8) - 0.5) * 1.3
@@ -60,8 +60,8 @@ def hedge(mask, frame, frames):
     return m
 
 
-def fence(mask, frame, frames):
-    m = Model.empty(-8, 24, -8, 24, 0, 14)
+def fence(mask, frame, frames, k):
+    m = Model.empty(-8, 24, -8, 24, 0, 14, k=k)
     X, Y, Z = m.coords()
     grain = (value_noise(X * 2, Y * 2, Z * 0.3, 1.0, 720) - 0.5) * 0.8
 
@@ -79,9 +79,9 @@ def fence(mask, frame, frames):
 
 # ---------- 1x1 garden pieces ----------
 
-def planter(v, frame, frames):
+def planter(v, frame, frames, k):
     rng = Rng(130, v)
-    m = Model.empty(0, 16, 0, 16, 0, 16)
+    m = Model.empty(0, 16, 0, 16, 0, 16, k=k)
     X, Y, Z = m.coords()
     frame_box = box(X, Y, Z, 1, 15, 1, 15, 0, 5)
     inner = box(X, Y, Z, 2.5, 13.5, 2.5, 13.5, 0, 5)
@@ -127,8 +127,8 @@ def planter(v, frame, frames):
     return m
 
 
-def beehive(v, frame, frames):
-    m = Model.empty(0, 16, 0, 16, 0, 22)
+def beehive(v, frame, frames, k):
+    m = Model.empty(0, 16, 0, 16, 0, 22, k=k)
     X, Y, Z = m.coords()
     for x in (4, 11):
         for y in (4, 11):
@@ -157,8 +157,8 @@ def beehive(v, frame, frames):
     return m
 
 
-def scarecrow(v, frame, frames):
-    m = Model.empty(-1, 17, 0, 16, 0, 34)
+def scarecrow(v, frame, frames, k):
+    m = Model.empty(-1, 17, 0, 16, 0, 34, k=k)
     X, Y, Z = m.coords()
     m.put(box(X, Y, Z, 7.5, 8.5, 7.5, 8.5, 0, 24), "wood")
     shirt = box(X, Y, Z, 5.5, 10.5, 6.6, 9.6, 11, 20)
@@ -190,8 +190,8 @@ def scarecrow(v, frame, frames):
     return m
 
 
-def well(v, frame, frames):
-    m = Model.empty(0, 16, 0, 16, 0, 27)
+def well(v, frame, frames, k):
+    m = Model.empty(0, 16, 0, 16, 0, 27, k=k)
     X, Y, Z = m.coords()
     rho = np.hypot(X - C, Y - C)
     ring = (rho <= 6.2) & (rho > 4.0) & (Z < 7)
@@ -220,8 +220,8 @@ def well(v, frame, frames):
     return m
 
 
-def lamp(v, frame, frames):
-    m = Model.empty(1, 15, 1, 15, 0, 36)
+def lamp(v, frame, frames, k):
+    m = Model.empty(1, 15, 1, 15, 0, 36, k=k)
     X, Y, Z = m.coords()
     cyl = cylinder_normal(X, Y, Z, C, C)
     # Stepped stone plinth, then a slim post with collars.
@@ -247,8 +247,8 @@ def lamp(v, frame, frames):
     return m
 
 
-def bench(v, frame, frames):
-    m = Model.empty(0, 16, 0, 16, 0, 14)
+def bench(v, frame, frames, k):
+    m = Model.empty(0, 16, 0, 16, 0, 14, k=k)
     X, Y, Z = m.coords()
     for x in (2.5, 12.5):
         for y in (6, 10):
@@ -265,8 +265,8 @@ def bench(v, frame, frames):
     return m
 
 
-def picnic_table(v, frame, frames):
-    m = Model.empty(0, 32, 0, 16, 0, 12)
+def picnic_table(v, frame, frames, k):
+    m = Model.empty(0, 32, 0, 16, 0, 12, k=k)
     X, Y, Z = m.coords()
     slats = (np.floor(Y / 2.0) % 2 == 0) * -0.5 - ((Y % 2.0) < 0.35) * 0.8
     m.put(box(X, Y, Z, 2, 30, 4, 12, 9, 10.2), "wood_light", tone=slats)
@@ -288,8 +288,8 @@ def picnic_table(v, frame, frames):
     return m
 
 
-def campfire(v, frame, frames):
-    m = Model.empty(0, 16, 0, 16, 0, 16)
+def campfire(v, frame, frames, k):
+    m = Model.empty(0, 16, 0, 16, 0, 16, k=k)
     X, Y, Z = m.coords()
     for k in range(9):
         a = k * 2 * math.pi / 9 + 0.2
@@ -323,8 +323,8 @@ def campfire(v, frame, frames):
     return m
 
 
-def bridge(v, frame, frames):
-    m = Model.empty(0, 16, 0, 16, -1, 13)
+def bridge(v, frame, frames, k):
+    m = Model.empty(0, 16, 0, 16, -1, 13, k=k)
     X, Y, Z = m.coords()
     arch = 1.2 + 2.8 * np.sin(np.pi * np.clip(X, 0, 16) / 16)
     plank = (np.floor(X / 2.0) % 2 == 0) * -0.4 - ((X % 2.0) < 0.4) * 0.9

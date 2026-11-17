@@ -1,6 +1,8 @@
 """Exact ray casting of voxel models into the 2:1 projection, with palette-ramp shading.
 
-Screen: sx = x - y, sy = (x + y) / 2 - z, anchor at world (0, 0, 0). Pixels are sampled at their
+Screen: sx = x - y, sy = (x + y) / 2 - z in voxels, anchor at world (0, 0, 0). Lengths that
+describe the look (occlusion reach, contact shadow, outline depth step) are in design units and
+scale with the model's voxels per design unit `k`; a pixel stays a pixel (outlines, dither). Pixels are sampled at their
 centres, so ground diamonds of neighbouring tiles partition the screen with no gaps or overlap.
 Every ray through a pixel centre runs along (1, 1, 1); along it, cell boundaries fall at fixed
 fractions of t, so three samples per unit of t visit every voxel the ray crosses.
@@ -23,7 +25,7 @@ AMBIENT, DIFFUSE = 0.42, 0.58
 FACE_NORMALS = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], np.float32)  # top, +x, +y
 SHADOW_ALPHA = (0, 58, 88, 116)
 HALO_STEPS = 6  # alpha levels of a glow halo, so light falls off softly
-AO_PAD = 5
+AO_PAD = 5  # design units
 
 BAYER4 = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]],
                   np.float32) / 16 + 1 / 32
@@ -83,11 +85,13 @@ def _sample(grid, p, x0, y0, z0, pad):
 
 def _ambient_occlusion(model: Model, centre, nrm):
     """How enclosed each surface point is: blurred solidity probed a little way along the normal."""
-    occ = _occupancy(model, AO_PAD).astype(np.float32)
-    near, far = box_blur(occ, 1), box_blur(occ, 3)
-    args = (model.x0, model.y0, model.z0, AO_PAD)
-    a = _sample(near, centre + nrm * 1.6, *args)
-    b = _sample(far, centre + nrm * 3.5, *args)
+    k = model.k
+    pad = AO_PAD * k
+    occ = _occupancy(model, pad).astype(np.float32)
+    near, far = box_blur(occ, k), box_blur(occ, 3 * k)
+    args = (model.x0, model.y0, model.z0, pad)
+    a = _sample(near, centre + nrm * (1.6 * k), *args)
+    b = _sample(far, centre + nrm * (3.5 * k), *args)
     return np.clip(1.08 - 0.55 * a - 0.75 * b, 0.5, 1.0)
 
 
@@ -187,7 +191,9 @@ def render_base(model: Model):
         light = (AMBIENT + DIFFUSE * diffuse) * ao
         n = RAMP_LEN[m]
         lv = (light - 0.22) / 0.72 * (n - 1) + BIAS[m] + model.tone[ii[h], jj[h], kk[h]]
-        lv += TEXTURE[m] * _texture_noise(ii[h], jj[h], kk[h], model.x0, model.y0, model.z0)
+        # Per-voxel grain is finer on finer grids; it is kept fainter there, as authored
+        # texture takes over.
+        lv += TEXTURE[m] / model.k * _texture_noise(ii[h], jj[h], kk[h], model.x0, model.y0, model.z0)
         level[h] = lv
 
     mat2 = mat.reshape(H, W)
@@ -203,10 +209,11 @@ def render_base(model: Model):
     lvl = lvl - solid * (0.9 * (up | left) + 1.6 * (down | right))
     front = np.zeros_like(solid)
     for nb in (pad_d[:-2, 1:-1], pad_d[2:, 1:-1], pad_d[1:-1, :-2], pad_d[1:-1, 2:]):
-        front |= (nb > -1e8) & (dep - nb > 3.0)
+        front |= (nb > -1e8) & (dep - nb > 3.0 * model.k)
     lvl = lvl - solid * front * 1.0
     pyy, pxx = np.mgrid[r0:r1, c0:c1]
-    idx = np.clip(dither(lvl, pxx, pyy), 0, RAMP_LEN[mat2] - 1).astype(np.int64)
+    # Finer grids have smoother normals, so a narrower dither band keeps ramps in clean steps.
+    idx = np.clip(dither(lvl, pxx, pyy, 0.55 / model.k), 0, RAMP_LEN[mat2] - 1).astype(np.int64)
     rgba = np.zeros((H, W, 4), np.uint8)
     rgba[..., :3] = RAMPS[mat2, idx]
     rgba[..., 3] = np.where(solid, 255, 0)
@@ -217,9 +224,10 @@ def render_base(model: Model):
         g = HAS_GLOW[mat2]
         glow[g, :3] = GLOWS[mat2[g]]
         glow[g, 3] = 255
+        k = model.k
         for halo in model.halos:
-            hx, hy = halo.x - halo.y, (halo.x + halo.y) / 2 - halo.z
-            d = np.hypot(pxx + 0.5 - hx, (pyy + 0.5 - hy) * 1.6) / halo.radius
+            hx, hy = (halo.x - halo.y) * k, ((halo.x + halo.y) / 2 - halo.z) * k
+            d = np.hypot(pxx + 0.5 - hx, (pyy + 0.5 - hy) * 1.6) / (halo.radius * k)
             inten = halo.strength * np.clip(1 - d, 0, 1) ** 1.6 * HALO_STEPS
             q = np.clip(dither(inten, pxx, pyy), 0, HALO_STEPS)
             # Halo strength lives in alpha: additive blending scales the colour by it.
@@ -251,18 +259,20 @@ def render_shadow(model: Model) -> Sprite:
     origin = np.stack([gx, gy, np.full_like(gx, 0.05)], 1).astype(np.float32)
     cast = _shadowed(occ, origin, model.x0, model.y0, model.z0, pad, zmax, SHADOW_SUN)
     # Contact darkening: how much solid sits right next to this ground point.
+    k = model.k
     k0 = -model.z0
     contact = np.zeros(gx.size, np.float32)
     if 0 <= k0 < nz:
-        layer = (model.visible()[:, :, k0:k0 + 3] > 0).any(axis=2)
-        lp = np.pad(layer, 3)
-        for dx in range(-2, 3):
-            for dy in range(-2, 3):
-                i = np.floor(gx).astype(np.int64) - model.x0 + dx + 3
-                j = np.floor(gy).astype(np.int64) - model.y0 + dy + 3
+        layer = (model.visible()[:, :, k0:k0 + 3 * k] > 0).any(axis=2)
+        r = 2 * k
+        lp = np.pad(layer, r + 1)
+        for dx in range(-r, r + 1):
+            for dy in range(-r, r + 1):
+                i = np.floor(gx).astype(np.int64) - model.x0 + dx + r + 1
+                j = np.floor(gy).astype(np.int64) - model.y0 + dy + r + 1
                 ok = (i >= 0) & (i < lp.shape[0]) & (j >= 0) & (j < lp.shape[1])
-                contact[ok] += lp[i[ok], j[ok]] * (1.0 / (1 + abs(dx) + abs(dy)))
-    level = np.maximum(cast * 1.9, np.clip(contact / 3.0, 0, 1) * 3.0)
+                contact[ok] += lp[i[ok], j[ok]] * (1.0 / (1 + (abs(dx) + abs(dy)) / k))
+    level = np.maximum(cast * 1.9, np.clip(contact / (3.0 * k * k), 0, 1) * 3.0)
     q = np.clip(dither(level.reshape(py.shape), px, py), 0, 3).astype(np.int64)
     if model.hover:
         q[:] = 0
