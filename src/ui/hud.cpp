@@ -28,9 +28,13 @@ enum Wid : int {
     kJournalClose,
     kScrollUp,
     kScrollDown,
-    kTab0 = 16,
-    kTile0 = 32,
+    kTrayHeader,
+    kCard0,               // wish cards: kCard0 + slot
+    kNotNow = kCard0 + 8, // the card menu's only entry
+    kTab0 = 48,           // drawer tabs: kTab0 + category
+    kTile0 = 64,          // drawer tiles: see tileId
 };
+constexpr int kTraySlots = kNotNow - kCard0;
 
 struct Named {
     std::string_view name;
@@ -52,6 +56,8 @@ constexpr Named kNames[] = {
     {"journal_close", kJournalClose},
     {"scroll_up", kScrollUp},
     {"scroll_down", kScrollDown},
+    {"tray", kTrayHeader},
+    {"not_now", kNotNow},
 };
 
 float approach(float v, bool on, float dt) {
@@ -150,6 +156,12 @@ Hud::Hud() {
     hintText_.reserve(192);
     lockLabel_.reserve(16);
     lockTip_.reserve(96);
+    tray_.reserve(kTraySlots);
+}
+
+void Hud::ribbon(Ribbon r) {
+    ribbon_ = std::move(r);
+    ribbonTime_ = theme::kRibbonSeconds;
 }
 
 void Hud::categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out,
@@ -332,6 +344,9 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
                      2 * tpad + font.lineHeight(Face::Title) + font.lineHeight(Face::Body)};
     }
 
+    // The tray first, so the drawer (drawn over it) is hit first where they meet.
+    layoutTray(font, screen, s);
+
     // Build drawer above the docks.
     drawerBox_ = {};
     scrollable_ = canScrollUp_ = canScrollDown_ = false;
@@ -462,8 +477,35 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         hintBox_ = {std::round((screen.x - w) * 0.5f),
                     bottom - gap - hintH + (1 - a) * theme::kHintSlide * s, w, hintH};
     }
+    // The ribbon announcing a granted wish: top centre, as wide as its content.
+    ribbonBox_ = {};
+    if (ribbonT_ > 0.0f) {
+        const float pad = theme::kToastPad * s;
+        const float icon = theme::kRibbonIcon * s;
+        const float line2 = font.measure(Face::Body, ribbon_.text) +
+                            static_cast<float>(ribbon_.iconCount) * (icon + gap * 0.5f) + gap;
+        const float line1 =
+            theme::kIcon * s + theme::kToastIconGap * s + font.measure(Face::Title, ribbon_.title);
+        // Between the title and the tray when that band is wide enough, else across the top.
+        const float bandL = titleBox_.x + titleBox_.w + gap;
+        const float bandR =
+            trayLast_.w > 0 && !tray_.empty() ? trayLast_.x - gap : screen.x - margin;
+        const bool inBand = bandR - bandL >= theme::kRibbonMinW * s;
+        const float maxW =
+            std::min(theme::kRibbonMaxW * s, inBand ? bandR - bandL : screen.x - 2 * margin);
+        const float quoteW = std::min(font.measure(Face::Body, ribbon_.quote), maxW - 2 * pad);
+        const float w = std::min(maxW, std::max({line1, line2, quoteW}) + 2 * pad);
+        const float lh = font.lineHeight(Face::Body);
+        const int quoteLines =
+            ribbon_.quote.empty() ? 0 : wrapLines(font, Face::Body, ribbon_.quote, w - 2 * pad, 2);
+        const float h = 2 * pad + font.lineHeight(Face::Title) + gap * 0.5f + std::max(icon, lh) +
+                        (quoteLines > 0 ? gap * 0.5f + static_cast<float>(quoteLines) * lh : 0.0f);
+        const float x = inBand ? std::clamp(std::round((screen.x - w) * 0.5f), bandL, bandR - w)
+                               : std::round((screen.x - w) * 0.5f);
+        ribbonBox_ = {x, margin - (1 - smooth(ribbonT_)) * theme::kToastSlide * s, w, h};
+    }
     // The toast sits in the free band between the title and the journal, or below the title
-    // when that band is too narrow.
+    // when that band is too narrow; below the ribbon while one shows.
     {
         const float tpad = theme::kToastPad * s;
         const float w = std::min(theme::kIcon * s + theme::kToastIconGap * s +
@@ -471,9 +513,10 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
                                  screen.x - 2 * margin);
         const float h = theme::kToastH * s;
         const float left = titleBox_.x + titleBox_.w + gap;
-        const float right = journalT_ > 0.0f ? journalBox_.x - gap : screen.x - margin;
+        float right = journalT_ > 0.0f ? journalBox_.x - gap : screen.x - margin;
+        if (trayT_ > 0.0f && trayBox_.w > 0) right = std::min(right, trayBox_.x - gap);
         float x = std::round((screen.x - w) * 0.5f);
-        float y = margin;
+        float y = ribbonBox_.w > 0 ? ribbonBox_.y + ribbonBox_.h + gap : margin;
         if (x < left || x + w > right) {
             x = std::round(std::clamp((left + right - w) * 0.5f, left, std::max(left, right - w)));
             if (x + w > right) {
@@ -506,6 +549,42 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     toastTime_ = std::max(0.0f, toastTime_ - dt);
     toastT_ = approach(toastT_, toastTime_ > 0.0f && !m.photo, dt);
     flash_ = std::max(0.0f, flash_ - dt / theme::kFlashSeconds);
+    ribbonTime_ = std::max(0.0f, ribbonTime_ - dt);
+    ribbonT_ = approach(ribbonT_, ribbonTime_ > 0.0f && !m.photo, dt);
+
+    // Tray cards follow the open wishes: new ones slide in, granted or snoozed ones fade up.
+    for (TrayCard& t : tray_) t.open = false;
+    for (const WishCard& c : m.wishes) {
+        const auto it = std::ranges::find_if(
+            tray_, [&](const TrayCard& t) { return t.card.wish == c.wish && t.out == 0.0f; });
+        if (it != tray_.end()) {
+            it->card = c;
+            it->open = true;
+        } else if (std::cmp_less(tray_.size(), kTraySlots)) {
+            tray_.push_back({c, 0.0f, 0.0f, true, {}, 1});
+        }
+    }
+    for (TrayCard& t : tray_) {
+        t.in = std::min(1.0f, t.in + dt / theme::kCardIn);
+        if (!t.open) {
+            t.card.detail = {}; // its text belonged to the open card
+            t.out = std::min(1.0f, t.out + dt / theme::kCardOut);
+        }
+    }
+    std::erase_if(tray_, [](const TrayCard& t) { return t.out >= 1.0f; });
+    if (menuWish_ >= 0 &&
+        std::ranges::none_of(m.wishes, [&](const WishCard& c) { return c.wish == menuWish_; }))
+        menuWish_ = -1;
+    // The tray steps aside for the journal, for photos and for a drawer that reaches it.
+    const bool drawerOverTray = drawerT_ > 0.0f && trayLast_.w > 0 && drawerBox_.w > 0 &&
+                                drawerBox_.y < trayLast_.y + trayLast_.h &&
+                                drawerBox_.x + drawerBox_.w > trayLast_.x;
+    const bool ribbonOverTray = ribbonT_ > 0.0f && trayLast_.w > 0 && ribbonBox_.w > 0 &&
+                                ribbonBox_.x + ribbonBox_.w > trayLast_.x;
+    trayT_ = approach(
+        trayT_, !tray_.empty() && !m.journalOpen && !m.photo && !drawerOverTray && !ribbonOverTray,
+        dt);
+    std::snprintf(trayCount_, sizeof trayCount_, "%zu", m.wishes.size());
 
     clockLabel_.assign(phaseName(m.phase));
     if (m.pin != ClockPin::Auto) clockLabel_.append(strings::kSeparator).append(strings::kPinned);
@@ -532,7 +611,9 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             (drawerT_ > 0.5f && drawerBox_.contains(in.x, in.y)) ||
             (journalT_ > 0.5f && journalBox_.contains(in.x, in.y)) ||
             (hintT_ > 0.5f && hintBox_.contains(in.x, in.y)) ||
-            (toastT_ > 0.5f && !toast_.empty() && toastBox_.contains(in.x, in.y)))
+            (toastT_ > 0.5f && !toast_.empty() && toastBox_.contains(in.x, in.y)) ||
+            (trayT_ > 0.5f && trayBox_.contains(in.x, in.y)) ||
+            (ribbonT_ > 0.5f && ribbonBox_.contains(in.x, in.y)))
             overUi_ = true;
         for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
             if (it->box.contains(in.x, in.y)) {
@@ -559,6 +640,18 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     pointed_ = pointed;
     hoverTime_ += dt;
 
+    // A right click on a wish card opens its small menu; any other click closes it.
+    if (in.rightPressed && canPoint) {
+        menuWish_ = -1;
+        if (hovered >= kCard0 && hovered < kNotNow) {
+            const auto slot = static_cast<std::size_t>(hovered - kCard0);
+            if (slot < tray_.size() && tray_[slot].open) {
+                menuWish_ = tray_[slot].card.wish;
+                emit(HudAction::Kind::Hover);
+            }
+        }
+    }
+    if (in.pressed && canPoint && hovered != kNotNow) menuWish_ = -1;
     if (in.pressed && canPoint && overUi_) {
         captured_ = true;
         active_ = hovered;
@@ -591,9 +684,18 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kScrollDown:
                 if (!scroll_.empty()) ++scroll_[static_cast<std::size_t>(m.category)];
                 break;
+            case kTrayHeader: trayCollapsed_ = !trayCollapsed_; break;
+            case kNotNow:
+                emit(HudAction::Kind::Snooze, menuWish_);
+                menuWish_ = -1;
+                break;
             default:
-                if (active_ >= kTile0 && entry.locked) {
-                    emit(HudAction::Kind::OpenWishes);
+                if (active_ >= kCard0 && active_ < kNotNow) {
+                    const auto slot = static_cast<std::size_t>(active_ - kCard0);
+                    if (slot < tray_.size())
+                        emit(HudAction::Kind::OpenWishes, tray_[slot].card.wish);
+                } else if (active_ >= kTile0 && entry.locked) {
+                    emit(HudAction::Kind::OpenWishes, -1);
                 } else if (active_ >= kTile0) {
                     emit(entry.terrain ? HudAction::Kind::PickTerrain : HudAction::Kind::PickItem,
                          entry.index);
@@ -616,6 +718,49 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     const bool showTip = pointed_ != 0 && hoverTime_ > theme::kTooltipDelay && active_ == 0;
     if (showTip) tooltipId_ = pointed_;
     tooltipT_ = approach(tooltipT_, showTip, dt);
+}
+
+void Hud::layoutTray(const Font& font, Vec2 screen, float s) {
+    trayBox_ = {};
+    menuBox_ = {};
+    if (trayT_ <= 0.0f || tray_.empty()) return;
+    const float margin = theme::kMargin * s;
+    const float pad = theme::kCardPad * s;
+    const float portrait = theme::kPortrait * s;
+    const float w = std::min(theme::kTrayW * s, screen.x - 2 * margin);
+    const float x = screen.x - margin - w + (1.0f - smooth(trayT_)) * theme::kSlide * s;
+    const float header = theme::kTrayHeader * s;
+    Widget& h = add(kTrayHeader, {x, margin, w, header});
+    h.tooltip = strings::kWishes;
+    float y = margin + header;
+    const float textX = pad + portrait + theme::kCardGap * s;
+    const float textW = w - textX - pad;
+    const float lh = font.lineHeight(Face::Body);
+    for (std::size_t i = 0; i < tray_.size(); ++i) {
+        TrayCard& t = tray_[i];
+        t.lines = static_cast<float>(wrapLines(font, Face::Body, t.card.text, textW, 2));
+        const float detail = t.card.detail.empty() ? 0.0f : lh + theme::kBarGap * s;
+        const float body = std::max(portrait, t.lines * lh + detail);
+        // A leaving card folds away as it fades.
+        const float hgt = (body + 2 * pad) * (1.0f - smooth(t.out));
+        t.box = {x, y, w, hgt};
+        if (trayCollapsed_) t.box.h = 0;
+        if (!trayCollapsed_ && t.open && trayT_ >= 1.0f) {
+            Widget& c = add(kCard0 + static_cast<int>(i), t.box);
+            // The full text, only when the card cuts it short.
+            if (wrapLines(font, Face::Body, t.card.text, textW, 3) > 2) c.tooltip = t.card.text;
+        }
+        y += t.box.h;
+        if (t.card.wish == menuWish_ && t.open && !trayCollapsed_) {
+            const float mw = font.measure(Face::Body, strings::kNotNow) + 2 * theme::kTipPad * s;
+            const float mh = theme::kTipH * s;
+            menuBox_ = {x - mw - theme::kGap * s, t.box.y + (t.box.h - mh) * 0.5f, mw, mh};
+            Widget& n = add(kNotNow, menuBox_);
+            n.label = strings::kNotNow;
+        }
+    }
+    trayBox_ = {x, margin, w, y - margin + (trayCollapsed_ ? 0.0f : pad * 0.25f)};
+    trayLast_ = trayBox_;
 }
 
 const Hud::Widget* Hud::find(std::string_view name, const HudModel& m) const {
@@ -648,6 +793,14 @@ const Hud::Widget* Hud::find(std::string_view name, const HudModel& m) const {
 
 std::optional<Vec2> Hud::widgetCentre(std::string_view name, const HudModel& m) const {
     if (name == "toast" && toastT_ > 0.5f) return Vec2{toastBox_.cx(), toastBox_.cy()};
+    if (name.starts_with("card:")) {
+        // "card:N": the N-th open wish card.
+        const int n = std::atoi(std::string(name.substr(5)).c_str());
+        int k = 0;
+        for (const TrayCard& t : tray_)
+            if (t.open && t.box.h > 0 && k++ == n) return Vec2{t.box.cx(), t.box.cy()};
+        return std::nullopt;
+    }
     if (name == "hint" && hintT_ > 0.5f) return Vec2{hintBox_.cx(), hintBox_.cy()};
     const Widget* w = find(name, m);
     if (w == nullptr) return std::nullopt;
@@ -875,6 +1028,110 @@ void Hud::drawToast(Painter& p) const {
            b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(theme::kInk, a));
 }
 
+void Hud::drawTray(Painter& p) const {
+    const float a = smooth(trayT_);
+    if (a <= 0 || trayBox_.w <= 0) return;
+    const float s = scale_;
+    const Font& f = p.font();
+    const float pad = theme::kCardPad * s;
+    const float portrait = theme::kPortrait * s;
+    const Box hb{trayBox_.x, trayBox_.y, trayBox_.w, theme::kTrayHeader * s};
+    const float base = hb.cy() + f.ascent(Face::Body) * theme::kBaselineCentre;
+    p.icon(theme::icon::kSparkles, hb.x + pad + theme::kIcon * s * 0.5f, hb.cy(),
+           withAlpha(theme::kGold, a));
+    p.text(Face::Title, strings::kWishes, hb.x + pad + theme::kIcon * s + theme::kCardGap * s,
+           hb.cy() + f.ascent(Face::Title) * theme::kBaselineCentre, withAlpha(theme::kInk, a));
+    p.text(Face::Body, trayCount_, hb.x + hb.w - pad - f.measure(Face::Body, trayCount_), base,
+           withAlpha(theme::kInkMuted, a));
+    const float hh = hoverOf(kTrayHeader);
+    if (hh > 0) p.roundRect(hb, theme::kPanelRadius * s, withAlpha(theme::kHover, a * hh * 0.5f));
+    if (trayCollapsed_) return;
+    const float lh = f.lineHeight(Face::Body);
+    for (std::size_t i = 0; i < tray_.size(); ++i) {
+        const TrayCard& t = tray_[i];
+        if (t.box.h <= 1) continue;
+        const float in = smooth(t.in);
+        const float ca = a * in * (1.0f - smooth(t.out));
+        const float dx = (1.0f - in) * theme::kCardSlide * s;
+        const float dy = -smooth(t.out) * theme::kCardSlide * s * 0.5f;
+        const Box b{t.box.x + dx, t.box.y + dy, t.box.w, t.box.h};
+        p.roundRect({b.x + pad, b.y, b.w - 2 * pad, theme::kRim * s}, 0,
+                    withAlpha(theme::kDivider, ca), 0);
+        const int id = kCard0 + static_cast<int>(i);
+        const float hov = hoverOf(id);
+        const float r = theme::kTileRadius * s;
+        const Box inner{b.x + pad * 0.4f, b.y + pad * 0.3f, b.w - pad * 0.8f, b.h - pad * 0.6f};
+        if (hov > 0) p.roundRect(inner, r, withAlpha(theme::kHover, ca * hov));
+        if (t.card.ready || t.out > 0)
+            p.rim(inner, r, 2 * theme::kRim * s, withAlpha(theme::kGold, ca),
+                  withAlpha(theme::kGold, ca * 0.5f));
+        const Box pic{b.x + pad, b.y + pad, portrait, portrait};
+        p.roundRect(pic, portrait * 0.5f, withAlpha(theme::kInset, ca));
+        p.thumbnail(t.card.portrait, pic, pic.w / std::max(1.0f, t.card.portrait.w), ca);
+        const float tx = pic.x + portrait + theme::kCardGap * s;
+        const float tw = b.x + b.w - pad - tx;
+        p.wrapped(Face::Body, t.card.text, tx, b.y + pad, tw, 2, withAlpha(theme::kInk, ca));
+        if (t.card.detail.empty()) continue;
+        float dyy = b.y + pad + t.lines * lh + theme::kBarGap * s;
+        float dx2 = tx;
+        if (t.card.progress >= 0) {
+            const float bw = theme::kBarW * s;
+            const float bh = theme::kBarH * s;
+            const Box track{tx, dyy + (lh - bh) * 0.5f, bw, bh};
+            p.roundRect(track, bh * 0.5f, withAlpha(theme::kInset, ca * 2));
+            p.roundRect({track.x, track.y, std::max(bh, bw * std::min(1.0f, t.card.progress)), bh},
+                        bh * 0.5f, withAlpha(theme::kAccent, ca));
+            dx2 += bw + theme::kCardGap * s;
+        }
+        p.text(Face::Body, t.card.detail, dx2, dyy + f.ascent(Face::Body),
+               withAlpha(theme::kInkMuted, ca));
+    }
+    if (menuBox_.w > 0) {
+        p.glass(menuBox_, theme::kTipRadius * scale_, a, theme::kGlassTip);
+        p.endGlass();
+        const float mh = hoverOf(kNotNow);
+        if (mh > 0) p.roundRect(menuBox_, theme::kTipRadius * scale_, withAlpha(theme::kHover, mh));
+        p.text(Face::Body, strings::kNotNow, menuBox_.x + theme::kTipPad * s,
+               menuBox_.cy() + f.ascent(Face::Body) * theme::kBaselineCentre,
+               withAlpha(theme::kInk, a));
+    }
+}
+
+void Hud::drawRibbon(Painter& p) const {
+    const float a = smooth(ribbonT_);
+    if (a <= 0) return;
+    const float s = scale_;
+    const Font& f = p.font();
+    const Box b = ribbonBox_;
+    const float pad = theme::kToastPad * s;
+    p.glass(b, theme::kPanelRadius * s, a, theme::kGlass);
+    p.endGlass();
+    float y = b.y + pad;
+    p.icon(theme::icon::kSparkles, b.x + pad + theme::kIcon * s * 0.5f,
+           y + f.lineHeight(Face::Title) * 0.5f, withAlpha(theme::kGold, a));
+    p.text(Face::Title, ribbon_.title, b.x + pad + theme::kIcon * s + theme::kToastIconGap * s,
+           y + f.ascent(Face::Title), withAlpha(theme::kInk, a));
+    y += f.lineHeight(Face::Title) + theme::kGap * s * 0.5f;
+    const float icon = theme::kRibbonIcon * s;
+    float x = b.x + pad;
+    const float lineH = std::max(icon, f.lineHeight(Face::Body));
+    p.text(Face::Body, ribbon_.text, x,
+           y + (lineH - f.lineHeight(Face::Body)) * 0.5f + f.ascent(Face::Body),
+           withAlpha(theme::kInk, a));
+    x += f.measure(Face::Body, ribbon_.text) + theme::kGap * s;
+    for (int i = 0; i < ribbon_.iconCount; ++i) {
+        const Sprite& sp = ribbon_.icons[static_cast<std::size_t>(i)];
+        p.thumbnail(sp, {x, y, icon, icon}, icon / std::max(sp.w, sp.h * 0.75f), a);
+        x += icon + theme::kGap * s * 0.5f;
+    }
+    if (!ribbon_.quote.empty()) {
+        y += lineH + theme::kGap * s * 0.5f;
+        p.wrapped(Face::Body, ribbon_.quote, b.x + pad, y, b.w - 2 * pad, 2,
+                  withAlpha(theme::kInkMuted, a));
+    }
+    p.endLayer();
+}
+
 void Hud::drawTooltip(Painter& p) const {
     const float a = smooth(tooltipT_);
     if (a <= 0) return;
@@ -956,6 +1213,14 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         if (journalT_ > 0) drawJournal(p, m);
         p.endLayer();
 
+        // The wish tray is its own layer: it fades out as the journal fades in at its place.
+        if (trayT_ > 0 && trayBox_.w > 0) {
+            p.glass(trayBox_, radius, smooth(trayT_), theme::kGlass);
+            p.endGlass();
+            drawTray(p);
+            p.endLayer();
+        }
+
         // The drawer is its own layer: the journal and docks keep clear of it.
         if (drawerT_ > 0) {
             const float a = smooth(drawerT_);
@@ -981,6 +1246,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         drawHint(p, m);
         drawToast(p);
     }
+    if (!m.photo) drawRibbon(p);
     if (!m.photo) drawTooltip(p);
     if (flash_ > 0)
         p.roundRect({0, 0, screen_.x, screen_.y}, 0,

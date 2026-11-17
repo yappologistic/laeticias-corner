@@ -209,38 +209,56 @@ void Painter::text(Face face, std::string_view s, float x, float baseline, SDL_F
     font_.draw(batch_, face, s, x, baseline, color);
 }
 
-float Painter::wrapped(Face face, std::string_view s, float x, float top, float width, int maxLines,
-                       SDL_FColor color) {
-    const float lh = font_.lineHeight(face);
-    float y = top + font_.ascent(face);
+namespace {
+
+// Splits `s` into lines no wider than `width` (a single long word gets a line of its own) and
+// calls line(text, isLastShown) for at most maxLines of them.
+template <typename F>
+int breakLines(const Font& font, Face face, std::string_view s, float width, int maxLines,
+               F&& line) {
     int lines = 0;
     std::size_t start = 0;
     while (start < s.size() && lines < maxLines) {
-        // Grow the line word by word until it no longer fits.
         std::size_t end = start;
         std::size_t fit = start;
         while (end < s.size()) {
             std::size_t next = s.find(' ', end + 1);
             if (next == std::string_view::npos) next = s.size();
-            if (font_.measure(face, s.substr(start, next - start)) > width && fit > start) break;
+            if (font.measure(face, s.substr(start, next - start)) > width && fit > start) break;
             fit = next;
             end = next;
         }
-        std::string_view line = s.substr(start, fit - start);
-        const bool last = lines + 1 == maxLines && fit < s.size();
-        if (last) {
-            // Truncate the final visible line with an ellipsis.
-            while (!line.empty() && font_.measure(face, line) + font_.measure(face, "…") > width)
-                line.remove_suffix(1);
-            const float w = font_.draw(batch_, face, line, x, y, color);
-            font_.draw(batch_, face, "…", x + w, y, color);
-        } else {
-            font_.draw(batch_, face, line, x, y, color);
-        }
+        line(s.substr(start, fit - start), lines + 1 == maxLines && fit < s.size());
         ++lines;
-        y += lh;
         start = fit < s.size() ? fit + 1 : fit;
     }
+    return lines;
+}
+
+} // namespace
+
+int wrapLines(const Font& font, Face face, std::string_view s, float width, int maxLines) {
+    return breakLines(font, face, s, width, maxLines, [](std::string_view, bool) {});
+}
+
+float Painter::wrapped(Face face, std::string_view s, float x, float top, float width, int maxLines,
+                       SDL_FColor color) {
+    const float lh = font_.lineHeight(face);
+    float y = top + font_.ascent(face);
+    const int lines =
+        breakLines(font_, face, s, width, maxLines, [&](std::string_view line, bool cut) {
+            if (cut) {
+                // Truncate the final visible line with an ellipsis.
+                while (!line.empty() &&
+                       font_.measure(face, line) + font_.measure(face, "…") > width)
+                    line.remove_suffix(1);
+                const float w = font_.draw(batch_, face, line, x, y, color);
+                font_.draw(batch_, face, "…", x + w, y, color);
+            } else {
+                font_.draw(batch_, face, line, x, y, color);
+            }
+            y += lh;
+        });
     return static_cast<float>(lines) * lh;
 }
 
@@ -248,9 +266,9 @@ void Painter::icon(char32_t cp, float cx, float cy, SDL_FColor color) {
     font_.drawIcon(batch_, cp, cx, cy, color);
 }
 
-void Painter::thumbnail(const Sprite& sprite, Box b, float maxScale, float alpha) {
+void Painter::thumbnail(const Sprite& sprite, Box b, float maxScale, float alpha, SDL_FColor tint) {
     if (thumbCount_ == thumbs_.size()) endLayer();
-    thumbs_[thumbCount_++] = {sprite, b, maxScale, alpha};
+    thumbs_[thumbCount_++] = {sprite, b, maxScale, {tint.r, tint.g, tint.b, tint.a * alpha}};
 }
 
 void Painter::endLayer() {
@@ -267,7 +285,7 @@ void Painter::endLayer() {
                    whole ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
         batch_.quad(
             SDL_FRect{std::round(t.box.cx() - w * 0.5f), std::round(t.box.cy() - h * 0.5f), w, h},
-            s.uv, {1, 1, 1, t.alpha});
+            s.uv, t.color);
     }
     thumbCount_ = 0;
 }

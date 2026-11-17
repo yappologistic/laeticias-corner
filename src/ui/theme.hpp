@@ -25,6 +25,7 @@ inline constexpr SDL_FColor kChip{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kDivider{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kFlash{1.0f, 1.0f, 1.0f, 1.0f};
 inline constexpr SDL_FColor kDotRim{0.06f, 0.08f, 0.07f, 0.7f};
+inline constexpr SDL_FColor kGold{0.98f, 0.82f, 0.48f, 1.0f}; // wishes: header, ready glow
 
 // The glass material, layered over the blurred scene: a dimmed copy of the blur, a dark green-grey
 // tint, a faint top-down sheen, a light rim that is brighter along the top, and a soft shadow.
@@ -121,6 +122,18 @@ inline constexpr float kChipPad = 6.0f;
 inline constexpr float kChipGap = 8.0f;
 inline constexpr float kChipRadius = 6.0f;
 inline constexpr float kDotRadius = 4.0f; // "new" marks
+inline constexpr float kTrayW = 300.0f;   // wish tray
+inline constexpr float kTrayHeader = 44.0f;
+inline constexpr float kCardPad = 12.0f;
+inline constexpr float kCardGap = 10.0f;
+inline constexpr float kCardSlide = 40.0f; // a card slides in from this far right
+inline constexpr float kPortrait = 28.0f;
+inline constexpr float kBarW = 64.0f; // count progress
+inline constexpr float kBarH = 6.0f;
+inline constexpr float kBarGap = 4.0f;
+inline constexpr float kRibbonIcon = 28.0f;
+inline constexpr float kRibbonMaxW = 560.0f;
+inline constexpr float kRibbonMinW = 360.0f; // narrower bands put it across the top
 // Text is centred on a line by putting its baseline this fraction of the ascent below it.
 inline constexpr float kBaselineCentre = 0.36f;
 
@@ -134,6 +147,9 @@ inline constexpr float kTransition = 0.15f;
 inline constexpr float kTooltipDelay = 0.45f;
 inline constexpr float kToastSeconds = 3.2f;
 inline constexpr float kFlashSeconds = 0.35f;
+inline constexpr float kRibbonSeconds = 4.0f;
+inline constexpr float kCardIn = 0.25f;
+inline constexpr float kCardOut = 0.3f;
 
 // UI scale: display density, raised on very large windows so 4K stays readable.
 inline constexpr float kReferenceW = 1600.0f;

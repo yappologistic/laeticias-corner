@@ -25,6 +25,11 @@ struct Box {
     [[nodiscard]] float cy() const { return y + h * 0.5f; }
 };
 
+// Lines `s` takes when word-wrapped to `width`, at most maxLines (the last one is cut short with
+// an ellipsis when drawn).
+[[nodiscard]] int wrapLines(const Font& font, Face face, std::string_view s, float width,
+                            int maxLines);
+
 // The blurred scene behind the interface, sampled with screen-space UVs. A null texture makes
 // glass fall back to a plain translucent fill. `brightness` (0 dark .. 1 bright) deepens the
 // glass over a bright scene so text keeps its contrast.
@@ -58,7 +63,8 @@ public:
     void icon(char32_t cp, float cx, float cy, SDL_FColor color);
     // Queues a sprite centred in the box at scale min(fit, maxScale): whole multiples when that
     // is 1 or more (crisp pixels), smooth fractions below.
-    void thumbnail(const Sprite& sprite, Box b, float maxScale, float alpha);
+    void thumbnail(const Sprite& sprite, Box b, float maxScale, float alpha,
+                   SDL_FColor tint = {1, 1, 1, 1});
     void endLayer();
 
     [[nodiscard]] const Font& font() const { return font_; }
@@ -75,7 +81,7 @@ private:
         Sprite sprite;
         Box box;
         float maxScale;
-        float alpha;
+        SDL_FColor color;
     };
 
     void shape(Box b, float radius, float feather, SDL_FColor top, SDL_FColor bottom, Fill fill);

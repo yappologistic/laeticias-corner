@@ -40,6 +40,16 @@ inline constexpr LightKey kLightKeys[] = {
 };
 inline constexpr float kRainSkyGrey = 0.45f; // blend of sky toward grey while raining
 
+// Progress loop (docs/design/living-corner.md §12)
+inline constexpr int kMaxOpenWishes = 3;
+inline constexpr double kWishOfferGap = 75.0;      // play seconds between offers or grants
+inline constexpr double kWishOfferGapEmpty = 30.0; // ... while no wish is open
+inline constexpr double kWishSnooze = 600.0;       // "Not now" keeps a wish away this long
+inline constexpr double kWishGrantHold = 1.5;      // a goal must hold this long to count
+inline constexpr double kWishAlreadyDoneDelay = 3.0;
+inline constexpr double kWishPacingTick = 1.0; // offers are considered once a second
+inline constexpr double kConditionDebounce = 0.25;
+
 // Visitors
 inline constexpr int kVisitorsPerNeed = 2; // satisfied once -> 2 visitors, twice -> 4...
 inline constexpr float kFirstArrivalDelay = 1.0f;

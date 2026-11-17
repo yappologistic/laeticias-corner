@@ -60,6 +60,8 @@ public:
 
     void onPlaced(const Item& item, Rng& rng);
     void onRemoved(const Item& item);
+    // A few sparkles rising from a spot on the ground (continuous tile coordinates).
+    void burst(Vec2 tile, Rng& rng);
     // Spawns and advances effects near the camera. Called once per simulation step.
     void update(float dt, const World& world, std::span<const Critter> critters, bool rain,
                 Rng& rng);

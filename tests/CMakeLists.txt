@@ -6,6 +6,7 @@ add_executable(lc_tests
   test_core.cpp
   test_conditions.cpp
   test_saves.cpp
+  test_progress.cpp
   test_engine.cpp
   test_coverage.cpp
 )
@@ -43,6 +44,8 @@ set(LC_SCRIPTS
   "ui_states|ui_states|960x600|"
   "drawer_tabs|drawer_tabs|640x400|"
   "drawer_unlocks|drawer_unlocks|960x600|"
+  "wish_first|wish_first|640x400|"
+  "wish_waiting|wish_waiting|960x600|"
   "ui_tiny|ui_sizes|320x240|"
   "ui_small|ui_sizes|960x600|"
   "glass_small|glass|960x600|heavy"

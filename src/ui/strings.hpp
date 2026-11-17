@@ -30,6 +30,21 @@ inline constexpr std::string_view kZoomIn = "Zoom in";
 inline constexpr std::string_view kClose = "Close";
 inline constexpr std::string_view kScrollUp = "Previous row";
 inline constexpr std::string_view kScrollDown = "Next row";
+inline constexpr std::string_view kWishes = "Wishes";
+inline constexpr std::string_view kNotNow = "Not now";
+inline constexpr std::string_view kWishGranted = "Wish granted";
+inline constexpr std::string_view kNewInBuild = "New in Build:";
+inline constexpr std::string_view kNewFrame = "New postcard frame: {}";
+inline constexpr std::string_view kNoteAdded = "{}'s note added to the sketchbook"; // resident
+inline constexpr std::string_view kThanks = "“{}” — {}";     // the thanks line, who says it
+inline constexpr std::string_view kWishCount = "{} / {} {}"; // have, need, progress label
+inline constexpr std::string_view kWaitNight = "Waiting for nightfall";
+inline constexpr std::string_view kWaitDusk = "Waiting for dusk";
+inline constexpr std::string_view kWaitDawn = "Waiting for dawn";
+inline constexpr std::string_view kWaitDay = "Waiting for daytime";
+inline constexpr std::string_view kWaitSeason = "Waiting for {}"; // season name, lower case
+inline constexpr std::string_view kWaitRain = "Waiting for rain";
+inline constexpr std::string_view kWaitClear = "Waiting for clear skies";
 inline constexpr std::string_view kTipLocked = "{} more to discover. Grant wishes to unlock them.";
 
 // Shortcut labels shown in tooltips.

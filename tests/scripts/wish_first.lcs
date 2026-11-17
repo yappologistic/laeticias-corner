@@ -1,0 +1,37 @@
+# Laeticia's first wish: offered after half a minute of play, read 2 / 4 with the starter
+# flowers, granted by planting two more, with a ribbon naming the new pieces, which then show in
+# the drawer with a dot.
+expect wishes 0
+expect widget tray no
+set played 29
+wait 70
+expect wish first_flowers open
+expect widget card:0 yes
+shot shots/wish_tray.png
+click ui:build
+wait 12
+click ui:tab:nature
+wait 12
+expect widget tile:flowers_violet no
+click ui:tile:flowers_white
+wait 12
+click @24,34
+click @25,34
+key escape
+wait 20
+set played 40
+wait 4
+expect wish first_flowers done
+expect ribbon yes
+expect wishes 0
+wait 20
+shot shots/wish_granted.png
+click ui:build
+wait 12
+click ui:tab:nature
+wait 12
+expect widget tile:flowers_violet yes
+move ui:tile:flowers_violet
+wait 30
+shot shots/wish_new_piece.png
+quit

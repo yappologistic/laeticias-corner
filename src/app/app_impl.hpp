@@ -11,6 +11,7 @@
 #include "core/clock.hpp"
 #include "core/edit.hpp"
 #include "core/progress.hpp"
+#include "core/progression.hpp"
 #include "core/rng.hpp"
 #include "core/save.hpp"
 #include "core/tuning.hpp"
@@ -86,6 +87,11 @@ private:
     void capturePhoto();
     void cycleClock();
     void markDirty() { autosave_.changed(); }
+    // The progress loop: facts for conditions, re-evaluation when something changed, pacing.
+    [[nodiscard]] CondFacts facts() const;
+    void updateProgress();
+    void onWishGranted(int wish);
+    [[nodiscard]] std::string_view waitingText(int node, std::string& out) const;
     [[nodiscard]] Vec2 screen() const {
         return {static_cast<float>(pixelW_), static_cast<float>(pixelH_)};
     }
@@ -124,6 +130,12 @@ private:
     bool rain_ = false;
     bool muted_ = false;
     Progress progress_;
+    Progression progression_;
+    std::uint64_t evalRevision_ = ~0ULL; // world revision last evaluated
+    double evalDue_ = -1;                // play time of a debounced evaluation
+    std::uint64_t factsKey_ = ~0ULL;     // what the facts were at the last evaluation
+    mutable std::vector<WishCard> cards_;
+    mutable std::array<std::string, tuning::kMaxOpenWishes> cardDetail_;
     // The open world save and the profile shared by all of them.
     std::string worldName_;
     std::string created_;
@@ -163,6 +175,8 @@ private:
     bool mouseInside_ = false;
     bool leftPressed_ = false;
     bool leftReleased_ = false;
+    bool rightPressed_ = false;
+    bool rightReleased_ = false;
     float wheel_ = 0;     // this frame, for the interface
     float wheelAcc_ = 0;  // toward the next zoom step
     float wheelIdle_ = 0; // seconds since the last wheel event
@@ -170,6 +184,7 @@ private:
     enum class Drag : std::uint8_t { None, Tool, Pan };
     Drag drag_ = Drag::None;
     bool rightDown_ = false;
+    bool panPending_ = false; // right or middle button went down: pan unless the UI takes it
     Vec2 rightStart_;
     Vec2 pressStart_;
     Vec2 lastPan_;

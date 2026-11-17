@@ -12,7 +12,8 @@
 namespace lc {
 namespace {
 
-constexpr char32_t kTextExtras[] = {0xB7, 0xD7, 0xE9, 0x2014, 0x2019, 0x2026, 0x2212};
+constexpr char32_t kTextExtras[] = {0xB7,   0xD7,   0xE9,   0x2014, 0x2018,
+                                    0x2019, 0x201C, 0x201D, 0x2026, 0x2212};
 // Kerning is kept for printable ASCII pairs, which is all interface text needs.
 constexpr char32_t kKernFirst = 32;
 constexpr char32_t kKernLast = 126;

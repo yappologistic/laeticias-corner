@@ -1,0 +1,78 @@
+# Wishes already answered are granted a moment after they are offered; one that needs the
+# evening says what it waits for; Not now sends a wish away; dusk grants the evening one.
+# Everything is built first, before any ribbon covers the small window.
+set unlock all
+click ui:build
+wait 12
+click ui:tab:nature
+wait 12
+click ui:tile:flowers_white
+wait 12
+click @24,34
+click @25,34
+key escape
+# A cottage by the starter bench and path answers three wishes; the cat moves in.
+click ui:build
+wait 12
+click ui:tab:homes
+wait 12
+click ui:tile:cottage
+wait 12
+click @28,31
+key escape
+click ui:build
+wait 12
+click ui:tab:garden
+wait 12
+click ui:tile:lamp
+wait 12
+click @30,29
+key escape
+wait 90
+expect seen cat
+set played 30
+wait 2
+expect wish first_flowers open
+set played 34
+wait 2
+expect wish first_flowers done
+set played 70
+wait 2
+expect wish a_roof open
+set played 74
+wait 2
+expect wish a_roof done
+set played 105
+wait 2
+set played 109
+wait 2
+expect wish path_to_door done
+set played 140
+wait 2
+set played 144
+wait 2
+expect wish cat_bench done
+set played 175
+wait 2
+expect wish three_beds open
+set played 251
+wait 2
+expect wish reading_light open
+expect wishes 2
+move ui:card:1
+wait 40
+shot shots/wish_waiting.png
+click ui:card:0 right
+wait 4
+expect widget not_now yes
+shot shots/wish_menu.png
+click ui:not_now
+wait 2
+expect wish three_beds waiting
+expect wishes 1
+set clock dusk
+wait 4
+set played 255
+wait 4
+expect wish reading_light done
+quit

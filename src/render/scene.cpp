@@ -223,6 +223,16 @@ void Scene::onPlaced(const Item& item, Rng& rng) {
     }
 }
 
+void Scene::burst(Vec2 tile, Rng& rng) {
+    const Vec2 c = iso_.toWorld(tile.x, tile.y);
+    const float u = iso_.tileH();
+    for (int i = 0; i < 6; ++i)
+        particles_.spawn(Fx::Sparkle,
+                         {c.x + rng.range(-1.0f, 1.0f) * tuning::kSparkleSpread * u,
+                          c.y - rng.range(0.6f, 1.8f) * u},
+                         {0, -tuning::kSparkleRise * u}, rng.range(0.6f, 1.0f));
+}
+
 void Scene::onRemoved(const Item& item) {
     if (fades_.size() == kMaxFades) fades_.erase(fades_.begin());
     // The connect mask is frozen at removal time; neighbours no longer include the item.

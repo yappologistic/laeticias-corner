@@ -12,10 +12,12 @@
 #include "ui/theme.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <format>
+#include <iterator>
 
 namespace lc {
 namespace {
@@ -34,6 +36,8 @@ constexpr std::string_view kClose = "sfx/ui_close.wav";
 constexpr std::string_view kShutter = "sfx/shutter.wav";
 constexpr std::string_view kDiscover = "sfx/discover.wav";
 constexpr std::string_view kPaint = "sfx/paint.wav";
+constexpr std::string_view kWish = "sfx/wish.wav";
+constexpr std::string_view kWishGranted = "sfx/wish_granted.wav";
 } // namespace sfx
 
 constexpr std::string_view kPhotoDir = "photos";
@@ -130,7 +134,7 @@ App::App(const Options& o, Catalog cat, fs::path assets)
                                ? 1
                                : static_cast<std::uint64_t>(
                                      std::chrono::steady_clock::now().time_since_epoch().count()))),
-      progress_(cat_), camera_(cat_.iso(), world_.landBounds(), 0) {
+      progress_(cat_), progression_(cat_), camera_(cat_.iso(), world_.landBounds(), 0) {
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
         gates_[v].allowed = !cat_.visitors[v].rare;
 }
@@ -239,6 +243,8 @@ void App::buildThumbs() {
     for (std::size_t i = 0; i < cat_.visitors.size(); ++i)
         thumbs_.visitors.push_back(spriteOf(Thumb::Visitor, static_cast<int>(i)));
     thumbs_.placeholder = atlas_->sprite(t.placeholder);
+    thumbs_.portrait =
+        atlas_->sprite(atlas_->resolve("ui/portrait/" + cat_.resident.id, t.placeholder));
     thumbs_.tileW = cat_.iso().tileW();
 }
 
@@ -437,6 +443,124 @@ bool App::writeThumbnail() {
     fs::rename(tmp, file, ec);
     if (ec) SDL_Log("thumbnail: %s", ec.message().c_str());
     return !ec;
+}
+
+CondFacts App::facts() const {
+    CondFacts f;
+    f.phase = clock_.phase();
+    f.season = 0;
+    f.raining = rain_;
+    f.present = visitors_.presence();
+    f.seen = visitors_.seenFlags();
+    using C = Counter;
+    const auto at = [&](C c) -> int& { return f.counters[static_cast<std::size_t>(c)]; };
+    at(C::Wishes) = static_cast<int>(progress_.granted.size());
+    at(C::Seen) = visitors_.seenCount();
+    at(C::Nooks) = progress_.nooksFound();
+    at(C::Pages) = at(C::Seen) + at(C::Nooks);
+    at(C::Harvests) = progress_.harvests;
+    at(C::Stage) = progress_.stage;
+    return f;
+}
+
+void App::updateProgress() {
+    const CondFacts f = facts();
+    // Facts that change rarely trigger an evaluation at once; world edits are debounced and
+    // wait for a drag to end, so a stroke counts once.
+    std::uint64_t key = static_cast<std::uint64_t>(f.phase) |
+                        (static_cast<std::uint64_t>(f.season) << 4) |
+                        (static_cast<std::uint64_t>(f.raining) << 8);
+    for (const int n : f.present) key = key * 31 + static_cast<std::uint64_t>(n);
+    for (const int c : f.counters) key = key * 131 + static_cast<std::uint64_t>(c);
+    bool evaluate = key != factsKey_;
+    factsKey_ = key;
+    if (world_.revision() != evalRevision_ && !editor_.inGroup()) {
+        if (evalDue_ < 0) evalDue_ = played_ + tuning::kConditionDebounce;
+        if (played_ >= evalDue_) {
+            evaluate = true;
+            evalRevision_ = world_.revision();
+            evalDue_ = -1;
+        }
+    }
+    if (evaluate) progression_.evaluate(world_, progress_, f, played_);
+    progression_.tick(world_, progress_, f, played_, !photo_);
+    for (const ProgressEvent& e : progression_.events()) {
+        switch (e.kind) {
+        case ProgressEvent::Kind::WishOffered: {
+            play(sfx::kWish);
+            const int giver = cat_.wishes[static_cast<std::size_t>(e.index)].giver;
+            for (const Critter& c : visitors_.critters())
+                if (c.visitor == giver && !c.leaving) {
+                    scene_->burst(c.pos, rng_);
+                    break;
+                }
+            break;
+        }
+        case ProgressEvent::Kind::WishGranted: onWishGranted(e.index); break;
+        }
+        markDirty();
+    }
+    progression_.clearEvents();
+}
+
+void App::onWishGranted(int wish) {
+    const WishDef& def = cat_.wishes[static_cast<std::size_t>(wish)];
+    play(sfx::kWishGranted);
+    Ribbon r;
+    r.title = strings::kWishGranted;
+    const Reward& rw = def.reward;
+    if (!rw.items.empty() || !rw.terrain.empty()) {
+        r.text = strings::kNewInBuild;
+        const auto add = [&](const std::string& name, const Sprite& icon) {
+            r.text += (r.iconCount == 0 ? " " : ", ") + name;
+            if (r.iconCount < static_cast<int>(r.icons.size()))
+                r.icons[static_cast<std::size_t>(r.iconCount++)] = icon;
+        };
+        for (const int t : rw.terrain)
+            add(cat_.terrain[static_cast<std::size_t>(t)].name,
+                thumbs_.terrain[static_cast<std::size_t>(t)]);
+        for (const int i : rw.items)
+            add(cat_.items[static_cast<std::size_t>(i)].name,
+                thumbs_.items[static_cast<std::size_t>(i)]);
+    } else if (rw.frame >= 0) {
+        r.text = std::vformat(
+            strings::kNewFrame,
+            std::make_format_args(cat_.frames[static_cast<std::size_t>(rw.frame)].name));
+    } else if (rw.clue >= 0) {
+        r.text = std::vformat(strings::kNoteAdded, std::make_format_args(cat_.resident.name));
+    }
+    r.quote = std::vformat(strings::kThanks, std::make_format_args(def.thanks, cat_.resident.name));
+    hud_.ribbon(std::move(r));
+}
+
+std::string_view App::waitingText(int node, std::string& out) const {
+    const CondNode& n = cat_.conditions.node(node);
+    const auto bit = [&](int i) { return ((n.mask >> i) & 1) != 0; };
+    switch (n.kind) {
+    case CondKind::Time: {
+        // The first listed phase still to come today.
+        static constexpr std::string_view kText[] = {strings::kWaitDay, strings::kWaitDusk,
+                                                     strings::kWaitNight, strings::kWaitDawn};
+        const int now = static_cast<int>(clock_.phase());
+        for (int k = 1; k <= 4; ++k)
+            if (bit((now + k) % 4)) return kText[(now + k) % 4];
+        return {};
+    }
+    case CondKind::Season: {
+        const int count = static_cast<int>(cat_.seasons.size());
+        for (int k = 1; k <= count; ++k)
+            if (bit(k % count)) {
+                std::string name = cat_.seasons[static_cast<std::size_t>(k % count)].name;
+                if (!name.empty())
+                    name[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(name[0])));
+                out = std::vformat(strings::kWaitSeason, std::make_format_args(name));
+                return out;
+            }
+        return {};
+    }
+    case CondKind::Weather: return n.mask != 0 ? strings::kWaitRain : strings::kWaitClear;
+    default: return {};
+    }
 }
 
 bool App::night() const {
@@ -692,11 +816,16 @@ void App::handleEvent(const SDL_Event& e) {
         if (e.button.button == SDL_BUTTON_LEFT) {
             (e.button.down ? leftPressed_ : leftReleased_) = true;
         } else if (e.button.button == SDL_BUTTON_RIGHT || e.button.button == SDL_BUTTON_MIDDLE) {
+            if (e.button.button == SDL_BUTTON_RIGHT)
+                (e.button.down ? rightPressed_ : rightReleased_) = true;
             if (e.button.down && drag_ == Drag::None) {
-                drag_ = Drag::Pan;
+                // The pan starts in worldInput, once the interface has had its say: a right
+                // click on a wish card opens its menu instead.
+                panPending_ = true;
                 rightDown_ = true;
                 rightStart_ = mouse_;
             } else if (!e.button.down && rightDown_) {
+                panPending_ = false;
                 rightDown_ = false;
                 if (drag_ == Drag::Pan) drag_ = Drag::None;
                 // A right click without dragging cancels the current tool.
@@ -726,6 +855,30 @@ HudModel App::model() const {
     m.thumbs = &thumbs_;
     m.visitors = &visitors_;
     m.progress = &progress_;
+    cards_.clear();
+    for (std::size_t i = 0; i < progress_.open.size(); ++i) {
+        const int w = progress_.open[i];
+        const WishDef& def = cat_.wishes[static_cast<std::size_t>(w)];
+        const WishStatus& st = progression_.status(w);
+        WishCard c;
+        c.wish = w;
+        c.text = def.text;
+        c.portrait = def.giver < 0 ? thumbs_.portrait
+                                   : thumbs_.visitors[static_cast<std::size_t>(def.giver)];
+        c.ready = st.ready;
+        std::string& detail = cardDetail_[std::min(i, cardDetail_.size() - 1)];
+        detail.clear();
+        if (st.count >= 0) {
+            c.progress = static_cast<float>(st.count) / static_cast<float>(std::max(1, st.min));
+            std::format_to(std::back_inserter(detail), strings::kWishCount,
+                           std::min(st.count, st.min), st.min, def.progress);
+            c.detail = detail;
+        } else if (st.waiting >= 0) {
+            c.detail = waitingText(st.waiting, detail);
+        }
+        cards_.push_back(c);
+    }
+    m.wishes = cards_;
     m.tool = tool_;
     m.selection = selection_;
     m.category = category_;
@@ -827,6 +980,12 @@ void App::applyHudActions() {
         case K::OpenWishes:
             journalOpen_ = true;
             play(sfx::kOpen, tuning::kUiSfxLevel);
+            break;
+        case K::Snooze:
+            if (a.arg >= 0) {
+                progression_.snooze(a.arg, progress_, played_);
+                markDirty();
+            }
             break;
         case K::Hover: break;
         }
@@ -930,6 +1089,10 @@ void App::worldInput() {
     for (; wheelAcc_ <= -1.0f; wheelAcc_ += 1.0f) zoomBy(-1, mouse_);
     wheel_ = 0;
 
+    if (panPending_) {
+        panPending_ = false;
+        if (!uiOwns && drag_ == Drag::None) drag_ = Drag::Pan;
+    }
     if (leftPressed_ && !uiOwns && drag_ == Drag::None) {
         if (tool_ == Tool::None || photo_) {
             drag_ = Drag::Pan;
@@ -983,6 +1146,7 @@ void App::step(float dt) {
         if (!def.voice.empty() && (e.kind == VisitorEvent::Kind::Call || e.firstSighting))
             play(def.voice, tuning::kVoiceLevel, true);
     }
+    updateProgress();
     scene_->update(dt, world_, visitors_.critters(), rain_, rng_);
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);
@@ -1069,7 +1233,7 @@ int App::run() {
     Uint64 last = SDL_GetTicksNS();
     double acc = 0;
     while (running_) {
-        leftPressed_ = leftReleased_ = false;
+        leftPressed_ = leftReleased_ = rightPressed_ = rightReleased_ = false;
         for (SDL_Event e; SDL_PollEvent(&e);) handleEvent(e);
 
         const Uint64 now = SDL_GetTicksNS();
@@ -1086,6 +1250,8 @@ int App::run() {
         in.inside = mouseInside_;
         in.pressed = leftPressed_;
         in.released = leftReleased_;
+        in.rightPressed = rightPressed_;
+        in.rightReleased = rightReleased_;
         in.wheel = wheel_;
         in.blocked = drag_ != Drag::None;
         hud_.update(in, model(), font_, screen(), uiScale_, frameDt);

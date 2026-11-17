@@ -28,7 +28,27 @@ struct ThumbSet {
     std::vector<Sprite> items;
     std::vector<Sprite> visitors;
     Sprite placeholder;
+    Sprite portrait;  // the resident, for her wish cards
     float tileW = 64; // art tile width: one-tile things share one scale, so sizes compare
+};
+
+// One open wish as the tray shows it.
+struct WishCard {
+    int wish = -1;
+    std::string_view text;
+    Sprite portrait;         // the giver
+    float progress = -1;     // a count goal's share done, 0..1; -1: no bar
+    std::string_view detail; // "3 / 4 flower patches" or "Waiting for nightfall"
+    bool ready = false;      // its goal holds: granted in a moment
+};
+
+// The wide toast that announces a granted wish and what it brought.
+struct Ribbon {
+    std::string title;
+    std::string text;
+    std::string quote; // the giver's thanks
+    std::array<Sprite, 4> icons{};
+    int iconCount = 0;
 };
 
 struct HudModel {
@@ -36,6 +56,7 @@ struct HudModel {
     const ThumbSet* thumbs = nullptr;
     const Visitors* visitors = nullptr;
     const Progress* progress = nullptr; // unlocks and new-piece dots; null: everything unlocked
+    std::span<const WishCard> wishes;   // the open wishes, in the order they were offered
     Tool tool = Tool::None;
     int selection = -1; // item index (Place) or terrain index (Paint)
     int category = 0;   // open drawer tab
@@ -61,6 +82,8 @@ struct UiInput {
     bool inside = false;  // pointer is over the window
     bool pressed = false; // left button went down this frame
     bool released = false;
+    bool rightPressed = false; // right button went down this frame
+    bool rightReleased = false;
     float wheel = 0;
     bool blocked = false; // the world owns the pointer (a drag started on the map)
 };
@@ -83,7 +106,8 @@ struct HudAction {
         ZoomOut,
         ZoomIn,
         SeenNew,    // the pointer reached a tile with a "new" dot: `arg` is its entry code
-        OpenWishes, // the "+N" tile: more pieces come from wishes
+        OpenWishes, // the "+N" tile or a wish card: the sketchbook's wishes; `arg` a wish or -1
+        Snooze,     // "Not now" on wish `arg`
         Hover
     };
     Kind kind;
@@ -131,6 +155,8 @@ public:
     // false when the tile is not in the open tab.
     bool reveal(std::string_view name, const HudModel& m);
     void toast(std::string text);
+    void ribbon(Ribbon r);
+    [[nodiscard]] bool ribbonShowing() const { return ribbonTime_ > 0.0f; }
     void flash() { flash_ = 1.0f; }
     [[nodiscard]] bool toastShowing() const { return toastTime_ > 0.0f; }
     // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...), or of
@@ -190,6 +216,9 @@ private:
     void drawJournal(Painter& p, const HudModel& m) const;
     void drawHint(Painter& p, const HudModel& m) const;
     void drawToast(Painter& p) const;
+    void layoutTray(const Font& font, Vec2 screen, float s);
+    void drawTray(Painter& p) const;
+    void drawRibbon(Painter& p) const;
     void drawTooltip(Painter& p) const;
 
     std::vector<Widget> widgets_;
@@ -223,6 +252,28 @@ private:
     std::string hintText_;
     std::string lockLabel_; // "+N" and its tooltip for the open tab's lock tile
     std::string lockTip_;
+
+    // The wish tray: cards slide in when offered and fade up when they leave.
+    struct TrayCard {
+        WishCard card;
+        float in = 0;  // 0..1 entering
+        float out = 0; // 0..1 leaving (0 while open)
+        bool open = true;
+        Box box;
+        float lines = 1; // text lines
+    };
+    std::vector<TrayCard> tray_;
+    Box trayBox_;
+    Box trayLast_; // where the tray was last shown, kept while it is hidden
+    float trayT_ = 0;
+    bool trayCollapsed_ = false;
+    int menuWish_ = -1; // the card whose "Not now" menu is open
+    Box menuBox_;
+    char trayCount_[8] = {};
+    Ribbon ribbon_;
+    float ribbonTime_ = 0;
+    float ribbonT_ = 0;
+    Box ribbonBox_;
     Box titleBox_;
     Box journalBox_;
     Box drawerBox_;

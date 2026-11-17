@@ -169,6 +169,16 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                    ? std::nullopt
                    : std::optional(std::format("widget {} {}shown", a[1], have ? "" : "not "));
     }
+    if (what == "wish") {
+        const auto w = cat_.findWish(a[1]);
+        if (!w || a.size() != 3) return std::string("expect wish ID open|done|waiting");
+        static constexpr std::string_view kStates[] = {"waiting", "open", "done"};
+        return equal(std::string(kStates[static_cast<std::size_t>(
+                         progress_.wishes[static_cast<std::size_t>(*w)].state)]),
+                     a[2]);
+    }
+    if (what == "wishes") return equal(std::to_string(progress_.open.size()), a[1]);
+    if (what == "ribbon") return yesNo(hud_.ribbonShowing());
     if (what == "zoom") return equal(scaleName(camera_.zoom()), a[1]);
     if (what == "toast") return yesNo(hud_.toastShowing());
     if (what == "panning") return yesNo(std::ranges::any_of(keyPan_, [](bool k) { return k; }));
@@ -346,6 +356,8 @@ bool App::scriptStep() {
                 clock_.setPin(*pin, true);
             } else if (c.args[0] == "unlock") {
                 progress_.unlockEverything(cat_);
+            } else if (c.args[0] == "played") {
+                played_ = std::stod(c.args[1]);
             } else {
                 rain_ = c.args[1] == "on";
             }

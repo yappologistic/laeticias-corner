@@ -117,9 +117,9 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             c.kind = ScriptCommand::Kind::Shot;
             c.args = {tok[1]};
         } else if (cmd == "set") {
-            static constexpr std::string_view kKeys[] = {"clock", "rain", "unlock"};
+            static constexpr std::string_view kKeys[] = {"clock", "rain", "unlock", "played"};
             if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys))
-                return err("set clock|rain|unlock VALUE");
+                return err("set clock|rain|unlock|played VALUE");
             c.kind = ScriptCommand::Kind::Set;
             c.args = {tok[1], tok[2]};
         } else if (cmd == "expect") {
