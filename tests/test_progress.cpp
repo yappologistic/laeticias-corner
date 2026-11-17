@@ -2,6 +2,7 @@
 
 #include "core/edit.hpp"
 #include "core/growth.hpp"
+#include "core/notes.hpp"
 #include "core/progression.hpp"
 #include "core/starter.hpp"
 #include "core/tuning.hpp"
@@ -309,4 +310,36 @@ TEST_CASE("rare visitors come after their recipe holds a while, visit, go away a
     g.place("hedge", 25, 34);
     g.run(120);
     CHECK_FALSE(g.rules.rareHere(robin));
+}
+
+TEST_CASE("the note walker starts on D, F sharp or A, walks in small steps and lands on D or A") {
+    Rng rng(11);
+    PhraseWalker w;
+    double t = 0;
+    const int first = w.next(t, rng);
+    CHECK((first == 0 || first == 2 || first == 3));
+    int prev = first;
+    std::vector<int> seq{first};
+    for (int i = 0; i < 200; ++i) {
+        t += 0.3;
+        const int n = w.next(t, rng);
+        CHECK(n >= 0);
+        CHECK(n < PhraseWalker::kNotes);
+        seq.push_back(n);
+        // Steps of one or two, except a cadence, which may jump to the nearest D or A.
+        const bool cadence = n == 0 || n == 3 || n == 5 || n == 8;
+        if (!cadence) CHECK(std::abs(n - prev) <= 2);
+        prev = n;
+    }
+    // Phrases are four to six notes, each ending on a cadence note.
+    int cadences = 0;
+    for (const int n : seq) cadences += (n == 0 || n == 3 || n == 5 || n == 8) ? 1 : 0;
+    CHECK(cadences >= static_cast<int>(seq.size()) / 7);
+    // A pause starts a fresh phrase.
+    const int fresh = w.next(t + 3.0, rng);
+    CHECK((fresh == 0 || fresh == 2 || fresh == 3));
+    // The same seed gives the same tune.
+    Rng a(4), b(4);
+    PhraseWalker wa, wb;
+    for (int i = 0; i < 50; ++i) CHECK(wa.next(i * 0.2, a) == wb.next(i * 0.2, b));
 }

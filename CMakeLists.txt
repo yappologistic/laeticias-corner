@@ -24,6 +24,7 @@ add_library(lc_core STATIC
   src/core/edit.cpp
   src/core/growth.cpp
   src/core/land.cpp
+  src/core/notes.cpp
   src/core/progress.cpp
   src/core/progression.cpp
   src/core/save.cpp

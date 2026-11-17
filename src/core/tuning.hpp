@@ -183,6 +183,13 @@ inline constexpr float kVoiceLevel = 0.48f;
 // bar; a newly unlocked stem fades in over this many bars from the next bar line.
 inline constexpr int kMusicBarSamples = 147000;
 inline constexpr int kStemFadeBars = 4;
+// Tuned placement notes: about 8 dB under the placement sounds, a phrase restarts after a pause,
+// quick drags skip notes closer together than this.
+inline constexpr float kNoteLevel = 0.4f;
+inline constexpr double kNotePhraseReset = 2.0;
+inline constexpr double kNoteMinGap = 0.09;
+inline constexpr float kNoteTurnChance = 0.2f;
+inline constexpr int kPaintNoteEvery = 6; // tiles painted between notes in a stroke
 // While a piece's melody is locked, its pad and keys are lifted (the opening is quieter).
 inline constexpr float kDayMakeup = 1.259f;        // +2 dB
 inline constexpr float kNightMakeup = 1.122f;      // +1 dB

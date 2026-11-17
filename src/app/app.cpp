@@ -568,6 +568,15 @@ bool App::pick(TilePos t) {
     return true;
 }
 
+void App::playNote() {
+    // Notes closer together than a quick drag's step are skipped (the phrase does not move).
+    if (lastNote_ >= 0 && simTime_ - lastNote_ < tuning::kNoteMinGap) return;
+    lastNote_ = simTime_;
+    const int n = notes_.next(simTime_, rng_);
+    if (std::cmp_less(n, cat_.audio.notes.size()))
+        play(cat_.audio.notes[static_cast<std::size_t>(n)], tuning::kSfxLevel * tuning::kNoteLevel);
+}
+
 int App::pages() const {
     return visitors_.seenCount() + progress_.nooksFound();
 }
@@ -1237,6 +1246,7 @@ void App::applyTool(TilePos t, bool first) {
         if (r == PlaceResult::Ok) {
             scene_->onPlaced(item, rng_);
             play(cat_.items[item.type].sound, tuning::kSfxLevel, true);
+            playNote();
             markDirty();
         } else if (first) {
             play(sfx::kInvalid);
@@ -1245,7 +1255,10 @@ void App::applyTool(TilePos t, bool first) {
     }
     case Tool::Paint: {
         const auto r = editor_.paint(w, cat_, t, selection_);
+        if (first) strokeTiles_ = 0;
         if (r == PaintResult::Ok) {
+            // A note when a stroke starts and every few tiles after.
+            if (strokeTiles_++ % tuning::kPaintNoteEvery == 0) playNote();
             if (simTime_ - lastPaintSound_ > tuning::kPaintSoundGap) {
                 const auto& snd = cat_.terrain[static_cast<std::size_t>(selection_)].sound;
                 play(snd.empty() ? sfx::kPaint : std::string_view(snd), tuning::kSfxLevel, true);

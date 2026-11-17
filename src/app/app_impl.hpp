@@ -10,6 +10,7 @@
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/edit.hpp"
+#include "core/notes.hpp"
 #include "core/progress.hpp"
 #include "core/progression.hpp"
 #include "core/rng.hpp"
@@ -106,6 +107,8 @@ private:
     void setupMusic();
     // Beds grow by `seconds` of play; a click with an empty hand picks a ripe one.
     void growBeds(float seconds);
+    // One tuned note of the building phrase (never pitch-jittered, so it stays in tune).
+    void playNote();
     bool pick(TilePos t);
     void unlockStems(const CondFacts& f, bool instant);
     [[nodiscard]] std::string_view waitingText(int node, std::string& out) const;
@@ -168,6 +171,9 @@ private:
     std::string hoverTipText_; // storage for formatted world tooltips
     float edgeChipUntil_ = 0;
     double growthAcc_ = 0;
+    PhraseWalker notes_;
+    double lastNote_ = -1;
+    int strokeTiles_ = 0; // tiles painted in this stroke, for its notes
     bool anyRipe_ = false;
     Vec2 edgeChipTarget_;
     mutable std::array<std::string, tuning::kMaxOpenWishes> cardDetail_;
