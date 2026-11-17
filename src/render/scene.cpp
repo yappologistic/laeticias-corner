@@ -4,8 +4,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numbers>
-#include <queue>
 
 namespace lc {
 namespace {
@@ -14,35 +12,25 @@ constexpr float kCritterMoveFps = 6.0f;
 constexpr float kCritterIdleFps = 2.0f;
 constexpr SDL_FColor kWhite{1, 1, 1, 1};
 constexpr SDL_FColor kInvalidTint{1.0f, 0.45f, 0.42f, 1.0f};
-constexpr SDL_FColor kWarmLight{1.0f, 0.80f, 0.52f, 1.0f};
+constexpr SDL_FColor kWarmLight{1.0f, 0.78f, 0.48f, 1.0f};
+constexpr SDL_FColor kFireflyHalo{0.75f, 1.0f, 0.55f, 1.0f};
+constexpr SDL_FColor kFireflyCore{0.8f, 1.0f, 0.5f, 1.0f};
+// GPU memory the ground cache may use; about 9 pages of 6 chunk slots at 64 x 32 tiles.
+constexpr std::size_t kGroundBudget = 128u << 20;
+// Region margin around the view, as a fraction of the view's size in tiles (and at least this
+// many tiles), so panning rebuilds rarely.
+constexpr float kRegionGrow = 0.3f;
+constexpr int kRegionMinGrow = 8;
+constexpr std::size_t kMaxPops = 256;
+constexpr std::size_t kMaxFades = 64;
 
-struct TileRect {
-    float x0, y0, x1, y1;
-};
-
-TileRect tileRect(const Item& it) {
-    return {static_cast<float>(it.pos.x), static_cast<float>(it.pos.y),
-            static_cast<float>(it.pos.x + it.w), static_cast<float>(it.pos.y + it.h)};
+FRect tileRect(const Item& it) {
+    const auto f = [](int v) { return static_cast<float>(v); };
+    return {f(it.pos.x), f(it.pos.y), f(it.pos.x + it.w), f(it.pos.y + it.h)};
 }
 
-TileRect pointRect(Vec2 p) {
+FRect pointRect(Vec2 p) {
     return {p.x - 0.01f, p.y - 0.01f, p.x + 0.01f, p.y + 0.01f};
-}
-
-// True when a must be drawn before b. Non-overlapping footprints are separated along at least
-// one axis; the object further along +x or +y is nearer the viewer. When the separation is
-// ambiguous (opposite directions, or overlap) the footprint centres decide.
-bool behind(const TileRect& a, const TileRect& b) {
-    const int sx = a.x1 <= b.x0 ? -1 : (b.x1 <= a.x0 ? 1 : 0);
-    const int sy = a.y1 <= b.y0 ? -1 : (b.y1 <= a.y0 ? 1 : 0);
-    if ((sx == 0 && sy == 0) || (sx != 0 && sy != 0 && sx != sy))
-        return a.x0 + a.x1 + a.y0 + a.y1 <= b.x0 + b.x1 + b.y0 + b.y1;
-    return (sx != 0 ? sx : sy) < 0;
-}
-
-template <typename R>
-bool overlaps(const R& a, const R& b) {
-    return a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 }
 
 float easeOutBack(float t) {
@@ -56,20 +44,31 @@ SDL_FColor scaled(SDL_FColor c, float k) {
     return {c.r * k, c.g * k, c.b * k, c.a};
 }
 
+void grow(Reach& r, const Sprite& s, float extraTop = 0) {
+    r.left = std::max(r.left, s.ox);
+    r.right = std::max(r.right, s.w - s.ox);
+    r.top = std::max(r.top, s.oy + extraTop);
+    r.bottom = std::max(r.bottom, s.h - s.oy);
+}
+
 } // namespace
 
 Scene::Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat)
-    : renderer_(renderer), atlas_(atlas), cat_(cat), tables_(buildSpriteTables(atlas, cat)),
-      batch_(renderer), popStart_(static_cast<std::size_t>(cat.mapW * cat.mapH), -1e9f) {
-    placed_.reserve(static_cast<std::size_t>(cat.mapW * cat.mapH));
-    entries_.reserve(static_cast<std::size_t>(cat.mapW * cat.mapH) + 256);
+    : renderer_(renderer), atlas_(atlas), cat_(cat), iso_(cat.iso()),
+      tables_(buildSpriteTables(atlas, cat)), batch_(renderer), particles_(cat.iso()) {
+    ground_ = std::make_unique<GroundCache>(renderer, atlas, cat, tables_, kGroundBudget);
+    for (const auto& it : tables_.items)
+        for (const auto& set : it.base)
+            for (const SpriteId id : set.frames) grow(itemReach_, atlas_.sprite(id));
+    for (const auto& anims : tables_.critters)
+        for (const auto& set : anims)
+            for (const SpriteId id : set.frames)
+                grow(itemReach_, atlas_.sprite(id), tuning::kHoverMax * iso_.tileH() + 2);
     lights_.reserve(256);
     chimneys_.reserve(64);
-    water_.reserve(static_cast<std::size_t>(cat.mapW * cat.mapH));
-    fades_.reserve(64);
-    const WorldBounds b = islandBounds(cat.mapW, cat.mapH);
-    constexpr float kPad = 8.0f;
-    groundRect_ = {b.x0 - kPad, b.y0 - kPad, b.x1 + kPad, b.y1 + kPad};
+    fades_.reserve(kMaxFades);
+    pops_.reserve(kMaxPops);
+    dynamic_.reserve(256);
 }
 
 int Scene::slotFor(const World& world, const Item& item) const {
@@ -77,208 +76,264 @@ int Scene::slotFor(const World& world, const Item& item) const {
                                                            : item.variant;
 }
 
-Scene::Rect Scene::spriteRect(const Item& item, int slot) const {
+FRect Scene::spriteRect(const Item& item, int slot) const {
     const Sprite& s =
         atlas_.sprite(tables_.items[item.type].base[static_cast<std::size_t>(slot)].frames.front());
-    const Vec2 a = tileToWorld(static_cast<float>(item.pos.x), static_cast<float>(item.pos.y));
+    const Vec2 a = iso_.toWorld(item.pos);
     return {a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
 }
 
-void Scene::rebuild(const World& world) {
-    revision_ = world.revision();
-    const auto items = world.items();
-    const std::size_t n = items.size();
+FRect Scene::critterRect(const Critter& c) const {
+    const FrameSet& set =
+        tables_.critters[c.visitor][static_cast<std::size_t>(CritterAnim::IdleFront)];
+    const Sprite& s = atlas_.sprite(set.frames.front());
+    const Vec2 a = iso_.toWorld(c.pos.x, c.pos.y);
+    // Mirrored frames flip about the anchor, so take the wider side both ways.
+    const float half = std::max(s.ox, s.w - s.ox);
+    return {a.x - half, a.y - s.oy, a.x + half, a.y - s.oy + s.h};
+}
 
-    // Topological order over pairs whose sprites can overlap on screen.
-    std::vector<Placed> all;
-    all.reserve(n);
-    // Trees (tall nature pieces) drop the occasional leaf.
+TileRect Scene::visibleTiles(const Camera& camera, Vec2 screen, const World& world) const {
+    const float s = camera.scale();
+    const Vec2 c = camera.position();
+    const FRect view{c.x - screen.x * 0.5f / s, c.y - screen.y * 0.5f / s,
+                     c.x + screen.x * 0.5f / s, c.y + screen.y * 0.5f / s};
+    // An anchor this far outside the view can still put sprite pixels inside it.
+    const FRect g{view.x0 - itemReach_.right, view.y0 - itemReach_.bottom,
+                  view.x1 + itemReach_.left, view.y1 + itemReach_.top};
+    const Vec2 k[4] = {iso_.toTile({g.x0, g.y0}), iso_.toTile({g.x1, g.y0}),
+                       iso_.toTile({g.x0, g.y1}), iso_.toTile({g.x1, g.y1})};
+    float x0 = k[0].x, x1 = k[0].x, y0 = k[0].y, y1 = k[0].y;
+    for (const Vec2& v : k) {
+        x0 = std::min(x0, v.x);
+        x1 = std::max(x1, v.x);
+        y0 = std::min(y0, v.y);
+        y1 = std::max(y1, v.y);
+    }
+    return TileRect{static_cast<int>(std::floor(x0)), static_cast<int>(std::floor(y0)),
+                    static_cast<int>(std::floor(x1)) + 1, static_cast<int>(std::floor(y1)) + 1}
+        .clipped(world.bounds());
+}
+
+void Scene::rebuild(const World& world, TileRect region) {
+    region_ = region;
+    regionRevision_ = world.revision();
     const auto nature = cat_.findCategory("nature");
-    for (const Item& it : items) {
+    gathered_.clear();
+    world.forEachItemIn(region, [&](const Item& it) {
         const int slot = slotFor(world, it);
         const auto& def = cat_.items[it.type];
-        const Rect r = spriteRect(it, slot);
-        all.push_back({it, slot, r,
-                       nature && def.category == *nature && !def.walkable && r.y1 - r.y0 >= 30.0f});
+        const FRect r = spriteRect(it, slot);
+        // Trees (tall nature pieces) drop the occasional leaf.
+        const bool tree = nature && def.category == *nature && !def.walkable &&
+                          r.y1 - r.y0 >= tuning::kTreeHeight * iso_.tileH();
+        gathered_.push_back({it, slot, r, tree, false});
+    });
+    footprints_.clear();
+    screens_.clear();
+    for (const Placed& p : gathered_) {
+        footprints_.push_back(tileRect(p.item));
+        screens_.push_back(p.screen);
     }
-    std::vector<std::vector<std::uint16_t>> next(n);
-    std::vector<int> indegree(n, 0);
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = i + 1; j < n; ++j) {
-            if (!overlaps(all[i].screen, all[j].screen)) continue;
-            const bool ij = behind(tileRect(all[i].item), tileRect(all[j].item));
-            const auto from = ij ? i : j;
-            const auto to = ij ? j : i;
-            next[from].push_back(static_cast<std::uint16_t>(to));
-            ++indegree[to];
-        }
-    }
-    const auto depth = [&](std::size_t i) {
-        const auto& it = all[i].item;
-        return static_cast<float>(it.pos.x * 2 + it.w + it.pos.y * 2 + it.h);
-    };
-    using Key = std::pair<float, std::size_t>;
-    std::priority_queue<Key, std::vector<Key>, std::greater<>> ready;
-    for (std::size_t i = 0; i < n; ++i)
-        if (indegree[i] == 0) ready.emplace(depth(i), i);
+    sorter_.sort(footprints_, screens_, 2 * iso_.tileW(), order_);
     placed_.clear();
-    std::vector<bool> done(n, false);
-    while (placed_.size() < n) {
-        if (ready.empty()) {
-            // A cycle (only possible with contrived layouts): break it at the shallowest item.
-            std::size_t pick = n;
-            for (std::size_t i = 0; i < n; ++i)
-                if (!done[i] && (pick == n || depth(i) < depth(pick))) pick = i;
-            indegree[pick] = 0;
-            ready.emplace(depth(pick), pick);
-        }
-        const auto [d, i] = ready.top();
-        ready.pop();
-        if (done[i]) continue;
-        done[i] = true;
-        placed_.push_back(all[i]);
-        for (const auto j : next[i])
-            if (--indegree[j] == 0 && !done[j]) ready.emplace(depth(j), j);
+    footprints_.clear();
+    screens_.clear();
+    for (const std::uint32_t i : order_) {
+        placed_.push_back(gathered_[i]);
+        footprints_.push_back(tileRect(gathered_[i].item));
+        screens_.push_back(gathered_[i].screen);
     }
+    grid_.build(screens_, 2 * iso_.tileW());
 
     glowRects_.clear();
-    for (const Placed& p : placed_)
-        if (!tables_.items[p.item.type].glow[static_cast<std::size_t>(p.slot)].empty())
-            glowRects_.push_back(p.screen);
-    for (Placed& p : placed_)
-        p.occludesGlow =
-            std::ranges::any_of(glowRects_, [&](const Rect& g) { return overlaps(g, p.screen); });
-
     lights_.clear();
     chimneys_.clear();
-    for (const Placed& p : placed_) {
+    trees_.clear();
+    for (std::uint32_t i = 0; i < placed_.size(); ++i) {
+        Placed& p = placed_[i];
         const auto& spr = tables_.items[p.item.type];
         const auto slot = static_cast<std::size_t>(p.slot);
-        const Vec2 a =
-            tileToWorld(static_cast<float>(p.item.pos.x), static_cast<float>(p.item.pos.y));
-        if (const auto& light = spr.light[slot]) {
-            const float size = static_cast<float>(std::max(p.item.w, p.item.h));
-            lights_.push_back({{a.x + light->x, a.y + light->y}, 26.0f + 14.0f * size});
-        }
+        if (p.tree) trees_.push_back(i);
+        const Vec2 a = iso_.toWorld(p.item.pos);
         const auto& smoke = cat_.items[p.item.type].smokeAt;
         if (slot < smoke.size())
             chimneys_.push_back(
                 {a.x + static_cast<float>(smoke[slot].x), a.y + static_cast<float>(smoke[slot].y)});
+        if (spr.glow[slot].empty()) continue;
+        glowRects_.push_back(p.screen);
+        grid_.query(p.screen, [&](std::uint32_t j) {
+            if (placed_[j].screen.overlaps(p.screen)) placed_[j].occludesGlow = true;
+        });
+        // The pool lies on the ground: under a small light, or in front of a building, below
+        // its windows.
+        const TileRect fp = p.item.rect();
+        const auto f = [](int v) { return static_cast<float>(v); };
+        Vec2 pos = iso_.toWorld(f(fp.x0) + f(p.item.w) * 0.5f, f(fp.y0) + f(p.item.h) * 0.5f);
+        if (spr.light[slot] && (p.item.w > 1 || p.item.h > 1)) {
+            const Vec2 left = iso_.toWorld(f(fp.x0), f(fp.y1));
+            const Vec2 bottom = iso_.toWorld(f(fp.x1), f(fp.y1));
+            const Vec2 right = iso_.toWorld(f(fp.x1), f(fp.y0));
+            const float x = std::clamp(a.x + spr.light[slot]->x, left.x, right.x);
+            const Vec2 from = x <= bottom.x ? left : bottom;
+            const Vec2 to = x <= bottom.x ? bottom : right;
+            const float k = to.x > from.x ? (x - from.x) / (to.x - from.x) : 0.0f;
+            pos = {x, from.y + (to.y - from.y) * k + iso_.hh * 0.5f};
+        }
+        const float side = static_cast<float>(std::max(p.item.w, p.item.h));
+        lights_.push_back(
+            {pos, iso_.tileW() * (tuning::kLightRadius + tuning::kLightRadiusPerSide * side)});
     }
+
     water_.clear();
-    for (int y = 0; y < world.height(); ++y)
-        for (int x = 0; x < world.width(); ++x)
-            if (world.isWater({x, y})) water_.push_back({x, y});
+    world.forEachChunkIn(region, [&](int cx, int cy) {
+        if (world.chunkTerrainCount(cx, cy, cat_.waterTerrain) == 0) return;
+        const TileRect r =
+            TileRect{cx * kChunk, cy * kChunk, (cx + 1) * kChunk, (cy + 1) * kChunk}.clipped(
+                region);
+        for (int y = r.y0; y < r.y1; ++y)
+            for (int x = r.x0; x < r.x1; ++x)
+                if (world.isWater({x, y})) water_.push_back({x, y});
+    });
 }
 
-void Scene::onPlaced(const Item& item, float now, Rng& rng) {
-    popStart_[static_cast<std::size_t>(item.pos.y * cat_.mapW + item.pos.x)] = now;
-    const Vec2 c = tileToWorld(static_cast<float>(item.pos.x) + item.w * 0.5f,
-                               static_cast<float>(item.pos.y) + item.h * 0.5f);
+float Scene::popOf(TilePos origin) const {
+    for (const Pop& p : pops_)
+        if (p.origin == origin) return (now_ - p.start) / tuning::kPopSeconds;
+    return 1.0f;
+}
+
+void Scene::onPlaced(const Item& item, Rng& rng) {
+    if (pops_.size() == kMaxPops) pops_.erase(pops_.begin());
+    std::erase_if(pops_, [&](const Pop& p) { return p.origin == item.pos; });
+    pops_.push_back({item.pos, now_});
+    const auto f = [](int v) { return static_cast<float>(v); };
+    const Vec2 c = iso_.toWorld(f(item.pos.x) + f(item.w) * 0.5f, f(item.pos.y) + f(item.h) * 0.5f);
+    const float u = iso_.tileH();
     for (int i = 0; i < 3; ++i) {
         particles_.spawn(Fx::Sparkle,
-                         {c.x + rng.range(-10.0f, 10.0f), c.y - rng.range(2.0f, 18.0f)}, {0, -6},
-                         rng.range(0.4f, 0.7f));
+                         {c.x + rng.range(-1.0f, 1.0f) * tuning::kSparkleSpread * u,
+                          c.y - rng.range(0.1f, 1.1f) * u},
+                         {0, -tuning::kSparkleRise * u}, rng.range(0.4f, 0.7f));
     }
 }
 
-void Scene::onRemoved(const Item& item, float now) {
-    if (fades_.size() == fades_.capacity()) fades_.erase(fades_.begin());
+void Scene::onRemoved(const Item& item) {
+    if (fades_.size() == kMaxFades) fades_.erase(fades_.begin());
     // The connect mask is frozen at removal time; neighbours no longer include the item.
     fades_.push_back(
-        {item, cat_.items[item.type].layout == Layout::Connect ? 0 : item.variant, now});
-    popStart_[static_cast<std::size_t>(item.pos.y * cat_.mapW + item.pos.x)] = -1e9f;
+        {item, cat_.items[item.type].layout == Layout::Connect ? 0 : item.variant, now_});
+    std::erase_if(pops_, [&](const Pop& p) { return p.origin == item.pos; });
 }
 
-void Scene::update(float dt, const World& world, bool rain, Rng& rng) {
-    if (world.revision() != revision_) rebuild(world);
+void Scene::update(float dt, const World& world, std::span<const Critter> critters, bool rain,
+                   Rng& rng) {
     now_ += dt;
     std::erase_if(fades_, [&](const Fade& f) { return now_ - f.start > tuning::kFadeOutSeconds; });
+    std::erase_if(pops_, [&](const Pop& p) { return now_ - p.start > tuning::kPopSeconds; });
+    const float u = iso_.tileH();
 
     for (const Vec2& c : chimneys_) {
         if (rng.chance(dt / tuning::kSmokeInterval))
             particles_.spawn(Fx::Smoke, {c.x + rng.range(-1.0f, 1.0f), c.y},
-                             {rng.range(1.0f, 5.0f), rng.range(-12.0f, -8.0f)},
+                             {rng.range(0.05f, tuning::kSmokeDriftMax) * u,
+                              -rng.range(tuning::kSmokeRiseMin, tuning::kSmokeRiseMax) * u},
                              rng.range(2.2f, 3.2f));
     }
+    const auto spawnMany = [&](float expected, auto&& one) {
+        while (expected > 0) {
+            if (rng.chance(std::min(1.0f, expected))) one();
+            expected -= 1.0f;
+        }
+    };
     if (!water_.empty()) {
         const float rate =
             static_cast<float>(water_.size()) * (rain ? tuning::kRainRipplesPerSecondPerWaterTile
                                                       : tuning::kRipplesPerSecondPerWaterTile);
-        float expected = rate * dt;
-        while (expected > 0) {
-            if (rng.chance(std::min(1.0f, expected))) {
-                const TilePos t = water_[static_cast<std::size_t>(
-                    rng.range(0, static_cast<int>(water_.size()) - 1))];
-                const Vec2 w = tileToWorld(static_cast<float>(t.x) + rng.range(0.25f, 0.75f),
-                                           static_cast<float>(t.y) + rng.range(0.25f, 0.75f));
-                particles_.spawn(Fx::Ripple, w, {0, 0}, 0.9f);
-            }
-            expected -= 1.0f;
-        }
+        spawnMany(rate * dt, [&] {
+            const TilePos t =
+                water_[static_cast<std::size_t>(rng.range(0, static_cast<int>(water_.size()) - 1))];
+            const Vec2 w = iso_.toWorld(static_cast<float>(t.x) + rng.range(0.25f, 0.75f),
+                                        static_cast<float>(t.y) + rng.range(0.25f, 0.75f));
+            particles_.spawn(Fx::Ripple, w, {0, 0}, tuning::kRippleSeconds + 0.1f);
+        });
     }
     if (rain && view_.x1 > view_.x0) {
-        const float area = (view_.x1 - view_.x0) * (view_.y1 - view_.y0) / (640.0f * 360.0f);
-        float expected = tuning::kRainDropsPerSecond * area * dt;
-        while (expected > 0) {
-            if (rng.chance(std::min(1.0f, expected))) {
-                constexpr float kFall = 90.0f;
-                constexpr float kSpeed = 260.0f;
-                const Vec2 ground{rng.range(view_.x0, view_.x1 + 40.0f),
-                                  rng.range(view_.y0, view_.y1)};
-                particles_.spawn(Fx::Raindrop, {ground.x + kFall * 0.15f, ground.y - kFall},
-                                 {-kSpeed * 0.15f, kSpeed}, kFall / kSpeed);
-            }
-            expected -= 1.0f;
-        }
+        const float tiles =
+            (view_.x1 - view_.x0) * (view_.y1 - view_.y0) / (iso_.tileW() * iso_.hh);
+        const float fall = tuning::kRainFall * u;
+        const float speed = tuning::kRainSpeed * u;
+        // Keep room in the pool for smoke, ripples and leaves however large the view.
+        const float maxRate = tuning::kRainPoolShare * static_cast<float>(Particles::kCapacity) /
+                              (fall / speed + tuning::kSplashSeconds);
+        const float rate = std::min(tuning::kRainDropsPerSecondPerTile * tiles, maxRate);
+        spawnMany(rate * dt, [&] {
+            const Vec2 ground{rng.range(view_.x0, view_.x1 + fall * 0.15f),
+                              rng.range(view_.y0, view_.y1)};
+            particles_.spawn(Fx::Raindrop, {ground.x + fall * 0.15f, ground.y - fall},
+                             {-speed * 0.15f, speed}, fall / speed);
+        });
     }
-    for (const Placed& p : placed_) {
-        if (!p.tree || !rng.chance(tuning::kLeavesPerSecondPerTree * dt)) continue;
-        const float cx = (p.screen.x0 + p.screen.x1) * 0.5f;
+    for (const std::uint32_t i : trees_) {
+        if (i >= placed_.size() || !rng.chance(tuning::kLeavesPerSecondPerTree * dt)) continue;
+        const FRect& r = placed_[i].screen;
         particles_.spawn(
             Fx::Leaf,
-            {cx + rng.range(-8.0f, 8.0f), p.screen.y0 + (p.screen.y1 - p.screen.y0) * 0.35f},
-            {rng.range(-4.0f, 4.0f), 9.0f}, 2.6f, rng.range(0.0f, 6.0f));
+            {(r.x0 + r.x1) * 0.5f + rng.range(-0.5f, 0.5f) * u, r.y0 + (r.y1 - r.y0) * 0.35f},
+            {rng.range(-0.25f, 0.25f) * u, tuning::kLeafFall * u}, 2.6f, rng.range(0.0f, 6.0f));
+    }
+    // Swimmers leave a wake.
+    for (const Critter& c : critters) {
+        if (cat_.visitors[c.visitor].habitat != Habitat::Water || !c.moving) continue;
+        if (rng.chance(dt / tuning::kWakeInterval))
+            particles_.spawn(Fx::Ripple, iso_.toWorld(c.pos.x, c.pos.y), {0, 0},
+                             tuning::kRippleSeconds);
     }
     particles_.update(dt, world);
 }
 
 void Scene::ensureTargets(int w, int h) {
-    if (w == targetW_ && h == targetH_ && worldTarget_) return;
     targetW_ = w;
     targetH_ = h;
-    const auto make = [&](SDL_ScaleMode mode) {
-        TexturePtr t{
-            SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h)};
-        if (!t) {
-            SDL_Log("render: cannot create %dx%d target: %s", w, h, SDL_GetError());
-            return t;
-        }
-        if (!SDL_SetTextureScaleMode(t.get(), mode)) SDL_Log("render: %s", SDL_GetError());
-        return t;
+    // Allocated with headroom and never shrunk, so zoom transitions and window resizes reuse
+    // the same textures.
+    const auto make = [&](Target& t) {
+        if (t.texture && t.w >= w && t.h >= h) return;
+        const int aw = std::max(t.w, (w + 255) / 256 * 256);
+        const int ah = std::max(t.h, (h + 255) / 256 * 256);
+        t.texture.reset(
+            SDL_CreateTexture(renderer_, kTextureFormat, SDL_TEXTUREACCESS_TARGET, aw, ah));
+        t.w = t.texture ? aw : 0;
+        t.h = t.texture ? ah : 0;
+        if (!t.texture) SDL_Log("render: cannot create %dx%d target: %s", aw, ah, SDL_GetError());
     };
-    worldTarget_ = make(SDL_SCALEMODE_NEAREST);
-    lightTarget_ = make(SDL_SCALEMODE_NEAREST);
-    glowTarget_ = make(SDL_SCALEMODE_NEAREST);
-    shadowTarget_ = make(SDL_SCALEMODE_NEAREST);
+    make(world_);
+    make(light_);
+    make(glow_);
+    make(shadow_);
+}
+
+void Scene::fullQuad(SDL_Texture* texture, SDL_BlendMode mode, SDL_FColor color) {
+    const auto& t = texture == world_.texture.get()   ? world_
+                    : texture == light_.texture.get() ? light_
+                    : texture == glow_.texture.get()  ? glow_
+                                                      : shadow_;
+    const auto w = static_cast<float>(targetW_);
+    const auto h = static_cast<float>(targetH_);
+    batch_.use(texture, mode, SDL_SCALEMODE_NEAREST);
+    batch_.quad(SDL_FRect{0, 0, w, h},
+                {0, 0, w / static_cast<float>(t.w), h / static_cast<float>(t.h)}, color);
 }
 
 void Scene::sprite(SpriteId id, Vec2 anchor, SDL_FColor color, bool mirror, Vec2 pivot,
                    Vec2 scale) {
-    const Sprite& s = atlas_.sprite(id);
-    const float x0 = mirror ? -(s.w - s.ox) : -s.ox;
-    const float y0 = -s.oy;
-    const auto place = [&](float lx, float ly) {
-        const float wx = anchor.x + lx;
-        const float wy = anchor.y + ly;
-        return SDL_FPoint{pivot.x + (wx - pivot.x) * scale.x - origin_.x,
-                          pivot.y + (wy - pivot.y) * scale.y - origin_.y};
-    };
-    const SDL_FPoint p[4] = {place(x0, y0), place(x0 + s.w, y0), place(x0 + s.w, y0 + s.h),
-                             place(x0, y0 + s.h)};
-    UvRect uv = s.uv;
-    if (mirror) std::swap(uv.u0, uv.u1);
-    batch_.quad(p, uv, color);
+    putSprite(batch_, atlas_.sprite(id), anchor, xf_, color, blend_, mirror, pivot, scale);
+}
+
+SDL_FColor Scene::exposed(SpriteId id, SDL_FColor c) const {
+    const float luma = atlas_.luma(id);
+    if (night_ <= 0.0f || luma <= tuning::kNightLumaCap) return c;
+    return scaled(c, 1.0f + (tuning::kNightLumaCap / luma - 1.0f) * night_);
 }
 
 void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, bool silhouette,
@@ -286,13 +341,12 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
     const auto& def = cat_.items[item.type];
     const auto& spr = tables_.items[item.type];
     const auto s = static_cast<std::size_t>(slot);
-    const Vec2 anchor = tileToWorld(static_cast<float>(item.pos.x), static_cast<float>(item.pos.y));
-    const Vec2 pivot = tileToWorld(static_cast<float>(item.pos.x) + item.w * 0.5f,
-                                   static_cast<float>(item.pos.y) + item.h * 0.5f);
+    const auto f = [](int v) { return static_cast<float>(v); };
+    const Vec2 anchor = iso_.toWorld(item.pos);
+    const Vec2 pivot =
+        iso_.toWorld(f(item.pos.x) + f(item.w) * 0.5f, f(item.pos.y) + f(item.h) * 0.5f);
     Vec2 scale{1.0f, scaleY};
-    const float t =
-        (now_ - popStart_[static_cast<std::size_t>(item.pos.y * cat_.mapW + item.pos.x)]) /
-        tuning::kPopSeconds;
+    const float t = popOf(item.pos);
     if (t >= 0.0f && t < 1.0f) {
         const float y = 0.35f + 0.65f * easeOutBack(t);
         scale = {1.0f + (1.0f - y) * 0.45f, y};
@@ -301,46 +355,38 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
     const std::uint32_t phase = tileHash(item.pos.x, item.pos.y) % 7;
     const SpriteId base = spr.base[s].at(now_, def.fps, phase);
     const SDL_FColor c = silhouette ? SDL_FColor{0, 0, 0, alpha}
-                                    : SDL_FColor{tint.r, tint.g, tint.b, tint.a * alpha};
+                                    : exposed(base, {tint.r, tint.g, tint.b, tint.a * alpha});
     sprite(base, anchor, c, false, pivot, scale);
 }
 
-void Scene::buildOrder(const FrameParams& p) {
-    entries_.clear();
-    for (std::size_t i = 0; i < placed_.size(); ++i)
-        entries_.push_back({EntryKind::Static, static_cast<std::uint16_t>(i),
-                            static_cast<int>(i) * 2 + 1, 0, false});
-
-    const auto insert = [&](EntryKind kind, std::uint16_t index, const TileRect& tr,
-                            const Rect& sr) {
-        int after = 0;
-        for (std::size_t i = 0; i < placed_.size(); ++i) {
-            if (overlaps(placed_[i].screen, sr) && behind(tileRect(placed_[i].item), tr))
-                after = static_cast<int>(i) + 1;
-        }
-        entries_.push_back({kind, index, after * 2, tr.x0 + tr.x1 + tr.y0 + tr.y1, nearGlow(sr)});
+void Scene::buildDynamic(const FrameParams& p) {
+    dynamic_.clear();
+    const auto insert = [&](EntryKind kind, std::uint32_t index, const FRect& tr, const FRect& sr,
+                            bool glowing) {
+        if (!sr.overlaps(view_)) return;
+        std::uint32_t after = 0;
+        grid_.query(sr, [&](std::uint32_t i) {
+            if (i + 1 > after && placed_[i].screen.overlaps(sr) && behind(footprints_[i], tr))
+                after = i + 1;
+        });
+        dynamic_.push_back(
+            {kind, index, after, tr.x0 + tr.x1 + tr.y0 + tr.y1, glowing || nearGlow(sr)});
     };
-
-    for (std::size_t i = 0; i < p.critters.size(); ++i) {
+    for (std::uint32_t i = 0; i < p.critters.size(); ++i) {
         const Critter& c = p.critters[i];
-        if (cat_.visitors[c.visitor].habitat == Habitat::Air) continue;
-        const Vec2 w = tileToWorld(c.pos.x, c.pos.y);
-        insert(EntryKind::Critter, static_cast<std::uint16_t>(i), pointRect(c.pos),
-               {w.x - 12, w.y - 24, w.x + 12, w.y + 2});
+        const auto& def = cat_.visitors[c.visitor];
+        if (def.habitat == Habitat::Air) continue;
+        // Emissive visitors are always drawn in the glow pass.
+        insert(EntryKind::Critter, i, pointRect(c.pos), critterRect(c), def.glow);
     }
-    // Emissive visitors are always drawn in the glow pass.
-    for (Entry& e : entries_)
-        if (e.kind == EntryKind::Critter && cat_.visitors[p.critters[e.index].visitor].glow)
-            e.occludesGlow = true;
     if (p.ghost.mode == Ghost::Mode::Item) {
         const int slot = slotFor(*p.world, p.ghost.item);
-        insert(EntryKind::Ghost, 0, tileRect(p.ghost.item), spriteRect(p.ghost.item, slot));
+        insert(EntryKind::Ghost, 0, tileRect(p.ghost.item), spriteRect(p.ghost.item, slot), false);
     }
-    for (std::size_t i = 0; i < fades_.size(); ++i)
-        insert(EntryKind::Fade, static_cast<std::uint16_t>(i), tileRect(fades_[i].item),
-               spriteRect(fades_[i].item, fades_[i].slot));
-
-    std::ranges::sort(entries_, [](const Entry& a, const Entry& b) {
+    for (std::uint32_t i = 0; i < fades_.size(); ++i)
+        insert(EntryKind::Fade, i, tileRect(fades_[i].item),
+               spriteRect(fades_[i].item, fades_[i].slot), false);
+    std::ranges::sort(dynamic_, [](const Entry& a, const Entry& b) {
         return a.after != b.after ? a.after < b.after : a.depth < b.depth;
     });
 }
@@ -356,12 +402,34 @@ void Scene::drawCritter(const Critter& c, bool silhouette) {
                  : (back ? CritterAnim::IdleBack : CritterAnim::IdleFront));
     const FrameSet& set = tables_.critters[c.visitor][anim];
     const SpriteId id = set.at(c.animTime, c.moving ? kCritterMoveFps : kCritterIdleFps);
-    Vec2 w = tileToWorld(c.pos.x, c.pos.y);
-    if (def.habitat == Habitat::Air) w.y -= c.hover + std::sin(c.animTime * 3.1f) * 2.0f;
+    Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
+    if (def.habitat == Habitat::Air)
+        w.y -= (c.hover + std::sin(c.animTime * 3.1f) * 0.12f) * iso_.tileH();
     w = {std::round(w.x), std::round(w.y)};
     const float a = std::clamp(c.alpha, 0.0f, 1.0f);
-    sprite(id, w, silhouette && !def.glow ? SDL_FColor{0, 0, 0, a} : SDL_FColor{1, 1, 1, a},
-           mirror);
+    const SDL_FColor color = silhouette && !def.glow ? SDL_FColor{0, 0, 0, a}
+                             : def.glow              ? SDL_FColor{1, 1, 1, a}
+                                                     : exposed(id, {1, 1, 1, a});
+    sprite(id, w, color, mirror);
+}
+
+void Scene::drawEntry(const FrameParams& p, const Entry& e, bool silhouette) {
+    if (silhouette && !e.occludesGlow) return;
+    switch (e.kind) {
+    case EntryKind::Critter: drawCritter(p.critters[e.index], silhouette); break;
+    case EntryKind::Ghost: {
+        const int slot = slotFor(*p.world, p.ghost.item);
+        drawItem(p.ghost.item, slot, tuning::kGhostAlpha, p.ghost.valid ? kWhite : kInvalidTint,
+                 silhouette);
+        break;
+    }
+    case EntryKind::Fade: {
+        const Fade& f = fades_[e.index];
+        const float t = std::clamp((now_ - f.start) / tuning::kFadeOutSeconds, 0.0f, 1.0f);
+        drawItem(f.item, f.slot, 1.0f - t, kWhite, silhouette, 1.0f - 0.12f * t);
+        break;
+    }
+    }
 }
 
 void Scene::drawEntries(const FrameParams& p, bool silhouette) {
@@ -369,165 +437,83 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
     const World& world = *p.world;
     const Item* removeTarget =
         p.ghost.mode == Ghost::Mode::Remove ? world.itemAt(p.ghost.tile) : nullptr;
-    for (const Entry& e : entries_) {
+    std::size_t d = 0;
+    if (!silhouette) drawnItems_ = 0;
+    for (std::uint32_t i = 0; i < placed_.size(); ++i) {
+        for (; d < dynamic_.size() && dynamic_[d].after <= i; ++d)
+            drawEntry(p, dynamic_[d], silhouette);
+        const Placed& pl = placed_[i];
+        if (!pl.screen.overlaps(view_)) continue;
         // The glow pass only needs what can hide an emissive pixel.
-        if (silhouette &&
-            !(e.kind == EntryKind::Static ? placed_[e.index].occludesGlow : e.occludesGlow))
-            continue;
-        switch (e.kind) {
-        case EntryKind::Static: {
-            const Placed& pl = placed_[e.index];
-            const bool marked = removeTarget != nullptr && *removeTarget == pl.item;
-            drawItem(pl.item, pl.slot, 1.0f, marked ? kInvalidTint : kWhite, silhouette);
-            const auto& glowSet =
-                tables_.items[pl.item.type].glow[static_cast<std::size_t>(pl.slot)];
-            if (silhouette && !glowSet.empty()) {
-                const Vec2 a = tileToWorld(static_cast<float>(pl.item.pos.x),
-                                           static_cast<float>(pl.item.pos.y));
-                const auto& def = cat_.items[pl.item.type];
-                sprite(glowSet.at(now_, def.fps, tileHash(pl.item.pos.x, pl.item.pos.y) % 7), a,
-                       {glow, glow, glow, 1.0f});
-            }
-            break;
-        }
-        case EntryKind::Critter: drawCritter(p.critters[e.index], silhouette); break;
-        case EntryKind::Ghost: {
-            const int slot = slotFor(world, p.ghost.item);
-            drawItem(p.ghost.item, slot, tuning::kGhostAlpha, p.ghost.valid ? kWhite : kInvalidTint,
-                     silhouette);
-            break;
-        }
-        case EntryKind::Fade: {
-            const Fade& f = fades_[e.index];
-            const float t = std::clamp((now_ - f.start) / tuning::kFadeOutSeconds, 0.0f, 1.0f);
-            drawItem(f.item, f.slot, 1.0f - t, kWhite, silhouette, 1.0f - 0.12f * t);
-            break;
-        }
+        if (silhouette && !pl.occludesGlow) continue;
+        if (!silhouette) ++drawnItems_;
+        const bool marked = removeTarget != nullptr && *removeTarget == pl.item;
+        drawItem(pl.item, pl.slot, 1.0f, marked ? kInvalidTint : kWhite, silhouette);
+        const auto& glowSet = tables_.items[pl.item.type].glow[static_cast<std::size_t>(pl.slot)];
+        if (silhouette && !glowSet.empty()) {
+            const auto& def = cat_.items[pl.item.type];
+            sprite(glowSet.at(now_, def.fps, tileHash(pl.item.pos.x, pl.item.pos.y) % 7),
+                   iso_.toWorld(pl.item.pos), {glow, glow, glow, 1.0f});
         }
     }
+    for (; d < dynamic_.size(); ++d) drawEntry(p, dynamic_[d], silhouette);
     // Flyers are always above the ground clutter.
     for (const Critter& c : p.critters) {
-        if (cat_.visitors[c.visitor].habitat != Habitat::Air) continue;
-        const Vec2 w = tileToWorld(c.pos.x, c.pos.y);
-        if (silhouette && !cat_.visitors[c.visitor].glow &&
-            !nearGlow({w.x - 8, w.y - c.hover - 12, w.x + 8, w.y - c.hover + 4}))
-            continue;
+        const auto& def = cat_.visitors[c.visitor];
+        if (def.habitat != Habitat::Air) continue;
+        FRect r = critterRect(c);
+        const float lift = c.hover * iso_.tileH();
+        r.y0 -= lift;
+        r.y1 -= lift;
+        if (!r.overlaps(view_) || (silhouette && !def.glow && !nearGlow(r))) continue;
         drawCritter(c, silhouette);
     }
 }
 
-bool Scene::nearGlow(const Rect& r) const {
-    return std::ranges::any_of(glowRects_, [&](const Rect& g) { return overlaps(g, r); });
-}
-
-void Scene::renderGroundCache(const World& world) {
-    const int w = world.width();
-    const int h = world.height();
-    const auto gw = static_cast<int>(groundRect_.x1 - groundRect_.x0);
-    const auto gh = static_cast<int>(groundRect_.y1 - groundRect_.y0);
-    if (!ground_) {
-        ground_.reset(SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA8888,
-                                        SDL_TEXTUREACCESS_TARGET, gw, gh));
-        if (!ground_ || !SDL_SetTextureScaleMode(ground_.get(), SDL_SCALEMODE_NEAREST)) {
-            SDL_Log("render: ground cache: %s", SDL_GetError());
-            return;
-        }
-    }
-    if (!SDL_SetRenderTarget(renderer_, ground_.get()) ||
-        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
-        SDL_Log("render: ground cache: %s", SDL_GetError());
-    }
-    const Vec2 saved = origin_;
-    origin_ = {groundRect_.x0, groundRect_.y0};
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
-    for (int y = 0; y < h; ++y)
-        sprite(tables_.cliffSE, tileToWorld(static_cast<float>(w - 1), static_cast<float>(y)),
-               kWhite);
-    for (int x = 0; x < w; ++x)
-        sprite(tables_.cliffSW, tileToWorld(static_cast<float>(x), static_cast<float>(h - 1)),
-               kWhite);
-    const auto& baseVariants = tables_.terrainBase[static_cast<std::size_t>(cat_.baseTerrain)];
-    for (int s = 0; s <= w + h - 2; ++s) {
-        for (int x = std::max(0, s - h + 1); x <= std::min(s, w - 1); ++x) {
-            const int y = s - x;
-            const Vec2 a = tileToWorld(static_cast<float>(x), static_cast<float>(y));
-            sprite(baseVariants[tileHash(x, y, 1) % baseVariants.size()], a, kWhite);
-            const int t = world.terrainAt({x, y});
-            if (t == cat_.baseTerrain) continue;
-            const auto& def = cat_.terrain[static_cast<std::size_t>(t)];
-            const FrameSet& set =
-                tables_.terrainOverlay[static_cast<std::size_t>(t)]
-                                      [static_cast<std::size_t>(world.terrainMask({x, y}))];
-            sprite(set.at(now_, def.fps), a, kWhite);
-        }
-    }
-    batch_.flush();
-    origin_ = saved;
-    if (!SDL_SetRenderTarget(renderer_, worldTarget_.get())) SDL_Log("render: %s", SDL_GetError());
-}
-
-void Scene::drawGround(const World& world) {
-    // The cache key folds in the current frame of every animated terrain.
-    std::uint64_t key = world.revision() * 1000003ULL;
-    for (const auto& t : cat_.terrain)
-        key = key * 31 + (t.fps > 0 ? static_cast<std::uint64_t>(now_ * t.fps) : 0);
-    if (key != groundKey_ || !ground_) {
-        batch_.flush();
-        renderGroundCache(world);
-        groundKey_ = key;
-    }
-    if (!ground_) return;
-    batch_.use(ground_.get(), SDL_BLENDMODE_BLEND);
-    batch_.quad(SDL_FRect{groundRect_.x0 - origin_.x, groundRect_.y0 - origin_.y,
-                          groundRect_.x1 - groundRect_.x0, groundRect_.y1 - groundRect_.y0},
-                {0, 0, 1, 1}, kWhite);
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+bool Scene::nearGlow(const FRect& r) const {
+    return std::ranges::any_of(glowRects_, [&](const FRect& g) { return g.overlaps(r); });
 }
 
 void Scene::drawShadows(const FrameParams& p) {
     // Shadow sprites were normalised to a peak alpha of 1, so drawing them into their own layer
     // saturates where they overlap; the layer is then composited once at the art's opacity.
     batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, shadowTarget_.get()) ||
+    if (!SDL_SetRenderTarget(renderer_, shadow_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
         SDL_Log("render: shadow layer: %s", SDL_GetError());
     }
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+    blend_ = SDL_BLENDMODE_BLEND;
     for (const Placed& pl : placed_) {
+        if (!pl.screen.overlaps(view_)) continue;
         const auto& set = tables_.items[pl.item.type].shadow[static_cast<std::size_t>(pl.slot)];
         if (set.empty()) continue;
-        const float t =
-            (now_ -
-             popStart_[static_cast<std::size_t>(pl.item.pos.y * cat_.mapW + pl.item.pos.x)]) /
-            tuning::kPopSeconds;
-        const float a = t >= 0.0f && t < 1.0f ? t : 1.0f;
-        sprite(set.frames.front(),
-               tileToWorld(static_cast<float>(pl.item.pos.x), static_cast<float>(pl.item.pos.y)),
-               {1, 1, 1, a});
+        const float t = popOf(pl.item.pos);
+        sprite(set.frames.front(), iso_.toWorld(pl.item.pos),
+               {1, 1, 1, t >= 0.0f && t < 1.0f ? t : 1.0f});
     }
     for (const Critter& c : p.critters) {
-        const bool air = cat_.visitors[c.visitor].habitat == Habitat::Air;
-        if (cat_.visitors[c.visitor].habitat == Habitat::Water) continue;
-        const Vec2 w = tileToWorld(c.pos.x, c.pos.y);
-        sprite(atlas_.softShadow(), {std::round(w.x), std::round(w.y)},
-               {1, 1, 1, std::clamp(c.alpha, 0.0f, 1.0f) * (air ? 0.45f : 1.0f)}, false,
-               {std::round(w.x), std::round(w.y)}, air ? Vec2{0.5f, 0.5f} : Vec2{0.7f, 0.7f});
+        const Habitat h = cat_.visitors[c.visitor].habitat;
+        Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
+        w = {std::round(w.x), std::round(w.y)};
+        const float k = h == Habitat::Air ? 0.5f : (h == Habitat::Water ? 0.85f : 0.7f);
+        const float a = h == Habitat::Air     ? 0.45f
+                        : h == Habitat::Water ? tuning::kWaterShadowAlpha
+                                              : 1.0f;
+        sprite(atlas_.softShadow(), w, {1, 1, 1, std::clamp(c.alpha, 0.0f, 1.0f) * a}, false, w,
+               {k, k});
     }
     batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, worldTarget_.get())) SDL_Log("render: %s", SDL_GetError());
-    batch_.use(shadowTarget_.get(), SDL_BLENDMODE_BLEND);
-    batch_.quad(SDL_FRect{0, 0, static_cast<float>(targetW_), static_cast<float>(targetH_)},
-                {0, 0, 1, 1}, {1, 1, 1, tables_.shadowOpacity});
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()))
+        SDL_Log("render: %s", SDL_GetError());
+    fullQuad(shadow_.texture.get(), SDL_BLENDMODE_BLEND, {1, 1, 1, tables_.shadowOpacity});
 }
 
 void Scene::drawMarkers(const FrameParams& p) {
     // Placement markers sit on the ground under everything else.
     const World& world = *p.world;
     const auto marker = [&](TilePos t, bool ok) {
-        if (world.inBounds(t))
-            sprite(ok ? tables_.tileOk : tables_.tileBad,
-                   tileToWorld(static_cast<float>(t.x), static_cast<float>(t.y)), {1, 1, 1, 0.9f});
+        if (world.hasGround(t))
+            sprite(ok ? tables_.tileOk : tables_.tileBad, iso_.toWorld(t), {1, 1, 1, 0.9f});
     };
     switch (p.ghost.mode) {
     case Ghost::Mode::None: break;
@@ -547,8 +533,10 @@ void Scene::drawMarkers(const FrameParams& p) {
 }
 
 void Scene::drawParticles(bool ground) {
+    const float m = iso_.tileW();
+    const FRect near{view_.x0 - m, view_.y0 - m, view_.x1 + m, view_.y1 + m};
     for (const Particle& pt : particles_.all()) {
-        if ((pt.kind == Fx::Ripple) != ground) continue;
+        if ((pt.kind == Fx::Ripple) != ground || !near.overlaps(pointRect(pt.pos))) continue;
         const FrameSet& set = tables_.fx[static_cast<std::size_t>(pt.kind)];
         const float k = std::clamp(pt.age / pt.life, 0.0f, 0.999f);
         SpriteId id =
@@ -579,34 +567,52 @@ void Scene::drawParticles(bool ground) {
 
 void Scene::drawLighting(const FrameParams& p) {
     const Rgb amb = p.light.ambient;
-    if (!SDL_SetRenderTarget(renderer_, lightTarget_.get()) ||
+    const float glow = p.light.glow;
+    const bool emissive = std::ranges::any_of(
+        p.critters, [&](const Critter& c) { return cat_.visitors[c.visitor].glow; });
+    if (glow <= 0.01f && !emissive) {
+        // No light pools: the light map would be one flat colour, so multiply by it directly.
+        if (amb.r >= 0.999f && amb.g >= 0.999f && amb.b >= 0.999f) return;
+        const auto w = static_cast<float>(targetW_);
+        const auto h = static_cast<float>(targetH_);
+        const SDL_FColor c{amb.r, amb.g, amb.b, 1};
+        const SDL_Vertex v[4] = {
+            {{0, 0}, c, {0, 0}}, {{w, 0}, c, {0, 0}}, {{w, h}, c, {0, 0}}, {{0, h}, c, {0, 0}}};
+        static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+        batch_.use(nullptr, SDL_BLENDMODE_MUL);
+        batch_.triangles(v, 4, kQuad, 6);
+        batch_.flush();
+        return;
+    }
+    if (!SDL_SetRenderTarget(renderer_, light_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, amb.r, amb.g, amb.b, 1.0f) ||
         !SDL_RenderClear(renderer_)) {
         SDL_Log("render: light map: %s", SDL_GetError());
     }
-    const float glow = p.light.glow;
-    if (glow > 0.01f) {
-        batch_.use(atlas_.texture(), SDL_BLENDMODE_ADD);
-        const SDL_FColor warm = scaled(kWarmLight, 0.6f * glow);
+    if (glow > 0.01f || emissive) {
+        blend_ = SDL_BLENDMODE_ADD;
+        const SDL_FColor warm = scaled(kWarmLight, tuning::kLightStrength * glow);
+        const float blobRadius = atlas_.sprite(atlas_.lightBlob()).w * 0.5f;
         for (const Light& l : lights_) {
-            const float s = l.radius / 32.0f;
-            sprite(atlas_.lightBlob(), l.pos, warm, false, l.pos, {s, s * 0.75f});
+            const FRect r{l.pos.x - l.radius, l.pos.y - l.radius, l.pos.x + l.radius,
+                          l.pos.y + l.radius};
+            if (!r.overlaps(view_)) continue;
+            const float s = l.radius / blobRadius;
+            sprite(atlas_.lightBlob(), l.pos, warm, false, l.pos, {s, s * 0.6f});
         }
         for (const Critter& c : p.critters) {
             if (!cat_.visitors[c.visitor].glow) continue;
-            Vec2 w = tileToWorld(c.pos.x, c.pos.y);
-            w.y -= c.hover;
+            Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
+            w.y -= c.hover * iso_.tileH();
             const float pulse = 0.6f + 0.4f * std::sin(c.animTime * 4.0f);
-            sprite(atlas_.lightBlob(), w,
-                   scaled({0.75f, 1.0f, 0.55f, 1.0f}, 0.5f * glow * pulse * c.alpha), false, w,
-                   {0.35f, 0.3f});
+            sprite(atlas_.lightBlob(), w, scaled(kFireflyHalo, 0.5f * glow * pulse * c.alpha),
+                   false, w, {0.35f, 0.3f});
         }
         batch_.flush();
     }
-    if (!SDL_SetRenderTarget(renderer_, worldTarget_.get())) SDL_Log("render: %s", SDL_GetError());
-    batch_.use(lightTarget_.get(), SDL_BLENDMODE_MUL);
-    batch_.quad(SDL_FRect{0, 0, static_cast<float>(targetW_), static_cast<float>(targetH_)},
-                {0, 0, 1, 1}, kWhite);
+    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()))
+        SDL_Log("render: %s", SDL_GetError());
+    fullQuad(light_.texture.get(), SDL_BLENDMODE_MUL, kWhite);
     batch_.flush();
 }
 
@@ -615,52 +621,65 @@ void Scene::drawGlow(const FrameParams& p) {
     const bool emissiveVisitors = std::ranges::any_of(
         p.critters, [&](const Critter& c) { return cat_.visitors[c.visitor].glow; });
     if (glow <= 0.01f && !emissiveVisitors) return;
-    if (!SDL_SetRenderTarget(renderer_, glowTarget_.get()) ||
+    if (!SDL_SetRenderTarget(renderer_, glow_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
         SDL_Log("render: glow: %s", SDL_GetError());
     }
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+    blend_ = SDL_BLENDMODE_BLEND;
     drawEntries(p, true);
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_ADD);
+    blend_ = SDL_BLENDMODE_ADD;
     for (const Critter& c : p.critters) {
         if (!cat_.visitors[c.visitor].glow) continue;
-        Vec2 w = tileToWorld(c.pos.x, c.pos.y);
-        w.y -= c.hover + std::sin(c.animTime * 3.1f) * 2.0f;
+        Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
+        w.y -= (c.hover + std::sin(c.animTime * 3.1f) * 0.12f) * iso_.tileH();
         const float pulse = 0.55f + 0.45f * std::sin(c.animTime * 4.0f);
-        sprite(atlas_.lightBlob(), w, scaled({0.8f, 1.0f, 0.5f, 1.0f}, 0.8f * pulse * c.alpha),
-               false, w, {0.12f, 0.12f});
+        sprite(atlas_.lightBlob(), w, scaled(kFireflyCore, 0.8f * pulse * c.alpha), false, w,
+               {0.12f, 0.12f});
     }
     batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, worldTarget_.get())) SDL_Log("render: %s", SDL_GetError());
-    batch_.use(glowTarget_.get(), SDL_BLENDMODE_ADD);
-    batch_.quad(SDL_FRect{0, 0, static_cast<float>(targetW_), static_cast<float>(targetH_)},
-                {0, 0, 1, 1}, kWhite);
+    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()))
+        SDL_Log("render: %s", SDL_GetError());
+    fullQuad(glow_.texture.get(), SDL_BLENDMODE_ADD, kWhite);
     batch_.flush();
 }
 
 void Scene::draw(const FrameParams& p) {
     batch_.resetStats();
     const World& world = *p.world;
-    if (world.revision() != revision_) rebuild(world);
-
-    const auto z = static_cast<float>(p.camera->zoom());
+    const float s = p.camera->scale();
+    // Target pixels per world pixel: native, except below 1x where the target matches the window.
+    const float res = std::min(1.0f, s);
     const Vec2 cam = p.camera->position();
-    topLeft_ = {cam.x - p.screen.x * 0.5f / z, cam.y - p.screen.y * 0.5f / z};
-    origin_ = {std::floor(topLeft_.x) - 1.0f, std::floor(topLeft_.y) - 1.0f};
-    ensureTargets(static_cast<int>(std::ceil(p.screen.x / z)) + 3,
-                  static_cast<int>(std::ceil(p.screen.y / z)) + 3);
-    if (!worldTarget_ || !lightTarget_ || !glowTarget_ || !shadowTarget_) return;
-    view_ = {origin_.x, origin_.y, origin_.x + static_cast<float>(targetW_),
-             origin_.y + static_cast<float>(targetH_)};
+    topLeft_ = {cam.x - p.screen.x * 0.5f / s, cam.y - p.screen.y * 0.5f / s};
+    // The origin sits on the target's pixel grid so cached ground lands on whole pixels.
+    const float px = 1.0f / res;
+    const Vec2 origin{std::floor(topLeft_.x / px) * px - px, std::floor(topLeft_.y / px) * px - px};
+    ensureTargets(static_cast<int>(std::ceil(p.screen.x / s * res)) + 3,
+                  static_cast<int>(std::ceil(p.screen.y / s * res)) + 3);
+    if (!world_.texture || !light_.texture || !glow_.texture || !shadow_.texture) return;
+    xf_ = {origin, res, res < 1.0f ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST};
+    view_ = {origin.x, origin.y, origin.x + static_cast<float>(targetW_) * px,
+             origin.y + static_cast<float>(targetH_) * px};
+    night_ = std::clamp(p.light.night, 0.0f, 1.0f);
 
-    if (!SDL_SetRenderTarget(renderer_, worldTarget_.get()) ||
+    const TileRect vis = visibleTiles(*p.camera, p.screen, world);
+    if (world.revision() != regionRevision_ || !region_.contains(vis)) {
+        const int gx = std::max(
+            kRegionMinGrow, static_cast<int>(static_cast<float>(vis.x1 - vis.x0) * kRegionGrow));
+        const int gy = std::max(
+            kRegionMinGrow, static_cast<int>(static_cast<float>(vis.y1 - vis.y0) * kRegionGrow));
+        rebuild(world, TileRect{vis.x0 - gx, vis.y0 - gy, vis.x1 + gx, vis.y1 + gy}.clipped(
+                           world.bounds()));
+    }
+
+    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
         SDL_Log("render: world target: %s", SDL_GetError());
     }
-    buildOrder(p);
-    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
-    drawGround(world);
+    ground_->draw(batch_, world, view_, xf_, world_.texture.get(), now_);
+    buildDynamic(p);
     drawShadows(p);
+    blend_ = SDL_BLENDMODE_BLEND;
     drawMarkers(p);
     drawParticles(true);
     drawEntries(p, false);
@@ -674,8 +693,9 @@ void Scene::draw(const FrameParams& p) {
 }
 
 void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
-    if (!worldTarget_) return;
-    const auto z = static_cast<float>(p.camera->zoom());
+    if (!world_.texture) return;
+    const float s = p.camera->scale();
+    const float k = s / xf_.res; // window px per target px
     const float w = p.screen.x * scale.x;
     const float h = p.screen.y * scale.y;
     // Sky gradient behind the floating island.
@@ -690,17 +710,29 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
     static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
-    if (smooth && !SDL_SetTextureScaleMode(worldTarget_.get(), SDL_SCALEMODE_LINEAR))
-        SDL_Log("render: %s", SDL_GetError());
-    batch_.use(worldTarget_.get(), SDL_BLENDMODE_BLEND);
-    batch_.quad(SDL_FRect{(origin_.x - topLeft_.x) * z * scale.x,
-                          (origin_.y - topLeft_.y) * z * scale.y,
-                          static_cast<float>(targetW_) * z * scale.x,
-                          static_cast<float>(targetH_) * z * scale.y},
-                {0, 0, 1, 1}, kWhite);
+    // Whole-number magnification stays nearest-neighbour; anything else (mid-transition, or a
+    // blurred copy) is filtered.
+    const bool whole = std::abs(k - std::round(k)) < 1e-3f;
+    batch_.use(world_.texture.get(), SDL_BLENDMODE_BLEND,
+               smooth || !whole ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
+    const auto tw = static_cast<float>(targetW_);
+    const auto th = static_cast<float>(targetH_);
+    batch_.quad(
+        SDL_FRect{(xf_.origin.x - topLeft_.x) * s * scale.x,
+                  (xf_.origin.y - topLeft_.y) * s * scale.y, tw * k * scale.x, th * k * scale.y},
+        {0, 0, tw / static_cast<float>(world_.w), th / static_cast<float>(world_.h)}, kWhite);
     batch_.flush();
-    if (smooth && !SDL_SetTextureScaleMode(worldTarget_.get(), SDL_SCALEMODE_NEAREST))
-        SDL_Log("render: %s", SDL_GetError());
+}
+
+SceneStats Scene::stats() const {
+    SceneStats st;
+    st.regionItems = placed_.size();
+    st.drawnItems = drawnItems_;
+    for (const Target* t : {&world_, &light_, &glow_, &shadow_})
+        st.targetBytes += static_cast<std::size_t>(t->w) * static_cast<std::size_t>(t->h) * 4;
+    st.groundBytes = ground_->bytes();
+    st.groundSlotsRendered = ground_->slotsRendered();
+    return st;
 }
 
 } // namespace lc

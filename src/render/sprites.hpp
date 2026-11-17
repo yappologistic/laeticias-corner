@@ -33,6 +33,14 @@ struct ItemSprites {
 enum class CritterAnim : std::uint8_t { MoveFront, MoveBack, IdleFront, IdleBack };
 enum class Fx : std::uint8_t { Smoke, Ripple, Sparkle, Raindrop, Leaf, Count };
 
+// How far ground sprites (terrain, cliffs) reach beyond their tile's diamond, in world px.
+struct Reach {
+    float left = 0;
+    float right = 0;
+    float top = 0;
+    float bottom = 0;
+};
+
 struct SpriteTables {
     std::vector<std::vector<SpriteId>> terrainBase;       // base terrain variants
     std::vector<std::array<FrameSet, 16>> terrainOverlay; // overlay terrain by mask
@@ -45,6 +53,7 @@ struct SpriteTables {
     SpriteId tileBad = 0;
     SpriteId placeholder = 0;    // drawn for anything that has no art
     float shadowOpacity = 0.35f; // opacity of the composited shadow layer
+    Reach groundReach;
 };
 
 [[nodiscard]] SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat);
@@ -56,6 +65,7 @@ enum class Thumb : std::uint8_t { Terrain, Item, Visitor };
 [[nodiscard]] SpriteId thumbnail(const SpriteTables& t, Thumb kind, int index);
 
 // The f0 key of every sprite the contract requires for this catalog (for coverage reports).
+// Optional layers (shadows) are not listed.
 [[nodiscard]] std::vector<std::string> requiredSpriteKeys(const Catalog& cat);
 
 } // namespace lc

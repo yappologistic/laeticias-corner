@@ -60,8 +60,8 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
             const std::string prefix = std::format("item/{}/", def.id);
             const std::string vk = variantKey(def, v);
             s.base.push_back(frames(atlas, prefix + "base/" + vk, atlas.placeholderBox()));
+            // Shadows are optional (flat things have none).
             FrameSet shadow = frames(atlas, prefix + "shadow/" + vk, std::nullopt);
-            if (shadow.empty()) atlas.reportMissing(prefix + "shadow/" + vk + "/f0");
             for (const SpriteId f : shadow.frames)
                 shadowPeak = std::max(shadowPeak, atlas.normalizeAlpha(f));
             s.shadow.push_back(std::move(shadow));
@@ -84,12 +84,28 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
     }
     for (std::size_t f = 0; f < t.fx.size(); ++f)
         t.fx[f] = frames(atlas, std::format("fx/{}", kFxNames[f]), atlas.placeholderBox());
-    t.cliffSE = atlas.resolve("edge/cliff_se", atlas.placeholderTile());
-    t.cliffSW = atlas.resolve("edge/cliff_sw", atlas.placeholderTile());
+    t.cliffSE = atlas.resolve("edge/cliff_se", atlas.placeholderEdgeSE());
+    t.cliffSW = atlas.resolve("edge/cliff_sw", atlas.placeholderEdgeSW());
     t.tileOk = atlas.resolve("ui/tile_ok", atlas.placeholderTile());
     t.tileBad = atlas.resolve("ui/tile_bad", atlas.placeholderTile());
     t.placeholder = atlas.placeholderBox();
     if (shadowPeak > 0.0f) t.shadowOpacity = shadowPeak;
+
+    // How far ground sprites reach beyond their tile's diamond, for sizing cached ground chunks.
+    const auto extend = [&](SpriteId id) {
+        const Sprite& sp = atlas.sprite(id);
+        t.groundReach.left = std::max(t.groundReach.left, sp.ox - atlas.iso().hw);
+        t.groundReach.right = std::max(t.groundReach.right, sp.w - sp.ox - atlas.iso().hw);
+        t.groundReach.top = std::max(t.groundReach.top, sp.oy);
+        t.groundReach.bottom = std::max(t.groundReach.bottom, sp.h - sp.oy - atlas.iso().tileH());
+    };
+    for (const auto& base : t.terrainBase)
+        for (const SpriteId id : base) extend(id);
+    for (const auto& overlay : t.terrainOverlay)
+        for (const auto& set : overlay)
+            for (const SpriteId id : set.frames) extend(id);
+    extend(t.cliffSE);
+    extend(t.cliffSW);
     return t;
 }
 
@@ -130,7 +146,6 @@ std::vector<std::string> requiredSpriteKeys(const Catalog& cat) {
         for (int v = 0; v < variantSlots(def); ++v) {
             const std::string vk = variantKey(def, v);
             keys.push_back(std::format("item/{}/base/{}/f0", def.id, vk));
-            keys.push_back(std::format("item/{}/shadow/{}/f0", def.id, vk));
             if (def.glow) keys.push_back(std::format("item/{}/glow/{}/f0", def.id, vk));
         }
     }

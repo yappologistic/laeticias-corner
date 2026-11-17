@@ -18,8 +18,8 @@ class Batch {
 public:
     explicit Batch(SDL_Renderer* renderer);
 
-    // Switches texture/blend mode, flushing pending geometry when either changes.
-    void use(SDL_Texture* texture, SDL_BlendMode mode);
+    // Switches texture, blend mode and sampling, flushing pending geometry when any changes.
+    void use(SDL_Texture* texture, SDL_BlendMode mode, SDL_ScaleMode scale = SDL_SCALEMODE_NEAREST);
     void quad(SDL_FRect dst, UvRect uv, SDL_FColor color);
     // Corners in order top-left, top-right, bottom-right, bottom-left.
     void quad(const SDL_FPoint (&p)[4], UvRect uv, SDL_FColor color);
@@ -34,6 +34,7 @@ private:
     SDL_Renderer* renderer_;
     SDL_Texture* texture_ = nullptr;
     SDL_BlendMode mode_ = SDL_BLENDMODE_BLEND;
+    SDL_ScaleMode scale_ = SDL_SCALEMODE_NEAREST;
     std::vector<SDL_Vertex> verts_;
     std::vector<int> indices_;
     int drawCalls_ = 0;

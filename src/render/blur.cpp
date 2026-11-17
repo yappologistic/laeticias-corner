@@ -28,8 +28,8 @@ bool Blur::begin(Vec2 screen, float radius) {
         for (auto& t : levels_) t.reset();
         for (int i = 0; i < count; ++i) {
             const int k = 1 << (count - 1 - i);
-            TexturePtr t{SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA8888,
-                                           SDL_TEXTUREACCESS_TARGET, bw * k, bh * k)};
+            TexturePtr t{SDL_CreateTexture(renderer_, kTextureFormat, SDL_TEXTUREACCESS_TARGET,
+                                           bw * k, bh * k)};
             if (!t || !SDL_SetTextureScaleMode(t.get(), SDL_SCALEMODE_LINEAR) ||
                 !SDL_SetTextureBlendMode(t.get(), SDL_BLENDMODE_BLEND)) {
                 SDL_Log("blur: cannot create %dx%d level: %s", bw * k, bh * k, SDL_GetError());

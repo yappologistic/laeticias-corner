@@ -6,77 +6,110 @@
 #include <cmath>
 
 namespace lc {
-namespace {
-constexpr float kCliffDepth = 40.0f; // world px of cliff below the south rims
-} // namespace
 
-WorldBounds islandBounds(int mapW, int mapH) {
-    return {-static_cast<float>(mapH * kHalfTileW), 0.0f, static_cast<float>(mapW * kHalfTileW),
-            static_cast<float>((mapW + mapH) * kHalfTileH) + kCliffDepth};
+WorldBounds landBox(Iso iso, TileRect land, float below) {
+    const auto f = [](int v) { return static_cast<float>(v); };
+    return {iso.toWorld(f(land.x0), f(land.y1)).x, iso.toWorld(f(land.x0), f(land.y0)).y,
+            iso.toWorld(f(land.x1), f(land.y0)).x, iso.toWorld(f(land.x1), f(land.y1)).y + below};
 }
 
-int defaultZoom(Vec2 screen, int mapW, int mapH) {
-    const WorldBounds b = islandBounds(mapW, mapH);
-    // Let the island fill most of the view; a little cropping at the sides is fine.
-    const float fit = std::min(screen.x * 1.2f / (b.x1 - b.x0), screen.y * 1.1f / (b.y1 - b.y0));
-    return std::clamp(static_cast<int>(fit), tuning::kMinZoom, tuning::kMaxZoom);
+int fitLevel(WorldBounds box, SafeArea safe) {
+    const float w = (safe.x1 - safe.x0) * tuning::kFrameFill;
+    const float h = (safe.y1 - safe.y0) * tuning::kFrameFill;
+    for (int l = static_cast<int>(kZoomLevels.size()) - 1; l > 0; --l) {
+        const float s = kZoomLevels[static_cast<std::size_t>(l)];
+        if ((box.x1 - box.x0) * s <= w && (box.y1 - box.y0) * s <= h) return l;
+    }
+    return 0;
 }
 
-Camera::Camera(int mapW, int mapH) : bounds_(islandBounds(mapW, mapH)), mapW_(mapW), mapH_(mapH) {
-    pos_ = target_ = {(bounds_.x0 + bounds_.x1) * 0.5f, (bounds_.y0 + bounds_.y1) * 0.5f};
+Camera::Camera(Iso iso, TileRect land, float cliffDepth)
+    : iso_(iso), land_(land), cliffDepth_(cliffDepth) {
+    const WorldBounds b = landBox(iso_, land_, cliffDepth_);
+    pos_ = target_ = {(b.x0 + b.x1) * 0.5f, (b.y0 + b.y1) * 0.5f};
 }
 
-void Camera::clamp(Vec2& p) const {
-    const float m = tuning::kCameraMargin;
-    p.x = std::clamp(p.x, bounds_.x0 - m, bounds_.x1 + m);
-    p.y = std::clamp(p.y, bounds_.y0 - m, bounds_.y1 + m);
+void Camera::setLand(TileRect land, float cliffDepth) {
+    land_ = land;
+    cliffDepth_ = cliffDepth;
 }
 
-void Camera::update(float dt) {
+void Camera::clamp(Vec2& p, Vec2 screen, float scale) const {
+    if (land_.empty()) return;
+    // Clamp the view centre, in tile space, to the land's rectangle grown by m tiles. A point m
+    // tiles (or less) beyond the rectangle along both axes is at most 2m half-tiles away on screen,
+    // so with m chosen from the half view the nearest land stays inside the inner part of the
+    // window at every zoom.
+    const float halfW = screen.x * 0.5f / scale;
+    const float halfH = screen.y * 0.5f / scale;
+    const float m =
+        std::max(0.0f, tuning::kCameraReach * std::min(halfW / iso_.tileW(), halfH / iso_.tileH()));
+    Vec2 t = iso_.toTile(p);
+    t.x = std::clamp(t.x, static_cast<float>(land_.x0) - m, static_cast<float>(land_.x1) + m);
+    t.y = std::clamp(t.y, static_cast<float>(land_.y0) - m, static_cast<float>(land_.y1) + m);
+    p = iso_.toWorld(t.x, t.y);
+}
+
+void Camera::update(float dt, Vec2 screen) {
+    if (scale_ != zoom()) {
+        // Ease in log space so every level change feels the same, keeping the anchor in place.
+        const float k = 1.0f - std::exp(-tuning::kZoomEase * dt);
+        const float a = std::log(scale_);
+        const float b = std::log(zoom());
+        scale_ = std::abs(b - a) < 0.002f ? zoom() : std::exp(a + (b - a) * k);
+        pos_ = {anchorWorld_.x - (anchorPx_.x - screen.x * 0.5f) / scale_,
+                anchorWorld_.y - (anchorPx_.y - screen.y * 0.5f) / scale_};
+        clamp(pos_, screen, scale_);
+        target_ = pos_;
+        return;
+    }
     const float k = 1.0f - std::exp(-tuning::kCameraEase * dt);
+    clamp(target_, screen, scale_);
     pos_.x += (target_.x - pos_.x) * k;
     pos_.y += (target_.y - pos_.y) * k;
     if (std::abs(target_.x - pos_.x) < 0.01f && std::abs(target_.y - pos_.y) < 0.01f)
         pos_ = target_;
 }
 
-void Camera::recentre(Vec2 screen) {
-    zoom_ = defaultZoom(screen, mapW_, mapH_);
-    target_ = {(bounds_.x0 + bounds_.x1) * 0.5f, (bounds_.y0 + bounds_.y1) * 0.5f};
-}
-
-void Camera::dragBy(Vec2 d) {
-    const auto z = static_cast<float>(zoom_);
-    target_ = {target_.x - d.x / z, target_.y - d.y / z};
-    clamp(target_);
-    pos_ = target_;
-}
-
-void Camera::nudge(Vec2 d) {
-    const auto z = static_cast<float>(zoom_);
-    target_ = {target_.x + d.x / z, target_.y + d.y / z};
-    clamp(target_);
-}
-
-void Camera::zoomAt(int zoom, Vec2 px, Vec2 screen) {
-    zoom = std::clamp(zoom, tuning::kMinZoom, tuning::kMaxZoom);
-    if (zoom == zoom_) return;
-    const Vec2 anchor = screenToWorld(px, screen);
-    zoom_ = zoom;
-    const auto z = static_cast<float>(zoom_);
-    pos_ = {anchor.x - (px.x - screen.x * 0.5f) / z, anchor.y - (px.y - screen.y * 0.5f) / z};
-    clamp(pos_);
+void Camera::frame(SafeArea safe, Vec2 screen) {
+    const WorldBounds b = landBox(iso_, land_, cliffDepth_);
+    level_ = fitLevel(b, safe);
+    scale_ = zoom();
+    // Put the land's centre at the safe area's centre, not the window's.
+    const Vec2 centre{(b.x0 + b.x1) * 0.5f, (b.y0 + b.y1) * 0.5f};
+    const Vec2 safeCentre{(safe.x0 + safe.x1) * 0.5f, (safe.y0 + safe.y1) * 0.5f};
+    pos_ = target_ = {centre.x - (safeCentre.x - screen.x * 0.5f) / scale_,
+                      centre.y - (safeCentre.y - screen.y * 0.5f) / scale_};
+    clamp(pos_, screen, scale_);
     target_ = pos_;
 }
 
+void Camera::dragBy(Vec2 d, Vec2 screen) {
+    target_ = {target_.x - d.x / scale_, target_.y - d.y / scale_};
+    clamp(target_, screen, scale_);
+    pos_ = target_;
+    anchorWorld_ = {anchorWorld_.x - d.x / scale_, anchorWorld_.y - d.y / scale_};
+}
+
+void Camera::nudge(Vec2 d, Vec2 screen) {
+    target_ = {target_.x + d.x / scale_, target_.y + d.y / scale_};
+    clamp(target_, screen, scale_);
+}
+
+void Camera::zoomTo(int level, Vec2 px, Vec2 screen) {
+    level = std::clamp(level, 0, static_cast<int>(kZoomLevels.size()) - 1);
+    if (level == level_) return;
+    anchorWorld_ = screenToWorld(px, screen);
+    anchorPx_ = px;
+    level_ = level;
+}
+
 Vec2 Camera::screenToWorld(Vec2 px, Vec2 screen) const {
-    const auto z = static_cast<float>(zoom_);
-    return {pos_.x + (px.x - screen.x * 0.5f) / z, pos_.y + (px.y - screen.y * 0.5f) / z};
+    return {pos_.x + (px.x - screen.x * 0.5f) / scale_, pos_.y + (px.y - screen.y * 0.5f) / scale_};
 }
 
 Vec2 Camera::worldToScreen(Vec2 w, Vec2 screen) const {
-    const auto z = static_cast<float>(zoom_);
-    return {(w.x - pos_.x) * z + screen.x * 0.5f, (w.y - pos_.y) * z + screen.y * 0.5f};
+    return {(w.x - pos_.x) * scale_ + screen.x * 0.5f, (w.y - pos_.y) * scale_ + screen.y * 0.5f};
 }
 
 } // namespace lc

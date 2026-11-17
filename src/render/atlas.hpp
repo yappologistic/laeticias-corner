@@ -1,10 +1,11 @@
 #pragma once
-// The single sprite atlas: the art manifest plus a strip of engine-made sprites (placeholders,
-// light pool, soft shadow), uploaded as one texture.
+// The sprite atlas: the art manifest plus a strip of engine-made sprites (placeholders, light
+// pool, soft shadow) sized from the tile cell, uploaded as one texture. Every Sprite carries its
+// texture, so more pages can be added later without touching the code that draws them.
 
 #include "core/iso.hpp"
-#include "render/batch.hpp"
-#include "render/sdl_ptr.hpp"
+#include "platform/sdl_ptr.hpp"
+#include "platform/sprite.hpp"
 
 #include <cstdint>
 #include <expected>
@@ -38,18 +39,10 @@ struct AtlasManifest {
 
 using SpriteId = std::uint16_t;
 
-struct Sprite {
-    UvRect uv;
-    float w = 0;
-    float h = 0;
-    float ox = 0;
-    float oy = 0;
-};
-
 class Atlas {
 public:
     // Never fails: missing or broken art leaves only the engine sprites (and one log line).
-    Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir);
+    Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir, Iso iso);
 
     [[nodiscard]] std::optional<SpriteId> find(std::string_view key) const;
     // find() or the given placeholder; a miss is logged once per key.
@@ -57,12 +50,19 @@ public:
     // Logs a missing optional sprite once.
     void reportMissing(std::string_view key);
     [[nodiscard]] const Sprite& sprite(SpriteId id) const { return sprites_[id]; }
-    [[nodiscard]] SDL_Texture* texture() const { return texture_.get(); }
-    [[nodiscard]] bool hasArt() const { return artCount_ > 0; }
+    [[nodiscard]] std::size_t size() const { return sprites_.size(); }
+    [[nodiscard]] Iso iso() const { return iso_; }
+    // Mean luminance (0..1, of the sRGB values) of a sprite's opaque pixels; night grading uses
+    // it to keep pale sprites from out-shining the lights.
+    [[nodiscard]] float luma(SpriteId id) const { return luma_[id]; }
+    [[nodiscard]] std::size_t textureBytes() const;
 
     [[nodiscard]] SpriteId placeholderTile() const { return placeholderTile_; }
+    // The tile placeholder anchored like edge/cliff_se and edge/cliff_sw: it covers the empty
+    // tile beside the rim, so a missing cliff shows instead of hiding under the ground.
+    [[nodiscard]] SpriteId placeholderEdgeSE() const { return placeholderEdgeSE_; }
+    [[nodiscard]] SpriteId placeholderEdgeSW() const { return placeholderEdgeSW_; }
     [[nodiscard]] SpriteId placeholderBox() const { return placeholderBox_; }
-    [[nodiscard]] SpriteId white() const { return white_; }
     [[nodiscard]] SpriteId lightBlob() const { return lightBlob_; }
     [[nodiscard]] SpriteId softShadow() const { return softShadow_; }
 
@@ -79,15 +79,17 @@ private:
 
     SurfacePtr pixels_;
     TexturePtr texture_;
+    Iso iso_;
     std::vector<Sprite> sprites_;
+    std::vector<float> luma_;
     std::vector<SpriteRect> rects_;
     std::unordered_map<std::string, SpriteId> byKey_;
     std::unordered_set<std::string> logged_;
     std::unordered_map<std::uint64_t, float> normalized_; // by rect origin: shared rects once
-    std::size_t artCount_ = 0;
     SpriteId placeholderTile_ = 0;
+    SpriteId placeholderEdgeSE_ = 0;
+    SpriteId placeholderEdgeSW_ = 0;
     SpriteId placeholderBox_ = 0;
-    SpriteId white_ = 0;
     SpriteId lightBlob_ = 0;
     SpriteId softShadow_ = 0;
 };

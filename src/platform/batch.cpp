@@ -1,4 +1,4 @@
-#include "render/batch.hpp"
+#include "platform/batch.hpp"
 
 namespace lc {
 namespace {
@@ -12,17 +12,21 @@ Batch::Batch(SDL_Renderer* renderer) : renderer_(renderer) {
     indices_.reserve(kMaxIndices);
 }
 
-void Batch::use(SDL_Texture* texture, SDL_BlendMode mode) {
-    if (texture == texture_ && mode == mode_) return;
+void Batch::use(SDL_Texture* texture, SDL_BlendMode mode, SDL_ScaleMode scale) {
+    if (texture == texture_ && mode == mode_ && (texture == nullptr || scale == scale_)) return;
     flush();
     texture_ = texture;
     mode_ = mode;
+    scale_ = scale;
 }
 
 void Batch::flush() {
     if (indices_.empty()) return;
     // Logged rather than fatal: a failed submission only loses one frame's geometry.
-    const bool modeOk = texture_ != nullptr ? SDL_SetTextureBlendMode(texture_, mode_)
+    // Blend and scale modes are captured per draw command, so setting them here is safe even
+    // though the same texture is drawn differently later in the frame.
+    const bool modeOk = texture_ != nullptr ? SDL_SetTextureBlendMode(texture_, mode_) &&
+                                                  SDL_SetTextureScaleMode(texture_, scale_)
                                             : SDL_SetRenderDrawBlendMode(renderer_, mode_);
     if (!modeOk ||
         !SDL_RenderGeometry(renderer_, texture_, verts_.data(), static_cast<int>(verts_.size()),

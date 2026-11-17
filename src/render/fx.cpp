@@ -1,5 +1,7 @@
 #include "render/fx.hpp"
 
+#include "core/tuning.hpp"
+
 #include <cmath>
 
 namespace lc {
@@ -15,7 +17,8 @@ void Particles::update(float dt, const World& world) {
         p.age += dt;
         p.pos.x += p.vel.x * dt;
         p.pos.y += p.vel.y * dt;
-        if (p.kind == Fx::Leaf) p.pos.x += std::sin(p.age * 2.6f + p.sway) * 6.0f * dt;
+        if (p.kind == Fx::Leaf)
+            p.pos.x += std::sin(p.age * 2.6f + p.sway) * tuning::kLeafSway * iso_.tileH() * dt;
     }
     // Separate pass so particles spawned by landing raindrops start fresh this step.
     std::size_t i = 0;
@@ -26,12 +29,13 @@ void Particles::update(float dt, const World& world) {
         }
         const Particle done = pool_[i];
         pool_[i] = pool_[--count_]; // swap-remove; the moved particle is checked next
-        const TilePos t = tileAt(done.pos);
-        if (done.kind != Fx::Raindrop || done.landed || !world.inBounds(t)) continue;
+        const TilePos t = iso_.tileAt(done.pos);
+        if (done.kind != Fx::Raindrop || done.landed || !world.hasGround(t)) continue;
         if (world.isWater(t)) {
-            spawn(Fx::Ripple, done.pos, {0, 0}, 0.8f);
+            spawn(Fx::Ripple, done.pos, {0, 0}, tuning::kRippleSeconds);
         } else if (count_ < kCapacity) {
-            pool_[count_++] = Particle{done.pos, {0, 0}, 0.0f, 0.22f, 0.0f, Fx::Raindrop, true};
+            pool_[count_++] =
+                Particle{done.pos, {0, 0}, 0.0f, tuning::kSplashSeconds, 0.0f, Fx::Raindrop, true};
         }
     }
 }

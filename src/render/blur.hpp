@@ -4,7 +4,7 @@
 // grows it back with offset linear taps. Render targets are reused across frames.
 
 #include "core/iso.hpp"
-#include "render/sdl_ptr.hpp"
+#include "platform/sdl_ptr.hpp"
 
 #include <array>
 

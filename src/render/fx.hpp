@@ -25,6 +25,8 @@ class Particles {
 public:
     static constexpr std::size_t kCapacity = 4096;
 
+    explicit Particles(Iso iso) : iso_(iso) {}
+
     // Drops the particle silently when the pool is full.
     void spawn(Fx kind, Vec2 pos, Vec2 vel, float life, float sway = 0);
     // Raindrops landing on water leave a ripple, on land a short splash; off the map, nothing.
@@ -32,6 +34,7 @@ public:
     [[nodiscard]] std::span<const Particle> all() const { return {pool_.data(), count_}; }
 
 private:
+    Iso iso_;
     std::array<Particle, kCapacity> pool_{};
     std::size_t count_ = 0;
 };

@@ -10,9 +10,6 @@
 namespace lc {
 namespace {
 
-constexpr int kStripHeight = 64;
-constexpr int kStripMinWidth = 192;
-
 struct Rgba {
     std::uint8_t r, g, b, a;
 };
@@ -53,7 +50,8 @@ std::expected<AtlasManifest, std::string> parseAtlasManifest(std::string_view te
 
 SpriteId Atlas::add(int x, int y, int w, int h, int ox, int oy) {
     rects_.push_back({x, y, w, h, ox, oy});
-    sprites_.push_back({{},
+    sprites_.push_back({nullptr,
+                        {},
                         static_cast<float>(w),
                         static_cast<float>(h),
                         static_cast<float>(ox),
@@ -61,7 +59,7 @@ SpriteId Atlas::add(int x, int y, int w, int h, int ox, int oy) {
     return static_cast<SpriteId>(sprites_.size() - 1);
 }
 
-Atlas::Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir) {
+Atlas::Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir, Iso iso) : iso_(iso) {
     // Load what art exists; any failure degrades to placeholders.
     SurfacePtr art;
     AtlasManifest manifest;
@@ -80,16 +78,28 @@ Atlas::Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir) {
         SDL_Log("atlas: %s; drawing placeholders", text.error().c_str());
     }
 
+    // Engine sprites, in proportion to the tile cell so they match the art at any density.
+    const int tw = static_cast<int>(iso.tileW());
+    const int th = static_cast<int>(iso.tileH());
+    const int boxW = std::max(4, tw / 2);
+    const int boxH = std::max(6, th * 3 / 2);
+    const int blob = std::max(16, 2 * tw);
+    const int shW = std::max(6, tw * 7 / 16);
+    const int shH = std::max(3, tw * 3 / 16);
+    const int stripH = std::max({th, boxH, blob, shH});
+    const int stripW = tw + 2 + boxW + 2 + blob + 2 + shW;
+
     const int artW = art ? art->w : 0;
     const int artH = art ? art->h : 0;
-    const int width = std::max(artW, kStripMinWidth);
+    const int width = std::max(artW, stripW);
     const int stripY = artH;
-    pixels_.reset(SDL_CreateSurface(width, artH + kStripHeight, SDL_PIXELFORMAT_RGBA32));
+    pixels_.reset(SDL_CreateSurface(width, artH + stripH, SDL_PIXELFORMAT_RGBA32));
     if (!pixels_) {
         SDL_Log("atlas: cannot create surface: %s", SDL_GetError());
         return;
     }
     if (!SDL_ClearSurface(pixels_.get(), 0, 0, 0, 0)) SDL_Log("atlas: %s", SDL_GetError());
+    std::size_t artCount = 0;
     if (art) {
         if (!SDL_SetSurfaceBlendMode(art.get(), SDL_BLENDMODE_NONE) ||
             !SDL_BlitSurface(art.get(), nullptr, pixels_.get(), nullptr)) {
@@ -102,66 +112,97 @@ Atlas::Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir) {
             }
             byKey_.emplace(key, add(r.x, r.y, r.w, r.h, r.ox, r.oy));
         }
-        artCount_ = byKey_.size();
+        artCount = byKey_.size();
     }
 
     SDL_Surface* s = pixels_.get();
-    // Placeholder diamond: loud magenta checker so missing art is obvious.
-    placeholderTile_ = add(0, stripY, 32, 16, 16, 0);
-    for (int y = 0; y < 16; ++y) {
-        const int half = y < 8 ? 2 * y + 1 : 2 * (15 - y) + 1; // rows 2, 6 ... 30 px wide
-        for (int x = 16 - half; x < 16 + half; ++x) {
-            const bool check = ((x / 4) + (y / 2)) % 2 == 0;
-            put(s, x, stripY + y, check ? Rgba{255, 0, 220, 255} : Rgba{40, 0, 40, 255});
+    int x = 0;
+    // Placeholder diamond, rasterised like ground tiles: loud magenta checker so missing art is
+    // obvious.
+    const int hw = tw / 2;
+    const int hh = th / 2;
+    placeholderTile_ = add(x, stripY, tw, th, hw, 0);
+    placeholderEdgeSE_ = add(x, stripY, tw, th, 0, -hh);
+    placeholderEdgeSW_ = add(x, stripY, tw, th, tw, -hh);
+    for (int y = 0; y < th; ++y) {
+        const int row = y < hh ? y : th - 1 - y;
+        const int half = 2 * row + 1; // 2, 6, 10 ... px wide rows, mirrored
+        for (int px = hw - half; px < hw + half; ++px) {
+            if (px < 1 || px >= tw - 1) continue;
+            const bool check = ((px * 8 / tw) + (y * 4 / th)) % 2 == 0;
+            put(s, x + px, stripY + y, check ? Rgba{255, 0, 220, 255} : Rgba{40, 0, 40, 255});
         }
     }
-    placeholderBox_ = add(34, stripY, 16, 24, 8, 18);
-    for (int y = 0; y < 24; ++y) {
-        for (int x = 0; x < 16; ++x) {
-            const bool edge = x == 0 || y == 0 || x == 15 || y == 23;
-            const bool check = ((x / 4) + (y / 4)) % 2 == 0;
-            put(s, 34 + x, stripY + y,
+    x += tw + 2;
+    placeholderBox_ = add(x, stripY, boxW, boxH, boxW / 2, boxH * 3 / 4);
+    for (int y = 0; y < boxH; ++y) {
+        for (int px = 0; px < boxW; ++px) {
+            const bool edge = px == 0 || y == 0 || px == boxW - 1 || y == boxH - 1;
+            const bool check = ((px * 4 / boxW) + (y * 6 / boxH)) % 2 == 0;
+            put(s, x + px, stripY + y,
                 edge ? Rgba{40, 0, 40, 255}
                      : (check ? Rgba{255, 0, 220, 255} : Rgba{90, 0, 90, 255}));
         }
     }
-    white_ = add(52, stripY, 4, 4, 0, 0);
-    for (int y = 0; y < 4; ++y)
-        for (int x = 0; x < 4; ++x) put(s, 52 + x, stripY + y, {255, 255, 255, 255});
-    lightBlob_ = add(58, stripY, 64, 64, 32, 32);
-    for (int y = 0; y < 64; ++y) {
-        for (int x = 0; x < 64; ++x) {
-            const float dx = (static_cast<float>(x) + 0.5f - 32.0f) / 32.0f;
-            const float dy = (static_cast<float>(y) + 0.5f - 32.0f) / 32.0f;
+    x += boxW + 2;
+    const float br = static_cast<float>(blob) * 0.5f;
+    lightBlob_ = add(x, stripY, blob, blob, blob / 2, blob / 2);
+    for (int y = 0; y < blob; ++y) {
+        for (int px = 0; px < blob; ++px) {
+            const float dx = (static_cast<float>(px) + 0.5f - br) / br;
+            const float dy = (static_cast<float>(y) + 0.5f - br) / br;
             const float k = std::max(0.0f, 1.0f - std::sqrt(dx * dx + dy * dy));
-            put(s, 58 + x, stripY + y, {255, 255, 255, toByte(k * k * (3 - 2 * k))});
+            put(s, x + px, stripY + y, {255, 255, 255, toByte(k * k * (3 - 2 * k))});
         }
     }
-    softShadow_ = add(124, stripY, 14, 6, 7, 3);
-    for (int y = 0; y < 6; ++y) {
-        for (int x = 0; x < 14; ++x) {
-            const float dx = (static_cast<float>(x) + 0.5f - 7.0f) / 7.0f;
-            const float dy = (static_cast<float>(y) + 0.5f - 3.0f) / 3.0f;
+    x += blob + 2;
+    softShadow_ = add(x, stripY, shW, shH, shW / 2, shH / 2);
+    for (int y = 0; y < shH; ++y) {
+        for (int px = 0; px < shW; ++px) {
+            const float dx = (static_cast<float>(px) + 0.5f - static_cast<float>(shW) * 0.5f) /
+                             (static_cast<float>(shW) * 0.5f);
+            const float dy = (static_cast<float>(y) + 0.5f - static_cast<float>(shH) * 0.5f) /
+                             (static_cast<float>(shH) * 0.5f);
             const float k = std::max(0.0f, 1.0f - (dx * dx + dy * dy));
-            put(s, 124 + x, stripY + y, {0, 0, 0, toByte(std::min(1.0f, k * 1.6f))});
+            put(s, x + px, stripY + y, {0, 0, 0, toByte(std::min(1.0f, k * 1.6f))});
         }
     }
 
-    texture_.reset(SDL_CreateTextureFromSurface(renderer, s));
-    if (!texture_) {
-        SDL_Log("atlas: cannot create texture: %s", SDL_GetError());
-        return;
+    luma_.resize(sprites_.size());
+    for (std::size_t i = 0; i < sprites_.size(); ++i) {
+        const auto& r = rects_[i];
+        double sum = 0;
+        double weight = 0;
+        for (int y = 0; y < r.h; ++y) {
+            const auto* row = static_cast<const std::uint8_t*>(s->pixels) +
+                              static_cast<std::ptrdiff_t>(r.y + y) * s->pitch;
+            for (int px = 0; px < r.w; ++px) {
+                const std::uint8_t* p = row + static_cast<std::ptrdiff_t>(r.x + px) * 4;
+                const double a = p[3] / 255.0;
+                sum += a * (0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2]) / 255.0;
+                weight += a;
+            }
+        }
+        luma_[i] = weight > 0 ? static_cast<float>(sum / weight) : 0.0f;
     }
-    if (!SDL_SetTextureScaleMode(texture_.get(), SDL_SCALEMODE_NEAREST))
-        SDL_Log("atlas: %s", SDL_GetError());
+
+    // The pixels stay RGBA for the CPU-side work; the texture gets the shared fast layout.
+    texture_ = uploadTexture(renderer, s);
+    if (!texture_) return;
     const auto fw = static_cast<float>(s->w);
     const auto fh = static_cast<float>(s->h);
     for (std::size_t i = 0; i < sprites_.size(); ++i) {
         const auto& r = rects_[i];
+        sprites_[i].texture = texture_.get();
         sprites_[i].uv = {static_cast<float>(r.x) / fw, static_cast<float>(r.y) / fh,
                           static_cast<float>(r.x + r.w) / fw, static_cast<float>(r.y + r.h) / fh};
     }
-    SDL_Log("atlas: %zu sprites loaded", artCount_);
+    SDL_Log("atlas: %zu sprites loaded", artCount);
+}
+
+std::size_t Atlas::textureBytes() const {
+    return pixels_ ? static_cast<std::size_t>(pixels_->w) * static_cast<std::size_t>(pixels_->h) * 4
+                   : 0;
 }
 
 std::optional<SpriteId> Atlas::find(std::string_view key) const {
@@ -227,7 +268,10 @@ float Atlas::normalizeAlpha(SpriteId id) {
     const SDL_Rect rect{r.x, r.y, r.w, r.h};
     const auto* first = base + static_cast<std::ptrdiff_t>(r.y) * pixels_->pitch +
                         static_cast<std::ptrdiff_t>(r.x) * 4;
-    if (!SDL_UpdateTexture(texture_.get(), &rect, first, pixels_->pitch))
+    std::vector<std::uint8_t> converted(static_cast<std::size_t>(r.w * r.h * 4));
+    if (!SDL_ConvertPixels(r.w, r.h, SDL_PIXELFORMAT_RGBA32, first, pixels_->pitch, kTextureFormat,
+                           converted.data(), r.w * 4) ||
+        !SDL_UpdateTexture(texture_.get(), &rect, converted.data(), r.w * 4))
         SDL_Log("atlas: %s", SDL_GetError());
     return static_cast<float>(peak) / 255.0f;
 }
