@@ -17,7 +17,8 @@ import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.shapes import Ellipse, Line, Mask, Poly, Rect
+from worldgen.finish import clear_doors, fit_faces, fords, free, glow_cap, orth, put, seam
+from worldgen.shapes import Ellipse, Line, Mask, Rect
 
 N = 144
 P = "parsa."
@@ -264,7 +265,7 @@ def build(L: Layout) -> None:
     L.node("qanat_outflow", (18, 138))
 
     # Fords and slab bridges wherever a way crosses water.
-    _fords(L, streets)
+    fords(L, streets)
 
     # =========================================================================================
     # 4. Landmarks (bible §2.3; each rect is checked by V4)
@@ -352,10 +353,10 @@ def build(L: Layout) -> None:
     _plain(L, noise)
     _naqsh(L)
 
-    _clear_doors(L)
-    _glow_cap(L)
-    _seam(L)
-    _faces(L)
+    clear_doors(L)
+    glow_cap(L, {P + "p_house_small": 0, P + "p_house": 1, P + "p_workshop": 2, P + "p_oven": 3})
+    seam(L, GRASS, ROUGH)
+    fit_faces(L, P + "rock")
 
     # =========================================================================================
     # 7. Checks and previews
@@ -380,154 +381,8 @@ def build(L: Layout) -> None:
 # helpers
 # =============================================================================================
 
-def orth(points):
-    """A polyline turned into axis-parallel runs: a diagonal step becomes a jog at its middle.
-    Lanes then wander in steps (as they read in isometric view), and every street tile, crossing
-    and graph edge lies exactly on the painted way."""
-    out = [tuple(points[0])]
-    for (c0, r0), (c1, r1) in zip(points, points[1:]):
-        if c0 != c1 and r0 != r1:
-            if abs(c1 - c0) >= abs(r1 - r0):
-                m = (c0 + c1) // 2
-                out += [(m, r0), (m, r1)]
-            else:
-                m = (r0 + r1) // 2
-                out += [(c0, m), (c1, m)]
-        out.append((c1, r1))
-    pts = [p for i, p in enumerate(out) if i == 0 or p != out[i - 1]]
-    keep = [pts[0]]
-    for a, b in zip(pts[1:], pts[2:] + [None]):
-        if b is not None and (keep[-1][0] == a[0] == b[0] or keep[-1][1] == a[1] == b[1]):
-            continue
-        keep.append(a)
-    return keep
-
-
 def way(L: Layout, points, **kw):
     return L.street(orth(points), **kw)
-
-
-def _seam(L: Layout) -> None:
-    """Where the plain meets a different base terrain of the world outside (the Zagros steppe
-    on the west, the plateau's corners), its edge tiles get rough ground, an overlay, so two
-    bases never touch (V8) and the meeting reads as a worn margin."""
-    edge = []
-    for i in range(N):
-        edge += [((0, i), (-1, i)), ((N - 1, i), (N, i)), ((i, 0), (i, -1)), ((i, N - 1), (i, N))]
-    for (c, r), (oc, orr) in edge:
-        here = L.terrain_at(c + L.origin[0], r + L.origin[1])
-        wc, wr = oc + L.origin[0], orr + L.origin[1]
-        if not (0 <= wc < 1280 and 0 <= wr < 448):
-            continue                                   # the world's own east and south edges
-        out = L.below_terrain(oc, orr)
-        if here == GRASS and out is not None and out != GRASS and L.cat.terrain[out].base:
-            L.paint(Rect(c, r, c, r), ROUGH)
-
-
-def _faces(L: Layout) -> None:
-    """Each raised tile keeps its face material when its final terrain lists it; otherwise it
-    takes the terrain's own: bare rock and scree the world's rock, the set's ground its strata
-    (parsa.rock) where it may, else its first face (earth banks)."""
-    for t, tid in enumerate(L.terrains):
-        allowed = L.cat.faces(tid)
-        if not allowed:
-            continue
-        on = (L.T == t) & (L.LV > 0)
-        bad = on & ~np.isin(L.FACE, [L.faces.index(f) for f in allowed if f in L.faces])
-        if not bad.any():
-            continue
-        face = P + "rock" if P + "rock" in allowed else allowed[0]
-        for k in np.unique(L.LV[bad]).tolist():
-            L.level(Mask(0, 0, bad & (L.LV == k)), int(k), face=face)
-
-
-def _clear_doors(L: Layout) -> None:
-    """Keep every door step and work spot free: small things standing on one go; a building
-    standing on another's door step goes instead of the step's owner. Then houses and stalls
-    whose spots no street reaches within the actors' last-stretch search (24 tiles) go too."""
-    for p in [p for p in L.items if not p.removed]:
-        spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
-        if p.door:
-            spots.append(p.door)
-        for c, r in spots:
-            if p.removed or (p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph):
-                continue
-            loc = L._local(c, r)
-            if loc is None or L.OCC[loc] < 0:
-                continue
-            other = L.items[L.OCC[loc]]
-            if other is p or L.cat.items[other.id].landmark or L.cat.items[other.id].rise:
-                continue
-            L.remove(other if other.pw * other.ph <= p.pw * p.ph else p)
-    # Walking distance from the streets over free ground (same level, no water).
-    from collections import deque
-    water = np.zeros(L.T.shape, dtype=bool)
-    for t, name in enumerate(L.terrains):
-        if L.cat.is_water(name):
-            water |= L.T == t
-    free = (L.T >= 0) & ~L.IMP & ~water & (L.OCC < 0)
-    for p in L.items:
-        if not p.removed and (L.cat.items[p.id].walkable or L.cat.items[p.id].rise):
-            for c, r in p.tiles():
-                loc = L._local(c, r)
-                if loc is not None:
-                    free[loc] = True
-    dist = np.full(L.T.shape, 99, dtype=np.int32)
-    q = deque()
-    for j, i in np.argwhere(L.STREET & free):
-        dist[j, i] = 0
-        q.append((j, i))
-    while q:
-        j, i = q.popleft()
-        if dist[j, i] >= 24:
-            continue
-        for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            a, b = j + dj, i + di
-            if 0 <= a < N and 0 <= b < N and free[a, b] and dist[a, b] > dist[j, i] + 1 \
-                    and L.LV[a, b] == L.LV[j, i]:
-                dist[a, b] = dist[j, i] + 1
-                q.append((a, b))
-    for p in L.items:
-        d = L.cat.items[p.id]
-        if p.removed or d.landmark or p.door is None:
-            continue
-        loc = L._local(*p.door)
-        if loc is None or dist[loc] > 24:
-            L.remove(p)
-
-
-def _glow_cap(L: Layout, cap: int = 38) -> None:
-    """The engine draws at most 40 glowing items per 32 x 32 chunk (V10). Where the town is
-    denser than that, the least needed lamps go: small houses away from the streets first."""
-    from worldgen.coords import COLS
-    from worldgen.validate import MAX_GLOW_CHUNK
-    cap = min(cap, MAX_GLOW_CHUNK)
-    by_chunk: dict = {}
-    for p in L.items:
-        if p.removed or not L.cat.items[p.id].glow:
-            continue
-        k = (p.r // 32, (COLS - 1 - (p.c + p.pw - 1)) // 32)
-        by_chunk.setdefault(k, []).append(p)
-    rank = {P + "p_house_small": 0, P + "p_house": 1, P + "p_workshop": 2, P + "p_oven": 3}
-    for k, lst in sorted(by_chunk.items()):
-        extra = len(lst) - cap
-        if extra <= 0:
-            continue
-        cand = sorted((p for p in lst if p.id in rank),
-                      key=lambda p: (rank[p.id], rng.hash64("parsa", "glow", p.c, p.r)))
-        for p in cand[:extra]:
-            L.remove(p)
-
-def _fords(L: Layout, streets) -> None:
-    """A walkable deck (ford or slab bridge) on every water tile a way crosses."""
-    seen = set()
-    for s in streets:
-        for c, r in Line(s.points, s.width).tiles():
-            t = L.terrain_at(c, r)
-            if (c, r) in seen or t is None or not L.cat.is_water(t):
-                continue
-            seen.add((c, r))
-            L.place("world.ford", at=(c - L.origin[0], r - L.origin[1]))
 
 
 def _south_stair(L: Layout) -> None:
@@ -585,7 +440,7 @@ def _paradise(L: Layout, noise) -> None:
     L.node("garden_south_gate", (36, 34))
     for pts in GARDEN_WATER:                       # water wins where it meets the walks
         L.channel(pts, terrain=WATER)
-    _fords(L, walks)
+    fords(L, walks)
     # Square basins where channels meet or end; sluices where the water turns (task 3: open the
     # garden channels at dawn).
     for c, r in ((35, 22), (32, 22), (35, 32), (28, 15), (42, 15), (35, 9), (52, 33)):
@@ -662,7 +517,7 @@ def _town(L: Layout, spur, noise) -> None:
         way(L, [(4, 93), (3, 98), (4, 103)], width=1, paving=E),
         way(L, [(12, 65), (11, 75), (12, 84), (10, 92), (14, 102)], width=1, paving=E),
     ]
-    _fords(L, [upper, *lanes])
+    fords(L, [upper, *lanes])
     for nid, at in (("town_square", (31, 71)), ("granary_yard", (29, 102)),
                     ("weavers", (41, 80)), ("brickfield", (39, 99)), ("dye_yard", (25, 88)),
                     ("goldsmith", (41, 63)), ("elamite_shrine", (12, 84)),
@@ -734,23 +589,9 @@ def _town(L: Layout, spur, noise) -> None:
     L.scatter(town, {P + "t_pomegranate": 2, P + "t_fig": 2, P + "t_almond": 1, P + "t_vine": 2,
                      P + "t_poplar": 1}, 0.06, seed="town_trees", clump=0.7)
     # Kitchen gardens on the town's open ground toward the fields.
-    L.paint(Rect(1, 105, 13, 111) & _free(L, Rect(1, 105, 13, 111)), BED)
+    L.paint(Rect(1, 105, 13, 111) & free(L, Rect(1, 105, 13, 111)), BED)
     # Poplars along the town canal, willows where it leaves the town.
     L.row(Line([(23, 53), (23, 110)], 1), P + "t_poplar", every=3)
-
-
-def _put(L: Layout, item: str, at, face: str = "west") -> None:
-    """Detail that gives way to anything already there."""
-    if L.fits(item, at, face):
-        L.place(item, at=at, face=face)
-
-
-def _free(L: Layout, rect: Rect) -> Mask:
-    """Tiles of a rect with nothing placed and no street."""
-    j0, i0 = rect.r0, rect.c0
-    occ = L.OCC[j0:rect.r1 + 1, i0:rect.c1 + 1] < 0
-    st = ~L.STREET[j0:rect.r1 + 1, i0:rect.c1 + 1]
-    return Mask(rect.c0, rect.r0, occ & st)
 
 
 def _terrace_detail(L: Layout) -> None:
@@ -804,20 +645,20 @@ def _terrace_detail(L: Layout) -> None:
     # banners down the processional road, scribes registering visitors by the Gate.
     for at in ((57, 23), (93, 23), (57, 40), (94, 40), (57, 79), (99, 79), (57, 117),
                (99, 112), (117, 79), (117, 117), (84, 78), (60, 101)):
-        _put(L, P + "p_brazier", at)
-        _put(L, P + "p_banner", (at[0] + 1, at[1]))
+        put(L, P + "p_brazier", at)
+        put(L, P + "p_banner", (at[0] + 1, at[1]))
     for c in range(71, 92, 4):
-        _put(L, P + "p_banner", (c, 48))
+        put(L, P + "p_banner", (c, 48))
     for at in ((71, 41), (73, 41)):
-        _put(L, P + "p_scribe_desk", at, "south")
+        put(L, P + "p_scribe_desk", at, "south")
     for at in ((75, 41), (76, 41)):
-        _put(L, P + "p_jars", at)
+        put(L, P + "p_jars", at)
     for at in ((70, 43), (70, 46)):
-        _put(L, P + "p_incense", at)
+        put(L, P + "p_incense", at)
     # The Tačara and Hadiš courts: incense before the porticoes, a throne-dais carpet.
     for at in ((64, 96), (69, 96), (77, 86), (84, 86)):
-        _put(L, P + "p_incense", at)
-    _put(L, P + "p_carpet", (79, 86), "north")
+        put(L, P + "p_incense", at)
+    put(L, P + "p_carpet", (79, 86), "north")
     # The royal kitchens' service yard south of the Tačara court: a walled yard of sheds,
     # bread ovens, storerooms and a well; servants carry the dishes up the Hadiš stair.
     for pts in ([(59, 106), (65, 106)], [(68, 106), (74, 106)], [(59, 107), (59, 116)],
@@ -826,14 +667,14 @@ def _terrace_detail(L: Layout) -> None:
     way(L, [(66, 104), (66, 111), (70, 111)], width=1, paving=STONE)
     L.node("royal_kitchens", (66, 110))
     for at in ((60, 108), (67, 108), (71, 108)):
-        _put(L, P + "p_workshop", at, "north")
+        put(L, P + "p_workshop", at, "north")
     for at in ((61, 112), (63, 112), (70, 111), (72, 111)):
-        _put(L, P + "p_oven", at)
+        put(L, P + "p_oven", at)
     for at in ((65, 113), (68, 113)):
-        _put(L, P + "p_granary", at, "north")
-    _put(L, P + "p_well", (71, 114))
+        put(L, P + "p_granary", at, "north")
+    put(L, P + "p_well", (71, 114))
     for at in ((60, 114), (61, 114), (62, 115), (72, 113)):
-        _put(L, P + "p_jars" if at[0] % 2 else P + "p_sacks", at)
+        put(L, P + "p_jars" if at[0] % 2 else P + "p_sacks", at)
     # Torches at the palaces' stairs, braziers in the courts.
     for at in ((62, 94), (72, 94), (72, 86), (84, 82)):
         L.place(P + "p_torch", at=at, face="south")
@@ -863,7 +704,7 @@ def _plain(L: Layout, noise) -> None:
     village = Rect(1, 24, 17, 40)
     vlane = way(L, [(24, 33), (17, 32), (9, 33), (3, 31)], width=1, paving=EARTH)
     vlane2 = way(L, [(9, 33), (8, 26)], width=1, paving=EARTH)
-    _fords(L, [vlane, vlane2])
+    fords(L, [vlane, vlane2])
     L.node("village", (9, 33))
     L.place(P + "p_threshing", at=(11, 35))
     L.place(P + "p_threshing", at=(3, 36))
@@ -891,7 +732,7 @@ def _plain(L: Layout, noise) -> None:
         L.place(P + "p_trough", at=(c1 - 2, r0 + 2))
     stab = way(L, [(54, 5), (59, 7), (59, 20), (80, 21), (96, 20)], width=1, paving=EARTH,
                     kind="track")
-    _fords(L, [stab])
+    fords(L, [stab])
     L.node("royal_stables", (80, 21))
     L.houses(Rect(60, 19, 99, 21) - Rect(57, 20, 99, 21), {P + "p_granary": 1}, front=[stab],
              gap=0.5, seed="stable_stores")
@@ -936,21 +777,21 @@ def _plain(L: Layout, noise) -> None:
             ((-4, 0), "north"), ((2, 1), "west"), ((-2, 1), "west")]
     lanes = [L.street(orth([(c, r - 1), (c, 122)]), width=1, paving=EARTH, kind="track")
              for c, r in camps]
-    _fords(L, lanes)
+    fords(L, lanes)
     for i, (c, r) in enumerate(camps):
         st = rng.stream("parsa", "camp", i)
         L.paint(Ellipse(c, r, 4 + st.randint(0, 2), 2 + st.randint(0, 1)), EARTH)
         L.place(P + "p_brazier", at=(c, r))
         order = sorted(ring, key=lambda t: rng.hash64("parsa", "tents", i, t[0]))
         for (dc, dr), face in order[: 2 + st.randint(0, 3)]:
-            _put(L, P + "p_tent", (c + dc, r + dr), face)
+            put(L, P + "p_tent", (c + dc, r + dr), face)
         side = -1 if st.chance(0.5) else 1
-        _put(L, P + "p_horse_line", (c + side * 5 - 1, r + st.randint(-2, 1)),
+        put(L, P + "p_horse_line", (c + side * 5 - 1, r + st.randint(-2, 1)),
              "west" if st.chance(0.5) else "north")
-        _put(L, P + "p_banner", (c + 1, r - 1))
+        put(L, P + "p_banner", (c + 1, r - 1))
         for item in (P + "p_carpet", P + "p_jars", P + "p_sacks", P + "p_jars"):
             if st.chance(0.6):
-                _put(L, item, (c + st.randint(-3, 3), r + st.randint(-1, 2)), "north")
+                put(L, item, (c + st.randint(-3, 3), r + st.randint(-1, 2)), "north")
     pitches = Rect(0, 0, 0, 0) - Rect(0, 0, 0, 0)
     for c, r in camps:
         pitches = pitches | Rect(c - 7, r - 4, c + 7, r + 3)

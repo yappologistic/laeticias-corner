@@ -1,0 +1,195 @@
+"""Layout helpers every region uses: orthogonal ways, detail that gives way, fords, and the
+finishing passes run at the end of a layout (door steps, glow budget, face materials, seams).
+
+They only call the public layout API plus the layout's own arrays, so a region's result is the
+same whether it writes these steps itself or calls them here.
+"""
+
+from __future__ import annotations
+
+from collections import deque
+
+import numpy as np
+
+from . import rng
+from .coords import COLS, ROWS
+from .dsl import Layout
+from .shapes import Line, Mask, Rect
+
+
+def orth(points):
+    """A polyline turned into axis-parallel runs: a diagonal step becomes a jog at its middle.
+    Lanes then wander in steps (as they read in isometric view), and every street tile, crossing
+    and graph edge lies exactly on the painted way."""
+    out = [tuple(points[0])]
+    for (c0, r0), (c1, r1) in zip(points, points[1:]):
+        if c0 != c1 and r0 != r1:
+            if abs(c1 - c0) >= abs(r1 - r0):
+                m = (c0 + c1) // 2
+                out += [(m, r0), (m, r1)]
+            else:
+                m = (r0 + r1) // 2
+                out += [(c0, m), (c1, m)]
+        out.append((c1, r1))
+    pts = [p for i, p in enumerate(out) if i == 0 or p != out[i - 1]]
+    keep = [pts[0]]
+    for a, b in zip(pts[1:], pts[2:] + [None]):
+        if b is not None and (keep[-1][0] == a[0] == b[0] or keep[-1][1] == a[1] == b[1]):
+            continue
+        keep.append(a)
+    return keep
+
+
+def stairstep(points, run: int = 3):
+    """A diagonal polyline as small alternating axis runs of about `run` tiles, so a wide way
+    can cross a square on the diagonal while every graph edge stays on its painted tiles."""
+    out = [tuple(points[0])]
+    for (c0, r0), (c1, r1) in zip(points, points[1:]):
+        dc, dr = c1 - c0, r1 - r0
+        n = max(1, max(abs(dc), abs(dr)) // run)
+        for k in range(1, n + 1):
+            ca, ra = out[-1]
+            cb, rb = c0 + round(dc * k / n), r0 + round(dr * k / n)
+            if ca != cb and ra != rb:
+                out.append((cb, ra))
+            if (cb, rb) != out[-1]:
+                out.append((cb, rb))
+    return orth(out)
+
+
+def put(L: Layout, item: str, at, face: str = "west", variant: int = 0):
+    """Detail that gives way to anything already there."""
+    if L.fits(item, at, face, variant):
+        return L.place(item, at=at, face=face, variant=variant)
+    return None
+
+
+def free(L: Layout, rect: Rect) -> Mask:
+    """Tiles of a rect (local) with nothing placed and no street."""
+    j0, i0 = rect.r0, rect.c0
+    occ = L.OCC[j0:rect.r1 + 1, i0:rect.c1 + 1] < 0
+    st = ~L.STREET[j0:rect.r1 + 1, i0:rect.c1 + 1]
+    return Mask(rect.c0, rect.r0, occ & st)
+
+
+def fords(L: Layout, streets, item: str = "world.ford") -> None:
+    """A walkable deck (ford or slab bridge) on every water tile a way crosses."""
+    seen = set()
+    for s in streets:
+        for c, r in Line(s.points, s.width).tiles():
+            t = L.terrain_at(c, r)
+            if (c, r) in seen or t is None or not L.cat.is_water(t):
+                continue
+            seen.add((c, r))
+            L.place(item, at=(c - L.origin[0], r - L.origin[1]))
+
+
+def clear_doors(L: Layout, reach: int = 24) -> None:
+    """Keep every door step and work spot free: small things standing on one go; a building
+    standing on another's door step goes instead of the step's owner. Then houses and stalls
+    whose spots no street reaches within the actors' last-stretch search go too."""
+    for p in [p for p in L.items if not p.removed]:
+        spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
+        if p.door:
+            spots.append(p.door)
+        for c, r in spots:
+            if p.removed or (p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph):
+                continue
+            loc = L._local(c, r)
+            if loc is None or L.OCC[loc] < 0:
+                continue
+            other = L.items[L.OCC[loc]]
+            if other is p or L.cat.items[other.id].landmark or L.cat.items[other.id].rise:
+                continue
+            L.remove(other if other.pw * other.ph <= p.pw * p.ph else p)
+    # Walking distance from the streets over free ground (same level, no water).
+    h, w = L.T.shape
+    water = np.zeros(L.T.shape, dtype=bool)
+    for t, name in enumerate(L.terrains):
+        if L.cat.is_water(name):
+            water |= L.T == t
+    open_ = (L.T >= 0) & ~L.IMP & ~water & (L.OCC < 0)
+    for p in L.items:
+        if not p.removed and (L.cat.items[p.id].walkable or L.cat.items[p.id].rise):
+            for c, r in p.tiles():
+                loc = L._local(c, r)
+                if loc is not None:
+                    open_[loc] = True
+    dist = np.full(L.T.shape, 99, dtype=np.int32)
+    q = deque()
+    for j, i in np.argwhere(L.STREET & open_):
+        dist[j, i] = 0
+        q.append((j, i))
+    while q:
+        j, i = q.popleft()
+        if dist[j, i] >= reach:
+            continue
+        for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            a, b = j + dj, i + di
+            if 0 <= a < h and 0 <= b < w and open_[a, b] and dist[a, b] > dist[j, i] + 1 \
+                    and L.LV[a, b] == L.LV[j, i]:
+                dist[a, b] = dist[j, i] + 1
+                q.append((a, b))
+    for p in L.items:
+        d = L.cat.items[p.id]
+        if p.removed or d.landmark or p.door is None:
+            continue
+        loc = L._local(*p.door)
+        if loc is None or dist[loc] > reach:
+            L.remove(p)
+
+
+def glow_cap(L: Layout, rank: dict[str, int], cap: int = 38) -> None:
+    """The engine draws at most 40 glowing items per 32 x 32 chunk (V10). Where a town is
+    denser than that, the least needed lamps go first: lowest `rank`, then a per-item hash."""
+    from .validate import MAX_GLOW_CHUNK
+    cap = min(cap, MAX_GLOW_CHUNK)
+    by_chunk: dict = {}
+    for p in L.items:
+        if p.removed or not L.cat.items[p.id].glow:
+            continue
+        k = (p.r // 32, (COLS - 1 - (p.c + p.pw - 1)) // 32)
+        by_chunk.setdefault(k, []).append(p)
+    for k, lst in sorted(by_chunk.items()):
+        extra = len(lst) - cap
+        if extra <= 0:
+            continue
+        cand = sorted((p for p in lst if p.id in rank),
+                      key=lambda p: (rank[p.id], rng.hash64(L.region, "glow", p.c, p.r)))
+        for p in cand[:extra]:
+            L.remove(p)
+
+
+def fit_faces(L: Layout, prefer: str) -> None:
+    """Each raised tile keeps its face material when its final terrain lists it; otherwise it
+    takes `prefer` where the terrain allows it, else the terrain's first face."""
+    for t, tid in enumerate(L.terrains):
+        allowed = L.cat.faces(tid)
+        if not allowed:
+            continue
+        on = (L.T == t) & (L.LV > 0)
+        bad = on & ~np.isin(L.FACE, [L.faces.index(f) for f in allowed if f in L.faces])
+        if not bad.any():
+            continue
+        face = prefer if prefer in allowed else allowed[0]
+        for k in np.unique(L.LV[bad]).tolist():
+            L.level(Mask(0, 0, bad & (L.LV == k)), int(k), face=face)
+
+
+def seam(L: Layout, base: str, overlay: str) -> None:
+    """Where the layer's `base` meets a different base terrain of the world outside, its edge
+    tiles get `overlay`, so two bases never touch (V8) and the meeting reads as a worn margin."""
+    w, h = L.size
+    edge = []
+    for i in range(w):
+        edge += [((i, 0), (i, -1)), ((i, h - 1), (i, h))]
+    for i in range(h):
+        edge += [((0, i), (-1, i)), ((w - 1, i), (w, i))]
+    for (c, r), (oc, orr) in edge:
+        here = L.terrain_at(c + L.origin[0], r + L.origin[1])
+        wc, wr = oc + L.origin[0], orr + L.origin[1]
+        if not (0 <= wc < COLS and 0 <= wr < ROWS):
+            continue                                   # the world's own edges
+        out = L.below_terrain(oc, orr)
+        if here == base and out is not None and out != base and L.cat.terrain[out].base:
+            L.paint(Rect(c, r, c, r), overlay)

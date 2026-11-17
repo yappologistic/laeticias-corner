@@ -148,3 +148,31 @@ class Sources(unittest.TestCase):
         self.assertEqual(cat.items["athens.parthenon"].source, "catalog")
         self.assertEqual(cat.terrain["grass"].faces, ["world.earth", "world.coast"])
         self.assertIn("athens.limestone", cat.faces("athens.rock_limestone"))
+
+
+class Finish(unittest.TestCase):
+    def test_orth_and_stairstep_give_axis_runs(self):
+        from worldgen.finish import orth, stairstep
+        for pts in (orth([(0, 0), (9, 4), (9, 12)]), stairstep([(0, 0), (12, 9)], run=3)):
+            for a, b in zip(pts, pts[1:]):
+                self.assertTrue(a[0] == b[0] or a[1] == b[1], pts)
+        s = stairstep([(0, 0), (12, 9)], run=3)
+        self.assertEqual((s[0], s[-1]), ((0, 0), (12, 9)))
+        self.assertGreater(len(s), 6)  # many small steps, not one big jog
+
+    def test_fit_faces_takes_the_terrains_own_material(self):
+        from worldgen.finish import fit_faces
+        L = layout()
+        L.fill("grass", district="meadows")
+        L.level(Rect(2, 2, 5, 5), 2, face="athens.limestone")  # not a face grass lists
+        fit_faces(L, "world.coast")
+        f = L.faces[L.FACE[L._local(L.origin[0] + 3, L.origin[1] + 3)]]
+        self.assertEqual(f, "world.coast")
+
+    def test_put_gives_way(self):
+        from worldgen.finish import put
+        L = layout()
+        L.fill("grass", district="meadows")
+        self.assertIsNotNone(put(L, "athens.g_herm", (4, 4)))
+        self.assertIsNone(put(L, "athens.g_herm", (4, 4)))
+        self.assertEqual(sum(1 for p in L.items if not p.removed), 1)
