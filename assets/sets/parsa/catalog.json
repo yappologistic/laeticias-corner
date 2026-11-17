@@ -1,0 +1,3431 @@
+{
+ "version": 1,
+ "set": "parsa",
+ "terrain": [
+  {
+   "id": "parsa.plain_grass",
+   "name": "Spring plain",
+   "base": true,
+   "variants": 4
+  },
+  {
+   "id": "parsa.field_barley",
+   "name": "Barley field",
+   "under": "parsa.plain_grass",
+   "edges": 16
+  },
+  {
+   "id": "parsa.garden_bed",
+   "name": "Garden bed",
+   "under": "parsa.plain_grass",
+   "edges": 16
+  },
+  {
+   "id": "parsa.packed_earth",
+   "name": "Packed earth road",
+   "under": "parsa.plain_grass",
+   "edges": 16
+  },
+  {
+   "id": "parsa.paving_stone",
+   "name": "Stone paving",
+   "under": "parsa.plain_grass",
+   "edges": 16
+  },
+  {
+   "id": "parsa.paving_red",
+   "name": "Red plaster floor",
+   "under": "parsa.plain_grass",
+   "edges": 16
+  },
+  {
+   "id": "parsa.gravel",
+   "name": "Gravel",
+   "under": "parsa.plain_grass",
+   "edges": 16
+  },
+  {
+   "id": "parsa.water_channel",
+   "name": "Water channel",
+   "under": "parsa.plain_grass",
+   "edges": 16,
+   "fps": 4
+  },
+  {
+   "id": "parsa.rough_ground",
+   "name": "Rough ground",
+   "under": "parsa.plain_grass",
+   "edges": 16
+  }
+ ],
+ "items": [
+  {
+   "id": "parsa.great_stair",
+   "name": "Great double stairway",
+   "footprint": [
+    18,
+    7
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 100,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "great_stair",
+   "rise": 6,
+   "axis": "y",
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "storyteller",
+     "kind": "stage",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.gate_all_lands",
+   "name": "Gate of All Lands",
+   "footprint": [
+    6,
+    6
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 155,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "gate_all_lands",
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 4
+    }
+   ],
+   "emitters": {
+    "torch_w": "parsa.torch_flame",
+    "torch_e": "parsa.torch_flame"
+   }
+  },
+  {
+   "id": "parsa.apadana",
+   "name": "Apadāna",
+   "footprint": [
+    24,
+    24
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 200,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "apadana",
+   "emitters": {
+    "incense_l": "parsa.incense",
+    "incense_r": "parsa.incense"
+   },
+   "slots": [
+    {
+     "id": "audience",
+     "kind": "stand",
+     "cap": 4
+    },
+    {
+     "id": "usher",
+     "kind": "stand",
+     "cap": 1
+    },
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 4
+    },
+    {
+     "id": "stroll",
+     "kind": "stand",
+     "cap": 3
+    }
+   ]
+  },
+  {
+   "id": "parsa.apadana_stair_n",
+   "name": "Apadāna north stair",
+   "footprint": [
+    3,
+    14
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 30,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "apadana_stair_n",
+   "rise": 1,
+   "axis": "x"
+  },
+  {
+   "id": "parsa.apadana_stair_e",
+   "name": "Apadāna east stair",
+   "footprint": [
+    12,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 30,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "apadana_stair_e",
+   "rise": 1,
+   "axis": "y"
+  },
+  {
+   "id": "parsa.tacara",
+   "name": "Tačara",
+   "footprint": [
+    10,
+    8
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 120,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "tacara",
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "parsa.tacara_stair_s",
+   "name": "Tačara south stair",
+   "footprint": [
+    3,
+    8
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 45,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "tacara_stair_s",
+   "rise": 2,
+   "axis": "x"
+  },
+  {
+   "id": "parsa.hadish",
+   "name": "Hadiš",
+   "footprint": [
+    14,
+    10
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 140,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "hadish",
+   "slots": [
+    {
+     "id": "stroll",
+     "kind": "stand",
+     "cap": 3
+    }
+   ]
+  },
+  {
+   "id": "parsa.hadish_stair_w",
+   "name": "Hadiš west stair",
+   "footprint": [
+    6,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "hadish_stair_w",
+   "rise": 3,
+   "axis": "y"
+  },
+  {
+   "id": "parsa.tripylon",
+   "name": "Tripylon",
+   "footprint": [
+    8,
+    7
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 110,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "tripylon",
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "parsa.tripylon_stair",
+   "name": "Tripylon stair",
+   "footprint": [
+    2,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 30,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "tripylon_stair",
+   "rise": 1,
+   "axis": "x"
+  },
+  {
+   "id": "parsa.hall_100",
+   "name": "Hall of a Hundred Columns (building site)",
+   "footprint": [
+    20,
+    16
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 120,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "hall_100",
+   "slots": [
+    {
+     "id": "mason",
+     "kind": "work",
+     "cap": 6
+    },
+    {
+     "id": "hoist",
+     "kind": "work",
+     "cap": 2
+    }
+   ],
+   "emitters": {
+    "dust_a": "parsa.chisel_dust",
+    "dust_b": "parsa.chisel_dust"
+   }
+  },
+  {
+   "id": "parsa.treasury",
+   "name": "Treasury",
+   "footprint": [
+    30,
+    17
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 80,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "treasury",
+   "slots": [
+    {
+     "id": "gift_drop",
+     "kind": "work",
+     "cap": 2
+    },
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "treasurer",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.harem",
+   "name": "Residential wing (\"Harem\")",
+   "footprint": [
+    27,
+    14
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "harem"
+  },
+  {
+   "id": "parsa.garrison",
+   "name": "Garrison quarters",
+   "footprint": [
+    13,
+    24
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "garrison",
+   "emitters": {
+    "brazier": "parsa.fire"
+   },
+   "slots": [
+    {
+     "id": "drill",
+     "kind": "stand",
+     "cap": 6
+    }
+   ]
+  },
+  {
+   "id": "parsa.south_stores",
+   "name": "Southern storerooms",
+   "footprint": [
+    6,
+    20
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 50,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "south_stores"
+  },
+  {
+   "id": "parsa.cistern",
+   "name": "Rock-cut cistern",
+   "footprint": [
+    5,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 20,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "cistern"
+  },
+  {
+   "id": "parsa.quarry",
+   "name": "Limestone quarry face",
+   "footprint": [
+    19,
+    15
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 90,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "quarry",
+   "slots": [
+    {
+     "id": "cut",
+     "kind": "work",
+     "cap": 4
+    }
+   ],
+   "emitters": {
+    "dust": "parsa.chisel_dust"
+   }
+  },
+  {
+   "id": "parsa.paradise_gate",
+   "name": "Glazed-brick garden gate",
+   "footprint": [
+    5,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 110,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "paradise_gate"
+  },
+  {
+   "id": "parsa.pavilion",
+   "name": "Garden pavilion",
+   "footprint": [
+    6,
+    6
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 90,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "pavilion",
+   "slots": [
+    {
+     "id": "music",
+     "kind": "sit",
+     "cap": 3
+    }
+   ]
+  },
+  {
+   "id": "parsa.road_station",
+   "name": "Royal-road station",
+   "footprint": [
+    8,
+    9
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "road_station",
+   "slots": [
+    {
+     "id": "seal_check",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.naqsh_cliff",
+   "name": "Naqsh-e Rostam and the tomb of Darius I",
+   "footprint": [
+    9,
+    21
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 230,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "naqsh_cliff"
+  },
+  {
+   "id": "parsa.kaba",
+   "name": "Ka'ba-ye Zartosht",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 120,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "kaba"
+  },
+  {
+   "id": "parsa.cyrus_tomb",
+   "name": "Tomb of Cyrus",
+   "footprint": [
+    5,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.85,
+   "height": 110,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "cyrus_tomb"
+  },
+  {
+   "id": "parsa.p_house",
+   "name": "Mudbrick courtyard house",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 60,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_house_small",
+   "name": "Workers' house",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 50,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_granary",
+   "name": "Granary",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 55,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_workshop",
+   "name": "Craft workshop yard",
+   "footprint": [
+    3,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 45,
+   "slots": [
+    {
+     "id": "work",
+     "kind": "work",
+     "cap": 3
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_kiln",
+   "name": "Brick kiln",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 40,
+   "emitters": {
+    "smoke": "smoke"
+   }
+  },
+  {
+   "id": "parsa.p_brickfield",
+   "name": "Mudbrick drying field",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 6,
+   "slots": [
+    {
+     "id": "mould",
+     "kind": "work",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_oven",
+   "name": "Bread oven",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 24,
+   "emitters": {
+    "smoke": "smoke"
+   }
+  },
+  {
+   "id": "parsa.p_well",
+   "name": "Well with sweep",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 50,
+   "fps": 2,
+   "slots": [
+    {
+     "id": "draw",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_channel",
+   "name": "Stone water channel",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 1,
+   "on": "either",
+   "layers": [
+    "base"
+   ],
+   "height": 4,
+   "fps": 4
+  },
+  {
+   "id": "parsa.p_basin",
+   "name": "Square channel basin",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "either",
+   "layers": [
+    "base"
+   ],
+   "height": 6,
+   "fps": 4
+  },
+  {
+   "id": "parsa.p_qanat_shaft",
+   "name": "Qanat shaft",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 10
+  },
+  {
+   "id": "parsa.p_fire_altar",
+   "name": "Fire altar",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 40,
+   "emitters": {
+    "fire": "parsa.fire"
+   },
+   "slots": [
+    {
+     "id": "tend",
+     "kind": "tend",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_incense",
+   "name": "Bronze incense burner",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 32,
+   "emitters": {
+    "smoke": "parsa.incense"
+   }
+  },
+  {
+   "id": "parsa.p_brazier",
+   "name": "Brazier",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 22,
+   "emitters": {
+    "fire": "parsa.fire"
+   }
+  },
+  {
+   "id": "parsa.p_torch",
+   "name": "Wall torch",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "glow"
+   ],
+   "height": 30,
+   "emitters": {
+    "flame": "parsa.torch_flame"
+   }
+  },
+  {
+   "id": "parsa.p_parasol",
+   "name": "Royal parasol",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 60
+  },
+  {
+   "id": "parsa.p_throne",
+   "name": "Throne and footstool",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "height": 40,
+   "slots": [
+    {
+     "id": "seat",
+     "kind": "sit",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_crane",
+   "name": "Shear-leg crane",
+   "footprint": [
+    2,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 110,
+   "fps": 2
+  },
+  {
+   "id": "parsa.p_scaffold",
+   "name": "Timber scaffold round a column",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "height": 120
+  },
+  {
+   "id": "parsa.p_drum_stack",
+   "name": "Column drums and capital blocks",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 24
+  },
+  {
+   "id": "parsa.p_jars",
+   "name": "Storage jars",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 22
+  },
+  {
+   "id": "parsa.p_sacks",
+   "name": "Grain sacks and measures",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 16
+  },
+  {
+   "id": "parsa.p_scribe_desk",
+   "name": "Scribe's mat and tablets",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 14,
+   "slots": [
+    {
+     "id": "write",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_scales",
+   "name": "Balance with weights",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 30
+  },
+  {
+   "id": "parsa.p_tent",
+   "name": "Delegation tent",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 50,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_loom",
+   "name": "Upright loom",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 40,
+   "slots": [
+    {
+     "id": "weave",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.p_horse_line",
+   "name": "Horse line",
+   "footprint": [
+    3,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 30
+  },
+  {
+   "id": "parsa.p_trough",
+   "name": "Stone trough",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 12
+  },
+  {
+   "id": "parsa.p_threshing",
+   "name": "Threshing floor",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 4
+  },
+  {
+   "id": "parsa.p_dovecote",
+   "name": "Mudbrick dovecote",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "height": 50
+  },
+  {
+   "id": "parsa.p_carpet",
+   "name": "Spread carpet",
+   "footprint": [
+    2,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 2
+  },
+  {
+   "id": "parsa.p_archery_butt",
+   "name": "Archery target",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 30
+  },
+  {
+   "id": "parsa.p_wall",
+   "name": "Mudbrick wall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 1,
+   "on": "land",
+   "height": 40
+  },
+  {
+   "id": "parsa.p_wall_gate",
+   "name": "Gate in a mudbrick wall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 52
+  },
+  {
+   "id": "parsa.fort_wall",
+   "name": "Fortification wall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 1,
+   "on": "land",
+   "height": 60
+  },
+  {
+   "id": "parsa.fort_tower",
+   "name": "Fortification tower",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 100,
+   "emitters": {
+    "torch": "parsa.torch_flame"
+   }
+  },
+  {
+   "id": "parsa.stair_relief",
+   "name": "Relief stair",
+   "footprint": [
+    2,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "height": 30,
+   "rise": 1,
+   "axis": "x"
+  },
+  {
+   "id": "parsa.drain_outfall",
+   "name": "Terrace drain outfall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 60,
+   "states": [
+    "rain"
+   ]
+  },
+  {
+   "id": "parsa.p_banner",
+   "name": "Banner on a pole",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "height": 70,
+   "fps": 6
+  },
+  {
+   "id": "parsa.p_sluice",
+   "name": "Channel sluice",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "either",
+   "layers": [
+    "base"
+   ],
+   "height": 12,
+   "states": [
+    "open"
+   ]
+  },
+  {
+   "id": "parsa.t_cypress",
+   "name": "Cypress",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "height": 110
+  },
+  {
+   "id": "parsa.t_plane",
+   "name": "Oriental plane",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "height": 120
+  },
+  {
+   "id": "parsa.t_poplar",
+   "name": "White poplar",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "height": 110
+  },
+  {
+   "id": "parsa.t_willow",
+   "name": "Willow",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "height": 80
+  },
+  {
+   "id": "parsa.t_pomegranate",
+   "name": "Pomegranate in flower",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "height": 55
+  },
+  {
+   "id": "parsa.t_almond",
+   "name": "Almond in blossom",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "height": 60
+  },
+  {
+   "id": "parsa.t_vine",
+   "name": "Grapevine on a trellis",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "height": 45
+  },
+  {
+   "id": "parsa.t_date",
+   "name": "Date palm",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "height": 100
+  },
+  {
+   "id": "parsa.t_fig",
+   "name": "Fig",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "height": 60
+  },
+  {
+   "id": "parsa.p_barley",
+   "name": "Young barley",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 8
+  },
+  {
+   "id": "parsa.p_wheat",
+   "name": "Wheat",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 10
+  },
+  {
+   "id": "parsa.p_lilies",
+   "name": "Lilies and wild tulips",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 10
+  },
+  {
+   "id": "parsa.p_rose",
+   "name": "Wild rose",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "height": 14
+  },
+  {
+   "id": "parsa.p_steppe",
+   "name": "Steppe tufts and wormwood",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 8
+  }
+ ],
+ "actors": [
+  {
+   "id": "parsa.noble",
+   "name": "Persian noble",
+   "sprite": "walker/parsa.noble",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.usher",
+   "name": "Usher in Median dress",
+   "sprite": "walker/parsa.usher",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.guard_spear",
+   "name": "Spearman of the guard",
+   "sprite": "walker/parsa.guard_spear",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "guard": {
+     "fps": 4
+    },
+    "march": {
+     "fps": 8
+    }
+   }
+  },
+  {
+   "id": "parsa.guard_mede",
+   "name": "Guard in Median dress",
+   "sprite": "walker/parsa.guard_mede",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "guard": {
+     "fps": 4
+    },
+    "march": {
+     "fps": 8
+    }
+   }
+  },
+  {
+   "id": "parsa.archer",
+   "name": "Archer at drill",
+   "sprite": "walker/parsa.archer",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "shoot": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.cavalryman",
+   "name": "Cavalryman",
+   "sprite": "walker/parsa.cavalryman",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.elamite",
+   "name": "Elamite courtier",
+   "sprite": "walker/parsa.elamite",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.scribe",
+   "name": "Scribe",
+   "sprite": "walker/parsa.scribe",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "write": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.mason",
+   "name": "Stonecutter",
+   "sprite": "walker/parsa.mason",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_high": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.labourer",
+   "name": "Labourer",
+   "sprite": "walker/parsa.labourer",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "haul": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.craftsman",
+   "name": "Craftsman",
+   "sprite": "walker/parsa.craftsman",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_high": {
+     "fps": 4
+    },
+    "stir": {
+     "fps": 4
+    },
+    "kneel": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.woman_worker",
+   "name": "Woman worker",
+   "sprite": "walker/parsa.woman_worker",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "throw": {
+     "fps": 4
+    },
+    "stir": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.overseer_woman",
+   "name": "Woman overseer",
+   "sprite": "walker/parsa.overseer_woman",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.child",
+   "name": "Child",
+   "sprite": "walker/parsa.child",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "run": {
+     "fps": 8
+    },
+    "kneel": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.gardener",
+   "name": "Gardener",
+   "sprite": "walker/parsa.gardener",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_low": {
+     "fps": 4
+    },
+    "pour": {
+     "fps": 4
+    },
+    "work_high": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.farmer",
+   "name": "Farmer",
+   "sprite": "walker/parsa.farmer",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_low": {
+     "fps": 4
+    },
+    "haul": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.shepherd",
+   "name": "Shepherd",
+   "sprite": "walker/parsa.shepherd",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.groom",
+   "name": "Groom",
+   "sprite": "walker/parsa.groom",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "stir": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.caravan_driver",
+   "name": "Caravan driver",
+   "sprite": "walker/parsa.caravan_driver",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.courier",
+   "name": "Royal-road courier",
+   "sprite": "walker/parsa.courier",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.magus",
+   "name": "Magus",
+   "sprite": "walker/parsa.magus",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "pour": {
+     "fps": 4
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.servant",
+   "name": "Servant with dishes",
+   "sprite": "walker/parsa.servant",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 4
+    },
+    "serve": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.musician",
+   "name": "Musician",
+   "sprite": "walker/parsa.musician",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "play": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.parasol_bearer",
+   "name": "Parasol bearer",
+   "sprite": "walker/parsa.parasol_bearer",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "guard": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.storyteller",
+   "name": "Storyteller",
+   "sprite": "walker/parsa.storyteller",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "talk": {
+     "fps": 4
+    },
+    "sit": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_medes_lead",
+   "name": "Medes: envoy",
+   "sprite": "walker/parsa.del_medes_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_medes_bearer",
+   "name": "Medes: gift bearer",
+   "sprite": "walker/parsa.del_medes_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_elamites_lead",
+   "name": "Elamites: envoy",
+   "sprite": "walker/parsa.del_elamites_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_elamites_bearer",
+   "name": "Elamites: gift bearer",
+   "sprite": "walker/parsa.del_elamites_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_armenians_lead",
+   "name": "Armenians: envoy",
+   "sprite": "walker/parsa.del_armenians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_armenians_bearer",
+   "name": "Armenians: gift bearer",
+   "sprite": "walker/parsa.del_armenians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_parthians_lead",
+   "name": "Parthians: envoy",
+   "sprite": "walker/parsa.del_parthians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_parthians_bearer",
+   "name": "Parthians: gift bearer",
+   "sprite": "walker/parsa.del_parthians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_babylonians_lead",
+   "name": "Babylonians: envoy",
+   "sprite": "walker/parsa.del_babylonians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_babylonians_bearer",
+   "name": "Babylonians: gift bearer",
+   "sprite": "walker/parsa.del_babylonians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_lydians_lead",
+   "name": "Lydians: envoy",
+   "sprite": "walker/parsa.del_lydians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_lydians_bearer",
+   "name": "Lydians: gift bearer",
+   "sprite": "walker/parsa.del_lydians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_arians_lead",
+   "name": "Arians: envoy",
+   "sprite": "walker/parsa.del_arians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_arians_bearer",
+   "name": "Arians: gift bearer",
+   "sprite": "walker/parsa.del_arians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_syrians_lead",
+   "name": "Syrians: envoy",
+   "sprite": "walker/parsa.del_syrians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_syrians_bearer",
+   "name": "Syrians: gift bearer",
+   "sprite": "walker/parsa.del_syrians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_cappadocians_lead",
+   "name": "Cappadocians: envoy",
+   "sprite": "walker/parsa.del_cappadocians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_cappadocians_bearer",
+   "name": "Cappadocians: gift bearer",
+   "sprite": "walker/parsa.del_cappadocians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_saka_lead",
+   "name": "Saka: envoy",
+   "sprite": "walker/parsa.del_saka_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_saka_bearer",
+   "name": "Saka: gift bearer",
+   "sprite": "walker/parsa.del_saka_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_egyptians_lead",
+   "name": "Egyptians: envoy",
+   "sprite": "walker/parsa.del_egyptians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_egyptians_bearer",
+   "name": "Egyptians: gift bearer",
+   "sprite": "walker/parsa.del_egyptians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_ionians_lead",
+   "name": "Ionians: envoy",
+   "sprite": "walker/parsa.del_ionians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_ionians_bearer",
+   "name": "Ionians: gift bearer",
+   "sprite": "walker/parsa.del_ionians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_bactrians_lead",
+   "name": "Bactrians: envoy",
+   "sprite": "walker/parsa.del_bactrians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_bactrians_bearer",
+   "name": "Bactrians: gift bearer",
+   "sprite": "walker/parsa.del_bactrians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_gandharans_lead",
+   "name": "Gandharans: envoy",
+   "sprite": "walker/parsa.del_gandharans_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_gandharans_bearer",
+   "name": "Gandharans: gift bearer",
+   "sprite": "walker/parsa.del_gandharans_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_arachosians_lead",
+   "name": "Arachosians: envoy",
+   "sprite": "walker/parsa.del_arachosians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_arachosians_bearer",
+   "name": "Arachosians: gift bearer",
+   "sprite": "walker/parsa.del_arachosians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_sagartians_lead",
+   "name": "Sagartians: envoy",
+   "sprite": "walker/parsa.del_sagartians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_sagartians_bearer",
+   "name": "Sagartians: gift bearer",
+   "sprite": "walker/parsa.del_sagartians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_sogdians_lead",
+   "name": "Sogdians: envoy",
+   "sprite": "walker/parsa.del_sogdians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_sogdians_bearer",
+   "name": "Sogdians: gift bearer",
+   "sprite": "walker/parsa.del_sogdians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_indians_lead",
+   "name": "Indians: envoy",
+   "sprite": "walker/parsa.del_indians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_indians_bearer",
+   "name": "Indians: gift bearer",
+   "sprite": "walker/parsa.del_indians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_thracians_lead",
+   "name": "Thracians: envoy",
+   "sprite": "walker/parsa.del_thracians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_thracians_bearer",
+   "name": "Thracians: gift bearer",
+   "sprite": "walker/parsa.del_thracians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_arabs_lead",
+   "name": "Arabs: envoy",
+   "sprite": "walker/parsa.del_arabs_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_arabs_bearer",
+   "name": "Arabs: gift bearer",
+   "sprite": "walker/parsa.del_arabs_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_carians_lead",
+   "name": "Carians: envoy",
+   "sprite": "walker/parsa.del_carians_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_carians_bearer",
+   "name": "Carians: gift bearer",
+   "sprite": "walker/parsa.del_carians_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_libyans_lead",
+   "name": "Libyans: envoy",
+   "sprite": "walker/parsa.del_libyans_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_libyans_bearer",
+   "name": "Libyans: gift bearer",
+   "sprite": "walker/parsa.del_libyans_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_kushites_lead",
+   "name": "Kushites: envoy",
+   "sprite": "walker/parsa.del_kushites_lead",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.del_kushites_bearer",
+   "name": "Kushites: gift bearer",
+   "sprite": "walker/parsa.del_kushites_bearer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.xerxes",
+   "name": "Xšayāršā (Xerxes I)",
+   "sprite": "figure/parsa.xerxes",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "sit": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.amestris",
+   "name": "Amestris",
+   "sprite": "figure/parsa.amestris",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "sit": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.artaxerxes",
+   "name": "Artaxšaça, the young prince",
+   "sprite": "figure/parsa.artaxerxes",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "shoot": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.baradkama",
+   "name": "Baradkama, treasurer",
+   "sprite": "figure/parsa.baradkama",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "write": {
+     "fps": 4
+    },
+    "serve": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.artemisia",
+   "name": "Artemisia of Caria",
+   "sprite": "figure/parsa.artemisia",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "bow": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.cyrus",
+   "name": "Kūruš (a memory)",
+   "sprite": "figure/parsa.cyrus",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.darius",
+   "name": "Dārayavauš (a memory)",
+   "sprite": "figure/parsa.darius",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.atossa",
+   "name": "Atossa (a memory)",
+   "sprite": "figure/parsa.atossa",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.irtashduna",
+   "name": "Irtašduna (a memory)",
+   "sprite": "figure/parsa.irtashduna",
+   "anims": {
+    "idle": {
+     "fps": 4
+    },
+    "sit": {
+     "fps": 4
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.parnakka",
+   "name": "Parnakka (a memory)",
+   "sprite": "figure/parsa.parnakka",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "write": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.mithradata",
+   "name": "Miθradāta, scribe",
+   "sprite": "figure/parsa.mithradata",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "write": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.rtakama",
+   "name": "Ṛtakāmā, overseer of weavers",
+   "sprite": "figure/parsa.rtakama",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.hermon",
+   "name": "Hermon, stonecutter",
+   "sprite": "figure/parsa.hermon",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_high": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.bel_iddin",
+   "name": "Bēl-iddin, brickmaker",
+   "sprite": "figure/parsa.bel_iddin",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "stir": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.pediese",
+   "name": "Pediese, goldsmith",
+   "sprite": "figure/parsa.pediese",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_high": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.manes",
+   "name": "Manes, carpenter",
+   "sprite": "figure/parsa.manes",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_high": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.farnadata",
+   "name": "Farnadāta, station master",
+   "sprite": "figure/parsa.farnadata",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "write": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.irdumartiya",
+   "name": "Irdumartiya, farmer",
+   "sprite": "figure/parsa.irdumartiya",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "work_low": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "parsa.dadush",
+   "name": "Daduš",
+   "sprite": "figure/parsa.dadush",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "run": {
+     "fps": 8
+    }
+   }
+  },
+  {
+   "id": "parsa.udusana",
+   "name": "Udusana",
+   "sprite": "figure/parsa.udusana",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 4
+    },
+    "run": {
+     "fps": 8
+    }
+   }
+  },
+  {
+   "id": "parsa.nisaean_horse",
+   "name": "Nisaean horse",
+   "sprite": "critter/parsa.nisaean_horse",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.bactrian_camel",
+   "name": "Bactrian camel",
+   "sprite": "critter/parsa.bactrian_camel",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.dromedary",
+   "name": "Dromedary",
+   "sprite": "critter/parsa.dromedary",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.zebu",
+   "name": "Humped bull",
+   "sprite": "critter/parsa.zebu",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.bull",
+   "name": "Bull",
+   "sprite": "critter/parsa.bull",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.ram",
+   "name": "Ram",
+   "sprite": "critter/parsa.ram",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.lioness",
+   "name": "Lioness on a lead",
+   "sprite": "critter/parsa.lioness",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.lion_cub",
+   "name": "Lion cub",
+   "sprite": "critter/parsa.lion_cub",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.water_buffalo",
+   "name": "Water buffalo",
+   "sprite": "critter/parsa.water_buffalo",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.oryx",
+   "name": "Oryx",
+   "sprite": "critter/parsa.oryx",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.okapi",
+   "name": "Okapi",
+   "sprite": "critter/parsa.okapi",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.hound",
+   "name": "Hunting hound",
+   "sprite": "critter/parsa.hound",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.hoopoe",
+   "name": "Hoopoe",
+   "sprite": "critter/parsa.hoopoe",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "peck": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.tishtrya",
+   "name": "Tištrya, the rain star as a white horse",
+   "sprite": "critter/parsa.tishtrya",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "parsa.p_cart",
+   "name": "Ox cart",
+   "sprite": "cart/parsa.p_cart",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "size": [
+    2,
+    1
+   ]
+  },
+  {
+   "id": "parsa.p_sledge",
+   "name": "Ox sledge with a block",
+   "sprite": "cart/parsa.p_sledge",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "size": [
+    2,
+    1
+   ]
+  },
+  {
+   "id": "parsa.chariot",
+   "name": "Two-horse chariot",
+   "sprite": "cart/parsa.chariot",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "size": [
+    2,
+    1
+   ]
+  }
+ ],
+ "art": {
+  "edges": [
+   "parsa.ashlar"
+  ],
+  "backdrops": [
+   "parsa.kuh_rahmat"
+  ],
+  "fx": [
+   "parsa.incense",
+   "parsa.fire",
+   "parsa.torch_flame",
+   "parsa.chisel_dust",
+   "parsa.petals",
+   "parsa.spray",
+   "parsa.dust",
+   "parsa.sparks"
+  ]
+ }
+}
