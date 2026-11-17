@@ -33,8 +33,11 @@ machine; 64x32 needs about eight times the CPU (roughly ten seconds on 16 idle c
   4x4 ordered dither. It also produces the ground `shadow` layer and the emissive `glow` layer.
 - `models/` describe every item and the walking visitors as voxel models; the tiny flyers
   (butterfly, bee, firefly) are hand-drawn pixel stencils, since voxels would only make blobs at
-  that size. `terrain.py` and `fx.py` evaluate ground tiles, cliff faces, cursor diamonds and
-  effects directly per pixel.
+  that size. Each stencil set is drawn for one pixel density (1 and 2 px per design unit, the
+  finer set with distinct front and back drawings); a build uses the densest set dividing its
+  own and enlarges it by the remaining whole factor. `terrain.py` and `fx.py` evaluate ground
+  tiles, cliff faces, cursor diamonds and effects directly per pixel; grass marks and meadow
+  flowers come in one table per detail level.
 - Lengths that set the look (occlusion reach, contact shadow, crevice width) are in design
   units; pixel-sized things (outlines, dither, 1 px marks) stay pixel-sized, so finer tiles
   read as finer art, not as enlarged sprites.
@@ -50,7 +53,9 @@ machine; 64x32 needs about eight times the CPU (roughly ten seconds on 16 idle c
   light, leaves and outlines continue across the tile edge without a seam.
 - Rotatable pieces are modelled facing +y (the windmill faces +x so both rotations show sails).
 - Trees are clumps studded with small leaf clusters (`leaf_mass`); each cluster shades as its own
-  puff, so canopies read as lit tufts with dark crevices. Their crowns sway clump by clump.
+  puff, so canopies read as lit tufts with dark crevices. Their crowns sway clump by clump. On
+  fine grids a 3D Voronoi of single leaves (`cells3`) shades each leaf and frays the silhouette;
+  hedges use a tile-periodic lattice so joins stay seamless.
 - Lawn grass is flat; variants differ only in a few hand-shaped marks and clumps, so a field of
   randomly chosen variants shows gentle patches. Meadow and cliffs repeat exactly per tile, so
   their marks are dense or hand-placed and smooth to keep the repeat from reading as a pattern.

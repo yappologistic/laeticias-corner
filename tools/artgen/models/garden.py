@@ -55,7 +55,8 @@ def hedge(mask, frame, frames, k):
     m.density_normals(solid, radius=2)
     speck = value_noise(X, Y, Z, 1.6, 710, period=10)
     sun = m.nrm[..., 0] * -0.45 + m.nrm[..., 1] * 0.28 + m.nrm[..., 2] * 0.85
-    m.tone[solid] = (np.where((sun > 0.55) & (speck > 0.5), 0.7, 0.0) + (speck - 0.5) * 0.5
+    # The speckle is kept fainter on fine grids, where the leaves already carry the texture.
+    m.tone[solid] = (np.where((sun > 0.55) & (speck > 0.5), 0.7, 0.0) + (speck - 0.5) * 0.5 / k
                      - 0.4 * (Z < 2))[solid]
     if m.fine:  # clipped leaves, on a lattice that repeats every tile so joins stay seamless
         m.carve(solid & ~_leaves(m, solid, m.nrm, m.tone, 711, leaf=16 / 14, period=14))
