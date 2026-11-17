@@ -5,13 +5,15 @@ add_executable(lc_tests
   test_support.cpp
   test_core.cpp
   test_conditions.cpp
+  test_saves.cpp
   test_engine.cpp
   test_coverage.cpp
 )
 target_link_libraries(lc_tests PRIVATE lc_engine lc_doctest)
 target_compile_definitions(lc_tests PRIVATE
   LC_TEST_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
-  LC_TEST_SCRATCH_DIR="${LC_SCRATCH}")
+  LC_TEST_SCRATCH_DIR="${LC_SCRATCH}"
+  LC_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 lc_project_target(lc_tests)
 # doctest 2.4.12 includes <ciso646> under Clang, which libstdc++ 16 flags with a #warning that
 # cannot be silenced per header; it is harmless, so only that diagnostic is relaxed for tests.
@@ -44,6 +46,7 @@ set(LC_SCRIPTS
   "ui_small|ui_sizes|960x600|"
   "glass_small|glass|960x600|heavy"
   "corrupt_save|corrupt_save|640x400|"
+  "migrate_v1|migrate_v1|640x400|"
   "rain|rain|640x400|"
   "visitors|visitors|640x400|"
   "clickthrough|clickthrough|640x400|"
@@ -96,9 +99,15 @@ set_tests_properties(script_save_reload_a PROPERTIES FIXTURES_SETUP reload)
 set_tests_properties(script_save_reload_b PROPERTIES FIXTURES_REQUIRED "clean_saves;reload")
 # The corrupt-save run needs a garbage file in place before launch.
 add_test(NAME prepare_corrupt_save COMMAND ${CMAKE_COMMAND}
-  -DFILE=${LC_SCRATCH}/save_corrupt_save/corner.json -P ${CMAKE_CURRENT_SOURCE_DIR}/write_garbage.cmake)
+  -DFILE=${LC_SCRATCH}/save_corrupt_save/worlds/laeticias-corner/world.json -P ${CMAKE_CURRENT_SOURCE_DIR}/write_garbage.cmake)
 set_tests_properties(prepare_corrupt_save PROPERTIES FIXTURES_SETUP corrupt FIXTURES_REQUIRED clean_saves)
 set_tests_properties(script_corrupt_save PROPERTIES FIXTURES_REQUIRED "clean_saves;corrupt")
+
+# A real save from the first release, migrated on launch.
+add_test(NAME prepare_migrate_v1 COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v1.json ${LC_SCRATCH}/save_migrate_v1/corner.json)
+set_tests_properties(prepare_migrate_v1 PROPERTIES FIXTURES_SETUP migrate FIXTURES_REQUIRED clean_saves)
+set_tests_properties(script_migrate_v1 PROPERTIES FIXTURES_REQUIRED "clean_saves;migrate")
 
 # A save directory the game cannot write to.
 if(UNIX)

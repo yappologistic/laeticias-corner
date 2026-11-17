@@ -1,0 +1,15 @@
+# A save from the first release becomes the first world: everything kept in the front corner,
+# the old pieces still unlocked, a welcome card, and the old file kept under a new name.
+expect count all 31
+expect item @35,35 cottage
+wait 2
+expect toast yes
+shot shots/migrated_v1.png
+wait 3
+expect saved yes
+expect file corner.json no
+expect file corner.v1.json yes
+expect file worlds/laeticias-corner/thumb.png yes
+expect file profile.json yes
+expect muted yes
+quit

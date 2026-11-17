@@ -63,8 +63,8 @@ public:
     // Spawns and advances effects near the camera. Called once per simulation step.
     void update(float dt, const World& world, std::span<const Critter> critters, bool rain,
                 Rng& rng);
-    // Renders the frame's layers and composites them onto the window.
-    void draw(const FrameParams& p);
+    // Renders the frame's layers and composites them onto `out` (the window when null).
+    void draw(const FrameParams& p, SDL_Texture* out = nullptr);
     // Composites the layers rendered by the last draw() onto the current render target, scaled
     // by `scale`; `smooth` filters the world linearly (for blurred copies).
     void composite(const FrameParams& p, Vec2 scale, bool smooth);

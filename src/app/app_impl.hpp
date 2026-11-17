@@ -10,7 +10,9 @@
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/edit.hpp"
+#include "core/progress.hpp"
 #include "core/rng.hpp"
+#include "core/save.hpp"
 #include "core/tuning.hpp"
 #include "core/visitors.hpp"
 #include "core/world.hpp"
@@ -40,6 +42,14 @@ inline constexpr int kExitBadScript = 2;
 inline constexpr int kExitOverBudget = 3;
 inline constexpr int kExitNoRenderer = 77; // ctest treats it as "skipped"
 
+// Files under the save directory (docs/design/living-corner.md §2.2).
+inline constexpr std::string_view kWorldsDir = "worlds";
+inline constexpr std::string_view kWorldFile = "world.json";
+inline constexpr std::string_view kThumbFile = "thumb.png";
+inline constexpr std::string_view kProfileFile = "profile.json";
+inline constexpr std::string_view kLegacyFile = "corner.json";
+inline constexpr std::string_view kLegacyKept = "corner.v1.json";
+
 class App {
 public:
     App(const Options& o, Catalog cat, fs::path assets);
@@ -50,7 +60,13 @@ private:
     bool init();
     bool createWindow();
     void loadOrStart();
+    void startNewWorld(std::vector<std::string> taken);
+    void adopt(SaveData& data);
+    bool loadWorld(const fs::path& file);
     bool save();
+    [[nodiscard]] fs::path worldDir() const { return saveDir_ / kWorldsDir / slug_; }
+    // Renders the open home region into a small image beside the world save.
+    bool writeThumbnail();
     void handleEvent(const SDL_Event& e);
     void handleKey(const SDL_KeyboardEvent& k);
     void applyHudActions();
@@ -107,7 +123,22 @@ private:
     Rng rng_;
     bool rain_ = false;
     bool muted_ = false;
-    int stage_ = 0; // highest open land stage
+    Progress progress_;
+    // The open world save and the profile shared by all of them.
+    std::string worldName_;
+    std::string created_;
+    std::string slug_;
+    bool freeBuild_ = false;
+    double played_ = 0; // active play time, seconds
+    int day_ = 0;
+    int seasonPin_ = -1;
+    Profile profile_;
+    std::string profileWritten_; // the profile as last written, to write it only on change
+    std::optional<Vec2> savedCamera_;
+    float savedZoom_ = 1;
+    double thumbTimer_ = 0;
+    fs::path legacyToRetire_; // an old save to rename once its world and thumbnail are written
+    bool welcomePending_ = false;
     Camera camera_;
 
     WindowPtr window_;

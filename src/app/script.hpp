@@ -30,6 +30,7 @@
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
 //       where it may) | saved yes|no (a save file exists) | zoom 0.25|0.5|1|2|3
 //       toast yes|no (a toast is showing) | panning yes|no (a pan key is held)
+//       file PATH yes|no (PATH, relative to the save directory, exists)
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.

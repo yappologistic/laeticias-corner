@@ -1,4 +1,4 @@
-# An unreadable save is moved aside and the starter scene loads instead.
+# An unreadable world save is moved aside and the starter scene loads in its place.
 expect count all 16
 wait 3
 quit

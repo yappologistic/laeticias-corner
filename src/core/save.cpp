@@ -1,13 +1,18 @@
 #include "core/save.hpp"
 
 #include "core/edit.hpp"
+#include "core/land.hpp"
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
+#include <cctype>
 #include <cerrno>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <format>
 #include <map>
 #include <memory>
 
@@ -26,21 +31,11 @@ namespace {
 // Coordinates outside this range cannot be on any map; rejecting them early keeps every later
 // addition far from integer overflow.
 constexpr long long kCoordLimit = 1LL << 24;
+constexpr std::string_view kSaveBaseBlank = "blank"; // version 2: untouched chunks are empty
 
 int terrainValue(const World& w, TilePos p) {
     const int t = w.terrainAt(p);
     return t == kNoGround ? -1 : t;
-}
-
-bool chunkIsBlank(const World& w, const Catalog& cat, int cx, int cy) {
-    if (!w.chunkItems(cx, cy).empty()) return false;
-    const TileRect r =
-        TileRect{cx * kChunk, cy * kChunk, (cx + 1) * kChunk, (cy + 1) * kChunk}.clipped(
-            w.bounds());
-    for (int y = r.y0; y < r.y1; ++y)
-        for (int x = r.x0; x < r.x1; ++x)
-            if (w.terrainAt({x, y}) != cat.baseTerrain) return false;
-    return true;
 }
 
 // Collects repairs by kind so a damaged file with a million bad entries logs a handful of lines.
@@ -123,15 +118,42 @@ struct Loader {
             warn.add("item '" + id + "' with an invalid variant skipped");
             return;
         }
-        const Item it = makeItem(cat, *type, static_cast<int>(vj.get<long long>()),
-                                 {*x + offset.x, *y + offset.y});
+        Item it = makeItem(cat, *type, static_cast<int>(vj.get<long long>()),
+                           {*x + offset.x, *y + offset.y});
         if (canPlace(data.world, cat, it) != PlaceResult::Ok) {
             warn.add("item '" + id + "' no longer fits and was skipped");
             return;
         }
+        if (def.growth.stages > 0 && j.contains("g")) {
+            const json& g = j["g"];
+            if (g.is_array() && g.size() == 2 && g[0].is_number_integer() && g[1].is_number() &&
+                g[0].get<long long>() >= 0 && g[0].get<long long>() < def.growth.stages &&
+                std::isfinite(g[1].get<double>())) {
+                it.stage = static_cast<std::uint8_t>(g[0].get<int>());
+                it.growth = std::clamp(g[1].get<float>(), 0.0f, 1.0f);
+            } else {
+                warn.add("item '" + id + "' with bad growth started over");
+            }
+        }
         data.world.addItem(it);
     }
 };
+
+// Ids from a list that the catalog knows, through `find`; the rest become one warning each kind.
+template <typename F>
+std::vector<int> knownIds(const json& list, F&& find, Warnings& warn, const char* what) {
+    std::vector<int> out;
+    if (!list.is_array()) return out;
+    for (const auto& id : list) {
+        if (!id.is_string()) continue;
+        const auto i = find(id.get<std::string>());
+        if (i)
+            out.push_back(*i);
+        else
+            warn.add(std::string("unknown ") + what + " '" + id.get<std::string>() + "' dropped");
+    }
+    return out;
+}
 
 std::expected<std::pair<int, int>, std::string> mapSize(const json& root) {
     const json& map = root.at("map");
@@ -203,6 +225,126 @@ void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
     }
 }
 
+void readVersion3(const json& root, Loader& in) {
+    const json& home = root.at("home");
+    const auto size = mapSize(home);
+    if (!size) throw std::runtime_error("home map size out of range");
+    const auto [w, h] = *size;
+    if (w != in.cat.mapW || h != in.cat.mapH) {
+        in.offset = centringOffset(w, h, in.cat.mapW, in.cat.mapH);
+        in.warn.add("a home map of another size was centred");
+    }
+    // Wild land first, so nothing can be loaded onto it.
+    const int stage = home.value("stage", 0);
+    in.data.progress.stage = std::clamp(stage, 0, static_cast<int>(in.cat.stages.size()) - 1);
+    applyLand(in.data.world, in.cat, in.data.progress.stage);
+    const json& runs = home.at("terrain");
+    if (!runs.is_array()) throw std::runtime_error("home terrain is not a list");
+    long long filled = 0;
+    const long long total = static_cast<long long>(w) * h;
+    for (const auto& run : runs) {
+        if (!run.is_array() || run.size() != 2 || !run[1].is_number_integer()) {
+            in.warn.add("malformed terrain run skipped");
+            continue;
+        }
+        for (long long k = 0, n = run[1].get<long long>(); k < n && filled < total; ++k, ++filled)
+            in.terrain(static_cast<int>(filled % w), static_cast<int>(filled / w), run[0]);
+    }
+    if (filled != total) in.warn.add("home terrain of the wrong length");
+    for (const auto& j : home.value("items", json::array())) in.item(j);
+    // Wild tiles hold the base terrain only (a damaged file could say otherwise).
+    World& world = in.data.world;
+    for (int y = 0; y < world.height(); ++y)
+        for (int x = 0; x < world.width(); ++x)
+            if (world.isWild({x, y}) && world.terrainAt({x, y}) != in.cat.baseTerrain) {
+                world.setTerrain({x, y}, in.cat.baseTerrain);
+                in.warn.add("ground on wild land was cleared");
+            }
+}
+
+void readProgress(const json& p, const Catalog& cat, SaveData& data, Warnings& warn) {
+    Progress& pr = data.progress;
+    const auto piece = [&](const std::string& id) -> std::optional<int> {
+        if (const auto i = cat.findItem(id)) return *i;
+        if (const auto t = cat.findTerrain(id)) return static_cast<int>(cat.items.size()) + *t;
+        return std::nullopt;
+    };
+    const auto mark = [&](const std::vector<int>& ids, std::vector<std::uint8_t>& items,
+                          std::vector<std::uint8_t>& terrains) {
+        for (const int i : ids) {
+            if (std::cmp_less(i, cat.items.size()))
+                items[static_cast<std::size_t>(i)] = 1;
+            else
+                terrains[static_cast<std::size_t>(i) - cat.items.size()] = 1;
+        }
+    };
+    if (p.contains("unlocked")) {
+        std::ranges::fill(pr.items, 0);
+        std::ranges::fill(pr.terrain, 0);
+        mark(knownIds(p["unlocked"], piece, warn, "piece"), pr.items, pr.terrain);
+    }
+    mark(knownIds(p.value("new", json::array()), piece, warn, "piece"), pr.newItems, pr.newTerrain);
+    if (p.contains("frames")) {
+        std::ranges::fill(pr.frames, 0);
+        for (const int f : knownIds(
+                 p["frames"], [&](const std::string& id) { return cat.findFrame(id); }, warn,
+                 "frame"))
+            pr.frames[static_cast<std::size_t>(f)] = 1;
+    }
+    const auto visitor = [&](const std::string& id) { return cat.findVisitor(id); };
+    for (const int v : knownIds(p.value("clues", json::array()), visitor, warn, "visitor"))
+        pr.clues[static_cast<std::size_t>(v)] = 1;
+    for (const int v : knownIds(p.value("seen", json::array()), visitor, warn, "visitor"))
+        if (std::ranges::find(data.seen, cat.visitors[static_cast<std::size_t>(v)].id) ==
+            data.seen.end())
+            data.seen.push_back(cat.visitors[static_cast<std::size_t>(v)].id);
+    for (const int n : knownIds(
+             p.value("nooks", json::array()),
+             [&](const std::string& id) { return cat.findNook(id); }, warn, "nook"))
+        pr.nooks[static_cast<std::size_t>(n)] = 1;
+    pr.harvests = std::max(0, p.value("harvests", 0));
+    pr.lastHarvestDay = p.value("last_harvest_day", -1);
+    if (p.contains("wishes") && p["wishes"].is_object()) {
+        const json& w = p["wishes"];
+        const auto wish = [&](const std::string& id) { return cat.findWish(id); };
+        for (const int i : knownIds(w.value("done", json::array()), wish, warn, "wish")) {
+            if (pr.wishes[static_cast<std::size_t>(i)].state == WishState::Done) continue;
+            pr.wishes[static_cast<std::size_t>(i)].state = WishState::Done;
+            pr.granted.push_back(i);
+        }
+        for (const int i : knownIds(w.value("open", json::array()), wish, warn, "wish")) {
+            if (pr.wishes[static_cast<std::size_t>(i)].state != WishState::Waiting) continue;
+            pr.wishes[static_cast<std::size_t>(i)].state = WishState::Open;
+            pr.open.push_back(i);
+        }
+        if (w.contains("snoozed") && w["snoozed"].is_object())
+            for (const auto& [id, t] : w["snoozed"].items()) {
+                const auto i = cat.findWish(id);
+                if (i && t.is_number() && std::isfinite(t.get<double>()) &&
+                    pr.wishes[static_cast<std::size_t>(*i)].state == WishState::Waiting)
+                    pr.wishes[static_cast<std::size_t>(*i)].snoozedUntil = t.get<double>();
+            }
+        const double last = w.value("last_offer", 0.0);
+        pr.lastOffer = std::isfinite(last) ? last : 0.0;
+    }
+}
+
+// Old files said nothing about the calendar or progress; only these sections carry over.
+void readLegacySections(const json& root, const Catalog& cat, SaveData& data) {
+    if (root.contains("settings") && root["settings"].is_object()) {
+        const auto& s = root["settings"];
+        data.muted = s.contains("muted") && s["muted"].is_boolean() && s["muted"].get<bool>();
+    }
+    if (root.contains("journal") && root["journal"].is_array()) {
+        for (const auto& id : root["journal"]) {
+            if (!id.is_string()) continue;
+            const auto s = id.get<std::string>();
+            if (cat.findVisitor(s) && std::ranges::find(data.seen, s) == data.seen.end())
+                data.seen.push_back(s);
+        }
+    }
+}
+
 } // namespace
 
 TilePos centringOffset(int fromW, int fromH, int toW, int toH) {
@@ -211,52 +353,88 @@ TilePos centringOffset(int fromW, int fromH, int toW, int toH) {
 
 std::string serialize(const SaveData& data, const Catalog& cat) {
     const World& w = data.world;
+    const Progress& p = data.progress;
     json palette = json::array();
     for (const auto& t : cat.terrain) palette.push_back(t.id);
-    json chunks = json::array();
-    for (int cy = 0; cy < w.chunksY(); ++cy) {
-        for (int cx = 0; cx < w.chunksX(); ++cx) {
-            if (!w.chunkTouched(cx, cy) || chunkIsBlank(w, cat, cx, cy)) continue;
-            const TileRect r =
-                TileRect{cx * kChunk, cy * kChunk, (cx + 1) * kChunk, (cy + 1) * kChunk}.clipped(
-                    w.bounds());
-            json runs = json::array();
-            int value = terrainValue(w, {r.x0, r.y0});
-            int count = 0;
-            for (int y = r.y0; y < r.y1; ++y) {
-                for (int x = r.x0; x < r.x1; ++x) {
-                    const int v = terrainValue(w, {x, y});
-                    if (v != value) {
-                        runs.push_back({value, count});
-                        value = v;
-                        count = 0;
-                    }
-                    ++count;
-                }
+    json runs = json::array();
+    int value = terrainValue(w, {0, 0});
+    int count = 0;
+    for (int y = 0; y < w.height(); ++y)
+        for (int x = 0; x < w.width(); ++x) {
+            const int v = terrainValue(w, {x, y});
+            if (v != value) {
+                runs.push_back({value, count});
+                value = v;
+                count = 0;
             }
-            runs.push_back({value, count});
-            json items = json::array();
-            for (const std::uint32_t i : w.chunkItems(cx, cy)) {
-                const Item& it = w.items()[i];
-                items.push_back({{"id", cat.items[it.type].id},
-                                 {"x", it.pos.x},
-                                 {"y", it.pos.y},
-                                 {"v", it.variant}});
-            }
-            chunks.push_back(
-                {{"x", cx}, {"y", cy}, {"terrain", std::move(runs)}, {"items", std::move(items)}});
+            ++count;
         }
+    runs.push_back({value, count});
+    json items = json::array();
+    // Row order, so the file does not depend on the order edits happened in.
+    std::vector<const Item*> sorted;
+    for (const Item& it : w.items()) sorted.push_back(&it);
+    std::ranges::sort(sorted, [](const Item* a, const Item* b) {
+        return a->pos.y != b->pos.y ? a->pos.y < b->pos.y : a->pos.x < b->pos.x;
+    });
+    for (const Item* it : sorted) {
+        json j = {
+            {"id", cat.items[it->type].id}, {"x", it->pos.x}, {"y", it->pos.y}, {"v", it->variant}};
+        if (cat.items[it->type].growth.stages > 0) j["g"] = {it->stage, it->growth};
+        items.push_back(std::move(j));
     }
+    const auto ids = [&](const std::vector<std::uint8_t>& flags, const auto& defs) {
+        json out = json::array();
+        for (std::size_t i = 0; i < flags.size(); ++i)
+            if (flags[i] != 0) out.push_back(defs[i].id);
+        return out;
+    };
+    json unlocked = ids(p.items, cat.items);
+    for (const auto& t : ids(p.terrain, cat.terrain)) unlocked.push_back(t);
+    json fresh = ids(p.newItems, cat.items);
+    for (const auto& t : ids(p.newTerrain, cat.terrain)) fresh.push_back(t);
+    json open = json::array();
+    for (const int i : p.open) open.push_back(cat.wishes[static_cast<std::size_t>(i)].id);
+    json done = json::array();
+    for (const int i : p.granted) done.push_back(cat.wishes[static_cast<std::size_t>(i)].id);
+    json snoozed = json::object();
+    for (std::size_t i = 0; i < p.wishes.size(); ++i)
+        if (p.wishes[i].snoozedUntil >= 0) snoozed[cat.wishes[i].id] = p.wishes[i].snoozedUntil;
+    json world = json::object();
+    if (data.camera)
+        world["camera"] = {{"at", {data.camera->x, data.camera->y}}, {"zoom", data.zoom}};
     const json root = {
         {"version", kSaveVersion},
-        {"map", {{"w", w.width()}, {"h", w.height()}}},
-        {"chunk", kChunk},
-        {"base", kSaveBaseBlank},
-        {"palette", std::move(palette)},
-        {"chunks", std::move(chunks)},
-        {"clock", {{"t", data.clockTime}, {"pin", pinId(data.pin)}}},
-        {"settings", {{"rain", data.rain}, {"muted", data.muted}}},
-        {"journal", data.journal},
+        {"name", data.name},
+        {"free_build", data.freeBuild},
+        {"created", data.created},
+        {"played", data.played},
+        {"clock", {{"t", data.clockTime}, {"pin", pinId(data.pin)}, {"day", data.day}}},
+        {"season_pin", data.seasonPin < 0
+                           ? std::string("auto")
+                           : cat.seasons[static_cast<std::size_t>(data.seasonPin)].id},
+        {"settings", {{"rain", data.rain}}},
+        {"progress",
+         {{"unlocked", std::move(unlocked)},
+          {"frames", ids(p.frames, cat.frames)},
+          {"wishes",
+           {{"open", std::move(open)},
+            {"done", std::move(done)},
+            {"snoozed", std::move(snoozed)},
+            {"last_offer", p.lastOffer}}},
+          {"clues", ids(p.clues, cat.visitors)},
+          {"seen", data.seen},
+          {"nooks", ids(p.nooks, cat.nooks)},
+          {"harvests", p.harvests},
+          {"last_harvest_day", p.lastHarvestDay},
+          {"new", std::move(fresh)}}},
+        {"home",
+         {{"map", {{"w", w.width()}, {"h", w.height()}}},
+          {"palette", std::move(palette)},
+          {"terrain", std::move(runs)},
+          {"items", std::move(items)},
+          {"stage", p.stage}}},
+        {"world", std::move(world)},
     };
     return root.dump(1);
 }
@@ -271,21 +449,48 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
         if (version > kSaveVersion)
             return std::unexpected("save: written by a newer version (" + std::to_string(version) +
                                    ")");
-        const auto size = mapSize(root);
-        if (!size) return std::unexpected(size.error());
-        const auto [fileW, fileH] = *size;
-
-        SaveData data(World{cat});
-        Loader in{cat, data, centringOffset(fileW, fileH, cat.mapW, cat.mapH), {}, {}};
-        in.readPalette(root.at("palette"));
-        if (version == 1)
-            readVersion1(root, in, fileW, fileH);
-        else
-            readVersion2(root, in, fileW, fileH);
-        if (fileW != cat.mapW || fileH != cat.mapH)
-            data.warnings.push_back("a " + std::to_string(fileW) + "x" + std::to_string(fileH) +
-                                    " map was centred on the " + std::to_string(cat.mapW) + "x" +
-                                    std::to_string(cat.mapH) + " map");
+        SaveData data(World{cat}, cat);
+        data.fromVersion = static_cast<int>(version);
+        Loader in{cat, data, {}, {}, {}};
+        if (version == 3) {
+            in.readPalette(root.at("home").at("palette"));
+            readVersion3(root, in);
+            if (root.contains("progress") && root["progress"].is_object())
+                readProgress(root["progress"], cat, data, in.warn);
+            data.name = root.value("name", std::string{});
+            data.freeBuild = root.value("free_build", false);
+            data.created = root.value("created", std::string{});
+            const double played = root.value("played", 0.0);
+            data.played = std::isfinite(played) && played >= 0 ? played : 0.0;
+            if (root.contains("season_pin") && root["season_pin"].is_string())
+                data.seasonPin = cat.findSeason(root["season_pin"].get<std::string>()).value_or(-1);
+            const json& cam = root.value("world", json::object()).value("camera", json::object());
+            if (cam.contains("at") && cam["at"].is_array() && cam["at"].size() == 2 &&
+                cam["at"][0].is_number() && cam["at"][1].is_number()) {
+                const Vec2 at{cam["at"][0].get<float>(), cam["at"][1].get<float>()};
+                if (std::isfinite(at.x) && std::isfinite(at.y)) data.camera = at;
+                data.zoom = cam.value("zoom", 1.0f);
+            }
+        } else {
+            const auto size = mapSize(root);
+            if (!size) return std::unexpected(size.error());
+            const auto [fileW, fileH] = *size;
+            // The first release's 20 x 20 map becomes the front corner of the home region (the
+            // first land stage); the chunked format was already the 40 x 40 map.
+            in.offset = version == 1 && fileW <= cat.mapW && fileH <= cat.mapH
+                            ? TilePos{cat.mapW - fileW, cat.mapH - fileH}
+                            : centringOffset(fileW, fileH, cat.mapW, cat.mapH);
+            in.readPalette(root.at("palette"));
+            if (version == 1)
+                readVersion1(root, in, fileW, fileH);
+            else
+                readVersion2(root, in, fileW, fileH);
+            if (fileW != cat.mapW || fileH != cat.mapH)
+                data.warnings.push_back("a " + std::to_string(fileW) + "x" + std::to_string(fileH) +
+                                        " map was placed on the " + std::to_string(cat.mapW) + "x" +
+                                        std::to_string(cat.mapH) + " map");
+            readLegacySections(root, cat, data);
+        }
         in.warn.flush(data.warnings);
 
         if (root.contains("clock") && root["clock"].is_object()) {
@@ -295,19 +500,12 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
                 data.clockTime = 0.2;
             if (c.contains("pin") && c["pin"].is_string())
                 data.pin = parsePin(c["pin"].get<std::string>()).value_or(ClockPin::Auto);
+            if (c.contains("day") && c["day"].is_number_integer())
+                data.day = std::max(0, c["day"].get<int>());
         }
         if (root.contains("settings") && root["settings"].is_object()) {
             const auto& s = root["settings"];
             data.rain = s.contains("rain") && s["rain"].is_boolean() && s["rain"].get<bool>();
-            data.muted = s.contains("muted") && s["muted"].is_boolean() && s["muted"].get<bool>();
-        }
-        if (root.contains("journal") && root["journal"].is_array()) {
-            for (const auto& id : root["journal"]) {
-                if (!id.is_string()) continue;
-                const auto s = id.get<std::string>();
-                if (cat.findVisitor(s) && std::ranges::find(data.journal, s) == data.journal.end())
-                    data.journal.push_back(s);
-            }
         }
         return data;
     } catch (const json::exception& e) {
@@ -315,6 +513,95 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
     } catch (const std::runtime_error& e) {
         return std::unexpected(std::string("save: ") + e.what());
     }
+}
+
+void migrateLegacy(SaveData& data, const Catalog& cat) {
+    Progress& p = data.progress;
+    p.unlock(cat.start);
+    p.unlock(cat.legacy);
+    // Wishes that only unlock pieces the player already has are quietly done.
+    for (std::size_t i = 0; i < cat.wishes.size(); ++i) {
+        const Reward& r = cat.wishes[i].reward;
+        const bool onlyUnlocks = r.frame < 0 && r.clue < 0;
+        const bool covered =
+            std::ranges::all_of(r.items,
+                                [&](int k) { return p.items[static_cast<std::size_t>(k)] != 0; }) &&
+            std::ranges::all_of(r.terrain,
+                                [&](int k) { return p.terrain[static_cast<std::size_t>(k)] != 0; });
+        if (onlyUnlocks && covered && p.wishes[i].state != WishState::Done) {
+            p.wishes[i].state = WishState::Done;
+            p.granted.push_back(static_cast<int>(i));
+        }
+    }
+    // Beds looked ripe in the old game, so they start ripe.
+    World& w = data.world;
+    for (std::size_t i = 0; i < w.items().size(); ++i) {
+        const Growth& g = cat.items[w.items()[i].type].growth;
+        if (g.stages > 0) w.setGrowth(i, g.stages - 1, 0.0f);
+    }
+    // Stages holding anything the player made open now, without their reveal.
+    int stage = 0;
+    for (int y = 0; y < w.height(); ++y)
+        for (int x = 0; x < w.width(); ++x)
+            if (w.hasGround({x, y}) &&
+                (w.terrainAt({x, y}) != cat.baseTerrain || w.itemAt({x, y}) != nullptr))
+                stage = std::max(stage, stageAt(cat, {x, y}));
+    p.stage = stage;
+    applyLand(w, cat, stage);
+    data.day = 0;
+    data.seasonPin = -1;
+    data.fromVersion = kSaveVersion;
+}
+
+std::string worldSlug(std::string_view name, std::span<const std::string> taken) {
+    constexpr std::string_view kCurly = "\xE2\x80\x99"; // U+2019, the typographic apostrophe
+    std::string base;
+    bool dash = false;
+    for (std::size_t i = 0; i < name.size(); ++i) {
+        const auto c = static_cast<unsigned char>(name[i]);
+        if (c == '\'') continue;
+        if (name.substr(i).starts_with(kCurly)) {
+            i += kCurly.size() - 1;
+            continue;
+        }
+        if (c < 0x80 && std::isalnum(c) != 0) {
+            if (dash && !base.empty()) base += '-';
+            dash = false;
+            base += static_cast<char>(std::tolower(c));
+        } else {
+            dash = true;
+        }
+    }
+    if (base.size() > 32) base.resize(32);
+    while (!base.empty() && base.back() == '-') base.pop_back();
+    if (base.empty()) base = "world";
+    std::string slug = base;
+    for (int n = 2; std::ranges::find(taken, slug) != taken.end(); ++n)
+        slug = base + "-" + std::to_string(n);
+    return slug;
+}
+
+std::string utcNow() {
+    const auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
+    return std::format("{:%Y-%m-%dT%H:%M:%SZ}", now);
+}
+
+Profile parseProfile(std::string_view text) {
+    Profile p;
+    try {
+        const json j = json::parse(text);
+        if (!j.is_object()) return p;
+        if (j.contains("muted") && j["muted"].is_boolean()) p.muted = j["muted"].get<bool>();
+        if (j.contains("last_world") && j["last_world"].is_string())
+            p.lastWorld = j["last_world"].get<std::string>();
+    } catch (const json::exception&) {
+        // Defaults: a broken profile never stops the game.
+    }
+    return p;
+}
+
+std::string serialize(const Profile& p) {
+    return json{{"version", 1}, {"muted", p.muted}, {"last_world", p.lastWorld}}.dump(1);
 }
 
 std::expected<void, std::string> writeFileAtomic(const std::filesystem::path& file,

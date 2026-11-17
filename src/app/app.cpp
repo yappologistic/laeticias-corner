@@ -36,10 +36,11 @@ constexpr std::string_view kDiscover = "sfx/discover.wav";
 constexpr std::string_view kPaint = "sfx/paint.wav";
 } // namespace sfx
 
-constexpr std::string_view kSaveFile = "corner.json";
 constexpr std::string_view kPhotoDir = "photos";
-constexpr int kBadSaveCopies = 3; // corner.json.bad1 (newest) .. bad3
-constexpr int kHeadlessW = 1280;  // headless window when --size is not given
+constexpr int kBadSaveCopies = 3; // world.json.bad1 (newest) .. bad3
+constexpr int kThumbW = 384;      // world thumbnail for the worlds screen
+constexpr int kThumbH = 240;
+constexpr int kHeadlessW = 1280; // headless window when --size is not given
 constexpr int kHeadlessH = 800;
 constexpr int kAudioFramesPerStep = kMixRate / 60; // capture: one simulation step of sound
 
@@ -129,7 +130,7 @@ App::App(const Options& o, Catalog cat, fs::path assets)
                                ? 1
                                : static_cast<std::uint64_t>(
                                      std::chrono::steady_clock::now().time_since_epoch().count()))),
-      camera_(cat_.iso(), world_.landBounds(), 0) {
+      progress_(cat_), camera_(cat_.iso(), world_.landBounds(), 0) {
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
         gates_[v].allowed = !cat_.visitors[v].rare;
 }
@@ -241,60 +242,157 @@ void App::buildThumbs() {
     thumbs_.tileW = cat_.iso().tileW();
 }
 
-void App::loadOrStart() {
-    const fs::path file = saveDir_ / kSaveFile;
+void App::adopt(SaveData& data) {
+    for (const auto& w : data.warnings) SDL_Log("save: %s", w.c_str());
+    world_ = std::move(data.world);
+    progress_ = std::move(data.progress);
+    worldName_ = data.name.empty() ? std::string(strings::kDefaultWorldName) : data.name;
+    created_ = data.created.empty() ? utcNow() : data.created;
+    freeBuild_ = data.freeBuild;
+    played_ = data.played;
+    day_ = data.day;
+    seasonPin_ = data.seasonPin;
+    clock_.setTime(data.clockTime);
+    clock_.setPin(data.pin, false);
+    rain_ = data.rain;
+    for (const auto& id : data.seen)
+        if (const auto v = cat_.findVisitor(id)) visitors_.markSeen(*v);
+    if (data.camera) {
+        savedCamera_ = cat_.iso().toWorld(data.camera->x, data.camera->y);
+        savedZoom_ = data.zoom;
+    }
+    // Critters are placed once the camera exists (see run()).
+}
+
+bool App::loadWorld(const fs::path& file) {
+    auto text = readTextFile(file);
+    auto data = text ? deserialize(*text, cat_) : std::unexpected(text.error());
+    if (data) {
+        adopt(*data);
+        SDL_Log("save: restored %s", file.string().c_str());
+        return true;
+    }
+    // Keep the unreadable file for inspection instead of overwriting it: the newest few bad
+    // copies are kept, oldest dropped.
     std::error_code ec;
-    if (fs::exists(file, ec)) {
-        auto text = readTextFile(file);
+    const auto bad = [&](int n) {
+        fs::path p = file;
+        p += ".bad" + std::to_string(n);
+        return p;
+    };
+    fs::remove_all(bad(kBadSaveCopies), ec);
+    for (int n = kBadSaveCopies - 1; n >= 1; --n)
+        if (fs::exists(bad(n), ec)) fs::rename(bad(n), bad(n + 1), ec);
+    fs::rename(file, bad(1), ec);
+    saveBlocked_ = static_cast<bool>(ec);
+    if (ec)
+        SDL_Log("save: %s; could not move it aside (%s), starting fresh without saving over it",
+                data.error().c_str(), ec.message().c_str());
+    else
+        SDL_Log("save: %s; moved aside to %s and starting fresh", data.error().c_str(),
+                bad(1).string().c_str());
+    return false;
+}
+
+void App::startNewWorld(std::vector<std::string> taken) {
+    world_ = makeStarterWorld(cat_);
+    progress_ = Progress(cat_);
+    worldName_ = strings::kDefaultWorldName;
+    created_ = utcNow();
+    slug_ = worldSlug(worldName_, taken);
+}
+
+void App::loadOrStart() {
+    std::error_code ec;
+    if (auto text = readTextFile(saveDir_ / kProfileFile)) profile_ = parseProfile(*text);
+    muted_ = profile_.muted;
+    const fs::path worlds = saveDir_ / kWorldsDir;
+    const fs::path legacy = saveDir_ / kLegacyFile;
+
+    // A save from before worlds existed becomes the first world (docs/design/living-corner.md
+    // §2.5). It is renamed only once the new world and its thumbnail are written; if it cannot
+    // be read it is left alone and the game starts as on a first launch.
+    if (fs::exists(legacy, ec) && !fs::exists(worlds, ec)) {
+        auto text = readTextFile(legacy);
         auto data = text ? deserialize(*text, cat_) : std::unexpected(text.error());
-        if (data) {
-            for (const auto& w : data->warnings) SDL_Log("save: %s", w.c_str());
-            world_ = std::move(data->world);
-            clock_.setTime(data->clockTime);
-            clock_.setPin(data->pin, false);
-            rain_ = data->rain;
-            muted_ = data->muted;
-            for (const auto& id : data->journal)
-                if (const auto v = cat_.findVisitor(id)) visitors_.markSeen(*v);
-            // Critters are placed once the camera exists (see run()).
-            SDL_Log("save: restored %s", file.string().c_str());
+        if (data && data->fromVersion < kSaveVersion) {
+            migrateLegacy(*data, cat_);
+            if (data->muted) muted_ = true;
+            adopt(*data);
+            slug_ = worldSlug(worldName_, {});
+            legacyToRetire_ = legacy;
+            welcomePending_ = true;
+            SDL_Log("save: migrated %s", legacy.string().c_str());
             return;
         }
-        // Keep the unreadable file for inspection instead of overwriting it: the newest few
-        // bad copies are kept, oldest dropped.
-        const auto bad = [&](int n) {
-            fs::path p = file;
-            p += ".bad" + std::to_string(n);
-            return p;
-        };
-        fs::remove_all(bad(kBadSaveCopies), ec);
-        for (int n = kBadSaveCopies - 1; n >= 1; --n)
-            if (fs::exists(bad(n), ec)) fs::rename(bad(n), bad(n + 1), ec);
-        fs::rename(file, bad(1), ec);
-        saveBlocked_ = static_cast<bool>(ec);
-        if (ec)
-            SDL_Log("save: %s; could not move it aside (%s), starting fresh without saving over it",
-                    data.error().c_str(), ec.message().c_str());
-        else
-            SDL_Log("save: %s; moved aside to %s and starting fresh", data.error().c_str(),
-                    bad(1).string().c_str());
+        SDL_Log("save: %s could not be migrated (%s); left as it is", legacy.string().c_str(),
+                data ? "not an older save" : data.error().c_str());
     }
-    world_ = makeStarterWorld(cat_);
+
+    std::vector<std::string> taken;
+    fs::path newest;
+    fs::file_time_type newestTime{};
+    for (auto it = fs::directory_iterator(worlds, ec); !ec && it != fs::directory_iterator();
+         it.increment(ec)) {
+        if (!it->is_directory(ec)) continue;
+        taken.push_back(it->path().filename().string());
+        const fs::path file = it->path() / kWorldFile;
+        const auto t = fs::last_write_time(file, ec);
+        if (ec) {
+            ec.clear();
+            continue;
+        }
+        if (newest.empty() || t > newestTime) {
+            newest = it->path();
+            newestTime = t;
+        }
+    }
+    // The world played last, else the most recently saved one, else a new one.
+    fs::path dir = newest;
+    if (!profile_.lastWorld.empty() && fs::exists(worlds / profile_.lastWorld / kWorldFile, ec))
+        dir = worlds / profile_.lastWorld;
+    if (!dir.empty()) {
+        slug_ = dir.filename().string();
+        if (loadWorld(dir / kWorldFile)) return;
+        const std::string slug = slug_;
+        startNewWorld({});
+        slug_ = slug; // a fresh corner in the same folder, beside the unreadable file
+        return;
+    }
+    startNewWorld(taken);
 }
 
 bool App::save() {
-    SaveData data(world_);
+    SaveData data(world_, cat_);
+    data.progress = progress_;
+    data.name = worldName_;
+    data.freeBuild = freeBuild_;
+    data.created = created_;
+    data.played = played_;
     data.clockTime = clock_.time();
     data.pin = clock_.pin();
+    data.day = day_;
+    data.seasonPin = seasonPin_;
     data.rain = rain_;
-    data.muted = muted_;
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
-        if (visitors_.seen(static_cast<int>(v))) data.journal.push_back(cat_.visitors[v].id);
+        if (visitors_.seen(static_cast<int>(v))) data.seen.push_back(cat_.visitors[v].id);
+    if (scene_) {
+        data.camera = cat_.iso().toTile(camera_.position());
+        data.zoom = camera_.zoom();
+    }
     // Never write over a save that could not be read and could not be moved aside.
-    const fs::path file = saveDir_ / kSaveFile;
     auto r = saveBlocked_ ? std::expected<void, std::string>(std::unexpect,
                                                              "an unreadable save is in the way")
-                          : writeFileAtomic(file, serialize(data, cat_));
+                          : writeFileAtomic(worldDir() / kWorldFile, serialize(data, cat_));
+    if (r) {
+        profile_.muted = muted_;
+        profile_.lastWorld = slug_;
+        const std::string text = serialize(profile_);
+        if (text != profileWritten_) {
+            r = writeFileAtomic(saveDir_ / kProfileFile, text);
+            if (r) profileWritten_ = text;
+        }
+    }
     if (!r) {
         SDL_Log("save: %s", r.error().c_str());
         if (!saveFailing_) hud_.toast(std::string(strings::kToastSaveFailed));
@@ -305,6 +403,40 @@ bool App::save() {
     saveFailing_ = false;
     autosave_.saved();
     return true;
+}
+
+bool App::writeThumbnail() {
+    const TexturePtr target{SDL_CreateTexture(renderer_.get(), kTextureFormat,
+                                              SDL_TEXTUREACCESS_TARGET, kThumbW, kThumbH)};
+    if (!target) {
+        SDL_Log("thumbnail: %s", SDL_GetError());
+        return false;
+    }
+    const Vec2 size{static_cast<float>(kThumbW), static_cast<float>(kThumbH)};
+    Camera cam(cat_.iso(), world_.landBounds(), scene_->cliffDepth());
+    cam.frame({0, 0, size.x, size.y}, size, openBounds(cat_, progress_.stage, world_));
+    FrameParams p;
+    p.world = &world_;
+    p.critters = visitors_.critters();
+    p.camera = &cam;
+    p.screen = size;
+    p.light = lightingAt(clock_.time(), rain_);
+    scene_->draw(p, target.get());
+    const SurfacePtr pixels{SDL_RenderReadPixels(renderer_.get(), nullptr)};
+    if (!SDL_SetRenderTarget(renderer_.get(), nullptr)) SDL_Log("thumbnail: %s", SDL_GetError());
+    std::error_code ec;
+    fs::create_directories(worldDir(), ec);
+    const fs::path file = worldDir() / kThumbFile;
+    fs::path tmp = file;
+    tmp += ".tmp";
+    if (!pixels || !SDL_SavePNG(pixels.get(), tmp.string().c_str())) {
+        SDL_Log("thumbnail: %s", SDL_GetError());
+        fs::remove(tmp, ec);
+        return false;
+    }
+    fs::rename(tmp, file, ec);
+    if (ec) SDL_Log("thumbnail: %s", ec.message().c_str());
+    return !ec;
 }
 
 bool App::night() const {
@@ -417,7 +549,8 @@ void App::zoomBy(int steps, Vec2 px) {
 
 void App::frameCamera() {
     const Box s = hud_.safeArea();
-    camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen(), openBounds(cat_, stage_, world_));
+    camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen(),
+                  openBounds(cat_, progress_.stage, world_));
 }
 
 void App::handleKey(const SDL_KeyboardEvent& k) {
@@ -813,6 +946,8 @@ void App::worldInput() {
 
 void App::step(float dt) {
     simTime_ += dt;
+    played_ += dt;
+    thumbTimer_ += dt;
     clock_.update(dt);
     const Vec2 pan{(keyPan_[3] ? 1.0f : 0.0f) - (keyPan_[2] ? 1.0f : 0.0f),
                    (keyPan_[1] ? 1.0f : 0.0f) - (keyPan_[0] ? 1.0f : 0.0f)};
@@ -908,7 +1043,10 @@ int App::run() {
     if (!font_.build(renderer_.get(), uiScale_)) return 1;
     // One interface layout first, so the camera can frame the land clear of it.
     hud_.update({}, model(), font_, screen(), uiScale_, 0);
-    frameCamera();
+    if (savedCamera_)
+        camera_.place(*savedCamera_, savedZoom_, screen());
+    else
+        frameCamera();
     if (opts_.bench) return runBench();
     visitors_.populate(world_, cat_, night(), rng_, activeArea(), gates_);
 
@@ -974,10 +1112,29 @@ int App::run() {
             if (!scriptStep()) running_ = false;
         }
         if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
+        if (!legacyToRetire_.empty()) {
+            // The migrated world and its thumbnail exist now; the old file is kept, renamed.
+            std::error_code ec;
+            if (save() && writeThumbnail()) {
+                fs::rename(legacyToRetire_, saveDir_ / kLegacyKept, ec);
+                if (ec) SDL_Log("save: cannot rename the old save: %s", ec.message().c_str());
+                legacyToRetire_.clear();
+            }
+        }
+        if (welcomePending_) {
+            welcomePending_ = false;
+            const int pages = visitors_.seenCount() + progress_.nooksFound();
+            hud_.toast(std::vformat(strings::kToastWelcome, std::make_format_args(pages)));
+        }
+        if (thumbTimer_ >= tuning::kThumbnailInterval) {
+            thumbTimer_ = 0;
+            (void)writeThumbnail();
+        }
         ++frame_;
         if (opts_.frames > 0 && frame_ >= opts_.frames) running_ = false;
     }
     if (editor_.inGroup()) editor_.commit();
+    if (!saveBlocked_) (void)writeThumbnail();
     if (!save() && exitCode_ == 0 && opts_.script) SDL_Log("save: the final save failed");
     rememberWindow();
     mixer_.close();

@@ -645,7 +645,7 @@ void Scene::drawGlow(const FrameParams& p) {
     batch_.flush();
 }
 
-void Scene::draw(const FrameParams& p) {
+void Scene::draw(const FrameParams& p, SDL_Texture* out) {
     batch_.resetStats();
     const World& world = *p.world;
     const float s = p.camera->scale();
@@ -692,7 +692,7 @@ void Scene::draw(const FrameParams& p) {
     drawLighting(p);
     drawGlow(p);
 
-    if (!SDL_SetRenderTarget(renderer_, nullptr)) SDL_Log("render: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("render: %s", SDL_GetError());
     composite(p, {1, 1}, false);
 }
 

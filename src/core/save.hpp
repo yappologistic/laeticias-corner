@@ -1,73 +1,108 @@
 #pragma once
-// Versioned JSON save files with atomic, durable writes and graceful handling of bad input.
+// World saves: versioned JSON with atomic, durable writes and graceful handling of bad input, the
+// migration of older saves, and world folder names.
 //
-// Save format, version 2 (the only place it is documented). One JSON object:
-//   "version"  2
-//   "map"      {"w": W, "h": H}            map size the file was written for
-//   "chunk"    32                          side of a chunk in tiles
-//   "base"     "blank"                     what untouched chunks contain (see below)
-//   "palette"  ["grass", "meadow", ...]    terrain ids; terrain values index this list
-//   "chunks"   [{"x": CX, "y": CY,         one entry per chunk that differs from the base
-//                "terrain": [[v, n], ...], run-length rows of the chunk's in-map tiles,
-//                                          row by row; v = palette index, -1 = no ground
-//                "items": [{"id": ID, "x": X, "y": Y, "v": VARIANT}, ...]}]
-//                                          items whose origin tile lies in the chunk, in
-//                                          absolute tile coordinates
-//   "clock"    {"t": 0..1, "pin": "auto|day|dusk|night|dawn"}
-//   "settings" {"rain": bool, "muted": bool}
-//   "journal"  [visitor ids seen so far]
-// Readers ignore sections and fields they do not know, skip ids the catalog no longer has (with a
-// warning) and fall back to defaults for missing optional sections; files from a newer version
-// are refused. A map of another size than the catalog's is loaded centred on the new map.
+// World save format, version 3 (the only place it is documented; layout from
+// docs/design/living-corner.md §2.4 and world-tech.md §2.7). One JSON object:
+//   "version"    3
+//   "name"       the world's name (its home corner's), "free_build" bool,
+//   "created"    UTC "YYYY-MM-DDTHH:MM:SSZ", "played" active play time in seconds
+//   "clock"      {"t": 0..1, "pin": "auto|day|dusk|night|dawn", "day": calendar day from 0}
+//   "season_pin" "auto" or a season id
+//   "settings"   {"rain": bool}
+//   "progress"   {"unlocked": [item and terrain ids], "frames": [frame ids],
+//                 "wishes": {"open": [ids, offer order], "done": [ids, grant order],
+//                            "snoozed": {id: play time it may return}, "last_offer": seconds},
+//                 "clues": [visitor ids], "seen": [visitor ids], "nooks": [nook ids],
+//                 "harvests": n, "last_harvest_day": n, "new": [ids with an unseen dot]}
+//   "home"       the home region: {"map": {"w", "h"}, "palette": [terrain ids],
+//                 "terrain": [[palette index, run], ...] over the map, x fastest,
+//                 "items": [{"id", "x", "y", "v", "g": [stage, progress] for growing items}],
+//                 "stage": highest open land stage}; coordinates are home-relative
+//   "world"      {"camera": {"at": [tx, ty] view centre in home tiles, "zoom": scale}}
+// Everything outside "home" is global to the world. Readers ignore what they do not know, skip
+// ids the catalog no longer has (with a warning) and fall back to defaults for missing optional
+// fields; files from a newer version are refused. Wild tiles (stages not yet open) hold nothing.
 //
-// Version 1 (still read): "map", "palette", a flat row-major "terrain" array of W*H palette
-// indices, a flat "items" array, and "clock"/"settings"/"journal" as above.
-//
-// Why chunks and a base: the world is planned to grow into one continuous map of roughly
-// 1024 x 512 tiles that is mostly prebuilt. "base" will then name that prebuilt content (shipped
-// with the game, never written by saves), and the file holds only the chunks the player changed,
-// so an autosave costs what the player built, not what the world contains. Later versions can
-// split chunk entries into separate files or append-only journals behind the same seam.
+// Older files are still read, for migration (see migrateLegacy):
+// Version 2 (engine chunked): "map", "chunk" (32), "base": "blank", "palette", "chunks":
+//   [{"x", "y", "terrain": [[v, n], ...] rows of the chunk's in-map tiles (-1 = no ground),
+//   "items": [{"id", "x", "y", "v"}] absolute}], "clock" {"t", "pin"}, "settings" {"rain",
+//   "muted"}, "journal" [visitor ids]. A map of another size is centred.
+// Version 1: "map", "palette", a flat row-major "terrain" array, a flat "items" array, and
+//   "clock", "settings", "journal" as above. Its 20 x 20 map lands in the front corner.
 
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
+#include "core/progress.hpp"
 #include "core/world.hpp"
 
 #include <expected>
 #include <filesystem>
+#include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace lc {
 
-inline constexpr int kSaveVersion = 2;
-inline constexpr std::string_view kSaveBaseBlank = "blank";
+inline constexpr int kSaveVersion = 3;
 
 struct SaveData {
-    explicit SaveData(World w) : world(std::move(w)) {}
+    SaveData(World w, const Catalog& cat) : world(std::move(w)), progress(cat) {}
 
     World world;
+    Progress progress;
+    std::string name;
+    bool freeBuild = false;
+    std::string created;
+    double played = 0;
     double clockTime = 0.2;
     ClockPin pin = ClockPin::Auto;
+    int day = 0;
+    int seasonPin = -1; // season index, -1: follow the calendar
     bool rain = false;
-    bool muted = false;
-    std::vector<std::string> journal;  // visitor ids seen so far
+    std::vector<std::string> seen; // visitor ids
+    std::optional<Vec2> camera;    // view centre in home tiles
+    float zoom = 1;
+    int fromVersion = kSaveVersion;
+    bool muted = false;                // older files only: it now lives in the profile
     std::vector<std::string> warnings; // entries skipped or repaired, one line per kind
 };
 
 [[nodiscard]] std::string serialize(const SaveData& data, const Catalog& cat);
-// Rejects malformed or newer files; tolerates missing optional fields, unknown ids and a map of a
-// different size (content is centred, anything that no longer fits is reported).
+// Rejects malformed or newer files; tolerates missing optional fields and unknown ids.
 [[nodiscard]] std::expected<SaveData, std::string> deserialize(std::string_view text,
                                                                const Catalog& cat);
 
+// Brings a save read from version 1 or 2 up to the progress loop (§2.5): every piece the old game
+// had stays unlocked, wishes those pieces already answer are done, veggie beds are ripe, and land
+// stages holding anything the player made are open (without their reveal, so nothing is
+// overwritten).
+void migrateLegacy(SaveData& data, const Catalog& cat);
+
 // Offset that centres a map of size `from` inside a map of size `to`.
 [[nodiscard]] TilePos centringOffset(int fromW, int fromH, int toW, int toH);
+
+// Folder name for a world: lowercase ASCII letters and digits, apostrophes dropped, other runs
+// of characters as "-", at most 32 characters, "world" when empty, "-2", "-3"... when taken.
+[[nodiscard]] std::string worldSlug(std::string_view name, std::span<const std::string> taken);
+// Current UTC time as "YYYY-MM-DDTHH:MM:SSZ".
+[[nodiscard]] std::string utcNow();
 
 // Writes to a temporary sibling, flushes it to disk and renames it over the target, so neither a
 // crash nor a power cut leaves a half-written save behind.
 [[nodiscard]] std::expected<void, std::string> writeFileAtomic(const std::filesystem::path& file,
                                                                std::string_view contents);
+
+// Settings shared by every world (docs/design/living-corner.md §2.3); a missing or malformed
+// file falls back to defaults field by field.
+struct Profile {
+    bool muted = false;
+    std::string lastWorld; // folder name of the world played last
+};
+[[nodiscard]] Profile parseProfile(std::string_view text);
+[[nodiscard]] std::string serialize(const Profile& p);
 
 } // namespace lc

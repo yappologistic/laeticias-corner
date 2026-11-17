@@ -85,6 +85,18 @@ void Camera::frame(SafeArea safe, Vec2 screen, TileRect focus) {
     target_ = pos_;
 }
 
+void Camera::place(Vec2 world, float zoom, Vec2 screen) {
+    level_ = 0;
+    for (std::size_t l = 0; l < kZoomLevels.size(); ++l)
+        if (std::abs(kZoomLevels[l] - zoom) <
+            std::abs(kZoomLevels[static_cast<std::size_t>(level_)] - zoom))
+            level_ = static_cast<int>(l);
+    scale_ = this->zoom();
+    pos_ = world;
+    clamp(pos_, screen, scale_);
+    target_ = pos_;
+}
+
 void Camera::dragBy(Vec2 d, Vec2 screen) {
     target_ = {target_.x - d.x / scale_, target_.y - d.y / scale_};
     clamp(target_, screen, scale_);

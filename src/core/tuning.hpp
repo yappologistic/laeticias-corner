@@ -9,9 +9,10 @@ namespace lc::tuning {
 inline constexpr double kStepSeconds = 1.0 / 60.0;
 inline constexpr int kMaxStepsPerFrame = 5;
 inline constexpr std::size_t kUndoSteps = 200;
-inline constexpr double kAutosaveDelay = 1.5;     // seconds after the last change
-inline constexpr double kAutosaveMaxDelay = 20.0; // longest unsaved stretch while editing
-inline constexpr double kSaveRetrySeconds = 10.0; // after a failed save
+inline constexpr double kAutosaveDelay = 1.5;       // seconds after the last change
+inline constexpr double kAutosaveMaxDelay = 20.0;   // longest unsaved stretch while editing
+inline constexpr double kSaveRetrySeconds = 10.0;   // after a failed save
+inline constexpr double kThumbnailInterval = 300.0; // play seconds between world thumbnails
 
 // Clock: fractions of one full cycle.
 inline constexpr double kDayLengthSeconds = 12.0 * 60.0;

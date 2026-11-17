@@ -44,6 +44,8 @@ public:
     // Picks the largest level that shows `focus` (the open land) inside `safe` and centres it
     // there; the cliff under the south rims counts when the focus reaches them.
     void frame(SafeArea safe, Vec2 screen, TileRect focus);
+    // Puts the view centre at `world` at the level nearest `zoom` (a restored view).
+    void place(Vec2 world, float zoom, Vec2 screen);
     // Immediate pan by a screen-space delta (mouse drag).
     void dragBy(Vec2 screenDelta, Vec2 screen);
     // Eased pan by a screen-space delta (keys).

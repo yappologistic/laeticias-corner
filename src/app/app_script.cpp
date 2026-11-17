@@ -10,7 +10,6 @@ namespace {
 
 constexpr int kDragSteps = 8;     // frames a scripted drag takes
 constexpr int kRevealRetries = 3; // frames to wait for a drawer tile to scroll into view
-constexpr std::string_view kSaveFile = "corner.json";
 constexpr std::string_view kPhotoDir = "photos";
 
 std::string scaleName(float s) {
@@ -153,7 +152,15 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "rain") return yesNo(rain_);
     if (what == "saved") {
         std::error_code ec;
-        return yesNo(fs::is_regular_file(saveDir_ / kSaveFile, ec));
+        return yesNo(fs::is_regular_file(worldDir() / kWorldFile, ec));
+    }
+    if (what == "file") {
+        if (a.size() != 3) return std::string("expect file PATH yes|no");
+        std::error_code ec;
+        const bool want = a[2] == "yes";
+        return fs::exists(saveDir_ / a[1], ec) == want
+                   ? std::nullopt
+                   : std::optional(std::format("expected {} to {}exist", a[1], want ? "" : "not "));
     }
     if (what == "zoom") return equal(scaleName(camera_.zoom()), a[1]);
     if (what == "toast") return yesNo(hud_.toastShowing());

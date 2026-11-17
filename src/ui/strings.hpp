@@ -7,6 +7,7 @@ namespace lc::strings {
 
 inline constexpr std::string_view kTitle = "Laeticia's Corner";
 inline constexpr std::string_view kWindowTitle = "Laeticia's Corner";
+inline constexpr std::string_view kDefaultWorldName = "Laeticia's Corner";
 
 inline constexpr std::string_view kBuild = "Build";
 inline constexpr std::string_view kRemove = "Remove";
@@ -83,6 +84,8 @@ inline constexpr std::string_view kToastNewVisitor = "New visitor: ";
 inline constexpr std::string_view kToastPhoto = "Photo saved";
 inline constexpr std::string_view kToastPhotoFailed = "Couldn't save the photo";
 inline constexpr std::string_view kToastSaveFailed = "Couldn't save your corner; will keep trying";
+inline constexpr std::string_view kToastWelcome =
+    "Welcome back. Laeticia has started a sketchbook: {} pages so far.";
 inline constexpr std::string_view kPhotoFile = "laeticias-corner-{:04}.png"; // numbered
 
 } // namespace lc::strings
