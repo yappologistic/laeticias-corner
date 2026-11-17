@@ -1,6 +1,7 @@
 # Living Corner: design spec for batch 2
 
-This is the source document for the next batch. It turns the toy into a small game with a gentle
+This is the source document for the next batch. The corner is the player's home region in what
+will later become one continuous world map (§2.1, §13). It turns the toy into a small game with a gentle
 goal structure: Laeticia and the visitors make wishes, granting them unlocks pieces, what you build
 is recognised and used, the sketchbook fills, and the wild land around the corner opens up.
 There is still no money, no timer that punishes and no fail state.
@@ -14,8 +15,8 @@ User-facing text uses **British spelling** throughout (colour, favourite, cosy, 
 
 | You are | Read |
 |---|---|
-| Engine, task A (progress loop) | §1, §2, §3, §4 R1, R3, R4, R5, R7, R8, §5, §6 (marked **A**), §9, §11, §12 |
-| Engine, task B (life and front door) | §1, §3, §4 R2, R6, R9, R10, R11, R12, §5, §6 (marked **B**), §9, §11, §12 |
+| Engine, task A (progress loop) | §1, §2, §3, §4 R1, R3, R4, R5, R7, R8, §5, §6 (marked **A**), §9, §11, §12, §13 |
+| Engine, task B (life and front door) | §1, §2.1, §3, §4 R2, R6, R9, R10, R11, R12, §5, §6 (marked **B**), §9, §11, §12, §13 |
 | Art | §1, §4 (skim R2, R4, R5, R6 for what the sprites do), §7 |
 | Audio | §1, §4 R8 and R9, §8 |
 
@@ -32,7 +33,8 @@ needs are met, beds grow, compositions you make are recognised as **nooks**, and
 here, walks about using it all. Laeticia and the visitors make short, optional **wishes**; granting
 one (by building what it asks for) unlocks new pieces. Every visitor seen and every nook found is a
 page in Laeticia's **sketchbook**, and as the sketchbook fills, the wild land around the corner
-opens in stages, each hiding something to find underneath. The music grows a layer at a time with
+opens in stages, each hiding something to find underneath, until the corner reaches an old road and
+a gate where the wider world will one day begin. The music grows a layer at a time with
 your progress. None of it can be lost, and nothing waits on real time.
 
 ```
@@ -59,7 +61,7 @@ your progress. None of it can be lost, and nothing waits on real time.
 - **The game never seizes the camera.** Flourishes happen where they happen; at most an edge chip
   points the way and you choose to look.
 - **Everything is optional.** You can ignore every wish and still build freely with what you have.
-  A corner can also be created in Free build, with everything open from the start.
+  A world can also be started in Free build, with everything open from the start.
 - **Quiet by default.** At most three open wishes, one new wish offer every 75 seconds at most,
   one speech bubble at a time.
 
@@ -67,7 +69,7 @@ your progress. None of it can be lost, and nothing waits on real time.
 
 | Time | What happens |
 |---|---|
-| 0:00 | Title screen over a softly drifting island at dawn. One button: **Begin**. A small dialog asks for a name (default "Laeticia's Corner"). **Create**. |
+| 0:00 | Title screen over a softly drifting island at dawn. One button: **Begin**. A small dialog asks for a name for the world (default "Laeticia's Corner"). **Create**. |
 | 0:05 | The island fades in. A cleared 20×20 corner at the front: a little pond with a lily pad, a meadow patch with one patch of daisies and one of poppies, a few oaks, two pines, a bench, a path stub. Behind it, dark bramble-covered wild land. Laeticia stands beside her bedroll and waves: "Oh, it's lovely. A bit bare, though." Ducks are already paddling on the pond. |
 | 0:10 | Tour (R10.5): "Drag to look around." The player pans. |
 | 0:18 | "Open Build to plant something." The drawer shows nine pieces. "Pick the daisies, then click the ground." A soft note plays on the place sound. |
@@ -94,44 +96,70 @@ Pressed flowers frame.
 
 ---
 
-## 2 Places, saves and scope
+## 2 The home region, saves and scope
 
-### 2.1 What lives where
+### 2.1 One world, one home region
 
-Later batches add other places (prebuilt cities reached from a world map). This batch already
-stores data at the right level:
+Later batches turn the game into **one continuous world map**. Laeticia's corner is the player's
+own buildable **home region** on it; large prebuilt historical cities, and the land and sea between
+them, lie elsewhere on the same map, reached by scrolling or by fast travel from an overview. There
+are no separate levels.
 
-| Level | What it is | Holds |
+In this batch the home region is the whole map: the 40×40 floating island. Everything is stored so
+that nothing has to move when the world grows around it:
+
+| Level | What it is |
+|---|---|
+| **Profile** | One per player: settings shared by every save |
+| **World save** | One per save file (the title screen lists these): the whole world and all progress. A save is named after its home corner ("Plum Hollow") |
+| **Home region** | Inside the world save: the buildable land, its map and items |
+
+Every piece of saved state and where it belongs:
+
+| State | Scope | Notes for the wider world |
 |---|---|---|
-| **Profile** (one per player) | Settings and preferences | Volumes, mute, fullscreen, UI scale, reduce motion, chatter, grid, brush size, last frame and caption choice, `onboarded` flag, last corner played |
-| **Corner** (one per save slot; the title screen lists these) | A whole playthrough | Name, free-build flag, calendar (day, season pin), clock, rain, all progress: unlocked pieces, frames, wishes, clues, visitors seen, nooks found, harvest count. The music layers are derived from progress. |
-| **Place** (one or more per corner; this batch has only `home`) | One map | Terrain, items (with growth state), opened land stage. Nook instances, visitor presence and Laeticia's state are recomputed, never saved. |
+| Volumes, mute, fullscreen, UI scale, reduce motion, chatter, grid, brush size, frame and caption choice, `onboarded`, last save played | Profile | shared by all saves |
+| Name, free-build flag, created, play time | World (global) | |
+| Clock time and pin, rain or snow | World (global) | one sky over the whole map |
+| Calendar day, season pin | World (global) | the season is the same everywhere |
+| Unlocked pieces, postcard frames, new-piece dots | World (global) | pieces can be used wherever building is allowed (today: the home region only) |
+| Wishes: open, granted, snoozed, last offer | World (global) | goals are evaluated over the home region (§3.2); hooks in §13 |
+| Clues | World (global) | |
+| Visitors seen (sketchbook) | World (global) | later shown per region (§13) |
+| Nooks discovered | World (global) | instances can only exist in the home region, the only buildable land |
+| Harvest count, last harvest day | World (global) | |
+| Music layers | World (global), derived from progress, not saved | |
+| Terrain, items, growth | Home region | |
+| Opened land stage | Home region | |
+| Visitor presence, nook instances, Laeticia's state | Home region, recomputed on load, never saved | |
 
-Rules for future places, decided now so nothing has to move later:
+Rules, decided now:
 
-- **Progress is per corner and shared by all its places.** One sketchbook, one set of unlocks, one
-  wish list, one calendar. A season is the same wherever you travel.
-- **Maps and land are per place.** Each place has its own terrain, items and land stages (a prebuilt
-  city may have no wild land: an empty `stages` list).
-- **Conditions are evaluated in the place you are in.** Counting, adjacency and visitor presence never
-  look across places. Progress terms (`progress`, `seen`) are corner-wide.
-- **Laeticia lives at the home place only.** Wishes from her are offered only there.
+- **Only the home region is buildable.** The rest of the world will be prebuilt, loaded from data
+  and not saved; this design adds no saved state for it.
+- **Home coordinates stay home-relative.** The home region keeps its own tile coordinates (0–39).
+  When the world exists, the region sits at an origin offset inside the world grid; saves keep
+  home-relative coordinates, so they never need rewriting when the world around them changes.
+- **Conditions are evaluated over the home region.** A later batch may add an optional `region` key
+  to `count`, `near` and `visitor`; without it they mean the home region, so every condition
+  written now keeps its meaning. Progress terms (`progress`, `seen`) are global.
+- **Laeticia lives in the home region** and offers her wishes there.
 
 ### 2.2 Files on disk
 
 ```
 <save dir>/
   profile.json                     global settings (§2.3)
-  corners/<slug>/corner.json       one corner (§2.4)
-  corners/<slug>/thumb.png         384×240 thumbnail for the corners screen
+  worlds/<slug>/world.json         one world save (§2.4)
+  worlds/<slug>/thumb.png          384×240 thumbnail of the home region for the worlds screen
   corner.v1.json                   the old single save after migration (kept, never read again)
 postcards: see R12.4
 ```
 
 `<save dir>` is resolved exactly as today (`--save-dir`, `$LAETICIA_SAVE_DIR`, SDL pref path).
 `<slug>` is made from the name at creation: lowercase ASCII letters and digits, every other run of
-characters becomes `-`, trimmed, at most 32 characters, `corner` if empty, `-2`, `-3`… on collision.
-Renaming a corner never renames its folder.
+characters becomes `-`, trimmed, at most 32 characters, `world` if empty, `-2`, `-3`… on collision.
+Renaming a world never renames its folder.
 
 ### 2.3 `profile.json`
 
@@ -140,14 +168,14 @@ Renaming a corner never renames its folder.
   "volume": { "music": 70, "effects": 85, "ambience": 60 }, "muted": false,
   "fullscreen": false, "ui_scale": "auto", "reduce_motion": false, "chatter": "chatty",
   "grid": false, "brush": 1, "frame": "plain", "caption": true,
-  "onboarded": false, "last_corner": "laeticias-corner" }
+  "onboarded": false, "last_world": "laeticias-corner" }
 ```
 
 `ui_scale` is `"auto"` or one of 0.75, 1, 1.25, 1.5, 2. `chatter` is `"chatty"` or `"quiet"`.
 `brush` is 1, 3 or 5. A missing or malformed profile falls back to these defaults field by field.
 Written atomically, debounced 0.5 s after a change.
 
-### 2.4 Corner save format, version 2
+### 2.4 World save format, version 2
 
 ```json
 { "version": 2,
@@ -162,29 +190,30 @@ Written atomically, debounced 0.5 s after a change.
                 "snoozed": { "reading_light": 4100.0 }, "last_offer": 4980.0 },
     "clues": ["owl"], "seen": ["duck", "cat"], "nooks": ["reading_nook"],
     "harvests": 3, "last_harvest_day": 6, "new": ["sunflowers"] },
-  "places": {
-    "home": { "map": { "w": 40, "h": 40 }, "palette": ["grass", "…"], "terrain": [0, 0, "…"],
-              "items": [ { "id": "planter", "x": 24, "y": 31, "v": 2, "g": [1, 0.42] } ],
-              "stage": 2 } } }
+  "home": { "map": { "w": 40, "h": 40 }, "palette": ["grass", "…"], "terrain": [0, 0, "…"],
+            "items": [ { "id": "planter", "x": 24, "y": 31, "v": 2, "g": [1, 0.42] } ],
+            "stage": 2 } }
 ```
 
+- Everything outside `home` is global to the world save; `home` is the home region (§2.1).
 - `played` is active play time in seconds (unpaused, not on the title screen). Wish snooze and
   offer pacing are measured against it.
 - `clock.day` is the calendar day counter (R4.1). `season_pin` is `auto` or a season id.
 - `progress.new` lists unlocked pieces whose "new" dot has not been seen yet.
-- Item `g` is `[stage, progress]`, present only for items with `growth`.
-- `stage` is the highest opened land stage index of that place.
+- Item `g` is `[stage, progress]`, present only for items with `growth`. Coordinates are
+  home-relative.
+- `home.stage` is the highest opened land stage.
 - Unknown ids are dropped with a warning, exactly as v1 does today. A save naming a newer version
   is refused and left untouched.
 
 ### 2.5 Migration from version 1
 
-On launch, if `<save dir>/corner.json` exists (v1) and `<save dir>/corners/` does not:
+On launch, if `<save dir>/corner.json` exists (v1) and `<save dir>/worlds/` does not:
 
 1. Read it with the v1 loader. If it fails, leave it alone and start as a first launch.
-2. Create corner "Laeticia's Corner" (`corners/laeticias-corner/`). Copy the 20×20 terrain and items
-   into the 40×40 home map at offset **(+20, +20)**, which is exactly land stage 0. Items keep their
-   variants; planters get `g = [3, 0]` (ripe), since they already looked ripe.
+2. Create the world save "Laeticia's Corner" (`worlds/laeticias-corner/`). Copy the 20×20 terrain and
+   items into the 40×40 home region at offset **(+20, +20)**, which is exactly land stage 0. Items
+   keep their variants; planters get `g = [3, 0]` (ripe), since they already looked ripe.
 3. **Unlocks:** the start palette **plus every piece that existed in v1** (`progression.legacy`: all 31
    original items and all five terrains). A returning player never loses a tool they had. The 11 new
    items, the frames and the clues still come from wishes.
@@ -192,7 +221,7 @@ On launch, if `<save dir>/corner.json` exists (v1) and `<save dir>/corners/` doe
    marked done silently. The rest are offered normally (an unlock wish that is partly covered grants
    only its new pieces).
 5. `journal` becomes `progress.seen`. Clock time and pin carry over; the calendar starts at Spring,
-   day 1. `settings.muted` moves to the profile; `settings.rain` stays in the corner.
+   day 1. `settings.muted` moves to the profile; `settings.rain` stays in the world save.
 6. Nooks already present are discovered silently at first load. Land stages whose page threshold is
    met open instantly, with their reveals, without the wave.
 7. Write the v2 save and thumbnail, then rename `corner.json` to `corner.v1.json`.
@@ -214,15 +243,15 @@ A condition is a JSON object with **exactly one key**:
 | `all` | `[Condition, …]` | every entry is true (an empty list is true) |
 | `any` | `[Condition, …]` | at least one entry is true (an empty list is false) |
 | `not` | `Condition` | the inner condition is false |
-| `count` | `Selector + {"min": N, "max": N}` | the number of matching items (instances) or terrain tiles in the place is ≥ `min` (default 1) and ≤ `max` (if given) |
+| `count` | `Selector + {"min": N, "max": N}` | the number of matching items (instances) or terrain tiles in the home region is ≥ `min` (default 1) and ≤ `max` (if given) |
 | `variety` | `{"tag": T, "min": N}` | at least N different item ids carrying tag T are present |
 | `near` | `NearSpec` (below) | enough anchors each have everything listed in their surroundings |
 | `time` | `["day", "dusk", "night", "dawn"]` (subset) | the current phase is listed |
 | `season` | `["spring", "summer", "autumn", "winter"]` (subset) | the effective season is listed |
 | `weather` | `"rain"` or `"clear"` | rain (or snow) is on / off |
-| `visitor` | `{"id": V, "min": N}` | at least N critters of V are present and not leaving (default 1) |
+| `visitor` | `{"id": V, "min": N}` | at least N critters of V are present in the home region and not leaving (default 1) |
 | `seen` | `V` | visitor V is in the sketchbook |
-| `nook` | `NookId` | at least one instance of that nook exists in the place right now |
+| `nook` | `NookId` | at least one instance of that nook exists in the home region right now |
 | `progress` | `{"wishes"\|"seen"\|"nooks"\|"pages"\|"harvests"\|"stage": N}` (one or more keys) | each listed counter is ≥ N |
 
 **Selector** (picks what to count), exactly one of:
@@ -286,10 +315,10 @@ Tags are listed per item in the catalog (`items[].tags`). The tags in use: `flow
 
 ### R1 Wishes and unlocks
 
-**R1.1 Unlocks.** A corner has a set of unlocked terrain, item and frame ids. A new corner starts
+**R1.1 Unlocks.** A world save has one global set of unlocked terrain, item and frame ids. A new world starts
 with `progression.start`: Ground: grass, meadow, path, water. Items: oak, bush, poppies, daisies,
 tall grass, rock, bench, fence, cottage. Frame: plain. Everything else comes from wishes (the full
-tree is in §5). Free-build corners start with everything unlocked.
+tree is in §5). Free-build worlds start with everything unlocked.
 
 - The Build drawer lists only unlocked pieces. Each tab ends with a dimmed **"+N"** tile (lock icon)
   when that tab still has locked pieces; its tooltip reads "N more to discover. Grant wishes to
@@ -323,7 +352,7 @@ sketchbook).
 - **Offerable** when: not open, granted or snoozed; every `after` wish is granted; `requires` holds;
   every item and terrain that the goal needs (all selectors with a positive `min`) is unlocked;
   and the giver is available (below).
-- **Giver available**: a visitor giver must be present in the place. Laeticia must be out and about
+- **Giver available**: a visitor giver must be present in the home region. Laeticia must be out and about
   (not inside or asleep), so she never offers at night. Until task B adds her to the world, treat
   her as available in every phase but night.
 - **Snoozed** wishes return to the pool after 600 s of play, ranked after unsnoozed ones.
@@ -471,12 +500,12 @@ have been seen. Common visitors also show their `hint` while undiscovered (today
   of the night, so changes happen in the dark). `clock.day` counts days from 0.
 - Each season lasts **3 days** (36 minutes of play); a year is 12 days. Season index =
   `(day / 3) % 4` (spring, summer, autumn, winter); day within the season = `day % 3 + 1`.
-  New corners start on Spring, day 1, at `t = 0.2`.
+  New worlds start on Spring, day 1, at `t = 0.2`. The calendar is global: one season for the whole map.
 - **The calendar only moves while the clock runs on auto.** A pinned clock stops the days. The
   pin's glide never advances the day, even when it crosses midnight.
 - **Season pin** (calendar popover, §6.4): "Follow the days" or "Always spring/summer/autumn/winter".
   It overrides the effective season and leaves the day counter alone.
-- Absence is invisible: the corner reopens exactly where it was.
+- Absence is invisible: the world reopens exactly where it was.
 
 **R4.2 What changes with the season.**
 
@@ -534,7 +563,7 @@ have been seen. Common visitors also show their `hint` while undiscovered (today
 
 Harvest is an interaction, not an edit: it is not on the undo stack. What it gives is deliberately
 non-economic: it feeds the `first_harvest` wish, Laeticia's cooking and lunch, and the hens.
-The first time any bed ripens in a corner, the hint line says "Ripe beds can be picked. Click one."
+The first time any bed ripens in a world, the hint line says "Ripe beds can be picked. Click one."
 
 **R4.6 Petals and leaves.** Blossom trees shed `fx/petal` in spring (0.03 per second per tree × the
 season's `petal` multiplier); petals that land on water float for 6 s, drifting. Leaves use the
@@ -545,12 +574,13 @@ spring. Pines shed nothing.
 
 ### R5 Land you earn
 
-**R5.1 Stages.** The 40×40 home map is split into five stages (rectangles in §5.6; they tile the map
+**R5.1 Stages.** The buildable home region (today the 40×40 map) grows outward in five stages (rectangles in §5.6; they tile the map
 exactly once). Stage 0, the front 20×20 corner (x and y 20–39), is open from the start. The others
 open when the sketchbook's **pages** (visitors seen + nooks found, 30 in all) reach 4, 9, 14 and 20:
 
 ```
          (0,0) ┌──────────── x ────────────►
+               │══ road ════ ⌂ gate ═════════│  y 0–1: road and wall (stage 4)
                │  4 ░ high wood ░░░░░░░░░░░░│  y 0–7
                │░░┌─────────┬───────────────┤
                │░░│ 3 old   │ 2 far pond    │  y 8–19
@@ -586,15 +616,37 @@ at once open one after another, 4 s apart):
 - A toast: "New land: The west meadow". If the stage is off screen, an edge chip "New land" with an
   arrow appears for 8 s; clicking it pans the camera there. The camera never moves on its own.
 - Laeticia walks to the new edge and says the stage's `line`.
-- Free-build corners open every stage at creation, with reveals.
+- Free-build worlds open every stage at creation, with reveals.
 
 **R5.4 What each stage hides.** The west meadow has a stream that falls off the south-west rim
 (a waterfall), lavender and a stump. The far pond has a pond with a rowing boat and a creek to the
 south-east rim (another waterfall). The old orchard has four apple trees in a broken grid, a broken
 stone wall and a hay bale (the `orchard_mended` wish asks you to fill the gaps). The high wood is a
-pine forest around a spring pool whose brook falls off the south-west rim.
+pine forest around a spring pool whose brook falls off the south-west rim, and at its far edge the
+road, the wall and the gate (R5.6).
 
-**R5.5 Save data:** `places.home.stage`. Wild tiles are derived from the stage, never saved.
+**R5.5 Save data:** `home.stage` (home region). Wild tiles are derived from the stage, never saved.
+
+**R5.6 The edge of the corner.** The last stage ends at a natural boundary rather than a wall of
+brambles. Along the far north-east rim (y = 0) runs an old **road**; inside it a dry-stone wall
+(y = 1) closes the home region, broken by one **gate**, a rose arch at (20, 1) with a lamp beside
+it, and a path leads from the gate down through the wood (x = 20, y 2–7) towards the far pond.
+All of it is revealed by stage 4 from existing pieces (stone wall, rose arch, lamp, path), and
+Laeticia's line for that stage is "A whole wood. And a road. Where does that go?" Reaching the
+edge should feel like the start of something: the road is visibly going somewhere.
+
+The gate is not interactive in this batch. Hovering it shows the tooltip "The road out" (a new
+string), nothing more.
+
+**R5.7 Present state, and what changes when the world exists.**
+
+| Now (this batch) | When the surrounding world exists |
+|---|---|
+| The home region is the whole 40×40 map, drawn as a floating island with cliff faces under the south-east and south-west rims and sky all round | The island rim, cliffs and sky around the home region go away; the neighbouring world terrain is drawn right up to the region's edge and the camera can scroll beyond it |
+| The road along y = 0 runs to the rim at both ends and stops in the sky | The road continues out of the region in both directions; the gate becomes the home region's door to the world and its first fast-travel point |
+| Water reaching the south rims falls off as waterfalls (§5.8, #1) | Those streams flow on into the world instead; the waterfall delight applies only where the world itself has a drop |
+| Wild stages are brambles inside the region | Unchanged: wild stages stay inside the home region. Land outside the region is never buildable and is drawn as the world, never as brambles |
+| The two south rims are the edge of everything | They meet the world: the design for the cities decides what lies there (a shore on the south-west, farmland on the south-east are the obvious fits for the streams and the stage-0 path) |
 
 ### R6 Laeticia
 
@@ -641,7 +693,7 @@ Lakeside lunch (above); Woodland walk (the stroll prefers its path); Village squ
 **R6.4 Home and the bedroll.** Her home is the first cottage in the item list. If it is removed she
 picks the next cottage; with none she says a `home_lost` line and goes back to the bedroll. Before
 any cottage exists she sleeps on the bedroll (`sleep` shows her lying on it; the bedroll is part
-of that sprite, not an item) at `starter.resident` in a new corner, or beside the campfire, or at
+of that sprite, not an item) at `starter.resident` in a new world, or beside the campfire, or at
 the open tile nearest the centre of stage 0. Line at bedtime: `no_cottage_night`.
 
 **R6.5 Movement.** A* on the tile grid, 8 directions without corner cutting, recomputed on demand
@@ -671,7 +723,8 @@ or directly inside a top-level `all`; that `near`'s anchors are the nook's insta
 (shown in the sketchbook before discovery), `blurb` (after), `gift` (a sentence saying what it does)
 and `effects`. Sixteen nooks are listed in §5.
 
-**R7.2 Discovery.** The first time any instance of a nook exists in a corner:
+**R7.2 Discovery.** The first time any instance of a nook exists in a world (nooks can only be built in
+the home region; the discovered list is global):
 
 - The instance's area tiles pulse with `ui/tile_area` (alpha 0 → 0.5 → 0 over 1.6 s); eight
   `fx/sparkle` bursts around it; a glass label with the nook's name floats above the anchor for
@@ -698,7 +751,7 @@ tooltip and outlines its area with `ui/tile_area`. Holding Tab shows every insta
 `who` is a visitor id or `laeticia`; Laeticia's activity ids are `water`, `feed`, `sit`, `read`,
 `lie`, `lunch`, `sketch`, `warm`, `stroll`, `admire`.
 
-**R7.5 Save data:** `progress.nooks` (discovered ids). Instances are recomputed.
+**R7.5 Save data:** `progress.nooks` (discovered ids, global). Instances are recomputed (home region).
 
 ### R8 Music that grows with the corner
 
@@ -767,43 +820,48 @@ The full list with triggers, rarity and assets is in §5.8. Rules shared by all 
 **R10.1 Flow.**
 
 ```
-launch ─► title ─┬─ Continue ─────────────► corner (last played)
-                 ├─ Corners ─► corners ─┬─ Play ──► corner
-                 │                      ├─ New ───► name dialog ─► corner (tour if first time)
-                 │                      ├─ Rename (inline)
-                 │                      └─ Delete ─► confirm
+launch ─► title ─┬─ Continue ─────────────► world (last played)
+                 ├─ Worlds ──► worlds ───┬─ Play ──► world
+                 │                       ├─ New ───► name dialog ─► world (tour if first time)
+                 │                       ├─ Rename (inline)
+                 │                       └─ Delete ─► confirm
                  ├─ Settings ─► settings ─► back
                  └─ Quit
-first launch (no corners): title shows Begin ─► name dialog ─► corner + tour
-in a corner: Esc (nothing to cancel) or ☰ ─► pause ─┬─ Resume
-                                                    ├─ Settings
-                                                    ├─ Open postcards folder
-                                                    ├─ Back to corners (save + thumbnail first)
-                                                    └─ Quit (save + thumbnail first)
+first launch (no saves): title shows Begin ─► name dialog ─► world + tour
+in a world: Esc (nothing to cancel) or ☰ ─► pause ─┬─ Resume
+                                                   ├─ Settings
+                                                   ├─ Open postcards folder
+                                                   ├─ Back to worlds (save + thumbnail first)
+                                                   └─ Quit (save + thumbnail first)
 ```
 
 Closing the window behaves like Quit. There are no "are you sure" prompts except Delete, because
 nothing can be lost.
 
-**R10.2 Title screen.** The last played corner renders behind a glass panel, the clock at its saved
-time, the camera drifting 4 px/s along the island; water and critters animate, no simulation runs.
-With no corners, it shows the starter scene at dawn. Music: the full day mix (or night mix if that
-corner's clock is at night). The logo is the `title/logo` sprite.
+Each save file is a **whole world**: its home region and all its progress. Several saves are several
+independent worlds; nothing is shared between them except the profile.
 
-**R10.3 Corners screen.** A grid of cards, newest played first, plus a dashed **New corner** card.
+**R10.2 Title screen.** The home region of the last played world renders behind a glass panel, the
+clock at its saved time, the camera drifting 4 px/s across it; water and critters animate, no
+simulation runs. With no saves, it shows the starter scene at dawn. Music: the full day mix (or
+night mix if that world's clock is at night). The logo is the `title/logo` sprite.
+
+**R10.3 Worlds screen.** A grid of cards, one per world save, newest played first, plus a dashed
+**New world** card.
 Each card: thumbnail, name, "Autumn, day 3 · 14 pages", and on hover or selection, Play, Rename
 and Delete. Rename edits the name in place (Enter confirms, Esc cancels, 1–28 characters after
-trimming, no two corners with the same name: "You already have a corner with that name").
-Delete asks: "Delete “Plum Hollow”?" / "Its postcards stay where they are. This can't be undone."
-[Keep it] [Delete]. Delete removes the corner folder. A corner that fails to load shows
-"This corner couldn't be opened" with a Back button; its file is left untouched and the error logged.
+trimming, no two worlds with the same name: "You already have a world with that name").
+Delete asks: "Delete “Plum Hollow”?" / "The whole world goes, corner and all. Its postcards stay where
+they are. This can't be undone." [Keep it] [Delete]. Delete removes the world's folder. A save that
+fails to load shows "This world couldn't be opened" with a Back button; its file is left untouched
+and the error logged.
 
-**R10.4 New corner dialog.** Name field (default "Laeticia's Corner", then "Laeticia's Corner 2"…),
+**R10.4 New world dialog.** Name field (the world is named after its home corner) (default "Laeticia's Corner", then "Laeticia's Corner 2"…),
 a **Free build** toggle ("Everything unlocked and all land open from the start. Wishes still come,
-just for the company."), [Cancel] [Create]. Creates the save from `starter` and opens it.
+just for the company."), [Cancel] [Create]. Creates the world save, builds the home region from `starter` and opens it.
 Text entry uses SDL text input while the field is focused.
 
-**R10.5 First-minute tour.** Runs when a corner opens and the profile is not `onboarded`. A small
+**R10.5 First-minute tour.** Runs when a world opens and the profile is not `onboarded`. A small
 coach card sits above the bottom dock with the step text and a "Skip tour" link. Steps advance by
 doing; only step 1 times out.
 
@@ -831,8 +889,8 @@ Reduce motion, Show grid (G), Laeticia's chatter (Chatty or Quiet), Replay the t
 particles (leaves, petals, snow, rain) at 30%; no nook pulse ring; land opens with a 1 s fade; no
 shooting-star streaks; no gust wave; no lamp moths. Critters and Laeticia still animate.
 
-**R10.9 Thumbnails.** On leaving a corner, on quit and every 5 minutes of play, render the world
-pass (no UI, no bubbles) into an offscreen 384×240 target framed on the opened land, and write
+**R10.9 Thumbnails.** On leaving a world, on quit and every 5 minutes of play, render the world
+pass (no UI, no bubbles) into an offscreen 384×240 target framed on the opened home region, and write
 `thumb.png` atomically.
 
 ### R11 Builder comforts
@@ -902,7 +960,7 @@ Plain is a 2-pixel cream border drawn by the engine. The others are nine-slice p
 (`frame/<id>/tl … br`, edges tiled) drawn at the world's integer zoom, so they match the art.
 F or the bar's arrows cycle unlocked frames; the choice is remembered in the profile.
 
-**R12.3 Caption.** On by default (T toggles): the corner's name, then "Spring, day 2 · 17 November 2026"
+**R12.3 Caption.** On by default (T toggles): the world's name (its home corner's name), then "Spring, day 2 · 17 November 2026"
 (in-game date, then the real date in English), set in the UI font at the bottom left, on the
 frame's `plate` sprite (or on a soft dark band for Plain). Month names live in `strings.hpp`.
 
@@ -917,7 +975,7 @@ existing flash, and toasts "Postcard saved". Files go to:
 
 File name: `<slug>-YYYYMMDD-HHMMSS.png`, adding `-2`, `-3` on collision. "Open folder" (bar and
 pause menu) calls `SDL_OpenURL` with the folder's `file://` URL. Failures toast "Couldn't save the
-postcard". Postcard taking never changes the corner save.
+postcard". Postcard taking never changes the world save.
 
 ---
 
@@ -1107,12 +1165,11 @@ Plus one line per land stage (`land.stages[].line`) and per season (`seasons[].l
 
 | # | id | Name | Area (inclusive rects) | Tiles | Opens at | Revealed underneath | Line |
 |---|---|---|---|---|---|---|---|
-| 0 | `corner` | The corner | [[20, 20, 39, 39]] | 400 | 0 pages | Starter scene (new corners) or the v1 map (migrated corners) | — |
+| 0 | `corner` | The corner | [[20, 20, 39, 39]] | 400 | 0 pages | Starter scene (new worlds) or the v1 map (migrated saves) | — |
 | 1 | `west_meadow` | The west meadow | [[8, 20, 19, 39]] | 240 | 4 pages | Meadow ×48, Water ×18; Lavender ×3, Mushrooms ×1, Stump ×1, Tall grass ×2, Reeds ×2, Rock ×1, Oak ×1, Pine ×1 | The brambles are gone. There's a stream back there. |
 | 2 | `far_pond` | The far pond | [[20, 8, 39, 19]] | 240 | 9 pages | Water ×32; Lily pads ×2, Reeds ×2, Rowing boat ×1, Blossom tree ×2, Rock ×1, Oak ×1 | There was a pond back there all along. |
 | 3 | `old_orchard` | The old orchard | [[8, 8, 19, 19]] | 144 | 14 pages | Meadow ×54, Path ×3; Apple tree ×4, Stone wall ×5, Hay bale ×1 | An old orchard. Somebody loved this place once. |
-| 4 | `high_wood` | The high wood | [[0, 0, 7, 39], [8, 0, 39, 7]] | 576 | 20 pages | Water ×21; Pine ×13, Oak ×3, Reeds ×2, Log pile ×1, Mushrooms ×2, Rock ×2 | Look at that. A whole wood. |
-
+| 4 | `high_wood` | The high wood | [[0, 0, 7, 39], [8, 0, 39, 7]] | 576 | 20 pages | Water ×21, Path ×46; Pine ×13, Oak ×3, Reeds ×2, Log pile ×1, Mushrooms ×2, Rock ×2, Rose arch ×1, Lamp post ×1, Stone wall ×39 | A whole wood. And a road. Where does that go? |
 
 ### 5.7 Seasons
 
@@ -1142,7 +1199,7 @@ Rarity column: how often it can happen at most. "RM" = what reduce motion does.
 | 14 | Season stinger | First dawn of a season, with Laeticia's season line | 4 per year | none | `sfx/season.wav` | kept |
 | 15 | Lamp moths | Night: two moths circle each lamp head (radius 10 px), drawn after night grading at 70% brightness so they look lamp-lit | always at night | `fx/moth` | none | off |
 | 16 | Gust | By day, every 2–4 minutes: a wave crosses the map left to right over 2 s; trees, tall grass, reeds, flowers and sunflowers play their sway frames at 3× as it passes; 6 leaves; the windmill turns 2× for 3 s | 2–4 min | existing sway frames, `fx/leaf` | `sfx/gust.wav` | sound only |
-| 17 | Fish jump | Day or dusk, if the place has 8+ water tiles: a fish arcs out of a water tile with no item on it | on average every 90 s | `fx/fish_jump` | `sfx/splash.wav` at 40% | kept |
+| 17 | Fish jump | Day or dusk, if the home region has 8+ water tiles: a fish arcs out of a water tile with no item on it | on average every 90 s | `fx/fish_jump` | `sfx/splash.wav` at 40% | kept |
 | 18 | Well plip | Clicking a well with no tool; Laeticia's pebble toss (Wishing well nook) | 1 s per well | Laeticia `toss` | `sfx/well.wav` | kept |
 | 19 | The cat watches | A sitting or idle cat within 3 tiles of the hovered tile turns to face the pointer | always | none | none | kept |
 | 20 | Fireflies in sync | 8+ fireflies present: they blink in unison for 6 s | every 40–60 s | none | none | kept |
@@ -1265,12 +1322,12 @@ Opens below the title card when it is clicked; closes on Esc or clicking elsewhe
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ (the last corner, drifting)                                                  │
+│ (the last world's home region, drifting)                                     │
 │   ┌───────────────────────────┐                                              │
 │   │   [ title/logo sprite ]   │                                              │
 │   │                           │                                              │
 │   │ [ Continue · Plum Hollow ]│   first launch: [ Begin ]                    │
-│   │ [ Corners                ]│   hidden on first launch                     │
+│   │ [ Worlds                 ]│   hidden on first launch                     │
 │   │ [ Settings               ]│                                              │
 │   │ [ Quit                   ]│                                              │
 │   └───────────────────────────┘                                              │
@@ -1280,24 +1337,24 @@ Opens below the title card when it is clicked; closes on Esc or clicking elsewhe
 Keyboard: ↑/↓ move focus, Enter activates, Esc does nothing on the title. Buttons have hover,
 pressed, focused and disabled states like the existing pills.
 
-### 6.6 Corners screen, dialogs (B)
+### 6.6 Worlds screen, dialogs (B)
 
 ```
-┌ Your corners ─────────────────────────────────────────────────────── Back · Esc ┐
+┌ Your worlds ──────────────────────────────────────────────────────── Back · Esc ┐
 │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌ ─ ─ ─ ─ ─ ─ ┐              │
 │ │  thumb.png   │ │  thumb.png   │ │  thumb.png   │ │      +       │              │
-│ │              │ │              │ │              │ │  New corner  │              │
+│ │              │ │              │ │              │ │  New world   │              │
 │ └──────────────┘ └──────────────┘ └──────────────┘ └ ─ ─ ─ ─ ─ ─ ┘              │
 │  Plum Hollow      Laeticia's Corner Fernbank                                     │
 │  Autumn, day 3 · 14 pages                                                        │
 │  [ Play ] [✎] [🗑]   ◄ on hover / keyboard focus                                  │
 └──────────────────────────────────────────────────────────────────────────────────┘
 
-┌ Name your corner ──────────────────┐     ┌──────────────────────────────────────┐
+┌ Name your world ───────────────────┐     ┌──────────────────────────────────────┐
 │ [ Laeticia's Corner_            ]  │     │ Delete “Plum Hollow”?                │
-│ ( ) Free build                     │     │ Its postcards stay where they are.   │
-│     Everything unlocked and all    │     │ This can't be undone.                │
-│     land open from the start.      │     │                                      │
+│ ( ) Free build                     │     │ The whole world goes, corner and     │
+│     Everything unlocked and all    │     │ all. Its postcards stay where they   │
+│     land open from the start.      │     │ are. This can't be undone.           │
 │     Wishes still come, just for    │     │            [ Keep it ]  [ Delete ]   │
 │     the company.                   │     └──────────────────────────────────────┘
 │            [ Cancel ]  [ Create ]  │      Delete is the non-default button; Enter = Keep it
@@ -1312,7 +1369,7 @@ pressed, focused and disabled states like the existing pills.
         │ [ Resume            Esc ] │        │  Music        ──────────●──── 70          │
         │ [ Settings              ] │        │  Effects      ────────────●── 85          │
         │ [ Open postcards folder ] │        │  Ambience     ───────●─────── 60          │
-        │ [ Back to corners       ] │        │  Mute all                    M   [ off ]  │
+        │ [ Back to worlds        ] │        │  Mute all                    M   [ off ]  │
         │ [ Quit                  ] │        │ Display                                   │
         └───────────────────────────┘        │  Fullscreen                F11   [ off ]  │
                                              │  Interface size        [ Auto       ▾ ]  │
@@ -1358,15 +1415,15 @@ Fades after 2 s without pointer movement. Locked frames are not offered.
 | Tools | Move · Copy (Alt-click) · Brush 1×1 · Brush 3×3 · Brush 5×5 |
 | Hints | Click something to pick it up · Esc to cancel / Click to put it down · R to rotate · Esc to put it back / Click and drag to paint · [ ] brush size · Shift-drag for a rectangle · Esc to cancel / Click to remove · Shift-drag to clear an area · Esc to cancel / " · Shift-drag for a straight line" (appended for 1×1 items) / Click something to copy it · Esc to cancel / Ripe beds can be picked. Click one. |
 | Warnings | This land is still wild · Not unlocked yet · Nothing to pick up here |
-| Tooltips | Ripe · click to pick · Wild land · opens at {n} pages ({k} more) · {n} more to discover. Grant wishes to unlock them. · Sketchbook · Menu · Snow · Move |
+| Tooltips | Ripe · click to pick · The road out · Wild land · opens at {n} pages ({k} more) · {n} more to discover. Grant wishes to unlock them. · Sketchbook · Menu · Snow · Move |
 | Toasts | Wish granted · New in Build: {list} · New postcard frame: {name} · Laeticia's note added to the sketchbook · New nook: {name} · {n} of {total} pages · New land: {name} · New land (edge chip) · Postcard saved · Couldn't save the postcard · Welcome back. Laeticia has started a sketchbook: {n} pages so far. |
 | Wish states | Wishes · Not now · Waiting for nightfall · Waiting for dusk · Waiting for dawn · Waiting for daytime · Waiting for {season} · Waiting for rain · Waiting for clear skies · Open · Granted |
 | Sketchbook | Sketchbook · Wishes · Visitors · Nooks · {n} of {total} pages · {k} more until {stage} · Every part of the map is open · Rarer visitors · Laeticia's note: · Here now |
 | Calendar | Calendar · {Season} · day {d} of 3 · Seasons · Follow the days · Always spring · Always summer · Always autumn · Always winter |
-| Title | Continue · {name} · Begin · Corners · Settings · Quit |
-| Corners | Your corners · New corner · Play · Rename · Delete · Back · {Season}, day {d} · {n} pages · This corner couldn't be opened |
-| Dialogs | Name your corner · Free build · Everything unlocked and all land open from the start. Wishes still come, just for the company. · Create · Cancel · Give it a name first · You already have a corner with that name · Delete “{name}”? · Its postcards stay where they are. This can't be undone. · Keep it · Delete |
-| Pause | Paused · Resume · Settings · Open postcards folder · Back to corners · Quit |
+| Title | Continue · {name} · Begin · Worlds · Settings · Quit |
+| Worlds | Your worlds · New world · Play · Rename · Delete · Back · {Season}, day {d} · {n} pages · This world couldn't be opened |
+| Dialogs | Name your world · Free build · Everything unlocked and all land open from the start. Wishes still come, just for the company. · Create · Cancel · Give it a name first · You already have a world with that name · Delete “{name}”? · The whole world goes, corner and all. Its postcards stay where they are. This can't be undone. · Keep it · Delete |
+| Pause | Paused · Resume · Settings · Open postcards folder · Back to worlds · Quit |
 | Settings | Settings · Sound · Music · Effects · Ambience · Mute all · Display · Fullscreen · Interface size · Auto · Reduce motion · Show grid · Laeticia · Chatter · Chatty · Quiet · Help · First-minute tour · Replay · Done |
 | Tour | Drag to look around. · Open Build to plant something. · Pick the daisies, then click the ground. · Laeticia has a wish. Granting it unlocks new pieces. · Ctrl+Z undoes anything. J opens the sketchbook. · That's all. Make yourself at home. · Skip tour |
 | Photo bar | Frame · Caption · Hide bar · Take postcard · Open folder · Close |
@@ -1547,7 +1604,7 @@ stereo, true peak ≤ −1 dB; effects are WAV, 44.1 kHz, 16-bit mono, peak ≤ 
 - Loudness: the sum of all five stems of a piece sits at about −18 LUFS integrated with true peak
   ≤ −1 dB (so the full set equals the current mix plus the colour stem). Each stem keeps its natural
   level inside that mix; do not normalise stems individually.
-- Pad and keys alone must sound complete and calm, since that is what a new corner hears first.
+- Pad and keys alone must sound complete and calm, since that is what a new world hears first.
 
 ### 8.2 Ambience (5)
 
@@ -1612,14 +1669,16 @@ Critters keep today's wandering; Laeticia exists only as the voice and portrait 
    reachable, no wish needing a locked piece) as a unit test over the real catalog.
 2. **Condition evaluator** (`src/core`): §3, with the waiting mode and progress readout, and nook
    instance enumeration. Opened-tile terrain counts in `World`.
-3. **Saves**: profile, corners folder, v2 corner format, v1 migration (§2.5), thumbnails (R10.9).
-   Until task B adds the corners screen, the game opens the last corner or creates one.
+3. **Saves**: profile, worlds folder, v2 world save with global progress and the home region,
+   v1 migration (§2.5), thumbnails (R10.9). Until task B adds the worlds screen, the game opens
+   the last world or creates one.
 4. **Unlocks and drawer**: filtering, "+N" tile, new dots.
 5. **Wishes**: R1 offer, pacing, grant, snooze; wish tray (6.2); unlock ribbon (6.9).
 6. **Sketchbook** (6.3) replacing the journal, with rare silhouettes, hints and clues.
 7. **Rare visitor presence** (R3.1, R3.2) and per-visitor `seasons`, using today's wander motion.
 8. **Nooks**: detection, discovery flourish, hover outline (R7.1–R7.3), `growth` and `cap` effects.
-9. **Land**: wild rendering and refusal, page thresholds, reveals, opening wave, edge chip (R5).
+9. **Land**: wild rendering and refusal, page thresholds, reveals, opening wave, edge chip, the
+   road-and-gate boundary (R5).
 10. **Calendar and seasons**: day counter, season pin and calendar popover (6.4), grades, sprite
     resolution with `@season` and `g<stage>` (R4.3), seasonal ambience, snow, petals and leaves.
 11. **Growth and harvest** (R4.4, R4.5), growth in the item record and the save.
@@ -1649,7 +1708,7 @@ postcards.
    speech bubbles, lines, reactions, giver availability for wishes; nook `prefer`, `routine`,
    `fx` and `rare_rate` effects.
 3. **Delights** (§5.8).
-4. **Front door** (R10): title, corners screen with thumbnails, new, rename and delete, pause,
+4. **Front door** (R10): title, worlds screen with thumbnails, new, rename and delete, pause,
    settings with the profile, reduce motion, text input.
 5. **Tour** (R10.5).
 6. **Builder comforts** (R11): move with `Editor::abort()`, eyedropper, line placement, brush sizes,
@@ -1660,8 +1719,8 @@ Tests (unit): activity choice weights and filters for a fixed seed; cycle order;
 spacing; petting cooldown; startle radius and `only_from`; A* costs, crossings and wild land;
 schedule block at each clock value and with a pin; line rotation without repeats; move = one undo
 step, cancelled move = none; line and rectangle tools as one undo step; brush skipping blocked
-tiles; postcard file naming and collisions; corner rename and duplicate rules.
-Tests (scripted, with shots): title, corners screen, new corner with free build, rename, delete
+tiles; postcard file naming and collisions; world rename and duplicate rules.
+Tests (scripted, with shots): title, worlds screen, new world with free build, rename, delete
 with confirmation; settings sliders and reduce motion; pause; the full tour; cat napping on a bench,
 ducks sleeping on the bank at night, bees entering the hive; petting a hen; Laeticia's day at four
 clock times; move, eyedropper, line fence, rectangle erase, grid, Tab overlay; photo bar with each
@@ -1672,8 +1731,8 @@ frame and the caption, postcard count.
 | Risk | Mitigation |
 |---|---|
 | **Art volume** (478 must sprites) gates both tasks | The engine falls back everywhere (season looks, growth stages, missing anims fall back to idle, placeholders), so engine work never waits on art. Art order in §7.6. Rare visitors can land last. |
-| **The 40×40 island at 64×32 tiles is 2560 px wide at 1×**, larger than most windows, and the world must stay at integer zoom | Zoom 1 still shows the opened corner (1280 px) comfortably at 1280×800; wild land is background and may be cut off at the edges. Camera margin should allow panning to every tile. If an overview is wanted later it is a separate decision (a half-scale overview breaks the integer-scale rule). |
-| Migration bugs could cost a player their corner | Never overwrite the v1 file; rename only after the v2 file and thumbnail are written; fixture tests with real v1 saves. |
+| **The 40×40 home region at 64×32 tiles is 2560 px wide at 1×**, larger than most windows | Zoom 1 still shows the opened corner (1280 px) comfortably at 1280×800; wild land is background and may be cut off at the edges. The camera margin must allow panning to every tile. A half-scale overview level (linear filtering, allowed by the projection contract) is the natural whole-region view, and later the fast-travel overview of the world; it is not needed in this batch. |
+| Migration bugs could cost a player their world | Never overwrite the v1 file; rename only after the v2 file and thumbnail are written; fixture tests with real v1 saves. |
 | Pacing feels slow or fast | All pacing numbers are in §12; scripted runs log time-to-page for the first 30 minutes so the orchestrator can tune once by hand. |
 | Stem drift or clicks on unlock | One master sample counter, seek on unlock, fade from silence on bar lines; a unit test checks seek position arithmetic. |
 | Condition cost grows with content | Debounced, event-driven evaluation; `near` early exit; bench gate. |
@@ -1703,7 +1762,7 @@ frame and the caption, postcard count.
 | Localisation | Strings are centralised so it stays possible. |
 | More rare visitors (a hare, a swan, bats) | Eight is the art budget; the data model takes more without engine work. |
 | Egg collecting, footprints in snow, an umbrella walk | Nice-to-have art listed in §7.6; no rules depend on them. |
-| The world map and other places | Next batches; §2.1 already scopes data correctly. |
+| The wider world map, cities, fast travel and the overview | Next batches; §2.1 scopes the saved state and §13 lists the hooks. |
 
 ---
 
@@ -1717,11 +1776,11 @@ Everything in v1 keeps its meaning. New and changed fields:
 |---|---|
 | `version` | now `2` |
 | `tile` | `{"w": 64, "h": 32}`; the projection constants in CLAUDE.md double (top vertex `sx = (tx − ty) × 32`, `sy = (tx + ty) × 16`) |
-| `map` | `{"w": 40, "h": 40}` |
+| `map` | `{"w": 40, "h": 40}`: the home region's size (today the whole map) |
 | `seasons[]` | `id`, `name`, `days` (season length in days), `grade.mul` (RGB multiply), `ambience.day` / `.night` (files from `audio.ambience`), `fx.petal` / `.leaf` (multipliers), optional `rain_as: "snow"`, `line` |
-| `land` | `measure: "pages"`, `stages[]`: `id`, `name`, `rects` (inclusive `[x0, y0, x1, y1]`), `pages` (threshold), optional `line`, optional `reveal` `{terrain: [{id, rect}], items: [{id, x, y, v}]}` |
-| `starter` | The new-corner scene: `terrain` (`{id, rect}`), `items` (`{id, x, y, v}`), `resident` (`[x, y]` bedroll spot). Replaces the tables in `starter.cpp`. |
-| `progression` | `start` (`terrain`, `items`, `frames` unlocked in a new corner); `legacy` (`terrain`, `items` unlocked for migrated v1 corners) |
+| `land` | the home region's stages. `measure: "pages"`, `stages[]`: `id`, `name`, `rects` (inclusive `[x0, y0, x1, y1]` in home-region coordinates), `pages` (threshold), optional `line`, optional `reveal` `{terrain: [{id, rect}], items: [{id, x, y, v}]}` |
+| `starter` | The home region of a new world: `terrain` (`{id, rect}`), `items` (`{id, x, y, v}`), `resident` (`[x, y]` bedroll spot). Replaces the tables in `starter.cpp`. |
+| `progression` | `start` (`terrain`, `items`, `frames` unlocked in a new world); `legacy` (`terrain`, `items` unlocked for saves migrated from v1) |
 | `frames[]` | `id`, `name` of postcard frames |
 | `wishes[]` | R1.2 |
 | `nooks[]` | R7.1 |
@@ -1808,3 +1867,31 @@ New entries for `tuning.hpp` (content numbers such as grades and growth seconds 
 | `kThumbnailInterval` | 300 s | R10.9 |
 | `kPhotoBarFade` | 2 s | R12.1 |
 | `kReduceMotionParticles` | 0.3 | R10.8 |
+
+---
+
+## 13 Hooks for the wider world
+
+Not designed here, only kept open. Nothing below is in this batch's tasks.
+
+- **The road and the gate** (R5.6) are the seam. Later the gate becomes the home region's first
+  fast-travel point and the road continues into the world. Laeticia gets a `road` line context
+  used near the gate at dusk, in the spirit of "Someone used to walk that road every market day."
+  and "Where do you suppose it ends up?" (examples of the voice, to be written with the cities).
+- **Laeticia stays home.** She does not travel; she sees you off at the gate and greets you on
+  return with `greet` lines. This keeps her routine, pathing and wishes inside the home region.
+- **Sketchbook per region.** Today's tabs become the Home section; each region you reach later adds
+  its own tab (who was seen there, its sights). Visitors already have one global "seen" list, so a
+  region tab is a filter plus that region's own entries. Pages from every region count toward the
+  same total, so travelling also helps the home region open (harmless once all its stages are open).
+- **Travel wishes.** The wish model already fits: a `giver` can later be someone met elsewhere, and
+  two condition terms would cover travel without changing existing ones: `{"visited": "<region>"}`
+  and a `region` key on `count` / `near` / `visitor` (§2.1). Laeticia's natural travel wish asks for
+  a postcard of a far place (a `{"postcard": "<region>"}` term), and its reward can be a piece in
+  that place's style for the home region.
+- **Travellers on the road.** A road visitor type that passes along y = 0 outside the wall, never
+  entering the home region, would make the edge feel lived-in before the world exists.
+- **Global time.** Clock, weather and the calendar are already global (§2.1), so a city sees the same
+  season and sky as home. Postcard captions add the region's name.
+- **Saved state.** The world save gains `regions_visited` and nothing else unless a later batch lets
+  players change other regions; home coordinates stay home-relative (§2.1).
