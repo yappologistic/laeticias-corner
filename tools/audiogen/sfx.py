@@ -16,7 +16,7 @@ def modes(n, freqs, amps, decays, rng):
     out = np.zeros(n)
     for f, a, d in zip(freqs, amps, decays):
         out += a * np.sin(2 * np.pi * f * t + rng.uniform(0, 2 * np.pi)) * np.exp(-t / d)
-    return out
+    return out * ramp_in(n, secs(0.0006))  # random phases must not start with a step
 
 
 def noise_burst(n, rng, lo, hi, attack, decay):
@@ -64,7 +64,7 @@ def place_wood(rng):
                 [0.05, 0.03, 0.018, 0.01], rng)
     body = modes(n, [130, 210], [0.7, 0.3], [0.05, 0.035], rng)
     click = lowpass(rng.standard_normal(n) * perc(n, 0.0003, 0.002), 4000)
-    return finish(room(lowpass(hit + body + 0.4 * click, 6000) * ramp_in(n, 20), rng, 0.12))
+    return finish(room(lowpass(hit + body + 0.4 * click, 6000), rng, 0.12))
 
 
 def place_stone(rng):
@@ -79,7 +79,7 @@ def place_stone(rng):
     place(second, 0.35 * modes(secs(0.06), [f0 * 1.1, f0 * 1.9], [1.0, 0.5], [0.012, 0.008], rng),
           secs(0.028))
     mix = hit + 0.5 * grit + thud + second
-    return finish(room(lowpass(mix * ramp_in(n, 10), 6500), rng, 0.12))
+    return finish(room(lowpass(mix, 6500), rng, 0.12))
 
 
 def splash(rng):
@@ -96,7 +96,8 @@ def splash(rng):
         d = np.sin(phase_of(f * (1 + 2 * tm))) * np.exp(-tm / 0.01)
         place(drops, d * rng.uniform(0.15, 0.35), secs(rng.uniform(0.08, 0.3)))
     under = lowpass(rng.standard_normal(n), 300) * np.exp(-t / 0.08)
-    return finish(room(bloop + 0.35 * spray + drops + 0.4 * under, rng, 0.18), fade_out=0.04)
+    mix = lowpass(bloop + 0.35 * spray + drops + 0.4 * under, 4500, 4)
+    return finish(room(mix, rng, 0.18), fade_out=0.04)
 
 
 def paint(rng):
@@ -105,18 +106,18 @@ def paint(rng):
     env = np.sin(np.pi * np.arange(n) / n) ** 1.5
     brush = bandpass(rng.standard_normal(n), 700, 3200) * env
     soil = lowpass(rng.standard_normal(n), 400) * env
-    return finish(brush + 0.8 * soil, 0.003, 0.015)
+    return finish(lowpass(brush + 0.8 * soil, 5000, 4), 0.003, 0.015)
 
 
 def remove(rng):
     """Soft poof: an airy puff whose colour sinks as it fades, with a faint drop."""
     n = secs(0.32)
     t = times(n)
-    cutoff = glide(n, [(0, 3000), (0.3, 350)])
+    cutoff = glide(n, [(0, 2200), (0.3, 300)])
     puff = sweep_lowpass(rng.standard_normal(n), cutoff)
     puff *= perc(n, 0.012, 0.08)
     sink = np.sin(phase_of(glide(n, [(0, 320), (0.2, 160)]))) * perc(n, 0.01, 0.06)
-    return finish(room(puff + 0.5 * sink, rng, 0.15), fade_out=0.05)
+    return finish(room(lowpass(puff, 3500, 4) + 0.5 * sink, rng, 0.15), fade_out=0.05)
 
 
 def rotate(rng):
@@ -127,7 +128,7 @@ def rotate(rng):
     swish = bandpass(rng.standard_normal(n), 900, 2600) * env
     tick = np.zeros(n)
     place(tick, modes(secs(0.04), [1900, 3100], [1.0, 0.4], [0.006, 0.004], rng), secs(0.1))
-    return finish(0.6 * swish + tick)
+    return finish(lowpass(0.6 * swish + tick, 5000, 4))
 
 
 def invalid(rng):

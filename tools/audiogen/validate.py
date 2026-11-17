@@ -17,7 +17,6 @@ import mastering
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "assets" / "catalog.json"
 AUDIO = ROOT / "assets" / "audio"
-EXTRA_FILES = {"CREDITS.md"}
 
 # group -> (format, codec, channels, duration window s, loudness window LUFS, peak ceiling dB)
 RULES = {
@@ -123,7 +122,7 @@ def main():
             print(f"{name:22s} {cols}  {'; '.join(problems) or 'ok'}")
     for path in sorted(p for p in AUDIO.rglob("*") if p.is_file()):
         rel = path.relative_to(AUDIO).as_posix()
-        if rel not in listed and rel not in EXTRA_FILES:
+        if rel not in listed:
             failures += 1
             print(f"{rel:22s} not in the catalog")
     print("(sfx LUFS column = loudest 100 ms; loops = integrated)")

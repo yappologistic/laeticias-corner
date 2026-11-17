@@ -112,7 +112,7 @@ def render(piece, rng):
                                (m - 62) / 36))
             bass_pc, voicing = CHORDS[name]
             if sec["bass"]:
-                events.append(("bass", b, ("bass", bass_midi(bass_pc), beats * beat_s * 0.92,
+                events.append(("bass", b, ("bass", bass_midi(bass_pc), beats * beat_s,
                                            sec["bass"]), 0.0))
             pad_notes = [bass_midi(bass_pc) + 12] + [midi(v) for v in voicing.split()]
             for m in pad_notes:
@@ -159,7 +159,7 @@ DAY = {
     "pad_cutoff": 2200.0,
     "reverb": (3.0, 1.8, 0.9),  # length, low T60, high T60: a small warm room
     # bus -> (gain, reverb send)
-    "mix": {"box": (0.55, 0.45), "piano": (1.0, 0.3), "pad": (0.028, 0.4), "bass": (0.56, 0.05)},
+    "mix": {"box": (0.55, 0.45), "piano": (1.0, 0.3), "pad": (0.028, 0.4), "bass": (0.4, 0.05)},
     "sections": [
         {   # A: the theme on the music box
             "chords": DAY_A,
@@ -205,7 +205,7 @@ NIGHT = {
     "box_octave": 2.0,  # the box sits an octave above the written line, clear of the pad
     "pad_cutoff": 1500.0,
     "reverb": (4.5, 3.0, 1.4),  # a larger, darker space
-    "mix": {"box": (0.5, 0.7), "piano": (1.1, 0.45), "pad": (0.07, 0.5), "bass": (0.55, 0.05)},
+    "mix": {"box": (0.5, 0.7), "piano": (1.1, 0.45), "pad": (0.07, 0.5), "bass": (0.39, 0.05)},
     "sections": [
         {   # A: the day motif at half speed, on a distant music box
             "chords": NIGHT_A,
