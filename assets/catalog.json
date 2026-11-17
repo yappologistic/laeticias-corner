@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "tile": { "w": 32, "h": 16 },
+  "map": { "w": 20, "h": 20 },
+  "terrain": [
+    { "id": "grass",  "name": "Grass",  "base": true, "variants": 4 },
+    { "id": "meadow", "name": "Meadow", "edges": 16, "sound": "paint" },
+    { "id": "path",   "name": "Path",   "edges": 16, "sound": "paint" },
+    { "id": "cobble", "name": "Cobble", "edges": 16, "sound": "stone" },
+    { "id": "water",  "name": "Water",  "edges": 16, "fps": 3, "sound": "splash" }
+  ],
+  "categories": [
+    { "id": "terrain", "name": "Ground" },
+    { "id": "nature",  "name": "Nature" },
+    { "id": "garden",  "name": "Garden" },
+    { "id": "homes",   "name": "Homes" }
+  ],
+  "items": [
+    { "id": "oak",           "name": "Oak",            "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "fps": 2 },
+    { "id": "pine",          "name": "Pine",           "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "fps": 2 },
+    { "id": "blossom",       "name": "Blossom tree",   "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "fps": 2 },
+    { "id": "bush",          "name": "Bush",           "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft" },
+    { "id": "berry_bush",    "name": "Berry bush",     "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft" },
+    { "id": "tall_grass",    "name": "Tall grass",     "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "walkable": true, "fps": 2 },
+    { "id": "flowers_red",   "name": "Poppies",        "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "walkable": true },
+    { "id": "flowers_white", "name": "Daisies",        "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "walkable": true },
+    { "id": "flowers_violet","name": "Lavender",       "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "walkable": true },
+    { "id": "mushrooms",     "name": "Mushrooms",      "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "soft",  "walkable": true },
+    { "id": "rock",          "name": "Rock",           "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "any",   "sound": "stone" },
+    { "id": "stump",         "name": "Stump",          "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 2, "on": "land",  "sound": "wood" },
+    { "id": "reeds",         "name": "Reeds",          "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "any",   "sound": "soft",  "walkable": true, "fps": 2 },
+    { "id": "lily_pads",     "name": "Lily pads",      "category": "nature", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "water", "sound": "splash", "walkable": true },
+
+    { "id": "hedge",         "name": "Hedge",          "category": "garden", "footprint": [1, 1], "layout": "connect", "on": "land",  "sound": "soft" },
+    { "id": "fence",         "name": "Fence",          "category": "garden", "footprint": [1, 1], "layout": "connect", "on": "land",  "sound": "wood" },
+    { "id": "planter",       "name": "Veggie bed",     "category": "garden", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "land",  "sound": "wood" },
+    { "id": "beehive",       "name": "Beehive",        "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood" },
+    { "id": "scarecrow",     "name": "Scarecrow",      "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood" },
+    { "id": "well",          "name": "Well",           "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 2, "on": "land",  "sound": "stone" },
+    { "id": "lamp",          "name": "Lamp post",      "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 1, "on": "land",  "sound": "stone", "glow": true },
+    { "id": "bench",         "name": "Bench",          "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood" },
+    { "id": "picnic_table",  "name": "Picnic table",   "category": "garden", "footprint": [2, 1], "layout": "rotate",  "count": 2, "on": "land",  "sound": "wood" },
+    { "id": "campfire",      "name": "Campfire",       "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 1, "on": "land",  "sound": "wood",  "glow": true, "fps": 6 },
+    { "id": "bridge",        "name": "Footbridge",     "category": "garden", "footprint": [1, 1], "layout": "rotate",  "count": 2, "on": "water", "sound": "wood",  "walkable": true },
+
+    { "id": "cottage",       "name": "Cottage",        "category": "homes",  "footprint": [2, 2], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood",  "glow": true, "smoke": true },
+    { "id": "toolshed",      "name": "Tool shed",      "category": "homes",  "footprint": [1, 1], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood" },
+    { "id": "coop",          "name": "Hen coop",       "category": "homes",  "footprint": [1, 1], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood" },
+    { "id": "greenhouse",    "name": "Greenhouse",     "category": "homes",  "footprint": [2, 2], "layout": "rotate",  "count": 2, "on": "land",  "sound": "stone", "glow": true },
+    { "id": "barn",          "name": "Barn",           "category": "homes",  "footprint": [3, 2], "layout": "rotate",  "count": 4, "on": "land",  "sound": "wood",  "glow": true },
+    { "id": "windmill",      "name": "Windmill",       "category": "homes",  "footprint": [2, 2], "layout": "rotate",  "count": 2, "on": "land",  "sound": "stone", "glow": true, "fps": 6 }
+  ],
+  "visitors": [
+    { "id": "duck",      "name": "Ducks",       "habitat": "water", "time": "any",   "needs": { "terrain": { "water": 6 } },                             "max": 4, "voice": "duck", "blurb": "They found the pond all by themselves." },
+    { "id": "hen",       "name": "Hens",        "habitat": "land",  "time": "day",   "needs": { "items": { "coop": 1 } },                                "max": 4, "voice": "hen",  "blurb": "Busy, opinionated, and very fond of the coop." },
+    { "id": "cat",       "name": "The cat",     "habitat": "land",  "time": "any",   "needs": { "items": { "cottage": 1 } },                             "max": 1, "voice": "cat",  "blurb": "Moved in the moment the cottage had a roof." },
+    { "id": "butterfly", "name": "Butterflies", "habitat": "air",   "time": "day",   "needs": { "any_items": { "flowers_red": 1, "flowers_white": 1, "flowers_violet": 1 }, "total": 4 }, "max": 6, "blurb": "Four flower patches is all it takes." },
+    { "id": "bee",       "name": "Bees",        "habitat": "air",   "time": "day",   "needs": { "items": { "beehive": 1 } },                             "max": 6, "blurb": "Humming between the hive and the blooms." },
+    { "id": "firefly",   "name": "Fireflies",   "habitat": "air",   "time": "night", "needs": { "any_items": { "tall_grass": 1, "reeds": 1 }, "total": 3 }, "max": 12, "blurb": "They only come out when the lamps do." }
+  ],
+  "audio": {
+    "music":    ["music/day.ogg", "music/night.ogg"],
+    "ambience": ["amb/birds.ogg", "amb/crickets.ogg", "amb/rain.ogg", "amb/water.ogg"],
+    "sfx": [
+      "sfx/place_soft.wav", "sfx/place_wood.wav", "sfx/place_stone.wav", "sfx/splash.wav", "sfx/paint.wav",
+      "sfx/remove.wav", "sfx/rotate.wav", "sfx/invalid.wav", "sfx/undo.wav", "sfx/redo.wav",
+      "sfx/ui_hover.wav", "sfx/ui_click.wav", "sfx/ui_open.wav", "sfx/ui_close.wav", "sfx/shutter.wav",
+      "sfx/discover.wav", "sfx/duck.wav", "sfx/hen.wav", "sfx/cat.wav"
+    ]
+  }
+}
