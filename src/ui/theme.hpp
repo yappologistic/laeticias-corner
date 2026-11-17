@@ -61,6 +61,10 @@ inline constexpr Glass kGlassTip{
     .shadowSoftness = 10.0f,
     .shadowDrop = 2.0f,
 };
+// Over a bright scene the glass deepens toward these, keeping text contrast high (about 8:1 or
+// more over a white backdrop); over a dark scene it stays lighter and more see-through.
+inline constexpr float kGlassBrightBackdrop = 0.62f;
+inline constexpr float kGlassBrightTint = 0.72f;
 // Without a blurred backdrop (render targets unavailable) the glass falls back to this fill.
 inline constexpr SDL_FColor kGlassFallback{0.16f, 0.18f, 0.165f, 0.90f};
 // Backdrop blur radius (UI units) and the width of light rims.
@@ -68,7 +72,6 @@ inline constexpr float kBlurRadius = 18.0f;
 inline constexpr float kRim = 1.0f;
 
 // Layout grid (UI units).
-inline constexpr float kUnit = 8.0f;
 inline constexpr float kMargin = 16.0f;
 inline constexpr float kGap = 8.0f;
 inline constexpr float kButton = 40.0f;
@@ -84,6 +87,40 @@ inline constexpr float kTabH = 32.0f;
 inline constexpr float kJournalW = 320.0f;
 inline constexpr float kJournalRow = 56.0f;
 inline constexpr float kTileRadius = 12.0f;
+inline constexpr float kBuildExtra = 64.0f; // Build pill width beyond its icon
+inline constexpr float kLabelGap = 8.0f;    // icon to label in pill buttons
+inline constexpr float kTitlePad = 14.0f;
+inline constexpr float kTitleIconGap = 6.0f;
+inline constexpr float kTabExtra = 28.0f; // tab width beyond its label
+inline constexpr float kSlide = 16.0f;    // drawer and journal slide while fading
+inline constexpr float kHintPad = 16.0f;
+inline constexpr float kHintH = 36.0f;
+inline constexpr float kHintSlide = 8.0f;
+inline constexpr float kToastPad = 18.0f;
+inline constexpr float kToastH = 40.0f;
+inline constexpr float kToastIconGap = 10.0f;
+inline constexpr float kToastSlide = 12.0f;
+inline constexpr float kJournalHeader = 48.0f;
+inline constexpr float kJournalIcon = 40.0f;
+inline constexpr float kJournalIconPad = 4.0f;
+inline constexpr float kJournalTextGap = 12.0f;
+inline constexpr float kJournalRowPad = 6.0f;
+inline constexpr float kCloseSize = 32.0f;
+inline constexpr float kCloseInset = 8.0f;
+inline constexpr float kTileInset = 4.0f;
+inline constexpr float kThumbTop = 6.0f;
+inline constexpr float kTileLabelBottom = 12.0f;
+inline constexpr float kTileLift = 2.0f; // hovered thumbnails rise this much
+inline constexpr float kTipPad = 10.0f;
+inline constexpr float kTipH = 32.0f;
+inline constexpr float kTipGap = 10.0f;
+inline constexpr float kTipRadius = 10.0f;
+inline constexpr float kTipSlide = 4.0f;
+inline constexpr float kChipPad = 6.0f;
+inline constexpr float kChipGap = 8.0f;
+inline constexpr float kChipRadius = 6.0f;
+// Text is centred on a line by putting its baseline this fraction of the ascent below it.
+inline constexpr float kBaselineCentre = 0.36f;
 
 // Type: two text sizes plus the icon size.
 inline constexpr float kTextBody = 15.0f;
@@ -120,9 +157,12 @@ inline constexpr char32_t kRedo = 0xE2A0;
 inline constexpr char32_t kHome = 0xE0F5;
 inline constexpr char32_t kClose = 0xE1B2;
 inline constexpr char32_t kSparkle = 0xE47E;
-inline constexpr char32_t kAll[] = {kPlus,      kMinus, kEraser, kSoundOn, kSoundOff, kCamera,
-                                    kClockAuto, kSun,   kSunset, kSunrise, kMoon,     kRain,
-                                    kJournal,   kUndo,  kRedo,   kHome,    kClose,    kSparkle};
+inline constexpr char32_t kChevronUp = 0xE070;
+inline constexpr char32_t kChevronDown = 0xE06D;
+inline constexpr char32_t kAll[] = {kPlus,   kMinus,     kEraser,  kSoundOn,   kSoundOff,
+                                    kCamera, kClockAuto, kSun,     kSunset,    kSunrise,
+                                    kMoon,   kRain,      kJournal, kUndo,      kRedo,
+                                    kHome,   kClose,     kSparkle, kChevronUp, kChevronDown};
 } // namespace icon
 
 } // namespace lc::theme

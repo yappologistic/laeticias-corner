@@ -2,8 +2,8 @@
 // Text and icon glyphs rasterised with stb_truetype into one UI texture (which also carries a
 // white texel for untextured shapes).
 
-#include "render/batch.hpp"
-#include "render/sdl_ptr.hpp"
+#include "platform/batch.hpp"
+#include "platform/sdl_ptr.hpp"
 
 #include <array>
 #include <filesystem>
@@ -47,11 +47,13 @@ private:
         std::vector<unsigned char> ttf;
         std::vector<Glyph> glyphs; // sorted by codepoint
         float ascent = 0;
+        float descent = 0; // negative: below the baseline
         float lineHeight = 0;
-        float pixelSize = 0;
+        std::vector<float> kern; // printable ASCII pairs; empty for the icon face
     };
     static std::size_t idx(Face f) { return static_cast<std::size_t>(f); }
     [[nodiscard]] const Glyph* find(Face face, char32_t cp) const;
+    [[nodiscard]] float kerning(Face face, char32_t a, char32_t b) const;
 
     std::array<FaceData, static_cast<std::size_t>(Face::Count)> faces_;
     TexturePtr texture_;

@@ -130,7 +130,7 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
         idx[n++] = 1 + (i + 1) % kOutline;
     }
     n = band(idx, n, 1, 1 + kOutline);
-    batch_.use(texture, SDL_BLENDMODE_BLEND);
+    batch_.use(texture, SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
     batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(), static_cast<int>(n));
 }
 
@@ -162,7 +162,7 @@ void Painter::rim(Box b, float radius, float width, SDL_FColor top, SDL_FColor b
     std::array<int, kOutline * 12> idx;
     std::size_t n = 0;
     for (int l = 0; l < 2; ++l) n = band(idx, n, l * kOutline, (l + 1) * kOutline);
-    batch_.use(font_.texture(), SDL_BLENDMODE_BLEND);
+    batch_.use(font_.texture(), SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
     batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(), static_cast<int>(n));
 }
 
@@ -183,9 +183,12 @@ void Painter::endGlass() {
                    p.box.w + soft * 0.5f, p.box.h + soft * 0.5f},
                   p.radius + soft * 0.5f, scaled(p.style->shadow, p.alpha), soft);
     }
+    const float bright = std::clamp(backdrop_.brightness, 0.0f, 1.0f);
     for (const Pane& p : panes) {
         if (backdrop_.texture != nullptr) {
-            const SDL_FColor c = scaled(p.style->backdrop, p.alpha);
+            SDL_FColor c = p.style->backdrop;
+            const float k = c.r + (theme::kGlassBrightBackdrop - c.r) * bright;
+            c = scaled({k, k * c.g / c.r, k * c.b / c.r, c.a}, p.alpha);
             shape(p.box, p.radius, 1.0f, c, c, Fill::Backdrop);
         } else {
             roundRect(p.box, p.radius, scaled(theme::kGlassFallback, p.alpha));
@@ -193,8 +196,10 @@ void Painter::endGlass() {
     }
     for (const Pane& p : panes) {
         const theme::Glass& g = *p.style;
-        gradient(p.box, p.radius, scaled(over(g.sheenTop, g.tint), p.alpha),
-                 scaled(over(g.sheenBottom, g.tint), p.alpha));
+        SDL_FColor tint = g.tint;
+        tint.a = std::max(tint.a, tint.a + (theme::kGlassBrightTint - tint.a) * bright);
+        gradient(p.box, p.radius, scaled(over(g.sheenTop, tint), p.alpha),
+                 scaled(over(g.sheenBottom, tint), p.alpha));
         rim(p.box, p.radius, theme::kRim * scale_, scaled(g.rimTop, p.alpha),
             scaled(g.rimBottom, p.alpha));
     }
@@ -243,23 +248,23 @@ void Painter::icon(char32_t cp, float cx, float cy, SDL_FColor color) {
     font_.drawIcon(batch_, cp, cx, cy, color);
 }
 
-void Painter::thumbnail(SpriteId id, Box b, float alpha) {
+void Painter::thumbnail(const Sprite& sprite, Box b, float maxScale, float alpha) {
     if (thumbCount_ == thumbs_.size()) endLayer();
-    thumbs_[thumbCount_++] = {id, b, alpha};
+    thumbs_[thumbCount_++] = {sprite, b, maxScale, alpha};
 }
 
 void Painter::endLayer() {
     for (std::size_t i = 0; i < thumbCount_; ++i) {
         const Thumb& t = thumbs_[i];
-        const Sprite& s = atlas_.sprite(t.id);
-        if (s.w <= 0 || s.h <= 0) continue;
-        // Whole multiples when the sprite fits, whole fractions when it does not, so pixel art
-        // stays even at any atlas resolution.
-        const float fit = std::min(t.box.w / s.w, t.box.h / s.h);
-        const float k = fit >= 1.0f ? std::floor(fit) : 1.0f / std::ceil(1.0f / fit);
+        const Sprite& s = t.sprite;
+        if (s.w <= 0 || s.h <= 0 || s.texture == nullptr) continue;
+        const float fit = std::min({t.box.w / s.w, t.box.h / s.h, t.maxScale});
+        const bool whole = fit >= 1.0f;
+        const float k = whole ? std::floor(fit) : fit;
         const float w = s.w * k;
         const float h = s.h * k;
-        batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+        batch_.use(s.texture, SDL_BLENDMODE_BLEND,
+                   whole ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
         batch_.quad(
             SDL_FRect{std::round(t.box.cx() - w * 0.5f), std::round(t.box.cy() - h * 0.5f), w, h},
             s.uv, {1, 1, 1, t.alpha});

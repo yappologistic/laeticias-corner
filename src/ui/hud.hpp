@@ -7,7 +7,7 @@
 #include "core/clock.hpp"
 #include "core/iso.hpp"
 #include "core/visitors.hpp"
-#include "render/sprites.hpp"
+#include "platform/sprite.hpp"
 #include "ui/painter.hpp"
 
 #include <array>
@@ -21,9 +21,18 @@ namespace lc {
 
 enum class Tool : std::uint8_t { None, Place, Paint, Remove };
 
+// First-frame art of every catalog entry, for drawer tiles and the journal.
+struct ThumbSet {
+    std::vector<Sprite> terrain;
+    std::vector<Sprite> items;
+    std::vector<Sprite> visitors;
+    Sprite placeholder;
+    float tileW = 64; // art tile width: one-tile things share one scale, so sizes compare
+};
+
 struct HudModel {
     const Catalog* cat = nullptr;
-    const SpriteTables* sprites = nullptr;
+    const ThumbSet* thumbs = nullptr;
     const Visitors* visitors = nullptr;
     Tool tool = Tool::None;
     int selection = -1; // item index (Place) or terrain index (Paint)
@@ -41,6 +50,7 @@ struct HudModel {
     bool canZoomOut = true;
     std::string_view hint;
     std::string_view warning;
+    float brightness = 0; // of the scene behind the glass, 0 dark .. 1 bright
 };
 
 struct UiInput {
@@ -78,6 +88,7 @@ struct HudAction {
 
 // The drawer's category with this id lists terrain instead of items.
 inline constexpr std::string_view kGroundCategory = "terrain";
+[[nodiscard]] bool isGroundCategory(const Catalog& cat, int category);
 
 // What a drawer tile stands for. Each tile carries its own, so drawing and picking never depend on
 // the open tab still being the one the drawer was laid out for.
@@ -100,6 +111,12 @@ public:
     }
     // True while the pointer is over the interface or a press that began on it is held.
     [[nodiscard]] bool wantsMouse() const { return overUi_ || captured_; }
+    // Window area the interface leaves free (below the title, above the docks and hint line), as
+    // of the last update.
+    [[nodiscard]] Box safeArea() const { return safe_; }
+    // Scrolls the open drawer so a named tile ("tile:<id>") is laid out from the next update;
+    // false when the tile is not in the open tab.
+    bool reveal(std::string_view name, const HudModel& m);
     void toast(std::string text);
     void flash() { flash_ = 1.0f; }
     // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...).
@@ -114,6 +131,10 @@ public:
 private:
     // Room for every widget of a frame (docks, tabs and a full drawer page), reserved up front.
     static constexpr std::size_t kWidgetReserve = 64;
+    struct Thumbnailed {
+        const Sprite* sprite;
+        float maxScale;
+    };
     struct Widget {
         int id = 0;
         Box box;
@@ -131,6 +152,9 @@ private:
     };
 
     void layout(const HudModel& m, const Font& font, Vec2 screen, float s);
+    // Lays out the docks, wrapping them into rows on narrow windows; returns the top row's y.
+    float layoutDocks(const HudModel& m, Vec2 screen, float s);
+    [[nodiscard]] Thumbnailed thumbFor(const HudModel& m, DrawerEntry e, float box) const;
     [[nodiscard]] const Widget* find(std::string_view name, const HudModel& m) const;
     void emit(HudAction::Kind kind, int arg = 0);
     Widget& add(int id, Box box);
@@ -182,7 +206,11 @@ private:
     Box drawerBox_;
     Box hintBox_;
     Box toastBox_;
+    Box safe_;
     float bottomTop_ = 0;
+    bool scrollable_ = false;
+    bool canScrollUp_ = false;
+    bool canScrollDown_ = false;
 };
 
 } // namespace lc

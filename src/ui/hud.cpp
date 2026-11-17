@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <format>
+#include <utility>
 
 namespace lc {
 namespace {
@@ -24,6 +26,8 @@ enum Wid : int {
     kZoomOut,
     kZoomIn,
     kJournalClose,
+    kScrollUp,
+    kScrollDown,
     kTab0 = 16,
     kTile0 = 32,
 };
@@ -46,6 +50,8 @@ constexpr Named kNames[] = {
     {"zoom_out", kZoomOut},
     {"zoom_in", kZoomIn},
     {"journal_close", kJournalClose},
+    {"scroll_up", kScrollUp},
+    {"scroll_down", kScrollDown},
 };
 
 float approach(float v, bool on, float dt) {
@@ -110,6 +116,11 @@ std::string_view pinTooltip(ClockPin p) {
 
 } // namespace
 
+bool isGroundCategory(const Catalog& cat, int category) {
+    return category >= 0 && std::cmp_less(category, cat.categories.size()) &&
+           cat.categories[static_cast<std::size_t>(category)].id == kGroundCategory;
+}
+
 Hud::Hud() {
     widgets_.reserve(kWidgetReserve);
     panels_.reserve(16);
@@ -121,7 +132,7 @@ Hud::Hud() {
 
 void Hud::categoryEntries(const Catalog& cat, int category, std::vector<DrawerEntry>& out) {
     out.clear();
-    if (cat.categories[static_cast<std::size_t>(category)].id == kGroundCategory) {
+    if (isGroundCategory(cat, category)) {
         for (std::size_t t = 0; t < cat.terrain.size(); ++t)
             out.push_back({.terrain = true, .index = static_cast<int>(t)});
     } else {
@@ -162,76 +173,83 @@ Hud::Widget& Hud::add(int id, Box box) {
     return w;
 }
 
-void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
-    widgets_.clear();
-    panels_.clear();
+float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
     const float margin = theme::kMargin * s;
     const float btn = theme::kButton * s;
     const float pad = theme::kDockPad * s;
     const float dockH = btn + 2 * pad;
     const float gap = theme::kGap * s;
-    const float y = screen.y - margin - dockH;
-    bottomTop_ = y;
+    const float buildW = btn + theme::kBuildExtra * s;
+    const float leftW = buildW + gap + dockH;
+    const float divider = gap * 2;
+    const float rightW = 5 * btn + 2 * divider + 2 * pad;
+    const float centreW = 5 * btn + 2 * pad;
+    const float avail = screen.x - 2 * margin;
+    // One row when everything fits; otherwise the centre dock, then the right dock, move up a
+    // row each, so no dock ever overlaps another.
+    const bool oneRow = leftW + gap + centreW + gap + rightW <= avail;
+    const bool twoRows = !oneRow && leftW + gap + rightW <= avail;
+    const float row0 = screen.y - margin - dockH;
+    const float rowStep = dockH + gap;
+    const float leftY = row0;
+    const float rightY = oneRow || twoRows ? row0 : row0 - rowStep;
+    const float centreY = oneRow ? row0 : rightY - rowStep;
 
-    // Bottom-left: Build pill and the remove tool.
-    const float buildW = btn + 64.0f * s;
     {
-        Widget& w = add(kBuild, {margin, y, buildW, dockH});
+        Widget& w = add(kBuild, {margin, leftY, buildW, dockH});
         w.icon = theme::icon::kPlus;
         w.label = strings::kBuild;
         w.tooltip = strings::kBuild;
-        w.shortcut = "B";
+        w.shortcut = strings::kKeyBuild;
         w.selected = m.drawerOpen || m.tool == Tool::Place || m.tool == Tool::Paint;
         panels_.push_back({w.box, dockH * 0.5f});
-        Widget& r = add(kRemove, {margin + buildW + gap, y, dockH, dockH});
+        Widget& r = add(kRemove, {margin + buildW + gap, leftY, dockH, dockH});
         r.icon = theme::icon::kEraser;
         r.tooltip = strings::kRemove;
-        r.shortcut = "X";
+        r.shortcut = strings::kKeyRemove;
         r.selected = m.tool == Tool::Remove;
         panels_.push_back({r.box, dockH * 0.5f});
     }
-    const float leftEnd = margin + buildW + gap + dockH;
 
     // Right dock: undo, redo | recentre | zoom out, zoom in.
-    const float divider = gap * 2;
-    const float rightW = 5 * btn + 2 * divider + 2 * pad;
     const float rightX = screen.x - margin - rightW;
-    panels_.push_back({{rightX, y, rightW, dockH}, dockH * 0.5f});
+    panels_.push_back({{rightX, rightY, rightW, dockH}, dockH * 0.5f});
     {
         float x = rightX + pad;
         const auto button = [&](int id, char32_t icon, std::string_view tip, std::string_view key,
                                 bool enabled) {
-            Widget& w = add(id, {x, y + pad, btn, btn});
+            Widget& w = add(id, {x, rightY + pad, btn, btn});
             w.icon = icon;
             w.tooltip = tip;
             w.shortcut = key;
             w.enabled = enabled;
             x += btn;
         };
-        button(kUndo, theme::icon::kUndo, strings::kUndo, "Ctrl+Z", m.canUndo);
-        button(kRedo, theme::icon::kRedo, strings::kRedo, "Ctrl+Shift+Z", m.canRedo);
+        button(kUndo, theme::icon::kUndo, strings::kUndo, strings::kKeyUndo, m.canUndo);
+        button(kRedo, theme::icon::kRedo, strings::kRedo, strings::kKeyRedo, m.canRedo);
         const auto rule = [&](Box& b) {
-            b = {std::round(x + divider * 0.5f - theme::kRim * s * 0.5f), y + pad + btn * 0.25f,
-                 theme::kRim * s, btn * 0.5f};
+            b = {std::round(x + divider * 0.5f - theme::kRim * s * 0.5f),
+                 rightY + pad + btn * 0.25f, theme::kRim * s, btn * 0.5f};
             x += divider;
         };
         rule(dividers_[0]);
-        button(kRecentre, theme::icon::kHome, strings::kRecentre, "Home", true);
+        button(kRecentre, theme::icon::kHome, strings::kRecentre, strings::kKeyRecentre, true);
         rule(dividers_[1]);
-        button(kZoomOut, theme::icon::kMinus, strings::kZoomOut, "−", m.canZoomOut);
-        button(kZoomIn, theme::icon::kPlus, strings::kZoomIn, "+", m.canZoomIn);
+        button(kZoomOut, theme::icon::kMinus, strings::kZoomOut, strings::kKeyZoomOut,
+               m.canZoomOut);
+        button(kZoomIn, theme::icon::kPlus, strings::kZoomIn, strings::kKeyZoomIn, m.canZoomIn);
     }
 
-    // Centre dock, kept clear of both side groups on narrow windows.
-    const float centreW = 5 * btn + 2 * pad;
     float centreX = std::round((screen.x - centreW) * 0.5f);
-    centreX = std::clamp(centreX, leftEnd + gap, std::max(leftEnd + gap, rightX - gap - centreW));
-    panels_.push_back({{centreX, y, centreW, dockH}, dockH * 0.5f});
+    if (oneRow)
+        centreX = std::clamp(centreX, margin + leftW + gap,
+                             std::max(margin + leftW + gap, rightX - gap - centreW));
+    panels_.push_back({{centreX, centreY, centreW, dockH}, dockH * 0.5f});
     {
         float x = centreX + pad;
         const auto button = [&](int id, char32_t icon, std::string_view tip, std::string_view key,
                                 bool selected) {
-            Widget& w = add(id, {x, y + pad, btn, btn});
+            Widget& w = add(id, {x, centreY + pad, btn, btn});
             w.icon = icon;
             w.tooltip = tip;
             w.shortcut = key;
@@ -239,25 +257,38 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
             x += btn;
         };
         button(kSound, m.muted ? theme::icon::kSoundOff : theme::icon::kSoundOn,
-               m.muted ? strings::kSoundOff : strings::kSoundOn, "M", false);
-        button(kPhoto, theme::icon::kCamera, strings::kPhoto, "P", false);
-        button(kClock, pinIcon(m.pin), pinTooltip(m.pin), "C", m.pin != ClockPin::Auto);
-        button(kRain, theme::icon::kRain, m.rain ? strings::kRainOn : strings::kRainOff, "N",
-               m.rain);
-        button(kJournal, theme::icon::kJournal, strings::kJournal, "J", m.journalOpen);
+               m.muted ? strings::kSoundOff : strings::kSoundOn, strings::kKeySound, false);
+        button(kPhoto, theme::icon::kCamera, strings::kPhoto, strings::kKeyPhoto, false);
+        button(kClock, pinIcon(m.pin), pinTooltip(m.pin), strings::kKeyClock,
+               m.pin != ClockPin::Auto);
+        button(kRain, theme::icon::kRain, m.rain ? strings::kRainOn : strings::kRainOff,
+               strings::kKeyRain, m.rain);
+        button(kJournal, theme::icon::kJournal, strings::kJournal, strings::kKeyJournal,
+               m.journalOpen);
     }
+    return std::min(centreY, rightY);
+}
+
+void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
+    widgets_.clear();
+    panels_.clear();
+    const float margin = theme::kMargin * s;
+    const float gap = theme::kGap * s;
+    bottomTop_ = layoutDocks(m, screen, s);
 
     // Title and clock, top-left.
     {
-        const float tpad = 14.0f * s;
+        const float tpad = theme::kTitlePad * s;
         const float w1 = font.measure(Face::Title, strings::kTitle);
-        const float w2 = theme::kIcon * s + 6 * s + font.measure(Face::Body, clockLabel_);
+        const float w2 =
+            theme::kIcon * s + theme::kTitleIconGap * s + font.measure(Face::Body, clockLabel_);
         titleBox_ = {margin, margin, std::max(w1, w2) + 2 * tpad,
                      2 * tpad + font.lineHeight(Face::Title) + font.lineHeight(Face::Body)};
     }
 
-    // Build drawer above the bottom-left group.
+    // Build drawer above the docks.
     drawerBox_ = {};
+    scrollable_ = canScrollUp_ = canScrollDown_ = false;
     if (drawerT_ > 0.0f) {
         const float ppad = theme::kPanelPad * s;
         const float tileW = theme::kTileW * s;
@@ -272,22 +303,41 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         if (scroll_.size() != m.cat->categories.size()) scroll_.assign(m.cat->categories.size(), 0);
         int& scroll = scroll_[static_cast<std::size_t>(m.category)];
         scroll = std::clamp(scroll, 0, std::max(0, rowsTotal - rows));
+        scrollable_ = rowsTotal > rows;
+        canScrollUp_ = scroll > 0;
+        canScrollDown_ = scroll < rowsTotal - rows;
 
         const float w =
             2 * ppad + static_cast<float>(cols) * tileW + static_cast<float>(cols - 1) * gap;
         const float h = 2 * ppad + theme::kTabH * s + gap + static_cast<float>(rows) * tileH +
                         static_cast<float>(rows - 1) * gap;
-        const float slide = (1.0f - smooth(drawerT_)) * 16.0f * s;
-        drawerBox_ = {margin, y - gap - h + slide, w, h};
+        const float slide = (1.0f - smooth(drawerT_)) * theme::kSlide * s;
+        drawerBox_ = {margin, bottomTop_ - gap - h + slide, w, h};
 
         float tx = drawerBox_.x + ppad;
         const float ty = drawerBox_.y + ppad;
         for (std::size_t c = 0; c < m.cat->categories.size(); ++c) {
-            const float tabW = font.measure(Face::Body, m.cat->categories[c].name) + 28.0f * s;
+            const float tabW =
+                font.measure(Face::Body, m.cat->categories[c].name) + theme::kTabExtra * s;
             Widget& t = add(kTab0 + static_cast<int>(c), {tx, ty, tabW, theme::kTabH * s});
             t.label = m.cat->categories[c].name;
             t.selected = static_cast<int>(c) == m.category;
             tx += tabW + gap;
+        }
+        if (scrollable_) {
+            // Row arrows at the end of the tab row; the wheel scrolls too.
+            const float b = theme::kTabH * s;
+            const float right = drawerBox_.x + drawerBox_.w - ppad;
+            Widget& down = add(kScrollDown, {right - b, ty, b, b});
+            down.icon = theme::icon::kChevronDown;
+            down.tooltip = strings::kScrollDown;
+            down.shortcut = strings::kKeyWheel;
+            down.enabled = canScrollDown_;
+            Widget& up = add(kScrollUp, {right - 2 * b - gap * 0.5f, ty, b, b});
+            up.icon = theme::icon::kChevronUp;
+            up.tooltip = strings::kScrollUp;
+            up.shortcut = strings::kKeyWheel;
+            up.enabled = canScrollUp_;
         }
         const float gy = ty + theme::kTabH * s + gap;
         for (int i = 0; i < rows * cols; ++i) {
@@ -308,42 +358,64 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         }
     }
 
-    // Journal panel, top-right.
+    // Journal panel, top-right, never reaching under the drawer or the docks.
     journalBox_ = {};
     if (journalT_ > 0.0f) {
         const float jw = std::min(theme::kJournalW * s, screen.x - 2 * margin);
-        const float header = 48.0f * s;
+        const float header = theme::kJournalHeader * s;
         const float h = header +
                         static_cast<float>(m.cat->visitors.size()) * theme::kJournalRow * s +
                         theme::kPanelPad * s * 0.5f;
-        const float slide = (1.0f - smooth(journalT_)) * 16.0f * s;
-        journalBox_ = {screen.x - margin - jw + slide, margin, jw, std::min(h, y - gap - margin)};
-        Widget& c = add(kJournalClose, {journalBox_.x + jw - 8 * s - 32 * s, journalBox_.y + 8 * s,
-                                        32 * s, 32 * s});
+        const float slide = (1.0f - smooth(journalT_)) * theme::kSlide * s;
+        const float x = screen.x - margin - jw + slide;
+        float bottom = bottomTop_ - gap;
+        if (drawerT_ > 0.0f && x < drawerBox_.x + drawerBox_.w) bottom = drawerBox_.y - gap;
+        journalBox_ = {x, margin, jw, std::max(header, std::min(h, bottom - margin))};
+        const float cs = theme::kCloseSize * s;
+        const float ci = theme::kCloseInset * s;
+        Widget& c = add(kJournalClose, {journalBox_.x + jw - ci - cs, journalBox_.y + ci, cs, cs});
         c.icon = theme::icon::kClose;
         c.tooltip = strings::kClose;
-        c.shortcut = "J";
+        c.shortcut = strings::kKeyJournal;
     }
 
-    // Hint line above the drawer or docks, toast at the top; both slide a little as they fade.
+    // Hint line above the drawer or docks; both slide a little as they fade.
+    const float hintH = theme::kHintH * s;
     {
-        const float hpad = 16.0f * s;
+        const float hpad = theme::kHintPad * s;
         const float w1 = font.measure(Face::Body, hintText_);
         const float w2 = m.warning.empty() ? 0.0f : font.measure(Face::Body, m.warning);
         const float sep = (w1 > 0 && w2 > 0) ? font.measure(Face::Body, strings::kSeparator) : 0.0f;
-        const float w = w1 + sep + w2 + 2 * hpad;
-        const float h = 36.0f * s;
+        const float w = std::min(w1 + sep + w2 + 2 * hpad, screen.x - 2 * margin);
         const float a = smooth(hintT_);
         const float bottom = drawerT_ > 0.0f ? drawerBox_.y : bottomTop_;
-        hintBox_ = {std::round((screen.x - w) * 0.5f), bottom - gap - h + (1 - a) * 8 * s, w, h};
+        hintBox_ = {std::round((screen.x - w) * 0.5f),
+                    bottom - gap - hintH + (1 - a) * theme::kHintSlide * s, w, hintH};
     }
+    // The toast sits in the free band between the title and the journal, or below the title
+    // when that band is too narrow.
     {
-        const float tpad = 18.0f * s;
-        const float w = theme::kIcon * s + 10 * s + font.measure(Face::Body, toast_) + 2 * tpad;
-        const float h = 40.0f * s;
-        toastBox_ = {std::round((screen.x - w) * 0.5f), margin - (1 - smooth(toastT_)) * 12 * s, w,
-                     h};
+        const float tpad = theme::kToastPad * s;
+        const float w = std::min(theme::kIcon * s + theme::kToastIconGap * s +
+                                     font.measure(Face::Body, toast_) + 2 * tpad,
+                                 screen.x - 2 * margin);
+        const float h = theme::kToastH * s;
+        const float left = titleBox_.x + titleBox_.w + gap;
+        const float right = journalT_ > 0.0f ? journalBox_.x - gap : screen.x - margin;
+        float x = std::round((screen.x - w) * 0.5f);
+        float y = margin;
+        if (x < left || x + w > right) {
+            x = std::round(std::clamp((left + right - w) * 0.5f, left, std::max(left, right - w)));
+            if (x + w > right) {
+                x = margin;
+                y = titleBox_.y + titleBox_.h + gap;
+            }
+        }
+        toastBox_ = {x, y - (1 - smooth(toastT_)) * theme::kToastSlide * s, w, h};
     }
+    const float top = titleBox_.y + titleBox_.h + gap;
+    safe_ = {margin, top, screen.x - 2 * margin,
+             std::max(0.0f, bottomTop_ - gap - hintH - gap - top)};
 }
 
 void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 screen, float s,
@@ -359,7 +431,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     screen_ = screen;
     drawerT_ = approach(drawerT_, m.drawerOpen && !m.photo, dt);
     journalT_ = approach(journalT_, m.journalOpen && !m.photo, dt);
-    hintT_ = approach(hintT_, (!m.hint.empty() || !m.warning.empty()) && !m.photo, dt);
+    // In photo mode only the hint line stays (it says how to take the photo and get back).
+    hintT_ = approach(hintT_, !m.hint.empty() || !m.warning.empty(), dt);
     toastTime_ = std::max(0.0f, toastTime_ - dt);
     toastT_ = approach(toastT_, toastTime_ > 0.0f && !m.photo, dt);
     flash_ = std::max(0.0f, flash_ - dt / theme::kFlashSeconds);
@@ -383,9 +456,13 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     if (canPoint) {
         for (const Panel& p : panels_)
             if (p.box.contains(in.x, in.y)) overUi_ = true;
+        // Every visible panel stops the pointer, so neither clicks nor the placement ghost reach
+        // the map through it.
         if (titleBox_.contains(in.x, in.y) ||
             (drawerT_ > 0.5f && drawerBox_.contains(in.x, in.y)) ||
-            (journalT_ > 0.5f && journalBox_.contains(in.x, in.y)))
+            (journalT_ > 0.5f && journalBox_.contains(in.x, in.y)) ||
+            (hintT_ > 0.5f && hintBox_.contains(in.x, in.y)) ||
+            (toastT_ > 0.5f && !toast_.empty() && toastBox_.contains(in.x, in.y)))
             overUi_ = true;
         for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
             if (it->box.contains(in.x, in.y)) {
@@ -397,7 +474,9 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         }
     }
     // Panels that are animating closed are not interactive.
-    if (hovered >= kTab0 && drawerT_ < 1.0f && !m.drawerOpen) hovered = 0;
+    if ((hovered >= kTab0 || hovered == kScrollUp || hovered == kScrollDown) && drawerT_ < 1.0f &&
+        !m.drawerOpen)
+        hovered = 0;
     if (hovered == kJournalClose && !m.journalOpen) hovered = 0;
     if (hovered != hovered_ && hovered != 0) emit(HudAction::Kind::Hover);
     if (pointed != pointed_) hoverTime_ = 0;
@@ -431,6 +510,12 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kRecentre: emit(HudAction::Kind::Recentre); break;
             case kZoomOut: emit(HudAction::Kind::ZoomOut); break;
             case kZoomIn: emit(HudAction::Kind::ZoomIn); break;
+            case kScrollUp:
+                if (!scroll_.empty()) --scroll_[static_cast<std::size_t>(m.category)];
+                break;
+            case kScrollDown:
+                if (!scroll_.empty()) ++scroll_[static_cast<std::size_t>(m.category)];
+                break;
             default:
                 if (active_ >= kTile0) {
                     emit(entry.terrain ? HudAction::Kind::PickTerrain : HudAction::Kind::PickItem,
@@ -443,9 +528,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         active_ = 0;
         captured_ = false;
     }
-    if (in.wheel != 0 && canPoint && drawerBox_.contains(in.x, in.y) && !scroll_.empty()) {
+    if (in.wheel != 0 && canPoint && drawerBox_.contains(in.x, in.y) && !scroll_.empty())
         scroll_[static_cast<std::size_t>(m.category)] += in.wheel > 0 ? -1 : 1;
-    }
 
     for (std::size_t i = 1; i < hover_.size(); ++i) {
         const int id = static_cast<int>(i);
@@ -492,6 +576,17 @@ float Hud::highlight(std::string_view name, const HudModel& m) const {
     return w != nullptr ? hoverOf(w->id) : 0.0f;
 }
 
+Hud::Thumbnailed Hud::thumbFor(const HudModel& m, DrawerEntry e, float box) const {
+    const ThumbSet& t = *m.thumbs;
+    const auto& list = e.terrain ? t.terrain : t.items;
+    const Sprite* s = e.index >= 0 && std::cmp_less(e.index, list.size())
+                          ? &list[static_cast<std::size_t>(e.index)]
+                          : &t.placeholder;
+    // One-tile things share one scale (a bush stays smaller than an oak); bigger pieces shrink
+    // to fit.
+    return {s, box / t.tileW};
+}
+
 void Hud::drawButton(Painter& p, const Widget& w, float alpha) const {
     const float s = scale_;
     const float h = w.enabled ? hoverOf(w.id) : 0.0f;
@@ -515,11 +610,11 @@ void Hud::drawButton(Painter& p, const Widget& w, float alpha) const {
         const Font& f = p.font();
         const float textW = f.measure(Face::Body, w.label);
         const float iconW = theme::kIcon * s;
-        const float total = iconW + 8 * s + textW;
+        const float total = iconW + theme::kLabelGap * s + textW;
         const float x0 = inner.cx() - total * 0.5f;
         p.icon(w.icon, x0 + iconW * 0.5f, inner.cy() + press, ink);
-        p.text(Face::Body, w.label, x0 + iconW + 8 * s,
-               inner.cy() + press + f.ascent(Face::Body) * 0.36f, ink);
+        p.text(Face::Body, w.label, x0 + iconW + theme::kLabelGap * s,
+               inner.cy() + press + f.ascent(Face::Body) * theme::kBaselineCentre, ink);
     } else {
         p.icon(w.icon, inner.cx(), inner.cy() + press, ink);
     }
@@ -537,8 +632,8 @@ void Hud::drawTab(Painter& p, const Widget& w, float alpha) const {
     const Font& f = p.font();
     const float tw = f.measure(Face::Body, w.label);
     const SDL_FColor ink = w.selected ? theme::kInk : mixColor(theme::kInkMuted, theme::kInk, h);
-    p.text(Face::Body, w.label, w.box.cx() - tw * 0.5f, w.box.cy() + f.ascent(Face::Body) * 0.36f,
-           withAlpha(ink, alpha));
+    p.text(Face::Body, w.label, w.box.cx() - tw * 0.5f,
+           w.box.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(ink, alpha));
 }
 
 void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) const {
@@ -558,15 +653,15 @@ void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) 
     if (h > 0) p.roundRect(w.box, r, withAlpha(theme::kHover, alpha * h));
     if (pr > 0) p.roundRect(w.box, r, withAlpha(theme::kPressed, alpha * pr));
 
-    const SpriteId thumb =
-        thumbnail(*m.sprites, w.entry.terrain ? Thumb::Terrain : Thumb::Item, w.entry.index);
-    const float lift = h * 2.0f * s - pr * s;
-    const float th = theme::kThumb * s;
-    p.thumbnail(thumb, {w.box.x + 4 * s, w.box.y + 6 * s - lift, w.box.w - 8 * s, th}, alpha);
+    const float inset = theme::kTileInset * s;
+    const Box box{w.box.x + inset, w.box.y + theme::kThumbTop * s - (h * theme::kTileLift - pr) * s,
+                  w.box.w - 2 * inset, theme::kThumb * s};
+    const Thumbnailed t = thumbFor(m, w.entry, box.w);
+    p.thumbnail(*t.sprite, box, t.maxScale, alpha);
 
     const Font& f = p.font();
     std::string_view label = w.label;
-    const float maxW = w.box.w - 8 * s;
+    const float maxW = w.box.w - 2 * inset;
     float tw = f.measure(Face::Body, label);
     bool cut = false;
     while (tw > maxW && label.size() > 1) {
@@ -575,7 +670,7 @@ void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) 
         cut = true;
     }
     const float x = w.box.cx() - tw * 0.5f;
-    const float base = w.box.y + w.box.h - 12 * s;
+    const float base = w.box.y + w.box.h - theme::kTileLabelBottom * s;
     const SDL_FColor ink = withAlpha(theme::kInk, alpha);
     const float adv = f.measure(Face::Body, label);
     p.text(Face::Body, label, x, base, ink);
@@ -585,7 +680,7 @@ void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) 
 void Hud::drawTitle(Painter& p, const HudModel& m) const {
     const float s = scale_;
     const Font& f = p.font();
-    const float pad = 14.0f * s;
+    const float pad = theme::kTitlePad * s;
     const float iconW = theme::kIcon * s;
     const float lh1 = f.lineHeight(Face::Title);
     const float lh2 = f.lineHeight(Face::Body);
@@ -593,8 +688,8 @@ void Hud::drawTitle(Painter& p, const HudModel& m) const {
     p.text(Face::Title, strings::kTitle, b.x + pad, b.y + pad + f.ascent(Face::Title), theme::kInk);
     const float y2 = b.y + pad + lh1;
     p.icon(phaseIcon(m.phase), b.x + pad + iconW * 0.5f, y2 + lh2 * 0.5f, theme::kInkMuted);
-    p.text(Face::Body, clockLabel_, b.x + pad + iconW + 6 * s, y2 + f.ascent(Face::Body),
-           theme::kInkMuted);
+    p.text(Face::Body, clockLabel_, b.x + pad + iconW + theme::kTitleIconGap * s,
+           y2 + f.ascent(Face::Body), theme::kInkMuted);
 }
 
 void Hud::drawJournal(Painter& p, const HudModel& m) const {
@@ -603,42 +698,53 @@ void Hud::drawJournal(Painter& p, const HudModel& m) const {
     const Box b = journalBox_;
     const Font& f = p.font();
     const float pad = theme::kPanelPad * s;
-    const float header = 48.0f * s;
-    p.text(Face::Title, strings::kJournal, b.x + pad, b.y + 24 * s + f.ascent(Face::Title) * 0.36f,
+    const float header = theme::kJournalHeader * s;
+    p.text(Face::Title, strings::kJournal, b.x + pad,
+           b.y + header * 0.5f + f.ascent(Face::Title) * theme::kBaselineCentre,
            withAlpha(theme::kInk, a));
     p.roundRect({b.x + pad, b.y + header - theme::kRim * s, b.w - 2 * pad, theme::kRim * s}, 0,
                 withAlpha(theme::kDivider, a), 0);
     float y = b.y + header;
     const float row = theme::kJournalRow * s;
+    const float rowPad = theme::kJournalRowPad * s;
+    const float iconSize = theme::kJournalIcon * s;
+    const float iconPad = theme::kJournalIconPad * s;
     for (std::size_t v = 0; v < m.cat->visitors.size(); ++v) {
         if (y + row > b.y + b.h + 1) break;
         const auto& def = m.cat->visitors[v];
         const bool seen = m.visitors->seen(static_cast<int>(v));
-        const Box icon{b.x + pad, y + 6 * s, 40 * s, 40 * s};
-        p.roundRect(icon, 20 * s, withAlpha(theme::kInset, a));
-        p.rim(icon, 20 * s, theme::kRim * s, withAlpha(theme::kInsetRimTop, a),
+        const Box icon{b.x + pad, y + rowPad, iconSize, iconSize};
+        p.roundRect(icon, iconSize * 0.5f, withAlpha(theme::kInset, a));
+        p.rim(icon, iconSize * 0.5f, theme::kRim * s, withAlpha(theme::kInsetRimTop, a),
               withAlpha(theme::kInsetRimBottom, a));
         if (seen) {
-            p.thumbnail(thumbnail(*m.sprites, Thumb::Visitor, static_cast<int>(v)),
-                        {icon.x + 4 * s, icon.y + 4 * s, 32 * s, 32 * s}, a);
+            const Sprite& spr =
+                v < m.thumbs->visitors.size() ? m.thumbs->visitors[v] : m.thumbs->placeholder;
+            p.thumbnail(
+                spr,
+                {icon.x + iconPad, icon.y + iconPad, icon.w - 2 * iconPad, icon.h - 2 * iconPad},
+                (icon.w - 2 * iconPad) / spr.w, a);
         } else {
-            p.text(Face::Body, "?", icon.cx() - f.measure(Face::Body, "?") * 0.5f,
-                   icon.cy() + f.ascent(Face::Body) * 0.36f, withAlpha(theme::kInkMuted, a));
+            p.text(Face::Body, strings::kJournalMystery,
+                   icon.cx() - f.measure(Face::Body, strings::kJournalMystery) * 0.5f,
+                   icon.cy() + f.ascent(Face::Body) * theme::kBaselineCentre,
+                   withAlpha(theme::kInkMuted, a));
         }
-        const float tx = icon.x + icon.w + 12 * s;
+        const float tx = icon.x + icon.w + theme::kJournalTextGap * s;
         const float tw = b.x + b.w - pad - tx;
         p.text(Face::Body, seen ? std::string_view(def.name) : strings::kJournalUnknown, tx,
-               y + 6 * s + f.ascent(Face::Body), withAlpha(theme::kInk, a));
+               y + rowPad + f.ascent(Face::Body), withAlpha(theme::kInk, a));
         const int present = m.visitors->present(static_cast<int>(v));
         if (present > 0) {
-            char buf[16];
-            const int n = std::snprintf(buf, sizeof buf, "×%d", present);
-            const std::string_view count(buf, static_cast<std::size_t>(std::max(0, n)));
+            char buf[24];
+            const auto end =
+                std::format_to_n(buf, sizeof buf, "{}{}", strings::kJournalCount, present);
+            const std::string_view count(buf, static_cast<std::size_t>(end.out - buf));
             p.text(Face::Body, count, b.x + b.w - pad - f.measure(Face::Body, count),
-                   y + 6 * s + f.ascent(Face::Body), withAlpha(theme::kAccent, a));
+                   y + rowPad + f.ascent(Face::Body), withAlpha(theme::kAccent, a));
         }
         p.wrapped(Face::Body, seen ? std::string_view(def.blurb) : strings::kJournalEmpty, tx,
-                  y + 6 * s + f.lineHeight(Face::Body), tw, 1, withAlpha(theme::kInkMuted, a));
+                  y + rowPad + f.lineHeight(Face::Body), tw, 1, withAlpha(theme::kInkMuted, a));
         y += row;
     }
 }
@@ -648,8 +754,8 @@ void Hud::drawHint(Painter& p, const HudModel& m) const {
     if (a <= 0) return;
     const Font& f = p.font();
     const Box b = hintBox_;
-    const float base = b.cy() + f.ascent(Face::Body) * 0.36f;
-    float x = b.x + 16.0f * scale_;
+    const float base = b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre;
+    float x = b.x + theme::kHintPad * scale_;
     p.text(Face::Body, hintText_, x, base, withAlpha(theme::kInk, a));
     x += f.measure(Face::Body, hintText_);
     if (!m.warning.empty()) {
@@ -666,12 +772,12 @@ void Hud::drawToast(Painter& p) const {
     if (a <= 0 || toast_.empty()) return;
     const float s = scale_;
     const Font& f = p.font();
-    const float pad = 18.0f * s;
+    const float pad = theme::kToastPad * s;
     const float iconW = theme::kIcon * s;
     const Box b = toastBox_;
     p.icon(theme::icon::kSparkle, b.x + pad + iconW * 0.5f, b.cy(), withAlpha(theme::kAccent, a));
-    p.text(Face::Body, toast_, b.x + pad + iconW + 10 * s, b.cy() + f.ascent(Face::Body) * 0.36f,
-           withAlpha(theme::kInk, a));
+    p.text(Face::Body, toast_, b.x + pad + iconW + theme::kToastIconGap * s,
+           b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(theme::kInk, a));
 }
 
 void Hud::drawTooltip(Painter& p) const {
@@ -683,32 +789,53 @@ void Hud::drawTooltip(Painter& p) const {
     if (w == nullptr || w->tooltip.empty()) return;
     const float s = scale_;
     const Font& f = p.font();
-    const float pad = 10.0f * s;
+    const float pad = theme::kTipPad * s;
+    const float chipPad = theme::kChipPad * s;
     const float tw = f.measure(Face::Body, w->tooltip);
-    const float kw = w->shortcut.empty() ? 0.0f : f.measure(Face::Body, w->shortcut) + 12 * s;
-    const float bw = tw + (kw > 0 ? kw + 8 * s : 0) + 2 * pad;
-    const float bh = 32.0f * s;
+    const float kw = w->shortcut.empty() ? 0.0f : f.measure(Face::Body, w->shortcut) + 2 * chipPad;
+    const float bw = tw + (kw > 0 ? kw + theme::kChipGap * s : 0) + 2 * pad;
+    const float bh = theme::kTipH * s;
     const bool above = w->box.y > screen_.y * 0.5f;
     float x = std::round(w->box.cx() - bw * 0.5f);
     x = std::clamp(x, theme::kMargin * s * 0.5f, screen_.x - bw - theme::kMargin * s * 0.5f);
-    float y = above ? w->box.y - bh - 10 * s + (1 - a) * 4 * s
-                    : w->box.y + w->box.h + 10 * s - (1 - a) * 4 * s;
+    const float gap = theme::kTipGap * s;
+    const float slide = (1 - a) * theme::kTipSlide * s;
+    float y = above ? w->box.y - bh - gap + slide : w->box.y + w->box.h + gap - slide;
     // Above the docks, keep clear of a visible hint line rather than covering it.
     const Box& h = hintBox_;
     if (above && hintT_ > 0 && x < h.x + h.w && x + bw > h.x && y < h.y + h.h && y + bh > h.y)
         y = h.y - bh - theme::kGap * s;
     const Box b{x, y, bw, bh};
-    p.glass(b, 10 * s, a, theme::kGlassTip);
+    p.glass(b, theme::kTipRadius * s, a, theme::kGlassTip);
     p.endGlass();
-    const float base = b.cy() + f.ascent(Face::Body) * 0.36f;
+    const float base = b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre;
     p.text(Face::Body, w->tooltip, b.x + pad, base, withAlpha(theme::kInk, a));
     if (kw > 0) {
-        const Box chip{b.x + pad + tw + 8 * s, b.y + 6 * s, kw, bh - 12 * s};
-        p.roundRect(chip, 6 * s, withAlpha(theme::kChip, a));
-        p.rim(chip, 6 * s, theme::kRim * s, withAlpha(theme::kInsetRimTop, a),
+        const Box chip{b.x + pad + tw + theme::kChipGap * s, b.y + chipPad, kw, bh - 2 * chipPad};
+        const float cr = theme::kChipRadius * s;
+        p.roundRect(chip, cr, withAlpha(theme::kChip, a));
+        p.rim(chip, cr, theme::kRim * s, withAlpha(theme::kInsetRimTop, a),
               withAlpha(theme::kInsetRimBottom, a));
-        p.text(Face::Body, w->shortcut, chip.x + 6 * s, base, withAlpha(theme::kInkMuted, a));
+        p.text(Face::Body, w->shortcut, chip.x + chipPad, base, withAlpha(theme::kInkMuted, a));
     }
+}
+
+bool Hud::reveal(std::string_view name, const HudModel& m) {
+    if (!name.starts_with("tile:") || !m.drawerOpen) return false;
+    const std::string_view id = name.substr(5);
+    categoryEntries(*m.cat, m.category, entries_);
+    const auto it = std::ranges::find_if(entries_, [&](const DrawerEntry& e) {
+        const auto i = static_cast<std::size_t>(e.index);
+        return (e.terrain ? m.cat->terrain[i].id : m.cat->items[i].id) == id;
+    });
+    if (it == entries_.end() || scroll_.size() != m.cat->categories.size()) return false;
+    const float avail = screen_.x - 2 * theme::kMargin * scale_ - 2 * theme::kPanelPad * scale_;
+    const float tileW = theme::kTileW * scale_;
+    const float gap = theme::kGap * scale_;
+    const int cols =
+        std::clamp(static_cast<int>((avail + gap) / (tileW + gap)), 1, theme::kDrawerMaxCols);
+    scroll_[static_cast<std::size_t>(m.category)] = static_cast<int>(it - entries_.begin()) / cols;
+    return true;
 }
 
 void Hud::draw(Painter& p, const HudModel& m) const {
@@ -723,7 +850,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         drawTitle(p, m);
         for (const Box& d : dividers_) p.roundRect(d, 0, theme::kDivider, 0);
         for (const Widget& w : widgets_) {
-            if (w.id >= kTab0) continue;
+            if (w.id >= kTab0 || w.id == kScrollUp || w.id == kScrollDown) continue;
             if (w.id == kJournalClose) {
                 if (journalT_ > 0) drawButton(p, w, ja);
                 continue;
@@ -733,7 +860,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         if (journalT_ > 0) drawJournal(p, m);
         p.endLayer();
 
-        // The drawer may cover the journal on small windows.
+        // The drawer is its own layer: the journal and docks keep clear of it.
         if (drawerT_ > 0) {
             const float a = smooth(drawerT_);
             p.glass(drawerBox_, radius, a, theme::kGlass);
@@ -743,21 +870,22 @@ void Hud::draw(Painter& p, const HudModel& m) const {
                     drawTile(p, w, m, a);
                 else if (w.id >= kTab0)
                     drawTab(p, w, a);
+                else if (w.id == kScrollUp || w.id == kScrollDown)
+                    drawButton(p, w, a);
             }
             p.endLayer();
         }
-
-        const float ha = smooth(hintT_);
-        const float ta = toast_.empty() ? 0.0f : smooth(toastT_);
-        if (ha > 0 || ta > 0) {
-            p.glass(hintBox_, hintBox_.h * 0.5f, ha, theme::kGlass);
-            p.glass(toastBox_, toastBox_.h * 0.5f, ta, theme::kGlass);
-            p.endGlass();
-            drawHint(p, m);
-            drawToast(p);
-        }
-        drawTooltip(p);
     }
+    const float ha = smooth(hintT_);
+    const float ta = toast_.empty() || m.photo ? 0.0f : smooth(toastT_);
+    if (ha > 0 || ta > 0) {
+        p.glass(hintBox_, hintBox_.h * 0.5f, ha, theme::kGlass);
+        p.glass(toastBox_, toastBox_.h * 0.5f, ta, theme::kGlass);
+        p.endGlass();
+        drawHint(p, m);
+        drawToast(p);
+    }
+    if (!m.photo) drawTooltip(p);
     if (flash_ > 0)
         p.roundRect({0, 0, screen_.x, screen_.y}, 0,
                     withAlpha(theme::kFlash, flash_ * flash_ * 0.8f), 0);

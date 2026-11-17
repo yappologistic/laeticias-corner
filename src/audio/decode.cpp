@@ -1,6 +1,6 @@
 #include "audio/decode.hpp"
 
-#include "render/sdl_ptr.hpp"
+#include "platform/sdl_ptr.hpp"
 
 #define STB_VORBIS_HEADER_ONLY
 // stb_vorbis ships as one .c file; HEADER_ONLY exposes just its declarations.

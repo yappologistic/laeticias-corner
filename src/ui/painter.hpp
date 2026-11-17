@@ -2,8 +2,8 @@
 // Anti-aliased UI shapes, glass panels, text and sprite thumbnails drawn through one batch.
 
 #include "core/iso.hpp"
-#include "render/atlas.hpp"
-#include "render/batch.hpp"
+#include "platform/batch.hpp"
+#include "platform/sprite.hpp"
 #include "ui/font.hpp"
 #include "ui/theme.hpp"
 
@@ -26,10 +26,12 @@ struct Box {
 };
 
 // The blurred scene behind the interface, sampled with screen-space UVs. A null texture makes
-// glass fall back to a plain translucent fill.
+// glass fall back to a plain translucent fill. `brightness` (0 dark .. 1 bright) deepens the
+// glass over a bright scene so text keeps its contrast.
 struct Backdrop {
     SDL_Texture* texture = nullptr;
     Vec2 screen;
+    float brightness = 0;
 };
 
 // Interface drawing goes in layers so the whole frame needs only a handful of texture switches:
@@ -38,8 +40,8 @@ struct Backdrop {
 // overlap; a later layer draws over earlier ones.
 class Painter {
 public:
-    Painter(Batch& batch, const Font& font, const Atlas& atlas, Backdrop backdrop, float scale)
-        : batch_(batch), font_(font), atlas_(atlas), backdrop_(backdrop), scale_(scale) {}
+    Painter(Batch& batch, const Font& font, Backdrop backdrop, float scale)
+        : batch_(batch), font_(font), backdrop_(backdrop), scale_(scale) {}
 
     // Rounded rectangle with a feathered edge; a large feather gives a soft shadow.
     void roundRect(Box b, float radius, SDL_FColor color, float feather = 1.0f);
@@ -54,8 +56,9 @@ public:
     float wrapped(Face face, std::string_view s, float x, float top, float width, int maxLines,
                   SDL_FColor color);
     void icon(char32_t cp, float cx, float cy, SDL_FColor color);
-    // Queues an atlas sprite scaled by an integer factor to fit the box, centred.
-    void thumbnail(SpriteId id, Box b, float alpha);
+    // Queues a sprite centred in the box at scale min(fit, maxScale): whole multiples when that
+    // is 1 or more (crisp pixels), smooth fractions below.
+    void thumbnail(const Sprite& sprite, Box b, float maxScale, float alpha);
     void endLayer();
 
     [[nodiscard]] const Font& font() const { return font_; }
@@ -69,8 +72,9 @@ private:
         const theme::Glass* style;
     };
     struct Thumb {
-        SpriteId id;
+        Sprite sprite;
         Box box;
+        float maxScale;
         float alpha;
     };
 
@@ -78,7 +82,6 @@ private:
 
     Batch& batch_;
     const Font& font_;
-    const Atlas& atlas_;
     Backdrop backdrop_;
     float scale_;
     std::array<Pane, 16> panes_{};

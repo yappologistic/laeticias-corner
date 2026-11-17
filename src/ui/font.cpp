@@ -12,7 +12,11 @@
 namespace lc {
 namespace {
 
-constexpr char32_t kTextExtras[] = {0xB7, 0xD7, 0xE9, 0x2014, 0x2019, 0x2026};
+constexpr char32_t kTextExtras[] = {0xB7, 0xD7, 0xE9, 0x2014, 0x2019, 0x2026, 0x2212};
+// Kerning is kept for printable ASCII pairs, which is all interface text needs.
+constexpr char32_t kKernFirst = 32;
+constexpr char32_t kKernLast = 126;
+constexpr std::size_t kKernSpan = kKernLast - kKernFirst + 1;
 
 std::vector<int> textCodepoints() {
     std::vector<int> cps;
@@ -109,8 +113,19 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
             stbtt_GetFontVMetrics(&info, &asc, &desc, &gap);
             const float px = stbtt_ScaleForPixelHeight(&info, sizes[f]);
             face.ascent = static_cast<float>(asc) * px;
+            face.descent = static_cast<float>(desc) * px;
             face.lineHeight = static_cast<float>(asc - desc + gap) * px;
-            face.pixelSize = sizes[f];
+            face.kern.clear();
+            if (sets[f] == &text) {
+                face.kern.resize(kKernSpan * kKernSpan);
+                for (std::size_t a = 0; a < kKernSpan; ++a)
+                    for (std::size_t b = 0; b < kKernSpan; ++b)
+                        face.kern[a * kKernSpan + b] =
+                            static_cast<float>(stbtt_GetCodepointKernAdvance(
+                                &info, static_cast<int>(kKernFirst + a),
+                                static_cast<int>(kKernFirst + b))) *
+                            px;
+            }
             face.glyphs.clear();
             for (std::size_t g = 0; g < chars[f].size(); ++g) {
                 const auto& c = chars[f][g];
@@ -142,11 +157,8 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
                 p[3] = bitmap[static_cast<std::size_t>(y * dim + x)];
             }
         }
-        texture_.reset(SDL_CreateTextureFromSurface(renderer, surface.get()));
-        if (!texture_) {
-            SDL_Log("font: cannot create texture: %s", SDL_GetError());
-            return false;
-        }
+        texture_ = uploadTexture(renderer, surface.get());
+        if (!texture_) return false;
         if (!SDL_SetTextureScaleMode(texture_.get(), SDL_SCALEMODE_LINEAR))
             SDL_Log("font: %s", SDL_GetError());
         return true;
@@ -161,28 +173,44 @@ const Glyph* Font::find(Face face, char32_t cp) const {
     return it != g.end() && it->cp == cp ? &*it : nullptr;
 }
 
+float Font::kerning(Face face, char32_t a, char32_t b) const {
+    const auto& k = faces_[idx(face)].kern;
+    if (k.empty() || a < kKernFirst || a > kKernLast || b < kKernFirst || b > kKernLast) return 0;
+    return k[(a - kKernFirst) * kKernSpan + (b - kKernFirst)];
+}
+
 float Font::measure(Face face, std::string_view text) const {
     float w = 0;
+    char32_t prev = 0;
     for (std::size_t i = 0; i < text.size();) {
-        const Glyph* g = find(face, nextCodepoint(text, i));
+        const char32_t cp = nextCodepoint(text, i);
+        const Glyph* g = find(face, cp);
         if (g == nullptr) g = find(face, '?');
-        if (g != nullptr) w += g->advance;
+        if (g == nullptr) continue;
+        w += kerning(face, prev, g->cp) + g->advance;
+        prev = g->cp;
     }
     return w;
 }
 
 float Font::draw(Batch& batch, Face face, std::string_view text, float x, float y,
                  SDL_FColor color) const {
-    batch.use(texture_.get(), SDL_BLENDMODE_BLEND);
+    batch.use(texture_.get(), SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
     float pen = std::round(x);
     const float base = std::round(y);
+    char32_t prev = 0;
     for (std::size_t i = 0; i < text.size();) {
         const Glyph* g = find(face, nextCodepoint(text, i));
         if (g == nullptr) g = find(face, '?'); // never draw a missing-glyph box
         if (g == nullptr) continue;
+        pen += kerning(face, prev, g->cp);
+        prev = g->cp;
+        // Each glyph lands on whole pixels: its bitmap was rasterised on the pixel grid, and
+        // fractional placement would blur it and make spacing look uneven.
         if (g->x1 > g->x0)
-            batch.quad(SDL_FRect{pen + g->x0, base + g->y0, g->x1 - g->x0, g->y1 - g->y0}, g->uv,
-                       color);
+            batch.quad(
+                SDL_FRect{std::round(pen + g->x0), base + g->y0, g->x1 - g->x0, g->y1 - g->y0},
+                g->uv, color);
         pen += g->advance;
     }
     return pen - std::round(x);
@@ -191,11 +219,14 @@ float Font::draw(Batch& batch, Face face, std::string_view text, float x, float 
 void Font::drawIcon(Batch& batch, char32_t cp, float cx, float cy, SDL_FColor color) const {
     const Glyph* g = find(Face::Icon, cp);
     if (g == nullptr) return;
-    batch.use(texture_.get(), SDL_BLENDMODE_BLEND);
-    // Centre the glyph's ink box on the point so icons sit optically centred in buttons.
-    const float w = g->x1 - g->x0;
-    const float h = g->y1 - g->y0;
-    batch.quad(SDL_FRect{std::round(cx - w * 0.5f), std::round(cy - h * 0.5f), w, h}, g->uv, color);
+    batch.use(texture_.get(), SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
+    // Icons are drawn on a shared em square, so they are centred by that square rather than by
+    // their ink (a minus sign has almost no ink box and would ride up otherwise).
+    const FaceData& f = faces_[idx(Face::Icon)];
+    const float baseline = std::round(cy + (f.ascent + f.descent) * 0.5f);
+    const float pen = std::round(cx - g->advance * 0.5f);
+    batch.quad(SDL_FRect{pen + g->x0, baseline + g->y0, g->x1 - g->x0, g->y1 - g->y0}, g->uv,
+               color);
 }
 
 } // namespace lc

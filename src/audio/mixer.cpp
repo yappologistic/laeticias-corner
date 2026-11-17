@@ -24,10 +24,12 @@ Mixer::Mixer() {
     for (auto& t : loopTargets_) t.store(0.0f);
 }
 
+void Mixer::VorbisCloser::operator()(stb_vorbis* v) const {
+    stb_vorbis_close(v);
+}
+
 Mixer::~Mixer() {
     close();
-    for (auto& t : loops_)
-        if (t.vorbis != nullptr) stb_vorbis_close(t.vorbis);
 }
 
 void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
@@ -53,20 +55,19 @@ void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
         }
         t.bytes = std::move(*bytes);
         int err = 0;
-        t.vorbis =
-            stb_vorbis_open_memory(t.bytes.data(), static_cast<int>(t.bytes.size()), &err, nullptr);
-        if (t.vorbis == nullptr) {
+        t.vorbis.reset(stb_vorbis_open_memory(t.bytes.data(), static_cast<int>(t.bytes.size()),
+                                              &err, nullptr));
+        if (!t.vorbis) {
             SDL_Log("audio: %.*s is not readable Ogg Vorbis",
                     static_cast<int>(kLoopFiles[i].size()), kLoopFiles[i].data());
             continue;
         }
-        const auto info = stb_vorbis_get_info(t.vorbis);
+        const auto info = stb_vorbis_get_info(t.vorbis.get());
         if (static_cast<int>(info.sample_rate) != kMixRate || info.channels < 1 ||
             info.channels > 2) {
             SDL_Log("audio: %.*s must be 44.1 kHz mono or stereo; it will be silent",
                     static_cast<int>(kLoopFiles[i].size()), kLoopFiles[i].data());
-            stb_vorbis_close(t.vorbis);
-            t.vorbis = nullptr;
+            t.vorbis.reset();
             continue;
         }
         t.channels = info.channels;
@@ -104,8 +105,17 @@ int Mixer::sfxIndex(std::string_view file) const {
     return static_cast<int>(it - sfxNames_.begin());
 }
 
+void Mixer::render(float* out, int frames) {
+    while (frames > 0) {
+        const int n = std::min(frames, kChunk);
+        mix(out, n);
+        out += n * 2;
+        frames -= n;
+    }
+}
+
 void Mixer::play(int sfx, float gain, float pitch) {
-    if (sfx < 0 || !stream_) return;
+    if (sfx < 0 || (!stream_ && !capture_)) return;
     const std::uint32_t head = head_.load(std::memory_order_relaxed);
     if (head - tail_.load(std::memory_order_acquire) >= kRing) return; // full: drop
     ring_[head % kRing] = {sfx, gain, pitch};
@@ -134,9 +144,9 @@ void Mixer::decodeLoop(LoopTrack& t, float* dst, int frames) {
     int guard = 0;
     while (done < frames && guard++ < 4) {
         const int got = stb_vorbis_get_samples_float_interleaved(
-            t.vorbis, t.channels, decodeBuf_.data(), (frames - done) * t.channels);
+            t.vorbis.get(), t.channels, decodeBuf_.data(), (frames - done) * t.channels);
         if (got == 0) {
-            (void)stb_vorbis_seek_start(t.vorbis); // seamless loop
+            (void)stb_vorbis_seek_start(t.vorbis.get()); // seamless loop
             continue;
         }
         for (int i = 0; i < got; ++i) {
@@ -183,7 +193,7 @@ void Mixer::mix(float* out, int frames) {
 
     for (std::size_t li = 0; li < loops_.size(); ++li) {
         LoopTrack& t = loops_[li];
-        if (t.vorbis == nullptr) continue;
+        if (!t.vorbis) continue;
         const float target = loopTargets_[li].load(std::memory_order_relaxed);
         if (t.gain <= 0.0f && target <= 0.0f) continue; // paused while inaudible
         const float g0 = t.gain;
@@ -200,13 +210,19 @@ void Mixer::mix(float* out, int frames) {
     const float masterTarget = (muted_.load() || closing_.load()) ? 0.0f : 1.0f;
     const float m0 = master_;
     master_ = rampTowards(m0, masterTarget, chunkSeconds / tuning::kMasterFadeSeconds);
+    // Peak limiter: transparent below the ceiling; above it the gain drops at once for that
+    // sample and recovers smoothly, so a pile-up of effects is held down without clipping or the
+    // distortion an always-on curve would add.
+    const float release = 1.0f / (tuning::kLimiterReleaseSeconds * static_cast<float>(kMixRate));
     for (int i = 0; i < frames; ++i) {
         const float g = m0 + (master_ - m0) * static_cast<float>(i) / static_cast<float>(frames);
-        for (int c = 0; c < 2; ++c) {
-            // Gentle soft clip so overlapping effects never wrap or crackle.
-            const float x = out[i * 2 + c] * g;
-            out[i * 2 + c] = x / (1.0f + std::abs(x) * 0.25f);
-        }
+        const float l = out[i * 2] * g;
+        const float r = out[i * 2 + 1] * g;
+        const float peak = std::max(std::abs(l), std::abs(r));
+        limit_ = std::min(1.0f, limit_ + release);
+        if (peak * limit_ > tuning::kLimiterCeiling) limit_ = tuning::kLimiterCeiling / peak;
+        out[i * 2] = l * limit_;
+        out[i * 2 + 1] = r * limit_;
     }
     silent_.store(master_ <= 0.0f);
 }
