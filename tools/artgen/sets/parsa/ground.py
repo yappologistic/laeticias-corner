@@ -9,7 +9,7 @@ import numpy as np
 
 import terrain as home
 from pack import Sprite
-from palette import (CINNABAR, EARTH, GLOW, HEMATITE, INK, LAPIS, LEAF, LIMESTONE, MUDBRICK, NAQSH,
+from palette import (CINNABAR, EARTH, GLOW, HEMATITE, INK, LAPIS, LEAF, LIMESTONE, MUDBRICK, NAQSH, PINE,
                      PLASTER, SNOW, STONE, WATER, _rgb)
 from render import dither
 from validate import diamond
@@ -48,10 +48,23 @@ def field_barley(mask, k):
 
 
 def garden_bed(mask, k):
+    """A planted bed of the paradise: rows of herbs and spring flowers (tulips, lilies,
+    roses) over dark watered soil, the rows running along v."""
     def paint(g, f):
-        furrow = ((g.v * 0.8) % 2.0) < 0.6
-        lvl = 2.0 + (home._pnoise(g.u, g.v, 6, 711) - 0.5) * 1.2 - furrow * 0.9 - np.clip(1.2 - f, 0, 1) * 0.8
-        return home._paint([INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]], lvl, g.px, g.py, k=k)
+        row = ((g.v * 0.5) % 2.0) < 1.25
+        n = home._pnoise(g.u, g.v, 8, 712)
+        leaf = row & (hash01(g.px, g.py, 713) < 0.78)
+        lvl = 2.4 + (n - 0.5) * 1.4 + (hash01(g.px // 2, g.py, 714) - 0.5) * 0.8
+        green = home._paint(SPRING, lvl, g.px, g.py, k=k)
+        soil = home._paint([INK, EARTH[0], EARTH[1], EARTH[2]], 1.8 + (n - 0.5) - np.clip(1.2 - f, 0, 1) * 0.8,
+                           g.px, g.py, k=k)
+        rgb = np.where(leaf[..., None], green, soil)
+        bloom = row & (hash01(g.px // 2, g.py // 2, 715) < 0.07)
+        colour = hash01(g.px // 2, g.py // 2, 716)
+        petals = np.where((colour < 0.4)[..., None], np.array(_rgb(CINNABAR[2]), np.uint8),
+                          np.where((colour < 0.7)[..., None], np.array(_rgb(PLASTER[4]), np.uint8),
+                                   np.array(_rgb("#e597a6"), np.uint8)))
+        return np.where(bloom[..., None], petals, rgb)
     return _overlay(mask, k, 1.4, 4.0, 0.5, 710, paint)
 
 
@@ -60,15 +73,24 @@ def packed_earth(mask, k):
 
 
 def paving_stone(mask, k):
-    """Large grey limestone slabs, fitted, with fine joints (terrace courts)."""
+    """The terrace courts: big fitted slabs of warm grey limestone in courses two to a tile
+    edge, lengths alternating, each slab its own tone, hairline joints with a lit edge, the
+    odd cracked or stained slab, and soft lighter patches where feet have polished them."""
     def paint(g, f):
         u, v = g.u, g.v
-        row = np.floor(v / 5.33)
-        off = (row % 2) * 2.7
-        col = np.floor((u + off) / 8.0)
-        joint = ((v % 5.33) < 0.45) | (((u + off) % 8.0) < 0.45)
-        h = hash01(row.astype(np.int64) % 3, col.astype(np.int64) % 2, 721)
-        lvl = 2.8 + (h - 0.5) * 0.8 + (home._pnoise(u, v, 4, 722) - 0.5) * 0.6 - joint * 1.4 - np.clip(1.0 - f, 0, 1)
+        row = np.floor(v / 8.0)
+        off = (row % 2) * 6.0
+        a = (u + off) % 16.0
+        cut = np.where(row % 2 == 0, 10.0, 6.0)
+        col = (a >= cut).astype(np.int64)
+        su = np.where(col == 0, a, a - cut)
+        joint = ((v % 8.0) < 0.42) | (su < 0.42)
+        lip = ((v % 8.0) > 0.42) & ((v % 8.0) < 0.95) | ((su > 0.42) & (su < 0.95))
+        h = hash01(row.astype(np.int64) % 2, col, 721)
+        crack = (h > 0.82) & (np.abs((su - (v % 8.0) * 0.9) - 2.5) < 0.25)
+        worn = home._pnoise(u, v, 2, 723)
+        lvl = (3.0 + (h - 0.5) * 1.1 + (home._pnoise(u, v, 8, 722) - 0.5) * 0.45 + (worn > 0.62) * 0.35
+               - joint * 1.3 + lip * 0.3 - crack * 0.9 - np.clip(1.0 - f, 0, 1))
         return home._paint(LIME, lvl, g.px, g.py, band=0.4, k=k)
     return _overlay(mask, k, 0.6, 2.0, 0.2, 720, paint)
 
@@ -189,42 +211,181 @@ def ashlar_face(side, v, k, top=False):
     return Sprite(rgba, ox, oy)
 
 
-# ---------------------------------------------------------------- backdrop
+ROCK = [INK, LIMESTONE[1], LIMESTONE[2], NAQSH[1], LIMESTONE[3], LIMESTONE[4], LIMESTONE[5]]
+EARTH_FACE = [INK, EARTH[0], EARTH[1], EARTH[2], MUDBRICK[1], MUDBRICK[2], MUDBRICK[3]]
+SHRUB = [LEAF[0], LEAF[1], LEAF[2], LEAF[3]]
 
-def kuh_rahmat(v, night, k):
-    """A segment of the Kuh-e Raḥmat strip behind the east world edge: bare grey-brown rock,
-    spring snow streaks high up, paler with height (aerial perspective). Segments join: the
-    ridge height at both ends is the same for every variant."""
-    W, Hmax = 256 * k, 192 * k
-    H = Hmax + 128 * k
+
+def _face_grid(side, k, above):
+    """Pixel grid of one level of face: for each pixel its distance along the face from the
+    bottom vertex `s` (px), its row inside the band `d` (0 at the rim) and whether it is on
+    the face; plus the sprite size and anchor."""
+    xs, first = _face_columns(k, side)
+    band = 8 * k
+    H, W = 16 * k + above, 16 * k
+    x0 = 0 if side == "se" else -16 * k
     py, px = np.mgrid[0:H, 0:W]
-    base_y = Hmax + px / 2.0                    # the edge line, sloping down to the right
-    t = px / W
-    end = 0.72 * Hmax
-    zeros = np.zeros_like(px, dtype=float)
-    mid = (value_noise(px / k + v * 977.0, zeros, zeros, 60.0, 811) - 0.5) * 0.5 * Hmax
-    ridge = end + mid * np.sin(np.pi * t) + 0.2 * Hmax * np.sin(np.pi * t) ** 2 + \
-        (value_noise(px / k, zeros, zeros, 9.0, 813 + v) - 0.5) * 0.06 * Hmax * np.sin(np.pi * t)
-    ridge = np.minimum(ridge, Hmax - 2)
-    height = base_y - py                        # pixels above the edge line
-    inside = (height >= 0) & (height < ridge)
-    rel = np.clip(height / Hmax, 0, 1)          # absolute height decides snow, not the local ridge
-    top = np.clip(height / np.maximum(ridge, 1), 0, 1)
-    # Erosion gullies run down the slope (stretched vertically), spurs between them catch the
-    # light from the upper left; bare grey-brown rock grows paler with height.
-    gully = value_noise(px / k * 2.2 + py / k * 0.35, py / k * 0.22, zeros, 7.0, 815)
-    spur = value_noise(px / k * 0.8, py / k * 0.5, zeros, 26.0, 817)
-    lvl = 1.8 + rel * 1.5 + (spur - 0.5) * 1.4 + (gully - 0.5) * 1.6 - (gully < 0.3) * 0.8
-    rock = [NAQSH[0], STONE[1], NAQSH[1], STONE[2], NAQSH[2], STONE[3], PLASTER[1]]
-    snow = (rel > 0.7) & (gully > 0.74 - (rel - 0.7) * 1.4) & (top > 0.6)
-    rgb = home._paint(rock, lvl, px, py, k=k)
-    rgb = np.where(snow[..., None], home._paint([SNOW[0], SNOW[1], SNOW[2]], 1.0 + spur * 1.4, px, py, k=k), rgb)
-    if night:
-        rgb = home._paint([INK, STONE[0], LAPIS[0], STONE[1], STONE[2]], 0.6 + rel * 1.4 + (gully - 0.5) + snow * 1.6,
-                          px, py, k=k)
+    s = np.zeros((H, W)); d = np.full((H, W), -999.0)
+    for x, f in zip(xs, first):
+        col = x - x0
+        if 0 <= col < W:
+            s[:, col] = x if side == "se" else -x
+            d[:, col] = py[:, col] - (f + above - 8 * k)
+    return px, py, s, d, band, H, W, -x0, above - 8 * k
+
+
+def _periodic(s, d, W, band, scale, seed, v=0):
+    """Smooth noise repeating every face width along s and every band down d, so faces stack
+    and join; variants differ only away from the tile edges."""
+    a = np.sin(2 * np.pi * s / W)
+    b = np.cos(2 * np.pi * s / W)
+    c = np.sin(2 * np.pi * d / band)
+    e = np.cos(2 * np.pi * d / band)
+    n = value_noise(a * scale + 7, b * scale + 3, (c + 2 * e) * scale * 0.7, 1.0, seed)
+    if v:
+        win = np.sin(np.pi * np.clip(s / W, 0, 1))
+        n = n * (1 - win) + value_noise(s / 3.0 + v * 31, d / 3.0, e * 3, 1.0, seed + v) * win
+    return n
+
+
+def rock_face(side, v, k, top=False):
+    """One level of the mountain's own rock (Kuh-e Raḥmat, the quarry, the slope): warm grey
+    limestone in strata, each bed with a lit lip and a shadowed undercut, vertical joints and
+    cracks, weathered pits, a tuft of shrub on a ledge here and there. `top` is the rim band:
+    broken rock with grass and wormwood tufts above."""
+    above = 6 * k if top else 0
+    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
+    shade = -0.9 if side == "se" else 0.0
+    on = d >= (-above if top else 0)
+    on &= d < band
+    n = _periodic(s, d, W, band, 1.3, 831, v)
+    bed = (d + (n - 0.5) * 2.5 * k) % (4 * k)
+    lip = bed < 1.2
+    under = (bed > 4 * k - 1.6)
+    crack = (np.abs(((s + n * 4 * k) % (W / 2)) - W / 4) < 0.6) & (_periodic(s, d, W, band, 2.0, 833, v) > 0.55)
+    pit = hash01(px, py, 835 + v) < 0.04
+    lvl = 3.0 + shade + (n - 0.5) * 1.0 + lip * 1.3 - under * 1.4 - crack * 1.4 - pit * 0.7 + (bed / (4 * k)) * 0.5
+    rgb = home._paint(ROCK, lvl, px, py, k=k)
+    shrub = lip & (_periodic(s, d, W, band, 3.0, 837, v) > 0.8) & (hash01(s.astype(np.int64) // 3, d.astype(np.int64) // 8, 838 + v) < 0.25) & on
+    shrub_px = np.zeros_like(shrub)
+    for dy in range(1, 3 * k):
+        shrub_px |= np.roll(shrub, -dy, axis=0) & (hash01(px, py - dy, 839) < 0.7)
+    rgb = np.where(shrub_px[..., None], home._paint(SHRUB, 2.0 + shade + (hash01(px, py, 841) - 0.3), px, py, k=k), rgb)
+    alpha = on.copy()
+    if top:
+        rim = (d < 0) & (d >= -above)
+        tuft = rim & (np.abs(d) < 2 + 3 * (_periodic(s, d * 0, W, band, 4.0, 843, v) > 0.6) * (hash01(px, 0, 845) < 0.6))
+        alpha = (on & (d >= 0)) | tuft
+        rgb = np.where(tuft[..., None], home._paint(SPRING, 2.4 + shade + (hash01(px, py, 847) - 0.5), px, py, k=k), rgb)
     rgba = np.zeros((H, W, 4), np.uint8)
     rgba[..., :3] = rgb
-    rgba[..., 3] = inside * 255
+    rgba[..., 3] = alpha * 255
+    return Sprite(rgba, ox, oy)
+
+
+def earth_face(side, v, k, top=False):
+    """One level of an earth bank (field and garden terraces, road cuttings): packed brown
+    earth in faint layers, pebbles and roots, a grassy lip on the rim band."""
+    above = 5 * k if top else 0
+    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
+    shade = -0.9 if side == "se" else 0.0
+    on = (d >= 0) & (d < band)
+    n = _periodic(s, d, W, band, 1.6, 851, v)
+    layer = (d + n * 2 * k) % (3 * k) < 1
+    pebble = (hash01(px // 2, py // 2, 853 + v) < 0.015)
+    root = (np.abs(((s * 0.7 + d) % (W / 2)) - 3) < 0.5) & (d < band * 0.4) & (_periodic(s, d, W, band, 2.5, 855, v) > 0.6)
+    lvl = 3.0 + shade + (n - 0.5) * 1.4 - layer * 0.5 + pebble * 1.2 - root * 1.2
+    rgb = home._paint(EARTH_FACE, lvl, px, py, k=k)
+    rgb = np.where(pebble[..., None] & on[..., None], home._paint([STONE[1], STONE[2], STONE[3]], 1.2 + shade, px, py, k=k), rgb)
+    alpha = on.copy()
+    if top:
+        tall = hash01(px, 0, 857 + v) * above * (hash01(px // 3, 0, 861 + v) < 0.6)
+        lip = (d < 2 * k) & (d >= -tall - 1)
+        alpha = alpha | lip
+        rgb = np.where(lip[..., None], home._paint(SPRING, 2.6 + shade + (hash01(px, py, 859) - 0.5), px, py, k=k), rgb)
+    rgba = np.zeros((H, W, 4), np.uint8)
+    rgba[..., :3] = rgb
+    rgba[..., 3] = alpha * 255
+    return Sprite(rgba, ox, oy)
+
+
+# ---------------------------------------------------------------- backdrop
+
+MOUNTAIN = LIMESTONE
+FAR = [STONE[1], STONE[2], STONE[3], SNOW[0], SNOW[1]]
+SCRUB = [LEAF[0], PINE[0], LEAF[1], EARTH[1]]
+
+
+def kuh_rahmat(v, night, k):
+    """A segment of the Kuh-e Raḥmat strip behind the east world edge: a bare limestone
+    mountain of warm grey-brown rock. Spurs lit from the upper left alternate with shadowed
+    gullies; beds of rock run across them as broken ledges, each with a lit lip; scree fans
+    spread pale at the gully mouths, dark scrub dots the lower slopes, spring snow lies in the
+    high gullies, and the higher Zagros shows pale and blue behind. Segments join: the ridge
+    at both ends and every texture near the ends are common to all variants."""
+    W, Hmax = 256 * k, 192 * k
+    H = Hmax + 128 * k
+    pyi, pxi = np.mgrid[0:H, 0:W]
+    py, px = pyi.astype(float), pxi.astype(float)
+    base_y = Hmax + px / 2.0                    # the edge line, sloping down to the right
+    t = px / W
+    win = np.sin(np.pi * t)                     # 0 at both ends: variant terms fade out there
+    z0 = np.zeros_like(px)
+
+    def per(x, y, scale, seed):
+        """Noise periodic across the segment width (seamless between any variants)."""
+        a = 2 * np.pi * x / W
+        return value_noise(np.sin(a) * W / (2 * np.pi * scale) + 50, np.cos(a) * W / (2 * np.pi * scale) + 50,
+                           y / scale, 1.0, seed)
+
+    def mix(x, y, scale, seed):
+        return per(x, y, scale, seed) * (1 - win) + value_noise(x / scale + v * 97.0, y / scale, z0, 1.0, seed + v) * win
+    end = 0.7 * Hmax
+    ridge = end + (mix(px, z0, 40.0 * k, 811) - 0.5) * 0.5 * Hmax * win + 0.18 * Hmax * win ** 2 + \
+        (mix(px, z0, 6.0 * k, 813) - 0.5) * 0.07 * Hmax
+    ridge = np.minimum(ridge, Hmax - 2)
+    far = 0.86 * Hmax + (mix(px, z0, 28.0 * k, 815) - 0.5) * 0.22 * Hmax
+    height = base_y - py
+    inside = (height >= 0) & (height < ridge)
+    behind = (height >= ridge) & (height < np.maximum(far, ridge))
+    rel = np.clip(height / Hmax, 0, 1)
+    top = np.clip(height / np.maximum(ridge, 1), 0, 1)
+    # Spurs and gullies: a ridged profile across x that leans a little with height; its
+    # slope against the light from the upper left gives lit and shaded flanks.
+    xs = px + height * 0.6
+    depth = np.clip(1.15 - top, 0.2, 1.0)                 # gullies cut deeper low down
+    prof = mix(xs, z0, 30.0 * k, 817) + 0.35 * mix(xs, z0, 9.0 * k, 819) * depth
+    dprof = mix(xs + 2 * k, z0, 30.0 * k, 817) + 0.35 * mix(xs + 2 * k, z0, 9.0 * k, 819) * depth - prof
+    gully = (prof < 0.5) & (depth > 0.35)
+    lit = np.clip(-dprof * 14.0, -1.0, 1.0) * depth
+    # Beds of rock: ledges at intervals of height, bent a little by the spurs, broken.
+    bed = (height + prof * 6 * k) % (10 * k)
+    unbroken = mix(px, height, 7.0 * k, 821) > 0.33
+    ledge = (bed < 1.0) & unbroken
+    under = (bed >= 1.0) & (bed < 3.0) & unbroken
+    grain = mix(px, height, 2.0 * k, 823) - 0.5
+    lvl = 2.5 + rel * 1.6 + lit * 1.7 - gully * 1.1 + ledge * 1.3 - under * 1.0 + grain * 0.7 + \
+        (mix(px, height, 22.0 * k, 824) - 0.5) * 1.0
+    # Scree fans at the gully mouths, low down: paler, finely speckled.
+    fan = gully & (rel < 0.28) & (mix(px, z0, 9.0 * k, 825) > 0.45)
+    lvl = np.where(fan, 4.6 + (hash01(pxi, pyi, 827) - 0.5) * 1.6 + lit * 0.4, lvl)
+    rgb = home._paint(MOUNTAIN, lvl, pxi, pyi, k=k)
+    scrub = (rel < 0.4) & ~fan & ~ledge & (hash01(pxi // 2, pyi // 2, 829 + v) < 0.018) \
+        & (mix(px, height, 14.0 * k, 831) > 0.45)
+    rgb = np.where(scrub[..., None], home._paint(SCRUB, 1.4 + lit * 0.5, pxi, pyi, k=k), rgb)
+    snow = (rel > 0.6) & (top > 0.7) & ((prof < 0.55) | (top > 0.93)) & \
+        (mix(px, height, 4.0 * k, 833) > 0.7 - (rel - 0.6) * 1.2)
+    rgb = np.where(snow[..., None], home._paint([STONE[3], SNOW[0], SNOW[1], SNOW[2]], 1.2 + lit * 0.8 + ledge, pxi, pyi, k=k), rgb)
+    # The higher range behind: pale, cool, snow on its crest.
+    frel = np.clip((height - ridge) / np.maximum(far - ridge, 1), 0, 1)
+    far_lvl = 1.2 + frel * 1.8 + (mix(xs, z0, 7.0 * k, 835) - 0.5) * 1.4
+    rgb = np.where(behind[..., None], home._paint(FAR, far_lvl, pxi, pyi, k=k), rgb)
+    if night:
+        nl = 0.6 + rel * 1.2 + lit * 0.5 + ledge * 0.4 + snow * 1.6 - gully * 0.4
+        rgb = home._paint([INK, STONE[0], LAPIS[0], STONE[1], STONE[2]], np.where(behind, 1.0 + frel, nl), pxi, pyi, k=k)
+    rgba = np.zeros((H, W, 4), np.uint8)
+    rgba[..., :3] = rgb
+    rgba[..., 3] = (inside | behind) * 255
     return Sprite(rgba, 0, Hmax)
 
 
@@ -304,8 +465,9 @@ def build(keys, cat, k):
                 out[key] = water_channel(int(mask), int(frame), FRAMES[tid], k)
             else:
                 out[key] = TERRAIN[tid](int(mask), k)
-        elif m := re.fullmatch(r"edge/parsa\.ashlar_(se|sw)/(v(\d)|top)", key):
-            out[key] = ashlar_face(m[1], int(m[3] or 0), k, top=m[2] == "top")
+        elif m := re.fullmatch(r"edge/parsa\.(ashlar|rock|earth)_(se|sw)/(v(\d)|top)", key):
+            face = {"ashlar": ashlar_face, "rock": rock_face, "earth": earth_face}[m[1]]
+            out[key] = face(m[2], int(m[4] or 0), k, top=m[3] == "top")
         elif m := re.fullmatch(r"backdrop/parsa\.kuh_rahmat/(day|night)/v(\d)", key):
             out[key] = kuh_rahmat(int(m[2]), m[1] == "night", k)
         elif m := re.fullmatch(r"fx/(parsa\.\w+)/f(\d+)", key):

@@ -60,25 +60,41 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
     graze = anim in ("graze", "peck")
     bob = 0.25 * abs(math.sin(2 * math.pi * ph)) if gait else 0.1 * (frame % 2)
     bz = H - g * 0.4 + bob
-    bd.blob((0, 0, bz), (L * 0.5, g, g * 1.15), b.coat, 0.1)
+    # Barrel, a deep chest forward and rounded quarters behind, so the body is shaped, not a
+    # sausage.
+    bd.blob((0, 0, bz), (L * 0.42, g * 0.92, g * 1.05), b.coat, 0.05)
+    bd.blob((L * 0.26, 0, bz - g * 0.05), (L * 0.24, g * 1.0, g * 1.22), b.coat, 0.15)
+    bd.blob((-L * 0.3, 0, bz + g * 0.05), (L * 0.22, g * 1.02, g * 1.1), b.coat, 0.1)
     if b.belly:
         bd.put((((bd.X / (L * 0.48)) ** 2 + (bd.Y / (g * 0.9)) ** 2 + ((bd.Z - bz + g * 0.5) / (g * 0.7)) ** 2) <= 1)
                & (bd.Z < bz - g * 0.3), b.belly, 0.2)
     for i in range(b.humps):
         hx = (-0.15 + 0.35 * i) * L if b.humps == 2 else 0.0
         bd.blob((hx, 0, bz + g * 1.1), (L * 0.16, g * 0.7, g * 0.9), b.hump_mat or b.coat, 0.15)
+    # Legs in a walking gait (diagonal pairs): forelegs fold at the knee as they lift, hind
+    # legs bend backward at the hock; muscled above, slender cannons below, dark hooves.
     for lx, side, off in ((0.36, 1, 0.0), (0.36, -1, 0.5), (-0.36, 1, 0.5), (-0.36, -1, 0.0)):
-        sw = math.sin(2 * math.pi * (ph + off)) * L * 0.09 if gait else 0.0
-        lift = max(0.0, -math.cos(2 * math.pi * (ph + off))) * 0.6 if gait else 0.0
-        top = (lx * L, side * g * 0.55, bz - g * 0.5)
-        knee = (lx * L + sw * 0.5, side * g * 0.55, H * 0.45 + lift)
-        foot = (lx * L + sw, side * g * 0.55, 0.35 + lift)
-        bd.limb(top, knee, b.leg * 1.25, b.coat, -0.1)
-        bd.limb(knee, foot, b.leg, b.coat, -0.2)
+        c = math.cos(2 * math.pi * (ph + off))
+        sw = math.sin(2 * math.pi * (ph + off)) * L * 0.1 if gait else 0.0
+        lift = max(0.0, -c) * 0.9 * H * 0.12 if gait else 0.0
+        y = side * g * 0.55
+        if lx > 0:      # foreleg: elbow, knee, hoof
+            top = (lx * L, y, bz - g * 0.55)
+            knee = (lx * L + sw * 0.4 + lift * 0.5, y, H * 0.36 + lift)
+            foot = (lx * L + sw - lift * 0.7, y, 0.35 + lift * 0.9)
+            bd.limb(top, knee, b.leg * 1.5, b.coat, -0.05, r2=b.leg * 0.95)
+            bd.limb(knee, foot, b.leg * 0.85, b.coat, -0.2, r2=b.leg * 0.7)
+        else:           # hind leg: stifle, hock bent back, hoof
+            top = (lx * L + L * 0.04, y, bz - g * 0.35)
+            hock = (lx * L - L * 0.07 + sw * 0.5, y, H * 0.3 + lift * 0.8)
+            foot = (lx * L - L * 0.02 + sw - lift * 0.5, y, 0.35 + lift * 0.9)
+            bd.limb(top, hock, b.leg * 1.75, b.coat, -0.05, r2=b.leg * 0.8)
+            bd.limb(hock, foot, b.leg * 0.8, b.coat, -0.2, r2=b.leg * 0.7)
+            knee = hock
         if b.stripes_legs:
-            bd.put(((bd.X - knee[0]) ** 2 + (bd.Y - side * g * 0.55) ** 2 < (b.leg * 1.4) ** 2) & (bd.Z < H * 0.6) &
+            bd.put(((bd.X - knee[0]) ** 2 + (bd.Y - y) ** 2 < (b.leg * 1.4) ** 2) & (bd.Z < H * 0.6) &
                    ((bd.Z * 2.2) % 1.0 < 0.45), "white_paint", 0.3)
-        bd.blob((foot[0] + 0.1, foot[1], 0.3), (b.leg * 1.1, b.leg * 1.0, 0.35), "ink" if b.coat != "white_paint" else "gold", 0.4)
+        bd.blob((foot[0] + 0.1, foot[1], 0.3), (b.leg * 1.0, b.leg * 0.9, 0.35), "ink" if b.coat != "white_paint" else "gold", 0.4)
     # Neck and head.
     n0 = (L * 0.42, 0, bz + g * 0.3)
     dip = H * 0.75 if graze else 0.0
@@ -86,7 +102,15 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
     head = (n0[0] + b.neck * math.cos(ang) * (1.2 if graze else 1.0), 0, n0[2] + b.neck * math.sin(ang) - dip * (1 if graze else 0))
     if graze:
         head = (n0[0] + b.neck * 0.9, 0, max(b.head + 0.3, n0[2] - H * 0.8 + 0.4 * (frame % 2)))
-    bd.limb(n0, head, g * 0.55, b.coat, 0.1, r2=g * 0.42)
+    if b.humps and not graze:   # the camel's neck dips forward, then rises to the head
+        mid = (n0[0] + b.neck * 0.65, 0, n0[2] - b.neck * 0.15)
+        head = (mid[0] + b.neck * 0.25, 0, mid[2] + b.neck * 0.7)
+        bd.limb(n0, mid, g * 0.55, b.coat, 0.1, r2=g * 0.38)
+        bd.limb(mid, head, g * 0.38, b.coat, 0.15, r2=g * 0.32)
+    else:                       # an arched neck, thick at the shoulder
+        mid = ((n0[0] + head[0]) / 2 + 0.2 * g, 0, (n0[2] + head[2]) / 2 + 0.25 * g)
+        bd.limb(n0, mid, g * 0.7, b.coat, 0.1, r2=g * 0.5)
+        bd.limb(mid, head, g * 0.5, b.coat, 0.15, r2=g * 0.4)
     hz = head[2]
     snout = (head[0] + b.head * 1.3, 0, hz - b.head * 0.5)
     bd.limb(head, snout, b.head * 0.6, b.coat, 0.15, r2=b.head * 0.45)
@@ -144,9 +168,9 @@ BEASTS = {
                         dewlap=True, tail="tuft"),
     "parsa.bull": Beast(9.5, 7.5, 2.2, 1.8, 0.2, 1.2, coat="felt", horns="bull", tail="tuft"),
     "parsa.ram": Beast(6.0, 4.6, 1.8, 1.4, 0.4, 0.8, coat="wool", horns="ram", tail="bushy", mane="wool"),
-    "parsa.lioness": Beast(8.5, 5.6, 1.6, 1.8, 0.4, 1.1, coat="saffron", belly="cream", tail="long", ears="round",
+    "parsa.lioness": Beast(8.5, 5.6, 1.6, 1.8, 0.4, 1.1, coat="wool", belly="cream", tail="long", ears="round",
                            lead=True),
-    "parsa.lion_cub": Beast(4.6, 3.0, 1.0, 1.0, 0.5, 0.8, coat="saffron", belly="cream", tail="long", ears="round"),
+    "parsa.lion_cub": Beast(4.6, 3.0, 1.0, 1.0, 0.5, 0.8, coat="wool", belly="cream", tail="long", ears="round"),
     "parsa.water_buffalo": Beast(10.0, 7.2, 2.3, 1.6, 0.15, 1.2, coat="polished", horns="buffalo", tail="tuft"),
     "parsa.oryx": Beast(8.0, 6.8, 1.4, 2.6, 0.6, 0.9, coat="cream", belly="white_paint", horns="oryx", face_mask=True,
                         tail="tuft"),

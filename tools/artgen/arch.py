@@ -35,14 +35,23 @@ class Scale:
         return 5.0 * self.s * metres
 
 
-def fill(m: Model, box, material: str, mask=None, tone=0.0, normal=None, only_empty=False):
+def fill(m: Model, box, material: str, mask=None, tone=0.0, normal=None, only_empty=False, only_solid=False):
     """Put `material` where `mask(X, Y, Z)` holds inside `box` = (x0, x1, y0, y1, z0, z1).
-    `tone` and `normal` may be constants or functions of the same local coordinates."""
+    `tone` and `normal` may be constants or functions of the same local coordinates.
+    `only_solid` repaints what is already there (paint on a carving), keeping its normals."""
     w = m.box_window(*box)
     if w is None:
         return
     sl, X, Y, Z = w
     msk = np.ones((X.size, Y.size, Z.size), bool) if mask is None else mask(X, Y, Z)
+    if only_solid:
+        msk = np.broadcast_to(msk, m.mat[sl].shape) & (m.mat[sl] > 0)
+        if normal is None and np.any(msk):
+            nr = m.nrm[sl][msk].copy()
+            tn = tone(X, Y, Z) if callable(tone) else tone
+            m.put(msk, material, tn, None, False, sl)
+            m.nrm[sl][msk] = nr
+            return
     if not np.any(msk):
         return
     tn = tone(X, Y, Z) if callable(tone) else tone
@@ -229,9 +238,11 @@ class Column:
 
     base: 'bell' (bell-shaped with hanging petals on a square plinth), 'square' (square
     two-step plinth with a torus) or 'plain'. capital: 'bull', 'lion', 'griffin' (addorsed
-    protomes over a bell and tall double volutes), 'protome' (protomes only, the short
+    protomes over a palm element and tall double volutes), 'protome' (protomes only, the short
     capitals of lesser halls), 'wood' (painted wooden column with a simple cap) or 'none'
-    (a shaft still being built). `beam` is the axis the protomes face along ('x' or 'y')."""
+    (a shaft still being built). `beam` is the axis the protomes face along ('x' or 'y'); the
+    main beam lies in the saddle across it. `paint` colours the capital (gilded horns, painted
+    collars, volutes picked out in blue and gold, the beam end red)."""
     shaft_r: float
     height: float                 # base to the saddle top
     base: str = "bell"
@@ -239,7 +250,10 @@ class Column:
     beam: str = "y"
     flutes: int = 24
     material: str = "limestone"
-    paint: bool = True            # gilded horns and painted eyes on the protomes
+    paint: bool = True
+
+
+CAP_FRACTION = {"bull": 0.31, "lion": 0.31, "griffin": 0.31, "protome": 0.15, "wood": 0.06, "none": 0.0}
 
 
 def column(m: Model, cx: float, cy: float, z0: float, c: Column):
@@ -247,47 +261,64 @@ def column(m: Model, cx: float, cy: float, z0: float, c: Column):
     H = c.height
     mat = c.material
     if c.base == "bell":
-        plinth = 0.035 * H
-        slab(m, cx - r * 2.0, cx + r * 2.0, cy - r * 2.0, cy + r * 2.0, z0, z0 + plinth, mat,
-             tone=ashlar_tone(plinth, r * 4, 11))
-        bell_h = 0.07 * H
-        revolve(m, cx, cy, z0 + plinth, z0 + plinth + bell_h,
-                lambda t: r * (1.85 - 0.75 * t ** 0.8), mat, ribs=16)
-        torus_z = z0 + plinth + bell_h
+        plinth = 0.03 * H
+        slab(m, cx - r * 2.1, cx + r * 2.1, cy - r * 2.1, cy + r * 2.1, z0, z0 + plinth, mat,
+             tone=ashlar_tone(plinth, r * 4.2, 11))
+        slab(m, cx - r * 1.95, cx + r * 1.95, cy - r * 1.95, cy + r * 1.95, z0 + plinth, z0 + plinth * 1.4, mat,
+             tone=0.35)
+        bell_h = 0.065 * H
+        b0 = z0 + plinth * 1.4
+        # The bell hangs with a row of petals turned down, their tips catching the light.
+        revolve(m, cx, cy, b0, b0 + bell_h, lambda t: r * (1.85 - 0.8 * t ** 0.75), mat, ribs=14,
+                tone=lambda X, Y, Z: 0.35 * (((Z - b0) / bell_h) < 0.18) - 0.1)
+        torus_z = b0 + bell_h
     elif c.base == "square":
         s1, s2 = 0.025 * H, 0.025 * H
         slab(m, cx - r * 2.1, cx + r * 2.1, cy - r * 2.1, cy + r * 2.1, z0, z0 + s1, mat, tone=-0.2)
-        slab(m, cx - r * 1.7, cx + r * 1.7, cy - r * 1.7, cy + r * 1.7, z0 + s1, z0 + s1 + s2, mat)
+        slab(m, cx - r * 1.7, cx + r * 1.7, cy - r * 1.7, cy + r * 1.7, z0 + s1, z0 + s1 + s2, mat, tone=0.15)
         torus_z = z0 + s1 + s2
     else:
         torus_z = z0
-    torus_h = 0.02 * H if c.base != "plain" else 0.0
+    torus_h = 0.022 * H if c.base != "plain" else 0.0
     if torus_h:
         revolve(m, cx, cy, torus_z, torus_z + torus_h,
-                lambda t: r * (1.12 + 0.18 * np.sin(np.pi * t)), mat, tone=0.3)
+                lambda t: r * (1.12 + 0.2 * np.sin(np.pi * t)), mat,
+                tone=lambda X, Y, Z: 0.3 - 0.5 * (np.abs(((Z - torus_z) / torus_h) - 0.5) > 0.38))
     shaft0 = torus_z + torus_h
-    cap = {"bull": 0.30, "lion": 0.30, "griffin": 0.30, "protome": 0.14, "wood": 0.06,
-           "none": 0.0}[c.capital]
-    shaft1 = z0 + H * (1 - cap)
+    shaft1 = z0 + H * (1 - CAP_FRACTION[c.capital])
     if c.capital == "wood":
         cylinder(m, cx, cy, r, shaft0, shaft1, mat, tone=_band_tone(shaft0, shaft1))
     else:
+        # A slight entasis-free taper and a fillet ring under the capital.
         cylinder(m, cx, cy, r, shaft0, shaft1, mat, flutes=c.flutes if m.fine else 0)
+        if c.capital != "none":
+            revolve(m, cx, cy, shaft1 - 0.9, shaft1, lambda t: r * 1.06, mat, tone=0.4)
     if c.capital == "none":
+        # An unfinished drum: the top left rough, a lifting boss.
+        fill(m, (cx - r, cx + r, cy - r, cy + r, shaft1 - 0.6, shaft1), mat,
+             lambda X, Y, Z: np.hypot(X - cx, Y - cy) <= r, tone=-0.4)
         return
     if c.capital == "wood":
-        slab(m, cx - r * 1.5, cx + r * 1.5, cy - r * 1.5, cy + r * 1.5, shaft1, z0 + H, "cedar")
+        slab(m, cx - r * 1.6, cx + r * 1.6, cy - r * 1.6, cy + r * 1.6, shaft1, shaft1 + (z0 + H - shaft1) * 0.5,
+             "gold" if c.paint else "cedar", tone=0.1)
+        slab(m, cx - r * 2.0, cx + r * 2.0, cy - r * 2.0, cy + r * 2.0, shaft1 + (z0 + H - shaft1) * 0.5, z0 + H,
+             "cedar", tone=0.2)
         return
     z = shaft1
     if c.capital in ("bull", "lion", "griffin"):
-        # The palm element: a drooping leaf crown, then an upright calyx.
-        ph = 0.07 * H
-        revolve(m, cx, cy, z, z + ph * 0.45, lambda t: r * (1.0 + 0.7 * t ** 1.5), mat, ribs=14, tone=0.1)
-        revolve(m, cx, cy, z + ph * 0.45, z + ph, lambda t: r * (1.25 - 0.35 * t + 0.4 * t ** 3), mat,
-                ribs=18, tone=0.2)
-        z += ph
-        # Tall double volutes: a slim block with paired vertical scrolls on two faces.
-        vh = 0.11 * H
+        # The palm element: a crown of leaves drooping over the shaft, then an upright calyx.
+        ph = 0.075 * H
+        za, zb = z, z + ph * 0.45
+        revolve(m, cx, cy, za, zb, lambda t: r * (1.0 + 0.8 * t ** 1.4), mat, ribs=16,
+                tone=lambda X, Y, Z: 0.45 * ((Z - za) / (zb - za) > 0.7) - 0.15)
+        zc = z + ph
+        revolve(m, cx, cy, zb, zc, lambda t: r * (1.35 - 0.45 * t + 0.55 * t ** 3), mat, ribs=20,
+                tone=lambda X, Y, Z: 0.3 * ((Z - zb) / (zc - zb)) - 0.1)
+        if c.paint:   # a gilded rim on the calyx
+            fill(m, (cx - r * 1.5, cx + r * 1.5, cy - r * 1.5, cy + r * 1.5, zc - 0.5, zc), "gold",
+                 lambda X, Y, Z: np.hypot(X - cx, Y - cy) > r * 1.2, tone=0.2, only_solid=True)
+        z = zc
+        vh = 0.115 * H
         _volutes(m, cx, cy, z, z + vh, r, c.beam, mat)
         z += vh
     _protomes(m, cx, cy, z, z0 + H, r, c, mat)
@@ -302,89 +333,208 @@ def _band_tone(z0, z1):
 
 
 def _volutes(m, cx, cy, z0, z1, r, beam, mat):
+    """The tall double volutes: a slim block with paired vertical scrolls curling at both ends
+    on the faces across the beam axis, ribbed between the curls."""
     along_x = beam == "x"
-    hw_a, hw_b = (r * 1.15, r * 0.95)
-    lx, ly = (hw_a, hw_b) if along_x else (hw_b, hw_a)
-    slab(m, cx - lx, cx + lx, cy - ly, cy + ly, z0, z1, mat, tone=0.1)
+    lx, ly = (r * 1.2, r * 0.95) if along_x else (r * 0.95, r * 1.2)
+    slab(m, cx - lx, cx + lx, cy - ly, cy + ly, z0, z1, mat, tone=0.05)
+    ext = 0.45 * r
 
-    def scrolls(X, Y, Z):
+    def parts(X, Y, Z):
         s = (Y - cy) if along_x else (X - cx)
         t = (Z - z0) / (z1 - z0)
-        u = np.abs(s) / (r * 1.2)
-        curl = ((t < 0.22) | (t > 0.78)) & (u > 0.35)
-        rib = np.cos(t * 24) > 0.4
-        return curl, rib
+        u = np.abs(s) / (r * 1.25)
+        # Each end curls into a spiral seen face on: a ring with a dark eye.
+        for_end = np.minimum(t, 1 - t) * (z1 - z0)
+        dz = np.where(t < 0.5, Z - (z0 + r * 0.55), Z - (z1 - r * 0.55))
+        ds = np.abs(s) - (r * 1.25)
+        rr = np.hypot(dz, ds)
+        curl = (rr < r * 0.62) & (for_end < r * 1.2)
+        eye = rr < r * 0.2
+        rib = (np.cos(t * 30) > 0.45) & ~curl & (u > 0.25)
+        return curl, eye, rib
+
+    def mask(X, Y, Z):
+        curl, _e, _r = parts(X, Y, Z)
+        return curl | ((np.abs(X - cx) <= lx) & (np.abs(Y - cy) <= ly))
 
     def tone(X, Y, Z):
-        curl, rib = scrolls(X, Y, Z)
-        return 0.6 * curl - 0.4 * rib * ~curl
-    ext = 0.35 * r
+        curl, eye, rib = parts(X, Y, Z)
+        return 0.55 * curl - 0.9 * eye - 0.45 * rib
     ex, ey = (lx, ly + ext) if along_x else (lx + ext, ly)
-    fill(m, (cx - ex, cx + ex, cy - ey, cy + ey, z0, z1), mat,
-         lambda X, Y, Z: scrolls(X, Y, Z)[0] | ((np.abs(X - cx) <= lx) & (np.abs(Y - cy) <= ly)), tone)
+    box = (cx - ex, cx + ex, cy - ey, cy + ey, z0, z1)
+    fill(m, box, mat, mask, tone)
 
 
 def _protomes(m, cx, cy, z0, z1, r, c: Column, mat):
-    """Two animal foreparts back to back along the beam axis, the saddle between them."""
+    """Two animal foreparts kneeling back to back along the beam axis: deep chests, folded
+    forelegs, heads turned out; the saddle between their necks carries the main beam, whose
+    painted end shows on both sides."""
     h = z1 - z0
-    L = r * 2.6                    # each forepart's reach from the axis
-    w = r * 0.95
+    L = r * 3.2                    # each forepart's reach from the axis
+    w = r * 1.0
     sx, sy = (1, 0) if c.beam == "x" else (0, 1)
     paint = c.paint
     for side in (-1, 1):
         ox, oy = sx * side, sy * side
-        # Body: a deep chest; the saddle between the two heads is a little lower.
-        ellipsoid(m, (cx + ox * L * 0.42, cy + oy * L * 0.42, z0 + h * 0.48),
-                  (abs(ox) * L * 0.5 + abs(oy) * w + 0.01, abs(oy) * L * 0.5 + abs(ox) * w + 0.01, h * 0.42),
-                  mat, tone=0.15)
-        # Folded forelegs under the chest.
-        for lat in (-0.45, 0.45):
-            px = cx + ox * L * 0.62 + sy * lat * w * 1.2
-            py = cy + oy * L * 0.62 + sx * lat * w * 1.2
-            slab(m, px - r * 0.28, px + r * 0.28, py - r * 0.28, py + r * 0.28, z0, z0 + h * 0.35, mat,
-                 tone=-0.2)
-        hx, hy = cx + ox * L * 0.98, cy + oy * L * 0.98
-        hz = z0 + h * 0.62
+
+        def P(a, lat=0.0):
+            """A point `a` (fraction of L) out along this forepart, `lat` across it."""
+            return cx + ox * L * a + sy * lat, cy + oy * L * a + sx * lat
+
+        # Back and chest: one long body tapering out to the chest.
+        bx, by = P(0.38)
+        ellipsoid(m, (bx, by, z0 + h * 0.5), (abs(ox) * L * 0.46 + abs(oy) * w + 0.01,
+                                              abs(oy) * L * 0.46 + abs(ox) * w + 0.01, h * 0.4), mat, tone=0.15)
+        chx, chy = P(0.7)
+        ellipsoid(m, (chx, chy, z0 + h * 0.42), (abs(ox) * L * 0.2 + abs(oy) * w * 0.95 + 0.01,
+                                                 abs(oy) * L * 0.2 + abs(ox) * w * 0.95 + 0.01, h * 0.38), mat,
+                  tone=0.25)
+        # Folded forelegs under the chest, hooves forward.
+        for lat in (-0.5, 0.5):
+            px, py = P(0.78, lat * w * 1.1)
+            slab(m, px - r * 0.3, px + r * 0.3, py - r * 0.3, py + r * 0.3, z0, z0 + h * 0.32, mat, tone=-0.15)
+            hx_, hy_ = P(0.92, lat * w * 1.1)
+            slab(m, min(px, hx_) - r * 0.28, max(px, hx_) + r * 0.28, min(py, hy_) - r * 0.28, max(py, hy_) + r * 0.28,
+                 z0, z0 + h * 0.1, mat, tone=0.2)
+        # Neck and head, raised and turned out.
+        nx_, ny_ = P(0.86)
+        hx, hy = P(1.02)
+        hz = z0 + h * 0.66
+        rod(m, (nx_, ny_, z0 + h * 0.5), (hx, hy, hz), r * 0.62, mat, tone=0.1)
         if c.capital in ("bull", "protome"):
-            ellipsoid(m, (hx, hy, hz), (r * 0.55 if ox else r * 0.5, r * 0.55 if oy else r * 0.5, h * 0.24), mat,
-                      tone=0.25)
-            # Horns curving forward and up, gilded.
+            ellipsoid(m, (hx, hy, hz), (r * 0.62 if ox else r * 0.55, r * 0.62 if oy else r * 0.55, h * 0.26), mat,
+                      tone=0.3)
+            mx, my = P(1.14)
+            ellipsoid(m, (mx, my, hz - h * 0.1), (r * 0.4 if ox else r * 0.38, r * 0.4 if oy else r * 0.38, h * 0.16),
+                      mat, tone=0.2)
             for lat in (-1, 1):
-                bx, by = hx + sy * lat * r * 0.45, hy + sx * lat * r * 0.45
-                rod(m, (bx - ox * r * 0.2, by - oy * r * 0.2, hz + h * 0.16),
-                    (bx + ox * r * 0.25, by + oy * r * 0.25, hz + h * 0.36), max(r * 0.13, 0.35),
-                    "gold" if paint else mat, tone=0.2)
-                rod(m, (bx - ox * r * 0.35, by - oy * r * 0.35, hz + h * 0.1),
-                    (bx + sy * lat * r * 0.3 - ox * r * 0.4, by + sx * lat * r * 0.3 - oy * r * 0.4, hz + h * 0.12),
-                    max(r * 0.12, 0.3), mat)
+                bxx, byy = hx + sy * lat * r * 0.42, hy + sx * lat * r * 0.42
+                # Horns sweep up and forward, gilded; ears out to the sides.
+                rod(m, (bxx - ox * r * 0.15, byy - oy * r * 0.15, hz + h * 0.14),
+                    (bxx + ox * r * 0.35 + sy * lat * r * 0.25, byy + oy * r * 0.35 + sx * lat * r * 0.25, hz + h * 0.42),
+                    max(r * 0.14, 0.35), "gold" if paint else mat, tone=0.2)
+                rod(m, (bxx - ox * r * 0.35, byy - oy * r * 0.35, hz + h * 0.08),
+                    (bxx + sy * lat * r * 0.45 - ox * r * 0.45, byy + sx * lat * r * 0.45 - oy * r * 0.45, hz + h * 0.1),
+                    max(r * 0.12, 0.3), mat, tone=0.1)
         elif c.capital == "lion":
-            ellipsoid(m, (hx, hy, hz), (r * 0.65, r * 0.65, h * 0.26), mat, tone=0.2)
-            # Mane collar and open jaw.
-            ellipsoid(m, (hx - ox * r * 0.3, hy - oy * r * 0.3, hz - h * 0.02), (r * 0.8, r * 0.8, h * 0.3), mat,
-                      tone=-0.3)
-            slab(m, hx + ox * r * 0.3 - r * 0.2, hx + ox * r * 0.3 + r * 0.2, hy + oy * r * 0.3 - r * 0.2,
-                 hy + oy * r * 0.3 + r * 0.2, hz - h * 0.18, hz - h * 0.1, "cinnabar" if paint else mat)
-        else:  # griffin: a beak, a crest and tall ears
-            ellipsoid(m, (hx, hy, hz + h * 0.04), (r * 0.5, r * 0.5, h * 0.24), mat, tone=0.2)
-            rod(m, (hx, hy, hz + h * 0.02), (hx + ox * r * 0.7, hy + oy * r * 0.7, hz - h * 0.1),
-                max(r * 0.2, 0.4), "gold" if paint else mat)
+            ellipsoid(m, (hx - ox * r * 0.25, hy - oy * r * 0.25, hz - h * 0.02), (r * 0.85, r * 0.85, h * 0.32), mat,
+                      tone=-0.25)
+            ellipsoid(m, (hx, hy, hz), (r * 0.62, r * 0.62, h * 0.26), mat, tone=0.25)
+            mx, my = P(1.12)
+            slab(m, mx - r * 0.25, mx + r * 0.25, my - r * 0.25, my + r * 0.25, hz - h * 0.2, hz - h * 0.08,
+                 "cinnabar" if paint else mat)
             for lat in (-1, 1):
-                bx, by = hx + sy * lat * r * 0.3, hy + sx * lat * r * 0.3
-                rod(m, (bx, by, hz + h * 0.2), (bx - ox * r * 0.15, by - oy * r * 0.15, hz + h * 0.45),
-                    max(r * 0.12, 0.3), mat)
-        if paint:  # a painted eye
-            ex, ey = hx + ox * r * 0.25, hy + oy * r * 0.25
-            fill(m, (ex - r * 0.8, ex + r * 0.8, ey - r * 0.8, ey + r * 0.8, hz + h * 0.04, hz + h * 0.1),
-                 "hair_black", lambda X, Y, Z: (np.hypot(X - ex, Y - ey) > r * 0.45) &
-                 (np.hypot(X - ex, Y - ey) < r * 0.62), only_empty=False)
-    # The saddle: a hollow between the necks where the beam end rests.
-    slab(m, cx - r * 0.9, cx + r * 0.9, cy - r * 0.9, cy + r * 0.9, z0 + h * 0.2, z0 + h * 0.86, mat, tone=-0.1)
+                ex_, ey_ = hx + sy * lat * r * 0.42, hy + sx * lat * r * 0.42
+                ellipsoid(m, (ex_, ey_, hz + h * 0.22), (r * 0.2, r * 0.2, h * 0.08), mat, tone=0.2)
+        else:  # griffin: an eagle's beak, a crest, tall ears, a curled horn
+            ellipsoid(m, (hx, hy, hz + h * 0.04), (r * 0.52, r * 0.52, h * 0.24), mat, tone=0.25)
+            mx, my = P(1.2)
+            rod(m, (hx, hy, hz + h * 0.02), (mx, my, hz - h * 0.14), max(r * 0.22, 0.4), "gold" if paint else mat)
+            for lat in (-1, 1):
+                bxx, byy = hx + sy * lat * r * 0.3, hy + sx * lat * r * 0.3
+                rod(m, (bxx, byy, hz + h * 0.2), (bxx - ox * r * 0.2, byy - oy * r * 0.2, hz + h * 0.48),
+                    max(r * 0.12, 0.3), mat, tone=0.2)
+            rod(m, (hx - ox * r * 0.2, hy - oy * r * 0.2, hz + h * 0.25), (hx - ox * r * 0.7, hy - oy * r * 0.7, hz + h * 0.1),
+                max(r * 0.16, 0.35), "lapis" if paint else mat, tone=0.1)
+        if paint:
+            # A painted collar at the base of the neck and a blanket edge on the shoulder.
+            cx_, cy_ = P(0.62)
+            fill(m, (cx_ - w * 1.3, cx_ + w * 1.3, cy_ - w * 1.3, cy_ + w * 1.3, z0 + h * 0.3, z0 + h * 0.9),
+                 "cinnabar", lambda X, Y, Z, cx_=cx_, cy_=cy_:
+                 (np.abs((X - cx_) * ox + (Y - cy_) * oy) < r * 0.14), tone=-0.3, only_solid=True)
+            fill(m, (cx_ - w * 1.3, cx_ + w * 1.3, cy_ - w * 1.3, cy_ + w * 1.3, z0 + h * 0.3, z0 + h * 0.9),
+                 "gold", lambda X, Y, Z, cx_=cx_, cy_=cy_:
+                 (np.abs((X - cx_) * ox + (Y - cy_) * oy - r * 0.2) < r * 0.07), tone=0.2, only_solid=True)
+            ex, ey = hx + ox * r * 0.2, hy + oy * r * 0.2
+            fill(m, (ex - r * 0.8, ex + r * 0.8, ey - r * 0.8, ey + r * 0.8, hz + h * 0.04, hz + h * 0.11),
+                 "hair_black", lambda X, Y, Z, ex=ex, ey=ey: (np.hypot(X - ex, Y - ey) > r * 0.48) &
+                 (np.hypot(X - ex, Y - ey) < r * 0.66), only_solid=True)
+    # The saddle and the main beam lying in it, across the protome axis.
+    slab(m, cx - r * 0.9, cx + r * 0.9, cy - r * 0.9, cy + r * 0.9, z0 + h * 0.2, z0 + h * 0.8, mat, tone=-0.1)
 
 
 def column_grid(m, xs, ys, z0, c: Column):
     for x in xs:
         for y in ys:
-            column(m, x, y, z0, c)
+            column(m, x, y, 0.0, c)
+
+
+def entablature(m, x0, x1, y0, y1, z, main="y", lines=(), main_w=None, joist=2.6, outer=FACES,
+                fascia="lapis", seed=1, depth=None, cornice_mat="limestone", top_mat="mudbrick", paint=True):
+    """The roof stack of a columned hall or portico on top of its columns at `z` (saddle top):
+    main beams running along `main` through the given column `lines` (their painted ends jut
+    out of the faces they reach), joists across them whose round ends show as a row along the
+    other faces, a painted fascia, a cavetto cornice with painted tongues and a gilded fillet,
+    the plastered roof on top. Returns the roof height."""
+    from materials import beam_ends, roof as roof_dress, timber
+    mw = main_w or 2.4
+    mh = mw * 1.2 if lines else 0.0
+    along_y = main == "y"
+    # Main beams.
+    for c in lines:
+        if along_y:
+            slab(m, c - mw / 2, c + mw / 2, y0 - 0.8, y1 + 0.8, z, z + mh, "cedar", tone=timber("y", seed))
+        else:
+            slab(m, x0 - 0.8, x1 + 0.8, c - mw / 2, c + mw / 2, z, z + mh, "cedar", tone=timber("x", seed))
+    if paint:   # painted ends: red with a gold ring and a blue heart
+        for c in lines:
+            for end in (0, 1):
+                if along_y:
+                    yy = y0 - 0.8 if end == 0 else y1 + 0.8 - 0.5
+                    fill(m, (c - mw / 2, c + mw / 2, yy, yy + 0.5, z, z + mh), "cinnabar", tone=0.1)
+                    fill(m, (c - mw / 4, c + mw / 4, yy - 0.01, yy + 0.51, z + mh * 0.3, z + mh * 0.7), "gold", tone=0.3)
+                else:
+                    xx = x0 - 0.8 if end == 0 else x1 + 0.8 - 0.5
+                    fill(m, (xx, xx + 0.5, c - mw / 2, c + mw / 2, z, z + mh), "cinnabar", tone=0.1)
+                    fill(m, (xx - 0.01, xx + 0.51, c - mw / 4, c + mw / 4, z + mh * 0.3, z + mh * 0.7), "gold", tone=0.3)
+    zj = z + mh
+    # Joists across the main beams, close set; a plank deck over them.
+    jr = 0.75
+    if along_y:
+        for x in np.arange(x0 + joist / 2, x1, joist):
+            slab(m, x - jr, x + jr, y0, y1, zj, zj + jr * 2, "cedar", tone=-0.1)
+    else:
+        for y in np.arange(y0 + joist / 2, y1, joist):
+            slab(m, x0, x1, y - jr, y + jr, zj, zj + jr * 2, "cedar", tone=-0.1)
+    zf = zj + jr * 2
+    for face in outer:
+        jface = face in (("-y", "+y") if along_y else ("-x", "+x"))
+        if jface:
+            beam_ends(m, face, (x0, x1, y0, y1), zj + jr, spacing=joist, r=jr, out=0.9,
+                      paint="lapis" if paint else None)
+    # Fascia: a plastered band painted, with a rosette border.
+    fh = 2.8
+    slab(m, x0 - 0.4, x1 + 0.4, y0 - 0.4, y1 + 0.4, zf, zf + fh, "white_paint", tone=0.0)
+    for face in outer:
+        L = face_length(face, x0 - 0.4, x1 + 0.4, y0 - 0.4, y1 + 0.4)
+        fill(m, face_box(face, x0 - 0.4, x1 + 0.4, y0 - 0.4, y1 + 0.4, zf + 0.5, zf + fh - 0.5, 0, L, -0.1, 0.5),
+             fascia, tone=0.1)
+        rosette_band(m, face, (x0 - 0.4, x1 + 0.4, y0 - 0.4, y1 + 0.4, 0, 0), 0.5, L - 0.5, zf + 0.5, zf + fh - 0.5,
+                     depth=0.5, material="white_paint", petals="gold", step=3.0)
+    zc = zf + fh
+    # The cavetto cornice: painted tongues (blue, red, green) under a gilded fillet.
+    ch = 3.0
+    cornice(m, x0 - 0.4, x1 + 0.4, y0 - 0.4, y1 + 0.4, zc, ch, 1.6, cornice_mat, tone=0.1)
+    if paint:
+        for face in outer:
+            L = face_length(face, x0 - 2.0, x1 + 2.0, y0 - 2.0, y1 + 2.0)
+            for i, col in enumerate(("lapis", "cinnabar", "lapis", "malachite")):
+                def tongue(X, Y, Z, i=i, face=face):
+                    s, _d = face_frame(face, X, Y, Z, x0 - 2.0, x1 + 2.0, y0 - 2.0, y1 + 2.0)
+                    k = np.floor(s / 1.2).astype(np.int64)
+                    t = (Z - zc) / ch
+                    return (k % 4 == i) & (t > 0.15) & (t < 0.8) & ((s % 1.2) < 0.8)
+                fill(m, (x0 - 2.1, x1 + 2.1, y0 - 2.1, y1 + 2.1, zc, zc + ch), col, tongue, tone=0.1,
+                     only_solid=True)
+        fill(m, (x0 - 1.0, x1 + 1.0, y0 - 1.0, y1 + 1.0, zc, zc + ch), cornice_mat, tone=0.1, only_solid=True)
+        fill(m, (x0 - 1.7, x1 + 1.7, y0 - 1.7, y1 + 1.7, zc + ch - 0.5, zc + ch), "gold", tone=0.2, only_solid=True,
+             mask=lambda X, Y, Z: (np.maximum(np.maximum(x0 - 0.4 - X, X - x1 - 0.4),
+                                              np.maximum(y0 - 0.4 - Y, Y - y1 - 0.4)) > 0.5))
+    zr = zc + ch
+    roof_dress(m, x0 - 0.4, x1 + 0.4, y0 - 0.4, y1 + 0.4, zr, seed=seed, material=top_mat, kind="palace",
+               hatches=0, rollers=0)
+    return zr
 
 
 # ---------- roofs, beams, parapets ----------

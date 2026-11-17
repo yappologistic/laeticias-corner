@@ -612,7 +612,7 @@ def _head(b: Body, d: Dress, p: Pose, fr: Frame, up):
     nb = up((0.05, 0.0, fr.shoulder - 0.2))
     b.limb(nb, (hx - 0.2, 0.0, hz - rz * 0.6), 0.65 * f, d.skin, tone=-0.3)
     b.blob((hx, hy, hz), (rx, ry, rz), d.skin)
-    turn = 0.5                                     # the face turns a little to the camera
+    turn = 0.75                                    # the face turns toward the camera
     c, s = math.cos(turn), math.sin(turn)
     U = (X - hx) * c + (Y - hy) * s
     W = -(X - hx) * s + (Y - hy) * c
@@ -643,7 +643,7 @@ def _head(b: Body, d: Dress, p: Pose, fr: Frame, up):
     b.points([at(fu, -0.55 * f, hz + 0.15 * f)], "hair_black", tone=0.5)
     b.blob(at(fu + 0.25, 0.0, hz - 0.25 * f), (0.32, 0.3, 0.35), d.skin, tone=0.3)
     if d.beard != "none":
-        long_ = {"short": 0.9, "full": 1.6, "curled": 1.8, "square": 2.6}[d.beard] * f
+        long_ = {"short": 0.9, "full": 1.35, "curled": 1.6, "square": 2.4}[d.beard] * f
         beard = (U > -0.4) & (Z < hz - 0.25 * f) & (Z > hz - rz - long_ + 0.4) & \
             (((X - hx - 0.2) / (rx + 0.25)) ** 2 + ((Y - hy) / (ry + 0.1)) ** 2 <= 1.0 + 0.3 * (Z < hz - rz))
         if d.beard == "square":
@@ -675,13 +675,16 @@ def _headgear(b, d: Dress, p: Pose, fr: Frame, c, at):
     if g == "none":
         return
     if g in ("fluted_cap", "crown"):
-        h = (2.6 if g == "fluted_cap" else 3.6) * f
+        # Tall enough to read as the fluted felt tiara, not as hair; a dark band at its foot
+        # parts it from the forehead.
+        h = (3.4 if g == "fluted_cap" else 3.8) * f
         z0 = hz + rz * 0.35
-        flare = 1.0 + 0.12 * np.clip((Z - z0) / h, 0, 1)
+        flare = 1.0 + 0.16 * np.clip((Z - z0) / h, 0, 1)
         cap = (rad <= flare) & (Z >= z0) & (Z < top + h - rz * 0.65)
         a = np.arctan2(Y - hy, X - hx)
-        tone = 0.35 * (np.cos(a * 10) > 0.4) - 0.2
+        tone = 0.45 * (np.cos(a * 10) > 0.4) - 0.35
         b.put(cap, mat, tone, ((X - hx), (Y - hy), np.zeros_like(Z)))
+        b.put(cap & (Z < z0 + 0.45), mat, tone=-1.4)
         if g == "crown":   # crenellated rim and a jewelled band
             crest = cap & (Z > top + h - rz * 0.65 - 0.9) & (np.cos(a * 6) < 0.0)
             b.m.mat[np.broadcast_to(crest, b.m.mat.shape)] = 0

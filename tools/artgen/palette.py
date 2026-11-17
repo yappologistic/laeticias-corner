@@ -107,7 +107,7 @@ MATERIALS = [
 
 # Pārsa, spring c. 470 BC: warm polished limestone, painted and gilded stone, glazed brick,
 # cedar, buff mudbrick plaster, the dyes of the court robes and the skins of many peoples.
-LIMESTONE = ["#363542", "#4f4d58", "#6c6970", "#8b8784", "#aca69c", "#cdc6b6", "#e6dfcf"]
+LIMESTONE = ["#37323c", "#514952", "#6f6560", "#8f8478", "#b0a492", "#cfc3ac", "#e8dec6"]
 DARKSTONE = ["#22212b", "#2f2e39", "#45434d"]          # the Tačara's dark polished stone
 LAPIS = ["#1f2557", "#2a3a85", "#3a56b0", "#5f7fd0"]
 EGYPT_BLUE = ["#2f6e9e", "#4d93c2", "#86bfdc"]

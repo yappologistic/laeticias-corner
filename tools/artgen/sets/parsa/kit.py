@@ -8,8 +8,9 @@ import math
 
 import numpy as np
 
+import materials as M
 from arch import (ashlar_tone, awning, carve, ellipsoid, face_box, fill, halo, merlons, mudbrick_wall,
-                  plaster_tone, revolve, rod, slab, stone_frame, tent)
+                  plaster_tone, revolve, rod, slab, stair, stone_frame, tent)
 from setbuild import Item
 from voxel import Model, hash01
 
@@ -24,54 +25,104 @@ def _m(fw, fh, top, k, below=0):
 
 # ---------------------------------------------------------------- dwellings and stores
 
+def _plaster(m, x0, x1, y0, y1, h, seed, plinth=1.2, material="mudbrick", amount=0.6):
+    """A house wall: mud plaster with patches, straw and a damp foot on a rubble footing."""
+    if plinth:
+        slab(m, x0 - 0.2, x1 + 0.2, y0 - 0.2, y1 + 0.2, 0, plinth, "stone", tone=M.ashlar(plinth, 3.0, seed, spread=1.0))
+    slab(m, x0, x1, y0, y1, plinth, h, material, tone=M.mud_plaster(seed, amount, plinth, 3.0))
+
+
+def _house_roof(m, x0, x1, y0, y1, h, seed, clutter=2, parapet=1.4):
+    M.beam_ends(m, "+y", (x0, x1, y0, y1), h - 1.0, spacing=3.2, r=0.6, out=0.8, s0=1.6)
+    M.beam_ends(m, "+x", (x0, x1, y0, y1), h - 1.0, spacing=3.2, r=0.6, out=0.8, s0=1.6)
+    M.roof(m, x0, x1, y0, y1, h + 0.6, seed=seed, kind="domestic", hatches=1, rollers=1, clutter=clutter,
+           base=-0.5)
+    slab(m, x0, x1, y0, y1, h + 0.6, h + 0.6 + parapet, "mudbrick", tone=M.mud_plaster(seed + 9, 0.4, h, 0.0))
+    carve(m, (x0 + 1.0, x1 - 1.0, y0 + 1.0, y1 - 1.0, h + 0.61, h + 0.6 + parapet + 0.1))
+
+
+def _door(m, face, box, s0, w, h, seed, frame="mudbrick"):
+    """A plank door in a plain frame, a little worn at the foot, soot of the lamp above."""
+    stone_frame(m, face, box, s0, w, 0.0, h, kind="door", leaf="cedar", frame_w=0.9, cornice_h=1.0, material=frame)
+    x0, x1, y0, y1 = box[:4]
+    M.stain(m, face_box(face, x0, x1, y0, y1, h + 1.5, h + 5.0, s0, s0 + w, -0.2, 0.5), lambda X, Y, Z: True, -0.4)
+
+
+def _awning(m, x0, x1, y0, y1, z, cloth):
+    """A cloth or reed awning on two poles, tied back to the wall."""
+    for px, py in ((x1, y0), (x1, y1)):
+        rod(m, (px, py, 0), (px, py, z), 0.35, "wood")
+    fill(m, (x0, x1 + 0.6, y0 - 0.4, y1 + 0.4, z - 1.6, z + 0.6), cloth,
+         lambda X, Y, Z: np.abs(Z - (z - 1.2 * (X - x0) / max(x1 - x0, 1))) < 0.45,
+         tone=lambda X, Y, Z: 0.35 * ((Y * 0.8) % 2.0 < 0.9) - 0.1)
+
+
 def p_house(v, frame, frames, k):
-    """A mudbrick courtyard house: rooms on two sides under a flat roof with a low parapet and
-    a few poles, a walled court with a tree, a wooden door, tiny high windows, a doorway lamp."""
-    m = _m(3, 3, 36, k)
+    """A mudbrick courtyard house. Every side is different, so its four rotations read as four
+    households: a plank door with a lamp and a cloth awning on one side, the court gate and a
+    bread oven on another, a stair up to the roof on a third, a dovecote corner and jars on the
+    fourth; a pomegranate in the court, life on the roof (mats of produce, fodder, jars)."""
+    m = _m(3, 3, 38, k)
     seed = 300
-    rooms_h, court_h = 26.0, 16.0
-    mudbrick_wall(m, 0, 20, 0, 48, 0, rooms_h, plinth=1.5, seed=seed)
-    mudbrick_wall(m, 20, 48, 0, 18, 0, rooms_h, plinth=1.5, seed=seed + 1)
+    rh, ch = 26.0, 16.0
+    _plaster(m, 0, 20, 0, 48, rh, seed)                               # rooms along the north side
+    _plaster(m, 20, 48, 0, 18, rh - 3.0, seed + 1, material="mudbrick", amount=0.8)   # a lower wing
     for w in ((20, 48, 45, 48), (45, 48, 18, 48)):
-        mudbrick_wall(m, *w, 0, court_h, plinth=1.0, seed=seed + 2)
-    house = (0, 20, 0, 48, 0, rooms_h)
-    stone_frame(m, "+y", (0, 20, 0, 48, 0, rooms_h), 6.0, 7.0, 0.0, 15.0, kind="door", leaf="cedar",
-                frame_w=1.0, cornice_h=1.2)
-    for face, s0 in (("+x", 6.0), ("+x", 30.0), ("+y", 2.0)):
-        b = house if face == "+y" else (0, 20, 0, 48, 0, rooms_h)
-        fill(m, face_box(face, *b[:4], 19.0, 21.5, s0, s0 + 3.0, -0.2, 1.2), "ink", tone=0.4)
-    fill(m, face_box("+x", 20, 48, 0, 18, 19.0, 21.5, 6.0, 9.0, -0.2, 1.2), "ink", tone=0.4)
-    # Court door in the west wall, a pomegranate in the court.
-    carve(m, (28, 36, 44, 49, 0.5, 12.0))
-    fill(m, (28, 36, 45.5, 46.5, 0.5, 12.0), "cedar", tone=lambda X, Y, Z: -0.4 * ((X % 2.0) < 0.4))
+        _plaster(m, *w, ch, seed + 2, plinth=0.8)
+        slab(m, *w, ch, ch + 0.8, "mudbrick", tone=0.2)
+    house = (0, 20, 0, 48, 0, rh)
+    wing = (20, 48, 0, 18, 0, rh - 3.0)
+    # West: the house door, its lamp, a striped awning over a bench.
+    _door(m, "+y", house, 6.0, 7.0, 15.0, seed)
+    _awning(m, 0, 7, 32, 46, 14.0, "linen")
+    slab(m, 1, 6, 40, 45, 0, 3.2, "wood", tone=M.timber("y", seed))
+    fill(m, (8.4, 11.6, 48.2, 49.4, 12.0, 14.0), "lamp")
+    halo(m, 10.0, 49.0, 13.0, 8.0, LAMP, 0.7)
+    # Small high windows; a niche with a lamp shelf.
+    for face, b, s0 in (("+x", wing, 6.0), ("+x", house, 30.0), ("-x", house, 12.0), ("-y", house, 8.0), ("-y", wing, 10.0)):
+        fill(m, face_box(face, *b[:4], 17.0, 19.5, s0, s0 + 3.0, -0.2, 1.2), "ink", tone=0.4)
+    # South: the court gate, a bread oven beside it.
+    carve(m, (45, 49, 26, 34, 0.5, 12.0))
+    fill(m, (45.5, 46.5, 26, 34, 0.5, 12.0), "cedar", tone=lambda X, Y, Z: -0.4 * ((Y % 2.0) < 0.4))
+    revolve(m, 52.0 - 4.0, 40.0, 0, 6.0, lambda t: 2.8 - 0.9 * t, "mudbrick", tone=M.mud_plaster(seed + 4, 0.5))
+    # East: a mud stair climbing the wing wall to the roof.
+    stair(m, 22, 46, -3.0, 0.0, 0, rh - 3.0, "+x", step=1.6, material="mudbrick")
+    # North: a dovecote turret on the corner of the roof, jars at the foot of the wall.
+    revolve(m, 4.0, 4.0, rh, rh + 8.0, lambda t: 3.2 - 0.8 * t, "mudbrick", tone=M.mud_plaster(seed + 5, 0.4))
+    for i in range(4):
+        fill(m, (1.5, 6.5, 1.5, 6.5, rh + 2.0 + i * 1.6, rh + 2.6 + i * 1.6), "ink",
+             lambda X, Y, Z: np.hypot(X - 4.0, Y - 4.0) > 2.6, tone=0.3, only_solid=True)
+    for i, y in enumerate((20.0, 24.0, 28.0)):
+        revolve(m, -1.0, y, 0, 4.5, lambda t: 1.4 + 0.6 * np.sin(np.pi * t * 0.9), "roof", tone=0.1 * i)
+    # The court: a pomegranate in flower, a water jar, a loom post.
     rod(m, (34, 32, 0), (34, 32, 9), 0.8, "bark")
     for cx, cy, cz in ((34, 32, 12), (31, 30, 11), (36, 35, 11)):
         ellipsoid(m, (cx, cy, cz), (3.4, 3.4, 2.8), "leaf_dark", tone=0.2)
     for px, py in ((32, 29), (36, 34), (33, 35)):
         fill(m, (px - 0.6, px + 0.6, py - 0.6, py + 0.6, 12.5, 13.6), "poppy")
-    for x0, x1, y0, y1 in ((0, 20, 0, 48), (20, 48, 0, 18)):
-        slab(m, x0, x1, y0, y1, rooms_h, rooms_h + 1.0, "mudbrick", tone=plaster_tone(seed, 0.3))
-        slab(m, x0, x1, y0, y1, rooms_h + 1.0, rooms_h + 2.6, "mudbrick", tone=-0.2)
-        carve(m, (x0 + 1.2, x1 - 1.2, y0 + 1.2, y1 - 1.2, rooms_h + 1.0, rooms_h + 3.0))
-    for px, py in ((4, 6), (14, 40), (40, 6)):
-        rod(m, (px, py, rooms_h + 1), (px + 0.4, py, rooms_h + 7), 0.35, "wood")
-    halo(m, 10.0, 49.0, 13.0, 8.0, LAMP, 0.7)
-    fill(m, (8.4, 11.6, 48.2, 49.4, 12.0, 14.0), "lamp")
+    revolve(m, 26.0, 40.0, 0, 4.0, lambda t: 1.6 + 0.5 * np.sin(np.pi * t), "roof", tone=0.2)
+    _house_roof(m, 0, 20, 0, 48, rh, seed, clutter=3)
+    _house_roof(m, 20, 48, 0, 18, rh - 3.0, seed + 7, clutter=2)
+    for px, py in ((14, 40), (40, 6)):
+        rod(m, (px, py, rh + 1), (px + 0.4, py, rh + 7), 0.35, "wood")
     return m
 
 
 def p_house_small(v, frame, frames, k):
-    """A workers' house: one plastered cell, a door, a high window, a parapet."""
+    """A workers' house: one plastered cell, each side its own: the door under a reed awning,
+    a stair to the roof, a bread oven, fuel stacked against the wall."""
     m = _m(2, 2, 30, k)
     seed = 310
-    mudbrick_wall(m, 2, 30, 2, 30, 0, 22.0, plinth=1.2, seed=seed)
-    stone_frame(m, "+y", (2, 30, 2, 30, 0, 22.0), 10.0, 7.0, 0.0, 14.0, kind="door", leaf="cedar",
-                frame_w=0.9, cornice_h=1.0, material="mudbrick")
+    _plaster(m, 2, 30, 2, 30, 22.0, seed, amount=0.8)
+    box = (2, 30, 2, 30, 0, 22.0)
+    _door(m, "+y", box, 10.0, 7.0, 14.0, seed)
+    _awning(m, 2, 9, 18, 30, 12.0, "straw")
     fill(m, face_box("+x", 2, 30, 2, 30, 16.0, 18.5, 12.0, 15.0, -0.2, 1.2), "ink", tone=0.4)
-    slab(m, 2, 30, 2, 30, 22.0, 23.0, "mudbrick", tone=plaster_tone(seed, 0.3))
-    slab(m, 2, 30, 2, 30, 23.0, 24.5, "mudbrick", tone=-0.2)
-    carve(m, (3.2, 28.8, 3.2, 28.8, 23.0, 25.0))
-    rod(m, (5, 5, 23), (5.4, 5, 28), 0.35, "wood")
+    stair(m, 6, 28, -1.0, 2.0, 0, 22.0, "-x", step=1.6, material="mudbrick")
+    revolve(m, 33.0 - 2.0, 8.0, 0, 5.0, lambda t: 2.4 - 0.8 * t, "mudbrick", tone=M.mud_plaster(seed + 2, 0.5))
+    fill(m, (4, 9, -1.5, 2, 0, 6.0), "straw", tone=lambda X, Y, Z: (hash01(np.floor(X * 2).astype(np.int64),
+                                                                            np.floor(Z * 2).astype(np.int64), seed) - 0.5))
+    _house_roof(m, 2, 30, 2, 30, 22.0, seed, clutter=2, parapet=1.2)
     fill(m, (12.4, 15.6, 30.2, 31.2, 14.0, 15.5), "lamp")
     halo(m, 14.0, 31.0, 15.0, 6.0, LAMP, 0.6)
     return m
@@ -94,28 +145,49 @@ def p_granary(v, frame, frames, k):
 
 
 def p_workshop(v, frame, frames, k):
-    """An open shed of poles and reed matting over a work yard: bench, jars, a hearth."""
-    m = _m(3, 2, 26, k)
-    mudbrick_wall(m, 0, 48, 0, 4, 0, 14.0, plinth=1.0, seed=330)
+    """A craft yard under a shade of poles and reed mats: on one side a potter's bench with
+    jars drying, on another a loom under the shade, a forge hearth with bellows and its glow,
+    bricks stacked along the back wall."""
+    m = _m(3, 2, 28, k)
+    _plaster(m, 0, 48, 0, 4, 14.0, 330, amount=0.8)
+    slab(m, 0, 48, 0, 4, 14.0, 15.0, "mudbrick", tone=0.2)
     awning(m, 2, 46, 4, 26, 20.0, cloth="straw", sag=0.4)
-    slab(m, 8, 26, 10, 14, 0, 6.0, "wood_light", tone=0.2)
-    slab(m, 8, 26, 10, 14, 6.0, 7.0, "cedar", tone=0.3)
-    for i, (x, y) in enumerate(((32, 10), (36, 12), (40, 9))):
-        revolve(m, x, y, 0, 6.5, lambda t: 1.8 + 1.0 * np.sin(np.pi * t * 0.9), "mudbrick", tone=0.2 + 0.1 * i)
-    revolve(m, 20, 22, 0, 2.0, lambda t: 3.0, "stone", tone=-0.2)
-    fill(m, (18, 22, 20, 24, 1.0, 2.6), "ember")
-    halo(m, 20, 22, 3.0, 8.0, FIRE, 0.7)
+    # A potter's bench and new jars drying.
+    slab(m, 8, 22, 10, 14, 0, 6.0, "wood_light", tone=M.timber("x", 331))
+    slab(m, 8, 22, 10, 14, 6.0, 7.0, "cedar", tone=0.3)
+    for i, (x, y) in enumerate(((10, 18), (13, 20), (16, 18), (19, 21))):
+        revolve(m, x, y, 0, 5.5, lambda t: 1.4 + 0.9 * np.sin(np.pi * t * 0.9), "mudbrick", tone=0.5 + 0.1 * i)
+    # A loom: two beams on posts, a patterned cloth on it.
+    for x in (28.0, 36.0):
+        rod(m, (x, 8, 0), (x, 8, 16), 0.4, "wood")
+    rod(m, (28, 8, 15.5), (36, 8, 15.5), 0.45, "wood")
+    fill(m, (28.5, 35.5, 7.6, 8.4, 4.0, 15.0), "cinnabar",
+         tone=lambda X, Y, Z: 0.6 * (((X + Z) % 2.0) < 0.6) - 0.5 * ((Z % 3.0) < 0.5))
+    fill(m, (28.5, 35.5, 7.4, 8.6, 9.0, 10.5), "lapis", tone=0.1, only_solid=True)
+    # A smithy hearth with its bellows and glow.
+    revolve(m, 40, 20, 0, 3.0, lambda t: 3.2 - 0.4 * t, "stone", tone=-0.2)
+    fill(m, (38.5, 41.5, 18.5, 21.5, 2.0, 3.6), "ember")
+    fill(m, (43, 47, 18, 22, 0.5, 3.0), "leather", lambda X, Y, Z: np.hypot(X - 45, Y - 20) < 2.0, tone=0.1)
+    halo(m, 40, 20, 4.0, 10.0, FIRE, 0.9)
+    # Bricks stacked against the back wall.
+    for i in range(4):
+        for j in range(3 - (i % 2)):
+            slab(m, 4 + i * 0.3, 7.6, 4.4 + j * 3.4, 7.4 + j * 3.4, i * 1.2, i * 1.2 + 1.1, "mudbrick",
+                 tone=0.2 + 0.2 * float(hash01(i, j, 333)))
     return m
 
 
 def p_kiln(v, frame, frames, k):
-    """A domed clay kiln with its fire mouth."""
+    """A domed clay kiln, soot-blackened at the vents, its fire mouth glowing."""
     m = _m(1, 1, 26, k)
     revolve(m, 8, 8, 0, 18.0, lambda t: 6.5 * np.sqrt(np.clip(1 - t ** 1.6, 0, 1)) + 0.6, "mudbrick",
-            tone=lambda X, Y, Z: plaster_tone(340, 0.5)(X, Y, Z) - 0.5 * (Z > 15))
+            tone=lambda X, Y, Z: M.mud_plaster(340, 0.6, 0, 2.0)(X, Y, Z) - 0.9 * (Z > 14) - 0.4 * (Z > 16.5))
     carve(m, (6, 10, 12, 16, 1.0, 6.0))
     fill(m, (6, 10, 11, 12, 1.0, 6.0), "ember")
-    revolve(m, 8, 8, 17.5, 19.5, lambda t: 1.4, "mudbrick", tone=-0.4)
+    M.stain(m, (5, 11, 12, 16, 5.0, 11.0), lambda X, Y, Z: True, -0.8)
+    revolve(m, 8, 8, 17.5, 19.5, lambda t: 1.4, "mudbrick", tone=-0.9)
+    for i in range(3):
+        fill(m, (12.5 + i * 0.4, 14.5, 1 + i * 2.2, 3 + i * 2.2, 0, 1.4 + i * 0.3), "wood", tone=0.1)
     halo(m, 8, 14, 3.0, 9.0, FIRE, 0.9)
     return m
 
@@ -178,7 +250,8 @@ def _channel(m, mask, frame, kerb="limestone"):
         inner.append(ib)
         carve(m, (*ib, 0.8, 3.0))
         fill(m, (*ib, 0.6, 1.4), "water",
-             tone=lambda X, Y, Z: 0.9 * (((X + Y + frame * 2.0) % 5.0) < 0.8) - 0.2)
+             tone=lambda X, Y, Z: 1.8 * (((X + Y * 0.6 + frame * 2.0) % 5.0) < 0.6) - 1.5 +
+             0.5 * (((X - Y + frame * 1.3) % 3.0) < 0.4))
     return m
 
 
@@ -195,7 +268,7 @@ def p_basin(v, frame, frames, k):
     carve(m, (2.5, 13.5, 2.5, 13.5, 0.8, 4.0))
     r = 1.5 + frame * 1.4
     fill(m, (2.5, 13.5, 2.5, 13.5, 0.6, 1.6), "water",
-         tone=lambda X, Y, Z: 0.9 * (np.abs(np.hypot(X - 8, Y - 8) - r) < 0.5) - 0.2)
+         tone=lambda X, Y, Z: 1.8 * (np.abs(np.hypot(X - 8, Y - 8) - r) < 0.5) - 1.4)
     return m
 
 
@@ -381,12 +454,25 @@ def p_scales(v, frame, frames, k):
 
 
 def p_tent(v, frame, frames, k):
-    """A wool tent for visiting envoys, striped, its door flap open, a lamp inside."""
-    m = _m(2, 2, 26, k)
-    cloth, stripe = (("wool", "cinnabar"), ("felt", "saffron"))[v % 2] if v < 2 else ("wool", None)
-    tent(m, 2, 30, 4, 28, 0, 22.0, cloth=cloth, stripe=stripe, ridge="x", door_face="+x")
-    rod(m, (2, 16, 0), (2, 16, 23), 0.45, "wood")
-    rod(m, (30, 16, 0), (30, 16, 23), 0.45, "wood")
+    """A delegation's tent on the plain: a ridge tent of striped wool with a door flap tied
+    open over a patterned rug on one side and a felt-walled porch awning on the other (its
+    two rotations read as two different camps), guy ropes to pegs, a pennant on the pole."""
+    m = _m(2, 2, 30, k)
+    tent(m, 3, 29, 5, 27, 0, 21.0, cloth="wool", stripe="cinnabar", ridge="x", door_face="+x")
+    for x in (3.0, 29.0):
+        rod(m, (x, 16, 0), (x, 16, 22.5), 0.45, "wood")
+    rod(m, (29.0, 16, 22.5), (29.0, 16, 27.0), 0.3, "wood")
+    fill(m, (28.8, 29.2, 16.3, 20.0, 24.0, 27.0), "saffron",
+         lambda X, Y, Z: (Z - 24.0) > (Y - 16.3) * 0.6, tone=0.2)
+    for px, py, tx, ty in ((3, 16, -1, 16), (29, 16, 32, 16), (16, 5, 16, 1), (16, 27, 16, 31)):
+        rod(m, (px, py, 18.0 if px in (3, 29) else 4.0), (tx, ty, 0.3), 0.15, "linen")
+    # The rug before the door (south) and the porch awning (west) on felt panels.
+    fill(m, (30, 34, 9, 23, 0, 0.4), "cinnabar",
+         tone=lambda X, Y, Z: 0.5 * (((X + Y) % 2.0) < 0.6) - 0.6 * ((np.abs(Y - 16) > 6) | (X > 33.3)))
+    awning(m, 8, 24, 27, 31, 11.0, cloth="felt", poles=True, sag=0.3)
+    slab(m, 8, 24, 30.6, 31.0, 0, 7.0, "felt", tone=lambda X, Y, Z: 0.4 * ((X % 4.0) < 0.5) - 0.1)
+    for i, x in enumerate((12.0, 15.0)):
+        revolve(m, x, 29.0, 0, 3.2, lambda t: 1.0 + 0.5 * np.sin(np.pi * t), "bronze", tone=0.1 * i)
     halo(m, 31.0, 16.0, 6.0, 9.0, LAMP, 0.7)
     return m
 

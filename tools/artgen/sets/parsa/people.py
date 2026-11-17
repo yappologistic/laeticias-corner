@@ -11,7 +11,7 @@ from rig import Dress, carry_point, person_sprite
 D = Dress
 
 # ---- the two court costumes ----
-PERSIAN = D(garment="court_robe", head="fluted_cap", head_mat="cream", jewels=("torque", "bracelets", "earrings"),
+PERSIAN = D(garment="court_robe", head="fluted_cap", head_mat="wool", jewels=("torque", "bracelets", "earrings"),
             feet="shoes")
 MEDE = D(garment="tunic", trousers="wool", coat="cinnabar", belt="gold", head="round_cap", head_mat="wool",
          feet="boots", worn=("akinakes",), jewels=("torque", "earrings"))
@@ -24,8 +24,8 @@ CHILD = D(body="child", beard="none", hair_style="short", garment="tunic", colou
 
 WALKERS = {
     "noble": [replace(PERSIAN, colour=c, trim=t, head_mat=h, hand_r=l) for c, t, h, l in (
-        ("purple", "gold", "cream", "lotus"), ("cinnabar", "saffron", "wool", None),
-        ("lapis", "gold", "white_paint", "lotus"), ("saffron", "cinnabar", "cream", None))],
+        ("purple", "gold", "wool", "lotus"), ("cinnabar", "saffron", "felt", None),
+        ("lapis", "gold", "saffron", "lotus"), ("saffron", "cinnabar", "wool", None))],
     "usher": [replace(MEDE, colour=c, trousers=t, coat=co, hand_l="staff") for c, t, co in (
         ("lapis", "saffron", "cinnabar"), ("cinnabar", "lapis", "purple"), ("malachite", "cinnabar", "lapis"),
         ("saffron", "purple", "cinnabar"))],
@@ -34,7 +34,7 @@ WALKERS = {
                             hand_l="spear", worn=("quiver", "bow_back"), jewels=("earrings", "bracelets"))
                     for c, p, pm, t, h, hm in (
         ("eblue", "dots", "saffron", "saffron", "fillet", "gold"), ("lapis", "squares", "white_paint", "white_paint",
-                                                                   "fluted_cap", "cream"),
+                                                                   "fluted_cap", "wool"),
         ("saffron", "dots", "cinnabar", "cinnabar", "fillet", "gold"))],
     "guard_mede": [replace(MEDE, colour=c, trousers=t, coat=co, head=h, head_mat=hm, hand_l="spear",
                            worn=("gorytos", "akinakes")) for c, t, co, h, hm in (

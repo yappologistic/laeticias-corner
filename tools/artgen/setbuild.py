@@ -322,7 +322,7 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
         else:
             sprites[f"item/{iid}/base/r0/f0"] = r.base
         if "shadow" in layers:
-            sprites[f"item/{iid}/shadow/r0/f0"] = r.shadow
+            sprites[f"item/{iid}/shadow/r0/f0"] = _clip_hidden(r.shadow, r.base)
         if "glow" in layers:
             sprites[f"item/{iid}/glow/r0/f0"] = r.glow
         lm_info[iid] = {"h": int(r.base.oy), "top": r.top, "column": r.column}
@@ -332,6 +332,22 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
     if missing:
         raise SystemExit(f"setbuild: builders did not make {len(missing)} keys, e.g. {missing[:5]}")
     return {key: sprites[key] for key in keys}, pieces, meta, lm_info
+
+
+def _clip_hidden(shadow: Sprite, base: Sprite) -> Sprite:
+    """Drop the shadow pixels that lie under the landmark's own opaque pixels: the base is
+    always drawn over them, so they are never seen, and a big closed building's shadow
+    sprite shrinks to its cast band and front contact strip."""
+    a = shadow.rgba.copy()
+    h, w = a.shape[:2]
+    y0, x0 = shadow.oy - base.oy, shadow.ox - base.ox
+    bh, bw = base.rgba.shape[:2]
+    ys0, ys1 = max(y0, 0), min(y0 + bh, h)
+    xs0, xs1 = max(x0, 0), min(x0 + bw, w)
+    if ys0 < ys1 and xs0 < xs1:
+        cover = base.rgba[ys0 - y0:ys1 - y0, xs0 - x0:xs1 - x0, 3] == 255
+        a[ys0:ys1, xs0:xs1][cover] = 0
+    return Sprite(a, shadow.ox, shadow.oy)
 
 
 # ---------- geometry ----------

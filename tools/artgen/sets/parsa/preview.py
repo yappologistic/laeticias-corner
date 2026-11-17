@@ -82,7 +82,7 @@ def terrace(pieces, floors, night=False, crop=(24, 126, 16, 122)):
     p.level(8, 63, 70, 82, 91)
     p.level(9, 76, 85, 88, 101)
     p.level(7, 86, 99, 86, 112)
-    p.level(8, 120, 126, 16, 122, edge=P + "ashlar")
+    p.level(8, 120, 126, 16, 122, edge=P + "rock")
     # Landmarks after the bible's coordinates.
     p.place("great_stair", 49, 37, 55, 54, pieces)
     p.place("gate_all_lands", 64, 42, 69, 47, pieces)
@@ -250,7 +250,7 @@ def town(pieces):
     for i, (x, y) in enumerate(((1, 1), (5, 1), (1, 11), (12, 11), (16, 11))):
         s.add(P + "p_house", f"r{i % 4}", x, y, 3, 3)
     for x in range(12, 20, 2):
-        s.add(P + "p_house_small", "r0", x, 2, 2, 2)
+        s.add(P + "p_house_small", f"r{(x // 2) % 4}", x, 2, 2, 2)
     s.add(P + "p_workshop", "r0", 1, 5, 3, 2)
     s.add(P + "p_granary", "r0", 15, 5, 2, 2)
     s.add(P + "p_granary", "r1", 17, 5, 2, 2)
