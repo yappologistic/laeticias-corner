@@ -13,7 +13,7 @@ always produces byte-identical output. A full run takes a few seconds on a multi
 ## How it works
 
 - `spec.py` lists every key the catalog implies (and our frame counts).
-- `palette.py` holds the one curated palette (56 colours) and the material ramps built from it.
+- `palette.py` holds the one curated palette (57 colours) and the material ramps built from it.
 - `voxel.py` is the modelling toolkit: a material grid with per-voxel normals and tone, boolean
   shape helpers (boxes, ellipsoids, cylinders, cones, capsules, gables), seeded noise, rotation.
   World units are voxels, 16 per tile edge; one voxel of height is one pixel.

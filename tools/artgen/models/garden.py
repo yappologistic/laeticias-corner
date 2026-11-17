@@ -94,7 +94,7 @@ def planter(v, frame, frames):
     if v == 0:      # cabbages
         for x, y in spots:
             r = rng.uniform(2.2, 2.7)
-            canopy(m, [(x, y, 4 + r * 0.6, r)], "grass", 132 + x * 3 + y, lambda Z: 0.0,
+            canopy(m, [(x, y, 4 + r * 0.6, r)], "grass", 132 + x * 3 + y,
                    leafy=0.25, light_tone=0.6)
     elif v == 1:    # carrots: feathery tops and orange shoulders
         for row in (4.5, 8, 11.5):
@@ -111,12 +111,12 @@ def planter(v, frame, frames):
             m.put(ellipsoid(X, Y, Z, x, y, 4 + r * 0.7, r, r, r * 0.75), "orange", tone=ribs,
                   normal=ellipsoid_normal(X, Y, Z, x, y, 4 + r * 0.7, r, r, r * 0.75))
             m.put(cylinder(X, Y, Z, x, y, 0.6, 4 + r * 1.3, 4 + r * 1.3 + 1.5), "bark")
-        canopy(m, [(11, 5, 5.5, 2.4), (5, 11.5, 5.5, 2.4)], "leaf", 133, lambda Z: 0.0)
+        canopy(m, [(11, 5, 5.5, 2.4), (5, 11.5, 5.5, 2.4)], "leaf", 133)
     else:           # tomato stakes
         for x, y in ((5.5, 8), (10.5, 8)):
             m.put(box(X, Y, Z, x - 0.5, x + 0.5, y - 0.5, y + 0.5, 4, 15), "wood_light")
             canopy(m, [(x, y, 7, 2.6), (x + 0.5, y - 0.5, 10.5, 2.3), (x - 0.3, y + 0.4, 13, 1.8)],
-                   "leaf", 134 + int(x), lambda Z: 0.0)
+                   "leaf", 134 + int(x))
             for k in range(5):
                 a, z = k * 2.4 + x, 6.5 + k * 1.4
                 px, py = x + 2.2 * math.cos(a), y + 2.2 * math.sin(a)

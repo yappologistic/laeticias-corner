@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 
+from render import SUN
 from voxel import (Model, Rng, curve, cylinder, cylinder_normal, ellipsoid, ellipsoid_normal,
                    hash01, segment, value_noise)
 
@@ -14,104 +15,251 @@ def _sway(frame: int, frames: int, amount: float) -> float:
     return amount * math.sin(2 * math.pi * frame / max(frames, 1))
 
 
-def canopy(m: Model, clumps, material: str, seed: int, shear, leafy=0.35, light_tone=0.7):
+def canopy(m: Model, clumps, material: str, seed: int, leafy=0.35, light_tone=0.7):
     """Union of noisy ellipsoid clumps; each clump keeps its own normals so it reads as a puff."""
     X, Y, Z = m.coords()
     for n, (cx, cy, cz, r) in enumerate(clumps):
-        Xs = X - shear(Z)
-        wob = (value_noise(Xs, Y, Z, 2.2, seed + n) - 0.5) * leafy * 2
+        wob = (value_noise(X, Y, Z, 2.2, seed + n) - 0.5) * leafy * 2
         rz = r * 0.82
-        mask = ellipsoid(Xs, Y, Z, cx, cy, cz, r, r, rz, wob)
-        nrm = ellipsoid_normal(Xs, Y, Z, cx, cy, cz, r, r, rz)
+        mask = ellipsoid(X, Y, Z, cx, cy, cz, r, r, rz, wob)
+        nrm = ellipsoid_normal(X, Y, Z, cx, cy, cz, r, r, rz)
         # Highlight cluster on the sun side of each clump, broken up by noise.
-        sun_side = ((cx - Xs) * 0.45 + (Y - cy) * 0.3 + (Z - cz) * 0.85) / r
-        speck = value_noise(Xs, Y, Z, 1.6, seed + 50 + n)
+        sun_side = ((cx - X) * 0.45 + (Y - cy) * 0.3 + (Z - cz) * 0.85) / r
+        speck = value_noise(X, Y, Z, 1.6, seed + 50 + n)
         tone = np.where((sun_side > 0.35) & (speck > 0.45), light_tone, 0.0) + (speck - 0.5) * 0.4
         m.put(mask, material, tone=tone, normal=nrm)
 
 
-def trunk(m: Model, x, y, r, z1, material="bark", lean=(0.0, 0.0), flare=1.6):
+def trunk(m: Model, x, y, r, z1, material="bark", lean=(0.0, 0.0), flare=1.6, taper=0.0):
     X, Y, Z = m.coords()
     cx = x + lean[0] * Z / z1
     cy = y + lean[1] * Z / z1
-    rr = r + flare * np.clip(1 - Z / 3.0, 0, 1)
+    rr = r * (1 - taper * np.clip(Z / z1, 0, 1)) + flare * np.clip(1 - Z / 3.0, 0, 1) ** 2
     mask = ((X - cx) ** 2 + (Y - cy) ** 2 <= rr ** 2) & (Z >= 0) & (Z < z1)
-    bark = value_noise(X * 3, Y * 3, Z * 0.4, 1.0, 11) - 0.5
-    m.put(mask, material, tone=bark * 0.8, normal=cylinder_normal(X, Y, Z, cx, cy))
+    # Vertical bark grooves: noise stretched along the trunk.
+    ang = np.arctan2(Y - cy, X - cx)
+    bark = value_noise(np.cos(ang) * 4 + 10, np.sin(ang) * 4 + 10, Z * 0.25, 1.0, 11) - 0.5
+    m.put(mask, material, tone=bark * 1.2, normal=cylinder_normal(X, Y, Z, cx, cy))
 
 
-def _round_tree(v, frame, frames, seed, material, size, inner=None):
-    rng = Rng(seed, v)
-    h = int(round(size * 40))
-    m = Model.empty(-10, 26, -10, 26, 0, h + 4)
-    trunk_h = rng.uniform(0.42, 0.5) * h
-    lean = (rng.uniform(-1, 1), rng.uniform(-1, 1))
-    trunk(m, C, C, 1.8 * size + 0.2, trunk_h + 4, lean=lean)
+def roots(m: Model, rng: Rng, x, y, count, reach, r=1.1, material="bark"):
+    """Short roots fanning out from the trunk base and diving into the ground."""
     X, Y, Z = m.coords()
-    for a in (rng.uniform(0, 6.28), rng.uniform(0, 6.28)):
-        p = (C + lean[0] * 0.7, C + lean[1] * 0.7, trunk_h - 4)
-        q = (C + 6 * size * math.cos(a), C + 6 * size * math.sin(a), trunk_h + 3)
-        m.put(segment(X, Y, Z, p, q, 1.0), "bark")
-    sway = _sway(frame, frames, 0.9)
-    shear = lambda Z: sway * np.clip((Z - trunk_h + 6) / 18, 0, 1)
-    top = h - 9 * size
-    clumps = [(C + lean[0], C + lean[1], top - 6 * size, 9.5 * size)]
-    for n in range(rng.integers(6, 9)):
-        a = n * 2.4 + rng.uniform(-0.4, 0.4)
-        d = rng.uniform(4.5, 7) * size
-        clumps.append((C + d * math.cos(a), C + d * math.sin(a),
-                       top - 9 * size + rng.uniform(-2, 7) * size, rng.uniform(4.8, 6.6) * size))
-    clumps.append((C - 1, C + 1, top + size, rng.uniform(5.5, 6.5) * size))
-    clumps.sort(key=lambda c: c[2])
-    if inner:
-        canopy(m, [(x, y, z, r * 0.9) for x, y, z, r in clumps[:3]], inner, seed * 7 + v, shear)
-        canopy(m, clumps[3:], material, seed * 13 + v, shear)
-    else:
-        canopy(m, clumps, material, seed * 13 + v, shear)
+    a0 = rng.uniform(0, 6.28)
+    for k in range(count):
+        a = a0 + k * 6.28 / count + rng.uniform(-0.4, 0.4)
+        d = reach * rng.uniform(0.7, 1.1)
+        p, q = (x, y, 2.2), (x + d * math.cos(a), y + d * math.sin(a), -0.6)
+        m.put(segment(X, Y, Z, p, q, r) & (Z >= 0), material, tone=-0.2,
+              normal=(X - x, Y - y, Z * 0 + 1.2))
+
+
+# ---- leaf masses ----
+
+def _sphere_points(n, rng: Rng):
+    """n roughly even unit vectors (a jittered Fibonacci sphere)."""
+    k = np.arange(n) + 0.5
+    phi = np.arccos(1 - 2 * k / n) + rng.g.uniform(-0.12, 0.12, n)
+    theta = math.pi * (1 + 5 ** 0.5) * k + rng.uniform(0, 6.28) + rng.g.uniform(-0.3, 0.3, n)
+    return np.stack([np.cos(theta) * np.sin(phi), np.sin(theta) * np.sin(phi), np.cos(phi)], 1)
+
+
+def leaf_mass(m: Model, clumps, seed: int, materials=(("leaf", 1.0),), under="leaf",
+              cluster=(2.8, 4.0), squash=0.9, level=-0.9):
+    """A canopy built from clumps, each covered in small leaf clusters.
+
+    `clumps` are (x, y, z, r). Every clump's surface is studded with clusters a few voxels
+    across; each cluster shades as its own little puff (normal blended with the clump's), so
+    the canopy reads as many lit tufts with dark crevices between them. Clusters on a clump's
+    underside use `under`; the rest pick from weighted `materials`. `level` shifts the whole
+    mass down the ramp so only sunlit tufts reach the lightest greens.
+    """
+    rng = Rng(seed)
+    shape = m.mat.shape
+    best = np.full(shape, -1.0, np.float32)
+    second = np.full(shape, -1.0, np.float32)
+    nrm = np.zeros(shape + (3,), np.float32)
+    tone = np.zeros(shape, np.float32)
+    own = np.zeros(shape, np.int8)
+    names = [name for name, _w in materials] + [under]
+    weights = np.cumsum([w for _n, w in materials]) / sum(w for _n, w in materials)
+
+    def claim(sl, mask, score, n_vec, t, mat_idx):
+        b, s2 = best[sl], second[sl]
+        win = mask & (score > b)
+        s2[win] = b[win]
+        s2[mask & ~win & (score > s2)] = score[mask & ~win & (score > s2)]
+        b[win] = score[win]
+        nrm[sl][win] = n_vec[win]
+        tone[sl][win] = np.broadcast_to(t, win.shape)[win]
+        own[sl][win] = np.broadcast_to(np.asarray(mat_idx, np.int8), win.shape)[win]
+
+    for cx, cy, cz, r in clumps:
+        rz = r * squash
+        sl, X, Y, Z = m.window(cx, cy, cz, r + 1)
+        dx, dy, dz = (X - cx) / r, (Y - cy) / r, (Z - cz) / rz
+        core = dx * dx + dy * dy + dz * dz <= 0.8 ** 2
+        cn = np.stack(np.broadcast_arrays(dx / r, dy / r, dz / rz), -1)
+        cn /= np.maximum(np.linalg.norm(cn, axis=-1, keepdims=True), 1e-6)
+        under_side = cn[..., 2] < -0.35
+        claim(sl, core, np.zeros(core.shape, np.float32), cn, level - 0.6 * under_side,
+              np.where(under_side, len(names) - 1, 0).astype(np.int8))
+        rc_mean = sum(cluster) / 2
+        count = int(3.2 * (r / rc_mean) ** 2) + 4
+        for p in _sphere_points(count, rng):
+            if p[2] < -0.75:
+                continue
+            rc = rng.uniform(*cluster)
+            px, py, pz = cx + p[0] * r * 0.8, cy + p[1] * r * 0.8, cz + p[2] * rz * 0.8
+            sl, X, Y, Z = m.window(px, py, pz, rc + 1)
+            d = np.sqrt((X - px) ** 2 + (Y - py) ** 2 + ((Z - pz) / 0.85) ** 2)
+            blob = d <= rc
+            if not blob.any():
+                continue
+            sn = np.stack(np.broadcast_arrays(X - px, Y - py, (Z - pz) / 0.85), -1) / np.maximum(d, 1e-3)[..., None]
+            cn = np.array([p[0] / r, p[1] / r, p[2] / rz], np.float32)
+            cn /= np.linalg.norm(cn)
+            n_vec = 0.45 * cn + 0.55 * sn
+            n_vec /= np.maximum(np.linalg.norm(n_vec, axis=-1, keepdims=True), 1e-6)
+            # Lit tufts on the sun side get a highlight cluster; each cluster varies a little.
+            sun = (sn * SUN).sum(-1)
+            facing = float(cn @ SUN)
+            t = (level + rng.uniform(-0.3, 0.3) + 0.9 * facing
+                 + np.where((sun > 0.55) & (facing > 0.1), 0.9, 0.0) - 0.7 * (p[2] < -0.35))
+            if p[2] < -0.35:
+                idx = len(names) - 1
+            else:
+                idx = int(np.searchsorted(weights, rng.uniform(), side="right"))
+                idx = min(idx, len(materials) - 1)
+            claim(sl, blob, 1.0 - d / rc + 0.05, n_vec, t, idx)
+
+    solid = best > -1
+    # Crevices: where two clusters meet with nearly equal claim, the gap between them is dark.
+    crevice = solid & (second > 0) & (best - second < 0.12)
+    tone -= crevice * 0.8
+    for i, name in enumerate(names):
+        mask = solid & (own == i)
+        if mask.any():
+            m.put(mask, name, tone=tone, normal=(nrm[..., 0], nrm[..., 1], nrm[..., 2]))
+
+
+def _branches(m: Model, base, clumps, r=1.2):
+    X, Y, Z = m.coords()
+    for cx, cy, cz, cr in clumps:
+        m.put(segment(X, Y, Z, base, (cx, cy, cz - cr * 0.3), r), "bark", tone=-0.4)
+
+
+# ---- broadleaf trees ----
+
+# Per variant: crown radius, crown centre height, trunk lean (x, y), ring clumps, ring spread,
+# crown squash and extra lobes (angle, distance, dz, radius) in units of the crown radius.
+BROADLEAF = (
+    dict(r=11.0, z=26, lean=(0.5, -0.5), ring=6, spread=0.95, lobes=()),
+    dict(r=9.5, z=31, lean=(3.5, -2.5), ring=5, spread=0.8, lobes=((5.6, 0.9, 0.55, 0.6),)),
+    dict(r=10.0, z=23, lean=(-1.0, 1.5), ring=7, spread=1.1, lobes=((5.5, 1.3, -0.2, 0.7),
+                                                                   (2.36, 1.3, -0.1, 0.7))),
+    dict(r=8.5, z=22, lean=(-2.0, -1.0), ring=4, spread=0.9, lobes=((2.4, 1.3, -0.3, 0.65),)),
+)
+
+
+def _broadleaf(v, frame, frames, seed, materials, under, level, scale=1.0):
+    rng = Rng(seed, v)
+    p = BROADLEAF[v]
+    R, zc = p["r"] * scale, p["z"] * scale
+    m = Model.empty(-18, 34, -18, 34, 0, int(zc + R * 1.6) + 4)
+    lx, ly = p["lean"]
+    top = (C + lx, C + ly)
+    trunk_h = zc - R * 0.35
+    trunk(m, C, C, 2.4 * scale, trunk_h, lean=(lx, ly), flare=2.0, taper=0.35)
+    roots(m, rng, C, C, 5, 5.0)
+    clumps = [(top[0], top[1], zc, R)]
+    a0 = rng.uniform(0, 6.28)
+    for n in range(p["ring"]):
+        a = a0 + n * 6.28 / p["ring"] + rng.uniform(-0.35, 0.35)
+        d = R * p["spread"] * rng.uniform(0.75, 1.0)
+        clumps.append((top[0] + d * math.cos(a), top[1] + d * math.sin(a),
+                       zc + R * rng.uniform(-0.45, 0.2), R * rng.uniform(0.55, 0.72)))
+    for a, d, dz, r in p["lobes"]:
+        clumps.append((top[0] + R * d * math.cos(a), top[1] + R * d * math.sin(a), zc + R * dz, R * r))
+    for _n in range(2):
+        a = rng.uniform(0, 6.28)
+        clumps.append((top[0] + R * 0.35 * math.cos(a), top[1] + R * 0.35 * math.sin(a),
+                       zc + R * rng.uniform(0.5, 0.7), R * rng.uniform(0.55, 0.65)))
+    _branches(m, (top[0], top[1], trunk_h - 2), clumps[1:])
+    # Sway: each clump drifts on its own phase, more the higher it sits.
+    t = 2 * math.pi * frame / max(frames, 1)
+    swayed = []
+    for n, (x, y, z, r) in enumerate(clumps):
+        amp = 0.6 * float(np.clip((z - trunk_h) / R + 0.4, 0.2, 1.2))
+        ph = (x - y) * 0.06 + n * 0.5        # a gust crossing the crown, each clump lagging a little
+        swayed.append((x + amp * math.sin(t + ph), y - 0.5 * amp * math.sin(t + ph), z, r))
+    swayed.sort(key=lambda c: c[2])
+    leaf_mass(m, swayed, seed * 31 + v, materials, under, level=level)
     return m
 
 
 def oak(v, frame, frames):
-    return _round_tree(v, frame, frames, 101, "leaf", (1.0, 0.92, 1.05, 0.96)[v])
+    return _broadleaf(v, frame, frames, 101, (("leaf", 1.0),), "leaf_dark", level=-1.2)
 
 
 def blossom(v, frame, frames):
-    m = _round_tree(v, frame, frames, 103, "blossom", (0.86, 0.8, 0.9, 0.84)[v], inner="leaf")
-    # Fallen petals around the trunk.
+    m = _broadleaf(v, frame, frames, 103, (("blossom", 0.95), ("leaf_dark", 0.05)), "leaf_dark",
+                   level=-1.3, scale=0.92)
+    # A few fallen petals on the ground under the crown, thicker near the trunk.
     X, Y, Z = m.coords()
-    petals = (hash01(np.floor(X).astype(np.int64), np.floor(Y).astype(np.int64), 104 + v) < 0.07) \
-        & (np.hypot(X - C, Y - C) < 9) & (np.hypot(X - C, Y - C) > 2.5) & (Z < 1)
-    m.put(petals, "blossom", tone=1.5, only_empty=True)
+    rho = np.hypot(X - C - 2, Y - C + 1)
+    cell = hash01(np.floor(X).astype(np.int64), np.floor(Y).astype(np.int64), 104 + v)
+    petals = (cell < 0.07 * np.clip(1.3 - rho / 12, 0, 1)) & (rho > 3) & (Z < 1)
+    m.put(petals, "blossom", tone=2.0 + (cell < 0.02), only_empty=True)
     return m
+
+
+# ---- conifers ----
+
+# Per variant: height, base radius, tiers, lean (x, y) at the top.
+PINES = ((60, 11.5, 7, (0.0, 0.0)), (54, 10.0, 6, (1.5, -1.5)), (50, 12.5, 6, (-0.5, 0.5)),
+         (63, 10.5, 8, (-1.0, -1.5)))
 
 
 def pine(v, frame, frames):
     rng = Rng(102, v)
-    h = rng.uniform(42, 50)
-    m = Model.empty(-6, 22, -6, 22, 0, int(h) + 2)
-    trunk(m, C, C, 1.5, 12, flare=1.2)
+    h, r0, tiers, (lx, ly) = PINES[v]
+    m = Model.empty(-10, 26, -10, 26, 0, h + 3)
+    trunk(m, C, C, 1.7, h * 0.4, flare=1.6, taper=0.3)
+    roots(m, rng, C, C, 4, 4.0, r=0.9)
     X, Y, Z = m.coords()
-    sway = _sway(frame, frames, 0.8)
-    Xs = X - sway * np.clip((Z - 8) / 36, 0, 1)
-    dx, dy = Xs - C, Y - C
-    rho = np.sqrt(dx * dx + dy * dy) + 1e-3
-    ang = np.arctan2(dy, dx)
-    tiers = rng.integers(4, 6)
+    t = 2 * math.pi * frame / max(frames, 1)
+    # Tiers are steep skirts, each starting wider than the one above reaches at that height,
+    # so every tier's drooping hem stands out from the one below it.
+    spacing = (h - 17) / tiers
     for n in range(tiers):
-        t = n / tiers
-        z0 = 6 + t * (h - 12)
-        r = 8.2 * (1 - t * 0.72) + rng.uniform(-0.5, 0.5)
-        height = r * 1.25 + 5
+        f = n / tiers
+        z0 = 13 + n * spacing + rng.uniform(-0.6, 0.6)
+        r = r0 * (1 - f * 0.8) + rng.uniform(-0.5, 0.5)
+        height = h - z0 if n == tiers - 1 else spacing * 2.3
+        # Each tier sways on its own phase; the axis leans with height.
+        sx = lx * z0 / h + (0.25 + 0.6 * f) * math.sin(t + n * 1.3)
+        sy = ly * z0 / h
+        dx, dy = X - C - sx, Y - C - sy
+        rho = np.sqrt(dx * dx + dy * dy) + 1e-3
+        ang = np.arctan2(dy, dx)
         frac = np.clip((z0 + height - Z) / height, 0, 1)
-        jag = 1 + 0.16 * np.sin(ang * 7 + n * 1.7 + v) + 0.08 * np.sin(ang * 13 + n)
-        droop = np.clip(rho / r, 0, 1) ** 2 * 2.0
-        mask = (rho <= r * frac * jag) & (Z >= z0 - droop) & (Z < z0 + height)
-        nrm = (dx / rho * height, dy / rho * height, np.full_like(Z, r))
-        speck = value_noise(Xs, Y, Z, 1.5, 300 + n + v * 10)
+        # Branch tips: a ragged rim of drooping points around the tier.
+        phase = rng.uniform(0, 6.28)
+        jag = 1 + 0.38 * np.maximum(np.sin(ang * 6 + phase), 0) ** 3 - 0.1 * np.sin(ang * 4 + phase * 2)
+        reach = r * jag
+        droop = (rho / reach) ** 2 * 4.0
+        mask = (rho <= reach * frac ** 1.35) & (Z >= z0 - droop) & (Z < z0 + height)
+        nrm = (dx / rho * height, dy / rho * height, np.full_like(Z, r * 0.9))
+        speck = value_noise(X, Y, Z, 1.4, 300 + n + v * 10)
         sun = (-dx * 0.45 + dy * 0.3) / rho
-        rim = rho / (r * jag + 1e-3)
-        tone = np.where((sun > 0.1) & (speck > 0.45) & (Z > z0 + 1.5), 1.1, 0.0) \
-            + (speck - 0.5) * 0.5 - ((Z < z0 + 1.6) & (rim > 0.55)) * 1.4
+        rim = rho / (reach + 1e-3)
+        # The outer skirt catches the light, branch tips glint on the sun side, and a dark hem
+        # runs along the underside of each drooping tier.
+        tips = (sun > 0.1) & (speck > 0.45) & (Z > z0 + 1.5) & (rim > 0.55)
+        hem = (Z < z0 - droop + 1.8) & (rim > 0.4)
+        tone = (0.7 * np.clip((rim - 0.45) * 2.5, 0, 1) - 0.3 + tips * 0.8
+                + (speck - 0.5) * 0.3 + (jag - 1) * 1.2 - hem * 1.8)
         m.put(mask, "leaf_dark", tone=tone, normal=nrm)
     return m
 
@@ -125,7 +273,7 @@ def _bush_shape(m: Model, rng: Rng, material: str, seed: int, size=1.0):
         clumps.append((C + d * math.cos(a), C + d * math.sin(a), r * 0.7 + rng.uniform(0, 2), r))
     clumps.append((C, C, 6.5 * size, 4.6 * size))
     clumps.sort(key=lambda c: c[2])
-    canopy(m, clumps, material, seed, lambda Z: 0.0, leafy=0.45)
+    canopy(m, clumps, material, seed, leafy=0.45)
 
 
 def bush(v, frame, frames):

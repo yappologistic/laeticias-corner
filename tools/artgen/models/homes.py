@@ -218,7 +218,7 @@ def greenhouse(v, frame, frames):
     # Plants pressed against the glass and a door at the front gable end.
     canopy(m, [(x, y, 4.5, 2.4) for x, y in ((7, y1 - 2), (12, y1 - 2), (20, y1 - 2), (25, y1 - 2),
                                               (x1 - 2, 10), (x1 - 2, 16), (x1 - 2, 22))],
-           "leaf", 830, lambda Z: 0.0)
+           "leaf", 830)
     front = Facade(m, "+y", y1)
     front.door(14, 18, 3, 11, material="glass_cool", frame="cream", knob=False)
     return m

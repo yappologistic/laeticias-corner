@@ -15,7 +15,7 @@ INK = "#2a2136"
 EARTH = ["#4a3034", "#6b4539", "#8f6343", "#b2875a", "#cfab79", "#e8d4a4"]
 LEAF = ["#22343b", "#2b4a41", "#376247", "#4a7d47", "#679a48", "#91b752", "#c6d872"]
 PINE = ["#1e3a3c", "#285046", "#36694f"]
-BLOSSOM = ["#8f4363", "#c4687f", "#e597a6", "#f6c9c8"]
+BLOSSOM = ["#6a3d5e", "#8f4363", "#c4687f", "#e597a6", "#f6c9c8"]
 STONE = ["#333449", "#4d4f63", "#6c6f7e", "#8f939c", "#b6b8b6", "#dbd8cb"]
 ROOF = ["#4c2333", "#78303b", "#a3463f", "#c86849", "#e29464"]
 STRAW = ["#8a6b3a", "#b49449", "#d8bb5f", "#f0dd91"]
@@ -47,7 +47,7 @@ def _m(name, ramp, **kw) -> Material:
 MATERIALS = [
     _m("leaf", LEAF, texture=0.35),
     _m("leaf_dark", [LEAF[0], *PINE, LEAF[3], LEAF[4]], texture=0.4),
-    _m("blossom", [VIOLET[1], BLOSSOM[0], *BLOSSOM[1:], PLASTER[4]], texture=0.6),
+    _m("blossom", [*BLOSSOM, PLASTER[4]], texture=0.6),
     _m("bark", [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]], texture=0.4),
     _m("wood", [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3], EARTH[4]], texture=0.3),
     _m("wood_light", [EARTH[1], EARTH[2], EARTH[3], EARTH[4], EARTH[5]], texture=0.3),

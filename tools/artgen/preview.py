@@ -301,6 +301,59 @@ def village_scene():
     return s
 
 
+FOREST = [
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+    "..............",
+    ".........p....",
+    ".........p....",
+    ".........p....",
+    ".........ppppp",
+    "..............",
+    "...mm.........",
+    "..mmmm........",
+    "...mm.........",
+    "..............",
+]
+
+
+def forest_scene():
+    """A small wood of every tree variant beside the cottage, to judge their scale and mix."""
+    s = Scene(FOREST)
+    s.add("cottage", "r0", 9, 3, (2, 2))
+    trees = [("oak", 0, 1, 1), ("pine", 0, 3, 0), ("blossom", 0, 5, 1), ("oak", 1, 1, 4),
+             ("pine", 1, 0, 6), ("oak", 2, 3, 3), ("blossom", 1, 6, 4), ("pine", 2, 2, 8),
+             ("oak", 3, 4, 6), ("pine", 3, 7, 0), ("blossom", 2, 0, 10), ("blossom", 3, 6, 9),
+             ("oak", 0, 9, 11), ("pine", 0, 12, 9)]
+    for t, v, x, y in trees:
+        s.add(t, f"r{v}", x, y)
+    for t, v, x, y in [("bush", 0, 2, 5), ("mushrooms", 1, 3, 5), ("stump", 0, 5, 3),
+                       ("flowers_white", 2, 3, 11), ("flowers_red", 0, 2, 12), ("rock", 0, 8, 8),
+                       ("tall_grass", 1, 1, 12), ("berry_bush", 3, 7, 6)]:
+        s.add(t, f"r{v}", x, y)
+    s.critter("critter/cat/idle_front", 9 * 16 + 4, 5 * 16 + 6)
+    return s
+
+
+def field_scene():
+    """A wide plain grass field with one meadow patch: gentle patches, no static."""
+    n = 22
+    rows = []
+    for y in range(n):
+        r = ""
+        for x in range(n):
+            dx, dy = (x - 13.5) / 5.5, (y - 8.5) / 4.0
+            r += "m" if dx * dx + dy * dy + 0.25 * hash01(x, y, 7) < 1 else "."
+        rows.append(r)
+    s = Scene(rows)
+    for t, v, x, y in [("tall_grass", 0, 5, 15), ("tall_grass", 2, 6, 16), ("flowers_white", 1, 14, 9),
+                       ("rock", 1, 17, 18)]:
+        s.add(t, f"r{v}", x, y)
+    return s
+
+
 def sprite_sheet(atlas: Atlas, cat) -> Image.Image:
     """Critter animations and effects, one row each, anchors marked by the cell layout."""
     rows = []
@@ -345,6 +398,8 @@ def main():
     save(maze_scene().render(atlas), "maze.png")
     save(village_scene().render(atlas), "village.png")
     save(village_scene().render(atlas, night=True), "village_night.png")
+    save(forest_scene().render(atlas), "forest.png")
+    save(field_scene().render(atlas), "field.png")
     sheet = sprite_sheet(atlas, cat)
     sheet.resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(spec.OUT / "sprites.png")
     print(f"previews in {spec.OUT}")

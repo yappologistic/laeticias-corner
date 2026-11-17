@@ -51,6 +51,17 @@ class Model:
         Z = (np.arange(nz, dtype=np.float32) + self.z0 + 0.5)[None, None, :]
         return X, Y, Z
 
+    def window(self, cx, cy, cz, r):
+        """Index slices of the voxels within a box of half-size r around a point, and their
+        centre coordinates, so small shapes are evaluated locally instead of over the grid."""
+        sl, axes = [], []
+        for c, o, n in zip((cx, cy, cz), (self.x0, self.y0, self.z0), self.mat.shape):
+            a, b = max(int(np.floor(c - r)) - o, 0), min(int(np.ceil(c + r)) - o + 1, n)
+            sl.append(slice(a, max(a, b)))
+            axes.append(np.arange(a, max(a, b), dtype=np.float32) + o + 0.5)
+        X, Y, Z = axes
+        return tuple(sl), X[:, None, None], Y[None, :, None], Z[None, None, :]
+
     def put(self, mask, material: str, tone=0.0, normal=None, only_empty=False):
         mask = np.broadcast_to(mask, self.mat.shape)
         if only_empty:
