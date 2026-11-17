@@ -1,6 +1,7 @@
 // Wishes: offer order and pacing on a fake play clock, granting after a hold, snoozing.
 
 #include "core/edit.hpp"
+#include "core/growth.hpp"
 #include "core/progression.hpp"
 #include "core/starter.hpp"
 #include "core/tuning.hpp"
@@ -229,4 +230,40 @@ TEST_CASE("nooks are found when built, once, with their effects") {
     g.place("scarecrow", 25, 38);
     CHECK(g.rules.nookGrowth(g.world, {24, 37, 25, 38}) == doctest::Approx(1.25f));
     CHECK(g.rules.nookGrowth(g.world, {35, 30, 36, 31}) == doctest::Approx(1.0f));
+}
+
+TEST_CASE("beds grow in play time, faster in rain and in a kitchen garden, rest in winter") {
+    const Catalog& c = test::catalog();
+    World w(c);
+    const int planter = *c.findItem("planter");
+    const Growth& g = c.items[static_cast<std::size_t>(planter)].growth;
+    REQUIRE(g.stages == 4);
+    w.addItem(makeItem(c, planter, 1, {10, 10}));
+    const TileRect bed{10, 10, 11, 11};
+    // Plain growth: a stage every 180 s, ripe after three stages, and ripe stays ripe.
+    CHECK(growthRate(w, c, bed, false, 1.0f, 1.0f) == doctest::Approx(1.0f));
+    CHECK_FALSE(grow(w, c, 0, 179.0f, 1.0f));
+    CHECK(w.items()[0].stage == 0);
+    CHECK(grow(w, c, 0, 2.0f, 1.0f));
+    CHECK(w.items()[0].stage == 1);
+    CHECK(w.items()[0].growth == doctest::Approx(1.0f / g.seconds).epsilon(0.01));
+    (void)grow(w, c, 0, 400.0f, 1.0f);
+    CHECK(ripe(c, w.items()[0]));
+    CHECK_FALSE(grow(w, c, 0, 1000.0f, 1.0f));
+    CHECK(w.items()[0].stage == 3);
+    harvest(w, 0);
+    CHECK(w.items()[0].stage == 0);
+    CHECK_FALSE(ripe(c, w.items()[0]));
+    // Rain doubles it; a kitchen garden multiplies it; winter rests it unless sheltered.
+    CHECK(growthRate(w, c, bed, true, 1.0f, 1.25f) == doctest::Approx(2.5f));
+    CHECK(growthRate(w, c, bed, false, 0.0f, 1.0f) == 0.0f);
+    w.addItem(makeItem(c, *c.findItem("greenhouse"), 0, {12, 12})); // within two tiles
+    CHECK(growthRate(w, c, bed, false, 0.0f, 1.0f) == doctest::Approx(1.0f));
+    World far(c);
+    far.addItem(makeItem(c, planter, 0, {10, 10}));
+    far.addItem(makeItem(c, *c.findItem("greenhouse"), 0, {14, 14}));
+    CHECK(growthRate(far, c, bed, false, 0.0f, 1.0f) == 0.0f);
+    // The season's rest comes from the catalog.
+    CHECK(c.seasons[static_cast<std::size_t>(*c.findSeason("winter"))].growth == 0.0f);
+    CHECK(c.seasons[static_cast<std::size_t>(*c.findSeason("summer"))].growth == 1.0f);
 }

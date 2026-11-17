@@ -118,16 +118,16 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             c.args = {tok[1]};
         } else if (cmd == "set") {
             static constexpr std::string_view kKeys[] = {"clock", "rain",   "unlock", "played",
-                                                         "land",  "season", "day"};
+                                                         "land",  "season", "day",    "grow"};
             if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys))
-                return err("set clock|rain|unlock|played|land|season|day VALUE");
+                return err("set clock|rain|unlock|played|land|season|day|grow VALUE");
             c.kind = ScriptCommand::Kind::Set;
             c.args = {tok[1], tok[2]};
         } else if (cmd == "expect") {
             if (tok.size() < 3) return err("expect WHAT ARGS");
             c.kind = ScriptCommand::Kind::Expect;
             c.args.assign(tok.begin() + 1, tok.end());
-            if (c.args[0] == "tile" || c.args[0] == "item") {
+            if (c.args[0] == "tile" || c.args[0] == "item" || c.args[0] == "growth") {
                 if (c.args.size() != 3) return err("expect " + c.args[0] + " P VALUE");
                 if (auto r = pointAt(2, c.a); !r) return err(r.error());
             } else if (c.args[0] == "luma" || c.args[0] == "color") {

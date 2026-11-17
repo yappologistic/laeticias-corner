@@ -3,6 +3,7 @@
 #include "app/app_impl.hpp"
 #include "audio/decode.hpp"
 #include "audio/wav.hpp"
+#include "core/growth.hpp"
 #include "core/land.hpp"
 #include "core/save.hpp"
 #include "core/starter.hpp"
@@ -43,6 +44,7 @@ constexpr std::string_view kPage = "sfx/page.wav";
 constexpr std::string_view kNook = "sfx/nook.wav";
 constexpr std::string_view kLandOpen = "sfx/land_open.wav";
 constexpr std::string_view kSeason = "sfx/season.wav";
+constexpr std::string_view kHarvest = "sfx/harvest.wav";
 } // namespace sfx
 
 constexpr std::string_view kPhotoDir = "photos";
@@ -535,6 +537,36 @@ void App::updateProgress() {
             openLand(++progress_.stage, false);
 }
 
+void App::growBeds(float seconds) {
+    const bool rain = rain_ && !snowing();
+    const float seasonGrowth = cat_.seasons[static_cast<std::size_t>(season())].growth;
+    anyRipe_ = false;
+    for (std::size_t i = 0; i < world_.items().size(); ++i) {
+        const Item& it = world_.items()[i];
+        if (cat_.items[it.type].growth.stages == 0) continue;
+        const float rate = growthRate(world_, cat_, it.rect(), rain, seasonGrowth,
+                                      progression_.nookGrowth(world_, it.rect()));
+        if (grow(world_, cat_, i, seconds, rate)) {
+            scene_->popAt(it.pos);
+            markDirty();
+        }
+        anyRipe_ = anyRipe_ || ripe(cat_, world_.items()[i]);
+    }
+}
+
+bool App::pick(TilePos t) {
+    const auto idx = world_.itemIndexAt(t);
+    if (!idx || !ripe(cat_, world_.items()[*idx])) return false;
+    const Item bed = world_.items()[*idx];
+    harvest(world_, *idx);
+    ++progress_.harvests;
+    progress_.lastHarvestDay = clock_.day();
+    play(sfx::kHarvest, tuning::kSfxLevel, true);
+    scene_->produce(bed, bed.variant);
+    markDirty();
+    return true;
+}
+
 int App::pages() const {
     return visitors_.seenCount() + progress_.nooksFound();
 }
@@ -624,6 +656,10 @@ void App::updateHoverNook() {
         const int more = std::max(0, at - pages());
         hoverTipText_ = std::vformat(strings::kTipWild, std::make_format_args(at, more));
         hoverTip_ = hoverTipText_;
+        return;
+    }
+    if (const Item* it = world_.itemAt(*tile); it && ripe(cat_, *it)) {
+        hoverTip_ = strings::kTipRipe;
         return;
     }
     if (const Item* it = world_.itemAt(*tile); it && cat_.gate && it->rect().contains(*cat_.gate)) {
@@ -1041,7 +1077,10 @@ HudModel App::model() const {
         return m;
     }
     switch (tool_) {
-    case Tool::None: break;
+    case Tool::None:
+        // The first time anything ripens, say what to do with it.
+        if (anyRipe_ && progress_.harvests == 0) m.hint = strings::kHintRipe;
+        break;
     case Tool::Place: {
         const auto& def = cat_.items[static_cast<std::size_t>(selection_)];
         const bool row = oneTile(def);
@@ -1269,11 +1308,14 @@ void App::worldInput() {
     }
     if (leftReleased_) {
         if (drag_ == Drag::Tool) editor_.commit();
-        // In photo mode a click (not a drag) takes the photo.
-        if (photo_ && drag_ == Drag::Pan && !rightDown_ &&
-            std::hypot(mouse_.x - pressStart_.x, mouse_.y - pressStart_.y) <
-                tuning::kClickSlop * density_)
+        // A click (not a drag) takes the photo in photo mode, or picks a ripe bed.
+        const bool click = drag_ == Drag::Pan && !rightDown_ &&
+                           std::hypot(mouse_.x - pressStart_.x, mouse_.y - pressStart_.y) <
+                               tuning::kClickSlop * density_;
+        if (click && photo_)
             capturePending_ = true;
+        else if (click && tool_ == Tool::None && hover_)
+            (void)pick(*hover_);
         if (drag_ != Drag::None && !rightDown_) drag_ = Drag::None;
     }
 }
@@ -1309,6 +1351,11 @@ void App::step(float dt) {
     });
     updateHoverNook();
     updateSeason(dt);
+    growthAcc_ += dt;
+    if (growthAcc_ >= tuning::kGrowthTick) {
+        growBeds(static_cast<float>(growthAcc_));
+        growthAcc_ = 0;
+    }
     scene_->update(dt, world_, visitors_.critters(), rain_, rng_);
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);

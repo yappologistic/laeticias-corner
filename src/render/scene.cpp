@@ -234,6 +234,20 @@ void Scene::burst(Vec2 tile, Rng& rng) {
                          {0, -tuning::kSparkleRise * u}, rng.range(0.6f, 1.0f));
 }
 
+void Scene::popAt(TilePos origin) {
+    if (pops_.size() == kMaxPops) pops_.erase(pops_.begin());
+    std::erase_if(pops_, [&](const Pop& p) { return p.origin == origin; });
+    pops_.push_back({origin, now_});
+}
+
+void Scene::produce(const Item& bed, int crop) {
+    const auto f = [](int v) { return static_cast<float>(v); };
+    const Vec2 c = iso_.toWorld(f(bed.pos.x) + f(bed.w) * 0.5f, f(bed.pos.y) + f(bed.h) * 0.5f);
+    const float u = iso_.tileH();
+    particles_.spawn(Fx::Produce, {c.x, c.y - 0.6f * u}, {0, -tuning::kProduceRise * u},
+                     tuning::kProduceSeconds, static_cast<float>(crop));
+}
+
 void Scene::flourish(const NearInstance& nook, const World& world, Rng& rng) {
     pulses_.push_back({nook, now_});
     const TileRect& f = nook.footprint;

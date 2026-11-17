@@ -55,7 +55,7 @@
     {"id": "cottage", "name": "Cottage", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "glow": true, "smoke_at": [[20, -38], [-4, -30], [-20, -42], [4, -50]], "tags": ["home"], "slots": [{"id": "door", "kind": "door", "where": "tile", "tiles": {"r0": [[2, 1]], "r1": [[1, 2]], "r2": [[-1, 0]], "r3": [[0, -1]]}}]},
     {"id": "toolshed", "name": "Tool shed", "category": "homes", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["home"]},
     {"id": "coop", "name": "Hen coop", "category": "homes", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["home"], "slots": [{"id": "door", "kind": "door", "where": "tile", "tiles": {"r0": [[1, 0]], "r1": [[0, 1]], "r2": [[-1, 0]], "r3": [[0, -1]]}}, {"id": "feed", "kind": "feed", "where": "beside", "cap": 1}]},
-    {"id": "greenhouse", "name": "Greenhouse", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "glow": true, "tags": ["home"]},
+    {"id": "greenhouse", "name": "Greenhouse", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "glow": true, "tags": ["home"], "shelter": 2},
     {"id": "barn", "name": "Barn", "category": "homes", "footprint": [3, 2], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "glow": true, "tags": ["home"]},
     {"id": "windmill", "name": "Windmill", "category": "homes", "footprint": [2, 2], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "glow": true, "fps": 6, "tags": ["home"]}
   ],
@@ -89,7 +89,7 @@
     {"id": "spring", "name": "Spring", "days": 3, "grade": {"mul": [0.98, 1.02, 0.96]}, "ambience": {"day": "amb/birds.ogg", "night": "amb/night_spring.ogg"}, "fx": {"petal": 1.0, "leaf": 0.5}, "line": "Spring. Everything's showing off."},
     {"id": "summer", "name": "Summer", "days": 3, "grade": {"mul": [1.03, 1.0, 0.94]}, "ambience": {"day": "amb/birds.ogg", "night": "amb/crickets.ogg"}, "fx": {"petal": 0.0, "leaf": 1.0}, "line": "Summer. Long days and short shadows."},
     {"id": "autumn", "name": "Autumn", "days": 3, "grade": {"mul": [1.06, 0.96, 0.86]}, "ambience": {"day": "amb/autumn.ogg", "night": "amb/crickets.ogg"}, "fx": {"petal": 0.0, "leaf": 3.0}, "line": "Autumn. My favourite. Don't tell the others."},
-    {"id": "winter", "name": "Winter", "days": 3, "grade": {"mul": [0.9, 0.95, 1.06]}, "ambience": {"day": "amb/winter.ogg", "night": "amb/night_winter.ogg"}, "fx": {"petal": 0.0, "leaf": 0.0}, "rain_as": "snow", "line": "First snow. Boots on."}
+    {"id": "winter", "name": "Winter", "days": 3, "grade": {"mul": [0.9, 0.95, 1.06]}, "ambience": {"day": "amb/winter.ogg", "night": "amb/night_winter.ogg"}, "fx": {"petal": 0.0, "leaf": 0.0}, "rain_as": "snow", "growth": 0, "line": "First snow. Boots on."}
   ],
   "land": {
     "measure": "pages",

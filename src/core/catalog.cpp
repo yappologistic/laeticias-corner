@@ -334,6 +334,8 @@ public:
                 requireSfx(d.clickSound, ctx);
             }
             if (it.contains("slots")) slots(it["slots"], d, ctx);
+            d.shelter = getOr(it, "shelter", 0, ctx);
+            if (d.shelter < 0 || d.shelter > 8) fail(ctx + ": shelter must be within 0..8");
             cat_.items.push_back(std::move(d));
         }
         checkUnique(cat_.items, "item");
@@ -503,6 +505,8 @@ public:
                     fail(ctx + ": rain_as can only be 'snow'");
                 d.snow = true;
             }
+            d.growth = getOr(s, "growth", 1.0f, ctx);
+            if (d.growth < 0) fail(ctx + ": growth must be >= 0");
             d.line = get<std::string>(s, "line", ctx);
             cat_.seasonDays.push_back(d.days);
             cat_.seasons.push_back(std::move(d));

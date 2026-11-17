@@ -22,6 +22,7 @@ add_library(lc_core STATIC
   src/core/clock.cpp
   src/core/condition.cpp
   src/core/edit.cpp
+  src/core/growth.cpp
   src/core/land.cpp
   src/core/progress.cpp
   src/core/progression.cpp

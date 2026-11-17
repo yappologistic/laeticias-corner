@@ -104,6 +104,9 @@ private:
     [[nodiscard]] Lighting lighting() const;
     [[nodiscard]] bool snowing() const;
     void setupMusic();
+    // Beds grow by `seconds` of play; a click with an empty hand picks a ripe one.
+    void growBeds(float seconds);
+    bool pick(TilePos t);
     void unlockStems(const CondFacts& f, bool instant);
     [[nodiscard]] std::string_view waitingText(int node, std::string& out) const;
     [[nodiscard]] Vec2 screen() const {
@@ -164,6 +167,8 @@ private:
     bool loading_ = true;      // the first evaluation finds what was already there, quietly
     std::string hoverTipText_; // storage for formatted world tooltips
     float edgeChipUntil_ = 0;
+    double growthAcc_ = 0;
+    bool anyRipe_ = false;
     Vec2 edgeChipTarget_;
     mutable std::array<std::string, tuning::kMaxOpenWishes> cardDetail_;
     // The open world save and the profile shared by all of them.

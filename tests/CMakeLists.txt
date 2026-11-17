@@ -49,6 +49,7 @@ set(LC_SCRIPTS
   "nook|nook|960x600|"
   "land|land|960x600|"
   "seasons|seasons|640x400|"
+  "harvest|harvest|960x600|"
   "wish_waiting|wish_waiting|960x600|"
   "ui_tiny|ui_sizes|320x240|"
   "ui_small|ui_sizes|960x600|"

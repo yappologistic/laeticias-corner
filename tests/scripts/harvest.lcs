@@ -1,0 +1,36 @@
+# A veggie bed grows from bare soil to ripe; the first ripe bed is explained in the hint line,
+# hovering it says it can be picked, and a click picks it: produce rises, the harvest counts,
+# the bed starts again.
+set unlock all
+click ui:build
+wait 10
+click ui:tab:garden
+wait 10
+click ui:tile:planter
+wait 10
+click @33,30
+click @34,30
+key escape
+wait 4
+expect growth @33,30 0
+shot shots/bed_new.png
+set grow 200
+wait 4
+expect growth @33,30 1
+set grow 200
+wait 4
+expect growth @33,30 2
+set grow 200
+wait 30
+expect growth @33,30 3
+expect harvests 0
+move @33,30
+wait 40
+shot shots/bed_ripe.png
+click @33,30
+wait 6
+expect harvests 1
+expect growth @33,30 0
+expect growth @34,30 3
+shot shots/harvest.png
+quit

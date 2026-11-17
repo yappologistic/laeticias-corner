@@ -179,6 +179,11 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "season") return equal(cat_.seasons[static_cast<std::size_t>(season())].id, a[1]);
     if (what == "day") return equal(std::to_string(clock_.day()), a[1]);
+    if (what == "harvests") return equal(std::to_string(progress_.harvests), a[1]);
+    if (what == "growth") {
+        const Item* it = world_.itemAt({static_cast<int>(c.a.x), static_cast<int>(c.a.y)});
+        return equal(it ? std::to_string(it->stage) : std::string("none"), a[2]);
+    }
     if (what == "stage") return equal(std::to_string(progress_.stage), a[1]);
     if (what == "wishes") return equal(std::to_string(progress_.open.size()), a[1]);
     if (what == "ribbon") return yesNo(hud_.ribbonShowing());
@@ -376,6 +381,8 @@ bool App::scriptStep() {
             } else if (c.args[0] == "season") {
                 seasonPin_ = c.args[1] == "auto" ? -1 : cat_.findSeason(c.args[1]).value_or(-2);
                 if (seasonPin_ < -1) return fail("unknown season " + c.args[1]);
+            } else if (c.args[0] == "grow") {
+                growBeds(std::stof(c.args[1]));
             } else if (c.args[0] == "day") {
                 clock_.setDay(std::stoi(c.args[1]));
             } else if (c.args[0] == "land") {

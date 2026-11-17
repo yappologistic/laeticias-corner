@@ -65,6 +65,10 @@ public:
     void onRemoved(const Item& item);
     // A few sparkles rising from a spot on the ground (continuous tile coordinates).
     void burst(Vec2 tile, Rng& rng);
+    // A growing item reached its next stage: the place pop, without sparkles.
+    void popAt(TilePos origin);
+    // Something picked from a bed rises and fades (`crop`: which produce frame).
+    void produce(const Item& bed, int crop);
     // A newly found nook: its area pulses and sparkles.
     void flourish(const NearInstance& nook, const World& world, Rng& rng);
     // A land stage just opened (its tiles are open already): the brambles clear in a wave from

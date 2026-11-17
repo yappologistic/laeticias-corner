@@ -69,6 +69,7 @@ struct ItemDef {
     Growth growth;
     Shed sheds = Shed::None;
     std::string clickSound; // sfx path played when clicked with no tool, empty when none
+    int shelter = 0;        // beds within this many tiles grow even when the season rests them
 };
 
 struct Amount {
@@ -109,6 +110,7 @@ struct SeasonDef {
     float petals = 0; // falling-thing multipliers
     float leaves = 1;
     bool snow = false; // rain falls as snow
+    float growth = 1;  // how fast beds grow (0: they rest, unless sheltered)
     std::string line;
 };
 

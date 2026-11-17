@@ -30,6 +30,7 @@
 //   set land N              open land stages up to N at once, with their reveals
 //   set season ID|auto      keep a season (as the calendar's pin does), or follow the days
 //   set day N               the calendar day (the season follows unless pinned)
+//   set grow SECONDS        let the beds grow that much play time at once
 //   expect WHAT ARGS...     fail the run unless the state matches:
 //       tile P TERRAIN | item P ITEM|none | count ITEM|all N | tool none|place|paint|remove
 //       drawer open|closed | journal open|closed | photo on|off | phase PHASE
@@ -42,6 +43,7 @@
 //       wish ID open|done|waiting | wishes N (open now) | ribbon yes|no (a wish was granted)
 //       sketch wishes|visitors|nooks (the sketchbook's open tab) | nook ID yes|no (found)
 //       stage N (highest open land stage) | season ID (the effective season) | day N
+//       growth P STAGE (growth stage of the item at P) | harvests N
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.

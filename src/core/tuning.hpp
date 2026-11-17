@@ -66,6 +66,10 @@ inline constexpr float kWildDim = 0.70f;          // wild grass brightness
 inline constexpr float kWildCool[3] = {0.94f, 0.99f, 1.08f};
 inline constexpr float kWildThicketChance = 0.8f; // tiles of wild land with brambles
 inline constexpr float kEdgeChipSeconds = 8.0f;   // "New land" chip for an off-screen stage
+inline constexpr float kRainGrowth = 2.0f;        // beds grow this much faster in rain
+inline constexpr double kGrowthTick = 0.5;        // seconds between growth updates
+inline constexpr float kProduceRise = 1.4f;       // tile heights per second
+inline constexpr float kProduceSeconds = 1.2f;
 
 // Visitors
 inline constexpr int kVisitorsPerNeed = 2; // satisfied once -> 2 visitors, twice -> 4...
