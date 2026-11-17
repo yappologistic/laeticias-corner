@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "set": "world",
+  "files": [
+    {
+      "file": "amb/world/sea.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 36.0,
+      "samples": 1587600,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Open water: a slow swell, wind over it, a far gull.",
+      "where": "stretches: Tyrrhenian, Adriatic, Ionian, Aegean seas, the Gulf"
+    },
+    {
+      "file": "amb/world/ship.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 40.0,
+      "samples": 1764000,
+      "gain": 0.8,
+      "when": "always",
+      "for": "Timbers creaking as she rolls, the sail filling and luffing, water along the hull.",
+      "where": "positional: near a ship token under way (or count-driven by ships in view)"
+    },
+    {
+      "file": "amb/world/mountain.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 36.0,
+      "samples": 1587600,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Cold gusting wind whistling on rock, a raven, far sheep bells.",
+      "where": "stretches: Apennines, Zagros"
+    },
+    {
+      "file": "amb/world/road.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 36.0,
+      "samples": 1587600,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Dry wind, larks, a caravan's and a horse's bells ahead, a cart far behind.",
+      "where": "stretches: Anatolian plateau, Syrian steppe, the Royal Road"
+    },
+    {
+      "file": "amb/world/river.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 36.0,
+      "samples": 1587600,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A broad river lapping, reeds rustling, frogs.",
+      "where": "stretches: Ionia-Lydia, Mesopotamia; river tiles anywhere"
+    },
+    {
+      "file": "amb/world/fields.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 36.0,
+      "samples": 1587600,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Larks, wind in grass and pines, cowbells far off.",
+      "where": "stretches: Latium-Italy, mainland Greece countryside, Iranian plateau"
+    },
+    {
+      "file": "amb/world/desert_night.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 36.0,
+      "samples": 1587600,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Near silence: a faint cold wind, a few crickets, a far owl.",
+      "where": "stretches at night: steppe, plateaus, desert, open country"
+    },
+    {
+      "file": "amb/world/storm.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 36.0,
+      "samples": 1587600,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Heavy rain, hard gusts, thunder rolling far off.",
+      "where": "weather: a storm cell (W1), mixed over the stretch's bed"
+    },
+    {
+      "file": "amb/world/seam.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 40.0,
+      "samples": 1764000,
+      "gain": 0.7,
+      "when": "always",
+      "for": "A soft airy drone on open fifths (A, E), breathing, with no melody.",
+      "where": "the mist bands at the era seams (all other beds duck 6 dB)"
+    },
+    {
+      "file": "amb/world/cart.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 0.8,
+      "when": "moving",
+      "for": "Iron-rimmed wheels on paving: rumble, joint knocks, axle creak.",
+      "where": "positional: any cart or wagon while it moves (night carts R1)"
+    },
+    {
+      "file": "amb/world/smith.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 10.0,
+      "samples": 441000,
+      "gain": 0.8,
+      "when": "worked",
+      "for": "Bellows breathing the fire up, then the hammer on the anvil.",
+      "where": "positional: a smithy slot while worked"
+    },
+    {
+      "file": "amb/world/loom.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 0.7,
+      "when": "worked",
+      "for": "Shuttle swish, beater thud, heddle clack.",
+      "where": "positional: a loom slot while worked (weavers in every city)"
+    },
+    {
+      "file": "amb/world/brazier.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 10.0,
+      "samples": 441000,
+      "gain": 0.7,
+      "when": "lit",
+      "for": "A small fire crackling over a low breathy roar.",
+      "where": "positional: braziers, fire altars, hearths, bonfires (R12)"
+    },
+    {
+      "file": "sfx/world/step.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2862,
+      "samples": 12622,
+      "gain": 0.6,
+      "when": "event",
+      "for": "One footstep on stone (step frames of walkers)."
+    },
+    {
+      "file": "sfx/world/hoof.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2319,
+      "samples": 10227,
+      "gain": 0.7,
+      "when": "event",
+      "for": "One hoof on paving (step frames of horses, mules, oxen)."
+    },
+    {
+      "file": "sfx/world/gallop.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.646,
+      "samples": 116689,
+      "gain": 0.9,
+      "when": "event",
+      "for": "A rider at the gallop passing (couriers, L6)."
+    },
+    {
+      "file": "sfx/world/chisel.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2778,
+      "samples": 12251,
+      "gain": 0.7,
+      "when": "event",
+      "for": "A mallet on a chisel biting stone (mason use frames)."
+    },
+    {
+      "file": "sfx/world/hammer.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.27,
+      "samples": 11907,
+      "gain": 0.7,
+      "when": "event",
+      "for": "A hammer dressing stone (builders, sculptors)."
+    },
+    {
+      "file": "sfx/world/pour.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.7066,
+      "samples": 75259,
+      "gain": 0.8,
+      "when": "event",
+      "for": "Water poured from a jar (water carriers, fountains A9)."
+    },
+    {
+      "file": "sfx/world/dog_far.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.5024,
+      "samples": 110356,
+      "gain": 0.8,
+      "when": "event",
+      "for": "A dog barks and another answers far away (W10)."
+    },
+    {
+      "file": "sfx/world/sheep_bells.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.2386,
+      "samples": 142822,
+      "gain": 0.8,
+      "when": "event",
+      "for": "A flock with bells and a bleat moving along a track (L1)."
+    },
+    {
+      "file": "sfx/world/rope.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.6224,
+      "samples": 71549,
+      "gain": 0.8,
+      "when": "event",
+      "for": "A rope creaking under strain (towed barges R6, moorings)."
+    },
+    {
+      "file": "sfx/world/thunder_far.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.4337,
+      "samples": 195527,
+      "gain": 1.0,
+      "when": "event",
+      "for": "Distant thunder (W1)."
+    },
+    {
+      "file": "sfx/world/swifts.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.124,
+      "samples": 93668,
+      "gain": 0.7,
+      "when": "event",
+      "for": "Swifts screaming round the roofs at dusk (W4)."
+    },
+    {
+      "file": "sfx/world/cranes.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.8376,
+      "samples": 169240,
+      "gain": 0.8,
+      "when": "event",
+      "for": "Cranes bugling high overhead on migration (W3)."
+    },
+    {
+      "file": "sfx/world/gull.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.527,
+      "samples": 67339,
+      "gain": 0.8,
+      "when": "event",
+      "for": "A gull's laughing calls (harbours, ships, S2)."
+    },
+    {
+      "file": "sfx/world/pigeons_up.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.6128,
+      "samples": 71124,
+      "gain": 0.8,
+      "when": "event",
+      "for": "Pigeons bursting up from a plaza (W13)."
+    },
+    {
+      "file": "sfx/world/lamp.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.686,
+      "samples": 30253,
+      "gain": 0.6,
+      "when": "event",
+      "for": "An oil lamp catching from a taper (lamplighter, W11)."
+    },
+    {
+      "file": "sfx/world/vendor.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2005,
+      "samples": 97041,
+      "gain": 0.8,
+      "when": "event",
+      "for": "A vendor's sung-out cry with no words (W12, markets)."
+    },
+    {
+      "file": "sfx/world/seam.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.5757,
+      "samples": 157690,
+      "gain": 1.0,
+      "when": "event",
+      "for": "The soft chime when the era caption appears at a seam."
+    },
+    {
+      "file": "sfx/world/arrive_home.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.5644,
+      "samples": 201288,
+      "gain": 1.0,
+      "when": "event",
+      "for": "Arriving home: the corner's motif on the music box."
+    }
+  ]
+}

@@ -29,6 +29,7 @@ import rome  # noqa: E402
 import score  # noqa: E402
 import sfx  # noqa: E402
 import validate  # noqa: E402
+import world  # noqa: E402
 from dsp import stereo  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -109,7 +110,7 @@ EFFECTS = {
 
 # Region sets (world-tech §2.2: assets/audio/<music|amb|sfx>/<set>/…), each with a manifest
 # at assets/audio/<set>/manifest.json for the engine and the region theme files.
-SETS = {"parsa": parsa.FILES, "athens": athens.FILES, "rome": rome.FILES}
+SETS = {"parsa": parsa.FILES, "athens": athens.FILES, "rome": rome.FILES, "world": world.FILES}
 REGION = {name: entry for files in SETS.values() for name, entry in files.items()}
 
 
