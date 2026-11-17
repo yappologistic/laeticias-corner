@@ -109,8 +109,9 @@ def pine(v, frame, frames):
         nrm = (dx / rho * height, dy / rho * height, np.full_like(Z, r))
         speck = value_noise(Xs, Y, Z, 1.5, 300 + n + v * 10)
         sun = (-dx * 0.45 + dy * 0.3) / rho
-        tone = np.where((sun > 0.2) & (speck > 0.5), 0.8, 0.0) + (speck - 0.5) * 0.5 \
-            - (Z < z0 + 1.2) * 0.6
+        rim = rho / (r * jag + 1e-3)
+        tone = np.where((sun > 0.1) & (speck > 0.45) & (Z > z0 + 1.5), 1.1, 0.0) \
+            + (speck - 0.5) * 0.5 - ((Z < z0 + 1.6) & (rim > 0.55)) * 1.4
         m.put(mask, "leaf_dark", tone=tone, normal=nrm)
     return m
 

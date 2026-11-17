@@ -197,7 +197,7 @@ def greenhouse(v, frame, frames):
     body = box(X, Y, Z, x0, x1, y0, y1, 3, eave + rise) & \
         gable(X, Y, Z, x0, x1, y0 - 0.01, y1 + 0.01, eave, rise) | box(X, Y, Z, x0, x1, y0, y1, 3, eave)
     shell = body & ~box(X, Y, Z, x0 + 1, x1 - 1, y0 + 1, y1 - 1, 0, 99)
-    m.put(shell, "glass_cool", tone=(((X - Y) % 7) < 1.2) * 1.0 - 0.5 * (Z < 6))
+    m.put(shell, "glass_warm", tone=(((X - Y) % 7) < 1.2) * 1.0 - 0.5 * (Z < 6))
     roof_glass = gable(X, Y, Z, x0 - 0.5, x1 + 0.5, y0 - 1.5, y1 + 1.5, eave, rise + 1.3) & \
         ~gable(X, Y, Z, x0 - 0.5, x1 + 0.5, y0 - 1.5, y1 + 1.5, eave + 0.01, rise + 1.3 - 1.5)
     across = np.abs(Y - 16)
@@ -211,8 +211,6 @@ def greenhouse(v, frame, frames):
     canopy(m, [(x, y, 4.5, 2.4) for x, y in ((7, y1 - 2), (12, y1 - 2), (20, y1 - 2), (25, y1 - 2),
                                               (x1 - 2, 10), (x1 - 2, 16), (x1 - 2, 22))],
            "leaf", 830, lambda Z: 0.0)
-    m.put(shell & ~box(X, Y, Z, x0 + 1, x1 - 1, y0 + 1, y1 - 1, 0, 99), "glass_cool",
-          only_empty=True)
     front = Facade(m, "+y", y1)
     front.door(14, 18, 3, 11, material="glass_cool", frame="cream", knob=False)
     return m
@@ -309,13 +307,13 @@ def windmill(v, frame, frames):
         a = turn + k * math.pi / 2
         dy, dz = math.cos(a), math.sin(a)
         tip = (hx, cy + dy * 25, hz + dz * 25)
-        m.put(segment(X, Y, Z, (hx, cy, hz), tip, 0.75), "wood")
+        m.put(segment(X, Y, Z, (hx, cy, hz), tip, 0.9), "wood")
         # Sail cloth on the trailing side of each spar, with lattice lines.
         s = (Y - cy) * dy + (Z - hz) * dz           # distance along the spar
         w = -(Y - cy) * dz + (Z - hz) * dy          # distance across it
-        cloth = (np.abs(X - hx) < 0.6) & (s > 5) & (s < 24.5) & (w > 0.7) & (w < 5.5)
-        lattice = (np.abs((s % 3.2)) < 0.7) | (w > 4.8)
-        m.put(cloth & ~lattice, "cream", tone=0.2 - (w < 1.6) * 0.5)
+        cloth = (np.abs(X - hx) < 0.6) & (s > 5) & (s < 24.5) & (w > 0.8) & (w < 7.2)
+        lattice = ((s % 4.0) < 0.8) | (w > 6.4)
+        m.put(cloth & ~lattice, "cream", tone=0.4 - (w < 1.8) * 0.6)
         m.put(cloth & lattice, "wood_light", tone=-0.2)
     m.put(ellipsoid(X, Y, Z, hx + 0.8, cy, hz, 1.6, 1.8, 1.8), "wood", tone=0.3)
     return m

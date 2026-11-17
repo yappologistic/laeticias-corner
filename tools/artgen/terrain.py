@@ -273,65 +273,61 @@ def water(mask: int, frame: int, frames: int) -> Sprite:
 
 # ---------- cliffs ----------
 
-CLIFF_DEPTH = 26
+CLIFF_DEPTH = 34
 SOIL = [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]]
+ROCK = [INK, STONE[0], STONE[1], STONE[2], STONE[3]]
 
 
 def cliff(face: str) -> Sprite:
-    """The earth face under one rim tile: 'se' is the +x face, 'sw' the +y face (sun side)."""
+    """The earth face under one rim tile: 'se' is the +x face, 'sw' the +y face (sun side).
+
+    Everything is a function of (s, depth) with s the position along the rim, repeating every
+    tile, so the faces join seamlessly along the whole rim and at the bottom corner."""
     W, H = TW, 8 + CLIFF_DEPTH + 10
     py, px = np.mgrid[0:H, 0:W]
     sx, sy = px - 16 + 0.5, py + 0.5
-    if face == "se":                 # plane u = 16: sx = 16 - v
-        s = 16 - sx
-        z = (16 + s) / 2 - sy
-        shade = -0.9
-    else:                            # plane v = 16: sx = u - 16
-        s = sx + 16
-        z = (16 + s) / 2 - sy
-        shade = 0.0
-    depth = -z
+    s = 16 - sx if face == "se" else sx + 16      # planes u = 16 and v = 16
+    shade = -0.8 if face == "se" else 0.0
+    depth = sy - (16 + s) / 2
+    flat = np.zeros_like(s)
     on = (s >= 0) & (s < 16) & (depth > 0)
-    # Ragged underside, repeating every tile along the rim.
-    bottom = CLIFF_DEPTH - 6 * _pnoise(s, np.zeros_like(s), 4, 700) - 3 * _pnoise(s, s * 0, 8, 701)
+    bottom = CLIFF_DEPTH - 7 * _pnoise(s, flat, 4, 700) - 4 * _pnoise(s, flat, 8, 701)
     on &= depth < bottom
-    strata = depth + 2.2 * (_pnoise(s, s * 0, 2, 710) - 0.5) * 2
-    level = 3.0 - np.clip(strata / bottom, 0, 1) * 1.6 + shade
-    band = (np.abs((strata % 7.0) - 5.5) < 0.6) & (strata > 6)
-    level = level - band * 0.9
-    rough = hash01(np.floor(s * 2).astype(np.int64), np.floor(depth).astype(np.int64), 711)
-    level = level + (rough - 0.5) * 0.7
-    level = level - np.clip(bottom - depth < 1.5, 0, 1) * 1.2      # dark lip on the underside
+    # Bands: topsoil, clay with a wavy stratum line, then rocky subsoil darkening downward.
+    wave = (_pnoise(s, flat, 2, 710) - 0.5) * 3
+    clay_top, rock_top = 7 + wave, 17 + wave * 1.3
+    level = np.where(depth < clay_top, 2.2, np.where(depth < rock_top, 3.0, 2.2))
+    level = level - np.clip((depth - rock_top) / 14, 0, 1) * 1.2 + shade
+    rough = hash01(np.floor(s * 2).astype(np.int64) % 32, np.floor(depth).astype(np.int64), 711)
+    level = level + (rough - 0.5) * 0.8
+    level = level - (np.abs(depth - clay_top) < 0.7) * 1.0 - (np.abs(depth - rock_top) < 0.7) * 0.8
+    level = level - (bottom - depth < 1.6) * 1.2                     # dark underside lip
     rgb = _paint(SOIL, level, px, py)
-    # Embedded stones with a lit top.
-    dx, dy = s, depth
-    stones = np.zeros(s.shape, bool)
-    stone_top = np.zeros(s.shape, bool)
-    for k in range(5):
-        cs = (hash01(k, 720) * 16)
-        cd = 7 + hash01(k, 721) * (CLIFF_DEPTH - 12)
-        r = 1.2 + hash01(k, 722) * 1.4
+    # Embedded stones, mostly in the lower layers, with a lit top edge.
+    from voxel import Rng
+    rng = Rng(720)
+    for cd in (10, 15.5, 21):
+        cs, cd = rng.uniform(0, 16), cd + rng.uniform(-2, 2)
+        rx, ry = rng.uniform(2.2, 3.4), rng.uniform(1.5, 2.3)
         for wrap in (-16, 0, 16):
-            d = ((dx - cs - wrap) / (r * 1.3)) ** 2 + ((dy - cd) / r) ** 2
-            stones |= d < 1
-            stone_top |= (d < 1) & (dy < cd - r * 0.3)
-    stone_level = 3.0 + shade + stone_top * 1.0
-    rgb = np.where((stones & (depth < bottom - 2))[..., None],
-                   _paint([INK, STONE[1], STONE[2], STONE[3], STONE[4]], stone_level, px, py), rgb)
+            d = ((s - cs - wrap) / rx) ** 2 + ((depth - cd) / ry) ** 2
+            stone = (d < 1) & (depth < bottom - 2)
+            lvl = 2.2 + shade + (depth < cd - ry * 0.4) * 1.3 - (depth > cd + ry * 0.5) * 0.9
+            rgb = np.where(stone[..., None], _paint(ROCK, lvl, px, py), rgb)
     # Roots dangling from the turf.
     root = np.zeros(s.shape, bool)
     for k in range(3):
-        rs = hash01(k, 730) * 16
-        length = 5 + hash01(k, 731) * 9
+        rs = rng.uniform(0, 16)
+        length = rng.uniform(4, 11)
         for wrap in (-16, 0, 16):
-            path_s = rs + wrap + 1.2 * np.sin(depth * 0.7 + k)
+            path_s = rs + wrap + 1.0 * np.sin(depth * 0.6 + k * 2)
             root |= (np.abs(s - path_s) < 0.5) & (depth > 2) & (depth < 2 + length)
     rgb = np.where(root[..., None], _rgb(EARTH[0]), rgb)
     # Grass lip with blades hanging over the edge.
-    blade = 2.0 + 1.6 * (hash01(np.floor(s).astype(np.int64) % 16, 740) > 0.6) \
-        + 1.0 * (hash01(np.floor(s).astype(np.int64) % 16, 741) > 0.8)
+    col = np.floor(s).astype(np.int64) % 16
+    blade = 2.0 + 1.5 * (hash01(col, 740) > 0.55) + 1.0 * (hash01(col, 741) > 0.8)
     lip = depth < blade
-    lip_level = 2.6 + shade * 0.8 - depth * 0.35
+    lip_level = 3.0 + shade * 0.8 - depth * 0.45
     rgb = np.where(lip[..., None], _paint(GRASS, lip_level, px, py), rgb)
     rgba = np.zeros((H, W, 4), np.uint8)
     rgba[..., :3] = rgb

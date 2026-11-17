@@ -206,9 +206,8 @@ def lamp(v, frame, frames):
     m.put(box(X, Y, Z, 6, 10, 6, 10, 24.5, 29), "lamp")
     corners = (np.abs(np.abs(X - C) - 1.6) < 0.5) & (np.abs(np.abs(Y - C) - 1.6) < 0.5)
     m.put(box(X, Y, Z, 5.8, 10.2, 5.8, 10.2, 24.5, 29) & corners, "metal")
-    for z in (29, 30, 31):
-        r = 2.6 - (z - 29) * 0.9
-        m.put(box(X, Y, Z, C - r, C + r, C - r, C + r, z, z + 1), "metal", tone=0.3)
+    m.put(box(X, Y, Z, C - 2.6, C + 2.6, C - 2.6, C + 2.6, 29, 30), "metal", tone=0.3)
+    m.put(box(X, Y, Z, C - 1, C + 1, C - 1, C + 1, 30, 31.5), "metal", tone=0.5)
     m.halos.append(Halo(C, C, 26.5, 15, _rgb(GLOW[1]), 1.0))
     return m
 
@@ -266,7 +265,8 @@ def campfire(v, frame, frames):
         frac = np.clip(1 - (Z - 1) / h, 0, 1)
         r = 2.6 * frac ** 0.7 * (0.75 + 0.5 * flick)
         tongue = ((X - cx) ** 2 + (Y - cy) ** 2 <= r * r) & (Z >= 1) & (Z < 1 + h)
-        m.put(tongue, "fire", tone=frac * 1.5 - 1.0 + (flick - 0.5), only_empty=False)
+        core = (X - cx) ** 2 + (Y - cy) ** 2 <= (r * 0.45) ** 2
+        m.put(tongue, "fire", tone=frac * 2.6 - 1.6 + core * 1.2 + (flick - 0.5))
     m.halos.append(Halo(C, C, 4, 18, _rgb(GLOW[0]), 0.9 + 0.1 * math.sin(t * 2)))
     return m
 

@@ -104,7 +104,8 @@ class Scene:
             for ty in range(self.h):
                 blit("edge/cliff_se", *self.anchor(self.w - 1, ty))
         for item_id, var, tx, ty, _fp in self.items:
-            blit(fkey(f"item/{item_id}/shadow/{var}"), *self.anchor(tx, ty))
+            if f"item/{item_id}/shadow/{var}/f0" in atlas.rects:
+                blit(fkey(f"item/{item_id}/shadow/{var}"), *self.anchor(tx, ty))
         drawables = []
         for item_id, var, tx, ty, (fw, fh) in self.items:
             drawables.append(((tx + fw - 1) + (ty + fh - 1), tx, 0, ("item", item_id, var, tx, ty)))
@@ -205,6 +206,103 @@ def item_sheet(ids, cat, cols=None, gap=2, base="."):
     return scene
 
 
+MAZE = [
+    "hhhhhhhhh.hh",
+    "h.......h..h",
+    "h.hhhhh.hh.h",
+    "h.h...h....h",
+    "h.h.h.hhhh.h",
+    "h...h......h",
+    "hhhhh.h.hh.h",
+    "h.....h.h..h",
+    "h.hhhhh.h.hh",
+    "h.......h...",
+    "hhhhhhhhhhhh",
+]
+
+
+def maze_scene():
+    rows = ["." * 16 for _ in range(16)]
+    scene = Scene(rows)
+    grid = {(x + 1, y + 1) for y, r in enumerate(MAZE) for x, c in enumerate(r) if c == "h"}
+    fences = {(x, 13) for x in range(1, 14)} | {(14, y) for y in range(1, 14)} | {(1, 14), (14, 14)}
+    fences = {(x, 14) for x in range(2, 15)} | {(15, y) for y in range(2, 15)}
+    occupied = grid | fences
+
+    def mask_of(cells, x, y):
+        m = 0
+        for bit, (dx, dy) in ((1, (0, -1)), (2, (1, 0)), (4, (0, 1)), (8, (-1, 0))):
+            m |= bit if (x + dx, y + dy) in cells else 0
+        return m
+
+    for x, y in sorted(grid):
+        scene.add("hedge", f"m{mask_of(grid, x, y)}", x, y)
+    for x, y in sorted(fences):
+        scene.add("fence", f"m{mask_of(fences, x, y)}", x, y)
+    scene.add("lamp", "r0", 6, 6)
+    scene.add("bench", "r0", 2, 2)
+    return scene
+
+
+VILLAGE = [
+    "....................",
+    "..mmm.......ww......",
+    ".mmmmm.....wwww.....",
+    ".mmmm......wwwww....",
+    "..mm.......wwww.....",
+    ".......p....ww......",
+    ".......p............",
+    "pppppppppppppp......",
+    ".......c.......p....",
+    "......ccc......p....",
+    ".....ccccc.....p....",
+    "......ccc......pppp.",
+    ".......c.........p..",
+    ".......p.........p..",
+    ".......p.....mmm.p..",
+    ".......p....mmmmmp..",
+    ".......p.....mmm.p..",
+    "...................p",
+    "....................",
+    "....................",
+]
+
+
+def village_scene():
+    s = Scene(VILLAGE)
+    for args in [("cottage", "r0", 2, 8, (2, 2)), ("toolshed", "r3", 5, 9, (1, 1)),
+                 ("barn", "r0", 9, 13, (3, 2)), ("windmill", "r1", 16, 1, (2, 2)),
+                 ("greenhouse", "r0", 17, 8, (2, 2)), ("coop", "r0", 13, 9, (1, 1)),
+                 ("well", "r0", 7, 10, (1, 1)), ("lamp", "r0", 9, 9, (1, 1)),
+                 ("lamp", "r0", 6, 6, (1, 1)), ("campfire", "r0", 4, 15, (1, 1)),
+                 ("bench", "r1", 5, 15, (1, 1)), ("picnic_table", "r0", 2, 17, (2, 1)),
+                 ("bridge", "r1", 12, 3, (1, 1)), ("beehive", "r0", 2, 5, (1, 1)),
+                 ("beehive", "r3", 4, 4, (1, 1)), ("scarecrow", "r0", 15, 15, (1, 1)),
+                 ("planter", "r0", 13, 15, (1, 1)), ("planter", "r1", 14, 16, (1, 1)),
+                 ("planter", "r2", 13, 16, (1, 1)), ("planter", "r3", 14, 15, (1, 1))]:
+        s.add(*args)
+    trees = [("oak", 0, 0), ("oak", 1, 1), ("pine", 0, 3), ("pine", 1, 0), ("oak", 18, 18),
+             ("blossom", 10, 6), ("pine", 19, 5), ("pine", 18, 4), ("blossom", 19, 12),
+             ("oak", 0, 19), ("pine", 1, 18), ("oak", 19, 16), ("blossom", 6, 1)]
+    for i, (t, x, y) in enumerate(trees):
+        s.add(t, f"r{i % 4}", x, y)
+    small = [("bush", 3, 2), ("berry_bush", 8, 3), ("flowers_red", 2, 3), ("flowers_white", 4, 2),
+             ("flowers_violet", 3, 1), ("flowers_red", 13, 8), ("tall_grass", 15, 5),
+             ("reeds", 10, 2), ("reeds", 14, 4), ("lily_pads", 13, 2), ("lily_pads", 12, 4),
+             ("rock", 16, 6), ("mushrooms", 1, 14), ("stump", 2, 13), ("tall_grass", 10, 17),
+             ("tall_grass", 11, 18), ("rock", 7, 18), ("bush", 0, 11), ("flowers_violet", 12, 14)]
+    for i, (t, x, y) in enumerate(small):
+        s.add(t, f"r{i % 4}", x, y)
+    s.critter("critter/duck/move_front", 13 * 16 + 2, 3 * 16 + 4)
+    s.critter("critter/duck/idle_back", 12 * 16 + 4, 1 * 16 + 10)
+    s.critter("critter/hen/move_front", 12 * 16 + 4, 11 * 16)
+    s.critter("critter/hen/idle_front", 13 * 16 + 8, 11 * 16 + 8, mirror=True)
+    s.critter("critter/cat/idle_front", 4 * 16 + 8, 11 * 16 + 4)
+    s.critter("critter/butterfly/move_front", 3 * 16, 3 * 16, z=14)
+    s.critter("critter/bee/move_front", 3 * 16, 5 * 16, z=10)
+    return s
+
+
 def sprite_sheet(atlas: Atlas, cat) -> Image.Image:
     """Critter animations and effects, one row each, anchors marked by the cell layout."""
     rows = []
@@ -246,6 +344,9 @@ def main():
     save(pond_scene().render(atlas), "pond.png")
     for f in range(2):
         save(pond_scene().render(atlas, frame=f), f"pond_f{f}.png")
+    save(maze_scene().render(atlas), "maze.png")
+    save(village_scene().render(atlas), "village.png")
+    save(village_scene().render(atlas, night=True), "village_night.png")
     sheet = sprite_sheet(atlas, cat)
     sheet.resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(spec.OUT / "sprites.png")
     print(f"previews in {spec.OUT}")

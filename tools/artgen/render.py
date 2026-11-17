@@ -90,7 +90,7 @@ def _ambient_occlusion(model: Model, centre, nrm):
     return np.clip(1.08 - 0.55 * a - 0.75 * b, 0.5, 1.0)
 
 
-def _raycast(model: Model, px, py):
+def _raycast(model: Model, px, py, mat_grid):
     sx, sy = px + 0.5, py + 0.5
     a, b = sy + sx / 2, sy - sx / 2
     even = (px % 2) == 0
@@ -103,7 +103,6 @@ def _raycast(model: Model, px, py):
     kk = np.zeros(n, np.int64)
     depth = np.full(n, -1e9, np.float32)
     todo = np.ones(n, bool)
-    mat_grid = model.visible()
     for k in range(model.z0 + nz - 1, model.z0 - 1, -1):
         for s, frac in enumerate((0.875, 0.5, 0.125)):
             t = k + frac
@@ -156,7 +155,14 @@ def render_base(model: Model):
     W, H = c1 - c0, r1 - r0
     py, px = np.mgrid[r0:r1, c0:c1]
     px, py = px.ravel(), py.ravel()
-    mat, face, ii, jj, kk, depth = _raycast(model, px, py)
+    mat, face, ii, jj, kk, depth = _raycast(model, px, py, model.visible())
+    # Outlines follow the whole shape, context included, so a hedge cut at the tile edge
+    # gets no seam line where the neighbour's arm continues it.
+    if model.ghost is None:
+        outline_solid, outline_depth = mat > 0, depth
+    else:
+        full_mat, _f, _i, _j, _k, full_depth = _raycast(model, px, py, model.mat)
+        outline_solid, outline_depth = full_mat > 0, np.where(mat > 0, depth, full_depth)
     hit = mat > 0
     level = np.zeros(px.size, np.float32)
     if hit.any():
@@ -188,8 +194,9 @@ def render_base(model: Model):
     dep = depth.reshape(H, W)
     solid = mat2 > 0
     # Selective outline: darken the silhouette (more on the shadow side) and front edges.
-    pad_s = np.pad(solid, 1)
-    pad_d = np.pad(dep, 1, constant_values=-1e9)
+    pad_s = np.pad(outline_solid.reshape(H, W), 1)
+    pad_d = np.pad(np.where(outline_solid, outline_depth, -1e9).reshape(H, W), 1,
+                   constant_values=-1e9)
     up, down = ~pad_s[:-2, 1:-1], ~pad_s[2:, 1:-1]
     left, right = ~pad_s[1:-1, :-2], ~pad_s[1:-1, 2:]
     lvl = lvl - solid * (0.9 * (up | left) + 1.6 * (down | right))
@@ -216,7 +223,7 @@ def render_base(model: Model):
             q = dither(inten, pxx, pyy)
             q = np.clip(q, 0, 3)
             add = (q > 0) & ~g
-            scale = (q / 3 * 0.45)[..., None]
+            scale = (q / 3 * 0.6)[..., None]
             glow[add, :3] = np.maximum(glow[add, :3], (np.array(halo.rgb) * scale[add]).astype(np.uint8))
             glow[add, 3] = 255
     return rgba, glow, -c0, -r0

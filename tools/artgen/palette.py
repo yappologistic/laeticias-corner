@@ -46,7 +46,7 @@ def _m(name, ramp, **kw) -> Material:
 # id 0 is empty space; ids are list positions + 1.
 MATERIALS = [
     _m("leaf", LEAF, texture=0.35),
-    _m("leaf_dark", [LEAF[0], *PINE, LEAF[3], LEAF[4]], texture=0.6),
+    _m("leaf_dark", [LEAF[0], *PINE, LEAF[3], LEAF[4]], texture=0.4),
     _m("blossom", [VIOLET[1], BLOSSOM[0], *BLOSSOM[1:], PLASTER[4]], texture=0.6),
     _m("bark", [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]], texture=0.4),
     _m("wood", [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3], EARTH[4]], texture=0.3),
@@ -60,9 +60,11 @@ MATERIALS = [
     _m("straw", [EARTH[1], *STRAW], texture=0.6),
     _m("soil", [INK, EARTH[0], EARTH[1], EARTH[2]], texture=0.6),
     _m("glass", [STONE[0], WATER[0], WATER[1], WATER[2], WATER[4]], glow=_rgb(GLOW[1])),
-    _m("glass_cool", [STONE[1], WATER[2], WATER[3], WATER[4], WATER[5]], glow=_rgb(GLOW[1])),
-    _m("lamp", [STRAW[2], GLOW[1], GLOW[2], PLASTER[4]], bias=2.0, glow=_rgb(GLOW[2])),
-    _m("fire", [ROOF[3], GLOW[0], GLOW[1], GLOW[2]], bias=2.5, glow=_rgb(GLOW[1])),
+    _m("glass_cool", [STONE[1], WATER[2], WATER[3], WATER[4], WATER[5]]),
+    # Greenhouse panes: same look by day, a dim lamplit warmth at night.
+    _m("glass_warm", [STONE[1], WATER[2], WATER[3], WATER[4], WATER[5]], glow=_rgb(EARTH[2])),
+    _m("lamp", [GLOW[0], GLOW[1], GLOW[2], PLASTER[4]], bias=1.2, glow=_rgb(GLOW[2])),
+    _m("fire", [ROOF[2], ROOF[3], GLOW[0], GLOW[1], GLOW[2]], bias=0.8, glow=_rgb(GLOW[1])),
     _m("ember", [ROOF[1], ROOF[2], GLOW[0]], bias=1.5, glow=_rgb(GLOW[0])),
     _m("metal", [INK, STONE[0], STONE[1], STONE[2], STONE[4]]),
     _m("cream", [PLASTER[0], PLASTER[1], PLASTER[2], PLASTER[3], PLASTER[4]], texture=0.2),

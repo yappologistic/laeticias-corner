@@ -13,13 +13,25 @@ from render import render_base
 from voxel import Model, cylinder, ellipsoid, ellipsoid_normal, segment
 
 
+S = 1.35  # critters are modelled at life-ish size and enlarged so they read at 1x
+
+
+def _model(x0, x1, y0, y1, z0, z1) -> Model:
+    return Model.empty(*(int(math.floor(v * S)) if v < 0 else int(math.ceil(v * S))
+                         for v in (x0, x1, y0, y1, z0, z1)))
+
+
+def _put_points(m, pts, material, **kw):
+    m.put_points(np.asarray(pts, np.float32) * S, material, **kw)
+
+
 def _blob(m, X, Y, Z, c, r, material, tone=0.0):
     m.put(ellipsoid(X, Y, Z, *c, *r), material, tone=tone, normal=ellipsoid_normal(X, Y, Z, *c, *r))
 
 
 def duck(anim, frame, frames):
-    m = Model.empty(-6, 7, -4, 5, 0, 10)
-    X, Y, Z = m.coords()
+    m = _model(-6, 7, -4, 5, 0, 10)
+    X, Y, Z = (a / S for a in m.coords())
     moving = anim == "move"
     bob = 0.5 * math.sin(2 * math.pi * frame / frames) if moving else 0.0
     dip = (not moving) and frame % 2 == 1
@@ -32,14 +44,14 @@ def duck(anim, frame, frames):
     m.put(segment(X, Y, Z, (1.8, 0, 3.5 + bob), (hx, 0, hz), 1.0), "cream")
     _blob(m, X, Y, Z, (hx, 0, hz), (1.6, 1.4, 1.5), "cream", tone=0.3)
     m.put(ellipsoid(X, Y, Z, hx + 1.9, 0, hz - 0.4, 1.0, 0.7, 0.45), "orange", tone=0.8)
-    m.put_points([(hx + 0.6, 1.2, hz + 0.3)], "ink")
+    _put_points(m, [(hx + 0.6, 1.2, hz + 0.3)], "ink")
     m.carve(Z < 0.6)  # sits in the water
     return m
 
 
 def hen(anim, frame, frames):
-    m = Model.empty(-5, 6, -4, 5, 0, 11)
-    X, Y, Z = m.coords()
+    m = _model(-5, 6, -4, 5, 0, 11)
+    X, Y, Z = (a / S for a in m.coords())
     moving = anim == "move"
     step = math.sin(2 * math.pi * frame / frames) if moving else 0.0
     peck = (not moving) and frame % 2 == 1
@@ -55,13 +67,13 @@ def hen(anim, frame, frames):
     m.put(ellipsoid(X, Y, Z, hx - 0.2, 0, hz + 1.5, 0.9, 0.4, 0.7), "poppy", tone=0.5)
     m.put(ellipsoid(X, Y, Z, hx + 1.3, 0, hz - 0.8, 0.4, 0.4, 0.6), "poppy", tone=0.2)
     m.put(ellipsoid(X, Y, Z, hx + 1.6, 0, hz, 0.8, 0.5, 0.4), "yellow", tone=0.6)
-    m.put_points([(hx + 0.4, 1.1, hz + 0.3)], "ink")
+    _put_points(m, [(hx + 0.4, 1.1, hz + 0.3)], "ink")
     return m
 
 
 def cat(anim, frame, frames):
-    m = Model.empty(-7, 8, -4, 5, 0, 12)
-    X, Y, Z = m.coords()
+    m = _model(-7, 8, -4, 5, 0, 12)
+    X, Y, Z = (a / S for a in m.coords())
     moving = anim == "move"
     t = 2 * math.pi * frame / frames
     stripes = ((np.floor(X * 0.9) % 2) == 0) * -0.6
@@ -89,14 +101,14 @@ def cat(anim, frame, frames):
     for side in (-1, 1):
         m.put(segment(X, Y, Z, (hx - 0.3, side * 1.0, hz + 1.0), (hx - 0.4, side * 1.1, hz + 2.4), 0.55),
               "ginger", tone=0.2)
-    m.put_points([(hx + 1.0, 1.2, hz + 0.3), (hx + 1.6, 0.4, hz + 0.3)], "ink")
-    m.put_points([(hx + 1.9, 0, hz - 0.5)], "blossom", tone=1)
+    _put_points(m, [(hx + 1.0, 1.2, hz + 0.3), (hx + 1.6, 0.4, hz + 0.3)], "ink")
+    _put_points(m, [(hx + 1.9, 0, hz - 0.5)], "blossom", tone=1)
     return m
 
 
 def butterfly(anim, frame, frames):
-    m = Model.empty(-5, 5, -6, 6, 0, 10)
-    X, Y, Z = m.coords()
+    m = _model(-5, 5, -7, 7, 0, 11)
+    X, Y, Z = (a / S for a in m.coords())
     m.hover = True
     flap = (0.15, 0.9, 1.35, 0.9)[frame % 4] if anim == "move" else (0.25, 0.6)[frame % 2]
     m.put(segment(X, Y, Z, (-1.5, 0, 3), (1.5, 0, 3.2), 0.55), "ink")
@@ -105,19 +117,21 @@ def butterfly(anim, frame, frames):
         ny, nz = -math.sin(flap) * side, math.cos(flap)
         across = (Y * math.cos(flap) * side + (Z - 3) * math.sin(flap))
         plane = np.abs(Y * ny + (Z - 3) * nz) < 0.6
-        upper = ellipsoid(X, across, Z * 0, 0.9, 2.6, 0, 2.2, 2.4, 1) & (across > 0.3)
-        lower = ellipsoid(X, across, Z * 0, -1.3, 1.6, 0, 1.4, 1.6, 1) & (across > 0.3)
+        ell = lambda cx, cy, rx, ry: ((X - cx) / rx) ** 2 + ((across - cy) / ry) ** 2
+        upper = (ell(0.9, 2.9, 2.6, 2.9) <= 1) & (across > 0.3)
+        lower = (ell(-1.4, 1.9, 1.7, 1.9) <= 1) & (across > 0.3)
         wing = plane & (upper | lower)
-        edge = wing & ~(ellipsoid(X, across, Z * 0, 0.9, 2.6, 0, 1.4, 1.6, 1)
-                        | ellipsoid(X, across, Z * 0, -1.3, 1.6, 0, 0.7, 0.9, 1))
-        m.put(wing, "violet", tone=0.8)
-        m.put(edge, "violet", tone=-1.2)
+        edge = wing & (ell(0.9, 2.9, 2.6, 2.9) > 0.6) & (ell(-1.4, 1.9, 1.7, 1.9) > 0.5)
+        lit = (X * 0 - 0.4, X * 0 + 0.3, X * 0 + 1.0)   # thin membranes: shade as if facing the sky
+        m.put(wing & upper, "orange", tone=0.8, normal=lit)
+        m.put(wing & lower & ~upper, "yellow", tone=0.4, normal=lit)
+        m.put(edge, "ink", tone=0.5, normal=lit)
     return m
 
 
 def bee(anim, frame, frames):
-    m = Model.empty(-4, 4, -4, 4, 0, 8)
-    X, Y, Z = m.coords()
+    m = _model(-4, 4, -4, 4, 0, 8)
+    X, Y, Z = (a / S for a in m.coords())
     m.hover = True
     bob = (0, 0.5, 0, -0.5)[frame % 4] if anim == "move" else 0.0
     body = ellipsoid(X, Y, Z, 0, 0, 3 + bob, 2.2, 1.5, 1.5)
@@ -133,8 +147,8 @@ def bee(anim, frame, frames):
 
 
 def firefly(anim, frame, frames):
-    m = Model.empty(-3, 3, -3, 3, 0, 6)
-    X, Y, Z = m.coords()
+    m = _model(-3, 3, -3, 3, 0, 6)
+    X, Y, Z = (a / S for a in m.coords())
     m.hover = True
     bright = (1.5, 0.8, 0.0, 0.8)[frame % 4] if anim == "move" else (1.5, 0.5)[frame % 2]
     m.put(ellipsoid(X, Y, Z, 0.6, 0, 2.6, 1.1, 0.8, 0.8), "ink")
