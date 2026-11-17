@@ -715,6 +715,12 @@ def _town(L: Layout, spur, noise) -> None:
     L.row(Line([(23, 53), (23, 110)], 1), P + "t_poplar", every=3)
 
 
+def _put(L: Layout, item: str, at, face: str = "west") -> None:
+    """Detail that gives way to anything already there."""
+    if L.fits(item, at, face):
+        L.place(item, at=at, face=face)
+
+
 def _free(L: Layout, rect: Rect) -> Mask:
     """Tiles of a rect with nothing placed and no street."""
     j0, i0 = rect.r0, rect.c0
@@ -770,6 +776,40 @@ def _terrace_detail(L: Layout) -> None:
     for at in ((78, 106), (79, 106), (82, 106), (84, 105)):
         L.place(P + "p_jars", at=at)
     L.place(P + "p_sacks", at=(81, 106))
+    # Guard posts: a brazier and a banner at the corners of the courts and along the edges,
+    # banners down the processional road, scribes registering visitors by the Gate.
+    for at in ((57, 23), (93, 23), (57, 40), (94, 40), (57, 79), (99, 79), (57, 117),
+               (99, 112), (117, 79), (117, 117), (84, 78), (60, 101)):
+        _put(L, P + "p_brazier", at)
+        _put(L, P + "p_banner", (at[0] + 1, at[1]))
+    for c in range(71, 92, 4):
+        _put(L, P + "p_banner", (c, 48))
+    for at in ((71, 41), (73, 41)):
+        _put(L, P + "p_scribe_desk", at, "south")
+    for at in ((75, 41), (76, 41)):
+        _put(L, P + "p_jars", at)
+    for at in ((70, 43), (70, 46)):
+        _put(L, P + "p_incense", at)
+    # The Tačara and Hadiš courts: incense before the porticoes, a throne-dais carpet.
+    for at in ((64, 96), (69, 96), (77, 86), (84, 86)):
+        _put(L, P + "p_incense", at)
+    _put(L, P + "p_carpet", (79, 86), "north")
+    # The royal kitchens' service yard south of the Tačara court: a walled yard of sheds,
+    # bread ovens, storerooms and a well; servants carry the dishes up the Hadiš stair.
+    for pts in ([(59, 106), (65, 106)], [(68, 106), (74, 106)], [(59, 107), (59, 116)],
+                [(74, 107), (74, 116)], [(60, 116), (73, 116)]):
+        L.wall(Line(pts, 1), P + "p_wall")
+    way(L, [(66, 104), (66, 111), (70, 111)], width=1, paving=STONE)
+    L.node("royal_kitchens", (66, 110))
+    for at in ((60, 108), (67, 108), (71, 108)):
+        _put(L, P + "p_workshop", at, "north")
+    for at in ((61, 112), (63, 112), (70, 111), (72, 111)):
+        _put(L, P + "p_oven", at)
+    for at in ((65, 113), (68, 113)):
+        _put(L, P + "p_granary", at, "north")
+    _put(L, P + "p_well", (71, 114))
+    for at in ((60, 114), (61, 114), (62, 115), (72, 113)):
+        _put(L, P + "p_jars" if at[0] % 2 else P + "p_sacks", at)
     # Torches at the palaces' stairs, braziers in the courts.
     for at in ((62, 94), (72, 94), (72, 86), (84, 82)):
         L.place(P + "p_torch", at=at, face="south")
@@ -860,32 +900,32 @@ def _plain(L: Layout, noise) -> None:
     L.place(P + "p_trough", at=(46, 115))
 
     # --- the delegations' camp on the plain south of the terrace ----------------------------
-    # Each delegation pitches its tents round a fire, with horse lines and carts: the must-have
-    # sets (Medes, Elamites, Babylonians, Lydians, Saka, Yaunā, Indians, Arabs) and room for more.
-    camps = [(62, 125), (75, 126), (88, 125), (100, 126), (64, 131), (77, 132), (90, 131),
-             (101, 132)]
-    lanes = []
+    # Each delegation pitches its tents round its own fire, doors turned to it where the tents
+    # allow, horses tethered at one side, a banner, carpets and baggage; no two pitches alike.
+    camps = [(61, 126), (71, 129), (81, 125), (91, 129), (100, 125), (66, 133), (80, 133),
+             (96, 133), (106, 129)]
+    ring = [((-1, -3), "west"), ((2, -3), "west"), ((2, -1), "north"), ((-4, -3), "west"),
+            ((-4, 0), "north"), ((2, 1), "west"), ((-2, 1), "west")]
+    lanes = [L.street(orth([(c, r - 1), (c, 122)]), width=1, paving=EARTH, kind="track")
+             for c, r in camps]
+    _fords(L, lanes)
     for i, (c, r) in enumerate(camps):
         st = rng.stream("parsa", "camp", i)
-        L.paint(Rect(c - 5, r - 2, c + 5, r + 2), EARTH)
-        lane = way(L, [(c - 5, r), (c + 5, r)], width=1, paving=EARTH, kind="track")
-        lanes.append(lane)
-        for dc in (-5, -2, 1, 4)[: 3 + st.randint(0, 1)]:
-            L.place(P + "p_tent", at=(c + dc, r + 1), face="north")
-        L.place(P + "p_brazier", at=(c, r - 1))
-        L.place(P + "p_horse_line", at=(c - 4, r - 2), face="north")
-        if st.chance(0.6):
-            L.place(P + "p_carpet", at=(c + 2, r - 1), face="north")
-        if st.chance(0.6):
-            L.place(P + "p_jars", at=(c + 4, r - 2))
-        if st.chance(0.5):
-            L.place(P + "p_sacks", at=(c - 1, r - 2))
-        top = 122 if r < 129 else r - 6
-        lanes.append(way(L, [(c + 5 if i % 2 else c - 5, r), (c + 5 if i % 2 else c - 5, top)],
-                              width=1, paving=EARTH, kind="track"))
+        L.paint(Ellipse(c, r, 4 + st.randint(0, 2), 2 + st.randint(0, 1)), EARTH)
+        L.place(P + "p_brazier", at=(c, r))
+        order = sorted(ring, key=lambda t: rng.hash64("parsa", "tents", i, t[0]))
+        for (dc, dr), face in order[: 2 + st.randint(0, 3)]:
+            _put(L, P + "p_tent", (c + dc, r + dr), face)
+        side = -1 if st.chance(0.5) else 1
+        _put(L, P + "p_horse_line", (c + side * 5 - 1, r + st.randint(-2, 1)),
+             "west" if st.chance(0.5) else "north")
+        _put(L, P + "p_banner", (c + 1, r - 1))
+        for item in (P + "p_carpet", P + "p_jars", P + "p_sacks", P + "p_jars"):
+            if st.chance(0.6):
+                _put(L, item, (c + st.randint(-3, 3), r + st.randint(-1, 2)), "north")
     pitches = Rect(0, 0, 0, 0) - Rect(0, 0, 0, 0)
     for c, r in camps:
-        pitches = pitches | Rect(c - 6, r - 3, c + 6, r + 3)
+        pitches = pitches | Rect(c - 7, r - 4, c + 7, r + 3)
     L.scatter(CAMP - pitches, {P + "p_steppe": 2, P + "p_lilies": 1}, 0.06, seed="camp_tufts")
     L.scatter(Rect(56, 119, 112, 121), {P + "t_poplar": 1}, 0.12, min_gap=3, seed="camp_poplars")
 

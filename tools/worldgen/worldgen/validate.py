@@ -128,8 +128,8 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             issue("V1", f"terrain {tid!r} comes from a {t.source} entry ({t.file})",
                   level="warning")
         if tid in cat.pending_faces:
-            issue("V1", f"terrain {tid!r} uses the faces world-tech §6.2 adds; the home catalog "
-                  "does not list them yet", level="warning")
+            issue("V1", f"terrain {tid!r} uses stand-in faces from plan/provisional.py; its "
+                  "catalog does not list them yet (world-tech §6.2)", level="warning")
     seen = set()
     for _, it in items:
         d = cat.items.get(it.id)

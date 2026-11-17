@@ -65,8 +65,14 @@ TERRAIN = [
      "faces": ["world.earth"]},
 ]
 
-# Home terrains get faces in world-tech §6.2; used only while the home catalog has none.
-FACES_PENDING = {"grass": ["world.earth", "world.coast"]}
+# Home terrains get faces in world-tech §6.2; used only while the home catalog has none. The
+# parsa set catalog lists no faces yet either: its ground uses the terrace's ashlar, the slope's
+# rock and earth banks (persepolis.md §2.6), in that order.
+_PARSA_FACES = ["parsa.ashlar", "world.rock", "world.earth"]
+FACES_PENDING = {"grass": ["world.earth", "world.coast"],
+                 **{f"parsa.{t}": _PARSA_FACES for t in (
+                     "plain_grass", "field_barley", "garden_bed", "packed_earth", "paving_stone",
+                     "paving_red", "gravel", "rough_ground")}}
 
 
 def _plant(i, stand_in, height=80, walkable=False):

@@ -417,6 +417,15 @@ class Layout:
         self._occupy(p)
         return p
 
+    def fits(self, item: str, at: tuple[int, int], face: str = "west", variant: int = 0) -> bool:
+        """Whether `place(item, at=at, face=face)` would stand on free, flat, suitable ground
+        off the streets (for detail that should give way rather than fail)."""
+        if item not in self.cat.items or face not in FACINGS:
+            return False
+        k = self._rot(item, face, variant)
+        pw, ph = self._plan_size(item, k)
+        return self._suitable(item, at[0] + self.origin[0], at[1] + self.origin[1], pw, ph)
+
     def walk_tiles(self, p: Placed) -> set[tuple[int, int]]:
         """World plan tiles of a placed landmark that its geometry file declares walkable."""
         if not self.cat.items[p.id].landmark:
