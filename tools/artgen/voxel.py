@@ -63,12 +63,13 @@ class Model:
         return X, Y, Z
 
     def window(self, cx, cy, cz, r):
-        """Index slices of the voxels within a box of half-size r around a point (design units),
-        and their centre coordinates, so small shapes are evaluated locally instead of over the
-        grid."""
+        """Index slices of the voxels within a box of half-size r (or (rx, ry, rz)) around a
+        point (design units), and their centre coordinates, so small shapes are evaluated
+        locally instead of over the grid."""
         sl, axes = [], []
         k = self.k
-        for c, o, n in zip((cx, cy, cz), (self.x0, self.y0, self.z0), self.mat.shape):
+        rs = np.broadcast_to(np.asarray(r, np.float64), (3,))
+        for c, r, o, n in zip((cx, cy, cz), rs, (self.x0, self.y0, self.z0), self.mat.shape):
             a = max(int(np.floor((c - r) * k)) - o, 0)
             b = min(int(np.ceil((c + r) * k)) - o + 1, n)
             sl.append(slice(a, max(a, b)))
@@ -76,25 +77,22 @@ class Model:
         X, Y, Z = axes
         return tuple(sl), X[:, None, None], Y[None, :, None], Z[None, None, :]
 
-    def put(self, mask, material: str, tone=0.0, normal=None, only_empty=False):
-        mask = np.broadcast_to(mask, self.mat.shape)
+    def put(self, mask, material: str, tone=0.0, normal=None, only_empty=False, sl=None):
+        """Set `mask` to `material`. With `sl` (from `window()`) the mask, tone and normal are
+        shaped like that window instead of the whole grid."""
+        mat, tn, nr = (self.mat, self.tone, self.nrm) if sl is None else \
+            (self.mat[sl], self.tone[sl], self.nrm[sl])
+        mask = np.broadcast_to(mask, mat.shape)
         if only_empty:
-            mask = mask & (self.mat == 0)
-        self.mat[mask] = MAT[material]
-        self.tone[mask] = np.broadcast_to(np.asarray(tone, np.float32), self.mat.shape)[mask]
+            mask = mask & (mat == 0)
+        mat[mask] = MAT[material]
+        tn[mask] = np.broadcast_to(np.asarray(tone, np.float32), mat.shape)[mask]
         if normal is None:
-            self.nrm[mask] = 0.0
-        else:
-            n = np.stack(np.broadcast_arrays(*normal), axis=-1).astype(np.float32)
+            nr[mask] = 0.0
+        else:  # normalised only where it is stored
+            n = np.stack([np.broadcast_to(c, mat.shape)[mask] for c in normal], axis=-1).astype(np.float32)
             n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
-            self.nrm[mask] = np.broadcast_to(n, self.mat.shape + (3,))[mask]
-
-    def put_window(self, sl, mask, material: str, tone=0.0):
-        """Set `mask` (shaped like the window `sl` from `window()`) to `material`."""
-        mask = np.broadcast_to(mask, self.mat[sl].shape)
-        self.mat[sl][mask] = MAT[material]
-        self.tone[sl][mask] = tone
-        self.nrm[sl][mask] = 0.0
+            nr[mask] = n
 
     def put_points(self, pts, material: str, tone=0.0, normal=None):
         """Set the voxels containing each point (N, 3) in design units; for thin stems and blades."""
@@ -221,6 +219,19 @@ def slope_normal(X, Y, Z, cx, cy, pitch, along_x=True):
     return (np.sign(X - cx) * pitch + zero, zero, zero + 1.0)
 
 
+def masonry(m: "Model", along, Z, course, block, seed):
+    """Fine-grid coursed stone: staggered blocks of slightly different tones with pixel-wide
+    mortar joints and a lit top edge. `along` runs along the wall (X + Y serves every face of
+    a box)."""
+    row = np.floor(Z / course)
+    a = along + (row % 2) * block * 0.5
+    col = np.floor(a / block)
+    j = 0.5 / m.k
+    joint = ((Z % course) < j) | ((a % block) < j)
+    top = (Z % course) >= course - j
+    return -1.1 * joint + top * 0.5 + (hash01(row.astype(np.int64), col.astype(np.int64), seed) - 0.5) * 0.9
+
+
 # ---- deterministic noise ----
 
 def hash01(*ints) -> np.ndarray:
@@ -257,9 +268,10 @@ def value_noise(x, y, z, scale, seed, period=None):
     return lerp(lerp(x00, x10, sy), lerp(x01, x11, sy), sz)
 
 
-def cells3(pts, cell, seed, jitter=0.9):
+def cells3(pts, cell, seed, jitter=0.9, period=None):
     """3D Voronoi cells over points (N, 3): distance to the nearest and second nearest centre,
-    the offset (N, 3) from the nearest centre and its hash. Leaves, pebbles, shingles."""
+    the offset (N, 3) from the nearest centre and its hash. Leaves, pebbles, shingles. With
+    `period` (cells) the pattern repeats along x and y, for pieces that join across tiles."""
     q = np.asarray(pts, np.float32) / cell
     base = np.floor(q).astype(np.int64)
     f1 = np.full(len(q), 1e9, np.float32)
@@ -268,7 +280,8 @@ def cells3(pts, cell, seed, jitter=0.9):
     h = np.zeros(len(q), np.float32)
     for d in np.ndindex(3, 3, 3):
         c = base + np.array(d) - 1
-        centre = c + 0.5 + (np.stack([hash01(c[:, 0], c[:, 1], c[:, 2], seed, a) for a in range(3)], 1)
+        w = c if period is None else np.stack([c[:, 0] % period, c[:, 1] % period, c[:, 2]], 1)
+        centre = c + 0.5 + (np.stack([hash01(w[:, 0], w[:, 1], w[:, 2], seed, a) for a in range(3)], 1)
                             - 0.5) * jitter
         o = (q - centre) * cell
         dist = np.sqrt((o * o).sum(1))
@@ -276,7 +289,7 @@ def cells3(pts, cell, seed, jitter=0.9):
         f2 = np.where(nearer, f1, np.minimum(f2, dist))
         f1 = np.where(nearer, dist, f1)
         off[nearer] = o[nearer]
-        h = np.where(nearer, hash01(c[:, 0], c[:, 1], c[:, 2], seed, 9), h)
+        h = np.where(nearer, hash01(w[:, 0], w[:, 1], w[:, 2], seed, 9), h)
     return f1, f2, off, h
 
 

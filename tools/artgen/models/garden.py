@@ -10,7 +10,7 @@ import numpy as np
 from palette import GLOW, _rgb
 from voxel import (Halo, Model, Rng, box, curve, cylinder, cylinder_normal, ellipsoid,
                    ellipsoid_normal, gable, hash01, segment, slope_normal, value_noise)
-from models.nature import C, canopy
+from models.nature import C, _leaves, canopy
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
 ARMS = {N_BIT: (0, -1), E_BIT: (1, 0), S_BIT: (0, 1), W_BIT: (-1, 0)}
@@ -57,6 +57,8 @@ def hedge(mask, frame, frames, k):
     sun = m.nrm[..., 0] * -0.45 + m.nrm[..., 1] * 0.28 + m.nrm[..., 2] * 0.85
     m.tone[solid] = (np.where((sun > 0.55) & (speck > 0.5), 0.7, 0.0) + (speck - 0.5) * 0.5
                      - 0.4 * (Z < 2))[solid]
+    if m.fine:  # clipped leaves, on a lattice that repeats every tile so joins stay seamless
+        m.carve(solid & ~_leaves(m, solid, m.nrm, m.tone, 711, leaf=16 / 14, period=14))
     return m
 
 
@@ -204,9 +206,24 @@ def well(v, frame, frames, k):
     for x in (2.2, 13.8):
         m.put(box(X, Y, Z, x - 1, x + 1, C - 1, C + 1, 6, 20), "wood")
     m.put(box(X, Y, Z, 2.2, 13.8, C - 0.5, C + 0.5, 15.5, 16.5), "wood_light")
-    m.put(box(X, Y, Z, C - 0.3, C + 0.3, C - 0.3, C + 0.3, 11, 15.5), "ink")
-    m.put(cylinder(X, Y, Z, C, C, 1.5, 8.5, 11.5), "wood", normal=cylinder_normal(X, Y, Z, C, C),
-          tone=-0.8 * ((Z > 9.5) & (Z < 10.2)))
+    if m.fine:
+        # A pixel of rope wound on the axle and hanging to a hooped bucket with a bail handle.
+        m.put(cylinder(X, Y, Z, C, C, 0.25, 11.5, 15.5), "straw", tone=0.4)
+        m.put(box(X, Y, Z, C - 1.6, C + 1.6, C - 0.7, C + 0.7, 15.2, 16.8) &
+              ((X % 0.5) < 0.25), "straw", tone=-0.3)
+        m.put(cylinder(X, Y, Z, C, C, 1.5, 8.5, 11.5) & ~cylinder(X, Y, Z, C, C, 1.0, 9.0, 12),
+              "wood", normal=cylinder_normal(X, Y, Z, C, C),
+              tone=(np.cos(np.arctan2(Y - C, X - C) * 6) > 0.7) * -0.6)
+        m.put(cylinder(X, Y, Z, C, C, 1.6, 8.5, 11.5) & ((np.abs(Z - 9.0) < 0.25) | (np.abs(Z - 11.0) < 0.25)),
+              "metal", tone=0.3, normal=cylinder_normal(X, Y, Z, C, C))
+        m.put(cylinder(X, Y, Z, C, C, 0.9, 9.0, 10.5), "water", tone=0.6)
+        m.put_points(curve((C - 1.5, C, 11.5), (C + 1.5, C, 11.5), bend=(0, 0)) + [0, 0, 0], "metal")
+        handle = [(C + 1.5 * math.cos(t), C, 11.5 + 1.0 * math.sin(t)) for t in np.linspace(0, math.pi, 12)]
+        m.put_points(handle, "metal", tone=0.4)
+    else:
+        m.put(box(X, Y, Z, C - 0.3, C + 0.3, C - 0.3, C + 0.3, 11, 15.5), "ink")
+        m.put(cylinder(X, Y, Z, C, C, 1.5, 8.5, 11.5), "wood", normal=cylinder_normal(X, Y, Z, C, C),
+              tone=-0.8 * ((Z > 9.5) & (Z < 10.2)))
     roof = gable(X, Y, Z, -0.5, 16.5, 2.5, 13.5, 19.5, 6.5)
     rows = (np.floor((19.5 + 6.5 - Z) / 1.7) % 2) == 0
     m.put(roof, "roof", tone=-0.7 * rows, normal=slope_normal(X, Y, Z, 8, 8, 6.5 / 5.5))
@@ -234,6 +251,9 @@ def lamp(v, frame, frames, k):
     m.put(box(X, Y, Z, C - 2.6, C + 2.6, C - 2.6, C + 2.6, 22, 23), "metal", tone=0.2)
     pane = box(X, Y, Z, C - 2, C + 2, C - 2, C + 2, 23, 28.5)
     m.put(pane, "lamp", tone=(Z > 26) * 0.6)
+    if m.fine:  # leaded panes: a pixel of came across the middle of each face
+        lead = (np.abs(X - C) < 0.25) | (np.abs(Y - C) < 0.25) | (np.abs(Z - 25.8) < 0.25)
+        m.put(pane & lead & ((np.abs(X - C) > 1.5) | (np.abs(Y - C) > 1.5)), "metal", tone=0.2)
     posts = (np.abs(np.abs(X - C) - 2.1) < 0.6) & (np.abs(np.abs(Y - C) - 2.1) < 0.6)
     m.put(box(X, Y, Z, C - 2.7, C + 2.7, C - 2.7, C + 2.7, 23, 28.5) & posts, "metal")
     m.put(box(X, Y, Z, C - 2.8, C + 2.8, C - 2.8, C + 2.8, 28.5, 29.3), "metal", tone=0.4)
@@ -255,10 +275,18 @@ def bench(v, frame, frames, k):
             m.put(box(X, Y, Z, x, x + 1, y, y + 1, 0, 5), "metal")
         m.put(box(X, Y, Z, x, x + 1, 5, 6, 0, 12), "metal")
         m.put(box(X, Y, Z, x - 0.3, x + 1.3, 5, 11.5, 7.5, 8.3), "wood")
-    slats = (np.floor(Y) % 2 == 0) * -0.7
-    m.put(box(X, Y, Z, 1.5, 14.5, 6, 11.5, 5, 6), "wood_light", tone=slats)
+    seat = box(X, Y, Z, 1.5, 14.5, 6, 11.5, 5, 6)
+    if m.fine:  # real gaps between the slats, grain along them and a screw at each support
+        seat &= (Y % 1.4) >= 0.5
+        grain = (value_noise(X * 0.3, Y * 4, Z, 1.0, 255) - 0.5) * 0.8
+        m.put(seat, "wood_light", tone=grain + ((Y % 1.4) >= 1.15) * -0.5)
+        for x in (3.0, 13.0):
+            m.put(seat & (np.abs(X - x) < 0.25) & (Z >= 5.5), "metal", tone=0.5)
+    else:
+        m.put(seat, "wood_light", tone=(np.floor(Y) % 2 == 0) * -0.7)
     for z in (7, 9.5):
-        m.put(box(X, Y, Z, 1.5, 14.5, 5.2, 6.2, z, z + 1.6), "wood_light", tone=0.2)
+        back = box(X, Y, Z, 1.5, 14.5, 5.2, 6.2, z, z + 1.6)
+        m.put(back, "wood_light", tone=0.2 - ((Z - z) < 0.5 / k) * 0.6 * m.fine)
     # Someone left their book.
     m.put(box(X, Y, Z, 9, 12.5, 7.2, 10.2, 6, 7.0), "poppy", tone=0.3)
     m.put(box(X, Y, Z, 9.2, 12.3, 10.0, 10.2, 6.1, 6.8), "cream", tone=0.6)
@@ -269,7 +297,11 @@ def picnic_table(v, frame, frames, k):
     m = Model.empty(0, 32, 0, 16, 0, 12, k=k)
     X, Y, Z = m.coords()
     slats = (np.floor(Y / 2.0) % 2 == 0) * -0.5 - ((Y % 2.0) < 0.35) * 0.8
-    m.put(box(X, Y, Z, 2, 30, 4, 12, 9, 10.2), "wood_light", tone=slats)
+    top = box(X, Y, Z, 2, 30, 4, 12, 9, 10.2)
+    if m.fine:  # gaps between the boards, and grain along them
+        top &= (Y % 2.0) >= 0.5
+        slats = slats + (value_noise(X * 0.3, Y * 4, Z, 1.0, 275) - 0.5) * 0.8
+    m.put(top, "wood_light", tone=slats)
     for y0 in (0.8, 12.2):
         m.put(box(X, Y, Z, 3, 29, y0, y0 + 3, 5, 6), "wood_light", tone=((Y % 1.5) < 0.3) * -0.6)
     for x in (7, 25):
@@ -277,7 +309,8 @@ def picnic_table(v, frame, frames, k):
             m.put(segment(X, Y, Z, a, b, 0.75), "wood")
         m.put(box(X, Y, Z, x - 0.6, x + 0.6, 0.5, 15.5, 4.2, 5), "wood")
     # A check runner draped across the middle and a picnic basket.
-    check = ((np.floor(X / 1.4) + np.floor(Y / 1.4)) % 2) == 0
+    sq = 1.4 / k ** 0.5  # smaller checks on finer grids
+    check = ((np.floor(X / sq) + np.floor(Y / sq)) % 2) == 0
     cloth = box(X, Y, Z, 12, 20, 3.6, 12.4, 10.2, 10.7) | \
         (box(X, Y, Z, 12, 20, 3.2, 12.8, 8.0, 10.7) & ((Y < 3.7) | (Y >= 12.3)))
     m.put(cloth & check, "red_paint", tone=0.6)

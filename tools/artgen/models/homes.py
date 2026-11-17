@@ -6,7 +6,7 @@ import numpy as np
 
 from palette import GLOW, _rgb
 from voxel import (Halo, Model, box, cone, cylinder, cylinder_normal, ellipsoid, gable, hash01,
-                   segment, slope_normal, value_noise)
+                   masonry, segment, slope_normal, value_noise)
 from models.nature import canopy
 
 
@@ -33,40 +33,77 @@ class Facade:
         """Voxels n layers inside the wall surface (0 = outermost); negative n is outside."""
         return (self.depth < -n) & (self.depth > -n - 1)
 
-    def window(self, a0, a1, z0, z1, glass="glass", frame="wood_light", cross=True, sill=True):
+    def window(self, a0, a1, z0, z1, glass="glass", frame="wood_light", cross=True, sill=True,
+               shutters=None):
         m, Z = self.m, self.Z
         rect = self._rect(a0, a1, z0, z1)
         m.carve(rect & self.layer(0))
-        lit_side = (self.along < a0 + 1.5) if self.left_is_low else (self.along >= a1 - 1.5)
-        shine = lit_side & (Z >= z1 - 2)
-        m.put(rect & self.layer(1), glass, tone=shine * 1.4 - (Z < z0 + 1) * 0.5)
+        if m.fine:  # a diagonal reflection across the panes, the reveal's shadow at the top
+            a = (self.along - a0) if self.left_is_low else (a1 - self.along)
+            streak = np.abs((a - (Z - z0) * 0.8) - (a1 - a0) * 0.25) < 0.7
+            tone = streak * 1.3 - (Z >= z1 - 0.5) * 0.9 - (Z < z0 + 0.5) * 0.3
+        else:
+            lit_side = (self.along < a0 + 1.5) if self.left_is_low else (self.along >= a1 - 1.5)
+            shine = lit_side & (Z >= z1 - 2)
+            tone = shine * 1.4 - (Z < z0 + 1) * 0.5
+        m.put(rect & self.layer(1), glass, tone=tone)
         ring = self._rect(a0 - 1, a1 + 1, z0 - 1, z1 + 1) & ~rect & self.layer(0)
         m.put(ring, frame, tone=0.2)
         if cross:
+            # Glazing bars stay a pixel wide on fine grids: four panes, not a thick cross.
             mid_a, mid_z = (a0 + a1) / 2, (z0 + z1) / 2
-            bars = (np.abs(self.along - mid_a) < 0.5) | (np.abs(Z - mid_z) < 0.5)
+            w = 0.5 / m.k
+            bars = (np.abs(self.along - mid_a) < w) | (np.abs(Z - mid_z) < w)
             m.put(rect & self.layer(1) & bars, frame, tone=-0.2)
         if sill:
-            m.put(self._rect(a0 - 1.5, a1 + 1.5, z0 - 1.6, z0 - 0.6) & (self.layer(0) | self.layer(-1)),
-                  frame, tone=0.5)
+            sill_box = self._rect(a0 - 1.5, a1 + 1.5, z0 - 1.6, z0 - 0.6) & (self.layer(0) | self.layer(-1))
+            m.put(sill_box, frame, tone=0.5 - (Z < z0 - 1.1) * 0.8 * m.fine)
+        if shutters and m.fine:
+            # Painted board shutters folded back beside the window, with a pixel of slat line.
+            for b0, b1 in ((a0 - 1 - (a1 - a0) / 2, a0 - 1), (a1 + 1, a1 + 1 + (a1 - a0) / 2)):
+                leaf = self._rect(b0, b1, z0 - 0.5, z1 + 0.5) & self.layer(-1)
+                slat = ((Z - z0) % 1.0) < 0.5
+                m.put(leaf, shutters, tone=0.3 - slat * 0.6)
 
     def door(self, a0, a1, z0, z1, material="wood", frame="wood_light", knob=True):
         m, Z = self.m, self.Z
         rect = self._rect(a0, a1, z0, z1)
         m.carve(rect & self.layer(0))
-        planks = ((self.along - a0) % 2.0 < 0.5) * -0.7
+        if m.fine:  # narrower planks, each its own tone, with pixel seams
+            rel = self.along - a0
+            board = np.floor(rel / 1.25)
+            planks = (rel % 1.25 < 0.5) * -0.9 + (hash01(board.astype(np.int64), 870) - 0.5) * 0.6
+        else:
+            planks = ((self.along - a0) % 2.0 < 0.5) * -0.7
         m.put(rect & self.layer(1), material, tone=planks + (Z > z1 - 1) * -0.8)
         m.put(self._rect(a0 - 1, a1 + 1, z0, z1 + 1) & ~rect & self.layer(0), frame, tone=0.1)
+        kx = a1 - 1.5 if self.left_is_low else a0 + 1.5
+        if m.fine:
+            # Strap hinges reaching from the hinge side, a ring handle and a keyhole.
+            h0, h1 = (a0, a0 + (a1 - a0) * 0.6) if kx > (a0 + a1) / 2 else (a1 - (a1 - a0) * 0.6, a1)
+            for hz in (z0 + 1.5, z1 - 2.0):
+                m.put(self._rect(h0, h1, hz, hz + 0.5) & self.layer(0), "metal", tone=-0.3)
         if knob:
-            kx = a1 - 1.5 if self.left_is_low else a0 + 1.5
-            m.put(self._rect(kx - 0.5, kx + 0.5, (z0 + z1) / 2 - 0.5, (z0 + z1) / 2 + 0.5)
-                  & self.layer(0), "metal", tone=1.5)
+            kz = (z0 + z1) / 2
+            m.put(self._rect(kx - 0.5, kx + 0.5, kz - 0.5, kz + 0.5) & self.layer(0), "metal", tone=1.5)
+            if m.fine:
+                m.put(self._rect(kx - 0.25, kx + 0.25, kz - 1.5, kz - 1.0) & self.layer(1), "ink")
 
     def flower_box(self, a0, a1, z, seed):
         m = self.m
-        m.put(self._rect(a0, a1, z - 1.5, z) & (self.layer(-1) | self.layer(-2)), "wood", tone=0.2)
+        m.put(self._rect(a0, a1, z - 1.5, z) & (self.layer(-1) | self.layer(-2)), "wood",
+              tone=0.2 - ((self.Z - (z - 1.5)) % 0.75 < 0.5 / m.k) * 0.6 * m.fine)
         blooms = self._rect(a0, a1, z, z + 1.5) & (self.layer(-1) | self.layer(-2))
-        pick = hash01(np.floor(self.along * 2).astype(np.int64), np.floor(self.Z).astype(np.int64), seed)
+        if m.fine:  # trailing leaves spill over the front board
+            spill = self._rect(a0 + 0.5, a1 - 0.5, z - 1.5, z) & self.layer(-3) & \
+                (hash01(np.floor(self.along * 2).astype(np.int64), np.floor(self.Z * 2).astype(np.int64),
+                        seed + 1) < 0.35 + (self.Z - z) * 0.3)
+            m.put(spill, "grass", tone=-0.2)
+            blooms = blooms | (self._rect(a0 + 0.5, a1 - 0.5, z + 1.5, z + 2.2)
+                               & (self.layer(-1) | self.layer(-2)))
+        # Blooms are a voxel each, so a box holds as many flowers as the grid allows.
+        pick = hash01(np.floor(self.along * 2 * m.k).astype(np.int64),
+                      np.floor(self.Z * m.k).astype(np.int64), seed)
         m.put(blooms & (pick < 0.55), "grass", tone=0.3)
         m.put(blooms & (pick >= 0.55) & (pick < 0.8), "poppy", tone=0.6)
         m.put(blooms & (pick >= 0.8), "cream", tone=0.6)
@@ -82,14 +119,24 @@ def gable_roof(m: Model, x0, x1, y0, y1, z0, rise, material="roof", verge="wood"
         across, along, half = np.abs(Y - (y0 + y1) / 2), X, (y1 - y0) / 2
     else:
         across, along, half = np.abs(X - (x0 + x1) / 2), Y, (x1 - x0) / 2
+    # Courses and tiles shrink a little on finer grids (more of them, each still several pixels)
+    # while their joints stay a pixel wide.
+    sc, px1 = m.k ** 0.5, 1 / m.k
+    row, tile = row / sc, 3.0 / sc
     rows = np.floor((half - across) / row)
-    joint = ((along + rows * 1.5) % 3.0) < 0.6
-    edge = ((half - across) % row) < 0.55
+    joint = ((along + rows * tile / 2) % tile) < 0.6 * px1
+    edge = ((half - across) % row) < 0.55 * px1
     if thatch:  # straw streaks running down the slope, a dark band at each course
-        streak = value_noise(along * 1.6, across * 0.25, Z * 0.25, 1.0, 801) - 0.5
-        tone = streak * 1.4 - 0.7 * (((half - across) % (row * 2)) < 0.6)
+        streak = value_noise(along * 1.6 * sc, across * 0.25, Z * 0.25, 1.0, 801) - 0.5
+        tone = streak * 1.4 - 0.7 * (((half - across) % (row * 2)) < 0.6 * px1)
     else:
-        tone = -0.9 * edge - 0.4 * joint + 0.35 * (rows % 2) + (value_noise(X, Y, Z, 3, 800) - 0.5) * 0.4
+        tone = -0.9 * edge - 0.4 * joint + 0.35 * (rows % 2) \
+            + (value_noise(X, Y, Z, 3, 800) - 0.5) * 0.4 / m.k
+        if m.fine:  # each tile its own shade, its lower lip catching the light above the joint
+            tid = np.floor((along + rows * tile / 2) / tile)
+            lip = (((half - across) % row) >= 0.55 * px1) & (((half - across) % row) < 1.1 * px1)
+            tone = tone + (hash01(rows.astype(np.int64), tid.astype(np.int64), 802) - 0.5) * 0.7 \
+                + lip * 0.5 - joint * 0.4
     shell = roof & ~gable(X, Y, Z, x0, x1, y0, y1, z0 + 0.01, rise - thick, along_x)
     ends = (along < (x0 if along_x else y0) + 1) | (along >= (x1 if along_x else y1) - 1)
     nrm = slope_normal(X, Y, Z, (x0 + x1) / 2, (y0 + y1) / 2, rise / half, along_x)
@@ -107,12 +154,16 @@ def cottage(v, frame, frames, k):
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 4, 28, 7, 25
     m.put(box(X, Y, Z, x0 - 1, x1 + 1, y0 - 1, y1 + 1, 0, 3), "stone",
-          tone=-0.8 * (((X + Y) % 4) < 0.6) - 0.6 * ((Z % 1.5) < 0.4))
+          tone=masonry(m, X + Y, Z, 1.0, 2.2, 811) if m.fine else
+          -0.8 * (((X + Y) % 4) < 0.6) - 0.6 * ((Z % 1.5) < 0.4))
     eave, rise = 15.0, 14.0
     walls = box(X, Y, Z, x0, x1, y0, y1, 3, eave + rise)
     under = gable(X, Y, Z, x0, x1, y0 - 0.01, y1 + 0.01, eave, rise)
-    m.put(walls & ((Z < eave) | under), "plaster",
-          tone=(value_noise(X, Y, Z, 2.5, 810) - 0.5) * 0.6)
+    # Lime plaster: gentle blotches; on fine grids fainter, plus the odd hairline crack.
+    plaster = (value_noise(X, Y, Z, 2.5, 810) - 0.5) * 0.6 / m.k
+    if m.fine:
+        plaster = plaster - (np.abs(value_noise(X + Y, Z * 0.3, X * 0, 1.5, 812) - 0.5) < 0.02) * 0.7
+    m.put(walls & ((Z < eave) | under), "plaster", tone=plaster)
     # Timber frame: corner posts, sill and head beams, a few studs and braces.
     beam = (Z < 4) | ((Z >= eave - 1) & (Z < eave))
     corner = ((X < x0 + 1.5) | (X >= x1 - 1.5)) & ((Y < y0 + 1.5) | (Y >= y1 - 1.5))
@@ -130,14 +181,21 @@ def cottage(v, frame, frames, k):
     m.put(box(X, Y, Z, 12.5, 19.5, y1 + 1, y1 + 3.5, 0, 1.6), "stone", tone=0.4)
     back = Facade(m, "-y", y0)
     for a in (8, 20):
-        back.window(a, a + 4, 7, 11)
+        back.window(a, a + 4, 7, 11, shutters="leaf_dark")
     for face, plane in (("+x", x1), ("-x", x0)):
         side = Facade(m, face, plane)
-        side.window(13, 19, 7, 11)
+        side.window(13, 19, 7, 11, shutters="leaf_dark")
         side.window(14.5, 17.5, 18, 21, cross=False, sill=False)
+    if m.fine:
+        # A wall lantern beside the door, on a little bracket.
+        m.put(front._rect(20.2, 20.8, 10.5, 11) & (front.layer(-1) | front.layer(-2)), "metal")
+        m.put(front._rect(20, 21, 8.8, 10.5) & front.layer(-2), "lamp")
+        m.put(front._rect(19.8, 21.2, 10.5, 11.2) & front.layer(-2), "metal", tone=0.3)
+        m.halos.append(Halo(20.5, y1 + 1.5, 9.7, 6, _rgb(GLOW[1]), 0.7))
     gable_roof(m, x0 - 2.5, x1 + 2.5, y0 - 3, y1 + 3, eave - 1, rise + 2.5)
     chim = box(X, Y, Z, 20, 24, 10, 14, 3, 35)
-    m.put(chim, "stone", tone=-0.8 * ((Z % 2) < 0.5) - 0.5 * (((X + Y + np.floor(Z / 2) * 2) % 4) < 0.6))
+    m.put(chim, "stone", tone=masonry(m, X + Y, Z, 1.0, 1.6, 813) if m.fine else
+          -0.8 * ((Z % 2) < 0.5) - 0.5 * (((X + Y + np.floor(Z / 2) * 2) % 4) < 0.6))
     m.put(box(X, Y, Z, 19.5, 24.5, 9.5, 14.5, 35, 36.5), "stone", tone=0.5)
     m.carve(box(X, Y, Z, 21, 23, 11, 13, 34, 37))
     m.put(box(X, Y, Z, 21, 23, 11, 13, 33, 34), "ink")
@@ -258,7 +316,14 @@ def barn(v, frame, frames, k):
     prof = np.where(across > knee_a, eave + (knee_z - eave) * (half - across) / (half - knee_a),
                     knee_z + (ridge - knee_z) * (knee_a - across) / knee_a)
     walls = box(X, Y, Z, x0, x1, y0, y1, 2, 99) & (Z < prof)
-    m.put(walls, "red_paint", tone=((X % 2.5) < 0.5) * -0.7 + ((Y % 2.5) < 0.5) * -0.7)
+    # Vertical boards; on fine grids the seams are a pixel and every board weathers differently.
+    j = 0.5 / k
+    boards = ((X % 2.5) < j) * -0.7 + ((Y % 2.5) < j) * -0.7
+    if m.fine:
+        bid = np.floor(X / 2.5) * 37 + np.floor(Y / 2.5)
+        boards = boards * 1.3 + (hash01(bid.astype(np.int64), 851) - 0.5) * 0.6 \
+            - (value_noise(X + Y, Z * 0.15, X * 0, 1.0, 852) > 0.7) * 0.4
+    m.put(walls, "red_paint", tone=boards)
     trim = ((X < x0 + 1) | (X >= x1 - 1)) & ((Y < y0 + 1) | (Y >= y1 - 1))
     m.put(walls & trim, "cream", tone=-0.2)
     m.put(walls & (Z >= prof - 1) & ((X < x0 + 1) | (X >= x1 - 1)), "cream", tone=-0.2)
@@ -293,13 +358,20 @@ def barn(v, frame, frames, k):
     roof = (X >= x0 - 1.5) & (X < x1 + 1.5) & (across < half + 2) & (Z < roof_top) & (Z >= roof_top - 2.2)
     # Courses are spaced by height, so they stay evenly spaced on screen on the steep lower
     # slope and the shallow upper one, lit or in shade.
-    course = np.floor(Z / 2.4)
+    # On finer grids the slates get smaller (still several pixels) and their lines a pixel.
+    sc, px1 = k ** 0.5, 1 / k
+    ch, sw = 2.4 / sc, 3.0 / sc
+    course = np.floor(Z / ch)
     pitch = np.where(across > knee_a, (knee_z - eave) / (half - knee_a), (ridge - knee_z) / knee_a)
     zero = X * 0 + Z * 0
     roof_n = (zero, np.sign(Y - yc) * pitch + zero, zero + 1.0)
-    m.put(roof, "slate", normal=roof_n, tone=-1.3 * ((Z % 2.4) < 0.7) + 0.5 * ((Z % 2.4) > 1.7)
-          - 0.6 * (((X + course * 1.5) % 3) < 0.6) - 0.5 * (across < 0.8)
-          + (value_noise(X, Y, Z, 2.5, 850) - 0.5) * 0.25)
+    slate = -1.3 * ((Z % ch) < 0.7 * px1) + 0.5 * ((Z % ch) > ch - 0.7 * px1) \
+        - 0.6 * (((X + course * sw / 2) % sw) < 0.6 * px1) - 0.5 * (across < 0.8) \
+        + (value_noise(X, Y, Z, 2.5, 850) - 0.5) * 0.25
+    if m.fine:
+        sid = np.floor((X + course * sw / 2) / sw)
+        slate = slate + (hash01(course.astype(np.int64), sid.astype(np.int64), 853) - 0.5) * 0.7
+    m.put(roof, "slate", normal=roof_n, tone=slate)
     m.put(roof & ((X < x0 - 0.5) | (X >= x1 + 0.5)), "cream", tone=-0.3)
     m.halos.append(Halo(x1 + 1.5, 16, 17.5, 12, _rgb(GLOW[1]), 0.8))
     return m
@@ -314,9 +386,10 @@ def windmill(v, frame, frames, k):
     ang = np.arctan2(Y - cy, X - cx)
     tower = (rho <= r) & (Z < 44)
     m.put(tower & (Z < 8), "stone", normal=cylinder_normal(X, Y, Z, cx, cy),
-          tone=-0.8 * ((Z % 2) < 0.5) - 0.6 * (np.cos(ang * 9 + np.floor(Z / 2) * 0.6) > 0.85))
+          tone=masonry(m, ang * 10.5, Z, 1.2, 2.4, 841) if m.fine else
+          -0.8 * ((Z % 2) < 0.5) - 0.6 * (np.cos(ang * 9 + np.floor(Z / 2) * 0.6) > 0.85))
     m.put(tower & (Z >= 8), "plaster", normal=cylinder_normal(X, Y, Z, cx, cy),
-          tone=(value_noise(X, Y, Z, 2.5, 840) - 0.5) * 0.5)
+          tone=(value_noise(X, Y, Z, 2.5, 840) - 0.5) * 0.5 / k)
     m.put(tower & (np.abs(Z - 8.5) < 0.7), "wood", normal=cylinder_normal(X, Y, Z, cx, cy))
     # Door, windows (two levels) and a balcony rail on the front.
     front = Facade(m, "+x", cx + 10.0)
@@ -342,17 +415,19 @@ def windmill(v, frame, frames, k):
     hx, hz = cx + 11.5, capz + 1.0
     m.put(segment(X, Y, Z, (cx + 6, cy, hz), (hx + 1.0, cy, hz), 1.3), "wood")
     turn = frame / frames * (math.pi / 2)
-    for k in range(4):
-        a = turn + k * math.pi / 2
+    # The sails live in a thin slab in front of the tower.
+    sl, X, Y, Z = m.window(hx, cy, hz, (2.5, 26, 26))
+    for n in range(4):
+        a = turn + n * math.pi / 2
         dy, dz = math.cos(a), math.sin(a)
         tip = (hx, cy + dy * 25, hz + dz * 25)
-        m.put(segment(X, Y, Z, (hx, cy, hz), tip, 0.9), "wood")
+        m.put(segment(X, Y, Z, (hx, cy, hz), tip, 0.9), "wood", sl=sl)
         # Sail cloth on the trailing side of each spar, with lattice lines.
         s = (Y - cy) * dy + (Z - hz) * dz           # distance along the spar
         w = -(Y - cy) * dz + (Z - hz) * dy          # distance across it
         cloth = (np.abs(X - hx) < 0.6) & (s > 5) & (s < 24.5) & (w > 0.8) & (w < 7.2)
         lattice = ((s % 4.0) < 0.8) | (w > 6.4)
-        m.put(cloth & ~lattice, "cream", tone=0.4 - (w < 1.8) * 0.6)
-        m.put(cloth & lattice, "wood_light", tone=-0.2)
-    m.put(ellipsoid(X, Y, Z, hx + 0.8, cy, hz, 1.6, 1.8, 1.8), "wood", tone=0.3)
+        m.put(cloth & ~lattice, "cream", tone=0.4 - (w < 1.8) * 0.6, sl=sl)
+        m.put(cloth & lattice, "wood_light", tone=-0.2, sl=sl)
+    m.put(ellipsoid(X, Y, Z, hx + 0.8, cy, hz, 1.6, 1.8, 1.8), "wood", tone=0.3, sl=sl)
     return m

@@ -32,7 +32,8 @@ def canopy(m: Model, clumps, material: str, seed: int, leafy=0.35, light_tone=0.
 
 
 def trunk(m: Model, x, y, r, z1, material="bark", lean=(0.0, 0.0), flare=1.6, taper=0.0):
-    X, Y, Z = m.coords()
+    sl, X, Y, Z = m.window(x + lean[0] / 2, y + lean[1] / 2, z1 / 2,
+                           max(z1 / 2, r + flare + max(map(abs, lean))) + 1)
     cx = x + lean[0] * Z / z1
     cy = y + lean[1] * Z / z1
     rr = r * (1 - taper * np.clip(Z / z1, 0, 1)) + flare * np.clip(1 - Z / 3.0, 0, 1) ** 2
@@ -44,19 +45,19 @@ def trunk(m: Model, x, y, r, z1, material="bark", lean=(0.0, 0.0), flare=1.6, ta
     if m.fine:  # narrow ridged plates between the grooves, catching light on their edges
         plates = value_noise(np.cos(ang) * 10 + 20, np.sin(ang) * 10 + 20, Z * 0.7, 1.0, 13)
         tone = tone + (plates > 0.62) * 0.8 - (plates < 0.3) * 0.7
-    m.put(mask, material, tone=tone, normal=cylinder_normal(X, Y, Z, cx, cy))
+    m.put(mask, material, tone=tone, normal=cylinder_normal(X, Y, Z, cx, cy), sl=sl)
 
 
 def roots(m: Model, rng: Rng, x, y, count, reach, r=1.1, material="bark"):
     """Short roots fanning out from the trunk base and diving into the ground."""
-    X, Y, Z = m.coords()
     a0 = rng.uniform(0, 6.28)
     for k in range(count):
         a = a0 + k * 6.28 / count + rng.uniform(-0.4, 0.4)
         d = reach * rng.uniform(0.7, 1.1)
         p, q = (x, y, 2.2), (x + d * math.cos(a), y + d * math.sin(a), -0.6)
+        sl, X, Y, Z = m.window(x, y, 1, reach * 1.1 + r + 2)
         m.put(segment(X, Y, Z, p, q, r) & (Z >= 0), material, tone=-0.2,
-              normal=(X - x, Y - y, Z * 0 + 1.2))
+              normal=(X - x, Y - y, Z * 0 + 1.2), sl=sl)
 
 
 # ---- leaf masses ----
@@ -159,7 +160,7 @@ def leaf_mass(m: Model, clumps, seed: int, materials=(("leaf", 1.0),), under="le
 LEAF = 1.1  # leaf size in design units on fine grids
 
 
-def _leaves(m: Model, solid, nrm, tone, seed):
+def _leaves(m: Model, solid, nrm, tone, seed, leaf=LEAF, period=None):
     """Individual leaves over a canopy: each lit on its sun side, with a dark notch where it
     overlaps the next, so tufts break into small shapes instead of smooth puffs. Notches on
     the outer skin are cut away, which frays the silhouette into leaf tips. Returns the solid
@@ -170,8 +171,8 @@ def _leaves(m: Model, solid, nrm, tone, seed):
     idx = np.nonzero(solid)
     X, Y, Z = m.coords()
     pts = np.stack([X[idx[0], 0, 0], Y[0, idx[1], 0], Z[0, 0, idx[2]]], 1)
-    f1, f2, off, h = cells3(pts * (1.0, 1.0, 1.3), LEAF, seed + 7)
-    side = (off @ SUN) / (LEAF * 0.5)
+    f1, f2, off, h = cells3(pts * (1.0, 1.0, 1.3), leaf, seed + 7, period=period)
+    side = (off @ SUN) / (leaf * 0.5)
     lit = np.clip(nrm[idx] @ SUN, 0, 1)
     gap = (f2 - f1) < 0.18
     # Shadowed leaves keep a gentler version of the same marks, lifted off the darkest ink.
@@ -183,9 +184,11 @@ def _leaves(m: Model, solid, nrm, tone, seed):
 
 
 def _branches(m: Model, base, clumps, r=1.2):
-    X, Y, Z = m.coords()
     for cx, cy, cz, cr in clumps:
-        m.put(segment(X, Y, Z, base, (cx, cy, cz - cr * 0.3), r), "bark", tone=-0.4)
+        q = np.array((cx, cy, cz - cr * 0.3))
+        mid = (np.asarray(base) + q) / 2
+        sl, X, Y, Z = m.window(*mid, np.linalg.norm(q - base) / 2 + r + 1)
+        m.put(segment(X, Y, Z, base, q, r), "bark", tone=-0.4, sl=sl)
 
 
 def _limbs(m: Model, rng: Rng, foot, top, trunk_h, clumps):
@@ -198,13 +201,13 @@ def _limbs(m: Model, rng: Rng, foot, top, trunk_h, clumps):
         q = np.array([cx, cy, cz - cr * 0.4])
         mid = (p + q) / 2 + (0, 0, rng.uniform(0.5, 2.0))
         sl, X, Y, Z = m.window(*((p + q) / 2), np.linalg.norm(q - p) / 2 + 2)
-        m.put_window(sl, segment(X, Y, Z, p, mid, 1.0) | segment(X, Y, Z, mid, q, 0.65), "bark",
-                     tone=-0.2)
+        m.put(segment(X, Y, Z, p, mid, 1.0) | segment(X, Y, Z, mid, q, 0.65), "bark",
+              tone=-0.2, sl=sl)
         a = rng.uniform(0, 6.28)
         twig = mid + (q - mid) * 0.5
         tip = twig + (np.cos(a) * 2.5, np.sin(a) * 2.5, 2.5)
         sl, X, Y, Z = m.window(*twig, 4)
-        m.put_window(sl, segment(X, Y, Z, twig, tip, 0.45), "bark", tone=0.1)
+        m.put(segment(X, Y, Z, twig, tip, 0.45), "bark", tone=0.1, sl=sl)
 
 
 # ---- broadleaf trees ----
@@ -287,7 +290,6 @@ def pine(v, frame, frames, k):
     m = Model.empty(-10, 26, -10, 26, 0, h + 3, k=k)
     trunk(m, C, C, 1.7, h * 0.4, flare=1.6, taper=0.3)
     roots(m, rng, C, C, 4, 4.0, r=0.9)
-    X, Y, Z = m.coords()
     t = 2 * math.pi * frame / max(frames, 1)
     # Tiers are steep skirts, each starting wider than the one above reaches at that height,
     # so every tier's drooping hem stands out from the one below it.
@@ -300,6 +302,8 @@ def pine(v, frame, frames, k):
         # Each tier sways on its own phase; the axis leans with height.
         sx = lx * z0 / h + (0.25 + 0.6 * f) * math.sin(t + n * 1.3)
         sy = ly * z0 / h
+        # Each tier is evaluated only in a box around it.
+        sl, X, Y, Z = m.window(C + sx, C + sy, z0 + height / 2 - 2, max(r * 1.45 + 2, height / 2 + 3))
         dx, dy = X - C - sx, Y - C - sy
         rho = np.sqrt(dx * dx + dy * dy) + 1e-3
         ang = np.arctan2(dy, dx)
@@ -327,7 +331,7 @@ def pine(v, frame, frames, k):
                                 1.0, 330 + v)
             tone = tone + (spray - 0.5) * 1.8 + 0.35
             mask = mask & ~(hem & (spray < 0.38))
-        m.put(mask, "leaf_dark", tone=tone, normal=nrm)
+        m.put(mask, "leaf_dark", tone=tone, normal=nrm, sl=sl)
     return m
 
 
@@ -421,22 +425,55 @@ def _flower_patch(v, k, seed, head):
     return m
 
 
+def _petal_angle(X, Y, x, y, count, phase):
+    """Angular position within a petal: 0 at a petal's middle, 1 at the gap between two."""
+    a = (np.arctan2(Y - y, X - x) * count / (2 * np.pi) + phase) % 1.0
+    return np.abs(a - 0.5) * 2
+
+
+def _leaf_pair(m, x, y, h, rng):
+    """Two small leaves on a stem (fine grids)."""
+    a = rng.uniform(0, 6.28)
+    for side in (0, math.pi):
+        z = h * rng.uniform(0.3, 0.55)
+        tip = (x + 1.3 * math.cos(a + side), y + 1.3 * math.sin(a + side), z + 0.8)
+        m.put_points(curve((x, y, z), tip, bend=(0, 0)), "leaf", tone=0.4)
+
+
 def _poppy(m, X, Y, Z, x, y, h, rng):
     cup = ellipsoid(X, Y, Z, x, y, h + 0.6, 1.3, 1.3, 0.9)
-    m.put(cup, "poppy", normal=ellipsoid_normal(X, Y, Z, x, y, h, 1.3, 1.3, 1.3), tone=0.4)
+    nrm = ellipsoid_normal(X, Y, Z, x, y, h, 1.3, 1.3, 1.3)
+    if m.fine:  # four crinkled petals with dark folds round a black boss
+        r = 1.6
+        cup = ellipsoid(X, Y, Z, x, y, h + 0.7, r, r, 1.0) & ~ellipsoid(X, Y, Z, x, y, h + 1.4, r - 0.5,
+                                                                        r - 0.5, 0.8)
+        fold = _petal_angle(X, Y, x, y, 4, rng.uniform(0, 1)) > 0.8
+        m.put(cup, "poppy", normal=nrm, tone=0.5 - fold * 0.9)
+        m.put(ellipsoid(X, Y, Z, x, y, h + 1.0, 0.5, 0.5, 0.4), "ink", tone=0.5)
+        _leaf_pair(m, x, y, h, rng)
+        return
+    m.put(cup, "poppy", normal=nrm, tone=0.4)
     m.put_points([(x, y, h + 1.2)], "ink")
 
 
 def _daisy(m, X, Y, Z, x, y, h, rng):
     petals = ellipsoid(X, Y, Z, x, y, h + 0.5, 1.6, 1.6, 0.6)
+    if m.fine:  # separate petals round a domed yellow centre
+        petals &= _petal_angle(X, Y, x, y, 8, rng.uniform(0, 1)) < 0.7
+        m.put(petals, "cream", tone=0.7 - (np.hypot(X - x, Y - y) > 1.2) * 0.3)
+        m.put(ellipsoid(X, Y, Z, x, y, h + 0.8, 0.6, 0.6, 0.45), "yellow", tone=0.6,
+              normal=(X - x, Y - y, Z - h))
+        _leaf_pair(m, x, y, h, rng)
+        return
     m.put(petals, "cream", tone=0.6)
     m.put_points([(x, y, h + 1.0)], "yellow", tone=0.8)
 
 
 def _lavender(m, X, Y, Z, x, y, h, rng):
-    for k in range(5):
-        m.put_points([(x + rng.uniform(-0.5, 0.5), y + rng.uniform(-0.5, 0.5), h + k * 0.8)],
-                     "violet", tone=0.2 + k * 0.25)
+    # Fine grids carry twice the florets, in pairs round the spike.
+    for k in range(5 * m.k):
+        m.put_points([(x + rng.uniform(-0.5, 0.5), y + rng.uniform(-0.5, 0.5), h + k * (0.8 / m.k))],
+                     "violet", tone=0.2 + k * (0.25 / m.k))
 
 
 def flowers_red(v, frame, frames, k):

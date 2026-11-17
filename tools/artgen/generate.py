@@ -6,6 +6,7 @@ The tile width comes from the catalog (`tile.w`) unless --tile overrides it; the
 assets/ unless --out names another directory (previews then go there too).
 """
 
+import os
 import sys
 import time
 from multiprocessing import Pool
@@ -53,8 +54,11 @@ def build_sprites(k: int) -> dict[str, pack.Sprite]:
                     for a, n in spec.CRITTER_ANIMS.items() for f in range(n)]
     sprites = terrain.build(cat, spec.WATER_FRAMES, k)
     sprites.update(fx.build(spec.FX_FRAMES, k))
-    # Big jobs first so the pool stays busy; results are merged by key, so order is irrelevant.
-    with Pool() as pool:
+    # Big footprints first so the pool stays busy; results are merged by key, so the order
+    # never shows in the output. The work is memory-bound numpy on large grids: beyond about a
+    # quarter of the hardware threads, workers only contend for memory bandwidth.
+    jobs.sort(key=lambda j: -j[5][0] * j[5][1])
+    with Pool(max(1, (os.cpu_count() or 4) // 4)) as pool:
         for part in pool.imap_unordered(_item_job, jobs, chunksize=1):
             sprites.update(part)
         for part in pool.imap_unordered(_critter_job, critter_jobs, chunksize=4):
