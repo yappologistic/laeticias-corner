@@ -179,6 +179,18 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "wishes") return equal(std::to_string(progress_.open.size()), a[1]);
     if (what == "ribbon") return yesNo(hud_.ribbonShowing());
+    if (what == "nook") {
+        const auto n = cat_.findNook(a[1]);
+        if (!n || a.size() != 3) return std::string("expect nook ID yes|no");
+        const bool found = progress_.nooks[static_cast<std::size_t>(*n)] != 0;
+        return found == (a[2] == "yes")
+                   ? std::nullopt
+                   : std::optional(std::format("nook {} {}found", a[1], found ? "" : "not "));
+    }
+    if (what == "sketch") {
+        static constexpr std::string_view kTabs[] = {"wishes", "visitors", "nooks"};
+        return equal(std::string(kTabs[static_cast<std::size_t>(hud_.sketchTab())]), a[1]);
+    }
     if (what == "zoom") return equal(scaleName(camera_.zoom()), a[1]);
     if (what == "toast") return yesNo(hud_.toastShowing());
     if (what == "panning") return yesNo(std::ranges::any_of(keyPan_, [](bool k) { return k; }));

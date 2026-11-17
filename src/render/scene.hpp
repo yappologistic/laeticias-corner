@@ -10,6 +10,7 @@
 
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
+#include "core/condition.hpp"
 #include "core/rng.hpp"
 #include "core/visitors.hpp"
 #include "core/world.hpp"
@@ -41,6 +42,7 @@ struct FrameParams {
     const World* world = nullptr;
     std::span<const Critter> critters;
     Ghost ghost;
+    std::span<const NearInstance> outlines; // nook areas to outline (the hovered nook)
     const Camera* camera = nullptr;
     Vec2 screen;
     Lighting light;
@@ -62,6 +64,8 @@ public:
     void onRemoved(const Item& item);
     // A few sparkles rising from a spot on the ground (continuous tile coordinates).
     void burst(Vec2 tile, Rng& rng);
+    // A newly found nook: its area pulses and sparkles.
+    void flourish(const NearInstance& nook, const World& world, Rng& rng);
     // Spawns and advances effects near the camera. Called once per simulation step.
     void update(float dt, const World& world, std::span<const Critter> critters, bool rain,
                 Rng& rng);
@@ -106,6 +110,10 @@ private:
         TilePos origin;
         float start;
     };
+    struct Pulse {
+        NearInstance area;
+        float start;
+    };
     struct Light {
         Vec2 pos;
         float radius;
@@ -133,6 +141,8 @@ private:
     void drawCritter(const Critter& c, bool silhouette);
     void drawShadows(const FrameParams& p);
     void drawMarkers(const FrameParams& p);
+    // Tiles of a nook's area (around its anchor, not under it), in the given colour.
+    void drawArea(const World& world, const NearInstance& area, SDL_FColor color);
     void drawParticles(bool ground);
     void drawLighting(const FrameParams& p);
     void drawGlow(const FrameParams& p);
@@ -181,6 +191,7 @@ private:
     std::vector<Entry> dynamic_;
     std::vector<Fade> fades_;
     std::vector<Pop> pops_;
+    std::vector<Pulse> pulses_;
     Particles particles_;
 };
 

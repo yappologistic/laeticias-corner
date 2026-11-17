@@ -1,0 +1,35 @@
+# A bench with a lamp and a tree beside it is recognised as the reading nook: its area pulses,
+# its name floats above it, a toast counts the page. Hovering its bench later names and
+# outlines it, and the sketchbook gains its Nooks tab.
+set unlock all
+expect nook reading_nook no
+click ui:build
+wait 10
+click ui:tab:garden
+wait 10
+click ui:tile:lamp
+wait 10
+click @30,29
+click ui:build
+wait 10
+click ui:tab:nature
+wait 10
+click ui:tile:oak
+wait 10
+click @28,28
+key escape
+wait 30
+expect nook reading_nook yes
+expect toast yes
+shot shots/nook_flourish.png
+wait 200
+move @29,29
+wait 40
+shot shots/nook_hover.png
+key j
+wait 12
+click ui:sketch:nooks
+wait 6
+expect sketch nooks
+shot shots/sketchbook_nooks.png
+quit

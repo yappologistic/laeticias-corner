@@ -204,3 +204,29 @@ TEST_CASE("Not now frees the slot; the wish returns after 600 s, after the other
     g.run(2);
     CHECK(g.done("reading_light"));
 }
+
+TEST_CASE("nooks are found when built, once, with their effects") {
+    Game g;
+    const int reading = *g.cat.findNook("reading_nook");
+    g.changed();
+    CHECK(g.progress.nooks[static_cast<std::size_t>(reading)] == 0);
+    g.place("lamp", 30, 29);
+    g.place("oak", 28, 28);
+    CHECK(g.progress.nooks[static_cast<std::size_t>(reading)] == 1);
+    CHECK(g.rules.nookHere()[static_cast<std::size_t>(reading)] == 1);
+    REQUIRE(g.rules.events().size() == 1);
+    CHECK(g.rules.events()[0].kind == ProgressEvent::Kind::NookFound);
+    g.rules.clearEvents();
+    // Broken and re-formed: present again, found only once.
+    g.world.removeItem(*g.world.itemIndexAt({30, 29}));
+    g.changed();
+    CHECK(g.rules.nookHere()[static_cast<std::size_t>(reading)] == 0);
+    g.place("lamp", 30, 29);
+    CHECK(g.rules.events().empty());
+    // Effects: the firefly hollow allows more fireflies; a kitchen garden speeds its beds.
+    CHECK(g.rules.extraVisitors(*g.cat.findVisitor("firefly")) == 0);
+    for (int x = 24; x < 28; ++x) g.place("planter", x, 37);
+    g.place("scarecrow", 25, 38);
+    CHECK(g.rules.nookGrowth(g.world, {24, 37, 25, 38}) == doctest::Approx(1.25f));
+    CHECK(g.rules.nookGrowth(g.world, {35, 30, 36, 31}) == doctest::Approx(1.0f));
+}

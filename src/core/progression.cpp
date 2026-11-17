@@ -8,8 +8,36 @@ namespace lc {
 
 Progression::Progression(const Catalog& cat)
     : cat_(cat), trueSince_(cat.wishes.size(), -1.0), grantAt_(cat.wishes.size(), -1.0),
-      status_(cat.wishes.size()) {
+      status_(cat.wishes.size()), nookHere_(cat.nooks.size(), 0) {
     events_.reserve(16);
+    instances_.reserve(64);
+}
+
+int Progression::extraVisitors(int visitor) const {
+    int extra = 0;
+    for (std::size_t n = 0; n < cat_.nooks.size(); ++n)
+        if (nookHere_[n] != 0)
+            for (const Amount& c : cat_.nooks[n].caps)
+                if (c.index == visitor) extra += c.count;
+    return extra;
+}
+
+float Progression::nookGrowth(const World& world, TileRect rect) const {
+    float mul = 1.0f;
+    for (std::size_t n = 0; n < cat_.nooks.size(); ++n) {
+        const NookDef& def = cat_.nooks[n];
+        if (nookHere_[n] == 0 || def.growth == 1.0f) continue;
+        cat_.conditions.instances(def.near, world, instances_);
+        for (const NearInstance& in : instances_) {
+            const TileRect area{in.footprint.x0 - in.within, in.footprint.y0 - in.within,
+                                in.footprint.x1 + in.within, in.footprint.y1 + in.within};
+            if (area.intersects(rect)) {
+                mul = std::max(mul, def.growth);
+                break;
+            }
+        }
+    }
+    return mul;
 }
 
 bool Progression::offerable(int wish, const World& world, const Progress& p, const CondFacts& facts,
@@ -68,7 +96,17 @@ void Progression::refresh(int wish, const World& world, const CondFacts& facts, 
 }
 
 void Progression::evaluate(const World& world, Progress& p, const CondFacts& facts, double played) {
-    for (const int w : p.open) refresh(w, world, facts, played);
+    // Nooks first: wishes and recipes may name them.
+    for (std::size_t n = 0; n < cat_.nooks.size(); ++n) {
+        nookHere_[n] = cat_.conditions.eval(cat_.nooks[n].condition, world, facts) ? 1 : 0;
+        if (nookHere_[n] != 0 && p.nooks[n] == 0) {
+            p.nooks[n] = 1;
+            events_.push_back({ProgressEvent::Kind::NookFound, static_cast<int>(n), false});
+        }
+    }
+    CondFacts f = facts;
+    f.nookHere = nookHere_;
+    for (const int w : p.open) refresh(w, world, f, played);
 }
 
 void Progression::grant(int wish, Progress& p, double played) {

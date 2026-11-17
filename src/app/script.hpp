@@ -5,7 +5,9 @@
 // Points (one token):  X,Y      window pixels
 //                      @TX,TY   centre of map tile (TX, TY) under the current camera
 //                      ui:NAME  centre of a UI widget: build, remove, sound, photo, clock, rain,
-//                               journal, journal_close, undo, redo, recentre, zoom_out, zoom_in,
+//                               journal (the sketchbook), journal_close, undo, redo, recentre,
+//                               zoom_out, zoom_in, tray, card:N, not_now, sketch:wishes|visitors|
+//                               nooks, sketch_not_now,
 //                               scroll_up, scroll_down, tab:<category id>, tile:<item or terrain
 //                               id>, or of the toast and hint panels: toast, hint
 //
@@ -35,6 +37,7 @@
 //       file PATH yes|no (PATH, relative to the save directory, exists)
 //       widget NAME yes|no (the widget is laid out now; also card:N, the N-th wish card)
 //       wish ID open|done|waiting | wishes N (open now) | ribbon yes|no (a wish was granted)
+//       sketch wishes|visitors|nooks (the sketchbook's open tab) | nook ID yes|no (found)
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.

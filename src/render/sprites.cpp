@@ -88,6 +88,7 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
     t.cliffSW = atlas.resolve("edge/cliff_sw", atlas.placeholderEdgeSW());
     t.tileOk = atlas.resolve("ui/tile_ok", atlas.placeholderTile());
     t.tileBad = atlas.resolve("ui/tile_bad", atlas.placeholderTile());
+    t.tileArea = atlas.resolve("ui/tile_area", atlas.placeholderTile());
     t.placeholder = atlas.placeholderBox();
     if (shadowPeak > 0.0f) t.shadowOpacity = shadowPeak;
 
@@ -153,7 +154,8 @@ std::vector<std::string> requiredSpriteKeys(const Catalog& cat) {
         for (const char* a : kCritterAnims)
             keys.push_back(std::format("critter/{}/{}/f0", v.id, a));
     for (const char* f : kFxNames) keys.push_back(std::format("fx/{}/f0", f));
-    for (const char* k : {"edge/cliff_se", "edge/cliff_sw", "ui/tile_ok", "ui/tile_bad"})
+    for (const char* k :
+         {"edge/cliff_se", "edge/cliff_sw", "ui/tile_ok", "ui/tile_bad", "ui/tile_area"})
         keys.emplace_back(k);
     return keys;
 }

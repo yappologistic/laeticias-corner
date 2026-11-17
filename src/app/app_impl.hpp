@@ -91,6 +91,8 @@ private:
     [[nodiscard]] CondFacts facts() const;
     void updateProgress();
     void onWishGranted(int wish);
+    void onNookFound(int nook);
+    void updateHoverNook();
     [[nodiscard]] std::string_view waitingText(int node, std::string& out) const;
     [[nodiscard]] Vec2 screen() const {
         return {static_cast<float>(pixelW_), static_cast<float>(pixelH_)};
@@ -135,6 +137,19 @@ private:
     double evalDue_ = -1;                // play time of a debounced evaluation
     std::uint64_t factsKey_ = ~0ULL;     // what the facts were at the last evaluation
     mutable std::vector<WishCard> cards_;
+    // Nooks: the one under the pointer (outlined, named) and names floating over new ones.
+    struct NookLabel {
+        int nook;
+        Vec2 world; // above its anchor
+        float start;
+    };
+    std::vector<NookLabel> nookLabels_;
+    mutable std::vector<FloatLabel> floatLabels_;
+    std::vector<NearInstance> hoverNook_;
+    std::string_view hoverTip_;
+    std::optional<TilePos> hoverNookTile_;
+    std::uint64_t hoverNookRevision_ = ~0ULL;
+    bool loading_ = true; // the first evaluation finds what was already there, quietly
     mutable std::array<std::string, tuning::kMaxOpenWishes> cardDetail_;
     // The open world save and the profile shared by all of them.
     std::string worldName_;

@@ -16,9 +16,9 @@
 namespace lc {
 
 struct ProgressEvent {
-    enum class Kind : std::uint8_t { WishOffered, WishGranted };
+    enum class Kind : std::uint8_t { WishOffered, WishGranted, NookFound };
     Kind kind = Kind::WishOffered;
-    int index = 0;        // wish
+    int index = 0;        // wish or nook
     bool already = false; // WishOffered: its goal already held, so it is granted shortly
 };
 
@@ -48,6 +48,12 @@ public:
     [[nodiscard]] const WishStatus& status(int wish) const {
         return status_[static_cast<std::size_t>(wish)];
     }
+    // Per nook: an instance exists now (recomputed by evaluate).
+    [[nodiscard]] std::span<const std::uint8_t> nookHere() const { return nookHere_; }
+    // Extra visitors nooks allow (their `cap` effects), per visitor.
+    [[nodiscard]] int extraVisitors(int visitor) const;
+    // Growth multiplier nooks give a bed whose footprint is `rect`.
+    [[nodiscard]] float nookGrowth(const World& world, TileRect rect) const;
     // Whether a wish could be offered now (exposed for tests and the sketchbook).
     [[nodiscard]] bool offerable(int wish, const World& world, const Progress& p,
                                  const CondFacts& facts, double played) const;
@@ -62,7 +68,9 @@ private:
     std::vector<double> grantAt_;   // per wish: an offered wish already met, granted then
     std::vector<WishStatus> status_;
     std::vector<ProgressEvent> events_;
-    double nextOffer_ = 0; // play time of the next pacing check
+    std::vector<std::uint8_t> nookHere_;
+    mutable std::vector<NearInstance> instances_; // scratch for area lookups
+    double nextOffer_ = 0;                        // play time of the next pacing check
 };
 
 } // namespace lc

@@ -715,8 +715,10 @@ TEST_CASE("the toast and the hint line stop the pointer; small windows keep dock
         CHECK(safe.h >= 0);
         if (screen.x >= 960) {
             const auto toastAt = [&]() {
-                in.x = screen.x * 0.5f;
-                in.y = theme::kMargin + theme::kToastH * 0.5f;
+                const auto at = hud.widgetCentre("toast", m);
+                REQUIRE(at);
+                in.x = at->x;
+                in.y = at->y;
                 hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
                 return hud.wantsMouse();
             };

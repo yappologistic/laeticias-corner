@@ -1,0 +1,54 @@
+# The sketchbook: pages and the way to the next land, open and granted wishes, common visitors
+# with hints until seen and, after four, the rarer ones as silhouettes; tabs by click or arrows.
+set unlock all
+click ui:build
+wait 10
+click ui:tab:homes
+wait 10
+click ui:tile:cottage
+wait 10
+click @28,31
+click ui:build
+wait 10
+click ui:tile:coop
+wait 10
+click @33,30
+click ui:build
+wait 10
+click ui:tab:nature
+wait 10
+click ui:tile:flowers_white
+wait 10
+click @24,34
+click @25,34
+key escape
+wait 150
+expect seen cat
+expect seen hen
+expect seen butterfly
+set played 30
+wait 2
+set played 34
+wait 2
+set played 70
+wait 4
+expect wish first_flowers done
+key j
+wait 12
+expect journal open
+expect sketch wishes
+shot shots/sketchbook_wishes.png
+key right
+wait 4
+expect sketch visitors
+shot shots/sketchbook_visitors.png
+wheel -1 ui:journal_close
+wait 4
+shot shots/sketchbook_visitors_scrolled.png
+click ui:sketch:wishes
+wait 4
+expect sketch wishes
+key j
+wait 12
+expect journal closed
+quit

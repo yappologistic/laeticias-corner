@@ -51,6 +51,7 @@ struct SpriteTables {
     SpriteId cliffSW = 0;
     SpriteId tileOk = 0;
     SpriteId tileBad = 0;
+    SpriteId tileArea = 0;       // soft white diamond, tinted for nook areas
     SpriteId placeholder = 0;    // drawn for anything that has no art
     float shadowOpacity = 0.35f; // opacity of the composited shadow layer
     Reach groundReach;

@@ -51,12 +51,23 @@ struct Ribbon {
     int iconCount = 0;
 };
 
+// A name floating over the world (a nook just found), at a window position.
+struct FloatLabel {
+    Vec2 at;
+    std::string_view text;
+    float alpha = 1;
+};
+
 struct HudModel {
     const Catalog* cat = nullptr;
     const ThumbSet* thumbs = nullptr;
     const Visitors* visitors = nullptr;
     const Progress* progress = nullptr; // unlocks and new-piece dots; null: everything unlocked
     std::span<const WishCard> wishes;   // the open wishes, in the order they were offered
+    int pages = 0;                      // sketchbook pages: visitors seen and nooks found
+    int pagesTotal = 0;
+    int nextStagePages = -1; // pages the next land stage opens at; -1: all open
+    std::string_view nextStageName;
     Tool tool = Tool::None;
     int selection = -1; // item index (Place) or terrain index (Paint)
     int category = 0;   // open drawer tab
@@ -73,6 +84,8 @@ struct HudModel {
     bool canZoomOut = true;
     std::string_view hint;
     std::string_view warning;
+    std::string_view worldTip; // what the pointer rests on in the world (a nook's name...)
+    std::span<const FloatLabel> labels;
     float brightness = 0; // of the scene behind the glass, 0 dark .. 1 bright
 };
 
@@ -108,6 +121,7 @@ struct HudAction {
         SeenNew,    // the pointer reached a tile with a "new" dot: `arg` is its entry code
         OpenWishes, // the "+N" tile or a wish card: the sketchbook's wishes; `arg` a wish or -1
         Snooze,     // "Not now" on wish `arg`
+        PageTurn,   // the sketchbook changed tab
         Hover
     };
     Kind kind;
@@ -154,6 +168,10 @@ public:
     // Scrolls the open drawer so a named tile ("tile:<id>") is laid out from the next update;
     // false when the tile is not in the open tab.
     bool reveal(std::string_view name, const HudModel& m);
+    // Opens the sketchbook on a tab (0 wishes, 1 visitors, 2 nooks) / turns its pages.
+    void openSketchbook(int tab);
+    void turnPage(int delta, const HudModel& m);
+    [[nodiscard]] int sketchTab() const { return sketchTab_; }
     void toast(std::string text);
     void ribbon(Ribbon r);
     [[nodiscard]] bool ribbonShowing() const { return ribbonTime_ > 0.0f; }
@@ -213,13 +231,19 @@ private:
     void drawTab(Painter& p, const Widget& w, float alpha) const;
     void drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) const;
     void drawTitle(Painter& p, const HudModel& m) const;
-    void drawJournal(Painter& p, const HudModel& m) const;
+    void layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, float s);
+    void drawSketchbook(Painter& p, const HudModel& m) const;
+    [[nodiscard]] static int sketchTabs(const HudModel& m);
+    [[nodiscard]] std::string_view rewardText(const Catalog& cat, const Reward& r) const;
+    void drawPill(Painter& p, const Widget& w, float alpha) const;
     void drawHint(Painter& p, const HudModel& m) const;
     void drawToast(Painter& p) const;
     void layoutTray(const Font& font, Vec2 screen, float s);
     void drawTray(Painter& p) const;
     void drawRibbon(Painter& p) const;
     void drawTooltip(Painter& p) const;
+    void drawWorldTip(Painter& p, const HudModel& m) const;
+    void drawLabels(Painter& p, const HudModel& m) const;
 
     std::vector<Widget> widgets_;
     std::vector<Panel> panels_; // the docks; always shown, never overlapping
@@ -233,6 +257,8 @@ private:
 
     float scale_ = 1;
     Vec2 screen_;
+    Vec2 pointer_;
+    float worldTipT_ = 0;
     int hovered_ = 0;
     int pointed_ = 0;
     int active_ = 0;
@@ -252,6 +278,24 @@ private:
     std::string hintText_;
     std::string lockLabel_; // "+N" and its tooltip for the open tab's lock tile
     std::string lockTip_;
+
+    // The sketchbook: tabs of rows, scrolled a row at a time.
+    struct Row {
+        enum class Kind : std::uint8_t { Section, OpenWish, GrantedWish, Visitor, Nook };
+        Kind kind;
+        int index; // section, wish card, wish, visitor or nook
+        float h;
+    };
+    std::vector<Row> rows_;
+    int sketchTab_ = 0;
+    int sketchScroll_ = 0;
+    int sketchShown_ = 0;
+    bool sketchMore_ = false;
+    float sketchBody_ = 0;
+    std::string pagesText_;
+    std::string untilText_;
+    std::string noteLabel_;
+    mutable std::string rewardText_;
 
     // The wish tray: cards slide in when offered and fade up when they leave.
     struct TrayCard {

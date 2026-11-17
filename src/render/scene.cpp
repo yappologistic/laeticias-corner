@@ -67,6 +67,7 @@ Scene::Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat)
     chimneys_.reserve(64);
     fades_.reserve(kMaxFades);
     pops_.reserve(kMaxPops);
+    pulses_.reserve(16);
     dynamic_.reserve(256);
 }
 
@@ -233,6 +234,25 @@ void Scene::burst(Vec2 tile, Rng& rng) {
                          {0, -tuning::kSparkleRise * u}, rng.range(0.6f, 1.0f));
 }
 
+void Scene::flourish(const NearInstance& nook, const World& world, Rng& rng) {
+    pulses_.push_back({nook, now_});
+    const TileRect& f = nook.footprint;
+    for (int i = 0; i < 8; ++i) {
+        const TilePos t{rng.range(f.x0 - nook.within, f.x1 + nook.within - 1),
+                        rng.range(f.y0 - nook.within, f.y1 + nook.within - 1)};
+        if (world.hasGround(t))
+            burst({static_cast<float>(t.x) + 0.5f, static_cast<float>(t.y) + 0.5f}, rng);
+    }
+}
+
+void Scene::drawArea(const World& world, const NearInstance& area, SDL_FColor color) {
+    const TileRect& f = area.footprint;
+    for (int y = f.y0 - area.within; y < f.y1 + area.within; ++y)
+        for (int x = f.x0 - area.within; x < f.x1 + area.within; ++x)
+            if (!f.contains(TilePos{x, y}) && world.hasGround({x, y}))
+                sprite(tables_.tileArea, iso_.toWorld(TilePos{x, y}), color);
+}
+
 void Scene::onRemoved(const Item& item) {
     if (fades_.size() == kMaxFades) fades_.erase(fades_.begin());
     // The connect mask is frozen at removal time; neighbours no longer include the item.
@@ -246,6 +266,8 @@ void Scene::update(float dt, const World& world, std::span<const Critter> critte
     now_ += dt;
     std::erase_if(fades_, [&](const Fade& f) { return now_ - f.start > tuning::kFadeOutSeconds; });
     std::erase_if(pops_, [&](const Pop& p) { return now_ - p.start > tuning::kPopSeconds; });
+    std::erase_if(pulses_,
+                  [&](const Pulse& p) { return now_ - p.start > tuning::kNookPulseSeconds; });
     const float u = iso_.tileH();
 
     for (const Vec2& c : chimneys_) {
@@ -525,8 +547,15 @@ void Scene::drawShadows(const FrameParams& p) {
 }
 
 void Scene::drawMarkers(const FrameParams& p) {
-    // Placement markers sit on the ground under everything else.
+    // Placement markers and nook areas sit on the ground under everything else.
     const World& world = *p.world;
+    for (const Pulse& pl : pulses_) {
+        const float k = (now_ - pl.start) / tuning::kNookPulseSeconds;
+        drawArea(world, pl.area,
+                 {1.0f, 0.86f, 0.55f, tuning::kNookPulseAlpha * std::sin(k * 3.14159f)});
+    }
+    for (const NearInstance& o : p.outlines)
+        drawArea(world, o, {1, 1, 1, tuning::kNookOutlineAlpha});
     const auto marker = [&](TilePos t, bool ok) {
         if (world.hasGround(t))
             sprite(ok ? tables_.tileOk : tables_.tileBad, iso_.toWorld(t), {1, 1, 1, 0.9f});

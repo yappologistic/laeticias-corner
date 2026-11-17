@@ -49,6 +49,11 @@ inline constexpr double kWishGrantHold = 1.5;      // a goal must hold this long
 inline constexpr double kWishAlreadyDoneDelay = 3.0;
 inline constexpr double kWishPacingTick = 1.0; // offers are considered once a second
 inline constexpr double kConditionDebounce = 0.25;
+inline constexpr float kNookPulseSeconds = 1.6f; // a found nook's area pulses this long
+inline constexpr float kNookPulseAlpha = 0.5f;
+inline constexpr float kNookLabelSeconds = 3.5f;  // its name floats above it this long
+inline constexpr float kNookOutlineAlpha = 0.22f; // the hovered nook's area
+inline constexpr float kNookLabelLift = 3.0f;     // tile heights above the anchor's centre
 
 // Visitors
 inline constexpr int kVisitorsPerNeed = 2; // satisfied once -> 2 visitors, twice -> 4...

@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <format>
 #include <iterator>
+#include <utility>
 
 namespace lc {
 namespace {
@@ -38,6 +39,8 @@ constexpr std::string_view kDiscover = "sfx/discover.wav";
 constexpr std::string_view kPaint = "sfx/paint.wav";
 constexpr std::string_view kWish = "sfx/wish.wav";
 constexpr std::string_view kWishGranted = "sfx/wish_granted.wav";
+constexpr std::string_view kPage = "sfx/page.wav";
+constexpr std::string_view kNook = "sfx/nook.wav";
 } // namespace sfx
 
 constexpr std::string_view kPhotoDir = "photos";
@@ -452,6 +455,7 @@ CondFacts App::facts() const {
     f.raining = rain_;
     f.present = visitors_.presence();
     f.seen = visitors_.seenFlags();
+    f.nookHere = progression_.nookHere();
     using C = Counter;
     const auto at = [&](C c) -> int& { return f.counters[static_cast<std::size_t>(c)]; };
     at(C::Wishes) = static_cast<int>(progress_.granted.size());
@@ -484,7 +488,15 @@ void App::updateProgress() {
     }
     if (evaluate) progression_.evaluate(world_, progress_, f, played_);
     progression_.tick(world_, progress_, f, played_, !photo_);
+    for (std::size_t v = 0; v < gates_.size(); ++v)
+        gates_[v].extra = progression_.extraVisitors(static_cast<int>(v));
+    // What was already there when the world opened is found quietly (a migrated world's nooks).
+    const bool quiet = std::exchange(loading_, false);
     for (const ProgressEvent& e : progression_.events()) {
+        if (quiet && e.kind == ProgressEvent::Kind::NookFound) {
+            markDirty();
+            continue;
+        }
         switch (e.kind) {
         case ProgressEvent::Kind::WishOffered: {
             play(sfx::kWish);
@@ -497,6 +509,7 @@ void App::updateProgress() {
             break;
         }
         case ProgressEvent::Kind::WishGranted: onWishGranted(e.index); break;
+        case ProgressEvent::Kind::NookFound: onNookFound(e.index); break;
         }
         markDirty();
     }
@@ -531,6 +544,46 @@ void App::onWishGranted(int wish) {
     }
     r.quote = std::vformat(strings::kThanks, std::make_format_args(def.thanks, cat_.resident.name));
     hud_.ribbon(std::move(r));
+}
+
+void App::onNookFound(int nook) {
+    const NookDef& def = cat_.nooks[static_cast<std::size_t>(nook)];
+    play(sfx::kNook);
+    const int pages = visitors_.seenCount() + progress_.nooksFound();
+    const int total = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
+    hud_.toast(std::vformat(strings::kToastNewNook, std::make_format_args(def.name, pages, total)));
+    std::vector<NearInstance> found;
+    cat_.conditions.instances(def.near, world_, found);
+    if (found.empty()) return;
+    const NearInstance& in = found.front();
+    scene_->flourish(in, world_, rng_);
+    const auto f = [](int v) { return static_cast<float>(v); };
+    const TileRect& r = in.footprint;
+    Vec2 top = cat_.iso().toWorld(f(r.x0 + r.x1) * 0.5f, f(r.y0 + r.y1) * 0.5f);
+    top.y -= cat_.iso().tileH() * tuning::kNookLabelLift;
+    nookLabels_.push_back({nook, top, simTime_});
+}
+
+void App::updateHoverNook() {
+    // Recomputed only when the pointer changes tile or the world changes.
+    const std::optional<TilePos> tile = tool_ == Tool::None ? hover_ : std::nullopt;
+    if (tile == hoverNookTile_ && world_.revision() == hoverNookRevision_) return;
+    hoverNookTile_ = tile;
+    hoverNookRevision_ = world_.revision();
+    hoverNook_.clear();
+    hoverTip_ = {};
+    if (!tile) return;
+    std::vector<NearInstance> found;
+    for (std::size_t n = 0; n < cat_.nooks.size() && hoverNook_.empty(); ++n) {
+        if (progression_.nookHere()[n] == 0) continue;
+        cat_.conditions.instances(cat_.nooks[n].near, world_, found);
+        for (const NearInstance& in : found)
+            if (in.footprint.contains(*tile)) {
+                hoverNook_.push_back(in);
+                hoverTip_ = cat_.nooks[n].name;
+                break;
+            }
+    }
 }
 
 std::string_view App::waitingText(int node, std::string& out) const {
@@ -694,6 +747,14 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         default: return -1;
         }
     }();
+    // While the sketchbook is open the arrows turn its pages (WASD still pans).
+    if (journalOpen_ && !photo_ && (key == SDLK_LEFT || key == SDLK_RIGHT)) {
+        if (k.down && !k.repeat) {
+            hud_.turnPage(key == SDLK_LEFT ? -1 : 1, model());
+            play(sfx::kPage, tuning::kUiSfxLevel);
+        }
+        return;
+    }
     if (panIndex >= 0) {
         // A release always stops the pan, whatever modifiers are held by then.
         if (!k.down)
@@ -868,7 +929,7 @@ HudModel App::model() const {
         c.ready = st.ready;
         std::string& detail = cardDetail_[std::min(i, cardDetail_.size() - 1)];
         detail.clear();
-        if (st.count >= 0) {
+        if (st.count >= 0 && !def.progress.empty()) {
             c.progress = static_cast<float>(st.count) / static_cast<float>(std::max(1, st.min));
             std::format_to(std::back_inserter(detail), strings::kWishCount,
                            std::min(st.count, st.min), st.min, def.progress);
@@ -879,6 +940,20 @@ HudModel App::model() const {
         cards_.push_back(c);
     }
     m.wishes = cards_;
+    m.worldTip = hoverTip_;
+    floatLabels_.clear();
+    for (const NookLabel& l : nookLabels_) {
+        const float k = (simTime_ - l.start) / tuning::kNookLabelSeconds;
+        const float fade = std::min({1.0f, k * 6.0f, (1.0f - k) * 4.0f});
+        floatLabels_.push_back({camera_.worldToScreen(l.world, screen()),
+                                cat_.nooks[static_cast<std::size_t>(l.nook)].name, fade});
+    }
+    m.labels = floatLabels_;
+    m.pages = visitors_.seenCount() + progress_.nooksFound();
+    m.pagesTotal = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
+    m.nextStagePages = nextStagePages(cat_, progress_.stage);
+    if (m.nextStagePages >= 0)
+        m.nextStageName = cat_.stages[static_cast<std::size_t>(progress_.stage) + 1].name;
     m.tool = tool_;
     m.selection = selection_;
     m.category = category_;
@@ -979,8 +1054,10 @@ void App::applyHudActions() {
         }
         case K::OpenWishes:
             journalOpen_ = true;
+            hud_.openSketchbook(0);
             play(sfx::kOpen, tuning::kUiSfxLevel);
             break;
+        case K::PageTurn: play(sfx::kPage, tuning::kUiSfxLevel); break;
         case K::Snooze:
             if (a.arg >= 0) {
                 progression_.snooze(a.arg, progress_, played_);
@@ -1147,6 +1224,10 @@ void App::step(float dt) {
             play(def.voice, tuning::kVoiceLevel, true);
     }
     updateProgress();
+    std::erase_if(nookLabels_, [&](const NookLabel& l) {
+        return simTime_ - l.start > tuning::kNookLabelSeconds;
+    });
+    updateHoverNook();
     scene_->update(dt, world_, visitors_.critters(), rain_, rng_);
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);
@@ -1175,6 +1256,7 @@ void App::render() {
     p.world = &world_;
     p.critters = visitors_.critters();
     p.ghost = ghost();
+    p.outlines = hoverNook_;
     p.camera = &camera_;
     p.screen = screen();
     p.light = lightingAt(clock_.time(), rain_);

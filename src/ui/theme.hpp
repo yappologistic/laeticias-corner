@@ -25,6 +25,8 @@ inline constexpr SDL_FColor kChip{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kDivider{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kFlash{1.0f, 1.0f, 1.0f, 1.0f};
 inline constexpr SDL_FColor kDotRim{0.06f, 0.08f, 0.07f, 0.7f};
+inline constexpr SDL_FColor kSilhouette{0.06f, 0.07f, 0.06f, 0.92f};     // visitors not seen yet
+inline constexpr SDL_FColor kSilhouetteBack{0.85f, 0.88f, 0.82f, 0.30f}; // behind a silhouette
 inline constexpr SDL_FColor kGold{0.98f, 0.82f, 0.48f, 1.0f}; // wishes: header, ready glow
 
 // The glass material, layered over the blurred scene: a dimmed copy of the blur, a dark green-grey
@@ -86,8 +88,8 @@ inline constexpr float kThumb = 56.0f;
 inline constexpr int kDrawerMaxCols = 8;
 inline constexpr int kDrawerRows = 2;
 inline constexpr float kTabH = 32.0f;
-inline constexpr float kJournalW = 320.0f;
-inline constexpr float kJournalRow = 56.0f;
+inline constexpr float kSketchW = 384.0f;
+inline constexpr int kRareSectionAfter = 4; // common visitors seen before the rarer ones show
 inline constexpr float kTileRadius = 12.0f;
 inline constexpr float kBuildExtra = 64.0f; // Build pill width beyond its icon
 inline constexpr float kLabelGap = 8.0f;    // icon to label in pill buttons
@@ -133,7 +135,8 @@ inline constexpr float kBarH = 6.0f;
 inline constexpr float kBarGap = 4.0f;
 inline constexpr float kRibbonIcon = 28.0f;
 inline constexpr float kRibbonMaxW = 560.0f;
-inline constexpr float kRibbonMinW = 360.0f; // narrower bands put it across the top
+inline constexpr float kRibbonMinW = 360.0f;    // narrower bands put it across the top
+inline constexpr float kWorldTipOffset = 18.0f; // from the pointer to a world tooltip
 // Text is centred on a line by putting its baseline this fraction of the ascent below it.
 inline constexpr float kBaselineCentre = 0.36f;
 

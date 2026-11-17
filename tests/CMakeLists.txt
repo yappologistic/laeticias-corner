@@ -45,6 +45,8 @@ set(LC_SCRIPTS
   "drawer_tabs|drawer_tabs|640x400|"
   "drawer_unlocks|drawer_unlocks|960x600|"
   "wish_first|wish_first|640x400|"
+  "sketchbook|sketchbook|960x600|"
+  "nook|nook|960x600|"
   "wish_waiting|wish_waiting|960x600|"
   "ui_tiny|ui_sizes|320x240|"
   "ui_small|ui_sizes|960x600|"

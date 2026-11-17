@@ -29,10 +29,12 @@ enum Wid : int {
     kScrollUp,
     kScrollDown,
     kTrayHeader,
-    kCard0,               // wish cards: kCard0 + slot
-    kNotNow = kCard0 + 8, // the card menu's only entry
-    kTab0 = 48,           // drawer tabs: kTab0 + category
-    kTile0 = 64,          // drawer tiles: see tileId
+    kCard0,                           // wish cards: kCard0 + slot
+    kNotNow = kCard0 + 8,             // the card menu's only entry
+    kSketchTab0,                      // sketchbook tabs: kSketchTab0 + tab
+    kSketchNotNow0 = kSketchTab0 + 3, // "Not now" on the sketchbook's open wishes
+    kTab0 = 48,                       // drawer tabs: kTab0 + category
+    kTile0 = 64,                      // drawer tiles: see tileId
 };
 constexpr int kTraySlots = kNotNow - kCard0;
 
@@ -58,6 +60,10 @@ constexpr Named kNames[] = {
     {"scroll_down", kScrollDown},
     {"tray", kTrayHeader},
     {"not_now", kNotNow},
+    {"sketch:wishes", kSketchTab0},
+    {"sketch:visitors", kSketchTab0 + 1},
+    {"sketch:nooks", kSketchTab0 + 2},
+    {"sketch_not_now", kSketchNotNow0},
 };
 
 float approach(float v, bool on, float dt) {
@@ -321,7 +327,7 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
                m.pin != ClockPin::Auto);
         button(kRain, theme::icon::kRain, m.rain ? strings::kRainOn : strings::kRainOff,
                strings::kKeyRain, m.rain);
-        button(kJournal, theme::icon::kJournal, strings::kJournal, strings::kKeyJournal,
+        button(kJournal, theme::icon::kJournal, strings::kSketchbook, strings::kKeyJournal,
                m.journalOpen);
     }
     return std::min(centreY, rightY);
@@ -443,26 +449,9 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         }
     }
 
-    // Journal panel, top-right, never reaching under the drawer or the docks.
+    // The sketchbook, top right, never reaching under the drawer or the docks.
     journalBox_ = {};
-    if (journalT_ > 0.0f) {
-        const float jw = std::min(theme::kJournalW * s, screen.x - 2 * margin);
-        const float header = theme::kJournalHeader * s;
-        const float h = header +
-                        static_cast<float>(m.cat->visitors.size()) * theme::kJournalRow * s +
-                        theme::kPanelPad * s * 0.5f;
-        const float slide = (1.0f - smooth(journalT_)) * theme::kSlide * s;
-        const float x = screen.x - margin - jw + slide;
-        float bottom = bottomTop_ - gap;
-        if (drawerT_ > 0.0f && x < drawerBox_.x + drawerBox_.w) bottom = drawerBox_.y - gap;
-        journalBox_ = {x, margin, jw, std::max(header, std::min(h, bottom - margin))};
-        const float cs = theme::kCloseSize * s;
-        const float ci = theme::kCloseInset * s;
-        Widget& c = add(kJournalClose, {journalBox_.x + jw - ci - cs, journalBox_.y + ci, cs, cs});
-        c.icon = theme::icon::kClose;
-        c.tooltip = strings::kClose;
-        c.shortcut = strings::kKeyJournal;
-    }
+    if (journalT_ > 0.0f) layoutSketchbook(m, font, screen, s);
 
     // Hint line above the drawer or docks; both slide a little as they fade.
     const float hintH = theme::kHintH * s;
@@ -488,8 +477,8 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
             theme::kIcon * s + theme::kToastIconGap * s + font.measure(Face::Title, ribbon_.title);
         // Between the title and the tray when that band is wide enough, else across the top.
         const float bandL = titleBox_.x + titleBox_.w + gap;
-        const float bandR =
-            trayLast_.w > 0 && !tray_.empty() ? trayLast_.x - gap : screen.x - margin;
+        float bandR = trayLast_.w > 0 && !tray_.empty() ? trayLast_.x - gap : screen.x - margin;
+        if (journalT_ > 0.0f) bandR = std::min(bandR, journalBox_.x - gap);
         const bool inBand = bandR - bandL >= theme::kRibbonMinW * s;
         const float maxW =
             std::min(theme::kRibbonMaxW * s, inBand ? bandR - bandL : screen.x - 2 * margin);
@@ -586,6 +575,9 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         dt);
     std::snprintf(trayCount_, sizeof trayCount_, "%zu", m.wishes.size());
 
+    if (noteLabel_.empty())
+        noteLabel_ = std::vformat(strings::kNoteLabel, std::make_format_args(m.cat->resident.name));
+
     clockLabel_.assign(phaseName(m.phase));
     if (m.pin != ClockPin::Auto) clockLabel_.append(strings::kSeparator).append(strings::kPinned);
     if (m.rain) clockLabel_.append(strings::kSeparator).append(strings::kRaining);
@@ -599,6 +591,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         return;
     }
     const bool canPoint = in.inside && !in.blocked;
+    pointer_ = {in.x, in.y};
     overUi_ = false;
     int hovered = 0; // enabled widget under the pointer
     int pointed = 0; // any widget under the pointer: disabled ones still explain themselves
@@ -628,7 +621,9 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     if ((hovered >= kTab0 || hovered == kScrollUp || hovered == kScrollDown) && drawerT_ < 1.0f &&
         !m.drawerOpen)
         hovered = 0;
-    if (hovered == kJournalClose && !m.journalOpen) hovered = 0;
+    if ((hovered == kJournalClose || (hovered >= kSketchTab0 && hovered < kSketchNotNow0 + 3)) &&
+        !m.journalOpen)
+        hovered = 0;
     if (hovered != hovered_ && hovered != 0) {
         emit(HudAction::Kind::Hover);
         for (const Widget& w : widgets_)
@@ -685,6 +680,18 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                 if (!scroll_.empty()) ++scroll_[static_cast<std::size_t>(m.category)];
                 break;
             case kTrayHeader: trayCollapsed_ = !trayCollapsed_; break;
+            case kSketchTab0:
+            case kSketchTab0 + 1:
+            case kSketchTab0 + 2:
+                if (active_ - kSketchTab0 != sketchTab_) {
+                    sketchTab_ = active_ - kSketchTab0;
+                    sketchScroll_ = 0;
+                    emit(HudAction::Kind::PageTurn);
+                }
+                break;
+            case kSketchNotNow0:
+            case kSketchNotNow0 + 1:
+            case kSketchNotNow0 + 2: emit(HudAction::Kind::Snooze, entry.index); break;
             case kNotNow:
                 emit(HudAction::Kind::Snooze, menuWish_);
                 menuWish_ = -1;
@@ -709,12 +716,15 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     }
     if (in.wheel != 0 && canPoint && drawerBox_.contains(in.x, in.y) && !scroll_.empty())
         scroll_[static_cast<std::size_t>(m.category)] += in.wheel > 0 ? -1 : 1;
+    if (in.wheel != 0 && canPoint && journalT_ > 0.5f && journalBox_.contains(in.x, in.y))
+        sketchScroll_ = std::max(0, sketchScroll_ + (in.wheel > 0 ? -1 : 1));
 
     for (std::size_t i = 1; i < hover_.size(); ++i) {
         const int id = static_cast<int>(i);
         hover_[i] = approach(hover_[i], id == hovered_, dt);
         press_[i] = approach(press_[i], id == active_ && id == hovered_, dt * 2);
     }
+    worldTipT_ = approach(worldTipT_, !m.worldTip.empty() && !overUi_ && canPoint, dt);
     const bool showTip = pointed_ != 0 && hoverTime_ > theme::kTooltipDelay && active_ == 0;
     if (showTip) tooltipId_ = pointed_;
     tooltipT_ = approach(tooltipT_, showTip, dt);
@@ -857,6 +867,21 @@ void Hud::drawButton(Painter& p, const Widget& w, float alpha) const {
     if (w.dot) drawDot(p, inner.x + inner.w - ir * 0.55f, inner.y + ir * 0.45f, s, alpha);
 }
 
+void Hud::drawPill(Painter& p, const Widget& w, float alpha) const {
+    const float r = w.box.h * 0.5f;
+    p.roundRect(w.box, r, withAlpha(theme::kInset, alpha));
+    p.rim(w.box, r, theme::kRim * scale_, withAlpha(theme::kInsetRimTop, alpha),
+          withAlpha(theme::kInsetRimBottom, alpha));
+    const float h = hoverOf(w.id);
+    if (h > 0) p.roundRect(w.box, r, withAlpha(theme::kHover, alpha * h));
+    const float pr = pressOf(w.id);
+    if (pr > 0) p.roundRect(w.box, r, withAlpha(theme::kPressed, alpha * pr));
+    const Font& f = p.font();
+    p.text(Face::Body, w.label, w.box.cx() - f.measure(Face::Body, w.label) * 0.5f,
+           w.box.cy() + f.ascent(Face::Body) * theme::kBaselineCentre,
+           withAlpha(mixColor(theme::kInkMuted, theme::kInk, h), alpha));
+}
+
 void Hud::drawTab(Painter& p, const Widget& w, float alpha) const {
     const float r = w.box.h * 0.5f;
     const float h = hoverOf(w.id);
@@ -940,61 +965,315 @@ void Hud::drawTitle(Painter& p, const HudModel& m) const {
            y2 + f.ascent(Face::Body), theme::kInkMuted);
 }
 
-void Hud::drawJournal(Painter& p, const HudModel& m) const {
+void Hud::openSketchbook(int tab) {
+    sketchTab_ = std::clamp(tab, 0, 2);
+    sketchScroll_ = 0;
+}
+
+void Hud::turnPage(int delta, const HudModel& m) {
+    const int tabs = sketchTabs(m);
+    sketchTab_ = (sketchTab_ + delta + tabs) % tabs;
+    sketchScroll_ = 0;
+}
+
+int Hud::sketchTabs(const HudModel& m) {
+    // The nooks tab appears with the first nook found.
+    return m.progress != nullptr && m.progress->nooksFound() > 0 ? 3 : 2;
+}
+
+void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, float s) {
+    const float margin = theme::kMargin * s;
+    const float gap = theme::kGap * s;
+    const float pad = theme::kPanelPad * s;
+    const float lh = font.lineHeight(Face::Body);
+    const float jw = std::min(theme::kSketchW * s, screen.x - 2 * margin);
+    const float slide = (1.0f - smooth(journalT_)) * theme::kSlide * s;
+    const float x = screen.x - margin - jw + slide;
+    float bottom = bottomTop_ - gap;
+    if (drawerT_ > 0.0f && x < drawerBox_.x + drawerBox_.w) bottom = drawerBox_.y - gap;
+    const float header = theme::kJournalHeader * s;
+    const float cs = theme::kCloseSize * s;
+    const float ci = theme::kCloseInset * s;
+    Widget& c = add(kJournalClose, {x + jw - ci - cs, margin + ci, cs, cs});
+    c.icon = theme::icon::kClose;
+    c.tooltip = strings::kClose;
+    c.shortcut = strings::kKeyJournal;
+
+    // Pages line, then the tabs.
+    pagesText_ = std::vformat(strings::kPagesOf, std::make_format_args(m.pages, m.pagesTotal));
+    untilText_.clear();
+    if (m.nextStagePages < 0) {
+        untilText_ = strings::kAllOpen;
+    } else {
+        std::string stage(m.nextStageName);
+        if (!stage.empty())
+            stage[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(stage[0])));
+        const int more = std::max(0, m.nextStagePages - m.pages);
+        untilText_ = std::vformat(strings::kMoreUntil, std::make_format_args(more, stage));
+    }
+    float y = margin + header + gap * 0.5f + 2 * lh + gap;
+    const int tabs = sketchTabs(m);
+    sketchTab_ = std::min(sketchTab_, tabs - 1);
+    static constexpr std::string_view kTabNames[] = {strings::kTabWishes, strings::kTabVisitors,
+                                                     strings::kTabNooks};
+    float tx = x + pad;
+    for (int t = 0; t < tabs; ++t) {
+        const float tw = font.measure(Face::Body, kTabNames[t]) + theme::kTabExtra * s;
+        Widget& w = add(kSketchTab0 + t, {tx, y, tw, theme::kTabH * s});
+        w.label = kTabNames[t];
+        w.selected = t == sketchTab_;
+        tx += tw + gap;
+    }
+    y += theme::kTabH * s + gap;
+    sketchBody_ = y;
+
+    // Rows of the open tab, measured so the panel can stop at the last one that fits.
+    rows_.clear();
+    const float icon = theme::kJournalIcon * s;
+    const float textW = jw - 2 * pad - icon - theme::kJournalTextGap * s;
+    const float rowPad = theme::kJournalRowPad * s;
+    const auto rowH = [&](float body) { return std::max(icon, body) + 2 * rowPad; };
+    const auto lines = [&](std::string_view text, float w, int max) {
+        return static_cast<float>(wrapLines(font, Face::Body, text, w, max)) * lh;
+    };
+    const Catalog& cat = *m.cat;
+    const Progress* pr = m.progress;
+    if (sketchTab_ == 0 && pr != nullptr) {
+        const float nowW = font.measure(Face::Body, strings::kNotNow) + 2 * theme::kTipPad * s;
+        if (!m.wishes.empty()) rows_.push_back({Row::Kind::Section, 0, lh + gap});
+        for (std::size_t i = 0; i < m.wishes.size(); ++i) {
+            const WishCard& card = m.wishes[i];
+            const float body =
+                lines(card.text, textW - nowW - gap, 3) + (card.detail.empty() ? 0.0f : lh);
+            rows_.push_back({Row::Kind::OpenWish, static_cast<int>(i), rowH(body)});
+        }
+        if (!pr->granted.empty()) rows_.push_back({Row::Kind::Section, 1, lh + gap});
+        for (std::size_t k = pr->granted.size(); k-- > 0;) {
+            const WishDef& w = cat.wishes[static_cast<std::size_t>(pr->granted[k])];
+            rows_.push_back(
+                {Row::Kind::GrantedWish, pr->granted[k], rowH(lines(w.thanks, textW, 2) + lh)});
+        }
+    } else if (sketchTab_ == 1) {
+        int commonSeen = 0;
+        for (std::size_t v = 0; v < cat.visitors.size(); ++v) {
+            const VisitorDef& def = cat.visitors[v];
+            if (def.rare) continue;
+            const bool seen = m.visitors->seen(static_cast<int>(v));
+            commonSeen += seen ? 1 : 0;
+            rows_.push_back({Row::Kind::Visitor, static_cast<int>(v),
+                             rowH(lh + lines(seen ? def.blurb : def.hint, textW, 2))});
+        }
+        // The rarer visitors appear once four common ones have been seen.
+        if (commonSeen >= theme::kRareSectionAfter) {
+            rows_.push_back({Row::Kind::Section, 2, lh + gap});
+            for (std::size_t v = 0; v < cat.visitors.size(); ++v) {
+                const VisitorDef& def = cat.visitors[v];
+                if (!def.rare) continue;
+                const bool seen = m.visitors->seen(static_cast<int>(v));
+                const bool clued = pr != nullptr && pr->clues[v] != 0;
+                float body = lh + lines(seen ? def.blurb : def.hint, textW, 2);
+                if (!seen && clued) body += lines(def.clue, textW, 3) + lh;
+                rows_.push_back({Row::Kind::Visitor, static_cast<int>(v), rowH(body)});
+            }
+        }
+    } else if (sketchTab_ == 2) {
+        for (std::size_t n = 0; n < cat.nooks.size(); ++n) {
+            const NookDef& def = cat.nooks[n];
+            const bool found = pr != nullptr && pr->nooks[n] != 0;
+            const float body = lh + (found ? lines(def.blurb, textW, 2) + lines(def.gift, textW, 2)
+                                           : lines(def.teaser, textW, 2));
+            rows_.push_back({Row::Kind::Nook, static_cast<int>(n), rowH(body)});
+        }
+    }
+    // Scroll by whole rows; the panel ends at the last row that fits.
+    const float avail = bottom - sketchBody_ - pad * 0.5f;
+    int last = static_cast<int>(rows_.size());
+    float used = 0;
+    int fit = 0;
+    for (int i = static_cast<int>(rows_.size()) - 1; i >= 0; --i) {
+        if (used + rows_[static_cast<std::size_t>(i)].h > avail) break;
+        used += rows_[static_cast<std::size_t>(i)].h;
+        ++fit;
+    }
+    sketchScroll_ = std::clamp(sketchScroll_, 0, std::max(0, last - fit));
+    float h = 0;
+    sketchShown_ = 0;
+    for (int i = sketchScroll_; i < last; ++i) {
+        const float rh = rows_[static_cast<std::size_t>(i)].h;
+        if (h + rh > avail) break;
+        h += rh;
+        ++sketchShown_;
+    }
+    sketchMore_ = sketchScroll_ + sketchShown_ < last;
+    // "Not now" buttons of the open wishes shown.
+    float ry = sketchBody_;
+    for (int i = sketchScroll_; i < sketchScroll_ + sketchShown_; ++i) {
+        const Row& r = rows_[static_cast<std::size_t>(i)];
+        if (r.kind == Row::Kind::OpenWish && r.index < 3) {
+            const float nowW = font.measure(Face::Body, strings::kNotNow) + 2 * theme::kTipPad * s;
+            Widget& n = add(kSketchNotNow0 + r.index,
+                            {x + jw - pad - nowW, ry + rowPad, nowW, theme::kTipH * s});
+            n.label = strings::kNotNow;
+            n.entry.index = m.wishes[static_cast<std::size_t>(r.index)].wish;
+        }
+        ry += r.h;
+    }
+    const float minH = sketchBody_ - margin + lh * 2;
+    journalBox_ = {x, margin, jw, std::max(minH, sketchBody_ - margin + h + pad * 0.5f)};
+}
+
+void Hud::drawSketchbook(Painter& p, const HudModel& m) const {
     const float a = smooth(journalT_);
     const float s = scale_;
     const Box b = journalBox_;
     const Font& f = p.font();
     const float pad = theme::kPanelPad * s;
+    const float lh = f.lineHeight(Face::Body);
     const float header = theme::kJournalHeader * s;
-    p.text(Face::Title, strings::kJournal, b.x + pad,
-           b.y + header * 0.5f + f.ascent(Face::Title) * theme::kBaselineCentre,
-           withAlpha(theme::kInk, a));
-    p.roundRect({b.x + pad, b.y + header - theme::kRim * s, b.w - 2 * pad, theme::kRim * s}, 0,
-                withAlpha(theme::kDivider, a), 0);
-    float y = b.y + header;
-    const float row = theme::kJournalRow * s;
-    const float rowPad = theme::kJournalRowPad * s;
-    const float iconSize = theme::kJournalIcon * s;
-    const float iconPad = theme::kJournalIconPad * s;
-    for (std::size_t v = 0; v < m.cat->visitors.size(); ++v) {
-        if (y + row > b.y + b.h + 1) break;
-        const auto& def = m.cat->visitors[v];
-        const bool seen = m.visitors->seen(static_cast<int>(v));
-        const Box icon{b.x + pad, y + rowPad, iconSize, iconSize};
-        p.roundRect(icon, iconSize * 0.5f, withAlpha(theme::kInset, a));
-        p.rim(icon, iconSize * 0.5f, theme::kRim * s, withAlpha(theme::kInsetRimTop, a),
-              withAlpha(theme::kInsetRimBottom, a));
-        if (seen) {
-            const Sprite& spr =
-                v < m.thumbs->visitors.size() ? m.thumbs->visitors[v] : m.thumbs->placeholder;
-            p.thumbnail(
-                spr,
-                {icon.x + iconPad, icon.y + iconPad, icon.w - 2 * iconPad, icon.h - 2 * iconPad},
-                (icon.w - 2 * iconPad) / spr.w, a);
-        } else {
-            p.text(Face::Body, strings::kJournalMystery,
-                   icon.cx() - f.measure(Face::Body, strings::kJournalMystery) * 0.5f,
-                   icon.cy() + f.ascent(Face::Body) * theme::kBaselineCentre,
-                   withAlpha(theme::kInkMuted, a));
-        }
-        const float tx = icon.x + icon.w + theme::kJournalTextGap * s;
-        const float tw = b.x + b.w - pad - tx;
-        p.text(Face::Body, seen ? std::string_view(def.name) : strings::kJournalUnknown, tx,
-               y + rowPad + f.ascent(Face::Body), withAlpha(theme::kInk, a));
-        const int present = m.visitors->present(static_cast<int>(v));
-        if (present > 0) {
-            char buf[24];
-            const auto end =
-                std::format_to_n(buf, sizeof buf, "{}{}", strings::kJournalCount, present);
-            const std::string_view count(buf, static_cast<std::size_t>(end.out - buf));
-            p.text(Face::Body, count, b.x + b.w - pad - f.measure(Face::Body, count),
-                   y + rowPad + f.ascent(Face::Body), withAlpha(theme::kAccent, a));
-        }
-        p.wrapped(Face::Body, seen ? std::string_view(def.blurb) : strings::kJournalEmpty, tx,
-                  y + rowPad + f.lineHeight(Face::Body), tw, 1, withAlpha(theme::kInkMuted, a));
-        y += row;
+    const SDL_FColor ink = withAlpha(theme::kInk, a);
+    const SDL_FColor muted = withAlpha(theme::kInkMuted, a);
+    p.text(Face::Title, strings::kSketchbook, b.x + pad,
+           b.y + header * 0.5f + f.ascent(Face::Title) * theme::kBaselineCentre, ink);
+    // Pages and the way to the next stage of land.
+    float y = b.y + header + theme::kGap * s * 0.5f;
+    p.text(Face::Body, pagesText_, b.x + pad, y + f.ascent(Face::Body), ink);
+    const float barX = b.x + pad + f.measure(Face::Body, pagesText_) + theme::kCardGap * s;
+    const float barW = b.x + b.w - pad - barX;
+    const float bh = theme::kBarH * s;
+    const Box track{barX, y + (lh - bh) * 0.5f, barW, bh};
+    p.roundRect(track, bh * 0.5f, withAlpha(theme::kInset, a * 2));
+    if (m.pagesTotal > 0) {
+        const float done = static_cast<float>(m.pages) / static_cast<float>(m.pagesTotal);
+        p.roundRect({track.x, track.y, std::max(bh, barW * std::min(1.0f, done)), bh}, bh * 0.5f,
+                    withAlpha(theme::kAccent, a));
     }
+    p.text(Face::Body, untilText_, b.x + pad, y + lh + f.ascent(Face::Body), muted);
+    for (const Widget& w : widgets_)
+        if (w.id >= kSketchTab0 && w.id < kSketchTab0 + 3) drawTab(p, w, a);
+
+    const float icon = theme::kJournalIcon * s;
+    const float iconPad = theme::kJournalIconPad * s;
+    const float rowPad = theme::kJournalRowPad * s;
+    const float gapX = theme::kJournalTextGap * s;
+    const Catalog& cat = *m.cat;
+    static constexpr std::string_view kSections[] = {strings::kOpenSection,
+                                                     strings::kGrantedSection, strings::kRarer};
+    y = sketchBody_;
+    const auto disc = [&](Box box, bool lit) {
+        p.roundRect(box, box.w * 0.5f, withAlpha(lit ? theme::kSilhouetteBack : theme::kInset, a));
+        p.rim(box, box.w * 0.5f, theme::kRim * s, withAlpha(theme::kInsetRimTop, a),
+              withAlpha(theme::kInsetRimBottom, a));
+    };
+    const auto art = [&](Box box, const Sprite& spr, SDL_FColor tint) {
+        const Box in{box.x + iconPad, box.y + iconPad, box.w - 2 * iconPad, box.h - 2 * iconPad};
+        p.thumbnail(spr, in, in.w / std::max(1.0f, std::max(spr.w, spr.h)), a, tint);
+    };
+    for (int i = sketchScroll_; i < sketchScroll_ + sketchShown_; ++i) {
+        const Row& r = rows_[static_cast<std::size_t>(i)];
+        const Box ib{b.x + pad, y + rowPad, icon, icon};
+        const float tx = ib.x + icon + gapX;
+        const float tw = b.x + b.w - pad - tx;
+        switch (r.kind) {
+        case Row::Kind::Section:
+            p.text(Face::Body, kSections[r.index], b.x + pad, y + f.ascent(Face::Body),
+                   withAlpha(theme::kGold, a));
+            break;
+        case Row::Kind::OpenWish: {
+            const WishCard& c = m.wishes[static_cast<std::size_t>(r.index)];
+            disc(ib, false);
+            art(ib, c.portrait, {1, 1, 1, 1});
+            const float nowW = f.measure(Face::Body, strings::kNotNow) + 2 * theme::kTipPad * s;
+            const float used =
+                p.wrapped(Face::Body, c.text, tx, y + rowPad, tw - nowW - theme::kGap * s, 3, ink);
+            if (!c.detail.empty())
+                p.text(Face::Body, c.detail, tx, y + rowPad + used + f.ascent(Face::Body), muted);
+            break;
+        }
+        case Row::Kind::GrantedWish: {
+            const WishDef& w = cat.wishes[static_cast<std::size_t>(r.index)];
+            disc(ib, false);
+            art(ib,
+                w.giver < 0 ? m.thumbs->portrait
+                            : m.thumbs->visitors[static_cast<std::size_t>(w.giver)],
+                {1, 1, 1, 1});
+            const float used = p.wrapped(Face::Body, w.thanks, tx, y + rowPad, tw, 2, ink);
+            const float ry = y + rowPad + used;
+            p.icon(theme::icon::kCheck, tx + theme::kIcon * s * 0.4f, ry + lh * 0.5f,
+                   withAlpha(theme::kAccent, a));
+            p.wrapped(Face::Body, rewardText(cat, w.reward), tx + theme::kIcon * s, ry,
+                      tw - theme::kIcon * s, 1, muted);
+            break;
+        }
+        case Row::Kind::Visitor: {
+            const VisitorDef& def = cat.visitors[static_cast<std::size_t>(r.index)];
+            const bool seen = m.visitors->seen(r.index);
+            const Sprite& spr = static_cast<std::size_t>(r.index) < m.thumbs->visitors.size()
+                                    ? m.thumbs->visitors[static_cast<std::size_t>(r.index)]
+                                    : m.thumbs->placeholder;
+            disc(ib, !seen);
+            // Not seen yet: the shape, as a silhouette.
+            art(ib, spr, seen ? SDL_FColor{1, 1, 1, 1} : theme::kSilhouette);
+            p.text(Face::Body, seen ? std::string_view(def.name) : strings::kJournalUnknown, tx,
+                   y + rowPad + f.ascent(Face::Body), ink);
+            const int present = m.visitors->present(r.index);
+            if (present > 0) {
+                const float hw = f.measure(Face::Body, strings::kHereNow);
+                const float hx = b.x + b.w - pad - hw;
+                p.text(Face::Body, strings::kHereNow, hx, y + rowPad + f.ascent(Face::Body),
+                       withAlpha(theme::kAccent, a));
+                const float dr = theme::kDotRadius * s;
+                p.roundRect({hx - 3 * dr, y + rowPad + lh * 0.5f - dr, 2 * dr, 2 * dr}, dr,
+                            withAlpha(theme::kAccent, a));
+            }
+            float ty = y + rowPad + lh;
+            ty += p.wrapped(Face::Body, seen ? def.blurb : def.hint, tx, ty, tw, 2, muted);
+            if (!seen && m.progress != nullptr &&
+                m.progress->clues[static_cast<std::size_t>(r.index)]) {
+                p.text(Face::Body, noteLabel_, tx, ty + f.ascent(Face::Body),
+                       withAlpha(theme::kGold, a));
+                p.wrapped(Face::Body, def.clue, tx, ty + lh, tw, 3, ink);
+            }
+            break;
+        }
+        case Row::Kind::Nook: {
+            const NookDef& def = cat.nooks[static_cast<std::size_t>(r.index)];
+            const bool found =
+                m.progress != nullptr && m.progress->nooks[static_cast<std::size_t>(r.index)];
+            disc(ib, false);
+            p.icon(theme::icon::kSparkles, ib.cx(), ib.cy(),
+                   withAlpha(found ? theme::kGold : theme::kInkMuted, a * (found ? 1.0f : 0.5f)));
+            p.text(Face::Body, found ? std::string_view(def.name) : strings::kUnknownNook, tx,
+                   y + rowPad + f.ascent(Face::Body), found ? ink : muted);
+            float ty = y + rowPad + lh;
+            if (found) {
+                ty += p.wrapped(Face::Body, def.blurb, tx, ty, tw, 2, ink);
+                p.wrapped(Face::Body, def.gift, tx, ty, tw, 2, muted);
+            } else {
+                p.wrapped(Face::Body, def.teaser, tx, ty, tw, 2,
+                          withAlpha(theme::kInkMuted, a * 0.8f));
+            }
+            break;
+        }
+        }
+        y += r.h;
+    }
+    if (sketchMore_ || sketchScroll_ > 0) {
+        const float cx = b.x + b.w * 0.5f;
+        if (sketchMore_) p.icon(theme::icon::kChevronDown, cx, b.y + b.h - pad * 0.45f, muted);
+    }
+}
+
+std::string_view Hud::rewardText(const Catalog& cat, const Reward& r) const {
+    rewardText_.clear();
+    const auto add = [&](std::string_view name) {
+        if (!rewardText_.empty()) rewardText_ += ", ";
+        rewardText_ += name;
+    };
+    for (const int t : r.terrain) add(cat.terrain[static_cast<std::size_t>(t)].name);
+    for (const int i : r.items) add(cat.items[static_cast<std::size_t>(i)].name);
+    if (r.frame >= 0) add(cat.frames[static_cast<std::size_t>(r.frame)].name);
+    if (r.clue >= 0) add(noteLabel_);
+    return rewardText_;
 }
 
 void Hud::drawHint(Painter& p, const HudModel& m) const {
@@ -1132,6 +1411,45 @@ void Hud::drawRibbon(Painter& p) const {
     p.endLayer();
 }
 
+void Hud::drawWorldTip(Painter& p, const HudModel& m) const {
+    const float a = smooth(worldTipT_);
+    if (a <= 0 || m.worldTip.empty()) return;
+    const float s = scale_;
+    const Font& f = p.font();
+    const float pad = theme::kTipPad * s;
+    const float bw = f.measure(Face::Body, m.worldTip) + 2 * pad;
+    const float bh = theme::kTipH * s;
+    const float x = std::clamp(pointer_.x + theme::kWorldTipOffset * s, theme::kMargin * s * 0.5f,
+                               screen_.x - bw - theme::kMargin * s * 0.5f);
+    float y = pointer_.y + theme::kWorldTipOffset * s;
+    if (y + bh > screen_.y - theme::kMargin * s) y = pointer_.y - bh - theme::kWorldTipOffset * s;
+    const Box b{x, y, bw, bh};
+    p.glass(b, theme::kTipRadius * s, a, theme::kGlassTip);
+    p.endGlass();
+    p.text(Face::Body, m.worldTip, b.x + pad,
+           b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(theme::kInk, a));
+}
+
+void Hud::drawLabels(Painter& p, const HudModel& m) const {
+    if (m.labels.empty()) return;
+    const float s = scale_;
+    const Font& f = p.font();
+    const float pad = theme::kToastPad * s;
+    for (const FloatLabel& l : m.labels) {
+        const float w =
+            theme::kIcon * s + theme::kToastIconGap * s + f.measure(Face::Title, l.text) + 2 * pad;
+        const float h = theme::kToastH * s;
+        const Box b{std::round(l.at.x - w * 0.5f), std::round(l.at.y - h), w, h};
+        p.glass(b, h * 0.5f, l.alpha, theme::kGlass);
+        p.endGlass();
+        p.icon(theme::icon::kSparkles, b.x + pad + theme::kIcon * s * 0.5f, b.cy(),
+               withAlpha(theme::kGold, l.alpha));
+        p.text(Face::Title, l.text, b.x + pad + theme::kIcon * s + theme::kToastIconGap * s,
+               b.cy() + f.ascent(Face::Title) * theme::kBaselineCentre,
+               withAlpha(theme::kInk, l.alpha));
+    }
+}
+
 void Hud::drawTooltip(Painter& p) const {
     const float a = smooth(tooltipT_);
     if (a <= 0) return;
@@ -1204,13 +1522,19 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         for (const Box& d : dividers_) p.roundRect(d, 0, theme::kDivider, 0);
         for (const Widget& w : widgets_) {
             if (w.id >= kTab0 || w.id == kScrollUp || w.id == kScrollDown) continue;
+            if (w.id >= kTrayHeader && w.id <= kNotNow) continue; // the tray draws its own
             if (w.id == kJournalClose) {
                 if (journalT_ > 0) drawButton(p, w, ja);
                 continue;
             }
+            if (w.id >= kSketchTab0 && w.id < kSketchNotNow0) continue; // drawn with the book
+            if (w.id >= kSketchNotNow0 && w.id < kSketchNotNow0 + 3) {
+                drawPill(p, w, ja);
+                continue;
+            }
             drawButton(p, w, 1.0f);
         }
-        if (journalT_ > 0) drawJournal(p, m);
+        if (journalT_ > 0) drawSketchbook(p, m);
         p.endLayer();
 
         // The wish tray is its own layer: it fades out as the journal fades in at its place.
@@ -1246,8 +1570,12 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         drawHint(p, m);
         drawToast(p);
     }
-    if (!m.photo) drawRibbon(p);
-    if (!m.photo) drawTooltip(p);
+    if (!m.photo) {
+        drawLabels(p, m);
+        drawRibbon(p);
+        drawWorldTip(p, m);
+        drawTooltip(p);
+    }
     if (flash_ > 0)
         p.roundRect({0, 0, screen_.x, screen_.y}, 0,
                     withAlpha(theme::kFlash, flash_ * flash_ * 0.8f), 0);
