@@ -59,17 +59,16 @@ constexpr int kDragSteps = 8;
 // Owns SDL initialisation so it outlives every other SDL object in App.
 struct SdlSession {
     bool ok = false;
-    explicit SdlSession(bool headless) {
+    SdlSession(bool headless, bool gpu) {
         if (headless) {
             // Override any environment so automated runs can never reach the desktop or speakers.
-            SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "offscreen", SDL_HINT_OVERRIDE);
+            // The dummy video driver suffices for software rendering; offscreen (EGL, still no
+            // window) is only needed when a GPU renderer is requested.
+            SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, gpu ? "offscreen" : "dummy",
+                                    SDL_HINT_OVERRIDE);
             SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE);
         }
         ok = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-        if (!ok && headless) {
-            SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "dummy", SDL_HINT_OVERRIDE);
-            ok = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-        }
         if (!ok) SDL_Log("SDL_Init failed: %s", SDL_GetError());
     }
     ~SdlSession() { SDL_Quit(); }
@@ -128,12 +127,14 @@ void walkLine(TilePos a, TilePos b, F&& visit) {
 
 class App {
 public:
-    explicit App(const Options& o)
-        : opts_(o), sdl_(o.headless),
+    App(const Options& o, Catalog cat, fs::path assets)
+        : opts_(o), assets_(std::move(assets)), saveDir_(findSaveDir(o)), cat_(std::move(cat)),
+          world_(cat_), visitors_(cat_),
           rng_(o.seed.value_or(
               o.headless ? 1
                          : static_cast<std::uint64_t>(
-                               std::chrono::steady_clock::now().time_since_epoch().count()))) {}
+                               std::chrono::steady_clock::now().time_since_epoch().count()))),
+          camera_(cat_.mapW, cat_.mapH) {}
 
     int run();
 
@@ -180,18 +181,17 @@ private:
     void runBench();
 
     Options opts_;
-    SdlSession sdl_;
     fs::path assets_;
     fs::path saveDir_;
-    std::optional<Catalog> cat_;
-    std::optional<World> world_;
+    Catalog cat_;
+    World world_;
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
-    std::optional<Visitors> visitors_;
+    Visitors visitors_;
     Rng rng_;
     bool rain_ = false;
     bool muted_ = false;
-    std::optional<Camera> camera_;
+    Camera camera_;
 
     WindowPtr window_;
     RendererPtr renderer_;
@@ -251,20 +251,10 @@ private:
 };
 
 bool App::init() {
-    if (!sdl_.ok) return false;
-    assets_ = findAssets(opts_);
-    saveDir_ = findSaveDir(opts_);
-    auto cat = loadCatalog(assets_ / "catalog.json");
-    if (!cat) {
-        SDL_Log("cannot start: %s", cat.error().c_str());
-        return false;
-    }
-    cat_ = std::move(*cat);
-    visitors_.emplace(*cat_);
-    camera_.emplace(cat_->mapW, cat_->mapH);
 
     SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-    window_.reset(SDL_CreateWindow(strings::kWindowTitle.data(), opts_.width, opts_.height, flags));
+    window_.reset(SDL_CreateWindow(std::string(strings::kWindowTitle).c_str(), opts_.width,
+                                   opts_.height, flags));
     if (!window_) {
         SDL_Log("cannot create window: %s", SDL_GetError());
         return false;
@@ -284,15 +274,15 @@ bool App::init() {
     if (density_ <= 0) density_ = 1;
 
     atlas_ = std::make_unique<Atlas>(renderer_.get(), assets_);
-    scene_ = std::make_unique<Scene>(renderer_.get(), *atlas_, *cat_);
+    scene_ = std::make_unique<Scene>(renderer_.get(), *atlas_, cat_);
     uiBatch_ = std::make_unique<Batch>(renderer_.get());
     if (!font_.load(assets_ / "fonts")) return false;
 
-    mixer_.load(assets_ / "audio", cat_->audio);
+    mixer_.load(assets_ / "audio", cat_.audio);
     (void)mixer_.open();
 
     loadOrStart();
-    camera_->recentre(screen());
+    camera_.recentre(screen());
     return true;
 }
 
@@ -301,16 +291,17 @@ void App::loadOrStart() {
     std::error_code ec;
     if (fs::exists(file, ec)) {
         auto text = readTextFile(file);
-        auto data = text ? deserialize(*text, *cat_) : std::unexpected(text.error());
+        auto data = text ? deserialize(*text, cat_) : std::unexpected(text.error());
         if (data) {
             for (const auto& w : data->warnings) SDL_Log("save: skipped %s", w.c_str());
-            world_.emplace(std::move(data->world));
+            world_ = std::move(data->world);
             clock_.setTime(data->clockTime);
             clock_.setPin(data->pin, false);
             rain_ = data->rain;
             muted_ = data->muted;
-            for (const auto& id : data->journal) visitors_->markSeen(*cat_->findVisitor(id));
-            visitors_->populate(*world_, *cat_, night(), rng_);
+            for (const auto& id : data->journal)
+                if (const auto v = cat_.findVisitor(id)) visitors_.markSeen(*v);
+            visitors_.populate(world_, cat_, night(), rng_);
             SDL_Log("save: restored %s", file.string().c_str());
             return;
         }
@@ -321,18 +312,18 @@ void App::loadOrStart() {
         SDL_Log("save: %s; moved aside to %s and starting fresh", data.error().c_str(),
                 backup.string().c_str());
     }
-    world_.emplace(makeStarterWorld(*cat_));
+    world_ = makeStarterWorld(cat_);
 }
 
 void App::save() {
-    SaveData data(*world_);
+    SaveData data(world_);
     data.clockTime = clock_.time();
     data.pin = clock_.pin();
     data.rain = rain_;
     data.muted = muted_;
-    for (std::size_t v = 0; v < cat_->visitors.size(); ++v)
-        if (visitors_->seen(static_cast<int>(v))) data.journal.push_back(cat_->visitors[v].id);
-    if (auto r = writeFileAtomic(saveDir_ / kSaveFile, serialize(data, *cat_)); !r)
+    for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
+        if (visitors_.seen(static_cast<int>(v))) data.journal.push_back(cat_.visitors[v].id);
+    if (auto r = writeFileAtomic(saveDir_ / kSaveFile, serialize(data, cat_)); !r)
         SDL_Log("save: %s", r.error().c_str());
     dirty_ = false;
 }
@@ -467,12 +458,12 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         return;
     }
     case SDLK_P: togglePhoto(); return;
-    case SDLK_HOME: camera_->recentre(screen()); return;
+    case SDLK_HOME: camera_.recentre(screen()); return;
     case SDLK_EQUALS:
     case SDLK_PLUS:
-    case SDLK_KP_PLUS: camera_->zoomAt(camera_->zoom() + 1, centre, screen()); return;
+    case SDLK_KP_PLUS: camera_.zoomAt(camera_.zoom() + 1, centre, screen()); return;
     case SDLK_MINUS:
-    case SDLK_KP_MINUS: camera_->zoomAt(camera_->zoom() - 1, centre, screen()); return;
+    case SDLK_KP_MINUS: camera_.zoomAt(camera_.zoom() - 1, centre, screen()); return;
     case SDLK_M:
         muted_ = !muted_;
         markDirty();
@@ -484,21 +475,21 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     switch (key) {
     case SDLK_Z:
         if (ctrl) {
-            const auto ops = shift ? editor_.redo(*world_) : editor_.undo(*world_);
+            const auto ops = shift ? editor_.redo(world_) : editor_.undo(world_);
             if (!ops.empty()) play(shift ? sfx::kRedo : sfx::kUndo);
             feedback(ops);
         }
         break;
     case SDLK_Y:
         if (ctrl) {
-            const auto ops = editor_.redo(*world_);
+            const auto ops = editor_.redo(world_);
             if (!ops.empty()) play(sfx::kRedo);
             feedback(ops);
         }
         break;
     case SDLK_R:
         if (tool_ == Tool::Place) {
-            const auto& def = cat_->items[static_cast<std::size_t>(selection_)];
+            const auto& def = cat_.items[static_cast<std::size_t>(selection_)];
             if (def.count > 1) {
                 variant_ = (variant_ + 1) % def.count;
                 play(sfx::kRotate);
@@ -537,7 +528,7 @@ void App::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_MOUSE_MOTION: {
         const Vec2 p{e.motion.x * density_, e.motion.y * density_};
         mouseInside_ = true;
-        if (drag_ == Drag::Pan) camera_->dragBy({p.x - lastPan_.x, p.y - lastPan_.y});
+        if (drag_ == Drag::Pan) camera_.dragBy({p.x - lastPan_.x, p.y - lastPan_.y});
         lastPan_ = p;
         mouse_ = p;
         break;
@@ -578,9 +569,9 @@ void App::handleEvent(const SDL_Event& e) {
 
 HudModel App::model() const {
     HudModel m;
-    m.cat = &*cat_;
+    m.cat = &cat_;
     m.sprites = &scene_->sprites();
-    m.visitors = &*visitors_;
+    m.visitors = &visitors_;
     m.tool = tool_;
     m.selection = selection_;
     m.category = category_;
@@ -593,12 +584,12 @@ HudModel App::model() const {
     m.phase = clock_.phase();
     m.canUndo = editor_.canUndo();
     m.canRedo = editor_.canRedo();
-    m.canZoomIn = camera_->zoom() < tuning::kMaxZoom;
-    m.canZoomOut = camera_->zoom() > tuning::kMinZoom;
+    m.canZoomIn = camera_.zoom() < tuning::kMaxZoom;
+    m.canZoomOut = camera_.zoom() > tuning::kMinZoom;
     switch (tool_) {
     case Tool::None: break;
     case Tool::Place: {
-        const auto& def = cat_->items[static_cast<std::size_t>(selection_)];
+        const auto& def = cat_.items[static_cast<std::size_t>(selection_)];
         m.hint = def.count <= 1 ? strings::kHintPlaceFixed
                                 : (def.layout == Layout::Rotate ? strings::kHintPlace
                                                                 : strings::kHintPlaceVariant);
@@ -609,7 +600,7 @@ HudModel App::model() const {
     }
     m.warning = warning_;
     if (tool_ == Tool::Place && hover_ && warnTime_ <= 0)
-        m.warning = placeWarning(canPlace(*world_, *cat_, ghostItem(*hover_)));
+        m.warning = placeWarning(canPlace(world_, cat_, ghostItem(*hover_)));
     return m;
 }
 
@@ -655,26 +646,26 @@ void App::applyHudActions() {
             play(journalOpen_ ? sfx::kOpen : sfx::kClose, tuning::kUiSfxLevel);
             break;
         case K::Undo:
-            feedback(editor_.undo(*world_));
+            feedback(editor_.undo(world_));
             play(sfx::kUndo);
             break;
         case K::Redo:
-            feedback(editor_.redo(*world_));
+            feedback(editor_.redo(world_));
             play(sfx::kRedo);
             break;
-        case K::Recentre: camera_->recentre(screen()); break;
-        case K::ZoomOut: camera_->zoomAt(camera_->zoom() - 1, centre, screen()); break;
-        case K::ZoomIn: camera_->zoomAt(camera_->zoom() + 1, centre, screen()); break;
+        case K::Recentre: camera_.recentre(screen()); break;
+        case K::ZoomOut: camera_.zoomAt(camera_.zoom() - 1, centre, screen()); break;
+        case K::ZoomIn: camera_.zoomAt(camera_.zoom() + 1, centre, screen()); break;
         case K::Hover: break;
         }
     }
 }
 
 Item App::ghostItem(TilePos hover) const {
-    const auto& def = cat_->items[static_cast<std::size_t>(selection_)];
+    const auto& def = cat_.items[static_cast<std::size_t>(selection_)];
     const Footprint fp = footprintOf(def, variant_);
     // Centre multi-tile footprints on the cursor.
-    return makeItem(*cat_, selection_, variant_,
+    return makeItem(cat_, selection_, variant_,
                     {hover.x - (fp.w - 1) / 2, hover.y - (fp.h - 1) / 2});
 }
 
@@ -686,26 +677,26 @@ Ghost App::ghost() const {
     case Tool::Place:
         g.mode = Ghost::Mode::Item;
         g.item = ghostItem(*hover_);
-        g.valid = canPlace(*world_, *cat_, g.item) == PlaceResult::Ok;
+        g.valid = canPlace(world_, cat_, g.item) == PlaceResult::Ok;
         break;
     case Tool::Paint: {
         g.mode = Ghost::Mode::Tile;
         g.tile = *hover_;
-        const auto r = canPaint(*world_, *cat_, *hover_, selection_);
+        const auto r = canPaint(world_, cat_, *hover_, selection_);
         g.valid = r == PaintResult::Ok || r == PaintResult::Unchanged;
         break;
     }
     case Tool::Remove:
         g.mode = Ghost::Mode::Remove;
         g.tile = *hover_;
-        g.valid = world_->itemAt(*hover_) != nullptr;
+        g.valid = world_.itemAt(*hover_) != nullptr;
         break;
     }
     return g;
 }
 
 void App::applyTool(TilePos t, bool first) {
-    World& w = *world_;
+    World& w = world_;
     const auto warn = [&](std::string_view text) {
         warning_ = text;
         warnTime_ = kWarnSeconds;
@@ -714,10 +705,10 @@ void App::applyTool(TilePos t, bool first) {
     case Tool::None: break;
     case Tool::Place: {
         const Item item = ghostItem(t);
-        const auto r = editor_.place(w, *cat_, item);
+        const auto r = editor_.place(w, cat_, item);
         if (r == PlaceResult::Ok) {
             scene_->onPlaced(item, simTime_, rng_);
-            play(cat_->items[item.type].sound, tuning::kSfxLevel, true);
+            play(cat_.items[item.type].sound, tuning::kSfxLevel, true);
             markDirty();
         } else if (first) {
             play(sfx::kInvalid);
@@ -725,10 +716,10 @@ void App::applyTool(TilePos t, bool first) {
         break;
     }
     case Tool::Paint: {
-        const auto r = editor_.paint(w, *cat_, t, selection_);
+        const auto r = editor_.paint(w, cat_, t, selection_);
         if (r == PaintResult::Ok) {
             if (simTime_ - lastPaintSound_ > tuning::kPaintSoundGap) {
-                const auto& snd = cat_->terrain[static_cast<std::size_t>(selection_)].sound;
+                const auto& snd = cat_.terrain[static_cast<std::size_t>(selection_)].sound;
                 play(snd.empty() ? sfx::kPaint : std::string_view(snd), tuning::kSfxLevel, true);
                 lastPaintSound_ = simTime_;
             }
@@ -759,12 +750,12 @@ void App::worldInput() {
     const bool uiOwns = hud_.wantsMouse() && drag_ != Drag::Tool;
     hover_.reset();
     if (mouseInside_ && !uiOwns && !photo_) {
-        const TilePos t = tileAt(camera_->screenToWorld(mouse_, screen()));
-        if (world_->inBounds(t)) hover_ = t;
+        const TilePos t = tileAt(camera_.screenToWorld(mouse_, screen()));
+        if (world_.inBounds(t)) hover_ = t;
     }
     if (!uiOwns && wheel_ != 0) {
         const int steps = wheel_ > 0 ? 1 : -1;
-        camera_->zoomAt(camera_->zoom() + steps, mouse_, screen());
+        camera_.zoomAt(camera_.zoom() + steps, mouse_, screen());
     }
     wheel_ = 0;
 
@@ -772,17 +763,17 @@ void App::worldInput() {
         if (tool_ == Tool::None || photo_) {
             drag_ = Drag::Pan;
             lastPan_ = mouse_;
-        } else if (hover_) {
+        } else if (const auto t = hover_) {
             drag_ = Drag::Tool;
             editor_.begin();
-            applyTool(*hover_, true);
-            lastTile_ = *hover_;
+            applyTool(*t, true);
+            lastTile_ = *t;
         }
     }
     if (drag_ == Drag::Tool && hover_ && *hover_ != lastTile_) {
         const bool repeat = tool_ != Tool::Place ||
-                            (cat_->items[static_cast<std::size_t>(selection_)].footprintW == 1 &&
-                             cat_->items[static_cast<std::size_t>(selection_)].footprintH == 1);
+                            (cat_.items[static_cast<std::size_t>(selection_)].footprintW == 1 &&
+                             cat_.items[static_cast<std::size_t>(selection_)].footprintH == 1);
         if (repeat) walkLine(lastTile_, *hover_, [&](TilePos t) { applyTool(t, false); });
         lastTile_ = *hover_;
     }
@@ -798,12 +789,12 @@ void App::step(float dt) {
     const Vec2 pan{(keyPan_[3] ? 1.0f : 0.0f) - (keyPan_[2] ? 1.0f : 0.0f),
                    (keyPan_[1] ? 1.0f : 0.0f) - (keyPan_[0] ? 1.0f : 0.0f)};
     if (pan.x != 0 || pan.y != 0)
-        camera_->nudge({pan.x * tuning::kKeyPanSpeed * dt, pan.y * tuning::kKeyPanSpeed * dt});
-    camera_->update(dt);
+        camera_.nudge({pan.x * tuning::kKeyPanSpeed * dt, pan.y * tuning::kKeyPanSpeed * dt});
+    camera_.update(dt);
 
-    visitors_->update(*world_, *cat_, night(), dt, rng_);
-    for (const VisitorEvent& e : visitors_->events()) {
-        const auto& def = cat_->visitors[static_cast<std::size_t>(e.visitor)];
+    visitors_.update(world_, cat_, night(), dt, rng_);
+    for (const VisitorEvent& e : visitors_.events()) {
+        const auto& def = cat_.visitors[static_cast<std::size_t>(e.visitor)];
         if (e.kind == VisitorEvent::Kind::Arrived && e.firstSighting) {
             hud_.toast(std::string(strings::kToastNewVisitor) + def.name);
             play(sfx::kDiscover);
@@ -812,7 +803,7 @@ void App::step(float dt) {
         if (!def.voice.empty() && (e.kind == VisitorEvent::Kind::Call || e.firstSighting))
             play(def.voice, tuning::kSfxLevel * 0.6f, true);
     }
-    scene_->update(dt, *world_, rain_, rng_);
+    scene_->update(dt, world_, rain_, rng_);
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);
     if (warnTime_ <= 0) warning_ = {};
@@ -831,17 +822,17 @@ void App::updateAudio() {
     mixer_.setLoopGain(Loop::Birds, tuning::kBirdsLevel * (1 - n) * (rain_ ? 0.3f : 1.0f));
     mixer_.setLoopGain(Loop::Crickets, tuning::kCricketsLevel * n * (rain_ ? 0.5f : 1.0f));
     mixer_.setLoopGain(Loop::Rain, rain_ ? tuning::kRainLevel : 0.0f);
-    const float water = static_cast<float>(world_->terrainCount(cat_->waterTerrain));
+    const float water = static_cast<float>(world_.terrainCount(cat_.waterTerrain));
     mixer_.setLoopGain(Loop::Water, tuning::kWaterLevel *
                                         std::min(1.0f, water / tuning::kWaterTilesForFullLevel));
 }
 
 void App::render() {
     FrameParams p;
-    p.world = &*world_;
-    p.critters = visitors_->critters();
+    p.world = &world_;
+    p.critters = visitors_.critters();
     p.ghost = ghost();
-    p.camera = &*camera_;
+    p.camera = &camera_;
     p.screen = screen();
     p.light = lightingAt(clock_.time(), rain_);
     p.time = simTime_;
@@ -863,7 +854,7 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
     switch (p.kind) {
     case ScriptPoint::Kind::Pixel: return Vec2{p.x, p.y};
     case ScriptPoint::Kind::Tile:
-        return camera_->worldToScreen(tileToWorld(p.x + 0.5f, p.y + 0.5f), screen());
+        return camera_.worldToScreen(tileToWorld(p.x + 0.5f, p.y + 0.5f), screen());
     case ScriptPoint::Kind::Widget: return hud_.widgetCentre(p.widget, model());
     }
     return std::nullopt;
@@ -934,26 +925,26 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
             return TilePos{static_cast<int>(c.a.x), static_cast<int>(c.a.y)};
         const auto px = resolve(c.a);
         if (!px) return std::nullopt;
-        return tileAt(camera_->screenToWorld(*px, screen()));
+        return tileAt(camera_.screenToWorld(*px, screen()));
     };
     if (what == "tile" || what == "item") {
         const auto t = tileOf();
-        if (!t || !world_->inBounds(*t)) return std::string("point is off the map");
+        if (!t || !world_.inBounds(*t)) return std::string("point is off the map");
         if (what == "tile") {
-            const auto& id = cat_->terrain[static_cast<std::size_t>(world_->terrainAt(*t))].id;
+            const auto& id = cat_.terrain[static_cast<std::size_t>(world_.terrainAt(*t))].id;
             return id == a[2] ? std::nullopt : std::optional(mismatch(id));
         }
-        const Item* it = world_->itemAt(*t);
-        const std::string id = it ? cat_->items[it->type].id : "none";
+        const Item* it = world_.itemAt(*t);
+        const std::string id = it ? cat_.items[it->type].id : "none";
         return id == a[2] ? std::nullopt : std::optional(mismatch(id));
     }
     if (what == "count") {
         if (a.size() != 3) return std::string("expect count ITEM N");
         int have = 0;
         if (a[1] == "all")
-            have = static_cast<int>(world_->items().size());
-        else if (const auto idx = cat_->findItem(a[1]))
-            have = world_->itemCount(*idx);
+            have = static_cast<int>(world_.items().size());
+        else if (const auto idx = cat_.findItem(a[1]))
+            have = world_.itemCount(*idx);
         else
             return "unknown item " + a[1];
         return std::to_string(have) == a[2] ? std::nullopt
@@ -972,19 +963,19 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "muted") return yesNo(muted_);
     if (what == "rain") return yesNo(rain_);
     if (what == "zoom") {
-        return std::to_string(camera_->zoom()) == a[1]
+        return std::to_string(camera_.zoom()) == a[1]
                    ? std::nullopt
-                   : std::optional(mismatch(std::to_string(camera_->zoom())));
+                   : std::optional(mismatch(std::to_string(camera_.zoom())));
     }
     if (what == "phase") {
         const std::string have(phaseId(clock_.phase()));
         return have == a[1] ? std::nullopt : std::optional(mismatch(have));
     }
     if (what == "seen") {
-        const auto v = cat_->findVisitor(a[1]);
+        const auto v = cat_.findVisitor(a[1]);
         if (!v) return "unknown visitor " + a[1];
-        return visitors_->seen(*v) ? std::nullopt
-                                   : std::optional(std::format("visitor {} not seen", a[1]));
+        return visitors_.seen(*v) ? std::nullopt
+                                  : std::optional(std::format("visitor {} not seen", a[1]));
     }
     if (what == "photos") {
         int n = 0;
@@ -1120,18 +1111,18 @@ void App::runBench() {
     // Fill every free tile with something, paint a lake, and render at night in the rain so every
     // pass (glow, light pools, particles) is busy.
     Rng fill(opts_.seed.value_or(1));
-    World& w = *world_;
+    World& w = world_;
     for (int y = 6; y < 12; ++y)
         for (int x = 4; x < 10; ++x)
-            if (w.itemAt({x, y}) == nullptr) w.setTerrain({x, y}, cat_->waterTerrain);
+            if (w.itemAt({x, y}) == nullptr) w.setTerrain({x, y}, cat_.waterTerrain);
     for (int y = 0; y < w.height(); ++y) {
         for (int x = 0; x < w.width(); ++x) {
             for (int attempt = 0; attempt < 8 && w.itemAt({x, y}) == nullptr; ++attempt) {
-                const int type = fill.range(0, static_cast<int>(cat_->items.size()) - 1);
+                const int type = fill.range(0, static_cast<int>(cat_.items.size()) - 1);
                 const int variant =
-                    fill.range(0, cat_->items[static_cast<std::size_t>(type)].count - 1);
-                const Item it = makeItem(*cat_, type, variant, {x, y});
-                if (canPlace(w, *cat_, it) == PlaceResult::Ok) w.addItem(it);
+                    fill.range(0, cat_.items[static_cast<std::size_t>(type)].count - 1);
+                const Item it = makeItem(cat_, type, variant, {x, y});
+                if (canPlace(w, cat_, it) == PlaceResult::Ok) w.addItem(it);
             }
         }
     }
@@ -1139,7 +1130,7 @@ void App::runBench() {
     rain_ = true;
     drawerOpen_ = true;
     journalOpen_ = true;
-    visitors_->populate(w, *cat_, night(), rng_);
+    visitors_.populate(w, cat_, night(), rng_);
 
     const int frames = opts_.frames > 0 ? opts_.frames : 600;
     double updSum = 0;
@@ -1170,7 +1161,7 @@ void App::runBench() {
     }
     const double n = frames - 10;
     std::printf("bench: %zu items, %zu critters, %dx%d, %d frames\n", w.items().size(),
-                visitors_->critters().size(), pixelW_, pixelH_, frames - 10);
+                visitors_.critters().size(), pixelW_, pixelH_, frames - 10);
     std::printf("bench: update avg %.3f ms, max %.3f ms\n", updSum / n, updMax);
     std::printf("bench: draw   avg %.3f ms, max %.3f ms (%s renderer)\n", drawSum / n, drawMax,
                 SDL_GetRendererName(renderer_.get()));
@@ -1273,7 +1264,16 @@ int App::run() {
 } // namespace
 
 int runApp(const Options& options) {
-    App app(options);
+    const SdlSession sdl(options.headless,
+                         !options.renderer.empty() && options.renderer != "software");
+    if (!sdl.ok) return 1;
+    fs::path assets = findAssets(options);
+    auto cat = loadCatalog(assets / "catalog.json");
+    if (!cat) {
+        SDL_Log("cannot start: %s", cat.error().c_str());
+        return 1;
+    }
+    App app(options, std::move(*cat), std::move(assets));
     return app.run();
 }
 

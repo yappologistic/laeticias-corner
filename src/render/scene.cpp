@@ -92,13 +92,14 @@ void Scene::rebuild(const World& world) {
     // Topological order over pairs whose sprites can overlap on screen.
     std::vector<Placed> all;
     all.reserve(n);
+    // Trees (tall nature pieces) drop the occasional leaf.
+    const auto nature = cat_.findCategory("nature");
     for (const Item& it : items) {
         const int slot = slotFor(world, it);
         const auto& def = cat_.items[it.type];
         const Rect r = spriteRect(it, slot);
         all.push_back({it, slot, r,
-                       def.category == *cat_.findCategory("nature") && !def.walkable &&
-                           r.y1 - r.y0 >= 30.0f});
+                       nature && def.category == *nature && !def.walkable && r.y1 - r.y0 >= 30.0f});
     }
     std::vector<std::vector<std::uint16_t>> next(n);
     std::vector<int> indegree(n, 0);
@@ -119,7 +120,7 @@ void Scene::rebuild(const World& world) {
     using Key = std::pair<float, std::size_t>;
     std::priority_queue<Key, std::vector<Key>, std::greater<>> ready;
     for (std::size_t i = 0; i < n; ++i)
-        if (indegree[i] == 0) ready.push({depth(i), i});
+        if (indegree[i] == 0) ready.emplace(depth(i), i);
     placed_.clear();
     std::vector<bool> done(n, false);
     while (placed_.size() < n) {
@@ -129,7 +130,7 @@ void Scene::rebuild(const World& world) {
             for (std::size_t i = 0; i < n; ++i)
                 if (!done[i] && (pick == n || depth(i) < depth(pick))) pick = i;
             indegree[pick] = 0;
-            ready.push({depth(pick), pick});
+            ready.emplace(depth(pick), pick);
         }
         const auto [d, i] = ready.top();
         ready.pop();
@@ -137,7 +138,7 @@ void Scene::rebuild(const World& world) {
         done[i] = true;
         placed_.push_back(all[i]);
         for (const auto j : next[i])
-            if (--indegree[j] == 0 && !done[j]) ready.push({depth(j), j});
+            if (--indegree[j] == 0 && !done[j]) ready.emplace(depth(j), j);
     }
 
     glowRects_.clear();
@@ -155,13 +156,12 @@ void Scene::rebuild(const World& world) {
         const auto slot = static_cast<std::size_t>(p.slot);
         const Vec2 a =
             tileToWorld(static_cast<float>(p.item.pos.x), static_cast<float>(p.item.pos.y));
-        if (slot < spr.light.size() && spr.light[slot]) {
+        if (const auto& light = spr.light[slot]) {
             const float size = static_cast<float>(std::max(p.item.w, p.item.h));
-            lights_.push_back(
-                {{a.x + spr.light[slot]->x, a.y + spr.light[slot]->y}, 26.0f + 14.0f * size});
+            lights_.push_back({{a.x + light->x, a.y + light->y}, 26.0f + 14.0f * size});
         }
-        if (slot < spr.smoke.size() && spr.smoke[slot])
-            chimneys_.push_back({a.x + spr.smoke[slot]->x, a.y + spr.smoke[slot]->y});
+        if (const auto& smoke = spr.smoke[slot])
+            chimneys_.push_back({a.x + smoke->x, a.y + smoke->y});
     }
     water_.clear();
     for (int y = 0; y < world.height(); ++y)

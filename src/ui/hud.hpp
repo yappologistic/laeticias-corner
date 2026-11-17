@@ -144,6 +144,7 @@ private:
     float scale_ = 1;
     Vec2 screen_;
     int hovered_ = 0;
+    int pointed_ = 0;
     int active_ = 0;
     bool overUi_ = false;
     bool captured_ = false;

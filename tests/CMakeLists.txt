@@ -12,12 +12,15 @@ target_compile_definitions(lc_tests PRIVATE
   LC_TEST_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
   LC_TEST_SCRATCH_DIR="${LC_SCRATCH}")
 lc_project_target(lc_tests)
+# doctest 2.4.12 includes <ciso646> under Clang, which libstdc++ 16 flags with a #warning that
+# cannot be silenced per header; it is harmless, so only that diagnostic is relaxed for tests.
+target_compile_options(lc_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
 
 # Each doctest case is its own ctest entry so failures are easy to spot.
 add_test(NAME unit COMMAND lc_tests --test-case-exclude=*coverage*)
 add_test(NAME coverage COMMAND lc_tests --test-case=*coverage* --success=false)
 set_tests_properties(unit coverage PROPERTIES
-  ENVIRONMENT "SDL_VIDEODRIVER=offscreen;SDL_AUDIODRIVER=dummy")
+  ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
 
 # Scripted headless runs through the real executable. Each script lives in tests/scripts/ and
 # fails the run (non-zero exit) when one of its `expect` lines does not hold. Entries are
@@ -37,7 +40,7 @@ set(LC_SCRIPTS
   "rain|rain|1280x800"
   "visitors|visitors|1280x800"
 )
-set(LC_RUN_ENV "SDL_VIDEODRIVER=offscreen;SDL_AUDIODRIVER=dummy;LAETICIA_SAVE_DIR=${LC_SCRATCH}/unused")
+set(LC_RUN_ENV "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy;LAETICIA_SAVE_DIR=${LC_SCRATCH}/unused")
 set(LC_SAVE_DIRS "")
 foreach(entry IN LISTS LC_SCRIPTS)
   string(REPLACE "|" ";" parts "${entry}")

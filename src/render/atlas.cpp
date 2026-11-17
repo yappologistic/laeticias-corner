@@ -27,7 +27,7 @@ void put(SDL_Surface* s, int x, int y, Rgba c) {
 }
 
 std::uint8_t toByte(float v) {
-    return static_cast<std::uint8_t>(std::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f);
+    return static_cast<std::uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255.0f));
 }
 
 } // namespace

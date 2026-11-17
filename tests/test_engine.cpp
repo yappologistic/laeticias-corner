@@ -1,5 +1,6 @@
 #include "app/options.hpp"
 #include "app/script.hpp"
+#include "audio/mixer.hpp"
 #include "core/tuning.hpp"
 #include "render/atlas.hpp"
 #include "render/camera.hpp"
@@ -8,6 +9,8 @@
 #include "test_support.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+
+#include <SDL3/SDL.h>
 
 #include <doctest.h>
 
@@ -183,4 +186,24 @@ TEST_CASE("particles expire and rain leaves ripples on water") {
     CHECK(p.all().size() == Particles::kCapacity);
     p.update(5.0f, w);
     CHECK(p.all().empty());
+}
+
+TEST_CASE("mixer loads the catalog's audio and plays through the dummy device") {
+    // Forced to the dummy driver even when run by hand: tests never reach the speakers.
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+    REQUIRE(SDL_Init(SDL_INIT_AUDIO));
+    {
+        Mixer mixer;
+        mixer.load(test::assetsDir() / "audio", test::catalog().audio);
+        CHECK(mixer.sfxIndex("sfx/not_a_sound.wav") == -1);
+        const int click = mixer.sfxIndex("sfx/ui_click.wav");
+        if (mixer.open()) {
+            mixer.setLoopGain(Loop::DayMusic, 0.5f);
+            for (int i = 0; i < 100; ++i) mixer.play(click, 0.5f, 1.05f); // overflows the ring
+            mixer.setMuted(true);
+            SDL_Delay(50);
+            mixer.close();
+        }
+    }
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }

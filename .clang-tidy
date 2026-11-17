@@ -1,18 +1,21 @@
 ---
-# Bug-finding and performance checks; style-only checks that fight the codebase's conventions
-# (trailing return types, magic numbers in tuning tables, short names in maths) are disabled.
+# Bug-finding and performance checks. Disabled on purpose:
+#  - signed-bitwise: neighbour masks and hashes are small non-negative ints by construction;
+#  - misplaced-widening-cast: index casts of bounded grid/sprite coordinates;
+#  - inefficient-string-concatenation: only on load-time error/key building, never per frame;
+#  - no-malloc/owning-memory: they flag the RAII deleters that wrap SDL's C API.
 Checks: >
   -*,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   -bugprone-narrowing-conversions,
   -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-signed-bitwise,
+  -bugprone-misplaced-widening-cast,
   cert-err33-c,
   clang-analyzer-*,
   -clang-analyzer-optin.performance.Padding,
   cppcoreguidelines-init-variables,
-  cppcoreguidelines-no-malloc,
-  cppcoreguidelines-owning-memory,
   cppcoreguidelines-slicing,
   misc-redundant-expression,
   misc-unused-using-decls,
@@ -22,6 +25,7 @@ Checks: >
   modernize-use-emplace,
   performance-*,
   -performance-enum-size,
+  -performance-inefficient-string-concatenation,
   readability-container-size-empty,
   readability-redundant-string-cstr,
   readability-simplify-boolean-expr,

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <unordered_set>
 
 namespace lc {
@@ -12,8 +13,8 @@ namespace {
 
 using nlohmann::json;
 
-struct Invalid {
-    std::string message;
+struct Invalid : std::runtime_error {
+    using std::runtime_error::runtime_error;
 };
 
 [[noreturn]] void fail(const std::string& msg) {
@@ -84,7 +85,7 @@ Catalog parse(const json& root) {
     if (cat.mapW < 1 || cat.mapH < 1 || cat.mapW > 256 || cat.mapH > 256)
         fail("map: size out of range");
 
-    const auto audio = root.at("audio");
+    const auto& audio = root.at("audio");
     cat.audio.music = get<std::vector<std::string>>(audio, "music", "audio");
     cat.audio.ambience = get<std::vector<std::string>>(audio, "ambience", "audio");
     cat.audio.sfx = get<std::vector<std::string>>(audio, "sfx", "audio");
@@ -116,8 +117,9 @@ Catalog parse(const json& root) {
     checkUnique(cat.terrain, "terrain");
     if (baseCount != 1) fail("terrain: exactly one base terrain is required");
     if (cat.terrain.size() > 255) fail("terrain: too many entries");
-    cat.baseTerrain = *findById(
-        cat.terrain, std::ranges::find_if(cat.terrain, [](auto& t) { return t.base; })->id);
+    cat.baseTerrain = static_cast<int>(
+        std::ranges::find_if(cat.terrain, [](const TerrainDef& t) { return t.base; }) -
+        cat.terrain.begin());
     const auto water = cat.findTerrain("water");
     if (!water) fail("terrain: a 'water' terrain is required");
     cat.waterTerrain = *water;
@@ -249,7 +251,7 @@ std::expected<Catalog, std::string> parseCatalog(std::string_view text) {
     try {
         return parse(json::parse(text));
     } catch (const Invalid& e) {
-        return std::unexpected(e.message);
+        return std::unexpected(std::string(e.what()));
     } catch (const json::exception& e) {
         return std::unexpected(std::string("catalog: ") + e.what());
     }

@@ -5,7 +5,8 @@
 #include "core/tuning.hpp"
 
 #define STB_VORBIS_HEADER_ONLY
-#include <stb_vorbis.c>
+// stb_vorbis ships as one .c file; HEADER_ONLY exposes just its declarations.
+#include <stb_vorbis.c> // NOLINT(bugprone-suspicious-include)
 
 #include <algorithm>
 #include <cmath>

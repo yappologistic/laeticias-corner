@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <cmath>
 #include <fstream>
 
 namespace lc {
@@ -96,7 +97,8 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
         if (root.contains("clock")) {
             const auto& c = root["clock"];
             data.clockTime = c.value("t", data.clockTime);
-            if (!(data.clockTime >= 0.0 && data.clockTime < 1.0)) data.clockTime = 0.2;
+            if (!std::isfinite(data.clockTime) || data.clockTime < 0.0 || data.clockTime >= 1.0)
+                data.clockTime = 0.2;
             data.pin = parsePin(c.value("pin", std::string("auto"))).value_or(ClockPin::Auto);
         }
         if (root.contains("settings")) {

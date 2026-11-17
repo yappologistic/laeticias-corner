@@ -19,7 +19,7 @@ std::expected<ScriptPoint, std::string> point(std::string_view tok) {
         if (p.widget.empty()) return std::unexpected("empty widget name");
         return p;
     }
-    if (tok.starts_with("@")) {
+    if (tok.starts_with('@')) {
         p.kind = ScriptPoint::Kind::Tile;
         tok.remove_prefix(1);
     }

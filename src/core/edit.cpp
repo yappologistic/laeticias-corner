@@ -23,8 +23,8 @@ void apply(World& world, const Op& op, bool forward) {
     case Op::Kind::Remove:
         if ((op.kind == Op::Kind::Add) == forward)
             world.addItem(op.item);
-        else
-            world.removeItem(*world.itemIndexAt(op.item.pos));
+        else if (const auto idx = world.itemIndexAt(op.item.pos))
+            world.removeItem(*idx);
         break;
     }
 }

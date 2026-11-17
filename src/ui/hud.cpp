@@ -330,12 +330,13 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
 
     if (m.photo) {
         overUi_ = captured_ = false;
-        hovered_ = active_ = 0;
+        hovered_ = pointed_ = active_ = 0;
         return;
     }
     const bool canPoint = in.inside && !in.blocked;
     overUi_ = false;
-    int hovered = 0;
+    int hovered = 0; // enabled widget under the pointer
+    int pointed = 0; // any widget under the pointer: disabled ones still explain themselves
     if (canPoint) {
         for (const Panel& p : panels_)
             if (p.alpha > 0.5f && p.box.contains(in.x, in.y)) overUi_ = true;
@@ -343,6 +344,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
             if (it->box.contains(in.x, in.y)) {
                 overUi_ = true;
+                pointed = it->id;
                 if (it->enabled) hovered = it->id;
                 break;
             }
@@ -352,8 +354,9 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     if (hovered >= kTab0 && drawerT_ < 1.0f && !m.drawerOpen) hovered = 0;
     if (hovered == kJournalClose && !m.journalOpen) hovered = 0;
     if (hovered != hovered_ && hovered != 0) emit(HudAction::Kind::Hover);
-    if (hovered != hovered_) hoverTime_ = 0;
+    if (pointed != pointed_) hoverTime_ = 0;
     hovered_ = hovered;
+    pointed_ = pointed;
     hoverTime_ += dt;
 
     if (in.pressed && canPoint && overUi_) {
@@ -407,8 +410,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             approach(press_[static_cast<std::size_t>(id)],
                      id == active_ && id == hovered_ && id != 0, dt * 2);
     }
-    const bool showTip = hovered_ != 0 && hoverTime_ > theme::kTooltipDelay && active_ == 0;
-    if (showTip) tooltipId_ = hovered_;
+    const bool showTip = pointed_ != 0 && hoverTime_ > theme::kTooltipDelay && active_ == 0;
+    if (showTip) tooltipId_ = pointed_;
     tooltipT_ = approach(tooltipT_, showTip, dt);
 }
 
