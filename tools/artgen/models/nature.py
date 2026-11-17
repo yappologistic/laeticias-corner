@@ -533,17 +533,28 @@ def tall_grass(v, frame, frames, k):
     return m
 
 
-def _flower_patch(v, k, seed, head):
+def _flower_patch(v, k, seed, head, season=None):
+    """In winter the same plants stand dried: straw stems bent over, brown seed heads."""
     rng = Rng(seed, v)
     m = Model.empty(-2, 18, -2, 18, 0, 14, k=k)
-    _blades(m, rng, 14, 5.5, 2, 4.5, ["grass", "leaf"], spread=2.0, tip=0.3)
+    winter = season == "winter"
+    _blades(m, rng, 14, 5.5, 2, 4.5, ["straw", "soil"] if winter else ["grass", "leaf"], spread=2.0, tip=0.3)
     X, Y, Z = m.coords()
     for n in range(rng.integers(7, 11)):
         a, d = rng.uniform(0, 6.28), 5.5 * math.sqrt(rng.uniform(0.05, 1))
         x, y = C + d * math.cos(a), C + d * math.sin(a)
         h = rng.uniform(3.5, 7.5)
+        if winter:
+            droop = rng.uniform(0.8, 2.0)
+            tip = (x + droop * math.cos(a), y + droop * math.sin(a), h * 0.8)
+            m.put_points(curve((x, y, 0.2), tip, bend=(droop * 0.5, 0)), "straw", tone=-0.3)
+            m.put(ellipsoid(X, Y, Z, *tip, 0.7, 0.7, 0.6), "bark", tone=0.3,
+                  normal=ellipsoid_normal(X, Y, Z, *tip, 0.7, 0.7, 0.6))
+            continue
         m.put_points(curve((x, y, 0.2), (x, y, h), bend=(rng.uniform(-0.6, 0.6), 0)), "grass")
         head(m, X, Y, Z, x, y, h, rng)
+    if winter:
+        snow_caps(m, seed + v, density=0.5)
     return m
 
 
@@ -598,16 +609,16 @@ def _lavender(m, X, Y, Z, x, y, h, rng):
                      "violet", tone=0.2 + k * (0.25 / m.k))
 
 
-def flowers_red(v, frame, frames, k):
-    return _flower_patch(v, k, 107, _poppy)
+def flowers_red(v, frame, frames, k, season=None):
+    return _flower_patch(v, k, 107, _poppy, season)
 
 
-def flowers_white(v, frame, frames, k):
-    return _flower_patch(v, k, 108, _daisy)
+def flowers_white(v, frame, frames, k, season=None):
+    return _flower_patch(v, k, 108, _daisy, season)
 
 
-def flowers_violet(v, frame, frames, k):
-    return _flower_patch(v, k, 109, _lavender)
+def flowers_violet(v, frame, frames, k, season=None):
+    return _flower_patch(v, k, 109, _lavender, season)
 
 
 # Per variant: cap material and the cluster as (dx, dy, scale); the first is the biggest.
@@ -747,7 +758,7 @@ def sunflowers(v, frame, frames, k, season=None):
     m = Model.empty(-4, 20, -4, 20, 0, 30, k=k)
     X, Y, Z = m.coords()
     n = 3 + (v % 2)
-    face_n = np.array((0.62, 0.62, 0.48))
+    face_n = np.array((0.62, 0.62, 0.48) if season != "winter" else (0.5, 0.5, -0.7))
     face_n /= np.linalg.norm(face_n)
     for i in range(n):
         a = i * 2.4 + rng.uniform(0, 1.2) + v
@@ -756,12 +767,14 @@ def sunflowers(v, frame, frames, k, season=None):
         h = rng.uniform(17, 24)
         top = (x + rng.uniform(-0.6, 0.6), y + rng.uniform(-0.6, 0.6), h)
         sl, Xs, Ys, Zs = m.window(x, y, h / 2, (2, 2, h / 2 + 1))
-        m.put(segment(Xs, Ys, Zs, (x, y, 0), top, 0.45), "grass", tone=-0.2, sl=sl)
+        m.put(segment(Xs, Ys, Zs, (x, y, 0), top, 0.45), "straw" if season == "winter" else "grass", tone=-0.2,
+              sl=sl)
         for z, side in ((h * 0.35, 1), (h * 0.55, -1), (h * 0.75, 1)):   # broad leaves up the stem
             b = a + side * 1.6
             c = (x + 1.6 * math.cos(b), y + 1.6 * math.sin(b), z)
             sl, Xs, Ys, Zs = m.window(*c, 2.2)
-            m.put(ellipsoid(Xs, Ys, Zs, *c, 1.7, 1.7, 0.45), "leaf", tone=0.3 - 0.5 * (Zs < z), sl=sl,
+            m.put(ellipsoid(Xs, Ys, Zs, *c, 1.7, 1.7, 0.45), "bark" if season == "winter" else "leaf",
+                  tone=0.3 - 0.5 * (Zs < z), sl=sl,
                   normal=(Xs - x, Ys - y, Zs * 0 + 2.0))
         # The head: a disc facing the sun's side of the garden, petals round a seed centre.
         cx, cy, cz = top[0] + face_n[0] * 0.6, top[1] + face_n[1] * 0.6, h + 0.6
@@ -777,6 +790,9 @@ def sunflowers(v, frame, frames, k, season=None):
         seeds = (hash01(np.floor(Xs * 3).astype(np.int64), np.floor(Ys * 3).astype(np.int64),
                         np.floor(Zs * 3).astype(np.int64), 191) - 0.5)
         nrm = tuple(np.broadcast_to(c, Xs.shape * 0 + depth.shape) for c in face_n)
+        if season == "winter":   # dried: the petals gone, the seed head dark and bowed
+            m.put(centre | (disc & (radial < 2.2)), "bark", tone=-0.2 + seeds, normal=nrm, sl=sl)
+            continue
         m.put(petal, "yellow", tone=0.4 - 0.6 * (radial > 2.9), normal=nrm, sl=sl)
         m.put(centre, "bark", tone=0.4 + seeds - 0.5 * (radial > 1.2), normal=nrm, sl=sl)
         m.put((depth < -0.4) & (depth > -1.0) & (radial < 1.6), "grass", tone=-0.4, sl=sl)

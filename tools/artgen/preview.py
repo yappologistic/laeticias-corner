@@ -564,8 +564,8 @@ def delights(atlas: Atlas) -> Image.Image:
     scene = delight_scene()
     img = scene.render(atlas)
     im, ox, oy = atlas.get("sky/rainbow")
-    sky = Image.new("RGBA", img.size, BG + (255,))
-    sky.alpha_composite(im, (img.width // 2 - ox, int(img.height * 0.45) - oy))
+    sky = Image.new("RGBA", img.size, (150, 186, 214, 255))      # a daytime sky, as the engine draws it
+    sky.alpha_composite(im, (img.width // 2 - ox, int(img.height * 0.36) - oy))
     island = np.asarray(img).copy()
     base = (np.abs(island[..., :3].astype(int) - BG).sum(-1) == 0)
     out = np.where(base[..., None], np.asarray(sky), island).astype(np.uint8)

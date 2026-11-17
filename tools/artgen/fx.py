@@ -303,6 +303,21 @@ PRODUCE = (
 )
 
 
+FOOTPRINT = (".bb...", "bbbb..", ".bb...", "....bb", "...bbbb", "....bb.")
+EGG = ("..cC..", ".cCCC.", "cCCCCc", "cCCCCc", ".cccc.", "YeYYeY")
+
+
+def footprint(frame, frames, k):
+    """A pair of boot prints pressed into snow, anchored at their middle."""
+    rows = tuple(r.ljust(7, ".") for r in FOOTPRINT)
+    return _stencil(rows, k, alpha=200, oy=3)
+
+
+def egg(frame, frames, k):
+    """A fresh egg in a twist of straw, by the coop."""
+    return _stencil(EGG, k)
+
+
 def produce(frame, frames, k):
     """Frame k is the crop of veggie bed variant r<k>, for the harvest pop."""
     return _stencil(PRODUCE[frame % 4], k)
@@ -311,7 +326,7 @@ def produce(frame, frames, k):
 EFFECTS = {"smoke": smoke, "ripple": ripple, "sparkle": sparkle, "raindrop": raindrop, "leaf": leaf,
            "heart": heart, "petal": petal, "snowflake": snowflake, "moth": moth, "fish_jump": fish_jump,
            "star_streak": star_streak, "apple": apple, "clear": clear, "mist": mist, "zzz": zzz,
-           "produce": produce}
+           "produce": produce, "footprint": footprint, "egg": egg}
 
 
 def build(keys: list[str], cat: dict, k: int) -> dict[str, Sprite]:

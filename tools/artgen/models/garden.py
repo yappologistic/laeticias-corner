@@ -473,9 +473,9 @@ def stone_wall(mask, frame, frames, k):
     joint = (f2 - f1) < 0.3
     lit_edge = (off[:, 2] > 0.6)
     tone = np.zeros(m.mat.shape, np.float32)
-    tone[idx] = 0.9 + (h - 0.5) * 1.0 - joint * 1.9 + lit_edge * 0.5
+    tone[idx] = 0.5 + (h - 0.5) * 1.0 - joint * 1.9 + lit_edge * 0.5
     ochre = np.zeros(m.mat.shape, bool)
-    ochre[idx] = (h > 0.7) & ~joint
+    ochre[idx] = (h > 0.84) & ~joint
     m.density_normals(solid, radius=1)
     m.tone[solid] = tone[solid]
     m.mat[ochre] = MAT["wood_light"]
@@ -483,7 +483,7 @@ def stone_wall(mask, frame, frames, k):
     covered = np.zeros_like(solid)
     covered[:, :, :-1] = solid[:, :, 1:]
     moss_n = value_noise(X, Y, Z, 1.6, 741, period=10)
-    m.put(solid & ~covered & (Z > height - 2.2) & (moss_n > 0.5), "grass", tone=-0.5 + (moss_n > 0.65) * 0.6)
+    m.put(solid & ~covered & (Z > height - 2.2) & (moss_n > 0.5), "grass", tone=-1.1 + (moss_n > 0.68) * 0.6)
     m.ghost_outside(0, 16, 0, 16)
     return m
 

@@ -48,6 +48,11 @@
     {"rank": "nice", "requires": ["version:2", "seasons", "item:bush", "item:berry_bush", "item:hedge"], "keys": [
       "item/{bush,berry_bush}/base/r{0-3}/f0@winter", "item/hedge/base/m{0-15}/f0@winter"]},
     {"rank": "nice", "requires": ["version:2", "seasons", "item:oak", "item:blossom", "item:apple_tree"], "keys": [
-      "item/{oak,blossom}/shadow/r{0-3}/f{0-3}@winter", "item/apple_tree/shadow/r{0-1}/f{0-3}@winter"]}
+      "item/{oak,blossom}/shadow/r{0-3}/f{0-3}@winter", "item/apple_tree/shadow/r{0-1}/f{0-3}@winter"]},
+    {"rank": "nice", "requires": ["version:2", "seasons", "item:sunflowers"], "keys": [
+      "item/{flowers_red,flowers_white,flowers_violet,sunflowers}/base/r{0-3}/f0@winter"]},
+    {"rank": "nice", "requires": ["version:2", "resident:laeticia"], "keys": [
+      "critter/laeticia/umbrella_{front,back}/f{0-5}"]},
+    {"rank": "nice", "requires": ["version:2"], "keys": ["fx/footprint/f0", "fx/egg/f0"]}
   ]
 }

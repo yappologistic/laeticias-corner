@@ -432,7 +432,24 @@ def _arms(left, right):
     return Arm(*left), Arm(*right)
 
 
-def _walk(frame, frames, carry=False):
+def _umbrella(hand):
+    """A red and cream umbrella held up over her head."""
+    def draw(f: Figure, dz):
+        X, Y, Z = f.X, f.Y, f.Z
+        top = (0.4, 0.4, 26.0 + dz)
+        f.limb(hand, top, 0.18, "wood", tone=0.3)
+        rel = np.stack(np.broadcast_arrays(X - top[0], Y - top[1], Z - top[2] + 1.6), -1)
+        rho = np.hypot(rel[..., 0], rel[..., 1])
+        canopy = (rho < 4.8) & (np.abs(rel[..., 2] - 1.6 * (1 - (rho / 4.8) ** 2)) < 0.35 + 0.15 * (rho < 1))
+        panel = (np.floor((np.arctan2(rel[..., 1], rel[..., 0]) + math.pi) / (math.pi / 4)) % 2) == 0
+        n = (rel[..., 0] * 0.4, rel[..., 1] * 0.4, np.ones_like(rho) * 2.0)
+        f.put(canopy & panel, "red_paint", tone=0.5 - 0.6 * (rho > 4.2), normal=n)
+        f.put(canopy & ~panel, "cream", tone=0.4 - 0.6 * (rho > 4.2), normal=n)
+        f.blob((top[0], top[1], top[2] + 0.2), (0.3, 0.3, 0.4), "wood", tone=0.6)
+    return draw
+
+
+def _walk(frame, frames, carry=False, umbrella=False):
     ph = 2 * math.pi * frame / frames
     s = math.sin(ph)
     feet = ((0.3 + 1.4 * s, 0.85), (0.3 - 1.4 * s, -0.85))
@@ -443,6 +460,10 @@ def _walk(frame, frames, carry=False):
     if carry:
         left = Arm((0.2, 3.15, 11.0), (1.0, 3.25, 9.5))
         props.append(_basket((0.7, 3.4, 8.8 + lift * 0.5)))
+    if umbrella:
+        hand = (1.3, 1.9, 14.6 + lift * 0.5)
+        left = Arm((0.8, 3.1, 12.6), hand)
+        props.append(_umbrella(hand))
     return Pose(lift=lift, left=left, right=right, feet=feet, toe_lift=toe,
                 hem=(0.3 * s, 0.0), bag_swing=0.35 * math.sin(ph - 0.9), props=props)
 
@@ -546,7 +567,8 @@ def _sleep(frame, frames):
     return Pose(lying=True, lift=0.0, left=left, right=right)
 
 
-ANIMS = {"move": _walk, "carry": lambda f, n: _walk(f, n, carry=True), "idle": _idle, "sit": _sit,
+ANIMS = {"move": _walk, "carry": lambda f, n: _walk(f, n, carry=True),
+         "umbrella": lambda f, n: _walk(f, n, umbrella=True), "idle": _idle, "sit": _sit,
          "read": _read, "sketch": _sketch, "warm": _warm, "stretch": _stretch, "wave": _wave,
          "toss": _toss, "water": _water, "scatter": _scatter, "lie": _lie, "sleep": _sleep}
 
@@ -588,7 +610,7 @@ def model(anim: str, frame: int, frames: int, k: int) -> Model:
         if anim == "sleep":
             _bedroll(m, frame % 2)
         return m
-    m = Model.empty(-6, 10, -7, 9, -6 if pose.sit == "chair" else 0, 24, k=k)
+    m = Model.empty(-6, 10, -7, 9, -6 if pose.sit == "chair" else 0, 29, k=k)
     m.hover = pose.sit == "chair"
     figure(Figure(m), pose)
     return m
