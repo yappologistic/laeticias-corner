@@ -49,14 +49,14 @@ void Batch::triangles(const SDL_Vertex* verts, int vertCount, const int* indices
 }
 
 void Batch::quad(const SDL_FPoint (&p)[4], UvRect uv, SDL_FColor color) {
-    const SDL_Vertex v[4] = {
-        {p[0], color, {uv.u0, uv.v0}},
-        {p[1], color, {uv.u1, uv.v0}},
-        {p[2], color, {uv.u1, uv.v1}},
-        {p[3], color, {uv.u0, uv.v1}},
-    };
-    static constexpr int kIdx[6] = {0, 1, 2, 0, 2, 3};
-    triangles(v, 4, kIdx, 6);
+    // The hot path of every frame: written straight into the arrays.
+    if (verts_.size() + 4 > kMaxVerts || indices_.size() + 6 > kMaxIndices) flush();
+    const int base = static_cast<int>(verts_.size());
+    verts_.push_back({p[0], color, {uv.u0, uv.v0}});
+    verts_.push_back({p[1], color, {uv.u1, uv.v0}});
+    verts_.push_back({p[2], color, {uv.u1, uv.v1}});
+    verts_.push_back({p[3], color, {uv.u0, uv.v1}});
+    for (const int k : {0, 1, 2, 0, 2, 3}) indices_.push_back(base + k);
 }
 
 void Batch::quad(SDL_FRect d, UvRect uv, SDL_FColor color) {

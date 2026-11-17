@@ -104,6 +104,21 @@ inline constexpr float kLightStrength = 0.5f;
 // never out-shine the lights.
 inline constexpr float kNightLumaCap = 0.42f;
 inline constexpr float kWaterShadowAlpha = 0.4f;
+inline constexpr float kWarmLight[3] = {1.0f, 0.78f, 0.48f};   // lamp, fire and window pools
+inline constexpr float kFireflyHalo[3] = {0.75f, 1.0f, 0.55f}; // light around a firefly
+inline constexpr float kFireflyCore[3] = {0.8f, 1.0f, 0.5f};   // its glowing body
+inline constexpr float kInvalidTint[3] = {1.0f, 0.45f, 0.42f}; // refused ghosts, removal mark
+inline constexpr float kCritterMoveFps = 6.0f;
+inline constexpr float kCritterIdleFps = 2.0f;
+inline constexpr float kWarnSeconds = 1.6f; // how long a refusal stays in the hint line
+inline constexpr float kClickSlop = 4.0f;   // window px a click may move and still be a click
+
+// Rendering budgets
+inline constexpr std::size_t kGroundCacheBytes = 128u << 20; // GPU memory for cached ground
+// Objects are gathered for the view grown by this share of its size (at least the minimum, in
+// tiles), so panning rarely rebuilds the depth order.
+inline constexpr float kRegionGrow = 0.3f;
+inline constexpr int kRegionMinGrow = 8;
 
 // Audio levels (linear gain)
 inline constexpr float kMusicLevel = 0.55f;

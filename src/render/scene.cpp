@@ -8,19 +8,14 @@
 namespace lc {
 namespace {
 
-constexpr float kCritterMoveFps = 6.0f;
-constexpr float kCritterIdleFps = 2.0f;
 constexpr SDL_FColor kWhite{1, 1, 1, 1};
-constexpr SDL_FColor kInvalidTint{1.0f, 0.45f, 0.42f, 1.0f};
-constexpr SDL_FColor kWarmLight{1.0f, 0.78f, 0.48f, 1.0f};
-constexpr SDL_FColor kFireflyHalo{0.75f, 1.0f, 0.55f, 1.0f};
-constexpr SDL_FColor kFireflyCore{0.8f, 1.0f, 0.5f, 1.0f};
-// GPU memory the ground cache may use; about 9 pages of 6 chunk slots at 64 x 32 tiles.
-constexpr std::size_t kGroundBudget = 128u << 20;
-// Region margin around the view, as a fraction of the view's size in tiles (and at least this
-// many tiles), so panning rebuilds rarely.
-constexpr float kRegionGrow = 0.3f;
-constexpr int kRegionMinGrow = 8;
+constexpr SDL_FColor colour(const float (&c)[3]) {
+    return {c[0], c[1], c[2], 1.0f};
+}
+constexpr SDL_FColor kInvalidTint = colour(tuning::kInvalidTint);
+constexpr SDL_FColor kWarmLight = colour(tuning::kWarmLight);
+constexpr SDL_FColor kFireflyHalo = colour(tuning::kFireflyHalo);
+constexpr SDL_FColor kFireflyCore = colour(tuning::kFireflyCore);
 constexpr std::size_t kMaxPops = 256;
 constexpr std::size_t kMaxFades = 64;
 
@@ -56,7 +51,8 @@ void grow(Reach& r, const Sprite& s, float extraTop = 0) {
 Scene::Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat)
     : renderer_(renderer), atlas_(atlas), cat_(cat), iso_(cat.iso()),
       tables_(buildSpriteTables(atlas, cat)), batch_(renderer), particles_(cat.iso()) {
-    ground_ = std::make_unique<GroundCache>(renderer, atlas, cat, tables_, kGroundBudget);
+    ground_ =
+        std::make_unique<GroundCache>(renderer, atlas, cat, tables_, tuning::kGroundCacheBytes);
     if (const SurfacePtr px{SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_RGBA32)};
         px && SDL_ClearSurface(px.get(), 1, 1, 1, 1))
         white_ = uploadTexture(renderer, px.get());
@@ -164,20 +160,26 @@ void Scene::rebuild(const World& world, TileRect region) {
             chimneys_.push_back(
                 {a.x + static_cast<float>(smoke[slot].x), a.y + static_cast<float>(smoke[slot].y)});
         if (spr.glow[slot].empty()) continue;
-        glowRects_.push_back(p.screen);
-        grid_.query(p.screen, [&](std::uint32_t j) {
-            if (placed_[j].screen.overlaps(p.screen)) placed_[j].occludesGlow = true;
+        // Only what can hide an emissive pixel needs the glow pass: use the glow art's bounds.
+        const Sprite& gs = atlas_.sprite(spr.glow[slot].frames.front());
+        const FRect glowBox{a.x - gs.ox, a.y - gs.oy, a.x - gs.ox + gs.w, a.y - gs.oy + gs.h};
+        glowRects_.push_back(glowBox);
+        // Things behind the light cannot cover it.
+        grid_.query(glowBox, [&](std::uint32_t j) {
+            if (placed_[j].screen.overlaps(glowBox) &&
+                (j == i || behind(footprints_[i], footprints_[j])))
+                placed_[j].occludesGlow = true;
         });
         // The pool lies on the ground: under a small light, or in front of a building, below
         // its windows.
         const TileRect fp = p.item.rect();
         const auto f = [](int v) { return static_cast<float>(v); };
         Vec2 pos = iso_.toWorld(f(fp.x0) + f(p.item.w) * 0.5f, f(fp.y0) + f(p.item.h) * 0.5f);
-        if (spr.light[slot] && (p.item.w > 1 || p.item.h > 1)) {
+        if (const auto& light = spr.light[slot]; light && (p.item.w > 1 || p.item.h > 1)) {
             const Vec2 left = iso_.toWorld(f(fp.x0), f(fp.y1));
             const Vec2 bottom = iso_.toWorld(f(fp.x1), f(fp.y1));
             const Vec2 right = iso_.toWorld(f(fp.x1), f(fp.y0));
-            const float x = std::clamp(a.x + spr.light[slot]->x, left.x, right.x);
+            const float x = std::clamp(a.x + light->x, left.x, right.x);
             const Vec2 from = x <= bottom.x ? left : bottom;
             const Vec2 to = x <= bottom.x ? bottom : right;
             const float k = to.x > from.x ? (x - from.x) / (to.x - from.x) : 0.0f;
@@ -404,7 +406,8 @@ void Scene::drawCritter(const Critter& c, bool silhouette) {
         c.moving ? (back ? CritterAnim::MoveBack : CritterAnim::MoveFront)
                  : (back ? CritterAnim::IdleBack : CritterAnim::IdleFront));
     const FrameSet& set = tables_.critters[c.visitor][anim];
-    const SpriteId id = set.at(c.animTime, c.moving ? kCritterMoveFps : kCritterIdleFps);
+    const SpriteId id =
+        set.at(c.animTime, c.moving ? tuning::kCritterMoveFps : tuning::kCritterIdleFps);
     Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
     if (def.habitat == Habitat::Air)
         w.y -= (c.hover + std::sin(c.animTime * 3.1f) * 0.12f) * iso_.tileH();
@@ -573,17 +576,13 @@ void Scene::drawLighting(const FrameParams& p) {
     const float glow = p.light.glow;
     const bool emissive = std::ranges::any_of(
         p.critters, [&](const Critter& c) { return cat_.visitors[c.visitor].glow; });
-    if (false && glow <= 0.01f && !emissive) {
+    if (glow <= 0.01f && !emissive && white_) {
         // No light pools: the light map would be one flat colour, so multiply by it directly.
+        // (Through a white texel: the software renderer mishandles untextured multiply.)
         if (amb.r >= 0.999f && amb.g >= 0.999f && amb.b >= 0.999f) return;
-        const auto w = static_cast<float>(targetW_);
-        const auto h = static_cast<float>(targetH_);
-        const SDL_FColor c{amb.r, amb.g, amb.b, 1};
-        const SDL_Vertex v[4] = {
-            {{0, 0}, c, {0, 0}}, {{w, 0}, c, {0, 0}}, {{w, h}, c, {0, 0}}, {{0, h}, c, {0, 0}}};
-        static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
-        batch_.use(nullptr, SDL_BLENDMODE_MUL);
-        batch_.triangles(v, 4, kQuad, 6);
+        batch_.use(white_.get(), SDL_BLENDMODE_MUL, SDL_SCALEMODE_NEAREST);
+        batch_.quad(SDL_FRect{0, 0, static_cast<float>(targetW_), static_cast<float>(targetH_)},
+                    {0, 0, 1, 1}, {amb.r, amb.g, amb.b, 1});
         batch_.flush();
         return;
     }
@@ -667,10 +666,12 @@ void Scene::draw(const FrameParams& p) {
 
     const TileRect vis = visibleTiles(*p.camera, p.screen, world);
     if (world.revision() != regionRevision_ || !region_.contains(vis)) {
-        const int gx = std::max(
-            kRegionMinGrow, static_cast<int>(static_cast<float>(vis.x1 - vis.x0) * kRegionGrow));
-        const int gy = std::max(
-            kRegionMinGrow, static_cast<int>(static_cast<float>(vis.y1 - vis.y0) * kRegionGrow));
+        const int gx =
+            std::max(tuning::kRegionMinGrow,
+                     static_cast<int>(static_cast<float>(vis.x1 - vis.x0) * tuning::kRegionGrow));
+        const int gy =
+            std::max(tuning::kRegionMinGrow,
+                     static_cast<int>(static_cast<float>(vis.y1 - vis.y0) * tuning::kRegionGrow));
         rebuild(world, TileRect{vis.x0 - gx, vis.y0 - gy, vis.x1 + gx, vis.y1 + gy}.clipped(
                            world.bounds()));
     }

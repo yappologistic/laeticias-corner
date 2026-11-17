@@ -174,8 +174,9 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::to_string(n), a[1]);
     }
     if (what == "luma" || what == "color") {
-        const ScriptRect r = *parseScriptRect(a[1]);
-        const SDL_Rect rect{r.x, r.y, r.w, r.h};
+        const auto r = parseScriptRect(a[1]);
+        if (!r) return "bad rectangle " + a[1];
+        const SDL_Rect rect{r->x, r->y, r->w, r->h};
         const SurfacePtr px{SDL_RenderReadPixels(renderer_.get(), &rect)};
         if (!px) return std::string("cannot read pixels: ") + SDL_GetError();
         double sum[3] = {0, 0, 0};
@@ -231,8 +232,11 @@ bool App::scriptStep() {
         // A drawer tile off the current page is scrolled into view, then tried again.
         const auto at = [&](const ScriptPoint& p) -> std::optional<Vec2> { return resolve(p); };
         const auto pending = [&](const ScriptPoint& p) {
-            return p.kind == ScriptPoint::Kind::Widget && scriptRetries_ < kRevealRetries &&
-                   hud_.reveal(p.widget, model()) && (++scriptRetries_, true);
+            if (p.kind != ScriptPoint::Kind::Widget || scriptRetries_ >= kRevealRetries ||
+                !hud_.reveal(p.widget, model()))
+                return false;
+            ++scriptRetries_;
+            return true;
         };
         using K = ScriptCommand::Kind;
         switch (c.kind) {

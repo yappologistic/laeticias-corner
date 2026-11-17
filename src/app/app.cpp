@@ -37,10 +37,8 @@ constexpr std::string_view kPaint = "sfx/paint.wav";
 
 constexpr std::string_view kSaveFile = "corner.json";
 constexpr std::string_view kPhotoDir = "photos";
-constexpr int kBadSaveCopies = 3;    // corner.json.bad1 (newest) .. bad3
-constexpr float kWarnSeconds = 1.6f; // how long a refusal stays in the hint line
-constexpr float kClickSlop = 4.0f;   // px a click may move and still count as a click
-constexpr int kHeadlessW = 1280;     // headless window when --size is not given
+constexpr int kBadSaveCopies = 3; // corner.json.bad1 (newest) .. bad3
+constexpr int kHeadlessW = 1280;  // headless window when --size is not given
 constexpr int kHeadlessH = 800;
 constexpr int kAudioFramesPerStep = kMixRate / 60; // capture: one simulation step of sound
 
@@ -565,7 +563,7 @@ void App::handleEvent(const SDL_Event& e) {
                 if (drag_ == Drag::Pan) drag_ = Drag::None;
                 // A right click without dragging cancels the current tool.
                 const float moved = std::hypot(mouse_.x - rightStart_.x, mouse_.y - rightStart_.y);
-                if (moved < kClickSlop * density_ && e.button.button == SDL_BUTTON_RIGHT &&
+                if (moved < tuning::kClickSlop * density_ && e.button.button == SDL_BUTTON_RIGHT &&
                     tool_ != Tool::None)
                     setTool(Tool::None, -1);
             }
@@ -721,7 +719,7 @@ void App::applyTool(TilePos t, bool first) {
     World& w = world_;
     const auto warn = [&](std::string_view text) {
         warning_ = text;
-        warnTime_ = kWarnSeconds;
+        warnTime_ = tuning::kWarnSeconds;
     };
     switch (tool_) {
     case Tool::None: break;
@@ -801,7 +799,8 @@ void App::worldInput() {
         if (drag_ == Drag::Tool) editor_.commit();
         // In photo mode a click (not a drag) takes the photo.
         if (photo_ && drag_ == Drag::Pan && !rightDown_ &&
-            std::hypot(mouse_.x - pressStart_.x, mouse_.y - pressStart_.y) < kClickSlop * density_)
+            std::hypot(mouse_.x - pressStart_.x, mouse_.y - pressStart_.y) <
+                tuning::kClickSlop * density_)
             capturePending_ = true;
         if (drag_ != Drag::None && !rightDown_) drag_ = Drag::None;
     }
