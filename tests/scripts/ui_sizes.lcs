@@ -14,7 +14,7 @@ shot shots/size_drawer.png
 click ui:tile:cottage
 wait 12
 expect tool place
-move @13,16
+move @30,31
 wait 10
 shot shots/size_placing.png
 click ui:sound

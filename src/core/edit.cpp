@@ -53,6 +53,9 @@ PlaceResult canPlace(const World& world, const Catalog& cat, const Item& item) {
             if (!world.hasGround({x, y})) return PlaceResult::OutOfBounds;
     for (int y = r.y0; y < r.y1; ++y)
         for (int x = r.x0; x < r.x1; ++x)
+            if (world.isWild({x, y})) return PlaceResult::Wild;
+    for (int y = r.y0; y < r.y1; ++y)
+        for (int x = r.x0; x < r.x1; ++x)
             if (world.itemAt({x, y}) != nullptr) return PlaceResult::Occupied;
     for (int y = r.y0; y < r.y1; ++y) {
         for (int x = r.x0; x < r.x1; ++x) {
@@ -66,6 +69,7 @@ PlaceResult canPlace(const World& world, const Catalog& cat, const Item& item) {
 PaintResult canPaint(const World& world, const Catalog& cat, TilePos p, int terrain) {
     if (!world.hasGround(p) || terrain < 0 || std::cmp_greater_equal(terrain, cat.terrain.size()))
         return PaintResult::OutOfBounds;
+    if (world.isWild(p)) return PaintResult::Wild;
     if (world.terrainAt(p) == terrain) return PaintResult::Unchanged;
     if (const Item* it = world.itemAt(p)) {
         const bool water = terrain == cat.waterTerrain;

@@ -5,7 +5,7 @@ click ui:tab:terrain
 wait 12
 click ui:tile:water
 wait 6
-drag @8,30 @14,36
+drag @31,28 @36,33
 drag @26,30 @26,38
 key escape
 key m

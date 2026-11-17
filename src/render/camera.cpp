@@ -71,8 +71,9 @@ void Camera::update(float dt, Vec2 screen) {
         pos_ = target_;
 }
 
-void Camera::frame(SafeArea safe, Vec2 screen) {
-    const WorldBounds b = landBox(iso_, land_, cliffDepth_);
+void Camera::frame(SafeArea safe, Vec2 screen, TileRect focus) {
+    const bool rim = focus.x1 >= land_.x1 || focus.y1 >= land_.y1;
+    const WorldBounds b = landBox(iso_, focus, rim ? cliffDepth_ : 0.0f);
     level_ = fitLevel(b, safe);
     scale_ = zoom();
     // Put the land's centre at the safe area's centre, not the window's.

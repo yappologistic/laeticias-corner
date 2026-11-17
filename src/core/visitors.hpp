@@ -45,9 +45,17 @@ struct Tally {
 // Sums the counts of every chunk overlapping `area` (so the tally is chunk-granular).
 void tallyArea(const World& world, const Catalog& cat, TileRect area, Tally& out);
 
+// What the progress loop decides about a visitor beyond its needs: whether it may come at all
+// (its season, a rare visitor's recipe and timing) and how many more than `max` nooks allow.
+struct VisitorGate {
+    bool allowed = true;
+    int extra = 0;
+};
+
 // How many of this visitor the tallied area attracts (0 when its needs are unmet or it is the
 // wrong time of day). `night` is true only in the Night phase: dusk and dawn belong to the day.
-[[nodiscard]] int desiredCount(const VisitorDef& def, const Tally& tally, bool night);
+[[nodiscard]] int desiredCount(const VisitorDef& def, const Tally& tally, bool night,
+                               VisitorGate gate = {});
 // Whether a critter of this habitat may stand on the tile containing p.
 [[nodiscard]] bool habitatAllows(Habitat h, const World& world, const Catalog& cat, Vec2 p);
 
@@ -60,16 +68,24 @@ public:
     explicit Visitors(const Catalog& cat);
 
     // Advances everyone inside `area`; events() holds what happened during this call.
+    // `gates` holds one entry per visitor.
     void update(const World& world, const Catalog& cat, bool night, float dt, Rng& rng,
-                TileRect area);
+                TileRect area, std::span<const VisitorGate> gates);
     // Spawns the desired population of `area` at once (used after loading) without events, for
     // the kinds already seen.
-    void populate(const World& world, const Catalog& cat, bool night, Rng& rng, TileRect area);
+    void populate(const World& world, const Catalog& cat, bool night, Rng& rng, TileRect area,
+                  std::span<const VisitorGate> gates);
 
     [[nodiscard]] std::span<const Critter> critters() const { return critters_; }
     [[nodiscard]] std::span<const VisitorEvent> events() const { return events_; }
-    [[nodiscard]] bool seen(int visitor) const { return seen_[static_cast<std::size_t>(visitor)]; }
-    void markSeen(int visitor) { seen_[static_cast<std::size_t>(visitor)] = true; }
+    [[nodiscard]] bool seen(int visitor) const {
+        return seen_[static_cast<std::size_t>(visitor)] != 0;
+    }
+    void markSeen(int visitor) { seen_[static_cast<std::size_t>(visitor)] = 1; }
+    [[nodiscard]] std::span<const std::uint8_t> seenFlags() const { return seen_; }
+    [[nodiscard]] int seenCount() const;
+    // Critters per visitor that are not leaving (refreshed by update and populate).
+    [[nodiscard]] std::span<const int> presence() const { return presence_; }
     [[nodiscard]] int present(int visitor) const;
 
 private:
@@ -85,7 +101,10 @@ private:
     std::uint64_t tallyRevision_ = ~0ULL;
     Tally tally_;
     std::vector<VisitorEvent> events_;
-    std::vector<bool> seen_;
+    void countPresence();
+
+    std::vector<std::uint8_t> seen_;
+    std::vector<int> presence_;
     std::vector<float> cooldown_;
 };
 

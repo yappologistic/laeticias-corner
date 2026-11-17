@@ -6,25 +6,25 @@ click ui:tab:terrain
 wait 12
 click ui:tile:water
 wait 12
-press @9,20
-move @9,21
-move @9,22
+press @33,28
+move @33,29
+move @33,30
 wait 2
-expect tile @9,21 water
+expect tile @33,29 water
 key ctrl+z
-expect tile @9,20 grass
-expect tile @9,21 grass
-move @9,23
-move @10,23
+expect tile @33,28 grass
+expect tile @33,29 grass
+move @33,31
+move @34,31
 wait 2
-release @10,23
-expect tile @9,23 grass
-expect tile @10,23 grass
+release @34,31
+expect tile @33,31 grass
+expect tile @34,31 grass
 expect undo no
 expect redo yes
-drag @9,20 @9,21
-drag @11,20 @11,21
+drag @33,28 @33,29
+drag @35,28 @35,29
 key ctrl+z
-expect tile @11,20 grass
-expect tile @9,20 water
+expect tile @35,28 grass
+expect tile @33,28 water
 quit

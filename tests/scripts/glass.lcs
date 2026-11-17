@@ -55,7 +55,7 @@ wait 15
 click ui:tab:homes
 wait 2
 click ui:tile:cottage
-move @13,16
+move @30,31
 wait 20
 expect tool place
 shot shots/glass_night_rain.png

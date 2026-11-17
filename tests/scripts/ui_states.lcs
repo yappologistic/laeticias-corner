@@ -9,22 +9,22 @@ click ui:journal_close
 wait 15
 expect journal closed
 # Small wheel deltas add up to one step; one notch is one step.
-expect zoom 0.25
-wheel 0.1 @20,20
-wheel 0.1 @20,20
-wheel 0.1 @20,20
-expect zoom 0.25
-wheel 1 @20,20
-wait 30
 expect zoom 0.5
+wheel 0.1 @30,30
+wheel 0.1 @30,30
+wheel 0.1 @30,30
+expect zoom 0.5
+wheel 1 @30,30
+wait 30
+expect zoom 1
 key minus
 wait 30
-expect zoom 0.25
+expect zoom 0.5
 click ui:zoom_in
 wait 30
-expect zoom 0.5
+expect zoom 1
 key home
-expect zoom 0.25
+expect zoom 0.5
 # Clicks on the interface never reach the map behind it.
 click ui:build
 wait 12
@@ -36,7 +36,7 @@ click ui:sound
 expect muted yes
 click ui:sound
 expect muted no
-expect count oak 6
+expect count oak 4
 key b
 wait 12
 shot shots/drawer_nature.png

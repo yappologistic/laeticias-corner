@@ -6,7 +6,7 @@ click ui:tab:homes
 wait 12
 click ui:tile:cottage
 wait 12
-click @12,16
+click @24,32
 click ui:build
 wait 12
 click ui:tile:coop
@@ -18,14 +18,19 @@ click ui:tab:garden
 wait 12
 click ui:tile:beehive
 wait 12
-click @17,14
+click @33,30
 click ui:build
 wait 12
 click ui:tab:nature
 wait 12
 click ui:tile:flowers_red
 wait 12
-drag @16,12 @18,12
+drag @32,32 @34,32
+click ui:build
+wait 12
+click ui:tile:tall_grass
+wait 12
+click @32,30
 key escape
 wait 150
 expect seen cat

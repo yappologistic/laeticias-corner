@@ -103,9 +103,11 @@ private:
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
     Visitors visitors_;
+    std::vector<VisitorGate> gates_; // per visitor, from the progress loop
     Rng rng_;
     bool rain_ = false;
     bool muted_ = false;
+    int stage_ = 0; // highest open land stage
     Camera camera_;
 
     WindowPtr window_;

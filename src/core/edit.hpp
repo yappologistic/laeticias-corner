@@ -10,8 +10,8 @@
 
 namespace lc {
 
-enum class PlaceResult { Ok, OutOfBounds, Occupied, NeedsLand, NeedsWater };
-enum class PaintResult { Ok, Unchanged, OutOfBounds, BlockedByItem };
+enum class PlaceResult { Ok, OutOfBounds, Wild, Occupied, NeedsLand, NeedsWater };
+enum class PaintResult { Ok, Unchanged, OutOfBounds, Wild, BlockedByItem };
 
 [[nodiscard]] PlaceResult canPlace(const World& world, const Catalog& cat, const Item& item);
 [[nodiscard]] PaintResult canPaint(const World& world, const Catalog& cat, TilePos p, int terrain);

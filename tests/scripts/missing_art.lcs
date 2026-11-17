@@ -1,4 +1,4 @@
 # With the cliff sprites missing, the placeholder hangs off the rim where it is plainly visible.
 wait 3
-expect color 418,266,6,6 150 6 130 40
+expect color 244,200,6,6 150 6 130 40
 quit

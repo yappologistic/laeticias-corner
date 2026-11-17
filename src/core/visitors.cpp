@@ -19,7 +19,8 @@ bool timeAllows(VisitTime t, bool night) {
 
 float speedOf(Habitat h) {
     switch (h) {
-    case Habitat::Land: return tuning::kLandSpeed;
+    case Habitat::Land:
+    case Habitat::Shore: return tuning::kLandSpeed;
     case Habitat::Water: return tuning::kWaterSpeed;
     case Habitat::Air: return tuning::kAirSpeed;
     }
@@ -64,8 +65,8 @@ void tallyArea(const World& world, const Catalog& cat, TileRect area, Tally& out
     });
 }
 
-int desiredCount(const VisitorDef& def, const Tally& tally, bool night) {
-    if (!timeAllows(def.time, night)) return 0;
+int desiredCount(const VisitorDef& def, const Tally& tally, bool night, VisitorGate gate) {
+    if (!gate.allowed || !timeAllows(def.time, night)) return 0;
     const auto terrain = [&](int i) { return tally.terrain[static_cast<std::size_t>(i)]; };
     const auto items = [&](int i) { return tally.items[static_cast<std::size_t>(i)]; };
     // The weakest need sets how strongly the area attracts this visitor.
@@ -81,20 +82,28 @@ int desiredCount(const VisitorDef& def, const Tally& tally, bool night) {
     }
     if (ratio < 1.0) return 0;
     const double count = std::floor(ratio * tuning::kVisitorsPerNeed);
-    return static_cast<int>(std::clamp(count, 1.0, static_cast<double>(def.max)));
+    return static_cast<int>(std::clamp(count, 1.0, static_cast<double>(def.max + gate.extra)));
 }
 
 bool habitatAllows(Habitat h, const World& world, const Catalog& cat, Vec2 p) {
     const TilePos t = tileOf(p);
-    if (!world.hasGround(t)) return false;
+    if (!world.hasGround(t) || world.isWild(t)) return false;
     if (h == Habitat::Air) return true;
     const Item* item = world.itemAt(t);
     if (item != nullptr && !cat.items[item->type].walkable) return false;
-    return world.isWater(t) == (h == Habitat::Water);
+    if (h != Habitat::Shore) return world.isWater(t) == (h == Habitat::Water);
+    // The shore: water beside open land, or land beside water.
+    const bool water = world.isWater(t);
+    for (const TilePos d : {TilePos{1, 0}, TilePos{-1, 0}, TilePos{0, 1}, TilePos{0, -1}}) {
+        const TilePos q{t.x + d.x, t.y + d.y};
+        if (world.hasGround(q) && !world.isWild(q) && world.isWater(q) != water) return true;
+    }
+    return false;
 }
 
 Visitors::Visitors(const Catalog& cat)
-    : seen_(cat.visitors.size(), false), cooldown_(cat.visitors.size(), 0.0f) {
+    : seen_(cat.visitors.size(), 0), presence_(cat.visitors.size(), 0),
+      cooldown_(cat.visitors.size(), 0.0f) {
     std::size_t cap = 0;
     for (const auto& v : cat.visitors) cap += static_cast<std::size_t>(v.max);
     critters_.reserve(cap);
@@ -108,6 +117,16 @@ int Visitors::present(int visitor) const {
         critters_, [&](const Critter& c) { return c.visitor == visitor && !c.leaving; }));
 }
 
+int Visitors::seenCount() const {
+    return static_cast<int>(std::ranges::count(seen_, std::uint8_t{1}));
+}
+
+void Visitors::countPresence() {
+    std::ranges::fill(presence_, 0);
+    for (const Critter& c : critters_)
+        if (!c.leaving) ++presence_[c.visitor];
+}
+
 bool Visitors::pickAnchor(const World& world, const Catalog& cat, int visitor, Rng& rng,
                           TilePos& out) const {
     const auto& def = cat.visitors[static_cast<std::size_t>(visitor)];
@@ -116,23 +135,20 @@ bool Visitors::pickAnchor(const World& world, const Catalog& cat, int visitor, R
     const auto offer = [&](TilePos p) {
         if (rng.range(0, seen++) == 0) out = p;
     };
-    const auto matches = [&](const std::vector<Amount>& list, int type) {
-        return std::ranges::any_of(list, [&](const Amount& a) { return a.index == type; });
-    };
     world.forEachItemIn(area_, [&](const Item& it) {
         if (area_.contains(it.pos) &&
-            (matches(def.itemNeeds, it.type) || matches(def.anyItems, it.type)))
+            std::ranges::find(def.attractItems, it.type) != def.attractItems.end())
             offer(it.pos);
     });
-    for (const auto& n : def.terrainNeeds) {
+    for (const int terrain : def.attractTerrain) {
         world.forEachChunkIn(area_, [&](int cx, int cy) {
-            if (world.chunkTerrainCount(cx, cy, n.index) == 0) return;
+            if (world.chunkTerrainCount(cx, cy, terrain) == 0) return;
             const TileRect r =
                 TileRect{cx * kChunk, cy * kChunk, (cx + 1) * kChunk, (cy + 1) * kChunk}.clipped(
                     area_.clipped(world.bounds()));
             for (int y = r.y0; y < r.y1; ++y)
                 for (int x = r.x0; x < r.x1; ++x)
-                    if (world.terrainAt({x, y}) == n.index) offer({x, y});
+                    if (world.terrainAt({x, y}) == terrain && !world.isWild({x, y})) offer({x, y});
         });
     }
     return seen > 0;
@@ -202,8 +218,8 @@ bool Visitors::spawn(const World& world, const Catalog& cat, int visitor, Rng& r
     return false;
 }
 
-void Visitors::populate(const World& world, const Catalog& cat, bool night, Rng& rng,
-                        TileRect area) {
+void Visitors::populate(const World& world, const Catalog& cat, bool night, Rng& rng, TileRect area,
+                        std::span<const VisitorGate> gates) {
     critters_.clear();
     area_ = area;
     tallyArea(world, cat, area_, tally_);
@@ -211,14 +227,15 @@ void Visitors::populate(const World& world, const Catalog& cat, bool night, Rng&
     for (std::size_t v = 0; v < cat.visitors.size(); ++v) {
         // Kinds never seen arrive the normal way, so their first sighting is still an event.
         if (!seen(static_cast<int>(v))) continue;
-        const int want = desiredCount(cat.visitors[v], tally_, night);
+        const int want = desiredCount(cat.visitors[v], tally_, night, gates[v]);
         for (int i = 0; i < want; ++i) (void)spawn(world, cat, static_cast<int>(v), rng, 1.0f);
         cooldown_[v] = tuning::kArrivalInterval;
     }
+    countPresence();
 }
 
 void Visitors::update(const World& world, const Catalog& cat, bool night, float dt, Rng& rng,
-                      TileRect area) {
+                      TileRect area, std::span<const VisitorGate> gates) {
     events_.clear();
     const bool moved = area != area_;
     if (moved) {
@@ -233,7 +250,7 @@ void Visitors::update(const World& world, const Catalog& cat, bool night, float 
     for (std::size_t v = 0; v < cat.visitors.size(); ++v) {
         const auto& def = cat.visitors[v];
         const int vi = static_cast<int>(v);
-        const int want = desiredCount(def, tally_, night);
+        const int want = desiredCount(def, tally_, night, gates[v]);
         int have = present(vi);
         if (moved && seen(vi)) {
             // Familiar faces are simply there when the view comes back.
@@ -308,6 +325,7 @@ void Visitors::update(const World& world, const Catalog& cat, bool night, float 
         }
     }
     std::erase_if(critters_, [](const Critter& c) { return c.leaving && c.alpha <= 0.0f; });
+    countPresence();
 }
 
 } // namespace lc

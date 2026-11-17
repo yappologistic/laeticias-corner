@@ -12,8 +12,11 @@ Footprint footprintOf(const ItemDef& def, int variant) {
 
 Item makeItem(const Catalog& cat, int type, int variant, TilePos origin) {
     const auto fp = footprintOf(cat.items[static_cast<std::size_t>(type)], variant);
-    return Item{static_cast<std::uint16_t>(type), static_cast<std::uint8_t>(variant),
-                static_cast<std::uint8_t>(fp.w), static_cast<std::uint8_t>(fp.h), origin};
+    return Item{.type = static_cast<std::uint16_t>(type),
+                .variant = static_cast<std::uint8_t>(variant),
+                .w = static_cast<std::uint8_t>(fp.w),
+                .h = static_cast<std::uint8_t>(fp.h),
+                .pos = origin};
 }
 
 World::World(const Catalog& cat) : World(cat, cat.mapW, cat.mapH) {}
@@ -73,6 +76,22 @@ void World::setTerrain(TilePos p, int terrain) {
     }
     bumpTerrain(p);
     ++revision_;
+}
+
+void World::setWild(TilePos p, bool wild) {
+    Chunk& c = chunkOf(p);
+    if (c.wild[local(p)] == wild) return;
+    c.wild[local(p)] = wild;
+    wildCount_ += wild ? 1 : -1;
+    bumpTerrain(p);
+    ++revision_;
+}
+
+void World::setGrowth(std::size_t index, int stage, float progress) {
+    Item& it = items_[index];
+    if (it.stage != stage) ++revision_;
+    it.stage = static_cast<std::uint8_t>(stage);
+    it.growth = progress;
 }
 
 TileRect World::landBounds() const {

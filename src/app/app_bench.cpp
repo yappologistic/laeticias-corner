@@ -112,7 +112,7 @@ int App::runBench() {
         camera_.zoomTo(level, {screen().x * 0.5f, screen().y * 0.5f}, screen());
         for (int i = 0; i < 120 && !camera_.settled(); ++i)
             camera_.update(static_cast<float>(tuning::kStepSeconds), screen());
-        visitors_.populate(world_, cat_, night(), rng_, activeArea());
+        visitors_.populate(world_, cat_, night(), rng_, activeArea(), gates_);
         Series upd;
         Series drw;
         Series pan;

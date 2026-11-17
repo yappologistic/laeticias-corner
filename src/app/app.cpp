@@ -3,6 +3,7 @@
 #include "app/app_impl.hpp"
 #include "audio/decode.hpp"
 #include "audio/wav.hpp"
+#include "core/land.hpp"
 #include "core/save.hpp"
 #include "core/starter.hpp"
 #include "render/sprites.hpp"
@@ -90,6 +91,7 @@ std::string_view placeWarning(PlaceResult r) {
     switch (r) {
     case PlaceResult::Ok: return {};
     case PlaceResult::OutOfBounds: return strings::kWarnEdge;
+    case PlaceResult::Wild: return strings::kWarnWild;
     case PlaceResult::Occupied: return strings::kWarnOccupied;
     case PlaceResult::NeedsLand: return strings::kWarnLand;
     case PlaceResult::NeedsWater: return strings::kWarnWater;
@@ -122,12 +124,15 @@ bool oneTile(const ItemDef& def) {
 
 App::App(const Options& o, Catalog cat, fs::path assets)
     : opts_(o), assets_(std::move(assets)), saveDir_(findSaveDir(o)), cat_(std::move(cat)),
-      world_(cat_), visitors_(cat_),
+      world_(cat_), visitors_(cat_), gates_(cat_.visitors.size()),
       rng_(o.seed.value_or(o.headless
                                ? 1
                                : static_cast<std::uint64_t>(
                                      std::chrono::steady_clock::now().time_since_epoch().count()))),
-      camera_(cat_.iso(), world_.landBounds(), 0) {}
+      camera_(cat_.iso(), world_.landBounds(), 0) {
+    for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
+        gates_[v].allowed = !cat_.visitors[v].rare;
+}
 
 bool App::createWindow() {
     SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
@@ -412,7 +417,7 @@ void App::zoomBy(int steps, Vec2 px) {
 
 void App::frameCamera() {
     const Box s = hud_.safeArea();
-    camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen());
+    camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen(), openBounds(cat_, stage_, world_));
 }
 
 void App::handleKey(const SDL_KeyboardEvent& k) {
@@ -744,9 +749,9 @@ void App::applyTool(TilePos t, bool first) {
                 lastPaintSound_ = simTime_;
             }
             markDirty();
-        } else if (r == PaintResult::BlockedByItem) {
+        } else if (r == PaintResult::BlockedByItem || r == PaintResult::Wild) {
             if (first) play(sfx::kInvalid);
-            warn(strings::kWarnPaint);
+            warn(r == PaintResult::Wild ? strings::kWarnWild : strings::kWarnPaint);
         }
         break;
     }
@@ -818,7 +823,7 @@ void App::step(float dt) {
     wheelIdle_ += dt;
     if (wheelIdle_ > tuning::kWheelIdleReset) wheelAcc_ = 0;
 
-    visitors_.update(world_, cat_, night(), dt, rng_, activeArea());
+    visitors_.update(world_, cat_, night(), dt, rng_, activeArea(), gates_);
     for (const VisitorEvent& e : visitors_.events()) {
         const auto& def = cat_.visitors[static_cast<std::size_t>(e.visitor)];
         if (e.kind == VisitorEvent::Kind::Arrived && e.firstSighting) {
@@ -905,7 +910,7 @@ int App::run() {
     hud_.update({}, model(), font_, screen(), uiScale_, 0);
     frameCamera();
     if (opts_.bench) return runBench();
-    visitors_.populate(world_, cat_, night(), rng_, activeArea());
+    visitors_.populate(world_, cat_, night(), rng_, activeArea(), gates_);
 
     // Headless runs advance exactly one fixed step per frame so scripts are reproducible.
     const bool fixed = opts_.headless;

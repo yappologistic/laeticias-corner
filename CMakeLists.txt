@@ -20,7 +20,9 @@ add_subdirectory(third_party)
 add_library(lc_core STATIC
   src/core/catalog.cpp
   src/core/clock.cpp
+  src/core/condition.cpp
   src/core/edit.cpp
+  src/core/land.cpp
   src/core/save.cpp
   src/core/starter.cpp
   src/core/visitors.cpp

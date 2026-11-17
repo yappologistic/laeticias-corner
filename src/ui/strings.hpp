@@ -73,6 +73,7 @@ inline constexpr std::string_view kWarnWater = "This needs water";
 inline constexpr std::string_view kWarnEdge = "That's past the edge";
 inline constexpr std::string_view kWarnPaint = "Can't change the ground under that";
 inline constexpr std::string_view kWarnNothing = "Nothing to remove here";
+inline constexpr std::string_view kWarnWild = "This land is still wild";
 
 inline constexpr std::string_view kJournalEmpty = "Not seen yet";
 inline constexpr std::string_view kJournalUnknown = "Someone new";

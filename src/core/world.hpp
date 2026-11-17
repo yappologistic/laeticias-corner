@@ -7,6 +7,7 @@
 #include "core/iso.hpp"
 
 #include <array>
+#include <bitset>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -19,8 +20,14 @@ struct Item {
     std::uint8_t variant = 0; // rotation k for rotate layouts, look for variant layouts
     std::uint8_t w = 1;       // footprint after rotation
     std::uint8_t h = 1;
-    TilePos pos; // origin tile: smallest tx, ty of the footprint
-    friend bool operator==(const Item&, const Item&) = default;
+    std::uint8_t stage = 0; // growth stage, for items that grow
+    TilePos pos;            // origin tile: smallest tx, ty of the footprint
+    float growth = 0;       // progress through the current stage, 0..1
+    // The same placed piece, whatever its growth (growth changes without an edit).
+    friend bool operator==(const Item& a, const Item& b) {
+        return a.type == b.type && a.variant == b.variant && a.w == b.w && a.h == b.h &&
+               a.pos == b.pos;
+    }
 
     [[nodiscard]] TileRect rect() const { return {pos.x, pos.y, pos.x + w, pos.y + h}; }
 };
@@ -62,6 +69,11 @@ public:
     [[nodiscard]] bool isWater(TilePos p) const { return terrainAt(p) == water_; }
     // `terrain` is a catalog terrain index or kNoGround.
     void setTerrain(TilePos p, int terrain);
+    // Wild tiles (land not opened yet) cannot be built on or walked; they always hold the base
+    // terrain and no items. Precondition: inBounds(p).
+    [[nodiscard]] bool isWild(TilePos p) const { return chunkOf(p).wild[local(p)]; }
+    void setWild(TilePos p, bool wild);
+    [[nodiscard]] int wildCount() const { return wildCount_; }
 
     [[nodiscard]] std::span<const Item> items() const { return items_; }
     [[nodiscard]] std::optional<std::size_t> itemIndexAt(TilePos p) const;
@@ -69,6 +81,9 @@ public:
     // Precondition: every footprint tile is in bounds and free.
     void addItem(const Item& item);
     Item removeItem(std::size_t index);
+    // Growth is not an edit: progress changes leave the revision alone, a new stage bumps it
+    // (the item looks different).
+    void setGrowth(std::size_t index, int stage, float progress);
 
     // Calls f(const Item&) for every item whose footprint intersects r.
     template <typename F>
@@ -131,7 +146,8 @@ private:
     struct Chunk {
         std::array<std::uint8_t, kChunkArea> terrain{};
         std::array<std::uint32_t, kChunkArea> occupancy{}; // item index + 1, 0 = free
-        std::vector<std::uint32_t> items;                  // items whose origin lies here
+        std::bitset<kChunkArea> wild;
+        std::vector<std::uint32_t> items; // items whose origin lies here
         std::vector<int> terrainCounts;
         std::vector<int> itemCounts;
         std::uint32_t terrainRev = 0;
@@ -165,6 +181,7 @@ private:
     std::vector<int> terrainCounts_;
     std::vector<int> itemCounts_;
     std::uint64_t revision_ = 0;
+    int wildCount_ = 0;
     mutable std::optional<TileRect> land_; // cached; reset when ground appears or vanishes
 };
 

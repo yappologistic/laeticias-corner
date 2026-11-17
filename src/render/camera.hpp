@@ -41,8 +41,9 @@ public:
     // The land changed shape (another map was loaded), or the cliff art is known.
     void setLand(TileRect land, float cliffDepth);
     void update(float dt, Vec2 screen);
-    // Picks the largest level that shows all the land inside `safe` and centres it there.
-    void frame(SafeArea safe, Vec2 screen);
+    // Picks the largest level that shows `focus` (the open land) inside `safe` and centres it
+    // there; the cliff under the south rims counts when the focus reaches them.
+    void frame(SafeArea safe, Vec2 screen, TileRect focus);
     // Immediate pan by a screen-space delta (mouse drag).
     void dragBy(Vec2 screenDelta, Vec2 screen);
     // Eased pan by a screen-space delta (keys).

@@ -130,7 +130,7 @@ TEST_CASE("camera maps screen and world consistently and zooms about the cursor"
     const TileRect land{0, 0, 40, 40};
     Camera cam(iso, land, 66);
     const Vec2 screen{1920, 1080};
-    cam.frame({16, 120, 1904, 940}, screen);
+    cam.frame({16, 120, 1904, 940}, screen, land);
     const Vec2 px{300, 200};
     const Vec2 w = cam.screenToWorld(px, screen);
     const Vec2 back = cam.worldToScreen(w, screen);
@@ -612,7 +612,7 @@ bool overlap(const Box& a, const Box& b) {
 
 } // namespace
 
-TEST_CASE("first-launch framing shows the whole island clear of the interface at any size") {
+TEST_CASE("first-launch framing shows the open corner clear of the interface at any size") {
     UiFixture ui;
     const Catalog& c = test::catalog();
     const Iso iso = c.iso();
@@ -630,17 +630,18 @@ TEST_CASE("first-launch framing shows the whole island clear of the interface at
         hud.update({}, m, ui.font, screen, s, 0);
         const Box safe = hud.safeArea();
         Camera cam(iso, world.landBounds(), 66);
-        cam.frame({safe.x, safe.y, safe.x + safe.w, safe.y + safe.h}, screen);
-        const WorldBounds b = landBox(iso, world.landBounds(), 66);
+        const TileRect corner = c.stages.front().rects.front();
+        cam.frame({safe.x, safe.y, safe.x + safe.w, safe.y + safe.h}, screen, corner);
+        const WorldBounds b = landBox(iso, corner, 66);
         const Vec2 tl = cam.worldToScreen({b.x0, b.y0}, screen);
         const Vec2 br = cam.worldToScreen({b.x1, b.y1}, screen);
         CHECK(tl.x >= safe.x - 0.5f);
         CHECK(tl.y >= safe.y - 0.5f);
         CHECK(br.x <= safe.x + safe.w + 0.5f);
         CHECK(br.y <= safe.y + safe.h + 0.5f);
-        // 1x on 1080p-class displays would crop a 40x40 island, so they open on an overview;
-        // 4K opens at the native 1x.
-        if (screen.x >= 3840) CHECK(cam.zoom() == 1.0f);
+        // The 20x20 corner is 1280 art pixels wide: native 1x from 1080p up, 2x at 4K.
+        if (screen.x >= 1920) CHECK(cam.zoom() >= 1.0f);
+        if (screen.x >= 3840) CHECK(cam.zoom() == 2.0f);
     }
 }
 

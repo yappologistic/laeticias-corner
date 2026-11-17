@@ -4,6 +4,7 @@ add_executable(lc_tests
   test_main.cpp
   test_support.cpp
   test_core.cpp
+  test_conditions.cpp
   test_engine.cpp
   test_coverage.cpp
 )

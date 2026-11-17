@@ -31,6 +31,6 @@ move @0,0
 wait 2
 click @0,0
 expect count barn 0
-click @30,20
+click @34,30
 expect count barn 1
 quit

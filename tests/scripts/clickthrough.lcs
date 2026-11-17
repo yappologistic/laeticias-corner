@@ -6,9 +6,9 @@ wait 12
 click ui:tile:rock
 wait 60
 expect toast yes
-expect count rock 3
+expect count rock 2
 click ui:toast
-expect count rock 3
+expect count rock 2
 click ui:hint
-expect count rock 3
+expect count rock 2
 quit
