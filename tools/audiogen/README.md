@@ -28,7 +28,11 @@ pinned `requirements.txt`. Nothing is ever played back.
 | `sfx.py` | placement, UI, tuned notes, stingers, nature, critter voices, Laeticia |
 | `mastering.py` | BS.1770 loudness, true-peak limiter, WAV/Ogg writing, decoding |
 | `validate.py` | contract checks (ffmpeg's EBU R128 meter as an independent reference), stem sums and subsets, note balance |
-| `generate.py` | catalog ↔ renderer table, loudness targets, parallel build |
+| `ancient.py` | waveguide plucked strings (angular harp, long-necked lute, kithara, lyra, barbitos, cithara), reed pipes as continuous phrases (double pipe, aulos, tibia), frame drum, clappers, cymbals, sistrum, hydraulis, horns, hummed voices |
+| `score.py` | note notation with exact fractions (dyads, graces, slurs, percussion strokes), rubato, piece renderer, loop facts for manifests |
+| `sounds.py` | bed assembly (`Bed`), wordless crowds and songs, birds and animals, struck stone and metal, feet, hooves, wheels, water, fire, insects, workshops |
+| `parsa.py`, `athens.py`, `rome.py`, `world.py` | each region set: music, beds, positional loops, effects and its `FILES` table |
+| `generate.py` | catalog ↔ renderer table, loudness targets, region sets and their manifests, parallel build |
 
 ## Loops
 
@@ -53,3 +57,19 @@ All mixes and stems have the same 4 704 000-sample length and start together at 
 Animal and human voices use `dsp.voice`: harmonics with a glottal spectral tilt, random
 jitter and shimmer, optional period-doubling roughness, and aspiration noise filtered
 through the same time-varying formants (`dsp.formant_noise`, frame by frame in the STFT).
+
+## Region sets
+
+The city and world audio is not in the catalog: each set module (`parsa`, `athens`, `rome`,
+`world`) lists its files in `FILES`, and the generator writes them to
+`assets/audio/<music|amb|sfx>/<set>/` (the layout in `docs/design/world-tech.md` §2.2) plus a
+manifest at `assets/audio/<set>/manifest.json`: per file its kind (`music`, `bed`, `loop`,
+`sfx`), loop flag, exact length, suggested gain, when and where it plays, and what it is for;
+music also carries bpm, metre, bars and the seconds where phrases begin (the engine restarts a
+piece at a phrase boundary). `tools/audiogen/generate.sh rome/` renders one set. The validator
+checks every manifest: each file against its kind's rules, its length against the manifest,
+and that every file in the set's folders is listed.
+
+City music is note data in the set module, rendered by `score.render` with all tails folded,
+so every piece is an exact number of bars; beds and loops are seamless the same way (periodic
+noise, events wrapped, every filter run circularly).

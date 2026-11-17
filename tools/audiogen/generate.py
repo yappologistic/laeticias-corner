@@ -18,12 +18,14 @@ from pathlib import Path
 os.environ["OPENBLAS_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"] = "1"
 
 import numpy as np  # noqa: E402  (must follow the thread setting)
+from scipy.ndimage import uniform_filter1d  # noqa: E402
 
 import ambience  # noqa: E402
 import athens  # noqa: E402
 import mastering  # noqa: E402
 import music  # noqa: E402
 import parsa  # noqa: E402
+import rome  # noqa: E402
 import score  # noqa: E402
 import sfx  # noqa: E402
 import validate  # noqa: E402
@@ -107,7 +109,7 @@ EFFECTS = {
 
 # Region sets (world-tech §2.2: assets/audio/<music|amb|sfx>/<set>/…), each with a manifest
 # at assets/audio/<set>/manifest.json for the engine and the region theme files.
-SETS = {"parsa": parsa.FILES, "athens": athens.FILES}
+SETS = {"parsa": parsa.FILES, "athens": athens.FILES, "rome": rome.FILES}
 REGION = {name: entry for files in SETS.values() for name, entry in files.items()}
 
 
@@ -171,8 +173,17 @@ def build_region(name, entry, rng):
         mastering.write_wav16(path, x)
         return f"{name:26s} {len(x) / mastering.SR:7.2f} s"
     x = stereo(x)  # positional loops may be built mono; every loop file is stereo
+    if "piece" not in entry:
+        x = quiet_start(x)
     x = mastering.master_loop(x, entry["lufs"], -1.5 if entry["quality"] >= 2 else -2.5)[0]
     return write_loop(name, x, entry["quality"])
+
+
+def quiet_start(x):
+    """Rotate a loop that has no musical start so its seam falls at its quietest moment:
+    the seam is continuous anyway, and there no event straddles it."""
+    energy = uniform_filter1d(np.sum(x**2, axis=1), int(0.25 * mastering.SR), mode="wrap")
+    return np.roll(x, -int(np.argmin(energy)), axis=0)
 
 
 def write_manifest(set_name, files):

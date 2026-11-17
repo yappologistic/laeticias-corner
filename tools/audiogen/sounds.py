@@ -35,6 +35,12 @@ class Bed:
         place(self.dry, x, k)
         place(self.send, x * (0.2 + 0.8 * dist), k)
 
+    @staticmethod
+    def wet(x, rng, room, wet):
+        """Put an already-looping stereo signal into a room, its tail folded onto the start."""
+        ir = impulse_response(rng, room[0], room[1], room[2], predelay=room[3])
+        return wrap(with_reverb(x, x, ir, wet), len(x))
+
     def scatter(self, make, count, spread=0.8, dist=(0.3, 0.9), level=(0.6, 1.0)):
         """`count` events from make(rng) at random times, places and distances."""
         for _ in range(count):
@@ -520,7 +526,7 @@ def hoofbeats(rng, dur, gait="walk", surface="stone"):
     else:
         times_ = np.concatenate([[c, c + 0.07, c + 0.15] for c in np.arange(0, dur, 0.42)])
     for t in times_:
-        place(out, hoof(rng, surface) * rng.uniform(0.6, 1.0), secs(t + rng.normal(0, 0.008)))
+        place(out, hoof(rng, surface) * rng.uniform(0.6, 1.0), max(0, secs(t + rng.normal(0, 0.008))))
     return out
 
 
@@ -675,3 +681,12 @@ def kiln(length, rng):
     roar = loop_noise(n, rng, 30, 500, 1.1, 1) * swell(n, rng, 0.25, 0.25)
     breath = loop_noise(n, rng, 200, 1500, 0.6, 1) * swell(n, rng, 0.8, 0.5)
     return loop_lowpass(roar + 0.25 * breath, 3000) + 0.4 * fire(length, rng, 0.5)
+
+
+def splash_small(rng):
+    """A hand or a body moving in a pool: a slosh of water and a few bubbles."""
+    n = secs(0.5)
+    out = bandpass(rng.standard_normal(n), 300, 3000) * perc(n, 0.01, 0.08)
+    for _ in range(int(rng.integers(3, 8))):
+        place(out, 0.5 * bubble(rng, rng.uniform(400, 1500)), secs(rng.uniform(0.0, 0.3)))
+    return lowpass(out, 5000)

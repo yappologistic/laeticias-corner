@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "set": "rome",
+  "files": [
+    {
+      "file": "music/rome/day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 120.0,
+      "samples": 5292000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Day piece: cithara theme in a Lydian-type mode on F in bars of 3 and 4, tibia in heterophony, a festival middle with hydraulis fifths and a far cornu.",
+      "music": {
+        "bpm": 84,
+        "meter": [
+          3,
+          4
+        ],
+        "bars": 48,
+        "beats": 168,
+        "samples": 5292000,
+        "phrase_starts_s": [
+          0.0,
+          10.0,
+          20.0,
+          30.0,
+          40.0,
+          50.0,
+          60.0,
+          70.0,
+          80.0,
+          90.0,
+          100.0,
+          110.0
+        ]
+      }
+    },
+    {
+      "file": "music/rome/night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 120.0,
+      "samples": 5292000,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Night piece: a lyre with long notes in free time, tibia sighs, a faint hydraulis pedal on F and C.",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 28,
+        "beats": 112,
+        "samples": 5292000,
+        "phrase_starts_s": [
+          0.0,
+          8.5714,
+          17.1429,
+          25.7143,
+          34.2857,
+          42.8571,
+          51.4286,
+          60.0,
+          68.5714,
+          77.1429,
+          85.7143,
+          94.2857,
+          102.8571,
+          111.4286
+        ]
+      }
+    },
+    {
+      "file": "amb/rome/day.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Dense far murmur, a corner fountain, hawkers' sung cries, hammering, a donkey, a crowd's far swell.",
+      "where": "everywhere in the region"
+    },
+    {
+      "file": "amb/rome/forum.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 0.8,
+      "when": "day",
+      "for": "Close voices, an orator declaiming far off under a portico, feet on paving, pigeons.",
+      "where": "zone or count-driven: the Forum Romanum and the imperial fora"
+    },
+    {
+      "file": "amb/rome/river.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 0.8,
+      "when": "always",
+      "for": "Water slapping barges, mooring ropes creaking, dockers calling out, gulls.",
+      "where": "zone: the Tiber banks and the Emporium"
+    },
+    {
+      "file": "amb/rome/circus.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 0.8,
+      "when": "event",
+      "for": "A vast crowd's roar surging as the teams pass (three laps a loop), hooves on sand.",
+      "where": "near the Circus Maximus during races (R5); gain by distance"
+    },
+    {
+      "file": "amb/rome/night.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Carts rolling over basalt, oxen, a shout, a dog, a tavern song far off, a fountain.",
+      "where": "everywhere in the region"
+    },
+    {
+      "file": "amb/rome/procession.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 20.0,
+      "samples": 882000,
+      "gain": 0.8,
+      "when": "event",
+      "for": "Tibia over its drone with drum and cymbals walking past (4 pairs of 3+4, 84 bpm).",
+      "where": "positional: follows the pompa or a sacrifice procession",
+      "music": {
+        "bpm": 84,
+        "meter": [
+          3,
+          4
+        ],
+        "bars": 8,
+        "beats": 28,
+        "samples": 882000,
+        "phrase_starts_s": [
+          19.6429,
+          9.6429
+        ]
+      }
+    },
+    {
+      "file": "amb/rome/fountain.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 0.7,
+      "when": "always",
+      "for": "A spout pouring into a stone basin.",
+      "where": "positional: each street fountain (lacus) and nymphaeum"
+    },
+    {
+      "file": "amb/rome/baths.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 16.0,
+      "samples": 705600,
+      "gain": 0.7,
+      "when": "afternoon",
+      "for": "Splashes, a poured bucket and voices ringing in a vaulted hall.",
+      "where": "positional: bath buildings while open (R3)"
+    },
+    {
+      "file": "amb/rome/treadwheel.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 0.7,
+      "when": "worked",
+      "for": "Men stepping in the wheel, the axle groaning, the pawl clacking.",
+      "where": "positional: a treadwheel crane while it lifts (R7)"
+    },
+    {
+      "file": "sfx/rome/tibia.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.5,
+      "samples": 242550,
+      "gain": 1.0,
+      "when": "event",
+      "for": "A tibia phrase over its drone at a sacrifice."
+    },
+    {
+      "file": "sfx/rome/cornu.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.8,
+      "samples": 255780,
+      "gain": 0.9,
+      "when": "event",
+      "for": "A cornu call from the arena on a game day, far off."
+    },
+    {
+      "file": "sfx/rome/hydraulis.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.8,
+      "samples": 255780,
+      "gain": 0.9,
+      "when": "event",
+      "for": "Water-organ chords from the Colosseum on a game day."
+    },
+    {
+      "file": "sfx/rome/sistrum.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.1467,
+      "samples": 50568,
+      "gain": 0.9,
+      "when": "event",
+      "for": "A sistrum shaken at the Iseum."
+    },
+    {
+      "file": "sfx/rome/arrive.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.5,
+      "samples": 242550,
+      "gain": 1.0,
+      "when": "event",
+      "for": "Arrival motif (fast travel, era caption): cithara F A C, cornu F."
+    }
+  ]
+}
