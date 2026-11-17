@@ -1,5 +1,6 @@
 #include "render/sprites.hpp"
 
+#include <algorithm>
 #include <format>
 
 namespace lc {
@@ -36,6 +37,7 @@ int variantSlots(const ItemDef& def) {
 
 SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
     SpriteTables t;
+    float shadowPeak = 0.0f;
     for (const auto& terr : cat.terrain) {
         std::vector<SpriteId> base;
         std::array<FrameSet, 16> overlay;
@@ -60,6 +62,8 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
             s.base.push_back(frames(atlas, prefix + "base/" + vk, atlas.placeholderBox()));
             FrameSet shadow = frames(atlas, prefix + "shadow/" + vk, std::nullopt);
             if (shadow.empty()) atlas.reportMissing(prefix + "shadow/" + vk + "/f0");
+            for (const SpriteId f : shadow.frames)
+                shadowPeak = std::max(shadowPeak, atlas.normalizeAlpha(f));
             s.shadow.push_back(std::move(shadow));
             FrameSet glow =
                 def.glow ? frames(atlas, prefix + "glow/" + vk, std::nullopt) : FrameSet{};
@@ -67,9 +71,6 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
             s.light.push_back(glow.empty() ? std::nullopt
                                            : atlas.alphaCentroid(glow.frames.front()));
             s.glow.push_back(std::move(glow));
-            const bool realBase = atlas.find(prefix + "base/" + vk + "/f0").has_value();
-            s.smoke.push_back(def.smoke && realBase ? atlas.topPoint(s.base.back().frames.front())
-                                                    : std::nullopt);
         }
         t.items.push_back(std::move(s));
     }
@@ -87,6 +88,7 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
     t.cliffSW = atlas.resolve("edge/cliff_sw", atlas.placeholderTile());
     t.tileOk = atlas.resolve("ui/tile_ok", atlas.placeholderTile());
     t.tileBad = atlas.resolve("ui/tile_bad", atlas.placeholderTile());
+    if (shadowPeak > 0.0f) t.shadowOpacity = shadowPeak;
     return t;
 }
 

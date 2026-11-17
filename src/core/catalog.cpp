@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
+#include <utility>
 
 namespace lc {
 namespace {
@@ -178,7 +179,15 @@ Catalog parse(const json& root) {
         requireSfx(d.sound, ctx);
         d.walkable = getOr(it, "walkable", false, ctx);
         d.glow = getOr(it, "glow", false, ctx);
-        d.smoke = getOr(it, "smoke", false, ctx);
+        if (it.contains("smoke_at")) {
+            const auto pts = get<std::vector<std::vector<int>>>(it, "smoke_at", ctx);
+            if (std::cmp_not_equal(pts.size(), d.count))
+                fail(ctx + ": smoke_at needs one [x, y] per variant");
+            for (const auto& pt : pts) {
+                if (pt.size() != 2) fail(ctx + ": smoke_at entries must be [x, y]");
+                d.smokeAt.push_back({pt[0], pt[1]});
+            }
+        }
         d.fps = getOr(it, "fps", 0.0f, ctx);
         if (d.fps < 0) fail(ctx + ": fps must be >= 0");
         cat.items.push_back(std::move(d));
@@ -220,6 +229,7 @@ Catalog parse(const json& root) {
         if (d.terrainNeeds.empty() && d.itemNeeds.empty() && d.anyItems.empty())
             fail(ctx + ": needs nothing, so it would always be present");
         d.max = get<int>(v, "max", ctx);
+        d.glow = getOr(v, "glow", false, ctx);
         if (d.max < 1 || d.max > 32) fail(ctx + ": max must be within 1..32");
         if (v.contains("voice")) {
             d.voice = "sfx/" + get<std::string>(v, "voice", ctx) + ".wav";

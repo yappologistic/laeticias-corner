@@ -160,8 +160,10 @@ void Scene::rebuild(const World& world) {
             const float size = static_cast<float>(std::max(p.item.w, p.item.h));
             lights_.push_back({{a.x + light->x, a.y + light->y}, 26.0f + 14.0f * size});
         }
-        if (const auto& smoke = spr.smoke[slot])
-            chimneys_.push_back({a.x + smoke->x, a.y + smoke->y});
+        const auto& smoke = cat_.items[p.item.type].smokeAt;
+        if (slot < smoke.size())
+            chimneys_.push_back(
+                {a.x + static_cast<float>(smoke[slot].x), a.y + static_cast<float>(smoke[slot].y)});
     }
     water_.clear();
     for (int y = 0; y < world.height(); ++y)
@@ -258,6 +260,7 @@ void Scene::ensureTargets(int w, int h) {
     worldTarget_ = make(SDL_SCALEMODE_NEAREST);
     lightTarget_ = make(SDL_SCALEMODE_NEAREST);
     glowTarget_ = make(SDL_SCALEMODE_NEAREST);
+    shadowTarget_ = make(SDL_SCALEMODE_NEAREST);
 }
 
 void Scene::sprite(SpriteId id, Vec2 anchor, SDL_FColor color, bool mirror, Vec2 pivot,
@@ -325,6 +328,10 @@ void Scene::buildOrder(const FrameParams& p) {
         insert(EntryKind::Critter, static_cast<std::uint16_t>(i), pointRect(c.pos),
                {w.x - 12, w.y - 24, w.x + 12, w.y + 2});
     }
+    // Emissive visitors are always drawn in the glow pass.
+    for (Entry& e : entries_)
+        if (e.kind == EntryKind::Critter && cat_.visitors[p.critters[e.index].visitor].glow)
+            e.occludesGlow = true;
     if (p.ghost.mode == Ghost::Mode::Item) {
         const int slot = slotFor(*p.world, p.ghost.item);
         insert(EntryKind::Ghost, 0, tileRect(p.ghost.item), spriteRect(p.ghost.item, slot));
@@ -338,8 +345,10 @@ void Scene::buildOrder(const FrameParams& p) {
     });
 }
 
-void Scene::drawCritter(const Critter& c, const FrameParams& p, bool silhouette) {
+void Scene::drawCritter(const Critter& c, bool silhouette) {
     const auto& def = cat_.visitors[c.visitor];
+    // Emissive visitors skip the graded pass and appear, ungraded, in the glow layer.
+    if (def.glow && !silhouette) return;
     const bool back = c.facing == Facing::Back || c.facing == Facing::BackMirrored;
     const bool mirror = c.facing == Facing::FrontMirrored || c.facing == Facing::BackMirrored;
     const auto anim = static_cast<std::size_t>(
@@ -351,8 +360,8 @@ void Scene::drawCritter(const Critter& c, const FrameParams& p, bool silhouette)
     if (def.habitat == Habitat::Air) w.y -= c.hover + std::sin(c.animTime * 3.1f) * 2.0f;
     w = {std::round(w.x), std::round(w.y)};
     const float a = std::clamp(c.alpha, 0.0f, 1.0f);
-    sprite(id, w, silhouette ? SDL_FColor{0, 0, 0, a} : SDL_FColor{1, 1, 1, a}, mirror);
-    (void)p;
+    sprite(id, w, silhouette && !def.glow ? SDL_FColor{0, 0, 0, a} : SDL_FColor{1, 1, 1, a},
+           mirror);
 }
 
 void Scene::drawEntries(const FrameParams& p, bool silhouette) {
@@ -381,7 +390,7 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
             }
             break;
         }
-        case EntryKind::Critter: drawCritter(p.critters[e.index], p, silhouette); break;
+        case EntryKind::Critter: drawCritter(p.critters[e.index], silhouette); break;
         case EntryKind::Ghost: {
             const int slot = slotFor(world, p.ghost.item);
             drawItem(p.ghost.item, slot, tuning::kGhostAlpha, p.ghost.valid ? kWhite : kInvalidTint,
@@ -400,9 +409,10 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
     for (const Critter& c : p.critters) {
         if (cat_.visitors[c.visitor].habitat != Habitat::Air) continue;
         const Vec2 w = tileToWorld(c.pos.x, c.pos.y);
-        if (silhouette && !nearGlow({w.x - 8, w.y - c.hover - 12, w.x + 8, w.y - c.hover + 4}))
+        if (silhouette && !cat_.visitors[c.visitor].glow &&
+            !nearGlow({w.x - 8, w.y - c.hover - 12, w.x + 8, w.y - c.hover + 4}))
             continue;
-        drawCritter(c, p, silhouette);
+        drawCritter(c, silhouette);
     }
 }
 
@@ -475,6 +485,14 @@ void Scene::drawGround(const World& world) {
 }
 
 void Scene::drawShadows(const FrameParams& p) {
+    // Shadow sprites were normalised to a peak alpha of 1, so drawing them into their own layer
+    // saturates where they overlap; the layer is then composited once at the art's opacity.
+    batch_.flush();
+    if (!SDL_SetRenderTarget(renderer_, shadowTarget_.get()) ||
+        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
+        SDL_Log("render: shadow layer: %s", SDL_GetError());
+    }
+    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
     for (const Placed& pl : placed_) {
         const auto& set = tables_.items[pl.item.type].shadow[static_cast<std::size_t>(pl.slot)];
         if (set.empty()) continue;
@@ -495,6 +513,15 @@ void Scene::drawShadows(const FrameParams& p) {
                {1, 1, 1, std::clamp(c.alpha, 0.0f, 1.0f) * (air ? 0.45f : 1.0f)}, false,
                {std::round(w.x), std::round(w.y)}, air ? Vec2{0.5f, 0.5f} : Vec2{0.7f, 0.7f});
     }
+    batch_.flush();
+    if (!SDL_SetRenderTarget(renderer_, worldTarget_.get())) SDL_Log("render: %s", SDL_GetError());
+    batch_.use(shadowTarget_.get(), SDL_BLENDMODE_BLEND);
+    batch_.quad(SDL_FRect{0, 0, static_cast<float>(targetW_), static_cast<float>(targetH_)},
+                {0, 0, 1, 1}, {1, 1, 1, tables_.shadowOpacity});
+    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+}
+
+void Scene::drawMarkers(const FrameParams& p) {
     // Placement markers sit on the ground under everything else.
     const World& world = *p.world;
     const auto marker = [&](TilePos t, bool ok) {
@@ -566,7 +593,7 @@ void Scene::drawLighting(const FrameParams& p) {
             sprite(atlas_.lightBlob(), l.pos, warm, false, l.pos, {s, s * 0.75f});
         }
         for (const Critter& c : p.critters) {
-            if (cat_.visitors[c.visitor].time != VisitTime::Night) continue;
+            if (!cat_.visitors[c.visitor].glow) continue;
             Vec2 w = tileToWorld(c.pos.x, c.pos.y);
             w.y -= c.hover;
             const float pulse = 0.6f + 0.4f * std::sin(c.animTime * 4.0f);
@@ -585,7 +612,9 @@ void Scene::drawLighting(const FrameParams& p) {
 
 void Scene::drawGlow(const FrameParams& p) {
     const float glow = p.light.glow;
-    if (glow <= 0.01f) return;
+    const bool emissiveVisitors = std::ranges::any_of(
+        p.critters, [&](const Critter& c) { return cat_.visitors[c.visitor].glow; });
+    if (glow <= 0.01f && !emissiveVisitors) return;
     if (!SDL_SetRenderTarget(renderer_, glowTarget_.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
         SDL_Log("render: glow: %s", SDL_GetError());
@@ -594,11 +623,11 @@ void Scene::drawGlow(const FrameParams& p) {
     drawEntries(p, true);
     batch_.use(atlas_.texture(), SDL_BLENDMODE_ADD);
     for (const Critter& c : p.critters) {
-        if (cat_.visitors[c.visitor].time != VisitTime::Night) continue;
+        if (!cat_.visitors[c.visitor].glow) continue;
         Vec2 w = tileToWorld(c.pos.x, c.pos.y);
         w.y -= c.hover + std::sin(c.animTime * 3.1f) * 2.0f;
         const float pulse = 0.55f + 0.45f * std::sin(c.animTime * 4.0f);
-        sprite(atlas_.lightBlob(), w, scaled({0.8f, 1.0f, 0.5f, 1.0f}, glow * pulse * c.alpha),
+        sprite(atlas_.lightBlob(), w, scaled({0.8f, 1.0f, 0.5f, 1.0f}, 0.8f * pulse * c.alpha),
                false, w, {0.12f, 0.12f});
     }
     batch_.flush();
@@ -620,7 +649,7 @@ void Scene::draw(const FrameParams& p) {
     origin_ = {std::floor(topLeft.x) - 1.0f, std::floor(topLeft.y) - 1.0f};
     ensureTargets(static_cast<int>(std::ceil(p.screen.x / z)) + 3,
                   static_cast<int>(std::ceil(p.screen.y / z)) + 3);
-    if (!worldTarget_ || !lightTarget_ || !glowTarget_) return;
+    if (!worldTarget_ || !lightTarget_ || !glowTarget_ || !shadowTarget_) return;
     view_ = {origin_.x, origin_.y, origin_.x + static_cast<float>(targetW_),
              origin_.y + static_cast<float>(targetH_)};
 
@@ -632,6 +661,7 @@ void Scene::draw(const FrameParams& p) {
     batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
     drawGround(world);
     drawShadows(p);
+    drawMarkers(p);
     drawParticles(true);
     drawEntries(p, false);
     drawParticles(false);

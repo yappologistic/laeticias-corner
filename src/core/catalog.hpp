@@ -31,6 +31,11 @@ struct CategoryDef {
     std::string name;
 };
 
+struct Offset {
+    int x = 0;
+    int y = 0;
+};
+
 struct ItemDef {
     std::string id;
     std::string name;
@@ -43,7 +48,7 @@ struct ItemDef {
     std::string sound; // sfx path
     bool walkable = false;
     bool glow = false;
-    bool smoke = false;
+    std::vector<Offset> smokeAt; // chimney top per variant, from the anchor; empty = no smoke
     float fps = 0;
 };
 
@@ -62,6 +67,7 @@ struct VisitorDef {
     std::vector<Amount> anyItems;     // weighted sum over these items must reach anyTotal
     int anyTotal = 0;
     int max = 1;
+    bool glow = false; // emissive: drawn after night grading
     std::string voice; // sfx path, empty when silent
     std::string blurb;
 };

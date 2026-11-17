@@ -91,10 +91,11 @@ private:
                   float scaleY = 1.0f);
     void drawEntries(const FrameParams& p, bool silhouette);
     [[nodiscard]] bool nearGlow(const Rect& r) const;
-    void drawCritter(const Critter& c, const FrameParams& p, bool silhouette);
+    void drawCritter(const Critter& c, bool silhouette);
     void drawGround(const World& world);
     void renderGroundCache(const World& world);
     void drawShadows(const FrameParams& p);
+    void drawMarkers(const FrameParams& p);
     void drawParticles(bool ground);
     void drawLighting(const FrameParams& p);
     void drawGlow(const FrameParams& p);
@@ -107,6 +108,7 @@ private:
     TexturePtr worldTarget_;
     TexturePtr lightTarget_;
     TexturePtr glowTarget_;
+    TexturePtr shadowTarget_;
     // Terrain and cliffs change rarely, so they are cached in one texture and redrawn only when
     // the world or a terrain animation frame changes.
     TexturePtr ground_;

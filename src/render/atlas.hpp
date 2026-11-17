@@ -66,10 +66,12 @@ public:
     [[nodiscard]] SpriteId lightBlob() const { return lightBlob_; }
     [[nodiscard]] SpriteId softShadow() const { return softShadow_; }
 
-    // Pixel queries on the CPU copy, relative to the sprite's anchor. Used once at load time to
-    // place light pools on emissive pixels and smoke on the highest point of a roof.
+    // Centre of a sprite's opaque pixels relative to its anchor; places light pools on the
+    // emissive pixels.
     [[nodiscard]] std::optional<Vec2> alphaCentroid(SpriteId id) const;
-    [[nodiscard]] std::optional<Vec2> topPoint(SpriteId id) const;
+    // Rescales a sprite's alpha so its peak is 1 and returns the original peak. Shadows are drawn
+    // as a saturating mask and composited once at that opacity, so overlaps never double-darken.
+    float normalizeAlpha(SpriteId id);
 
 private:
     SpriteId add(int x, int y, int w, int h, int ox, int oy);
@@ -81,6 +83,7 @@ private:
     std::vector<SpriteRect> rects_;
     std::unordered_map<std::string, SpriteId> byKey_;
     std::unordered_set<std::string> logged_;
+    std::unordered_map<std::uint64_t, float> normalized_; // by rect origin: shared rects once
     std::size_t artCount_ = 0;
     SpriteId placeholderTile_ = 0;
     SpriteId placeholderBox_ = 0;

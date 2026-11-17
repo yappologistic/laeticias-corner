@@ -109,7 +109,7 @@ Atlas::Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir) {
     // Placeholder diamond: loud magenta checker so missing art is obvious.
     placeholderTile_ = add(0, stripY, 32, 16, 16, 0);
     for (int y = 0; y < 16; ++y) {
-        const int half = y < 8 ? 2 * y + 2 : 2 * (15 - y) + 2;
+        const int half = y < 8 ? 2 * y + 1 : 2 * (15 - y) + 1; // rows 2, 6 ... 30 px wide
         for (int x = 16 - half; x < 16 + half; ++x) {
             const bool check = ((x / 4) + (y / 2)) % 2 == 0;
             put(s, x, stripY + y, check ? Rgba{255, 0, 220, 255} : Rgba{40, 0, 40, 255});
@@ -143,7 +143,7 @@ Atlas::Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir) {
             const float dx = (static_cast<float>(x) + 0.5f - 7.0f) / 7.0f;
             const float dy = (static_cast<float>(y) + 0.5f - 3.0f) / 3.0f;
             const float k = std::max(0.0f, 1.0f - (dx * dx + dy * dy));
-            put(s, 124 + x, stripY + y, {0, 0, 0, toByte(std::min(1.0f, k * 1.6f) * 0.32f)});
+            put(s, 124 + x, stripY + y, {0, 0, 0, toByte(std::min(1.0f, k * 1.6f))});
         }
     }
 
@@ -206,24 +206,30 @@ std::optional<Vec2> Atlas::alphaCentroid(SpriteId id) const {
                 static_cast<float>(sy / sum) - static_cast<float>(r.oy)};
 }
 
-std::optional<Vec2> Atlas::topPoint(SpriteId id) const {
-    if (!pixels_) return std::nullopt;
+float Atlas::normalizeAlpha(SpriteId id) {
     const auto& r = rects_[id];
+    const auto key = (static_cast<std::uint64_t>(r.x) << 32) | static_cast<std::uint32_t>(r.y);
+    if (const auto it = normalized_.find(key); it != normalized_.end()) return it->second;
+    if (!pixels_ || !texture_) return 1.0f;
+    std::uint8_t peak = 0;
+    for (int y = 0; y < r.h; ++y)
+        for (int x = 0; x < r.w; ++x) peak = std::max(peak, alphaAt(r.x + x, r.y + y));
+    normalized_.emplace(key, static_cast<float>(peak) / 255.0f);
+    if (peak == 0 || peak == 255) return static_cast<float>(peak) / 255.0f;
+    auto* base = static_cast<std::uint8_t*>(pixels_->pixels);
     for (int y = 0; y < r.h; ++y) {
-        int first = -1;
-        int last = -1;
+        std::uint8_t* row = base + static_cast<std::ptrdiff_t>(r.y + y) * pixels_->pitch;
         for (int x = 0; x < r.w; ++x) {
-            if (alphaAt(r.x + x, r.y + y) > 128) {
-                if (first < 0) first = x;
-                last = x;
-            }
-        }
-        if (first >= 0) {
-            return Vec2{static_cast<float>(first + last + 1) * 0.5f - static_cast<float>(r.ox),
-                        static_cast<float>(y) - static_cast<float>(r.oy)};
+            std::uint8_t& a = row[static_cast<std::ptrdiff_t>(r.x + x) * 4 + 3];
+            a = static_cast<std::uint8_t>(std::min(255, a * 255 / peak));
         }
     }
-    return std::nullopt;
+    const SDL_Rect rect{r.x, r.y, r.w, r.h};
+    const auto* first = base + static_cast<std::ptrdiff_t>(r.y) * pixels_->pitch +
+                        static_cast<std::ptrdiff_t>(r.x) * 4;
+    if (!SDL_UpdateTexture(texture_.get(), &rect, first, pixels_->pitch))
+        SDL_Log("atlas: %s", SDL_GetError());
+    return static_cast<float>(peak) / 255.0f;
 }
 
 } // namespace lc

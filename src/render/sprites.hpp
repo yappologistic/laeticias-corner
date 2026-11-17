@@ -27,7 +27,6 @@ struct ItemSprites {
     std::vector<FrameSet> base;
     std::vector<FrameSet> shadow;
     std::vector<FrameSet> glow;
-    std::vector<std::optional<Vec2>> smoke; // chimney point relative to the anchor
     std::vector<std::optional<Vec2>> light; // centre of the emissive pixels
 };
 
@@ -44,6 +43,7 @@ struct SpriteTables {
     SpriteId cliffSW = 0;
     SpriteId tileOk = 0;
     SpriteId tileBad = 0;
+    float shadowOpacity = 0.35f; // opacity of the composited shadow layer
 };
 
 [[nodiscard]] SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat);

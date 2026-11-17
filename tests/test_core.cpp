@@ -44,6 +44,13 @@ TEST_CASE("the shipped catalog parses and validates") {
     CHECK(butterfly.anyItems.size() == 3);
     CHECK(butterfly.anyTotal == 4);
     CHECK(c.visitors[static_cast<std::size_t>(*c.findVisitor("duck"))].voice == "sfx/duck.wav");
+    CHECK(c.visitors[static_cast<std::size_t>(*c.findVisitor("firefly"))].glow);
+    CHECK_FALSE(c.visitors[static_cast<std::size_t>(*c.findVisitor("duck"))].glow);
+    const auto& cottage = c.items[static_cast<std::size_t>(item(c, "cottage"))];
+    REQUIRE(cottage.smokeAt.size() == 4);
+    CHECK(cottage.smokeAt[0].x == 10);
+    CHECK(cottage.smokeAt[0].y == -19);
+    CHECK(c.items[static_cast<std::size_t>(item(c, "barn"))].smokeAt.empty());
 }
 
 TEST_CASE("catalog validation reports bad content") {
@@ -62,6 +69,8 @@ TEST_CASE("catalog validation reports bad content") {
     CHECK_FALSE(broken("\"coop\": 1", "\"castle\": 1").has_value());
     CHECK_FALSE(broken("\"id\": \"pine\"", "\"id\": \"oak\"").has_value());
     CHECK_FALSE(broken("\"sfx/cat.wav\"", "\"sfx/dog.wav\"").has_value());
+    CHECK_FALSE(broken("[[10, -19], [-2, -15], [-10, -21], [2, -25]]", "[[10, -19]]").has_value());
+    CHECK_FALSE(broken("[[10, -19], [-2, -15]", "[[10], [-2, -15]").has_value());
     const auto err = broken("\"layout\": \"connect\"", "\"layout\": \"spiral\"");
     REQUIRE_FALSE(err.has_value());
     CHECK(err.error().find("hedge") != std::string::npos);
