@@ -1,0 +1,177 @@
+# worldgen: building the world as code
+
+`tools/worldgen` compiles region sources into the world files the engine loads
+(`assets/world/world.json`, `assets/world/layers/<layer>.lcw` and `.graph.json`,
+`assets/world/overview.png`), validates the composed world, and renders previews from the atlas
+pages without the engine. The formats and rules are `docs/design/world-tech.md` §2–§3; this file is
+the practical guide.
+
+## Commands
+
+```sh
+tools/worldgen/build.sh parsa                 # compile + validate one layer, write it if clean
+tools/worldgen/build.sh parsa --preview       # … and write previews to out/worldgen/parsa/
+tools/worldgen/build.sh base                  # regenerate the procedural base (worldgen core only)
+tools/worldgen/build.sh --all                 # base, then every layer with a layout
+tools/worldgen/build.sh --check               # validate the committed files as they are
+tools/worldgen/build.sh world --preview       # world.png, overview_full.png, assets/world/overview.png
+tools/worldgen/build.sh parsa --no-write      # validate only
+tools/worldgen/build.sh --test                # the test suite (about 25 s)
+```
+
+The first run creates `.venv` from `requirements.txt` (numpy, Pillow). Everything runs under
+`nice -n 19`, single-threaded, headless. A layer is compiled against the **committed** files of
+every other layer, so builders of different layers never wait on each other. A layer with errors
+is not written; the report says why.
+
+Outputs per layer in `out/worldgen/<layer>/`: `report.txt` (every error and warning, numbered,
+with file:line of the layout call and local/plan/grid coordinates), `map.png` (1 px per tile for
+the base, 4 px for a layer: terrain colours, level shading, items as dots, graph in yellow),
+`issues.png` (the map with every issue circled and numbered as in the report),
+`close_<view>.png` (isometric close-ups of each `L.view()` and of every landmark's
+surroundings), `missing_art.txt` (ids drawn as placeholders). Delete them when done.
+
+## Authoring a region
+
+One builder owns one layer: `tools/worldgen/regions/<layer>/layout.py` (+ `README.md`),
+`assets/world/layers/<layer>.*` and `assets/regions/<region>.json`. The layer list, rects,
+regions and base levels are in `plan/world_plan.py` (`LAYERS`, `REGIONS`); ask the worldgen core
+owner to change them. `regions/ostia/layout.py` is the template town; `regions/corner/layout.py`
+is a countryside layer.
+
+```python
+from worldgen.dsl import Layout
+from worldgen.shapes import Ellipse, Line, Poly, Rect
+
+def build(L: Layout) -> None:
+    sea = L.sea_below()                                  # follow the base layer's coast
+    L.fill("parsa.plain_grass", level=0, district="fields")
+    L.paint(sea, "world.sea"); L.level(sea, -4)          # sea is world level 0
+    L.district("town", Rect(0, 62, 48, 112))
+    road = L.street([(0, 50), (26, 50)], width=3, paving="parsa.packed_earth", kind="road",
+                    portal="royal_road_w")
+    L.place("parsa.apadana", rect=(60, 54, 83, 77), name="apadana")
+    L.houses(Rect(0, 62, 48, 112), {"parsa.p_house": 3, "parsa.p_house_small": 5},
+             front=[road], gap=0.15, seed="town")
+    L.view("forecourt", Rect(20, 30, 70, 64))
+```
+
+### Coordinates, levels, facings
+
+- **Local plan coordinates** `(c, r)`: `c` east, `r` south, from the region's north-west corner,
+  exactly the city files' tables. Rects are inclusive `(c0, r0, c1, r1)` (a 4-tuple works wherever
+  a shape does). Worldgen converts to grid (`tx = R`, `ty = 1279 − C`) only when writing files.
+- **Levels are local**: the region's base level (`REGIONS` in the plan) is added. World levels are
+  0..15; the sea is 0, so a coastal town at base 1 paints its sea at local `-1`.
+- **Facings** are compass words. Kit faces `+y` (west) in `r0`, so `"west"` = `r0`, `"north"` =
+  `r1`, `"east"` = `r2`, `"south"` = `r3`; worldgen turns the footprint for you (odd `k` swaps it).
+  Landmarks are modelled in grid axes and always use `r0`, whatever `face` says.
+- `place(at=(c, r))` gives the footprint's **north-west** tile; `place(rect=...)` gives the whole
+  footprint and is checked against the catalog footprint after rotation (V4).
+- **Stairs and ramps**: `L.stair(item, rect=..., face=...)` — the foot (lower end) is on the
+  `face` side, the head on the opposite side. The footprint is at the lower level; the tile beyond
+  the head must be `rise` levels higher (V3). Walkers change level only on stairs and ramps (V5).
+
+### The API (world-tech §3.3, plus a few helpers)
+
+| Call | Does |
+|---|---|
+| `fill(terrain, level=0, district=None)` | whole layer |
+| `paint(shape, terrain)`, `level(shape, n, face=None)`, `impassable(shape)`, `transparent(shape)`, `no_ground(shape)` | ground; `face` names the edge material of raised tiles (must be in the terrain's `faces`, or its base's) |
+| `district(name, shape)` | `"town"` is stored as `<region>/town`; a layer holding several regions writes `"seam_dell/dell"` |
+| `place(item, rect=|at=, face=, variant=, name=)` | one item; reports overlaps (V2) instead of placing |
+| `scatter(shape, {item: weight}, density, min_gap=1, seed=, clump=0)` | per-tile draws; `clump` (0..1) makes thickets and clearings |
+| `row(line, item, every, face=, offset=)` | items along a line's centre walk |
+| `houses(shape, kit, front=[streets], gap=, seed=)` | district filler: frontage first, doors to the street, alleys, then smaller pieces inside facing reachable tiles; houses whose door gets cut off are removed |
+| `fields(shape, crop, plot=(w, h), path=None, seed=)` | plots that wobble by a tile, one in five fallow; `crop` is a terrain or an item planted in rows |
+| `wall(line, kit, tower=, every=, gates=[(c, r, item)])` | connect-layout walls with towers and gates |
+| `street(points, width=, paving=, kerb=, kind=, portal=)` | paints and makes graph edges; crossings and T-junctions become nodes; `portal` names the end on the layer edge |
+| `stair(item, rect=, face=)` | see above; makes a `stair` edge |
+| `river(points, width=, terrain=, banks={item: density}, seed=)`, `channel(...)` | water with flow (aux) following the points |
+| `lane(id, points, kind=, ports={id: point index})` | ship and barge lanes |
+| `node(id, at, kind="dest")` | a named node; snapped to the nearest street within 16 tiles |
+| `edge(a, b, kind=, via=)` | an explicit edge between named nodes (over ground the layer leaves to another) |
+| `link(placed, slot, node)` | slot spot ↔ node |
+| `expect(landmark, rect=, level=)` | V4 check of your own placement |
+| `view(name, rect)` | a close-up preview |
+| `below_terrain(c, r)`, `below_level(c, r)`, `land_below()`, `sea_below()`, `coast_below()`, `below_where(pred)` | read the committed layers underneath (the base's coast, rivers, levels) |
+| `terrain_at(C, R)` | what this layer has painted so far (world coordinates) |
+
+Shapes: `Rect`, `Poly` (vertices are tiles, boundary included), `Line(points, width)` (odd widths
+centre on the named tiles, even widths on their south-east corners, so a width-2 street along
+row `r` covers `r` and `r + 1`), `Ellipse(c, r, rx, ry)`, and `a | b`, `a - b`, `a & b`.
+
+**Order is the only state.** Later calls win on the same tiles. Lay streets before houses and
+water before scattering trees (painting water under a tree is caught by V3). Every random choice is
+a pure function of `(region, seed, tile)`: changing one `scatter` never reshuffles another.
+
+### Multi-piece landmarks
+
+Place a landmark **once**, with its whole footprint rect, at `r0`. The art tool cuts it into pieces
+and emits walk tiles and slot spots in `assets/atlas/<set>.geom.json`; worldgen reads them (V7 checks
+every spot is walkable and near the graph). Do not place pieces separately. Its stairs are separate
+items (`L.stair`), furniture inside it is kit placed on its walk tiles (`L.place("parsa.p_throne",
+at=…)`). Paint the paving under walk tiles yourself: walk-tile floors are ground terrain, not part
+of the landmark. Name landmarks with their city-file id (`name="apadana"`); V4 compares every
+`<set>.<id>` you place with the city file's §2.3 table (rect and local level). A listed landmark
+you have not placed is a warning, and an error once your region README says `Status: complete`.
+
+### Believable districts, not grids
+
+- Streets follow the city file's plan, then wander: give long streets a vertex every 8–15 tiles
+  and let them bend; vary widths (main 2–3, lanes 1).
+- Use `houses` with `gap` 0.1–0.2 and a kit of 3–6 pieces of different sizes with uneven weights;
+  it leaves alleys and courtyards. Several `houses` calls with different seeds and kits per
+  quarter read as neighbourhoods.
+- Break uniform areas with `scatter(..., clump=0.5–0.9)`: yards, wells, ovens, trees in gardens.
+- `fields` already wobbles plot sizes and leaves fallow plots; vary `plot` between districts.
+- Look at `close_<view>.png` at 1× before committing: a street that reads as a ruler line, or a
+  block of identical houses, needs another pass.
+
+### Content that does not exist yet
+
+Ids resolve from `assets/catalog.json` and `assets/sets/<set>/catalog.json`, then drafts
+(`docs/design/sets/<set>.json`), then `plan/provisional.py` (worldgen's stand-ins: footprints and
+heights from the city files). Draft and provisional ids validate with a V1 warning per id. Missing
+art draws as a grey box of the catalog height with the id on it; provisional plants draw a home
+sprite as a stand-in so country previews can be judged.
+
+## Validation (world-tech §3.5)
+
+| # | Check | Level |
+|---|---|---|
+| V1 | ids exist (terrain, items, districts `<region>/<name>` of the layer's regions, face materials); draft/provisional ids warn | error / warning |
+| V2 | no overlaps in a layer; items of lower layers dropped by this one | error / warning |
+| V3 | footprints on ground of their `on` kind, flat; stairs: foot at the stair's level, head `rise` higher | error |
+| V4 | `expect()` rects and levels; city-file §2.3 landmark rects and levels | error (missing: warning) |
+| V5 | every graph edge walkable along its course; levels change only on stairs, ramps, or decks on water (jetties, bridges, fords stand at their bank's height, ±1 level) | error |
+| V6 | graph connected; portals declared in the plan with the same tile, present in the other layer when it is built; dest nodes ≤ 64 | error / warning |
+| V7 | slot spots (geometry files) and doors of buildings walkable and within 24 walking tiles of the graph | error |
+| V8 | two base terrains never touch; seas at level 0; rivers never flow uphill | error |
+| V9 | layer rect inside its regions; every tile with ground has a district | error |
+| V10 | ≤ 1 200 items and ≤ 40 glowing items per chunk, ≤ 254 districts | error |
+| V11 | ≤ 25 % of walkable tiles hidden behind raised ground | warning |
+| V12 | item cards exist in the region file | error |
+| V13 | determinism: two compiles give the same bytes (test suite) | test |
+
+`--check` validates committed files without their layouts, so checks that need the layout source
+(V4 expectations, V7 slots, source lines) only run when the layer is built.
+
+## The base layer and the plan (worldgen core)
+
+`plan/world_plan.py` holds the coarse authored world: regions and stretches, district ownership
+rules, layers, portals, land/sea/island polygons, relief per stretch, mountain bands, rivers,
+routes and lanes, stretch looks, overview labels. `worldgen/base.py` turns it into the base layer
+(coasts roughened by bounded noise, relief with domain-warped stretch settings, carved rivers,
+routes by A*, fields and forests by stretch look, districts). City rects are reserved flat at the
+city's base level; town rects keep natural ground but no country items. Each table entry affects
+only its own area, and all noise is a function of world position and a string key.
+
+## Files
+
+`worldgen/`: `dsl.py` layout API · `shapes.py`, `raster.py` shapes and exact rasterisation ·
+`catalog.py` catalogs, atlas pages, geometry · `layer.py`, `graph.py` file formats ·
+`compiler.py` layout → layer and graph · `compose.py` the engine's composition rule ·
+`validate.py` V1–V12 · `bible.py` city-file landmark tables · `base.py` the base layer ·
+`preview.py` maps, overview, isometric close-ups · `rng.py` SplitMix64 streams and noise ·
+`build.py` the command line. Tests in `tests/`.
