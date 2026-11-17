@@ -123,9 +123,11 @@ visitors and effects it is the ground contact point. Keys:
 
 ### Audio (`assets/audio/`)
 
-Files are listed under `audio` in the catalog. Music and ambience: seamless loops, Ogg Vorbis,
-44.1 kHz stereo, about −18 LUFS, true peak ≤ −1 dB. Effects: WAV, 44.1 kHz, 16-bit mono, peak
-≤ −3 dB, no clicks at the start or end. The engine crossfades `day`/`night` music and ambience with
+Files are listed under `audio` in the catalog. Everything under `music/` and `amb/` is a seamless
+whole-file loop, Ogg Vorbis, 44.1 kHz stereo, true peak ≤ −1 dB; music sits at about −18 LUFS
+integrated and ambience beds at −21 to −23. Effects: WAV, 44.1 kHz, 16-bit mono, peak ≤ −3 dB,
+balanced against each other by their loudest 100 ms, no clicks at the start or end. A visitor's
+`voice` value `<v>` plays `sfx/<v>.wav`. The engine crossfades `day`/`night` music and ambience with
 the clock, adds slight random pitch to placement sounds, and treats a missing file as silence.
 
 ## Game rules (v0)
