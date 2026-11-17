@@ -433,10 +433,10 @@ houses, walkers, caravans, plants); each adds a few unique landmarks at `s ≈ 0
 | **Sardis** (C 860..879, R 200..219) | `sardis_acropolis` | 10 × 10 | 160 | M | steep eroded acropolis with walls; the satrap's residence below (N); the Paktolos stream with gold-washers |
 | | `royal_road_head` | 4 × 4 | 60 | M | the first station of the Royal Road, a milestone-like stone and an Aramaic sign panel |
 
-**Asset counts (Pārsa):** landmarks 21 (M 16 / N 5), kit 33 (M 28 / N 5), plants 15 (M 12 / N 3),
+**Asset counts (Pārsa):** landmarks 21 (M 17 / N 4), kit 33 (M 28 / N 5), plants 15 (M 12 / N 3),
 terrain 11 (M), walker kinds 19 (M 18 / N 1) plus delegation sets, animals 13 (M 6 / N 7).
-Waypoints add 17 landmarks (M 12 / N 5). **Total about 129 entries: must-have about 103,
-nice-to-have about 26.** The must-have set alone
+Waypoints add 17 landmarks (M 12 / N 5). **Total about 129 entries: must-have about 104,
+nice-to-have about 25.** The must-have set alone
 builds a convincing city; the cut line is the N marks.
 
 ---
