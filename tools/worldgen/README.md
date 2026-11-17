@@ -86,12 +86,15 @@ def build(L: Layout) -> None:
 | `fields(shape, crop, plot=(w, h), path=None, seed=)` | plots that wobble by a tile, one in five fallow; `crop` is a terrain or an item planted in rows |
 | `wall(line, kit, tower=, every=, gates=[(c, r, item)])` | connect-layout walls with towers and gates |
 | `street(points, width=, paving=, kerb=, kind=, portal=)` | paints and makes graph edges; crossings and T-junctions become nodes; `portal` names the end on the layer edge |
-| `stair(item, rect=, face=)` | see above; makes a `stair` edge |
+| `stair(item, rect=, face=, name=)` | see above; makes a `stair` edge. Where the end lands inside a landmark, it snaps to the landmark's nearest walk tile; a landing shared by two stairs joins only their flights |
 | `river(points, width=, terrain=, banks={item: density}, seed=)`, `channel(...)` | water with flow (aux) following the points |
 | `lane(id, points, kind=, ports={id: point index})` | ship and barge lanes |
 | `node(id, at, kind="dest")` | a named node; snapped to the nearest street within 16 tiles |
 | `edge(a, b, kind=, via=)` | an explicit edge between named nodes (over ground the layer leaves to another) |
 | `link(placed, slot, node)` | slot spot ↔ node |
+| `fits(item, at, face=)` | would `place` succeed here (free, flat, suitable, off the streets)? For detail that gives way |
+| `walk_tiles(placed)` | a landmark's walk tiles (plan) from the geometry file; `place` may put furniture on them |
+| `remove(placed)` | take back an item a filler placed (thinning, door clearing) |
 | `expect(landmark, rect=, level=)` | V4 check of your own placement |
 | `view(name, rect)` | a close-up preview |
 | `below_terrain(c, r)`, `below_level(c, r)`, `land_below()`, `sea_below()`, `coast_below()`, `below_where(pred)` | read the committed layers underneath (the base's coast, rivers, levels) |
@@ -127,6 +130,11 @@ you have not placed is a warning, and an error once your region README says `Sta
 - `fields` already wobbles plot sizes and leaves fallow plots; vary `plot` between districts.
 - Look at `close_<view>.png` at 1× before committing: a street that reads as a ruler line, or a
   block of identical houses, needs another pass.
+- Diagonal street segments are rasterised as staircases, and graph edges between crossings on
+  them may leave the painted tiles: prefer axis-parallel runs with jogs (`regions/parsa`'s
+  `orth()` helper).
+- With a mixed kit, `houses` favours the small pieces; run it twice (large pieces first, then a
+  fill with the small ones) for courtyard-house quarters.
 
 ### Content that does not exist yet
 
@@ -143,10 +151,10 @@ sprite as a stand-in so country previews can be judged.
 | V1 | ids exist (terrain, items, districts `<region>/<name>` of the layer's regions, face materials); draft/provisional ids warn | error / warning |
 | V2 | no overlaps in a layer; items of lower layers dropped by this one | error / warning |
 | V3 | footprints on ground of their `on` kind, flat; stairs: foot at the stair's level, head `rise` higher | error |
-| V4 | `expect()` rects and levels; city-file §2.3 landmark rects and levels | error (missing: warning) |
-| V5 | every graph edge walkable along its course; levels change only on stairs, ramps, or decks on water (jetties, bridges, fords stand at their bank's height, ±1 level) | error |
-| V6 | graph connected; portals declared in the plan with the same tile, present in the other layer when it is built; dest nodes ≤ 64 | error / warning |
-| V7 | slot spots (geometry files) and doors of buildings walkable and within 24 walking tiles of the graph | error |
+| V4 | `expect()` rects and levels; city-file §2.3 landmark rects and levels (a set footprint that holds the bible's rect, e.g. a hall modelled with its portico, warns; rows without a footprint are not landmarks) | error (missing: warning) |
+| V5 | every graph edge walkable along its course; levels change only on stairs, ramps, or decks on water (jetties, bridges, fords stand at their bank's height, ±1 level); entering a landmark whose set has no geometry yet warns | error / warning |
+| V6 | graph connected; portals declared in the plan with the same tile, present in the other layer when it is built (a base route still planned warns); dest nodes ≤ 64 | error / warning |
+| V7 | slot spots (geometry files) and doors of buildings walkable and within 24 walking tiles of the graph; a kit slot on its own footprint (a seat, a shed's yard) counts from the walkable tile beside it; spots inside a landmark that only its geometry can open warn ("art geometry") | error / warning |
 | V8 | two base terrains never touch; seas at level 0; rivers never flow uphill | error |
 | V9 | layer rect inside its regions; every tile with ground has a district | error |
 | V10 | ≤ 1 200 items and ≤ 40 glowing items per chunk, ≤ 254 districts | error |
