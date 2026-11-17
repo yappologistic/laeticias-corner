@@ -97,8 +97,9 @@ public:
     // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...).
     [[nodiscard]] std::optional<Vec2> widgetCentre(std::string_view name, const HudModel& m) const;
 
-    // Entries of a drawer category: item indices, or terrain indices for the ground tab.
-    [[nodiscard]] static std::vector<int> categoryEntries(const Catalog& cat, int category);
+    // Entries of a drawer category: item indices, or terrain indices for the ground tab. Fills
+    // `out` in place so the per-frame layout reuses its storage.
+    static void categoryEntries(const Catalog& cat, int category, std::vector<int>& out);
 
     static constexpr int kMaxWidgets = 192;
 

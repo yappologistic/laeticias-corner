@@ -151,9 +151,11 @@ TEST_CASE("utf-8 decoding") {
 
 TEST_CASE("drawer categories list terrain for the ground tab") {
     const Catalog& c = test::catalog();
-    const auto ground = Hud::categoryEntries(c, *c.findCategory(kGroundCategory));
+    std::vector<int> ground;
+    Hud::categoryEntries(c, *c.findCategory(kGroundCategory), ground);
     CHECK(ground.size() == c.terrain.size());
-    const auto homes = Hud::categoryEntries(c, *c.findCategory("homes"));
+    std::vector<int> homes;
+    Hud::categoryEntries(c, *c.findCategory("homes"), homes);
     CHECK(homes.size() == 6);
     for (int i : homes)
         CHECK(c.items[static_cast<std::size_t>(i)].category == *c.findCategory("homes"));

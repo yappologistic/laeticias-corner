@@ -119,15 +119,14 @@ Hud::Hud() {
     hintText_.reserve(192);
 }
 
-std::vector<int> Hud::categoryEntries(const Catalog& cat, int category) {
-    std::vector<int> out;
+void Hud::categoryEntries(const Catalog& cat, int category, std::vector<int>& out) {
+    out.clear();
     if (cat.categories[static_cast<std::size_t>(category)].id == kGroundCategory) {
         for (std::size_t t = 0; t < cat.terrain.size(); ++t) out.push_back(static_cast<int>(t));
     } else {
         for (std::size_t i = 0; i < cat.items.size(); ++i)
             if (cat.items[i].category == category) out.push_back(static_cast<int>(i));
     }
-    return out;
 }
 
 void Hud::toast(std::string text) {
@@ -245,7 +244,7 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         const float avail = screen.x - 2 * margin - 2 * ppad;
         const int cols =
             std::clamp(static_cast<int>((avail + gap) / (tileW + gap)), 1, theme::kDrawerMaxCols);
-        entries_ = categoryEntries(*m.cat, m.category);
+        categoryEntries(*m.cat, m.category, entries_);
         const int total = static_cast<int>(entries_.size());
         const int rowsTotal = (total + cols - 1) / cols;
         const int rows = std::clamp(rowsTotal, 1, theme::kDrawerRows);
