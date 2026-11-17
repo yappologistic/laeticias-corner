@@ -182,9 +182,12 @@ def reed_phrase(kind, notes, n, rng, legato=0.03):
         form = sum(g / (1 + ((fk - c) / (0.5 * bw)) ** 2) for c, bw, g in p["formants"])
         w = w * (0.35 + form) / (1 + (fk / p["roll"]) ** 3) * (fk < CEILING)
         out += w * np.sin(k * ph)
-    # Breath rides on the tone (it is the air through the reed), never a separate hiss.
-    breath = lowpass(highpass(rng.standard_normal(n), 700, 2), 3500, 4)
-    out = out * (1 + p["breath"] * 2 * breath / (np.std(breath) + 1e-12))
+    # Breath: a slow flutter riding on the tone (narrow, so harmonics stay clean) plus a
+    # little air in the bore's formant band, both following the player's dynamics.
+    flutter = lowpass(rng.standard_normal(n), 300, 2)
+    out = out * (1 + p["breath"] * 2 * flutter / (np.std(flutter) + 1e-12))
+    air = bandpass(rng.standard_normal(n), 900, 3000, 2)
+    out = out + p["breath"] * 0.5 * air * np.std(out) / (np.std(air) + 1e-12)
     return out * amp
 
 

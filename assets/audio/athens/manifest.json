@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "set": "athens",
+  "files": [
+    {
+      "file": "music/athens/day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 128.0,
+      "samples": 5644800,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Day piece: kithara theme in the Dorian species on E in dactylic lines, aulos joining in heterophony, a festival middle on A with krotala and drum.",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          6
+        ],
+        "bars": 32,
+        "beats": 192,
+        "samples": 5644800,
+        "phrase_starts_s": [
+          0.0,
+          8.0,
+          16.0,
+          24.0,
+          32.0,
+          40.0,
+          48.0,
+          56.0,
+          64.0,
+          72.0,
+          80.0,
+          88.0,
+          96.0,
+          104.0,
+          112.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "music/athens/night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 128.0,
+      "samples": 5644800,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Night piece: solo barbitos in the Lydian species on C (free time), a far aulos answering four times.",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 32,
+        "beats": 128,
+        "samples": 5644800,
+        "phrase_starts_s": [
+          0.0,
+          8.0,
+          16.0,
+          24.0,
+          32.0,
+          40.0,
+          48.0,
+          56.0,
+          64.0,
+          72.0,
+          80.0,
+          88.0,
+          96.0,
+          104.0,
+          112.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "amb/athens/day.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Cicadas in waves, distant voices, hammer and chisel on marble, goat bells, swallows.",
+      "where": "everywhere in the region"
+    },
+    {
+      "file": "amb/athens/agora.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 0.8,
+      "when": "day",
+      "for": "Close crowd murmur and bargaining without words, a herald far off, a donkey, feet.",
+      "where": "zone or count-driven: the Agora (vendors and customers, full = 12)"
+    },
+    {
+      "file": "amb/athens/sea.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 0.8,
+      "when": "always",
+      "for": "Small waves, rigging creak and halyard taps, gulls, shouted orders, a trireme rowing to its piper far out.",
+      "where": "zone: Piraeus harbours and the Long Walls' sea end"
+    },
+    {
+      "file": "amb/athens/rock.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 0.8,
+      "when": "day",
+      "for": "Wind over the rock, a kestrel, cicadas far below, an occasional chisel.",
+      "where": "zone: the Acropolis plateau"
+    },
+    {
+      "file": "amb/athens/night.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Crickets, a dog across town, a symposium singing far off with an aulos, a little owl.",
+      "where": "everywhere in the region"
+    },
+    {
+      "file": "amb/athens/potters.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 40.0,
+      "samples": 1764000,
+      "gain": 0.8,
+      "when": "day",
+      "for": "Kick wheels, clay slapped and wedged, a kiln roaring, pots clinking.",
+      "where": "zone: the Kerameikos potters' quarter"
+    },
+    {
+      "file": "amb/athens/procession.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 24.0,
+      "samples": 1058400,
+      "gain": 0.8,
+      "when": "event",
+      "for": "Aulos and kithara hymn with drum and krotala walking past (6 bars, 90 bpm).",
+      "where": "positional: follows the Panathenaic procession (A1)",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          6
+        ],
+        "bars": 6,
+        "beats": 36,
+        "samples": 1058400,
+        "phrase_starts_s": [
+          23.6667,
+          7.6667,
+          15.6667
+        ]
+      }
+    },
+    {
+      "file": "amb/athens/wheel.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 0.7,
+      "when": "worked",
+      "for": "A potter's kick wheel turning, hands on wet clay.",
+      "where": "positional: a potter's wheel slot while it is used"
+    },
+    {
+      "file": "amb/athens/kiln.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 0.7,
+      "when": "firing",
+      "for": "A wood-fired kiln roaring through its flue, the firebox crackling.",
+      "where": "positional: a kiln while firing (A4)"
+    },
+    {
+      "file": "sfx/athens/aulos.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.8,
+      "samples": 255780,
+      "gain": 1.0,
+      "when": "event",
+      "for": "An aulos phrase over its drone pipe (sacrifice, A10, A1)."
+    },
+    {
+      "file": "sfx/athens/lyre.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.5,
+      "samples": 198450,
+      "gain": 1.0,
+      "when": "event",
+      "for": "A lyre swept with the plectrum and a few notes (symposium, school)."
+    },
+    {
+      "file": "sfx/athens/owl.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.4797,
+      "samples": 109354,
+      "gain": 0.9,
+      "when": "event",
+      "for": "Athena's little owl calling on the rock at night (H3)."
+    },
+    {
+      "file": "sfx/athens/trireme.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.4798,
+      "samples": 109361,
+      "gain": 0.9,
+      "when": "event",
+      "for": "A trireme's timbers creaking, an oar knocking (ships)."
+    },
+    {
+      "file": "sfx/athens/oars.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.9263,
+      "samples": 173149,
+      "gain": 0.9,
+      "when": "event",
+      "for": "A bank of oars in time with the piper's call (S4)."
+    },
+    {
+      "file": "sfx/athens/arrive.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.5,
+      "samples": 242550,
+      "gain": 1.0,
+      "when": "event",
+      "for": "Arrival motif (fast travel, era caption): kithara E A B E."
+    }
+  ]
+}

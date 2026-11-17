@@ -14,7 +14,8 @@ pitches: D (low centre), T (edge), k (soft tap), C (clapper), K (krotala), Y (cy
 S (sistrum).
 
 A piece is a dict: bpm, meter (bar lengths in beats, cycled), reverb, an optional rubato
-(beats of push and pull per phrase), and parts, each naming its voice, gain, pan and reverb
+(beats of push and pull per phrase), an optional offset (beats: where a positional loop's file
+starts, so its seam falls between attacks), and parts, each naming its voice, gain, pan and reverb
 send. The render is an exact number of beats long with every tail folded onto the start."""
 
 import re
@@ -85,7 +86,7 @@ def timing(piece, total):
     its end; the curve is periodic in the phrase, so the loop length stays exact."""
     beat_s = 60.0 / piece["bpm"]
     push, phrase = piece.get("rubato", (0.0, 8))
-    assert total % phrase == 0
+    assert push == 0 or total % phrase == 0, "rubato phrases must tile the loop"
     k = push * 2 * np.pi / phrase
     assert k < 0.8, "rubato too strong: time would run backwards"
 
@@ -189,6 +190,10 @@ def render(piece, rng, parts_out=False, one_shot=None):
         return circular(lambda y: lowpass(highpass(y, 35, 2), 8000, 2), out)
 
     mix = finish(dry, send)
+    if piece.get("offset") and not one_shot:
+        # A positional loop has no musical start: begin it between attacks, not on a downbeat.
+        shift = secs(at(Fraction(piece["offset"]).limit_denominator(64)))
+        mix = np.roll(mix, -shift, axis=0)
     if not parts_out:
         return mix
     return mix, {k: finish(*v) for k, v in stems.items()}
@@ -203,4 +208,5 @@ def info(piece):
     return {"bpm": piece["bpm"], "meter": [int(m) for m in meter],
             "bars": bar_count(total, meter), "beats": int(total),
             "samples": secs(at(total)),
-            "phrase_starts_s": [round(at(b), 4) for b in range(0, int(total), phrase)]}
+            "phrase_starts_s": [float(round((at(b) - at(piece.get("offset", 0))) % at(total), 4))
+                                for b in range(0, int(total), phrase)]}

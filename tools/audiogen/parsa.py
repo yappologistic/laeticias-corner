@@ -175,7 +175,7 @@ def plain_day(rng, layers=None, length=48.0):
     return sd.mix({
         "wind": 0.16 * sd.wind(n, rng, 150, 2200, 0.07, 0.6, whistle=0.02),
         "life": 1.6 * life.finish((2.5, 1.5, 0.7, 0.03), 0.4),
-        "voices": 0.4 * lowpass(sd.crowd(length, rng, 5), 1200, 2),
+        "voices": 0.4 * sd.crowd(length, rng, 5, ceiling=1200),
     }, layers)
 
 
@@ -237,7 +237,7 @@ def site(rng, layers=None, length=48.0):
     calls = sd.crowd(length, rng, 3, f0=(110, 170), ceiling=2000, calling=2)
     return sd.mix({
         "work": work.finish((1.8, 1.2, 0.6, 0.02), 0.35),
-        "calls": 0.3 * lowpass(calls, 1800, 2),
+        "calls": 0.3 * calls,
         "wind": 0.03 * sd.wind(n, rng, 150, 1800, 0.07, 0.5),
     }, layers)
 

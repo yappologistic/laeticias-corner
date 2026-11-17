@@ -20,12 +20,14 @@ os.environ["OPENBLAS_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np  # noqa: E402  (must follow the thread setting)
 
 import ambience  # noqa: E402
+import athens  # noqa: E402
 import mastering  # noqa: E402
 import music  # noqa: E402
 import parsa  # noqa: E402
 import score  # noqa: E402
 import sfx  # noqa: E402
 import validate  # noqa: E402
+from dsp import stereo  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "assets" / "audio"
@@ -105,7 +107,7 @@ EFFECTS = {
 
 # Region sets (world-tech §2.2: assets/audio/<music|amb|sfx>/<set>/…), each with a manifest
 # at assets/audio/<set>/manifest.json for the engine and the region theme files.
-SETS = {"parsa": parsa.FILES}
+SETS = {"parsa": parsa.FILES, "athens": athens.FILES}
 REGION = {name: entry for files in SETS.values() for name, entry in files.items()}
 
 
@@ -168,6 +170,7 @@ def build_region(name, entry, rng):
         path.parent.mkdir(parents=True, exist_ok=True)
         mastering.write_wav16(path, x)
         return f"{name:26s} {len(x) / mastering.SR:7.2f} s"
+    x = stereo(x)  # positional loops may be built mono; every loop file is stereo
     x = mastering.master_loop(x, entry["lufs"], -1.5 if entry["quality"] >= 2 else -2.5)[0]
     return write_loop(name, x, entry["quality"])
 

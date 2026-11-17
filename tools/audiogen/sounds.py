@@ -48,6 +48,11 @@ class Bed:
         return circular(lambda y: highpass(y, 30, 2), out)  # bubbles and knocks carry DC
 
 
+def loop_lowpass(x, freq):
+    """Low-pass a whole loop as if it had been playing forever (no click at the seam)."""
+    return circular(lambda y: lowpass(y, freq, 2), x)
+
+
 def loop_noise(n, rng, lo, hi, tilt=0.5, channels=2):
     """Periodic band-limited noise (spectrum f^-tilt between lo and hi)."""
     return shaped_noise(n, rng, lambda f: f**-tilt / (1 + (lo / f) ** 4) / (1 + (f / hi) ** 4),
@@ -113,8 +118,8 @@ def babble(dur, rng, f0=150.0, rate=4.5, ceiling=2500.0, calling=False):
         amp = (h**-1.2) * (1 / (1 + ((fh - f1) / 90) ** 2) + 0.5 / (1 + ((fh - f2) / 150) ** 2)
                            + 0.03)
         out += amp * np.sin(h * ph)
-    out *= syll * gate
-    return lowpass(out, ceiling, 2)
+    out = lowpass(out * syll * gate, ceiling, 2)
+    return out * ramp_in(n, secs(0.05)) * ramp_in(n, secs(0.05))[::-1]
 
 
 def crowd(length, rng, talkers, f0=(110, 240), ceiling=1800.0, spread=0.8, calling=0):
@@ -125,7 +130,9 @@ def crowd(length, rng, talkers, f0=(110, 240), ceiling=1800.0, spread=0.8, calli
         x = babble(length + 3, rng, rng.uniform(*f0), rng.uniform(3.5, 5.5), ceiling,
                    calling=i >= talkers)
         x = pan(x * rng.uniform(0.5, 1.0), rng.uniform(-spread, spread))
-        out += wrap(np.roll(x, secs(rng.uniform(0, length)), axis=0), n)
+        buf = np.zeros((n + len(x), 2))
+        place(buf, x, secs(rng.uniform(0, length)))
+        out += wrap(buf, n)
     return out
 
 
@@ -533,7 +540,7 @@ def cart(length, rng, speed=1.0, rumble=1.0):
     for i in range(turns):
         t = i * length / turns
         place(out, 0.25 * creak_short(rng)[: n - secs(t) % n], secs(t) % n)
-    return lowpass(out, 3000)
+    return loop_lowpass(out, 3000)
 
 
 def creak_short(rng, dur=0.35, f=None):
@@ -592,7 +599,7 @@ def fire(length, rng, size=1.0):
         x = bandpass(rng.standard_normal(m), 800, 6000) * np.hanning(m) * rng.lognormal(0, 0.6)
         place(pops, x, secs(rng.uniform(0, length)))
     pops = wrap(pops, n)
-    return lowpass(0.5 * roar + 0.6 * pops, CEILING)
+    return loop_lowpass(0.5 * roar + 0.6 * pops, CEILING)
 
 
 def pour(rng, dur=1.6):
@@ -629,3 +636,42 @@ def finish_sfx(x, rng, wet=0.2, size=0.6, fade_out=0.05, longest=5.8):
     y = highpass(y[: min(loud[-1] + 1, secs(longest))], 25, 2)
     n = len(y)
     return y * ramp_in(n, secs(0.002)) * ramp_in(n, secs(fade_out))[::-1]
+
+
+# --- workshops -------------------------------------------------------------------------
+
+
+def wheel(length, rng, rpm=110.0):
+    """A potter's kick wheel as a seamless loop: the heavy stone flywheel's low hum and
+    the bearing's soft rub once a turn, with wet hands on clay hissing above it."""
+    n = secs(length)
+    turns = max(1, int(round(length * rpm / 60)))
+    f_turn = turns / length
+    t = times(n)
+    hum = loop_noise(n, rng, 40, 300, 1.0, 1) * (0.7 + 0.3 * np.sin(2 * np.pi * f_turn * t))
+    rub = loop_noise(n, rng, 200, 900, 0.5, 1) * (0.5 + 0.5 * np.sin(2 * np.pi * f_turn * t)) ** 6
+    hands = loop_noise(n, rng, 800, 4000, 0.3, 1) * swell(n, rng, 0.5, 0.6)
+    return loop_lowpass(0.6 * hum + 0.4 * rub + 0.12 * hands, 5000)
+
+
+def slap(rng):
+    """Wet clay slapped down or wedged on a board."""
+    n = secs(0.15)
+    x = lowpass(rng.standard_normal(n), 1800) * perc(n, 0.001, 0.02)
+    return x + 0.5 * modes(n, [160, 330], [1.0, 0.4], [0.03, 0.015], rng)
+
+
+def clink(rng):
+    """Two fired pots touching: a short ceramic tick."""
+    n = secs(0.2)
+    f = rng.uniform(1600, 2600)
+    return modes(n, [f, f * 1.6, f * 2.3], [1.0, 0.5, 0.25], [0.03, 0.02, 0.01], rng)
+
+
+def kiln(length, rng):
+    """A wood-fired kiln as a seamless loop: a deep turbulent roar breathing through the
+    flue, with the crackle of the firebox."""
+    n = secs(length)
+    roar = loop_noise(n, rng, 30, 500, 1.1, 1) * swell(n, rng, 0.25, 0.25)
+    breath = loop_noise(n, rng, 200, 1500, 0.6, 1) * swell(n, rng, 0.8, 0.5)
+    return loop_lowpass(roar + 0.25 * breath, 3000) + 0.4 * fire(length, rng, 0.5)
