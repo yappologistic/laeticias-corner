@@ -20,6 +20,7 @@ struct Game {
     World world = makeStarterWorld(cat);
     Progress progress{cat};
     Progression rules{cat};
+    Rng rng{5};
     std::vector<int> present = std::vector<int>(cat.visitors.size(), 0);
     std::vector<std::uint8_t> seen = std::vector<std::uint8_t>(cat.visitors.size(), 0);
     std::vector<std::uint8_t> nooks = std::vector<std::uint8_t>(cat.nooks.size(), 0);
@@ -42,7 +43,7 @@ struct Game {
         const auto steps = static_cast<int>(seconds / tuning::kStepSeconds + 0.5);
         for (int i = 0; i < steps; ++i) {
             played += tuning::kStepSeconds;
-            rules.tick(world, progress, facts(), played, true);
+            rules.tick(world, progress, facts(), played, true, rng);
             for (const auto& e : rules.events()) log.push_back(e);
             rules.clearEvents();
         }
@@ -266,4 +267,46 @@ TEST_CASE("beds grow in play time, faster in rain and in a kitchen garden, rest 
     // The season's rest comes from the catalog.
     CHECK(c.seasons[static_cast<std::size_t>(*c.findSeason("winter"))].growth == 0.0f);
     CHECK(c.seasons[static_cast<std::size_t>(*c.findSeason("summer"))].growth == 1.0f);
+}
+
+TEST_CASE("rare visitors come after their recipe holds a while, visit, go away and return") {
+    Game g;
+    g.progress.unlockEverything(g.cat);
+    const int owl = *g.cat.findVisitor("owl");
+    g.place("stump", 35, 30);
+    g.place("pine", 34, 29);
+    g.place("pine", 36, 29);
+    g.run(5);
+    CHECK_FALSE(g.rules.rareHere(owl)); // two pines, and it is day
+    g.place("pine", 36, 31);
+    g.run(120);
+    CHECK_FALSE(g.rules.rareHere(owl)); // still day
+    g.phase = Phase::Night;
+    g.changed();
+    g.run(19.5);
+    CHECK_FALSE(g.rules.rareHere(owl)); // the recipe must hold 20 to 60 s first
+    g.run(41);
+    REQUIRE(g.rules.rareHere(owl));
+    // Before it is seen its visit does not run out.
+    g.run(400);
+    CHECK(g.rules.rareHere(owl));
+    g.seen[static_cast<std::size_t>(owl)] = 1;
+    g.run(361);
+    CHECK_FALSE(g.rules.rareHere(owl)); // the visit is over: away for 120 to 240 s
+    g.run(119);
+    CHECK_FALSE(g.rules.rareHere(owl));
+    g.run(121 + 61);
+    CHECK(g.rules.rareHere(owl)); // back, the recipe still holding
+    // It leaves as soon as the recipe stops holding.
+    g.phase = Phase::Day;
+    g.changed();
+    g.run(1);
+    CHECK_FALSE(g.rules.rareHere(owl));
+    // Out of season, never: the robin comes only in winter.
+    const int robin = *g.cat.findVisitor("robin");
+    g.place("bird_feeder", 24, 33);
+    g.place("hedge", 25, 33);
+    g.place("hedge", 25, 34);
+    g.run(120);
+    CHECK_FALSE(g.rules.rareHere(robin));
 }

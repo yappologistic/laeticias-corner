@@ -206,8 +206,10 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "seen") {
         const auto v = cat_.findVisitor(a[1]);
         if (!v) return "unknown visitor " + a[1];
-        return visitors_.seen(*v) ? std::nullopt
-                                  : std::optional(std::format("visitor {} not seen", a[1]));
+        const bool want = a.size() < 3 || a[2] == "yes";
+        return visitors_.seen(*v) == want
+                   ? std::nullopt
+                   : std::optional(std::format("visitor {} {}seen", a[1], want ? "not " : ""));
     }
     if (what == "photos") {
         int n = 0;

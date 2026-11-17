@@ -497,11 +497,12 @@ void App::updateProgress() {
         progression_.evaluate(world_, progress_, f, played_);
         unlockStems(f, loading_);
     }
-    progression_.tick(world_, progress_, f, played_, !photo_);
+    progression_.tick(world_, progress_, f, played_, !photo_, rng_);
     // Who may come: the season allows them (rare visitors also by their recipe, in Progression).
     const auto bit = static_cast<std::uint8_t>(1u << season());
     for (std::size_t v = 0; v < gates_.size(); ++v) {
-        gates_[v].allowed = !cat_.visitors[v].rare && (cat_.visitors[v].seasons & bit) != 0;
+        gates_[v].allowed = cat_.visitors[v].rare ? progression_.rareHere(static_cast<int>(v))
+                                                  : (cat_.visitors[v].seasons & bit) != 0;
         gates_[v].extra = progression_.extraVisitors(static_cast<int>(v));
     }
     // What was already there when the world opened is found quietly (a migrated world's nooks).

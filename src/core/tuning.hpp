@@ -54,6 +54,13 @@ inline constexpr double kWishGrantHold = 1.5;      // a goal must hold this long
 inline constexpr double kWishAlreadyDoneDelay = 3.0;
 inline constexpr double kWishPacingTick = 1.0; // offers are considered once a second
 inline constexpr double kConditionDebounce = 0.25;
+// Rare visitors: the recipe holds this long before one comes; a visit lasts, then it stays away.
+inline constexpr float kRareDelayMin = 20.0f;
+inline constexpr float kRareDelayMax = 60.0f;
+inline constexpr float kRareStayMin = 180.0f;
+inline constexpr float kRareStayMax = 360.0f;
+inline constexpr float kRareAwayMin = 120.0f;
+inline constexpr float kRareAwayMax = 240.0f;
 inline constexpr float kNookPulseSeconds = 1.6f; // a found nook's area pulses this long
 inline constexpr float kNookPulseAlpha = 0.5f;
 inline constexpr float kNookLabelSeconds = 3.5f;  // its name floats above it this long
@@ -138,6 +145,8 @@ inline constexpr float kLightStrength = 0.5f;
 // never out-shine the lights.
 inline constexpr float kNightLumaCap = 0.42f;
 inline constexpr float kWaterShadowAlpha = 0.4f;
+inline constexpr float kUnderwaterAlpha = 0.6f; // swimmers below the surface (the koi)
+inline constexpr float kUnderwaterTint[3] = {0.72f, 0.86f, 1.0f};
 inline constexpr float kWarmLight[3] = {1.0f, 0.78f, 0.48f};   // lamp, fire and window pools
 inline constexpr float kFireflyHalo[3] = {0.75f, 1.0f, 0.55f}; // light around a firefly
 inline constexpr float kFireflyCore[3] = {0.8f, 1.0f, 0.5f};   // its glowing body

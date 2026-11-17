@@ -521,7 +521,7 @@ void Scene::buildDynamic(const FrameParams& p) {
     for (std::uint32_t i = 0; i < p.critters.size(); ++i) {
         const Critter& c = p.critters[i];
         const auto& def = cat_.visitors[c.visitor];
-        if (def.habitat == Habitat::Air) continue;
+        if (def.habitat == Habitat::Air || def.underwater) continue;
         // Emissive visitors are always drawn in the glow pass.
         insert(EntryKind::Critter, i, pointRect(c.pos), critterRect(c), def.glow);
     }
@@ -554,9 +554,13 @@ void Scene::drawCritter(const Critter& c, bool silhouette) {
         w.y -= (c.hover + std::sin(c.animTime * 3.1f) * 0.12f) * iso_.tileH();
     w = {std::round(w.x), std::round(w.y)};
     const float a = std::clamp(c.alpha, 0.0f, 1.0f);
-    const SDL_FColor color = silhouette && !def.glow ? SDL_FColor{0, 0, 0, a}
-                             : def.glow              ? SDL_FColor{1, 1, 1, a}
-                                                     : exposed(id, {1, 1, 1, a});
+    SDL_FColor color = silhouette && !def.glow ? SDL_FColor{0, 0, 0, a}
+                       : def.glow              ? SDL_FColor{1, 1, 1, a}
+                                               : exposed(id, {1, 1, 1, a});
+    // Under the water: faded and cooled.
+    if (def.underwater && !silhouette)
+        color = {color.r * tuning::kUnderwaterTint[0], color.g * tuning::kUnderwaterTint[1],
+                 color.b * tuning::kUnderwaterTint[2], color.a * tuning::kUnderwaterAlpha};
     sprite(id, w, color, mirror);
 }
 
@@ -640,6 +644,7 @@ void Scene::drawShadows(const FrameParams& p) {
     }
     for (const Critter& c : p.critters) {
         const Habitat h = cat_.visitors[c.visitor].habitat;
+        if (cat_.visitors[c.visitor].underwater) continue;
         Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
         w = {std::round(w.x), std::round(w.y)};
         const float k = h == Habitat::Air ? 0.5f : (h == Habitat::Water ? 0.85f : 0.7f);
@@ -849,6 +854,9 @@ void Scene::draw(const FrameParams& p, SDL_Texture* out) {
     blend_ = SDL_BLENDMODE_BLEND;
     drawMarkers(p);
     drawParticles(true);
+    // Swimmers under the water go below everything that floats on it.
+    for (const Critter& c : p.critters)
+        if (cat_.visitors[c.visitor].underwater) drawCritter(c, false);
     drawEntries(p, false);
     drawParticles(false);
     batch_.flush();

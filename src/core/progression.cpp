@@ -9,7 +9,7 @@ namespace lc {
 
 Progression::Progression(const Catalog& cat)
     : cat_(cat), trueSince_(cat.wishes.size(), -1.0), grantAt_(cat.wishes.size(), -1.0),
-      status_(cat.wishes.size()), nookHere_(cat.nooks.size(), 0) {
+      status_(cat.wishes.size()), nookHere_(cat.nooks.size(), 0), rare_(cat.visitors.size()) {
     events_.reserve(16);
     instances_.reserve(64);
 }
@@ -108,6 +108,56 @@ void Progression::evaluate(const World& world, Progress& p, const CondFacts& fac
     CondFacts f = facts;
     f.nookHere = nookHere_;
     for (const int w : p.open) refresh(w, world, f, played);
+    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
+        const VisitorDef& def = cat_.visitors[v];
+        if (!def.rare) continue;
+        rare_[v].holds =
+            ((def.seasons >> f.season) & 1) != 0 && cat_.conditions.eval(def.recipe, world, f);
+    }
+}
+
+int Progression::rareRate(int visitor) const {
+    int rate = 1;
+    for (std::size_t n = 0; n < cat_.nooks.size(); ++n)
+        if (nookHere_[n] != 0)
+            for (const Amount& r : cat_.nooks[n].rareRate)
+                if (r.index == visitor) rate *= r.count;
+    return rate;
+}
+
+void Progression::tickRare(const CondFacts& facts, double played, Rng& rng) {
+    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
+        Rare& r = rare_[v];
+        if (!cat_.visitors[v].rare) continue;
+        if (!r.holds) {
+            // It leaves as soon as the recipe stops holding.
+            r.since = -1;
+            r.here = false;
+            continue;
+        }
+        const bool seen = v < facts.seen.size() && facts.seen[v] != 0;
+        if (r.here) {
+            // The visit is timed from the first sighting; once over, it stays away a while.
+            if (!seen) r.leaves = played + r.stay;
+            if (played >= r.leaves) {
+                r.here = false;
+                r.since = -1;
+                r.awayUntil = played + rng.range(tuning::kRareAwayMin, tuning::kRareAwayMax);
+            }
+            continue;
+        }
+        if (played < r.awayUntil) continue;
+        if (r.since < 0) {
+            r.since = played;
+            r.delay = rng.range(tuning::kRareDelayMin, tuning::kRareDelayMax) /
+                      static_cast<float>(rareRate(static_cast<int>(v)));
+        }
+        if (played - r.since >= r.delay) {
+            r.here = true;
+            r.stay = rng.range(tuning::kRareStayMin, tuning::kRareStayMax);
+            r.leaves = played + r.stay;
+        }
+    }
 }
 
 void Progression::grant(int wish, Progress& p, double played) {
@@ -150,7 +200,8 @@ void Progression::offer(const World& world, Progress& p, const CondFacts& facts,
 }
 
 void Progression::tick(const World& world, Progress& p, const CondFacts& facts, double played,
-                       bool offering) {
+                       bool offering, Rng& rng) {
+    tickRare(facts, played, rng);
     if (played >= nextOffer_) {
         nextOffer_ = played + tuning::kWishPacingTick;
         // The hold is measured between evaluations, so goals are looked at again here too.

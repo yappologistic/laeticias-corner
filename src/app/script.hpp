@@ -34,7 +34,7 @@
 //   expect WHAT ARGS...     fail the run unless the state matches:
 //       tile P TERRAIN | item P ITEM|none | count ITEM|all N | tool none|place|paint|remove
 //       drawer open|closed | journal open|closed | photo on|off | phase PHASE
-//       seen VISITOR | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
+//       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
 //       where it may) | saved yes|no (a save file exists) | zoom 0.25|0.5|1|2|3
 //       toast yes|no (a toast is showing) | panning yes|no (a pan key is held)

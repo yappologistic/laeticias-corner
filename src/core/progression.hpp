@@ -7,6 +7,7 @@
 #include "core/catalog.hpp"
 #include "core/condition.hpp"
 #include "core/progress.hpp"
+#include "core/rng.hpp"
 #include "core/world.hpp"
 
 #include <cstdint>
@@ -37,9 +38,10 @@ public:
     // Re-evaluates everything that depends on the world or the facts (call after a change).
     void evaluate(const World& world, Progress& p, const CondFacts& facts, double played);
     // Call every simulation step. Wishes are offered at most once a second while `offering`
-    // (not paused, not framing a photo); grants happen whenever their hold is over.
-    void tick(const World& world, Progress& p, const CondFacts& facts, double played,
-              bool offering);
+    // (not paused, not framing a photo); grants happen whenever their hold is over; rare
+    // visitors' timings advance.
+    void tick(const World& world, Progress& p, const CondFacts& facts, double played, bool offering,
+              Rng& rng);
     // "Not now": the wish leaves the tray and may come back after a while.
     void snooze(int wish, Progress& p, double played);
 
@@ -52,6 +54,10 @@ public:
     [[nodiscard]] std::span<const std::uint8_t> nookHere() const { return nookHere_; }
     // Extra visitors nooks allow (their `cap` effects), per visitor.
     [[nodiscard]] int extraVisitors(int visitor) const;
+    // A rare visitor may be here now: its recipe has held long enough and its visit is on.
+    [[nodiscard]] bool rareHere(int visitor) const {
+        return rare_[static_cast<std::size_t>(visitor)].here;
+    }
     // Growth multiplier nooks give a bed whose footprint is `rect`.
     [[nodiscard]] float nookGrowth(const World& world, TileRect rect) const;
     // Whether a wish could be offered now (exposed for tests and the sketchbook).
@@ -59,6 +65,18 @@ public:
                                  const CondFacts& facts, double played) const;
 
 private:
+    // A rare visitor's comings and goings (docs/design/living-corner.md R3.2).
+    struct Rare {
+        bool holds = false; // recipe and season allow it now
+        double since = -1;  // play time the recipe began to hold
+        double delay = 0;   // how long it must hold before the visitor comes
+        bool here = false;
+        double stay = 0;       // length of this visit
+        double leaves = 0;     // play time the visit ends (counted from the first sighting)
+        double awayUntil = -1; // after a visit it stays away a while
+    };
+    void tickRare(const CondFacts& facts, double played, Rng& rng);
+    [[nodiscard]] int rareRate(int visitor) const;
     void offer(const World& world, Progress& p, const CondFacts& facts, double played);
     void grant(int wish, Progress& p, double played);
     void refresh(int wish, const World& world, const CondFacts& facts, double played);
@@ -69,6 +87,7 @@ private:
     std::vector<WishStatus> status_;
     std::vector<ProgressEvent> events_;
     std::vector<std::uint8_t> nookHere_;
+    std::vector<Rare> rare_;
     mutable std::vector<NearInstance> instances_; // scratch for area lookups
     double nextOffer_ = 0;                        // play time of the next pacing check
     double stageReady_ = 0;                       // stages reached together open this far apart
