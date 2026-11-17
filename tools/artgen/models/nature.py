@@ -223,9 +223,58 @@ BROADLEAF = (
 )
 
 
-def _broadleaf(v, frame, frames, k, seed, materials, under, level, scale=1.0):
+def snow_caps(m: Model, seed: int, density=0.85, min_z=0.0, which=None, broad=0):
+    """A pixel or two of snow on every upward-facing surface (of `which` materials), broken
+    up a little column by column. With `broad` > 0 snow only settles where at least that many
+    of the 8 neighbours in the layer are solid, so twigs stay dark and limbs carry it."""
+    solid = m.mat > 0 if which is None else np.isin(m.mat, [MAT[w] for w in which])
+    if broad:
+        pad = np.pad(solid, ((1, 1), (1, 1), (0, 0)))
+        near = sum(pad[1 + dx:pad.shape[0] - 1 + dx, 1 + dy:pad.shape[1] - 1 + dy]
+                   for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)
+        solid = solid & (near >= broad)
+    covered = np.zeros_like(solid)
+    covered[:, :, :-1] = m.mat[:, :, 1:] > 0
+    X, Y, Z = m.coords()
+    col = hash01(np.floor(X * m.k).astype(np.int64), np.floor(Y * m.k).astype(np.int64), seed)
+    top = solid & ~covered & (Z > min_z) & (col < density)
+    m.put(top, "snow", tone=0.3 * (col < density * 0.5), normal=(X * 0, Y * 0, Z * 0 + 1))
+    if m.fine:  # thicker where it settled: the voxel under the cap too
+        under = np.zeros_like(top)
+        under[:, :, :-1] = top[:, :, 1:]
+        m.put(under & solid & (col < density * 0.6), "snow", tone=-0.4, normal=(X * 0, Y * 0, Z * 0 + 1))
+
+
+def _bare_crown(m: Model, seed: int, clumps, dry=None):
+    """Winter: the crown as branches forking out to where the leaf clumps were, ending in a
+    fan of pixel-wide twigs; `dry` is a material for a few leaves still clinging on."""
+    rng = Rng(seed, 9)
+    tips = []
+    for cx, cy, cz, r in clumps:
+        base = np.array((cx, cy, cz - r * 0.3))
+        for _n in range(rng.integers(2, 4)):
+            a = rng.uniform(0, 6.28)
+            d = np.array((math.cos(a) * rng.uniform(0.5, 0.9), math.sin(a) * rng.uniform(0.5, 0.9),
+                          rng.uniform(0.35, 0.9)))
+            end = base + d * r * 0.8
+            sl, X, Y, Z = m.window(*((base + end) / 2), r * 0.5 + 2)
+            m.put(segment(X, Y, Z, base, end, 0.55), "bark", tone=0.0, sl=sl)
+            for _t in range(rng.integers(2, 4)):
+                b = rng.uniform(0, 6.28)
+                tip = end + np.array((math.cos(b), math.sin(b), rng.uniform(0.4, 1.4))) * r * rng.uniform(0.3, 0.5)
+                m.put_points(curve(end, tip, bend=(rng.uniform(-0.6, 0.6), rng.uniform(-0.6, 0.6))), "bark",
+                             tone=0.4)
+                tips.append(tip)
+    if dry:
+        for tip in tips[::3]:
+            m.put_points([tip + (rng.uniform(-0.8, 0.8), rng.uniform(-0.8, 0.8), rng.uniform(-0.6, 0.3))
+                          for _n in range(3)], dry, tone=0.2)
+
+
+def _broadleaf(p, v, frame, frames, k, seed, materials, under, level, scale=1.0, bare=False,
+               dry=None, after=None):
+    """`after(m, crown_clumps)` adds fruit or flowers once the leaves are in place."""
     rng = Rng(seed, v)
-    p = BROADLEAF[v]
     R, zc = p["r"] * scale, p["z"] * scale
     m = Model.empty(-18, 34, -18, 34, 0, int(zc + R * 1.6) + 4, k=k)
     lx, ly = p["lean"]
@@ -249,31 +298,98 @@ def _broadleaf(v, frame, frames, k, seed, materials, under, level, scale=1.0):
     _branches(m, (top[0], top[1], trunk_h - 2), clumps[1:])
     if m.fine:
         _limbs(m, Rng(seed, v, 7), (C, C), top, trunk_h, clumps[1:])
-    # Sway: each clump drifts on its own phase, more the higher it sits.
+    # Sway: each clump drifts on its own phase, more the higher it sits (bare crowns less).
     t = 2 * math.pi * frame / max(frames, 1)
     swayed = []
     for n, (x, y, z, r) in enumerate(clumps):
-        amp = 0.6 * float(np.clip((z - trunk_h) / R + 0.4, 0.2, 1.2))
+        amp = 0.6 * float(np.clip((z - trunk_h) / R + 0.4, 0.2, 1.2)) * (0.5 if bare else 1.0)
         ph = (x - y) * 0.06 + n * 0.5        # a gust crossing the crown, each clump lagging a little
         swayed.append((x + amp * math.sin(t + ph), y - 0.5 * amp * math.sin(t + ph), z, r))
     swayed.sort(key=lambda c: c[2])
+    if bare:
+        _bare_crown(m, seed * 31 + v, swayed[1:], dry)
+        snow_caps(m, seed + v, density=0.8, min_z=trunk_h * 0.4, broad=3)
+        return m
     leaf_mass(m, swayed, seed * 31 + v, materials, under, level=level)
+    if after:
+        after(m, swayed)
     return m
 
 
-def oak(v, frame, frames, k):
-    return _broadleaf(v, frame, frames, k, 101, (("leaf", 1.0),), "leaf_dark", level=-1.2)
+# Leaf materials per season look: (weighted top materials, underside, level).
+SUMMER = ((("leaf", 1.0),), "leaf_dark", -1.2)
+AUTUMN = ((("autumn", 0.5), ("rust_leaf", 0.25), ("gold_leaf", 0.25)), "rust_leaf", -1.0)
+RED_AUTUMN = ((("rust_leaf", 0.55), ("autumn", 0.45)), "rust_leaf", -1.0)
+BLOOM = ((("blossom", 0.95), ("leaf_dark", 0.05)), "leaf_dark", -1.3)
+WHITE_BLOOM = ((("cream", 0.75), ("blossom", 0.12), ("leaf", 0.13)), "leaf_dark", -1.1)
 
 
-def blossom(v, frame, frames, k):
-    m = _broadleaf(v, frame, frames, k, 103, (("blossom", 0.95), ("leaf_dark", 0.05)), "leaf_dark",
-                   level=-1.3, scale=0.92)
-    # A few fallen petals on the ground under the crown, thicker near the trunk.
+def oak(v, frame, frames, k, season=None):
+    if season == "winter":
+        return _broadleaf(BROADLEAF[v], v, frame, frames, k, 101, (), "", 0, bare=True, dry="autumn")
+    mats, under, level = AUTUMN if season == "autumn" else SUMMER
+    return _broadleaf(BROADLEAF[v], v, frame, frames, k, 101, mats, under, level=level)
+
+
+def _fallen(m: Model, v, material, seed, rate=0.07, tone=2.0):
+    """A few fallen petals or leaves on the ground under the crown, thicker near the trunk."""
     X, Y, Z = m.coords()
     rho = np.hypot(X - C - 2, Y - C + 1)
-    cell = hash01(np.floor(X).astype(np.int64), np.floor(Y).astype(np.int64), 104 + v)
-    petals = (cell < 0.07 * np.clip(1.3 - rho / 12, 0, 1)) & (rho > 3) & (Z < 1)
-    m.put(petals, "blossom", tone=2.0 + (cell < 0.02), only_empty=True)
+    cell = hash01(np.floor(X).astype(np.int64), np.floor(Y).astype(np.int64), seed + v)
+    petals = (cell < rate * np.clip(1.3 - rho / 12, 0, 1)) & (rho > 3) & (Z < 1)
+    m.put(petals, material, tone=tone + (cell < 0.02), only_empty=True)
+
+
+def blossom(v, frame, frames, k, season=None):
+    """The plain look is the spring bloom; summer is in leaf, autumn red-orange, winter bare."""
+    if season == "winter":
+        return _broadleaf(BROADLEAF[v], v, frame, frames, k, 103, (), "", 0, scale=0.92, bare=True)
+    mats, under, level = {None: BLOOM, "summer": SUMMER, "autumn": RED_AUTUMN}[season]
+    m = _broadleaf(BROADLEAF[v], v, frame, frames, k, 103, mats, under, level=level, scale=0.92)
+    if season is None:
+        _fallen(m, v, "blossom", 104)
+    elif season == "autumn":
+        _fallen(m, v, "rust_leaf", 104, rate=0.05, tone=0.8)
+    return m
+
+
+# Apple trees: smaller and rounder than the oak, with a low, spreading crown.
+APPLE = (
+    dict(r=8.0, z=17, lean=(1.0, -0.5), ring=6, spread=0.95, lobes=((0.8, 1.1, -0.25, 0.6),)),
+    dict(r=7.5, z=16, lean=(-1.2, 0.8), ring=5, spread=1.05, lobes=((3.9, 1.1, -0.2, 0.62),)),
+)
+
+
+def _apples(seed):
+    """Red apples hung on the outside of the crown, a voxel cluster each."""
+    def add(m: Model, clumps):
+        solid = m.mat > 0
+        pad = np.pad(solid, 1)
+        exposed = solid & ~(pad[2:, 1:-1, 1:-1] & pad[1:-1, 2:, 1:-1] & pad[1:-1, 1:-1, 2:])
+        X, Y, Z = m.coords()
+        pick = hash01(np.floor(X).astype(np.int64), np.floor(Y).astype(np.int64),
+                      np.floor(Z).astype(np.int64), seed) < 0.035
+        seeds = exposed & pick & (Z > 9)
+        grown = seeds.copy()
+        for axis in range(3):
+            grown |= np.roll(seeds, 1, axis) | np.roll(seeds, -1, axis)
+        m.put(grown, "poppy", tone=0.7 + seeds * 0.8, normal=(X * 0, Y * 0, Z * 0 + 1))
+    return add
+
+
+def apple_tree(v, frame, frames, k, season=None):
+    """Plain look: summer green with red apples; spring in white blossom; autumn orange with
+    apples; winter bare grey-brown."""
+    p = APPLE[v]
+    if season == "winter":
+        return _broadleaf(p, v, frame, frames, k, 107, (), "", 0, bare=True)
+    mats, under, level = {None: SUMMER, "spring": WHITE_BLOOM, "autumn": AUTUMN}[season]
+    after = None if season == "spring" else _apples(170 + v)
+    m = _broadleaf(p, v, frame, frames, k, 107, mats, under, level=level, after=after)
+    if season == "spring":
+        _fallen(m, v, "cream", 171, rate=0.05, tone=1.5)
+    elif season == "autumn":
+        _fallen(m, v, "poppy", 172, rate=0.02, tone=0.8)
     return m
 
 
@@ -284,7 +400,7 @@ PINES = ((60, 11.5, 7, (0.0, 0.0)), (54, 10.0, 6, (1.5, -1.5)), (50, 12.5, 6, (-
          (63, 10.5, 8, (-1.0, -1.5)))
 
 
-def pine(v, frame, frames, k):
+def pine(v, frame, frames, k, season=None):
     rng = Rng(102, v)
     h, r0, tiers, (lx, ly) = PINES[v]
     m = Model.empty(-10, 26, -10, 26, 0, h + 3, k=k)
@@ -320,7 +436,7 @@ def pine(v, frame, frames, k):
         rim = rho / (reach + 1e-3)
         # The outer skirt catches the light, branch tips glint on the sun side, and a dark hem
         # runs along the underside of each drooping tier.
-        tips = (sun > 0.1) & (speck > 0.45) & (Z > z0 + 1.5) & (rim > 0.55)
+        tips = (sun > 0.1) & (speck > 0.55) & (Z > z0 + 1.5) & (rim > 0.6)
         hem = (Z < z0 - droop + 1.8) & (rim > 0.4)
         tone = (0.7 * np.clip((rim - 0.45) * 2.5, 0, 1) - 0.3 + tips * 0.8
                 + (speck - 0.5) * 0.3 + (jag - 1) * 1.2 - hem * 1.8)
@@ -329,9 +445,11 @@ def pine(v, frame, frames, k):
             # as layered branch tips; the hem frays where a streak ends.
             spray = value_noise(ang * rho * 1.8, (rho - Z * 0.6) * 0.45, np.full_like(Z, n * 7.0),
                                 1.0, 330 + v)
-            tone = tone + (spray - 0.5) * 1.8 + 0.35
+            tone = tone + (spray - 0.5) * 1.3 + 0.3
             mask = mask & ~(hem & (spray < 0.38))
         m.put(mask, "leaf_dark", tone=tone, normal=nrm, sl=sl)
+    if season == "winter":   # snow lying along every tier
+        snow_caps(m, 120 + v, density=0.85, min_z=12, broad=3)
     return m
 
 
@@ -347,14 +465,16 @@ def _bush_shape(m: Model, rng: Rng, material: str, seed: int, size=1.0):
     canopy(m, clumps, material, seed, leafy=0.45)
 
 
-def bush(v, frame, frames, k):
+def bush(v, frame, frames, k, season=None):
     rng = Rng(104, v)
     m = Model.empty(-3, 19, -3, 19, 0, 15, k=k)
     _bush_shape(m, rng, "leaf", 400 + v, (0.95, 1.05, 0.85, 1.0)[v])
+    if season == "winter":
+        snow_caps(m, 410 + v, density=0.8, min_z=5, broad=4)
     return m
 
 
-def berry_bush(v, frame, frames, k):
+def berry_bush(v, frame, frames, k, season=None):
     rng = Rng(105, v)
     m = Model.empty(-3, 19, -3, 19, 0, 15, k=k)
     _bush_shape(m, rng, "leaf_dark", 500 + v, (1.0, 0.92, 1.05, 0.95)[v])
@@ -366,6 +486,8 @@ def berry_bush(v, frame, frames, k):
                   np.floor(Z).astype(np.int64), 510 + v) < 0.09
     berries = exposed & pick & (Z > 2)
     m.put(berries, "violet" if v == 2 else "poppy", tone=0.8)
+    if season == "winter":
+        snow_caps(m, 520 + v, density=0.8, min_z=5, broad=4)
     return m
 
 
@@ -614,4 +736,93 @@ def lily_pads(v, frame, frames, k):
         m.put(ellipsoid(X, Y, Z, x, y, 1.0, 1.8, 1.8, 1.4) & (Z >= 1), "blossom", tone=0.8,
               normal=(X - x, Y - y, Z))
         m.put_points([(x, y, 2.2)], "yellow", tone=1)
+    return m
+
+
+# ---- batch 2 ----
+
+def sunflowers(v, frame, frames, k, season=None):
+    """Three or four tall stems, big yellow faces turned south-east (towards +x +y)."""
+    rng = Rng(190, v)
+    m = Model.empty(-4, 20, -4, 20, 0, 30, k=k)
+    X, Y, Z = m.coords()
+    n = 3 + (v % 2)
+    face_n = np.array((0.62, 0.62, 0.48))
+    face_n /= np.linalg.norm(face_n)
+    for i in range(n):
+        a = i * 2.4 + rng.uniform(0, 1.2) + v
+        d = rng.uniform(1.0, 4.0)
+        x, y = C + d * math.cos(a), C + d * math.sin(a)
+        h = rng.uniform(17, 24)
+        top = (x + rng.uniform(-0.6, 0.6), y + rng.uniform(-0.6, 0.6), h)
+        sl, Xs, Ys, Zs = m.window(x, y, h / 2, (2, 2, h / 2 + 1))
+        m.put(segment(Xs, Ys, Zs, (x, y, 0), top, 0.45), "grass", tone=-0.2, sl=sl)
+        for z, side in ((h * 0.35, 1), (h * 0.55, -1), (h * 0.75, 1)):   # broad leaves up the stem
+            b = a + side * 1.6
+            c = (x + 1.6 * math.cos(b), y + 1.6 * math.sin(b), z)
+            sl, Xs, Ys, Zs = m.window(*c, 2.2)
+            m.put(ellipsoid(Xs, Ys, Zs, *c, 1.7, 1.7, 0.45), "leaf", tone=0.3 - 0.5 * (Zs < z), sl=sl,
+                  normal=(Xs - x, Ys - y, Zs * 0 + 2.0))
+        # The head: a disc facing the sun's side of the garden, petals round a seed centre.
+        cx, cy, cz = top[0] + face_n[0] * 0.6, top[1] + face_n[1] * 0.6, h + 0.6
+        sl, Xs, Ys, Zs = m.window(cx, cy, cz, 4.0)
+        rel = np.stack(np.broadcast_arrays(Xs - cx, Ys - cy, Zs - cz), -1)
+        depth = rel @ face_n
+        radial = np.sqrt(np.maximum((rel ** 2).sum(-1) - depth ** 2, 0))
+        disc = (np.abs(depth) < 0.55) & (radial < 3.3)
+        ref = np.cross(face_n, (0, 0, 1))
+        ang = np.arctan2(rel @ np.cross(face_n, ref), rel @ ref)
+        petal = disc & (radial > 1.6) & ((np.cos(ang * 13) > -0.2) | (radial < 2.2))
+        centre = disc & (radial <= 1.6)
+        seeds = (hash01(np.floor(Xs * 3).astype(np.int64), np.floor(Ys * 3).astype(np.int64),
+                        np.floor(Zs * 3).astype(np.int64), 191) - 0.5)
+        nrm = tuple(np.broadcast_to(c, Xs.shape * 0 + depth.shape) for c in face_n)
+        m.put(petal, "yellow", tone=0.4 - 0.6 * (radial > 2.9), normal=nrm, sl=sl)
+        m.put(centre, "bark", tone=0.4 + seeds - 0.5 * (radial > 1.2), normal=nrm, sl=sl)
+        m.put((depth < -0.4) & (depth > -1.0) & (radial < 1.6), "grass", tone=-0.4, sl=sl)
+    return m
+
+
+def log_pile(v, frame, frames, k):
+    """Split logs stacked three, two and one along y, pale cut ends, a little moss on top."""
+    m = Model.empty(-1, 17, -1, 17, 0, 12, k=k)
+    X, Y, Z = m.coords()
+    rng = Rng(195, v)
+    r = 1.9
+    for row, count in ((0, 3), (1, 2), (2, 1)):
+        for i in range(count):
+            x = C + (i - (count - 1) / 2) * 2 * r * 0.98 + rng.uniform(-0.2, 0.2)
+            z = r + row * r * 1.72
+            y0, y1 = 2.6 + rng.uniform(-0.8, 0.6), 13.4 + rng.uniform(-0.6, 0.8)
+            rho = np.hypot(X - x, Z - z)
+            log = (rho <= r) & (Y >= y0) & (Y < y1)
+            bark = (value_noise(np.arctan2(Z - z, X - x) * 4, Y * 0.5, rho, 1.0, 196 + i) - 0.5) * 1.4
+            m.put(log, "bark", tone=bark, normal=(X - x, Y * 0, Z - z))
+            ends = log & ((Y >= y1 - 0.5) | (Y < y0 + 0.5))
+            rings = (np.sin(rho * 5.5) > 0.6) * -0.6
+            m.put(ends, "wood_light", tone=0.5 + rings - (rho > r - 0.45) * 1.4,
+                  normal=(X * 0, np.where(Y > C, 1.0, -1.0) + X * 0, Z * 0))
+            if row == 2 or (row == 1 and i == 0):
+                moss = log & (Z > z + r * 0.5) & (value_noise(X, Y, Z, 1.5, 197) > 0.5) & ~ends
+                m.put(moss, "grass", tone=-0.2)
+    return m
+
+
+def stepping_stones(v, frame, frames, k):
+    """Three or four flat grey stones sitting in the water, a dark wet rim at the waterline."""
+    rng = Rng(198, v)
+    m = Model.empty(-1, 17, -1, 17, 0, 3, k=k)
+    X, Y, Z = m.coords()
+    n = 3 + (v % 2)
+    for i in range(n):
+        t = (i + 0.5) / n
+        x = 2.5 + 11.0 * t + rng.uniform(-1.0, 1.0)
+        y = 13.5 - 11.0 * t + rng.uniform(-1.0, 1.0)
+        rx, ry = rng.uniform(1.8, 2.6), rng.uniform(1.6, 2.3)
+        wob = (value_noise(X, Y, Z, 1.6, 199 + i + v * 7) - 0.5) * 0.5
+        top = 1.3 + rng.uniform(0, 0.5)
+        stone = (((X - x) / rx) ** 2 + ((Y - y) / ry) ** 2 <= 1 + wob) & (Z < top - 0.6 * ((X - x) ** 2 / rx ** 2 + (Y - y) ** 2 / ry ** 2))
+        m.put(stone, "stone", tone=-0.4 - (Z < 0.6) * 1.4 + wob, normal=(X - x, Y - y, Z * 0 + 2.5))
+        lap = (((X - x) / (rx + 0.6)) ** 2 + ((Y - y) / (ry + 0.6)) ** 2 <= 1) & ~stone & (Z < 0.5)
+        m.put(lap, "water", tone=1.4)
     return m

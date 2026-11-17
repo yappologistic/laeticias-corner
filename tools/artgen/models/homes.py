@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 
-from palette import GLOW, _rgb
+from palette import GLOW, MAT, _rgb
 from voxel import (Halo, Model, box, cone, cylinder, cylinder_normal, ellipsoid, gable, hash01,
                    masonry, segment, slope_normal, value_noise)
 from models.nature import canopy
@@ -301,6 +301,18 @@ def greenhouse(v, frame, frames, k):
            "leaf", 830)
     front = Facade(m, "+y", y1)
     front.door(14, 18, 3, 11, material="glass_cool", frame="cream", knob=False)
+    if m.fine:
+        # Flowers among the plants inside, a finial on the ridge, terracotta pots by the door.
+        top = (m.mat == MAT["leaf"]) & np.concatenate([m.mat[:, :, 1:] == 0, np.ones_like(m.mat[:, :, :1], bool)], 2)
+        pick = hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64), 831) < 0.25
+        m.put(top & pick, "poppy", tone=0.8)
+        for x in (x0 - 0.4, x1 + 0.4):
+            m.put(cylinder(X, Y, Z, x, 16, 0.5, eave + rise, eave + rise + 2.2), "cream", tone=0.4)
+        for x in (11.0, 21.0):
+            pot = cylinder(X, Y, Z, x, y1 + 1.6, 1.3 - 0.0 * Z, 0, 2.4)
+            m.put(pot, "roof", tone=0.5, normal=cylinder_normal(X, Y, Z, x, y1 + 1.6))
+            m.put(ellipsoid(X, Y, Z, x, y1 + 1.6, 3.0, 1.3, 1.3, 1.0), "leaf", tone=0.4)
+            m.put(ellipsoid(X, Y, Z, x + 0.3, y1 + 2.0, 3.7, 0.5, 0.5, 0.4), "blossom", tone=1.0)
     return m
 
 
@@ -426,8 +438,13 @@ def windmill(v, frame, frames, k):
         s = (Y - cy) * dy + (Z - hz) * dz           # distance along the spar
         w = -(Y - cy) * dz + (Z - hz) * dy          # distance across it
         cloth = (np.abs(X - hx) < 0.6) & (s > 5) & (s < 24.5) & (w > 0.8) & (w < 7.2)
-        lattice = ((s % 4.0) < 0.8) | (w > 6.4)
-        m.put(cloth & ~lattice, "cream", tone=0.4 - (w < 1.8) * 0.6, sl=sl)
+        # A finer lattice on fine grids: cross bars every few units and a bar along the middle.
+        if m.fine:
+            lattice = ((s % 2.7) < 0.55) | (w > 6.5) | (np.abs(w - 4.0) < 0.3)
+        else:
+            lattice = ((s % 4.0) < 0.8) | (w > 6.4)
+        m.put(cloth & ~lattice, "cream", tone=0.5 - (w < 1.8) * 0.6 - (w > 5.0) * 0.3 + ((s % 2.7) > 2.1) * 0.3,
+              sl=sl)
         m.put(cloth & lattice, "wood_light", tone=-0.2, sl=sl)
     m.put(ellipsoid(X, Y, Z, hx + 0.8, cy, hz, 1.6, 1.8, 1.8), "wood", tone=0.3, sl=sl)
     return m

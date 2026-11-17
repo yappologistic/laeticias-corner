@@ -22,8 +22,8 @@ def diamond(tile_w: int) -> np.ndarray:
     return np.abs(np.arange(w)[None, :] + 0.5 - w / 2) < half
 
 
-def validate(build: spec.Build) -> list[str]:
-    cat = spec.load_catalog()
+def validate(build: spec.Build, allow_extra=False) -> list[str]:
+    cat = build.load_catalog()
     doc = json.loads(build.atlas_json.read_text())
     errors = []
     if set(doc) != {"version", "image", "sprites"} or doc["version"] != 1:
@@ -39,7 +39,13 @@ def validate(build: spec.Build) -> list[str]:
     missing = [k for k in required if k not in sprites]
     extra = sorted(set(sprites) - set(required))
     errors += [f"missing sprite {k}" for k in missing]
-    errors += [f"unexpected sprite {k}" for k in extra]
+    if not allow_extra:
+        errors += [f"unexpected sprite {k}" for k in extra]
+    # Every animation the catalog asks for has frames (directional or plain).
+    for cid, anims in spec.referenced_anims(cat).items():
+        for a in sorted(anims):
+            if not any(f"critter/{cid}/{a}{s}/f0" in sprites for s in ("", "_front")):
+                errors.append(f"{cid}: no sprite for the catalog's animation {a!r}")
 
     alpha = img.getchannel("A")
     reach = 160 * build.k
@@ -59,7 +65,8 @@ def validate(build: spec.Build) -> list[str]:
     # Whole-tile ground sprites cover exactly the contract diamond, anchored at its top vertex.
     rgba = np.asarray(img)
     want = diamond(build.tile_w)
-    full = [k for k in sprites if re.fullmatch(r"terrain/[^/]+/(v\d+|m15/f\d+)|ui/tile_\w+", k)]
+    full = [k for k in sprites
+            if re.fullmatch(r"terrain/[^/]+/(v\d+|m15/f\d+)(@\w+)?|ui/tile_(ok|bad|area)", k)]
     for k in full:
         r = sprites[k]
         if (r["w"], r["h"], r["ox"], r["oy"]) != (want.shape[1], want.shape[0], build.tile_w // 2 - 1, 0):
@@ -78,14 +85,14 @@ def validate(build: spec.Build) -> list[str]:
         if bad:
             errors.append(f"{k}: {len(bad)} colours outside the palette")
 
-    # Every layer of an item variant has the same number of frames.
+    # Every layer, variant, stage and season look of an item has the same number of frames.
     frames = defaultdict(set)
     for k in sprites:
-        m = re.fullmatch(r"item/([^/]+)/([^/]+)/([^/]+)/f(\d+)", k)
+        m = re.fullmatch(r"item/([^/]+)/([^/]+/[^/]+/(?:g\d+/)?)f(\d+)(@\w+)?", k)
         if m:
-            frames[(m[1], m[2], m[3])].add(int(m[4]))
+            frames[(m[1], m[2], m[4])].add(int(m[3]))
     per_item = defaultdict(set)
-    for (item, _layer, _var), fs in frames.items():
+    for (item, _look, _season), fs in frames.items():
         if fs != set(range(len(fs))):
             errors.append(f"{item}: frames not contiguous from f0")
         per_item[item].add(len(fs))
@@ -94,8 +101,8 @@ def validate(build: spec.Build) -> list[str]:
     return errors
 
 
-def main(build: spec.Build) -> int:
-    errors = validate(build)
+def main(build: spec.Build, allow_extra=False) -> int:
+    errors = validate(build, allow_extra)
     for e in errors:
         print("atlas:", e, file=sys.stderr)
     n = len(json.loads(build.atlas_json.read_text())["sprites"])
@@ -104,4 +111,5 @@ def main(build: spec.Build) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(spec.parse_build(sys.argv[1:])[0]))
+    _build, _args = spec.parse_build(sys.argv[1:], validate_only=True)
+    sys.exit(main(_build, _args.allow_extra))

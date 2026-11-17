@@ -7,18 +7,24 @@ an open edge (same terrain beyond) is fully covered and every inset tapers to ze
 next to an open edge, so neighbouring tiles always agree along their shared edge.
 """
 
+import re
+import math
 from dataclasses import dataclass
 
 import numpy as np
 
 from pack import Sprite
-from palette import EARTH, INK, LEAF, PLASTER, POPPY, ROOF, STONE, STRAW, VIOLET, WATER, _rgb
+from palette import AUTUMN, EARTH, INK, LEAF, PLASTER, POPPY, ROOF, SNOW, STONE, STRAW, VIOLET, WATER, _rgb
 from render import dither
 from voxel import hash01, value_noise
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
 GRASS = [LEAF[1], LEAF[2], LEAF[3], LEAF[4], LEAF[5]]
 MEADOW = [LEAF[2], LEAF[3], LEAF[4], LEAF[5], LEAF[6]]
+# Season looks of the lawn: autumn olive going to straw, winter a thin snow over stubble.
+GRASS_AUTUMN = [LEAF[1], LEAF[2], LEAF[3], STRAW[0], STRAW[1], STRAW[2]]
+SNOWFIELD = [STONE[3], SNOW[0], SNOW[1], SNOW[2], PLASTER[4]]
+STUBBLE = [EARTH[1], STRAW[0], LEAF[2], LEAF[3]]
 
 
 @dataclass
@@ -179,7 +185,7 @@ def _marks(k: int) -> Marks:
 GRASS_VARIANTS = (
     (0.2, 0.08, 0.0, 0.0, 0.0),
     (0.12, 0.0, 0.45, 0.0, 0.07),
-    (0.1, 0.1, 0.0, 0.32, -0.06),
+    (0.1, 0.1, 0.0, 0.2, -0.04),
     (0.16, 0.04, 0.25, 0.0, 0.03),
 )
 
@@ -190,7 +196,7 @@ def _clump(seed, peak):
     return lambda u, v: peak * np.clip(1 - np.hypot(u - cu, v - cv) / 5.5, 0, 1) + 0.03 * peak
 
 
-def grass(variant: int, k: int) -> Sprite:
+def grass(variant: int, k: int, season=None) -> Sprite:
     g = _grid(k)
     mk = _marks(k)
     tufts, specks, light, shade, sprinkle = (d * mk.density for d in GRASS_VARIANTS[variant])
@@ -205,7 +211,36 @@ def grass(variant: int, k: int) -> Sprite:
     if shade:
         level = _stamps(g, level, seed + 4, _clump(seed + 4, shade), mk.shade, cell=mk.blade_cell,
                         interior=(2.0, 1.0))
-    return _sprite(g, _paint(GRASS, level, g.px, g.py, k=k), g.inside * 255)
+    return _sprite(g, _season_ground(g, level, GRASS_LEVEL, season, 330 + variant), g.inside * 255)
+
+
+def _season_ground(g: Grid, level, base_level, season, seed, ramp=GRASS, flowers=True):
+    """Paint a grass level field for one season. Spring is fresher with a few tiny flowers;
+    autumn drifts into olive and straw patches with the odd fallen leaf; winter is a thin snow
+    with the grass marks poking through it. Noise is tile periodic, so tiles stay seamless."""
+    k = g.k
+    if season in (None, "summer"):
+        return _paint(ramp, level, g.px, g.py, k=k)
+    if season == "spring":
+        rgb = _paint(ramp, level + 0.4, g.px, g.py, k=k)
+        if flowers:
+            rgb = _blooms(g, rgb, g.inside, seed, 2, 0.12, (("W",), ("Y",), ("W", "g")))
+        return rgb
+    # Shared by every variant (they must meet seamlessly), so kept gentle: it repeats per tile.
+    patch = _pnoise(g.u, g.v, 2, 337)
+    if season == "autumn":
+        rgb = _paint(GRASS_AUTUMN, level + 0.35 + (patch - 0.5) * 1.6, g.px, g.py, k=k)
+        if flowers:
+            rgb = _blooms(g, rgb, g.inside, seed + 3, 4, 0.1, (("a",), ("A",)))
+        return rgb
+    # Winter: the marks (where the level differs from the plain ground) show as dark grass
+    # blades and stubble; elsewhere snow, thinner (grass showing) in a few soft hollows.
+    marks = np.abs(level - base_level) > 0.5
+    thin = hash01(g.px, g.py, seed + 9) < 0.03
+    snow = _paint(SNOWFIELD, 2.5 + (patch - 0.5) * 0.5 + (_pnoise(g.u, g.v, 8, 338) - 0.5) * 0.4,
+                  g.px, g.py, band=0.3, k=k)
+    grass_rgb = _paint(STUBBLE, 1.6 + (level - base_level) * 0.6, g.px, g.py, k=k)
+    return np.where((marks | thin)[..., None], grass_rgb, snow)
 
 
 # ---------- overlay shapes ----------
@@ -256,7 +291,7 @@ MEADOW_TUFTS = (("H..", "L.H", "LLL", "DLD"), (".H.", "HL.", "LLL", ".D."), ("L.
 # FLOWER_COLORS per flower). Fine grids show whole flowers: petals round a centre, a stem.
 BLOOM_INKS = {"g": LEAF[2], "G": LEAF[3], "W": PLASTER[4], "w": PLASTER[2], "y": STRAW[1],
               "Y": STRAW[3], "V": VIOLET[3], "v": VIOLET[2], "R": POPPY[1], "r": POPPY[0],
-              "b": WATER[4], "B": WATER[3]}
+              "b": WATER[4], "B": WATER[3], "a": AUTUMN[0], "A": AUTUMN[1]}
 BLOOMS = (
     ((("*", "g"),), 2, 0.3),
     (((".W.", "WyW", ".W.", ".g."), ("W.", "Wy", "g."), (".Y.", "YyY", ".G."), ("V.V", ".v.", ".g."),
@@ -264,7 +299,7 @@ BLOOMS = (
 )
 
 
-def meadow(mask: int, k: int) -> Sprite:
+def meadow(mask: int, k: int, season=None) -> Sprite:
     g = _grid(k)
     px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
     f = shape_field(mask, u, v, 1.4, 5.5, 0.9, 300, k)
@@ -276,6 +311,15 @@ def meadow(mask: int, k: int) -> Sprite:
     # cross into the next meadow tile (the pattern repeats exactly) and stay irregular inside.
     level = _stamps(g, level, 311, 0.2, MEADOW_TUFTS, cell=2, interior=None)
     level = _stamps(g, level, 312, 0.12, _marks(k).blades, cell=2, interior=None)
+    if season in ("autumn", "winter"):
+        # Autumn: gold grass and seed heads; winter: snow-dusted stubble.
+        if season == "autumn":
+            rgb = _paint(MEADOW_AUTUMN, level, px, py, k=k)
+        else:
+            rgb = _season_ground(g, level, 2.0, season, 340, ramp=MEADOW, flowers=False)
+        designs = SEED_HEADS if season == "autumn" else STUBBLE_HEADS
+        rgb = _blooms(g, rgb, f > 1.5, 321, 2, 0.3, designs, colors=SEED_COLORS)
+        return _sprite(g, rgb, cover * 255)
     rgb = _paint(MEADOW, level, px, py, k=k)
     # Wildflowers dense enough to read as a texture: every meadow tile is the same sprite, so
     # sparse bright dots would line up into rows across a large patch. They keep off the
@@ -285,13 +329,20 @@ def meadow(mask: int, k: int) -> Sprite:
     return _sprite(g, rgb, cover * 255)
 
 
-def _blooms(g: Grid, rgb, allowed, seed, cell, density, designs):
+MEADOW_AUTUMN = [LEAF[2], STRAW[0], STRAW[1], STRAW[2], STRAW[3]]
+SEED_COLORS = [EARTH[2], EARTH[3], STRAW[1], EARTH[1]]
+SEED_HEADS = (("*", "y"), ("*", "*", "y"), ("*.", ".y"), (".*", "y."))
+STUBBLE_HEADS = (("*", "y"), ("y",), ("*.", ".y"))
+
+
+def _blooms(g: Grid, rgb, allowed, seed, cell, density, designs, colors=FLOWER_COLORS):
     """Scatter flower designs; the bottom row's middle pixel sits on the scattered point, and
     the design and its '*' colour are both picked from the point's hash."""
     dx, dy, h, ok = _scatter(g, cell, seed, density, jitter=0.95)
     rx, ry = np.floor(dx + 0.5), np.floor(dy + 0.5)
-    colors = np.array([_rgb(c) for c in FLOWER_COLORS], np.uint8)
-    star = colors[np.minimum((h * len(FLOWER_COLORS)).astype(np.int64), len(FLOWER_COLORS) - 1)]
+    ncol = len(colors)
+    colors = np.array([_rgb(c) for c in colors], np.uint8)
+    star = colors[np.minimum((h * ncol).astype(np.int64), ncol - 1)]
     pick = np.minimum((h * 7.31 % 1 * len(designs)).astype(np.int64), len(designs) - 1) \
         if len(designs) > 1 else np.zeros(h.shape, np.int64)
     out = rgb.copy()
@@ -314,7 +365,7 @@ def _blooms(g: Grid, rgb, allowed, seed, cell, density, designs):
 PATH = [EARTH[1], EARTH[2], EARTH[3], EARTH[4], EARTH[5]]
 
 
-def path(mask: int, k: int) -> Sprite:
+def path(mask: int, k: int, season=None) -> Sprite:
     g = _grid(k)
     px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
     f = shape_field(mask, u, v, 1.6, 5.5, 0.7, 400, k)
@@ -357,17 +408,18 @@ def _pebbles(g: Grid, level, f):
 
 # ---------- cobble ----------
 
-# Each cobble picks one ramp: three parts warm grey, two cool grey, one sandstone.
+# Each cobble picks one ramp: four parts warm grey, three cool grey, one weathered sandstone.
 WARM_GREY = [STONE[1], STONE[2], PLASTER[1], STONE[4], PLASTER[2]]
 COOL_GREY = [STONE[0], STONE[1], STONE[2], STONE[3], STONE[4]]
-SANDSTONE = [EARTH[1], EARTH[2], EARTH[3], EARTH[4], EARTH[5]]
-COBBLE_RAMPS = (WARM_GREY,) * 3 + (COOL_GREY,) * 2 + (SANDSTONE,)
-MORTAR = [INK, EARTH[0], EARTH[1]]
+SANDSTONE = [STONE[1], EARTH[2], PLASTER[1], EARTH[4], PLASTER[2]]
+COBBLE_RAMPS = (WARM_GREY,) * 4 + (COOL_GREY,) * 3 + (SANDSTONE,)
+MORTAR = [INK, EARTH[0], STONE[1]]
 
 
-def _cells(u, v, cell, seed, jitter=0.8):
+def _cells(u, v, cell, seed, jitter=0.8, weight=0.0):
     """Tile-periodic Voronoi cells: distance to the nearest and second nearest centre, the
-    offset (du, dv) from the nearest centre and its hash."""
+    offset (du, dv) from the nearest centre and its hash. `weight` (in cells) shrinks or grows
+    each cell by its own amount, so stones come in different sizes with curved joints."""
     n = round(16 / cell)
     f1 = np.full(u.shape, 1e9, np.float32)
     f2 = np.full(u.shape, 1e9, np.float32)
@@ -379,7 +431,7 @@ def _cells(u, v, cell, seed, jitter=0.8):
             ku, kv = iu % n, iv % n
             ou = u - (iu + 0.5 + (hash01(ku, kv, seed, 2) - 0.5) * jitter) * cell
             ov = v - (iv + 0.5 + (hash01(ku, kv, seed, 3) - 0.5) * jitter) * cell
-            d = np.hypot(ou, ov)
+            d = np.hypot(ou, ov) - (hash01(ku, kv, seed, 5) - 0.5) * weight * cell
             nearer = d < f1
             f2 = np.where(nearer, f1, np.minimum(f2, d))
             f1 = np.where(nearer, d, f1)
@@ -389,25 +441,30 @@ def _cells(u, v, cell, seed, jitter=0.8):
     return f1, f2, bdu, bdv, bh
 
 
-def cobble(mask: int, k: int) -> Sprite:
+def cobble(mask: int, k: int, season=None) -> Sprite:
     g = _grid(k)
     px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
     f = shape_field(mask, u, v, 1.2, 4.0, 0.4, 500, k)
     cover = inside & (f > 0)
-    # Finer grids lay smaller stones, with a pixel-wide bevel instead of a broad gradient.
-    f1, f2, du, dv, h = _cells(u, v, 16 / 5 if g.fine else 4.0, 510)
-    mortar = (f2 - f1) < 0.5
-    # Each stone: lit on its sun side (-u, +v), shaded on the far side, a few lighter flecks.
-    side = (-du * 0.45 + dv * 0.28) / np.maximum(f1, 1e-3)
-    if g.fine:  # a rounded top: a lit crescent on the sun side, a dark one opposite
-        edge = np.clip(1 - (f2 - f1 - 0.5) / 1.1, 0, 1)
-        rim = (edge * 1.3 + 0.2) * np.clip(f1 / 1.2, 0, 1)
-        side = side + (hash01(px, py, 511) < 0.06) * 0.8
+    ramp_of = lambda h: np.minimum((h * len(COBBLE_RAMPS)).astype(np.int64), len(COBBLE_RAMPS) - 1)
+    if g.fine:
+        # Smaller stones of uneven sizes; each a rounded pillow lit from the upper left, so they
+        # read as worn setts rather than flat facets.
+        f1, f2, du, dv, h = _cells(u, v, 16 / 5, 512, jitter=0.95, weight=0.5)
+        gap = f2 - f1
+        mortar = gap < 0.3
+        height = np.sqrt(np.clip((gap - 0.3) / 1.6, 0, 1))
+        hy, hx = np.gradient(height)
+        lit = -(hx * 0.55 + hy * 0.85) * 2.6
+        level = 2.2 + (h * 13 % 1 - 0.5) * 0.7 + np.clip(lit, -1.3, 1.3) + 0.25 * height
+        level = level + (hash01(px, py, 511) < 0.05) * 0.6 - np.clip(1.2 - f, 0, 1) * 1.2
     else:
+        f1, f2, du, dv, h = _cells(u, v, 4.0, 510)
+        mortar = (f2 - f1) < 0.5
+        side = (-du * 0.45 + dv * 0.28) / np.maximum(f1, 1e-3)
         rim = np.clip((f1 - 0.6) / 1.4, 0, 1)
-    level = 2.3 + (h * 13 % 1 - 0.5) * 0.5 + side * rim * 1.3
-    level = level - np.clip(1.2 - f, 0, 1) * 1.2
-    ramp = np.minimum((h * len(COBBLE_RAMPS)).astype(np.int64), len(COBBLE_RAMPS) - 1)
+        level = 2.3 + (h * 13 % 1 - 0.5) * 0.5 + side * rim * 1.3 - np.clip(1.2 - f, 0, 1) * 1.2
+    ramp = ramp_of(h)
     rgb = np.zeros(u.shape + (3,), np.uint8)
     for i, colors in enumerate(COBBLE_RAMPS):
         rgb = np.where((ramp == i)[..., None], _paint(colors, level, px, py, band=0.4, k=k), rgb)
@@ -538,7 +595,12 @@ def cliff(face: str, k: int) -> Sprite:
     level = level - (bottom - depth < 1.8) * 1.3                       # dark underside lip
     # The turf overhangs: an even band of shadow just under the grass (no ink speckles).
     lip = 2.8 + _wave(s, ((2, 0.6, 1.0), (5, 0.4, 3.0)))
-    under_turf = (depth > lip) & (depth < lip + 2.0 - 0.8 * (k > 1))
+    # Its depth wanders irregularly along the rim (smooth harmonics plus a per-column jitter on
+    # fine grids), so the band's lower edge never steps into a regular sawtooth.
+    band = 2.0 - 0.8 * (k > 1) + _wave(s, ((3, 0.35, 0.4), (7, 0.25, 2.0)))
+    if k > 1:
+        band = band + (hash01(np.floor(s * k).astype(np.int64) % (16 * k), 715) - 0.5) * 0.9
+    under_turf = (depth > lip) & (depth < lip + np.maximum(band, 0.5))
     level = np.where(under_turf, 1.2 + shade * 0.3, level)
     rgb = _paint(SOIL, level, px, py, k=k)
     # Stones of different sizes, each with a lit top, a dark base and a dark seam around it.
@@ -577,6 +639,87 @@ def cliff(face: str, k: int) -> Sprite:
     return Sprite(rgba, 16 * k, 0)
 
 
+# ---------- waterfalls ----------
+
+def fall(face: str, frame: int, frames: int, k: int) -> Sprite:
+    """Water pouring over the rim and down the cliff face under one rim tile, drawn over
+    `edge/cliff_*` with the same anchor: a curved lip at the top, streaky falling sheets, white
+    foam dashes running down with the frames, and spray where it leaves the bottom."""
+    W, H = 32 * k, (8 + CLIFF_DEPTH + 14) * k
+    py, px = np.mgrid[0:H, 0:W]
+    sx = (px - 16 * k + 0.5) / k
+    s = 16 - sx if face == "se" else sx + 16
+    first_row = np.floor((16 + s) / 2 * k - 0.5) + 1
+    depth = (py - first_row + 0.5) / k
+    # Sheets cover most of the tile's width, pinching in a little where they leave the lip.
+    half = 5.6 - 0.8 * np.clip(1 - depth / 3, 0, 1) + 0.6 * np.clip((depth - 20) / 15, 0, 1)
+    across = np.abs(s - 8.0)
+    bottom = CLIFF_DEPTH + 6 + 1.5 * np.sin(s * 0.9 + frame)
+    on = (across < half) & (depth > -0.8) & (depth < bottom)
+    col = np.floor(s * k).astype(np.int64)
+    streak = hash01(col, 760) - 0.5
+    t = frame / frames
+    period = 9.0 + 4.0 * hash01(col, 762)
+    phase = (depth / period - t + hash01(col, 761)) % 1.0
+    foam = (phase < 0.22 + 0.15 * (across > half - 1.4)) & (hash01(col, 763) < 0.55)
+    shade = -0.8 if face == "se" else 0.0
+    level = 2.6 + streak * 1.2 + shade + 1.2 * (across > half - 1.0) - 0.8 * np.clip((depth - 26) / 12, 0, 1)
+    level = np.where(depth < 1.2, 4.2 + shade * 0.5, level)       # the bright rounded lip
+    rgb = _paint(WATER, level, px, py, k=k)
+    rgb = np.where((foam & on)[..., None], _paint(SNOWFIELD, 3.0 + shade * 0.6 + streak, px, py, k=k), rgb)
+    alpha = np.where(on, np.where(depth > bottom - 4, 150, 235), 0)
+    rgba = np.zeros((H, W, 4), np.uint8)
+    rgba[..., :3] = rgb
+    rgba[..., 3] = alpha
+    return Sprite(rgba, 16 * k, 0)
+
+
+# ---------- wild land ----------
+
+def thicket(variant: int, k: int) -> Sprite:
+    """Brambles, nettles and briar over a wild tile: dense, low contrast, cool and dim so the
+    wild land reads as background behind what you build. Anchored like terrain."""
+    from models.nature import leaf_mass
+    from render import render_base
+    from voxel import Model, Rng, curve
+    rng = Rng(770, variant)
+    m = Model.empty(-2, 18, -2, 18, 0, 20, k=k)
+    clumps = []
+    for _n in range(rng.integers(5, 8)):
+        x, y = rng.uniform(2, 14), rng.uniform(2, 14)
+        r = rng.uniform(3.0, 4.6)
+        clumps.append((x, y, r * 0.75 + rng.uniform(0, 3.5), r))
+    clumps.sort(key=lambda c: c[2])
+    leaf_mass(m, clumps, 771 + variant, (("leaf_dark", 1.0),), "leaf_dark", cluster=(2.0, 3.0), level=-2.6)
+    m.tone[m.mat > 0] -= 0.9          # kept dim: lit tufts stop short of the bright greens
+    # Arching briar canes with thorns, and a few nettle spikes poking up.
+    for _n in range(rng.integers(4, 7)):
+        x0, y0 = rng.uniform(1, 15), rng.uniform(1, 15)
+        a = rng.uniform(0, 6.28)
+        d = rng.uniform(5, 9)
+        x1, y1 = x0 + d * math.cos(a), y0 + d * math.sin(a)
+        pts = curve((x0, y0, 0.5), (x1, y1, 0.5), bend=(0, 0))
+        pts[:, 2] += np.sin(np.linspace(0, math.pi, len(pts))) * rng.uniform(7, 12)
+        m.put_points(pts, "rust_leaf", tone=-1.6)
+        m.put_points(pts[::4] + (0, 0, 0.6), "rust_leaf", tone=-2.0)
+    for _n in range(rng.integers(3, 6)):
+        x, y = rng.uniform(1, 15), rng.uniform(1, 15)
+        h = rng.uniform(9, 14)
+        m.put_points(curve((x, y, 0.2), (x + rng.uniform(-1, 1), y, h), bend=(0.5, 0)), "leaf_dark", tone=-1.0)
+    if variant % 2:   # a few dark berries
+        for _n in range(6):
+            m.put_points([(rng.uniform(3, 13), rng.uniform(3, 13), rng.uniform(5, 10))], "violet", tone=-0.8)
+    m.carve(~np.broadcast_to(_inside_tile(m), m.mat.shape))
+    rgba, _glow, ox, oy = render_base(m)
+    return Sprite(rgba, ox, oy)
+
+
+def _inside_tile(m):
+    """Voxels over the tile square (a little overhang allowed), so thickets stay on their tile."""
+    X, Y, _Z = m.coords()
+    return (X > -1.0) & (X < 17.0) & (Y > -1.0) & (Y < 17.0)
+
+
 # ---------- placement cursor ----------
 
 def cursor(ok: bool, k: int) -> Sprite:
@@ -591,23 +734,53 @@ def cursor(ok: bool, k: int) -> Sprite:
     return _sprite(g, rgb, alpha)
 
 
-def build(cat: dict, water_frames: int, k: int) -> dict[str, Sprite]:
+def tile_grid(k: int) -> Sprite:
+    """A 1-pixel diamond outline, white (the engine tints and fades it)."""
+    g = _grid(k)
+    pad = np.pad(g.inside, 1)
+    border = g.inside & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+    return _sprite(g, _rgb(SNOW[2]), border * 255)
+
+
+def tile_area(k: int) -> Sprite:
+    """A full white diamond with a soft edge (the engine tints and fades it)."""
+    g = _grid(k)
+    edge = np.minimum(np.minimum(g.u, 16 - g.u), np.minimum(g.v, 16 - g.v)) * k
+    alpha = np.where(g.inside, np.clip(120 + edge * 45, 0, 220), 0).astype(np.uint8)
+    return _sprite(g, _rgb(SNOW[2]), alpha)
+
+
+UI_TILES = {"ok": lambda k: cursor(True, k), "bad": lambda k: cursor(False, k), "grid": tile_grid,
+            "area": tile_area}
+
+
+TERRAIN_KEY = re.compile(r"terrain/(\w+)/(?:v(\d+)|m(\d+)/f(\d+))(?:@(\w+))?")
+
+
+def build(keys: list[str], cat: dict, k: int) -> dict[str, Sprite]:
+    """Ground tiles, rim edges, wild land and cursor diamonds for the given keys."""
     out = {}
-    builders = {"meadow": meadow, "path": path, "cobble": cobble}
-    for t in cat["terrain"]:
-        tid = t["id"]
-        if t.get("base"):
-            for n in range(t["variants"]):
-                out[f"terrain/{tid}/v{n}"] = grass(n, k)
-        elif tid == "water":
-            for m in range(16):
-                for fr in range(water_frames):
-                    out[f"terrain/water/m{m}/f{fr}"] = water(m, fr, water_frames, k)
+    water_frames = 1 + max([int(m[4]) for key in keys
+                            if (m := TERRAIN_KEY.fullmatch(key)) and m[1] == "water"] or [0])
+    overlays = {"meadow": meadow, "path": path, "cobble": cobble}
+    for key in keys:
+        if m := TERRAIN_KEY.fullmatch(key):
+            tid, variant, mask, frame, season = m.groups()
+            if variant is not None:
+                out[key] = grass(int(variant), k, season)
+            elif tid == "water":
+                out[key] = water(int(mask), int(frame), water_frames, k)
+            else:
+                out[key] = overlays[tid](int(mask), k, season)
+        elif key in ("edge/cliff_se", "edge/cliff_sw"):
+            out[key] = cliff(key[-2:], k)
+        elif m := re.fullmatch(r"edge/fall_(se|sw)/f(\d+)", key):
+            frames = sum(1 for x in keys if x.startswith(f"edge/fall_{m[1]}/"))
+            out[key] = fall(m[1], int(m[2]), frames, k)
+        elif m := re.fullmatch(r"wild/thicket/v(\d+)", key):
+            out[key] = thicket(int(m[1]), k)
+        elif key.startswith("ui/tile_"):
+            out[key] = UI_TILES[key[8:]](k)
         else:
-            for m in range(16):
-                out[f"terrain/{tid}/m{m}/f0"] = builders[tid](m, k)
-    out["edge/cliff_se"] = cliff("se", k)
-    out["edge/cliff_sw"] = cliff("sw", k)
-    out["ui/tile_ok"] = cursor(True, k)
-    out["ui/tile_bad"] = cursor(False, k)
+            raise KeyError(key)
     return out

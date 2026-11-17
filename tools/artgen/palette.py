@@ -24,9 +24,15 @@ PLASTER = ["#7a6b78", "#a0928f", "#cdbfac", "#efe5cc", "#fbf5e4"]
 VIOLET = ["#3e3366", "#5d4993", "#8869bf", "#b49de0"]
 POPPY = ["#c5333d", "#ec6550"]
 GLOW = ["#ff9a3a", "#ffc95c", "#ffeba4"]
+# Laeticia's skin: a warm shadow, mid and light, with the blossom pinks for her cheeks.
+SKIN = ["#b97a66", "#dea488", "#f3cdb0"]
+# Snow: blue shadow, cool grey, near white (never pure white).
+SNOW = ["#9fb2c6", "#cbd9e0", "#eef3f0"]
+# Autumn leaves between the roof rusts and the straw golds.
+AUTUMN = ["#b9612c", "#dd8f37"]
 
 PALETTE = [INK, *EARTH, *LEAF, *PINE, *BLOSSOM, *STONE, *ROOF, *STRAW, *WATER, *PLASTER, *VIOLET,
-           *POPPY, *GLOW]
+           *POPPY, *GLOW, *SKIN, *SNOW, *AUTUMN]
 assert len(set(PALETTE)) == len(PALETTE)
 
 
@@ -77,6 +83,21 @@ MATERIALS = [
     _m("grass", [LEAF[1], LEAF[2], LEAF[3], LEAF[4], LEAF[5], LEAF[6]], texture=0.5),
     _m("ink", [INK, STONE[0], STONE[1]]),
     _m("ginger", [EARTH[0], EARTH[1], EARTH[2], ROOF[3], ROOF[4], STRAW[3]]),
+    # Laeticia: cloth is smooth (little grain) so folds and limbs read at 1x; her face is lifted
+    # so it stays readable on the shaded +x side.
+    _m("skin", [EARTH[1], SKIN[0], SKIN[1], SKIN[2], PLASTER[4]], bias=0.7),
+    _m("hair", [STONE[0], STONE[1], STONE[2], STONE[3], STONE[4], STONE[5]], bias=-0.2, texture=0.15),
+    _m("cardigan", [LEAF[0], LEAF[1], LEAF[2], LEAF[3], LEAF[4], LEAF[5]], bias=0.2, texture=0.1),
+    _m("skirt", [ROOF[0], ROOF[1], ROOF[2], ROOF[3], ROOF[4]], bias=0.2, texture=0.08),
+    _m("linen", [PLASTER[0], PLASTER[1], PLASTER[2], PLASTER[3], PLASTER[4]], texture=0.08),
+    _m("leather", [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3], EARTH[4]], texture=0.1),
+    _m("green_paint", [PINE[0], LEAF[2], LEAF[3], LEAF[4], LEAF[5], LEAF[6]], bias=0.9, texture=0.05),
+    _m("blue_paint", [INK, WATER[0], WATER[1], WATER[2], WATER[3], WATER[4]], bias=0.3, texture=0.35),
+    _m("white_paint", [STONE[2], PLASTER[1], PLASTER[2], PLASTER[3], PLASTER[4]], bias=0.4, texture=0.1),
+    _m("snow", [STONE[2], SNOW[0], SNOW[1], SNOW[2], PLASTER[4]], bias=0.6, texture=0.1),
+    _m("autumn", [ROOF[0], ROOF[1], ROOF[2], AUTUMN[0], AUTUMN[1], STRAW[2], STRAW[3]], texture=0.4),
+    _m("gold_leaf", [EARTH[1], EARTH[2], STRAW[0], STRAW[1], STRAW[2], STRAW[3], GLOW[2]], texture=0.4),
+    _m("rust_leaf", [INK, ROOF[0], ROOF[1], ROOF[2], AUTUMN[0], ROOF[4]], texture=0.4),
 ]
 MAT = {m.name: i + 1 for i, m in enumerate(MATERIALS)}
 for _m_ in MATERIALS:

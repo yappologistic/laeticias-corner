@@ -8,7 +8,7 @@ import math
 import numpy as np
 
 from pack import Sprite
-from palette import LEAF, PLASTER, STONE, STRAW, GLOW, WATER, EARTH, _rgb
+from palette import BLOSSOM, EARTH, GLOW, INK, LEAF, PINE, PLASTER, POPPY, ROOF, SNOW, STONE, STRAW, WATER, _rgb
 from render import dither
 
 
@@ -114,8 +114,209 @@ def leaf(frame, frames, k):
     return Sprite(rgba, c, c)
 
 
-EFFECTS = {"smoke": smoke, "ripple": ripple, "sparkle": sparkle, "raindrop": raindrop, "leaf": leaf}
+# ---- batch 2: hand-drawn at the 64x32 density (2 px per design unit), scaled for others ----
+
+FX_INKS = {"K": INK, "P": BLOSSOM[2], "p": BLOSSOM[3], "q": BLOSSOM[4], "W": SNOW[2], "w": SNOW[1],
+           "b": SNOW[0], "R": POPPY[0], "r": POPPY[1], "D": ROOF[1], "G": LEAF[3], "g": LEAF[4],
+           "B": EARTH[1], "S": STONE[4], "s": STONE[3], "C": PLASTER[4], "c": PLASTER[3], "Y": STRAW[2],
+           "V": PINE[1], "v": LEAF[2], "e": EARTH[3], "O": GLOW[0], "o": ROOF[3], "x": STONE[2]}
 
 
-def build(frames: dict[str, int], k: int) -> dict[str, Sprite]:
-    return {f"fx/{name}/f{f}": EFFECTS[name](f, n, k) for name, n in frames.items() for f in range(n)}
+def _stencil(rows, k, alpha=255, ox=None, oy=None):
+    """Rows of FX_INKS letters drawn for k = 2; the anchor defaults to the bottom middle."""
+    h, w = len(rows), len(rows[0])
+    rgba = np.zeros((h, w, 4), np.uint8)
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                rgba[y, x, :3] = _rgb(FX_INKS[ch])
+                rgba[y, x, 3] = alpha
+    ox = w // 2 if ox is None else ox
+    oy = h - 1 if oy is None else oy
+    if k >= 2:
+        f = k // 2
+        return Sprite(rgba.repeat(f, 0).repeat(f, 1), ox * f, oy * f)
+    return Sprite(rgba[::2, ::2].copy(), ox // 2, oy // 2)
+
+
+HEART = (".PP.PP.",
+         "PqpPPpP",
+         "PpPPPPP",
+         ".PPPPP.",
+         "..PPP..",
+         "...P...")
+HEART_SMALL = ("P.P", "PPP", ".P.")
+
+
+def heart(frame, frames, k):
+    """A pink heart that pops, rises (the offset is in the sprite) and fades."""
+    rows = HEART_SMALL if frame == 0 else HEART
+    sp = _stencil(rows, k, alpha=(255, 255, 210, 120)[frame % 4])
+    pad = np.zeros((sp.rgba.shape[0] + 3 * frame * max(1, k // 2),) + sp.rgba.shape[1:], np.uint8)
+    pad[:sp.rgba.shape[0]] = sp.rgba
+    return Sprite(pad, sp.ox, pad.shape[0] - 1)
+
+
+PETALS = (("pP", "Pq"), (".P", "Pp"), ("PP",), ("P.", "pP"))
+
+
+def petal(frame, frames, k):
+    return _stencil(PETALS[frame % 4], k)
+
+
+SNOWFLAKES = ((".w.", "wWw", ".w."), ("w.w", ".W.", "w.w"), (".b.", "bWb", ".b."), ("...", ".W.", "..."))
+
+
+def snowflake(frame, frames, k):
+    return _stencil(SNOWFLAKES[frame % 4], k, ox=1, oy=1)
+
+
+MOTHS = (("c.c", "cCc", ".s."), ("...", "cCc", "csc"))
+
+
+def moth(frame, frames, k):
+    return _stencil(MOTHS[frame % 2], k, ox=1, oy=1, alpha=230)
+
+
+def fish_jump(frame, frames, k):
+    """A silver fish arcing out of the water and back in, with a splash at each end."""
+    sc = max(1, k // 2) if k >= 2 else 1
+    w, h = 18 * sc, 18 * sc
+    px, py, rgba = _canvas(w, h)
+    t = frame / (frames - 1)
+    base = h - 2 * sc
+    if 0 < frame < frames - 1:
+        cx = (3 + 12 * t) * sc
+        cy = base - 13 * sc * 4 * t * (1 - t)
+        ang = math.atan2(-13 * 4 * (1 - 2 * t), 12)
+        ca, sa = math.cos(ang), math.sin(ang)
+        u = ((px + 0.5 - cx) * ca + (py + 0.5 - cy) * sa) / sc
+        v = (-(px + 0.5 - cx) * sa + (py + 0.5 - cy) * ca) / sc
+        body = (u / 3.2) ** 2 + (v / 1.2) ** 2 <= 1
+        tail = (u < -2.6) & (u > -4.6) & (np.abs(v) < (-u - 2.4) * 0.8)
+        _set(rgba, body | tail, STONE[3])
+        _set(rgba, body & (v < -0.2), STONE[5])
+        _set(rgba, body & (v > 0.5), STONE[2])
+        _set(rgba, (np.abs(u - 2.0) < 0.5) & (np.abs(v + 0.2) < 0.5), INK)
+    for sx, active in ((3 * sc, frame in (0, 1)), (15 * sc, frame in (frames - 2, frames - 1))):
+        if active:
+            d = np.hypot(px + 0.5 - sx, (py + 0.5 - base) * 2)
+            r = (2.0 + 1.5 * (frame % 2)) * sc
+            _set(rgba, np.abs(d - r) < 0.7, WATER[5], 220)
+            _set(rgba, (np.abs(px - sx) == 2 * sc) & (py == base - 3 * sc), WATER[5], 200)
+    return Sprite(rgba, 9 * sc, base)
+
+
+def star_streak(frame, frames, k):
+    """A white-to-transparent streak; the head (bright end) is at the right, anchored there."""
+    sc = max(1, k // 2) if k >= 2 else 1
+    w, h = 48 * sc, 3 * sc
+    px, py, rgba = _canvas(w, h)
+    t = (px + 0.5) / w
+    core = np.abs(py + 0.5 - h / 2) < 0.5 * sc + t * 0.6 * sc
+    _set(rgba, core, SNOW[2])
+    rgba[..., 3] = np.where(core, (255 * t ** 1.5).astype(np.uint8), 0)
+    rgba[core & (px >= w - 3 * sc), :3] = _rgb(GLOW[2])
+    return Sprite(rgba, w - 1, h // 2)
+
+
+APPLES = ((".Gg.", ".B..", "rrRR", "rrRR", "RRRD", ".DD."),
+          ("..g.", ".B..", "rrRR", "RRRD", ".vv."))
+
+
+def apple(frame, frames, k):
+    return _stencil(APPLES[frame % 2], k)
+
+
+def clear(frame, frames, k):
+    """Brambles bursting into leaves and dust as wild land opens; particles fly out and fade."""
+    sc = max(1, k // 2) if k >= 2 else 1
+    w, h = 48 * sc, 32 * sc
+    px, py, rgba = _canvas(w, h)
+    t = (frame + 1) / frames
+    rng = np.random.Generator(np.random.PCG64([81]))
+    cx, cy = w / 2, h - 8 * sc
+    # A dust cloud that swells and thins.
+    d = np.hypot((px + 0.5 - cx) / (10 * sc * (0.4 + t)), (py + 0.5 - cy) / (4 * sc * (0.4 + t)))
+    dust = (d < 1) & (dither(np.full(px.shape, 1.5 - t * 1.3), px, py) >= 1)
+    _set(rgba, dust, EARTH[4], int(130 - 100 * t))
+    for n in range(30):
+        a = rng.uniform(-math.pi * 0.95, -0.05)
+        speed = rng.uniform(12, 28) * sc
+        x = cx + math.cos(a) * speed * t
+        y = cy + math.sin(a) * speed * t + 20 * sc * t * t
+        color = (PINE[1], LEAF[2], LEAF[3], EARTH[2], ROOF[1])[n % 5]
+        size = 2 if n % 3 else 3
+        m = (np.abs(px + 0.5 - x) < size * sc * 0.5 + 0.01) & (np.abs(py + 0.5 - y) < size * sc * 0.5 + 0.01)
+        if frame < frames - 1 or n % 2:
+            _set(rgba, m, color, 255 if t < 0.7 else 170)
+    return Sprite(rgba, int(cx), int(cy))
+
+
+def mist(frame, frames, k):
+    """Soft white spray at a waterfall's foot: overlapping puffs that drift and shimmer."""
+    sc = max(1, k // 2) if k >= 2 else 1
+    w, h = 40 * sc, 16 * sc
+    px, py, rgba = _canvas(w, h)
+    t = frame / frames
+    inside = np.zeros(px.shape, np.float32)
+    for n in range(7):
+        a = 2 * math.pi * (t + n / 7)
+        cx = (6 + n * 4.6 + 1.2 * math.sin(a)) * sc
+        cy = (10 - 2.5 * abs(math.sin(a * 0.5 + n))) * sc
+        r = (4.0 + 1.2 * math.sin(a + n)) * sc
+        inside = np.maximum(inside, 1 - np.hypot(px + 0.5 - cx, (py + 0.5 - cy) * 1.6) / r)
+    body = inside > 0
+    _set(rgba, body, SNOW[1])
+    _set(rgba, inside > 0.45, SNOW[2])
+    holes = dither(np.full(px.shape, 1.4), px + frame, py) < 1
+    rgba[..., 3] = np.where(body & ~(holes & (inside < 0.3)), np.where(inside > 0.45, 170, 110), 0)
+    return Sprite(rgba, w // 2, h - 2 * sc)
+
+
+ZEDS = (("WWW", "..W", ".W.", "WWW"), ("WWWW", "..W.", ".W..", "WWWW"), ("WWWW", "..W.", ".W..", "WWWW"))
+
+
+def zzz(frame, frames, k):
+    """A small z drifting up and fading (the rise is in the sprite)."""
+    sp = _stencil(ZEDS[frame % 3], k, alpha=(255, 230, 140)[frame % 3])
+    f = max(1, k // 2) if k >= 2 else 1
+    rise = (0, 3, 6)[frame % 3] * f
+    pad = np.zeros((sp.rgba.shape[0] + rise + 2 * f, sp.rgba.shape[1] + 2 * f, 4), np.uint8)
+    pad[:sp.rgba.shape[0], (frame % 3) * f:(frame % 3) * f + sp.rgba.shape[1]] = sp.rgba
+    return Sprite(pad, sp.ox, pad.shape[0] - 1)
+
+
+PRODUCE = (
+    # cabbage
+    ("....vGGv....", "..vGgggGGv..", ".vGggGggggv.", "vGgGgGgggGGv", "vGggGgggGgGv",
+     ".vGgGgGgGgv.", "..vGGGGGGv..", "....vvvv...."),
+    # a bunch of carrots
+    ("..g.g.g.....", "...ggg.g....", "..gGgGg.....", "...oOoO.....", "...oOOo.....",
+     "....oOo.....", "....oO......", ".....o......"),
+    # pumpkin
+    ("....BB......", "..oOoOoOo...", ".oOoOOoOOo..", "oOoOOoOOoOo.", "oOoOOoOOoOo.",
+     ".oOoOOoOOo..", "..ooooooo..."),
+    # tomatoes on the vine
+    ("...vGv......", ".RRgRR......", "RrRRRrRR....", "RRRRRRRRR...", ".RRDRRrRR...",
+     "..DD.RRRR...", ".....DDD...."),
+)
+
+
+def produce(frame, frames, k):
+    """Frame k is the crop of veggie bed variant r<k>, for the harvest pop."""
+    return _stencil(PRODUCE[frame % 4], k)
+
+
+EFFECTS = {"smoke": smoke, "ripple": ripple, "sparkle": sparkle, "raindrop": raindrop, "leaf": leaf,
+           "heart": heart, "petal": petal, "snowflake": snowflake, "moth": moth, "fish_jump": fish_jump,
+           "star_streak": star_streak, "apple": apple, "clear": clear, "mist": mist, "zzz": zzz,
+           "produce": produce}
+
+
+def build(keys: list[str], cat: dict, k: int) -> dict[str, Sprite]:
+    parsed = {key: (key.split("/")[1], int(key.split("/")[2][1:])) for key in keys}
+    frames = {}
+    for name, f in parsed.values():
+        frames[name] = max(frames.get(name, 0), f + 1)
+    return {key: EFFECTS[name](f, frames[name], k) for key, (name, f) in parsed.items()}
