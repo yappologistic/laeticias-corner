@@ -1,13 +1,13 @@
 # Pārsa (Persepolis) · تخت جمشید · spring, c. 470 BC
 
 Design bible for the Achaemenid city. Read `world.md` first for scale, plan coordinates, the
-elevation model and the place data model. Evidence and links: `sources.md` (section "Pārsa").
+elevation model and the region data model. Evidence and links: `sources.md` (section "Pārsa").
 
 Names. The city was **Pārsa** in Old Persian (the same word as the land, Fārs, and the people);
 the Greeks called it *Persepolis*; the Elamite tablets write *Paršaš*. Medieval Persians named the
 ruins **Takht-e Jamshid** (تخت جمشید, "Throne of Jamshid"), linking them to the legendary king Yima
 / Jamshid; this name is about 1,500 years later than our moment and appears in the game only on the
-world map subtitle and in one card that explains it. Key Old Persian forms used in cards:
+overview map subtitle and in one card that explains it. Key Old Persian forms used in cards:
 Dārayavauš (Darius), Xšayāršā (Xerxes), Kūruš (Cyrus), Artaxšaça (Artaxerxes), Auramazdā,
 Pārsa, Yaunā (Ionians), *dahyu* (land, people), *bāji* (tribute, share), *tačara* (palace; Darius's
 word for his building), *hadiš* (palace; Xerxes's word for his), *duvarθi visadahyu* ("gate of all
@@ -62,39 +62,49 @@ orange of fire altars and torches against an enormous star field.
 
 ### 2.1 Size, scope, orientation
 
-- **Map: 144 × 144 tiles.** Plan coordinates `c` (east) and `r` (south) as in `world.md`.
-- **Grid mapping (turned 180°): `tx = 143 − c`, `ty = 143 − r`.** The camera looks from the
-  north-west across the plain at the stairway, with the mountain at the back of the picture. Every
-  landmark uses its `r2` model view; a footprint's origin tile is its plan **south-east** corner.
+- **Region: 144 × 144 tiles, world origin (1136, 304), base level 4** (`world.md` §3, §5).
+  All coordinates in this file are **local** plan coordinates `c` (east) and `r` (south) from the
+  region's north-west corner: world `C = 1136 + c`, `R = 304 + r`; world level = 4 + local level.
+  The region fills the south-east corner of the world; its east edge is the world's east edge,
+  where the backdrop of Kuh-e Raḥmat stands.
+- **Camera:** the world view from the south-west (`world.md` §3.2). The plain and the stairway are
+  in front, the terrace rises behind them and the mountain closes the picture. Faces turned south
+  and west are seen: the great stairway, the Gate's west door with its bulls, the Apadāna's west
+  portico, the Tačara's south front and relief stair, the Hadiš. Faces turned north and east are
+  hidden (the Apadāna's north and east relief stairs, the Gate's east lamassu, the Hall of a Hundred
+  Columns' portico); their cards describe them, and the optional view rotation shows them.
+  Landmarks are modelled in their true compass orientation; the world mapping decides which
+  rotation sprite is used.
 - **Scale:** terrace and everything on it at `s = 0.85` (tile ≈ 4.7 m real; heights 8.5 px per
   real metre). The plain is compressed about 4 × so that town, gardens, fields, the road station and
-  two satellite vignettes fit.
-- **In scope:** the whole terrace; the fortification and slope of Kuh-e Raḥmat directly behind it;
+  the Naqsh-e Rostam vignette fit.
+- **In scope (region):** the whole terrace; the fortification and slope of Kuh-e Raḥmat behind it;
   the town of Pārsa and its gardens on the plain; fields, canals and a qanat line; a quarry; a
-  royal-road station; a cavalry and archery ground; two satellite vignettes (Naqsh-e Rostam with the
-  tomb of Darius; Pasargadae with the tomb of Cyrus); a stretch of river.
-- **Out of scope (world map and cards only):** Susa, Ecbatana, Babylon, the Persian Gulf ports,
-  the full royal road.
+  royal-road station; a cavalry and archery ground; the Naqsh-e Rostam satellite; a stretch of
+  river.
+- **Persian-time waypoints outside the region** (§3.7, `world.md` §6): Pasargadae, the Persian
+  Gates, Susa, Babylon, the Euphrates crossing, the Halys crossing, Gordion, Sidon and Sardis. They
+  belong to the same moment (c. 470 BC) and use this file's kit.
 
 ### 2.2 Districts
 
 | # | District | Plan area (c, r) | Level | Contents |
 |---|---|---|---|---|
 | D1 | Terrace (Takht) | c 56..119, r 22..118 | 6 (platforms 7–9) | the palaces, gate, halls, treasury, garrison |
-| D2 | Mountain slope and fortification | c 120..143, r 10..135 | 7–9, backdrop beyond | wall with towers, rock-cut cistern, drainage outfalls, quarry face, mountain shrine, backdrop of Kuh-e Raḥmat |
-| D3 | Stairway forecourt and royal road | c 30..55, r 30..60 | 0 | arrival plaza, horse lines, road from the west edge |
+| D2 | Mountain slope and fortification | c 120..143, r 0..143 | 7–9, backdrop beyond | wall with towers, rock-cut cistern, drainage outfalls, quarry face, a mountain shrine |
+| D3 | Stairway forecourt and royal road | c 26..48, r 36..60 | 0 | arrival plaza, horse lines, the road from the west edge (enters at c 0, r 49..51 = world R 353..355, from the Persian Gates) |
 | D4 | Town of Pārsa | c 0..48, r 62..112 | 0 | mudbrick courtyard houses, workshops, workers' quarters, granaries, kitchens, a small shrine |
-| D5 | Paradise garden (*partetaš* in Elamite tablets; Old Persian *paridaida*) | c 0..54, r 10..30 and c 49..55, r 60..118 strip below terrace | 0 | walled garden with stone channels, pavilion, cypress and plane rows, orchards; a glazed-brick gate (after Tol-e Ajori) |
-| D6 | Fields and canals | c 0..30, r 112..144 and c 0..56, r 0..10 | 0 | barley and wheat plots, threshing floor, canal, qanat shaft line, village, flocks |
-| D7 | Royal-road station and caravan yard | c 20..34, r 112..126 | 0 | station with stables and storeroom, caravan of camels, relay horses |
-| D8 | Cavalry and archery ground | c 34..56, r 120..142 | 0 | riding track, archery butts, Immortals at drill |
-| S1 | Satellite: Naqsh-e Rostam (real: 6 km NNW) | c 0..26, r 0..22 corner, cut off by a band of rocky ground | 0–8 | a cliff with Darius I's cruciform tomb, the Ka'ba-ye Zartosht tower |
-| S2 | Satellite: Pasargadae (real: about 80 km N) | c 120..143, r 136..143 plus c 128..143, r 120..143 | 0 | the gabled tomb of Cyrus on its six steps, a garden channel, a few trees |
+| D5 | Paradise garden (*partetaš* in Elamite tablets; Old Persian *paridaida*) | c 26..54, r 8..34, and a garden strip c 49..55, r 60..118 below the terrace | 0 | walled garden with stone channels, pavilion, cypress and plane rows, orchards; a glazed-brick gate (after Tol-e Ajori) |
+| D6 | Fields, canals, village | c 26..56, r 0..7; c 0..25, r 21..61; c 0..19, r 113..143 | 0 | barley and wheat plots, threshing floor, canal, village, flocks |
+| D7 | Royal-road station and caravan yard | c 20..34, r 113..126 | 0 | station with stables and storeroom, camel caravan, relay horses |
+| D8 | Cavalry and archery ground | c 35..55, r 113..134 | 0 | riding track, archery butts, the guard at drill |
+| D9 | Southern plain and qanat | c 20..119, r 135..143 | 0 | qanat shaft line along r 138..140 from the mountain foot to the fields; grazing |
+| S1 | Satellite: Naqsh-e Rostam (real: 6 km NNW) | c 0..24, r 0..20, cut off by a band of rocky ground | 0–8 | the cliff with Darius I's cruciform tomb, the Ka'ba-ye Zartosht tower, a fire altar |
 
-Satellite rule (also in `world.md`): satellites are compressed vignettes, separated from the city
-by a strip of plain rough ground with no road, and they may be turned to face the camera. Both
-Pārsa satellites face the camera; the cards say the real tomb façades face south (Naqsh-e Rostam)
-and roughly north-west (Cyrus's tomb door; orientation to be checked by the artist).
+Satellite rule (`world.md` §6): a satellite is a compressed vignette separated from the city by a
+strip of rough ground with no road. Naqsh-e Rostam's real tomb façades face south, and the camera
+sees south faces, so it needs no turning. Pasargadae, 80 km north in reality, is a waypoint on the
+world map 17 rows north of the region (§3.7).
 
 ### 2.3 Landmark placement (plan coordinates, inclusive)
 
@@ -106,9 +116,9 @@ scaled by `0.85 / 4 m` per tile and then lightly adjusted so footprints do not t
 | `terrace` | Terrace walls | outline c 56..119, r 22..118 | 64 × 97 | 6 | west face is the long visible cliff (`ashlar` edge, 6 levels). Stepped merlons along the top edge. A minor stair on the south side (the original access, Livius) at c 84..88, r 118..121 |
 | `great_stair` | Great double stairway | c 49..55, r 37..54 | 7 × 18 | 0 → 6 | west face. Lower flights start side by side at the centre (r 45..46) and climb outward north and south to landings at r 37..39 and r 52..54, then upper flights turn back and climb inward to one top landing at c 55, r 43..48 |
 | `gate_all_lands` | Gate of All Lands (Xerxes) | c 64..69, r 42..47 | 6 × 6 | 6 | doors on west (bulls), east (human-headed winged bulls) and south (to the Apadāna) |
-| `apadana` | Apadāna with corner towers | c 60..83, r 54..77 | 24 × 24 | 7 | north stair c 65..78, r 51..53 (visible face); east stair c 84..86, r 60..71 (hidden face, reliefs on card); west portico looks over the plain |
-| `tacara` | Tačara (palace of Darius) | c 63..70, r 82..91 | 8 × 10 | 8 | main portico and relief stair on the south (hidden); west stair visible but plain in 470 (the decorated west stair is later) |
-| `hadish` | Hadiš (palace of Xerxes) | c 76..86, r 88..101 | 11 × 14 | 9 | highest platform; stairs on west and north |
+| `apadana` | Apadāna with corner towers | c 60..83, r 54..77 | 24 × 24 | 7 | west portico (seen) looks over the plain; north stair c 65..78, r 51..53 and east stair c 84..86, r 60..71 carry the reliefs (faces hidden in the default view; cards, view rotation) |
+| `tacara` | Tačara (palace of Darius) | c 63..70, r 82..91 | 8 × 10 | 8 | main portico and relief stair on the south (seen); west stair plain in 470 (the decorated west stair is later) |
+| `hadish` | Hadiš (palace of Xerxes) | c 76..85, r 88..101 | 10 × 14 | 9 | highest platform; stairs on west and north |
 | `tripylon` | Tripylon / central hall ("Council Hall") | c 87..93, r 71..78 | 7 × 8 | 7 | stair reliefs of Persian and Median nobles climbing |
 | `hall_100` | Hall of a Hundred Columns, **under construction** | c 93..108, r 52..67 | 16 × 16 | 6 | north portico c 93..108, r 48..51 with two colossal bulls; forecourt c 90..110, r 36..47 |
 | `treasury` | Treasury (enlarged by Xerxes) | c 100..116, r 79..108 | 17 × 30 | 6 | flat-roofed mudbrick, columned halls with wooden columns |
@@ -119,60 +129,107 @@ scaled by `0.85 / 4 m` per tile and then lightly adjusted so footprints do not t
 | `fort_wall` | Fortification on the slope | c 119..124, r 10..130, towers every 8 rows | — | 7–9 | mudbrick on stone, square towers |
 | `cistern` | Rock-cut cistern and channel | c 124..128, r 60..64 | 5 × 5 | 8 | feeds the drainage/water system cut into the rock |
 | `quarry` | Limestone quarry face | c 126..140, r 100..118 | 15 × 19 | 7–9 | half-cut blocks, wedge holes, ramp down to the terrace road |
-| `paradise_gate` | Glazed-brick garden gate (after Tol-e Ajori) | c 30..34, r 18..22 | 5 × 5 | 0 | real gate 3.5 km west, built under Cyrus/Cambyses c. 530s (Iranian-Italian mission); compressed into the garden wall |
-| `pavilion` | Garden pavilion | c 14..19, r 14..19 | 6 × 6 | 0 | columned pavilion over the channel crossing |
+| `paradise_gate` | Glazed-brick garden gate (after Tol-e Ajori) | c 26..30, r 24..28 | 5 × 5 | 0 | real gate 3.5 km west, built under Cyrus/Cambyses c. 530s (Iranian-Italian mission); compressed into the garden wall |
+| `pavilion` | Garden pavilion | c 32..37, r 12..17 | 6 × 6 | 0 | columned pavilion over the channel crossing |
 | `road_station` | Royal-road station | c 20..28, r 114..121 | 9 × 8 | 0 | |
-| `naqsh_cliff` | Naqsh-e Rostam cliff with Darius I's tomb | c 0..20, r 0..8 | 21 × 9 | 0–8 | façade turned to face the camera (satellite rule) |
-| `kaba` | Ka'ba-ye Zartosht tower | c 10..12, r 12..14 | 3 × 3 | 0 | date and purpose debated (Darius I or earlier; tomb, fire house, archive?) |
-| `cyrus_tomb` | Tomb of Cyrus (Pasargadae) | c 133..137, r 129..133 | 5 × 5 | 0 | six-stepped plinth, gabled chamber |
+| `naqsh_cliff` | Naqsh-e Rostam cliff with Darius I's tomb | c 0..20, r 0..8 | 21 × 9 | 0–8 | the tomb façade faces south, toward the camera |
+| `kaba` | Ka'ba-ye Zartosht tower | c 10..12, r 13..15 | 3 × 3 | 0 | date and purpose debated (Darius I or earlier; tomb, fire house, archive?) |
+| `cyrus_tomb` | Tomb of Cyrus (Pasargadae waypoint) | world C 1187..1191, R 270..274 | 5 × 5 | world 5 | six-stepped plinth, gabled chamber (§3.7) |
 
-### 2.4 ASCII plan (north up, 1 char ≈ 4 × 4 tiles)
+### 2.4 Plan (north up, local coordinates, 1 character = 3 × 3 tiles)
+
+Generated from the coordinate tables above; where footprints share a cell, the later one wins.
 
 ```
-     c: 0       16      32      48      64      80      96      112     128   143
-r  0  NNNNNN..ffffffffffffff..........................................MMMMMMMM
-   8  NNNNNN.kk.gggggggggggg.......  |TTTTTTTTTTTTTTTTTTTTTTTT|Gar|rison|W MMMMMMM
-  16  ......ggPPgggGTgggggggg.......  |       forecourt  =====  |      |W MMMMMMM
-  24  ......ggggggggggggggggg.......  | Gate~~~road~~~~~~~ ****  portico|W MMMMMMM
-  32  ......cccccccccccccccc......SS  |  [AAAAAA]   [Trip]  |H100 under  |W MMMMMMM
-  40  hhhhhhhh....plaza......  SS|  [AAAAAA]           |construction|W cist
-  48  hhhhhhhhh...horses.....  SS|  [AAAAAA]           |  ****      |W MMMMMMM
-  56  hhhhhhhhhhh............ g |    [Tač]  [Hadiš]  [Harem][Treasury] |W MMMMMMM
-  64  hhhhhhhhhhh workshops.. g |                      [Harem][Treasury] |W quarry
-  72  hhhhhhhhhhh granaries.. g |  ....southern storerooms....       |W quarry
-  80  hhhhhhhhhhh............ g |________________________________|  MMMMMMM
-  88  fffff RRR...........   .......................................  ....
-  96  fffff RRR  aaaaaaaa    .......................................   C(Pasargadae)
-     N = Naqsh-e Rostam, k = Ka'ba, g = garden, P = pavilion, GT = glazed gate, c = canal,
-     SS = great stairway, A = Apadāna, h = town houses, f = fields, R = road station,
-     a = archery ground, W = fortification wall, M = mountain slope, C = tomb of Cyrus.
+   c→ 0       24      48      72      96      120     
+r  0  NNNNNNNNN~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~MMMMMMMM
+r  3  NNNNNNNNN~~~~~~~~~~~~...................MMMMMMMM
+r  6  NNNNNNNNNgggggggggg,,,,,,,,,,,,,,,,,,,,,MMMMMMMM
+r  9  NNNNNNNNNgggggDDDDD,,,,,,,,,,,,,,,,,,,,WWMMMMMMM
+r 12  NNNkkNNNNgPPPgDDDDD,,,,,,,,,,,,,,,,,,,,WWMMMMMMM
+r 15  NNNkkNNNNgPPPgDDDDD,,,,,,,,,,,,,,,,,,,,WWMMMMMMM
+r 18  NNNNNNNNNgggggDDDDD,,,,,,,,,,,,,,,,,,,,WWMMMMMMM
+r 21  ffffffffggggggggggTTTTTTTTTTTTTTbbbbbbbbWMMMMMMM
+r 24  ffffffffIIIgggggggTTTTTTTTTTTTTTbbbbbbbbWMMMMMMM
+r 27  ffffffffIIIgggggggTTTTTTTTTTTTTTbbbbbbbbWMMMMMMM
+r 30  ffffffffggggggggggTTTTTTTTTTTTTTbbbbbbbbWMMMMMMM
+r 33  ffffffffggggggggggTTTTTTTTTTTTTTbbbbbbbbWMMMMMMM
+r 36  ffffffff::::::::EEETTTTTTTTTTTTTTTTTTTTTWMMMMMMM
+r 39  ffffffff::::::::EEETTTTTTTTTTTTTTTTTTTTTWMMMMMMM
+r 42  ffffffff::::::::EEETTGGG=======TTTTTTTTTWMMMMMMM
+r 45  ffffffff::::::::EEETTGGG=======TTTTTTTTTWMMMMMMM
+r 48  ffffffff::::::::EEETTTTTTTTTTTTHHHHHHTTTWMMMMMMM
+r 51  ffffffff::::::::EEETTAAAAAATTTTHHHHHHTTTWMMMMMMM
+r 54  ffffffff::::::::EEETAAAAAAAATTTHHHHHHTTTWMMMMMMM
+r 57  ffffffff:::::::::.TTAAAAAAAATTTHHHHHHTTTWMMMMMMM
+r 60  hhhhhhhhhhhhhhhhhgTTAAAAAAAATTTHHHHHHTTTWooMMMMM
+r 63  hhhhhhhhhhhhhhhhhgTTAAAAAAAATTTHHHHHHTTTWooMMMMM
+r 66  hhhhhhhhhhhhhhhhhgTTAAAAAAAATTTHHHHHHTTTWMMMMMMM
+r 69  hhhhhhhhhhhhhhhhhgTTAAAAAAAATtttTTTTTTTTWMMMMMMM
+r 72  hhhhhhhhhhhhhhhhhgTTAAAAAAAATtttTTTTTTTTWMMMMMMM
+r 75  hhhhhhhhhhhhhhhhhgTTAAAAAAAATtttTTTTTTTTWMMMMMMM
+r 78  hhhhhhhhhhhhhhhhhgTTTTTTTTTTTtttTRRRRRRTWMMMMMMM
+r 81  hhhhhhhhhhhhhhhhhgTTTcccTTTTTTTTTRRRRRRTWMMMMMMM
+r 84  hhhhhhhhhhhhhhhhhgTTTcccTTTTmmmmmRRRRRRTWMMMMMMM
+r 87  hhhhhhhhhhhhhhhhhgTTTcccTXXXmmmmmRRRRRRTWMMMMMMM
+r 90  hhhhhhhhhhhhhhhhhgTTTcccTXXXmmmmmRRRRRRTWMMMMMMM
+r 93  hhhhhhhhhhhhhhhhhgTTTTTTTXXXmmmmmRRRRRRTWMMMMMMM
+r 96  hhhhhhhhhhhhhhhhhgTTTTTTTXXXmmmmmRRRRRRTWMMMMMMM
+r 99  hhhhhhhhhhhhhhhhhgTTTTTTTXXXmmmmmRRRRRRTWMQQQQQM
+r102  hhhhhhhhhhhhhhhhhgTTTTTTTTTTmmmmmmRRRRRTWMQQQQQM
+r105  hhhhhhhhhhhhhhhhhgTTTTTTTTTTmmmmmmRRRRRTWMQQQQQM
+r108  hhhhhhhhhhhhhhhhhgTTTTTTTTTTmmmmmmRRRRRTWMQQQQQM
+r111  hhhhhhsssssaaaaaaaTTTTTTTTzzzzzzzzTTTTTTWMQQQQQM
+r114  ffffffsssssaaaaaaaTTTTTTTTzzzzzzzzTTTTTTWMQQQQQM
+r117  ffffffsssssaaaaaaaTTTTTTTTzzzzzzzzTTTTTTWMQQQQQM
+r120  ffffffsssssaaaaaaaa....................WWMMMMMMM
+r123  ffffffsssssaaaaaaaa....................WWMMMMMMM
+r126  ffffffsssssaaaaaaaa....................WWMMMMMMM
+r129  fffffff....aaaaaaaa....................WWMMMMMMM
+r132  fffffff....aaaaaaaa.....................MMMMMMMM
+r135  ffffff,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,MMMMMMMM
+r138  ffffffqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqMMMMMMMM
+r141  ffffff,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,MMMMMMMM
 ```
+
+Legend: `N` Naqsh-e Rostam cliff, `k` Ka'ba-ye Zartosht, `~` river and canal, `f` fields, `,`
+plain and pasture, `q` qanat line, `g` paradise garden, `P` pavilion, `I` glazed-brick gate, `D`
+player's garden plot, `:` stairway plaza, `E` great stairway, `T` terrace (open courts), `G` Gate
+of All Lands, `=` processional road, `A` Apadāna, `H` Hall of a Hundred Columns, `t` Tripylon, `c`
+Tačara, `X` Hadiš, `m` residential wing, `R` Treasury, `b` garrison, `z` southern storerooms, `h`
+town, `s` road station, `a` cavalry and archery ground, `W` fortification wall, `o` cistern, `Q`
+quarry, `M` mountain slope (backdrop beyond the east edge).
 
 (The ASCII is a reading aid; the tables above are authoritative.)
 
 ### 2.5 Streets, water, walls and gates
 
-- **Royal road** enters at the west edge (c 0, r 50), passes the road station spur, and ends at
-  the stairway plaza (c 30..48, r 40..56). Packed earth, 3 tiles wide, lined by a canal on its
-  north side.
+- **Royal road** enters at the west edge (c 0, r 49..51; world R 353..355, coming from the Persian
+  Gates) and ends at the stairway plaza (c 26..48, r 36..60). Packed earth, 3 tiles wide. A spur
+  runs south at c 22 through the town to the road station (D7).
 - **Terrace streets** are paved courts and corridors between mudbrick walls: the Gate → Hall road
   (above); a north–south street east of the Apadāna (c 88..90, r 48..80); courts in front of the
   Tačara and Hadiš (r 78..87).
-- **Water:** a main canal from the north-east (fed by the river and the qanat line) runs west
-  along r 32..33 into the garden, where stone-lined channels about 25 cm wide (Pasargadae garden,
+- **Water:** a main canal leaves the river at c 60, r 3, runs west along r 4..5 to the garden's
+  north-east corner (c 54, r 8) and feeds the garden, where stone-lined channels about 25 cm wide (Pasargadae garden,
   Met essay) divide beds, with square basins at intervals. On the terrace, rock-cut drains run
   under the paving to outfalls in the west face (the terrace drainage system is well documented);
-  show grated openings and, after rain, small waterfalls from the outfalls.
+  show grated openings and, after rain, small waterfalls from the outfalls. From the garden a
+  channel runs south along the terrace foot (c 50..51) to the town and the fields.
 - **River:** a tributary of the Pulvar crosses the north edge (r 0..3), shallow, with willows,
   reeds and a ford.
 - **Qanat:** a line of shaft mounds (ring of spoil around a hole every 2 tiles) runs from the
-  mountain foot at c 120, r 130 to the fields at c 20, r 132, ending in an open channel. Achaemenid
+  mountain foot at c 119, r 139 west along r 138..140 to the fields at c 19, r 139, ending in an
+  open channel. Achaemenid
   qanats are **debated** (Polybius 10.28 attributes underground channels to the Persian period in
   Hyrcania); mark as a nice-to-have with a careful card.
 - **Walls:** the terrace edge is a cliff of fitted grey limestone blocks; a mudbrick wall with
   towers crowns the mountain side. The town has no circuit wall in the game.
 
 ### 2.6 Elevation
+
+Local levels; world level = 4 + local (the plain sits at world level 4, above Mesopotamia and
+below the Zagros pass).
 
 | Area | Level | Notes |
 |---|---|---|
@@ -195,8 +252,9 @@ stair (rise 2), Hadiš west stair (rise 3, from level 6), Tripylon stair (rise 1
 ## 3. Asset list
 
 Legend: **M** must-have, **N** nice-to-have. **L** landmark (unique), **K** kit (reusable).
-Heights in px at 64 × 32 from ground to top. Rotations: Pārsa uses `r2` only (fixed view) unless
-the optional view rotation is built, in which case the voxel generator renders `r0..r3`. Layers:
+Heights in px at 64 × 32 from ground to top. Rotations: one sprite per landmark for the fixed
+south-west view; all four if the optional view rotation is built (the voxel generator renders
+them from the same model). Layers:
 B base, S shadow, G glow.
 
 ### 3.1 Architectural facts every artist must get right (Pārsa)
@@ -238,7 +296,7 @@ B base, S shadow, G glow.
 | `gate_all_lands` | Gate of All Lands | 6 × 6 | 155 | B,S,G | torch flicker (G) | M | square hall with 4 columns about 16.5 m tall (commonly cited), double-bull capitals; three doorways. West door: a pair of colossal **bulls** in profile, striding out; east door: colossal **human-headed winged bulls** (lamassu) with tall feathered crowns, curled beards, wings raised. Trilingual XPa panels above the bulls. Mudbrick walls painted, flat roof, merlons |
 | `apadana` | Apadāna | 24 × 24 | 200 | B,S,G | incense smoke emitters | M | main hall 6 × 6 = 36 columns, over 19 m tall (Iranica); porticoes on north, west and east, each 2 rows of 6 = 12 columns (72 in all); four square corner towers (mudbrick on stone, two storeys, merlons, small windows); south side closed by service rooms. Walls painted, glazed-brick panels. North stair (visible): double stair, relief front with nobles and delegations in two registers each side, lions attacking bulls in the triangles, central panel with 8 guards under the winged disc and sphinxes (the original audience panel of the king was later moved to the Treasury, Livius; at 470 the audience panel is still here: show it). Build so walkers enter the north portico (`walk` tiles) |
 | `tacara` | Tačara | 8 × 10 | 120 | B,S,G | lamp glow | M | small palace of dark polished stone (the "hall of mirrors" sheen), hall of 12 columns (3 × 4) with 8-column portico (2 × 4) on the south; stone door and window frames with reliefs of the king under a parasol with attendants, heroes fighting monsters; DPa inscription "I built this *tačara*". West stair plain in 470 |
-| `hadish` | Hadiš | 11 × 14 | 140 | B,S,G | lamp glow | M | hall of 36 columns (6 × 6) with a 12-column portico; on the highest platform; stair reliefs of servants carrying food, wineskins and kid goats; XPe-type inscriptions. Visible from the plain as the top of the terrace silhouette |
+| `hadish` | Hadiš | 10 × 14 | 140 | B,S,G | lamp glow | M | hall of 36 columns (6 × 6) with a 12-column portico; on the highest platform; stair reliefs of servants carrying food, wineskins and kid goats; XPe-type inscriptions. Visible from the plain as the top of the terrace silhouette |
 | `tripylon` | Tripylon | 7 × 8 | 110 | B,S | — | M | small 4-column hall with three doors; stair façade with Persian and Median nobles climbing, holding flowers, chatting, hands on each other's shoulders |
 | `hall_100` | Hall of a Hundred Columns (building site) | 16 × 16 | 120 (finished columns); 40–110 (rising) | B,S | crane swing, chisel sparks | M | grid of 10 × 10 bases, about a third with full shafts, some with capitals, others shafts at mid-height with timber scaffolds and earth ramps; north portico of 16 columns; two colossal bulls flanking the portico, roughly blocked out; stacks of drums, a capital on rollers, ox sledges |
 | `treasury` | Treasury | 17 × 30 | 80 | B,S | — | M | low, flat-roofed mudbrick complex, plastered walls, small high windows, many columned halls with **wooden columns plastered and painted** in patterns on stone bases; guarded doors |
@@ -350,9 +408,35 @@ Each walker kind comes in 3–4 colour variants. Dress follows section 6.2.
 | Lioness and cubs (Elamite gift, in a cage cart) | — | idle | N |
 | Birds: swallows, hoopoe, house sparrows, storks, crows; insects: bees in the garden, butterflies; at night: owls, bats | — | fly | M (swallows, hoopoe, sparrows) |
 
+### 3.7 Persian-time waypoints on the Royal Road (outside the region)
+
+World coordinates (`world.md` §6). Same moment (c. 470 BC) and same kit as Pārsa (road station,
+houses, walkers, caravans, plants); each adds a few unique landmarks at `s ≈ 0.5`.
+
+| Waypoint (world rect) | Landmark id | Footprint | Height px | M/N | Look (what must be right) |
+|---|---|---|---|---|---|
+| **Pasargadae** (C 1176..1203, R 260..287) | `cyrus_tomb` | 5 × 5 | 110 | M | see §3.2 |
+| | `pasargadae_garden` | 12 × 10 | 70 | M | Palace P: a columned hall facing a garden divided by narrow stone channels with square basins (Met essay); cypresses and planes |
+| | `pasargadae_gate` | 6 × 6 | 90 | N | Gate R with the relief of a four-winged figure wearing an Egyptian-style crown (once inscribed "I, Cyrus the king, an Achaemenid"; who it shows is debated) |
+| **Persian Gates** (C 1112..1127, R 330..345) | `gates_station` | 8 × 6 | 60 | M | a narrow defile between cliffs (`rock` edges, levels 12–15), the road on a ledge, a walled station with guards and a beacon |
+| **Susa** (C 1080..1103, R 315..340) | `susa_palace` | 14 × 12 | 150 | M | Darius's palace on the high citadel mound: an apadāna of 36 columns with bull capitals (like Pārsa) beside courtyard buildings of mudbrick faced with **glazed-brick friezes**: archers in patterned robes, lions, winged bulls, on blue and green grounds |
+| | `susa_mound` (terrain set) | — | — | M | high earthen mound (`earth` edges), mudbrick town below, the Shaur river |
+| **Babylon** (C 1036..1071, R 285..316) | `ishtar_gate` | 6 × 4 | 140 | M | double gate in **blue glazed brick** with alternating rows of yellow-brown aurochs and white-yellow *mušḫuššu* dragons in relief (Nebuchadnezzar II, c. 575 BC), crenellated towers |
+| | `processional_way` | 2 × 14 | 60 | M | walled street lined with glazed-brick striding lions |
+| | `etemenanki` | 12 × 12 | 260 | M | the stepped temple tower of Marduk: seven stepped stages in mudbrick with baked-brick facing, a long front stair, a shrine on top (proportions after the Esagila tablet; uncertain). Its state under Xerxes is debated (Greek writers say he damaged Marduk's sanctuary after the revolts of 484; many historians doubt it). Shown standing |
+| | `babylon_wall` (kit) | 1 × 1 / 2 × 2 tower | 70 / 100 | M | mudbrick double wall with towers |
+| | `euphrates_bridge` | 10 × 2 | 30 | N | stone piers with timber deck (Herodotus describes it) |
+| **Euphrates crossing** (C 1008..1023, R 170..185) | `ferry_station` | 6 × 6 | 40 | M | landing stages on both banks, round hide-covered boats and log rafts on inflated skins, a station |
+| **Halys crossing** (C 950..965, R 120..135) | `halys_gates` | 8 × 4 | 80 | M | a gate with towers and a guard post on the road before the river (Herodotus mentions gates and a fort here), timber bridge or ferry |
+| **Gordion** (C 905..925, R 130..150) | `gordion_mound` | 10 × 10 | 70 | N | the great burial mound and the citadel walls of the old Phrygian capital |
+| **Sidon / Byblos** (C 990..1007, R 300..340) | `phoenician_harbour` | 12 × 8 | 70 | N | quay, Phoenician ships with horse-head prows, cedar logs being floated; cedar loggers on the slope above |
+| **Sardis** (C 860..879, R 200..219) | `sardis_acropolis` | 10 × 10 | 160 | M | steep eroded acropolis with walls; the satrap's residence below (N); the Paktolos stream with gold-washers |
+| | `royal_road_head` | 4 × 4 | 60 | M | the first station of the Royal Road, a milestone-like stone and an Aramaic sign panel |
+
 **Asset counts (Pārsa):** landmarks 21 (M 16 / N 5), kit 33 (M 28 / N 5), plants 15 (M 12 / N 3),
 terrain 11 (M), walker kinds 19 (M 18 / N 1) plus delegation sets, animals 13 (M 6 / N 7).
-**Total about 112 entries: must-have about 91, nice-to-have about 21.** The must-have set alone
+Waypoints add 17 landmarks (M 12 / N 5). **Total about 129 entries: must-have about 103,
+nice-to-have about 26.** The must-have set alone
 builds a convincing city; the cut line is the N marks.
 
 ---
@@ -429,8 +513,8 @@ Darius (DSf) names which peoples did which crafts, and the game follows it.
 
 ## 5. Civilization: society in motion
 
-Pārsa was not a city of nobles. The Persepolis Fortification tablets (about 15,000–18,000
-documents excavated, mostly Elamite, plus Aramaic and a few in other languages) record rations for
+Pārsa was not a city of nobles. The Persepolis Fortification tablets (tens of thousands of tablets
+and fragments, mostly Elamite, plus Aramaic and a few in other languages) record rations for
 tens of thousands of workers (*kurtaš*), men, women and children of many origins, alongside
 travellers, priests, horses and royal women's households. The streets should show that
 cross-section.
@@ -615,14 +699,14 @@ sheep → shearing → dyer → weaver → robe → noble on the terrace.
 | Element | On the main map or satellite | Plan coordinates | What it shows |
 |---|---|---|---|
 | Fields, canals, village | main map | D6 | spring barley, ploughing, threshing |
-| Qanat line (N) | main map | c 20..120, r 130..133 | shafts, a windlass, the outflow |
+| Qanat line (N) | main map | c 20..119, r 138..140 | shafts, a windlass, the outflow |
 | Quarry | main map | `quarry` | the start of every stone chain |
 | Royal-road station and caravans | main map | D7 | couriers, camels, delegations arriving |
 | Cavalry and archery ground ("Immortals' quarters" are the `garrison` on the terrace) | main map | D8 | drill, riding, archery |
 | Paradise with the glazed gate | main map | D5 | gardens, pavilion, planting |
 | Naqsh-e Rostam | satellite S1 | c 0..26, r 0..22 | Darius I's tomb, the tower, a fire altar |
-| Pasargadae | satellite S2 | c 120..143, r 120..143 | Cyrus's tomb with trees and a channel |
-| Persian Gulf, Susa, Babylon | world map + cards | — | goods and delegations come from there |
+| Pasargadae | waypoint north of the region | world C 1176..1203, R 260..287 | Cyrus's tomb, the palace garden channels, the gatehouse relief |
+| Royal Road east to Sardis: Persian Gates, Susa, Babylon, the Euphrates and Halys crossings, Gordion, Sidon, Sardis | waypoints in the connective stretches | §3.7 and `world.md` §6 | the empire on the road: stations, caravans, delegations heading for Pārsa |
 
 ### 6.7 The empire at large
 
@@ -683,4 +767,155 @@ for variety (owner's choice). Default: spring only.
 | **Religion and its limits** | the Auramazdā card, plus a fair note: Xerxes's own "daiva inscription" says he destroyed a sanctuary of false gods, so royal tolerance had limits |
 | **Standards** | the karša weight and the daric card; Darius's canal from the Nile to the Red Sea (his Suez inscriptions) as a card |
 
-<!-- part 3 -->
+---
+
+## 7. Ambient life and events
+
+### 7.1 Walkers and routines
+
+| Group | Count (day / night) | Path or zone | Routine |
+|---|---|---|---|
+| Nobles in pairs | 10 / 2 | stairway → Gate → Apadāna → Tripylon | walk, stop and talk (hand on shoulder, as on the Tripylon stair), climb |
+| Guards | 16 / 12 | stairway top, Gate doors, Apadāna portico, Treasury, fortification | stand; shift change at dawn and dusk (march in pairs) |
+| Scribes | 6 / 0 | granary yard ↔ treasury ↔ archive | carry tablet baskets, sit and write |
+| Builders | 24 / 0 | quarry ↔ `hall_100` | chains in §6.3 |
+| Weavers, grinders, dyers | 14 / 2 | town workshops | loop actions |
+| Farmers, herders | 16 / 0 | fields, rough ground | plough, water, herd sheep home at dusk |
+| Gardeners | 6 / 0 | paradise | plant, water, prune |
+| Grooms and horses | 8 / 2 | horse lines, cavalry ground | water, lead, ride |
+| Couriers | 1 every 3 min | west edge → station → stairway | ride in, change horse, ride out |
+| Caravan | 1 every 6 min | west edge → caravan yard → storerooms | 4 camels, 2 drivers |
+| Children | 8 / 0 | town, canal, plaza | run, play knucklebones, watch delegations |
+| Magi | 2 / 1 | fire altars | tend fire |
+
+### 7.2 Timed events
+
+| Event | Trigger | Route and cast | Effects |
+|---|---|---|---|
+| **Audience of the delegations** (M) | every 12 in-game minutes in the morning | 3 delegation sets per audience (rotating through the 23) climb the great stairway, pass the Gate, cross to the Apadāna north stair, are presented by the usher to the king in the portico (bow with hand before mouth, as on the relief), then hand gifts to treasury officials | incense smoke, a soft drum and harp phrase, the crowd hushes; journal unlocks the delegation's card |
+| Change of guard (M) | dawn and dusk | spearmen march from the garrison to the stairway and Gate | measured footsteps, a horn call |
+| Ration day (M) | every 20 minutes | workers queue at the granary; scribes write; sacks handed out | busy chatter |
+| Royal ride (N) | afternoon | king and escort ride down the south stair onto the plain and around the gardens | hoofbeats, dust |
+| Spring shower (M) | weather, random | clouds over the mountain; rain; water runs from the drain outfalls; Tištrya apparition | rain bed, dripping, a rainbow after |
+| Planting in the paradise (N) | once per in-game day | gardeners plant a young tree (player may help, §9) | |
+| Storyteller at dusk (M) | dusk | an old man at the plaza; myth cards appear as faint silhouettes over the terrace | low harp, crickets |
+| Arrival of a caravan from the Gulf (N) | random | camels with pearls, dates and incense jars | bells |
+
+### 7.3 Birds, insects, small life
+
+Swallows and swifts around the columns (morning, evening), house sparrows, a hoopoe in the garden,
+crows on the fortification, white storks on the plain and nesting on a tower, rock doves at the
+quarry, partridges (chukar) on the slope; bees and butterflies in the garden; owls and bats at
+night; frogs by the canal after rain.
+
+---
+
+## 8. Light, weather and season
+
+**Season:** early spring at 1,600 m altitude: crisp mornings, mild days (about 15–20 °C), cold
+nights, clear air. Snow lingers on the Zagros ridges; the plain is new green; almond and pomegranate
+blossom.
+
+| Time | Sky (top → horizon) | Grading target | Light character |
+|---|---|---|---|
+| Dawn | `#2b3a67` → `#e8a87c` → `#f6d7a7` | warm gold highlights on stone, blue-violet shadows, mountain backdrop cold blue | long shadows, mist on the plain, stone glows honey-gold first on the Hadiš and Apadāna tops |
+| Day | `#4a86c8` → `#9cc6e8` → `#e9eef0` | high clarity, slightly cool neutral, saturated greens, grey stone reads silver | almost no haze close up; distant mountains pale blue; crisp shadows |
+| Dusk | `#3d2c5a` → `#c75b39` → `#f2b46d` | stone turns rose and copper, shadows purple | the mountain glows pink then grey; first torches |
+| Night | `#0b1026` → `#1b2445` | deep blue, low saturation; warm pools of torch and fire light | very bright stars and the Milky Way (high, dry, no city glow); Sirius notably bright |
+
+- **Haze:** light, cool, toward the west edge (the plain); the mountain backdrop has aerial
+  perspective (paler with height).
+- **Wind:** a steady breeze from the north-west in the afternoon, rippling barley and poplars.
+- **Dust:** a dry "dust breeze" weather (pale ochre motes, slightly warmer grading) after several
+  dry days.
+- **Rain:** spring showers (rare, memorable): towering clouds build over the mountain, a short
+  rain, the drains spout into the plain, a rainbow over the terrace.
+- **What glows at night:** fire altars (strong orange), torches at the Gate, stairway and towers,
+  braziers in the garrison, oil lamps in the residential wing and town doorways, lanterns in the
+  pavilion. Glow layers: `gate_all_lands`, `apadana`, `tacara`, `hadish`, `harem`, `garrison`,
+  `fort_wall`, `p_fire_altar`, `p_brazier`, `p_torch`, `p_house`, `pavilion`.
+
+---
+
+## 9. Sound and music direction
+
+### 9.1 Ambience beds
+
+| Bed | Content | Where |
+|---|---|---|
+| `amb/parsa_day.ogg` | thin dry wind, distant swallows, a far-off chisel ring (irregular, soft), horse snort and bell now and then, very faint voices | everywhere by day |
+| `amb/parsa_channels.ogg` | close trickling water in narrow stone channels, frogs at the edges | garden zone, canal |
+| `amb/parsa_site.ogg` | chisels, mallets on wedges, rope creak, ox lowing, workers' calls | `hall_100`, quarry |
+| `amb/parsa_night.ogg` | crickets, a lone owl, wind over stone, a guard's footsteps, a fire crackle | everywhere at night |
+| `amb/parsa_rain.ogg` | spring rain on stone and leaves, gurgling drains | rain weather |
+| One-shots | distant horn call (guard change; a long natural horn), camel grunts, horse bells, hoopoe "hoo-poo-poo", stork bill-clatter | positional |
+
+### 9.2 Music brief
+
+**What is attested.** Almost nothing survives of Achaemenid music itself (Iranica's music
+article; Farhat: the dynasty "has left us nothing to reveal the nature of its musical culture").
+What we know: the long Elamite tradition of harp ensembles (the Assyrian palace relief of Elamite
+musicians welcoming the victors at Madaktu, c. 653 BC, shows vertical and horizontal angular harps,
+double pipes and a drum, with singers; the Kul-e Farah rock reliefs show Elamite harp ensembles);
+long-necked lutes known in Mesopotamia since the second millennium; frame drums and small
+cymbals; trumpets and horns for signals. Greek writers mention numerous women singers and
+musicians at the Persian court (Xenophon; Athenaeus on the 329 musician women of Darius III) and
+say that the magi chanted at sacrifices without pipes (Herodotus 1.132).
+
+**What is not attested for 470 BC.** The *dastgāh* modal system and its instruments (*tār*,
+*setār*, *santur*, *kamānche*) are much later; the short-necked *barbat* is Parthian/Sasanian;
+the name *chang* for the angular harp is later (the instrument itself is ancient). Quarter-tone
+intervals as a stylistic shorthand for "Persian" are a modern association. Avoid them as a
+cliché.
+
+**Evocative choice (modern, stated as such).** A small court ensemble: **angular harp** (the
+central voice: plucked, bright, with gentle decay), **long-necked lute** (drone and ostinato),
+**double pipe** (two reed pipes, one droning), **frame drum** and a soft **clapper**. Scales:
+diatonic heptatonic modes built from tetrachords (pentatonic gestures on the harp, a whole-tone and
+semitone tetrachord on the pipes), with long drones. No quarter tones.
+
+| Piece | Tempo | Form | Mood | Synthesis notes |
+|---|---|---|---|---|
+| `music/parsa_day.ogg` (about 3 min loop) | 76–84 bpm, steady processional 4/4 with a lilting 6/8 middle section | harp arpeggio over a lute drone (D); pipes enter with a calm, stepwise melody; frame drum marks the processional walk; second section brighter on G | stately, open, sunlit, generous; the feeling of many peoples climbing the same stair | harp: plucked string (Karplus–Strong) with soft body resonance, slight inharmonicity; lute: brighter, more nasal plucks; pipes: reed model with breath noise, one pipe holding a drone; drum: low skin with finger rolls. Natural hall reverb (stone, 1.8 s) |
+| `music/parsa_night.ogg` (about 3 min loop) | free tempo, about 56 bpm implied | solo harp with sparse pipe answers; a low hummed vocal drone (wordless, women's voices) | intimate, starry, slightly melancholy, a court asleep | longer decays, more space, quiet wind in the background |
+
+The world-map motif: four rising harp notes D–E–F–A.
+
+---
+
+## 10. What the player does here
+
+| Activity | What exactly | M/N |
+|---|---|---|
+| Wander and look | pan and zoom over the terrace, the plain, Naqsh-e Rostam, and along the Royal Road west to Sardis; time of day changes everything | M |
+| Click figures and landmarks | cards (§4.3, landmark cards for every landmark); first click adds to the Pārsa journal | M |
+| Journal | sections: Landmarks (21), People (17 heroes + 9 ordinary), Delegations (23), Things found (12: a karša weight, a sealed tablet, a griffin armlet, a pomegranate spear butt, a glazed brick, a column drum mark, a stonemason's mark, a pigment bowl, a lotus, a horse bell, a halmi travel seal, a cedar beam); progress shown on the overview map | M |
+| Gentle tasks (optional, no timers) | 1. Watch all 23 delegations (spread over days). 2. Follow a stone from the quarry to the hall. 3. Open the garden channels at dawn (click three sluices, water flows). 4. Find the storyteller and hear four tales. 5. Find the Saēna bird's shadow at dawn. Each gives a small keepsake | M (1–3), N (4–5) |
+| Decorate a garden plot | a walled plot in the paradise (c 44..54, r 9..19, 11 × 11) where the player plants cypresses, poplars, pomegranates, almonds, roses and lays channels with the corner's build tools (region-specific menu) | M |
+| Keepsake for the corner | completing task 3 unlocks a small Persian-style channel and a pomegranate tree in the corner's build menu (no `region` tag, so it belongs to the corner) | N |
+| Photo mode | as in the corner | M |
+
+---
+
+## 11. Uncertainties for a human to check
+
+1. **Apadāna column height**: Iranica (Schmitt & Stronach) "more than 19 m"; Livius 25 m;
+   Wikipedia 24 m. The design uses 19–20 m.
+2. **Great stairway**: 111 steps per side is the common count (Coste counted 106); the split per
+   flight is not secure.
+3. **Gate of All Lands column height** (16.5 m is a commonly repeated figure without a primary
+   reference found).
+4. **Which capitals stood where** (bulls in the Apadāna hall and north portico per Iranica; lions
+   and griffins assignment chosen by us).
+5. **Hall of a Hundred Columns column height** (about 11 m; not verified) and **the exact state of
+   the site in 470**.
+6. **Tripylon date** (Darius/Xerxes vs. Artaxerxes I in different sources). We show it finished.
+7. **Delegation identifications** follow Livius; some peoples (Arians/Arachosians, Syrians/
+   Assyrians, Sogdians, the okapi) are debated.
+8. **Royal women's dress** is reconstructed (weak evidence).
+9. **Atossa = Udusana** (Henkelman) is a proposal.
+10. **Baradkama's** dates as treasurer: check against Cameron's *Persepolis Treasury Tablets*.
+11. **Achaemenid qanats** are debated; the qanat line is marked nice-to-have.
+12. **Orientation of Cyrus's tomb door** (to check before modelling).
+13. **The spring audience = New Year** link is a modern hypothesis; the game never names Nowruz.
+14. **Artemisia's visit** is invented (labelled in her card).
