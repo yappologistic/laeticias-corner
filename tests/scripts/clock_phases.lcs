@@ -1,0 +1,31 @@
+set clock day
+expect phase day
+wait 3
+shot shots/clock_day.png
+set clock dusk
+expect phase dusk
+wait 3
+shot shots/clock_dusk.png
+set clock night
+expect phase night
+wait 90
+shot shots/clock_night.png
+set clock dawn
+expect phase dawn
+wait 3
+shot shots/clock_dawn.png
+# The dock button cycles auto -> day -> dusk -> night -> auto, gliding between phases.
+set clock auto
+click ui:clock
+wait 120
+expect phase day
+click ui:clock
+wait 120
+expect phase dusk
+click ui:clock
+wait 120
+expect phase night
+click ui:clock
+wait 2
+expect phase night
+quit

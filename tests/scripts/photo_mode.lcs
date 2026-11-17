@@ -1,0 +1,15 @@
+expect photos 0
+key p
+wait 3
+expect photo on
+expect photos 1
+shot shots/photo_mode.png
+key escape
+wait 20
+expect photo off
+shot shots/after_photo.png
+click ui:photo
+wait 3
+expect photos 2
+key p
+quit

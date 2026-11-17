@@ -509,7 +509,7 @@ void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) 
     }
     const float lift = h * 2.0f * s - pr * s;
     const float th = theme::kThumb * s;
-    p.thumbnail(thumb, {w.box.x + (w.box.w - th) * 0.5f, w.box.y + 6 * s - lift, th, th}, alpha);
+    p.thumbnail(thumb, {w.box.x + 4 * s, w.box.y + 6 * s - lift, w.box.w - 8 * s, th}, alpha);
 
     const Font& f = p.font();
     std::string_view label = w.label;

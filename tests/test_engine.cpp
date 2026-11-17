@@ -165,10 +165,19 @@ TEST_CASE("particles expire and rain leaves ripples on water") {
     p.spawn(Fx::Raindrop, tileToWorld(5.5f, 5.5f), {0, 0}, 0.1f);
     p.spawn(Fx::Smoke, {0, 0}, {0, -10}, 1.0f);
     p.update(0.2f, w);
-    REQUIRE(p.all().size() == 2);
+    REQUIRE(p.all().size() == 3); // smoke, a ripple on the water and a splash on the grass
     int ripples = 0;
-    for (const auto& pt : p.all()) ripples += pt.kind == Fx::Ripple ? 1 : 0;
+    int splashes = 0;
+    for (const auto& pt : p.all()) {
+        ripples += pt.kind == Fx::Ripple ? 1 : 0;
+        splashes += pt.kind == Fx::Raindrop && pt.landed ? 1 : 0;
+    }
     CHECK(ripples == 1);
+    CHECK(splashes == 1);
+    // Off the map a drop simply disappears.
+    p.spawn(Fx::Raindrop, tileToWorld(-3.0f, -3.0f), {0, 0}, 0.1f);
+    p.update(0.2f, w);
+    CHECK(p.all().size() == 3);
     for (std::size_t i = 0; i < Particles::kCapacity + 10; ++i)
         p.spawn(Fx::Sparkle, {0, 0}, {0, 0}, 1.0f);
     CHECK(p.all().size() == Particles::kCapacity);

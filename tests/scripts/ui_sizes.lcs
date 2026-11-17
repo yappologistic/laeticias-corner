@@ -1,0 +1,26 @@
+# Layout holds up at any window size: tooltips, journal, drawer, placing, and clicks on the
+# interface never reaching the map.
+move ui:undo
+wait 45
+shot shots/size_tooltip.png
+click ui:journal
+wait 15
+expect journal open
+click ui:build
+wait 12
+click ui:tab:homes
+wait 12
+shot shots/size_drawer.png
+click ui:tile:cottage
+wait 12
+expect tool place
+move @9,9
+wait 10
+shot shots/size_placing.png
+click ui:sound
+expect muted yes
+expect count cottage 0
+click ui:journal_close
+wait 15
+expect journal closed
+quit

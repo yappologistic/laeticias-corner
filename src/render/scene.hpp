@@ -60,13 +60,15 @@ private:
         int slot = 0;  // sprite variant or connect mask
         Rect screen{}; // world-px bounding box of the base sprite
         bool tree = false;
+        bool occludesGlow = false; // overlaps a glowing item, so the glow pass must draw it
     };
     enum class EntryKind : std::uint8_t { Static, Critter, Ghost, Fade };
     struct Entry {
         EntryKind kind;
         std::uint16_t index;
-        int after;   // dynamic entries: drawn after this many static entries
-        float depth; // tie-break among dynamic entries at the same slot
+        int after;                 // dynamic entries: drawn after this many static entries
+        float depth;               // tie-break among dynamic entries at the same slot
+        bool occludesGlow = false; // overlaps a glowing item
     };
     struct Fade {
         Item item;
@@ -88,8 +90,10 @@ private:
     void drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, bool silhouette,
                   float scaleY = 1.0f);
     void drawEntries(const FrameParams& p, bool silhouette);
+    [[nodiscard]] bool nearGlow(const Rect& r) const;
     void drawCritter(const Critter& c, const FrameParams& p, bool silhouette);
     void drawGround(const World& world);
+    void renderGroundCache(const World& world);
     void drawShadows(const FrameParams& p);
     void drawParticles(bool ground);
     void drawLighting(const FrameParams& p);
@@ -103,6 +107,11 @@ private:
     TexturePtr worldTarget_;
     TexturePtr lightTarget_;
     TexturePtr glowTarget_;
+    // Terrain and cliffs change rarely, so they are cached in one texture and redrawn only when
+    // the world or a terrain animation frame changes.
+    TexturePtr ground_;
+    Rect groundRect_{};
+    std::uint64_t groundKey_ = ~0ULL;
     int targetW_ = 0;
     int targetH_ = 0;
     Vec2 origin_; // world px of the target's top-left pixel
@@ -112,6 +121,7 @@ private:
     std::vector<Placed> placed_; // in draw order
     std::vector<Entry> entries_;
     std::vector<Light> lights_;
+    std::vector<Rect> glowRects_;
     std::vector<Vec2> chimneys_;
     std::vector<TilePos> water_;
     std::vector<float> popStart_; // per origin tile

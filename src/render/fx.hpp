@@ -18,6 +18,7 @@ struct Particle {
     float life = 1;
     float sway = 0; // leaves drift sideways with a per-particle phase
     Fx kind = Fx::Sparkle;
+    bool landed = false; // raindrops: falling streak (frame 0) until they land, then a splash
 };
 
 class Particles {
@@ -26,9 +27,8 @@ public:
 
     // Drops the particle silently when the pool is full.
     void spawn(Fx kind, Vec2 pos, Vec2 vel, float life, float sway = 0);
-    // Raindrops that land on water leave a ripple behind.
+    // Raindrops landing on water leave a ripple, on land a short splash; off the map, nothing.
     void update(float dt, const World& world);
-    void clear() { count_ = 0; }
     [[nodiscard]] std::span<const Particle> all() const { return {pool_.data(), count_}; }
 
 private:

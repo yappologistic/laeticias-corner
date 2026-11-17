@@ -23,7 +23,7 @@ bool strict() {
     return v != nullptr && std::string_view(v) == "1";
 }
 
-void reportMissing(const char* what, const std::vector<std::string>& missing) {
+void reportMissing(const std::string& what, const std::vector<std::string>& missing) {
     if (missing.empty()) {
         MESSAGE(what << ": complete");
         return;

@@ -1,0 +1,34 @@
+move ui:undo
+wait 45
+shot shots/tooltip_undo.png
+click ui:journal
+wait 15
+expect journal open
+shot shots/journal.png
+click ui:journal_close
+wait 15
+expect journal closed
+wheel 1 @6,6
+expect zoom 3
+key minus
+expect zoom 2
+click ui:zoom_in
+expect zoom 3
+key home
+expect zoom 2
+# Clicks on the interface never reach the map behind it.
+click ui:build
+wait 12
+click ui:tab:nature
+wait 12
+click ui:tile:oak
+wait 12
+click ui:sound
+expect muted yes
+click ui:sound
+expect muted no
+expect count oak 4
+key b
+wait 12
+shot shots/drawer_nature.png
+quit

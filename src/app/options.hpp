@@ -19,7 +19,8 @@ struct Options {
     std::optional<std::filesystem::path> saveDir;
     std::optional<std::filesystem::path> assetsDir;
     std::optional<std::uint64_t> seed;
-    int frames = 0; // 0 = run until quit
+    std::string renderer; // SDL render driver; empty = software when headless, else SDL's choice
+    int frames = 0;       // 0 = run until quit
     bool bench = false;
     bool help = false;
 };

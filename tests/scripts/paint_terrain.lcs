@@ -1,0 +1,38 @@
+# Painting by drag, the land/water rule, and undo of whole strokes.
+click ui:build
+wait 12
+click ui:tab:terrain
+wait 12
+shot shots/drawer_ground.png
+click ui:tile:water
+wait 12
+expect tool paint
+drag @2,2 @2,6
+expect tile @2,2 water
+expect tile @2,4 water
+expect tile @2,6 water
+# Tall grass at 2,7 and an oak at 2,9 refuse water underneath.
+drag @2,7 @2,10
+expect tile @2,7 grass
+expect tile @2,8 water
+expect tile @2,9 grass
+expect tile @2,10 water
+move @2,9
+wait 6
+shot shots/paint_refused.png
+key ctrl+z
+expect tile @2,8 grass
+expect tile @2,4 water
+key ctrl+z
+expect tile @2,4 meadow
+expect undo no
+click ui:build
+wait 12
+click ui:tile:path
+wait 12
+drag @5,8 @9,12
+expect tile @5,8 path
+expect tile @9,12 path
+wait 10
+shot shots/paint_path.png
+quit

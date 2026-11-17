@@ -67,6 +67,9 @@ Scene::Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat)
     chimneys_.reserve(64);
     water_.reserve(static_cast<std::size_t>(cat.mapW * cat.mapH));
     fades_.reserve(64);
+    const WorldBounds b = islandBounds(cat.mapW, cat.mapH);
+    constexpr float kPad = 8.0f;
+    groundRect_ = {b.x0 - kPad, b.y0 - kPad, b.x1 + kPad, b.y1 + kPad};
 }
 
 int Scene::slotFor(const World& world, const Item& item) const {
@@ -136,6 +139,14 @@ void Scene::rebuild(const World& world) {
         for (const auto j : next[i])
             if (--indegree[j] == 0 && !done[j]) ready.push({depth(j), j});
     }
+
+    glowRects_.clear();
+    for (const Placed& p : placed_)
+        if (!tables_.items[p.item.type].glow[static_cast<std::size_t>(p.slot)].empty())
+            glowRects_.push_back(p.screen);
+    for (Placed& p : placed_)
+        p.occludesGlow =
+            std::ranges::any_of(glowRects_, [&](const Rect& g) { return overlaps(g, p.screen); });
 
     lights_.clear();
     chimneys_.clear();
@@ -294,8 +305,8 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
 void Scene::buildOrder(const FrameParams& p) {
     entries_.clear();
     for (std::size_t i = 0; i < placed_.size(); ++i)
-        entries_.push_back(
-            {EntryKind::Static, static_cast<std::uint16_t>(i), static_cast<int>(i) * 2 + 1, 0});
+        entries_.push_back({EntryKind::Static, static_cast<std::uint16_t>(i),
+                            static_cast<int>(i) * 2 + 1, 0, false});
 
     const auto insert = [&](EntryKind kind, std::uint16_t index, const TileRect& tr,
                             const Rect& sr) {
@@ -304,7 +315,7 @@ void Scene::buildOrder(const FrameParams& p) {
             if (overlaps(placed_[i].screen, sr) && behind(tileRect(placed_[i].item), tr))
                 after = static_cast<int>(i) + 1;
         }
-        entries_.push_back({kind, index, after * 2, tr.x0 + tr.x1 + tr.y0 + tr.y1});
+        entries_.push_back({kind, index, after * 2, tr.x0 + tr.x1 + tr.y0 + tr.y1, nearGlow(sr)});
     };
 
     for (std::size_t i = 0; i < p.critters.size(); ++i) {
@@ -350,6 +361,10 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
     const Item* removeTarget =
         p.ghost.mode == Ghost::Mode::Remove ? world.itemAt(p.ghost.tile) : nullptr;
     for (const Entry& e : entries_) {
+        // The glow pass only needs what can hide an emissive pixel.
+        if (silhouette &&
+            !(e.kind == EntryKind::Static ? placed_[e.index].occludesGlow : e.occludesGlow))
+            continue;
         switch (e.kind) {
         case EntryKind::Static: {
             const Placed& pl = placed_[e.index];
@@ -382,33 +397,49 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
         }
     }
     // Flyers are always above the ground clutter.
-    for (const Critter& c : p.critters)
-        if (cat_.visitors[c.visitor].habitat == Habitat::Air) drawCritter(c, p, silhouette);
+    for (const Critter& c : p.critters) {
+        if (cat_.visitors[c.visitor].habitat != Habitat::Air) continue;
+        const Vec2 w = tileToWorld(c.pos.x, c.pos.y);
+        if (silhouette && !nearGlow({w.x - 8, w.y - c.hover - 12, w.x + 8, w.y - c.hover + 4}))
+            continue;
+        drawCritter(c, p, silhouette);
+    }
 }
 
-void Scene::drawGround(const World& world) {
+bool Scene::nearGlow(const Rect& r) const {
+    return std::ranges::any_of(glowRects_, [&](const Rect& g) { return overlaps(g, r); });
+}
+
+void Scene::renderGroundCache(const World& world) {
     const int w = world.width();
     const int h = world.height();
-    const auto visible = [&](int x, int y) {
-        const Vec2 a = tileToWorld(static_cast<float>(x), static_cast<float>(y));
-        return a.x + 24 > view_.x0 && a.x - 24 < view_.x1 && a.y + 48 > view_.y0 &&
-               a.y - 8 < view_.y1;
-    };
-    for (int y = 0; y < h; ++y) {
-        if (visible(w - 1, y))
-            sprite(tables_.cliffSE, tileToWorld(static_cast<float>(w - 1), static_cast<float>(y)),
-                   kWhite);
+    const auto gw = static_cast<int>(groundRect_.x1 - groundRect_.x0);
+    const auto gh = static_cast<int>(groundRect_.y1 - groundRect_.y0);
+    if (!ground_) {
+        ground_.reset(SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA8888,
+                                        SDL_TEXTUREACCESS_TARGET, gw, gh));
+        if (!ground_ || !SDL_SetTextureScaleMode(ground_.get(), SDL_SCALEMODE_NEAREST)) {
+            SDL_Log("render: ground cache: %s", SDL_GetError());
+            return;
+        }
     }
-    for (int x = 0; x < w; ++x) {
-        if (visible(x, h - 1))
-            sprite(tables_.cliffSW, tileToWorld(static_cast<float>(x), static_cast<float>(h - 1)),
-                   kWhite);
+    if (!SDL_SetRenderTarget(renderer_, ground_.get()) ||
+        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
+        SDL_Log("render: ground cache: %s", SDL_GetError());
     }
+    const Vec2 saved = origin_;
+    origin_ = {groundRect_.x0, groundRect_.y0};
+    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
+    for (int y = 0; y < h; ++y)
+        sprite(tables_.cliffSE, tileToWorld(static_cast<float>(w - 1), static_cast<float>(y)),
+               kWhite);
+    for (int x = 0; x < w; ++x)
+        sprite(tables_.cliffSW, tileToWorld(static_cast<float>(x), static_cast<float>(h - 1)),
+               kWhite);
     const auto& baseVariants = tables_.terrainBase[static_cast<std::size_t>(cat_.baseTerrain)];
     for (int s = 0; s <= w + h - 2; ++s) {
         for (int x = std::max(0, s - h + 1); x <= std::min(s, w - 1); ++x) {
             const int y = s - x;
-            if (!visible(x, y)) continue;
             const Vec2 a = tileToWorld(static_cast<float>(x), static_cast<float>(y));
             sprite(baseVariants[tileHash(x, y, 1) % baseVariants.size()], a, kWhite);
             const int t = world.terrainAt({x, y});
@@ -420,6 +451,27 @@ void Scene::drawGround(const World& world) {
             sprite(set.at(now_, def.fps), a, kWhite);
         }
     }
+    batch_.flush();
+    origin_ = saved;
+    if (!SDL_SetRenderTarget(renderer_, worldTarget_.get())) SDL_Log("render: %s", SDL_GetError());
+}
+
+void Scene::drawGround(const World& world) {
+    // The cache key folds in the current frame of every animated terrain.
+    std::uint64_t key = world.revision() * 1000003ULL;
+    for (const auto& t : cat_.terrain)
+        key = key * 31 + (t.fps > 0 ? static_cast<std::uint64_t>(now_ * t.fps) : 0);
+    if (key != groundKey_ || !ground_) {
+        batch_.flush();
+        renderGroundCache(world);
+        groundKey_ = key;
+    }
+    if (!ground_) return;
+    batch_.use(ground_.get(), SDL_BLENDMODE_BLEND);
+    batch_.quad(SDL_FRect{groundRect_.x0 - origin_.x, groundRect_.y0 - origin_.y,
+                          groundRect_.x1 - groundRect_.x0, groundRect_.y1 - groundRect_.y0},
+                {0, 0, 1, 1}, kWhite);
+    batch_.use(atlas_.texture(), SDL_BLENDMODE_BLEND);
 }
 
 void Scene::drawShadows(const FrameParams& p) {
@@ -481,7 +533,17 @@ void Scene::drawParticles(bool ground) {
             id = set.at(pt.age, 5.0f);
             alpha = std::min(1.0f, (1.0f - k) * 3.0f);
             break;
-        case Fx::Raindrop: alpha = 0.75f; break;
+        case Fx::Raindrop:
+            // Frame 0 is the falling streak; the remaining frames are the splash.
+            if (!pt.landed || set.frames.size() < 2) {
+                id = set.frames.front();
+            } else {
+                const auto n = set.frames.size() - 1;
+                id = set.frames[1 + std::min(n - 1,
+                                             static_cast<std::size_t>(k * static_cast<float>(n)))];
+            }
+            alpha = 0.8f;
+            break;
         default: break;
         }
         sprite(id, {std::round(pt.pos.x), std::round(pt.pos.y)}, {1, 1, 1, alpha});
@@ -498,7 +560,7 @@ void Scene::drawLighting(const FrameParams& p) {
     const float glow = p.light.glow;
     if (glow > 0.01f) {
         batch_.use(atlas_.texture(), SDL_BLENDMODE_ADD);
-        const SDL_FColor warm = scaled(kWarmLight, 0.85f * glow);
+        const SDL_FColor warm = scaled(kWarmLight, 0.6f * glow);
         for (const Light& l : lights_) {
             const float s = l.radius / 32.0f;
             sprite(atlas_.lightBlob(), l.pos, warm, false, l.pos, {s, s * 0.75f});

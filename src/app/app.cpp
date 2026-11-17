@@ -64,7 +64,6 @@ struct SdlSession {
             // Override any environment so automated runs can never reach the desktop or speakers.
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "offscreen", SDL_HINT_OVERRIDE);
             SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE);
-            SDL_SetHintWithPriority(SDL_HINT_RENDER_DRIVER, "software", SDL_HINT_OVERRIDE);
         }
         ok = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
         if (!ok && headless) {
@@ -148,7 +147,8 @@ private:
     void worldInput();
     void applyTool(TilePos t, bool first);
     void step(float dt);
-    void render(bool present);
+    void render();
+    void refreshScale();
     void updateAudio();
     void play(std::string_view file, float gain = tuning::kSfxLevel, bool jitter = false);
     void feedback(std::span<const Op> ops);
@@ -269,7 +269,10 @@ bool App::init() {
         SDL_Log("cannot create window: %s", SDL_GetError());
         return false;
     }
-    renderer_.reset(SDL_CreateRenderer(window_.get(), opts_.headless ? "software" : nullptr));
+    // Headless runs default to the software renderer so screenshots are reproducible anywhere.
+    const std::string driver =
+        !opts_.renderer.empty() ? opts_.renderer : (opts_.headless ? "software" : "");
+    renderer_.reset(SDL_CreateRenderer(window_.get(), driver.empty() ? nullptr : driver.c_str()));
     if (!renderer_) {
         SDL_Log("cannot create renderer: %s", SDL_GetError());
         return false;
@@ -833,7 +836,7 @@ void App::updateAudio() {
                                         std::min(1.0f, water / tuning::kWaterTilesForFullLevel));
 }
 
-void App::render(bool present) {
+void App::render() {
     FrameParams p;
     p.world = &*world_;
     p.critters = visitors_->critters();
@@ -852,7 +855,6 @@ void App::render(bool present) {
         hud_.draw(painter, model());
         uiBatch_->flush();
     }
-    if (present && !SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
 }
 
 // --- scripting --------------------------------------------------------------------------------
@@ -1155,7 +1157,7 @@ void App::runBench() {
         const Uint64 t1 = SDL_GetPerformanceCounter();
         hud_.update({}, model(), font_, screen(), uiScale_,
                     static_cast<float>(tuning::kStepSeconds));
-        render(false);
+        render();
         const Uint64 t2 = SDL_GetPerformanceCounter();
         calls = scene_->drawCalls() + uiBatch_->drawCalls();
         uiBatch_->resetStats();
@@ -1170,10 +1172,18 @@ void App::runBench() {
     std::printf("bench: %zu items, %zu critters, %dx%d, %d frames\n", w.items().size(),
                 visitors_->critters().size(), pixelW_, pixelH_, frames - 10);
     std::printf("bench: update avg %.3f ms, max %.3f ms\n", updSum / n, updMax);
-    std::printf(
-        "bench: draw   avg %.3f ms, max %.3f ms (software renderer, includes rasterisation)\n",
-        drawSum / n, drawMax);
+    std::printf("bench: draw   avg %.3f ms, max %.3f ms (%s renderer)\n", drawSum / n, drawMax,
+                SDL_GetRendererName(renderer_.get()));
     std::printf("bench: draw calls per frame %d\n", calls);
+}
+
+void App::refreshScale() {
+    const float display = SDL_GetWindowDisplayScale(window_.get());
+    const float fit = std::min(static_cast<float>(pixelW_) / theme::kReferenceW,
+                               static_cast<float>(pixelH_) / theme::kReferenceH);
+    // Quarter steps keep glyph re-rasterisation rare while a window is being resized.
+    uiScale_ = std::clamp(std::round(std::max(display > 0 ? display : 1.0f, fit) * 4.0f) / 4.0f,
+                          1.0f, theme::kMaxScale);
 }
 
 int App::run() {
@@ -1187,17 +1197,18 @@ int App::run() {
         }
         script_ = std::move(*parsed);
     }
-    uiScale_ = 1;
+    refreshScale();
+    if (!font_.build(renderer_.get(), uiScale_)) return 1;
     if (opts_.bench) {
         runBench();
         return 0;
     }
 
+    // Headless runs advance exactly one fixed step per frame so scripts are reproducible.
     const bool fixed = opts_.headless;
     Uint64 last = SDL_GetTicksNS();
     double acc = 0;
     while (running_) {
-        if (!script_.empty() && !scriptStep()) running_ = false;
         leftPressed_ = leftReleased_ = false;
         for (SDL_Event e; SDL_PollEvent(&e);) handleEvent(e);
 
@@ -1206,12 +1217,7 @@ int App::run() {
         last = now;
         const float frameDt = fixed ? static_cast<float>(tuning::kStepSeconds)
                                     : static_cast<float>(std::min(real, 0.1));
-
-        const float display = window_ ? SDL_GetWindowDisplayScale(window_.get()) : 1.0f;
-        const float fit = std::min(static_cast<float>(pixelW_) / theme::kReferenceW,
-                                   static_cast<float>(pixelH_) / theme::kReferenceH);
-        uiScale_ = std::clamp(std::round(std::max(display > 0 ? display : 1.0f, fit) * 4.0f) / 4.0f,
-                              1.0f, theme::kMaxScale);
+        refreshScale();
         if (!font_.build(renderer_.get(), uiScale_)) return 1;
 
         UiInput in;
@@ -1238,21 +1244,23 @@ int App::run() {
         }
         for (int i = 0; i < steps; ++i) step(static_cast<float>(tuning::kStepSeconds));
         updateAudio();
+        render();
 
-        const bool shotNow = scriptPos_ < script_.size() &&
-                             script_[scriptPos_].kind == ScriptCommand::Kind::Shot &&
-                             scriptWait_ == 0;
-        render(!shotNow);
-        if (shotNow) {
-            const auto& c = script_[scriptPos_];
-            if (!shot(c.args[0]))
-                exitCode_ = 1;
-            else
-                SDL_Log("script: saved %s", c.args[0].c_str());
-            if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
-            ++scriptPos_;
-            scriptPhase_ = 0;
+        // The script runs after the frame is drawn: shots capture it, and the input it queues is
+        // handled at the start of the next frame, exactly like real events.
+        if (!script_.empty()) {
+            if (scriptWait_ == 0 && scriptPos_ < script_.size() &&
+                script_[scriptPos_].kind == ScriptCommand::Kind::Shot) {
+                const auto& file = script_[scriptPos_].args[0];
+                if (shot(file))
+                    SDL_Log("script: saved %s", file.c_str());
+                else
+                    exitCode_ = 1;
+                ++scriptPos_;
+            }
+            if (!scriptStep()) running_ = false;
         }
+        if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
         ++frame_;
         if (opts_.frames > 0 && frame_ >= opts_.frames) running_ = false;
     }

@@ -1,0 +1,16 @@
+# First half: change things, then quit (which saves).
+click ui:build
+wait 12
+click ui:tab:homes
+wait 12
+click ui:tile:coop
+wait 12
+click @15,15
+key escape
+expect count coop 1
+set clock dusk
+set rain on
+key m
+wait 150
+expect seen duck
+quit

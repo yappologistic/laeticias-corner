@@ -23,6 +23,7 @@ std::string_view usage() {
            "  --assets DIR        asset directory (env LAETICIA_ASSETS_DIR)\n"
            "  --seed N            random seed (default: time, or 1 when headless)\n"
            "  --frames N          quit after N frames\n"
+           "  --renderer NAME     SDL render driver (headless default: software)\n"
            "  --bench             fill the map and report frame timings (implies --headless)\n"
            "  --help              show this text\n";
 }
@@ -67,6 +68,10 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             std::uint64_t seed = 0;
             if (!v || !parseNumber(*v, seed)) return std::unexpected("--seed expects a number");
             o.seed = seed;
+        } else if (a == "--renderer") {
+            const auto v = value();
+            if (!v || v->empty()) return std::unexpected("--renderer expects a driver name");
+            o.renderer = std::string(*v);
         } else if (a == "--frames") {
             const auto v = value();
             if (!v || !parseNumber(*v, o.frames) || o.frames < 0)

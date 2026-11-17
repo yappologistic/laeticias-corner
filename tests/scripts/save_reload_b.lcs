@@ -1,0 +1,11 @@
+# Second half: everything from the first run is restored.
+expect count coop 1
+expect item @15,15 coop
+expect rain on
+expect muted yes
+expect phase dusk
+expect seen duck
+expect undo no
+wait 30
+shot shots/reloaded.png
+quit
