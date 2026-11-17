@@ -146,6 +146,41 @@ rests them), and `perch` may list one height per variant; a season may set `grow
 rest). `tile.level`, `sets`, `world` and terrain `faces`/`under` are for the world
 (`docs/design/world-tech.md` §6.2) and ignored by the engine until it builds it.
 
+Life (`docs/design/living-world.md` §2–§6; read by `src/core/actor_data.cpp`, which names the
+entry it refuses):
+
+- **Actor kinds.** Every `visitors[]` entry is read as an actor kind (§2.5: `activities` become a
+  looping `pick`, `cycle` a sequence, `home` the item it walks into when it leaves and comes out
+  of, `hide_in_rain` a rain interrupt, `line` a line formation); a visitor may set
+  `watches_pointer` (it turns to the hovered tile while idle). The `resident` is a kind too:
+  `enabled` (false leaves her out entirely; her wishes then come by day from the tray), `home`
+  (the item she lives in, the first in the list), `roles` (`carry`, `rain`, `wave`: which
+  animations mean walking with goods, walking in rain, waving), `schedule` (game hours `hh:mm`,
+  `hour = 6 + 24 t`), `routines` and `interrupts` (`when` rain with an optional `delay`, or the
+  events `placed_nearby` and `harvest`; `chance`, `cooldown`, `priority`). Everything about who
+  she is (name, sprites under `critter/<id>/`, portrait `ui/portrait/<id>`, lines, day) is data.
+- **Routine steps** are those of §2.2 (`go`, `use`, `take`, `put`, `wander`, `wait`, `enter`,
+  `exit`, `follow` the resident (`"on": true`: on her hat), `say`, `emit`, `pick`, `routine`,
+  `each`, `if`) with `dur`, `until` (`hour`, `phase`, `weather`), `every` + `call_anim`, `effect`
+  (`water_bed`, `call_hens`, `toss_pebble`, `cook`, `react_line`) and `as` (the activity a nook's
+  `prefer` weighs). Targets: `item`/`items`/`tag` (+ `slot` or `spot`), `slot_kind` (+ `tag`),
+  `home`, `here`, `each`, `bank`, `shore`, `resident`, `bedroll`, `poi` (`stroll`, `new_items`,
+  `visitors`, `nooks`) and `nook` (beside an instance of that nook), with `within` and `near`.
+  Conditions gain the actor terms `home` and `harvested_today`. A routine runs once per schedule
+  block unless `loop`; a nook's `routine` effect must name one of her routines.
+- **Slots** on items: `id`, `kind`, `where` (`on`, `beside`, `tile`), `cap`, `facing` (`rotation`,
+  `item`, `out`, `free`), and per variant `tiles`, `spots` (tile coordinates from the origin
+  tile's top corner), `lift` (px) and `face` (`+x`, `+y`, `-x`, `-y`), every variant listed. A
+  target with `spot: "beside"` and no slot named means the free tiles around the item. Terrain
+  may be `paved` (walkers prefer it); items tagged `crossing` let walkers over water.
+- **Goods** (`goods[]`: `id`, `name`), **seasons' `climate`** (`showers` and `clouds` expected per
+  weather period, usual `wind` 0..1) and **events** (`events[]`: `id`, `show` (the engine's
+  presentation: `rainbow`, `shooting_star`, `owl_call`, `rustle`, `gust`, `fish_jump`,
+  `frog_chorus`, `chorus`, `firefly_sync`, `smoke`, `season`), `trigger` (`window` with `mean` or
+  `every`, `hours`, `rain`, `rain_stop` with `min_rain`, `placed` with `near: {tag, within}`,
+  `reactive`, `cook`, `season`), filters `time`, `seasons`, `weather`, `when`, and `duration`,
+  `cooldown`, `daily`, `sfx`, `gain`, `who`).
+
 ### Projection
 
 2:1 isometric. The tile cell size comes from `tile` in the catalog (64×32 px at 1×; nothing in
@@ -180,7 +215,7 @@ visitors and effects it is the ground contact point. Keys:
 | `ui/tile_ok`, `ui/tile_bad` | Tile highlight diamonds for the placement cursor |
 | `<any key>@<season>` | Optional look of any sprite for one season; the plain key is the fallback |
 | `item/<id>/base/<variant>/g<stage>/f<frame>` | Growth stage of an item with `growth` (looked up: stage and season, stage, season, plain) |
-| `critter/<id>/<anim>/f<frame>` (plain) | Extra animations without `_front`/`_back` (front frames, mirrored) |
+| `critter/<id>/<anim>/f<frame>` (plain) | Extra animations without `_front`/`_back` (front frames, mirrored). Any animation an actor kind names is looked up as `<anim>_front`/`_back`, else plain; a missing one falls back to idle (role animations quietly) |
 | `critter/laeticia/…`, `ui/portrait/laeticia` | The resident on the critter scheme; her 28×28 portrait for wish cards |
 | `wild/thicket/v<n>` | Brambles on wild land, anchored like terrain |
 | `edge/fall_se/f<n>`, `edge/fall_sw/f<n>` | Water falling over the rim, anchored and drawn like the cliff faces |
@@ -266,12 +301,33 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   Remove deletes; everything is undoable (`Ctrl+Z` / `Ctrl+Shift+Z`), drags as one step. The
   drawer lists only unlocked pieces (lock tile "+N" while a tab has more; dots on new ones).
 - Wishes: the first offerable wish in catalog order is offered after 30 s of play with none open,
-  75 s otherwise, at most three, from Laeticia (not at night) or a present visitor. A goal that
+  75 s otherwise, at most three, from Laeticia (when she is about: not asleep or indoors; her
+  bubble and the card arrive together) or a present visitor. A goal that
   holds for 1.5 s grants the wish and its unlocks, frame or clue; "Not now" snoozes it for 600 s.
   Nothing is ever taken away.
 - Visitors come by `needs` and season; rare ones by their recipe after it holds 20–60 s, staying
   180–360 s. Nooks are recognised from their recipes and kept in the sketchbook (`J`), which also
   holds the wishes and the visitors (rarer ones as silhouettes with hints).
+- Life: everything that moves is an actor (`src/core/actors.hpp`): visitors use what is built
+  (the cat naps on seats or by the fire and watches the pointer, hens peck by the beds and walk
+  into the coop at night, ducks swim in a line and sleep on the bank, bees go between the hive
+  and its flowers, butterflies settle on flowers and on her hat, rare visitors as their
+  activities say) with slots reserved so nobody shares a seat; they step off ground that changes
+  under them. With an empty hand, hovering names an actor and clicking pets it (heart, voice,
+  4 s cooldown; she answers with a line, 8 s); placements nearby startle the timid. Laeticia
+  lives her day from the catalog (waters the beds once a day, feeds the hens, sits and reads,
+  strolls and sketches, warms at the fire, goes home or to her bedroll), shelters from rain or
+  walks with an umbrella, carries a harvest home (the chimney puffs for 90 s), turns to look at
+  new things, walks over to a new nook or a new visitor, and speaks in small bubbles, one at a
+  time, paced, idle chatter only when the profile's `chatter` is chatty.
+- Weather and wind: one wind drifts slowly; gusts sway trees and grass as they pass; clouds and
+  showers drift across as cells (cloud shadows, rain only under a shower, wet ground darkening).
+  `N` cycles the weather: as it comes, rain here, clear skies here. The corner's delights run as
+  events: rainbow after a long shower by day, shooting stars, the owl's distant call, rustling
+  trees, fish jumping, the frog's chorus in rain, dawn and after-rain birdsong, fireflies in step,
+  cooking smoke, the season's turn; petals float on water, moths circle lamps at night, sleepers
+  breathe z's, waterfalls fall at the rims with mist and their own sound. Water, the waterfall
+  and every voice are placed in the stereo field by where they are on screen.
 - Time: the clock cycles day → dusk → night → dawn and can be pinned; a calendar day begins at
   midnight while it runs, three days a season; the season can be pinned from the title card.
   Seasons change looks, grade, ambience, falling things and visitors; winter rain is snow. Veggie
@@ -305,7 +361,7 @@ slow at big sizes); they finish in about two minutes. Coverage is strict: missin
 fails (shadow layers are optional). The `bench` tests use the windowless `opengl` driver, assert
 the frame budget, and are skipped (exit 77) where no GPU renderer can be created.
 
-Headless runs (never a visible window or sound; `--script`, `--bench` and `--audio-out` imply
+Headless runs (never a visible window or sound; `--script`, `--bench`, `--soak` and `--audio-out` imply
 `--headless`):
 
 ```sh
@@ -319,9 +375,12 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
 
 - Script language: documented at the top of `src/app/script.hpp`; scripted tests live in
   `tests/scripts/` and write screenshots to `build/<preset>/shots/`. Besides input it can hold
-  keys and buttons (`press`, `keydown` ...), set state (clock, season, day, land stage, unlocks,
-  play time and growth stepped forward) and assert state and image statistics. The first ten
-  minutes of a new world run end to end in `first_ten.lcs`.
+  keys and buttons (`press`, `keydown` ...), set state (clock and time, season, day, land stage,
+  unlocks, weather, a shower, the camera, play time and growth stepped forward), place and paint
+  directly, point at actors (`actor:KIND`), simulate without drawing (`fast`), wait for a state
+  (`waitfor`) and assert state, actors, events, the liveliness rule (`expect lively`) and image
+  statistics. The first ten minutes of a new world run end to end in `first_ten.lcs`; behaviours
+  each have a script; `determinism_check` compares two runs byte for byte.
 - Save format: version 3, documented at the top of `src/core/save.hpp` (versioned, tolerant;
   versions 1 and 2 migrate on launch). A save directory holds `profile.json`,
   `worlds/<slug>/world.json` with `thumb.png`, and `corner.v1.json` after a migration.
@@ -333,8 +392,13 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
 - `--bench` fills the map (dense around the centre, sparse elsewhere), times every condition of
   the progress loop at once, runs at night in the rain with the drawer and sketchbook open, and
   reports update/draw times (average, 95th percentile, worst) at 1x and at the half-scale
-  overview, plus memory; `--budget-ms` makes it exit 3 when a frame is over that budget or the
-  conditions take over 1 ms.
+  overview, plus memory; then a busy corner (every visitor kind at its number) and a crowd of 400
+  actors, reporting actors, simulation and frame times (average, 95th, 99th percentile, worst).
+  `--budget-ms` makes it exit 3 when a frame averages over that budget, the conditions take
+  over 1 ms, simulation averages over 0.6 ms, the busy frames' 99th percentile is over 8.3 ms or
+  the worst over 16.6 ms.
+- `--soak SECONDS` runs that much busy play fast (actors, events, weather, the calendar turning,
+  a frame drawn now and then) and exits 3 if memory grows after the first quarter.
 - Interactive play: `$B` with no flags. The window opens on a share of the display it is on and
   remembers its size, place and fullscreen state (`window.json` beside the save). Do not run it
   from automation.
