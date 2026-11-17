@@ -408,12 +408,26 @@ class Layout:
                 return None
             if self.OCC[loc] >= 0:
                 other = self.items[self.OCC[loc]]
+                if (cc, rr_) in self.walk_tiles(other):
+                    continue  # furniture on a landmark's walk tile (world-tech §1.13)
                 self._err("V2", f"{name or item} overlaps {other.name or other.id} "
                           f"(placed at {other.src})", src, at=(cc, rr_))
                 return None
         self.items.append(p)
         self._occupy(p)
         return p
+
+    def walk_tiles(self, p: Placed) -> set[tuple[int, int]]:
+        """World plan tiles of a placed landmark that its geometry file declares walkable."""
+        if not self.cat.items[p.id].landmark:
+            return set()
+        ne_c = p.c + p.pw - 1
+        return {(ne_c - dy, p.r + dx) for dx, dy in self.cat.walk_tiles(p.id, p.k)}
+
+    def remove(self, p: Placed) -> None:
+        """Take a placed item out again (a layout thinning its own fillers)."""
+        if not p.removed:
+            self._remove(p)
 
     def _try_place(self, item: str, c: int, r: int, k: int, face: str | None, src: str,
                    name: str | None = None) -> Placed | None:
@@ -549,9 +563,9 @@ class Layout:
         self.streets.append(s)
         return s
 
-    def stair(self, item: str, *, rect, face: str) -> Placed | None:
+    def stair(self, item: str, *, rect, face: str, name: str | None = None) -> Placed | None:
         """A stair or ramp: its foot is on the `face` side, its head on the opposite side."""
-        p = self.place(item, rect=rect, face=face)
+        p = self.place(item, rect=rect, face=face, name=name)
         if p is None:
             return None
         dc, dr = PLAN_STEP[face]
@@ -560,13 +574,32 @@ class Layout:
         if dc:
             foot = (p.c - 1, mid_r) if dc < 0 else (p.c + p.pw, mid_r)
             head = (p.c + p.pw, mid_r) if dc < 0 else (p.c - 1, mid_r)
+            span = [(foot[0], rr) for rr in range(p.r, p.r + p.ph)], \
+                [(head[0], rr) for rr in range(p.r, p.r + p.ph)]
         else:
             foot = (mid_c, p.r - 1) if dr < 0 else (mid_c, p.r + p.ph)
             head = (mid_c, p.r + p.ph) if dr < 0 else (mid_c, p.r - 1)
+            span = [(cc, foot[1]) for cc in range(p.c, p.c + p.pw)], \
+                [(cc, head[1]) for cc in range(p.c, p.c + p.pw)]
+        foot, head = self._landing(foot, span[0]), self._landing(head, span[1])
         p.slots.setdefault("foot", [(foot[0], foot[1], None)])
         p.slots.setdefault("head", [(head[0], head[1], None)])
         self.stair_edges.append((p, foot, head))
         return p
+
+    def _landing(self, tile, edge) -> tuple[int, int]:
+        """Where a stair ends inside a landmark (a portico, a platform), the landing is the
+        landmark's walk tile along the stair's end nearest its middle."""
+        loc = self._local(*tile)
+        if loc is None or self.OCC[loc] < 0:
+            return tile
+        walk = self.walk_tiles(self.items[self.OCC[loc]])
+        if not walk or tile in walk:
+            return tile
+        on_edge = [t for t in edge if t in walk]
+        if not on_edge:
+            return tile
+        return min(on_edge, key=lambda t: (abs(t[0] - tile[0]) + abs(t[1] - tile[1]), t))
 
     def river(self, points: list[tuple[int, int]], *, width: int, terrain: str = "world.river",
               banks: dict[str, float] | None = None, seed: str = "") -> None:

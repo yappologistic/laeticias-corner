@@ -48,6 +48,22 @@ def _rect(pl: PlanLayer):
     return (pl.c0, pl.r0, pl.c0 + pl.w - 1, pl.r0 + pl.h - 1)
 
 
+def item_walk_tiles(cat: Catalog, it) -> set[tuple[int, int]]:
+    """Plan tiles of a placed item that its geometry declares walkable (landmarks only)."""
+    return {(it.c + it.pw - 1 - dy, it.r + dx) for dx, dy in cat.walk_tiles(it.id, it.k)}
+
+
+def no_geometry(world: World, cat: Catalog) -> np.ndarray:
+    """Tiles under landmarks the art set has not emitted geometry for yet: whether walkers may
+    enter them is unknown until it does, so V5/V7 report such tiles as warnings."""
+    out = np.zeros((ROWS, COLS), dtype=bool)
+    for _, it in live_items(world):
+        d = cat.items.get(it.id)
+        if d is not None and d.landmark and d.rise == 0 and it.id not in cat.geom:
+            out[it.r:it.r + it.ph, it.c:it.c + it.pw] = True
+    return out
+
+
 def walk_map(world: World, cat: Catalog) -> tuple[np.ndarray, np.ndarray]:
     """(walkable, stair) masks over the whole world, plan orientation. `stair` marks tiles where
     a walker may change level: stairs and ramps, and decks on water (jetties, bridges, fords),
@@ -131,6 +147,8 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
     # V2: overlaps within the layer; items of lower layers dropped by this one.
     for a, b, at in world.overlaps:
         if b.layer == name or a.layer == name:
+            if at in item_walk_tiles(cat, a) or at in item_walk_tiles(cat, b):
+                continue  # furniture on a landmark's walk tile
             issue("V2", f"{b.id} overlaps {a.id} ({a.layer})", at, isrc(b))
     for it, by in world.dropped:
         if by == name:
@@ -201,8 +219,19 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                           level="error" if complete else "warning")
                     continue
                 if p.rect.bounds() != wr:
-                    issue("V4", f"{lid}: placed at local {_local(p.rect.bounds(), origin)}, "
-                          f"{mfile}:{m.line} says {m.rect}", (p.c, p.r), p.src)
+                    bw, bh = wr[2] - wr[0] + 1, wr[3] - wr[1] + 1
+                    holds = (p.c <= wr[0] and p.r <= wr[1] and p.c + p.pw - 1 >= wr[2]
+                             and p.r + p.ph - 1 >= wr[3])
+                    if holds and (p.pw, p.ph) != (bw, bh):
+                        # The set models attached parts (a portico, a stair) with the building:
+                        # the placement is right if the bible's rect lies inside the footprint.
+                        issue("V4", f"{lid}: the set catalog footprint {p.pw} x {p.ph} differs "
+                              f"from {mfile}:{m.line} ({bw} x {bh}); placed at local "
+                              f"{_local(p.rect.bounds(), origin)}, which holds {m.rect}",
+                              (p.c, p.r), p.src, level="warning")
+                    else:
+                        issue("V4", f"{lid}: placed at local {_local(p.rect.bounds(), origin)}, "
+                              f"{mfile}:{m.line} says {m.rect}", (p.c, p.r), p.src)
                 if m.level is not None:
                     got = int(lv[p.r, p.c]) - tg.layout.base_level
                     if not (m.level[0] <= got <= m.level[1]):
@@ -211,6 +240,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                                                   else ""), (p.c, p.r), p.src)
 
     walk, stair = walk_map(world, cat)
+    unknown = no_geometry(world, cat)
     g = tg.graph
     # V5: every graph edge is walkable along its course, levels change only on stairs/ramps.
     graph_tiles: set[tuple[int, int]] = set()
@@ -228,8 +258,12 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             graph_tiles.add((c, r))
             if not walk[r, c]:
                 t = world.terrain_id(c, r)
-                issue("V5", f"{e.kind} {e.a} - {e.b} crosses a tile walkers cannot enter "
-                      f"({t}{', impassable' if world.L[r, c] & 0x40 else ''})", (c, r))
+                if unknown[r, c]:
+                    issue("V5", f"{e.kind} {e.a} - {e.b} enters a landmark without geometry "
+                          "yet (walk tiles unknown)", (c, r), level="warning")
+                else:
+                    issue("V5", f"{e.kind} {e.a} - {e.b} crosses a tile walkers cannot enter "
+                          f"({t}{', impassable' if world.L[r, c] & 0x40 else ''})", (c, r))
                 break
             if prev and lv[r, c] != lv[prev[1], prev[0]] and not (stair[r, c] or
                                                                    stair[prev[1], prev[0]]):
@@ -282,7 +316,13 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                 issue("V6", f"portal {n.id!r}: layer {other!r} is not built yet", at,
                       level="warning")
             elif og.node(n.id) is None:
-                issue("V6", f"portal {n.id!r} is missing from layer {other!r}'s graph", at)
+                planned = [rid for rid, rt in P.ROUTES.items() if not rt.get("build")
+                           and f"{name}:{n.id}" in rt["points"]] if other == "base" else []
+                if planned:
+                    issue("V6", f"portal {n.id!r}: the base's route {planned[0]!r} is planned, "
+                          "not built yet", at, level="warning")
+                else:
+                    issue("V6", f"portal {n.id!r} is missing from layer {other!r}'s graph", at)
     dests = sum(1 for n in g.nodes if n.kind == "dest")
     if dests > MAX_DEST:
         issue("V10", f"{dests} dest nodes; at most {MAX_DEST} per region")
@@ -298,14 +338,40 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                     spots.append((p, sid, c, r))
             if p.door and not p.slots:
                 spots.append((p, "door", *p.door))
+    marks = np.full((ROWS, COLS), -1, dtype=np.int32)   # which landmark covers a tile
+    for i, it in live_items(world):
+        d = cat.items.get(it.id)
+        if d is not None and d.landmark and d.rise == 0:
+            marks[it.r:it.r + it.ph, it.c:it.c + it.pw] = i
     for p, sid, c, r in spots:
-        if not (0 <= c < COLS and 0 <= r < ROWS) or not walk[r, c]:
-            issue("V7", f"{p.name or p.id}: slot {sid!r} is on a tile walkers cannot enter",
-                  (c, r), p.src)
+        inside = 0 <= c < COLS and 0 <= r < ROWS
+        own = p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph
+        start = [(c, r)]
+        if inside and not walk[r, c] and own and not cat.items[p.id].landmark:
+            # A seat, a work yard under a shed: used from the walkable tile beside it.
+            start = [(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                     if 0 <= c + dc < COLS and 0 <= r + dr < ROWS and walk[r + dr, c + dc]]
+        art = inside and marks[r, c] >= 0 and not cat.items[p.id].rise
+        if not inside or not start or not walk[start[0][1], start[0][0]]:
+            if inside and unknown[r, c]:
+                issue("V7", f"{p.name or p.id}: slot {sid!r} is inside a landmark without "
+                      "geometry yet (walk tiles unknown)", (c, r), p.src, level="warning")
+            elif art:
+                issue("V7", f"{p.name or p.id}: slot {sid!r} is inside "
+                      f"{world.items[marks[r, c]].id} on a tile its geometry does not make "
+                      "walkable (art geometry)", (c, r), p.src, level="warning")
+            else:
+                issue("V7", f"{p.name or p.id}: slot {sid!r} is on a tile walkers cannot enter",
+                      (c, r), p.src)
             continue
-        if not _near_graph((c, r), graph_tiles, walk, lv, stair):
-            issue("V7", f"{p.name or p.id}: slot {sid!r} is not within {SLOT_REACH} walking "
-                  "tiles of the path graph", (c, r), p.src)
+        if not any(_near_graph(t, graph_tiles, walk, lv, stair) for t in start):
+            if art:
+                issue("V7", f"{p.name or p.id}: slot {sid!r} is enclosed inside "
+                      f"{world.items[marks[r, c]].id} (art geometry: no walk path out)",
+                      (c, r), p.src, level="warning")
+            else:
+                issue("V7", f"{p.name or p.id}: slot {sid!r} is not within {SLOT_REACH} walking "
+                      "tiles of the path graph", (c, r), p.src)
 
     # V8: base terrains never touch; seas at level 0; rivers never run uphill.
     T = world.T[sl].astype(np.int64)

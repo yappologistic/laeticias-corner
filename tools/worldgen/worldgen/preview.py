@@ -362,6 +362,21 @@ class IsoRenderer:
             self.missing.add(item_id)
         return s
 
+    def piece_sprites(self, item_id: str, k: int):
+        """[(piece rect (dx, dy, w, h), sprite)] of a split landmark (world-tech §1.3, §1.11),
+        or None when the item is not split or a piece has no sprite."""
+        rects = self.cat.geom.get(item_id, {}).get(f"r{k}", {}).get("pieces")
+        if not rects:
+            return None
+        out = []
+        for i, rc in enumerate(rects):
+            s = self.atlas.get(f"item/{item_id}/base/r{k}/p{i}/f0")
+            if s is None:
+                self.missing.add(item_id)
+                return None
+            out.append((tuple(rc), s))
+        return out
+
     def placeholder(self, item_id: str, fx: int, fy: int) -> tuple[Image.Image, int, int]:
         """A grey box of the catalog height over the footprint, with the id written on it."""
         key = (item_id, fx, fy)
@@ -415,6 +430,7 @@ class IsoRenderer:
         c0, r0, c1, r1 = rect
         c0, r0 = max(c0, 0), max(r0, 0)
         c1, r1 = min(c1, COLS - 1), min(r1, ROWS - 1)
+        rect = (c0, r0, c1, r1)  # a view may reach past the world's edge: draw what exists
         hw, hh, lp = self.hw, self.hh, self.lp
         tiles = [(c, r) for r in range(r0, r1 + 1) for c in range(c0, c1 + 1)]
         txs = [r for c, r in tiles]
@@ -491,13 +507,21 @@ class IsoRenderer:
             ax, ay = screen(it.c + it.pw - 1, it.r, lv)
             mask = self._connect_mask(it) if self.cat.items.get(it.id) and \
                 self.cat.items[it.id].layout == "connect" else 0
+            sh = self.item_sprite(it.id, it.k, mask, "shadow")
+            if sh is not None:
+                shadows.append((ax - sh[1], ay - sh[2], sh[0]))
+            pieces = self.piece_sprites(it.id, it.k)
+            if pieces:
+                # A split landmark: each piece sorts by its own rect; all share the anchor.
+                for (dx, dy, pw_, ph_), (im, ox, oy) in pieces:
+                    box = (ax - ox, ay - oy, ax - ox + im.width, ay - oy + im.height)
+                    drawn.append(((tx0 + dx, ty0 + dy, tx0 + dx + pw_, ty0 + dy + ph_), box,
+                                  (ax - ox, ay - oy, im)))
+                continue
             spr = self.item_sprite(it.id, it.k, mask)
             if spr is None:
                 spr = self.placeholder(it.id, fx, fy)
             im, ox, oy = spr
-            sh = self.item_sprite(it.id, it.k, mask, "shadow")
-            if sh is not None:
-                shadows.append((ax - sh[1], ay - sh[2], sh[0]))
             box = (ax - ox, ay - oy, ax - ox + im.width, ay - oy + im.height)
             drawn.append(((tx0, ty0, tx0 + fx, ty0 + fy), box, (ax - ox, ay - oy, im)))
         # Raised tiles that hide an item behind them join the depth sort (world-tech §4.3).

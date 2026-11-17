@@ -170,11 +170,18 @@ def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
     for nid, (at, kind, src) in L.nodes.items():
         named[tuple(at)] = (nid, kind)
         want.append((tuple(at), nid))
+    # A landing shared by two stairs (the head of one is the foot of the next) is joined by the
+    # stair edges themselves; snapping it to the nearest street would skip the flights.
+    ends: dict[tuple[int, int], int] = {}
+    for p, foot, head in L.stair_edges:
+        for tile in (foot, head):
+            ends[tuple(tile)] = ends.get(tuple(tile), 0) + 1
     for p, foot, head in L.stair_edges:
         base = p.name or f"{p.id}@{p.c},{p.r}"
         for tile, tag in ((foot, "foot"), (head, "head")):
             named.setdefault(tuple(tile), (f"{base}.{tag}", None))
-            want.append((tuple(tile), named[tuple(tile)][0]))
+            if ends[tuple(tile)] == 1:
+                want.append((tuple(tile), named[tuple(tile)][0]))
         extra.append((tuple(foot), tuple(head), "stair"))
     for p, slot, nid, src in L.links:
         spots = p.slots.get(slot)

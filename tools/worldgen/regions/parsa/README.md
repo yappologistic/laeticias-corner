@@ -1,0 +1,48 @@
+# Layer `parsa`
+
+Region: `parsa` (Pārsa with Naqsh-e Rostam, world C 1136..1279, R 304..447, base level 4),
+`docs/design/cities/persepolis.md`. Local coordinates and levels are the bible's.
+
+Status: first version.
+
+Built, in order:
+- Ground and elevation: the Marvdasht plain (level 0); Kuh-e Raḥmat behind the terrace (slope
+  foot 7 with the fortification, limestone rising to 11 at the east edge, impassable above the
+  wall), foothills north and south of the terrace; the terrace c 56..119, r 22..118 at 6 with
+  `parsa.ashlar` faces, platforms for the Apadāna and Tripylon (7), the residential wing (7), the
+  Tačara (8) and the Hadiš (9); quarry floor, cistern and a shrine ledge cut into the slope.
+- Ways: the Royal Road (portal `royal_road_w`) into the gravel forecourt; the Pasargadae road
+  past the glazed-brick gate, along the paradise wall and over the river by a ford (portal
+  `pasargadae_n`); the town spur to the road station; terrace streets (landing → Gate → walled
+  processional road → Hall forecourt; the street east of the Apadāna split round the Tripylon;
+  courts north of the Hadiš and south of the Tačara; service streets; the haul road from the
+  quarry through the wall and down a ramp to the masons' yard); the camp road; tracks.
+- Water: the river along the north edge with willows and reeds, the canal from c 60 into the
+  paradise, the garden's channels with basins and sluices, the channel round the stairway and
+  along the terrace foot, the town canal, field canals, the qanat line of shaft mounds.
+- Landmarks at the bible's coordinates (V4), stairs as items with their levels checked (V3).
+- Districts and fillers: paradise with the player's plot, forecourt, town (upper town, workers'
+  quarter, craft quarter with brickfield, kilns, weavers, dyers, goldsmith, granary yard,
+  Elamite shrine), village with threshing floors, fields, royal stables, station and caravan
+  yard, cavalry and archery ground, the delegations' camp, southern pasture with folds, terrace
+  detail (guards' braziers, banners, fire altars, incense, building-site stone, Hadiš kitchens,
+  the archive corner), Naqsh-e Rostam with the Ka'ba and a fire altar.
+
+Deviations from the bible (and why):
+- `hall_100` is placed c 93..108, r 48..67: the set models the north portico (bible r 48..51)
+  with the hall, so its footprint is 16 × 20 (V4 reports it as a warning).
+- The south stair (rise 6) has no item in the set; it is built from six `parsa.stair_relief`
+  flights climbing west along the south face (c 80..91, r 119..120), each landing a level higher,
+  because `south_stores` (c 80..99, r 113..118) covers the bible's spot (c 84..88, r 118..121).
+- The channel "along the terrace foot (c 50..51)" cannot pass the great stairway (c 49..55,
+  r 37..54); it leaves the paradise at its south-east corner, runs round the stairway's west
+  side (c 47, slab bridges in front of the flights) and follows c 50..51 from r 55 down.
+- The town spur runs at c 21..22 (bible c 22), leaving c 24 to the town canal beside it.
+- The Apadāna's east stair is placed without a path (its portico is closed in the model); a
+  short relief stair gives the west portico access from the terrace edge.
+- Hadiš: only the west stair exists in the set (no north stair).
+- The wall gates and openings in walls are gaps (`parsa.p_wall_gate` is not walkable).
+
+Waiting for art: walk tiles and slots come from `assets/atlas/parsa.geom.json`; until it exists,
+paths into landmarks are warnings (V5/V7), and the throne is placed only once the Apadāna's
+geometry declares its tile walkable.
