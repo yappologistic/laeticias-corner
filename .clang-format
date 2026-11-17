@@ -1,0 +1,25 @@
+BasedOnStyle: LLVM
+Standard: c++20
+IndentWidth: 4
+ColumnLimit: 100
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
+BreakTemplateDeclarations: Yes
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: '^<SDL3/'
+    Priority: 2
+  - Regex: '^<(nlohmann|doctest|stb_)'
+    Priority: 3
+  - Regex: '^<'
+    Priority: 4
+PointerAlignment: Left
+SpaceBeforeCpp11BracedList: false
+Cpp11BracedListStyle: true
