@@ -169,6 +169,8 @@ R  0 +----+---------+---------+----+--------+--------+-------+---+--------+-----
 | `ionian_sea` | Ionian Sea (time seam) | C 408..471, R 180..447 | 0 | seam |
 | `greece` | Mainland Greece: Epirus, Phocis, the Gulf of Corinth, the Peloponnese, Megara | land C 448..575, R 150..447 | 1–7 | 432 BC |
 | `arcadia` | Mountains of Arcadia (scenic) | C 490..550, R 330..360 | 8–11 | 432 BC |
+| `attica_north` | Northern Attica: Parnes, olive country, the Academy, Eleusis | C 556..735, R 150..219 (and Eleusis C 556..575, R 220..250) | 1–8 | 432 BC |
+| `saronic` | Saronic Gulf with Aegina | C 560..735, R 380..447 | 0 | 432 BC |
 | `aegean` | Aegean Sea and islands | C 736..831, R 150..447 | 0 | 432 BC |
 | `thrace` | Thrace and the Hellespont | C 736..879, R 0..149 | 1–5 | 432 BC |
 | `ionia_lydia` | Ionian coast and Lydia | C 832..879, R 150..300 | 1–4 | 432 BC (coast) / 470 BC (Sardis), seam between |
@@ -213,6 +215,7 @@ pieces, farms or herds, a shrine, and a recognisable landscape. **M** = must-hav
 | Apennines | scenic mountain band, beech and oak woods, snow on top in April | transhumant shepherds and flocks on the drove road | — | M |
 | Ionian Sea (seam) | open sea with swell, the island of Corcyra (Kerkyra) | ships under sail, dolphins, gulls; a mist band at C 430..445 marks the seam of time (§8) | **Corcyra** town and harbour C 440..455, R 200..225 (N) | M |
 | Western Greece and the Gulf | the long Gulf of Corinth between mountains; olive terraces, goat paths | fishing boats, a ferry, pilgrims to Delphi | **Delphi** on its mountainside: the 6th-century temple of Apollo, the Athenian treasury, the Sacred Way C 500..519, R 250..265 (M); **Olympia** with the Temple of Zeus (c. 456 BC) and the workshop where Pheidias made the Zeus statue C 470..491, R 320..340 (N); **Sparta**: villages along the Eurotas, no walls (Sparta was unwalled in the 5th century) C 515..535, R 360..385 (N); **Corinth**: archaic temple of Apollo, Acrocorinth, the diolkos, harbours of Lechaion and Kenchreai C 553..575, R 280..305 (M) | M |
+| Northern Attica and the Saronic Gulf | olive country under Mount Parnes; the gulf with Aegina offshore | farmers, charcoal burners on the road from Acharnai; triremes and merchant ships in the gulf | **Eleusis**: the Telesterion of the Mysteries C 556..575, R 222..250 (M); **Academy** grove C 560..575, R 205..219 (N) | M |
 | Aegean | deep blue sea, the Cyclades as small islands (Delos, Rheneia, Naxos, Paros, Tenos, Andros) | triremes, merchant ships, fishing boats; the meltemi wind whitening wave crests | **Delos**: the sacred lake, the Naxian lions, the sanctuary of Apollo C 775..790, R 330..345 (M) | M |
 | Thrace and the Hellespont | northern coast, the narrow strait | grain ships coming from the Black Sea | — | N |
 | Ionia and Lydia | river valleys of the Kaystros and Paktolos, fertile and green | the Royal Road begins | **Ephesus**: harbour, the archaic Artemision C 832..851, R 235..255 (M); **Sardis**: acropolis, the Paktolos with its gold-bearing sands, the satrap's palace, the first station of the Royal Road C 860..879, R 200..219 (M) | M |
@@ -228,7 +231,8 @@ pieces, farms or herds, a shrine, and a recognisable landscape. **M** = must-hav
 
 Waypoint set pieces use the same kit as their nearest city plus 1–3 unique landmarks each; their
 landmarks are listed in the relevant city file (Rome: Tibur, Alban Mount, Capua, Beneventum,
-Brundisium, Ostia/Portus; Athens: Corcyra, Delphi, Olympia, Sparta, Corinth, Delos, Ephesus;
+Brundisium, Ostia/Portus; Athens: Eleusis, the Academy, Corcyra, Delphi, Olympia, Sparta,
+Corinth, Delos, Ephesus;
 Pārsa: Sardis, Halys, Gordion, Sidon, Euphrates crossing, Babylon, Susa, Persian Gates,
 Pasargadae).
 
