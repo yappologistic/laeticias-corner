@@ -23,6 +23,20 @@ Everything in this game is original: its own art, palette, UI, names, sounds and
 - **Stay in your lane.** Edit only the paths you own (see Ownership). If you need a change in
   someone else's area or in a contract file, report it instead of making it.
 
+## Machine courtesy
+
+The owner uses this computer while agents work, and disk space is limited.
+
+- At most 4 parallel build jobs (`cmake --build … -j4`, `ctest -j2`) and at most two headless game
+  processes at once. Prefix long CPU-heavy commands with `nice -n 19`.
+- Build trees: only `build/release` and `build/asan` are kept. Anything else (extra presets, QA
+  copies, worktrees) lives under `out/` and is deleted by whoever created it before they finish.
+- Keep `out/` small: delete scratch renders, intermediate audio, old screenshots and saves when
+  done. Never write large files outside the project. No downloads over a few MB without a reason.
+- One agent at a time edits `src/` and `tests/` (the engine lane). Art (`tools/artgen`, atlases),
+  audio (`tools/audiogen`, `assets/audio`) and read-only work (QA, research, design docs) run
+  beside it.
+
 ## Stack
 
 - C++23, CMake (presets) + Ninja, GCC or Clang. One executable: `laeticias-corner`.
@@ -43,7 +57,8 @@ Everything in this game is original: its own art, palette, UI, names, sounds and
 | `tools/artgen/`, `assets/atlas.png`, `assets/atlas.json` | Sprite generator and its output | art |
 | `tools/audiogen/`, `assets/audio/` | Audio generator and its output | audio |
 | `assets/fonts/` | Bundled UI fonts + licences | engine |
-| `assets/catalog.json`, `CLAUDE.md` | Contracts | orchestrator only |
+| `docs/design/` | Game design specs: rules, content tables, art and audio lists for each batch | design |
+| `assets/catalog.json`, `CLAUDE.md` | Contracts | orchestrator, or the agent whose brief says so |
 
 `src/core` must not include SDL headers. Dependencies point one way: `app → ui/render/audio → core`.
 
