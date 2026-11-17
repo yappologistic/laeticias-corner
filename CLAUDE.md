@@ -78,9 +78,10 @@ audio files. The engine loads it at runtime; the generators read it to know what
 
 ### Projection
 
-2:1 isometric. Tile diamond is 32×16 px at 1×. The top vertex of tile `(tx, ty)` is at
-`sx = (tx - ty) * 16`, `sy = (tx + ty) * 8`; the diamond spans `x ∈ [sx-16, sx+16)`,
-`y ∈ [sy, sy+16)`. `+x` runs down-right, `+y` runs down-left. Neighbour bits for masks:
+2:1 isometric. Tile cell is 32×16 px at 1×. The top vertex of tile `(tx, ty)` is at
+`sx = (tx - ty) * 16`, `sy = (tx + ty) * 8`; the rasterised ground diamond spans
+`x ∈ [sx-15, sx+15)`, `y ∈ [sy, sy+16)` (rows 2, 6, … 30, 30, … 2 px wide) so tiles meet with no
+gap or overlap. `+x` runs down-right, `+y` runs down-left. Neighbour bits for masks:
 N `(tx, ty-1)` = 1, E `(tx+1, ty)` = 2, S `(tx, ty+1)` = 4, W `(tx-1, ty)` = 8.
 The world is always drawn at an integer scale with nearest-neighbour sampling.
 
@@ -111,6 +112,13 @@ visitors and effects it is the ground contact point. Keys:
 - `base` is lit for neutral daylight, sun from the upper-left. `shadow` is the cast shadow on the
   ground only (black with alpha). `glow` holds only the emissive pixels (windows, lamps, fire) and
   is drawn additively at dusk and night. Day/night grading is done by the engine, not baked.
+- Shadows are composited as one layer (overlapping shadows must not double-darken).
+- Emissive things are drawn after night grading: item `glow` layers (palette colour, halo strength
+  in alpha, additive) and visitors marked `"glow": true` in the catalog.
+- `smoke_at` on an item lists, per `r<k>`, the pixel offset from the anchor to the chimney top.
+- Flying visitors are anchored at the bottom of the body; the engine adds altitude. `edge/*`
+  sprites anchor at the rim tile's top vertex. `fx/raindrop`: `f0` is the falling streak, later
+  frames are the splash.
 - A missing sprite must never crash: the engine draws an obvious placeholder and logs once.
 
 ### Audio (`assets/audio/`)
