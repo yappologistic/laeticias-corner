@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "layer": "base",
+  "nodes": [
+    {"id": "corner_road_s", "at": [111, 1185], "kind": "portal"},
+    {"id": "aurelia_w", "at": [120, 1183], "kind": "portal"}
+  ],
+  "edges": [
+    {"a": "corner_road_s", "b": "aurelia_w", "kind": "road", "via": [[120, 1185]]}
+  ],
+  "lanes": [
+    {"id": "corner_portus", "kind": "sea", "points": [[112, 1245], [113, 1239], [130, 1219], [150, 1219], [170, 1199], [178, 1199], [188, 1189], [198, 1189], [205, 1183], [216, 1175]], "ports": [{"id": "corner_jetty", "at": 0}, {"id": "portus", "at": 9}]}
+  ]
+}
