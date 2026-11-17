@@ -6,56 +6,89 @@
    "id": "parsa.plain_grass",
    "name": "Spring plain",
    "base": true,
-   "variants": 4
+   "variants": 4,
+   "faces": [
+    "parsa.earth",
+    "parsa.rock",
+    "parsa.ashlar"
+   ]
   },
   {
    "id": "parsa.field_barley",
    "name": "Barley field",
    "under": "parsa.plain_grass",
-   "edges": 16
+   "edges": 16,
+   "faces": [
+    "parsa.earth"
+   ]
   },
   {
    "id": "parsa.garden_bed",
    "name": "Garden bed",
    "under": "parsa.plain_grass",
-   "edges": 16
+   "edges": 16,
+   "faces": [
+    "parsa.earth"
+   ]
   },
   {
    "id": "parsa.packed_earth",
    "name": "Packed earth road",
    "under": "parsa.plain_grass",
-   "edges": 16
+   "edges": 16,
+   "faces": [
+    "parsa.earth",
+    "parsa.rock"
+   ]
   },
   {
    "id": "parsa.paving_stone",
    "name": "Stone paving",
    "under": "parsa.plain_grass",
-   "edges": 16
+   "edges": 16,
+   "faces": [
+    "parsa.ashlar",
+    "parsa.rock"
+   ]
   },
   {
    "id": "parsa.paving_red",
    "name": "Red plaster floor",
    "under": "parsa.plain_grass",
-   "edges": 16
+   "edges": 16,
+   "faces": [
+    "parsa.ashlar"
+   ]
   },
   {
    "id": "parsa.gravel",
    "name": "Gravel",
    "under": "parsa.plain_grass",
-   "edges": 16
+   "edges": 16,
+   "faces": [
+    "parsa.earth",
+    "parsa.ashlar"
+   ]
   },
   {
    "id": "parsa.water_channel",
    "name": "Water channel",
    "under": "parsa.plain_grass",
    "edges": 16,
-   "fps": 4
+   "fps": 4,
+   "faces": [
+    "parsa.ashlar"
+   ]
   },
   {
    "id": "parsa.rough_ground",
    "name": "Rough ground",
    "under": "parsa.plain_grass",
-   "edges": 16
+   "edges": 16,
+   "faces": [
+    "parsa.rock",
+    "parsa.earth"
+   ]
   }
  ],
  "items": [
@@ -3412,7 +3445,9 @@
  ],
  "art": {
   "edges": [
-   "parsa.ashlar"
+   "parsa.ashlar",
+   "parsa.rock",
+   "parsa.earth"
   ],
   "backdrops": [
    "parsa.kuh_rahmat"

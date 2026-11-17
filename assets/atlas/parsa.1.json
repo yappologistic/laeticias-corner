@@ -3,264 +3,280 @@
  "image": "parsa.1.png",
  "sprites": {
   "item/parsa.apadana/glow/r0/f0": {
-   "x": 2917,
-   "y": 1787,
+   "x": 1241,
+   "y": 1152,
    "w": 1103,
-   "h": 602,
-   "ox": 524,
-   "oy": -6
+   "h": 626,
+   "ox": 552,
+   "oy": 21
   },
   "item/parsa.apadana/shadow/r0/f0": {
-   "x": 1933,
-   "y": 995,
-   "w": 1654,
-   "h": 791,
+   "x": 1,
+   "y": 2360,
+   "w": 1668,
+   "h": 453,
    "ox": 768,
-   "oy": 0
+   "oy": -342
   },
   "item/parsa.apadana_stair_e/shadow/r0/f0": {
-   "x": 2316,
-   "y": 3389,
-   "w": 499,
-   "h": 245,
+   "x": 1672,
+   "y": 2998,
+   "w": 498,
+   "h": 232,
    "ox": 100,
-   "oy": 2
+   "oy": -11
   },
   "item/parsa.apadana_stair_n/shadow/r0/f0": {
-   "x": 1754,
-   "y": 3269,
+   "x": 1672,
+   "y": 2734,
    "w": 561,
-   "h": 277,
+   "h": 263,
    "ox": 452,
-   "oy": 2
+   "oy": -12
   },
   "item/parsa.cistern/base/r0/f0": {
-   "x": 2232,
-   "y": 572,
+   "x": 1343,
+   "y": 814,
    "w": 320,
    "h": 172,
    "ox": 160,
    "oy": 12
   },
   "item/parsa.cistern/shadow/r0/f0": {
-   "x": 2816,
-   "y": 3573,
+   "x": 498,
+   "y": 3101,
    "w": 331,
-   "h": 164,
+   "h": 86,
    "ox": 164,
-   "oy": 2
+   "oy": -76
   },
   "item/parsa.cyrus_tomb/base/r0/f0": {
-   "x": 3501,
-   "y": 827,
+   "x": 304,
+   "y": 1000,
    "w": 204,
    "h": 157,
    "ox": 102,
    "oy": 26
   },
   "item/parsa.cyrus_tomb/shadow/r0/f0": {
-   "x": 701,
-   "y": 3643,
+   "x": 2844,
+   "y": 3196,
    "w": 213,
-   "h": 106,
+   "h": 58,
    "ox": 106,
-   "oy": -27
+   "oy": -75
+  },
+  "item/parsa.fort_tower/glow/r0/f0": {
+   "x": 1122,
+   "y": 3270,
+   "w": 39,
+   "h": 25,
+   "ox": -14,
+   "oy": 32
   },
   "item/parsa.fort_tower/shadow/r0/f0": {
-   "x": 140,
-   "y": 3646,
+   "x": 2832,
+   "y": 3120,
    "w": 181,
    "h": 75,
    "ox": 66,
    "oy": 1
   },
   "item/parsa.fort_wall/shadow/m0/f0": {
-   "x": 780,
-   "y": 3782,
+   "x": 1323,
+   "y": 3270,
    "w": 69,
    "h": 24,
    "ox": 20,
    "oy": -6
   },
   "item/parsa.fort_wall/shadow/m1/f0": {
-   "x": 2655,
-   "y": 3777,
+   "x": 2844,
+   "y": 3255,
    "w": 77,
    "h": 29,
    "ox": 20,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m10/f0": {
-   "x": 2418,
-   "y": 3742,
+   "x": 995,
+   "y": 3235,
    "w": 87,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m11/f0": {
-   "x": 2506,
-   "y": 3742,
+   "x": 1083,
+   "y": 3235,
    "w": 87,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m12/f0": {
-   "x": 1091,
-   "y": 3747,
+   "x": 498,
+   "y": 3253,
    "w": 79,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m13/f0": {
-   "x": 2594,
-   "y": 3742,
+   "x": 1171,
+   "y": 3235,
    "w": 87,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m14/f0": {
-   "x": 3511,
-   "y": 3746,
+   "x": 1259,
+   "y": 3235,
    "w": 87,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m15/f0": {
-   "x": 3599,
-   "y": 3746,
+   "x": 1347,
+   "y": 3235,
    "w": 87,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m2/f0": {
-   "x": 2733,
-   "y": 3777,
+   "x": 2922,
+   "y": 3255,
    "w": 77,
    "h": 29,
    "ox": 20,
    "oy": -6
   },
   "item/parsa.fort_wall/shadow/m3/f0": {
-   "x": 1171,
-   "y": 3747,
+   "x": 578,
+   "y": 3253,
    "w": 77,
    "h": 34,
    "ox": 20,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m4/f0": {
-   "x": 2495,
-   "y": 3777,
+   "x": 326,
+   "y": 3254,
    "w": 79,
    "h": 29,
    "ox": 30,
    "oy": -6
   },
   "item/parsa.fort_wall/shadow/m5/f0": {
-   "x": 915,
-   "y": 3747,
+   "x": 2554,
+   "y": 3247,
    "w": 87,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m6/f0": {
-   "x": 2319,
-   "y": 3777,
+   "x": 150,
+   "y": 3254,
    "w": 87,
    "h": 29,
    "ox": 30,
    "oy": -6
   },
   "item/parsa.fort_wall/shadow/m7/f0": {
-   "x": 1003,
-   "y": 3747,
+   "x": 1435,
+   "y": 3250,
    "w": 87,
    "h": 34,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m8/f0": {
-   "x": 2575,
-   "y": 3777,
+   "x": 406,
+   "y": 3254,
    "w": 79,
    "h": 29,
    "ox": 30,
    "oy": -1
   },
   "item/parsa.fort_wall/shadow/m9/f0": {
-   "x": 2407,
-   "y": 3777,
+   "x": 238,
+   "y": 3254,
    "w": 87,
    "h": 29,
    "ox": 30,
    "oy": -1
   },
-  "item/parsa.garrison/base/r0/p0/f0": {
-   "x": 3315,
-   "y": 1,
-   "w": 507,
-   "h": 285,
-   "ox": 255,
-   "oy": 64
+  "item/parsa.garrison/base/r0/p13/f0": {
+   "x": 1966,
+   "y": 301,
+   "w": 411,
+   "h": 266,
+   "ox": 160,
+   "oy": 62
   },
-  "item/parsa.garrison/base/r0/p1/f0": {
-   "x": 450,
-   "y": 1,
-   "w": 510,
-   "h": 293,
-   "ox": 511,
+  "item/parsa.garrison/base/r0/p14/f0": {
+   "x": 2889,
+   "y": 569,
+   "w": 386,
+   "h": 253,
+   "ox": 770,
+   "oy": -226
+  },
+  "item/parsa.garrison/base/r0/p15/f0": {
+   "x": 3276,
+   "y": 569,
+   "w": 390,
+   "h": 251,
+   "ox": 547,
+   "oy": -342
+  },
+  "item/parsa.garrison/base/r0/p16/f0": {
+   "x": 1,
+   "y": 580,
+   "w": 322,
+   "h": 226,
+   "ox": -96,
    "oy": -62
   },
-  "item/parsa.garrison/base/r0/p3/f0": {
-   "x": 1843,
-   "y": 290,
-   "w": 417,
-   "h": 275,
-   "ox": -1,
-   "oy": -61
+  "item/parsa.garrison/base/r0/p17/f0": {
+   "x": 3667,
+   "y": 569,
+   "w": 349,
+   "h": 244,
+   "ox": 413,
+   "oy": -12
   },
-  "item/parsa.garrison/base/r0/p4/f0": {
-   "x": 2354,
-   "y": 289,
-   "w": 416,
-   "h": 282,
-   "ox": 255,
-   "oy": -182
-  },
-  "item/parsa.garrison/base/r0/p5/f0": {
-   "x": 2804,
-   "y": 287,
-   "w": 425,
-   "h": 283,
-   "ox": 520,
-   "oy": -310
+  "item/parsa.garrison/base/r0/p18/f0": {
+   "x": 935,
+   "y": 577,
+   "w": 352,
+   "h": 233,
+   "ox": 95,
+   "oy": -183
   },
   "item/parsa.garrison/glow/r0/f0": {
-   "x": 3784,
-   "y": 3372,
-   "w": 287,
-   "h": 149,
-   "ox": 316,
-   "oy": -206
+   "x": 1670,
+   "y": 2360,
+   "w": 613,
+   "h": 373,
+   "ox": 654,
+   "oy": -116
   },
   "item/parsa.garrison/shadow/r0/f0": {
-   "x": 1,
-   "y": 2043,
+   "x": 1359,
+   "y": 1892,
    "w": 1227,
-   "h": 602,
+   "h": 467,
    "ox": 774,
-   "oy": 3
+   "oy": -132
   },
   "item/parsa.gate_all_lands/glow/r0/f0": {
-   "x": 1527,
-   "y": 3547,
+   "x": 3726,
+   "y": 2963,
    "w": 353,
    "h": 181,
    "ox": 176,
@@ -268,1043 +284,1187 @@
   },
   "item/parsa.gate_all_lands/shadow/r0/f0": {
    "x": 1,
-   "y": 3431,
-   "w": 482,
-   "h": 214,
+   "y": 3101,
+   "w": 496,
+   "h": 152,
    "ox": 198,
-   "oy": 3
+   "oy": -64
   },
   "item/parsa.great_stair/shadow/r0/f0": {
-   "x": 3230,
-   "y": 2963,
+   "x": 3151,
+   "y": 2665,
    "w": 861,
-   "h": 408,
+   "h": 297,
    "ox": 228,
-   "oy": 2
+   "oy": -109
   },
   "item/parsa.hadish/glow/r0/f0": {
-   "x": 1147,
-   "y": 3643,
+   "x": 1440,
+   "y": 3080,
    "w": 199,
    "h": 103,
    "ox": -172,
    "oy": -216
   },
   "item/parsa.hadish/shadow/r0/f0": {
-   "x": 971,
-   "y": 2988,
-   "w": 782,
-   "h": 367,
+   "x": 877,
+   "y": 2814,
+   "w": 794,
+   "h": 265,
    "ox": 248,
-   "oy": -34
+   "oy": -135
   },
-  "item/parsa.hadish_stair_w/shadow/r0/f0": {
-   "x": 1881,
-   "y": 3547,
-   "w": 357,
-   "h": 169,
-   "ox": 132,
-   "oy": 2
+  "item/parsa.hall_100/base/r0/p0/f0": {
+   "x": 484,
+   "y": 1,
+   "w": 470,
+   "h": 314,
+   "ox": 211,
+   "oy": 60
   },
   "item/parsa.hall_100/base/r0/p4/f0": {
-   "x": 1472,
+   "x": 2865,
    "y": 1,
-   "w": 370,
+   "w": 382,
    "h": 291,
-   "ox": -270,
+   "ox": -258,
    "oy": -157
   },
   "item/parsa.hall_100/base/r0/p5/f0": {
-   "x": 2771,
-   "y": 571,
+   "x": 955,
+   "y": 811,
    "w": 387,
-   "h": 187,
+   "h": 191,
    "ox": 3,
-   "oy": -389
+   "oy": -385
   },
   "item/parsa.hall_100/shadow/r0/f0": {
-   "x": 2917,
-   "y": 2390,
+   "x": 1,
+   "y": 1160,
    "w": 1151,
-   "h": 572,
+   "h": 544,
    "ox": 501,
-   "oy": -6
-  },
-  "item/parsa.harem/base/r0/p2/f0": {
-   "x": 450,
-   "y": 295,
-   "w": 478,
-   "h": 267,
-   "ox": -285,
-   "oy": -200
+   "oy": -34
   },
   "item/parsa.harem/base/r0/p3/f0": {
-   "x": 2354,
+   "x": 3248,
+   "y": 291,
+   "w": 499,
+   "h": 277,
+   "ox": 287,
+   "oy": 44
+  },
+  "item/parsa.harem/base/r0/p4/f0": {
+   "x": 955,
    "y": 1,
-   "w": 449,
-   "h": 287,
-   "ox": 450,
-   "oy": -65
+   "w": 499,
+   "h": 309,
+   "ox": 31,
+   "oy": -74
   },
   "item/parsa.harem/base/r0/p5/f0": {
-   "x": 3695,
-   "y": 287,
-   "w": 369,
-   "h": 273,
-   "ox": -63,
-   "oy": -335
+   "x": 1,
+   "y": 1,
+   "w": 482,
+   "h": 322,
+   "ox": -253,
+   "oy": -201
+  },
+  "item/parsa.harem/base/r0/p6/f0": {
+   "x": 2416,
+   "y": 296,
+   "w": 417,
+   "h": 269,
+   "ox": 450,
+   "oy": -83
   },
   "item/parsa.harem/base/r0/p7/f0": {
-   "x": 1941,
-   "y": 566,
-   "w": 290,
-   "h": 196,
-   "ox": -319,
-   "oy": -461
+   "x": 2834,
+   "y": 296,
+   "w": 384,
+   "h": 269,
+   "ox": 193,
+   "oy": -211
+  },
+  "item/parsa.harem/base/r0/p8/f0": {
+   "x": 1966,
+   "y": 568,
+   "w": 408,
+   "h": 255,
+   "ox": -63,
+   "oy": -353
+  },
+  "item/parsa.harem/base/r0/p9/f0": {
+   "x": 1414,
+   "y": 576,
+   "w": 301,
+   "h": 237,
+   "ox": -565,
+   "oy": -323
   },
   "item/parsa.harem/glow/r0/f0": {
-   "x": 651,
-   "y": 3356,
+   "x": 1,
+   "y": 2814,
    "w": 875,
    "h": 286,
    "ox": 402,
    "oy": -145
   },
   "item/parsa.harem/shadow/r0/f0": {
-   "x": 1558,
-   "y": 1787,
-   "w": 1358,
-   "h": 651,
+   "x": 1,
+   "y": 1779,
+   "w": 1357,
+   "h": 485,
    "ox": 454,
-   "oy": -13
+   "oy": -179
   },
   "item/parsa.kaba/base/r0/f0": {
-   "x": 2388,
-   "y": 827,
+   "x": 1664,
+   "y": 979,
    "w": 132,
    "h": 167,
    "ox": 66,
    "oy": 86
   },
   "item/parsa.kaba/shadow/r0/f0": {
-   "x": 3749,
-   "y": 3660,
+   "x": 498,
+   "y": 3188,
    "w": 185,
-   "h": 74,
+   "h": 64,
    "ox": 70,
-   "oy": -13
+   "oy": -23
   },
   "item/parsa.naqsh_cliff/base/r0/p0/f0": {
-   "x": 1,
-   "y": 831,
+   "x": 3483,
+   "y": 964,
    "w": 510,
    "h": 366,
    "ox": 255,
    "oy": 122
   },
   "item/parsa.naqsh_cliff/base/r0/p1/f0": {
-   "x": 1422,
-   "y": 824,
+   "x": 2555,
+   "y": 945,
    "w": 510,
    "h": 453,
    "ox": 511,
    "oy": 88
   },
   "item/parsa.naqsh_cliff/base/r0/p2/f0": {
-   "x": 911,
-   "y": 826,
+   "x": 3066,
+   "y": 958,
    "w": 416,
    "h": 419,
    "ox": 672,
    "oy": -45
   },
   "item/parsa.naqsh_cliff/base/r0/p3/f0": {
-   "x": 3213,
-   "y": 827,
+   "x": 1343,
+   "y": 987,
    "w": 287,
    "h": 164,
    "ox": -1,
    "oy": -107
   },
   "item/parsa.naqsh_cliff/base/r0/p4/f0": {
-   "x": 512,
-   "y": 831,
+   "x": 955,
+   "y": 1003,
    "w": 285,
    "h": 156,
    "ox": 256,
    "oy": -244
   },
   "item/parsa.naqsh_cliff/base/r0/p5/f0": {
-   "x": 2919,
-   "y": 871,
+   "x": 509,
+   "y": 1008,
    "w": 192,
    "h": 114,
    "ox": 416,
    "oy": -366
   },
   "item/parsa.naqsh_cliff/shadow/r0/f0": {
-   "x": 1,
-   "y": 2646,
+   "x": 2587,
+   "y": 1892,
    "w": 969,
-   "h": 479,
+   "h": 393,
    "ox": 676,
-   "oy": -2
+   "oy": -88
+  },
+  "item/parsa.p_archery_butt/shadow/r0/f0": {
+   "x": 2986,
+   "y": 3285,
+   "w": 42,
+   "h": 15,
+   "ox": 17,
+   "oy": -10
   },
   "item/parsa.p_archery_butt/shadow/r1/f0": {
-   "x": 4049,
-   "y": 3772,
+   "x": 79,
+   "y": 3285,
    "w": 43,
    "h": 17,
    "ox": 18,
    "oy": -8
   },
   "item/parsa.p_banner/shadow/r0/f0": {
-   "x": 3925,
-   "y": 3783,
+   "x": 425,
+   "y": 3284,
    "w": 56,
    "h": 17,
+   "ox": 4,
+   "oy": -14
+  },
+  "item/parsa.p_banner/shadow/r0/f1": {
+   "x": 1430,
+   "y": 3285,
+   "w": 57,
+   "h": 16,
+   "ox": 4,
+   "oy": -14
+  },
+  "item/parsa.p_banner/shadow/r0/f2": {
+   "x": 2830,
+   "y": 3285,
+   "w": 57,
+   "h": 16,
    "ox": 4,
    "oy": -14
   },
   "item/parsa.p_banner/shadow/r0/f3": {
-   "x": 3982,
-   "y": 3783,
+   "x": 1523,
+   "y": 3284,
    "w": 56,
    "h": 17,
    "ox": 4,
    "oy": -14
   },
+  "item/parsa.p_banner/shadow/r0/f4": {
+   "x": 270,
+   "y": 3284,
+   "w": 56,
+   "h": 18,
+   "ox": 4,
+   "oy": -14
+  },
+  "item/parsa.p_banner/shadow/r0/f5": {
+   "x": 327,
+   "y": 3284,
+   "w": 56,
+   "h": 18,
+   "ox": 4,
+   "oy": -14
+  },
   "item/parsa.p_brazier/glow/r0/f0": {
-   "x": 4049,
-   "y": 3726,
+   "x": 1393,
+   "y": 3270,
    "w": 36,
    "h": 23,
    "ox": 18,
    "oy": 14
   },
   "item/parsa.p_crane/shadow/r0/f0": {
-   "x": 2204,
-   "y": 3742,
+   "x": 1996,
+   "y": 3231,
    "w": 114,
    "h": 38,
    "ox": 31,
    "oy": 0
   },
+  "item/parsa.p_crane/shadow/r0/f1": {
+   "x": 1814,
+   "y": 3231,
+   "w": 116,
+   "h": 39,
+   "ox": 31,
+   "oy": 0
+  },
   "item/parsa.p_crane/shadow/r1/f0": {
-   "x": 3854,
-   "y": 3735,
+   "x": 831,
+   "y": 3235,
    "w": 66,
    "h": 38,
    "ox": 15,
    "oy": 0
   },
+  "item/parsa.p_crane/shadow/r1/f1": {
+   "x": 1931,
+   "y": 3231,
+   "w": 64,
+   "h": 39,
+   "ox": 15,
+   "oy": 0
+  },
   "item/parsa.p_dovecote/shadow/r0/f0": {
-   "x": 1595,
-   "y": 3782,
+   "x": 3208,
+   "y": 3270,
    "w": 61,
    "h": 23,
    "ox": 21,
    "oy": -6
   },
   "item/parsa.p_drum_stack/shadow/r0/f0": {
-   "x": 3511,
-   "y": 3781,
+   "x": 2111,
+   "y": 3261,
    "w": 59,
    "h": 28,
    "ox": 28,
    "oy": -1
   },
   "item/parsa.p_drum_stack/shadow/r1/f0": {
-   "x": 2204,
-   "y": 3781,
+   "x": 3000,
+   "y": 3255,
    "w": 57,
    "h": 29,
    "ox": 26,
    "oy": -2
   },
+  "item/parsa.p_fire_altar/glow/r0/f0": {
+   "x": 1038,
+   "y": 3270,
+   "w": 41,
+   "h": 25,
+   "ox": 20,
+   "oy": 32
+  },
   "item/parsa.p_fire_altar/shadow/r0/f0": {
-   "x": 3854,
-   "y": 3774,
+   "x": 79,
+   "y": 3254,
    "w": 70,
    "h": 30,
    "ox": 30,
    "oy": -1
   },
-  "item/parsa.p_granary/shadow/r0/f0": {
-   "x": 1676,
-   "y": 3729,
-   "w": 100,
-   "h": 44,
-   "ox": 42,
-   "oy": -11
-  },
   "item/parsa.p_granary/shadow/r1/f0": {
-   "x": 1777,
-   "y": 3729,
+   "x": 3709,
+   "y": 3220,
    "w": 100,
    "h": 44,
    "ox": 42,
    "oy": -11
   },
-  "item/parsa.p_house/shadow/r0/f0": {
-   "x": 915,
-   "y": 3643,
-   "w": 231,
-   "h": 103,
-   "ox": 102,
-   "oy": 3
+  "item/parsa.p_horse_line/shadow/r1/f0": {
+   "x": 3602,
+   "y": 3216,
+   "w": 106,
+   "h": 49,
+   "ox": 80,
+   "oy": -8
   },
-  "item/parsa.p_house/shadow/r1/f0": {
-   "x": 2239,
-   "y": 3635,
-   "w": 231,
-   "h": 106,
-   "ox": 102,
-   "oy": 3
+  "item/parsa.p_house/glow/r0/f0": {
+   "x": 123,
+   "y": 3285,
+   "w": 25,
+   "h": 16,
+   "ox": 90,
+   "oy": -25
   },
-  "item/parsa.p_house/shadow/r2/f0": {
-   "x": 2471,
-   "y": 3635,
-   "w": 231,
-   "h": 106,
-   "ox": 102,
-   "oy": 3
+  "item/parsa.p_house/glow/r1/f0": {
+   "x": 1488,
+   "y": 3285,
+   "w": 25,
+   "h": 16,
+   "ox": 34,
+   "oy": 25
   },
-  "item/parsa.p_house/shadow/r3/f0": {
-   "x": 484,
-   "y": 3643,
-   "w": 216,
-   "h": 106,
-   "ox": 102,
-   "oy": 3
+  "item/parsa.p_house/glow/r2/f0": {
+   "x": 2934,
+   "y": 3285,
+   "w": 25,
+   "h": 16,
+   "ox": -66,
+   "oy": -3
+  },
+  "item/parsa.p_house/glow/r3/f0": {
+   "x": 2960,
+   "y": 3285,
+   "w": 25,
+   "h": 16,
+   "ox": -10,
+   "oy": -53
   },
   "item/parsa.p_house_small/shadow/r0/f0": {
-   "x": 3935,
-   "y": 3660,
-   "w": 146,
-   "h": 65,
-   "ox": 62,
-   "oy": -1
+   "x": 2554,
+   "y": 3180,
+   "w": 144,
+   "h": 66,
+   "ox": 60,
+   "oy": 0
   },
   "item/parsa.p_house_small/shadow/r1/f0": {
-   "x": 2057,
-   "y": 3717,
-   "w": 146,
-   "h": 65,
-   "ox": 62,
-   "oy": -1
+   "x": 2699,
+   "y": 3196,
+   "w": 144,
+   "h": 64,
+   "ox": 60,
+   "oy": -2
   },
   "item/parsa.p_house_small/shadow/r2/f0": {
-   "x": 322,
-   "y": 3718,
+   "x": 684,
+   "y": 3188,
    "w": 146,
-   "h": 65,
+   "h": 64,
    "ox": 62,
-   "oy": -1
+   "oy": -2
   },
   "item/parsa.p_house_small/shadow/r3/f0": {
-   "x": 140,
-   "y": 3722,
-   "w": 146,
+   "x": 1440,
+   "y": 3184,
+   "w": 147,
    "h": 65,
-   "ox": 62,
+   "ox": 63,
    "oy": -1
   },
+  "item/parsa.p_incense/shadow/r0/f0": {
+   "x": 656,
+   "y": 3286,
+   "w": 34,
+   "h": 13,
+   "ox": 11,
+   "oy": -10
+  },
+  "item/parsa.p_jars/shadow/r0/f0": {
+   "x": 1996,
+   "y": 3270,
+   "w": 48,
+   "h": 24,
+   "ox": 23,
+   "oy": -4
+  },
   "item/parsa.p_jars/shadow/r1/f0": {
-   "x": 2262,
-   "y": 3781,
+   "x": 1872,
+   "y": 3271,
    "w": 54,
    "h": 23,
    "ox": 25,
    "oy": -4
   },
-  "item/parsa.p_parasol/shadow/r0/f0": {
-   "x": 1530,
-   "y": 3782,
-   "w": 64,
-   "h": 23,
-   "ox": 12,
-   "oy": -10
+  "item/parsa.p_kiln/shadow/r0/f0": {
+   "x": 3404,
+   "y": 3269,
+   "w": 56,
+   "h": 26,
+   "ox": 25,
+   "oy": -3
+  },
+  "item/parsa.p_oven/shadow/r0/f0": {
+   "x": 384,
+   "y": 3284,
+   "w": 40,
+   "h": 18,
+   "ox": 18,
+   "oy": -7
+  },
+  "item/parsa.p_rose/shadow/r0/f0": {
+   "x": 2554,
+   "y": 3282,
+   "w": 47,
+   "h": 20,
+   "ox": 26,
+   "oy": -6
+  },
+  "item/parsa.p_sacks/shadow/r0/f0": {
+   "x": 995,
+   "y": 3270,
+   "w": 42,
+   "h": 25,
+   "ox": 21,
+   "oy": -4
+  },
+  "item/parsa.p_sacks/shadow/r1/f0": {
+   "x": 827,
+   "y": 3274,
+   "w": 50,
+   "h": 20,
+   "ox": 25,
+   "oy": -6
   },
   "item/parsa.p_scaffold/shadow/r0/f0": {
-   "x": 2703,
-   "y": 3741,
+   "x": 898,
+   "y": 3235,
    "w": 96,
    "h": 35,
    "ox": 28,
    "oy": -2
   },
   "item/parsa.p_scaffold/shadow/r1/f0": {
-   "x": 2900,
-   "y": 3738,
+   "x": 1693,
+   "y": 3231,
    "w": 120,
    "h": 40,
    "ox": 28,
    "oy": -2
   },
+  "item/parsa.p_tent/glow/r0/f0": {
+   "x": 3780,
+   "y": 3265,
+   "w": 29,
+   "h": 18,
+   "ox": -16,
+   "oy": -26
+  },
   "item/parsa.p_tent/glow/r1/f0": {
-   "x": 3116,
-   "y": 3738,
+   "x": 2602,
+   "y": 3282,
    "w": 29,
    "h": 18,
    "ox": 44,
    "oy": -26
   },
   "item/parsa.p_tent/shadow/r0/f0": {
-   "x": 3935,
-   "y": 3726,
-   "w": 113,
-   "h": 56,
-   "ox": 56,
-   "oy": -4
+   "x": 3168,
+   "y": 3216,
+   "w": 107,
+   "h": 53,
+   "ox": 52,
+   "oy": -6
   },
   "item/parsa.p_tent/shadow/r1/f0": {
-   "x": 1,
-   "y": 3728,
-   "w": 113,
-   "h": 56,
-   "ox": 56,
-   "oy": -4
+   "x": 3058,
+   "y": 3216,
+   "w": 109,
+   "h": 53,
+   "ox": 54,
+   "oy": -6
   },
   "item/parsa.p_throne/shadow/r0/f0": {
-   "x": 586,
-   "y": 3783,
+   "x": 1927,
+   "y": 3271,
    "w": 51,
    "h": 23,
    "ox": 22,
    "oy": -4
   },
   "item/parsa.p_throne/shadow/r1/f0": {
-   "x": 1464,
-   "y": 3782,
+   "x": 2045,
+   "y": 3270,
    "w": 65,
    "h": 23,
    "ox": 22,
    "oy": -5
   },
   "item/parsa.p_throne/shadow/r2/f0": {
-   "x": 3571,
-   "y": 3781,
+   "x": 3276,
+   "y": 3269,
    "w": 65,
    "h": 26,
    "ox": 24,
    "oy": -5
   },
+  "item/parsa.p_throne/shadow/r3/f0": {
+   "x": 3954,
+   "y": 3264,
+   "w": 51,
+   "h": 26,
+   "ox": 24,
+   "oy": -4
+  },
   "item/parsa.p_torch/glow/r0/f0": {
-   "x": 287,
-   "y": 3722,
+   "x": 3673,
+   "y": 3266,
    "w": 33,
    "h": 21,
    "ox": 12,
    "oy": 27
   },
   "item/parsa.p_torch/glow/r1/f0": {
-   "x": 287,
-   "y": 3744,
+   "x": 957,
+   "y": 3271,
    "w": 33,
    "h": 21,
    "ox": 12,
    "oy": 22
   },
   "item/parsa.p_torch/glow/r2/f0": {
-   "x": 4049,
-   "y": 3750,
+   "x": 1693,
+   "y": 3272,
    "w": 33,
    "h": 21,
    "ox": 22,
    "oy": 22
   },
+  "item/parsa.p_torch/glow/r3/f0": {
+   "x": 1656,
+   "y": 3273,
+   "w": 33,
+   "h": 20,
+   "ox": 22,
+   "oy": 27
+  },
+  "item/parsa.p_wall/shadow/m0/f0": {
+   "x": 2888,
+   "y": 3285,
+   "w": 45,
+   "h": 16,
+   "ox": 14,
+   "oy": -9
+  },
   "item/parsa.p_wall/shadow/m1/f0": {
-   "x": 528,
-   "y": 3783,
+   "x": 1814,
+   "y": 3271,
    "w": 57,
    "h": 23,
    "ox": 14,
    "oy": -2
   },
   "item/parsa.p_wall/shadow/m10/f0": {
-   "x": 3687,
-   "y": 3777,
+   "x": 4009,
+   "y": 3260,
    "w": 71,
    "h": 29,
    "ox": 27,
    "oy": -2
   },
   "item/parsa.p_wall/shadow/m11/f0": {
-   "x": 3759,
-   "y": 3777,
+   "x": 2642,
+   "y": 3261,
    "w": 71,
    "h": 29,
    "ox": 27,
    "oy": -2
   },
-  "item/parsa.p_wall/shadow/m12/f0": {
-   "x": 852,
-   "y": 3750,
-   "w": 58,
-   "h": 29,
-   "ox": 27,
-   "oy": -2
-  },
   "item/parsa.p_wall/shadow/m13/f0": {
-   "x": 2811,
-   "y": 3780,
+   "x": 3709,
+   "y": 3265,
    "w": 70,
    "h": 29,
    "ox": 27,
    "oy": -2
   },
   "item/parsa.p_wall/shadow/m14/f0": {
-   "x": 2900,
-   "y": 3779,
+   "x": 2714,
+   "y": 3261,
    "w": 71,
    "h": 29,
    "ox": 27,
    "oy": -2
   },
   "item/parsa.p_wall/shadow/m15/f0": {
-   "x": 2972,
-   "y": 3779,
+   "x": 3810,
+   "y": 3261,
    "w": 71,
    "h": 29,
    "ox": 27,
    "oy": -2
   },
-  "item/parsa.p_wall/shadow/m2/f0": {
-   "x": 2057,
-   "y": 3783,
-   "w": 58,
-   "h": 22,
-   "ox": 14,
-   "oy": -9
-  },
   "item/parsa.p_wall/shadow/m3/f0": {
-   "x": 852,
-   "y": 3780,
+   "x": 2111,
+   "y": 3231,
    "w": 58,
    "h": 29,
    "ox": 14,
    "oy": -2
   },
-  "item/parsa.p_wall/shadow/m4/f0": {
-   "x": 2116,
-   "y": 3783,
-   "w": 58,
-   "h": 22,
-   "ox": 27,
-   "oy": -9
-  },
   "item/parsa.p_wall/shadow/m5/f0": {
-   "x": 1249,
-   "y": 3781,
+   "x": 3602,
+   "y": 3266,
    "w": 70,
    "h": 29,
    "ox": 27,
    "oy": -2
   },
-  "item/parsa.p_wall/shadow/m6/f0": {
-   "x": 638,
-   "y": 3783,
-   "w": 71,
-   "h": 22,
-   "ox": 27,
-   "oy": -9
-  },
   "item/parsa.p_wall/shadow/m7/f0": {
-   "x": 3044,
-   "y": 3779,
+   "x": 3882,
+   "y": 3264,
    "w": 71,
    "h": 29,
    "ox": 27,
    "oy": -2
   },
   "item/parsa.p_wall/shadow/m8/f0": {
-   "x": 469,
-   "y": 3783,
+   "x": 898,
+   "y": 3271,
    "w": 58,
    "h": 23,
    "ox": 27,
    "oy": -2
   },
   "item/parsa.p_wall/shadow/m9/f0": {
-   "x": 1158,
-   "y": 3782,
+   "x": 3137,
+   "y": 3270,
    "w": 70,
    "h": 23,
    "ox": 27,
    "oy": -2
   },
-  "item/parsa.p_wall_gate/shadow/r0/f0": {
-   "x": 1676,
-   "y": 3774,
-   "w": 77,
-   "h": 30,
-   "ox": 27,
+  "item/parsa.p_well/shadow/r0/f0": {
+   "x": 150,
+   "y": 3284,
+   "w": 61,
+   "h": 18,
+   "ox": 30,
+   "oy": -7
+  },
+  "item/parsa.p_well/shadow/r0/f1": {
+   "x": 212,
+   "y": 3284,
+   "w": 57,
+   "h": 18,
+   "ox": 30,
+   "oy": -7
+  },
+  "item/parsa.p_well/shadow/r1/f0": {
+   "x": 3546,
+   "y": 3269,
+   "w": 43,
+   "h": 25,
+   "ox": 18,
+   "oy": 0
+  },
+  "item/parsa.p_well/shadow/r1/f1": {
+   "x": 1080,
+   "y": 3270,
+   "w": 41,
+   "h": 25,
+   "ox": 18,
+   "oy": 0
+  },
+  "item/parsa.p_workshop/glow/r0/f0": {
+   "x": 1727,
+   "y": 3272,
+   "w": 33,
+   "h": 21,
+   "ox": -24,
+   "oy": -42
+  },
+  "item/parsa.p_workshop/glow/r1/f0": {
+   "x": 1761,
+   "y": 3272,
+   "w": 33,
+   "h": 21,
+   "ox": 72,
+   "oy": -34
+  },
+  "item/parsa.p_workshop/glow/r2/f0": {
+   "x": 1588,
+   "y": 3273,
+   "w": 33,
+   "h": 21,
+   "ox": 24,
    "oy": -2
   },
-  "item/parsa.p_wall_gate/shadow/r1/f0": {
-   "x": 1754,
-   "y": 3774,
-   "w": 77,
-   "h": 30,
-   "ox": 27,
-   "oy": -2
-  },
-  "item/parsa.p_workshop/shadow/r0/f0": {
-   "x": 1,
-   "y": 3646,
-   "w": 138,
-   "h": 81,
-   "ox": 26,
-   "oy": 3
+  "item/parsa.p_workshop/glow/r3/f0": {
+   "x": 1622,
+   "y": 3273,
+   "w": 33,
+   "h": 21,
+   "ox": -8,
+   "oy": -10
   },
   "item/parsa.p_workshop/shadow/r1/f0": {
-   "x": 322,
-   "y": 3646,
-   "w": 138,
-   "h": 71,
-   "ox": 58,
+   "x": 3900,
+   "y": 3145,
+   "w": 158,
+   "h": 72,
+   "ox": 77,
    "oy": -12
   },
   "item/parsa.p_workshop/shadow/r2/f0": {
-   "x": 1881,
-   "y": 3717,
-   "w": 175,
-   "h": 71,
-   "ox": 70,
-   "oy": -12
-  },
-  "item/parsa.p_workshop/shadow/r3/f0": {
-   "x": 1347,
-   "y": 3643,
-   "w": 175,
-   "h": 81,
-   "ox": 102,
-   "oy": 3
+   "x": 3726,
+   "y": 3145,
+   "w": 173,
+   "h": 74,
+   "ox": 68,
+   "oy": -10
   },
   "item/parsa.paradise_gate/base/r0/p0/f0": {
-   "x": 2753,
-   "y": 759,
+   "x": 2889,
+   "y": 823,
    "w": 165,
    "h": 121,
    "ox": 87,
    "oy": 56
   },
   "item/parsa.paradise_gate/base/r0/p1/f0": {
-   "x": 2553,
-   "y": 572,
-   "w": 199,
+   "x": 1716,
+   "y": 778,
+   "w": 200,
    "h": 200,
    "ox": 150,
    "oy": 95
   },
-  "item/parsa.paradise_gate/shadow/r0/f0": {
-   "x": 3148,
-   "y": 3629,
-   "w": 362,
-   "h": 163,
-   "ox": 154,
-   "oy": -3
-  },
-  "item/parsa.pavilion/base/r0/p1/f0": {
-   "x": 2388,
-   "y": 745,
-   "w": 135,
-   "h": 81,
-   "ox": 136,
-   "oy": 55
+  "item/parsa.paradise_gate/base/r0/p2/f0": {
+   "x": 1716,
+   "y": 576,
+   "w": 205,
+   "h": 201,
+   "ox": 55,
+   "oy": 46
   },
   "item/parsa.pavilion/base/r0/p3/f0": {
-   "x": 2232,
-   "y": 745,
+   "x": 3435,
+   "y": 821,
    "w": 155,
    "h": 122,
    "ox": 92,
    "oy": 30
   },
-  "item/parsa.pavilion/base/r0/p5/f0": {
-   "x": 2919,
-   "y": 759,
-   "w": 130,
-   "h": 78,
-   "ox": -3,
-   "oy": -12
+  "item/parsa.pavilion/base/r0/p4/f0": {
+   "x": 3276,
+   "y": 821,
+   "w": 158,
+   "h": 136,
+   "ox": 63,
+   "oy": 14
+  },
+  "item/parsa.pavilion/base/r0/p6/f0": {
+   "x": 3667,
+   "y": 814,
+   "w": 158,
+   "h": 149,
+   "ox": 127,
+   "oy": 46
+  },
+  "item/parsa.pavilion/base/r0/p7/f0": {
+   "x": 3826,
+   "y": 814,
+   "w": 155,
+   "h": 149,
+   "ox": 29,
+   "oy": -2
   },
   "item/parsa.pavilion/glow/r0/f0": {
-   "x": 1347,
-   "y": 3725,
+   "x": 3014,
+   "y": 3120,
    "w": 116,
    "h": 62,
    "ox": 58,
    "oy": -12
   },
   "item/parsa.pavilion/shadow/r0/f0": {
-   "x": 3784,
-   "y": 3522,
+   "x": 2832,
+   "y": 2999,
    "w": 297,
-   "h": 137,
+   "h": 120,
    "ox": 114,
-   "oy": -36
+   "oy": -53
   },
-  "item/parsa.quarry/base/r0/p0/f0": {
-   "x": 2804,
-   "y": 1,
-   "w": 510,
-   "h": 285,
-   "ox": 255,
-   "oy": 72
+  "item/parsa.quarry/base/r0/p15/f0": {
+   "x": 652,
+   "y": 811,
+   "w": 302,
+   "h": 196,
+   "ox": 478,
+   "oy": -84
   },
-  "item/parsa.quarry/base/r0/p1/f0": {
-   "x": 1843,
-   "y": 1,
-   "w": 510,
-   "h": 288,
-   "ox": -1,
-   "oy": -49
-  },
-  "item/parsa.quarry/base/r0/p2/f0": {
-   "x": 961,
-   "y": 294,
-   "w": 468,
-   "h": 274,
-   "ox": 469,
-   "oy": -87
-  },
-  "item/parsa.quarry/base/r0/p3/f0": {
-   "x": 3230,
-   "y": 287,
-   "w": 464,
-   "h": 282,
-   "ox": 210,
-   "oy": -213
+  "item/parsa.quarry/base/r0/p16/f0": {
+   "x": 1,
+   "y": 807,
+   "w": 302,
+   "h": 202,
+   "ox": -50,
+   "oy": -342
   },
   "item/parsa.quarry/shadow/r0/f0": {
-   "x": 1229,
-   "y": 2439,
-   "w": 1133,
-   "h": 548,
-   "ox": 473,
-   "oy": 2
+   "x": 2587,
+   "y": 2286,
+   "w": 1143,
+   "h": 378,
+   "ox": 482,
+   "oy": -168
   },
   "item/parsa.road_station/base/r0/p4/f0": {
-   "x": 3721,
-   "y": 818,
+   "x": 1917,
+   "y": 824,
    "w": 350,
    "h": 199,
    "ox": 255,
    "oy": 42
   },
   "item/parsa.road_station/base/r0/p5/f0": {
-   "x": 1941,
-   "y": 763,
+   "x": 2268,
+   "y": 828,
    "w": 286,
-   "h": 189,
+   "h": 188,
    "ox": 28,
-   "oy": -19
-  },
-  "item/parsa.road_station/base/r0/p6/f0": {
-   "x": 3050,
-   "y": 759,
-   "w": 162,
-   "h": 111,
-   "ox": 65,
-   "oy": -162
-  },
-  "item/parsa.road_station/base/r0/p7/f0": {
-   "x": 2524,
-   "y": 773,
-   "w": 111,
-   "h": 103,
-   "ox": 290,
-   "oy": -88
-  },
-  "item/parsa.road_station/base/r0/p8/f0": {
-   "x": 2636,
-   "y": 773,
-   "w": 74,
-   "h": 94,
-   "ox": 127,
-   "oy": -162
+   "oy": -20
   },
   "item/parsa.road_station/glow/r0/f0": {
-   "x": 3116,
-   "y": 3757,
+   "x": 3780,
+   "y": 3284,
    "w": 29,
    "h": 17,
    "ox": 24,
    "oy": -108
   },
   "item/parsa.road_station/shadow/r0/f0": {
-   "x": 1754,
-   "y": 2988,
+   "x": 3151,
+   "y": 2963,
    "w": 574,
-   "h": 280,
+   "h": 252,
    "ox": 294,
-   "oy": 3
+   "oy": -25
   },
   "item/parsa.south_stores/base/r0/p0/f0": {
-   "x": 1,
-   "y": 563,
+   "x": 955,
+   "y": 311,
    "w": 458,
-   "h": 267,
+   "h": 265,
    "ox": 255,
-   "oy": 43
+   "oy": 41
   },
   "item/parsa.south_stores/base/r0/p1/f0": {
-   "x": 460,
-   "y": 563,
+   "x": 484,
+   "y": 316,
    "w": 450,
-   "h": 267,
+   "h": 265,
    "ox": 511,
-   "oy": -85
+   "oy": -87
+  },
+  "item/parsa.south_stores/base/r0/p2/f0": {
+   "x": 324,
+   "y": 797,
+   "w": 327,
+   "h": 202,
+   "ox": 642,
+   "oy": -215
   },
   "item/parsa.south_stores/shadow/r0/f0": {
-   "x": 2363,
-   "y": 2963,
+   "x": 2284,
+   "y": 2665,
    "w": 866,
-   "h": 425,
+   "h": 333,
    "ox": 646,
-   "oy": 3
+   "oy": -88
   },
   "item/parsa.stair_relief/shadow/r0/f0": {
-   "x": 2703,
-   "y": 3635,
+   "x": 3276,
+   "y": 3216,
    "w": 109,
    "h": 52,
    "ox": 36,
    "oy": 2
   },
-  "item/parsa.stair_relief/shadow/r1/f0": {
-   "x": 1464,
-   "y": 3729,
-   "w": 105,
-   "h": 52,
-   "ox": 68,
-   "oy": 2
-  },
   "item/parsa.stair_relief/shadow/r2/f0": {
-   "x": 1570,
-   "y": 3729,
+   "x": 3496,
+   "y": 3216,
    "w": 105,
    "h": 52,
    "ox": 36,
    "oy": 2
   },
   "item/parsa.stair_relief/shadow/r3/f0": {
-   "x": 2703,
-   "y": 3688,
+   "x": 3386,
+   "y": 3216,
    "w": 109,
    "h": 52,
    "ox": 68,
    "oy": 2
   },
-  "item/parsa.t_almond/shadow/r0/f0": {
-   "x": 718,
-   "y": 3750,
-   "w": 66,
-   "h": 31,
-   "ox": 12,
-   "oy": -5
-  },
-  "item/parsa.t_almond/shadow/r1/f0": {
-   "x": 785,
-   "y": 3750,
-   "w": 66,
-   "h": 31,
-   "ox": 12,
-   "oy": -5
-  },
   "item/parsa.t_cypress/shadow/r0/f0": {
-   "x": 1079,
-   "y": 3782,
+   "x": 3058,
+   "y": 3270,
    "w": 78,
    "h": 23,
    "ox": 17,
    "oy": -8
   },
   "item/parsa.t_cypress/shadow/r1/f0": {
-   "x": 911,
-   "y": 3782,
+   "x": 1162,
+   "y": 3270,
    "w": 81,
    "h": 24,
    "ox": 15,
    "oy": -7
   },
-  "item/parsa.t_cypress/shadow/r2/f0": {
-   "x": 993,
-   "y": 3782,
-   "w": 85,
-   "h": 23,
-   "ox": 13,
-   "oy": -9
-  },
   "item/parsa.t_date/shadow/r0/f0": {
-   "x": 469,
-   "y": 3750,
+   "x": 656,
+   "y": 3253,
    "w": 92,
    "h": 32,
    "ox": 9,
    "oy": -12
   },
-  "item/parsa.t_date/shadow/r1/f0": {
-   "x": 2319,
-   "y": 3742,
-   "w": 98,
-   "h": 34,
-   "ox": 9,
-   "oy": -12
-  },
   "item/parsa.t_fig/shadow/r0/f0": {
-   "x": 1249,
-   "y": 3747,
+   "x": 1523,
+   "y": 3250,
    "w": 64,
    "h": 33,
    "ox": 12,
    "oy": -3
   },
   "item/parsa.t_plane/shadow/r0/f0": {
-   "x": 3749,
-   "y": 3735,
+   "x": 1588,
+   "y": 3231,
    "w": 104,
    "h": 41,
    "ox": 15,
    "oy": -4
   },
+  "item/parsa.t_plane/shadow/r1/f0": {
+   "x": 3900,
+   "y": 3218,
+   "w": 108,
+   "h": 45,
+   "ox": 15,
+   "oy": -3
+  },
   "item/parsa.t_pomegranate/shadow/r0/f0": {
-   "x": 718,
-   "y": 3782,
+   "x": 3342,
+   "y": 3269,
    "w": 61,
    "h": 26,
    "ox": 12,
    "oy": -7
   },
-  "item/parsa.t_pomegranate/shadow/r1/f0": {
-   "x": 3687,
-   "y": 3746,
-   "w": 59,
-   "h": 30,
+  "item/parsa.t_poplar/shadow/r0/f0": {
+   "x": 1244,
+   "y": 3270,
+   "w": 78,
+   "h": 24,
    "ox": 12,
-   "oy": -5
+   "oy": -10
+  },
+  "item/parsa.t_poplar/shadow/r1/f0": {
+   "x": 3461,
+   "y": 3269,
+   "w": 84,
+   "h": 25,
+   "ox": 12,
+   "oy": -10
   },
   "item/parsa.t_vine/shadow/r0/f0": {
-   "x": 562,
-   "y": 3750,
+   "x": 749,
+   "y": 3253,
    "w": 77,
    "h": 32,
    "ox": 28,
    "oy": -2
   },
   "item/parsa.t_vine/shadow/r1/f0": {
-   "x": 640,
-   "y": 3750,
+   "x": 1,
+   "y": 3254,
    "w": 77,
    "h": 32,
    "ox": 28,
    "oy": -2
   },
   "item/parsa.t_willow/shadow/r0/f0": {
-   "x": 3021,
-   "y": 3738,
+   "x": 3810,
+   "y": 3220,
    "w": 85,
    "h": 40,
    "ox": 13,
    "oy": -2
   },
   "item/parsa.t_willow/shadow/r1/f0": {
-   "x": 2813,
-   "y": 3738,
+   "x": 4009,
+   "y": 3218,
    "w": 86,
    "h": 41,
    "ox": 13,
    "oy": -1
   },
+  "item/parsa.tacara/glow/r0/f0": {
+   "x": 2786,
+   "y": 3261,
+   "w": 43,
+   "h": 27,
+   "ox": -74,
+   "oy": -126
+  },
   "item/parsa.tacara/shadow/r0/f0": {
-   "x": 1,
-   "y": 3126,
-   "w": 649,
-   "h": 304,
+   "x": 2171,
+   "y": 2999,
+   "w": 660,
+   "h": 180,
    "ox": 262,
-   "oy": 3
+   "oy": -125
   },
   "item/parsa.tacara_stair_s/shadow/r0/f0": {
-   "x": 2816,
-   "y": 3389,
-   "w": 381,
-   "h": 183,
+   "x": 2171,
+   "y": 3180,
+   "w": 382,
+   "h": 140,
    "ox": 260,
-   "oy": 2
+   "oy": -41
   },
-  "item/parsa.treasury/base/r0/p1/f0": {
-   "x": 911,
-   "y": 569,
-   "w": 510,
-   "h": 256,
-   "ox": 511,
-   "oy": -57
+  "item/parsa.treasury/base/r0/p10/f0": {
+   "x": 324,
+   "y": 582,
+   "w": 288,
+   "h": 214,
+   "ox": 65,
+   "oy": -426
   },
   "item/parsa.treasury/base/r0/p2/f0": {
-   "x": 961,
-   "y": 1,
+   "x": 1455,
+   "y": 309,
    "w": 510,
-   "h": 292,
-   "ox": -1,
-   "oy": -50
+   "h": 266,
+   "ox": 511,
+   "oy": -59
   },
   "item/parsa.treasury/base/r0/p3/f0": {
-   "x": 3230,
-   "y": 570,
+   "x": 1455,
+   "y": 1,
+   "w": 510,
+   "h": 307,
+   "ox": -1,
+   "oy": -51
+  },
+  "item/parsa.treasury/base/r0/p4/f0": {
+   "x": 3248,
+   "y": 1,
    "w": 490,
-   "h": 256,
+   "h": 289,
    "ox": 255,
    "oy": -185
   },
-  "item/parsa.treasury/base/r0/p4/f0": {
-   "x": 3721,
-   "y": 561,
-   "w": 359,
-   "h": 256,
-   "ox": -404,
-   "oy": -185
-  },
   "item/parsa.treasury/base/r0/p5/f0": {
-   "x": 1430,
+   "x": 1,
+   "y": 324,
+   "w": 454,
+   "h": 255,
+   "ox": -307,
+   "oy": -187
+  },
+  "item/parsa.treasury/base/r0/p6/f0": {
+   "x": 2378,
    "y": 566,
    "w": 510,
-   "h": 257,
+   "h": 261,
    "ox": -1,
    "oy": -323
   },
   "item/parsa.treasury/base/r0/p7/f0": {
-   "x": 1,
+   "x": 1966,
+   "y": 1,
+   "w": 449,
+   "h": 299,
+   "ox": -513,
+   "oy": -309
+  },
+  "item/parsa.treasury/base/r0/p8/f0": {
+   "x": 2416,
    "y": 1,
    "w": 448,
-   "h": 295,
+   "h": 294,
    "ox": -257,
-   "oy": -441
+   "oy": -442
+  },
+  "item/parsa.treasury/base/r0/p9/f0": {
+   "x": 613,
+   "y": 582,
+   "w": 289,
+   "h": 213,
+   "ox": 546,
+   "oy": -187
   },
   "item/parsa.treasury/shadow/r0/f0": {
-   "x": 1,
-   "y": 1278,
-   "w": 1556,
-   "h": 764,
+   "x": 2345,
+   "y": 1399,
+   "w": 1554,
+   "h": 492,
    "ox": 550,
-   "oy": 3
+   "oy": -269
   },
   "item/parsa.tripylon/shadow/r0/f0": {
-   "x": 3230,
-   "y": 3372,
-   "w": 553,
-   "h": 256,
+   "x": 877,
+   "y": 3080,
+   "w": 562,
+   "h": 154,
    "ox": 230,
-   "oy": 3
-  },
-  "item/parsa.tripylon_stair/shadow/r0/f0": {
-   "x": 3511,
-   "y": 3629,
-   "w": 237,
-   "h": 116,
-   "ox": 164,
-   "oy": 2
+   "oy": -104
   }
  }
 }
