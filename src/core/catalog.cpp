@@ -504,6 +504,7 @@ public:
                 d.snow = true;
             }
             d.line = get<std::string>(s, "line", ctx);
+            cat_.seasonDays.push_back(d.days);
             cat_.seasons.push_back(std::move(d));
         }
         checkUnique(cat_.seasons, "season");

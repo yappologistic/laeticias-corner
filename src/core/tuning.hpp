@@ -20,6 +20,11 @@ inline constexpr double kDuskStart = 0.50;
 inline constexpr double kNightStart = 0.625;
 inline constexpr double kDawnStart = 0.875;
 inline constexpr double kPinEaseSeconds = 1.6; // time to glide to a pinned phase
+inline constexpr double kMidnight = 0.75;      // a new calendar day begins here
+// The season's colour grade glides to the new season over this share of a cycle (midnight to
+// the end of dawn), or this many seconds when the season is pinned by hand.
+inline constexpr double kSeasonGradeGlide = 0.25;
+inline constexpr float kSeasonPinGlide = 2.0f;
 
 // Lighting keyframes over the cycle, interpolated smoothly and wrapping at 1.0.
 struct LightKey {
@@ -111,7 +116,9 @@ inline constexpr float kRainPoolShare = 0.6f; // most of the particle pool rain 
 inline constexpr float kRippleSeconds = 0.8f;
 inline constexpr float kSplashSeconds = 0.22f;
 inline constexpr float kLeavesPerSecondPerTree = 0.012f;
-inline constexpr float kTreeHeight = 1.875f; // nature pieces this tall drop leaves
+inline constexpr float kPetalsPerSecondPerTree = 0.03f;
+inline constexpr float kSnowSpeed = 1.2f;  // tile heights per second
+inline constexpr float kSnowShare = 0.35f; // snowflakes per raindrop the view would have
 inline constexpr float kLeafFall = 0.56f;
 inline constexpr float kLeafSway = 0.375f;
 inline constexpr float kSparkleSpread = 0.6f;
@@ -159,5 +166,13 @@ inline constexpr float kLimiterReleaseSeconds = 0.25f;
 inline constexpr float kRainBirdsDuck = 0.3f;    // birds under rain
 inline constexpr float kRainCricketsDuck = 0.5f; // crickets under rain
 inline constexpr float kVoiceLevel = 0.48f;
+// Music stems (docs/design/living-corner.md R8): 72 bpm in 4/4 at 44.1 kHz is 147 000 samples a
+// bar; a newly unlocked stem fades in over this many bars from the next bar line.
+inline constexpr int kMusicBarSamples = 147000;
+inline constexpr int kStemFadeBars = 4;
+// While a piece's melody is locked, its pad and keys are lifted (the opening is quieter).
+inline constexpr float kDayMakeup = 1.259f;        // +2 dB
+inline constexpr float kNightMakeup = 1.122f;      // +1 dB
+inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 dB
 
 } // namespace lc::tuning

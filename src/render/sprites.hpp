@@ -27,11 +27,23 @@ struct ItemSprites {
     std::vector<FrameSet> base;
     std::vector<FrameSet> shadow;
     std::vector<FrameSet> glow;
-    std::vector<std::optional<Vec2>> light; // centre of the emissive pixels
+    std::vector<std::optional<Vec2>> light;    // centre of the emissive pixels
+    std::vector<std::vector<FrameSet>> stages; // growing items: [stage][variant]
 };
 
 enum class CritterAnim : std::uint8_t { MoveFront, MoveBack, IdleFront, IdleBack };
-enum class Fx : std::uint8_t { Smoke, Ripple, Sparkle, Raindrop, Leaf, Clear, Count };
+enum class Fx : std::uint8_t {
+    Smoke,
+    Ripple,
+    Sparkle,
+    Raindrop,
+    Leaf,
+    Clear,
+    Petal,
+    Snow,
+    Produce, // frame k is the crop of veggie bed variant k
+    Count
+};
 
 // How far ground sprites (terrain, cliffs) reach beyond their tile's diamond, in world px.
 struct Reach {
@@ -60,7 +72,9 @@ struct SpriteTables {
     Reach groundReach;
 };
 
-[[nodiscard]] SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat);
+// Resolves every sprite once. With a season, each frame takes its `@season` look where the art
+// has one (growing items: stage and season, stage, season, plain), else the plain one.
+[[nodiscard]] SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season = -1);
 
 enum class Thumb : std::uint8_t { Terrain, Item, Visitor };
 

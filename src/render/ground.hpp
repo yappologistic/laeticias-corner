@@ -34,6 +34,8 @@ public:
     void draw(Batch& batch, const World& world, const FRect& view, const Xform& target,
               SDL_Texture* targetTexture, float now);
 
+    // Every cached chunk is drawn afresh (the sprites changed, say for a new season).
+    void invalidate();
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] int slotsRendered() const { return rendered_; }
     // Chunk side in tiles at a level (0: native resolution, 1: overview).

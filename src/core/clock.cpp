@@ -72,7 +72,11 @@ void Clock::setPin(ClockPin pin, bool instant) {
 
 void Clock::update(double dt) {
     if (pin_ == ClockPin::Auto) {
+        const double before = t_;
         t_ = wrap(t_ + dt / tuning::kDayLengthSeconds);
+        // Midnight falls in the middle of the night, so the days change in the dark.
+        const double since = wrap(t_ - tuning::kMidnight);
+        if (since < wrap(before - tuning::kMidnight)) ++day_;
         return;
     }
     // Glide along the shortest way round the cycle so pinning never jumps.
@@ -80,6 +84,18 @@ void Clock::update(double dt) {
     const double d = wrap(target - t_ + 0.5) - 0.5;
     const double maxStep = 0.5 * dt / tuning::kPinEaseSeconds; // half a cycle at most
     t_ = std::abs(d) <= maxStep ? target : wrap(t_ + std::copysign(maxStep, d));
+}
+
+SeasonDay seasonOf(int day, std::span<const int> days) {
+    int year = 0;
+    for (const int d : days) year += d;
+    if (year <= 0) return {};
+    int k = ((day % year) + year) % year;
+    for (std::size_t s = 0; s < days.size(); ++s) {
+        if (k < days[s]) return {static_cast<int>(s), k};
+        k -= days[s];
+    }
+    return {};
 }
 
 Lighting lightingAt(double t, bool raining) {

@@ -97,6 +97,14 @@ private:
     // way when it is out of sight.
     void openLand(int stage, bool wave);
     [[nodiscard]] int pages() const;
+    // Seasons: the effective one (pinned or from the calendar), its grade gliding in, and the
+    // lighting with that grade applied.
+    [[nodiscard]] int season() const;
+    void updateSeason(float dt);
+    [[nodiscard]] Lighting lighting() const;
+    [[nodiscard]] bool snowing() const;
+    void setupMusic();
+    void unlockStems(const CondFacts& f, bool instant);
     [[nodiscard]] std::string_view waitingText(int node, std::string& out) const;
     [[nodiscard]] Vec2 screen() const {
         return {static_cast<float>(pixelW_), static_cast<float>(pixelH_)};
@@ -164,8 +172,18 @@ private:
     std::string slug_;
     bool freeBuild_ = false;
     double played_ = 0; // active play time, seconds
-    int day_ = 0;
     int seasonPin_ = -1;
+    int seasonShown_ = -2;     // the season the scene shows (-2: none yet)
+    bool seasonByPin_ = false; // the next season change came from the pin: glide quickly
+    Rgb gradeFrom_;
+    Rgb gradeTo_;
+    float gradeT_ = 1;
+    float gradeSeconds_ = 1;
+    Phase lastPhase_ = Phase::Day;
+    int lastDay_ = 0;
+    std::vector<int> dayStems_; // loops of each piece's stems
+    std::vector<int> nightStems_;
+    std::vector<std::uint8_t> stemOn_; // per catalog stem (day, then night): unlocked
     Profile profile_;
     std::string profileWritten_; // the profile as last written, to write it only on change
     std::optional<Vec2> savedCamera_;

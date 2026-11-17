@@ -1,0 +1,33 @@
+# The four seasons by day: their sprite looks (grass, trees) and grade, then snow at night in
+# winter, and the calendar popover with its season pin.
+set land 2
+set clock day
+set season spring
+wait 10
+expect season spring
+shot shots/season_spring.png
+set season summer
+wait 10
+shot shots/season_summer.png
+set season autumn
+wait 10
+shot shots/season_autumn.png
+set season winter
+wait 130
+expect season winter
+shot shots/season_winter.png
+set clock night
+set rain on
+wait 90
+shot shots/season_winter_snow.png
+set rain off
+set clock day
+click ui:calendar
+wait 12
+shot shots/calendar.png
+click ui:season_auto
+wait 4
+expect season spring
+key escape
+wait 12
+quit

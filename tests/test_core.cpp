@@ -664,3 +664,36 @@ TEST_CASE("autosave fires under continuous editing, after quiet moments, and ret
     while (!a.due(step, false)) ++frames;
     CHECK(frames * step == doctest::Approx(tuning::kSaveRetrySeconds).epsilon(0.02));
 }
+
+TEST_CASE("the calendar turns at midnight while the clock runs, never while pinned") {
+    Clock clock;
+    clock.setTime(0.74);
+    CHECK(clock.day() == 0);
+    clock.update(tuning::kDayLengthSeconds * 0.005); // 0.745: not yet
+    CHECK(clock.day() == 0);
+    clock.update(tuning::kDayLengthSeconds * 0.01); // past 0.75
+    CHECK(clock.day() == 1);
+    clock.update(tuning::kDayLengthSeconds * 0.3); // through 1.0 (not midnight) to 0.055
+    CHECK(clock.day() == 1);
+    // A whole cycle in simulation steps: one more midnight.
+    for (int i = 0; i < static_cast<int>(tuning::kDayLengthSeconds / tuning::kStepSeconds); ++i)
+        clock.update(tuning::kStepSeconds);
+    CHECK(clock.day() == 2);
+    // A pinned clock (and its glide across midnight) leaves the calendar alone.
+    clock.setTime(0.7);
+    clock.setPin(ClockPin::Dawn, false);
+    for (int i = 0; i < 600; ++i) clock.update(tuning::kStepSeconds);
+    CHECK(clock.phase() == Phase::Dawn);
+    CHECK(clock.day() == 2);
+    clock.update(tuning::kDayLengthSeconds * 3);
+    CHECK(clock.day() == 2);
+
+    const std::vector<int> days{3, 3, 3, 3};
+    CHECK(seasonOf(0, days).season == 0);
+    CHECK(seasonOf(2, days).day == 2);
+    CHECK(seasonOf(3, days).season == 1);
+    CHECK(seasonOf(3, days).day == 0);
+    CHECK(seasonOf(11, days).season == 3);
+    CHECK(seasonOf(12, days).season == 0); // a year is twelve days
+    CHECK(seasonOf(40, days).season == 1);
+}

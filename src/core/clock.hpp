@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string_view>
 
 namespace lc {
@@ -37,14 +38,26 @@ public:
     [[nodiscard]] double time() const { return t_; }
     [[nodiscard]] ClockPin pin() const { return pin_; }
     [[nodiscard]] Phase phase() const;
+    // Calendar day, counted from 0. A new day begins at midnight, and only while the clock runs
+    // on its own: a pinned clock (and its glide) stops the calendar.
+    [[nodiscard]] int day() const { return day_; }
+    void setDay(int day) { day_ = day; }
 
 private:
     double t_ = 0.2; // a fresh corner starts mid-morning
     ClockPin pin_ = ClockPin::Auto;
+    int day_ = 0;
 };
 
 [[nodiscard]] Phase phaseAt(double t);
 [[nodiscard]] double phaseCentre(Phase p);
 [[nodiscard]] Lighting lightingAt(double t, bool raining);
+
+// The calendar: seasons of `days[i]` days each, repeating (docs/design/living-corner.md R4.1).
+struct SeasonDay {
+    int season = 0;
+    int day = 0; // within the season, from 0
+};
+[[nodiscard]] SeasonDay seasonOf(int day, std::span<const int> days);
 
 } // namespace lc

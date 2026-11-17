@@ -1,6 +1,7 @@
 #pragma once
 // Small software mixer on one SDL audio stream: one-shot effects with pitch, looping Ogg
-// music/ambience with smooth gain ramps, a faded master mute and a peak limiter that only acts
+// ambience with smooth gain ramps, music stems that play in step from one master sample position
+// and fade in on a bar line when unlocked, a faded master mute and a peak limiter that only acts
 // above its ceiling. The audio thread only reads immutable sample data, atomics and a
 // single-producer/single-consumer command ring. In capture mode there is no device: the game
 // pulls samples itself (for headless analysis of what the player would hear).
@@ -12,6 +13,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -22,13 +24,6 @@ namespace lc {
 
 struct AudioList;
 
-enum class Loop : std::uint8_t { DayMusic, NightMusic, Birds, Crickets, Rain, Water, Count };
-
-// Catalog file each loop plays.
-inline constexpr std::array<std::string_view, static_cast<std::size_t>(Loop::Count)> kLoopFiles{
-    "music/day.ogg",    "music/night.ogg", "amb/birds.ogg",
-    "amb/crickets.ogg", "amb/rain.ogg",    "amb/water.ogg"};
-
 class Mixer {
 public:
     Mixer();
@@ -36,7 +31,8 @@ public:
     Mixer(const Mixer&) = delete;
     Mixer& operator=(const Mixer&) = delete;
 
-    // Loads every file the catalog lists; missing or unreadable ones become silence.
+    // Loads every effect, ambience bed and music stem the catalog lists; missing or unreadable
+    // ones become silence.
     void load(const std::filesystem::path& audioDir, const AudioList& list);
     // Opens the default playback device. Without one the game simply stays silent.
     bool open();
@@ -49,8 +45,18 @@ public:
 
     [[nodiscard]] int sfxIndex(std::string_view file) const;
     void play(int sfx, float gain, float pitch);
-    void setLoopGain(Loop loop, float gain);
+    // Loops are ambience beds and music stems, by file; -1 when the file is not loaded.
+    [[nodiscard]] int loopIndex(std::string_view file) const;
+    void setLoopGain(int loop, float gain);
+    // A music stem joins: at once (`instant`, e.g. when a world opens), or from silence over a
+    // few bars starting on the next bar line. Stems not unlocked stay silent and undecoded.
+    void unlockStem(int loop, bool instant);
+    // Extra gain on a piece's stems while its stem `lead` is not yet in (a quieter opening needs
+    // lifting); it fades away as the lead fades in. `stems` are the piece's loops.
+    void setMakeup(std::span<const int> stems, int lead, float gain);
     void setMuted(bool muted) { muted_.store(muted); }
+    // Master sample position of the music (for tests of the arithmetic's wiring).
+    [[nodiscard]] std::uint64_t musicPosition() const { return musicPos_; }
 
 private:
     struct Voice {
@@ -63,10 +69,18 @@ private:
         void operator()(stb_vorbis* v) const;
     };
     struct LoopTrack {
+        std::string file;
         std::vector<unsigned char> bytes;
         std::unique_ptr<stb_vorbis, VorbisCloser> vorbis;
         int channels = 0;
         float gain = 0;
+        bool stem = false;           // plays in step with the music's master position
+        std::uint64_t length = 0;    // samples, for stems
+        std::uint64_t at = ~0ULL;    // decoder position the stem is at, ~0: not playing
+        std::uint64_t fadeStart = 0; // stem: when its fade-in began (master samples)
+        bool fading = false;
+        int lead = -1;    // stem: the loop whose arrival removes the makeup gain
+        float makeup = 1; // stem: gain while `lead` is not in
     };
     struct Command {
         int sfx;
@@ -83,8 +97,10 @@ private:
 
     std::vector<std::string> sfxNames_;
     std::vector<std::vector<float>> sfx_;
-    std::array<LoopTrack, static_cast<std::size_t>(Loop::Count)> loops_{};
-    std::array<std::atomic<float>, static_cast<std::size_t>(Loop::Count)> loopTargets_{};
+    static constexpr std::size_t kMaxLoops = 32;
+    std::vector<LoopTrack> loops_; // fixed once loaded
+    std::array<std::atomic<float>, kMaxLoops> loopTargets_{};
+    std::array<std::atomic<int>, kMaxLoops> unlocked_{}; // 0 locked, 1 fade in, 2 instant
     std::array<Command, kRing> ring_{};
     std::atomic<std::uint32_t> head_{0}; // written by the game thread
     std::atomic<std::uint32_t> tail_{0}; // written by the audio thread
@@ -95,7 +111,9 @@ private:
     // Audio-thread state.
     std::array<Voice, kVoices> voices_{};
     float master_ = 0;
-    float limit_ = 1; // limiter gain, recovers slowly after a peak
+    float limit_ = 1;                          // limiter gain, recovers slowly after a peak
+    std::uint64_t musicPos_ = 0;               // master sample position of the music
+    std::array<float, kMaxLoops> stemLevel_{}; // fade-in level of each stem
     std::array<float, kChunk * 2> mixBuf_{};
     std::array<float, kChunk * 2> decodeBuf_{}; // raw decoder output
     std::array<float, kChunk * 2> loopBuf_{};   // one loop's stereo chunk

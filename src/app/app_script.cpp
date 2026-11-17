@@ -177,6 +177,8 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                          progress_.wishes[static_cast<std::size_t>(*w)].state)]),
                      a[2]);
     }
+    if (what == "season") return equal(cat_.seasons[static_cast<std::size_t>(season())].id, a[1]);
+    if (what == "day") return equal(std::to_string(clock_.day()), a[1]);
     if (what == "stage") return equal(std::to_string(progress_.stage), a[1]);
     if (what == "wishes") return equal(std::to_string(progress_.open.size()), a[1]);
     if (what == "ribbon") return yesNo(hud_.ribbonShowing());
@@ -371,6 +373,11 @@ bool App::scriptStep() {
                 progress_.unlockEverything(cat_);
             } else if (c.args[0] == "played") {
                 played_ = std::stod(c.args[1]);
+            } else if (c.args[0] == "season") {
+                seasonPin_ = c.args[1] == "auto" ? -1 : cat_.findSeason(c.args[1]).value_or(-2);
+                if (seasonPin_ < -1) return fail("unknown season " + c.args[1]);
+            } else if (c.args[0] == "day") {
+                clock_.setDay(std::stoi(c.args[1]));
             } else if (c.args[0] == "land") {
                 const int to =
                     std::min(std::stoi(c.args[1]), static_cast<int>(cat_.stages.size()) - 1);

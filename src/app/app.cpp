@@ -42,11 +42,14 @@ constexpr std::string_view kWishGranted = "sfx/wish_granted.wav";
 constexpr std::string_view kPage = "sfx/page.wav";
 constexpr std::string_view kNook = "sfx/nook.wav";
 constexpr std::string_view kLandOpen = "sfx/land_open.wav";
+constexpr std::string_view kSeason = "sfx/season.wav";
 } // namespace sfx
 
 constexpr std::string_view kPhotoDir = "photos";
-constexpr int kBadSaveCopies = 3; // world.json.bad1 (newest) .. bad3
-constexpr int kThumbW = 384;      // world thumbnail for the worlds screen
+constexpr std::string_view kRainBed = "amb/rain.ogg";   // under rain, not snow
+constexpr std::string_view kWaterBed = "amb/water.ogg"; // with the amount of water
+constexpr int kBadSaveCopies = 3;                       // world.json.bad1 (newest) .. bad3
+constexpr int kThumbW = 384;                            // world thumbnail for the worlds screen
 constexpr int kThumbH = 240;
 constexpr int kHeadlessW = 1280; // headless window when --size is not given
 constexpr int kHeadlessH = 800;
@@ -227,6 +230,7 @@ bool App::init() {
     if (!font_.load(assets_ / "fonts")) return false;
 
     mixer_.load(assets_ / "audio", cat_.audio);
+    setupMusic();
     if (opts_.audioOut)
         mixer_.startCapture();
     else
@@ -260,7 +264,7 @@ void App::adopt(SaveData& data) {
     created_ = data.created.empty() ? utcNow() : data.created;
     freeBuild_ = data.freeBuild;
     played_ = data.played;
-    day_ = data.day;
+    clock_.setDay(data.day);
     seasonPin_ = data.seasonPin;
     clock_.setTime(data.clockTime);
     clock_.setPin(data.pin, false);
@@ -381,7 +385,7 @@ bool App::save() {
     data.played = played_;
     data.clockTime = clock_.time();
     data.pin = clock_.pin();
-    data.day = day_;
+    data.day = clock_.day();
     data.seasonPin = seasonPin_;
     data.rain = rain_;
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
@@ -430,7 +434,7 @@ bool App::writeThumbnail() {
     p.critters = visitors_.critters();
     p.camera = &cam;
     p.screen = size;
-    p.light = lightingAt(clock_.time(), rain_);
+    p.light = lighting();
     scene_->draw(p, target.get());
     const SurfacePtr pixels{SDL_RenderReadPixels(renderer_.get(), nullptr)};
     if (!SDL_SetRenderTarget(renderer_.get(), nullptr)) SDL_Log("thumbnail: %s", SDL_GetError());
@@ -452,7 +456,7 @@ bool App::writeThumbnail() {
 CondFacts App::facts() const {
     CondFacts f;
     f.phase = clock_.phase();
-    f.season = 0;
+    f.season = season();
     f.raining = rain_;
     f.present = visitors_.presence();
     f.seen = visitors_.seenFlags();
@@ -487,10 +491,17 @@ void App::updateProgress() {
             evalDue_ = -1;
         }
     }
-    if (evaluate) progression_.evaluate(world_, progress_, f, played_);
+    if (evaluate) {
+        progression_.evaluate(world_, progress_, f, played_);
+        unlockStems(f, loading_);
+    }
     progression_.tick(world_, progress_, f, played_, !photo_);
-    for (std::size_t v = 0; v < gates_.size(); ++v)
+    // Who may come: the season allows them (rare visitors also by their recipe, in Progression).
+    const auto bit = static_cast<std::uint8_t>(1u << season());
+    for (std::size_t v = 0; v < gates_.size(); ++v) {
+        gates_[v].allowed = !cat_.visitors[v].rare && (cat_.visitors[v].seasons & bit) != 0;
         gates_[v].extra = progression_.extraVisitors(static_cast<int>(v));
+    }
     // What was already there when the world opened is found quietly (a migrated world's nooks).
     const bool quiet = std::exchange(loading_, false);
     for (const ProgressEvent& e : progression_.events()) {
@@ -816,6 +827,8 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_ESCAPE:
         if (photo_)
             togglePhoto();
+        else if (hud_.calendarOpen())
+            hud_.closeCalendar();
         else if (tool_ != Tool::None)
             setTool(Tool::None, -1);
         else if (drawerOpen_) {
@@ -996,6 +1009,11 @@ HudModel App::model() const {
     }
     m.labels = floatLabels_;
     m.edgeChip = simTime_ < edgeChipUntil_;
+    m.worldName = worldName_;
+    m.season = season();
+    m.seasonDay = seasonOf(clock_.day(), cat_.seasonDays).day;
+    m.seasonPin = seasonPin_;
+    m.snow = cat_.seasons[static_cast<std::size_t>(m.season)].snow;
     m.pages = visitors_.seenCount() + progress_.nooksFound();
     m.pagesTotal = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
     m.nextStagePages = nextStagePages(cat_, progress_.stage);
@@ -1015,7 +1033,7 @@ HudModel App::model() const {
     m.canRedo = editor_.canRedo();
     m.canZoomIn = camera_.level() + 1 < static_cast<int>(kZoomLevels.size());
     m.canZoomOut = camera_.level() > 0;
-    const Lighting l = lightingAt(clock_.time(), rain_);
+    const Lighting l = lighting();
     m.brightness =
         std::clamp(((l.ambient.r + l.ambient.g + l.ambient.b) / 3.0f - 0.3f) / 0.6f, 0.0f, 1.0f);
     if (photo_) {
@@ -1105,6 +1123,11 @@ void App::applyHudActions() {
             play(sfx::kOpen, tuning::kUiSfxLevel);
             break;
         case K::PageTurn: play(sfx::kPage, tuning::kUiSfxLevel); break;
+        case K::SeasonPin:
+            seasonPin_ = a.arg;
+            seasonByPin_ = true;
+            markDirty();
+            break;
         case K::EdgeChip:
             camera_.panTo(edgeChipTarget_, screen());
             edgeChipUntil_ = 0;
@@ -1285,6 +1308,7 @@ void App::step(float dt) {
         return simTime_ - l.start > tuning::kNookLabelSeconds;
     });
     updateHoverNook();
+    updateSeason(dt);
     scene_->update(dt, world_, visitors_.critters(), rain_, rng_);
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);
@@ -1292,20 +1316,118 @@ void App::step(float dt) {
     if (autosave_.due(dt, drag_ == Drag::Tool)) (void)save();
 }
 
+int App::season() const {
+    return seasonPin_ >= 0 ? seasonPin_ : seasonOf(clock_.day(), cat_.seasonDays).season;
+}
+
+bool App::snowing() const {
+    return rain_ && cat_.seasons[static_cast<std::size_t>(season())].snow;
+}
+
+Lighting App::lighting() const {
+    Lighting l = lightingAt(clock_.time(), rain_);
+    // The season's grade multiplies over the world with the day's light.
+    const float k = gradeT_ * gradeT_ * (3 - 2 * gradeT_);
+    const Rgb g{gradeFrom_.r + (gradeTo_.r - gradeFrom_.r) * k,
+                gradeFrom_.g + (gradeTo_.g - gradeFrom_.g) * k,
+                gradeFrom_.b + (gradeTo_.b - gradeFrom_.b) * k};
+    l.ambient = {l.ambient.r * g.r, l.ambient.g * g.g, l.ambient.b * g.b};
+    return l;
+}
+
+void App::updateSeason(float dt) {
+    gradeT_ = std::min(1.0f, gradeT_ + dt / gradeSeconds_);
+    const int s = season();
+    if (s != seasonShown_) {
+        // Looks switch at once; the grade glides from where it is to the new season's.
+        const Rgb target = cat_.seasons[static_cast<std::size_t>(s)].grade;
+        if (seasonShown_ < -1) {
+            gradeFrom_ = gradeTo_ = target;
+            gradeT_ = 1;
+        } else {
+            const float k = gradeT_ * gradeT_ * (3 - 2 * gradeT_);
+            gradeFrom_ = {gradeFrom_.r + (gradeTo_.r - gradeFrom_.r) * k,
+                          gradeFrom_.g + (gradeTo_.g - gradeFrom_.g) * k,
+                          gradeFrom_.b + (gradeTo_.b - gradeFrom_.b) * k};
+            gradeTo_ = target;
+            gradeT_ = 0;
+            gradeSeconds_ =
+                seasonByPin_
+                    ? tuning::kSeasonPinGlide
+                    : static_cast<float>(tuning::kSeasonGradeGlide * tuning::kDayLengthSeconds);
+        }
+        seasonByPin_ = false;
+        seasonShown_ = s;
+        scene_->setSeason(s);
+    }
+    if (clock_.day() != lastDay_) {
+        lastDay_ = clock_.day();
+        markDirty();
+    }
+    // The first dawn of a season: a soft chime and Laeticia's word on it.
+    const Phase phase = clock_.phase();
+    if (phase == Phase::Dawn && lastPhase_ == Phase::Night && clock_.pin() == ClockPin::Auto &&
+        seasonOf(clock_.day(), cat_.seasonDays).day == 0) {
+        const SeasonDef& def = cat_.seasons[static_cast<std::size_t>(s)];
+        play(sfx::kSeason);
+        hud_.toast(
+            std::vformat(strings::kThanks, std::make_format_args(def.line, cat_.resident.name)));
+    }
+    lastPhase_ = phase;
+}
+
+void App::setupMusic() {
+    for (const auto& s : cat_.audio.dayStems) dayStems_.push_back(mixer_.loopIndex(s.file));
+    for (const auto& s : cat_.audio.nightStems) nightStems_.push_back(mixer_.loopIndex(s.file));
+    stemOn_.assign(dayStems_.size() + nightStems_.size(), 0);
+    // While a piece's first conditional stem (its melody) is locked, the rest is lifted a little.
+    const auto lead = [](const std::vector<StemDef>& defs, const std::vector<int>& loops) {
+        for (std::size_t i = 0; i < defs.size(); ++i)
+            if (defs[i].when >= 0) return loops[i];
+        return -1;
+    };
+    mixer_.setMakeup(dayStems_, lead(cat_.audio.dayStems, dayStems_), tuning::kDayMakeup);
+    mixer_.setMakeup(nightStems_, lead(cat_.audio.nightStems, nightStems_), tuning::kNightMakeup);
+}
+
+void App::unlockStems(const CondFacts& f, bool instant) {
+    std::size_t k = 0;
+    for (const auto* piece : {&cat_.audio.dayStems, &cat_.audio.nightStems}) {
+        const auto& loops = piece == &cat_.audio.dayStems ? dayStems_ : nightStems_;
+        for (std::size_t i = 0; i < piece->size(); ++i, ++k) {
+            const StemDef& s = (*piece)[i];
+            if (stemOn_[k] != 0 || (s.when >= 0 && !cat_.conditions.eval(s.when, world_, f)))
+                continue;
+            stemOn_[k] = 1;
+            // Layers there when the world opens play at once; new ones fade in on a bar line.
+            mixer_.unlockStem(loops[i], instant || s.when < 0);
+        }
+    }
+}
+
 void App::updateAudio() {
     mixer_.setMuted(muted_);
-    const Lighting l = lightingAt(clock_.time(), rain_);
+    const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);
-    mixer_.setLoopGain(Loop::DayMusic, tuning::kMusicLevel * (1 - n));
-    mixer_.setLoopGain(Loop::NightMusic, tuning::kMusicLevel * n);
-    mixer_.setLoopGain(Loop::Birds,
-                       tuning::kBirdsLevel * (1 - n) * (rain_ ? tuning::kRainBirdsDuck : 1.0f));
-    mixer_.setLoopGain(Loop::Crickets,
-                       tuning::kCricketsLevel * n * (rain_ ? tuning::kRainCricketsDuck : 1.0f));
-    mixer_.setLoopGain(Loop::Rain, rain_ ? tuning::kRainLevel : 0.0f);
-    const float water = static_cast<float>(world_.terrainCount(cat_.waterTerrain));
-    mixer_.setLoopGain(Loop::Water, tuning::kWaterLevel *
-                                        std::min(1.0f, water / tuning::kWaterTilesForFullLevel));
+    for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n));
+    for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n);
+    // The season's beds; under snow there is no rain bed and the winter bed comes up.
+    const SeasonDef& def = cat_.seasons[static_cast<std::size_t>(season())];
+    const bool snow = snowing();
+    const float boost = snow ? tuning::kSnowAmbienceBoost : 1.0f;
+    for (const auto& file : cat_.audio.ambience) {
+        float g = 0;
+        if (file == def.ambienceDay)
+            g += tuning::kBirdsLevel * (1 - n) * (rain_ && !snow ? tuning::kRainBirdsDuck : boost);
+        if (file == def.ambienceNight)
+            g += tuning::kCricketsLevel * n * (rain_ && !snow ? tuning::kRainCricketsDuck : boost);
+        if (file == kRainBed && rain_ && !snow) g += tuning::kRainLevel;
+        if (file == kWaterBed) {
+            const float water = static_cast<float>(world_.terrainCount(cat_.waterTerrain));
+            g += tuning::kWaterLevel * std::min(1.0f, water / tuning::kWaterTilesForFullLevel);
+        }
+        mixer_.setLoopGain(mixer_.loopIndex(file), g);
+    }
 }
 
 void App::render() {
@@ -1316,7 +1438,7 @@ void App::render() {
     p.outlines = hoverNook_;
     p.camera = &camera_;
     p.screen = screen();
-    p.light = lightingAt(clock_.time(), rain_);
+    p.light = lighting();
     scene_->draw(p);
     if (capturePending_) {
         capturePending_ = false;

@@ -3,6 +3,7 @@
 #include "app/window_state.hpp"
 #include "audio/decode.hpp"
 #include "audio/mixer.hpp"
+#include "audio/stems.hpp"
 #include "audio/wav.hpp"
 #include "core/rng.hpp"
 #include "core/tuning.hpp"
@@ -362,7 +363,10 @@ TEST_CASE("mixer: effects pass untouched, pile-ups are limited, mute and loops r
         CHECK(peak <= tuning::kLimiterCeiling + 1e-4f);
         CHECK(peak > 0.5f);
         // Music fades in without a jump, and mute fades the master out to silence.
-        mixer.setLoopGain(Loop::DayMusic, tuning::kMusicLevel);
+        const int pad = mixer.loopIndex("music/day_pad.ogg");
+        REQUIRE(pad >= 0);
+        mixer.unlockStem(pad, true);
+        mixer.setLoopGain(pad, tuning::kMusicLevel);
         float prev = 0;
         float jump = 0;
         for (int k = 0; k < 40; ++k) {
@@ -376,6 +380,77 @@ TEST_CASE("mixer: effects pass untouched, pile-ups are limited, mute and loops r
         mixer.setMuted(true);
         for (int k = 0; k < 3; ++k) mixer.render(out.data(), kFrames);
         for (const float v : out) CHECK(v == 0.0f);
+    }
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
+TEST_CASE("music stems: bar lines, fades and a stem joining in step with the others") {
+    constexpr std::uint64_t kBar = tuning::kMusicBarSamples;
+    CHECK(nextBar(0, kBar) == 0);
+    CHECK(nextBar(1, kBar) == kBar);
+    CHECK(nextBar(kBar, kBar) == kBar);
+    CHECK(nextBar(kBar * 5 + 3, kBar) == kBar * 6);
+    CHECK(fadeLevel(10, 20, 100) == 0.0f);
+    CHECK(fadeLevel(70, 20, 100) == doctest::Approx(0.5f));
+    CHECK(fadeLevel(500, 20, 100) == 1.0f);
+    CHECK(loopOffset(4704000 + 17, 4704000) == 17);
+
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+    REQUIRE(SDL_Init(SDL_INIT_AUDIO));
+    {
+        // Three mixers on one clock: pad alone; pad then keys joining a bar into the music; keys
+        // alone from the start. Once the keys have faded in, the second is exactly the sum of
+        // the other two, so the late stem landed on the master position, sample for sample.
+        const auto setup = [](Mixer& m, bool pad, bool keys) {
+            m.load(test::assetsDir() / "audio", test::catalog().audio);
+            m.startCapture();
+            const int p = m.loopIndex("music/day_pad.ogg");
+            const int k = m.loopIndex("music/day_keys.ogg");
+            REQUIRE(p >= 0);
+            REQUIRE(k >= 0);
+            m.setLoopGain(p, 0.3f);
+            m.setLoopGain(k, 0.3f);
+            if (pad) m.unlockStem(p, true);
+            if (keys) m.unlockStem(k, true);
+            return k;
+        };
+        Mixer a, b, c;
+        (void)setup(a, true, false);
+        const int keysB = setup(b, true, false);
+        (void)setup(c, false, true);
+        constexpr int kChunk = 4410;
+        std::vector<float> oa(kChunk * 2), ob(kChunk * 2), oc(kChunk * 2);
+        const auto step = [&] {
+            a.render(oa.data(), kChunk);
+            b.render(ob.data(), kChunk);
+            c.render(oc.data(), kChunk);
+        };
+        for (int i = 0; i < 40; ++i) step(); // 4 s: gains settled, more than a bar in
+        CHECK(b.musicPosition() == 40 * static_cast<std::uint64_t>(kChunk));
+        b.unlockStem(keysB, false);
+        // Before the next bar line the keys are silent in b.
+        step();
+        double early = 0;
+        for (std::size_t i = 0; i < ob.size(); ++i)
+            early = std::max(early, static_cast<double>(std::abs(ob[i] - oa[i])));
+        CHECK(early < 1e-6);
+        // After the bar line and four bars of fade, b = a + c.
+        const auto fadeEnd = (nextBar(41 * static_cast<std::uint64_t>(kChunk), kBar) +
+                              kBar * tuning::kStemFadeBars) /
+                                 kChunk +
+                             2;
+        while (b.musicPosition() / kChunk < fadeEnd) step();
+        double err = 0;
+        double signal = 0;
+        for (int k = 0; k < 10; ++k) {
+            step();
+            for (std::size_t i = 0; i < ob.size(); ++i) {
+                err = std::max(err, static_cast<double>(std::abs(ob[i] - oa[i] - oc[i])));
+                signal = std::max(signal, static_cast<double>(std::abs(oc[i])));
+            }
+        }
+        CHECK(signal > 0.01);
+        CHECK(err < 1e-4);
     }
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }

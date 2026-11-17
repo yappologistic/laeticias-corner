@@ -34,6 +34,8 @@ enum Wid : int {
     kSketchTab0,                      // sketchbook tabs: kSketchTab0 + tab
     kSketchNotNow0 = kSketchTab0 + 3, // "Not now" on the sketchbook's open wishes
     kEdgeChip = kSketchNotNow0 + 3,   // "New land"
+    kTitleCard,                       // opens the calendar
+    kCalPin0,                         // calendar: follow the days, then each season
     kTab0 = 48,                       // drawer tabs: kTab0 + category
     kTile0 = 64,                      // drawer tiles: see tileId
 };
@@ -66,6 +68,12 @@ constexpr Named kNames[] = {
     {"sketch:nooks", kSketchTab0 + 2},
     {"sketch_not_now", kSketchNotNow0},
     {"edge_chip", kEdgeChip},
+    {"calendar", kTitleCard},
+    {"season_auto", kCalPin0},
+    {"season_spring", kCalPin0 + 1},
+    {"season_summer", kCalPin0 + 2},
+    {"season_autumn", kCalPin0 + 3},
+    {"season_winter", kCalPin0 + 4},
 };
 
 float approach(float v, bool on, float dt) {
@@ -327,8 +335,12 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         button(kPhoto, theme::icon::kCamera, strings::kPhoto, strings::kKeyPhoto, false);
         button(kClock, pinIcon(m.pin), pinTooltip(m.pin), strings::kKeyClock,
                m.pin != ClockPin::Auto);
-        button(kRain, theme::icon::kRain, m.rain ? strings::kRainOn : strings::kRainOff,
-               strings::kKeyRain, m.rain);
+        if (m.snow)
+            button(kRain, theme::icon::kSnowflake, m.rain ? strings::kSnowOn : strings::kSnowOff,
+                   strings::kKeyRain, m.rain);
+        else
+            button(kRain, theme::icon::kRain, m.rain ? strings::kRainOn : strings::kRainOff,
+                   strings::kKeyRain, m.rain);
         button(kJournal, theme::icon::kJournal, strings::kSketchbook, strings::kKeyJournal,
                m.journalOpen);
     }
@@ -345,12 +357,19 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
     // Title and clock, top-left.
     {
         const float tpad = theme::kTitlePad * s;
-        const float w1 = font.measure(Face::Title, strings::kTitle);
+        const float w1 =
+            font.measure(Face::Title, m.worldName.empty() ? strings::kTitle : m.worldName);
         const float w2 =
             theme::kIcon * s + theme::kTitleIconGap * s + font.measure(Face::Body, clockLabel_);
         titleBox_ = {margin, margin, std::max(w1, w2) + 2 * tpad,
                      2 * tpad + font.lineHeight(Face::Title) + font.lineHeight(Face::Body)};
     }
+
+    {
+        Widget& t = add(kTitleCard, titleBox_);
+        t.tooltip = strings::kCalendar;
+    }
+    layoutCalendar(m, font, s);
 
     // The tray first, so the drawer (drawn over it) is hit first where they meet.
     layoutTray(font, screen, s);
@@ -553,6 +572,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     toastTime_ = std::max(0.0f, toastTime_ - dt);
     toastT_ = approach(toastT_, toastTime_ > 0.0f && !m.photo, dt);
     flash_ = std::max(0.0f, flash_ - dt / theme::kFlashSeconds);
+    if (m.photo) calendarOpen_ = false;
+    calendarT_ = approach(calendarT_, calendarOpen_, dt);
     ribbonTime_ = std::max(0.0f, ribbonTime_ - dt);
     ribbonT_ = approach(ribbonT_, ribbonTime_ > 0.0f && !m.photo, dt);
 
@@ -594,8 +615,16 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         noteLabel_ = std::vformat(strings::kNoteLabel, std::make_format_args(m.cat->resident.name));
 
     clockLabel_.assign(phaseName(m.phase));
+    if (!m.cat->seasons.empty()) {
+        clockLabel_.append(strings::kSeparator)
+            .append(m.cat->seasons[static_cast<std::size_t>(m.season)].name)
+            .append(" ")
+            .append(std::to_string(m.seasonDay + 1));
+    }
     if (m.pin != ClockPin::Auto) clockLabel_.append(strings::kSeparator).append(strings::kPinned);
-    if (m.rain) clockLabel_.append(strings::kSeparator).append(strings::kRaining);
+    if (m.rain)
+        clockLabel_.append(strings::kSeparator)
+            .append(m.snow ? strings::kSnowing : strings::kRaining);
     hintText_.assign(m.hint);
 
     layout(m, font, screen, s);
@@ -621,7 +650,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             (hintT_ > 0.5f && hintBox_.contains(in.x, in.y)) ||
             (toastT_ > 0.5f && !toast_.empty() && toastBox_.contains(in.x, in.y)) ||
             (trayT_ > 0.5f && trayBox_.contains(in.x, in.y)) ||
-            (ribbonT_ > 0.5f && ribbonBox_.contains(in.x, in.y)))
+            (ribbonT_ > 0.5f && ribbonBox_.contains(in.x, in.y)) ||
+            (calendarT_ > 0.5f && calendarBox_.contains(in.x, in.y)))
             overUi_ = true;
         for (auto it = widgets_.rbegin(); it != widgets_.rend(); ++it) {
             if (it->box.contains(in.x, in.y)) {
@@ -662,6 +692,10 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         }
     }
     if (in.pressed && canPoint && hovered != kNotNow) menuWish_ = -1;
+    // A click elsewhere closes the calendar.
+    if (in.pressed && canPoint && calendarOpen_ && hovered != kTitleCard &&
+        !(hovered >= kCalPin0 && hovered <= kCalPin0 + 8) && !calendarBox_.contains(in.x, in.y))
+        calendarOpen_ = false;
     if (in.pressed && canPoint && overUi_) {
         captured_ = true;
         active_ = hovered;
@@ -695,6 +729,16 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                 if (!scroll_.empty()) ++scroll_[static_cast<std::size_t>(m.category)];
                 break;
             case kTrayHeader: trayCollapsed_ = !trayCollapsed_; break;
+            case kTitleCard: calendarOpen_ = !calendarOpen_; break;
+            case kCalPin0:
+            case kCalPin0 + 1:
+            case kCalPin0 + 2:
+            case kCalPin0 + 3:
+            case kCalPin0 + 4:
+            case kCalPin0 + 5:
+            case kCalPin0 + 6:
+            case kCalPin0 + 7:
+            case kCalPin0 + 8: emit(HudAction::Kind::SeasonPin, active_ - kCalPin0 - 1); break;
             case kEdgeChip: emit(HudAction::Kind::EdgeChip); break;
             case kSketchTab0:
             case kSketchTab0 + 1:
@@ -974,7 +1018,10 @@ void Hud::drawTitle(Painter& p, const HudModel& m) const {
     const float lh1 = f.lineHeight(Face::Title);
     const float lh2 = f.lineHeight(Face::Body);
     const Box b = titleBox_;
-    p.text(Face::Title, strings::kTitle, b.x + pad, b.y + pad + f.ascent(Face::Title), theme::kInk);
+    p.text(Face::Title, m.worldName.empty() ? strings::kTitle : m.worldName, b.x + pad,
+           b.y + pad + f.ascent(Face::Title), theme::kInk);
+    const float h = hoverOf(kTitleCard);
+    if (h > 0) p.roundRect(b, theme::kPanelRadius * s, withAlpha(theme::kHover, h * 0.6f));
     const float y2 = b.y + pad + lh1;
     p.icon(phaseIcon(m.phase), b.x + pad + iconW * 0.5f, y2 + lh2 * 0.5f, theme::kInkMuted);
     p.text(Face::Body, clockLabel_, b.x + pad + iconW + theme::kTitleIconGap * s,
@@ -1427,6 +1474,109 @@ void Hud::drawRibbon(Painter& p) const {
     p.endLayer();
 }
 
+void Hud::layoutCalendar(const HudModel& m, const Font& font, float s) {
+    calendarBox_ = {};
+    if (calendarT_ <= 0.0f || m.cat->seasons.empty()) return;
+    const float pad = theme::kPanelPad * s;
+    const float lh = font.lineHeight(Face::Body);
+    const float row = theme::kTipH * s;
+    const auto& seasons = m.cat->seasons;
+    const SeasonDef& now = seasons[static_cast<std::size_t>(m.season)];
+    const int day = m.seasonDay + 1;
+    calendarLine_ =
+        std::vformat(strings::kCalendarDay, std::make_format_args(now.name, day, now.days));
+    const auto lower = [](std::string s0) {
+        if (!s0.empty()) s0[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(s0[0])));
+        return s0;
+    };
+    pinLabels_[0] = strings::kFollowDays;
+    float w = font.measure(Face::Title, calendarLine_);
+    for (std::size_t i = 0; i < seasons.size() && i + 1 < pinLabels_.size(); ++i) {
+        const std::string name = lower(seasons[i].name);
+        pinLabels_[i + 1] = std::vformat(strings::kAlwaysSeason, std::make_format_args(name));
+    }
+    const std::size_t pins = std::min(seasons.size() + 1, pinLabels_.size());
+    for (std::size_t i = 0; i < pins; ++i)
+        w = std::max(w, font.measure(Face::Body, pinLabels_[i]) + theme::kIcon * s * 2);
+    float chips = 0;
+    for (const auto& sd : seasons)
+        chips += font.measure(Face::Body, sd.name) + theme::kIcon * s + 3 * theme::kGap * s;
+    w = std::max(w, chips) + 2 * pad;
+    const float slide = (1.0f - smooth(calendarT_)) * theme::kSlide * s * 0.5f;
+    const float x = titleBox_.x;
+    float y = titleBox_.y + titleBox_.h + theme::kGap * s - slide;
+    const float top = y;
+    y += pad + font.lineHeight(Face::Title) + theme::kGap * s; // the date
+    y += row + theme::kGap * s;                                // the season chips
+    y += lh + theme::kGap * s * 0.5f;                          // "Seasons"
+    for (std::size_t i = 0; i < pins; ++i) {
+        Widget& r = add(kCalPin0 + static_cast<int>(i), {x + pad * 0.5f, y, w - pad, row});
+        r.label = pinLabels_[i];
+        r.selected = static_cast<int>(i) - 1 == m.seasonPin;
+        y += row;
+    }
+    calendarBox_ = {x, top, w, y + pad * 0.5f - top};
+}
+
+void Hud::drawCalendar(Painter& p, const HudModel& m) const {
+    const float a = smooth(calendarT_);
+    if (a <= 0 || calendarBox_.w <= 0) return;
+    const float s = scale_;
+    const Font& f = p.font();
+    const float pad = theme::kPanelPad * s;
+    const Box b = calendarBox_;
+    p.glass(b, theme::kPanelRadius * s, a, theme::kGlass);
+    p.endGlass();
+    float y = b.y + pad;
+    p.text(Face::Title, calendarLine_, b.x + pad, y + f.ascent(Face::Title),
+           withAlpha(theme::kInk, a));
+    y += f.lineHeight(Face::Title) + theme::kGap * s;
+    // The year's seasons, the current one lit.
+    static constexpr char32_t kIcons[] = {theme::icon::kFlower, theme::icon::kSun,
+                                          theme::icon::kLeaf, theme::icon::kSnowflake};
+    const float row = theme::kTipH * s;
+    float x = b.x + pad;
+    for (std::size_t i = 0; i < m.cat->seasons.size(); ++i) {
+        const auto& name = m.cat->seasons[i].name;
+        const float cw = f.measure(Face::Body, name) + theme::kIcon * s + 2 * theme::kGap * s;
+        const Box chip{x, y, cw, row};
+        const bool lit = static_cast<int>(i) == m.season;
+        if (lit) {
+            p.roundRect(chip, row * 0.5f, withAlpha(theme::kAccentWash, a));
+            p.rim(chip, row * 0.5f, theme::kRim * s, withAlpha(theme::kAccentRim, a),
+                  withAlpha(theme::kAccentRim, a * 0.5f));
+        }
+        const SDL_FColor ink = withAlpha(lit ? theme::kInk : theme::kInkMuted, a);
+        p.icon(kIcons[i % std::size(kIcons)], chip.x + theme::kGap * s + theme::kIcon * s * 0.4f,
+               chip.cy(), ink);
+        p.text(Face::Body, name, chip.x + theme::kGap * s + theme::kIcon * s,
+               chip.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, ink);
+        x += cw + theme::kGap * s;
+    }
+    y += row + theme::kGap * s;
+    p.text(Face::Body, strings::kSeasons, b.x + pad, y + f.ascent(Face::Body),
+           withAlpha(theme::kGold, a));
+    for (const Widget& w : widgets_) {
+        if (w.id < kCalPin0 || w.id > kCalPin0 + 8) continue;
+        const float h = hoverOf(w.id);
+        if (h > 0) p.roundRect(w.box, w.box.h * 0.5f, withAlpha(theme::kHover, a * h));
+        // A radio: a ring, filled when chosen.
+        const float r = theme::kDotRadius * s * 1.6f;
+        const float cx = w.box.x + pad * 0.5f + r;
+        const Box ring{cx - r, w.box.cy() - r, 2 * r, 2 * r};
+        p.rim(ring, r, theme::kRim * s * 1.5f, withAlpha(theme::kInk, a * 0.8f),
+              withAlpha(theme::kInk, a * 0.6f));
+        if (w.selected) {
+            const float d = r * 0.5f;
+            p.roundRect({cx - d, w.box.cy() - d, 2 * d, 2 * d}, d, withAlpha(theme::kAccent, a));
+        }
+        p.text(Face::Body, w.label, cx + r + theme::kGap * s,
+               w.box.cy() + f.ascent(Face::Body) * theme::kBaselineCentre,
+               withAlpha(w.selected ? theme::kInk : theme::kInkMuted, a));
+    }
+    p.endLayer();
+}
+
 void Hud::drawWorldTip(Painter& p, const HudModel& m) const {
     const float a = smooth(worldTipT_);
     if (a <= 0 || m.worldTip.empty()) return;
@@ -1538,7 +1688,8 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         for (const Box& d : dividers_) p.roundRect(d, 0, theme::kDivider, 0);
         for (const Widget& w : widgets_) {
             if (w.id >= kTab0 || w.id == kScrollUp || w.id == kScrollDown) continue;
-            if (w.id >= kTrayHeader && w.id <= kNotNow) continue; // the tray draws its own
+            if (w.id >= kTrayHeader && w.id <= kNotNow) continue;     // the tray draws its own
+            if (w.id >= kTitleCard && w.id <= kCalPin0 + 8) continue; // title and calendar
             if (w.id == kJournalClose) {
                 if (journalT_ > 0) drawButton(p, w, ja);
                 continue;
@@ -1587,6 +1738,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         drawToast(p);
     }
     if (!m.photo) {
+        drawCalendar(p, m);
         drawLabels(p, m);
         drawRibbon(p);
         drawWorldTip(p, m);

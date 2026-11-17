@@ -87,7 +87,12 @@ struct HudModel {
     std::string_view worldTip; // what the pointer rests on in the world (a nook's name...)
     std::span<const FloatLabel> labels;
     bool edgeChip = false; // land opened out of sight: a chip points the way
-    float brightness = 0;  // of the scene behind the glass, 0 dark .. 1 bright
+    std::string_view worldName;
+    int season = 0;       // effective season
+    int seasonDay = 0;    // day within the calendar's season, from 0
+    int seasonPin = -1;   // -1: follow the days
+    bool snow = false;    // this season's rain falls as snow
+    float brightness = 0; // of the scene behind the glass, 0 dark .. 1 bright
 };
 
 struct UiInput {
@@ -124,6 +129,7 @@ struct HudAction {
         Snooze,     // "Not now" on wish `arg`
         PageTurn,   // the sketchbook changed tab
         EdgeChip,   // "New land": look at the stage that just opened
+        SeasonPin,  // the calendar: `arg` a season to keep, or -1 to follow the days
         Hover
     };
     Kind kind;
@@ -174,6 +180,8 @@ public:
     void openSketchbook(int tab);
     void turnPage(int delta, const HudModel& m);
     [[nodiscard]] int sketchTab() const { return sketchTab_; }
+    [[nodiscard]] bool calendarOpen() const { return calendarOpen_; }
+    void closeCalendar() { calendarOpen_ = false; }
     void toast(std::string text);
     void ribbon(Ribbon r);
     [[nodiscard]] bool ribbonShowing() const { return ribbonTime_ > 0.0f; }
@@ -246,6 +254,8 @@ private:
     void drawTooltip(Painter& p) const;
     void drawWorldTip(Painter& p, const HudModel& m) const;
     void drawLabels(Painter& p, const HudModel& m) const;
+    void layoutCalendar(const HudModel& m, const Font& font, float s);
+    void drawCalendar(Painter& p, const HudModel& m) const;
 
     std::vector<Widget> widgets_;
     std::vector<Panel> panels_; // the docks; always shown, never overlapping
@@ -261,6 +271,11 @@ private:
     Vec2 screen_;
     Vec2 pointer_;
     float worldTipT_ = 0;
+    bool calendarOpen_ = false;
+    float calendarT_ = 0;
+    Box calendarBox_;
+    std::string calendarLine_;
+    std::array<std::string, 9> pinLabels_; // "Follow the days", "Always spring"...
     int hovered_ = 0;
     int pointed_ = 0;
     int active_ = 0;

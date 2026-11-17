@@ -120,15 +120,13 @@ TileRect Scene::visibleTiles(const Camera& camera, Vec2 screen, const World& wor
 void Scene::rebuild(const World& world, TileRect region) {
     region_ = region;
     regionRevision_ = world.revision();
-    const auto nature = cat_.findCategory("nature");
     gathered_.clear();
     world.forEachItemIn(region, [&](const Item& it) {
         const int slot = slotFor(world, it);
         const auto& def = cat_.items[it.type];
         const FRect r = spriteRect(it, slot);
-        // Trees (tall nature pieces) drop the occasional leaf.
-        const bool tree = nature && def.category == *nature && !def.walkable &&
-                          r.y1 - r.y0 >= tuning::kTreeHeight * iso_.tileH();
+        // Trees drop leaves (or petals), as the catalog says.
+        const bool tree = def.sheds != Shed::None;
         gathered_.push_back({it, slot, r, tree, false});
     });
     footprints_.clear();
@@ -314,8 +312,25 @@ void Scene::onRemoved(const Item& item) {
     std::erase_if(pops_, [&](const Pop& p) { return p.origin == item.pos; });
 }
 
+const FrameSet& Scene::baseFrames(const Item& item, int slot) const {
+    const ItemSprites& spr = tables_.items[item.type];
+    const auto s = static_cast<std::size_t>(slot);
+    return item.stage < spr.stages.size() ? spr.stages[item.stage][s] : spr.base[s];
+}
+
+void Scene::setSeason(int season) {
+    if (season == season_) return;
+    season_ = season;
+    tables_ = buildSpriteTables(atlas_, cat_, season);
+    ground_->invalidate();
+    regionRevision_ = ~0ULL;
+}
+
 void Scene::update(float dt, const World& world, std::span<const Critter> critters, bool rain,
                    Rng& rng) {
+    const SeasonDef* season =
+        season_ >= 0 ? &cat_.seasons[static_cast<std::size_t>(season_)] : nullptr;
+    const bool snow = rain && season != nullptr && season->snow;
     now_ += dt;
     std::erase_if(fades_, [&](const Fade& f) { return now_ - f.start > tuning::kFadeOutSeconds; });
     std::erase_if(pops_, [&](const Pop& p) { return now_ - p.start > tuning::kPopSeconds; });
@@ -347,9 +362,9 @@ void Scene::update(float dt, const World& world, std::span<const Critter> critte
         }
     };
     if (!water_.empty()) {
-        const float rate =
-            static_cast<float>(water_.size()) * (rain ? tuning::kRainRipplesPerSecondPerWaterTile
-                                                      : tuning::kRipplesPerSecondPerWaterTile);
+        const float rate = static_cast<float>(water_.size()) *
+                           (rain && !snow ? tuning::kRainRipplesPerSecondPerWaterTile
+                                          : tuning::kRipplesPerSecondPerWaterTile);
         spawnMany(rate * dt, [&] {
             const TilePos t =
                 water_[static_cast<std::size_t>(rng.range(0, static_cast<int>(water_.size()) - 1))];
@@ -367,18 +382,36 @@ void Scene::update(float dt, const World& world, std::span<const Critter> critte
         const float maxRate = tuning::kRainPoolShare * static_cast<float>(Particles::kCapacity) /
                               (fall / speed + tuning::kSplashSeconds);
         const float rate = std::min(tuning::kRainDropsPerSecondPerTile * tiles, maxRate);
-        spawnMany(rate * dt, [&] {
-            const Vec2 ground{rng.range(view_.x0, view_.x1 + fall * 0.15f),
-                              rng.range(view_.y0, view_.y1)};
-            particles_.spawn(Fx::Raindrop, {ground.x + fall * 0.15f, ground.y - fall},
-                             {-speed * 0.15f, speed}, fall / speed);
-        });
+        if (snow) {
+            // Snow drifts down slowly and settles without a splash.
+            const float slow = tuning::kSnowSpeed * u;
+            spawnMany(rate * tuning::kSnowShare * dt, [&] {
+                const Vec2 ground{rng.range(view_.x0, view_.x1), rng.range(view_.y0, view_.y1)};
+                particles_.spawn(Fx::Snow, {ground.x, ground.y - fall}, {0, slow}, fall / slow,
+                                 rng.range(0.0f, 6.0f));
+            });
+        } else {
+            spawnMany(rate * dt, [&] {
+                const Vec2 ground{rng.range(view_.x0, view_.x1 + fall * 0.15f),
+                                  rng.range(view_.y0, view_.y1)};
+                particles_.spawn(Fx::Raindrop, {ground.x + fall * 0.15f, ground.y - fall},
+                                 {-speed * 0.15f, speed}, fall / speed);
+            });
+        }
     }
+    // Leaves fall by the season's measure; blossom sheds petals in spring instead.
+    const float leaves = season != nullptr ? season->leaves : 1.0f;
+    const float petals = season != nullptr ? season->petals : 0.0f;
     for (const std::uint32_t i : trees_) {
-        if (i >= placed_.size() || !rng.chance(tuning::kLeavesPerSecondPerTree * dt)) continue;
+        if (i >= placed_.size()) continue;
+        const bool blossom = cat_.items[placed_[i].item.type].sheds == Shed::Blossom;
+        const bool petal = blossom && petals > 0.0f;
+        const float rate = petal ? tuning::kPetalsPerSecondPerTree * petals
+                                 : tuning::kLeavesPerSecondPerTree * leaves;
+        if (!rng.chance(rate * dt)) continue;
         const FRect& r = placed_[i].screen;
         particles_.spawn(
-            Fx::Leaf,
+            petal ? Fx::Petal : Fx::Leaf,
             {(r.x0 + r.x1) * 0.5f + rng.range(-0.5f, 0.5f) * u, r.y0 + (r.y1 - r.y0) * 0.35f},
             {rng.range(-0.25f, 0.25f) * u, tuning::kLeafFall * u}, 2.6f, rng.range(0.0f, 6.0f));
     }
@@ -439,8 +472,6 @@ SDL_FColor Scene::exposed(SpriteId id, SDL_FColor c) const {
 void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, bool silhouette,
                      float scaleY) {
     const auto& def = cat_.items[item.type];
-    const auto& spr = tables_.items[item.type];
-    const auto s = static_cast<std::size_t>(slot);
     const auto f = [](int v) { return static_cast<float>(v); };
     const Vec2 anchor = iso_.toWorld(item.pos);
     const Vec2 pivot =
@@ -454,7 +485,7 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
         alpha *= std::min(1.0f, t * 4.0f);
     }
     const std::uint32_t phase = tileHash(item.pos.x, item.pos.y) % 7;
-    const SpriteId base = spr.base[s].at(now_, def.fps, phase);
+    const SpriteId base = baseFrames(item, slot).at(now_, def.fps, phase);
     const SDL_FColor c = silhouette ? SDL_FColor{0, 0, 0, alpha}
                                     : exposed(base, {tint.r, tint.g, tint.b, tint.a * alpha});
     sprite(base, anchor, c, false, pivot, scale);
@@ -662,8 +693,15 @@ void Scene::drawParticles(bool ground) {
         switch (pt.kind) {
         case Fx::Smoke: alpha = 0.8f * (1.0f - k); break;
         case Fx::Leaf:
+        case Fx::Petal:
+        case Fx::Snow:
             id = set.at(pt.age, 5.0f);
             alpha = std::min(1.0f, (1.0f - k) * 3.0f);
+            break;
+        case Fx::Produce:
+            // A crop, not an animation: the frame was chosen when it was spawned (as sway).
+            id = set.frames[static_cast<std::size_t>(pt.sway) % set.frames.size()];
+            alpha = std::min(1.0f, (1.0f - k) * 2.5f);
             break;
         case Fx::Raindrop:
             // Frame 0 is the falling streak; the remaining frames are the splash.

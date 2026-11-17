@@ -74,6 +74,8 @@ public:
     // Spawns and advances effects near the camera. Called once per simulation step.
     void update(float dt, const World& world, std::span<const Critter> critters, bool rain,
                 Rng& rng);
+    // The season's sprite looks, falling things and whether rain falls as snow (-1: plain).
+    void setSeason(int season);
     // Renders the frame's layers and composites them onto `out` (the window when null).
     void draw(const FrameParams& p, SDL_Texture* out = nullptr);
     // Composites the layers rendered by the last draw() onto the current render target, scaled
@@ -136,6 +138,7 @@ private:
     };
 
     void rebuild(const World& world, TileRect region);
+    [[nodiscard]] const FrameSet& baseFrames(const Item& item, int slot) const;
     void ensureTargets(int w, int h);
     [[nodiscard]] int slotFor(const World& world, const Item& item) const;
     [[nodiscard]] FRect spriteRect(const Item& item, int slot) const;
@@ -180,6 +183,7 @@ private:
     FRect view_;   // world px the target covers
     float now_ = 0;
     float night_ = 0; // exposure grading strength this frame
+    int season_ = -1;
     Reach itemReach_; // how far item sprites reach from their anchor
 
     // The region: objects near the camera in draw order, and what derives from them.

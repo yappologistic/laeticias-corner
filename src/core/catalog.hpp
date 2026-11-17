@@ -221,6 +221,7 @@ struct Catalog {
     std::vector<VisitorDef> visitors;
     std::vector<std::string> tags;
     std::vector<SeasonDef> seasons;
+    std::vector<int> seasonDays; // days of each season, for the calendar
     std::vector<StageDef> stages;
     std::optional<TilePos> gate; // the home region's way out (the road gate), if any
     StarterDef starter;

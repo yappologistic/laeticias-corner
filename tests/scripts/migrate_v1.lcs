@@ -1,6 +1,9 @@
 # A save from the first release becomes the first world: everything kept in the front corner,
-# the old pieces still unlocked, a welcome card, and the old file kept under a new name.
-expect count all 31
+# the old pieces still unlocked, a welcome card, and the old file kept under a new name. Its
+# visitors and nooks already make four pages, so the west meadow opens at once with its reveal
+# (12 pieces besides the 31 old ones).
+expect stage 1
+expect count all 43
 expect item @35,35 cottage
 wait 2
 expect toast yes

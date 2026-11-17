@@ -46,6 +46,11 @@ GroundCache::GroundCache(SDL_Renderer* renderer, const Atlas& atlas, const Catal
     maxPages_ = std::max<std::size_t>(1, budgetBytes / pageBytes_);
 }
 
+void GroundCache::invalidate() {
+    byKey_.clear();
+    for (Slot& s : slots_) s.key = ~0ULL;
+}
+
 std::size_t GroundCache::bytes() const {
     const std::size_t scratch = scratch_ ? static_cast<std::size_t>(4 * slotW_ * slotH_) * 4 : 0;
     return pages_.size() * pageBytes_ + scratch;

@@ -17,7 +17,7 @@ void Particles::update(float dt, const World& world) {
         p.age += dt;
         p.pos.x += p.vel.x * dt;
         p.pos.y += p.vel.y * dt;
-        if (p.kind == Fx::Leaf)
+        if (p.kind == Fx::Leaf || p.kind == Fx::Petal || p.kind == Fx::Snow)
             p.pos.x += std::sin(p.age * 2.6f + p.sway) * tuning::kLeafSway * iso_.tileH() * dt;
     }
     // Separate pass so particles spawned by landing raindrops start fresh this step.

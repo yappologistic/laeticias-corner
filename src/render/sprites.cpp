@@ -9,19 +9,36 @@ namespace {
 constexpr std::array<const char*, 4> kCritterAnims{"move_front", "move_back", "idle_front",
                                                    "idle_back"};
 constexpr std::array<const char*, static_cast<std::size_t>(Fx::Count)> kFxNames{
-    "smoke", "ripple", "sparkle", "raindrop", "leaf", "clear"};
+    "smoke", "ripple", "sparkle", "raindrop", "leaf", "clear", "petal", "snowflake", "produce"};
 
-// Collects prefix/f0, f1, ... until the first gap. With a placeholder, a missing f0 is logged
-// and replaced; without one the set stays empty (optional layers).
-FrameSet frames(Atlas& atlas, const std::string& prefix, std::optional<SpriteId> placeholder) {
+// Collects prefix/f0, f1, ... until the first gap, each frame in its `suffix` look (a season)
+// where there is one. With a placeholder, a missing f0 is logged and replaced; without one the
+// set stays empty (optional layers).
+FrameSet frames(Atlas& atlas, const std::string& prefix, std::optional<SpriteId> placeholder,
+                std::string_view suffix = {}) {
     FrameSet set;
     for (int f = 0;; ++f) {
-        const auto id = atlas.find(std::format("{}/f{}", prefix, f));
+        const std::string key = std::format("{}/f{}", prefix, f);
+        const auto id = atlas.find(key);
         if (!id) break;
-        set.frames.push_back(*id);
+        const auto look = suffix.empty() ? std::nullopt : atlas.find(key + std::string(suffix));
+        set.frames.push_back(look.value_or(*id));
     }
     if (set.frames.empty() && placeholder)
         set.frames.push_back(atlas.resolve(prefix + "/f0", *placeholder));
+    return set;
+}
+
+// A growth stage's frames: stage and season, stage, season, plain, frame by frame.
+FrameSet stageFrames(Atlas& atlas, const std::string& prefix, int stage, std::string_view suffix,
+                     const FrameSet& plain) {
+    FrameSet set;
+    for (std::size_t f = 0; f < plain.frames.size(); ++f) {
+        const std::string key = std::format("{}/g{}/f{}", prefix, stage, f);
+        auto id = suffix.empty() ? std::nullopt : atlas.find(key + std::string(suffix));
+        if (!id) id = atlas.find(key);
+        set.frames.push_back(id.value_or(plain.frames[f]));
+    }
     return set;
 }
 
@@ -35,20 +52,25 @@ int variantSlots(const ItemDef& def) {
 
 } // namespace
 
-SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
+SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
     SpriteTables t;
+    const std::string suffix =
+        season >= 0 ? "@" + cat.seasons[static_cast<std::size_t>(season)].id : std::string{};
     float shadowPeak = 0.0f;
     for (const auto& terr : cat.terrain) {
         std::vector<SpriteId> base;
         std::array<FrameSet, 16> overlay;
         if (terr.base) {
-            for (int v = 0; v < terr.variants; ++v)
-                base.push_back(atlas.resolve(std::format("terrain/{}/v{}", terr.id, v),
-                                             atlas.placeholderTile()));
+            for (int v = 0; v < terr.variants; ++v) {
+                const std::string key = std::format("terrain/{}/v{}", terr.id, v);
+                const auto look = suffix.empty() ? std::nullopt : atlas.find(key + suffix);
+                base.push_back(look ? *look : atlas.resolve(key, atlas.placeholderTile()));
+            }
         } else {
             for (int m = 0; m < 16; ++m)
-                overlay[static_cast<std::size_t>(m)] = frames(
-                    atlas, std::format("terrain/{}/m{}", terr.id, m), atlas.placeholderTile());
+                overlay[static_cast<std::size_t>(m)] =
+                    frames(atlas, std::format("terrain/{}/m{}", terr.id, m),
+                           atlas.placeholderTile(), suffix);
         }
         t.terrainBase.push_back(std::move(base));
         t.terrainOverlay.push_back(std::move(overlay));
@@ -59,18 +81,26 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
         for (int v = 0; v < variantSlots(def); ++v) {
             const std::string prefix = std::format("item/{}/", def.id);
             const std::string vk = variantKey(def, v);
-            s.base.push_back(frames(atlas, prefix + "base/" + vk, atlas.placeholderBox()));
+            s.base.push_back(frames(atlas, prefix + "base/" + vk, atlas.placeholderBox(), suffix));
             // Shadows are optional (flat things have none).
-            FrameSet shadow = frames(atlas, prefix + "shadow/" + vk, std::nullopt);
+            FrameSet shadow = frames(atlas, prefix + "shadow/" + vk, std::nullopt, suffix);
             for (const SpriteId f : shadow.frames)
                 shadowPeak = std::max(shadowPeak, atlas.normalizeAlpha(f));
             s.shadow.push_back(std::move(shadow));
             FrameSet glow =
-                def.glow ? frames(atlas, prefix + "glow/" + vk, std::nullopt) : FrameSet{};
+                def.glow ? frames(atlas, prefix + "glow/" + vk, std::nullopt, suffix) : FrameSet{};
             if (def.glow && glow.empty()) atlas.reportMissing(prefix + "glow/" + vk + "/f0");
             s.light.push_back(glow.empty() ? std::nullopt
                                            : atlas.alphaCentroid(glow.frames.front()));
             s.glow.push_back(std::move(glow));
+        }
+        for (int g = 0; g < def.growth.stages; ++g) {
+            std::vector<FrameSet> byVariant;
+            for (int v = 0; v < variantSlots(def); ++v)
+                byVariant.push_back(
+                    stageFrames(atlas, std::format("item/{}/base/{}", def.id, variantKey(def, v)),
+                                g, suffix, s.base[static_cast<std::size_t>(v)]));
+            s.stages.push_back(std::move(byVariant));
         }
         t.items.push_back(std::move(s));
     }

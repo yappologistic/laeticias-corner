@@ -1,6 +1,7 @@
 #include "audio/mixer.hpp"
 
 #include "audio/decode.hpp"
+#include "audio/stems.hpp"
 #include "core/catalog.hpp"
 #include "core/tuning.hpp"
 
@@ -22,6 +23,7 @@ float rampTowards(float v, float target, float maxStep) {
 
 Mixer::Mixer() {
     for (auto& t : loopTargets_) t.store(0.0f);
+    for (auto& u : unlocked_) u.store(0);
 }
 
 void Mixer::VorbisCloser::operator()(stb_vorbis* v) const {
@@ -42,13 +44,21 @@ void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
         sfxNames_.push_back(name);
         sfx_.push_back(std::move(*samples));
     }
-    for (std::size_t i = 0; i < loops_.size(); ++i) {
-        const auto listed = [&](const std::vector<std::string>& v) {
-            return std::ranges::find(v, kLoopFiles[i]) != v.end();
-        };
-        if (!listed(list.music) && !listed(list.ambience)) continue;
-        LoopTrack& t = loops_[i];
-        auto bytes = readBinaryFile(dir / kLoopFiles[i]);
+    // Ambience beds, then the music stems (the full mixes belong to the title screen).
+    std::vector<std::pair<std::string, bool>> files;
+    for (const auto& f : list.ambience) files.emplace_back(f, false);
+    for (const auto* piece : {&list.dayStems, &list.nightStems})
+        for (const auto& s : *piece) files.emplace_back(s.file, true);
+    loops_.reserve(std::min(files.size(), kMaxLoops));
+    for (const auto& [file, stem] : files) {
+        if (loops_.size() == kMaxLoops) {
+            SDL_Log("audio: more than %zu loops; %s will be silent", kMaxLoops, file.c_str());
+            continue;
+        }
+        LoopTrack& t = loops_.emplace_back();
+        t.file = file;
+        t.stem = stem;
+        auto bytes = readBinaryFile(dir / file);
         if (!bytes) {
             SDL_Log("audio: %s; it will be silent", bytes.error().c_str());
             continue;
@@ -58,19 +68,38 @@ void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
         t.vorbis.reset(stb_vorbis_open_memory(t.bytes.data(), static_cast<int>(t.bytes.size()),
                                               &err, nullptr));
         if (!t.vorbis) {
-            SDL_Log("audio: %.*s is not readable Ogg Vorbis",
-                    static_cast<int>(kLoopFiles[i].size()), kLoopFiles[i].data());
+            SDL_Log("audio: %s is not readable Ogg Vorbis", file.c_str());
             continue;
         }
         const auto info = stb_vorbis_get_info(t.vorbis.get());
         if (static_cast<int>(info.sample_rate) != kMixRate || info.channels < 1 ||
             info.channels > 2) {
-            SDL_Log("audio: %.*s must be 44.1 kHz mono or stereo; it will be silent",
-                    static_cast<int>(kLoopFiles[i].size()), kLoopFiles[i].data());
+            SDL_Log("audio: %s must be 44.1 kHz mono or stereo; it will be silent", file.c_str());
             t.vorbis.reset();
             continue;
         }
         t.channels = info.channels;
+        t.length = stb_vorbis_stream_length_in_samples(t.vorbis.get());
+    }
+}
+
+int Mixer::loopIndex(std::string_view file) const {
+    const auto it = std::ranges::find(loops_, file, &LoopTrack::file);
+    return it == loops_.end() ? -1 : static_cast<int>(it - loops_.begin());
+}
+
+void Mixer::unlockStem(int loop, bool instant) {
+    if (loop < 0 || std::cmp_greater_equal(loop, loops_.size())) return;
+    int expected = 0;
+    (void)unlocked_[static_cast<std::size_t>(loop)].compare_exchange_strong(expected,
+                                                                            instant ? 2 : 1);
+}
+
+void Mixer::setMakeup(std::span<const int> stems, int lead, float gain) {
+    for (const int s : stems) {
+        if (s < 0 || std::cmp_greater_equal(s, loops_.size())) continue;
+        loops_[static_cast<std::size_t>(s)].lead = lead;
+        loops_[static_cast<std::size_t>(s)].makeup = gain;
     }
 }
 
@@ -122,7 +151,8 @@ void Mixer::play(int sfx, float gain, float pitch) {
     head_.store(head + 1, std::memory_order_release);
 }
 
-void Mixer::setLoopGain(Loop loop, float gain) {
+void Mixer::setLoopGain(int loop, float gain) {
+    if (loop < 0 || std::cmp_greater_equal(loop, loops_.size())) return;
     loopTargets_[static_cast<std::size_t>(loop)].store(gain, std::memory_order_relaxed);
 }
 
@@ -191,21 +221,74 @@ void Mixer::mix(float* out, int frames) {
         }
     }
 
+    // Stem fades first: makeup gains read the lead stems' levels.
+    const std::uint64_t pos0 = musicPos_;
+    const std::uint64_t pos1 = pos0 + static_cast<std::uint64_t>(frames);
+    const auto bar = static_cast<std::uint64_t>(tuning::kMusicBarSamples);
+    std::array<float, kMaxLoops> level0{};
+    for (std::size_t li = 0; li < loops_.size(); ++li) {
+        LoopTrack& t = loops_[li];
+        level0[li] = stemLevel_[li];
+        if (!t.stem) continue;
+        const int u = unlocked_[li].load(std::memory_order_relaxed);
+        if (u == 2 && !t.fading) {
+            stemLevel_[li] = 1.0f;
+            level0[li] = 1.0f;
+        } else if (u == 1 && !t.fading && stemLevel_[li] < 1.0f) {
+            t.fading = true;
+            t.fadeStart = nextBar(pos0, bar);
+        }
+        if (t.fading) {
+            const std::uint64_t len = bar * static_cast<std::uint64_t>(tuning::kStemFadeBars);
+            level0[li] = fadeLevel(pos0, t.fadeStart, len);
+            stemLevel_[li] = fadeLevel(pos1, t.fadeStart, len);
+            if (stemLevel_[li] >= 1.0f) t.fading = false;
+        }
+    }
+    const bool hushed = master_ <= 0.0f && muted_.load();
     for (std::size_t li = 0; li < loops_.size(); ++li) {
         LoopTrack& t = loops_[li];
         if (!t.vorbis) continue;
         const float target = loopTargets_[li].load(std::memory_order_relaxed);
-        if (t.gain <= 0.0f && target <= 0.0f) continue; // paused while inaudible
         const float g0 = t.gain;
         const float g1 = rampTowards(g0, target, chunkSeconds / tuning::kLoopFadeSeconds);
         t.gain = g1;
+        if (g0 <= 0.0f && g1 <= 0.0f) {
+            t.at = ~0ULL; // paused while inaudible; a stem finds its place again when heard
+            continue;
+        }
+        float l0 = 1.0f;
+        float l1 = 1.0f;
+        if (t.stem) {
+            l0 = level0[li];
+            l1 = stemLevel_[li];
+            // Nothing to hear: not unlocked yet, or everything is muted. Not decoded.
+            if ((l0 <= 0.0f && l1 <= 0.0f) || hushed) {
+                t.at = ~0ULL;
+                continue;
+            }
+            if (t.lead >= 0) {
+                const auto lead = static_cast<std::size_t>(t.lead);
+                l0 *= 1.0f + (t.makeup - 1.0f) * (1.0f - level0[lead]);
+                l1 *= 1.0f + (t.makeup - 1.0f) * (1.0f - stemLevel_[lead]);
+            }
+            // Every stem plays from the one master position, so they stay sample-aligned.
+            const std::uint64_t want = loopOffset(pos0, t.length);
+            if (t.at != want) {
+                (void)stb_vorbis_seek(t.vorbis.get(), static_cast<unsigned>(want));
+                t.at = want;
+            }
+            t.at = loopOffset(t.at + static_cast<std::uint64_t>(frames), t.length);
+        }
         decodeLoop(t, loopBuf_.data(), frames);
         for (int i = 0; i < frames; ++i) {
-            const float g = g0 + (g1 - g0) * static_cast<float>(i) / static_cast<float>(frames);
+            const float k = static_cast<float>(i) / static_cast<float>(frames);
+            const float g = (g0 + (g1 - g0) * k) * (l0 + (l1 - l0) * k);
             out[i * 2] += loopBuf_[static_cast<std::size_t>(i * 2)] * g;
             out[i * 2 + 1] += loopBuf_[static_cast<std::size_t>(i * 2 + 1)] * g;
         }
     }
+    musicPos_ = pos1;
 
     const float masterTarget = (muted_.load() || closing_.load()) ? 0.0f : 1.0f;
     const float m0 = master_;
