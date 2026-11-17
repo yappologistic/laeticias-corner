@@ -4,7 +4,8 @@ Rows look like
   | `apadana` | Apadāna with corner towers | c 60..83, r 54..77 | 24 × 24 | 7 | … |
 and give, in the region's local plan coordinates, the footprint rect and the local level (a
 single number, a range "0 → 6" or "7–9", or blank). Rows without a `c a..b, r a..b` rect (outlines,
-roads, world rects) are skipped: only rect landmarks can be checked by position.
+roads, world rects) and rows without a footprint (`—`: a paved road, a wall line) are skipped:
+only rect landmarks can be checked by position.
 """
 
 from __future__ import annotations
@@ -39,10 +40,10 @@ def parse(path: Path) -> dict[str, Landmark]:
         m = ROW.match(line)
         if not m:
             continue
-        lid, name, rect, _wh, level = (g.strip() for g in m.groups())
+        lid, name, rect, wh, level = (g.strip() for g in m.groups())
         r = RECT.match(rect)
-        if not r:
-            continue
+        if not r or wh in ("—", "-", ""):
+            continue  # no footprint: a road or a wall line, not a placed item
         c0, c1, r0, r1 = (int(x) for x in r.groups())
         lv = None
         mm = LEVEL.match(level)

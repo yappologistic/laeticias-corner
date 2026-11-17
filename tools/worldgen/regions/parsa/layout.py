@@ -184,7 +184,7 @@ def build(L: Layout) -> None:
     street([(57, 96), (75, 96)], width=2, paving=STONE)                   # Tačara's south court
     street([(91, 36), (118, 36)], width=1, paving=STONE)                  # below the garrison
     street([(100, 36), (100, 44)], width=1, paving=STONE)                 # forecourt cross-path
-    street([(92, 44), (111, 44)], width=1, paving=EARTH)                  # through the building site
+    street([(92, 44), (111, 44)], width=1, paving=STONE)                  # through the building site
     street([(94, 75), (118, 75)], width=2, paving=STONE)                  # masons' yard
     street([(118, 36), (118, 110)], width=2, paving=STONE)                # east service street
     street([(100, 110), (118, 110)], width=2, paving=STONE)               # treasury's south door
@@ -694,15 +694,21 @@ def _town(L: Layout, spur, noise) -> None:
     L.place(P + "t_plane", at=(13, 81))
 
     # Houses: three neighbourhoods, each its own kit and seed; density falls to the south-west.
+    # Courtyard houses take the frontage first; smaller houses, stores and sheds fill in.
     near = Rect(22, 62, 48, 86)
-    L.houses(near, {P + "p_house": 5, P + "p_house_small": 2, P + "p_granary": 0.4},
-             front=[upper, *lanes[:3], lanes[5], lanes[6]], gap=0.22, seed="upper_town")
+    near_front = [upper, *lanes[:3], lanes[5], lanes[6]]
+    L.houses(near, {P + "p_house": 1}, front=near_front, gap=0.12, seed="upper_town")
+    L.houses(near, {P + "p_house_small": 3, P + "p_granary": 0.5}, front=near_front, gap=0.2,
+             seed="upper_town_fill")
     crafts = Rect(22, 87, 48, 111)
-    L.houses(crafts, {P + "p_house_small": 3, P + "p_house": 2, P + "p_workshop": 1.5},
-             front=[lanes[2], lanes[3], lanes[4], lanes[7]], gap=0.3, seed="crafts")
+    crafts_front = [lanes[2], lanes[3], lanes[4], lanes[7]]
+    L.houses(crafts, {P + "p_house": 2, P + "p_workshop": 1}, front=crafts_front, gap=0.25,
+             seed="crafts")
+    L.houses(crafts, {P + "p_house_small": 3, P + "p_granary": 0.3}, front=crafts_front,
+             gap=0.2, seed="crafts_fill")
     workers = Rect(0, 62, 20, 111)
-    L.houses(workers, {P + "p_house_small": 5, P + "p_house": 1},
-             front=lanes[8:], gap=0.28, seed="workers")
+    L.houses(workers, {P + "p_house_small": 5, P + "p_house": 1.5},
+             front=lanes[8:], gap=0.15, seed="workers")
     # Yards: bread ovens, jars, wells, a few dovecotes; trees in courtyards and gardens.
     town = Rect(0, 62, 48, 111)
     L.scatter(town, {P + "p_oven": 2, P + "p_jars": 2, P + "p_sacks": 1, P + "p_well": 0.6,
@@ -829,9 +835,13 @@ def _plain(L: Layout, noise) -> None:
     # --- fields (D6) and the village ---------------------------------------------------------
     L.fields(Rect(27, 4, 53, 5) | Rect(27, 7, 53, 7), FIELD, plot=(5, 2), seed="north_strip")
     west = Rect(0, 22, 23, 61) - Rect(1, 24, 17, 40)
-    L.fields(west, FIELD, plot=(5, 4), path=EARTH, seed="west_fields")
-    L.fields(Rect(0, 113, 13, 143) | Rect(15, 122, 19, 143), FIELD, plot=(4, 5), path=EARTH,
+    # Grass balks between the plots, so the roads stand out from the fields.
+    L.fields(west, FIELD, plot=(5, 4), path=GRASS, seed="west_fields")
+    L.fields(Rect(0, 113, 13, 143) | Rect(15, 122, 19, 143), FIELD, plot=(4, 5), path=GRASS,
              seed="south_fields")
+    # Poplars along the Royal Road's last stretch to the forecourt.
+    L.row(Line([(1, 48), (23, 48)], 1), P + "t_poplar", every=4, offset=1)
+    L.row(Line([(1, 53), (19, 53)], 1), P + "t_poplar", every=4, offset=3)
     village = Rect(1, 24, 17, 40)
     vlane = way(L, [(24, 33), (17, 32), (9, 33), (3, 31)], width=1, paving=EARTH)
     vlane2 = way(L, [(9, 33), (8, 26)], width=1, paving=EARTH)
@@ -841,7 +851,7 @@ def _plain(L: Layout, noise) -> None:
     L.place(P + "p_threshing", at=(3, 36))
     L.node("threshing_floor", (12, 34))
     L.houses(village, {P + "p_house": 2, P + "p_house_small": 2, P + "p_granary": 1},
-             front=[vlane, vlane2], gap=0.3, seed="village")
+             front=[vlane, vlane2], gap=0.15, seed="village")
     L.scatter(village, {P + "p_dovecote": 1, P + "p_oven": 1, P + "p_well": 0.5,
                         P + "p_sacks": 1}, 0.05, min_gap=2, seed="village_yards")
     L.scatter(village, {P + "t_almond": 1, P + "t_pomegranate": 1, P + "t_poplar": 1}, 0.08,

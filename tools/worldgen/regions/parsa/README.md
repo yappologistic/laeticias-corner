@@ -3,7 +3,7 @@
 Region: `parsa` (Pārsa with Naqsh-e Rostam, world C 1136..1279, R 304..447, base level 4),
 `docs/design/cities/persepolis.md`. Local coordinates and levels are the bible's.
 
-Status: first version.
+Status: complete
 
 Built, in order:
 - Ground and elevation: the Marvdasht plain (level 0); Kuh-e Raḥmat behind the terrace (slope
@@ -43,6 +43,17 @@ Deviations from the bible (and why):
 - Hadiš: only the west stair exists in the set (no north stair).
 - The wall gates and openings in walls are gaps (`parsa.p_wall_gate` is not walkable).
 
-Waiting for art: walk tiles and slots come from `assets/atlas/parsa.geom.json`; until it exists,
-paths into landmarks are warnings (V5/V7), and the throne is placed only once the Apadāna's
-geometry declares its tile walkable.
+- Field balks are grass and the Royal Road's last stretch has poplar rows, so roads read apart
+  from field paths.
+- `parsa.p_sledge` and `parsa.p_cart` are actors (world-tech §1.9), not items: the building site
+  and the camp carry stacked drums, cranes and baggage instead.
+
+Art geometry this layer cannot fix (V7 warnings, listed in the report): the Treasury's
+`gift_drop`/`guard` spots fall on the empty strip c 99, r 86..103 inside the residential wing's
+footprint (its L leaves that corridor open, but the geometry declares no walk tiles there); the
+`treasurer`, the garrison's `drill` and the quarry's `cut` spots lie inside their own footprints
+on tiles not declared walkable. The Tačara's south stair flights (c 64, c 69) do not line up with
+its portico walk tiles (c 65, c 68); the stair's landing snaps to the nearest walk tile.
+
+Previews draw split landmarks from the set's pieces; the throne stands on the Apadāna's walk tile
+(2, 11) only when the geometry declares it walkable.

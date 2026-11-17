@@ -119,6 +119,7 @@ class Bible(unittest.TestCase):
         self.assertEqual(marks["apadana"].level, (7, 7))
         self.assertEqual(marks["great_stair"].level, (0, 6))
         self.assertNotIn("terrace", marks)  # an outline, not a rect
+        self.assertNotIn("gate_road", marks)  # a road: rect but no footprint
 
 
 if __name__ == "__main__":
