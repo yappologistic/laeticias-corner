@@ -1,0 +1,12 @@
+# The cat moves in with the cottage and naps on a seat by day.
+set unlock all
+set season summer
+set clock day
+place cottage @32,30 0
+place stump @27,27 0
+set camera 29 29 2
+fast 150 actor cat sleep
+expect habitat ok
+wait 30
+shot shots/cat_nap.png
+quit

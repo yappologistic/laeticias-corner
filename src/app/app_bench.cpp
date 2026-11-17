@@ -90,7 +90,7 @@ void App::fillBenchWorld() {
 int App::runBench() {
     fillBenchWorld();
     clock_.setPin(ClockPin::Night, true);
-    rain_ = true;
+    weather_.setMode(WeatherMode::Rain);
     drawerOpen_ = true;
     journalOpen_ = true;
     camera_.setLand(world_.landBounds(), scene_->cliffDepth());
@@ -143,10 +143,11 @@ int App::runBench() {
         camera_.zoomTo(level, {screen().x * 0.5f, screen().y * 0.5f}, screen());
         for (int i = 0; i < 120 && !camera_.settled(); ++i)
             camera_.update(static_cast<float>(tuning::kStepSeconds), screen());
-        visitors_.populate(world_, cat_, night(), rng_, activeArea(), gates_);
+        actors_.populate(actorEnv());
         Series upd;
         Series drw;
         Series pan;
+        Series act;
         int calls = 0;
         int slots = 0;
         for (int f = 0; f < kWarmup + frames; ++f) {
@@ -166,17 +167,23 @@ int App::runBench() {
             slots += scene_->stats().groundSlotsRendered;
             upd.add(ms(t0, t1));
             drw.add(ms(t1, t2));
+            act.add(actorMs_);
             if (panning) pan.add(ms(t0, t2));
         }
         const SceneStats st = scene_->stats();
         const auto [rss, peak] = processMemory();
         const double total = upd.avg() + drw.avg();
-        std::printf("bench: zoom %g: %zu critters, %zu items in region, %zu drawn, %d draw calls, "
-                    "%d ground chunks redrawn\n",
-                    static_cast<double>(camera_.zoom()), visitors_.critters().size(),
-                    st.regionItems, st.drawnItems, calls, slots);
-        std::printf("bench: zoom %g: update avg %.3f p95 %.3f max %.3f ms\n",
-                    static_cast<double>(camera_.zoom()), upd.avg(), upd.pct(0.95), upd.max());
+        std::printf(
+            "bench: zoom %g: %zu actors, %zu items in region, %zu drawn, %d draw calls, "
+            "%d ground chunks redrawn\n",
+            static_cast<double>(camera_.zoom()),
+            static_cast<std::size_t>(std::ranges::count_if(
+                actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; })),
+            st.regionItems, st.drawnItems, calls, slots);
+        std::printf(
+            "bench: zoom %g: update avg %.3f p95 %.3f max %.3f ms (actors avg %.3f p95 %.3f)\n",
+            static_cast<double>(camera_.zoom()), upd.avg(), upd.pct(0.95), upd.max(), act.avg(),
+            act.pct(0.95));
         std::printf("bench: zoom %g: draw   avg %.3f p95 %.3f max %.3f ms\n",
                     static_cast<double>(camera_.zoom()), drw.avg(), drw.pct(0.95), drw.max());
         std::printf("bench: zoom %g: total  avg %.3f ms (panning avg %.3f p95 %.3f ms)\n",
@@ -193,7 +200,99 @@ int App::runBench() {
             over = true;
         }
     }
+    // A busy corner: every visitor kind seen and allowed, at its full number; then a crowd of
+    // kBenchCrowd actors. The actor update is timed on its own against its share of the frame.
+    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
+        actors_.markSeen(static_cast<int>(v));
+        gates_[v].allowed = true;
+    }
+    clock_.setPin(ClockPin::Day, true);
+    weather_.setMode(WeatherMode::Natural);
+    for (const int crowd : {0, tuning::kBenchCrowd}) {
+        actors_.populate(actorEnv());
+        if (crowd > 0)
+            actors_.crowd(actorEnv(), crowd - static_cast<int>(std::ranges::count_if(
+                                                  actors_.all(), [](const Actor& a) {
+                                                      return (a.flags & actor_flag::kAlive) != 0;
+                                                  })));
+        Series act;
+        Series sim;
+        Series frame;
+        for (int f = 0; f < kWarmup + frames; ++f) {
+            const Uint64 t0 = SDL_GetPerformanceCounter();
+            step(static_cast<float>(tuning::kStepSeconds));
+            hud_.update({}, model(), font_, screen(), uiScale_,
+                        static_cast<float>(tuning::kStepSeconds));
+            render();
+            const Uint64 t1 = SDL_GetPerformanceCounter();
+            if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
+            if (f < kWarmup) continue;
+            act.add(actorMs_);
+            sim.add(actorMs_ + lifeMs_ + progressMs_);
+            frame.add(ms(t0, t1));
+        }
+        const auto alive = std::ranges::count_if(
+            actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; });
+        const char* name = crowd > 0 ? "crowd" : "busy corner";
+        std::printf("bench: %s: %td actors: actors avg %.3f p95 %.3f p99 %.3f worst %.3f ms "
+                    "(path searches in the last step %d)\n",
+                    name, alive, act.avg(), act.pct(0.95), act.pct(0.99), act.max(),
+                    actors_.searches());
+        std::printf("bench: %s: simulation avg %.3f p95 %.3f p99 %.3f worst %.3f ms (budget avg "
+                    "%.2f)\n",
+                    name, sim.avg(), sim.pct(0.95), sim.pct(0.99), sim.max(), tuning::kSimBudgetMs);
+        std::printf("bench: %s: frame (update + draw) avg %.3f p95 %.3f p99 %.3f worst %.3f ms "
+                    "(budgets avg %.1f, p99 %.1f, worst %.1f)\n",
+                    name, frame.avg(), frame.pct(0.95), frame.pct(0.99), frame.max(),
+                    opts_.budgetMs, tuning::kFrameP99Ms, tuning::kFrameWorstMs);
+        const double actorBudget = crowd > 0 ? tuning::kCrowdBudgetMs : tuning::kSimBudgetMs;
+        if (opts_.budgetMs > 0 &&
+            (act.avg() > actorBudget || sim.avg() > tuning::kSimBudgetMs ||
+             frame.avg() > opts_.budgetMs || frame.pct(0.99) > tuning::kFrameP99Ms ||
+             frame.max() > tuning::kFrameWorstMs)) {
+            std::printf("bench: %s is over its budget\n", name);
+            over = true;
+        }
+    }
     return over ? kExitOverBudget : 0;
+}
+
+int App::runSoak() {
+    // A busy corner left running: every visitor kind welcome, the clock and calendar going,
+    // natural weather, events by their schedules. Frames are drawn now and then so the scene's
+    // caches take part too. Memory must stay flat once the first quarter has warmed it up.
+    fillBenchWorld();
+    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) actors_.markSeen(static_cast<int>(v));
+    clock_.setPin(ClockPin::Auto, true);
+    weather_.setMode(WeatherMode::Natural);
+    camera_.setLand(world_.landBounds(), scene_->cliffDepth());
+    actors_.populate(actorEnv());
+    const auto steps = static_cast<long long>(opts_.soak / tuning::kStepSeconds);
+    double warm = 0;
+    double peakActors = 0;
+    for (long long s = 0; s < steps; ++s) {
+        step(static_cast<float>(tuning::kStepSeconds));
+        peakActors = std::max(peakActors, actorMs_);
+        if (s % tuning::kSoakDrawEvery == 0) {
+            hud_.update({}, model(), font_, screen(), uiScale_,
+                        static_cast<float>(tuning::kStepSeconds));
+            render();
+            if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
+        }
+        if (s == steps / 4) warm = processMemory().first;
+    }
+    const double end = processMemory().first;
+    const auto alive = std::ranges::count_if(
+        actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; });
+    std::printf(
+        "soak: %.0f s of play, day %d, %td actors at the end; rss %.1f MiB after a quarter, "
+        "%.1f MiB at the end (allowed growth %.1f MiB); slowest actor step %.3f ms\n",
+        opts_.soak, clock_.day(), alive, warm, end, tuning::kSoakGrowthMiB, peakActors);
+    if (end - warm > tuning::kSoakGrowthMiB) {
+        std::printf("soak: memory grew\n");
+        return kExitOverBudget;
+    }
+    return 0;
 }
 
 } // namespace lc

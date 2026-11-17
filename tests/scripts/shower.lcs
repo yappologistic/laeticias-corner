@@ -1,0 +1,19 @@
+# A shower drifts across the corner: the sky greys where it is, the ground darkens, and a
+# rainbow follows a long enough one by day.
+set season summer
+set clock day
+set weather natural
+set camera 30 30 0.5
+wait 30
+shot shots/shower_before.png
+set shower now
+fast 400 raining yes
+fast 25
+wait 2
+expect raining yes
+shot shots/shower_during.png
+fast 600 raining no
+fast 30 event rainbow yes
+wait 120
+shot shots/shower_after.png
+quit

@@ -1,0 +1,32 @@
+# Laeticia's day at four times (dusk and night pinned, so her own clock loops them): watering the beds, sitting on the bench, warming herself
+# at the fire at dusk, gone home at night; she shelters in the rain.
+set unlock all
+set season summer
+place cottage @32,30 0
+place planter @26,32 0
+place planter @27,32 1
+place campfire @30,35 0
+place bench @27,29 1
+set camera 29 31 1
+set time 0.02
+fast 66 actor laeticia water planter
+shot shots/laeticia_water.png
+set time 0.25
+fast 100 actor laeticia sit
+expect habitat ok
+shot shots/laeticia_sit.png
+set clock dusk
+fast 100 actor laeticia warm campfire
+shot shots/laeticia_warm.png
+set clock night
+fast 100 actor laeticia inside
+expect bubble no
+shot shots/laeticia_night.png
+set clock auto
+set time 0.25
+fast 100 actor laeticia sit
+set weather rain
+fast 50 actor laeticia inside
+set weather natural
+fast 50 actor laeticia any
+quit

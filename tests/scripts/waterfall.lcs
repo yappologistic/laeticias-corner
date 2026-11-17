@@ -1,0 +1,9 @@
+# Water painted to the south-east rim falls over it, with mist at its foot.
+set unlock all
+set season summer
+set clock day
+paint water @36,31 @39,33
+set camera 38 33 2
+wait 120
+shot shots/waterfall.png
+quit

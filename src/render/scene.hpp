@@ -8,11 +8,12 @@
 // lights and effect sources are rebuilt only when the world changes or the view leaves it. Each
 // frame then culls that region to the view.
 
+#include "core/actors.hpp"
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/condition.hpp"
 #include "core/rng.hpp"
-#include "core/visitors.hpp"
+#include "core/weather.hpp"
 #include "core/world.hpp"
 #include "platform/batch.hpp"
 #include "platform/sdl_ptr.hpp"
@@ -41,12 +42,16 @@ struct Ghost {
 
 struct FrameParams {
     const World* world = nullptr;
-    std::span<const Critter> critters;
+    std::span<const Actor> actors;
+    int resident = -1;                // her actor, for butterflies on her hat
+    const Weather* weather = nullptr; // cloud shadows, wet ground, rain on her umbrella
     Ghost ghost;
     std::span<const NearInstance> outlines; // nook areas to outline (the hovered nook)
     const Camera* camera = nullptr;
     Vec2 screen;
     Lighting light;
+    float rainbow = 0;        // the rainbow's visibility, 0..1
+    bool fireflySync = false; // fireflies blink in unison
 };
 
 struct SceneStats {
@@ -75,9 +80,24 @@ public:
     // the open land outwards and the revealed items pop up as it passes. Returns its length.
     float landWave(const World& world, const Catalog& cat, int stage,
                    std::span<const Item> revealed);
-    // Spawns and advances effects near the camera. Called once per simulation step.
-    void update(float dt, const World& world, std::span<const Critter> critters, bool rain,
+    // Spawns and advances effects near the camera. Called once per simulation step. Rain and
+    // snow fall where the weather has them; the wind leans smoke, leaves and trees.
+    void update(float dt, const World& world, std::span<const Actor> actors, const Weather& weather,
                 Rng& rng);
+    // A heart rising from an actor that was petted.
+    void heart(const Actor& a);
+    // Trees near a tile shake and drop a few leaves (something was placed beside them).
+    void rustle(Vec2 tile, Rng& rng);
+    // A fish arcs out of a water tile.
+    void fishJump(Vec2 tile);
+    // A shooting star crosses the sky.
+    void shootingStar(Rng& rng);
+    // Chimney smoke of the item at `origin` thickens (cooking), or stops doing so.
+    void cooking(std::optional<TilePos> origin) { cooking_ = origin; }
+    // Where an actor's head is, in world pixels (speech bubbles, hats).
+    [[nodiscard]] Vec2 headOf(const Actor& a) const;
+    // The actor under a world-pixel point, topmost first, if any.
+    [[nodiscard]] std::optional<int> actorAt(std::span<const Actor> actors, Vec2 world) const;
     // The season's sprite looks, falling things and whether rain falls as snow (-1: plain).
     void setSeason(int season);
     // Renders the frame's layers and composites them onto `out` (the window when null).
@@ -104,7 +124,7 @@ private:
         bool tree = false;
         bool occludesGlow = false; // overlaps a glowing item, so the glow pass must draw it
     };
-    enum class EntryKind : std::uint8_t { Critter, Ghost, Fade };
+    enum class EntryKind : std::uint8_t { Actor, Ghost, Fade };
     struct Entry {
         EntryKind kind;
         std::uint32_t index;
@@ -146,7 +166,11 @@ private:
     void ensureTargets(int w, int h);
     [[nodiscard]] int slotFor(const World& world, const Item& item) const;
     [[nodiscard]] FRect spriteRect(const Item& item, int slot) const;
-    [[nodiscard]] FRect critterRect(const Critter& c) const;
+    [[nodiscard]] FRect actorRect(const Actor& a) const;
+    [[nodiscard]] std::size_t animOf(const Actor& a) const;
+    [[nodiscard]] bool flying(const Actor& a) const;
+    [[nodiscard]] bool glows(const Actor& a) const;
+    [[nodiscard]] Vec2 actorAnchor(const Actor& a) const;
     [[nodiscard]] float popOf(TilePos origin) const;
     void buildDynamic(const FrameParams& p);
     void sprite(SpriteId id, Vec2 anchor, SDL_FColor color, bool mirror = false, Vec2 pivot = {},
@@ -156,7 +180,9 @@ private:
     void drawEntry(const FrameParams& p, const Entry& e, bool silhouette);
     void drawEntries(const FrameParams& p, bool silhouette);
     [[nodiscard]] bool nearGlow(const FRect& r) const;
-    void drawCritter(const Critter& c, bool silhouette);
+    void drawActor(const Actor& a, bool silhouette);
+    void drawMoths(const FrameParams& p);
+    void drawSky(const FrameParams& p, Vec2 scale);
     void drawShadows(const FrameParams& p);
     void drawMarkers(const FrameParams& p);
     // Tiles of a nook's area (around its anchor, not under it), in the given colour.
@@ -202,7 +228,36 @@ private:
     ScreenGrid grid_; // region items' screen boxes, in draw order
     std::vector<Light> lights_;
     std::vector<FRect> glowRects_;
-    std::vector<Vec2> chimneys_;
+    struct Chimney {
+        Vec2 at;
+        TilePos origin;
+    };
+    std::vector<Chimney> chimneys_;
+    struct Fall {
+        Vec2 foot; // where its mist rises, world px
+    };
+    std::vector<Fall> falls_;
+    std::vector<Vec2> moths_; // lamp heads, world px
+    struct Rustle {
+        TilePos tile;
+        float end;
+    };
+    std::vector<Rustle> rustles_;
+    struct Star {
+        float start = -1;
+        Vec2 from; // window fractions
+        Vec2 dir;
+    };
+    Star star_;
+    std::optional<TilePos> cooking_;
+    std::span<const Actor> actors_; // this frame's, for hats
+    int resident_ = -1;
+    const Weather* weather_ = nullptr;
+    const World* map_ = nullptr; // the world being drawn this frame
+    Wind wind_;
+    float sway_ = 0;      // wind-driven sway clock for trees and grass
+    float sleepTick_ = 0; // z's rise from sleepers every few seconds
+    bool fireflySync_ = false;
     std::vector<std::uint32_t> trees_;
     std::vector<TilePos> water_;
     std::size_t drawnItems_ = 0;

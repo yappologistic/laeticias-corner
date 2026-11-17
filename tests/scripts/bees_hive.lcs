@@ -1,0 +1,15 @@
+# Bees commute between the hive and the flowers near it, and go into the hive.
+set unlock all
+set season summer
+set clock day
+place beehive @33,30 0
+place flowers_red @31,31
+place flowers_white @32,32
+place flowers_violet @34,32
+place flowers_red @35,30
+set camera 33 31 2
+fast 50 actor bee idle flowers_red
+shot shots/bees_flowers.png
+fast 50 actor bee inside
+expect habitat ok
+quit

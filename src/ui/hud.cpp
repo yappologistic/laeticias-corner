@@ -336,12 +336,20 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         button(kPhoto, theme::icon::kCamera, strings::kPhoto, strings::kKeyPhoto, false);
         button(kClock, pinIcon(m.pin), pinTooltip(m.pin), strings::kKeyClock,
                m.pin != ClockPin::Auto);
-        if (m.snow)
-            button(kRain, theme::icon::kSnowflake, m.rain ? strings::kSnowOn : strings::kSnowOff,
-                   strings::kKeyRain, m.rain);
-        else
-            button(kRain, theme::icon::kRain, m.rain ? strings::kRainOn : strings::kRainOff,
-                   strings::kKeyRain, m.rain);
+        // Weather as it comes, rain (or snow) here, or clear skies here.
+        const char32_t wet = m.snow ? theme::icon::kSnowflake : theme::icon::kRain;
+        switch (m.weather) {
+        case WeatherMode::Natural:
+            button(kRain, wet, strings::kWeatherNatural, strings::kKeyRain, false);
+            break;
+        case WeatherMode::Rain:
+            button(kRain, wet, m.snow ? strings::kWeatherSnow : strings::kWeatherRain,
+                   strings::kKeyRain, true);
+            break;
+        case WeatherMode::Clear:
+            button(kRain, theme::icon::kSun, strings::kWeatherClear, strings::kKeyRain, true);
+            break;
+        }
         button(kJournal, theme::icon::kJournal, strings::kSketchbook, strings::kKeyJournal,
                m.journalOpen);
     }
@@ -630,10 +638,11 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             .append(std::to_string(m.seasonDay + 1));
     }
     if (m.pin != ClockPin::Auto) clockLabel_.append(strings::kSeparator).append(strings::kPinned);
-    if (m.rain)
+    if (m.raining)
         clockLabel_.append(strings::kSeparator)
             .append(m.snow ? strings::kSnowing : strings::kRaining);
-    hintText_.assign(m.hint);
+    // A hint fading out keeps its words until it is gone (an empty pill would shrink to a dot).
+    if (!m.hint.empty() || !m.warning.empty() || hintT_ <= 0) hintText_.assign(m.hint);
 
     layout(m, font, screen, s);
 
@@ -1632,6 +1641,36 @@ void Hud::drawLabels(Painter& p, const HudModel& m) const {
     }
 }
 
+void Hud::drawBubble(Painter& p, const HudModel& m) const {
+    if (m.bubble.empty() || m.bubbleAlpha <= 0) return;
+    const float s = scale_;
+    const Font& f = p.font();
+    const float pad = theme::kBubblePad * s;
+    const float maxW = theme::kBubbleMaxW * s;
+    const float textW = std::min(f.measure(Face::Body, m.bubble), maxW);
+    const int lines = wrapLines(f, Face::Body, m.bubble, textW + 1, 2);
+    const float lh = f.lineHeight(Face::Body);
+    const float w = textW + 2 * pad;
+    const float h = static_cast<float>(lines) * lh + 2 * pad * 0.75f;
+    const float dot = theme::kBubbleDot * s;
+    // Above her head, kept on screen; a small trail of dots points down to her.
+    const float x = std::clamp(std::round(m.bubbleAt.x - w * 0.5f), theme::kMargin * s * 0.5f,
+                               screen_.x - w - theme::kMargin * s * 0.5f);
+    const float y = std::max(theme::kMargin * s * 0.5f,
+                             std::round(m.bubbleAt.y - theme::kBubbleLift * s - h - 1.6f * dot));
+    const Box b{x, y, w, h};
+    const float a = m.bubbleAlpha;
+    p.glass(b, theme::kBubbleRadius * s, a, theme::kGlassTip);
+    p.endGlass();
+    const float cx = std::clamp(m.bubbleAt.x, b.x + dot, b.x + b.w - dot);
+    p.roundRect({cx - dot * 0.5f, b.y + b.h + dot * 0.25f, dot, dot}, dot * 0.5f,
+                withAlpha(theme::kBubbleTrail, a));
+    p.roundRect({cx - dot * 0.3f, b.y + b.h + dot * 1.15f, dot * 0.6f, dot * 0.6f}, dot * 0.3f,
+                withAlpha(theme::kBubbleTrail, a));
+    p.wrapped(Face::Body, m.bubble, b.x + pad, b.y + pad * 0.75f, textW + 1, 2,
+              withAlpha(theme::kInk, a));
+}
+
 void Hud::drawTooltip(Painter& p) const {
     const float a = smooth(tooltipT_);
     if (a <= 0) return;
@@ -1756,6 +1795,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
     if (!m.photo) {
         drawCalendar(p, m);
         drawLabels(p, m);
+        drawBubble(p, m);
         drawRibbon(p);
         drawWorldTip(p, m);
         drawTooltip(p);

@@ -206,6 +206,10 @@ int ConditionSet::compile(const json& j, const Catalog& cat, std::span<const std
                 fail(ctx + ": progress '" + k + "' must be a whole number");
             n.progress[static_cast<std::size_t>(it - kCounterNames.begin())] = x.get<int>();
         }
+    } else if (key == "home" || key == "harvested_today") {
+        // Terms about the actor itself (living-world.md §2.2), true only for the resident.
+        if (!v.is_boolean() || !v.get<bool>()) fail(ctx + ": '" + key + "' takes true");
+        n.kind = key == "home" ? CondKind::Home : CondKind::HarvestedToday;
     } else {
         fail(ctx + ": unknown condition '" + key + "'");
     }
@@ -349,6 +353,8 @@ bool ConditionSet::eval(int i, const World& world, const CondFacts& f) const {
         for (std::size_t k = 0; k < kCounters; ++k)
             if (n.progress[k] >= 0 && f.counters[k] < n.progress[k]) return false;
         return true;
+    case CondKind::Home: return f.home;
+    case CondKind::HarvestedToday: return f.harvestedToday;
     }
     return false;
 }

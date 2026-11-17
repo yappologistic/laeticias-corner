@@ -60,13 +60,12 @@ bool Progression::offerable(int wish, const World& world, const Progress& p, con
                                  [&](int id) { return unlocked[static_cast<std::size_t>(id)]; }))
             return false;
     }
-    // The giver must be about: a visitor in the home region; Laeticia (not yet walking about)
-    // is up in every phase but night.
+    // The giver must be about: a visitor in the home region, or the resident up and about.
     if (def.giver >= 0) {
         if (std::cmp_greater_equal(def.giver, facts.present.size()) ||
             facts.present[static_cast<std::size_t>(def.giver)] <= 0)
             return false;
-    } else if (facts.phase == Phase::Night) {
+    } else if (!facts.residentAbout) {
         return false;
     }
     return def.gate < 0 || cat_.conditions.eval(def.gate, world, facts);

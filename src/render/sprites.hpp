@@ -31,7 +31,15 @@ struct ItemSprites {
     std::vector<std::vector<FrameSet>> stages; // growing items: [stage][variant]
 };
 
-enum class CritterAnim : std::uint8_t { MoveFront, MoveBack, IdleFront, IdleBack };
+// One animation of an actor kind: front and back frames (the engine mirrors them for the other
+// two directions), or one plain set drawn facing front.
+struct KindAnim {
+    FrameSet front;
+    FrameSet back; // empty for a plain animation
+    float fps = 0;
+    [[nodiscard]] bool empty() const { return front.empty(); }
+};
+
 enum class Fx : std::uint8_t {
     Smoke,
     Ripple,
@@ -42,6 +50,12 @@ enum class Fx : std::uint8_t {
     Petal,
     Snow,
     Produce, // frame k is the crop of veggie bed variant k
+    Heart,
+    Zzz,
+    FishJump,
+    Mist,
+    Moth,
+    StarStreak,
     Count
 };
 
@@ -57,7 +71,7 @@ struct SpriteTables {
     std::vector<std::vector<SpriteId>> terrainBase;       // base terrain variants
     std::vector<std::array<FrameSet, 16>> terrainOverlay; // overlay terrain by mask
     std::vector<ItemSprites> items;
-    std::vector<std::array<FrameSet, 4>> critters;
+    std::vector<std::vector<KindAnim>> kinds; // per actor kind, per animation (missing: idle)
     std::array<FrameSet, static_cast<std::size_t>(Fx::Count)> fx;
     SpriteId cliffSE = 0;
     SpriteId cliffSW = 0;
@@ -67,8 +81,9 @@ struct SpriteTables {
     std::vector<SpriteId> thickets; // brambles on wild land, by variant
     FrameSet fallSE;                // water falling over the south-east rim
     FrameSet fallSW;
-    SpriteId placeholder = 0;    // drawn for anything that has no art
-    float shadowOpacity = 0.35f; // opacity of the composited shadow layer
+    std::optional<SpriteId> rainbow; // the arc behind the island, when the art has it
+    SpriteId placeholder = 0;        // drawn for anything that has no art
+    float shadowOpacity = 0.35f;     // opacity of the composited shadow layer
     Reach groundReach;
 };
 
@@ -83,7 +98,8 @@ enum class Thumb : std::uint8_t { Terrain, Item, Visitor };
 [[nodiscard]] SpriteId thumbnail(const SpriteTables& t, Thumb kind, int index);
 
 // The f0 key of every sprite the contract requires for this catalog (for coverage reports).
-// Optional layers (shadows) are not listed.
+// Optional layers (shadows) are not listed. An actor animation may be directional or plain:
+// such an entry lists both keys as "a|b", either of which will do.
 [[nodiscard]] std::vector<std::string> requiredSpriteKeys(const Catalog& cat);
 
 } // namespace lc

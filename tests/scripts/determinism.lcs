@@ -1,0 +1,14 @@
+# Actors, the resident, weather and events running from one seed: the same script must give
+# byte-identical screenshots and saves (compared by the determinism_check test).
+set unlock all
+set season spring
+set clock day
+place cottage @32,30 0
+place coop @26,32 0
+place planter @24,33 0
+set shower now
+set camera 30 30 1
+fast 15
+wait 4
+shot determinism.png
+quit

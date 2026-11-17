@@ -17,7 +17,7 @@ void Particles::update(float dt, const World& world) {
         p.age += dt;
         p.pos.x += p.vel.x * dt;
         p.pos.y += p.vel.y * dt;
-        if (p.kind == Fx::Leaf || p.kind == Fx::Petal || p.kind == Fx::Snow)
+        if ((p.kind == Fx::Leaf || p.kind == Fx::Petal || p.kind == Fx::Snow) && !p.landed)
             p.pos.x += std::sin(p.age * 2.6f + p.sway) * tuning::kLeafSway * iso_.tileH() * dt;
     }
     // Separate pass so particles spawned by landing raindrops start fresh this step.
@@ -30,6 +30,16 @@ void Particles::update(float dt, const World& world) {
         const Particle done = pool_[i];
         pool_[i] = pool_[--count_]; // swap-remove; the moved particle is checked next
         const TilePos t = iso_.tileAt(done.pos);
+        // A petal that lands on water floats a while, drifting slowly.
+        if (done.kind == Fx::Petal && !done.landed && world.hasGround(t) && world.isWater(t) &&
+            count_ < kCapacity) {
+            const float drift = std::sin(done.sway) * tuning::kPetalDrift * iso_.tileH();
+            pool_[count_++] = Particle{done.pos,  {drift, drift * 0.5f},
+                                       0.0f,      tuning::kPetalFloatSeconds,
+                                       done.sway, Fx::Petal,
+                                       true};
+            continue;
+        }
         if (done.kind != Fx::Raindrop || done.landed || !world.hasGround(t)) continue;
         if (world.isWater(t)) {
             spawn(Fx::Ripple, done.pos, {0, 0}, tuning::kRippleSeconds);

@@ -2,6 +2,7 @@
 // Every tunable number of the simulation and presentation lives here.
 
 #include <cstddef>
+#include <cstdint>
 
 namespace lc::tuning {
 
@@ -55,6 +56,15 @@ inline constexpr double kWishAlreadyDoneDelay = 3.0;
 inline constexpr double kWishPacingTick = 1.0; // offers are considered once a second
 inline constexpr double kConditionDebounce = 0.25;
 inline constexpr double kConditionBudgetMs = 1.0; // every condition at once, on a full map
+// The actor update's share of the frame (living-world.md §7.5): a busy corner at its caps, and
+// a crowd of kBenchCrowd actors at about a microsecond each.
+inline constexpr double kSimBudgetMs = 0.6;   // actors, events, weather and conditions, on average
+inline constexpr double kCrowdBudgetMs = 0.4; // the crowd's actors alone
+inline constexpr double kFrameP99Ms = 8.3;    // CLAUDE.md "Performance": 99th percentile frame
+inline constexpr double kFrameWorstMs = 16.6;
+inline constexpr double kSoakGrowthMiB = 4.0;    // memory a long session may add after warming up
+inline constexpr long long kSoakDrawEvery = 120; // steps between frames drawn during a soak
+inline constexpr int kBenchCrowd = 400;
 // Rare visitors: the recipe holds this long before one comes; a visit lasts, then it stays away.
 inline constexpr float kRareDelayMin = 20.0f;
 inline constexpr float kRareDelayMax = 60.0f;
@@ -75,6 +85,8 @@ inline constexpr float kWildCool[3] = {0.94f, 0.99f, 1.08f};
 inline constexpr float kWildThicketChance = 0.8f; // tiles of wild land with brambles
 inline constexpr float kEdgeChipSeconds = 8.0f;   // "New land" chip for an off-screen stage
 inline constexpr float kRainGrowth = 2.0f;        // beds grow this much faster in rain
+inline constexpr float kWaterBoost = 0.25f;       // of a stage, her morning watering gives
+inline constexpr double kRipeLineDelay = 30.0;    // a bed ripe this long unpicked: she says so
 inline constexpr double kGrowthTick = 0.5;        // seconds between growth updates
 inline constexpr float kProduceRise = 1.4f;       // tile heights per second
 inline constexpr float kProduceSeconds = 1.2f;
@@ -98,6 +110,78 @@ inline constexpr int kTargetAttempts = 8;
 inline constexpr int kSpawnAttempts = 16;
 inline constexpr float kHoverMin = 0.5f; // flight height range, in tile heights
 inline constexpr float kHoverMax = 1.1f;
+
+// Actors (docs/design/living-world.md §2, living-corner.md R2 and R6)
+inline constexpr std::size_t kActorPool = 512;    // records; the home region needs a few dozen
+inline constexpr std::uint32_t kThinkBuckets = 4; // actors check the world in turn, one in four
+inline constexpr float kPathCostPaved = 1.0f;     // paths, cobbles and crossings
+inline constexpr float kPathCostOther = 1.6f;
+inline constexpr int kPathMaxNodes = 4096;        // nodes one search may expand
+inline constexpr int kPathSearchesPerStep = 8;    // more wait for the next step
+inline constexpr float kResidentSpeedPath = 1.1f; // tiles per second on paths
+inline constexpr float kResidentSpeedOther = 0.9f;
+inline constexpr float kNookPreferWeight = 4.0f;
+inline constexpr float kShoreMargin = 0.3f;   // swimmers keep this far (tiles) from the bank
+inline constexpr int kBankSearch = 6;         // tiles around a swimmer it looks for a bank
+inline constexpr float kStrollRadius = 6.0f;  // a stroll with nothing of note goes this far
+inline constexpr float kNewItemWeight = 3.0f; // strolls favour what was placed lately
+inline constexpr double kNewItemSeconds = 600.0;
+inline constexpr float kPotterRadius = 2.0f; // pottering about between routines
+inline constexpr int kHandsMax = 3;          // goods units carried at once
+inline constexpr float kHatReach = 4.0f;     // a butterfly finds her hat within this
+inline constexpr float kCallRadius = 6.0f;   // hens come to feed from this far
+inline constexpr float kHenPeckSeconds = 6.0f;
+inline constexpr float kLineSpacing = 0.7f;   // ducks in a line, tiles apart
+inline constexpr float kFollowSpacing = 1.0f; // following her, a tile behind
+inline constexpr float kReactRadius = 8.0f;   // she turns to placements this close
+inline constexpr float kStartleSeconds = 0.6f;
+inline constexpr float kStartleCooldown = 5.0f;
+inline constexpr float kStartleSpeed = 2.5f;
+inline constexpr float kStartleMin = 2.0f; // tiles it flees
+inline constexpr float kStartleMax = 3.0f;
+inline constexpr float kPetSeconds = 1.5f;
+inline constexpr float kPetCooldown = 4.0f;
+inline constexpr float kPetHitInflate = 4.0f; // px at 1x around a critter's frame
+inline constexpr float kClickCooldown = 8.0f; // between her answers to a click
+inline constexpr float kHarvestReach = 12.0f; // she takes the harvest home from this far
+inline constexpr float kHarvestPeckReach = 5.0f;
+inline constexpr float kNookVisitReach = 15.0f; // she walks over to a new nook from this far
+inline constexpr float kVisitLinger = 2.5f;
+inline constexpr float kSketchVisitor = 15.0f; // she sketches a new visitor this long
+inline constexpr float kCallSeconds = 1.0f;    // a call animation
+inline constexpr float kWaveSeconds = 1.6f;    // her wave hello
+inline constexpr float kWatchReach = 3.0f;     // the cat watches the pointer this close
+inline constexpr int kDisplaceReach = 3;       // she steps aside this far
+// Her speech (living-corner.md R6.6): shown 2.5 s plus a little per character, fading in and
+// out; ordinary lines leave a gap after the last; idle chatter comes every minute or two.
+inline constexpr double kBubbleBase = 2.5;
+inline constexpr double kBubblePerChar = 0.05;
+inline constexpr double kBubbleFade = 0.2;
+inline constexpr double kBubbleGap = 4.0;
+inline constexpr float kIdleLineMin = 60.0f;
+inline constexpr float kIdleLineMax = 120.0f;
+inline constexpr float kFirstSightReach = 12.0f; // she remarks on a first visitor this close
+
+// Events (living-world.md §5): scheduled starts keep this far apart; a deferred one retries.
+inline constexpr double kEventSpacing = 20.0;
+inline constexpr double kEventRetry = 5.0;
+
+// Weather and wind (living-world.md §6)
+inline constexpr int kWetBlock = 8; // tiles per side of a wetness block
+inline constexpr std::size_t kMaxWeatherCells = 6;
+inline constexpr float kRainCellMin = 6.0f; // radius in tiles
+inline constexpr float kRainCellMax = 14.0f;
+inline constexpr float kCloudCellMin = 8.0f;
+inline constexpr float kCloudCellMax = 20.0f;
+inline constexpr float kCellMinSpeed = 0.12f;   // tiles per second
+inline constexpr float kCellWindSpeed = 0.35f;  // added at full wind
+inline constexpr float kWeatherPeriod = 120.0f; // seconds between weather decisions
+inline constexpr float kWindAngle = 0.4f;       // radians from +x in tile space
+inline constexpr float kGustSpeed = 18.0f;      // tiles per second a gust wave travels
+inline constexpr float kGustWidth = 4.0f;       // tiles
+inline constexpr float kRainThreshold = 0.3f;   // rain this strong counts as raining
+inline constexpr float kWetRise = 0.02f;        // per second under full rain
+inline constexpr float kWetDry = 0.005f;
 
 // Camera
 inline constexpr float kCameraEase = 12.0f;   // 1/s exponential approach
@@ -129,13 +213,40 @@ inline constexpr float kRippleSeconds = 0.8f;
 inline constexpr float kSplashSeconds = 0.22f;
 inline constexpr float kLeavesPerSecondPerTree = 0.012f;
 inline constexpr float kPetalsPerSecondPerTree = 0.03f;
-inline constexpr float kSnowSpeed = 1.2f;  // tile heights per second
-inline constexpr float kSnowShare = 0.35f; // snowflakes per raindrop the view would have
+inline constexpr float kPetalFloatSeconds = 6.0f; // a petal on water floats this long
+inline constexpr float kPetalDrift = 0.08f;       // tile heights per second
+inline constexpr float kSnowSpeed = 1.2f;         // tile heights per second
+inline constexpr float kSnowShare = 0.35f;        // snowflakes per raindrop the view would have
 inline constexpr float kLeafFall = 0.56f;
 inline constexpr float kLeafSway = 0.375f;
 inline constexpr float kSparkleSpread = 0.6f;
 inline constexpr float kSparkleRise = 0.4f;
 inline constexpr float kWakeInterval = 0.9f; // seconds between ripples behind a swimming critter
+inline constexpr float kSwayCalm = 0.6f;     // sway clock speed with no wind
+inline constexpr float kSwayWind = 1.2f;     // added at full wind
+inline constexpr float kGustSway = 2.0f;     // sway runs this much faster as a gust passes
+inline constexpr float kGustLeaves = 8.0f;   // and trees drop this many times more leaves
+inline constexpr float kRustleSeconds = 0.6f;
+inline constexpr float kRustleFps = 8.0f;
+inline constexpr float kSmokeLean = 0.5f; // how far the wind pushes smoke, leaves and rain
+inline constexpr float kLeafLean = 0.4f;
+inline constexpr float kRainLean = 0.25f;
+inline constexpr float kMistDrop = 1.6f; // tile heights below a rim tile's top: a fall's foot
+inline constexpr float kMistPerSecond = 0.7f;
+inline constexpr float kMistSeconds = 1.8f;
+inline constexpr float kZzzInterval = 3.0f;
+inline constexpr float kHeartSeconds = 1.2f;
+inline constexpr float kFishJumpSeconds = 1.0f;
+inline constexpr float kMothRadius = 10.0f / 64.0f; // tile widths
+inline constexpr float kMothLit = 0.7f;
+inline constexpr float kStarSeconds = 1.0f;
+inline constexpr float kStarTravel = 0.35f; // share of the window width a shooting star crosses
+inline constexpr float kRainbowScale = 2.0f;
+inline constexpr float kRainbowDrop = 0.15f;    // its feet, from the island's top toward its middle
+inline constexpr float kCloudShadowSize = 1.4f; // blob width per tile of cell radius
+inline constexpr float kCloudShadow = 0.3f;
+inline constexpr float kRainShadow = 1.0f;
+inline constexpr float kWetDarken = 0.16f;
 inline constexpr float kPitchJitter = 0.06f;
 inline constexpr float kRainAmbientDim = 0.85f;
 // Night lighting. Pools sit on the ground in front of a light; radius in tile widths.
@@ -154,8 +265,10 @@ inline constexpr float kFireflyCore[3] = {0.8f, 1.0f, 0.5f};   // its glowing bo
 inline constexpr float kInvalidTint[3] = {1.0f, 0.45f, 0.42f}; // refused ghosts, removal mark
 inline constexpr float kCritterMoveFps = 6.0f;
 inline constexpr float kCritterIdleFps = 2.0f;
-inline constexpr float kWarnSeconds = 1.6f; // how long a refusal stays in the hint line
-inline constexpr float kClickSlop = 4.0f;   // window px a click may move and still be a click
+inline constexpr float kCritterActFps = 5.0f;  // actions of three frames or more
+inline constexpr float kCritterSlowFps = 1.5f; // two-frame loops: breathing, a page turn
+inline constexpr float kWarnSeconds = 1.6f;    // how long a refusal stays in the hint line
+inline constexpr float kClickSlop = 4.0f;      // window px a click may move and still be a click
 
 // Rendering budgets
 inline constexpr std::size_t kGroundCacheBytes = 128u << 20; // GPU memory for cached ground
@@ -171,6 +284,18 @@ inline constexpr float kCricketsLevel = 0.45f;
 inline constexpr float kRainLevel = 0.6f;
 inline constexpr float kWaterLevel = 0.4f;
 inline constexpr float kWaterTilesForFullLevel = 24.0f;
+inline constexpr float kWaterfallLevel = 0.5f;
+inline constexpr float kFallTilesForFullLevel = 6.0f;
+inline constexpr float kBedPan = 0.6f;         // a positional bed leans at most this far
+inline constexpr float kPanLimit = 0.8f;       // nothing sits in one ear
+inline constexpr float kPositionalNear = 6.0f; // tiles from the view centre at full gain
+inline constexpr float kPositionalLevel = 0.9f;
+inline constexpr std::size_t kMaxPositional = 12; // one-shots at once
+inline constexpr double kMergeSeconds = 0.08;     // the same sound this close plays once
+inline constexpr double kVoiceBusy = 0.6;         // a one-shot counts against the budget this long
+inline constexpr float kRainbowSeconds = 48.0f;
+inline constexpr float kRainbowIn = 3.0f;
+inline constexpr float kRainbowOut = 5.0f;
 inline constexpr float kSfxLevel = 0.8f;
 inline constexpr float kUiSfxLevel = 0.35f;
 inline constexpr float kLoopFadeSeconds = 2.5f;

@@ -10,6 +10,8 @@
 //                               nooks, sketch_not_now,
 //                               scroll_up, scroll_down, tab:<category id>, tile:<item or terrain
 //                               id>, or of the toast and hint panels: toast, hint
+//                  actor:KIND   the middle of the first actor of that kind (a visitor id or the
+//                               resident's)
 //
 // Commands:
 //   move P                  pointer motion
@@ -24,7 +26,14 @@
 //   wait N                  let N frames pass
 //   shot FILE.png           save the current frame (relative to the working directory)
 //   set clock PHASE|auto    pin the clock to day/dusk/night/dawn instantly, or unpin
-//   set rain on|off
+//   set rain on|off         rain here, or the weather as it comes
+//   set weather natural|rain|clear
+//   set time T              the time of day, 0..1 (0.2 mid-morning, 0.55 dusk, 0.75 midnight)
+//   set chatter chatty|quiet   the resident's idle remarks
+//   set camera TX TY ZOOM   look at tile (TX, TY) at a zoom level (0.25, 0.5, 1, 2, 3)
+//   set look KIND ZOOM      look at the first actor of that kind
+//   set lively reset        start a fresh liveliness record (see expect lively)
+//   set shower now          a shower enters at the upwind edge of the open land
 //   set unlock all          unlock every piece, frame and clue (as a free-build world has)
 //   set played [+]SECONDS   move the play clock on (wish pacing and the like) without frames:
 //                           to SECONDS (never backwards), or by them with a +
@@ -32,6 +41,9 @@
 //   set season ID|auto      keep a season (as the calendar's pin does), or follow the days
 //   set day N               the calendar day (the season follows unless pinned)
 //   set grow SECONDS        let the beds grow that much play time at once
+//   waitfor N WHAT ARGS...  wait up to N frames until `expect WHAT ARGS...` holds, else fail
+//   fast S [WHAT ARGS...]   simulate S seconds without drawing (or until `expect WHAT ARGS...`
+//                           holds, failing if it never does); state checks only
 //   expect WHAT ARGS...     fail the run unless the state matches:
 //       tile P TERRAIN | item P ITEM|none | count ITEM|all N | tool none|place|paint|remove
 //       drawer open|closed | journal open|closed | photo on|off | phase PHASE
@@ -47,7 +59,16 @@
 //       growth P STAGE (growth stage of the item at P) | harvests N
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
+//       actor KIND ANIM|moving|inside|hat|any [ITEM]  one actor of that kind (a visitor id or
+//                               the resident's) is doing that now, at that item's slot if given
+//       bubble yes|no (the resident is speaking) | raining yes|no (where the camera looks)
+//       weather natural|rain|clear | event SHOW yes|no (rainbow, gust, chorus, smoke...)
+//       lively MIN CAP HMIN HCAP SHARE   since `set lively reset`, at least SHARE (0..1) of the
+//                               one-second samples had MIN..CAP purposeful movers in view and
+//                               HMIN..HCAP new happenings in the last minute
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
+//   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
+//   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would
 //   quit
 
 #include <cstdint>
@@ -82,6 +103,10 @@ struct ScriptCommand {
         Shot,
         Set,
         Expect,
+        WaitFor,
+        Fast,
+        Place,
+        Paint,
         Quit
     };
     Kind kind = Kind::Wait;

@@ -56,8 +56,15 @@ TEST_CASE("coverage: catalog vs atlas") {
         CHECK_MESSAGE(r.y + r.h <= image->h, key << " lies outside the image");
     }
     std::vector<std::string> missing;
-    for (const auto& key : requiredSpriteKeys(test::catalog()))
-        if (!manifest->sprites.contains(key)) missing.push_back(key);
+    for (const auto& key : requiredSpriteKeys(test::catalog())) {
+        // "a|b": either form of an actor animation will do.
+        const auto bar = key.find('|');
+        const bool have = bar == std::string::npos
+                              ? manifest->sprites.contains(key)
+                              : manifest->sprites.contains(key.substr(0, bar)) ||
+                                    manifest->sprites.contains(key.substr(bar + 1));
+        if (!have) missing.push_back(key);
+    }
     // Frame sequences must not have gaps (f0, f1, f3 would silently drop f3). Keys with other
     // suffixes belong to later contract additions and are not frames of this catalog.
     for (const auto& [key, r] : manifest->sprites) {

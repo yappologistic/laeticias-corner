@@ -1,0 +1,13 @@
+# Ducks swim in a line by day, and at night waddle onto the bank to sleep side by side.
+set season summer
+set clock day
+set camera 34 24 2
+fast 15 present duck 2
+fast 10
+expect habitat ok
+shot shots/ducks_day.png
+set clock night
+fast 150 actor duck sleep
+fast 5
+shot shots/ducks_night.png
+quit

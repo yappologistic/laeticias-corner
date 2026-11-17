@@ -3,11 +3,12 @@
 // tooltips. Laid out and hit-tested each frame from a read-only model; user intent comes back as
 // actions for the app to apply.
 
+#include "core/actors.hpp"
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/iso.hpp"
 #include "core/progress.hpp"
-#include "core/visitors.hpp"
+#include "core/weather.hpp"
 #include "platform/sprite.hpp"
 #include "ui/painter.hpp"
 
@@ -61,7 +62,7 @@ struct FloatLabel {
 struct HudModel {
     const Catalog* cat = nullptr;
     const ThumbSet* thumbs = nullptr;
-    const Visitors* visitors = nullptr;
+    const Actors* visitors = nullptr;
     const Progress* progress = nullptr; // unlocks and new-piece dots; null: everything unlocked
     std::span<const WishCard> wishes;   // the open wishes, in the order they were offered
     int pages = 0;                      // sketchbook pages: visitors seen and nooks found
@@ -75,7 +76,8 @@ struct HudModel {
     bool journalOpen = false;
     bool photo = false;
     bool muted = false;
-    bool rain = false;
+    WeatherMode weather = WeatherMode::Natural; // the player's weather choice
+    bool raining = false;                       // it rains (or snows) where the camera looks
     ClockPin pin = ClockPin::Auto;
     Phase phase = Phase::Day;
     bool canUndo = false;
@@ -86,6 +88,10 @@ struct HudModel {
     std::string_view warning;
     std::string_view worldTip; // what the pointer rests on in the world (a nook's name...)
     std::span<const FloatLabel> labels;
+    // The resident's speech bubble: its line, the window point above her head, its fade.
+    std::string_view bubble;
+    Vec2 bubbleAt;
+    float bubbleAlpha = 0;
     bool edgeChip = false; // land opened out of sight: a chip points the way
     std::string_view worldName;
     int season = 0;       // effective season
@@ -254,6 +260,7 @@ private:
     void drawTooltip(Painter& p) const;
     void drawWorldTip(Painter& p, const HudModel& m) const;
     void drawLabels(Painter& p, const HudModel& m) const;
+    void drawBubble(Painter& p, const HudModel& m) const;
     void layoutCalendar(const HudModel& m, const Font& font, float s);
     void drawCalendar(Painter& p, const HudModel& m) const;
 

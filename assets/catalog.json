@@ -7,8 +7,8 @@
   "terrain": [
     {"id": "grass", "name": "Grass", "base": true, "variants": 4, "faces": ["world.earth", "world.coast"]},
     {"id": "meadow", "name": "Meadow", "edges": 16, "under": "grass", "sound": "paint"},
-    {"id": "path", "name": "Path", "edges": 16, "under": "grass", "sound": "paint"},
-    {"id": "cobble", "name": "Cobble", "edges": 16, "under": "grass", "sound": "stone"},
+    {"id": "path", "name": "Path", "edges": 16, "paved": true, "under": "grass", "sound": "paint"},
+    {"id": "cobble", "name": "Cobble", "edges": 16, "paved": true, "under": "grass", "sound": "stone"},
     {"id": "water", "name": "Water", "edges": 16, "under": "grass", "fps": 3, "sound": "splash"}
   ],
   "categories": [
@@ -43,8 +43,8 @@
     {"id": "scarecrow", "name": "Scarecrow", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood"},
     {"id": "well", "name": "Well", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "stone", "tags": ["stone"], "click_sound": "well", "slots": [{"id": "use", "kind": "stand", "where": "beside", "cap": 1, "facing": "item"}]},
     {"id": "lamp", "name": "Lamp post", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 1, "on": "land", "sound": "stone", "glow": true, "tags": ["light"], "slots": [{"id": "light", "kind": "light", "where": "beside", "cap": 1, "states": ["unlit", "lit"]}]},
-    {"id": "bench", "name": "Bench", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 12, "slots": [{"id": "seat", "kind": "sit", "where": "on", "cap": 1, "facing": "rotation"}]},
-    {"id": "picnic_table", "name": "Picnic table", "category": "garden", "footprint": [2, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 12, "slots": [{"id": "seat", "kind": "sit", "where": "tile", "cap": 1, "facing": "item", "tiles": {"r0": [[0, 1], [1, 1], [0, -1], [1, -1]], "r1": [[1, 0], [1, 1], [-1, 0], [-1, 1]]}}]},
+    {"id": "bench", "name": "Bench", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 4, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 12, "slots": [{"id": "seat", "kind": "sit", "where": "on", "cap": 1, "spots": {"r0": [[0.62, 0.67]], "r1": [[0.33, 0.6]], "r2": [[0.6, 0.33]], "r3": [[0.67, 0.6]]}, "lift": 12, "face": {"r0": "+y", "r1": "-x", "r2": "-y", "r3": "+x"}}]},
+    {"id": "picnic_table", "name": "Picnic table", "category": "garden", "footprint": [2, 1], "layout": "rotate", "count": 2, "on": "land", "sound": "wood", "tags": ["seat"], "perch": 12, "slots": [{"id": "seat", "kind": "sit", "where": "on", "cap": 4, "facing": "item", "spots": {"r0": [[0.5, 0.15], [1.5, 0.15], [0.5, 0.85], [1.5, 0.85]], "r1": [[0.15, 0.5], [0.15, 1.5], [0.85, 0.5], [0.85, 1.5]]}, "lift": 12}]},
     {"id": "campfire", "name": "Campfire", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 1, "on": "land", "sound": "wood", "glow": true, "fps": 6, "tags": ["light"], "slots": [{"id": "warm", "kind": "stand", "where": "beside", "cap": 4, "facing": "item"}]},
     {"id": "bridge", "name": "Footbridge", "category": "garden", "footprint": [1, 1], "layout": "rotate", "count": 2, "on": "water", "sound": "wood", "walkable": true, "tags": ["crossing"]},
     {"id": "stone_wall", "name": "Stone wall", "category": "garden", "footprint": [1, 1], "layout": "connect", "on": "land", "sound": "stone", "tags": ["line", "stone"], "perch": 14},
@@ -64,7 +64,7 @@
   "visitors": [
     {"id": "duck", "name": "Ducks", "habitat": "water", "time": "any", "needs": {"terrain": {"water": 6}}, "max": 4, "voice": "duck", "blurb": "They found the pond all by themselves.", "hint": "They look for open water. A good-sized pond will do.", "line": true, "activities": [{"id": "wander", "weight": 3}, {"id": "dabble", "anim": "dabble", "at": {"here": true}, "dur": [2, 5], "weight": 2}, {"id": "sleep_bank", "anim": "sleep", "at": {"bank": true}, "time": ["night"], "dur": [60, 120], "weight": 10}], "startle": {"radius": 2, "anim": "flap"}, "pet": {"anim": "dabble"}},
     {"id": "hen", "name": "Hens", "habitat": "land", "time": "day", "needs": {"items": {"coop": 1}}, "max": 4, "voice": "hen", "blurb": "Busy, opinionated, and very fond of the coop.", "hint": "They need somewhere to roost.", "home": "coop", "activities": [{"id": "wander", "weight": 2}, {"id": "peck_bed", "anim": "peck", "at": {"item": "planter"}, "spot": "beside", "dur": [4, 10], "weight": 4}, {"id": "peck", "anim": "peck", "at": {"here": true}, "dur": [3, 6], "weight": 3}], "startle": {"radius": 1.5, "anim": "flap"}, "pet": {"anim": "peck"}},
-    {"id": "cat", "name": "The cat", "habitat": "land", "time": "any", "needs": {"items": {"cottage": 1}}, "max": 1, "voice": "cat", "blurb": "Moved in the moment the cottage had a roof.", "hint": "Cats choose houses, not people.", "activities": [{"id": "wander", "weight": 2}, {"id": "nap", "anim": "sleep", "at": {"tag": "seat"}, "spot": "on", "time": ["day", "dusk"], "dur": [30, 60], "weight": 3}, {"id": "warm", "anim": "sleep", "at": {"item": "campfire"}, "spot": "beside", "time": ["dusk", "night"], "dur": [40, 80], "weight": 5}, {"id": "doorstep", "anim": "sit", "at": {"item": "cottage"}, "spot": "beside", "dur": [10, 25], "weight": 2}, {"id": "groom", "anim": "groom", "at": {"here": true}, "dur": [4, 8], "weight": 2}, {"id": "follow", "at": {"resident": true}, "time": ["day"], "dur": [10, 20], "weight": 1}, {"id": "night_in", "anim": "sleep", "at": {"item": "cottage"}, "spot": "beside", "time": ["night"], "dur": [60, 120], "weight": 2}], "startle": {"radius": 1, "anim": "stretch", "only_from": ["sleep"]}, "pet": {"anim": "sit", "sound": "purr"}},
+    {"id": "cat", "name": "The cat", "habitat": "land", "time": "any", "needs": {"items": {"cottage": 1}}, "max": 1, "voice": "cat", "blurb": "Moved in the moment the cottage had a roof.", "hint": "Cats choose houses, not people.", "activities": [{"id": "wander", "weight": 2}, {"id": "nap", "anim": "sleep", "at": {"tag": "seat"}, "spot": "on", "time": ["day", "dusk"], "dur": [30, 60], "weight": 3}, {"id": "warm", "anim": "sleep", "at": {"item": "campfire"}, "spot": "beside", "time": ["dusk", "night"], "dur": [40, 80], "weight": 5}, {"id": "doorstep", "anim": "sit", "at": {"item": "cottage"}, "spot": "beside", "dur": [10, 25], "weight": 2}, {"id": "groom", "anim": "groom", "at": {"here": true}, "dur": [4, 8], "weight": 2}, {"id": "follow", "at": {"resident": true}, "time": ["day"], "dur": [10, 20], "weight": 1}, {"id": "night_in", "anim": "sleep", "at": {"item": "cottage"}, "spot": "beside", "time": ["night"], "dur": [60, 120], "weight": 2}], "startle": {"radius": 1, "anim": "stretch", "only_from": ["sleep"]}, "pet": {"anim": "sit", "sound": "purr"}, "watches_pointer": true},
     {"id": "butterfly", "name": "Butterflies", "habitat": "air", "time": "day", "needs": {"any_items": {"flowers_red": 1, "flowers_white": 1, "flowers_violet": 1}, "total": 4}, "max": 6, "blurb": "Four flower patches is all it takes.", "seasons": ["spring", "summer"], "hint": "Flowers, and plenty of them.", "hide_in_rain": true, "activities": [{"id": "wander", "weight": 2}, {"id": "rest", "anim": "rest", "at": {"tag": "flower"}, "spot": "on", "dur": [3, 8], "weight": 4}, {"id": "hat", "anim": "rest", "at": {"resident": true}, "spot": "on", "dur": [6, 12], "weight": 1, "needs_sitting": 20}]},
     {"id": "bee", "name": "Bees", "habitat": "air", "time": "day", "needs": {"items": {"beehive": 1}}, "max": 6, "blurb": "Humming between the hive and the blooms.", "seasons": ["spring", "summer", "autumn"], "hint": "They'll need a hive to come home to.", "hide_in_rain": true, "cycle": ["sip", "sip", "hive"], "activities": [{"id": "sip", "anim": "idle", "at": {"tag": "flower"}, "spot": "on", "dur": [2, 4], "within": 6}, {"id": "hive", "anim": "enter", "at": {"item": "beehive"}, "spot": "on", "dur": [3, 6]}]},
     {"id": "firefly", "name": "Fireflies", "habitat": "air", "time": "night", "needs": {"any_items": {"tall_grass": 1, "reeds": 1}, "total": 3}, "max": 12, "glow": true, "blurb": "They only come out when the lamps do.", "seasons": ["summer", "autumn"], "hint": "Long grass on summer nights.", "activities": [{"id": "wander", "weight": 1}]},
@@ -88,10 +88,10 @@
     "notes": ["sfx/note_0.wav", "sfx/note_1.wav", "sfx/note_2.wav", "sfx/note_3.wav", "sfx/note_4.wav", "sfx/note_5.wav", "sfx/note_6.wav", "sfx/note_7.wav", "sfx/note_8.wav", "sfx/note_9.wav"]
   },
   "seasons": [
-    {"id": "spring", "name": "Spring", "days": 3, "grade": {"mul": [0.98, 1.02, 0.96]}, "ambience": {"day": "amb/birds.ogg", "night": "amb/night_spring.ogg"}, "fx": {"petal": 1.0, "leaf": 0.5}, "line": "Spring. Everything's showing off."},
-    {"id": "summer", "name": "Summer", "days": 3, "grade": {"mul": [1.03, 1.0, 0.94]}, "ambience": {"day": "amb/birds.ogg", "night": "amb/crickets.ogg"}, "fx": {"petal": 0.0, "leaf": 1.0}, "line": "Summer. Long days and short shadows."},
-    {"id": "autumn", "name": "Autumn", "days": 3, "grade": {"mul": [1.06, 0.96, 0.86]}, "ambience": {"day": "amb/autumn.ogg", "night": "amb/crickets.ogg"}, "fx": {"petal": 0.0, "leaf": 3.0}, "line": "Autumn. My favourite. Don't tell the others."},
-    {"id": "winter", "name": "Winter", "days": 3, "grade": {"mul": [0.9, 0.95, 1.06]}, "ambience": {"day": "amb/winter.ogg", "night": "amb/night_winter.ogg"}, "fx": {"petal": 0.0, "leaf": 0.0}, "rain_as": "snow", "growth": 0, "line": "First snow. Boots on."}
+    {"id": "spring", "name": "Spring", "days": 3, "grade": {"mul": [0.98, 1.02, 0.96]}, "ambience": {"day": "amb/birds.ogg", "night": "amb/night_spring.ogg"}, "fx": {"petal": 1.0, "leaf": 0.5}, "climate": {"showers": 0.6, "clouds": 1.2, "wind": 0.35}, "line": "Spring. Everything's showing off."},
+    {"id": "summer", "name": "Summer", "days": 3, "grade": {"mul": [1.03, 1.0, 0.94]}, "ambience": {"day": "amb/birds.ogg", "night": "amb/crickets.ogg"}, "fx": {"petal": 0.0, "leaf": 1.0}, "climate": {"showers": 0.15, "clouds": 0.6, "wind": 0.2}, "line": "Summer. Long days and short shadows."},
+    {"id": "autumn", "name": "Autumn", "days": 3, "grade": {"mul": [1.06, 0.96, 0.86]}, "ambience": {"day": "amb/autumn.ogg", "night": "amb/crickets.ogg"}, "fx": {"petal": 0.0, "leaf": 3.0}, "climate": {"showers": 0.7, "clouds": 1.4, "wind": 0.6}, "line": "Autumn. My favourite. Don't tell the others."},
+    {"id": "winter", "name": "Winter", "days": 3, "grade": {"mul": [0.9, 0.95, 1.06]}, "ambience": {"day": "amb/winter.ogg", "night": "amb/night_winter.ogg"}, "fx": {"petal": 0.0, "leaf": 0.0}, "rain_as": "snow", "growth": 0, "climate": {"showers": 0.5, "clouds": 1.0, "wind": 0.4}, "line": "First snow. Boots on."}
   ],
   "land": {
     "measure": "pages",
@@ -142,6 +142,23 @@
     {"id": "pressed_flowers", "name": "Pressed flowers"},
     {"id": "watercolour", "name": "Watercolour"},
     {"id": "starry", "name": "Starry night"}
+  ],
+  "goods": [
+    {"id": "produce", "name": "Produce"}
+  ],
+  "events": [
+    {"id": "rainbow", "show": "rainbow", "trigger": "rain_stop", "min_rain": 60, "time": ["day"], "seasons": ["spring", "summer", "autumn"], "daily": true, "duration": 48, "sfx": "rainbow"},
+    {"id": "shooting_star", "show": "shooting_star", "trigger": "window", "time": ["night"], "weather": "clear", "mean": 50, "duration": 1, "sfx": "twinkle", "gain": 0.3},
+    {"id": "owl_far", "show": "owl_call", "trigger": "window", "time": ["night"], "when": {"all": [{"count": {"item": "pine", "min": 5}}, {"not": {"seen": "owl"}}]}, "every": [240, 360], "duration": 2, "sfx": "owl", "gain": 0.35},
+    {"id": "rustle", "show": "rustle", "trigger": "placed", "near": {"tag": "tree", "within": 1}, "cooldown": 0.3, "duration": 0.6, "sfx": "rustle"},
+    {"id": "gust", "show": "gust", "trigger": "window", "time": ["day"], "every": [120, 240], "duration": 2, "sfx": "gust"},
+    {"id": "fish_jump", "show": "fish_jump", "trigger": "window", "time": ["day", "dusk"], "when": {"count": {"terrain": "water", "min": 8}}, "mean": 90, "duration": 1, "sfx": "splash", "gain": 0.4},
+    {"id": "frog_chorus", "show": "frog_chorus", "trigger": "rain", "who": "frog", "when": {"visitor": {"id": "frog"}}, "duration": 60, "every": [4, 8], "sfx": "frog"},
+    {"id": "dawn_chorus", "show": "chorus", "trigger": "hours", "hours": [3, 4.1], "gain": 1.4},
+    {"id": "after_rain_chorus", "show": "chorus", "trigger": "rain_stop", "time": ["day"], "duration": 20, "gain": 1.6},
+    {"id": "fireflies_sync", "show": "firefly_sync", "trigger": "reactive", "when": {"visitor": {"id": "firefly", "min": 8}}, "every": [40, 60], "duration": 6},
+    {"id": "cooking_smoke", "show": "smoke", "trigger": "cook", "duration": 90},
+    {"id": "season_turns", "show": "season", "trigger": "season", "duration": 3, "sfx": "season"}
   ],
   "wishes": [
     {"id": "first_flowers", "giver": "laeticia", "after": [], "text": "It's a bit bare, isn't it? A few more flowers would help. Four patches, say.", "goal": {"count": {"tag": "flower", "min": 4}}, "progress": "flower patches", "thanks": "There. Now it smells like somewhere.", "reward": {"unlock": ["flowers_violet", "berry_bush"]}},
@@ -201,7 +218,10 @@
   ],
   "resident": {
     "id": "laeticia",
+    "enabled": true,
     "name": "Laeticia",
+    "home": "cottage",
+    "roles": {"carry": "carry", "rain": "umbrella", "wave": "wave"},
     "voice": ["laeticia_1", "laeticia_2", "laeticia_3"],
     "blurb": "Drew other people's gardens for forty years. This one is hers.",
     "lines": {
@@ -255,9 +275,24 @@
       {"hours": ["18:00", "21:00"], "routine": "evening"},
       {"hours": ["21:00", "03:00"], "routine": "home"}
     ],
-    "routines": {"wake": {"steps": [{"if": {"home": true}, "do": [{"exit": {"home": "door"}}]}, {"use": {"here": true}, "anim": "stretch", "dur": [2, 2]}, {"say": "morning"}]}, "chores": {"steps": [{"each": {"item": "planter", "slot": "tend", "max": 6, "order": "nearest"}, "do": [{"go": {"each": true}}, {"use": {"each": true}, "anim": "water", "dur": [3, 3], "effect": "water_bed"}]}, {"if": {"visitor": {"id": "hen"}}, "do": [{"go": {"item": "coop", "slot": "feed"}}, {"use": {"item": "coop", "slot": "feed"}, "anim": "scatter", "dur": [4, 4], "effect": "call_hens"}]}, {"routine": "leisure"}]}, "leisure": {"steps": [{"pick": [{"weight": 3, "steps": [{"go": {"slot_kind": "sit", "tag": "seat"}}, {"use": {"here": true}, "anim": "sit", "dur": [20, 40]}, {"pick": [{"weight": 1, "use": {"here": true}, "anim": "read", "dur": [20, 40]}, {"weight": 1, "wait": {"dur": [1, 1]}}]}]}, {"weight": 2, "when": {"count": {"item": "hammock", "min": 1}}, "steps": [{"go": {"item": "hammock", "slot": "lie"}}, {"use": {"item": "hammock", "slot": "lie"}, "anim": "lie", "dur": [30, 60]}]}, {"weight": 4, "when": {"all": [{"nook": "lakeside_lunch"}, {"harvested_today": true}]}, "steps": [{"go": {"item": "picnic_table", "slot": "seat"}}, {"use": {"item": "picnic_table", "slot": "seat"}, "anim": "sit", "dur": [40, 60]}]}]}]}, "stroll": {"steps": [{"each": {"poi": "stroll", "max": 4}, "do": [{"go": {"each": true}}, {"pick": [{"weight": 2, "use": {"here": true}, "anim": "idle", "dur": [2, 2]}, {"weight": 1, "use": {"here": true}, "anim": "sketch", "dur": [15, 25]}]}]}]}, "evening": {"steps": [{"say": "dusk"}, {"pick": [{"weight": 3, "when": {"count": {"item": "campfire", "min": 1}}, "steps": [{"go": {"item": "campfire", "slot": "warm"}}, {"use": {"item": "campfire", "slot": "warm"}, "anim": "warm", "dur": [20, 40]}]}, {"weight": 1, "steps": [{"go": {"slot_kind": "sit", "tag": "seat"}}, {"use": {"here": true}, "anim": "sit", "dur": [20, 40]}]}]}]}, "home": {"steps": [{"say": "night"}, {"if": {"home": true}, "do": [{"go": {"home": "door"}}, {"enter": {"home": "door"}, "until": {"hour": "03:00"}}], "else": [{"say": "no_cottage_night"}, {"go": {"bedroll": true}}, {"use": {"here": true}, "anim": "sleep", "until": {"hour": "03:00"}}]}]}, "shelter": {"steps": [{"say": "rain_start"}, {"if": {"home": true}, "do": [{"go": {"home": "door"}}, {"enter": {"home": "door"}, "until": {"weather": "clear"}}], "else": [{"go": {"tag": "tree", "slot": "beside"}}, {"wait": {"until": {"weather": "clear"}}}]}, {"say": "rain_stop"}]}, "react": {"steps": [{"use": {"here": true}, "anim": "idle", "dur": [2, 2], "effect": "react_line"}]}},
+    "routines": {
+      "wake": {"steps": [{"if": {"home": true}, "do": [{"exit": {"home": "door"}}]}, {"use": {"here": true}, "anim": "stretch", "dur": [2, 2]}, {"say": "morning"}]},
+      "chores": {"steps": [{"each": {"item": "planter", "slot": "tend", "max": 6, "order": "nearest"}, "as": "water", "do": [{"go": {"each": true}}, {"use": {"each": true}, "anim": "water", "dur": [3, 3], "effect": "water_bed"}]}, {"if": {"visitor": {"id": "hen"}}, "do": [{"go": {"item": "coop", "slot": "feed"}, "as": "feed"}, {"use": {"item": "coop", "slot": "feed"}, "anim": "scatter", "dur": [4, 4], "effect": "call_hens"}]}, {"routine": "leisure"}]},
+      "leisure": {"loop": true, "steps": [{"pick": [{"weight": 3, "steps": [{"go": {"slot_kind": "sit", "tag": "seat"}, "as": "read"}, {"use": {"here": true}, "anim": "sit", "dur": [20, 40]}, {"pick": [{"weight": 1, "as": "read", "use": {"here": true}, "anim": "read", "dur": [20, 40]}, {"weight": 1, "wait": {"dur": [1, 1]}}]}]}, {"weight": 2, "when": {"count": {"item": "hammock", "min": 1}}, "steps": [{"go": {"item": "hammock", "slot": "lie"}, "as": "lie"}, {"use": {"item": "hammock", "slot": "lie"}, "anim": "lie", "dur": [30, 60]}]}, {"weight": 4, "when": {"all": [{"nook": "lakeside_lunch"}, {"harvested_today": true}]}, "routine": "lunch"}, {"weight": 1, "steps": [{"wander": {"radius": 4}, "dur": [10, 20], "as": "stroll"}]}]}]},
+      "lunch": {"steps": [{"go": {"item": "picnic_table", "slot": "seat"}, "as": "lunch"}, {"use": {"item": "picnic_table", "slot": "seat"}, "anim": "sit", "dur": [40, 60]}]},
+      "stroll": {"loop": true, "steps": [{"if": {"nook": "wishing_well"}, "do": [{"routine": "pebble"}]}, {"each": {"poi": "stroll", "max": 4}, "as": "stroll", "do": [{"go": {"each": true}}, {"pick": [{"weight": 2, "use": {"here": true}, "anim": "idle", "dur": [2, 2]}, {"weight": 1, "as": "sketch", "use": {"here": true}, "anim": "sketch", "dur": [15, 25]}]}]}]},
+      "pebble": {"steps": [{"go": {"item": "well", "slot": "use"}}, {"use": {"here": true}, "anim": "toss", "dur": [2, 2], "effect": "toss_pebble"}]},
+      "evening": {"steps": [{"say": "dusk"}, {"routine": "fireside"}]},
+      "fireside": {"loop": true, "steps": [{"pick": [{"weight": 3, "when": {"count": {"item": "campfire", "min": 1}}, "steps": [{"go": {"item": "campfire", "slot": "warm"}, "as": "warm"}, {"use": {"item": "campfire", "slot": "warm"}, "anim": "warm", "dur": [20, 40]}]}, {"weight": 1, "steps": [{"go": {"slot_kind": "sit", "tag": "seat"}, "as": "sit"}, {"use": {"here": true}, "anim": "sit", "dur": [20, 40]}]}, {"weight": 1, "steps": [{"wander": {"radius": 3}, "dur": [8, 15], "as": "stroll"}]}]}]},
+      "home": {"steps": [{"if": {"nook": "moon_garden"}, "do": [{"routine": "moon_stroll"}]}, {"say": "night"}, {"if": {"home": true}, "do": [{"go": {"home": "door"}}, {"enter": {"home": "door"}, "until": {"hour": "03:00"}}], "else": [{"say": "no_cottage_night"}, {"go": {"bedroll": true}}, {"use": {"here": true}, "anim": "sleep", "until": {"hour": "03:00"}}]}]},
+      "moon_stroll": {"steps": [{"go": {"nook": "moon_garden"}}, {"use": {"here": true}, "anim": "idle", "dur": [20, 30]}]},
+      "shelter": {"steps": [{"say": "rain_start"}, {"if": {"home": true}, "do": [{"go": {"home": "door"}}, {"enter": {"home": "door"}, "until": {"weather": "clear"}}], "else": [{"go": {"tag": "tree", "spot": "beside"}}, {"wait": {"until": {"weather": "clear"}}}]}, {"say": "rain_stop"}]},
+      "carry_home": {"steps": [{"say": "harvest_done"}, {"if": {"home": true}, "do": [{"go": {"home": "door"}}, {"put": "produce"}, {"use": {"here": true}, "anim": "idle", "dur": [1, 1], "effect": "cook"}, {"enter": {"here": true}, "dur": [3, 4]}], "else": [{"go": {"bedroll": true}}, {"put": "produce"}]}]},
+      "react": {"steps": [{"use": {"here": true}, "anim": "idle", "dur": [2, 2], "effect": "react_line"}]}
+    },
     "interrupts": [
-      {"when": {"weather": "rain"}, "routine": "shelter", "priority": 3},
+      {"when": {"weather": "rain"}, "routine": "shelter", "priority": 3, "delay": 5},
+      {"when": {"event": "harvest"}, "routine": "carry_home", "priority": 2},
       {"when": {"event": "placed_nearby"}, "routine": "react", "priority": 1, "chance": 0.3, "cooldown": 20}
     ]
   }

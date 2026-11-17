@@ -1,15 +1,22 @@
 #include "render/sprites.hpp"
 
+#include "core/tuning.hpp"
+
 #include <algorithm>
 #include <format>
 
 namespace lc {
 namespace {
 
-constexpr std::array<const char*, 4> kCritterAnims{"move_front", "move_back", "idle_front",
-                                                   "idle_back"};
 constexpr std::array<const char*, static_cast<std::size_t>(Fx::Count)> kFxNames{
-    "smoke", "ripple", "sparkle", "raindrop", "leaf", "clear", "petal", "snowflake", "produce"};
+    "smoke",   "ripple", "sparkle", "raindrop",  "leaf", "clear", "petal",      "snowflake",
+    "produce", "heart",  "zzz",     "fish_jump", "mist", "moth",  "star_streak"};
+
+// Animations every kind names but the art may leave out: they fall back quietly.
+bool optionalAnim(const ActorKind& k, std::size_t a) {
+    const auto i = static_cast<std::uint8_t>(a);
+    return i == k.carryAnim || i == k.rainAnim || i == k.waddleAnim || i == k.waveAnim;
+}
 
 // Collects prefix/f0, f1, ... until the first gap, each frame in its `suffix` look (a season)
 // where there is one. With a placeholder, a missing f0 is logged and replaced; without one the
@@ -106,12 +113,35 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
         t.items.push_back(std::move(s));
     }
 
-    for (const auto& v : cat.visitors) {
-        std::array<FrameSet, 4> anims;
-        for (std::size_t a = 0; a < 4; ++a)
-            anims[a] = frames(atlas, std::format("critter/{}/{}", v.id, kCritterAnims[a]),
-                              atlas.placeholderBox());
-        t.critters.push_back(std::move(anims));
+    for (const auto& k : cat.kinds) {
+        std::vector<KindAnim> anims;
+        for (std::size_t a = 0; a < k.anims.size(); ++a) {
+            const std::string& name = k.anims[a];
+            KindAnim ka;
+            ka.front = frames(atlas, std::format("{}/{}_front", k.sprite, name), std::nullopt);
+            if (!ka.front.empty()) {
+                ka.back = frames(atlas, std::format("{}/{}_back", k.sprite, name), std::nullopt);
+            } else {
+                ka.front = frames(atlas, std::format("{}/{}", k.sprite, name), std::nullopt);
+            }
+            if (ka.front.empty() && !optionalAnim(k, a))
+                atlas.reportMissing(std::format("{}/{}_front/f0", k.sprite, name));
+            const float n = static_cast<float>(ka.front.frames.size());
+            ka.fps = a == 0   ? tuning::kCritterMoveFps * (n > 4 ? 1.35f : 1.0f)
+                     : a == 1 ? tuning::kCritterIdleFps
+                     : n >= 3 ? tuning::kCritterActFps
+                              : tuning::kCritterSlowFps;
+            anims.push_back(std::move(ka));
+        }
+        // Idle stands in for anything missing; a kind without idle art shows the placeholder.
+        if (anims[1].empty()) anims[1].front.frames.push_back(atlas.placeholderBox());
+        for (KindAnim& ka : anims)
+            if (ka.empty()) {
+                const float fps = ka.fps;
+                ka = anims[1];
+                ka.fps = fps;
+            }
+        t.kinds.push_back(std::move(anims));
     }
     for (std::size_t f = 0; f < t.fx.size(); ++f)
         t.fx[f] = frames(atlas, std::format("fx/{}", kFxNames[f]), atlas.placeholderBox());
@@ -128,6 +158,8 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
     if (t.thickets.empty()) atlas.reportMissing("wild/thicket/v0");
     t.fallSE = frames(atlas, "edge/fall_se", atlas.placeholderEdgeSE());
     t.fallSW = frames(atlas, "edge/fall_sw", atlas.placeholderEdgeSW());
+    t.rainbow = atlas.find("sky/rainbow");
+    if (!t.rainbow) atlas.reportMissing("sky/rainbow");
     t.placeholder = atlas.placeholderBox();
     if (shadowPeak > 0.0f) t.shadowOpacity = shadowPeak;
 
@@ -168,8 +200,8 @@ SpriteId thumbnail(const SpriteTables& t, Thumb kind, int index) {
         if (i >= t.items.size() || t.items[i].base.empty()) break;
         return first(t.items[i].base.front().frames);
     case Thumb::Visitor:
-        if (i >= t.critters.size()) break;
-        return first(t.critters[i][static_cast<std::size_t>(CritterAnim::IdleFront)].frames);
+        if (i >= t.kinds.size()) break;
+        return first(t.kinds[i][1].front.frames);
     }
     return t.placeholder;
 }
@@ -192,12 +224,21 @@ std::vector<std::string> requiredSpriteKeys(const Catalog& cat) {
             if (def.glow) keys.push_back(std::format("item/{}/glow/{}/f0", def.id, vk));
         }
     }
-    for (const auto& v : cat.visitors)
-        for (const char* a : kCritterAnims)
-            keys.push_back(std::format("critter/{}/{}/f0", v.id, a));
+    for (const auto& k : cat.kinds)
+        for (std::size_t a = 0; a < k.anims.size(); ++a) {
+            if (optionalAnim(k, a)) continue;
+            if (a < 2) {
+                keys.push_back(std::format("{}/{}_front/f0", k.sprite, k.anims[a]));
+                keys.push_back(std::format("{}/{}_back/f0", k.sprite, k.anims[a]));
+            } else {
+                keys.push_back(std::format("{}/{}_front/f0|{}/{}/f0", k.sprite, k.anims[a],
+                                           k.sprite, k.anims[a]));
+            }
+        }
     for (const char* f : kFxNames) keys.push_back(std::format("fx/{}/f0", f));
-    for (const char* k : {"edge/cliff_se", "edge/cliff_sw", "ui/tile_ok", "ui/tile_bad",
-                          "ui/tile_area", "wild/thicket/v0", "edge/fall_se/f0", "edge/fall_sw/f0"})
+    for (const char* k :
+         {"edge/cliff_se", "edge/cliff_sw", "ui/tile_ok", "ui/tile_bad", "ui/tile_area",
+          "wild/thicket/v0", "edge/fall_se/f0", "edge/fall_sw/f0", "sky/rainbow"})
         keys.emplace_back(k);
     return keys;
 }

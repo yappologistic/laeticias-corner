@@ -144,17 +144,23 @@ void Mixer::render(float* out, int frames) {
     }
 }
 
-void Mixer::play(int sfx, float gain, float pitch) {
+void Mixer::play(int sfx, float gain, float pitch, float pan) {
     if (sfx < 0 || (!stream_ && !capture_)) return;
     const std::uint32_t head = head_.load(std::memory_order_relaxed);
     if (head - tail_.load(std::memory_order_acquire) >= kRing) return; // full: drop
-    ring_[head % kRing] = {sfx, gain, pitch};
+    ring_[head % kRing] = {sfx, gain, pitch, std::clamp(pan, -1.0f, 1.0f)};
     head_.store(head + 1, std::memory_order_release);
 }
 
 void Mixer::setLoopGain(int loop, float gain) {
     if (loop < 0 || std::cmp_greater_equal(loop, loops_.size())) return;
     loopTargets_[static_cast<std::size_t>(loop)].store(gain, std::memory_order_relaxed);
+}
+
+void Mixer::setLoopPan(int loop, float pan) {
+    if (loop < 0 || std::cmp_greater_equal(loop, loops_.size())) return;
+    loopPans_[static_cast<std::size_t>(loop)].store(std::clamp(pan, -1.0f, 1.0f),
+                                                    std::memory_order_relaxed);
 }
 
 void SDLCALL Mixer::callback(void* self, SDL_AudioStream* stream, int additional, int /*total*/) {
@@ -200,7 +206,10 @@ void Mixer::mix(float* out, int frames) {
          tail != head_.load(std::memory_order_acquire); ++tail) {
         const Command c = ring_[tail % kRing];
         const auto slot = std::ranges::find_if(voices_, [](const Voice& v) { return v.sfx < 0; });
-        if (slot != voices_.end()) *slot = {c.sfx, 0.0, c.pitch, c.gain};
+        // Linear pan law: the centre stays at unity, the far side fades.
+        if (slot != voices_.end())
+            *slot = {c.sfx, 0.0, c.pitch, c.gain * std::min(1.0f, 1.0f - c.pan),
+                     c.gain * std::min(1.0f, 1.0f + c.pan)};
         tail_.store(tail + 1, std::memory_order_release);
     }
 
@@ -215,9 +224,9 @@ void Mixer::mix(float* out, int frames) {
             }
             const auto idx = static_cast<std::size_t>(v.pos);
             const auto frac = static_cast<float>(v.pos - static_cast<double>(idx));
-            const float sample = (s[idx] + (s[idx + 1] - s[idx]) * frac) * v.gain;
-            out[i * 2] += sample;
-            out[i * 2 + 1] += sample;
+            const float sample = s[idx] + (s[idx + 1] - s[idx]) * frac;
+            out[i * 2] += sample * v.left;
+            out[i * 2 + 1] += sample * v.right;
             v.pos += v.step;
         }
     }
@@ -282,11 +291,19 @@ void Mixer::mix(float* out, int frames) {
             t.at = loopOffset(t.at + static_cast<std::uint64_t>(frames), t.length);
         }
         decodeLoop(t, loopBuf_.data(), frames);
+        // Positional beds glide to where their source is on screen.
+        const float p0 = pan_[li];
+        const float p1 = rampTowards(p0, loopPans_[li].load(std::memory_order_relaxed),
+                                     chunkSeconds / tuning::kLoopFadeSeconds);
+        pan_[li] = p1;
         for (int i = 0; i < frames; ++i) {
             const float k = static_cast<float>(i) / static_cast<float>(frames);
             const float g = (g0 + (g1 - g0) * k) * (l0 + (l1 - l0) * k);
-            out[i * 2] += loopBuf_[static_cast<std::size_t>(i * 2)] * g;
-            out[i * 2 + 1] += loopBuf_[static_cast<std::size_t>(i * 2 + 1)] * g;
+            const float pan = p0 + (p1 - p0) * k;
+            out[i * 2] +=
+                loopBuf_[static_cast<std::size_t>(i * 2)] * g * std::min(1.0f, 1.0f - pan);
+            out[i * 2 + 1] +=
+                loopBuf_[static_cast<std::size_t>(i * 2 + 1)] * g * std::min(1.0f, 1.0f + pan);
         }
     }
     musicPos_ = pos1;

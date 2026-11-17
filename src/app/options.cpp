@@ -31,6 +31,8 @@ std::string_view usage() {
            "  --map WxH           bench: map size (default: the catalog's)\n"
            "  --density D         bench: share of tiles filled near the camera, 0..1 (0.5)\n"
            "  --budget-ms MS      bench: exit 3 when update + draw averages more than MS\n"
+           "  --soak SECONDS      run that much busy play fast and exit 3 if memory grows "
+           "(implies --headless)\n"
            "  --help              show this text\n";
 }
 
@@ -73,6 +75,11 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             const auto v = value();
             if (!v || !parseNumber(*v, o.budgetMs) || o.budgetMs <= 0)
                 return std::unexpected("--budget-ms expects a positive number");
+        } else if (a == "--soak") {
+            const auto v = value();
+            if (!v || !parseNumber(*v, o.soak) || o.soak <= 0)
+                return std::unexpected("--soak expects a positive number of seconds");
+            o.headless = true;
         } else if (a == "--audio-out") {
             const auto v = value();
             if (!v) return std::unexpected(v.error());

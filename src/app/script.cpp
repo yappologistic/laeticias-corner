@@ -20,6 +20,11 @@ std::expected<ScriptPoint, std::string> point(std::string_view tok) {
         if (p.widget.empty()) return std::unexpected("empty widget name");
         return p;
     }
+    if (tok.starts_with("actor:") && tok.size() > 6) {
+        p.kind = ScriptPoint::Kind::Widget; // resolved like a widget, by name, each frame
+        p.widget = std::string(tok);
+        return p;
+    }
     if (tok.starts_with('@')) {
         p.kind = ScriptPoint::Kind::Tile;
         tok.remove_prefix(1);
@@ -117,19 +122,39 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             c.kind = ScriptCommand::Kind::Shot;
             c.args = {tok[1]};
         } else if (cmd == "set") {
-            static constexpr std::string_view kKeys[] = {"clock", "rain",   "unlock", "played",
-                                                         "land",  "season", "day",    "grow"};
-            if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys))
-                return err("set clock|rain|unlock|played|land|season|day|grow VALUE");
+            static constexpr std::string_view kKeys[] = {
+                "clock", "rain",    "unlock",  "played", "land",   "season", "day",
+                "grow",  "weather", "chatter", "time",   "lively", "shower"};
+            if (tok.size() == 4 && tok[1] == "look") {
+                float v = 0;
+                if (!number(tok[3], v)) return err("set look KIND ZOOM");
+            } else if (tok.size() == 5 && tok[1] == "camera") {
+                for (std::size_t i = 2; i < 5; ++i) {
+                    float v = 0;
+                    if (!number(tok[i], v)) return err("set camera TX TY ZOOM");
+                }
+            } else if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys)) {
+                return err("set clock|rain|weather|unlock|played|land|season|day|grow|chatter|"
+                           "time|lively VALUE, set camera TX TY ZOOM or set look KIND ZOOM");
+            }
             c.kind = ScriptCommand::Kind::Set;
-            c.args = {tok[1], tok[2]};
-        } else if (cmd == "expect") {
-            if (tok.size() < 3) return err("expect WHAT ARGS");
-            c.kind = ScriptCommand::Kind::Expect;
             c.args.assign(tok.begin() + 1, tok.end());
+        } else if (cmd == "fast") {
+            c.kind = ScriptCommand::Kind::Fast;
+            if (tok.size() < 2 || !number(tok[1], c.amount) || c.amount <= 0 || c.amount > 86400)
+                return err("fast SECONDS [WHAT ARGS]");
+            c.args.assign(tok.begin() + 2, tok.end());
+        } else if (cmd == "expect" || cmd == "waitfor") {
+            const bool wait = cmd == "waitfor";
+            if (wait && (tok.size() < 4 || !number(tok[1], c.amount) || c.amount < 1 ||
+                         c.amount > kScriptMaxWait))
+                return err("waitfor N WHAT ARGS");
+            if (tok.size() < 3) return err("expect WHAT ARGS");
+            c.kind = wait ? ScriptCommand::Kind::WaitFor : ScriptCommand::Kind::Expect;
+            c.args.assign(tok.begin() + (wait ? 2 : 1), tok.end());
             if (c.args[0] == "tile" || c.args[0] == "item" || c.args[0] == "growth") {
                 if (c.args.size() != 3) return err("expect " + c.args[0] + " P VALUE");
-                if (auto r = pointAt(2, c.a); !r) return err(r.error());
+                if (auto r = pointAt(wait ? 3 : 2, c.a); !r) return err(r.error());
             } else if (c.args[0] == "luma" || c.args[0] == "color") {
                 const std::size_t want = c.args[0] == "luma" ? 4 : 6;
                 if (c.args.size() != want || !parseScriptRect(c.args[1]))
@@ -138,6 +163,21 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
                 for (std::size_t i = 2; i < want; ++i) {
                     float v = 0;
                     if (!number(c.args[i], v)) return err("bad number '" + c.args[i] + "'");
+                }
+            }
+        } else if (cmd == "place" || cmd == "paint") {
+            c.kind = cmd == "place" ? ScriptCommand::Kind::Place : ScriptCommand::Kind::Paint;
+            if (tok.size() < 3 || tok.size() > 4) return err(cmd + " ID @TX,TY [V or @TX2,TY2]");
+            c.args = {tok[1]};
+            if (auto r = pointAt(2, c.a); !r || c.a.kind != ScriptPoint::Kind::Tile)
+                return err(cmd + " needs a tile point @TX,TY");
+            if (tok.size() == 4) {
+                if (cmd == "place") {
+                    if (!number(tok[3], c.amount)) return err("place: bad variant");
+                } else if (auto r = pointAt(3, c.b); !r || c.b.kind != ScriptPoint::Kind::Tile) {
+                    return err("paint needs tile points");
+                } else {
+                    c.hasPoint = true;
                 }
             }
         } else if (cmd == "quit") {

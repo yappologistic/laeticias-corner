@@ -30,6 +30,7 @@ struct Options {
     std::optional<Size> map; // bench: map size instead of the catalog's
     float density = 0.5f;    // bench: share of tiles filled around the camera
     double budgetMs = 0;     // bench: fail when update + draw averages more than this
+    double soak = 0;         // seconds of play to run checking that memory stays flat (0: no)
     bool help = false;
 };
 

@@ -68,7 +68,7 @@ TEST_CASE("world saves round-trip everything: home, progress, clock, calendar, c
     data.pin = ClockPin::Dusk;
     data.day = 7;
     data.seasonPin = 3;
-    data.rain = true;
+    data.weather = WeatherMode::Clear;
     data.seen = {"duck", "cat"};
     data.camera = Vec2{29.5f, 30.25f};
     data.zoom = 2;
@@ -103,7 +103,7 @@ TEST_CASE("world saves round-trip everything: home, progress, clock, calendar, c
     CHECK(loaded->pin == ClockPin::Dusk);
     CHECK(loaded->day == 7);
     CHECK(loaded->seasonPin == 3);
-    CHECK(loaded->rain);
+    CHECK(loaded->weather == WeatherMode::Clear);
     CHECK(loaded->seen == data.seen);
     REQUIRE(loaded->camera.has_value());
     CHECK(loaded->camera->x == doctest::Approx(29.5f));

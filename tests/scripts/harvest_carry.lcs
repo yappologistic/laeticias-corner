@@ -1,0 +1,14 @@
+# A ripe bed picked near her: she takes it home, and the chimney puffs with her cooking.
+set unlock all
+set season summer
+set clock day
+place cottage @32,30 0
+place planter @30,32 0
+set grow 2000
+set camera 31 31 2
+wait 30
+click @30,32
+expect harvests 1
+fast 50 event smoke yes
+shot shots/harvest_carry.png
+quit

@@ -44,10 +44,12 @@ public:
     void close();
 
     [[nodiscard]] int sfxIndex(std::string_view file) const;
-    void play(int sfx, float gain, float pitch);
+    // `pan` places the sound from -1 (left) to 1 (right); 0 is centred.
+    void play(int sfx, float gain, float pitch, float pan = 0);
     // Loops are ambience beds and music stems, by file; -1 when the file is not loaded.
     [[nodiscard]] int loopIndex(std::string_view file) const;
     void setLoopGain(int loop, float gain);
+    void setLoopPan(int loop, float pan);
     // A music stem joins: at once (`instant`, e.g. when a world opens), or from silence over a
     // few bars starting on the next bar line. Stems not unlocked stay silent and undecoded.
     void unlockStem(int loop, bool instant);
@@ -63,7 +65,8 @@ private:
         int sfx = -1;
         double pos = 0;
         float step = 1;
-        float gain = 0;
+        float left = 0; // gain per channel
+        float right = 0;
     };
     struct VorbisCloser {
         void operator()(stb_vorbis* v) const;
@@ -86,6 +89,7 @@ private:
         int sfx;
         float gain;
         float pitch;
+        float pan;
     };
     static constexpr std::size_t kVoices = 24;
     static constexpr std::size_t kRing = 64;
@@ -100,6 +104,8 @@ private:
     static constexpr std::size_t kMaxLoops = 32;
     std::vector<LoopTrack> loops_; // fixed once loaded
     std::array<std::atomic<float>, kMaxLoops> loopTargets_{};
+    std::array<std::atomic<float>, kMaxLoops> loopPans_{};
+    std::array<float, kMaxLoops> pan_{}; // audio thread: each loop's pan, gliding to its target
     std::array<std::atomic<int>, kMaxLoops> unlocked_{}; // 0 locked, 1 fade in, 2 instant
     std::array<Command, kRing> ring_{};
     std::atomic<std::uint32_t> head_{0}; // written by the game thread

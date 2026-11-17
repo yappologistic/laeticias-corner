@@ -32,6 +32,7 @@ struct Game {
     CondFacts facts() const {
         CondFacts f;
         f.phase = phase;
+        f.residentAbout = phase != Phase::Night; // she is indoors at night
         f.present = present;
         f.seen = seen;
         f.nookHere = nooks;

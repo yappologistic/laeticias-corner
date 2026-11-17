@@ -51,7 +51,8 @@ private:
 
 [[nodiscard]] Phase phaseAt(double t);
 [[nodiscard]] double phaseCentre(Phase p);
-[[nodiscard]] Lighting lightingAt(double t, bool raining);
+// `rain` 0..1: how hard it rains where the camera looks.
+[[nodiscard]] Lighting lightingAt(double t, float rain);
 
 // The calendar: seasons of `days[i]` days each, repeating (docs/design/living-corner.md R4.1).
 struct SeasonDay {

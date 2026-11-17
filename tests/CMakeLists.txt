@@ -7,6 +7,7 @@ add_executable(lc_tests
   test_conditions.cpp
   test_saves.cpp
   test_progress.cpp
+  test_actors.cpp
   test_engine.cpp
   test_coverage.cpp
 )
@@ -62,6 +63,15 @@ set(LC_SCRIPTS
   "visitors|visitors|640x400|"
   "clickthrough|clickthrough|640x400|"
   "ghost_edges|ghost_edges|640x400|"
+  "cat_nap|cat_nap|640x400|"
+  "ducks_night|ducks_night|640x400|"
+  "bees_hive|bees_hive|640x400|"
+  "pet_hen|pet_hen|640x400|"
+  "laeticia_day|laeticia_day|640x400|"
+  "harvest_carry|harvest_carry|640x400|"
+  "shower|shower|640x400|"
+  "waterfall|waterfall|640x400|"
+  "lively|lively|640x400|"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
   "launch_1440|launch_2560x1440|2560x1440|heavy"
@@ -102,7 +112,8 @@ endforeach()
 
 # Every run starts from a clean save directory; the reload pair runs in order.
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art"
-     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench")
+     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench" "${LC_SCRATCH}/save_soak"
+     "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -163,6 +174,31 @@ set_tests_properties(audio_capture PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
 add_test(NAME audio_capture_check COMMAND lc_tests --test-case=capture:*)
 set_tests_properties(audio_capture_check PROPERTIES ENVIRONMENT "LC_AUDIO_CAPTURE=${capture}"
   FIXTURES_REQUIRED audio)
+
+# The same script and seed give byte-identical screenshots and saves with actors, the resident,
+# weather and events running: two runs in their own directories, compared file by file.
+foreach(run a b)
+  set(dir "${LC_SCRATCH}/determinism_${run}")
+  add_test(NAME determinism_${run}
+    COMMAND ${CMAKE_COMMAND} -E env SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy
+            ${CMAKE_COMMAND} -E chdir "${dir}"
+            $<TARGET_FILE:laeticias-corner> --headless --size 640x400 --seed 7 --save-dir "${dir}/save"
+            --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/determinism.lcs")
+  set_tests_properties(determinism_${run} PROPERTIES FIXTURES_SETUP determinism
+    FIXTURES_REQUIRED determinism_dirs)
+endforeach()
+add_test(NAME prepare_determinism COMMAND ${CMAKE_COMMAND} -E make_directory
+  "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
+set_tests_properties(prepare_determinism PROPERTIES FIXTURES_SETUP determinism_dirs
+  FIXTURES_REQUIRED clean_saves)
+add_test(NAME determinism_check COMMAND ${CMAKE_COMMAND} -DA=${LC_SCRATCH}/determinism_a
+  -DB=${LC_SCRATCH}/determinism_b -P ${CMAKE_CURRENT_SOURCE_DIR}/compare_runs.cmake)
+set_tests_properties(determinism_check PROPERTIES FIXTURES_REQUIRED determinism)
+
+# Memory stays flat over a long busy session (actors, events and weather running).
+add_test(NAME soak
+  COMMAND laeticias-corner --soak 600 --size 640x400 --seed 1 --save-dir "${LC_SCRATCH}/save_soak")
+set_tests_properties(soak PROPERTIES ENVIRONMENT "${LC_RUN_ENV}" FIXTURES_REQUIRED clean_saves)
 
 # Frame budget (CLAUDE.md: under 2 ms for update + draw submission) on the GPU path, windowless.
 # Sanitizer builds run many times slower, so there the bench only has to run cleanly. Skipped

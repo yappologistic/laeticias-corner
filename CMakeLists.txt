@@ -18,18 +18,24 @@ add_subdirectory(third_party)
 
 # Pure game logic: no SDL allowed (enforced by not linking it).
 add_library(lc_core STATIC
+  src/core/actor_data.cpp
+  src/core/actors.cpp
   src/core/catalog.cpp
   src/core/clock.cpp
   src/core/condition.cpp
   src/core/edit.cpp
+  src/core/events.cpp
   src/core/growth.cpp
   src/core/land.cpp
   src/core/notes.cpp
+  src/core/path.cpp
   src/core/progress.cpp
   src/core/progression.cpp
   src/core/save.cpp
+  src/core/speech.cpp
   src/core/starter.cpp
   src/core/visitors.cpp
+  src/core/weather.cpp
   src/core/world.cpp
 )
 target_include_directories(lc_core PUBLIC src)
@@ -43,6 +49,7 @@ add_library(lc_engine STATIC
   src/app/script.cpp
   src/app/app_script.cpp
   src/app/app_bench.cpp
+  src/app/app_life.cpp
   src/app/window_state.cpp
   src/audio/mixer.cpp
   src/audio/decode.cpp

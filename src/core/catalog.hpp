@@ -2,6 +2,7 @@
 // The content contract (assets/catalog.json, version 2) parsed and validated into plain structs.
 // Field meanings: CLAUDE.md "Content contract" and docs/design/living-corner.md §11.
 
+#include "core/actor_data.hpp"
 #include "core/clock.hpp"
 #include "core/condition.hpp"
 #include "core/iso.hpp"
@@ -31,7 +32,8 @@ struct TerrainDef {
     bool water = false;
     int variants = 1;
     float fps = 0;
-    std::string sound; // sfx path, empty when silent
+    std::string sound;  // sfx path, empty when silent
+    bool paved = false; // walkers prefer it
 };
 
 struct CategoryDef {
@@ -42,6 +44,27 @@ struct CategoryDef {
 struct Offset {
     int x = 0;
     int y = 0;
+};
+
+// An interaction point on an item (docs/design/living-world.md §2.3). Positions are resolved per
+// variant: `spots[v]` lists points in tile coordinates from the origin tile's top corner, `lift[v]`
+// is how many pixels above the ground they are (a seat, a perch), `face[v]` the direction an
+// actor there faces (0 +x, 1 +y, 2 -x, 3 -y; 0xFF: free). Beside slots have no fixed points:
+// any free tile next to the footprint will do.
+enum class SlotWhere : std::uint8_t { On, Beside, Tile };
+enum class SlotFacing : std::uint8_t { Free, Rotation, Item, Out };
+
+struct SlotDef {
+    int name = 0; // Catalog::slotNames
+    int kind = 0; // Catalog::slotKinds
+    SlotWhere where = SlotWhere::On;
+    SlotFacing facing = SlotFacing::Free;
+    int cap = 1;
+    std::vector<std::vector<Vec2>> spots;
+    std::vector<float> lift;
+    std::vector<std::uint8_t> face;
+    int holds = -1; // goods it keeps, -1: none
+    int holdsMax = 0;
 };
 
 struct Growth {
@@ -70,6 +93,9 @@ struct ItemDef {
     Shed sheds = Shed::None;
     std::string clickSound; // sfx path played when clicked with no tool, empty when none
     int shelter = 0;        // beds within this many tiles grow even when the season rests them
+    bool crossing = false;  // walkers may cross water on it (tag "crossing")
+    std::vector<int> perch; // pixel height a percher sits at, per variant; empty: none
+    std::vector<SlotDef> slots;
 };
 
 struct Amount {
@@ -112,6 +138,9 @@ struct SeasonDef {
     bool snow = false; // rain falls as snow
     float growth = 1;  // how fast beds grow (0: they rest, unless sheltered)
     std::string line;
+    float showers = 0; // rain cells expected per weather period
+    float clouds = 0;  // cloud cells expected per weather period
+    float wind = 0.3f; // usual wind strength, 0..1
 };
 
 struct TerrainFill {
@@ -183,13 +212,75 @@ struct NookDef {
     float growth = 1;             // growth multiplier for beds in its area
     std::vector<Amount> caps;     // visitor index, extra `max`
     std::vector<Amount> rareRate; // visitor index, divisor of the arrival delay
+    // `prefer`: who (a visitor index, -1 the resident) and which activity (activityNames).
+    std::vector<std::pair<int, int>> prefer;
 };
 
+// Who lives in the corner: everything about her is data, and she can be left out entirely.
 struct ResidentDef {
+    bool enabled = true;
     std::string id;
     std::string name;
     std::string blurb;
-    std::vector<std::string> voice; // sfx paths
+    std::vector<std::string> voice;              // sfx paths
+    std::vector<std::string> contexts;           // line contexts
+    std::vector<std::vector<std::string>> lines; // per context
+    [[nodiscard]] int context(std::string_view c) const;
+};
+
+struct GoodsDef {
+    std::string id;
+    std::string name;
+};
+
+// The corner's moments of delight as scheduled or triggered events (living-world.md §5).
+enum class EventShow : std::uint8_t {
+    Rainbow,
+    ShootingStar,
+    OwlCall,
+    Rustle,
+    Gust,
+    FishJump,
+    FrogChorus,
+    Chorus,
+    FireflySync,
+    Smoke,
+    Season
+};
+enum class EventOn : std::uint8_t {
+    Window,   // at random times inside its filters (an average gap, or a range)
+    Hours,    // active while the clock is inside `from`..`to`
+    Rain,     // while it rains here, and `duration` after
+    RainStop, // rain here stopped after at least `minRain` seconds
+    Placed,   // a placement, move or removal near an item with tag `nearTag`
+    Reactive, // its `when` condition holds
+    Cook,     // the resident cooked a harvest
+    Season    // the first dawn of a season
+};
+
+struct EventDef {
+    std::string id;
+    EventShow show = EventShow::Gust;
+    EventOn on = EventOn::Window;
+    std::uint8_t phases = 0xF;
+    std::uint8_t seasons = 0xFF;
+    int weather = -1; // 0 clear, 1 rain, -1 either
+    int when = -1;    // condition node
+    float mean = 0;   // Window: average gap in seconds
+    float every0 = 0; // Window: gap range; Reactive: gap; Rain: repeat inside the event
+    float every1 = 0;
+    float from = 0; // Hours
+    float to = 0;
+    float cooldown = 0;
+    bool daily = false; // at most once per calendar day
+    float dur0 = 0;
+    float dur1 = 0;
+    float minRain = 0;
+    int nearTag = -1;
+    float within = 1;
+    std::string sfx; // empty: silent
+    float gain = 1;
+    int who = -1; // a visitor it asks to call (the frog's chorus), -1: none
 };
 
 struct StemDef {
@@ -233,6 +324,15 @@ struct Catalog {
     std::vector<WishDef> wishes;
     std::vector<NookDef> nooks;
     ResidentDef resident;
+    std::vector<GoodsDef> goods;
+    std::vector<EventDef> events;
+    std::vector<std::string> slotNames;
+    std::vector<std::string> slotKinds;
+    std::vector<std::string> activityNames; // nook `prefer` keys
+    std::vector<std::string> emitSounds;    // sfx paths named by `emit` steps
+    std::vector<ActorKind> kinds;           // visitors first (same index), then the resident
+    ActorProgram program;
+    int residentKind = -1; // -1: nobody lives here
     ConditionSet conditions;
     AudioList audio;
     int baseTerrain = 0;

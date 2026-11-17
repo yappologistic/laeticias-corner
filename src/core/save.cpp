@@ -33,6 +33,15 @@ namespace {
 constexpr long long kCoordLimit = 1LL << 24;
 constexpr std::string_view kSaveBaseBlank = "blank"; // version 2: untouched chunks are empty
 
+std::string_view weatherId(WeatherMode m) {
+    switch (m) {
+    case WeatherMode::Natural: return "natural";
+    case WeatherMode::Rain: return "rain";
+    case WeatherMode::Clear: return "clear";
+    }
+    return "natural";
+}
+
 int terrainValue(const World& w, TilePos p) {
     const int t = w.terrainAt(p);
     return t == kNoGround ? -1 : t;
@@ -413,7 +422,7 @@ std::string serialize(const SaveData& data, const Catalog& cat) {
         {"season_pin", data.seasonPin < 0
                            ? std::string("auto")
                            : cat.seasons[static_cast<std::size_t>(data.seasonPin)].id},
-        {"settings", {{"rain", data.rain}}},
+        {"settings", {{"weather", weatherId(data.weather)}}},
         {"progress",
          {{"unlocked", std::move(unlocked)},
           {"frames", ids(p.frames, cat.frames)},
@@ -505,7 +514,14 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
         }
         if (root.contains("settings") && root["settings"].is_object()) {
             const auto& s = root["settings"];
-            data.rain = s.contains("rain") && s["rain"].is_boolean() && s["rain"].get<bool>();
+            if (s.contains("weather") && s["weather"].is_string()) {
+                const std::string w = s["weather"].get<std::string>();
+                data.weather = w == "rain"    ? WeatherMode::Rain
+                               : w == "clear" ? WeatherMode::Clear
+                                              : WeatherMode::Natural;
+            } else if (s.contains("rain") && s["rain"].is_boolean() && s["rain"].get<bool>()) {
+                data.weather = WeatherMode::Rain;
+            }
         }
         return data;
     } catch (const json::exception& e) {
@@ -592,6 +608,8 @@ Profile parseProfile(std::string_view text) {
         const json j = json::parse(text);
         if (!j.is_object()) return p;
         if (j.contains("muted") && j["muted"].is_boolean()) p.muted = j["muted"].get<bool>();
+        if (j.contains("chatter") && j["chatter"].is_string())
+            p.chatty = j["chatter"].get<std::string>() != "quiet";
         if (j.contains("last_world") && j["last_world"].is_string())
             p.lastWorld = j["last_world"].get<std::string>();
     } catch (const json::exception&) {
@@ -601,7 +619,11 @@ Profile parseProfile(std::string_view text) {
 }
 
 std::string serialize(const Profile& p) {
-    return json{{"version", 1}, {"muted", p.muted}, {"last_world", p.lastWorld}}.dump(1);
+    return json{{"version", 1},
+                {"muted", p.muted},
+                {"chatter", p.chatty ? "chatty" : "quiet"},
+                {"last_world", p.lastWorld}}
+        .dump(1);
 }
 
 std::expected<void, std::string> writeFileAtomic(const std::filesystem::path& file,

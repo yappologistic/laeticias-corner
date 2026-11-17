@@ -23,7 +23,23 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
     case ScriptPoint::Kind::Pixel: return Vec2{p.x, p.y};
     case ScriptPoint::Kind::Tile:
         return camera_.worldToScreen(cat_.iso().toWorld(p.x + 0.5f, p.y + 0.5f), screen());
-    case ScriptPoint::Kind::Widget: return hud_.widgetCentre(p.widget, model());
+    case ScriptPoint::Kind::Widget:
+        if (p.widget.starts_with("actor:")) {
+            // The middle of the first actor of that kind (a visitor id, or the resident's).
+            const std::string id = p.widget.substr(6);
+            for (const Actor& a : actors_.all()) {
+                if ((a.flags & actor_flag::kAlive) == 0 || cat_.kinds[a.kind].id != id ||
+                    a.alpha < 0.5f)
+                    continue;
+                const Vec2 head = scene_->headOf(a);
+                Vec2 foot = cat_.iso().toWorld(a.pos.x, a.pos.y);
+                foot.y -= a.lift;
+                return camera_.worldToScreen({(head.x + foot.x) * 0.5f, (head.y + foot.y) * 0.5f},
+                                             screen());
+            }
+            return std::nullopt;
+        }
+        return hud_.widgetCentre(p.widget, model());
     }
     return std::nullopt;
 }
@@ -129,15 +145,93 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         if (a.size() != 3) return std::string("expect present VISITOR N");
         const auto v = cat_.findVisitor(a[1]);
         if (!v) return "unknown visitor " + a[1];
-        return equal(std::to_string(visitors_.present(*v)), a[2]);
+        return equal(std::to_string(actors_.present(*v)), a[2]);
     }
     if (what == "habitat") {
+        // Everyone stands where it may (on its reserved seat counts: she sits on the bench).
         int bad = 0;
-        for (const Critter& cr : visitors_.critters())
-            if (!cr.leaving &&
-                !habitatAllows(cat_.visitors[cr.visitor].habitat, world_, cat_, cr.pos))
-                ++bad;
+        for (const Actor& ac : actors_.all()) {
+            if ((ac.flags & actor_flag::kAlive) == 0 || (ac.flags & actor_flag::kLeaving) != 0 ||
+                ac.state == ActorState::Inside)
+                continue;
+            const ActorKind& k = cat_.kinds[ac.kind];
+            const TilePos t{static_cast<int>(std::floor(ac.pos.x)),
+                            static_cast<int>(std::floor(ac.pos.y))};
+            const bool seated = ac.reserved && world_.itemAt(t) != nullptr &&
+                                world_.itemAt(t)->pos == TilePos{ac.resX, ac.resY};
+            const bool ok =
+                k.visitor >= 0
+                    ? habitatAllows(cat_.visitors[static_cast<std::size_t>(k.visitor)].habitat,
+                                    world_, cat_, ac.pos) ||
+                          passable(world_, cat_, k.move, t, true)
+                    : passable(world_, cat_, Locomotion::Walk, t);
+            if (!ok && !seated) ++bad;
+        }
         return yesNo(bad == 0);
+    }
+    if (what == "actor") {
+        // expect actor KIND ANIM|moving|inside|any [ITEM]: one of that kind is doing that now
+        // (and, with ITEM, on or beside that item: its reserved slot is on one).
+        if (a.size() < 3) return std::string("expect actor KIND ANIM|moving|inside|any [ITEM]");
+        const auto kind = std::ranges::find(cat_.kinds, a[1], &ActorKind::id);
+        if (kind == cat_.kinds.end()) return "unknown actor kind " + a[1];
+        const auto ki = static_cast<std::uint16_t>(kind - cat_.kinds.begin());
+        const auto item = a.size() > 3 ? cat_.findItem(a[3]) : std::nullopt;
+        if (a.size() > 3 && !item) return "unknown item " + a[3];
+        for (const Actor& ac : actors_.all()) {
+            if ((ac.flags & actor_flag::kAlive) == 0 || ac.kind != ki) continue;
+            const std::string& anim = kind->anims[ac.overlay > 0 ? ac.overlayAnim : ac.anim];
+            const bool doing = a[2] == "any" ||
+                               (a[2] == "moving" && ac.state == ActorState::Travel) ||
+                               (a[2] == "inside" && ac.state == ActorState::Inside) ||
+                               (ac.state == ActorState::Act && anim == a[2]) ||
+                               ((ac.flags & actor_flag::kOnHat) != 0 && a[2] == "hat");
+            const bool at = !item || (ac.reserved && ac.resType == *item);
+            if (doing && at) return std::nullopt;
+        }
+        return std::format("no {} is {}{}", a[1], a[2], a.size() > 3 ? " at a " + a[3] : "");
+    }
+    if (what == "bubble") {
+        const bool showing = speech_.showing(simTime_) != nullptr;
+        return yesNo(showing);
+    }
+    if (what == "raining") return yesNo(raining());
+    if (what == "weather") {
+        static constexpr std::string_view kModes[] = {"natural", "rain", "clear"};
+        return equal(std::string(kModes[static_cast<std::size_t>(weather_.mode())]), a[1]);
+    }
+    if (what == "event") {
+        // expect event SHOW yes|no: an event of that show is running now.
+        static constexpr std::pair<std::string_view, EventShow> kShows[] = {
+            {"rainbow", EventShow::Rainbow},
+            {"gust", EventShow::Gust},
+            {"chorus", EventShow::Chorus},
+            {"smoke", EventShow::Smoke},
+            {"firefly_sync", EventShow::FireflySync},
+            {"frog_chorus", EventShow::FrogChorus}};
+        if (a.size() != 3) return std::string("expect event SHOW yes|no");
+        for (const auto& [n, show] : kShows)
+            if (n == a[1])
+                return events_.active(show) == (a[2] == "yes")
+                           ? std::nullopt
+                           : std::optional(std::format("event {} is {}running", a[1],
+                                                       events_.active(show) ? "" : "not "));
+        return "unknown event show " + a[1];
+    }
+    if (what == "lively") {
+        // expect lively MIN CAP HMIN HCAP SHARE: of the samples taken since `set lively reset`,
+        // at least SHARE had MIN..CAP purposeful movers in view and HMIN..HCAP happenings in the
+        // last minute.
+        if (a.size() != 6) return std::string("expect lively MIN CAP HMIN HCAP SHARE");
+        const LivelyReport r =
+            lively_.check(std::stoi(a[1]), std::stoi(a[2]), std::stoi(a[3]), std::stoi(a[4]));
+        SDL_Log("script: lively: %d samples, %d too quiet, %d too busy, movers %d..%d, "
+                "happenings up to %d a minute",
+                r.samples, r.quiet, r.busy, r.moversMin, r.moversMax, r.happeningsMax);
+        return r.samples > 0 && r.share() >= std::stof(a[5])
+                   ? std::nullopt
+                   : std::optional(std::format("lively: only {:.0f}% of {} samples within the rule",
+                                               r.share() * 100.0f, r.samples));
     }
     if (what == "tool") {
         static constexpr std::string_view kNames[] = {"none", "place", "paint", "remove"};
@@ -149,7 +243,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "undo") return yesNo(editor_.canUndo());
     if (what == "redo") return yesNo(editor_.canRedo());
     if (what == "muted") return yesNo(muted_);
-    if (what == "rain") return yesNo(rain_);
+    if (what == "rain") return yesNo(weather_.mode() == WeatherMode::Rain);
     if (what == "saved") {
         std::error_code ec;
         return yesNo(fs::is_regular_file(worldDir() / kWorldFile, ec));
@@ -207,7 +301,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         const auto v = cat_.findVisitor(a[1]);
         if (!v) return "unknown visitor " + a[1];
         const bool want = a.size() < 3 || a[2] == "yes";
-        return visitors_.seen(*v) == want
+        return actors_.seen(*v) == want
                    ? std::nullopt
                    : std::optional(std::format("visitor {} {}seen", a[1], want ? "not " : ""));
     }
@@ -389,12 +483,50 @@ bool App::scriptStep() {
                 growBeds(std::stof(c.args[1]));
             } else if (c.args[0] == "day") {
                 clock_.setDay(std::stoi(c.args[1]));
+            } else if (c.args[0] == "weather") {
+                static constexpr std::pair<std::string_view, WeatherMode> kModes[] = {
+                    {"natural", WeatherMode::Natural},
+                    {"rain", WeatherMode::Rain},
+                    {"clear", WeatherMode::Clear}};
+                bool ok = false;
+                for (const auto& [n, m] : kModes)
+                    if (n == c.args[1]) {
+                        weather_.setMode(m);
+                        ok = true;
+                    }
+                if (!ok) return fail("unknown weather " + c.args[1]);
+            } else if (c.args[0] == "camera") {
+                // set camera TX TY ZOOM: look at a tile at one of the zoom levels.
+                if (c.args.size() != 4) return fail("set camera TX TY ZOOM");
+                camera_.place(cat_.iso().toWorld(std::stof(c.args[1]), std::stof(c.args[2])),
+                              std::stof(c.args[3]), screen());
+            } else if (c.args[0] == "look") {
+                // set look KIND ZOOM: the camera on the first actor of that kind.
+                if (c.args.size() != 3) return fail("set look KIND ZOOM");
+                bool found = false;
+                for (const Actor& a : actors_.all())
+                    if ((a.flags & actor_flag::kAlive) != 0 && cat_.kinds[a.kind].id == c.args[1]) {
+                        camera_.place(cat_.iso().toWorld(a.pos.x, a.pos.y), std::stof(c.args[2]),
+                                      screen());
+                        found = true;
+                        break;
+                    }
+                if (!found) return fail("no " + c.args[1] + " to look at");
+            } else if (c.args[0] == "shower") {
+                weather_.shower();
+            } else if (c.args[0] == "lively") {
+                lively_.reset();
+            } else if (c.args[0] == "chatter") {
+                profile_.chatty = c.args[1] != "quiet";
+            } else if (c.args[0] == "time") {
+                // The clock to a time of day (0..1), keeping its pin state.
+                clock_.setTime(std::stod(c.args[1]));
             } else if (c.args[0] == "land") {
                 const int to =
                     std::min(std::stoi(c.args[1]), static_cast<int>(cat_.stages.size()) - 1);
                 while (progress_.stage < to) openLand(++progress_.stage, false);
             } else {
-                rain_ = c.args[1] == "on";
+                weather_.setMode(c.args[1] == "on" ? WeatherMode::Rain : WeatherMode::Natural);
             }
             next();
             continue;
@@ -403,6 +535,65 @@ bool App::scriptStep() {
             if (const auto err = check(c)) return fail(*err);
             next();
             continue;
+        case K::Fast: {
+            // Simulation only, step after step; with an expectation, until it holds.
+            const auto steps = static_cast<long long>(c.amount / tuning::kStepSeconds);
+            std::optional<std::string> err = c.args.empty() ? std::nullopt : check(c);
+            for (long long n = 0; n < steps && (c.args.empty() || err); ++n) {
+                step(static_cast<float>(tuning::kStepSeconds));
+                if (!c.args.empty()) err = check(c);
+            }
+            if (!c.args.empty() && err) return fail("fast-forwarded in vain: " + *err);
+            next();
+            return true;
+        }
+        case K::WaitFor: {
+            // Frames left in scriptPhase_ (counted up from 0).
+            const auto err = check(c);
+            if (!err) {
+                next();
+                continue;
+            }
+            if (++scriptPhase_ >= static_cast<int>(c.amount))
+                return fail("waited in vain: " + *err);
+            return true;
+        }
+        case K::Place: {
+            const auto type = cat_.findItem(c.args[0]);
+            if (!type) return fail("unknown item " + c.args[0]);
+            const auto& def = cat_.items[static_cast<std::size_t>(*type)];
+            const int v = static_cast<int>(c.amount);
+            if (v < 0 || v >= def.count) return fail("variant out of range");
+            const Item item =
+                makeItem(cat_, *type, v, {static_cast<int>(c.a.x), static_cast<int>(c.a.y)});
+            const bool fresh = world_.itemCount(*type) == 0;
+            editor_.begin();
+            const auto r = editor_.place(world_, cat_, item);
+            editor_.commit();
+            if (r != PlaceResult::Ok) return fail("cannot place " + c.args[0] + " there");
+            scene_->onPlaced(item, rng_);
+            disturbed(item.rect(), item.type, fresh);
+            markDirty();
+            next();
+            continue;
+        }
+        case K::Paint: {
+            const auto terrain = cat_.findTerrain(c.args[0]);
+            if (!terrain) return fail("unknown terrain " + c.args[0]);
+            const ScriptPoint& b = c.hasPoint ? c.b : c.a;
+            editor_.begin();
+            for (int y = static_cast<int>(std::min(c.a.y, b.y));
+                 y <= static_cast<int>(std::max(c.a.y, b.y)); ++y)
+                for (int x = static_cast<int>(std::min(c.a.x, b.x));
+                     x <= static_cast<int>(std::max(c.a.x, b.x)); ++x)
+                    if (editor_.paint(world_, cat_, {x, y}, *terrain) == PaintResult::Ok &&
+                        *terrain == cat_.waterTerrain)
+                        disturbed({x, y, x + 1, y + 1}, -1, false);
+            editor_.commit();
+            markDirty();
+            next();
+            continue;
+        }
         case K::Quit: return false;
         }
     }

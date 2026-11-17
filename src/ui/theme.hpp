@@ -119,6 +119,13 @@ inline constexpr float kTipPad = 10.0f;
 inline constexpr float kTipH = 32.0f;
 inline constexpr float kTipGap = 10.0f;
 inline constexpr float kTipRadius = 10.0f;
+// The resident's speech bubble.
+inline constexpr float kBubblePad = 12.0f;
+inline constexpr float kBubbleMaxW = 230.0f;
+inline constexpr float kBubbleRadius = 14.0f;
+inline constexpr float kBubbleLift = 6.0f; // above her head
+inline constexpr float kBubbleDot = 7.0f;
+inline constexpr SDL_FColor kBubbleTrail{0.12f, 0.13f, 0.16f, 0.7f};
 inline constexpr float kTipSlide = 4.0f;
 inline constexpr float kChipPad = 6.0f;
 inline constexpr float kChipGap = 8.0f;

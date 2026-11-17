@@ -43,15 +43,15 @@ constexpr std::string_view kWishGranted = "sfx/wish_granted.wav";
 constexpr std::string_view kPage = "sfx/page.wav";
 constexpr std::string_view kNook = "sfx/nook.wav";
 constexpr std::string_view kLandOpen = "sfx/land_open.wav";
-constexpr std::string_view kSeason = "sfx/season.wav";
 constexpr std::string_view kHarvest = "sfx/harvest.wav";
 } // namespace sfx
 
 constexpr std::string_view kPhotoDir = "photos";
-constexpr std::string_view kRainBed = "amb/rain.ogg";   // under rain, not snow
-constexpr std::string_view kWaterBed = "amb/water.ogg"; // with the amount of water
-constexpr int kBadSaveCopies = 3;                       // world.json.bad1 (newest) .. bad3
-constexpr int kThumbW = 384;                            // world thumbnail for the worlds screen
+constexpr std::string_view kRainBed = "amb/rain.ogg";           // under rain, not snow
+constexpr std::string_view kWaterBed = "amb/water.ogg";         // with the water on screen
+constexpr std::string_view kWaterfallBed = "amb/waterfall.ogg"; // where water meets the rim
+constexpr int kBadSaveCopies = 3;                               // world.json.bad1 (newest) .. bad3
+constexpr int kThumbW = 384; // world thumbnail for the worlds screen
 constexpr int kThumbH = 240;
 constexpr int kHeadlessW = 1280; // headless window when --size is not given
 constexpr int kHeadlessH = 800;
@@ -138,12 +138,14 @@ bool oneTile(const ItemDef& def) {
 
 App::App(const Options& o, Catalog cat, fs::path assets)
     : opts_(o), assets_(std::move(assets)), saveDir_(findSaveDir(o)), cat_(std::move(cat)),
-      world_(cat_), visitors_(cat_), gates_(cat_.visitors.size()),
-      rng_(o.seed.value_or(o.headless
-                               ? 1
-                               : static_cast<std::uint64_t>(
-                                     std::chrono::steady_clock::now().time_since_epoch().count()))),
-      progress_(cat_), progression_(cat_), camera_(cat_.iso(), world_.landBounds(), 0) {
+      world_(cat_),
+      seed_(o.seed.value_or(
+          o.headless ? 1
+                     : static_cast<std::uint64_t>(
+                           std::chrono::steady_clock::now().time_since_epoch().count()))),
+      rng_(seed_), actors_(cat_, seed_), gates_(cat_.visitors.size()), weather_(cat_, seed_),
+      events_(cat_, seed_), speech_(cat_, seed_), progress_(cat_), progression_(cat_),
+      camera_(cat_.iso(), world_.landBounds(), 0) {
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
         gates_[v].allowed = !cat_.visitors[v].rare;
 }
@@ -270,9 +272,9 @@ void App::adopt(SaveData& data) {
     seasonPin_ = data.seasonPin;
     clock_.setTime(data.clockTime);
     clock_.setPin(data.pin, false);
-    rain_ = data.rain;
+    weather_.setMode(data.weather);
     for (const auto& id : data.seen)
-        if (const auto v = cat_.findVisitor(id)) visitors_.markSeen(*v);
+        if (const auto v = cat_.findVisitor(id)) actors_.markSeen(*v);
     if (data.camera) {
         savedCamera_ = cat_.iso().toWorld(data.camera->x, data.camera->y);
         savedZoom_ = data.zoom;
@@ -389,9 +391,9 @@ bool App::save() {
     data.pin = clock_.pin();
     data.day = clock_.day();
     data.seasonPin = seasonPin_;
-    data.rain = rain_;
+    data.weather = weather_.mode();
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
-        if (visitors_.seen(static_cast<int>(v))) data.seen.push_back(cat_.visitors[v].id);
+        if (actors_.seen(static_cast<int>(v))) data.seen.push_back(cat_.visitors[v].id);
     if (scene_) {
         data.camera = cat_.iso().toTile(camera_.position());
         data.zoom = camera_.zoom();
@@ -433,7 +435,9 @@ bool App::writeThumbnail() {
     cam.frame({0, 0, size.x, size.y}, size, openBounds(cat_, progress_.stage, world_));
     FrameParams p;
     p.world = &world_;
-    p.critters = visitors_.critters();
+    p.actors = actors_.all();
+    p.resident = actors_.resident();
+    p.weather = &weather_;
     p.camera = &cam;
     p.screen = size;
     p.light = lighting();
@@ -459,14 +463,18 @@ CondFacts App::facts() const {
     CondFacts f;
     f.phase = clock_.phase();
     f.season = season();
-    f.raining = rain_;
-    f.present = visitors_.presence();
-    f.seen = visitors_.seenFlags();
+    f.raining = raining();
+    f.present = actors_.presence();
+    f.seen = actors_.seenFlags();
+    f.harvestedToday = progress_.harvests > 0 && progress_.lastHarvestDay == clock_.day();
+    // Her wishes come from her when she is about; with no resident, by day.
+    f.residentAbout =
+        cat_.residentKind >= 0 ? actors_.residentAvailable() : clock_.phase() != Phase::Night;
     f.nookHere = progression_.nookHere();
     using C = Counter;
     const auto at = [&](C c) -> int& { return f.counters[static_cast<std::size_t>(c)]; };
     at(C::Wishes) = static_cast<int>(progress_.granted.size());
-    at(C::Seen) = visitors_.seenCount();
+    at(C::Seen) = actors_.seenCount();
     at(C::Nooks) = progress_.nooksFound();
     at(C::Pages) = at(C::Seen) + at(C::Nooks);
     at(C::Harvests) = progress_.harvests;
@@ -480,7 +488,8 @@ void App::updateProgress() {
     // wait for a drag to end, so a stroke counts once.
     std::uint64_t key = static_cast<std::uint64_t>(f.phase) |
                         (static_cast<std::uint64_t>(f.season) << 4) |
-                        (static_cast<std::uint64_t>(f.raining) << 8);
+                        (static_cast<std::uint64_t>(f.raining) << 8) |
+                        (static_cast<std::uint64_t>(f.residentAbout) << 9);
     for (const int n : f.present) key = key * 31 + static_cast<std::uint64_t>(n);
     for (const int c : f.counters) key = key * 131 + static_cast<std::uint64_t>(c);
     bool evaluate = key != factsKey_;
@@ -516,9 +525,16 @@ void App::updateProgress() {
         case ProgressEvent::Kind::WishOffered: {
             play(sfx::kWish);
             const int giver = cat_.wishes[static_cast<std::size_t>(e.index)].giver;
-            for (const Critter& c : visitors_.critters())
-                if (c.visitor == giver && !c.leaving) {
-                    scene_->burst(c.pos, rng_);
+            if (giver < 0) {
+                // From her in the world: the bubble and the card arrive together.
+                (void)speak(cat_.resident.context(e.already ? "already_done" : "wish_offer"),
+                            SpeechWeight::Important);
+                break;
+            }
+            for (const Actor& a : actors_.all())
+                if ((a.flags & actor_flag::kAlive) != 0 && (a.flags & actor_flag::kLeaving) == 0 &&
+                    cat_.kinds[a.kind].visitor == giver) {
+                    scene_->burst(a.pos, rng_);
                     break;
                 }
             break;
@@ -539,12 +555,15 @@ void App::updateProgress() {
 }
 
 void App::growBeds(float seconds) {
-    const bool rain = rain_ && !snowing();
+    const bool snow = cat_.seasons[static_cast<std::size_t>(season())].snow;
     const float seasonGrowth = cat_.seasons[static_cast<std::size_t>(season())].growth;
     anyRipe_ = false;
     for (std::size_t i = 0; i < world_.items().size(); ++i) {
         const Item& it = world_.items()[i];
         if (cat_.items[it.type].growth.stages == 0) continue;
+        // Rain where the bed is (not snow) makes it grow faster.
+        const bool rain = !snow && weather_.raining({static_cast<float>(it.pos.x) + 0.5f,
+                                                     static_cast<float>(it.pos.y) + 0.5f});
         const float rate = growthRate(world_, cat_, it.rect(), rain, seasonGrowth,
                                       progression_.nookGrowth(world_, it.rect()));
         if (grow(world_, cat_, i, seconds, rate)) {
@@ -562,8 +581,12 @@ bool App::pick(TilePos t) {
     harvest(world_, *idx);
     ++progress_.harvests;
     progress_.lastHarvestDay = clock_.day();
-    play(sfx::kHarvest, tuning::kSfxLevel, true);
+    playAt(sfx::kHarvest, tuning::kSfxLevel,
+           {static_cast<float>(t.x) + 0.5f, static_cast<float>(t.y) + 0.5f}, true);
     scene_->produce(bed, bed.variant);
+    // Hens come for what fell; she takes it home if she is near.
+    (void)actors_.harvested(actorEnv(), bed.pos);
+    lively_.happening(simTime_);
     markDirty();
     return true;
 }
@@ -578,7 +601,7 @@ void App::playNote() {
 }
 
 int App::pages() const {
-    return visitors_.seenCount() + progress_.nooksFound();
+    return actors_.seenCount() + progress_.nooksFound();
 }
 
 void App::openLand(int stage, bool wave) {
@@ -589,6 +612,7 @@ void App::openLand(int stage, bool wave) {
     (void)scene_->landWave(world_, cat_, stage, revealed);
     play(sfx::kLandOpen);
     const StageDef& def = cat_.stages[static_cast<std::size_t>(stage)];
+    if (!def.line.empty()) (void)speakText(def.line, SpeechWeight::Important);
     hud_.toast(std::vformat(strings::kToastNewLand, std::make_format_args(def.name)));
     // The camera never moves on its own: when the new land is out of sight, a chip offers it.
     TileRect box = def.rects.front();
@@ -635,14 +659,20 @@ void App::onWishGranted(int wish) {
 void App::onNookFound(int nook) {
     const NookDef& def = cat_.nooks[static_cast<std::size_t>(nook)];
     play(sfx::kNook);
-    const int pages = visitors_.seenCount() + progress_.nooksFound();
+    const int pages = actors_.seenCount() + progress_.nooksFound();
     const int total = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
     hud_.toast(std::vformat(strings::kToastNewNook, std::make_format_args(def.name, pages, total)));
+    lively_.happening(simTime_);
     std::vector<NearInstance> found;
     cat_.conditions.instances(def.near, world_, found);
     if (found.empty()) return;
     const NearInstance& in = found.front();
     scene_->flourish(in, world_, rng_);
+    // She walks over, if she is near and free, and says something about it.
+    actors_.visit(actorEnv(),
+                  {static_cast<float>(in.footprint.x0 + in.footprint.x1) * 0.5f,
+                   static_cast<float>(in.footprint.y0 + in.footprint.y1) * 0.5f},
+                  cat_.resident.context("nook_found"), tuning::kNookVisitReach);
     const auto f = [](int v) { return static_cast<float>(v); };
     const TileRect& r = in.footprint;
     Vec2 top = cat_.iso().toWorld(f(r.x0 + r.x1) * 0.5f, f(r.y0 + r.y1) * 0.5f);
@@ -806,10 +836,13 @@ bool App::shot(const fs::path& file) {
 
 void App::feedback(std::span<const Op> ops) {
     for (const Op& op : ops) {
-        if (op.kind == Op::Kind::Add)
+        if (op.kind == Op::Kind::Add) {
             scene_->onPlaced(op.item, rng_);
-        else if (op.kind == Op::Kind::Remove)
+            disturbed(op.item.rect(), op.item.type, false);
+        } else if (op.kind == Op::Kind::Remove) {
             scene_->onRemoved(op.item);
+            disturbed(op.item.rect(), -2, false);
+        }
     }
     if (!ops.empty()) markDirty();
 }
@@ -936,10 +969,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         play(journalOpen_ ? sfx::kOpen : sfx::kClose, tuning::kUiSfxLevel);
         break;
     case SDLK_C: cycleClock(); break;
-    case SDLK_N:
-        rain_ = !rain_;
-        markDirty();
-        break;
+    case SDLK_N: cycleWeather(); break;
     default: break;
     }
 }
@@ -1019,7 +1049,7 @@ HudModel App::model() const {
     HudModel m;
     m.cat = &cat_;
     m.thumbs = &thumbs_;
-    m.visitors = &visitors_;
+    m.visitors = &actors_;
     m.progress = &progress_;
     cards_.clear();
     for (std::size_t i = 0; i < progress_.open.size(); ++i) {
@@ -1046,6 +1076,16 @@ HudModel App::model() const {
     }
     m.wishes = cards_;
     m.worldTip = hoverTip_;
+    // An empty hand over an actor names it (she answers to her name; visitors to theirs).
+    if (m.worldTip.empty() && tool_ == Tool::None && !photo_ && hover_) {
+        if (const auto who = actorUnder(mouse_)) {
+            const ActorKind& k = cat_.kinds[actors_.all()[static_cast<std::size_t>(*who)].kind];
+            m.worldTip =
+                k.visitor >= 0
+                    ? std::string_view(cat_.visitors[static_cast<std::size_t>(k.visitor)].name)
+                    : std::string_view(cat_.resident.name);
+        }
+    }
     floatLabels_.clear();
     for (const NookLabel& l : nookLabels_) {
         const float k = (simTime_ - l.start) / tuning::kNookLabelSeconds;
@@ -1060,7 +1100,7 @@ HudModel App::model() const {
     m.seasonDay = seasonOf(clock_.day(), cat_.seasonDays).day;
     m.seasonPin = seasonPin_;
     m.snow = cat_.seasons[static_cast<std::size_t>(m.season)].snow;
-    m.pages = visitors_.seenCount() + progress_.nooksFound();
+    m.pages = actors_.seenCount() + progress_.nooksFound();
     m.pagesTotal = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
     m.nextStagePages = nextStagePages(cat_, progress_.stage);
     if (m.nextStagePages >= 0)
@@ -1072,7 +1112,15 @@ HudModel App::model() const {
     m.journalOpen = journalOpen_;
     m.photo = photo_;
     m.muted = muted_;
-    m.rain = rain_;
+    m.weather = weather_.mode();
+    m.raining = raining();
+    // Her speech bubble, above her head wherever she is on screen.
+    if (const Bubble* b = speech_.showing(simTime_); b != nullptr && residentOnScreen()) {
+        const Actor& r = actors_.all()[static_cast<std::size_t>(actors_.resident())];
+        m.bubble = b->text;
+        m.bubbleAt = camera_.worldToScreen(scene_->headOf(r), screen());
+        m.bubbleAlpha = speech_.alpha(simTime_) * std::clamp(r.alpha, 0.0f, 1.0f);
+    }
     m.pin = clock_.pin();
     m.phase = clock_.phase();
     m.canUndo = editor_.canUndo();
@@ -1144,10 +1192,7 @@ void App::applyHudActions() {
             break;
         case K::Photo: togglePhoto(); break;
         case K::Clock: cycleClock(); break;
-        case K::Rain:
-            rain_ = !rain_;
-            markDirty();
-            break;
+        case K::Rain: cycleWeather(); break;
         case K::Journal:
             journalOpen_ = !journalOpen_;
             play(journalOpen_ ? sfx::kOpen : sfx::kClose, tuning::kUiSfxLevel);
@@ -1242,9 +1287,11 @@ void App::applyTool(TilePos t, bool first) {
     case Tool::None: break;
     case Tool::Place: {
         const Item item = ghostItem(t);
+        const bool fresh = w.itemCount(item.type) == 0;
         const auto r = editor_.place(w, cat_, item);
         if (r == PlaceResult::Ok) {
             scene_->onPlaced(item, rng_);
+            disturbed(item.rect(), item.type, fresh);
             play(cat_.items[item.type].sound, tuning::kSfxLevel, true);
             playNote();
             markDirty();
@@ -1257,6 +1304,7 @@ void App::applyTool(TilePos t, bool first) {
         const auto r = editor_.paint(w, cat_, t, selection_);
         if (first) strokeTiles_ = 0;
         if (r == PaintResult::Ok) {
+            if (selection_ == cat_.waterTerrain) disturbed({t.x, t.y, t.x + 1, t.y + 1}, -1, false);
             // A note when a stroke starts and every few tiles after.
             if (strokeTiles_++ % tuning::kPaintNoteEvery == 0) playNote();
             if (simTime_ - lastPaintSound_ > tuning::kPaintSoundGap) {
@@ -1276,6 +1324,7 @@ void App::applyTool(TilePos t, bool first) {
             const Item removed = *it;
             (void)editor_.remove(w, t);
             scene_->onRemoved(removed);
+            disturbed(removed.rect(), -2, false);
             play(sfx::kRemove, tuning::kSfxLevel, true);
             markDirty();
         } else if (first) {
@@ -1326,10 +1375,20 @@ void App::worldInput() {
         const bool click = drag_ == Drag::Pan && !rightDown_ &&
                            std::hypot(mouse_.x - pressStart_.x, mouse_.y - pressStart_.y) <
                                tuning::kClickSlop * density_;
-        if (click && photo_)
+        if (click && photo_) {
             capturePending_ = true;
-        else if (click && tool_ == Tool::None && hover_)
-            (void)pick(*hover_);
+        } else if (click && tool_ == Tool::None) {
+            // An actor under the pointer is petted (she answers); else a ripe bed is picked;
+            // else an item with a sound of its own plays it (the well's plip).
+            if (const auto who = actorUnder(mouse_)) {
+                (void)actors_.pet(*who);
+            } else if (const auto t = hover_; t && !pick(*t)) {
+                if (const Item* it = world_.itemAt(*t);
+                    it && !cat_.items[it->type].clickSound.empty())
+                    playAt(cat_.items[it->type].clickSound, tuning::kSfxLevel,
+                           {static_cast<float>(t->x) + 0.5f, static_cast<float>(t->y) + 0.5f});
+            }
+        }
         if (drag_ != Drag::None && !rightDown_) drag_ = Drag::None;
     }
 }
@@ -1348,18 +1407,11 @@ void App::step(float dt) {
     wheelIdle_ += dt;
     if (wheelIdle_ > tuning::kWheelIdleReset) wheelAcc_ = 0;
 
-    visitors_.update(world_, cat_, night(), dt, rng_, activeArea(), gates_);
-    for (const VisitorEvent& e : visitors_.events()) {
-        const auto& def = cat_.visitors[static_cast<std::size_t>(e.visitor)];
-        if (e.kind == VisitorEvent::Kind::Arrived && e.firstSighting) {
-            hud_.toast(std::string(strings::kToastNewVisitor) + def.name);
-            play(sfx::kDiscover);
-            markDirty();
-        }
-        if (!def.voice.empty() && (e.kind == VisitorEvent::Kind::Call || e.firstSighting))
-            play(def.voice, tuning::kVoiceLevel, true);
-    }
+    updateLife(dt);
+    const Uint64 p0 = SDL_GetPerformanceCounter();
     updateProgress();
+    progressMs_ = static_cast<double>(SDL_GetPerformanceCounter() - p0) * 1000.0 /
+                  static_cast<double>(SDL_GetPerformanceFrequency());
     std::erase_if(nookLabels_, [&](const NookLabel& l) {
         return simTime_ - l.start > tuning::kNookLabelSeconds;
     });
@@ -1370,7 +1422,7 @@ void App::step(float dt) {
         growBeds(static_cast<float>(growthAcc_));
         growthAcc_ = 0;
     }
-    scene_->update(dt, world_, visitors_.critters(), rain_, rng_);
+    scene_->update(dt, world_, actors_.all(), weather_, rng_);
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);
     if (warnTime_ <= 0) warning_ = {};
@@ -1382,11 +1434,11 @@ int App::season() const {
 }
 
 bool App::snowing() const {
-    return rain_ && cat_.seasons[static_cast<std::size_t>(season())].snow;
+    return raining() && cat_.seasons[static_cast<std::size_t>(season())].snow;
 }
 
 Lighting App::lighting() const {
-    Lighting l = lightingAt(clock_.time(), rain_);
+    Lighting l = lightingAt(clock_.time(), rainHere());
     // The season's grade multiplies over the world with the day's light.
     const float k = gradeT_ * gradeT_ * (3 - 2 * gradeT_);
     const Rgb g{gradeFrom_.r + (gradeTo_.r - gradeFrom_.r) * k,
@@ -1425,16 +1477,6 @@ void App::updateSeason(float dt) {
         lastDay_ = clock_.day();
         markDirty();
     }
-    // The first dawn of a season: a soft chime and Laeticia's word on it.
-    const Phase phase = clock_.phase();
-    if (phase == Phase::Dawn && lastPhase_ == Phase::Night && clock_.pin() == ClockPin::Auto &&
-        seasonOf(clock_.day(), cat_.seasonDays).day == 0) {
-        const SeasonDef& def = cat_.seasons[static_cast<std::size_t>(s)];
-        play(sfx::kSeason);
-        hud_.toast(
-            std::vformat(strings::kThanks, std::make_format_args(def.line, cat_.resident.name)));
-    }
-    lastPhase_ = phase;
 }
 
 void App::setupMusic() {
@@ -1472,34 +1514,72 @@ void App::updateAudio() {
     const float n = std::clamp(l.night, 0.0f, 1.0f);
     for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n));
     for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n);
-    // The season's beds; under snow there is no rain bed and the winter bed comes up.
+    // The season's beds follow the weather where the camera looks: rain ducks the birds and
+    // brings its own bed (snow brings none and lifts the winter bed). Birds swell at dawn and
+    // after rain (the chorus events).
     const SeasonDef& def = cat_.seasons[static_cast<std::size_t>(season())];
-    const bool snow = snowing();
-    const float boost = snow ? tuning::kSnowAmbienceBoost : 1.0f;
+    const bool snowSeason = def.snow;
+    const float rain = snowSeason ? 0.0f : rainHere();
+    const float snow = snowSeason ? rainHere() : 0.0f;
+    const float boost = 1.0f + (tuning::kSnowAmbienceBoost - 1.0f) * snow;
+    const float chorus = events_.gain(EventShow::Chorus);
+    // Water and the waterfall are where they are on screen: louder and panned toward them.
+    const TileRect vis = scene_->visibleTiles(camera_, screen(), world_);
+    float water = 0;
+    float waterX = 0;
+    world_.forEachChunkIn(vis, [&](int cx, int cy) {
+        const auto w = static_cast<float>(world_.chunkTerrainCount(cx, cy, cat_.waterTerrain));
+        water += w;
+        // The middle of the chunk stands for where its water is.
+        const float half = static_cast<float>(kChunk) * 0.5f;
+        waterX += w * panOf({static_cast<float>(cx * kChunk) + half,
+                             static_cast<float>(cy * kChunk) + half});
+    });
     for (const auto& file : cat_.audio.ambience) {
         float g = 0;
+        float pan = 0;
         if (file == def.ambienceDay)
-            g += tuning::kBirdsLevel * (1 - n) * (rain_ && !snow ? tuning::kRainBirdsDuck : boost);
+            g += tuning::kBirdsLevel * (1 - n) * boost * chorus *
+                 (1.0f + (tuning::kRainBirdsDuck - 1.0f) * rain);
         if (file == def.ambienceNight)
-            g += tuning::kCricketsLevel * n * (rain_ && !snow ? tuning::kRainCricketsDuck : boost);
-        if (file == kRainBed && rain_ && !snow) g += tuning::kRainLevel;
-        if (file == kWaterBed) {
-            const float water = static_cast<float>(world_.terrainCount(cat_.waterTerrain));
+            g += tuning::kCricketsLevel * n * boost *
+                 (1.0f + (tuning::kRainCricketsDuck - 1.0f) * rain);
+        if (file == kRainBed) g += tuning::kRainLevel * rain;
+        if (file == kWaterBed && water > 0) {
             g += tuning::kWaterLevel * std::min(1.0f, water / tuning::kWaterTilesForFullLevel);
+            pan = waterX / water * tuning::kBedPan;
         }
-        mixer_.setLoopGain(mixer_.loopIndex(file), g);
+        if (file == kWaterfallBed && fallCount_ > 0) {
+            g += tuning::kWaterfallLevel *
+                 std::min(1.0f, static_cast<float>(fallCount_) / tuning::kFallTilesForFullLevel) *
+                 distanceGain(fallCentre_);
+            pan = panOf(fallCentre_);
+        }
+        const int loop = mixer_.loopIndex(file);
+        mixer_.setLoopGain(loop, g);
+        mixer_.setLoopPan(loop, pan);
     }
 }
 
 void App::render() {
     FrameParams p;
     p.world = &world_;
-    p.critters = visitors_.critters();
+    p.actors = actors_.all();
+    p.resident = actors_.resident();
+    p.weather = &weather_;
     p.ghost = ghost();
     p.outlines = hoverNook_;
     p.camera = &camera_;
     p.screen = screen();
     p.light = lighting();
+    p.fireflySync = events_.active(EventShow::FireflySync);
+    // The rainbow fades in, holds and fades out over its event.
+    if (const float k = events_.progress(EventShow::Rainbow, simTime_); k >= 0) {
+        const float t = k * tuning::kRainbowSeconds;
+        p.rainbow = std::clamp(
+            std::min(t / tuning::kRainbowIn, (tuning::kRainbowSeconds - t) / tuning::kRainbowOut),
+            0.0f, 1.0f);
+    }
     scene_->draw(p);
     if (capturePending_) {
         capturePending_ = false;
@@ -1548,7 +1628,12 @@ int App::run() {
     else
         frameCamera();
     if (opts_.bench) return runBench();
-    visitors_.populate(world_, cat_, night(), rng_, activeArea(), gates_);
+    if (opts_.soak > 0) return runSoak();
+    actors_.populate(actorEnv());
+    refreshNooks();
+    // She greets the player when the corner opens and she can be seen.
+    if (residentOnScreen() && speak(cat_.resident.context("greet"), SpeechWeight::Important))
+        actors_.wave();
 
     // Headless runs advance exactly one fixed step per frame so scripts are reproducible.
     const bool fixed = opts_.headless;
@@ -1625,7 +1710,7 @@ int App::run() {
         }
         if (welcomePending_) {
             welcomePending_ = false;
-            const int pages = visitors_.seenCount() + progress_.nooksFound();
+            const int pages = actors_.seenCount() + progress_.nooksFound();
             hud_.toast(std::vformat(strings::kToastWelcome, std::make_format_args(pages)));
         }
         if (thumbTimer_ >= tuning::kThumbnailInterval) {

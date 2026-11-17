@@ -26,16 +26,6 @@ int terrain(const Catalog& c, std::string_view id) {
     return *c.findTerrain(id);
 }
 
-// Everyone may come except rare visitors, whose recipes are the progress loop's business.
-const std::vector<VisitorGate>& gates() {
-    static const std::vector<VisitorGate> g = [] {
-        std::vector<VisitorGate> v(test::catalog().visitors.size());
-        for (std::size_t i = 0; i < v.size(); ++i) v[i].allowed = !test::catalog().visitors[i].rare;
-        return v;
-    }();
-    return g;
-}
-
 // How many of a visitor the whole world attracts.
 int wants(const VisitorDef& def, const World& w, bool night) {
     Tally t;
@@ -372,62 +362,6 @@ TEST_CASE("visitor needs decide who comes") {
     CHECK(wants(cat, w, true) == 1); // max 1
 }
 
-TEST_CASE("visitors arrive, stay in their habitat and leave when unwelcome") {
-    const Catalog& c = test::catalog();
-    World w(c);
-    Rng rng(7);
-    Visitors vis(c);
-    const int duckId = *c.findVisitor("duck");
-    const int water = terrain(c, "water");
-    for (int y = 4; y < 8; ++y)
-        for (int x = 4; x < 8; ++x) w.setTerrain({x, y}, water);
-
-    bool firstSeen = false;
-    int arrivals = 0;
-    for (int i = 0; i < 60 * 30; ++i) {
-        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds(), gates());
-        for (const auto& e : vis.events()) {
-            if (e.kind != VisitorEvent::Kind::Arrived) continue;
-            ++arrivals;
-            if (e.firstSighting) {
-                CHECK_FALSE(firstSeen);
-                firstSeen = true;
-            }
-        }
-        for (const Critter& cr : vis.critters()) {
-            REQUIRE(habitatAllows(Habitat::Water, w, c, cr.pos));
-        }
-    }
-    CHECK(firstSeen);
-    CHECK(vis.seen(duckId));
-    CHECK(vis.present(duckId) == wants(c.visitors[static_cast<std::size_t>(duckId)], w, false));
-    CHECK(arrivals == vis.present(duckId));
-
-    // Drain the pond: the ducks fade away.
-    for (int y = 4; y < 8; ++y)
-        for (int x = 4; x < 8; ++x) w.setTerrain({x, y}, c.baseTerrain);
-    for (int i = 0; i < 60 * 5; ++i)
-        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds(), gates());
-    CHECK(vis.critters().empty());
-}
-
-TEST_CASE("populate spawns the full population without events") {
-    const Catalog& c = test::catalog();
-    World w = makeStarterWorld(c);
-    for (int x = 22; x < 25; ++x) w.addItem(makeItem(c, item(c, "tall_grass"), 0, {x, 38}));
-    Rng rng(3);
-    Visitors vis(c);
-    vis.populate(w, c, true, rng, w.bounds(), gates());
-    CHECK(vis.critters().empty()); // nobody seen yet: first sightings must still be events
-    for (const char* id : {"duck", "firefly", "butterfly"}) vis.markSeen(*c.findVisitor(id));
-    vis.populate(w, c, true, rng, w.bounds(), gates());
-    CHECK(vis.events().empty());
-    const int ducks = vis.present(*c.findVisitor("duck"));
-    CHECK(ducks > 0);
-    CHECK(vis.present(*c.findVisitor("firefly")) > 0);
-    CHECK(vis.present(*c.findVisitor("butterfly")) == 0);
-}
-
 TEST_CASE("the starter scene is pleasant and valid") {
     const Catalog& c = test::catalog();
     const World w = makeStarterWorld(c);
@@ -541,95 +475,6 @@ TEST_CASE("tiles without ground shape the land: refused for edits, edges run int
     CHECK((w.terrainMask({29, 4}) & kMaskE) != 0); // open sky counts as "same"
     CHECK(w.terrainCount(c.baseTerrain) == 30 * c.mapH - 1);
     CHECK_FALSE(habitatAllows(Habitat::Air, w, c, {31.5f, 4.5f}));
-}
-
-TEST_CASE("critters never step onto tiles edited away under their walk") {
-    const Catalog& c = test::catalog();
-    World w(c);
-    const int water = terrain(c, "water");
-    for (int y = 10; y < 13; ++y)
-        for (int x = 4; x < 20; ++x) w.setTerrain({x, y}, water);
-    Rng rng(5);
-    Visitors vis(c);
-    vis.markSeen(*c.findVisitor("duck"));
-    vis.populate(w, c, false, rng, w.bounds(), gates());
-    REQUIRE(vis.present(*c.findVisitor("duck")) > 0);
-    // Let them swim, then drain the channel in stripes while they move.
-    for (int i = 0; i < 600; ++i) {
-        if (i % 50 == 25) {
-            const int x = 5 + (i / 50) % 14;
-            for (int y = 10; y < 13; ++y) w.setTerrain({x, y}, c.baseTerrain);
-        }
-        const auto before = std::vector<Critter>(vis.critters().begin(), vis.critters().end());
-        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds(), gates());
-        // Order is kept by update (new arrivals are appended, departures removed in order), so
-        // compare each surviving critter with its previous position.
-        std::size_t j = 0;
-        for (const Critter& now : vis.critters()) {
-            while (j < before.size() &&
-                   (before[j].visitor != now.visitor ||
-                    std::hypot(before[j].pos.x - now.pos.x, before[j].pos.y - now.pos.y) > 0.1f))
-                ++j;
-            if (j == before.size()) break; // a new arrival
-            const TilePos a{static_cast<int>(std::floor(before[j].pos.x)),
-                            static_cast<int>(std::floor(before[j].pos.y))};
-            const TilePos b{static_cast<int>(std::floor(now.pos.x)),
-                            static_cast<int>(std::floor(now.pos.y))};
-            if (!(a == b)) CHECK(habitatAllows(c.visitors[now.visitor].habitat, w, c, now.pos));
-            ++j;
-        }
-    }
-}
-
-TEST_CASE("a critter whose tile is edited away walks to an allowed neighbour") {
-    const Catalog& c = test::catalog();
-    World w(c);
-    const int cottage = item(c, "cottage");
-    w.addItem(makeItem(c, cottage, 0, {20, 20}));
-    Rng rng(9);
-    Visitors vis(c);
-    const int catId = *c.findVisitor("cat");
-    vis.markSeen(catId);
-    vis.populate(w, c, false, rng, w.bounds(), gates());
-    REQUIRE(vis.present(catId) == 1);
-    const auto catPos = [&] {
-        for (const Critter& cr : vis.critters())
-            if (cr.visitor == catId) return cr.pos;
-        return Vec2{-1, -1};
-    };
-    const Vec2 p = catPos();
-    const TilePos t{static_cast<int>(p.x), static_cast<int>(p.y)};
-    // Put a rock right under the cat (unless that is the cottage itself).
-    REQUIRE(w.itemAt(t) == nullptr);
-    w.addItem(makeItem(c, item(c, "rock"), 0, t));
-    for (int i = 0; i < 120; ++i)
-        vis.update(w, c, false, static_cast<float>(tuning::kStepSeconds), rng, w.bounds(), gates());
-    REQUIRE(vis.present(catId) == 1); // it moved off instead of fading away
-    CHECK(habitatAllows(Habitat::Land, w, c, catPos()));
-}
-
-TEST_CASE("visitors live in the active area only") {
-    const Catalog& c = test::catalog();
-    World w(c, 200, 200);
-    const int water = terrain(c, "water");
-    for (int y = 150; y < 160; ++y)
-        for (int x = 150; x < 160; ++x) w.setTerrain({x, y}, water);
-    Rng rng(4);
-    Visitors vis(c);
-    const int duck = *c.findVisitor("duck");
-    vis.markSeen(duck);
-    vis.populate(w, c, false, rng, {0, 0, 64, 64}, gates());
-    CHECK(vis.present(duck) == 0); // the pond is outside the area: nobody is simulated there
-    vis.populate(w, c, false, rng, {128, 128, 192, 192}, gates());
-    CHECK(vis.present(duck) > 0);
-    // The view leaves: they are dropped silently; it comes back: they are simply there again.
-    vis.update(w, c, false, 0.01f, rng, {0, 0, 64, 64}, gates());
-    CHECK(vis.critters().empty());
-    CHECK(vis.events().empty());
-    vis.update(w, c, false, 0.01f, rng, {128, 128, 192, 192}, gates());
-    CHECK(vis.present(duck) > 0);
-    CHECK(vis.events().empty());
-    for (const Critter& cr : vis.critters()) CHECK(cr.pos.x >= 128);
 }
 
 TEST_CASE("autosave fires under continuous editing, after quiet moments, and retries later") {

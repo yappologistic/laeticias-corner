@@ -98,7 +98,7 @@ SeasonDay seasonOf(int day, std::span<const int> days) {
     return {};
 }
 
-Lighting lightingAt(double t, bool raining) {
+Lighting lightingAt(double t, float rain) {
     t = wrap(t);
     const auto& keys = tuning::kLightKeys;
     constexpr std::size_t n = std::size(tuning::kLightKeys);
@@ -117,16 +117,18 @@ Lighting lightingAt(double t, bool raining) {
     l.skyBottom = mix(a.skyBottom, b.skyBottom, kf);
     l.glow = mix(a.glow, b.glow, kf);
     l.night = mix(a.night, b.night, kf);
-    if (raining) {
-        const auto grey = [](Rgb c) {
+    if (rain > 0) {
+        // A shower greys the sky and dims the light as it arrives, by how hard it rains.
+        rain = std::min(rain, 1.0f);
+        const auto grey = [&](Rgb c) {
             const float y = (c.r + c.g + c.b) / 3.0f;
-            const float g = tuning::kRainSkyGrey;
+            const float g = tuning::kRainSkyGrey * rain;
             return Rgb{mix(c.r, y, g), mix(c.g, y, g), mix(c.b, y, g)};
         };
         l.skyTop = grey(l.skyTop);
         l.skyBottom = grey(l.skyBottom);
-        l.ambient = {l.ambient.r * tuning::kRainAmbientDim, l.ambient.g * tuning::kRainAmbientDim,
-                     l.ambient.b * tuning::kRainAmbientDim};
+        const float dim = 1.0f + (tuning::kRainAmbientDim - 1.0f) * rain;
+        l.ambient = {l.ambient.r * dim, l.ambient.g * dim, l.ambient.b * dim};
     }
     return l;
 }

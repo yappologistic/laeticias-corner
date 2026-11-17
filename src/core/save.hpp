@@ -9,7 +9,8 @@
 //   "created"    UTC "YYYY-MM-DDTHH:MM:SSZ", "played" active play time in seconds
 //   "clock"      {"t": 0..1, "pin": "auto|day|dusk|night|dawn", "day": calendar day from 0}
 //   "season_pin" "auto" or a season id
-//   "settings"   {"rain": bool}
+//   "settings"   {"weather": "natural|rain|clear"} (the player's weather choice; files that
+//                 have only the older "rain": true read as "rain")
 //   "progress"   {"unlocked": [item and terrain ids], "frames": [frame ids],
 //                 "wishes": {"open": [ids, offer order], "done": [ids, grant order],
 //                            "snoozed": {id: play time it may return}, "last_offer": seconds},
@@ -35,6 +36,7 @@
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/progress.hpp"
+#include "core/weather.hpp"
 #include "core/world.hpp"
 
 #include <expected>
@@ -62,7 +64,7 @@ struct SaveData {
     ClockPin pin = ClockPin::Auto;
     int day = 0;
     int seasonPin = -1; // season index, -1: follow the calendar
-    bool rain = false;
+    WeatherMode weather = WeatherMode::Natural;
     std::vector<std::string> seen; // visitor ids
     std::optional<Vec2> camera;    // view centre in home tiles
     float zoom = 1;
@@ -100,6 +102,7 @@ void migrateLegacy(SaveData& data, const Catalog& cat);
 // file falls back to defaults field by field.
 struct Profile {
     bool muted = false;
+    bool chatty = true;    // "chatter": the resident's idle remarks ("chatty") or not ("quiet")
     std::string lastWorld; // folder name of the world played last
 };
 [[nodiscard]] Profile parseProfile(std::string_view text);

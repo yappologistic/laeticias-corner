@@ -61,10 +61,14 @@ Scene::Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat)
     for (const auto& it : tables_.items)
         for (const auto& set : it.base)
             for (const SpriteId id : set.frames) grow(itemReach_, atlas_.sprite(id));
-    for (const auto& anims : tables_.critters)
-        for (const auto& set : anims)
-            for (const SpriteId id : set.frames)
-                grow(itemReach_, atlas_.sprite(id), tuning::kHoverMax * iso_.tileH() + 2);
+    // Actors reach as far as their tallest frame, lifted onto the highest perch or flight.
+    float lift = tuning::kHoverMax * iso_.tileH() + 2;
+    for (const auto& def : cat.items)
+        for (const int p : def.perch) lift = std::max(lift, static_cast<float>(p) + 2);
+    for (const auto& anims : tables_.kinds)
+        for (const KindAnim& ka : anims)
+            for (const FrameSet* set : {&ka.front, &ka.back})
+                for (const SpriteId id : set->frames) grow(itemReach_, atlas_.sprite(id), lift);
     lights_.reserve(256);
     chimneys_.reserve(64);
     fades_.reserve(kMaxFades);
@@ -85,14 +89,80 @@ FRect Scene::spriteRect(const Item& item, int slot) const {
     return {a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
 }
 
-FRect Scene::critterRect(const Critter& c) const {
-    const FrameSet& set =
-        tables_.critters[c.visitor][static_cast<std::size_t>(CritterAnim::IdleFront)];
-    const Sprite& s = atlas_.sprite(set.frames.front());
-    const Vec2 a = iso_.toWorld(c.pos.x, c.pos.y);
+bool Scene::flying(const Actor& a) const {
+    return cat_.kinds[a.kind].move == Locomotion::Fly || (a.flags & actor_flag::kOnHat) != 0;
+}
+
+bool Scene::glows(const Actor& a) const {
+    const int v = cat_.kinds[a.kind].visitor;
+    return v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].glow;
+}
+
+std::size_t Scene::animOf(const Actor& a) const {
+    const ActorKind& k = cat_.kinds[a.kind];
+    if (a.overlay > 0) return a.overlayAnim;
+    const bool moving =
+        a.state == ActorState::Travel ||
+        (a.state == ActorState::Follow && a.anim == 0 && (a.flags & actor_flag::kOnHat) == 0);
+    if (!moving) return a.anim;
+    // Walking with goods, under rain, or a swimmer on land: their own walks where drawn.
+    if (k.carryAnim != 0xFF && a.goodsCount > 0) return k.carryAnim;
+    if (k.rainAnim != 0xFF && weather_ != nullptr && weather_->raining(a.pos)) return k.rainAnim;
+    if (k.waddleAnim != 0xFF && map_ != nullptr) {
+        const TilePos t{static_cast<int>(std::floor(a.pos.x)),
+                        static_cast<int>(std::floor(a.pos.y))};
+        if (map_->hasGround(t) && !map_->isWater(t)) return k.waddleAnim;
+    }
+    return 0;
+}
+
+Vec2 Scene::actorAnchor(const Actor& a) const {
+    if ((a.flags & actor_flag::kOnHat) != 0 && resident_ >= 0 &&
+        std::cmp_less(resident_, actors_.size())) {
+        // Resting on her hat: just above the top of her current frame.
+        const Vec2 h = headOf(actors_[static_cast<std::size_t>(resident_)]);
+        return {h.x, h.y + 2};
+    }
+    Vec2 w = iso_.toWorld(a.pos.x, a.pos.y);
+    w.y -= a.lift;
+    if (cat_.kinds[a.kind].move == Locomotion::Fly && a.state != ActorState::Act)
+        w.y -= std::sin(a.animTime * 3.1f) * 0.12f * iso_.tileH();
+    return {std::round(w.x), std::round(w.y)};
+}
+
+FRect Scene::actorRect(const Actor& a) const {
+    const KindAnim& ka = tables_.kinds[a.kind][animOf(a)];
+    const Sprite& s = atlas_.sprite(ka.front.frames.front());
+    const Vec2 w = actorAnchor(a);
     // Mirrored frames flip about the anchor, so take the wider side both ways.
     const float half = std::max(s.ox, s.w - s.ox);
-    return {a.x - half, a.y - s.oy, a.x + half, a.y - s.oy + s.h};
+    return {w.x - half, w.y - s.oy, w.x + half, w.y - s.oy + s.h};
+}
+
+Vec2 Scene::headOf(const Actor& a) const {
+    const FRect r = actorRect(a);
+    return {(r.x0 + r.x1) * 0.5f, r.y0};
+}
+
+std::optional<int> Scene::actorAt(std::span<const Actor> actors, Vec2 world) const {
+    // The topmost by depth first: nearer (larger x + y), then flyers above everything.
+    std::optional<int> best;
+    float bestDepth = -1e9f;
+    const float inflate = tuning::kPetHitInflate * iso_.tileW() / 64.0f;
+    for (std::size_t i = 0; i < actors.size(); ++i) {
+        const Actor& a = actors[i];
+        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha < 0.5f) continue;
+        const FRect r = actorRect(a);
+        if (world.x < r.x0 - inflate || world.x > r.x1 + inflate || world.y < r.y0 - inflate ||
+            world.y > r.y1 + inflate)
+            continue;
+        const float depth = a.pos.x + a.pos.y + (flying(a) ? 1000.0f : 0.0f);
+        if (depth > bestDepth) {
+            bestDepth = depth;
+            best = static_cast<int>(i);
+        }
+    }
+    return best;
 }
 
 TileRect Scene::visibleTiles(const Camera& camera, Vec2 screen, const World& world) const {
@@ -149,6 +219,7 @@ void Scene::rebuild(const World& world, TileRect region) {
     glowRects_.clear();
     lights_.clear();
     chimneys_.clear();
+    moths_.clear();
     trees_.clear();
     for (std::uint32_t i = 0; i < placed_.size(); ++i) {
         Placed& p = placed_[i];
@@ -159,8 +230,14 @@ void Scene::rebuild(const World& world, TileRect region) {
         const auto& smoke = cat_.items[p.item.type].smokeAt;
         if (slot < smoke.size())
             chimneys_.push_back(
-                {a.x + static_cast<float>(smoke[slot].x), a.y + static_cast<float>(smoke[slot].y)});
+                {{a.x + static_cast<float>(smoke[slot].x), a.y + static_cast<float>(smoke[slot].y)},
+                 p.item.pos});
         if (spr.glow[slot].empty()) continue;
+        // Lamp heads (lights that do not flicker like a fire) draw moths at night.
+        const auto& idef = cat_.items[p.item.type];
+        if (const auto& head = spr.light[slot];
+            idef.fps <= 0 && head && cat_.hasTag(p.item.type, "light"))
+            moths_.push_back({a.x + head->x, a.y + head->y});
         // Only what can hide an emissive pixel needs the glow pass: use the glow art's bounds.
         const Sprite& gs = atlas_.sprite(spr.glow[slot].frames.front());
         const FRect glowBox{a.x - gs.ox, a.y - gs.oy, a.x - gs.ox + gs.w, a.y - gs.oy + gs.h};
@@ -192,14 +269,24 @@ void Scene::rebuild(const World& world, TileRect region) {
     }
 
     water_.clear();
+    falls_.clear();
     world.forEachChunkIn(region, [&](int cx, int cy) {
         if (world.chunkTerrainCount(cx, cy, cat_.waterTerrain) == 0) return;
         const TileRect r =
             TileRect{cx * kChunk, cy * kChunk, (cx + 1) * kChunk, (cy + 1) * kChunk}.clipped(
                 region);
         for (int y = r.y0; y < r.y1; ++y)
-            for (int x = r.x0; x < r.x1; ++x)
-                if (world.isWater({x, y})) water_.push_back({x, y});
+            for (int x = r.x0; x < r.x1; ++x) {
+                if (!world.isWater({x, y}) || world.isWild({x, y})) continue;
+                water_.push_back({x, y});
+                // Water at a rim falls over it; mist rises at the foot of the fall.
+                const Vec2 a = iso_.toWorld(TilePos{x, y});
+                const float foot = tuning::kMistDrop * iso_.tileH();
+                if (!world.hasGround({x + 1, y}))
+                    falls_.push_back({{a.x + iso_.hw * 0.5f, a.y + iso_.hh * 1.5f + foot}});
+                if (!world.hasGround({x, y + 1}))
+                    falls_.push_back({{a.x - iso_.hw * 0.5f, a.y + iso_.hh * 1.5f + foot}});
+            }
     });
 }
 
@@ -340,14 +427,20 @@ void Scene::setSeason(int season) {
     regionRevision_ = ~0ULL;
 }
 
-void Scene::update(float dt, const World& world, std::span<const Critter> critters, bool rain,
-                   Rng& rng) {
+void Scene::update(float dt, const World& world, std::span<const Actor> actors,
+                   const Weather& weather, Rng& rng) {
     const SeasonDef* season =
         season_ >= 0 ? &cat_.seasons[static_cast<std::size_t>(season_)] : nullptr;
-    const bool snow = rain && season != nullptr && season->snow;
+    weather_ = &weather;
+    map_ = &world;
+    wind_ = weather.wind();
+    const bool snow = season != nullptr && season->snow;
     now_ += dt;
+    // Trees and grass sway faster in a stronger wind.
+    sway_ += dt * (tuning::kSwayCalm + tuning::kSwayWind * wind_.strength);
     std::erase_if(fades_, [&](const Fade& f) { return now_ - f.start > tuning::kFadeOutSeconds; });
     std::erase_if(pops_, [&](const Pop& p) { return now_ - p.start > tuning::kPopSeconds; });
+    std::erase_if(rustles_, [&](const Rustle& r) { return now_ > r.end; });
     for (WaveTile& w : wave_) {
         if (w.cleared || now_ < w.start) continue;
         w.cleared = true;
@@ -361,13 +454,20 @@ void Scene::update(float dt, const World& world, std::span<const Critter> critte
     std::erase_if(pulses_,
                   [&](const Pulse& p) { return now_ - p.start > tuning::kNookPulseSeconds; });
     const float u = iso_.tileH();
+    // The wind's lean on screen: its x component in window space, -1..1.
+    const float lean = (wind_.dir.x - wind_.dir.y) * 0.7071f * wind_.strength;
 
-    for (const Vec2& c : chimneys_) {
-        if (rng.chance(dt / tuning::kSmokeInterval))
-            particles_.spawn(Fx::Smoke, {c.x + rng.range(-1.0f, 1.0f), c.y},
-                             {rng.range(0.05f, tuning::kSmokeDriftMax) * u,
-                              -rng.range(tuning::kSmokeRiseMin, tuning::kSmokeRiseMax) * u},
-                             rng.range(2.2f, 3.2f));
+    for (const Chimney& c : chimneys_) {
+        // A cooking chimney puffs twice as often, two puffs at a time.
+        const bool cook = cooking_ && *cooking_ == c.origin;
+        const float rate = (cook ? 2.0f : 1.0f) / tuning::kSmokeInterval;
+        if (!rng.chance(dt * rate)) continue;
+        for (int n = 0; n < (cook ? 2 : 1); ++n)
+            particles_.spawn(
+                Fx::Smoke, {c.at.x + rng.range(-1.0f, 1.0f), c.at.y},
+                {(rng.range(0.05f, tuning::kSmokeDriftMax) + lean * tuning::kSmokeLean) * u,
+                 -rng.range(tuning::kSmokeRiseMin, tuning::kSmokeRiseMax) * u},
+                rng.range(2.2f, 3.2f));
     }
     const auto spawnMany = [&](float expected, auto&& one) {
         while (expected > 0) {
@@ -375,19 +475,35 @@ void Scene::update(float dt, const World& world, std::span<const Critter> critte
             expected -= 1.0f;
         }
     };
+    const auto rainHere = [&](Vec2 groundPx) { return weather.rainAt(iso_.toTile(groundPx)); };
     if (!water_.empty()) {
-        const float rate = static_cast<float>(water_.size()) *
-                           (rain && !snow ? tuning::kRainRipplesPerSecondPerWaterTile
-                                          : tuning::kRipplesPerSecondPerWaterTile);
-        spawnMany(rate * dt, [&] {
-            const TilePos t =
-                water_[static_cast<std::size_t>(rng.range(0, static_cast<int>(water_.size()) - 1))];
-            const Vec2 w = iso_.toWorld(static_cast<float>(t.x) + rng.range(0.25f, 0.75f),
-                                        static_cast<float>(t.y) + rng.range(0.25f, 0.75f));
-            particles_.spawn(Fx::Ripple, w, {0, 0}, tuning::kRippleSeconds + 0.1f);
-        });
+        spawnMany(
+            static_cast<float>(water_.size()) * tuning::kRipplesPerSecondPerWaterTile * dt, [&] {
+                const TilePos t = water_[static_cast<std::size_t>(
+                    rng.range(0, static_cast<int>(water_.size()) - 1))];
+                const Vec2 w = iso_.toWorld(static_cast<float>(t.x) + rng.range(0.25f, 0.75f),
+                                            static_cast<float>(t.y) + rng.range(0.25f, 0.75f));
+                particles_.spawn(Fx::Ripple, w, {0, 0}, tuning::kRippleSeconds + 0.1f);
+            });
+        // Rain stipples the water where it falls.
+        if (!snow)
+            spawnMany(
+                static_cast<float>(water_.size()) * tuning::kRainRipplesPerSecondPerWaterTile * dt,
+                [&] {
+                    const TilePos t = water_[static_cast<std::size_t>(
+                        rng.range(0, static_cast<int>(water_.size()) - 1))];
+                    const Vec2 w = iso_.toWorld(static_cast<float>(t.x) + rng.range(0.25f, 0.75f),
+                                                static_cast<float>(t.y) + rng.range(0.25f, 0.75f));
+                    if (rng.chance(rainHere(w)))
+                        particles_.spawn(Fx::Ripple, w, {0, 0}, tuning::kRippleSeconds + 0.1f);
+                });
     }
-    if (rain && view_.x1 > view_.x0) {
+    const bool anyRain = weather.mode() == WeatherMode::Rain ||
+                         (weather.mode() == WeatherMode::Natural &&
+                          std::ranges::any_of(weather.cells(), [](const WeatherCell& c) {
+                              return c.rain && c.age >= 0;
+                          }));
+    if (anyRain && view_.x1 > view_.x0) {
         const float tiles =
             (view_.x1 - view_.x0) * (view_.y1 - view_.y0) / (iso_.tileW() * iso_.hh);
         const float fall = tuning::kRainFall * u;
@@ -396,47 +512,115 @@ void Scene::update(float dt, const World& world, std::span<const Critter> critte
         const float maxRate = tuning::kRainPoolShare * static_cast<float>(Particles::kCapacity) /
                               (fall / speed + tuning::kSplashSeconds);
         const float rate = std::min(tuning::kRainDropsPerSecondPerTile * tiles, maxRate);
+        // Drops fall only where a shower is, slanting with the wind.
+        const float slant = 0.15f + lean * tuning::kRainLean;
         if (snow) {
-            // Snow drifts down slowly and settles without a splash.
             const float slow = tuning::kSnowSpeed * u;
             spawnMany(rate * tuning::kSnowShare * dt, [&] {
                 const Vec2 ground{rng.range(view_.x0, view_.x1), rng.range(view_.y0, view_.y1)};
-                particles_.spawn(Fx::Snow, {ground.x, ground.y - fall}, {0, slow}, fall / slow,
-                                 rng.range(0.0f, 6.0f));
+                if (!rng.chance(rainHere(ground))) return;
+                particles_.spawn(Fx::Snow, {ground.x - lean * fall * 0.4f, ground.y - fall},
+                                 {lean * slow * 0.4f, slow}, fall / slow, rng.range(0.0f, 6.0f));
             });
         } else {
             spawnMany(rate * dt, [&] {
-                const Vec2 ground{rng.range(view_.x0, view_.x1 + fall * 0.15f),
+                const Vec2 ground{rng.range(view_.x0 - fall * slant, view_.x1 + fall * slant),
                                   rng.range(view_.y0, view_.y1)};
-                particles_.spawn(Fx::Raindrop, {ground.x + fall * 0.15f, ground.y - fall},
-                                 {-speed * 0.15f, speed}, fall / speed);
+                if (!rng.chance(rainHere(ground))) return;
+                particles_.spawn(Fx::Raindrop, {ground.x + fall * slant, ground.y - fall},
+                                 {-speed * slant, speed}, fall / speed);
             });
         }
     }
-    // Leaves fall by the season's measure; blossom sheds petals in spring instead.
+    // Leaves fall by the season's measure (more in a gust); blossom sheds petals in spring.
     const float leaves = season != nullptr ? season->leaves : 1.0f;
     const float petals = season != nullptr ? season->petals : 0.0f;
     for (const std::uint32_t i : trees_) {
         if (i >= placed_.size()) continue;
         const bool blossom = cat_.items[placed_[i].item.type].sheds == Shed::Blossom;
         const bool petal = blossom && petals > 0.0f;
-        const float rate = petal ? tuning::kPetalsPerSecondPerTree * petals
-                                 : tuning::kLeavesPerSecondPerTree * leaves;
+        const TilePos tp = placed_[i].item.pos;
+        const float gust =
+            weather.gustAt({static_cast<float>(tp.x) + 0.5f, static_cast<float>(tp.y) + 0.5f});
+        const float rate = (petal ? tuning::kPetalsPerSecondPerTree * petals
+                                  : tuning::kLeavesPerSecondPerTree * leaves) *
+                           (1.0f + tuning::kGustLeaves * gust);
         if (!rng.chance(rate * dt)) continue;
         const FRect& r = placed_[i].screen;
         particles_.spawn(
             petal ? Fx::Petal : Fx::Leaf,
             {(r.x0 + r.x1) * 0.5f + rng.range(-0.5f, 0.5f) * u, r.y0 + (r.y1 - r.y0) * 0.35f},
-            {rng.range(-0.25f, 0.25f) * u, tuning::kLeafFall * u}, 2.6f, rng.range(0.0f, 6.0f));
+            {(rng.range(-0.25f, 0.25f) + lean * tuning::kLeafLean) * u, tuning::kLeafFall * u},
+            2.6f, rng.range(0.0f, 6.0f));
     }
-    // Swimmers leave a wake.
-    for (const Critter& c : critters) {
-        if (cat_.visitors[c.visitor].habitat != Habitat::Water || !c.moving) continue;
-        if (rng.chance(dt / tuning::kWakeInterval))
-            particles_.spawn(Fx::Ripple, iso_.toWorld(c.pos.x, c.pos.y), {0, 0},
+    // Mist rises at the foot of every waterfall.
+    for (const Fall& f : falls_)
+        if (rng.chance(dt * tuning::kMistPerSecond))
+            particles_.spawn(Fx::Mist,
+                             {f.foot.x + rng.range(-0.15f, 0.15f) * iso_.tileW(), f.foot.y},
+                             {lean * 0.2f * u, -0.15f * u}, tuning::kMistSeconds);
+    // Swimmers leave a wake; sleepers breathe out z's.
+    sleepTick_ += dt;
+    const bool zzz = sleepTick_ >= tuning::kZzzInterval;
+    if (zzz) sleepTick_ = 0;
+    for (const Actor& a : actors) {
+        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f) continue;
+        const ActorKind& k = cat_.kinds[a.kind];
+        if (k.move == Locomotion::Swim && a.state == ActorState::Travel &&
+            rng.chance(dt / tuning::kWakeInterval))
+            particles_.spawn(Fx::Ripple, iso_.toWorld(a.pos.x, a.pos.y), {0, 0},
                              tuning::kRippleSeconds);
+        if (zzz && k.sleepAnim != 0xFF && a.anim == k.sleepAnim && a.state == ActorState::Act &&
+            a.overlay <= 0) {
+            const Vec2 h = headOf(a);
+            particles_.spawn(Fx::Zzz, {h.x + 2, h.y + 2}, {0.1f * u, -0.3f * u}, 1.5f);
+        }
     }
     particles_.update(dt, world);
+}
+
+void Scene::heart(const Actor& a) {
+    const Vec2 h = headOf(a);
+    particles_.spawn(Fx::Heart, {h.x, h.y - 1}, {0, -0.35f * iso_.tileH()}, tuning::kHeartSeconds);
+}
+
+void Scene::rustle(Vec2 tile, Rng& rng) {
+    // Trees within a tile shake for a moment and drop two leaves (petals in spring, nothing in
+    // winter).
+    const SeasonDef* season =
+        season_ >= 0 ? &cat_.seasons[static_cast<std::size_t>(season_)] : nullptr;
+    const float u = iso_.tileH();
+    for (const std::uint32_t i : trees_) {
+        if (i >= placed_.size()) continue;
+        const Placed& pl = placed_[i];
+        const TilePos t = pl.item.pos;
+        if (std::abs(static_cast<float>(t.x) + 0.5f - tile.x) > 1.6f ||
+            std::abs(static_cast<float>(t.y) + 0.5f - tile.y) > 1.6f)
+            continue;
+        rustles_.push_back({t, now_ + tuning::kRustleSeconds});
+        const bool blossom = cat_.items[pl.item.type].sheds == Shed::Blossom;
+        const bool petal = blossom && season != nullptr && season->petals > 0;
+        if (season != nullptr && season->leaves <= 0 && !petal) continue;
+        for (int n = 0; n < 2; ++n)
+            particles_.spawn(petal ? Fx::Petal : Fx::Leaf,
+                             {(pl.screen.x0 + pl.screen.x1) * 0.5f + rng.range(-0.5f, 0.5f) * u,
+                              pl.screen.y0 + (pl.screen.y1 - pl.screen.y0) * 0.35f},
+                             {rng.range(-0.25f, 0.25f) * u, tuning::kLeafFall * u}, 2.6f,
+                             rng.range(0.0f, 6.0f));
+    }
+}
+
+void Scene::fishJump(Vec2 tile) {
+    const Vec2 w = iso_.toWorld(tile.x, tile.y);
+    particles_.spawn(Fx::FishJump, w, {0, 0}, tuning::kFishJumpSeconds);
+    particles_.spawn(Fx::Ripple, w, {0, 0}, tuning::kRippleSeconds);
+}
+
+void Scene::shootingStar(Rng& rng) {
+    star_.start = now_;
+    star_.from = {rng.range(0.15f, 0.75f), rng.range(0.05f, 0.3f)};
+    const float ang = rng.range(0.15f, 0.4f);
+    star_.dir = {std::cos(ang), std::sin(ang)};
 }
 
 void Scene::ensureTargets(int w, int h) {
@@ -499,7 +683,20 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
         alpha *= std::min(1.0f, t * 4.0f);
     }
     const std::uint32_t phase = tileHash(item.pos.x, item.pos.y) % 7;
-    const SpriteId base = baseFrames(item, slot).at(now_, def.fps, phase);
+    // Plants sway with the wind, faster as a gust passes and when something rustles them;
+    // lights and machines keep their own pace.
+    float clock = now_;
+    float fps = def.fps;
+    if (fps > 0 && !def.glow) {
+        const Vec2 c{static_cast<float>(item.pos.x) + 0.5f, static_cast<float>(item.pos.y) + 0.5f};
+        const float gust = weather_ != nullptr ? weather_->gustAt(c) : 0.0f;
+        clock = sway_ * (1.0f + tuning::kGustSway * gust);
+        if (std::ranges::any_of(rustles_, [&](const Rustle& r) { return r.tile == item.pos; })) {
+            clock = now_;
+            fps = tuning::kRustleFps;
+        }
+    }
+    const SpriteId base = baseFrames(item, slot).at(clock, fps, phase);
     const SDL_FColor c = silhouette ? SDL_FColor{0, 0, 0, alpha}
                                     : exposed(base, {tint.r, tint.g, tint.b, tint.a * alpha});
     sprite(base, anchor, c, false, pivot, scale);
@@ -518,12 +715,13 @@ void Scene::buildDynamic(const FrameParams& p) {
         dynamic_.push_back(
             {kind, index, after, tr.x0 + tr.x1 + tr.y0 + tr.y1, glowing || nearGlow(sr)});
     };
-    for (std::uint32_t i = 0; i < p.critters.size(); ++i) {
-        const Critter& c = p.critters[i];
-        const auto& def = cat_.visitors[c.visitor];
-        if (def.habitat == Habitat::Air || def.underwater) continue;
+    for (std::uint32_t i = 0; i < p.actors.size(); ++i) {
+        const Actor& a = p.actors[i];
+        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f || flying(a)) continue;
+        const int v = cat_.kinds[a.kind].visitor;
+        if (v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].underwater) continue;
         // Emissive visitors are always drawn in the glow pass.
-        insert(EntryKind::Critter, i, pointRect(c.pos), critterRect(c), def.glow);
+        insert(EntryKind::Actor, i, pointRect(a.pos), actorRect(a), glows(a));
     }
     if (p.ghost.mode == Ghost::Mode::Item) {
         const int slot = slotFor(*p.world, p.ghost.item);
@@ -537,28 +735,26 @@ void Scene::buildDynamic(const FrameParams& p) {
     });
 }
 
-void Scene::drawCritter(const Critter& c, bool silhouette) {
-    const auto& def = cat_.visitors[c.visitor];
+void Scene::drawActor(const Actor& a, bool silhouette) {
+    if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f) return;
+    const ActorKind& k = cat_.kinds[a.kind];
+    const bool glow = glows(a);
     // Emissive visitors skip the graded pass and appear, ungraded, in the glow layer.
-    if (def.glow && !silhouette) return;
-    const bool back = c.facing == Facing::Back || c.facing == Facing::BackMirrored;
-    const bool mirror = c.facing == Facing::FrontMirrored || c.facing == Facing::BackMirrored;
-    const auto anim = static_cast<std::size_t>(
-        c.moving ? (back ? CritterAnim::MoveBack : CritterAnim::MoveFront)
-                 : (back ? CritterAnim::IdleBack : CritterAnim::IdleFront));
-    const FrameSet& set = tables_.critters[c.visitor][anim];
-    const SpriteId id =
-        set.at(c.animTime, c.moving ? tuning::kCritterMoveFps : tuning::kCritterIdleFps);
-    Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
-    if (def.habitat == Habitat::Air)
-        w.y -= (c.hover + std::sin(c.animTime * 3.1f) * 0.12f) * iso_.tileH();
-    w = {std::round(w.x), std::round(w.y)};
-    const float a = std::clamp(c.alpha, 0.0f, 1.0f);
-    SDL_FColor color = silhouette && !def.glow ? SDL_FColor{0, 0, 0, a}
-                       : def.glow              ? SDL_FColor{1, 1, 1, a}
-                                               : exposed(id, {1, 1, 1, a});
+    if (glow && !silhouette) return;
+    const KindAnim& ka = tables_.kinds[a.kind][animOf(a)];
+    const bool backward = a.facing == Facing::Back || a.facing == Facing::BackMirrored;
+    const bool back = backward && !ka.back.empty();
+    // Mirrored frames cover +y and -x (plain animations, drawn facing front, too).
+    const bool mirror = a.facing == Facing::FrontMirrored || a.facing == Facing::BackMirrored;
+    const SpriteId id = (back ? ka.back : ka.front).at(a.animTime, ka.fps);
+    const Vec2 w = actorAnchor(a);
+    const float al = std::clamp(a.alpha, 0.0f, 1.0f);
+    SDL_FColor color = silhouette && !glow ? SDL_FColor{0, 0, 0, al}
+                       : glow              ? SDL_FColor{1, 1, 1, al}
+                                           : exposed(id, {1, 1, 1, al});
     // Under the water: faded and cooled.
-    if (def.underwater && !silhouette)
+    if (k.visitor >= 0 && cat_.visitors[static_cast<std::size_t>(k.visitor)].underwater &&
+        !silhouette)
         color = {color.r * tuning::kUnderwaterTint[0], color.g * tuning::kUnderwaterTint[1],
                  color.b * tuning::kUnderwaterTint[2], color.a * tuning::kUnderwaterAlpha};
     sprite(id, w, color, mirror);
@@ -567,7 +763,7 @@ void Scene::drawCritter(const Critter& c, bool silhouette) {
 void Scene::drawEntry(const FrameParams& p, const Entry& e, bool silhouette) {
     if (silhouette && !e.occludesGlow) return;
     switch (e.kind) {
-    case EntryKind::Critter: drawCritter(p.critters[e.index], silhouette); break;
+    case EntryKind::Actor: drawActor(p.actors[e.index], silhouette); break;
     case EntryKind::Ghost: {
         const int slot = slotFor(*p.world, p.ghost.item);
         drawItem(p.ghost.item, slot, tuning::kGhostAlpha, p.ghost.valid ? kWhite : kInvalidTint,
@@ -608,16 +804,12 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
         }
     }
     for (; d < dynamic_.size(); ++d) drawEntry(p, dynamic_[d], silhouette);
-    // Flyers are always above the ground clutter.
-    for (const Critter& c : p.critters) {
-        const auto& def = cat_.visitors[c.visitor];
-        if (def.habitat != Habitat::Air) continue;
-        FRect r = critterRect(c);
-        const float lift = c.hover * iso_.tileH();
-        r.y0 -= lift;
-        r.y1 -= lift;
-        if (!r.overlaps(view_) || (silhouette && !def.glow && !nearGlow(r))) continue;
-        drawCritter(c, silhouette);
+    // Flyers are always above the ground clutter (and a butterfly on her hat above her).
+    for (const Actor& a : p.actors) {
+        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f || !flying(a)) continue;
+        const FRect r = actorRect(a);
+        if (!r.overlaps(view_) || (silhouette && !glows(a) && !nearGlow(r))) continue;
+        drawActor(a, silhouette);
     }
 }
 
@@ -642,17 +834,35 @@ void Scene::drawShadows(const FrameParams& p) {
         if (t < 0.0f) continue;
         sprite(set.frames.front(), iso_.toWorld(pl.item.pos), {1, 1, 1, t < 1.0f ? t : 1.0f});
     }
-    for (const Critter& c : p.critters) {
-        const Habitat h = cat_.visitors[c.visitor].habitat;
-        if (cat_.visitors[c.visitor].underwater) continue;
-        Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
+    for (const Actor& a : p.actors) {
+        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f ||
+            (a.flags & actor_flag::kOnHat) != 0)
+            continue;
+        const ActorKind& kd = cat_.kinds[a.kind];
+        const int v = kd.visitor;
+        if (v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].underwater) continue;
+        // Something sitting on an item is in that item's shadow already.
+        if (kd.move != Locomotion::Fly && a.lift > 0.5f) continue;
+        Vec2 w = iso_.toWorld(a.pos.x, a.pos.y);
         w = {std::round(w.x), std::round(w.y)};
-        const float k = h == Habitat::Air ? 0.5f : (h == Habitat::Water ? 0.85f : 0.7f);
-        const float a = h == Habitat::Air     ? 0.45f
-                        : h == Habitat::Water ? tuning::kWaterShadowAlpha
-                                              : 1.0f;
-        sprite(atlas_.softShadow(), w, {1, 1, 1, std::clamp(c.alpha, 0.0f, 1.0f) * a}, false, w,
+        const bool air = kd.move == Locomotion::Fly;
+        const bool swim = kd.move == Locomotion::Swim;
+        const float k = air ? 0.5f : (swim ? 0.85f : 0.7f);
+        const float al = air ? 0.45f : swim ? tuning::kWaterShadowAlpha : 1.0f;
+        sprite(atlas_.softShadow(), w, {1, 1, 1, std::clamp(a.alpha, 0.0f, 1.0f) * al}, false, w,
                {k, k});
+    }
+    // Clouds slide their soft shadows over the ground; showers are darker.
+    if (p.weather != nullptr) {
+        // A round blob that fades all the way to nothing, darkened: no edge shows however large.
+        const Sprite& blob = atlas_.sprite(atlas_.lightBlob());
+        for (const WeatherCell& c : p.weather->cells()) {
+            if (c.age < 0) continue;
+            const Vec2 w = iso_.toWorld(c.centre.x, c.centre.y);
+            const float sx = c.radius * iso_.tileW() * tuning::kCloudShadowSize / blob.w;
+            const float al = c.intensity() * (c.rain ? tuning::kRainShadow : tuning::kCloudShadow);
+            sprite(atlas_.lightBlob(), w, {0, 0, 0, al}, false, w, {sx, sx * 0.5f});
+        }
     }
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, world_.texture.get()))
@@ -663,6 +873,19 @@ void Scene::drawShadows(const FrameParams& p) {
 void Scene::drawMarkers(const FrameParams& p) {
     // Placement markers and nook areas sit on the ground under everything else.
     const World& world = *p.world;
+    // Wet ground darkens, block by block, softly blending into its neighbours.
+    if (p.weather != nullptr) {
+        const auto b = static_cast<float>(tuning::kWetBlock);
+        for (int by = 0; by < p.weather->wetBlocksY(); ++by)
+            for (int bx = 0; bx < p.weather->wetBlocksX(); ++bx) {
+                const float wet = p.weather->wetBlock(bx, by);
+                if (wet < 0.02f) continue;
+                const Vec2 at =
+                    iso_.toWorld(static_cast<float>(bx) * b, static_cast<float>(by) * b);
+                sprite(tables_.tileArea, at, {0, 0, 0.05f, wet * tuning::kWetDarken}, false, at,
+                       {b, b});
+            }
+    }
     for (const Pulse& pl : pulses_) {
         const float k = (now_ - pl.start) / tuning::kNookPulseSeconds;
         drawArea(world, pl.area,
@@ -714,9 +937,11 @@ void Scene::drawParticles(bool ground) {
         case Fx::Leaf:
         case Fx::Petal:
         case Fx::Snow:
-            id = set.at(pt.age, 5.0f);
+            // Floating on water, a petal rests on one frame.
+            id = pt.landed ? set.frames.front() : set.at(pt.age, 5.0f);
             alpha = std::min(1.0f, (1.0f - k) * 3.0f);
             break;
+        case Fx::Mist: alpha = 0.7f * std::sin(k * 3.14159f); break;
         case Fx::Produce:
             // A crop, not an animation: the frame was chosen when it was spawned (as sway).
             id = set.frames[static_cast<std::size_t>(pt.sway) % set.frames.size()];
@@ -743,7 +968,7 @@ void Scene::drawLighting(const FrameParams& p) {
     const Rgb amb = p.light.ambient;
     const float glow = p.light.glow;
     const bool emissive = std::ranges::any_of(
-        p.critters, [&](const Critter& c) { return cat_.visitors[c.visitor].glow; });
+        p.actors, [&](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0 && glows(a); });
     if (glow <= 0.01f && !emissive && white_) {
         // No light pools: the light map would be one flat colour, so multiply by it directly.
         // (Through a white texel: the software renderer mishandles untextured multiply.)
@@ -770,12 +995,12 @@ void Scene::drawLighting(const FrameParams& p) {
             const float s = l.radius / blobRadius;
             sprite(atlas_.lightBlob(), l.pos, warm, false, l.pos, {s, s * 0.6f});
         }
-        for (const Critter& c : p.critters) {
-            if (!cat_.visitors[c.visitor].glow) continue;
-            Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
-            w.y -= c.hover * iso_.tileH();
-            const float pulse = 0.6f + 0.4f * std::sin(c.animTime * 4.0f);
-            sprite(atlas_.lightBlob(), w, scaled(kFireflyHalo, 0.5f * glow * pulse * c.alpha),
+        for (const Actor& a : p.actors) {
+            if ((a.flags & actor_flag::kAlive) == 0 || !glows(a)) continue;
+            const Vec2 w = actorAnchor(a);
+            const float t = fireflySync_ ? now_ * 1.6f : a.animTime;
+            const float pulse = 0.6f + 0.4f * std::sin(t * 4.0f);
+            sprite(atlas_.lightBlob(), w, scaled(kFireflyHalo, 0.5f * glow * pulse * a.alpha),
                    false, w, {0.35f, 0.3f});
         }
         batch_.flush();
@@ -789,7 +1014,7 @@ void Scene::drawLighting(const FrameParams& p) {
 void Scene::drawGlow(const FrameParams& p) {
     const float glow = p.light.glow;
     const bool emissiveVisitors = std::ranges::any_of(
-        p.critters, [&](const Critter& c) { return cat_.visitors[c.visitor].glow; });
+        p.actors, [&](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0 && glows(a); });
     if (glow <= 0.01f && !emissiveVisitors) return;
     if (!SDL_SetRenderTarget(renderer_, glow_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
@@ -798,12 +1023,14 @@ void Scene::drawGlow(const FrameParams& p) {
     blend_ = SDL_BLENDMODE_BLEND;
     drawEntries(p, true);
     blend_ = SDL_BLENDMODE_ADD;
-    for (const Critter& c : p.critters) {
-        if (!cat_.visitors[c.visitor].glow) continue;
-        Vec2 w = iso_.toWorld(c.pos.x, c.pos.y);
-        w.y -= (c.hover + std::sin(c.animTime * 3.1f) * 0.12f) * iso_.tileH();
-        const float pulse = 0.55f + 0.45f * std::sin(c.animTime * 4.0f);
-        sprite(atlas_.lightBlob(), w, scaled(kFireflyCore, 0.8f * pulse * c.alpha), false, w,
+    for (const Actor& a : p.actors) {
+        if ((a.flags & actor_flag::kAlive) == 0 || !glows(a)) continue;
+        const Vec2 w = actorAnchor(a);
+        // In unison (an event) or each to its own rhythm.
+        const float t = fireflySync_ ? now_ * 1.6f : a.animTime;
+        const float pulse =
+            fireflySync_ ? std::max(0.0f, std::sin(t * 4.0f)) : 0.55f + 0.45f * std::sin(t * 4.0f);
+        sprite(atlas_.lightBlob(), w, scaled(kFireflyCore, 0.8f * pulse * a.alpha), false, w,
                {0.12f, 0.12f});
     }
     batch_.flush();
@@ -831,6 +1058,10 @@ void Scene::draw(const FrameParams& p, SDL_Texture* out) {
     view_ = {origin.x, origin.y, origin.x + static_cast<float>(targetW_) * px,
              origin.y + static_cast<float>(targetH_) * px};
     night_ = std::clamp(p.light.night, 0.0f, 1.0f);
+    actors_ = p.actors;
+    resident_ = p.resident;
+    map_ = p.world;
+    fireflySync_ = p.fireflySync;
 
     const TileRect vis = visibleTiles(*p.camera, p.screen, world);
     if (world.revision() != regionRevision_ || !region_.contains(vis)) {
@@ -855,12 +1086,15 @@ void Scene::draw(const FrameParams& p, SDL_Texture* out) {
     drawMarkers(p);
     drawParticles(true);
     // Swimmers under the water go below everything that floats on it.
-    for (const Critter& c : p.critters)
-        if (cat_.visitors[c.visitor].underwater) drawCritter(c, false);
+    for (const Actor& a : p.actors) {
+        const int v = cat_.kinds[a.kind].visitor;
+        if (v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].underwater) drawActor(a, false);
+    }
     drawEntries(p, false);
     drawParticles(false);
     batch_.flush();
     drawLighting(p);
+    drawMoths(p);
     drawGlow(p);
 
     if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("render: %s", SDL_GetError());
@@ -885,6 +1119,7 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
     static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
+    drawSky(p, scale);
     // Whole-number magnification stays nearest-neighbour; anything else (mid-transition, or a
     // blurred copy) is filtered.
     const bool whole = std::abs(k - std::round(k)) < 1e-3f;
@@ -898,6 +1133,66 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
                   (xf_.origin.y - topLeft_.y) * s * scale.y, tw * k * scale.x, th * k * scale.y},
         {0, 0, tw / static_cast<float>(world_.w), th / static_cast<float>(world_.h)}, kWhite);
     batch_.flush();
+}
+
+void Scene::drawMoths(const FrameParams& p) {
+    // Two moths circle each lamp head at night, lit by it (drawn after the night grade).
+    if (p.light.night < 0.3f || moths_.empty()) return;
+    const FrameSet& set = tables_.fx[static_cast<std::size_t>(Fx::Moth)];
+    const float r = tuning::kMothRadius * iso_.tileW();
+    const float a = std::clamp((p.light.night - 0.3f) * 2.0f, 0.0f, 1.0f);
+    blend_ = SDL_BLENDMODE_BLEND;
+    for (const Vec2& head : moths_) {
+        const float phase =
+            static_cast<float>(tileHash(static_cast<int>(head.x), static_cast<int>(head.y)) % 628) *
+            0.01f;
+        for (int k = 0; k < 2; ++k) {
+            const float ang = now_ * (2.2f + 0.4f * static_cast<float>(k)) + phase +
+                              3.14159f * static_cast<float>(k);
+            const Vec2 at{std::round(head.x + std::cos(ang) * r),
+                          std::round(head.y + std::sin(ang) * r * 0.6f)};
+            sprite(set.at(now_ + static_cast<float>(k) * 0.1f, 12.0f), at,
+                   {tuning::kMothLit, tuning::kMothLit, tuning::kMothLit, a});
+        }
+    }
+    batch_.flush();
+}
+
+void Scene::drawSky(const FrameParams& p, Vec2 scale) {
+    // Things in the sky behind the island, in window space: the rainbow and shooting stars.
+    const float s = p.camera->scale();
+    const Xform win{topLeft_, s * scale.x, SDL_SCALEMODE_NEAREST};
+    if (p.rainbow > 0.0f && tables_.rainbow && p.world != nullptr) {
+        const TileRect lb = p.world->landBounds();
+        const Vec2 c = iso_.toWorld(static_cast<float>(lb.x0 + lb.x1) * 0.5f,
+                                    static_cast<float>(lb.y0 + lb.y1) * 0.5f);
+        const Vec2 top = iso_.toWorld(static_cast<float>(lb.x0), static_cast<float>(lb.y0));
+        // Its feet rest behind the island's middle; integer-scaled with the island.
+        const Vec2 at{c.x, top.y + (c.y - top.y) * tuning::kRainbowDrop};
+        const float k = tuning::kRainbowScale;
+        putSprite(batch_, atlas_.sprite(*tables_.rainbow), at, win, {1, 1, 1, p.rainbow},
+                  SDL_BLENDMODE_BLEND, false, at, {k, k});
+    }
+    if (star_.start >= 0) {
+        const float t = (now_ - star_.start) / tuning::kStarSeconds;
+        if (t >= 1.0f || p.light.night < 0.5f) {
+            star_.start = -1;
+        } else {
+            // A streak along a shallow diagonal, bright head first, fading as it goes.
+            const float w = p.screen.x * scale.x;
+            const float h = p.screen.y * scale.y;
+            const float travel = w * tuning::kStarTravel * t;
+            const Vec2 px{star_.from.x * w + star_.dir.x * travel,
+                          star_.from.y * h + star_.dir.y * travel};
+            const Xform screen{{0, 0}, 1.0f, SDL_SCALEMODE_NEAREST};
+            const float k = std::max(1.0f, std::round(s * scale.x));
+            const float a = std::sin(t * 3.14159f) * p.light.night;
+            putSprite(
+                batch_,
+                atlas_.sprite(tables_.fx[static_cast<std::size_t>(Fx::StarStreak)].frames.front()),
+                px, screen, {1, 1, 1, a}, SDL_BLENDMODE_ADD, false, px, {k, k});
+        }
+    }
 }
 
 SceneStats Scene::stats() const {

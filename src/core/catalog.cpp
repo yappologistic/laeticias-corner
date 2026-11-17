@@ -66,6 +66,13 @@ void checkUnique(const std::vector<Def>& defs, const char* what) {
     }
 }
 
+int intern(std::vector<std::string>& names, const std::string& s) {
+    const auto it = std::ranges::find(names, s);
+    if (it != names.end()) return static_cast<int>(it - names.begin());
+    names.push_back(s);
+    return static_cast<int>(names.size()) - 1;
+}
+
 // Maps a catalog sound name to the sfx file the engine plays for it.
 std::string soundFile(const std::string& name) {
     if (name == "splash" || name == "paint") return "sfx/" + name + ".wav";
@@ -190,6 +197,7 @@ public:
             d.water = d.id == "water";
             d.variants = getOr(t, "variants", 1, ctx);
             d.fps = getOr(t, "fps", 0.0f, ctx);
+            d.paved = getOr(t, "paved", false, ctx);
             if (d.variants < 1) fail(ctx + ": variants must be >= 1");
             if (!d.base && getOr(t, "edges", 0, ctx) != 16)
                 fail(ctx + ": overlay terrain must declare 16 edge masks");
@@ -214,26 +222,118 @@ public:
         cat_.conditions.setBaseTerrain(cat_.baseTerrain);
     }
 
-    void slots(const json& list, const ItemDef& d, const std::string& ctx) const {
+    // Per-variant values: one for all, or {"r0": v, ...} listing every variant.
+    template <typename T, typename F>
+    std::vector<T> perVariant(const json& j, const ItemDef& d, const std::string& ctx, F&& read) {
+        std::vector<T> out;
+        if (!j.is_object()) {
+            out.assign(static_cast<std::size_t>(d.count), read(j));
+            return out;
+        }
+        for (int v = 0; v < d.count; ++v) {
+            const std::string key = "r" + std::to_string(v);
+            if (!j.contains(key)) fail(ctx + ": '" + key + "' is missing (list every variant)");
+            out.push_back(read(j[key]));
+        }
+        if (j.size() != out.size()) fail(ctx + ": keys are the item's variants r0..");
+        return out;
+    }
+
+    void slots(const json& list, ItemDef& d, const std::string& ctx) {
         if (!list.is_array()) fail(ctx + ": slots must be a list");
         for (const auto& s : list) {
             const std::string sctx = ctx + " slot";
-            (void)get<std::string>(s, "id", sctx);
-            (void)get<std::string>(s, "kind", sctx);
+            SlotDef slot;
+            const auto name = get<std::string>(s, "id", sctx);
+            const auto taken = std::ranges::any_of(d.slots, [&](const SlotDef& o) {
+                return cat_.slotNames[static_cast<std::size_t>(o.name)] == name;
+            });
+            if (taken) fail(sctx + ": '" + name + "' is duplicated");
+            slot.name = intern(cat_.slotNames, name);
+            slot.kind = intern(cat_.slotKinds, get<std::string>(s, "kind", sctx));
             const auto where = get<std::string>(s, "where", sctx);
-            if (where != "on" && where != "beside" && where != "tile")
+            if (where == "on")
+                slot.where = SlotWhere::On;
+            else if (where == "beside")
+                slot.where = SlotWhere::Beside;
+            else if (where == "tile")
+                slot.where = SlotWhere::Tile;
+            else
                 fail(sctx + ": 'where' must be on, beside or tile");
-            if (getOr(s, "cap", 1, sctx) < 1) fail(sctx + ": cap must be at least 1");
-            if (where == "tile") {
-                const json& tiles = section(s, "tiles", sctx.c_str());
-                if (!tiles.is_object() || tiles.empty()) fail(sctx + ": tiles per rotation");
-                for (const auto& [k, v] : tiles.items()) {
-                    if (k.size() < 2 || k[0] != 'r' || std::stoi(k.substr(1)) >= d.count)
-                        fail(sctx + ": tiles key '" + k + "' is not a variant of the item");
-                    (void)get<std::vector<std::vector<int>>>(tiles, k.c_str(), sctx);
+            slot.cap = getOr(s, "cap", 1, sctx);
+            if (slot.cap < 1 || slot.cap > 8) fail(sctx + ": cap must be within 1..8");
+            const auto facing = getOr(s, "facing", std::string("free"), sctx);
+            if (facing == "rotation")
+                slot.facing = SlotFacing::Rotation;
+            else if (facing == "item")
+                slot.facing = SlotFacing::Item;
+            else if (facing == "out")
+                slot.facing = SlotFacing::Out;
+            else if (facing != "free")
+                fail(sctx + ": facing is rotation, item, out or free");
+            const auto points = [&](const json& j, float add) {
+                std::vector<Vec2> pts;
+                if (!j.is_array() || j.empty()) fail(sctx + ": a list of [x, y] points");
+                for (const auto& pt : j) {
+                    if (!pt.is_array() || pt.size() != 2 || !pt[0].is_number() ||
+                        !pt[1].is_number())
+                        fail(sctx + ": points are [x, y]");
+                    pts.push_back({pt[0].get<float>() + add, pt[1].get<float>() + add});
+                }
+                return pts;
+            };
+            if (slot.where == SlotWhere::Tile) {
+                // Whole tiles: actors stand in their middle.
+                slot.spots = perVariant<std::vector<Vec2>>(
+                    section(s, "tiles", sctx.c_str()), d, sctx + " tiles",
+                    [&](const json& j) { return points(j, 0.5f); });
+            } else if (s.contains("spots")) {
+                if (slot.where != SlotWhere::On) fail(sctx + ": spots belong to 'on' slots");
+                slot.spots = perVariant<std::vector<Vec2>>(
+                    s["spots"], d, sctx + " spots", [&](const json& j) { return points(j, 0.0f); });
+            } else if (slot.where == SlotWhere::On) {
+                for (int v = 0; v < d.count; ++v) {
+                    const bool turned = d.layout == Layout::Rotate && v % 2 == 1;
+                    const int w = turned ? d.footprintH : d.footprintW;
+                    const int h = turned ? d.footprintW : d.footprintH;
+                    slot.spots.push_back(
+                        {{static_cast<float>(w) * 0.5f, static_cast<float>(h) * 0.5f}});
                 }
             }
+            if (slot.where != SlotWhere::Beside)
+                for (const auto& pts : slot.spots)
+                    if (std::cmp_less(pts.size(), slot.cap) && pts.size() > 1)
+                        fail(sctx + ": fewer spots than its cap");
+            if (s.contains("lift"))
+                slot.lift = perVariant<float>(s["lift"], d, sctx + " lift",
+                                              [&](const json& j) { return j.get<float>(); });
+            else if (slot.where == SlotWhere::On && !d.perch.empty())
+                for (const int p : d.perch) slot.lift.push_back(static_cast<float>(p));
+            if (s.contains("face")) {
+                slot.face =
+                    perVariant<std::uint8_t>(s["face"], d, sctx + " face", [&](const json& j) {
+                        static constexpr std::string_view kDirs[] = {"+x", "+y", "-x", "-y"};
+                        const auto it = std::ranges::find(kDirs, j.get<std::string>());
+                        if (it == std::end(kDirs)) fail(sctx + ": face is +x, +y, -x or -y");
+                        return static_cast<std::uint8_t>(it - std::begin(kDirs));
+                    });
+            } else if (slot.facing == SlotFacing::Rotation) {
+                // R2.1: r0 faces +x, r1 +y, r2 -x, r3 -y.
+                for (int v = 0; v < d.count; ++v)
+                    slot.face.push_back(static_cast<std::uint8_t>(v % 4));
+            }
             if (s.contains("states")) (void)get<std::vector<std::string>>(s, "states", sctx);
+            if (s.contains("holds")) {
+                const json& h = s["holds"];
+                if (!h.is_object() || h.size() != 1) fail(sctx + ": holds one kind of goods");
+                const auto it = std::ranges::find(cat_.goods, h.begin().key(), &GoodsDef::id);
+                if (it == cat_.goods.end())
+                    fail(sctx + ": unknown goods '" + h.begin().key() + "'");
+                slot.holds = static_cast<int>(it - cat_.goods.begin());
+                slot.holdsMax = h.begin().value().get<int>();
+                if (slot.holdsMax < 1 || slot.holdsMax > 3) fail(sctx + ": holds 1 to 3");
+            }
+            d.slots.push_back(std::move(slot));
         }
     }
 
@@ -301,6 +401,7 @@ public:
                     t = static_cast<int>(cat_.tags.size()) - 1;
                 }
                 d.tags.push_back(*t);
+                d.crossing = d.crossing || tag == "crossing";
             }
             if (it.contains("perch")) {
                 const json& p = it["perch"];
@@ -309,6 +410,10 @@ public:
                     (p.is_array() && std::cmp_equal(p.size(), d.count) &&
                      std::ranges::all_of(p, [](const json& v) { return v.is_number_integer(); }));
                 if (!ok) fail(ctx + ": perch is a pixel height, or one per variant");
+                if (p.is_array())
+                    d.perch = p.get<std::vector<int>>();
+                else
+                    d.perch.assign(static_cast<std::size_t>(d.count), p.get<int>());
             }
             if (it.contains("season_looks"))
                 d.seasonLooks = seasonMask(it["season_looks"], ctx + " season_looks");
@@ -333,17 +438,17 @@ public:
                 d.clickSound = "sfx/" + get<std::string>(it, "click_sound", ctx) + ".wav";
                 requireSfx(d.clickSound, ctx);
             }
-            if (it.contains("slots")) slots(it["slots"], d, ctx);
             d.shelter = getOr(it, "shelter", 0, ctx);
             if (d.shelter < 0 || d.shelter > 8) fail(ctx + ": shelter must be within 0..8");
+            if (it.contains("slots")) slots(it["slots"], d, ctx);
             cat_.items.push_back(std::move(d));
         }
         checkUnique(cat_.items, "item");
         if (cat_.items.size() > 60000) fail("items: too many entries");
     }
 
-    // Activity data drives visitor behaviour in a later engine round; validated now so the
-    // content stays correct.
+    // Activities are read as actor routines (core/actor_data.cpp); this checks what that
+    // reading takes for granted.
     void activities(const json& list, const std::string& ctx) const {
         if (!list.is_array() || list.empty()) fail(ctx + ": activities must be a non-empty list");
         std::vector<std::string> ids;
@@ -508,6 +613,14 @@ public:
             d.growth = getOr(s, "growth", 1.0f, ctx);
             if (d.growth < 0) fail(ctx + ": growth must be >= 0");
             d.line = get<std::string>(s, "line", ctx);
+            if (s.contains("climate")) {
+                const json& c = s["climate"];
+                d.showers = getOr(c, "showers", 0.0f, ctx);
+                d.clouds = getOr(c, "clouds", 0.0f, ctx);
+                d.wind = getOr(c, "wind", 0.3f, ctx);
+                if (d.showers < 0 || d.clouds < 0 || d.wind < 0 || d.wind > 1)
+                    fail(ctx + ": climate showers and clouds >= 0, wind within 0..1");
+            }
             cat_.seasonDays.push_back(d.days);
             cat_.seasons.push_back(std::move(d));
         }
@@ -609,6 +722,7 @@ public:
         ResidentDef& d = cat_.resident;
         d.id = get<std::string>(r, "id", "resident");
         const std::string ctx = "resident '" + d.id + "'";
+        d.enabled = getOr(r, "enabled", true, ctx);
         d.name = get<std::string>(r, "name", ctx);
         d.blurb = get<std::string>(r, "blurb", ctx);
         for (const auto& v : get<std::vector<std::string>>(r, "voice", ctx)) {
@@ -619,17 +733,124 @@ public:
         if (!lines.is_object() || lines.empty()) fail(ctx + ": lines by context");
         for (const auto& [key, list] : lines.items()) {
             if (!list.is_array() || list.empty()) fail(ctx + ": lines '" + key + "' is empty");
-            for (const auto& l : list)
+            std::vector<std::string> texts;
+            for (const auto& l : list) {
                 if (!l.is_string() || l.get<std::string>().size() > kMaxLine)
                     fail(ctx + ": line in '" + key + "' is not text of at most 52 characters");
+                texts.push_back(l.get<std::string>());
+            }
+            d.contexts.push_back(key);
+            d.lines.push_back(std::move(texts));
         }
-        // Her day as actor data is read by the actor system (a later engine round).
-        for (const char* key : {"schedule", "interrupts"})
-            if (!section(r, key, ctx.c_str()).is_array())
-                fail(ctx + ": '" + key + "' must be a list");
-        if (!section(r, "routines", ctx.c_str()).is_object())
-            fail(ctx + ": 'routines' is an object");
         if (cat_.findVisitor(d.id)) fail(ctx + ": shares an id with a visitor");
+    }
+
+    void goods(const json& root) {
+        for (const auto& g : getOr(root, "goods", json::array(), "catalog")) {
+            GoodsDef d;
+            d.id = get<std::string>(g, "id", "goods");
+            d.name = get<std::string>(g, "name", "goods '" + d.id + "'");
+            cat_.goods.push_back(std::move(d));
+        }
+        checkUnique(cat_.goods, "goods");
+    }
+
+    void events(const json& root, std::span<const std::string> nookIds) {
+        static constexpr std::pair<std::string_view, EventShow> kShows[] = {
+            {"rainbow", EventShow::Rainbow},
+            {"shooting_star", EventShow::ShootingStar},
+            {"owl_call", EventShow::OwlCall},
+            {"rustle", EventShow::Rustle},
+            {"gust", EventShow::Gust},
+            {"fish_jump", EventShow::FishJump},
+            {"frog_chorus", EventShow::FrogChorus},
+            {"chorus", EventShow::Chorus},
+            {"firefly_sync", EventShow::FireflySync},
+            {"smoke", EventShow::Smoke},
+            {"season", EventShow::Season}};
+        static constexpr std::pair<std::string_view, EventOn> kTriggers[] = {
+            {"window", EventOn::Window}, {"hours", EventOn::Hours},
+            {"rain", EventOn::Rain},     {"rain_stop", EventOn::RainStop},
+            {"placed", EventOn::Placed}, {"reactive", EventOn::Reactive},
+            {"cook", EventOn::Cook},     {"season", EventOn::Season}};
+        for (const auto& e : getOr(root, "events", json::array(), "catalog")) {
+            EventDef d;
+            d.id = get<std::string>(e, "id", "event");
+            const std::string ctx = "event '" + d.id + "'";
+            const auto show = get<std::string>(e, "show", ctx);
+            const auto trig = get<std::string>(e, "trigger", ctx);
+            bool found = false;
+            for (const auto& [n, v] : kShows)
+                if (n == show) {
+                    d.show = v;
+                    found = true;
+                }
+            if (!found) fail(ctx + ": unknown show '" + show + "'");
+            found = false;
+            for (const auto& [n, v] : kTriggers)
+                if (n == trig) {
+                    d.on = v;
+                    found = true;
+                }
+            if (!found) fail(ctx + ": unknown trigger '" + trig + "'");
+            if (e.contains("time")) {
+                d.phases = 0;
+                phases(e["time"], ctx);
+                for (const auto& p : e["time"])
+                    d.phases |= static_cast<std::uint8_t>(
+                        1u << (std::ranges::find(kPhaseIds, p.get<std::string>()) -
+                               kPhaseIds.begin()));
+            }
+            if (e.contains("seasons")) d.seasons = seasonMask(e["seasons"], ctx);
+            if (e.contains("weather")) {
+                const auto w = get<std::string>(e, "weather", ctx);
+                if (w != "clear" && w != "rain") fail(ctx + ": weather is clear or rain");
+                d.weather = w == "rain" ? 1 : 0;
+            }
+            if (e.contains("when")) d.when = cat_.conditions.compile(e["when"], cat_, nookIds, ctx);
+            d.mean = getOr(e, "mean", 0.0f, ctx);
+            const auto pair = [&](const char* key, float& a, float& b) {
+                if (!e.contains(key)) return;
+                const json& v = e[key];
+                if (v.is_number()) {
+                    a = b = v.get<float>();
+                    return;
+                }
+                const auto r = get<std::vector<float>>(e, key, ctx);
+                if (r.size() != 2 || r[0] < 0 || r[1] < r[0])
+                    fail(ctx + ": '" + key + "' is [min, max]");
+                a = r[0];
+                b = r[1];
+            };
+            pair("every", d.every0, d.every1);
+            pair("duration", d.dur0, d.dur1);
+            if (d.on == EventOn::Window && d.mean <= 0 && d.every1 <= 0)
+                fail(ctx + ": a window event needs 'mean' or 'every'");
+            if (d.on == EventOn::Hours) {
+                const auto h = get<std::vector<float>>(e, "hours", ctx);
+                if (h.size() != 2) fail(ctx + ": hours [from, to] as game hours");
+                d.from = h[0];
+                d.to = h[1];
+            }
+            d.cooldown = getOr(e, "cooldown", 0.0f, ctx);
+            d.daily = getOr(e, "daily", false, ctx);
+            d.minRain = getOr(e, "min_rain", 0.0f, ctx);
+            if (d.on == EventOn::Placed) {
+                const json& n = section(e, "near", ctx.c_str());
+                const auto tag = cat_.findTag(get<std::string>(n, "tag", ctx));
+                if (!tag) fail(ctx + ": unknown tag");
+                d.nearTag = *tag;
+                d.within = getOr(n, "within", 1.0f, ctx);
+            }
+            if (e.contains("sfx")) {
+                d.sfx = "sfx/" + get<std::string>(e, "sfx", ctx) + ".wav";
+                requireSfx(d.sfx, ctx);
+            }
+            d.gain = getOr(e, "gain", 1.0f, ctx);
+            if (e.contains("who")) d.who = visitor(get<std::string>(e, "who", ctx), ctx);
+            cat_.events.push_back(std::move(d));
+        }
+        checkUnique(cat_.events, "event");
     }
 
     void wishes(const json& root, std::span<const std::string> nookIds) {
@@ -710,8 +931,9 @@ public:
                     if (d.rareRate.back().count < 1) fail(ctx + ": rare_rate mul must be >= 1");
                 } else if (key == "prefer") {
                     const auto who = get<std::string>(v, "who", ctx);
-                    if (who != cat_.resident.id) (void)visitor(who, ctx);
-                    (void)get<std::string>(v, "activity", ctx);
+                    const int w = who == cat_.resident.id ? -1 : visitor(who, ctx);
+                    d.prefer.emplace_back(
+                        w, intern(cat_.activityNames, get<std::string>(v, "activity", ctx)));
                 } else if (key == "fx") {
                     (void)get<std::string>(v, "name", ctx);
                     if (v.contains("seasons")) (void)seasonMask(v["seasons"], ctx);
@@ -796,6 +1018,7 @@ public:
         }
         checkUnique(cat_.categories, "category");
         seasons(root);
+        goods(root);
         items(root);
         visitors(root);
         frames(root);
@@ -820,7 +1043,9 @@ public:
         wishes(root, nookIds);
         nooks(root, nookIds);
         stems(root, nookIds);
+        events(root, nookIds);
         attractors();
+        compileActors(root, cat_);
     }
 
 private:
@@ -857,6 +1082,10 @@ std::optional<int> Catalog::findTag(std::string_view id) const {
     const auto it = std::ranges::find(tags, id);
     if (it == tags.end()) return std::nullopt;
     return static_cast<int>(it - tags.begin());
+}
+int ResidentDef::context(std::string_view c) const {
+    const auto it = std::ranges::find(contexts, c);
+    return it == contexts.end() ? -1 : static_cast<int>(it - contexts.begin());
 }
 bool Catalog::hasTag(int item, std::string_view tag) const {
     const auto t = findTag(tag);

@@ -6,17 +6,22 @@
 #include "app/script.hpp"
 #include "app/window_state.hpp"
 #include "audio/mixer.hpp"
+#include "core/actors.hpp"
 #include "core/autosave.hpp"
 #include "core/catalog.hpp"
 #include "core/clock.hpp"
 #include "core/edit.hpp"
+#include "core/events.hpp"
+#include "core/lively.hpp"
 #include "core/notes.hpp"
 #include "core/progress.hpp"
 #include "core/progression.hpp"
 #include "core/rng.hpp"
 #include "core/save.hpp"
+#include "core/speech.hpp"
 #include "core/tuning.hpp"
 #include "core/visitors.hpp"
+#include "core/weather.hpp"
 #include "core/world.hpp"
 #include "platform/batch.hpp"
 #include "platform/sdl_ptr.hpp"
@@ -119,6 +124,30 @@ private:
     [[nodiscard]] Item ghostItem(TilePos hover) const;
     [[nodiscard]] Ghost ghost() const;
     [[nodiscard]] bool night() const;
+    // Life (actors, weather, events, speech): app.cpp's second half lives in app_life.cpp.
+    [[nodiscard]] ActorEnv actorEnv() const;
+    void updateLife(float dt);
+    void handleActorEvents();
+    void handleWorldEvents();
+    void refreshNooks();
+    // The weather where the camera looks (sky, sound, the conditions' `weather`).
+    [[nodiscard]] bool raining() const;
+    [[nodiscard]] float rainHere() const;
+    [[nodiscard]] Vec2 viewTile() const;
+    void cycleWeather();
+    // A sound placed in the stereo field by where its source is on screen, quieter far away;
+    // the same sound twice within kMergeSeconds plays once, and busy moments drop extras.
+    void playAt(std::string_view file, float gain, Vec2 tile, bool jitter = false);
+    [[nodiscard]] float distanceGain(Vec2 tile) const;
+    [[nodiscard]] float panOf(Vec2 tile) const;
+    // The resident speaks (a bubble, if she is on screen, and one of her murmurs).
+    bool speak(int context, SpeechWeight weight);
+    bool speakText(std::string_view text, SpeechWeight weight);
+    [[nodiscard]] bool residentOnScreen() const;
+    // Something was placed, moved or removed over `rect` (type -1: water painted, -2: removed).
+    void disturbed(TileRect rect, int type, bool fresh);
+    [[nodiscard]] std::optional<int> actorUnder(Vec2 px) const;
+    [[nodiscard]] int moversInView() const;
     // Chunk-aligned area around the view where critters live.
     [[nodiscard]] TileRect activeArea() const;
     void buildThumbs();
@@ -136,6 +165,8 @@ private:
     // Benchmark (app_bench.cpp)
     int runBench();
     void fillBenchWorld();
+    // The soak run: busy play for opts_.soak seconds, memory checked to stay flat.
+    int runSoak();
 
     Options opts_;
     fs::path assets_;
@@ -144,10 +175,35 @@ private:
     World world_;
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
-    Visitors visitors_;
-    std::vector<VisitorGate> gates_; // per visitor, from the progress loop
+    std::uint64_t seed_; // the game's one seed; every random stream derives from it
     Rng rng_;
-    bool rain_ = false;
+    Actors actors_;
+    std::vector<VisitorGate> gates_; // per visitor, from the progress loop
+    Weather weather_;
+    EventScheduler events_;
+    Speech speech_;
+    LivelyProbe lively_;
+    std::vector<PreferArea> prefer_; // nook areas that weigh what actors choose
+    std::vector<NookPlace> nookPlaces_;
+    std::uint64_t nookRevision_ = ~0ULL;
+    std::vector<std::uint8_t> nookSeen_; // nookHere when the places were gathered
+    struct Played {
+        int sfx;
+        double at;
+    };
+    std::vector<Played> recentSounds_; // positional one-shots, for merging and the budget
+    double idleLineAt_ = 0;            // when she may next say an idle line
+    double livelyAt_ = 0;              // next liveliness sample
+    // Per-system times of the last step (ms), kept measurable for the bench and a profiler.
+    double actorMs_ = 0;    // actors
+    double lifeMs_ = 0;     // weather, events, speech and sound around them
+    double progressMs_ = 0; // conditions, wishes, nooks, rare visitors
+    int ripeDay_ = -1;      // the day a bed first ripened (her "something's ripe" line)
+    double ripeSince_ = -1; // when, in play seconds
+    bool rainWas_ = false;  // rain at the view, last step
+    int fallCount_ = 0;     // water tiles at the rims (the waterfall's bed)
+    Vec2 fallCentre_;       // their middle, in tiles
+    std::uint64_t fallRevision_ = ~0ULL;
     bool muted_ = false;
     Progress progress_;
     Progression progression_;

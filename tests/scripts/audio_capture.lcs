@@ -1,5 +1,7 @@
 # Drives tuned placement notes, a drag-paint, the first wish (its melody stem joins on a bar
-# line and fades in), a mute toggle and a day/night crossfade while the mix is captured.
+# line and fades in), a mute toggle and a day/night crossfade while the mix is captured; then
+# the positional layers: water reaching the rim (the waterfall's bed, panned toward it), hens
+# calling where they are, rain arriving and leaving, and the camera moving across them.
 set unlock all
 set clock day
 click ui:build
@@ -33,4 +35,15 @@ click ui:clock
 click ui:clock
 wait 110
 expect phase night
+set clock day
+paint water @37,30 @39,32
+place coop @24,30 0
+set camera 38 31 2
+wait 120
+set camera 24 30 2
+wait 120
+set weather rain
+wait 120
+set weather natural
+wait 120
 quit

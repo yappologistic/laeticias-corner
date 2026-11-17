@@ -1,0 +1,23 @@
+# The rule of thumb on a busy afternoon: enough moving with purpose, something new every
+# minute, never more than the caps (home corner: 3 to 20 movers, 1 to 3 happenings a minute).
+set unlock all
+set season summer
+set clock day
+set land 1
+place cottage @32,30 0
+place coop @26,32 0
+place beehive @36,31 0
+place flowers_red @34,28
+place flowers_white @35,28
+place flowers_violet @36,28
+place flowers_red @36,29
+place planter @24,33 0
+place planter @25,33 1
+place campfire @30,36 0
+set camera 30 30 1
+fast 15
+set lively reset
+fast 60
+expect lively 3 20 1 3 0.9
+shot shots/lively.png
+quit

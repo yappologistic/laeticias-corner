@@ -35,7 +35,9 @@ enum class CondKind : std::uint8_t {
     Visitor,
     Seen,
     Nook,
-    Progress
+    Progress,
+    Home,          // the actor has a home item (the resident: a cottage)
+    HarvestedToday // something was picked today
 };
 
 // The counters a `progress` term can name, in this order.
@@ -80,6 +82,9 @@ struct CondFacts {
     std::span<const std::uint8_t> seen;     // per visitor
     std::span<const std::uint8_t> nookHere; // per nook: an instance exists now
     Counters counters{};
+    bool home = false;
+    bool harvestedToday = false;
+    bool residentAbout = true; // she can give a wish now (not asleep or indoors)
     // Waiting mode (§3.3): time, season and weather terms count as true.
     bool waiting = false;
 };

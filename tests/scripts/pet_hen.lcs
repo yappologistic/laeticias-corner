@@ -1,0 +1,13 @@
+# Clicking a hen pets it: a heart rises, it pecks, and it will not be petted again at once.
+set unlock all
+set season summer
+set clock day
+place coop @30,31 0
+set camera 30 31 3
+fast 15 actor hen any
+fast 2
+click actor:hen
+wait 6
+expect actor hen peck
+shot shots/pet_hen.png
+quit

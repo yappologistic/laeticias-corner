@@ -277,8 +277,9 @@ TEST_CASE("thumbnails fall back to the placeholder instead of crashing") {
     t.items.resize(3);
     t.items[0].base = {FrameSet{{5}}};
     t.items[1].base = {FrameSet{}}; // missing art
-    t.critters.resize(1);
-    t.critters[0][static_cast<std::size_t>(CritterAnim::IdleFront)].frames = {6};
+    t.kinds.resize(1);
+    t.kinds[0].resize(2);
+    t.kinds[0][1].front.frames = {6};
 
     CHECK(thumbnail(t, Thumb::Terrain, 0) == 3);
     CHECK(thumbnail(t, Thumb::Terrain, 1) == 4);
@@ -722,7 +723,7 @@ TEST_CASE("first-launch framing shows the open corner clear of the interface at 
     const Catalog& c = test::catalog();
     const Iso iso = c.iso();
     const World world(c);
-    Visitors vis(c);
+    Actors vis(c, 1);
     for (const Vec2 screen : {Vec2{960, 600}, Vec2{1280, 800}, Vec2{1920, 1080}, Vec2{2560, 1440},
                               Vec2{3840, 2160}, Vec2{1600, 1200}}) {
         CAPTURE(screen.x);
@@ -753,7 +754,7 @@ TEST_CASE("first-launch framing shows the open corner clear of the interface at 
 TEST_CASE("the toast and the hint line stop the pointer; small windows keep docks apart") {
     UiFixture ui;
     const Catalog& c = test::catalog();
-    Visitors vis(c);
+    Actors vis(c, 1);
     for (const Vec2 screen : {Vec2{320, 240}, Vec2{640, 400}, Vec2{960, 600}, Vec2{1280, 800}}) {
         CAPTURE(screen.x);
         REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
@@ -805,7 +806,7 @@ TEST_CASE("the toast and the hint line stop the pointer; small windows keep dock
 TEST_CASE("the drawer scrolls to tiles off its page and shows row arrows") {
     UiFixture ui;
     const Catalog& c = test::catalog();
-    Visitors vis(c);
+    Actors vis(c, 1);
     REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
     HudModel m;
     m.cat = &c;
@@ -887,6 +888,14 @@ TEST_CASE("capture: the mix has no clipping and no clicks") {
     }
     CHECK(peak <= tuning::kLimiterCeiling + 1e-4f); // never reaches full scale
     CHECK(energy > 0);                              // something was audible
+    // Positional layers lean left or right: the two channels are not the same signal.
+    double left = 0;
+    double right = 0;
+    for (std::size_t i = 0; i + 1 < s->size(); i += 2) {
+        left += static_cast<double>((*s)[i]) * (*s)[i];
+        right += static_cast<double>((*s)[i + 1]) * (*s)[i + 1];
+    }
+    CHECK(std::abs(left - right) > 0.01 * (left + right));
     // A click is a jump between neighbouring samples far beyond the local motion of the signal.
     constexpr std::size_t kWindow = 512;
     const std::size_t frames = s->size() / 2;
