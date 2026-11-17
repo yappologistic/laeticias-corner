@@ -159,6 +159,12 @@ add_test(NAME bench
 add_test(NAME bench_world
   COMMAND laeticias-corner --bench --renderer opengl --size 1920x1080 --seed 1 --frames 240
           --map 1024x512 --density 0.6 --save-dir "${LC_SCRATCH}/save_bench")
-set_tests_properties(bench bench_world PROPERTIES ENVIRONMENT "${LC_RUN_ENV}" SKIP_RETURN_CODE 77
+set(LC_BENCH_ENV "${LC_RUN_ENV}")
+if(LC_SANITIZE)
+  # The GPU driver and D-Bus behind the offscreen EGL path leak a few allocations of their own;
+  # project code is leak-checked by every software-rendered test.
+  list(APPEND LC_BENCH_ENV "ASAN_OPTIONS=detect_leaks=0")
+endif()
+set_tests_properties(bench bench_world PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 set_tests_properties(bench_world PROPERTIES LABELS heavy)
