@@ -93,6 +93,10 @@ private:
     void onWishGranted(int wish);
     void onNookFound(int nook);
     void updateHoverNook();
+    // Opens the next land stage; with `wave`, the brambles clear visibly and a chip points the
+    // way when it is out of sight.
+    void openLand(int stage, bool wave);
+    [[nodiscard]] int pages() const;
     [[nodiscard]] std::string_view waitingText(int node, std::string& out) const;
     [[nodiscard]] Vec2 screen() const {
         return {static_cast<float>(pixelW_), static_cast<float>(pixelH_)};
@@ -149,7 +153,10 @@ private:
     std::string_view hoverTip_;
     std::optional<TilePos> hoverNookTile_;
     std::uint64_t hoverNookRevision_ = ~0ULL;
-    bool loading_ = true; // the first evaluation finds what was already there, quietly
+    bool loading_ = true;      // the first evaluation finds what was already there, quietly
+    std::string hoverTipText_; // storage for formatted world tooltips
+    float edgeChipUntil_ = 0;
+    Vec2 edgeChipTarget_;
     mutable std::array<std::string, tuning::kMaxOpenWishes> cardDetail_;
     // The open world save and the profile shared by all of them.
     std::string worldName_;

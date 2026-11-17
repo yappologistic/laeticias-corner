@@ -31,7 +31,7 @@ struct ItemSprites {
 };
 
 enum class CritterAnim : std::uint8_t { MoveFront, MoveBack, IdleFront, IdleBack };
-enum class Fx : std::uint8_t { Smoke, Ripple, Sparkle, Raindrop, Leaf, Count };
+enum class Fx : std::uint8_t { Smoke, Ripple, Sparkle, Raindrop, Leaf, Clear, Count };
 
 // How far ground sprites (terrain, cliffs) reach beyond their tile's diamond, in world px.
 struct Reach {
@@ -51,7 +51,10 @@ struct SpriteTables {
     SpriteId cliffSW = 0;
     SpriteId tileOk = 0;
     SpriteId tileBad = 0;
-    SpriteId tileArea = 0;       // soft white diamond, tinted for nook areas
+    SpriteId tileArea = 0;          // soft white diamond, tinted for nook areas
+    std::vector<SpriteId> thickets; // brambles on wild land, by variant
+    FrameSet fallSE;                // water falling over the south-east rim
+    FrameSet fallSW;
     SpriteId placeholder = 0;    // drawn for anything that has no art
     float shadowOpacity = 0.35f; // opacity of the composited shadow layer
     Reach groundReach;

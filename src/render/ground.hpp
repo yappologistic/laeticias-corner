@@ -15,10 +15,14 @@
 #include "render/sprites.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
 namespace lc {
+
+// The bramble sprite on a wild tile (a stable choice per tile), or none on one tile in five.
+[[nodiscard]] std::optional<SpriteId> thicketAt(const SpriteTables& tables, TilePos p);
 
 class GroundCache {
 public:
@@ -64,6 +68,7 @@ private:
     const Catalog& cat_;
     const SpriteTables& tables_;
     Iso iso_;
+    float waterFps_; // waterfalls move with the water
     int slotW_ = 0;
     int slotH_ = 0;
     int slotsX_ = 0; // per page

@@ -54,6 +54,13 @@ inline constexpr float kNookPulseAlpha = 0.5f;
 inline constexpr float kNookLabelSeconds = 3.5f;  // its name floats above it this long
 inline constexpr float kNookOutlineAlpha = 0.22f; // the hovered nook's area
 inline constexpr float kNookLabelLift = 3.0f;     // tile heights above the anchor's centre
+inline constexpr double kLandStageGap = 4.0;      // seconds between stages opening together
+inline constexpr float kLandWaveStep = 0.08f;     // seconds per tile as the brambles clear
+inline constexpr float kLandClearFade = 0.4f;     // each tile's brambles fade this long
+inline constexpr float kWildDim = 0.70f;          // wild grass brightness
+inline constexpr float kWildCool[3] = {0.94f, 0.99f, 1.08f};
+inline constexpr float kWildThicketChance = 0.8f; // tiles of wild land with brambles
+inline constexpr float kEdgeChipSeconds = 8.0f;   // "New land" chip for an off-screen stage
 
 // Visitors
 inline constexpr int kVisitorsPerNeed = 2; // satisfied once -> 2 visitors, twice -> 4...

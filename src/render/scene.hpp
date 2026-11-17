@@ -25,6 +25,7 @@
 #include "render/sprites.hpp"
 
 #include <memory>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -66,6 +67,10 @@ public:
     void burst(Vec2 tile, Rng& rng);
     // A newly found nook: its area pulses and sparkles.
     void flourish(const NearInstance& nook, const World& world, Rng& rng);
+    // A land stage just opened (its tiles are open already): the brambles clear in a wave from
+    // the open land outwards and the revealed items pop up as it passes. Returns its length.
+    float landWave(const World& world, const Catalog& cat, int stage,
+                   std::span<const Item> revealed);
     // Spawns and advances effects near the camera. Called once per simulation step.
     void update(float dt, const World& world, std::span<const Critter> critters, bool rain,
                 Rng& rng);
@@ -113,6 +118,12 @@ private:
     struct Pulse {
         NearInstance area;
         float start;
+    };
+    struct WaveTile {
+        TilePos tile;
+        float start; // when its brambles begin to clear
+        std::optional<SpriteId> thicket;
+        bool cleared = false;
     };
     struct Light {
         Vec2 pos;
@@ -192,6 +203,8 @@ private:
     std::vector<Fade> fades_;
     std::vector<Pop> pops_;
     std::vector<Pulse> pulses_;
+    std::vector<WaveTile> wave_;
+    float waveEnd_ = 0;
     Particles particles_;
 };
 

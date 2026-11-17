@@ -1,0 +1,49 @@
+# Land you earn: the fourth page (ducks, the cat, hens and butterflies) opens the west meadow.
+# Its brambles clear in a wave from the open corner, its stream and flowers appear, and wild
+# land explains when it will open.
+set unlock all
+expect stage 0
+move @12,30
+wait 30
+shot shots/land_wild_hover.png
+click ui:build
+wait 10
+click ui:tab:homes
+wait 10
+click ui:tile:cottage
+wait 10
+click @12,30
+expect count cottage 0
+click @28,31
+click ui:build
+wait 10
+click ui:tile:coop
+wait 10
+click @33,30
+key escape
+wait 120
+expect seen cat
+expect seen hen
+expect stage 0
+click ui:build
+wait 10
+click ui:tab:nature
+wait 10
+click ui:tile:flowers_white
+wait 10
+click @24,34
+click @25,34
+key escape
+wait 40
+shot shots/land_wave.png
+wait 150
+expect seen butterfly
+expect stage 1
+shot shots/land_open.png
+expect tile @12,35 water
+expect item @10,23 flowers_violet
+expect item @15,29 stump
+key home
+wait 20
+shot shots/land_open_home.png
+quit

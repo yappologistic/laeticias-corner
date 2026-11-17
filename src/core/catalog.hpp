@@ -222,6 +222,7 @@ struct Catalog {
     std::vector<std::string> tags;
     std::vector<SeasonDef> seasons;
     std::vector<StageDef> stages;
+    std::optional<TilePos> gate; // the home region's way out (the road gate), if any
     StarterDef starter;
     PieceSet start;  // unlocked in a new world
     PieceSet legacy; // unlocked for worlds migrated from the first save format

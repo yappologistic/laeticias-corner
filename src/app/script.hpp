@@ -27,6 +27,7 @@
 //   set rain on|off
 //   set unlock all          unlock every piece, frame and clue (as a free-build world has)
 //   set played SECONDS      move the play clock on (wish pacing and the like) without frames
+//   set land N              open land stages up to N at once, with their reveals
 //   expect WHAT ARGS...     fail the run unless the state matches:
 //       tile P TERRAIN | item P ITEM|none | count ITEM|all N | tool none|place|paint|remove
 //       drawer open|closed | journal open|closed | photo on|off | phase PHASE
@@ -38,6 +39,7 @@
 //       widget NAME yes|no (the widget is laid out now; also card:N, the N-th wish card)
 //       wish ID open|done|waiting | wishes N (open now) | ribbon yes|no (a wish was granted)
 //       sketch wishes|visitors|nooks (the sketchbook's open tab) | nook ID yes|no (found)
+//       stage N (highest open land stage)
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.

@@ -41,6 +41,7 @@ constexpr std::string_view kWish = "sfx/wish.wav";
 constexpr std::string_view kWishGranted = "sfx/wish_granted.wav";
 constexpr std::string_view kPage = "sfx/page.wav";
 constexpr std::string_view kNook = "sfx/nook.wav";
+constexpr std::string_view kLandOpen = "sfx/land_open.wav";
 } // namespace sfx
 
 constexpr std::string_view kPhotoDir = "photos";
@@ -510,10 +511,42 @@ void App::updateProgress() {
         }
         case ProgressEvent::Kind::WishGranted: onWishGranted(e.index); break;
         case ProgressEvent::Kind::NookFound: onNookFound(e.index); break;
+        case ProgressEvent::Kind::StageOpens: openLand(e.index, true); break;
         }
         markDirty();
     }
     progression_.clearEvents();
+    // A world that opens with enough pages for more land (a migrated one) gets it at once, with
+    // its reveals but without the wave.
+    if (quiet)
+        while (nextStagePages(cat_, progress_.stage) >= 0 &&
+               pages() >= nextStagePages(cat_, progress_.stage))
+            openLand(++progress_.stage, false);
+}
+
+int App::pages() const {
+    return visitors_.seenCount() + progress_.nooksFound();
+}
+
+void App::openLand(int stage, bool wave) {
+    std::vector<Item> revealed;
+    openStage(world_, cat_, stage, revealed);
+    markDirty();
+    if (!wave) return;
+    (void)scene_->landWave(world_, cat_, stage, revealed);
+    play(sfx::kLandOpen);
+    const StageDef& def = cat_.stages[static_cast<std::size_t>(stage)];
+    hud_.toast(std::vformat(strings::kToastNewLand, std::make_format_args(def.name)));
+    // The camera never moves on its own: when the new land is out of sight, a chip offers it.
+    TileRect box = def.rects.front();
+    for (const TileRect& r : def.rects)
+        box = {std::min(box.x0, r.x0), std::min(box.y0, r.y0), std::max(box.x1, r.x1),
+               std::max(box.y1, r.y1)};
+    const auto f = [](int v) { return static_cast<float>(v); };
+    edgeChipTarget_ = cat_.iso().toWorld(f(box.x0 + box.x1) * 0.5f, f(box.y0 + box.y1) * 0.5f);
+    const Vec2 at = camera_.worldToScreen(edgeChipTarget_, screen());
+    const Box safe = hud_.safeArea();
+    if (!safe.contains(at.x, at.y)) edgeChipUntil_ = simTime_ + tuning::kEdgeChipSeconds;
 }
 
 void App::onWishGranted(int wish) {
@@ -565,14 +598,27 @@ void App::onNookFound(int nook) {
 }
 
 void App::updateHoverNook() {
-    // Recomputed only when the pointer changes tile or the world changes.
-    const std::optional<TilePos> tile = tool_ == Tool::None ? hover_ : std::nullopt;
+    // Recomputed only when the pointer changes tile or the world changes. Wild land explains
+    // itself to every tool; nooks and the gate answer an empty hand.
+    const std::optional<TilePos> tile =
+        tool_ == Tool::None || (hover_ && world_.isWild(*hover_)) ? hover_ : std::nullopt;
     if (tile == hoverNookTile_ && world_.revision() == hoverNookRevision_) return;
     hoverNookTile_ = tile;
     hoverNookRevision_ = world_.revision();
     hoverNook_.clear();
     hoverTip_ = {};
     if (!tile) return;
+    if (world_.isWild(*tile)) {
+        const int at = nextStagePages(cat_, stageAt(cat_, *tile) - 1);
+        const int more = std::max(0, at - pages());
+        hoverTipText_ = std::vformat(strings::kTipWild, std::make_format_args(at, more));
+        hoverTip_ = hoverTipText_;
+        return;
+    }
+    if (const Item* it = world_.itemAt(*tile); it && cat_.gate && it->rect().contains(*cat_.gate)) {
+        hoverTip_ = strings::kTipGate;
+        return;
+    }
     std::vector<NearInstance> found;
     for (std::size_t n = 0; n < cat_.nooks.size() && hoverNook_.empty(); ++n) {
         if (progression_.nookHere()[n] == 0) continue;
@@ -949,6 +995,7 @@ HudModel App::model() const {
                                 cat_.nooks[static_cast<std::size_t>(l.nook)].name, fade});
     }
     m.labels = floatLabels_;
+    m.edgeChip = simTime_ < edgeChipUntil_;
     m.pages = visitors_.seenCount() + progress_.nooksFound();
     m.pagesTotal = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
     m.nextStagePages = nextStagePages(cat_, progress_.stage);
@@ -1058,6 +1105,10 @@ void App::applyHudActions() {
             play(sfx::kOpen, tuning::kUiSfxLevel);
             break;
         case K::PageTurn: play(sfx::kPage, tuning::kUiSfxLevel); break;
+        case K::EdgeChip:
+            camera_.panTo(edgeChipTarget_, screen());
+            edgeChipUntil_ = 0;
+            break;
         case K::Snooze:
             if (a.arg >= 0) {
                 progression_.snooze(a.arg, progress_, played_);
@@ -1081,7 +1132,13 @@ Ghost App::ghost() const {
     Ghost g;
     if (!hover_ || photo_ || drag_ == Drag::Pan) return g;
     switch (tool_) {
-    case Tool::None: break;
+    case Tool::None:
+        // An empty hand over wild land shows it cannot be used yet.
+        if (world_.isWild(*hover_)) {
+            g.mode = Ghost::Mode::Tile;
+            g.tile = *hover_;
+        }
+        break;
     case Tool::Place:
         g.mode = Ghost::Mode::Item;
         g.item = ghostItem(*hover_);

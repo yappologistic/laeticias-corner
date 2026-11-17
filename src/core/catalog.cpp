@@ -514,6 +514,12 @@ public:
         const json& land = section(root, "land", "catalog");
         if (get<std::string>(land, "measure", "land") != "pages")
             fail("land: the only measure is 'pages'");
+        if (land.contains("gate")) {
+            const auto g = get<std::vector<int>>(land, "gate", "land");
+            if (g.size() != 2 || g[0] < 0 || g[1] < 0 || g[0] >= cat_.mapW || g[1] >= cat_.mapH)
+                fail("land: gate is an [x, y] tile on the map");
+            cat_.gate = TilePos{g[0], g[1]};
+        }
         std::vector<int> owner(
             static_cast<std::size_t>(cat_.mapW) * static_cast<std::size_t>(cat_.mapH), -1);
         for (const auto& s : section(land, "stages", "land")) {

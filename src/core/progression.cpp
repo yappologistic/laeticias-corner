@@ -1,5 +1,6 @@
 #include "core/progression.hpp"
 
+#include "core/land.hpp"
 #include "core/tuning.hpp"
 
 #include <algorithm>
@@ -155,6 +156,14 @@ void Progression::tick(const World& world, Progress& p, const CondFacts& facts, 
         // The hold is measured between evaluations, so goals are looked at again here too.
         evaluate(world, p, facts, played);
         if (offering) offer(world, p, facts, played);
+    }
+    // Land opens as the sketchbook fills; several stages reached at once open one by one.
+    const int next = nextStagePages(cat_, p.stage);
+    if (next >= 0 && facts.counters[static_cast<std::size_t>(Counter::Pages)] >= next &&
+        played >= stageReady_) {
+        ++p.stage;
+        stageReady_ = played + tuning::kLandStageGap;
+        events_.push_back({ProgressEvent::Kind::StageOpens, p.stage, false});
     }
     // Backwards: granting removes wishes from the open list.
     for (std::size_t i = p.open.size(); i-- > 0;) {

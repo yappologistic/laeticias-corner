@@ -1,9 +1,11 @@
 #include "render/scene.hpp"
 
+#include "core/land.hpp"
 #include "core/tuning.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <deque>
 
 namespace lc {
 namespace {
@@ -245,6 +247,57 @@ void Scene::flourish(const NearInstance& nook, const World& world, Rng& rng) {
     }
 }
 
+float Scene::landWave(const World& world, const Catalog& cat, int stage,
+                      std::span<const Item> revealed) {
+    // Steps from the land that was already open, through the stage's tiles.
+    const StageDef& def = cat.stages[static_cast<std::size_t>(stage)];
+    std::vector<int> dist(static_cast<std::size_t>(world.width() * world.height()), -1);
+    const auto idx = [&](TilePos p) { return static_cast<std::size_t>(p.y * world.width() + p.x); };
+    const auto inStage = [&](TilePos p) { return world.inBounds(p) && stageAt(cat, p) == stage; };
+    std::deque<TilePos> open;
+    for (const TileRect& r : def.rects)
+        for (int y = r.y0; y < r.y1; ++y)
+            for (int x = r.x0; x < r.x1; ++x)
+                for (const TilePos d :
+                     {TilePos{1, 0}, TilePos{-1, 0}, TilePos{0, 1}, TilePos{0, -1}}) {
+                    const TilePos q{x + d.x, y + d.y};
+                    if (world.hasGround(q) && !inStage(q) && !world.isWild(q) &&
+                        dist[idx({x, y})] < 0) {
+                        dist[idx({x, y})] = 0;
+                        open.push_back({x, y});
+                    }
+                }
+    while (!open.empty()) {
+        const TilePos p = open.front();
+        open.pop_front();
+        for (const TilePos d : {TilePos{1, 0}, TilePos{-1, 0}, TilePos{0, 1}, TilePos{0, -1}}) {
+            const TilePos q{p.x + d.x, p.y + d.y};
+            if (inStage(q) && dist[idx(q)] < 0) {
+                dist[idx(q)] = dist[idx(p)] + 1;
+                open.push_back(q);
+            }
+        }
+    }
+    wave_.clear();
+    float longest = 0;
+    for (const TileRect& r : def.rects)
+        for (int y = r.y0; y < r.y1; ++y)
+            for (int x = r.x0; x < r.x1; ++x) {
+                const float delay =
+                    static_cast<float>(std::max(0, dist[idx({x, y})])) * tuning::kLandWaveStep;
+                longest = std::max(longest, delay);
+                wave_.push_back({{x, y}, now_ + delay, thicketAt(tables_, {x, y})});
+            }
+    // Revealed items pop up as the wave reaches them (invisible until then).
+    for (const Item& it : revealed) {
+        if (pops_.size() == kMaxPops) break;
+        pops_.push_back({it.pos, now_ + static_cast<float>(std::max(0, dist[idx(it.pos)])) *
+                                            tuning::kLandWaveStep});
+    }
+    waveEnd_ = now_ + longest + tuning::kLandClearFade;
+    return longest + tuning::kLandClearFade;
+}
+
 void Scene::drawArea(const World& world, const NearInstance& area, SDL_FColor color) {
     const TileRect& f = area.footprint;
     for (int y = f.y0 - area.within; y < f.y1 + area.within; ++y)
@@ -266,6 +319,16 @@ void Scene::update(float dt, const World& world, std::span<const Critter> critte
     now_ += dt;
     std::erase_if(fades_, [&](const Fade& f) { return now_ - f.start > tuning::kFadeOutSeconds; });
     std::erase_if(pops_, [&](const Pop& p) { return now_ - p.start > tuning::kPopSeconds; });
+    for (WaveTile& w : wave_) {
+        if (w.cleared || now_ < w.start) continue;
+        w.cleared = true;
+        if (w.thicket)
+            particles_.spawn(Fx::Clear,
+                             iso_.toWorld(static_cast<float>(w.tile.x) + 0.5f,
+                                          static_cast<float>(w.tile.y) + 0.5f),
+                             {0, 0}, tuning::kLandClearFade * 1.5f);
+    }
+    if (!wave_.empty() && now_ > waveEnd_) wave_.clear();
     std::erase_if(pulses_,
                   [&](const Pulse& p) { return now_ - p.start > tuning::kNookPulseSeconds; });
     const float u = iso_.tileH();
@@ -384,6 +447,7 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
         iso_.toWorld(f(item.pos.x) + f(item.w) * 0.5f, f(item.pos.y) + f(item.h) * 0.5f);
     Vec2 scale{1.0f, scaleY};
     const float t = popOf(item.pos);
+    if (t < 0.0f) return; // revealed by a wave that has not reached it yet
     if (t >= 0.0f && t < 1.0f) {
         const float y = 0.35f + 0.65f * easeOutBack(t);
         scale = {1.0f + (1.0f - y) * 0.45f, y};
@@ -526,8 +590,8 @@ void Scene::drawShadows(const FrameParams& p) {
         const auto& set = tables_.items[pl.item.type].shadow[static_cast<std::size_t>(pl.slot)];
         if (set.empty()) continue;
         const float t = popOf(pl.item.pos);
-        sprite(set.frames.front(), iso_.toWorld(pl.item.pos),
-               {1, 1, 1, t >= 0.0f && t < 1.0f ? t : 1.0f});
+        if (t < 0.0f) continue;
+        sprite(set.frames.front(), iso_.toWorld(pl.item.pos), {1, 1, 1, t < 1.0f ? t : 1.0f});
     }
     for (const Critter& c : p.critters) {
         const Habitat h = cat_.visitors[c.visitor].habitat;
@@ -556,6 +620,14 @@ void Scene::drawMarkers(const FrameParams& p) {
     }
     for (const NearInstance& o : p.outlines)
         drawArea(world, o, {1, 1, 1, tuning::kNookOutlineAlpha});
+    // Land being opened still looks wild until the wave reaches each tile.
+    for (const WaveTile& w : wave_) {
+        const float a = std::clamp(1.0f - (now_ - w.start) / tuning::kLandClearFade, 0.0f, 1.0f);
+        if (a <= 0.0f) continue;
+        const Vec2 at = iso_.toWorld(w.tile);
+        sprite(tables_.tileArea, at, {0, 0, 0, (1.0f - tuning::kWildDim) * a});
+        if (w.thicket) sprite(*w.thicket, at, {1, 1, 1, a});
+    }
     const auto marker = [&](TilePos t, bool ok) {
         if (world.hasGround(t))
             sprite(ok ? tables_.tileOk : tables_.tileBad, iso_.toWorld(t), {1, 1, 1, 0.9f});

@@ -9,7 +9,7 @@ namespace {
 constexpr std::array<const char*, 4> kCritterAnims{"move_front", "move_back", "idle_front",
                                                    "idle_back"};
 constexpr std::array<const char*, static_cast<std::size_t>(Fx::Count)> kFxNames{
-    "smoke", "ripple", "sparkle", "raindrop", "leaf"};
+    "smoke", "ripple", "sparkle", "raindrop", "leaf", "clear"};
 
 // Collects prefix/f0, f1, ... until the first gap. With a placeholder, a missing f0 is logged
 // and replaced; without one the set stays empty (optional layers).
@@ -89,6 +89,14 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
     t.tileOk = atlas.resolve("ui/tile_ok", atlas.placeholderTile());
     t.tileBad = atlas.resolve("ui/tile_bad", atlas.placeholderTile());
     t.tileArea = atlas.resolve("ui/tile_area", atlas.placeholderTile());
+    for (int v = 0;; ++v) {
+        const auto id = atlas.find(std::format("wild/thicket/v{}", v));
+        if (!id) break;
+        t.thickets.push_back(*id);
+    }
+    if (t.thickets.empty()) atlas.reportMissing("wild/thicket/v0");
+    t.fallSE = frames(atlas, "edge/fall_se", atlas.placeholderEdgeSE());
+    t.fallSW = frames(atlas, "edge/fall_sw", atlas.placeholderEdgeSW());
     t.placeholder = atlas.placeholderBox();
     if (shadowPeak > 0.0f) t.shadowOpacity = shadowPeak;
 
@@ -107,6 +115,9 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat) {
             for (const SpriteId id : set.frames) extend(id);
     extend(t.cliffSE);
     extend(t.cliffSW);
+    for (const SpriteId id : t.thickets) extend(id);
+    for (const SpriteId id : t.fallSE.frames) extend(id);
+    for (const SpriteId id : t.fallSW.frames) extend(id);
     return t;
 }
 
@@ -154,8 +165,8 @@ std::vector<std::string> requiredSpriteKeys(const Catalog& cat) {
         for (const char* a : kCritterAnims)
             keys.push_back(std::format("critter/{}/{}/f0", v.id, a));
     for (const char* f : kFxNames) keys.push_back(std::format("fx/{}/f0", f));
-    for (const char* k :
-         {"edge/cliff_se", "edge/cliff_sw", "ui/tile_ok", "ui/tile_bad", "ui/tile_area"})
+    for (const char* k : {"edge/cliff_se", "edge/cliff_sw", "ui/tile_ok", "ui/tile_bad",
+                          "ui/tile_area", "wild/thicket/v0", "edge/fall_se/f0", "edge/fall_sw/f0"})
         keys.emplace_back(k);
     return keys;
 }

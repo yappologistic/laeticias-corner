@@ -86,7 +86,8 @@ struct HudModel {
     std::string_view warning;
     std::string_view worldTip; // what the pointer rests on in the world (a nook's name...)
     std::span<const FloatLabel> labels;
-    float brightness = 0; // of the scene behind the glass, 0 dark .. 1 bright
+    bool edgeChip = false; // land opened out of sight: a chip points the way
+    float brightness = 0;  // of the scene behind the glass, 0 dark .. 1 bright
 };
 
 struct UiInput {
@@ -122,6 +123,7 @@ struct HudAction {
         OpenWishes, // the "+N" tile or a wish card: the sketchbook's wishes; `arg` a wish or -1
         Snooze,     // "Not now" on wish `arg`
         PageTurn,   // the sketchbook changed tab
+        EdgeChip,   // "New land": look at the stage that just opened
         Hover
     };
     Kind kind;

@@ -33,6 +33,7 @@ enum Wid : int {
     kNotNow = kCard0 + 8,             // the card menu's only entry
     kSketchTab0,                      // sketchbook tabs: kSketchTab0 + tab
     kSketchNotNow0 = kSketchTab0 + 3, // "Not now" on the sketchbook's open wishes
+    kEdgeChip = kSketchNotNow0 + 3,   // "New land"
     kTab0 = 48,                       // drawer tabs: kTab0 + category
     kTile0 = 64,                      // drawer tiles: see tileId
 };
@@ -64,6 +65,7 @@ constexpr Named kNames[] = {
     {"sketch:visitors", kSketchTab0 + 1},
     {"sketch:nooks", kSketchTab0 + 2},
     {"sketch_not_now", kSketchNotNow0},
+    {"edge_chip", kEdgeChip},
 };
 
 float approach(float v, bool on, float dt) {
@@ -453,6 +455,19 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
     journalBox_ = {};
     if (journalT_ > 0.0f) layoutSketchbook(m, font, screen, s);
 
+    // "New land" above the right dock while a stage opened out of sight.
+    if (m.edgeChip && !m.photo) {
+        const float cw = font.measure(Face::Body, strings::kNewLandChip) + theme::kIcon * s +
+                         theme::kLabelGap * s + 2 * theme::kHintPad * s;
+        const float ch = theme::kHintH * s;
+        float y = bottomTop_ - gap - ch;
+        if (drawerT_ > 0.0f) y = std::min(y, drawerBox_.y - gap - ch);
+        Widget& w = add(kEdgeChip, {screen.x - margin - cw, y, cw, ch});
+        w.label = strings::kNewLandChip;
+        w.icon = theme::icon::kChevronRight;
+        panels_.push_back({w.box, ch * 0.5f});
+    }
+
     // Hint line above the drawer or docks; both slide a little as they fade.
     const float hintH = theme::kHintH * s;
     {
@@ -680,6 +695,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                 if (!scroll_.empty()) ++scroll_[static_cast<std::size_t>(m.category)];
                 break;
             case kTrayHeader: trayCollapsed_ = !trayCollapsed_; break;
+            case kEdgeChip: emit(HudAction::Kind::EdgeChip); break;
             case kSketchTab0:
             case kSketchTab0 + 1:
             case kSketchTab0 + 2:

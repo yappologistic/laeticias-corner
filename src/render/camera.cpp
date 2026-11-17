@@ -97,6 +97,11 @@ void Camera::place(Vec2 world, float zoom, Vec2 screen) {
     target_ = pos_;
 }
 
+void Camera::panTo(Vec2 world, Vec2 screen) {
+    target_ = world;
+    clamp(target_, screen, scale_);
+}
+
 void Camera::dragBy(Vec2 d, Vec2 screen) {
     target_ = {target_.x - d.x / scale_, target_.y - d.y / scale_};
     clamp(target_, screen, scale_);

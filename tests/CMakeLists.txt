@@ -47,6 +47,7 @@ set(LC_SCRIPTS
   "wish_first|wish_first|640x400|"
   "sketchbook|sketchbook|960x600|"
   "nook|nook|960x600|"
+  "land|land|960x600|"
   "wish_waiting|wish_waiting|960x600|"
   "ui_tiny|ui_sizes|320x240|"
   "ui_small|ui_sizes|960x600|"

@@ -16,9 +16,9 @@
 namespace lc {
 
 struct ProgressEvent {
-    enum class Kind : std::uint8_t { WishOffered, WishGranted, NookFound };
+    enum class Kind : std::uint8_t { WishOffered, WishGranted, NookFound, StageOpens };
     Kind kind = Kind::WishOffered;
-    int index = 0;        // wish or nook
+    int index = 0;        // wish, nook or land stage
     bool already = false; // WishOffered: its goal already held, so it is granted shortly
 };
 
@@ -71,6 +71,7 @@ private:
     std::vector<std::uint8_t> nookHere_;
     mutable std::vector<NearInstance> instances_; // scratch for area lookups
     double nextOffer_ = 0;                        // play time of the next pacing check
+    double stageReady_ = 0;                       // stages reached together open this far apart
 };
 
 } // namespace lc

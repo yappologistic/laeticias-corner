@@ -1,6 +1,7 @@
 #include "render/ground.hpp"
 
 #include "core/rng.hpp"
+#include "core/tuning.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -20,9 +21,17 @@ std::uint64_t keyOf(int level, int cx, int cy) {
 
 } // namespace
 
+std::optional<SpriteId> thicketAt(const SpriteTables& tables, TilePos p) {
+    if (tables.thickets.empty()) return std::nullopt;
+    const std::uint32_t h = tileHash(p.x, p.y, 7);
+    if (static_cast<float>(h % 1000) >= tuning::kWildThicketChance * 1000.0f) return std::nullopt;
+    return tables.thickets[(h / 1000) % tables.thickets.size()];
+}
+
 GroundCache::GroundCache(SDL_Renderer* renderer, const Atlas& atlas, const Catalog& cat,
                          const SpriteTables& tables, std::size_t budgetBytes)
-    : renderer_(renderer), atlas_(atlas), cat_(cat), tables_(tables), iso_(cat.iso()) {
+    : renderer_(renderer), atlas_(atlas), cat_(cat), tables_(tables), iso_(cat.iso()),
+      waterFps_(cat.terrain[static_cast<std::size_t>(cat.waterTerrain)].fps) {
     const Reach& r = tables_.groundReach;
     slotW_ = static_cast<int>(static_cast<float>(kBaseChunk) * iso_.tileW() +
                               std::ceil(r.left + r.right)) +
@@ -80,11 +89,32 @@ void GroundCache::drawTile(Batch& batch, const World& world, TilePos p, const Xf
     const Vec2 a = iso_.toWorld(p);
     // Cliff faces hang under rims that face open sky; tiles drawn later (further south) cover
     // them where the land continues.
-    if (!world.hasGround({p.x + 1, p.y}))
+    const bool water = world.isWater(p);
+    if (!world.hasGround({p.x + 1, p.y})) {
         putSprite(batch, atlas_.sprite(tables_.cliffSE), a, x, kWhite, SDL_BLENDMODE_BLEND);
-    if (!world.hasGround({p.x, p.y + 1}))
+        // Water reaching the rim falls over it.
+        if (water)
+            putSprite(batch, atlas_.sprite(tables_.fallSE.at(now, waterFps_)), a, x, kWhite,
+                      SDL_BLENDMODE_BLEND);
+    }
+    if (!world.hasGround({p.x, p.y + 1})) {
         putSprite(batch, atlas_.sprite(tables_.cliffSW), a, x, kWhite, SDL_BLENDMODE_BLEND);
+        if (water)
+            putSprite(batch, atlas_.sprite(tables_.fallSW.at(now, waterFps_)), a, x, kWhite,
+                      SDL_BLENDMODE_BLEND);
+    }
     const auto& base = tables_.terrainBase[static_cast<std::size_t>(cat_.baseTerrain)];
+    if (world.isWild(p)) {
+        // Wild land: the grass dimmed and cooled, brambles on four tiles in five.
+        static constexpr SDL_FColor kWild{tuning::kWildDim * tuning::kWildCool[0],
+                                          tuning::kWildDim * tuning::kWildCool[1],
+                                          tuning::kWildDim * tuning::kWildCool[2], 1.0f};
+        putSprite(batch, atlas_.sprite(base[tileHash(p.x, p.y, 1) % base.size()]), a, x, kWild,
+                  SDL_BLENDMODE_BLEND);
+        if (const auto t = thicketAt(tables_, p))
+            putSprite(batch, atlas_.sprite(*t), a, x, kWhite, SDL_BLENDMODE_BLEND);
+        return;
+    }
     putSprite(batch, atlas_.sprite(base[tileHash(p.x, p.y, 1) % base.size()]), a, x, kWhite,
               SDL_BLENDMODE_BLEND);
     const int t = world.terrainAt(p);

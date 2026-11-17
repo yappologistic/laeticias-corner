@@ -177,6 +177,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                          progress_.wishes[static_cast<std::size_t>(*w)].state)]),
                      a[2]);
     }
+    if (what == "stage") return equal(std::to_string(progress_.stage), a[1]);
     if (what == "wishes") return equal(std::to_string(progress_.open.size()), a[1]);
     if (what == "ribbon") return yesNo(hud_.ribbonShowing());
     if (what == "nook") {
@@ -370,6 +371,10 @@ bool App::scriptStep() {
                 progress_.unlockEverything(cat_);
             } else if (c.args[0] == "played") {
                 played_ = std::stod(c.args[1]);
+            } else if (c.args[0] == "land") {
+                const int to =
+                    std::min(std::stoi(c.args[1]), static_cast<int>(cat_.stages.size()) - 1);
+                while (progress_.stage < to) openLand(++progress_.stage, false);
             } else {
                 rain_ = c.args[1] == "on";
             }
