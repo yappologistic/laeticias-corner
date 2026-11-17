@@ -136,6 +136,8 @@ def required_keys(cat: dict, mod, pieces: dict) -> list[str]:
         keys += [f"backdrop/{b}/{t}/v{n}" for t in ("day", "night") for n in range(4)]
     for fxid in art.get("fx", ()):
         keys += [f"fx/{fxid}/f{f}" for f in range(mod.FRAMES.get(fxid, 6))]
+    for g in cat.get("goods", []):        # living-world.md §3.2: the carried unit and 1..stack at a slot
+        keys += [g["sprite"]] + [f"{g['sprite']}/s{n}" for n in range(1, g.get("stack", 3) + 1)]
     seen = set()
     return [k for k in keys if not (k in seen or seen.add(k))]
 
@@ -196,7 +198,7 @@ def piece_index(pieces, fw, fh) -> np.ndarray:
 # ---------- jobs ----------
 
 ITEM_KEY = re.compile(r"item/([^/]+)/([^/]+)/([^/]+)/f(\d+)")
-ACTOR_KEY = re.compile(r"(walker|figure|critter|cart)/([^/]+)(?:/v(\d+))?/(\w+)_(front|back)/f(\d+)")
+ACTOR_KEY = re.compile(r"(walker|figure|critter|cart|ship)/([^/]+)(?:/v(\d+))?/(\w+)_(front|back)/f(\d+)")
 
 
 def _set_mod(set_id):

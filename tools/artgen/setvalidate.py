@@ -113,6 +113,12 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
                 errors.append(f"{iid}: pieces do not partition the footprint")
         walk = {tuple(t) for t in g.get("walk", [])}
         floor = {tuple(map(int, kk.split(","))): v for kk, v in g.get("walk_z", {}).items()}
+        if it.get("landmark"):       # a spot inside a landmark must stand on one of its walk tiles
+            for sid, spots in g.get("slots", {}).items():
+                for sp in spots:
+                    t = tuple(sp["t"])
+                    if 0 <= t[0] < fw and 0 <= t[1] < fh and t not in walk:
+                        errors.append(f"{iid}: slot {sid} spot {list(t)} is inside the footprint on a non-walk tile")
         info = (lm_info or {}).get(iid)
         if walk and info is not None:
             col = info["column"]

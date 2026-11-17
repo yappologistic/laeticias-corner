@@ -17,6 +17,9 @@ Art sets beyond the home region (world-tech.md §1) build on their own, from the
 tools/artgen/build.sh --set parsa --preview          # pages, geometry, validation, previews
 tools/artgen/build.sh --set parsa --only apadana walker/parsa.usher   # a quick look, no geometry
 tools/artgen/.venv/bin/python tools/artgen/setvalidate.py parsa
+tools/artgen/build.sh --set athens --preview         # the Athens set
+tools/artgen/build.sh --set athens --only parthenon --out out/artgen/athens/q   # quick look elsewhere
+tools/artgen/.venv/bin/python -m sets.athens.preview out/artgen/athens/q parthenon  # (from tools/artgen)
 ```
 
 `--catalog` picks the catalog the required keys are derived from (default `assets/catalog.json`).
@@ -100,6 +103,18 @@ half with the four worker processes the machine-courtesy rules allow.
   things, how things are held, a mount). A set's people are lists of dresses
   (`sets/parsa/people.py`); other sets reuse the rig with their own.
 - `setpreview.py` composes scenes from a set's pages with levels and stacked edge faces.
+- `greek.py` is Greek (and Roman) architecture as parameters: an `Order` (Doric or Ionic, in
+  metres) drawn at a landmark `Scale`, columns with entasis and flutes (finished, unfluted,
+  with lifting bosses, or as drums on a building site), crepidomas, marble and poros ashlar,
+  house walls, the Doric entablature (taenia, regulae, triglyphs and figured metopes, geison),
+  Ionic friezes, pediments with sculpture, akroteria, tiled gable, hipped and conical roofs
+  with antefixes, `temple(Temple)` (peripteral, prostyle or in antis, porch grilles, friezes)
+  and `stoa(Stoa)` (Doric front, Ionic inner row, painted panels, hanging shields), statues cast
+  from rig dresses at any size (`statue_model`, `paste`), herms, stelai, bases, vases, painted
+  motifs (meander, egg-and-dart, leaf, beads, palmette) and city walls.
+- `relief_greek.py` poses 2D figures (people, horses, centaurs, chariots, the olive) and
+  rasterises them into `relief` stencils at any height, so pediments, metopes, the Ionic
+  frieze, painted panels and grave stelae compose from figures instead of hand-drawn text.
 
 ## Conventions worth knowing
 

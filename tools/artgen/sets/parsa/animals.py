@@ -35,7 +35,7 @@ class Beast:
     topknot: bool = False
     stripes_legs: bool = False   # the okapi
     face_mask: bool = False      # the oryx
-    ears: str = "small"          # small, gold (Tištrya), round (lion)
+    ears: str = "small"          # small, gold (Tištrya), round (lion), long (donkeys)
     lead: bool = False           # a lead rope from the neck (lions led by hand)
     dewlap: bool = False
 
@@ -124,7 +124,8 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
     ear = "gold" if b.ears == "gold" else b.coat
     for side in (1, -1):
         bd.limb((head[0] - 0.2, side * b.head * 0.4, hz + b.head * 0.5),
-                (head[0] - 0.5, side * b.head * 0.7, hz + b.head * (1.4 if b.ears != "round" else 1.0)), 0.3, ear, 0.2)
+                (head[0] - 0.5, side * b.head * 0.7, hz + b.head * {"round": 1.0, "long": 2.4}.get(b.ears, 1.4)), 0.3, ear,
+                0.2)
     if b.dewlap:
         bd.limb((n0[0] + 0.5, 0, n0[2] - g * 0.5), (head[0], 0, hz - b.head * 1.0), g * 0.3, b.coat, -0.2)
     for side in (1, -1):

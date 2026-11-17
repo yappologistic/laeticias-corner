@@ -53,11 +53,31 @@ CODES = {
     "f": ("wing", -0.6, 1),
     "#": ("frame", 0.3, 1),          # panel frames and register lines
     "_": ("frame", -0.2, 0),         # paint on the surface, no relief
+    # Greek painted sculpture (relief_greek.py): flesh, drapery, a second drapery, bronze
+    # attachments, horses, brown hair, shield faces, and flat painted colours (no relief).
+    "N": ("flesh", 0.3, 1),
+    "n": ("flesh", -0.5, 1),
+    "U": ("drape", 0.2, 1),
+    "u": ("drape", -0.65, 1),
+    "I": ("drape2", 0.2, 1),
+    "i": ("drape2", -0.65, 1),
+    "E": ("bronze", 0.35, 1),
+    "H": ("horse", 0.3, 1),
+    "h": ("horse", -0.6, 1),
+    "J": ("hair2", 0.1, 1),
+    "Z": ("shield", 0.3, 1),
+    "z": ("shield", -0.5, 1),
+    "1": ("p1", 0.1, 0),
+    "2": ("p2", 0.1, 0),
+    "3": ("p3", 0.1, 0),
+    "4": ("p4", 0.1, 0),
 }
 
 DEFAULT = {"stone": "limestone", "cap": "felt", "robe": "cinnabar", "trim": "gold", "coat": "lapis",
            "legs": "saffron", "gift": "gold", "beast": "limestone", "mane": "hair_black", "lion": "saffron",
-           "tree": "malachite", "petal": "gold", "heart": "cinnabar", "wing": "lapis", "frame": "limestone"}
+           "tree": "malachite", "petal": "gold", "heart": "cinnabar", "wing": "lapis", "frame": "limestone",
+           "flesh": "marble", "drape": "cinnabar", "drape2": "eblue", "bronze": "bronze", "horse": "marble",
+           "hair2": "cedar", "shield": "bronze", "p1": "cinnabar", "p2": "eblue", "p3": "ochre", "p4": "gloss"}
 
 
 def stencil(*rows):

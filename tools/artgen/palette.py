@@ -123,9 +123,27 @@ SKIN_OLIVE = ["#6a4434", "#8d5f45", "#b07f5c", "#cc9c76"]
 SKIN_DARK = ["#33221f", "#4d3328", "#6c4734"]
 NAQSH = ["#5d4c50", "#80696a", "#a28a82", "#c2ab9c", "#dccabb"]   # Naqsh-e Rostam's pinkish cliff
 
+# Athens, summer 432 BC: warm Pentelic marble weathering to honey, yellow poros, grey Eleusinian
+# and Acropolis limestone with its rusty stains, orange Attic clay and terracotta, black gloss,
+# pitch-black hulls, the silver-green olive and summer-gold grass; the painted colours (Egyptian
+# blue, cinnabar, ochre, gold, green) are shared with the Pārsa ramps.
+MARBLE = ["#4b4552", "#6d6569", "#928882", "#b7ab9c", "#d4c8b2", "#e9dec6", "#f6eedb"]
+POROS = ["#5c4b3b", "#7f6a50", "#a28a66", "#c0a87e", "#d9c497"]
+ATTIC_ROCK = ["#46413f", "#635b55", "#837a6f", "#a3998b", "#c0b6a6", "#dad1c0"]
+RUST = ["#8a5a43", "#a8714f"]                           # iron stains on the rock, red earth
+TERRACOTTA = ["#5b2b24", "#87412d", "#ad5b37", "#cb7a48", "#e09c66", "#efbf8c"]
+CLAY = ["#7c4a30", "#a5643c", "#c4804f", "#d9a072"]       # Attic clay, unfired and fired
+GLOSS = ["#17141b", "#25202a", "#38323f"]               # black gloss of fine pottery
+OLIVE = ["#3a4638", "#53634a", "#72825d", "#93a27a", "#b8c39d"]
+SUMMER = ["#7a6f3c", "#9c8d4a", "#bba95c", "#d3c07a"]     # summer-dry grass and stubble
+PITCH = ["#141217", "#211c24", "#322b35"]
+
 REGION_COLOURS = {
     "parsa": [*LIMESTONE, *DARKSTONE, *LAPIS, *EGYPT_BLUE, *CINNABAR, *HEMATITE, *GOLD, *CEDAR,
               *MUDBRICK, *PURPLE, *SAFFRON, *MALACHITE, *SKIN_OLIVE, *SKIN_DARK, *NAQSH],
+    "athens": [*DARKSTONE, *LAPIS, *EGYPT_BLUE, *CINNABAR, *GOLD, *CEDAR, *MUDBRICK, *PURPLE, *SAFFRON,
+               *MALACHITE, *SKIN_OLIVE, *SKIN_DARK, *MARBLE, *POROS, *ATTIC_ROCK, *RUST, *TERRACOTTA, *CLAY,
+               *GLOSS, *OLIVE, *SUMMER, *PITCH],
 }
 for _cols in REGION_COLOURS.values():
     assert len(set(_cols)) == len(_cols) and not set(_cols) & set(PALETTE)
@@ -159,6 +177,29 @@ MATERIALS += [
     _m("wool", [EARTH[1], MUDBRICK[1], MUDBRICK[2], MUDBRICK[3], MUDBRICK[4]], bias=0.2, texture=0.08),
     _m("felt", [INK, EARTH[0], EARTH[1], EARTH[2], MUDBRICK[2]], bias=0.2, texture=0.1),
     _m("bronze", [INK, CEDAR[1], GOLD[0], GOLD[1], GOLD[2], GOLD[3]], bias=0.2, texture=0.1),
+]
+# Athens (appended, so the home and Pārsa ids never change).
+MATERIALS += [
+    _m("marble", MARBLE, bias=0.15, texture=0.12),
+    _m("marble_rough", MARBLE[:6], texture=0.45),          # quarry faces, unfinished blocks
+    _m("poros", [INK, *POROS], texture=0.4),
+    _m("eleusinian", [INK, *DARKSTONE, MARBLE[1], MARBLE[2]], texture=0.15),
+    _m("attic_rock", [INK, *ATTIC_ROCK], texture=0.45),
+    _m("terracotta", TERRACOTTA, texture=0.15),
+    _m("clay", [TERRACOTTA[0], *CLAY, TERRACOTTA[5]], bias=0.1, texture=0.1),
+    _m("gloss", [INK, *GLOSS, STONE[1]], texture=0.05),
+    _m("olive", OLIVE, texture=0.35),
+    _m("olive_silver", [OLIVE[1], OLIVE[2], OLIVE[3], OLIVE[4], SNOW[1]], texture=0.4),
+    _m("summer", [EARTH[1], *SUMMER, STRAW[3]], bias=-0.7, texture=0.5),
+    _m("pitch", [INK, *PITCH, STONE[1]], texture=0.1),
+    _m("triglyph", [INK, PITCH[1], LAPIS[0], LAPIS[1], LAPIS[2]], bias=0.1, texture=0.05),
+    _m("ochre", [EARTH[1], EARTH[2], SAFFRON[0], SAFFRON[1], GOLD[3]], bias=0.1, texture=0.08),
+    _m("whitewash", [MARBLE[2], PLASTER[1], PLASTER[2], PLASTER[3], PLASTER[4]], bias=0.5, texture=0.2),
+    _m("rust", [EARTH[0], *RUST, CLAY[2]], texture=0.3),
+    _m("skin_tan", [SKIN_OLIVE[1], SKIN_OLIVE[2], SKIN_OLIVE[3], SKIN[1], SKIN[2]], bias=1.0),
+    # Cast bronze kept polished: a warm brown-gold, darker than gilding.
+    _m("bronze_cast", [INK, CEDAR[0], CEDAR[1], CEDAR[2], GOLD[1], GOLD[2]], bias=0.3, texture=0.08),
+    _m("gravel", [STONE[1], POROS[1], POROS[2], STONE[3], POROS[3], MARBLE[4]], texture=0.7),
 ]
 MAT = {m.name: i + 1 for i, m in enumerate(MATERIALS)}
 _ALL = set(PALETTE).union(*REGION_COLOURS.values())
