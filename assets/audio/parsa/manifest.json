@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "set": "parsa",
+  "files": [
+    {
+      "file": "music/parsa/day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 120.0,
+      "samples": 5292000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Day piece: angular harp, long-necked lute, double pipe, frame drum and clapper in a D mode; harp motif, pipe song, lilting triplet middle on G.",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 5292000,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0,
+          72.0,
+          84.0,
+          96.0,
+          108.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 120.0,
+      "samples": 5292000,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Night piece: solo harp in free time, hummed drone of women's voices, far pipe answers; same D mode and motif as the day.",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 30,
+        "beats": 120,
+        "samples": 5292000,
+        "phrase_starts_s": [
+          0.0,
+          8.0,
+          16.0,
+          24.0,
+          32.0,
+          40.0,
+          48.0,
+          56.0,
+          64.0,
+          72.0,
+          80.0,
+          88.0,
+          96.0,
+          104.0,
+          112.0
+        ]
+      }
+    },
+    {
+      "file": "amb/parsa/plain_day.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Thin dry wind, swallows, far chisels, a horse's snort and bells, faint voices.",
+      "where": "everywhere in the region"
+    },
+    {
+      "file": "amb/parsa/plain_night.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Crickets, a scops owl's runs, wind over stone, a guard's steps, a fire altar.",
+      "where": "everywhere in the region"
+    },
+    {
+      "file": "amb/parsa/channels.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 40.0,
+      "samples": 1764000,
+      "gain": 0.7,
+      "when": "always",
+      "for": "Close water in narrow stone channels, frogs at the edges.",
+      "where": "zone: the paradise garden and the canal"
+    },
+    {
+      "file": "amb/parsa/site.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 48.0,
+      "samples": 2116800,
+      "gain": 0.8,
+      "when": "day",
+      "for": "Chisels, mallets on wedges, rope creak, an ox, workers calling without words.",
+      "where": "zone: hall_100 building site and the quarry"
+    },
+    {
+      "file": "amb/parsa/rain.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 40.0,
+      "samples": 1764000,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Spring shower on paving and leaves, drains gurgling at the outfalls.",
+      "where": "everywhere while it rains (replaces nothing: mix over the day/night bed)"
+    },
+    {
+      "file": "amb/parsa/procession.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 24.0,
+      "samples": 1058400,
+      "gain": 0.8,
+      "when": "event",
+      "for": "A delegation's drum, double pipe and clapper walking past (8 bars, 80 bpm).",
+      "where": "positional: follows the delegation (P1) up the stair",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 8,
+        "beats": 32,
+        "samples": 1058400,
+        "phrase_starts_s": [
+          0.0,
+          12.0
+        ]
+      }
+    },
+    {
+      "file": "sfx/parsa/horn.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.8,
+      "samples": 255780,
+      "gain": 1.0,
+      "when": "event",
+      "for": "Long natural horn call at the change of guard (P8)."
+    },
+    {
+      "file": "sfx/parsa/camel.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.2044,
+      "samples": 53114,
+      "gain": 0.9,
+      "when": "event",
+      "for": "A camel's groan (caravans, L7)."
+    },
+    {
+      "file": "sfx/parsa/horse_bells.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.3623,
+      "samples": 192379,
+      "gain": 0.9,
+      "when": "event",
+      "for": "Bronze bells on a walking horse (couriers, grooms)."
+    },
+    {
+      "file": "sfx/parsa/hoopoe.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.8854,
+      "samples": 83148,
+      "gain": 0.8,
+      "when": "event",
+      "for": "Hoopoe's 'hoo-poo-poo' in the garden."
+    },
+    {
+      "file": "sfx/parsa/stork.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2022,
+      "samples": 97117,
+      "gain": 0.8,
+      "when": "event",
+      "for": "White stork clattering its bill on a nest (P12)."
+    },
+    {
+      "file": "sfx/parsa/chant.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.8332,
+      "samples": 213143,
+      "gain": 0.9,
+      "when": "event",
+      "for": "The magus intoning at the fire altar at dawn (P2), wordless."
+    },
+    {
+      "file": "sfx/parsa/audience.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.5,
+      "samples": 198450,
+      "gain": 1.0,
+      "when": "event",
+      "for": "Soft harp and drum phrase as a delegation is presented (P1)."
+    },
+    {
+      "file": "sfx/parsa/arrive.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.0,
+      "samples": 220500,
+      "gain": 1.0,
+      "when": "event",
+      "for": "Arrival motif (fast travel, era caption): harp D E F A."
+    }
+  ]
+}

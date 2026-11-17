@@ -22,6 +22,8 @@ import numpy as np  # noqa: E402  (must follow the thread setting)
 import ambience  # noqa: E402
 import mastering  # noqa: E402
 import music  # noqa: E402
+import parsa  # noqa: E402
+import score  # noqa: E402
 import sfx  # noqa: E402
 import validate  # noqa: E402
 
@@ -101,6 +103,12 @@ EFFECTS = {
 }
 
 
+# Region sets (world-tech §2.2: assets/audio/<music|amb|sfx>/<set>/…), each with a manifest
+# at assets/audio/<set>/manifest.json for the engine and the region theme files.
+SETS = {"parsa": parsa.FILES}
+REGION = {name: entry for files in SETS.values() for name, entry in files.items()}
+
+
 def alignment_lag(a, b, span=5 * mastering.SR):
     """Lag (samples) at which b best matches a: proves the encoder kept sample alignment.
     Waveform error is no use here, since Vorbis legitimately rebuilds noise differently."""
@@ -126,6 +134,8 @@ def build(job):
     """Render, master and write one file (or a piece and its stems); returns summary lines."""
     name, stems = job
     rng = np.random.default_rng(zlib.crc32(name.encode()))
+    if name in REGION:
+        return [build_region(name, REGION[name], rng)]
     if name in LOOPS:
         render, target, quality = LOOPS[name]
         if not stems:
@@ -149,6 +159,42 @@ def build(job):
     return [f"{name:26s} {len(x) / mastering.SR:7.2f} s"]
 
 
+def build_region(name, entry, rng):
+    """Render, master and write one region-set file."""
+    x = entry["render"](rng)
+    if entry["kind"] == "sfx":
+        x = mastering.master_sfx(x, entry["lufs"])
+        path = OUT / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        mastering.write_wav16(path, x)
+        return f"{name:26s} {len(x) / mastering.SR:7.2f} s"
+    x = mastering.master_loop(x, entry["lufs"], -1.5 if entry["quality"] >= 2 else -2.5)[0]
+    return write_loop(name, x, entry["quality"])
+
+
+def write_manifest(set_name, files):
+    """assets/audio/<set>/manifest.json: every file of the set with what the engine needs."""
+    entries = []
+    for name, e in files.items():
+        path = OUT / name
+        if not path.is_file():
+            continue
+        samples = len(mastering.decode(path))
+        item = {"file": name, "kind": e["kind"], "loop": e["kind"] != "sfx",
+                "seconds": round(samples / mastering.SR, 4), "samples": samples,
+                "gain": e["gain"], "when": e.get("when", "event"), "for": e["purpose"]}
+        if "where" in e:
+            item["where"] = e["where"]
+        if "piece" in e:
+            item["music"] = score.info(e["piece"])
+            assert item["music"]["samples"] == samples, name
+        entries.append(item)
+    out = OUT / set_name / "manifest.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    doc = {"version": 1, "set": set_name, "files": entries}
+    out.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+
+
 def jobs(audio):
     """(name, {stem id: file}) for every renderable entry; stems ride with their piece."""
     stems = {f"music/{piece}.ogg": {s["id"]: s["file"] for s in entries}
@@ -170,6 +216,7 @@ def main():
     ap.add_argument("filters", nargs="*")
     args = ap.parse_args()
     todo, stem_files = jobs(json.loads(args.catalog.read_text())["audio"])
+    todo += [(name, {}) for name in REGION]
     wanted = {piece for f, piece in stem_files.items() if any(x in f for x in args.filters)}
 
     def selected(job):
@@ -180,6 +227,8 @@ def main():
         for lines in pool.map(build, [j for j in todo if selected(j)]):
             for line in lines:
                 print("rendered", line, flush=True)
+    for set_name, files in SETS.items():
+        write_manifest(set_name, files)
     sys.exit(validate.main(["--catalog", str(args.catalog)]))
 
 

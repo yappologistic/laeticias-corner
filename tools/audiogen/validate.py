@@ -28,7 +28,13 @@ RULES = {
     "stem": ("ogg", "vorbis", 2, (90, 150), (-45.0, -17.0), -1.0),  # natural level in the mix
     "ambience": ("ogg", "vorbis", 2, (30, 90), (-25.0, -17.0), -1.0),
     "sfx": ("wav", "pcm_s16le", 1, (0.02, 3.2), None, -3.0),
+    # Region sets (assets/audio/<set>/manifest.json): music as above, beds at bed level,
+    # positional loops a little lower, effects up to 6 s (arrival motifs, horn calls).
+    "bed": ("ogg", "vorbis", 2, (30, 90), (-23.5, -20.5), -1.0),
+    "loop": ("ogg", "vorbis", 2, (4, 40), (-27.0, -20.0), -1.0),
+    "region_sfx": ("wav", "pcm_s16le", 1, (0.02, 6.0), None, -3.0),
 }
+KINDS = {"music": "music", "bed": "bed", "loop": "loop", "sfx": "region_sfx"}
 MUSIC_SAMPLES = 4_704_000  # 32 bars at 72 bpm: the shared loop length of mixes and stems
 STEM_RESIDUAL_DB = -20.0  # base stems summed vs the full mix, both decoded (codec noise only)
 STEM_SUM_LUFS = (-19.0, -16.5)  # all stems together: the mix plus the colour layer
@@ -81,7 +87,7 @@ def seam_problems(x):
     return problems
 
 
-def check(group, name):
+def check(group, name, samples=None):
     path = AUDIO / name
     if not path.is_file():
         return None, ["missing"]
@@ -95,10 +101,12 @@ def check(group, name):
     seconds = len(x) / mastering.SR
     stem = Path(name).stem
     dmax = SFX_MAX_SECONDS.get(stem, dmax) if group == "sfx" else dmax
+    sfx_like = group in ("sfx", "region_sfx")
     if not dmin <= seconds <= dmax:
         problems.append(f"duration {seconds:.3f} s outside [{dmin}, {dmax}]")
-    if group in ("music", "stem") and len(x) != MUSIC_SAMPLES:
-        problems.append(f"{len(x)} samples, not {MUSIC_SAMPLES}")
+    want_n = samples if samples is not None else MUSIC_SAMPLES if group in ("music", "stem") else None
+    if want_n is not None and len(x) != want_n:
+        problems.append(f"{len(x)} samples, not {want_n}")
     lufs, true_peak = ebur128(path)
     sample_peak = mastering.sample_peak_db(x)
     if max(true_peak, sample_peak) > ceiling:
@@ -108,7 +116,7 @@ def check(group, name):
     dc = np.abs(x.mean(axis=0)).max()
     if dc > 1e-3:
         problems.append(f"DC offset {dc:.4f}")
-    if group == "sfx":
+    if sfx_like:
         short = mastering.max_short_lufs(x)
         if not SFX_SHORT_LUFS[0] <= short <= SFX_SHORT_LUFS[1]:
             problems.append(f"loudest 100 ms {short:.1f} LUFS outside {SFX_SHORT_LUFS}")
@@ -177,6 +185,38 @@ def check_notes(names):
     return lines, problems
 
 
+def check_sets():
+    """Every region set's manifest: each listed file passes its kind's rules and matches
+    the manifest's length; every file in the set's folders is listed. Returns (listed
+    files, failure count)."""
+    listed, failures = set(), 0
+    for manifest in sorted(AUDIO.glob("*/manifest.json")):
+        doc = json.loads(manifest.read_text())
+        set_name = doc["set"]
+        listed.add(manifest.relative_to(AUDIO).as_posix())
+        print(f"set {set_name}:")
+        names = set()
+        for e in doc["files"]:
+            name = e["file"]
+            names.add(name)
+            group = KINDS[e["kind"]]
+            stats, problems = check(group, name, e["samples"] if e["loop"] else None)
+            if stats and abs(stats[0] - e["seconds"]) > 1e-3:
+                problems.append(f"manifest says {e['seconds']} s")
+            if e["loop"] != (group != "region_sfx"):
+                problems.append("loop flag does not match its kind")
+            failures += bool(problems)
+            cols = f"{stats[0]:8.2f} {stats[1]:7.1f} {stats[2]:8.2f}" if stats else " " * 25
+            print(f"  {name:32s} {cols}  {'; '.join(problems) or 'ok'}")
+        on_disk = {p.relative_to(AUDIO).as_posix() for sub in ("music", "amb", "sfx")
+                   for p in (AUDIO / sub / set_name).glob("*") if p.is_file()}
+        for name in sorted(on_disk - names):
+            failures += 1
+            print(f"  {name:32s} not in the manifest")
+        listed |= names
+    return listed, failures
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--catalog", type=Path, default=CATALOG)
@@ -202,6 +242,9 @@ def main(argv=None):
         print(f"{title}: {'; '.join(problems) or 'ok'}")
         for line in lines:
             print("   ", line)
+    set_files, set_failures = check_sets()
+    failures += set_failures
+    listed |= set_files
     # The folder may run ahead of a catalog during a batch: unlisted files are reported,
     # not failed, so the live catalog still validates before the next one is promoted.
     for path in sorted(p for p in AUDIO.rglob("*") if p.is_file()):
