@@ -51,28 +51,7 @@ TERRAIN = [
      "faces": ["world.earth"]},
     {"id": "rome.vineyard_soil", "under": "rome.grass_spring", "colour": [128, 102, 74]},
     {"id": "rome.mud_bank", "under": "rome.grass_spring", "colour": [124, 110, 82]},
-    # athens
-    {"id": "athens.dry_grass", "base": True, "variants": 4, "colour": [182, 168, 106],
-     "faces": ["world.earth", "world.coast", "world.rock", "athens.limestone"]},
-    {"id": "athens.field_stubble", "under": "athens.dry_grass", "colour": [206, 184, 118],
-     "faces": ["world.earth"]},
-    {"id": "athens.olive_soil", "under": "athens.dry_grass", "colour": [158, 136, 94],
-     "faces": ["world.earth"]},
-    # parsa
-    {"id": "parsa.plain_grass", "base": True, "variants": 4, "colour": [148, 158, 94],
-     "faces": ["world.earth", "world.rock", "parsa.ashlar"]},
-    {"id": "parsa.field_barley", "under": "parsa.plain_grass", "colour": [186, 178, 94],
-     "faces": ["world.earth"]},
 ]
-
-# Home terrains get faces in world-tech §6.2; used only while the home catalog has none. The
-# parsa set catalog lists no faces yet either: its ground uses the terrace's ashlar, the slope's
-# rock and earth banks (persepolis.md §2.6), in that order.
-_PARSA_FACES = ["parsa.ashlar", "world.rock", "world.earth"]
-FACES_PENDING = {"grass": ["world.earth", "world.coast"],
-                 **{f"parsa.{t}": _PARSA_FACES for t in (
-                     "plain_grass", "field_barley", "garden_bed", "packed_earth", "paving_stone",
-                     "paving_red", "gravel", "rough_ground")}}
 
 
 def _plant(i, stand_in, height=80, walkable=False):
@@ -94,8 +73,6 @@ ITEMS = [
     _plant("world.t_fir", "pine", 100), _plant("world.t_cedar", "pine", 110),
     _plant("world.t_palm", "pine", 100), _plant("world.t_tamarisk", "bush", 40),
     _plant("world.t_pine_aleppo", "pine", 90),
-    _plant("athens.t_olive", "bush", 55), _plant("athens.t_cypress", "pine", 110),
-    _plant("parsa.t_cypress", "pine", 110),
     {"id": "world.t_reeds", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "any",
      "height": 30, "stand_in": "reeds", "walkable": True},
     # world kit

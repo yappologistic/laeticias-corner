@@ -90,7 +90,7 @@ def build(L: Layout) -> None:
     lv = np.where((cc >= 120) & (cc <= 124), 7, lv)
     lv = np.where(cc >= 125, mount, lv)
     for k in range(1, 12):
-        L.level(mask(lv == k), k, face="world.rock")
+        L.level(mask(lv == k), k, face=P + "rock")
     slope = mask((cc >= 125) | ((lv > 0) & (cc >= 100)))
     L.paint(slope, ROCK)
     L.paint(mask((cc >= 100) & (cc < 125) & (lv > 0) & (noise(5.0, "scree") > 0.55)), SCREE)
@@ -123,10 +123,10 @@ def build(L: Layout) -> None:
         L.paint(rect, RED)
 
     # The quarry floor, the cistern and the mountain shrine's ledge are cut into the slope.
-    L.level(QUARRY | Rect(124, 99, 125, 119), 7, face="world.rock")
+    L.level(QUARRY | Rect(124, 99, 125, 119), 7, face=P + "rock")
     L.paint(QUARRY | Rect(124, 99, 125, 119), ROCK)
-    L.level(CISTERN, 8, face="world.rock")
-    L.level(Rect(126, 38, 130, 44), 8, face="world.rock")
+    L.level(CISTERN, 8, face=P + "rock")
+    L.level(Rect(126, 38, 130, 44), 8, face=P + "rock")
     L.level(Rect(124, 41, 125, 41), 7)
     L.paint(Rect(126, 38, 130, 44), ROUGH)
     L.district("quarry", QUARRY | Rect(124, 99, 125, 119))
@@ -220,7 +220,7 @@ def build(L: Layout) -> None:
     L.node("mountain_shrine", (128, 41))
 
     # The plain south of the terrace: the camp road from the town past the terrace foot.
-    camp_road = street([(47, 88), (47, 113), (55, 113), (55, 122), (75, 122), (104, 122)],
+    camp_road = street([(47, 88), (47, 113), (54, 113), (54, 122), (75, 122), (104, 122)],
                        width=2, paving=EARTH, kind="road")
     street([(92, 119), (92, 122)], width=1, paving=EARTH)                 # the south stair's foot
     L.node("delegation_camp", (86, 128))
@@ -355,6 +355,7 @@ def build(L: Layout) -> None:
     _clear_doors(L)
     _glow_cap(L)
     _seam(L)
+    _faces(L)
 
     # =========================================================================================
     # 7. Checks and previews
@@ -421,6 +422,23 @@ def _seam(L: Layout) -> None:
         out = L.below_terrain(oc, orr)
         if here == GRASS and out is not None and out != GRASS and L.cat.terrain[out].base:
             L.paint(Rect(c, r, c, r), ROUGH)
+
+
+def _faces(L: Layout) -> None:
+    """Each raised tile keeps its face material when its final terrain lists it; otherwise it
+    takes the terrain's own: bare rock and scree the world's rock, the set's ground its strata
+    (parsa.rock) where it may, else its first face (earth banks)."""
+    for t, tid in enumerate(L.terrains):
+        allowed = L.cat.faces(tid)
+        if not allowed:
+            continue
+        on = (L.T == t) & (L.LV > 0)
+        bad = on & ~np.isin(L.FACE, [L.faces.index(f) for f in allowed if f in L.faces])
+        if not bad.any():
+            continue
+        face = P + "rock" if P + "rock" in allowed else allowed[0]
+        for k in np.unique(L.LV[bad]).tolist():
+            L.level(Mask(0, 0, bad & (L.LV == k)), int(k), face=face)
 
 
 def _clear_doors(L: Layout) -> None:

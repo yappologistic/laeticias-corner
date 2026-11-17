@@ -2,7 +2,7 @@
 
 Sources, in order of authority (an id is taken from the first that defines it):
   1. `assets/catalog.json` (home set) and `assets/sets/<set>/catalog.json`        "catalog"
-  2. drafts: `docs/design/catalog.next.json` (home), `docs/design/sets/<set>.json` "draft"
+  2. drafts: `docs/design/sets/<set>.json` for a set without a catalog yet       "draft"
   3. `tools/worldgen/plan/provisional.py`, worldgen's stand-ins for sets whose
      catalogs do not exist yet                                                     "provisional"
 Ids from 2 and 3 validate with a warning (V1), so layouts can be written before the set catalogs
@@ -94,9 +94,6 @@ class Catalog:
         self.items: dict[str, ItemDef] = {}
         self.base_terrain_home = next(t["id"] for t in home["terrain"] if t.get("base"))
         self._load_doc(home, "catalog", "assets/catalog.json")
-        nxt = self.root / "docs/design/catalog.next.json"
-        if nxt.exists():
-            self._load_doc(json.loads(nxt.read_text()), "draft", str(nxt.relative_to(self.root)))
         for s in self.sets:
             real = self.root / f"assets/sets/{s}/catalog.json"
             draft = self.root / f"docs/design/sets/{s}.json"
@@ -157,12 +154,6 @@ class Catalog:
         for i in provisional.ITEMS:
             if i["id"] not in self.items:
                 self.items[i["id"]] = self._item(i, "provisional", file)
-        self.pending_faces: set[str] = set()
-        for tid, faces in provisional.FACES_PENDING.items():
-            t = self.terrain.get(tid)
-            if t is not None and not t.faces:
-                t.faces = list(faces)
-                self.pending_faces.add(tid)
 
     def _load_geometry(self) -> dict:
         geom: dict = {}

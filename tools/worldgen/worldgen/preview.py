@@ -726,12 +726,7 @@ def home_preview(world: World, cat: Catalog, root: Path) -> None:
     """Paint the home region's fully revealed starter land (all stages, from the home catalog
     catalog) into a composed world, for previews only; the engine writes the home from the save."""
     import json
-    doc = {}
-    for f in (Path(root) / "assets/catalog.json", Path(root) / "docs/design/catalog.next.json"):
-        if f.exists():
-            doc = json.loads(f.read_text())
-            if "land" in doc:
-                break
+    doc = json.loads((Path(root) / "assets/catalog.json").read_text())
     if "land" not in doc:
         return
     (hc, hr), (hw_, hh_) = P.HOME["origin_plan"], P.HOME["size"]

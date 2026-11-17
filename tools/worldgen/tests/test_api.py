@@ -124,3 +124,27 @@ class Bible(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Sources(unittest.TestCase):
+    def test_catalog_reads_the_contract_and_the_set_catalogs(self):
+        import json
+        import shutil
+        import tempfile
+        from pathlib import Path
+        from worldgen.catalog import Catalog
+        with tempfile.TemporaryDirectory() as tmp:
+            t = Path(tmp)
+            (t / "assets/sets/athens").mkdir(parents=True)
+            shutil.copy(ROOT / "assets/catalog.json", t / "assets/catalog.json")
+            shutil.copy(ROOT / "assets/sets/athens/catalog.json",
+                        t / "assets/sets/athens/catalog.json")
+            # The retired home draft is never read, even when a stale copy lies around.
+            (t / "docs/design").mkdir(parents=True)
+            (t / "docs/design/catalog.next.json").write_text(json.dumps(
+                {"terrain": [], "items": [{"id": "zz_stale", "footprint": [1, 1]}]}))
+            cat = Catalog(t)
+        self.assertNotIn("zz_stale", cat.items)
+        self.assertEqual(cat.items["athens.parthenon"].source, "catalog")
+        self.assertEqual(cat.terrain["grass"].faces, ["world.earth", "world.coast"])
+        self.assertIn("athens.limestone", cat.faces("athens.rock_limestone"))
