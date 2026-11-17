@@ -232,35 +232,35 @@ bool ConditionSet::anchorPasses(const CondNode& n, const World& world, TileRect 
         TileRect{fp.x0 - n.within, fp.y0 - n.within, fp.x1 + n.within, fp.y1 + n.within}.clipped(
             world.bounds());
     std::array<int, kMaxHas> counts{};
-    bool items = false;
-    bool terrain = false;
-    for (int h = 0; h < n.count; ++h)
-        (selector(has_[static_cast<std::size_t>(n.first + h)].selector).terrain ? terrain : items) =
-            true;
-    if (items) {
-        // Any other item touching the grown rectangle has a tile in the area: the footprint
-        // itself is the anchor's.
-        world.forEachItemIn(area, [&](const Item& it) {
-            if (&it == anchorItem) return;
-            for (int h = 0; h < n.count; ++h) {
-                const Selector& s = selector(has_[static_cast<std::size_t>(n.first + h)].selector);
-                if (!s.terrain && s.match[it.type] != 0) ++counts[static_cast<std::size_t>(h)];
-            }
-        });
+    // Without upper bounds an anchor passes as soon as every minimum is met.
+    bool bounded = false;
+    int unmet = 0;
+    for (int h = 0; h < n.count; ++h) {
+        const Has& e = has_[static_cast<std::size_t>(n.first + h)];
+        bounded = bounded || e.max >= 0;
+        unmet += e.min > 0 ? 1 : 0;
     }
-    if (terrain) {
-        for (int y = area.y0; y < area.y1; ++y)
-            for (int x = area.x0; x < area.x1; ++x) {
-                const TilePos p{x, y};
-                if (fp.contains(p) || !world.hasGround(p) || world.isWild(p)) continue;
-                const auto t = static_cast<std::size_t>(world.terrainAt(p));
-                for (int h = 0; h < n.count; ++h) {
-                    const Selector& s =
-                        selector(has_[static_cast<std::size_t>(n.first + h)].selector);
-                    if (s.terrain && s.match[t] != 0) ++counts[static_cast<std::size_t>(h)];
+    // One pass over the area's tiles (at most 12 x 12): its terrain, and through occupancy the
+    // items on it, each counted once, at the first of its tiles the scan meets.
+    for (int y = area.y0; y < area.y1; ++y)
+        for (int x = area.x0; x < area.x1; ++x) {
+            const TilePos p{x, y};
+            if (fp.contains(p) || !world.hasGround(p) || world.isWild(p)) continue;
+            const auto t = static_cast<std::size_t>(world.terrainAt(p));
+            const Item* it = world.itemAt(p);
+            const bool first = it != nullptr && it != anchorItem &&
+                               x == std::max(it->pos.x, area.x0) &&
+                               y == std::max(it->pos.y, area.y0);
+            for (int h = 0; h < n.count; ++h) {
+                const Selector& sel =
+                    selector(has_[static_cast<std::size_t>(n.first + h)].selector);
+                if (sel.terrain ? sel.match[t] != 0 : first && sel.match[it->type] != 0) {
+                    int& c = counts[static_cast<std::size_t>(h)];
+                    if (++c == has_[static_cast<std::size_t>(n.first + h)].min) --unmet;
                 }
             }
-    }
+            if (!bounded && unmet == 0) return true;
+        }
     for (int h = 0; h < n.count; ++h) {
         const Has& e = has_[static_cast<std::size_t>(n.first + h)];
         const int c = counts[static_cast<std::size_t>(h)];

@@ -103,6 +103,37 @@ int App::runBench() {
                 world_.width(), world_.height(), world_.items().size(), pixelW_, pixelH_,
                 SDL_GetRendererName(renderer_.get()), static_cast<double>(opts_.density));
     bool over = false;
+    {
+        // Every condition the progress loop knows, evaluated over the filled map at once (the
+        // worst case: in play only open wishes and changed facts are looked at).
+        const CondFacts f = facts();
+        const ConditionSet& cs = cat_.conditions;
+        Series cond;
+        int holding = 0;
+        for (int i = 0; i < 40; ++i) {
+            holding = 0;
+            const Uint64 t0 = SDL_GetPerformanceCounter();
+            for (const WishDef& w : cat_.wishes) {
+                holding += cs.eval(w.goal, world_, f) ? 1 : 0;
+                if (w.gate >= 0) holding += cs.eval(w.gate, world_, f) ? 1 : 0;
+            }
+            for (const NookDef& n : cat_.nooks) holding += cs.eval(n.condition, world_, f) ? 1 : 0;
+            for (const VisitorDef& v : cat_.visitors)
+                if (v.recipe >= 0) holding += cs.eval(v.recipe, world_, f) ? 1 : 0;
+            for (const auto* piece : {&cat_.audio.dayStems, &cat_.audio.nightStems})
+                for (const StemDef& s : *piece)
+                    if (s.when >= 0) holding += cs.eval(s.when, world_, f) ? 1 : 0;
+            cond.add(ms(t0, SDL_GetPerformanceCounter()));
+        }
+        std::printf("bench: conditions: every wish, gate, nook, recipe and stem: avg %.3f max %.3f "
+                    "ms (%d hold)\n",
+                    cond.avg(), cond.max(), holding);
+        if (opts_.budgetMs > 0 && cond.avg() > tuning::kConditionBudgetMs) {
+            std::printf("bench: conditions are over the %.2f ms budget\n",
+                        tuning::kConditionBudgetMs);
+            over = true;
+        }
+    }
     for (const int level : {kDefaultZoomLevel, kDefaultZoomLevel - 1}) {
         // Centre the camera on the built-up middle at this level.
         const Vec2 mid = cat_.iso().toWorld(static_cast<float>(world_.width()) * 0.5f,

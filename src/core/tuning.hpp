@@ -54,6 +54,7 @@ inline constexpr double kWishGrantHold = 1.5;      // a goal must hold this long
 inline constexpr double kWishAlreadyDoneDelay = 3.0;
 inline constexpr double kWishPacingTick = 1.0; // offers are considered once a second
 inline constexpr double kConditionDebounce = 0.25;
+inline constexpr double kConditionBudgetMs = 1.0; // every condition at once, on a full map
 // Rare visitors: the recipe holds this long before one comes; a visit lasts, then it stays away.
 inline constexpr float kRareDelayMin = 20.0f;
 inline constexpr float kRareDelayMax = 60.0f;
