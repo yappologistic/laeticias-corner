@@ -5,9 +5,11 @@ import re
 import sys
 from collections import defaultdict
 
+import numpy as np
 from PIL import Image
 
 import spec
+from palette import PALETTE
 
 
 def validate() -> list[str]:
@@ -42,6 +44,17 @@ def validate() -> list[str]:
         if k.startswith(("item/", "terrain/", "critter/", "edge/")) and w * h > 1:
             if alpha.crop((x, y, x + w, y + h)).getbbox() is None:
                 errors.append(f"{k}: sprite is fully transparent")
+
+    # Every coloured pixel comes from the palette; shadows are pure black with alpha.
+    rgba = np.asarray(img)
+    allowed = {int(c[1:], 16) for c in PALETTE}
+    for k, r in sprites.items():
+        px = rgba[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]].reshape(-1, 4)
+        px = px[px[:, 3] > 0].astype(np.int64)
+        codes = set(np.unique((px[:, 0] << 16) | (px[:, 1] << 8) | px[:, 2]).tolist())
+        bad = codes - ({0} if "/shadow/" in k else allowed)
+        if bad:
+            errors.append(f"{k}: {len(bad)} colours outside the palette")
 
     # Every layer of an item variant has the same number of frames.
     frames = defaultdict(set)

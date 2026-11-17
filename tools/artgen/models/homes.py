@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 from palette import GLOW, _rgb
-from voxel import (Halo, Model, box, cone, cylinder, cylinder_normal, ellipsoid, gable, hash01,
+from voxel import (Halo, Model, box, cone, slope_normal, cylinder_normal, ellipsoid, gable, hash01,
                    segment, value_noise)
 from models.nature import canopy
 
@@ -73,8 +73,8 @@ class Facade:
 
 
 def gable_roof(m: Model, x0, x1, y0, y1, z0, rise, material="roof", verge="wood",
-               along_x=True, row=1.8, thick=2.5):
-    """Shingled gable roof; returns the mask of voxels under it (for gable walls)."""
+               along_x=True, row=1.8, thick=2.5, thatch=False):
+    """Shingled (or thatched) gable roof; returns the mask of voxels under it."""
     X, Y, Z = m.coords()
     roof = gable(X, Y, Z, x0, x1, y0, y1, z0, rise, along_x)
     under = gable(X, Y, Z, x0, x1, y0, y1, z0 - thick, rise, along_x)
@@ -85,10 +85,15 @@ def gable_roof(m: Model, x0, x1, y0, y1, z0, rise, material="roof", verge="wood"
     rows = np.floor((half - across) / row)
     joint = ((along + rows * 1.5) % 3.0) < 0.6
     edge = ((half - across) % row) < 0.55
-    tone = -0.9 * edge - 0.4 * joint + 0.35 * (rows % 2) + (value_noise(X, Y, Z, 3, 800) - 0.5) * 0.4
+    if thatch:  # straw streaks running down the slope, a dark band at each course
+        streak = value_noise(along * 1.6, across * 0.25, Z * 0.25, 1.0, 801) - 0.5
+        tone = streak * 1.4 - 0.7 * (((half - across) % (row * 2)) < 0.6)
+    else:
+        tone = -0.9 * edge - 0.4 * joint + 0.35 * (rows % 2) + (value_noise(X, Y, Z, 3, 800) - 0.5) * 0.4
     shell = roof & ~gable(X, Y, Z, x0, x1, y0, y1, z0 + 0.01, rise - thick, along_x)
     ends = (along < (x0 if along_x else y0) + 1) | (along >= (x1 if along_x else y1) - 1)
-    m.put(shell, material, tone=tone - 0.6 * (across < 0.8))
+    nrm = slope_normal(X, Y, Z, (x0 + x1) / 2, (y0 + y1) / 2, rise / half, along_x)
+    m.put(shell, material, tone=tone - 0.6 * (across < 0.8), normal=nrm)
     m.put(shell & ends, verge, tone=-0.2)
     return under & ~roof
 
@@ -145,16 +150,17 @@ def toolshed(v, frame, frames):
     x0, x1, y0, y1 = 2.5, 13.5, 3, 13
     low, high = 12.5, 16.5
     top = low + (high - low) * (Y - y0) / (y1 - y0)
-    m.put(box(X, Y, Z, x0, x1, y0, y1, 0, 99) & (Z < top), "wood_grey",
+    m.put(box(X, Y, Z, x0, x1, y0, y1, 0, 99) & (Z < top), "wood",
           tone=((X % 2.0) < 0.45) * -0.8 + ((Y % 2.0) < 0.45) * -0.8)
     front = Facade(m, "+y", y1)
-    front.door(5.5, 10.5, 0, 10, material="wood", frame="wood")
+    front.door(5.5, 10.5, 0, 10, material="wood_grey", frame="wood_light")
     side = Facade(m, "+x", x1)
     side.window(6, 10, 6, 9.5, cross=True, sill=True)
     rtop = low + (high - low) * (Y - y0) / (y1 - y0) + 0.5
     roof = (X >= x0 - 1.2) & (X < x1 + 1.2) & (Y >= y0 - 1.2) & (Y < y1 + 1.8) & \
         (Z >= rtop - 0.2) & (Z < rtop + 1.3)
-    m.put(roof, "slate", tone=-0.8 * ((np.floor(Y) % 2) == 0) - 0.3 * (((X + np.floor(Y) * 1.5) % 3) < 0.6))
+    m.put(roof, "slate", tone=-0.8 * ((np.floor(Y) % 2) == 0) - 0.3 * (((X + np.floor(Y) * 1.5) % 3) < 0.6)
+          - 0.6)
     # A rake leaning by the door.
     m.put(segment(X, Y, Z, (12.0, 14.6, 0), (13.4, 14.0, 12), 0.5), "wood_light")
     m.put(box(X, Y, Z, 10.5, 14.5, 14.2, 15.2, 0, 1), "metal")
@@ -162,17 +168,17 @@ def toolshed(v, frame, frames):
 
 
 def coop(v, frame, frames):
-    m = Model.empty(0, 16, 0, 17, 0, 22)
+    m = Model.empty(0, 16, 0, 17, 0, 24)
     X, Y, Z = m.coords()
     x0, x1, y0, y1 = 3, 13, 3.5, 11.5
     for x in (x0 + 0.5, x1 - 1.5):
         for y in (y0 + 0.5, y1 - 1.5):
             m.put(box(X, Y, Z, x, x + 1, y, y + 1, 0, 4), "wood")
-    walls = box(X, Y, Z, x0, x1, y0, y1, 4, 18)
-    under = gable(X, Y, Z, x0 - 0.01, x1 + 0.01, y0, y1, 12, 5, along_x=False)
-    m.put(walls & ((Z < 12) | under), "red_paint", tone=siding(Z))
+    walls = box(X, Y, Z, x0, x1, y0, y1, 4, 20)
+    under = gable(X, Y, Z, x0 - 0.01, x1 + 0.01, y0, y1, 13, 5, along_x=False)
+    m.put(walls & ((Z < 13) | under), "red_paint", tone=siding(Z))
     corners = ((X < x0 + 1) | (X >= x1 - 1)) & ((Y < y0 + 1) | (Y >= y1 - 1))
-    m.put(walls & corners & (Z < 12), "cream", tone=-0.2)
+    m.put(walls & corners & (Z < 13), "cream", tone=-0.2)
     m.put(box(X, Y, Z, x0, x1, y0, y1, 4, 5), "cream", tone=-0.4)
     front = Facade(m, "+y", y1)
     m.carve(front._rect(6.5, 9.5, 5, 9.5) & front.layer(0))
@@ -180,8 +186,8 @@ def coop(v, frame, frames):
     m.put(front._rect(5.5, 10.5, 9.5, 10.5) & front.layer(0), "cream")
     side = Facade(m, "+x", x1)
     side.window(6, 9, 7, 10, glass="glass", frame="cream", sill=False)
-    gable_roof(m, x0 - 1.5, x1 + 1.5, y0 - 1.5, y1 + 1.5, 11.5, 6.5, material="straw", verge="straw",
-               along_x=False, row=1.4, thick=2)
+    gable_roof(m, x0 - 1, x1 + 1, y0 - 1, y1 + 1, 12.5, 6.0, material="straw", verge="straw",
+               along_x=False, row=1.4, thick=2, thatch=True)
     ramp_z = lambda y: 5 - (y - y1) * 1.0
     ramp = (X >= 6.5) & (X < 9.5) & (Y >= y1) & (Y < y1 + 5) & (Z < ramp_z(Y)) & (Z >= ramp_z(Y) - 1)
     m.put(ramp, "wood_light", tone=-0.8 * ((Y % 1.6) < 0.4))
@@ -202,8 +208,10 @@ def greenhouse(v, frame, frames):
         ~gable(X, Y, Z, x0 - 0.5, x1 + 0.5, y0 - 1.5, y1 + 1.5, eave + 0.01, rise + 1.3 - 1.5)
     across = np.abs(Y - 16)
     m.put(roof_glass, "glass_cool", tone=0.6 + (((X + across) % 6) < 1.0) * 0.8)
-    mullion = ((X - x0) % 4.33 < 1.0) | ((Y - y0) % 5.5 < 1.0) | (Z < 4) | \
-        ((Z >= eave - 1) & (Z < eave)) | (np.abs(Z - 8.5) < 0.5)
+    on_end = (X < x0 + 1) | (X >= x1 - 1)
+    corner = on_end & ((Y < y0 + 1) | (Y >= y1 - 1))
+    mullion = np.where(on_end, ((Y - y0 + 2.75) % 5.5) < 1.0, ((X - x0 + 2.2) % 4.33) < 1.0) | \
+        corner | (Z < 4) | ((Z >= eave - 1) & (Z < eave)) | (np.abs(Z - 8.5) < 0.5)
     m.put(shell & mullion, "cream", tone=0.2)
     m.put(roof_glass & ((X - x0) % 4.33 < 1.0), "cream", tone=0.3)
     m.put(roof_glass & (across < 1.0), "cream", tone=0.5)
@@ -237,8 +245,10 @@ def barn(v, frame, frames):
     rect = end._rect(10, 22, 2, 15)
     m.carve(rect & end.layer(0))
     a = end.along
-    brace = (np.abs((a - 10) - (Z - 2) * 12 / 13) < 0.8) | (np.abs((22 - a) - (Z - 2) * 12 / 13) < 0.8) \
-        | (np.abs(a - 16) < 0.6) | (Z >= 14) | (a < 11) | (a >= 21)
+    leaf = np.where(a < 16, a - 10, a - 16)          # two door leaves, each braced with an X
+    rise_ = (Z - 2) * 6 / 13
+    brace = (np.abs(leaf - rise_) < 0.75) | (np.abs((6 - leaf) - rise_) < 0.75) \
+        | (leaf < 0.9) | (leaf > 5.1) | (Z >= 14) | (Z < 3)
     m.put(rect & end.layer(1), "red_paint", tone=((a % 2) < 0.5) * -0.6 - 0.4)
     m.put(rect & end.layer(1) & brace, "cream")
     m.put(end._rect(9, 23, 15, 16) & (end.layer(0) | end.layer(-1)), "cream", tone=0.3)
@@ -260,8 +270,12 @@ def barn(v, frame, frames):
                         knee_z + 0.9 + (ridge + 1 - knee_z) * (knee_a - across) / knee_a)
     roof = (X >= x0 - 1.5) & (X < x1 + 1.5) & (across < half + 2) & (Z < roof_top) & (Z >= roof_top - 2.2)
     rows = np.floor(across / 1.8)
-    m.put(roof, "slate", tone=-0.8 * ((across % 1.8) < 0.5) - 0.3 * (((X + rows * 1.5) % 3) < 0.6)
-          + 0.6 * (across > knee_a) - 0.5 * (across < 0.8))
+    pitch = np.where(across > knee_a, (knee_z - eave) / (half - knee_a), (ridge - knee_z) / knee_a)
+    zero = X * 0 + Z * 0
+    roof_n = (zero, np.sign(Y - yc) * pitch + zero, zero + 1.0)
+    m.put(roof, "slate", normal=roof_n, tone=-1.2 * ((across % 1.8) < 0.5) + 0.5 * ((across % 1.8) > 1.3)
+          - 0.5 * (((X + rows * 1.5) % 3) < 0.6) - 0.5 * (across < 0.8)
+          + (value_noise(X, Y, Z, 2.5, 850) - 0.5) * 0.6)
     m.put(roof & ((X < x0 - 0.5) | (X >= x1 + 0.5)), "cream", tone=-0.3)
     m.halos.append(Halo(x1 + 1.5, 16, 17.5, 12, _rgb(GLOW[1]), 0.8))
     return m
@@ -282,9 +296,10 @@ def windmill(v, frame, frames):
     m.put(tower & (np.abs(Z - 8.5) < 0.7), "wood", normal=cylinder_normal(X, Y, Z, cx, cy))
     # Door, windows (two levels) and a balcony rail on the front.
     front = Facade(m, "+x", cx + 10.0)
-    m.carve(front._rect(13.5, 18.5, 0, 9) & (front.depth > -3))
-    m.put(front._rect(13.5, 18.5, 0, 9) & (front.depth > -4) & (front.depth <= -3), "wood",
-          tone=((Y % 2) < 0.5) * -0.7)
+    door = front._rect(13.5, 18.5, 0, 9)
+    m.carve(door & (front.depth > -1.2))
+    m.put(door & (front.depth > -2.2) & (front.depth <= -1.2), "wood", tone=((Y % 2) < 0.5) * -0.7)
+    m.put(front._rect(12.5, 19.5, 0, 10) & ~door & tower & (front.depth > -1.5), "wood_light")
     for z0, d in ((19, 1.4), (31, 2.2)):
         win = front._rect(14.5, 17.5, z0, z0 + 4) & (front.depth > -d - 2.5) & (front.depth < -d + 1)
         m.carve(win & (front.depth > -d - 1))

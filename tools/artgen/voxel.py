@@ -43,10 +43,6 @@ class Model:
         return cls(x0, y0, z0, np.zeros(shape, np.uint8), np.zeros(shape, np.float32),
                    np.zeros(shape + (3,), np.float32))
 
-    @classmethod
-    def for_footprint(cls, fw: int, fh: int, height: int, margin: int = 8, below: int = 0):
-        return cls.empty(-margin, TILE * fw + margin, -margin, TILE * fh + margin, -below, height)
-
     def coords(self):
         """Voxel-centre world coordinates as broadcastable (nx,1,1), (1,ny,1), (1,1,nz) arrays."""
         nx, ny, nz = self.mat.shape
@@ -85,10 +81,6 @@ class Model:
         mask = np.broadcast_to(mask, self.mat.shape)
         self.mat[mask] = 0
         self.nrm[mask] = 0.0
-
-    def add_tone(self, mask, amount):
-        mask = np.broadcast_to(mask, self.mat.shape)
-        self.tone += np.where(mask, np.asarray(amount, np.float32), 0.0)
 
     def rotated(self, k: int, fw: int, fh: int) -> "Model":
         """The model turned k x 90 degrees clockwise seen from above (N -> E -> S -> W)."""
@@ -184,6 +176,14 @@ def gable(X, Y, Z, x0, x1, y0, y1, z0, rise, along_x=True):
         half = (x1 - x0) / 2
         h = z0 + rise * (1 - np.abs(X - (x0 + half)) / half)
     return (X >= x0) & (X < x1) & (Y >= y0) & (Y < y1) & (Z >= z0) & (Z < h)
+
+
+def slope_normal(X, Y, Z, cx, cy, pitch, along_x=True):
+    """Normals of a pitched roof plane, so voxel staircases shade as one smooth slope."""
+    zero = Z * 0 + X * 0 + Y * 0
+    if along_x:
+        return (zero, np.sign(Y - cy) * pitch + zero, zero + 1.0)
+    return (np.sign(X - cx) * pitch + zero, zero, zero + 1.0)
 
 
 # ---- deterministic noise ----

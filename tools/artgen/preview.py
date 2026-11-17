@@ -189,7 +189,7 @@ def item_sheet(ids, cat, cols=None, gap=2, base="."):
         n = 16 if it["layout"] == "connect" else it["count"]
         rows_spec.append((item_id, n, it))
     width = max(sum(max(it["footprint"]) + gap for _ in range(n)) for _, n, it in rows_spec) + gap
-    rows, placements, ty = [], [], gap
+    placements, ty = [], gap
     for item_id, n, it in rows_spec:
         fw, fh = it["footprint"]
         tx = gap
@@ -225,9 +225,7 @@ def maze_scene():
     rows = ["." * 16 for _ in range(16)]
     scene = Scene(rows)
     grid = {(x + 1, y + 1) for y, r in enumerate(MAZE) for x, c in enumerate(r) if c == "h"}
-    fences = {(x, 13) for x in range(1, 14)} | {(14, y) for y in range(1, 14)} | {(1, 14), (14, 14)}
     fences = {(x, 14) for x in range(2, 15)} | {(15, y) for y in range(2, 15)}
-    occupied = grid | fences
 
     def mask_of(cells, x, y):
         m = 0

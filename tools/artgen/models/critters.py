@@ -10,7 +10,7 @@ import numpy as np
 
 from pack import Sprite
 from render import render_base
-from voxel import Model, cylinder, ellipsoid, ellipsoid_normal, segment
+from voxel import Model, ellipsoid, ellipsoid_normal, segment
 
 
 S = 1.35  # critters are modelled at life-ish size and enlarged so they read at 1x

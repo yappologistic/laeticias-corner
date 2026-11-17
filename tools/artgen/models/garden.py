@@ -9,8 +9,8 @@ import numpy as np
 
 from palette import GLOW, _rgb
 from voxel import (Halo, Model, Rng, box, cylinder, cylinder_normal, ellipsoid, ellipsoid_normal,
-                   gable, hash01, segment, value_noise)
-from models.nature import C, _blades, canopy
+                   gable, hash01, segment, slope_normal, value_noise)
+from models.nature import C, canopy
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
 ARMS = {N_BIT: (0, -1), E_BIT: (1, 0), S_BIT: (0, 1), W_BIT: (-1, 0)}
@@ -141,7 +141,8 @@ def beehive(v, frame, frames):
     m.put(box(X, Y, Z, 5.5, 10.5, 13, 15, 4, 4.8), "wood_light", tone=0.4)
     # Roof with a little overhang.
     roof = gable(X, Y, Z, 2.5, 13.5, 3, 14, 17.5, 3.5, along_x=False)
-    m.put(roof, "roof", tone=-0.8 * ((np.floor(Y) % 2) == 0))
+    m.put(roof, "roof", tone=-0.8 * ((np.floor(Y) % 2) == 0),
+          normal=slope_normal(X, Y, Z, 8, 8.5, 3.5 / 5.5, along_x=False))
     m.put(box(X, Y, Z, 2, 14, 2.5, 14.5, 17.5, 18.2), "wood", tone=-0.3)
     return m
 
@@ -192,7 +193,7 @@ def well(v, frame, frames):
           tone=-0.8 * ((Z > 9.5) & (Z < 10.2)))
     roof = gable(X, Y, Z, -0.5, 16.5, 2.5, 13.5, 19.5, 6.5)
     rows = (np.floor((19.5 + 6.5 - Z) / 1.7) % 2) == 0
-    m.put(roof, "roof", tone=-0.7 * rows)
+    m.put(roof, "roof", tone=-0.7 * rows, normal=slope_normal(X, Y, Z, 8, 8, 6.5 / 5.5))
     m.put(roof & ((X < 0.5) | (X > 15.5)), "wood", tone=-0.3)
     return m
 

@@ -19,7 +19,7 @@ SUN /= np.linalg.norm(SUN)
 # Ground shadows use a higher sun than the shading so they stay compact on a crowded map.
 SHADOW_SUN = np.array([-0.38, 0.16, 0.91], np.float32)
 SHADOW_SUN /= np.linalg.norm(SHADOW_SUN)
-AMBIENT, DIFFUSE = 0.38, 0.62
+AMBIENT, DIFFUSE = 0.42, 0.58
 FACE_NORMALS = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], np.float32)  # top, +x, +y
 SHADOW_ALPHA = (0, 58, 88, 116)
 AO_PAD = 5
@@ -53,7 +53,7 @@ class Layers:
     glow: Sprite | None
 
 
-def _bounds(model: Model, extra_ground=None):
+def _bounds(model: Model):
     nx, ny, nz = model.mat.shape
     xs = (model.x0, model.x0 + nx)
     ys = (model.y0, model.y0 + ny)
@@ -222,10 +222,11 @@ def render_base(model: Model):
             inten = halo.strength * np.clip(1 - d, 0, 1) ** 1.6 * 3
             q = dither(inten, pxx, pyy)
             q = np.clip(q, 0, 3)
-            add = (q > 0) & ~g
-            scale = (q / 3 * 0.6)[..., None]
-            glow[add, :3] = np.maximum(glow[add, :3], (np.array(halo.rgb) * scale[add]).astype(np.uint8))
-            glow[add, 3] = 255
+            # Halo strength lives in alpha: additive blending scales the colour by it.
+            alpha = (q / 3 * 0.6 * 255).astype(np.uint8)
+            add = (alpha > glow[..., 3]) & ~g
+            glow[add, :3] = halo.rgb
+            glow[add, 3] = alpha[add]
     return rgba, glow, -c0, -r0
 
 

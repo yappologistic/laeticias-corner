@@ -7,13 +7,11 @@ an open edge (same terrain beyond) is fully covered and every inset tapers to ze
 next to an open edge, so neighbouring tiles always agree along their shared edge.
 """
 
-import math
-
 import numpy as np
 
 from pack import Sprite
-from palette import EARTH, GLOW, INK, LEAF, PLASTER, POPPY, ROOF, STONE, STRAW, VIOLET, WATER, _rgb
-from render import BAYER4, dither
+from palette import EARTH, INK, LEAF, PLASTER, POPPY, ROOF, STONE, STRAW, VIOLET, WATER, _rgb
+from render import dither
 from voxel import hash01, value_noise
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
@@ -195,12 +193,12 @@ def path(mask: int) -> Sprite:
     cover = inside & (f > 0)
     level = 2.3 + (_pnoise(u, v, 4, 410) - 0.5) * 1.0 + (_pnoise(u, v, 8, 411) - 0.5) * 0.5
     # Pebbles: light top, dark underside.
-    dx, dy, h, ok = _scatter(u, v, 2, 420, 0.35)
+    dx, dy, h, ok = _scatter(u, v, 2, 420, 0.2)
     rx, ry = np.round(dx - 0.5), np.round(dy - 0.5)
     big = h > 0.7
     top = ok & (ry == 0) & ((rx == 0) | (big & (rx == -1)))
     bottom = ok & (ry == 1) & ((rx == 0) | (big & (rx == -1)))
-    level = level + top * 1.6 - bottom * 1.4
+    level = level + top * 1.3 - bottom * 1.2
     # Worn rim: darker earth just inside the border, with a lighter crest before it.
     level = level - np.clip(1.4 - f, 0, 1) * 1.6 + ((f > 1.4) & (f < 2.2)) * 0.5
     rgb = _paint(PATH, level, px, py)
