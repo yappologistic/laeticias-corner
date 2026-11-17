@@ -1,0 +1,3665 @@
+{
+ "version": 1,
+ "set": "athens",
+ "terrain": [
+  {
+   "id": "athens.dry_grass",
+   "name": "Summer-dry grass",
+   "base": true,
+   "variants": 4,
+   "faces": [
+    "athens.earth",
+    "athens.limestone",
+    "athens.ashlar"
+   ]
+  },
+  {
+   "id": "athens.rock_limestone",
+   "name": "Limestone rock",
+   "under": "athens.dry_grass",
+   "edges": 16,
+   "faces": [
+    "athens.limestone"
+   ]
+  },
+  {
+   "id": "athens.marble_paving",
+   "name": "Marble paving",
+   "under": "athens.dry_grass",
+   "edges": 16,
+   "faces": [
+    "athens.ashlar",
+    "athens.limestone"
+   ]
+  },
+  {
+   "id": "athens.gravel",
+   "name": "Gravel (Panathenaic Way, Agora)",
+   "under": "athens.dry_grass",
+   "edges": 16,
+   "faces": [
+    "athens.earth",
+    "athens.limestone"
+   ]
+  },
+  {
+   "id": "athens.packed_earth",
+   "name": "Packed earth lane",
+   "under": "athens.dry_grass",
+   "edges": 16,
+   "faces": [
+    "athens.earth",
+    "athens.limestone"
+   ]
+  },
+  {
+   "id": "athens.field_stubble",
+   "name": "Barley stubble",
+   "under": "athens.dry_grass",
+   "edges": 16,
+   "faces": [
+    "athens.earth"
+   ]
+  },
+  {
+   "id": "athens.olive_soil",
+   "name": "Olive-grove soil",
+   "under": "athens.dry_grass",
+   "edges": 16,
+   "faces": [
+    "athens.earth"
+   ]
+  },
+  {
+   "id": "athens.riverbed",
+   "name": "Dry riverbed (Ilissos)",
+   "under": "athens.dry_grass",
+   "edges": 16,
+   "faces": [
+    "athens.earth",
+    "athens.limestone"
+   ]
+  }
+ ],
+ "items": [
+  {
+   "id": "athens.parthenon",
+   "name": "Parthenon",
+   "footprint": [
+    8,
+    17
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 190,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "parthenon"
+  },
+  {
+   "id": "athens.propylaia",
+   "name": "Propylaia",
+   "footprint": [
+    11,
+    10
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 140,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "propylaia",
+   "slots": [
+    {
+     "id": "mnesikles",
+     "kind": "stand",
+     "cap": 1
+    },
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.nike_bastion",
+   "name": "Nike bastion",
+   "footprint": [
+    5,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 40,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "nike_bastion",
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.approach",
+   "name": "Approach ramp",
+   "footprint": [
+    7,
+    14
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 144,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "approach",
+   "rise": 9,
+   "axis": "y",
+   "slots": [
+    {
+     "id": "stand",
+     "kind": "stand",
+     "cap": 3
+    }
+   ]
+  },
+  {
+   "id": "athens.old_temple",
+   "name": "Old Temple of Athena",
+   "footprint": [
+    6,
+    11
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 45,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "old_temple",
+   "slots": [
+    {
+     "id": "priestess",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.pandroseion",
+   "name": "Pandroseion and the sacred olive",
+   "footprint": [
+    4,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "pandroseion",
+   "slots": [
+    {
+     "id": "tend",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.promachos",
+   "name": "Athena Promachos",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 130,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "promachos"
+  },
+  {
+   "id": "athens.great_altar",
+   "name": "Great Altar of Athena",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 30,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "great_altar",
+   "slots": [
+    {
+     "id": "sacrifice",
+     "kind": "work",
+     "cap": 2
+    }
+   ],
+   "emitters": {
+    "fire": "athens.altar_fire"
+   }
+  },
+  {
+   "id": "athens.sculpt_yard",
+   "name": "Sculptors' yard",
+   "footprint": [
+    11,
+    9
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 100,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "sculpt_yard",
+   "slots": [
+    {
+     "id": "carve",
+     "kind": "work",
+     "cap": 3
+    },
+    {
+     "id": "hoist",
+     "kind": "work",
+     "cap": 2
+    },
+    {
+     "id": "pheidias",
+     "kind": "stand",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "dust": "athens.marble_dust"
+   }
+  },
+  {
+   "id": "athens.brauronion",
+   "name": "Sanctuary of Artemis Brauronia",
+   "footprint": [
+    6,
+    9
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "brauronion"
+  },
+  {
+   "id": "athens.chalkotheke",
+   "name": "Chalkotheke",
+   "footprint": [
+    4,
+    7
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "chalkotheke"
+  },
+  {
+   "id": "athens.zeus_polieus",
+   "name": "Sanctuary of Zeus Polieus",
+   "footprint": [
+    5,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 40,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "zeus_polieus"
+  },
+  {
+   "id": "athens.hephaisteion",
+   "name": "Hephaisteion",
+   "footprint": [
+    4,
+    8
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 100,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "hephaisteion"
+  },
+  {
+   "id": "athens.royal_stoa",
+   "name": "Royal Stoa (Stoa Basileios)",
+   "footprint": [
+    5,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "royal_stoa",
+   "slots": [
+    {
+     "id": "herald",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.stoa_zeus",
+   "name": "Stoa of Zeus Eleutherios (building site)",
+   "footprint": [
+    11,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 50,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "stoa_zeus",
+   "slots": [
+    {
+     "id": "mason",
+     "kind": "work",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "athens.old_bouleuterion",
+   "name": "Old Bouleuterion",
+   "footprint": [
+    6,
+    6
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "old_bouleuterion",
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.tholos",
+   "name": "Tholos",
+   "footprint": [
+    5,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 80,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "tholos",
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "smoke": "smoke"
+   }
+  },
+  {
+   "id": "athens.stoa_poikile",
+   "name": "Stoa Poikile (Painted Stoa)",
+   "footprint": [
+    3,
+    10
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "stoa_poikile",
+   "slots": [
+    {
+     "id": "stroll",
+     "kind": "stand",
+     "cap": 3
+    },
+    {
+     "id": "philosopher",
+     "kind": "stage",
+     "cap": 1
+    },
+    {
+     "id": "sit",
+     "kind": "seat",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.twelve_gods",
+   "name": "Altar of the Twelve Gods",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 20,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "twelve_gods"
+  },
+  {
+   "id": "athens.tyrannicides",
+   "name": "Harmodios and Aristogeiton",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "tyrannicides"
+  },
+  {
+   "id": "athens.se_fountain",
+   "name": "South-east fountain house",
+   "footprint": [
+    4,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 50,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "se_fountain",
+   "slots": [
+    {
+     "id": "fill",
+     "kind": "work",
+     "cap": 2
+    }
+   ],
+   "emitters": {
+    "spout_a": "athens.spout",
+    "spout_b": "athens.spout"
+   }
+  },
+  {
+   "id": "athens.lawcourt",
+   "name": "Rectangular enclosure (law court)",
+   "footprint": [
+    6,
+    7
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 30,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "lawcourt"
+  },
+  {
+   "id": "athens.horos",
+   "name": "Boundary stone of the Agora",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 18,
+   "layers": [
+    "base"
+   ],
+   "occluder": false,
+   "card": "horos"
+  },
+  {
+   "id": "athens.simon_shop",
+   "name": "Simon the shoemaker's shop",
+   "footprint": [
+    2,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 50,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "simon_shop",
+   "slots": [
+    {
+     "id": "work",
+     "kind": "work",
+     "cap": 1
+    },
+    {
+     "id": "sit",
+     "kind": "seat",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.eleusinion",
+   "name": "City Eleusinion",
+   "footprint": [
+    5,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "eleusinion"
+  },
+  {
+   "id": "athens.dipylon",
+   "name": "Dipylon gate",
+   "footprint": [
+    7,
+    7
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 110,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "dipylon",
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    }
+   ],
+   "emitters": {
+    "torch_a": "athens.torch_flame",
+    "torch_b": "athens.torch_flame"
+   }
+  },
+  {
+   "id": "athens.sacred_gate",
+   "name": "Sacred Gate",
+   "footprint": [
+    5,
+    5
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 90,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "sacred_gate",
+   "emitters": {
+    "stream": "athens.ripple"
+   }
+  },
+  {
+   "id": "athens.pnyx",
+   "name": "Pnyx assembly place",
+   "footprint": [
+    15,
+    17
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 30,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "pnyx",
+   "slots": [
+    {
+     "id": "bema",
+     "kind": "stage",
+     "cap": 1
+    },
+    {
+     "id": "assembly",
+     "kind": "stand",
+     "cap": 16
+    },
+    {
+     "id": "archer",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "athens.meton_dial",
+   "name": "Meton's sundial",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 20,
+   "layers": [
+    "base"
+   ],
+   "occluder": false,
+   "card": "meton_dial",
+   "slots": [
+    {
+     "id": "observe",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.theatre",
+   "name": "Theatre of Dionysos",
+   "footprint": [
+    17,
+    15
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 96,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "theatre",
+   "slots": [
+    {
+     "id": "chorus",
+     "kind": "stand",
+     "cap": 6
+    },
+    {
+     "id": "watch",
+     "kind": "stand",
+     "cap": 1
+    },
+    {
+     "id": "aulos",
+     "kind": "stage",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.dionysos_temple",
+   "name": "Old temple of Dionysos Eleuthereus",
+   "footprint": [
+    4,
+    7
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "dionysos_temple"
+  },
+  {
+   "id": "athens.odeion",
+   "name": "Odeion of Pericles",
+   "footprint": [
+    14,
+    13
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.8,
+   "height": 150,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "odeion"
+  },
+  {
+   "id": "athens.olympieion",
+   "name": "Olympieion foundations",
+   "footprint": [
+    11,
+    19
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 40,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "olympieion"
+  },
+  {
+   "id": "athens.kallirrhoe",
+   "name": "Kallirrhoe spring",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 20,
+   "layers": [
+    "base"
+   ],
+   "occluder": false,
+   "card": "kallirrhoe",
+   "slots": [
+    {
+     "id": "fill",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.lyceum",
+   "name": "Lyceum gymnasium",
+   "footprint": [
+    17,
+    12
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 40,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "lyceum",
+   "slots": [
+    {
+     "id": "drill",
+     "kind": "stand",
+     "cap": 4
+    },
+    {
+     "id": "run",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "talk",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "athens.shipsheds",
+   "name": "Ship sheds of Zea",
+   "footprint": [
+    6,
+    16
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "shipsheds"
+  },
+  {
+   "id": "athens.harbour",
+   "name": "Kantharos harbour and emporion",
+   "footprint": [
+    10,
+    18
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 60,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "harbour",
+   "slots": [
+    {
+     "id": "moor",
+     "kind": "mooring",
+     "cap": 4
+    },
+    {
+     "id": "trade",
+     "kind": "stand",
+     "cap": 3
+    },
+    {
+     "id": "load",
+     "kind": "work",
+     "cap": 2
+    }
+   ],
+   "emitters": {
+    "beacon": "athens.fire"
+   }
+  },
+  {
+   "id": "athens.pentelikon_quarry",
+   "name": "Pentelikon quarry",
+   "footprint": [
+    19,
+    20
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 120,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "pentelikon_quarry",
+   "slots": [
+    {
+     "id": "cut",
+     "kind": "work",
+     "cap": 4
+    },
+    {
+     "id": "sledge",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "dust": "athens.marble_dust"
+   }
+  },
+  {
+   "id": "athens.telesterion",
+   "name": "Telesterion at Eleusis",
+   "footprint": [
+    10,
+    10
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 90,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "telesterion"
+  },
+  {
+   "id": "athens.academy_grove",
+   "name": "Academy",
+   "footprint": [
+    10,
+    12
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 40,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "academy_grove",
+   "emitters": {
+    "altar": "athens.fire"
+   }
+  },
+  {
+   "id": "athens.g_house",
+   "name": "Courtyard house",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 70,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_house_small",
+   "name": "Small house and workshop",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 60,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    },
+    {
+     "id": "sell",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_house_two",
+   "name": "Two-storey house",
+   "footprint": [
+    3,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 85,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_herm",
+   "name": "Herm",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 36
+  },
+  {
+   "id": "athens.g_shrine",
+   "name": "Small shrine and altar",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 30,
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "fire": "athens.fire"
+   }
+  },
+  {
+   "id": "athens.g_stall",
+   "name": "Market stall",
+   "footprint": [
+    2,
+    1
+   ],
+   "layout": "variant",
+   "count": 6,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 40,
+   "fps": 2,
+   "slots": [
+    {
+     "id": "sell",
+     "kind": "work",
+     "cap": 1
+    },
+    {
+     "id": "buy",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_table_banker",
+   "name": "Money-changer's table",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 20,
+   "slots": [
+    {
+     "id": "work",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_kiln",
+   "name": "Potter's kiln",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 45,
+   "slots": [
+    {
+     "id": "stoke",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "smoke": "smoke"
+   }
+  },
+  {
+   "id": "athens.g_wheel",
+   "name": "Potter's wheel",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 16,
+   "fps": 4,
+   "slots": [
+    {
+     "id": "throw",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_pots",
+   "name": "Pots drying, stacked amphorae",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 24
+  },
+  {
+   "id": "athens.g_forge",
+   "name": "Bronze-smith's hearth",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 35,
+   "slots": [
+    {
+     "id": "work",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "smoke": "smoke"
+   }
+  },
+  {
+   "id": "athens.g_loom",
+   "name": "Warp-weighted loom",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 44,
+   "slots": [
+    {
+     "id": "weave",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_press",
+   "name": "Olive press",
+   "footprint": [
+    2,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 50,
+   "slots": [
+    {
+     "id": "work",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_threshing",
+   "name": "Threshing floor",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 4,
+   "slots": [
+    {
+     "id": "work",
+     "kind": "work",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "athens.g_well",
+   "name": "Well head",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 22,
+   "slots": [
+    {
+     "id": "draw",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_grave_stele",
+   "name": "Grave stele and lekythoi",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 32,
+   "slots": [
+    {
+     "id": "mourn",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_grave_mound",
+   "name": "Grave mound",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 24
+  },
+  {
+   "id": "athens.g_statue_base",
+   "name": "Statue on its base",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 50
+  },
+  {
+   "id": "athens.g_stele_inscr",
+   "name": "Inscribed stele",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 34,
+   "slots": [
+    {
+     "id": "read",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_crane",
+   "name": "Crane",
+   "footprint": [
+    2,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 110,
+   "fps": 1
+  },
+  {
+   "id": "athens.g_scaffold",
+   "name": "Scaffold",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 90
+  },
+  {
+   "id": "athens.g_brazier",
+   "name": "Brazier",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "glow"
+   ],
+   "height": 26,
+   "emitters": {
+    "fire": "athens.fire"
+   }
+  },
+  {
+   "id": "athens.g_lamp",
+   "name": "Oil lamp in a niche",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "glow"
+   ],
+   "height": 8
+  },
+  {
+   "id": "athens.g_couch",
+   "name": "Dining couch and table",
+   "footprint": [
+    2,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 22,
+   "slots": [
+    {
+     "id": "recline",
+     "kind": "seat",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_wall",
+   "name": "City wall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 70
+  },
+  {
+   "id": "athens.g_long_wall",
+   "name": "Long Wall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 60
+  },
+  {
+   "id": "athens.g_wall_tower",
+   "name": "Wall tower",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 100,
+   "emitters": {
+    "torch": "athens.torch_flame"
+   }
+  },
+  {
+   "id": "athens.g_wall_gate",
+   "name": "Gate in the city wall",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 90
+  },
+  {
+   "id": "athens.g_running_track",
+   "name": "Track start sill and post",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 6
+  },
+  {
+   "id": "athens.g_fountain",
+   "name": "Neighbourhood fountain house",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 60,
+   "fps": 3,
+   "slots": [
+    {
+     "id": "fill",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.g_workshop",
+   "name": "Potter's workshop yard",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 50,
+   "slots": [
+    {
+     "id": "throw",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "smoke": "smoke"
+   }
+  },
+  {
+   "id": "athens.g_farmstead",
+   "name": "Attic farmstead with tower",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 90,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.stair_marble",
+   "name": "Marble stair",
+   "footprint": [
+    1,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 16,
+   "rise": 1,
+   "axis": "y"
+  },
+  {
+   "id": "athens.t_olive",
+   "name": "Olive",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 60
+  },
+  {
+   "id": "athens.t_plane",
+   "name": "Oriental plane",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 110
+  },
+  {
+   "id": "athens.t_cypress",
+   "name": "Cypress",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 100
+  },
+  {
+   "id": "athens.t_pine",
+   "name": "Aleppo pine",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 90
+  },
+  {
+   "id": "athens.t_fig",
+   "name": "Fig",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 55
+  },
+  {
+   "id": "athens.t_vine",
+   "name": "Vine (bush and pergola)",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 30
+  },
+  {
+   "id": "athens.t_poplar",
+   "name": "White poplar",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 100
+  },
+  {
+   "id": "athens.t_agnus",
+   "name": "Chaste tree",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 35
+  },
+  {
+   "id": "athens.t_oleander",
+   "name": "Oleander",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 30
+  },
+  {
+   "id": "athens.t_myrtle",
+   "name": "Myrtle",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 25
+  },
+  {
+   "id": "athens.t_laurel",
+   "name": "Laurel",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 40
+  },
+  {
+   "id": "athens.p_thyme",
+   "name": "Thyme and phrygana",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 8
+  },
+  {
+   "id": "athens.p_barley",
+   "name": "Barley stubble",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 6
+  },
+  {
+   "id": "athens.p_acanthus",
+   "name": "Acanthus",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 12
+  },
+  {
+   "id": "athens.p_reeds",
+   "name": "Reeds",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 30,
+   "fps": 2
+  },
+  {
+   "id": "athens.p_asphodel",
+   "name": "Dry grass and asphodel",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 10
+  }
+ ],
+ "actors": [
+  {
+   "id": "athens.citizen",
+   "name": "Citizen in a himation",
+   "sprite": "walker/athens.citizen",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "sit": {
+     "fps": 2
+    }
+   }
+  },
+  {
+   "id": "athens.elder",
+   "name": "Old man with a staff",
+   "sprite": "walker/athens.elder",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "sit": {
+     "fps": 2
+    }
+   }
+  },
+  {
+   "id": "athens.youth",
+   "name": "Young man in chlamys and petasos",
+   "sprite": "walker/athens.youth",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.woman",
+   "name": "Citizen woman",
+   "sprite": "walker/athens.woman",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.working_woman",
+   "name": "Working woman (seller, wool-worker)",
+   "sprite": "walker/athens.working_woman",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "serve": {
+     "fps": 4
+    },
+    "throw": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.child",
+   "name": "Girl or boy",
+   "sprite": "walker/athens.child",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "run": {
+     "fps": 8
+    },
+    "kneel": {
+     "fps": 2
+    }
+   }
+  },
+  {
+   "id": "athens.enslaved_man",
+   "name": "Enslaved worker in an exomis",
+   "sprite": "walker/athens.enslaved_man",
+   "variants": 4,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    },
+    "work_low": {
+     "fps": 4
+    },
+    "haul": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.enslaved_woman",
+   "name": "Enslaved woman (nurse, water carrier)",
+   "sprite": "walker/athens.enslaved_woman",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.scythian",
+   "name": "Scythian archer",
+   "sprite": "walker/athens.scythian",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "guard": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.metic",
+   "name": "Metic trader",
+   "sprite": "walker/athens.metic",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "serve": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.hoplite",
+   "name": "Hoplite",
+   "sprite": "walker/athens.hoplite",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "march": {
+     "fps": 8
+    },
+    "guard": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.rower",
+   "name": "Rower and sailor",
+   "sprite": "walker/athens.rower",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "haul": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.potter",
+   "name": "Potter",
+   "sprite": "walker/athens.potter",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "throw": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.painter",
+   "name": "Vase painter",
+   "sprite": "walker/athens.painter",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "write": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.smith",
+   "name": "Bronze-smith",
+   "sprite": "walker/athens.smith",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_high": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.mason",
+   "name": "Mason",
+   "sprite": "walker/athens.mason",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_high": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    },
+    "haul": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.sculptor",
+   "name": "Sculptor",
+   "sprite": "walker/athens.sculptor",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_high": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.farmer",
+   "name": "Farmer",
+   "sprite": "walker/athens.farmer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_low": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.herder",
+   "name": "Shepherd and goatherd",
+   "sprite": "walker/athens.herder",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.priest",
+   "name": "Priest and priestess",
+   "sprite": "walker/athens.priest",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "pour": {
+     "fps": 4
+    },
+    "pray": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.philosopher",
+   "name": "Philosopher and talker",
+   "sprite": "walker/athens.philosopher",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.athlete",
+   "name": "Athlete",
+   "sprite": "walker/athens.athlete",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "run": {
+     "fps": 8
+    },
+    "wrestle": {
+     "fps": 4
+    },
+    "scrape": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.musician",
+   "name": "Aulos and kithara player",
+   "sprite": "walker/athens.musician",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "play": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.kanephoros",
+   "name": "Basket-bearer (kanephoros)",
+   "sprite": "walker/athens.kanephoros",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.hydriaphoros",
+   "name": "Water-carrier of the procession",
+   "sprite": "walker/athens.hydriaphoros",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.skaphephoros",
+   "name": "Metic tray-bearer in purple",
+   "sprite": "walker/athens.skaphephoros",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.metic_daughter",
+   "name": "Metic daughter with sunshade or stool",
+   "sprite": "walker/athens.metic_daughter",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.thallophoros",
+   "name": "Elder with an olive branch",
+   "sprite": "walker/athens.thallophoros",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.marshal",
+   "name": "Marshal of the procession",
+   "sprite": "walker/athens.marshal",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.peplos_bearer",
+   "name": "Bearer of Athena's new robe",
+   "sprite": "walker/athens.peplos_bearer",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.drover",
+   "name": "Youth leading a sacrificial heifer",
+   "sprite": "walker/athens.drover",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.cavalryman",
+   "name": "Horseman of the procession",
+   "sprite": "walker/athens.cavalryman",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.chorus",
+   "name": "Chorus member rehearsing",
+   "sprite": "walker/athens.chorus",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "dance": {
+     "fps": 6
+    }
+   }
+  },
+  {
+   "id": "athens.thracian",
+   "name": "Thracian",
+   "sprite": "walker/athens.thracian",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.spartan",
+   "name": "Spartan visitor",
+   "sprite": "walker/athens.spartan",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.ionian",
+   "name": "Ionian merchant",
+   "sprite": "walker/athens.ionian",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.persian_envoy",
+   "name": "Persian envoy",
+   "sprite": "walker/athens.persian_envoy",
+   "variants": 1,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.pericles",
+   "name": "Pericles",
+   "sprite": "figure/athens.pericles",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.aspasia",
+   "name": "Aspasia",
+   "sprite": "figure/athens.aspasia",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "sit": {
+     "fps": 2
+    }
+   }
+  },
+  {
+   "id": "athens.socrates",
+   "name": "Socrates",
+   "sprite": "figure/athens.socrates",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "sit": {
+     "fps": 2
+    }
+   }
+  },
+  {
+   "id": "athens.sophocles",
+   "name": "Sophocles",
+   "sprite": "figure/athens.sophocles",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.euripides",
+   "name": "Euripides",
+   "sprite": "figure/athens.euripides",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "sit": {
+     "fps": 2
+    },
+    "write": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.pheidias",
+   "name": "Pheidias",
+   "sprite": "figure/athens.pheidias",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_high": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.mnesikles",
+   "name": "Mnesikles",
+   "sprite": "figure/athens.mnesikles",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.protagoras",
+   "name": "Protagoras",
+   "sprite": "figure/athens.protagoras",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.meton",
+   "name": "Meton",
+   "sprite": "figure/athens.meton",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.alcibiades",
+   "name": "Alcibiades",
+   "sprite": "figure/athens.alcibiades",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.solon",
+   "name": "Solon (a memory)",
+   "sprite": "figure/athens.solon",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.themistocles",
+   "name": "Themistocles (a memory)",
+   "sprite": "figure/athens.themistocles",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.theseus",
+   "name": "Theseus (festival reenactor)",
+   "sprite": "figure/athens.theseus",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.rhapsode",
+   "name": "The rhapsode",
+   "sprite": "figure/athens.rhapsode",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.philinna",
+   "name": "Philinna",
+   "sprite": "figure/athens.philinna",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "throw": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.mania",
+   "name": "Mania",
+   "sprite": "figure/athens.mania",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.manes",
+   "name": "Manes",
+   "sprite": "figure/athens.manes",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_low": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.kephalos",
+   "name": "Kephalos",
+   "sprite": "figure/athens.kephalos",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.sosias",
+   "name": "Sosias",
+   "sprite": "figure/athens.sosias",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.nikarete",
+   "name": "Nikarete",
+   "sprite": "figure/athens.nikarete",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "serve": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.toxamis",
+   "name": "Toxamis",
+   "sprite": "figure/athens.toxamis",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "guard": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.euphiletos",
+   "name": "Euphiletos",
+   "sprite": "figure/athens.euphiletos",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_low": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.hegeso",
+   "name": "Hegeso",
+   "sprite": "figure/athens.hegeso",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.simon",
+   "name": "Simon the shoemaker",
+   "sprite": "figure/athens.simon",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "stir": {
+     "fps": 4
+    },
+    "talk": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.horse",
+   "name": "Horse",
+   "sprite": "critter/athens.horse",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.donkey",
+   "name": "Donkey",
+   "sprite": "critter/athens.donkey",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.mule",
+   "name": "Mule",
+   "sprite": "critter/athens.mule",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.ox",
+   "name": "Ox",
+   "sprite": "critter/athens.ox",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.heifer",
+   "name": "Sacrificial heifer",
+   "sprite": "critter/athens.heifer",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.sheep",
+   "name": "Sheep",
+   "sprite": "critter/athens.sheep",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.goat",
+   "name": "Goat",
+   "sprite": "critter/athens.goat",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.dog_laconian",
+   "name": "Laconian hound",
+   "sprite": "critter/athens.dog_laconian",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.dog_molossian",
+   "name": "Molossian dog",
+   "sprite": "critter/athens.dog_molossian",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.pig",
+   "name": "Pig",
+   "sprite": "critter/athens.pig",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   }
+  },
+  {
+   "id": "athens.owl",
+   "name": "Little owl",
+   "sprite": "critter/athens.owl",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 2
+    }
+   }
+  },
+  {
+   "id": "athens.hen",
+   "name": "Hen",
+   "sprite": "critter/athens.hen",
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    },
+    "peck": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.rooster",
+   "name": "Rooster",
+   "sprite": "critter/athens.rooster",
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    },
+    "peck": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.trireme",
+   "name": "Trireme",
+   "sprite": "ship/athens.trireme",
+   "size": [
+    6,
+    2
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "slack": {
+     "fps": 4
+    },
+    "row": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.merchant",
+   "name": "Merchant ship",
+   "sprite": "ship/athens.merchant",
+   "size": [
+    4,
+    2
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "slack": {
+     "fps": 4
+    },
+    "row": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.fishing",
+   "name": "Fishing boat",
+   "sprite": "ship/athens.fishing",
+   "size": [
+    2,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "slack": {
+     "fps": 4
+    },
+    "row": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 4
+    }
+   }
+  },
+  {
+   "id": "athens.cart",
+   "name": "Ox cart",
+   "sprite": "cart/athens.cart",
+   "size": [
+    2,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "variants": 3
+  },
+  {
+   "id": "athens.sledge",
+   "name": "Marble sledge",
+   "sprite": "cart/athens.sledge",
+   "size": [
+    2,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   }
+  },
+  {
+   "id": "athens.chariot",
+   "name": "Procession chariot",
+   "sprite": "cart/athens.chariot",
+   "size": [
+    2,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   }
+  }
+ ],
+ "goods": [
+  {
+   "id": "athens.goods_hydria",
+   "name": "Hydria of water",
+   "sprite": "goods/athens.goods_hydria",
+   "stack": 3
+  },
+  {
+   "id": "athens.goods_kanoun",
+   "name": "Sacred basket",
+   "sprite": "goods/athens.goods_kanoun",
+   "stack": 3
+  },
+  {
+   "id": "athens.goods_redfigure",
+   "name": "Red-figure pots",
+   "sprite": "goods/athens.goods_redfigure",
+   "stack": 3
+  },
+  {
+   "id": "athens.goods_prize_amphora",
+   "name": "Panathenaic prize amphora",
+   "sprite": "goods/athens.goods_prize_amphora",
+   "stack": 3
+  },
+  {
+   "id": "athens.goods_charcoal",
+   "name": "Sack of charcoal",
+   "sprite": "goods/athens.goods_charcoal",
+   "stack": 3
+  },
+  {
+   "id": "athens.goods_shield",
+   "name": "Hoplite shield",
+   "sprite": "goods/athens.goods_shield",
+   "stack": 3
+  },
+  {
+   "id": "athens.goods_peplos",
+   "name": "Athena's new robe",
+   "sprite": "goods/athens.goods_peplos",
+   "stack": 3
+  }
+ ],
+ "art": {
+  "edges": [
+   "athens.limestone",
+   "athens.ashlar",
+   "athens.earth"
+  ],
+  "fx": [
+   "athens.altar_fire",
+   "athens.fire",
+   "athens.torch_flame",
+   "athens.altar_smoke",
+   "athens.marble_dust",
+   "athens.spout",
+   "athens.ripple",
+   "athens.sea_glint",
+   "athens.cicada",
+   "athens.sparks"
+  ]
+ }
+}
