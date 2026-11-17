@@ -40,7 +40,7 @@ T get(const json& j, const char* key, const std::string& ctx) {
 
 template <typename T>
 T getOr(const json& j, const char* key, T fallback, const std::string& ctx) {
-    return j.contains(key) ? get<T>(j, key, ctx) : fallback;
+    return j.contains(key) ? get<T>(j, key, ctx) : std::move(fallback);
 }
 
 // Takes a plain C string for the context: a temporary std::string argument would make GCC warn

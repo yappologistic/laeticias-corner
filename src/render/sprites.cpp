@@ -96,6 +96,7 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
         }
         for (int g = 0; g < def.growth.stages; ++g) {
             std::vector<FrameSet> byVariant;
+            byVariant.reserve(static_cast<std::size_t>(variantSlots(def)));
             for (int v = 0; v < variantSlots(def); ++v)
                 byVariant.push_back(
                     stageFrames(atlas, std::format("item/{}/base/{}", def.id, variantKey(def, v)),

@@ -265,7 +265,7 @@ void readVersion3(const json& root, Loader& in) {
 void readProgress(const json& p, const Catalog& cat, SaveData& data, Warnings& warn) {
     Progress& pr = data.progress;
     const auto piece = [&](const std::string& id) -> std::optional<int> {
-        if (const auto i = cat.findItem(id)) return *i;
+        if (const auto i = cat.findItem(id)) return i;
         if (const auto t = cat.findTerrain(id)) return static_cast<int>(cat.items.size()) + *t;
         return std::nullopt;
     };
@@ -595,7 +595,7 @@ Profile parseProfile(std::string_view text) {
         if (j.contains("last_world") && j["last_world"].is_string())
             p.lastWorld = j["last_world"].get<std::string>();
     } catch (const json::exception&) {
-        // Defaults: a broken profile never stops the game.
+        return Profile{}; // a broken profile never stops the game: defaults
     }
     return p;
 }

@@ -4,6 +4,7 @@
 #include "ui/theme.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <format>
 #include <utility>
@@ -614,7 +615,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     trayT_ = approach(
         trayT_, !tray_.empty() && !m.journalOpen && !m.photo && !drawerOverTray && !ribbonOverTray,
         dt);
-    std::snprintf(trayCount_, sizeof trayCount_, "%zu", m.wishes.size());
+    const auto end = std::format_to_n(trayCount_, sizeof trayCount_ - 1, "{}", m.wishes.size());
+    *end.out = '\0';
 
     if (noteLabel_.empty())
         noteLabel_ = std::vformat(strings::kNoteLabel, std::make_format_args(m.cat->resident.name));
@@ -704,7 +706,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     if (in.pressed && canPoint && hovered != kNotNow) menuWish_ = -1;
     // A click elsewhere closes the calendar.
     if (in.pressed && canPoint && calendarOpen_ && hovered != kTitleCard &&
-        !(hovered >= kCalPin0 && hovered <= kCalPin0 + 8) && !calendarBox_.contains(in.x, in.y))
+        (hovered < kCalPin0 || hovered > kCalPin0 + 8) && !calendarBox_.contains(in.x, in.y))
         calendarOpen_ = false;
     if (in.pressed && canPoint && overUi_) {
         captured_ = true;
@@ -875,7 +877,10 @@ std::optional<Vec2> Hud::widgetCentre(std::string_view name, const HudModel& m) 
     if (name == "toast" && toastT_ > 0.5f) return Vec2{toastBox_.cx(), toastBox_.cy()};
     if (name.starts_with("card:")) {
         // "card:N": the N-th open wish card.
-        const int n = std::atoi(std::string(name.substr(5)).c_str());
+        int n = 0;
+        const std::string_view digits = name.substr(5);
+        if (std::from_chars(digits.data(), digits.data() + digits.size(), n).ec != std::errc{})
+            return std::nullopt;
         int k = 0;
         for (const TrayCard& t : tray_)
             if (t.open && t.box.h > 0 && k++ == n) return Vec2{t.box.cx(), t.box.cy()};

@@ -46,6 +46,7 @@ void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
     }
     // Ambience beds, then the music stems (the full mixes belong to the title screen).
     std::vector<std::pair<std::string, bool>> files;
+    files.reserve(list.ambience.size() + list.dayStems.size() + list.nightStems.size());
     for (const auto& f : list.ambience) files.emplace_back(f, false);
     for (const auto* piece : {&list.dayStems, &list.nightStems})
         for (const auto& s : *piece) files.emplace_back(s.file, true);
