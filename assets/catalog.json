@@ -1,13 +1,15 @@
 {
   "version": 2,
-  "tile": {"w": 64, "h": 32},
+  "tile": {"w": 64, "h": 32, "level": 16},
+  "sets": ["world", "rome", "athens", "parsa"],
+  "world": "world/world.json",
   "map": {"w": 40, "h": 40},
   "terrain": [
-    {"id": "grass", "name": "Grass", "base": true, "variants": 4},
-    {"id": "meadow", "name": "Meadow", "edges": 16, "sound": "paint"},
-    {"id": "path", "name": "Path", "edges": 16, "sound": "paint"},
-    {"id": "cobble", "name": "Cobble", "edges": 16, "sound": "stone"},
-    {"id": "water", "name": "Water", "edges": 16, "fps": 3, "sound": "splash"}
+    {"id": "grass", "name": "Grass", "base": true, "variants": 4, "faces": ["world.earth", "world.coast"]},
+    {"id": "meadow", "name": "Meadow", "edges": 16, "under": "grass", "sound": "paint"},
+    {"id": "path", "name": "Path", "edges": 16, "under": "grass", "sound": "paint"},
+    {"id": "cobble", "name": "Cobble", "edges": 16, "under": "grass", "sound": "stone"},
+    {"id": "water", "name": "Water", "edges": 16, "under": "grass", "fps": 3, "sound": "splash"}
   ],
   "categories": [
     {"id": "terrain", "name": "Ground"},
