@@ -51,7 +51,7 @@ set(LC_SCRIPTS
   "seasons|seasons|640x400|"
   "harvest|harvest|640x400|"
   "rare|rare|640x400|"
-  "first_ten|first_ten|960x600|heavy"
+  "first_ten|first_ten|960x600|"
   "wish_waiting|wish_waiting|960x600|"
   "ui_tiny|ui_sizes|320x240|"
   "ui_small|ui_sizes|960x600|"

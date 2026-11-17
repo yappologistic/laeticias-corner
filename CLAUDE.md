@@ -292,7 +292,7 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   `tests/scripts/` and write screenshots to `build/<preset>/shots/`. Besides input it can hold
   keys and buttons (`press`, `keydown` ...), set state (clock, season, day, land stage, unlocks,
   play time and growth stepped forward) and assert state and image statistics. The first ten
-  minutes of a new world run end to end in `first_ten.lcs` (heavy label).
+  minutes of a new world run end to end in `first_ten.lcs`.
 - Save format: version 3, documented at the top of `src/core/save.hpp` (versioned, tolerant;
   versions 1 and 2 migrate on launch). A save directory holds `profile.json`,
   `worlds/<slug>/world.json` with `thumb.png`, and `corner.v1.json` after a migration.

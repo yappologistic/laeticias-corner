@@ -497,7 +497,8 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         const float sep = (w1 > 0 && w2 > 0) ? font.measure(Face::Body, strings::kSeparator) : 0.0f;
         const float w = std::min(w1 + sep + w2 + 2 * hpad, screen.x - 2 * margin);
         const float a = smooth(hintT_);
-        const float bottom = drawerT_ > 0.0f ? drawerBox_.y : bottomTop_;
+        // Above an open drawer; a closing one lets it drop back at once, off the map.
+        const float bottom = m.drawerOpen && drawerT_ > 0.0f ? drawerBox_.y : bottomTop_;
         hintBox_ = {std::round((screen.x - w) * 0.5f),
                     bottom - gap - hintH + (1 - a) * theme::kHintSlide * s, w, hintH};
     }

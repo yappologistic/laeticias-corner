@@ -70,7 +70,7 @@ click ui:tab:garden
 wait 3
 click ui:tile:bench
 wait 3
-click @36,33
+click @36,30
 key escape
 wait 20
 set played +2
