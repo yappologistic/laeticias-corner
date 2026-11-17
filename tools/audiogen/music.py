@@ -217,7 +217,7 @@ NIGHT = {
         {   # B: low felt piano takes the line
             "chords": "Em9:8 Bm9/D:8 Gmaj7#11:8 A13sus:8",
             "melody": "r/2 G4/1 B4/1 | F#5/4 | r/1 F#4/1 A4/1 C#5/1 | B4/4 "
-                      "| r/2 C#5/2 | D5/2 B4/2 | r/1 E4/1 F#4/1 D5/1 | B4/2 r/2",
+                      "| r/2 C#5/2 | B4/2 A4/1 F#4/1 | r/1 E4/1 F#4/1 D5/1 | B4/2 r/2",
             "lead": "piano", "lead_vel": 0.5, "piano": "whole", "piano_vel": 0.6,
             "bass": 0.4, "pad": 1.1,
         },

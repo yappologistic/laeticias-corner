@@ -5,7 +5,7 @@ import numpy as np
 from scipy import signal
 
 import instruments as ins
-from dsp import (SR, bandpass, fade, glide, highpass, impulse_response, line, lowpass,
+from dsp import (bandpass, fade, glide, highpass, impulse_response, line, lowpass,
                  midi_hz, perc, phase_of, place, ramp_in, secs, sweep_lowpass, times,
                  voiced)
 
@@ -112,7 +112,6 @@ def paint(rng):
 def remove(rng):
     """Soft poof: an airy puff whose colour sinks as it fades, with a faint drop."""
     n = secs(0.32)
-    t = times(n)
     cutoff = glide(n, [(0, 2200), (0.3, 300)])
     puff = sweep_lowpass(rng.standard_normal(n), cutoff)
     puff *= perc(n, 0.012, 0.08)

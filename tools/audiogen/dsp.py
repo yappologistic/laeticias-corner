@@ -115,12 +115,6 @@ def bandpass(x, lo, hi, order=2):
     return butter(x, "bandpass", [lo, hi], order)
 
 
-def resonator(x, freq, q):
-    """Second-order peaking band-pass (constant 0 dB peak gain)."""
-    b, a = signal.iirpeak(freq, q, fs=SR)
-    return signal.lfilter(b, a, x, axis=0)
-
-
 def sweep_lowpass(x, cutoff, block=128):
     """Two cascaded one-pole low-passes following a per-sample cutoff curve (mono)."""
     out = np.empty_like(x)
@@ -233,6 +227,3 @@ def place(buf, x, at):
     if end > at:
         buf[at:end] += x[: end - at]
 
-
-def softclip(x, drive=1.0):
-    return np.tanh(drive * x) / np.tanh(drive)

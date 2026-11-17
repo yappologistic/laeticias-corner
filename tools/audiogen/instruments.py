@@ -3,7 +3,7 @@ sub bass. Each returns a mono (or stereo, for the pad) note rendered from scratc
 
 import numpy as np
 
-from dsp import SR, adsr, lowpass, perc, ramp_in, secs, times
+from dsp import adsr, lowpass, perc, ramp_in, secs, times
 
 NYQUIST_GUARD = 9000.0  # keep partials below this: nothing glassy or harsh up top
 TINE_CEILING = 7000.0  # bar modes ring longest, so they get a lower ceiling
