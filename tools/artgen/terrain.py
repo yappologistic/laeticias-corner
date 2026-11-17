@@ -312,9 +312,31 @@ def water(mask: int, frame: int, frames: int) -> Sprite:
 
 # ---------- cliffs ----------
 
-CLIFF_DEPTH = 34
-SOIL = [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]]
-ROCK = [INK, STONE[0], STONE[1], STONE[2], STONE[3]]
+CLIFF_DEPTH = 35
+SOIL = [INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3], EARTH[4]]
+ROCK = [INK, STONE[0], STONE[1], STONE[2], STONE[3], STONE[4]]
+# The face repeats every tile along the rim, so everything is placed by hand on one period
+# with uneven spacing and sizes, and built from a few smooth harmonics instead of noise teeth.
+# Underside: (harmonic, amplitude, phase) lifting the bottom, and hanging drips (s, length, width).
+CLIFF_UNDERSIDE = ((1, 1.6, 0.7), (2, 0.9, 2.3), (3, 0.5, 4.1))
+CLIFF_DRIPS = ((3.4, 2.2, 2.6), (9.2, 1.2, 1.4), (13.1, 1.8, 1.8))
+# Strata lines: (mean depth, (harmonic, amplitude, phase) ...).
+CLIFF_STRATA = ((8.0, ((1, 1.6, 0.4), (2, 0.6, 1.9))), (17.0, ((1, 2.0, 2.2), (3, 0.5, 0.3))))
+# Embedded stones: (s, depth, rx, ry).
+CLIFF_STONES = ((12.3, 20.5, 3.1, 2.1), (3.0, 12.5, 1.5, 1.0), (7.0, 25.5, 1.1, 0.8))
+# Roots dangling from the turf: (s, length, wiggle phase).
+CLIFF_ROOTS = ((5.0, 9.0, 0.0), (13.7, 14.0, 4.0))
+# Grass tufts hanging over the lip: (s, length, half-width).
+CLIFF_TUFTS = ((1.6, 3.0, 1.6), (7.9, 4.5, 1.2), (12.4, 2.0, 2.2))
+
+
+def _wave(s, terms):
+    return sum(a * np.sin(2 * np.pi * k * s / 16 + p) for k, a, p in terms)
+
+
+def _wrapped(s, s0):
+    """Signed distance along the rim from s to s0, taking the shorter way round the period."""
+    return (s - s0 + 8) % 16 - 8
 
 
 def cliff(face: str) -> Sprite:
@@ -326,48 +348,54 @@ def cliff(face: str) -> Sprite:
     py, px = np.mgrid[0:H, 0:W]
     sx, sy = px - 16 + 0.5, py + 0.5
     s = 16 - sx if face == "se" else sx + 16      # planes u = 16 and v = 16
-    shade = -0.8 if face == "se" else 0.0
-    depth = sy - (16 + s) / 2
-    flat = np.zeros_like(s)
+    shade = -0.9 if face == "se" else 0.0
+    # Depth in whole pixels below each column's first face pixel: measured from the exact rim
+    # line it would step by half a pixel per column and every band would turn into teeth.
+    first_row = np.floor((16 + s) / 2 - 0.5) + 1
+    depth = py - first_row + 0.5
     on = (s >= 0) & (s < 16) & (depth > 0)
-    bottom = CLIFF_DEPTH - 7 * _pnoise(s, flat, 4, 700) - 4 * _pnoise(s, flat, 8, 701)
+    # A ragged, tapering underside: smooth lumps plus a few hanging drips.
+    bottom = CLIFF_DEPTH - 3.0 - _wave(s, CLIFF_UNDERSIDE)
+    for s0, length, width in CLIFF_DRIPS:
+        bottom = bottom + length * np.clip(1 - np.abs(_wrapped(s, s0)) / width, 0, 1) ** 1.5
     on &= depth < bottom
-    # Bands: topsoil, clay with a wavy stratum line, then rocky subsoil darkening downward.
-    wave = (_pnoise(s, flat, 2, 710) - 0.5) * 3
-    clay_top, rock_top = 7 + wave, 17 + wave * 1.3
-    level = np.where(depth < clay_top, 2.2, np.where(depth < rock_top, 3.0, 2.2))
-    level = level - np.clip((depth - rock_top) / 14, 0, 1) * 1.2 + shade
-    rough = hash01(np.floor(s * 2).astype(np.int64) % 32, np.floor(depth).astype(np.int64), 711)
-    level = level + (rough - 0.5) * 0.8
-    level = level - (np.abs(depth - clay_top) < 0.7) * 1.0 - (np.abs(depth - rock_top) < 0.7) * 0.8
-    level = level - (bottom - depth < 1.6) * 1.2                     # dark underside lip
+    # Bands: dark topsoil, a lighter clay band, then stony subsoil darkening downward.
+    (d1, w1), (d2, w2) = CLIFF_STRATA
+    line1, line2 = d1 + _wave(s, w1), d2 + _wave(s, w2)
+    level = np.where(depth < line1, 2.2, np.where(depth < line2, 3.2, 2.4))
+    level = level - np.clip((depth - line2) / 12, 0, 1) * 1.0 + shade
+    # Streaky grain along the strata (short horizontal dashes, not per-pixel static).
+    grain = hash01(np.floor(s * 0.6).astype(np.int64) % 10, np.floor(depth).astype(np.int64), 711)
+    level = level + (grain > 0.82) * (depth > line1 + 1) * 0.7 - (grain < 0.12) * 0.7
+    level = level - (np.abs(depth - line1) < 0.6) * 1.1 - (np.abs(depth - line2) < 0.6) * 0.9
+    level = level - (bottom - depth < 1.8) * 1.3                       # dark underside lip
+    # The turf overhangs: an even band of shadow just under the grass (no ink speckles).
+    lip = 2.8 + _wave(s, ((2, 0.6, 1.0), (5, 0.4, 3.0)))
+    under_turf = (depth > lip) & (depth < lip + 2.0)
+    level = np.where(under_turf, 1.2 + shade * 0.3, level)
     rgb = _paint(SOIL, level, px, py)
-    # Embedded stones, mostly in the lower layers, with a lit top edge.
-    from voxel import Rng
-    rng = Rng(720)
-    for cd in (10, 15.5, 21):
-        cs, cd = rng.uniform(0, 16), cd + rng.uniform(-2, 2)
-        rx, ry = rng.uniform(2.2, 3.4), rng.uniform(1.5, 2.3)
-        for wrap in (-16, 0, 16):
-            d = ((s - cs - wrap) / rx) ** 2 + ((depth - cd) / ry) ** 2
-            stone = (d < 1) & (depth < bottom - 2)
-            lvl = 2.2 + shade + (depth < cd - ry * 0.4) * 1.3 - (depth > cd + ry * 0.5) * 0.9
-            rgb = np.where(stone[..., None], _paint(ROCK, lvl, px, py), rgb)
-    # Roots dangling from the turf.
-    root = np.zeros(s.shape, bool)
-    for k in range(3):
-        rs = rng.uniform(0, 16)
-        length = rng.uniform(4, 11)
-        for wrap in (-16, 0, 16):
-            path_s = rs + wrap + 1.0 * np.sin(depth * 0.6 + k * 2)
-            root |= (np.abs(s - path_s) < 0.5) & (depth > 2) & (depth < 2 + length)
-    rgb = np.where(root[..., None], _rgb(EARTH[0]), rgb)
-    # Grass lip with blades hanging over the edge.
-    col = np.floor(s).astype(np.int64) % 16
-    blade = 2.0 + 1.5 * (hash01(col, 740) > 0.55) + 1.0 * (hash01(col, 741) > 0.8)
-    lip = depth < blade
-    lip_level = 3.0 + shade * 0.8 - depth * 0.45
-    rgb = np.where(lip[..., None], _paint(GRASS, lip_level, px, py), rgb)
+    # Stones of different sizes, each with a lit top, a dark base and a dark seam around it.
+    for cs, cd, rx, ry in CLIFF_STONES:
+        d = (_wrapped(s, cs) / rx) ** 2 + ((depth - cd) / ry) ** 2
+        seam = (d < 1.45) & (d >= 1) & (depth < bottom - 1)
+        rgb = np.where(seam[..., None], _paint(SOIL, level - 1.0, px, py), rgb)
+        stone = (d < 1) & (depth < bottom - 1)
+        lvl = 2.5 + shade + (depth < cd - ry * 0.35) * 1.2 - (depth > cd + ry * 0.4) * 0.9
+        lvl = lvl + (_wrapped(s, cs) < -rx * 0.4) * (0.6 if face == "sw" else -0.3)
+        rgb = np.where(stone[..., None], _paint(ROCK, lvl, px, py), rgb)
+    # Thin pale roots curling down from the turf.
+    for rs, length, ph in CLIFF_ROOTS:
+        path_s = rs + 1.4 * np.sin(depth * 0.7 + ph) * np.clip(depth / 5, 0, 1)
+        body = (depth > lip) & (depth < lip + length) & (depth < bottom - 1)
+        root = body & (np.abs(_wrapped(s, path_s)) < 0.5)
+        rgb = np.where(root[..., None], _paint(SOIL, np.full_like(level, 4.6 + shade), px, py), rgb)
+    # Grass lip with a few tufts hanging over the edge.
+    hang = np.zeros_like(s)
+    for ts, length, half in CLIFF_TUFTS:
+        hang = np.maximum(hang, length * np.clip(1 - np.abs(_wrapped(s, ts)) / half, 0, 1) ** 0.7)
+    turf = depth < lip + hang
+    turf_level = np.where(depth > lip, 3.3 - (depth - lip) * 0.25, 3.4 - depth * 0.3) + shade * 0.7
+    rgb = np.where(turf[..., None], _paint(GRASS, turf_level, px, py), rgb)
     rgba = np.zeros((H, W, 4), np.uint8)
     rgba[..., :3] = rgb
     rgba[..., 3] = on * 255
