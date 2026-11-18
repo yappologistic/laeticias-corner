@@ -316,6 +316,89 @@
         "first_snow",
         "parsa"
       ]
+    },
+    {
+      "file": "amb/parsa/plain_day_summer.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 44.0,
+      "samples": 1940400,
+      "gain": 1.0,
+      "when": "day",
+      "for": "The plain in summer: hot wind, grasshoppers, flies, threshing far off, a horse snorting.",
+      "where": "replaces amb/parsa/plain_day.ogg from June to September (theme.seasons)",
+      "tags": [
+        "season",
+        "summer",
+        "parsa",
+        "east"
+      ]
+    },
+    {
+      "file": "amb/parsa/plain_day_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 44.0,
+      "samples": 1940400,
+      "gain": 1.0,
+      "when": "day",
+      "for": "The plain in winter: cold wind, crows and a raven, no swallows, slow chisels, an ox, a dog.",
+      "where": "replaces amb/parsa/plain_day.ogg from November to February (theme.seasons)",
+      "tags": [
+        "season",
+        "winter",
+        "parsa",
+        "east"
+      ]
+    },
+    {
+      "file": "amb/parsa/plain_night_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 44.0,
+      "samples": 1940400,
+      "gain": 1.0,
+      "when": "night",
+      "for": "A frost-still winter night: an owl, a guard pacing, a fire altar breathing, a jackal far off.",
+      "where": "replaces amb/parsa/plain_night.ogg from November to March (theme.seasons)",
+      "tags": [
+        "season",
+        "winter",
+        "parsa",
+        "east"
+      ]
+    },
+    {
+      "file": "amb/parsa/feast.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 24.0,
+      "samples": 1058400,
+      "gain": 1.0,
+      "when": "event",
+      "for": "A court feast: angular harp, double pipe, frame drum, women singing and clapping, the court talking (Elamite and Greek sources; inferred).",
+      "where": "follows the harvest offering (June), Bāgayādi (September), Mithrakāna (November)",
+      "tags": [
+        "festival",
+        "parsa",
+        "summer",
+        "autumn"
+      ]
+    },
+    {
+      "file": "sfx/parsa/sting_season.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft cue for the turn of a season, in Pārsa's D mode (harp and hummed drone).",
+      "tags": [
+        "sting",
+        "season",
+        "parsa"
+      ]
     }
   ]
 }

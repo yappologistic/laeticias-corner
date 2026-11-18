@@ -4166,7 +4166,11 @@
    "amb/parsa/channels.ogg",
    "amb/parsa/site.ogg",
    "amb/parsa/rain.ogg",
-   "amb/parsa/procession.ogg"
+   "amb/parsa/procession.ogg",
+   "amb/parsa/plain_day_summer.ogg",
+   "amb/parsa/plain_day_winter.ogg",
+   "amb/parsa/plain_night_winter.ogg",
+   "amb/parsa/feast.ogg"
   ],
   "sfx": [
    "sfx/parsa/horn.wav",
@@ -4182,7 +4186,8 @@
    "sfx/parsa/sting_nightfall.wav",
    "sfx/parsa/sting_storm_clear.wav",
    "sfx/parsa/sting_rainbow.wav",
-   "sfx/parsa/sting_first_snow.wav"
+   "sfx/parsa/sting_first_snow.wav",
+   "sfx/parsa/sting_season.wav"
   ]
  }
 }

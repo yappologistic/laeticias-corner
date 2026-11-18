@@ -2543,6 +2543,401 @@
         "persian",
         "parsa"
       ]
+    },
+    {
+      "file": "amb/world/dawn_autumn.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dawn",
+      "for": "Autumn dawn: robins, starlings, crows, a wren, a far cockerel, dry leaves.",
+      "where": "the dawn bed in autumn for climates mediterranean, river_plain, steppe",
+      "tags": [
+        "nature",
+        "dawn",
+        "autumn",
+        "mediterranean",
+        "river_plain",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/dawn_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dawn",
+      "for": "Winter dawn: a robin, a wren, sparrows, crows, a far cockerel; thin and cold.",
+      "where": "the dawn bed in winter for climates mediterranean, river_plain, mountain, east, steppe",
+      "tags": [
+        "nature",
+        "dawn",
+        "winter",
+        "mediterranean",
+        "river_plain",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/dusk_autumn.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dusk",
+      "for": "Autumn dusk: starlings gathering to roost, rooks, the last slow crickets, an owl.",
+      "where": "the dusk bed in autumn for climates mediterranean, river_plain, mountain, east, steppe",
+      "tags": [
+        "nature",
+        "dusk",
+        "autumn",
+        "mediterranean",
+        "river_plain",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/dusk_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dusk",
+      "for": "Winter dusk: jackdaws and rooks to roost, a robin ticking, a dog or a fox far off.",
+      "where": "the dusk bed in winter for climates mediterranean, river_plain, mountain, east, steppe",
+      "tags": [
+        "nature",
+        "dusk",
+        "winter",
+        "mediterranean",
+        "river_plain",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/night_autumn.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Autumn night: tawny owls calling to each other, a few slow crickets, a fox, leaves.",
+      "where": "the night bed in autumn for climates mediterranean, river_plain, mountain",
+      "tags": [
+        "nature",
+        "night",
+        "autumn",
+        "mediterranean",
+        "river_plain",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/night_cold.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Winter night without snow: no insects; an owl, a far dog, drips, a thin wind.",
+      "where": "the night bed in winter for climates mediterranean, river_plain, east, steppe",
+      "tags": [
+        "nature",
+        "night",
+        "winter",
+        "mediterranean",
+        "river_plain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/night_snow.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "A night under snow: muffled near silence, a breath of air, a bough creaking, a far owl.",
+      "where": "the night bed in winter for climates mountain, east, steppe while snow lies",
+      "tags": [
+        "nature",
+        "night",
+        "winter",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/day_snow.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "day",
+      "for": "A day under snow: a crow, tits, a bough shedding its load, wood split far off, drips.",
+      "where": "the day bed in winter for climates mountain, east, steppe while snow lies",
+      "tags": [
+        "nature",
+        "day",
+        "winter",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/frogs_spring.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Spring frogs in full chorus, toads trilling, swelling and falling.",
+      "where": "a layer by rivers, marshes and ponds on spring nights (March to May), over the night bed",
+      "tags": [
+        "nature",
+        "night",
+        "spring",
+        "water",
+        "layer"
+      ]
+    },
+    {
+      "file": "amb/world/marsh_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "day",
+      "for": "A winter marsh: geese honking and lifting, ducks, wings, reeds.",
+      "where": "Mesopotamian and Susianan marshes, Tyrrhenian lagoons, November to February",
+      "tags": [
+        "nature",
+        "winter",
+        "water",
+        "river_plain"
+      ]
+    },
+    {
+      "file": "amb/world/flood.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Floodwater over the fields: lapping, gurgling into ditches, a heron, frogs.",
+      "where": "the flood_rising turn and flooded tiles (April and May: Babylon, Mesopotamia, Susa, Susiana; the Tiber's high months)",
+      "tags": [
+        "water",
+        "flood",
+        "spring"
+      ]
+    },
+    {
+      "file": "amb/world/reaping.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 14.0,
+      "samples": 617400,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Reapers in standing grain: sickles, handfuls laid down, a hum.",
+      "where": "positional: reapers (June-July; April-May in Mesopotamia)",
+      "tags": [
+        "work",
+        "season",
+        "summer",
+        "harvest"
+      ]
+    },
+    {
+      "file": "amb/world/winnowing.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "A winnowing floor: grain tossed into the wind, chaff hissing.",
+      "where": "positional: threshing floors after the harvest (July-August)",
+      "tags": [
+        "work",
+        "season",
+        "summer",
+        "harvest"
+      ]
+    },
+    {
+      "file": "amb/world/vintage.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 16.0,
+      "samples": 705600,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Grapes trodden in the vat to a double pipe, juice running.",
+      "where": "positional: grape pickers and treaders (September-October)",
+      "tags": [
+        "work",
+        "season",
+        "autumn",
+        "vintage"
+      ]
+    },
+    {
+      "file": "amb/world/olive_harvest.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 14.0,
+      "samples": 617400,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Poles beating olive branches, olives pattering on cloths.",
+      "where": "positional: olive pickers (November-January)",
+      "tags": [
+        "work",
+        "season",
+        "winter",
+        "olives"
+      ]
+    },
+    {
+      "file": "amb/world/ploughing.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 14.0,
+      "samples": 617400,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "An ox team ploughing: slow steps, the share in the soil, the yoke creaking, the ploughman's call.",
+      "where": "positional: ploughmen and oxen (October-November)",
+      "tags": [
+        "work",
+        "season",
+        "autumn",
+        "ploughing"
+      ]
+    },
+    {
+      "file": "sfx/world/sting_season.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft cue for the turn of a season on the open land (a fifth on A and E under a lute).",
+      "tags": [
+        "sting",
+        "season",
+        "world"
+      ]
+    },
+    {
+      "file": "sfx/world/cicada_start.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.9328,
+      "samples": 173435,
+      "gain": 0.8,
+      "when": "always",
+      "for": "The first cicada of summer starting up, two more joining.",
+      "tags": [
+        "turn",
+        "summer",
+        "insects"
+      ]
+    },
+    {
+      "file": "sfx/world/leaves_skitter.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.3517,
+      "samples": 147812,
+      "gain": 0.8,
+      "when": "always",
+      "for": "An autumn gust through dry leaves skittering away.",
+      "tags": [
+        "turn",
+        "autumn",
+        "leaves"
+      ]
+    },
+    {
+      "file": "sfx/world/frost_steps.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.108,
+      "samples": 92963,
+      "gain": 0.7,
+      "when": "always",
+      "for": "Steps crunching over rimed grass in still air.",
+      "tags": [
+        "turn",
+        "winter",
+        "frost"
+      ]
+    },
+    {
+      "file": "amb/world/wind_bare_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind through bare winter branches, breeze.",
+      "where": "woods and orchards from December to February, by wind strength (in place of the leafy wind.trees)",
+      "family": "wind.bare",
+      "level": 1,
+      "level_name": "breeze",
+      "tags": [
+        "weather",
+        "wind",
+        "trees",
+        "winter"
+      ]
+    },
+    {
+      "file": "amb/world/wind_bare_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind through bare winter branches, strong.",
+      "where": "woods and orchards from December to February, by wind strength (in place of the leafy wind.trees)",
+      "family": "wind.bare",
+      "level": 2,
+      "level_name": "strong",
+      "tags": [
+        "weather",
+        "wind",
+        "trees",
+        "winter"
+      ]
     }
   ]
 }

@@ -3683,7 +3683,25 @@
    "amb/world/crowd_greek_3.ogg",
    "amb/world/crowd_persian_1.ogg",
    "amb/world/crowd_persian_2.ogg",
-   "amb/world/crowd_persian_3.ogg"
+   "amb/world/crowd_persian_3.ogg",
+   "amb/world/dawn_autumn.ogg",
+   "amb/world/dawn_winter.ogg",
+   "amb/world/dusk_autumn.ogg",
+   "amb/world/dusk_winter.ogg",
+   "amb/world/night_autumn.ogg",
+   "amb/world/night_cold.ogg",
+   "amb/world/night_snow.ogg",
+   "amb/world/day_snow.ogg",
+   "amb/world/frogs_spring.ogg",
+   "amb/world/marsh_winter.ogg",
+   "amb/world/flood.ogg",
+   "amb/world/reaping.ogg",
+   "amb/world/winnowing.ogg",
+   "amb/world/vintage.ogg",
+   "amb/world/olive_harvest.ogg",
+   "amb/world/ploughing.ogg",
+   "amb/world/wind_bare_1.ogg",
+   "amb/world/wind_bare_2.ogg"
   ],
   "sfx": [
    "sfx/world/step.wav",
@@ -3758,7 +3776,11 @@
    "sfx/world/cheer.wav",
    "sfx/world/hush.wav",
    "sfx/world/chorus_far.wav",
-   "sfx/world/wedding_song.wav"
+   "sfx/world/wedding_song.wav",
+   "sfx/world/sting_season.wav",
+   "sfx/world/cicada_start.wav",
+   "sfx/world/leaves_skitter.wav",
+   "sfx/world/frost_steps.wav"
   ]
  },
  "art": {

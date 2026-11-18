@@ -249,8 +249,8 @@
  ],
  "audio": {
   "music": ["music/rome/day.ogg", "music/rome/night.ogg"],
-  "ambience": ["amb/rome/day.ogg", "amb/rome/forum.ogg", "amb/rome/river.ogg", "amb/rome/circus.ogg", "amb/rome/night.ogg", "amb/rome/procession.ogg", "amb/rome/fountain.ogg", "amb/rome/baths.ogg", "amb/rome/treadwheel.ogg"],
-  "sfx": ["sfx/rome/tibia.wav", "sfx/rome/cornu.wav", "sfx/rome/hydraulis.wav", "sfx/rome/sistrum.wav", "sfx/rome/arrive.wav", "sfx/rome/acclamation.wav", "sfx/rome/sting_sunrise.wav", "sfx/rome/sting_nightfall.wav", "sfx/rome/sting_storm_clear.wav", "sfx/rome/sting_rainbow.wav"]
+  "ambience": ["amb/rome/day.ogg", "amb/rome/forum.ogg", "amb/rome/river.ogg", "amb/rome/circus.ogg", "amb/rome/night.ogg", "amb/rome/procession.ogg", "amb/rome/fountain.ogg", "amb/rome/baths.ogg", "amb/rome/treadwheel.ogg", "amb/rome/day_winter.ogg", "amb/rome/saturnalia.ogg"],
+  "sfx": ["sfx/rome/tibia.wav", "sfx/rome/cornu.wav", "sfx/rome/hydraulis.wav", "sfx/rome/sistrum.wav", "sfx/rome/arrive.wav", "sfx/rome/acclamation.wav", "sfx/rome/sting_sunrise.wav", "sfx/rome/sting_nightfall.wav", "sfx/rome/sting_storm_clear.wav", "sfx/rome/sting_rainbow.wav", "sfx/rome/lituus.wav", "sfx/rome/sting_season.wav"]
  },
  "art": {"edges": ["rome.tufa", "rome.brick", "rome.travertine", "rome.earth"], "fx": ["rome.bonfire", "rome.dust", "rome.fire", "rome.glint", "rome.incense", "rome.smoke", "rome.sparks", "rome.spout", "rome.spray", "rome.steam", "rome.torch_flame"], "props": ["rome.lamp", "rome.torch", "rome.lantern"]}
 }

@@ -28,6 +28,7 @@ import parsa  # noqa: E402
 import people  # noqa: E402
 import rome  # noqa: E402
 import score  # noqa: E402
+import seasons  # noqa: E402
 import sfx  # noqa: E402
 import stings  # noqa: E402
 import validate  # noqa: E402
@@ -114,10 +115,11 @@ EFFECTS = {
 
 # Region sets (world-tech §2.2: assets/audio/<music|amb|sfx>/<set>/…), each with a manifest
 # at assets/audio/<set>/manifest.json for the engine and the region theme files.
-SETS = {"parsa": {**parsa.FILES, **people.PARSA, **stings.PARSA},
-        "athens": {**athens.FILES, **people.ATHENS, **stings.ATHENS},
-        "rome": {**rome.FILES, **people.ROME, **stings.ROME},
-        "world": {**world.FILES, **weather.FILES, **wildlife.FILES, **people.FILES},
+SETS = {"parsa": {**parsa.FILES, **people.PARSA, **stings.PARSA, **seasons.PARSA},
+        "athens": {**athens.FILES, **people.ATHENS, **stings.ATHENS, **seasons.ATHENS},
+        "rome": {**rome.FILES, **people.ROME, **stings.ROME, **seasons.ROME},
+        "world": {**world.FILES, **weather.FILES, **wildlife.FILES, **people.FILES,
+                  **seasons.FILES},
         # Home-only additions not in the catalog (variations, steps, stings) live in the home
         # folders and are listed in assets/audio/home/manifest.json.
         "home": {**wildlife.HOME, **people.HOME, **stings.HOME}}
