@@ -283,6 +283,7 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
     // the tile next to it), as resolve() does; a spot with neither is never used.
     std::vector<std::tuple<std::uint32_t, std::uint16_t, int, int>> seen;
     for (const world::WorldSlot& s : m.slots()) {
+        if (m.slotKinds()[s.kind] == "mooring") continue; // a boat's place, on the water
         const world::Placed& it = m.items()[s.item];
         const int lr = w.data.regionOfWorld(m.regionAt({it.x, it.y}));
         if (lr < 0 || w.pathsOf[static_cast<std::size_t>(lr)] < 0) continue;

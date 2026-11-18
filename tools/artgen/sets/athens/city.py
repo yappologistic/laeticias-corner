@@ -90,7 +90,9 @@ def sacred_gate(m):
 # ---------------------------------------------------------------- the Pnyx
 
 PNYX_RISE = 16.0                   # two levels: the bema at 4, the top at 6
-BEMA = 7.5
+# The speaker's platform: one walker's step (8 px) above the front row of the assembly, which is
+# the way up onto it (draw-order.md W3).
+BEMA = 7.0
 
 
 def _pnyx_ground(x):
@@ -126,7 +128,8 @@ def pnyx(m):
 
 
 def _pnyx_landmark():
-    walk = [t for t in tiles(1, 14, 0, 16)]
+    # The bema's ends drop a cliff to the rock beside them: those two tiles are not walk tiles.
+    walk = [t for t in tiles(1, 14, 0, 16) if t not in ((1, 6), (1, 10))]
     floor = {(x, y): (BEMA if x == 1 and 7 <= y <= 9 else float(_pnyx_ground((x + 1) * T) + 0.6)) for x, y in walk}
     spots = [{"t": [x, y], "face": "-x"} for x in (4, 6, 8, 10) for y in (3, 6, 9, 12)]
     return Landmark((15, 17), (0, 24), ref("pnyx"), walk=walk, floor=floor,

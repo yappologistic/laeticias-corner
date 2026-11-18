@@ -980,7 +980,7 @@ ITEMS = {f"rome.{n}": it for n, it in {
     "r_vigiles": _item(r_vigiles, {"door": [{"t": [1, 2], "face": "+y"}]}),
     "r_villa_farm": _item(r_villa_farm, {"door": [{"t": [1, -1], "face": "+x"}]}),
     "r_shed": _item(r_shed),
-    "mutatio": _item(mutatio, {"door": [{"t": [4, 4], "face": "+y"}], "change": [{"t": [3, 2]}, {"t": [4, 2]}]}),
+    "mutatio": _item(mutatio, {"door": [{"t": [4, 4], "face": "+y"}], "change": [{"t": [2, 4]}, {"t": [3, 4]}]}),
     "stair_travertine": _item(stair_travertine),
     "quay": _item(quay, {"mooring": [{"t": [0, 1], "face": "+y"}]}),
     "aqua_claudia": _walk_item(aqua_claudia),

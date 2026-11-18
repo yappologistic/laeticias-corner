@@ -19,19 +19,21 @@ from . import rng
 from .base import CC, RR, SEED, World, box_blur, distance_to, noise
 from .coords import COLS, ROWS
 from .dsl import Placed
+from .graph import Graph
+from .routes import drove_tracks
 
 SRC = "plan/world_plan.py"
 GLOW_OUTSIDE_TOWNS = 12   # §9.5 budget per chunk
 REACH = 24                # V7: walking tiles from the graph
-FOLD_REACH = 48           # steps from a road to a fold a shepherd walks to
 
 
-def place(W: World) -> None:
+def place(W: World, g: Graph) -> None:
     fields(W)
     plants(W)
     props(W)
     peaks(W)
     glow_cap(W)
+    drove_tracks(W, g)
     reachable_kit(W)
 
 
@@ -171,10 +173,6 @@ def props(W: World) -> None:
     road = W.road if W.road is not None else np.zeros_like(land)
     near_road = distance_to(road, 4) < 4
     u = rng.hash01(CC, RR, rng.hash64(SEED, "props"))
-    from .routes import street_reach
-    # A fold stands off the roads but on ground a shepherd walks to from one (one level, no
-    # scarp between): a fold out of reach would be an island no herdsman's route gets to (W-L2).
-    walk_to = street_reach(W, FOLD_REACH) < FOLD_REACH
     var = rng.hash_grid(CC, RR, rng.hash64(SEED, "propvar"))
     counts: dict[str, int] = {}
     for i, n in enumerate(W.names):
@@ -200,25 +198,36 @@ def props(W: World) -> None:
                 lv = int(L.LV[j, i_])
                 if any(abs(int(L.LV[y, x]) - lv) > 1 for x, y in tiles):
                     continue
-                if item == "world.sheepfold" and not any(
-                        walk_to[y, x] and L.LV[y, x] == lv
-                        for x, y in ((i_ + a, j + b) for a in range(-1, pw + 1)
-                                     for b in range(-1, ph + 1))
-                        if 0 <= x < COLS and 0 <= y < ROWS):
-                    # The flocks still graze the bench; only the fold, which no herdsman could
-                    # walk to from a road, is left out.
-                    from .routes import mark_pasture
-                    mark_pasture(W, int(i_) + 1, int(j) + 1)
-                    counts["pasture without fold"] = counts.get("pasture without fold", 0) + 1
+                if item == "world.sheepfold" and not fold_site(W, item, int(i_), int(j), lv):
+                    counts["fold sites refused"] = counts.get("fold sites refused", 0) + 1
                     continue
                 for x, y in tiles:
                     L.LV[y, x] = lv
-                _add(W, item, int(i_), int(j), int(var[j, i_] % np.uint64(1 << 20)))
+                p = _add(W, item, int(i_), int(j), int(var[j, i_] % np.uint64(1 << 20)))
                 counts[item] = counts.get(item, 0) + 1
                 if item == "world.sheepfold":
                     from .routes import mark_pasture
                     mark_pasture(W, int(i_) + 1, int(j) + 1)
+                    # The gate stays free and level with the fold: the drove track starts there.
+                    L._door_and_slots(p)
+                    for c, r, _f in p.slots.get("gate", []):
+                        L.LV[r, c] = lv
+                        W.keep[r, c] = True
     W.stats["props"] = dict(sorted(counts.items()))
+
+
+def fold_site(W: World, item: str, c: int, r: int, lv: int) -> bool:
+    """A fold's gate opens onto dry, free land within a level of the fold (not over a cliff's
+    edge, not into water); elsewhere the place itself is wrong for a fold."""
+    L = W.L
+    probe = Placed(-1, item, c, r, *L._plan_size(item, 0), 0, None, SRC)
+    L._door_and_slots(probe)
+    for gc, gr, _f in probe.slots.get("gate", []):
+        if not (0 <= gc < COLS and 0 <= gr < ROWS) or not W.land[gr, gc] or W.river[gr, gc] \
+                or L.OCC[gr, gc] >= 0 or L.IMP[gr, gc] or W.reserved[gr, gc] or \
+                abs(int(L.LV[gr, gc]) - lv) > 1:
+            return False
+    return True
 
 
 def peaks(W: World) -> None:
@@ -239,7 +248,8 @@ def peaks(W: World) -> None:
             continue
         tiles = [(i_ - 1 + x, j - 1 + y) for y in range(3) for x in range(3)]
         if not all(0 <= x < COLS and 0 <= y < ROWS and land[y, x] and L.OCC[y, x] < 0 and
-                   not L.STREET[y, x] and not W.river[y, x] for x, y in tiles):
+                   not L.STREET[y, x] and not W.river[y, x] and not W.keep[y, x]
+                   for x, y in tiles):
             continue
         top = int(max(L.LV[y, x] for x, y in tiles))
         for x, y in tiles:

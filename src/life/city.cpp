@@ -188,6 +188,7 @@ std::unique_ptr<LifeWorld> buildLifeWorld(const LoadedWorld& w) {
     }
     for (std::uint32_t i = 0; i < map.items().size(); ++i) {
         const Placed& it = map.items()[i];
+        if (it.rect().intersects(w.file.home.rect)) continue; // the game's home stands there
         const int lr = lw->data.regionOfWorld(map.regionAt({it.x, it.y}));
         if (lr >= 0) lw->regionItems[static_cast<std::size_t>(lr)].emplace_back(it.info, i);
     }
@@ -350,11 +351,12 @@ int CityLife::seasonFor(int day, int season) const {
 }
 
 int CityLife::monthFor(int day, int season) const {
-    // The month of the season's day: day n's own (n mod 12) while the seasons follow the days;
-    // with a season kept, the month of that season on the same day of it.
-    const int days = std::max(1, w_->data.seasonDays);
-    const int m = seasonFor(day, season) * days + day % days;
-    return m < static_cast<int>(w_->data.months.size()) ? m : w_->data.monthOf(day);
+    // The calendar's one rule (core calendarDay): day n's own month while the seasons follow the
+    // days; with a season kept, the month of that season on the same day of it.
+    const Catalog& cat = map_->content().home();
+    const int m =
+        calendarDay(day, season, cat.seasonDays, static_cast<int>(w_->data.months.size())).month;
+    return m >= 0 ? m : w_->data.monthOf(day);
 }
 
 bool CityLife::festivalOn(int region, int festival, int day, int season) const {

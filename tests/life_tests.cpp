@@ -900,7 +900,12 @@ TEST_CASE("city: gather writes what is drawn, interpolated, without allocating")
         CHECK(city.alive(d.handle));
         CHECK(d.kind < kinds.size());
         CHECK(d.alpha > 0.0f);
-        CHECK(city.activeRect().contains(
+        // Gathered by its tile; drawn between its last two steps, so a walker on the area's
+        // edge may be drawn a step over it.
+        const TileRect a = city.activeRect();
+        CAPTURE(d.pos.x);
+        CAPTURE(d.pos.y);
+        CHECK(TileRect{a.x0 - 1, a.y0 - 1, a.x1 + 1, a.y1 + 1}.contains(
             TilePos{static_cast<int>(d.pos.x), static_cast<int>(d.pos.y)}));
     }
 }

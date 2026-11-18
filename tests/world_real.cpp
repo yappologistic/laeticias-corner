@@ -289,8 +289,12 @@ TEST_CASE("real world: the starter home overlays the corner") {
             CHECK(m.level(p) == w->file.home.level);
             if (starter.isWild({x, y})) CHECK_FALSE(m.walkable(p));
         }
-    for (const Placed& it : m.items())
-        if (it.layer != kHomeLayer) CHECK_FALSE(it.rect().intersects(hr));
+    // Prebuilt items there stay in the list (no index moves) but nothing of the world stands on
+    // the home's tiles.
+    for (int y = hr.y0; y < hr.y1; ++y)
+        for (int x = hr.x0; x < hr.x1; ++x)
+            if (const int i = m.itemAt({x, y}); i >= 0)
+                CHECK(m.items()[static_cast<std::size_t>(i)].layer == kHomeLayer);
 }
 
 TEST_CASE("perf: load time and memory") {

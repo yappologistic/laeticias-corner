@@ -475,10 +475,16 @@ def _route_between(graphs, world, high: str, low: str) -> tuple[str, str] | None
     for e in base.edges:
         adj.setdefault(e.a, []).append(e.b)
         adj.setdefault(e.b, []).append(e.a)
-    starts = sorted(n.id for n in base.nodes if region_at(n) == high
-                    and (n.kind == "station" or "_farm_" in n.id or n.id in adj))
+    # The herds leave from and come home to their folds (at the drove tracks' ends) where the
+    # region has them, else from the stations and farms on the road.
+    def fold(n):
+        return n.id.startswith("fold_")
+
+    starts = sorted(n.id for n in base.nodes if region_at(n) == high and fold(n)) or \
+        sorted(n.id for n in base.nodes if region_at(n) == high
+               and (n.kind == "station" or "_farm_" in n.id or n.id in adj))
     goals = {n.id for n in base.nodes if region_at(n) == low and
-             (n.kind == "station" or "_farm_" in n.id)}
+             (n.kind == "station" or "_farm_" in n.id or fold(n))}
     if not starts or not goals:
         return None
     from collections import deque

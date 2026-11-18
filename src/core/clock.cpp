@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <utility>
 
 namespace lc {
 namespace {
@@ -114,6 +115,19 @@ SeasonDay seasonOf(int day, std::span<const int> days) {
         k -= days[s];
     }
     return {};
+}
+
+CalendarDay calendarDay(int day, int pinned, std::span<const int> seasonDays, int months) {
+    const SeasonDay sd = seasonOf(day, seasonDays);
+    CalendarDay c;
+    c.season = pinned >= 0 && std::cmp_less(pinned, seasonDays.size()) ? pinned : sd.season;
+    const int days =
+        seasonDays.empty() ? 1 : std::max(1, seasonDays[static_cast<std::size_t>(c.season)]);
+    c.seasonDay = c.season == sd.season ? sd.day : ((day % days) + days) % days;
+    int month = c.seasonDay;
+    for (int k = 0; k < c.season; ++k) month += seasonDays[static_cast<std::size_t>(k)];
+    c.month = month < months ? month : -1;
+    return c;
 }
 
 Lighting lightingAt(double t, float rain) {

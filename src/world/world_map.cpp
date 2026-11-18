@@ -189,10 +189,6 @@ WorldMap::WorldMap(const WorldFile& wf, const Content& content, std::span<const 
     for (const auto& [key, s] : dropped)
         diag.warn("layers/" + key.first + ".lcw drops " + std::to_string(s.count) + " item(s) of " +
                   key.second + " under its cells (first at " + at(s.first) + ")");
-    // Prebuilt items touching the home rect give way to the game's home now, not when the home
-    // is applied: item indices never change after load (city life keeps them; L-018).
-    for (std::size_t i = 0; i < items_.size(); ++i)
-        if (items_[i].rect().intersects(home_.rect)) dead[i] = 1;
     std::size_t keep = 0;
     for (std::size_t i = 0; i < items_.size(); ++i)
         if (!dead[i]) items_[keep++] = items_[i];
@@ -305,6 +301,7 @@ void WorldMap::index(TileRect area, std::uint32_t from, Diagnostics& diag) {
     });
     for (std::uint32_t i = from; i < items_.size(); ++i) {
         const Placed& it = items_[i];
+        if (underHome(i)) continue;
         if (isBig(it)) {
             forEachChunkIn(it.rect(),
                            [&](int cx, int cy) { chunks_[chunkIndex(cx, cy)].big.push_back(i); });

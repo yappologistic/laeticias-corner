@@ -12,6 +12,8 @@
 
 #include <doctest.h>
 
+#include <array>
+
 #include <filesystem>
 #include <fstream>
 
@@ -549,6 +551,21 @@ TEST_CASE("autosave fires under continuous editing, after quiet moments, and ret
     for (int f = 0; f < 60 * 60; ++f) held = held || a.due(step, false, true);
     CHECK_FALSE(held);
     CHECK(a.due(step, false, false));
+}
+
+TEST_CASE("the calendar day: one answer to the season and month, kept seasons included") {
+    // Four seasons of three days, twelve months (day n: month n mod 12).
+    const std::array<int, 4> days{3, 3, 3, 3};
+    CHECK(calendarDay(0, -1, days, 12).season == 0);
+    CHECK(calendarDay(0, -1, days, 12).month == 0);
+    CHECK(calendarDay(7, -1, days, 12).season == 2);
+    CHECK(calendarDay(7, -1, days, 12).seasonDay == 1);
+    CHECK(calendarDay(7, -1, days, 12).month == 7);
+    CHECK(calendarDay(19, -1, days, 12).month == 7); // a year on
+    // A kept season: that season's month for the day of the season.
+    CHECK(calendarDay(10, 1, days, 12).season == 1);
+    CHECK(calendarDay(10, 1, days, 12).month == 4);
+    CHECK(calendarDay(10, 1, days, 0).month == -1); // no calendar
 }
 
 TEST_CASE("the calendar turns at midnight while the clock runs, and in play time while pinned") {

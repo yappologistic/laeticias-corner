@@ -927,11 +927,10 @@ void App::drawPlaceholderLabels(Painter& p) {
 namespace lc {
 
 int App::calendarMonth() const {
-    // The month of the season's day (a kept season keeps its own months); -1 without a calendar.
-    const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
-    int month = clock_.day() % std::max(1, sd.days);
-    for (int k = 0; k < season(); ++k) month += cat_.seasonDays[static_cast<std::size_t>(k)];
-    return month < static_cast<int>(cat_.months.size()) ? month : -1;
+    // The world calendar's month of the day (a kept season keeps its own months); -1 without one.
+    return calendarDay(clock_.day(), seasonPin_, cat_.seasonDays,
+                       static_cast<int>(cat_.months.size()))
+        .month;
 }
 
 void App::followWorldWeather() {

@@ -17,9 +17,11 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+import setbuild
 import spec
 
-SLACK = 12           # px at 64x32 a model may reach outside its footprint (pads, leaning crowns)
+SLACK = 12           # px at 64x32 a figure may reach outside its footprint
+REACH = 32           # px an item may reach outside its footprint (a stone pine's crown, a quay's wall)
 ITEM = re.compile(r"item/([^/]+)/[^/]+/(r\d+|m\d+)/")
 
 
@@ -148,7 +150,7 @@ def check_page(png: Path, table: dict, feet: dict, hh: int) -> list[str]:
             (fw, fh), layout = feet[m[1]]
             if layout == "rotate" and m[2].startswith("r") and int(m[2][1:]) % 2:
                 fw, fh = fh, fw
-            lo, hi = rel - 1 - SLACK, rel + (fw + fh) * hh + 1 + SLACK
+            lo, hi = rel - 1 - REACH, rel + (fw + fh) * hh + 1 + REACH
         elif key.startswith(("terrain/", "wild/")):
             lo, hi = rel - 1 - SLACK, rel + 2 * hh + 1 + SLACK
         elif key.startswith(("walker/", "figure/", "critter/", "goods/", "cart/", "ship/")):
@@ -241,10 +243,13 @@ def check_depth(name: str, atlas_dir: Path, pages) -> list[str]:
                 fh = max(y + h_ for _x, y, _w, h_ in g["pieces"])
                 _hh, gx, gy, _up = _ground_xy(whole, ox, oy)
                 tx, ty = np.clip(gx / hw, 0, fw - 1e-3), np.clip(gy / hw, 0, fh - 1e-3)
+                # Below the anchor's ground (piers in a river, a basin's floor) heights are 0:
+                # such pixels cannot be placed, so only those above it are held to their tiles.
+                placed = _hh > 0
                 slack = 1.5 / hw
                 bad = total = 0
                 for i, (px, py, pw, ph) in enumerate(g["pieces"]):
-                    m = owner == i
+                    m = (owner == i) & placed
                     total += int(m.sum())
                     bad += int((m & ((tx < px - slack) | (tx > px + pw + slack) |
                                      (ty < py - slack) | (ty > py + ph + slack))).sum())
@@ -255,7 +260,10 @@ def check_depth(name: str, atlas_dir: Path, pages) -> list[str]:
                     hh_, gx, gy, up = _ground_xy(whole, ox, oy)
                     wz = {tuple(map(int, t.split(","))): z for t, z in g["walk_z"].items()}
                     for (tx_, ty_), z in wz.items():
-                        sel = up & (np.floor(gx / hw) == tx_) & (np.floor(gy / hw) == ty_)
+                        # Only what a walker could stand on or hit: a roof over a stoa's floor
+                        # stands above the headroom and hides the floor itself.
+                        sel = up & (np.floor(gx / hw) == tx_) & (np.floor(gy / hw) == ty_) & \
+                            (hh_ < z + setbuild.WALK_HEADROOM * hw // 32)
                         # A stair tile holds several treads: allow half its rise to the next tile.
                         rise = max((abs(z - wz[n]) for n in ((tx_ + 1, ty_), (tx_ - 1, ty_), (tx_, ty_ + 1),
                                                               (tx_, ty_ - 1)) if n in wz), default=0)
@@ -277,6 +285,70 @@ def check_depth(name: str, atlas_dir: Path, pages) -> list[str]:
                 if sel.sum() < 8 or np.std(along) == 0 or np.std(hh_[sel]) == 0 or \
                         np.corrcoef(along, hh_[sel])[0, 1] < 0.5:
                     errors.append(f"{iid} {v}: the treads do not rise toward {g['climb']}")
+    return errors
+
+
+def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str]:
+    """The art-side rules of draw-order.md §5.1 for one item: `item` its catalog entry, `entry`
+    its geometry ({variant: ...}), `keys` the sprite keys on the set's pages, `level` tile.level
+    px. P1 pieces where there are walk tiles or a footprint over 8 x 8, walk tiles in runs of
+    their own; P2 art for every piece; P3 `tops` for every look and `roof` only over walk tiles;
+    W2 every walk tile reached from the footprint's edge by steps of at most half a level; W3 neighbouring walk floors within half a level unless one floor piece holds both; W4 a walk
+    floor not above the item and more than three levels up only on a stair or a terrace; S1 a
+    stair's `climb` along its catalog `axis`; O1 a clearance (`under`) for every piece."""
+    errors = []
+    fw0, fh0 = item["footprint"]
+    for v, g in entry.items():
+        turned = item.get("layout") == "rotate" and v.startswith("r") and int(v[1:]) % 2
+        fw, fh = (fh0, fw0) if turned else (fw0, fh0)
+        walk = {tuple(t) for t in g.get("walk", [])}
+        pieces = g.get("pieces", [])
+        if (walk or fw > 8 or fh > 8) and not pieces:
+            errors.append(f"{iid} {v}: P1 walk tiles or a footprint over 8 x 8 but no pieces")
+        for i, (x, y, w, h) in enumerate(pieces):
+            tiles_ = {(x + a, y + b) for a in range(w) for b in range(h)}
+            if tiles_ & walk and (tiles_ - walk or (w > 1 and h > 1)):
+                errors.append(f"{iid} {v}: P1 piece {i} mixes walk tiles with others or is not a run")
+            if f"item/{iid}/base/{v}/p{i}/f0" not in keys:
+                errors.append(f"{iid} {v}: P2 piece {i} has no art")
+        tops = g.get("tops")
+        if tops is None or len(tops) != fh or any(len(r) != fw for r in tops):
+            errors.append(f"{iid} {v}: P3 no tops for its {fw} x {fh} footprint")
+        bad_roof = [t for t in g.get("roof", {}) if tuple(map(int, t.split(","))) not in walk]
+        if bad_roof:
+            errors.append(f"{iid} {v}: P3 roof over tiles that are not walk tiles {bad_roof[:3]}")
+        wz = {tuple(map(int, t.split(","))): z for t, z in g.get("walk_z", {}).items()}
+        floors = [{(x + a, y + b) for a in range(w) for b in range(h)}
+                  for i, (x, y, w, h) in enumerate(pieces) if i in set(g.get("floor_pieces", []))]
+        for (x, y), z in wz.items():
+            for nb in ((x + 1, y), (x, y + 1)):    # a stair's floors rise by design ("climb")
+                if nb in wz and abs(wz[nb] - z) > level // 2 and "climb" not in g and \
+                        not any((x, y) in f and nb in f for f in floors):
+                    errors.append(f"{iid} {v}: W3 walk floors ({x},{y}) {z} px and {nb} {wz[nb]} px "
+                                  "more than half a level apart outside one floor piece")
+            if z > g.get("h", 0):
+                errors.append(f"{iid} {v}: W4 walk floor ({x},{y}) at {z} px above the item's top")
+        if walk:                # W2: reachable from the footprint's edge by steps a walker takes
+            def ok(a_, b_):
+                return abs(wz.get(a_, 0) - wz.get(b_, 0)) <= level // 2 or "climb" in g or \
+                    any(a_ in f and b_ in f for f in floors)
+            todo = [t for t in walk if t[0] in (0, fw - 1) or t[1] in (0, fh - 1)]
+            seen = set(todo)
+            while todo:
+                x, y = todo.pop()
+                for nb in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if nb in walk and nb not in seen and ok((x, y), nb):
+                        seen.add(nb)
+                        todo.append(nb)
+            if walk - seen:
+                errors.append(f"{iid} {v}: W2 walk tiles no step reaches from the edge {sorted(walk - seen)[:4]}")
+        if wz and max(wz.values()) > 3 * level and "climb" not in g and not g.get("terrace"):
+            errors.append(f"{iid} {v}: W4 a walk floor {max(wz.values())} px up on an item that is not a "
+                          "stair and not marked a terrace")
+        if item.get("rise") and v == "r0" and "axis" in item and g.get("climb", "  ")[1] != item["axis"]:
+            errors.append(f"{iid} r0: S1 climbs {g.get('climb')} across its catalog axis {item['axis']}")
+        if pieces and len(g.get("under", [])) != len(pieces):
+            errors.append(f"{iid} {v}: O1 no clearance (under) for each piece")
     return errors
 
 
@@ -304,6 +376,14 @@ def check(name: str, atlas_dir: Path | None = None) -> list[str]:
         packed = [(json.loads(p.with_suffix(".json").read_text())["sprites"],
                    _words(_rgba(p.with_name(p.stem + ".p.png")))) for p in pages]
         errors += check_depth(name, atlas_dir, packed)
+        geom_file = atlas_dir / f"{name}.geom.json"
+        if geom_file.exists():
+            keys = {k for man, _w in packed for k in man}
+            level = json.loads(spec.CATALOG.read_text())["tile"]["level"]
+            items = {it["id"]: it for it in cat["items"]}
+            for iid, entry in json.loads(geom_file.read_text())["items"].items():
+                if iid in items:
+                    errors += order_rules(iid, items[iid], entry, keys, level)
     return errors
 
 
