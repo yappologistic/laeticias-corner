@@ -18,6 +18,10 @@ its districts) into a `RegionView`, and checks a region document against it:
   L6  cards: every figure and placed landmark has one, within its length band
   L7  names and spelling: no retired name, one transliteration and British spelling throughout
   L8  events: no two events can hold the same route at once
+  L9  sound: every audio file and family named is in a manifest; no event, working role or
+      populated district is silent (`sound.check`)
+  L10 look: `theme.look` and district looks complete and in range (`look.check`)
+  L11 names: a name and caption for the region, its era, a name for every district
 
 Population model (what `max_per_chunk` means, for the engine's actor round): a district entry
 spawns `density[hour] * max_per_chunk` actors per chunk-sized share (1 024 tiles) of the
@@ -556,7 +560,22 @@ def check(doc: dict, view: RegionView, sim=None) -> list[Problem]:
     _check_cards(doc, view, bad)
     _check_names(doc, rid, bad)
     _check_events(doc, bad)
+    _check_sound_and_look(doc, view, bad)
     return out
+
+
+def _check_sound_and_look(doc, view, bad):
+    """L9 sound: every audio file and family a region names is in a manifest; no event,
+    working role or populated district is silent. L10 look: `theme.look` and district looks
+    have their fields, in range."""
+    from . import look, places, sound
+    _files, families = sound.manifests(Path(__file__).resolve().parents[3])
+    for level, where, msg in sound.check(doc, view.audio, families):
+        bad("L9", where, msg, level)
+    for level, where, msg in look.check(doc):
+        bad("L10", where, msg, level)
+    for level, where, msg in places.check(doc):
+        bad("L11", where, msg, level)
 
 
 def _kind_of(doc: dict, roles: dict, key: str) -> str | None:

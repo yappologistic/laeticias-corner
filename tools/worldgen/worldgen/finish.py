@@ -73,15 +73,56 @@ def free(L: Layout, rect: Rect) -> Mask:
 
 
 def fords(L: Layout, streets, item: str = "world.ford") -> None:
-    """A walkable deck (ford or slab bridge) on every water tile a way crosses."""
+    """A walkable deck (ford or slab bridge) on every water tile a way crosses, on the way's own
+    line only: connect decks run along one axis, so a wide street narrows to one tile over the
+    water (two lanes of decks would draw a hollow frame)."""
     seen = set()
     for s in streets:
-        for c, r in Line(s.points, s.width).tiles():
+        for c, r in Line(s.points, 1).tiles():
             t = L.terrain_at(c, r)
             if (c, r) in seen or t is None or not L.cat.is_water(t):
                 continue
             seen.add((c, r))
             L.place(item, at=(c - L.origin[0], r - L.origin[1]))
+
+
+FOOT_FACE = {(1, 0): "west", (-1, 0): "east", (0, 1): "north", (0, -1): "south"}
+DECKS = ("world.bridge_arch", "world.bridge_timber", "world.pontoon", "world.ford")
+
+
+def landings(L: Layout) -> list[str]:
+    """Where a street meets a deck over water a level below it (a river sunk below its banks:
+    the kit's end pieces ramp down to the water's level), the street steps down to the deck: a
+    ramp on four straight street tiles, else a two-tile stone stair, the foot on the deck's end.
+    Returns the ends it could not join, for the report."""
+    left = []
+    for p in list(L.items):
+        if p.removed or p.id not in DECKS:
+            continue
+        for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nxt = L._local(p.c + dc, p.r + dr)
+            if nxt is not None and L.OCC[nxt] >= 0 and L.items[L.OCC[nxt]].id == p.id:
+                continue  # the run goes on that way
+            low = int(L.LV[L._local(p.c, p.r)])
+            line = [(p.c + dc * k, p.r + dr * k) for k in range(1, 6)]
+            loc = [L._local(*t) for t in line]
+            if loc[0] is None or not L.STREET[loc[0]] or int(L.LV[loc[0]]) != low + 1:
+                continue
+            for item, n in (("world.ramp", 4), ("world.stair_stone", 2)):
+                run, head = loc[:n], loc[n] if n < len(loc) else None
+                if head is None or any(x is None or not L.STREET[x] or L.OCC[x] >= 0 or
+                                       int(L.LV[x]) != low + 1 for x in run + [head]):
+                    continue
+                cs = [t[0] - L.origin[0] for t in line[:n]]
+                rs = [t[1] - L.origin[1] for t in line[:n]]
+                rect = (min(cs), min(rs), max(cs), max(rs))
+                L.level(Rect(*rect), low)
+                if L.stair(item, rect=rect, face=FOOT_FACE[(dc, dr)]) is not None:
+                    break
+                L.level(Rect(*rect), low + 1)
+            else:
+                left.append(f"{p.id} at {(p.c, p.r)}: no straight street to step down on")
+    return left
 
 
 def _beside(c: int, r: int):
@@ -122,8 +163,9 @@ def clear_doors(L: Layout, reach: int = 24, all_slots: bool = False) -> None:
             if loc is None or L.OCC[loc] < 0:
                 continue
             other = L.items[L.OCC[loc]]
-            if other is p or L.cat.items[other.id].landmark or L.cat.items[other.id].rise:
-                continue
+            od = L.cat.items[other.id]
+            if other is p or od.landmark or od.rise or (od.walkable and od.on == "water"):
+                continue   # a deck on the spot is the way to it (a stair's foot on a bridge)
             L.remove(other if other.pw * other.ph <= p.pw * p.ph else p)
     # Walking distance from the streets over free ground (same level, no water).
     h, w = L.T.shape
