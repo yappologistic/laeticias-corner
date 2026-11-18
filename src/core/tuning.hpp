@@ -420,7 +420,7 @@ inline constexpr float kIdleWander = 3.0f; // tiles
 inline constexpr int kWanderTries = 6;
 inline constexpr float kWanderPause = 0.25f; // chance a lingering walker stands a moment instead //
                                              // straight walkable lines tried per wander move
-inline constexpr float kFollowReach = 16.0f;         // tiles: whom a `follow` step may follow
+inline constexpr float kFollowReach = 16.0f; // tiles: whom a `follow` step may follow
 inline constexpr double kGameSecondsPerReal = 120.0; // a game hour is 30 real seconds
 inline constexpr float kDefaultEventSeconds = 60.0f;
 inline constexpr int kMaxRunningEvents = 24;      // world-wide

@@ -270,6 +270,7 @@ private:
     [[nodiscard]] std::vector<std::string> takenSlugs() const;
     const MenuModel& menuModel();
     void profileChanged();
+    void toggleMute();
     void writeProfileIfDue();
     void applyVolumes();
     void applyReduceMotion();

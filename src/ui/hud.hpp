@@ -159,6 +159,7 @@ struct HudAction {
         Redo,
         Recentre,
         Map,       // the world map
+        Mute,      // the speaker button
         CloseCard, // the landmark or figure card
         ZoomOut,
         ZoomIn,

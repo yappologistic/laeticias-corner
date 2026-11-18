@@ -242,6 +242,14 @@ const MenuModel& App::menuModel() {
     return m;
 }
 
+void App::toggleMute() {
+    // Muting is saved at once (a muted profile left over is the first thing to puzzle over).
+    muted_ = !muted_;
+    profile_.muted = muted_;
+    profileDue_ = 0;
+    writeProfileIfDue();
+}
+
 void App::profileChanged() {
     profileDue_ = static_cast<float>(SDL_GetTicks()) / 1000.0f + kProfileDebounce;
 }
@@ -379,10 +387,7 @@ void App::applyMenuActions() {
             }
             break;
         }
-        case K::Mute:
-            muted_ = !muted_;
-            profileChanged();
-            break;
+        case K::Mute: toggleMute(); break;
         case K::Fullscreen:
             setFullscreen((SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) == 0);
             break;

@@ -40,6 +40,7 @@ enum Wid : int {
     kCalPin0,                          // calendar: follow the days, then each season
     kMap = kCalPin0 + 9,               // the world map
     kCardClose,                        // the landmark or figure card's close button
+    kSoundButton,                      // mute and unmute, anywhere
     kTab0 = 72,                        // drawer tabs: kTab0 + category
     kTile0 = 96,                       // drawer tiles: see tileId
 };
@@ -63,6 +64,7 @@ constexpr Named kNames[] = {
     {"recentre", kRecentre},
     {"map", kMap},
     {"card_close", kCardClose},
+    {"sound", kSoundButton},
     {"zoom_out", kZoomOut},
     {"zoom_in", kZoomIn},
     {"journal_close", kJournalClose},
@@ -271,7 +273,7 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
     const float leftW = buildW + 2 * (gap + dockH);
     const float divider = gap * 2;
     const float rightW = 5 * btn + 2 * divider + 2 * pad;
-    const float centreW = (m.world ? 6.0f : 5.0f) * btn + 2 * pad;
+    const float centreW = (m.world ? 7.0f : 6.0f) * btn + 2 * pad;
     const float avail = screen.x - 2 * margin;
     // One row when everything fits; otherwise the centre dock, then the right dock, move up a
     // row each, so no dock ever overlaps another.
@@ -283,7 +285,8 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
     const float rightY = oneRow || twoRows ? row0 : row0 - rowStep;
     const float centreY = oneRow ? row0 : rightY - rowStep;
 
-    {
+    // The building dock belongs to the home: away from it, it folds away.
+    if (!m.away) {
         Widget& w = add(kBuild, {margin, leftY, buildW, dockH});
         w.icon = theme::icon::kPlus;
         w.label = strings::kBuild;
@@ -379,6 +382,9 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         button(kJournal, theme::icon::kJournal, strings::kSketchbook, strings::kKeyJournal,
                m.journalOpen);
         if (m.world) button(kMap, theme::icon::kMap, strings::kMap, strings::kKeyMap, false);
+        // Muted shows unmistakably: the crossed speaker, lit as a held button.
+        button(kSoundButton, m.muted ? theme::icon::kSoundOff : theme::icon::kSoundOn,
+               m.muted ? strings::kSoundOff : strings::kSoundOn, strings::kKeyMute, m.muted);
     }
     return std::min(centreY, rightY);
 }
@@ -538,7 +544,7 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
     }
 
     // "New land" above the right dock while a stage opened out of sight.
-    if (m.edgeChip && !m.photo) {
+    if (m.edgeChip && !m.photo && !m.away) {
         const float cw = font.measure(Face::Body, strings::kNewLandChip) + theme::kIcon * s +
                          theme::kLabelGap * s + 2 * theme::kHintPad * s;
         const float ch = theme::kHintH * s;
@@ -696,7 +702,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                                   calendarBox_.x + calendarBox_.w > trayLast_.x &&
                                   calendarBox_.y < trayLast_.y + trayLast_.h;
     trayT_ = approach(trayT_,
-                      !tray_.empty() && !m.journalOpen && !m.photo && !drawerOverTray &&
+                      !tray_.empty() && !m.journalOpen && !m.photo && !m.away && !drawerOverTray &&
                           !ribbonOverTray && !calendarOverTray,
                       dt);
     const auto end = std::format_to_n(trayCount_, sizeof trayCount_ - 1, "{}", m.wishes.size());
@@ -831,6 +837,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kRedo: emit(HudAction::Kind::Redo); break;
             case kRecentre: emit(HudAction::Kind::Recentre); break;
             case kMap: emit(HudAction::Kind::Map); break;
+            case kSoundButton: emit(HudAction::Kind::Mute); break;
             case kCardClose: emit(HudAction::Kind::CloseCard); break;
             case kZoomOut: emit(HudAction::Kind::ZoomOut); break;
             case kZoomIn: emit(HudAction::Kind::ZoomIn); break;

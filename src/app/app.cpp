@@ -935,10 +935,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         if (menus_.editing()) return; // letters arrive as text input
         if (key == SDLK_F11)
             setFullscreen((SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) == 0);
-        if (key == SDLK_M && ctrl) {
-            muted_ = !muted_;
-            profileChanged();
-        }
+        if (key == SDLK_M && ctrl) toggleMute();
         return;
     }
     if (!k.down && (menus_.blocking() || menus_.editing())) return;
@@ -1038,8 +1035,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_KP_MINUS: zoomBy(-1, centre); return;
     case SDLK_M:
         if (ctrl) {
-            muted_ = !muted_;
-            profileChanged();
+            toggleMute();
         } else if (!photo_) {
             toggleMap();
         }
@@ -1331,6 +1327,7 @@ void App::applyHudActions() {
         case K::Redo: undoRedo(true); break;
         case K::Recentre: frameCamera(); break;
         case K::Map: toggleMap(); break;
+        case K::Mute: toggleMute(); break;
         case K::CloseCard: closeCard(); break;
         case K::ZoomOut: zoomBy(-1, centre); break;
         case K::ZoomIn: zoomBy(1, centre); break;

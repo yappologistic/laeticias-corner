@@ -346,7 +346,8 @@ void App::fillWorldModel(HudModel& m) const {
             m.caption = regionName(c);
         }
     }
-    if (m.away && m.hint.empty() && !photo_) m.hint = strings::kAwayHint;
+    // Away from home its own panels rest: no wish tray (the wishes wait for the return).
+    if (m.away) m.wishes = {};
     if (cardOpen_) {
         m.cardTitle = card_.title;
         if (font_.hasAll(card_.native)) m.cardNative = card_.native;
