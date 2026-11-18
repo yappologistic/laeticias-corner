@@ -76,7 +76,8 @@ void CellCache::reserve(std::size_t budget) {
 }
 
 std::size_t CellCache::budget() const {
-    return maxSlots_ * kSlotBytes;
+    // Slots come in whole cache pages.
+    return (maxSlots_ + kPerPage - 1) / kPerPage * kPerPage * kSlotBytes;
 }
 
 void CellCache::clear() {
