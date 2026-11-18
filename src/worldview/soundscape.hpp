@@ -83,6 +83,7 @@ private:
     std::vector<std::vector<Bed>> beds_;     // per region
     std::vector<float> bedGain_;             // scratch: one region's beds' gains this update
     std::vector<std::vector<int>> zoneFile_; // per region, per zone
+    std::vector<std::vector<std::uint16_t>> zoneMonths_; // per region, per zone: month bits
     std::vector<std::pair<int, std::uint64_t>> seeks_;
     struct Music {
         int day = -1; // file indices
@@ -97,6 +98,9 @@ private:
         int region = -1;
         int item = -1; // content item index
         std::string when;
+        float from = 0; // a worked loop's hours
+        float to = 24;
+        std::uint16_t months = 0; // bit per calendar month; 0: every month
     };
     std::vector<Source> sources_;
     std::vector<std::pair<float, float>> placed_; // per source: gain, pan (refreshed at 10 Hz)

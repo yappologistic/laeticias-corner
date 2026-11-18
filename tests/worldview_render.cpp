@@ -369,6 +369,69 @@ TEST_CASE("sound: every region has a bed in every month, by day and night; a sea
           Files{"amb/parsa/plain_day.ogg", "amb/parsa/rain.ogg"});
 }
 
+TEST_CASE("sound: no inland region hears the sea; worked loops sound in their hours only") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    Soundscape s(w, std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "audio");
+    const Catalog& cat = w.content->home();
+    // The towns that fell back to the open sea's bed day and night (world-sound.md §5).
+    for (std::size_t g = 0; g < w.regions.size(); ++g) {
+        const nlohmann::json& snd = w.regions[g].theme.sound;
+        if (!snd.is_object() || snd.value("climate", "") == "sea") continue;
+        for (std::size_t k = 0; k < cat.seasons.size(); ++k)
+            for (int m = 0; m < static_cast<int>(cat.months.size()); ++m)
+                for (const float hour : {12.0f, 0.0f})
+                    for (const std::string& f :
+                         s.bedsOf(static_cast<int>(g), static_cast<int>(k), m, hour, false))
+                        CHECK_MESSAGE(f != "amb/world/sea.ogg", w.file.regions[g].id);
+    }
+    // Every worked item loop with a placed source: heard at it in its hours and months; silent
+    // outside its hours where nothing else plays that file.
+    std::vector<float> weights(w.file.regions.size(), 0.0f);
+    const auto clockAt = [](float hour) { return std::fmod((hour - 6.0f) / 24.0f + 1.0f, 1.0f); };
+    int heard = 0;
+    for (const world::RegionFile& rf : w.regions)
+        for (const world::ItemLoop& l : rf.theme.loops) {
+            if (l.when != "worked") continue;
+            const int item = w.content->findItem(l.item);
+            const auto at = std::ranges::find_if(w.map->items(), [&](const world::Placed& p) {
+                return static_cast<int>(p.info) == item;
+            });
+            if (item < 0 || at == w.map->items().end()) continue;
+            const Vec2 c{static_cast<float>(at->x) + static_cast<float>(at->w) * 0.5f,
+                         static_cast<float>(at->y) + static_cast<float>(at->h) * 0.5f};
+            int month = -1;
+            if (!l.months.empty())
+                month = static_cast<int>(std::ranges::find(cat.months, l.months.front()) -
+                                         cat.months.begin());
+            const float span = std::fmod(l.to - l.from + 24.0f, 24.0f);
+            const auto gain = [&](float hour) {
+                Soundscape::Input in{weights, c, 15, clockAt(hour), 0, 0.2f};
+                in.month = month;
+                s.update(in);
+                s.update(in);
+                const auto f = static_cast<std::size_t>(std::ranges::find(s.files(), l.file) -
+                                                        s.files().begin());
+                return s.out()[f].gain;
+            };
+            INFO(rf.id << " " << l.item << " " << l.file);
+            CHECK(gain(std::fmod(l.from + span * 0.5f, 24.0f)) > 0);
+            ++heard;
+            // Outside its hours, when no other loop, zone or bed of the world plays that file.
+            bool alone = span < 23.0f;
+            for (const world::RegionFile& o : w.regions) {
+                for (const world::ItemLoop& x : o.theme.loops)
+                    if (x.file == l.file && x.when != "worked") alone = false;
+                for (const world::AmbienceZone& z : o.theme.zones)
+                    if (z.file == l.file) alone = false;
+            }
+            if (alone) CHECK(gain(std::fmod(l.to + (24.0f - span) * 0.5f, 24.0f)) == 0.0f);
+        }
+    MESSAGE(heard << " worked item loops heard in their hours");
+    CHECK(heard > 10);
+}
+
 TEST_CASE("sound: a season's turn crossfades its beds with equal power, never a jump") {
     Rig& r = rig();
     REQUIRE(r.ok);

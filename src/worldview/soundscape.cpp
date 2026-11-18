@@ -15,6 +15,11 @@ namespace {
 
 constexpr double kRate = 44100.0; // CLAUDE.md "Audio": every file is 44.1 kHz
 
+// A month mask holds `month` (an empty mask, or no month known, holds every month).
+bool inMonth(std::uint16_t mask, int month) {
+    return mask == 0 || month < 0 || ((mask >> month) & 1u) != 0;
+}
+
 float approachLinear(float v, float target, float step) {
     return v < target ? std::min(target, v + step) : std::max(target, v - step);
 }
@@ -44,16 +49,22 @@ Soundscape::Soundscape(const world::LoadedWorld& world, const std::filesystem::p
     music_.resize(wf.regions.size());
     beds_.resize(world.regions.size());
     zoneFile_.resize(world.regions.size());
+    zoneMonths_.resize(world.regions.size());
     const Catalog& cat = world.content->home();
+    const auto monthMask = [&](const std::vector<std::string>& months) {
+        std::uint16_t mask = 0;
+        for (const std::string& m : months)
+            for (std::size_t k = 0; k < cat.months.size() && k < 16; ++k)
+                if (cat.months[k] == m) mask = static_cast<std::uint16_t>(mask | (1u << k));
+        return mask;
+    };
     std::size_t mostBeds = 0;
     for (std::size_t r = 0; r < world.regions.size(); ++r) {
         const world::Theme& t = world.regions[r].theme;
         std::vector<Bed>& beds = beds_[r];
         const auto add = [&](const world::AmbienceBed& b, int season) {
-            Bed bed{fileIndex(b.file), b.from, b.to, season, 0, b.weather == "rain"};
-            for (const std::string& m : b.months)
-                for (std::size_t k = 0; k < cat.months.size() && k < 16; ++k)
-                    if (cat.months[k] == m) bed.months |= static_cast<std::uint16_t>(1u << k);
+            Bed bed{fileIndex(b.file),  b.from, b.to, season, monthMask(b.months),
+                    b.weather == "rain"};
             bed.first = beds.size();
             for (std::size_t i = 0; i < beds.size(); ++i)
                 if (beds[i].file == bed.file) {
@@ -70,11 +81,15 @@ Soundscape::Soundscape(const world::LoadedWorld& world, const std::filesystem::p
                 add(b, static_cast<int>(s - cat.seasons.begin()));
         }
         mostBeds = std::max(mostBeds, beds.size());
-        for (const world::AmbienceZone& z : t.zones) zoneFile_[r].push_back(fileIndex(z.file));
+        for (const world::AmbienceZone& z : t.zones) {
+            zoneFile_[r].push_back(fileIndex(z.file));
+            zoneMonths_[r].push_back(monthMask(z.months));
+        }
         for (const world::ItemLoop& l : t.loops) {
             const int item = world.content->findItem(l.item);
             if (item >= 0)
-                sources_.push_back({fileIndex(l.file), static_cast<int>(r), item, l.when});
+                sources_.push_back({fileIndex(l.file), static_cast<int>(r), item, l.when, l.from,
+                                    l.to, monthMask(l.months)});
         }
         if (!t.musicDay.empty()) music_[r].day = fileIndex(t.musicDay);
         if (!t.musicNight.empty()) music_[r].night = fileIndex(t.musicNight);
@@ -221,7 +236,7 @@ void Soundscape::update(const Input& in) {
                         w * bedGain_[b] * level * (t.seam ? 1.0f : duck) * muffle;
         for (std::size_t zi = 0; zi < t.zones.size(); ++zi) {
             const world::AmbienceZone& z = t.zones[zi];
-            if (!inHours(h, z.from, z.to)) continue;
+            if (!inHours(h, z.from, z.to) || !inMonth(zoneMonths_[r][zi], in.month)) continue;
             // Full inside the zone, falling off over kZoneReach tiles outside it.
             const float dx = std::max({static_cast<float>(z.rect.x0) - in.centre.x, 0.0f,
                                        in.centre.x - static_cast<float>(z.rect.x1)});
@@ -245,8 +260,11 @@ void Soundscape::update(const Input& in) {
     }
     for (std::size_t s = 0; s < sources_.size(); ++s) {
         const Source& src = sources_[s];
-        const bool on = src.when == "always" || (src.when == "lit" && in.night > 0.3f) ||
-                        (src.when == "afternoon" && inHours(h, 12.0f, 17.0f));
+        // A worked loop sounds in its working hours (world-sound.md §1); any loop in its months.
+        const bool on = inMonth(src.months, in.month) &&
+                        (src.when == "always" || (src.when == "lit" && in.night > 0.3f) ||
+                         (src.when == "afternoon" && inHours(h, 12.0f, 17.0f)) ||
+                         (src.when == "worked" && inHours(h, src.from, src.to)));
         if (!on || placed_[s].first <= 0) continue;
         const auto f = static_cast<std::size_t>(src.file);
         const float g = placed_[s].first * tuning::kItemLoopLevel * duck;

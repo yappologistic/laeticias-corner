@@ -71,8 +71,9 @@ public:
     // People in view as the crowd counts them, and the crowd's level position (0..2), for tests.
     [[nodiscard]] int people() const { return people_; }
     [[nodiscard]] float crowdLevel() const { return crowdLevel_; }
-    // One line per region whose seasonal nature beds were guessed from the world manifest's tags
-    // because its file does not name them (`nature_seasons`, `nature_snow`): missing data.
+    // One line per region whose seasonal nature beds or night calls were guessed from the world
+    // manifest's tags because its file does not name them (`nature_seasons`, `nature_snow`,
+    // `calls`): missing data.
     [[nodiscard]] const std::vector<std::string>& guesses() const { return guesses_; }
     // The music's gain while a sting plays (1 otherwise).
     [[nodiscard]] float musicDuck() const { return duckFor_ > 0 ? tuning::kStingDuck : 1.0f; }

@@ -41,6 +41,14 @@ float hours(const json& v, const std::string& ctx) {
     return static_cast<float>(h) + static_cast<float>(m) / 60.0f;
 }
 
+std::vector<std::string> monthsOf(const json& j, const std::string& ctx) {
+    std::vector<std::string> out;
+    if (has(j, "months"))
+        for (const json& m : asArray(j.at("months"), ctx + ": months"))
+            out.push_back(asString(m, ctx + ": months"));
+    return out;
+}
+
 std::vector<AmbienceBed> parseBeds(const json& list, const std::string& ac) {
     const json& beds = asArray(list, ac);
     std::vector<AmbienceBed> out;
@@ -55,9 +63,7 @@ std::vector<AmbienceBed> parseBeds(const json& list, const std::string& ac) {
             b.to = hours(hv[1], bc + ": hours");
         }
         b.weather = stringOr(beds[i], "weather", "", bc);
-        if (has(beds[i], "months"))
-            for (const json& m : asArray(beds[i].at("months"), bc + ": months"))
-                b.months.push_back(asString(m, bc + ": months"));
+        b.months = monthsOf(beds[i], bc);
         out.push_back(std::move(b));
     }
     return out;
@@ -107,6 +113,7 @@ Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
                     z.from = hours(hv[0], zc + ": hours");
                     z.to = hours(hv[1], zc + ": hours");
                 }
+                z.months = monthsOf(zones[i], zc);
                 out.zones.push_back(std::move(z));
             }
         }
@@ -121,6 +128,13 @@ Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
                 l.item = asString(loops[i].at("item"), lc + ": item");
                 l.file = asString(field(loops[i], "file", lc), lc + ": file");
                 l.when = stringOr(loops[i], "when", "always", lc);
+                if (has(loops[i], "hours")) {
+                    const json& hv = loops[i].at("hours");
+                    if (!hv.is_array() || hv.size() != 2) fail(lc + ": hours is [from, to]");
+                    l.from = hours(hv[0], lc + ": hours");
+                    l.to = hours(hv[1], lc + ": hours");
+                }
+                l.months = monthsOf(loops[i], lc);
                 out.loops.push_back(std::move(l));
             }
         }

@@ -33,12 +33,16 @@ struct AmbienceZone {
     float gain = 1;
     float from = 0; // game hours it plays; from > to wraps over midnight
     float to = 24;
+    std::vector<std::string> months; // calendar month ids it plays in; empty: every month
 };
 
 struct ItemLoop {
     std::string item; // set item id: every placed one is a source
     std::string file;
-    std::string when; // "always", "lit" (dusk and night), "afternoon", ...
+    std::string when; // "always", "lit" (dusk and night), "afternoon", "worked" (in its hours)
+    float from = 0;   // game hours (a worked loop's working hours)
+    float to = 24;
+    std::vector<std::string> months; // calendar month ids it plays in; empty: every month
 };
 
 struct Theme {

@@ -162,11 +162,6 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
                         break;
                     }
         }
-        if (!guess.empty())
-            guesses_.push_back(world.file.regions[r].id +
-                               ": nature beds guessed from the world "
-                               "manifest's tags:" +
-                               guess);
         if (const auto st = s.find("stings"); st != s.end() && st->is_object()) {
             const char* keys[4] = {"sunrise", "nightfall", "storm_clear", "season"};
             for (std::size_t k = 0; k < 4; ++k) rs.stings[k] = effect(text(*st, keys[k]));
@@ -194,9 +189,12 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
                 call.when.months = monthMask(c, life);
                 rs.calls.push_back(call);
             }
-        // Night voices on land: the world's night animals of this climate and their seasons,
-        // from dusk to dawn, beside the region's own calls.
-        if (!climate.empty() && climate != "sea")
+        // Night voices on land, where the region names no calls at all: the world's night
+        // animals of this climate and their seasons, from dusk to dawn (world-sound.md §1.3:
+        // a region's own calls are the whole list).
+        const auto named = s.find("calls");
+        const bool callsNamed = named != s.end() && named->is_array() && !named->empty();
+        if (!callsNamed && !climate.empty() && climate != "sea")
             for (const Tagged& t : tagged) {
                 if (t.kind != "sfx" || !t.has("animal") || !t.has("night") ||
                     !forClimate(t, climate))
@@ -211,7 +209,11 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
                     if (t.has(life.seasons[k])) seasons |= 1u << k;
                 call.when.seasons = seasons != 0 ? seasons : ~0u;
                 rs.calls.push_back(call);
+                guess += std::format(" night call {};", t.file);
             }
+        if (!guess.empty())
+            guesses_.push_back(world.file.regions[r].id +
+                               ": guessed from the world manifest's tags:" + guess);
         rs.voices.resize(life.kinds.size());
         if (const auto v = s.find("voices"); v != s.end() && v->is_object())
             for (const auto& [kind, files] : v->items()) {
