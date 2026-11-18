@@ -124,6 +124,7 @@ inline constexpr float kActorMoving = 0.05f;  // tiles/s: faster than this walks
 inline constexpr float kActorWalkPace = 0.9f; // tiles/s at which walk frames play at the art's fps
 inline constexpr Vec2 kCarryAt{3, -31};       // px from the feet: goods in hand, no carry point
 inline constexpr float kActorFoot = 0.2f;     // half the square round the feet, tiles
+inline constexpr float kCoverHidden = 4.0f;   // px of something in front over the feet: hidden
 inline constexpr int kActorMargin = 3;        // tiles beyond the view gathered (sprites overhang)
 inline constexpr std::size_t kActorBuffer = 2048; // actors gathered per frame at most
 inline constexpr float kActorShadowW = 0.42f;     // the soft shadow under the feet, tiles wide

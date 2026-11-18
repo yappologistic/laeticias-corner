@@ -220,6 +220,7 @@ add_library(lc_worldview STATIC
   src/worldview/cell_cache.cpp
   src/worldview/cells.cpp
   src/worldview/city_sound.cpp
+  src/worldview/cover.cpp
   src/worldview/gather.cpp
   src/worldview/order.cpp
   src/worldview/overview.cpp
