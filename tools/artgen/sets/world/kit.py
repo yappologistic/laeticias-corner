@@ -346,6 +346,43 @@ def ramp(v, frame, frames, k):
     return m
 
 
+def ramp_basalt(v, frame, frames, k):
+    """A Roman road climbing one level over four tiles: polygonal basalt paving with raised
+    kerbstones (crepidines) and a gutter, as on the Appia (worldgen's request: per-road ramps)."""
+    m = _m(1, 4, 12, k)
+    L = 64.0
+
+    def top(Y):
+        return 8.0 * (L - Y) / L
+
+    def poly(X, Y, Z):
+        d1 = np.hypot((X * 0.9) % 2.6 - 1.3, (Y * 1.1) % 2.4 - 1.2)
+        return (value_noise(X, Y, Z * 0, 1.3, 6092) - 0.5) * 0.9 - 1.0 * (d1 > 1.15) - 0.25
+    fill(m, (2.0, 14.0, 0.0, L, 0.0, 9.0), "basalt", lambda X, Y, Z: Z < top(Y) + 0.4, tone=poly)
+    for x0 in (0.4, 14.0):
+        fill(m, (x0, x0 + 1.6, 0.0, L, 0.0, 10.0), "travertine", lambda X, Y, Z: Z < top(Y) + 1.4,
+             tone=M.ashlar(1.4, 3.2, 6093, spread=0.4))
+    return m
+
+
+def ramp_royal(v, frame, frames, k):
+    """The Royal Road climbing one level over four tiles: a broad graded bed of pale packed
+    gravel, cambered, edged with set stones, a cross drain of laid slabs (as the flat road)."""
+    m = _m(1, 4, 12, k)
+    L = 64.0
+
+    def top(X, Y):
+        return 8.0 * (L - Y) / L + 0.5 * (1 - ((X - 8.0) / 6.5) ** 2)
+    fill(m, (1.0, 15.0, 0.0, L, 0.0, 9.5), "sand", lambda X, Y, Z: Z < top(X, Y),
+         tone=lambda X, Y, Z: (value_noise(X * 2, Y * 2, Z, 1.0, 6094) - 0.5) * 0.7 + 0.2)
+    for y in (20.0, 44.0):
+        fill(m, (1.5, 14.5, y - 0.8, y + 0.8, 0.0, 9.5), "limestone", lambda X, Y, Z: Z < top(X, Y) + 0.2, tone=0.1)
+    for x0 in (0.2, 14.8):
+        fill(m, (x0, x0 + 1.0, 0.0, L, 0.0, 10.0), "limestone", lambda X, Y, Z: Z < 8.0 * (L - Y) / L + 0.9,
+             tone=M.ashlar(0.9, 2.2, 6095, polygonal=0.6, spread=0.7))
+    return m
+
+
 def stile(v, frame, frames, k):
     """A dry-stone wall (along y) stepped as a stile: flat stones jut out on both faces so a
     walker climbs over (the corner's dell); walkable."""
@@ -878,6 +915,8 @@ ITEMS = {
     "world.stair_stone": _i(stair_stone),
     "world.stair_earth": _i(stair_earth),
     "world.ramp": _i(ramp),
+    "world.ramp_basalt": _i(ramp_basalt),
+    "world.ramp_royal": _i(ramp_royal),
     "world.stile": _i(stile),
     "world.milestone": _i(milestone, slots={"rest": [{"t": [0, 1], "face": "+y"}]}),
     "world.wayside_shrine": _i(wayside_shrine, slots={"pray": [{"t": [0, 1], "face": "-y"}]}),

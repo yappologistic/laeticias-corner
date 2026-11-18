@@ -95,16 +95,34 @@ def _marks(g, level, seed, density, rows_list, cell=4, interior=None):
     return home._stamps(g, level, seed, density, rows_list, cell=cell, interior=interior)
 
 
-def _overlay(mask, k, inset, radius, wobble, seed, paint, fray=0.9):
+# Interior looks of the commonest overlays (`terrain/<id>/m15/v<n>/f<k>`, v0 being the plain
+# `m15` key): the same ground with its pattern shifted inside the tile and the edge band left
+# as it is, so any look meets any neighbour without a seam and a field of mixed looks loses the
+# one-tile rhythm (the engine picks a look by tile hash, as it does for base variants).
+INTERIOR = {"world.sea": 6, "world.scrub": 4, "world.pasture": 4, "world.rock": 4, "world.forest_floor": 3}
+SHIFTS = ((0.0, 0.0), (5.3, 9.1), (10.7, 3.9), (3.1, 12.6), (12.2, 6.8), (7.7, 14.3))
+
+
+def _interior(g, rgb, paint_shifted, var, seed):
+    """Mix a look shifted by SHIFTS[var] into the tile's interior, fading to the plain look in a
+    band along every edge (dithered, so the change has no line)."""
+    if not var:
+        return rgb
+    alt = paint_shifted(_G(g, *SHIFTS[var]))
+    pick = _window(g, 4.5) > hash01(g.px, g.py, seed + 31 * var)
+    return np.where(pick[..., None], alt, rgb)
+
+
+def _overlay(mask, k, inset, radius, wobble, seed, paint, fray=0.9, var=0):
     """An overlay tile: the shape field of the mask, painted, its rim frayed a little on fine
-    grids so overlays meet bases with a natural ragged edge."""
+    grids so overlays meet bases with a natural ragged edge. `var` > 0: an interior look."""
     g = home._grid(k)
     f = home.shape_field(mask, g.u, g.v, inset, radius, wobble, seed, k)
     if g.fine and fray:
         cover = g.inside & (f > fray * hash01(g.px, g.py, seed + 7))
     else:
         cover = g.inside & (f > 0)
-    rgb = paint(g, f)
+    rgb = _interior(g, paint(g, f), lambda gs: paint(gs, f), var, seed)
     return home._sprite(g, rgb, cover * 255)
 
 
@@ -221,35 +239,38 @@ def _bank(mask, g, inset, radius, wobble, seed):
     return field(0), field(1) <= 0, field(2) <= 0, field(3) <= 0
 
 
-def sea(mask, frame, k):
+def sea(mask, frame, k, var=0):
     """The open sea: deep blue under slow swells whose crests catch the light, a scatter of
     sparkles, a little lighter where it laps a shore. Frames loop (the swell moves a quarter
-    tile a frame); the engine tints by depth."""
-    g = home._grid(k)
-    f = home.shape_field(mask, g.u, g.v, 1.2, 5.0, 0.8, 9401, k)
-    cover = g.inside & (f > 0.7 * hash01(g.px, g.py, 9402)) if g.fine else g.inside & (f > 0)
+    tile a frame); the engine tints by depth. Nothing in it repeats at the tile's own size
+    except the long crest lines, which run on across tiles; breaking crests and sparkles sit
+    on finer lattices, and the interior looks shift them (INTERIOR)."""
+    g0 = home._grid(k)
+    f = home.shape_field(mask, g0.u, g0.v, 1.2, 5.0, 0.8, 9401, k)
+    cover = g0.inside & (f > 0.7 * hash01(g0.px, g0.py, 9402)) if g0.fine else g0.inside & (f > 0)
     t = frame / FRAMES_WATER
-    a = home._pnoise(g.u - 4 * frame, g.v, 2, 9403)
-    b = home._pnoise(g.u, g.v + 4 * frame, 2, 9404)
-    lvl = 2.2 + (a - 0.5) * 0.5 + (b - 0.5) * 0.5
-    # Swell: long crests running across the tile, bent by noise, moving one tile in 4 frames.
-    # Swell: long low crests across the tile, moving one tile in 4 frames, lit only here and
-    # there (where a slow noise lets them break), so open water stays calm and does not tile.
-    warp = (home._pnoise(g.u, g.v, 4, 9405) - 0.5) * 6.0
-    ph = 2 * np.pi * ((g.u + 2 * g.v) / 16.0 + t) + warp
-    crest = np.sin(ph)
-    breaks = home._pnoise(g.u + 4 * frame, g.v, 4, 9408) > 0.55
-    lvl = lvl + (crest > 0.92) * breaks * 0.8 - (crest < -0.85) * breaks * 0.25
-    # Sparkles that wink on and off.
-    dx, dy, h, ok = home._scatter(g, 4, 9406, 0.18, jitter=0.9)
-    on = np.sin(2 * np.pi * (t + h)) > 0.6
-    sp = ok & on & (np.abs(dy) < 0.5) & (np.abs(dx) < 1.0 + k * 0.5 * (h > 0.6))
-    shore = np.clip(1.6 - f, 0, 1.6)
-    lvl = lvl + shore * 0.7
-    rgb = _paint(SEA, lvl, g, band=0.35)
-    rgb = np.where(sp[..., None], _rgb(SHALLOW[4]), rgb)
-    rgb = np.where(((f < 0.5) & cover)[..., None], _paint(SHALLOWS, 3.0 + hash01(g.px, g.py, 9407), g), rgb)
-    return home._sprite(g, rgb, cover * 255)
+
+    def paint(g):
+        a = home._pnoise(g.u - 4 * frame, g.v, 4, 9403)
+        b = home._pnoise(g.u, g.v + 4 * frame, 4, 9404)
+        lvl = 2.2 + (a - 0.5) * 0.45 + (b - 0.5) * 0.45
+        # Swell: long low crests running across tiles (two to a tile), bent by a fine warp,
+        # moving one tile in 4 frames, lit only where a fine noise lets them break.
+        warp = (home._pnoise(g.u, g.v, 8, 9405) - 0.5) * 4.0
+        ph = 2 * np.pi * (2 * (g.u + 2 * g.v) / 16.0 + t) + warp
+        crest = np.sin(ph)
+        breaks = home._pnoise(g.u + 4 * frame, g.v, 8, 9408) > 0.6
+        lvl = lvl + (crest > 0.94) * breaks * 0.7 - (crest < -0.9) * 0.2
+        # Sparkles that wink on and off, on a fine lattice.
+        dx, dy, h, ok = home._scatter(g, 2, 9406, 0.07, jitter=0.95)
+        on = np.sin(2 * np.pi * (t + h)) > 0.7
+        sp = ok & on & (np.abs(dy) < 0.5) & (np.abs(dx) < 1.0 + k * 0.5 * (h > 0.7))
+        shore = np.clip(1.6 - f, 0, 1.6)
+        rgb = _paint(SEA, lvl + shore * 0.7, g, band=0.35)
+        return np.where(sp[..., None], _rgb(SHALLOW[4]), rgb)
+    rgb = _interior(g0, paint(g0), paint, var, 9401)
+    rgb = np.where(((f < 0.5) & cover)[..., None], _paint(SHALLOWS, 3.0 + hash01(g0.px, g0.py, 9407), g0), rgb)
+    return home._sprite(g0, rgb, cover * 255)
 
 
 def shallows(mask, frame, k):
@@ -374,28 +395,32 @@ def flow(direction, frame, k):
 
 # ---------------------------------------------------------------- land overlays
 
-def rock(mask, k):
+def rock(mask, k, var=0):
     """Grey limestone outcrop: a few big weathered slabs, each tilted to the light (lit from the
     upper left), thin dark joints between them, a tuft of grass in the joints, and a dark lower
     lip where the rock stands proud of the ground."""
-    g = home._grid(k)
-    f = home.shape_field(mask, g.u, g.v, 1.4, 5.0, 1.2, 9901, k)
-    f_lo = home.shape_field(mask, g.u - 1.2, g.v - 1.2, 1.4, 5.0, 1.2, 9901, k)
-    cover = g.inside & (f > 0.6 * hash01(g.px, g.py, 9902))
-    n = home._pnoise(g.u, g.v, 4, 9903)
-    fine = home._pnoise(g.u, g.v, 16, 9909)
-    d1, d2, hh, ou, ov = _voronoi(g, 8, 9904, jitter=0.9)
-    joint = (d2 - d1) < 0.32
-    tilt = (hh - 0.5) * 0.6 - (ou + ov) * 0.04           # each slab leans its own way; upper-left lit
-    lvl = 3.4 + tilt + (n - 0.5) * 1.0 + (fine - 0.5) * 0.6 - joint * 1.2 + ((d2 - d1) < 0.7) * (~joint) * 0.4 \
-        + (hash01(g.px, g.py, 9905) - 0.5) * 0.5
-    lvl = lvl - (f_lo <= 0) * 1.3             # the shadowed lower rim
-    rgb = _paint(LIME_ROCK, lvl, g)
-    tuft = joint & (hash01(np.floor(g.u).astype(np.int64) % 16, np.floor(g.v).astype(np.int64) % 16, 9906) < 0.25) & (f > 1.5)
-    rgb = np.where(tuft[..., None], _paint(STEPPE_GRASS, 2.0 + hash01(g.px, g.py, 9907) * 2, g), rgb)
-    lichen = (n > 0.62) & (hash01(g.px, g.py, 9908) < 0.3) & ~joint
-    rgb = np.where(lichen[..., None], _paint([OLIVE[1], OLIVE[2], SAND[2]], 1.0 + fine * 2, g), rgb)
-    return home._sprite(g, rgb, cover * 255)
+    g0 = home._grid(k)
+    f = home.shape_field(mask, g0.u, g0.v, 1.4, 5.0, 1.2, 9901, k)
+    f_lo = home.shape_field(mask, g0.u - 1.2, g0.v - 1.2, 1.4, 5.0, 1.2, 9901, k)
+    cover = g0.inside & (f > 0.6 * hash01(g0.px, g0.py, 9902))
+
+    def paint(g):
+        n = home._pnoise(g.u, g.v, 4, 9903)
+        fine = home._pnoise(g.u, g.v, 16, 9909)
+        d1, d2, hh, ou, ov = _voronoi(g, 8, 9904, jitter=0.9)
+        joint = (d2 - d1) < 0.32
+        tilt = (hh - 0.5) * 0.6 - (ou + ov) * 0.04           # each slab leans its own way; upper-left lit
+        lvl = 3.4 + tilt + (n - 0.5) * 1.0 + (fine - 0.5) * 0.6 - joint * 1.2 + ((d2 - d1) < 0.7) * (~joint) * 0.4 \
+            + (hash01(g.px, g.py, 9905) - 0.5) * 0.5
+        lvl = lvl - (f_lo <= 0) * 1.3             # the shadowed lower rim
+        rgb = _paint(LIME_ROCK, lvl, g)
+        tuft = joint & (hash01(np.floor(g.u).astype(np.int64) % 16, np.floor(g.v).astype(np.int64) % 16, 9906) < 0.25) \
+            & (f > 1.5)
+        rgb = np.where(tuft[..., None], _paint(STEPPE_GRASS, 2.0 + hash01(g.px, g.py, 9907) * 2, g), rgb)
+        lichen = (n > 0.62) & (hash01(g.px, g.py, 9908) < 0.3) & ~joint
+        return np.where(lichen[..., None], _paint([OLIVE[1], OLIVE[2], SAND[2]], 1.0 + fine * 2, g), rgb)
+    rgb = _interior(g0, paint(g0), paint, var, 9901)
+    return home._sprite(g0, rgb, cover * 255)
 
 
 def snow(mask, k):
@@ -513,7 +538,7 @@ def field(mask, k):
     return _overlay(mask, k, 1.2, 3.0, 0.6, 9960, paint)
 
 
-def scrub(mask, k):
+def scrub(mask, k, var=0):
     """Grey-green garrigue: low rounded cushions of kermes oak, thyme and sage, lit on top and
     shadowed beneath, bare stony ground between."""
     def paint(g, f):
@@ -533,10 +558,10 @@ def scrub(mask, k):
         slvl = _marks(g, np.full_like(base, 2.0), 9976, 0.2, STONES, cell=2 if g.fine else 4)
         stone = (slvl != 2.0) & ~bush
         return np.where(stone[..., None], _paint(PALE_ROCK, slvl + 0.5, g), rgb)
-    return _overlay(mask, k, 1.6, 5.0, 1.4, 9970, paint, fray=1.3)
+    return _overlay(mask, k, 1.6, 5.0, 1.4, 9970, paint, fray=1.3, var=var)
 
 
-def forest_floor(mask, k):
+def forest_floor(mask, k, var=0):
     """Under the trees: dark leaf litter and moss, a fallen twig, a fern, so canopies sit on shade."""
     def paint(g, f):
         n = home._pnoise(g.u, g.v, 4, 9981)
@@ -550,7 +575,7 @@ def forest_floor(mask, k):
         flvl = _marks(g, np.full_like(lvl, 2.0), 9985, 0.3, _tufts(g), cell=4)
         fern = flvl != 2.0
         return np.where(fern[..., None], _paint(GREEN, flvl + 1.6, g), rgb)
-    return _overlay(mask, k, 1.8, 5.0, 1.6, 9980, paint, fray=1.4)
+    return _overlay(mask, k, 1.8, 5.0, 1.6, 9980, paint, fray=1.4, var=var)
 
 
 def dune(mask, k):
@@ -607,7 +632,7 @@ def fallow(mask, k):
     return _overlay(mask, k, 1.4, 4.0, 1.0, 10020, paint)
 
 
-def pasture(mask, k):
+def pasture(mask, k, var=0):
     """Lush short spring grass with clover and flowers: Thracian meadows, Ionian valleys, the
     high Apennine pastures in April."""
     def paint(g, f):
@@ -621,7 +646,7 @@ def pasture(mask, k):
                        np.where((h < 0.7)[..., None], np.array(_rgb(STRAW[3]), np.uint8),
                                 np.array(_rgb(POPPY[1]), np.uint8)))
         return np.where(fl[..., None], col, rgb)
-    return _overlay(mask, k, 1.6, 5.0, 1.2, 10030, paint, fray=1.2)
+    return _overlay(mask, k, 1.6, 5.0, 1.2, 10030, paint, fray=1.2, var=var)
 
 
 OVERLAYS = {"world.rock": rock, "world.snow": snow, "world.scree": scree, "world.marsh": marsh,
@@ -708,7 +733,31 @@ def rock_face(side, v, k, top=False):
         tuft = rim & (np.abs(d) < 2 + 3 * (_periodic(s, d * 0, W, band, 4.0, 10107, v) > 0.6) * (hash01(px, 0, 10108) < 0.6))
         alpha = (on & (d >= 0)) | tuft
         rgb = np.where(tuft[..., None], _paint(STEPPE_GRASS, 2.6 + shade + (hash01(px, py, 10109) - 0.5), P), rgb)
+        rgb, alpha = _soften(rgb, alpha, px, py, s, d, W, band, k, v, shade, P, 10130, rock=True)
     return _sprite(rgb, alpha | grow, H, W, ox, oy)
+
+
+def _soften(rgb, alpha, px, py, s, d, W, band, k, v, shade, P, seed, rock):
+    """The uppermost band of a face, which is the whole face where the ground steps one level:
+    a rounded, lit shoulder under the rim with grass hanging over it in uneven tufts, and at the
+    foot a fan of fallen stones and soil with grass coming through, so a low step reads as a
+    slope's broken edge rather than a cut."""
+    on = (d >= 0) & (d < band)
+    hang = (1.0 + 2.5 * _periodic(s, d * 0, W, band, 3.0, seed, v)) * k
+    shoulder = on & (d < hang + k) & ~(d < hang * (hash01(px, 0, seed + 1) < 0.55))
+    rgb = np.where(shoulder[..., None], _paint(PALE_ROCK if rock else [EARTH[1], EARTH[2], CLAY[1], EARTH[3], SAND[2]],
+                                                3.6 + shade * 0.6 + (hash01(px, py, seed + 2) - 0.5) * 0.6, P), rgb)
+    drape = on & (d < hang * (hash01(px, 0, seed + 1) < 0.55))
+    rgb = np.where(drape[..., None], _paint(STEPPE_GRASS, 2.4 + shade + (hash01(px, py, seed + 3) - 0.5), P), rgb)
+    fan = (2.0 + 2.5 * _periodic(s + 3 * k, d * 0, W, band, 2.0, seed + 4, v)) * k
+    foot = on & (d > band - fan)
+    stone = foot & (hash01(px // 2, py // 2, seed + 5 + v) < 0.35)
+    grass = foot & ~stone & (hash01(px, py, seed + 6) < 0.3)
+    rgb = np.where(foot[..., None], _paint([INK, EARTH[0], EARTH[1], EARTH[2], SAND[1]], 2.4 + shade * 0.5 +
+                                           (hash01(px, py, seed + 7) - 0.5) * 0.8, P), rgb)
+    rgb = np.where(stone[..., None], _paint(PALE_ROCK, 2.6 + shade * 0.6 + (hash01(px, py, seed + 8) - 0.5), P), rgb)
+    rgb = np.where(grass[..., None], _paint(STEPPE_GRASS, 2.2 + shade + (hash01(px, py, seed + 9) - 0.5), P), rgb)
+    return rgb, alpha
 
 
 def earth_face(side, v, k, top=False):
@@ -731,6 +780,7 @@ def earth_face(side, v, k, top=False):
         lip = (d < 2 * k) & (d >= -tall - 1)
         alpha = alpha | lip
         rgb = np.where(lip[..., None], _paint(STEPPE_GRASS, 2.8 + shade + (hash01(px, py, 10116) - 0.5), P), rgb)
+        rgb, alpha = _soften(rgb, alpha, px, py, s, d, W, band, k, v, shade, P, 10140, rock=False)
     return _sprite(rgb, alpha, H, W, ox, oy)
 
 

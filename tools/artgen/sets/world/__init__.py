@@ -22,10 +22,13 @@ COAST_FRAMES = 4
 
 def extra_keys(cat):
     """Keys the world's art implies beyond the shared scheme: shore foam (a sea tile with no
-    land beside it has none), river flow, the animated foot of the sea cliff, the nice-to-have
+    land beside it has none), the interior looks of the commonest overlays, river flow, the animated foot of the sea cliff, the nice-to-have
     faces, strips and effects, the weather sprites and the map markers."""
     art = cat.get("art", {})
     keys = [f"terrain/world.sea/foam/m{m}/f{f}" for m in range(1, 16) for f in range(ground.FRAMES_WATER)]
+    for tid, n in ground.INTERIOR.items():
+        frames = ground.FRAMES_WATER if tid in ground.WATER_OVERLAYS else 1
+        keys += [f"terrain/{tid}/m15/v{v}/f{f}" for v in range(1, n) for f in range(frames)]
     keys += [f"terrain/world.river/flow_{d}/f{f}" for d in ("n", "e") for f in range(ground.FLOW_FRAMES)]
     keys += [f"edge/world.coast_{s}/v{n}/f{f}" for s in ("se", "sw") for n in range(4) for f in range(COAST_FRAMES)]
     for e in art.get("edges_nice", ()):
@@ -64,6 +67,11 @@ def _flat(key, k):
         if tid in ground.WATER_OVERLAYS:
             return ground.WATER_OVERLAYS[tid](int(mask), int(frame), k)
         return ground.OVERLAYS[tid](int(mask), k)
+    if m := re.fullmatch(r"terrain/(world\.\w+)/m15/v(\d+)/f(\d+)", key):
+        tid, var, frame = m[1], int(m[2]), int(m[3])
+        if tid in ground.WATER_OVERLAYS:
+            return ground.WATER_OVERLAYS[tid](15, frame, k, var=var)
+        return ground.OVERLAYS[tid](15, k, var=var)
     if m := re.fullmatch(r"terrain/world\.sea/foam/m(\d+)/f(\d+)", key):
         return ground.foam(int(m[1]), int(m[2]), k)
     if m := re.fullmatch(r"terrain/world\.river/flow_([ne])/f(\d+)", key):
