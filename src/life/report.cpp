@@ -2,8 +2,12 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
+#include <array>
 #include <cmath>
+#include <format>
 #include <map>
+#include <tuple>
 
 namespace lc::life {
 
@@ -80,7 +84,7 @@ std::string chainReport(const LifeWorld& w, int days) {
             ojson travel = ojson::array();
             if (run.ok()) {
                 for (long t = 0; t < static_cast<long>(days) * 720; ++t)
-                    run.tick(t, run.hoursOn(t));
+                    run.tick(t, run.hoursOn(t), 1.0); // lifesim: hours only, one pace
                 std::map<std::string, int> sorted;
                 for (const ChainRun::Counter& k : run.counters())
                     sorted[k.ref + "|" + w.data.goods[static_cast<std::size_t>(k.goods)]] = k.count;
@@ -131,6 +135,11 @@ std::string lifeDump(const CityLife& life, std::string_view label) {
                   {"tokens", s.tokens},
                   {"running_events", s.running},
                   {"queued", s.queued},
+                  {"walking_in_place", s.marching},
+                  {"to_and_fro", s.oscillating},
+                  {"stuck", s.stuck},
+                  {"waiting", s.waiting},
+                  {"unstuck", s.unstuck},
                   {"scale", round2(s.scale)}};
     ojson districts = ojson::array();
     std::vector<DistrictCount> counts = life.districtCounts();
@@ -235,6 +244,68 @@ std::string lifeDump(const CityLife& life, std::string_view label) {
     for (const auto& [k, v] : names) dn[std::to_string(k)] = v;
     j["ground"] = {{"rect", {m.x0, m.y0, m.x1, m.y1}}, {"names", dn}, {"tiles", tiles}};
     return j.dump(1) + "\n";
+}
+
+std::vector<std::string> walkProblems(const LifeWorld& w) {
+    std::vector<std::string> out;
+    const world::WorldMap& m = w.map();
+    for (std::size_t r = 0; r < w.data.regions.size(); ++r) {
+        const int pi = w.pathsOf[r];
+        if (pi < 0) continue;
+        const RegionPaths& rp = w.paths[static_cast<std::size_t>(pi)];
+        const std::string& region = w.data.regions[r].id;
+        for (std::size_t e = 0; e < rp.edges().size() && rp.blockedEdges() > 0; ++e) {
+            const RegionPaths::Edge& ed = rp.edges()[e];
+            if (!ed.blocked) continue;
+            const auto c = rp.course(static_cast<int>(e));
+            std::array<world::WalkStep, 4> steps{};
+            for (std::size_t k = 0; k < c.size(); ++k) {
+                const TilePos t = c[k].pos();
+                bool legal = true;
+                if (k > 0) {
+                    const int n = m.walkNeighbours(c[k - 1].pos(), steps);
+                    legal = std::any_of(steps.begin(), steps.begin() + n,
+                                        [&](const world::WalkStep& s) { return s.to == t; });
+                }
+                if (!m.walkable(t) || !legal) {
+                    out.push_back(
+                        std::format("{}: graph edge {} - {}: {} at grid ({}, {}), level {}", region,
+                                    rp.nodeId(ed.a), rp.nodeId(ed.b),
+                                    !m.walkable(t) ? "course over unwalkable ground"
+                                                   : "a step no walker can make",
+                                    t.x, t.y, m.level(t)));
+                    break;
+                }
+            }
+        }
+    }
+    // Slot spots: a walker stands on the spot or beside it (a seat on its item is used from
+    // the tile next to it), as resolve() does; a spot with neither is never used.
+    std::vector<std::tuple<std::uint32_t, std::uint16_t, int, int>> seen;
+    for (const world::WorldSlot& s : m.slots()) {
+        if (m.slotKinds()[s.kind] == "mooring") continue; // a boat's place, on the water
+        const world::Placed& it = m.items()[s.item];
+        const int lr = w.data.regionOfWorld(m.regionAt({it.x, it.y}));
+        if (lr < 0 || w.pathsOf[static_cast<std::size_t>(lr)] < 0) continue;
+        const RegionPaths& rp =
+            w.paths[static_cast<std::size_t>(w.pathsOf[static_cast<std::size_t>(lr)])];
+        const auto stand = [&](TilePos t) {
+            return m.inBounds(t) && m.walkable(t) && rp.reachable(t);
+        };
+        bool ok = stand(s.tile);
+        for (const TilePos d : world::kSteps) ok = ok || stand({s.tile.x + d.x, s.tile.y + d.y});
+        if (ok) continue;
+        const auto key = std::tuple{s.item, s.name, s.tile.x, s.tile.y};
+        if (std::ranges::find(seen, key) != seen.end()) continue;
+        seen.push_back(key);
+        const bool walkable = m.inBounds(s.tile) && m.walkable(s.tile);
+        out.push_back(std::format("{}: slot {} of {} at grid ({}, {}): {}",
+                                  w.data.regions[static_cast<std::size_t>(lr)].id,
+                                  m.slotNames()[s.name], m.info(it).id, s.tile.x, s.tile.y,
+                                  walkable ? "no walker of the region reaches it"
+                                           : "nowhere to stand at or beside it"));
+    }
+    return out;
 }
 
 } // namespace lc::life

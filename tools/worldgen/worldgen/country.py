@@ -23,6 +23,7 @@ from .dsl import Placed
 SRC = "plan/world_plan.py"
 GLOW_OUTSIDE_TOWNS = 12   # §9.5 budget per chunk
 REACH = 24                # V7: walking tiles from the graph
+FOLD_REACH = 48           # steps from a road to a fold a shepherd walks to
 
 
 def place(W: World) -> None:
@@ -136,7 +137,10 @@ def plants(W: World) -> None:
     bank1 = land & ~W.river & ~W.reserved & (dist_river == 1) & ~L.STREET & (W.anchors.dist > 1) & ~W.keep
     bank2 = land & ~W.river & ~W.reserved & (dist_river == 2) & ~L.STREET & (W.anchors.dist > 1) & ~W.keep
     ur = rng.hash01(CC, RR, rng.hash64(SEED, "reeds"))
-    for j, i_ in zip(*np.nonzero(bank1 & (L.OCC < 0) & (ur < 0.3) & (dist_road >= 2))):
+    # Reed beds are walkable kit: on water they would be decks (W-D2), so they grow on the
+    # bank's edge only.
+    wet = np.isin(L.T, [t for t, name in enumerate(L.terrains) if W.cat.is_water(name)])
+    for j, i_ in zip(*np.nonzero(bank1 & ~wet & (L.OCC < 0) & (ur < 0.3) & (dist_road >= 2))):
         _add(W, "world.t_reeds", int(i_), int(j), int((i_ * 7 + j) % 4))
         counts["world.t_reeds"] = counts.get("world.t_reeds", 0) + 1
     ut = rng.hash01(CC, RR, rng.hash64(SEED, "rivertree"))
@@ -150,7 +154,7 @@ def plants(W: World) -> None:
             _add(W, item, int(i_), int(j), int(var[j, i_] % np.uint64(97)))
             counts[item] = counts.get(item, 0) + 1
     # Marsh: dense reeds.
-    for j, i_ in zip(*np.nonzero(W.marsh & (L.OCC < 0) & ~L.STREET & ~W.keep & (ur < 0.35))):
+    for j, i_ in zip(*np.nonzero(W.marsh & ~wet & (L.OCC < 0) & ~L.STREET & ~W.keep & (ur < 0.35))):
         _add(W, "world.t_reeds", int(i_), int(j), int((i_ * 3 + j) % 4))
         counts["world.t_reeds"] = counts.get("world.t_reeds", 0) + 1
     # Coasts: sea squill and sea lavender (look 4).
@@ -167,6 +171,10 @@ def props(W: World) -> None:
     road = W.road if W.road is not None else np.zeros_like(land)
     near_road = distance_to(road, 4) < 4
     u = rng.hash01(CC, RR, rng.hash64(SEED, "props"))
+    from .routes import street_reach
+    # A fold stands off the roads but on ground a shepherd walks to from one (one level, no
+    # scarp between): a fold out of reach would be an island no herdsman's route gets to (W-L2).
+    walk_to = street_reach(W, FOLD_REACH) < FOLD_REACH
     var = rng.hash_grid(CC, RR, rng.hash64(SEED, "propvar"))
     counts: dict[str, int] = {}
     for i, n in enumerate(W.names):
@@ -191,6 +199,17 @@ def props(W: World) -> None:
                     continue
                 lv = int(L.LV[j, i_])
                 if any(abs(int(L.LV[y, x]) - lv) > 1 for x, y in tiles):
+                    continue
+                if item == "world.sheepfold" and not any(
+                        walk_to[y, x] and L.LV[y, x] == lv
+                        for x, y in ((i_ + a, j + b) for a in range(-1, pw + 1)
+                                     for b in range(-1, ph + 1))
+                        if 0 <= x < COLS and 0 <= y < ROWS):
+                    # The flocks still graze the bench; only the fold, which no herdsman could
+                    # walk to from a road, is left out.
+                    from .routes import mark_pasture
+                    mark_pasture(W, int(i_) + 1, int(j) + 1)
+                    counts["pasture without fold"] = counts.get("pasture without fold", 0) + 1
                     continue
                 for x, y in tiles:
                     L.LV[y, x] = lv

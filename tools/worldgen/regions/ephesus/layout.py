@@ -58,7 +58,7 @@ def build(L: Layout) -> None:
         if L.terrain_at(5 + L.origin[0], r + L.origin[1]) == "world.sea":
             L.place("world.mole", at=(5, r))
     put(L, "world.beacon", (6, 2))
-    WP.harbour_lane(L, "ephesus", [(4, 8), (2, 6)], port="ephesus", home="quay")
+    WP.harbour_lane(L, "ephesus", [(4, 7), (2, 6)], port="ephesus", home="quay")
     L.houses(Rect(9, 0, W - 1, 8), HOUSES, front=[road, upper, *lanes], gap=0.12, seed="town")
     put(L, "athens.g_well", (16, 7))
     put(L, "athens.g_shrine", (12, 7))

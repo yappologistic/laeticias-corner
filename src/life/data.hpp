@@ -107,7 +107,9 @@ struct Filter {
     bool hours = false;
     std::uint8_t every = 0; // days: day % every == offset
     std::uint8_t offset = 0;
-    std::uint8_t seasons = 0; // bit per season; 0: any
+    std::uint8_t seasons = 0;   // bit per season; 0: any
+    std::uint8_t seasonDay = 0; // 1-based day of the season; 0: any
+    std::uint16_t months = 0;   // bit per calendar month; 0: any
     int festival = kNoIndex;
     int notFestival = kNoIndex;
     std::int8_t weather = -1; // -1 any, 0 clear, 1 rain
@@ -173,6 +175,8 @@ struct Group {
 
 struct Festival {
     std::string id;
+    std::uint16_t months = 0; // bit per calendar month: on exactly those months (season and day
+                              // aside); 0: by season and day
     std::uint8_t seasons = 0;
     int day = 0; // 1-based day of the season, 0: every day
     float from = 0;
@@ -205,7 +209,9 @@ struct Chain {
     float from = 6; // hours
     float to = 18;
     std::uint8_t seasons = 0;
-    int event = kNoIndex; // runs only while this event runs
+    std::uint16_t months = 0; // bit per calendar month; 0: any
+    std::vector<float> pace;  // by_month: the period is divided by it, per month; empty: 1
+    int event = kNoIndex;     // runs only while this event runs
     std::vector<ChainStage> stages;
 };
 
@@ -232,7 +238,8 @@ struct CastEntry {
 struct Event {
     std::string id;
     Trigger trigger = Trigger::Window;
-    Filter when; // hours (the window), days, seasons, festival filters
+    Filter when;             // hours (the window), days, seasons, months, festival filters
+    bool seasonTurn = false; // `season_turn`: on its season's first day (months: its month's)
     float chance = 1;
     double every = 0;        // game seconds between repeats inside the window; 0: once
     int festival = kNoIndex; // calendar
@@ -293,6 +300,14 @@ struct Token {
     int group = kNoIndex; // region group following the token's leader
     int carry = kNoIndex; // goods
     int variant = -1;
+    Filter when;        // the days it travels (months, season and its day); hours are below
+    bool hours = false; // under way only from hourFrom to hourTo (game hours); waiting otherwise
+    float hourFrom = 0;
+    float hourTo = 0;
+    std::vector<std::string> rest; // where a waiting instance stands: "<layer>:<node>" or ports
+    std::vector<float> offsets;    // per instance, its share of the period (empty: k / count)
+    std::vector<float> share;      // per month, the share of instances under way (empty: all)
+    std::uint64_t seed = 0;        // from its id: the days each instance is under way
 };
 
 struct LifeRegion {
@@ -327,17 +342,24 @@ struct LifeData {
     std::vector<Token> tokens;
     std::vector<std::string> seasons;  // the home catalog's, in order
     int seasonDays = 3;                // days in a season (the calendar's)
+    std::vector<std::string> months;   // the world calendar's month ids (day n: month n mod size)
     std::vector<std::string> problems; // what did not resolve, one line each
 
     [[nodiscard]] int findKind(std::string_view id) const;
     [[nodiscard]] int findGoods(std::string_view id) const;
     [[nodiscard]] int findRegion(std::string_view id) const;
     [[nodiscard]] int regionOfWorld(int worldRegion) const; // -1 when it has no life
+    [[nodiscard]] int monthOf(int day) const;               // the calendar month of a day
     [[nodiscard]] std::size_t memoryBytes() const;
 
     std::unordered_map<std::string, int> kindIndex;
     std::vector<int> worldToLife; // WorldFile::regions index -> regions index, -1
 };
+
+// A month mask holds month m (an empty mask holds every month).
+[[nodiscard]] constexpr bool monthIn(std::uint16_t mask, int month) {
+    return mask == 0 || ((mask >> month) & 1u) != 0;
+}
 
 inline constexpr std::uint16_t kAnimIdle = 0;
 inline constexpr std::uint16_t kAnimMove = 1;

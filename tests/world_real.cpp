@@ -217,6 +217,18 @@ TEST_CASE("real world: the digest equals tools/worldgen's, byte for byte") {
     CHECK(toJson(actual) == *text);
 }
 
+TEST_CASE("real world: the home region keeps its own look, its file the rest") {
+    // corner.json styles the land round the corner (sound, weather, life) but lays no tint or
+    // haze on the home: the game's scene grades it from the home catalog's seasons.
+    const world::LoadedWorld& w = realWorld();
+    const std::size_t home = static_cast<std::size_t>(w.file.home.region);
+    REQUIRE(home < w.regions.size());
+    const world::Theme& t = w.regions[home].theme;
+    CHECK(t.hazeStrength == 0.0f);
+    for (const auto& g : t.grading) CHECK(g == world::Rgb3{1, 1, 1});
+    CHECK_FALSE(w.regions[home].life.is_null()); // its life is read
+}
+
 TEST_CASE("real world: loading twice gives the same world") {
     const auto again = loadWorld(assetsDir(), homeCatalog());
     REQUIRE(again.has_value());
@@ -277,8 +289,12 @@ TEST_CASE("real world: the starter home overlays the corner") {
             CHECK(m.level(p) == w->file.home.level);
             if (starter.isWild({x, y})) CHECK_FALSE(m.walkable(p));
         }
-    for (const Placed& it : m.items())
-        if (it.layer != kHomeLayer) CHECK_FALSE(it.rect().intersects(hr));
+    // Prebuilt items there stay in the list (no index moves) but nothing of the world stands on
+    // the home's tiles.
+    for (int y = hr.y0; y < hr.y1; ++y)
+        for (int x = hr.x0; x < hr.x1; ++x)
+            if (const int i = m.itemAt({x, y}); i >= 0)
+                CHECK(m.items()[static_cast<std::size_t>(i)].layer == kHomeLayer);
 }
 
 TEST_CASE("perf: load time and memory") {

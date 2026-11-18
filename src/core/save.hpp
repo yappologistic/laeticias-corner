@@ -50,6 +50,7 @@
 #include "core/weather.hpp"
 #include "core/world.hpp"
 
+#include <ctime>
 #include <expected>
 #include <filesystem>
 #include <optional>
@@ -119,6 +120,9 @@ void migrateLegacy(SaveData& data, const Catalog& cat);
 [[nodiscard]] std::string worldSlug(std::string_view name, std::span<const std::string> taken);
 // Current UTC time as "YYYY-MM-DDTHH:MM:SSZ".
 [[nodiscard]] std::string utcNow();
+// A postcard's file name without extension, "<slug>-YYYYMMDD-HHMMSS", in local time (the date its
+// caption shows).
+[[nodiscard]] std::string postcardStem(std::string_view slug, std::time_t when);
 
 // Writes to a temporary sibling, flushes it to disk and renames it over the target, so neither a
 // crash nor a power cut leaves a half-written save behind.

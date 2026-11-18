@@ -52,13 +52,7 @@
      ]
     }
    ],
-   "loops": [
-    {
-     "item": "world.beacon",
-     "file": "amb/world/brazier.ogg",
-     "when": "lit"
-    }
-   ]
+   "loops": []
   },
   "weather": {
    "spring": {
@@ -623,20 +617,6 @@
     "body": "#3f7fa0",
     "reflect": true,
     "sea_state": 0
-   },
-   "lights": {
-    "world.beacon": {
-     "kind": "beacon",
-     "colour": "#ffa04a",
-     "radius": 4.0,
-     "flicker": {
-      "breathe": [
-       0.8,
-       1.6
-      ],
-      "depth": 0.15
-     }
-    }
    }
   }
  },
@@ -747,12 +727,6 @@
      }
     },
     {
-     "role": "beacon_keeper",
-     "per_item": "world.beacon",
-     "count": 1,
-     "density": "always"
-    },
-    {
      "role": "woodcutter",
      "per_item": "world.t_cedar",
      "count": 0.012,
@@ -800,7 +774,7 @@
    "area": "wild",
    "sound": {
     "surfaces": {
-     "leaves": 0.04
+     "leaves": 0.05
     },
     "wind": "wind.open",
     "exposure": 1.0,
@@ -858,11 +832,6 @@
      "hooves": [
       "sfx/world/hoof_earth_1.wav",
       "sfx/world/hoof_earth_2.wav"
-     ],
-     "decks": [
-      "sfx/world/step_timber_1.wav",
-      "sfx/world/step_timber_2.wav",
-      "sfx/world/step_timber_3.wav"
      ]
     },
     "cart": "amb/world/cart_earth.ogg"
@@ -1465,7 +1434,7 @@
  "lanes_tokens": [
   {
    "actor": "world.fishing_boat",
-   "lane": "base:cilician_road_harbour_fishing",
+   "lane": "base:levant",
    "count": 2,
    "by_month": [
     0.7,
@@ -1487,85 +1456,12 @@
     "11:00"
    ],
    "rest": [
-    "home",
-    "grounds"
-   ],
-   "offsets": [
-    0.034,
-    0.498
-   ]
-  },
-  {
-   "actor": "world.fishing_boat",
-   "lane": "base:cilician_road_harbour_fishing",
-   "count": 1,
-   "hours": [
-    "20:30",
-    "03:30"
-   ],
-   "when": {
-    "months": [
-     "may",
-     "jun",
-     "jul",
-     "aug",
-     "sep"
-    ]
-   },
-   "note": "fishing by torchlight on calm summer nights",
-   "by_month": [
-    0.7,
-    0.8,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.9,
-    0.7,
-    0.5,
-    0.5,
-    0.6
-   ],
-   "id": "east_med.1",
-   "rest": [
-    "home",
-    "grounds"
-   ],
-   "offsets": [
-    0.996
-   ]
-  },
-  {
-   "actor": "world.fishing_boat",
-   "lane": "base:levant",
-   "count": 2,
-   "by_month": [
-    0.7,
-    0.8,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.9,
-    0.7,
-    0.5,
-    0.5,
-    0.6
-   ],
-   "id": "east_med.2",
-   "hours": [
-    "03:30",
-    "11:00"
-   ],
-   "rest": [
     "cilicia",
     "sidon"
    ],
    "offsets": [
-    0.064,
-    0.497
+    0.034,
+    0.498
    ]
   },
   {
@@ -1578,16 +1474,15 @@
    "group": "caravan",
    "note": "a caravan with Phoenician goods (glass, purple cloth, cedar) bound for Babylon",
    "by_month": "caravan",
-   "id": "east_med.3",
+   "id": "east_med.1",
    "hours": [
     "05:00",
     "19:30"
    ],
    "rest": [
     "sidon:sidon_quay",
-    "base:cilician_road_station_980_254",
-    "base:cilician_road_station_983_240",
-    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_980_256",
+    "base:cilician_road_station_983_238",
     "base:cilician_road_station_983_225",
     "base:cilician_road_station_983_212",
     "base:cilician_road_station_985_201",
@@ -1605,19 +1500,19 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court"
    ],
    "offsets": [
-    0.149
+    0.996
    ]
   },
   {
@@ -1630,16 +1525,15 @@
    "group": "del_arabs",
    "note": "Arabs with dromedaries bringing frankincense, a gift Herodotus says they gave each year (3.97)",
    "by_month": "caravan",
-   "id": "east_med.4",
+   "id": "east_med.2",
    "hours": [
     "05:00",
     "19:30"
    ],
    "rest": [
     "sidon:sidon_quay",
-    "base:cilician_road_station_980_254",
-    "base:cilician_road_station_983_240",
-    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_980_256",
+    "base:cilician_road_station_983_238",
     "base:cilician_road_station_983_225",
     "base:cilician_road_station_983_212",
     "base:cilician_road_station_985_201",
@@ -1657,19 +1551,19 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court"
    ],
    "offsets": [
-    0.807
+    0.129
    ]
   },
   {
@@ -1682,7 +1576,7 @@
    "carry": "world.goods_logs",
    "note": "cedar from the mountains carted down to Sidon's ship-sheds",
    "by_month": "road",
-   "id": "east_med.5",
+   "id": "east_med.3",
    "hours": [
     "05:00",
     "19:30"
@@ -1691,7 +1585,7 @@
     "sidon:sidon_quay"
    ],
    "offsets": [
-    0.262
+    0.149
    ]
   },
   {
@@ -1704,30 +1598,19 @@
    ],
    "note": "Phoenician ships of Sidon along the coast",
    "by_month": "sailing",
-   "id": "east_med.6",
+   "id": "east_med.4",
    "rest": [
     "cilicia",
     "sidon"
    ],
    "offsets": [
-    0.08,
-    0.224,
-    0.732
+    0.936,
+    0.33,
+    0.675
    ]
   }
  ],
- "zones": [
-  {
-   "kind": "fishing",
-   "rect": [
-    287,
-    279,
-    291,
-    283
-   ],
-   "lane": "base:cilician_road_harbour_fishing"
-  }
- ],
+ "zones": [],
  "cards": {},
  "strings": {
   "season_turn.spring": "The swallows are back under the eaves.",
@@ -1786,67 +1669,6 @@
   }
  ],
  "roles": [
-  {
-   "id": "beacon_keeper",
-   "actor": "parsa.guard_spear",
-   "name": "Beacon keeper",
-   "schedule": [
-    {
-     "hours": [
-      "17:00",
-      "06:00"
-     ],
-     "routine": "watch"
-    }
-   ],
-   "routines": {
-    "watch": {
-     "loop": true,
-     "steps": [
-      {
-       "go": {
-        "item": "world.beacon",
-        "spot": "beside",
-        "within": 12
-       }
-      },
-      {
-       "use": {
-        "here": true
-       },
-       "anim": "guard",
-       "dur": [
-        60,
-        120
-       ]
-      },
-      {
-       "wander": {
-        "radius": 2
-       },
-       "dur": [
-        10,
-        20
-       ]
-      },
-      {
-       "use": {
-        "here": true
-       },
-       "anim": "guard",
-       "dur": [
-        30,
-        60
-       ]
-      }
-     ]
-    }
-   },
-   "carries": {
-    "light": "carried_torch",
-    "prop": "torch"
-   }
-  },
   {
    "id": "woodcutter",
    "actor": "world.logger",
@@ -2064,63 +1886,5 @@
     "oct"
    ]
   }
- ],
- "lights": {
-  "version": 1,
-  "profiles": {
-   "carried_torch": {
-    "kind": "torch",
-    "kelvin": 1900,
-    "colour": "#ff8c3c",
-    "radius": 2.6,
-    "strength": 0.85,
-    "flicker": {
-     "style": "gutter",
-     "hz": [
-      6,
-      10
-     ],
-     "depth": 0.08
-    },
-    "hours": [
-     [
-      "dusk",
-      "dawn"
-     ]
-    ],
-    "rain": "out"
-   },
-   "signal_watch": {
-    "kind": "fire",
-    "kelvin": 1800,
-    "colour": "#ff8436",
-    "radius": 2.2,
-    "strength": 0.6,
-    "flicker": {
-     "style": "breathe",
-     "hz": [
-      0.8,
-      1.6
-     ],
-     "depth": 0.07
-    },
-    "hours": [
-     [
-      "dusk",
-      "dawn"
-     ]
-    ],
-    "rain": "out"
-   }
-  }
- },
- "light_points": [
-  [
-   288,
-   279,
-   "world.beacon",
-   "signal_watch",
-   "fire"
-  ]
  ]
 }

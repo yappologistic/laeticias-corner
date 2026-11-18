@@ -1194,11 +1194,8 @@
    "show": "water",
    "steps": [],
    "string": "season_turn.apr",
-   "pending_sound": [
-    "amb/world/flood.ogg"
-   ],
    "ambience": {
-    "file": "amb/world/river_2.ogg",
+    "file": "amb/world/flood.ogg",
     "gain": 0.6
    }
   },

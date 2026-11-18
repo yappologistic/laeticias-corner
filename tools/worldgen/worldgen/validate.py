@@ -20,7 +20,7 @@ import numpy as np
 
 from plan import world_plan as P
 
-from . import bible, crossings
+from . import bible, crossings, walkable
 from . import walk as engine_walk
 from .catalog import Catalog
 from .compose import NONE16, World, live_items
@@ -350,7 +350,11 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                               f"{mfile}:{m.line} says {m.rect}", (p.c, p.r), p.src)
                 if m.level is not None:
                     got = landmark_level(p)
-                    if not (m.level[0] <= got <= m.level[1]):
+                    lm = tg.layout.level_moves.get(lid)
+                    if lm and lm[0] == got and not (m.level[0] <= got <= m.level[1]):
+                        issue("V4", f"{lid}: local level {got} instead of {mfile}:{m.line}'s "
+                              f"{m.level[0]}: {lm[1]}", (p.c, p.r), lm[2], level="warning")
+                    elif not (m.level[0] <= got <= m.level[1]):
                         issue("V4", f"{lid}: local level {got}, {mfile}:{m.line} says "
                               f"{m.level[0]}" + (f"..{m.level[1]}" if m.level[1] != m.level[0]
                                                   else ""), (p.c, p.r), p.src)
@@ -396,6 +400,11 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
     # V17: every edge walkable step by step by the engine's own rules.
     for msg, at, level in engine_walk.check(world, cat, g):
         issue("V17", msg, at, level=level)
+    # W-*: where walkers may be (draw-order.md §5.2), over the whole composed world; each layer
+    # answers for its own items, graph and lanes.
+    for f in walkable.findings(world, cat, joined, root):
+        if f.layer == name:
+            issue(f.code, f.msg, f.at, level=f.level)
 
     # V6: connected, portals agreed, dest budget.
     parent = {n.id: n.id for n in g.nodes}

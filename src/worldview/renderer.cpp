@@ -766,23 +766,44 @@ void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
 }
 
 std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
-    // Figures first: they are small and stand clear (world/figures.hpp), while a landmark's box
-    // is much larger than what it draws.
+    // What is drawn there, nearest first, by the drawing's own order (draw-order.md 4.5): the
+    // topmost element that draws a pixel under the pointer decides, and opens its card if it has
+    // one (a landmark's box covers far more than its pixels). Where nothing is drawn, the
+    // nearest footprint under the pointer at its level does: a building's bare ground (a walk
+    // floor's courtyard, the open end of a building site) is the building's.
+    const Elem* ground = nullptr;
     for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
         const Elem& e = region_.elems[*it];
-        const FRect& b = region_.items[*it].screen;
-        if (e.figure && px.x >= b.x0 && px.x < b.x1 && px.y >= b.y0 && px.y < b.y1)
-            return Picked{true, figureOf_[e.item]};
-    }
-    for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
-        const Elem& e = region_.elems[*it];
-        const FRect& b = region_.items[*it].screen;
-        if (e.ground || e.home || px.x < b.x0 || px.x >= b.x1 || px.y < b.y0 || px.y >= b.y1)
+        if (e.ground || e.home) continue;
+        const OrderItem& o = region_.items[*it];
+        const FRect& b = o.screen;
+        const bool inBox = px.x >= b.x0 && px.x < b.x1 && px.y >= b.y0 && px.y < b.y1;
+        if (e.figure) {
+            if (inBox) return Picked{true, figureOf_[e.item]};
             continue;
-        if (e.figure) return Picked{true, figureOf_[e.item]};
-        if (!map_.info(map_.items()[e.item]).card.empty()) return Picked{false, e.item};
+        }
+        const SpriteRef& s = e.piece >= 0 ? e.look->pieces[static_cast<std::size_t>(e.piece)]
+                                          : e.look->base.f.front();
+        if (inBox && pages_->drawsAt(s, px.x - b.x0, px.y - b.y0)) {
+            if (map_.info(map_.items()[e.item]).card.empty()) return std::nullopt;
+            return Picked{false, e.item};
+        }
+        if (ground != nullptr) continue;
+        const float lift = iso_.toWorld(e.tile).y - e.anchor.y;
+        const Vec2 t = iso_.toWorld(o.foot.x0, o.foot.y0);
+        const Vec2 r = iso_.toWorld(o.foot.x1, o.foot.y0);
+        const Vec2 bt = iso_.toWorld(o.foot.x1, o.foot.y1);
+        const Vec2 l = iso_.toWorld(o.foot.x0, o.foot.y1);
+        const auto edge = [&](Vec2 a, Vec2 c) {
+            return a.y + (c.y - a.y) * (px.x - a.x) / (c.x - a.x);
+        };
+        if (px.x >= l.x && px.x < r.x && px.y >= (px.x < t.x ? edge(l, t) : edge(t, r)) - lift &&
+            px.y <= (px.x < bt.x ? edge(l, bt) : edge(bt, r)) - lift)
+            ground = &e;
     }
-    return std::nullopt;
+    if (ground == nullptr || map_.info(map_.items()[ground->item]).card.empty())
+        return std::nullopt;
+    return Picked{false, ground->item};
 }
 
 void WorldView::drawWeatherGround(const FRect& view, const Xform& x) {

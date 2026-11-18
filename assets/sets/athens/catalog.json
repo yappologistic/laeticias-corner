@@ -4172,5 +4172,40 @@
    "athens.lamp",
    "athens.torch"
   ]
+ },
+ "audio": {
+  "music": [
+   "music/athens/day.ogg",
+   "music/athens/night.ogg"
+  ],
+  "ambience": [
+   "amb/athens/day.ogg",
+   "amb/athens/agora.ogg",
+   "amb/athens/sea.ogg",
+   "amb/athens/rock.ogg",
+   "amb/athens/night.ogg",
+   "amb/athens/potters.ogg",
+   "amb/athens/procession.ogg",
+   "amb/athens/wheel.ogg",
+   "amb/athens/kiln.ogg",
+   "amb/athens/day_cool.ogg",
+   "amb/athens/night_winter.ogg",
+   "amb/athens/komos.ogg"
+  ],
+  "sfx": [
+   "sfx/athens/aulos.wav",
+   "sfx/athens/lyre.wav",
+   "sfx/athens/owl.wav",
+   "sfx/athens/trireme.wav",
+   "sfx/athens/oars.wav",
+   "sfx/athens/arrive.wav",
+   "sfx/athens/ololyge.wav",
+   "sfx/athens/sting_sunrise.wav",
+   "sfx/athens/sting_nightfall.wav",
+   "sfx/athens/sting_storm_clear.wav",
+   "sfx/athens/sting_rainbow.wav",
+   "sfx/athens/tympanon.wav",
+   "sfx/athens/sting_season.wav"
+  ]
  }
 }

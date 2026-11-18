@@ -1779,8 +1779,38 @@
      ]
     ],
     "rain": "out"
+   },
+   "watch_fire": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
    }
   }
  },
- "light_points": []
+ "light_points": [
+  [
+   330,
+   169,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ]
+ ]
 }

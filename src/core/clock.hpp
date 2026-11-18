@@ -43,6 +43,9 @@ public:
     // per day length, so pinning never holds the seasons (and what comes with them) back.
     [[nodiscard]] int day() const { return day_; }
     void setDay(int day);
+    // How often the time or the day was set outright (a jump), so followers can tell a jump
+    // from the clock running or gliding to a pin.
+    [[nodiscard]] std::uint32_t jumps() const { return jumps_; }
 
 private:
     void nextDay();
@@ -51,6 +54,7 @@ private:
     ClockPin pin_ = ClockPin::Auto;
     int day_ = 0;
     double pinnedDay_ = 0; // share of a calendar day played while pinned
+    std::uint32_t jumps_ = 0;
 };
 
 [[nodiscard]] Phase phaseAt(double t);
@@ -64,5 +68,17 @@ struct SeasonDay {
     int day = 0; // within the season, from 0
 };
 [[nodiscard]] SeasonDay seasonOf(int day, std::span<const int> days);
+
+// The one answer to "which season and month is it today" (every region shares the calendar; a
+// region's climate, `Catalog::findClimate`, says what that season and month bring there): the
+// season follows the days, or is `pinned` (a kept season, >= 0); the month is that season's
+// month for the day of the season (the catalog's `calendar.months`, -1 when it has none).
+struct CalendarDay {
+    int season = 0;
+    int seasonDay = 0; // from 0
+    int month = -1;
+};
+[[nodiscard]] CalendarDay calendarDay(int day, int pinned, std::span<const int> seasonDays,
+                                      int months);
 
 } // namespace lc

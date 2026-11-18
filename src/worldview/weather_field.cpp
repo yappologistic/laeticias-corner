@@ -17,15 +17,36 @@ Climate climateOf(std::string_view name) {
 
 WeatherField::WeatherField(const world::LoadedWorld& world, std::uint64_t seed)
     : world_(world), seed_(seed) {
-    for (const world::RegionFile& r : world.regions)
+    for (const world::RegionFile& r : world.regions) {
         climates_.push_back(climateOf(r.theme.climate));
-    cells_.reserve(tuning::kWeatherCellsMax);
+        snowOf_.push_back(world.map->content().home().findClimate(r.theme.climate));
+    }
+    cells_.reserve(tuning::kWeatherCellsMax + 1); // and the player's shower
     trails_.reserve(tuning::kWeatherCellsMax * (tuning::kWetSamples + 1));
     drift_.reserve(tuning::kWeatherCellsMax);
 }
 
+bool WeatherField::snowsAt(TilePos t, SeasonClimate season) const {
+    const world::WorldMap& m = *world_.map;
+    if (!m.inBounds(t)) return season.snow;
+    const int region = m.regionAt(t);
+    const ClimateDef* c = region >= 0 && static_cast<std::size_t>(region) < snowOf_.size()
+                              ? snowOf_[static_cast<std::size_t>(region)]
+                              : nullptr;
+    if (c == nullptr || season.month < 0 ||
+        static_cast<std::size_t>(season.month) >= c->snowLine.size())
+        return season.snow;
+    const int line = c->snowLine[static_cast<std::size_t>(season.month)];
+    if (line >= 0 && m.level(t) >= line) return true;
+    // Below the line only in its lowland months, on some days (the same all day, everywhere).
+    if (((c->lowlandMonths >> season.month) & 1u) == 0) return false;
+    Rng rng(seed_ ^ (static_cast<std::uint64_t>(season.day) * 0xC2B2AE3D27D4EB4FULL) ^
+            static_cast<std::uint64_t>(region));
+    return rng.range(0.0f, 1.0f) < c->lowlandChance;
+}
+
 void WeatherField::blockCells(int bx, int by, std::int64_t period, const Wind& wind,
-                              SeasonClimate season) {
+                              SeasonClimate season, TileRect view) {
     const int b = tuning::kWeatherBlock;
     const world::WorldMap& m = *world_.map;
     const TilePos mid{std::clamp(bx * b + b / 2, 0, m.width() - 1),
@@ -39,7 +60,7 @@ void WeatherField::blockCells(int bx, int by, std::int64_t period, const Wind& w
     const float expected = season.clouds * c.clouds * tuning::kWeatherCellsPerBlock;
     const auto count = static_cast<int>(expected + rng.range(0.0f, 1.0f));
     const double start = static_cast<double>(period) * ::lc::tuning::kWeatherPeriod;
-    for (int k = 0; k < count && cells_.size() < tuning::kWeatherCellsMax; ++k) {
+    for (int k = 0; k < count; ++k) {
         WeatherCell cell;
         const bool rain = rng.chance(std::clamp(season.showers * c.showers, 0.0f, 1.0f));
         cell.rain = rain;
@@ -58,6 +79,12 @@ void WeatherField::blockCells(int bx, int by, std::int64_t period, const Wind& w
             cell.factor;
         const Vec2 v{wind.dir.x * speed, wind.dir.y * speed};
         cell.centre = {at.x + v.x * cell.age, at.y + v.y * cell.age};
+        // Only what touches the view (grown by its radius) is kept, and counted against the cap.
+        const bool touches = cell.centre.x + cell.radius > static_cast<float>(view.x0) &&
+                             cell.centre.x - cell.radius < static_cast<float>(view.x1) &&
+                             cell.centre.y + cell.radius > static_cast<float>(view.y0) &&
+                             cell.centre.y - cell.radius < static_cast<float>(view.y1);
+        if (!touches || cells_.size() >= tuning::kWeatherCellsMax) continue;
         cells_.push_back(cell);
         drift_.push_back(v);
     }
@@ -66,42 +93,31 @@ void WeatherField::blockCells(int bx, int by, std::int64_t period, const Wind& w
 void WeatherField::update(double time, const Wind& wind, SeasonClimate season, TileRect view,
                           WeatherMode mode) {
     time_ = time;
-    snow_ = season.snow;
+    snow_ = snowsAt({(view.x0 + view.x1) / 2, (view.y0 + view.y1) / 2}, season);
     cells_.clear();
     drift_.clear();
-    // Blocks whose cells can reach the view: upwind by as far as a cell drifts in its life.
-    const float reach = tuning::kWeatherLifeMax *
-                            (::lc::tuning::kCellMinSpeed + ::lc::tuning::kCellWindSpeed * 2.0f) +
-                        ::lc::tuning::kCloudCellMax;
+    // Blocks whose cells can reach the view: as far as a cell of each period can have drifted
+    // since its period began (L-112: the young periods need few blocks). Newest first, so if the
+    // cap ever cuts, it cuts the oldest cells (the young ones fade in, the old are going).
+    const float speed = ::lc::tuning::kCellMinSpeed + ::lc::tuning::kCellWindSpeed * 2.0f;
+    const float radius = std::max(::lc::tuning::kCloudCellMax, ::lc::tuning::kRainCellMax);
     const int b = tuning::kWeatherBlock;
-    const auto r = static_cast<int>(reach);
-    const int bx0 = (view.x0 - r) / b - 1;
-    const int by0 = (view.y0 - r) / b - 1;
-    const int bx1 = (view.x1 + r) / b + 1;
-    const int by1 = (view.y1 + r) / b + 1;
     const auto now = static_cast<std::int64_t>(time / ::lc::tuning::kWeatherPeriod);
     const int periods =
         static_cast<int>(tuning::kWeatherLifeMax / ::lc::tuning::kWeatherPeriod) + 1;
     if (mode != WeatherMode::Clear)
-        for (std::int64_t p = now - periods; p <= now; ++p)
+        for (std::int64_t p = now; p >= now - periods; --p) {
+            const double since = time - static_cast<double>(p) * ::lc::tuning::kWeatherPeriod;
+            const float age =
+                std::min(tuning::kWeatherLifeMax, static_cast<float>(std::max(0.0, since)));
+            const auto r = static_cast<int>(age * speed + radius) + 1;
+            const int bx0 = (view.x0 - r) / b - 1;
+            const int by0 = (view.y0 - r) / b - 1;
+            const int bx1 = (view.x1 + r) / b + 1;
+            const int by1 = (view.y1 + r) / b + 1;
             for (int by = by0; by <= by1; ++by)
-                for (int bx = bx0; bx <= bx1; ++bx) blockCells(bx, by, p, wind, season);
-    // Only what touches the view (grown by a radius) is kept.
-    const auto touches = [&](const WeatherCell& c) {
-        return c.centre.x + c.radius > static_cast<float>(view.x0) &&
-               c.centre.x - c.radius < static_cast<float>(view.x1) &&
-               c.centre.y + c.radius > static_cast<float>(view.y0) &&
-               c.centre.y - c.radius < static_cast<float>(view.y1);
-    };
-    std::size_t keep = 0;
-    for (std::size_t i = 0; i < cells_.size(); ++i)
-        if (touches(cells_[i])) {
-            cells_[keep] = cells_[i];
-            drift_[keep] = drift_[i];
-            ++keep;
+                for (int bx = bx0; bx <= bx1; ++bx) blockCells(bx, by, p, wind, season, view);
         }
-    cells_.resize(keep);
-    drift_.resize(keep);
     trails_.clear();
     for (std::size_t i = 0; i < cells_.size(); ++i) {
         const WeatherCell& c = cells_[i];

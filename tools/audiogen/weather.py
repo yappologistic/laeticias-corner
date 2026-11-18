@@ -11,22 +11,29 @@ import numpy as np
 
 import ambience
 import sounds as sd
-from atmos import (band, conv, entry, gusts, kernels, loop_tone, noise_burst,
+from atmos import (WATER_EQ, band, conv, entry, eq, gusts, kernels, loop_tone, noise_burst,
                    resonant_burst, scatter_train, slow, swell, train)
 from dsp import SR, bandpass, lowpass, pan, place, ramp_in, secs, times
 
 BED_S = 30.0  # weather beds: long enough not to be heard repeating under a changing mix
-LAYER_S = 12.0  # surface layers ride on a bed, so they can be shorter
+# Rain is heard for minutes on end: its bed and its surface layers get lengths that share no
+# factor with each other or with the 30 s wind and 32 s nature beds, so the mix of a rainy
+# view never lines up again for hours, and no layer is short enough to be heard cycling.
+RAIN_S = 37.0
+LAYER_S = (17.0, 19.0)  # surface layers, sparse and dense (cross-faded, so co-prime too)
 
 # --- wind ------------------------------------------------------------------------------
 
 # One recipe, four strengths: the top of the spectrum, the gust rate and depth, the
 # buffeting and how much of each variant's character (leaves, whistles, spray) shows.
 WIND = (
-    dict(name="breath", hi=650.0, gust=0.10, depth=0.25, flutter=0.0, top=0.10, char=0.25),
-    dict(name="breeze", hi=1200.0, gust=0.12, depth=0.32, flutter=0.04, top=0.22, char=0.6),
-    dict(name="strong", hi=2100.0, gust=0.15, depth=0.40, flutter=0.08, top=0.40, char=1.0),
-    dict(name="gale", hi=3100.0, gust=0.18, depth=0.48, flutter=0.14, top=0.62, char=1.3),
+    # Gust depths keep each bed's loudness range near the quality bar's 2-5 LU (strong and gale
+    # a little above it, 5-7 LU: their gusts are the motion); the engine's gust one-shots and
+    # the cross-fade between strengths carry the larger swings.
+    dict(name="breath", hi=650.0, gust=0.10, depth=0.15, flutter=0.0, top=0.10, char=0.25),
+    dict(name="breeze", hi=1200.0, gust=0.12, depth=0.18, flutter=0.04, top=0.22, char=0.6),
+    dict(name="strong", hi=2100.0, gust=0.15, depth=0.22, flutter=0.08, top=0.40, char=1.0),
+    dict(name="gale", hi=3100.0, gust=0.18, depth=0.26, flutter=0.14, top=0.62, char=1.3),
 )
 WIND_LUFS = (-29.0, -25.5, -22.0, -18.5)
 # Variant: buffeting scale (streets churn, open sea is smooth) and gust depth scale.
@@ -122,7 +129,7 @@ def k_bubble(rng, lo=600, hi=2500):
 
 
 RAIN = (
-    dict(name="light", rate=40, hiss=0.07, big=8, body=0.0, run=0),
+    dict(name="light", rate=40, hiss=0.07, big=8, body=0.08, run=0),
     dict(name="moderate", rate=200, hiss=0.4, big=22, body=0.25, run=25),
     dict(name="heavy", rate=650, hiss=1.0, big=45, body=0.7, run=70),
 )
@@ -134,21 +141,21 @@ def rain(level):
     drops, nearer ticks and pats, and in harder rain the body of the downpour and runoff."""
     p = RAIN[level]
 
-    def render(rng, length=BED_S):
+    def render(rng, length=RAIN_S):
         n = secs(length)
-        s = swell(n, rng, 0.04, 0.3, 0.4)
+        s = swell(n, rng, 0.04, 0.22, 0.4)
         S = s[:, None]
         layers = {
             "hiss": p["hiss"] * band(n, rng, 500, 6500, 0.35) * S,
-            "drops": 0.9 * scatter_train(n, rng, p["rate"] * s, kernels(k_drop, 6, rng)),
-            "pats": 0.6 * scatter_train(n, rng, p["big"] * s, kernels(k_splat, 4, rng)),
+            "drops": 0.9 * scatter_train(n, rng, p["rate"] * s, kernels(k_drop, 12, rng)),
+            "pats": 0.6 * scatter_train(n, rng, p["big"] * s, kernels(k_splat, 8, rng)),
         }
         if p["body"]:
             layers["body"] = p["body"] * band(n, rng, 70, 900, 1.0) * S
         if p["run"]:
             ks = kernels(lambda r: k_bubble(r, 250, 900), 6, rng)
             layers["runoff"] = 0.5 * scatter_train(n, rng, p["run"] * s, ks, spread=0.5)
-        return sd.mix(layers)
+        return eq(sd.mix(layers), WATER_EQ)
 
     return render
 
@@ -212,10 +219,10 @@ def surface(kind, dense):
     over a rain bed by how much of that surface is on screen."""
     make, rates, extra = SURFACES[kind]
 
-    def render(rng, length=LAYER_S):
+    def render(rng, length=LAYER_S[dense]):
         n = secs(length)
         s = swell(n, rng, 0.06, 0.3, 0.4)
-        out = scatter_train(n, rng, rates[dense] * s, kernels(make, 8, rng))
+        out = scatter_train(n, rng, rates[dense] * s, kernels(make, 16, rng))
         if dense:
             if extra == "drip":  # big drops falling off the leaves
                 out += 0.8 * scatter_train(n, rng, 6, kernels(lambda r: k_bubble(r, 500, 1500), 4,
@@ -231,12 +238,12 @@ def surface(kind, dense):
                 out += 0.15 * band(n, rng, 2500, 6500, 0.2) * s[:, None]
             else:  # canvas drumming blurs into a low hum of taps
                 out += 0.15 * band(n, rng, 150, 600, 0.8) * s[:, None]
-        return out
+        return out if kind == "canvas" else eq(out, WATER_EQ)
 
     return render
 
 
-def first_drops_bed(rng, length=LAYER_S):
+def first_drops_bed(rng, length=LAYER_S[0]):
     """The first heavy drops on dry dust, sparse, before the rain proper."""
     n = secs(length)
     return scatter_train(n, rng, 5, kernels(k_dust, 6, rng)) + \
@@ -374,21 +381,21 @@ def fog(rng, length=BED_S):
     for _ in range(5):
         life.add(lowpass(sd.bell(rng.uniform(600, 800), rng, 0.6, "sheet"), 1200),
                  rng.uniform(0, length), pos, 0.9, 0.15)
-    air = band(n, rng, 40, 500, 1.0)
+    air = band(n, rng, 40, 500, 1.0) * swell(n, rng, 0.05, 0.35, 0.3)[:, None]  # fog breathes
     return sd.mix({"air": 0.25 * air, "drips": 3.0 * life.finish((1.2, 0.8, 0.3, 0.01), 0.35)})
 
 
-def after_rain(rng, length=LAYER_S):
+def after_rain(rng, length=LAYER_S[0]):
     """After the rain: water dripping from eaves and leaves, a gutter emptying."""
     n = secs(length)
     life = sd.Bed(length, rng, tail=3.0)
-    for _ in range(40):
+    for _ in range(int(3.3 * length)):
         life.add(drip(rng), rng.uniform(0, length), rng.uniform(-0.8, 0.8), rng.uniform(0.15, 0.6),
                  rng.uniform(0.3, 1.0))
     ks = kernels(lambda r: k_bubble(r, 400, 1300), 5, rng)
     gutter = scatter_train(n, rng, 14 * swell(n, rng, 0.2, 0.6), ks, channels=1)[:, 0]
-    return sd.mix({"drips": 3.0 * life.finish((1.0, 0.7, 0.3, 0.01), 0.3),
-                   "gutter": 0.5 * pan(gutter, 0.5)})
+    return eq(sd.mix({"drips": 3.0 * life.finish((1.0, 0.7, 0.3, 0.01), 0.3),
+                      "gutter": 0.5 * pan(gutter, 0.5)}), WATER_EQ)
 
 
 def fly_pass(rng):
@@ -510,7 +517,7 @@ def coast(level):
             layers["thump"] = 0.6 * np.stack([thump, thump], axis=1)
         if p["wind"]:
             layers["wind"] = 0.25 * wind_core(n, rng, WIND[p["wind"]], WIND_PLACES["sea"])[0]
-        return sd.mix(layers)
+        return eq(sd.mix(layers), WATER_EQ)
 
     return render
 
@@ -587,7 +594,7 @@ def river(level):
             layers["laps"] = 0.5 * scatter_train(n, rng, 1.2, kernels(k_lap, 5, rng), sigma=0.4)
         if p["rush"]:
             layers["rush"] = p["rush"] * band(n, rng, 200, 5500, 0.4)
-        return sd.mix(layers)
+        return eq(sd.mix(layers), WATER_EQ) if p["rush"] else sd.mix(layers)
 
     return render
 
@@ -597,7 +604,7 @@ def waterfall(level):
 
     def render(rng, length=BED_S):
         n = secs(length)
-        s = swell(n, rng, 0.3, 0.15)[:, None]
+        s = swell(n, rng, 0.2, 0.3)[:, None]  # spray and roar breathe with the flow
         if level == 0:  # distance takes the top off, not all of it
             return 0.8 * band(n, rng, 40, 1800, 0.9) * s + 0.3 * band(n, rng, 600, 3000, 0.6)
         spray = np.stack([ambience.crackle(n, rng, 900, 1500, 6500) for _ in range(2)], axis=1)
@@ -773,12 +780,12 @@ for _lvl, _p in enumerate(DUST):
         when="weather", where="dust cells: the Syrian steppe, Mesopotamia, Pārsa in summer",
         family="dust", level=_lvl + 1, level_name=_p["name"], tags=["weather", "dust", "east"])
 for _lvl, _p in enumerate(SEA):
-    FILES[f"amb/{W}/coast_{_lvl + 1}.ogg"] = entry(
+    FILES[f"amb/{W}/sea_coast_{_lvl + 1}.ogg"] = entry(
         "bed", coast(_lvl), SEA_LUFS[_lvl], f"Waves on an open shore, {_p['name']}.",
         where=f"sea state {_lvl + 1}/3 (0-1 calm, 2 moderate, 3 storm) where the view holds coast",
         family="sea.coast", level=_lvl + 1, level_name=_p["name"], tags=["sea", "coast"])
 for _lvl, _p in enumerate(HARBOUR):
-    FILES[f"amb/{W}/harbour_{_lvl + 1}.ogg"] = entry(
+    FILES[f"amb/{W}/sea_harbour_{_lvl + 1}.ogg"] = entry(
         "bed", harbour(_lvl), SEA_LUFS[_lvl],
         f"Inside a harbour, {_p['name']}: lapping at quays and hulls, boats knocking.",
         where=f"sea state {_lvl + 1}/3 in harbour zones (Piraeus, Ostia, the Emporium, Brundisium)",

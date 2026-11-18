@@ -1,6 +1,6 @@
 # Meeting the living figures (city life): Socrates in the Agora on the Panathenaia, found among
 # the crowd and the procession; his card opens while he moves (titled in Greek), F follows him,
-# Esc lets go; the journal keeps him and the procession witnessed.
+# Esc, a drag or Home lets go; the journal keeps him and the procession witnessed.
 set season summer
 set day 10
 set time 0.125
@@ -18,11 +18,25 @@ key f
 wait 5
 expect following yes
 wait 180
+expect city moving
 shot shots/city_meet_follow.png
 key escape
 wait 5
 expect following no
 expect info Σωκράτης
+# A drag with the mouse lets go too, and so does Home (L-114).
+key f
+wait 5
+expect following yes
+drag 300,400 520,520
+wait 30
+expect following no
+key f
+wait 5
+expect following yes
+key home
+wait 5
+expect following no
 key escape
 wait 5
 expect info no

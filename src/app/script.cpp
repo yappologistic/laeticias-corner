@@ -130,10 +130,11 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             c.args = {tok[1]};
         } else if (cmd == "set") {
             static constexpr std::string_view kKeys[] = {
-                "clock",  "rain", "unlock",    "played",  "land", "season",
-                "day",    "grow", "weather",   "chatter", "time", "lively",
-                "shower", "city", "city_dump", "clouds"};
-            static constexpr std::string_view kNumeric[] = {"played", "grow", "day", "time"};
+                "clock",  "rain", "unlock",    "played",  "land",  "season",
+                "day",    "grow", "weather",   "chatter", "time",  "lively",
+                "shower", "city", "city_dump", "session", "clouds"};
+            static constexpr std::string_view kNumeric[] = {"played", "grow", "day", "time",
+                                                            "session"};
             if (tok.size() == 3 && std::ranges::find(kNumeric, tok[1]) != std::end(kNumeric)) {
                 float v = 0;
                 const std::string_view n = tok[2].starts_with('+')
@@ -154,7 +155,7 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             } else if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys)) {
                 return err(
                     "set clock|rain|weather|clouds|unlock|played|land|season|day|grow|chatter|"
-                    "time|lively|city|city_dump VALUE, set camera|world TX TY ZOOM, set "
+                    "time|lively|city|city_dump|session VALUE, set camera|world TX TY ZOOM, set "
                     "world PLACE ZOOM, set look KIND ZOOM or set wish ID open");
             }
             c.kind = ScriptCommand::Kind::Set;

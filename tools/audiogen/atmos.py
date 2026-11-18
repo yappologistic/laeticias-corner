@@ -6,7 +6,7 @@ import numpy as np
 from scipy import signal
 
 import sounds as sd
-from dsp import SR, bandpass, secs, times, wrap
+from dsp import SR, bandpass, circular, secs, smooth_random, times, wrap
 
 CEILING = 7500.0  # nothing above this: weather is soft and wide, never hissy
 
@@ -57,21 +57,8 @@ def loop_tone(freq, rng=None):
     return ph + (rng.uniform(0, 2 * np.pi) if rng is not None else 0.0)
 
 
-def slow(n, rng, cutoff):
-    """Periodic, slowly wandering curve with zero mean and unit deviation. Unlike
-    dsp.smooth_random (whose noise clamps frequencies below 1 Hz, so curves slower than
-    about 0.3 Hz come out flat), this one really wanders at rates under a hertz."""
-    f = np.fft.rfftfreq(n, 1 / SR)
-    g = np.exp(-((f / cutoff) ** 2))
-    g[0] = 0
-    g[1] = max(g[1], 1e-3)  # at least one slow cycle per loop, however low the cutoff
-    x = np.fft.irfft((rng.standard_normal(len(f)) + 1j * rng.standard_normal(len(f))) * g, n)
-    return x / (np.std(x) + 1e-12)
-
-
-def swell(n, rng, rate, depth, floor=0.1):
-    """A periodic slow level curve around 1 (showers thickening, waves of cicadas)."""
-    return np.clip(1 + depth * slow(n, rng, rate), floor, None)
+slow = smooth_random  # periodic slow curves (dsp: on the true frequencies)
+swell = sd.swell  # a periodic slow level curve around 1 (showers thickening, waves of cicadas)
 
 
 def gusts(n, rng, rate, depth, floor=0.12, flutter=0.0):
@@ -109,6 +96,39 @@ def resonant_burst(rng, dur, freq, q, decay, lo=60.0, hi=6000.0):
 
 
 
+def _biquad(kind, f, gain_db, q):
+    """RBJ cookbook peaking or shelving biquad as one SOS row."""
+    a_ = 10 ** (gain_db / 40)
+    w = 2 * np.pi * f / SR
+    cw, alpha = np.cos(w), np.sin(w) / (2 * q)
+    if kind == "peak":
+        b = [1 + alpha * a_, -2 * cw, 1 - alpha * a_]
+        a = [1 + alpha / a_, -2 * cw, 1 - alpha / a_]
+    else:  # "high" or "low" shelf, slope 1
+        sq = 2 * np.sqrt(a_) * alpha
+        sign = 1 if kind == "high" else -1
+        b = [a_ * ((a_ + 1) + sign * (a_ - 1) * cw + sq), -2 * sign * a_ * ((a_ - 1) + sign * (a_ + 1) * cw),
+             a_ * ((a_ + 1) + sign * (a_ - 1) * cw - sq)]
+        a = [(a_ + 1) - sign * (a_ - 1) * cw + sq, 2 * sign * ((a_ - 1) - sign * (a_ + 1) * cw),
+             (a_ + 1) - sign * (a_ - 1) * cw - sq]
+    return np.concatenate([np.array(b) / a[0], np.array(a) / a[0]])
+
+
+def eq(x, bands, loop=True):
+    """Gentle tone shaping: `bands` of (kind, Hz, dB, q) with kind "peak", "high" or "low"
+    (shelves); run circularly on loops so the seam stays continuous."""
+    sos = np.array([_biquad(*b) for b in bands])
+    if not loop:
+        return signal.sosfilt(sos, x, axis=0)
+    return circular(lambda y: signal.sosfilt(sos, y, axis=0), x)
+
+
+# Broadband water (rain, surf, rapids) synthesised under the 6.5 kHz ceiling piles its energy
+# into 2-5 kHz, where a long bed tires the ear: a wide presence dip puts it back near the
+# share real recordings have (about a quarter of the energy).
+WATER_EQ = (("peak", 3300.0, -4.0, 0.7),)
+
+
 def tame(x, top, loop):
     """A steep (8th-order) low-pass over the finished sound, so nothing reaches the harsh
     band above 8 kHz, and a 20 Hz high-pass against the DC that bubbles and thuds carry;
@@ -117,8 +137,7 @@ def tame(x, top, loop):
                           signal.butter(2, 20.0, "highpass", fs=SR, output="sos")])
     if not loop:
         return signal.sosfilt(sos, x, axis=0)
-    n = len(x)
-    return signal.sosfilt(sos, np.concatenate([x, x]), axis=0)[n:]
+    return circular(lambda y: signal.sosfilt(sos, y, axis=0), x)
 
 
 def entry(kind, render, lufs, purpose, gain=1.0, when="always", where=None, quality=0,

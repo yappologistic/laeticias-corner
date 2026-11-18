@@ -334,29 +334,48 @@ int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& 
             cases.push_back(c);
         }
     } else {
-        // Each city at its busiest view on an ordinary day and on its festival (the builders'
-        // day reports: Rome day 9 and the Parilia day 1, Athens day 5 and the Panathenaia day
-        // 4... as its own season reads them).
+        // Each city at its busiest view on an ordinary day and on its festival, on the calendar
+        // (L-110: once a festival's label ran another day, searched in one season and measured
+        // in another): the Parilia day 1, the Panathenaia day 4, Parsa's audience day 1; an
+        // ordinary day is the first of the year with no festival of the city's on.
         struct City {
             const char* region;
-            int day;
+            const char* festival; // null: an ordinary day
             const char* what;
         };
+        const auto dayOf = [&](int r, const char* festival) {
+            const LifeRegion& reg = w.data.regions[static_cast<std::size_t>(r)];
+            const int year = w.data.seasonDays * static_cast<int>(w.data.seasons.size());
+            for (int day = 0; day < year; ++day) {
+                bool any = false;
+                for (std::size_t f = 0; f < reg.festivals.size(); ++f)
+                    if (s.city->festivalOn(r, static_cast<int>(f), day, -1)) {
+                        if (festival != nullptr && reg.festivals[f].id == festival) return day;
+                        any = true;
+                    }
+                if (festival == nullptr && !any) return day;
+            }
+            return -1;
+        };
         for (const City& c :
-             {City{"rome", 9, "ordinary day"}, City{"rome", 1, "Parilia"},
-              City{"athens", 5, "ordinary day"}, City{"athens", 1, "Panathenaia"},
-              City{"parsa", 2, "spring audience"}, City{"parsa", 3, "ration day"}}) {
+             {City{"rome", nullptr, "ordinary day"}, City{"rome", "parilia", "Parilia"},
+              City{"athens", nullptr, "ordinary day"}, City{"athens", "panathenaia", "Panathenaia"},
+              City{"parsa", "spring_audience", "spring audience"},
+              City{"parsa", nullptr, "ordinary day"}}) {
             const int r = w.data.findRegion(c.region);
-            const int season = r >= 0 && w.data.regions[static_cast<std::size_t>(r)].season >= 0
-                                   ? w.data.regions[static_cast<std::size_t>(r)].season
-                                   : 0;
-            const Busiest b = busiestView(s, c.region, c.day, season);
+            const int day = r >= 0 ? dayOf(r, c.festival) : -1;
+            if (day < 0) {
+                (void)std::fprintf(stderr, "life bench: no day for %s %s\n", c.region, c.what);
+                return 1;
+            }
+            const int season = s.city->seasonFor(day, -1);
+            const Busiest b = busiestView(s, c.region, day, season);
             char name[96];
             (void)std::snprintf(name, sizeof name, "%s %s, busiest %02d:%02d (%.0f)", c.region,
                                 c.what, static_cast<int>(b.hour),
                                 static_cast<int>(b.hour * 60) % 60,
                                 static_cast<double>(b.expected));
-            cases.emplace_back(name, b.focus, c.day, b.hour);
+            cases.emplace_back(name, b.focus, day, b.hour);
         }
         CaseSpec sweep("rome, a fast pan across", {40, 1080}, 9, 10.5, CaseSpec::Sweep);
         sweep.stops = {{40, 1080}, {170, 1100}};
@@ -433,6 +452,8 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
     TilePos at = places[0];
     std::vector<DrawActor> buf(2048);
     double worst = 0;
+    long inPlace = 0; // actor-seconds drawn walking on the spot, or stuck past the watchdog
+    const long unstuck0 = city.stats().unstuck;
     for (long k = 0; k < steps; ++k) {
         // The clock at play speed; a calendar day every 50 s so the soak crosses the seasons.
         c.t += tuning::kStepSeconds / tuning::kDayLengthSeconds;
@@ -458,6 +479,7 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
         sim.add(ms);
         worst = std::max(worst, ms);
         if (k % 4 == 0) (void)city.gather(city.view(), 0.5f, buf);
+        if (k % 60 == 30) inPlace += city.stats().marching + city.stats().lost;
         if (k == steps / 4) {
             quarterRss = rssMb();
             quarterBytes = city.memoryBytes();
@@ -470,7 +492,14 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
         "rss %.1f MB after a quarter, %.1f MB at the end; life memory %.2f -> %.2f MB\n",
         seconds, c.day, sim.avg(), sim.pct(0.99), worst, city.stats().live, quarterRss, endRss,
         static_cast<double>(quarterBytes) / 1e6, static_cast<double>(endBytes) / 1e6);
+    (void)std::printf("life soak: %ld actor-seconds walking in place or stuck, %ld given up by "
+                      "the watchdog\n",
+                      inPlace, city.stats().unstuck - unstuck0);
     int rc = 0;
+    if (inPlace > 0) {
+        (void)std::printf("life soak: FAIL people walking in place\n");
+        rc = 3;
+    }
     if (endRss > quarterRss + tuning::kSoakGrowthMiB || endBytes > quarterBytes) {
         (void)std::printf("life soak: FAIL memory grew\n");
         rc = 3;

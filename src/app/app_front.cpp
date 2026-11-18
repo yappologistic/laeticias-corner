@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
+#include <utility>
 
 namespace lc {
 namespace {
@@ -35,6 +36,7 @@ void App::resetWorld() {
     world_ = World(cat_);
     editor_ = Editor(tuning::kUndoSteps);
     clock_ = Clock{};
+    ++clocks_; // its jump count starts again: city life must still see a jump
     actors_ = Actors(cat_, seed_);
     for (std::size_t v = 0; v < gates_.size(); ++v) gates_[v] = {!cat_.visitors[v].rare, 0};
     weather_ = Weather(cat_, seed_);
@@ -53,6 +55,10 @@ void App::resetWorld() {
     fallCount_ = 0;
     fallRevision_ = ~0ULL;
     rimTiles_.clear();
+    homeSynced_ = ~0ULL; // the new world's corner is copied to the map whatever its revision
+    rimTerrain_.clear();
+    cornerToasts_.clear(); // the last world's news is not this one's
+    follow_.reset();
     progress_ = Progress(cat_);
     progression_ = Progression(cat_);
     evalRevision_ = ~0ULL;
@@ -559,14 +565,18 @@ void App::updateTour(float dt) {
         ++tourStep_;
         tourT_ = 0;
         if (tourStep_ == kWish) {
-            // Its wish is offered now, unless it was granted already (then the step is skipped).
+            // Its wish is offered now, unless it was granted already or the tray is full (L-005:
+            // a replayed tour once opened a fourth); then the step is skipped.
             hud_.holdToasts(false);
-            if (wish < 0 ||
-                progress_.wishes[static_cast<std::size_t>(wish)].state == WishState::Done) {
+            const WishState state =
+                wish < 0 ? WishState::Done : progress_.wishes[static_cast<std::size_t>(wish)].state;
+            if (state == WishState::Done ||
+                (state == WishState::Waiting &&
+                 std::cmp_greater_equal(progress_.open.size(), tuning::kMaxOpenWishes))) {
                 ++tourStep_;
-            } else if (progress_.wishes[static_cast<std::size_t>(wish)].state ==
-                       WishState::Waiting) {
+            } else if (state == WishState::Waiting) {
                 progress_.wishes[static_cast<std::size_t>(wish)].state = WishState::Open;
+                progress_.wishes[static_cast<std::size_t>(wish)].snoozedUntil = -1;
                 progress_.open.push_back(wish);
                 progression_.evaluate(world_, progress_, facts(), played_);
                 play(sfx::kWish);

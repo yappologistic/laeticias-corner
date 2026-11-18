@@ -7,6 +7,7 @@
 #include "life/city.hpp"
 
 #include <string>
+#include <vector>
 
 namespace lc::life {
 
@@ -19,5 +20,11 @@ namespace lc::life {
 // counts), live actors (kind, role, district, position, level, step, goods, flags), running
 // events with their routes, chain stocks in the area. Deterministic text for byte comparison.
 [[nodiscard]] std::string lifeDump(const CityLife& life, std::string_view label);
+
+// Where the walk data and the life disagree, one line each with its grid tile: road edges
+// walkers cannot use (a course over unwalkable ground, or a step no walker can make: left out of
+// walking), and slot spots on unwalkable ground or where the region's walkers never reach (no one
+// is sent there). For the worldgen and art agents; the engine routes around every one.
+[[nodiscard]] std::vector<std::string> walkProblems(const LifeWorld& w);
 
 } // namespace lc::life

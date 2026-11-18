@@ -250,11 +250,21 @@ bool ChainRun::hoursOn(long t) const {
     return inHours(chain_->from, chain_->to, hourOf(t));
 }
 
-bool ChainRun::tick(long t, bool on) {
+bool ChainRun::on(long t, int season, int month) const {
+    if (chain_->seasons != 0 && (chain_->seasons & (1u << season)) == 0) return false;
+    return monthIn(chain_->months, month) && hoursOn(t);
+}
+
+double ChainRun::pace(int month) const {
+    const auto m = static_cast<std::size_t>(month);
+    return m < chain_->pace.size() ? static_cast<double>(chain_->pace[m]) : 1.0;
+}
+
+bool ChainRun::tick(long t, bool on, double pace) {
     constexpr int kCap = tl::kChainCap;
     if (t == kDay) resetStats(); // lifesim judges the chain once it has filled
     std::ranges::fill(doneNow_, 0);
-    const double period = chain_->period;
+    const double period = chain_->period / pace;
     for (std::size_t k = 0; k < workers_.size(); ++k) {
         const auto i = static_cast<std::size_t>(workerStage_[k]);
         const ChainStage& s = chain_->stages[i];
@@ -436,18 +446,20 @@ void Chains::dayStart(std::size_t i, long day) {
     } else {
         r.restore(days.back());
     }
+    // A chain whose days differ through the year (seasons, months, pace) repeats only by whole
+    // years: two equal mornings in its closed season say nothing about its open one.
+    const Chain& c = r.chain();
+    const long year = seasonDays * seasons;
+    const long step = c.seasons != 0 || c.months != 0 || !c.pace.empty() ? year : 1;
     while (days.size() <= d) {
         const long k = static_cast<long>(days.size()) - 1;
         const auto season = static_cast<int>((k / seasonDays) % seasons);
-        const Chain& c = r.chain();
-        for (long t = k * kDay; t < (k + 1) * kDay; ++t) {
-            bool on = r.hoursOn(t);
-            if (c.seasons != 0 && (c.seasons & (1u << season)) == 0) on = false;
-            r.tick(t, on);
-        }
+        const int month = data_->monthOf(static_cast<int>(k));
+        for (long t = k * kDay; t < (k + 1) * kDay; ++t)
+            r.tick(t, r.on(t, season, month), r.pace(month));
         days.push_back(r.snapshot());
         const long n = static_cast<long>(days.size()) - 1;
-        for (long lag = 1; lag <= 12 && lag <= n; ++lag)
+        for (long lag = step; lag <= std::max(12L, year) && lag <= n; lag += step)
             if (days[static_cast<std::size_t>(n)] == days[static_cast<std::size_t>(n - lag)]) {
                 cycleStart_[i] = static_cast<int>(n - lag);
                 cycleLen_[i] = static_cast<int>(lag);

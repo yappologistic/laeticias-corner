@@ -34,7 +34,7 @@ from plan import world_plan as P
 from . import raster, rng
 from .catalog import Catalog
 from .coords import COLS, ROWS
-from .dsl import Layout
+from .dsl import PIERS, Layout
 from .graph import Graph
 from .layer import NO_GROUND, TRANSPARENT, PlanLayer
 
@@ -163,6 +163,7 @@ class Anchors:
     water: np.ndarray           # that edge tile is sea (+1), land (0), unknown (-1)
     terrain: list = field(default_factory=list)   # (c, r, terrain id) of edge tiles' outsides
     rects: list = field(default_factory=list)
+    piers: list = field(default_factory=list)     # (c, r) of the layers' jetties and moles
 
     def inside(self) -> np.ndarray:
         return self.dist == 0
@@ -178,6 +179,8 @@ def make_anchors(layers: dict[str, PlanLayer], cat: Catalog) -> Anchors:
         pl = layers[name]
         c0, r0, c1, r1 = pl.c0, pl.r0, pl.c0 + pl.w - 1, pl.r0 + pl.h - 1
         A.rects.append((name, (c0, r0, c1, r1)))
+        A.piers += [(c, r) for it in pl.items if it.id.split(".")[-1] in PIERS
+                    for r in range(it.r, it.r + it.ph) for c in range(it.c, it.c + it.pw)]
         wc0, wr0 = max(c0 - B, 0), max(r0 - B, 0)
         wc1, wr1 = min(c1 + B, COLS - 1), min(r1 + B, ROWS - 1)
         cc, rr = CC[wr0:wr1 + 1, wc0:wc1 + 1], RR[wr0:wr1 + 1, wc0:wc1 + 1]
@@ -1065,7 +1068,47 @@ def build_base(cat: Catalog, layers: dict[str, PlanLayer] | None = None) -> tupl
     routes.lanes(W, g)
     country.place(W)
     districts(W)
+    drop_unreached_kit(W, g, layers or {})
     W.stats.pop("_courses")
     W.stats["land_tiles"] = int(land.sum())
     W.stats["items"] = sum(1 for p in L.items if not p.removed)
     return L, g, W.stats
+
+
+# Base kit the graph names (relay stations: their nodes), and kit that is the way itself, stays
+# whatever the walk check says; the validators report it instead.
+KEEP_KIT = ("world.royal_station", "rome.mutatio")
+
+
+def drop_unreached_kit(W: World, g: Graph, layers: dict[str, PlanLayer]) -> None:
+    """Take out base kit (folds, wells, shrines, graves, towers) that walkers cannot use by the
+    engine's own walk model over the composed world: a walk tile or slot spot no graph reaches
+    (W-W5, W-L2), or a spot another item covers (W-L1). Placement checks reach by its own
+    simpler rules; this is the last word, so the base never ships a sealed fold."""
+    from . import compiler, compose, walkable
+    L, cat = W.L, W.cat
+    removed: dict[str, int] = {}
+    for _ in range(4):
+        pl, _issues = compiler.compile_layer(L)
+        seq = [(n, pl if n == "base" else layers[n]) for n, _r, _g in P.LAYERS
+               if n == "base" or n in layers]
+        world = compose.compose(seq)
+        by_pos = {(p.id, p.c, p.r): p for p in L.items if not p.removed}
+        drop = set()
+        for f in walkable.scan(world, cat, {"base": g}):
+            if f.code not in ("W-W5", "W-L1", "W-L2") or f.index < 0:
+                continue
+            it = world.items[f.index]
+            d = cat.items.get(it.id)
+            if it.layer != "base" or d is None or it.id in KEEP_KIT or d.rise or d.walkable \
+                    or d.landmark:
+                continue
+            p = by_pos.get((it.id, it.c, it.r))
+            if p is not None:
+                drop.add(p.index)
+        if not drop:
+            break
+        for i in sorted(drop):
+            L._remove(L.items[i])
+            removed[L.items[i].id] = removed.get(L.items[i].id, 0) + 1
+    W.stats["unwalkable_removed"] = dict(sorted(removed.items()))

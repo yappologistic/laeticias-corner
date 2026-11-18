@@ -45,6 +45,7 @@ life::LifeClock App::cityClock() const {
     c.t = clock_.time();
     c.season = season();
     c.rain = rainHere() >= tuning::kRainThreshold;
+    c.epoch = (static_cast<std::int64_t>(clocks_) << 32) | clock_.jumps();
     return c;
 }
 
@@ -92,6 +93,13 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         return bad == 0 ? std::nullopt
                         : std::optional(std::format("{} people off the walkable ground", bad));
     }
+    if (what == "moving") {
+        // Nobody drawn walking on the spot, nobody going nowhere past the watchdog.
+        const life::LifeStats& st = c.stats();
+        if (st.marching == 0 && st.lost == 0) return std::nullopt;
+        return std::format("{} walking in place, {} going nowhere past the watchdog", st.marching,
+                           st.lost);
+    }
     if (what == "slots") {
         int over = 0;
         c.forEachReservation([&](int, int count, int cap) { over += count > cap ? 1 : 0; });
@@ -121,8 +129,8 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         return std::format("expected city district {} in {}..{} but found {}", a[2], a[3], a[4],
                            live);
     }
-    if (what == "drawn")
-        return range(worldView_ ? static_cast<int>(worldView_->actorsDrawn().size()) : 0, 2);
+    if (what == "drawn") // the sprites put last frame, not the actors gathered round the view
+        return range(worldView_ ? worldView_->stats().actorsDrawn : 0, 2);
     if (what == "people") return range(citySound_ ? citySound_->people() : 0, 2);
     if (what == "sound" && a.size() >= 5) {
         // expect city sound FILE MIN MAX: the gain (x100) its loop is set to now.

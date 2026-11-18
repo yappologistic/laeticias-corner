@@ -285,6 +285,7 @@ bool App::away() const {
 
 void App::travelTo(int region) {
     if (!loaded_ || travel_.region >= 0) return;
+    follow_.reset(); // the journey takes the camera away from whoever it followed
     travel_ = {region, 0, false};
     map_.open(false);
 }
@@ -356,6 +357,7 @@ void App::updateWorld(float dt) {
     if (away()) {
         if (tool_ != Tool::None) setTool(Tool::None, -1);
         drawerOpen_ = false;
+        pipette_ = false;
     }
 }
 
@@ -885,7 +887,11 @@ void App::followWorldWeather() {
     // One weather for the whole map: the home takes the world field's cells over its land, and
     // the view's field is what the renderer draws everywhere else.
     const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
-    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow};
+    // The month of the season's day (a kept season keeps its own months), for each region's
+    // snow by its climate.
+    const CalendarDay cd = calendarDay(clock_.day(), seasonPin_, cat_.seasonDays,
+                                       static_cast<int>(cat_.months.size()));
+    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow, cd.month, clock_.day()};
     const TileRect h = loaded_->file.home.rect;
     const int m = tuning::kWorldWeatherMargin;
     homeWeather_->update(played_, weather_.wind(), sc, {h.x0 - m, h.y0 - m, h.x1 + m, h.y1 + m},

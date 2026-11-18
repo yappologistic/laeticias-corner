@@ -413,6 +413,7 @@ private:
     World world_;
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
+    std::uint32_t clocks_ = 0; // clocks made this session (one per world opened)
     std::unique_ptr<life::LifeSession> city_;
     std::unique_ptr<worldview::CitySound> citySound_; // what the city sounds like on screen
     std::vector<int> cityLoops_;                      // its loops and effects in the mixer
@@ -465,7 +466,7 @@ private:
     struct NookLabel {
         int nook;
         Vec2 world; // above its anchor
-        float start;
+        double start;
     };
     std::vector<NookLabel> nookLabels_;
     mutable std::vector<FloatLabel> floatLabels_;
@@ -475,7 +476,7 @@ private:
     std::uint64_t hoverNookRevision_ = ~0ULL;
     bool loading_ = true;      // the first evaluation finds what was already there, quietly
     std::string hoverTipText_; // storage for formatted world tooltips
-    float edgeChipUntil_ = 0;
+    double edgeChipUntil_ = 0;
     double growthAcc_ = 0;
     PhraseWalker notes_;
     double lastNote_ = -1;
@@ -508,7 +509,7 @@ private:
     float savedZoom_ = 1;
     double thumbTimer_ = 0;
     fs::path legacyToRetire_; // an old save to rename once its world and thumbnail are written
-    float retireAt_ = 0;      // when to try that again after a failed write
+    double retireAt_ = 0;     // when to try that again after a failed write
     bool welcomePending_ = false;
     Camera camera_;
     Camera view_;                   // the camera as this frame draws it (between steps)
@@ -691,10 +692,10 @@ private:
     bool capturePending_ = false;
     std::string_view warning_;
     float warnTime_ = 0;
-    float lastPaintSound_ = -1;
+    double lastPaintSound_ = -1;
 
     // Time and saving
-    float simTime_ = 0;
+    double simTime_ = 0;
     AutosaveClock autosave_;
     FileWriter writer_;
     bool saveFailing_ = false;

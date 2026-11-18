@@ -1875,10 +1875,9 @@ void Actors::beginErrand(const ActorEnv& env, int i) {
     a.flags |= kErrand;
 }
 
-bool Actors::interrupts(const ActorEnv& env, int i, float dt) {
+bool Actors::interrupts(const ActorEnv& env, int i) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
     const ActorKind& k = cat_->kinds[a.kind];
-    (void)dt;
     const bool rain = rainAt(env, a.pos);
     if (rain) {
         a.rainHold = static_cast<std::uint8_t>(std::min(255, a.rainHold + bucketTicks_));
@@ -2200,7 +2199,7 @@ void Actors::tick(const ActorEnv& env, int i, float dt) {
         follow(env, i, dt);
         return;
     }
-    if (thinks && interrupts(env, i, dt)) return;
+    if (thinks && interrupts(env, i)) return;
     // Watchers turn to the pointer while sitting or idle.
     if (k.watches && look_ && a.state == ActorState::Act && !asleep(a) &&
         dist(a.pos, centre(*look_)) <= tuning::kWatchReach)
@@ -2409,10 +2408,17 @@ void Actors::populate(const ActorEnv& env) {
     map_ = env.world;
     for (std::size_t i = 0; i < pool_.size(); ++i)
         if ((pool_[i].flags & kAlive) != 0) release(static_cast<int>(i));
+    // Every array kept per actor (see claim) starts again with the pool.
     pool_.clear();
     paths_.clear();
     errands_.clear();
     dests_.clear();
+    visited_.clear();
+    stuck_.clear();
+    lineBan_.clear();
+    inside_.clear();
+    leaveAge_.clear();
+    lineAhead_.clear();
     reserved_.clear();
     held_.clear();
     freed_.clear();

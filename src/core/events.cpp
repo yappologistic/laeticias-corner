@@ -54,8 +54,7 @@ void EventScheduler::start(int e, double now, Vec2 at) {
     fired_.push_back({e, at, false});
 }
 
-void EventScheduler::update(const EventEnv& env, float dt) {
-    (void)dt;
+void EventScheduler::update(const EventEnv& env) {
     const double now = env.now;
     const bool rain = env.facts.raining;
     if (rain && !wasRaining_) rainSince_ = now;

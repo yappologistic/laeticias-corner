@@ -21,7 +21,7 @@
     {"a": "west_bridge", "b": "east_bridge", "kind": "bridge"}
   ],
   "lanes": [
-    {"id": "quffa_ferry", "kind": "river", "points": [[178, 265], [178, 262]], "ports": [{"id": "start", "at": 0}, {"id": "west_landing", "at": 0}, {"id": "east_landing", "at": 1}, {"id": "end", "at": 1}]},
+    {"id": "quffa_ferry", "kind": "river", "points": [[178, 264], [178, 263]], "ports": [{"id": "start", "at": 0}, {"id": "west_landing", "at": 0}, {"id": "east_landing", "at": 1}, {"id": "end", "at": 1}]},
     {"id": "euphrates_boats", "kind": "sea", "points": [[183, 263], [185, 263], [187, 264]], "ports": [{"id": "landing", "at": 0}, {"id": "start", "at": 0}, {"id": "crossing", "at": 2}, {"id": "end", "at": 2}]}
   ]
 }

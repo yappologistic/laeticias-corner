@@ -398,15 +398,26 @@ inline constexpr float kFadeSeconds = 0.5f;    // fading in from a doorway or ou
 inline constexpr int kLiveMargin = 12;         // tiles around the view whose chunks are live
 inline constexpr float kEaseSeconds = 0.35f;   // a walker reaches its pace (or stops) over this
 inline constexpr float kWanderPace = 0.7f;     // share of its pace a lingering walker strolls at
-inline constexpr float kBrakeTiles = 0.6f;     // it slows over the last of its way
-inline constexpr float kLateral = 0.3f;        // tiles either side of the way's middle it keeps to
-inline constexpr float kLateralRamp = 1.5f;    // tiles over which it moves off the middle and back
-inline constexpr float kSmoothReach = 1.0f;    // tiles of route averaged either side (no zigzags)
+inline constexpr float kBrakeTiles = 0.4f;     // it slows over the last of its way ...
+inline constexpr float kBrakeFloor = 0.5f;  // ... to no less than this share of its pace (no crawl)
+inline constexpr float kLateral = 0.3f;     // tiles either side of the way's middle it keeps to
+inline constexpr float kLateralRamp = 1.5f; // tiles over which it moves off the middle and back
+inline constexpr float kSmoothReach = 1.0f; // tiles of route averaged either side (no zigzags)
 inline constexpr float kCatchUp =
     1.25f; // a walker's drawn point moves at most this much over its pace
-inline constexpr float kTurnRate = 7.0f;  // radians/s the heading turns at most
-inline constexpr float kTurnHold = 0.17f; // radians past a sector's edge before a sprite turns
-inline constexpr float kRate0 = 0.85f;    // animation pace range, per actor
+inline constexpr float kTurnRate = 7.0f; // radians/s the heading turns at most
+// The body drives the drawing: a walk is drawn only while it moves over the ground (above
+// kShownWalk to start, below kShownStop to stop: above the renderer's kActorMoving, so a walk is
+// always phased by distance), and each second tells whether it got anywhere.
+inline constexpr float kShownWalk = 0.12f;     // tiles/s
+inline constexpr float kShownStop = 0.07f;     // tiles/s
+inline constexpr float kShownSmooth = 0.2f;    // seconds the drawn speed follows the body over
+inline constexpr float kProgressWindow = 1.0f; // seconds
+inline constexpr float kStillTiles = 0.15f;    // closer than this to a window's start: standing
+inline constexpr float kStallGiveUp = 4.0f;    // seconds stuck before the step is given up
+inline constexpr float kStallLeave = 12.0f;    // seconds stuck (steps given up) before it leaves
+inline constexpr float kTurnHold = 0.17f;      // radians past a sector's edge before a sprite turns
+inline constexpr float kRate0 = 0.85f;         // animation pace range, per actor
 inline constexpr float kRate1 = 1.15f;
 inline constexpr float kStationDwell = 6.0f;  // seconds a courier stops at a relay station
 inline constexpr float kFishingStay = 150.0f; // seconds a fishing boat works its ground
@@ -422,12 +433,13 @@ inline constexpr float kIdle0 = 6.0f; // a routine that ran out: idle, then a sh
 inline constexpr float kIdle1 = 14.0f;
 inline constexpr float kIdleWander = 3.0f; // tiles
 inline constexpr int kWanderTries = 6;
+inline constexpr float kWanderHop = 1.5f;    // tiles a lingering walker's walk covers at least
 inline constexpr float kWanderPause = 0.25f; // chance a lingering walker stands a moment instead //
                                              // straight walkable lines tried per wander move
 inline constexpr float kFollowReach = 16.0f; // tiles: whom a `follow` step may follow
 inline constexpr double kGameSecondsPerReal = 120.0; // a game hour is 30 real seconds
 inline constexpr float kDefaultEventSeconds = 60.0f;
-inline constexpr int kMaxRunningEvents = 24;      // world-wide
+inline constexpr int kMaxRunningEvents = 128;     // world-wide (the plans need about 70 at once)
 inline constexpr int kEventTrail = 2048;          // route tiles kept per running event
 inline constexpr double kReactiveCooldown = 90.0; // seconds, per region
 inline constexpr double kEventStartGap = 20.0;    // seconds between starts in the active area

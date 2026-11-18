@@ -139,7 +139,8 @@ void MapScreen::draw(Painter& p, const MapModel& m) const {
         h += f.lineHeight(Face::Body);
     }
     Box b{c.x - w * 0.5f - tp, c.y - theme::kMapReach * s - h - 2 * tp, w + 2 * tp, h + 2 * tp};
-    b.x = std::clamp(b.x, frame_.x, frame_.x + frame_.w - b.w);
+    // Kept inside the map's frame; a tip wider than the frame starts at its left edge.
+    b.x = std::max(frame_.x, std::min(b.x, frame_.x + frame_.w - b.w));
     if (b.y < frame_.y) b.y = c.y + theme::kMapReach * s;
     p.glass(b, theme::kTipRadius * s, a, theme::kGlassTip);
     p.endGlass();

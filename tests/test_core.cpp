@@ -12,6 +12,8 @@
 
 #include <doctest.h>
 
+#include <array>
+
 #include <filesystem>
 #include <fstream>
 
@@ -514,13 +516,13 @@ TEST_CASE("tiles without ground shape the land: refused for edits, edges run int
 TEST_CASE("autosave fires under continuous editing, after quiet moments, and retries later") {
     const double step = tuning::kStepSeconds;
     AutosaveClock a;
-    CHECK_FALSE(a.due(step, false)); // nothing to save
+    CHECK_FALSE(a.due(step, false, false)); // nothing to save
     // An edit every 50 frames never leaves a quiet moment, yet a save comes within the maximum.
     double t = 0;
     bool fired = false;
     for (int f = 0; f < 60 * 60 && !fired; ++f) {
         if (f % 50 == 0) a.changed();
-        fired = a.due(step, false);
+        fired = a.due(step, false, false);
         t += step;
     }
     CHECK(fired);
@@ -530,18 +532,40 @@ TEST_CASE("autosave fires under continuous editing, after quiet moments, and ret
     // After one change, a quiet moment triggers it, but not during a drag.
     a.changed();
     int frames = 0;
-    while (!a.due(step, true) && frames < 60 * 30) ++frames;
+    while (!a.due(step, true, false) && frames < 60 * 30) ++frames;
     CHECK(frames * step >= tuning::kAutosaveMaxDelay - step * 2); // only the deadline, mid-drag
     a.saved();
     a.changed();
     frames = 0;
-    while (!a.due(step, false)) ++frames;
+    while (!a.due(step, false, false)) ++frames;
     CHECK(frames * step == doctest::Approx(tuning::kAutosaveDelay).epsilon(0.05));
     // A failure waits before the next attempt.
     a.failed();
     frames = 0;
-    while (!a.due(step, false)) ++frames;
+    while (!a.due(step, false, false)) ++frames;
     CHECK(frames * step == doctest::Approx(tuning::kSaveRetrySeconds).epsilon(0.02));
+    // A piece held with Move blocks every save, even an overdue one (L-004); put down, it saves.
+    a.saved();
+    a.changed();
+    bool held = false;
+    for (int f = 0; f < 60 * 60; ++f) held = held || a.due(step, false, true);
+    CHECK_FALSE(held);
+    CHECK(a.due(step, false, false));
+}
+
+TEST_CASE("the calendar day: one answer to the season and month, kept seasons included") {
+    // Four seasons of three days, twelve months (day n: month n mod 12).
+    const std::array<int, 4> days{3, 3, 3, 3};
+    CHECK(calendarDay(0, -1, days, 12).season == 0);
+    CHECK(calendarDay(0, -1, days, 12).month == 0);
+    CHECK(calendarDay(7, -1, days, 12).season == 2);
+    CHECK(calendarDay(7, -1, days, 12).seasonDay == 1);
+    CHECK(calendarDay(7, -1, days, 12).month == 7);
+    CHECK(calendarDay(19, -1, days, 12).month == 7); // a year on
+    // A kept season: that season's month for the day of the season.
+    CHECK(calendarDay(10, 1, days, 12).season == 1);
+    CHECK(calendarDay(10, 1, days, 12).month == 4);
+    CHECK(calendarDay(10, 1, days, 0).month == -1); // no calendar
 }
 
 TEST_CASE("the calendar turns at midnight while the clock runs, and in play time while pinned") {

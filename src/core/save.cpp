@@ -258,6 +258,9 @@ void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
     if (root.contains("base") &&
         (!root["base"].is_string() || root["base"].get<std::string>() != kSaveBaseBlank))
         throw std::runtime_error("unknown base");
+    // Items are listed under the chunk of their origin, so every chunk's terrain is read before
+    // any item: a water piece across a chunk line must find the water of the later chunk.
+    std::vector<const json*> items;
     for (const auto& c : listField(root, "chunks", in.warn)) {
         if (!c.is_object() || !c.contains("x") || !c.contains("y") || !c["x"].is_number_integer() ||
             !c["y"].is_number_integer()) {
@@ -266,12 +269,13 @@ void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
         }
         const long long cx = c["x"].get<long long>();
         const long long cy = c["y"].get<long long>();
-        const long long x0 = cx * chunk;
-        const long long y0 = cy * chunk;
-        if (cx < 0 || cy < 0 || x0 >= fileW || y0 >= fileH) {
+        if (cx < 0 || cy < 0 || cx >= fileW || cy >= fileH || cx * chunk >= fileW ||
+            cy * chunk >= fileH) {
             in.warn.add("chunk outside the map skipped");
             continue;
         }
+        const long long x0 = cx * chunk;
+        const long long y0 = cy * chunk;
         const int cw = static_cast<int>(std::min<long long>(chunk, fileW - x0));
         const int chH = static_cast<int>(std::min<long long>(chunk, fileH - y0));
         if (c.contains("terrain")) {
@@ -291,8 +295,9 @@ void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
             if (filled != total) in.warn.add("chunk terrain of the wrong length");
         }
         if (c.contains("items") && c["items"].is_array())
-            for (const auto& j : c["items"]) in.item(j);
+            for (const auto& j : c["items"]) items.push_back(&j);
     }
+    for (const json* j : items) in.item(*j);
 }
 
 void readVersion3(const json& root, Loader& in) {
@@ -733,6 +738,17 @@ std::string worldSlug(std::string_view name, std::span<const std::string> taken)
 std::string utcNow() {
     const auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
     return std::format("{:%Y-%m-%dT%H:%M:%SZ}", now);
+}
+
+std::string postcardStem(std::string_view slug, std::time_t when) {
+    std::tm t{};
+#if defined(_WIN32)
+    (void)localtime_s(&t, &when);
+#else
+    (void)localtime_r(&when, &t);
+#endif
+    return std::format("{}-{:04}{:02}{:02}-{:02}{:02}{:02}", slug, t.tm_year + 1900, t.tm_mon + 1,
+                       t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
 }
 
 Profile parseProfile(std::string_view text) {

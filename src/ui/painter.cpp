@@ -275,6 +275,12 @@ int breakLines(const Font& font, Face face, std::string_view s, float width, int
 
 } // namespace
 
+void dropLastCharacter(std::string_view& s) {
+    while (!s.empty() && (static_cast<unsigned char>(s.back()) & 0xC0u) == 0x80u)
+        s.remove_suffix(1); // continuation bytes
+    if (!s.empty()) s.remove_suffix(1);
+}
+
 std::string_view elide(const Font& font, Face face, std::string_view s, float width,
                        std::string& out) {
     if (font.measure(face, s) <= width) return s;
@@ -307,7 +313,7 @@ float Painter::wrapped(Face face, std::string_view s, float x, float top, float 
                 // Truncate the final visible line with an ellipsis.
                 while (!line.empty() &&
                        font_.measure(face, line) + font_.measure(face, "…") > width)
-                    line.remove_suffix(1);
+                    dropLastCharacter(line);
                 const float w = font_.draw(batch_, face, line, x, y, color);
                 font_.draw(batch_, face, "…", x + w, y, color);
             } else {

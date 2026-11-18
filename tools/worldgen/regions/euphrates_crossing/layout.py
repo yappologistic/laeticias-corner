@@ -31,7 +31,7 @@ def build(L: Layout) -> None:
         L.place("world.pontoon", at=(c, 11))
     L.place("world.jetty", at=(6, 8))
     L.place("world.jetty", at=(9, 8))
-    L.lane("quffa_ferry", [(6, 8), (9, 8)], kind="river",
+    L.lane("quffa_ferry", [(7, 8), (8, 8)], kind="river",   # between the stages' heads
            ports={"start": 0, "end": 1, "west_landing": 0, "east_landing": 1})
     WP.harbour_lane(L, "euphrates_boats", [(8, 13), (8, 15)], port="crossing", home="landing")
     L.place("world.royal_station", rect=(11, 3, 14, 6), face="south", name="euphrates_station")
