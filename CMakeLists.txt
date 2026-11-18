@@ -80,3 +80,31 @@ if(LC_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
+
+# --- World data runtime (src/world/) -------------------------------------------------------------
+# Loads, validates and serves the prebuilt world (layers, graphs, regions, set catalogs, atlas
+# manifests, geometry). Pure logic like lc_core: no SDL.
+add_library(lc_world STATIC
+  src/world/atlas_pages.cpp
+  src/world/content.cpp
+  src/world/digest.cpp
+  src/world/geometry.cpp
+  src/world/graph_file.cpp
+  src/world/json_util.cpp
+  src/world/layer_file.cpp
+  src/world/loader.cpp
+  src/world/region_file.cpp
+  src/world/road_graph.cpp
+  src/world/set_catalog.cpp
+  src/world/world_file.cpp
+  src/world/world_map.cpp
+)
+target_link_libraries(lc_world PUBLIC lc_core)
+lc_project_target(lc_world)
+
+# Debugging aid for world builders and QA: summary, validation, region and tile dumps, digest.
+add_executable(worldinfo src/world/worldinfo_main.cpp)
+target_link_libraries(worldinfo PRIVATE lc_world)
+target_compile_definitions(worldinfo PRIVATE LC_WORLDINFO_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+lc_project_target(worldinfo)
+
