@@ -153,12 +153,17 @@ RUNS = [
     (STAIR, (30, 96), "north", 2, 4, 1, "meton_steps"),
     (STAIR, (70, 94), "south", 1, 9, 1, "nike_steps"),
     (STAIR, (128, 100), "south", 5, 0, 1, "peripatos_east"),
-    (RAMP, (41, 89), "west", 1, 0, 3, "approach_ramp"),
+    # A broad marble flight at the approach's foot (the city's own piece: no plank ramp in the
+    # view of the Propylaia, V15).
+    (STAIR, (41, 89), "west", 1, 0, 3, "approach_steps"),
     (STAIR, (40, 146), "west", 4, 0, 1, "mounychia_steps"),
     (RAMP, (4, 5), "south", 1, 0, 1, "academy_road_ramp"),
     (RAMP, (153, 45), "north", 1, 0, 1, "lyceum_ramp"),
-    # The quarry road: from the road north of the wall up seven ramps to the quarry's lip (7).
-    (RAMP, (104, 3), "west", 7, 0, 2, "quarry_road"),
+    # The quarry road climbs Pentelikon's foot in two legs of three ramps (bible: rise 6 over
+    # 30 tiles): east along r 3..4 to a bend at 3, then east again along r 8..9 to the quarry's
+    # lip (6). The hillside is shaped to the road, so each flight cuts one of its scarps.
+    (RAMP, (111, 3), "west", 3, 0, 2, "quarry_road"),
+    (RAMP, (124, 8), "west", 3, 3, 2, "quarry_road_upper"),
 ]
 STEP = {"west": (-1, 0), "north": (0, -1), "east": (1, 0), "south": (0, 1)}
 SIDE = {"west": (0, 1), "east": (0, 1), "north": (1, 0), "south": (1, 0)}
@@ -205,13 +210,15 @@ def _levels(L: Layout, cc, rr, noise):
     plat = _m(PLATEAU) | _m(LANDING)
     high = plat | _m(BASTION) | _m(NIKE_TERRACE)
     d = _dist(high, 12)
-    # A distance wobbled by noise makes the outline craggy; the profiles give sheer faces: on
-    # the north the rim drops 10 -> 5 onto the Peripatos' ledge, then 5 -> 2 again; on the south
-    # the Kimonian wall stands 10 -> 6, then the slope falls in steep steps to the city.
-    de = d + np.where(d >= 2, np.round((noise(5.0, "crag") - 0.5) * 2.6).astype(int), 0)
+    # A distance wobbled by slow noise bends the outline into long crags and bays; the profiles
+    # give a few tall faces with ledges between them, so the rock reads as one rock: on the north
+    # the rim drops 10 -> 5 onto the Peripatos' ledge, then 5 -> 2 and 2 -> 0; on the south the
+    # Kimonian wall stands 10 -> 6 over a ledge the theatre's cavea meets, then the slope falls
+    # 6 -> 3 onto a second ledge for the sanctuaries and 3 -> 0 to the city.
+    de = d + np.where(d >= 2, np.round((noise(9.0, "crag") - 0.5) * 2.2).astype(int), 0)
     de = np.clip(de, 0, 12)
-    north_p = np.array([10, 5, 5, 5, 2, 1, 1, 0, 0, 0, 0, 0, 0])
-    south_p = np.array([10, 6, 4, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0])
+    north_p = np.array([10, 5, 5, 5, 2, 2, 0, 0, 0, 0, 0, 0, 0])
+    south_p = np.array([10, 6, 6, 6, 3, 3, 0, 0, 0, 0, 0, 0, 0])
     zone = (cc >= 54) & (cc <= 131) & (rr >= 63) & (rr <= 110)
     slope = np.where(rr < 86, north_p[de], south_p[de])
     lv = np.where(zone, np.maximum(lv, slope), lv)
@@ -228,7 +235,7 @@ def _levels(L: Layout, cc, rr, noise):
     lv[_m(Rect(100, 116, 103, 125)) | _m(Rect(119, 116, 133, 126))] = 0
     # The Panathenaic Way's corridor round the west end of the rock, and the approach's foot.
     lv[_m(Rect(58, 62, 62, 85) | Rect(40, 82, 62, 85) | Rect(40, 86, 47, 92))] = 0
-    lv[_m(Rect(46, 86, 47, 92))] = 1
+    lv[_m(Rect(44, 86, 47, 92))] = 1
     lv[_m(Rect(60, 70, 64, 76))] = 0      # the Klepsydra under the north-west cliff
 
     # --- Areopagus: a bare rock highest in the west, falling to the Way ---------------------
@@ -293,8 +300,8 @@ def _levels(L: Layout, cc, rr, noise):
     _meet_edges(L, lv)
 
     # --- landmark platforms and the quarry --------------------------------------------------
-    lv[_m(Rect(140, 0, 159, 18))] = 7                       # quarry working level
-    lv[_m(Rect(139, 3, 139, 16))] = 7                       # its west lip, where the road leaves
+    lv[_m(Rect(140, 0, 159, 18))] = 6                       # quarry working level
+    lv[_m(Rect(139, 3, 139, 16))] = 6                       # its west lip, where the road leaves
     lv[_m(Rect(54, 66, 58, 70))] = 2                        # Eleusinion terrace
     lv[_m(Rect(148, 50, 159, 66))] = 1                      # Lyceum
     lv[_m(Rect(146, 43, 159, 49))] = 0                      # the Mesogeia road below Lykabettos
@@ -308,6 +315,19 @@ def _levels(L: Layout, cc, rr, noise):
     rock |= mh & (noise(3.0, "mounychia_rock") > 0.5)
     lv[_m(Rect(126, 99, 134, 101))] = 0                     # below the Peripatos' east stair
 
+    # Pentelikon's foot north of the wall, shaped to the quarry road: the lower leg's terrace
+    # (rows 0..7 west of the bend), the bend at 3, the upper leg's terrace with the mountain
+    # above it and the slope below it falling toward the wall.
+    lower = np.clip((cc - 111) // 5, 0, 3)
+    upper = 3 + np.clip((cc - 124) // 5, 0, 3)
+    foot = (cc >= 104) & (cc <= 138)
+    lv = np.where(foot & (rr <= 7) & (cc < 124), np.maximum(lv, lower), lv)
+    lv = np.where(foot & (rr >= 3) & (rr <= 4) & (cc < 127), lower, lv)
+    lv = np.where(foot & (rr >= 5) & (rr <= 7) & (cc >= 124) & (cc <= 126), 3, lv)
+    lv = np.where(foot & (rr <= 7) & (cc >= 127), np.maximum(lv, upper + 1), lv)
+    lv = np.where(foot & (rr >= 8) & (rr <= 9) & (cc >= 124), upper, lv)
+    lv = np.where(foot & (rr >= 10) & (rr <= 11) & (cc >= 124), np.minimum(lv, upper - 1), lv)
+    rock |= foot & (rr <= 11) & (cc >= 116) & (noise(4.0, "pent_foot") > 0.45)
     for run in RUNS:
         _carve(lv, run)
 
@@ -403,7 +423,7 @@ def _ways(L: Layout, lv) -> dict:
     st("way", [(22, 22), (44, 50)], 3, GRAVEL, fine=True)   # straight on screen
     st("way", [(44, 50), (51, 55), (52, 62), (60, 64), (60, 84), (40, 84), (40, 90), (41, 90)],
        3, GRAVEL)
-    st("way", [(46, 89), (47, 89)], 1, GRAVEL)                      # ramp head to the approach
+    st("way", [(44, 89), (47, 89)], 1, GRAVEL)                      # steps' head to the approach
     # On the rock: the landing, through the Propylaia's passage, along the processional way
     # between the Old Temple and the Parthenon to the Great Altar and the sculptors' yard.
     st("rock", [(62, 89), (64, 89), (64, 87), (116, 87)], 2, MARBLE)
@@ -418,7 +438,9 @@ def _ways(L: Layout, lv) -> dict:
                      (118, 48), (128, 54), (136, 58), (147, 60)], 2, EARTH, "road")
     st("diochares", [(147, 60), (147, 45), (159, 45)], 1, EARTH, "road", portal="mesogeia_e")
     st("ne_gate", [(104, 46), (106, 26), (110, 16), (110, 3)], 2, EARTH, "road")
-    st("quarry", [(4, 3), (139, 3), (139, 4), (142, 4), (142, 15)], 1, EARTH, "road")
+    st("quarry", [(4, 3), (111, 3)], 1, EARTH, "road")
+    st("quarry", [(126, 3), (126, 6), (124, 6), (124, 8)], 1, EARTH, "road")   # the bend
+    st("quarry", [(139, 8), (142, 8), (142, 15)], 1, EARTH, "road")
     st("tripods", [(118, 48), (126, 56), (134, 64), (134, 117), (119, 117)], 2, EARTH)
     st("peripatos", [(128, 100), (134, 100)], 1, EARTH)
     st("kollytos", [(103, 117), (96, 116), (88, 118), (80, 121), (80, 137)], 2, EARTH)
@@ -1224,7 +1246,7 @@ NODES = {
     "long_walls_gate": (10, 106), "long_walls_road": (9, 118), "piraeus_agora": (26, 133),
     "kantharos_quay": (20, 148), "zea_sheds": (31, 140), "kephalos_workshop": (33, 138),
     "mounychia": (52, 146), "mounychia_landing": (50, 152), "kydathenaion_fountain": (89, 48),
-    "pentelikon_quarry": (142, 10), "quarry_road": (120, 3), "lyceum": (153, 45),
+    "pentelikon_quarry": (142, 10), "quarry_road": (126, 5), "lyceum": (153, 45),
     "olympieion": (133, 134), "kallirrhoe": (134, 140), "phaleron_road": (79, 145),
     "north_farms": (60, 3), "south_farms": (80, 142), "melite_school": (36, 80),
     "player_house": (39, 66), "kollytos_tavern": (88, 118),
@@ -1240,6 +1262,8 @@ def _nodes(L: Layout) -> None:
         L.node(nid, (int(is_[k]), int(js[k])))
 
 def _views(L: Layout) -> None:
+    # The way up to the Propylaia, from the Panathenaic Way's bend to the landing (V15).
+    L.sightline("propylaia_approach", Rect(36, 82, 65, 95))
     L.view("whole_region", Rect(0, 0, 159, 159))
     L.view("acropolis", Rect(40, 60, 136, 126))
     L.view("acropolis_west_1x", Rect(40, 76, 80, 100))
