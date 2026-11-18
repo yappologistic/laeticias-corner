@@ -181,6 +181,16 @@ fixed level; paving; a ford, bridge or pontoon on water; then markers, stations,
 graves, terrace walls, watchtowers, beacons and farms with tracks; harbours at route and lane ends.
 Between two portals of a town without a layout the base carries the road through the town's rect.
 
+Connections, not removals: a harbour lays its planks only from a strand walkers reach from a road
+(`shore_reach`; a road is extended down to the strand where a harbour belongs, as the Troad road
+to Abydos and the Cilician spur), with no scarp beside the planks (`cliff_beside`), its beacon on
+the strand beside the root; a fold whose gate no walk of one level from a road reaches gets a
+drove track (`drove_tracks`: earth paving of the region's set, levels changing only on ramps) to
+the nearest node of the base graph or another fold's track, with a `fold_<c>_<r>` node at its
+gate, so herds (`life.droves`, `seasonlife.transhumance`) leave from their folds. A fold is not
+built where its gate opens onto water, a cliff or another item (`country.fold_site`); a later
+route never lays a ramp on a tile an earlier road paves.
+
 ## Lit nights (`worldgen/lights.py`, `worldgen/nights.py`)
 
 Every region file gets `lights` (the profiles: kind, colour temperature, radius, strength,

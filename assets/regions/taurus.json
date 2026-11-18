@@ -1351,6 +1351,55 @@
      "count": 3
     }
    ]
+  },
+  {
+   "id": "transhumance",
+   "formation": "cluster",
+   "radius": 3,
+   "leader": {
+    "actor": "parsa.shepherd"
+   },
+   "members": [
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "count": 10
+    },
+    {
+     "actor": "world.goat",
+     "count": 4
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ],
+   "seasonal": {
+    "summer": "taurus/pasture",
+    "winter": "east_med/land",
+    "summer_months": [
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ],
+    "winter_months": [
+     "nov",
+     "dec",
+     "jan",
+     "feb",
+     "mar",
+     "apr"
+    ],
+    "move": [
+     "may",
+     "oct"
+    ],
+    "route": {
+     "start": "base:cilician_road_station_983_279",
+     "end": "base:cilician_harbour_station_969_289"
+    }
+   }
   }
  ],
  "chains": [],
@@ -1788,6 +1837,34 @@
    ],
    "offsets": [
     0.24
+   ]
+  },
+  {
+   "actor": "parsa.shepherd",
+   "group": "transhumance",
+   "count": 1,
+   "route": {
+    "start": "base:cilician_road_station_983_279",
+    "end": "base:cilician_harbour_station_969_289"
+   },
+   "when": {
+    "months": [
+     "may",
+     "oct"
+    ]
+   },
+   "note": "flocks moving between the summer and the winter pastures",
+   "id": "taurus.3",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:cilician_road_station_983_279",
+    "base:cilician_harbour_station_969_289"
+   ],
+   "offsets": [
+    0.259
    ]
   }
  ],

@@ -154,11 +154,15 @@ def apply(doc: dict, clim: dict, items: dict[str, dict[str, int]], kinds: dict) 
                        {"use": {"here": True}, "anim": _anim(kinds, guard, "guard"), "dur": [60, 120]},
                        {"wander": {"radius": 2}, "dur": [10, 20]}]},
                     "day": _at("world.watchtower", _anim(kinds, guard, "guard"), (60, 120), 2)}))
+        for did in sorted(items):
+            per(did, "watchman", "world.watchtower", 1)
+    # -- a harbour's or a pass's beacon has its keeper wherever it stands
+    if any(v.get("world.beacon") for v in items.values()):
+        guard = K["guard"]
         role(_role("beacon_keeper", guard, "Beacon keeper",
                    [{"hours": ["17:00", "06:00"], "routine": "watch"}],
                    {"watch": _at("world.beacon", _anim(kinds, guard, "guard"), (60, 120), 2)}))
         for did in sorted(items):
-            per(did, "watchman", "world.watchtower", 1)
             per(did, "beacon_keeper", "world.beacon", 1)
     # -- shepherds at their folds; the flock out day and night
     shep = K["shepherd"]
