@@ -518,13 +518,16 @@ def droves(docs: dict, world: World, graphs: dict[str, Graph]) -> None:
         if set_ not in SHEPHERD or P.REGIONS[rid][0] != "stretch":
             continue
         stops = sorted((n.id, to_plan(*n.at)) for n in base.nodes
-                       if ("_farm_" in n.id or n.kind == "station")
+                       if ("_farm_" in n.id or n.kind == "station" or n.id.startswith("fold_"))
                        and region_of(world, *to_plan(*n.at)) == rid)
         if len(stops) < 2:
             continue
-        a, b = max(((x, y) for x in stops for y in stops if x[0] < y[0]),
-                   key=lambda xy: (abs(xy[0][1][0] - xy[1][1][0]) + abs(xy[0][1][1] - xy[1][1][1]),
-                                   xy[0][0], xy[1][0]))
+        # A flock leaves from its fold (up its drove track) where the stretch has folds.
+        folds = [x for x in stops if x[0].startswith("fold_")]
+        pairs = [(x, y) for x in folds for y in stops if y[0] != x[0]] if folds else \
+            [(x, y) for x in stops for y in stops if x[0] < y[0]]
+        a, b = max(pairs, key=lambda xy: (abs(xy[0][1][0] - xy[1][1][0]) +
+                                          abs(xy[0][1][1] - xy[1][1][1]), xy[0][0], xy[1][0]))
         sheep = {"actor": "world.sheep", "variant": 1 if set_ == "parsa" else 0, "count": 8}
         doc["groups"].append({"id": "drove", "formation": "cluster", "radius": 3,
                               "leader": {"actor": SHEPHERD[set_]},

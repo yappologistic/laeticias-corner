@@ -263,7 +263,7 @@ def matidia(m):
 
 LANDMARKS = {
     "rome.pantheon": Landmark((14, 9), (0, 160), ref("pantheon"), district=1,
-                              slots={"visit": [{"t": [-1, 4], "face": "+x"}, {"t": [-1, 3], "face": "+x"}]}),
+                              slots={"visit": [{"t": [1, -1], "face": "+y"}, {"t": [1, 9], "face": "-y"}]}),
     "rome.pantheon_court": Landmark((8, 13), (0, 64), ref("pantheon_court"), district=1),
     "rome.agrippa_baths": Landmark((9, 13), (0, 96), ref("agrippa_baths"), district=1,
                                    slots={"bathe": [{"t": [9, 6], "face": "-x"}, {"t": [9, 7], "face": "-x"}]},

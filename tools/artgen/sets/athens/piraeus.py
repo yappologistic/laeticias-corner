@@ -125,8 +125,9 @@ def harbour(m):
 
 
 def _harbour_landmark():
-    blocked = {(9, 1), (9, 4), (9, 7), (9, 10), (9, 13), (7, 0), (7, 1), (7, 4), (7, 8), (7, 11), (7, 12), (8, 5),
-               (8, 6), (9, 6)}
+    # (9, 5) is hemmed in by the bollards and goods round it: no step reaches it (draw-order audit).
+    blocked = {(9, 1), (9, 4), (9, 5), (9, 7), (9, 10), (9, 13), (7, 0), (7, 1), (7, 4), (7, 8), (7, 11), (7, 12),
+               (8, 5), (8, 6), (9, 6)}
     walk = [t for t in tiles(5, 9, 0, 14) if t not in blocked]
     floor = {t: (0.0 if t[0] == 5 else 2.4 if t[0] == 9 else 1.6) for t in walk}
     return Landmark((10, 18), (0, 56), ref("harbour"), walk=walk, floor=floor,

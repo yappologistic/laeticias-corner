@@ -188,6 +188,19 @@ def boat_heights(root, cat: Catalog) -> dict[str, int]:
     return out
 
 
+def _clearance(it, geo: dict, t) -> int | None:
+    """The clearance (`under`, px above the item's base) of the piece over plan tile t: per
+    piece when the geometry lists pieces, else one number for the item; None when undeclared."""
+    under = geo.get("under")
+    if not isinstance(under, list):
+        return under
+    dx, dy = t[1] - it.r, it.c + it.pw - 1 - t[0]
+    for (px, py, pw, ph), u in zip(geo.get("pieces", []), under):
+        if px <= dx < px + pw and py <= dy < py + ph:
+            return int(u)
+    return min(under) if under else None
+
+
 def lane_tiles(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
     """Tiles a boat's keel passes over between lane points (plan): its centre moves on straight
     lines through tile centres, so a diagonal that only grazes a corner is not counted."""
@@ -389,9 +402,7 @@ def scan(world: World, cat: Catalog, graphs: dict[str, Graph], root=None,
                 d = cat.items.get(items[o].id)
                 if d is None or not (d.walkable or d.landmark):
                     continue        # a buoy, a fish trap, a mooring post: floats beside
-                under = geo.get("under")
-                if isinstance(under, dict):
-                    under = min(under.values()) if under else None
+                under = _clearance(items[o], geo, t)
                 if d.id.split(".")[-1] in PIERS or d.id.split(".")[-1] == "t_reeds":
                     told.add(o)
                     add("W-O2", name, f"lane {ln.id} ({ln.kind}) runs over {d.id} at {g(t)}: "

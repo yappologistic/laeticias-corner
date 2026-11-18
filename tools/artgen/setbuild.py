@@ -22,7 +22,7 @@ import pack
 import props
 import rig
 import spec
-from bigrender import BigModel, render_big
+from bigrender import BigModel, clearance, render_big
 from pack import Sprite
 from render import render
 
@@ -129,7 +129,9 @@ def actor_keys(a: dict, mod) -> list[str]:
 CRITTER_FRAMES = rig.CRITTER_FRAMES
 
 
-def required_keys(cat: dict, mod, pieces: dict) -> list[str]:
+def required_keys(cat: dict, mod, pieces: dict, kit_pieces: dict | None = None) -> list[str]:
+    """Every key the set catalog implies. `pieces`: landmark id -> its pieces; `kit_pieces`: kit
+    item id -> {variant: pieces} for kit items with walk tiles (their whole sprites stay too)."""
     keys = []
     for t in cat.get("terrain", []):
         if t.get("base"):
@@ -146,6 +148,8 @@ def required_keys(cat: dict, mod, pieces: dict) -> list[str]:
                              for f in range(n)]
                 else:
                     keys += [f"item/{it['id']}/{layer}/{v}/f{f}" for f in range(n)]
+                    if layer == "base" and v in (kit_pieces or {}).get(it["id"], {}):
+                        keys += [f"item/{it['id']}/base/{v}/p{i}/f0" for i in range(len(kit_pieces[it["id"]][v]))]
         for state in it.get("states", ()):
             keys += [f"item/{it['id']}/{state}/{v}/f{f}" for v in item_variants(it) for f in range(n)]
     for a in cat.get("actors", []):
@@ -218,6 +222,83 @@ def make_pieces(fw: int, fh: int, walk: set, water: set = frozenset()) -> list[l
     return pieces
 
 
+def kit_walk(item: "Item", it: dict, v: str) -> list:
+    """A kit item's walk tiles in look `v` (turned with the item)."""
+    walk = (item.walk(v) if callable(item.walk) else item.walk) if item else []
+    n = int(v[1:]) if v.startswith("r") and it["layout"] == "rotate" else 0
+    fw, fh = it["footprint"]
+    return sorted(tuple(_rot_tile(t, n, fw, fh)) for t in walk)
+
+
+def kit_piece_map(cat: dict, mod) -> dict:
+    """Pieces of the kit items with walk tiles, per look (draw-order.md §5 P1): walk tiles in
+    runs of their own, so a walker on them is ordered against the item round them."""
+    out = {}
+    for it in cat["items"]:
+        item = mod.ITEMS.get(it["id"])
+        if item is None or it["id"] in mod.LANDMARKS or not item.walk:
+            continue
+        for v in item_variants(it):
+            walk = kit_walk(item, it, v)
+            if walk:
+                n = int(v[1:]) if v.startswith("r") and it["layout"] == "rotate" else 0
+                fw, fh = it["footprint"] if n % 2 == 0 else it["footprint"][::-1]
+                out.setdefault(it["id"], {})[v] = make_pieces(fw, fh, set(walk))
+    return out
+
+
+def columns(model, fw: int, fh: int):
+    """((fw, fh, top) bool: solid at that height (px above the anchor's ground) on that footprint
+    tile, (fw, fh) clearance (bigrender.clearance)), from the model's own voxels (context
+    excluded)."""
+    vis = model.visible() > 0
+    t = spec.DESIGN_TILE * model.k
+    nz = max(0, model.z0 + vis.shape[2])
+    col = np.zeros((fw, fh, max(nz, 1)), bool)
+    tx = (np.arange(vis.shape[0]) + model.x0) // t
+    ty = (np.arange(vis.shape[1]) + model.y0) // t
+    z = np.arange(vis.shape[2]) + model.z0
+    for x in range(fw):
+        for y in range(fh):
+            sub = vis[tx == x][:, ty == y]
+            if sub.size:
+                c = sub.any(axis=(0, 1))
+                col[x, y, z[(z >= 0) & c]] = True
+    above = vis[:, :, max(0, -model.z0):]
+    return col, clearance(above, model.x0, model.y0, fw, fh, t)
+
+
+def order_geometry(col: np.ndarray, clear: np.ndarray, walk, walk_z: dict, pieces, k: int, water=(),
+                   crossing=False) -> dict:
+    """What the global draw order needs of an item in one look (draw-order.md §3.4, §5 O1):
+    `tops`, the highest point in px above the anchor's ground of what stands on each footprint
+    tile, rows by dy (a walk tile gives its floor); `roof`, over each walk tile with something
+    above the headroom, that thing's top; `under`, per piece, the clearance where something can
+    pass beneath it: the most room under it on its walk and water tiles (`clear`: under an arch's
+    crown, a deck's underside between the piers; 0 for a piece with neither, eaves included). An
+    unsplit crossing (a kit bridge) gives one value for its whole footprint."""
+    fw, fh = col.shape[:2]
+    head = WALK_HEADROOM * k // 2
+    top = np.where(col.any(axis=2), col.shape[2] - np.argmax(col[:, :, ::-1], axis=2), 0)
+    out = {"tops": [[int(top[x, y]) for x in range(fw)] for y in range(fh)]}
+    roof = {}
+    for (x, y) in sorted(map(tuple, walk)):
+        floor = int(walk_z.get((x, y), 0))
+        out["tops"][y][x] = floor
+        above = np.nonzero(col[x, y, floor + head:])[0]
+        if above.size:
+            roof[f"{x},{y}"] = int(top[x, y])
+    if roof:
+        out["roof"] = roof
+    passable = set(map(tuple, walk)) | set(map(tuple, water))
+    if pieces:
+        out["under"] = [max([int(clear[a, b]) for a in range(x, x + w) for b in range(y, y + h)
+                             if (a, b) in passable], default=0) for x, y, w, h in pieces]
+    elif crossing and clear.max() > 0:
+        out["under"] = [int(clear.max())]
+    return out
+
+
 def piece_index(pieces, fw, fh) -> np.ndarray:
     idx = np.zeros((fw, fh), np.int64)
     for i, (x, y, w, h) in enumerate(pieces):
@@ -236,7 +317,7 @@ def _set_mod(set_id):
 
 
 def _item_job(args):
-    set_id, item_id, layout, variant, frame, frames, footprint, layers, k = args
+    set_id, item_id, layout, variant, frame, frames, footprint, layers, k, pieces, crossing = args
     mod = _set_mod(set_id)
     item: Item = mod.ITEMS[item_id]
     n = int(variant[1:])
@@ -245,11 +326,28 @@ def _item_job(args):
         model = item.build(0, frame, frames, k).rotated(n, fw, fh)
     else:
         model = item.build(n, frame, frames, k)
-    out = render(model, "glow" in layers, cull=True)
+    out = render(model, "glow" in layers, cull=True, hit=bool(pieces))
     sprites = {"base": out.base, "shadow": out.shadow, "glow": out.glow}
     res = {f"item/{item_id}/{layer}/{variant}/f{frame}": sprites[layer] for layer in layers}
+    rfw, rfh = (fh, fw) if layout == "rotate" and n % 2 else (fw, fh)
+    if pieces and frame == 0:       # walk tiles in runs of their own, cut as the landmarks' are
+        t = spec.DESIGN_TILE * k
+        idx = piece_index(pieces, rfw, rfh)
+        vx, vy = out.hit
+        owner = idx[np.clip(vx // t, 0, rfw - 1), np.clip(vy // t, 0, rfh - 1)]
+        solid = out.base.rgba[..., 3] > 0
+        for i in range(len(pieces)):
+            keep = solid & (owner == i)
+            part = out.base.rgba.copy()
+            part[~keep] = 0
+            res[f"item/{item_id}/base/{variant}/p{i}/f0"] = Sprite(part, out.base.ox, out.base.oy,
+                                                                   np.where(keep, out.base.data, 0).astype(np.uint32))
     zmax = int(np.nonzero((model.mat > 0).any(axis=(0, 1)))[0].max() + 1 + model.z0) if model.mat.any() else 0
-    return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax, "lights": _lights(model, k)}}
+    walk = kit_walk(item, {"layout": layout, "footprint": footprint}, variant)
+    if frame:                       # every frame of a look shares its geometry: frame 0 gives it
+        return res, {}
+    order = order_geometry(*columns(model, rfw, rfh), walk, {}, pieces, k, crossing=crossing)
+    return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax, "lights": _lights(model, k), **order}}
 
 
 def _lights(model, k) -> dict:
@@ -313,7 +411,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
         fw, fh = lm.footprint
         if fw > MAX_PIECE or fh > MAX_PIECE or lm.walk or lm.water:
             pieces[i] = make_pieces(fw, fh, set(map(tuple, lm.walk)), set(map(tuple, lm.water)))
-    keys = required_keys(cat, mod, pieces)
+    kit_pieces = kit_piece_map(cat, mod)
+    keys = required_keys(cat, mod, pieces, kit_pieces)
     if only:
         keys = [k_ for k_ in keys if any(o in k_ for o in only)]
     keyset = set(keys)
@@ -333,7 +432,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
                 jobs.append((_state_job, (set_id, iid, it["layout"], layer, variant, int(frame), item_frames(it, mod),
                                           tuple(it["footprint"]), k)))
         elif key.startswith("item/") and "/p" in key:
-            lm_wanted.add(key.split("/")[1])
+            if key.split("/")[1] in landmarks:    # a kit item's pieces come with its look's frame 0
+                lm_wanted.add(key.split("/")[1])
         elif key.startswith("prop/"):
             pid, rest = key[5:].split("/", 1)
             if not rest.startswith("glow/"):
@@ -347,7 +447,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
     for (iid, variant, frame), layers in item_groups.items():
         it = items[iid]
         jobs.append((_item_job, (set_id, iid, it["layout"], variant, frame, item_frames(it, mod),
-                                 tuple(it["footprint"]), tuple(sorted(layers)), k)))
+                                 tuple(it["footprint"]), tuple(sorted(layers)), k,
+                                 kit_pieces.get(iid, {}).get(variant), bool(it.get("crossing") or it.get("walkable")))))
     jobs.sort(key=lambda j: 0 if j[0] is _item_job else 1)
     for group, ks in flat.items():
         for i in range(0, len(ks), 24):
@@ -386,7 +487,10 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
             sprites[f"item/{iid}/shadow/r0/f0"] = _clip_hidden(r.shadow, r.base)
         if "glow" in layers:
             sprites[f"item/{iid}/glow/r0/f0"] = r.glow
-        lm_info[iid] = {"h": int(r.base.oy), "top": r.top, "column": r.column}
+        floor = {t: int(round(z * k)) for t, z in lm.floor.items()}
+        lm_info[iid] = {"h": int(r.base.oy), "top": r.top, "column": r.column,
+                        "order": order_geometry(r.column, r.clear, lm.walk, floor, pieces.get(iid), k,
+                                                lm.water)}
         print(f"  {iid}: {r.base.rgba.shape[1]}x{r.base.rgba.shape[0]} px, "
               f"{len(pieces.get(iid, [1]))} pieces, {time.time() - t1:.1f}s")
     missing = sorted(keyset - set(sprites))
@@ -394,6 +498,7 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
         raise SystemExit(f"setbuild: builders did not make {len(missing)} keys, e.g. {missing[:5]}")
     glows = sorted(k_ for k_ in sprites if k_ not in keyset and "/glow/" in k_)
     meta["glow_at"] = _glow_at({k_: sprites[k_] for k_ in glows})
+    meta["kit_pieces"] = kit_pieces
     return {key: sprites[key] for key in keys + glows}, pieces, meta, lm_info
 
 
@@ -485,6 +590,7 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                 g["climb"] = lm.climb
             if lm.slots:
                 g["slots"] = lm.slots
+            g.update(info["order"])
             if lm.emitters:
                 g["emitters"] = {n: [int(round((x - y) * k)), int(round(((x + y) / 2 - z) * k))]
                                  for n, (x, y, z) in lm.emitters.items()}
@@ -512,6 +618,11 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                     g["climb"] = _rot_face("-y", n)
                 if info.get("lights"):  # door and window light points (world-nights.md §7)
                     g["lights"] = info["lights"]
+                if v in meta.get("kit_pieces", {}).get(iid, {}):
+                    g["pieces"] = meta["kit_pieces"][iid][v]
+                for key in ("tops", "roof", "under"):
+                    if key in info:
+                        g[key] = info[key]
                 entry[v] = g
         if entry:
             out["items"][iid] = entry

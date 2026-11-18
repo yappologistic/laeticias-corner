@@ -235,6 +235,19 @@ def _hex_inside(x, y):
 
 
 PORTUS_WATER = _basin_tiles(18 * T, 20 * T, _hex_inside)
+# The quays round the basin by tile, rows by dy: "q" the paved quay (1.5 units up), "r" its rim
+# at the water (4 units), "." open ground, "#" warehouses and the lighthouse's foot, "w" the
+# basin; quays, rims and ground are walk tiles, so the moored ships are reached (draw-order
+# audit, W-L3).
+PORTUS_QUAYS = ("....##..##..##....", "..####qq##qq####..", "..##qqrr##rrqq##..", "...rr........rr...",
+                "##qqq........qqq##", "##qr..........rq##", ".qr............rq.", "qrq............qrq",
+                "###.............rq", "###.............qq", "###.............qq", "###.............rq",
+                "qrq............qrq", ".qr............rq.", "##qr..........rq##", "##qqq........qqq##",
+                "...rr........rr...", "..##qqrrrrrrqq##..", "..####qq##qq####..", "....##..##..##....")
+_QUAY_Z = {".": 0.0, "q": 1.5, "r": 4.0}
+PORTUS_WALK = [(x, y) for y, row in enumerate(PORTUS_QUAYS) for x, ch in enumerate(row)
+               if ch in _QUAY_Z and (x, y) not in PORTUS_WATER]
+PORTUS_FLOOR = {(x, y): _QUAY_Z[PORTUS_QUAYS[y][x]] for x, y in PORTUS_WALK}
 
 
 def _portus_moorings():
@@ -259,6 +272,7 @@ BR_WATER = [(x, y) for x in range(5, 12) for y in range(16)]
 
 LANDMARKS = {
     "rome.portus_hexagon": Landmark((18, 20), (-3, 40), ref("portus_hexagon"), district=9, water=PORTUS_WATER,
+                                    walk=PORTUS_WALK, floor=PORTUS_FLOOR,
                                     slots={"mooring": _portus_moorings()}),
     "rome.portus_lighthouse": Landmark((3, 3), (-3, 112), ref("portus_lighthouse"), district=9),
     "rome.ostia_guilds": Landmark((6, 12), (0, 40), ref("ostia_guilds"), district=9),

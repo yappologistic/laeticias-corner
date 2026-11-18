@@ -749,7 +749,7 @@
    "area": "road",
    "sound": {
     "surfaces": {
-     "stone": 1.0
+     "stone": 0.55
     },
     "wind": "wind.street",
     "exposure": 1.0,
@@ -1066,7 +1066,7 @@
    "area": "wild",
    "sound": {
     "surfaces": {
-     "leaves": 0.04,
+     "leaves": 0.05,
      "water": 0.08
     },
     "wind": "wind.open",
@@ -1188,10 +1188,10 @@
    "name": "Pastures",
    "sound": {
     "surfaces": {
-     "roof": 0.02
+     "roof": 0.05
     },
     "wind": "wind.open",
-    "exposure": 0.98,
+    "exposure": 0.96,
     "steps": {
      "surface": "earth",
      "files": [
@@ -2165,8 +2165,8 @@
    "group": "drove",
    "count": 1,
    "route": {
-    "start": "base:royal_road_farm_930_141",
-    "end": "base:royal_road_station_1058_265"
+    "start": "base:fold_866_251",
+    "end": "base:fold_1038_11"
    },
    "when": {
     "months": [
@@ -2181,6 +2181,19 @@
     "18:00"
    ],
    "rest": [
+    "sardis:paktolos",
+    "base:royal_road_station_896_212",
+    "base:royal_road_farm_901_213",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
+    "base:royal_road_farm_896_189",
+    "base:royal_road_station_896_187",
+    "base:royal_road_farm_896_179",
+    "base:royal_road_station_905_178",
+    "base:royal_road_station_912_169",
+    "base:royal_road_farm_912_165",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
     "base:royal_road_farm_930_141",
     "base:royal_road_station_932_141",
     "base:royal_road_farm_942_141",
@@ -2204,9 +2217,7 @@
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
     "base:royal_road_farm_1040_245",
-    "base:royal_road_station_1041_250",
-    "base:royal_road_station_1050_253",
-    "base:royal_road_station_1058_265"
+    "base:royal_road_station_1041_250"
    ],
    "offsets": [
     0.146
@@ -3266,7 +3277,7 @@
    "rect": [
     211,
     362,
-    220,
+    219,
     363
    ],
    "group": "flock"
@@ -3305,7 +3316,7 @@
    "kind": "pasture",
    "rect": [
     232,
-    226,
+    227,
     237,
     237
    ],
