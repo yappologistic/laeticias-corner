@@ -369,11 +369,14 @@ void CityLife::advanceAbstract(const LifeClock& clock) {
     sounds_.clear();
     stats_.spawnedThisStep = 0;
     builds_ = tl::kTableBuildsPerStep;
-    // A jump of the clock (a script, a fast travel, the day set by hand) rebuilds the events
-    // from the plan; a new day continues them.
+    // A jump of the clock (a script, the time or day set by hand) rebuilds the events from the
+    // plan; a new day continues them, and so does the clock gliding to a pin (L-002: its steps
+    // are larger than any step of a running clock, so they are told apart by the jump count).
     const bool first = lastNow_ <= -1e17;
-    const bool jumped = first || std::abs(now_ - lastNow_) > 2.0;
+    const bool jumped =
+        first || (clock.epoch >= 0 ? clock.epoch != lastEpoch_ : std::abs(now_ - lastNow_) > 2.0);
     lastNow_ = now_;
+    lastEpoch_ = clock.epoch;
     if (jumped || clock.day != day_) {
         day_ = clock.day;
         if (jumped) {

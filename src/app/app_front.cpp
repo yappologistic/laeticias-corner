@@ -34,6 +34,7 @@ void App::resetWorld() {
     world_ = World(cat_);
     editor_ = Editor(tuning::kUndoSteps);
     clock_ = Clock{};
+    ++clocks_; // its jump count starts again: city life must still see a jump
     actors_ = Actors(cat_, seed_);
     for (std::size_t v = 0; v < gates_.size(); ++v) gates_[v] = {!cat_.visitors[v].rare, 0};
     weather_ = Weather(cat_, seed_);

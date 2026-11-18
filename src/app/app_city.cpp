@@ -45,6 +45,7 @@ life::LifeClock App::cityClock() const {
     c.t = clock_.time();
     c.season = season();
     c.rain = rainHere() >= tuning::kRainThreshold;
+    c.epoch = (static_cast<std::int64_t>(clocks_) << 32) | clock_.jumps();
     return c;
 }
 

@@ -559,6 +559,44 @@ TEST_CASE("city: the same seed and script give byte-identical dumps") {
     CHECK(dumps[0] == dumps[1]);
 }
 
+TEST_CASE("city: the clock gliding to a pin is no jump; chains never run backwards (L-002)") {
+    CityLife city(lifeWorld(), 5);
+    const int rome = lifeWorld().data.findRegion("rome");
+    const LifeRegion& reg = lifeWorld().data.regions[static_cast<std::size_t>(rome)];
+    const auto showerRuns = [&] {
+        return std::ranges::any_of(city.running(), [&](const RunningEvent& e) {
+            return e.region == rome && e.event >= 0 &&
+                   reg.events[static_cast<std::size_t>(e.event)].id == "spring_shower";
+        });
+    };
+    city.setFocus(centreOf("forum"));
+    LifeClock clock = LifeClock::at(0, 10.0, -1); // March: Rome's spring shower may come
+    clock.epoch = 0;
+    city.settle(clock);
+    step(city, clock, 10);
+    clock.rain = true; // the shower's weather event starts (it is in no day plan)
+    step(city, clock, 2);
+    REQUIRE(showerRuns());
+    // The pin's glide: 3.75 life seconds a step, forward then back, with no jump counted.
+    const double glide = 0.5 * tuning::kStepSeconds / tuning::kPinEaseSeconds;
+    for (int k = 0; k < 16; ++k) {
+        clock.t += glide;
+        city.update(clock, static_cast<float>(tuning::kStepSeconds));
+        CHECK(showerRuns());
+    }
+    const long tick = city.chains().tick();
+    for (int k = 0; k < 16; ++k) {
+        clock.t -= glide;
+        city.update(clock, static_cast<float>(tuning::kStepSeconds));
+        CHECK(city.chains().tick() >= tick);
+    }
+    CHECK(showerRuns());
+    // A jump the caller counts still rebuilds from the plan, dropping what no plan holds.
+    clock.epoch = 1;
+    city.update(clock, static_cast<float>(tuning::kStepSeconds));
+    CHECK_FALSE(showerRuns());
+}
+
 TEST_CASE("city: an event runs to completion and the day goes on around it") {
     CityLife city(lifeWorld(), 9);
     // Rome, a Senate day (week day 1): the senators walk from the Velia to the Curia.

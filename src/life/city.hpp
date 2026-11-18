@@ -66,6 +66,10 @@ struct LifeClock {
     double t = 0.2; // the clock, 0..1: hour = 6 + 24 t
     int season = 0; // index into the catalog's seasons
     bool rain = false;
+    // The caller's count of clock jumps (the time or day set outright): a change is a jump, and
+    // anything else (the clock running, gliding to a pin, a pinned day turning) continues. -1:
+    // no count, a change of over 2 s is taken for a jump (tools and tests).
+    std::int64_t epoch = -1;
     [[nodiscard]] double hour() const;    // 0..24
     [[nodiscard]] double seconds() const; // real seconds since day 0 06:00
     [[nodiscard]] static LifeClock at(int day, double hour, int season, bool rain = false);
@@ -457,6 +461,7 @@ private:
     std::vector<double> reactiveCool_;
     double lastStart_ = -1e9;
     double lastNow_ = -1e18;
+    std::int64_t lastEpoch_ = -1; // the clock's jump count at the last step
     std::vector<std::tuple<int, double, double>> planScratch_;
     struct TokenState {
         std::vector<Vec2> line; // polyline (tile coordinates)

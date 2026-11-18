@@ -401,6 +401,7 @@ private:
     World world_;
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
+    std::uint32_t clocks_ = 0; // clocks made this session (one per world opened)
     std::unique_ptr<life::LifeSession> city_;
     std::unique_ptr<worldview::CitySound> citySound_; // what the city sounds like on screen
     std::vector<int> cityLoops_;                      // its loops and effects in the mixer
