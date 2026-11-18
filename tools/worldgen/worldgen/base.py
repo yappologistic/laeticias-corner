@@ -988,7 +988,10 @@ def water_and_faces(W: World, flow: np.ndarray) -> None:
     high = land & ~coast & (W.level >= 7)
     for t, tid in enumerate(L.terrains):
         faces = cat.faces(tid)
-        for m, material in ((coast, "world.coast"), (high, "world.rock")):
+        # A sea cliff of a terrain without a coast face shows its rock, never a bank of earth.
+        cliff = next((f for f in faces if f == "world.coast"), None) or \
+            next((f for f in faces if f.endswith((".rock", ".tufa"))), None)
+        for m, material in ((coast, cliff), (high, "world.rock")):
             if material in faces:
                 mt = m & (L.T == t)
                 L.AUX[mt] = faces.index(material)
