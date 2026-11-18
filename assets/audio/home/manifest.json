@@ -1,0 +1,267 @@
+{
+  "version": 1,
+  "set": "home",
+  "files": [
+    {
+      "file": "sfx/duck_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.0371,
+      "samples": 45734,
+      "gain": 1.0,
+      "when": "always",
+      "for": "The duck's laughing run of quacks.",
+      "tags": [
+        "animal",
+        "voice",
+        "duck",
+        "variation"
+      ]
+    },
+    {
+      "file": "sfx/duck_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.5698,
+      "samples": 25127,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A drake's soft hoarse murmur.",
+      "tags": [
+        "animal",
+        "voice",
+        "duck",
+        "variation"
+      ]
+    },
+    {
+      "file": "sfx/hen_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.909,
+      "samples": 40087,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A hen's contented clucks while scratching.",
+      "tags": [
+        "animal",
+        "voice",
+        "hen",
+        "variation"
+      ]
+    },
+    {
+      "file": "sfx/hen_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.8685,
+      "samples": 38303,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A settled hen's purring trill.",
+      "tags": [
+        "animal",
+        "voice",
+        "hen",
+        "variation"
+      ]
+    },
+    {
+      "file": "sfx/cat_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.5273,
+      "samples": 23255,
+      "gain": 1.0,
+      "when": "always",
+      "for": "The cat's greeting chirrup.",
+      "tags": [
+        "animal",
+        "voice",
+        "cat",
+        "variation"
+      ]
+    },
+    {
+      "file": "sfx/cat_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.4697,
+      "samples": 20712,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A small, high mew.",
+      "tags": [
+        "animal",
+        "voice",
+        "cat",
+        "variation"
+      ]
+    },
+    {
+      "file": "sfx/step_grass_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2417,
+      "samples": 10661,
+      "gain": 0.6,
+      "when": "always",
+      "for": "Laeticia's footstep on grass, variation 1.",
+      "tags": [
+        "steps",
+        "laeticia",
+        "grass"
+      ]
+    },
+    {
+      "file": "sfx/step_grass_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2338,
+      "samples": 10311,
+      "gain": 0.6,
+      "when": "always",
+      "for": "Laeticia's footstep on grass, variation 2.",
+      "tags": [
+        "steps",
+        "laeticia",
+        "grass"
+      ]
+    },
+    {
+      "file": "sfx/step_grass_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2404,
+      "samples": 10602,
+      "gain": 0.6,
+      "when": "always",
+      "for": "Laeticia's footstep on grass, variation 3.",
+      "tags": [
+        "steps",
+        "laeticia",
+        "grass"
+      ]
+    },
+    {
+      "file": "sfx/step_path_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2378,
+      "samples": 10488,
+      "gain": 0.6,
+      "when": "always",
+      "for": "Laeticia's footstep on path, variation 1.",
+      "tags": [
+        "steps",
+        "laeticia",
+        "path"
+      ]
+    },
+    {
+      "file": "sfx/step_path_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2676,
+      "samples": 11802,
+      "gain": 0.6,
+      "when": "always",
+      "for": "Laeticia's footstep on path, variation 2.",
+      "tags": [
+        "steps",
+        "laeticia",
+        "path"
+      ]
+    },
+    {
+      "file": "sfx/step_path_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2532,
+      "samples": 11166,
+      "gain": 0.6,
+      "when": "always",
+      "for": "Laeticia's footstep on path, variation 3.",
+      "tags": [
+        "steps",
+        "laeticia",
+        "path"
+      ]
+    },
+    {
+      "file": "sfx/watering.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.1326,
+      "samples": 94046,
+      "gain": 0.8,
+      "when": "always",
+      "for": "Laeticia's watering can over a bed.",
+      "tags": [
+        "laeticia",
+        "water",
+        "work"
+      ]
+    },
+    {
+      "file": "sfx/sting_sunrise.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for the sun rising (dawn begins), in D lydian (the corner's key).",
+      "tags": [
+        "sting",
+        "sunrise",
+        "home"
+      ]
+    },
+    {
+      "file": "sfx/sting_nightfall.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for night falling (dusk ends), in D lydian (the corner's key).",
+      "tags": [
+        "sting",
+        "nightfall",
+        "home"
+      ]
+    },
+    {
+      "file": "sfx/sting_storm_clear.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for a storm clearing (rain stops after a storm cell), in D lydian (the corner's key).",
+      "tags": [
+        "sting",
+        "storm_clear",
+        "home"
+      ]
+    },
+    {
+      "file": "sfx/sting_first_snow.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for the first snow of a winter, in D lydian (the corner's key).",
+      "tags": [
+        "sting",
+        "first_snow",
+        "home"
+      ]
+    }
+  ]
+}

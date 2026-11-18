@@ -227,6 +227,95 @@
       "gain": 1.0,
       "when": "event",
       "for": "Arrival motif (fast travel, era caption): harp D E F A."
+    },
+    {
+      "file": "sfx/parsa/response.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.4414,
+      "samples": 151765,
+      "gain": 0.8,
+      "when": "always",
+      "for": "The court's measured response (audiences, offerings).",
+      "tags": [
+        "event",
+        "ritual"
+      ]
+    },
+    {
+      "file": "sfx/parsa/sting_sunrise.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for the sun rising (dawn begins), in Pārsa's D mode.",
+      "tags": [
+        "sting",
+        "sunrise",
+        "parsa"
+      ]
+    },
+    {
+      "file": "sfx/parsa/sting_nightfall.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for night falling (dusk ends), in Pārsa's D mode.",
+      "tags": [
+        "sting",
+        "nightfall",
+        "parsa"
+      ]
+    },
+    {
+      "file": "sfx/parsa/sting_storm_clear.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for a storm clearing (rain stops after a storm cell), in Pārsa's D mode.",
+      "tags": [
+        "sting",
+        "storm_clear",
+        "parsa"
+      ]
+    },
+    {
+      "file": "sfx/parsa/sting_rainbow.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for a rainbow (the rainbow event), in Pārsa's D mode.",
+      "tags": [
+        "sting",
+        "rainbow",
+        "parsa"
+      ]
+    },
+    {
+      "file": "sfx/parsa/sting_first_snow.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for the first snow of a winter, in Pārsa's D mode.",
+      "tags": [
+        "sting",
+        "first_snow",
+        "parsa"
+      ]
     }
   ]
 }
