@@ -4,2140 +4,381 @@
  "name": "Athens",
  "native": "Ἀθῆναι",
  "caption": "Athens · the Panathenaia, summer 432 BC",
- "theme": {
-  "grading": {
-   "dawn": [
-    0.98,
-    0.86,
-    0.8
-   ],
-   "day": [
-    1.0,
-    0.99,
-    0.95
-   ],
-   "dusk": [
-    0.98,
-    0.8,
-    0.68
-   ],
-   "night": [
-    0.44,
-    0.5,
-    0.7
-   ]
-  },
-  "haze": {
-   "colour": [
-    0.93,
-    0.89,
-    0.8
-   ],
-   "strength": 0.12
-  },
-  "climate": "athens",
-  "ambience": {
-   "beds": [
-    {
-     "file": "amb/athens/day.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/athens/night.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
-    }
-   ],
-   "zones": [
-    {
-     "rect": [
-      246,
-      651,
-      282,
-      683
-     ],
-     "file": "amb/athens/agora.ogg",
-     "gain": 0.8
-    },
-    {
-     "rect": [
-      295,
-      578,
-      323,
-      641
-     ],
-     "file": "amb/athens/rock.ogg",
-     "gain": 0.7
-    },
-    {
-     "rect": [
-      227,
-      672,
-      247,
-      699
-     ],
-     "file": "amb/athens/potters.ogg",
-     "gain": 0.7
-    },
-    {
-     "rect": [
-      351,
-      646,
-      379,
-      703
-     ],
-     "file": "amb/athens/sea.ogg",
-     "gain": 0.8
-    }
-   ]
-  },
-  "music": {
-   "day": "music/athens/day.ogg",
-   "night": "music/athens/night.ogg"
-  }
+ "era": "The Athens of Pericles · 432 BC",
+ "season": "summer",
+ "theme": {"grading": {"dawn": [0.98, 0.86, 0.8], "day": [1.0, 0.99, 0.95], "dusk": [0.98, 0.8, 0.68], "night": [0.44, 0.5, 0.7]}, "haze": {"colour": [0.93, 0.89, 0.8], "strength": 0.12, "toward": "south-west"}, "climate": "athens", "weather": {"summer": {"showers": 0, "clouds": 1, "wind": 0.5, "wind_from": "north-east", "note": "calm mornings; the meltemi rises in the afternoon; one rare storm"}, "autumn": {"showers": 2, "clouds": 3, "wind": 0.4, "note": "the first rains"}, "winter": {"showers": 3, "clouds": 4, "wind": 0.4, "note": "mild rain; snow on the far mountains"}, "spring": {"showers": 1, "clouds": 2, "wind": 0.35, "note": "clear and breezy"}}, "ambience": {"beds": [{"file": "amb/athens/day.ogg", "hours": ["05:00", "19:30"]}, {"file": "amb/athens/night.ogg", "hours": ["19:30", "05:00"]}], "zones": [{"rect": [246, 651, 282, 683], "file": "amb/athens/agora.ogg", "gain": 0.8, "hours": ["06:00", "19:00"], "count_driven": {"roles": ["stall_keeper", "shopper"], "full": 12}}, {"rect": [295, 578, 323, 641], "file": "amb/athens/rock.ogg", "gain": 0.7, "hours": ["05:00", "19:30"]}, {"rect": [227, 672, 247, 699], "file": "amb/athens/potters.ogg", "gain": 0.7, "hours": ["05:30", "18:30"]}, {"rect": [351, 646, 379, 703], "file": "amb/athens/sea.ogg", "gain": 0.8}, {"rect": [367, 648, 379, 703], "file": "amb/athens/sea.ogg", "gain": 0.8}], "loops": [{"slot": "athens.g_wheel.throw", "file": "amb/athens/wheel.ogg", "when": "worked"}, {"slot": "athens.g_kiln.stoke", "file": "amb/athens/kiln.ogg", "when": "firing"}, {"slot": "athens.g_forge.work", "file": "amb/world/smith.ogg", "when": "worked"}, {"slot": "athens.g_loom.weave", "file": "amb/world/loom.ogg", "when": "worked"}, {"item": "athens.g_brazier", "file": "amb/world/brazier.ogg", "when": "lit"}], "one_shots": {"sculpt_yard.carve": "sfx/world/chisel.wav", "pentelikon_quarry.cut": "sfx/world/hammer.wav"}, "cicadas": {"hours": ["09:00", "18:00"], "season": ["summer"], "weather": "clear", "fade_s": 20}}, "music": {"day": "music/athens/day.ogg", "night": "music/athens/night.ogg"}, "arrive": "sfx/athens/arrive.wav"},
+ "densities": {
+  "always": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  "day": [0, 0, 0, 0, 0, 0.25, 0.7, 1, 1, 1, 1, 1, 0.8, 0.8, 0.95, 1, 1, 1, 1, 0.6, 0.3, 0.1, 0, 0],
+  "market": [0, 0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 1, 1, 0.75, 0.75, 0.9, 0.9, 0.9, 0.9, 0.7, 0.4, 0.1, 0, 0, 0],
+  "work": [0, 0, 0, 0, 0, 0.3, 0.85, 1, 1, 1, 1, 1, 0.65, 0.65, 1, 1, 1, 1, 0.4, 0, 0, 0, 0, 0],
+  "dawn_work": [0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 1, 1, 0.6, 0.6, 0.6, 1, 1, 1, 0.6, 0.2, 0, 0, 0, 0],
+  "houses": [0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 1, 1, 1, 0.7, 0.7, 0.9, 0.9, 0.9, 1, 1, 0.7, 0.4, 0.15, 0, 0],
+  "afternoon": [0, 0, 0, 0, 0, 0, 0.3, 0.3, 0.3, 0.6, 0.6, 0.6, 0.7, 0.7, 1, 1, 1, 1, 0.8, 0.4, 0, 0, 0, 0],
+  "watch": [0.5, 0.5, 0.5, 0.5, 0.5, 0.8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.8, 0.8, 0.5, 0.5, 0.5],
+  "evening": [0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0.8, 1, 1, 1, 0.6, 0.3],
+  "graze": [0.2, 0.2, 0.2, 0.2, 0.2, 0.8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.6, 0.2, 0.2, 0.2, 0.2],
+  "children": [0, 0, 0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 0.6, 0.6, 1, 1, 1, 1, 0.7, 0.3, 0, 0, 0, 0],
+  "harbour": [0.1, 0.1, 0.1, 0.1, 0.4, 0.9, 1, 1, 1, 1, 1, 1, 0.75, 0.75, 1, 1, 1, 1, 0.7, 0.7, 0.3, 0.3, 0.1, 0.1]
  },
  "districts": [
-  {
-   "id": "agora",
-   "populations": [
-    {
-     "actor": "athens.citizen",
-     "density": "market",
-     "max_per_chunk": 10
-    },
-    {
-     "actor": "athens.metic",
-     "density": "market",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.working_woman",
-     "density": "market",
-     "max_per_chunk": 5
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "market",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.scythian",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.philosopher",
-     "density": "afternoon",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.donkey",
-     "density": "market",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "council",
-   "populations": [
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 6
-    },
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.scythian",
-     "density": "watch",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "kerameikos",
-   "populations": [
-    {
-     "actor": "athens.potter",
-     "density": "work",
-     "max_per_chunk": 5
-    },
-    {
-     "actor": "athens.painter",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.donkey",
-     "density": "work",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "cemetery",
-   "populations": [
-    {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.priest",
-     "density": "daytime",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "acropolis",
-   "populations": [
-    {
-     "actor": "athens.priest",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.mason",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.sculptor",
-     "density": "work",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.owl",
-     "density": "watch",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "slopes",
-   "populations": [
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.owl",
-     "density": "watch",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "areopagus",
-   "populations": [
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "pnyx",
-   "populations": [
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "kolonos",
-   "populations": [
-    {
-     "actor": "athens.smith",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "dionysos",
-   "populations": [
-    {
-     "actor": "athens.chorus",
-     "density": "afternoon",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.musician",
-     "density": "afternoon",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.priest",
-     "density": "daytime",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "melite",
-   "populations": [
-    {
-     "actor": "athens.woman",
-     "density": "houses",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_woman",
-     "density": "houses",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.dog_laconian",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.hen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "koile",
-   "populations": [
-    {
-     "actor": "athens.woman",
-     "density": "houses",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_woman",
-     "density": "houses",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.dog_laconian",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.hen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "kollytos",
-   "populations": [
-    {
-     "actor": "athens.woman",
-     "density": "houses",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_woman",
-     "density": "houses",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.dog_laconian",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.hen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "kydathenaion",
-   "populations": [
-    {
-     "actor": "athens.woman",
-     "density": "houses",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_woman",
-     "density": "houses",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.dog_laconian",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.hen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "skambonidai",
-   "populations": [
-    {
-     "actor": "athens.woman",
-     "density": "houses",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_woman",
-     "density": "houses",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.dog_laconian",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.hen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "east_quarter",
-   "populations": [
-    {
-     "actor": "athens.woman",
-     "density": "houses",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_woman",
-     "density": "houses",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.elder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.dog_laconian",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.hen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "piraeus",
-   "populations": [
-    {
-     "actor": "athens.rower",
-     "density": "work",
-     "max_per_chunk": 5
-    },
-    {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.ionian",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.thracian",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.enslaved_man",
-     "density": "work",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "athens.woman",
-     "density": "houses",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.child",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "long_walls",
-   "populations": [
-    {
-     "actor": "athens.drover",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.donkey",
-     "density": "daytime",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "north_fields",
-   "populations": [
-    {
-     "actor": "athens.farmer",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.sheep",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.donkey",
-     "density": "work",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "south_fields",
-   "populations": [
-    {
-     "actor": "athens.farmer",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.sheep",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.donkey",
-     "density": "work",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "ilissos",
-   "populations": [
-    {
-     "actor": "athens.farmer",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.sheep",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.donkey",
-     "density": "work",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "countryside",
-   "populations": [
-    {
-     "actor": "athens.farmer",
-     "density": "work",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "athens.sheep",
-     "density": "daytime",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.donkey",
-     "density": "work",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "lyceum",
-   "populations": [
-    {
-     "actor": "athens.athlete",
-     "density": "afternoon",
-     "max_per_chunk": 5
-    },
-    {
-     "actor": "athens.hoplite",
-     "density": "work",
-     "max_per_chunk": 6
-    },
-    {
-     "actor": "athens.cavalryman",
-     "density": "afternoon",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.philosopher",
-     "density": "afternoon",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
-   "id": "pentelikon",
-   "populations": [
-    {
-     "actor": "athens.mason",
-     "density": "work",
-     "max_per_chunk": 6
-    },
-    {
-     "actor": "athens.drover",
-     "density": "work",
-     "max_per_chunk": 2
-    },
-    {
-     "actor": "athens.ox",
-     "density": "work",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "lykabettos",
-   "populations": [
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 4
-    }
-   ]
-  },
-  {
-   "id": "hymettos",
-   "populations": [
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 4
-    }
-   ]
-  },
-  {
-   "id": "mouseion",
-   "populations": [
-    {
-     "actor": "athens.herder",
-     "density": "daytime",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "athens.goat",
-     "density": "daytime",
-     "max_per_chunk": 4
-    }
-   ]
-  }
+  {"id": "agora", "area": "centre", "populations": [{"role": "stall_keeper", "per_item": "athens.g_stall", "count": 1, "density": "market"}, {"role": "banker", "per_item": "athens.g_table_banker", "count": 1, "density": "market"}, {"role": "shopper", "density": "market", "max_per_chunk": 30}, {"role": "elder", "density": "day", "max_per_chunk": 7}, {"role": "porter", "density": "market", "max_per_chunk": 10}, {"role": "archer", "density": "watch", "max_per_chunk": 6}, {"role": "fountain_woman", "per_item": "athens.se_fountain", "count": 2, "density": "always"}, {"role": "philosopher", "density": "afternoon", "max_per_chunk": 3}, {"role": "pupil", "density": "afternoon", "max_per_chunk": 6}, {"role": "child", "density": "children", "max_per_chunk": 4}, {"role": "donkey", "density": "market", "max_per_chunk": 2}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}]},
+  {"id": "council", "area": "town", "populations": [{"role": "councillor", "density": "day", "max_per_chunk": 36}, {"role": "herald", "per_item": "athens.royal_stoa", "count": 1, "density": "day"}, {"role": "archer", "density": "watch", "max_per_chunk": 6}, {"role": "juror", "density": "day", "max_per_chunk": 6}, {"role": "shopper", "density": "market", "max_per_chunk": 10}]},
+  {"id": "kerameikos", "area": "town", "populations": [{"role": "potter", "per_item": "athens.g_wheel", "count": 1, "density": "work"}, {"role": "vase_painter", "per_item": "athens.g_workshop", "count": 1, "density": "work"}, {"role": "kiln_man", "per_item": "athens.g_kiln", "count": 1, "density": "work"}, {"role": "clay_digger", "density": "work", "max_per_chunk": 9}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}, {"role": "child", "density": "children", "max_per_chunk": 6}, {"role": "donkey", "density": "work", "max_per_chunk": 2}, {"role": "housewife", "density": "houses", "max_per_chunk": 6}]},
+  {"id": "cemetery", "area": "country", "populations": [{"role": "mourner", "density": "day", "max_per_chunk": 10}, {"role": "potter", "per_item": "athens.g_wheel", "count": 1, "density": "work"}, {"role": "vase_painter", "per_item": "athens.g_workshop", "count": 1, "density": "work"}, {"role": "clay_digger", "density": "work", "max_per_chunk": 6}, {"role": "gate_guard", "per_item": "athens.dipylon", "count": 2, "density": "watch"}]},
+  {"id": "acropolis", "area": "centre", "populations": [{"role": "priestess", "density": "day", "max_per_chunk": 8}, {"role": "visitor", "density": "day", "max_per_chunk": 38}, {"role": "visitor_woman", "density": "day", "max_per_chunk": 16}, {"role": "yard_mason", "density": "work", "max_per_chunk": 4}, {"role": "sculptor", "per_item": "athens.sculpt_yard", "count": 3, "density": "work"}, {"role": "owl", "density": "always", "max_per_chunk": 1}]},
+  {"id": "slopes", "area": "wild", "populations": [{"role": "goat", "density": "graze", "max_per_chunk": 4}, {"role": "owl", "density": "always", "max_per_chunk": 2}, {"role": "townsman", "density": "day", "max_per_chunk": 4}]},
+  {"id": "areopagus", "area": "wild", "populations": [{"role": "elder", "density": "day", "max_per_chunk": 6}]},
+  {"id": "pnyx", "area": "wild", "populations": [{"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 6}, {"role": "townsman", "density": "day", "max_per_chunk": 4}]},
+  {"id": "kolonos", "area": "town", "populations": [{"role": "smith", "per_item": "athens.g_forge", "count": 1, "density": "work"}, {"role": "caster", "density": "work", "max_per_chunk": 24}, {"role": "townsman", "density": "day", "max_per_chunk": 12}, {"role": "visitor", "density": "day", "max_per_chunk": 6}]},
+  {"id": "dionysos", "area": "town", "populations": [{"role": "chorus", "per_item": "athens.theatre", "count": 6, "density": "afternoon"}, {"role": "aulos_player", "per_item": "athens.theatre", "count": 1, "density": "afternoon"}, {"role": "theatre_visitor", "density": "day", "max_per_chunk": 28}, {"role": "priestess", "density": "day", "max_per_chunk": 3}, {"role": "townsman", "density": "day", "max_per_chunk": 12}]},
+  {"id": "melite", "area": "town", "populations": [{"role": "housewife", "density": "houses", "max_per_chunk": 16}, {"role": "townsman", "density": "day", "max_per_chunk": 10}, {"role": "child", "density": "children", "max_per_chunk": 8}, {"role": "maid", "density": "houses", "max_per_chunk": 8}, {"role": "workman", "density": "work", "max_per_chunk": 6}, {"role": "dog", "density": "day", "max_per_chunk": 1}, {"role": "hen", "density": "day", "max_per_chunk": 2}, {"role": "night_walker", "density": "evening", "max_per_chunk": 4}, {"role": "wall_watch", "density": "always", "max_per_chunk": 2}, {"role": "weaver", "per_item": "athens.g_loom", "count": 1, "density": "work"}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}, {"role": "schoolboy", "density": "children", "max_per_chunk": 4}, {"role": "paidagogos", "density": "children", "max_per_chunk": 3}, {"role": "cobbler", "per_item": "athens.simon_shop", "count": 1, "density": "work"}]},
+  {"id": "koile", "area": "town", "populations": [{"role": "housewife", "density": "houses", "max_per_chunk": 18}, {"role": "townsman", "density": "day", "max_per_chunk": 12}, {"role": "child", "density": "children", "max_per_chunk": 8}, {"role": "maid", "density": "houses", "max_per_chunk": 8}, {"role": "workman", "density": "work", "max_per_chunk": 6}, {"role": "dog", "density": "day", "max_per_chunk": 1}, {"role": "hen", "density": "day", "max_per_chunk": 2}, {"role": "night_walker", "density": "evening", "max_per_chunk": 4}, {"role": "wall_watch", "density": "always", "max_per_chunk": 2}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}]},
+  {"id": "kollytos", "area": "town", "populations": [{"role": "housewife", "density": "houses", "max_per_chunk": 16}, {"role": "townsman", "density": "day", "max_per_chunk": 12}, {"role": "child", "density": "children", "max_per_chunk": 8}, {"role": "maid", "density": "houses", "max_per_chunk": 8}, {"role": "workman", "density": "work", "max_per_chunk": 6}, {"role": "dog", "density": "day", "max_per_chunk": 1}, {"role": "hen", "density": "day", "max_per_chunk": 2}, {"role": "night_walker", "density": "evening", "max_per_chunk": 4}, {"role": "wall_watch", "density": "always", "max_per_chunk": 2}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}]},
+  {"id": "kydathenaion", "area": "town", "populations": [{"role": "housewife", "density": "houses", "max_per_chunk": 18}, {"role": "townsman", "density": "day", "max_per_chunk": 14}, {"role": "child", "density": "children", "max_per_chunk": 9}, {"role": "maid", "density": "houses", "max_per_chunk": 8}, {"role": "workman", "density": "work", "max_per_chunk": 7}, {"role": "dog", "density": "day", "max_per_chunk": 1}, {"role": "hen", "density": "day", "max_per_chunk": 2}, {"role": "night_walker", "density": "evening", "max_per_chunk": 4}, {"role": "wall_watch", "density": "always", "max_per_chunk": 2}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}]},
+  {"id": "skambonidai", "area": "town", "populations": [{"role": "housewife", "density": "houses", "max_per_chunk": 16}, {"role": "townsman", "density": "day", "max_per_chunk": 12}, {"role": "child", "density": "children", "max_per_chunk": 8}, {"role": "maid", "density": "houses", "max_per_chunk": 8}, {"role": "workman", "density": "work", "max_per_chunk": 6}, {"role": "dog", "density": "day", "max_per_chunk": 1}, {"role": "hen", "density": "day", "max_per_chunk": 2}, {"role": "night_walker", "density": "evening", "max_per_chunk": 4}, {"role": "wall_watch", "density": "always", "max_per_chunk": 2}, {"role": "weaver", "per_item": "athens.g_loom", "count": 1, "density": "work"}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}]},
+  {"id": "east_quarter", "area": "town", "populations": [{"role": "housewife", "density": "houses", "max_per_chunk": 14}, {"role": "townsman", "density": "day", "max_per_chunk": 12}, {"role": "child", "density": "children", "max_per_chunk": 8}, {"role": "maid", "density": "houses", "max_per_chunk": 8}, {"role": "workman", "density": "work", "max_per_chunk": 6}, {"role": "dog", "density": "day", "max_per_chunk": 1}, {"role": "hen", "density": "day", "max_per_chunk": 2}, {"role": "night_walker", "density": "evening", "max_per_chunk": 4}, {"role": "wall_watch", "density": "always", "max_per_chunk": 2}, {"role": "weaver", "per_item": "athens.g_loom", "count": 1, "density": "work"}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}]},
+  {"id": "piraeus", "area": "centre", "populations": [{"role": "rower", "density": "harbour", "max_per_chunk": 18}, {"role": "docker", "density": "harbour", "max_per_chunk": 12}, {"role": "merchant", "density": "harbour", "max_per_chunk": 6}, {"role": "shipwright", "density": "work", "max_per_chunk": 10}, {"role": "smith", "per_item": "athens.g_forge", "count": 1, "density": "work"}, {"role": "stall_keeper", "per_item": "athens.g_stall", "count": 1, "density": "market"}, {"role": "vase_painter", "per_item": "athens.g_workshop", "count": 1, "density": "work"}, {"role": "ionian", "density": "day", "max_per_chunk": 6}, {"role": "thracian", "density": "day", "max_per_chunk": 3}, {"role": "housewife", "density": "houses", "max_per_chunk": 8}, {"role": "child", "density": "children", "max_per_chunk": 4}, {"role": "gull", "density": "day", "max_per_chunk": 4}, {"role": "archer", "density": "watch", "max_per_chunk": 2}, {"role": "shopkeeper", "per_item": "athens.g_house_small", "count": 1, "density": "market"}]},
+  {"id": "harbour", "area": "sea", "populations": [{"role": "gull", "density": "harbour", "max_per_chunk": 14}]},
+  {"id": "long_walls", "area": "road", "populations": [{"role": "cart", "density": "day", "max_per_chunk": 8}, {"role": "drover", "density": "day", "max_per_chunk": 6}, {"role": "townsman", "density": "day", "max_per_chunk": 6}, {"role": "donkey", "density": "day", "max_per_chunk": 2}]},
+  {"id": "north_fields", "area": "country", "populations": [{"role": "farmer", "density": "dawn_work", "max_per_chunk": 14}, {"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 6}, {"role": "donkey", "density": "work", "max_per_chunk": 2}]},
+  {"id": "south_fields", "area": "country", "populations": [{"role": "farmer", "density": "dawn_work", "max_per_chunk": 10}, {"role": "thresher", "per_item": "athens.g_threshing", "count": 2, "density": "dawn_work"}, {"role": "presser", "per_item": "athens.g_press", "count": 1, "density": "dawn_work"}, {"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 4}, {"role": "sheep", "density": "graze", "max_per_chunk": 4}, {"role": "ox", "density": "work", "max_per_chunk": 2}]},
+  {"id": "ilissos", "area": "country", "populations": [{"role": "farmer", "density": "dawn_work", "max_per_chunk": 14}, {"role": "presser", "per_item": "athens.g_press", "count": 1, "density": "dawn_work"}, {"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 6}, {"role": "sheep", "density": "graze", "max_per_chunk": 4}, {"role": "housewife", "density": "houses", "max_per_chunk": 3}, {"role": "donkey", "density": "work", "max_per_chunk": 2}]},
+  {"id": "countryside", "area": "country", "populations": [{"role": "farmer", "density": "dawn_work", "max_per_chunk": 12}, {"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 6}, {"role": "donkey", "density": "work", "max_per_chunk": 2}, {"role": "townsman", "density": "day", "max_per_chunk": 4}]},
+  {"id": "lyceum", "area": "town", "populations": [{"role": "athlete", "density": "day", "max_per_chunk": 28}, {"role": "hoplite", "per_item": "athens.lyceum", "count": 4, "density": "work"}, {"role": "trainer", "per_item": "athens.lyceum", "count": 2, "density": "day"}, {"role": "rider", "density": "day", "max_per_chunk": 8}, {"role": "pupil", "density": "afternoon", "max_per_chunk": 6}]},
+  {"id": "pentelikon", "area": "town", "populations": [{"role": "quarryman", "per_item": "athens.pentelikon_quarry", "count": 4, "density": "work"}, {"role": "sledge", "density": "work", "max_per_chunk": 4}, {"role": "drover", "density": "work", "max_per_chunk": 8}, {"role": "ox", "density": "work", "max_per_chunk": 8}, {"role": "quarry_hauler", "density": "work", "max_per_chunk": 14}]},
+  {"id": "lykabettos", "area": "wild", "populations": [{"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 6}]},
+  {"id": "hymettos", "area": "wild", "populations": [{"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 6}]},
+  {"id": "mouseion", "area": "wild", "populations": [{"role": "herder", "density": "day", "max_per_chunk": 2}, {"role": "goat", "density": "graze", "max_per_chunk": 6}]}
  ],
- "densities": {
-  "daytime": [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0.15,
-   0.5,
-   0.85,
-   1,
-   1,
-   1,
-   1,
-   0.85,
-   0.6,
-   0.7,
-   0.9,
-   1,
-   0.95,
-   0.7,
-   0.4,
-   0.15,
-   0.05,
-   0,
-   0
-  ],
-  "market": [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0.1,
-   0.4,
-   0.9,
-   1,
-   1,
-   1,
-   0.9,
-   0.5,
-   0.3,
-   0.4,
-   0.6,
-   0.7,
-   0.6,
-   0.4,
-   0.2,
-   0.05,
-   0,
-   0,
-   0
-  ],
-  "houses": [
-   0.05,
-   0.05,
-   0.05,
-   0.05,
-   0.1,
-   0.3,
-   0.6,
-   0.8,
-   0.8,
-   0.7,
-   0.6,
-   0.6,
-   0.5,
-   0.4,
-   0.5,
-   0.6,
-   0.7,
-   0.8,
-   0.8,
-   0.6,
-   0.4,
-   0.2,
-   0.1,
-   0.05
-  ],
-  "watch": [
-   0.4,
-   0.4,
-   0.4,
-   0.4,
-   0.4,
-   0.5,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.6,
-   0.5,
-   0.4,
-   0.4,
-   0.4
-  ],
-  "afternoon": [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0.1,
-   0.2,
-   0.3,
-   0.4,
-   0.4,
-   0.3,
-   0.3,
-   0.6,
-   0.9,
-   1,
-   1,
-   0.9,
-   0.6,
-   0.2,
-   0,
-   0,
-   0,
-   0
-  ],
-  "work": [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0.3,
-   0.8,
-   1,
-   1,
-   1,
-   1,
-   0.9,
-   0.4,
-   0.6,
-   0.9,
-   1,
-   0.9,
-   0.7,
-   0.3,
-   0,
-   0,
-   0,
-   0,
-   0
-  ]
- },
- "figures": [
-  {
-   "actor": "athens.pericles",
-   "presence": "present",
-   "card": "pericles"
-  },
-  {
-   "actor": "athens.aspasia",
-   "presence": "present",
-   "card": "aspasia"
-  },
-  {
-   "actor": "athens.socrates",
-   "presence": "present",
-   "card": "socrates"
-  },
-  {
-   "actor": "athens.sophocles",
-   "presence": "present",
-   "card": "sophocles"
-  },
-  {
-   "actor": "athens.euripides",
-   "presence": "present",
-   "card": "euripides"
-  },
-  {
-   "actor": "athens.pheidias",
-   "presence": "present",
-   "card": "pheidias"
-  },
-  {
-   "actor": "athens.mnesikles",
-   "presence": "present",
-   "card": "mnesikles"
-  },
-  {
-   "actor": "athens.protagoras",
-   "presence": "present",
-   "card": "protagoras"
-  },
-  {
-   "actor": "athens.meton",
-   "presence": "present",
-   "card": "meton"
-  },
-  {
-   "actor": "athens.alcibiades",
-   "presence": "present",
-   "card": "alcibiades"
-  },
-  {
-   "actor": "athens.solon",
-   "presence": "memory",
-   "card": "solon"
-  },
-  {
-   "actor": "athens.themistocles",
-   "presence": "memory",
-   "card": "themistocles"
-  },
-  {
-   "actor": "athens.theseus",
-   "presence": "reenactor",
-   "card": "theseus"
-  },
-  {
-   "actor": "athens.rhapsode",
-   "presence": "reenactor",
-   "card": "rhapsode"
-  },
-  {
-   "actor": "athens.philinna",
-   "presence": "present",
-   "card": "philinna"
-  },
-  {
-   "actor": "athens.mania",
-   "presence": "present",
-   "card": "mania"
-  },
-  {
-   "actor": "athens.manes",
-   "presence": "present",
-   "card": "manes"
-  },
-  {
-   "actor": "athens.kephalos",
-   "presence": "present",
-   "card": "kephalos"
-  },
-  {
-   "actor": "athens.sosias",
-   "presence": "present",
-   "card": "sosias"
-  },
-  {
-   "actor": "athens.nikarete",
-   "presence": "present",
-   "card": "nikarete"
-  },
-  {
-   "actor": "athens.toxamis",
-   "presence": "present",
-   "card": "toxamis"
-  },
-  {
-   "actor": "athens.euphiletos",
-   "presence": "present",
-   "card": "euphiletos"
-  },
-  {
-   "actor": "athens.hegeso",
-   "presence": "present",
-   "card": "hegeso"
-  },
-  {
-   "actor": "athens.simon",
-   "presence": "present",
-   "card": "simon"
-  }
+ "roles": [
+  {"id": "stall_keeper", "actor": "athens.working_woman", "name": "Market seller", "schedule": [{"hours": ["05:30", "12:00"], "routine": "sell"}, {"hours": ["14:00", "19:00"], "routine": "sell"}], "routines": {"sell": {"loop": true, "steps": [{"go": {"home": "sell"}}, {"use": {"home": "sell"}, "anim": "serve", "dur": [30, 50], "effect": "open_shutters"}, {"use": {"here": true}, "anim": "idle", "dur": [6, 12]}, {"use": {"here": true}, "anim": "serve", "dur": [20, 30]}]}, "shelter": {"steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "idle", "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "home": {"item": "athens.g_stall", "slot": "sell"}, "card": "seller"},
+  {"id": "banker", "actor": "athens.metic", "name": "Money-changer", "schedule": [{"hours": ["06:30", "12:00"], "routine": "change"}, {"hours": ["14:00", "18:00"], "routine": "change"}], "routines": {"change": {"loop": true, "steps": [{"go": {"home": "work"}}, {"use": {"home": "work"}, "anim": "serve", "dur": [30, 50]}, {"use": {"here": true}, "anim": "talk", "dur": [15, 25]}]}}, "home": {"item": "athens.g_table_banker", "slot": "work"}, "card": "banker"},
+  {"id": "shopper", "actor": "athens.citizen", "name": "Citizen", "schedule": [{"hours": ["06:00", "12:00"], "routine": "market"}, {"hours": ["12:00", "14:30"], "routine": "shade"}, {"hours": ["14:30", "19:30"], "routine": "stroll"}], "routines": {"market": {"loop": true, "steps": [{"go": {"node": "market"}}, {"wander": {"radius": 5}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}, {"go": {"item": "athens.g_table_banker", "spot": "beside", "within": 6}}, {"wait": {"dur": [6, 12]}}, {"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "talk", "dur": [15, 25]}]}, "shade": {"steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "sit", "dur": [60, 90]}]}, "stroll": {"loop": true, "steps": [{"go": {"node": "agora"}}, {"use": {"here": true}, "anim": "talk", "dur": [15, 25]}, {"go": {"node": "royal_stoa"}}, {"wander": {"radius": 4}, "dur": [20, 30]}, {"go": {"node": "se_fountain"}}, {"wait": {"dur": [8, 14]}}]}, "shelter": {"steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "idle", "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "citizen"},
+  {"id": "elder", "actor": "athens.elder", "name": "Old man", "schedule": [{"hours": ["07:00", "12:00"], "routine": "sit"}, {"hours": ["15:00", "19:00"], "routine": "sit"}], "routines": {"sit": {"loop": true, "steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "sit", "dur": [60, 100]}, {"wander": {"radius": 3}, "dur": [20, 30]}]}, "shelter": {"steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "idle", "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "elder"},
+  {"id": "porter", "actor": "athens.enslaved_man", "name": "Porter", "schedule": [{"hours": ["05:30", "12:00"], "routine": "carry"}, {"hours": ["14:00", "19:00"], "routine": "carry"}], "routines": {"carry": {"loop": true, "steps": [{"go": {"node": "market"}}, {"take": "world.goods_sacks"}, {"go": {"item": "athens.g_stall", "slot": "buy"}}, {"put": "world.goods_sacks"}, {"go": {"node": "piraeus_gate"}}, {"wait": {"dur": [10, 20]}}]}}, "card": "porter"},
+  {"id": "archer", "actor": "athens.scythian", "name": "Scythian archer", "schedule": [{"hours": ["06:00", "20:00"], "routine": "patrol"}], "routines": {"patrol": {"loop": true, "steps": [{"go": {"node": "agora"}}, {"use": {"here": true}, "anim": "guard", "dur": [30, 50]}, {"go": {"node": "lawcourt"}}, {"use": {"here": true}, "anim": "gesture", "dur": [6, 10]}, {"go": {"node": "bouleuterion"}}, {"use": {"here": true}, "anim": "guard", "dur": [20, 40]}, {"go": {"item": "athens.horos", "spot": "beside"}}, {"use": {"here": true}, "anim": "guard", "dur": [15, 25]}]}}, "card": "scythian"},
+  {"id": "fountain_woman", "actor": "athens.enslaved_woman", "name": "Water carrier", "schedule": [{"hours": ["04:30", "09:00"], "routine": "water"}, {"hours": ["16:30", "20:00"], "routine": "water"}], "routines": {"water": {"loop": true, "steps": [{"go": {"home": "fill"}}, {"use": {"home": "fill"}, "anim": "carry_idle", "dur": [10, 16]}, {"take": "athens.goods_hydria"}, {"go": {"slot_kind": "door", "within": 14}}, {"put": "athens.goods_hydria"}]}}, "home": {"item": "athens.se_fountain", "slot": "fill"}, "card": "water_carrier"},
+  {"id": "philosopher", "actor": "athens.philosopher", "name": "A talker", "schedule": [{"hours": ["07:00", "12:00"], "routine": "stoa"}, {"hours": ["14:00", "19:00"], "routine": "walk"}], "routines": {"stoa": {"loop": true, "steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"use": {"here": true}, "anim": "gesture", "dur": [10, 15]}, {"wander": {"radius": 4}, "dur": [20, 30]}]}, "walk": {"loop": true, "steps": [{"go": {"node": "agora"}}, {"use": {"here": true}, "anim": "talk", "dur": [20, 30]}, {"go": {"node": "simon_shop"}}, {"use": {"here": true}, "anim": "gesture", "dur": [10, 20]}, {"go": {"node": "stoa_poikile"}}, {"wait": {"dur": [10, 20]}}]}, "shelter": {"steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "idle", "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "philosopher"},
+  {"id": "pupil", "actor": "athens.youth", "name": "Young man", "schedule": [{"hours": ["07:00", "12:00"], "routine": "listen"}, {"hours": ["15:00", "19:00"], "routine": "listen"}], "routines": {"listen": {"loop": true, "steps": [{"follow": {"actor": "athens.philosopher"}, "dur": [40, 70], "spacing": 1.0}, {"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "idle", "dur": [20, 30]}]}}, "card": "youth"},
+  {"id": "councillor", "actor": "athens.citizen", "name": "Councillor", "schedule": [{"hours": ["06:30", "12:00"], "routine": "council"}, {"hours": ["14:00", "18:00"], "routine": "council"}, {"hours": ["18:00", "21:00"], "routine": "dine"}], "routines": {"council": {"loop": true, "steps": [{"go": {"item": "athens.old_bouleuterion", "slot": "door"}}, {"wait": {"dur": [20, 30]}}, {"go": {"node": "royal_stoa"}}, {"use": {"here": true}, "anim": "talk", "dur": [15, 25]}, {"go": {"node": "tholos"}}, {"wait": {"dur": [10, 20]}}]}, "dine": {"steps": [{"go": {"item": "athens.tholos", "slot": "door"}}, {"enter": {"here": true}, "until": {"hour": "06:00"}}]}}, "card": "councillor"},
+  {"id": "herald", "actor": "athens.citizen", "name": "Herald", "schedule": [{"hours": ["07:00", "12:00"], "routine": "proclaim"}], "routines": {"proclaim": {"loop": true, "steps": [{"go": {"home": "herald"}}, {"use": {"home": "herald"}, "anim": "talk", "dur": [20, 30]}, {"use": {"here": true}, "anim": "idle", "dur": [30, 60]}]}}, "home": {"item": "athens.royal_stoa", "slot": "herald"}, "card": "herald"},
+  {"id": "juror", "actor": "athens.elder", "name": "Juror", "schedule": [{"hours": ["06:30", "12:00"], "routine": "court"}], "routines": {"court": {"loop": true, "steps": [{"go": {"item": "athens.lawcourt", "spot": "beside"}}, {"use": {"here": true}, "anim": "idle", "dur": [40, 70]}, {"use": {"here": true}, "anim": "sit", "dur": [40, 60]}]}}, "card": "juror"},
+  {"id": "potter", "actor": "athens.potter", "name": "Potter", "schedule": [{"hours": ["05:30", "12:00"], "routine": "throw"}, {"hours": ["14:00", "18:00"], "routine": "throw"}], "routines": {"throw": {"loop": true, "steps": [{"go": {"home": "throw"}}, {"use": {"home": "throw"}, "anim": "throw", "dur": [30, 50]}, {"use": {"here": true}, "anim": "idle", "dur": [4, 8]}]}}, "home": {"item": "athens.g_wheel", "slot": "throw"}, "card": "potter"},
+  {"id": "vase_painter", "actor": "athens.painter", "name": "Vase painter", "schedule": [{"hours": ["06:00", "12:00"], "routine": "paint"}, {"hours": ["14:00", "18:00"], "routine": "paint"}], "routines": {"paint": {"loop": true, "steps": [{"go": {"home": "throw"}}, {"use": {"home": "throw"}, "anim": "write", "dur": [40, 60]}, {"use": {"here": true}, "anim": "idle", "dur": [6, 10]}]}}, "home": {"item": "athens.g_workshop", "slot": "throw"}, "card": "painter"},
+  {"id": "kiln_man", "actor": "athens.enslaved_man", "name": "Kiln-man", "schedule": [{"hours": ["05:30", "12:00"], "routine": "stoke"}, {"hours": ["14:00", "18:30"], "routine": "stoke"}], "routines": {"stoke": {"loop": true, "steps": [{"go": {"home": "stoke"}}, {"use": {"home": "stoke"}, "anim": "work_low", "dur": [30, 50]}, {"use": {"here": true}, "anim": "carry_idle", "dur": [6, 10]}]}}, "home": {"item": "athens.g_kiln", "slot": "stoke"}, "card": "kiln_man"},
+  {"id": "clay_digger", "actor": "athens.enslaved_man", "name": "Clay digger", "schedule": [{"hours": ["05:00", "11:30"], "routine": "dig"}, {"hours": ["14:00", "18:00"], "routine": "dig"}], "routines": {"dig": {"loop": true, "steps": [{"go": {"node": "cemetery"}}, {"wander": {"radius": 4}, "dur": [10, 20]}, {"use": {"here": true}, "anim": "work_low", "dur": [30, 40]}, {"take": "world.goods_sacks"}, {"go": {"node": "kerameikos_kilns"}}, {"put": "world.goods_sacks"}, {"use": {"here": true}, "anim": "haul", "dur": [10, 15]}]}}, "card": "clay_digger"},
+  {"id": "mourner", "actor": "athens.woman", "name": "Mourner", "schedule": [{"hours": ["06:00", "11:00"], "routine": "graves"}, {"hours": ["16:00", "19:00"], "routine": "graves"}], "routines": {"graves": {"loop": true, "steps": [{"go": {"item": "athens.g_grave_stele", "slot": "mourn"}}, {"use": {"here": true}, "anim": "idle", "dur": [40, 70]}, {"wander": {"radius": 4}, "dur": [15, 25]}]}}, "card": "mourner"},
+  {"id": "priestess", "actor": "athens.priest", "name": "Priest or priestess", "schedule": [{"hours": ["04:30", "12:00"], "routine": "rites"}, {"hours": ["16:00", "19:30"], "routine": "rites"}], "routines": {"rites": {"loop": true, "steps": [{"pick": [{"weight": 1, "steps": [{"go": {"item": "athens.pandroseion", "slot": "tend"}}, {"use": {"here": true}, "anim": "pour", "dur": [10, 15]}]}, {"weight": 1, "steps": [{"go": {"item": "athens.great_altar", "slot": "sacrifice"}}, {"use": {"here": true}, "anim": "pray", "dur": [10, 15]}]}, {"weight": 1, "steps": [{"go": {"item": "athens.nike_bastion", "slot": "pray"}}, {"use": {"here": true}, "anim": "pray", "dur": [10, 15]}]}, {"weight": 4, "steps": [{"go": {"node": "great_altar"}}, {"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "pour", "dur": [10, 15]}]}]}]}}, "card": "priest"},
+  {"id": "visitor", "actor": "athens.citizen", "name": "Visitor on the rock", "schedule": [{"hours": ["06:00", "12:30"], "routine": "visit"}, {"hours": ["13:30", "19:30"], "routine": "visit"}], "routines": {"visit": {"loop": true, "steps": [{"go": {"node": "propylaia"}}, {"wait": {"dur": [6, 12]}}, {"go": {"item": "athens.g_stele_inscr", "slot": "read", "within": 6}}, {"use": {"here": true}, "anim": "idle", "dur": [15, 25]}, {"go": {"node": "great_altar"}}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}, {"go": {"node": "pandroseion"}}, {"wait": {"dur": [10, 15]}}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 20}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "card": "citizen"},
+  {"id": "visitor_woman", "actor": "athens.woman", "name": "Woman on the rock", "schedule": [{"hours": ["06:00", "12:30"], "routine": "visit"}, {"hours": ["13:30", "19:00"], "routine": "visit"}], "routines": {"visit": {"loop": true, "steps": [{"go": {"node": "propylaia"}}, {"wait": {"dur": [6, 12]}}, {"go": {"node": "pandroseion"}}, {"use": {"here": true}, "anim": "idle", "dur": [15, 25]}, {"go": {"item": "athens.brauronion", "spot": "beside"}}, {"wait": {"dur": [15, 25]}}]}}, "card": "woman"},
+  {"id": "yard_mason", "actor": "athens.mason", "name": "Mason", "schedule": [{"hours": ["06:00", "12:00"], "routine": "work"}, {"hours": ["14:00", "18:00"], "routine": "work"}], "routines": {"work": {"loop": true, "steps": [{"go": {"item": "athens.sculpt_yard", "slot": "hoist"}}, {"use": {"here": true}, "anim": "haul", "dur": [25, 40]}, {"go": {"item": "athens.g_scaffold", "spot": "beside", "within": 6}}, {"use": {"here": true}, "anim": "work_high", "dur": [25, 40]}]}}, "card": "mason"},
+  {"id": "sculptor", "actor": "athens.sculptor", "name": "Sculptor", "schedule": [{"hours": ["06:00", "12:00"], "routine": "carve"}, {"hours": ["14:00", "18:00"], "routine": "carve"}], "routines": {"carve": {"loop": true, "steps": [{"go": {"home": "carve"}}, {"use": {"home": "carve"}, "anim": "work_high", "dur": [40, 60]}, {"use": {"here": true}, "anim": "idle", "dur": [6, 10]}]}}, "home": {"item": "athens.sculpt_yard", "slot": "carve"}, "card": "sculptor"},
+  {"id": "owl", "actor": "athens.owl", "name": "Little owl", "schedule": [{"hours": ["00:00", "24:00"], "routine": "perch"}], "routines": {"perch": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "idle", "dur": [60, 120]}]}}, "card": "owl"},
+  {"id": "housewife", "actor": "athens.woman", "name": "Citizen woman", "schedule": [{"hours": ["05:00", "10:00"], "routine": "water"}, {"hours": ["10:00", "17:00"], "routine": "visits"}, {"hours": ["17:00", "20:30"], "routine": "water"}], "routines": {"water": {"loop": true, "steps": [{"pick": [{"weight": 1, "steps": [{"go": {"item": "athens.g_well", "slot": "draw", "within": 16}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [3, 5]}, {"take": "athens.goods_hydria"}, {"go": {"slot_kind": "door", "within": 10}}, {"put": "athens.goods_hydria"}]}, {"weight": 2, "steps": [{"go": {"slot_kind": "door", "within": 10}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [20, 40]}, {"wander": {"radius": 5}, "dur": [20, 30]}]}]}]}, "visits": {"loop": true, "steps": [{"pick": [{"weight": 3, "steps": [{"go": {"slot_kind": "door", "within": 10}}, {"wait": {"dur": [30, 50]}}, {"wander": {"radius": 6}, "dur": [20, 30]}]}, {"weight": 1, "steps": [{"go": {"item": "athens.g_shrine", "slot": "pray", "within": 12}}, {"use": {"here": true}, "anim": "idle", "dur": [4, 6]}]}]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "woman"},
+  {"id": "maid", "actor": "athens.enslaved_woman", "name": "Enslaved woman", "schedule": [{"hours": ["05:00", "12:00"], "routine": "errands"}, {"hours": ["14:00", "20:00"], "routine": "errands"}], "routines": {"errands": {"loop": true, "steps": [{"pick": [{"weight": 1, "steps": [{"go": {"item": "athens.g_well", "slot": "draw", "within": 16}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [3, 5]}, {"take": "athens.goods_hydria"}, {"go": {"slot_kind": "door", "within": 10}}, {"put": "athens.goods_hydria"}]}, {"weight": 3, "steps": [{"go": {"slot_kind": "door", "within": 10}}, {"take": "world.goods_firewood"}, {"wander": {"radius": 6}, "dur": [20, 40]}, {"put": "world.goods_firewood"}]}]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "enslaved_woman"},
+  {"id": "townsman", "actor": "athens.citizen", "name": "Citizen", "schedule": [{"hours": ["05:30", "12:00"], "routine": "errands"}, {"hours": ["14:00", "20:00"], "routine": "errands"}], "routines": {"errands": {"loop": true, "steps": [{"go": {"slot_kind": "door", "within": 12}}, {"wait": {"dur": [10, 20]}}, {"wander": {"radius": 8}, "dur": [30, 50]}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "citizen"},
+  {"id": "shopkeeper", "actor": "athens.working_woman", "name": "Shopkeeper", "schedule": [{"hours": ["06:00", "12:00"], "routine": "shop"}, {"hours": ["15:00", "19:30"], "routine": "shop"}], "routines": {"shop": {"loop": true, "steps": [{"go": {"home": "sell"}}, {"use": {"home": "sell"}, "anim": "serve", "dur": [30, 50]}, {"use": {"here": true}, "anim": "throw", "dur": [20, 30]}]}}, "home": {"item": "athens.g_house_small", "slot": "sell"}, "card": "shopkeeper"},
+  {"id": "weaver", "actor": "athens.working_woman", "name": "Wool-worker", "schedule": [{"hours": ["05:00", "12:00"], "routine": "weave"}, {"hours": ["14:00", "18:00"], "routine": "weave"}], "routines": {"weave": {"loop": true, "steps": [{"go": {"home": "weave"}}, {"use": {"home": "weave"}, "anim": "throw", "dur": [50, 70]}, {"use": {"here": true}, "anim": "idle", "dur": [4, 8]}]}}, "home": {"item": "athens.g_loom", "slot": "weave"}, "card": "weaver"},
+  {"id": "workman", "actor": "athens.enslaved_man", "name": "Enslaved worker", "schedule": [{"hours": ["05:30", "12:00"], "routine": "work"}, {"hours": ["14:00", "19:00"], "routine": "work"}], "routines": {"work": {"loop": true, "steps": [{"go": {"slot_kind": "door", "within": 12}}, {"take": "world.goods_firewood"}, {"wander": {"radius": 8}, "dur": [20, 40]}, {"go": {"slot_kind": "door", "within": 12}}, {"put": "world.goods_firewood"}, {"use": {"here": true}, "anim": "work_low", "dur": [20, 30]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "enslaved_man"},
+  {"id": "child", "actor": "athens.child", "name": "Child", "schedule": [{"hours": ["06:30", "19:30"], "routine": "play"}], "routines": {"play": {"loop": true, "steps": [{"pick": [{"weight": 3, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "run", "dur": [6, 10]}]}, {"weight": 2, "steps": [{"wander": {"radius": 3}, "dur": [10, 15]}, {"use": {"here": true}, "anim": "kneel", "dur": [20, 30]}]}]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "child"},
+  {"id": "schoolboy", "actor": "athens.youth", "name": "Schoolboy", "schedule": [{"hours": ["07:00", "11:30"], "routine": "school"}], "routines": {"school": {"steps": [{"go": {"node": "melite_school"}}, {"use": {"here": true}, "anim": "idle", "until": {"hour": "11:30"}}]}}, "card": "school"},
+  {"id": "paidagogos", "actor": "athens.enslaved_man", "name": "Paidagogos", "schedule": [{"hours": ["06:30", "12:00"], "routine": "escort"}], "routines": {"escort": {"loop": true, "steps": [{"follow": {"actor": "athens.youth"}, "dur": [40, 60], "spacing": 1.2}, {"go": {"node": "melite_school"}}, {"wait": {"dur": [30, 60]}}]}}, "card": "paidagogos"},
+  {"id": "night_walker", "actor": "athens.citizen", "name": "Citizen with a lamp", "schedule": [{"hours": ["19:30", "01:00"], "routine": "home"}], "routines": {"home": {"loop": true, "steps": [{"wander": {"radius": 10}, "dur": [30, 50]}, {"go": {"slot_kind": "door", "within": 12}}, {"wait": {"dur": [10, 20]}}]}}, "card": "citizen"},
+  {"id": "wall_watch", "actor": "athens.hoplite", "name": "Watch on the walls", "schedule": [{"hours": ["19:00", "06:00"], "routine": "watch"}], "routines": {"watch": {"loop": true, "steps": [{"wander": {"radius": 12}, "dur": [40, 70]}, {"use": {"here": true}, "anim": "guard", "dur": [30, 60]}]}}, "card": "hoplite"},
+  {"id": "dog", "actor": "athens.dog_laconian", "name": "Laconian hound", "schedule": [{"hours": ["00:00", "24:00"], "routine": "roam"}], "routines": {"roam": {"loop": true, "steps": [{"wander": {"radius": 8}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "idle", "dur": [30, 60]}]}}},
+  {"id": "hen", "actor": "athens.hen", "name": "Hen", "schedule": [{"hours": ["05:00", "19:30"], "routine": "peck"}], "routines": {"peck": {"loop": true, "steps": [{"wander": {"radius": 3}, "dur": [10, 20]}, {"use": {"here": true}, "anim": "peck", "dur": [10, 20]}]}}},
+  {"id": "cobbler", "actor": "athens.simon", "name": "Simon at his bench", "schedule": [{"hours": ["06:30", "18:30"], "routine": "work"}], "routines": {"work": {"loop": true, "steps": [{"go": {"item": "athens.simon_shop", "slot": "work"}}, {"use": {"here": true}, "anim": "stir", "dur": [40, 60]}, {"use": {"here": true}, "anim": "talk", "dur": [15, 25]}]}}},
+  {"id": "smith", "actor": "athens.smith", "name": "Smith", "schedule": [{"hours": ["05:30", "12:00"], "routine": "forge"}, {"hours": ["14:00", "18:30"], "routine": "forge"}], "routines": {"forge": {"loop": true, "steps": [{"go": {"home": "work"}}, {"use": {"home": "work"}, "anim": "work_high", "dur": [40, 60]}, {"use": {"here": true}, "anim": "idle", "dur": [6, 10]}]}}, "home": {"item": "athens.g_forge", "slot": "work"}, "card": "smith"},
+  {"id": "caster", "actor": "athens.metic", "name": "Bronze caster", "schedule": [{"hours": ["06:00", "12:00"], "routine": "cast"}, {"hours": ["14:00", "18:00"], "routine": "cast"}], "routines": {"cast": {"loop": true, "steps": [{"go": {"node": "hephaisteion"}}, {"use": {"here": true}, "anim": "serve", "dur": [20, 30]}, {"wander": {"radius": 4}, "dur": [20, 30]}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}]}}, "card": "caster"},
+  {"id": "chorus", "actor": "athens.chorus", "name": "Chorus member", "schedule": [{"hours": ["14:00", "18:30"], "routine": "rehearse"}], "routines": {"rehearse": {"loop": true, "steps": [{"go": {"home": "chorus"}}, {"use": {"home": "chorus"}, "anim": "dance", "dur": [40, 60]}, {"use": {"here": true}, "anim": "idle", "dur": [10, 15]}]}}, "home": {"item": "athens.theatre", "slot": "chorus"}, "card": "chorus"},
+  {"id": "aulos_player", "actor": "athens.musician", "name": "Aulos player", "schedule": [{"hours": ["14:00", "18:30"], "routine": "play"}, {"hours": ["19:30", "23:00"], "routine": "symposium"}], "routines": {"play": {"loop": true, "steps": [{"go": {"home": "aulos"}}, {"use": {"home": "aulos"}, "anim": "play", "dur": [50, 70]}]}, "symposium": {"steps": [{"go": {"slot_kind": "door", "within": 40}}, {"enter": {"here": true}, "until": {"hour": "23:00"}}]}}, "home": {"item": "athens.theatre", "slot": "aulos"}, "card": "aulos"},
+  {"id": "theatre_visitor", "actor": "athens.citizen", "name": "Onlooker", "schedule": [{"hours": ["06:30", "12:00"], "routine": "look"}, {"hours": ["14:00", "18:30"], "routine": "look"}], "routines": {"look": {"loop": true, "steps": [{"go": {"node": "theatre"}}, {"use": {"here": true}, "anim": "sit", "dur": [40, 70]}, {"go": {"node": "odeion"}}, {"wander": {"radius": 4}, "dur": [20, 30]}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}]}}, "card": "citizen"},
+  {"id": "rower", "actor": "athens.rower", "name": "Rower", "schedule": [{"hours": ["05:00", "12:00"], "routine": "quay"}, {"hours": ["14:00", "19:00"], "routine": "quay"}], "routines": {"quay": {"loop": true, "steps": [{"go": {"node": "kantharos_quay"}}, {"use": {"here": true}, "anim": "haul", "dur": [20, 30]}, {"go": {"node": "zea_sheds"}}, {"use": {"here": true}, "anim": "haul", "dur": [20, 30]}, {"wander": {"radius": 4}, "dur": [15, 25]}]}}, "card": "rower"},
+  {"id": "docker", "actor": "athens.enslaved_man", "name": "Dock worker", "schedule": [{"hours": ["05:00", "12:00"], "routine": "load"}, {"hours": ["14:00", "19:00"], "routine": "load"}], "routines": {"load": {"loop": true, "steps": [{"go": {"item": "athens.harbour", "slot": "load"}}, {"use": {"here": true}, "anim": "haul", "dur": [6, 10]}, {"take": "world.goods_amphorae"}, {"go": {"node": "piraeus_agora"}}, {"put": "world.goods_amphorae"}, {"go": {"node": "kantharos_quay"}}, {"wait": {"dur": [8, 14]}}]}}, "card": "docker"},
+  {"id": "merchant", "actor": "athens.metic", "name": "Merchant", "schedule": [{"hours": ["06:00", "12:00"], "routine": "trade"}, {"hours": ["14:00", "19:00"], "routine": "trade"}], "routines": {"trade": {"loop": true, "steps": [{"go": {"item": "athens.harbour", "slot": "trade"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"go": {"node": "piraeus_agora"}}, {"use": {"here": true}, "anim": "serve", "dur": [20, 30]}]}}, "card": "metic"},
+  {"id": "shipwright", "actor": "athens.enslaved_man", "name": "Shipwright", "schedule": [{"hours": ["06:00", "12:00"], "routine": "build"}, {"hours": ["14:00", "18:30"], "routine": "build"}], "routines": {"build": {"loop": true, "steps": [{"go": {"item": "athens.shipsheds", "spot": "beside"}}, {"use": {"here": true}, "anim": "work_low", "dur": [30, 50]}, {"use": {"here": true}, "anim": "haul", "dur": [15, 25]}]}}, "card": "shipwright"},
+  {"id": "ionian", "actor": "athens.ionian", "name": "Ionian visitor", "schedule": [{"hours": ["07:00", "18:00"], "routine": "visit"}], "routines": {"visit": {"loop": true, "steps": [{"go": {"node": "piraeus_agora"}}, {"use": {"here": true}, "anim": "talk", "dur": [20, 30]}, {"go": {"node": "kantharos_quay"}}, {"wait": {"dur": [15, 25]}}]}}, "card": "ionian"},
+  {"id": "thracian", "actor": "athens.thracian", "name": "Thracian", "schedule": [{"hours": ["07:00", "18:00"], "routine": "visit"}], "routines": {"visit": {"loop": true, "steps": [{"go": {"node": "kantharos_quay"}}, {"use": {"here": true}, "anim": "idle", "dur": [20, 30]}, {"go": {"node": "piraeus_agora"}}, {"wait": {"dur": [15, 25]}}]}}, "card": "thracian"},
+  {"id": "gull", "actor": "world.gull", "name": "Gull", "schedule": [{"hours": ["04:30", "21:00"], "routine": "fly"}], "routines": {"fly": {"loop": true, "steps": [{"wander": {"radius": 14}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "idle", "dur": [10, 20]}]}}},
+  {"id": "cart", "actor": "athens.cart", "name": "Ox cart", "schedule": [{"hours": ["05:00", "19:00"], "routine": "haul"}], "routines": {"haul": {"loop": true, "steps": [{"go": {"node": "kantharos_quay"}}, {"wait": {"dur": [20, 30]}}, {"go": {"node": "long_walls_road"}}, {"go": {"node": "long_walls_gate"}}, {"go": {"node": "market"}}, {"wait": {"dur": [20, 30]}}]}}, "locomotion": {"mode": "walk", "speed": 0.6, "network": "roads", "turn_radius": 2}},
+  {"id": "drover", "actor": "athens.drover", "name": "Drover", "schedule": [{"hours": ["05:00", "19:00"], "routine": "drive"}], "routines": {"drive": {"loop": true, "steps": [{"follow": {"actor": "athens.cart"}, "dur": [60, 90], "spacing": 0.8}, {"use": {"here": true}, "anim": "idle", "dur": [10, 20]}]}}},
+  {"id": "donkey", "actor": "athens.donkey", "name": "Donkey", "schedule": [{"hours": ["05:00", "19:00"], "routine": "walk"}], "routines": {"walk": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "graze", "dur": [20, 40]}]}}},
+  {"id": "farmer", "actor": "athens.farmer", "name": "Farmer", "schedule": [{"hours": ["04:30", "11:30"], "routine": "field"}, {"hours": ["15:00", "19:00"], "routine": "field"}], "routines": {"field": {"loop": true, "steps": [{"pick": [{"weight": 4, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "work_low", "dur": [30, 50]}]}, {"weight": 1, "steps": [{"go": {"item": "athens.g_farmstead", "slot": "door", "within": 12}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [10, 15]}]}]}]}}, "card": "farmer"},
+  {"id": "thresher", "actor": "athens.farmer", "name": "Thresher", "schedule": [{"hours": ["05:00", "11:00"], "routine": "thresh"}, {"hours": ["15:00", "18:30"], "routine": "thresh"}], "routines": {"thresh": {"loop": true, "steps": [{"go": {"home": "work"}}, {"use": {"home": "work"}, "anim": "work_low", "dur": [30, 50]}, {"use": {"here": true}, "anim": "carry_idle", "dur": [6, 10]}]}}, "home": {"item": "athens.g_threshing", "slot": "work"}, "card": "thresher"},
+  {"id": "presser", "actor": "athens.farmer", "name": "Olive presser", "schedule": [{"hours": ["05:30", "11:00"], "routine": "press"}, {"hours": ["15:00", "18:30"], "routine": "press"}], "routines": {"press": {"loop": true, "steps": [{"go": {"home": "work"}}, {"use": {"home": "work"}, "anim": "work_low", "dur": [30, 50]}, {"take": "world.goods_amphorae"}, {"go": {"item": "athens.g_farmstead", "slot": "door", "within": 10}}, {"put": "world.goods_amphorae"}]}}, "home": {"item": "athens.g_press", "slot": "work"}, "card": "presser"},
+  {"id": "herder", "actor": "athens.herder", "name": "Goatherd", "schedule": [{"hours": ["05:00", "19:00"], "routine": "herd"}], "routines": {"herd": {"loop": true, "steps": [{"wander": {"radius": 10}, "dur": [40, 70]}, {"use": {"here": true}, "anim": "idle", "dur": [10, 20]}]}}, "card": "herder"},
+  {"id": "goat", "actor": "athens.goat", "name": "Goat", "schedule": [{"hours": ["05:00", "19:30"], "routine": "graze"}], "routines": {"graze": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "graze", "dur": [10, 25]}]}}},
+  {"id": "sheep", "actor": "athens.sheep", "name": "Sheep", "schedule": [{"hours": ["05:00", "19:30"], "routine": "graze"}], "routines": {"graze": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "graze", "dur": [10, 25]}]}}},
+  {"id": "ox", "actor": "athens.ox", "name": "Ox", "schedule": [{"hours": ["05:00", "18:30"], "routine": "graze"}], "routines": {"graze": {"loop": true, "steps": [{"wander": {"radius": 4}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "graze", "dur": [30, 50]}]}}},
+  {"id": "athlete", "actor": "athens.athlete", "name": "Athlete", "schedule": [{"hours": ["06:00", "12:00"], "routine": "train"}, {"hours": ["14:00", "19:00"], "routine": "train"}], "routines": {"train": {"loop": true, "steps": [{"pick": [{"weight": 1, "steps": [{"go": {"item": "athens.lyceum", "slot": "run"}}, {"use": {"here": true}, "anim": "run", "dur": [8, 12]}]}, {"weight": 2, "steps": [{"wander": {"radius": 8}, "dur": [20, 30]}, {"use": {"here": true}, "anim": "run", "dur": [15, 25]}]}, {"weight": 2, "steps": [{"wander": {"radius": 4}, "dur": [10, 15]}, {"use": {"here": true}, "anim": "wrestle", "dur": [20, 30]}]}, {"weight": 1, "steps": [{"wander": {"radius": 3}, "dur": [10, 15]}, {"use": {"here": true}, "anim": "scrape", "dur": [15, 20]}]}]}]}}, "card": "athlete"},
+  {"id": "hoplite", "actor": "athens.hoplite", "name": "Hoplite", "schedule": [{"hours": ["06:00", "11:00"], "routine": "drill"}, {"hours": ["16:00", "19:00"], "routine": "drill"}], "routines": {"drill": {"loop": true, "steps": [{"go": {"home": "drill"}}, {"use": {"home": "drill"}, "anim": "march", "dur": [25, 40]}, {"use": {"here": true}, "anim": "guard", "dur": [10, 20]}]}}, "home": {"item": "athens.lyceum", "slot": "drill"}, "card": "hoplite"},
+  {"id": "gate_guard", "actor": "athens.hoplite", "name": "Watch at the gate", "schedule": [{"hours": ["00:00", "24:00"], "routine": "watch"}], "routines": {"watch": {"loop": true, "steps": [{"go": {"item": "athens.dipylon", "slot": "guard"}}, {"use": {"here": true}, "anim": "guard", "dur": [60, 120]}, {"go": {"node": "sacred_gate"}}, {"use": {"here": true}, "anim": "march", "dur": [10, 15]}]}}, "card": "hoplite"},
+  {"id": "trainer", "actor": "athens.philosopher", "name": "Trainer", "schedule": [{"hours": ["06:00", "12:00"], "routine": "watch"}, {"hours": ["14:00", "19:00"], "routine": "watch"}], "routines": {"watch": {"loop": true, "steps": [{"go": {"item": "athens.lyceum", "slot": "talk"}}, {"use": {"here": true}, "anim": "gesture", "dur": [20, 30]}, {"wander": {"radius": 4}, "dur": [15, 25]}]}}, "card": "trainer"},
+  {"id": "rider", "actor": "athens.cavalryman", "name": "Horseman", "schedule": [{"hours": ["06:00", "12:00"], "routine": "ride"}, {"hours": ["14:00", "19:00"], "routine": "ride"}], "routines": {"ride": {"loop": true, "steps": [{"go": {"node": "lyceum"}}, {"wander": {"radius": 8}, "dur": [40, 70]}]}}},
+  {"id": "quarryman", "actor": "athens.mason", "name": "Quarryman", "schedule": [{"hours": ["05:00", "12:00"], "routine": "cut"}, {"hours": ["14:00", "18:30"], "routine": "cut"}], "routines": {"cut": {"loop": true, "steps": [{"go": {"home": "cut"}}, {"use": {"home": "cut"}, "anim": "work_high", "dur": [30, 50]}, {"use": {"here": true}, "anim": "haul", "dur": [10, 20]}]}}, "home": {"item": "athens.pentelikon_quarry", "slot": "cut"}, "card": "quarryman"},
+  {"id": "quarry_hauler", "actor": "athens.enslaved_man", "name": "Quarry hauler", "schedule": [{"hours": ["05:00", "12:30"], "routine": "haul"}, {"hours": ["13:30", "18:30"], "routine": "haul"}], "routines": {"haul": {"loop": true, "steps": [{"go": {"node": "pentelikon_quarry"}}, {"use": {"here": true}, "anim": "haul", "dur": [30, 50]}, {"wander": {"radius": 5}, "dur": [15, 25]}, {"use": {"here": true}, "anim": "work_low", "dur": [20, 30]}]}}, "card": "quarry_hauler"},
+  {"id": "sledge", "actor": "athens.sledge", "name": "Marble sledge", "schedule": [{"hours": ["05:30", "18:30"], "routine": "haul"}], "routines": {"haul": {"loop": true, "steps": [{"go": {"item": "athens.pentelikon_quarry", "slot": "sledge"}}, {"wait": {"dur": [20, 30]}}, {"go": {"node": "quarry_road"}}, {"go": {"node": "acharnian_gate"}}, {"go": {"node": "approach_foot"}}, {"go": {"node": "sculptors_yard"}}, {"wait": {"dur": [20, 30]}}]}}, "locomotion": {"mode": "walk", "speed": 0.5, "network": "roads", "turn_radius": 2}}
  ],
  "groups": [
-  {
-   "id": "panathenaic_procession",
-   "leader": {
-    "actor": "athens.marshal"
-   },
-   "members": [
-    {
-     "actor": "athens.peplos_bearer",
-     "count": 2,
-     "carry": "athens.goods_peplos"
-    },
-    {
-     "actor": "athens.kanephoros",
-     "count": 4,
-     "carry": "athens.goods_kanoun"
-    },
-    {
-     "actor": "athens.hydriaphoros",
-     "count": 3,
-     "carry": "athens.goods_hydria"
-    },
-    {
-     "actor": "athens.skaphephoros",
-     "count": 3
-    },
-    {
-     "actor": "athens.metic_daughter",
-     "count": 2
-    },
-    {
-     "actor": "athens.thallophoros",
-     "count": 4
-    },
-    {
-     "actor": "athens.musician",
-     "count": 2
-    },
-    {
-     "actor": "athens.drover",
-     "count": 2
-    },
-    {
-     "actor": "athens.heifer",
-     "count": 4
-    },
-    {
-     "actor": "athens.sheep",
-     "count": 4
-    },
-    {
-     "actor": "athens.hoplite",
-     "count": 6
-    },
-    {
-     "actor": "athens.cavalryman",
-     "count": 4
-    },
-    {
-     "actor": "athens.chariot",
-     "count": 1
-    }
-   ],
-   "formation": {
-    "kind": "pairs",
-    "spacing": 0.9
-   }
-  },
-  {
-   "id": "hoplites_for_potidaea",
-   "leader": {
-    "actor": "athens.hoplite"
-   },
-   "members": [
-    {
-     "actor": "athens.hoplite",
-     "count": 11
-    }
-   ],
-   "formation": {
-    "kind": "pairs",
-    "spacing": 0.8
-   }
-  },
-  {
-   "id": "assembly_sweep",
-   "leader": {
-    "actor": "athens.toxamis"
-   },
-   "members": [
-    {
-     "actor": "athens.scythian",
-     "count": 3
-    }
-   ],
-   "formation": {
-    "kind": "line",
-    "spacing": 1.2
-   }
-  }
+  {"id": "panathenaic_procession", "leader": {"actor": "athens.marshal"}, "members": [{"actor": "athens.peplos_bearer", "count": 2, "carry": "athens.goods_peplos"}, {"actor": "athens.kanephoros", "count": 4, "carry": "athens.goods_kanoun"}, {"actor": "athens.hydriaphoros", "count": 3, "carry": "athens.goods_hydria"}, {"actor": "athens.skaphephoros", "count": 3}, {"actor": "athens.metic_daughter", "count": 2}, {"actor": "athens.thallophoros", "count": 4}, {"actor": "athens.musician", "count": 2}, {"actor": "athens.drover", "count": 2}, {"actor": "athens.heifer", "count": 4}, {"actor": "athens.sheep", "count": 4}, {"actor": "athens.hoplite", "count": 6}, {"actor": "athens.cavalryman", "count": 4}, {"actor": "athens.alcibiades", "count": 1}, {"actor": "athens.theseus", "count": 1}, {"actor": "athens.chariot", "count": 1}], "formation": {"kind": "pairs", "spacing": 0.9}},
+  {"id": "hoplites_for_potidaea", "leader": {"role": "hoplite"}, "members": [{"role": "hoplite", "count": 11}], "formation": {"kind": "pairs", "spacing": 0.8}},
+  {"id": "assembly_sweep", "leader": {"actor": "athens.toxamis"}, "members": [{"role": "archer", "count": 3}], "formation": {"kind": "line", "spacing": 1.2}},
+  {"id": "wedding", "leader": {"actor": "athens.cart"}, "members": [{"actor": "athens.musician", "count": 2}, {"role": "housewife", "count": 4}, {"role": "townsman", "count": 4}, {"role": "child", "count": 2}], "formation": {"kind": "cluster", "radius": 2}},
+  {"id": "funeral", "leader": {"role": "townsman"}, "members": [{"role": "mourner", "count": 4}, {"actor": "athens.musician", "count": 1}, {"role": "townsman", "count": 3}], "formation": {"kind": "pairs", "spacing": 0.9}},
+  {"id": "socratic_ring", "leader": {"actor": "athens.socrates"}, "members": [{"role": "pupil", "count": 4}, {"actor": "athens.alcibiades", "count": 1}], "formation": {"kind": "cluster", "radius": 2}},
+  {"id": "protagoras_pupils", "leader": {"actor": "athens.protagoras"}, "members": [{"role": "pupil", "count": 6}], "formation": {"kind": "line", "spacing": 0.9}},
+  {"id": "flock", "leader": {"role": "herder"}, "members": [{"actor": "athens.goat", "count": 5}, {"actor": "athens.sheep", "count": 3}, {"actor": "athens.dog_molossian", "count": 1}], "formation": {"kind": "cluster", "radius": 3}}
  ],
  "chains": [
-  {
-   "id": "athens_marble",
-   "period": 260,
-   "stages": [
-    {
-     "slot": "athens.pentelikon_quarry.cut",
-     "makes": "marble_block",
-     "by": "athens.mason"
-    },
-    {
-     "carry": "marble_block",
-     "from": "athens.pentelikon_quarry.sledge",
-     "to": "athens.sculpt_yard.hoist",
-     "by": "athens.sledge"
-    },
-    {
-     "slot": "athens.sculpt_yard.carve",
-     "needs": "marble_block",
-     "makes": "carved_block",
-     "by": "athens.sculptor"
-    },
-    {
-     "slot": "athens.sculpt_yard.pheidias",
-     "sink": "carved_block",
-     "by": "athens.pheidias"
-    }
-   ]
-  },
-  {
-   "id": "athens_pottery",
-   "period": 200,
-   "stages": [
-    {
-     "slot": "athens.g_workshop.throw",
-     "makes": "athens.goods_redfigure",
-     "by": "athens.potter"
-    },
-    {
-     "slot": "athens.g_kiln.stoke",
-     "needs": "athens.goods_redfigure",
-     "makes": "athens.goods_redfigure",
-     "by": "athens.painter"
-    },
-    {
-     "carry": "athens.goods_redfigure",
-     "from": "athens.g_kiln.stoke",
-     "to": "athens.g_stall.sell",
-     "by": "athens.enslaved_man"
-    },
-    {
-     "slot": "athens.harbour.load",
-     "sink": "athens.goods_redfigure",
-     "by": "athens.rower"
-    }
-   ]
-  },
-  {
-   "id": "athens_oil",
-   "period": 240,
-   "stages": [
-    {
-     "slot": "athens.g_press.work",
-     "makes": "athens.goods_prize_amphora",
-     "by": "athens.farmer"
-    },
-    {
-     "carry": "athens.goods_prize_amphora",
-     "from": "athens.g_press.work",
-     "to": "athens.g_stall.sell",
-     "by": "athens.cart"
-    },
-    {
-     "slot": "athens.g_stall.buy",
-     "sink": "athens.goods_prize_amphora",
-     "by": "athens.citizen"
-    }
-   ]
-  },
-  {
-   "id": "athens_water",
-   "period": 90,
-   "stages": [
-    {
-     "slot": "athens.se_fountain.fill",
-     "makes": "athens.goods_hydria",
-     "by": "athens.woman"
-    },
-    {
-     "carry": "athens.goods_hydria",
-     "from": "athens.se_fountain.fill",
-     "to": "athens.g_house.door",
-     "by": "athens.enslaved_woman"
-    },
-    {
-     "slot": "athens.g_house.door",
-     "sink": "athens.goods_hydria",
-     "by": "athens.woman"
-    }
-   ]
-  },
-  {
-   "id": "athens_charcoal",
-   "period": 180,
-   "stages": [
-    {
-     "carry": "athens.goods_charcoal",
-     "from": "portal:acharnai_n",
-     "to": "athens.g_kiln.stoke",
-     "by": "athens.sosias"
-    },
-    {
-     "slot": "athens.g_forge.work",
-     "sink": "athens.goods_charcoal",
-     "by": "athens.smith"
-    }
-   ]
-  },
-  {
-   "id": "athens_shields",
-   "period": 220,
-   "stages": [
-    {
-     "slot": "athens.g_forge.work",
-     "makes": "athens.goods_shield",
-     "by": "athens.smith"
-    },
-    {
-     "carry": "athens.goods_shield",
-     "from": "athens.g_forge.work",
-     "to": "athens.lyceum.drill",
-     "by": "athens.enslaved_man"
-    },
-    {
-     "slot": "athens.lyceum.drill",
-     "sink": "athens.goods_shield",
-     "by": "athens.hoplite"
-    }
-   ]
-  }
+  {"id": "athens_marble", "name": "Marble for the Acropolis", "period": 210, "hours": ["05:30", "18:30"], "stages": [{"slot": "athens.pentelikon_quarry.cut", "makes": "world.goods_block", "by": "quarryman"}, {"carry": "world.goods_block", "from": "athens.pentelikon_quarry.cut", "to": "athens.sculpt_yard.carve", "by": "sledge", "units": 1, "workers": 3}, {"slot": "athens.sculpt_yard.carve", "needs": "world.goods_block", "makes": "world.goods_block", "out": "athens.sculpt_yard.hoist", "by": "sculptor", "label": "carved"}, {"slot": "athens.sculpt_yard.hoist", "sink": "world.goods_block", "by": "yard_mason", "label": "hoisted into place"}]},
+  {"id": "athens_pottery", "name": "Pottery", "period": 120, "hours": ["05:30", "18:00"], "stages": [{"slot": "athens.g_wheel.throw", "makes": "world.goods_pot_raw", "near": "kerameikos_kilns", "by": "potter"}, {"carry": "world.goods_pot_raw", "from": "athens.g_wheel.throw", "to": "athens.g_workshop.throw", "near": "kerameikos_kilns", "by": "potter"}, {"slot": "athens.g_workshop.throw", "needs": "world.goods_pot_raw", "makes": "world.goods_pot_painted", "near": "kerameikos_kilns", "by": "vase_painter"}, {"carry": "world.goods_pot_painted", "from": "athens.g_workshop.throw", "to": "athens.g_kiln.stoke", "near": "kerameikos_kilns", "by": "kiln_man"}, {"slot": "athens.g_kiln.stoke", "needs": "world.goods_pot_painted", "makes": "athens.goods_redfigure", "near": "kerameikos_kilns", "by": "kiln_man", "label": "fired: oxidise, reduce, reoxidise"}, {"carry": "athens.goods_redfigure", "from": "athens.g_kiln.stoke", "to": "athens.g_stall.sell", "near": "kerameikos_kilns", "by": "porter", "units": 2}, {"slot": "athens.g_stall.sell", "sink": "athens.goods_redfigure", "near": "market", "by": "stall_keeper", "label": "sold"}]},
+  {"id": "athens_oil", "name": "Olive oil to the market", "period": 160, "hours": ["05:30", "18:30"], "stages": [{"slot": "athens.g_press.work", "makes": "world.goods_oil_jar", "near": "south_farms", "by": "presser", "label": "pressed from the store of olives"}, {"carry": "world.goods_oil_jar", "from": "athens.g_press.work", "to": "athens.g_stall.sell", "near": "south_farms", "by": "cart", "units": 3, "workers": 2}, {"slot": "athens.g_stall.sell", "sink": "world.goods_oil_jar", "near": "se_fountain", "by": "stall_keeper", "label": "sold by the ladle"}]},
+  {"id": "athens_oil_export", "name": "Oil for the ships", "period": 200, "hours": ["05:30", "18:30"], "stages": [{"slot": "athens.g_press.work", "makes": "world.goods_amphorae", "near": "kallirrhoe", "by": "presser"}, {"carry": "world.goods_amphorae", "from": "athens.g_press.work", "to": "athens.harbour.load", "near": "kallirrhoe", "by": "cart", "units": 3, "workers": 2}, {"slot": "athens.harbour.load", "sink": "world.goods_amphorae", "by": "docker", "label": "loaded aboard a merchantman"}]},
+  {"id": "athens_grain", "name": "Black Sea grain", "period": 150, "hours": ["05:00", "18:00"], "stages": [{"slot": "node:kantharos_quay", "makes": "world.goods_sacks", "by": "docker", "label": "unloaded from a grain ship"}, {"carry": "world.goods_sacks", "from": "node:kantharos_quay", "to": "athens.g_stall.sell", "by": "cart", "units": 3, "workers": 2, "near": "lawcourt"}, {"slot": "athens.g_stall.sell", "sink": "world.goods_sacks", "near": "lawcourt", "by": "stall_keeper", "label": "carried home to be ground"}]},
+  {"id": "athens_fish", "name": "Fish", "period": 100, "hours": ["05:00", "12:00"], "stages": [{"slot": "node:mounychia_landing", "makes": "world.goods_fish", "by": "rower", "label": "landed from the boats"}, {"carry": "world.goods_fish", "from": "node:mounychia_landing", "to": "athens.g_stall.sell", "near": "piraeus_agora", "by": "porter", "units": 2}, {"slot": "athens.g_stall.sell", "sink": "world.goods_fish", "near": "piraeus_agora", "by": "stall_keeper", "label": "sold"}]},
+  {"id": "athens_water", "name": "Water", "period": 70, "hours": ["04:30", "20:00"], "stages": [{"slot": "athens.se_fountain.fill", "makes": "athens.goods_hydria", "by": "fountain_woman"}, {"carry": "athens.goods_hydria", "from": "athens.se_fountain.fill", "to": "athens.g_house_two.door", "near": "se_fountain", "by": "fountain_woman", "workers": 2}, {"slot": "athens.g_house_two.door", "sink": "athens.goods_hydria", "near": "se_fountain", "by": "housewife", "label": "carried in"}]},
+  {"id": "athens_charcoal", "name": "Charcoal from Acharnai", "period": 160, "hours": ["06:00", "17:00"], "stages": [{"slot": "node:acharnian_gate", "makes": "athens.goods_charcoal", "by": "farmer", "label": "brought in by donkey from the burners on Parnes"}, {"carry": "athens.goods_charcoal", "from": "node:acharnian_gate", "to": "athens.g_kiln.stoke", "near": "kerameikos_kilns", "by": "porter", "units": 2, "workers": 2}, {"slot": "athens.g_kiln.stoke", "sink": "athens.goods_charcoal", "near": "kerameikos_kilns", "by": "kiln_man", "label": "burnt in the firing"}]},
+  {"id": "athens_shields", "name": "Shields from Piraeus", "period": 200, "hours": ["06:00", "18:00"], "stages": [{"slot": "athens.g_forge.work", "makes": "athens.goods_shield", "near": "kephalos_workshop", "by": "smith"}, {"carry": "athens.goods_shield", "from": "athens.g_forge.work", "to": "athens.harbour.load", "near": "kephalos_workshop", "by": "docker"}, {"slot": "athens.harbour.load", "sink": "athens.goods_shield", "by": "docker", "label": "stowed for the force at Potidaea"}]},
+  {"id": "athens_tribute", "name": "Tribute to the Acropolis", "period": 150, "hours": ["08:00", "18:00"], "event": "tribute_ship", "stages": [{"slot": "athens.harbour.trade", "makes": "world.goods_silver", "by": "merchant", "label": "sealed jars of silver landed"}, {"carry": "world.goods_silver", "from": "athens.harbour.trade", "to": "node:propylaia", "by": "cart", "units": 3, "workers": 2}, {"slot": "node:propylaia", "sink": "world.goods_silver", "by": "priestess", "label": "counted into Athena's treasury"}]}
+ ],
+ "festivals": [
+  {"id": "panathenaia", "season": "summer", "day": 2, "hours": ["05:30", "18:00"]},
+  {"id": "mysteries", "season": "autumn", "day": 1, "hours": ["06:00", "18:00"]},
+  {"id": "thesmophoria", "season": "autumn", "day": 3, "hours": ["06:00", "18:00"]},
+  {"id": "olive_harvest", "season": "autumn", "hours": ["06:00", "17:00"]},
+  {"id": "lenaia", "season": "winter", "day": 2, "hours": ["09:00", "17:00"]},
+  {"id": "anthesteria", "season": "winter", "day": 3, "hours": ["08:00", "20:00"]},
+  {"id": "city_dionysia", "season": "spring", "day": 2, "hours": ["07:00", "18:00"]}
  ],
  "events": [
-  {
-   "id": "panathenaic_procession",
-   "trigger": {
-    "on": "window",
-    "hours": [
-     "05:30",
-     "06:30"
-    ],
-    "chance": 1.0
-   },
-   "size": "large",
-   "duration": [
-    600,
-    720
-   ],
-   "cast": [
-    {
-     "group": "panathenaic_procession"
-    }
-   ],
-   "route": [
-    "dipylon",
-    "kerameikos_kilns",
-    "agora",
-    "eleusinion",
-    "klepsydra",
-    "approach_foot",
-    "propylaia",
-    "pandroseion",
-    "great_altar"
-   ],
-   "steps": [
-    {
-     "go": {
-      "node": "dipylon"
-     }
-    },
-    {
-     "go": {
-      "node": "agora"
-     }
-    },
-    {
-     "go": {
-      "node": "eleusinion"
-     }
-    },
-    {
-     "go": {
-      "node": "approach_foot"
-     }
-    },
-    {
-     "go": {
-      "node": "propylaia"
-     }
-    },
-    {
-     "go": {
-      "node": "great_altar"
-     }
-    },
-    {
-     "use": {
-      "item": "athens.great_altar",
-      "slot": "sacrifice"
-     },
-     "anim": "pray",
-     "dur": [
-      40,
-      60
-     ]
-    },
-    {
-     "emit": {
-      "sfx": "sfx/athens/aulos.wav"
-     }
-    }
-   ],
-   "ambience": {
-    "file": "amb/athens/procession.ogg",
-    "gain": 0.8
-   }
-  },
-  {
-   "id": "assembly_morning",
-   "trigger": {
-    "on": "window",
-    "hours": [
-     "07:00",
-     "09:00"
-    ],
-    "chance": 0.35
-   },
-   "size": "large",
-   "duration": [
-    480,
-    600
-   ],
-   "cast": [
-    {
-     "group": "assembly_sweep"
-    },
-    {
-     "actor": "athens.citizen",
-     "count": 24,
-     "from": "district"
-    },
-    {
-     "actor": "athens.pericles",
-     "count": 1
-    }
-   ],
-   "route": [
-    "agora",
-    "simon_shop",
-    "melite_school",
-    "pnyx"
-   ],
-   "steps": [
-    {
-     "go": {
-      "node": "agora"
-     }
-    },
-    {
-     "go": {
-      "node": "pnyx"
-     }
-    },
-    {
-     "use": {
-      "item": "athens.pnyx",
-      "slot": "assembly"
-     },
-     "anim": "idle",
-     "dur": [
-      300,
-      400
-     ]
-    }
-   ]
-  },
-  {
-   "id": "theatre_rehearsal",
-   "zone": "theatre",
-   "trigger": {
-    "on": "window",
-    "hours": [
-     "14:00",
-     "17:00"
-    ],
-    "chance": 0.8
-   },
-   "size": "medium",
-   "duration": [
-    240,
-    360
-   ],
-   "cast": [
-    {
-     "actor": "athens.chorus",
-     "count": 6
-    },
-    {
-     "actor": "athens.musician",
-     "count": 1
-    },
-    {
-     "actor": "athens.euripides",
-     "count": 1
-    }
-   ],
-   "steps": [
-    {
-     "use": {
-      "item": "athens.theatre",
-      "slot": "chorus"
-     },
-     "anim": "dance",
-     "dur": [
-      200,
-      300
-     ]
-    }
-   ]
-  },
-  {
-   "id": "hoplites_embark",
-   "trigger": {
-    "on": "window",
-    "hours": [
-     "09:00",
-     "12:00"
-    ],
-    "chance": 1.0
-   },
-   "size": "medium",
-   "duration": [
-    600,
-    900
-   ],
-   "cast": [
-    {
-     "group": "hoplites_for_potidaea"
-    }
-   ],
-   "route": [
-    "lyceum",
-    "diochares_gate",
-    "agora",
-    "piraeus_gate",
-    "long_walls_gate",
-    "long_walls_road",
-    "piraeus_agora",
-    "kantharos_quay"
-   ],
-   "steps": [
-    {
-     "go": {
-      "node": "lyceum"
-     }
-    },
-    {
-     "go": {
-      "node": "long_walls_gate"
-     }
-    },
-    {
-     "go": {
-      "node": "long_walls_road"
-     }
-    },
-    {
-     "go": {
-      "node": "kantharos_quay"
-     }
-    }
-   ]
-  },
-  {
-   "id": "tribute_ship",
-   "zone": "kantharos_quay",
-   "trigger": {
-    "on": "token_arrived",
-    "actor": "athens.merchant",
-    "chance": 0.2
-   },
-   "size": "medium",
-   "duration": [
-    120,
-    180
-   ],
-   "cast": [
-    {
-     "actor": "athens.enslaved_man",
-     "count": 4,
-     "from": "district"
-    },
-    {
-     "actor": "athens.hoplite",
-     "count": 2
-    }
-   ],
-   "steps": [
-    {
-     "use": {
-      "item": "athens.harbour",
-      "slot": "load"
-     },
-     "anim": "carry",
-     "dur": [
-      60,
-      90
-     ]
-    },
-    {
-     "go": {
-      "node": "long_walls_road"
-     }
-    },
-    {
-     "go": {
-      "node": "propylaia"
-     }
-    }
-   ]
-  },
-  {
-   "id": "meton_solstice",
-   "trigger": {
-    "on": "window",
-    "hours": [
-     "05:00",
-     "06:00"
-    ],
-    "chance": 0.5
-   },
-   "size": "small",
-   "duration": [
-    120,
-    180
-   ],
-   "cast": [
-    {
-     "actor": "athens.meton",
-     "count": 1
-    }
-   ],
-   "steps": [
-    {
-     "go": {
-      "node": "meton_dial"
-     }
-    },
-    {
-     "use": {
-      "item": "athens.meton_dial",
-      "slot": "observe"
-     },
-     "anim": "idle",
-     "dur": [
-      90,
-      120
-     ]
-    }
-   ]
-  },
-  {
-   "id": "torch_race",
-   "trigger": {
-    "on": "window",
-    "hours": [
-     "21:00",
-     "23:00"
-    ],
-    "chance": 0.5
-   },
-   "size": "medium",
-   "duration": [
-    180,
-    240
-   ],
-   "cast": [
-    {
-     "actor": "athens.youth",
-     "count": 6
-    }
-   ],
-   "route": [
-    "cemetery",
-    "dipylon",
-    "agora",
-    "approach_foot",
-    "propylaia",
-    "great_altar"
-   ],
-   "steps": [
-    {
-     "go": {
-      "node": "cemetery"
-     }
-    },
-    {
-     "go": {
-      "node": "dipylon"
-     }
-    },
-    {
-     "go": {
-      "node": "agora"
-     }
-    },
-    {
-     "go": {
-      "node": "approach_foot"
-     }
-    },
-    {
-     "go": {
-      "node": "great_altar"
-     }
-    }
-   ]
-  },
-  {
-   "id": "meltemi_afternoon",
-   "trigger": {
-    "on": "weather",
-    "kind": "wind",
-    "hours": [
-     "13:00",
-     "18:00"
-    ]
-   },
-   "size": "small",
-   "duration": [
-    600,
-    900
-   ],
-   "steps": [
-    {
-     "emit": {
-      "fx": "athens.sea_glint"
-     }
-    }
-   ]
-  }
+  {"id": "panathenaic_procession", "rarity": "festival", "size": "large", "card": "athena", "trigger": {"on": "calendar", "festival": "panathenaia", "hours": ["05:30", "06:00"]}, "duration": [270, 330], "cast": [{"group": "panathenaic_procession"}, {"role": "shopper", "count": 20, "from": "district"}], "route": ["dipylon", "kerameikos_kilns", "agora", "eleusinion", "klepsydra", "approach_foot", "propylaia", "pandroseion", "great_altar"], "steps": [{"go": {"node": "agora"}}, {"go": {"node": "eleusinion"}}, {"go": {"node": "approach_foot"}}, {"go": {"node": "propylaia"}}, {"go": {"node": "great_altar"}}, {"use": {"item": "athens.great_altar", "slot": "sacrifice"}, "anim": "idle", "dur": [40, 60]}, {"emit": {"sfx": "sfx/athens/aulos.wav"}}], "ambience": {"file": "amb/athens/procession.ogg", "gain": 0.8}, "string": "procession"},
+  {"id": "athena_apparition", "rarity": "festival", "size": "small", "zone": "acropolis", "trigger": {"on": "after", "event": "panathenaic_procession"}, "duration": [8, 12], "steps": [{"emit": {"fx": "athens.altar_smoke"}}], "card": "athena"},
+  {"id": "sacrificial_feast", "rarity": "festival", "size": "medium", "zone": "kerameikos", "trigger": {"on": "calendar", "festival": "panathenaia", "hours": ["18:30", "19:00"]}, "duration": [120, 160], "cast": [{"role": "townsman", "count": 12}, {"role": "housewife", "count": 6}, {"role": "child", "count": 4}], "steps": [{"go": {"node": "kerameikos_kilns"}}, {"use": {"here": true}, "anim": "sit", "dur": [100, 140]}]},
+  {"id": "assembly", "rarity": "uncommon", "size": "large", "trigger": {"on": "window", "hours": ["06:30", "07:00"], "days": {"every": 4, "offset": 2}, "not_festival": "panathenaia", "chance": 1.0}, "duration": [240, 300], "cast": [{"group": "assembly_sweep"}, {"role": "shopper", "count": 24, "from": "district"}, {"actor": "athens.pericles", "count": 1}], "route": ["agora", "simon_shop", "melite_school", "pnyx"], "steps": [{"go": {"node": "pnyx"}}, {"use": {"item": "athens.pnyx", "slot": "assembly"}, "anim": "idle", "dur": [150, 200]}], "ambience": {"file": "amb/athens/agora.ogg", "gain": 0.6}, "string": "assembly", "card": "democracy"},
+  {"id": "law_court", "rarity": "common", "size": "medium", "zone": "agora", "trigger": {"on": "window", "hours": ["07:00", "08:00"], "chance": 0.6}, "duration": [150, 200], "cast": [{"role": "juror", "count": 10}, {"role": "archer", "count": 1}], "steps": [{"go": {"item": "athens.lawcourt", "spot": "beside"}}, {"use": {"here": true}, "anim": "sit", "dur": [120, 160]}]},
+  {"id": "prytaneis_dine", "rarity": "daily", "size": "small", "zone": "council", "trigger": {"on": "window", "hours": ["18:00", "18:30"], "chance": 1.0}, "duration": [60, 90], "cast": [{"role": "councillor", "count": 6, "from": "district"}], "steps": [{"go": {"item": "athens.tholos", "slot": "door"}}, {"enter": {"here": true}, "dur": [50, 80]}]},
+  {"id": "philosopher_crowd", "rarity": "daily", "size": "medium", "zone": "agora", "trigger": {"on": "window", "hours": ["08:00", "09:30"], "chance": 1.0}, "duration": [120, 150], "cast": [{"group": "socratic_ring"}, {"role": "shopper", "count": 5}], "steps": [{"go": {"item": "athens.stoa_poikile", "slot": "philosopher"}}, {"use": {"here": true}, "anim": "talk", "dur": [100, 130]}], "card": "philosophy"},
+  {"id": "protagoras_walk", "rarity": "uncommon", "size": "small", "zone": "kollytos", "trigger": {"on": "window", "hours": ["15:00", "16:00"], "chance": 0.4}, "duration": [90, 120], "cast": [{"group": "protagoras_pupils"}], "steps": [{"go": {"node": "kollytos_tavern"}}, {"wander": {"radius": 4}, "dur": [80, 100]}]},
+  {"id": "rehearsal", "rarity": "common", "size": "medium", "zone": "dionysos", "trigger": {"on": "window", "hours": ["14:00", "15:00"], "chance": 0.8}, "duration": [150, 180], "cast": [{"role": "chorus", "count": 6}, {"role": "aulos_player", "count": 1}, {"actor": "athens.euripides", "count": 1}], "steps": [{"use": {"item": "athens.theatre", "slot": "chorus"}, "anim": "dance", "dur": [130, 160]}], "card": "drama"},
+  {"id": "athletes", "rarity": "common", "size": "medium", "zone": "lyceum", "trigger": {"on": "window", "hours": ["07:00", "08:00"], "chance": 0.8}, "duration": [120, 150], "cast": [{"role": "athlete", "count": 6}, {"role": "trainer", "count": 1}], "steps": [{"use": {"item": "athens.lyceum", "slot": "run"}, "anim": "run", "dur": [100, 130]}]},
+  {"id": "kiln_firing", "rarity": "common", "size": "small", "zone": "kerameikos", "trigger": {"on": "chain", "chain": "athens_pottery", "stage": 4}, "duration": [60, 80], "cast": [{"actor": "athens.manes", "count": 1}], "steps": [{"use": {"item": "athens.g_kiln", "slot": "stoke"}, "anim": "work_low", "dur": [50, 70], "state": "firing"}], "ambience": {"file": "amb/athens/kiln.ogg", "gain": 0.8}},
+  {"id": "fountain_dawn", "rarity": "daily", "size": "small", "zone": "agora", "trigger": {"on": "window", "hours": ["04:30", "05:00"], "chance": 1.0}, "duration": [90, 110], "cast": [{"role": "fountain_woman", "count": 4}, {"actor": "athens.philinna", "count": 1}, {"actor": "athens.mania", "count": 1}], "steps": [{"use": {"item": "athens.se_fountain", "slot": "fill"}, "anim": "carry_idle", "dur": [70, 90]}, {"emit": {"sfx": "sfx/world/pour.wav"}}]},
+  {"id": "symposium", "rarity": "common", "size": "small", "zone": "kydathenaion", "trigger": {"on": "window", "hours": ["20:30", "21:30"], "chance": 0.7}, "duration": [150, 200], "cast": [{"role": "townsman", "count": 5}, {"role": "aulos_player", "count": 1}], "steps": [{"go": {"item": "athens.g_house", "slot": "door", "within": 10}}, {"enter": {"here": true}, "dur": [140, 180]}, {"emit": {"sfx": "sfx/athens/lyre.wav"}}], "card": "symposium"},
+  {"id": "owl_call", "rarity": "common", "size": "small", "zone": "acropolis", "trigger": {"on": "window", "hours": ["21:00", "04:00"], "every": 3600}, "duration": [2, 3], "cast": [{"role": "owl", "count": 1}], "steps": [{"emit": {"sfx": "sfx/athens/owl.wav"}}]},
+  {"id": "torch_race", "rarity": "festival", "size": "medium", "trigger": {"on": "calendar", "festival": "panathenaia", "hours": ["20:30", "21:00"]}, "duration": [100, 120], "cast": [{"role": "pupil", "count": 6}], "route": ["cemetery", "dipylon", "agora", "approach_foot", "propylaia", "great_altar"], "steps": [{"go": {"node": "dipylon"}}, {"go": {"node": "agora"}}, {"go": {"node": "approach_foot"}}, {"go": {"node": "great_altar"}}], "string": "torch_race"},
+  {"id": "hoplites_embark", "rarity": "uncommon", "size": "medium", "trigger": {"on": "window", "hours": ["08:30", "09:00"], "chance": 0.5, "not_festival": "panathenaia"}, "duration": [200, 240], "cast": [{"group": "hoplites_for_potidaea"}, {"role": "housewife", "count": 4}], "route": ["lyceum", "diochares_gate", "piraeus_gate", "long_walls_gate", "long_walls_road", "piraeus_agora", "kantharos_quay"], "steps": [{"go": {"node": "long_walls_gate"}}, {"go": {"node": "long_walls_road"}}, {"go": {"node": "kantharos_quay"}}], "string": "embark", "card": "potidaea"},
+  {"id": "tribute_ship", "rarity": "rare", "size": "medium", "zone": "piraeus", "trigger": {"on": "token_arrived", "actor": "athens.merchant", "chance": 0.2}, "duration": [120, 160], "cast": [{"role": "docker", "count": 4, "from": "district"}, {"role": "hoplite", "count": 2}], "steps": [{"use": {"item": "athens.harbour", "slot": "load"}, "anim": "haul", "dur": [40, 60]}], "card": "league"},
+  {"id": "ship_unloads", "rarity": "common", "size": "medium", "zone": "piraeus", "trigger": {"on": "token_arrived", "actor": "athens.merchant"}, "duration": [90, 120], "cast": [{"role": "docker", "count": 6, "from": "district"}], "steps": [{"use": {"item": "athens.harbour", "slot": "load"}, "anim": "haul", "dur": [60, 90], "effect": "unload"}], "sfx": "sfx/athens/trireme.wav", "ambience": {"file": "amb/athens/sea.ogg", "gain": 0.6}},
+  {"id": "trireme_drill", "rarity": "uncommon", "size": "small", "zone": "harbour", "trigger": {"on": "window", "hours": ["07:00", "09:00"], "chance": 0.4}, "duration": [45, 60], "cast": [{"actor": "athens.trireme", "count": 1}], "steps": [], "sfx": "sfx/athens/oars.wav"},
+  {"id": "fishing_fleet", "rarity": "daily", "size": "small", "zone": "harbour", "trigger": {"on": "window", "hours": ["04:30", "05:00"], "chance": 1.0}, "duration": [60, 90], "cast": [{"actor": "athens.fishing", "count": 3}], "steps": [], "sfx": "sfx/world/gull.wav"},
+  {"id": "wedding", "rarity": "rare", "size": "medium", "trigger": {"on": "window", "hours": ["19:00", "19:30"], "chance": 0.15}, "duration": [90, 120], "cast": [{"group": "wedding"}], "route": ["melite_school", "kydathenaion_fountain"], "steps": [{"go": {"node": "kydathenaion_fountain"}}, {"emit": {"sfx": "sfx/athens/aulos.wav"}}], "string": "wedding"},
+  {"id": "funeral", "rarity": "uncommon", "size": "medium", "trigger": {"on": "window", "hours": ["03:30", "04:00"], "chance": 0.3, "not_festival": "panathenaia"}, "duration": [60, 75], "cast": [{"group": "funeral"}], "route": ["kerameikos_kilns", "dipylon", "cemetery"], "steps": [{"go": {"node": "dipylon"}}, {"go": {"node": "cemetery"}}, {"use": {"item": "athens.g_grave_stele", "slot": "mourn"}, "anim": "idle", "dur": [30, 40]}], "card": "burial"},
+  {"id": "dog_steals_fish", "rarity": "uncommon", "size": "small", "zone": "piraeus", "trigger": {"on": "reactive", "when": {"near": {"actor": "athens.dog_laconian", "item": "athens.g_stall", "within": 2, "goods": "world.goods_fish"}}}, "duration": [6, 8], "cast": [{"role": "dog", "count": 1}], "steps": [{"go": {"item": "athens.g_stall", "spot": "beside"}}, {"take": "world.goods_fish"}, {"wander": {"radius": 8}, "dur": [4, 6]}], "sfx": "sfx/world/vendor.wav"},
+  {"id": "megarian_turned_back", "rarity": "uncommon", "size": "small", "zone": "agora", "trigger": {"on": "window", "hours": ["07:00", "11:00"], "chance": 0.25}, "duration": [30, 40], "cast": [{"actor": "athens.metic", "count": 1}, {"role": "archer", "count": 1}], "steps": [{"go": {"item": "athens.horos", "spot": "beside"}}, {"wait": {"dur": [10, 15]}}, {"go": {"node": "dipylon"}}], "card": "megara"},
+  {"id": "rhapsode_recital", "rarity": "common", "size": "small", "zone": "agora", "trigger": {"on": "window", "hours": ["18:30", "19:00"], "chance": 0.6}, "duration": [90, 120], "cast": [{"actor": "athens.rhapsode", "count": 1}, {"role": "shopper", "count": 6}], "steps": [{"go": {"item": "athens.twelve_gods", "spot": "beside"}}, {"use": {"here": true}, "anim": "talk", "dur": [80, 110]}], "card": "rhapsode"},
+  {"id": "meton_dawn", "rarity": "daily", "size": "small", "zone": "pnyx", "trigger": {"on": "window", "hours": ["04:00", "05:00"], "chance": 1.0}, "duration": [60, 90], "cast": [{"actor": "athens.meton", "count": 1}], "steps": [{"go": {"item": "athens.meton_dial", "slot": "observe"}}, {"use": {"here": true}, "anim": "gesture", "dur": [50, 80]}]},
+  {"id": "lamps_lit", "rarity": "daily", "size": "small", "zone": "agora", "trigger": {"on": "window", "hours": ["19:30", "20:00"], "chance": 1.0}, "duration": [60, 90], "steps": [{"each": {"item": "athens.g_brazier", "max": 4}, "state": "lit"}], "sfx": "sfx/world/lamp.wav"},
+  {"id": "dogs_bark", "rarity": "common", "size": "small", "zone": "kollytos", "trigger": {"on": "window", "hours": ["21:00", "03:00"], "every": 5400}, "duration": [5, 6], "steps": [], "sfx": "sfx/world/dog_far.wav"},
+  {"id": "swifts", "rarity": "daily", "size": "small", "zone": "acropolis", "trigger": {"on": "window", "hours": ["18:00", "19:00"], "season": ["spring", "summer"], "chance": 1.0}, "duration": [60, 90], "cast": [{"actor": "world.swift", "count": 8}], "steps": [{"wander": {"radius": 12}, "dur": [50, 80]}], "sfx": "sfx/world/swifts.wav"},
+  {"id": "meltemi", "rarity": "common", "size": "small", "zone": "piraeus", "trigger": {"on": "weather", "kind": "wind", "season": ["summer"], "hours": ["13:00", "18:00"]}, "duration": [300, 400], "steps": [{"emit": {"fx": "athens.sea_glint"}}]},
+  {"id": "summer_storm", "rarity": "rare", "size": "medium", "zone": "hymettos", "trigger": {"on": "weather", "kind": "storm", "season": ["summer"]}, "duration": [90, 150], "steps": [], "sfx": "sfx/world/thunder_far.wav"},
+  {"id": "flock_out", "rarity": "daily", "size": "small", "zone": "pnyx", "trigger": {"on": "window", "hours": ["05:00", "05:30"], "chance": 1.0}, "duration": [80, 100], "cast": [{"group": "flock"}], "steps": [{"wander": {"zone": "pnyx"}, "dur": [70, 90]}], "sfx": "sfx/world/sheep_bells.wav"},
+  {"id": "solon_memory", "rarity": "daily", "size": "small", "zone": "council", "trigger": {"on": "window", "hours": ["18:30", "19:00"], "chance": 1.0}, "duration": [80, 100], "cast": [{"actor": "athens.solon", "count": 1}], "steps": [{"use": {"item": "athens.royal_stoa", "slot": "herald"}, "anim": "talk", "dur": [70, 90]}], "card": "solon"},
+  {"id": "olive_harvest", "rarity": "festival", "size": "medium", "zone": "ilissos", "trigger": {"on": "calendar", "festival": "olive_harvest", "hours": ["07:00", "08:00"]}, "duration": [180, 220], "cast": [{"role": "farmer", "count": 8, "from": "district"}], "steps": [{"wander": {"zone": "ilissos"}, "dur": [30, 40]}, {"use": {"here": true}, "anim": "work_high", "dur": [140, 170]}]},
+  {"id": "mysteries_procession", "rarity": "festival", "size": "large", "trigger": {"on": "calendar", "festival": "mysteries", "hours": ["06:00", "06:30"]}, "duration": [240, 300], "cast": [{"role": "townsman", "count": 20}, {"role": "housewife", "count": 12}, {"role": "priestess", "count": 2}], "route": ["eleusinion", "agora", "dipylon", "sacred_gate", "sacred_way_w"], "steps": [{"go": {"node": "agora"}}, {"go": {"node": "dipylon"}}, {"go": {"node": "sacred_gate"}}, {"go": {"node": "sacred_way_w"}}]},
+  {"id": "city_dionysia", "rarity": "festival", "size": "large", "zone": "dionysos", "trigger": {"on": "calendar", "festival": "city_dionysia", "hours": ["07:00", "08:00"]}, "duration": [300, 360], "cast": [{"role": "theatre_visitor", "count": 30}, {"role": "chorus", "count": 6}], "steps": [{"go": {"node": "theatre"}}, {"use": {"item": "athens.theatre", "slot": "watch"}, "anim": "sit", "dur": [280, 340]}]}
+ ],
+ "days_shown": [
+  {"day": 5, "label": "An ordinary summer day (week day 1)"},
+  {"day": 2, "label": "Assembly day (week day 2)"},
+  {"day": 1, "label": "The Panathenaia (summer, day 2)"}
+ ],
+ "figures": [
+  {"actor": "athens.pericles", "presence": "present", "card": "pericles", "schedule": [{"hours": ["07:00", "11:00"], "routine": "agora"}, {"hours": ["14:00", "17:30"], "routine": "rock"}, {"hours": ["18:00", "21:00"], "routine": "home"}], "routines": {"agora": {"loop": true, "steps": [{"go": {"node": "bouleuterion"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "gesture", "dur": [15, 25]}]}, "rock": {"loop": true, "steps": [{"go": {"item": "athens.sculpt_yard", "slot": "pheidias"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"go": {"node": "propylaia"}}, {"wait": {"dur": [15, 25]}}]}, "home": {"steps": [{"go": {"node": "kydathenaion_fountain"}}, {"use": {"here": true}, "anim": "talk", "until": {"hour": "21:00"}}]}}, "note": "on assembly days the assembly event takes him to the Pnyx"},
+  {"actor": "athens.aspasia", "presence": "present", "card": "aspasia", "schedule": [{"hours": ["09:00", "12:00"], "routine": "court"}, {"hours": ["17:00", "21:00"], "routine": "guests"}], "routines": {"court": {"steps": [{"go": {"node": "kydathenaion_fountain"}}, {"use": {"here": true}, "anim": "sit", "until": {"hour": "12:00"}}]}, "guests": {"steps": [{"go": {"node": "kydathenaion_fountain"}}, {"use": {"here": true}, "anim": "talk", "until": {"hour": "21:00"}}]}}},
+  {"actor": "athens.socrates", "presence": "present", "card": "socrates", "schedule": [{"hours": ["07:00", "12:00"], "routine": "agora"}, {"hours": ["14:30", "17:00"], "routine": "ilissos"}, {"hours": ["17:00", "19:30"], "routine": "simon"}], "routines": {"agora": {"loop": true, "steps": [{"go": {"node": "stoa_poikile"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"go": {"node": "agora"}}, {"use": {"here": true}, "anim": "talk", "dur": [20, 30]}]}, "ilissos": {"steps": [{"go": {"node": "kallirrhoe"}}, {"use": {"here": true}, "anim": "sit", "until": {"hour": "17:00"}}]}, "simon": {"steps": [{"go": {"item": "athens.simon_shop", "slot": "sit"}}, {"use": {"here": true}, "anim": "talk", "until": {"hour": "19:30"}}]}}},
+  {"actor": "athens.sophocles", "presence": "present", "card": "sophocles", "schedule": [{"hours": ["08:00", "12:00"], "routine": "agora"}, {"hours": ["14:00", "17:00"], "routine": "theatre"}], "routines": {"agora": {"loop": true, "steps": [{"go": {"node": "agora"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"go": {"node": "royal_stoa"}}, {"wait": {"dur": [15, 25]}}]}, "theatre": {"steps": [{"go": {"node": "theatre"}}, {"use": {"here": true}, "anim": "gesture", "until": {"hour": "17:00"}}]}}},
+  {"actor": "athens.euripides", "presence": "present", "card": "euripides", "schedule": [{"hours": ["08:00", "12:00"], "routine": "read"}, {"hours": ["14:00", "18:00"], "routine": "theatre"}], "routines": {"read": {"steps": [{"go": {"item": "athens.stoa_poikile", "slot": "sit"}}, {"use": {"here": true}, "anim": "write", "until": {"hour": "12:00"}}]}, "theatre": {"steps": [{"use": {"item": "athens.theatre", "slot": "watch"}, "anim": "sit", "until": {"hour": "18:00"}}]}}},
+  {"actor": "athens.pheidias", "presence": "memory", "card": "pheidias", "schedule": [{"hours": ["18:30", "21:30"], "routine": "memory"}], "routines": {"memory": {"steps": [{"go": {"item": "athens.sculpt_yard", "slot": "pheidias"}}, {"use": {"here": true}, "anim": "work_high", "dur": [20, 30]}, {"use": {"here": true}, "anim": "idle", "until": {"hour": "21:30"}}]}}, "translucent": true},
+  {"actor": "athens.mnesikles", "presence": "present", "card": "mnesikles", "schedule": [{"hours": ["07:00", "12:00"], "routine": "gate"}, {"hours": ["15:00", "18:00"], "routine": "gate"}], "routines": {"gate": {"steps": [{"go": {"item": "athens.propylaia", "slot": "mnesikles"}}, {"use": {"here": true}, "anim": "gesture", "dur": [30, 50]}, {"use": {"here": true}, "anim": "idle", "until": {"hour": "12:00"}}]}}},
+  {"actor": "athens.protagoras", "presence": "present", "card": "protagoras", "note": "walks with his pupils (protagoras_walk)"},
+  {"actor": "athens.meton", "presence": "present", "card": "meton", "note": "at his sundial at dawn (meton_dawn)"},
+  {"actor": "athens.alcibiades", "presence": "present", "card": "alcibiades", "schedule": [{"hours": ["16:00", "19:00"], "routine": "ride"}], "routines": {"ride": {"steps": [{"go": {"node": "lyceum"}}, {"wander": {"radius": 8}, "dur": [60, 90]}]}}, "note": "rides with the cavalry in the procession"},
+  {"actor": "athens.solon", "presence": "memory", "card": "solon", "note": "dusk at the Royal Stoa (solon_memory)", "translucent": true},
+  {"actor": "athens.themistocles", "presence": "memory", "card": "themistocles", "schedule": [{"hours": ["18:30", "21:30"], "routine": "memory"}], "routines": {"memory": {"steps": [{"go": {"node": "kantharos_quay"}}, {"use": {"here": true}, "anim": "idle", "until": {"hour": "21:30"}}]}}, "translucent": true},
+  {"actor": "athens.theseus", "presence": "reenactor", "card": "theseus", "note": "in the Panathenaic procession"},
+  {"actor": "athens.rhapsode", "presence": "reenactor", "card": "rhapsode", "note": "an informal recital at dusk (rhapsode_recital)"},
+  {"presence": "shrine", "card": "athena", "at": "great_altar"},
+  {"presence": "shrine", "card": "poseidon", "at": "pandroseion"},
+  {"presence": "statue", "card": "herakles", "at": "hephaisteion"},
+  {"actor": "athens.philinna", "presence": "present", "card": "philinna", "schedule": [{"hours": ["05:00", "07:00"], "routine": "water"}, {"hours": ["07:00", "12:00"], "routine": "loom"}], "routines": {"water": {"steps": [{"go": {"item": "athens.se_fountain", "slot": "fill"}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [20, 30]}]}, "loom": {"steps": [{"go": {"item": "athens.g_loom", "slot": "weave"}}, {"use": {"here": true}, "anim": "throw", "until": {"hour": "12:00"}}]}}},
+  {"actor": "athens.mania", "presence": "present", "card": "mania", "schedule": [{"hours": ["05:00", "12:00"], "routine": "errands"}, {"hours": ["15:00", "19:00"], "routine": "errands"}], "routines": {"errands": {"loop": true, "steps": [{"go": {"node": "kydathenaion_fountain"}}, {"wait": {"dur": [30, 50]}}, {"go": {"node": "se_fountain"}}, {"wait": {"dur": [20, 30]}}]}}},
+  {"actor": "athens.manes", "presence": "present", "card": "manes", "schedule": [{"hours": ["05:30", "18:30"], "routine": "kiln"}], "routines": {"kiln": {"steps": [{"go": {"item": "athens.g_kiln", "slot": "stoke"}}, {"use": {"here": true}, "anim": "work_low", "until": {"hour": "18:30"}}]}}},
+  {"actor": "athens.kephalos", "presence": "present", "card": "kephalos", "schedule": [{"hours": ["07:00", "17:00"], "routine": "workshop"}], "routines": {"workshop": {"loop": true, "steps": [{"go": {"node": "kephalos_workshop"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"go": {"node": "piraeus_agora"}}, {"wait": {"dur": [20, 30]}}]}}},
+  {"actor": "athens.sosias", "presence": "present", "card": "sosias", "schedule": [{"hours": ["06:00", "12:00"], "routine": "charcoal"}], "routines": {"charcoal": {"steps": [{"go": {"node": "acharnian_gate"}}, {"go": {"node": "market"}}, {"use": {"here": true}, "anim": "idle", "until": {"hour": "12:00"}}]}}},
+  {"actor": "athens.nikarete", "presence": "present", "card": "nikarete", "schedule": [{"hours": ["05:30", "13:00"], "routine": "bread"}], "routines": {"bread": {"steps": [{"go": {"item": "athens.g_stall", "slot": "buy"}}, {"use": {"here": true}, "anim": "serve", "until": {"hour": "13:00"}}]}}},
+  {"actor": "athens.toxamis", "presence": "present", "card": "toxamis", "schedule": [{"hours": ["06:00", "19:00"], "routine": "watch"}], "routines": {"watch": {"loop": true, "steps": [{"go": {"item": "athens.horos", "spot": "beside"}}, {"use": {"here": true}, "anim": "guard", "dur": [40, 60]}, {"go": {"node": "agora"}}, {"use": {"here": true}, "anim": "gesture", "dur": [10, 15]}]}}},
+  {"actor": "athens.euphiletos", "presence": "present", "card": "euphiletos", "schedule": [{"hours": ["05:00", "11:00"], "routine": "grove"}, {"hours": ["15:00", "18:30"], "routine": "grove"}], "routines": {"grove": {"loop": true, "steps": [{"go": {"node": "south_farms"}}, {"use": {"here": true}, "anim": "work_low", "dur": [40, 60]}]}}},
+  {"actor": "athens.hegeso", "presence": "present", "card": "hegeso", "schedule": [{"hours": ["08:00", "12:00"], "routine": "home"}, {"hours": ["16:00", "19:00"], "routine": "home"}], "routines": {"home": {"loop": true, "steps": [{"go": {"node": "kydathenaion_fountain"}}, {"wait": {"dur": [30, 50]}}]}}},
+  {"actor": "athens.simon", "presence": "present", "card": "simon", "note": "at his bench (the role cobbler draws him)"}
  ],
  "lanes_tokens": [
-  {
-   "actor": "athens.merchant",
-   "lane": "athens:kantharos",
-   "count": 2
-  },
-  {
-   "actor": "athens.trireme",
-   "lane": "athens:zea",
-   "count": 2
-  },
-  {
-   "actor": "athens.fishing",
-   "lane": "athens:mounychia",
-   "count": 2
-  }
+  {"actor": "athens.merchant", "lane": "athens:kantharos", "count": 2},
+  {"actor": "athens.trireme", "lane": "athens:zea", "count": 2},
+  {"actor": "athens.fishing", "lane": "athens:mounychia", "count": 2}
  ],
+ "pending": {
+  "goods": {"world.goods_block": "world.goods_bale", "world.goods_pot_raw": "athens.goods_redfigure", "world.goods_pot_painted": "athens.goods_redfigure", "world.goods_oil_jar": "world.goods_amphorae", "world.goods_silver": "world.goods_amphorae"}
+ },
  "cards": {
-  "parthenon": {
-   "title": "Παρθενών",
-   "epithet": "Parthenon",
-   "text": "Begun in 447 and finished this year with its pediments, the Doric temple of 8 by 17 columns houses Pheidias's gold and ivory Athena. Its west pediment shows Athena and Poseidon contesting Attica; the frieze inside the colonnade shows a procession like the one you can follow today. Temples were painted, never plain white."
-  },
-  "propylaia": {
-   "title": "Προπύλαια",
-   "epithet": "The gateway, unfinished",
-   "text": "Mnesikles's gateway turns the steep west end of the rock into a stately climb: a central hall with Doric fronts, a ramp for the animals, a picture gallery in the north-west wing. This year the work stops; the lifting bosses stay on the blocks, and they are still there today."
-  },
-  "nike_bastion": {
-   "title": "Πύργος",
-   "epithet": "Nike bastion",
-   "text": "A poros bastion beside the gateway with a small old shrine and altar of Athena Nike. The Ionic temple that stands here today is not built until the 420s."
-  },
-  "approach": {
-   "title": "The approach",
-   "epithet": "Ramp to the rock",
-   "text": "A broad gravel ramp between retaining walls climbs from the Panathenaic Way to the gateway. Sacrificial cattle, riders and the whole procession come up this way."
-  },
-  "old_temple": {
-   "title": "Ἀρχαῖος νεώς",
-   "epithet": "Old Temple of Athena",
-   "text": "The temple burned by the Persians in 480. Whether its western rooms were repaired and used is debated; here its foundations lie open with a repaired, roofed west chamber where the old olive-wood Athena Polias may be kept."
-  },
-  "pandroseion": {
-   "title": "Πανδρόσειον",
-   "epithet": "The sacred olive",
-   "text": "A walled court round Athena's olive tree, her gift to the city in the contest with Poseidon. Burned in 480, it sprouted again the next day, people said. The tomb of the hero Kekrops lies beside it."
-  },
-  "promachos": {
-   "title": "Ἀθηνᾶ Πρόμαχος",
-   "epithet": "The bronze Athena",
-   "text": "Pheidias's colossal bronze Athena, made around 460-450, stands between the gateway and the Old Temple. Sailors rounding Cape Sounion are said to have seen the glint of her spear tip. Her height is uncertain, perhaps 7 to 9 metres."
-  },
-  "brauronion": {
-   "title": "Βραυρώνιον",
-   "epithet": "Artemis Brauronia",
-   "text": "A sanctuary of Artemis of Brauron with a stoa of two wings, where women dedicated clothing to the goddess."
-  },
-  "chalkotheke": {
-   "title": "Χαλκοθήκη",
-   "epithet": "The bronze store",
-   "text": "A plain hall where bronze dedications, weapons and votive offerings of Athena were stored and listed."
-  },
-  "great_altar": {
-   "title": "Βωμός",
-   "epithet": "Great Altar of Athena",
-   "text": "The altar where the procession ends: a hundred cattle are sacrificed at the Great Panathenaia, and the meat is shared out to the people in the Kerameikos."
-  },
-  "zeus_polieus": {
-   "title": "Διὸς Πολιέως",
-   "epithet": "Zeus of the city",
-   "text": "The sanctuary of Zeus Polieus, where the old ox-sacrifice of the Dipolieia is held at midsummer."
-  },
-  "sculpt_yard": {
-   "title": "The sculptors' yard",
-   "epithet": "Behind the Parthenon",
-   "text": "Blocks with their bosses, roughed-out figures and a two-legged crane: the last of the pediment work is coming down. Citizens, metics and slaves cut stone here side by side."
-  },
-  "hephaisteion": {
-   "title": "Ἡφαιστεῖον",
-   "epithet": "Temple of Hephaistos",
-   "text": "A Doric temple of 6 by 13 columns on Kolonos Agoraios, almost finished. Its metopes show Herakles and Theseus; its cult statues are not made until 421-415. Bronze casters work in pits on the hill around it."
-  },
-  "royal_stoa": {
-   "title": "Στοὰ Βασίλειος",
-   "epithet": "Royal Stoa",
-   "text": "A small Doric stoa where the king archon sits; the laws of Solon are displayed here on wooden boards and stone."
-  },
-  "stoa_zeus": {
-   "title": "Στοὰ τοῦ Διός",
-   "epithet": "Stoa of Zeus, rising",
-   "text": "The Stoa of Zeus Eleutherios is only a building site: foundations, the first columns, scaffolding."
-  },
-  "old_bouleuterion": {
-   "title": "Βουλευτήριον",
-   "epithet": "Council house",
-   "text": "The council of 500, fifty men from each tribe chosen by lot for a year, meets here to prepare the assembly's business."
-  },
-  "tholos": {
-   "title": "Θόλος",
-   "epithet": "Round dining hall",
-   "text": "The fifty councillors on duty, the prytaneis, eat here at public expense, and a third of them sleep here, so the city is never without a government."
-  },
-  "stoa_poikile": {
-   "title": "Στοὰ Ποικίλη",
-   "epithet": "The Painted Stoa",
-   "text": "A long colonnade facing the Agora, hung with great painted panels of Marathon, the Amazons, the fall of Troy and Oinoe, and with shields captured from the Spartans. Anyone may walk and talk here."
-  },
-  "twelve_gods": {
-   "title": "Βωμὸς τῶν δώδεκα θεῶν",
-   "epithet": "Altar of the Twelve Gods",
-   "text": "A fenced altar and place of refuge; distances from Athens were measured from here."
-  },
-  "tyrannicides": {
-   "title": "Harmodios and Aristogeiton",
-   "epithet": "The Tyrannicides",
-   "text": "The bronze group by Kritios and Nesiotes (477/6) honours the two men who killed the tyrant's brother in 514. When the Persians carried off the first statue, the city simply made a new one."
-  },
-  "se_fountain": {
-   "title": "Κρήνη",
-   "epithet": "South-east fountain house",
-   "text": "Water runs from lion-head spouts into the basin; women and enslaved girls fill their hydriai here at dawn and in the evening."
-  },
-  "lawcourt": {
-   "title": "Δικαστήριον",
-   "epithet": "Law court enclosure",
-   "text": "A walled enclosure probably used by the courts (the identification is debated). Juries of hundreds of citizens over thirty are paid two obols a day."
-  },
-  "horos": {
-   "title": "Ὅρος",
-   "epithet": "Boundary stone",
-   "text": "\"I am the boundary of the Agora\", says the inscribed marble post. Beyond it, people under a curse may not pass."
-  },
-  "simon_shop": {
-   "title": "Σίμων",
-   "epithet": "Simon's shop",
-   "text": "A shoemaker's house and shop at the Agora's edge, where hobnails and a cup inscribed SIMONOS were found. Socrates is said to have sat at his bench."
-  },
-  "eleusinion": {
-   "title": "Ἐλευσίνιον",
-   "epithet": "City Eleusinion",
-   "text": "The city sanctuary of Demeter and Kore on the Panathenaic Way, linked by the Sacred Way to Eleusis and its Mysteries."
-  },
-  "dipylon": {
-   "title": "Δίπυλον",
-   "epithet": "The double gate",
-   "text": "The largest gate of Athens: two gate towers and a deep court. The Panathenaic Way begins here, and the procession sets out at dawn."
-  },
-  "sacred_gate": {
-   "title": "Ἱερὰ Πύλη",
-   "epithet": "The Sacred Gate",
-   "text": "The Sacred Way to Eleusis leaves through this gate, with the Eridanos flowing in its channel beside the road."
-  },
-  "pnyx": {
-   "title": "Πνύξ",
-   "epithet": "The assembly",
-   "text": "Every adult male citizen may come here to speak and vote by a show of hands. The audience sits on the natural slope facing the speakers' platform; perhaps forty meetings a year."
-  },
-  "meton_dial": {
-   "title": "Ἡλιοτρόπιον",
-   "epithet": "Meton's sundial",
-   "text": "Here the astronomer Meton observed the summer solstice of 432 BC and proposed a cycle of 19 years that brings the moon's months back into step with the sun's year."
-  },
-  "theatre": {
-   "title": "Θέατρον Διονύσου",
-   "epithet": "Theatre of Dionysos",
-   "text": "Wooden bleachers on the south slope face a round earth orchestra with an altar and a simple wooden stage. The stone theatre comes a century later. Next spring Euripides will stage the Medea here."
-  },
-  "dionysos_temple": {
-   "title": "Ναὸς Διονύσου",
-   "epithet": "Old temple of Dionysos",
-   "text": "A small poros temple of Dionysos Eleuthereus beside the theatre."
-  },
-  "odeion": {
-   "title": "Ὠιδεῖον",
-   "epithet": "Odeion of Pericles",
-   "text": "A square hall with a forest of columns under a pyramidal roof; Plutarch says it imitated the Persian king's tent. Music contests of the Panathenaia are held here."
-  },
-  "olympieion": {
-   "title": "Ὀλυμπιεῖον",
-   "epithet": "Olympieion foundations",
-   "text": "A huge platform begun by the tyrants in the 6th century and abandoned; column drums lie in the grass. It will not be finished for six hundred years."
-  },
-  "kallirrhoe": {
-   "title": "Καλλιρρόη",
-   "epithet": "The fair-flowing spring",
-   "text": "A spring in the bed of the Ilissos whose water was used for bridal baths."
-  },
-  "lyceum": {
-   "title": "Λύκειον",
-   "epithet": "The Lyceum",
-   "text": "A gymnasium in a grove outside the walls with a running track and a shrine of Apollo Lykeios. Hoplites and cavalry drill here; athletes run and wrestle in the afternoon."
-  },
-  "shipsheds": {
-   "title": "Νεώσοικοι",
-   "epithet": "Ship sheds of Zea",
-   "text": "Long rows of roofed slipways where the triremes are hauled out of the water to dry. Athens has some 300 warships in 431."
-  },
-  "harbour": {
-   "title": "Κάνθαρος",
-   "epithet": "Kantharos and the emporion",
-   "text": "The great harbour of Piraeus: quays, the long stoas of the emporion where merchants deal in grain from the Black Sea and Egypt, moles with towers narrowing the mouth."
-  },
-  "pentelikon_quarry": {
-   "title": "Πεντελικόν",
-   "epithet": "The marble quarry",
-   "text": "Bright white-gold faces cut in steps, wedge slots, a sledge ramp: the Parthenon's marble starts here and goes down to the city on sledges and ox carts."
-  },
-  "pericles": {
-   "title": "Περικλῆς",
-   "epithet": "First citizen",
-   "text": "Elected general year after year, Pericles persuaded the Athenians to rebuild the Acropolis with the allies' tribute. Thucydides wrote that Athens was in name a democracy but in fact ruled by its first man. This summer, Sparta's patience is running out."
-  },
-  "aspasia": {
-   "title": "Ἀσπασία",
-   "epithet": "of Miletus",
-   "text": "A foreign woman of learning and wit, Pericles's partner. Socrates is said to have learned rhetoric from her. Comic poets mocked her; later writers admired her. As a metic, her son by Pericles needed a special vote to become a citizen."
-  },
-  "socrates": {
-   "title": "Σωκράτης",
-   "epithet": "The questioner",
-   "text": "A stonemason's son who walks barefoot in all weather and asks people what courage, justice or beauty really are. He wrote nothing. Soon he will march to Potidaea as a hoplite."
-  },
-  "sophocles": {
-   "title": "Σοφοκλῆς",
-   "epithet": "Tragic poet",
-   "text": "Winner of more drama contests than anyone, and general with Pericles in the war against Samos. His Antigone asks what a citizen owes to the city and to the gods."
-  },
-  "euripides": {
-   "title": "Εὐριπίδης",
-   "epithet": "Tragic poet",
-   "text": "Restless, questioning, fond of books. Next spring he will stage the Medea, a woman's fury against the man who betrayed her. It will come third."
-  },
-  "pheidias": {
-   "title": "Φειδίας",
-   "epithet": "Sculptor",
-   "text": "He made the gold and ivory Athena inside the Parthenon and directed its sculpture. Enemies of Pericles accused him of theft; ancient accounts disagree about when and what happened next. His Zeus at Olympia became a wonder of the world."
-  },
-  "mnesikles": {
-   "title": "Μνησικλῆς",
-   "epithet": "Architect",
-   "text": "His gateway to the Acropolis turns a steep rock into a stately climb. This year the work stops, with the stone bosses for lifting still on the blocks. They are still there today."
-  },
-  "protagoras": {
-   "title": "Πρωταγόρας",
-   "epithet": "Sophist",
-   "text": "'Man is the measure of all things.' The famous teacher from Abdera charges fees to train young men in argument. Plato imagined Socrates debating him here, at the house of Kallias."
-  },
-  "meton": {
-   "title": "Μέτων",
-   "epithet": "Astronomer",
-   "text": "On the Pnyx this summer he marks the solstice and proposes a cycle of 19 years that brings the moon's months back into step with the sun's year."
-  },
-  "alcibiades": {
-   "title": "Ἀλκιβιάδης",
-   "epithet": "Pericles's ward",
-   "text": "Eighteen, rich, beautiful and reckless, and adored by the city. At Potidaea, Socrates will save his life. Later he will betray Athens and return to it, twice."
-  },
-  "solon": {
-   "title": "Σόλων",
-   "epithet": "Lawgiver (a memory)",
-   "text": "Long ago he freed Athenians enslaved for debt and wrote the laws still kept on revolving wooden boards. He wrote poems, too: 'I grow old, always learning many things.'"
-  },
-  "themistocles": {
-   "title": "Θεμιστοκλῆς",
-   "epithet": "Founder of the fleet (a memory)",
-   "text": "He persuaded Athens to spend its silver on ships, won at Salamis and walled Piraeus. Ostracised, he ended his life as a Persian governor. His harbour still hums below him."
-  },
-  "theseus": {
-   "title": "Θησεύς",
-   "epithet": "Founder-hero",
-   "text": "Slayer of the Minotaur, he joined the villages of Attica into a single city. Kimon found his bones on Skyros and brought them home in triumph."
-  },
-  "rhapsode": {
-   "title": "The rhapsode",
-   "epithet": "Singer of Homer",
-   "text": "At the Panathenaia, singers recite the Iliad and Odyssey in turn, by law. Listen, and Achilles' anger and Odysseus' long road home rise in the dusk."
-  },
-  "philinna": {
-   "title": "Philinna",
-   "epithet": "Wool-worker and mother",
-   "text": "Philinna spins wool before sunrise and weaves until noon. Her husband sits on the Council this year. She goes out for water, for festivals and to visit her sister. Her daughter will carry a basket in next year's procession."
-  },
-  "mania": {
-   "title": "Mania",
-   "epithet": "Nurse",
-   "text": "Mania was born in Phrygia and sold at Ephesus as a girl. She has raised two of Philinna's children. Athenian grave stones sometimes honour nurses like her by name, kindly. She hums Phrygian songs to the baby."
-  },
-  "manes": {
-   "title": "Manes",
-   "epithet": "Kiln-man",
-   "text": "Manes knows the kiln's moods: three firings, air in, air out, then in again, and red clay turns black where the painter's slip lies. He has saved some coins; some enslaved craftsmen in Athens worked on their own and paid their master a share."
-  },
-  "kephalos": {
-   "title": "Kephalos",
-   "epithet": "Shield-maker",
-   "text": "Kephalos came from Syracuse at Pericles's invitation and makes shields in Piraeus with more than a hundred workers. Metics like him pay a special tax, serve in the army and cannot own land, but Athens could not run without them."
-  },
-  "sosias": {
-   "title": "Sosias",
-   "epithet": "Charcoal seller",
-   "text": "Sosias walks from Acharnai with two donkeys of oak charcoal. He votes in the assembly when the harvest allows, and grumbles that the city folk talk too much. His charcoal feeds the potters' kilns and the smithies."
-  },
-  "nikarete": {
-   "title": "Nikarete",
-   "epithet": "Bread-seller",
-   "text": "Nikarete sells barley cakes and wheat loaves from a basket in the Agora. Bread-women had a reputation for sharp tongues. She has seen every general of the last thirty years buy her bread, and tells you so."
-  },
-  "toxamis": {
-   "title": "Toxamis",
-   "epithet": "Archer",
-   "text": "Toxamis is one of the city's Scythian archers: public slaves who keep order in the assembly and the courts. On assembly mornings they sweep the Agora with a rope dyed red, and anyone marked with red paint loses their pay."
-  },
-  "euphiletos": {
-   "title": "Euphiletos",
-   "epithet": "Farmer",
-   "text": "Euphiletos tends olives and vines outside the walls and brings his oil to the city. In a war he would serve as a hoplite. Tonight he will sleep in the city to see the procession at dawn."
-  },
-  "hegeso": {
-   "title": "Hegeso",
-   "epithet": "Girl",
-   "text": "Hegeso is eleven. Girls her age weave the new robe for Athena with the priestesses, and a few of good family carry baskets in the procession. She practises walking with a basket on her head, very straight."
-  },
-  "simon": {
-   "title": "Simon",
-   "epithet": "Shoemaker",
-   "text": "Simon makes sandals at the corner of the Agora. Ancient writers said Socrates often sat at his bench to talk with young men too young to enter the Agora. The hobnails and his cup were found by archaeologists."
-  }
+  "parthenon": {"kind": "landmark", "title": "Παρθενών", "text": "Begun in 447 and finished this year with its pediments, the Doric temple of 8 by 17 columns houses Pheidias's gold and ivory Athena. Its west pediment shows Athena and Poseidon contesting Attica; the frieze inside the colonnade shows a procession like the one you can follow today. Temples were painted, never plain white.", "epithet": "Parthenon"},
+  "propylaia": {"kind": "landmark", "title": "Προπύλαια", "text": "Mnesikles's gateway turns the steep west end of the rock into a stately climb: a central hall with Doric fronts, a ramp for the animals, a picture gallery in the north-west wing. This year the work stops; the lifting bosses stay on the blocks, and they are still there today.", "epithet": "The gateway, unfinished"},
+  "nike_bastion": {"kind": "landmark", "title": "Πύργος", "text": "A poros bastion beside the gateway with a small old shrine and altar of Athena Nike. The Ionic temple that stands here today is not built until the 420s.", "epithet": "Nike bastion"},
+  "approach": {"kind": "landmark", "title": "The approach", "text": "A broad gravel ramp between retaining walls climbs from the Panathenaic Way to the gateway. Sacrificial cattle, riders and the whole procession come up this way.", "epithet": "Ramp to the rock"},
+  "old_temple": {"kind": "landmark", "title": "Ἀρχαῖος νεώς", "text": "The temple burned by the Persians in 480. Whether its western rooms were repaired and used is debated; here its foundations lie open with a repaired, roofed west chamber where the old olive-wood Athena Polias may be kept.", "epithet": "Old Temple of Athena"},
+  "pandroseion": {"kind": "landmark", "title": "Πανδρόσειον", "text": "A walled court round Athena's olive tree, her gift to the city in the contest with Poseidon. Burned in 480, it sprouted again the next day, people said. The tomb of the hero Kekrops lies beside it.", "epithet": "The sacred olive"},
+  "promachos": {"kind": "landmark", "title": "Ἀθηνᾶ Πρόμαχος", "text": "Pheidias's colossal bronze Athena, made around 460-450, stands between the gateway and the Old Temple. Sailors rounding Cape Sounion are said to have seen the glint of her spear tip. Her height is uncertain, perhaps 7 to 9 metres.", "epithet": "The bronze Athena"},
+  "brauronion": {"kind": "landmark", "title": "Βραυρώνιον", "text": "A sanctuary of Artemis of Brauron with a stoa of two wings, where women dedicated clothing to the goddess after childbirth, and girls served her as little bears.", "epithet": "Artemis Brauronia"},
+  "chalkotheke": {"kind": "landmark", "title": "Χαλκοθήκη", "text": "A plain hall where bronze dedications, weapons and votive offerings of Athena were stored, counted and listed on stone by her treasurers each year.", "epithet": "The bronze store"},
+  "great_altar": {"kind": "landmark", "title": "Βωμός", "text": "The altar where the procession ends. Cattle are sacrificed here, a hundred at the Great Panathenaia, and the meat is shared out to the people in the Kerameikos and the Agora.", "epithet": "Great Altar of Athena"},
+  "zeus_polieus": {"kind": "landmark", "title": "Διὸς Πολιέως", "text": "The sanctuary of Zeus Polieus, where the old ox-sacrifice of the Dipolieia is held at midsummer: the axe is tried for the killing and thrown into the sea.", "epithet": "Zeus of the city"},
+  "sculpt_yard": {"kind": "landmark", "title": "The sculptors' yard", "text": "Blocks with their bosses, roughed-out figures and a two-legged crane: the last of the pediment work is coming down. Citizens, metics and enslaved men cut stone here side by side. At dusk, some say, Pheidias still walks among the blocks.", "epithet": "Behind the Parthenon"},
+  "hephaisteion": {"kind": "landmark", "title": "Ἡφαιστεῖον", "text": "A Doric temple of 6 by 13 columns on Kolonos Agoraios, almost finished. Its metopes show Herakles and Theseus; its cult statues are not made until 421-415. Bronze casters work in pits on the hill around it.", "epithet": "Temple of Hephaistos"},
+  "royal_stoa": {"kind": "landmark", "title": "Στοὰ Βασίλειος", "text": "A small Doric stoa facing the square where the king archon sits; the laws of Solon are displayed here on revolving wooden boards and on stone, for anyone to read.", "epithet": "Royal Stoa"},
+  "stoa_zeus": {"kind": "landmark", "title": "Στοὰ τοῦ Διός", "text": "The Stoa of Zeus Eleutherios is dated around 430-420. In 432 it is at most a fresh building site, foundations pegged out, and possibly not begun at all; the game shows its footing.", "epithet": "Stoa of Zeus, a building site"},
+  "old_bouleuterion": {"kind": "landmark", "title": "Βουλευτήριον", "text": "The council of 500, fifty men from each tribe chosen by lot for a year, meets here to prepare the assembly's business.", "epithet": "Council house"},
+  "tholos": {"kind": "landmark", "title": "Θόλος", "text": "The fifty councillors on duty, the prytaneis, eat here at public expense, and a third of them sleep here, so the city is never without a government.", "epithet": "Round dining hall"},
+  "stoa_poikile": {"kind": "landmark", "title": "Στοὰ Ποικίλη", "text": "A long colonnade facing the Agora, hung with great painted panels of Marathon, the Amazons, the fall of Troy and Oinoe. Anyone may walk and talk here. The captured Spartan shields Pausanias saw came later, from 425 and 421.", "epithet": "The Painted Stoa"},
+  "twelve_gods": {"kind": "landmark", "title": "Βωμὸς τῶν δώδεκα θεῶν", "text": "A fenced altar and a place of refuge for suppliants; distances from Athens were measured from here, the city's milestone point.", "epithet": "Altar of the Twelve Gods"},
+  "tyrannicides": {"kind": "landmark", "title": "Harmodios and Aristogeiton", "text": "The bronze group by Kritios and Nesiotes (477/6) honours the two men who killed the tyrant's brother in 514. When the Persians carried off the first statue, the city simply made a new one.", "epithet": "The Tyrannicides"},
+  "se_fountain": {"kind": "landmark", "title": "Κρήνη", "text": "Water runs from lion-head spouts into the basin; women and enslaved girls fill their hydriai here at dawn and in the evening.", "epithet": "South-east fountain house"},
+  "lawcourt": {"kind": "landmark", "title": "Δικαστήριον", "text": "A walled enclosure probably used by the courts (the identification is debated). Juries of hundreds of citizens over thirty are paid two obols a day.", "epithet": "Law court enclosure"},
+  "horos": {"kind": "landmark", "title": "Ὅρος", "text": "\"I am the boundary of the Agora\", says the inscribed marble post. Beyond it, people under a curse may not pass.", "epithet": "Boundary stone"},
+  "simon_shop": {"kind": "landmark", "title": "Σίμων", "text": "A shoemaker's house and shop at the Agora's edge, where hobnails and a cup inscribed SIMONOS were found. Socrates is said to have sat at his bench.", "epithet": "Simon's shop"},
+  "eleusinion": {"kind": "landmark", "title": "Ἐλευσίνιον", "text": "The city sanctuary of Demeter and Kore on the Panathenaic Way, linked by the Sacred Way to Eleusis and its Mysteries.", "epithet": "City Eleusinion"},
+  "dipylon": {"kind": "landmark", "title": "Δίπυλον", "text": "The largest gate of Athens: two gate towers and a deep court. The Panathenaic Way begins here, and the procession sets out at dawn.", "epithet": "The double gate"},
+  "sacred_gate": {"kind": "landmark", "title": "Ἱερὰ Πύλη", "text": "The Sacred Way to Eleusis leaves through this gate, with the Eridanos flowing in its channel beside the road.", "epithet": "The Sacred Gate"},
+  "pnyx": {"kind": "landmark", "title": "Πνύξ", "text": "Every adult male citizen may come here to speak and vote by a show of hands. The audience sits on the natural slope facing the speakers' platform; perhaps forty meetings a year.", "epithet": "The assembly"},
+  "meton_dial": {"kind": "landmark", "title": "Ἡλιοτρόπιον", "text": "Here the astronomer Meton observed the summer solstice of 432 BC and proposed a cycle of 19 years that brings the moon's months back into step with the sun's year.", "epithet": "Meton's sundial"},
+  "theatre": {"kind": "landmark", "title": "Θέατρον Διονύσου", "text": "Wooden bleachers on the south slope face a round earth orchestra with an altar and a simple wooden stage. The stone theatre comes a century later. Next spring Euripides will stage the Medea here.", "epithet": "Theatre of Dionysos"},
+  "dionysos_temple": {"kind": "landmark", "title": "Ναὸς Διονύσου", "text": "A small poros temple of Dionysos Eleuthereus beside the theatre, home of the old wooden image of the god that is carried in at the City Dionysia.", "epithet": "Old temple of Dionysos"},
+  "odeion": {"kind": "landmark", "title": "Ὠιδεῖον", "text": "A square hall with a forest of columns under a pyramidal roof; Plutarch says it imitated the Persian king's tent. The music contests of the Great Panathenaia are held here.", "epithet": "Odeion of Pericles"},
+  "olympieion": {"kind": "landmark", "title": "Ὀλυμπιεῖον", "text": "A huge platform begun by the tyrants in the 6th century and abandoned; column drums lie in the grass. It will not be finished for six hundred years.", "epithet": "Olympieion foundations"},
+  "kallirrhoe": {"kind": "landmark", "title": "Καλλιρρόη", "text": "A spring in the bed of the Ilissos whose water was used for bridal baths. Plane trees and a grassy bank make it a place to sit and talk in the heat.", "epithet": "The fair-flowing spring"},
+  "lyceum": {"kind": "landmark", "title": "Λύκειον", "text": "A gymnasium in a grove outside the walls with a running track and a shrine of Apollo Lykeios. Hoplites and cavalry drill here; athletes run and wrestle in the afternoon.", "epithet": "The Lyceum"},
+  "shipsheds": {"kind": "landmark", "title": "Νεώσοικοι", "text": "Long rows of roofed slipways where the triremes are hauled out of the water to dry. Athens has some 300 warships in 431.", "epithet": "Ship sheds of Zea"},
+  "harbour": {"kind": "landmark", "title": "Κάνθαρος", "text": "The great harbour of Piraeus: quays, the long stoas of the emporion where merchants deal in grain from the Black Sea and Egypt, moles with towers narrowing the mouth.", "epithet": "Kantharos and the emporion"},
+  "pentelikon_quarry": {"kind": "landmark", "title": "Πεντελικόν", "text": "Bright white-gold faces cut in steps, wedge slots, a sledge ramp: the Parthenon's marble starts here and goes down to the city on sledges and ox carts.", "epithet": "The marble quarry"},
+  "pericles": {"kind": "figure", "title": "Περικλῆς", "text": "Elected general year after year, Pericles persuaded the Athenians to rebuild the Acropolis with the allies' tribute. Thucydides wrote that Athens was in name a democracy but in fact ruled by its first man. This summer, Sparta's patience is running out.", "epithet": "Pericles, first citizen"},
+  "aspasia": {"kind": "figure", "title": "Ἀσπασία", "text": "A foreign woman of learning and wit, Pericles's partner. Socrates is said to have learned rhetoric from her. Comic poets mocked her; later writers admired her. As a metic, her son by Pericles needed a special vote to become a citizen.", "epithet": "Aspasia of Miletus"},
+  "socrates": {"kind": "figure", "title": "Σωκράτης", "text": "A stonemason's son, aged about 37, who walks barefoot in all weather and asks people what courage, justice or beauty really are, until they admit they do not know. He wrote nothing. Soon he will march to Potidaea as a hoplite.", "epithet": "Socrates, the questioner"},
+  "sophocles": {"kind": "figure", "title": "Σοφοκλῆς", "text": "Winner of more drama contests than anyone, and general with Pericles in the war against Samos. He also serves as priest of a healing hero. His Antigone asks what a citizen owes to the city and what to the gods.", "epithet": "Sophocles, tragic poet"},
+  "euripides": {"kind": "figure", "title": "Εὐριπίδης", "text": "Restless, questioning, fond of books; tradition says he liked solitude. Next spring he will stage the Medea, a woman's fury against the man who betrayed her. It will come third. This afternoon he watches its chorus rehearse, a scroll in his lap.", "epithet": "Euripides, tragic poet"},
+  "pheidias": {"kind": "figure", "title": "Φειδίας", "text": "He made the gold and ivory Athena inside the Parthenon and directed its sculpture. Enemies of Pericles accused him of stealing the statue's gold. One ancient writer says he died in an Athenian prison; another that he left for Olympia, where his Zeus became a wonder of the world. This summer, his yard works on without him.", "epithet": "Pheidias, sculptor (a memory)"},
+  "mnesikles": {"kind": "figure", "title": "Μνησικλῆς", "text": "His gateway to the Acropolis turns a steep rock into a stately climb. This year the work stops, with the stone bosses for lifting still on the blocks; the money and the men are wanted elsewhere. The bosses are still there today.", "epithet": "Mnesikles, architect"},
+  "protagoras": {"kind": "figure", "title": "Πρωταγόρας", "text": "'Man is the measure of all things.' The famous teacher from Abdera charges fees to train young men in argument, and walks with a crowd of pupils who turn about as he turns. Plato imagined Socrates debating him at the house of Kallias.", "epithet": "Protagoras, sophist"},
+  "meton": {"kind": "figure", "title": "Μέτων", "text": "On the Pnyx this summer he marked the solstice, and he proposes a cycle of 19 years that brings the moon's months back into step with the sun's year. Comic poets laughed at him; astronomers used his cycle for centuries.", "epithet": "Meton, astronomer"},
+  "alcibiades": {"kind": "figure", "title": "Ἀλκιβιάδης", "text": "Eighteen, rich, beautiful and reckless, and adored by the city; today he rides with the cavalry in the procession, long-haired, in a purple cloak. At Potidaea, Socrates will save his life. Later he will betray Athens and return to it, twice.", "epithet": "Alcibiades, Pericles's ward"},
+  "solon": {"kind": "figure", "title": "Σόλων", "text": "Long ago he freed Athenians enslaved for debt and wrote the laws still kept on revolving wooden boards in the Royal Stoa. He wrote poems, too: 'I grow old, always learning many things.' At dusk he is remembered before the stoa.", "epithet": "Solon, lawgiver (a memory)"},
+  "themistocles": {"kind": "figure", "title": "Θεμιστοκλῆς", "text": "He persuaded Athens to spend its silver on ships, won at Salamis and walled Piraeus. Ostracised, he ended his life as a Persian governor. At dusk he is remembered on the quay, looking toward Salamis. His harbour still hums below him.", "epithet": "Themistocles, founder of the fleet (a memory)"},
+  "theseus": {"kind": "figure", "title": "Θησεύς", "text": "Slayer of the Minotaur, he joined the villages of Attica into a single city, the Athenians said. Kimon found his bones on Skyros and brought them home in triumph. In the procession a young man walks in his likeness, club in hand.", "epithet": "Theseus, founder-hero"},
+  "rhapsode": {"kind": "figure", "title": "The rhapsode", "text": "Every fourth summer, at the Great Panathenaia, singers recite the Iliad and Odyssey in turn, by law. This year is not a great year, but he sings anyway. Listen, and Achilles' anger and Odysseus' long road home rise in the dusk.", "epithet": "Singer of Homer"},
+  "athena": {"kind": "figure", "title": "Ἀθηνᾶ", "text": "She won Attica from Poseidon by giving the olive. The Athenians bring her old olive-wood statue a new woven robe, perhaps every summer, certainly every fourth. The gold and ivory Athena in the Parthenon was a treasure as much as an image.", "epithet": "Athena Polias, Parthenos, Promachos"},
+  "poseidon": {"kind": "figure", "title": "Ποσειδῶν", "text": "He struck the rock with his trident and a salt spring rose, but the gods gave the land to Athena. Athenians still showed the marks in the rock, and honoured him beside the hero Erechtheus. Sailors and rowers still pray to him before they put out.", "epithet": "Poseidon, earth-shaker"},
+  "herakles": {"kind": "figure", "title": "Ἡρακλῆς", "text": "Strongest of heroes, son of Zeus and a mortal woman. His labours fill the metopes of the Hephaisteion and the Athenian treasury at Delphi; the Athenians claimed they were the first to honour him as a god. Look for his lion skin and club.", "epithet": "Herakles, hero of the labours"},
+  "philinna": {"kind": "figure", "title": "Philinna", "text": "Philinna spins wool before sunrise and weaves until noon. Her husband sits on the Council this year. She goes out for water, for festivals and to visit her sister. Her daughter will carry a basket in next year's procession, if the priestesses choose her.", "epithet": "Wool-worker and mother"},
+  "mania": {"kind": "figure", "title": "Mania", "text": "Mania was born in Phrygia and sold at Ephesus as a girl. She has raised two of Philinna's children. Athenian grave stones sometimes honour nurses like her by name, kindly. She hums Phrygian songs to the baby, in a language no one else in the house knows.", "epithet": "Nurse"},
+  "manes": {"kind": "figure", "title": "Manes", "text": "Manes knows the kiln's moods: three firings, air in, air out, then in again, and red clay turns black where the painter's slip lies. He has saved some coins; some enslaved craftsmen in Athens worked on their own and paid their master a share.", "epithet": "Kiln-man"},
+  "kephalos": {"kind": "figure", "title": "Kephalos", "text": "Kephalos came from Syracuse at Pericles's invitation and makes shields in Piraeus in a large workshop. Metics like him pay a special tax, serve in the army and cannot own land, but Athens could not run without them. His sons will keep the workshop going.", "epithet": "Shield-maker"},
+  "sosias": {"kind": "figure", "title": "Sosias", "text": "Sosias walks from Acharnai with two donkeys of oak charcoal. He votes in the assembly when the harvest allows, and grumbles that the city folk talk too much. His charcoal feeds the potters' kilns and the smithies, and warms the city's winters.", "epithet": "Charcoal seller"},
+  "nikarete": {"kind": "figure", "title": "Nikarete", "text": "Nikarete sells barley cakes and wheat loaves from a basket in the Agora. Bread-women had a reputation for sharp tongues. She has seen every general of the last thirty years buy her bread, and tells you so, twice, before you have paid.", "epithet": "Bread-seller"},
+  "toxamis": {"kind": "figure", "title": "Toxamis", "text": "Toxamis is one of the city's Scythian archers: public slaves who keep order in the assembly and the courts. On assembly mornings they sweep the Agora with a rope dyed red, and, ancient commentators said, anyone marked with the red loses their pay.", "epithet": "Scythian archer"},
+  "euphiletos": {"kind": "figure", "title": "Euphiletos", "text": "Euphiletos tends olives and vines outside the walls and brings his oil to the city. In a war he would serve as a hoplite. Tonight he will sleep in the city, at his cousin's in Kollytos, to see the procession at dawn.", "epithet": "Farmer"},
+  "hegeso": {"kind": "figure", "title": "Hegeso", "text": "Hegeso is eleven. Girls her age weave the new robe for Athena with the priestesses, and a few of good family carry baskets in the procession. She practises walking with a basket on her head, very straight, and does not drop it once.", "epithet": "Girl"},
+  "simon": {"kind": "figure", "title": "Simon", "text": "Simon makes sandals at the corner of the Agora. Ancient writers said Socrates often sat at his bench to talk with young men too young to enter the Agora. The hobnails and his cup were found by archaeologists, just outside the boundary stone.", "epithet": "Shoemaker"},
+  "democracy": {"kind": "idea", "title": "Democracy", "text": "In 432, a few tens of thousands of men governed themselves directly: they spoke and voted in the assembly, sat on the Council by lot and judged in huge juries. Women, slaves and foreigners could not vote; Athens's freedom rested partly on the tribute of others.", "epithet": "Rule by the people"},
+  "philosophy": {"kind": "idea", "title": "Philosophy", "text": "Earlier thinkers asked what the world is made of. In Athens, sophists like Protagoras taught argument for fees, and Socrates asked everyone what justice, courage and the good life really are. The questions moved from the stars to the street.", "epithet": "From nature to how to live"},
+  "drama": {"kind": "idea", "title": "Tragedy and comedy", "text": "Plays are staged for Dionysos at the City Dionysia in spring and the Lenaia in winter, with choruses of citizens, three actors in masks and a prize for the best poet. A rich citizen pays for each chorus. The seats are still wooden."},
+  "history": {"kind": "idea", "title": "History", "text": "Herodotus, tradition says, read from his Histories of the Persian Wars in Athens. A young Athenian named Thucydides is about to begin a history of the war that is coming, written to be a possession for all time, and to tell what really happened.", "epithet": "Herodotus and Thucydides"},
+  "curves": {"kind": "idea", "title": "The Parthenon's curves", "text": "Nothing in the Parthenon is quite straight. The base rises about 6 cm in the middle of the short ends and about 10-11 cm along the long sides; the columns lean slightly inward and swell a little. Why the builders did it, to correct the eye or for life and tension, is still argued."},
+  "planning": {"kind": "idea", "title": "A city on a grid", "text": "Hippodamos of Miletus laid out Piraeus in a regular grid of streets, with zones for the harbour, the market and the houses, and argued about the best way to order a city. Athens itself, older, grew in winding lanes around its rock.", "epithet": "Piraeus and Hippodamos"},
+  "medicine": {"kind": "idea", "title": "Hippocratic medicine", "text": "Physicians of the Hippocratic school watched symptoms, took notes and looked for natural causes rather than divine ones. Athens hired public physicians. The cult of the healing god Asklepios arrives only in 420, and the great plague, which no physician can stop, in 430."},
+  "laurion": {"kind": "idea", "title": "The silver of Laurion", "text": "The owls in every purse come from the state mines at Laurion in south Attica, worked mostly by enslaved men in narrow, airless galleries. The mines are off this map; their silver is everywhere on it, in every purse and on every stall."},
+  "league": {"kind": "idea", "title": "The League and its tribute", "text": "Founded against Persia in 478, the Delian League is now an Athenian empire of some 150 cities. Their tribute arrives by sea; a sixtieth goes to Athena and is listed on stone on the Acropolis. Chios and Lesbos still send ships instead."},
+  "megara": {"kind": "idea", "title": "The Megarian decree", "text": "This year Athens has shut the traders of Megara out of the Agora and the League's harbours. A Megarian at the boundary stone is turned back. Sparta will call it one cause of the war that begins next spring, together with Potidaea."},
+  "potidaea": {"kind": "idea", "title": "Potidaea", "text": "Potidaea, a city of the League in the north, has revolted with Corinth's help. Hoplites march down between the Long Walls to the ships; Socrates and Alcibiades will be among them. The great war with Sparta is only months away.", "epithet": "The cloud on the horizon"},
+  "metics": {"kind": "idea", "title": "Metics", "text": "Perhaps ten to twenty-five thousand free foreigners live in Attica with their families: traders, bankers, potters, shield-makers. They pay a special tax, serve in the army and the fleet and carry trays in the procession, but cannot vote or own land.", "epithet": "Resident foreigners"},
+  "slavery": {"kind": "idea", "title": "Enslaved Athenians", "text": "A very large number of the people you see are enslaved: nurses, porters, kiln-men, miners, even the city's own archers. Many work beside free men at the same tasks; some live on their own and pay their owner a share. Their freedom was not theirs to choose."},
+  "women": {"kind": "idea", "title": "Women's lives", "text": "Citizen women run the household, spin and weave, fetch water, visit, mourn and serve as priestesses; wealthy women go out less. Poorer women sell in the market and nurse. Women could not vote, but the city's greatest festivals needed them."},
+  "symposium": {"kind": "idea", "title": "The symposium", "text": "After dinner, men recline on couches in the andron, mix wine with water in a krater, sing, play kottabos and talk. Hired musicians, often enslaved, play the aulos. From the street you hear only laughter and a lyre, late into the night.", "epithet": "The drinking party"},
+  "burial": {"kind": "idea", "title": "Funerals", "text": "The dead are carried out before dawn, as an old law requires, with women singing laments and an aulos player, to graves along the roads outside the walls. Painted stelai and white-ground oil flasks honour them, and families come back to the graves with ribbons and oil."},
+  "seller": {"kind": "role", "title": "Market seller", "text": "Sells from a trestle stall: bread, oil, pots, fish, garlic; bargains loudly and packs up at midday."},
+  "banker": {"kind": "role", "title": "Money-changer", "text": "At his table he tests coins, weighs them and changes foreign silver for Athenian owls."},
+  "citizen": {"kind": "role", "title": "Citizen", "text": "In a himation, he shops in the morning, talks in the stoas and walks the city in the cool of the evening."},
+  "elder": {"kind": "role", "title": "Old man", "text": "Sits in the shade of the stoa with his staff and watches the city go by, ready to argue."},
+  "porter": {"kind": "role", "title": "Porter", "text": "Enslaved or free, he carries sacks and jars between the quays, the gates and the stalls."},
+  "scythian": {"kind": "role", "title": "Scythian archer", "text": "A public slave of the city in a pointed cap and trousers, keeping order in the Agora and the courts."},
+  "water_carrier": {"kind": "role", "title": "Water carrier", "text": "Fills her hydria at the fountain house, lifts it onto her head and walks home."},
+  "philosopher": {"kind": "role", "title": "A talker", "text": "Walks in the stoa with whoever will listen and asks what they mean by what they say."},
+  "youth": {"kind": "role", "title": "Young man", "text": "In a short cloak and broad hat, he follows a teacher about the Agora and argues back."},
+  "councillor": {"kind": "role", "title": "Councillor", "text": "Chosen by lot for a year, he prepares the assembly's business and dines in the Tholos when his tribe is on duty."},
+  "herald": {"kind": "role", "title": "Herald", "text": "Calls the citizens to order, proclaims decrees and calls for silence before a speech."},
+  "juror": {"kind": "role", "title": "Juror", "text": "A citizen over thirty with a bronze ticket, paid two obols a day to judge a case before sunset."},
+  "potter": {"kind": "role", "title": "Potter", "text": "Wedges the clay, throws a pot on the kick wheel, trims it and fixes the handles."},
+  "painter": {"kind": "role", "title": "Vase painter", "text": "Draws the figures in fine slip, fills the ground black around them and adds the details before the firing."},
+  "kiln_man": {"kind": "role", "title": "Kiln-man", "text": "Stacks the kiln, stokes it and controls the air through three firings."},
+  "clay_digger": {"kind": "role", "title": "Clay digger", "text": "Digs clay in the pits outside the Dipylon and carries it to the workshops to soak."},
+  "mourner": {"kind": "role", "title": "Mourner", "text": "Brings oil flasks and ribbons to a family grave and sits awhile beside the painted stone."},
+  "priest": {"kind": "role", "title": "Priest or priestess", "text": "Opens the shrine, pours a libation, prays and tends the sacred olive."},
+  "woman": {"kind": "role", "title": "Citizen woman", "text": "A himation drawn over her hair, she fetches water, visits a neighbour and stops at the household shrine."},
+  "mason": {"kind": "role", "title": "Mason", "text": "Hoists and sets blocks, clamps them with iron and lead and dresses the faces."},
+  "sculptor": {"kind": "role", "title": "Sculptor", "text": "Roughs out with the point, works with the claw chisel, smooths with a rasp and emery."},
+  "owl": {"kind": "role", "title": "Little owl", "text": "Athena's bird, common on the rock and the walls; it calls at night."},
+  "enslaved_woman": {"kind": "role", "title": "Enslaved woman", "text": "A nurse or a maid, carrying water, a baby or the shopping through the lanes."},
+  "shopkeeper": {"kind": "role", "title": "Shopkeeper", "text": "Sells from the front room of her house: wool, garlands, perfume, lamps."},
+  "weaver": {"kind": "role", "title": "Wool-worker", "text": "Cards, spins and weaves on the warp-weighted loom, as women of every class did."},
+  "enslaved_man": {"kind": "role", "title": "Enslaved worker", "text": "Carries firewood and water, works in a shop or a field, often beside his owner."},
+  "child": {"kind": "role", "title": "Child", "text": "Plays knucklebones, spins a top or chases a hoop in the lanes."},
+  "school": {"kind": "role", "title": "Schoolboy", "text": "Learns his letters, Homer and the lyre at a small school in Melite."},
+  "paidagogos": {"kind": "role", "title": "Paidagogos", "text": "The enslaved man who walks a boy to school and keeps an eye on him."},
+  "smith": {"kind": "role", "title": "Smith", "text": "Works the bellows and hammers bronze and iron into tools, armour and shield facings."},
+  "caster": {"kind": "role", "title": "Bronze caster", "text": "Packs moulds, melts bronze and pours it in pits on the hill of the Hephaisteion."},
+  "chorus": {"kind": "role", "title": "Chorus member", "text": "A citizen who rehearses the songs and steps of a tragic chorus for months."},
+  "aulos": {"kind": "role", "title": "Aulos player", "text": "Plays the double pipes for the chorus by day and at a symposium by night."},
+  "rower": {"kind": "role", "title": "Rower", "text": "A poorer citizen, metic or enslaved man who pulls an oar in a trireme, in time to the piper."},
+  "docker": {"kind": "role", "title": "Dock worker", "text": "Hauls ropes and carries amphorae and sacks between the ships and the emporion."},
+  "metic": {"kind": "role", "title": "Merchant", "text": "A resident foreigner trading grain, wine and timber in the emporion of Piraeus."},
+  "shipwright": {"kind": "role", "title": "Shipwright", "text": "Shapes pine and fir from Macedon with the adze and pitches the hulls of triremes."},
+  "ionian": {"kind": "role", "title": "Ionian visitor", "text": "A trader or envoy from the League's Greek cities across the Aegean."},
+  "thracian": {"kind": "role", "title": "Thracian", "text": "From the north, where Athens gets timber and silver, and many of its slaves."},
+  "farmer": {"kind": "role", "title": "Farmer", "text": "Hoes the vines and olives, brings the threshed barley home and goes to the city on market days."},
+  "thresher": {"kind": "role", "title": "Thresher", "text": "Spreads the barley on the floor, drives the animals round and winnows the grain in the wind."},
+  "presser": {"kind": "role", "title": "Olive presser", "text": "Crushes olives from the store, packs the baskets under the beam and decants the oil into jars."},
+  "herder": {"kind": "role", "title": "Goatherd", "text": "Takes the goats and sheep up the hills at dawn and brings them down at dusk."},
+  "athlete": {"kind": "role", "title": "Athlete", "text": "Runs, wrestles and scrapes the oil and dust off with a strigil, naked as Greeks trained."},
+  "hoplite": {"kind": "role", "title": "Hoplite", "text": "A citizen who can afford a bronze shield, helmet and spear, drilling at the Lyceum."},
+  "trainer": {"kind": "role", "title": "Trainer", "text": "Watches the athletes with his rod, corrects a hold and calls the pace."},
+  "quarry_hauler": {"kind": "role", "title": "Quarry hauler", "text": "Free and enslaved men rope the blocks down the sledge ramp and clear the spoil."},
+  "quarryman": {"kind": "role", "title": "Quarryman", "text": "Cuts a channel round a block, drives the wedges and levers the marble free."}
  },
  "strings": {
   "first_visit": "Hekatombaion, 432 BC. The Parthenon is finished, the Propylaia has just stopped, and at dawn the procession leaves the Dipylon for the rock.",
   "procession": "The Panathenaic procession has left the Dipylon.",
   "assembly": "The archers sweep the Agora with the red rope: the assembly meets on the Pnyx.",
   "embark": "Hoplites march down between the Long Walls to the ships for Potidaea.",
+  "torch_race": "Torches in the dark: the runners race from the Academy to the rock.",
+  "wedding": "Torches and an aulos: a bride is led to her new home.",
   "decorate_zone": "A courtyard house in Melite, with a garden to furnish."
  },
  "decorate": {
-  "rect": [
-   286,
-   659,
-   296,
-   669
-  ]
+  "rect": [286, 659, 296, 669]
  },
  "journal": [
   "landmark:*",
   "figure:*",
   "chain:*",
+  "idea:*",
   "event:panathenaic_procession"
  ]
 }

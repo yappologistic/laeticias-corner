@@ -28,7 +28,7 @@
     {"id": "corner", "set": "home", "kind": "home", "time": "timeless"},
     {"id": "rome", "set": "rome", "kind": "city", "time": "rome", "life": "regions/rome.json"},
     {"id": "athens", "set": "athens", "kind": "city", "time": "athens", "life": "regions/athens.json"},
-    {"id": "parsa", "set": "parsa", "kind": "city", "time": "parsa"},
+    {"id": "parsa", "set": "parsa", "kind": "city", "time": "parsa", "life": "regions/parsa.json"},
     {"id": "ostia", "set": "rome", "kind": "town", "time": "rome", "life": "regions/ostia.json"},
     {"id": "tibur", "set": "rome", "kind": "town", "time": "rome"},
     {"id": "alban_mount", "set": "rome", "kind": "town", "time": "rome"},

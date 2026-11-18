@@ -281,7 +281,13 @@
   }
  ],
  "zones": [],
- "cards": {},
+ "cards": {
+  "susa_palace": {
+   "title": "Palace of Darius",
+   "epithet": "Susa",
+   "text": "An audience hall of 36 columns like Pārsa's, beside courts faced with glazed bricks: archers, lions and winged bulls. Darius's building inscription here names the peoples who made it, from Ionian stonecutters to Babylonian brickmakers."
+  }
+ },
  "strings": {
   "first_visit": "Susa: the palace of Darius on its mound above the Shaur."
  },

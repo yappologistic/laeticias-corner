@@ -623,6 +623,10 @@ def _terrace_detail(L: Layout) -> None:
         L.place(P + "p_crane", at=at, face="west")
     for at in ((112, 40), (113, 41), (110, 77)):
         L.place(P + "p_jars", at=at)
+    # The Tripylon may still be unfinished in 470 (fact-check §1.3: Xerxes and Artaxerxes I):
+    # scaffold poles against its walls, where they leave the doors and stairs free.
+    for at in ((86, 72), (86, 76), (94, 72), (89, 79), (92, 79)):
+        put(L, P + "p_scaffold", at)
     # The archive in the fortification's north-east corner (where the tablets were found).
     for at in ((114, 38), (116, 38)):
         L.place(P + "p_scribe_desk", at=at, face="south")

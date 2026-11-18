@@ -1116,11 +1116,28 @@ def _farm(L: Layout, at, face: str, seed: str) -> None:
         for dc, dr in ((4, 0), (-4, 0), (0, 4), (0, -4), (4, 3), (-4, -3)):
             if put(L, A + "g_threshing", (c + dc, r + dr)):
                 break
-    for dc, dr in ((3, 1), (-1, 3), (1, -1), (3, 2)):
-        if put(L, A + "g_press", (c + dc, r + dr), face="west"):
+    # The press under the farm's wall, or on the nearest free ground of the yard (the oil chain
+    # starts here, so every farm needs one).
+    near = [(3, 1), (-1, 3), (1, -1), (3, 2), (4, 0), (0, 4), (-3, 0), (0, -3), (4, 3), (-3, 3),
+            (3, -3), (-3, -2), (5, 1), (1, 5), (-4, 1), (1, -4)]
+    for dc, dr in near:
+        if _press(L, (c + dc, r + dr)):
             break
     for _ in range(3):
         put(L, A + "g_pots", (c + st.randint(-2, 4), r + st.randint(-2, 4)))
+
+
+def _press(L: Layout, at) -> bool:
+    """An olive press whose work spot is free ground (else it would be cleared off again)."""
+    for face in ("west", "north"):
+        p = put(L, A + "g_press", at, face=face)
+        if p is None:
+            continue
+        loc = [L._local(c, r) for c, r, _f in p.slots.get("work", [])]
+        if loc and all(x is not None and L.OCC[x] < 0 and not L.STREET[x] for x in loc):
+            return True
+        L.remove(p)
+    return False
 
 
 def _country(L: Layout, inside, noise) -> None:

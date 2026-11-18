@@ -275,7 +275,13 @@
  "events": [],
  "lanes_tokens": [],
  "zones": [],
- "cards": {},
+ "cards": {
+  "athenian_treasury": {
+   "title": "Treasury of the Athenians",
+   "epithet": "On the Sacred Way",
+   "text": "A small Doric treasury of Parian marble, its metopes carved with Herakles and Theseus; whether it was built about 510 or after Marathon in 490 is debated."
+  }
+ },
  "strings": {
   "first_visit": "Delphi under the shining cliffs. The Sacred Way climbs to Apollo's temple."
  },

@@ -269,7 +269,56 @@
    0.5
   ]
  },
- "figures": [],
+ "figures": [
+  {
+   "actor": "parsa.cyrus",
+   "presence": "memory",
+   "card": "cyrus",
+   "translucent": true,
+   "schedule": [
+    {
+     "hours": [
+      "18:30",
+      "03:00"
+     ],
+     "routine": "memory"
+    }
+   ],
+   "routines": {
+    "memory": {
+     "steps": [
+      {
+       "go": {
+        "item": "parsa.cyrus_tomb",
+        "spot": "beside"
+       }
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        40,
+        60
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "03:00"
+       }
+      }
+     ]
+    }
+   },
+   "ideas": [
+    "cyrus_cylinder"
+   ]
+  }
+ ],
  "groups": [],
  "chains": [],
  "events": [],
@@ -279,7 +328,17 @@
   "cyrus_tomb": {
    "title": "Tomb of Cyrus",
    "epithet": "On six steps",
-   "text": "The tomb of Cyrus the Great, a gabled chamber on six steps. The magi who keep it receive a sheep a day (Arrian 6.29)."
+   "text": "The tomb of Cyrus the Great, a gabled stone chamber on six steps in a watered grove. The magi who keep it, father to son since Cambyses, receive a sheep a day and a horse a month. Two centuries later Alexander found it robbed and had it restored (Arrian 6.29)."
+  },
+  "cyrus": {
+   "title": "Kūruš",
+   "epithet": "Cyrus, founder (a memory)",
+   "text": "Cyrus joined Persians, Medes and Elamites into one empire and took Lydia and Babylon. He rests here in a small stone house on six steps, where magi kept watch, father to son. Two centuries later Alexander found it robbed and had it restored."
+  },
+  "cyrus_cylinder": {
+   "title": "The Cyrus Cylinder",
+   "epithet": "A careful reading",
+   "text": "A clay cylinder written in Babylonian cuneiform after Cyrus, 'king of Anšan', took Babylon in 539 BC, and buried in the city's wall. In the manner of Mesopotamian kings, it says Marduk chose Cyrus, blames the previous king, and says Cyrus entered Babylon without battle, returned the images of gods to their shrines in a list of cities from Aššur and Susa to the Zagros, and gathered their people and gave them back their homes. It does not name the Jews; their return is told in the Hebrew Bible. Often called the first charter of human rights, and treasured in Iran today, it is to historians a royal proclamation of a policy of restoring local cults and peoples."
   }
  },
  "strings": {

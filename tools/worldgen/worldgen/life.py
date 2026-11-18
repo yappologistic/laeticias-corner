@@ -80,8 +80,9 @@ TOWN = {
                 "people": ["athens.citizen", "athens.woman", "athens.priest", "athens.farmer"],
                 "cards": {"telesterion": ("Telesterion", "Hall of the Mysteries",
                                           "The square hall where the initiates of Demeter and "
-                                          "Kore gathered. Its Periclean rebuilding is under way; "
-                                          "the roof is not finished.")},
+                                          "Kore gathered. Its Periclean rebuilding is under way: "
+                                          "Koroibos began it, Metagenes and Xenokles will finish "
+                                          "it, Plutarch says; the roof is not finished.")},
                 "first": "Eleusis, on its bay. The Sacred Way from Athens ends at the gate of "
                          "Demeter's sanctuary."},
     "academy": {"name": "Akademeia", "native": "Ἀκαδήμεια", "caption": "The Academy · 432 BC",
@@ -94,8 +95,13 @@ TOWN = {
                          "boys."},
     "delphi": {"name": "Delphi", "native": "Δελφοί", "caption": "Delphi · summer, 432 BC",
                "people": ["athens.priest", "athens.citizen", "athens.ionian", "athens.woman"],
-               "cards": {}, "first": "Delphi under the shining cliffs. The Sacred Way climbs to "
-                                     "Apollo's temple."},
+               "cards": {"athenian_treasury": ("Treasury of the Athenians", "On the Sacred Way",
+                                               "A small Doric treasury of Parian marble, its "
+                                               "metopes carved with Herakles and Theseus; whether "
+                                               "it was built about 510 or after Marathon in 490 "
+                                               "is debated.")},
+               "first": "Delphi under the shining cliffs. The Sacred Way climbs to "
+                        "Apollo's temple."},
     "corinth": {"name": "Korinthos", "native": "Κόρινθος", "caption": "Corinth · summer, 432 BC",
                 "people": ["athens.citizen", "athens.woman", "athens.metic", "athens.rower"],
                 "cards": {}, "first": "Corinth, between two seas. Ships cross the isthmus on "
@@ -128,7 +134,13 @@ TOWN = {
     "susa": {"name": "Susa", "native": "Šušan", "caption": "Susa · spring, c. 470 BC",
              "people": ["parsa.scribe", "parsa.guard_spear", "parsa.woman_worker",
                         "parsa.labourer", "parsa.elamite"],
-             "cards": {}, "first": "Susa: the palace of Darius on its mound above the Shaur."},
+             "cards": {"susa_palace": ("Palace of Darius", "Susa",
+                                       "An audience hall of 36 columns like Pārsa's, beside courts "
+                                       "faced with glazed bricks: archers, lions and winged bulls. "
+                                       "Darius's building inscription here names the peoples who "
+                                       "made it, from Ionian stonecutters to Babylonian "
+                                       "brickmakers.")},
+             "first": "Susa: the palace of Darius on its mound above the Shaur."},
     "persian_gates": {"name": "The Persian Gates", "native": "Persian Gates",
                       "caption": "The Persian Gates · c. 470 BC",
                       "people": ["parsa.guard_spear", "parsa.archer"],
@@ -138,9 +150,42 @@ TOWN = {
                    "caption": "Pasargadae · spring, c. 470 BC",
                    "people": ["parsa.magus", "parsa.gardener", "parsa.guard_spear"],
                    "cards": {"cyrus_tomb": ("Tomb of Cyrus", "On six steps",
-                                            "The tomb of Cyrus the Great, a gabled chamber on six "
-                                            "steps. The magi who keep it receive a sheep a day "
-                                            "(Arrian 6.29).")},
+                                            "The tomb of Cyrus the Great, a gabled stone chamber "
+                                            "on six steps in a watered grove. The magi who keep "
+                                            "it, father to son since Cambyses, receive a sheep a "
+                                            "day and a horse a month. Two centuries later "
+                                            "Alexander found it robbed and had it restored "
+                                            "(Arrian 6.29)."),
+                             "cyrus": ("Kūruš", "Cyrus, founder (a memory)",
+                                       "Cyrus joined Persians, Medes and Elamites into one empire "
+                                       "and took Lydia and Babylon. He rests here in a small stone "
+                                       "house on six steps, where magi kept watch, father to son. "
+                                       "Two centuries later Alexander found it robbed and had it "
+                                       "restored."),
+                             "cyrus_cylinder": ("The Cyrus Cylinder", "A careful reading",
+                                                "A clay cylinder written in Babylonian cuneiform "
+                                                "after Cyrus, 'king of Anšan', took Babylon in 539 "
+                                                "BC, and buried in the city's wall. In the manner "
+                                                "of Mesopotamian kings, it says Marduk chose Cyrus, "
+                                                "blames the previous king, and says Cyrus entered "
+                                                "Babylon without battle, returned the images of "
+                                                "gods to their shrines in a list of cities from "
+                                                "Aššur and Susa to the Zagros, and gathered their "
+                                                "people and gave them back their homes. It does not "
+                                                "name the Jews; their return is told in the Hebrew "
+                                                "Bible. Often called the first charter of human "
+                                                "rights, and treasured in Iran today, it is to "
+                                                "historians a royal proclamation of a policy of "
+                                                "restoring local cults and peoples.")},
+                   "figures": [{"actor": "parsa.cyrus", "presence": "memory", "card": "cyrus",
+                                "translucent": True,
+                                "schedule": [{"hours": ["18:30", "03:00"], "routine": "memory"}],
+                                "routines": {"memory": {"steps": [
+                                    {"go": {"item": "parsa.cyrus_tomb", "spot": "beside"}},
+                                    {"wander": {"radius": 3}, "dur": [40, 60]},
+                                    {"use": {"here": True}, "anim": "idle",
+                                     "until": {"hour": "03:00"}}]}},
+                                "ideas": ["cyrus_cylinder"]}],
                    "first": "Pasargadae: Cyrus' gardens and his tomb on the plain."},
 }
 
@@ -368,7 +413,8 @@ def town_file(rid: str, layout_world: World, graphs: dict[str, Graph]) -> dict:
     cards = {k: {"title": a, "epithet": b, "text": c} for k, (a, b, c) in t["cards"].items()}
     return {"version": 1, "id": rid, "name": t["name"], "native": t["native"],
             "caption": t["caption"], "theme": theme(rid) | {"climate": set_},
-            "districts": pops, "densities": DENSITIES, "figures": [], "groups": [], "chains": [],
+            "districts": pops, "densities": DENSITIES, "figures": t.get("figures", []),
+            "groups": [], "chains": [],
             "events": [], "lanes_tokens": tokens, "zones": [], "cards": cards,
             "strings": {"first_visit": t["first"]}, "journal": ["landmark:*"]}
 
