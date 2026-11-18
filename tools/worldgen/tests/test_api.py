@@ -176,3 +176,18 @@ class Finish(unittest.TestCase):
         self.assertIsNotNone(put(L, "athens.g_herm", (4, 4)))
         self.assertIsNone(put(L, "athens.g_herm", (4, 4)))
         self.assertEqual(sum(1 for p in L.items if not p.removed), 1)
+
+
+class Junctions(unittest.TestCase):
+    def test_lane_ends_join_one_street_and_never_on_the_diagonal(self):
+        from worldgen import compiler
+        from worldgen.coords import to_plan
+        L = layout()
+        L.fill("grass", district="meadows")
+        L.street([(2, 10), (20, 10)], width=1, paving="path")      # the parent street
+        L.street([(8, 10), (8, 3)], width=1, paving="path")        # a lane starting on it
+        L.street([(9, 11), (9, 18)], width=1, paving="path")       # another, a step aside
+        g, _ = compiler.derive_graph(L)
+        for e in g.edges:
+            a, b = to_plan(*g.node(e.a).at), to_plan(*g.node(e.b).at)
+            self.assertTrue(a[0] == b[0] or a[1] == b[1], (a, b))

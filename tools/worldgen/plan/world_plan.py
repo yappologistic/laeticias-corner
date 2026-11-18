@@ -135,6 +135,12 @@ PORTALS = {
     "ostiensis": (("ostia", "rome"), (163, 184), 1),        # Via Ostiensis, Ostia's north edge
     "royal_road_w": (("parsa", "base"), (1136, 354), 4),    # persepolis.md: c 0, r 50
     "pasargadae_n": (("parsa", "base"), (1190, 304), 4),
+    # athens.md §2.5: the Sacred Way leaves the Sacred Gate west (c 0, r 16); the Academy road
+    # from the Dipylon, the Acharnai road from the north gate, the Mesogeia road past the Lyceum.
+    "sacred_way_w": (("athens", "base"), (576, 236), 1),
+    "academy_road_n": (("athens", "base"), (580, 220), 2),
+    "acharnai_n": (("athens", "base"), (617, 220), 1),
+    "mesogeia_e": (("athens", "base"), (735, 265), 1),
 }
 
 # --- coastlines ------------------------------------------------------------------------------
@@ -372,8 +378,14 @@ ROUTES = {
                         "build": False},
     "delphi_way": {"points": [(556, 284), (530, 262), (510, 258)], "paving": "world.road_earth",
                    "width": 1, "kind": "track", "build": False},
-    "sacred_way": {"points": [(576, 240), (566, 236)], "paving": "world.road_earth",
+    "sacred_way": {"points": ["athens:sacred_way_w", (566, 236)], "paving": "world.road_earth",
                    "width": 2, "kind": "road", "build": False},
+    "academy_road": {"points": ["athens:academy_road_n", (568, 212)],
+                     "paving": "world.road_earth", "width": 2, "kind": "road", "build": False},
+    "acharnai_road": {"points": ["athens:acharnai_n", (618, 200), (630, 160)],
+                      "paving": "world.road_earth", "width": 1, "kind": "road", "build": False},
+    "mesogeia_road": {"points": ["athens:mesogeia_e", (744, 252)],
+                      "paving": "world.road_earth", "width": 1, "kind": "track", "build": False},
 }
 
 LANES = {
@@ -385,12 +397,15 @@ LANES = {
                         "ports": {"brundisium": 0, "mist_w": 1}, "build": False},
     "ionian_greek": {"points": [(446, 250), (448, 232), (462, 270), (520, 275), (554, 282)],
                      "kind": "sea", "ports": {"mist_e": 0, "lechaion": 4}, "build": False},
-    "saronic": {"points": [(572, 300), (580, 340), (596, 368)], "kind": "sea",
-                "ports": {"kenchreai": 0, "piraeus": 2}, "build": False},
-    "aegean_delos": {"points": [(600, 386), (700, 392), (782, 346), (840, 252)], "kind": "sea",
-                     "ports": {"piraeus": 0, "delos": 2, "ephesus": 3}, "build": False},
-    "hellespont": {"points": [(600, 386), (720, 392), (790, 200), (800, 104)], "kind": "sea",
-                   "ports": {"piraeus": 0, "hellespont": 3}, "build": False},
+    # Piraeus' lanes meet Athens' own harbour lane off the Kantharos mouth (athens local c 12,
+    # r 159 = world (588, 379)), in open water just beyond the layer's south edge.
+    "saronic": {"points": [(572, 300), (568, 334), (570, 364), (580, 384), (588, 380)],
+                "kind": "sea", "ports": {"kenchreai": 0, "piraeus": 4}, "build": False},
+    "aegean_delos": {"points": [(588, 380), (600, 392), (700, 392), (782, 346), (840, 252)],
+                     "kind": "sea", "ports": {"piraeus": 0, "delos": 3, "ephesus": 4},
+                     "build": False},
+    "hellespont": {"points": [(588, 380), (600, 392), (720, 392), (790, 200), (800, 104)],
+                   "kind": "sea", "ports": {"piraeus": 0, "hellespont": 4}, "build": False},
     "gulf_lane": {"points": [(1080, 420), (1088, 400)], "kind": "sea",
                   "ports": {"gulf": 0, "susiana": 1}, "build": False},
 }

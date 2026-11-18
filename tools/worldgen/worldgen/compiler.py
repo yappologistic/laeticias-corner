@@ -153,17 +153,25 @@ def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
                         tile = (round(a[0] + t * (b[0] - a[0])), round(a[1] + t * (b[1] - a[1])))
                         bps[i].append((si + t, tile))
                         bps[j].append((sj + u, tile))
-    # T-junctions: a street end lying on (near) another street.
+    # T-junctions: a street end near another street joins it. An end that already lies on a
+    # street is joined there by the crossing above; otherwise it joins only the nearest street
+    # within reach (joining every street within reach drew short diagonal edges across
+    # whatever stood between two lanes that both start on a third).
     for i, s in enumerate(streets):
         for end in (polys[i][0], polys[i][-1]):
+            near = []
             for j, o in enumerate(streets):
                 if j == i:
                     continue
                 dist, pos, tile = _project(end, polys[j])
-                if 0 < dist <= o.width / 2 + 1:
-                    bps[j].append((pos, tile))
-                    if tile != tuple(end):
-                        extra.append((tuple(end), tile, s.kind))
+                if dist <= o.width / 2 + 1:
+                    near.append((dist, j, pos, tile))
+            if not near or min(near)[0] < 1e-9:
+                continue
+            dist, j, pos, tile = min(near)
+            bps[j].append((pos, tile))
+            if tile != tuple(end):
+                extra.append((tuple(end), tile, s.kind))
 
     named: dict[tuple[int, int], tuple[str, str]] = {}  # tile -> (id, kind)
     want: list[tuple[tuple[int, int], str]] = []  # named tiles that must join the streets

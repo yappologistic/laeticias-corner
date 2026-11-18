@@ -84,10 +84,11 @@ def fords(L: Layout, streets, item: str = "world.ford") -> None:
             L.place(item, at=(c - L.origin[0], r - L.origin[1]))
 
 
-def clear_doors(L: Layout, reach: int = 24) -> None:
+def clear_doors(L: Layout, reach: int = 24, all_slots: bool = False) -> None:
     """Keep every door step and work spot free: small things standing on one go; a building
     standing on another's door step goes instead of the step's owner. Then houses and stalls
-    whose spots no street reaches within the actors' last-stretch search go too."""
+    whose spots no street reaches within the actors' last-stretch search go too (with
+    `all_slots`, any kit whose slots none of them reaches: kilns, wells, looms boxed in)."""
     for p in [p for p in L.items if not p.removed]:
         spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
         if p.door:
@@ -132,11 +133,23 @@ def clear_doors(L: Layout, reach: int = 24) -> None:
                 q.append((a, b))
     for p in L.items:
         d = L.cat.items[p.id]
-        if p.removed or d.landmark or p.door is None:
+        if p.removed or d.landmark or d.rise:
             continue
-        loc = L._local(*p.door)
-        if loc is None or dist[loc] > reach:
-            L.remove(p)
+        if p.door is not None:
+            loc = L._local(*p.door)
+            if loc is None or dist[loc] > reach:
+                L.remove(p)
+        elif all_slots and p.slots:
+            spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
+            near = set()
+            for c, r in spots:
+                if p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph:
+                    near |= {(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))}
+                else:
+                    near.add((c, r))
+            locs = [L._local(c, r) for c, r in near]
+            if not any(loc is not None and dist[loc] <= reach for loc in locs):
+                L.remove(p)
 
 
 def glow_cap(L: Layout, rank: dict[str, int], cap: int = 38) -> None:
