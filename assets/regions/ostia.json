@@ -130,10 +130,10 @@
  ],
  "figures": [],
  "lanes_tokens": [
-  {"actor": "rome.merchantman", "lane": "ostia:portus", "count": 3, "by_month": "sailing"},
-  {"actor": "world.fishing_boat", "lane": "ostia:portus", "count": 2, "by_month": [0.7, 0.8, 1, 1, 1, 1, 1, 0.9, 0.7, 0.5, 0.5, 0.6]},
-  {"actor": "rome.barge", "lane": "ostia:tiber_ostia", "count": 2, "by_month": "barge"},
-  {"actor": "rome.barge", "lane": "ostia:portus_canal", "count": 1, "by_month": "barge"}
+  {"actor": "rome.merchantman", "lane": "ostia:portus", "count": 3, "by_month": "sailing", "id": "ostia.0", "hours": ["05:00", "20:00"], "rest": ["sea_s", "sea_w", "claudius"], "offsets": [0.073, 0.353, 0.709]},
+  {"actor": "world.fishing_boat", "lane": "ostia:portus", "count": 2, "by_month": [0.7, 0.8, 1, 1, 1, 1, 1, 0.9, 0.7, 0.5, 0.5, 0.6], "id": "ostia.1", "hours": ["03:30", "11:00"], "rest": ["sea_s", "sea_w", "claudius"], "offsets": [0.003, 0.422]},
+  {"actor": "rome.barge", "lane": "ostia:tiber_ostia", "count": 2, "by_month": "barge", "id": "ostia.2", "hours": ["05:00", "20:00"], "rest": ["rome", "ostia_quay", "mouth"], "offsets": [0.961, 0.528]},
+  {"actor": "rome.barge", "lane": "ostia:portus_canal", "count": 1, "by_month": "barge", "id": "ostia.3", "hours": ["05:00", "20:00"], "rest": ["tiber", "hexagon"], "offsets": [0.314]}
  ],
  "cards": {
   "portus_hexagon": {"kind": "landmark", "title": "Portus Traiani", "text": "Trajan's hexagonal basin, about 358 metres a side, opened around 112: quays and warehouses all round, ships moored side by side, and a canal to the Tiber. The grain of Egypt and Africa is unloaded here for Rome.", "epithet": "Trajan's harbour"},
