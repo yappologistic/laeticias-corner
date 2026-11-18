@@ -100,7 +100,7 @@ Post::Post(SDL_Renderer* renderer) : renderer_(renderer) {}
 bool Post::init() {
     device_ = SDL_GetGPURendererDevice(renderer_);
     if (device_ == nullptr) return false;
-    finalShader_ = makeShader(device_, "final", 5);
+    finalShader_ = makeShader(device_, "final", 4);
     shadeShader_ = makeShader(device_, "shade", 1);
     downShader_ = makeShader(device_, "bloom_down", 1);
     upShader_ = makeShader(device_, "bloom_up", 1);
@@ -142,7 +142,12 @@ bool Post::init() {
             px[static_cast<std::size_t>(y * kSide + x)] = v | v << 8 | v << 16 | v << 24;
         }
     falloff_.reset(SDL_CreateTexture(renderer_, kFormat, SDL_TEXTUREACCESS_STATIC, kSide, kSide));
+    // Pools add their light to the glow target's alpha alone (colour stays the glow's).
+    poolBlend_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE,
+                                            SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
+                                            SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD);
     if (!falloff_ || !SDL_UpdateTexture(falloff_.get(), nullptr, px.data(), kSide * 4) ||
+        !SDL_SetTextureBlendMode(falloff_.get(), poolBlend_) ||
         !SDL_SetTextureBlendMode(falloff_.get(), SDL_BLENDMODE_ADD_PREMULTIPLIED)) {
         SDL_Log("gpu: falloff: %s", SDL_GetError());
         return false;
@@ -159,7 +164,6 @@ bool Post::channelsRead() {
     prepare(2, 2);
     Batch b(renderer_);
     SDL_Texture* out = SDL_GetRenderTarget(renderer_);
-    begin(light_.get());
     begin(glow_.get());
     for (int i = 0; i < kLevels; ++i) begin(bloom_[static_cast<std::size_t>(i)].get());
     if (!SDL_SetRenderTarget(renderer_, dst.get())) return false;
@@ -212,14 +216,14 @@ SDL_GPUTexture* Post::gpuOf(SDL_Texture* t) const {
 }
 
 int Post::levels() const {
-    return quality_ == Quality::Low ? tuning::kBloomLevelsLow : tuning::kBloomLevelsHigh;
+    if (quality_ == Quality::Low) return 0; // Low: the glow layer itself, no halo
+    return quality_ == Quality::Medium ? tuning::kBloomLevelsMedium : tuning::kBloomLevelsHigh;
 }
 
 void Post::prepare(int w, int h) {
-    if (light_ && w <= w_ && h <= h_) return;
+    if (glow_ && w <= w_ && h <= h_) return;
     w_ = std::max(w, w_);
     h_ = std::max(h, h_);
-    light_ = target(w_, h_);
     glow_ = target(w_, h_);
     for (int i = 0; i < kLevels; ++i)
         bloom_[static_cast<std::size_t>(i)] = target(halve(w_, i + 1), halve(h_, i + 1));
@@ -238,15 +242,14 @@ void Post::rebuildStates() {
         drop(down_[i]);
         drop(up_[i]);
     }
-    if (!light_ || !glow_ || !bloom_[0]) return;
-    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): four here.
-    const SDL_GPUTextureSamplerBinding bind[4] = {{gpuOf(light_.get()), linear_},
-                                                  {gpuOf(glow_.get()), linear_},
+    if (!glow_ || !bloom_[0]) return;
+    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): three here.
+    const SDL_GPUTextureSamplerBinding bind[3] = {{gpuOf(glow_.get()), linear_},
                                                   {gpuOf(bloom_[0].get()), linear_},
                                                   {gpuOf(mean_.back().get()), linear_}};
     SDL_GPURenderStateCreateInfo info{};
     info.fragment_shader = finalShader_;
-    info.num_sampler_bindings = 4;
+    info.num_sampler_bindings = 3;
     info.sampler_bindings = bind;
     for (SDL_GPURenderState*& s : final_) s = SDL_CreateGPURenderState(renderer_, &info);
     SDL_GPURenderStateCreateInfo bi{};
@@ -337,24 +340,30 @@ void Post::bloom(Batch& b, int w, int h) {
 }
 
 void Post::measure(Batch& b, SDL_Texture* scene, int w, int h) {
-    // The exposure follows the mean slowly: measured every few frames (the first at once).
-    if (measured_++ % tuning::kMeanEvery != 0) return;
+    // The first frame fills the whole chain; then one level a frame, top to bottom, so the
+    // mean is at most a chain's length of frames old for one draw a frame.
+    const std::size_t levels = mean_.size();
+    const std::size_t first = measured_ == 0 ? 0 : measured_ % levels;
+    const std::size_t last = measured_ == 0 ? levels : first + 1;
+    ++measured_;
     b.flush();
     use(b, nullptr);
-    SDL_Texture* src = scene;
-    float u = static_cast<float>(w) / static_cast<float>(w_);
-    float v = static_cast<float>(h) / static_cast<float>(h_);
-    for (const TexturePtr& t : mean_) {
+    for (std::size_t i = first; i < last; ++i) {
+        SDL_Texture* src = i == 0 ? scene : mean_[i - 1].get();
+        float u = 1;
+        float v = 1;
+        if (i == 0) {
+            u = static_cast<float>(w) / static_cast<float>(w_);
+            v = static_cast<float>(h) / static_cast<float>(h_);
+        }
         float tw = 0;
         float th = 0;
-        if (!SDL_GetTextureSize(t.get(), &tw, &th) || !SDL_SetRenderTarget(renderer_, t.get()))
+        if (!SDL_GetTextureSize(mean_[i].get(), &tw, &th) ||
+            !SDL_SetRenderTarget(renderer_, mean_[i].get()))
             SDL_Log("gpu: %s", SDL_GetError());
         b.use(src, SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
         b.quad(SDL_FRect{0, 0, tw, th}, {0, 0, u, v}, {1, 1, 1, 1});
         b.flush();
-        src = t.get();
-        u = 1;
-        v = 1;
     }
 }
 
@@ -391,7 +400,9 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
     set4(u.haze, f.haze.r, f.haze.g, f.haze.b,
          f.hazeStrength * (f.near ? 1.0f - (1.0f - tuning::kNearDayHaze) * day : 1.0f));
     set4(u.mixes, g.shoulder, tuning::kPoolGain, tuning::kPoolWarm,
-         tuning::kBloomGain * (tuning::kBloomFloor + (1.0f - tuning::kBloomFloor) * f.glow));
+         levels() == 0
+             ? 0.0f
+             : tuning::kBloomGain * (tuning::kBloomFloor + (1.0f - tuning::kBloomFloor) * f.glow));
     set4(u.texel, static_cast<float>(w_), static_cast<float>(h_), f.windowPerTarget,
          tuning::kGlowCore);
     set4(u.world, f.artOrigin.x, f.artOrigin.y, f.targetPerArt,
@@ -406,7 +417,8 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
          lerp(lerp(tuning::kTwilightAdaptMin, tuning::kDayAdapt[0], day), tuning::kNightAdapt[0],
               night),
          lerp(tuning::kDayAdapt[1], tuning::kNightAdapt[1], night), day);
-    set4(u.pool, 1.0f / tuning::kLightHeadroom, 0, 0, 0);
+    set4(u.pool, 1.0f / tuning::kLightHeadroom, tuning::kLampColour[0], tuning::kLampColour[1],
+         tuning::kLampColour[2]);
     if (!SDL_SetGPURenderStateFragmentUniforms(s, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());
     use(b, s);
@@ -417,7 +429,7 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
 }
 
 std::size_t Post::bytes() const {
-    std::size_t n = 2 * static_cast<std::size_t>(w_) * static_cast<std::size_t>(h_) * 4;
+    std::size_t n = static_cast<std::size_t>(w_) * static_cast<std::size_t>(h_) * 4;
     for (int i = 0; i < kLevels; ++i)
         n += static_cast<std::size_t>(halve(w_, i + 1)) *
              static_cast<std::size_t>(halve(h_, i + 1)) * 4;

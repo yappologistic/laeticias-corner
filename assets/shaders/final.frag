@@ -10,10 +10,9 @@ layout(location = 0) in vec4 v_color;
 layout(location = 1) in vec2 v_uv;
 layout(location = 0) out vec4 o_color;
 layout(set = 2, binding = 0) uniform sampler2D u_scene; // premultiplied
-layout(set = 2, binding = 1) uniform sampler2D u_light;
-layout(set = 2, binding = 2) uniform sampler2D u_glow;
-layout(set = 2, binding = 3) uniform sampler2D u_bloom;
-layout(set = 2, binding = 4) uniform sampler2D u_mean; // the scene averaged to one texel
+layout(set = 2, binding = 1) uniform sampler2D u_glow;  // rgb what glows; a the lamps' pools
+layout(set = 2, binding = 2) uniform sampler2D u_bloom;
+layout(set = 2, binding = 3) uniform sampler2D u_mean;  // the scene averaged to one texel
 
 layout(std140, set = 3, binding = 0) uniform U {
     vec4 gain;   // white balance times exposure; tint amount
@@ -25,7 +24,7 @@ layout(std140, set = 3, binding = 0) uniform U {
     vec4 world;  // art px at target (0, 0) x, y; target px per art px; pool bands
     vec4 night;  // the low light's tint (luma 1); how far night shifts toward it
     vec4 key;    // the hour's key (mean luma aimed at); least, most exposure; daylight 0..1
-    vec4 pool;   // the light target's scale (it is stored with headroom); unused
+    vec4 pool;   // the pools' scale (stored with headroom); the lamps' colour
 };
 
 const mat4 kBayer = mat4(0.0, 12.0, 3.0, 15.0, 8.0, 4.0, 11.0, 7.0, 2.0, 14.0, 1.0, 13.0, 10.0,
@@ -73,15 +72,15 @@ void main() {
     vec3 c = grade(albedo, adapt, pivot);
     // Lamp light in a few bands with a dithered edge, the cell anchored to world art pixels so
     // nothing crawls while the camera pans.
-    vec3 light = texture(u_light, uv).rgb * pool.x;
+    vec4 g = texture(u_glow, uv);
     ivec2 cell = ivec2(mod(floor(uv * texel.xy / world.z + world.xy), 4.0));
-    light = floor(light * world.w + kBayer[cell.x][cell.y]) / world.w;
+    vec3 light = pool.yzw * (floor(g.a * pool.x * world.w + kBayer[cell.x][cell.y]) / world.w);
     // Screened on, so a white wall beside a flame rolls off to warm white instead of clipping
     // into a flat block.
     vec3 lit = clamp(light * (albedo * mixes.y + luma(albedo) * mixes.z), 0.0, 1.0);
     c = 1.0 - (1.0 - clamp(c, 0.0, 1.0)) * (1.0 - lit);
     // Haze leans the lit toward the air and leaves the darks dark (never milky).
     c = mix(c, haze.rgb, haze.a * (0.25 + 0.75 * luma(c)));
-    vec3 glow = texture(u_glow, uv).rgb * texel.w + texture(u_bloom, v_uv).rgb * mixes.w;
+    vec3 glow = g.rgb * texel.w + texture(u_bloom, v_uv).rgb * mixes.w;
     o_color = vec4(min(c, 1.0) * s.a + glow, s.a);
 }

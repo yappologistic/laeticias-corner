@@ -17,8 +17,9 @@ inline constexpr float kSwayCrop = 3.0f;
 inline constexpr float kSwayBush = 2.0f;
 inline constexpr float kWindFloor = 0.35f; // the stillest air still stirs a little
 
-// Bloom: halvings of the glow layer by tier (Low, Medium, High), and its strength.
-inline constexpr int kBloomLevelsLow = 3;
+// Bloom: halvings of the glow layer by tier (Low has none: the glow layer alone), and its
+// strength.
+inline constexpr int kBloomLevelsMedium = 3;
 inline constexpr int kBloomLevelsHigh = 5;
 inline constexpr float kBloomGain = 0.85f;    // halo added, times the clock's glow
 inline constexpr float kBloomFloor = 0.25f;   // share of the halo kept by day
@@ -50,7 +51,6 @@ inline constexpr float kDaySaturation = 0.12f;
 inline constexpr float kDayWarm[3] = {0.14f, 0.06f, -0.10f};
 inline constexpr float kTwilightWarm = 0.08f; // dawn and dusk: red up, blue down by this
 inline constexpr float kNightAdapt[2] = {0.45f, 2.0f};
-inline constexpr int kMeanEvery = 8; // frames between two measures of the scene's mean
 inline constexpr int kMeanSide = 64; // the scene is first sampled to this many texels across
 // The night shift starts past dusk: from the clock's night at this value to full at 1.
 inline constexpr float kNightFrom = 0.5f;
@@ -64,6 +64,13 @@ inline constexpr float kPoolGain = 0.35f; // albedo * light added
 inline constexpr float kPoolWarm = 0.85f; // plus this much of the light by the pixel's luma
 inline constexpr float kPoolDay = 0.12f;  // share of a pool still seen at full day
 inline constexpr float kPoolRise = 0.7f;
+// The lamps' light colour (their flames are 1700-2600 K, close enough to one warm hue that the
+// pools share it: they live in one alpha channel of the glow target).
+inline constexpr float kLampColour[3] = {1.0f, 0.58f, 0.28f};
+// The pool list of the visible chunks is rebuilt when the view crosses a chunk, the hour moves
+// on by this much, or after this many frames (rain at the lights); flicker is applied per frame.
+inline constexpr float kPoolHourStep = 0.02f;
+inline constexpr int kPoolRefreshFrames = 30;
 inline constexpr float kLightHeadroom = 0.4f; // pools are stored at this share (8-bit target:
                                               // overlapping flames must not clip to white)
 inline constexpr float kPoolWall = 0.5f;

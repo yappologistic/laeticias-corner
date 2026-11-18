@@ -219,56 +219,52 @@ void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow,
         hooks.light(neutral);
         batch_.flush();
     }
-    post_->begin(post_->light());
+    post_->begin(post_->glow());
     if (lod != Lod::Overview) {
         // A pool is an ellipse on the ground ((1 - (d/R)^2)^2 inside R tiles) below its centre,
-        // and above it reaches up the walls behind to near the flame's height.
+        // and above it fades up the walls behind to near the flame's height. Pools add into the
+        // glow target's alpha (one warm colour, tuning::kLampColour), all in one draw.
         const float day =
             (t::kPoolDay + (1.0f - t::kPoolDay) * std::clamp(glow, 0.0f, 1.0f)) * t::kLightHeadroom;
         const float ax = std::numbers::sqrt2_v<float> * iso_.hw;
         const float ay = std::numbers::sqrt2_v<float> * iso_.hh;
-        batch_.use(post_->falloff(), SDL_BLENDMODE_ADD_PREMULTIPLIED, SDL_SCALEMODE_LINEAR);
-        const auto pool = [&](Vec2 ground, float height, float radius, Rgb c) {
+        const auto pool = [&](Vec2 ground, float height, float radius, float k) {
             const float a = radius * ax * x.res;
             const float b = radius * ay * x.res;
             const float up = b + std::max(0.0f, height) * t::kPoolRise * x.res;
             const Vec2 g = x.apply(ground);
-            const SDL_FColor col{c.r * day, c.g * day, c.b * day, 1};
-            batch_.quad(SDL_FRect{g.x - a, g.y, 2 * a, b}, {0, 0.5f, 1, 1}, col);
-            // Above the pool's centre stand walls as often as ground: the light fades toward
-            // the top to tuning::kPoolWall, so a white wall behind a flame is warmed, not turned
-            // into a lit block (and no step shows where the halves meet).
-            const float w = t::kPoolWall;
-            const SDL_FColor top{col.r * w, col.g * w, col.b * w, 1};
-            const SDL_Vertex v[4] = {{{g.x - a, g.y - up}, top, {0, 0}},
-                                     {{g.x + a, g.y - up}, top, {1, 0}},
-                                     {{g.x + a, g.y}, col, {1, 0.5f}},
-                                     {{g.x - a, g.y}, col, {0, 0.5f}}};
-            static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
-            batch_.triangles(v, 4, kQuad, 6);
+            const SDL_FColor col{0, 0, 0, k * day};
+            const SDL_FColor top{0, 0, 0, k * day * t::kPoolWall};
+            // Above the centre stand walls as often as ground: the light fades toward the top,
+            // so a white wall behind a flame is warmed, not turned into a lit block.
+            const SDL_Vertex v[8] = {
+                {{g.x - a, g.y - up}, top, {0, 0}}, {{g.x + a, g.y - up}, top, {1, 0}},
+                {{g.x + a, g.y}, col, {1, 0.5f}},   {{g.x - a, g.y}, col, {0, 0.5f}},
+                {{g.x - a, g.y}, col, {0, 0.5f}},   {{g.x + a, g.y}, col, {1, 0.5f}},
+                {{g.x + a, g.y + b}, col, {1, 1}},  {{g.x - a, g.y + b}, col, {0, 1}}};
+            static constexpr int kQuads[12] = {0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7};
+            batch_.triangles(v, 8, kQuads, 12);
         };
-        TileRect tiles = gatherTiles(view, sprites_->itemSpan(), iso_);
-        const int margin = 13; // the widest pool's reach, tiles
-        tiles = {tiles.x0 - margin, tiles.y0 - margin, tiles.x1 + margin, tiles.y1 + margin};
         const auto rain = [&](Vec2 tile) {
             return weather_ != nullptr ? weather_->rainAt(tile) : 0.0f;
         };
-        lights_->forEach(tiles, rain, [&](const WorldLight& l, Rgb c, float radius) {
-            pool(l.ground, l.ground.y - l.at.y, radius, c);
-        });
-        if (home && hooks.lamps && glow > 0.01f) {
+        refreshPools(view, rain);
+        batch_.use(post_->falloff(), post_->poolBlend(), SDL_SCALEMODE_LINEAR);
+        for (const PoolLight& l : pools_)
+            pool(l.ground, l.height, l.radius, l.base * lights_->flickerOf(l.profile, l.seed));
+        const auto strength = [](Rgb c) {
+            const float lamp = 0.299f * t::kLampColour[0] + 0.587f * t::kLampColour[1] +
+                               0.114f * t::kLampColour[2];
+            return (0.299f * c.r + 0.587f * c.g + 0.114f * c.b) / lamp;
+        };
+        if (home && hooks.lamps && glow > 0.01f)
             // The home's lamps burn with the clock's glow; their reach is in world px.
-            const Rgb warm{1.0f * glow, 0.64f * glow, 0.34f * glow};
             for (const HomeLamp& lamp : hooks.lamps())
-                pool(lamp.at, 0, lamp.radius / (ax * 1.4f), warm);
-        }
+                pool(lamp.at, 0, lamp.radius / (ax * 1.4f), glow);
         forEachCarried(rain, [&](Vec2 feet, Vec2, Rgb c, float radius) {
-            pool(feet, t::kCarriedHeight, radius, c);
+            pool(feet, t::kCarriedHeight, radius, strength(c));
         });
         batch_.flush();
-    }
-    post_->begin(post_->glow());
-    if (lod != Lod::Overview) {
         // The carried flame itself (the walker art has no glow frames yet): a small warm point
         // at the hand, bloomed with the rest.
         const float r = std::max(1.5f, t::kCarriedFlame * x.res);
@@ -281,6 +277,36 @@ void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow,
                        });
         batch_.flush();
     }
+}
+
+template <typename R>
+void WorldView::refreshPools(const FRect& view, R&& rain) {
+    // The visible chunks' lights with their slow part (hours, strength, festival, rain) kept
+    // between frames: rebuilt when the view crosses a chunk, the hour moves on a step, or every
+    // few frames for the rain; only the flicker is per frame.
+    namespace t = gpu::tuning;
+    TileRect tiles = gatherTiles(view, sprites_->itemSpan(), iso_);
+    const int margin = 13; // the widest pool's reach, tiles
+    constexpr int kMask = ~((1 << kChunkShift) - 1);
+    tiles = {(tiles.x0 - margin) & kMask, (tiles.y0 - margin) & kMask,
+             ((tiles.x1 + margin) & kMask) + (1 << kChunkShift),
+             ((tiles.y1 + margin) & kMask) + (1 << kChunkShift)};
+    const int step = static_cast<int>(lights_->hour() / t::kPoolHourStep);
+    if (tiles.x0 == poolTiles_.x0 && tiles.y0 == poolTiles_.y0 && tiles.x1 == poolTiles_.x1 &&
+        tiles.y1 == poolTiles_.y1 && step == poolStep_ && ++poolAge_ < t::kPoolRefreshFrames)
+        return;
+    poolTiles_ = tiles;
+    poolStep_ = step;
+    poolAge_ = 0;
+    pools_.clear();
+    const float lamp =
+        0.299f * t::kLampColour[0] + 0.587f * t::kLampColour[1] + 0.114f * t::kLampColour[2];
+    lights_->forEachBase(tiles, rain, [&](const WorldLight& l, float base) {
+        const Rgb c = lights_->profiles()[l.profile].colour;
+        pools_.push_back({l.ground, l.ground.y - l.at.y, lights_->profiles()[l.profile].radius,
+                          base * (0.299f * c.r + 0.587f * c.g + 0.114f * c.b) / lamp, l.seed,
+                          l.profile});
+    });
 }
 
 void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow) {

@@ -325,7 +325,9 @@ float windLean(Vec2 w, double now, Vec2 dir, float strength) {
     const float base = 0.55f + 0.45f * std::sin(t * rate + w.x * 0.011f + w.y * 0.007f);
     // Gust crests rolling downwind as visible waves.
     const float wave = std::sin((along * tuning::kGustSpacing - t * tuning::kGustRate) * kTau);
-    const float gust = std::pow(std::max(0.0f, wave), 6.0f);
+    const float crest = std::max(0.0f, wave);
+    const float c2 = crest * crest;
+    const float gust = c2 * c2 * c2; // ^6: narrow crests
     return strength * (base + tuning::kGustGain * gust);
 }
 

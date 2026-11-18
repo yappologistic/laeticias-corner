@@ -390,6 +390,21 @@ private:
     std::unique_ptr<WorldLights> lights_;
     std::vector<gpu::RegionLook> regionLooks_;
     std::vector<std::vector<std::int16_t>> carried_; // per life region, per role: light profile
+    // The visible chunks' pools, their slow part kept between frames (refreshPools).
+    struct PoolLight {
+        Vec2 ground;      // world px
+        float height = 0; // of the flame above it, px
+        float radius = 0; // tiles
+        float base = 0;   // brightness without flicker, in the lamps' colour
+        std::uint32_t seed = 0;
+        std::uint16_t profile = 0;
+    };
+    std::vector<PoolLight> pools_;
+    TileRect poolTiles_;
+    int poolStep_ = -1;
+    int poolAge_ = 0;
+    template <typename R>
+    void refreshPools(const FRect& view, R&& rain);
     mutable std::vector<std::pair<Vec2, float>> mapSums_; // mapLights() per chunk: weighted sum
     struct Sway {
         float lean = 0;      // art px at the top in a full wind, 0: still

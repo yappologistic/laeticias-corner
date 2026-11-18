@@ -69,6 +69,14 @@ public:
     [[nodiscard]] int profileOf(int region, std::string_view id) const;
     // A profile's colour now for a light with this seed and rain at it (carried lights).
     [[nodiscard]] Rgb colourOf(std::uint16_t profile, std::uint32_t seed, float rain) const;
+    // The same split: its brightness without the flicker (hours, strength, festival, rain:
+    // slow, cached by the caller) and the flicker factor now.
+    [[nodiscard]] float baseOf(std::uint16_t profile, std::uint32_t seed, float rain) const;
+    [[nodiscard]] float flickerOf(std::uint16_t profile, std::uint32_t seed) const;
+    // Lights of the chunks meeting `tiles` with their brightness without flicker:
+    // `f(const WorldLight&, float base)`; `rain` as for forEach.
+    template <typename R, typename F>
+    void forEachBase(TileRect tiles, R&& rain, F&& f) const;
     // Every light burning now, anywhere (the map): `f(Vec2 groundTile, Rgb colour)`.
     template <typename F>
     void forEachBurning(F&& f) const;
@@ -81,6 +89,8 @@ public:
     // Whether a placed item's glow layer burns now (true for items the data does not govern).
     [[nodiscard]] bool glowOn(std::uint32_t item) const;
     [[nodiscard]] std::size_t count() const { return lights_.size(); }
+    // The game hour (0..24) update() was last given.
+    [[nodiscard]] float hour() const { return hour_; }
     [[nodiscard]] int unmatched() const { return unmatched_; }
     [[nodiscard]] std::span<const LightProfile> profiles() const { return profiles_; }
 
@@ -138,6 +148,23 @@ void WorldLights::forEach(TileRect tiles, R&& rain, F&& f) const {
                     colourOf(l, p.rain == LightRain::Sheltered ? 0.0f : rain(tileOf(l)));
                 if (col.r + col.g + col.b <= 0.002f) continue;
                 f(l, col, p.radius);
+            }
+        }
+}
+
+template <typename R, typename F>
+void WorldLights::forEachBase(TileRect tiles, R&& rain, F&& f) const {
+    const TileRect t = tiles.clipped(map_.bounds());
+    if (t.empty() || start_.empty()) return;
+    for (int cy = t.y0 >> kChunkShift; cy <= (t.y1 - 1) >> kChunkShift; ++cy)
+        for (int cx = t.x0 >> kChunkShift; cx <= (t.x1 - 1) >> kChunkShift; ++cx) {
+            const auto c = static_cast<std::size_t>(cy * map_.chunksX() + cx);
+            for (std::uint32_t i = start_[c]; i < start_[c + 1]; ++i) {
+                const WorldLight& l = lights_[i];
+                const LightProfile& p = profiles_[l.profile];
+                const float k = baseOf(l.profile, l.seed,
+                                       p.rain == LightRain::Sheltered ? 0.0f : rain(tileOf(l)));
+                if (k > 0.002f) f(l, k);
             }
         }
 }

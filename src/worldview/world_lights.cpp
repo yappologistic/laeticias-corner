@@ -310,18 +310,30 @@ Vec2 WorldLights::tileOf(const WorldLight& l) const {
     return iso_.toTile(l.ground);
 }
 
-Rgb WorldLights::colourOf(std::uint16_t profile, std::uint32_t seed, float rain) const {
+float WorldLights::baseOf(std::uint16_t profile, std::uint32_t seed, float rain) const {
     const LightProfile& p = profiles_[profile];
     const float night =
         profile < factor_.size() ? factor_[profile] : (p.festivalOnly ? 0.0f : 1.0f);
-    if (night <= 0) return {0, 0, 0};
+    if (night <= 0) return 0;
     float k = hoursOn(p, hour_, seed) * night;
-    if (k <= 0) return {0, 0, 0};
-    if (p.rain == LightRain::Out && rain >= gpu::tuning::kRainOut) return {0, 0, 0};
+    if (k <= 0) return 0;
+    if (p.rain == LightRain::Out && rain >= gpu::tuning::kRainOut) return 0;
     if (p.rain == LightRain::Dim)
         k *= 1.0f - (1.0f - gpu::tuning::kRainDim) * std::min(1.0f, rain / gpu::tuning::kRainOut);
-    k *= p.strength * gpu::flicker(p.flicker, p.hzLo, p.hzHi, p.depth, seed, now_);
-    return {p.colour.r * k, p.colour.g * k, p.colour.b * k};
+    return k * p.strength;
+}
+
+float WorldLights::flickerOf(std::uint16_t profile, std::uint32_t seed) const {
+    const LightProfile& p = profiles_[profile];
+    return gpu::flicker(p.flicker, p.hzLo, p.hzHi, p.depth, seed, now_);
+}
+
+Rgb WorldLights::colourOf(std::uint16_t profile, std::uint32_t seed, float rain) const {
+    const float k = baseOf(profile, seed, rain);
+    if (k <= 0) return {0, 0, 0};
+    const Rgb c = profiles_[profile].colour;
+    const float f = k * flickerOf(profile, seed);
+    return {c.r * f, c.g * f, c.b * f};
 }
 
 bool WorldLights::glowOn(std::uint32_t item) const {

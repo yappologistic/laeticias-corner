@@ -58,15 +58,19 @@ public:
     // Lays the shadow layer (premultiplied black, alpha its coverage) over the current target by
     // multiplying with `tint` where it covers: the classic darkening, in the sky's colour.
     void shade(Batch& b, SDL_Texture* layer, SDL_FRect dst, UvRect uv, Rgb tint);
-    // Binds `t` (light() or glow()) as the render target, cleared to transparent black.
+    // Binds `t` (glow()) as the render target, cleared to transparent black.
     void begin(SDL_Texture* t);
-    [[nodiscard]] SDL_Texture* light() const { return light_.get(); }
+    // What glows (rgb, added and bloomed) and the lamps' pools (alpha: their light, stored with
+    // headroom), one target so the frame switches to it once.
     [[nodiscard]] SDL_Texture* glow() const { return glow_.get(); }
+    // Pools add into the glow target's alpha only (draw with falloff() and colour (0, 0, 0, k)).
+    [[nodiscard]] SDL_BlendMode poolBlend() const { return poolBlend_; }
     // A soft round falloff (white, premultiplied: (1 - r^2)^2), for pools and far lights.
     [[nodiscard]] SDL_Texture* falloff() const { return falloff_.get(); }
     // Halves the glow target's used `w` x `h` down the tier's levels and back up.
     void bloom(Batch& b, int w, int h);
-    // Averages the scene's used `w` x `h` down to one texel for the night's exposure.
+    // Averages the scene's used `w` x `h` down to one texel for the exposure, one level a frame
+    // (the exposure follows slowly; the chain refreshes every few frames for one draw each).
     void measure(Batch& b, SDL_Texture* scene, int w, int h);
     // Grades `scene` (premultiplied, the size prepare() was given) with the light and glow
     // targets onto the current target at `dst`, `uv` being the scene's used part. `aux` draws a
@@ -106,12 +110,12 @@ private:
     int h_ = 0;
     int usedW_ = 0; // the bloom chain's uniforms are for this used size
     int usedH_ = 0;
-    TexturePtr light_;
     TexturePtr glow_;
     std::array<TexturePtr, kLevels> bloom_;
     TexturePtr falloff_;
     std::vector<TexturePtr> mean_; // kMeanSide wide, halved down to 1 x 1
     std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
+    SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
 };
 
 } // namespace lc::gpu
