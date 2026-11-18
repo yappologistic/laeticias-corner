@@ -8,7 +8,7 @@ set world agora 2
 set time 0.6667
 wait 40
 expect look high
-expect lit 0,180,2560,1080 0.01
+expect lit 0,180,2560,1080 0.006
 expect luma 0,180,2560,1080 18 60
 shot shots/gpu_agora_2200.png
 set season spring
