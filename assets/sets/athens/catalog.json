@@ -10,7 +10,8 @@
    "faces": [
     "athens.earth",
     "athens.limestone",
-    "athens.ashlar"
+    "athens.ashlar",
+    "world.coast"
    ]
   },
   {
@@ -19,7 +20,8 @@
    "under": "athens.dry_grass",
    "edges": 16,
    "faces": [
-    "athens.limestone"
+    "athens.limestone",
+    "world.coast"
    ]
   },
   {
@@ -1589,6 +1591,7 @@
     "base"
    ],
    "height": 4,
+   "walkable": true,
    "slots": [
     {
      "id": "work",
@@ -1841,8 +1844,8 @@
    "id": "athens.g_wall_gate",
    "name": "Gate in the city wall",
    "footprint": [
-    2,
-    2
+    1,
+    1
    ],
    "layout": "rotate",
    "count": 2,
@@ -1851,7 +1854,8 @@
     "base",
     "shadow"
    ],
-   "height": 90
+   "height": 80,
+   "walkable": true
   },
   {
    "id": "athens.g_running_track",
@@ -2967,7 +2971,7 @@
   },
   {
    "id": "athens.pheidias",
-   "name": "Pheidias",
+   "name": "Pheidias (a memory)",
    "sprite": "figure/athens.pheidias",
    "anims": {
     "move": {
