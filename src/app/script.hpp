@@ -13,6 +13,10 @@
 //                               id>, or of the toast and hint panels: toast, hint
 //                  actor:KIND   the middle of the first actor of that kind in the window (a
 //                               visitor id or the resident's); none in view fails the run
+//                  grid:TX,TY   the middle of world grid tile (TX, TY), raised by its level
+//                  map:REGION   that place's marker on the open map
+//                  landmark:ID  the middle of the first placed item with that id (world set)
+//                  figure:ID    the middle of that named figure where it stands
 //                  ui:menu:NAME the front door's widgets: continue (also Begin), worlds, settings,
 //                               quit, back, new, card:N, play:N, rename:N, delete:N, field,
 //                               freebuild, cancel, create, keep, confirm_delete, error_back,
@@ -41,7 +45,11 @@
 //   set time T              the time of day, 0..1 (0.2 mid-morning, 0.55 dusk, 0.75 midnight)
 //   set chatter chatty|quiet   the resident's idle remarks
 //   set camera TX TY ZOOM   look at tile (TX, TY) at a zoom level (0.25, 0.5, 1, 2, 3)
-//   set look KIND ZOOM      look at the first actor of that kind
+//   set world TX TY ZOOM    the same at a world grid tile (a jump: themes and places snap);
+//   set world PLACE ZOOM    or at a place: forum, agora, terrace, layer:node,
+//                           district:<region>/<id> (city life's foci)
+//   set look KIND ZOOM      look at the first actor of that kind, a named figure, or a
+//                           landmark:ID (the first placed)
 //   set lively reset        start a fresh liveliness record (see expect lively)
 //   set shower now          a shower enters at the upwind edge of the open land
 //   set unlock all          unlock every piece, frame and clue (as a free-build world has)
@@ -85,8 +93,19 @@
 //       sketch wishes|visitors|nooks (the sketchbook's open tab) | nook ID yes|no (found)
 //       stage N (highest open land stage) | season ID (the effective season) | day N
 //       growth P STAGE (growth stage of the item at P) | harvests N
+//       region ID (the world region under the view) | place ID|none (the named place)
+//       era yes|no | era WORDS... (the era caption showing contains them)
+//       away yes|no (the view is off the home region) | map open|closed | travelling yes|no
+//       info yes|no | info WORDS... (the open landmark or figure card's title contains them)
+//       visited REGION yes|no | journal REGION N (entries) | found REGION N (cards opened)
+//       figures N (named figures standing in the world, at least) | tip WORDS... (the world tip)
+//       following yes|no (the camera follows an actor: F on a living figure's card)
+// Points `life:KIND` (the first drawn city-life actor of that kind); `set look KIND ZOOM` finds
+// a living actor of that kind first.
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
+//       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,
+//                               warm: the night's lit windows, lamps and fires)
 //       actor KIND ANIM|moving|inside|hat|any [ITEM]  one actor of that kind (a visitor id or
 //                               the resident's) is doing that now, at that item's slot if given
 //       bubble yes|no (the resident is speaking) | bubble CONTEXT (a line of that context) |
@@ -101,7 +120,9 @@
 //                               HMIN..HCAP new happenings in the last minute
 //       city live MIN MAX | city ground ok (every live person on a walkable tile at its level)
 //       | city slots ok (no slot over capacity) | city event ID yes|no (running in the area)
-//       | city district NAME MIN MAX (live people of the district)
+//       | city district NAME MIN MAX (live people of the district) | city drawn MIN MAX (actors
+//       drawn this frame) | city people MIN MAX (people the crowd hears) | city sound FILE MIN
+//       MAX (that city loop's gain x 100 now)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would

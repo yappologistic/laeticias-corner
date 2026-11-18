@@ -5,7 +5,6 @@
 #include "app/app_impl.hpp"
 
 #include <algorithm>
-#include <fstream>
 #include <string>
 
 namespace lc {
@@ -17,27 +16,8 @@ constexpr float kSnapTiles =
 
 } // namespace
 
-double msBetween(Uint64 a, Uint64 b) {
-    return static_cast<double>(b - a) * 1000.0 / static_cast<double>(SDL_GetPerformanceFrequency());
-}
-
-std::pair<double, double> processMemory() {
-    std::ifstream in("/proc/self/status");
-    double rss = 0;
-    double peak = 0;
-    for (std::string line; std::getline(in, line);) {
-        const auto field = [&](const char* key, double& out) {
-            if (line.starts_with(key))
-                out = std::stod(line.substr(std::string_view(key).size())) / 1024.0;
-        };
-        field("VmRSS:", rss);
-        field("VmHWM:", peak);
-    }
-    return {rss, peak};
-}
-
 void App::prepareView() {
-    view_ = camera_.interpolated(alpha_);
+    view_ = camera_.moving() ? camera_.interpolated(alpha_) : camera_.snapped(screen());
     const auto all = actors_.all();
     drawActors_.assign(all.begin(), all.end());
     if (alpha_ >= 1.0f) return;
@@ -48,6 +28,7 @@ void App::prepareView() {
         const float dy = a.pos.y - from.y;
         if (dx * dx + dy * dy > kSnapTiles * kSnapTiles) continue;
         a.pos = {from.x + dx * alpha_, from.y + dy * alpha_};
+        a.stride -= std::hypot(dx, dy) * (1.0f - alpha_); // the walk cycle between steps too
     }
 }
 
@@ -63,7 +44,7 @@ double App::syncGpu(Uint64 frameStart) {
 void App::recordFrame(FrameSample& s) {
     s.sceneMs = static_cast<float>(sceneMs_);
     s.audioLoad = mixer_.load();
-    s.drawCalls = scene_->drawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
+    s.drawCalls = sceneDrawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
     uiBatch_->resetStats();
     const SceneStats st = scene_->stats();
     s.spritesDrawn = static_cast<int>(st.drawnItems);
@@ -73,9 +54,25 @@ void App::recordFrame(FrameSample& s) {
     s.actorsAbstract =
         0; // the home region keeps every actor live; abstract tiers come with the world
     s.chunksCached = st.groundChunksCached;
-    s.textureMiB = static_cast<float>(static_cast<double>(atlas_->textureBytes() + st.targetBytes +
-                                                          st.groundBytes + blur_->bytes()) /
-                                      1048576.0);
+    if (worldView_) {
+        // The world's share: its sprites, cells and pages.
+        const worldview::FrameStats& ws = worldView_->stats();
+        s.spritesDrawn += ws.spritesDrawn;
+        s.spritesCulled += ws.spritesCulled;
+        s.chunksCached += ws.cellsCached;
+        s.placeholders = ws.placeholders;
+        s.pageMiB = static_cast<float>(static_cast<double>(ws.pages.bytes) / 1048576.0);
+        s.pageBudgetMiB = static_cast<float>(static_cast<double>(ws.pages.budget) / 1048576.0);
+        s.missingArt = worldView_->missingArt();
+        s.crowdMs = static_cast<float>(ws.actorMs);
+        s.cityDrawn = ws.actorsDrawn;
+        s.cityLive = city_ ? city_->city->liveCount() : 0;
+    }
+    const std::size_t worldBytes = worldView_ ? worldView_->stats().textureBytes() : 0;
+    s.textureMiB =
+        static_cast<float>(static_cast<double>(atlas_->textureBytes() + st.targetBytes +
+                                               st.groundBytes + blur_->bytes() + worldBytes) /
+                           1048576.0);
     const FrameSample prev = perf_.size() > 0 ? perf_.recent(0) : FrameSample{};
     s.totalMiB =
         perfFrames_ % kMemoryEvery == 0 ? static_cast<float>(processMemory().first) : prev.totalMiB;

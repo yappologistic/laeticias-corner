@@ -11,7 +11,7 @@ key escape
 expect count coop 1
 set clock dusk
 set rain on
-key m
+key ctrl+m
 wait 120
 expect seen duck
 quit

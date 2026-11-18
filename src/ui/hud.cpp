@@ -31,15 +31,18 @@ enum Wid : int {
     kScrollUp,
     kScrollDown,
     kTrayHeader,
-    kCard0,                           // wish cards: kCard0 + slot
-    kNotNow = kCard0 + 8,             // the card menu's only entry
-    kSketchTab0,                      // sketchbook tabs: kSketchTab0 + tab
-    kSketchNotNow0 = kSketchTab0 + 3, // "Not now" on the sketchbook's open wishes
-    kEdgeChip = kSketchNotNow0 + 3,   // "New land"
-    kTitleCard,                       // opens the calendar
-    kCalPin0,                         // calendar: follow the days, then each season
-    kTab0 = 48,                       // drawer tabs: kTab0 + category
-    kTile0 = 64,                      // drawer tiles: see tileId
+    kCard0,                            // wish cards: kCard0 + slot
+    kNotNow = kCard0 + 8,              // the card menu's only entry
+    kSketchTab0,                       // sketchbook tabs: kSketchTab0 + tab
+    kSketchNotNow0 = kSketchTab0 + 12, // "Not now" on the sketchbook's open wishes
+    kEdgeChip = kSketchNotNow0 + 3,    // "New land"
+    kTitleCard,                        // opens the calendar
+    kCalPin0,                          // calendar: follow the days, then each season
+    kMap = kCalPin0 + 9,               // the world map
+    kCardClose,                        // the landmark or figure card's close button
+    kSoundButton,                      // mute and unmute, anywhere
+    kTab0 = 72,                        // drawer tabs: kTab0 + category
+    kTile0 = 96,                       // drawer tiles: see tileId
 };
 constexpr int kTraySlots = kNotNow - kCard0;
 
@@ -59,6 +62,9 @@ constexpr Named kNames[] = {
     {"undo", kUndo},
     {"redo", kRedo},
     {"recentre", kRecentre},
+    {"map", kMap},
+    {"card_close", kCardClose},
+    {"sound", kSoundButton},
     {"zoom_out", kZoomOut},
     {"zoom_in", kZoomIn},
     {"journal_close", kJournalClose},
@@ -69,6 +75,8 @@ constexpr Named kNames[] = {
     {"sketch:wishes", kSketchTab0},
     {"sketch:visitors", kSketchTab0 + 1},
     {"sketch:nooks", kSketchTab0 + 2},
+    {"sketch:place0", kSketchTab0 + 3},
+    {"sketch:place1", kSketchTab0 + 4},
     {"sketch_not_now", kSketchNotNow0},
     {"edge_chip", kEdgeChip},
     {"calendar", kTitleCard},
@@ -264,8 +272,9 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
     const float buildW = btn + theme::kBuildExtra * s;
     const float leftW = buildW + 2 * (gap + dockH);
     const float divider = gap * 2;
-    const float rightW = 5 * btn + 2 * divider + 2 * pad;
-    const float centreW = 5 * btn + 2 * pad;
+    // Away from home, undo and redo (the corner's edits) rest with the building dock.
+    const float rightW = m.away ? 3 * btn + divider + 2 * pad : 5 * btn + 2 * divider + 2 * pad;
+    const float centreW = (m.world ? 7.0f : 6.0f) * btn + 2 * pad;
     const float avail = screen.x - 2 * margin;
     // One row when everything fits; otherwise the centre dock, then the right dock, move up a
     // row each, so no dock ever overlaps another.
@@ -277,13 +286,15 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
     const float rightY = oneRow || twoRows ? row0 : row0 - rowStep;
     const float centreY = oneRow ? row0 : rightY - rowStep;
 
-    {
+    // The building dock belongs to the home: away from it, it folds away.
+    if (!m.away) {
         Widget& w = add(kBuild, {margin, leftY, buildW, dockH});
         w.icon = theme::icon::kPlus;
         w.label = strings::kBuild;
         w.tooltip = strings::kBuildTip;
         w.shortcut = strings::kKeyBuild;
         w.selected = m.drawerOpen || m.tool == Tool::Place || m.tool == Tool::Paint;
+        w.enabled = !m.away;
         w.dot =
             m.progress != nullptr && (std::ranges::find(m.progress->newItems, std::uint8_t{1}) !=
                                           m.progress->newItems.end() ||
@@ -295,12 +306,14 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         r.tooltip = strings::kRemove;
         r.shortcut = strings::kKeyRemove;
         r.selected = m.tool == Tool::Remove;
+        r.enabled = !m.away;
         panels_.push_back({r.box, dockH * 0.5f});
         Widget& v = add(kMove, {margin + buildW + 2 * gap + dockH, leftY, dockH, dockH});
         v.icon = theme::icon::kMove;
         v.tooltip = strings::kMoveTip;
         v.shortcut = strings::kKeyMove;
         v.selected = m.tool == Tool::Move;
+        v.enabled = !m.away;
         panels_.push_back({v.box, dockH * 0.5f});
     }
 
@@ -318,14 +331,18 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
             w.enabled = enabled;
             x += btn;
         };
-        button(kUndo, theme::icon::kUndo, strings::kUndo, strings::kKeyUndo, m.canUndo);
-        button(kRedo, theme::icon::kRedo, strings::kRedo, strings::kKeyRedo, m.canRedo);
         const auto rule = [&](Box& b) {
             b = {std::round(x + divider * 0.5f - theme::kRim * s * 0.5f),
                  rightY + pad + btn * 0.25f, theme::kRim * s, btn * 0.5f};
             x += divider;
         };
-        rule(dividers_[0]);
+        if (!m.away) {
+            button(kUndo, theme::icon::kUndo, strings::kUndo, strings::kKeyUndo, m.canUndo);
+            button(kRedo, theme::icon::kRedo, strings::kRedo, strings::kKeyRedo, m.canRedo);
+            rule(dividers_[0]);
+        } else {
+            dividers_[0] = {};
+        }
         button(kRecentre, theme::icon::kHome, strings::kRecentre, strings::kKeyRecentre, true);
         rule(dividers_[1]);
         button(kZoomOut, theme::icon::kMinus, strings::kZoomOut, strings::kKeyZoomOut,
@@ -369,6 +386,10 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         }
         button(kJournal, theme::icon::kJournal, strings::kSketchbook, strings::kKeyJournal,
                m.journalOpen);
+        if (m.world) button(kMap, theme::icon::kMap, strings::kMap, strings::kKeyMap, false);
+        // Muted shows unmistakably: the crossed speaker, lit as a held button.
+        button(kSoundButton, m.muted ? theme::icon::kSoundOff : theme::icon::kSoundOn,
+               m.muted ? strings::kSoundOff : strings::kSoundOn, strings::kKeyMute, m.muted);
     }
     return std::min(centreY, rightY);
 }
@@ -384,8 +405,10 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
     {
         const float tpad = theme::kTitlePad * s;
         const float maxName = std::min(theme::kTitleMaxW * s, screen.x * 0.5f);
-        titleName_ = elide(font, Face::Title, m.worldName.empty() ? strings::kTitle : m.worldName,
-                           maxName, titleCut_);
+        const std::string_view name = m.away && !m.place.empty()
+                                          ? m.place
+                                          : (m.worldName.empty() ? strings::kTitle : m.worldName);
+        titleName_ = elide(font, Face::Title, name, maxName, titleCut_);
         const float w1 = font.measure(Face::Title, titleName_);
         const float w2 =
             theme::kIcon * s + theme::kTitleIconGap * s + font.measure(Face::Body, clockLabel_);
@@ -502,8 +525,31 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
     journalBox_ = {};
     if (journalT_ > 0.0f) layoutSketchbook(m, font, screen, s);
 
+    // A landmark's or figure's card: right of centre, clear of the docks.
+    cardBox_ = {};
+    if (cardT_ > 0.0f && !m.cardTitle.empty()) {
+        const float pad = theme::kPanelPad * s;
+        const float w = std::min(theme::kPlaceCardW * s, screen.x - 2 * margin);
+        const float textW = w - 2 * pad;
+        const float lines =
+            static_cast<float>(wrapLines(font, Face::Body, m.cardText, textW, theme::kCardLines));
+        float h =
+            2 * pad + font.lineHeight(Face::Title) + lines * font.lineHeight(Face::Body) + gap;
+        if (!m.cardNative.empty()) h += font.lineHeight(Face::Body);
+        if (!m.cardEpithet.empty()) h += font.lineHeight(Face::Body);
+        const float x = screen.x - margin - w;
+        const float y = std::max(margin, (bottomTop_ - gap - h) * 0.5f);
+        cardBox_ = {x + (1.0f - smooth(cardT_)) * slideBy(s), y, w, h};
+        const float cs = theme::kCloseSize * s;
+        const float ci = theme::kCloseInset * s;
+        Widget& c = add(kCardClose, {cardBox_.x + w - ci - cs, y + ci, cs, cs});
+        c.icon = theme::icon::kClose;
+        c.tooltip = strings::kClose;
+        c.shortcut = strings::kKeyEsc;
+    }
+
     // "New land" above the right dock while a stage opened out of sight.
-    if (m.edgeChip && !m.photo) {
+    if (m.edgeChip && !m.photo && !m.away) {
         const float cw = font.measure(Face::Body, strings::kNewLandChip) + theme::kIcon * s +
                          theme::kLabelGap * s + 2 * theme::kHintPad * s;
         const float ch = theme::kHintH * s;
@@ -602,7 +648,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         press_.assign(ids, 0.0f);
     }
     screen_ = screen;
-    drawerT_ = approach(drawerT_, m.drawerOpen && !m.photo, dt);
+    drawerT_ = approach(drawerT_, m.drawerOpen && !m.photo && !m.away, dt);
+    cardT_ = approach(cardT_, !m.cardTitle.empty() && !m.photo, dt);
     journalT_ = approach(journalT_, m.journalOpen && !m.photo, dt);
     // In photo mode only the hint line stays (it says how to take the photo and get back).
     hintT_ = approach(hintT_, !m.hint.empty() || !m.warning.empty(), dt);
@@ -660,7 +707,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                                   calendarBox_.x + calendarBox_.w > trayLast_.x &&
                                   calendarBox_.y < trayLast_.y + trayLast_.h;
     trayT_ = approach(trayT_,
-                      !tray_.empty() && !m.journalOpen && !m.photo && !drawerOverTray &&
+                      !tray_.empty() && !m.journalOpen && !m.photo && !m.away && !drawerOverTray &&
                           !ribbonOverTray && !calendarOverTray,
                       dt);
     const auto end = std::format_to_n(trayCount_, sizeof trayCount_ - 1, "{}", m.wishes.size());
@@ -794,6 +841,9 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kUndo: emit(HudAction::Kind::Undo); break;
             case kRedo: emit(HudAction::Kind::Redo); break;
             case kRecentre: emit(HudAction::Kind::Recentre); break;
+            case kMap: emit(HudAction::Kind::Map); break;
+            case kSoundButton: emit(HudAction::Kind::Mute); break;
+            case kCardClose: emit(HudAction::Kind::CloseCard); break;
             case kZoomOut: emit(HudAction::Kind::ZoomOut); break;
             case kZoomIn: emit(HudAction::Kind::ZoomIn); break;
             case kScrollUp:
@@ -817,8 +867,17 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kSketchTab0:
             case kSketchTab0 + 1:
             case kSketchTab0 + 2:
-                if (active_ - kSketchTab0 != sketchTab_) {
-                    sketchTab_ = active_ - kSketchTab0;
+            case kSketchTab0 + 3:
+            case kSketchTab0 + 4:
+            case kSketchTab0 + 5:
+            case kSketchTab0 + 6:
+            case kSketchTab0 + 7:
+            case kSketchTab0 + 8:
+            case kSketchTab0 + 9:
+            case kSketchTab0 + 10:
+            case kSketchTab0 + 11:
+                if (entry.index != sketchTab_) {
+                    sketchTab_ = entry.index;
                     sketchScroll_ = 0;
                     emit(HudAction::Kind::PageTurn);
                 }
@@ -1102,7 +1161,7 @@ void Hud::drawTitle(Painter& p, const HudModel& m) const {
 }
 
 void Hud::openSketchbook(int tab) {
-    sketchTab_ = std::clamp(tab, 0, 2);
+    sketchTab_ = std::clamp(tab, 0, kSketchNotNow0 - kSketchTab0 - 1);
     sketchScroll_ = 0;
 }
 
@@ -1112,9 +1171,16 @@ void Hud::turnPage(int delta, const HudModel& m) {
     sketchScroll_ = 0;
 }
 
+const JournalPlace& Hud::placeOpen(const HudModel& m) const {
+    const int homeTabs = m.progress != nullptr && m.progress->nooksFound() > 0 ? 3 : 2;
+    return m.places[static_cast<std::size_t>(
+        std::clamp(sketchTab_ - homeTabs, 0, static_cast<int>(m.places.size()) - 1))];
+}
+
 int Hud::sketchTabs(const HudModel& m) {
-    // The nooks tab appears with the first nook found.
-    return m.progress != nullptr && m.progress->nooksFound() > 0 ? 3 : 2;
+    // The nooks tab appears with the first nook found; then a tab per place visited.
+    const int home = m.progress != nullptr && m.progress->nooksFound() > 0 ? 3 : 2;
+    return std::min(home + static_cast<int>(m.places.size()), kSketchNotNow0 - kSketchTab0);
 }
 
 void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, float s) {
@@ -1152,11 +1218,22 @@ void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, flo
     sketchTab_ = std::min(sketchTab_, tabs - 1);
     static constexpr std::string_view kTabNames[] = {strings::kTabWishes, strings::kTabVisitors,
                                                      strings::kTabNooks};
+    const int homeTabs = m.progress != nullptr && m.progress->nooksFound() > 0 ? 3 : 2;
     float tx = x + pad;
     for (int t = 0; t < tabs; ++t) {
-        const float tw = font.measure(Face::Body, kTabNames[t]) + theme::kTabExtra * s;
-        Widget& w = add(kSketchTab0 + t, {tx, y, tw, theme::kTabH * s});
-        w.label = kTabNames[t];
+        const std::string_view name =
+            t < homeTabs ? kTabNames[t] : m.places[static_cast<std::size_t>(t - homeTabs)].name;
+        const float tw = font.measure(Face::Body, name) + theme::kTabExtra * s;
+        // Tabs wrap onto another row rather than run past the page.
+        if (tx > x + pad && tx + tw > x + jw - pad) {
+            tx = x + pad;
+            y += theme::kTabH * s + gap * 0.5f;
+        }
+        // The home's tabs keep their ids (scripts name them); places follow the nooks' slot.
+        Widget& w = add(t < homeTabs ? kSketchTab0 + t : kSketchTab0 + 3 + (t - homeTabs),
+                        {tx, y, tw, theme::kTabH * s});
+        w.label = name;
+        w.entry.index = t;
         w.selected = t == sketchTab_;
         tx += tw + gap;
     }
@@ -1212,6 +1289,12 @@ void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, flo
                 rows_.push_back({Row::Kind::Visitor, static_cast<int>(v), rowH(body)});
             }
         }
+    } else if (sketchTab_ >= homeTabs) {
+        const JournalPlace& place = m.places[static_cast<std::size_t>(sketchTab_ - homeTabs)];
+        rows_.push_back({Row::Kind::Section, 3, lh + gap});
+        for (std::size_t e = 0; e < place.entries.size(); ++e)
+            rows_.push_back({Row::Kind::Entry, static_cast<int>(e),
+                             rowH(lh + lines(place.entries[e].epithet, textW, 2))});
     } else if (sketchTab_ == 2) {
         for (std::size_t n = 0; n < cat.nooks.size(); ++n) {
             const NookDef& def = cat.nooks[n];
@@ -1285,7 +1368,7 @@ void Hud::drawSketchbook(Painter& p, const HudModel& m) const {
     }
     p.text(Face::Body, untilText_, b.x + pad, y + lh + f.ascent(Face::Body), muted);
     for (const Widget& w : widgets_)
-        if (w.id >= kSketchTab0 && w.id < kSketchTab0 + 3) drawTab(p, w, a);
+        if (w.id >= kSketchTab0 && w.id < kSketchNotNow0) drawTab(p, w, a);
 
     const float icon = theme::kJournalIcon * s;
     const float iconPad = theme::kJournalIconPad * s;
@@ -1312,9 +1395,19 @@ void Hud::drawSketchbook(Painter& p, const HudModel& m) const {
         const float tw = b.x + b.w - pad - tx;
         switch (r.kind) {
         case Row::Kind::Section:
-            p.text(Face::Body, kSections[r.index], b.x + pad, y + f.ascent(Face::Body),
-                   withAlpha(theme::kGold, a));
+            p.text(Face::Body, r.index < 3 ? kSections[r.index] : placeOpen(m).summary, b.x + pad,
+                   y + f.ascent(Face::Body), withAlpha(theme::kGold, a));
             break;
+        case Row::Kind::Entry: {
+            const JournalEntry& e = placeOpen(m).entries[static_cast<std::size_t>(r.index)];
+            disc(ib, false);
+            p.icon(theme::icon::kLandmark, ib.cx(), ib.cy(),
+                   withAlpha(e.found ? theme::kGold : theme::kInkMuted, a * (e.found ? 1 : 0.5f)));
+            p.text(Face::Body, e.name, tx, y + rowPad + f.ascent(Face::Body),
+                   e.found ? ink : muted);
+            p.wrapped(Face::Body, e.epithet, tx, y + rowPad + lh, tw, 2, muted);
+            break;
+        }
         case Row::Kind::OpenWish: {
             if (std::cmp_greater_equal(r.index, m.wishes.size())) break;
             const WishCard& c = m.wishes[static_cast<std::size_t>(r.index)];
@@ -1522,6 +1615,55 @@ void Hud::drawTray(Painter& p) const {
                menuBox_.cy() + f.ascent(Face::Body) * theme::kBaselineCentre,
                withAlpha(theme::kInk, a));
     }
+}
+
+void Hud::drawCard(Painter& p, const HudModel& m) const {
+    const float a = smooth(cardT_);
+    if (a <= 0 || cardBox_.w <= 0) return;
+    const float s = scale_;
+    const Font& f = p.font();
+    const Box b = cardBox_;
+    const float pad = theme::kPanelPad * s;
+    p.glass(b, theme::kPanelRadius * s, a, theme::kGlass);
+    p.endGlass();
+    float y = b.y + pad;
+    p.text(Face::Title, m.cardTitle, b.x + pad, y + f.ascent(Face::Title),
+           withAlpha(theme::kInk, a));
+    y += f.lineHeight(Face::Title);
+    for (const std::string_view line : {m.cardNative, m.cardEpithet}) {
+        if (line.empty()) continue;
+        p.text(Face::Body, line, b.x + pad, y + f.ascent(Face::Body),
+               withAlpha(theme::kInkMuted, a));
+        y += f.lineHeight(Face::Body);
+    }
+    y += theme::kGap * s;
+    p.wrapped(Face::Body, m.cardText, b.x + pad, y, b.w - 2 * pad, theme::kCardLines,
+              withAlpha(theme::kInk, a));
+    for (const Widget& w : widgets_)
+        if (w.id == kCardClose) drawButton(p, w, a);
+    p.endLayer();
+}
+
+void Hud::drawCaption(Painter& p, const HudModel& m) const {
+    // Quiet: no panel, a soft shadow under light type, centred at the top.
+    if (m.captionAlpha <= 0 || m.caption.empty()) return;
+    const float a = m.captionAlpha;
+    const float s = scale_;
+    const Font& f = p.font();
+    const float top = theme::kCaptionTop * s;
+    const float w1 = f.measure(Face::Title, m.caption);
+    const float x1 = std::round((screen_.x - w1) * 0.5f);
+    const float base1 = top + f.ascent(Face::Title);
+    const float sh = std::max(1.0f, std::round(s));
+    p.text(Face::Title, m.caption, x1 + sh, base1 + sh, withAlpha(theme::kCaptionShadow, a * 0.6f));
+    p.text(Face::Title, m.caption, x1, base1, withAlpha(theme::kCaptionInk, a));
+    if (m.captionSub.empty()) return;
+    const float w2 = f.measure(Face::Body, m.captionSub);
+    const float x2 = std::round((screen_.x - w2) * 0.5f);
+    const float base2 = top + f.lineHeight(Face::Title) + f.ascent(Face::Body);
+    p.text(Face::Body, m.captionSub, x2 + sh, base2 + sh,
+           withAlpha(theme::kCaptionShadow, a * 0.6f));
+    p.text(Face::Body, m.captionSub, x2, base2, withAlpha(theme::kCaptionInk, a * 0.85f));
 }
 
 void Hud::drawRibbon(Painter& p) const {
@@ -1821,6 +1963,8 @@ bool Hud::reveal(std::string_view name, const HudModel& m) {
 }
 
 void Hud::draw(Painter& p, const HudModel& m) const {
+    // The era caption lies under every panel.
+    if (!m.photo) drawCaption(p, m);
     if (!m.photo) {
         const float radius = theme::kPanelRadius * scale_;
         // Title, docks and journal never overlap, so they share one layer.
@@ -1888,6 +2032,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         drawCalendar(p, m);
         drawLabels(p, m);
         drawBubble(p, m);
+        drawCard(p, m);
         drawRibbon(p);
         drawWorldTip(p, m);
         drawTooltip(p);

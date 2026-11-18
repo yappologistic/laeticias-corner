@@ -28,6 +28,7 @@
 #include "core/writer.hpp"
 #include "life/session.hpp"
 #include "platform/batch.hpp"
+#include "platform/process.hpp"
 #include "platform/sdl_ptr.hpp"
 #include "render/atlas.hpp"
 #include "render/blur.hpp"
@@ -35,11 +36,18 @@
 #include "render/scene.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+#include "ui/map_screen.hpp"
 #include "ui/menus.hpp"
 #include "ui/profiler.hpp"
+#include "world/loader.hpp"
+#include "worldview/city_sound.hpp"
+#include "worldview/renderer.hpp"
+#include "worldview/soundscape.hpp"
+#include "worldview/weather_field.hpp"
 
 #include <cstdio>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <span>
@@ -76,6 +84,9 @@ inline constexpr std::string_view kPage = "sfx/page.wav";
 inline constexpr std::string_view kNook = "sfx/nook.wav";
 inline constexpr std::string_view kLandOpen = "sfx/land_open.wav";
 inline constexpr std::string_view kHarvest = "sfx/harvest.wav";
+// The world's: arriving home by fast travel, and crossing into another moment.
+inline constexpr std::string_view kArriveHome = "sfx/world/arrive_home.wav";
+inline constexpr std::string_view kSeamChime = "sfx/world/seam.wav";
 } // namespace sfx
 
 // The hint line's words for a placement the rules refuse.
@@ -85,11 +96,6 @@ inline constexpr std::string_view kHarvest = "sfx/harvest.wav";
     return def.footprintW == 1 && def.footprintH == 1;
 }
 
-// Milliseconds between two performance-counter readings.
-[[nodiscard]] double msBetween(Uint64 a, Uint64 b);
-// This process's resident memory in MiB (Linux; 0 elsewhere), and its peak.
-[[nodiscard]] std::pair<double, double> processMemory();
-
 // Files under the save directory (docs/design/living-corner.md §2.2).
 inline constexpr std::string_view kWorldsDir = "worlds";
 inline constexpr std::string_view kWorldFile = "world.json";
@@ -97,6 +103,20 @@ inline constexpr std::string_view kThumbFile = "thumb.png";
 inline constexpr std::string_view kProfileFile = "profile.json";
 inline constexpr std::string_view kLegacyFile = "corner.json";
 inline constexpr std::string_view kLegacyKept = "corner.v1.json";
+// One-time facts kept in the save's world block.
+inline constexpr std::string_view kFlagSeamExplained = "seam_explained";
+
+// A bench case's frames, and the statistics of one measure over them.
+struct BenchFrames {
+    std::vector<FrameSample> all;
+    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
+        std::vector<float> v;
+        v.reserve(all.size());
+        for (const FrameSample& f : all)
+            if (f.*field >= 0) v.push_back(f.*field);
+        return perfStats(v);
+    }
+};
 
 // --life-dump: city-life dumps of the area round --focus, without a window (app_city.cpp).
 int runLifeDumps(const Options& o, const std::filesystem::path& assets);
@@ -232,9 +252,11 @@ private:
     void pushButton(Vec2 px, bool down, const ScriptCommand& c);
     void pushKey(std::string_view combo, bool down);
     std::optional<std::string> check(const ScriptCommand& c);
-    // City life (src/life/): opened on demand by --focus or a script, stepped with the clock.
+    // City life (src/life/) over the game's world, opened with it: the camera's view is its
+    // active area (or a fixed focus from --focus or a script), stepped with the game's clock.
     bool openCity();
     [[nodiscard]] life::LifeClock cityClock() const;
+    [[nodiscard]] TileRect cityView() const;
     void stepCity(float dt);
     std::optional<std::string> checkCity(std::span<const std::string> a);
     bool shot(const fs::path& file);
@@ -251,6 +273,7 @@ private:
     [[nodiscard]] std::vector<std::string> takenSlugs() const;
     const MenuModel& menuModel();
     void profileChanged();
+    void toggleMute();
     void writeProfileIfDue();
     void applyVolumes();
     void applyReduceMotion();
@@ -270,6 +293,79 @@ private:
     void updatePostcardDate();
     void drawPostcard(Painter& p);
 
+    // The world (app_world.cpp): loaded when assets/world/world.json exists, else the island.
+    bool loadWorldData();
+    // The world renderer, once the home is known (after the save is read).
+    void createWorldView();
+    // The world's copy of the home region follows the player's edits (walking, the overview).
+    void syncHome();
+    // Draws the frame: the world with the home inside it, or the floating island.
+    void drawScene(const FrameParams& p, SDL_Texture* out = nullptr);
+    void compositeScene(const FrameParams& p, Vec2 scale, bool smooth);
+    [[nodiscard]] int sceneDrawCalls() const;
+    // The whole world grid in home tiles (empty without a world).
+    [[nodiscard]] TileRect cameraLand() const;
+    // The map, fast travel, places and captions (app_world.cpp).
+    void setupMap();
+    [[nodiscard]] const world::RegionFile* regionFile(int region) const;
+    // A region's name for the player (the home's is the world's name).
+    [[nodiscard]] std::string_view regionName(int region) const;
+    const MapModel& mapModel();
+    void toggleMap();
+    // The view is off the home region: the building tools rest.
+    [[nodiscard]] bool away() const;
+    // News of the corner (a visitor, a nook, new land, her lines): shown at once at home, kept
+    // until the view comes back when it is out in the world.
+    void cornerToast(std::string text);
+    std::vector<std::string> cornerToasts_;
+    void travelTo(int region);
+    // Once per frame: travel's fade and jump, places visited, the seam's chime and line.
+    void updateWorld(float dt);
+    // How much of the window the travel fade covers (0..1).
+    [[nodiscard]] float travelVeil() const;
+    [[nodiscard]] std::string_view arriveMotif(std::string_view set) const;
+    void fillWorldModel(HudModel& m) const;
+    // Cards and the journal: what has a card under a window point (off the home's land), its
+    // names, an entry seen or found, the card shown, the sketchbook's places.
+    struct CardRef {
+        int region = -1;
+        std::string entry;  // "landmark:<id>" or "figure:<id>"
+        std::string card;   // card id in the region file
+        life::Handle actor; // a living figure (city life), or none
+    };
+    // City life: an actor's record by handle, the actor under the pointer, a role's name.
+    [[nodiscard]] std::optional<life::CityLife::Info> actorInfo(life::Handle h) const;
+    [[nodiscard]] std::optional<life::Handle> actorAt(Vec2 px) const;
+    [[nodiscard]] const life::Figure* figureOf(const life::CityLife::Info& in) const;
+    void followActor(float dt);
+    void noteEvents();
+    [[nodiscard]] std::optional<CardRef> cardAt(Vec2 px) const;
+    [[nodiscard]] std::string_view entryName(const CardRef& c, std::string& storage) const;
+    [[nodiscard]] std::string_view nativeName(const CardRef& c) const;
+    void recordEntry(const CardRef& c, bool found);
+    bool openCardAt(Vec2 px);
+    void closeCard();
+    void noteArrival();
+    void buildJournal();
+    // A script's point in the world (grid:X,Y, landmark:ID, figure:ID) in window px.
+    [[nodiscard]] std::optional<Vec2> gridPoint(std::string_view name) const;
+    // A world grid tile (continuous) in home px, raised by its level as the world draws it.
+    [[nodiscard]] Vec2 gridToHome(Vec2 tile) const;
+    // The player's delta over the world for the save, and taking one from it.
+    [[nodiscard]] WorldProgress worldState() const;
+    void adoptWorldState(const WorldProgress& w);
+    // The world's sound (world-tech §4.6): its loops into the mixer before it opens; each
+    // frame, the regions' beds, zones, item loops and music by where the view is. The home's
+    // own music and beds play by its share of the view.
+    void loadWorldAudio();
+    void updateWorldAudio(float night);
+    [[nodiscard]] float homeMusic() const;
+    [[nodiscard]] float homeAmbience() const;
+    void drawPlaceholderLabels(Painter& p);
+    // The world's weather around the view and over the home (followed by the home's Weather).
+    void followWorldWeather();
+    [[nodiscard]] TileRect cameraTiles() const;
+
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
     void prepareView();
@@ -284,6 +380,12 @@ private:
     // then a results card and a report beside the save.
     int runBenchmark();
     int runBench();
+    // The process's stated memory ceiling at 1080p (more with the world).
+    [[nodiscard]] double memoryCeiling() const;
+    [[nodiscard]] double soakCeiling() const;
+    // The bench's world cases (cities, a pan, fast travel); false when one is over budget.
+    bool benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
+                    const std::function<void()>& warm, int frames);
     // One frame of the bench, timed whole (with the GPU waited for).
     FrameSample benchFrame();
     void fillBenchWorld();
@@ -300,7 +402,15 @@ private:
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
     std::unique_ptr<life::LifeSession> city_;
-    std::uint64_t seed_; // the game's one seed; every random stream derives from it
+    std::unique_ptr<worldview::CitySound> citySound_; // what the city sounds like on screen
+    std::vector<int> cityLoops_;                      // its loops and effects in the mixer
+    std::vector<int> cityFx_;
+    std::optional<TilePos> cityFocus_;   // a fixed active area instead of the camera's
+    std::optional<life::Handle> follow_; // the camera follows this actor (Esc or a pan ends it)
+    life::Handle cardActor_;             // the living figure whose card is open
+    float eventsSeenIn_ = 0;             // seconds to the next look for events in view
+    bool cityOff_ = false;               // `set city off`: nobody about
+    std::uint64_t seed_;                 // the game's one seed; every random stream derives from it
     Rng rng_;
     Actors actors_;
     std::vector<VisitorGate> gates_; // per visitor, from the progress loop
@@ -322,6 +432,7 @@ private:
     // Per-system times of the last step (ms), kept measurable for the bench and a profiler.
     double actorMs_ = 0;    // actors
     double lifeMs_ = 0;     // weather, events, speech and sound around them
+    double cityMs_ = 0;     // city life's last step (src/life/)
     double progressMs_ = 0; // conditions, wishes, nooks, rare visitors
     int ripeDay_ = -1;      // the day a bed first ripened (her "something's ripe" line)
     double ripeSince_ = -1; // when, in play seconds
@@ -397,6 +508,68 @@ private:
     RendererPtr renderer_;
     std::unique_ptr<Atlas> atlas_;
     std::unique_ptr<Scene> scene_;
+    // The world around the home (null: the floating island). World px = home px + homeOffset_.
+    std::unique_ptr<world::LoadedWorld> loaded_;
+    std::unique_ptr<worldview::WorldView> worldView_;
+    worldview::Hooks hooks_;
+    FrameParams sceneFrame_; // this frame's scene, for the hooks
+    Vec2 homeOffset_;
+    std::uint64_t homeSynced_ = ~0ULL; // the home's revision the world's copy has
+    std::vector<int> rimTerrain_;      // the home's rim terrain the world's cells were drawn with
+    std::vector<int> rimScratch_;
+    float frameDt_ = 0; // real seconds of this frame (themes ease by it)
+    struct Place {
+        int region = -1;
+        MapMarker marker = MapMarker::Town;
+        TilePos at; // grid tile of its world.json marker
+    };
+    std::vector<Place> allPlaces_;
+    std::vector<MapPlace> mapPlaces_; // those shown now
+    std::vector<int> mapShown_;       // their regions
+    MapModel mapModel_;
+    MapScreen map_;
+    TexturePtr mapTexture_;
+    Sprite mapSprite_;
+    float mapScale_ = 2;                // overview px per tile
+    std::vector<std::uint8_t> visited_; // per region: the view has been there
+    bool seamExplained_ = false;        // the first crossing's line was shown
+    struct Travel {
+        int region = -1; // -1: not travelling
+        float t = 0;
+        bool jumped = false;
+    };
+    Travel travel_;
+    float travelFadeIn_ = -1;
+    std::vector<std::string> arriveFiles_; // each set's arrival motif
+    std::vector<world::FigurePlace> figures_;
+    std::unique_ptr<worldview::Soundscape> soundscape_;
+    std::vector<int> soundLoops_; // the soundscape's files as mixer loops
+    std::unique_ptr<worldview::WeatherField> viewWeather_;
+    std::unique_ptr<worldview::WeatherField> homeWeather_;
+    std::vector<WeatherCell> homeCells_;
+    std::vector<float> themeWeights_; // per region, this frame
+    std::vector<std::pair<Vec2, std::uint32_t>> placeholderScratch_;
+    struct JournalItem {
+        std::string entry;
+        std::string card;
+        bool found = false; // its card was opened (else seen on arrival)
+    };
+    std::vector<std::vector<JournalItem>> journal_; // per region
+    struct OpenCard {
+        std::string title;
+        std::string native;
+        std::string epithet;
+        std::string text;
+    };
+    OpenCard card_;
+    bool cardOpen_ = false;
+    bool journalDirty_ = true;
+    std::vector<worldview::WorldView::Picked> pickedScratch_;
+    std::vector<JournalEntry> journalEntries_;
+    std::vector<JournalPlace> journalPlaces_;
+    std::vector<std::string> journalSummaries_;
+    std::vector<std::string> journalNames_;
+    mutable std::string hoverName_;
     std::unique_ptr<Batch> uiBatch_;
     std::unique_ptr<Blur> blur_;
     ThumbSet thumbs_;

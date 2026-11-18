@@ -1,0 +1,12 @@
+# Second half: reopened where it was left, with what was found there.
+expect region parsa
+expect away yes
+expect visited parsa yes
+expect found parsa 1
+waitfor 30 era Pārsa
+click ui:journal
+wait 15
+click ui:sketch:place0
+wait 15
+shot shots/world_journal.png
+quit

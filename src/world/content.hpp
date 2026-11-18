@@ -9,7 +9,10 @@
 #include "world/geometry.hpp"
 #include "world/set_catalog.hpp"
 
+#include <array>
+#include <cstdint>
 #include <expected>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -40,8 +43,10 @@ struct TerrainInfo {
     bool base = false;
     bool water = false;
     bool paved = false;
+    float fps = 0; // animated overlays (water)
     std::string under;
     std::vector<std::string> faces;
+    std::optional<std::array<std::uint8_t, 3>> colour; // set catalogs' flat look, when stated
 };
 
 struct ItemInfo {
@@ -61,7 +66,9 @@ struct ItemInfo {
     int rise = 0;
     char axis = 0; // at r0
     int height = 0;
+    float fps = 0; // animated looks
     std::string card;
+    std::string standIn;              // home item drawn in its place while the set has no art
     std::vector<SlotBehaviour> slots; // set items; home slots live in the home catalog
     int geom = -1;                    // index into Content::geometry(), -1 when none
 

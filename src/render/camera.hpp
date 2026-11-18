@@ -3,6 +3,7 @@
 // the land clear of the interface, and pan limits that always keep some land on screen.
 
 #include "core/iso.hpp"
+#include "core/tuning.hpp"
 
 #include <array>
 
@@ -38,8 +39,9 @@ class Camera {
 public:
     Camera(Iso iso, TileRect land, float cliffDepth);
 
-    // The land changed shape (another map was loaded), or the cliff art is known.
-    void setLand(TileRect land, float cliffDepth);
+    // The land changed shape (another map was loaded), or the cliff art is known. `reach`: how
+    // far beyond the land the view centre may go, as a share of the half view (0: never).
+    void setLand(TileRect land, float cliffDepth, float reach = tuning::kCameraReach);
     void update(float dt, Vec2 screen);
     // Picks the largest level that shows `focus` (the open land) inside `safe` and centres it
     // there; the cliff under the south rims counts when the focus reaches them.
@@ -70,6 +72,13 @@ public:
         prevScale_ = scale_;
     }
     [[nodiscard]] Camera interpolated(float alpha) const;
+    // Moved or zoomed in the last step.
+    [[nodiscard]] bool moving() const {
+        return pos_.x != prevPos_.x || pos_.y != prevPos_.y || scale_ != prevScale_;
+    }
+    // The same view with its top-left corner on a whole window pixel (a resting view is drawn
+    // crisp; a moving one keeps its sub-pixel place and is filtered).
+    [[nodiscard]] Camera snapped(Vec2 screen) const;
     // Reduce motion: pans and zooms arrive at once instead of easing.
     void setEasing(bool on) { easing_ = on; }
     [[nodiscard]] Vec2 screenToWorld(Vec2 px, Vec2 screen) const;
@@ -81,6 +90,7 @@ private:
     Iso iso_;
     TileRect land_;
     float cliffDepth_;
+    float reach_ = tuning::kCameraReach;
     Vec2 pos_;
     Vec2 target_;
     int level_ = kDefaultZoomLevel;

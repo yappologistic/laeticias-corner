@@ -418,6 +418,8 @@ void App::worldInput() {
         } else if (tool_ == Tool::None || photo_) {
             drag_ = Drag::Pan;
             lastPan_ = pressStart_ = mouse_;
+        } else if (!hover_ && loaded_) {
+            warn(strings::kWorldsLand);
         } else if (const auto t = hover_) {
             if (tool_ == Tool::Move) {
                 if (carry_)
@@ -462,6 +464,8 @@ void App::worldInput() {
             // else an item with a sound of its own plays it (the well's plip).
             if (const auto who = actorUnder(mouse_)) {
                 (void)actors_.pet(*who);
+            } else if (openCardAt(mouse_)) {
+                // A landmark or figure out in the world: its card.
             } else if (const auto t = hover_; t && !pick(*t)) {
                 if (const Item* it = world_.itemAt(*t);
                     it && !cat_.items[it->type].clickSound.empty())

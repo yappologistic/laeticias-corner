@@ -56,6 +56,14 @@ SetTerrain terrain(const json& t, const std::string& ctx, const std::string& set
     if (d.faces.size() > 4) fail(c + ": at most 4 faces (the level byte's aux has two bits)");
     d.water = boolOr(t, "water", waterByName(d.id), c);
     d.paved = boolOr(t, "paved", false, c);
+    if (has(t, "colour")) {
+        const json& rgb = asArray(t.at("colour"), c + ": colour");
+        if (rgb.size() != 3) fail(c + ": colour is [r, g, b]");
+        std::array<std::uint8_t, 3> v{};
+        for (std::size_t k = 0; k < 3; ++k)
+            v[k] = static_cast<std::uint8_t>(asInt(rgb[k], c + ": colour", 0, 255));
+        d.colour = v;
+    }
     return d;
 }
 
@@ -96,6 +104,7 @@ SetItem item(const json& i, const std::string& ctx, const std::string& set) {
         if (l != "base" && l != "shadow" && l != "glow") fail(c + ": unknown layer '" + l + "'");
     d.occluder = boolOr(i, "occluder", false, c);
     d.card = stringOr(i, "card", "", c);
+    d.standIn = stringOr(i, "stand_in", "", c);
     d.rise = intOr(i, "rise", 0, c, 0, kMaxRise);
     if (has(i, "axis")) {
         const std::string a = asString(i.at("axis"), c + ": axis");
@@ -137,6 +146,7 @@ SetActor actor(const json& a, const std::string& ctx, const std::string& set) {
         const float fps = asFloat(field(spec, "fps", c + ": anims: " + pose), c + ": fps");
         if (fps <= 0) fail(c + ": anims: " + pose + ": fps must be positive");
         d.anims.emplace_back(pose, fps);
+        d.strides.push_back(floatOr(spec, "stride", 0.0f, c + ": anims: " + pose));
     }
     if (d.anims.empty()) fail(c + ": an actor needs at least one animation");
     if (has(a, "size")) {

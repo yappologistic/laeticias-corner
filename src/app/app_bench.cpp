@@ -3,10 +3,12 @@
 // (average, 95th percentile, worst) at the working zoom and the overview, plus memory.
 
 #include "app/app_impl.hpp"
+#include "worldview/tuning.hpp"
 
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <string>
 
 namespace lc {
@@ -17,18 +19,6 @@ constexpr float kFarShare = 0.05f; // density elsewhere, relative to near
 constexpr int kLakeSide = 12;
 constexpr int kWarmup = 30;
 constexpr float kPanPxPerFrame = 6.0f; // the second half of each phase pans
-
-// A case's frames, and the statistics of one measure over them.
-struct Frames {
-    std::vector<FrameSample> all;
-    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
-        std::vector<float> v;
-        v.reserve(all.size());
-        for (const FrameSample& f : all)
-            if (f.*field >= 0) v.push_back(f.*field);
-        return perfStats(v);
-    }
-};
 
 void report(const char* name, const char* what, const PerfStats& s) {
     std::printf("bench: %s: %-12s avg %.3f p95 %.3f p99 %.3f worst %.3f ms\n", name, what,
@@ -74,6 +64,8 @@ FrameSample App::benchFrame() {
     // whole: the GPU is waited for before presenting, so the frame's time includes its drawing.
     const Uint64 t0 = SDL_GetPerformanceCounter();
     step(static_cast<float>(tuning::kStepSeconds));
+    frameDt_ = static_cast<float>(tuning::kStepSeconds);
+    updateWorld(frameDt_);
     alpha_ = 1;
     prepareView();
     ui_ = model();
@@ -89,11 +81,12 @@ FrameSample App::benchFrame() {
     f.frameMs = static_cast<float>(msBetween(t0, t1));
     f.cpuMs = static_cast<float>(msBetween(t0, tSubmit));
     f.simMs = static_cast<float>(actorMs_ + lifeMs_ + progressMs_);
+    f.cityMs = static_cast<float>(cityMs_);
     f.condMs = static_cast<float>(progressMs_);
     f.uiMs = static_cast<float>(msBetween(t0, tUpdate)); // the update half: step and interface
     f.sceneMs = static_cast<float>(msBetween(tUpdate, tSubmit)); // the draw submission half
     f.presentMs = static_cast<float>(msBetween(tPresent, t1));
-    f.drawCalls = scene_->drawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
+    f.drawCalls = sceneDrawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
     uiBatch_->resetStats();
     f.actorsLive = static_cast<int>(std::ranges::count_if(
         actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; }));
@@ -150,7 +143,7 @@ int App::runBench() {
     // 99th percentile and worst; the CPU's update and draw submission on average).
     // Returns false when only the worst frame was over: a lone frame on a busy machine can be
     // the scheduler's, so the caller measures that case once more before calling it a failure.
-    const auto judgeCase = [&](const char* name, const Frames& fr, bool last) {
+    const auto judgeCase = [&](const char* name, const BenchFrames& fr, bool last) {
         const PerfStats whole = fr.of(&FrameSample::frameMs);
         const PerfStats cpu = fr.of(&FrameSample::cpuMs);
         report(name, "whole frame", whole);
@@ -161,7 +154,7 @@ int App::runBench() {
         report(name, "simulation", fr.of(&FrameSample::simMs));
         const auto [rss, peak] = processMemory();
         std::printf("bench: %s: memory rss %.0f MiB, peak %.0f MiB (ceiling %.0f at 1080p)\n", name,
-                    rss, peak, tuning::kBenchMemoryMiB);
+                    rss, peak, memoryCeiling());
         if (!judge) return true;
         if (cpu.avg > opts_.budgetMs || whole.p99 > tuning::kFrameP99Ms) fail(name);
         if (whole.worst <= tuning::kFrameWorstMs) return true;
@@ -188,8 +181,8 @@ int App::runBench() {
                 camera_.update(static_cast<float>(tuning::kStepSeconds), screen());
             actors_.populate(actorEnv());
             warm();
-            Frames still;
-            Frames pan;
+            BenchFrames still;
+            BenchFrames pan;
             int slots = 0;
             for (int f = 0; f < frames; ++f) {
                 const bool panning = f >= frames / 2;
@@ -211,7 +204,7 @@ int App::runBench() {
                 static_cast<double>(st.targetBytes) / 1048576.0,
                 static_cast<double>(st.groundBytes) / 1048576.0,
                 static_cast<double>(blur_->bytes()) / 1048576.0);
-            Frames all = still;
+            BenchFrames all = still;
             all.all.insert(all.all.end(), pan.all.begin(), pan.all.end());
             report(name, "panning", pan.of(&FrameSample::frameMs));
             if (judgeCase(name, all, attempt == 1)) break;
@@ -234,7 +227,7 @@ int App::runBench() {
                                               return (a.flags & actor_flag::kAlive) != 0;
                                           })));
             warm();
-            Frames fr;
+            BenchFrames fr;
             std::vector<float> act;
             for (int f = 0; f < frames; ++f) {
                 fr.all.push_back(benchFrame());
@@ -251,17 +244,169 @@ int App::runBench() {
                 fail(name);
             if (judgeCase(name, fr, attempt == 1)) break;
         }
+    if (worldView_ && !benchWorld(judgeCase, warm, frames)) over = true;
     // Memory is held to its ceiling at the size the gate runs (1080p and below).
-    if (judge && pixelW_ * pixelH_ <= 1920 * 1080 &&
-        processMemory().second > tuning::kBenchMemoryMiB)
+    if (judge && pixelW_ * pixelH_ <= 1920 * 1080 && processMemory().second > memoryCeiling())
         fail("memory");
     const int city = benchCity(judge);
     return over || city == kExitOverBudget ? kExitOverBudget : 0;
 }
 
+bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
+                     const std::function<void()>& warm, int frames) {
+    // The world (CLAUDE.md "Performance"): each city's busiest view at 1x by day with the
+    // sketchbook and the profiler open, a fast pan across Rome, and fast travel.
+    bool over = false;
+    clock_.setPin(ClockPin::Day, true);
+    drawerOpen_ = false;
+    journalOpen_ = true;
+    profilerOn_ = true;
+    // The world's camera limits (the corner's cases keep the camera on the filled home).
+    camera_.setLand(cameraLand(), 0, 0);
+    const auto settle = [&] {
+        for (int i = 0; i < tuning::kBenchSettleFrames; ++i) {
+            (void)benchFrame();
+            if (worldView_->settled()) break;
+        }
+    };
+    const auto look = [&](Vec2 grid) {
+        camera_.place(gridToHome(grid), kZoomLevels[kDefaultZoomLevel], screen());
+        camera_.beginStep();
+        worldView_->jumped(
+            {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
+        settle();
+    };
+    struct BenchSpot {
+        const char* name;
+        Vec2 grid;
+    };
+    for (const BenchSpot& spot :
+         {BenchSpot{"forum", {80, 1077}}, BenchSpot{"agora", {262, 672}},
+          BenchSpot{"acropolis", {305, 618}}, BenchSpot{"parsa terrace", {376, 69}}})
+        for (int attempt = 0; attempt < 2; ++attempt) {
+            look(spot.grid);
+            warm();
+            BenchFrames fr;
+            int draws = 0;
+            for (int f = 0; f < frames; ++f) {
+                fr.all.push_back(benchFrame());
+                draws = std::max(draws, fr.all.back().drawCalls);
+            }
+            const double tex = static_cast<double>(worldView_->stats().textureBytes()) / 1048576.0;
+            const double budget = static_cast<double>(worldView_->textureBudget()) / 1048576.0;
+            std::printf("bench: %s: %d draw calls at most (world %d), %.0f MiB of world textures "
+                        "(budget %.0f)\n",
+                        spot.name, draws, worldView_->stats().drawCalls, tex, budget);
+            if (opts_.budgetMs > 0 && tex > budget) {
+                std::printf("bench: over budget: %s textures\n", spot.name);
+                over = true;
+            }
+            if (judgeCase(spot.name, fr, attempt == 1)) break;
+        }
+    // Crowds (src/life/): each city at its busiest view and hour, on an ordinary day and on its
+    // festival, the life simulated and drawn with the world.
+    if (city_) {
+        struct Crowd {
+            const char* name;
+            const char* region;
+            const char* season;
+            int day;
+        };
+        clock_.setPin(ClockPin::Auto, true);
+        for (const Crowd& c :
+             {Crowd{"rome crowd", "rome", "spring", 9}, Crowd{"rome parilia", "rome", "spring", 1},
+              Crowd{"athens crowd", "athens", "summer", 5},
+              Crowd{"athens panathenaia", "athens", "summer", 4},
+              Crowd{"parsa crowd", "parsa", "spring", 0},
+              Crowd{"parsa audience", "parsa", "spring", 1}}) {
+            const int season = cat_.findSeason(c.season).value_or(0);
+            const life::Busiest b = life::busiestView(*city_, c.region, c.day, season);
+            seasonPin_ = season;
+            clock_.setDay(c.day);
+            clock_.setTime((b.hour - 6.0) / 24.0 + (b.hour < 6.0 ? 1.0 : 0.0));
+            for (int attempt = 0; attempt < 2; ++attempt) {
+                look({static_cast<float>(b.focus.x) + 0.5f, static_cast<float>(b.focus.y) + 0.5f});
+                warm();
+                BenchFrames fr;
+                int draws = 0;
+                int world = 0;
+                std::vector<float> sim;
+                std::vector<float> crowd;
+                int drawn = 0;
+                for (int f = 0; f < frames; ++f) {
+                    fr.all.push_back(benchFrame());
+                    draws = std::max(draws, fr.all.back().drawCalls);
+                    world = std::max(world, worldView_->stats().drawCalls);
+                    sim.push_back(static_cast<float>(cityMs_));
+                    crowd.push_back(static_cast<float>(worldView_->stats().actorMs));
+                    drawn = std::max(drawn, worldView_->stats().actorsDrawn);
+                }
+                const PerfStats s = perfStats(sim);
+                const PerfStats p = perfStats(crowd);
+                std::printf("bench: %s: %d live, %d drawn at most, city simulation avg %.3f worst "
+                            "%.3f ms, crowd preparation avg %.3f ms, %d draw calls at most "
+                            "(world %d%s)\n",
+                            c.name, city_->city->liveCount(), drawn, static_cast<double>(s.avg),
+                            static_cast<double>(s.worst), static_cast<double>(p.avg), draws, world,
+                            world > tuning::kSceneDrawCalls ? ", over the scene's 40 (reported)"
+                                                            : "");
+                if (opts_.budgetMs > 0 && (s.avg > tuning::kSimBudgetMs ||
+                                           city_->city->liveCount() > tuning::life::kLiveCap)) {
+                    std::printf("bench: over budget: %s simulation\n", c.name);
+                    over = true;
+                }
+                if (judgeCase(c.name, fr, attempt == 1)) break;
+            }
+        }
+        seasonPin_ = -1;
+        clock_.setPin(ClockPin::Day, true);
+    }
+    // A pan across Rome at 1800 px a second (30 px a step).
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        look({60, 1050});
+        BenchFrames fr;
+        for (int f = 0; f < frames; ++f) {
+            camera_.dragBy({tuning::kBenchWorldPanPx, tuning::kBenchWorldPanPx * 0.25f}, screen());
+            fr.all.push_back(benchFrame());
+        }
+        if (judgeCase("pan rome", fr, attempt == 1)) break;
+    }
+    // Fast travel from Parsa to Rome and home: no frame frozen, each journey within a second.
+    look({376, 69});
+    for (const char* to : {"rome", "corner"}) {
+        travelTo(loaded_->file.findRegion(to));
+        BenchFrames fr;
+        const Uint64 t0 = SDL_GetPerformanceCounter();
+        while (travel_.region >= 0 && fr.all.size() < 600) fr.all.push_back(benchFrame());
+        const double ms = msBetween(t0, SDL_GetPerformanceCounter());
+        const PerfStats whole = fr.of(&FrameSample::frameMs);
+        std::printf("bench: travel to %s: %.0f ms in %zu frames, worst frame %.2f ms\n", to, ms,
+                    fr.all.size(), static_cast<double>(whole.worst));
+        if (opts_.budgetMs > 0 &&
+            (whole.worst > tuning::kFrameWorstMs || ms > tuning::kTravelBudgetMs)) {
+            std::printf("bench: over budget: travel to %s\n", to);
+            over = true;
+        }
+    }
+    profilerOn_ = false;
+    return !over;
+}
+
+double App::memoryCeiling() const {
+    return worldView_ ? tuning::kBenchWorldMemoryMiB : tuning::kBenchMemoryMiB;
+}
+
+double App::soakCeiling() const {
+    // On the software renderer (the soak's) the world's textures are process memory too.
+    const bool software = std::string_view(SDL_GetRendererName(renderer_.get())) == "software";
+    return memoryCeiling() + (worldView_ && software
+                                  ? static_cast<double>(worldView_->textureBudget()) / 1048576.0
+                                  : 0.0);
+}
+
 int App::runSoak() {
     // A busy corner left running: every visitor kind welcome, the clock and calendar going,
-    // natural weather, events by their schedules. Frames are drawn now and then so the scene's
+    // natural weather, events by their schedules. BenchFrames are drawn now and then so the scene's
     // caches take part too. Memory must stay flat once the first quarter has warmed it up, and
     // under the ceiling.
     fillBenchWorld();
@@ -317,7 +462,7 @@ int App::runSoak() {
                 static_cast<double>(f.worst));
     std::printf("soak: rss %.1f MiB after a quarter, %.1f MiB at the end, peak %.1f (allowed "
                 "growth %.1f MiB, ceiling %.0f MiB)\n",
-                warm, end, peak, tuning::kSoakGrowthMiB, tuning::kBenchMemoryMiB);
+                warm, end, peak, tuning::kSoakGrowthMiB, soakCeiling());
     bool over = false;
     if (end - warm > tuning::kSoakGrowthMiB) {
         std::printf("soak: memory grew\n");
@@ -325,7 +470,7 @@ int App::runSoak() {
     }
     // The ceiling and the simulation budget are held where budgets apply (--budget-ms): a
     // sanitizer build's shadow memory and pace are not the game's.
-    if (opts_.budgetMs > 0 && peak > tuning::kBenchMemoryMiB) {
+    if (opts_.budgetMs > 0 && peak > soakCeiling()) {
         std::printf("soak: memory over its ceiling\n");
         over = true;
     }

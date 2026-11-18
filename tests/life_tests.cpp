@@ -34,9 +34,13 @@ TilePos centreOf(std::string_view district) {
     return *f;
 }
 
+// The season of a city's famous month (world-seasons.md: the regions' pins are gone; at the
+// famous month every city shows the crowds it showed before): Rome and Pārsa in spring, Athens in
+// summer.
 int seasonOf(std::string_view region) {
-    const LifeWorld& w = lifeWorld();
-    return w.data.regions[static_cast<std::size_t>(w.data.findRegion(region))].season;
+    const auto& s = lifeWorld().data.seasons;
+    const auto at = std::ranges::find(s, region == "athens" ? "summer" : "spring");
+    return static_cast<int>(at - s.begin());
 }
 
 // The problems the data has today, reported to their owners (out/reports/engine-city-life.md);
@@ -362,7 +366,7 @@ TEST_CASE("city: the three centres live their day as the data says") {
     };
     for (const Case cs :
          {Case{"forum", "rome", 9}, Case{"forum", "rome", 1}, Case{"agora", "athens", 5},
-          Case{"agora", "athens", 1}, Case{"terrace", "parsa", 2}, Case{"terrace", "parsa", 3}}) {
+          Case{"agora", "athens", 4}, Case{"terrace", "parsa", 2}, Case{"terrace", "parsa", 3}}) {
         for (const double hour : {5.5, 10.0, 15.5, 19.5, 1.5}) {
             const std::string where = std::string(cs.focus) + " day " + std::to_string(cs.day);
             CAPTURE(where);
@@ -384,9 +388,12 @@ TEST_CASE("city: the three centres live their day as the data says") {
                 CAPTURE(d.expected);
                 // Fractional people are rounded by hash, one draw per population entry and
                 // chunk: the spread is about a square root.
-                CHECK(std::abs(static_cast<float>(d.live + d.inside) - d.expected) <=
-                      3.0f + 1.5f * std::sqrt(d.expected));
+                const float want = d.expected * city.stats().scale; // the cap's share
+                CHECK(std::abs(static_cast<float>(d.live + d.inside) - want) <=
+                      3.0f + 1.5f * std::sqrt(want));
             }
+            // Over the cap (the Panathenaia's Agora) populations are scaled down in proportion.
+            expected *= city.stats().scale;
             CHECK(std::abs(static_cast<float>(live) - expected) <=
                   4.0f + 2.0f * std::sqrt(expected));
             checkGround(city);
@@ -559,6 +566,26 @@ TEST_CASE("city: the cap scales populations down in proportion") {
         if (n >= 30)
             CHECK(std::abs(static_cast<float>(scaled[role]) / static_cast<float>(n) -
                            city.stats().scale) < 0.25f);
+}
+
+TEST_CASE("city: never more live than the cap, panning fast and jumping between cities") {
+    // QA5 Q5-E-20: a step's spawns were not counted against the cap while they happened.
+    CityLife city(lifeWorld(), 6);
+    LifeClock clock = LifeClock::at(1, 8.0, seasonOf("rome"));
+    const TilePos forum = centreOf("forum");
+    int worst = 0;
+    for (int k = 0; k < 1500; ++k) {
+        const char* far[] = {"agora", "terrace", "forum"};
+        TilePos at = k % 500 == 499 ? centreOf(far[(k / 500) % 3])
+                                    : TilePos{forum.x + (k % 500) / 4 - 60, forum.y};
+        city.setFocus(at);
+        step(city, clock, 1);
+        int live = 0;
+        city.forEachInfo([&](const CityLife::Info&) { ++live; });
+        worst = std::max(worst, live);
+    }
+    MESSAGE("most live " << worst);
+    CHECK(worst <= tuning::life::kLiveCap);
 }
 
 TEST_CASE("city: ships and barges on their lanes, carts on the road, live where the camera is") {

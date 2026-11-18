@@ -1,0 +1,10 @@
+# A world saved by the previous version (3) opens in the world: the home and its view where they
+# were (home-relative), everything kept, and it is written back as version 4.
+expect region corner
+expect away no
+expect count all 43
+expect item @35,35 cottage
+expect zoom 2
+wait 30
+shot shots/world_old_save.png
+quit

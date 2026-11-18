@@ -182,7 +182,11 @@ bool App::init() {
     buildThumbs();
     if (!font_.load(assets_ / "fonts")) return false;
 
+    if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
+    // The cities' life runs with the world (src/life/): the camera is its active area.
+    if (loaded_) (void)openCity();
     mixer_.load(assets_ / "audio", cat_.audio);
+    loadWorldAudio();
     setupMusic();
     if (opts_.audioOut)
         mixer_.startCapture();
@@ -198,6 +202,7 @@ bool App::init() {
     }
     // The measuring modes build a world of their own and never touch the player's saves.
     if (!measuring()) loadOrStart();
+    createWorldView();
     logo_ = atlas_->sprite(atlas_->resolve("title/logo", atlas_->placeholderBox()));
     if (!opts_.headless && !opts_.benchmark && !profile_.vsync &&
         !SDL_SetRenderVSync(renderer_.get(), 0))
@@ -242,6 +247,7 @@ void App::adopt(SaveData& data) {
         savedCamera_ = cat_.iso().toWorld(data.camera->x, data.camera->y);
         savedZoom_ = data.zoom;
     }
+    adoptWorldState(data.worldState);
     // Critters are placed once the camera exists (see run()).
 }
 
@@ -323,7 +329,7 @@ void App::loadOrStart() {
     if (fs::exists(legacy, ec) && !anyWorld()) {
         auto text = readTextFile(legacy);
         auto data = text ? deserialize(*text, cat_) : std::unexpected(text.error());
-        if (data && data->fromVersion < kSaveVersion) {
+        if (data && data->fromVersion < 3) {
             migrateLegacy(*data, cat_);
             if (data->muted) muted_ = true;
             adopt(*data);
@@ -390,6 +396,7 @@ bool App::save(bool wait) {
         data.camera = cat_.iso().toTile(camera_.position());
         data.zoom = camera_.zoom();
     }
+    data.worldState = worldState();
     if (measuring()) return true; // a measuring world is never saved
     // The front door's preview of a new corner is not a world until it is begun.
     if (freshWorld_ && frontDoor()) return true;
@@ -445,7 +452,9 @@ bool App::writeThumbnail() {
     p.camera = &cam;
     p.screen = size;
     p.light = lighting();
-    scene_->draw(p, target.get());
+    drawScene(p, target.get());
+    if (!SDL_SetRenderTarget(renderer_.get(), target.get()))
+        SDL_Log("thumbnail: %s", SDL_GetError());
     const SurfacePtr pixels{SDL_RenderReadPixels(renderer_.get(), nullptr)};
     if (!SDL_SetRenderTarget(renderer_.get(), nullptr)) SDL_Log("thumbnail: %s", SDL_GetError());
     std::error_code ec;
@@ -618,6 +627,11 @@ void App::fitCameraLand() {
     TileRect r = openBounds(cat_, progress_.stage, world_);
     const int m = tuning::kCameraOpenMargin;
     r = TileRect{r.x0 - m, r.y0 - m, r.x1 + m, r.y1 + m}.clipped(world_.landBounds());
+    if (loaded_ && !measuring()) {
+        // In the world the camera roams over all of it.
+        camera_.setLand(cameraLand(), 0, 0);
+        return;
+    }
     camera_.setLand(measuring() ? world_.landBounds() : r, scene_->cliffDepth());
 }
 
@@ -631,7 +645,7 @@ void App::openLand(int stage, bool wave) {
     play(sfx::kLandOpen);
     const StageDef& def = cat_.stages[static_cast<std::size_t>(stage)];
     if (!def.line.empty()) (void)speakText(def.line, SpeechWeight::Important);
-    hud_.toast(std::vformat(strings::kToastNewLand, std::make_format_args(def.name)));
+    cornerToast(std::vformat(strings::kToastNewLand, std::make_format_args(def.name)));
     // The camera never moves on its own: when the new land is out of sight, a chip offers it.
     TileRect box = def.rects.front();
     for (const TileRect& r : def.rects)
@@ -682,7 +696,8 @@ void App::onNookFound(int nook) {
     play(sfx::kNook);
     const int pages = actors_.seenCount() + progress_.nooksFound();
     const int total = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
-    hud_.toast(std::vformat(strings::kToastNewNook, std::make_format_args(def.name, pages, total)));
+    cornerToast(
+        std::vformat(strings::kToastNewNook, std::make_format_args(def.name, pages, total)));
     lively_.happening(simTime_);
     std::vector<NearInstance> found;
     cat_.conditions.instances(def.near, world_, found);
@@ -868,6 +883,11 @@ void App::undoRedo(bool redo) {
 
 void App::zoomBy(int steps, Vec2 px) {
     tourMoved_ = true;
+    // Zooming out past the widest view opens the world's map (world-tech §4.7).
+    if (steps < 0 && camera_.level() == 0 && loaded_ && !map_.isOpen()) {
+        toggleMap();
+        return;
+    }
     camera_.zoomTo(camera_.level() + steps, px, screen());
 }
 
@@ -918,10 +938,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         if (menus_.editing()) return; // letters arrive as text input
         if (key == SDLK_F11)
             setFullscreen((SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) == 0);
-        if (key == SDLK_M) {
-            muted_ = !muted_;
-            profileChanged();
-        }
+        if (key == SDLK_M && ctrl) toggleMute();
         return;
     }
     if (!k.down && (menus_.blocking() || menus_.editing())) return;
@@ -964,7 +981,13 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     const Vec2 centre{screen().x * 0.5f, screen().y * 0.5f};
     switch (key) {
     case SDLK_ESCAPE:
-        if (photo_)
+        if (follow_)
+            follow_.reset();
+        else if (map_.isOpen())
+            toggleMap();
+        else if (cardOpen_)
+            closeCard();
+        else if (photo_)
             togglePhoto();
         else if (carry_)
             cancelMove();
@@ -995,6 +1018,11 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_F:
     case SDLK_T:
     case SDLK_H:
+        // F follows the living figure whose card is open (Esc or a pan lets go).
+        if (!photo_ && key == SDLK_F && cardOpen_ && city_ && city_->city->alive(cardActor_)) {
+            follow_ = cardActor_;
+            return;
+        }
         if (!photo_) break;
         // The photo bar's keys: next frame, caption, hide the bar.
         if (key == SDLK_F) cycleFrame(1);
@@ -1016,8 +1044,11 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_MINUS:
     case SDLK_KP_MINUS: zoomBy(-1, centre); return;
     case SDLK_M:
-        muted_ = !muted_;
-        profileChanged();
+        if (ctrl) {
+            toggleMute();
+        } else if (!photo_) {
+            toggleMap();
+        }
         return;
     default: break;
     }
@@ -1250,15 +1281,19 @@ HudModel App::model() const {
     m.canUndo = editor_.canUndo();
     m.canRedo = editor_.canRedo();
     m.canZoomIn = camera_.level() + 1 < static_cast<int>(kZoomLevels.size());
-    m.canZoomOut = camera_.level() > 0;
+    m.canZoomOut = camera_.level() > 0 || loaded_ != nullptr;
     const Lighting l = lighting();
     m.brightness =
         std::clamp(((l.ambient.r + l.ambient.g + l.ambient.b) / 3.0f - 0.3f) / 0.6f, 0.0f, 1.0f);
-    if (photo_) return m; // the photo bar names its keys
+    if (photo_) {
+        fillWorldModel(m);
+        return m; // the photo bar names its keys
+    }
     m.hint = toolHint();
     m.warning = warning_;
     if ((tool_ == Tool::Place || carry_) && hover_ && warnTime_ <= 0 && shape_ == Shape::None)
         m.warning = placeWarning(canPlace(world_, cat_, ghostItem(*hover_)));
+    fillWorldModel(m);
     return m;
 }
 
@@ -1301,6 +1336,9 @@ void App::applyHudActions() {
         case K::Undo: undoRedo(false); break;
         case K::Redo: undoRedo(true); break;
         case K::Recentre: frameCamera(); break;
+        case K::Map: toggleMap(); break;
+        case K::Mute: toggleMute(); break;
+        case K::CloseCard: closeCard(); break;
         case K::ZoomOut: zoomBy(-1, centre); break;
         case K::ZoomIn: zoomBy(1, centre); break;
         case K::SeenNew: {
@@ -1339,6 +1377,7 @@ void App::applyHudActions() {
 }
 
 void App::step(float dt) {
+    syncHome();
     camera_.beginStep();
     actorPrev_.resize(actors_.all().size());
     for (std::size_t i = 0; i < actorPrev_.size(); ++i) actorPrev_[i] = actors_.all()[i].pos;
@@ -1348,7 +1387,10 @@ void App::step(float dt) {
     clock_.update(dt);
     const Vec2 pan{(keyPan_[3] ? 1.0f : 0.0f) - (keyPan_[2] ? 1.0f : 0.0f),
                    (keyPan_[1] ? 1.0f : 0.0f) - (keyPan_[0] ? 1.0f : 0.0f)};
-    if (pan.x != 0 || pan.y != 0) tourMoved_ = true;
+    if (pan.x != 0 || pan.y != 0) {
+        tourMoved_ = true;
+        follow_.reset(); // a pan takes the camera back
+    }
     if (pan.x != 0 || pan.y != 0)
         camera_.nudge({pan.x * tuning::kKeyPanSpeed * dt, pan.y * tuning::kKeyPanSpeed * dt},
                       screen());
@@ -1428,6 +1470,7 @@ void App::updateSeason(float dt) {
         seasonByPin_ = false;
         seasonShown_ = s;
         scene_->setSeason(s);
+        if (worldView_) worldView_->setSeason(s);
     }
     if (clock_.day() != lastDay_) {
         lastDay_ = clock_.day();
@@ -1469,8 +1512,11 @@ void App::updateAudio() {
     applyVolumes(); // the music ducks while paused
     const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);
-    for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n));
-    for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n);
+    // In the world the home's stems play while the home holds the music (its share of the view).
+    const float home = homeMusic();
+    for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n) * home);
+    for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n * home);
+    updateWorldAudio(n);
     // The season's beds follow the weather where the camera looks: rain ducks the birds and
     // brings its own bed (snow brings none and lifts the winter bed). Birds swell at dawn and
     // after rain (the chorus events).
@@ -1513,7 +1559,7 @@ void App::updateAudio() {
             pan = panOf(fallCentre_);
         }
         const int loop = mixer_.loopIndex(file);
-        mixer_.setLoopGain(loop, g);
+        mixer_.setLoopGain(loop, g * homeAmbience());
         mixer_.setLoopPan(loop, pan);
     }
 }
@@ -1547,7 +1593,7 @@ void App::render() {
             0.0f, 1.0f);
     }
     const Uint64 t0 = SDL_GetPerformanceCounter();
-    scene_->draw(p);
+    drawScene(p);
     if (photo_ && font_.build(renderer_.get(), uiScale_)) {
         // The postcard's frame and caption over the view; a postcard is taken with them and
         // before the bar is drawn.
@@ -1562,7 +1608,7 @@ void App::render() {
     // The glass panels show a blurred copy of the scene.
     blur_->invalidate();
     if (blur_->begin(p.screen, theme::kBlurRadius * uiScale_)) {
-        scene_->composite(p, blur_->sourceScale(), true);
+        compositeScene(p, blur_->sourceScale(), true);
         blur_->end();
     }
     const Uint64 t1 = SDL_GetPerformanceCounter();
@@ -1573,10 +1619,21 @@ void App::render() {
         // The interface shows in play; the front door's pages and the pause menu draw over a
         // world without it.
         if (menus_.page() == Page::None) hud_.draw(painter, ui_);
+        if (map_.showing()) map_.draw(painter, mapModel_);
         const MenuModel& menus = menuModel();
         menus_.relayout(menus, font_);
         menus_.draw(painter, menus);
-        if (profilerOn_) profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
+        if (profilerOn_) {
+            drawPlaceholderLabels(painter);
+            profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
+        }
+        uiBatch_->flush();
+    }
+    if (const float veil = travelVeil(); veil > 0 && font_.build(renderer_.get(), uiScale_)) {
+        Painter painter(*uiBatch_, font_, {nullptr, p.screen, 0.5f}, uiScale_);
+        painter.roundRect({0, 0, p.screen.x, p.screen.y}, 0,
+                          {theme::kTravelVeil.r, theme::kTravelVeil.g, theme::kTravelVeil.b, veil},
+                          0);
         uiBatch_->flush();
     }
     hudDrawMs_ = msBetween(t1, SDL_GetPerformanceCounter());
@@ -1622,13 +1679,16 @@ int App::run() {
         camera_.place(*savedCamera_, savedZoom_, screen());
     else
         frameCamera();
-    if (opts_.bench) return runBench();
+    if (opts_.bench) {
+        std::printf("bench: start-up to the first frame's setup %llu ms\n",
+                    static_cast<unsigned long long>(SDL_GetTicks()));
+        return runBench();
+    }
     if (opts_.benchmark) return runBenchmark();
     if (opts_.soak > 0) return runSoak();
     if (opts_.focus && openCity()) {
-        const auto f = life::parseFocus(*city_->life, *opts_.focus);
-        if (f) city_->city->setFocus(*f);
-        if (!f) SDL_Log("city life: unknown focus %s", opts_.focus->c_str());
+        cityFocus_ = life::parseFocus(*city_->life, *opts_.focus);
+        if (!cityFocus_) SDL_Log("city life: unknown focus %s", opts_.focus->c_str());
     }
     actors_.populate(actorEnv());
     refreshNooks();
@@ -1667,6 +1727,7 @@ int App::run() {
         last = now;
         const float frameDt = fixed ? static_cast<float>(tuning::kStepSeconds)
                                     : static_cast<float>(std::min(real, 0.1));
+        frameDt_ = frameDt;
         refreshScale();
         if (!font_.build(renderer_.get(), uiScale_)) return 1;
 
@@ -1682,6 +1743,7 @@ int App::run() {
         }
         double simMs = 0;
         double condMs = 0;
+        double cityMs = 0;
         // Menus stop the corner (pause and the front door); the title's camera drifts on.
         const bool blocked = menus_.blocking();
         if (blocked) {
@@ -1693,9 +1755,11 @@ int App::run() {
             step(static_cast<float>(tuning::kStepSeconds));
             simMs += actorMs_ + lifeMs_ + progressMs_;
             condMs += progressMs_;
+            cityMs += cityMs_;
         }
         if (!blocked)
             updateTour(static_cast<float>(steps) * static_cast<float>(tuning::kStepSeconds));
+        updateWorld(frameDt);
         // Drawing runs between steps: the camera and every actor are shown where they are this
         // far toward the next step, so motion is smooth at any refresh rate.
         alpha_ = fixed ? 1.0f : static_cast<float>(acc / tuning::kStepSeconds);
@@ -1718,7 +1782,15 @@ int App::run() {
         in.blocked = drag_ != Drag::None;
         // The menus (a page, the coach card, the photo bar) see the pointer first.
         menus_.update(in, menuModel(), font_, screen(), uiScale_, frameDt);
-        const bool menusOwn = menus_.wantsMouse() || menus_.blocking();
+        bool menusOwn = menus_.wantsMouse() || menus_.blocking();
+        if (loaded_) {
+            // The map takes the pointer while it is open, and nothing moves while travelling.
+            const bool free = !menusOwn && menus_.page() == Page::None;
+            map_.update(in.x, in.y, in.inside && free, in.pressed && free, in.released && free,
+                        mapModel(), font_, screen(), uiScale_, frameDt);
+            if (const auto c = map_.clicked()) travelTo(mapShown_[static_cast<std::size_t>(*c)]);
+            menusOwn = menusOwn || map_.isOpen() || travel_.region >= 0;
+        }
         UiInput hudIn = in;
         if (menusOwn || menus_.page() != Page::None) hudIn = UiInput{};
         hud_.update(hudIn, ui_, font_, screen(), uiScale_, frameDt);
@@ -1771,6 +1843,7 @@ int App::run() {
         fs.presentMs = static_cast<float>(msBetween(tPresent, t1));
         fs.simMs = static_cast<float>(simMs);
         fs.condMs = static_cast<float>(condMs);
+        fs.cityMs = static_cast<float>(cityMs);
         fs.uiMs = static_cast<float>(uiMs + hudDrawMs_);
         fs.steps = steps;
         recordFrame(fs);
@@ -1799,6 +1872,10 @@ int App::run() {
             thumbTimer_ = 0;
             (void)writeThumbnail();
         }
+        // SDL started with the process: its clock is the start-up time (CLAUDE.md: within 3 s).
+        if (frame_ == 0)
+            SDL_Log("start: the first frame after %llu ms",
+                    static_cast<unsigned long long>(SDL_GetTicks()));
         ++frame_;
         if (opts_.frames > 0 && frame_ >= opts_.frames) running_ = false;
     }

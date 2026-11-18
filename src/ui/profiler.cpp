@@ -61,7 +61,8 @@ void Profiler::draw(Painter& p, const PerfRing& ring, Vec2 screen, float s, bool
     line(strings::kProfAudio, last.audioLoad * 100.0f);
     line(strings::kProfDraw, last.drawCalls, last.spritesDrawn, last.spritesCulled);
     line(strings::kProfActors, last.actorsLive, last.actorsAbstract, last.chunksCached);
-    line(strings::kProfMemory, last.textureMiB, last.totalMiB);
+    line(strings::kProfMemory, last.textureMiB, last.pageMiB, last.pageBudgetMiB, last.totalMiB);
+    line(strings::kProfMissing, last.placeholders, last.missingArt);
     const bool over = frame.p99 > static_cast<float>(tuning::kFrameP99Ms) ||
                       frame.worst > static_cast<float>(tuning::kFrameWorstMs);
     line(over ? strings::kProfOver : strings::kProfWithin, static_cast<float>(tuning::kFrameP99Ms),

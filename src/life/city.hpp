@@ -305,6 +305,8 @@ public:
     void dayPlan(int region, int day, int season,
                  std::vector<std::tuple<int, double, double>>& out) const;
     [[nodiscard]] bool festivalOn(int region, int festival, int day, int season) const;
+    // `season`, or the world calendar's for `day` when it is -1.
+    [[nodiscard]] int seasonFor(int day, int season) const;
     // The data's population (out of doors, by the schedules) over the chunks a view would make
     // live at a clock, without changing anything: what the cap must hold there.
     [[nodiscard]] float expectedFor(TileRect view, const LifeClock& clock);

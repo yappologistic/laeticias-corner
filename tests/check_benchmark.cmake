@@ -7,7 +7,7 @@ if(NOT n EQUAL 1)
 endif()
 file(READ "${reports}" text)
 foreach(want "Verdict: " "Renderer: " "Window: 1280x720" "Whole frame" "GPU done" "fast panning"
-        "night with lights and rain" "panels open")
+        "night with lights and rain" "panels open" "Rome by fast travel" "Parsa at night")
   string(FIND "${text}" "${want}" at)
   if(at EQUAL -1)
     message(FATAL_ERROR "the report lacks '${want}':\n${text}")

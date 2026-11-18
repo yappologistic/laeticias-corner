@@ -1,0 +1,78 @@
+# Roaming: the half and quarter scales over the home in its surroundings, scrolling out to
+# Rome's edge (the home's own panels, the building dock and the wish tray, fold away there),
+# Home back to the corner (they return), a build stroke off the home's land refused, the dock's
+# speaker button muting at once (kept in the profile), and zooming out past the widest view
+# opens the map.
+set unlock all
+set wish first_flowers open
+set camera 30 30 1
+wait 30
+expect away no
+expect widget build yes
+expect widget card:0 yes
+key minus
+wait 40
+expect zoom 0.5
+shot shots/world_home_half.png
+key minus
+wait 40
+expect zoom 0.25
+shot shots/world_home_quarter.png
+# East along the road towards Rome.
+keydown d
+wait 150
+keyup d
+keydown w
+wait 30
+keyup w
+wait 30
+expect away yes
+expect region rome
+expect tool none
+expect widget build no
+expect widget remove no
+expect widget undo no
+expect widget card:0 no
+expect widget map yes
+expect widget sound yes
+click ui:sound
+wait 5
+expect muted yes
+expect file profile.json yes
+click ui:sound
+wait 5
+expect muted no
+shot shots/world_rome_edge.png
+key home
+wait 60
+expect away no
+expect region corner
+expect widget build yes
+expect widget undo yes
+expect widget card:0 yes
+# A piece placed off the home's land is refused.
+click ui:build
+wait 15
+click ui:tab:nature
+wait 5
+click ui:tile:oak
+wait 5
+expect tool place
+expect count oak 4
+click grid:82,1222
+wait 5
+expect tool place
+expect count oak 4
+# Zooming out past the widest view opens the map.
+key escape
+key minus
+key minus
+key minus
+wait 40
+key minus
+wait 20
+expect map open
+key escape
+wait 20
+expect map closed
+quit

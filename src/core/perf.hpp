@@ -30,6 +30,14 @@ struct FrameSample {
     int chunksCached = 0;
     float textureMiB = 0;
     float totalMiB = 0;
+    float pageMiB = 0; // the world's atlas pages resident, and what they may hold
+    float pageBudgetMiB = 0;
+    int placeholders = 0; // sprites drawn as placeholders this frame (art still to come)
+    int missingArt = 0;   // ids in the world with no art at all
+    float cityMs = 0;     // city life's simulation in this frame's steps (src/life/)
+    float crowdMs = 0;    // gathering, resolving and ordering its actors for drawing
+    int cityLive = 0;     // its live actors
+    int cityDrawn = 0;    // of them, drawn this frame
 };
 
 struct PerfStats {
@@ -67,7 +75,7 @@ private:
 inline constexpr const char* kPerfHeader =
     "frame,frame_ms,cpu_ms,gpu_ms,present_ms,sim_ms,cond_ms,scene_ms,ui_ms,audio_load,steps,"
     "draw_calls,sprites_drawn,sprites_culled,actors_live,actors_abstract,chunks_cached,"
-    "texture_mib,total_mib";
+    "texture_mib,total_mib,city_ms,crowd_ms,city_live,city_drawn";
 inline constexpr std::size_t kPerfLineMax = 256;
 std::size_t perfLine(std::int64_t frame, const FrameSample& s, std::span<char> out);
 

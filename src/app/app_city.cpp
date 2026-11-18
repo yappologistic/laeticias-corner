@@ -23,6 +23,12 @@ std::uint64_t citySeed(const Options& o) {
 
 bool App::openCity() {
     if (city_) return true;
+    if (loaded_) {
+        city_ = std::make_unique<life::LifeSession>(life::openLifeSession(*loaded_, seed_));
+        SDL_Log("city life: %.0f ms", city_->loadMs);
+        if (worldView_) worldView_->setLife(city_->city.get());
+        return true;
+    }
     std::string error;
     auto s = life::openLifeSession(assets_, citySeed(opts_), error);
     if (!s) {
@@ -38,12 +44,30 @@ life::LifeClock App::cityClock() const {
     c.day = clock_.day();
     c.t = clock_.time();
     c.season = season();
-    c.rain = raining();
+    c.rain = rainHere() >= tuning::kRainThreshold;
     return c;
 }
 
+TileRect App::cityView() const {
+    if (cityOff_) return {};
+    if (cityFocus_)
+        return {cityFocus_->x - 16, cityFocus_->y - 16, cityFocus_->x + 17, cityFocus_->y + 17};
+    // The map and the overview show no one; elsewhere the view (the life grows it by a ring, so
+    // people walk in from beyond the edges instead of appearing).
+    if (!worldView_ || map_.isOpen() ||
+        worldview::WorldView::lodFor(view_.scale()) == worldview::Lod::Overview)
+        return {};
+    return cameraTiles();
+}
+
 void App::stepCity(float dt) {
-    if (city_) city_->city->update(cityClock(), dt);
+    cityMs_ = 0;
+    if (!city_) return;
+    const Uint64 t0 = SDL_GetPerformanceCounter();
+    city_->city->setView(cityView());
+    city_->city->update(cityClock(), dt);
+    cityMs_ = msBetween(t0, SDL_GetPerformanceCounter());
+    if (citySound_) citySound_->addLifeSounds(city_->city->sounds());
 }
 
 std::optional<std::string> App::checkCity(std::span<const std::string> a) {
@@ -96,6 +120,18 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         if (live >= std::stoi(a[3]) && live <= std::stoi(a[4])) return std::nullopt;
         return std::format("expected city district {} in {}..{} but found {}", a[2], a[3], a[4],
                            live);
+    }
+    if (what == "drawn")
+        return range(worldView_ ? static_cast<int>(worldView_->actorsDrawn().size()) : 0, 2);
+    if (what == "people") return range(citySound_ ? citySound_->people() : 0, 2);
+    if (what == "sound" && a.size() >= 5) {
+        // expect city sound FILE MIN MAX: the gain (x100) its loop is set to now.
+        if (!citySound_) return "no city sound";
+        const auto& files = citySound_->loops();
+        const auto it = std::ranges::find(files, a[2]);
+        if (it == files.end()) return "the city plays no " + a[2];
+        const float g = citySound_->out()[static_cast<std::size_t>(it - files.begin())].gain;
+        return range(static_cast<int>(std::lround(g * 100.0f)), 3);
     }
     return "unknown city expectation " + what;
 }

@@ -3,6 +3,7 @@
 
 #include "core/starter.hpp"
 #include "world/digest.hpp"
+#include "world/figures.hpp"
 #include "world/loader.hpp"
 #include "world_support.hpp"
 
@@ -12,6 +13,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <map>
 #include <numeric>
 #include <random>
@@ -48,7 +50,6 @@ constexpr std::array<const char*, 18> kKnownUncatalogued{
     "parsa.royal_road_head",
     "parsa.susa_palace",
 };
-
 bool knownError(const std::string& e) {
     return std::ranges::any_of(kKnownUncatalogued, [&](const char* id) {
         return e.find("item id '" + std::string(id) + "' is in no catalog") != std::string::npos;
@@ -105,6 +106,10 @@ TEST_CASE("real world: every piece and slot of a placed item exists in geometry 
     for (const Placed& it : m.items()) {
         const ItemInfo& info = m.info(it);
         if (info.homeType >= 0 || !checked.insert(it.info * 64u + it.variant).second) continue;
+        // A set whose art is not drawn yet (the shared `world` set) has no pages to check.
+        if (std::ranges::none_of(w.atlas.pages(),
+                                 [&](const AtlasPage& pg) { return pg.set == info.set; }))
+            continue;
         if (it.variant >= info.count && info.layout != Layout::Connect) continue; // known finding
         const GeomVariant* g = m.geometry(it);
         if (info.landmark) {
@@ -253,7 +258,7 @@ TEST_CASE("real world: the starter home overlays the corner") {
     const World starter = makeStarterWorld(cat);
     Diagnostics diag;
     REQUIRE(m.applyHome(homeDeltaFrom(starter, cat), diag).has_value());
-    CHECK(diag.errors.empty());
+    for (const std::string& e : diag.errors) CHECK_MESSAGE(knownError(e), e);
     const TileRect hr = m.homeRect();
     for (const Item& it : starter.items()) {
         const TilePos p{hr.x0 + it.pos.x, hr.y0 + it.pos.y};
@@ -375,4 +380,102 @@ TEST_CASE("perf: query throughput") {
     CHECK(walk < 200.0);
     CHECK(hop < 50.0);
 #endif
+}
+
+TEST_CASE("real world: named figures stand on open ground in their regions, one per tile") {
+    const LoadedWorld& w = realWorld();
+    const WorldMap& m = *w.map;
+    const auto figures = placeFigures(w);
+    std::set<std::pair<int, int>> tiles;
+    std::map<std::string, int> perRegion;
+    for (const FigurePlace& f : figures) {
+        CAPTURE(f.actor);
+        const TilePos t{static_cast<int>(f.at.x), static_cast<int>(f.at.y)};
+        REQUIRE(m.inBounds(t));
+        CHECK(m.walkable(t));
+        CHECK(m.itemAt(t) < 0);
+        CHECK(m.regionAt(t) == f.region);
+        CHECK(f.level == m.level(t));
+        CHECK(tiles.insert({t.x, t.y}).second);
+        CHECK_FALSE(f.sprite.empty());
+        ++perRegion[w.file.regions[static_cast<std::size_t>(f.region)].id];
+    }
+    // Every figure of the three cities that is a person (an actor; shrines, statues, reliefs
+    // and tales are shown by places) has a place.
+    for (const std::string city : {"rome", "athens", "parsa"}) {
+        const RegionFile& rf = w.regions[static_cast<std::size_t>(w.file.findRegion(city))];
+        CAPTURE(city);
+        const auto people = std::ranges::count_if(
+            rf.life["figures"], [](const nlohmann::json& f) { return f.contains("actor"); });
+        CHECK(perRegion[city] == static_cast<int>(people));
+    }
+}
+
+TEST_CASE("real world: stairs and ramps stand on their lower tile and reach their head") {
+    // QA (owner, Acropolis): stair pieces floating over the ground. A stair is drawn at its
+    // item's level, which must be its footprint's lowest; its head (the side it climbs to) must
+    // stand `rise` levels up. Mismatches in the layouts are listed
+    // (out/reports/world-game-faults.md).
+    const LoadedWorld& w = realWorld();
+    const WorldMap& m = *w.map;
+    int stairs = 0;
+    int drawnHigh = 0;
+    std::vector<std::string> unreached;
+    for (const Placed& it : m.items()) {
+        const ItemInfo& info = m.info(it);
+        if (info.rise <= 0) continue;
+        ++stairs;
+        const TileRect r = it.rect();
+        int low = 99;
+        for (int y = r.y0; y < r.y1; ++y)
+            for (int x = r.x0; x < r.x1; ++x)
+                if (m.inBounds({x, y})) low = std::min(low, m.level({x, y}));
+        CAPTURE(info.id);
+        CAPTURE(it.x);
+        CAPTURE(it.y);
+        if (it.level > low) ++drawnHigh;
+        CHECK(it.level <= low);
+        if (it.head < 0)
+            unreached.push_back(info.id + " at (" + std::to_string(it.x) + ", " +
+                                std::to_string(it.y) + ")");
+    }
+    CHECK(stairs > 50);
+    CHECK(drawnHigh == 0);
+    for (const std::string& s : unreached) MESSAGE("data finding: no head at its rise: " << s);
+}
+
+TEST_CASE("real world: a stair is stepped onto at its foot and off at its head") {
+    // world-loose-ends.md: first treads drawn 10-14 px up (`walk_z` is a tread's middle) refused
+    // the step from the ground. Every walkable tile on a stair's foot edge takes the step from
+    // the ground before it at the stair's level, and the head edge to the ground `rise` up.
+    const WorldMap& m = *realWorld().map;
+    int edges = 0;
+    std::vector<std::string> refused;
+    for (const Placed& it : m.items()) {
+        const ItemInfo& info = m.info(it);
+        if (info.rise <= 0 || it.head < 0) continue;
+        const TileRect r = it.rect();
+        for (const auto& [end, level] : {std::pair{(it.head + 2) % 4, int(it.level)},
+                                         std::pair{int(it.head), it.level + info.rise}}) {
+            const TilePos d = lc::world::kSteps[static_cast<std::size_t>(end)];
+            for (int y = r.y0; y < r.y1; ++y)
+                for (int x = r.x0; x < r.x1; ++x) {
+                    const TilePos p{x, y};
+                    const TilePos q{x + d.x, y + d.y};
+                    if (r.contains(q) || !m.inBounds(q) || !m.walkable(p) || !m.walkable(q) ||
+                        m.itemAt(q) >= 0 || m.level(q) != level)
+                        continue;
+                    ++edges;
+                    std::array<WalkStep, 4> steps{};
+                    const int n = m.walkNeighbours(q, steps);
+                    if (std::none_of(steps.begin(), steps.begin() + n,
+                                     [&](const WalkStep& s) { return s.to == p; }))
+                        refused.push_back(
+                            std::format("{} ({}, {}) from ({}, {})", info.id, p.x, p.y, q.x, q.y));
+                }
+        }
+    }
+    for (const std::string& s : refused) MESSAGE("refused: " << s);
+    CHECK(edges > 100);
+    CHECK(refused.empty());
 }

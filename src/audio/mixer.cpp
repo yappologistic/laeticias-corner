@@ -25,6 +25,7 @@ Mixer::Mixer() {
     for (auto& t : loopTargets_) t.store(0.0f);
     for (auto& u : unlocked_) u.store(0);
     for (auto& b : busTargets_) b.store(1.0f);
+    for (auto& s : seekTo_) s.store(-1);
 }
 
 void Mixer::VorbisCloser::operator()(stb_vorbis* v) const {
@@ -36,7 +37,17 @@ Mixer::~Mixer() {
 }
 
 void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
-    for (const auto& name : list.sfx) {
+    // Ambience beds, then the music stems (the full mixes belong to the title screen).
+    std::vector<std::string> loops = list.ambience;
+    loadMore(dir, list.sfx, loops);
+    for (const auto* piece : {&list.dayStems, &list.nightStems})
+        for (const auto& st : *piece) addLoop(dir, st.file, true);
+}
+
+void Mixer::loadMore(const std::filesystem::path& dir, std::span<const std::string> sfx,
+                     std::span<const std::string> loops) {
+    for (const auto& name : sfx) {
+        if (sfxIndex(name) >= 0) continue;
         auto samples = loadWavMono(dir / name);
         if (!samples) {
             SDL_Log("audio: %s; it will be silent", samples.error().c_str());
@@ -45,44 +56,46 @@ void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
         sfxNames_.push_back(name);
         sfx_.push_back(std::move(*samples));
     }
-    // Ambience beds, then the music stems (the full mixes belong to the title screen).
-    std::vector<std::pair<std::string, bool>> files;
-    files.reserve(list.ambience.size() + list.dayStems.size() + list.nightStems.size());
-    for (const auto& f : list.ambience) files.emplace_back(f, false);
-    for (const auto* piece : {&list.dayStems, &list.nightStems})
-        for (const auto& s : *piece) files.emplace_back(s.file, true);
-    loops_.reserve(std::min(files.size(), kMaxLoops));
-    for (const auto& [file, stem] : files) {
-        if (loops_.size() == kMaxLoops) {
-            SDL_Log("audio: more than %zu loops; %s will be silent", kMaxLoops, file.c_str());
-            continue;
-        }
-        LoopTrack& t = loops_.emplace_back();
-        t.file = file;
-        t.stem = stem;
-        auto bytes = readBinaryFile(dir / file);
-        if (!bytes) {
-            SDL_Log("audio: %s; it will be silent", bytes.error().c_str());
-            continue;
-        }
-        t.bytes = std::move(*bytes);
-        int err = 0;
-        t.vorbis.reset(stb_vorbis_open_memory(t.bytes.data(), static_cast<int>(t.bytes.size()),
-                                              &err, nullptr));
-        if (!t.vorbis) {
-            SDL_Log("audio: %s is not readable Ogg Vorbis", file.c_str());
-            continue;
-        }
-        const auto info = stb_vorbis_get_info(t.vorbis.get());
-        if (static_cast<int>(info.sample_rate) != kMixRate || info.channels < 1 ||
-            info.channels > 2) {
-            SDL_Log("audio: %s must be 44.1 kHz mono or stereo; it will be silent", file.c_str());
-            t.vorbis.reset();
-            continue;
-        }
-        t.channels = info.channels;
-        t.length = stb_vorbis_stream_length_in_samples(t.vorbis.get());
+    for (const auto& file : loops)
+        if (loopIndex(file) < 0) addLoop(dir, file, false);
+}
+
+void Mixer::addLoop(const std::filesystem::path& dir, const std::string& file, bool stem) {
+    if (loops_.size() == kMaxLoops) {
+        SDL_Log("audio: more than %zu loops; %s will be silent", kMaxLoops, file.c_str());
+        return;
     }
+    if (loops_.capacity() < kMaxLoops) loops_.reserve(kMaxLoops); // never moved once playing
+    LoopTrack& t = loops_.emplace_back();
+    t.file = file;
+    t.stem = stem;
+    auto bytes = readBinaryFile(dir / file);
+    if (!bytes) {
+        SDL_Log("audio: %s; it will be silent", bytes.error().c_str());
+        return;
+    }
+    t.bytes = std::move(*bytes);
+    int err = 0;
+    t.vorbis.reset(
+        stb_vorbis_open_memory(t.bytes.data(), static_cast<int>(t.bytes.size()), &err, nullptr));
+    if (!t.vorbis) {
+        SDL_Log("audio: %s is not readable Ogg Vorbis", file.c_str());
+        return;
+    }
+    const auto info = stb_vorbis_get_info(t.vorbis.get());
+    if (static_cast<int>(info.sample_rate) != kMixRate || info.channels < 1 || info.channels > 2) {
+        SDL_Log("audio: %s must be 44.1 kHz mono or stereo; it will be silent", file.c_str());
+        t.vorbis.reset();
+        return;
+    }
+    t.channels = info.channels;
+    t.length = stb_vorbis_stream_length_in_samples(t.vorbis.get());
+}
+
+void Mixer::seekLoop(int loop, std::uint64_t sample) {
+    if (loop < 0 || std::cmp_greater_equal(loop, loops_.size())) return;
+    seekTo_[static_cast<std::size_t>(loop)].store(static_cast<std::int64_t>(sample),
+                                                  std::memory_order_relaxed);
 }
 
 int Mixer::loopIndex(std::string_view file) const {
@@ -308,6 +321,10 @@ void Mixer::mix(float* out, int frames) {
             t.at = ~0ULL; // paused while inaudible; a stem finds its place again when heard
             continue;
         }
+        // A loop asked to start from a given sample (a phrase boundary) does so now.
+        if (const std::int64_t to = seekTo_[li].exchange(-1, std::memory_order_relaxed);
+            to >= 0 && !t.stem)
+            (void)stb_vorbis_seek(t.vorbis.get(), static_cast<unsigned>(to));
         float l0 = 1.0f;
         float l1 = 1.0f;
         if (t.stem) {

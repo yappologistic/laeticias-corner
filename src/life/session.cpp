@@ -75,8 +75,19 @@ std::optional<LifeSession> openLifeSession(const std::filesystem::path& assets, 
         error = w.error();
         return std::nullopt;
     }
-    s.world = std::make_unique<LoadedWorld>(std::move(*w));
+    s.ownWorld = std::make_unique<LoadedWorld>(std::move(*w));
+    s.world = s.ownWorld.get();
     s.life = buildLifeWorld(*s.world);
+    s.city = std::make_unique<CityLife>(*s.life, seed);
+    s.loadMs = msSince(t0);
+    return s;
+}
+
+LifeSession openLifeSession(const LoadedWorld& world, std::uint64_t seed) {
+    const auto t0 = Clock::now();
+    LifeSession s;
+    s.world = &world;
+    s.life = buildLifeWorld(world);
     s.city = std::make_unique<CityLife>(*s.life, seed);
     s.loadMs = msSince(t0);
     return s;

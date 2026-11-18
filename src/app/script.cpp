@@ -20,6 +20,12 @@ std::expected<ScriptPoint, std::string> point(std::string_view tok) {
         if (p.widget.empty()) return std::unexpected("empty widget name");
         return p;
     }
+    for (const std::string_view prefix : {"grid:", "map:", "landmark:", "figure:", "life:"})
+        if (tok.starts_with(prefix) && tok.size() > prefix.size()) {
+            p.kind = ScriptPoint::Kind::Widget; // resolved by name each frame, like actors
+            p.widget = std::string(tok);
+            return p;
+        }
     if (tok.starts_with("actor:") && tok.size() > 6) {
         p.kind = ScriptPoint::Kind::Widget; // resolved like a widget, by name, each frame
         p.widget = std::string(tok);
@@ -136,18 +142,18 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             }
             if (tok.size() == 4 && tok[1] == "wish") {
                 if (tok[3] != "open") return err("set wish ID open");
-            } else if (tok.size() == 4 && tok[1] == "look") {
+            } else if (tok.size() == 4 && (tok[1] == "look" || tok[1] == "world")) {
                 float v = 0;
-                if (!number(tok[3], v)) return err("set look KIND ZOOM");
-            } else if (tok.size() == 5 && tok[1] == "camera") {
+                if (!number(tok[3], v)) return err("set " + tok[1] + " PLACE ZOOM");
+            } else if (tok.size() == 5 && (tok[1] == "camera" || tok[1] == "world")) {
                 for (std::size_t i = 2; i < 5; ++i) {
                     float v = 0;
-                    if (!number(tok[i], v)) return err("set camera TX TY ZOOM");
+                    if (!number(tok[i], v)) return err("set " + tok[1] + " TX TY ZOOM");
                 }
             } else if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys)) {
                 return err("set clock|rain|weather|unlock|played|land|season|day|grow|chatter|"
-                           "time|lively|city|city_dump VALUE, set camera TX TY ZOOM, set look "
-                           "KIND ZOOM or set wish ID open");
+                           "time|lively|city|city_dump VALUE, set camera|world TX TY ZOOM, set "
+                           "world PLACE ZOOM, set look KIND ZOOM or set wish ID open");
             }
             c.kind = ScriptCommand::Kind::Set;
             c.args.assign(tok.begin() + 1, tok.end());

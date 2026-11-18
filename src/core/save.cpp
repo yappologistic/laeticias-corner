@@ -477,8 +477,20 @@ std::string serialize(const SaveData& data, const Catalog& cat) {
     for (std::size_t i = 0; i < p.wishes.size(); ++i)
         if (p.wishes[i].snoozedUntil >= 0) snoozed[cat.wishes[i].id] = p.wishes[i].snoozedUntil;
     json world = json::object();
+    const WorldProgress& ws = data.worldState;
+    if (ws.camera) world["camera"] = {{"at", {ws.camera->x, ws.camera->y}}, {"zoom", ws.zoom}};
     if (data.camera)
-        world["camera"] = {{"at", {data.camera->x, data.camera->y}}, {"zoom", data.zoom}};
+        world["home_view"] = {{"at", {data.camera->x, data.camera->y}}, {"zoom", data.zoom}};
+    world["visited"] = ws.visited;
+    const auto byRegion = [](const auto& lists) {
+        json o = json::object();
+        for (const auto& [region, entries] : lists)
+            if (!entries.empty()) o[region] = entries;
+        return o;
+    };
+    world["journal"] = byRegion(ws.found);
+    world["seen"] = byRegion(ws.seen);
+    world["flags"] = ws.flags;
     const json root = {
         {"version", kSaveVersion},
         {"name", data.name},
@@ -528,7 +540,7 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
         SaveData data(World{cat}, cat);
         data.fromVersion = static_cast<int>(version);
         Loader in{cat, data, {}, {}, {}};
-        if (version == 3) {
+        if (version >= 3) {
             in.readPalette(root.at("home").at("palette"));
             readVersion3(root, in);
             if (root.contains("progress") && root["progress"].is_object())
@@ -554,14 +566,42 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
             static const json kNone = json::object();
             const json& worldPart =
                 root.contains("world") && root["world"].is_object() ? root["world"] : kNone;
-            const json& cam = worldPart.contains("camera") && worldPart["camera"].is_object()
-                                  ? worldPart["camera"]
-                                  : kNone;
-            if (cam.contains("at") && cam["at"].is_array() && cam["at"].size() == 2 &&
-                cam["at"][0].is_number() && cam["at"][1].is_number()) {
-                const Vec2 at{cam["at"][0].get<float>(), cam["at"][1].get<float>()};
-                if (std::isfinite(at.x) && std::isfinite(at.y)) data.camera = at;
-                data.zoom = static_cast<float>(numField(cam, "zoom", 1.0, 0.1, 8.0, in.warn));
+            // A view: {"at": [x, y], "zoom"}; version 3 kept the home view under "camera".
+            const auto readView = [&](const char* key, std::optional<Vec2>& at, float& zoom) {
+                const json& cam =
+                    worldPart.contains(key) && worldPart[key].is_object() ? worldPart[key] : kNone;
+                if (cam.contains("at") && cam["at"].is_array() && cam["at"].size() == 2 &&
+                    cam["at"][0].is_number() && cam["at"][1].is_number()) {
+                    const Vec2 v{cam["at"][0].get<float>(), cam["at"][1].get<float>()};
+                    if (std::isfinite(v.x) && std::isfinite(v.y)) at = v;
+                    zoom = static_cast<float>(numField(cam, "zoom", 1.0, 0.1, 8.0, in.warn));
+                }
+            };
+            WorldProgress& ws = data.worldState;
+            if (version == 3) {
+                readView("camera", data.camera, data.zoom);
+            } else {
+                readView("home_view", data.camera, data.zoom);
+                readView("camera", ws.camera, ws.zoom);
+                const auto strings = [&](const json& j, std::vector<std::string>& out) {
+                    if (!j.is_array()) return;
+                    for (const json& e : j)
+                        if (e.is_string() &&
+                            std::ranges::find(out, e.get<std::string>()) == out.end())
+                            out.push_back(e.get<std::string>());
+                };
+                const auto lists = [&](const char* key, auto& out) {
+                    if (!worldPart.contains(key) || !worldPart[key].is_object()) return;
+                    for (const auto& [region, entries] : worldPart[key].items()) {
+                        std::vector<std::string> v;
+                        strings(entries, v);
+                        if (!v.empty()) out.emplace_back(region, std::move(v));
+                    }
+                };
+                if (worldPart.contains("visited")) strings(worldPart["visited"], ws.visited);
+                if (worldPart.contains("flags")) strings(worldPart["flags"], ws.flags);
+                lists("journal", ws.found);
+                lists("seen", ws.seen);
             }
         } else {
             const auto size = mapSize(root);

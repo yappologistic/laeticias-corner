@@ -24,6 +24,13 @@ inline constexpr SDL_FColor kInsetRimBottom{1.0f, 1.0f, 1.0f, 0.04f};
 inline constexpr SDL_FColor kChip{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kDivider{1.0f, 1.0f, 1.0f, 0.12f};
 inline constexpr SDL_FColor kFlash{1.0f, 1.0f, 1.0f, 1.0f};
+inline constexpr SDL_FColor kCaptionInk{1.0f, 0.98f, 0.93f, 1.0f}; // the era caption over the world
+inline constexpr SDL_FColor kCaptionShadow{0.05f, 0.05f, 0.08f, 1.0f};
+inline constexpr SDL_FColor kMapDot{0.62f, 0.16f, 0.12f, 1.0f}; // the overview art's ink red
+inline constexpr SDL_FColor kMapDotRim{0.98f, 0.95f, 0.86f, 0.9f};
+inline constexpr SDL_FColor kMapView{1.0f, 1.0f, 1.0f, 0.55f};
+inline constexpr SDL_FColor kTravelVeil{0.93f, 0.89f, 0.80f,
+                                        1.0f}; // fast travel fades through paper
 inline constexpr SDL_FColor kDotRim{0.06f, 0.08f, 0.07f, 0.7f};
 inline constexpr SDL_FColor kSilhouette{0.06f, 0.07f, 0.06f, 0.92f};     // visitors not seen yet
 inline constexpr SDL_FColor kSilhouetteBack{0.85f, 0.88f, 0.82f, 0.30f}; // behind a silhouette
@@ -101,6 +108,16 @@ inline constexpr int kDrawerMaxCols = 8;
 inline constexpr int kDrawerRows = 2;
 inline constexpr float kTabH = 32.0f;
 inline constexpr float kSketchW = 384.0f;
+inline constexpr float kPlaceCardW = 360.0f; // a landmark's or figure's card
+inline constexpr int kCardLines = 9;
+inline constexpr float kCaptionTop = 84.0f; // the era caption, below the title card's band
+// The world map.
+inline constexpr float kMapHeader = 36.0f;
+inline constexpr float kMapReach = 14.0f; // a marker answers the pointer this far away
+inline constexpr float kMapHomeDot = 6.0f;
+inline constexpr float kMapCityDot = 6.0f;
+inline constexpr float kMapTownDot = 3.5f;
+inline constexpr float kMapViewRing = 10.0f;
 inline constexpr int kRareSectionAfter = 4; // common visitors seen before the rarer ones show
 inline constexpr float kTileRadius = 12.0f;
 inline constexpr float kBuildExtra = 64.0f; // Build pill width beyond its icon
@@ -237,6 +254,8 @@ inline constexpr char32_t kCheck = 0xE06C;
 inline constexpr char32_t kMove = 0xE121;
 inline constexpr char32_t kPipette = 0xE13B;
 inline constexpr char32_t kMenu = 0xE115;
+inline constexpr char32_t kMap = 0xE110;
+inline constexpr char32_t kLandmark = 0xE23A;
 inline constexpr char32_t kSettings = 0xE154;
 inline constexpr char32_t kFrame = 0xE291;
 inline constexpr char32_t kImage = 0xE0F6;
@@ -256,7 +275,7 @@ inline constexpr char32_t kAll[] = {
     kChevronRight, kLock,    kSparkles, kSnowflake, kLeaf,      kFlower,      kCheck,
     kMove,         kPipette, kMenu,     kSettings,  kFrame,     kImage,       kFolderOpen,
     kHeart,        kPencil,  kTrash,    kPlay,      kType,      kEyeOff,      kArrowLeft,
-    kLogOut};
+    kLogOut,       kMap,     kLandmark};
 } // namespace icon
 
 } // namespace lc::theme

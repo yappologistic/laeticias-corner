@@ -78,7 +78,7 @@ TEST_CASE("world saves round-trip everything: home, progress, clock, calendar, c
     data.zoom = 2;
 
     const std::string text = serialize(data, c);
-    CHECK(text.find("\"version\": 3") != std::string::npos);
+    CHECK(text.find("\"version\": 4") != std::string::npos);
     const auto loaded = deserialize(text, c);
     REQUIRE(loaded.has_value());
     CHECK(loaded->warnings.empty());
@@ -256,7 +256,7 @@ TEST_CASE("a real first-release save becomes the front corner of a version 3 wor
     CHECK(data->seen == std::vector<std::string>{"duck", "cat", "firefly"});
     CHECK(data->day == 0);
     CHECK(data->pin == ClockPin::Dusk);
-    // Written as version 3, it round-trips.
+    // Written as the current version, it round-trips.
     const std::string v3 = serialize(*data, c);
     const auto again = deserialize(v3, c);
     REQUIRE(again.has_value());
@@ -407,4 +407,66 @@ TEST_CASE("the worlds screen's list: names, days, pages, newest first; rename an
     CHECK(readTextFile(dir / "future" / "world.json").value_or("") == before);
     REQUIRE(deleteWorld(dir / "broken").has_value());
     CHECK_FALSE(std::filesystem::exists(dir / "broken"));
+}
+
+TEST_CASE("a version 3 world opens unchanged and is written as version 4 with its view kept") {
+    const Catalog& c = test::catalog();
+    auto data = deserialize(fixture("save_v3.json"), c);
+    REQUIRE(data.has_value());
+    CHECK(data->fromVersion == 3);
+    CHECK(data->warnings.empty());
+    // The home view in home tiles is kept; the world block starts empty.
+    REQUIRE(data->camera.has_value());
+    CHECK(data->camera->x == doctest::Approx(30));
+    CHECK(data->camera->y == doctest::Approx(25));
+    CHECK(data->zoom == doctest::Approx(2));
+    CHECK_FALSE(data->worldState.camera.has_value());
+    CHECK(data->worldState.visited.empty());
+    CHECK(data->world.items().size() == 43);
+    const std::string v4 = serialize(*data, c);
+    CHECK(v4.find("\"version\": 4") != std::string::npos);
+    const auto again = deserialize(v4, c);
+    REQUIRE(again.has_value());
+    CHECK(again->fromVersion == 4);
+    CHECK(again->warnings.empty());
+    CHECK(sameWorld(again->world, data->world));
+    REQUIRE(again->camera.has_value());
+    CHECK(again->camera->x == doctest::Approx(30));
+    CHECK(serialize(*again, c) == v4);
+}
+
+TEST_CASE("the world block keeps the player's delta over the world, and only that") {
+    const Catalog& c = test::catalog();
+    SaveData data(makeStarterWorld(c), c);
+    data.name = "Delta";
+    data.worldState.camera = Vec2{376.5f, 69.25f};
+    data.worldState.zoom = 0.5f;
+    data.worldState.visited = {"corner", "parsa"};
+    data.worldState.found = {{"parsa", {"figure:parsa.xerxes", "landmark:parsa.apadana"}}};
+    data.worldState.seen = {{"parsa", {"landmark:parsa.gate_of_all_lands"}}};
+    data.worldState.flags = {"seam_explained"};
+    const std::string text = serialize(data, c);
+    // Small: nothing of the prebuilt world goes in.
+    CHECK(text.size() < 12000);
+    const auto back = deserialize(text, c);
+    REQUIRE(back.has_value());
+    CHECK(back->warnings.empty());
+    const WorldProgress& w = back->worldState;
+    REQUIRE(w.camera.has_value());
+    CHECK(w.camera->x == doctest::Approx(376.5f));
+    CHECK(w.camera->y == doctest::Approx(69.25f));
+    CHECK(w.zoom == doctest::Approx(0.5f));
+    CHECK(w.visited == data.worldState.visited);
+    CHECK(w.found == data.worldState.found);
+    CHECK(w.seen == data.worldState.seen);
+    CHECK(w.flags == data.worldState.flags);
+    CHECK(serialize(*back, c) == text);
+    // Damaged parts of the block fall back one by one; duplicates collapse.
+    std::string bad = text;
+    const auto at = bad.find("\"visited\"");
+    REQUIRE(at != std::string::npos);
+    bad.replace(at, std::string("\"visited\"").size(), "\"visited\": 7, \"x\"");
+    auto tolerant = deserialize(bad, c);
+    REQUIRE(tolerant.has_value());
+    CHECK(tolerant->worldState.found == data.worldState.found);
 }

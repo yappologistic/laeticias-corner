@@ -57,6 +57,13 @@ public:
     void gust();
     // A shower enters at the upwind edge of the region now (a script asking for one).
     void shower();
+    // The world's weather decides (worldview::WeatherField): these cells, in this region's tiles,
+    // replace the ones it would spawn and drift; wind, gusts and wet ground still run here.
+    // A shower asked for (shower()) still crosses on its own, over them.
+    void follow(std::span<const WeatherCell> cells) {
+        external_ = true;
+        field_.assign(cells.begin(), cells.end());
+    }
     // Wetness of the ground, 0..1, per block of kWetBlock tiles.
     [[nodiscard]] float wetness(TilePos t) const;
     [[nodiscard]] std::span<const WeatherCell> cells() const { return cells_; }
@@ -75,6 +82,9 @@ private:
     double time_ = 0; // seconds of weather simulated
     std::int64_t period_ = -1;
     std::uint32_t nextId_ = 1;
+    bool external_ = false;          // the cells come from follow()
+    std::vector<WeatherCell> field_; // ... these, and
+    std::vector<WeatherCell> local_; // the showers asked for meanwhile
     std::vector<WeatherCell> cells_;
     Wind wind_;
     float gustFront_ = -1; // distance the wave has travelled across the region, -1: none

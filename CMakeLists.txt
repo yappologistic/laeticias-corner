@@ -45,26 +45,14 @@ target_include_directories(lc_core PUBLIC src)
 target_link_libraries(lc_core PUBLIC nlohmann_json::nlohmann_json)
 lc_project_target(lc_core)
 
-# SDL-facing engine pieces, split from main() so tests can link them.
+# SDL-facing engine pieces (render, interface, audio), linked by the world renderer and the app.
 add_library(lc_engine STATIC
-  src/app/app.cpp
-  src/app/options.cpp
-  src/app/script.cpp
-  src/app/app_script.cpp
-  src/app/app_bench.cpp
-  src/app/app_benchmark.cpp
-  src/app/app_city.cpp
-  src/app/app_build.cpp
-  src/app/app_front.cpp
-  src/app/app_photo.cpp
-  src/app/app_life.cpp
-  src/app/app_perf.cpp
-  src/app/window_state.cpp
   src/audio/mixer.cpp
   src/audio/decode.cpp
   src/audio/wav.cpp
   src/render/atlas.cpp
   src/platform/batch.cpp
+  src/platform/process.cpp
   src/render/blur.cpp
   src/render/camera.cpp
   src/render/depth.cpp
@@ -75,6 +63,7 @@ add_library(lc_engine STATIC
   src/render/sprites.cpp
   src/ui/font.cpp
   src/ui/hud.cpp
+  src/ui/map_screen.cpp
   src/ui/menus.cpp
   src/ui/painter.cpp
   src/ui/profiler.cpp
@@ -83,13 +72,8 @@ target_link_libraries(lc_engine PUBLIC lc_core lc_life SDL3::SDL3 PRIVATE lc_stb
 target_compile_definitions(lc_engine PUBLIC LC_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 lc_project_target(lc_engine)
 
-add_executable(laeticias-corner src/app/main.cpp)
-target_link_libraries(laeticias-corner PRIVATE lc_engine)
-lc_project_target(laeticias-corner)
-
 if(LC_TESTS)
   enable_testing()
-  add_subdirectory(tests)
 endif()
 
 # --- World data runtime (src/world/) -------------------------------------------------------------
@@ -99,6 +83,7 @@ add_library(lc_world STATIC
   src/world/atlas_pages.cpp
   src/world/content.cpp
   src/world/digest.cpp
+  src/world/figures.cpp
   src/world/geometry.cpp
   src/world/graph_file.cpp
   src/world/json_util.cpp
@@ -192,4 +177,108 @@ if(LC_TESTS)
     -P ${CMAKE_SOURCE_DIR}/tests/world_tools/digest_check.cmake)
   set_tests_properties(life_chains PROPERTIES SKIP_RETURN_CODE 77)
   add_test(NAME lifeinfo_summary COMMAND lifeinfo summary)
+endif()
+
+# --- World renderer and viewer (src/worldview/) --------------------------------------------------
+# Draws the prebuilt world: atlas pages streamed by set, cached ground cells and impostors,
+# depth-sorted landmark pieces, region themes and the overview; laeticias-world shows it headless.
+find_package(Threads REQUIRED)
+add_library(lc_worldview STATIC
+  src/worldview/actor_looks.cpp
+  src/worldview/camera.cpp
+  src/worldview/cell_cache.cpp
+  src/worldview/cells.cpp
+  src/worldview/city_sound.cpp
+  src/worldview/gather.cpp
+  src/worldview/order.cpp
+  src/worldview/overview.cpp
+  src/worldview/page_atlas.cpp
+  src/worldview/places.cpp
+  src/worldview/renderer.cpp
+  src/worldview/script.cpp
+  src/worldview/soundscape.cpp
+  src/worldview/theme.cpp
+  src/worldview/weather_field.cpp
+  src/worldview/viewer.cpp
+  src/worldview/world_sprites.cpp
+)
+target_link_libraries(lc_worldview PUBLIC lc_engine lc_world Threads::Threads)
+lc_project_target(lc_worldview)
+
+# The game: the app (main loop, input, scripts, bench, front door) over the engine and the world,
+# split from main() so tests can link it.
+add_library(lc_app STATIC
+  src/app/app.cpp
+  src/app/options.cpp
+  src/app/script.cpp
+  src/app/app_script.cpp
+  src/app/app_bench.cpp
+  src/app/app_benchmark.cpp
+  src/app/app_city.cpp
+  src/app/app_build.cpp
+  src/app/app_front.cpp
+  src/app/app_photo.cpp
+  src/app/app_life.cpp
+  src/app/app_perf.cpp
+  src/app/window_state.cpp
+  src/app/app_world.cpp
+)
+target_link_libraries(lc_app PUBLIC lc_worldview)
+lc_project_target(lc_app)
+
+add_executable(laeticias-corner src/app/main.cpp)
+target_link_libraries(laeticias-corner PRIVATE lc_app)
+lc_project_target(laeticias-corner)
+
+if(LC_TESTS)
+  add_subdirectory(tests)
+endif()
+
+add_executable(laeticias-world src/worldview/viewer_main.cpp)
+target_link_libraries(laeticias-world PRIVATE lc_worldview)
+lc_project_target(laeticias-world)
+
+if(LC_TESTS)
+  add_executable(lc_worldview_tests
+    tests/worldview_main.cpp
+    tests/worldview_depth.cpp
+    tests/worldview_logic.cpp
+    tests/worldview_render.cpp
+  )
+  target_link_libraries(lc_worldview_tests PRIVATE lc_worldview lc_doctest)
+  target_compile_definitions(lc_worldview_tests PRIVATE
+    LC_WORLDVIEW_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+  lc_project_target(lc_worldview_tests)
+  # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
+  target_compile_options(lc_worldview_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
+  set(LC_WORLDVIEW_ENV "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+  add_test(NAME worldview_unit COMMAND lc_worldview_tests)
+  set_tests_properties(worldview_unit PROPERTIES ENVIRONMENT "${LC_WORLDVIEW_ENV}")
+
+  # Scripted viewer runs (tests/scripts/world/*.lws): shots land in <build>/shots/world/, and an
+  # `expect` that does not hold fails the run.
+  file(GLOB LC_WORLD_SCRIPTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/scripts/world/*.lws")
+  foreach(script ${LC_WORLD_SCRIPTS})
+    get_filename_component(name ${script} NAME_WE)
+    add_test(NAME world_script_${name}
+      COMMAND laeticias-world --script ${script} --shots "${CMAKE_BINARY_DIR}/shots/world")
+    set_tests_properties(world_script_${name} PROPERTIES ENVIRONMENT "${LC_WORLDVIEW_ENV}")
+  endforeach()
+
+  # The bench cases at 1080p on the GPU path, windowless; budgets assert in optimised builds
+  # (sanitizer builds report). Skipped (exit 77) where no GPU renderer can be created.
+  if(LC_SANITIZE)
+    set(LC_WORLD_BUDGET --no-budget)
+  else()
+    set(LC_WORLD_BUDGET "")
+  endif()
+  add_test(NAME world_bench
+    COMMAND laeticias-world --bench --renderer opengl --size 1920x1080 ${LC_WORLD_BUDGET})
+  set(LC_WORLD_BENCH_ENV "")
+  if(LC_SANITIZE)
+    # The GPU driver behind the offscreen EGL path leaks allocations of its own.
+    set(LC_WORLD_BENCH_ENV "ASAN_OPTIONS=detect_leaks=0")
+  endif()
+  set_tests_properties(world_bench PROPERTIES SKIP_RETURN_CODE 77 RUN_SERIAL TRUE
+    ENVIRONMENT "${LC_WORLD_BENCH_ENV}")
 endif()
