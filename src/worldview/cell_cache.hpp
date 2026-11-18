@@ -38,6 +38,8 @@ public:
     }
     [[nodiscard]] static Vec2 pageSize(); // texels of a cache page
     void clear();
+    // Raises the memory budget (never lowers it).
+    void reserve(std::size_t budget);
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] int cached() const { return static_cast<int>(byKey_.size()); }
 

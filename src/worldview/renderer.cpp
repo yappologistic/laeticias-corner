@@ -515,7 +515,11 @@ void WorldView::drawCells(int level, const FRect& view, const Xform& x, double n
         if (si >= 0) composite_.push_back({k, from, si});
     }
     std::ranges::stable_sort(composite_, [&](const Composite& a, const Composite& b) {
-        return cells_.slot(a.slot).page < cells_.slot(b.slot).page;
+        const int sa = a.from.level - a.key.level;
+        const int sb = b.from.level - b.key.level;
+        const int pa = cells_.slot(a.slot).page;
+        const int pb = cells_.slot(b.slot).page;
+        return pa != pb ? pa < pb : sa < sb;
     });
     for (const Composite& c : composite_) {
         const CellSlot& s = cells_.slot(c.slot);
@@ -573,10 +577,11 @@ void WorldView::drawBackdrops(const FRect& view, const Xform& x, bool night) {
     }
 }
 
-void WorldView::wantSets(const FRect& view) {
-    // The sets of the regions sampled over the view grown by 64 tiles (world-tech §4.5).
+void WorldView::wantSets(const FRect& view, bool prefetch) {
+    // The sets of the regions sampled over the view, grown by 64 tiles at the native level
+    // (world-tech §4.5); impostors far out need only what they draw.
     const TileRect t = tilesUnder(view, iso_);
-    const int g = tuning::kNeededSetGrow;
+    const int g = prefetch ? tuning::kNeededSetGrow : 0;
     const TileRect r = TileRect{t.x0 - g, t.y0 - g, t.x1 + g, t.y1 + g}.clipped(map_.bounds());
     const int step = tuning::kNeededSetSpacing;
     std::vector<bool>& seen = setSeen_;
@@ -668,7 +673,11 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
                              light.ambient.b * grade.mul.b, 1};
 
     // Streaming.
-    if (lod != Lod::Overview) wantSets(view);
+    if (lod != Lod::Overview) wantSets(view, lod == Lod::Native);
+    // The cell cache holds what a frame needs at this window size, at least its stated budget.
+    cells_.reserve(static_cast<std::size_t>(
+        static_cast<double>(tuning::kCellBudget) *
+        std::max(1.0, static_cast<double>(screen.x * screen.y) / tuning::kCellBudgetArea)));
     pages_->update(now);
     while (!overview_->upload(renderer_) && !async_) {}
 

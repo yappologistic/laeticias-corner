@@ -115,7 +115,7 @@ private:
     void drawCells(int level, const FRect& view, const Xform& x, double now);
     void drawOverview(const Xform& x);
     void drawBackdrops(const FRect& view, const Xform& x, bool night);
-    void wantSets(const FRect& view);
+    void wantSets(const FRect& view, bool prefetch);
     void ensure(Target& t, int w, int h);
     [[nodiscard]] std::size_t targetBytes() const;
     void fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode);
