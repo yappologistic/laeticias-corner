@@ -303,12 +303,13 @@ def run(b, rids: list[str], preview: bool, write: bool) -> bool:
 def check_regions(b, world) -> int:
     """Sound (L9), look (L10), names and eras (L11) and lights (L12) errors in every committed
     region file, cities or not."""
-    from . import look, places, sound
+    from . import look, places, sound, soundplan
     files, families = sound.manifests(b.root)
     n = 0
     for f in sorted((b.root / "assets/regions").glob("*.json")):
         doc = json.loads(f.read_text())
         probs = [("L9",) + x for x in sound.check(doc, files, families)] + \
+                [("L9",) + x for x in soundplan.check_world(doc, soundplan.facts(world, doc["id"]))] + \
                 [("L10",) + x for x in look.check(doc)] + \
                 [("L11",) + x for x in places.check(doc)] + \
                 [("L12",) + x for x in lights.check(doc, world, b.cat)]

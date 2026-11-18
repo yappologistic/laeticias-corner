@@ -38,21 +38,52 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/mountain.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/world/mountain.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
+     "file": "amb/world/mountain.ogg"
     }
    ],
-   "loops": []
+   "loops": [],
+   "zones": [
+    {
+     "rect": [
+      327,
+      774,
+      337,
+      789
+     ],
+     "file": "amb/world/stream.ogg",
+     "gain": 0.8
+    },
+    {
+     "rect": [
+      327,
+      767,
+      332,
+      777
+     ],
+     "file": "amb/world/stream.ogg",
+     "gain": 0.8
+    },
+    {
+     "rect": [
+      348,
+      750,
+      357,
+      761
+     ],
+     "file": "amb/world/stream.ogg",
+     "gain": 0.8
+    },
+    {
+     "rect": [
+      352,
+      743,
+      361,
+      753
+     ],
+     "file": "amb/world/stream.ogg",
+     "gain": 0.8
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -211,7 +242,8 @@
     "sunrise": "sfx/athens/sting_sunrise.wav",
     "nightfall": "sfx/athens/sting_nightfall.wav",
     "storm_clear": "sfx/athens/sting_storm_clear.wav",
-    "rainbow": "sfx/athens/sting_rainbow.wav"
+    "rainbow": "sfx/athens/sting_rainbow.wav",
+    "season": "sfx/athens/sting_season.wav"
    },
    "wind": "wind.mountain",
    "weather": [
@@ -255,6 +287,18 @@
    },
    "calls": [
     {
+     "file": "sfx/world/cuckoo.wav",
+     "hours": [
+      "06:00",
+      "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
+     ]
+    },
+    {
      "file": "sfx/world/crow_1.wav",
      "hours": [
       "07:00",
@@ -262,17 +306,47 @@
      ]
     },
     {
-     "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
-     ],
+     "file": "sfx/world/owl_tawny.wav",
      "hours": [
-      "06:00",
-      "11:00"
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/wolves_far.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/stag_roar.wav",
+     "hours": [
+      "19:00",
+      "06:00"
+     ],
+     "months": [
+      "sep",
+      "oct"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
      ]
     }
    ],
    "voices": {
+    "athens.owl": [
+     "sfx/world/owl_tawny.wav"
+    ],
     "world.dog": [
      "sfx/world/dog_1.wav",
      "sfx/world/dog_2.wav"
@@ -289,7 +363,37 @@
      "sfx/world/sheep_2.wav"
     ]
    },
-   "waterfall": "waterfall"
+   "waterfall": "waterfall",
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
+   }
   },
   "look": {
    "phases": {
@@ -817,10 +921,6 @@
     },
     "wind": "wind.mountain",
     "exposure": 1.0,
-    "water": {
-     "family": "river",
-     "speed": "fast"
-    },
     "steps": {
      "surface": "earth",
      "files": [
@@ -1286,7 +1386,7 @@
     }
    ],
    "string": "season_turn.oct",
-   "sfx": "sfx/world/seam.wav"
+   "sfx": "sfx/world/leaves_skitter.wav"
   },
   {
    "id": "turn_winter_first_snow",
@@ -1308,7 +1408,10 @@
    "show": "weather",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.5
+   }
   },
   {
    "id": "lambing",

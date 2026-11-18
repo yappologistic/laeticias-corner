@@ -38,18 +38,7 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/mountain.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/world/mountain.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
+     "file": "amb/world/mountain.ogg"
     }
    ],
    "loops": [
@@ -57,6 +46,36 @@
      "item": "world.watchtower",
      "file": "amb/world/brazier.ogg",
      "when": "lit"
+    }
+   ],
+   "zones": [
+    {
+     "rect": [
+      243,
+      284,
+      249,
+      295
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      247,
+      370,
+      249,
+      376
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
     }
    ]
   },
@@ -203,7 +222,8 @@
     "nightfall": "sfx/parsa/sting_nightfall.wav",
     "storm_clear": "sfx/parsa/sting_storm_clear.wav",
     "rainbow": "sfx/parsa/sting_rainbow.wav",
-    "first_snow": "sfx/parsa/sting_first_snow.wav"
+    "first_snow": "sfx/parsa/sting_first_snow.wav",
+    "season": "sfx/parsa/sting_season.wav"
    },
    "wind": "wind.mountain",
    "weather": [
@@ -247,6 +267,18 @@
    },
    "calls": [
     {
+     "file": "sfx/world/cuckoo.wav",
+     "hours": [
+      "06:00",
+      "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
+     ]
+    },
+    {
      "file": "sfx/world/crow_1.wav",
      "hours": [
       "07:00",
@@ -254,13 +286,61 @@
      ]
     },
     {
-     "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/wolves_far.wav",
+     "hours": [
+      "20:00",
+      "05:00"
      ],
+     "months": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/stag_roar.wav",
+     "hours": [
+      "19:00",
+      "06:00"
+     ],
+     "months": [
+      "sep",
+      "oct"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_call.wav",
      "hours": [
       "06:00",
-      "11:00"
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
      ]
     }
    ],
@@ -287,6 +367,36 @@
      "sfx/world/sheep_1.wav",
      "sfx/world/sheep_2.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
    }
   },
   "look": {
@@ -1477,7 +1587,7 @@
     }
    ],
    "string": "season_turn.autumn",
-   "sfx": "sfx/world/seam.wav"
+   "sfx": "sfx/world/leaves_skitter.wav"
   },
   {
    "id": "turn_oct_flocks_down",
@@ -1524,7 +1634,10 @@
    "show": "weather",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.5
+   }
   },
   {
    "id": "flocks_up",
@@ -1990,7 +2103,7 @@
     }
    },
    "sound": {
-    "oneshot": "sfx/world/sickle.wav"
+    "loop": "amb/world/ploughing.ogg"
    }
   },
   {
@@ -2059,6 +2172,7 @@
     }
    },
    "sound": {
+    "loop": "amb/world/reaping.ogg",
     "oneshot": "sfx/world/sickle.wav"
    }
   },

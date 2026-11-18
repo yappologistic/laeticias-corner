@@ -38,18 +38,7 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
+     "file": "amb/world/sea.ogg"
     }
    ],
    "loops": []
@@ -157,7 +146,8 @@
     "sunrise": "sfx/rome/sting_sunrise.wav",
     "nightfall": "sfx/rome/sting_nightfall.wav",
     "storm_clear": "sfx/rome/sting_storm_clear.wav",
-    "rainbow": "sfx/rome/sting_rainbow.wav"
+    "rainbow": "sfx/rome/sting_rainbow.wav",
+    "season": "sfx/rome/sting_season.wav"
    },
    "wind": "wind.sea",
    "weather": [],
@@ -196,6 +186,30 @@
      "hours": [
       "06:00",
       "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/sail_flap.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct"
      ]
     }
    ],
@@ -559,7 +573,7 @@
     "wind": "wind.sea",
     "exposure": 1.0,
     "water": {
-     "family": "sea.coast"
+     "family": "sea.rocks"
     },
     "steps": {
      "surface": "earth",
@@ -868,7 +882,10 @@
     }
    ],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/heat.ogg",
+    "gain": 0.4
+   }
   },
   {
    "id": "turn_autumn_storms_return",

@@ -39,18 +39,7 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
+     "file": "amb/world/river.ogg"
     }
    ],
    "loops": [
@@ -117,7 +106,18 @@
      null,
      null,
      null
-    ]
+    ],
+    "ambience": {
+     "beds": [
+      {
+       "file": "amb/world/flood.ogg",
+       "months": [
+        "apr",
+        "may"
+       ]
+      }
+     ]
+    }
    },
    "summer": {
     "grade": [
@@ -206,7 +206,8 @@
     "nightfall": "sfx/parsa/sting_nightfall.wav",
     "storm_clear": "sfx/parsa/sting_storm_clear.wav",
     "rainbow": "sfx/parsa/sting_rainbow.wav",
-    "first_snow": "sfx/parsa/sting_first_snow.wav"
+    "first_snow": "sfx/parsa/sting_first_snow.wav",
+    "season": "sfx/parsa/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -244,25 +245,72 @@
    },
    "calls": [
     {
-     "file": "sfx/world/cranes.wav",
-     "seasons": [
-      "autumn",
-      "spring"
-     ],
-     "hours": [
-      "06:00",
-      "18:00"
-     ]
-    },
-    {
      "file": "sfx/world/stork_clatter.wav",
-     "seasons": [
-      "spring",
-      "summer"
-     ],
      "hours": [
       "07:00",
       "17:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/cranes.wav",
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "months": [
+      "mar",
+      "oct",
+      "nov"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/geese_over.wav",
+     "hours": [
+      "07:00",
+      "17:00"
+     ],
+     "months": [
+      "nov",
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
      ]
     }
    ],
@@ -271,6 +319,32 @@
      "sfx/world/dog_1.wav",
      "sfx/world/dog_2.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_river.ogg",
+     "dusk": "amb/world/dusk_water.ogg",
+     "night": "amb/world/night_water.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_river.ogg",
+     "dusk": "amb/world/dusk_water.ogg",
+     "night": "amb/world/night_water.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
    }
   },
   "look": {
@@ -2329,7 +2403,8 @@
     }
    },
    "sound": {
-    "oneshot": "sfx/world/amphora.wav"
+    "loop": "amb/world/oars.ogg",
+    "oneshot": "sfx/world/rope.wav"
    }
   },
   {
@@ -3232,7 +3307,11 @@
    ],
    "sfx": "sfx/world/step_earth_2.wav",
    "string": "harvest_in",
-   "zone": "east_bank"
+   "zone": "east_bank",
+   "ambience": {
+    "file": "amb/world/reaping.ogg",
+    "gain": 0.75
+   }
   },
   {
    "id": "winter_fires",
@@ -3533,7 +3612,10 @@
     }
    ],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/heat.ogg",
+    "gain": 0.4
+   }
   },
   {
    "id": "turn_autumn_date_harvest",
