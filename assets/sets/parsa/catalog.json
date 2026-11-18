@@ -1331,7 +1331,8 @@
    "layers": [
     "base"
    ],
-   "height": 4
+   "height": 4,
+   "walkable": true
   },
   {
    "id": "parsa.p_dovecote",
@@ -1394,7 +1395,8 @@
    "layout": "rotate",
    "count": 2,
    "on": "land",
-   "height": 52
+   "height": 74,
+   "walkable": true
   },
   {
    "id": "parsa.fort_wall",
@@ -1440,7 +1442,7 @@
    "on": "land",
    "height": 30,
    "rise": 1,
-   "axis": "x"
+   "axis": "y"
   },
   {
    "id": "parsa.drain_outfall",
@@ -2920,9 +2922,9 @@
    }
   },
   {
-   "id": "parsa.baradkama",
-   "name": "Baradkama, treasurer",
-   "sprite": "figure/parsa.baradkama",
+   "id": "parsa.maus",
+   "name": "Mauš, treasurer",
+   "sprite": "figure/parsa.maus",
    "anims": {
     "move": {
      "fps": 8
