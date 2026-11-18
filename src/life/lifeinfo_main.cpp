@@ -95,40 +95,8 @@ int main(int argc, char** argv) {
         for (const std::string& p : session->life->data.problems) std::printf("%s\n", p.c_str());
         for (const std::string& p : session->city->chains().problems())
             (void)std::printf("%s\n", p.c_str());
-        // Road edges walkers cannot use: a course tile off the walkable ground, or a step no
-        // walker could make (a level change without stairs). Left out of walking, kept for
-        // worldgen's distances.
-        const world::WorldMap& m = *session->world->map;
-        for (std::size_t r = 0; r < session->life->data.regions.size(); ++r) {
-            const int pi = session->life->pathsOf[r];
-            if (pi < 0) continue;
-            const RegionPaths& rp = session->life->paths[static_cast<std::size_t>(pi)];
-            if (rp.blockedEdges() == 0) continue;
-            for (std::size_t e = 0; e < rp.edges().size(); ++e) {
-                const RegionPaths::Edge& ed = rp.edges()[e];
-                if (!ed.blocked) continue;
-                const auto c = rp.course(static_cast<int>(e));
-                std::array<world::WalkStep, 4> steps{};
-                for (std::size_t k = 0; k < c.size(); ++k) {
-                    const TilePos t = c[k].pos();
-                    bool legal = true;
-                    if (k > 0) {
-                        const int n = m.walkNeighbours(c[k - 1].pos(), steps);
-                        legal = std::any_of(steps.begin(), steps.begin() + n,
-                                            [&](const world::WalkStep& w) { return w.to == t; });
-                    }
-                    if (!m.walkable(t) || !legal) {
-                        (void)std::printf("%s: graph edge %s - %s: %s at grid (%d, %d), level %d\n",
-                                          session->life->data.regions[r].id.c_str(),
-                                          rp.nodeId(ed.a).c_str(), rp.nodeId(ed.b).c_str(),
-                                          !m.walkable(t) ? "course over unwalkable ground"
-                                                         : "a step no walker can make",
-                                          t.x, t.y, m.level(t));
-                        break;
-                    }
-                }
-            }
-        }
+        for (const std::string& p : walkProblems(*session->life))
+            (void)std::printf("%s\n", p.c_str());
         return 0;
     }
     if (cmd == "chains") {

@@ -170,6 +170,33 @@ TEST_CASE("life: every region's life compiles, and what does not resolve is know
     }
 }
 
+TEST_CASE("life: the walk data's faults are named with their tiles, and nobody is sent there") {
+    // Road edges walkers cannot use and slot spots off the walkable ground or out of reach: each
+    // named with its grid tile (for worldgen), each routed around (edges left out of walking,
+    // such spots never chosen: resolve() stands only where the region's walkers reach).
+    const std::vector<std::string> faults = walkProblems(lifeWorld());
+    for (const std::string& f : faults) {
+        CAPTURE(f);
+        CHECK(f.find("at grid (") != std::string::npos);
+    }
+    MESSAGE(faults.size() << " walk-data faults");
+    CityLife city(lifeWorld(), 3);
+    for (const char* place : {"forum", "agora", "terrace"}) {
+        city.setFocus(centreOf(place));
+        LifeClock clock = LifeClock::at(1, 10.0, -1);
+        city.settle(clock);
+        step(city, clock, 600);
+        city.forEachInfo([&](const CityLife::Info& in) {
+            if (in.spot < 0) return;
+            const world::WorldSlot& s =
+                lifeWorld().map().slots()[static_cast<std::size_t>(in.spot)];
+            CAPTURE(s.tile.x);
+            CAPTURE(s.tile.y);
+            CHECK(lifeWorld().map().walkable(in.tile));
+        });
+    }
+}
+
 TEST_CASE("life: courses are worldgen's staircases, tile for tile") {
     const int cols = lifeWorld().map().height();
     const auto grid = [&](int c, int r) { return TilePos{r, cols - 1 - c}; };
