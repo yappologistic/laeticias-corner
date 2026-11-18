@@ -201,6 +201,8 @@ bool App::init() {
     // The measuring modes build a world of their own and never touch the player's saves.
     if (!measuring()) loadOrStart();
     createWorldView();
+    // The cities' life runs with the world (src/life/): the camera is its active area.
+    if (worldView_) (void)openCity();
     logo_ = atlas_->sprite(atlas_->resolve("title/logo", atlas_->placeholderBox()));
     if (!opts_.headless && !opts_.benchmark && !profile_.vsync &&
         !SDL_SetRenderVSync(renderer_.get(), 0))
@@ -1674,9 +1676,8 @@ int App::run() {
     if (opts_.benchmark) return runBenchmark();
     if (opts_.soak > 0) return runSoak();
     if (opts_.focus && openCity()) {
-        const auto f = life::parseFocus(*city_->life, *opts_.focus);
-        if (f) city_->city->setFocus(*f);
-        if (!f) SDL_Log("city life: unknown focus %s", opts_.focus->c_str());
+        cityFocus_ = life::parseFocus(*city_->life, *opts_.focus);
+        if (!cityFocus_) SDL_Log("city life: unknown focus %s", opts_.focus->c_str());
     }
     actors_.populate(actorEnv());
     refreshNooks();
@@ -1731,6 +1732,7 @@ int App::run() {
         }
         double simMs = 0;
         double condMs = 0;
+        double cityMs = 0;
         // Menus stop the corner (pause and the front door); the title's camera drifts on.
         const bool blocked = menus_.blocking();
         if (blocked) {
@@ -1742,6 +1744,7 @@ int App::run() {
             step(static_cast<float>(tuning::kStepSeconds));
             simMs += actorMs_ + lifeMs_ + progressMs_;
             condMs += progressMs_;
+            cityMs += cityMs_;
         }
         if (!blocked)
             updateTour(static_cast<float>(steps) * static_cast<float>(tuning::kStepSeconds));
@@ -1829,6 +1832,7 @@ int App::run() {
         fs.presentMs = static_cast<float>(msBetween(tPresent, t1));
         fs.simMs = static_cast<float>(simMs);
         fs.condMs = static_cast<float>(condMs);
+        fs.cityMs = static_cast<float>(cityMs);
         fs.uiMs = static_cast<float>(uiMs + hudDrawMs_);
         fs.steps = steps;
         recordFrame(fs);

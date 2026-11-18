@@ -251,9 +251,11 @@ private:
     void pushButton(Vec2 px, bool down, const ScriptCommand& c);
     void pushKey(std::string_view combo, bool down);
     std::optional<std::string> check(const ScriptCommand& c);
-    // City life (src/life/): opened on demand by --focus or a script, stepped with the clock.
+    // City life (src/life/) over the game's world, opened with it: the camera's view is its
+    // active area (or a fixed focus from --focus or a script), stepped with the game's clock.
     bool openCity();
     [[nodiscard]] life::LifeClock cityClock() const;
+    [[nodiscard]] TileRect cityView() const;
     void stepCity(float dt);
     std::optional<std::string> checkCity(std::span<const std::string> a);
     bool shot(const fs::path& file);
@@ -388,7 +390,9 @@ private:
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
     std::unique_ptr<life::LifeSession> city_;
-    std::uint64_t seed_; // the game's one seed; every random stream derives from it
+    std::optional<TilePos> cityFocus_; // a fixed active area instead of the camera's
+    bool cityOff_ = false;             // `set city off`: nobody about
+    std::uint64_t seed_;               // the game's one seed; every random stream derives from it
     Rng rng_;
     Actors actors_;
     std::vector<VisitorGate> gates_; // per visitor, from the progress loop
@@ -410,6 +414,7 @@ private:
     // Per-system times of the last step (ms), kept measurable for the bench and a profiler.
     double actorMs_ = 0;    // actors
     double lifeMs_ = 0;     // weather, events, speech and sound around them
+    double cityMs_ = 0;     // city life's last step (src/life/)
     double progressMs_ = 0; // conditions, wishes, nooks, rare visitors
     int ripeDay_ = -1;      // the day a bed first ripened (her "something's ripe" line)
     double ripeSince_ = -1; // when, in play seconds

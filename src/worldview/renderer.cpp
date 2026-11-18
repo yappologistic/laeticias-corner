@@ -361,7 +361,8 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     std::ranges::stable_sort(shadows_, {}, &std::pair<std::uint16_t, std::uint32_t>::first);
     for (const auto& [page, i] : shadows_)
         ok &= put(*g.elems[i].look->shadow, g.elems[i].anchor, x, kWhite, SDL_BLENDMODE_BLEND);
-    const bool any = !shadows_.empty();
+    drawActorShadows(x);
+    const bool any = !shadows_.empty() || !actorDraw_.empty();
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, onto.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
@@ -920,7 +921,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const float s = camera.scale;
     const Lod lod = lodFor(s);
     stats_.lod = lod;
-    const float res = lod == Lod::Native    ? 1.0f
+    // At 2x and 3x the native level is drawn at the zoom's resolution: sprites stay whole art
+    // pixels, while moving things are placed to the window's pixel.
+    const float res = lod == Lod::Native    ? std::max(1.0f, std::floor(s + 1e-3f))
                       : lod == Lod::Half    ? 0.5f
                       : lod == Lod::Quarter ? 0.25f
                                             : std::min(overview().image().scale, s);
@@ -930,6 +933,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The target's origin sits on its own pixel grid, so cached cells land on whole texels.
     const float px = 1.0f / res;
     const Vec2 origin{std::floor(topLeft.x / px) * px - px, std::floor(topLeft.y / px) * px - px};
+    res_ = res;
     viewW_ = static_cast<int>(std::ceil(screen.x / s * res)) + 3;
     viewH_ = static_cast<int>(std::ceil(screen.y / s * res)) + 3;
     ensure(view_, viewW_, viewH_);
@@ -997,8 +1001,11 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     if (lod == Lod::Native) {
         if (!camera.flying) updateRegion(view, true);
         stats_.regionElements = static_cast<int>(region_.elems.size());
+        prepareActors(view, lod);
         (void)drawShadows(region_, view, xf, shadow_, view_);
-        for (const std::uint32_t i : region_.order) {
+        for (std::size_t k = 0; k < region_.order.size(); ++k) {
+            for (const std::uint32_t a : merge_.before(k)) drawActor(actorOf_[a], xf);
+            const std::uint32_t i = region_.order[k];
             if (!region_.items[i].screen.overlaps(view)) {
                 ++stats_.spritesCulled;
                 continue;
@@ -1014,9 +1021,18 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
             ++stats_.spritesDrawn;
             if (e.look != nullptr && e.look->look == Look::Placeholder) ++stats_.placeholders;
         }
+        for (const std::uint32_t a : merge_.before(region_.order.size()))
+            drawActor(actorOf_[a], xf);
+    } else if (lod != Lod::Overview) {
+        // Coarser levels have no live objects of their own: people go over the impostors.
+        prepareActors(view, lod);
+        for (const std::uint32_t a : coarse_) drawActor(a, xf);
+    } else {
+        actorCount_ = 0;
+        actorDraw_.clear();
     }
     batch_.flush();
-    // Coarser levels have no live objects of their own: the home's go over the impostors.
+    // The home's objects go over the impostors at the coarser levels.
     if (!homeDrawn && hooks.objects && home) hooks.objects(frame);
     if (weather_ != nullptr && (lod == Lod::Native || lod == Lod::Half)) drawRain(view, xf, now);
     // Grading, then what glows (drawn after it, additively).
@@ -1108,6 +1124,7 @@ void WorldView::updateRegion(const FRect& view, bool needed) {
             std::swap(region_, next_);
             regionRect_ = pendingRect_;
             stats_.regionRebuilt = true;
+            mergeIndexed_ = false;
         }
     }
     if (needed && !regionRect_.intersects(need)) {
@@ -1115,12 +1132,129 @@ void WorldView::updateRegion(const FRect& view, bool needed) {
         regionRect_ = grow(tuning::kRegionGrow);
         prep_->now(regionRect_, all, region_);
         stats_.regionRebuilt = true;
+        mergeIndexed_ = false;
     } else if (!regionPending_ && !regionRect_.contains(grow(tuning::kRegionEarly))) {
         pendingRect_ = grow(tuning::kRegionGrow);
         prep_->request({kRegionTag, pendingRect_, all});
         regionPending_ = true;
         // Synchronous gathering finishes at once.
         if (!async_) updateRegion(view, needed);
+    }
+}
+
+void WorldView::setLife(const life::CityLife* city) {
+    life_ = city;
+    if (city != nullptr && !looks_)
+        looks_ = std::make_unique<ActorLooks>(*pages_, city->lifeWorld().data, map_.content());
+    actorBuf_.resize(tuning::kActorBuffer);
+    actorCount_ = 0;
+}
+
+void WorldView::prepareActors(const FRect& view, Lod lod) {
+    const Uint64 t0 = SDL_GetPerformanceCounter();
+    prepareActorsTimed(view, lod);
+    stats_.actorMs = static_cast<double>(SDL_GetPerformanceCounter() - t0) * 1000.0 /
+                     static_cast<double>(SDL_GetPerformanceFrequency());
+}
+
+void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
+    actorDraw_.clear();
+    mergeActors_.clear();
+    actorOf_.clear();
+    coarse_.clear();
+    actorCount_ = 0;
+    if (lod == Lod::Native && !mergeIndexed_) {
+        merge_.index(region_.items, region_.order, tuning::kActorMergeCell);
+        mergeIndexed_ = true;
+    }
+    if (life_ == nullptr || !looks_) {
+        if (lod == Lod::Native)
+            merge_.plan(
+                region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; },
+                [](std::uint32_t) { return false; });
+        return;
+    }
+    TileRect tiles = tilesUnder(view, iso_);
+    const int m = tuning::kActorMargin;
+    tiles =
+        TileRect{tiles.x0 - m, tiles.y0 - m, tiles.x1 + m, tiles.y1 + m * 2}.clipped(map_.bounds());
+    actorCount_ = life_->gather(tiles, lifeAlpha_, actorBuf_);
+    const float px = 1.0f / res_;
+    for (std::size_t i = 0; i < actorCount_; ++i) {
+        const life::DrawActor& d = actorBuf_[i];
+        ActorDraw ad;
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        const auto look = hole_.tiles.contains(t) ? std::nullopt : looks_->resolve(d);
+        if (look) {
+            const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
+            // Whole pixels of the target, so sprites stay crisp.
+            ad.anchor = {std::round(w.x / px) * px, std::round((w.y - d.z) / px) * px};
+            ad.sprite = look->sprite;
+            ad.mirror = look->mirror;
+            const float a = d.alpha * (d.translucent ? tuning::kMemoryAlpha : 1.0f);
+            ad.colour = {1, 1, 1, a};
+            if (d.goods >= 0 && d.goodsCount > 0) {
+                ad.goods = looks_->goods(d.goods, 0);
+                ad.goodsAt = {ad.anchor.x + look->carry.x, ad.anchor.y + look->carry.y};
+            }
+            ad.depth = d.pos.x + d.pos.y;
+        }
+        actorDraw_.push_back(ad);
+        if (ad.sprite == nullptr) continue;
+        const SpriteRef& s = *ad.sprite;
+        const float x0 = ad.anchor.x - (ad.mirror ? s.w - s.ox : s.ox);
+        FRect box{x0, ad.anchor.y - s.oy, x0 + s.w, ad.anchor.y - s.oy + s.h};
+        if (!box.overlaps(view)) continue;
+        if (ad.goods != nullptr) box.y0 = std::min(box.y0, ad.goodsAt.y - ad.goods->oy);
+        if (lod != Lod::Native) {
+            // Under a roof or a colonnade there is nothing to see from this far.
+            if (d.item < 0 || d.floor) coarse_.push_back(static_cast<std::uint32_t>(i));
+            continue;
+        }
+        const float f = tuning::kActorFoot;
+        mergeActors_.push_back(
+            {FRect{d.pos.x - f, d.pos.y - f, d.pos.x + f, d.pos.y + f}, box, s.page});
+        actorOf_.push_back(static_cast<std::uint32_t>(i));
+    }
+    if (lod != Lod::Native) {
+        std::ranges::sort(coarse_, {}, [&](std::uint32_t i) { return actorDraw_[i].depth; });
+        return;
+    }
+    merge_.plan(
+        region_.items, mergeActors_,
+        [&](std::uint32_t e, std::uint32_t a) {
+            const Elem& el = region_.elems[e];
+            const life::DrawActor& d = actorBuf_[actorOf_[a]];
+            const FRect& foot = region_.items[e].foot;
+            const bool on =
+                d.pos.x >= foot.x0 && d.pos.x < foot.x1 && d.pos.y >= foot.y0 && d.pos.y < foot.y1;
+            // The raised tile someone stands on is under them.
+            if (el.ground) return on ? -1 : 0;
+            if (el.home || el.figure || d.item < 0 || el.item != static_cast<std::uint32_t>(d.item))
+                return 0;
+            // On an item's walk tile: its floor (and an unsplit deck) is under the feet; a
+            // landmark piece over the tile (a roof, a lintel, a gateway) is over the head.
+            if (el.floor || el.piece < 0) return -1;
+            return on ? 1 : 0;
+        },
+        [&](std::uint32_t e) { return region_.items[e].screen.overlaps(view); });
+}
+
+void WorldView::drawActor(std::uint32_t i, const Xform& x) {
+    const ActorDraw& a = actorDraw_[i];
+    if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror)) ++stats_.actorsDrawn;
+    if (a.goods != nullptr) (void)put(*a.goods, a.goodsAt, x, a.colour, SDL_BLENDMODE_BLEND);
+}
+
+void WorldView::drawActorShadows(const Xform& x) {
+    // Soft ovals under the feet in the shared shadow layer: they merge with the buildings'.
+    const float rx = tuning::kActorShadowW * iso_.tileW() * 0.5f / (blob_.w * 0.5f);
+    for (const std::uint32_t i : actorOf_) {
+        const ActorDraw& a = actorDraw_[i];
+        const SDL_FColor c{0, 0, 0, tuning::kActorShadow * a.colour.a};
+        putSprite(batch_, blob_, a.anchor, x, c, SDL_BLENDMODE_BLEND, false, a.anchor,
+                  {rx, rx * 0.5f});
     }
 }
 

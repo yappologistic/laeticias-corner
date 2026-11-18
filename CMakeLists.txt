@@ -184,6 +184,7 @@ endif()
 # depth-sorted landmark pieces, region themes and the overview; laeticias-world shows it headless.
 find_package(Threads REQUIRED)
 add_library(lc_worldview STATIC
+  src/worldview/actor_looks.cpp
   src/worldview/camera.cpp
   src/worldview/cell_cache.cpp
   src/worldview/cells.cpp

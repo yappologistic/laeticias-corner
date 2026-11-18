@@ -800,12 +800,18 @@ bool App::scriptStep() {
                 if (!found) return fail("no " + c.args[1] + " to look at");
             } else if (c.args[0] == "city") {
                 if (c.args[1] == "off") {
-                    city_.reset();
+                    cityOff_ = true;
+                    cityFocus_.reset();
+                } else if (c.args[1] == "camera") {
+                    cityOff_ = false;
+                    cityFocus_.reset();
                 } else {
                     if (!openCity()) return fail("city life: no world");
                     const auto f = life::parseFocus(*city_->life, c.args[1]);
                     if (!f) return fail("city life: unknown place " + c.args[1]);
-                    city_->city->setFocus(*f);
+                    cityOff_ = false;
+                    cityFocus_ = *f;
+                    city_->city->setView(cityView());
                     city_->city->settle(cityClock());
                 }
             } else if (c.args[0] == "city_dump") {

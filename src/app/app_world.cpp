@@ -89,6 +89,7 @@ void App::createWorldView() {
                                                         measuring() || !opts_.headless,
                                                         worldview::Hole{home.rect, box}, figures_);
     worldView_->setWeather(viewWeather_.get());
+    if (city_) worldView_->setLife(city_->city.get());
     setupMap();
 }
 
@@ -127,6 +128,7 @@ void App::drawScene(const FrameParams& p, SDL_Texture* out) {
     v.scale = p.camera->scale();
     v.screen = p.screen;
     if (!SDL_SetRenderTarget(renderer_.get(), out)) SDL_Log("render: %s", SDL_GetError());
+    worldView_->setLifeAlpha(alpha_);
     worldView_->draw(v, clock_.time(), p.light, frameDt_, static_cast<double>(simTime_), hooks_);
 }
 

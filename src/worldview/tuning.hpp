@@ -2,6 +2,8 @@
 // The world renderer's and viewer's tunable numbers, in one place (budgets from CLAUDE.md
 // "Performance" and docs/design/world-tech.md §4.14).
 
+#include "core/iso.hpp"
+
 #include <array>
 #include <cstddef>
 #include <string_view>
@@ -110,6 +112,18 @@ inline constexpr std::array<float, 3> kHorizonHaze{0.70f, 0.79f, 0.84f};
 inline constexpr float kFlatJitter = 0.04f;       // per-tile brightness variation of flat terrain
 inline constexpr float kPlaceholderHeight = 4;    // px: a low slab over the footprint
 inline constexpr float kPlaceholderAlpha = 0.55f; // the land shows through it
+
+// City life on screen (src/life/).
+inline constexpr float kActorMoving = 0.05f;  // tiles/s: faster than this walks by distance
+inline constexpr float kActorWalkPace = 0.9f; // tiles/s at which walk frames play at the art's fps
+inline constexpr Vec2 kCarryAt{3, -31};       // px from the feet: goods in hand, no carry point
+inline constexpr float kActorFoot = 0.2f;     // half the square round the feet, tiles
+inline constexpr int kActorMargin = 3;        // tiles beyond the view gathered (sprites overhang)
+inline constexpr std::size_t kActorBuffer = 2048; // actors gathered per frame at most
+inline constexpr float kActorShadowW = 0.42f;     // the soft shadow under the feet, tiles wide
+inline constexpr float kActorShadow = 0.75f;      // its strength in the shadow layer
+inline constexpr float kMemoryAlpha = 0.5f;       // memories are translucent
+inline constexpr float kActorMergeCell = 128.0f;  // the merge's screen grid, world px
 
 // Fallback shadow opacity when no resident page measured one.
 inline constexpr float kShadowOpacity = 0.4f;

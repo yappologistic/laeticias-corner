@@ -81,6 +81,7 @@ FrameSample App::benchFrame() {
     f.frameMs = static_cast<float>(msBetween(t0, t1));
     f.cpuMs = static_cast<float>(msBetween(t0, tSubmit));
     f.simMs = static_cast<float>(actorMs_ + lifeMs_ + progressMs_);
+    f.cityMs = static_cast<float>(cityMs_);
     f.condMs = static_cast<float>(progressMs_);
     f.uiMs = static_cast<float>(msBetween(t0, tUpdate)); // the update half: step and interface
     f.sceneMs = static_cast<float>(msBetween(tUpdate, tSubmit)); // the draw submission half

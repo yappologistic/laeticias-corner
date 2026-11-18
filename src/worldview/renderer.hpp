@@ -13,12 +13,14 @@
 // around the view. Region themes grade the view with the clock and cross-fade by position.
 
 #include "core/clock.hpp"
+#include "life/city.hpp"
 #include "platform/batch.hpp"
 #include "render/atlas.hpp"
 #include "render/draw.hpp"
 #include "ui/font.hpp"
 #include "world/figures.hpp"
 #include "world/loader.hpp"
+#include "worldview/actor_looks.hpp"
 #include "worldview/camera.hpp"
 #include "worldview/cell_cache.hpp"
 #include "worldview/gather.hpp"
@@ -35,6 +37,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -54,6 +57,8 @@ struct FrameStats {
     int cellsCached = 0;
     int cellsPending = 0; // visible cells still to build (shown from a coarser level)
     int regionElements = 0;
+    int actorsDrawn = 0; // city life's people, animals, carts and ships
+    double actorMs = 0;  // gathering, resolving and merging them
     bool regionRebuilt = false;
     std::size_t cellBytes = 0;
     std::size_t targetBytes = 0;
@@ -164,6 +169,15 @@ public:
     [[nodiscard]] bool overviewBuilt() const { return !overview_ || overview_->built(); }
     // The hole's tiles changed in the map (its rim is drawn into the cells): redraw them.
     void holeChanged();
+    // City life drawn from now on, in the world's painter's order (null: none). Its looks are
+    // resolved on the first call. `alpha` places actors between the last two simulation steps.
+    void setLife(const life::CityLife* city);
+    void setLifeAlpha(float alpha) { lifeAlpha_ = alpha; }
+    [[nodiscard]] const ActorLooks* actorLooks() const { return looks_.get(); }
+    // The actors drawn in the last frame.
+    [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
+        return std::span(actorBuf_).first(actorCount_);
+    }
 
 private:
     struct Target {
@@ -201,6 +215,12 @@ private:
     void ensure(Target& t, int w, int h);
     [[nodiscard]] std::size_t targetBytes() const;
     void fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode);
+    // City life: this frame's actors gathered, resolved and (at the native level) merged into
+    // the region's order; drawn one by one at their turns.
+    void prepareActors(const FRect& view, Lod lod);
+    void prepareActorsTimed(const FRect& view, Lod lod);
+    void drawActor(std::uint32_t i, const Xform& x);
+    void drawActorShadows(const Xform& x);
     [[nodiscard]] float shadowOpacity() const;
 
     SDL_Renderer* renderer_;
@@ -250,6 +270,7 @@ private:
     Target half_; // impostor downsampling
     int viewW_ = 0;
     int viewH_ = 0;
+    float res_ = 1; // target px per world px this frame
 
     // The native level's region: elements around the view in draw order, and the next one.
     std::unique_ptr<Prep> prep_;
@@ -287,6 +308,27 @@ private:
         bool valid = false;
     };
     Present present_;
+
+    const life::CityLife* life_ = nullptr;
+    std::unique_ptr<ActorLooks> looks_;
+    float lifeAlpha_ = 1;
+    std::vector<life::DrawActor> actorBuf_;
+    std::size_t actorCount_ = 0;
+    struct ActorDraw {
+        const SpriteRef* sprite = nullptr;
+        Vec2 anchor; // world px: the feet
+        bool mirror = false;
+        SDL_FColor colour{1, 1, 1, 1};
+        const SpriteRef* goods = nullptr;
+        Vec2 goodsAt;
+        float depth = 0;
+    };
+    std::vector<ActorDraw> actorDraw_;
+    std::vector<MergeActor> mergeActors_;
+    std::vector<std::uint32_t> actorOf_; // merge entry -> actorDraw_/actorBuf_ index
+    std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, back to front
+    ActorMerge merge_;
+    bool mergeIndexed_ = false;
 
     // Backdrop sprites by region (day, night), resolved at load; empty when the set has none.
     std::vector<std::array<std::vector<SpriteRef>, 2>> backdrops_;

@@ -64,6 +64,9 @@ void App::recordFrame(FrameSample& s) {
         s.pageMiB = static_cast<float>(static_cast<double>(ws.pages.bytes) / 1048576.0);
         s.pageBudgetMiB = static_cast<float>(static_cast<double>(ws.pages.budget) / 1048576.0);
         s.missingArt = worldView_->missingArt();
+        s.crowdMs = static_cast<float>(ws.actorMs);
+        s.cityDrawn = ws.actorsDrawn;
+        s.cityLive = city_ ? city_->city->liveCount() : 0;
     }
     const std::size_t worldBytes = worldView_ ? worldView_->stats().textureBytes() : 0;
     s.textureMiB =

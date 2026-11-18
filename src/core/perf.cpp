@@ -50,10 +50,11 @@ std::size_t perfLine(std::int64_t frame, const FrameSample& s, std::span<char> o
     const auto r = std::format_to_n(
         out.data(), static_cast<std::ptrdiff_t>(out.size()),
         "{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{},{},{},{},{},{},{},"
-        "{:.1f},{:.1f}",
+        "{:.1f},{:.1f},{:.3f},{:.3f},{},{}",
         frame, s.frameMs, s.cpuMs, s.gpuMs, s.presentMs, s.simMs, s.condMs, s.sceneMs, s.uiMs,
         s.audioLoad, s.steps, s.drawCalls, s.spritesDrawn, s.spritesCulled, s.actorsLive,
-        s.actorsAbstract, s.chunksCached, s.textureMiB, s.totalMiB);
+        s.actorsAbstract, s.chunksCached, s.textureMiB, s.totalMiB, s.cityMs, s.crowdMs, s.cityLive,
+        s.cityDrawn);
     return std::min(static_cast<std::size_t>(r.size), out.size());
 }
 
