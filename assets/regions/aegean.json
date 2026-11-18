@@ -522,10 +522,11 @@
     {
      "actor": "world.gull",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 1.5
     }
    ],
    "name": "The open sea",
+   "area": "sea",
    "sound": {
     "surfaces": {
      "water": 1.0
@@ -689,6 +690,84 @@
    0.5,
    0.5,
    0.5
+  ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
   ],
   "daytime_hot": [
    0,
@@ -876,6 +955,139 @@
     "file": "amb/world/ship.ogg",
     "gain": 0.8
    }
+  },
+  {
+   "id": "dolphins",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "10:00",
+     "10:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "apr",
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.dolphin"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "dolphins",
+   "sfx": "sfx/world/gull.wav"
+  },
+  {
+   "id": "meltemi_afternoon",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "14:00",
+     "14:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "meltemi_afternoon",
+   "sfx": "sfx/world/gust_front.wav",
+   "ambience": {
+    "file": "amb/world/wind_sea_3.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "tunny_run",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.fish_shoal"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "tunny_run",
+   "sfx": "sfx/world/fish.wav"
+  },
+  {
+   "id": "winter_storm",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "12:00",
+     "12:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "winter_storm",
+   "sfx": "sfx/world/thunder_far.wav"
   }
  ],
  "lanes_tokens": [
@@ -896,6 +1108,60 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "aegean.0",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.106,
+    0.404
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "base:mesogeia_road_harbour_fishing",
+   "count": 1,
+   "hours": [
+    "20:30",
+    "03:30"
+   ],
+   "when": {
+    "months": [
+     "may",
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "note": "fishing by torchlight on calm summer nights",
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "aegean.1",
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.924
    ]
   },
   {
@@ -915,6 +1181,129 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "aegean.2",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.153,
+    0.409
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "base:hellespont_fishing",
+   "count": 1,
+   "hours": [
+    "20:30",
+    "03:30"
+   ],
+   "when": {
+    "months": [
+     "may",
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "note": "fishing by torchlight on calm summer nights",
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "aegean.3",
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.096
+   ]
+  },
+  {
+   "actor": "athens.merchant",
+   "lane": "base:aegean_delos",
+   "count": 2,
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "note": "ships for Delos and Ephesus, island to island",
+   "by_month": "sailing",
+   "id": "aegean.4",
+   "rest": [
+    "piraeus",
+    "delos",
+    "ephesus"
+   ],
+   "offsets": [
+    0.892,
+    0.37
+   ]
+  },
+  {
+   "actor": "athens.trireme",
+   "lane": "base:aegean_delos",
+   "count": 1,
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "when": {
+    "months": [
+     "may"
+    ]
+   },
+   "note": "the sacred ship carrying Athens' delegation to Apollo's festival on Delos",
+   "by_month": "sailing",
+   "id": "aegean.5",
+   "rest": [
+    "piraeus",
+    "delos",
+    "ephesus"
+   ],
+   "offsets": [
+    0.729
+   ]
+  },
+  {
+   "actor": "athens.merchant",
+   "lane": "base:hellespont",
+   "count": 4,
+   "carry": "world.goods_sacks",
+   "hours": [
+    "00:00",
+    "24:00"
+   ],
+   "note": "grain ships from the Black Sea through the Hellespont for Piraeus",
+   "by_month": "grain",
+   "id": "aegean.6",
+   "rest": [
+    "piraeus",
+    "hellespont"
+   ],
+   "offsets": [
+    0.947,
+    0.175,
+    0.543,
+    0.692
    ]
   }
  ],
@@ -947,7 +1336,11 @@
   "season_turn.autumn": "Autumn storms over the sea.",
   "season_turn.nov": "Cranes call high overhead, flying in a long V.",
   "season_turn.oct": "The first rain. The whole land smells of dust and earth.",
-  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
+  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter.",
+  "dolphins": "Dolphins among the Cyclades.",
+  "meltemi_afternoon": "The north wind whitens the crests in the afternoon.",
+  "tunny_run": "The tunny shoals run through the straits; the fishermen watch for them.",
+  "winter_storm": "A winter storm over the islands."
  },
  "journal": [],
  "era": {
@@ -960,5 +1353,68 @@
    "winter": "432/431 BC"
   },
   "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
- }
+ },
+ "roles": [],
+ "ambient": [
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  }
+ ]
 }
