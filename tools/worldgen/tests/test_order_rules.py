@@ -78,17 +78,17 @@ class SpotUnderAnotherItem(unittest.TestCase):
 
 
 class SpotInsideItsOwnKit(unittest.TestCase):
-    """W-L1 (art): rome.mutatio's change spots inside its footprint; known to the art lane, so a
-    named warning (plan/art_pending.py) until its geometry changes."""
+    """W-L1 (art): parsa.p_workshop's work spots inside its footprint; known to the art lane, so
+    a named warning (plan/art_pending.py) until its geometry changes."""
 
     def test_is_reported_as_art_pending(self):
         L = meadow()
         L.street([(0, 20), (31, 20)], width=1, paving="path")
         L.node("road", (0, 20))
-        L.place("rome.mutatio", at=(10, 14), face="south")
+        L.place("parsa.p_workshop", at=(10, 12), face="south")
         issues = check(L)
-        self.assertEqual([m for m in found(issues, "W-L1") if "mutatio" in m], [])
-        self.assertTrue(any("[art:" in m and "mutatio.change" in m
+        self.assertEqual([m for m in found(issues, "W-L1") if "p_workshop" in m], [])
+        self.assertTrue(any("[art:" in m and "p_workshop.work" in m
                             for m in found(issues, "W-L1", "warning")))
 
 
@@ -309,9 +309,9 @@ class EngineModel(unittest.TestCase):
 
 class ArtList(unittest.TestCase):
     def test_an_entry_no_fault_matches_is_stale(self):
-        f = walkable.Finding("W-L1", "base", "m", (0, 0), item="rome.mutatio", slot="change")
+        f = walkable.Finding("W-L1", "base", "m", (0, 0), item="parsa.p_workshop", slot="work")
         stale = walkable.stale_art([f])
-        self.assertNotIn(("W-L1", "rome.mutatio", "change"), stale)
+        self.assertNotIn(("W-L1", "parsa.p_workshop", "work"), stale)
         self.assertIn(("W-O2", "rome.pons_fabricius", ""), stale)
 
 
