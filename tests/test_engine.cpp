@@ -385,6 +385,60 @@ TEST_CASE("mixer: effects pass untouched, pile-ups are limited, mute and loops r
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
+TEST_CASE("mixer buses: the player's volumes glide, never click, and stems reset for a world") {
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+    REQUIRE(SDL_Init(SDL_INIT_AUDIO));
+    {
+        Mixer mixer;
+        mixer.load(test::assetsDir() / "audio", test::catalog().audio);
+        mixer.startCapture();
+        constexpr int kFrames = 4096;
+        std::vector<float> out(kFrames * 2);
+        const int pad = mixer.loopIndex("music/day_pad.ogg");
+        REQUIRE(pad >= 0);
+        mixer.unlockStem(pad, true);
+        mixer.setLoopGain(pad, tuning::kMusicLevel);
+        const auto energy = [&] {
+            double e = 0;
+            for (int k = 0; k < 8; ++k) {
+                mixer.render(out.data(), kFrames);
+                for (const float v : out) e += static_cast<double>(v) * v;
+            }
+            return e;
+        };
+        for (int k = 0; k < 8; ++k) (void)energy(); // the loop's own gain glides in first
+        const double full = energy();
+        REQUIRE(full > 0);
+        // The music bus down to zero: a glide (no sample-to-sample jump), then silence.
+        mixer.setBus(Mixer::Bus::Music, 0.0f);
+        float prev = out[out.size() - 2];
+        float jump = 0;
+        for (int k = 0; k < 60; ++k) {
+            mixer.render(out.data(), kFrames);
+            for (std::size_t i = 0; i < out.size(); i += 2) {
+                jump = std::max(jump, std::abs(out[i] - prev));
+                prev = out[i];
+            }
+        }
+        CHECK(jump < 0.2f);
+        CHECK(energy() == 0.0);
+        // Halfway, about a quarter of the energy (the amplitude halves).
+        mixer.setBus(Mixer::Bus::Music, 0.5f);
+        for (int k = 0; k < 8; ++k) (void)energy();
+        const double half = energy();
+        CHECK(half > full * 0.1);
+        CHECK(half < full * 0.5);
+        // The ambience bus leaves the music alone; another world's stems start silent.
+        mixer.setBus(Mixer::Bus::Ambience, 0.0f);
+        CHECK(energy() > 0);
+        mixer.resetStems();
+        for (int k = 0; k < 2; ++k) mixer.render(out.data(), kFrames);
+        CHECK(mixer.stemLevel(pad) == 0.0f);
+        CHECK(energy() == 0.0);
+    }
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
 TEST_CASE("music stems: bar lines, fades and a stem joining in step with the others") {
     constexpr std::uint64_t kBar = tuning::kMusicBarSamples;
     CHECK(nextBar(0, kBar) == 0);

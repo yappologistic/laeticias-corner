@@ -28,6 +28,13 @@ public:
     void flush();
 
     [[nodiscard]] int drawCalls() const { return drawCalls_; }
+    // Storage a caller may build geometry in before handing it to triangles(); it keeps its
+    // capacity from frame to frame.
+    struct Scratch {
+        std::vector<SDL_Vertex> verts;
+        std::vector<int> indices;
+    };
+    [[nodiscard]] Scratch& scratch() { return scratch_; }
     void resetStats() { drawCalls_ = 0; }
 
 private:
@@ -38,6 +45,7 @@ private:
     std::vector<SDL_Vertex> verts_;
     std::vector<int> indices_;
     int drawCalls_ = 0;
+    Scratch scratch_;
 };
 
 } // namespace lc

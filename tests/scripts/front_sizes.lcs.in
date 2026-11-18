@@ -1,0 +1,74 @@
+# Every new screen and panel at @SIZE@, for review: the tour's coach card, a straight line of
+# ghosts, the profiler, a framed postcard, pause, settings, "Your worlds" with three worlds, the
+# title with Continue.
+wait 4
+click ui:menu:continue
+wait 4
+type Plum Hollow
+key return
+wait 20
+shot shots/sizes_@SIZE@_tour.png
+click ui:menu:skip_tour
+wait 2
+click ui:build
+wait 3
+click ui:tab:nature
+wait 3
+click ui:tile:flowers_white
+wait 3
+keydown shift
+press @22,32
+move @26,32
+wait 2
+shot shots/sizes_@SIZE@_line.png
+release @26,32
+keyup shift
+key escape
+key f3
+wait 20
+shot shots/sizes_@SIZE@_profiler.png
+key f3
+set unlock all
+key p
+wait 3
+key f
+wait 3
+shot shots/sizes_@SIZE@_postcard.png
+key escape
+wait 2
+key escape
+wait 12
+shot shots/sizes_@SIZE@_pause.png
+click ui:menu:pause_settings
+wait 12
+shot shots/sizes_@SIZE@_settings.png
+click ui:menu:done
+wait 2
+click ui:menu:back_to_worlds
+wait 4
+click ui:menu:new
+wait 3
+type Fernbank
+key return
+wait 4
+key escape
+wait 3
+click ui:menu:back_to_worlds
+wait 4
+click ui:menu:new
+wait 3
+type Moss Bank
+key return
+wait 4
+key escape
+wait 3
+click ui:menu:back_to_worlds
+wait 4
+move ui:menu:card:1
+wait 12
+shot shots/sizes_@SIZE@_worlds.png
+click ui:menu:back
+wait 4
+expect page title
+shot shots/sizes_@SIZE@_title.png
+quit

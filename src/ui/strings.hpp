@@ -157,6 +157,7 @@ inline constexpr std::string_view kDelete = "Delete";
 inline constexpr std::string_view kBack = "Back";
 inline constexpr std::string_view kKeyEsc = "Esc";
 inline constexpr std::string_view kWorldDetail = "{}, day {} · {} pages"; // season, day, pages
+inline constexpr std::string_view kWorldDetailOne = "{}, day {} · {} page";
 inline constexpr std::string_view kCannotOpen = "Can't be opened here";
 inline constexpr std::string_view kCouldNotOpen = "This world couldn't be opened";
 inline constexpr std::string_view kCouldNotOpenText =

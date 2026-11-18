@@ -99,6 +99,7 @@ private:
     std::size_t paneCount_ = 0;
     std::array<Thumb, 64> thumbs_{};
     std::size_t thumbCount_ = 0;
+    static constexpr float kMaxTriangle = 384.0f; // px: larger fills are subdivided
 };
 
 } // namespace lc

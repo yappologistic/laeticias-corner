@@ -124,13 +124,51 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
     }
     std::array<int, kOutline * 9> idx;
     std::size_t n = 0;
-    for (int i = 0; i < kOutline; ++i) {
+    batch_.use(texture, SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
+    // Large panels (a full-window veil) are filled in small triangles: renderers rasterise
+    // huge ones unreliably (the software one drops parts of them).
+    const bool big = b.w > kMaxTriangle || b.h > kMaxTriangle;
+    for (int i = 0; i < kOutline && !big; ++i) {
         idx[n++] = 0;
         idx[n++] = 1 + i;
         idx[n++] = 1 + (i + 1) % kOutline;
     }
+    if (big) {
+        // The batch's scratch storage: kept between frames, so nothing is allocated per frame.
+        auto& bigV_ = batch_.scratch().verts;
+        auto& bigI_ = batch_.scratch().indices;
+        bigV_.clear();
+        bigI_.clear();
+        for (int i = 0; i < kOutline; ++i) {
+            const SDL_FPoint a = centre;
+            const SDL_FPoint p = solid[static_cast<std::size_t>(i)];
+            const SDL_FPoint q = solid[static_cast<std::size_t>((i + 1) % kOutline)];
+            const float longest =
+                std::max({std::hypot(p.x - a.x, p.y - a.y), std::hypot(q.x - a.x, q.y - a.y),
+                          std::hypot(q.x - p.x, q.y - p.y)});
+            const int steps = std::max(1, static_cast<int>(std::ceil(longest / kMaxTriangle)));
+            // Rows of the triangle from the centre outwards, each split into equal pieces.
+            const int base = static_cast<int>(bigV_.size());
+            for (int r = 0; r <= steps; ++r)
+                for (int c = 0; c <= r; ++c) {
+                    const float t = static_cast<float>(r) / static_cast<float>(steps);
+                    const float u = r == 0 ? 0.0f : static_cast<float>(c) / static_cast<float>(r);
+                    const SDL_FPoint e{p.x + (q.x - p.x) * u, p.y + (q.y - p.y) * u};
+                    const SDL_FPoint pt{a.x + (e.x - a.x) * t, a.y + (e.y - a.y) * t};
+                    bigV_.push_back({pt, shade.at(pt.y), uv(pt)});
+                }
+            const auto at = [&](int r, int c) { return base + r * (r + 1) / 2 + c; };
+            for (int r = 0; r < steps; ++r)
+                for (int c = 0; c <= r; ++c) {
+                    bigI_.insert(bigI_.end(), {at(r, c), at(r + 1, c), at(r + 1, c + 1)});
+                    if (c < r)
+                        bigI_.insert(bigI_.end(), {at(r, c), at(r + 1, c + 1), at(r, c + 1)});
+                }
+        }
+        batch_.triangles(bigV_.data(), static_cast<int>(bigV_.size()), bigI_.data(),
+                         static_cast<int>(bigI_.size()));
+    }
     n = band(idx, n, 1, 1 + kOutline);
-    batch_.use(texture, SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
     batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(), static_cast<int>(n));
 }
 

@@ -191,7 +191,7 @@ void App::refreshWorlds() {
         const int day = sd.day + 1;
         const int pages = w.pages;
         worldDetails_.push_back(
-            w.readable ? std::vformat(strings::kWorldDetail,
+            w.readable ? std::vformat(pages == 1 ? strings::kWorldDetailOne : strings::kWorldDetail,
                                       std::make_format_args(
                                           cat_.seasons[static_cast<std::size_t>(sd.season)].name,
                                           day, pages))

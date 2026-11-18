@@ -489,7 +489,7 @@ void Menus::layoutWorlds(const MenuModel& m, const Font& font, float s) {
     heading_ = strings::kYourWorlds;
     headingBox_ = {panel.x + pad, panel.y + pad, panel.w - 2 * pad, font.lineHeight(Face::Title)};
     const float backW = font.measure(Face::Body, strings::kBack) +
-                        font.measure(Face::Body, strings::kKeyEsc) + 5 * theme::kGap * s;
+                        font.measure(Face::Body, strings::kKeyEsc) + 7 * theme::kGap * s;
     Widget& b =
         add(kBack, Kind::Button,
             {panel.x + panel.w - pad - backW, panel.y + pad * 0.6f, backW, theme::kTipH * s},
@@ -867,10 +867,13 @@ void Menus::drawWidget(Painter& p, const Widget& w, float a) const {
             break;
         }
         // The label centred (a bar segment's from its left), a shortcut chip at the right end.
-        (void)chip(w.value, w.box.x + w.box.w - theme::kGap * s * 1.5f);
+        const float chipLeft = chip(w.value, w.box.x + w.box.w - theme::kGap * s * 1.5f);
         const float tw = f.measure(Face::Body, w.label) +
                          (w.icon != 0 ? theme::kIcon * s + theme::kLabelGap * s : 0.0f);
+        // Centred in the button, or in what the chip leaves of a narrow one.
         float x = w.kind == Kind::Bar ? w.box.x + theme::kGap * s : w.box.cx() - tw * 0.5f;
+        if (w.kind != Kind::Bar && !w.value.empty() && x + tw > chipLeft)
+            x = std::max(w.box.x + theme::kGap * s, (w.box.x + chipLeft - tw) * 0.5f);
         if (w.icon != 0) {
             p.icon(w.icon, x + theme::kIcon * s * 0.5f, w.box.cy(), c);
             x += theme::kIcon * s + theme::kLabelGap * s;
