@@ -269,6 +269,16 @@ bool Menus::key(MenuKey k, const MenuModel& m) {
             if (w.enabled && focusable(w.id) && w.kind != Kind::Bar) order.push_back(w.id);
         if (order.empty()) return true;
         auto it = std::ranges::find(order, focus_);
+        // A settings page that scrolls moves on past its last (first) row shown.
+        if (page() == Page::Settings && settingsScrollable_ && it != order.end()) {
+            const bool down = k == MenuKey::Down;
+            const bool edge = down ? it + 2 >= order.end() // the row above Done
+                                   : it == order.begin();
+            if (edge && (down ? settingsScroll_ < settingsScrollMax_ : settingsScroll_ > 0)) {
+                settingsScroll_ += down ? 1 : -1;
+                return true;
+            }
+        }
         const auto n = static_cast<std::ptrdiff_t>(order.size());
         std::ptrdiff_t i = it == order.end() ? (k == MenuKey::Down ? -1 : 0) : it - order.begin();
         i = (i + (k == MenuKey::Down ? 1 : n - 1)) % n;
@@ -424,6 +434,9 @@ void Menus::update(const UiInput& in, const MenuModel& m, const Font& font, Vec2
         active_ = 0;
         dragging_ = 0;
     }
+    if (in.wheel != 0 && page() == Page::Settings && settingsScrollable_ && in.inside)
+        settingsScroll_ =
+            std::clamp(settingsScroll_ + (in.wheel > 0 ? -1 : 1), 0, settingsScrollMax_);
     if (in.wheel != 0 && page() == Page::Worlds && in.inside) {
         worldsScroll_ += in.wheel > 0 ? -1 : 1;
         worldsScroll_ = std::clamp(worldsScroll_, 0, std::max(0, worldsTotalRows_ - worldsRows_));
@@ -614,94 +627,237 @@ void Menus::layoutDialog(const MenuModel& m, const Font& font, float s) {
 }
 
 void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
+    // The rows as a list in sections, flowed into as many columns as the window has room for
+    // (two when they fit, more when the rows do not fit in two), rows a little tighter when
+    // that is not enough, and as a last resort one scrolling column: more rows (look and
+    // clouds settings) never overlap or fall off the screen at any size.
     const Profile& pr = m.profile != nullptr ? *m.profile : Profile{};
+    enum class Row : std::uint8_t {
+        Section,
+        Volume,
+        Mute,
+        Fullscreen,
+        UiScale,
+        ReduceMotion,
+        Grid,
+        Vsync,
+        Chatter,
+        Tour
+    };
+    struct Entry {
+        Row row;
+        int arg = 0;            // the volume's bus
+        std::string_view title; // a section's name
+    };
+    std::array<Entry, 24> items{};
+    std::size_t count = 0;
+    const auto put = [&](Row r, int arg = 0, std::string_view title = {}) {
+        if (count < items.size()) items[count++] = {r, arg, title};
+    };
+    put(Row::Section, 0, strings::kSound);
+    for (int i = 0; i < 3; ++i) put(Row::Volume, i);
+    put(Row::Mute);
+    put(Row::Section, 0, strings::kDisplay);
+    put(Row::Fullscreen);
+    put(Row::UiScale);
+    put(Row::ReduceMotion);
+    put(Row::Grid);
+    put(Row::Vsync);
+    if (!m.residentName.empty()) {
+        put(Row::Section, 0, m.residentName);
+        put(Row::Chatter);
+    }
+    put(Row::Section, 0, strings::kHelp);
+    put(Row::Tour);
+
+    const float margin = theme::kMargin * s;
     const float pad = theme::kPanelPad * s * 1.5f;
-    const float row = theme::kRowH * s;
     const float lh = font.lineHeight(Face::Body);
     const float gap = theme::kGap * s * 2;
     const float colW = theme::kSettingsColW * s;
-    // Two columns where they fit side by side; one otherwise.
-    const bool two = 2 * colW + gap + 2 * pad <= screen_.x - 2 * theme::kMargin * s;
-    const float w = two ? 2 * colW + gap + 2 * pad
-                        : std::min(colW + 2 * pad, screen_.x - 2 * theme::kMargin * s);
-    const float cw = two ? colW : w - 2 * pad;
     const float sectionH = lh + theme::kGap * s;
-    const float leftH = 2 * sectionH + 9 * row;
-    const float rightH = 2 * sectionH + 2 * row;
-    const float bodyH = two ? std::max(leftH, rightH) : leftH + rightH;
     const float bh = theme::kMenuButtonH * s * 0.85f;
-    const float h = 2 * pad + font.lineHeight(Face::Title) + gap + bodyH + gap + bh;
+    const float chrome = 2 * pad + font.lineHeight(Face::Title) + gap + gap + bh;
+    const float availH = std::max(lh, screen_.y - 2 * margin - chrome);
+    const int maxCols =
+        std::clamp(static_cast<int>((screen_.x - 2 * margin - 2 * pad + gap) / (colW + gap)), 1, 3);
+
+    // Sections are the places a column may break.
+    std::array<std::size_t, 12> starts{};
+    std::size_t sections = 0;
+    for (std::size_t i = 0; i < count; ++i)
+        if (items[i].row == Row::Section && sections < starts.size()) starts[sections++] = i;
+    const auto heightOf = [&](std::size_t from, std::size_t to, float r) {
+        float h = 0;
+        for (std::size_t i = from; i < to; ++i) h += items[i].row == Row::Section ? sectionH : r;
+        return h;
+    };
+    const auto sectionEnd = [&](std::size_t k) { return k + 1 < sections ? starts[k + 1] : count; };
+    // The most even split of the sections into `cols` columns: its tallest column and breaks.
+    struct Split {
+        float tallest = 0;
+        std::array<std::size_t, 3> first{}; // the first section of each column
+    };
+    const auto split = [&](int cols, float r) {
+        Split best{1e30f, {}};
+        const std::size_t n = sections;
+        const auto column = [&](std::size_t a, std::size_t b) {
+            return a < b ? heightOf(starts[a], sectionEnd(b - 1), r) : 0.0f;
+        };
+        if (cols <= 1 || n < 2) return Split{column(0, n), {0, n, n}};
+        for (std::size_t b1 = 1; b1 < n; ++b1) {
+            if (cols == 2) {
+                const float t = std::max(column(0, b1), column(b1, n));
+                if (t < best.tallest) best = {t, {0, b1, n}};
+                continue;
+            }
+            for (std::size_t b2 = b1 + 1; b2 < n; ++b2) {
+                const float t = std::max({column(0, b1), column(b1, b2), column(b2, n)});
+                if (t < best.tallest) best = {t, {0, b1, b2}};
+            }
+        }
+        return best;
+    };
+    float r = theme::kRowH * s;
+    int cols = std::min(2, maxCols);
+    Split layoutSplit = split(cols, r);
+    for (int c = cols + 1; layoutSplit.tallest > availH && c <= maxCols; ++c) {
+        cols = c;
+        layoutSplit = split(cols, r);
+    }
+    const float rMin = std::max(lh * 1.15f, r * 0.75f);
+    // Tighter rows, as far as they read well (the headings keep their height, hence a few
+    // passes).
+    for (int pass = 0; pass < 4 && layoutSplit.tallest > availH && r > rMin; ++pass) {
+        r = std::max(rMin, r * availH / layoutSplit.tallest);
+        layoutSplit = split(cols, r);
+    }
+    settingsScrollable_ = layoutSplit.tallest > availH;
+    if (settingsScrollable_) {
+        cols = 1;
+        r = rMin;
+        layoutSplit = {availH, {0, sections, sections}};
+    }
+    const float cw = cols > 1 ? colW : std::min(colW, screen_.x - 2 * margin - 2 * pad);
+    const float w = cw * static_cast<float>(cols) + gap * static_cast<float>(cols - 1) + 2 * pad;
+    const float bodyH = std::min(layoutSplit.tallest, availH);
+    const float h = chrome + bodyH;
     const Box panel{std::round((screen_.x - w) * 0.5f),
-                    std::round(std::max(theme::kMargin * s, (screen_.y - h) * 0.5f)), w, h};
+                    std::round(std::max(margin, (screen_.y - h) * 0.5f)), w, h};
     panels_.push_back(panel);
     fullGlass_ = {0, 0, screen_.x, screen_.y};
     heading_ = strings::kSettings;
     headingBox_ = {panel.x + pad, panel.y + pad, w - 2 * pad, font.lineHeight(Face::Title)};
+    const float colTop = headingBox_.y + headingBox_.h + gap;
+    const float colBottom = colTop + bodyH;
+
+    // Scrolling: whole items from the top are skipped; a line says when more lie below.
+    std::size_t skip = 0;
+    if (settingsScrollable_) {
+        std::size_t fit = 0;
+        for (float used = sectionH; fit < count; ++fit) { // a line kept for "more below"
+            used += items[count - 1 - fit].row == Row::Section ? sectionH : r;
+            if (used > bodyH) break;
+        }
+        settingsScrollMax_ = static_cast<int>(count - fit);
+        settingsScroll_ = std::clamp(settingsScroll_, 0, settingsScrollMax_);
+        skip = static_cast<std::size_t>(settingsScroll_);
+    } else {
+        settingsScroll_ = settingsScrollMax_ = 0;
+    }
+
     float x = panel.x + pad;
-    float y = headingBox_.y + headingBox_.h + gap;
-    const float colTop = y;
-    const auto section = [&](std::string_view name) {
-        Widget& t = add(0, Kind::Link, {x, y, cw, sectionH}, name);
-        t.enabled = false;
-        y += sectionH;
-    };
-    const auto toggle = [&](int id, std::string_view label, bool on, std::string_view key) {
-        Widget& t = add(id, Kind::Toggle, {x, y, cw, row}, label);
-        t.on = on;
-        t.value = key;
-        y += row;
-    };
-    section(strings::kSound);
-    const int vols[] = {pr.music, pr.effects, pr.ambience};
-    static constexpr std::string_view kVolNames[] = {strings::kMusic, strings::kEffects,
-                                                     strings::kAmbience};
-    for (int i = 0; i < 3; ++i) {
-        volumeText_[static_cast<std::size_t>(i)] = std::to_string(vols[i]);
-        Widget& sl = add(
-            kMusic + i, Kind::Slider,
-            {x + cw - theme::kSliderW * s - font.measure(Face::Body, "100") - theme::kGap * s * 2,
-             y, theme::kSliderW * s, row},
-            kVolNames[i]);
-        sl.amount = static_cast<float>(vols[i]) / 100.0f;
-        sl.rowX = x;
-        sl.value = volumeText_[static_cast<std::size_t>(i)];
-        y += row;
+    float y = colTop;
+    int col = 0;
+    std::size_t section = 0;
+    for (std::size_t i = skip; i < count; ++i) {
+        const Entry& it = items[i];
+        if (it.row == Row::Section) {
+            // A column's first section opens the next column.
+            while (section < sections && starts[section] != i) ++section;
+            if (col + 1 < cols && section == layoutSplit.first[static_cast<std::size_t>(col + 1)] &&
+                section > 0) {
+                ++col;
+                x += cw + gap;
+                y = colTop;
+            }
+        }
+        const float ih = it.row == Row::Section ? sectionH : r;
+        if (settingsScrollable_ && y + ih > colBottom - sectionH && i + 1 < count) {
+            Widget& more = add(0, Kind::Link, {x, y, cw, sectionH}, strings::kMoreSettings);
+            more.enabled = false;
+            more.on = true;
+            break;
+        }
+        const auto toggle = [&](int id, std::string_view label, bool on, std::string_view key) {
+            Widget& t = add(id, Kind::Toggle, {x, y, cw, r}, label);
+            t.on = on;
+            t.value = key;
+        };
+        const auto label = [&](std::string_view text, float share) {
+            Widget& lab = add(0, Kind::Link, {x, y, cw * share, r}, text);
+            lab.enabled = false;
+            lab.on = true; // drawn as a row label
+        };
+        switch (it.row) {
+        case Row::Section: {
+            Widget& t = add(0, Kind::Link, {x, y, cw, sectionH}, it.title);
+            t.enabled = false;
+            break;
+        }
+        case Row::Volume: {
+            static constexpr std::string_view kVolNames[] = {strings::kMusic, strings::kEffects,
+                                                             strings::kAmbience};
+            const int vols[] = {pr.music, pr.effects, pr.ambience};
+            const auto k = static_cast<std::size_t>(it.arg);
+            volumeText_[k] = std::to_string(vols[k]);
+            Widget& sl = add(kMusic + it.arg, Kind::Slider,
+                             {x + cw - theme::kSliderW * s - font.measure(Face::Body, "100") -
+                                  theme::kGap * s * 2,
+                              y, theme::kSliderW * s, r},
+                             kVolNames[k]);
+            sl.amount = static_cast<float>(vols[k]) / 100.0f;
+            sl.rowX = x;
+            sl.value = volumeText_[k];
+            break;
+        }
+        case Row::Mute: toggle(kMute, strings::kMuteAll, pr.muted, strings::kKeyMute); break;
+        case Row::Fullscreen:
+            toggle(kFullscreen, strings::kFullscreen, m.fullscreen, strings::kKeyFullscreen);
+            break;
+        case Row::UiScale: {
+            const int percent = static_cast<int>(
+                std::lround(kUiScales[std::clamp(pr.uiScale, 0, kUiScaleCount - 1)] * 100.0f));
+            scaleText_ = pr.uiScale <= 0
+                             ? std::string(strings::kAuto)
+                             : std::vformat(strings::kPercent, std::make_format_args(percent));
+            Widget& sc = add(kUiScale, Kind::Choice, {x, y, cw, r}, strings::kInterfaceSize);
+            sc.value = scaleText_;
+            break;
+        }
+        case Row::ReduceMotion:
+            toggle(kReduceMotion, strings::kReduceMotion, pr.reduceMotion, {});
+            break;
+        case Row::Grid: toggle(kGrid, strings::kShowGrid, pr.grid, strings::kKeyGrid); break;
+        case Row::Vsync: toggle(kVsync, strings::kVsync, pr.vsync, {}); break;
+        case Row::Chatter: {
+            label(strings::kChatter, 0.4f);
+            const float chip = (cw * 0.6f - theme::kGap * s) * 0.5f;
+            add(kChatty, Kind::Button, {x + cw - 2 * chip - theme::kGap * s, y, chip, r},
+                strings::kChatty)
+                .on = pr.chatty;
+            add(kQuiet, Kind::Button, {x + cw - chip, y, chip, r}, strings::kQuiet).on = !pr.chatty;
+            break;
+        }
+        case Row::Tour: {
+            label(strings::kTourSetting, 0.6f);
+            const float rw = font.measure(Face::Body, strings::kReplay) + 4 * theme::kGap * s;
+            add(kReplay, Kind::Button, {x + cw - rw, y, rw, r}, strings::kReplay);
+            break;
+        }
+        }
+        y += ih;
     }
-    toggle(kMute, strings::kMuteAll, pr.muted, strings::kKeyMute);
-    section(strings::kDisplay);
-    toggle(kFullscreen, strings::kFullscreen, m.fullscreen, strings::kKeyFullscreen);
-    const int percent = static_cast<int>(
-        std::lround(kUiScales[std::clamp(pr.uiScale, 0, kUiScaleCount - 1)] * 100.0f));
-    scaleText_ = pr.uiScale <= 0 ? std::string(strings::kAuto)
-                                 : std::vformat(strings::kPercent, std::make_format_args(percent));
-    Widget& sc = add(kUiScale, Kind::Choice, {x, y, cw, row}, strings::kInterfaceSize);
-    sc.value = scaleText_;
-    y += row;
-    toggle(kReduceMotion, strings::kReduceMotion, pr.reduceMotion, {});
-    toggle(kGrid, strings::kShowGrid, pr.grid, strings::kKeyGrid);
-    toggle(kVsync, strings::kVsync, pr.vsync, {});
-    if (two) {
-        x += cw + gap;
-        y = colTop;
-    }
-    if (!m.residentName.empty()) {
-        section(m.residentName);
-        Widget& lab = add(0, Kind::Link, {x, y, cw * 0.4f, row}, strings::kChatter);
-        lab.enabled = false;
-        lab.on = true; // drawn as a row label
-        const float chip = (cw * 0.6f - theme::kGap * s) * 0.5f;
-        add(kChatty, Kind::Button, {x + cw - 2 * chip - theme::kGap * s, y, chip, row},
-            strings::kChatty)
-            .on = pr.chatty;
-        add(kQuiet, Kind::Button, {x + cw - chip, y, chip, row}, strings::kQuiet).on = !pr.chatty;
-        y += row;
-    }
-    section(strings::kHelp);
-    Widget& lab = add(0, Kind::Link, {x, y, cw * 0.6f, row}, strings::kTourSetting);
-    lab.enabled = false;
-    lab.on = true;
-    const float rw = font.measure(Face::Body, strings::kReplay) + 4 * theme::kGap * s;
-    add(kReplay, Kind::Button, {x + cw - rw, y, rw, row}, strings::kReplay);
     const float dw = font.measure(Face::Body, strings::kDone) + 8 * theme::kGap * s;
     add(kDone, Kind::Button, {panel.x + panel.w - pad - dw, panel.y + panel.h - pad - bh, dw, bh},
         strings::kDone)

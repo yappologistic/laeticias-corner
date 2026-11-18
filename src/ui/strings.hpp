@@ -220,6 +220,7 @@ inline constexpr std::string_view kChatter = "Chatter";
 inline constexpr std::string_view kChatty = "Chatty";
 inline constexpr std::string_view kQuiet = "Quiet";
 inline constexpr std::string_view kHelp = "Help";
+inline constexpr std::string_view kMoreSettings = "More below: scroll or use the arrow keys";
 inline constexpr std::string_view kTourSetting = "First-minute tour";
 inline constexpr std::string_view kReplay = "Replay";
 inline constexpr std::string_view kDone = "Done";

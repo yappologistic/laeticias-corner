@@ -1078,6 +1078,64 @@ TEST_CASE("cutting text drops whole characters, never half of one (L-017)") {
     CHECK(cuts == std::vector<std::string_view>{"P\xC4\x81rs", "P\xC4\x81r", "P\xC4\x81", "P", ""});
 }
 
+TEST_CASE("settings fit every window and interface size, with room for more rows") {
+    UiFixture ui;
+    const Profile profile;
+    MenuModel m;
+    m.profile = &profile;
+    m.residentName = "Laeticia";
+    UiInput in;
+    in.inside = true;
+    in.x = in.y = -100;
+    const Vec2 screens[] = {{960, 600},   {1280, 800},  {1580, 845},
+                            {1920, 1080}, {2560, 1440}, {3840, 2160}};
+    for (const Vec2 base : screens)
+        for (const float factor : kUiScales)
+            // The window as it is, and with two rows' height less: the look and clouds rows the
+            // other branches add must fit too.
+            for (const int fewer : {0, 2}) {
+                const float fit =
+                    std::min(base.x / theme::kReferenceW, base.y / theme::kReferenceH);
+                const float f = factor > 0 ? factor : 1.0f;
+                const float s = std::clamp(std::round(std::max(1.0f, fit) * f * 4.0f) / 4.0f,
+                                           f < 1.0f ? 0.75f : 1.0f, theme::kMaxScale);
+                REQUIRE(ui.font.build(ui.renderer.get(), s));
+                const Vec2 screen{base.x, base.y - static_cast<float>(fewer) * theme::kRowH * s};
+                Menus menus;
+                menus.open(Page::Settings);
+                const auto layout = [&](float wheel) {
+                    in.wheel = wheel;
+                    menus.update(in, m, ui.font, screen, s, 1.0f / 60.0f);
+                    in.wheel = 0;
+                };
+                layout(0);
+                const auto check = [&] {
+                    const std::vector<Box> boxes = menus.widgetBoxes();
+                    INFO(screen.x << "x" << screen.y << " at " << s);
+                    for (const Box& b : boxes) {
+                        CHECK(b.x >= -0.5f);
+                        CHECK(b.y >= -0.5f);
+                        CHECK(b.x + b.w <= screen.x + 0.5f);
+                        CHECK(b.y + b.h <= screen.y + 0.5f);
+                    }
+                    for (std::size_t i = 0; i < boxes.size(); ++i)
+                        for (std::size_t j = i + 1; j < boxes.size(); ++j) {
+                            const Box& a = boxes[i];
+                            const Box& b = boxes[j];
+                            const bool over = a.x + 0.5f < b.x + b.w && b.x + 0.5f < a.x + a.w &&
+                                              a.y + 0.5f < b.y + b.h && b.y + 0.5f < a.y + a.h;
+                            CHECK_FALSE(over);
+                        }
+                    CHECK(menus.widgetCentre("done"));
+                };
+                check();
+                // Every row can be reached: scrolled to the end, the last one shows.
+                for (int k = 0; k < 30 && !menus.widgetCentre("replay"); ++k) layout(-1);
+                CHECK(menus.widgetCentre("replay"));
+                check();
+            }
+}
+
 TEST_CASE("world cards keep their own ids past a hundred worlds (L-111)") {
     UiFixture ui;
     REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
