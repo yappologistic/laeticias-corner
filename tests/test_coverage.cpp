@@ -16,8 +16,12 @@
 #include <charconv>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
+#include <iterator>
+#include <map>
+#include <set>
 
 using namespace lc;
 
@@ -162,6 +166,57 @@ TEST_CASE("coverage: the interface's fonts draw every string the world shows") {
         REQUIRE_FALSE(j.is_discarded());
         scan(j, "", f.filename().string());
     }
+    // The interface's own text (src/ui/strings.hpp): every string literal in it.
+    {
+        std::ifstream in(assets.parent_path() / "src" / "ui" / "strings.hpp");
+        REQUIRE(in);
+        const std::string text((std::istreambuf_iterator<char>(in)), {});
+        for (std::size_t i = text.find('"'); i != std::string::npos; i = text.find('"', i + 1)) {
+            std::string lit;
+            std::size_t j = i + 1;
+            for (; j < text.size() && text[j] != '"'; ++j) {
+                if (text[j] == '\\' && j + 1 < text.size()) ++j;
+                lit += text[j];
+            }
+            scan(lit, "", "strings.hpp");
+            i = j;
+        }
+    }
+    // Every character that would be drawn as a box or "?" (none but the Arabic script the game
+    // leaves out), and what the fonts are asked for, by block, for the record.
+    std::set<char32_t> uncovered;
+    std::map<std::string, int> blocks;
+    for (const auto& f : files) {
+        std::ifstream in(f);
+        const std::string text((std::istreambuf_iterator<char>(in)), {});
+        for (std::size_t i = 0; i < text.size();) {
+            const char32_t c = nextCodepoint(text, i);
+            if (c < 0x80) continue;
+            const char* block = c < 0x250                     ? "Latin-1 and Latin Extended"
+                                : c < 0x370                   ? "IPA and modifiers"
+                                : c < 0x400                   ? "Greek"
+                                : c < 0x600                   ? "Cyrillic and others"
+                                : c < 0x780                   ? "Arabic"
+                                : c < 0x1E00                  ? "other"
+                                : c < 0x1F00                  ? "Latin Extended Additional"
+                                : c < 0x2000                  ? "Greek Extended (polytonic)"
+                                : c < 0x2070                  ? "punctuation"
+                                : c < 0x10000                 ? "symbols"
+                                : c >= 0x103A0 && c < 0x103E0 ? "Old Persian cuneiform"
+                                                              : "other (beyond the BMP)";
+            ++blocks[block];
+            if (!font.covers(c)) uncovered.insert(c);
+        }
+    }
+    for (const auto& [block, n] : blocks) MESSAGE(block << ": " << n << " characters shown");
+    for (const char32_t c : uncovered) {
+        const bool arabicScript = (c >= 0x600 && c <= 0x6FF) || c == 0x200C || c == 0x200D;
+        MESSAGE(std::format("not in the fonts: U+{:04X}{}", static_cast<unsigned>(c),
+                            arabicScript ? " (Arabic script, left out)" : ""));
+        CHECK(arabicScript);
+    }
+    // What the painter itself draws: the ellipsis of a cut line.
+    CHECK(font.coversAll("…"));
     for (const std::string& m : missing) MESSAGE("not drawable: " << m);
     CHECK(missing.empty());
     CHECK(files.size() > 40);
