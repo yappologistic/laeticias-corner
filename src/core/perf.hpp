@@ -30,6 +30,8 @@ struct FrameSample {
     int chunksCached = 0;
     float textureMiB = 0;
     float totalMiB = 0;
+    float pageMiB = 0; // the world's atlas pages resident, and what they may hold
+    float pageBudgetMiB = 0;
     int placeholders = 0; // sprites drawn as placeholders this frame (art still to come)
     int missingArt = 0;   // ids in the world with no art at all
 };

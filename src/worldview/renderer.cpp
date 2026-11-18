@@ -82,7 +82,7 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
               return times;
           }()) {
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
-                                         tuning::kPageBudget);
+                                         tuning::kPageCeiling);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_);
     // Asynchronous runs build the overview on a worker from the start; synchronous ones only
     // when a frame needs it (it stands in for cells not built yet, which they never have).
@@ -718,6 +718,11 @@ std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
         if (!map_.info(map_.items()[e.item]).card.empty()) return Picked{false, e.item};
     }
     return std::nullopt;
+}
+
+std::size_t WorldView::textureBudget() const {
+    return pages_->stats().budget + cells_.budget() + targetBytes() +
+           (overview_ ? overview_->bytes() : 0);
 }
 
 int WorldView::missingArt() const {

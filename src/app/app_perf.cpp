@@ -60,6 +60,8 @@ void App::recordFrame(FrameSample& s) {
         s.spritesCulled += ws.spritesCulled;
         s.chunksCached += ws.cellsCached;
         s.placeholders = ws.placeholders;
+        s.pageMiB = static_cast<float>(static_cast<double>(ws.pages.bytes) / 1048576.0);
+        s.pageBudgetMiB = static_cast<float>(static_cast<double>(ws.pages.budget) / 1048576.0);
         s.missingArt = worldView_->missingArt();
     }
     const std::size_t worldBytes = worldView_ ? worldView_->stats().textureBytes() : 0;

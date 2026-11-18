@@ -267,7 +267,8 @@ inline constexpr std::string_view kProfScene =
 inline constexpr std::string_view kProfAudio = "Audio callback load {:.1f}%";
 inline constexpr std::string_view kProfDraw = "Draw calls {} · sprites {} drawn, {} culled";
 inline constexpr std::string_view kProfActors = "Actors {} live, {} abstract · chunks {} cached";
-inline constexpr std::string_view kProfMemory = "Memory: textures {:.0f} MiB · process {:.0f} MiB";
+inline constexpr std::string_view kProfMemory =
+    "Memory: textures {:.0f} MiB (pages {:.0f} of {:.0f}) · process {:.0f} MiB";
 inline constexpr std::string_view kProfWithin = "Within budget: p99 {:.1f} ms, worst {:.1f} ms";
 inline constexpr std::string_view kProfOver = "Over budget: p99 {:.1f} ms, worst {:.1f} ms";
 

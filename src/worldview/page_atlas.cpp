@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <fstream>
+#include <map>
 
 namespace lc::worldview {
 namespace {
@@ -40,6 +41,7 @@ SDL_TextureAccess uploadAccess(SDL_Renderer* renderer) {
 PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::AtlasPages& pages,
                      std::filesystem::path atlasDir, bool async, std::size_t budget)
     : renderer_(renderer), home_(home), index_(pages), async_(async), budget_(budget) {
+
     Page h;
     h.set = "home";
     h.file = atlasDir.parent_path() / "atlas.png";
@@ -68,12 +70,22 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         }
         pages_.push_back(std::move(p));
     }
-    // As many slots as the budget holds beside the fixed pages, made up front when streaming.
+    // Slots for what a view can need, measured from the sets on disk: the two largest sets (a
+    // seam between two cities' moments) and the shared world set, made up front when streaming.
+    // The budget follows; the ceiling passed in only caps it.
+    std::map<std::string, std::size_t> perSet;
+    for (std::size_t i = 2; i < pages_.size(); ++i) ++perSet[pages_[i].set];
+    std::vector<std::size_t> cities;
+    for (const auto& [set, n] : perSet)
+        if (set != "world") cities.push_back(n);
+    std::ranges::sort(cities, std::greater<>());
+    std::size_t need = perSet.contains("world") ? perSet["world"] : 0;
+    for (std::size_t k = 0; k < cities.size() && k < 2; ++k) need += cities[k];
     const std::size_t fixed = static_cast<std::size_t>(pages_[kHomePage].w) *
                               static_cast<std::size_t>(pages_[kHomePage].h) * 4;
-    slotLimit_ =
-        std::min(pages_.size() - 2,
-                 std::max<std::size_t>(1, (budget_ - std::min(budget_, fixed)) / kSlotBytes));
+    const std::size_t room = budget_ > fixed ? (budget_ - fixed) / kSlotBytes : 1;
+    slotLimit_ = std::clamp<std::size_t>(need, 1, std::max<std::size_t>(1, room));
+    budget_ = fixed + slotLimit_ * kSlotBytes;
     if (async_) {
         for (std::size_t i = 0; i < slotLimit_; ++i)
             if (makeSlot() < 0) break;
@@ -128,8 +140,12 @@ int PageAtlas::freeSlot(double now) {
         slotPage_[static_cast<std::size_t>(lru)] = -1;
         return lru;
     }
-    // Every slot holds a page the view needs (a seam of two sets): one more rather than stall.
-    SDL_Log("atlas: over the page budget by one page");
+    // Every slot holds a page the view needs: one more rather than stall (said once).
+    if (!overLogged_) {
+        SDL_Log("atlas: a view needs more pages than its budget of %zu; making one more",
+                slotLimit_);
+        overLogged_ = true;
+    }
     return makeSlot();
 }
 
@@ -388,6 +404,7 @@ PageStats PageAtlas::stats() const {
     // Texture memory: the fixed pages and every slot made (resident or free).
     PageStats s;
     s.uploads = uploads_;
+    s.budget = budget_;
     s.bytes = slots_.size() * kSlotBytes;
     for (const Page& p : pages_) {
         if (p.state == State::Fixed)

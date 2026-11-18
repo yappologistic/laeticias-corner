@@ -289,11 +289,11 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
                 draws = std::max(draws, fr.all.back().drawCalls);
             }
             const double tex = static_cast<double>(worldView_->stats().textureBytes()) / 1048576.0;
+            const double budget = static_cast<double>(worldView_->textureBudget()) / 1048576.0;
             std::printf("bench: %s: %d draw calls at most (world %d), %.0f MiB of world textures "
                         "(budget %.0f)\n",
-                        spot.name, draws, worldView_->stats().drawCalls, tex,
-                        worldview::tuning::kTextureBudgetMiB);
-            if (opts_.budgetMs > 0 && tex > worldview::tuning::kTextureBudgetMiB) {
+                        spot.name, draws, worldView_->stats().drawCalls, tex, budget);
+            if (opts_.budgetMs > 0 && tex > budget) {
                 std::printf("bench: over budget: %s textures\n", spot.name);
                 over = true;
             }
@@ -337,7 +337,9 @@ double App::memoryCeiling() const {
 double App::soakCeiling() const {
     // On the software renderer (the soak's) the world's textures are process memory too.
     const bool software = std::string_view(SDL_GetRendererName(renderer_.get())) == "software";
-    return memoryCeiling() + (worldView_ && software ? worldview::tuning::kTextureBudgetMiB : 0.0);
+    return memoryCeiling() + (worldView_ && software
+                                  ? static_cast<double>(worldView_->textureBudget()) / 1048576.0
+                                  : 0.0);
 }
 
 int App::runSoak() {

@@ -22,8 +22,6 @@ inline constexpr int kCellPageSlotsY = 4;
 inline constexpr std::size_t kCellBudget = 96 * kMiB;      // world-tech §4.14: ground cache 96 MB
 inline constexpr double kCellBudgetArea = 2560.0 * 1440.0; // ... per this much window,
 inline constexpr double kCellBudgetMaxScale = 1.5; // and at most this many times it (144 at 4K)
-// Every texture of the world (pages, cells, overview, targets) at any window size, MiB.
-inline constexpr double kTextureBudgetMiB = 576.0;
 inline constexpr int kImpostorBlock = 1024;       // impostor cells render in blocks of this many px
 inline constexpr int kCellBuildsPerFrame = 4;     // native cells (re)built per frame at most
 inline constexpr int kImpostorBlocksPerFrame = 1; // impostor blocks drawn per frame at most
@@ -31,12 +29,13 @@ inline constexpr int kImpostorCellsInFlight = 4;  // impostor cells gathering at
 inline constexpr int kCellPrefetch = 1; // ring of cells around the view built when budget allows
 
 // Atlas pages: streamed per set, decoded off the main thread, uploaded in slices.
-inline constexpr std::size_t kPageBudget = 320 * kMiB; // world-tech §4.14
-inline constexpr int kUploadRowsPerFrame = 64;         // 1 MB of a 4096-wide page per frame
-inline constexpr int kPagesInFlight = 2;               // decoded or decoding, not yet in their slot
-inline constexpr double kPageIdleSeconds = 10.0;       // unused this long: may be evicted
-inline constexpr int kNeededSetGrow = 64;              // tiles around the view whose sets load
-inline constexpr int kNeededSetSpacing = 8;            // district sampling step, tiles
+// Page slots follow what the sets on disk need (PageAtlas); this only caps them.
+inline constexpr std::size_t kPageCeiling = 640 * kMiB;
+inline constexpr int kUploadRowsPerFrame = 64;   // 1 MB of a 4096-wide page per frame
+inline constexpr int kPagesInFlight = 2;         // decoded or decoding, not yet in their slot
+inline constexpr double kPageIdleSeconds = 10.0; // unused this long: may be evicted
+inline constexpr int kNeededSetGrow = 64;        // tiles around the view whose sets load
+inline constexpr int kNeededSetSpacing = 8;      // district sampling step, tiles
 
 // Objects near the camera are gathered into a region this much larger than the view.
 inline constexpr float kRegionGrow = 0.5f;

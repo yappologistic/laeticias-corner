@@ -146,6 +146,9 @@ public:
     void visibleCards(std::vector<Picked>& out) const;
     // Figures without art (not drawn).
     [[nodiscard]] int figuresMissing() const { return figuresMissing_; }
+    // What the world's textures may hold: the pages' slots, the cell cache at this window size,
+    // the targets and the overview.
+    [[nodiscard]] std::size_t textureBudget() const;
     // Ids with no art of their own: placeholder items, flat terrain and faces, figures, and ids
     // the layers place that no catalog defines (not drawn).
     [[nodiscard]] int missingArt() const;

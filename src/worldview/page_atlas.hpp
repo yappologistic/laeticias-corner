@@ -35,10 +35,11 @@ struct SpriteRef {
 };
 
 struct PageStats {
-    int resident = 0;      // set pages resident
-    int streaming = 0;     // queued, decoding or uploading
-    int uploads = 0;       // slices uploaded this frame
-    std::size_t bytes = 0; // texture memory of every resident page
+    int resident = 0;       // set pages resident
+    int streaming = 0;      // queued, decoding or uploading
+    int uploads = 0;        // slices uploaded this frame
+    std::size_t bytes = 0;  // texture memory of every resident page
+    std::size_t budget = 0; // the fixed pages and the slots the sets on disk need
 };
 
 class PageAtlas {
@@ -113,6 +114,7 @@ private:
     bool async_;
     std::size_t budget_;
     std::size_t slotLimit_ = 1; // page slots the budget holds beside the fixed pages
+    bool overLogged_ = false;
     std::vector<Page> pages_;
     std::vector<TexturePtr> slots_; // kMaxPageSide square, shared by the streamed pages
     std::vector<int> slotPage_;     // page in each slot, -1 free

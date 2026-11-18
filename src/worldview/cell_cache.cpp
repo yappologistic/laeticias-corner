@@ -75,6 +75,10 @@ void CellCache::reserve(std::size_t budget) {
     maxSlots_ = std::max(maxSlots_, budget / kSlotBytes);
 }
 
+std::size_t CellCache::budget() const {
+    return maxSlots_ * kSlotBytes;
+}
+
 void CellCache::clear() {
     byKey_.clear();
     for (CellSlot& s : slots_) s.key = ~0ULL;
