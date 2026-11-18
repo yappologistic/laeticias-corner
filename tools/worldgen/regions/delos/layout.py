@@ -34,13 +34,14 @@ def build(L: Layout) -> None:
     L.paint(kynthos, "world.rock")
     L.district("kynthos", kynthos)
     L.paint(Rect(4, 2, 13, 9), GRAVEL)
-    lake = Rect(6, 12, 10, 13)
+    lake = Rect(6, 13, 10, 13)    # a walk between the lions and the lake, where people look
     L.paint(lake, "world.shallows")
     L.level(lake, -1)
 
     # Ways: from the harbour along the sanctuary's west side, round the lake to the lions.
     L.street([(2, 8), (3, 8), (3, 14), (12, 14), (12, 10)], width=1, paving=GRAVEL)
     L.street([(3, 8), (3, 3)], width=1, paving=GRAVEL)
+    L.street([(3, 12), (12, 12)], width=1, paving=GRAVEL)
     L.place("athens.delos_sanctuary", rect=(4, 2, 13, 9), name="delos_sanctuary")
     # The lions on their terrace north of the lake (8 x 2), facing it.
     L.place("athens.naxian_lions", rect=(4, 10, 11, 11), name="naxian_lions")

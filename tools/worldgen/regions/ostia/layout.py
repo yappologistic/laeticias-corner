@@ -24,7 +24,7 @@ import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.finish import clear_doors, fit_faces, free, glow_cap, put, seam
+from worldgen.finish import clear_doors, fit_faces, free, glow_cap, landings, put, seam
 from worldgen.shapes import Line, Mask, Poly, Rect
 
 _spec = importlib.util.spec_from_file_location(
@@ -183,6 +183,9 @@ def _ways(L: Layout) -> dict:
                 lc, lr = c - L.origin[0], r - L.origin[1]
                 L.paint(Rect(lc, lr, lc, lr), wet[(c, r)])
                 L.place("world.bridge_arch", at=(lc, lr), face="north")
+    # The river and canals lie at the sea's level, a step below the town: the ways step down
+    # to the decks.
+    landings(L)
     return W_
 
 

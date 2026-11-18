@@ -128,15 +128,19 @@ def _relief(L: Layout, wet: np.ndarray) -> np.ndarray:
 
 
 def _appia(L: Layout, wet: np.ndarray) -> None:
-    """The Via Appia: a level lower from Rome (west portal) to a ramp at c 6..9, then on at the
-    mount's foot over the Liris' arch to the east portal; tombs, trees and milestones."""
+    """The Via Appia: from Rome (west portal) in a cutting a level below the flat, so no ramp
+    stands in the view out of the city, to a ramp at c 15..18 short of the Via Sacra's foot;
+    then on at the mount's foot over the Liris' arch (one tile wide) to the east portal; tombs,
+    trees and milestones."""
     W, H = L.size
     WP.portal_street(L, "appia_alban_w", [(5, ROAD_ROW)], width=2, paving=BASALT)
+    L.street([(6, ROAD_ROW), (14, ROAD_ROW)], width=2, paving=BASALT, kind="road")
+    L.level(Rect(0, ROAD_ROW, 14, ROAD_ROW + 1), -1, face="rome.tufa")
     for r in (ROAD_ROW, ROAD_ROW + 1):
-        L.level(Rect(6, r, 9, r), -1)
-        L.stair("world.ramp", rect=(6, r, 9, r), face="west")
-    east = WP.portal_street(L, "appia_alban_e", [(10, ROAD_ROW)], width=2, paving=BASALT)
-    for c, r in Line(east.points, east.width).tiles():
+        L.level(Rect(15, r, 18, r), -1)
+        L.stair("world.ramp", rect=(15, r, 18, r), face="west")
+    east = WP.portal_street(L, "appia_alban_e", [(19, ROAD_ROW)], width=2, paving=BASALT)
+    for c, r in Line(east.points, 1).tiles():
         lc, lr = c - L.origin[0], r - L.origin[1]
         if 0 <= lc < W and 0 <= lr < H and wet[lr, lc]:
             L.paint(Rect(lc, lr, lc, lr), L.below_terrain(lc, lr))

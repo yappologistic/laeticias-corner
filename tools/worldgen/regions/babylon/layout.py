@@ -38,19 +38,19 @@ def build(L: Layout) -> None:
     town = [L.street([(31, 9), (22, 9), (22, 15)], width=1, paving=EARTH),
             L.street([(31, 14), (25, 14)], width=1, paving=EARTH),
             L.street([(34, 6), (34, 16)], width=1, paving=EARTH)]
-    quay = L.street([(14, 22), (4, 22), (4, 8), (11, 8)], width=1, paving=EARTH)
+    quay = L.street([(13, 22), (4, 22), (4, 8), (11, 8)], width=1, paving=EARTH)
     west = [L.street([(4, 14), (22, 14)], width=1, paving=EARTH)]   # over the river
     L.channel([(3, 22), (3, 3), (11, 3)], terrain="world.river")
-    L.level(Line([(3, 22), (3, 3), (11, 3)], 1), -1)
+    L.level(Line([(3, 22), (3, 3), (11, 3)], 1), 0)   # the canal joins the river at its level
 
     # Landmarks, the river, the wall and towers, the houses.
     L.place("parsa.ishtar_gate", rect=(30, 1, 35, 4), name="ishtar_gate")
     L.place("parsa.processional_way", rect=(32, 5, 33, 18), name="processional_way")
     L.place("parsa.etemenanki", rect=(20, 17, 31, 28), name="etemenanki")
     L.river(RIVER, width=4, terrain="world.river", banks={"world.t_reeds": 0.3}, seed="euphrates")
-    L.level(Line(RIVER, 4), WP.river_level(L, RIVER, -1))
+    L.level(Line(RIVER, 4), 0)  # flush with its banks, as the kit decks are drawn (the base meets it)
     F.fords(L, west, item="world.bridge_timber")
-    F.fords(L, [quay])
+    L.place("world.jetty", at=(14, 22))     # the boats' landing stage off the quay's end
     for c in range(18, 30):
         for r in (2, 3):
             if (c - 18) % 3 == 0 and r == 2:

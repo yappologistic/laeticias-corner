@@ -91,7 +91,7 @@ DECORATE = Rect(156, 108, 166, 118)
 TIBER_UP = [(5, 0), (5, 12), (6, 26), (9, 38), (14, 48), (20, 58), (30, 65), (40, 70), (45, 76),
             (48, 83)]
 TIBER_DOWN = [(56, 95), (56, 159)]
-DROP_ROW = 119                       # the Tiber drops a level here, below the Pons Sublicius
+BRIDGEHEAD = Rect(41, 89, 45, 93)     # the Pons Cestius' landing in Transtiberim
 AQUEDUCT = [(175, 127), (152, 127), (152, 100), (135, 100)]
 APPIA = [(135, 122), (150, 132), (169, 138)]                # past the villa
 APPIA_END = [(169, 138), (175, 150)]
@@ -146,6 +146,10 @@ def build(L: Layout) -> None:
     _transtiberim(L)
     _port(L)
     _campagna(L)
+    # The whole Tiber lies a level below its banks (once the streets that pave over its old
+    # channels are laid): the island's quay and the bridges' decks are drawn 16-24 px above the
+    # water, so their landings meet the banks only so.
+    L.level(Mask(0, 0, _water_mask(L)), -1)
     _nodes(L)
     C.drop_bad_spots(L)
     clear_doors(L, all_slots=True)
@@ -383,8 +387,6 @@ def _river(L: Layout) -> None:
     L.river(TIBER_DOWN, width=8, terrain=TIBER)
     L.paint(STAGNUM, TIBER)
     L.level(STAGNUM, -1)
-    water = _water_mask(L)
-    L.level(Mask(0, 0, water & (np.arange(H)[:, None] >= DROP_ROW)), -1)
     for lid in ("tiber_island", "pons_fabricius", "pons_cestius", "pons_aemilius", "pons_sublicius"):
         L.paint(Rect(*LM[lid]), TIBER if L.cat.items[R + lid].on == "water" else MUD)
     banks = m(Line(TIBER_UP, 8)) & ~m(Line(TIBER_UP, 6))
@@ -440,10 +442,12 @@ def _ways(L: Layout) -> dict:
     st("subura", [(130, 25), (130, 30), (132, 30)])
     st("subura", [(118, 25), (118, 37)])
     # The Esquiline and the Oppian.
-    st("esquiline", [(138, 30), (141, 30), (141, 17), (175, 17)])
+    st("esquiline", [(138, 30), (141, 30), (141, 17), (173, 17)])   # short of the edge (Tibur's ground)
     st("esquiline", [(146, 51), (175, 51)])
     st("esquiline", [(150, 52), (150, 51)])
-    st("esquiline", [(157, 0), (157, 30)])
+    # Down to the Oppian, or only to the Baths of Trajan's precinct once the set draws them.
+    st("esquiline", [(157, 0), (157, 19 if L.cat.items[R + "trajan_baths"].source != "provisional"
+                                 else 30)])
     st("esquiline", [(140, 51), (140, 39), (130, 39)])
     st("quirinal", [(118, 13), (118, 6), (100, 6)])
     st("quirinal", [(118, 6), (133, 6)])
@@ -812,6 +816,10 @@ def _transtiberim(L: Layout) -> None:
     for r in range(64, H):
         cols = np.nonzero(wet[r, 12:])[0]
         west[r, 15:12 + (int(cols[0]) if cols.size else W - 12)] = True
+    # The Pons Cestius lands on a small square, not against an insula's wall.
+    head = m(BRIDGEHEAD) & ~L.STREET & (L.OCC < 0) & ~wet
+    L.paint(Mask(0, 0, head), BASALT)
+    west &= ~m(BRIDGEHEAD)
     area = Mask(0, 0, west)
     am = west & (L.LV == 0) & (L.OCC < 0)
     C.beside_street(L, am & ~L.STREET, {R + "r_glass": 2, R + "r_dyeworks": 2, R + "r_smithy": 1.5,

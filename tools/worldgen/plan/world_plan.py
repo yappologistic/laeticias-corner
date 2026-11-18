@@ -176,6 +176,15 @@ PORTALS = {
     "gates_w": (("persian_gates", "base"), (1112, 337), 4),
     "gates_e": (("persian_gates", "base"), (1127, 338), 6),
     "pasargadae_s": (("pasargadae", "base"), (1190, 287), 5),
+    # The roadside stops and outlying towns (world.md §4; built as small layers): Tibur on its
+    # road from the Appia, Corinth's south gate for the Peloponnese, Olympia, Sparta, Gordion
+    # off the Royal Road, Sidon down the Levant coast. Corcyra is reached by its harbour lane.
+    "tiburtina": (("tibur", "base"), (276, 79), 2),
+    "corinth_s": (("corinth", "base"), (565, 305), 1),
+    "olympia_n": (("olympia", "base"), (478, 320), 3),
+    "sparta_e": (("sparta", "base"), (535, 372), 2),
+    "gordion_s": (("gordion", "base"), (915, 150), 5),
+    "sidon_n": (("sidon", "base"), (1000, 300), 1),
 }
 
 # --- coastlines ------------------------------------------------------------------------------
@@ -469,7 +478,7 @@ ROAD_STYLES = {
 ROUTES = {
     "corner_road": {"points": ["corner:corner_road_s", "rome:aurelia_w"], "style": "corner",
                     "width": 1, "kind": "road"},
-    "via_appia": {"points": ["rome:appia_se", "alban_mount:appia_alban_w",
+    "via_appia": {"points": ["rome:appia_se", (275, 173), "alban_mount:appia_alban_w",
                              "alban_mount:appia_alban_e", "capua:appia_capua_w",
                              "capua:appia_capua_e", "beneventum:appia_benev_w",
                              "beneventum:appia_benev_e", (368, 236),
@@ -491,7 +500,7 @@ ROUTES = {
     "ionian_road": {"points": ["ephesus:ephesus_e", (856, 228), "sardis:sardis_w"],
                     "style": "greek", "width": 1, "kind": "road"},
     # The Royal Road (Herodotus 5.52-54), by the Euphrates and Babylon (world.md §5.3).
-    "royal_road": {"points": ["sardis:sardis_e", (896, 190), (916, 158),
+    "royal_road": {"points": ["sardis:sardis_e", (898, 213), (896, 190), (916, 158),
                               "halys:halys_w", "halys:halys_e", (985, 150), (1000, 168),
                               "euphrates_crossing:euph_w", "euphrates_crossing:euph_e",
                               (1032, 214), (1044, 250), (1062, 272), "babylon:babylon_n",
@@ -505,6 +514,20 @@ ROUTES = {
     # From the Royal Road in Cappadocia over the Taurus gates to a Cilician harbour.
     "cilician_road": {"points": [(985, 150), (983, 206), (980, 248), (980, 266), (983, 283)],
                       "style": "persian", "width": 1, "kind": "road", "end": "harbour"},
+    # The Via Tiburtina's last stretch, from the Appia below the city up to Tibur's plain.
+    "via_tiburtina": {"points": ["tibur:tiburtina", (275, 173)], "style": "roman", "width": 1,
+                      "kind": "road"},
+    # From Corinth's south gate down the Argolid shore and into the Eurotas valley from the east to Sparta, and west along the gulf to Olympia.
+    "peloponnese_road": {"points": ["corinth:corinth_s", (556, 312), (550, 345), (548, 372),
+                                    "sparta:sparta_e"], "style": "greek", "width": 1,
+                         "kind": "road"},
+    "olympia_road": {"points": [(556, 312), (520, 316), "olympia:olympia_n"], "style": "greek",
+                     "width": 1, "kind": "road"},
+    # Gordion off the Royal Road; Sidon down the coast from the Cilician road.
+    "gordion_way": {"points": [(916, 158), "gordion:gordion_s"], "style": "persian", "width": 1,
+                    "kind": "road"},
+    "levant_road": {"points": [(980, 266), "sidon:sidon_n"], "style": "persian", "width": 1,
+                    "kind": "road"},
 }
 
 # Sea and river lanes. Ports name the places a lane serves; `start` and `end` are added to every

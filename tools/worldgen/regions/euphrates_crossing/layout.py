@@ -25,7 +25,7 @@ def build(L: Layout) -> None:
     east = WP.portal_street(L, "euph_e", [(11, 8), (11, 11), (10, 11)], width=1, paving=EARTH)
     river = [(7, 0), (7, 15)]
     L.river(river, width=4, terrain="world.river", banks=None, seed="euphrates")
-    L.level(Line(river, 4), WP.river_level(L, river, -1))
+    L.level(Line(river, 4), 0)  # flush with its banks, as the kit decks are drawn (the base meets it)
     # The bridge of boats on row 11, the ferry's landing stages on row 8.
     for c in range(6, 10):
         L.place("world.pontoon", at=(c, 11))

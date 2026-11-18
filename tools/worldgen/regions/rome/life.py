@@ -1970,7 +1970,27 @@ def theme(view) -> dict:
     }
 
 
+def _baths(doc: dict, view) -> dict:
+    """Once the set draws the Baths of Trajan, the Oppian holds the landmark instead of its
+    dressing of small bath halls: bathers go to its doors and the hall stokers (whose
+    furnace doors were the small halls') are not cast."""
+    if view.of_item(R + "r_bath_small") or not view.of_item(R + "trajan_baths"):
+        return doc
+    doc["roles"] = [r for r in doc["roles"] if r["id"] != "stoker"]
+    for d in doc["districts"]:
+        d["populations"] = [p for p in d["populations"] if p.get("role") != "stoker"]
+    for r in doc["roles"]:
+        if r["id"] == "bather":
+            r["routines"]["bathe"]["steps"][0] = {"go": {"item": R + "trajan_baths",
+                                                         "spot": "beside", "within": 12}}
+    return doc
+
+
 def build(view) -> dict:
+    return _baths(_build(view), view)
+
+
+def _build(view) -> dict:
     return {
         "version": 1, "id": "rome", "name": "Rome", "native": "Roma",
         "caption": "Rome · the Parilia, 21 April AD 126",

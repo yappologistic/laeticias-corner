@@ -25,7 +25,7 @@ def build(L: Layout) -> None:
     yard = L.street([(11, 9), (11, 8)], width=1, paving="parsa.packed_earth")
     river = [(6, 15), (6, 0)]   # the Halys flows north
     L.river(river, width=3, terrain="world.river", banks={"world.t_reeds": 0.35}, seed="halys")
-    L.level(Line(river, 3), WP.river_level(L, river, -1))
+    L.level(Line(river, 3), 0)  # flush with its banks, as the kit decks are drawn (the base meets it)
     F.fords(L, [road, road_e], item="world.bridge_timber")
     L.place("parsa.halys_gates", rect=(0, 6, 3, 13), name="halys_gates")
     L.place("world.royal_station", rect=(10, 4, 13, 7), face="south", name="halys_station")

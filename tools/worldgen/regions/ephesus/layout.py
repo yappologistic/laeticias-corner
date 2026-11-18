@@ -49,7 +49,7 @@ def build(L: Layout) -> None:
     L.level(Line([(11, 6), (11, 2)], 1), 1)
     L.river(KAYSTROS, width=2, terrain="world.river", banks={"world.t_reeds": 0.4},
             seed="kaystros")
-    L.level(Line(KAYSTROS, 2), WP.river_level(L, KAYSTROS, -1))
+    L.level(Line(KAYSTROS, 2), 0)  # flush with the quay, as the kit bridge is drawn
     F.fords(L, [quay], item="world.bridge_timber")
     L.place("athens.artemision", rect=(2, 13, 17, 20), name="artemision")
 
