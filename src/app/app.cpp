@@ -596,6 +596,7 @@ bool App::pick(TilePos t) {
     if (!idx || !ripe(cat_, world_.items()[*idx])) return false;
     const Item bed = world_.items()[*idx];
     harvest(world_, *idx);
+    editor_.dropRedo();
     ++progress_.harvests;
     progress_.lastHarvestDay = clock_.day();
     playAt(sfx::kHarvest, tuning::kSfxLevel,
