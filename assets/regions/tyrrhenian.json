@@ -56,6 +56,10 @@
  },
  "districts": [
   {
+   "id": "land",
+   "populations": []
+  },
+  {
    "id": "sea",
    "populations": [
     {

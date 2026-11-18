@@ -76,26 +76,6 @@
    ]
   },
   {
-   "id": "farm",
-   "populations": [
-    {
-     "actor": "rome.farmer",
-     "density": "fields",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "world.ox",
-     "density": "fields",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "world.dog",
-     "density": "daytime",
-     "max_per_chunk": 1
-    }
-   ]
-  },
-  {
    "id": "land",
    "populations": [
     {

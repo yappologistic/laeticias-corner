@@ -360,26 +360,6 @@
   {
    "kind": "pasture",
    "rect": [
-    91,
-    73,
-    101,
-    89
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    102,
-    73,
-    107,
-    89
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
     124,
     22,
     135,

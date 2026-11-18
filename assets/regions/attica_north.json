@@ -251,7 +251,7 @@
    "actor": "world.donkey",
    "variant": 1,
    "route": {
-    "start": "base:acharnai_road_yard_639_189",
+    "start": "base:acharnai_road_yard_640_185",
     "end": "base:acharnai_n"
    },
    "count": 2,
