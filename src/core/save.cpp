@@ -703,6 +703,11 @@ Profile parseProfile(std::string_view text) {
         if (j.contains("muted") && j["muted"].is_boolean()) p.muted = j["muted"].get<bool>();
         if (j.contains("chatter") && j["chatter"].is_string())
             p.chatty = j["chatter"].get<std::string>() != "quiet";
+        if (j.contains("grid") && j["grid"].is_boolean()) p.grid = j["grid"].get<bool>();
+        if (j.contains("brush") && j["brush"].is_number_integer()) {
+            const auto b = j["brush"].get<long long>();
+            if (b == 1 || b == 3 || b == 5) p.brush = static_cast<int>(b);
+        }
         if (j.contains("last_world") && j["last_world"].is_string())
             p.lastWorld = j["last_world"].get<std::string>();
     } catch (const json::exception&) {
@@ -712,10 +717,8 @@ Profile parseProfile(std::string_view text) {
 }
 
 std::string serialize(const Profile& p) {
-    return json{{"version", 1},
-                {"muted", p.muted},
-                {"chatter", p.chatty ? "chatty" : "quiet"},
-                {"last_world", p.lastWorld}}
+    return json{{"version", 1},   {"muted", p.muted}, {"chatter", p.chatty ? "chatty" : "quiet"},
+                {"grid", p.grid}, {"brush", p.brush}, {"last_world", p.lastWorld}}
         .dump(1);
 }
 

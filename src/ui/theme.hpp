@@ -204,11 +204,29 @@ inline constexpr char32_t kSnowflake = 0xE165;
 inline constexpr char32_t kLeaf = 0xE2DE;
 inline constexpr char32_t kFlower = 0xE2D3;
 inline constexpr char32_t kCheck = 0xE06C;
+inline constexpr char32_t kMove = 0xE121;
+inline constexpr char32_t kPipette = 0xE13B;
+inline constexpr char32_t kMenu = 0xE115;
+inline constexpr char32_t kSettings = 0xE154;
+inline constexpr char32_t kFrame = 0xE291;
+inline constexpr char32_t kImage = 0xE0F6;
+inline constexpr char32_t kFolderOpen = 0xE247;
+inline constexpr char32_t kHeart = 0xE0F2;
+inline constexpr char32_t kPencil = 0xE1F9;
+inline constexpr char32_t kTrash = 0xE18D;
+inline constexpr char32_t kPlay = 0xE13C;
+inline constexpr char32_t kType = 0xE198;
+inline constexpr char32_t kEyeOff = 0xE0BB;
+inline constexpr char32_t kArrowLeft = 0xE048;
+inline constexpr char32_t kLogOut = 0xE10E;
 inline constexpr char32_t kAll[] = {
-    kPlus,         kMinus,  kEraser,   kSoundOn,   kSoundOff,  kCamera,      kClockAuto,
-    kSun,          kSunset, kSunrise,  kMoon,      kRain,      kJournal,     kUndo,
-    kRedo,         kHome,   kClose,    kSparkle,   kChevronUp, kChevronDown, kChevronLeft,
-    kChevronRight, kLock,   kSparkles, kSnowflake, kLeaf,      kFlower,      kCheck};
+    kPlus,         kMinus,   kEraser,   kSoundOn,   kSoundOff,  kCamera,      kClockAuto,
+    kSun,          kSunset,  kSunrise,  kMoon,      kRain,      kJournal,     kUndo,
+    kRedo,         kHome,    kClose,    kSparkle,   kChevronUp, kChevronDown, kChevronLeft,
+    kChevronRight, kLock,    kSparkles, kSnowflake, kLeaf,      kFlower,      kCheck,
+    kMove,         kPipette, kMenu,     kSettings,  kFrame,     kImage,       kFolderOpen,
+    kHeart,        kPencil,  kTrash,    kPlay,      kType,      kEyeOff,      kArrowLeft,
+    kLogOut};
 } // namespace icon
 
 } // namespace lc::theme

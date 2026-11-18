@@ -16,6 +16,7 @@ enum Wid : int {
     kNone = 0,
     kBuild,
     kRemove,
+    kMove,
     kSound,
     kPhoto,
     kClock,
@@ -49,6 +50,7 @@ struct Named {
 constexpr Named kNames[] = {
     {"build", kBuild},
     {"remove", kRemove},
+    {"move", kMove},
     {"sound", kSound},
     {"photo", kPhoto},
     {"clock", kClock},
@@ -260,7 +262,7 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
     const float dockH = btn + 2 * pad;
     const float gap = theme::kGap * s;
     const float buildW = btn + theme::kBuildExtra * s;
-    const float leftW = buildW + gap + dockH;
+    const float leftW = buildW + 2 * (gap + dockH);
     const float divider = gap * 2;
     const float rightW = 5 * btn + 2 * divider + 2 * pad;
     const float centreW = 5 * btn + 2 * pad;
@@ -279,7 +281,7 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         Widget& w = add(kBuild, {margin, leftY, buildW, dockH});
         w.icon = theme::icon::kPlus;
         w.label = strings::kBuild;
-        w.tooltip = strings::kBuild;
+        w.tooltip = strings::kBuildTip;
         w.shortcut = strings::kKeyBuild;
         w.selected = m.drawerOpen || m.tool == Tool::Place || m.tool == Tool::Paint;
         w.dot =
@@ -294,6 +296,12 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
         r.shortcut = strings::kKeyRemove;
         r.selected = m.tool == Tool::Remove;
         panels_.push_back({r.box, dockH * 0.5f});
+        Widget& v = add(kMove, {margin + buildW + 2 * gap + dockH, leftY, dockH, dockH});
+        v.icon = theme::icon::kMove;
+        v.tooltip = strings::kMoveTip;
+        v.shortcut = strings::kKeyMove;
+        v.selected = m.tool == Tool::Move;
+        panels_.push_back({v.box, dockH * 0.5f});
     }
 
     // Right dock: undo, redo | recentre | zoom out, zoom in.
@@ -773,6 +781,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             switch (active_) {
             case kBuild: emit(HudAction::Kind::ToggleBuild); break;
             case kRemove: emit(HudAction::Kind::RemoveTool); break;
+            case kMove: emit(HudAction::Kind::MoveTool); break;
             case kSound: emit(HudAction::Kind::Sound); break;
             case kPhoto: emit(HudAction::Kind::Photo); break;
             case kClock: emit(HudAction::Kind::Clock); break;
@@ -959,7 +968,8 @@ void Hud::drawButton(Painter& p, const Widget& w, float alpha) const {
     const float h = w.enabled ? hoverOf(w.id) : 0.0f;
     const float pr = pressOf(w.id);
     const float r = std::min(w.box.w, w.box.h) * 0.5f;
-    const float inset = (w.id == kBuild || w.id == kRemove) ? theme::kDockPad * s : 0.0f;
+    const float inset =
+        (w.id == kBuild || w.id == kRemove || w.id == kMove) ? theme::kDockPad * s : 0.0f;
     const Box inner{w.box.x + inset, w.box.y + inset, w.box.w - 2 * inset, w.box.h - 2 * inset};
     const float ir = r - inset;
     if (w.selected) {

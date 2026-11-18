@@ -55,11 +55,13 @@ void App::pushMouseMotion(Vec2 px) {
     if (!SDL_PushEvent(&e)) SDL_Log("script: %s", SDL_GetError());
 }
 
-void App::pushButton(Vec2 px, bool down, bool right) {
+void App::pushButton(Vec2 px, bool down, const ScriptCommand& c) {
     SDL_Event e{};
     e.type = down ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
     e.button.windowID = SDL_GetWindowID(window_.get());
-    e.button.button = static_cast<Uint8>(right ? SDL_BUTTON_RIGHT : SDL_BUTTON_LEFT);
+    e.button.button = static_cast<Uint8>(c.right    ? SDL_BUTTON_RIGHT
+                                         : c.middle ? SDL_BUTTON_MIDDLE
+                                                    : SDL_BUTTON_LEFT);
     e.button.down = down;
     e.button.clicks = 1;
     e.button.x = px.x / density_;
@@ -238,11 +240,16 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                                                r.share() * 100.0f, r.samples));
     }
     if (what == "tool") {
-        static constexpr std::string_view kNames[] = {"none", "place", "paint", "remove"};
+        static constexpr std::string_view kNames[] = {"none", "place", "paint", "remove", "move"};
         return equal(std::string(kNames[static_cast<std::size_t>(tool_)]), a[1]);
     }
     if (what == "drawer") return yesNo(drawerOpen_);
     if (what == "profiler") return yesNo(profilerOn_);
+    if (what == "grid") return yesNo(grid_);
+    if (what == "footprints") return yesNo(footprintsHeld_);
+    if (what == "carrying") return yesNo(carry_.has_value());
+    if (what == "pipette") return yesNo(pipette_);
+    if (what == "brush") return equal(std::to_string(brush_), a[1]);
     if (what == "journal") return yesNo(journalOpen_);
     if (what == "photo") return yesNo(photo_);
     if (what == "undo") return yesNo(editor_.canUndo());
@@ -410,7 +417,7 @@ bool App::scriptStep() {
             const auto p = at(c.a);
             if (!p) return pending(c.a) || fail("cannot resolve point");
             pushMouseMotion(*p);
-            if (c.kind != K::Move) pushButton(*p, c.kind == K::Press, c.right);
+            if (c.kind != K::Move) pushButton(*p, c.kind == K::Press, c);
             next();
             return true;
         }
@@ -419,10 +426,10 @@ bool App::scriptStep() {
             if (!p) return pending(c.a) || fail("cannot resolve point");
             if (scriptPhase_ == 0) {
                 pushMouseMotion(*p);
-                pushButton(*p, true, c.right);
+                pushButton(*p, true, c);
                 scriptPhase_ = 1;
             } else {
-                pushButton(*p, false, c.right);
+                pushButton(*p, false, c);
                 next();
             }
             return true;
@@ -435,7 +442,7 @@ bool App::scriptStep() {
                 const auto q = at(c.b);
                 if (!q) return fail("cannot resolve point");
                 pushMouseMotion(*p);
-                pushButton(*p, true, c.right);
+                pushButton(*p, true, c);
                 script_[scriptPos_].a = {ScriptPoint::Kind::Pixel, p->x, p->y, {}};
                 script_[scriptPos_].b = {ScriptPoint::Kind::Pixel, q->x, q->y, {}};
                 scriptPhase_ = 1;
@@ -447,7 +454,7 @@ bool App::scriptStep() {
                 pushMouseMotion(p);
                 ++scriptPhase_;
             } else {
-                pushButton({c.b.x, c.b.y}, false, c.right);
+                pushButton({c.b.x, c.b.y}, false, c);
                 next();
             }
             return true;

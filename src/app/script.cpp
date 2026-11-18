@@ -92,9 +92,10 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
                 next = 3;
             }
             if (next < tok.size()) {
-                if (tok[next] != "right" || c.kind == ScriptCommand::Kind::Move)
+                if ((tok[next] != "right" && tok[next] != "middle") ||
+                    c.kind == ScriptCommand::Kind::Move)
                     return err("unexpected '" + tok[next] + "'");
-                c.right = true;
+                (tok[next] == "right" ? c.right : c.middle) = true;
                 ++next;
             }
             if (next != tok.size()) return err("too many arguments");

@@ -22,7 +22,7 @@
 
 namespace lc {
 
-enum class Tool : std::uint8_t { None, Place, Paint, Remove };
+enum class Tool : std::uint8_t { None, Place, Paint, Remove, Move };
 
 // First-frame art of every catalog entry, for drawer tiles and the journal.
 struct ThumbSet {
@@ -121,6 +121,7 @@ struct HudAction {
         PickItem,
         PickTerrain,
         RemoveTool,
+        MoveTool,
         Sound,
         Photo,
         Clock,

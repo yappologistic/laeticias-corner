@@ -723,9 +723,11 @@ void Scene::buildDynamic(const FrameParams& p) {
         // Emissive visitors are always drawn in the glow pass.
         insert(EntryKind::Actor, i, pointRect(a.pos), actorRect(a), glows(a));
     }
-    if (p.ghost.mode == Ghost::Mode::Item) {
-        const int slot = slotFor(*p.world, p.ghost.item);
-        insert(EntryKind::Ghost, 0, tileRect(p.ghost.item), spriteRect(p.ghost.item, slot), false);
+    for (std::uint32_t i = 0; i < p.ghosts.size(); ++i) {
+        const Ghost& g = p.ghosts[i];
+        if (g.mode != Ghost::Mode::Item) continue;
+        const int slot = slotFor(*p.world, g.item);
+        insert(EntryKind::Ghost, i, tileRect(g.item), spriteRect(g.item, slot), false);
     }
     for (std::uint32_t i = 0; i < fades_.size(); ++i)
         insert(EntryKind::Fade, i, tileRect(fades_[i].item),
@@ -765,9 +767,9 @@ void Scene::drawEntry(const FrameParams& p, const Entry& e, bool silhouette) {
     switch (e.kind) {
     case EntryKind::Actor: drawActor(p.actors[e.index], silhouette); break;
     case EntryKind::Ghost: {
-        const int slot = slotFor(*p.world, p.ghost.item);
-        drawItem(p.ghost.item, slot, tuning::kGhostAlpha, p.ghost.valid ? kWhite : kInvalidTint,
-                 silhouette);
+        const Ghost& g = p.ghosts[e.index];
+        const int slot = slotFor(*p.world, g.item);
+        drawItem(g.item, slot, tuning::kGhostAlpha, g.valid ? kWhite : kInvalidTint, silhouette);
         break;
     }
     case EntryKind::Fade: {
@@ -782,8 +784,14 @@ void Scene::drawEntry(const FrameParams& p, const Entry& e, bool silhouette) {
 void Scene::drawEntries(const FrameParams& p, bool silhouette) {
     const float glow = p.light.glow;
     const World& world = *p.world;
-    const Item* removeTarget =
-        p.ghost.mode == Ghost::Mode::Remove ? world.itemAt(p.ghost.tile) : nullptr;
+    // Items a remove tool points at are tinted (one, or every one an area touches).
+    const auto marked = [&](const Item& it) {
+        return std::ranges::any_of(p.ghosts, [&](const Ghost& g) {
+            if (g.mode != Ghost::Mode::Remove) return false;
+            const Item* t = world.itemAt(g.tile);
+            return t != nullptr && *t == it;
+        });
+    };
     std::size_t d = 0;
     if (!silhouette) drawnItems_ = 0;
     for (std::uint32_t i = 0; i < placed_.size(); ++i) {
@@ -794,8 +802,8 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
         // The glow pass only needs what can hide an emissive pixel.
         if (silhouette && !pl.occludesGlow) continue;
         if (!silhouette) ++drawnItems_;
-        const bool marked = removeTarget != nullptr && *removeTarget == pl.item;
-        drawItem(pl.item, pl.slot, 1.0f, marked ? kInvalidTint : kWhite, silhouette);
+        const bool tinted = !silhouette && !p.ghosts.empty() && marked(pl.item);
+        drawItem(pl.item, pl.slot, 1.0f, tinted ? kInvalidTint : kWhite, silhouette);
         const auto& glowSet = tables_.items[pl.item.type].glow[static_cast<std::size_t>(pl.slot)];
         if (silhouette && !glowSet.empty()) {
             const auto& def = cat_.items[pl.item.type];
@@ -891,6 +899,20 @@ void Scene::drawMarkers(const FrameParams& p) {
         drawArea(world, pl.area,
                  {1.0f, 0.86f, 0.55f, tuning::kNookPulseAlpha * std::sin(k * 3.14159f)});
     }
+    // The grid lies over open land, under everything standing on it.
+    if (p.grid > 0) {
+        const TileRect v = visibleTiles(*p.camera, p.screen, world);
+        for (int y = v.y0; y < v.y1; ++y)
+            for (int x = v.x0; x < v.x1; ++x)
+                if (world.hasGround({x, y}) && !world.isWild({x, y}))
+                    sprite(tables_.tileGrid, iso_.toWorld(TilePos{x, y}), {1, 1, 1, p.grid});
+    }
+    if (p.footprints)
+        for (const Placed& pl : placed_)
+            for (int y = pl.item.pos.y; y < pl.item.pos.y + pl.item.h; ++y)
+                for (int x = pl.item.pos.x; x < pl.item.pos.x + pl.item.w; ++x)
+                    sprite(tables_.tileArea, iso_.toWorld(TilePos{x, y}),
+                           {1, 1, 1, tuning::kFootprintAlpha});
     for (const NearInstance& o : p.outlines)
         drawArea(world, o, {1, 1, 1, tuning::kNookOutlineAlpha});
     // Land being opened still looks wild until the wave reaches each tile.
@@ -905,20 +927,22 @@ void Scene::drawMarkers(const FrameParams& p) {
         if (world.hasGround(t))
             sprite(ok ? tables_.tileOk : tables_.tileBad, iso_.toWorld(t), {1, 1, 1, 0.9f});
     };
-    switch (p.ghost.mode) {
-    case Ghost::Mode::None: break;
-    case Ghost::Mode::Item:
-        for (int y = 0; y < p.ghost.item.h; ++y)
-            for (int x = 0; x < p.ghost.item.w; ++x)
-                marker({p.ghost.item.pos.x + x, p.ghost.item.pos.y + y}, p.ghost.valid);
-        break;
-    case Ghost::Mode::Tile: marker(p.ghost.tile, p.ghost.valid); break;
-    case Ghost::Mode::Remove:
-        if (const Item* it = world.itemAt(p.ghost.tile)) {
-            for (int y = 0; y < it->h; ++y)
-                for (int x = 0; x < it->w; ++x) marker({it->pos.x + x, it->pos.y + y}, false);
+    for (const Ghost& g : p.ghosts) {
+        switch (g.mode) {
+        case Ghost::Mode::None: break;
+        case Ghost::Mode::Item:
+            for (int y = 0; y < g.item.h; ++y)
+                for (int x = 0; x < g.item.w; ++x)
+                    marker({g.item.pos.x + x, g.item.pos.y + y}, g.valid);
+            break;
+        case Ghost::Mode::Tile: marker(g.tile, g.valid); break;
+        case Ghost::Mode::Remove:
+            if (const Item* it = world.itemAt(g.tile)) {
+                for (int y = 0; y < it->h; ++y)
+                    for (int x = 0; x < it->w; ++x) marker({it->pos.x + x, it->pos.y + y}, false);
+            }
+            break;
         }
-        break;
     }
 }
 

@@ -24,28 +24,6 @@
 namespace lc {
 namespace {
 
-// Sound files the engine plays besides the per-item/terrain/visitor sounds in the catalog.
-namespace sfx {
-constexpr std::string_view kRemove = "sfx/remove.wav";
-constexpr std::string_view kRotate = "sfx/rotate.wav";
-constexpr std::string_view kInvalid = "sfx/invalid.wav";
-constexpr std::string_view kUndo = "sfx/undo.wav";
-constexpr std::string_view kRedo = "sfx/redo.wav";
-constexpr std::string_view kHover = "sfx/ui_hover.wav";
-constexpr std::string_view kClick = "sfx/ui_click.wav";
-constexpr std::string_view kOpen = "sfx/ui_open.wav";
-constexpr std::string_view kClose = "sfx/ui_close.wav";
-constexpr std::string_view kShutter = "sfx/shutter.wav";
-constexpr std::string_view kDiscover = "sfx/discover.wav";
-constexpr std::string_view kPaint = "sfx/paint.wav";
-constexpr std::string_view kWish = "sfx/wish.wav";
-constexpr std::string_view kWishGranted = "sfx/wish_granted.wav";
-constexpr std::string_view kPage = "sfx/page.wav";
-constexpr std::string_view kNook = "sfx/nook.wav";
-constexpr std::string_view kLandOpen = "sfx/land_open.wav";
-constexpr std::string_view kHarvest = "sfx/harvest.wav";
-} // namespace sfx
-
 constexpr std::string_view kPhotoDir = "photos";
 constexpr std::string_view kRainBed = "amb/rain.ogg";           // under rain, not snow
 constexpr std::string_view kWaterBed = "amb/water.ogg";         // with the water on screen
@@ -101,39 +79,6 @@ fs::path findSaveDir(const Options& o) {
         return p;
     }
     return fs::current_path() / "save";
-}
-
-std::string_view placeWarning(PlaceResult r) {
-    switch (r) {
-    case PlaceResult::Ok: return {};
-    case PlaceResult::OutOfBounds: return strings::kWarnEdge;
-    case PlaceResult::Wild: return strings::kWarnWild;
-    case PlaceResult::Occupied: return strings::kWarnOccupied;
-    case PlaceResult::NeedsLand: return strings::kWarnLand;
-    case PlaceResult::NeedsWater: return strings::kWarnWater;
-    }
-    return {};
-}
-
-// 4-connected walk from a (exclusive) to b (inclusive), so drags never leave diagonal gaps.
-template <typename F>
-void walkLine(TilePos a, TilePos b, F&& visit) {
-    const int tx = b.x - a.x;
-    const int ty = b.y - a.y;
-    TilePos c = a;
-    while (c != b) {
-        const int rx = b.x - c.x;
-        const int ry = b.y - c.y;
-        if (std::abs(rx) * std::abs(ty) >= std::abs(ry) * std::abs(tx) && rx != 0)
-            c.x += rx > 0 ? 1 : -1;
-        else
-            c.y += ry > 0 ? 1 : -1;
-        visit(c);
-    }
-}
-
-bool oneTile(const ItemDef& def) {
-    return def.footprintW == 1 && def.footprintH == 1;
 }
 
 } // namespace
@@ -346,6 +291,8 @@ void App::loadOrStart() {
     std::error_code ec;
     if (auto text = readTextFile(saveDir_ / kProfileFile)) profile_ = parseProfile(*text);
     muted_ = profile_.muted;
+    brush_ = profile_.brush;
+    grid_ = profile_.grid;
     const fs::path worlds = saveDir_ / kWorldsDir;
     const fs::path legacy = saveDir_ / kLegacyFile;
 
@@ -837,6 +784,9 @@ void App::play(std::string_view file, float gain, bool jitter) {
 }
 
 void App::setTool(Tool t, int selection) {
+    cancelMove();
+    shape_ = Shape::None;
+    pipette_ = false;
     if (editor_.inGroup()) editor_.commit();
     drag_ = drag_ == Drag::Tool ? Drag::None : drag_;
     tool_ = t;
@@ -918,6 +868,8 @@ void App::undoRedo(bool redo) {
     // Undo in the middle of a drag ends the drag: the stroke so far is one step and is undone
     // whole, and nothing more is drawn until the button is pressed again.
     if (drag_ == Drag::Tool) drag_ = Drag::None;
+    shape_ = Shape::None;
+    cancelMove(); // a piece in hand goes back first
     const auto ops = redo ? editor_.redo(world_) : editor_.undo(world_);
     if (!ops.empty()) play(redo ? sfx::kRedo : sfx::kUndo);
     feedback(ops);
@@ -935,8 +887,28 @@ void App::frameCamera() {
 
 void App::handleKey(const SDL_KeyboardEvent& k) {
     const SDL_Keycode key = k.key;
+    // Modifiers as the keys say, so clicks can read them (synthesized input included).
+    mods_ = k.mod;
+    const auto modBit = [](SDL_Keycode c) -> SDL_Keymod {
+        switch (c) {
+        case SDLK_LSHIFT: return SDL_KMOD_LSHIFT;
+        case SDLK_RSHIFT: return SDL_KMOD_RSHIFT;
+        case SDLK_LALT: return SDL_KMOD_LALT;
+        case SDLK_RALT: return SDL_KMOD_RALT;
+        case SDLK_LCTRL: return SDL_KMOD_LCTRL;
+        case SDLK_RCTRL: return SDL_KMOD_RCTRL;
+        default: return SDL_KMOD_NONE;
+        }
+    };
+    if (const SDL_Keymod bit = modBit(key); bit != SDL_KMOD_NONE)
+        mods_ = static_cast<SDL_Keymod>(k.down ? (mods_ | bit) : (mods_ & ~bit));
     const bool ctrl = (k.mod & SDL_KMOD_CTRL) != 0;
     const bool shift = (k.mod & SDL_KMOD_SHIFT) != 0;
+    // Held Tab shows every footprint and nook; it lets go when released.
+    if (key == SDLK_TAB) {
+        footprintsHeld_ = k.down && !photo_;
+        return;
+    }
     const auto panIndex = [&]() -> int {
         switch (key) {
         case SDLK_W:
@@ -973,7 +945,14 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_ESCAPE:
         if (photo_)
             togglePhoto();
-        else if (hud_.calendarOpen())
+        else if (carry_)
+            cancelMove();
+        else if (pipette_)
+            pipette_ = false;
+        else if (shape_ != Shape::None) {
+            shape_ = Shape::None;
+            drag_ = Drag::None;
+        } else if (hud_.calendarOpen())
             hud_.closeCalendar();
         else if (tool_ != Tool::None)
             setTool(Tool::None, -1);
@@ -1019,7 +998,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         if (ctrl) undoRedo(true);
         break;
     case SDLK_R:
-        if (tool_ == Tool::Place) {
+        if (tool_ == Tool::Place || carry_) {
             const auto& def = cat_.items[static_cast<std::size_t>(selection_)];
             if (def.count > 1) {
                 variant_ = (variant_ + 1) % def.count;
@@ -1032,6 +1011,25 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         play(drawerOpen_ ? sfx::kOpen : sfx::kClose, tuning::kUiSfxLevel);
         break;
     case SDLK_X: setTool(tool_ == Tool::Remove ? Tool::None : Tool::Remove, -1); break;
+    case SDLK_V: setTool(tool_ == Tool::Move ? Tool::None : Tool::Move, -1); break;
+    case SDLK_I: pipette_ = !pipette_; break;
+    case SDLK_LEFTBRACKET:
+    case SDLK_RIGHTBRACKET: {
+        // Brush sizes 1, 3, 5.
+        const auto& sizes = tuning::kBrushSizes;
+        const auto at = std::ranges::find(sizes, brush_) - std::begin(sizes);
+        const auto n = static_cast<std::ptrdiff_t>(std::size(sizes));
+        brush_ = sizes[static_cast<std::size_t>(
+            std::clamp<std::ptrdiff_t>(at + (key == SDLK_RIGHTBRACKET ? 1 : -1), 0, n - 1))];
+        profile_.brush = brush_;
+        markDirty();
+        break;
+    }
+    case SDLK_G:
+        grid_ = !grid_;
+        profile_.grid = grid_;
+        markDirty();
+        break;
     case SDLK_J:
         journalOpen_ = !journalOpen_;
         play(journalOpen_ ? sfx::kOpen : sfx::kClose, tuning::kUiSfxLevel);
@@ -1066,6 +1064,8 @@ void App::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_WINDOW_FOCUS_LOST:
         // Keys released while another window has focus never arrive here.
         std::ranges::fill(keyPan_, false);
+        mods_ = SDL_KMOD_NONE;
+        footprintsHeld_ = false;
         break;
     case SDL_EVENT_WINDOW_MOUSE_ENTER: mouseInside_ = true; break;
     case SDL_EVENT_WINDOW_MOUSE_LEAVE: mouseInside_ = false; break;
@@ -1099,9 +1099,18 @@ void App::handleEvent(const SDL_Event& e) {
                 if (drag_ == Drag::Pan) drag_ = Drag::None;
                 // A right click without dragging cancels the current tool.
                 const float moved = std::hypot(mouse_.x - rightStart_.x, mouse_.y - rightStart_.y);
-                if (moved < tuning::kClickSlop * density_ && e.button.button == SDL_BUTTON_RIGHT &&
-                    tool_ != Tool::None)
-                    setTool(Tool::None, -1);
+                const bool click = moved < tuning::kClickSlop * density_;
+                if (click && e.button.button == SDL_BUTTON_RIGHT) {
+                    // Right click puts a piece in hand back, else lets go of the tool.
+                    if (carry_)
+                        cancelMove();
+                    else if (pipette_)
+                        pipette_ = false;
+                    else if (tool_ != Tool::None)
+                        setTool(Tool::None, -1);
+                } else if (click && e.button.button == SDL_BUTTON_MIDDLE) {
+                    middleClick_ = true;
+                }
             }
         }
         break;
@@ -1168,6 +1177,15 @@ HudModel App::model() const {
         floatLabels_.push_back({view_.worldToScreen(l.world, screen()),
                                 cat_.nooks[static_cast<std::size_t>(l.nook)].name, fade});
     }
+    // Held Tab names every nook in a small pill over its anchor.
+    if (footprintsHeld_)
+        for (const NookPlace& n : nookPlaces_) {
+            const TileRect& r = n.area.footprint;
+            const Vec2 top = cat_.iso().toWorld(static_cast<float>(r.x0 + r.x1) * 0.5f,
+                                                static_cast<float>(r.y0 + r.y1) * 0.5f);
+            floatLabels_.push_back({view_.worldToScreen(top, screen()),
+                                    cat_.nooks[static_cast<std::size_t>(n.nook)].name, 1.0f});
+        }
     m.labels = floatLabels_;
     m.edgeChip = simTime_ < edgeChipUntil_;
     m.worldName = worldName_;
@@ -1211,27 +1229,9 @@ HudModel App::model() const {
         m.hint = strings::kHintPhoto;
         return m;
     }
-    switch (tool_) {
-    case Tool::None:
-        // The first time anything ripens, say what to do with it.
-        if (anyRipe_ && progress_.harvests == 0) m.hint = strings::kHintRipe;
-        break;
-    case Tool::Place: {
-        const auto& def = cat_.items[static_cast<std::size_t>(selection_)];
-        const bool row = oneTile(def);
-        if (def.count <= 1)
-            m.hint = row ? strings::kHintPlaceRow : strings::kHintPlaceFixed;
-        else if (def.layout == Layout::Rotate)
-            m.hint = row ? strings::kHintPlaceRowRotate : strings::kHintPlace;
-        else
-            m.hint = row ? strings::kHintPlaceRowVariant : strings::kHintPlaceVariant;
-        break;
-    }
-    case Tool::Paint: m.hint = strings::kHintPaint; break;
-    case Tool::Remove: m.hint = strings::kHintRemove; break;
-    }
+    m.hint = toolHint();
     m.warning = warning_;
-    if (tool_ == Tool::Place && hover_ && warnTime_ <= 0)
+    if ((tool_ == Tool::Place || carry_) && hover_ && warnTime_ <= 0 && shape_ == Shape::None)
         m.warning = placeWarning(canPlace(world_, cat_, ghostItem(*hover_)));
     return m;
 }
@@ -1263,6 +1263,7 @@ void App::applyHudActions() {
             break;
         }
         case K::RemoveTool: setTool(tool_ == Tool::Remove ? Tool::None : Tool::Remove, -1); break;
+        case K::MoveTool: setTool(tool_ == Tool::Move ? Tool::None : Tool::Move, -1); break;
         case K::Sound:
             muted_ = !muted_;
             markDirty();
@@ -1314,162 +1315,6 @@ void App::applyHudActions() {
     }
 }
 
-Item App::ghostItem(TilePos hover) const {
-    const auto& def = cat_.items[static_cast<std::size_t>(selection_)];
-    const Footprint fp = footprintOf(def, variant_);
-    // Centre multi-tile footprints on the cursor.
-    return makeItem(cat_, selection_, variant_,
-                    {hover.x - (fp.w - 1) / 2, hover.y - (fp.h - 1) / 2});
-}
-
-Ghost App::ghost() const {
-    Ghost g;
-    if (!hover_ || photo_ || drag_ == Drag::Pan) return g;
-    switch (tool_) {
-    case Tool::None:
-        // An empty hand over wild land shows it cannot be used yet.
-        if (world_.isWild(*hover_)) {
-            g.mode = Ghost::Mode::Tile;
-            g.tile = *hover_;
-        }
-        break;
-    case Tool::Place:
-        g.mode = Ghost::Mode::Item;
-        g.item = ghostItem(*hover_);
-        g.valid = canPlace(world_, cat_, g.item) == PlaceResult::Ok;
-        break;
-    case Tool::Paint: {
-        g.mode = Ghost::Mode::Tile;
-        g.tile = *hover_;
-        const auto r = canPaint(world_, cat_, *hover_, selection_);
-        g.valid = r == PaintResult::Ok || r == PaintResult::Unchanged;
-        break;
-    }
-    case Tool::Remove:
-        g.mode = Ghost::Mode::Remove;
-        g.tile = *hover_;
-        g.valid = world_.itemAt(*hover_) != nullptr;
-        break;
-    }
-    return g;
-}
-
-void App::applyTool(TilePos t, bool first) {
-    World& w = world_;
-    const auto warn = [&](std::string_view text) {
-        warning_ = text;
-        warnTime_ = tuning::kWarnSeconds;
-    };
-    switch (tool_) {
-    case Tool::None: break;
-    case Tool::Place: {
-        const Item item = ghostItem(t);
-        const bool fresh = w.itemCount(item.type) == 0;
-        const auto r = editor_.place(w, cat_, item);
-        if (r == PlaceResult::Ok) {
-            scene_->onPlaced(item, rng_);
-            disturbed(item.rect(), item.type, fresh);
-            play(cat_.items[item.type].sound, tuning::kSfxLevel, true);
-            playNote();
-            markDirty();
-        } else if (first) {
-            play(sfx::kInvalid);
-        }
-        break;
-    }
-    case Tool::Paint: {
-        const auto r = editor_.paint(w, cat_, t, selection_);
-        if (first) strokeTiles_ = 0;
-        if (r == PaintResult::Ok) {
-            if (selection_ == cat_.waterTerrain) disturbed({t.x, t.y, t.x + 1, t.y + 1}, -1, false);
-            // A note when a stroke starts and every few tiles after.
-            if (strokeTiles_++ % tuning::kPaintNoteEvery == 0) playNote();
-            if (simTime_ - lastPaintSound_ > tuning::kPaintSoundGap) {
-                const auto& snd = cat_.terrain[static_cast<std::size_t>(selection_)].sound;
-                play(snd.empty() ? sfx::kPaint : std::string_view(snd), tuning::kSfxLevel, true);
-                lastPaintSound_ = simTime_;
-            }
-            markDirty();
-        } else if (r == PaintResult::BlockedByItem || r == PaintResult::Wild) {
-            if (first) play(sfx::kInvalid);
-            warn(r == PaintResult::Wild ? strings::kWarnWild : strings::kWarnPaint);
-        }
-        break;
-    }
-    case Tool::Remove: {
-        if (const Item* it = w.itemAt(t)) {
-            const Item removed = *it;
-            (void)editor_.remove(w, t);
-            scene_->onRemoved(removed);
-            disturbed(removed.rect(), -2, false);
-            play(sfx::kRemove, tuning::kSfxLevel, true);
-            markDirty();
-        } else if (first) {
-            warn(strings::kWarnNothing);
-        }
-        break;
-    }
-    }
-}
-
-void App::worldInput() {
-    const bool uiOwns = hud_.wantsMouse() && drag_ != Drag::Tool;
-    hover_.reset();
-    if (mouseInside_ && !uiOwns && !photo_) {
-        const TilePos t = cat_.iso().tileAt(view_.screenToWorld(mouse_, screen()));
-        if (world_.hasGround(t)) hover_ = t;
-    }
-    // Whole notches step the zoom; small deltas (touchpads, smooth wheels) add up to a step.
-    if (uiOwns) wheelAcc_ = 0;
-    for (; wheelAcc_ >= 1.0f; wheelAcc_ -= 1.0f) zoomBy(1, mouse_);
-    for (; wheelAcc_ <= -1.0f; wheelAcc_ += 1.0f) zoomBy(-1, mouse_);
-    wheel_ = 0;
-
-    if (panPending_) {
-        panPending_ = false;
-        if (!uiOwns && drag_ == Drag::None) drag_ = Drag::Pan;
-    }
-    if (leftPressed_ && !uiOwns && drag_ == Drag::None) {
-        if (tool_ == Tool::None || photo_) {
-            drag_ = Drag::Pan;
-            lastPan_ = pressStart_ = mouse_;
-        } else if (const auto t = hover_) {
-            drag_ = Drag::Tool;
-            editor_.begin();
-            applyTool(*t, true);
-            lastTile_ = *t;
-        }
-    }
-    if (drag_ == Drag::Tool && hover_ && *hover_ != lastTile_) {
-        const bool repeat =
-            tool_ != Tool::Place || oneTile(cat_.items[static_cast<std::size_t>(selection_)]);
-        if (repeat) walkLine(lastTile_, *hover_, [&](TilePos t) { applyTool(t, false); });
-        lastTile_ = *hover_;
-    }
-    if (leftReleased_) {
-        if (drag_ == Drag::Tool) editor_.commit();
-        // A click (not a drag) takes the photo in photo mode, or picks a ripe bed.
-        const bool click = drag_ == Drag::Pan && !rightDown_ &&
-                           std::hypot(mouse_.x - pressStart_.x, mouse_.y - pressStart_.y) <
-                               tuning::kClickSlop * density_;
-        if (click && photo_) {
-            capturePending_ = true;
-        } else if (click && tool_ == Tool::None) {
-            // An actor under the pointer is petted (she answers); else a ripe bed is picked;
-            // else an item with a sound of its own plays it (the well's plip).
-            if (const auto who = actorUnder(mouse_)) {
-                (void)actors_.pet(*who);
-            } else if (const auto t = hover_; t && !pick(*t)) {
-                if (const Item* it = world_.itemAt(*t);
-                    it && !cat_.items[it->type].clickSound.empty())
-                    playAt(cat_.items[it->type].clickSound, tuning::kSfxLevel,
-                           {static_cast<float>(t->x) + 0.5f, static_cast<float>(t->y) + 0.5f});
-            }
-        }
-        if (drag_ != Drag::None && !rightDown_) drag_ = Drag::None;
-    }
-}
-
 void App::step(float dt) {
     camera_.beginStep();
     actorPrev_.resize(actors_.all().size());
@@ -1506,7 +1351,12 @@ void App::step(float dt) {
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);
     if (warnTime_ <= 0) warning_ = {};
-    if (autosave_.due(dt, drag_ == Drag::Tool)) (void)save();
+    if (pendingNotes_ > 0 && (lastNote_ < 0 || simTime_ - lastNote_ >= tuning::kNoteMinGap)) {
+        --pendingNotes_;
+        playNote();
+    }
+    // Never saved with a piece in hand (it is out of the world until it is put down).
+    if (autosave_.due(dt, drag_ == Drag::Tool || carry_)) (void)save();
     (void)pollSaves();
 }
 
@@ -1648,7 +1498,16 @@ void App::render() {
     p.actors = drawActors_;
     p.resident = actors_.resident();
     p.weather = &weather_;
-    p.ghost = ghost();
+    p.ghosts = buildGhosts();
+    p.grid = grid_ ? tuning::kGridAlphaDay + (tuning::kGridAlphaNight - tuning::kGridAlphaDay) *
+                                                 std::clamp(p.light.night, 0.0f, 1.0f)
+                   : 0.0f;
+    p.footprints = footprintsHeld_;
+    if (footprintsHeld_) {
+        allNooks_.clear();
+        for (const NookPlace& n : nookPlaces_) allNooks_.push_back(n.area);
+        p.outlines = allNooks_;
+    }
     p.outlines = hoverNook_;
     p.camera = &view_;
     p.screen = screen();
@@ -1853,6 +1712,7 @@ int App::run() {
         ++frame_;
         if (opts_.frames > 0 && frame_ >= opts_.frames) running_ = false;
     }
+    cancelMove();
     if (editor_.inGroup()) editor_.commit();
     if (!saveBlocked_) (void)writeThumbnail();
     if (!save(true) && exitCode_ == 0 && opts_.script) SDL_Log("save: the final save failed");

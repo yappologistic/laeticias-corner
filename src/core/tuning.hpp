@@ -64,7 +64,7 @@ inline constexpr double kSimBudgetMs = 0.6;   // actors, events, weather and con
 inline constexpr double kCrowdBudgetMs = 0.4; // the crowd's actors alone
 inline constexpr double kFrameP99Ms = 8.3;    // CLAUDE.md "Performance": 99th percentile frame
 inline constexpr double kFrameWorstMs = 16.6;
-inline constexpr double kCpuBudgetMs = 2.0; // update + draw submission on the CPU, on average
+inline constexpr double kCpuBudgetMs = 2.0;   // update + draw submission on the CPU, on average
 inline constexpr double kSoakGrowthMiB = 4.0; // memory a long session may add after warming up
 // The process's resident memory may not pass this in the bench at 1080p, nor the soak at its size.
 // It covers the atlas, the four world targets and the blur chain at that size, the ground cache's
@@ -280,6 +280,13 @@ inline constexpr float kClickSlop = 4.0f;      // window px a click may move and
 inline constexpr int kCameraOpenMargin = 6; // tiles of wild land the camera may look over
 
 inline constexpr int kHiddenWaitMs = 250; // a hidden window sleeps on events this long at most
+
+// Builder comforts (docs/design/living-corner.md R11)
+inline constexpr float kGridAlphaDay = 0.14f;
+inline constexpr float kGridAlphaNight = 0.10f;
+inline constexpr float kFootprintAlpha = 0.3f; // hold Tab: every item's footprint
+inline constexpr int kBrushSizes[] = {1, 3, 5};
+inline constexpr int kLineNotes = 5; // notes a placed line plays, one after another
 
 // Rendering budgets
 inline constexpr std::size_t kGroundCacheBytes = 128u << 20; // GPU memory for cached ground

@@ -16,10 +16,10 @@
 //
 // Commands:
 //   move P                  pointer motion
-//   click P [right]         press and release (left button unless "right")
-//   drag P1 P2 [right]      press at P1, move to P2 over 8 frames, release
-//   press P [right]         move to P and press the button (hold it)
-//   release P [right]       move to P and release the button
+//   click P [right|middle]  press and release (left button unless "right" or "middle")
+//   drag P1 P2 [right|middle]  press at P1, move to P2 over 8 frames, release
+//   press P [right|middle]  move to P and press the button (hold it)
+//   release P [right|middle]  move to P and release the button
 //   key COMBO               e.g. r, escape, ctrl+z, ctrl+shift+z, alt+x, home, f3, f11, equals,
 //                           minus, space
 //   keydown COMBO           press (and hold) a key, e.g. keydown d, keydown ctrl
@@ -49,8 +49,10 @@
 //                           holds, failing if it never does); state checks only; an audio
 //                           capture keeps recording through it
 //   expect WHAT ARGS...     fail the run unless the state matches:
-//       tile P TERRAIN | item P ITEM|none | count ITEM|all N | tool none|place|paint|remove
+//       tile P TERRAIN | item P ITEM|none | count ITEM|all N | tool none|place|paint|remove|move
 //       drawer open|closed | journal open|closed | photo on|off | phase PHASE | profiler yes|no
+//       grid yes|no | footprints yes|no (Tab held) | carrying yes|no (a piece being moved)
+//       brush N | pipette yes|no
 //       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
 //       where it may) | saved yes|no (a save file exists) | zoom 0.25|0.5|1|2|3
@@ -121,6 +123,7 @@ struct ScriptCommand {
     ScriptPoint b;
     bool hasPoint = false;
     bool right = false;
+    bool middle = false;           // the middle button instead of the left
     float amount = 0;              // wheel delta, wait frames
     std::vector<std::string> args; // key combo, file name, set/expect arguments
 };

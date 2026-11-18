@@ -89,6 +89,17 @@ void Editor::commit() {
     pending_.clear();
 }
 
+std::span<const Op> Editor::abort(World& world) {
+    applied_.clear();
+    for (const Op& op : std::views::reverse(pending_)) {
+        apply(world, op, false);
+        applied_.push_back(inverted(op));
+    }
+    pending_.clear();
+    grouping_ = false;
+    return applied_;
+}
+
 void Editor::push(std::vector<Op>&& step) {
     undo_.push_back(std::move(step));
     if (undo_.size() > maxSteps_) undo_.erase(undo_.begin());

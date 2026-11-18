@@ -11,6 +11,9 @@ inline constexpr std::string_view kDefaultWorldName = "Laeticia's Corner";
 
 inline constexpr std::string_view kBuild = "Build";
 inline constexpr std::string_view kRemove = "Remove";
+inline constexpr std::string_view kMove = "Move";
+inline constexpr std::string_view kBuildTip = "Build · Alt-click to copy";
+inline constexpr std::string_view kMoveTip = "Move · Alt-click to copy";
 inline constexpr std::string_view kSoundOn = "Sound on";
 inline constexpr std::string_view kSoundOff = "Sound off";
 inline constexpr std::string_view kPhoto = "Photo mode";
@@ -69,6 +72,7 @@ inline constexpr std::string_view kTipLocked = "{} more to discover. Grant wishe
 // Shortcut labels shown in tooltips.
 inline constexpr std::string_view kKeyBuild = "B";
 inline constexpr std::string_view kKeyRemove = "X";
+inline constexpr std::string_view kKeyMove = "V";
 inline constexpr std::string_view kKeyUndo = "Ctrl+Z";
 inline constexpr std::string_view kKeyRedo = "Ctrl+Shift+Z";
 inline constexpr std::string_view kKeyRecentre = "Home";
@@ -94,13 +98,21 @@ inline constexpr std::string_view kHintPlace = "Click to place · R to rotate ·
 inline constexpr std::string_view kHintPlaceVariant =
     "Click to place · R for another look · Esc to cancel";
 inline constexpr std::string_view kHintPlaceFixed = "Click to place · Esc to cancel";
-inline constexpr std::string_view kHintPlaceRow = "Click or drag to place · Esc to cancel";
+inline constexpr std::string_view kHintPlaceRow =
+    "Click or drag to place · Esc to cancel · Shift-drag for a straight line";
 inline constexpr std::string_view kHintPlaceRowVariant =
-    "Click or drag to place · R for another look · Esc to cancel";
+    "Click or drag to place · R for another look · Esc to cancel · Shift-drag for a straight line";
 inline constexpr std::string_view kHintPlaceRowRotate =
-    "Click or drag to place · R to rotate · Esc to cancel";
-inline constexpr std::string_view kHintPaint = "Click and drag to paint · Esc to cancel";
-inline constexpr std::string_view kHintRemove = "Click to remove · Drag to clear · Esc to cancel";
+    "Click or drag to place · R to rotate · Esc to cancel · Shift-drag for a straight line";
+inline constexpr std::string_view kHintPaintBrush = "Brush {}×{} · Click and drag to paint · [ ] "
+                                                    "brush size · Shift-drag for a rectangle · "
+                                                    "Esc to cancel";
+inline constexpr std::string_view kHintRemove =
+    "Click to remove · Shift-drag to clear an area · Esc to cancel";
+inline constexpr std::string_view kHintMovePick = "Click something to pick it up · Esc to cancel";
+inline constexpr std::string_view kHintMoveCarry =
+    "Click to put it down · R to rotate · Esc to put it back";
+inline constexpr std::string_view kHintPipette = "Click something to copy it · Esc to cancel";
 inline constexpr std::string_view kHintPhoto =
     "Frame your photo · Space or click to take it · Esc to return";
 
@@ -111,6 +123,8 @@ inline constexpr std::string_view kWarnEdge = "That's past the edge";
 inline constexpr std::string_view kWarnPaint = "Can't change the ground under that";
 inline constexpr std::string_view kWarnNothing = "Nothing to remove here";
 inline constexpr std::string_view kWarnWild = "This land is still wild";
+inline constexpr std::string_view kWarnLocked = "Not unlocked yet";
+inline constexpr std::string_view kWarnNothingToPick = "Nothing to pick up here";
 
 inline constexpr std::string_view kJournalUnknown = "Someone new";
 inline constexpr std::string_view kToastNewVisitor = "New visitor: ";

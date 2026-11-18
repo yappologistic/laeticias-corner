@@ -108,6 +108,8 @@ void migrateLegacy(SaveData& data, const Catalog& cat);
 // file falls back to defaults field by field.
 struct Profile {
     bool muted = false;
+    bool grid = false;     // the tile grid over open land (G)
+    int brush = 1;         // paint brush side: 1, 3 or 5
     bool chatty = true;    // "chatter": the resident's idle remarks ("chatty") or not ("quiet")
     std::string lastWorld; // folder name of the world played last
 };

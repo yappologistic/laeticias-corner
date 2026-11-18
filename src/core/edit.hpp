@@ -46,6 +46,9 @@ public:
     // Groups subsequent edits into one undo step until commit(). Empty groups are dropped.
     void begin();
     void commit();
+    // Undoes the open group's edits and closes it without leaving an undo step; returns them as
+    // applied (inverted), for feedback.
+    std::span<const Op> abort(World& world);
     [[nodiscard]] bool inGroup() const { return grouping_; }
 
     PlaceResult place(World& world, const Catalog& cat, const Item& item);

@@ -130,8 +130,8 @@ void Profiler::drawCard(Painter& p, std::span<const std::string> lines, Vec2 scr
                             : col + f.measure(Face::Body, l.substr(tab + 1)));
     }
     w = std::min(w + 2 * pad, screen.x - 2 * theme::kMargin * s);
-    const float h = 2 * pad + f.lineHeight(Face::Title) + lh * 0.5f +
-                    static_cast<float>(lines.size() - 1) * lh;
+    const float h =
+        2 * pad + f.lineHeight(Face::Title) + lh * 0.5f + static_cast<float>(lines.size() - 1) * lh;
     const Box b{std::round((screen.x - w) * 0.5f), std::round((screen.y - h) * 0.5f), w, h};
     p.glass(b, theme::kPanelRadius * s, 1, theme::kGlass);
     p.endGlass();

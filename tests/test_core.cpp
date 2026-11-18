@@ -279,6 +279,40 @@ TEST_CASE("undo and redo, including drags as one step") {
     CHECK(ed.undo(w).size() == 1); // the empty group was not recorded
 }
 
+TEST_CASE("an aborted group is undone and leaves no undo step (moving a piece back)") {
+    const Catalog& c = test::catalog();
+    World w(c);
+    Editor ed(tuning::kUndoSteps);
+    const Item bench = makeItem(c, item(c, "bench"), 1, {5, 5});
+    REQUIRE(ed.place(w, c, bench) == PlaceResult::Ok);
+    REQUIRE(ed.canUndo());
+    ed.undo(w);
+    ed.redo(w);
+    // Picked up (removed in an open group), then put back by aborting.
+    ed.begin();
+    REQUIRE(ed.remove(w, {5, 5}));
+    CHECK(w.itemAt({5, 5}) == nullptr);
+    const auto ops = ed.abort(w);
+    REQUIRE(ops.size() == 1);
+    CHECK(ops[0].kind == Op::Kind::Add);
+    CHECK_FALSE(ed.inGroup());
+    REQUIRE(w.itemAt({5, 5}) != nullptr);
+    CHECK(*w.itemAt({5, 5}) == bench);
+    // The history is as it was: one undo removes the bench, nothing more.
+    ed.undo(w);
+    CHECK(w.items().empty());
+    CHECK_FALSE(ed.canUndo());
+    // A completed move is one step: undo puts it back where it was.
+    ed.redo(w);
+    ed.begin();
+    REQUIRE(ed.remove(w, {5, 5}));
+    REQUIRE(ed.place(w, c, makeItem(c, item(c, "bench"), 1, {9, 9})) == PlaceResult::Ok);
+    ed.commit();
+    ed.undo(w);
+    CHECK(w.itemAt({5, 5}) != nullptr);
+    CHECK(w.itemAt({9, 9}) == nullptr);
+}
+
 TEST_CASE("undo history is bounded") {
     const Catalog& c = test::catalog();
     World w(c);

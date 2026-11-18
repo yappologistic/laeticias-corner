@@ -150,6 +150,7 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
     t.tileOk = atlas.resolve("ui/tile_ok", atlas.placeholderTile());
     t.tileBad = atlas.resolve("ui/tile_bad", atlas.placeholderTile());
     t.tileArea = atlas.resolve("ui/tile_area", atlas.placeholderTile());
+    t.tileGrid = atlas.resolve("ui/tile_grid", atlas.placeholderTile());
     for (int v = 0;; ++v) {
         const auto id = atlas.find(std::format("wild/thicket/v{}", v));
         if (!id) break;

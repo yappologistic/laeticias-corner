@@ -78,6 +78,7 @@ struct SpriteTables {
     SpriteId tileOk = 0;
     SpriteId tileBad = 0;
     SpriteId tileArea = 0;          // soft white diamond, tinted for nook areas
+    SpriteId tileGrid = 0;          // 1-px diamond outline for the grid
     std::vector<SpriteId> thickets; // brambles on wild land, by variant
     FrameSet fallSE;                // water falling over the south-east rim
     FrameSet fallSW;

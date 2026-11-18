@@ -1,0 +1,149 @@
+# Builder comforts (docs/design/living-corner.md R11), each one undo step, on the start pieces:
+# a straight line of daisies, brushes and a painted rectangle, clearing an area, moving the bench
+# (and putting it back), the eyedropper three ways, the grid and the footprints overlay.
+set clock day
+set camera 28 30 1
+wait 2
+# A line: Shift-drag with a one-tile piece previews every ghost and lands as one step.
+click ui:build
+wait 3
+click ui:tab:nature
+wait 3
+click ui:tile:flowers_white
+wait 3
+keydown shift
+press @22,32
+move @25,32
+move @27,33
+wait 2
+shot shots/builder_line.png
+release @27,33
+keyup shift
+wait 2
+expect item @22,32 flowers_white
+expect item @27,32 flowers_white
+expect item @27,33 none
+expect count flowers_white 7
+key ctrl+z
+wait 2
+expect count flowers_white 1
+key ctrl+shift+z
+wait 2
+expect count flowers_white 7
+# Brushes: ] makes it 3x3; a click paints the square (blocked tiles are skipped).
+click ui:build
+wait 3
+click ui:tab:terrain
+wait 3
+click ui:tile:path
+wait 3
+key ]
+wait 1
+expect brush 3
+move @34,30
+wait 2
+shot shots/builder_brush.png
+click @34,30
+wait 2
+expect tile @33,29 path
+expect tile @35,31 path
+key ctrl+z
+wait 2
+expect tile @33,29 grass
+key [
+expect brush 1
+# A rectangle: Shift-drag with paint.
+click ui:build
+wait 3
+click ui:tile:meadow
+wait 1
+keydown shift
+press @31,34
+move @34,36
+wait 2
+shot shots/builder_rect.png
+release @34,36
+keyup shift
+wait 2
+expect tile @31,34 meadow
+expect tile @34,36 meadow
+key ctrl+z
+wait 2
+expect tile @34,36 grass
+# Clearing an area: Shift-drag with remove takes every piece the rectangle touches.
+key x
+keydown shift
+press @22,31
+move @28,33
+wait 2
+shot shots/builder_clear.png
+release @28,33
+keyup shift
+wait 2
+expect count flowers_white 1
+expect item @21,30 oak
+key ctrl+z
+wait 2
+expect count flowers_white 7
+key escape
+# Move: pick the bench up, put it down elsewhere; one undo puts it back. Esc puts a piece in
+# hand back with no undo step.
+key v
+expect tool move
+click @29,29
+wait 2
+expect carrying yes
+expect item @29,29 none
+move @31,31
+wait 2
+shot shots/builder_move.png
+click @31,31
+wait 2
+expect carrying no
+expect item @31,31 bench
+key ctrl+z
+wait 2
+expect item @29,29 bench
+expect item @31,31 none
+click @29,29
+wait 2
+key escape
+wait 2
+expect carrying no
+expect item @29,29 bench
+expect redo yes
+click @30,36
+wait 1
+expect carrying no
+key escape
+# The eyedropper: Alt-click an oak, I then a click on the path, a middle click on the bench.
+key alt+x
+keydown alt
+click @21,30
+keyup alt
+wait 2
+expect tool place
+key escape
+key i
+expect pipette yes
+click @27,36
+wait 2
+expect tool paint
+expect pipette no
+key escape
+click @29,29 middle
+wait 2
+expect tool place
+key escape
+# Grid (G, remembered) and the footprints and nooks while Tab is held.
+key g
+wait 2
+expect grid yes
+keydown tab
+wait 3
+expect footprints yes
+shot shots/builder_grid_tab.png
+keyup tab
+wait 2
+expect footprints no
+quit

@@ -76,6 +76,7 @@ set(LC_SCRIPTS
   "sketch_lists|sketch_lists|960x600|"
   "newer_save|newer_save|640x400|"
   "profiler|profiler|960x600|"
+  "builder|builder|960x600|"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
   "launch_1440|launch_2560x1440|2560x1440|heavy"

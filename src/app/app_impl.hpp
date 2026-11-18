@@ -53,6 +53,35 @@ inline constexpr int kExitBadScript = 2;
 inline constexpr int kExitOverBudget = 3;
 inline constexpr int kExitNoRenderer = 77; // ctest treats it as "skipped"
 
+// Sound files the engine plays besides the per-item/terrain/visitor sounds in the catalog.
+namespace sfx {
+inline constexpr std::string_view kRemove = "sfx/remove.wav";
+inline constexpr std::string_view kRotate = "sfx/rotate.wav";
+inline constexpr std::string_view kInvalid = "sfx/invalid.wav";
+inline constexpr std::string_view kUndo = "sfx/undo.wav";
+inline constexpr std::string_view kRedo = "sfx/redo.wav";
+inline constexpr std::string_view kHover = "sfx/ui_hover.wav";
+inline constexpr std::string_view kClick = "sfx/ui_click.wav";
+inline constexpr std::string_view kOpen = "sfx/ui_open.wav";
+inline constexpr std::string_view kClose = "sfx/ui_close.wav";
+inline constexpr std::string_view kShutter = "sfx/shutter.wav";
+inline constexpr std::string_view kDiscover = "sfx/discover.wav";
+inline constexpr std::string_view kPaint = "sfx/paint.wav";
+inline constexpr std::string_view kWish = "sfx/wish.wav";
+inline constexpr std::string_view kWishGranted = "sfx/wish_granted.wav";
+inline constexpr std::string_view kPage = "sfx/page.wav";
+inline constexpr std::string_view kNook = "sfx/nook.wav";
+inline constexpr std::string_view kLandOpen = "sfx/land_open.wav";
+inline constexpr std::string_view kHarvest = "sfx/harvest.wav";
+} // namespace sfx
+
+// The hint line's words for a placement the rules refuse.
+[[nodiscard]] std::string_view placeWarning(PlaceResult r);
+// Pieces of one tile can be dragged in rows and lines.
+[[nodiscard]] inline bool oneTile(const ItemDef& def) {
+    return def.footprintW == 1 && def.footprintH == 1;
+}
+
 // Milliseconds between two performance-counter readings.
 [[nodiscard]] double msBetween(Uint64 a, Uint64 b);
 // This process's resident memory in MiB (Linux; 0 elsewhere), and its peak.
@@ -92,7 +121,21 @@ private:
     void handleKey(const SDL_KeyboardEvent& k);
     void applyHudActions();
     void worldInput();
+    // Building (app_build.cpp).
     void applyTool(TilePos t, bool first);
+    void warn(std::string_view text);
+    // The tiles a Shift-drag covers: a line of one-tile pieces, or a rectangle.
+    [[nodiscard]] TileRect shapeRect() const;
+    void shapeTiles(std::vector<TilePos>& out) const;
+    void brushTiles(TilePos centre, std::vector<TilePos>& out) const;
+    const std::vector<Ghost>& buildGhosts();
+    [[nodiscard]] std::string_view toolHint() const;
+    void eyedrop(TilePos t);
+    void pickUp(TilePos t);
+    void putDown(TilePos t);
+    // Puts a piece being moved back where it was, leaving no undo step.
+    void cancelMove();
+    void finishShape();
     void step(float dt);
     void render();
     void refreshScale();
@@ -140,7 +183,6 @@ private:
     }
     [[nodiscard]] HudModel model() const;
     [[nodiscard]] Item ghostItem(TilePos hover) const;
-    [[nodiscard]] Ghost ghost() const;
     [[nodiscard]] bool night() const;
     // Life (actors, weather, events, speech): app.cpp's second half lives in app_life.cpp.
     [[nodiscard]] ActorEnv actorEnv() const;
@@ -175,7 +217,7 @@ private:
     bool scriptStep();
     std::optional<Vec2> resolve(const ScriptPoint& p);
     void pushMouseMotion(Vec2 px);
-    void pushButton(Vec2 px, bool down, bool right);
+    void pushButton(Vec2 px, bool down, const ScriptCommand& c);
     void pushKey(std::string_view combo, bool down);
     std::optional<std::string> check(const ScriptCommand& c);
     bool shot(const fs::path& file);
@@ -321,8 +363,8 @@ private:
     Profiler profiler_;
     bool profilerOn_ = false;
     bool hudHidden_ = false; // the benchmark's results card draws instead of the interface
-    double sceneMs_ = 0;   // building and queuing the world's draws, last frame
-    double hudDrawMs_ = 0; // drawing the interface, last frame
+    double sceneMs_ = 0;     // building and queuing the world's draws, last frame
+    double hudDrawMs_ = 0;   // drawing the interface, last frame
     struct FileCloser {
         void operator()(std::FILE* f) const { (void)std::fclose(f); }
     };
@@ -351,6 +393,22 @@ private:
     std::optional<TilePos> hover_;
 
     // Tools and UI state
+    enum class Shape : std::uint8_t { None, Line, Rect };
+    Shape shape_ = Shape::None;       // a Shift-drag in progress
+    TilePos anchor_;                  // where it started
+    std::optional<Item> carry_;       // the piece being moved, as it was picked up
+    bool pipette_ = false;            // the eyedropper is armed (I): the next click copies
+    bool middleClick_ = false;        // a middle click to handle as an eyedropper
+    SDL_Keymod mods_ = SDL_KMOD_NONE; // modifier keys held, from key events
+    int brush_ = 1;
+    bool grid_ = false;
+    bool footprintsHeld_ = false;        // Tab is held
+    std::vector<NearInstance> allNooks_; // every nook instance, while Tab is held
+    int pendingNotes_ = 0;               // notes of a line's little run still to play
+    std::vector<Ghost> ghosts_;
+    std::vector<TilePos> scratchTiles_;
+    std::vector<TilePos> areaItems_;
+    mutable std::string toolHintText_;
     Tool tool_ = Tool::None;
     int selection_ = -1;
     int variant_ = 0;
