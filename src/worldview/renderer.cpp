@@ -852,7 +852,8 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The cell cache holds what a frame needs at this window size, at least its stated budget.
     cells_.reserve(static_cast<std::size_t>(
         static_cast<double>(tuning::kCellBudget) *
-        std::max(1.0, static_cast<double>(screen.x * screen.y) / tuning::kCellBudgetArea)));
+        std::clamp(static_cast<double>(screen.x * screen.y) / tuning::kCellBudgetArea, 1.0,
+                   tuning::kCellBudgetMaxScale)));
     pages_->update(now);
     if (overview_) {
         while (!overview_->upload(renderer_) && !async_) {}
@@ -869,7 +870,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         drawCells(level, view, xf, now);
     }
     batch_.flush();
-    if (hooks.ground && lod != Lod::Overview) hooks.ground(frame);
+    // The game's scene works only while its home is in view.
+    const bool home = lod != Lod::Overview && !hole_.empty() && hole_.screen.overlaps(view);
+    if (hooks.ground && home) hooks.ground(frame);
     // A flight down to the native level gathers its destination on the way.
     if (camera.flying && lodFor(camera.arrivalScale) == Lod::Native) {
         const Vec2 to = camera.arrival;
@@ -891,7 +894,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
             const Elem& e = region_.elems[i];
             if (e.home) {
                 batch_.flush();
-                if (hooks.objects) hooks.objects(frame);
+                if (hooks.objects && home) hooks.objects(frame);
                 homeDrawn = true;
                 continue;
             }
@@ -902,11 +905,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     }
     batch_.flush();
     // Coarser levels have no live objects of their own: the home's go over the impostors.
-    if (!homeDrawn && hooks.objects && lod != Lod::Overview && !hole_.empty() &&
-        hole_.screen.overlaps(view))
-        hooks.objects(frame);
+    if (!homeDrawn && hooks.objects && home) hooks.objects(frame);
     // Grading, then what glows (drawn after it, additively).
-    if (hooks.light && lod != Lod::Overview)
+    if (hooks.light && home)
         hooks.light(frame);
     else
         fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
@@ -920,7 +921,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         }
     }
     batch_.flush();
-    if (hooks.glow && lod != Lod::Overview) hooks.glow(frame);
+    if (hooks.glow && home) hooks.glow(frame);
 
     // Onto the window: sky, the world, the haze.
     if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("worldview: %s", SDL_GetError());

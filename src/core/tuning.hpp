@@ -70,6 +70,9 @@ inline constexpr double kSoakGrowthMiB = 4.0; // memory a long session may add a
 // It covers the atlas, the four world targets and the blur chain at that size, the ground cache's
 // budget and the code and drivers around them; see out/reports/engine-frontdoor.md for the sums.
 inline constexpr double kBenchMemoryMiB = 512.0;
+// With the world: its pages (320 MiB of 4096-square slots, which the driver may mirror), its cell
+// cache, the overview and the decoding of a page (two 64 MiB surfaces at once) come on top.
+inline constexpr double kBenchWorldMemoryMiB = 832.0;
 inline constexpr long long kSoakDrawEvery = 120; // steps between frames drawn during a soak
 inline constexpr double kSoakDaySeconds = 50.0;  // a soak's calendar day: 600 s cross 4 seasons
 inline constexpr int kBenchCrowd = 400;
@@ -356,6 +359,10 @@ inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 
 inline constexpr float kTravelFadeOut = 0.25f;
 inline constexpr float kTravelHold = 0.4f;
 inline constexpr float kTravelFadeIn = 0.3f;
+inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
+// The bench's world cases: frames allowed for a view to stream in, and the pan's step (px).
+inline constexpr int kBenchSettleFrames = 600;
+inline constexpr float kBenchWorldPanPx = 30.0f;
 // Scripts point into a landmark's or a figure's sprite this far above its feet (px).
 inline constexpr float kLandmarkPointLift = 24.0f;
 inline constexpr float kFigurePointLift = 14.0f;

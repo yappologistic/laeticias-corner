@@ -71,11 +71,11 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
     // As many slots as the budget holds beside the fixed pages, made up front when streaming.
     const std::size_t fixed = static_cast<std::size_t>(pages_[kHomePage].w) *
                               static_cast<std::size_t>(pages_[kHomePage].h) * 4;
-    const std::size_t want =
+    slotLimit_ =
         std::min(pages_.size() - 2,
                  std::max<std::size_t>(1, (budget_ - std::min(budget_, fixed)) / kSlotBytes));
     if (async_) {
-        for (std::size_t i = 0; i < want; ++i)
+        for (std::size_t i = 0; i < slotLimit_; ++i)
             if (makeSlot() < 0) break;
         worker_ = std::jthread([this](const std::stop_token& st) { work(st); });
     }
@@ -105,6 +105,8 @@ int PageAtlas::makeSlot() {
 int PageAtlas::freeSlot(double now) {
     for (std::size_t i = 0; i < slots_.size(); ++i)
         if (slotPage_[i] < 0) return static_cast<int>(i);
+    // Synchronous runs make their slots as they need them, up to what the budget holds.
+    if (slots_.size() < slotLimit_) return makeSlot();
     evict(now);
     for (std::size_t i = 0; i < slots_.size(); ++i)
         if (slotPage_[i] < 0) return static_cast<int>(i);

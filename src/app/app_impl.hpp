@@ -44,6 +44,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <span>
@@ -101,6 +102,18 @@ inline constexpr std::string_view kLegacyFile = "corner.json";
 inline constexpr std::string_view kLegacyKept = "corner.v1.json";
 // One-time facts kept in the save's world block.
 inline constexpr std::string_view kFlagSeamExplained = "seam_explained";
+
+// A bench case's frames, and the statistics of one measure over them.
+struct BenchFrames {
+    std::vector<FrameSample> all;
+    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
+        std::vector<float> v;
+        v.reserve(all.size());
+        for (const FrameSample& f : all)
+            if (f.*field >= 0) v.push_back(f.*field);
+        return perfStats(v);
+    }
+};
 
 class App {
 public:
@@ -339,6 +352,11 @@ private:
     // then a results card and a report beside the save.
     int runBenchmark();
     int runBench();
+    // The process's stated memory ceiling at 1080p (more with the world).
+    [[nodiscard]] double memoryCeiling() const;
+    // The bench's world cases (cities, a pan, fast travel); false when one is over budget.
+    bool benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
+                    const std::function<void()>& warm, int frames);
     // One frame of the bench, timed whole (with the GPU waited for).
     FrameSample benchFrame();
     void fillBenchWorld();

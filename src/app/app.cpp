@@ -1668,7 +1668,11 @@ int App::run() {
         camera_.place(*savedCamera_, savedZoom_, screen());
     else
         frameCamera();
-    if (opts_.bench) return runBench();
+    if (opts_.bench) {
+        std::printf("bench: start-up to the first frame's setup %llu ms\n",
+                    static_cast<unsigned long long>(SDL_GetTicks()));
+        return runBench();
+    }
     if (opts_.benchmark) return runBenchmark();
     if (opts_.soak > 0) return runSoak();
     actors_.populate(actorEnv());
@@ -1850,6 +1854,10 @@ int App::run() {
             thumbTimer_ = 0;
             (void)writeThumbnail();
         }
+        // SDL started with the process: its clock is the start-up time (CLAUDE.md: within 3 s).
+        if (frame_ == 0)
+            SDL_Log("start: the first frame after %llu ms",
+                    static_cast<unsigned long long>(SDL_GetTicks()));
         ++frame_;
         if (opts_.frames > 0 && frame_ >= opts_.frames) running_ = false;
     }

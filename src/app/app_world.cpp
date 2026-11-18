@@ -84,7 +84,7 @@ void App::createWorldView() {
                     iso.toWorld(f(w), 0.0f).x + r.left + homeOffset_.x,
                     iso.toWorld(f(w), f(h)).y + r.top + homeOffset_.y};
     worldView_ = std::make_unique<worldview::WorldView>(renderer_.get(), *loaded_, assets_, *atlas_,
-                                                        measuring() && !opts_.headless,
+                                                        measuring() || !opts_.headless,
                                                         worldview::Hole{home.rect, box}, figures_);
     setupMap();
 }

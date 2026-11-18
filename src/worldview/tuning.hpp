@@ -20,7 +20,10 @@ inline constexpr int kCellTexels = 512;   // slot side; a level-L cell spans 512
 inline constexpr int kCellPageSlotsX = 8; // cache pages of 4096 x 2048: few pages, few draws
 inline constexpr int kCellPageSlotsY = 4;
 inline constexpr std::size_t kCellBudget = 96 * kMiB;      // world-tech §4.14: ground cache 96 MB
-inline constexpr double kCellBudgetArea = 2560.0 * 1440.0; // ... per this much window (216 at 4K)
+inline constexpr double kCellBudgetArea = 2560.0 * 1440.0; // ... per this much window,
+inline constexpr double kCellBudgetMaxScale = 1.5; // and at most this many times it (144 at 4K)
+// Every texture of the world (pages, cells, overview, targets) at any window size, MiB.
+inline constexpr double kTextureBudgetMiB = 576.0;
 inline constexpr int kImpostorBlock = 1024;       // impostor cells render in blocks of this many px
 inline constexpr int kCellBuildsPerFrame = 4;     // native cells (re)built per frame at most
 inline constexpr int kImpostorBlocksPerFrame = 1; // impostor blocks drawn per frame at most

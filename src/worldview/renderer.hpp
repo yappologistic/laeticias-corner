@@ -87,8 +87,9 @@ struct FrameInfo {
     Vec2 topLeft;                   // world px at the window's top-left corner
 };
 
-// The game's scene (the home region, its actors and effects) drawn at its turns in the frame.
-// Each draws into FrameInfo::target and leaves it bound; any may be empty.
+// The game's scene (the home region, its actors and effects) drawn at its turns in the frame,
+// while the home is in view (else the world grades itself). Each draws into FrameInfo::target
+// and leaves it bound; any may be empty.
 struct Hooks {
     std::function<void(const FrameInfo&)> ground;  // after the world's ground, before its shadows
     std::function<void(const FrameInfo&)> objects; // at the home's turn in the painter's order

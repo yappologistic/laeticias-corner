@@ -112,6 +112,7 @@ private:
     const world::AtlasPages& index_;
     bool async_;
     std::size_t budget_;
+    std::size_t slotLimit_ = 1; // page slots the budget holds beside the fixed pages
     std::vector<Page> pages_;
     std::vector<TexturePtr> slots_; // kMaxPageSide square, shared by the streamed pages
     std::vector<int> slotPage_;     // page in each slot, -1 free
