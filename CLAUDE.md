@@ -336,13 +336,19 @@ describe them, compiled by `src/life/data.cpp`, which lists what it cannot resol
   no hour covers means indoors), `districts[]` with `populations` (`role` or a bare `actor`,
   which strolls the graph, herds graze together, birds linger; `density` × `max_per_chunk` per
   1 024 tiles of the district, or `per_item` × `count`, filtered by `when`), `densities`,
-  `groups` (`line`, `pairs`, `cluster`), `chains`, `festivals` (`day` from 1 within the season),
-  `events` (`window` with `chance`, `every` in game seconds; `calendar`, `after`,
-  `token_arrived`, `chain`, `weather` `rain`/`rain_stop`, `reactive`), `figures` (`present` and
-  `memory` with a day are actors, the rest are places and casts), `lanes_tokens`.
-- Day `n`: week day `n mod 4`, season day `n mod 3 + 1`; a game hour is 30 real seconds; events
+  `groups` (`line`, `pairs`, `cluster`), `chains` (`months`, `by_month` dividing the period),
+  `festivals` (`day` from 1 within the season, or `months`: on exactly those months),
+  `events` (`window` with `chance`, `every` in game seconds; `season_turn` on its season's first
+  day, or its month; `calendar`, `after`, `token_arrived`, `chain`, `weather` `rain`/`rain_stop`,
+  `reactive`), `figures` (`present` and `memory` with a day are actors, the rest are places and
+  casts), `lanes_tokens` (with `when`). Every filter may name `months` (the catalog's
+  `calendar.months`).
+- Day `n`: week day `n mod 4`, season day `n mod 3 + 1`, month `n mod 12` (with a season kept,
+  that season's month for the season day); a game hour is 30 real seconds; events
   start at their hour and run in real seconds (they may overrun it); the day plan's chance draw
   is worldgen's (`hash64("<region>:<event>:<day>")`); large events of a region never overlap.
+  City life takes a jump of the clock only from the game's count of clock jumps (time or day set
+  outright), so the clock gliding to a pin or a pinned day turning continues the day.
 - Chains run exactly as `tools/worldgen/worldgen/lifesim.py` (slots and hands of 3, one tick a
   second from 06:00; a slot reference named again takes the last stage's instance): the
   `life_chains` test compares all of them with the Python simulator.
@@ -384,9 +390,9 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
 - **Cards and journal.** With an empty hand, landmarks with cards and named figures (city life's
   actors: clicked while they walk, a figure winning over the crowd round it) open a glass card
   from the region file; ordinary people show their role on hover, animals their kind; `F` on a
-  living figure's card follows it (damped camera; Esc or a pan lets go). What is in view on
-  arrival is seen, what is clicked found, events running in view are witnessed; the sketchbook
-  has a tab per place.
+  living figure's card follows it (damped camera; Esc, a pan or drag, Home or a journey lets
+  go). What is in view on arrival is seen, what is clicked found, events running in view are
+  witnessed; the sketchbook has a tab per place.
 - **Sound.** Region beds by theme weight and hour, seams ducking the rest, zones by nearness,
   item loops (fountains, lit braziers) by the nearest, a city's music fading in over 4 s from a
   phrase start and out when left; the home's stems and beds play by its share of the view.
@@ -401,7 +407,9 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
 - **Weather is world-wide.** Clouds and showers come from a deterministic field over the whole
   grid (seed, weather period, the region's climate times the season's); the home's weather
   follows it, and the renderer draws cloud shadows, wet ground and rain or snow wherever the
-  camera is. `N` acts where the camera is.
+  camera is; showers over the view fall as snow only where its climate's snow line (or its
+  lowland months) has snow that month. `N` acts where the camera is. Away from home the home's
+  editing keys rest.
 - Lights (glow) persist at every zoom level; the overview's are softer.
 
 - The home region is 40×40 tiles in five land stages. A new world opens on the front 20×20 corner
@@ -462,7 +470,7 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
 - Camera: drag or WASD/arrows to pan, wheel or `+`/`-` to zoom in steps toward the cursor, `Home`
   recentres on the open land; it stays within the open land plus a margin. Drawing interpolates
   the camera and actors between the 60 Hz steps. The world autosaves (atomic write, on a worker
-  thread) and reopens where it was left; a world that cannot be opened (damaged, or from a newer
+  thread; never while a piece is held with Move) and reopens where it was left; a world that cannot be opened (damaged, or from a newer
   version) is never renamed or written over: a fresh corner opens in a folder of its own.
 - Postcards (R12): `P` hides the interface and shows the photo bar (frames Plain and the unlocked
   nine-slice ones at the world's whole zoom, the caption with the world's name, in-game and real
