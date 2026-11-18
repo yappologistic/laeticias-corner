@@ -1,5 +1,6 @@
 """Trim sprites, shelf-pack them into one atlas and write the PNG + manifest."""
 
+import hashlib
 import json
 from dataclasses import dataclass
 
@@ -27,10 +28,20 @@ def trim(s: Sprite) -> Sprite:
 
 
 def pack(sprites: dict[str, Sprite], max_side: int = 4096):
-    """Shelf packing, tallest first; returns (atlas RGBA array, {key: (x, y, w, h, ox, oy)})."""
+    """Shelf packing, tallest first; returns (atlas RGBA array, {key: (x, y, w, h, ox, oy)}).
+    Identical sprites (same pixels and anchor) share one rectangle."""
     trimmed = {k: trim(s) for k, s in sprites.items()}
-    order = sorted(trimmed, key=lambda k: (-trimmed[k].rgba.shape[0], -trimmed[k].rgba.shape[1], k))
-    area = sum((t.rgba.shape[0] + PAD) * (t.rgba.shape[1] + PAD) for t in trimmed.values())
+    same, first = {}, {}
+    for k in sorted(trimmed):
+        t = trimmed[k]
+        sig = hashlib.sha1(t.rgba.tobytes() + repr((t.rgba.shape, t.ox, t.oy)).encode()).digest()
+        if sig in first:
+            same[k] = first[sig]
+        else:
+            first[sig] = k
+    unique = [k for k in trimmed if k not in same]
+    order = sorted(unique, key=lambda k: (-trimmed[k].rgba.shape[0], -trimmed[k].rgba.shape[1], k))
+    area = sum((trimmed[k].rgba.shape[0] + PAD) * (trimmed[k].rgba.shape[1] + PAD) for k in unique)
     width = 256
     while width * width < area * 1.15 and width < max_side:
         width *= 2
@@ -47,6 +58,8 @@ def pack(sprites: dict[str, Sprite], max_side: int = 4096):
         if height <= width or width >= max_side:
             break
         width *= 2
+    for k, src in same.items():
+        rects[k] = rects[src]
     side_h = 1
     while side_h < height:
         side_h *= 2
