@@ -307,6 +307,8 @@ public:
     [[nodiscard]] bool festivalOn(int region, int festival, int day, int season) const;
     // `season`, or the world calendar's for `day` when it is -1.
     [[nodiscard]] int seasonFor(int day, int season) const;
+    // The calendar month of `day` in that season (-1: the calendar's own).
+    [[nodiscard]] int monthFor(int day, int season) const;
     // The data's population (out of doors, by the schedules) over the chunks a view would make
     // live at a clock, without changing anything: what the cap must hold there.
     [[nodiscard]] float expectedFor(TileRect view, const LifeClock& clock);
@@ -389,6 +391,9 @@ private:
     [[nodiscard]] bool inView(Vec2 p) const;
     [[nodiscard]] bool festivalToday(int region, int festival) const;
     [[nodiscard]] bool filterPasses(const LifeRegion& r, const Filter& f) const;
+    // A filter's calendar terms that hold for a whole day: its months and its day of the season.
+    [[nodiscard]] bool dayPasses(const Filter& f, int day, int season) const;
+    [[nodiscard]] bool tokenOn(const Token& tk) const; // travels today (its `when`)
     [[nodiscard]] int blockAt(int region, const Role& role) const;
     void countDistricts();
 

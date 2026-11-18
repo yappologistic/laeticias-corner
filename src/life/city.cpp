@@ -305,11 +305,20 @@ int CityLife::seasonFor(int day, int season) const {
     return (day / std::max(1, w_->data.seasonDays)) % n;
 }
 
+int CityLife::monthFor(int day, int season) const {
+    // The month of the season's day: day n's own (n mod 12) while the seasons follow the days;
+    // with a season kept, the month of that season on the same day of it.
+    const int days = std::max(1, w_->data.seasonDays);
+    const int m = seasonFor(day, season) * days + day % days;
+    return m < static_cast<int>(w_->data.months.size()) ? m : w_->data.monthOf(day);
+}
+
 bool CityLife::festivalOn(int region, int festival, int day, int season) const {
     if (festival < 0) return false;
     season = seasonFor(day, season);
     const Festival& f = w_->data.regions[static_cast<std::size_t>(region)]
                             .festivals[static_cast<std::size_t>(festival)];
+    if (f.months != 0) return monthIn(f.months, monthFor(day, season));
     if (f.seasons != 0 && (f.seasons & (1u << season)) == 0) return false;
     const int seasonDay = day % std::max(1, w_->data.seasonDays);
     return f.day == 0 || f.day == seasonDay + 1;
@@ -325,11 +334,21 @@ bool CityLife::filterPasses(const LifeRegion& r, const Filter& f) const {
     if (f.hours && !inHours(f.from, f.to, hour_)) return false;
     if (f.every > 0 && clock_.day % f.every != f.offset) return false;
     if (f.seasons != 0 && (f.seasons & (1u << clock_.season)) == 0) return false;
+    if (!dayPasses(f, clock_.day, clock_.season)) return false;
     if (f.festival >= 0 && !festivalToday(region, f.festival)) return false;
     if (f.notFestival >= 0 && festivalToday(region, f.notFestival)) return false;
     if (f.weather == 1 && !clock_.rain) return false;
     if (f.weather == 0 && clock_.rain) return false;
     return true;
+}
+
+bool CityLife::tokenOn(const Token& tk) const {
+    return filterPasses(w_->data.regions[static_cast<std::size_t>(tk.region)], tk.when);
+}
+
+bool CityLife::dayPasses(const Filter& f, int day, int season) const {
+    if (!monthIn(f.months, monthFor(day, season))) return false;
+    return f.seasonDay == 0 || day % std::max(1, w_->data.seasonDays) + 1 == f.seasonDay;
 }
 
 int CityLife::blockAt(int region, const Role& role) const {
@@ -367,8 +386,10 @@ void CityLife::advanceAbstract(const LifeClock& clock) {
         }
         for (std::size_t r = 0; r < plans_.size(); ++r) planDay(static_cast<int>(r), day_, !jumped);
     }
-    chains_.advanceTo(now_, clock.season,
-                      [this](int region, int event) { return eventRunning(region, event); });
+    // Chains never run backwards: gliding back to a pin, they wait for the clock to catch up.
+    if (jumped || static_cast<long>(now_) >= chains_.tick())
+        chains_.advanceTo(now_, clock_.season, monthFor(clock_.day, clock_.season),
+                          [this](int region, int event) { return eventRunning(region, event); });
     updateEvents();
     updateTokens();
     if (rainChanged) {
@@ -538,10 +559,13 @@ void CityLife::reconcile() {
         if (!run.ok()) continue;
         const int region = chains_.regionOf(c);
         const LifeRegion& reg = w_->data.regions[static_cast<std::size_t>(region)];
+        // As the simulation decides it (season, month, event), so nobody works a closed chain.
+        const bool on = chains_.working(
+            c, static_cast<long>(now_), clock_.season, monthFor(clock_.day, clock_.season),
+            [this](int rg, int event) { return eventRunning(rg, event); });
         for (std::size_t k = 0; k < run.workers().size(); ++k) {
             const ChainStage& s = run.chain().stages[static_cast<std::size_t>(run.stageOf(k))];
             const ChainWorker& wk = run.workers()[k];
-            const bool on = run.hoursOn(static_cast<long>(now_));
             if (!on && wk.phase != WorkerPhase::Out && wk.phase != WorkerPhase::Back) continue;
             const TilePos at = run.place(s.kind == ChainStage::Kind::Carry ? s.from : s.slot).tile;
             const TilePos to = s.kind == ChainStage::Kind::Carry ? run.place(s.to).tile : at;
@@ -563,6 +587,10 @@ void CityLife::reconcile() {
         std::size_t inst = 0;
         for (std::size_t t = 0; t < w_->data.tokens.size(); ++t) {
             const Token& tk = w_->data.tokens[t];
+            if (!tokenOn(tk)) {
+                inst += static_cast<std::size_t>(tk.count);
+                continue;
+            }
             int members = 1;
             if (tk.group >= 0) {
                 const Group& g = w_->data.regions[static_cast<std::size_t>(tk.region)]
@@ -795,6 +823,7 @@ float CityLife::expectedFor(TileRect view, const LifeClock& c) {
     desires_.clear();
     counts_.clear();
     clock_ = c;
+    clock_.season = seasonFor(c.day, c.season);
     hour_ = static_cast<float>(c.hour());
     hourIndex_ = c.day * 48 + static_cast<int>(hour_ * 2.0f);
     scale_ = 1;
@@ -2442,6 +2471,9 @@ void CityLife::dayPlan(int region, int day, int season,
         const Filter& f = ev.when;
         if (f.every > 0 && day % f.every != f.offset) continue;
         if (f.seasons != 0 && (f.seasons & (1u << season)) == 0) continue;
+        if (!dayPasses(f, day, season)) continue;
+        // A season's turn comes once, at its first dawn (a month's turn by its month).
+        if (ev.seasonTurn && f.months == 0 && day % std::max(1, w_->data.seasonDays) != 0) continue;
         if (f.festival >= 0 && !festivalOnDay(f.festival)) continue;
         if (f.notFestival >= 0 && festivalOnDay(f.notFestival)) continue;
         if (ev.trigger == Trigger::Calendar && ev.festival < 0) continue;
@@ -2783,8 +2815,12 @@ void CityLife::updateTokens() {
     for (std::size_t t = 0; t < w_->data.tokens.size(); ++t) {
         const Token& tk = w_->data.tokens[t];
         const TokenState& ts = tokenPaths_[t];
+        const bool on = tokenOn(tk);
         for (int k = 0; k < tk.count; ++k, ++inst) {
-            if (!ts.ok) continue;
+            if (!ts.ok || !on) {
+                tokenLast_[inst] = {-1.0, 0.0}; // a day off: no arrival on its first step back
+                continue;
+            }
             ++stats_.tokens;
             const KindDef& kd = w_->data.kinds[static_cast<std::size_t>(tk.kind)];
             const float speed =

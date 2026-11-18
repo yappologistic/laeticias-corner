@@ -11,6 +11,7 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <bit>
 #include <climits>
 #include <cstdlib>
 #include <map>
@@ -223,6 +224,78 @@ TEST_CASE("life: the day plan draws as worldgen's day reports do") {
     }));
 }
 
+TEST_CASE("life: the calendar's months: festivals, populations, events and season turns") {
+    const LifeData& d = lifeWorld().data;
+    REQUIRE(d.months.size() == 12);
+    CHECK(d.months.front() == "mar");
+    CHECK(d.monthOf(13) == 1);
+    CityLife city(lifeWorld(), 1);
+    // Month-only festivals are on in their months and no other day (they once ran every day).
+    const auto festivalDays = [&](const char* region, const char* festival) {
+        const int r = d.findRegion(region);
+        const int f = d.regions[static_cast<std::size_t>(r)].findFestival(festival);
+        REQUIRE(f >= 0);
+        std::vector<int> days;
+        for (int day = 0; day < 24; ++day)
+            if (city.festivalOn(r, f, day, -1)) days.push_back(day);
+        return days;
+    };
+    CHECK(festivalDays("babylon", "king_in_babylon") == std::vector<int>{9, 10, 11, 21, 22, 23});
+    CHECK(festivalDays("athens", "olive_harvest") == std::vector<int>{8, 9, 10, 20, 21, 22});
+    CHECK(festivalDays("ostia", "grain_fleet") == std::vector<int>{2, 14});
+    // Every event is planned only in its months, and a season's turn once a year, at its first
+    // dawn (L-101: it once came every morning of the season).
+    std::vector<std::tuple<int, double, double>> plan;
+    for (std::size_t r = 0; r < d.regions.size(); ++r) {
+        const LifeRegion& reg = d.regions[r];
+        std::vector<int> planned(reg.events.size(), 0);
+        for (int day = 0; day < 12; ++day) {
+            city.dayPlan(static_cast<int>(r), day, -1, plan);
+            for (const auto& entry : plan) {
+                const int e = std::get<0>(entry);
+                const Event& ev = reg.events[static_cast<std::size_t>(e)];
+                CAPTURE(reg.id);
+                CAPTURE(ev.id);
+                CHECK(monthIn(ev.when.months, d.monthOf(day)));
+                if (ev.seasonTurn && ev.when.months == 0) CHECK(day % d.seasonDays == 0);
+                planned[static_cast<std::size_t>(e)] |= 1 << day; // days, not occurrences
+            }
+        }
+        for (std::size_t e = 0; e < reg.events.size(); ++e)
+            if (reg.events[e].seasonTurn) {
+                CAPTURE(reg.id);
+                CAPTURE(reg.events[e].id);
+                CHECK(std::popcount(static_cast<unsigned>(planned[e])) <= 1);
+            }
+    }
+    // The planned events of the whole world at once leave room for those no plan holds (rain,
+    // arrivals, chains, `after`): once the world's 24 slots were full by mid-morning.
+    std::vector<std::pair<double, int>> edges;
+    for (std::size_t r = 0; r < d.regions.size(); ++r)
+        for (int day = 0; day < 12; ++day) {
+            city.dayPlan(static_cast<int>(r), day, -1, plan);
+            for (const auto& [e, start, stop] : plan) {
+                edges.emplace_back(start, 1);
+                edges.emplace_back(stop, -1);
+            }
+        }
+    std::ranges::sort(edges);
+    int at = 0;
+    int most = 0;
+    for (const auto& [t, k] : edges) most = std::max(most, at += k);
+    MESSAGE("planned events running at once, at most " << most);
+    CHECK(most + 16 <= tuning::life::kMaxRunningEvents);
+    // Populations follow their months: the whole world's crowd at 10:00 is the month's, as
+    // the data means it (audit-alive: 3 949 to 4 513, where every month at once made 6 136).
+    const TileRect all = lifeWorld().map().bounds();
+    for (int day = 0; day < 12; ++day) {
+        const float n = city.expectedFor(all, LifeClock::at(day, 10.0, -1));
+        CAPTURE(day);
+        CHECK(n > 3600.0f);
+        CHECK(n < 4800.0f);
+    }
+}
+
 TEST_CASE("life: next hops follow shortest ways, and every planned walk is legal") {
     LifeWorld& w = lifeWorld();
     const WorldMap& m = w.map();
@@ -301,20 +374,27 @@ TEST_CASE("life: chains keep their rules over a simulated fortnight, and the cyc
     // Tick by tick for 14 days, every counter 0..3 always.
     Chains a(w.data, w.map(), w.paths, w.pathsOf);
     for (long t = 0; t < 14 * 720; t += 60) {
-        a.advanceTo(static_cast<double>(t), 0, [](int, int) { return true; });
+        a.advanceTo(static_cast<double>(t), 0, 0, [](int, int) { return true; });
         for (std::size_t i = 0; i < a.size(); ++i)
             for (const ChainRun::Counter& c : a.run(i).counters()) {
                 CHECK(c.count >= 0);
                 CHECK(c.count <= tuning::life::kChainCap);
             }
     }
-    // A jump to day 40 equals walking there tick by tick from day 30's 06:00.
+    // A jump to day 40 equals walking there tick by tick from day 30's 06:00, each day in its
+    // own season and month (the month-limited and month-paced chains among them).
+    const auto seasonOf = [&](long t) {
+        return static_cast<int>((t / 720 / w.data.seasonDays) %
+                                static_cast<long>(w.data.seasons.size()));
+    };
+    const auto monthOf = [&](long t) { return w.data.monthOf(static_cast<int>(t / 720)); };
+    const auto none = [](int, int) { return false; };
     Chains jump(w.data, w.map(), w.paths, w.pathsOf);
-    jump.advanceTo(40 * 720 + 300, 0, [](int, int) { return false; });
+    jump.advanceTo(40 * 720 + 300, seasonOf(40 * 720), monthOf(40 * 720), none);
     Chains walk(w.data, w.map(), w.paths, w.pathsOf);
-    walk.advanceTo(30 * 720, 0, [](int, int) { return false; });
+    walk.advanceTo(30 * 720, seasonOf(30 * 720), monthOf(30 * 720), none);
     for (long t = 30 * 720; t <= 40 * 720 + 300; t += 1)
-        walk.advanceTo(static_cast<double>(t), 0, [](int, int) { return false; });
+        walk.advanceTo(static_cast<double>(t), seasonOf(t - 1), monthOf(t - 1), none); // tick t-1
     for (std::size_t i = 0; i < jump.size(); ++i) {
         CAPTURE(jump.run(i).chain().id);
         if (jump.run(i).chain().event >= 0) continue;

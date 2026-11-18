@@ -91,6 +91,8 @@ private:
     int slotName(const std::string& s, const std::string& where);
     int district(const std::string& id, const std::string& where);
     void filter(const json& o, Filter& f, const std::string& where);
+    // A list of month ids as a mask (unknown ones reported).
+    std::uint16_t months(const json& list, const std::string& where);
     Target target(const json& t, const std::string& where);
     void dur(const json& s, Step& st);
     std::uint32_t block(const json& steps, bool loop, const std::string& where,
@@ -145,6 +147,11 @@ void Compiler::kinds() {
     for (const SeasonDef& s : map_.content().home().seasons) d_.seasons.push_back(s.id);
     if (!map_.content().home().seasons.empty())
         d_.seasonDays = map_.content().home().seasons.front().days;
+    d_.months = map_.content().home().months;
+    if (d_.months.size() > 16) {
+        problem("the calendar has more months than a month filter holds (16)");
+        d_.months.clear();
+    }
 }
 
 void Compiler::tiles() {
@@ -227,6 +234,14 @@ void Compiler::filter(const json& o, Filter& f, const std::string& where) {
         if (s->is_array())
             for (const json& v : *s) add(v.get<std::string>());
     }
+    if (const auto dd = o.find("day"); dd != o.end() && dd->is_number_integer()) {
+        const int day = dd->get<int>();
+        if (day < 1 || day > d_.seasonDays)
+            problem(where + ": day " + std::to_string(day) + " is not a day of the season");
+        else
+            f.seasonDay = static_cast<std::uint8_t>(day);
+    }
+    if (const auto m = o.find("months"); m != o.end()) f.months = months(*m, where);
     if (const std::string fest = str(o, "festival"); !fest.empty()) {
         f.festival = r_->findFestival(fest);
         if (f.festival < 0) problem(where + ": festival '" + fest + "' is not in the calendar");
@@ -234,6 +249,19 @@ void Compiler::filter(const json& o, Filter& f, const std::string& where) {
     if (const std::string fest = str(o, "not_festival"); !fest.empty())
         f.notFestival = r_->findFestival(fest);
     if (const std::string wx = str(o, "weather"); !wx.empty()) f.weather = wx == "clear" ? 0 : 1;
+}
+
+std::uint16_t Compiler::months(const json& list, const std::string& where) {
+    std::uint16_t mask = 0;
+    for (const json& v : list.is_array() ? list : json::array({list})) {
+        const std::string id = v.is_string() ? v.get<std::string>() : std::string();
+        const auto it = std::ranges::find(d_.months, id);
+        if (it == d_.months.end())
+            problem(where + ": month '" + id + "' is not in the calendar");
+        else
+            mask |= static_cast<std::uint16_t>(1u << (it - d_.months.begin()));
+    }
+    return mask;
 }
 
 Target Compiler::target(const json& t, const std::string& where) {
@@ -670,6 +698,8 @@ void Compiler::festivals(const json& life) {
         if (f.contains("season")) season["season"] = f["season"];
         filter(season, tmp, "festival " + fe.id);
         fe.seasons = tmp.seasons;
+        if (const auto m = f.find("months"); m != f.end())
+            fe.months = months(*m, "festival " + fe.id);
         fe.day = f.value("day", 0);
         if (const auto h = f.find("hours"); h != f.end() && h->is_array() && h->size() == 2) {
             fe.from = parseHour((*h)[0].get<std::string>());
@@ -693,6 +723,17 @@ void Compiler::chains(const json& life) {
         Filter tmp;
         filter(c, tmp, where);
         ch.seasons = tmp.seasons;
+        ch.months = tmp.months;
+        if (const auto bm = c.find("by_month"); bm != c.end()) {
+            if (!bm->is_array() || bm->size() != d_.months.size())
+                problem(where + ": by_month needs one factor per month");
+            else
+                for (const json& v : *bm) {
+                    const float k = v.is_number() ? v.get<float>() : 0.0f;
+                    if (k <= 0) problem(where + ": by_month factors must be above 0");
+                    ch.pace.push_back(std::max(k, 0.01f));
+                }
+        }
         for (const json& s : c.value("stages", json::array())) {
             ChainStage st;
             st.by = str(s, "by");
@@ -749,6 +790,10 @@ void Compiler::events(const json& life) {
                      : on == "weather"       ? Trigger::Weather
                      : on == "reactive"      ? Trigger::Reactive
                                              : Trigger::Window;
+        // A season's turn is a window on the season's first day (with months: on that month).
+        ev.seasonTurn = on == "season_turn";
+        if (ev.trigger == Trigger::Window && on != "window" && !ev.seasonTurn)
+            problem(where + ": trigger '" + on + "' is not a trigger");
         filter(t, ev.when, where);
         ev.chance = num(t, "chance", 1);
         ev.every = t.value("every", 0.0);
@@ -873,6 +918,8 @@ void Compiler::tokens(const json& life, int lifeRegion) {
         if (t.contains("group")) tk.group = r_->findGroup(str(t, "group"));
         if (t.contains("carry")) tk.carry = goods(str(t, "carry"), "token");
         tk.variant = t.value("variant", -1);
+        if (const auto w = t.find("when"); w != t.end() && w->is_object())
+            filter(*w, tk.when, "token '" + str(t, "actor") + "'");
         d_.tokens.push_back(std::move(tk));
     }
 }
@@ -965,6 +1012,11 @@ int LifeData::findGoods(std::string_view id) const {
 
 int LifeData::findRegion(std::string_view id) const {
     return indexOf(regions, id);
+}
+
+int LifeData::monthOf(int day) const {
+    const int n = static_cast<int>(months.size());
+    return n > 0 ? ((day % n) + n) % n : 0;
 }
 
 int LifeData::regionOfWorld(int worldRegion) const {

@@ -80,7 +80,7 @@ std::string chainReport(const LifeWorld& w, int days) {
             ojson travel = ojson::array();
             if (run.ok()) {
                 for (long t = 0; t < static_cast<long>(days) * 720; ++t)
-                    run.tick(t, run.hoursOn(t));
+                    run.tick(t, run.hoursOn(t), 1.0); // lifesim: hours only, one pace
                 std::map<std::string, int> sorted;
                 for (const ChainRun::Counter& k : run.counters())
                     sorted[k.ref + "|" + w.data.goods[static_cast<std::size_t>(k.goods)]] = k.count;
