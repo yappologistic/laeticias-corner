@@ -962,7 +962,7 @@
     "surfaces": {
      "stone": 0.42,
      "roof": 0.09,
-     "leaves": 0.11,
+     "leaves": 0.1,
      "water": 0.06
     },
     "wind": "wind.street",
@@ -1124,7 +1124,7 @@
    "sound": {
     "surfaces": {
      "roof": 0.12,
-     "leaves": 0.11,
+     "leaves": 0.1,
      "water": 0.42
     },
     "wind": "wind.open",

@@ -52,6 +52,6 @@
   ],
   "lanes": [
     {"id": "lechaion", "kind": "sea", "points": [[286, 721], [284, 724], [284, 726]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 2}, {"id": "lechaion", "at": 2}]},
-    {"id": "kenchreai", "kind": "sea", "points": [[301, 706], [304, 707], [306, 708]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 2}, {"id": "kenchreai", "at": 2}]}
+    {"id": "kenchreai", "kind": "sea", "points": [[302, 705], [304, 706], [306, 708]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 2}, {"id": "kenchreai", "at": 2}]}
   ]
 }

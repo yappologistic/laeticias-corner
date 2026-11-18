@@ -52,6 +52,6 @@
     {"a": "n17", "b": "n5", "kind": "street"}
   ],
   "lanes": [
-    {"id": "babylon", "kind": "sea", "points": [[307, 230], [295, 230], [284, 231]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "babylon", "at": 2}, {"id": "end", "at": 2}]}
+    {"id": "babylon", "kind": "sea", "points": [[307, 228], [301, 228], [297, 229], [295, 230], [284, 231]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "babylon", "at": 4}, {"id": "end", "at": 4}]}
   ]
 }
