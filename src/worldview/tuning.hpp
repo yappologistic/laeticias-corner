@@ -180,6 +180,7 @@ inline constexpr float kDripAfter = 60.0f; // s drops keep falling after the rai
 inline constexpr float kDripMin = 0.4f;    // s between drops
 inline constexpr float kDripMax = 2.5f;
 inline constexpr float kDrip = 0.35f;
+inline constexpr float kLayerFull = 4.0f;        // a quarter of the view fresh water: full layer
 
 // Fallback shadow opacity when no resident page measured one.
 inline constexpr float kShadowOpacity = 0.4f;

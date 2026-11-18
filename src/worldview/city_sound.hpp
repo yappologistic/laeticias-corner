@@ -178,7 +178,13 @@ private:
     Family treesLeafy_;                       // wind in leafy crowns, and in bare ones
     Family treesBare_;
     std::vector<int> drips_; // effects: drops from leaves and eaves after rain
-    unsigned winter_ = 0;    // bit per season whose trees are bare
+    struct Layer {
+        int loop = -1;
+        int phase = -1;       // its phase of the day (-1: any)
+        unsigned seasons = 0; // bit per season (0: any)
+    };
+    std::vector<Layer> layers_; // over the nature beds where rivers and lakes show
+    unsigned winter_ = 0;       // bit per season whose trees are bare
     struct Heard {
         const Family* family = nullptr;
         float share = 0;

@@ -1,7 +1,7 @@
 # The year in sound away from home (out/reports/audio-seasons.md §5), captured with --audio-out:
 # every region plays a bed in every month by day and night; Rome's winter bed replaces its plain
 # one after a crossfade; Pārsa's season beds, and its rain bed only under rain; the night; the
-# open sea by its state; a mountain under snow. audio_year_check reads the capture for level,
+# open sea by its state; a mountain under snow; spring frogs by a lake at night. audio_year_check reads the capture for level,
 # balance, clipping and clicks at the crossfades.
 expect sound beds
 set clock day
@@ -42,4 +42,12 @@ wait 30
 fast 25
 expect region zagros
 expect sound amb/world/day_snow.ogg 10 100
+set clock night
+set season spring
+set world district:alban_mount/lake 1
+wait 30
+fast 10
+expect region alban_mount
+expect sound amb/world/frogs_spring.ogg 1 100
+expect sound river 1 200
 quit

@@ -299,6 +299,16 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
             if (const int fx = effect(t.file); fx >= 0) drips_.push_back(fx);
     for (std::size_t k = 0; k < life.seasons.size(); ++k)
         if (life.seasons[k] == "winter") winter_ |= 1u << k;
+    // Layers over the nature beds by fresh water (spring frogs): the world's beds tagged so.
+    for (const Tagged& t : tagged) {
+        if (t.kind != "bed" || !t.has("layer") || !t.has("water")) continue;
+        Layer l{loop(t.file), -1, 0};
+        for (std::size_t p = 0; p < kPhases.size(); ++p)
+            if (t.has(kPhases[p])) l.phase = static_cast<int>(p);
+        for (std::size_t k = 0; k < life.seasons.size(); ++k)
+            if (t.has(life.seasons[k])) l.seasons |= 1u << k;
+        if (l.loop >= 0) layers_.push_back(l);
+    }
     out_.resize(loops_.size());
     work_.resize(loops_.size());
     shots_.reserve(64);
@@ -546,6 +556,15 @@ void CitySound::update(const Input& in) {
                                                                               : 3;
         if (const int f = natureFile(*rs, ds, in.season, phase, in.snowCover); f >= 0)
             out_[static_cast<std::size_t>(f)] = {tuning::kNatureBed * away, 0};
+        // Over it, by the rivers and lakes in view, the season's water layer (spring frogs).
+        float fresh = 0;
+        for (const Heard& h : water_)
+            if (h.family != nullptr && h.level >= 0) fresh += h.share;
+        for (const Layer& l : layers_)
+            if (fresh > 0 && (l.phase < 0 || l.phase == phase) &&
+                (l.seasons == 0 || ((l.seasons >> in.season) & 1u) != 0))
+                out_[static_cast<std::size_t>(l.loop)] = {
+                    tuning::kNatureBed * away * std::min(1.0f, fresh * tuning::kLayerFull), 0};
         // Cicadas in their hours and season, louder towards the afternoon's heat.
         const Window& w = rs->cicadaHours;
         const bool month = w.months == 0 || in.month < 0 || ((w.months >> in.month) & 1u) != 0;
