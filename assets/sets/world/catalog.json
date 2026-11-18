@@ -3556,6 +3556,11 @@
    "world.bd_pindos",
    "world.bd_pontic",
    "world.bd_plateau"
+  ],
+  "props": [
+   "world.lamp",
+   "world.torch",
+   "world.lantern"
   ]
  }
 }

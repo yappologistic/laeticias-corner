@@ -4167,6 +4167,10 @@
    "athens.sea_glint",
    "athens.cicada",
    "athens.sparks"
+  ],
+  "props": [
+   "athens.lamp",
+   "athens.torch"
   ]
  }
 }
