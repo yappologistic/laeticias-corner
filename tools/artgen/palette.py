@@ -138,6 +138,25 @@ OLIVE = ["#3a4638", "#53634a", "#72825d", "#93a27a", "#b8c39d"]
 SUMMER = ["#7a6f3c", "#9c8d4a", "#bba95c", "#d3c07a"]     # summer-dry grass and stubble
 PITCH = ["#141217", "#211c24", "#322b35"]
 
+# Rome, April AD 126 (rome.md §3.1): warm travertine with its holes, red-orange brick of the
+# concrete facings, grey-brown tufa, grey-black basalt paving, the coloured marbles of the
+# empire (giallo antico, green cipollino, red porphyry, grey and pink Egyptian granite),
+# painted stucco in red and yellow ochre, and the muddy yellow-green "flavus Tiberis".
+TRAVERTINE = ["#4d4234", "#6d5f4c", "#918066", "#b3a081", "#ccbb98", "#e1d3b0", "#efe4c6"]
+BRICK = ["#47221d", "#6a3125", "#8a432e", "#a95839", "#c2724a", "#d68f63"]
+TUFA = ["#3b3631", "#564d46", "#72675c", "#8f8170", "#aa9c87", "#c4b7a0"]
+BASALT = ["#1d1d24", "#2a2a33", "#393943", "#4b4b55", "#5f5f69", "#77777f"]
+GIALLO = ["#86672a", "#ad883b", "#cca753", "#e3c576"]
+CIPOLLINO = ["#4c6856", "#6c8a75", "#91ad98"]
+PORPHYRY = ["#3a1921", "#58242f", "#77333f"]
+GRANITE = ["#434549", "#5d5f66", "#7b7d83", "#9a9ca0"]
+GRANITE_PINK = ["#6c4c46", "#8f665c", "#b1887a", "#cda798"]
+STUCCO_RED = ["#772c21", "#9b3d2b", "#ba583d", "#cf7a59"]
+TIBER = ["#475034", "#5d6840", "#74814d", "#8e9961", "#a7b17a", "#c1c698"]
+
+_ROME_NEW = [*TRAVERTINE, *BRICK, *TUFA, *BASALT, *GIALLO, *CIPOLLINO, *PORPHYRY, *GRANITE, *GRANITE_PINK,
+             *STUCCO_RED, *TIBER]
+
 REGION_COLOURS = {
     "parsa": [*LIMESTONE, *DARKSTONE, *LAPIS, *EGYPT_BLUE, *CINNABAR, *HEMATITE, *GOLD, *CEDAR,
               *MUDBRICK, *PURPLE, *SAFFRON, *MALACHITE, *SKIN_OLIVE, *SKIN_DARK, *NAQSH],
@@ -145,6 +164,8 @@ REGION_COLOURS = {
                *MALACHITE, *SKIN_OLIVE, *SKIN_DARK, *MARBLE, *POROS, *ATTIC_ROCK, *RUST, *TERRACOTTA, *CLAY,
                *GLOSS, *OLIVE, *SUMMER, *PITCH],
 }
+# Rome shares every Pārsa and Athens colour (painted stone, dyes, marble, terracotta, skins).
+REGION_COLOURS["rome"] = list(dict.fromkeys([*REGION_COLOURS["parsa"], *REGION_COLOURS["athens"], *_ROME_NEW]))
 for _cols in REGION_COLOURS.values():
     assert len(set(_cols)) == len(_cols) and not set(_cols) & set(PALETTE)
 
@@ -200,6 +221,22 @@ MATERIALS += [
     # Cast bronze kept polished: a warm brown-gold, darker than gilding.
     _m("bronze_cast", [INK, CEDAR[0], CEDAR[1], CEDAR[2], GOLD[1], GOLD[2]], bias=0.3, texture=0.08),
     _m("gravel", [STONE[1], POROS[1], POROS[2], STONE[3], POROS[3], MARBLE[4]], texture=0.7),
+]
+# Rome (appended after Athens).
+MATERIALS += [
+    _m("travertine", TRAVERTINE, bias=0.1, texture=0.35),
+    _m("brick", [INK, *BRICK], texture=0.3),
+    _m("tufa", [INK, *TUFA], texture=0.45),
+    _m("basalt", [INK, *BASALT], texture=0.4),
+    _m("giallo", [EARTH[1], *GIALLO, PLASTER[3]], bias=0.2, texture=0.15),
+    _m("cipollino", [PINE[0], *CIPOLLINO, MARBLE[4]], bias=0.2, texture=0.2),
+    _m("porphyry", [INK, *PORPHYRY, CINNABAR[1]], bias=0.2, texture=0.25),
+    _m("granite", [INK, *GRANITE, MARBLE[4]], bias=0.2, texture=0.3),
+    _m("granite_pink", [GRANITE_PINK[0], *GRANITE_PINK, MARBLE[5]], bias=0.2, texture=0.3),
+    _m("stucco_red", [INK, *STUCCO_RED], bias=0.1, texture=0.15),
+    _m("tiber", TIBER, texture=0.2),
+    # Gilded bronze roof tiles: the gold ramp kept low so a whole roof glows without glaring.
+    _m("gilt", [CEDAR[1], GOLD[0], GOLD[1], GOLD[2], GOLD[3], GOLD[4]], bias=-0.2, texture=0.2),
 ]
 MAT = {m.name: i + 1 for i, m in enumerate(MATERIALS)}
 _ALL = set(PALETTE).union(*REGION_COLOURS.values())

@@ -38,7 +38,8 @@ POSES = {"move": 6, "idle": 2, "carry": 6, "carry_idle": 2, "run": 6, "sit": 2, 
          "serve": 4, "guard": 2, "march": 6, "shoot": 4, "ride": 6,
          "wrestle": 4, "scrape": 4, "pray": 4, "dance": 4}
 
-LONG = {"court_robe", "long_tunic", "cloak_long", "striped_robe", "royal_robe", "himation", "chiton_long", "peplos"}
+LONG = {"court_robe", "long_tunic", "cloak_long", "striped_robe", "royal_robe", "himation", "chiton_long", "peplos",
+        "toga", "stola"}
 # Greek garments (athens.md §6.1): the man's himation alone (right shoulder bare), the women's
 # long linen chiton (sleeves to the elbow), the peplos with its overfold (arms bare), the
 # exomis (one shoulder), and nothing at all (athletes, small boys).
@@ -81,6 +82,15 @@ class Dress:
     mantle: str | None = None        # a himation worn over a chiton, round the hips and over
                                      # the left shoulder (Greek women, elders)
     mantle_head: bool = False        # the mantle drawn over the head in public
+    # Roman dress (rome.md §6.2): the tunic under a toga or stola, the senators' and knights'
+    # purple stripes (clavi), a beard of its own colour (lighter tones read at 1x), the hooded
+    # bell-shaped travelling cloak (paenula) with its hood up or down.
+    under: str | None = None
+    clavi: str | None = None
+    clavi_broad: bool = False
+    beard_mat: str | None = None
+    cloak: str | None = None
+    cloak_hood: bool = False
 
 
 @dataclass
@@ -509,6 +519,8 @@ def _garment(b: Body, d: Dress, p: Pose, fr: Frame, lift, up):
         ry, rx = fr.sw * 0.82, 1.25 * f
         torso = (((X - cx(Z)) / rx) ** 2 + (Y / ry) ** 2 + ((Z - tz) / (2.4 * f)) ** 2 <= 1) & (Z > waist - 1.5 * f)
         top_mat = d.skin if d.garment in ("wrap", "none") else d.colour
+        if d.garment in ("toga", "stola") and d.under:
+            top_mat = d.under
         b.put(torso, top_mat, tone=0.1, normal=((X - cx(Z)) / rx ** 2, Y / ry ** 2, (Z - tz) / (2.4 * f) ** 2))
         if d.garment == "sleeveless":
             pass
@@ -516,7 +528,7 @@ def _garment(b: Body, d: Dress, p: Pose, fr: Frame, lift, up):
     hem_z = {"court_robe": 0.25, "royal_robe": 0.15, "long_tunic": 0.35, "cloak_long": 0.4,
              "striped_robe": 0.3, "tunic": 4.6, "chiton": 5.0, "kilt": 4.8, "wrap": 4.2,
              "sleeveless": 5.0, "himation": 0.35, "chiton_long": 0.25, "peplos": 0.3,
-             "exomis": 4.4}.get(d.garment, 4.6) * f
+             "exomis": 4.4, "toga": 0.45, "stola": 0.25}.get(d.garment, 4.6) * f
     if p.kneel:
         hem_z = 0.5
     if p.sit and not d.mount:
@@ -527,7 +539,8 @@ def _garment(b: Body, d: Dress, p: Pose, fr: Frame, lift, up):
     t = np.clip((Z - hem_z) / max(top_z - hem_z, 0.1), 0, 1)
     flare = {"court_robe": (3.7, 2.6), "royal_robe": (4.0, 2.8), "long_tunic": (2.4, 2.0),
              "cloak_long": (2.4, 2.1), "striped_robe": (2.4, 2.0), "himation": (2.6, 2.2),
-             "chiton_long": (2.3, 1.9), "peplos": (2.5, 2.0)}.get(d.garment, (2.0, 1.75))
+             "chiton_long": (2.3, 1.9), "peplos": (2.5, 2.0), "toga": (2.9, 2.4),
+             "stola": (2.3, 1.9)}.get(d.garment, (2.0, 1.75))
     wy = fr.hw * (1.05 + (flare[0] / 1.6 - 1.0) * (1 - t) ** 1.2) * (1.15 if p.kneel or p.sit else 1.0)
     wx = 1.35 * f * (1.0 + (flare[1] / 1.6 - 1.0) * (1 - t) ** 1.3) * (1.4 if p.kneel or p.sit else 1.0)
     drift = p.hem * f * (1 - t) ** 1.6
@@ -564,6 +577,12 @@ def _garment(b: Body, d: Dress, p: Pose, fr: Frame, lift, up):
         b.put(skirt & (np.abs(ang) < 0.25), d.colour, tone=-0.6)
     if d.garment in ("himation", "chiton_long", "peplos", "exomis", "none") and not p.bend:
         _greek_garment(b, d, p, fr, lift, cx, skirt, nrm)
+    if d.clavi and not p.bend:
+        _clavi(b, d, p, fr, lift, cx)
+    if d.garment in ("toga", "stola") and not p.bend:
+        _roman_garment(b, d, p, fr, lift, cx, skirt, nrm)
+    if d.cloak:
+        _paenula(b, d, p, fr, lift, cx)
     # Over-garments.
     if d.coat:
         _kandys(b, d, p, fr, lift)
@@ -606,6 +625,88 @@ def _greek_garment(b, d, p, fr, lift, cx, skirt, nrm):
             b.put(over & (Z < hip_z + 0.9 * f), d.trim, tone=0.25)
     elif d.garment == "chiton_long":   # fine linen pleats
         b.put(skirt & (np.cos(np.arctan2(Y, X) * 14) > 0.55), d.colour, tone=-0.45)
+
+
+def _clavi(b, d, p, fr, lift, cx):
+    """Two purple stripes from the shoulders down the front of the tunic: broad for senators,
+    narrow for knights."""
+    X, Y, Z = b.X, b.Y, b.Z
+    f = fr.f
+    sh = fr.shoulder + lift
+    lo = fr.knee - 0.4 * f + lift if d.garment not in LONG else 1.0
+    w = (0.42 if d.clavi_broad else 0.2) * f
+    ry, rx = fr.sw * 0.84, 1.3 * f
+    tz = fr.chest + lift
+    front = X - cx(Z) > 0.2 * f
+    torso = (((X - cx(Z)) / rx) ** 2 + (Y / ry) ** 2 + ((Z - tz) / (2.5 * f)) ** 2 <= 1.05) & (Z < sh + 0.3)
+    skirt = (((X - 0.1 * f) / (1.6 * f)) ** 2 + (Y / (fr.hw * 1.3)) ** 2 <= 1.05) & (Z < fr.waist + lift) & (Z > lo)
+    stripe = (np.abs(np.abs(Y) - fr.sw * 0.42) < w) & front & (torso | skirt)
+    b.put(stripe, d.clavi, tone=0.1)
+
+
+def _roman_garment(b, d, p, fr, lift, cx, skirt, nrm):
+    """The toga: a great white mantle over the tunic, its mass over the left shoulder and arm,
+    a broad roll (balteus) across the chest from under the right arm, the pouch (umbo) pulled
+    out at the chest and the curved front fold (sinus) hanging across the thighs; the purple
+    border (`trim`) along the sinus and the roll for the praetexta. The stola: a long
+    sleeveless overdress on narrow straps, falling in fine folds over the tunic (`under`)."""
+    X, Y, Z = b.X, b.Y, b.Z
+    f = fr.f
+    sh = fr.shoulder + lift
+    waist = fr.waist + lift
+    tz = fr.chest + lift
+    ry, rx = fr.sw * 0.84, 1.32 * f
+    torso = (((X - cx(Z)) / rx) ** 2 + (Y / ry) ** 2 + ((Z - tz) / (2.45 * f)) ** 2 <= 1) & (Z > waist - 1.5 * f)
+    if d.garment == "stola":
+        bodice = torso & (Z < sh - 0.5 * f) & (np.abs(Y) < fr.sw * 0.75)
+        b.put(bodice, d.colour, tone=0.05)
+        for side in (1, -1):    # the shoulder straps
+            b.put(torso & (np.abs(Y - side * fr.sw * 0.45) < 0.35 * f) & (Z >= sh - 0.6 * f), d.colour, tone=0.2)
+        b.put(skirt & (np.cos(np.arctan2(Y, X) * 12) > 0.6), d.colour, tone=-0.45)
+        if d.under:    # the tunic shows at the hem
+            b.put(skirt & (Z < 0.25 * f + 0.8), d.under, tone=0.1)
+        return
+    # The toga: torso wrapped except the right shoulder and breast (the tunic shows there).
+    cover = torso & ~((Y < -0.35 * f) & (Z > tz - 0.3 * f - 0.55 * (Y + fr.sw)))
+    b.put(cover, d.colour, tone=0.15)
+    roll_c = lambda Y_: waist - 0.6 * f + (Y_ + fr.sw) * 0.95
+    roll = (((X - cx(Z)) / (rx + 0.5)) ** 2 + (Y / (ry + 0.4)) ** 2 <= 1.1) & (np.abs(Z - roll_c(Y)) < 0.75 * f) & \
+        (Z > waist - 1.6 * f) & (Z < sh + 0.6 * f)
+    b.put(roll, d.colour, tone=0.4)
+    if d.trim:
+        b.put(roll & (Z < roll_c(Y) - 0.35 * f), d.trim, tone=0.15)
+    # The umbo: a pouch of cloth pulled over the roll at the middle of the chest.
+    b.blob((cx(waist) + 1.25 * f, 0.35 * f, waist + 0.4 * f), (0.6 * f, 0.75 * f, 0.7 * f), d.colour, tone=0.3)
+    # The mass over the left shoulder and down the left side, front and back.
+    b.limb((0.2 * f, fr.sw * 0.75, sh + 0.35), (0.9 * f, fr.sw * 0.9, fr.knee + lift), 0.95 * f, d.colour, tone=-0.05)
+    b.limb((-0.9 * f, fr.sw * 0.6, sh + 0.3), (-1.2 * f, fr.sw * 0.7, 1.2), 0.9 * f, d.colour, tone=-0.2)
+    # The sinus: a deep curved fold across the front of the thighs, darker beneath its edge.
+    ang = np.arctan2(Y, X - 0.1 * f)
+    front = np.cos(ang) > 0.1
+    curve = fr.knee + lift + 0.6 * f + 1.4 * f * (Y / (fr.hw * 2.2)) ** 2 - 0.5 * f * (Y < 0)
+    edge = skirt & front & (np.abs(Z - curve) < 0.55 * f)
+    b.put(skirt & front & (Z < curve - 0.55 * f) & (Z > curve - 2.2 * f), d.colour, tone=-0.35)
+    b.put(edge, d.trim or d.colour, tone=0.35 if not d.trim else 0.1)
+    b.put(skirt & (np.cos(ang * 6 + Z * 0.7) > 0.8) & (Z < curve - 0.6 * f), d.colour, tone=-0.55)
+
+
+def _paenula(b, d, p, fr, lift, cx):
+    """The paenula: a bell of heavy wool from the shoulders to the knees, closed in front with
+    a seam, the arms under it, the hood lying on the shoulders (or up, `cloak_hood`)."""
+    X, Y, Z = b.X, b.Y, b.Z
+    f = fr.f
+    sh = fr.shoulder + lift
+    lo = fr.knee - 0.8 * f + lift if not (p.sit or p.kneel) else max(0.5, fr.knee - 3.0 * f + lift)
+    t = np.clip((sh + 0.5 * f - Z) / max(sh + 0.5 * f - lo, 0.1), 0, 1)
+    rx = 1.45 * f + 0.9 * f * t
+    ry = fr.sw * (1.08 + 0.35 * t)
+    c = cx(Z) * (1 - t) + 0.2 * f * t + (1.0 * f if p.sit or p.kneel else 0)
+    bell = (((X - c) / rx) ** 2 + (Y / ry) ** 2 <= 1) & (Z >= lo) & (Z <= sh + 0.55 * f)
+    a = np.arctan2(Y, X - c)
+    b.put(bell, d.cloak, tone=0.1 - 0.4 * (np.cos(a * 5) > 0.75) * t, normal=((X - c) / rx ** 2, Y / ry ** 2, 0.3 + 0 * Z))
+    b.put(bell & (np.abs(Y) < 0.22 * f) & (X - c > 0), d.cloak, tone=-0.6)
+    if not d.cloak_hood:
+        b.blob((cx(sh) - 1.0 * f, 0.0, sh + 0.4 * f), (0.9 * f, fr.sw * 0.75, 0.8 * f), d.cloak, tone=-0.15)
 
 
 def _mantle(b, d, p, fr, lift, cx):
@@ -678,11 +779,15 @@ def _arms(b: Body, d: Dress, p: Pose, fr: Frame, up):
         s = up((0.0, side * fr.sw, fr.shoulder))
         e = up(arm.elbow)
         h = up(arm.hand)
+        if d.garment in ("toga", "stola"):    # the toga wraps the left arm; tunics have short sleeves
+            sleeve = d.colour if d.garment == "toga" and side > 0 else (d.under or d.skin)
         b.blob(s, (0.85 * f, 0.8 * f, 0.85 * f), sleeve)
         b.limb(s, e, fr.limb * 1.05, sleeve)
         wrist = tuple(np.asarray(e) + (np.asarray(h) - np.asarray(e)) * 0.8)
-        b.limb(e, wrist, fr.limb * 0.92, sleeve if d.garment not in ("chiton", "kilt", "chiton_long") else d.skin,
-               tone=0.1)
+        fore = sleeve if d.garment not in ("chiton", "kilt", "chiton_long", "stola") else d.skin
+        if d.garment == "toga" and side < 0:
+            fore = d.skin
+        b.limb(e, wrist, fr.limb * 0.92, fore, tone=0.1)
         if wide:
             # The court robe's wide sleeve hangs in a deep fold below the forearm.
             mid = tuple(np.asarray(e) * 0.5 + np.asarray(wrist) * 0.5)
@@ -691,7 +796,8 @@ def _arms(b: Body, d: Dress, p: Pose, fr: Frame, up):
             b.limb(drop, wrist, 0.85 * f, d.colour, tone=0.15)
             if d.trim:
                 b.limb((drop[0], drop[1], drop[2] - 0.2), (drop[0] + 0.3, drop[1], drop[2] - 0.6), 0.55 * f, d.trim)
-        if d.trim and d.garment not in ("wrap", "sleeveless", "chiton", "kilt", "chiton_long") + BARE_ARMS:
+        if d.trim and d.garment not in ("wrap", "sleeveless", "chiton", "kilt", "chiton_long", "toga",
+                                        "stola") + BARE_ARMS:
             b.limb(tuple(np.asarray(wrist) - (np.asarray(h) - np.asarray(e)) * 0.08), wrist, fr.limb * 0.98, d.trim,
                    tone=0.2)
         b.blob(h, (0.5 * f, 0.48 * f, 0.55 * f), d.skin)
@@ -736,23 +842,39 @@ def _head(b: Body, d: Dress, p: Pose, fr: Frame, up):
         b.blob((hx - 0.1, hy, hz + 0.4), (rx + 0.35, ry + 0.35, rz + 0.1), d.hair, tone=-0.2, only_empty=True)
     elif d.hair_style == "tied":
         b.blob(at(-rx * 1.0, 0.0, hz - 0.2), (0.7, 0.7, 0.75), d.hair)
+    elif d.hair_style == "curls":     # short curls over the crown and the back, the face left clear
+        b.put(shell & (((W * 2.4 + Z * 2.0) % 1.0) < 0.35), d.hair, tone=-0.6)
+        b.blob((hx - 0.35, hy, hz + 0.35), (rx + 0.15, ry + 0.3, rz + 0.05), d.hair, tone=0.1, only_empty=True)
+    elif d.hair_style == "coil":      # hair swept up into a high coil on the crown (Sabina's style)
+        b.blob((hx - 0.2, hy, hz + rz * 0.95), (rx * 0.8, ry * 0.85, 0.9 * f), d.hair, tone=0.1)
+        b.put((np.abs(np.hypot((X - hx + 0.2) / (rx * 0.8), (Y - hy) / (ry * 0.85)) - 0.7) < 0.18) &
+              (np.abs(Z - hz - rz * 0.95) < 0.6 * f), d.hair, tone=-0.5)
+    elif d.hair_style == "braids":    # the Vestals' six braids wound round the head
+        b.put(shell & (((Z - hz) * 2.4) % 1.0 < 0.4) & (Z > hz - 0.3 * f), d.hair, tone=-0.4)
     # Face: an eye and a brow on the camera side, a nose.
     fu = rx - 0.05
     b.points([at(fu, 0.55 * f, hz + 0.15 * f)], "hair_black")
     b.points([at(fu, -0.55 * f, hz + 0.15 * f)], "hair_black", tone=0.5)
     b.blob(at(fu + 0.25, 0.0, hz - 0.25 * f), (0.32, 0.3, 0.35), d.skin, tone=0.3)
     if d.beard != "none":
-        long_ = {"short": 0.9, "full": 1.35, "curled": 1.6, "square": 2.4}[d.beard] * f
+        long_ = {"short": 0.9, "full": 1.35, "curled": 1.6, "square": 2.4, "curly": 1.05}[d.beard] * f
         beard = (U > -0.4) & (Z < hz - 0.25 * f) & (Z > hz - rz - long_ + 0.4) & \
             (((X - hx - 0.2) / (rx + 0.25)) ** 2 + ((Y - hy) / (ry + 0.1)) ** 2 <= 1.0 + 0.3 * (Z < hz - rz))
         if d.beard == "square":
             beard |= (U > 0.0) & (U < rx + 0.3) & (np.abs(W) < 0.95 * f) & (Z < hz - rz + 0.3) & (Z > hz - rz - long_ + 0.4)
         curls = ((Z * 2.6) % 1.0) < 0.35
-        b.put(beard, d.hair, tone=-0.35 * curls + 0.15)
+        bmat = d.beard_mat or d.hair
+        if d.beard == "curly":       # a short curly beard round the jaw, the mouth and chin lit
+            b.put(beard, bmat, tone=0.35 - 0.55 * (((W * 2.6 + Z * 2.2) % 1.0) < 0.35))
+            b.points([at(fu + 0.15, 0.0, hz - 0.62 * f)], d.skin, tone=-0.6)
+        else:
+            b.put(beard, bmat, tone=-0.35 * curls + 0.15)
         if d.beard in ("curled", "square"):
             b.put(beard & curls & ((W * 3) % 1.0 < 0.4), "gold" if d.body == "king" else d.hair, tone=-0.6 if d.body != "king" else -1.6)
     else:
         b.points([at(fu + 0.05, 0.0, hz - 0.85 * f)], d.skin, tone=-1.2)
+    if "bulla" in d.jewels or "lunula" in d.jewels:    # the amulet at the neck of a freeborn child
+        b.blob(up((1.2 * f, 0.0, fr.shoulder - 1.2 * f)), (0.35, 0.55, 0.55), "gold", 0.5)
     if "earrings" in d.jewels:
         b.points([at(0.0, ry + 0.05, hz - 0.5 * f)], "gold", 0.6)
     _headgear(b, d, p, fr, (hx, hy, hz), at)
@@ -888,6 +1010,51 @@ def _headgear(b, d: Dress, p: Pose, fr: Frame, c, at):
                <= 1) & (X < hx + 0.2)
         b.put(bag, mat, tone=0.1 - 0.35 * ((Z * 2.5) % 1.0 < 0.3))
         b.put((rad >= 0.9) & (rad <= 1.1) & (np.abs(Z - (hz + rz * 0.45)) < 0.35), d.head_trim or mat, tone=0.3)
+    elif g == "galea":     # the Imperial Gallic helmet: bowl, brow ridge, cheek pieces, a deep neck guard
+        shell = (((X - hx + 0.05) / (rx + 0.3)) ** 2 + ((Y - hy) / (ry + 0.3)) ** 2 +
+                 ((Z - hz - 0.25) / (rz + 0.28)) ** 2 <= 1) & (Z > hz - rz * 0.1)
+        U = X - hx
+        guard = (U < -rx * 0.2) & (np.hypot((X - hx + 0.3) / (rx + 0.9), (Y - hy) / (ry + 0.55)) <= 1) & \
+            (Z > hz - rz * 0.75) & (Z < hz - rz * 0.25)
+        cheek = (((X - hx - 0.1) / (rx + 0.25)) ** 2 + ((Y - hy) / (ry + 0.3)) ** 2 <= 1) & \
+            (Z < hz + 0.1) & (Z > hz - rz * 0.95) & (np.abs(Y - hy) > ry * 0.82) & (U > -rx * 0.2) & (U < rx * 0.5)
+        brow = (rad > 0.95) & (rad < 1.22) & (np.abs(Z - (hz + rz * 0.42)) < 0.3) & (U > 0)
+        b.put(shell | guard | cheek | brow, mat, tone=0.25, normal=((X - hx) / rx ** 2, (Y - hy) / ry ** 2, (Z - hz) / rz ** 2))
+        if d.head_trim:            # brass trim and, on parade, a crest
+            b.put(brow, d.head_trim, tone=0.4)
+            crest = (np.abs(Y - hy) < 0.38 * f) & (Z > top + 0.4) & (Z < top + 1.5 * f) & (np.abs(X - hx) < rx * 0.9)
+            b.put(crest, "cinnabar", tone=0.1 - 0.4 * ((X * 3) % 1.0 < 0.3))
+    elif g == "apex":      # the flamen's close cap topped by a spike of olive wood with a tuft of wool
+        cap = ((((X - hx + 0.1) / (rx + 0.22)) ** 2 + ((Y - hy) / (ry + 0.22)) ** 2 + ((Z - hz) / (rz + 0.2)) ** 2) <= 1) & \
+            (Z > hz + 0.1)
+        b.put(cap, mat, tone=0.1)
+        b.limb((hx, hy, top), (hx, hy, top + 2.2 * f), 0.22, "cedar", tone=0.2)
+        b.blob((hx, hy, top + 2.3 * f), (0.4, 0.4, 0.45), "wool", 0.3)
+    elif g == "pilleus":   # the felt cap of the newly freed: a rounded cone
+        h = 1.9 * f
+        z0 = hz + rz * 0.15
+        tf = np.clip((Z - z0) / h, 0, 1)
+        cap = (rad <= 1.05 - 0.6 * tf ** 1.5) & (Z >= z0) & (Z < z0 + h)
+        b.put(cap, mat, tone=0.15 - 0.3 * (Z < z0 + 0.4))
+    elif g == "suffibulum":   # the Vestal's woollen bands (infula, vittae) and white veil pinned at the breast
+        cloth = (((X - hx + 0.15) / (rx + 0.38)) ** 2 + ((Y - hy) / (ry + 0.38)) ** 2 + ((Z - hz - 0.15) / (rz + 0.3)) ** 2
+                 <= 1) & ~((X - hx > rx * 0.1) & (Z < hz + rz * 0.5)) & (Z > hz - rz * 1.3)
+        b.put(cloth, mat, tone=0.2)
+        band = (rad >= 0.92) & (rad <= 1.18) & (np.abs(Z - (hz + rz * 0.45)) < 0.42)
+        b.put(band, d.head_trim or "cinnabar", tone=0.1 - 0.5 * ((np.arctan2(Y - hy, X - hx) * 6) % 1.0 < 0.3))
+        b.put((np.abs(Y - hy) < ry + 0.9) & (X > hx - rx * 0.4) & (X < hx + rx * 0.9) & (Z > fr.shoulder - 0.9 * f) &
+              (Z < hz - rz * 0.7) & (np.abs(Y - hy) > ry * 0.4), mat, tone=0.0)
+        b.blob((hx + rx * 0.7, hy, fr.shoulder - 0.7 * f), (0.4, 0.4, 0.4), "gold", 0.4)
+    elif g == "radiate":   # the Sun's crown of rays
+        b.put((rad >= 0.9) & (rad <= 1.15) & (np.abs(Z - (hz + rz * 0.4)) < 0.4), mat, tone=0.3)
+        a = np.arctan2(Y - hy, X - hx)
+        ray = (np.cos(a * 7) > 0.8) & (rad > 1.0) & (rad < 1.7) & (Z > hz + rz * 0.3) & \
+            (Z < hz + rz * 0.3 + 2.4 * f * (1.7 - rad))
+        b.put(ray, mat, tone=0.4)
+    elif g == "leather_cap":   # the charioteer's padded cap with straps under the chin
+        cap = ((((X - hx + 0.1) / (rx + 0.28)) ** 2 + ((Y - hy) / (ry + 0.28)) ** 2 + ((Z - hz) / (rz + 0.25)) ** 2) <= 1) & \
+            (Z > hz - rz * 0.3) & ~((X - hx > rx * 0.3) & (Z < hz + rz * 0.35))
+        b.put(cap, mat, tone=0.1 - 0.45 * ((Z * 2.2) % 1.0 < 0.3))
     elif g == "fox_cap":   # the Thracian alopekis: fox fur with ear flaps and the tail behind
         cap = (((X - hx + 0.1) / (rx + 0.35)) ** 2 + ((Y - hy) / (ry + 0.35)) ** 2 + ((Z - hz - 0.6) / (rz + 0.6)) ** 2 <= 1) \
             & (Z > hz + 0.1 * f)
@@ -958,6 +1125,8 @@ def _worn(b: Body, d: Dress, p: Pose, fr: Frame, up):
         elif w == "aryballos":  # the athlete's oil flask hanging from the wrist
             s = up((0.4, fr.hw + 0.9, fr.hip))
             b.blob(s, (0.55, 0.55, 0.6), "gloss", 0.3)
+        elif w in ROMAN_WORN:
+            _roman_worn(b, w, d, p, fr, up)
         elif w == "phorbeia":   # the aulos player's cheek strap
             hx, hy, hz = up((0.15 * f, 0.0, fr.head))
             ring = (np.abs(np.hypot((X - hx) / (fr.head_r[0] + 0.15), (Y - hy) / (fr.head_r[1] + 0.15)) - 1.0) < 0.12) & \
@@ -1114,6 +1283,8 @@ def draw_prop(b: Body, prop, hand, side, d: Dress, p: Pose, fr: Frame, hl, hr):
         b.blob((x + 0.2, y, z + 0.8), (0.35, 0.35, 0.5), "malachite", 0.3)
     elif prop in GREEK_PROPS:
         _greek_prop(b, prop, (x, y, z), side, d, p, fr, hl, hr)
+    elif prop in ROMAN_PROPS:
+        _roman_prop(b, prop, (x, y, z), side, d, p, fr, hl, hr)
     else:
         raise KeyError(f"rig: no prop {prop!r}")
 
@@ -1258,6 +1429,148 @@ def _greek_prop(b: Body, prop, hand, side, d: Dress, p: Pose, fr: Frame, hl, hr)
         b.points([(x + 0.9, y + 0.3, z + 0.7), (x + 0.9, y - 0.3, z + 0.7)], "gloss", 0.0)
     elif prop == "ostrakon":
         b.blob((x + 0.3, y, z + 0.2), (0.5, 0.4, 0.15), "clay", 0.3)
+
+
+ROMAN_WORN = {"segmentata", "hamata", "cingulum", "gladius", "cuirass", "focale", "straps"}
+
+
+def _roman_worn(b: Body, w, d: Dress, p: Pose, fr: Frame, up):
+    """Roman soldiers' and charioteers' gear (rome.md §6.2): plate armour of iron bands
+    (lorica segmentata) with its shoulder guards, mail (lorica hamata) to the hips, the belt
+    with its apron of studded straps, the short sword on the right hip, a muscled cuirass with
+    leather strips for generals and statues, the soldier's scarf, the charioteer's laced bands."""
+    f = fr.f
+    X, Y, Z = b.X, b.Y, b.Z
+    sh, wz = up((0.0, 0.0, fr.shoulder)), up((0.0, 0.0, fr.waist))
+    tz = (sh[2] + wz[2]) / 2
+    cx_ = (sh[0] + wz[0]) / 2 + 0.1 * f
+    shell = (((X - cx_) / (1.45 * f)) ** 2 + (Y / (fr.sw * 0.97)) ** 2 + ((Z - tz) / (2.6 * f)) ** 2 <= 1) & \
+        (Z > wz[2] - 1.0 * f) & (Z < sh[2] + 0.5 * f)
+    if w == "segmentata":
+        band = ((Z - wz[2]) * 1.4) % 1.0
+        b.put(shell, "metal", tone=0.45 - 0.7 * (band < 0.25))
+        for side in (1, -1):    # shoulder guards: curved plates over each shoulder
+            b.blob(up((0.0, side * fr.sw * 0.85, fr.shoulder + 0.2)), (1.1 * f, 0.95 * f, 0.7 * f), "metal", 0.35)
+        b.put(shell & (np.abs(Y) < 0.18) & (X > cx_), "bronze", tone=0.4)
+    elif w == "hamata":
+        mail = (((X - cx_) / (1.5 * f)) ** 2 + (Y / (fr.sw * 1.0)) ** 2 <= 1.0) & (Z > fr.hip - 1.0 * f) & \
+            (Z < sh[2] + 0.4 * f)
+        b.put(mail, "metal", tone=0.1 - 0.45 * (((Z * 3.0 + (X + Y) * 1.5) % 1.0) < 0.35))
+        for side in (1, -1):
+            b.blob(up((0.0, side * fr.sw * 0.7, fr.shoulder + 0.3)), (1.0 * f, 0.8 * f, 0.45 * f), "metal", 0.2)
+    elif w == "cingulum":
+        belt = (((X - cx_) / (1.55 * f)) ** 2 + (Y / (fr.hw * 1.3)) ** 2 <= 1) & (np.abs(Z - wz[2] + 0.6 * f) < 0.4)
+        b.put(belt, "leather", tone=0.1)
+        b.put(belt & ((np.arctan2(Y, X) * 6) % 1.0 < 0.3), "bronze", tone=0.4)
+        for dy in (-0.55, 0.0, 0.55):    # the apron of studded straps
+            top_ = (cx_ + 1.4 * f, dy * f, wz[2] - 0.8 * f)
+            b.limb(top_, (top_[0] + 0.1, top_[1], fr.hip - 2.2 * f), 0.22, "leather", 0.1)
+            b.points([(top_[0] + 0.15, dy * f, fr.hip - 1.0 * f), (top_[0] + 0.15, dy * f, fr.hip - 2.0 * f)], "bronze",
+                     0.6)
+    elif w == "gladius":
+        s = up((0.2, -fr.hw - 0.6, fr.waist - 0.5))
+        b.limb(s, (s[0] - 0.8, s[1] - 0.1, fr.hip - 1.6 * f), 0.4, "leather", tone=0.1)
+        b.points([s, (s[0] - 0.5, s[1] - 0.05, s[2] - 1.5)], "bronze", 0.5)
+    elif w == "cuirass":
+        b.put(shell, "bronze", tone=0.35 - 0.4 * (np.abs(Y) < 0.15) - 0.3 * (np.abs(Z - tz - 0.3 * f) < 0.25))
+        ring = (((X - cx_) / (1.6 * f)) ** 2 + (Y / (fr.hw * 1.3)) ** 2 <= 1) & (Z > fr.hip - 1.4 * f) & \
+            (Z < wz[2] - 0.8 * f)
+        b.put(ring & ((np.arctan2(Y, X - cx_) * 5) % 1.0 < 0.7), "leather", tone=0.2)
+    elif w == "focale":
+        ring = (np.abs(np.hypot((X - sh[0] - 0.2) / 1.1, Y / 1.2) - 0.95 * f) < 0.45) & (np.abs(Z - sh[2] - 0.2) < 0.45)
+        b.put(ring, "linen", tone=0.2)
+    elif w == "straps":       # laced leather bands round the charioteer's ribs
+        b.put(shell & (((Z - wz[2]) * 1.6) % 1.0 < 0.45) & (Z < sh[2] - 0.6 * f), "leather", tone=0.0)
+
+
+ROMAN_PROPS = {"fasces", "scutum", "oval_shield", "pilum", "bucket", "hook_pole", "lantern", "simpulum", "sistrum",
+               "whip", "cornu", "hoop", "broom", "trowel", "flask", "basket", "net_cast", "doll", "loaf", "amphora_r"}
+
+
+def _roman_prop(b: Body, prop, hand, side, d: Dress, p: Pose, fr: Frame, hl, hr):
+    """The things Romans carry (rome.md §6.2, §6.3), held in the hand they are given to."""
+    f = fr.f
+    x, y, z = hand
+    if prop == "fasces":      # the bundle of elm rods bound with red straps, on the left shoulder
+        a, c = (x - 0.2, y, z - 0.4), (x - 1.4 * f, y + 0.3, z + 3.6 * f)
+        for dy in (-0.25, 0.25):
+            b.limb((a[0], a[1] + dy, a[2]), (c[0], c[1] + dy, c[2]), 0.42, "wood_light", tone=0.1)
+        for t in (0.25, 0.55, 0.85):
+            q = tuple(np.asarray(a) + (np.asarray(c) - np.asarray(a)) * t)
+            b.blob(q, (0.55, 0.65, 0.4), "cinnabar", 0.2)
+    elif prop in ("scutum", "oval_shield"):
+        sx, sy, sz = x + 0.5, y + side * 1.0, z + 0.1
+        hw, hh = (1.9 * f, 3.2 * f) if prop == "scutum" else (2.0 * f, 2.8 * f)
+        if prop == "scutum":
+            face = (np.abs(b.X - sx) < hw) & (np.abs(b.Z - sz) < hh)
+            curve = np.abs(b.Y - sy - side * 0.6 * ((b.X - sx) / hw) ** 2) < 0.45
+        else:
+            face = ((b.X - sx) / hw) ** 2 + ((b.Z - sz) / hh) ** 2 < 1
+            curve = np.abs(b.Y - sy) < 0.4
+        board = face & curve
+        b.put(board, d.pattern_mat or "cinnabar", tone=0.1)
+        b.put(board & (((b.X - sx) / hw) ** 2 + ((b.Z - sz) / hh) ** 2 < 0.06), "bronze", tone=0.5)   # the boss
+        rim = board & ((np.abs(b.X - sx) > hw - 0.35) | (np.abs(b.Z - sz) > hh - 0.35)) if prop == "scutum" else \
+            board & (((b.X - sx) / hw) ** 2 + ((b.Z - sz) / hh) ** 2 > 0.82)
+        b.put(rim, "bronze", tone=0.35)
+        if prop == "scutum":      # wings and thunderbolt painted in yellow
+            b.put(board & (np.abs(b.Z - sz) < 0.3) & (np.abs(b.X - sx) > 0.6) & (np.abs(b.X - sx) < hw - 0.6), "ochre", 0.2)
+    elif prop == "pilum":
+        L = 1.6 * fr.H
+        lo = max(0.15, z - 0.25 * fr.H)
+        b.limb((x, y, lo), (x + 0.05, y, lo + L * 0.65), 0.28, "cedar", 0.2)
+        b.limb((x + 0.05, y, lo + L * 0.65), (x + 0.05, y, lo + L), 0.17, "metal", 0.5)
+    elif prop == "bucket":    # the vigiles' leather fire bucket
+        b.limb((x, y, z), (x, y, z - 1.0 * f), 0.15, "leather")
+        b.limb((x, y, z - 1.2 * f), (x, y, z - 2.6 * f), 0.95 * f, "leather", 0.1, r2=0.8 * f)
+    elif prop == "hook_pole":
+        b.limb((x, y, z - 2.0 * f), (x + 0.3, y, z + 4.5 * f), 0.24, "cedar", 0.2)
+        b.limb((x + 0.3, y, z + 4.5 * f), (x + 1.1 * f, y, z + 4.0 * f), 0.22, "metal", 0.4)
+    elif prop == "lantern":   # a bronze lantern with horn panes, lit
+        b.limb((x, y, z), (x, y, z - 0.8 * f), 0.12, "bronze")
+        b.blob((x, y, z - 1.5 * f), (0.6 * f, 0.6 * f, 0.8 * f), "lamp", 0.3)
+        b.blob((x, y, z - 0.75 * f), (0.5 * f, 0.5 * f, 0.25), "bronze", 0.3)
+    elif prop == "simpulum":  # the Vestal's and priests' small ladle
+        b.limb((x, y, z), (x + 0.4, y, z + 1.6 * f), 0.16, "bronze", 0.4)
+        b.blob((x + 0.45, y, z + 1.8 * f), (0.45, 0.45, 0.35), "bronze", 0.4)
+    elif prop == "sistrum":
+        b.limb((x, y, z), (x + 0.2, y, z + 1.0 * f), 0.18, "bronze", 0.3)
+        ring = (np.abs(np.hypot(b.X - x - 0.3, b.Z - z - 1.9 * f) - 0.8 * f) < 0.22) & (np.abs(b.Y - y) < 0.25)
+        b.put(ring, "gold", 0.4)
+    elif prop == "whip":
+        b.limb((x, y, z), (x + 0.6, y, z + 1.8 * f), 0.18, "leather")
+        b.limb((x + 0.6, y, z + 1.8 * f), (x + 2.4 * f, y, z + 0.6 * f), 0.1, "leather", 0.2)
+    elif prop == "cornu":     # the great G-shaped bronze horn round the body
+        ring = (np.abs(np.hypot(b.X - 0.2, b.Z - fr.chest) - 2.6 * f) < 0.32) & (np.abs(b.Y + 0.6) < 0.35)
+        b.put(ring, "gold", 0.4)
+        b.limb((0.2, -0.6, fr.chest + 2.6 * f), (1.6 * f, -0.6, fr.head + 1.2 * f), 0.5, "gold", 0.4)
+    elif prop == "hoop":
+        ring = (np.abs(np.hypot(b.X - x - 1.0 * f, b.Z - 1.6 * f) - 1.5 * f) < 0.25) & (np.abs(b.Y - y) < 0.25)
+        b.put(ring, "wood_light", 0.3)
+        b.limb((x, y, z), (x + 1.0 * f, y, 2.2 * f), 0.12, "wood")
+    elif prop == "broom":
+        b.limb((x, y, z + 1.0), (x + 2.0 * f, y, 0.8), 0.2, "wood")
+        b.blob((x + 2.4 * f, y, 0.6), (1.0 * f, 0.6 * f, 0.5), "straw", 0.2)
+    elif prop == "trowel":
+        b.limb((x, y, z), (x + 0.8, y, z + 0.2), 0.16, "wood")
+        b.blob((x + 1.3, y, z + 0.1), (0.6, 0.45, 0.12), "metal", 0.4)
+    elif prop == "flask":     # the bather's oil flask and strigil on a ring
+        b.blob((x + 0.2, y, z - 0.6), (0.55, 0.55, 0.65), "glass_cool", 0.3)
+        b.limb((x + 0.2, y + 0.3, z - 0.3), (x + 0.9, y + 0.3, z - 1.2), 0.15, "bronze", 0.4)
+    elif prop == "basket":
+        b.blob((x + 0.4, y, z - 0.5), (1.1 * f, 1.0 * f, 0.8 * f), "straw", 0.1)
+        b.blob((x + 0.4, y, z + 0.1), (0.8 * f, 0.7 * f, 0.35), d.pattern_mat or "poppy", 0.3)
+    elif prop == "net_cast":
+        b.blob((x + 0.6, y, z - 0.8), (1.2 * f, 1.0 * f, 1.3 * f), "straw", -0.2)
+    elif prop == "doll":
+        b.limb((x + 0.3, y, z), (x + 0.3, y, z + 1.4 * f), 0.4, "wood_light", 0.2)
+        b.blob((x + 0.3, y, z + 1.7 * f), (0.4, 0.4, 0.4), "wood_light", 0.3)
+    elif prop == "loaf":      # a round loaf scored into eight (as found at Pompeii)
+        b.blob((x + 0.5, y, z + 0.2), (0.95 * f, 0.95 * f, 0.5 * f), "ochre", 0.2)
+    elif prop == "amphora_r":  # a Roman transport amphora on the shoulder
+        cx, cy, cz = x - 0.6, y + 0.2, z + 1.2 * f
+        b.limb((cx, cy, cz), (cx - 2.4 * f, cy, cz + 2.0 * f), 1.0 * f, "clay", 0.2, r2=0.55 * f)
+        b.limb((cx, cy, cz), (cx + 0.9 * f, cy, cz - 0.8 * f), 0.5 * f, "clay", 0.1, r2=0.2)
 
 
 def _tool(b: Body, prop, hl, hr, p: Pose, fr: Frame):
