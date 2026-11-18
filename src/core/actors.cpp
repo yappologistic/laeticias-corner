@@ -435,7 +435,7 @@ void Actors::presence(const ActorEnv& env, float dt) {
                 markSeen(vi);
                 events_.push_back({ActorEvent::Kind::Arrived,
                                    i,
-                                   vi,
+                                   pool_[static_cast<std::size_t>(i)].kind,
                                    pool_[static_cast<std::size_t>(i)].pos,
                                    -1,
                                    {},

@@ -1006,8 +1006,8 @@ TEST_CASE("the cottage removed while she is inside: she comes out at once (Q3-06
     CHECK(l.her().alpha > 0.5f); // seen again, on her way to the bedroll
 }
 
-TEST_CASE(
-    "an hour of random edits: reservations, population and habitat rules hold (Q3-02, Q3-07)") {
+TEST_CASE("twenty minutes of random edits: reservations, population and habitat rules hold (Q3-02, "
+          "Q3-07)") {
     Life l(test::catalog(), 5);
     l.world = makeStarterWorld(l.cat);
     for (const auto& [id, x, y] : {std::tuple{"cottage", 32, 30},
