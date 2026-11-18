@@ -755,10 +755,21 @@ bool App::scriptStep() {
                 camera_.place(cat_.iso().toWorld(std::stof(c.args[1]), std::stof(c.args[2])),
                               std::stof(c.args[3]), screen());
             } else if (c.args[0] == "world") {
-                // set world TX TY ZOOM: look at a world grid tile; themes and places snap.
-                if (c.args.size() != 4 || !loaded_) return fail("set world TX TY ZOOM");
-                camera_.place(gridToHome({std::stof(c.args[1]), std::stof(c.args[2])}),
-                              std::stof(c.args[3]), screen());
+                // set world TX TY ZOOM | PLACE ZOOM: look at a world grid tile or a named place
+                // (city life's foci: forum, agora, terrace, layer:node, district:<region>/<id>);
+                // themes and places snap.
+                if ((c.args.size() != 4 && c.args.size() != 3) || !loaded_)
+                    return fail("set world TX TY ZOOM | PLACE ZOOM");
+                Vec2 spot;
+                if (c.args.size() == 4) {
+                    spot = {std::stof(c.args[1]), std::stof(c.args[2])};
+                } else {
+                    const auto f =
+                        openCity() ? life::parseFocus(*city_->life, c.args[1]) : std::nullopt;
+                    if (!f) return fail("no place " + c.args[1]);
+                    spot = {static_cast<float>(f->x) + 0.5f, static_cast<float>(f->y) + 0.5f};
+                }
+                camera_.place(gridToHome(spot), std::stof(c.args.back()), screen());
                 camera_.beginStep();
                 view_ = camera_;
                 worldView_->jumped(

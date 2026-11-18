@@ -45,7 +45,9 @@
 //   set time T              the time of day, 0..1 (0.2 mid-morning, 0.55 dusk, 0.75 midnight)
 //   set chatter chatty|quiet   the resident's idle remarks
 //   set camera TX TY ZOOM   look at tile (TX, TY) at a zoom level (0.25, 0.5, 1, 2, 3)
-//   set world TX TY ZOOM    the same at a world grid tile (a jump: themes and places snap)
+//   set world TX TY ZOOM    the same at a world grid tile (a jump: themes and places snap);
+//   set world PLACE ZOOM    or at a place: forum, agora, terrace, layer:node,
+//                           district:<region>/<id> (city life's foci)
 //   set look KIND ZOOM      look at the first actor of that kind, a named figure, or a
 //                           landmark:ID (the first placed)
 //   set lively reset        start a fresh liveliness record (see expect lively)
