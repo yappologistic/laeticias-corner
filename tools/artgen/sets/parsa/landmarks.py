@@ -471,7 +471,9 @@ def _stair_landmark(fn, fw, fh, rise, axis, low, flights, district, **kw):
             for i in range(n):
                 t = (i, c) if axis == "x" else (c, i)
                 walk.append(t)
-                frac = (i + 1) / n if low == "lo" else (n - i) / n
+                # The tread at the tile's middle: the foot tile half a flight-tile above the
+                # ground (≤ 8 px for these flights), the head tile half one below the top.
+                frac = (i + 0.5) / n if low == "lo" else (n - i - 0.5) / n
                 floor[t] = rise * frac + 1.2
     up = ("+" if low == "lo" else "-") + axis
     return Landmark((fw, fh), (0, int(rise) + 12), ref(fn, **kw), walk=walk, floor=floor, district=district,

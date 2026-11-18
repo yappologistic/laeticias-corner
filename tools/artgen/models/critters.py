@@ -12,10 +12,15 @@ from pack import Sprite
 from palette import GLOW, INK, PLASTER, ROOF, STONE, STRAW, WATER, _rgb
 from render import render_base
 from palette import MAT
+from rig import BEAST_DUTY, foot_cycle
 from voxel import Model, ellipsoid, ellipsoid_normal, segment
 
 
 S = 1.35  # critters are modelled at life-ish size and enlarged so they read at 1x
+# Walks with planted feet (rig.foot_cycle): a foot sweeps `reach` model units either side.
+HEN_REACH = 0.9
+CAT_REACH = 1.2
+DUCK_REACH = 0.9
 
 
 def _model(k, x0, x1, y0, y1, z0, z1) -> Model:
@@ -63,10 +68,10 @@ def duck(anim, frame, frames, k):
     dip = anim == "idle" and frame % 2 == 1
     lift = 0.0
     if anim == "waddle":
-        lift = 1.3 + 0.3 * abs(math.sin(t))
-        for side, ph in ((1.0, 0.0), (-1.0, math.pi)):
-            sw = math.sin(t + ph)
-            foot = (0.4 + sw * 0.9, side * 1.0, max(0.0, -sw) * 0.5)
+        lift = 1.3 + 0.15 * (1 - math.cos(2 * t))
+        for side, off in ((1.0, 0.0), (-1.0, 0.5)):
+            a, up = foot_cycle(frame / frames + off)
+            foot = (0.4 + a * DUCK_REACH, side * 1.0, up * 0.5)
             m.put(segment(X, Y, Z, (0.2, side * 0.9, 1.6 + lift), foot, 0.4), "orange", tone=0.2)
             m.put(ellipsoid(X, Y, Z, foot[0] + 0.6, foot[1], foot[2] + 0.2, 0.9, 0.6, 0.25), "orange", tone=0.5)
     elif anim == "flap":
@@ -128,12 +133,13 @@ def hen(anim, frame, frames, k):
     m = _model(k, -5, 6, -7 if flap else -4, 8 if flap else 5, 0, 14 if flap else 11)
     X, Y, Z = (a / S for a in m.coords())
     moving = anim == "move"
-    step = math.sin(2 * math.pi * frame / frames) if moving else 0.0
+    t = frame / frames
     hop = (0.0, 1.6, 0.4)[frame % 3] if flap else 0.0
-    bob = abs(step) * 0.5 + hop
-    for side, phase in ((-0.9, 1), (0.9, -1)):
-        lift = max(0.0, step * phase) * 1.2 + hop
-        m.put(segment(X, Y, Z, (0.2, side, 3 + hop), (0.2 + step * phase * 0.8, side, lift), 0.5), "orange")
+    bob = (0.25 * (1 - math.cos(4 * math.pi * t)) if moving else 0.0) + hop
+    for side, off in ((-0.9, 0.5), (0.9, 0.0)):
+        a, up = foot_cycle(t + off) if moving else (0.0, 0.0)
+        m.put(segment(X, Y, Z, (0.2, side, 3 + hop + bob - hop), (0.2 + a * HEN_REACH, side, up * 1.2 + hop), 0.5),
+              "orange")
     # A brown hen with a pale breast and a dark tail, so she never reads as a small ginger cat.
     _blob(m, X, Y, Z, (0, 0, 4.4 + bob), (3.0, 2.2, 2.4), "wood_light", tone=-0.2)
     m.put(ellipsoid(X, Y, Z, 1.6, 0, 4.2 + bob, 1.5, 1.8, 1.6), "straw", tone=0.6)
@@ -241,10 +247,10 @@ def cat(anim, frame, frames, k):
         tail = [(-3.2, 0, 5.0), (-4.4, 0, 7.6), (-4.2, 0.3, 10.0)]
         shut = frame % 4 == 1
     elif anim in ("move", "stretch"):
-        sway = 1.2 if anim == "move" else 0.0
-        for x0, side, ph in ((2.6, 1, 0), (2.6, -1, math.pi), (-2.4, 1, math.pi), (-2.4, -1, 0)):
-            sw = math.sin(t + ph) * sway
-            m.put(segment(X, Y, Z, (x0, side * 0.9, 3.5), (x0 + sw, side * 0.9, 0.3), 0.6),
+        u = frame / frames if anim == "move" else None
+        for x0, side, off in ((2.6, 1, 0.25), (2.6, -1, 0.75), (-2.4, 1, 0.0), (-2.4, -1, 0.5)):
+            a, up = foot_cycle(u - off, BEAST_DUTY) if u is not None else (0.0, 0.0)
+            m.put(segment(X, Y, Z, (x0, side * 0.9, 3.5), (x0 + a * CAT_REACH, side * 0.9, 0.3 + up * 0.9), 0.6),
                   "ginger", tone=-0.3)
         _blob(m, X, Y, Z, (0, 0, 4.0), (4.0, 1.7, 1.7), "ginger", tone=stripes)
         head = (4.3, 0, 5.6)

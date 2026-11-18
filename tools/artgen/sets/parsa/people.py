@@ -6,7 +6,7 @@ straight akinakes, no veil ever covers a woman's face."""
 
 from dataclasses import replace
 
-from rig import Dress, carry_point, person_sprite
+from rig import Dress, carry_table, person_sprite
 
 D = Dress
 
@@ -225,9 +225,4 @@ def sprite(kind, variant, anim, facing, frame, k):
 
 
 def carry_at(kind, k):
-    out = {}
-    for anim, n in (("carry", 6), ("carry_idle", 2)):
-        d = _posed(kind, 0, anim)
-        for facing in ("front", "back"):
-            out[f"{anim}_{facing}"] = [carry_point(d, anim, f, facing, k) for f in range(n)]
-    return out
+    return carry_table(lambda anim: _posed(kind, 0, anim), k)

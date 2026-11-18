@@ -1514,7 +1514,8 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 13.8,
+     "stride": 0.739
     },
     "idle": {
      "fps": 3
@@ -1523,7 +1524,8 @@
      "fps": 2
     },
     "carry": {
-     "fps": 8
+     "fps": 13.8,
+     "stride": 0.739
     },
     "carry_idle": {
      "fps": 3
@@ -1674,7 +1676,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 13.6,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -1686,7 +1689,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 13.6,
+     "stride": 0.75
     },
     "carry_idle": {
      "fps": 3
@@ -1777,7 +1781,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 13.6,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -1786,7 +1791,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 13.6,
+     "stride": 0.75
     }
    },
    "locomotion": {
@@ -1894,7 +1900,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 12.8,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -1906,7 +1913,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 12.8,
+     "stride": 0.75
     },
     "carry_idle": {
      "fps": 3
@@ -2091,7 +2099,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2100,7 +2109,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "carry_idle": {
      "fps": 3
@@ -2185,7 +2195,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 11.2,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2210,7 +2221,8 @@
    "sprite": "critter/world.donkey",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 19.8,
+     "stride": 0.425
     },
     "idle": {
      "fps": 3
@@ -2232,7 +2244,8 @@
    "sprite": "critter/world.mule",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 19.4,
+     "stride": 0.494
     },
     "idle": {
      "fps": 3
@@ -2254,7 +2267,8 @@
    "sprite": "critter/world.sheep",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 20.6,
+     "stride": 0.35
     },
     "idle": {
      "fps": 3
@@ -2341,7 +2355,8 @@
    "sprite": "critter/world.goat",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 24.9,
+     "stride": 0.338
     },
     "idle": {
      "fps": 3
@@ -2428,7 +2443,8 @@
    "sprite": "critter/world.ox",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 10.4,
+     "stride": 0.575
     },
     "idle": {
      "fps": 3
@@ -2449,13 +2465,15 @@
    "sprite": "critter/world.dog",
    "anims": {
     "move": {
-     "fps": 10
+     "fps": 41.1,
+     "stride": 0.35
     },
     "idle": {
      "fps": 3
     },
     "run": {
-     "fps": 12
+     "fps": 18.8,
+     "stride": 0.768
     },
     "sleep": {
      "fps": 2
@@ -2473,7 +2491,8 @@
    "sprite": "critter/world.gazelle",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 46.3,
+     "stride": 0.362
     },
     "idle": {
      "fps": 3
@@ -2495,7 +2514,7 @@
    "sprite": "critter/world.gull",
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 16.0
     },
     "idle": {
      "fps": 2
@@ -2585,7 +2604,7 @@
    "sprite": "critter/world.stork",
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 16.0
     },
     "idle": {
      "fps": 2
@@ -2644,7 +2663,7 @@
    "sprite": "critter/world.crane",
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 16.0
     }
    },
    "locomotion": {
@@ -2658,7 +2677,7 @@
    "sprite": "critter/world.eagle",
    "anims": {
     "move": {
-     "fps": 4
+     "fps": 16.0
     }
    },
    "locomotion": {
@@ -2697,7 +2716,7 @@
    "sprite": "critter/world.swift",
    "anims": {
     "move": {
-     "fps": 10
+     "fps": 16.0
     }
    },
    "locomotion": {
@@ -2711,7 +2730,7 @@
    "sprite": "critter/world.raven",
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 16.0
     },
     "idle": {
      "fps": 2

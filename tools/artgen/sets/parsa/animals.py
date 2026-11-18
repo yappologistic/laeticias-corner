@@ -12,7 +12,7 @@ import numpy as np
 from arch import ellipsoid, fill, rod, slab
 from pack import Sprite
 from render import render_base
-from rig import Body, Dress, Frame, draw, pose, horse as rig_horse
+from rig import BEAST_DUTY, CART_FRAMES, CRITTER_FRAMES, Body, Dress, Frame, draw, foot_cycle, pose, horse as rig_horse
 from voxel import Model
 
 
@@ -41,6 +41,25 @@ class Beast:
 
 
 SIZE = 2.5      # beasts are written in compact units; this brings a horse to about 44 px
+REACH = 0.13    # a hoof sweeps this share of the body length either side of its hip
+RUN = (1.35, 0.4)  # the trot: reach x 1.35, each hoof down 40 % of the cycle (diagonal pairs)
+BIRD_REACH = 0.8   # walking birds: a foot swings this far either side (body units)
+
+
+def stride(b: "Beast", anim: str = "move") -> float:
+    """Ground one walk cycle covers, design units: 2 x reach over the duty factor."""
+    if anim == "run":
+        return 2 * REACH * RUN[0] * b.length * SIZE / RUN[1]
+    return 2 * REACH * b.length * SIZE / BEAST_DUTY
+
+
+def bird_feet(t: float, walking: bool):
+    """Two small feet stepping (x offset, lift) per foot over a cycle; still when not walking.
+    One cycle covers 4 x BIRD_REACH body units."""
+    if not walking:
+        return ((0.0, 0.0), (0.0, 0.0))
+    (a, la), (b, lb) = foot_cycle(t), foot_cycle(t + 0.5)
+    return ((a * BIRD_REACH, la * 0.5), (b * BIRD_REACH, lb * 0.5))
 
 
 def _scaled(b: Beast) -> Beast:
@@ -56,9 +75,10 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
                     int(H + b.neck + b.head * 4) + 4, k=k)
     bd = Body(m)
     ph = frame / frames
-    gait = anim == "move"
+    run = anim == "run"
+    gait = anim in ("move", "run")
     graze = anim in ("graze", "peck")
-    bob = 0.25 * abs(math.sin(2 * math.pi * ph)) if gait else 0.1 * (frame % 2)
+    bob = 0.125 * (1 - math.cos(4 * math.pi * ph)) if gait else 0.1 * (frame % 2)
     bz = H - g * 0.4 + bob
     # Barrel, a deep chest forward and rounded quarters behind, so the body is shaped, not a
     # sausage.
@@ -71,12 +91,16 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
     for i in range(b.humps):
         hx = (-0.15 + 0.35 * i) * L if b.humps == 2 else 0.0
         bd.blob((hx, 0, bz + g * 1.1), (L * 0.16, g * 0.7, g * 0.9), b.hump_mat or b.coat, 0.15)
-    # Legs in a walking gait (diagonal pairs): forelegs fold at the knee as they lift, hind
-    # legs bend backward at the hock; muscled above, slender cannons below, dark hooves.
-    for lx, side, off in ((0.36, 1, 0.0), (0.36, -1, 0.5), (-0.36, 1, 0.5), (-0.36, -1, 0.0)):
-        c = math.cos(2 * math.pi * (ph + off))
-        sw = math.sin(2 * math.pi * (ph + off)) * L * 0.1 if gait else 0.0
-        lift = max(0.0, -c) * 0.9 * H * 0.12 if gait else 0.0
+    # Legs in a four-beat walk (left hind, left fore, right hind, right fore), each hoof planted
+    # while it bears weight: forelegs fold at the knee as they lift, hind legs bend backward at
+    # the hock; muscled above, slender cannons below, dark hooves.
+    # A trot moves diagonal pairs together, reaching further, with a moment in the air.
+    legs = ((0.36, 1, 0.0), (0.36, -1, 0.5), (-0.36, 1, 0.5), (-0.36, -1, 0.0)) if run else \
+        ((0.36, 1, 0.25), (0.36, -1, 0.75), (-0.36, 1, 0.0), (-0.36, -1, 0.5))
+    for lx, side, off in legs:
+        a, up = foot_cycle(ph - off, RUN[1] if run else BEAST_DUTY) if gait else (0.0, 0.0)
+        sw = a * L * REACH * (RUN[0] if run else 1.0)
+        lift = up * H * (0.18 if run else 0.12)
         y = side * g * 0.55
         if lx > 0:      # foreleg: elbow, knee, hoof
             top = (lx * L, y, bz - g * 0.55)
@@ -94,7 +118,7 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
         if b.stripes_legs:
             bd.put(((bd.X - knee[0]) ** 2 + (bd.Y - y) ** 2 < (b.leg * 1.4) ** 2) & (bd.Z < H * 0.6) &
                    ((bd.Z * 2.2) % 1.0 < 0.45), "white_paint", 0.3)
-        bd.blob((foot[0] + 0.1, foot[1], 0.3), (b.leg * 1.0, b.leg * 0.9, 0.35), "ink" if b.coat != "white_paint" else "gold", 0.4)
+        bd.blob((foot[0] + 0.1, foot[1], foot[2] - 0.05), (b.leg * 1.0, b.leg * 0.9, 0.35), "ink" if b.coat != "white_paint" else "gold", 0.4)
     # Neck and head.
     n0 = (L * 0.42, 0, bz + g * 0.3)
     dip = H * 0.75 if graze else 0.0
@@ -187,7 +211,8 @@ def hoopoe(anim, frame, frames, k):
     m = Model.empty(-6, 8, -4, 4, 0, 9, k=k)
     bd = Body(m, rot=np.eye(3) / 1.5)
     peck = anim == "peck" and frame % 2 == 1
-    hop = 0.3 if anim == "move" and frame % 2 else 0.0
+    t = frame / frames
+    hop = 0.15 * (1 - math.cos(4 * math.pi * t)) if anim == "move" else 0.0
     bd.blob((0, 0, 1.8 + hop), (1.5, 0.8, 0.9), "saffron", 0.2)
     bd.put((np.abs(bd.Y) > 0.4) & (((bd.X + 2) * 2.5) % 1.0 < 0.5) & ((bd.X / 1.6) ** 2 + (bd.Y / 0.9) ** 2 +
            ((bd.Z - 1.9 - hop) / 0.8) ** 2 <= 1) & (bd.X < 0.5), "ink", 0.0)
@@ -198,11 +223,12 @@ def hoopoe(anim, frame, frames, k):
         bd.limb((1.2, 0, hz + 0.3), (1.2 - 1.3 * math.sin(a), 0, hz + 0.3 + 1.2 * math.cos(a)), 0.18,
                 "saffron" if i % 2 else "orange", 0.3)
     bd.limb((-1.3, 0, 1.9 + hop), (-2.8, 0, 1.6 + hop), 0.3, "ink")
-    for y in (0.3, -0.3):
-        bd.limb((0.2, y, 1.0 + hop), (0.2, y, 0.1), 0.12, "felt")
+    for y, (fx, fz) in zip((0.3, -0.3), bird_feet(t, anim == "move")):
+        bd.limb((0.2, y, 1.0 + hop), (0.2 + fx, y, 0.1 + fz), 0.12, "felt")
     return m
 
 
+WALKING_BIRDS = {"parsa.hoopoe": 1.5}   # walking birds: body scale (strides)
 CRITTERS = {**{k_: None for k_ in BEASTS}, "parsa.hoopoe": hoopoe}
 
 
@@ -218,9 +244,9 @@ def _wheel(bd: Body, cx, cz, r, side_y, turn, mat="cedar"):
     bd.put(rim | spokes | hub, mat, 0.2)
 
 
-def _driver(m, x, y, dress, frame, k, seated=False, anim="move"):
+def _driver(m, x, y, dress, frame, k, seated=False, anim="move", cycle=None):
     fr = Frame(dress)
-    p = pose(anim, frame, 6 if anim == "move" else 2, fr, dress)
+    p = pose(anim, frame, CART_FRAMES, fr, dress, cycle) if anim == "move" else pose(anim, frame % 2, 2, fr, dress)
     b = Body(m, shift=(x, y, 0.0))
     draw(b, dress, p, fr)
 
@@ -229,18 +255,38 @@ DRIVER = Dress(garment="tunic", colour="wool", belt="leather", beard="short", he
                feet="bare", hair_style="short", hand_l="staff")
 
 
+CART_OX = (Beast(8.5, 6.6, 2.0, 1.6, 0.2, 1.1, coat="cream", horns="bull", tail="tuft"),
+           Beast(8.5, 6.6, 2.0, 1.6, 0.2, 1.1, coat="felt", horns="bull", tail="tuft"))
+SLEDGE_OX = Beast(8.0, 6.2, 1.8, 1.6, 0.2, 1.1, coat="felt", horns="bull", tail="tuft")
+
+
+def _rollers(x0: float, span: float, t: float, n: int = 3):
+    """Rollers under a sledge: they slip back as it moves and are carried round to the front."""
+    return [x0 + (i * span / n + span / n * (1 - t)) % span for i in range(n)]
+
+
+def cart_stride(kind) -> float:
+    """Ground one cycle of a cart's `move` covers, design units (its team's walk)."""
+    return {"parsa.p_cart": stride(CART_OX[0]), "parsa.p_sledge": stride(SLEDGE_OX)}.get(kind, rig_stride())
+
+
+def rig_stride() -> float:
+    from rig import HORSE_STRIDE
+    return HORSE_STRIDE
+
+
 def cart_model(kind, variant, anim, frame, k):
     """Carts with their teams and drivers baked in (world-tech.md §1.9), at toy scale: an ox
     about as tall as a man at the shoulder, wheels as tall as his waist."""
-    frames = 4
+    frames = CART_FRAMES
     turn = frame / frames * (math.pi / 3) if anim == "move" else 0.0
-    f6 = frame * 6 // frames
     m = Model.empty(-44, 40, -14, 14, 0, 46, k=k)
     team = "move" if anim == "move" else "idle"
+    tf, tn = (frame, frames) if team == "move" else (frame % 2, 2)
     if kind == "parsa.p_cart":
         # A two-wheeled cart with spoked wheels behind an ox, its driver walking beside.
-        ox = Beast(8.5, 6.6, 2.0, 1.6, 0.2, 1.1, coat="felt" if variant else "cream", horns="bull", tail="tuft")
-        m = _merge(m, quadruped(ox, team, f6 % 6 if team == "move" else frame % 2, 6 if team == "move" else 2, k), 16.0, 0.0)
+        ox = CART_OX[variant]
+        m = _merge(m, quadruped(ox, team, tf, tn, k), 16.0, 0.0)
         bd = Body(m)
         slab(m, -34, -10, -7, 7, 9.0, 10.5, "wood_light", tone=0.2)
         for y in (-7.4, 7.4):
@@ -253,19 +299,18 @@ def cart_model(kind, variant, anim, frame, k):
                 ellipsoid(m, (x, y, 14.0), (3.4, 2.8, 3.6), "straw", tone=0.1 * i)
         else:
             slab(m, -30, -14, -5, 5, 10.5, 18.0, "limestone", tone=0.3)
-        _driver(m, 14.0, 11.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle")
+        _driver(m, 14.0, 11.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle", cycle=stride(ox))
     elif kind == "parsa.p_sledge":
         # Two oxen yoked to a wooden sledge carrying a column drum, rollers under it.
         for y in (-5.5, 5.5):
-            ox = Beast(8.0, 6.2, 1.8, 1.6, 0.2, 1.1, coat="felt", horns="bull", tail="tuft")
-            m = _merge(m, quadruped(ox, team, f6 % 6 if team == "move" else frame % 2, 6 if team == "move" else 2, k), 16.0, y)
+            m = _merge(m, quadruped(SLEDGE_OX, team, tf, tn, k), 16.0, y)
         rod(m, (12.0, -7, 13.0), (12.0, 7, 13.0), 0.9, "wood")
         rod(m, (12.0, 0, 12.0), (-12.0, 0, 4.0), 0.9, "wood")
         slab(m, -40, -12, -8, 8, 2.0, 4.5, "wood_light", tone=0.2)
-        for x in (-36.0, -27.0, -18.0):
-            rod(m, (x + (frame % 2) * 1.2, -9, 1.2), (x + (frame % 2) * 1.2, 9, 1.2), 1.2, "wood")
+        for x in _rollers(-38.0, 27.0, frame / frames if anim == "move" else 0.0):
+            rod(m, (x, -9, 1.2), (x, 9, 1.2), 1.2, "wood")
         rod(m, (-34, 0, 9.5), (-18, 0, 9.5), 5.0, "limestone", tone=0.3)
-        _driver(m, 10.0, 12.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle")
+        _driver(m, 10.0, 12.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle", cycle=stride(SLEDGE_OX))
     else:
         # The two-horse chariot of the Lydian (and Libyan) gift: light box, big spoked wheels.
         for y in (-4.5, 4.5):
@@ -313,7 +358,7 @@ def _render(m: Model, facing: str) -> Sprite:
 def sprite(kind, variant, anim, facing, frame, k):
     if kind in CARTS:
         return _render(cart_model(kind, variant or 0, anim, frame, k), facing)
-    frames = {"move": 6, "idle": 2, "graze": 4, "peck": 4, "sleep": 2}[anim]
+    frames = CRITTER_FRAMES[anim]
     if kind == "parsa.hoopoe":
         return _render(hoopoe(anim, frame, frames, k), facing)
     return _render(quadruped(BEASTS[kind], anim, frame, frames, k), facing)

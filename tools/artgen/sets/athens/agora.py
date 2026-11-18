@@ -15,7 +15,7 @@ from greek import (Order, Stoa, Temple, column, conical_roof, crepidoma, doric_e
 from rig import Dress
 from setbuild import Landmark
 from sets.athens.common import (LAMP, S, T, altar, blocks, bronze_statue, drum, lamp_niche, olive_tree, referrer,
-                                scaffold)
+                                scaffold, tiles)
 
 ref = referrer("sets.athens.agora")
 
@@ -211,9 +211,9 @@ def lawcourt(m):
     W, Lh = 6 * T, 7 * T
     for w in ((4.0, 92.0, 4.0, 8.0), (4.0, 92.0, Lh - 8.0, Lh - 4.0), (4.0, 8.0, 4.0, Lh - 4.0), (88.0, 92.0, 4.0, Lh - 4.0)):
         house_wall(m, *w, 0.0, 14.0, seed, socle=6.0, plaster="mudbrick")
-    carve(m, (3.0, 9.0, 50.0, 62.0, 0.0, 14.0))
-    for x in (12.0, 80.0):
-        slab(m, x, x + 3.0, 12.0, Lh - 12.0, 0.0, 2.4, "wood", tone=M.timber("y", seed))
+    carve(m, (3.0, 9.0, 48.0, 64.0, 0.0, 14.0))      # the entrance, a whole tile wide
+    for x, y0, y1 in ((12.0, 12.0, 46.0), (12.0, 66.0, Lh - 12.0), (80.0, 12.0, Lh - 12.0)):   # benches, open at the door
+        slab(m, x, x + 3.0, y0, y1, 0.0, 2.4, "wood", tone=M.timber("y", seed))
 
 
 def horos(m):
@@ -278,7 +278,12 @@ LANDMARKS = {
     "athens.se_fountain": Landmark((4, 4), (0, 40), ref("se_fountain"), walk=[(0, dy) for dy in range(4)],
                                    slots={"fill": [{"t": [0, 1], "face": "+x"}, {"t": [0, 2], "face": "+x"}]},
                                    emitters={"spout_a": (34.0, 24.0, 8.0), "spout_b": (34.0, 40.0, 8.0)}, district=2),
-    "athens.lawcourt": Landmark((6, 7), (0, 16), ref("lawcourt"), district=2),
+    # The open court is walkable from the entrance; jurors sit along the two benches.
+    "athens.lawcourt": Landmark((6, 7), (0, 16), ref("lawcourt"), district=2,
+                                walk=[(0, 3)] + tiles(1, 4, 1, 5),
+                                slots={"jurors": [{"t": [1, y], "face": "-x"} for y in range(1, 6)] +
+                                                 [{"t": [4, y], "face": "+x"} for y in range(1, 6)],
+                                       "speaker": [{"t": [2, 3], "face": "+x"}, {"t": [3, 3], "face": "-x"}]}),
     "athens.horos": Landmark((1, 1), (0, 10), ref("horos"), district=2),
     "athens.simon_shop": Landmark((2, 3), (0, 28), ref("simon_shop"),
                                   slots={"work": [{"t": [2, 1], "face": "+y"}], "sit": [{"t": [2, 2], "face": "-x"}]},

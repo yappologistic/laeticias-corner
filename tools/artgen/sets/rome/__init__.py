@@ -11,6 +11,16 @@ STATES = {}
 # The Campus Martius monuments and the Baths of Trajan came after the first three pages: they
 # pack on a page of their own (setbuild.page_groups).
 LATE_DISTRICTS = frozenset({30, 31})
+# The twelve-frame walks and eight-frame carts of the walkers came after that too: they pack
+# with them on the late pages.
+LOCOMOTION = ("move", "carry", "march", "run", "ride")
+
+
+def late_key(key: str) -> bool:
+    parts = key.split("/")
+    return parts[0] in ("walker", "cart") and parts[-2].rsplit("_", 1)[0] in LOCOMOTION
+
+
 # The three first pages are full: one group with the longest sides first keeps everything
 # earlier on them.
 ONE_GROUP = True

@@ -50,10 +50,14 @@ P_COLS = (56.0, 72.0, 88.0, 120.0, 136.0, 152.0)    # x of the six columns, the 
 P_RISE = 6.0                                        # the floor rises this much to the east portico
 
 
+P_EAST = 16.0                                       # the passage ramps down to the summit over this
+
+
 def _prop_floor(y):
     """Floor of the central passage: level through the forecourt, a ramp up through the west
-    hall to the gate wall, level again in the east portico."""
-    return float(np.clip((92.0 - y) / (92.0 - 40.0), 0, 1) * P_RISE)
+    hall to the gate wall, level in the east portico, and down again through its wide middle
+    bay to the summit, so both ends meet the ground they open onto."""
+    return float(min(np.clip((92.0 - y) / (92.0 - 40.0), 0, 1), np.clip(y / P_EAST, 0, 1)) * P_RISE)
 
 
 def propylaia(m):
@@ -73,7 +77,8 @@ def propylaia(m):
     carve(m, (96.0, 112.0, 80.0, 96.0, 0.0, zs + 0.1))
     # The passage floor (marble paving rising eastward) and the side floors.
     fill(m, (96.0, 112.0, 0.0, 96.0, 0.0, P_RISE + 0.5), "marble",
-         lambda X, Y, Z: Z < np.clip((92.0 - Y) / 52.0, 0, 1) * P_RISE + 0.01, tone=M.paving(8.0, 5.0, seed))
+         lambda X, Y, Z: Z < np.minimum(np.clip((92.0 - Y) / 52.0, 0, 1), np.clip(Y / P_EAST, 0, 1)) * P_RISE + 0.01,
+         tone=M.paving(8.0, 5.0, seed))
     slab(m, 49.0, 96.0, 40.0, 82.0, 0, zs, "marble", tone=M.paving(8.0, 6.0, seed + 1))
     slab(m, 112.0, 159.0, 40.0, 82.0, 0, zs, "marble", tone=M.paving(8.0, 6.0, seed + 2))
     slab(m, 49.0, 96.0, 0.0, 40.0, 0, P_RISE + zs, "marble", tone=M.ashlar(2.6, 8.0, seed + 3, spread=0.3))
@@ -168,7 +173,9 @@ def propylaia(m):
 def _propylaia_landmark():
     walk = [(6, dy) for dy in range(10)] + tiles(5, 7, 6, 9) + tiles(0, 2, 0, 5) + [(10, dy) for dy in range(6)]
     walk = sorted(set(walk))
-    floor = {t: (_prop_floor(t[1] * T + 0.0) if t[0] == 6 and t[1] <= 5 else 0.0) for t in walk}
+    # A passage tile's floor where it is highest; the east tile's at its middle (the ramp down).
+    floor = {t: (_prop_floor(t[1] * T + (T / 2 if t[1] == 0 else 0.0)) if t[0] == 6 and t[1] <= 5 else 0.0)
+             for t in walk}
     return Landmark((11, 10), (0, 96), ref("propylaia"), walk=walk, floor=floor,
                     slots={"mnesikles": [{"t": [7, 7], "face": "-y"}], "guard": [{"t": [6, 9], "face": "+y"}]},
                     district=1)
@@ -262,7 +269,8 @@ def approach(m):
 def _approach_landmark():
     walk = tiles(1, 5, 0, 13)
     L = 14 * T
-    floor = {(x, y): float(np.clip((L - y * T) / L, 0, 1) * RAMP_RISE) for x, y in walk}
+    # Each tile's floor at its middle, so the foot tile is half a tread above the street (≤ 8 px).
+    floor = {(x, y): float(np.clip((L - (y + 0.5) * T) / L, 0, 1) * RAMP_RISE) for x, y in walk}
     return Landmark((7, 14), (0, int(RAMP_RISE) + 10), ref("approach"), walk=walk, floor=floor,
                     slots={"stand": [{"t": [3, 12]}, {"t": [2, 6]}, {"t": [4, 2]}]}, district=1, climb="-y")
 

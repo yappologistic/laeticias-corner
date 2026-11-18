@@ -104,15 +104,17 @@ def actor_keys(a: dict) -> list[str]:
         for anim in a["anims"]:
             if prefix.startswith("critter/"):
                 n = CRITTER_FRAMES.get(anim, 4)
-            elif prefix.startswith(("cart/", "ship/")):
-                n = 4                                   # world-tech.md §1.9: carts and ships
+            elif prefix.startswith("cart/"):
+                n = rig.CART_FRAMES if anim == "move" else 4
+            elif prefix.startswith("ship/"):
+                n = 4                                   # world-tech.md §1.9: ships
             else:
                 n = rig.POSES.get(anim, 4)
             keys += [f"{prefix}{v}/{anim}_{fc}/f{f}" for fc in FACINGS for f in range(n)]
     return keys
 
 
-CRITTER_FRAMES = {"move": 6, "idle": 2, "graze": 4, "sleep": 2, "flap": 4, "peck": 4}
+CRITTER_FRAMES = rig.CRITTER_FRAMES
 
 
 def required_keys(cat: dict, mod, pieces: dict) -> list[str]:
@@ -553,13 +555,14 @@ def page_groups(keys, cat, mod):
     """Packing groups: kit and actors, each landmark district, then shadows and glows. Districts
     a set lists in `LATE_DISTRICTS` (landmarks added after its pages were laid out) follow as
     one last group with their own shadows and glows, on pages of their own, so the earlier
-    pages keep their layout."""
+    pages keep their layout; so do the keys a set's `late_key(key)` picks."""
     lm_ids = {it["id"]: mod.LANDMARKS[it["id"]].district for it in cat["items"] if it["id"] in mod.LANDMARKS}
     late = getattr(mod, "LATE_DISTRICTS", frozenset())
+    late_key = getattr(mod, "late_key", lambda key: False)    # other keys a set sends to its late pages
     small, layer, landmark, later = [], [], defaultdict(list), []
     for key in keys:
         parts = key.split("/")
-        if parts[0] == "item" and lm_ids.get(parts[1]) in late:
+        if (parts[0] == "item" and lm_ids.get(parts[1]) in late) or late_key(key):
             later.append(key)
         elif "/shadow/" in key or "/glow/" in key:
             layer.append(key)
