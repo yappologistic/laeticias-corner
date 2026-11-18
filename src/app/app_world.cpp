@@ -3,6 +3,7 @@
 // drawn by the game's own scene at the world renderer's turns.
 
 #include "app/app_impl.hpp"
+#include "core/land.hpp"
 #include "ui/strings.hpp"
 
 #include <algorithm>
@@ -130,6 +131,20 @@ void App::drawScene(const FrameParams& p, SDL_Texture* out) {
     v.centre = {c.x + homeOffset_.x, c.y + homeOffset_.y};
     v.scale = p.camera->scale();
     v.screen = p.screen;
+    // Where the view is going, so it is ready on arrival: a journey's destination while the
+    // veil comes down, else the level a zoom under way ends at.
+    if (const auto to = travelDestination()) {
+        v.heading = true;
+        v.arrival = {to->centre.x + homeOffset_.x, to->centre.y + homeOffset_.y};
+        v.arrivalScale = to->scale;
+    } else if (!camera_.settled()) {
+        const Vec2 end = camera_.arrival(p.screen);
+        v.heading = true;
+        v.arrival = {end.x + homeOffset_.x, end.y + homeOffset_.y};
+        v.arrivalScale = camera_.zoom();
+    }
+    const Vec2 at = mouseInside_ ? p.camera->screenToWorld(mouse_, p.screen) : c;
+    v.pointer = {at.x + homeOffset_.x, at.y + homeOffset_.y};
     if (!SDL_SetRenderTarget(renderer_.get(), out)) SDL_Log("render: %s", SDL_GetError());
     worldView_->setLifeAlpha(alpha_);
     worldView_->draw(v, clock_.time(), p.light, frameDt_, static_cast<double>(simTime_), hooks_);
@@ -267,6 +282,23 @@ void App::travelTo(int region) {
     if (!loaded_ || travel_.region >= 0) return;
     travel_ = {region, 0, false};
     map_.open(false);
+}
+
+std::optional<App::Destination> App::travelDestination() const {
+    if (travel_.region < 0 || travel_.jumped) return std::nullopt;
+    const world::WorldFile& wf = loaded_->file;
+    const auto mk = std::ranges::find(wf.markers, travel_.region, &world::Marker::region);
+    if (travel_.region == wf.home.region || mk == wf.markers.end()) {
+        // Home is framed clear of the interface, as frameCamera() will frame it.
+        Camera framed = camera_;
+        const Box safe = hud_.safeArea();
+        framed.frame({safe.x, safe.y, safe.x + safe.w, safe.y + safe.h}, screen(),
+                     openBounds(cat_, progress_.stage, world_));
+        return Destination{framed.position(), framed.zoom()};
+    }
+    return Destination{
+        gridToHome({static_cast<float>(mk->at.x) + 0.5f, static_cast<float>(mk->at.y) + 0.5f}),
+        kZoomLevels[kDefaultZoomLevel]};
 }
 
 void App::updateWorld(float dt) {

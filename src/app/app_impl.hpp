@@ -45,6 +45,7 @@
 #include "worldview/soundscape.hpp"
 #include "worldview/weather_field.hpp"
 
+#include <array>
 #include <cstdio>
 #include <filesystem>
 #include <functional>
@@ -109,12 +110,22 @@ inline constexpr std::string_view kFlagSeamExplained = "seam_explained";
 // A bench case's frames, and the statistics of one measure over them.
 struct BenchFrames {
     std::vector<FrameSample> all;
-    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
+    // Statistics of `value(sample)` over the frames that measured it (negative: not measured).
+    template <typename F>
+    [[nodiscard]] PerfStats stats(F&& value) const {
         std::vector<float> v;
         v.reserve(all.size());
         for (const FrameSample& f : all)
-            if (f.*field >= 0) v.push_back(f.*field);
+            if (const float x = value(f); x >= 0) v.push_back(x);
         return perfStats(v);
+    }
+    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
+        return stats([field](const FrameSample& f) { return f.*field; });
+    }
+    [[nodiscard]] HitchLog hitches() const {
+        HitchLog log;
+        for (const FrameSample& f : all) log.add(f);
+        return log;
     }
 };
 
@@ -351,6 +362,12 @@ private:
     [[nodiscard]] std::optional<Vec2> gridPoint(std::string_view name) const;
     // A world grid tile (continuous) in home px, raised by its level as the world draws it.
     [[nodiscard]] Vec2 gridToHome(Vec2 tile) const;
+    // Where a journey that has not jumped yet will put the view: its centre (home px) and scale.
+    struct Destination {
+        Vec2 centre;
+        float scale = 1;
+    };
+    [[nodiscard]] std::optional<Destination> travelDestination() const;
     // The player's delta over the world for the save, and taking one from it.
     [[nodiscard]] WorldProgress worldState() const;
     void adoptWorldState(const WorldProgress& w);
@@ -370,6 +387,18 @@ private:
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
     void prepareView();
     void recordFrame(FrameSample& s);
+    // This frame's times by part into the sample.
+    void closeParts(FrameSample& s);
+    // The main thread's CPU time and allocation count at a frame's start, and what the frame
+    // used of each by the time its draws are submitted (into the sample).
+    struct FrameMark {
+        double threadMs = 0;
+        std::uint64_t allocs = 0;
+    };
+    [[nodiscard]] static FrameMark markFrame();
+    static void closeMark(const FrameMark& m, FrameSample& s);
+    // The world's share of a sample: sprites, cells, pages, pop-in and cache work.
+    void worldSample(FrameSample& s) const;
     [[nodiscard]] double syncGpu(Uint64 frameStart);
 
     // Benchmark (app_bench.cpp)
@@ -386,6 +415,8 @@ private:
     // The bench's world cases (cities, a pan, fast travel); false when one is over budget.
     bool benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
                     const std::function<void()>& warm, int frames);
+    // The player's cases: zoom sweeps, fast pans, travel between places, the map.
+    bool benchPlay(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase);
     // One frame of the bench, timed whole (with the GPU waited for).
     FrameSample benchFrame();
     void fillBenchWorld();
@@ -430,6 +461,21 @@ private:
     double idleLineAt_ = 0;            // when she may next say an idle line
     double livelyAt_ = 0;              // next liveliness sample
     // Per-system times of the last step (ms), kept measurable for the bench and a profiler.
+    // Time by part of the frame (core/perf.hpp), added up over the frame's steps.
+    std::array<double, kFrameParts> partMs_{};
+    class Timed {
+    public:
+        Timed(App& app, Part part)
+            : ms_(app.partMs_[static_cast<std::size_t>(part)]), t0_(SDL_GetPerformanceCounter()) {}
+        ~Timed() { ms_ += msBetween(t0_, SDL_GetPerformanceCounter()); }
+        Timed(const Timed&) = delete;
+        Timed& operator=(const Timed&) = delete;
+
+    private:
+        double& ms_;
+        Uint64 t0_;
+    };
+    double stepMs_ = 0;     // this frame's steps, whole
     double actorMs_ = 0;    // actors
     double lifeMs_ = 0;     // weather, events, speech and sound around them
     double cityMs_ = 0;     // city life's last step (src/life/)

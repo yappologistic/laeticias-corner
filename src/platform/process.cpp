@@ -1,5 +1,7 @@
 #include "platform/process.hpp"
 
+#include <atomic>
+#include <ctime>
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -23,6 +25,37 @@ std::pair<double, double> processMemory() {
         field("VmHWM:", peak);
     }
     return {rss, peak};
+}
+
+double threadCpuMs() {
+#if defined(CLOCK_THREAD_CPUTIME_ID)
+    timespec t{};
+    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t) == 0)
+        return static_cast<double>(t.tv_sec) * 1000.0 + static_cast<double>(t.tv_nsec) * 1e-6;
+#endif
+    return -1.0;
+}
+
+namespace {
+// Plain thread-local integers: operator new runs before and after every other object's life.
+thread_local std::uint64_t tAllocs = 0;
+std::atomic<bool> gCounting{false};
+} // namespace
+
+std::uint64_t threadAllocs() {
+    return tAllocs;
+}
+
+bool allocCounting() {
+    return gCounting.load(std::memory_order_relaxed);
+}
+
+void noteAlloc() noexcept {
+    ++tAllocs;
+}
+
+void enableAllocCounting() noexcept {
+    gCounting.store(true, std::memory_order_relaxed);
 }
 
 } // namespace lc

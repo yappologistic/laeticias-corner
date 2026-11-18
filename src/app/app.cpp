@@ -1398,12 +1398,19 @@ void App::step(float dt) {
     wheelIdle_ += dt;
     if (wheelIdle_ > tuning::kWheelIdleReset) wheelAcc_ = 0;
 
+    const double before = partMs_[static_cast<std::size_t>(Part::Weather)];
     updateLife(dt);
+    // What the home's life took besides its actors and the weather.
+    partMs_[static_cast<std::size_t>(Part::Actors)] += actorMs_;
+    partMs_[static_cast<std::size_t>(Part::HomeLife)] +=
+        lifeMs_ - (partMs_[static_cast<std::size_t>(Part::Weather)] - before);
     stepCity(dt);
+    partMs_[static_cast<std::size_t>(Part::City)] += cityMs_;
     const Uint64 p0 = SDL_GetPerformanceCounter();
     updateProgress();
     progressMs_ = static_cast<double>(SDL_GetPerformanceCounter() - p0) * 1000.0 /
                   static_cast<double>(SDL_GetPerformanceFrequency());
+    partMs_[static_cast<std::size_t>(Part::Progress)] += progressMs_;
     std::erase_if(nookLabels_, [&](const NookLabel& l) {
         return simTime_ - l.start > tuning::kNookLabelSeconds;
     });
@@ -1414,7 +1421,10 @@ void App::step(float dt) {
         growBeds(static_cast<float>(growthAcc_));
         growthAcc_ = 0;
     }
-    scene_->update(dt, world_, actors_.all(), weather_, rng_);
+    {
+        const Timed timed(*this, Part::Effects);
+        scene_->update(dt, world_, actors_.all(), weather_, rng_);
+    }
 
     warnTime_ = std::max(0.0f, warnTime_ - dt);
     if (warnTime_ <= 0) warning_ = {};
@@ -1593,7 +1603,10 @@ void App::render() {
             0.0f, 1.0f);
     }
     const Uint64 t0 = SDL_GetPerformanceCounter();
-    drawScene(p);
+    {
+        const Timed timed(*this, Part::Scene);
+        drawScene(p);
+    }
     if (photo_ && font_.build(renderer_.get(), uiScale_)) {
         // The postcard's frame and caption over the view; a postcard is taken with them and
         // before the bar is drawn.
@@ -1607,9 +1620,12 @@ void App::render() {
     }
     // The glass panels show a blurred copy of the scene.
     blur_->invalidate();
-    if (blur_->begin(p.screen, theme::kBlurRadius * uiScale_)) {
-        compositeScene(p, blur_->sourceScale(), true);
-        blur_->end();
+    {
+        const Timed timed(*this, Part::Blur);
+        if (blur_->begin(p.screen, theme::kBlurRadius * uiScale_)) {
+            compositeScene(p, blur_->sourceScale(), true);
+            blur_->end();
+        }
     }
     const Uint64 t1 = SDL_GetPerformanceCounter();
     sceneMs_ = msBetween(t0, t1);
@@ -1637,6 +1653,7 @@ void App::render() {
         uiBatch_->flush();
     }
     hudDrawMs_ = msBetween(t1, SDL_GetPerformanceCounter());
+    partMs_[static_cast<std::size_t>(Part::UiDraw)] += hudDrawMs_;
 }
 
 void App::captureAudio(int steps) {
@@ -1711,6 +1728,8 @@ int App::run() {
     double acc = 0;
     while (running_) {
         const Uint64 t0 = SDL_GetPerformanceCounter();
+        const FrameMark mark = markFrame();
+        partMs_ = {};
         leftPressed_ = leftReleased_ = rightPressed_ = rightReleased_ = false;
         for (SDL_Event e; SDL_PollEvent(&e);) handleEvent(e);
         if (hidden_ && !opts_.headless) {
@@ -1752,24 +1771,33 @@ int App::run() {
             steps = 0;
         }
         for (int i = 0; i < steps; ++i) {
+            const Uint64 s0 = SDL_GetPerformanceCounter();
             step(static_cast<float>(tuning::kStepSeconds));
+            stepMs_ += msBetween(s0, SDL_GetPerformanceCounter());
             simMs += actorMs_ + lifeMs_ + progressMs_;
             condMs += progressMs_;
             cityMs += cityMs_;
         }
         if (!blocked)
             updateTour(static_cast<float>(steps) * static_cast<float>(tuning::kStepSeconds));
-        updateWorld(frameDt);
+        {
+            const Timed timed(*this, Part::World);
+            updateWorld(frameDt);
+        }
         // Drawing runs between steps: the camera and every actor are shown where they are this
         // far toward the next step, so motion is smooth at any refresh rate.
         alpha_ = fixed ? 1.0f : static_cast<float>(acc / tuning::kStepSeconds);
         prepareView();
 
         const Uint64 tUi = SDL_GetPerformanceCounter();
+        const double updateMs = msBetween(t0, tUi);
         // One interface model per frame, built after the simulation: the interface is laid out,
         // hit-tested and drawn from it alone, so what is drawn always matches the layout even
         // when a click or a grant changes the game in between (QA2-01).
-        ui_ = model();
+        {
+            const Timed timed(*this, Part::Model);
+            ui_ = model();
+        }
         UiInput in;
         in.x = mouse_.x;
         in.y = mouse_.y;
@@ -1832,11 +1860,12 @@ int App::run() {
             if (!scriptStep()) running_ = false;
         }
         const Uint64 tSubmit = SDL_GetPerformanceCounter();
+        FrameSample fs;
+        closeMark(mark, fs);
         const double gpuMs = opts_.gpuSync ? syncGpu(t0) : -1.0;
         const Uint64 tPresent = SDL_GetPerformanceCounter();
         if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
         const Uint64 t1 = SDL_GetPerformanceCounter();
-        FrameSample fs;
         fs.frameMs = static_cast<float>(msBetween(t0, t1));
         fs.cpuMs = static_cast<float>(msBetween(t0, tSubmit));
         fs.gpuMs = static_cast<float>(gpuMs);
@@ -1845,6 +1874,9 @@ int App::run() {
         fs.condMs = static_cast<float>(condMs);
         fs.cityMs = static_cast<float>(cityMs);
         fs.uiMs = static_cast<float>(uiMs + hudDrawMs_);
+        fs.updateMs = static_cast<float>(updateMs + uiMs);
+        partMs_[static_cast<std::size_t>(Part::UiUpdate)] +=
+            uiMs - partMs_[static_cast<std::size_t>(Part::Model)];
         fs.steps = steps;
         recordFrame(fs);
         if (!legacyToRetire_.empty() && simTime_ >= retireAt_) {

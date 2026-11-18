@@ -372,6 +372,14 @@ inline constexpr float kFollowLift = 20.0f;     // px: it centres on the body, n
 // The bench's world cases: frames allowed for a view to stream in, and the pan's step (px).
 inline constexpr int kBenchSettleFrames = 600;
 inline constexpr float kBenchWorldPanPx = 30.0f;
+// The bench's player cases: zoom sweeps through every level with a short rest at each, pans of
+// this many frames, the map opened and closed. Once a view has settled nothing in it may arrive
+// late: no frame of a case may show a cell from a coarser level or leave a sprite out.
+inline constexpr int kBenchZoomSweeps = 3;
+inline constexpr int kBenchZoomRest = 20; // frames at a level before the next notch
+inline constexpr int kBenchPanFrames = 360;
+inline constexpr int kBenchMapFrames = 45;
+inline constexpr int kPopInFramesAllowed = 0;
 // Scripts point into a landmark's or a figure's sprite this far above its feet (px).
 inline constexpr float kLandmarkPointLift = 24.0f;
 inline constexpr float kFigurePointLift = 14.0f;
@@ -439,6 +447,8 @@ inline constexpr int kChainCap = 3;            // lifesim CAP: goods a slot or a
 inline constexpr int kPeriodicSearchDays = 64; // days simulated to find the chains' cycle
 inline constexpr float kLeaveTimeout = 30.0f;  // a folded-back actor still in view goes anyway
 inline constexpr double kChunkLinger = 2.0;    // seconds a chunk stays live after the area left
+// Seconds between reconciliations while the area slides within the chunks it touches.
+inline constexpr double kReconcileMoving = 0.25;
 } // namespace life
 
 } // namespace lc::tuning

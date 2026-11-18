@@ -227,7 +227,7 @@ add_library(lc_app STATIC
 target_link_libraries(lc_app PUBLIC lc_worldview)
 lc_project_target(lc_app)
 
-add_executable(laeticias-corner src/app/main.cpp)
+add_executable(laeticias-corner src/app/main.cpp src/platform/alloc_count.cpp)
 target_link_libraries(laeticias-corner PRIVATE lc_app)
 lc_project_target(laeticias-corner)
 
