@@ -6,6 +6,7 @@
 #include "worldview/tuning.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdio>
 #include <fstream>
 #include <functional>
@@ -24,6 +25,68 @@ void report(const char* name, const char* what, const PerfStats& s) {
     std::printf("bench: %s: %-12s avg %.3f p95 %.3f p99 %.3f worst %.3f ms\n", name, what,
                 static_cast<double>(s.avg), static_cast<double>(s.p95), static_cast<double>(s.p99),
                 static_cast<double>(s.worst));
+}
+
+// What the player would notice in a case: frames by time with the slow ones by cause, what
+// arrived late, the cache work behind it, and the main thread's allocations.
+void reportSmooth(const char* name, const BenchFrames& fr) {
+    std::array<char, 512> line{};
+    const HitchLog log = fr.hitches();
+    (void)log.line(line);
+    std::printf("bench: %s: %s\n", name, line.data());
+    int popFrames = 0;
+    int popCells = 0;
+    int popSprites = 0;
+    float popShare = 0;
+    int built = 0;
+    double buildMs = 0;
+    double uploadMs = 0;
+    double gatherMs = 0;
+    double uploadKiB = 0;
+    long allocs = 0;
+    int allocFrames = 0;
+    for (const FrameSample& f : fr.all) {
+        popFrames += f.popCells > 0 || f.popSprites > 0 ? 1 : 0;
+        popCells = std::max(popCells, f.popCells);
+        popSprites = std::max(popSprites, f.popSprites);
+        popShare = std::max(popShare, f.popShare);
+        built += f.cellsBuilt;
+        buildMs = std::max(buildMs, static_cast<double>(f.buildMs));
+        uploadMs = std::max(uploadMs, static_cast<double>(f.uploadMs));
+        gatherMs = std::max(gatherMs, static_cast<double>(f.gatherMs));
+        uploadKiB += static_cast<double>(f.uploadKiB);
+        if (f.allocs >= 0) {
+            allocs += f.allocs;
+            ++allocFrames;
+        }
+    }
+    std::printf("bench: %s: pop-in in %d of %zu frames (at most %d cells, %.1f%% of the view, %d "
+                "sprites); built %d cells (worst frame %.2f ms), uploaded %.0f KiB (worst %.2f "
+                "ms), gather on the main thread worst %.2f ms\n",
+                name, popFrames, fr.all.size(), popCells, static_cast<double>(popShare) * 100.0,
+                popSprites, built, buildMs, uploadKiB, uploadMs, gatherMs);
+    if (allocFrames > 0)
+        std::printf("bench: %s: %.1f allocations a frame on the main thread\n", name,
+                    static_cast<double>(allocs) / allocFrames);
+    std::printf("bench: %s: parts avg ms:", name);
+    for (std::size_t i = 0; i < kFrameParts; ++i) {
+        double sum = 0;
+        for (const FrameSample& f : fr.all) sum += static_cast<double>(f.part[i]);
+        std::printf(" %s %.3f", partName(static_cast<Part>(i)),
+                    sum / static_cast<double>(std::max<std::size_t>(fr.all.size(), 1)));
+    }
+    std::printf("\n");
+    if (allocFrames > 0) {
+        std::printf("bench: %s: allocations by part:", name);
+        for (std::size_t i = 0; i < kFrameParts; ++i) {
+            double sum = 0;
+            for (const FrameSample& f : fr.all) sum += f.partAllocs[i];
+            if (sum > 0)
+                std::printf(" %s %.1f", partName(static_cast<Part>(i)),
+                            sum / static_cast<double>(fr.all.size()));
+        }
+        std::printf("\n");
+    }
 }
 
 } // namespace
@@ -63,17 +126,35 @@ FrameSample App::benchFrame() {
     // The same work as a frame of play (a step, the interface, the scene, presentation), timed
     // whole: the GPU is waited for before presenting, so the frame's time includes its drawing.
     const Uint64 t0 = SDL_GetPerformanceCounter();
+    const FrameMark mark = markFrame();
+    partMs_ = {};
+    partAllocs_ = {};
     step(static_cast<float>(tuning::kStepSeconds));
+    stepMs_ = msBetween(t0, SDL_GetPerformanceCounter());
+    stepAllocs_ = threadAllocs() - mark.allocs;
     frameDt_ = static_cast<float>(tuning::kStepSeconds);
-    updateWorld(frameDt_);
+    {
+        const Timed timed(*this, Part::World);
+        updateWorld(frameDt_);
+    }
     alpha_ = 1;
     prepareView();
-    ui_ = model();
-    hud_.update({}, ui_, font_, screen(), uiScale_, static_cast<float>(tuning::kStepSeconds));
+    const Uint64 tUi = SDL_GetPerformanceCounter();
+    {
+        const Timed timed(*this, Part::Model);
+        ui_ = model();
+    }
+    {
+        const Timed timed(*this, Part::UiUpdate);
+        if (loaded_)
+            map_.update(0, 0, false, false, false, mapModel(), font_, screen(), uiScale_, frameDt_);
+        hud_.update({}, ui_, font_, screen(), uiScale_, static_cast<float>(tuning::kStepSeconds));
+    }
     const Uint64 tUpdate = SDL_GetPerformanceCounter();
     render();
     const Uint64 tSubmit = SDL_GetPerformanceCounter();
     FrameSample f;
+    closeMark(mark, f);
     f.gpuMs = static_cast<float>(syncGpu(t0));
     const Uint64 tPresent = SDL_GetPerformanceCounter();
     if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
@@ -83,14 +164,17 @@ FrameSample App::benchFrame() {
     f.simMs = static_cast<float>(actorMs_ + lifeMs_ + progressMs_);
     f.cityMs = static_cast<float>(cityMs_);
     f.condMs = static_cast<float>(progressMs_);
-    f.uiMs = static_cast<float>(msBetween(t0, tUpdate)); // the update half: step and interface
-    f.sceneMs = static_cast<float>(msBetween(tUpdate, tSubmit)); // the draw submission half
+    f.updateMs = static_cast<float>(msBetween(t0, tUpdate));
+    f.uiMs = static_cast<float>(msBetween(tUi, tUpdate) + hudDrawMs_);
+    f.sceneMs = static_cast<float>(sceneMs_);
     f.presentMs = static_cast<float>(msBetween(tPresent, t1));
     f.drawCalls = sceneDrawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
     uiBatch_->resetStats();
     f.actorsLive = static_cast<int>(std::ranges::count_if(
         actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; }));
     f.steps = 1;
+    closeParts(f);
+    worldSample(f);
     return f;
 }
 
@@ -149,14 +233,31 @@ int App::runBench() {
         report(name, "whole frame", whole);
         report(name, "gpu done", fr.of(&FrameSample::gpuMs));
         report(name, "cpu", cpu);
-        report(name, "update", fr.of(&FrameSample::uiMs));
-        report(name, "draw submit", fr.of(&FrameSample::sceneMs));
+        report(name, "cpu (thread)", fr.of(&FrameSample::threadMs));
+        // Not a time: millions of instructions, the same on a busy machine as on a quiet one.
+        if (const PerfStats in = fr.of(&FrameSample::instrM); in.count > 0)
+            std::printf("bench: %s: cpu work     avg %.2f p95 %.2f p99 %.2f worst %.2f M "
+                        "instructions\n",
+                        name, static_cast<double>(in.avg), static_cast<double>(in.p95),
+                        static_cast<double>(in.p99), static_cast<double>(in.worst));
+        report(name, "update", fr.of(&FrameSample::updateMs));
+        report(name, "draw submit",
+               fr.stats([](const FrameSample& f) { return f.cpuMs - f.updateMs; }));
         report(name, "simulation", fr.of(&FrameSample::simMs));
+        report(name, "interface", fr.of(&FrameSample::uiMs));
+        reportSmooth(name, fr);
         const auto [rss, peak] = processMemory();
         std::printf("bench: %s: memory rss %.0f MiB, peak %.0f MiB (ceiling %.0f at 1080p)\n", name,
                     rss, peak, memoryCeiling());
         if (!judge) return true;
-        if (cpu.avg > opts_.budgetMs || whole.p99 > tuning::kFrameP99Ms) fail(name);
+        // The CPU budget is for the work the game does: where the system counts the main
+        // thread's own CPU time that is what is judged, so a core taken away by another
+        // program is not read as the game's work. The whole-frame budgets stay wall time: what
+        // a player would see.
+        const PerfStats work = fr.of(&FrameSample::threadMs);
+        if ((work.count > 0 ? work.avg : cpu.avg) > opts_.budgetMs ||
+            whole.p99 > tuning::kFrameP99Ms)
+            fail(name);
         if (whole.worst <= tuning::kFrameWorstMs) return true;
         if (last) {
             fail(name);
@@ -169,6 +270,25 @@ int App::runBench() {
     const auto warm = [&] {
         for (int f = 0; f < kWarmup; ++f) (void)benchFrame();
     };
+    if (worldView_) {
+        // Start-up: the frames from the first one until the world around the view is whole and
+        // what loads ahead of need has loaded (pages, the wider levels). Their work is spread
+        // out, so none may be slow; the CPU average is the steady state's budget, not theirs.
+        BenchFrames fr;
+        for (int f = 0; f < tuning::kBenchSettleFrames * 4; ++f) {
+            fr.all.push_back(benchFrame());
+            if (worldView_->idle()) break;
+        }
+        const PerfStats whole = fr.of(&FrameSample::frameMs);
+        report("start-up", "whole frame", whole);
+        report("start-up", "cpu (thread)", fr.of(&FrameSample::threadMs));
+        reportSmooth("start-up", fr);
+        std::printf("bench: start-up: everything around the first view ready after %zu frames\n",
+                    fr.all.size());
+        if (judge && (whole.p99 > tuning::kFrameP99Ms || whole.worst > tuning::kFrameWorstMs))
+            fail("start-up frames");
+        if (judge && startupMs_ > tuning::kStartupBudgetMs) fail("start-up time");
+    }
     for (const int level : {kDefaultZoomLevel, kDefaultZoomLevel - 1})
         for (int attempt = 0; attempt < 2; ++attempt) {
             // Centre the camera on the built-up middle at this level.
@@ -266,7 +386,9 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
     const auto settle = [&] {
         for (int i = 0; i < tuning::kBenchSettleFrames; ++i) {
             (void)benchFrame();
-            if (worldView_->settled()) break;
+            // A steady view: what is built ahead of need (the wider levels) is done too. The
+            // zoom, pan and travel cases are where that work is measured.
+            if (worldView_->idle()) break;
         }
     };
     const auto look = [&](Vec2 grid) {
@@ -388,7 +510,153 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
             over = true;
         }
     }
+    if (!benchPlay(judgeCase)) over = true;
     profilerOn_ = false;
+    return !over;
+}
+
+bool App::benchPlay(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase) {
+    // What a player does with the view (CLAUDE.md "Performance": smooth always): zooming through
+    // every level, fast pans at each scale, travel between every pair of places, the map opened
+    // and closed. Each case holds the frame budgets and shows nothing arriving late: after a
+    // view has settled, no cell from a coarser level and no sprite left out, on any frame.
+    bool over = false;
+    const bool judge = opts_.budgetMs > 0;
+    journalOpen_ = false;
+    const auto settle = [&] {
+        for (int i = 0; i < tuning::kBenchSettleFrames; ++i) {
+            (void)benchFrame();
+            if (worldView_->idle()) break;
+        }
+    };
+    const auto look = [&](Vec2 grid, int level) {
+        camera_.place(gridToHome(grid), kZoomLevels[static_cast<std::size_t>(level)], screen());
+        camera_.beginStep();
+        worldView_->jumped(
+            {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
+        settle();
+    };
+    // Pop-in over a case, against its allowance (frames that may show a stand-in at all).
+    const auto smooth = [&](const char* name, const BenchFrames& fr, int allowed) {
+        int popFrames = 0;
+        int longest = 0;
+        int run = 0;
+        for (const FrameSample& f : fr.all) {
+            const bool pop = f.popCells > 0 || f.popSprites > 0;
+            popFrames += pop ? 1 : 0;
+            run = pop ? run + 1 : 0;
+            longest = std::max(longest, run);
+        }
+        std::printf("bench: %s: pop-in frames %d (allowed %d), longest run %d frames (%.0f ms at "
+                    "60 FPS)\n",
+                    name, popFrames, allowed, longest, longest * 1000.0 / 60.0);
+        if (judge && popFrames > allowed) {
+            std::printf("bench: over budget: %s pop-in\n", name);
+            over = true;
+        }
+    };
+    struct PlaySpot {
+        const char* name;
+        Vec2 grid;
+    };
+    static constexpr PlaySpot kForum{"forum", {80, 1077}};
+    static constexpr PlaySpot kCountry{"country", {170, 880}};
+    // The pointer a zoom keeps in place: off-centre, as a player's is.
+    const Vec2 pointer{screen().x * 0.3f, screen().y * 0.62f};
+    mouse_ = pointer;
+    mouseInside_ = true;
+    // Zoom sweeps: out to the widest level and in to the closest, a short rest at each.
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        look(kForum.grid, kDefaultZoomLevel);
+        BenchFrames fr;
+        for (int sweep = 0; sweep < tuning::kBenchZoomSweeps; ++sweep)
+            for (const int level : {1, 0, 1, 2, 3, 4, 3, 2}) {
+                camera_.zoomTo(level, pointer, screen());
+                int rest = 0;
+                while (rest < tuning::kBenchZoomRest && fr.all.size() < 20000) {
+                    fr.all.push_back(benchFrame());
+                    rest = camera_.settled() ? rest + 1 : 0;
+                }
+            }
+        smooth("zoom sweep", fr, tuning::kPopInFramesAllowed);
+        if (judgeCase("zoom sweep", fr, attempt == 1)) break;
+    }
+    // Fast pans at each scale: across the city and across open country.
+    for (const PlaySpot& spot : {kForum, kCountry})
+        for (const int level : {2, 1, 0}) {
+            char name[48];
+            (void)std::snprintf(name, sizeof name, "pan %s %gx", spot.name,
+                                static_cast<double>(kZoomLevels[static_cast<std::size_t>(level)]));
+            for (int attempt = 0; attempt < 2; ++attempt) {
+                look(spot.grid, level);
+                BenchFrames fr;
+                for (int f = 0; f < tuning::kBenchPanFrames; ++f) {
+                    // Out along one diagonal and back along the other: new land all the way.
+                    const float dir = f < tuning::kBenchPanFrames / 2 ? 1.0f : -1.0f;
+                    camera_.dragBy(
+                        {-tuning::kBenchWorldPanPx * dir, -tuning::kBenchWorldPanPx * 0.5f},
+                        screen());
+                    fr.all.push_back(benchFrame());
+                }
+                smooth(name, fr, tuning::kPopInFramesAllowed);
+                if (judgeCase(name, fr, attempt == 1)) break;
+            }
+        }
+    // Travel between every pair of the places a player goes to.
+    {
+        const world::WorldFile& wf = loaded_->file;
+        std::vector<int> places;
+        for (const char* id : {"corner", "rome", "athens", "parsa"})
+            if (const int r = wf.findRegion(id); r >= 0) places.push_back(r);
+        BenchFrames all;
+        double worstMs = 0;
+        int popFrames = 0;
+        const auto go = [&](int to) {
+            travelTo(to);
+            BenchFrames fr;
+            const Uint64 t0 = SDL_GetPerformanceCounter();
+            while (travel_.region >= 0 && fr.all.size() < 600) {
+                fr.all.push_back(benchFrame());
+                // What shows once the veil lifts is seen: the destination must be there by then.
+                if (travelFadeIn_ >= 0 &&
+                    (fr.all.back().popCells > 0 || fr.all.back().popSprites > 0))
+                    ++popFrames;
+            }
+            const double ms = msBetween(t0, SDL_GetPerformanceCounter());
+            worstMs = std::max(worstMs, ms);
+            all.all.insert(all.all.end(), fr.all.begin(), fr.all.end());
+            return ms;
+        };
+        for (const int from : places)
+            for (const int to : places) {
+                if (from == to) continue;
+                (void)go(from);
+                const double ms = go(to);
+                std::printf("bench: travel %s to %s: %.0f ms\n",
+                            wf.regions[static_cast<std::size_t>(from)].id.c_str(),
+                            wf.regions[static_cast<std::size_t>(to)].id.c_str(), ms);
+            }
+        std::printf("bench: travel: slowest journey %.0f ms (budget %.0f), %d frames with pop-in "
+                    "after the veil began to lift\n",
+                    worstMs, tuning::kTravelBudgetMs, popFrames);
+        if (judge && (worstMs > tuning::kTravelBudgetMs || popFrames > 0)) {
+            std::printf("bench: over budget: travel between places\n");
+            over = true;
+        }
+        (void)judgeCase("travel", all, true);
+    }
+    // The map opened and closed over a city.
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        look(kForum.grid, kDefaultZoomLevel);
+        BenchFrames fr;
+        for (int k = 0; k < 4; ++k) {
+            toggleMap();
+            for (int f = 0; f < tuning::kBenchMapFrames; ++f) fr.all.push_back(benchFrame());
+        }
+        smooth("map", fr, tuning::kPopInFramesAllowed);
+        if (judgeCase("map", fr, attempt == 1)) break;
+    }
+    mouseInside_ = false;
     return !over;
 }
 

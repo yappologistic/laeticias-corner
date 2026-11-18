@@ -22,7 +22,8 @@ def view() -> RegionView:
     return RegionView(
         region="parsa", kinds={"t.walker": {"idle", "move", "carry", "work_high"},
                                "t.cart": {"idle", "move"}},
-        goods={"t.goods_a"}, audio={"sfx/t.wav"},
+        goods={"t.goods_a"},
+        audio={"sfx/t.wav", "amb/parsa/plain_day.ogg", "amb/parsa/plain_night.ogg"},
         slots={"t.shop": {"sell": {"kind": "work", "cap": 1}},
                "t.bench": {"seat": {"kind": "sit", "cap": 1}}},
         instances=[shop] + benches,
@@ -73,6 +74,9 @@ def atmosphere(d: dict) -> dict:
     d.update({"name": "Test square", "caption": "Test square · c. 470 BC",
               "era": "The Persian empire of Xerxes · c. 470 BC"})
     d.setdefault("theme", {})["look"] = with_look()["theme"]["look"]
+    d["theme"].setdefault("ambience", {})["beds"] = [
+        {"file": "amb/parsa/plain_day.ogg", "hours": ["05:30", "19:00"]},
+        {"file": "amb/parsa/plain_night.ogg", "hours": ["19:00", "05:30"]}]
     for x in d["districts"]:
         x.update({"name": "The square", "sound": {"surfaces": {"stone": 0.5}, "wind": "wind.street",
                                                    "crowd": {"family": "crowd.persian", "full": 20}}})

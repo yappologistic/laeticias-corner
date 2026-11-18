@@ -3,6 +3,7 @@
 // drawn by the game's own scene at the world renderer's turns.
 
 #include "app/app_impl.hpp"
+#include "core/land.hpp"
 #include "ui/strings.hpp"
 
 #include <algorithm>
@@ -62,11 +63,11 @@ bool App::loadWorldData() {
     return true;
 }
 
-void App::createWorldView() {
-    if (!loaded_ || worldView_) return;
-    // The home goes into the world's map once, before anything reads it on another thread: its
-    // terrain (every home terrain id interned, so later edits only write bytes) and wild land.
-    // Its items stay the game's (core World); the world's map never holds them.
+void App::applyHomeToMap() {
+    // The home goes into the world's map: its terrain (every home terrain id interned, so
+    // later edits only write bytes) and wild land. Its items stay the game's (core World); the
+    // world's map never holds them. The first time, the map drops whatever the world's layers
+    // placed on the home's land and renumbers its items and slots.
     world::HomeDelta delta = world::homeDeltaFrom(world_, cat_);
     delta.items.clear();
     for (const TerrainDef& t : cat_.terrain)
@@ -76,6 +77,12 @@ void App::createWorldView() {
     if (auto r = loaded_->map->applyHome(delta, diag); !r)
         SDL_Log("world: home: %s", r.error().c_str());
     homeSynced_ = world_.revision();
+}
+
+void App::createWorldView() {
+    if (!loaded_ || worldView_) return;
+    // Once more with the world that was opened, before anything reads the map on another thread.
+    applyHomeToMap();
     const world::HomePlacement& home = loaded_->file.home;
     const Iso iso = cat_.iso();
     // The home's screen box in world px: its ground and whatever stands on it.
@@ -130,6 +137,20 @@ void App::drawScene(const FrameParams& p, SDL_Texture* out) {
     v.centre = {c.x + homeOffset_.x, c.y + homeOffset_.y};
     v.scale = p.camera->scale();
     v.screen = p.screen;
+    // Where the view is going, so it is ready on arrival: a journey's destination while the
+    // veil comes down, else the level a zoom under way ends at.
+    if (const auto to = travelDestination()) {
+        v.heading = true;
+        v.arrival = {to->centre.x + homeOffset_.x, to->centre.y + homeOffset_.y};
+        v.arrivalScale = to->scale;
+    } else if (!camera_.settled()) {
+        const Vec2 end = camera_.arrival(p.screen);
+        v.heading = true;
+        v.arrival = {end.x + homeOffset_.x, end.y + homeOffset_.y};
+        v.arrivalScale = camera_.zoom();
+    }
+    const Vec2 at = mouseInside_ ? p.camera->screenToWorld(mouse_, p.screen) : c;
+    v.pointer = {at.x + homeOffset_.x, at.y + homeOffset_.y};
     if (!SDL_SetRenderTarget(renderer_.get(), out)) SDL_Log("render: %s", SDL_GetError());
     worldView_->setLifeAlpha(alpha_);
     worldView_->draw(v, clock_.time(), p.light, frameDt_, static_cast<double>(simTime_), hooks_);
@@ -270,6 +291,23 @@ void App::travelTo(int region) {
     map_.open(false);
 }
 
+std::optional<App::Destination> App::travelDestination() const {
+    if (travel_.region < 0 || travel_.jumped) return std::nullopt;
+    const world::WorldFile& wf = loaded_->file;
+    const auto mk = std::ranges::find(wf.markers, travel_.region, &world::Marker::region);
+    if (travel_.region == wf.home.region || mk == wf.markers.end()) {
+        // Home is framed clear of the interface, as frameCamera() will frame it.
+        Camera framed = camera_;
+        const Box safe = hud_.safeArea();
+        framed.frame({safe.x, safe.y, safe.x + safe.w, safe.y + safe.h}, screen(),
+                     openBounds(cat_, progress_.stage, world_));
+        return Destination{framed.position(), framed.zoom()};
+    }
+    return Destination{
+        gridToHome({static_cast<float>(mk->at.x) + 0.5f, static_cast<float>(mk->at.y) + 0.5f}),
+        kZoomLevels[kDefaultZoomLevel]};
+}
+
 void App::updateWorld(float dt) {
     if (!worldView_) return;
     if (!away() && !cornerToasts_.empty()) {
@@ -307,7 +345,8 @@ void App::updateWorld(float dt) {
             travel_.t = tuning::kTravelFadeOut;
         }
         const float held = travel_.t - tuning::kTravelFadeOut;
-        if (travel_.jumped && (worldView_->settled() || held >= tuning::kTravelHold) &&
+        // Whether the destination is whole is known once a frame of it has been drawn.
+        if (travel_.jumped && held > 0 && (worldView_->settled() || held >= tuning::kTravelHold) &&
             travelFadeIn_ < 0)
             travelFadeIn_ = travel_.t;
         if (travelFadeIn_ >= 0 && travel_.t - travelFadeIn_ >= tuning::kTravelFadeIn) {
@@ -384,9 +423,15 @@ void App::fillWorldModel(HudModel& m) const {
     m.places = journalPlaces_;
     // What the pointer rests on out in the world: its name.
     if (m.worldTip.empty() && tool_ == Tool::None && mouseInside_ && !hud_.wantsMouse()) {
-        if (const auto c = cardAt(mouse_)) {
-            hoverName_.assign(entryName(*c, hoverName_));
-            m.worldTip = hoverName_;
+        if (const auto pick = pickCard(mouse_)) {
+            // Asked every frame while the pointer rests: the name is made when what is under
+            // it changes, not each time.
+            if (!(hoverPick_ == pick)) {
+                hoverPick_ = pick;
+                std::string storage;
+                hoverCardName_.assign(entryName(cardOf(*pick), storage));
+            }
+            m.worldTip = hoverCardName_;
         } else if (const auto h = actorAt(mouse_)) {
             // Ordinary people by what they do (a potter, a courier); animals by their kind.
             if (const auto in = actorInfo(*h)) {
@@ -431,7 +476,7 @@ std::optional<life::Handle> App::actorAt(Vec2 px) const {
     // Of the people under the pointer the frontmost, unless a named figure is among them.
     if (!worldView_ || !city_) return std::nullopt;
     const Vec2 w = view_.screenToWorld(px, screen());
-    std::vector<life::Handle> hits;
+    std::vector<life::Handle>& hits = actorHits_; // kept: asked every frame under the pointer
     worldView_->actorsAt({w.x + homeOffset_.x, w.y + homeOffset_.y}, hits);
     if (hits.empty()) return std::nullopt;
     for (const life::Handle h : hits)
@@ -439,7 +484,7 @@ std::optional<life::Handle> App::actorAt(Vec2 px) const {
     return hits.front();
 }
 
-std::optional<App::CardRef> App::cardAt(Vec2 px) const {
+std::optional<App::CardPick> App::pickCard(Vec2 px) const {
     // The corner's own things answer on its land; the world's everywhere else.
     if (!worldView_ || hover_) return std::nullopt;
     // A living figure (city life) under the pointer: its card from its region's figures.
@@ -448,24 +493,36 @@ std::optional<App::CardRef> App::cardAt(Vec2 px) const {
             if (const life::Figure* f = figureOf(*in)) {
                 const int region =
                     city_->life->data.regions[static_cast<std::size_t>(in->region)].worldRegion;
-                if (regionFile(region) != nullptr)
-                    return CardRef{region, "figure:" + f->actor, f->card, *h};
+                if (regionFile(region) != nullptr) return CardPick{region, f, nullptr, -1, *h};
             }
     const Vec2 w = view_.screenToWorld(px, screen());
     const auto picked = worldView_->pick({w.x + homeOffset_.x, w.y + homeOffset_.y});
     if (!picked) return std::nullopt;
-    const world::WorldMap& m = *loaded_->map;
-    CardRef r;
+    CardPick r;
     if (picked->figure) {
-        const world::FigurePlace& f = figures_[picked->index];
-        r = {f.region, "figure:" + f.actor, f.card, {}};
+        r.placed = &figures_[picked->index];
+        r.region = r.placed->region;
     } else {
-        const world::Placed& it = m.items()[picked->index];
-        const world::ItemInfo& info = m.info(it);
-        r = {m.regionAt({it.x, it.y}), "landmark:" + info.id, info.card, {}};
+        const world::Placed& it = loaded_->map->items()[picked->index];
+        r.item = static_cast<int>(picked->index);
+        r.region = loaded_->map->regionAt({it.x, it.y});
     }
     if (regionFile(r.region) == nullptr) return std::nullopt;
     return r;
+}
+
+App::CardRef App::cardOf(const CardPick& p) const {
+    if (p.living != nullptr)
+        return {p.region, "figure:" + p.living->actor, p.living->card, p.actor};
+    if (p.placed != nullptr) return {p.region, "figure:" + p.placed->actor, p.placed->card, {}};
+    const world::WorldMap& m = *loaded_->map;
+    const world::ItemInfo& info = m.info(m.items()[static_cast<std::size_t>(p.item)]);
+    return {p.region, "landmark:" + info.id, info.card, {}};
+}
+
+std::optional<App::CardRef> App::cardAt(Vec2 px) const {
+    if (const auto p = pickCard(px)) return cardOf(*p);
+    return std::nullopt;
 }
 
 std::string_view App::entryName(const CardRef& c, std::string& storage) const {

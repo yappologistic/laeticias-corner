@@ -62,6 +62,40 @@ TEST_CASE("cells: the least recently used slot not used this frame is reused") {
     CHECK(lruSlot(busy, 4) == -1);
 }
 
+TEST_CASE("cells: work done ahead spares what the last frames used") {
+    // Frame 12: slot 2 was used last frame, slot 4 this frame.
+    const std::array<std::uint64_t, 5> used{7, 3, 11, 10, 12};
+    CHECK(lruSlot(used, 12, 0) == 1);
+    const std::array<std::uint64_t, 3> recent{11, 10, 12};
+    CHECK(lruSlot(recent, 12, 0) == 1); // anything not used this frame may go
+    CHECK(lruSlot(recent, 12, 1) == 1); // not what the last frame used
+    CHECK(lruSlot(recent, 12, 2) == -1);
+}
+
+TEST_CASE("cells: each step of a cell's water has its own key") {
+    std::set<std::uint64_t> keys;
+    for (int level = 0; level < 3; ++level)
+        for (int frame = 0; frame < 4; ++frame)
+            for (int cx = -110; cx < 40; cx += 7)
+                CHECK(keys.insert(packCell({level, cx, 2, frame})).second);
+}
+
+TEST_CASE("cells: a zoom about a point keeps that point where it is on screen") {
+    const FRect view{1000, 500, 3000, 1500}; // 2000 x 1000 world px at scale 1
+    const Vec2 pointer{1500, 1250};          // a quarter in, three quarters down
+    const FRect out = zoomedAbout(view, pointer, 1.0f, 0.5f);
+    CHECK(out.x1 - out.x0 == doctest::Approx(4000));
+    CHECK(out.y1 - out.y0 == doctest::Approx(2000));
+    CHECK((pointer.x - out.x0) / (out.x1 - out.x0) == doctest::Approx(0.25));
+    CHECK((pointer.y - out.y0) / (out.y1 - out.y0) == doctest::Approx(0.75));
+    // Zooming out about a point always shows everything the view showed.
+    CHECK(out.x0 <= view.x0);
+    CHECK(out.y1 >= view.y1);
+    const FRect in = zoomedAbout(out, pointer, 0.5f, 1.0f);
+    CHECK(in.x0 == doctest::Approx(view.x0));
+    CHECK(in.y1 == doctest::Approx(view.y1));
+}
+
 TEST_CASE("pages: idle, unwanted pages are evicted oldest first, only while over budget") {
     const std::array<PageUse, 5> pages{{
         {64, 1.0, true, false},  // idle long: first out

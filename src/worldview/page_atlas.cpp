@@ -1,5 +1,6 @@
 #include "worldview/page_atlas.hpp"
 
+#include "platform/process.hpp"
 #include "worldview/cells.hpp"
 #include "worldview/tuning.hpp"
 
@@ -7,7 +8,6 @@
 #include <array>
 #include <cmath>
 #include <fstream>
-#include <map>
 
 namespace lc::worldview {
 namespace {
@@ -71,17 +71,11 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         }
         pages_.push_back(std::move(p));
     }
-    // Slots for what a view can need, measured from the sets on disk: the two largest sets (a
-    // seam between two cities' moments) and the shared world set, made up front when streaming.
-    // The budget follows; the ceiling passed in only caps it.
-    std::map<std::string, std::size_t> perSet;
-    for (std::size_t i = 2; i < pages_.size(); ++i) ++perSet[pages_[i].set];
-    std::vector<std::size_t> cities;
-    for (const auto& [set, n] : perSet)
-        if (set != "world") cities.push_back(n);
-    std::ranges::sort(cities, std::greater<>());
-    std::size_t need = perSet.contains("world") ? perSet["world"] : 0;
-    for (std::size_t k = 0; k < cities.size() && k < 2; ++k) need += cities[k];
+    // A slot for every page on disk while the ceiling holds them all: then nothing is ever
+    // evicted, pages the view does not need yet load ahead in the background, and a journey to
+    // any city finds its art resident. Sets that outgrow the ceiling stream as before, least
+    // recently used out first; a view always gets what it needs (freeSlot).
+    const std::size_t need = pages_.size() - 2;
     const std::size_t fixed = static_cast<std::size_t>(pages_[kHomePage].w) *
                               static_cast<std::size_t>(pages_[kHomePage].h) * 4;
     const std::size_t room = budget_ > fixed ? (budget_ - fixed) / kSlotBytes : 1;
@@ -316,6 +310,7 @@ void PageAtlas::upload(Page& p, int rows) {
         SDL_Log("atlas: upload failed: %s", SDL_GetError());
     p.uploadedRows += n;
     ++uploads_;
+    uploadedBytes_ += static_cast<std::size_t>(p.w) * static_cast<std::size_t>(n) * 4;
     if (p.uploadedRows < p.h) return;
     p.pixels.reset();
     p.texture = tex;
@@ -327,6 +322,7 @@ void PageAtlas::upload(Page& p, int rows) {
 void PageAtlas::update(double now) {
     now_ = now;
     uploads_ = 0;
+    uploadedBytes_ = 0;
     // At most two pages between the disk and their slot (one uploading, one decoding): each
     // decoded page holds 64 MiB until it is uploaded.
     int inFlight = 0;
@@ -335,24 +331,44 @@ void PageAtlas::update(double now) {
             p.state == State::Queued || p.state == State::Decoded || p.state == State::Uploading
                 ? 1
                 : 0;
-    for (std::size_t i = 0; i < pages_.size(); ++i) {
+    const auto start = [&](std::size_t i) {
         Page& p = pages_[i];
-        if (p.state != State::Unloaded || !p.wanted || p.w <= 0) continue;
-        if (async_ && inFlight >= tuning::kPagesInFlight) break;
         ++inFlight;
         if (!async_) {
             p.pixels = decode(p, &p.shadowPeak, p.opaque);
-            if (!p.pixels) continue;
+            if (!p.pixels) return;
             p.uploadedRows = 0;
             upload(p, p.h);
-            continue;
+            return;
         }
         p.state = State::Queued;
         const std::scoped_lock lock(mutex_);
         queue_.push_back(static_cast<std::uint16_t>(i));
         wake_.notify_one();
+    };
+    for (std::size_t i = 0; i < pages_.size(); ++i) {
+        const Page& p = pages_[i];
+        if (p.state != State::Unloaded || !p.wanted || p.w <= 0) continue;
+        if (async_ && inFlight >= tuning::kPagesInFlight) break;
+        start(i);
     }
     if (async_) {
+        // With nothing the view needs left to load, pages load ahead into slots that are free:
+        // never at the cost of a page that is resident.
+        bool waiting = false;
+        for (const Page& p : pages_)
+            waiting =
+                waiting || (p.wanted && p.state != State::Resident && p.state != State::Fixed);
+        std::size_t held = 0;
+        for (const Page& p : pages_)
+            held += p.state != State::Fixed && p.state != State::Unloaded ? 1 : 0;
+        for (std::size_t i = 0; i < pages_.size() && !waiting; ++i) {
+            const Page& p = pages_[i];
+            if (p.state != State::Unloaded || p.w <= 0) continue;
+            if (inFlight >= tuning::kPagesInFlight || held >= slotLimit_) break;
+            ++held;
+            start(i);
+        }
         {
             const std::scoped_lock lock(mutex_);
             for (Decoded& d : done_) {
@@ -365,20 +381,32 @@ void PageAtlas::update(double now) {
             }
             done_.clear();
         }
-        // One page at a time, a slice per frame, so no frame blocks on a whole page.
-        Page* up = nullptr;
-        for (Page& p : pages_)
-            if (p.state == State::Uploading) up = &p;
-        for (Page& p : pages_)
-            if (up == nullptr && p.state == State::Decoded) {
-                p.state = State::Uploading;
-                up = &p;
-            }
-        if (up != nullptr) upload(*up, tuning::kUploadRowsPerFrame);
+        // One page at a time, in slices, within a time budget per frame (at least one slice):
+        // no frame blocks on a whole page. A page the view waits for goes first and faster.
+        const Uint64 t0 = SDL_GetPerformanceCounter();
+        for (;;) {
+            Page* up = nullptr;
+            for (Page& p : pages_)
+                if (p.state == State::Uploading) up = &p;
+            for (Page& p : pages_)
+                if (up == nullptr && p.state == State::Decoded && p.wanted) up = &p;
+            for (Page& p : pages_)
+                if (up == nullptr && p.state == State::Decoded) up = &p;
+            if (up == nullptr) break;
+            up->state = State::Uploading;
+            const double limit = up->wanted ? tuning::kUploadMsWanted : tuning::kUploadMsAhead;
+            upload(*up, tuning::kUploadRows);
+            if (msBetween(t0, SDL_GetPerformanceCounter()) >= limit) break;
+        }
     }
-    for (Page& p : pages_)
+    wantedPending_ = 0;
+    for (Page& p : pages_) {
         if (p.wanted && p.state == State::Resident) p.lastUsed = now;
-    evict(now);
+        if (p.wanted && p.state != State::Resident && p.state != State::Fixed && p.w > 0)
+            ++wantedPending_;
+    }
+    // Only a view that needed more pages than the budget holds leaves anything to release.
+    if (slots_.size() > slotLimit_) evict(now);
     for (Page& p : pages_) p.wanted = false;
 }
 
@@ -433,6 +461,7 @@ PageStats PageAtlas::stats() const {
     // Texture memory: the fixed pages and every slot made (resident or free).
     PageStats s;
     s.uploads = uploads_;
+    s.wanted = wantedPending_;
     s.budget = slotLimit_ * kSlotBytes;
     s.bytes = slots_.size() * kSlotBytes;
     for (const Page& p : pages_) {

@@ -100,8 +100,11 @@ void App::updateLife(float dt) {
         return static_cast<double>(SDL_GetPerformanceCounter() - t) * 1000.0 /
                static_cast<double>(SDL_GetPerformanceFrequency());
     };
-    followWorldWeather();
-    weather_.update(dt, season(), openBounds(cat_, progress_.stage, world_));
+    {
+        const Timed timed(*this, Part::Weather);
+        followWorldWeather();
+        weather_.update(dt, season(), openBounds(cat_, progress_.stage, world_));
+    }
     refreshNooks();
     if (world_.revision() != fallRevision_) {
         // Water at the rims falls over them: the waterfall's bed comes from there. The rim tiles

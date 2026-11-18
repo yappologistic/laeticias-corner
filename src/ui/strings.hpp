@@ -270,6 +270,10 @@ inline constexpr std::string_view kProfDraw = "Draw calls {} · sprites {} drawn
 inline constexpr std::string_view kProfActors = "Actors {} live, {} abstract · chunks {} cached";
 inline constexpr std::string_view kProfMemory =
     "Memory: textures {:.0f} MiB (pages {:.0f} of {:.0f}) · process {:.0f} MiB";
+inline constexpr std::string_view kProfPopIn =
+    "Late in view {} frames, at most {:.0f}% · cell builds {:.1f} ms · uploads {:.1f} ms";
+inline constexpr std::string_view kProfHitches =
+    "Slow frames {} (mostly {}) · allocations {} now, {} at most";
 inline constexpr std::string_view kProfWithin = "Within budget: p99 {:.1f} ms, worst {:.1f} ms";
 inline constexpr std::string_view kProfOver = "Over budget: p99 {:.1f} ms, worst {:.1f} ms";
 

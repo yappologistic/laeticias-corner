@@ -30,8 +30,7 @@ SDL_FColor withAlpha(SDL_FColor c, float a) {
 
 } // namespace
 
-void Profiler::draw(Painter& p, const PerfRing& ring, Vec2 screen, float s, bool gpuSync) {
-    const Font& f = p.font();
+void Profiler::refresh(const PerfRing& ring, bool gpuSync) {
     const PerfStats frame = ring.stats(&FrameSample::frameMs);
     const PerfStats cpu = ring.stats(&FrameSample::cpuMs);
     const PerfStats gpu = ring.stats(&FrameSample::gpuMs);
@@ -63,10 +62,45 @@ void Profiler::draw(Painter& p, const PerfRing& ring, Vec2 screen, float s, bool
     line(strings::kProfActors, last.actorsLive, last.actorsAbstract, last.chunksCached);
     line(strings::kProfMemory, last.textureMiB, last.pageMiB, last.pageBudgetMiB, last.totalMiB);
     line(strings::kProfMissing, last.placeholders, last.missingArt);
-    const bool over = frame.p99 > static_cast<float>(tuning::kFrameP99Ms) ||
-                      frame.worst > static_cast<float>(tuning::kFrameWorstMs);
-    line(over ? strings::kProfOver : strings::kProfWithin, static_cast<float>(tuning::kFrameP99Ms),
+    // What arrived late and what the caches cost, over the frames kept: the smoothness a player
+    // sees, as numbers.
+    int popFrames = 0;
+    float popShare = 0;
+    float build = 0;
+    float upload = 0;
+    int slow = 0;
+    int allocs = 0;
+    std::array<int, static_cast<std::size_t>(HitchCause::Count)> causes{};
+    for (std::size_t i = 0; i < ring.size(); ++i) {
+        const FrameSample& f = ring.recent(i);
+        popFrames += f.popCells > 0 || f.popSprites > 0 ? 1 : 0;
+        popShare = std::max(popShare, f.popShare);
+        build = std::max(build, f.buildMs);
+        upload = std::max(upload, f.uploadMs);
+        if (f.frameMs > static_cast<float>(tuning::kFrameP99Ms)) {
+            ++slow;
+            ++causes[static_cast<std::size_t>(hitchCause(f))];
+        }
+        allocs = std::max(allocs, f.allocs);
+    }
+    const auto worst = static_cast<HitchCause>(std::ranges::max_element(causes) - causes.begin());
+    line(strings::kProfPopIn, popFrames, popShare * 100.0f, build, upload);
+    line(strings::kProfHitches, slow, slow > 0 ? hitchName(worst) : "-", last.allocs, allocs);
+    over_ = frame.p99 > static_cast<float>(tuning::kFrameP99Ms) ||
+            frame.worst > static_cast<float>(tuning::kFrameWorstMs);
+    line(over_ ? strings::kProfOver : strings::kProfWithin, static_cast<float>(tuning::kFrameP99Ms),
          static_cast<float>(tuning::kFrameWorstMs));
+    count_ = n;
+}
+
+void Profiler::draw(Painter& p, const PerfRing& ring, Vec2 screen, float s, bool gpuSync) {
+    const Font& f = p.font();
+    // The numbers change a few times a second: readable, and their statistics (eight sorts of
+    // the ring) and formatting are not paid every frame.
+    if (age_ % kRefreshFrames == 0) refresh(ring, gpuSync);
+    ++age_;
+    const std::size_t n = count_;
+    const bool over = over_;
 
     // The panel: a graph of the last frames over the text.
     const float pad = theme::kPanelPad * s;

@@ -510,8 +510,9 @@ int Viewer::runBench() {
         if (!o_.benchCase.empty() && o_.benchCase != c.name) continue;
         c.setup();
         view_->jumped(cam);
-        // Warm up until the start is loaded and built: the cases measure what follows.
-        for (int i = 0; i < kWarmFrames || (!view_->settled() && i < kSettleFrames); ++i) {
+        // Warm up until the start is loaded and built, and what is built and loaded ahead of
+        // need is done: the cases measure what follows.
+        for (int i = 0; i < kWarmFrames || (!view_->idle() && i < kSettleFrames); ++i) {
             frame(kBenchStep);
             present();
             gpuSync();

@@ -94,6 +94,7 @@ set(LC_SCRIPTS
   "world_cards|world_cards|1280x800|"
   "city_world|city_world|1280x800|"
   "city_meet|city_meet|1280x800|"
+  "city_coarse|city_coarse|1280x800|"
   "rain_pan|rain_pan|640x400|"
   "walk_home|walk_home|640x400|"
   "home_gone|home_gone|640x400|"
@@ -151,7 +152,8 @@ endforeach()
 # Every run starts from a clean save directory; the reload pair runs in order.
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no_resident"
      "${LC_SCRATCH}/save_offscreen_actor"
-     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench" "${LC_SCRATCH}/save_soak"
+     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench" "${LC_SCRATCH}/save_bench_1440"
+     "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
@@ -311,6 +313,10 @@ set_tests_properties(soak PROPERTIES ENVIRONMENT "${LC_SOAK_ENV}" FIXTURES_REQUI
 add_test(NAME bench
   COMMAND laeticias-corner --bench --renderer opengl --size 1920x1080 --seed 1 --frames 240
           ${LC_BUDGET} --save-dir "${LC_SCRATCH}/save_bench")
+# The same at 1440p, the size the budgets are stated for (CLAUDE.md "Performance").
+add_test(NAME bench_1440
+  COMMAND laeticias-corner --bench --renderer opengl --size 2560x1440 --seed 1 --frames 240
+          ${LC_BUDGET} --save-dir "${LC_SCRATCH}/save_bench_1440")
 # The planned 1024x512 world, built up around the camera: reported, not yet held to the budget
 # (see out/reports/engine-foundation.md for the numbers and the next step).
 add_test(NAME bench_world
@@ -331,7 +337,7 @@ if(LC_SANITIZE)
   # project code is leak-checked by every software-rendered test.
   list(APPEND LC_BENCH_ENV "ASAN_OPTIONS=detect_leaks=0")
 endif()
-set_tests_properties(bench bench_world benchmark PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
+set_tests_properties(bench bench_1440 bench_world benchmark PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 set_tests_properties(bench_world PROPERTIES LABELS heavy)
 

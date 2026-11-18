@@ -55,15 +55,20 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
                         p.widget.starts_with("figure:")))
             return gridPoint(p.widget);
         if (worldView_ && city_ && p.widget.starts_with("life:")) {
-            // The first living actor of that kind drawn now, at its body.
+            // The first living actor of that kind in the window now, at its body (the actors
+            // gathered round the view reach beyond it: one of the kind off screen is no target
+            // while another stands in view).
             const int k = city_->life->data.findKind(p.widget.substr(5));
+            std::optional<Vec2> beyond;
             for (const life::DrawActor& d : worldView_->actorsDrawn())
                 if (static_cast<int>(d.kind) == k) {
                     Vec2 w = gridToHome(d.pos);
                     w.y -= tuning::kFigurePointLift;
-                    return camera_.worldToScreen(w, screen());
+                    const Vec2 at = camera_.worldToScreen(w, screen());
+                    if (at.x >= 0 && at.y >= 0 && at.x < screen().x && at.y < screen().y) return at;
+                    if (!beyond) beyond = at;
                 }
-            return std::nullopt;
+            return beyond;
         }
         return hud_.widgetCentre(p.widget, ui_);
     }

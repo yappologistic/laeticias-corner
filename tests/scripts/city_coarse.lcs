@@ -1,0 +1,37 @@
+# Zoomed out (half and quarter scale) the static world is a cached picture and people are drawn
+# over it: nobody may be drawn who stands, their whole width, behind something in front of them
+# (the owner's "people on the roofs"). Checked person by person against the order's own depth
+# rule, worked out from the map's items rather than from the cover map that hides them. Without
+# that map 236 of the 440 people about the Forum at half scale, and 381 of 743 at quarter scale
+# (1920x1080), are drawn over a building they stand behind. Many are still drawn: the streets
+# and the square are full.
+set season spring
+set day 9
+set time 0.0417
+set city forum
+set city camera
+set world forum 0.5
+wait 90
+expect city coarse 30 400
+expect city covered 12 0 0
+shot shots/city_forum_half.png
+set world forum 0.25
+wait 90
+expect city coarse 60 800
+expect city covered 12 0 0
+shot shots/city_forum_quarter.png
+# Athens' Agora below the Acropolis' terraces and Parsa's terrace with its stairs: raised ground
+# and landmarks in pieces hide who is behind them too.
+set city agora
+set city camera
+set world agora 0.5
+wait 90
+expect city coarse 20 400
+expect city covered 12 0 0
+set city terrace
+set city camera
+set world terrace 0.5
+wait 90
+expect city coarse 20 400
+expect city covered 12 0 0
+quit

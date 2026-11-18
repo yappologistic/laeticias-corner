@@ -9,6 +9,7 @@
 #include "worldview/gather.hpp"
 #include "worldview/world_sprites.hpp"
 
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
@@ -20,6 +21,22 @@ public:
     // Px of something in front above the ground point of `t` (0 when none, 255 at most).
     [[nodiscard]] int at(TilePos t) const {
         return map_.inBounds(t) ? cover_[static_cast<std::size_t>(t.y * map_.width() + t.x)] : 0;
+    }
+
+    // The same at a point between tile centres (continuous tile coordinates, x.5: a centre),
+    // blended from the four centres round it: someone in the back half of a tile behind a wall
+    // is as covered as where they stand, not as the middle of their tile.
+    [[nodiscard]] float at(Vec2 p) const {
+        const float fx = p.x - 0.5f;
+        const float fy = p.y - 0.5f;
+        const int x = static_cast<int>(std::floor(fx));
+        const int y = static_cast<int>(std::floor(fy));
+        const float u = fx - static_cast<float>(x);
+        const float v = fy - static_cast<float>(y);
+        const auto c = [&](int dx, int dy) {
+            return static_cast<float>(at(TilePos{x + dx, y + dy}));
+        };
+        return (c(0, 0) * (1 - u) + c(1, 0) * u) * (1 - v) + (c(0, 1) * (1 - u) + c(1, 1) * u) * v;
     }
 
 private:

@@ -113,9 +113,12 @@ void ActorMerge::index(std::span<const OrderItem> items, std::span<const std::ui
     order_.assign(order.begin(), order.end());
     rank_.assign(items.size(), 0);
     for (std::size_t k = 0; k < order.size(); ++k) rank_[order[k]] = static_cast<std::uint32_t>(k);
-    screens_.resize(items.size());
-    for (std::size_t i = 0; i < items.size(); ++i) screens_[i] = items[i].screen;
+    placed_.resize(order.size());
+    for (std::size_t k = 0; k < order.size(); ++k) placed_[k] = items[order[k]].screen;
     cell_ = cell;
+    grid_.build(placed_, cell_);
+    seen_.assign(order.size(), 0);
+    tick_ = 1;
 }
 
 void ActorMerge::bounds(std::span<const OrderItem> items, std::span<const MergeActor> actors) {
@@ -188,7 +191,14 @@ void ActorMerge::schedule(std::span<const OrderItem> items, std::span<const Merg
     pending_.clear();
     state_.assign(na, 0);
     byLo_.assign(byDepth_.begin(), byDepth_.end());
-    std::ranges::stable_sort(byLo_, {}, [&](std::uint32_t a) { return lo_[a]; });
+    // By lower bound, ties in depth order (their place in byDepth_): a total order, so the
+    // plain sort gives what a stable one would without its buffer.
+    depthRank_.resize(na);
+    for (std::size_t i = 0; i < byDepth_.size(); ++i)
+        depthRank_[byDepth_[i]] = static_cast<std::uint32_t>(i);
+    std::ranges::sort(byLo_, [&](std::uint32_t a, std::uint32_t b) {
+        return lo_[a] != lo_[b] ? lo_[a] < lo_[b] : depthRank_[a] < depthRank_[b];
+    });
     int bound = -1;
     int minHi = INT_MAX;
     std::size_t next = 0;
