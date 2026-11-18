@@ -76,6 +76,7 @@ RegionLook makeHome() {
     l.shade = {hex("#7c74ac"), hex("#7aa4d6"), hex("#665494"), hex("#283462")};
     l.haze = hex("#e8e2d4");
     l.hazeByLod = {0.04f, 0.12f, 0.18f, 0.26f};
+    l.water = hex("#4a8fb0");
     return l;
 }
 
@@ -163,6 +164,18 @@ std::string_view qualityId(Quality q) {
     return kQualityIds[static_cast<std::size_t>(q)];
 }
 
+constexpr std::array<std::string_view, kCloudModes> kCloudIds{"on", "shadows", "off"};
+
+std::optional<Clouds> parseClouds(std::string_view id) {
+    for (int i = 0; i < kCloudModes; ++i)
+        if (kCloudIds[static_cast<std::size_t>(i)] == id) return static_cast<Clouds>(i);
+    return std::nullopt;
+}
+
+std::string_view cloudsId(Clouds c) {
+    return kCloudIds[static_cast<std::size_t>(c)];
+}
+
 const RegionLook& homeLook() {
     static const RegionLook kHome = makeHome();
     return kHome;
@@ -196,6 +209,8 @@ RegionLook parseLook(const json& look, const json& seasons, const RegionLook& fa
                 l.hazeByLod[3] = num(*z, "overview", fallback.hazeByLod[3]);
             }
         }
+        if (const auto wt = look.find("water"); wt != look.end() && wt->is_object())
+            l.water = rgb(*wt, "body", fallback.water);
     }
     if (seasons.is_object())
         for (std::size_t i = 0; i < kSeasonIds.size(); ++i) {
@@ -254,6 +269,7 @@ GradeAt gradeAt(const RegionLook& look, double clock, int season, int lod) {
     };
     g.haze = lerp(airOf(a), airOf(b), u);
     g.hazeStrength = look.hazeByLod[static_cast<std::size_t>(std::clamp(lod, 0, 3))];
+    g.water = look.water;
     return g;
 }
 
@@ -271,6 +287,9 @@ void accumulate(GradeAt& acc, const GradeAt& g, float w) {
     acc.haze.g += g.haze.g * w;
     acc.haze.b += g.haze.b * w;
     acc.hazeStrength += g.hazeStrength * w;
+    acc.water.r += g.water.r * w;
+    acc.water.g += g.water.g * w;
+    acc.water.b += g.water.b * w;
 }
 
 GradeAt scaled(const GradeAt& g, float k) {
@@ -278,7 +297,8 @@ GradeAt scaled(const GradeAt& g, float k) {
                 {Rgb{0, 0, 0}, Rgb{0, 0, 0}, Rgb{0, 0, 0}},
                 {0, 0, 0},
                 {0, 0, 0},
-                0};
+                0,
+                {0, 0, 0}};
     accumulate(out, g, k);
     return out;
 }

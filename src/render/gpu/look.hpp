@@ -21,6 +21,17 @@ enum class Quality : std::uint8_t { Classic, Low, Medium, High };
 inline constexpr int kQualityCount = 4;
 [[nodiscard]] std::optional<Quality> parseQuality(std::string_view id);
 [[nodiscard]] std::string_view qualityId(Quality q);
+// A weather cell for the cloud pass (post.hpp CloudParams).
+struct CloudCell {
+    Vec2 at;          // world px, the ground plane (y doubled)
+    float radius = 0; // px, the same plane
+    float intensity = 0;
+};
+// The clouds setting: the deck and its shadows, the shadows alone, or neither.
+enum class Clouds : std::uint8_t { On, Shadows, Off };
+inline constexpr int kCloudModes = 3;
+[[nodiscard]] std::optional<Clouds> parseClouds(std::string_view id);
+[[nodiscard]] std::string_view cloudsId(Clouds c);
 
 // One phase of a region's grade, as `theme.look.phases.<phase>` writes it (tools/worldgen
 // look.py): white balance and exposure, split toning around mid grey, an S-curve, a highlight
@@ -56,6 +67,7 @@ struct RegionLook {
     Rgb haze{0.91f, 0.89f, 0.83f};
     std::array<float, 4> hazeByLod{0.04f, 0.12f, 0.18f, 0.26f}; // native, half, quarter, overview
     std::array<SeasonGrade, kSeasons> seasons;
+    Rgb water{0.29f, 0.56f, 0.69f}; // the water's body colour (`theme.look.water.body`)
 };
 
 // The home's look (the `home` family of tools/worldgen/worldgen/look.py): the corner has no
@@ -74,6 +86,7 @@ struct GradeAt {
     Rgb shade;
     Rgb haze;
     float hazeStrength = 0;
+    Rgb water;
 };
 [[nodiscard]] GradeAt gradeAt(const RegionLook& look, double clock, int season, int lod);
 // acc += g * w (every field, linearly): regions in view mix by their weights.

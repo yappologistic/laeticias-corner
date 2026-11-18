@@ -38,6 +38,11 @@ TEST_CASE("gpu: quality ids round-trip; unknown ones are refused") {
     }
     CHECK_FALSE(gpu::parseQuality("ultra").has_value());
     CHECK_FALSE(gpu::parseQuality("").has_value());
+    for (int i = 0; i < gpu::kCloudModes; ++i) {
+        const auto c = static_cast<gpu::Clouds>(i);
+        CHECK(gpu::parseClouds(gpu::cloudsId(c)) == c);
+    }
+    CHECK_FALSE(gpu::parseClouds("thick").has_value());
 }
 
 TEST_CASE("gpu: a neutral grade leaves colours as they are; night cools at the same luma") {
@@ -71,7 +76,8 @@ TEST_CASE("gpu: a region's look sits at the phase centres and fills gaps from th
                    "night": {"exposure": 0.4}},
         "sky": {"day": ["#000000", "#808080", "#ffffff"]},
         "shade": {"day": "#6f98d8"},
-        "haze": {"colour": "#ff0000", "strength": 0.1, "by_zoom": {"quarter": 0.3}}})");
+        "haze": {"colour": "#ff0000", "strength": 0.1, "by_zoom": {"quarter": 0.3}},
+        "water": {"body": "#204060"}})");
     const nlohmann::json seasons = nlohmann::json::parse(
         R"({"winter": {"grade": [0.9, 1.0, 1.1], "look": {"saturation": -0.1}}})");
     const gpu::RegionLook& home = gpu::homeLook();
@@ -86,6 +92,8 @@ TEST_CASE("gpu: a region's look sits at the phase centres and fills gaps from th
     CHECK(near(l.hazeByLod[0], 0.1f));
     CHECK(near(l.hazeByLod[2], 0.3f));
     CHECK(near(l.hazeByLod[1], home.hazeByLod[1]));
+    CHECK(near(l.water.b, static_cast<float>(0x60) / 255.0f));
+    CHECK(near(gpu::gradeAt(l, 0.3, -1, 0).water.g, static_cast<float>(0x40) / 255.0f));
     // At the day phase's centre the day's grade, exactly; winter shifts it.
     const gpu::GradeAt day = gpu::gradeAt(l, phaseCentre(Phase::Day), -1, 0);
     CHECK(near(day.grade.exposure, 0.9f));

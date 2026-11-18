@@ -24,6 +24,21 @@ struct FinalUniforms {
     float key[4];
     float pool[4];
     float guard[4];
+    float water[4];
+    float tiles[4];
+    float shallow[4];
+    float deep[4];
+    float skyw[4];
+    float cloud[4];
+    float deck[4];
+};
+
+// std140 mirror of shaders/clouds.frag's block.
+struct CloudUniforms {
+    float frame[4];
+    float drift[4];
+    float sun[4];
+    float cells[tuning::kCloudCells][4];
 };
 
 // std140 mirror of shaders/shade.frag's block.
@@ -101,7 +116,8 @@ Post::Post(SDL_Renderer* renderer) : renderer_(renderer) {}
 bool Post::init() {
     device_ = SDL_GetGPURendererDevice(renderer_);
     if (device_ == nullptr) return false;
-    finalShader_ = makeShader(device_, "final", 4);
+    finalShader_ = makeShader(device_, "final", 6);
+    cloudShader_ = makeShader(device_, "clouds", 1);
     shadeShader_ = makeShader(device_, "shade", 1);
     downShader_ = makeShader(device_, "bloom_down", 1);
     upShader_ = makeShader(device_, "bloom_up", 1);
@@ -115,12 +131,18 @@ bool Post::init() {
     linear_ = SDL_CreateGPUSampler(device_, &si);
     if (linear_ == nullptr) SDL_Log("gpu: sampler: %s", SDL_GetError());
     if (finalShader_ == nullptr || downShader_ == nullptr || upShader_ == nullptr ||
-        shadeShader_ == nullptr || linear_ == nullptr)
+        shadeShader_ == nullptr || cloudShader_ == nullptr || linear_ == nullptr)
         return false;
     SDL_GPURenderStateCreateInfo si2{};
     si2.fragment_shader = shadeShader_;
     shadeState_ = SDL_CreateGPURenderState(renderer_, &si2);
-    if (shadeState_ == nullptr) {
+    si2.fragment_shader = cloudShader_;
+    cloudState_ = SDL_CreateGPURenderState(renderer_, &si2);
+    // The tile water field: made once, at its largest, updated in place.
+    water_.reset(SDL_CreateTexture(renderer_, kFormat, SDL_TEXTUREACCESS_STATIC,
+                                   tuning::kWaterField, tuning::kWaterField));
+    if (shadeState_ == nullptr || cloudState_ == nullptr || !water_ ||
+        !SDL_SetTextureScaleMode(water_.get(), SDL_SCALEMODE_LINEAR)) {
         SDL_Log("gpu: render state: %s", SDL_GetError());
         return false;
     }
@@ -147,6 +169,10 @@ bool Post::init() {
     poolBlend_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE,
                                             SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
                                             SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD);
+    // Water marks lower the cell's alpha under the sprite and leave its colour.
+    markBlend_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_ONE,
+                                            SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
+                                            SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_REV_SUBTRACT);
     if (!falloff_ || !SDL_UpdateTexture(falloff_.get(), nullptr, px.data(), kSide * 4) ||
         !SDL_SetTextureBlendMode(falloff_.get(), poolBlend_) ||
         !SDL_SetTextureBlendMode(falloff_.get(), SDL_BLENDMODE_ADD_PREMULTIPLIED)) {
@@ -191,12 +217,13 @@ Post::~Post() {
     for (SDL_GPURenderState* s : final_)
         if (s != nullptr) SDL_DestroyGPURenderState(s);
     if (shadeState_ != nullptr) SDL_DestroyGPURenderState(shadeState_);
+    if (cloudState_ != nullptr) SDL_DestroyGPURenderState(cloudState_);
     for (std::size_t i = 0; i < kLevels; ++i) {
         if (down_[i] != nullptr) SDL_DestroyGPURenderState(down_[i]);
         if (up_[i] != nullptr) SDL_DestroyGPURenderState(up_[i]);
     }
     if (device_ == nullptr) return;
-    for (SDL_GPUShader* s : {finalShader_, downShader_, upShader_, shadeShader_})
+    for (SDL_GPUShader* s : {finalShader_, downShader_, upShader_, shadeShader_, cloudShader_})
         if (s != nullptr) SDL_ReleaseGPUShader(device_, s);
     if (linear_ != nullptr) SDL_ReleaseGPUSampler(device_, linear_);
 }
@@ -228,6 +255,9 @@ void Post::prepare(int w, int h) {
     glow_ = target(w_, h_);
     for (int i = 0; i < kLevels; ++i)
         bloom_[static_cast<std::size_t>(i)] = target(halve(w_, i + 1), halve(h_, i + 1));
+    clouds_ = target(halve(w_, 2), halve(h_, 2));
+    begin(clouds_.get());
+    cloudsClear_ = true;
     usedW_ = usedH_ = 0;
     rebuildStates();
 }
@@ -243,14 +273,16 @@ void Post::rebuildStates() {
         drop(down_[i]);
         drop(up_[i]);
     }
-    if (!glow_ || !bloom_[0]) return;
-    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): three here.
-    const SDL_GPUTextureSamplerBinding bind[3] = {{gpuOf(glow_.get()), linear_},
+    if (!glow_ || !bloom_[0] || !clouds_) return;
+    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): all five.
+    const SDL_GPUTextureSamplerBinding bind[5] = {{gpuOf(glow_.get()), linear_},
                                                   {gpuOf(bloom_[0].get()), linear_},
-                                                  {gpuOf(mean_.back().get()), linear_}};
+                                                  {gpuOf(mean_.back().get()), linear_},
+                                                  {gpuOf(water_.get()), linear_},
+                                                  {gpuOf(clouds_.get()), linear_}};
     SDL_GPURenderStateCreateInfo info{};
     info.fragment_shader = finalShader_;
-    info.num_sampler_bindings = 3;
+    info.num_sampler_bindings = 5;
     info.sampler_bindings = bind;
     for (SDL_GPURenderState*& s : final_) s = SDL_CreateGPURenderState(renderer_, &info);
     SDL_GPURenderStateCreateInfo bi{};
@@ -340,6 +372,44 @@ void Post::bloom(Batch& b, int w, int h) {
     use(b, nullptr);
 }
 
+void Post::clouds(Batch& b, const CloudParams& p, int w, int h) {
+    CloudUniforms u{};
+    const int n = std::min<int>(static_cast<int>(p.cells.size()), tuning::kCloudCells);
+    set4(u.frame, p.origin.x, p.origin.y, p.worldPerTexel, static_cast<float>(n));
+    set4(u.drift, p.drift.x, p.drift.y, p.size, p.cover);
+    set4(u.sun, p.sunShift.x, p.sunShift.y, p.altitude, 0);
+    for (int i = 0; i < n; ++i) {
+        const CloudCell& c = p.cells[static_cast<std::size_t>(i)];
+        set4(u.cells[i], c.at.x, c.at.y, c.radius, c.intensity);
+    }
+    if (!SDL_SetGPURenderStateFragmentUniforms(cloudState_, 0, &u, sizeof u))
+        SDL_Log("gpu: %s", SDL_GetError());
+    b.flush();
+    if (!SDL_SetRenderTarget(renderer_, clouds_.get())) SDL_Log("gpu: %s", SDL_GetError());
+    use(b, cloudState_);
+    b.use(falloff_.get(), SDL_BLENDMODE_NONE, SDL_SCALEMODE_NEAREST);
+    b.quad(SDL_FRect{0, 0, static_cast<float>(halve(w, 2)), static_cast<float>(halve(h, 2))},
+           {0, 0, 1, 1}, {1, 1, 1, 1});
+    b.flush();
+    use(b, nullptr);
+    cloudsClear_ = false;
+}
+
+void Post::noClouds() {
+    if (cloudsClear_) return;
+    begin(clouds_.get());
+    cloudsClear_ = true;
+}
+
+void Post::setWaterField(std::span<const std::uint32_t> texels, int w, int h) {
+    if (w > tuning::kWaterField || h > tuning::kWaterField ||
+        static_cast<int>(texels.size()) < w * h)
+        return;
+    const SDL_Rect r{0, 0, w, h};
+    if (!SDL_UpdateTexture(water_.get(), &r, texels.data(), w * 4))
+        SDL_Log("gpu: water: %s", SDL_GetError());
+}
+
 void Post::measure(Batch& b, SDL_Texture* scene, int w, int h) {
     // The first frame fills the whole chain; then one level a frame, top to bottom, so the
     // mean is at most a chain's length of frames old for one draw a frame.
@@ -420,7 +490,16 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
          lerp(tuning::kDayAdapt[1], tuning::kNightAdapt[1], night), day);
     set4(u.pool, 1.0f / tuning::kLightHeadroom, tuning::kLampColour[0], tuning::kLampColour[1],
          tuning::kLampColour[2]);
-    set4(u.guard, tuning::kDaySaturationGrowth, 0, 0, 0);
+    set4(u.guard, tuning::kDaySaturationGrowth, f.grid.x, f.grid.y, 1.0f / f.horizonTiles);
+    set4(u.water, f.waterAt.x, f.waterAt.y, 1.0f / static_cast<float>(tuning::kWaterField),
+         1.0f / static_cast<float>(tuning::kWaterField));
+    set4(u.tiles, f.halfTile.x, f.halfTile.y, f.levelPx,
+         static_cast<float>(std::fmod(f.time, 3600.0)));
+    set4(u.shallow, f.shallow.r, f.shallow.g, f.shallow.b, f.bands);
+    set4(u.deep, f.deep.r, f.deep.g, f.deep.b, f.reflections ? 1.0f : 0.0f);
+    set4(u.skyw, f.skyInWater.r, f.skyInWater.g, f.skyInWater.b, f.skyShare);
+    set4(u.cloud, f.deckAlpha, f.cloudShadow, f.rain, f.glints);
+    set4(u.deck, f.deckColour.r, f.deckColour.g, f.deckColour.b, 0);
     if (!SDL_SetGPURenderStateFragmentUniforms(s, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());
     use(b, s);
@@ -435,6 +514,8 @@ std::size_t Post::bytes() const {
     for (int i = 0; i < kLevels; ++i)
         n += static_cast<std::size_t>(halve(w_, i + 1)) *
              static_cast<std::size_t>(halve(h_, i + 1)) * 4;
+    n += static_cast<std::size_t>(halve(w_, 2)) * static_cast<std::size_t>(halve(h_, 2)) * 4;
+    n += static_cast<std::size_t>(tuning::kWaterField * tuning::kWaterField * 4);
     return n + static_cast<std::size_t>(tuning::kPoolTexture * tuning::kPoolTexture * 4);
 }
 

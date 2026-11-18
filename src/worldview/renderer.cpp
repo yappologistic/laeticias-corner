@@ -190,6 +190,12 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     const int t = map_.terrainAt(p);
     if (t == world::kNone) return true;
     const TerrainLook& look = sprites_->terrain(t);
+    // On the shader path water moves in the final pass: its tiles stay still in the cells (no
+    // rebuilds at the art's frame rate) and are marked for it.
+    if (post_ && look.water) {
+        now = 0;
+        animated = nullptr;
+    }
     const std::uint8_t lb = map_.levelByte(p);
     const int level = world::levelOf(lb);
     const int aux = world::auxOf(lb);
@@ -251,18 +257,20 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
                     times(overlay ? look.flatBase : look.flat, jitter * tint), SDL_BLENDMODE_BLEND);
         else
             ok &= put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, shade, SDL_BLENDMODE_BLEND);
+        if (post_ && look.water && !overlay) markWater(sprites_->diamond(), a);
     }
     if (overlay) {
         if (look.hasOverlay()) {
             const Frames& f = look.overlayIn(sameMask(map_, p, t), season_);
             ok &= put(f.at(now, look.fps), a, x, shade, SDL_BLENDMODE_BLEND);
+            if (post_ && look.water) markWater(f.at(now, look.fps), a);
             if (look.animated() && animated != nullptr) *animated = true;
         } else {
             ok &= put(sprites_->diamond(), a, x, times(look.flat, jitter * tint),
                       SDL_BLENDMODE_BLEND);
         }
     }
-    if (look.water && !look.foam[0].empty()) {
+    if (look.water && !look.foam[0].empty() && !post_) { // (the shader path draws its own)
         // Foam where the water meets land: the mask is of land neighbours.
         int land = 0;
         const auto dry = [&](int dx, int dy) {
@@ -295,7 +303,14 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     if (tiles.empty()) return true;
     const float lift = r.up - static_cast<float>(kMaxLevel * lvl_);
     bool ok = true;
+    // Tiles on one diagonal never overlap, so water marks wait for the end of theirs (one blend
+    // switch a diagonal, not one a tile).
+    int diagonal = tiles.x0 + tiles.y0;
     diagonals(tiles, [&](TilePos p) {
+        if (p.x + p.y != diagonal) {
+            flushMarks(x);
+            diagonal = p.x + p.y;
+        }
         const Vec2 w = iso_.toWorld(p);
         if (!map_.inBounds(p)) {
             if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
@@ -312,7 +327,19 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
             return;
         ok &= drawTile(p, x, now, animated);
     });
+    flushMarks(x);
     return ok;
+}
+
+void WorldView::markWater(const SpriteRef& s, Vec2 anchor) {
+    marks_.push_back({s, anchor});
+}
+
+void WorldView::flushMarks(const Xform& x) {
+    if (marks_.empty()) return;
+    for (const auto& [s, a] : marks_)
+        (void)put(s, a, x, {1, 1, 1, gpu::Post::kWaterMark}, post_->markBlend());
+    marks_.clear();
 }
 
 bool WorldView::drawBeyond(TilePos p, const Xform& x, float now) {
@@ -336,6 +363,8 @@ bool WorldView::drawBeyond(TilePos p, const Xform& x, float now) {
     const float alpha = sea_ >= 0 ? k * tuning::kHorizonHazeMax : 1.0f;
     if (alpha > 0.0f)
         ok &= put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
+    // (Marked over the haze: the final pass hands the hazed art back with distance.)
+    if (post_ && sea_ >= 0) markWater(sprites_->diamond(), a);
     (void)now;
     return ok;
 }
@@ -760,7 +789,9 @@ void WorldView::drawWeatherGround(const FRect& view, const Xform& x) {
     // Cloud shadows: soft dark blobs drifting with the cells (showers darker); then the wet ground
     // where showers passed, darkened tile by tile. The home's own scene shades its land.
     const float blobR = blob_.w * 0.5f;
-    for (const WeatherCell& c : weather_->cells()) {
+    // (The shader path draws the clouds' shadows from the same cells itself.)
+    const bool none = post_ || clouds_ == gpu::Clouds::Off;
+    for (const WeatherCell& c : none ? std::span<const WeatherCell>{} : weather_->cells()) {
         const Vec2 w = iso_.toWorld(c.centre.x, c.centre.y);
         const float rpx = c.radius * iso_.tileW() * 0.5f;
         if (w.x + rpx < view.x0 || w.x - rpx > view.x1 || w.y + rpx < view.y0 ||
@@ -1015,7 +1046,11 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const SDL_FColor ambient{light.ambient.r * grade.mul.r, light.ambient.g * grade.mul.g,
                              light.ambient.b * grade.mul.b, 1};
     const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
-    if (post_) gradeGpu(clock, now, light, lod, origin);
+    if (post_) {
+        gradeGpu(clock, now, light, lod, origin);
+        cloudDrift_ = {cloudDrift_.x + windQ_.x * dt, cloudDrift_.y + windQ_.y * dt};
+        if (lod != Lod::Overview) refreshWater(view);
+    }
     lastView_ = {topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
 
     // Streaming.

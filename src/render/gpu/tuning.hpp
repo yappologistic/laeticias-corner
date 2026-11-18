@@ -55,6 +55,28 @@ inline constexpr float kDayWarm[3] = {0.10f, 0.04f, -0.06f};
 inline constexpr float kTwilightWarm = 0.08f; // dawn and dusk: red up, blue down by this
 inline constexpr float kNightAdapt[2] = {0.45f, 2.0f};
 inline constexpr int kMeanSide = 64; // the scene is first sampled to this many texels across
+
+// Water (E2): the tile water field's side (tiles round the view, one texel each), the water's
+// colours (shallow, deep; mixed with the region's body colour), bands by tier, the sky's share
+// in it, glints by day; channels (rivers, canals) clear and without foam.
+inline constexpr int kWaterField = 512;
+inline constexpr float kShallow[3] = {0.40f, 0.68f, 0.66f};
+inline constexpr float kDeep[3] = {0.07f, 0.22f, 0.32f};
+inline constexpr float kWaterBandsLow = 3;
+inline constexpr float kWaterBandsHigh = 4;
+inline constexpr float kSkyInWater = 0.35f;
+inline constexpr float kGlints = 0.9f;
+inline constexpr float kRiverSpeed = 0.55f; // tiles per second along a river's flow
+
+// Clouds (E2): the world's weather cells shaped by noise in a quarter-resolution pass; the deck
+// thin at the native zooms and fuller zoomed out, its shadows lowering only the sun.
+inline constexpr int kCloudCells = 16;
+inline constexpr float kCloudSize = 900;     // noise feature size, world px
+inline constexpr float kCloudAltitude = 520; // px the deck stands above the ground
+inline constexpr float kCloudShadow = 0.25f; // a full cloud's shadow takes this of the light
+inline constexpr float kDeckAlpha[4] = {0.18f, 0.40f, 0.6f,
+                                        0.75f}; // native, half, quarter, overview
+inline constexpr float kCloudDrift = 1.0f;      // the deck's drift, times the weather cells' speed
 // The night shift starts past dusk: from the clock's night at this value to full at 1.
 inline constexpr float kNightFrom = 0.5f;
 // Shade takes the sky's colour (the regions' `theme.look.shade`) by the shadow layer's coverage
@@ -66,7 +88,7 @@ inline constexpr float kShadeTint = 0.8f;
 inline constexpr float kPoolGain = 0.35f; // albedo * light added
 inline constexpr float kPoolWarm = 0.85f; // plus this much of the light by the pixel's luma
 inline constexpr float kPoolDay = 0.12f;  // share of a pool still seen at full day
-inline constexpr float kPoolRise = 0.7f;
+inline constexpr float kPoolRise = 0.7f;  // walls above a light lit to this share of its height
 // The lamps' light colour (their flames are 1700-2600 K, close enough to one warm hue that the
 // pools share it: they live in one alpha channel of the glow target).
 inline constexpr float kLampColour[3] = {1.0f, 0.58f, 0.28f};
@@ -76,16 +98,14 @@ inline constexpr float kPoolHourStep = 0.02f;
 inline constexpr int kPoolRefreshFrames = 30;
 inline constexpr float kLightHeadroom = 0.4f; // pools are stored at this share (8-bit target:
                                               // overlapping flames must not clip to white)
-inline constexpr float kPoolWall = 0.5f;
+inline constexpr float kPoolWall = 0.5f; // the pool's upper half (walls behind) at this strength
 inline constexpr float kMapLightFull = 4.0f; // a map chunk this bright in lights: the fullest point
 inline constexpr float kCarriedHeight = 20;  // world px from the feet to a carried flame
-inline constexpr float kCarriedFlame =
-    2.5f; // world px radius of the flame's point // the pool's upper half (walls behind) at this
-          // strength // walls above a light lit to this share of its height
-inline constexpr int kPoolLevels = 6;      // a pool's light in this many dithered bands
-inline constexpr int kPoolTexture = 64;    // the falloff texture's side
-inline constexpr float kFarLightPx = 2.5f; // window px radius of a light seen from afar, at least
-inline constexpr float kFarLightWorld = 9; // ... or this many world px
+inline constexpr float kCarriedFlame = 2.5f; // world px radius of the flame's point
+inline constexpr int kPoolLevels = 6;        // a pool's light in this many dithered bands
+inline constexpr int kPoolTexture = 64;      // the falloff texture's side
+inline constexpr float kFarLightPx = 2.5f;   // window px radius of a light seen from afar, at least
+inline constexpr float kFarLightWorld = 9;   // ... or this many world px
 inline constexpr float kWindowFadeHours = 0.2f; // lights come on and go out over this long
 inline constexpr float kStaggerHours = 1.5f;    // windows and doors light one by one over this
 inline constexpr float kDuskHour = 19.0f;       // `dusk` and `dawn` in the lights' hours (the

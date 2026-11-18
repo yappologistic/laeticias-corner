@@ -208,6 +208,10 @@ public:
     // The world's wind (unit direction in grid tiles, strength 0..1) for sway; reduce motion
     // halves it.
     void setWind(Vec2 dir, float strength, bool reduceMotion);
+    // The clouds setting (the deck and shadows, shadows alone, none; the classic frame has no
+    // deck).
+    void setClouds(gpu::Clouds c) { clouds_ = c; }
+    [[nodiscard]] gpu::Clouds clouds() const { return clouds_; }
 
 private:
     struct Target {
@@ -228,6 +232,13 @@ private:
     void reserveGpuTargets();
     // The shadow layer laid on in the sky's colour of the hour (the classic darkening's place).
     void shadeGpu(SDL_Texture* layer, float w, float h);
+    // Marks a water sprite's pixels in a cell for the shader path (alpha lowered a step).
+    void markWater(const SpriteRef& s, Vec2 anchor);
+    void flushMarks(const Xform& x);
+    // The tile water field round the view, rebuilt when the view nears its edge.
+    void refreshWater(const FRect& view);
+    // The cloud pass for this frame (or none).
+    void cloudsGpu(Lod lod);
     // A swaying item, bent in strips by the wind.
     void putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean);
     // Whether an item's glow layer burns now (the world data's lights on the shader path).
@@ -424,6 +435,16 @@ private:
         double now = 0;
     };
     GpuFrame gpuFrame_;
+    gpu::Clouds clouds_ = gpu::Clouds::On;
+    Vec2 windQ_;      // the clouds' drift, ground-plane px (y doubled) per second
+    Vec2 cloudDrift_; // ... so far
+    std::vector<gpu::CloudCell> cloudCells_;
+    // Water marks waiting for the end of their diagonal (drawTiles).
+    std::vector<std::pair<SpriteRef, Vec2>> marks_;
+    // The tile water field (refreshWater): the tiles it holds, its texels, the distances.
+    TileRect waterRect_;
+    std::vector<std::uint32_t> waterTexels_;
+    std::vector<float> waterDist_;
 
     // Backdrop sprites by region (day, night), resolved at load; empty when the set has none.
     std::vector<std::array<std::vector<SpriteRef>, 2>> backdrops_;

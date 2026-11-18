@@ -15,6 +15,7 @@
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace lc::gpu {
@@ -37,6 +38,38 @@ struct FinalParams {
     float windowPerTarget = 1; // window px per target px (sharp sampling)
     Vec2 artOrigin;            // art px at the target's (0, 0), for the world-anchored dither
     float targetPerArt = 1;    // target px per art px
+    // Water: the field's first tile; half a tile (world px), a level's height; the
+    // water's colours and bands (0: no layered water); mirrored edges (High); the sky in it.
+    Vec2 waterAt;
+    Vec2 halfTile{32, 16};
+    Vec2 grid{1, 1};         // the world grid's size in tiles (beyond it the sea hazes away)
+    float horizonTiles = 40; // ... over this many tiles
+    float levelPx = 16;
+    double time = 0;
+    Rgb shallow{0.46f, 0.73f, 0.68f};
+    Rgb deep{0.06f, 0.19f, 0.27f};
+    float bands = 0;
+    bool reflections = false;
+    Rgb skyInWater;
+    float skyShare = 0;
+    // Clouds: the deck's opacity at this zoom, its shadows' strength, its colour; rain; glints.
+    float deckAlpha = 0;
+    float cloudShadow = 0;
+    Rgb deckColour{1, 1, 1};
+    float rain = 0;
+    float glints = 0;
+};
+
+// The cloud pass's inputs (the cells are look.hpp's CloudCell).
+struct CloudParams {
+    Vec2 origin;             // world px at the scene target's (0, 0)
+    float worldPerTexel = 4; // world px per cloud texel
+    Vec2 drift;              // the wind's drift so far, world px
+    float size = 900;        // the noise's feature size, px
+    float cover = 0;         // cloud everywhere (overcast), 0..1
+    Vec2 sunShift;           // ground-plane px from a point to the cloud that shades it
+    float altitude = 520;    // px the deck stands above the ground
+    std::span<const CloudCell> cells;
 };
 
 class Post {
@@ -65,10 +98,22 @@ public:
     [[nodiscard]] SDL_Texture* glow() const { return glow_.get(); }
     // Pools add into the glow target's alpha only (draw with falloff() and colour (0, 0, 0, k)).
     [[nodiscard]] SDL_BlendMode poolBlend() const { return poolBlend_; }
+    // Marks water in the ground cells: the target's alpha lowered by the sprite's coverage times
+    // the vertex alpha (kWaterMark), its colour kept. The final pass reads alpha in (0.5, 0.995)
+    // as water; whatever is drawn over it later restores alpha 1.
+    [[nodiscard]] SDL_BlendMode markBlend() const { return markBlend_; }
+    static constexpr float kWaterMark = 0.02f;
     // A soft round falloff (white, premultiplied: (1 - r^2)^2), for pools and far lights.
     [[nodiscard]] SDL_Texture* falloff() const { return falloff_.get(); }
     // Halves the glow target's used `w` x `h` down the tier's levels and back up.
     void bloom(Batch& b, int w, int h);
+    // The cloud deck and its shadows for this frame at a quarter of the scene's used size.
+    void clouds(Batch& b, const CloudParams& p, int w, int h);
+    // No clouds this frame (the setting Off, or none in the sky): the cloud target cleared.
+    void noClouds();
+    // The tile water field round the view (one texel per tile: shore distance, flow, flags; at
+    // most kWaterField a side), its first tile at (x0, y0).
+    void setWaterField(std::span<const std::uint32_t> texels, int w, int h);
     // Averages the scene's used `w` x `h` down to one texel for the exposure, one level a frame
     // (the exposure follows slowly; the chain refreshes every few frames for one draw each).
     void measure(Batch& b, SDL_Texture* scene, int w, int h);
@@ -100,6 +145,8 @@ private:
     SDL_GPUShader* upShader_ = nullptr;
     SDL_GPUShader* shadeShader_ = nullptr;
     SDL_GPURenderState* shadeState_ = nullptr;
+    SDL_GPUShader* cloudShader_ = nullptr;
+    SDL_GPURenderState* cloudState_ = nullptr;
     SDL_GPUSampler* linear_ = nullptr;
     // Sampler bindings and uniforms are fixed per state, so each pass and level has its own.
     std::array<SDL_GPURenderState*, 2> final_{}; // the window, the glass copy
@@ -113,9 +160,13 @@ private:
     TexturePtr glow_;
     std::array<TexturePtr, kLevels> bloom_;
     TexturePtr falloff_;
+    TexturePtr water_;  // the tile water field (static, updated when the view's region moves)
+    TexturePtr clouds_; // the deck (r) and its shadows (g), a quarter of the scene
+    bool cloudsClear_ = false;
     std::vector<TexturePtr> mean_; // kMeanSide wide, halved down to 1 x 1
     std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
     SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
+    SDL_BlendMode markBlend_ = SDL_BLENDMODE_INVALID;
 };
 
 } // namespace lc::gpu
