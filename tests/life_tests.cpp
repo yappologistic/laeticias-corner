@@ -68,6 +68,10 @@ void checkGround(const CityLife& c) {
         CAPTURE(static_cast<int>(in.source));
         REQUIRE(m.inBounds(in.tile));
         CHECK(m.walkable(in.tile));
+        // Where it is drawn, too (smoothed paths cut corners only over walkable ground).
+        const TilePos drawn{static_cast<int>(std::floor(in.pos.x)),
+                            static_cast<int>(std::floor(in.pos.y))};
+        CHECK(m.walkable(drawn));
         const int t = m.terrainAt(in.tile);
         const bool water = t != world::kNone && m.terrainInfo(t).water;
         CHECK((!water || m.itemAt(in.tile) >= 0)); // on water only on a deck or a bridge
@@ -596,4 +600,106 @@ TEST_CASE("city: gather writes what is drawn, interpolated, without allocating")
         CHECK(city.activeRect().contains(
             TilePos{static_cast<int>(d.pos.x), static_cast<int>(d.pos.y)}));
     }
+}
+
+TEST_CASE("city: people walk smoothly: even pace, eased turns, diagonals, strides by distance") {
+    CityLife city(lifeWorld(), 12);
+    LifeClock clock = LifeClock::at(9, 10.0, seasonOf("rome"));
+    city.setFocus(centreOf("forum"));
+    city.settle(clock);
+    step(city, clock, 120);
+    std::vector<DrawActor> before(4096);
+    std::vector<DrawActor> after(4096);
+    int moving = 0;
+    int jumps = 0;
+    int flips = 0;
+    int diagonal = 0;
+    int slides = 0;
+    std::set<float> rates;
+    for (int k = 0; k < 600; ++k) {
+        const std::size_t n0 = city.gather(city.activeRect(), 1.0f, before);
+        step(city, clock, 1);
+        const std::size_t n1 = city.gather(city.activeRect(), 1.0f, after);
+        std::map<std::uint32_t, const DrawActor*> was;
+        for (std::size_t i = 0; i < n0; ++i)
+            was[(std::uint32_t(before[i].handle.index) << 16) | before[i].handle.gen] = &before[i];
+        for (std::size_t i = 0; i < n1; ++i) {
+            const DrawActor& d = after[i];
+            const auto it = was.find((std::uint32_t(d.handle.index) << 16) | d.handle.gen);
+            if (it == was.end()) continue;
+            const DrawActor& p = *it->second;
+            const float dx = d.pos.x - p.pos.x;
+            const float dy = d.pos.y - p.pos.y;
+            const float dist = std::sqrt(dx * dx + dy * dy);
+            if (dist > 0.5f) continue; // a puppet placed by its formula after an event turned
+            // The stride is the distance walked: frames chosen by it never slide.
+            if (std::abs((d.stride - p.stride) - dist) > 1e-3f) ++slides;
+            if (d.speed < 0.3f || p.speed < 0.3f) continue;
+            ++moving;
+            // An even pace: never more than a step's worth at a brisk walk.
+            if (dist > 1.6f * static_cast<float>(tuning::kStepSeconds)) {
+                if (jumps < 12)
+                    MESSAGE("jump " << lifeWorld().data.kinds[d.kind].id << " "
+                                    << dist / tuning::kStepSeconds << " tiles/s at " << d.pos.x
+                                    << "," << d.pos.y << " speed " << d.speed);
+                ++jumps;
+            }
+            float turn = d.heading - p.heading;
+            while (turn > 3.1415927f) turn -= 6.2831853f;
+            while (turn < -3.1415927f) turn += 6.2831853f;
+            if (std::abs(turn) > 0.8f) ++flips; // no about-turn or right angle in one step
+            const float s2 = std::abs(std::sin(2.0f * d.heading));
+            if (s2 > 0.5f) ++diagonal;
+        }
+    }
+    MESSAGE("moving samples " << moving << ", jumps " << jumps << ", flips " << flips
+                              << ", diagonal " << diagonal << ", slides " << slides);
+    REQUIRE(moving > 20000);
+    CHECK(jumps == 0);
+    CHECK(flips * 1000 < moving);  // under one in a thousand steps
+    CHECK(diagonal * 10 > moving); // people take diagonals, not only grid lines
+    CHECK(slides == 0);
+    // Crowds out of step: every actor its own animation phase and pace.
+    std::set<int> phases;
+    const std::size_t n = city.gather(city.activeRect(), 0.0f, after);
+    for (std::size_t i = 0; i < n; ++i)
+        phases.insert(static_cast<int>(after[i].animTime * 10.0f) % 40);
+    CHECK(phases.size() > 30);
+}
+
+TEST_CASE("city: the land between the cities is alive: travellers, couriers, boats") {
+    CityLife city(lifeWorld(), 21);
+    // The Royal Road in Anatolia: couriers ride station to station every two game hours, the
+    // road's travellers and grooms are about.
+    const auto station = parseFocus(lifeWorld(), "base:royal_road_station_921_152");
+    REQUIRE(station.has_value());
+    city.setFocus(*station, 24, 24);
+    LifeClock clock = LifeClock::at(2, 8.0, 0);
+    city.settle(clock);
+    int people = 0;
+    int casts = 0;
+    for (int k = 0; k < 16; ++k) {
+        step(city, clock, 600);
+        people =
+            std::max(people, city.stats().bySource[static_cast<std::size_t>(Source::Population)]);
+        casts = std::max(casts, city.stats().bySource[static_cast<std::size_t>(Source::Cast)]);
+    }
+    CHECK(people > 0);
+    CHECK(casts > 0); // the courier and the groom came by
+    checkGround(city);
+    // Fishing boats and ships on the lanes: some are where the camera looks when it follows the
+    // coast of Latium and the Saronic gulf.
+    int boats = 0;
+    for (const char* d :
+         {"district:ostia/portus", "district:athens/piraeus", "district:corinth/kenchreai"}) {
+        const auto f = parseFocus(lifeWorld(), d);
+        if (!f) continue;
+        city.setFocus(*f, 40, 40);
+        city.settle(clock);
+        for (int k = 0; k < 10 && boats == 0; ++k) {
+            step(city, clock, 600);
+            boats = city.stats().bySource[static_cast<std::size_t>(Source::Token)];
+        }
+    }
+    CHECK(boats > 0);
 }

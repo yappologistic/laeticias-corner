@@ -482,20 +482,34 @@ int Compiler::strollRole(const std::string& kind, const std::string& where) {
     role.id = id;
     role.name = d_.kinds[static_cast<std::size_t>(k)].name;
     role.kind = k;
+    // What kind of thing it is decides how it spends the day: herds graze and drift together,
+    // birds linger and wander, people walk the roads from place to place.
+    const auto is = [&](std::initializer_list<const char*> words) {
+        return std::ranges::any_of(
+            words, [&](const char* w) { return kind.find(w) != std::string::npos; });
+    };
+    const bool herd = is({"sheep", "goat", "cattle", "cow", "flock"});
+    const bool bird =
+        is({"gull", "eagle", "stork", "pigeon", "swift", "crane", "heron", "ibis", "bird"});
     const auto first = static_cast<std::uint32_t>(d_.steps.size());
     Step go;
     go.verb = Verb::Go;
-    go.target.kind = TargetKind::Roam;
+    go.target.kind = herd ? TargetKind::Flock : TargetKind::Roam;
     go.target.within = 24;
     Step linger;
     linger.verb = Verb::Wander;
-    linger.radius = 3;
-    linger.dur0 = 10;
-    linger.dur1 = 30;
-    d_.steps.push_back(go);
-    d_.steps.push_back(linger);
+    linger.radius = herd ? 3.0f : bird ? 6.0f : 3.0f;
+    linger.dur0 = herd ? 40.0f : bird ? 20.0f : 10.0f;
+    linger.dur1 = herd ? 90.0f : bird ? 40.0f : 30.0f;
     role.routines.emplace_back("stroll", static_cast<int>(d_.blocks.size()));
-    d_.blocks.push_back({first, 2, true, 1});
+    if (bird) {
+        d_.steps.push_back(linger);
+        d_.blocks.push_back({first, 1, true, 1});
+    } else {
+        d_.steps.push_back(go);
+        d_.steps.push_back(linger);
+        d_.blocks.push_back({first, 2, true, 1});
+    }
     role.schedule.push_back({Filter{}, role.routines.back().second});
     r_->roles.push_back(std::move(role));
     return static_cast<int>(r_->roles.size() - 1);

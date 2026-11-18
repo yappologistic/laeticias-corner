@@ -74,6 +74,10 @@ public:
         return ids_[static_cast<std::size_t>(n)];
     }
     [[nodiscard]] int findNode(std::string_view id) const;
+    // A relay station (couriers change horses there): its kind, or its name says so.
+    [[nodiscard]] bool isStation(int n) const {
+        return stations_[static_cast<std::size_t>(n)] != 0;
+    }
     [[nodiscard]] std::span<const Edge> edges() const { return edges_; }
     [[nodiscard]] std::span<const Tile16> course(int e) const {
         const Edge& ed = edges_[static_cast<std::size_t>(e)];
@@ -149,6 +153,7 @@ private:
     TileRect rect_;
     std::vector<Tile16> nodes_;
     std::vector<std::string> ids_;
+    std::vector<std::uint8_t> stations_;
     std::unordered_map<std::string, int> index_;
     std::vector<Edge> edges_;
     std::vector<Tile16> courses_;

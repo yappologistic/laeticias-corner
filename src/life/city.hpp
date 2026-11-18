@@ -84,8 +84,11 @@ enum class ActState : std::uint8_t { Idle, Travel, Act, Wander, Inside, Follow, 
 // One live actor as the renderer draws it.
 struct DrawActor {
     Handle handle;
-    Vec2 pos;    // continuous tile coordinates, interpolated (x.5: a tile centre)
-    float z = 0; // floor height, px above level 0 (stairs and walk floors included)
+    Vec2 pos;          // continuous tile coordinates, interpolated (x.5: a tile centre)
+    float stride = 0;  // tiles walked, interpolated: pick walk frames by distance (no sliding)
+    float speed = 0;   // tiles/s now
+    float heading = 0; // radians in grid space (0: +x, pi/2: +y), continuous
+    float z = 0;       // floor height, px above level 0 (stairs and walk floors included)
     std::uint8_t level = 0;
     std::uint8_t facing =
         0; // 0 front (+x), 1 front mirrored (+y), 2 back (-y), 3 back mirrored (-x)
@@ -170,11 +173,18 @@ struct LiveActor {
     float timer = 0; // seconds left in the step
     float animTime = 0;
     float alpha = 0;
-    float speed = 0.9f; // tiles/s
-    float progress = 0; // 0..1 from `tile` towards `next`
+    float speed = 0.9f; // tiles/s it walks at
+    float s = 0;        // distance along its track (route tiles from the track's start)
+    float speedNow = 0; // tiles/s now (eased; measured from the motion)
+    float heading = 0;  // radians in grid space (atan2 of dy, dx)
+    float stride = 0;   // tiles walked so far: the walk cycle's phase
+    float prevStride = 0;
+    float lateral = 0; // its own offset from the way's middle, tiles
+    float rate = 1;    // its animations' pace (crowds out of step)
+    Vec2 endPoint;     // where the track ends (a slot spot, a tile centre)
+    Vec2 startOffset;  // where it stood off the start tile's centre (eased away)
     Route route;
     Tile16 tile;   // the tile it stands on
-    Tile16 next;   // the tile it walks to
     Tile16 anchor; // a wander's centre
     std::array<Frame, 3> stack{};
     std::uint32_t step = 0xFFFFFFFF; // LifeData::steps index running
@@ -333,9 +343,22 @@ private:
     Begin beginStep(int i, std::uint32_t s, float& estimate);
     void endStep(int i);
     bool untilMet(const Actor& a) const;
-    void move(int i, float dt);
-    void advanceAlong(int i, float tiles);
-    bool planTo(int i, TilePos goal, int& builds);
+    void move(int i, float dt); // Motion: a track is the route's next tiles, walked as a smoothed
+                                // continuous path.
+    void startTrack(int i, Vec2 end);
+    void fillTrack(int i);
+    [[nodiscard]] bool moving(int i) const;
+    [[nodiscard]] Vec2 trackRaw(int i, float s) const;
+    [[nodiscard]] Vec2 trackPoint(int i, float s, bool lateral) const;
+    void placeOnTrack(int i, float maxStep); // maxStep 0: wherever the track has it
+    void motion(int i, float dt);            // every step: eased speed along the track
+    void advanceBy(int i, float tiles);      // fast-forward: straight to a distance along it
+    void afterStep(int i, float dt);         // speed, heading, facing and stride from the motion
+    bool planTo(int i, TilePos goal, Vec2 end, int& builds);
+    [[nodiscard]] Vec2 smoothAlong(std::span<const Tile16> line, float s) const;
+    [[nodiscard]] Vec2 settleOnGround(Vec2 raw, Vec2 want) const;
+    [[nodiscard]] static float atLength(std::span<const float> cum, float d);
+    const std::vector<Tile16>& carrierPath(std::size_t key, TilePos from, TilePos to);
     struct TokenAt {
         Vec2 pos;
         std::uint8_t facing = 0;
@@ -392,6 +415,21 @@ private:
 
     std::vector<LiveActor> pool_;
     std::vector<std::array<Tile16, tuning::life::kMoveReach + 2>> desc_;
+    struct Track {
+        std::array<Tile16, 8> t{};
+        int base = 0;       // route index of t[0]
+        std::uint8_t n = 0; // tiles held
+        bool ended = true;  // the route has no more tiles
+    };
+    std::vector<Track> tracks_;
+    std::vector<float> trailCum_; // per trail tile: smoothed length from the trail's start
+    struct Stops {
+        std::array<std::uint16_t, 32> at{}; // trail indices of relay stations on the route
+        std::uint8_t n = 0;
+    };
+    std::vector<Stops> trailStops_;
+    std::vector<std::vector<Tile16>> carrierPaths_; // per chain run and stage, made once
+    std::vector<std::vector<float>> carrierCum_;
     std::vector<int> free_;
     std::vector<int> chunkHead_; // per map chunk: first live actor, -1
     std::vector<int> chunkNext_; // per pool record
@@ -418,6 +456,8 @@ private:
         std::vector<float> cum; // cumulative length
         float length = 0;
         float period = 0;
+        float farStay = 0; // seconds at the far end (in port, or working a fishing ground)
+        bool fishing = false;
         bool ok = false;
     };
     std::vector<TokenState> tokenPaths_;
