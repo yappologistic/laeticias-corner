@@ -260,6 +260,8 @@ private:
     // The native level's objects: re-gathered on the worker before the view leaves them, and
     // gathered ahead for a destination the view is heading to.
     void updateRegion(const FRect& view);
+    // Takes over a finished gather that covers `view`.
+    void adoptRegion(const FRect& view);
     void gatherAhead(const FRect& view);
     [[nodiscard]] static TileRect regionAround(const TileRect& need, float k);
     void drawCells(int level, const FRect& view, const Xform& x);
@@ -351,7 +353,7 @@ private:
     };
     std::vector<Building> building_;
     std::vector<CellWant> wants_;
-    std::vector<std::pair<std::uint16_t, std::uint32_t>> shadows_; // page, element: by page
+    std::vector<std::pair<std::uint16_t, std::uint32_t>> shadows_; // page, place in the order
     std::vector<CellKey> keys_;
     struct Composite {
         CellKey key;
@@ -392,6 +394,16 @@ private:
     std::vector<MergeActor> mergeActors_;
     std::vector<std::uint32_t> actorOf_; // merge entry -> actorDraw_/actorBuf_ index
     std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, back to front
+    mutable std::vector<std::pair<float, life::Handle>> actorHits_; // actorsAt's scratch
+    // How far an actor's art reaches from its feet, px: twice the largest in today's sets (112
+    // sideways, 152 up with goods, 51 down), and widened by anything larger that is drawn.
+    Reach actorReach_{256, 256, 320, 128};
+    struct Shower {
+        Vec2 centre; // tiles
+        float invR2 = 0;
+        float intensity = 0;
+    };
+    std::vector<Shower> showers_; // drawRain's scratch
     ActorMerge merge_;
     bool mergeIndexed_ = false;
 

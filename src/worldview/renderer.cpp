@@ -383,19 +383,23 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     shadows_.clear();
     // An element's screen box holds its shadow: what is not drawn casts none in view.
     const std::size_t n = visible.empty() ? g.order.size() : visible.size();
+    const auto at = [&](std::size_t j) { return g.order[visible.empty() ? j : visible[j]]; };
     for (std::size_t j = 0; j < n; ++j) {
-        const std::uint32_t i = g.order[visible.empty() ? j : visible[j]];
-        const Elem& e = g.elems[i];
+        const Elem& e = g.elems[at(j)];
         if (!e.first || e.look == nullptr || !e.look->shadow) continue;
         const SpriteRef& s = *e.look->shadow;
         const FRect box{e.anchor.x - s.ox, e.anchor.y - s.oy, e.anchor.x - s.ox + s.w,
                         e.anchor.y - s.oy + s.h};
-        if (box.overlaps(clip)) shadows_.emplace_back(s.page, i);
+        if (box.overlaps(clip)) shadows_.emplace_back(s.page, static_cast<std::uint32_t>(j));
     }
-    std::ranges::stable_sort(shadows_, {}, &std::pair<std::uint16_t, std::uint32_t>::first);
-    for (const auto& [page, i] : shadows_)
-        if (const std::optional<SpriteRef>& sh = g.elems[i].look->shadow)
-            ok &= put(*sh, g.elems[i].anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    // By page, then in the order's sequence: a total order, so the plain sort (which, unlike
+    // the stable one, allocates nothing) gives the same result every time.
+    std::ranges::sort(shadows_);
+    for (const auto& [page, j] : shadows_) {
+        const Elem& e = g.elems[at(j)];
+        if (const std::optional<SpriteRef>& sh = e.look->shadow)
+            ok &= put(*sh, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    }
     drawActorShadows(x);
     const bool any = !shadows_.empty() || !actorDraw_.empty();
     batch_.flush();
@@ -552,7 +556,9 @@ double WorldView::buildLimit(int rank) const {
 void WorldView::progressImpostors() {
     // Blocks whose gathers are back are drawn, the cells the view waits for first, while the
     // frame's build time lasts.
-    std::ranges::stable_sort(building_, {}, &Building::rank);
+    std::ranges::sort(building_, [](const Building& a, const Building& b) {
+        return a.rank != b.rank ? a.rank < b.rank : packCell(a.key) < packCell(b.key);
+    });
     for (auto it = building_.begin(); it != building_.end();) {
         Building& b = *it;
         const int n = blocksPerSide(b.key.level);
@@ -659,7 +665,9 @@ void WorldView::buildCells() {
     const auto dup =
         std::ranges::unique(wants_, {}, [](const CellWant& w) { return packCell(w.key); });
     wants_.erase(dup.begin(), dup.end());
-    std::ranges::stable_sort(wants_, {}, &CellWant::rank);
+    std::ranges::sort(wants_, [](const CellWant& a, const CellWant& b) {
+        return a.rank != b.rank ? a.rank < b.rank : packCell(a.key) < packCell(b.key);
+    });
     // No more is wanted than the cache holds (impostors filling in keep their slots too): what
     // is left out is the least urgent, and nothing wanted is ever pushed out by something else
     // wanted, so the cache never churns.
@@ -764,12 +772,13 @@ void WorldView::drawCells(int level, const FRect& view, const Xform& x) {
     stats_.pendingShare =
         pendingArea / ((lastView_.x1 - lastView_.x0) * (lastView_.y1 - lastView_.y0));
     if (stats_.cellsBare > 0) drawOverview(x);
-    std::ranges::stable_sort(composite_, [&](const Composite& a, const Composite& b) {
+    std::ranges::sort(composite_, [&](const Composite& a, const Composite& b) {
         const int sa = a.from.level - a.key.level;
         const int sb = b.from.level - b.key.level;
         const int pa = cells_.slot(a.slot).page;
         const int pb = cells_.slot(b.slot).page;
-        return pa != pb ? pa < pb : sa < sb;
+        if (pa != pb) return pa < pb;
+        return sa != sb ? sa < sb : packCell(a.key) < packCell(b.key);
     });
     for (const Composite& c : composite_) {
         const CellSlot& s = cells_.slot(c.slot);
@@ -876,17 +885,23 @@ void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
 }
 
 std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
+    // Only what the last frame drew can be under the pointer (topmost: last drawn first). Just
+    // after other objects took over (a journey's destination) nothing of them is drawn yet.
+    if (!mergeIndexed_) return std::nullopt;
+    const std::span<const std::uint32_t> drawn = merge_.visible();
     // Figures first: they are small and stand clear (world/figures.hpp), while a landmark's box
     // is much larger than what it draws.
-    for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
-        const Elem& e = region_.elems[*it];
-        const FRect& b = region_.items[*it].screen;
+    for (auto it = drawn.rbegin(); it != drawn.rend(); ++it) {
+        const std::uint32_t i = region_.order[*it];
+        const Elem& e = region_.elems[i];
+        const FRect& b = region_.items[i].screen;
         if (e.figure && px.x >= b.x0 && px.x < b.x1 && px.y >= b.y0 && px.y < b.y1)
             return Picked{true, figureOf_[e.item]};
     }
-    for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
-        const Elem& e = region_.elems[*it];
-        const FRect& b = region_.items[*it].screen;
+    for (auto it = drawn.rbegin(); it != drawn.rend(); ++it) {
+        const std::uint32_t i = region_.order[*it];
+        const Elem& e = region_.elems[i];
+        const FRect& b = region_.items[i].screen;
         if (e.ground || e.home || px.x < b.x0 || px.x >= b.x1 || px.y < b.y0 || px.y >= b.y1)
             continue;
         if (e.figure) return Picked{true, figureOf_[e.item]};
@@ -945,6 +960,27 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
                  std::max(tiles.y1, r.y1)};
     }
     if (tiles.x0 >= tiles.x1 || tiles.y0 >= tiles.y1) return;
+    // The showers that reach the tiles looked at, once: each tile then asks only them, and
+    // without a square root (intensity x (1 - d^2 / r^2), as WeatherField::rainAt gives).
+    showers_.clear();
+    for (const WeatherCell& c : weather_->cells()) {
+        if (!c.rain || c.centre.x + c.radius < static_cast<float>(tiles.x0) ||
+            c.centre.x - c.radius > static_cast<float>(tiles.x1) ||
+            c.centre.y + c.radius < static_cast<float>(tiles.y0) ||
+            c.centre.y - c.radius > static_cast<float>(tiles.y1))
+            continue;
+        showers_.push_back({c.centre, 1.0f / (c.radius * c.radius), c.intensity()});
+    }
+    const auto rainAt = [&](Vec2 t) {
+        float r = 0;
+        for (const Shower& sh : showers_) {
+            const float dx = t.x - sh.centre.x;
+            const float dy = t.y - sh.centre.y;
+            const float d2 = (dx * dx + dy * dy) * sh.invR2;
+            if (d2 < 1) r = std::max(r, sh.intensity * (1.0f - d2));
+        }
+        return std::min(1.0f, r);
+    };
     const float fall = snow ? tuning::kSnowFall : tuning::kRainFall;
     const float drop = iso_.tileH() * 6.0f; // px a streak falls before it starts again
     // Farther out, every other tile each way: as many streaks on screen at any zoom.
@@ -959,7 +995,7 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
                 w.y > view.y1 + margin)
                 continue;
             if (hole_.tiles.contains(TilePos{tx, y})) continue;
-            const float r = weather_->rainAt(c);
+            const float r = rainAt(c);
             if (r < ::lc::tuning::kRainThreshold) continue;
             for (int k = 0; k < tuning::kRainStreaksPerTile; ++k) {
                 const std::uint32_t h = tileHash(tx, y, 31u + static_cast<std::uint32_t>(k));
@@ -1045,6 +1081,7 @@ int WorldView::missingArt() const {
 
 void WorldView::placeholdersInView(std::vector<std::pair<Vec2, std::uint32_t>>& out) const {
     out.clear();
+    if (stats_.placeholders == 0) return; // nothing to look for among thousands of elements
     for (std::size_t i = 0; i < region_.elems.size(); ++i) {
         const Elem& e = region_.elems[i];
         if (e.look != nullptr && e.first && e.look->look == Look::Placeholder &&
@@ -1135,6 +1172,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     jumped_ = false;
     animStep_ = animFps_ > 0 ? static_cast<std::uint64_t>(now * animFps_) : 0;
     const Lod want = lodFor(s);
+    // Objects gathered for this view meanwhile (a destination's, on arrival) are taken over
+    // before the level is chosen, so an arrival that was made ready is shown at once.
+    if (want == Lod::Native) adoptRegion(seen);
     // The native level needs its ground cells and its objects. While they are still on their
     // way (a zoom in that arrived at once, a jump) the half-scale impostors stay up, magnified,
     // if they are whole: the previous level until the new one is complete, never a hole.
@@ -1343,10 +1383,8 @@ TileRect WorldView::regionAround(const TileRect& need, float k) {
     return TileRect{need.x0 - gx, need.y0 - gy, need.x1 + gx, need.y1 + gy};
 }
 
-void WorldView::updateRegion(const FRect& view) {
-    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_);
-    const TileRect inMap = need.clipped(map_.bounds());
-    const FRect all{-1e9f, -1e9f, 1e9f, 1e9f};
+void WorldView::adoptRegion(const FRect& view) {
+    const TileRect inMap = gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds());
     // A finished gather takes over when it covers the view (one overtaken by a jump is dropped).
     if (regionPending_ && prep_->take(kRegionTag, next_)) {
         regionPending_ = false;
@@ -1369,6 +1407,12 @@ void WorldView::updateRegion(const FRect& view) {
         stats_.regionRebuilt = true;
         mergeIndexed_ = false;
     }
+}
+
+void WorldView::updateRegion(const FRect& view) {
+    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_);
+    const FRect all{-1e9f, -1e9f, 1e9f, 1e9f};
+    adoptRegion(view);
     if (!async_ && !regionRect_.intersects(need)) {
         // Nothing gathered here (a jump): synchronous runs gather before they draw. With a
         // worker the request below is back within a frame or two, and nothing blocks.
@@ -1426,9 +1470,7 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
     }
     if (life_ == nullptr || !looks_) {
         if (lod == Lod::Native)
-            merge_.plan(
-                region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; },
-                [&](std::uint32_t e) { return region_.items[e].screen.overlaps(view); });
+            merge_.plan(region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; }, view);
         return;
     }
     TileRect tiles = tilesUnder(view, iso_);
@@ -1442,9 +1484,14 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         ActorDraw ad;
         const TilePos t{static_cast<int>(std::floor(d.pos.x)),
                         static_cast<int>(std::floor(d.pos.y))};
-        const auto look = hole_.tiles.contains(t) ? std::nullopt : looks_->resolve(d);
+        const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
+        // The tiles under a view are a box twice the view: half of those gathered stand off
+        // screen, and are passed over before anything is resolved for them.
+        const float feetY = w.y - d.z;
+        const bool near = w.x + actorReach_.right >= view.x0 && w.x - actorReach_.left <= view.x1 &&
+                          feetY + actorReach_.down >= view.y0 && feetY - actorReach_.up <= view.y1;
+        const auto look = !near || hole_.tiles.contains(t) ? std::nullopt : looks_->resolve(d);
         if (look) {
-            const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
             // Whole pixels of the target, so sprites stay crisp.
             ad.anchor = {std::round(w.x / px) * px, std::round((w.y - d.z) / px) * px};
             ad.sprite = look->sprite;
@@ -1462,6 +1509,11 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         const SpriteRef& s = *ad.sprite;
         const float x0 = ad.anchor.x - (ad.mirror ? s.w - s.ox : s.ox);
         FRect box{x0, ad.anchor.y - s.oy, x0 + s.w, ad.anchor.y - s.oy + s.h};
+        // Art larger than anything seen so far widens the reach for the frames to come.
+        const float side = std::max(s.ox, s.w - s.ox) + 1;
+        actorReach_ = {std::max(actorReach_.left, side), std::max(actorReach_.right, side),
+                       std::max(actorReach_.up, s.oy + 1),
+                       std::max(actorReach_.down, s.h - s.oy + 1)};
         if (!box.overlaps(view)) continue;
         if (ad.goods != nullptr) box.y0 = std::min(box.y0, ad.goodsAt.y - ad.goods->oy);
         if (lod != Lod::Native) {
@@ -1500,12 +1552,13 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
             if (el.floor || el.piece < 0) return -1;
             return on ? 1 : 0;
         },
-        [&](std::uint32_t e) { return region_.items[e].screen.overlaps(view); });
+        view);
 }
 
 void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
     out.clear();
-    std::vector<std::pair<float, life::Handle>> hits; // a click, not a frame: allocation is fine
+    auto& hits = actorHits_; // kept: the pointer asks every frame it rests on the world
+    hits.clear();
     for (std::size_t i = 0; i < actorDraw_.size(); ++i) {
         const ActorDraw& a = actorDraw_[i];
         if (a.sprite == nullptr) continue;
@@ -1518,7 +1571,9 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
             continue;
         hits.emplace_back(-a.depth, actorBuf_[i].handle);
     }
-    std::ranges::sort(hits, {}, &std::pair<float, life::Handle>::first);
+    std::ranges::sort(hits, [](const auto& a, const auto& b) {
+        return a.first != b.first ? a.first < b.first : a.second.index < b.second.index;
+    });
     for (const auto& h : hits) out.push_back(h.second);
 }
 

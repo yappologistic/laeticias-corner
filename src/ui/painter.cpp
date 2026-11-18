@@ -94,14 +94,6 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
                     Fill fill) {
     if (b.w <= 0 || b.h <= 0 || (top.a <= 0 && bottom.a <= 0)) return;
     radius = std::clamp(radius, 0.0f, std::min(b.w, b.h) * 0.5f);
-    // The solid edge sits half the feather inside the box so the visible edge stays where the box
-    // says; the transparent edge half outside.
-    const float inset = std::min(feather * 0.5f, radius);
-    Loop solid;
-    Loop clear;
-    outline(b, radius, inset, solid);
-    outline(b, radius, inset - feather, clear);
-
     SDL_Texture* texture = font_.texture();
     const UvRect white = font_.whiteUv();
     const SDL_FPoint whiteUv{(white.u0 + white.u1) * 0.5f, (white.v0 + white.v1) * 0.5f};
@@ -114,6 +106,27 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
                           std::clamp(p.y / backdrop_.screen.y, 0.0f, 1.0f)};
     };
     const Shade shade{b, top, bottom};
+    if (radius == 0 && feather == 0 && b.w <= kMaxTriangle && b.h <= kMaxTriangle) {
+        // A plain rectangle (a bar of a graph, a divider) is one quad: the same pixels as the
+        // fan below at a thirtieth of the vertices.
+        const SDL_FPoint q[4] = {
+            {b.x, b.y}, {b.x + b.w, b.y}, {b.x + b.w, b.y + b.h}, {b.x, b.y + b.h}};
+        const SDL_Vertex v[4] = {{q[0], shade.at(q[0].y), uv(q[0])},
+                                 {q[1], shade.at(q[1].y), uv(q[1])},
+                                 {q[2], shade.at(q[2].y), uv(q[2])},
+                                 {q[3], shade.at(q[3].y), uv(q[3])}};
+        static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+        batch_.use(texture, SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
+        batch_.triangles(v, 4, kQuad, 6);
+        return;
+    }
+    // The solid edge sits half the feather inside the box so the visible edge stays where the box
+    // says; the transparent edge half outside.
+    const float inset = std::min(feather * 0.5f, radius);
+    Loop solid;
+    Loop clear;
+    outline(b, radius, inset, solid);
+    outline(b, radius, inset - feather, clear);
 
     std::array<SDL_Vertex, 1 + 2 * kOutline> v;
     const SDL_FPoint centre{b.cx(), b.cy()};
