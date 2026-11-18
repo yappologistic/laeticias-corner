@@ -251,7 +251,12 @@ void Compiler::filter(const json& o, Filter& f, const std::string& where) {
         f.notFestival = r_->findFestival(fest);
         if (f.notFestival < 0) problem(where + ": festival '" + fest + "' is not in the calendar");
     }
-    if (const std::string wx = str(o, "weather"); !wx.empty()) f.weather = wx == "clear" ? 0 : 1;
+    if (const std::string wx = str(o, "weather"); !wx.empty()) {
+        // Only clear and rain are the clock's weathers; another word would quietly mean rain.
+        if (wx != "clear" && wx != "rain")
+            problem(where + ": weather '" + wx + "' is not clear or rain");
+        f.weather = wx == "clear" ? 0 : 1;
+    }
 }
 
 std::uint16_t Compiler::months(const json& list, const std::string& where) {
