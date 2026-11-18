@@ -31,6 +31,8 @@ SEAMS = {"seam_dell": ("The misty dell", "Between the corner and Rome"),
          "seam_ionia": ("The haze over the Kaystros hills", "Between 432 and c. 470 BC")}
 # District names: per region where they are proper places, then by district id.
 DISTRICTS = {
+    "corner": {"meadows": "The meadows", "wood": "The beech wood", "coast": "The shore",
+               "farms": "The farmsteads", "road": "The old road", "reserved": "The outskirts"},
     "rome": {"forum": "Forum Romanum", "fora": "The imperial fora", "markets": "Trajan's Markets",
              "capitol": "The Capitol", "velia": "The Velia", "colosseum": "The Colosseum valley",
              "palatine": "The Palatine", "circus": "Circus Maximus", "velabrum": "Velabrum",

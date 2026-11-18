@@ -55,7 +55,7 @@ STRETCH_BED = {
     "latium_italy": "fields", "greece": "fields", "attica_north": "fields", "thrace": "fields",
     "iran_plateau": "fields", "apennines": "mountain", "arcadia": "mountain", "taurus": "mountain",
     "zagros": "mountain", "anatolia": "road", "syrian_steppe": "road", "east_med": "fields",
-    "ionia_lydia": "river", "mesopotamia": "river", "susiana": "river",
+    "ionia_lydia": "river", "mesopotamia": "river", "susiana": "river", "corner": "fields",
 }
 
 # Who walks where, by the set of the region (kinds from the set catalogs and the world set).
@@ -73,6 +73,12 @@ DENSITIES = {
                0, 0, 0, 0],
     "always": [1] * 24,
     "watch": [0.5] * 6 + [0.7] * 13 + [0.5] * 5,
+    # out day and night: a flock rests by its fold after dark
+    "herd": [0.8] * 5 + [0.9] + [1.0] * 13 + [0.9] + [0.8] * 4,
+    # townsfolk out and about: from first light to the end of the evening
+    "town_day": [0, 0, 0, 0, 0, 0, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.9, 0.8, 0.6, 0, 0],
+    # night birds and the night watch: dusk to dawn
+    "night": [1, 1, 1, 1, 1, 0.6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 1, 1, 1, 1],
 }
 
 # The towns: who lives there, their landmarks' cards, the line on arrival.
@@ -430,7 +436,7 @@ def stretch_file(rid: str, world: World, graphs: dict[str, Graph]) -> dict:
         districts.append({"id": "land", "populations": birds})
     if "sea" in have:
         districts.append({"id": "sea", "populations": [
-            {"actor": "world.gull", "density": "daytime", "max_per_chunk": 2}]})
+            {"actor": "world.gull", "density": "daytime", "max_per_chunk": 1.5}]})
     groups, zones = [], []
     if "pasture" in have and era:
         sheep = {"actor": "world.sheep", "variant": 1 if era == "parsa" else 0, "count": 6}
@@ -449,6 +455,10 @@ def stretch_file(rid: str, world: World, graphs: dict[str, Graph]) -> dict:
             ids = {p.id for p in ln.ports}
             if "grounds" in ids:
                 tokens.append({"actor": "world.fishing_boat", "lane": f"base:{ln.id}", "count": 2})
+                tokens.append({"actor": "world.fishing_boat", "lane": f"base:{ln.id}", "count": 1,
+                               "hours": ["20:30", "03:30"],
+                               "when": {"months": ["may", "jun", "jul", "aug", "sep"]},
+                               "note": "fishing by torchlight on calm summer nights"})
                 gc, gr = to_plan(*ln.points[-1])
                 zones.append({"kind": "fishing", "rect": grid_rect(gc - 2, gr - 2, gc + 2, gr + 2),
                               "lane": f"base:{ln.id}"})
@@ -466,77 +476,34 @@ def stretch_file(rid: str, world: World, graphs: dict[str, Graph]) -> dict:
 
 
 def road_life(docs: dict, graphs: dict[str, Graph]) -> None:
-    """The long routes' tokens and events, filed with the stretch they mostly cross."""
+    """The Royal Road's events, filed with Anatolia (its traffic is `traffic.TRAFFIC`)."""
     base = graphs.get("base")
-    if base is None:
+    if base is None or "anatolia" not in docs:
         return
-    stations = [n for n in base.nodes if n.kind == "station"]
-    royal = [n.id for n in stations if n.id.startswith("royal_road_station")]
-    appia = [n.id for n in stations if n.id.startswith("via_appia_station")]
-    if "anatolia" in docs:
-        a = docs["anatolia"]
-        a["lanes_tokens"] += [
-            {"actor": "parsa.courier", "route": {"start": "sardis:sardis_station",
-                                                 "end": "parsa:royal_road_station"}, "count": 3},
-            {"actor": "parsa.caravan_driver", "route": {"start": "sardis:sardis_station",
-                                                        "end": "babylon:etemenanki_court"},
-             "count": 2, "group": "caravan"},
-            {"actor": "world.muleteer", "route": {"start": "halys:halys_station",
-                                                  "end": "euphrates_crossing:euph_station"},
-             "count": 1, "group": "mule_train"}]
-        a["groups"] += [
-            {"id": "caravan", "formation": "line", "spacing": 1.0,
-             "leader": {"actor": "parsa.caravan_driver"},
-             "members": [{"actor": "parsa.dromedary", "count": 4},
-                         {"actor": "world.donkey", "variant": 1, "count": 2}]},
-            {"id": "mule_train", "formation": "line", "spacing": 0.8,
-             "leader": {"actor": "world.muleteer"},
-             "members": [{"actor": "world.mule", "variant": 1, "count": 4}]}]
-        # L6, the relay of riders (Herodotus 8.98): station to station, a fresh horse waiting.
-        a["events"].append({"id": "courier_relay", "trigger": {"on": "window",
-                            "hours": ["07:00", "18:00"], "every": 7200},
-                            "size": "small", "duration": [30, 60],
-                            "cast": [{"actor": "parsa.courier"}, {"actor": "parsa.groom"}],
-                            "route": [f"base:{s}" for s in royal],
-                            "steps": [{"go": {"node": "next"}},
-                                      {"use": {"item": "world.royal_station", "slot": "change"},
-                                       "anim": "idle", "dur": [4, 6]}],
-                            "sfx": "sfx/world/gallop.wav"})
-        # L7, caravans arrive at dusk; beacons lit on the heights in sequence.
-        a["events"].append({"id": "caravan_dusk", "trigger": {"on": "window",
-                            "hours": ["17:30", "19:00"], "chance": 1.0}, "size": "medium",
-                            "duration": [180, 240], "cast": [{"group": "caravan"}],
-                            "steps": [{"go": {"item": "world.royal_station", "slot": "horse",
-                                              "within": 64}},
-                                      {"use": {"here": True}, "anim": "idle", "dur": [60, 90]}]})
-        a["events"].append({"id": "beacons_lit", "trigger": {"on": "window",
-                            "hours": ["19:00", "19:30"], "chance": 1.0}, "size": "small",
-                            "duration": [60, 60],
-                            "steps": [{"each": {"item": "world.beacon", "within": 4096},
-                                       "state": "lit", "every": 4}]})
-    if "latium_italy" in docs and appia:
-        docs["latium_italy"]["lanes_tokens"] += [
-            {"actor": "world.traveller", "route": {"start": "base:appia_se",
-                                                   "end": "base:appia_brund_w"}, "count": 3},
-            {"actor": "world.muleteer", "route": {"start": "base:appia_se",
-                                                  "end": "base:appia_brund_w"}, "count": 1,
-             "group": "mule_train"}]
-        docs["latium_italy"]["groups"].append(
-            {"id": "mule_train", "formation": "line", "spacing": 0.8,
-             "leader": {"actor": "world.muleteer"},
-             "members": [{"actor": "world.mule", "variant": 1, "count": 3}]})
-    if "greece" in docs:
-        docs["greece"]["lanes_tokens"] += [
-            {"actor": "world.traveller", "route": {"start": "eleusis:eleusis_town",
-                                                   "end": "delphi:temple"}, "count": 2},
-            {"actor": "world.merchant", "route": {"start": "corinth:lechaion",
-                                                  "end": "eleusis:eleusis_town"}, "count": 1}]
-    yards = sorted(n.id for n in base.nodes if n.id.startswith("acharnai_road_yard"))
-    if "attica_north" in docs and yards:
-        # Charcoal from the burners on Parnes to Athens (Aristophanes' Acharnians).
-        docs["attica_north"]["lanes_tokens"].append(
-            {"actor": "world.donkey", "variant": 1, "route": {"start": f"base:{yards[-1]}",
-             "end": "base:acharnai_n"}, "count": 2, "carry": "world.goods_charcoal"})
+    royal = [n.id for n in base.nodes if n.kind == "station" and n.id.startswith("royal_road_station")]
+    a = docs["anatolia"]
+    # L6, the relay of riders (Herodotus 8.98): station to station, a fresh horse waiting.
+    a["events"].append({"id": "courier_relay", "trigger": {"on": "window",
+                        "hours": ["07:00", "18:00"], "every": 7200},
+                        "size": "small", "duration": [30, 60],
+                        "cast": [{"actor": "parsa.courier"}, {"actor": "parsa.groom"}],
+                        "route": [f"base:{s}" for s in royal],
+                        "steps": [{"go": {"node": "next"}},
+                                  {"use": {"item": "world.royal_station", "slot": "change"},
+                                   "anim": "idle", "dur": [4, 6]}],
+                        "sfx": "sfx/world/gallop.wav"})
+    # L7, caravans arrive at dusk; beacons lit on the heights in sequence.
+    a["events"].append({"id": "caravan_dusk", "trigger": {"on": "window",
+                        "hours": ["17:30", "19:00"], "chance": 1.0}, "size": "medium",
+                        "duration": [180, 240], "cast": [{"group": "caravan"}],
+                        "steps": [{"go": {"item": "world.royal_station", "slot": "horse",
+                                          "within": 64}},
+                                  {"use": {"here": True}, "anim": "idle", "dur": [60, 90]}]})
+    a["events"].append({"id": "beacons_lit", "trigger": {"on": "window",
+                        "hours": ["19:00", "19:30"], "chance": 1.0}, "size": "small",
+                        "duration": [60, 60],
+                        "steps": [{"each": {"item": "world.beacon", "within": 4096},
+                                   "state": "lit", "every": 4}]})
 
 
 def droves(docs: dict, world: World, graphs: dict[str, Graph]) -> None:
@@ -579,45 +546,98 @@ def droves(docs: dict, world: World, graphs: dict[str, Graph]) -> None:
                                                 "Parilia, the shepherds' feast of Pales"})
 
 
-def town_file(rid: str, layout_world: World, graphs: dict[str, Graph]) -> dict:
+def town_file(rid: str, layout_world: World, graphs: dict[str, Graph], facts: dict) -> dict:
+    from . import seasonlife, townlife
     kind, set_, time, rect, _b = P.REGIONS[rid]
     t = TOWN[rid]
     g = graphs.get(rid)
-    on_map = {int(i) for i in np.unique(layout_world.D)}
-    dists = sorted({d.split("/", 1)[1] for i, d in enumerate(layout_world.districts)
-                    if d.startswith(rid + "/") and i in on_map})
-    pops = []
-    for i, d in enumerate(dists):
-        people = t["people"]
-        pops.append({"id": d, "populations": [
-            {"actor": people[(i + k) % len(people)], "density": "daytime", "max_per_chunk": 4 - k}
-            for k in range(min(3, len(people)))]})
+    tiles, placed = facts.get(rid, ({}, set()))
+    nodes = {n.id for n in g.nodes} if g else set()
+    rule = seasonlife.TOWN_SEASONS.get(rid, {}).get("factors", {})
+    factors = rule.get(("*", "*"), [1.0] * 12)
+    from . import climates as C
+    from . import seasons as S
+    root = Path(__file__).resolve().parents[3]
+    work = S.resolve(S.raw_climates(root), C.REGION_CLIMATE[rid]).get("work", {})
+    life = townlife.build(rid, set_, tiles, placed, nodes, factors, seasonlife.KIND_ANIMS,
+                          t["people"][-1], work)
     tokens = []
     if g:
         for ln in g.lanes:
             ids = {p.id for p in ln.ports}
             if ln.id == "quffa_ferry":
-                tokens.append({"actor": "world.quffa", "lane": f"{rid}:{ln.id}", "count": 2})
+                tokens.append({"actor": "world.quffa", "lane": f"{rid}:{ln.id}", "count": 2,
+                               "hours": ["05:00", "20:00"]})
             elif "grounds" in ids:
                 tokens.append({"actor": "world.fishing_boat", "lane": f"{rid}:{ln.id}", "count": 1})
+                tokens.append({"actor": "world.fishing_boat", "lane": f"{rid}:{ln.id}", "count": 1,
+                               "hours": ["20:30", "03:30"],
+                               "when": {"months": ["may", "jun", "jul", "aug", "sep"]},
+                               "note": "fishing by torchlight on calm summer nights"})
             elif ln.kind == "river" or rid in ("babylon", "susa", "euphrates_crossing"):
                 tokens.append({"actor": "world.reed_boat", "lane": f"{rid}:{ln.id}", "count": 2})
             else:
                 tokens.append({"actor": SHIP.get(set_, "world.fishing_boat"),
                                "lane": f"{rid}:{ln.id}", "count": 2})
                 tokens.append({"actor": "world.fishing_boat", "lane": f"{rid}:{ln.id}", "count": 1})
-    cards = {k: {"title": a, "epithet": b, "text": c} for k, (a, b, c) in t["cards"].items()}
+                # Fishing by torchlight on calm summer nights (Plato, Sophist 220d).
+                tokens.append({"actor": "world.fishing_boat", "lane": f"{rid}:{ln.id}", "count": 1,
+                               "hours": ["20:30", "03:30"],
+                               "when": {"months": ["may", "jun", "jul", "aug", "sep"]},
+                               "note": "fishing by torchlight on calm summer nights"})
+    kinds_of = {"cyrus": "figure", "cyrus_cylinder": "idea"}
+    cards = {k: {"kind": kinds_of.get(k, "landmark"), "title": a, "epithet": b, "text": c}
+             for k, (a, b, c) in t["cards"].items()}
+    cards.update(life["cards"])
     return {"version": 1, "id": rid, "name": t["name"], "native": t["native"],
             "caption": t["caption"], "theme": theme(rid),
-            "districts": pops, "densities": DENSITIES, "figures": t.get("figures", []),
-            "groups": [], "chains": [],
-            "events": [], "lanes_tokens": tokens, "zones": [], "cards": cards,
-            "strings": {"first_visit": t["first"]}, "journal": ["landmark:*"]} | (
+            "districts": life["districts"], "densities": DENSITIES,
+            "roles": life["roles"], "figures": t.get("figures", []),
+            "groups": [], "chains": life["chains"],
+            "events": life["events"], "lanes_tokens": tokens, "zones": [], "cards": cards,
+            "strings": {"first_visit": t["first"], **life["strings"]},
+            "journal": ["landmark:*", "chain:*"]} | (
         {"place": {"node": f"{rid}:{t['place'][0]}", "card": t["place"][1]}} if "place" in t else {})
 
 
-def check_refs(docs: dict, graphs: dict[str, Graph]) -> list[str]:
-    """Every lane and route node a token names exists in the graphs."""
+def town_facts(world: World) -> dict[str, tuple[dict[str, int], set[str]]]:
+    """Per town: its districts' tiles and the item ids its own layer places."""
+    from .compose import live_items
+    out: dict[str, tuple[dict[str, int], set[str]]] = {rid: ({}, set()) for rid in TOWNS}
+    u, c = np.unique(world.D, return_counts=True)
+    for d, n in zip(u.tolist(), c.tolist()):
+        if d == NONE16:
+            continue
+        rid, did = world.districts[d].split("/", 1)
+        if rid in out:
+            out[rid][0][did] = int(n)
+    for _, it in live_items(world):
+        if it.layer in out:
+            out[it.layer][1].add(it.id)
+    return out
+
+
+def base_items(world: World) -> dict[str, dict[str, dict[str, int]]]:
+    """region -> district -> item id -> placements, for the items of the base and corner layers
+    (the layers the stretches and seams draw their life from), by the district under each
+    item's origin tile."""
+    from .compose import live_items
+    out: dict[str, dict[str, dict[str, int]]] = {}
+    for _, it in live_items(world):
+        if it.layer not in ("base", "corner"):
+            continue
+        d = int(world.D[it.r, it.c])
+        if d == NONE16:
+            continue
+        rid, did = world.districts[d].split("/", 1)
+        row = out.setdefault(rid, {}).setdefault(did, {})
+        row[it.id] = row.get(it.id, 0) + 1
+    return out
+
+
+def check_refs(docs: dict, graphs: dict[str, Graph], joined=None) -> list[str]:
+    """Every lane and route node a token names exists in the graphs, and every route has a
+    path on the joined graph."""
     out = []
     for rid, doc in docs.items():
         for tk in doc["lanes_tokens"]:
@@ -631,6 +651,9 @@ def check_refs(docs: dict, graphs: dict[str, Graph]) -> list[str]:
                 g = graphs.get(layer)
                 if g is None or g.node(nid) is None:
                     out.append(f"{rid}: route node {end} not found")
+            if "route" in tk and joined is not None and \
+                    joined.path(tk["route"]["start"], tk["route"]["end"]) is None:
+                out.append(f"{rid}: no path from {tk['route']['start']} to {tk['route']['end']}")
         for ev in doc["events"]:
             for end in ev.get("route", []):
                 layer, nid = end.split(":", 1)
@@ -647,22 +670,44 @@ def write(world: World, graphs: dict[str, Graph], out_dir: Path, cat=None) -> li
             docs[rid] = stretch_file(rid, world, graphs)
     road_life(docs, graphs)
     droves(docs, world, graphs)
+    from . import countrylife
+    from . import seasonlife as SL0
+    SL0.load_kinds(Path(__file__).resolve().parents[3])
+    corner = countrylife.corner_file(base_items(world).get("corner", {}), SL0.KIND_ANIMS)
+    corner["theme"] = theme("corner")
+    corner["densities"] = DENSITIES
+    docs["corner"] = corner
     regions = Path(__file__).resolve().parent.parent / "regions"
+    facts = town_facts(world)
     for rid in TOWNS:
         # A town with its own life module is a city file (`build.sh --city`), never written here.
         if rid in graphs and not (regions / rid / "life.py").exists():
-            docs[rid] = town_file(rid, world, graphs)
-    from . import look, places, seasonlife, sound
+            docs[rid] = town_file(rid, world, graphs, facts)
+    from . import climates as C
+    from . import look, places, seasonlife, sound, traffic
+    traffic.apply(docs, graphs)
     root = Path(__file__).resolve().parents[3]
+    ctx = seasonlife.context(world, graphs, cat, root)
+    placed = base_items(world)
     for rid in list(docs):
         docs[rid] = seasonlife.apply(places.apply(docs[rid]), world, graphs, cat, root)
-    ctx = seasonlife.context(world, graphs, cat, root)
+        if P.REGIONS[rid][0] in ("stretch", "seam"):
+            countrylife.apply(docs[rid], ctx.clims[C.REGION_CLIMATE[rid]], placed.get(rid, {}),
+                              seasonlife.KIND_ANIMS)
+            countrylife.events(docs[rid], seasonlife.KIND_ANIMS)
+            countrylife.merge_months(docs[rid])
+            places.apply(docs[rid])
+            seasonlife.dress(docs[rid])
     seasonlife.transhumance(docs, world, graphs, ctx.clims)
+    for rid, doc in docs.items():
+        countrylife.ambient(doc, ctx.clims[C.REGION_CLIMATE[rid]])
+    joined = traffic.Joined(graphs)
     for rid, doc in docs.items():
         sound.apply(doc, world, cat, root)
         look.apply(doc, world, cat, root)
         seasonlife.finish(doc, root)
-    problems = check_refs(docs, graphs)
+        traffic.finish(doc, graphs, joined)
+    problems = check_refs(docs, graphs, joined)
     if problems:
         raise SystemExit("region files name missing graph parts:\n  " + "\n  ".join(problems))
     out_dir.mkdir(parents=True, exist_ok=True)

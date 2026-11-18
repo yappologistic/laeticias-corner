@@ -305,7 +305,13 @@
       "18:00"
      ]
     }
-   ]
+   ],
+   "voices": {
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ]
+   }
   },
   "look": {
    "phases": {
@@ -673,11 +679,12 @@
  "districts": [
   {
    "id": "acrocorinth",
+   "area": "wild",
    "populations": [
     {
-     "actor": "athens.citizen",
+     "actor": "world.raven",
      "density": "daytime",
-     "max_per_chunk": 4,
+     "max_per_chunk": 7.59,
      "when": {
       "months": [
        "mar",
@@ -690,98 +697,18 @@
        "oct",
        "nov"
       ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
      }
     },
     {
-     "actor": "athens.citizen",
+     "actor": "world.raven",
      "density": "daytime",
-     "max_per_chunk": 3.2,
+     "max_per_chunk": 6.07,
      "when": {
       "months": [
        "dec",
        "jan",
        "feb"
       ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 3,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 2.4,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 2,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 1.6,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
      }
     }
    ],
@@ -810,11 +737,7 @@
       "sfx/world/step_stair_3.wav"
      ]
     },
-    "cart": "amb/world/cart.ogg",
-    "crowd": {
-     "family": "crowd.greek",
-     "full": 12
-    }
+    "cart": "amb/world/cart.ogg"
    },
    "look": {
     "air": {
@@ -833,11 +756,12 @@
   },
   {
    "id": "harbours",
+   "area": "country",
    "populations": [
     {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 4,
+     "role": "hauler",
+     "density": "always",
+     "max_per_chunk": 10.51,
      "when": {
       "months": [
        "mar",
@@ -852,85 +776,14 @@
       ]
      },
      "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 3.2,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 3,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 2.4,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.rower",
-     "density": "daytime",
-     "max_per_chunk": 2,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
+      "cold": "climate",
       "hot": "climate"
      }
     },
     {
-     "actor": "athens.rower",
-     "density": "daytime",
-     "max_per_chunk": 1.6,
+     "role": "hauler",
+     "density": "always",
+     "max_per_chunk": 8.41,
      "when": {
       "months": [
        "dec",
@@ -939,6 +792,121 @@
       ]
      },
      "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "sailor",
+     "density": "always",
+     "max_per_chunk": 7.86,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "sailor",
+     "density": "always",
+     "max_per_chunk": 6.29,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 26.49,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 21.19,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 10.84,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 8.67,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
       "hot": "climate"
      }
     }
@@ -974,7 +942,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.greek",
-     "full": 12
+     "full": 8
     }
    },
    "look": {
@@ -987,83 +955,12 @@
   },
   {
    "id": "land",
+   "area": "country",
    "populations": [
     {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 4,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 3.2,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "athens.rower",
-     "density": "daytime",
-     "max_per_chunk": 3,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "athens.rower",
-     "density": "daytime",
-     "max_per_chunk": 2.4,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 2,
+     "role": "farmer",
+     "density": "always",
+     "max_per_chunk": 16.34,
      "when": {
       "months": [
        "mar",
@@ -1083,9 +980,9 @@
      }
     },
     {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 1.6,
+     "role": "farmer",
+     "density": "always",
+     "max_per_chunk": 13.07,
      "when": {
       "months": [
        "dec",
@@ -1096,6 +993,116 @@
      "variants": {
       "cold": "climate",
       "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 26.53,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 21.22,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 5.45,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 4.36,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 5.45,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 4.36,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
      }
     }
    ],
@@ -1127,17 +1134,18 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.greek",
-     "full": 12
+     "full": 8
     }
    }
   },
   {
    "id": "town",
+   "area": "town",
    "populations": [
     {
-     "actor": "athens.rower",
-     "density": "daytime",
-     "max_per_chunk": 4,
+     "role": "potter",
+     "density": "always",
+     "max_per_chunk": 14.63,
      "when": {
       "months": [
        "mar",
@@ -1150,30 +1158,24 @@
        "oct",
        "nov"
       ]
-     },
-     "variants": {
-      "hot": "climate"
      }
     },
     {
-     "actor": "athens.rower",
-     "density": "daytime",
-     "max_per_chunk": 3.2,
+     "role": "potter",
+     "density": "always",
+     "max_per_chunk": 11.7,
      "when": {
       "months": [
        "dec",
        "jan",
        "feb"
       ]
-     },
-     "variants": {
-      "hot": "climate"
      }
     },
     {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 3,
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 53.03,
      "when": {
       "months": [
        "mar",
@@ -1193,9 +1195,9 @@
      }
     },
     {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 2.4,
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 42.42,
      "when": {
       "months": [
        "dec",
@@ -1209,9 +1211,47 @@
      }
     },
     {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 2,
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 14.63,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 11.7,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 7.31,
      "when": {
       "months": [
        "mar",
@@ -1230,9 +1270,45 @@
      }
     },
     {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 1.6,
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 5.85,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 7.31,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 5.85,
      "when": {
       "months": [
        "dec",
@@ -1267,7 +1343,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.greek",
-     "full": 12
+     "full": 20
     }
    }
   }
@@ -1403,6 +1479,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -1430,10 +1584,1049 @@
    0
   ]
  },
+ "roles": [
+  {
+   "id": "hauler",
+   "actor": "athens.enslaved_man",
+   "name": "Hauler on the diolkos",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "kenchreai"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "card": "diolkos_hauler",
+   "sound": {
+    "oneshot": "sfx/world/rope.wav"
+   }
+  },
+  {
+   "id": "potter",
+   "actor": "athens.potter",
+   "name": "Potter",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "athens.g_house_small",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "throw",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "throw",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/athens/wheel.ogg"
+   }
+  },
+  {
+   "id": "sailor",
+   "actor": "world.sailor",
+   "name": "Sailor",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "lechaion"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/rope.wav"
+   }
+  },
+  {
+   "id": "farmer",
+   "actor": "athens.farmer",
+   "name": "Farmer",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "townsfolk",
+   "actor": "athens.citizen",
+   "name": "Townsfolk on their errands",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:30"
+     ],
+     "routine": "errands"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:30"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "errands": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "corinth_temple"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "talk",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "go": {
+        "node": "lechaion"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "talk",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "go": {
+        "node": "kenchreai"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "talk",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "water_carrier",
+   "actor": "athens.woman",
+   "name": "Fetching water",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "09:30"
+     ],
+     "routine": "water"
+    },
+    {
+     "hours": [
+      "16:30",
+      "19:00"
+     ],
+     "routine": "water"
+    }
+   ],
+   "routines": {
+    "water": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "carry_idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/pour.wav"
+   }
+  },
+  {
+   "id": "child",
+   "actor": "athens.child",
+   "name": "Children at play",
+   "schedule": [
+    {
+     "hours": [
+      "08:00",
+      "12:00"
+     ],
+     "routine": "play"
+    },
+    {
+     "hours": [
+      "15:00",
+      "18:30"
+     ],
+     "routine": "play"
+    }
+   ],
+   "routines": {
+    "play": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "run",
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "night_watch",
+   "actor": "athens.citizen",
+   "name": "The night watch",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "06:00"
+     ],
+     "routine": "round"
+    }
+   ],
+   "routines": {
+    "round": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "corinth_temple"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "go": {
+        "node": "lechaion"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "go": {
+        "node": "kenchreai"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_lamp",
+    "prop": "lantern"
+   }
+  }
+ ],
  "figures": [],
  "groups": [],
- "chains": [],
+ "chains": [
+  {
+   "id": "corinth_diolkos",
+   "name": "Cargo across the isthmus",
+   "period": 240,
+   "hours": [
+    "06:00",
+    "18:00"
+   ],
+   "stages": [
+    {
+     "slot": "node:lechaion",
+     "makes": "world.goods_amphorae",
+     "by": "sailor",
+     "label": "a cargo unloaded at Lechaion"
+    },
+    {
+     "carry": "world.goods_amphorae",
+     "from": "node:lechaion",
+     "to": "node:kenchreai",
+     "by": "hauler",
+     "label": "hauled over the diolkos"
+    },
+    {
+     "slot": "node:kenchreai",
+     "sink": "world.goods_amphorae",
+     "by": "sailor",
+     "label": "loaded again at Kenchreai"
+    }
+   ]
+  }
+ ],
  "events": [
+  {
+   "id": "market_day",
+   "rarity": "common",
+   "size": "medium",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:30",
+     "08:00"
+    ],
+    "chance": 1.0,
+    "days": {
+     "every": 4,
+     "offset": 2
+    }
+   },
+   "duration": [
+    200,
+    260
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 6
+    },
+    {
+     "actor": "athens.woman",
+     "count": 4
+    },
+    {
+     "actor": "world.merchant",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "corinth_temple"
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    },
+    {
+     "wander": {
+      "radius": 5
+     },
+     "dur": [
+      40,
+      60
+     ]
+    }
+   ],
+   "sfx": "sfx/world/vendor.wav",
+   "string": "market_day",
+   "zone": "town",
+   "ambience": {
+    "file": "amb/world/crowd_greek_1.ogg",
+    "gain": 0.5
+   }
+  },
+  {
+   "id": "market_rain",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "weather",
+    "kind": "rain",
+    "days": {
+     "every": 4,
+     "offset": 2
+    }
+   },
+   "duration": [
+    60,
+    90
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "corinth_temple"
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      30,
+      50
+     ]
+    }
+   ],
+   "ambience": {
+    "file": "amb/world/rain_roof_1.ogg",
+    "gain": 0.6
+   },
+   "string": "market_rain",
+   "zone": "town"
+  },
+  {
+   "id": "lamps_lit",
+   "rarity": "daily",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "19:00",
+     "19:30"
+    ],
+    "chance": 1.0
+   },
+   "duration": [
+    60,
+    60
+   ],
+   "cast": [
+    {
+     "role": "night_watch",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "each": {
+      "item": "athens.g_lamp",
+      "within": 64
+     },
+     "state": "lit",
+     "every": 4
+    },
+    {
+     "each": {
+      "item": "athens.g_brazier",
+      "within": 64
+     },
+     "state": "lit",
+     "every": 4
+    }
+   ],
+   "sfx": "sfx/world/lamp.wav",
+   "string": "lamps_lit",
+   "zone": "town",
+   "carries": {
+    "light": "carried_lamp",
+    "prop": "lamp"
+   }
+  },
+  {
+   "id": "wedding",
+   "rarity": "uncommon",
+   "size": "medium",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.25,
+    "months": [
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    150,
+    200
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 6
+    },
+    {
+     "actor": "athens.woman",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      40,
+      60
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/wedding_song.wav",
+   "string": "wedding",
+   "zone": "town",
+   "ambience": {
+    "file": "amb/world/crowd_greek_1.ogg",
+    "gain": 0.8
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "shearing",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "apr"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 3
+    },
+    {
+     "actor": "world.sheep",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/sheep_bells.wav",
+   "string": "shearing",
+   "zone": "town"
+  },
+  {
+   "id": "threshing",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "jun",
+     "jul"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/sickle.wav",
+   "string": "threshing",
+   "zone": "town",
+   "ambience": {
+    "file": "amb/world/threshing.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "vintage",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "sep"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 5
+    },
+    {
+     "actor": "athens.woman",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/pour.wav",
+   "string": "vintage",
+   "zone": "town"
+  },
+  {
+   "id": "rural_dionysia",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "16:30",
+     "17:00"
+    ],
+    "chance": 0.6,
+    "months": [
+     "dec",
+     "jan"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 8
+    },
+    {
+     "actor": "athens.woman",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/athens/aulos.wav",
+   "string": "rural_dionysia",
+   "zone": "town",
+   "ambience": {
+    "file": "amb/world/crowd_greek_1.ogg",
+    "gain": 0.8
+   },
+   "sounds": [
+    {
+     "file": "sfx/world/applause.wav",
+     "at": "end"
+    }
+   ]
+  },
   {
    "id": "turn_spring_swallows_return",
    "rarity": "festival",
@@ -1601,7 +2794,20 @@
    "actor": "athens.merchant",
    "lane": "corinth:lechaion",
    "count": 2,
-   "by_month": "sailing"
+   "by_month": "sailing",
+   "id": "corinth.0",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "quay",
+    "lechaion"
+   ],
+   "offsets": [
+    0.905,
+    0.585
+   ]
   },
   {
    "actor": "world.fishing_boat",
@@ -1620,13 +2826,79 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "corinth.1",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "quay",
+    "lechaion"
+   ],
+   "offsets": [
+    0.761
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "corinth:lechaion",
+   "count": 1,
+   "hours": [
+    "20:30",
+    "03:30"
+   ],
+   "when": {
+    "months": [
+     "may",
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "note": "fishing by torchlight on calm summer nights",
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "corinth.2",
+   "rest": [
+    "quay",
+    "lechaion"
+   ],
+   "offsets": [
+    0.697
    ]
   },
   {
    "actor": "athens.merchant",
    "lane": "corinth:kenchreai",
    "count": 2,
-   "by_month": "sailing"
+   "by_month": "sailing",
+   "id": "corinth.3",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "quay",
+    "kenchreai"
+   ],
+   "offsets": [
+    0.162,
+    0.555
+   ]
   },
   {
    "actor": "world.fishing_boat",
@@ -1645,29 +2917,99 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "corinth.4",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "quay",
+    "kenchreai"
+   ],
+   "offsets": [
+    0.284
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "corinth:kenchreai",
+   "count": 1,
+   "hours": [
+    "20:30",
+    "03:30"
+   ],
+   "when": {
+    "months": [
+     "may",
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "note": "fishing by torchlight on calm summer nights",
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "corinth.5",
+   "rest": [
+    "quay",
+    "kenchreai"
+   ],
+   "offsets": [
+    0.935
    ]
   }
  ],
  "zones": [],
  "cards": {
   "corinth_apollo": {
+   "kind": "landmark",
    "title": "Temple of Apollo",
    "epithet": "On its low hill",
    "text": "Built about 540 BC and one of the oldest Doric temples in Greece: six by fifteen stocky columns, each shaft cut from a single block of limestone."
   },
   "diolkos": {
+   "kind": "landmark",
    "title": "Diolkos",
    "epithet": "The ship road",
    "text": "A paved trackway across the isthmus, several kilometres long, on which ships or their cargoes were hauled on wheeled cradles from the gulf to the Saronic sea, sparing the voyage round the Peloponnese."
   },
   "acrocorinth_summit": {
+   "kind": "landmark",
    "title": "Acrocorinth",
    "epithet": "The citadel rock",
    "text": "The steep rock above the city, walled on its summit, with a small temple of Aphrodite at the top."
+  },
+  "diolkos_hauler": {
+   "kind": "role",
+   "title": "Hauler",
+   "epithet": "",
+   "text": "Gangs dragged cradles with cargoes, and sometimes whole ships, over the paved diolkos."
   }
  },
  "strings": {
   "first_visit": "Corinth, between two seas. Ships cross the isthmus on the diolkos.",
+  "market_day": "Market day: stalls, voices and goods from the country around.",
+  "market_rain": "Rain: the stallholders cover their goods and wait under the eaves.",
+  "lamps_lit": "Dusk: the lamps are lit along the street.",
+  "wedding": "A wedding: the bride is led to her new home with torches and songs.",
+  "shearing": "Shearing time: the flocks come in.",
+  "threshing": "The threshing floors are busy from dawn.",
+  "vintage": "The vintage: the grapes are trodden in the vats.",
+  "rural_dionysia": "The country Dionysia: a procession with songs, a goat and the aulos.",
   "season_turn.spring": "The swallows are back under the eaves.",
   "season_turn.summer": "The cicadas have started.",
   "season_turn.autumn": "The grapes are in: the vintage begins.",
@@ -1676,7 +3018,8 @@
   "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
  },
  "journal": [
-  "landmark:*"
+  "landmark:*",
+  "chain:*"
  ],
  "era": {
   "edge": "The Athens of Pericles · 432 BC",
@@ -1697,6 +3040,164 @@
    "below": 0.3,
    "props": [
     "world.hull_ashore"
+   ]
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "town",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": "athens.owl",
+   "sound": "sfx/athens/owl.wav"
+  },
+  {
+   "kind": "nightingale",
+   "where": "wood",
+   "hours": [
+    "22:00",
+    "04:00"
+   ],
+   "per_screen": 0,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun"
+   ]
+  },
+  {
+   "kind": "swifts",
+   "where": "town",
+   "hours": [
+    "18:30",
+    "20:30"
+   ],
+   "per_screen": 8,
+   "sprite": "world.swift",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
+  },
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
    ]
   }
  ],
@@ -1752,6 +3253,50 @@
     "festivals": {
      "*": 1.5
     }
+   },
+   "carried_lamp": {
+    "kind": "lantern",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
    },
    "door_lamp": {
     "kind": "door",

@@ -255,8 +255,16 @@
     }
    ],
    "voices": {
+    "athens.horse": [
+     "sfx/world/horse_whinny.wav",
+     "sfx/world/horse_blow.wav"
+    ],
     "world.crane": [
      "sfx/world/cranes.wav"
+    ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
     ],
     "world.stork": [
      "sfx/world/stork_clatter.wav"
@@ -592,7 +600,7 @@
     {
      "actor": "world.stork",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -607,7 +615,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -619,7 +627,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "apr",
@@ -630,9 +638,112 @@
        "sep"
       ]
      }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_beech",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_beech",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "thracian_rider",
+     "density": "daytime",
+     "max_per_chunk": 0.3
+    },
+    {
+     "role": "horse_herd",
+     "density": "herd",
+     "max_per_chunk": 0.8
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.5
+    },
+    {
+     "role": "thracian_rider",
+     "per_item": "world.tumulus",
+     "count": 0.3,
+     "density": "daytime"
+    },
+    {
+     "role": "owl",
+     "density": "night",
+     "max_per_chunk": 0.5
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "leaves": 0.12
@@ -651,7 +762,11 @@
       "sfx/world/hoof_earth_2.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 12
+    }
    }
   }
  ],
@@ -785,6 +900,84 @@
    0.5,
    0.5,
    0.5
+  ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
   ],
   "daytime_hot": [
    0,
@@ -920,6 +1113,230 @@
    "steps": [],
    "string": "season_turn.winter",
    "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "horses_to_pasture",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.thracian",
+     "count": 2
+    },
+    {
+     "actor": "athens.horse",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "horses_to_pasture",
+   "sfx": "sfx/world/horse_whinny.wav"
+  },
+  {
+   "id": "thracian_harvest",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jul"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.thracian",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "thracian_harvest",
+   "sfx": "sfx/world/sickle.wav"
+  },
+  {
+   "id": "hunting_party",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:30",
+     "08:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "oct",
+     "nov"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.thracian",
+     "count": 3
+    },
+    {
+     "actor": "athens.horse",
+     "count": 2
+    },
+    {
+     "actor": "athens.dog_molossian",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "hunting_party",
+   "sfx": "sfx/world/dog_far.wav"
+  },
+  {
+   "id": "wood_smoke",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.thracian",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/smoke"
+     }
+    },
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "wood_smoke",
+   "ambience": {
+    "file": "amb/world/hearth.ogg",
+    "gain": 0.6
+   }
   }
  ],
  "lanes_tokens": [],
@@ -929,7 +1346,11 @@
   "season_turn.spring": "The storks are back on their nests.",
   "season_turn.summer": "The cicadas have started.",
   "season_turn.autumn": "Cranes call high overhead, flying in a long V.",
-  "season_turn.winter": "Snow on the heights."
+  "season_turn.winter": "Snow on the heights.",
+  "horses_to_pasture": "Thracians drive their horses out to the spring grass.",
+  "thracian_harvest": "Harvest in the Thracian plain.",
+  "hunting_party": "A Thracian hunting party rides out with its hounds.",
+  "wood_smoke": "Wood smoke over the villages on a cold evening."
  },
  "journal": [],
  "era": {
@@ -942,5 +1363,252 @@
    "winter": "432/431 BC"
   },
   "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
- }
+ },
+ "roles": [
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "14:00",
+      "17:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        25
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  },
+  {
+   "id": "thracian_rider",
+   "actor": "athens.thracian",
+   "name": "Thracian with his horses",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "19:00"
+     ],
+     "routine": "ride"
+    }
+   ],
+   "routines": {
+    "ride": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 12
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "horse_herd",
+   "actor": "athens.horse",
+   "name": "Thracian horses",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "owl",
+   "actor": "athens.owl",
+   "name": "Little owl",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "hunt"
+    }
+   ],
+   "routines": {
+    "hunt": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        90
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": "athens.owl",
+   "sound": "sfx/athens/owl.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
+  }
+ ]
 }

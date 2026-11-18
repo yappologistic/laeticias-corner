@@ -1,0 +1,1912 @@
+{
+ "version": 1,
+ "id": "corner",
+ "name": "The corner",
+ "caption": "The corner",
+ "climate": "home",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.96,
+    0.92,
+    0.86
+   ],
+   "day": [
+    1.0,
+    1.0,
+    0.98
+   ],
+   "dusk": [
+    0.96,
+    0.86,
+    0.76
+   ],
+   "night": [
+    0.46,
+    0.5,
+    0.66
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.92,
+    0.9,
+    0.84
+   ],
+   "strength": 0.12
+  },
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/fields.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/desert_night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ],
+   "loops": [
+    {
+     "item": "windmill",
+     "file": "amb/world/mill.ogg",
+     "when": "worked"
+    }
+   ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 0.6,
+    "clouds": 1.2,
+    "wind": 0.35
+   },
+   "summer": {
+    "showers": 0.15,
+    "clouds": 0.6,
+    "wind": 0.2
+   },
+   "autumn": {
+    "showers": 0.7,
+    "clouds": 1.4,
+    "wind": 0.6
+   },
+   "winter": {
+    "showers": 0.5,
+    "clouds": 1.0,
+    "wind": 0.4,
+    "snow": true
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.98,
+     1.02,
+     0.96
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.03,
+     1.0,
+     0.94
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.06,
+     0.96,
+     0.86
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.9,
+     0.95,
+     1.06
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "frozen": [
+      "jan"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  "sound": {
+   "climate": "mediterranean",
+   "nature": {
+    "dawn": "amb/world/dawn_scrub.ogg",
+    "dusk": "amb/world/dusk_town.ogg",
+    "night": "amb/world/night_scrub.ogg"
+   },
+   "stings": {
+    "sunrise": "sfx/sting_sunrise.wav",
+    "nightfall": "sfx/sting_nightfall.wav",
+    "storm_clear": "sfx/sting_storm_clear.wav",
+    "first_snow": "sfx/sting_first_snow.wav"
+   },
+   "wind": "wind.open",
+   "weather": [
+    "fog"
+   ],
+   "rain": {
+    "family": "rain",
+    "snow": "snow"
+   },
+   "turns": {
+    "front": "sfx/world/gust_front.wav",
+    "calm": "sfx/world/calm_before.wav",
+    "drops": "sfx/world/first_drops.wav",
+    "onset": "amb/world/rain_dust.ogg",
+    "after": "amb/world/after_rain.ogg",
+    "storm": "amb/world/storm.ogg"
+   },
+   "thunder": {
+    "near": [
+     "sfx/world/thunder_near_1.wav",
+     "sfx/world/thunder_near_2.wav",
+     "sfx/world/thunder_near_3.wav"
+    ],
+    "roll": [
+     "sfx/world/thunder_roll_1.wav",
+     "sfx/world/thunder_roll_2.wav",
+     "sfx/world/thunder_roll_3.wav"
+    ],
+    "far": [
+     "sfx/world/thunder_far.wav",
+     "sfx/world/thunder_far_2.wav",
+     "sfx/world/thunder_far_3.wav"
+    ]
+   },
+   "calls": [
+    {
+     "file": "sfx/world/cuckoo.wav",
+     "seasons": [
+      "spring"
+     ],
+     "hours": [
+      "06:00",
+      "11:00"
+     ]
+    },
+    {
+     "file": "sfx/world/crow_2.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
+    }
+   ],
+   "voices": {
+    "world.dog": [
+     "sfx/world/dog_1.wav",
+     "sfx/world/dog_2.wav"
+    ],
+    "world.donkey": [
+     "sfx/world/donkey.wav"
+    ],
+    "world.goat": [
+     "sfx/world/goat_1.wav",
+     "sfx/world/goat_2.wav"
+    ],
+    "world.gull": [
+     "sfx/world/gull_call.wav"
+    ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ],
+    "world.sheep": [
+     "sfx/world/sheep_1.wav",
+     "sfx/world/sheep_2.wav"
+    ]
+   }
+  },
+  "look": {
+   "phases": {
+    "dawn": {
+     "wb": [
+      0.96,
+      0.88,
+      0.88
+     ],
+     "exposure": 0.88,
+     "shadow_tint": [
+      0.34,
+      0.34,
+      0.64
+     ],
+     "high_tint": [
+      0.72,
+      0.58,
+      0.42
+     ],
+     "tint": 0.28,
+     "contrast": 0.3,
+     "saturation": 1.1,
+     "shoulder": 0.2
+    },
+    "day": {
+     "wb": [
+      1.0,
+      1.0,
+      0.98
+     ],
+     "exposure": 1.0,
+     "shadow_tint": [
+      0.32,
+      0.4,
+      0.66
+     ],
+     "high_tint": [
+      0.56,
+      0.54,
+      0.46
+     ],
+     "tint": 0.26,
+     "contrast": 0.3,
+     "saturation": 1.1,
+     "shoulder": 0.3
+    },
+    "dusk": {
+     "wb": [
+      1.0,
+      0.8,
+      0.62
+     ],
+     "exposure": 0.8,
+     "shadow_tint": [
+      0.3,
+      0.32,
+      0.62
+     ],
+     "high_tint": [
+      0.92,
+      0.62,
+      0.3
+     ],
+     "tint": 0.36,
+     "contrast": 0.34,
+     "saturation": 1.18,
+     "shoulder": 0.2,
+     "bands": {
+      "foliage": {
+       "hue": 0,
+       "sat": -0.2,
+       "val": 0.0
+      }
+     }
+    },
+    "night": {
+     "wb": [
+      0.78,
+      0.82,
+      1.0
+     ],
+     "exposure": 0.48,
+     "shadow_tint": [
+      0.26,
+      0.3,
+      0.56
+     ],
+     "high_tint": [
+      0.54,
+      0.52,
+      0.6
+     ],
+     "tint": 0.28,
+     "contrast": 0.22,
+     "saturation": 0.85,
+     "shoulder": 0.0
+    }
+   },
+   "sky": {
+    "dawn": [
+     "#384a7a",
+     "#eaa47e",
+     "#f8dcb4"
+    ],
+    "day": [
+     "#4a8ad0",
+     "#a6cdee",
+     "#eef2ee"
+    ],
+    "dusk": [
+     "#3e2e58",
+     "#d8703e",
+     "#f6c07a"
+    ],
+    "night": [
+     "#0e1532",
+     "#202c52",
+     "#2c3860"
+    ]
+   },
+   "sun": {
+    "dawn": "#f4caa0",
+    "day": "#fff6e0",
+    "dusk": "#f6a860",
+    "night": "#b0c4ea"
+   },
+   "shade": {
+    "dawn": "#7c74ac",
+    "day": "#7aa4d6",
+    "dusk": "#665494",
+    "night": "#283462"
+   },
+   "haze": {
+    "colour": "#e8e2d4",
+    "strength": 0.04,
+    "toward": "north",
+    "by_zoom": {
+     "half": 0.11,
+     "quarter": 0.18,
+     "overview": 0.26
+    }
+   },
+   "stars": 0.8,
+   "palette": {
+    "large": {
+     "grass": "#5da54a",
+     "grass_shade": "#3e7a3a",
+     "path": "#c9a46a"
+    },
+    "accents": {
+     "cottage_red": "#b8402f"
+    }
+   },
+   "light": "storybook: saturated, soft, the warmest nights",
+   "targets": {
+    "day": {
+     "p2": [
+      20,
+      45
+     ],
+     "median": [
+      100,
+      135
+     ],
+     "p98": [
+      205,
+      230
+     ],
+     "sat_mean": [
+      33,
+      48
+     ],
+     "sat_high": [
+      8,
+      30
+     ],
+     "cool_min": 15
+    },
+    "dawn": {
+     "p2": [
+      10,
+      30
+     ],
+     "median": [
+      70,
+      125
+     ],
+     "p98": [
+      180,
+      215
+     ],
+     "sat_mean": [
+      30,
+      45
+     ],
+     "sat_high": [
+      0,
+      25
+     ],
+     "warm": [
+      35,
+      75
+     ],
+     "cool_min": 7
+    },
+    "dusk": {
+     "p2": [
+      8,
+      25
+     ],
+     "median": [
+      45,
+      85
+     ],
+     "p98": [
+      165,
+      215
+     ],
+     "sat_mean": [
+      38,
+      55
+     ],
+     "sat_high": [
+      0,
+      40
+     ],
+     "warm": [
+      55,
+      80
+     ],
+     "cool_min": 8
+    },
+    "night": {
+     "p2": [
+      4,
+      14
+     ],
+     "median": [
+      22,
+      45
+     ],
+     "p98_lights_only": 200,
+     "sat_mean": [
+      18,
+      35
+     ],
+     "sat_high": [
+      0,
+      10
+     ],
+     "cool_unlit_min": 50
+    }
+   },
+   "weather": {
+    "spring": {
+     "storm": 0.05,
+     "fog": 0.12,
+     "dust": 0.0
+    },
+    "summer": {
+     "storm": 0.06,
+     "fog": 0.02,
+     "dust": 0.02
+    },
+    "autumn": {
+     "storm": 0.12,
+     "fog": 0.12,
+     "dust": 0.0
+    },
+    "winter": {
+     "storm": 0.1,
+     "fog": 0.18,
+     "dust": 0.0
+    }
+   },
+   "air": {
+    "night_mist": {
+     "where": "water",
+     "hours": [
+      "22:00",
+      "05:00"
+     ]
+    }
+   },
+   "water": {
+    "body": "#4a8fb0",
+    "reflect": true,
+    "sea_state": 0
+   },
+   "lights": {
+    "barn": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    },
+    "cottage": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    },
+    "lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
+     }
+    },
+    "windmill": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    }
+   },
+   "backdrop": {
+    "north": {
+     "id": "world.bd_alps",
+     "span": [
+      0,
+      95
+     ]
+    }
+   }
+  }
+ },
+ "districts": [
+  {
+   "id": "road",
+   "area": "road",
+   "populations": [
+    {
+     "actor": "world.traveller",
+     "density": "road_day",
+     "max_per_chunk": 6,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.donkey",
+     "density": "road_day",
+     "max_per_chunk": 2
+    }
+   ],
+   "name": "The old road",
+   "sound": {
+    "surfaces": {},
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   }
+  },
+  {
+   "id": "farms",
+   "area": "country",
+   "populations": [
+    {
+     "role": "farmhand",
+     "density": "always",
+     "max_per_chunk": 6,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "world.donkey",
+     "density": "always",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.5
+    },
+    {
+     "role": "beekeeper",
+     "per_item": "beehive",
+     "count": 0.5,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    }
+   ],
+   "name": "The farmsteads",
+   "sound": {
+    "surfaces": {
+     "roof": 0.03
+    },
+    "wind": "wind.open",
+    "exposure": 0.98,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   }
+  },
+  {
+   "id": "meadows",
+   "area": "country",
+   "populations": [
+    {
+     "role": "shepherd",
+     "density": "daytime",
+     "max_per_chunk": 0.6,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.sheep",
+     "density": "herd",
+     "max_per_chunk": 5
+    },
+    {
+     "actor": "world.goat",
+     "density": "herd",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 0.3
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.4
+    }
+   ],
+   "name": "The meadows",
+   "sound": {
+    "surfaces": {},
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   }
+  },
+  {
+   "id": "wood",
+   "area": "wild",
+   "populations": [
+    {
+     "role": "woodcutter",
+     "per_item": "oak",
+     "count": 0.01,
+     "density": "always",
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.8
+    }
+   ],
+   "name": "The beech wood",
+   "sound": {
+    "surfaces": {},
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   }
+  },
+  {
+   "id": "coast",
+   "area": "country",
+   "populations": [
+    {
+     "role": "fisher",
+     "density": "always",
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.gull",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ],
+   "name": "The shore",
+   "sound": {
+    "surfaces": {
+     "water": 0.03
+    },
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "water": {
+     "family": "river",
+     "speed": "slow"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
+     ],
+     "decks": [
+      "sfx/world/step_timber_1.wav",
+      "sfx/world/step_timber_2.wav",
+      "sfx/world/step_timber_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true
+   }
+  },
+  {
+   "id": "reserved",
+   "area": "wild",
+   "populations": [
+    {
+     "actor": "world.gull",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ],
+   "name": "The outskirts",
+   "sound": {
+    "surfaces": {
+     "water": 1.0
+    },
+    "wind": "wind.sea",
+    "exposure": 1.0,
+    "water": {
+     "family": "sea.coast"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "decks": [
+      "sfx/world/step_timber_1.wav",
+      "sfx/world/step_timber_2.wav",
+      "sfx/world/step_timber_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true
+   }
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [
+  {
+   "id": "lambing",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:30",
+     "07:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.sheep",
+     "count": 6
+    },
+    {
+     "actor": "world.traveller",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "meadows",
+   "string": "lambing",
+   "sfx": "sfx/world/sheep_1.wav"
+  },
+  {
+   "id": "haymaking",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.traveller",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "carry",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "farms",
+   "string": "haymaking",
+   "sfx": "sfx/world/sickle.wav"
+  },
+  {
+   "id": "berry_picking",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "09:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.traveller",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "carry",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "meadows",
+   "string": "berry_picking",
+   "ambience": {
+    "file": "amb/world/fields.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "woodcutting",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "09:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.logger",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_high",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "wood",
+   "string": "woodcutting",
+   "sfx": "sfx/world/chop.wav"
+  },
+  {
+   "id": "nets_hauled",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:00",
+     "06:30"
+    ],
+    "chance": 0.7
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.fisher",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "haul",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "coast",
+   "string": "nets_hauled",
+   "sfx": "sfx/world/rope.wav"
+  },
+  {
+   "id": "flock_home",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "18:30",
+     "19:00"
+    ],
+    "chance": 0.7
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.sheep",
+     "count": 6
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "meadows",
+   "string": "flock_home",
+   "sfx": "sfx/world/sheep_bells.wav"
+  }
+ ],
+ "lanes_tokens": [],
+ "zones": [],
+ "roles": [
+  {
+   "id": "farmhand",
+   "actor": "world.traveller",
+   "name": "Farm folk",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:00"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "barn",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "carry",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "carry",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "steps": [
+      {
+       "go": {
+        "item": "cottage",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "until": {
+        "hour": "21:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shepherd",
+   "actor": "world.traveller",
+   "name": "Shepherd on the hills",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "19:30"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 8
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "fisher",
+   "actor": "world.fisher",
+   "name": "Fisher on the shore",
+   "schedule": [
+    {
+     "hours": [
+      "04:30",
+      "11:00"
+     ],
+     "routine": "fish"
+    },
+    {
+     "hours": [
+      "16:00",
+      "20:00"
+     ],
+     "routine": "fish"
+    }
+   ],
+   "routines": {
+    "fish": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/fish.wav"
+   }
+  },
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "07:00",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "13:30",
+      "17:00"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "oak",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        20,
+        35
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  },
+  {
+   "id": "beekeeper",
+   "actor": "world.traveller",
+   "name": "Beekeeper",
+   "schedule": [
+    {
+     "hours": [
+      "08:00",
+      "11:00"
+     ],
+     "routine": "hives"
+    }
+   ],
+   "routines": {
+    "hives": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "beehive",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        30
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "cards": {},
+ "strings": {
+  "lambing": "Lambs in the meadows.",
+  "haymaking": "Haymaking: the grass is cut and raked into rows.",
+  "berry_picking": "Blackberries and apples are picked along the hedges.",
+  "woodcutting": "Woodcutters in the winter wood.",
+  "nets_hauled": "Fishers haul their nets on the shore at first light.",
+  "flock_home": "The flock is brought in at dusk."
+ },
+ "journal": [],
+ "water": [
+  {
+   "body": "corner_brook",
+   "kind": "stream",
+   "tiles": 34,
+   "rect": [
+    52,
+    1213,
+    102,
+    1244
+   ],
+   "level": [
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "ice": {
+    "months": [
+     "jan"
+    ],
+    "hours": [
+     "00:00",
+     "12:00"
+    ],
+    "rim": true,
+    "note": "rim ice on winter day 2; the middle stays open for the ducks"
+   }
+  },
+  {
+   "body": "corner_river",
+   "kind": "river",
+   "tiles": 34,
+   "rect": [
+    44,
+    1240,
+    53,
+    1259
+   ],
+   "level": [
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "ice": {
+    "months": [
+     "jan"
+    ],
+    "hours": [
+     "00:00",
+     "12:00"
+    ],
+    "rim": true,
+    "note": "rim ice on winter day 2; the middle stays open for the ducks"
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "fireflies",
+   "where": "land",
+   "hours": [
+    "21:00",
+    "01:00"
+   ],
+   "per_screen": 6,
+   "sprite": "fx/sparkle",
+   "months": [
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  }
+ ]
+}

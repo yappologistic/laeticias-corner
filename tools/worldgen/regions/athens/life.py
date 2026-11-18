@@ -22,7 +22,7 @@ SEASONS = SL.sibling(__file__, "seasons")
 SEASON_BEDS = SEASONS.SEASON_BEDS
 
 A = "athens."
-ASSEMBLY = {"days": {"every": 4, "offset": 2}}
+ASSEMBLY = {"days": {"every": 4, "offset": 0}}
 FEAST = {"festival": "panathenaia"}
 WORKDAY = {"not_festival": "panathenaia"}   # the Panathenaia is a holiday for the workshops
 
@@ -1421,7 +1421,7 @@ def build(view) -> dict:
         "festivals": FESTIVALS,
         "events": events(),
         "days_shown": [{"day": 5, "label": "An ordinary summer day (week day 1)"},
-                       {"day": 2, "label": "Assembly day (week day 2)"},
+                       {"day": 0, "label": "Assembly day (week day 0)"},
                        {"day": 1, "label": "The Panathenaia (summer, day 2)"}],
         "figures": figures(),
         "lanes_tokens": [{"actor": A + "merchant", "lane": "athens:kantharos", "count": 2},

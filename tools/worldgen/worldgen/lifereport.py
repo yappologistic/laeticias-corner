@@ -256,11 +256,13 @@ def activity_map(doc: dict, view, world, root: Path, day: int, label: str,
 
 def finish_doc(doc: dict, world, b, beds: dict | None = None) -> dict:
     """What every region file gets beside its life: its year (climate, era, water, seasonal life
-    and themes), its sound and its look."""
-    from . import look, places, seasonlife, sound
+    and themes), its sound, its look and its tokens' hours, rests and spacing."""
+    from . import look, places, seasonlife, sound, traffic
     doc = seasonlife.apply(places.apply(doc), world, b.graphs, b.cat, b.root, beds)
     doc = sound.apply(doc, world, b.cat, b.root)
-    return seasonlife.finish(look.apply(doc, world, b.cat, b.root), b.root)
+    doc = seasonlife.finish(look.apply(doc, world, b.cat, b.root), b.root)
+    traffic.finish(doc, b.graphs)
+    return doc
 
 
 def run(b, rids: list[str], preview: bool, write: bool) -> bool:
@@ -320,17 +322,21 @@ def check_regions(b, world) -> int:
 
 
 def check_committed(b, world) -> int:
-    """Errors in the committed region files of every city with a life module (`--check`)."""
+    """Errors in the committed region files (`--check`): every city and town is held to all the
+    life checks; the stretches, seams and the corner to all but L5, whose movers per screenful
+    are for settled places (their numbers are held by `alive`'s A1 and A2)."""
+    from .life import TOWNS
     n = 0
     for layer, _, regs in P.LAYERS:
-        if life_module(layer) is None:
-            continue
         for rid in regs:
             f = b.root / "assets/regions" / f"{rid}.json"
             if not f.exists():
                 continue
-            view = CL.region_view(world, b.cat, b.graphs, b.root, rid, layer)
-            problems = CL.check(json.loads(f.read_text()), view)
+            settled = life_module(layer) is not None or rid in TOWNS
+            view = CL.region_view(world, b.cat, b.graphs, b.root, rid,
+                                  layer if rid in b.graphs or layer == "corner" else "base")
+            problems = [p for p in CL.check(json.loads(f.read_text()), view)
+                        if settled or p.code != "L5"]
             errs = [p for p in problems if p.level == "error"]
             print(f"{rid}: life {len(errs)} error(s), {len(problems) - len(errs)} warning(s)")
             for p in errs[:12]:

@@ -3281,6 +3281,145 @@
     }
    },
    "nice": true
+  },
+  {
+   "id": "world.farmer",
+   "name": "Country farmer",
+   "sprite": "walker/world.farmer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 13.1,
+     "stride": 0.734
+    },
+    "idle": {
+     "fps": 3
+    },
+    "carry": {
+     "fps": 13.1,
+     "stride": 0.734
+    },
+    "carry_idle": {
+     "fps": 3
+    },
+    "work_low": {
+     "fps": 4
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.8,
+    "network": "roads"
+   }
+  },
+  {
+   "id": "world.owl",
+   "name": "Tawny owl",
+   "sprite": "critter/world.owl",
+   "anims": {
+    "move": {
+     "fps": 16.0
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 1.2
+   }
+  },
+  {
+   "id": "world.heron",
+   "name": "Grey heron",
+   "sprite": "critter/world.heron",
+   "anims": {
+    "move": {
+     "fps": 16.0
+    },
+    "idle": {
+     "fps": 2
+    },
+    "peck": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 1.4
+   }
+  },
+  {
+   "id": "world.bat",
+   "name": "Bat",
+   "sprite": "critter/world.bat",
+   "anims": {
+    "move": {
+     "fps": 16.0
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 2.0
+   }
+  },
+  {
+   "id": "world.deer",
+   "name": "Red deer",
+   "sprite": "critter/world.deer",
+   "anims": {
+    "move": {
+     "fps": 32.0,
+     "stride": 0.45
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 1.2,
+    "network": "roads"
+   }
+  },
+  {
+   "id": "world.boar",
+   "name": "Wild boar",
+   "sprite": "critter/world.boar",
+   "anims": {
+    "move": {
+     "fps": 25.6,
+     "stride": 0.375
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.8,
+    "network": "roads"
+   }
+  },
+  {
+   "id": "world.dolphin",
+   "name": "Dolphin",
+   "sprite": "critter/world.dolphin",
+   "anims": {
+    "move": {
+     "fps": 16.0
+    }
+   },
+   "locomotion": {
+    "mode": "sail",
+    "speed": 1.2
+   }
   }
  ],
  "goods": [
@@ -3556,6 +3695,11 @@
    "world.bd_pindos",
    "world.bd_pontic",
    "world.bd_plateau"
+  ],
+  "props": [
+   "world.lamp",
+   "world.torch",
+   "world.lantern"
   ]
  }
 }

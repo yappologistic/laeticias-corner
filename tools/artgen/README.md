@@ -79,8 +79,10 @@ half with the four worker processes the machine-courtesy rules allow.
   backdrops, effects), renders them with the set's package `sets/<set>/` (`LANDMARKS`,
   `ITEMS`, `STATES`, `FRAMES`, `actor_sprite`, `carry_at`, `flat`, `preview`), cuts large
   landmarks into pieces (walk tiles in runs of up to 8, the rest in rectangles of at most
-  8 x 8), packs pages (kit and actors first, landmark pieces by district, shadows and glows on
-  their own page when that costs no extra page) and writes the geometry file. `setvalidate.py`
+  8 x 8), packs pages by what one view draws together (the city's people with its kit and plants
+  on one page, each landmark district whole on one page, the busiest first; glows, shadows,
+  ground and effects fill the gaps, as the engine draws those apart) and writes the geometry
+  file. `setvalidate.py`
   checks keys, page limits, palette (`palette.palette_for(set)`: home colours plus the set's),
   diamonds, frame counts, piece partitions, walk-tile headroom and reachability, slot and
   emitter coverage, and warns when a measured height strays more than 15 % from the catalog's.
@@ -132,3 +134,68 @@ half with the four worker processes the machine-courtesy rules allow.
   their marks are dense or hand-placed and smooth to keep the repeat from reading as a pattern.
 - Glow layers store halo strength in alpha; draw them with additive blending.
 - Flying visitors are anchored at the bottom of the body; the engine adds the altitude.
+
+## Data pages (the shader path's contract, graphics-plan §2)
+
+Every build writes, beside each colour page, what the shader path reads instead of it; the
+colour pages, their manifests and the key scheme are unchanged.
+
+| File | What |
+|---|---|
+| `<page>.p.png` | The **packed page**: the colour page's size and rectangles, one 32-bit word per pixel |
+| `<page>.p.json` | `{"version": 1, "packed": "<page>.p.png", "colour": "<page>.png", "ramps": "<path to ramps.json>", "colour_only": [keys]}` |
+| `<set>.s.png` + `.json` (home: `atlas.s.*`) | The **shadow page**: every `…/shadow/…` sprite at half size, `"scale": 0.5`; `w`, `h`, `ox`, `oy` in half-size texels, drawn ×2 with linear filtering |
+| `atlas/ramps.png` + `ramps.json` | The **ramp table**, shared by every set and the home atlas |
+
+`<page>` is `assets/atlas/<set>.<n>` for a set and `assets/atlas` for the home atlas.
+
+**The packed word.** RGBA8 read as `w = r | g << 8 | b << 16 | a << 24`, sampled nearest only:
+
+| Bits | Field | Meaning |
+|---|---|---|
+| 0–2 | `step` | step on the ramp, 0 = darkest |
+| 3–10 | `ramp` | ramp id 1–255 in `ramps.json`; 0 = no pixel. `ramps.png` at (`step`, `ramp`) is the pixel's exact colour |
+| 11–15 | `nx` | world normal x as a code 0–30: `n = (code − 15) / 15` (axis normals exact; 31 unused) |
+| 16–20 | `ny` | world normal y, the same; `nz = sqrt(max(0, 1 − nx² − ny²))`, z is up; x and y are the grid axes (+x down-right, +y down-left) |
+| 21–29 | `h` | height above the anchor's ground in art px, 0–511 (one voxel of height is one px) |
+| 30 | `lit` | 1 where the generator's sun reached the surface: its baked light was `0.42 + 0.58·max(0, N·S₀)·(lit ? 1 : 0.25)` times its occlusion, `S₀ = normalise(−0.45, 0.28, 0.85)` |
+| 31 | `snow` | snow catcher: the stored normal has `nz > 0.55`, nothing above it up to the sky, its ramp is one snow lies on, and the sprite stands still (items, ground, faces; never people, animals, carts or goods) |
+
+Flat sprites (ground and overlays drawn per pixel) face up at height 0, lit, catching snow. Faces
+under tile edges (`edge/…_se…`, `edge/…_sw…`) face +x or +y; their height falls one px per px
+from their top to 0 at each column's lowest pixel, so the engine adds the level of the face's
+foot. A sprite the engine mirrors (the other two facings of people and carts) swaps `nx` and
+`ny`. Colour-only sprites (`colour_only`: shadows, glows, effects, weather, sky, interface,
+painted backdrops, the hand-drawn flyers, anything translucent such as foam, river flow and
+falls) hold their RGBA unchanged on the packed page, so the packed page alone replaces the
+colour page; their rectangles must be sampled as colour.
+
+**The ramp table.** `ramps.png`: row = ramp id (row 0 empty), eight texels dark to light, alpha
+0 past a ramp's last step. `ramps.json`: `{"version", "texture", "steps": 8, "classes", "states",
+"ramps": [...]}`; per ramp `id`, `name`, `material` (a `palette.MATERIALS` ramp, what model
+renders quantise to) or `group` (a `palette.GROUPS` ramp, what flat sprites resolve to) or
+`state_of` + `state`, `steps`, `colours`, Oklab `L` per step, `class` (one of `classes`),
+`shell` (px of thin-shell depth for the shadow march: foliage, grass and crops 6, cloth 2, skin
+8, else 255), `porous` (wet darkening), `snow` (snow lies on it), `specular`, `sway` (foliage,
+grass, crops, cloth: bends in the wind on static items) and, on the green ramps, `states`
+(`fresh`, `dry`, `dormant`, `turn` → the ramp id that state draws with: the same number of steps,
+picked from one hue family by Oklab L, outlines kept). Ids are stable: a name keeps the id it has
+in the committed `ramps.json`; new names take the next id; a retired id is never reused.
+
+**Geometry additions** (`<set>.geom.json`, fields the engine's parser may ignore): per item
+variant `lights` (`{"door_0": {"at": [x, y], "z": h}, "window_0": …}`: pixel offset from the
+anchor and height in px of each door lamp and window, from the halos and marks the models give
+a kind); per actor `hand_at` (`{"<anim>_<facing>": [[x, y, front], …]}` for `move`, `idle`,
+`march`, `run`: the free hand, `front` 1 when it is nearer the camera than the body; mirrored
+facings negate `x`) and, for actors whose frames hold something alight, `glow_at` (the glow's
+centre per frame) beside their `…/glow/f<n>` frames. Carried lights are `prop/<set>.<lamp|torch|
+lantern>/f<n>` with `…/glow/f<n>`, anchored at the grip, listed in the set catalog's `art.props`.
+
+**Checks** (`datavalidate.py`, run by `validate.py` and `setvalidate.py`): the ramp table is well
+formed and its ids stable against the committed one; every page has its packed twin of the same
+size; no coloured pixel without data, no data outside a sprite or on a transparent pixel, ramp
+and step inside the table, every decoded colour equal to the pixel's, normals on the unit sphere
+within half a code, the snow bit only on snow ramps with `nz > 0.55`, heights consistent with
+where each pixel sits on screen for its item's footprint (items, ground, people, carts); the
+shadow page holds every shadow sprite at half size. `datapreview.py` draws preview scenes from
+the packed pages (normals, heights, classes, sun and snow bits, autumn and winter by ramp swap).

@@ -275,6 +275,9 @@
     }
    ],
    "voices": {
+    "parsa.dromedary": [
+     "sfx/world/camel_grumble.wav"
+    ],
     "world.crane": [
      "sfx/world/cranes.wav"
     ],
@@ -283,6 +286,10 @@
     ],
     "world.gull": [
      "sfx/world/gull_call.wav"
+    ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
     ]
    }
   },
@@ -671,6 +678,7 @@
     }
    ],
    "name": "The Levant road",
+   "area": "road",
    "sound": {
     "surfaces": {
      "stone": 1.0
@@ -691,7 +699,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 6
     }
    },
    "look": {
@@ -715,7 +723,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -727,7 +735,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "apr",
@@ -737,9 +745,59 @@
        "aug"
       ]
      }
+    },
+    {
+     "role": "beacon_keeper",
+     "per_item": "world.beacon",
+     "count": 1,
+     "density": "always"
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_cedar",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_cedar",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "leaves": 0.04
@@ -763,7 +821,11 @@
       "sfx/world/step_timber_3.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 12
+    }
    }
   },
   {
@@ -772,10 +834,11 @@
     {
      "actor": "world.gull",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 1.5
     }
    ],
    "name": "The open sea",
+   "area": "sea",
    "sound": {
     "surfaces": {
      "water": 1.0
@@ -952,6 +1015,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -980,7 +1121,41 @@
   ]
  },
  "figures": [],
- "groups": [],
+ "groups": [
+  {
+   "id": "caravan",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.caravan_driver"
+   },
+   "members": [
+    {
+     "actor": "parsa.dromedary",
+     "count": 4
+    },
+    {
+     "actor": "world.donkey",
+     "variant": 1,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "del_arabs",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.del_arabs_lead"
+   },
+   "members": [
+    {
+     "actor": "parsa.del_arabs_bearer",
+     "count": 2
+    }
+   ]
+  }
+ ],
  "chains": [],
  "events": [
   {
@@ -1104,6 +1279,187 @@
    "steps": [],
    "string": "season_turn.winter",
    "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "cedar_hauling",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.logger",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "haul",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "cedar_hauling",
+   "sfx": "sfx/world/chop.wav"
+  },
+  {
+   "id": "levant_harvest",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "may",
+     "jun"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.farmer",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_low",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "levant_harvest",
+   "sfx": "sfx/world/sickle.wav"
+  },
+  {
+   "id": "levant_vintage",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.farmer",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_low",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "levant_vintage",
+   "sfx": "sfx/world/pour.wav"
+  },
+  {
+   "id": "winter_storm",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "14:00",
+     "14:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "winter_storm",
+   "sfx": "sfx/world/thunder_far.wav"
   }
  ],
  "lanes_tokens": [
@@ -1124,6 +1480,60 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "east_med.0",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.034,
+    0.498
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "base:cilician_road_harbour_fishing",
+   "count": 1,
+   "hours": [
+    "20:30",
+    "03:30"
+   ],
+   "when": {
+    "months": [
+     "may",
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "note": "fishing by torchlight on calm summer nights",
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "east_med.1",
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.996
    ]
   },
   {
@@ -1143,6 +1553,166 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "east_med.2",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "cilicia",
+    "sidon"
+   ],
+   "offsets": [
+    0.064,
+    0.497
+   ]
+  },
+  {
+   "actor": "parsa.caravan_driver",
+   "route": {
+    "start": "sidon:sidon_quay",
+    "end": "babylon:etemenanki_court"
+   },
+   "count": 1,
+   "group": "caravan",
+   "note": "a caravan with Phoenician goods (glass, purple cloth, cedar) bound for Babylon",
+   "by_month": "caravan",
+   "id": "east_med.3",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "sidon:sidon_quay",
+    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_240",
+    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_983_225",
+    "base:cilician_road_station_983_212",
+    "base:cilician_road_station_985_201",
+    "base:cilician_road_farm_985_198",
+    "base:cilician_road_station_985_176",
+    "base:cilician_road_station_985_163",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court"
+   ],
+   "offsets": [
+    0.149
+   ]
+  },
+  {
+   "actor": "parsa.del_arabs_lead",
+   "route": {
+    "start": "sidon:sidon_quay",
+    "end": "babylon:etemenanki_court"
+   },
+   "count": 1,
+   "group": "del_arabs",
+   "note": "Arabs with dromedaries bringing frankincense, a gift Herodotus says they gave each year (3.97)",
+   "by_month": "caravan",
+   "id": "east_med.4",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "sidon:sidon_quay",
+    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_240",
+    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_983_225",
+    "base:cilician_road_station_983_212",
+    "base:cilician_road_station_985_201",
+    "base:cilician_road_farm_985_198",
+    "base:cilician_road_station_985_176",
+    "base:cilician_road_station_985_163",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court"
+   ],
+   "offsets": [
+    0.807
+   ]
+  },
+  {
+   "actor": "parsa.p_cart",
+   "route": {
+    "start": "base:cilician_road_980_266",
+    "end": "sidon:sidon_quay"
+   },
+   "count": 1,
+   "carry": "world.goods_logs",
+   "note": "cedar from the mountains carted down to Sidon's ship-sheds",
+   "by_month": "road",
+   "id": "east_med.5",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "sidon:sidon_quay"
+   ],
+   "offsets": [
+    0.262
+   ]
+  },
+  {
+   "actor": "world.phoenician",
+   "lane": "base:levant",
+   "count": 3,
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "note": "Phoenician ships of Sidon along the coast",
+   "by_month": "sailing",
+   "id": "east_med.6",
+   "rest": [
+    "cilicia",
+    "sidon"
+   ],
+   "offsets": [
+    0.08,
+    0.224,
+    0.732
    ]
   }
  ],
@@ -1164,7 +1734,11 @@
   "season_turn.summer": "The cicadas have started.",
   "season_turn.autumn": "The grapes are in: the vintage begins.",
   "season_turn.oct": "The first rain. The whole land smells of dust and earth.",
-  "season_turn.winter": "Snow on the heights."
+  "season_turn.winter": "Snow on the heights.",
+  "cedar_hauling": "Loggers drag cedar trunks down towards the coast.",
+  "levant_harvest": "Harvest on the coastal plain.",
+  "levant_vintage": "The vintage below the mountains.",
+  "winter_storm": "A winter storm over the sea: the ships stay in harbour."
  },
  "journal": [],
  "era": {
@@ -1211,9 +1785,311 @@
    }
   }
  ],
+ "roles": [
+  {
+   "id": "beacon_keeper",
+   "actor": "parsa.guard_spear",
+   "name": "Beacon keeper",
+   "schedule": [
+    {
+     "hours": [
+      "17:00",
+      "06:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.beacon",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "14:00",
+      "17:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        25
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "nightingale",
+   "where": "wood",
+   "hours": [
+    "22:00",
+    "04:00"
+   ],
+   "per_screen": 0,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun"
+   ]
+  },
+  {
+   "kind": "swifts",
+   "where": "land",
+   "hours": [
+    "18:30",
+    "20:30"
+   ],
+   "per_screen": 8,
+   "sprite": "world.swift",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
+  },
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  }
+ ],
  "lights": {
   "version": 1,
   "profiles": {
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
    "signal_watch": {
     "kind": "fire",
     "kelvin": 1800,

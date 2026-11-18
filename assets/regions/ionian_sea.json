@@ -538,10 +538,11 @@
     {
      "actor": "world.gull",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 1.5
     }
    ],
    "name": "The open sea",
+   "area": "sea",
    "sound": {
     "surfaces": {
      "water": 1.0
@@ -701,6 +702,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -829,6 +908,136 @@
     "file": "amb/world/ship.ogg",
     "gain": 0.8
    }
+  },
+  {
+   "id": "dolphins",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "10:00",
+     "10:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "apr",
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.dolphin"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "dolphins",
+   "sfx": "sfx/world/gull.wav"
+  },
+  {
+   "id": "summer_glitter",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "12:00",
+     "12:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/athens.sea_glint"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "summer_glitter",
+   "sfx": "sfx/world/gull_call.wav"
+  },
+  {
+   "id": "autumn_storm",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "14:00",
+     "14:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "oct",
+     "nov"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "autumn_storm",
+   "sfx": "sfx/world/thunder_far.wav"
+  },
+  {
+   "id": "winter_gale",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "11:00",
+     "11:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "winter_gale",
+   "sfx": "sfx/world/gust_front.wav"
   }
  ],
  "lanes_tokens": [],
@@ -838,7 +1047,11 @@
   "season_turn.spring": "The sea opens: the first ships put out.",
   "season_turn.summer": "The air shimmers over the land at noon.",
   "season_turn.autumn": "Autumn storms over the sea.",
-  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
+  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter.",
+  "dolphins": "Dolphins run beside the sea lane.",
+  "summer_glitter": "The summer sea glitters under the noon sun.",
+  "autumn_storm": "Storm clouds over the Ionian sea.",
+  "winter_gale": "A winter gale: no ship crosses now."
  },
  "journal": [],
  "era": {
@@ -854,5 +1067,67 @@
    "jan": "AD 127",
    "feb": "AD 127"
   }
- }
+ },
+ "ambient": [
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  }
+ ]
 }

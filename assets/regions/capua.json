@@ -646,11 +646,42 @@
  "districts": [
   {
    "id": "road",
+   "area": "road",
    "populations": [
     {
-     "actor": "rome.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4,
+     "role": "mourner",
+     "density": "always",
+     "max_per_chunk": 16.0,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "role": "mourner",
+     "density": "always",
+     "max_per_chunk": 12.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 13.28,
      "when": {
       "months": [
        "mar",
@@ -670,9 +701,9 @@
      }
     },
     {
-     "actor": "rome.citizen",
-     "density": "daytime",
-     "max_per_chunk": 3.2,
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 10.62,
      "when": {
       "months": [
        "dec",
@@ -683,80 +714,6 @@
      "variants": {
       "cold": "climate",
       "hot": "climate"
-     }
-    },
-    {
-     "actor": "rome.carter",
-     "density": "daytime",
-     "max_per_chunk": 3,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "rome.carter",
-     "density": "daytime",
-     "max_per_chunk": 2.4,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "rome.freedman",
-     "density": "daytime",
-     "max_per_chunk": 2,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "rome.freedman",
-     "density": "daytime",
-     "max_per_chunk": 1.6,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
      }
     }
    ],
@@ -782,17 +739,126 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.latin",
-     "full": 12
+     "full": 6
     }
    }
   },
   {
    "id": "town",
+   "area": "town",
    "populations": [
     {
-     "actor": "rome.carter",
-     "density": "daytime",
-     "max_per_chunk": 4,
+     "role": "station_hand",
+     "density": "always",
+     "max_per_chunk": 10.67,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "station_hand",
+     "density": "always",
+     "max_per_chunk": 8.54,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "shopkeeper",
+     "density": "always",
+     "max_per_chunk": 16.0,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "shopkeeper",
+     "density": "always",
+     "max_per_chunk": 12.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "perfumer",
+     "density": "always",
+     "max_per_chunk": 5.33,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "perfumer",
+     "density": "always",
+     "max_per_chunk": 4.26,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 53.01,
      "when": {
       "months": [
        "mar",
@@ -812,9 +878,9 @@
      }
     },
     {
-     "actor": "rome.carter",
-     "density": "daytime",
-     "max_per_chunk": 3.2,
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 42.41,
      "when": {
       "months": [
        "dec",
@@ -828,9 +894,9 @@
      }
     },
     {
-     "actor": "rome.freedman",
-     "density": "daytime",
-     "max_per_chunk": 3,
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 10.67,
      "when": {
       "months": [
        "mar",
@@ -843,60 +909,18 @@
        "oct",
        "nov"
       ]
-     },
-     "variants": {
-      "cold": "climate"
      }
     },
     {
-     "actor": "rome.freedman",
-     "density": "daytime",
-     "max_per_chunk": 2.4,
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 8.54,
      "when": {
       "months": [
        "dec",
        "jan",
        "feb"
       ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "rome.working_woman",
-     "density": "daytime",
-     "max_per_chunk": 2,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "rome.working_woman",
-     "density": "daytime",
-     "max_per_chunk": 1.6,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
      }
     }
    ],
@@ -922,7 +946,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.latin",
-     "full": 12
+     "full": 20
     }
    }
   }
@@ -1058,6 +1082,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -1085,10 +1187,1086 @@
    0
   ]
  },
+ "roles": [
+  {
+   "id": "station_hand",
+   "actor": "rome.freedman",
+   "name": "Hand at the mutatio",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "21:00"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.mutatio",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "shopkeeper",
+   "actor": "rome.freedman",
+   "name": "Shopkeeper",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.r_insula_low",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "perfumer",
+   "actor": "rome.working_woman",
+   "name": "Perfume seller of the Seplasia",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.r_insula_low",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "card": "perfumer",
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "mourner",
+   "actor": "rome.matron",
+   "name": "Visitor at the tombs",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.r_tomb",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "pray",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "pray",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "townsfolk",
+   "actor": "rome.citizen",
+   "name": "Townsfolk on their errands",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:30"
+     ],
+     "routine": "errands"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:30"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "errands": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "appia_capua_w"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "talk",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "go": {
+        "node": "capua_station"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "talk",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "go": {
+        "node": "appia_capua_e"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "talk",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "water_carrier",
+   "actor": "rome.working_woman",
+   "name": "Fetching water",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "09:30"
+     ],
+     "routine": "water"
+    },
+    {
+     "hours": [
+      "16:30",
+      "19:00"
+     ],
+     "routine": "water"
+    }
+   ],
+   "routines": {
+    "water": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "carry_idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/pour.wav"
+   }
+  },
+  {
+   "id": "child",
+   "actor": "rome.child",
+   "name": "Children at play",
+   "schedule": [
+    {
+     "hours": [
+      "08:00",
+      "12:00"
+     ],
+     "routine": "play"
+    },
+    {
+     "hours": [
+      "15:00",
+      "18:30"
+     ],
+     "routine": "play"
+    }
+   ],
+   "routines": {
+    "play": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "run",
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "night_watch",
+   "actor": "rome.vigil",
+   "name": "The night watch",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "06:00"
+     ],
+     "routine": "round"
+    }
+   ],
+   "routines": {
+    "round": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "appia_capua_w"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "go": {
+        "node": "capua_station"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "go": {
+        "node": "appia_capua_e"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_lamp",
+    "prop": "lantern"
+   }
+  },
+  {
+   "id": "wine_porter",
+   "actor": "rome.citizen",
+   "name": "Wine porter",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/amphora.wav"
+   }
+  }
+ ],
  "figures": [],
  "groups": [],
- "chains": [],
+ "chains": [
+  {
+   "id": "capua_wine",
+   "name": "Campanian wine for travellers",
+   "period": 200,
+   "hours": [
+    "06:00",
+    "18:00"
+   ],
+   "stages": [
+    {
+     "slot": "rome.r_insula_low.beside",
+     "makes": "rome.goods_wine_amphora",
+     "by": "shopkeeper",
+     "label": "an amphora of Campanian wine from the shop"
+    },
+    {
+     "carry": "rome.goods_wine_amphora",
+     "from": "rome.r_insula_low.beside",
+     "to": "rome.mutatio.beside",
+     "by": "wine_porter",
+     "label": "carried to the posting station"
+    },
+    {
+     "slot": "rome.mutatio.beside",
+     "sink": "rome.goods_wine_amphora",
+     "by": "station_hand",
+     "label": "poured for travellers"
+    }
+   ]
+  }
+ ],
  "events": [
+  {
+   "id": "market_day",
+   "rarity": "common",
+   "size": "medium",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:30",
+     "08:00"
+    ],
+    "chance": 1.0,
+    "days": {
+     "every": 4,
+     "offset": 2
+    }
+   },
+   "duration": [
+    200,
+    260
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 6
+    },
+    {
+     "actor": "rome.working_woman",
+     "count": 4
+    },
+    {
+     "actor": "world.merchant",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "appia_capua_w"
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    },
+    {
+     "wander": {
+      "radius": 5
+     },
+     "dur": [
+      40,
+      60
+     ]
+    }
+   ],
+   "sfx": "sfx/world/vendor.wav",
+   "string": "market_day",
+   "zone": "town",
+   "ambience": {
+    "file": "amb/world/crowd_latin_1.ogg",
+    "gain": 0.5
+   }
+  },
+  {
+   "id": "market_rain",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "weather",
+    "kind": "rain",
+    "days": {
+     "every": 4,
+     "offset": 2
+    }
+   },
+   "duration": [
+    60,
+    90
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "appia_capua_w"
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      30,
+      50
+     ]
+    }
+   ],
+   "ambience": {
+    "file": "amb/world/rain_roof_1.ogg",
+    "gain": 0.6
+   },
+   "string": "market_rain",
+   "zone": "town"
+  },
+  {
+   "id": "lamps_lit",
+   "rarity": "daily",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "19:00",
+     "19:30"
+    ],
+    "chance": 1.0
+   },
+   "duration": [
+    60,
+    60
+   ],
+   "cast": [
+    {
+     "role": "night_watch",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "each": {
+      "item": "rome.r_lamp",
+      "within": 64
+     },
+     "state": "lit",
+     "every": 4
+    },
+    {
+     "each": {
+      "item": "rome.r_brazier",
+      "within": 64
+     },
+     "state": "lit",
+     "every": 4
+    }
+   ],
+   "sfx": "sfx/world/lamp.wav",
+   "string": "lamps_lit",
+   "zone": "town",
+   "carries": {
+    "light": "carried_lamp",
+    "prop": "lamp"
+   }
+  },
+  {
+   "id": "wedding",
+   "rarity": "uncommon",
+   "size": "medium",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.25,
+    "months": [
+     "jun"
+    ]
+   },
+   "duration": [
+    150,
+    200
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 6
+    },
+    {
+     "actor": "rome.working_woman",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      40,
+      60
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/wedding_song.wav",
+   "string": "wedding",
+   "zone": "town",
+   "ambience": {
+    "file": "amb/world/crowd_latin_1.ogg",
+    "gain": 0.8
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "ploughing_out",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "oct",
+     "nov"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 3
+    },
+    {
+     "actor": "rome.ox",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/step_earth_1.wav",
+   "string": "ploughing_out",
+   "zone": "town"
+  },
+  {
+   "id": "evening_cool",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "18:30",
+     "19:00"
+    ],
+    "chance": 0.6,
+    "months": [
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "talk",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/vendor.wav",
+   "string": "evening_cool",
+   "zone": "town"
+  },
+  {
+   "id": "vintage",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 5
+    },
+    {
+     "actor": "rome.working_woman",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/pour.wav",
+   "string": "vintage",
+   "zone": "town"
+  },
+  {
+   "id": "saturnalia",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "dec"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 6
+    },
+    {
+     "actor": "rome.working_woman",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "talk",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/rome/tibia.wav",
+   "string": "saturnalia",
+   "zone": "town",
+   "ambience": {
+    "file": "amb/world/crowd_latin_3.ogg",
+    "gain": 0.8
+   }
+  },
   {
    "id": "turn_spring_swallows_return",
    "rarity": "festival",
@@ -1194,20 +2372,36 @@
  "zones": [],
  "cards": {
   "capua": {
+   "kind": "landmark",
    "title": "Capua",
    "epithet": "The city of Campania",
    "text": "The great city of the Campanian plain, on the Via Appia. Its amphitheatre was one of the largest in Italy; an inscription records that Hadrian restored it. The city's monuments are not drawn here: the stop shows the road between houses, a posting station and tombs made of common Roman pieces."
+  },
+  "perfumer": {
+   "kind": "role",
+   "title": "Unguentaria",
+   "epithet": "",
+   "text": "Capua's Seplasia was a whole street of perfume sellers, famous across Italy for their scented oils."
   }
  },
  "strings": {
   "first_visit": "Capua: the Via Appia runs between shops and tombs past a posting station.",
+  "market_day": "Market day: stalls, voices and goods from the country around.",
+  "market_rain": "Rain: the stallholders cover their goods and wait under the eaves.",
+  "lamps_lit": "Dusk: the lamps are lit along the street.",
+  "wedding": "A wedding: the bride is led to her new home with torches and songs.",
+  "ploughing_out": "The plough teams go out at first light.",
+  "evening_cool": "Neighbours sit out in the evening cool.",
+  "vintage": "The vintage: baskets of grapes go to the vats.",
+  "saturnalia": "The Saturnalia: gifts, games and shouts of 'Io Saturnalia!'",
   "season_turn.spring": "The swallows are back under the eaves.",
   "season_turn.summer": "The cicadas have started.",
   "season_turn.autumn": "The grapes are in: the vintage begins.",
   "season_turn.winter": "Braziers glow in the doorways against the cold."
  },
  "journal": [
-  "landmark:*"
+  "landmark:*",
+  "chain:*"
  ],
  "place": {
   "node": "capua:capua_station",
@@ -1228,6 +2422,134 @@
   }
  },
  "festivals": [],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "town",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "fireflies",
+   "where": "land",
+   "hours": [
+    "21:00",
+    "01:00"
+   ],
+   "per_screen": 6,
+   "sprite": "fx/sparkle",
+   "months": [
+    "jun"
+   ]
+  },
+  {
+   "kind": "nightingale",
+   "where": "wood",
+   "hours": [
+    "22:00",
+    "04:00"
+   ],
+   "per_screen": 0,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun"
+   ]
+  },
+  {
+   "kind": "swifts",
+   "where": "town",
+   "hours": [
+    "18:30",
+    "20:30"
+   ],
+   "per_screen": 8,
+   "sprite": "world.swift",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "starlings",
+   "where": "land",
+   "hours": [
+    "17:00",
+    "18:30"
+   ],
+   "per_screen": 40,
+   "sprite": null,
+   "months": [
+    "oct",
+    "nov",
+    "dec",
+    "jan",
+    "feb"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
+  }
+ ],
  "lights": {
   "version": 1,
   "profiles": {
@@ -1255,6 +2577,50 @@
     "festivals": {
      "*": 1.5
     }
+   },
+   "carried_lamp": {
+    "kind": "lantern",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
    },
    "niche_lamp": {
     "kind": "lamp",

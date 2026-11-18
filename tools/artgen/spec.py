@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,9 @@ CATALOG = ROOT / "assets" / "catalog.json"
 ART_LIST = Path(__file__).with_name("art_list.json")
 ASSETS = ROOT / "assets"
 PREVIEWS = ROOT / "out" / "artgen"
+# Render workers: at most three beside the other agents' work (ARTGEN_JOBS overrides); the
+# output never depends on it.
+WORKERS = max(1, int(os.environ.get("ARTGEN_JOBS", min(3, max(1, (os.cpu_count() or 2) // 2)))))
 # Models are authored in design units: 16 per tile edge, whatever the output resolution.
 DESIGN_TILE = 16
 

@@ -35,7 +35,7 @@
     {"id": "corner", "file": "layers/corner.lcw", "graph": "layers/corner.graph.json"}
   ],
   "regions": [
-    {"id": "corner", "set": "home", "kind": "home", "time": "timeless"},
+    {"id": "corner", "set": "home", "kind": "home", "time": "timeless", "life": "regions/corner.json"},
     {"id": "rome", "set": "rome", "kind": "city", "time": "rome", "life": "regions/rome.json"},
     {"id": "athens", "set": "athens", "kind": "city", "time": "athens", "life": "regions/athens.json"},
     {"id": "parsa", "set": "parsa", "kind": "city", "time": "parsa", "life": "regions/parsa.json"},

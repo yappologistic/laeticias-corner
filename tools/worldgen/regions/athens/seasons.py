@@ -315,8 +315,8 @@ def apply(doc: dict) -> dict:
         {"day": 4, "label": "The Panathenaia (summer day 2, July)"},
         {"day": 5, "label": "An ordinary summer day (August)"},
         {"day": 1, "label": "The City Dionysia (spring day 2, April)"},
-        {"day": 6, "label": "The Mysteries and an assembly (autumn day 1, September)"},
-        {"day": 8, "label": "A November day: ploughing and the olive harvest"},
-        {"day": 10, "label": "Assembly day in January: the Lenaia, olives and the ship sheds"},
+        {"day": 6, "label": "The Mysteries (autumn day 1, September)"},
+        {"day": 8, "label": "Assembly day in November: ploughing and the olive harvest"},
+        {"day": 10, "label": "January: the Lenaia, olives and the ship sheds"},
     ]
     return doc

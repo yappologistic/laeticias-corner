@@ -261,6 +261,10 @@
     "world.crane": [
      "sfx/world/cranes.wav"
     ],
+    "world.goat": [
+     "sfx/world/goat_1.wav",
+     "sfx/world/goat_2.wav"
+    ],
     "world.stork": [
      "sfx/world/stork_clatter.wav"
     ]
@@ -586,7 +590,7 @@
     {
      "actor": "world.stork",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -601,7 +605,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -613,7 +617,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "apr",
@@ -623,9 +627,45 @@
        "aug"
       ]
      }
+    },
+    {
+     "role": "olive_picker",
+     "per_item": "athens.t_olive",
+     "count": 0.02,
+     "density": "always",
+     "when": {
+      "months": [
+       "nov",
+       "dec"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "goatherd",
+     "density": "daytime",
+     "max_per_chunk": 0.25,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.goat",
+     "density": "daytime",
+     "max_per_chunk": 1.2
+    },
+    {
+     "role": "owl",
+     "density": "night",
+     "max_per_chunk": 0.5
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "leaves": 0.08,
@@ -649,7 +689,11 @@
       "sfx/world/hoof_earth_2.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 12
+    }
    },
    "look": {
     "reflect": true
@@ -787,6 +831,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -917,16 +1039,255 @@
     "file": "amb/world/brazier.ogg",
     "gain": 0.6
    }
+  },
+  {
+   "id": "asian_meadow",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.crane",
+     "count": 8
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "move",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "asian_meadow",
+   "sfx": "sfx/world/cranes.wav"
+  },
+  {
+   "id": "ionian_harvest",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.farmer",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_low",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "ionian_harvest",
+   "sfx": "sfx/world/sickle.wav"
+  },
+  {
+   "id": "ionian_vintage",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.farmer",
+     "count": 3
+    },
+    {
+     "actor": "athens.woman",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "ionian_vintage",
+   "sfx": "sfx/world/pour.wav"
+  },
+  {
+   "id": "ionian_olives",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "nov",
+     "dec"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.farmer",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_low",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "ionian_olives",
+   "sfx": "sfx/world/sickle.wav",
+   "ambience": {
+    "file": "amb/world/press.ogg",
+    "gain": 0.8
+   }
   }
  ],
- "lanes_tokens": [],
+ "lanes_tokens": [
+  {
+   "actor": "athens.ionian",
+   "route": {
+    "start": "ephesus:ephesus_e",
+    "end": "base:ionian_road_856_228"
+   },
+   "count": 2,
+   "note": "Ephesians on the road up the Kaystros valley; they turn back in the haze of the seam, where the Greek years end",
+   "by_month": "road",
+   "id": "ionia_lydia.0",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "ephesus:ephesus_e",
+    "base:ionian_road_856_228"
+   ],
+   "offsets": [
+    0.966,
+    0.543
+   ]
+  }
+ ],
  "zones": [],
  "cards": {},
  "strings": {
   "season_turn.spring": "The swallows are back under the eaves.",
   "season_turn.summer": "The cicadas have started.",
   "season_turn.autumn": "The grapes are in: the vintage begins.",
-  "season_turn.winter": "Braziers glow in the doorways against the cold."
+  "season_turn.winter": "Braziers glow in the doorways against the cold.",
+  "asian_meadow": "Cranes settle on the Asian meadow by the Kaystros, as in Homer.",
+  "ionian_harvest": "Harvest in the Kaystros valley.",
+  "ionian_vintage": "The vintage in the Ionian hills.",
+  "ionian_olives": "Olive picking on the terraces."
  },
  "journal": [],
  "era": {
@@ -1001,6 +1362,284 @@
      0.92
     ]
    }
+  }
+ ],
+ "roles": [
+  {
+   "id": "olive_picker",
+   "actor": "athens.farmer",
+   "name": "Olive picker",
+   "schedule": [
+    {
+     "hours": [
+      "07:00",
+      "12:00"
+     ],
+     "routine": "pick"
+    },
+    {
+     "hours": [
+      "13:30",
+      "17:00"
+     ],
+     "routine": "pick"
+    }
+   ],
+   "routines": {
+    "pick": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "athens.t_olive",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/world/press.ogg"
+   }
+  },
+  {
+   "id": "goatherd",
+   "actor": "athens.herder",
+   "name": "Goatherd on the hills",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "19:00"
+     ],
+     "routine": "herd"
+    }
+   ],
+   "routines": {
+    "herd": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "owl",
+   "actor": "athens.owl",
+   "name": "Little owl",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "hunt"
+    }
+   ],
+   "routines": {
+    "hunt": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        90
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": "athens.owl",
+   "sound": "sfx/athens/owl.wav"
+  },
+  {
+   "kind": "fireflies",
+   "where": "land",
+   "hours": [
+    "21:00",
+    "01:00"
+   ],
+   "per_screen": 6,
+   "sprite": "fx/sparkle",
+   "months": [
+    "jun"
+   ]
+  },
+  {
+   "kind": "nightingale",
+   "where": "wood",
+   "hours": [
+    "22:00",
+    "04:00"
+   ],
+   "per_screen": 0,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun"
+   ]
+  },
+  {
+   "kind": "swifts",
+   "where": "land",
+   "hours": [
+    "18:30",
+    "20:30"
+   ],
+   "per_screen": 8,
+   "sprite": "world.swift",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "starlings",
+   "where": "land",
+   "hours": [
+    "17:00",
+    "18:30"
+   ],
+   "per_screen": 40,
+   "sprite": null,
+   "months": [
+    "oct",
+    "nov",
+    "dec",
+    "jan",
+    "feb"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
   }
  ]
 }

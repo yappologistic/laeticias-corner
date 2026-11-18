@@ -27,6 +27,11 @@ BEASTS = {
     "world.dog": Beast(5.6, 4.6, 0.95, 1.8, 0.6, 0.8, coat="wool", belly="cream", tail="bushy", leg=0.3),
     "world.gazelle": Beast(5.8, 5.6, 1.0, 2.4, 0.75, 0.75, coat="ochre", belly="cream", horns="oryx", tail="thin",
                            leg=0.24),
+    # Woods of Thrace, Latium and the Apennines: a red deer stag, and a dark bristled boar.
+    "world.deer": Beast(7.2, 6.8, 1.15, 2.6, 0.8, 0.85, coat="cedar", belly="cream", horns="antler", tail="thin",
+                        leg=0.26),
+    "world.boar": Beast(6.0, 4.8, 1.35, 1.2, 0.15, 1.1, coat="bark", belly="bark", mane="gloss", tail="thin",
+                        leg=0.36),
 }
 VARIANT_COAT = {("world.goat", 1): replace(BEASTS["world.goat"], coat="cedar", belly="cream", mane="cream")}
 FRAMES = CRITTER_FRAMES
@@ -92,8 +97,23 @@ def _bird(kind, anim, frame, frames, k):
                             head="ochre", glide=True),
         "world.swift": dict(size=0.6, body="ink", wing="ink", tip="ink", beak="ink", legs="ink", span=7.0, sickle=True),
         "world.raven": dict(size=1.0, body="gloss", wing="gloss", tip="gloss", beak="gloss", legs="gloss", span=10.0),
+        # The tawny owl: round-headed, perching upright, out at night.
+        "world.owl": dict(size=1.25, body="wood_grey", wing="cedar", tip="ink", beak="ochre", legs="ochre", span=10.0,
+                          head="wood_light", head_r=1.5, glide=True, upright=True),
+        "world.heron": dict(size=1.35, body="stone", wing="stone", tip="ink", beak="ochre", legs="ochre", span=13.0,
+                            neck=2.8, leg_len=4.8, cap="ink"),
+        "world.bat": dict(size=0.5, body="gloss", wing="felt", tip="gloss", beak="gloss", legs="gloss", span=7.0),
     }[kind]
     s = spec["size"]
+    if spec.get("upright") and not fly:     # perched upright: the owl on a branch or a wall
+        bd.blob((0, 0, 2.2 * s), (1.3 * s, 1.2 * s, 2.0 * s), spec["body"], 0.1)
+        for side in (1, -1):
+            bd.blob((-0.3 * s, side * 1.0 * s, 2.0 * s), (1.0 * s, 0.4 * s, 1.7 * s), spec["wing"], 0.0)
+        bd.blob((0.2 * s, 0, 4.6 * s), (1.2 * s, 1.2 * s, 1.0 * s), spec["head"], 0.2)
+        for side in (1, -1):
+            bd.points([(1.2 * s, side * 0.5 * s, 4.8 * s)], "ink")
+        bd.points([(1.4 * s, 0, 4.4 * s)], spec["beak"])
+        return m
     z = 1.0 if fly else (spec.get("leg_len", 1.6) * s)
     bd.blob((0, 0, z + 1.2 * s), (2.6 * s, 1.1 * s, 1.1 * s), spec["body"], 0.1)
     hx = 2.6 * s
@@ -104,7 +124,8 @@ def _bird(kind, anim, frame, frames, k):
         head = (hx + (neck * 0.7 if fly else 0.4 * s), 0, z + 1.6 * s + (0 if fly else neck))
     if neck:
         bd.limb((hx * 0.8, 0, z + 1.4 * s), head, 0.45 * s, spec["body"], 0.1)
-    bd.blob(head, (0.9 * s, 0.75 * s, 0.75 * s), spec.get("head", spec["body"]), 0.2)
+    hr = spec.get("head_r", 1.0)
+    bd.blob(head, (0.9 * s * hr, 0.75 * s * hr, 0.75 * s * hr), spec.get("head", spec["body"]), 0.2)
     if spec.get("cap"):
         bd.blob((head[0], 0, head[2] + 0.5 * s), (0.4 * s, 0.4 * s, 0.25 * s), spec["cap"], 0.2)
     bl = 1.6 * s if kind in ("world.stork", "world.crane") else 0.9 * s
@@ -133,7 +154,31 @@ def _bird(kind, anim, frame, frames, k):
     return m
 
 
-BIRDS = {"world.gull", "world.stork", "world.crane", "world.eagle", "world.swift", "world.raven"}
+BIRDS = {"world.gull", "world.stork", "world.crane", "world.eagle", "world.swift", "world.raven", "world.owl",
+         "world.heron", "world.bat"}
+
+
+def dolphin(frame, frames, k):
+    """A dolphin breaking the surface: the body rolls along an arc out of the water and back,
+    only what is above the surface drawn (the grid starts at the water line)."""
+    m = Model.empty(-14, 14, -6, 6, 0, 12, k=k)
+    m.hover = True
+    bd = Body(m)
+    t = frame / frames
+    pts = []
+    for i in range(9):          # nose (i = 0) to tail, the arc travelling forward with t
+        u = t * 1.6 - 0.3 - i * 0.11
+        pts.append((9.0 - i * 2.2, 0.0, 6.5 * math.sin(math.pi * min(max(u, 0.0), 1.0)) - 2.5))
+    for i, (a, b) in enumerate(zip(pts, pts[1:])):
+        r = 1.5 - abs(i - 2.5) * 0.22
+        bd.limb(a, b, max(r, 0.45), "granite", 0.1)
+        bd.limb((a[0], 0, a[2] - r * 0.5), (b[0], 0, b[2] - r * 0.5), max(r * 0.6, 0.3), "cream", 0.1)
+    fin = pts[3]
+    bd.limb(fin, (fin[0] - 1.4, 0, fin[2] + 2.2), 0.45, "granite", 0.0)
+    tail = pts[-1]
+    for side in (1, -1):
+        bd.limb(tail, (tail[0] - 1.2, side * 1.8, tail[2] + 0.3), 0.4, "granite", 0.0)
+    return m
 
 
 # ---------------------------------------------------------------- boats
@@ -306,13 +351,15 @@ def ship_model(kind, anim, frame, k):
 
 
 SHIPS = {"world.fishing_boat", "world.quffa", "world.reed_boat", "world.kelek", "world.phoenician"}
-KINDS = set(BEASTS) | BIRDS | SHIPS
+KINDS = set(BEASTS) | BIRDS | SHIPS | {"world.dolphin"}
 
 
 def sprite(kind, variant, anim, facing, frame, k):
     if kind in SHIPS:
         return _render(ship_model(kind, anim, frame, k), facing)
     n = FRAMES[anim]
+    if kind == "world.dolphin":
+        return _render(dolphin(frame, n, k), facing)
     if kind in BIRDS:
         return _render(_bird(kind, anim, frame, n, k), facing)
     if kind == "world.dog" and anim == "sleep":

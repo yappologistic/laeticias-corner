@@ -19,7 +19,7 @@ class Pages:
     def __init__(self, out_dir: Path, sets, k, home=None):
         self.k = k
         self.rects, self.images, self.cache = {}, {}, {}
-        files = [p for s in sets for p in sorted(Path(out_dir).glob(f"{s}.[0-9]*.json"))]
+        files = [p for s in sets for p in sorted(Path(out_dir).glob(f"{s}.[0-9]*.json")) if len(p.name.split(".")) == 3]
         if home:
             files.append(Path(home))
         for f in files:

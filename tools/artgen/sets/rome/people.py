@@ -11,7 +11,7 @@ nobody in purple who should not be, no thumbs, no gladiators outside the arena."
 
 from dataclasses import replace
 
-from rig import Dress, carry_table, person_sprite
+from rig import Dress, carry_table, person_sprite, trade
 from sets.rome.animals import horse_mount
 
 D = Dress
@@ -168,6 +168,13 @@ WALKERS = {
         D(skin=OLIVE, hair="hair_black", hair_style="curls", beard="full", beard_mat="cedar", garment="long_tunic",
           colour="wool", mantle="linen", feet="shoes", hand_l="basket", pattern_mat="eblue")]),
 }
+
+# Each trade its own colour, so a potter reads apart from a smith at 1x.
+TRADES = {"builder": "ochre", "docker": "eblue", "hauler": "malachite", "carter": "rust", "baker": "saffron",
+          "fuller": "cinnabar", "smith": "lapis", "farmer": "terracotta"}
+for _kind, _accent in TRADES.items():
+    _title, _anims, _dresses = WALKERS[_kind]
+    WALKERS[_kind] = (_title, _anims, trade(_dresses, _accent))
 
 # ---- named figures (rome.md §4.1, §4.2): one look each, respectful and individual ----
 FIGURE_ANIMS = {

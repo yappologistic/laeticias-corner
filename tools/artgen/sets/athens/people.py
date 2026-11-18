@@ -9,7 +9,7 @@ riders, women outdoors at fountains, markets and festivals, no veil over a face.
 
 from dataclasses import replace
 
-from rig import Dress, carry_table, person_sprite
+from rig import Dress, carry_table, person_sprite, trade
 from sets.athens.animals import horse_mount
 
 D = Dress
@@ -175,6 +175,13 @@ WALKERS = {
         D(skin=TAN, hair="gloss", hair_style="bunch", beard="full", garment="tunic", colour="eblue", trousers="saffron",
           coat="cinnabar", belt="gold", head="round_cap", head_mat="wool", feet="boots", jewels=("torque",))]),
 }
+
+# Each trade its own colour, so a potter reads apart from a smith at 1x.
+TRADES = {"potter": "terracotta", "painter": "eblue", "smith": "rust", "mason": "ochre",
+          "sculptor": "cinnabar", "farmer": "malachite", "herder": "saffron", "rower": "lapis"}
+for _kind, _accent in TRADES.items():
+    _title, _anims, _dresses = WALKERS[_kind]
+    WALKERS[_kind] = (_title, _anims, trade(_dresses, _accent))
 
 # ---- named figures (athens.md §4.1, §4.2); one look each, respectful and individual ----
 FIGURE_ANIMS = {"pericles": _a(talk=4, gesture=4), "aspasia": _a(talk=4, sit=2), "socrates": _a(talk=4, sit=2),

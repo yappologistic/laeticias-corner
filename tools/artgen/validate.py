@@ -102,7 +102,9 @@ def validate(build: spec.Build, allow_extra=False) -> list[str]:
 
 
 def main(build: spec.Build, allow_extra=False) -> int:
+    import datavalidate
     errors = validate(build, allow_extra)
+    errors += datavalidate.check("home", build.out / "atlas")
     for e in errors:
         print("atlas:", e, file=sys.stderr)
     n = len(json.loads(build.atlas_json.read_text())["sprites"])

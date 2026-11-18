@@ -7,8 +7,7 @@ import re
 import numpy as np
 
 from arch import ellipsoid, fill, revolve, rod, slab
-from pack import Sprite
-from render import render_base
+from render import render_sprite
 from voxel import Model
 
 OFFSETS = ((0.0, 0.0, 0.0), (0.0, 4.6, 0.0), (2.2, 2.3, 3.0))
@@ -126,5 +125,4 @@ def sprite(key, k):
     m = Model.empty(-12, 12, -12, 12, 0, 16, k=k)
     for i, (dx, dy, dz) in enumerate(OFFSETS[:n]):
         _one(m, name, dx, dy, dz, i)
-    rgba, _g, ox, oy = render_base(m)
-    return Sprite(rgba, ox, oy)
+    return render_sprite(m)

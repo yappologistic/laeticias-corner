@@ -215,6 +215,16 @@
      ]
     }
    ],
+   "voices": {
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ],
+    "world.sheep": [
+     "sfx/world/sheep_1.wav",
+     "sfx/world/sheep_2.wav"
+    ]
+   },
    "seam": {
     "bed": "amb/world/seam.ogg",
     "chime": "sfx/world/seam.wav",
@@ -521,7 +531,93 @@
    }
   }
  },
- "districts": [],
+ "districts": [
+  {
+   "id": "dell",
+   "populations": [
+    {
+     "actor": "world.sheep",
+     "density": "herd",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.6
+    }
+   ],
+   "area": "wild",
+   "name": "Dell",
+   "sound": {
+    "surfaces": {},
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   }
+  },
+  {
+   "id": "mist",
+   "populations": [
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.6
+    }
+   ],
+   "area": "wild",
+   "name": "Mist",
+   "sound": {
+    "surfaces": {
+     "leaves": 0.04,
+     "water": 0.31
+    },
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "water": {
+     "family": "river",
+     "speed": "slow"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "nature": {
+     "dawn": "amb/world/dawn_river.ogg",
+     "dusk": "amb/world/dusk_water.ogg",
+     "night": "amb/world/night_water.ogg"
+    }
+   },
+   "look": {
+    "reflect": true
+   }
+  }
+ ],
  "densities": {
   "road_day": [
    0,
@@ -653,6 +749,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -683,11 +857,145 @@
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "dell_mist",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "05:00",
+     "05:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr",
+     "may",
+     "sep",
+     "oct",
+     "nov"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "weather/seam_mist"
+     }
+    }
+   ],
+   "zone": "dell",
+   "string": "dell_mist",
+   "sfx": "sfx/world/seam.wav",
+   "ambience": {
+    "file": "amb/world/fog.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "swifts_over_the_dell",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "19:00",
+     "19:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.swift",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "move",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "dell",
+   "string": "swifts_over_the_dell",
+   "sfx": "sfx/world/swifts.wav"
+  },
+  {
+   "id": "frost_mist",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "weather/seam_mist"
+     }
+    }
+   ],
+   "zone": "dell",
+   "string": "frost_mist",
+   "sfx": "sfx/world/seam.wav",
+   "ambience": {
+    "file": "amb/world/fog.ogg",
+    "gain": 0.8
+   }
+  }
+ ],
  "lanes_tokens": [],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "dell_mist": "Mist lies in the dell at dawn.",
+  "swifts_over_the_dell": "Swifts scream over the dell at dusk.",
+  "frost_mist": "A frosty mist hangs over the stile."
+ },
  "journal": [],
  "water": [
   {
@@ -725,6 +1033,130 @@
     "rim": true,
     "note": "rim ice on winter day 2; the middle stays open for the ducks"
    }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "fireflies",
+   "where": "land",
+   "hours": [
+    "21:00",
+    "01:00"
+   ],
+   "per_screen": 6,
+   "sprite": "fx/sparkle",
+   "months": [
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
   }
  ]
 }

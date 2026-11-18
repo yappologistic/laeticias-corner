@@ -263,6 +263,10 @@
     "world.donkey": [
      "sfx/world/donkey.wav"
     ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ],
     "world.stork": [
      "sfx/world/stork_clatter.wav"
     ]
@@ -654,6 +658,7 @@
     }
    ],
    "name": "The Royal Road",
+   "area": "road",
    "sound": {
     "surfaces": {
      "stone": 1.0
@@ -674,7 +679,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 6
     }
    },
    "look": {
@@ -698,7 +703,7 @@
     {
      "actor": "world.stork",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -713,7 +718,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 2,
+     "max_per_chunk": 1,
      "when": {
       "months": [
        "dec",
@@ -725,7 +730,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -738,9 +743,79 @@
        "oct"
       ]
      }
+    },
+    {
+     "role": "station_keeper",
+     "per_item": "world.royal_station",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "station_guest",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "relay_animal",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always"
+    },
+    {
+     "role": "reed_cutter",
+     "per_item": "world.t_reeds",
+     "count": 0.02,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "palm_climber",
+     "per_item": "parsa.t_date",
+     "count": 0.015,
+     "density": "always",
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "leaves": 0.12,
@@ -769,7 +844,11 @@
       "sfx/world/step_timber_3.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 12
+    }
    },
    "look": {
     "reflect": true
@@ -906,6 +985,84 @@
    0.5,
    0.5,
    0.5
+  ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
   ],
   "daytime_hot": [
    0,
@@ -1126,9 +1283,240 @@
     "file": "amb/rome/treadwheel.ogg",
     "gain": 0.8
    }
+  },
+  {
+   "id": "palm_pollination",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.gardener",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_high",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "palm_pollination",
+   "sfx": "sfx/world/rope.wav"
+  },
+  {
+   "id": "barley_harvest",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "apr",
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.farmer",
+     "count": 5
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_low",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "barley_harvest",
+   "sfx": "sfx/world/sickle.wav"
+  },
+  {
+   "id": "canal_clearing",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "05:30",
+     "06:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 5
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "haul",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "canal_clearing",
+   "sfx": "sfx/world/chop.wav"
+  },
+  {
+   "id": "seed_ploughs",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "nov",
+     "dec"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.farmer",
+     "count": 2
+    },
+    {
+     "actor": "world.ox",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "seed_ploughs",
+   "sfx": "sfx/world/step_earth_1.wav"
   }
  ],
- "lanes_tokens": [],
+ "lanes_tokens": [
+  {
+   "actor": "world.quffa",
+   "lane": "base:euphrates_boats",
+   "count": 2,
+   "carry": "world.goods_amphorae",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "note": "round leather boats bringing wine down to Babylon (Herodotus 1.194)",
+   "by_month": "barge",
+   "id": "mesopotamia.0",
+   "rest": [
+    "crossing",
+    "babylon"
+   ],
+   "offsets": [
+    0.951,
+    0.641
+   ]
+  }
+ ],
  "zones": [],
  "cards": {},
  "strings": {
@@ -1137,7 +1525,11 @@
   "season_turn.apr": "The river is rising over the low fields.",
   "season_turn.summer": "The air shimmers over the land at noon.",
   "season_turn.autumn": "Climbers in the palms: the date harvest.",
-  "season_turn.winter": "Cranes call high overhead, flying in a long V."
+  "season_turn.winter": "Cranes call high overhead, flying in a long V.",
+  "palm_pollination": "Climbers in the palms dust the female flowers.",
+  "barley_harvest": "The barley harvest on the alluvium.",
+  "canal_clearing": "Crews clear the silt from the canals before the flood.",
+  "seed_ploughs": "Oxen draw the seeder ploughs over the fields."
  },
  "journal": [],
  "era": {
@@ -1317,6 +1709,370 @@
   }
  ],
  "festivals": [],
+ "roles": [
+  {
+   "id": "station_keeper",
+   "actor": "parsa.groom",
+   "name": "Station keeper",
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "21:00"
+     ],
+     "routine": "tend"
+    },
+    {
+     "hours": [
+      "21:00",
+      "05:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "tend": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "watch": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "station_guest",
+   "actor": "world.traveller",
+   "name": "Traveller resting at the station",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "rest"
+    }
+   ],
+   "routines": {
+    "rest": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "until": {
+        "hour": "05:30"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "relay_animal",
+   "actor": "parsa.nisaean_horse",
+   "name": "Relay horse",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "reed_cutter",
+   "actor": "parsa.farmer",
+   "name": "Reed cutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "15:30",
+      "18:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.t_reeds",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/hammer.wav"
+   }
+  },
+  {
+   "id": "palm_climber",
+   "actor": "parsa.gardener",
+   "name": "Climber in the palms",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:00"
+     ],
+     "routine": "climb"
+    },
+    {
+     "hours": [
+      "15:30",
+      "18:00"
+     ],
+     "routine": "climb"
+    }
+   ],
+   "routines": {
+    "climb": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "parsa.t_date",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/hammer.wav"
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  }
+ ],
  "lights": {
   "version": 1,
   "profiles": {

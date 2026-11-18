@@ -5,7 +5,7 @@ sea (world.md §11); nobody wears scallop shells, medieval hats or stirrups."""
 
 from dataclasses import replace
 
-from rig import Dress, carry_table, person_sprite
+from rig import Dress, carry_table, person_sprite, trade
 
 D = Dress
 TAN, OLIVE, DARK = "skin_tan", "skin_olive", "skin_dark"
@@ -47,12 +47,24 @@ WALKERS = {
         replace(WORKER, head="felt_cap", head_mat="felt", hand_l="rope"),
         replace(WORKER, colour="felt", skin=DARK, beard="none", head="headcloth", head_mat="cinnabar", hand_l="rope"),
     ],
+    # The corner's country people, of no one age: a man with his hoe and broad straw hat, a woman
+    # with her head cloth, both barefoot in undyed wool.
+    "farmer": [
+        replace(WORKER, garment="tunic", head="petasos", head_mat="straw", hand_r="hoe", skin=TAN),
+        D(body="woman", skin=OLIVE, hair="cedar", hair_style="knot", beard="none", garment="long_tunic", colour="wool",
+          belt="wool", head="headcloth", head_mat="linen", feet="bare", hand_r="sickle"),
+    ],
     "logger": [
         replace(WORKER, garment="tunic", colour="felt", belt="leather", hand_r="axe", feet="boots"),
         replace(WORKER, garment="tunic", colour="ochre", belt="leather", head="felt_cap", head_mat="wool", hand_r="axe",
                 feet="boots", skin=TAN),
     ],
 }
+
+# Each trade its own colour, so a mason reads apart from a gardener at 1x.
+TRADES = {"fisher": "eblue", "sailor": "lapis", "logger": "malachite", "muleteer": "ochre", "farmer": "saffron"}
+for _kind, _accent in TRADES.items():
+    WALKERS[_kind] = trade(WALKERS[_kind], _accent)
 
 # What the hands hold changes with the work being done.
 WORK_PROPS = {
@@ -63,6 +75,7 @@ WORK_PROPS = {
                "carry_idle": dict(hand_l=None), "sit": dict(hand_l="net")},
     "sailor": {"carry": dict(hand_l=None), "carry_idle": dict(hand_l=None)},
     "logger": {"haul": dict(hand_l="rope", hand_r=None)},
+    "farmer": {"carry": dict(hand_r=None), "carry_idle": dict(hand_r=None)},
 }
 
 

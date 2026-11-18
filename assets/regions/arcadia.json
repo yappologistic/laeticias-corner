@@ -654,6 +654,7 @@
     }
    ],
    "name": "The road to Sparta",
+   "area": "road",
    "sound": {
     "surfaces": {},
     "wind": "wind.mountain",
@@ -678,7 +679,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.greek",
-     "full": 12
+     "full": 6
     }
    }
   },
@@ -693,7 +694,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "apr",
@@ -704,9 +705,111 @@
        "sep"
       ]
      }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "goatherd",
+     "density": "daytime",
+     "max_per_chunk": 0.25,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.goat",
+     "density": "daytime",
+     "max_per_chunk": 1.2
+    },
+    {
+     "role": "owl",
+     "density": "night",
+     "max_per_chunk": 0.5
+    },
+    {
+     "role": "shrine_keeper",
+     "per_item": "athens.g_shrine",
+     "count": 1,
+     "density": "always"
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "leaves": 0.03,
@@ -730,7 +833,11 @@
       "sfx/world/hoof_earth_2.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 12
+    }
    },
    "look": {
     "reflect": true
@@ -867,6 +974,84 @@
    0.5,
    0.5,
    0.5
+  ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
   ],
   "daytime_hot": [
    0,
@@ -1124,6 +1309,230 @@
    "steps": [],
    "string": "season_turn.winter",
    "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "lambing",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:30",
+     "07:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "feb",
+     "mar",
+     "apr"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.herder",
+     "count": 2
+    },
+    {
+     "actor": "athens.sheep",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "lambing",
+   "sfx": "sfx/world/sheep_1.wav"
+  },
+  {
+   "id": "lykaia",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "09:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jul"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.athlete",
+     "count": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "count": 6
+    },
+    {
+     "actor": "athens.herder",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "lykaia",
+   "sfx": "sfx/world/cheer.wav"
+  },
+  {
+   "id": "flocks_down",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.herder",
+     "count": 2
+    },
+    {
+     "actor": "athens.sheep",
+     "count": 8
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "flocks_down",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "snow_on_the_peaks",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "athens.herder",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "snow_on_the_peaks",
+   "ambience": {
+    "file": "amb/world/hearth.ogg",
+    "gain": 0.6
+   }
   }
  ],
  "lanes_tokens": [
@@ -1141,7 +1550,19 @@
      "oct"
     ]
    },
-   "note": "flocks moving between summer and winter pastures"
+   "note": "flocks moving between summer and winter pastures",
+   "id": "arcadia.0",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:peloponnese_road_farm_548_357",
+    "base:peloponnese_road_farm_550_343"
+   ],
+   "offsets": [
+    0.249
+   ]
   },
   {
    "actor": "athens.herder",
@@ -1157,7 +1578,19 @@
      "oct"
     ]
    },
-   "note": "flocks moving between the summer and the winter pastures"
+   "note": "flocks moving between the summer and the winter pastures",
+   "id": "arcadia.1",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:peloponnese_road_farm_550_343",
+    "base:peloponnese_road_farm_556_320"
+   ],
+   "offsets": [
+    0.723
+   ]
   }
  ],
  "zones": [],
@@ -1168,7 +1601,11 @@
   "season_turn.summer": "The flocks are on the high pastures.",
   "season_turn.autumn": "The flocks come down to the lowlands.",
   "season_turn.oct": "The woods are turning copper and gold.",
-  "season_turn.winter": "Snow on the heights."
+  "season_turn.winter": "Snow on the heights.",
+  "lambing": "Lambing time in the high valleys of Pan.",
+  "lykaia": "The Lykaia: Arcadians gather for games on the mountain of Zeus Lykaios.",
+  "flocks_down": "The flocks go down to the coast for the winter.",
+  "snow_on_the_peaks": "Snow on the peaks: herders sit by the fire in the fold."
  },
  "journal": [],
  "era": {
@@ -1270,6 +1707,264 @@
     ],
     "margins": true
    }
+  }
+ ],
+ "roles": [
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "14:00",
+      "17:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        25
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  },
+  {
+   "id": "goatherd",
+   "actor": "athens.herder",
+   "name": "Goatherd on the hills",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "19:00"
+     ],
+     "routine": "herd"
+    }
+   ],
+   "routines": {
+    "herd": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "owl",
+   "actor": "athens.owl",
+   "name": "Little owl",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "hunt"
+    }
+   ],
+   "routines": {
+    "hunt": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        90
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "shrine_keeper",
+   "actor": "athens.priest",
+   "name": "Keeper of a country shrine",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "11:00"
+     ],
+     "routine": "offer"
+    },
+    {
+     "hours": [
+      "16:00",
+      "18:30"
+     ],
+     "routine": "offer"
+    }
+   ],
+   "routines": {
+    "offer": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "athens.g_shrine",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "pour",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "pour",
+       "dur": [
+        20,
+        35
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": "athens.owl",
+   "sound": "sfx/athens/owl.wav"
   }
  ],
  "lights": {
