@@ -865,6 +865,12 @@ void Compiler::events(const json& life) {
             }
             ev.cast.push_back(std::move(ce));
         }
+        // A group the trigger brings along (the Carian delegation to the spring audience).
+        if (const std::string g = str(t, "with_group"); !g.empty()) {
+            CastEntry ce;
+            ce.group = need(r_->findGroup(g), "group", g);
+            if (ce.group >= 0) ev.cast.push_back(ce);
+        }
         for (const json& n : e.value("route", json::array())) {
             const int nd = node(n.get<std::string>(), where + " route");
             if (nd >= 0) ev.route.push_back(nd);

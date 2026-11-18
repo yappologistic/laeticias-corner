@@ -218,6 +218,18 @@ TEST_CASE("life: a region file with a field of the wrong type is named and left 
     for (const Token& t : d.tokens) CHECK(t.region < static_cast<int>(d.regions.size()));
 }
 
+TEST_CASE("life: a trigger's with_group joins the event's cast") {
+    // Parsa's Carian visit brings the Carian delegation (once dropped by the compiler: L-102).
+    const LifeData& d = lifeWorld().data;
+    const LifeRegion& parsa = d.regions[static_cast<std::size_t>(d.findRegion("parsa"))];
+    const int e = parsa.findEvent("carian_visit");
+    REQUIRE(e >= 0);
+    const int g = parsa.findGroup("delegation_carians");
+    REQUIRE(g >= 0);
+    const auto& cast = parsa.events[static_cast<std::size_t>(e)].cast;
+    CHECK(std::ranges::any_of(cast, [&](const CastEntry& c) { return c.group == g; }));
+}
+
 TEST_CASE("life: courses are worldgen's staircases, tile for tile") {
     const int cols = lifeWorld().map().height();
     const auto grid = [&](int c, int r) { return TilePos{r, cols - 1 - c}; };
