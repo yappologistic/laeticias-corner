@@ -1612,7 +1612,10 @@ void App::render() {
         const MenuModel& menus = menuModel();
         menus_.relayout(menus, font_);
         menus_.draw(painter, menus);
-        if (profilerOn_) profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
+        if (profilerOn_) {
+            drawPlaceholderLabels(painter);
+            profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
+        }
         uiBatch_->flush();
     }
     if (const float veil = travelVeil(); veil > 0 && font_.build(renderer_.get(), uiScale_)) {

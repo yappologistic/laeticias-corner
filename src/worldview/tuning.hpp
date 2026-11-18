@@ -73,10 +73,9 @@ inline constexpr float kWaterDepthTint = 0.08f; // per sea depth band
 inline constexpr float kHorizonTiles = 40.0f;
 inline constexpr float kHorizonHazeMax = 0.85f;
 inline constexpr std::array<float, 3> kHorizonHaze{0.70f, 0.79f, 0.84f};
-inline constexpr float kFlatJitter = 0.04f;     // per-tile brightness variation of flat terrain
-inline constexpr float kPlaceholderHeight = 32; // px, when the catalog gives none
-inline constexpr float kPlaceholderAlphaBig = 0.45f; // large landmark placeholders let land show
-inline constexpr int kPlaceholderBigTiles = 36;
+inline constexpr float kFlatJitter = 0.04f;       // per-tile brightness variation of flat terrain
+inline constexpr float kPlaceholderHeight = 4;    // px: a low slab over the footprint
+inline constexpr float kPlaceholderAlpha = 0.55f; // the land shows through it
 
 // Fallback shadow opacity when no resident page measured one.
 inline constexpr float kShadowOpacity = 0.4f;

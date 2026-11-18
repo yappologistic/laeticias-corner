@@ -13,9 +13,6 @@ namespace lc::worldview {
 namespace {
 
 constexpr int kPagePad = 2;
-constexpr int kLabelGap = 16; // px above a box too narrow for its label
-constexpr SDL_FColor kInk{0.16f, 0.13f, 0.12f, 1};
-constexpr SDL_FColor kPaper{1.0f, 0.99f, 0.96f, 1};
 
 SDL_FColor rgb(int r, int g, int b) {
     return {static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f,
@@ -156,11 +153,11 @@ SDL_FColor shade(SDL_FColor c, float k, float a) {
 } // namespace
 
 WorldSprites::WorldSprites(SDL_Renderer* renderer, Atlas& home, PageAtlas& pages,
-                           const world::WorldMap& map, Font& font)
+                           const world::WorldMap& map)
     : iso_(map.content().home().iso()), level_(map.content().tileLevel()) {
     resolveTerrain(map, pages);
     resolveItems(map, home, pages);
-    buildPage(renderer, map, pages, font);
+    buildPage(renderer, map, pages);
     count(map);
 }
 
@@ -343,8 +340,7 @@ void WorldSprites::resolveItems(const world::WorldMap& map, Atlas& home, PageAtl
     homeShadowPeak_ = peaks > 0 ? peakSum / static_cast<float>(peaks) : -1.0f;
 }
 
-void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map, PageAtlas& pages,
-                             Font& font) {
+void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map, PageAtlas& pages) {
     const world::Content& content = map.content();
     const int hw = static_cast<int>(iso_.hw);
     const int hh = static_cast<int>(iso_.hh);
@@ -368,21 +364,15 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
     const int faceH = faceBottom - faceTop + 1;
     const int headerH = std::max(2 * hh, faceH) + kPagePad;
 
-    // Boxes, measured and shelf-packed below the engine sprites.
+    // Markers, measured and shelf-packed below the engine sprites: a low slab over the footprint,
+    // as quiet as honesty allows (the profiler's overlay names them).
     for (Box& b : boxes_) {
-        const world::ItemInfo& info = content.item(static_cast<int>(b.info));
-        const world::GeomVariant* g = content.geometry(static_cast<int>(b.info), b.variant, 0);
-        b.height = info.height > 0
-                       ? static_cast<float>(info.height)
-                       : (g != nullptr ? static_cast<float>(g->h) : tuning::kPlaceholderHeight);
-        const std::string label = info.id.substr(info.id.find('.') + 1);
-        b.labelW = font.measure(Face::Body, label);
+        b.height = tuning::kPlaceholderHeight;
         const int boxW = (b.fw + b.fh) * hw + 2;
-        const bool above = b.labelW + 6 > static_cast<float>(boxW);
-        b.w = std::max(boxW, static_cast<int>(std::ceil(b.labelW)) + 8);
-        const int top = static_cast<int>(std::ceil(b.height)) + (above ? kLabelGap : 0);
+        b.w = boxW;
+        const int top = static_cast<int>(std::ceil(b.height));
         b.h = (b.fw + b.fh) * hh + top + 2;
-        b.ox = static_cast<float>(b.fh * hw + 1 + (b.w - boxW) / 2);
+        b.ox = static_cast<float>(b.fh * hw + 1);
         b.oy = static_cast<float>(top + 1);
     }
     int pageW = 1024;
@@ -439,8 +429,7 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
         return;
     }
 
-    // Placeholder boxes: three faces of the catalog height over the footprint, outlined, with
-    // the id written on the top or above it.
+    // Placeholder markers: the footprint as a low tinted slab, translucent, with a soft rim.
     Batch batch(renderer);
     for (const Box& b : boxes_) {
         const world::ItemInfo& info = content.item(static_cast<int>(b.info));
@@ -451,38 +440,19 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
         const auto fw = static_cast<float>(b.fw);
         const auto fh = static_cast<float>(b.fh);
         const float hpx = b.height;
-        const Vec2 top = P(0, 0, 0), right = P(fw, 0, 0), bottom = P(fw, fh, 0), left = P(0, fh, 0);
+        const Vec2 right = P(fw, 0, 0), bottom = P(fw, fh, 0), left = P(0, fh, 0);
         const Vec2 topU = P(0, 0, hpx), rightU = P(fw, 0, hpx), bottomU = P(fw, fh, hpx),
                    leftU = P(0, fh, hpx);
-        const float alpha =
-            b.fw * b.fh >= tuning::kPlaceholderBigTiles ? tuning::kPlaceholderAlphaBig : 1.0f;
         const SDL_FColor base = categoryColour(info, {b.fw, b.fh});
+        const float alpha = tuning::kPlaceholderAlpha;
         batch.use(nullptr, SDL_BLENDMODE_NONE);
-        poly(batch, {left, bottom, bottomU, leftU}, shade(base, 0.92f, alpha));
-        poly(batch, {bottom, right, rightU, bottomU}, shade(base, 0.74f, alpha));
-        poly(batch, {topU, rightU, bottomU, leftU}, shade(base, 1.12f, alpha));
+        poly(batch, {left, bottom, bottomU, leftU}, shade(base, 0.86f, alpha));
+        poly(batch, {bottom, right, rightU, bottomU}, shade(base, 0.72f, alpha));
+        poly(batch, {topU, rightU, bottomU, leftU}, shade(base, 1.0f, alpha * 0.8f));
         batch.use(nullptr, SDL_BLENDMODE_BLEND);
-        for (const auto& [p, q] : {std::pair{left, bottom},
-                                   {bottom, right},
-                                   {topU, rightU},
-                                   {rightU, bottomU},
-                                   {bottomU, leftU},
-                                   {leftU, topU},
-                                   {left, leftU},
-                                   {bottom, bottomU},
-                                   {right, rightU}})
-            line(batch, p, q, kInk);
-        (void)top;
-        const std::string label = info.id.substr(info.id.find('.') + 1);
-        const bool above = b.labelW + 6 > static_cast<float>((b.fw + b.fh) * hw + 2);
-        const float tx = above
-                             ? static_cast<float>(b.x) + (static_cast<float>(b.w) - b.labelW) * 0.5f
-                             : (leftU.x + rightU.x) * 0.5f - b.labelW * 0.5f;
-        const float ty = above ? static_cast<float>(b.y) + font.ascent(Face::Body)
-                               : (topU.y + bottomU.y) * 0.5f + font.ascent(Face::Body) * 0.4f;
-        for (const Vec2 o : {Vec2{-1, 0}, Vec2{1, 0}, Vec2{0, -1}, Vec2{0, 1}})
-            font.draw(batch, Face::Body, label, std::round(tx + o.x), std::round(ty + o.y), kPaper);
-        font.draw(batch, Face::Body, label, std::round(tx), std::round(ty), kInk);
+        for (const auto& [p, q] :
+             {std::pair{topU, rightU}, {rightU, bottomU}, {bottomU, leftU}, {leftU, topU}})
+            line(batch, p, q, shade(base, 1.25f, alpha));
     }
     batch.flush();
     if (!SDL_SetRenderTarget(renderer, nullptr)) SDL_Log("worldview: %s", SDL_GetError());

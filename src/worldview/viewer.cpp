@@ -174,7 +174,7 @@ bool Viewer::init() {
     if (!font_.load(assets_ / "fonts") || !font_.build(renderer_.get(), 1.0f)) return false;
     ui_ = std::make_unique<Batch>(renderer_.get());
     async_ = o_.interactive || o_.bench;
-    view_ = std::make_unique<WorldView>(renderer_.get(), *world_, assets_, *atlas_, font_, async_);
+    view_ = std::make_unique<WorldView>(renderer_.get(), *world_, assets_, *atlas_, async_);
     const world::WorldMap& m = *world_->map;
     camera_ = std::make_unique<WorldCamera>(cat_.iso(), m.width(), m.height(),
                                             static_cast<float>(15 * m.content().tileLevel()));

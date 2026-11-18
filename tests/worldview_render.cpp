@@ -54,7 +54,7 @@ struct Rig {
             !font.build(renderer.get(), 1.0f))
             return;
         view = std::make_unique<WorldView>(renderer.get(), *world, LC_WORLDVIEW_ASSETS_DIR, *atlas,
-                                           font, false);
+                                           false);
         target.reset(
             SDL_CreateTexture(renderer.get(), kTextureFormat, SDL_TEXTUREACCESS_TARGET, kW, kH));
         ok = target != nullptr;

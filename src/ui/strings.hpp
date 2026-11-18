@@ -60,6 +60,7 @@ inline constexpr std::string_view kMapTitle = "The world";
 inline constexpr std::string_view kMapHint = "Click a place to travel there";
 inline constexpr std::string_view kMapHome = "Home";
 inline constexpr std::string_view kJournalFound = "{} of {} found";
+inline constexpr std::string_view kProfMissing = "Missing art  {} placeholders in view, {} ids";
 inline constexpr std::string_view kScrollUp = "Previous row";
 inline constexpr std::string_view kScrollDown = "Next row";
 inline constexpr std::string_view kWishes = "Wishes";

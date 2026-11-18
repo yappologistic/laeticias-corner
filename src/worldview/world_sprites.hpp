@@ -96,8 +96,7 @@ class WorldSprites {
 public:
     // Resolves every look and builds the generated page into `pages`. `home` is the home atlas
     // (its shadow sprites are normalised here, as the scene does); `font` labels placeholders.
-    WorldSprites(SDL_Renderer* renderer, Atlas& home, PageAtlas& pages, const world::WorldMap& map,
-                 Font& font);
+    WorldSprites(SDL_Renderer* renderer, Atlas& home, PageAtlas& pages, const world::WorldMap& map);
 
     [[nodiscard]] const TerrainLook& terrain(int t) const {
         return terrains_[static_cast<std::size_t>(t)];
@@ -143,14 +142,12 @@ private:
         float ox = 0;
         float oy = 0;
         float height = 0;
-        float labelW = 0;
     };
 
     void resolveTerrain(const world::WorldMap& map, PageAtlas& pages);
     void resolveItems(const world::WorldMap& map, Atlas& home, PageAtlas& pages);
     int internMaterial(const std::string& id, PageAtlas& pages);
-    void buildPage(SDL_Renderer* renderer, const world::WorldMap& map, PageAtlas& pages,
-                   Font& font);
+    void buildPage(SDL_Renderer* renderer, const world::WorldMap& map, PageAtlas& pages);
     void count(const world::WorldMap& map);
 
     Iso iso_;

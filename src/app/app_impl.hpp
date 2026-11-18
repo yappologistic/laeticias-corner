@@ -323,6 +323,7 @@ private:
     void updateWorldAudio(float night);
     [[nodiscard]] float homeMusic() const;
     [[nodiscard]] float homeAmbience() const;
+    void drawPlaceholderLabels(Painter& p);
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
@@ -485,6 +486,7 @@ private:
     std::unique_ptr<worldview::Soundscape> soundscape_;
     std::vector<int> soundLoops_;     // the soundscape's files as mixer loops
     std::vector<float> themeWeights_; // per region, this frame
+    std::vector<std::pair<Vec2, std::uint32_t>> placeholderScratch_;
     struct JournalItem {
         std::string entry;
         std::string card;

@@ -53,9 +53,20 @@ void App::recordFrame(FrameSample& s) {
     s.actorsAbstract =
         0; // the home region keeps every actor live; abstract tiers come with the world
     s.chunksCached = st.groundChunksCached;
-    s.textureMiB = static_cast<float>(static_cast<double>(atlas_->textureBytes() + st.targetBytes +
-                                                          st.groundBytes + blur_->bytes()) /
-                                      1048576.0);
+    if (worldView_) {
+        // The world's share: its sprites, cells and pages.
+        const worldview::FrameStats& ws = worldView_->stats();
+        s.spritesDrawn += ws.spritesDrawn;
+        s.spritesCulled += ws.spritesCulled;
+        s.chunksCached += ws.cellsCached;
+        s.placeholders = ws.placeholders;
+        s.missingArt = worldView_->missingArt();
+    }
+    const std::size_t worldBytes = worldView_ ? worldView_->stats().textureBytes() : 0;
+    s.textureMiB =
+        static_cast<float>(static_cast<double>(atlas_->textureBytes() + st.targetBytes +
+                                               st.groundBytes + blur_->bytes() + worldBytes) /
+                           1048576.0);
     const FrameSample prev = perf_.size() > 0 ? perf_.recent(0) : FrameSample{};
     s.totalMiB =
         perfFrames_ % kMemoryEvery == 0 ? static_cast<float>(processMemory().first) : prev.totalMiB;

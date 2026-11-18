@@ -61,8 +61,8 @@ Lod WorldView::lodFor(float scale) {
 }
 
 WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
-                     const std::filesystem::path& assets, Atlas& home, Font& font, bool async,
-                     Hole hole, const std::vector<world::FigurePlace>& figures)
+                     const std::filesystem::path& assets, Atlas& home, bool async, Hole hole,
+                     const std::vector<world::FigurePlace>& figures)
     : renderer_(renderer), world_(world), map_(*world.map), iso_(map_.content().home().iso()),
       lvl_(map_.content().tileLevel()), async_(async), hole_(hole),
       cells_(renderer, tuning::kCellBudget), batch_(renderer), theme_([&] {
@@ -83,7 +83,7 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
           }()) {
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
                                          tuning::kPageBudget);
-    sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_, font);
+    sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_);
     // Asynchronous runs build the overview on a worker from the start; synchronous ones only
     // when a frame needs it (it stands in for cells not built yet, which they never have).
     if (async) overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async);
@@ -720,6 +720,25 @@ std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
     return std::nullopt;
 }
 
+int WorldView::missingArt() const {
+    int n = figuresMissing_;
+    for (const MissingArt& m : sprites_->missingItems()) n += m.look == Look::Placeholder ? 1 : 0;
+    n += static_cast<int>(sprites_->missingTerrain().size() + sprites_->flatMaterials().size());
+    // Ids placed in the layers that no catalog defines are not drawn at all; they count too.
+    n += static_cast<int>(map_.unresolved().size());
+    return n;
+}
+
+void WorldView::placeholdersInView(std::vector<std::pair<Vec2, std::uint32_t>>& out) const {
+    out.clear();
+    for (std::size_t i = 0; i < region_.elems.size(); ++i) {
+        const Elem& e = region_.elems[i];
+        if (e.look != nullptr && e.first && e.look->look == Look::Placeholder &&
+            region_.items[i].screen.overlaps(lastView_))
+            out.emplace_back(e.anchor, map_.items()[e.item].info);
+    }
+}
+
 void WorldView::visibleCards(std::vector<Picked>& out) const {
     out.clear();
     for (std::size_t i = 0; i < region_.elems.size(); ++i) {
@@ -878,6 +897,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
             }
             (void)drawElem(e, xf, static_cast<float>(now));
             ++stats_.spritesDrawn;
+            if (e.look != nullptr && e.look->look == Look::Placeholder) ++stats_.placeholders;
         }
     }
     batch_.flush();

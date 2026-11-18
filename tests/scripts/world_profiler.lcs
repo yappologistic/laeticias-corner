@@ -1,0 +1,11 @@
+# The profiler over the world counts what has no art yet (ids no catalog defines are among them)
+# and names any placeholder in view.
+key m
+wait 20
+click map:parsa
+waitfor 70 travelling no
+key f3
+wait 30
+expect profiler yes
+shot shots/world_profiler.png
+quit

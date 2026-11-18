@@ -84,7 +84,7 @@ void App::createWorldView() {
                     iso.toWorld(f(w), 0.0f).x + r.left + homeOffset_.x,
                     iso.toWorld(f(w), f(h)).y + r.top + homeOffset_.y};
     worldView_ = std::make_unique<worldview::WorldView>(renderer_.get(), *loaded_, assets_, *atlas_,
-                                                        font_, measuring() && !opts_.headless,
+                                                        measuring() && !opts_.headless,
                                                         worldview::Hole{home.rect, box}, figures_);
     setupMap();
 }
@@ -669,6 +669,26 @@ float App::homeMusic() const {
 
 float App::homeAmbience() const {
     return soundscape_ ? soundscape_->homeWeight() : 1.0f;
+}
+
+} // namespace lc
+
+namespace lc {
+
+void App::drawPlaceholderLabels(Painter& p) {
+    // The debug overlay names what is drawn as a placeholder (the world itself stays quiet).
+    if (!worldView_) return;
+    worldView_->placeholdersInView(placeholderScratch_);
+    const Font& f = p.font();
+    for (const auto& [anchor, info] : placeholderScratch_) {
+        const std::string& id = loaded_->content->item(static_cast<int>(info)).id;
+        const Vec2 s =
+            view_.worldToScreen({anchor.x - homeOffset_.x, anchor.y - homeOffset_.y}, screen());
+        const float w = f.measure(Face::Body, id);
+        p.text(Face::Body, id, std::round(s.x - w * 0.5f) + 1, std::round(s.y) + 1,
+               theme::kCaptionShadow);
+        p.text(Face::Body, id, std::round(s.x - w * 0.5f), std::round(s.y), theme::kWarn);
+    }
 }
 
 } // namespace lc

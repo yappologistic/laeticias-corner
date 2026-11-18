@@ -46,6 +46,7 @@ struct FrameStats {
     int drawCalls = 0;      // composing the frame
     int buildDrawCalls = 0; // rendering cells into the cache
     int spritesDrawn = 0;   // items, pieces and occluding tiles drawn live
+    int placeholders = 0;   // of them, drawn as placeholders (no art yet)
     int spritesCulled = 0;  // in the gathered region but off screen
     int cellsBuilt = 0;     // native cells (re)built this frame
     int impostorsBuilt = 0;
@@ -102,8 +103,8 @@ public:
     // otherwise everything a frame needs is loaded and built before it is drawn. `hole`: tiles
     // the game's scene draws itself (the home region), left out of cells and gathering.
     WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
-              const std::filesystem::path& assets, Atlas& home, Font& font, bool async,
-              Hole hole = {}, const std::vector<world::FigurePlace>& figures = {});
+              const std::filesystem::path& assets, Atlas& home, bool async, Hole hole = {},
+              const std::vector<world::FigurePlace>& figures = {});
     ~WorldView();
     WorldView(const WorldView&) = delete;
     WorldView& operator=(const WorldView&) = delete;
@@ -144,6 +145,11 @@ public:
     void visibleCards(std::vector<Picked>& out) const;
     // Figures without art (not drawn).
     [[nodiscard]] int figuresMissing() const { return figuresMissing_; }
+    // Ids with no art of their own: placeholder items, flat terrain and faces, figures, and ids
+    // the layers place that no catalog defines (not drawn).
+    [[nodiscard]] int missingArt() const;
+    // Placeholders on screen in the last frame: where (world px, at their anchor) and what.
+    void placeholdersInView(std::vector<std::pair<Vec2, std::uint32_t>>& out) const;
     // The season whose looks the world wears (the home catalog's index; -1: plain).
     void setSeason(int season);
     // Nothing reads the map on a worker but the gatherer (which never looks inside the hole).
