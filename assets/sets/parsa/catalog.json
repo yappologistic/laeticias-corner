@@ -11,6 +11,13 @@
     "parsa.earth",
     "parsa.rock",
     "parsa.ashlar"
+   ],
+   "season_class": "grass",
+   "plain_state": "fresh",
+   "season_states": [
+    "green",
+    "dry",
+    "dormant"
    ]
   },
   {
@@ -20,6 +27,14 @@
    "edges": 16,
    "faces": [
     "parsa.earth"
+   ],
+   "season_class": "crop",
+   "plain_state": "green",
+   "season_states": [
+    "ploughed",
+    "sprout",
+    "ripe",
+    "stubble"
    ]
   },
   {
@@ -927,7 +942,8 @@
      "kind": "work",
      "cap": 1
     }
-   ]
+   ],
+   "snow_catch": false
   },
   {
    "id": "parsa.p_brickfield",
@@ -976,7 +992,8 @@
      "kind": "work",
      "cap": 1
     }
-   ]
+   ],
+   "snow_catch": false
   },
   {
    "id": "parsa.p_well",
@@ -1077,7 +1094,8 @@
      "kind": "tend",
      "cap": 1
     }
-   ]
+   ],
+   "snow_catch": false
   },
   {
    "id": "parsa.p_incense",
@@ -1097,7 +1115,8 @@
    "height": 32,
    "emitters": {
     "smoke": "parsa.incense"
-   }
+   },
+   "snow_catch": false
   },
   {
    "id": "parsa.p_brazier",
@@ -1120,7 +1139,8 @@
    },
    "states": [
     "lit"
-   ]
+   ],
+   "snow_catch": false
   },
   {
    "id": "parsa.p_torch",
@@ -1142,7 +1162,8 @@
    },
    "states": [
     "lit"
-   ]
+   ],
+   "snow_catch": false
   },
   {
    "id": "parsa.p_parasol",
@@ -1584,7 +1605,13 @@
    "layout": "variant",
    "count": 3,
    "on": "land",
-   "height": 110
+   "height": 110,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": [
+    "snow"
+   ],
+   "snow_look": true
   },
   {
    "id": "parsa.t_plane",
@@ -1596,7 +1623,14 @@
    "layout": "variant",
    "count": 2,
    "on": "land",
-   "height": 120
+   "height": 120,
+   "season_class": "deciduous",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "parsa.t_poplar",
@@ -1608,7 +1642,14 @@
    "layout": "variant",
    "count": 2,
    "on": "land",
-   "height": 110
+   "height": 110,
+   "season_class": "deciduous",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "parsa.t_willow",
@@ -1620,7 +1661,14 @@
    "layout": "variant",
    "count": 2,
    "on": "land",
-   "height": 80
+   "height": 80,
+   "season_class": "deciduous",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "parsa.t_pomegranate",
@@ -1632,7 +1680,19 @@
    "layout": "variant",
    "count": 2,
    "on": "land",
-   "height": 55
+   "height": 55,
+   "season_class": "deciduous",
+   "plain_state": "bloom",
+   "season_states": [
+    "fresh",
+    "green",
+    "turn",
+    "bare"
+   ],
+   "bloom": [
+    "may",
+    "jun"
+   ]
   },
   {
    "id": "parsa.t_almond",
@@ -1644,7 +1704,15 @@
    "layout": "variant",
    "count": 2,
    "on": "land",
-   "height": 60
+   "height": 60,
+   "season_class": "early_bloom",
+   "plain_state": "bloom",
+   "season_states": [
+    "fresh",
+    "green",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "parsa.t_vine",
@@ -1656,7 +1724,15 @@
    "layout": "rotate",
    "count": 2,
    "on": "land",
-   "height": 45
+   "height": 45,
+   "season_class": "vine",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare",
+    "fruit"
+   ]
   },
   {
    "id": "parsa.t_date",
@@ -1668,7 +1744,17 @@
    "layout": "variant",
    "count": 2,
    "on": "land",
-   "height": 100
+   "height": 100,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": [
+    "fruit"
+   ],
+   "fruit": [
+    "aug",
+    "sep",
+    "oct"
+   ]
   },
   {
    "id": "parsa.t_fig",
@@ -1680,7 +1766,14 @@
    "layout": "variant",
    "count": 1,
    "on": "land",
-   "height": 60
+   "height": 60,
+   "season_class": "deciduous",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "parsa.p_barley",
@@ -1695,7 +1788,15 @@
    "layers": [
     "base"
    ],
-   "height": 8
+   "height": 8,
+   "season_class": "crop",
+   "plain_state": "green",
+   "season_states": [
+    "ploughed",
+    "sprout",
+    "ripe",
+    "stubble"
+   ]
   },
   {
    "id": "parsa.p_wheat",
@@ -1710,7 +1811,15 @@
    "layers": [
     "base"
    ],
-   "height": 10
+   "height": 10,
+   "season_class": "crop",
+   "plain_state": "green",
+   "season_states": [
+    "ploughed",
+    "sprout",
+    "ripe",
+    "stubble"
+   ]
   },
   {
    "id": "parsa.p_lilies",
@@ -1725,7 +1834,13 @@
    "layers": [
     "base"
    ],
-   "height": 10
+   "height": 10,
+   "season_class": "wildflower",
+   "plain_state": "bloom",
+   "season_states": [
+    "green",
+    "dry"
+   ]
   },
   {
    "id": "parsa.p_rose",
@@ -1737,7 +1852,18 @@
    "layout": "variant",
    "count": 1,
    "on": "land",
-   "height": 14
+   "height": 14,
+   "season_class": "deciduous",
+   "plain_state": "bloom",
+   "season_states": [
+    "fresh",
+    "green",
+    "turn",
+    "bare"
+   ],
+   "bloom": [
+    "may"
+   ]
   },
   {
    "id": "parsa.p_steppe",
@@ -1752,7 +1878,14 @@
    "layers": [
     "base"
    ],
-   "height": 8
+   "height": 8,
+   "season_class": "grass",
+   "plain_state": "fresh",
+   "season_states": [
+    "green",
+    "dry",
+    "dormant"
+   ]
   },
   {
    "id": "parsa.ishtar_gate",
