@@ -9,6 +9,7 @@
 
 #include "core/clock.hpp"
 #include "core/iso.hpp"
+#include "life/city.hpp"
 #include "render/gpu/look.hpp"
 #include "world/loader.hpp"
 #include "worldview/gather.hpp"
@@ -36,7 +37,10 @@ struct LightProfile {
     std::vector<std::pair<float, float>> hours; // game hours [on, off); off < on: past midnight
     LightRain rain = LightRain::Sheltered;
     bool festivalOnly = false; // `only`: lit on a festival's or an event's night alone
-    bool staggered = false;    // windows and doors light one by one
+    std::string only;          // that festival's id, or `event:<id>`
+    std::vector<std::pair<std::string, float>> festivals; // festival id or "*" -> brightness
+    bool staggered = false;                               // windows and doors light one by one
+    int region = -1; // WorldFile::regions index of the file that defines it
 };
 
 [[nodiscard]] LightProfile parseLightProfile(std::string_view id, const nlohmann::json& j);
@@ -57,8 +61,17 @@ public:
     // their tile are counted in unmatched()). The hole's items are the game's own.
     WorldLights(const world::LoadedWorld& world, const WorldSprites& sprites, Hole hole);
 
-    // This frame's state of every profile: the clock (0..1) and seconds since start.
-    void update(double clock, double now);
+    // This frame's state of every profile: the clock (0..1) and seconds since start; with city
+    // life, festival nights (brighter, or lit only then) and events running (`only:
+    // event:<id>`); without it festival-only lights stay dark.
+    void update(double clock, double now, const life::CityLife* life);
+    // A region's profile by its id (-1 when it has none): what a role carries.
+    [[nodiscard]] int profileOf(int region, std::string_view id) const;
+    // A profile's colour now for a light with this seed and rain at it (carried lights).
+    [[nodiscard]] Rgb colourOf(std::uint16_t profile, std::uint32_t seed, float rain) const;
+    // Every light burning now, anywhere (the map): `f(Vec2 groundTile, Rgb colour)`.
+    template <typename F>
+    void forEachBurning(F&& f) const;
     // Lights of the chunks meeting `tiles` with their colour now (already times strength,
     // flicker, hours and rain): `rain(Vec2 tile)` says how hard it rains at a grid point (asked
     // only for lights rain puts out or dims); `f(const WorldLight&, Rgb colour, float radius)`
@@ -72,8 +85,12 @@ public:
     [[nodiscard]] std::span<const LightProfile> profiles() const { return profiles_; }
 
 private:
-    [[nodiscard]] Rgb colourOf(const WorldLight& l, float rain) const;
+    [[nodiscard]] Rgb colourOf(const WorldLight& l, float rain) const {
+        return colourOf(l.profile, l.seed, rain);
+    }
     [[nodiscard]] Vec2 tileOf(const WorldLight& l) const;
+    // Festivals and events resolved against city life once (indices into its region data).
+    void resolve(const life::CityLife& life);
 
     const world::WorldMap& map_;
     std::vector<LightProfile> profiles_;
@@ -90,6 +107,17 @@ private:
     std::vector<Named> named_;
     std::vector<bool> governed_;
     Iso iso_;
+    // Per profile, resolved once against city life: its life region, the festivals that brighten
+    // it (index, factor; -2 for "*"), the festival or event it is lit for alone (-1: none).
+    struct Night {
+        int lifeRegion = -1;
+        std::vector<std::pair<int, float>> festivals;
+        int onlyFestival = -1;
+        int onlyEvent = -1;
+    };
+    std::vector<Night> nights_;
+    const life::CityLife* resolvedFor_ = nullptr;
+    std::vector<float> factor_; // per profile, this frame: 0 out, else brightness
     // Per frame.
     float hour_ = 0;
     double now_ = 0;
@@ -112,6 +140,14 @@ void WorldLights::forEach(TileRect tiles, R&& rain, F&& f) const {
                 f(l, col, p.radius);
             }
         }
+}
+
+template <typename F>
+void WorldLights::forEachBurning(F&& f) const {
+    for (const WorldLight& l : lights_) {
+        const Rgb col = colourOf(l, 0.0f);
+        if (col.r + col.g + col.b > 0.002f) f(tileOf(l), col);
+    }
 }
 
 } // namespace lc::worldview

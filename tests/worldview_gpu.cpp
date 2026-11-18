@@ -177,6 +177,12 @@ TEST_CASE("lights: profiles read the world data's shape; hours run past midnight
         "tapers", nlohmann::json::parse(R"({"kind": "window", "hours": [["dusk", "dawn"]],
                                             "only": "saturnalia"})"));
     CHECK(only.festivalOnly);
+    CHECK(only.only == "saturnalia");
+    const LightProfile altar = parseLightProfile(
+        "altar", nlohmann::json::parse(R"({"kind": "altar", "hours": [["dusk", "dawn"]],
+                                           "festivals": {"*": 2.0, "parilia": 1.5}})"));
+    REQUIRE(altar.festivals.size() == 2);
+    CHECK_FALSE(altar.festivalOnly);
 }
 
 TEST_CASE("lights: every light point of the committed world names its item") {
@@ -206,7 +212,7 @@ TEST_CASE("lights: every light point of the committed world names its item") {
         CHECK(l.count() == points);
         CHECK(points > 1000);
         // At 22:00 some burn and every colour stays a warm flame's.
-        l.update(hourAt(22.0), 100.0);
+        l.update(hourAt(22.0), 100.0, nullptr);
         int burning = 0;
         l.forEach(
             world->map->bounds(), [](Vec2) { return 0.0f; },
@@ -218,12 +224,18 @@ TEST_CASE("lights: every light point of the committed world names its item") {
             });
         CHECK(burning > 200);
         // At noon almost nothing (glass furnaces and forges may burn).
-        l.update(hourAt(12.0), 100.0);
+        l.update(hourAt(12.0), 100.0, nullptr);
         int noon = 0;
         l.forEach(
             world->map->bounds(), [](Vec2) { return 0.0f; },
             [&](const WorldLight&, Rgb, float) { ++noon; });
         CHECK(noon < burning / 4);
+        // Roles name what they carry by profile id, per region; unknown ids are none.
+        bool carried = false;
+        for (std::size_t r = 0; r < world->regions.size(); ++r)
+            if (l.profileOf(static_cast<int>(r), "carried_torch") >= 0) carried = true;
+        CHECK(carried);
+        CHECK(l.profileOf(0, "no such light") == -1);
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }

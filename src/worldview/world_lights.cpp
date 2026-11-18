@@ -103,7 +103,13 @@ LightProfile parseLightProfile(std::string_view id, const json& j) {
         const std::string s = r->get<std::string>();
         p.rain = s == "dim" ? LightRain::Dim : (s == "out" ? LightRain::Out : LightRain::Sheltered);
     }
-    p.festivalOnly = j.contains("only");
+    if (const auto o = j.find("only"); o != j.end() && o->is_string()) {
+        p.only = o->get<std::string>();
+        p.festivalOnly = true;
+    }
+    if (const auto fs = j.find("festivals"); fs != j.end() && fs->is_object())
+        for (const auto& [fid, k] : fs->items())
+            if (k.is_number()) p.festivals.emplace_back(fid, k.get<float>());
     p.staggered = p.kind == "window" || p.kind == "door";
     return p;
 }
@@ -155,6 +161,7 @@ WorldLights::WorldLights(const world::LoadedWorld& world, const WorldSprites& sp
             for (const auto& [id, pj] : ps->items()) {
                 names.emplace_back(id, static_cast<std::uint16_t>(profiles_.size()));
                 profiles_.push_back(parseLightProfile(id, pj));
+                profiles_.back().region = static_cast<int>(r);
             }
         for (const json& pt : points) {
             if (!pt.is_array() || pt.size() < 4 || !pt[0].is_number_integer() ||
@@ -223,24 +230,97 @@ WorldLights::WorldLights(const world::LoadedWorld& world, const WorldSprites& sp
     for (const Pending& p : pending) lights_[fill[p.chunk]++] = p.light;
 }
 
-void WorldLights::update(double clock, double now) {
+void WorldLights::resolve(const life::CityLife& life) {
+    resolvedFor_ = &life;
+    const life::LifeData& d = life.lifeWorld().data;
+    nights_.assign(profiles_.size(), {});
+    for (std::size_t i = 0; i < profiles_.size(); ++i) {
+        const LightProfile& p = profiles_[i];
+        Night& n = nights_[i];
+        if (p.region < 0 || static_cast<std::size_t>(p.region) >= d.worldToLife.size()) continue;
+        n.lifeRegion = d.worldToLife[static_cast<std::size_t>(p.region)];
+        if (n.lifeRegion < 0) continue;
+        const life::LifeRegion& lr = d.regions[static_cast<std::size_t>(n.lifeRegion)];
+        const auto festival = [&](std::string_view id) {
+            for (std::size_t f = 0; f < lr.festivals.size(); ++f)
+                if (lr.festivals[f].id == id) return static_cast<int>(f);
+            return -1;
+        };
+        for (const auto& [id, k] : p.festivals) {
+            const int f = id == "*" ? -2 : festival(id);
+            if (f != -1) n.festivals.emplace_back(f, k);
+        }
+        if (p.only.starts_with("event:")) {
+            const std::string_view ev = std::string_view(p.only).substr(6);
+            for (std::size_t e = 0; e < lr.events.size(); ++e)
+                if (lr.events[e].id == ev) n.onlyEvent = static_cast<int>(e);
+        } else if (!p.only.empty()) {
+            n.onlyFestival = festival(p.only);
+        }
+    }
+}
+
+void WorldLights::update(double clock, double now, const life::CityLife* life) {
     hour_ = static_cast<float>(std::fmod(6.0 + 24.0 * (clock - std::floor(clock)), 24.0));
     now_ = now;
+    factor_.assign(profiles_.size(), 1.0f); // keeps its capacity: no allocation once sized
+    if (life != nullptr && life != resolvedFor_) resolve(*life);
+    for (std::size_t i = 0; i < profiles_.size(); ++i) {
+        const LightProfile& p = profiles_[i];
+        if (life == nullptr || nights_.empty()) {
+            factor_[i] = p.festivalOnly ? 0.0f : 1.0f;
+            continue;
+        }
+        const Night& n = nights_[i];
+        // The evening's day: after midnight the night still belongs to the day before.
+        const life::LifeClock& c = life->clock();
+        const int day = hour_ < 6.0f ? std::max(0, c.day - 1) : c.day;
+        const auto on = [&](int f) { return life->festivalOn(n.lifeRegion, f, day, c.season); };
+        float k = 1.0f;
+        for (const auto& [f, factor] : n.festivals) {
+            bool any = false;
+            if (f == -2) {
+                const auto& fs = life->lifeWorld()
+                                     .data.regions[static_cast<std::size_t>(n.lifeRegion)]
+                                     .festivals;
+                for (std::size_t j = 0; j < fs.size() && !any; ++j) any = on(static_cast<int>(j));
+            } else {
+                any = on(f);
+            }
+            if (any) k = std::max(k, factor);
+        }
+        if (p.festivalOnly) {
+            bool lit = n.onlyFestival >= 0 && on(n.onlyFestival);
+            for (const life::RunningEvent& e : life->running())
+                lit =
+                    lit || (n.onlyEvent >= 0 && e.region == n.lifeRegion && e.event == n.onlyEvent);
+            k = lit ? k : 0.0f;
+        }
+        factor_[i] = k;
+    }
+}
+
+int WorldLights::profileOf(int region, std::string_view id) const {
+    for (std::size_t i = 0; i < profiles_.size(); ++i)
+        if (profiles_[i].region == region && profiles_[i].id == id) return static_cast<int>(i);
+    return -1;
 }
 
 Vec2 WorldLights::tileOf(const WorldLight& l) const {
     return iso_.toTile(l.ground);
 }
 
-Rgb WorldLights::colourOf(const WorldLight& l, float rain) const {
-    const LightProfile& p = profiles_[l.profile];
-    if (p.festivalOnly) return {0, 0, 0};
-    float k = hoursOn(p, hour_, l.seed);
+Rgb WorldLights::colourOf(std::uint16_t profile, std::uint32_t seed, float rain) const {
+    const LightProfile& p = profiles_[profile];
+    const float night =
+        profile < factor_.size() ? factor_[profile] : (p.festivalOnly ? 0.0f : 1.0f);
+    if (night <= 0) return {0, 0, 0};
+    float k = hoursOn(p, hour_, seed) * night;
     if (k <= 0) return {0, 0, 0};
     if (p.rain == LightRain::Out && rain >= gpu::tuning::kRainOut) return {0, 0, 0};
     if (p.rain == LightRain::Dim)
         k *= 1.0f - (1.0f - gpu::tuning::kRainDim) * std::min(1.0f, rain / gpu::tuning::kRainOut);
-    k *= p.strength * gpu::flicker(p.flicker, p.hzLo, p.hzHi, p.depth, l.seed, now_);
+    k *= p.strength * gpu::flicker(p.flicker, p.hzLo, p.hzHi, p.depth, seed, now_);
     return {p.colour.r * k, p.colour.g * k, p.colour.b * k};
 }
 
@@ -249,7 +329,9 @@ bool WorldLights::glowOn(std::uint32_t item) const {
     auto it = std::ranges::lower_bound(named_, item, {}, &Named::item);
     for (; it != named_.end() && it->item == item; ++it) {
         const LightProfile& p = profiles_[it->profile];
-        if (!p.festivalOnly && hoursOn(p, hour_, it->seed) > 0) return true;
+        const float night =
+            it->profile < factor_.size() ? factor_[it->profile] : (p.festivalOnly ? 0.0f : 1.0f);
+        if (night > 0 && hoursOn(p, hour_, it->seed) > 0) return true;
     }
     return false;
 }

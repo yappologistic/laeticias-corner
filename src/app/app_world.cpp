@@ -241,9 +241,17 @@ const MapModel& App::mapModel() {
     }
     const Vec2 t = cat_.iso().toTile(camera_.position());
     const TileRect h = loaded_->file.home.rect;
+    // After dark the towns' lights show on the map (the shader path's light data).
+    mapLights_.clear();
+    if (const float glow = lighting().glow; worldView_ && glow > 0.01f && map_.showing()) {
+        worldView_->mapLights(mapLightTiles_);
+        for (const auto& [tile, k] : mapLightTiles_)
+            mapLights_.push_back({mapPixel(tile, loaded_->file.gridH, mapScale_), k * glow});
+    }
     mapModel_ = {mapTexture_ ? &mapSprite_ : nullptr, mapPlaces_,
                  mapPixel({t.x + static_cast<float>(h.x0), t.y + static_cast<float>(h.y0)},
-                          loaded_->file.gridH, mapScale_)};
+                          loaded_->file.gridH, mapScale_),
+                 mapLights_};
     return mapModel_;
 }
 

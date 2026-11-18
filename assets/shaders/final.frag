@@ -25,6 +25,7 @@ layout(std140, set = 3, binding = 0) uniform U {
     vec4 world;  // art px at target (0, 0) x, y; target px per art px; pool bands
     vec4 night;  // the low light's tint (luma 1); how far night shifts toward it
     vec4 key;    // the hour's key (mean luma aimed at); least, most exposure; daylight 0..1
+    vec4 pool;   // the light target's scale (it is stored with headroom); unused
 };
 
 const mat4 kBayer = mat4(0.0, 12.0, 3.0, 15.0, 8.0, 4.0, 11.0, 7.0, 2.0, 14.0, 1.0, 13.0, 10.0,
@@ -72,7 +73,7 @@ void main() {
     vec3 c = grade(albedo, adapt, pivot);
     // Lamp light in a few bands with a dithered edge, the cell anchored to world art pixels so
     // nothing crawls while the camera pans.
-    vec3 light = texture(u_light, uv).rgb;
+    vec3 light = texture(u_light, uv).rgb * pool.x;
     ivec2 cell = ivec2(mod(floor(uv * texel.xy / world.z + world.xy), 4.0));
     light = floor(light * world.w + kBayer[cell.x][cell.y]) / world.w;
     // Screened on, so a white wall beside a flame rolls off to warm white instead of clipping

@@ -22,6 +22,7 @@ struct FinalUniforms {
     float world[4];
     float night[4];
     float key[4];
+    float pool[4];
 };
 
 // std140 mirror of shaders/shade.frag's block.
@@ -403,6 +404,7 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
          lerp(lerp(tuning::kTwilightAdaptMin, tuning::kDayAdapt[0], day), tuning::kNightAdapt[0],
               night),
          lerp(tuning::kDayAdapt[1], tuning::kNightAdapt[1], night), day);
+    set4(u.pool, 1.0f / tuning::kLightHeadroom, 0, 0, 0);
     if (!SDL_SetGPURenderStateFragmentUniforms(s, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());
     use(b, s);

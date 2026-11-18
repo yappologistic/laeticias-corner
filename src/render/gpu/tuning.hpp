@@ -59,12 +59,18 @@ inline constexpr float kShadeTint = 0.8f;
 
 // Light pools (world_lights.hpp): falloff strength * (1 - (d/R)^2)^2, as the worldgen
 // measuring assumes (out/reports/world-nights.md §1).
-inline constexpr float kPoolGain = 1.1f;  // albedo * light added
-inline constexpr float kPoolWarm = 0.22f; // plus this much of the light by the pixel's luma
+inline constexpr float kPoolGain = 0.35f; // albedo * light added
+inline constexpr float kPoolWarm = 0.85f; // plus this much of the light by the pixel's luma
 inline constexpr float kPoolDay = 0.12f;  // share of a pool still seen at full day
 inline constexpr float kPoolRise = 0.7f;
-inline constexpr float kPoolWall = 0.5f; // the pool's upper half (walls behind) at this strength //
-                                         // walls above a light lit to this share of its height
+inline constexpr float kLightHeadroom = 0.4f; // pools are stored at this share (8-bit target:
+                                              // overlapping flames must not clip to white)
+inline constexpr float kPoolWall = 0.5f;
+inline constexpr float kMapLightFull = 4.0f; // a map chunk this bright in lights: the fullest point
+inline constexpr float kCarriedHeight = 20;  // world px from the feet to a carried flame
+inline constexpr float kCarriedFlame =
+    2.5f; // world px radius of the flame's point // the pool's upper half (walls behind) at this
+          // strength // walls above a light lit to this share of its height
 inline constexpr int kPoolLevels = 6;      // a pool's light in this many dithered bands
 inline constexpr int kPoolTexture = 64;    // the falloff texture's side
 inline constexpr float kFarLightPx = 2.5f; // window px radius of a light seen from afar, at least

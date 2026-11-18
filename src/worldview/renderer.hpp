@@ -202,6 +202,9 @@ public:
     // Classic where the shader path cannot be made (logged once).
     gpu::Quality setQuality(gpu::Quality q);
     [[nodiscard]] gpu::Quality quality() const;
+    // The world data's lights burning now, gathered by map chunk for the map screen: (grid tile
+    // of their middle, how bright 0..1); empty on the classic path.
+    void mapLights(std::vector<std::pair<Vec2, float>>& out) const;
     // The world's wind (unit direction in grid tiles, strength 0..1) for sway; reduce motion
     // halves it.
     void setWind(Vec2 dir, float strength, bool reduceMotion);
@@ -227,6 +230,10 @@ private:
     void putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean);
     // Whether an item's glow layer burns now (the world data's lights on the shader path).
     [[nodiscard]] bool glowing(std::uint32_t item) const;
+    // City life's actors drawn this frame that carry a burning light: `f(feet, hand, colour,
+    // radius tiles)`, world px; `rain(Vec2 tile)` as for the world's lights.
+    template <typename R, typename F>
+    void forEachCarried(R&& rain, F&& f);
 
     void warmUp();
     [[nodiscard]] bool put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
@@ -380,6 +387,8 @@ private:
     std::unique_ptr<gpu::Post> post_;
     std::unique_ptr<WorldLights> lights_;
     std::vector<gpu::RegionLook> regionLooks_;
+    std::vector<std::vector<std::int16_t>> carried_; // per life region, per role: light profile
+    mutable std::vector<std::pair<Vec2, float>> mapSums_; // mapLights() per chunk: weighted sum
     struct Sway {
         float lean = 0;      // art px at the top in a full wind, 0: still
         bool frames = false; // cloth keeps its own flapping frames; plants bend instead

@@ -541,6 +541,8 @@ private:
     std::vector<MapPlace> mapPlaces_; // those shown now
     std::vector<int> mapShown_;       // their regions
     MapModel mapModel_;
+    std::vector<MapLight> mapLights_;                   // the map's town lights this frame
+    std::vector<std::pair<Vec2, float>> mapLightTiles_; // the same in grid tiles
     MapScreen map_;
     TexturePtr mapTexture_;
     Sprite mapSprite_;

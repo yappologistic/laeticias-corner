@@ -50,6 +50,40 @@ std::pair<float, bool> swayFor(const world::ItemInfo& info, const Catalog& home)
 
 } // namespace
 
+template <typename R, typename F>
+void WorldView::forEachCarried(R&& rain, F&& f) {
+    // Roles with `carries` hold their light while its hours hold (city life's actors drawn
+    // this frame); the profile per (life region, role) is resolved once.
+    if (life_ == nullptr || !lights_ || actorCount_ == 0) return;
+    const life::LifeData& d = life_->lifeWorld().data;
+    if (carried_.size() != d.regions.size()) {
+        carried_.assign(d.regions.size(), {});
+        for (std::size_t r = 0; r < d.regions.size(); ++r)
+            for (const life::Role& role : d.regions[r].roles)
+                carried_[r].push_back(static_cast<std::int16_t>(
+                    role.carries.empty()
+                        ? -1
+                        : lights_->profileOf(d.regions[r].worldRegion, role.carries)));
+    }
+    for (std::size_t i = 0; i < actorCount_; ++i) {
+        const life::DrawActor& a = actorBuf_[i];
+        if (a.role < 0 || a.region >= carried_.size()) continue;
+        const std::vector<std::int16_t>& roles = carried_[a.region];
+        if (static_cast<std::size_t>(a.role) >= roles.size() ||
+            roles[static_cast<std::size_t>(a.role)] < 0)
+            continue;
+        const auto profile = static_cast<std::uint16_t>(roles[static_cast<std::size_t>(a.role)]);
+        const LightProfile& p = lights_->profiles()[profile];
+        const Rgb c = lights_->colourOf(profile, a.handle.index * 2654435761U + a.handle.gen,
+                                        p.rain == LightRain::Sheltered ? 0.0f : rain(a.pos));
+        if (c.r + c.g + c.b <= 0.002f) continue;
+        const Vec2 w = iso_.toWorld(a.pos.x, a.pos.y);
+        const Vec2 feet{w.x, w.y - a.z};
+        f(feet, Vec2{feet.x, feet.y - gpu::tuning::kCarriedHeight},
+          Rgb{c.r * a.alpha, c.g * a.alpha, c.b * a.alpha}, p.radius);
+    }
+}
+
 gpu::Quality WorldView::setQuality(gpu::Quality q) {
     if (q == gpu::Quality::Classic) {
         if (post_) {
@@ -100,6 +134,27 @@ void WorldView::setWind(Vec2 dir, float strength, bool reduceMotion) {
                     (reduceMotion ? 0.5f : 1.0f);
 }
 
+void WorldView::mapLights(std::vector<std::pair<Vec2, float>>& out) const {
+    out.clear();
+    if (!post_ || !lights_) return;
+    // One point per map chunk with burning lights, at their middle, brighter for more.
+    const int cw = map_.chunksX();
+    mapSums_.assign(static_cast<std::size_t>(cw * map_.chunksY()), {});
+    lights_->forEachBurning([&](Vec2 tile, Rgb c) {
+        const int cx = std::clamp(static_cast<int>(tile.x) >> kChunkShift, 0, cw - 1);
+        const int cy = std::clamp(static_cast<int>(tile.y) >> kChunkShift, 0, map_.chunksY() - 1);
+        auto& s = mapSums_[static_cast<std::size_t>(cy * cw + cx)];
+        const float k = (c.r + c.g + c.b) / 3.0f;
+        s.first.x += tile.x * k;
+        s.first.y += tile.y * k;
+        s.second += k;
+    });
+    for (const auto& [at, k] : mapSums_)
+        if (k > 0.01f)
+            out.emplace_back(Vec2{at.x / k, at.y / k},
+                             std::min(1.0f, k / gpu::tuning::kMapLightFull));
+}
+
 bool WorldView::glowing(std::uint32_t item) const {
     return !post_ || !lights_ || lights_->glowOn(item);
 }
@@ -133,7 +188,7 @@ void WorldView::gradeGpu(double clock, double now, const Lighting& light, Lod lo
                  origin,
                  res_,
                  now};
-    lights_->update(clock, now);
+    lights_->update(clock, now, life_);
 }
 
 void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow, const Hooks& hooks,
@@ -151,7 +206,8 @@ void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow,
     if (lod != Lod::Overview) {
         // A pool is an ellipse on the ground ((1 - (d/R)^2)^2 inside R tiles) below its centre,
         // and above it reaches up the walls behind to near the flame's height.
-        const float day = t::kPoolDay + (1.0f - t::kPoolDay) * std::clamp(glow, 0.0f, 1.0f);
+        const float day =
+            (t::kPoolDay + (1.0f - t::kPoolDay) * std::clamp(glow, 0.0f, 1.0f)) * t::kLightHeadroom;
         const float ax = std::numbers::sqrt2_v<float> * iso_.hw;
         const float ay = std::numbers::sqrt2_v<float> * iso_.hh;
         batch_.use(post_->falloff(), SDL_BLENDMODE_ADD_PREMULTIPLIED, SDL_SCALEMODE_LINEAR);
@@ -189,9 +245,25 @@ void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow,
             for (const HomeLamp& lamp : hooks.lamps())
                 pool(lamp.at, 0, lamp.radius / (ax * 1.4f), warm);
         }
+        forEachCarried(rain, [&](Vec2 feet, Vec2, Rgb c, float radius) {
+            pool(feet, t::kCarriedHeight, radius, c);
+        });
         batch_.flush();
     }
     post_->begin(post_->glow());
+    if (lod != Lod::Overview) {
+        // The carried flame itself (the walker art has no glow frames yet): a small warm point
+        // at the hand, bloomed with the rest.
+        const float r = std::max(1.5f, t::kCarriedFlame * x.res);
+        batch_.use(post_->falloff(), SDL_BLENDMODE_ADD_PREMULTIPLIED, SDL_SCALEMODE_LINEAR);
+        forEachCarried([](Vec2) { return 0.0f; },
+                       [&](Vec2, Vec2 hand, Rgb c, float) {
+                           const Vec2 p = x.apply(hand);
+                           batch_.quad(SDL_FRect{p.x - r, p.y - r, 2 * r, 2 * r}, {0, 0, 1, 1},
+                                       {c.r * 1.5f, c.g * 1.5f, c.b * 1.5f, 1});
+                       });
+        batch_.flush();
+    }
 }
 
 void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow) {

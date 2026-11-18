@@ -102,6 +102,8 @@ struct DrawActor {
     bool translucent = false; // memories
     int item = -1;            // map item whose walk tile it stands on (draw order), -1: ground
     bool floor = false;       // that tile is a walk-run floor: drawn after the floor piece
+    std::int16_t role = -1;   // in its life region (its carried light), -1: none
+    std::uint8_t region = 0;  // LifeData::regions index
 };
 
 // A one-shot sound or effect of the last step, at a place.
