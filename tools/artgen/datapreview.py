@@ -31,6 +31,7 @@ def _table():
     doc = json.loads((spec.ASSETS / "atlas" / "ramps.json").read_text())
     colours = np.zeros((256, 8, 3), np.uint8)
     cls = np.zeros((256, 3), np.uint8)
+    leaf = np.zeros(256, bool)
     remap = {st: np.arange(256) for st in doc["states"]}
     snow_ramp = None
     for e in doc["ramps"]:
@@ -38,16 +39,17 @@ def _table():
             colours[e["id"], i] = [int(c[j:j + 2], 16) for j in (1, 3, 5)]
         colours[e["id"], len(e["colours"]):] = colours[e["id"], len(e["colours"]) - 1]
         cls[e["id"]] = CLASS_RGB[e["class"]]
+        leaf[e["id"]] = e["class"] == "foliage_deciduous"
         for st, rid in e.get("states", {}).items():
             remap[st][e["id"]] = rid
         if e["name"] == "snow":
             snow_ramp = e["id"]
-    return colours, cls, remap, snow_ramp
+    return colours, cls, remap, snow_ramp, leaf
 
 
 def visualise(colour: np.ndarray, packed: np.ndarray, raw_mask: np.ndarray, view: str) -> np.ndarray:
     """One page drawn as `view`; colour-only sprites keep their colour."""
-    colours, cls, remap, snow_ramp = _table()
+    colours, cls, remap, snow_ramp, leaf = _table()
     v = packed.astype(np.uint32)
     w = v[..., 0] | v[..., 1] << 8 | v[..., 2] << 16 | v[..., 3] << 24
     ramp, step = ((w >> 3) & 255).astype(np.int64), (w & 7).astype(np.int64)
@@ -71,9 +73,8 @@ def visualise(colour: np.ndarray, packed: np.ndarray, raw_mask: np.ndarray, view
     elif view == "sun_snow":
         rgb = colours[ramp, step] * np.where(lit, 1.0, 0.45)[..., None]
         rgb[snow] = (255, 255, 255)
-    elif view == "autumn":          # leaves turn, grass dries
-        turn = remap["turn"][ramp]
-        rgb = colours[np.where(turn != ramp, turn, remap["dry"][ramp]), step]
+    elif view == "autumn":          # deciduous leaves turn, grass dries
+        rgb = colours[np.where(leaf[ramp], remap["turn"][ramp], remap["dry"][ramp]), step]
     else:                           # winter: dormant ground and leaves, snow where it catches
         rgb = colours[remap["dormant"][ramp], step].astype(np.float32)
         sn = colours[snow_ramp, np.clip(step, 1, 4)]

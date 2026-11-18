@@ -645,9 +645,9 @@ ITEMS = {f"athens.{n}": it for n, it in {
     "g_wall_tower": _item(g_wall_tower, {}, {"torch": (24.0, 32.8, 29.0)}),
     "g_wall_gate": _item(g_wall_gate),
     "g_running_track": _item(g_running_track),
-    "g_fountain": _item(g_fountain, {"fill": [{"t": [1, 0], "face": "-x"}]}),
-    "g_workshop": _item(g_workshop, {"throw": [{"t": [1, 0], "face": "-x"}]}, {"smoke": (24.0, 24.0, 18.0)}),
-    "g_farmstead": _item(g_farmstead, {"door": [{"t": [0, 2], "face": "+y"}]}),
+    "g_fountain": _item(g_fountain, {"fill": [{"t": [1, 2], "face": "-y"}]}),
+    "g_workshop": _item(g_workshop, {"throw": [{"t": [1, 2], "face": "-y"}]}, {"smoke": (24.0, 24.0, 18.0)}),
+    "g_farmstead": _item(g_farmstead, {"door": [{"t": [0, 3], "face": "+y"}]}),
     "stair_marble": _item(stair_marble),
 }.items()}
 

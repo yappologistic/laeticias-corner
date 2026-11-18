@@ -56,6 +56,7 @@ class Layers:
     base: Sprite
     shadow: Sprite
     glow: Sprite | None
+    hit: tuple | None = None    # (vx, vy) per base pixel: the voxel it shows, for cutting pieces
 
 
 def _bounds(model: Model):
@@ -357,11 +358,12 @@ def render_sprite(model: Model, cull=False, edge=3.0) -> Sprite:
     return base
 
 
-def render_layers(model: Model, cull=False, edge=3.0):
-    """(base Sprite with its data word, glow RGBA or None)."""
+def render_layers(model: Model, cull=False, edge=3.0, hit=False):
+    """(base Sprite with its data word, glow RGBA or None[, (vx, vy) per pixel])."""
     sh = shade(model)
     rgba, glow, ox, oy = finish(sh, model.k, model.halos, cull, edge)
-    return Sprite(rgba, ox, oy, data_word(sh)), glow
+    out = Sprite(rgba, ox, oy, data_word(sh)), glow
+    return out + ((sh.vx, sh.vy),) if hit else out
 
 
 def render_shadow(model: Model) -> Sprite:
@@ -407,11 +409,11 @@ def render_shadow(model: Model) -> Sprite:
     return Sprite(rgba, -c0, -r0)
 
 
-def render(model: Model, want_glow: bool, cull=False) -> Layers:
-    base, glow = render_layers(model, cull)
+def render(model: Model, want_glow: bool, cull=False, hit=False) -> Layers:
+    base, glow, *vxy = render_layers(model, cull, hit=hit)
     glow_sprite = None
     if want_glow:
         if glow is None:
             glow = np.zeros_like(base.rgba)
         glow_sprite = Sprite(glow, base.ox, base.oy)
-    return Layers(base, render_shadow(model), glow_sprite)
+    return Layers(base, render_shadow(model), glow_sprite, vxy[0] if vxy else None)
