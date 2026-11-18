@@ -111,6 +111,23 @@ TEST_CASE("a passing state during an undo does not grant a wish") {
     CHECK(g.done("first_flowers"));
 }
 
+TEST_CASE("a wish met when offered is not granted once its goal is undone (QA2-06)") {
+    Game g;
+    g.place("flowers_white", 30, 30);
+    g.place("flowers_red", 31, 30);
+    g.run(31);
+    REQUIRE(g.isOpen("first_flowers"));
+    REQUIRE(g.log.back().already);
+    g.world.removeItem(*g.world.itemIndexAt({31, 30}));
+    g.changed();
+    g.run(5.0);
+    CHECK_FALSE(g.done("first_flowers"));
+    // Met again, it is granted after the ordinary hold.
+    g.place("flowers_red", 31, 30);
+    g.run(2.0);
+    CHECK(g.done("first_flowers"));
+}
+
 TEST_CASE("offers come one at a time, 75 s apart (30 s with none open), at most three") {
     Game g;
     g.progress.unlockEverything(g.cat);

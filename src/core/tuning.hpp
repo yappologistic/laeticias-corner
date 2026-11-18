@@ -20,8 +20,10 @@ inline constexpr double kDayLengthSeconds = 12.0 * 60.0;
 inline constexpr double kDuskStart = 0.50;
 inline constexpr double kNightStart = 0.625;
 inline constexpr double kDawnStart = 0.875;
-inline constexpr double kPinEaseSeconds = 1.6; // time to glide to a pinned phase
-inline constexpr double kMidnight = 0.75;      // a new calendar day begins here
+inline constexpr double kPinEaseSeconds = 1.6;     // time to glide to a pinned phase
+inline constexpr double kMidnight = 0.75;          // a new calendar day begins here
+inline constexpr int kMaxCalendarDay = 1'000'000;  // saves cannot push the calendar past this
+inline constexpr int kMaxHarvests = 1'000'000'000; // nor the harvest count
 // The season's colour grade glides to the new season over this share of a cycle (midnight to
 // the end of dawn), or this many seconds when the season is pinned by hand.
 inline constexpr double kSeasonGradeGlide = 0.25;

@@ -510,7 +510,7 @@ TEST_CASE("autosave fires under continuous editing, after quiet moments, and ret
     CHECK(frames * step == doctest::Approx(tuning::kSaveRetrySeconds).epsilon(0.02));
 }
 
-TEST_CASE("the calendar turns at midnight while the clock runs, never while pinned") {
+TEST_CASE("the calendar turns at midnight while the clock runs, and in play time while pinned") {
     Clock clock;
     clock.setTime(0.74);
     CHECK(clock.day() == 0);
@@ -524,14 +524,24 @@ TEST_CASE("the calendar turns at midnight while the clock runs, never while pinn
     for (int i = 0; i < static_cast<int>(tuning::kDayLengthSeconds / tuning::kStepSeconds); ++i)
         clock.update(tuning::kStepSeconds);
     CHECK(clock.day() == 2);
-    // A pinned clock (and its glide across midnight) leaves the calendar alone.
+    // A pinned clock's glide across midnight does not turn the day...
     clock.setTime(0.7);
     clock.setPin(ClockPin::Dawn, false);
     for (int i = 0; i < 600; ++i) clock.update(tuning::kStepSeconds);
     CHECK(clock.phase() == Phase::Dawn);
     CHECK(clock.day() == 2);
+    // ...but the calendar keeps turning in play time, a day per day length, so pinning never
+    // keeps summer (and its visitors and wishes) away.
     clock.update(tuning::kDayLengthSeconds * 3);
-    CHECK(clock.day() == 2);
+    CHECK(clock.day() == 5);
+    CHECK(clock.phase() == Phase::Dawn);
+    // Saves cannot push the calendar into overflow (QA2-08).
+    clock.setDay(2147483647);
+    CHECK(clock.day() == tuning::kMaxCalendarDay);
+    clock.update(tuning::kDayLengthSeconds * 2);
+    CHECK(clock.day() == tuning::kMaxCalendarDay);
+    clock.setDay(-5);
+    CHECK(clock.day() == 0);
 
     const std::vector<int> days{3, 3, 3, 3};
     CHECK(seasonOf(0, days).season == 0);

@@ -2,6 +2,7 @@
 
 #include "core/tuning.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 
@@ -60,6 +61,14 @@ Phase Clock::phase() const {
     return phaseAt(t_);
 }
 
+void Clock::setDay(int day) {
+    day_ = std::clamp(day, 0, tuning::kMaxCalendarDay);
+}
+
+void Clock::nextDay() {
+    day_ = std::min(day_ + 1, tuning::kMaxCalendarDay);
+}
+
 void Clock::setTime(double t) {
     t_ = wrap(t);
 }
@@ -76,8 +85,13 @@ void Clock::update(double dt) {
         t_ = wrap(t_ + dt / tuning::kDayLengthSeconds);
         // Midnight falls in the middle of the night, so the days change in the dark.
         const double since = wrap(t_ - tuning::kMidnight);
-        if (since < wrap(before - tuning::kMidnight)) ++day_;
+        if (since < wrap(before - tuning::kMidnight)) nextDay();
         return;
+    }
+    pinnedDay_ += dt / tuning::kDayLengthSeconds;
+    while (pinnedDay_ >= 1.0) {
+        pinnedDay_ -= 1.0;
+        nextDay();
     }
     // Glide along the shortest way round the cycle so pinning never jumps.
     const double target = phaseCentre(static_cast<Phase>(static_cast<int>(pin_) - 1));

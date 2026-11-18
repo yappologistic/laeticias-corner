@@ -23,7 +23,9 @@
 //   "world"      {"camera": {"at": [tx, ty] view centre in home tiles, "zoom": scale}}
 // Everything outside "home" is global to the world. Readers ignore what they do not know, skip
 // ids the catalog no longer has (with a warning) and fall back to defaults for missing optional
-// fields; files from a newer version are refused. Wild tiles (stages not yet open) hold nothing.
+// fields (or fields of the wrong type, each with a warning); counters and timers are clamped to
+// what play could have made; files from a newer version are refused. Wild tiles (stages not yet
+// open) hold nothing.
 //
 // Older files are still read, for migration (see migrateLegacy):
 // Version 2 (engine chunked): "map", "chunk" (32), "base": "blank", "palette", "chunks":
@@ -77,6 +79,10 @@ struct SaveData {
 // Rejects malformed or newer files; tolerates missing optional fields and unknown ids.
 [[nodiscard]] std::expected<SaveData, std::string> deserialize(std::string_view text,
                                                                const Catalog& cat);
+
+// The "version" a save file claims (0 when it is unreadable), so a file from a newer build can be
+// told apart from a damaged one and left untouched.
+[[nodiscard]] int saveFileVersion(std::string_view text);
 
 // Brings a save read from version 1 or 2 up to the progress loop (§2.5): every piece the old game
 // had stays unlocked, wishes those pieces already answer are done, veggie beds are ripe, and land

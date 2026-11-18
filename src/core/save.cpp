@@ -2,6 +2,7 @@
 
 #include "core/edit.hpp"
 #include "core/land.hpp"
+#include "core/tuning.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -59,6 +60,66 @@ public:
 private:
     std::map<std::string, int> counts_;
 };
+
+// Optional fields are read one by one: a field of the wrong type or out of range falls back to
+// its default with a warning, and never costs the rest of the world (QA2-09).
+const json& listField(const json& j, const char* key, Warnings& warn) {
+    static const json kEmpty = json::array();
+    if (!j.is_object() || !j.contains(key)) return kEmpty;
+    if (!j[key].is_array()) {
+        warn.add(std::string("'") + key + "' was not a list and was ignored");
+        return kEmpty;
+    }
+    return j[key];
+}
+
+long long intField(const json& j, const char* key, long long def, long long lo, long long hi,
+                   Warnings& warn) {
+    if (!j.is_object() || !j.contains(key)) return def;
+    const json& v = j[key];
+    if (!v.is_number_integer()) {
+        warn.add(std::string("'") + key + "' was not a whole number and was reset");
+        return def;
+    }
+    const long long n = v.is_number_unsigned() && v.get<unsigned long long>() > 1ULL << 62
+                            ? hi
+                            : v.get<long long>();
+    if (n < lo || n > hi) warn.add(std::string("'") + key + "' was out of range and was clamped");
+    return std::clamp(n, lo, hi);
+}
+
+double numField(const json& j, const char* key, double def, double lo, double hi, Warnings& warn) {
+    if (!j.is_object() || !j.contains(key)) return def;
+    const json& v = j[key];
+    if (!v.is_number() || !std::isfinite(v.get<double>())) {
+        warn.add(std::string("'") + key + "' was not a number and was reset");
+        return def;
+    }
+    const double d = v.get<double>();
+    if (d < lo || d > hi) warn.add(std::string("'") + key + "' was out of range and was clamped");
+    return std::clamp(d, lo, hi);
+}
+
+bool boolField(const json& j, const char* key, bool def, Warnings& warn) {
+    if (!j.is_object() || !j.contains(key)) return def;
+    if (!j[key].is_boolean()) {
+        warn.add(std::string("'") + key + "' was not true or false and was reset");
+        return def;
+    }
+    return j[key].get<bool>();
+}
+
+std::string stringField(const json& j, const char* key, Warnings& warn) {
+    if (!j.is_object() || !j.contains(key)) return {};
+    if (!j[key].is_string()) {
+        warn.add(std::string("'") + key + "' was not text and was dropped");
+        return {};
+    }
+    return j[key].get<std::string>();
+}
+
+// The longest play time a save may claim (about 30 000 years); beyond it numbers lose seconds.
+constexpr double kMaxPlayed = 1e12;
 
 struct Loader {
     const Catalog& cat;
@@ -185,19 +246,19 @@ void readVersion1(const json& root, Loader& in, int fileW, int fileH) {
             in.terrain(x, y,
                        terrain[static_cast<std::size_t>(y) * static_cast<std::size_t>(fileW) +
                                static_cast<std::size_t>(x)]);
-    const json items = root.value("items", json::array());
-    if (!items.is_array()) throw std::runtime_error("items is not a list");
-    for (const auto& j : items) in.item(j);
+    for (const auto& j : listField(root, "items", in.warn)) in.item(j);
 }
 
 void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
-    const int chunk = root.value("chunk", kChunk);
-    if (chunk < 1 || chunk > 1024) throw std::runtime_error("chunk size out of range");
-    const std::string base = root.value("base", std::string(kSaveBaseBlank));
-    if (base != kSaveBaseBlank) throw std::runtime_error("unknown base '" + base + "'");
-    const json chunks = root.value("chunks", json::array());
-    if (!chunks.is_array()) throw std::runtime_error("chunks is not a list");
-    for (const auto& c : chunks) {
+    if (root.contains("chunk") &&
+        (!root["chunk"].is_number_integer() || root["chunk"].get<long long>() < 1 ||
+         root["chunk"].get<long long>() > 1024))
+        throw std::runtime_error("chunk size out of range");
+    const int chunk = root.contains("chunk") ? root["chunk"].get<int>() : kChunk;
+    if (root.contains("base") &&
+        (!root["base"].is_string() || root["base"].get<std::string>() != kSaveBaseBlank))
+        throw std::runtime_error("unknown base");
+    for (const auto& c : listField(root, "chunks", in.warn)) {
         if (!c.is_object() || !c.contains("x") || !c.contains("y") || !c["x"].is_number_integer() ||
             !c["y"].is_number_integer()) {
             in.warn.add("malformed chunk skipped");
@@ -244,8 +305,8 @@ void readVersion3(const json& root, Loader& in) {
         in.warn.add("a home map of another size was centred");
     }
     // Wild land first, so nothing can be loaded onto it.
-    const int stage = home.value("stage", 0);
-    in.data.progress.stage = std::clamp(stage, 0, static_cast<int>(in.cat.stages.size()) - 1);
+    in.data.progress.stage = static_cast<int>(
+        intField(home, "stage", 0, 0, static_cast<long long>(in.cat.stages.size()) - 1, in.warn));
     applyLand(in.data.world, in.cat, in.data.progress.stage);
     const json& runs = home.at("terrain");
     if (!runs.is_array()) throw std::runtime_error("home terrain is not a list");
@@ -260,7 +321,7 @@ void readVersion3(const json& root, Loader& in) {
             in.terrain(static_cast<int>(filled % w), static_cast<int>(filled / w), run[0]);
     }
     if (filled != total) in.warn.add("home terrain of the wrong length");
-    for (const auto& j : home.value("items", json::array())) in.item(j);
+    for (const auto& j : listField(home, "items", in.warn)) in.item(j);
     // Wild tiles hold the base terrain only (a damaged file could say otherwise).
     World& world = in.data.world;
     for (int y = 0; y < world.height(); ++y)
@@ -292,7 +353,7 @@ void readProgress(const json& p, const Catalog& cat, SaveData& data, Warnings& w
         std::ranges::fill(pr.terrain, 0);
         mark(knownIds(p["unlocked"], piece, warn, "piece"), pr.items, pr.terrain);
     }
-    mark(knownIds(p.value("new", json::array()), piece, warn, "piece"), pr.newItems, pr.newTerrain);
+    mark(knownIds(listField(p, "new", warn), piece, warn, "piece"), pr.newItems, pr.newTerrain);
     if (p.contains("frames")) {
         std::ranges::fill(pr.frames, 0);
         for (const int f : knownIds(
@@ -301,28 +362,34 @@ void readProgress(const json& p, const Catalog& cat, SaveData& data, Warnings& w
             pr.frames[static_cast<std::size_t>(f)] = 1;
     }
     const auto visitor = [&](const std::string& id) { return cat.findVisitor(id); };
-    for (const int v : knownIds(p.value("clues", json::array()), visitor, warn, "visitor"))
+    for (const int v : knownIds(listField(p, "clues", warn), visitor, warn, "visitor"))
         pr.clues[static_cast<std::size_t>(v)] = 1;
-    for (const int v : knownIds(p.value("seen", json::array()), visitor, warn, "visitor"))
+    for (const int v : knownIds(listField(p, "seen", warn), visitor, warn, "visitor"))
         if (std::ranges::find(data.seen, cat.visitors[static_cast<std::size_t>(v)].id) ==
             data.seen.end())
             data.seen.push_back(cat.visitors[static_cast<std::size_t>(v)].id);
     for (const int n : knownIds(
-             p.value("nooks", json::array()),
-             [&](const std::string& id) { return cat.findNook(id); }, warn, "nook"))
+             listField(p, "nooks", warn), [&](const std::string& id) { return cat.findNook(id); },
+             warn, "nook"))
         pr.nooks[static_cast<std::size_t>(n)] = 1;
-    pr.harvests = std::max(0, p.value("harvests", 0));
-    pr.lastHarvestDay = p.value("last_harvest_day", -1);
+    pr.harvests = static_cast<int>(intField(p, "harvests", 0, 0, tuning::kMaxHarvests, warn));
+    pr.lastHarvestDay =
+        static_cast<int>(intField(p, "last_harvest_day", -1, -1, tuning::kMaxCalendarDay, warn));
     if (p.contains("wishes") && p["wishes"].is_object()) {
         const json& w = p["wishes"];
         const auto wish = [&](const std::string& id) { return cat.findWish(id); };
-        for (const int i : knownIds(w.value("done", json::array()), wish, warn, "wish")) {
+        for (const int i : knownIds(listField(w, "done", warn), wish, warn, "wish")) {
             if (pr.wishes[static_cast<std::size_t>(i)].state == WishState::Done) continue;
             pr.wishes[static_cast<std::size_t>(i)].state = WishState::Done;
             pr.granted.push_back(i);
         }
-        for (const int i : knownIds(w.value("open", json::array()), wish, warn, "wish")) {
+        for (const int i : knownIds(listField(w, "open", warn), wish, warn, "wish")) {
             if (pr.wishes[static_cast<std::size_t>(i)].state != WishState::Waiting) continue;
+            // Never more open than the tray holds; the rest wait to be offered again (QA2-05).
+            if (std::cmp_greater_equal(pr.open.size(), tuning::kMaxOpenWishes)) {
+                warn.add("more open wishes than the tray holds; the rest wait");
+                continue;
+            }
             pr.wishes[static_cast<std::size_t>(i)].state = WishState::Open;
             pr.open.push_back(i);
         }
@@ -331,10 +398,10 @@ void readProgress(const json& p, const Catalog& cat, SaveData& data, Warnings& w
                 const auto i = cat.findWish(id);
                 if (i && t.is_number() && std::isfinite(t.get<double>()) &&
                     pr.wishes[static_cast<std::size_t>(*i)].state == WishState::Waiting)
-                    pr.wishes[static_cast<std::size_t>(*i)].snoozedUntil = t.get<double>();
+                    pr.wishes[static_cast<std::size_t>(*i)].snoozedUntil =
+                        std::max(0.0, t.get<double>());
             }
-        const double last = w.value("last_offer", 0.0);
-        pr.lastOffer = std::isfinite(last) ? last : 0.0;
+        pr.lastOffer = numField(w, "last_offer", 0.0, 0.0, kMaxPlayed, warn);
     }
 }
 
@@ -466,19 +533,35 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
             readVersion3(root, in);
             if (root.contains("progress") && root["progress"].is_object())
                 readProgress(root["progress"], cat, data, in.warn);
-            data.name = root.value("name", std::string{});
-            data.freeBuild = root.value("free_build", false);
-            data.created = root.value("created", std::string{});
-            const double played = root.value("played", 0.0);
-            data.played = std::isfinite(played) && played >= 0 ? played : 0.0;
+            data.name = stringField(root, "name", in.warn);
+            data.freeBuild = boolField(root, "free_build", false, in.warn);
+            data.created = stringField(root, "created", in.warn);
+            data.played = numField(root, "played", 0.0, 0.0, kMaxPlayed, in.warn);
+            // Timers measured against play time can never lie beyond it, so a damaged file
+            // cannot keep wishes away for good (QA2-07).
+            Progress& pr = data.progress;
+            if (pr.lastOffer > data.played) {
+                pr.lastOffer = data.played;
+                in.warn.add("the last offer lay in the future and was brought back");
+            }
+            for (WishProgress& wp : pr.wishes)
+                if (wp.snoozedUntil > data.played + tuning::kWishSnooze) {
+                    wp.snoozedUntil = data.played + tuning::kWishSnooze;
+                    in.warn.add("a snooze lay too far ahead and was shortened");
+                }
             if (root.contains("season_pin") && root["season_pin"].is_string())
                 data.seasonPin = cat.findSeason(root["season_pin"].get<std::string>()).value_or(-1);
-            const json& cam = root.value("world", json::object()).value("camera", json::object());
+            static const json kNone = json::object();
+            const json& worldPart =
+                root.contains("world") && root["world"].is_object() ? root["world"] : kNone;
+            const json& cam = worldPart.contains("camera") && worldPart["camera"].is_object()
+                                  ? worldPart["camera"]
+                                  : kNone;
             if (cam.contains("at") && cam["at"].is_array() && cam["at"].size() == 2 &&
                 cam["at"][0].is_number() && cam["at"][1].is_number()) {
                 const Vec2 at{cam["at"][0].get<float>(), cam["at"][1].get<float>()};
                 if (std::isfinite(at.x) && std::isfinite(at.y)) data.camera = at;
-                data.zoom = cam.value("zoom", 1.0f);
+                data.zoom = static_cast<float>(numField(cam, "zoom", 1.0, 0.1, 8.0, in.warn));
             }
         } else {
             const auto size = mapSize(root);
@@ -500,8 +583,6 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
                                         std::to_string(cat.mapH) + " map");
             readLegacySections(root, cat, data);
         }
-        in.warn.flush(data.warnings);
-
         if (root.contains("clock") && root["clock"].is_object()) {
             const auto& c = root["clock"];
             if (c.contains("t") && c["t"].is_number()) data.clockTime = c["t"].get<double>();
@@ -509,8 +590,7 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
                 data.clockTime = 0.2;
             if (c.contains("pin") && c["pin"].is_string())
                 data.pin = parsePin(c["pin"].get<std::string>()).value_or(ClockPin::Auto);
-            if (c.contains("day") && c["day"].is_number_integer())
-                data.day = std::max(0, c["day"].get<int>());
+            data.day = static_cast<int>(intField(c, "day", 0, 0, tuning::kMaxCalendarDay, in.warn));
         }
         if (root.contains("settings") && root["settings"].is_object()) {
             const auto& s = root["settings"];
@@ -523,12 +603,25 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
                 data.weather = WeatherMode::Rain;
             }
         }
+        in.warn.flush(data.warnings);
         return data;
     } catch (const json::exception& e) {
         return std::unexpected(std::string("save: ") + e.what());
     } catch (const std::runtime_error& e) {
         return std::unexpected(std::string("save: ") + e.what());
     }
+}
+
+int saveFileVersion(std::string_view text) {
+    try {
+        const json root = json::parse(text);
+        if (root.is_object() && root.contains("version") && root["version"].is_number_integer())
+            return static_cast<int>(
+                std::clamp<long long>(root["version"].get<long long>(), 0, 1 << 30));
+    } catch (const json::exception&) {
+        return 0;
+    }
+    return 0;
 }
 
 void migrateLegacy(SaveData& data, const Catalog& cat) {

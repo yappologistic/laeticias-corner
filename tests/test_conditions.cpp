@@ -3,6 +3,7 @@
 #include "core/catalog.hpp"
 #include "core/condition.hpp"
 #include "core/land.hpp"
+#include "core/rng.hpp"
 #include "core/world.hpp"
 #include "test_support.hpp"
 
@@ -287,4 +288,96 @@ TEST_CASE("catalog: every nook has one near, and the wish tree unlocks everythin
     }
     for (std::size_t wi = 0; wi < c.wishes.size(); ++wi)
         CHECK_MESSAGE(granted[wi], c.wishes[wi].id << " can never be offered");
+}
+
+TEST_CASE("conditions: a multi-tile item counts when any tile is in reach of a terrain anchor") {
+    // QA2-12: the item's top-left tile is the anchor tile itself, so the old "first tile" rule
+    // never counted it although the rest of it lies in the area.
+    const Catalog& c = test::catalog();
+    World w(c);
+    Probe p;
+    w.setTerrain({10, 10}, terrain("path"));
+    put(w, "barn", 10, 10);
+    const char* near = R"({"near": {"anchor": {"terrain": "path"}, "within": 1,
+                                    "has": [{"item": "barn", "min": 1}]}})";
+    CHECK(p.eval(near, w));
+    // Counted once even though several of its tiles are in the area.
+    CHECK_FALSE(p.eval(R"({"near": {"anchor": {"terrain": "path"}, "within": 1,
+                                    "has": [{"item": "barn", "min": 2}]}})",
+                       w));
+}
+
+TEST_CASE("conditions: near agrees with a literal reading of the spec on random worlds") {
+    // A differential check (QA2): every anchor's footprint grown by `within`, every item counted
+    // once if any of its tiles lies in that area outside the anchor, terrain tile by tile.
+    const Catalog& c = test::catalog();
+    const int path = terrain("path");
+    const std::vector<int> kinds = {item("barn"), item("hammock"), item("oak"), item("bench")};
+    struct Case {
+        const char* json;
+        bool terrainAnchor;
+        int anchor;
+        int has;
+        int min;
+        int within;
+    };
+    const Case cases[] = {
+        {R"({"near": {"anchor": {"terrain": "path"}, "within": 1, "has": [{"item": "barn"}]}})",
+         true, path, kinds[0], 1, 1},
+        {R"({"near": {"anchor": {"terrain": "path"}, "within": 2,
+              "has": [{"item": "hammock", "min": 2}]}})",
+         true, path, kinds[1], 2, 2},
+        {R"({"near": {"anchor": {"item": "bench"}, "within": 1, "has": [{"item": "barn"}]}})",
+         false, kinds[3], kinds[0], 1, 1},
+        {R"({"near": {"anchor": {"item": "oak"}, "within": 2,
+              "has": [{"item": "hammock", "min": 2}]}})",
+         false, kinds[2], kinds[1], 2, 2},
+    };
+    Rng rng(20261117);
+    for (int round = 0; round < 60; ++round) {
+        World w(c);
+        const TileRect zone{4, 4, 16, 16};
+        for (int k = 0; k < 6; ++k)
+            w.setTerrain({rng.range(zone.x0, zone.x1 - 1), rng.range(zone.y0, zone.y1 - 1)}, path);
+        for (int k = 0; k < 14; ++k) {
+            const int type = kinds[static_cast<std::size_t>(rng.range(0, 3))];
+            const Item it = makeItem(
+                c, type, 0, {rng.range(zone.x0, zone.x1 - 1), rng.range(zone.y0, zone.y1 - 1)});
+            bool free = true;
+            for (int y = it.pos.y; y < it.pos.y + it.h; ++y)
+                for (int x = it.pos.x; x < it.pos.x + it.w; ++x) free = free && !w.itemAt({x, y});
+            if (free) w.addItem(it);
+        }
+        for (const Case& cs : cases) {
+            std::vector<TileRect> anchors;
+            if (cs.terrainAnchor) {
+                for (int y = 0; y < w.height(); ++y)
+                    for (int x = 0; x < w.width(); ++x)
+                        if (w.terrainAt({x, y}) == cs.anchor)
+                            anchors.push_back({x, y, x + 1, y + 1});
+            } else {
+                for (const Item& it : w.items())
+                    if (it.type == cs.anchor) anchors.push_back(it.rect());
+            }
+            bool expected = false;
+            for (const TileRect& fp : anchors) {
+                const TileRect area = TileRect{fp.x0 - cs.within, fp.y0 - cs.within,
+                                               fp.x1 + cs.within, fp.y1 + cs.within}
+                                          .clipped(w.bounds());
+                int n = 0;
+                for (const Item& it : w.items()) {
+                    if (it.type != cs.has || it.rect() == fp) continue;
+                    bool in = false;
+                    for (int y = it.pos.y; y < it.pos.y + it.h; ++y)
+                        for (int x = it.pos.x; x < it.pos.x + it.w; ++x)
+                            in =
+                                in || (area.contains(TilePos{x, y}) && !fp.contains(TilePos{x, y}));
+                    n += in ? 1 : 0;
+                }
+                expected = expected || n >= cs.min;
+            }
+            Probe p;
+            CHECK_MESSAGE(p.eval(cs.json, w) == expected, "round " << round << ": " << cs.json);
+        }
+    }
 }

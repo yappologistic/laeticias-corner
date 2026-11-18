@@ -75,9 +75,11 @@ void Progression::refresh(int wish, const World& world, const CondFacts& facts, 
     const auto w = static_cast<std::size_t>(wish);
     const WishDef& def = cat_.wishes[w];
     const bool holds = cat_.conditions.eval(def.goal, world, facts);
-    if (!holds)
+    if (!holds) {
         trueSince_[w] = -1;
-    else if (trueSince_[w] < 0)
+        // A wish met when offered and then undone waits for its goal like any other (QA2-06).
+        grantAt_[w] = -1;
+    } else if (trueSince_[w] < 0)
         trueSince_[w] = played;
     WishStatus& st = status_[w];
     st.ready = holds;
@@ -220,7 +222,7 @@ void Progression::tick(const World& world, Progress& p, const CondFacts& facts, 
         const int wish = p.open[i];
         const auto w = static_cast<std::size_t>(wish);
         if (grantAt_[w] >= 0) {
-            if (played >= grantAt_[w]) grant(wish, p, played);
+            if (played >= grantAt_[w] && trueSince_[w] >= 0) grant(wish, p, played);
         } else if (trueSince_[w] >= 0 && played - trueSince_[w] >= tuning::kWishGrantHold) {
             grant(wish, p, played);
         }

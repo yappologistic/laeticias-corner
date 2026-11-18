@@ -230,6 +230,25 @@ int ConditionSet::countMatches(int sel, const World& world) const {
     return total;
 }
 
+namespace {
+
+// The first tile of an item's footprint, in the area scan's row order, that lies in `area` but
+// not in the anchor's own footprint `fp`: an item counts once, there, if any of it is in reach
+// (docs/design/living-corner.md §3.1). {-1, -1} when none is.
+TilePos firstTileIn(const Item& it, TileRect area, TileRect fp) {
+    const TileRect r = it.rect();
+    const int x0 = std::max(r.x0, area.x0);
+    const int x1 = std::min(r.x1, area.x1);
+    for (int y = std::max(r.y0, area.y0); y < std::min(r.y1, area.y1); ++y) {
+        int x = x0;
+        if (y >= fp.y0 && y < fp.y1 && x >= fp.x0 && x < fp.x1) x = fp.x1;
+        if (x < x1) return {x, y};
+    }
+    return {-1, -1};
+}
+
+} // namespace
+
 bool ConditionSet::anchorPasses(const CondNode& n, const World& world, TileRect fp,
                                 const void* anchorItem) const {
     const TileRect area =
@@ -252,9 +271,7 @@ bool ConditionSet::anchorPasses(const CondNode& n, const World& world, TileRect 
             if (fp.contains(p) || !world.hasGround(p) || world.isWild(p)) continue;
             const auto t = static_cast<std::size_t>(world.terrainAt(p));
             const Item* it = world.itemAt(p);
-            const bool first = it != nullptr && it != anchorItem &&
-                               x == std::max(it->pos.x, area.x0) &&
-                               y == std::max(it->pos.y, area.y0);
+            const bool first = it != nullptr && it != anchorItem && firstTileIn(*it, area, fp) == p;
             for (int h = 0; h < n.count; ++h) {
                 const Selector& sel =
                     selector(has_[static_cast<std::size_t>(n.first + h)].selector);

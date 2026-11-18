@@ -38,15 +38,19 @@ public:
     [[nodiscard]] double time() const { return t_; }
     [[nodiscard]] ClockPin pin() const { return pin_; }
     [[nodiscard]] Phase phase() const;
-    // Calendar day, counted from 0. A new day begins at midnight, and only while the clock runs
-    // on its own: a pinned clock (and its glide) stops the calendar.
+    // Calendar day, counted from 0, at most tuning::kMaxCalendarDay. While the clock runs a new
+    // day begins at midnight; while it is pinned the calendar keeps turning in play time, one day
+    // per day length, so pinning never holds the seasons (and what comes with them) back.
     [[nodiscard]] int day() const { return day_; }
-    void setDay(int day) { day_ = day; }
+    void setDay(int day);
 
 private:
+    void nextDay();
+
     double t_ = 0.2; // a fresh corner starts mid-morning
     ClockPin pin_ = ClockPin::Auto;
     int day_ = 0;
+    double pinnedDay_ = 0; // share of a calendar day played while pinned
 };
 
 [[nodiscard]] Phase phaseAt(double t);

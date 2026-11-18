@@ -4,6 +4,7 @@
 #include "core/land.hpp"
 #include "core/save.hpp"
 #include "core/starter.hpp"
+#include "core/tuning.hpp"
 #include "test_support.hpp"
 
 #include <doctest.h>
@@ -151,6 +152,64 @@ TEST_CASE("corrupt, newer, damaged and odd world saves are handled") {
     CHECK(said("jetpack"));
     CHECK(said("growth"));
     CHECK(loaded->warnings.size() <= 6);
+}
+
+TEST_CASE("one mistyped field or an impossible number never costs the world (QA2-05..09)") {
+    const Catalog& c = test::catalog();
+    SaveData base(makeStarterWorld(c), c);
+    base.played = 400;
+    base.progress.lastOffer = 362;
+    const std::string original = serialize(base, c);
+    const auto edited =
+        [&](std::initializer_list<std::pair<std::string_view, std::string_view>> e) {
+            std::string text = original;
+            for (const auto& [from, to] : e) {
+                const auto pos = text.find(from);
+                REQUIRE_MESSAGE(pos != std::string::npos, from);
+                text.replace(pos, from.size(), to);
+            }
+            auto loaded = deserialize(text, c);
+            REQUIRE(loaded.has_value());
+            return std::move(*loaded);
+        };
+    // Wrongly typed optional fields fall back to their defaults, the rest is kept.
+    const SaveData typed = edited({{"\"stage\": 0", "\"stage\": \"2\""},
+                                   {"\"played\": 400.0", "\"played\": \"lots\""},
+                                   {"\"harvests\": 0", "\"harvests\": [1]"}});
+    CHECK(typed.progress.stage == 0);
+    CHECK(typed.played == 0.0);
+    CHECK(typed.world.items().size() == base.world.items().size());
+    CHECK(typed.progress.lastOffer == 0.0); // brought back to the play clock
+    CHECK(typed.warnings.size() >= 3);
+    // Timers beyond the play clock are brought back, so offers resume.
+    const SaveData timers = edited({{"\"last_offer\": 362.0", "\"last_offer\": 1e12"},
+                                    {"\"snoozed\": {}", "\"snoozed\": {\"a_roof\": 1e300}"}});
+    CHECK(timers.progress.lastOffer == doctest::Approx(400.0));
+    CHECK(timers.progress.wishes[static_cast<std::size_t>(*c.findWish("a_roof"))].snoozedUntil <=
+          400.0 + tuning::kWishSnooze);
+    // Counters too large for play to have made are clamped, never wrapped.
+    const SaveData huge = edited(
+        {{"\"day\": 0", "\"day\": 2147483647"}, {"\"harvests\": 0", "\"harvests\": 99999999999"}});
+    CHECK(huge.day == tuning::kMaxCalendarDay);
+    CHECK(huge.progress.harvests == tuning::kMaxHarvests);
+    // No more open wishes than the tray holds; the rest wait to be offered again.
+    const SaveData open =
+        edited({{"\"open\": []", "\"open\": [\"first_flowers\", \"a_roof\", \"path_to_door\", "
+                                 "\"cat_bench\", \"three_beds\", \"reading_light\"]"}});
+    CHECK(open.progress.open.size() == tuning::kMaxOpenWishes);
+    for (const int w : open.progress.open)
+        CHECK(open.progress.wishes[static_cast<std::size_t>(w)].state == WishState::Open);
+    CHECK(std::ranges::count_if(open.progress.wishes, [](const WishProgress& w) {
+              return w.state == WishState::Open;
+          }) == tuning::kMaxOpenWishes);
+}
+
+TEST_CASE("a newer save is recognised as newer, a damaged one is not (QA2-03)") {
+    CHECK(saveFileVersion("{\"version\": 4, \"home\": {}}") == 4);
+    CHECK(saveFileVersion("{\"version\": 3}") == 3);
+    CHECK(saveFileVersion("{\"version\": 9") == 0);
+    CHECK(saveFileVersion("[]") == 0);
+    CHECK(saveFileVersion("{\"version\": \"4\"}") == 0);
 }
 
 TEST_CASE("a real first-release save becomes the front corner of a version 3 world") {
