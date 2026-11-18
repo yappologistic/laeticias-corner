@@ -146,6 +146,7 @@ SetActor actor(const json& a, const std::string& ctx, const std::string& set) {
         const float fps = asFloat(field(spec, "fps", c + ": anims: " + pose), c + ": fps");
         if (fps <= 0) fail(c + ": anims: " + pose + ": fps must be positive");
         d.anims.emplace_back(pose, fps);
+        d.strides.push_back(floatOr(spec, "stride", 0.0f, c + ": anims: " + pose));
     }
     if (d.anims.empty()) fail(c + ": an actor needs at least one animation");
     if (has(a, "size")) {

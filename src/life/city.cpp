@@ -426,10 +426,15 @@ void CityLife::settle(const LifeClock& clock) {
     // Everything placed where the clock has it, no step of anyone's day taken.
     advanceAbstract(clock);
     reconcile();
-    // A jump is not watched: whoever was leaving is gone.
-    for (std::size_t k = 0; k < pool_.size(); ++k)
+    // A jump is not watched: whoever was leaving is gone, and no longer holds the cap against
+    // those arriving (a full area left behind would otherwise keep the new one empty).
+    int live = 0;
+    for (std::size_t k = 0; k < pool_.size(); ++k) {
         if ((pool_[k].flags & live_flag::kAlive) != 0 && pool_[k].state == ActState::Leave)
             release(static_cast<int>(k));
+        live += (pool_[k].flags & live_flag::kAlive) != 0 ? 1 : 0;
+    }
+    stats_.live = live;
     builds_ = 1 << 20;
     spawnQueued(true);
     builds_ = tl::kTableBuildsPerStep;

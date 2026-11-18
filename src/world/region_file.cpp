@@ -145,6 +145,8 @@ std::expected<RegionFile, std::string> parseRegionFile(std::string_view text, st
         rf.native = stringOr(doc, "native", "", f);
         rf.caption = stringOr(doc, "caption", "", f);
         if (has(doc, "theme")) rf.theme = theme(doc.at("theme"), f + ": theme", gridW, gridH);
+        // The region's climate (the catalog's `climates`) now stands beside its theme.
+        if (rf.theme.climate.empty()) rf.theme.climate = stringOr(doc, "climate", "", f);
         if (has(doc, "districts")) {
             std::unordered_set<std::string> seen;
             const json& ds = asArray(doc.at("districts"), f + ": districts");

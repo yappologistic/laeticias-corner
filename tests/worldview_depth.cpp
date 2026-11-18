@@ -243,14 +243,14 @@ TEST_CASE("actors: walk frames follow the distance walked, evenly, at any pace")
     for (const float speed : {0.5f, 0.9f, 1.8f}) {
         float stride = 0;
         int changes = 0;
-        int last = cycleFrame(true, 0, 0, fps, n);
+        int last = cycleFrame(true, 0, 0, fps, 0, n);
         float since = 0;
         float minRun = 1e9f;
         float maxRun = 0;
         for (int step = 0; step < 6000; ++step) {
             stride += speed / 600.0f;
             since += speed / 600.0f;
-            const int f = cycleFrame(true, stride, 99.0f, fps, n);
+            const int f = cycleFrame(true, stride, 99.0f, fps, 0, n);
             if (f != last) {
                 if (changes > 0) {
                     minRun = std::min(minRun, since);
@@ -266,7 +266,9 @@ TEST_CASE("actors: walk frames follow the distance walked, evenly, at any pace")
         const float run = lc::worldview::tuning::kActorWalkPace / fps;
         CHECK(minRun > run - 0.01f);
         CHECK(maxRun < run + 0.01f);
-        CHECK(cycleFrame(true, 3.0f, 0, fps, n) == cycleFrame(true, 3.0f, 50, fps, n));
+        CHECK(cycleFrame(true, 3.0f, 0, fps, 0, n) == cycleFrame(true, 3.0f, 50, fps, 0, n));
+        // The art's stride: twelve frames over 0.75 tiles, one per 0.0625 tiles walked.
+        CHECK(cycleFrame(true, 0.75f * 2 + 0.0625f * 5 + 0.01f, 0, fps, 0.75f, 12) == 5);
     }
-    CHECK(cycleFrame(false, 5.0f, 0.5f, 4, 4) == 2);
+    CHECK(cycleFrame(false, 5.0f, 0.5f, 4, 0, 4) == 2);
 }

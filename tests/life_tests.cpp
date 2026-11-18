@@ -34,9 +34,13 @@ TilePos centreOf(std::string_view district) {
     return *f;
 }
 
+// The season of a city's famous month (world-seasons.md: the regions' pins are gone; at the
+// famous month every city shows the crowds it showed before): Rome and Pārsa in spring, Athens in
+// summer.
 int seasonOf(std::string_view region) {
-    const LifeWorld& w = lifeWorld();
-    return w.data.regions[static_cast<std::size_t>(w.data.findRegion(region))].season;
+    const auto& s = lifeWorld().data.seasons;
+    const auto at = std::ranges::find(s, region == "athens" ? "summer" : "spring");
+    return static_cast<int>(at - s.begin());
 }
 
 // The problems the data has today, reported to their owners (out/reports/engine-city-life.md);
@@ -362,7 +366,7 @@ TEST_CASE("city: the three centres live their day as the data says") {
     };
     for (const Case cs :
          {Case{"forum", "rome", 9}, Case{"forum", "rome", 1}, Case{"agora", "athens", 5},
-          Case{"agora", "athens", 1}, Case{"terrace", "parsa", 2}, Case{"terrace", "parsa", 3}}) {
+          Case{"agora", "athens", 4}, Case{"terrace", "parsa", 2}, Case{"terrace", "parsa", 3}}) {
         for (const double hour : {5.5, 10.0, 15.5, 19.5, 1.5}) {
             const std::string where = std::string(cs.focus) + " day " + std::to_string(cs.day);
             CAPTURE(where);
@@ -387,6 +391,8 @@ TEST_CASE("city: the three centres live their day as the data says") {
                 CHECK(std::abs(static_cast<float>(d.live + d.inside) - d.expected) <=
                       3.0f + 1.5f * std::sqrt(d.expected));
             }
+            // Over the cap (the Panathenaia's Agora) populations are scaled down in proportion.
+            expected *= city.stats().scale;
             CHECK(std::abs(static_cast<float>(live) - expected) <=
                   4.0f + 2.0f * std::sqrt(expected));
             checkGround(city);

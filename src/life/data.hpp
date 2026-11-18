@@ -29,6 +29,7 @@ struct KindDef {
     int variants = 1;
     std::vector<std::uint16_t> anims; // LifeData::animNames indices this kind has
     std::vector<float> fps;           // per entry of `anims`
+    std::vector<float> strides;       // per entry: tiles a cycle walks, 0 when not stated
     bool cart = false;                // carts and sledges: lifesim's slower default speed
     [[nodiscard]] bool has(int anim) const;
     [[nodiscard]] float fpsOf(int anim) const;

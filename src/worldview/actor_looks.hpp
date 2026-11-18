@@ -17,9 +17,10 @@
 
 namespace lc::worldview {
 
-// The frame of an `n`-frame cycle playing at `fps`: walking, by the tiles walked (`moving`), so
-// frames change every `kActorWalkPace / fps` tiles whatever the pace; otherwise by `time`.
-[[nodiscard]] int cycleFrame(bool moving, float stride, float time, float fps, int n);
+// The frame of an `n`-frame cycle: walking (`moving`), by the tiles walked, one cycle per `cycle`
+// tiles (the art's stated stride; 0: as if played at `fps` at kActorWalkPace), so feet stay
+// planted and frames change evenly whatever the pace; otherwise by `time` at `fps`.
+[[nodiscard]] int cycleFrame(bool moving, float walked, float time, float fps, float cycle, int n);
 
 class ActorLooks {
 public:
@@ -42,6 +43,7 @@ private:
         std::array<std::vector<SpriteRef>, 2> frames; // front, back
         std::array<std::vector<Vec2>, 2> carry;       // per frame, empty: the default point
         float fps = 0;
+        float cycle = 0; // tiles one cycle walks, 0: not stated
     };
     struct Kind {
         int variants = 0;               // variants with art

@@ -51,6 +51,7 @@ ActorLooks::ActorLooks(const PageAtlas& pages, const life::LifeData& data,
                 const std::string& name = data.animNames[def.anims[a]];
                 Anim& an = anims[a];
                 an.fps = def.fps[a];
+                an.cycle = a < def.strides.size() ? def.strides[a] : 0.0f;
                 for (int side = 0; side < 2; ++side) {
                     const std::string facing = name + (side == 0 ? "_front" : "_back");
                     std::vector<SpriteRef> f =
@@ -99,11 +100,12 @@ ActorLooks::ActorLooks(const PageAtlas& pages, const life::LifeData& data,
     }
 }
 
-int cycleFrame(bool moving, float stride, float time, float fps, int n) {
+int cycleFrame(bool moving, float walked, float time, float fps, float cycle, int n) {
     if (n <= 1) return 0;
-    // Walking: the art's fps reads as drawn at the usual pace, so feet stay planted at any speed.
-    const float t = moving ? stride / tuning::kActorWalkPace : time;
-    return ((static_cast<int>(std::floor(t * fps)) % n) + n) % n;
+    const float phase = !moving     ? time * fps
+                        : cycle > 0 ? walked / cycle * static_cast<float>(n)
+                                    : walked / tuning::kActorWalkPace * fps;
+    return ((static_cast<int>(std::floor(phase)) % n) + n) % n;
 }
 
 std::optional<ActorLooks::Drawn> ActorLooks::resolve(const life::DrawActor& d) const {
@@ -118,7 +120,8 @@ std::optional<ActorLooks::Drawn> ActorLooks::resolve(const life::DrawActor& d) c
     const std::size_t side = d.facing < 2 ? 0 : 1;
     const std::vector<SpriteRef>& f = an->frames[side];
     if (f.empty()) return std::nullopt;
-    const int i = cycleFrame(moving, d.stride, d.animTime, an->fps, static_cast<int>(f.size()));
+    const int i =
+        cycleFrame(moving, d.stride, d.animTime, an->fps, an->cycle, static_cast<int>(f.size()));
     const bool mirror = d.facing == 1 || d.facing == 3;
     const std::vector<Vec2>& c = an->carry[side];
     Vec2 carry = c.empty() ? tuning::kCarryAt : c[static_cast<std::size_t>(i) % c.size()];

@@ -129,9 +129,11 @@ void Compiler::kinds() {
             k.name = a.name;
             k.sprite = a.sprite;
             k.variants = std::max(1, a.variants);
-            for (const auto& [pose, fps] : a.anims) {
-                k.anims.push_back(static_cast<std::uint16_t>(intern(d_.animNames, pose)));
-                k.fps.push_back(fps);
+            for (std::size_t i = 0; i < a.anims.size(); ++i) {
+                k.anims.push_back(
+                    static_cast<std::uint16_t>(intern(d_.animNames, a.anims[i].first)));
+                k.fps.push_back(a.anims[i].second);
+                k.strides.push_back(i < a.strides.size() ? a.strides[i] : 0.0f);
             }
             k.cart =
                 a.id.find("cart") != std::string::npos || a.id.find("sledge") != std::string::npos;

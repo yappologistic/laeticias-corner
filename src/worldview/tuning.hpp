@@ -80,10 +80,16 @@ struct ClimateRow {
     float wind;
 };
 inline constexpr ClimateRow kClimates[] = {
-    {"rome", 1.2f, 1.1f, 1.0f},
-    {"athens", 0.35f, 0.6f, 1.6f},
-    {"parsa", 0.15f, 0.35f, 0.9f},
-    {"world", 1.0f, 1.0f, 1.3f},
+    // The catalog's climates (world-seasons.md): showers, clouds, wind, until their months are
+    // read.
+    {"home", 1.0f, 1.0f, 1.0f},          {"med_green", 1.2f, 1.1f, 1.0f},
+    {"med_dry", 0.35f, 0.6f, 1.6f},      {"highland", 1.3f, 1.2f, 1.2f},
+    {"thracian", 1.2f, 1.1f, 1.2f},      {"levant", 0.4f, 0.6f, 1.1f},
+    {"anatolian", 0.8f, 0.9f, 1.2f},     {"high_mountain", 1.4f, 1.3f, 1.5f},
+    {"mesopotamian", 0.15f, 0.3f, 1.0f}, {"steppe", 0.4f, 0.6f, 1.4f},
+    {"fars", 0.15f, 0.35f, 0.9f},        {"plateau", 0.25f, 0.45f, 1.1f},
+    {"sea_west", 1.0f, 1.0f, 1.3f},      {"sea_aegean", 0.6f, 0.8f, 1.5f},
+    {"gulf", 0.2f, 0.4f, 1.1f},
 };
 inline constexpr float kOverviewGlow = 0.6f; // lights at the overview: fewer pixels, softer
 inline constexpr float kHazeShare = 0.5f;    // how much of a region's haze strength tints the view
@@ -126,10 +132,10 @@ inline constexpr float kMemoryAlpha = 0.5f;       // memories are translucent
 inline constexpr float kActorMergeCell = 128.0f;  // the merge's screen grid, world px
 
 // City life's sound (city_sound.hpp; out/reports/audio-atmosphere.md "How the engine should mix").
-inline constexpr float kCityRainOn = 0.05f;   // rain intensity at which rain is heard
-inline constexpr float kCrowdHandful = 5.0f;  // people in view: level 1 up to here
-inline constexpr float kCrowdMarket = 20.0f;  // level 2 up to here, festival beyond
-inline constexpr float kCrowdRain = 0.4f;     // crowds hush in the rain (look.md §3.6)
+inline constexpr float kCityRainOn = 0.05f;  // rain intensity at which rain is heard
+inline constexpr float kCrowdHandful = 5.0f; // people in view: level 1 up to here
+inline constexpr float kCrowdMarket = 20.0f; // level 2 up to here, festival beyond
+inline constexpr float kCrowdRain = 0.4f;    // crowds hush in the rain (look.md §3.6)
 inline constexpr float kCityWind = 0.6f;
 inline constexpr float kRainSurface = 0.8f;
 inline constexpr float kDawnFrom = 5.0f; // game hours of the climate's beds
@@ -138,21 +144,21 @@ inline constexpr float kDuskFrom = 18.5f;
 inline constexpr float kDuskTo = 20.5f;
 inline constexpr float kNatureBed = 0.7f;
 inline constexpr float kCicadas = 0.7f;
-inline constexpr float kEventReach = 24.0f;   // tiles beyond half the view an event is heard
-inline constexpr float kWorkReach = 14.0f;    // tiles a work loop carries (plus a quarter view)
-inline constexpr float kCitySlowTick = 0.1f;  // s: work, voices
+inline constexpr float kEventReach = 24.0f;    // tiles beyond half the view an event is heard
+inline constexpr float kWorkReach = 14.0f;     // tiles a work loop carries (plus a quarter view)
+inline constexpr float kCitySlowTick = 0.1f;   // s: work, voices
 inline constexpr float kWorkShotEvery = 14.0f; // s between a worker's sounds, on average
-inline constexpr float kVoiceEvery = 30.0f;   // s between an animal's calls, on average
+inline constexpr float kVoiceEvery = 30.0f;    // s between an animal's calls, on average
 inline constexpr float kWorkLoop = 0.8f;
 inline constexpr float kWorkShot = 0.6f;
 inline constexpr float kVoice = 0.6f;
 inline constexpr float kCart = 0.7f;
-inline constexpr float kStepZoom = 2.0f;      // footsteps from this zoom in
-inline constexpr float kStepReach = 6.0f;     // tiles
-inline constexpr float kStepTiles = 0.45f;    // tiles walked per step
+inline constexpr float kStepZoom = 2.0f;   // footsteps from this zoom in
+inline constexpr float kStepReach = 6.0f;  // tiles
+inline constexpr float kStepTiles = 0.45f; // tiles walked per step
 inline constexpr float kStep = 0.45f;
 inline constexpr float kLifeShot = 0.9f;
-inline constexpr float kCallMin = 25.0f;      // s between birds' and animals' calls
+inline constexpr float kCallMin = 25.0f; // s between birds' and animals' calls
 inline constexpr float kCallMax = 70.0f;
 inline constexpr float kCall = 0.6f;
 inline constexpr std::size_t kShotsPerUpdate = 8;

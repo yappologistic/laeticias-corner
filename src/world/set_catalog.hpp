@@ -67,7 +67,8 @@ struct SetActor {
     std::string sprite;
     int variants = 1;
     std::vector<std::pair<std::string, float>> anims; // pose, fps
-    int sizeW = 0;                                    // depth footprint in tiles; 0 for people
+    std::vector<float> strides; // per anim: tiles one cycle walks (art-motion.md), 0: not stated
+    int sizeW = 0;              // depth footprint in tiles; 0 for people
     int sizeH = 0;
 };
 
