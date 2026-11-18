@@ -15,12 +15,11 @@ from dataclasses import replace
 import numpy as np
 
 import materials as M
-from arch import Scale, carve, cylinder, ellipsoid, face_box, field_fill, fill, rod, slab
-from greek import (Order, Temple, column, crepidoma, geison_ring, marble_wall, paint_band, paint_ring, temple,
-                   tiled_roof, pediment)
+from arch import Scale, carve, ellipsoid, face_box, field_fill, fill, rod, slab
+from greek import Order, Temple, column, crepidoma, marble_wall, paint_band, pediment, temple, tiled_roof
 from rig import Dress
 from setbuild import Landmark
-from sets.athens.common import FIRE, altar, blocks, bronze_statue, drum, olive_tree, paving, referrer, tiles
+from sets.athens.common import altar, blocks, bronze_statue, drum, olive_tree, paving, referrer, tiles
 from voxel import value_noise
 
 ref = referrer("sets.athens.waypoints")
