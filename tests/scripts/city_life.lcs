@@ -1,5 +1,6 @@
 # City life driven by the game without the world renderer (src/life/): the Roman Forum on an
-# ordinary April morning, a minute of its life, then the Athenian Agora on the same morning.
+# ordinary April morning, a minute of its life, then the Athenian Agora on the same morning;
+# nobody is drawn walking on the spot.
 set season spring
 set day 9
 set time 0.1667
@@ -7,16 +8,20 @@ set city forum
 expect city live 450 900
 expect city ground ok
 expect city slots ok
+expect city moving
 expect city district forum 60 130
 wait 900
 expect city ground ok
 expect city slots ok
+expect city moving
 expect city live 450 900
 set season summer
 set city agora
 expect city live 300 900
 expect city district agora 40 130
 expect city ground ok
+wait 600
+expect city moving
 set city_dump city_agora.json
 set city off
 quit

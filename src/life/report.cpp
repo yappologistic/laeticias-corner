@@ -131,6 +131,11 @@ std::string lifeDump(const CityLife& life, std::string_view label) {
                   {"tokens", s.tokens},
                   {"running_events", s.running},
                   {"queued", s.queued},
+                  {"walking_in_place", s.marching},
+                  {"to_and_fro", s.oscillating},
+                  {"stuck", s.stuck},
+                  {"waiting", s.waiting},
+                  {"unstuck", s.unstuck},
                   {"scale", round2(s.scale)}};
     ojson districts = ojson::array();
     std::vector<DistrictCount> counts = life.districtCounts();

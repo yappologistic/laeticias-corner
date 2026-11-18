@@ -18,6 +18,7 @@ key f
 wait 5
 expect following yes
 wait 180
+expect city moving
 shot shots/city_meet_follow.png
 key escape
 wait 5

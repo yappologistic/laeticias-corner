@@ -452,6 +452,8 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
     TilePos at = places[0];
     std::vector<DrawActor> buf(2048);
     double worst = 0;
+    long inPlace = 0; // actor-seconds drawn walking on the spot, or stuck past the watchdog
+    const long unstuck0 = city.stats().unstuck;
     for (long k = 0; k < steps; ++k) {
         // The clock at play speed; a calendar day every 50 s so the soak crosses the seasons.
         c.t += tuning::kStepSeconds / tuning::kDayLengthSeconds;
@@ -477,6 +479,7 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
         sim.add(ms);
         worst = std::max(worst, ms);
         if (k % 4 == 0) (void)city.gather(city.view(), 0.5f, buf);
+        if (k % 60 == 30) inPlace += city.stats().marching + city.stats().lost;
         if (k == steps / 4) {
             quarterRss = rssMb();
             quarterBytes = city.memoryBytes();
@@ -489,7 +492,14 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
         "rss %.1f MB after a quarter, %.1f MB at the end; life memory %.2f -> %.2f MB\n",
         seconds, c.day, sim.avg(), sim.pct(0.99), worst, city.stats().live, quarterRss, endRss,
         static_cast<double>(quarterBytes) / 1e6, static_cast<double>(endBytes) / 1e6);
+    (void)std::printf("life soak: %ld actor-seconds walking in place or stuck, %ld given up by "
+                      "the watchdog\n",
+                      inPlace, city.stats().unstuck - unstuck0);
     int rc = 0;
+    if (inPlace > 0) {
+        (void)std::printf("life soak: FAIL people walking in place\n");
+        rc = 3;
+    }
     if (endRss > quarterRss + tuning::kSoakGrowthMiB || endBytes > quarterBytes) {
         (void)std::printf("life soak: FAIL memory grew\n");
         rc = 3;

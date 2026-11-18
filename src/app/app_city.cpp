@@ -93,6 +93,13 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         return bad == 0 ? std::nullopt
                         : std::optional(std::format("{} people off the walkable ground", bad));
     }
+    if (what == "moving") {
+        // Nobody drawn walking on the spot, nobody going nowhere past the watchdog.
+        const life::LifeStats& st = c.stats();
+        if (st.marching == 0 && st.lost == 0) return std::nullopt;
+        return std::format("{} walking in place, {} going nowhere past the watchdog", st.marching,
+                           st.lost);
+    }
     if (what == "slots") {
         int over = 0;
         c.forEachReservation([&](int, int count, int cap) { over += count > cap ? 1 : 0; });

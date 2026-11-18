@@ -227,6 +227,21 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
     activeChunks_.reserve(256);
     groupCount_.assign(w.groupCap.size(), 0);
     spotUse_.assign(w.slotGroup.size(), 0);
+    // Walks and what each becomes standing still: a walk with goods stands with them.
+    const auto& names = w.data.animNames;
+    const auto named = [&](std::string_view n) {
+        const auto it = std::ranges::find(names, n);
+        return it == names.end() ? -1 : static_cast<int>(it - names.begin());
+    };
+    idleOf_.assign(names.size(), -1);
+    for (const char* walk : {"move", "haul", "run", "march", "row"})
+        if (const int k = named(walk); k >= 0) idleOf_[static_cast<std::size_t>(k)] = kAnimIdle;
+    carryWalk_ = named("carry");
+    if (const int k = named("carry"); k >= 0) {
+        const int idle = named("carry_idle");
+        idleOf_[static_cast<std::size_t>(k)] =
+            static_cast<std::int16_t>(idle >= 0 ? idle : kAnimIdle);
+    }
     itemState_.assign(map_->items().size(), 0);
     itemStateUntil_.assign(map_->items().size(), 0);
     running_.reserve(tl::kMaxRunningEvents);
@@ -458,7 +473,10 @@ void CityLife::update(const LifeClock& clock, float dt) {
         if ((pool_[i].flags & live_flag::kAlive) != 0) afterStep(k, dt);
     }
     ++frame_;
-    if (frame_ % 30 == 0) countDistricts();
+    if (frame_ % 30 == 0) {
+        countDistricts();
+        countBodies();
+    }
     stats_.running = static_cast<int>(running_.size());
     stats_.chains = static_cast<int>(chains_.size());
 }
@@ -1884,8 +1902,9 @@ void CityLife::motion(int i, float dt) {
     const Track& tr = tracks_[static_cast<std::size_t>(i)];
     const float pace = a.speed * (a.state == ActState::Wander ? tl::kWanderPace : 1.0f);
     const float left = tr.ended ? static_cast<float>(tr.base + tr.n - 1) - a.s : 1e9f;
-    const float target =
-        left < tl::kBrakeTiles ? std::max(0.2f * pace, pace * left / tl::kBrakeTiles) : pace;
+    const float target = left < tl::kBrakeTiles
+                             ? std::max(tl::kBrakeFloor * pace, pace * left / tl::kBrakeTiles)
+                             : pace;
     const float ease = pace * dt / tl::kEaseSeconds;
     a.speedNow = std::clamp(target, a.speedNow - ease, a.speedNow + ease);
     // Constant speed over the ground: the step along the track that moves it exactly this far
@@ -1901,7 +1920,7 @@ void CityLife::motion(int i, float dt) {
     }
     a.s += ds;
     if (tr.ended) a.s = std::min(a.s, static_cast<float>(tr.base + tr.n - 1));
-    placeOnTrack(i, tl::kCatchUp * std::max(a.speedNow, 0.2f * pace) * dt);
+    placeOnTrack(i, tl::kCatchUp * std::max(a.speedNow, tl::kBrakeFloor * pace) * dt);
 }
 
 void CityLife::advanceBy(int i, float tiles) {
@@ -1924,13 +1943,80 @@ void CityLife::advanceBy(int i, float tiles) {
     placeOnTrack(i, 0);
 }
 
+std::uint16_t CityLife::shownAnim(const LiveActor& a) const {
+    // The body decides: a walk only while it moves over the ground, its standing form (idle, or
+    // standing with its load) while it does not; moving with a standing animation is walking.
+    // Intent never shows: a step begun but not yet moving, a puppet held at its place, a walker
+    // braking to its spot, all stand.
+    const KindDef& k = w_->data.kinds[a.kind];
+    const auto has = [&](int anim) { return anim >= 0 && k.has(static_cast<std::uint16_t>(anim)); };
+    const std::uint16_t want = has(a.anim) ? a.anim : kAnimIdle;
+    const std::int16_t standing = want < idleOf_.size() ? idleOf_[want] : std::int16_t{-1};
+    if ((a.body & body_flag::kWalking) != 0) {
+        if (standing >= 0) return want; // a walk, and walking
+        return has(carryWalk_) && a.goods >= 0 ? static_cast<std::uint16_t>(carryWalk_) : kAnimMove;
+    }
+    if (standing < 0) return want;
+    return has(standing) ? static_cast<std::uint16_t>(standing) : kAnimIdle;
+}
+
+void CityLife::judgeWindow(int i) {
+    LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    const float net = std::sqrt(dist2(a.pos, a.mark));
+    const float walked = a.stride - a.markStride;
+    const bool puppet = a.state == ActState::Puppet;
+    std::uint8_t b = static_cast<std::uint8_t>(a.body & body_flag::kWalking);
+    // Marching: drawn walking for half the window while the body covered less ground than the
+    // slowest walk is ever drawn at (its feet would step on the spot).
+    if (a.walkTime >= 0.5f * a.markAge && a.walkDist < tl::kShownStop * a.walkTime)
+        b |= body_flag::kMarching;
+    // To and fro: walking and back where it began, two windows running (one is a U-turn: a
+    // walk to a spot and back the way it came).
+    if (walked > 4.0f * tl::kStillTiles && net < tl::kStillTiles)
+        b |= (a.body & (body_flag::kTurned | body_flag::kOscillating)) != 0
+                 ? body_flag::kOscillating
+                 : body_flag::kTurned;
+    // Stuck: under way at a walking pace (not braking to its spot) and getting nowhere.
+    if (!puppet && moving(i) && a.speedNow > 2.0f * tl::kShownWalk && net < tl::kStillTiles)
+        b |= body_flag::kStuck;
+    // Going nowhere (stuck, or to and fro) counts towards the watchdog alike.
+    const bool nowhere = (b & (body_flag::kStuck | body_flag::kOscillating)) != 0;
+    a.stall = nowhere ? a.stall + a.markAge : 0.0f;
+    if (nowhere) b |= static_cast<std::uint8_t>(a.body & body_flag::kGaveUp);
+    a.body = b;
+    a.mark = a.pos;
+    a.markStride = a.stride;
+    a.markAge = 0;
+    a.walkTime = 0;
+    a.walkDist = 0;
+}
+
 void CityLife::afterStep(int i, float dt) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     const float dx = a.pos.x - a.prev.x;
     const float dy = a.pos.y - a.prev.y;
     const float d = std::sqrt(dx * dx + dy * dy);
     a.animTime += dt * a.rate;
-    if (d > 1.5f) return; // placed, not walked
+    // What is drawn follows the body: its speed over the ground, smoothed, with hysteresis.
+    const float v = d > 1.5f || dt <= 0.0f ? 0.0f : d / dt;
+    a.shown += (v - a.shown) * std::min(1.0f, dt / tl::kShownSmooth);
+    // It starts being drawn walking once it has picked up speed, and stops the step its body
+    // stops (the feet never step on a standing body).
+    const bool walking = (a.body & body_flag::kWalking) != 0;
+    if (walking ? v < tl::kShownStop : a.shown > tl::kShownWalk)
+        a.body = static_cast<std::uint8_t>(a.body ^ body_flag::kWalking);
+    a.markAge += dt;
+    if ((a.body & body_flag::kWalking) != 0 && d <= 1.5f) {
+        a.walkTime += dt;
+        a.walkDist += d;
+    }
+    if (d > 1.5f) { // placed, not walked: a new window from here
+        a.mark = a.pos;
+        a.markStride = a.stride;
+        a.markAge = a.walkTime = a.walkDist = 0;
+        return;
+    }
+    if (a.markAge >= tl::kProgressWindow) judgeWindow(i);
     a.stride += d;
     if (a.source != Source::Population && a.source != Source::Figure) a.speedNow = d / dt;
     if (d > 1e-4f) {
@@ -2001,6 +2087,22 @@ void CityLife::think(int i, float dt) {
         }
     }
     double none = 0;
+    // The watchdog: wanting to move and getting nowhere is bounded. First the step is given up
+    // (the day goes on with its next step, which plans afresh from where it stands); still
+    // stuck, it leaves by the population rule (fades where it stands).
+    if (a.stall >= tl::kStallLeave) {
+        ++stats_.unstuck;
+        beginLeave(i);
+        return;
+    }
+    if (a.stall >= tl::kStallGiveUp && (a.body & body_flag::kGaveUp) == 0) {
+        ++stats_.unstuck;
+        a.body |= body_flag::kGaveUp; // once; still stuck after that, it leaves
+        tracks_[static_cast<std::size_t>(i)].n = 0;
+        endStep(i);
+        runSteps(i, false, none);
+        return;
+    }
     switch (a.state) {
     case ActState::Idle:
         a.timer -= dt;
@@ -2045,13 +2147,16 @@ void CityLife::think(int i, float dt) {
             if (!map_->inBounds(t) || t == a.tile.pos() || !map_->walkable(t)) continue;
             if (a.zone >= 0 && map_->districtAt(t) != a.zone) continue;
             if (!paths.lineClear(a.tile.pos(), t, 2 * radius + 2)) continue;
+            // Somewhere on the tile, not its exact centre; never a shuffle of a few steps (a
+            // walk too short to cross the ground reads as walking in place).
+            const Vec2 end{static_cast<float>(t.x) + range(a, 0.25f, 0.75f),
+                           static_cast<float>(t.y) + range(a, 0.25f, 0.75f)};
+            if (dist2(end, a.pos) < tl::kWanderHop * tl::kWanderHop) continue;
             a.route = Route{};
             a.route.leg = Leg::Line;
             a.route.start = a.tile;
             a.route.goal = tile16(t);
-            // Somewhere on the tile, not its exact centre.
-            startTrack(i, {static_cast<float>(t.x) + range(a, 0.25f, 0.75f),
-                           static_cast<float>(t.y) + range(a, 0.25f, 0.75f)});
+            startTrack(i, end);
             a.anim = kAnimMove;
             break;
         }
@@ -2069,7 +2174,10 @@ void CityLife::think(int i, float dt) {
         }
         const LiveActor& o = pool_[static_cast<std::size_t>(a.follow)];
         const Step& st = w_->data.steps[a.step];
-        if (dist2(o.pos, a.pos) > (st.spacing + 0.6f) * (st.spacing + 0.6f)) {
+        // Hysteresis: it sets off once it has fallen a tile behind and stops when close, so it
+        // never dithers to and fro behind a leader who lingers.
+        const float reach = st.spacing + (moving(i) ? 0.6f : 1.6f);
+        if (dist2(o.pos, a.pos) > reach * reach) {
             if (!moving(i) || frame_ % 30 < static_cast<std::uint32_t>(tl::kBuckets))
                 if (!planTo(i, o.tile.pos(), centre(o.tile.pos()), builds_))
                     tracks_[static_cast<std::size_t>(i)].n = 0;
@@ -2892,14 +3000,16 @@ std::size_t CityLife::gather(TileRect rect, float alpha, std::span<DrawActor> ou
                 d.pos = {a.prev.x + (a.pos.x - a.prev.x) * f, a.prev.y + (a.pos.y - a.prev.y) * f};
                 d.z = a.prevZ + (a.z - a.prevZ) * f;
                 d.stride = a.prevStride + (a.stride - a.prevStride) * f;
-                d.speed = a.speedNow;
+                // Its speed over the ground while drawn walking (never under the renderer's
+                // threshold, so a walk is always phased by the distance covered), else none.
+                d.speed =
+                    (a.body & body_flag::kWalking) != 0 ? std::max(a.shown, tl::kShownStop) : 0.0f;
                 d.heading = a.heading;
                 d.level = static_cast<std::uint8_t>(map_->level(a.tile.pos()));
                 d.facing = a.facing;
                 d.kind = a.kind;
                 d.variant = a.variant;
-                const KindDef& k = w_->data.kinds[a.kind];
-                d.anim = k.has(a.anim) ? a.anim : (a.anim == kAnimMove ? kAnimMove : kAnimIdle);
+                d.anim = shownAnim(a);
                 d.animTime = a.animTime;
                 d.alpha = a.alpha;
                 d.goods = a.goods;
@@ -2912,6 +3022,19 @@ std::size_t CityLife::gather(TileRect rect, float alpha, std::span<DrawActor> ou
             }
         }
     return n;
+}
+
+void CityLife::countBodies() {
+    stats_.marching = stats_.oscillating = stats_.stuck = stats_.waiting = stats_.lost = 0;
+    for (const LiveActor& a : pool_) {
+        if ((a.flags & live_flag::kAlive) == 0 || a.alpha <= 0.0f) continue;
+        stats_.marching += (a.body & body_flag::kMarching) != 0 ? 1 : 0;
+        stats_.oscillating += (a.body & body_flag::kOscillating) != 0 ? 1 : 0;
+        stats_.stuck += (a.body & body_flag::kStuck) != 0 ? 1 : 0;
+        stats_.waiting +=
+            (a.body & body_flag::kWalking) == 0 && a.state != ActState::Inside ? 1 : 0;
+        stats_.lost += a.stall > tl::kStallGiveUp + tl::kProgressWindow ? 1 : 0;
+    }
 }
 
 void CityLife::countDistricts() {

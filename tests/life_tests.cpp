@@ -576,6 +576,68 @@ TEST_CASE("city: the same clock gives the same people however often the area com
     }
 }
 
+TEST_CASE("city: nobody walks in place, in the cities, towns, roads and seas, at four hours") {
+    // Each place at four hours: after a settling minute, 20 s watched; every second each live
+    // actor's window says whether it was drawn walking without getting anywhere (marching) or
+    // walked to and fro. The causes are tallied by source, state and step for the report.
+    // Before the body drove the drawing: 5 054 actor-seconds marching over these 32 views.
+    const char* places[] = {"forum",
+                            "agora",
+                            "terrace",
+                            "district:ostia/forum",
+                            "district:delphi/sanctuary",
+                            "district:latium_italy/road",
+                            "district:greece/road",
+                            "district:tyrrhenian/sea"};
+    long marching = 0;
+    long oscillating = 0;
+    long stuckLong = 0;
+    std::map<std::string, long> causes;
+    for (const char* place : places)
+        for (const double hour : {7.0, 10.5, 15.0, 21.0}) {
+            CityLife city(lifeWorld(), 11);
+            city.setFocus(centreOf(place), 24, 16);
+            LifeClock clock = LifeClock::at(1, hour, -1);
+            city.settle(clock);
+            step(city, clock, 60 * 60);
+            long here = 0;
+            for (int k = 0; k < 20; ++k) {
+                step(city, clock, 60);
+                city.forEachInfo([&](const CityLife::Info& in) {
+                    if ((in.body & body_flag::kMarching) == 0 &&
+                        (in.body & body_flag::kOscillating) == 0)
+                        return;
+                    ++here;
+                    marching += (in.body & body_flag::kMarching) != 0 ? 1 : 0;
+                    oscillating += (in.body & body_flag::kOscillating) != 0 ? 1 : 0;
+                    const LifeData& d = lifeWorld().data;
+                    const std::string verb =
+                        in.step >= 0 ? std::to_string(static_cast<int>(
+                                           d.steps[static_cast<std::size_t>(in.step)].verb))
+                                     : "-";
+                    ++causes["source " + std::to_string(static_cast<int>(in.source)) + " state " +
+                             std::to_string(static_cast<int>(in.state)) + " verb " + verb +
+                             ((in.body & body_flag::kStuck) != 0 ? " stuck" : "") +
+                             ((in.body & body_flag::kOscillating) != 0 ? " to-and-fro" : "")];
+                });
+                city.forEachInfo([&](const CityLife::Info& in) {
+                    if (in.stall > tuning::life::kStallGiveUp + tuning::life::kProgressWindow)
+                        ++stuckLong;
+                });
+            }
+            MESSAGE(std::string(place)
+                    << " " << hour << "h: " << here << " actor-seconds walking in place, live "
+                    << city.liveCount() << ", stuck now " << city.stats().stuck);
+        }
+    for (const auto& [c, n] : causes) MESSAGE(c << ": " << n);
+    MESSAGE("marching " << marching << ", to and fro (two windows) " << oscillating
+                        << ", going nowhere past the watchdog " << stuckLong);
+    // Nobody is drawn walking on the spot; nobody goes nowhere (stuck, to and fro) past the
+    // watchdog's bound, after which the step is given up or the actor leaves.
+    CHECK(marching == 0);
+    CHECK(stuckLong == 0);
+}
+
 TEST_CASE("city: the same seed and script give byte-identical dumps") {
     std::string dumps[2];
     for (std::string& out : dumps) {

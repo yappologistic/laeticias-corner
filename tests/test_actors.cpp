@@ -486,6 +486,58 @@ TEST_CASE("a busy corner: no two actors ever hold one spot") {
     CHECK(!l.of("butterfly").empty());
 }
 
+TEST_CASE("a busy corner: nobody is drawn walking on the spot") {
+    // Every second, each actor drawn in a walk (as the home scene decides it, render/scene.cpp
+    // animOf: travelling, or following on foot) must have covered ground; a walk drawn on a
+    // standing body would freeze mid-stride.
+    const auto walkDrawn = [](const Actor& a) {
+        return a.state == ActorState::Travel || (a.state == ActorState::Follow && a.anim == 0 &&
+                                                 (a.flags & actor_flag::kOnHat) == 0);
+    };
+    Life l;
+    l.world = makeStarterWorld(l.cat);
+    for (const auto& [id, x, y] : {std::tuple{"cottage", 32, 30},
+                                   {"coop", 26, 32},
+                                   {"beehive", 36, 31},
+                                   {"flowers_red", 34, 28},
+                                   {"flowers_white", 35, 28},
+                                   {"flowers_violet", 36, 28},
+                                   {"flowers_red", 36, 29},
+                                   {"campfire", 30, 36},
+                                   {"planter", 24, 33},
+                                   {"bench", 33, 34},
+                                   {"stump", 27, 27}})
+        l.place(id, x, y);
+    l.water({22, 22, 27, 26});
+    for (std::size_t v = 0; v < l.cat.visitors.size(); ++v) l.actors.markSeen(static_cast<int>(v));
+    l.actors.populate(l.env());
+    std::vector<Vec2> mark(512);
+    std::vector<int> drawnWalking(512, 0);
+    long frozen = 0;
+    long windows = 0;
+    for (int s = 0; s < 240; ++s) {
+        for (std::size_t i = 0; i < l.actors.all().size(); ++i) mark[i] = l.actors.all()[i].pos;
+        std::ranges::fill(drawnWalking, 0);
+        for (int k = 0; k < 60; ++k) {
+            l.step();
+            for (std::size_t i = 0; i < l.actors.all().size(); ++i)
+                if (walkDrawn(l.actors.all()[i])) ++drawnWalking[i];
+        }
+        for (std::size_t i = 0; i < l.actors.all().size(); ++i) {
+            const Actor& a = l.actors.all()[i];
+            if ((a.flags & actor_flag::kAlive) == 0 || drawnWalking[i] < 30) continue;
+            ++windows;
+            if (std::hypot(a.pos.x - mark[i].x, a.pos.y - mark[i].y) < 0.07f) {
+                ++frozen;
+                MESSAGE(l.cat.kinds[a.kind].id << " state " << static_cast<int>(a.state) << " at "
+                                               << a.pos.x << "," << a.pos.y);
+            }
+        }
+    }
+    MESSAGE("walking windows " << windows << ", on the spot " << frozen);
+    CHECK(frozen == 0);
+}
+
 TEST_CASE("the same seed gives the same life; another seed another") {
     const auto runWith = [](std::uint64_t seed) {
         Life l(test::catalog(), seed);

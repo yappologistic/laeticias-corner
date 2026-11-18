@@ -9,6 +9,7 @@ set world forum 1
 wait 240
 expect city ground ok
 expect city slots ok
+expect city moving
 expect city drawn 150 900
 expect city people 60 900
 expect city sound amb/world/crowd_latin_3.ogg 40 100
