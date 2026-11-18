@@ -796,13 +796,13 @@ TEST_CASE("events: a pure plan per seed, cooldowns, spacing and once a day") {
     const Catalog& c = test::catalog();
     World w(c);
     for (int x = 0; x < 10; ++x) w.setTerrain({x, 0}, c.waterTerrain);
-    const auto plan = [&](std::uint64_t seed) {
+    const auto plan = [&](std::uint64_t seed, double from = 0) {
         EventScheduler s(c, seed);
         std::vector<std::pair<int, int>> starts;
         EventEnv e;
         e.world = &w;
         for (int i = 0; i < 60 * 600; ++i) {
-            e.now = i * tuning::kStepSeconds;
+            e.now = from + i * tuning::kStepSeconds;
             e.phase = (i / (60 * 120)) % 2 == 0 ? Phase::Day : Phase::Night;
             s.update(e);
             for (const FiredEvent& f : s.fired()) starts.emplace_back(f.event, i);
@@ -812,6 +812,8 @@ TEST_CASE("events: a pure plan per seed, cooldowns, spacing and once a day") {
     };
     const auto a = plan(9);
     CHECK(a == plan(9));
+    // A world opened late in a session plans from then: the same starts, none all at once (F-308).
+    CHECK(a == plan(9, 600000.0));
     CHECK(a != plan(10));
     CHECK(!a.empty());
     // Scheduled (window) starts keep at least kEventSpacing apart.
