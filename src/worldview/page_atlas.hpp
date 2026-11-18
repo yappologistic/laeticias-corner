@@ -1,8 +1,9 @@
 #pragma once
 // Every atlas page the world draws from, as one key space (docs/design/world-tech.md §4.5): the
 // home atlas and the generated page are always resident; each set's pages stream in: decoded on
-// a worker thread, uploaded a slice of rows per frame (one page at a time) into one of a few
-// page-sized texture slots, and evicted least-recently-used under a memory budget once idle.
+// a worker thread, uploaded in slices within a time budget per frame (one page at a time) into
+// page-sized texture slots, the pages a view needs first and the rest ahead of need while slots
+// are free, and evicted least-recently-used under a memory budget once idle.
 // The slots are made (and touched, so the driver allocates them) when streaming starts, as a GPU
 // stalls a frame for every fresh 64 MB texture. In synchronous mode (headless runs) a wanted
 // page loads at once, so screenshots are reproducible.
@@ -37,6 +38,7 @@ struct SpriteRef {
 struct PageStats {
     int resident = 0;       // set pages resident
     int streaming = 0;      // queued, decoding or uploading
+    int wanted = 0;         // of them (or not started yet), pages the view needs
     int uploads = 0;        // slices uploaded this frame
     std::size_t bytes = 0;  // texture memory of every resident page
     std::size_t budget = 0; // the fixed pages and the slots the sets on disk need
@@ -73,6 +75,8 @@ public:
     [[nodiscard]] std::uint32_t generation() const { return generation_; }
     [[nodiscard]] float shadowOpacity() const;
     [[nodiscard]] PageStats stats() const;
+    // Page pixels uploaded by the last update(), in bytes.
+    [[nodiscard]] std::size_t uploadedBytes() const { return uploadedBytes_; }
     [[nodiscard]] std::size_t pageCount() const { return pages_.size(); }
     [[nodiscard]] const std::string& pageSet(std::uint16_t page) const { return pages_[page].set; }
     // Texels of a page (the home page includes the engine's strip below the art).
@@ -121,6 +125,8 @@ private:
     std::uint32_t generation_ = 0;
     double now_ = 0;
     int uploads_ = 0;
+    std::size_t uploadedBytes_ = 0;
+    int wantedPending_ = 0;
 
     std::mutex mutex_; // guards queue_, done_ and the pixels/peak of pages in flight
     std::condition_variable_any wake_;

@@ -89,6 +89,14 @@ void Camera::update(float dt, Vec2 screen) {
         pos_ = target_;
 }
 
+Vec2 Camera::arrival(Vec2 screen) const {
+    if (settled()) return pos_;
+    Vec2 p{anchorWorld_.x - (anchorPx_.x - screen.x * 0.5f) / zoom(),
+           anchorWorld_.y - (anchorPx_.y - screen.y * 0.5f) / zoom()};
+    clamp(p, screen, zoom());
+    return p;
+}
+
 void Camera::frame(SafeArea safe, Vec2 screen, TileRect focus) {
     const bool rim = focus.x1 >= land_.x1 || focus.y1 >= land_.y1;
     const WorldBounds b = landBox(iso_, focus, rim ? cliffDepth_ : 0.0f);

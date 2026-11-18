@@ -63,6 +63,8 @@ public:
     // The scale currently on screen.
     [[nodiscard]] float scale() const { return scale_; }
     [[nodiscard]] bool settled() const { return scale_ == zoom(); }
+    // Where a zoom under way will leave the view's centre (the position when settled).
+    [[nodiscard]] Vec2 arrival(Vec2 screen) const;
     [[nodiscard]] Vec2 position() const { return pos_; }
     // Rendering runs between simulation steps: call beginStep() before each step's update, then
     // draw with interpolated(alpha), alpha being how far the frame is from the last step toward

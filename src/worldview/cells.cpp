@@ -18,10 +18,10 @@ TileRect tilesUnder(const FRect& px, Iso iso) {
             static_cast<int>(std::floor(x1)) + 1, static_cast<int>(std::floor(y1)) + 1};
 }
 
-int lruSlot(std::span<const std::uint64_t> lastUsed, std::uint64_t frame) {
+int lruSlot(std::span<const std::uint64_t> lastUsed, std::uint64_t frame, std::uint64_t spare) {
     int best = -1;
     for (std::size_t i = 0; i < lastUsed.size(); ++i)
-        if (lastUsed[i] != frame &&
+        if (lastUsed[i] + spare < frame &&
             (best < 0 || lastUsed[i] < lastUsed[static_cast<std::size_t>(best)]))
             best = static_cast<int>(i);
     return best;
