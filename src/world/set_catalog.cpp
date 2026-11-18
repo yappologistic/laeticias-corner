@@ -29,8 +29,9 @@ Layout layoutOf(const std::string& s, const std::string& ctx) {
 Surface surfaceOf(const std::string& s, const std::string& ctx) {
     if (s == "land") return Surface::Land;
     if (s == "water") return Surface::Water;
-    if (s == "either") return Surface::Any;
-    fail(ctx + ": on '" + s + "' is not land, water or either");
+    // "any" as the home catalog writes it; "either" as world-tech §1.12 did.
+    if (s == "any" || s == "either") return Surface::Any;
+    fail(ctx + ": on '" + s + "' is not land, water or any");
 }
 
 void unique(std::unordered_set<std::string>& seen, const std::string& id, const std::string& ctx) {
@@ -178,6 +179,9 @@ std::expected<SetCatalog, std::string> parseSetCatalog(std::string_view text, st
         cat.set = asString(field(doc, "set", f), f + ": set");
         if (cat.set != set) fail(f + ": set '" + cat.set + "' differs from '" + s + "'");
         std::unordered_set<std::string> ids;
+        // Actor kinds draw from their own key families (critter/, walker/, figure/, ...), so an
+        // actor may share its id with an item (rome.castor: the statue and the apparition).
+        std::unordered_set<std::string> actorIds;
         const auto each = [&](const char* key, auto&& parse) {
             if (!has(doc, key)) return;
             const json& list = asArray(doc.at(key), f + ": " + key);
@@ -194,7 +198,7 @@ std::expected<SetCatalog, std::string> parseSetCatalog(std::string_view text, st
         });
         each("actors", [&](const json& j, const std::string& c) {
             cat.actors.push_back(actor(j, c, s));
-            unique(ids, cat.actors.back().id, c);
+            unique(actorIds, cat.actors.back().id, c);
         });
         each("goods", [&](const json& j, const std::string& c) {
             cat.goods.push_back(goods(j, c, s));

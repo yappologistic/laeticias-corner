@@ -58,6 +58,8 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
         const auto [it, fresh] = source.emplace(id, file);
         return fresh;
     };
+    // Actor kinds have their own key families, so they only clash with other actors.
+    std::unordered_map<std::string, std::string> actorSource;
     const std::string homeFile = "assets/catalog.json";
     const std::string& homeBase = home.terrain[static_cast<std::size_t>(home.baseTerrain)].id;
     for (const auto& t : home.terrain) {
@@ -141,9 +143,9 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
             c.items_.push_back(std::move(info));
         }
         for (const SetActor& a : sc.actors)
-            if (!claim(a.id, sc.file))
-                return std::unexpected("actor '" + a.id + "' is defined in both " +
-                                       source.at(a.id) + " and " + sc.file);
+            if (const auto [at, fresh] = actorSource.emplace(a.id, sc.file); !fresh)
+                return std::unexpected("actor '" + a.id + "' is defined in both " + at->second +
+                                       " and " + sc.file);
         for (const SetGoods& g : sc.goods)
             if (!claim(g.id, sc.file))
                 return std::unexpected("goods '" + g.id + "' are defined in both " +
