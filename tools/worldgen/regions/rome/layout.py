@@ -18,7 +18,7 @@ import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.finish import (clear_doors, crossings, fit_faces, free, glow_cap, night_posts, orth,
+from worldgen.finish import (clear_doors, clear_front, crossings, fit_faces, free, glow_cap, night_posts, orth,
                              put, seam, stairstep)
 from worldgen.shapes import Ellipse, Line, Mask, Rect
 
@@ -143,6 +143,9 @@ def build(L: Layout) -> None:
     _velia(L)
     _palatine(L)
     _quarters(L, ways)
+    # A gate's passage and a bridge's south end are not hidden behind a roof (QA5 L-04).
+    for lid in ("porta_capena", "pons_cestius"):
+        clear_front(L, Rect(*LM[lid]))
     _campus(L)
     _transtiberim(L)
     _port(L)

@@ -348,3 +348,22 @@ def night_posts(L: Layout, item: str, anchors, *, ring: int = 2, gap: int = 5,
                 placed.append(p)
                 break
     return placed
+
+
+def clear_front(L: Layout, rect: Rect, depth: int = 4) -> None:
+    """Take away the buildings standing in front of `rect` (local) as the camera sees it: the
+    tiles south of it and west of it, `depth` deep, where a roof would hide a gate's passage or a
+    bridge's end at 1x and 2x."""
+    zone = Rect(rect.c0 - depth, rect.r0, rect.c1, rect.r1 + depth)
+    for p in L.items:
+        d = L.cat.items[p.id]
+        if p.removed or d.landmark or not d.has_door:
+            continue
+        pr = p.rect
+        c0, r0 = pr.c0 - L.origin[0], pr.r0 - L.origin[1]
+        c1, r1 = pr.c1 - L.origin[0], pr.r1 - L.origin[1]
+        if c1 < zone.c0 or c0 > zone.c1 or r1 < zone.r0 or r0 > zone.r1:
+            continue
+        if c0 >= rect.c0 and c1 <= rect.c1 and r1 < rect.r0:
+            continue
+        L.remove(p)

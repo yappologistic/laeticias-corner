@@ -26,7 +26,7 @@
     {"id": "n21", "at": [18, 1247]},
     {"id": "world.ramp@33,92.foot", "at": [96, 1246]},
     {"id": "world.stair_earth@33,97.foot", "at": [99, 1246]},
-    {"id": "jetty", "at": [107, 1246], "kind": "dest"},
+    {"id": "jetty", "at": [103, 1246], "kind": "dest"},
     {"id": "home_gate", "at": [60, 1201], "kind": "gate"}
   ],
   "edges": [
