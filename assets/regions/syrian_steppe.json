@@ -239,6 +239,10 @@
     "world.crane": [
      "sfx/world/cranes.wav"
     ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ],
     "world.stork": [
      "sfx/world/stork_clatter.wav"
     ]
@@ -584,7 +588,7 @@
     {
      "actor": "world.stork",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -596,7 +600,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -604,9 +608,15 @@
        "nov"
       ]
      }
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "stone": 0.05,
@@ -776,6 +786,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -910,6 +998,228 @@
    "steps": [],
    "string": "season_turn.winter",
    "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "green_steppe",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.sheep",
+     "count": 8
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "green_steppe",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "night_caravan",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "21:00",
+     "21:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.caravan_driver",
+     "count": 2
+    },
+    {
+     "actor": "parsa.dromedary",
+     "count": 5
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "night_caravan",
+   "sfx": "sfx/parsa/camel.wav",
+   "ambience": {
+    "file": "amb/world/hooves_walk.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "gazelles",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:30",
+     "07:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "oct",
+     "nov"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.gazelle",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "graze",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "gazelles",
+   "sfx": "sfx/world/hoof_earth_1.wav"
+  },
+  {
+   "id": "rain_pools",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "09:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.goat",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "rain_pools",
+   "sfx": "sfx/world/goat_1.wav"
   }
  ],
  "lanes_tokens": [],
@@ -919,7 +1229,11 @@
   "season_turn.spring": "A green flush over the land.",
   "season_turn.summer": "The air shimmers over the land at noon.",
   "season_turn.autumn": "Cranes call high overhead, flying in a long V.",
-  "season_turn.winter": "Frost on the ground this morning."
+  "season_turn.winter": "Frost on the ground this morning.",
+  "green_steppe": "The steppe is green: herders bring their flocks.",
+  "night_caravan": "In the summer heat the caravans travel by night.",
+  "gazelles": "A herd of gazelles crosses the steppe.",
+  "rain_pools": "Winter rain fills the pools; the herds drink."
  },
  "journal": [],
  "era": {
@@ -993,6 +1307,71 @@
      0.9
     ]
    }
+  }
+ ],
+ "roles": [],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
   }
  ]
 }

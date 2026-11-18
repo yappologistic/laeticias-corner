@@ -207,6 +207,10 @@
     "world.gull": [
      "sfx/world/gull_call.wav"
     ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ],
     "world.stork": [
      "sfx/world/stork_clatter.wav"
     ]
@@ -553,7 +557,7 @@
     {
      "actor": "world.stork",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -568,7 +572,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 2,
+     "max_per_chunk": 1,
      "when": {
       "months": [
        "dec",
@@ -580,7 +584,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -593,9 +597,15 @@
        "oct"
       ]
      }
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {},
     "wind": "wind.open",
@@ -635,10 +645,11 @@
     {
      "actor": "world.gull",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 1.5
     }
    ],
    "name": "The open sea",
+   "area": "sea",
    "sound": {
     "surfaces": {
      "water": 1.0
@@ -810,6 +821,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -944,6 +1033,140 @@
     "file": "amb/rome/treadwheel.ogg",
     "gain": 0.8
    }
+  },
+  {
+   "id": "date_boats",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.wake"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "date_boats",
+   "sfx": "sfx/world/rope.wav"
+  },
+  {
+   "id": "shimmer",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "12:00",
+     "12:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.shimmer"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "shimmer",
+   "ambience": {
+    "file": "amb/world/heat.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "fish_shoals",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:30",
+     "07:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr",
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.fish_shoal"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "fish_shoals",
+   "sfx": "sfx/world/fish.wav"
+  },
+  {
+   "id": "shamal",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "13:00",
+     "13:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "shamal",
+   "sfx": "sfx/world/gust_front.wav"
   }
  ],
  "lanes_tokens": [
@@ -964,13 +1187,79 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "persian_gulf.0",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "gulf",
+    "shatt"
+   ],
+   "offsets": [
+    0.887,
+    0.543
    ]
   },
   {
    "actor": "world.reed_boat",
    "lane": "base:karun_boats",
    "count": 2,
-   "by_month": "barge"
+   "by_month": "barge",
+   "id": "persian_gulf.1",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "shatt",
+    "susa"
+   ],
+   "offsets": [
+    0.994,
+    0.612
+   ]
+  },
+  {
+   "actor": "world.reed_boat",
+   "lane": "base:gulf_lane",
+   "count": 2,
+   "carry": "world.goods_dates",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "note": "boats with dates from the head of the Gulf",
+   "by_month": "barge",
+   "id": "persian_gulf.2",
+   "rest": [
+    "gulf",
+    "shatt"
+   ],
+   "offsets": [
+    0.889,
+    0.369
+   ]
+  },
+  {
+   "actor": "world.kelek",
+   "lane": "base:karun_boats",
+   "count": 1,
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "note": "a raft on skins floating goods down to Susa's river",
+   "by_month": "barge",
+   "id": "persian_gulf.3",
+   "rest": [
+    "shatt",
+    "susa"
+   ],
+   "offsets": [
+    0.04
+   ]
   }
  ],
  "zones": [],
@@ -979,7 +1268,11 @@
   "season_turn.spring": "The storks are back on their nests.",
   "season_turn.summer": "The north-west wind blows dust over the water.",
   "season_turn.autumn": "Climbers in the palms: the date harvest.",
-  "season_turn.winter": "Cranes call high overhead, flying in a long V."
+  "season_turn.winter": "Cranes call high overhead, flying in a long V.",
+  "date_boats": "Boats loaded with the new dates.",
+  "shimmer": "The shallow sea shimmers in the heat.",
+  "fish_shoals": "Shoals break the surface at dawn.",
+  "shamal": "The north-west wind blows dust over the water."
  },
  "journal": [],
  "era": {
@@ -991,5 +1284,114 @@
    "autumn": "c. 470/469 BC",
    "winter": "c. 470/469 BC"
   }
- }
+ },
+ "roles": [],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  }
+ ]
 }

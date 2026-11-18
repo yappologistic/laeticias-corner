@@ -285,6 +285,10 @@
    "voices": {
     "world.donkey": [
      "sfx/world/donkey.wav"
+    ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
     ]
    },
    "waterfall": "waterfall"
@@ -681,6 +685,7 @@
     }
    ],
    "name": "The Royal Road",
+   "area": "road",
    "sound": {
     "surfaces": {
      "stone": 1.0
@@ -706,7 +711,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 6
     }
    }
   },
@@ -717,9 +722,64 @@
      "actor": "world.eagle",
      "density": "daytime",
      "max_per_chunk": 1
+    },
+    {
+     "role": "watchman",
+     "per_item": "world.watchtower",
+     "count": 1,
+     "density": "always"
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak_zagros",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak_zagros",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "gazelle",
+     "density": "daytime",
+     "max_per_chunk": 0.3
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "roof": 0.07
@@ -738,7 +798,11 @@
       "sfx/world/hoof_earth_2.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 12
+    }
    }
   }
  ],
@@ -872,6 +936,84 @@
    0.5,
    0.5,
    0.5
+  ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
   ],
   "daytime_hot": [
    0,
@@ -1025,6 +1167,226 @@
    "steps": [],
    "string": "season_turn.winter",
    "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "flocks_climb",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:30",
+     "07:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "apr",
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.sheep",
+     "count": 8
+    },
+    {
+     "actor": "world.goat",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "flocks_climb",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "oak_woods",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.logger",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "work_high",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "oak_woods",
+   "sfx": "sfx/world/chop.wav"
+  },
+  {
+   "id": "flocks_descend",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:30",
+     "07:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.sheep",
+     "count": 8
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "flocks_descend",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "passes_snowbound",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "10:00",
+     "10:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.traveller",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "road",
+   "string": "passes_snowbound",
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.6
+   }
   }
  ],
  "lanes_tokens": [],
@@ -1035,7 +1397,11 @@
   "season_turn.summer": "The flocks are on the high pastures.",
   "season_turn.autumn": "The woods are turning copper and gold.",
   "season_turn.oct": "The flocks come down to the lowlands.",
-  "season_turn.winter": "Snow on the heights."
+  "season_turn.winter": "Snow on the heights.",
+  "flocks_climb": "The herders climb with their flocks to the summer pastures.",
+  "oak_woods": "Woodcutters in the oak woods of the mountains.",
+  "flocks_descend": "The flocks come down towards Susiana.",
+  "passes_snowbound": "Snow closes the high passes."
  },
  "journal": [],
  "era": {
@@ -1139,5 +1505,282 @@
     "gorges": true
    }
   }
- ]
+ ],
+ "roles": [
+  {
+   "id": "watchman",
+   "actor": "parsa.guard_spear",
+   "name": "Watchman on the tower",
+   "schedule": [
+    {
+     "hours": [
+      "18:00",
+      "07:00"
+     ],
+     "routine": "watch"
+    },
+    {
+     "hours": [
+      "07:00",
+      "18:00"
+     ],
+     "routine": "day"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    },
+    "day": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "14:00",
+      "17:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        25
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  },
+  {
+   "id": "gazelle",
+   "actor": "world.gazelle",
+   "name": "Gazelles",
+   "schedule": [
+    {
+     "hours": [
+      "04:30",
+      "20:30"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   }
+  }
+ },
+ "light_points": []
 }

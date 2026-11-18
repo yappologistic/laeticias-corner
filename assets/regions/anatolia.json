@@ -302,6 +302,10 @@
     "world.mule": [
      "sfx/world/donkey.wav"
     ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ],
     "world.sheep": [
      "sfx/world/sheep_1.wav",
      "sfx/world/sheep_2.wav"
@@ -742,6 +746,7 @@
     }
    ],
    "name": "The Royal Road",
+   "area": "road",
    "sound": {
     "surfaces": {
      "stone": 1.0
@@ -767,7 +772,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 6
     }
    }
   },
@@ -775,23 +780,34 @@
    "id": "farm",
    "populations": [
     {
-     "actor": "parsa.farmer",
+     "actor": "world.ox",
      "density": "fields",
-     "max_per_chunk": 3,
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
      }
     },
     {
      "actor": "world.ox",
      "density": "fields",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "world.dog",
-     "density": "daytime",
-     "max_per_chunk": 1
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     }
     },
     {
      "role": "ploughman",
@@ -806,17 +822,6 @@
      "variants": {
       "cold": "climate",
       "hot": "climate"
-     }
-    },
-    {
-     "actor": "world.ox",
-     "density": "fields",
-     "max_per_chunk": 1,
-     "when": {
-      "months": [
-       "sep",
-       "oct"
-      ]
      }
     },
     {
@@ -846,9 +851,46 @@
       "cold": "climate",
       "hot": "climate"
      }
+    },
+    {
+     "role": "shepherd",
+     "per_item": "world.sheepfold",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.sheep",
+     "per_item": "world.sheepfold",
+     "count": 3,
+     "density": "herd"
+    },
+    {
+     "role": "farmer",
+     "density": "always",
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1
+    },
+    {
+     "role": "yard_donkey",
+     "per_item": "parsa.p_house_small",
+     "count": 0.5,
+     "density": "always"
     }
    ],
    "name": "Farms",
+   "area": "country",
    "sound": {
     "surfaces": {
      "roof": 0.1,
@@ -871,7 +913,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 8
     }
    },
    "look": {
@@ -895,7 +937,7 @@
     {
      "actor": "world.stork",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -910,7 +952,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -922,7 +964,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "apr",
@@ -933,9 +975,96 @@
        "sep"
       ]
      }
+    },
+    {
+     "role": "station_keeper",
+     "per_item": "world.royal_station",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "station_guest",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "relay_animal",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always"
+    },
+    {
+     "role": "watchman",
+     "per_item": "world.watchtower",
+     "count": 1,
+     "density": "always"
+    },
+    {
+     "role": "beacon_keeper",
+     "per_item": "world.beacon",
+     "count": 1,
+     "density": "always"
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "gazelle",
+     "density": "daytime",
+     "max_per_chunk": 0.3
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "leaves": 0.04,
@@ -964,10 +1093,123 @@
       "sfx/world/step_timber_3.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 12
+    }
    },
    "look": {
     "reflect": true
+   }
+  },
+  {
+   "id": "pasture",
+   "populations": [
+    {
+     "role": "station_keeper",
+     "per_item": "world.royal_station",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "station_guest",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "relay_animal",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always"
+    },
+    {
+     "role": "shepherd",
+     "per_item": "world.sheepfold",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.sheep",
+     "per_item": "world.sheepfold",
+     "count": 3,
+     "density": "herd"
+    },
+    {
+     "actor": "world.dog",
+     "per_item": "world.sheepfold",
+     "count": 0.5,
+     "density": "always"
+    },
+    {
+     "role": "shepherd",
+     "density": "herd",
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "density": "herd",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "world.goat",
+     "density": "herd",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1
+    },
+    {
+     "role": "horse_herd",
+     "density": "herd",
+     "max_per_chunk": 1.5
+    }
+   ],
+   "area": "country",
+   "name": "Pastures",
+   "sound": {
+    "surfaces": {
+     "roof": 0.05
+    },
+    "wind": "wind.open",
+    "exposure": 0.96,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 8
+    }
    }
   }
  ],
@@ -1102,6 +1344,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -1155,6 +1475,29 @@
    ]
   },
   {
+   "id": "drove",
+   "formation": "cluster",
+   "radius": 3,
+   "leader": {
+    "actor": "parsa.shepherd"
+   },
+   "members": [
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "count": 8
+    },
+    {
+     "actor": "world.goat",
+     "count": 3
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ]
+  },
+  {
    "id": "caravan",
    "formation": "line",
    "spacing": 1.0,
@@ -1184,30 +1527,131 @@
     {
      "actor": "world.mule",
      "variant": 1,
+     "count": 3
+    }
+   ]
+  },
+  {
+   "id": "donkeys_home",
+   "formation": "line",
+   "spacing": 0.8,
+   "leader": {
+    "actor": "world.muleteer"
+   },
+   "members": [
+    {
+     "actor": "world.donkey",
      "count": 4
     }
    ]
   },
   {
-   "id": "drove",
-   "formation": "cluster",
-   "radius": 3,
+   "id": "court",
+   "formation": "line",
+   "spacing": 1.2,
    "leader": {
-    "actor": "parsa.shepherd"
+    "actor": "parsa.cavalryman"
    },
    "members": [
     {
-     "actor": "world.sheep",
-     "variant": 1,
-     "count": 8
+     "actor": "parsa.guard_spear",
+     "count": 4
     },
     {
-     "actor": "world.goat",
-     "count": 3
-    },
-    {
-     "actor": "world.dog",
+     "actor": "parsa.chariot",
      "count": 1
+    },
+    {
+     "actor": "parsa.guard_mede",
+     "count": 2
+    },
+    {
+     "actor": "parsa.p_cart",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "del_lydians",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.del_lydians_lead"
+   },
+   "members": [
+    {
+     "actor": "parsa.del_lydians_bearer",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "del_cappadocians",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.del_cappadocians_lead"
+   },
+   "members": [
+    {
+     "actor": "parsa.del_cappadocians_bearer",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "del_armenians",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.del_armenians_lead"
+   },
+   "members": [
+    {
+     "actor": "parsa.del_armenians_bearer",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "del_babylonians",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.del_babylonians_lead"
+   },
+   "members": [
+    {
+     "actor": "parsa.del_babylonians_bearer",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "del_elamites",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.del_elamites_lead"
+   },
+   "members": [
+    {
+     "actor": "parsa.del_elamites_bearer",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "del_syrians",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.del_syrians_lead"
+   },
+   "members": [
+    {
+     "actor": "parsa.del_syrians_bearer",
+     "count": 2
     }
    ]
   }
@@ -1468,6 +1912,234 @@
    "steps": [],
    "string": "season_turn.winter",
    "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "shearing",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:30",
+     "08:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.sheep",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "pasture",
+   "string": "shearing",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "threshing",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.farmer",
+     "count": 3
+    },
+    {
+     "actor": "world.ox",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "farm",
+   "string": "threshing",
+   "ambience": {
+    "file": "amb/world/threshing.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "flocks_down",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.sheep",
+     "count": 8
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "pasture",
+   "string": "flocks_down",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "snowbound_station",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "16:00",
+     "16:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.traveller",
+     "count": 4
+    },
+    {
+     "actor": "parsa.groom",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "snowbound_station",
+   "ambience": {
+    "file": "amb/world/hearth.ogg",
+    "gain": 0.6
+   }
   }
  ],
  "lanes_tokens": [
@@ -1475,36 +2147,20 @@
    "actor": "world.reed_boat",
    "lane": "base:euphrates_boats",
    "count": 2,
-   "by_month": "barge"
-  },
-  {
-   "actor": "parsa.courier",
-   "route": {
-    "start": "sardis:sardis_station",
-    "end": "parsa:royal_road_station"
-   },
-   "count": 3,
-   "by_month": "courier"
-  },
-  {
-   "actor": "parsa.caravan_driver",
-   "route": {
-    "start": "sardis:sardis_station",
-    "end": "babylon:etemenanki_court"
-   },
-   "count": 2,
-   "group": "caravan",
-   "by_month": "caravan"
-  },
-  {
-   "actor": "world.muleteer",
-   "route": {
-    "start": "halys:halys_station",
-    "end": "euphrates_crossing:euph_station"
-   },
-   "count": 1,
-   "group": "mule_train",
-   "by_month": "caravan"
+   "by_month": "barge",
+   "id": "anatolia.0",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "crossing",
+    "babylon"
+   ],
+   "offsets": [
+    0.925,
+    0.545
+   ]
   },
   {
    "actor": "parsa.shepherd",
@@ -1520,7 +2176,811 @@
      "oct"
     ]
    },
-   "note": "flocks moving between summer and winter pastures"
+   "note": "flocks moving between summer and winter pastures",
+   "id": "anatolia.1",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:royal_road_farm_930_141",
+    "base:royal_road_station_932_141",
+    "base:royal_road_farm_942_141",
+    "base:royal_road_station_943_136",
+    "base:royal_road_station_967_137",
+    "base:royal_road_farm_978_138",
+    "base:royal_road_station_978_146",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272"
+   ],
+   "offsets": [
+    0.146
+   ]
+  },
+  {
+   "actor": "parsa.courier",
+   "route": {
+    "start": "sardis:sardis_station",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 4,
+   "hours": [
+    "00:00",
+    "24:00"
+   ],
+   "note": "royal riders by relays, a fresh horse at every station; 'neither snow nor rain nor heat nor darkness' stops them (Herodotus 8.98)",
+   "by_month": "courier",
+   "id": "anatolia.2",
+   "rest": [
+    "sardis:sardis_station",
+    "base:royal_road_station_896_212",
+    "base:royal_road_farm_901_213",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
+    "base:royal_road_farm_896_189",
+    "base:royal_road_station_896_187",
+    "base:royal_road_farm_897_178",
+    "base:royal_road_station_905_178",
+    "base:royal_road_station_912_169",
+    "base:royal_road_farm_912_165",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
+    "base:royal_road_farm_930_141",
+    "base:royal_road_station_932_141",
+    "base:royal_road_farm_942_141",
+    "base:royal_road_station_943_136",
+    "base:royal_road_station_967_137",
+    "base:royal_road_farm_978_138",
+    "base:royal_road_station_978_146",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.977,
+    0.308,
+    0.479,
+    0.696
+   ]
+  },
+  {
+   "actor": "parsa.caravan_driver",
+   "route": {
+    "start": "sardis:sardis_station",
+    "end": "babylon:etemenanki_court"
+   },
+   "count": 2,
+   "group": "caravan",
+   "note": "caravans on the Royal Road, stopping at the stations' inns (Herodotus 5.52)",
+   "by_month": "caravan",
+   "id": "anatolia.3",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "sardis:sardis_station",
+    "base:royal_road_station_896_212",
+    "base:royal_road_farm_901_213",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
+    "base:royal_road_farm_896_189",
+    "base:royal_road_station_896_187",
+    "base:royal_road_farm_897_178",
+    "base:royal_road_station_905_178",
+    "base:royal_road_station_912_169",
+    "base:royal_road_farm_912_165",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
+    "base:royal_road_farm_930_141",
+    "base:royal_road_station_932_141",
+    "base:royal_road_farm_942_141",
+    "base:royal_road_station_943_136",
+    "base:royal_road_station_967_137",
+    "base:royal_road_farm_978_138",
+    "base:royal_road_station_978_146",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court"
+   ],
+   "offsets": [
+    0.918,
+    0.526
+   ]
+  },
+  {
+   "actor": "parsa.caravan_driver",
+   "route": {
+    "start": "babylon:etemenanki_court",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 2,
+   "group": "caravan",
+   "note": "caravans from Babylon to Susa and Pārsa",
+   "by_month": "caravan",
+   "id": "anatolia.4",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.906,
+    0.493
+   ]
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "halys:halys_station",
+    "end": "euphrates_crossing:euph_station"
+   },
+   "count": 1,
+   "group": "mule_train",
+   "note": "mule trains over the Cappadocian plateau",
+   "by_month": "caravan",
+   "id": "anatolia.5",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "halys:halys_station",
+    "base:royal_road_station_967_137",
+    "base:royal_road_farm_978_138",
+    "base:royal_road_station_978_146",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station"
+   ],
+   "offsets": [
+    0.995
+   ]
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "sardis:sardis_station",
+    "end": "halys:halys_station"
+   },
+   "count": 1,
+   "group": "mule_train",
+   "note": "mule trains from Lydia to the Halys",
+   "by_month": "caravan",
+   "id": "anatolia.6",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "sardis:sardis_station",
+    "base:royal_road_station_896_212",
+    "base:royal_road_farm_901_213",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
+    "base:royal_road_farm_896_189",
+    "base:royal_road_station_896_187",
+    "base:royal_road_farm_897_178",
+    "base:royal_road_station_905_178",
+    "base:royal_road_station_912_169",
+    "base:royal_road_farm_912_165",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
+    "base:royal_road_farm_930_141",
+    "base:royal_road_station_932_141",
+    "base:royal_road_farm_942_141",
+    "base:royal_road_station_943_136",
+    "halys:halys_station"
+   ],
+   "offsets": [
+    0.191
+   ]
+  },
+  {
+   "actor": "world.traveller",
+   "route": {
+    "start": "sardis:sardis_station",
+    "end": "susa:susa_town"
+   },
+   "count": 3,
+   "note": "travellers with sealed travel documents, fed at the stations (Persepolis Fortification tablets)",
+   "by_month": "road",
+   "id": "anatolia.7",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "sardis:sardis_station",
+    "base:royal_road_station_896_212",
+    "base:royal_road_farm_901_213",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
+    "base:royal_road_farm_896_189",
+    "base:royal_road_station_896_187",
+    "base:royal_road_farm_897_178",
+    "base:royal_road_station_905_178",
+    "base:royal_road_station_912_169",
+    "base:royal_road_farm_912_165",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
+    "base:royal_road_farm_930_141",
+    "base:royal_road_station_932_141",
+    "base:royal_road_farm_942_141",
+    "base:royal_road_station_943_136",
+    "base:royal_road_station_967_137",
+    "base:royal_road_farm_978_138",
+    "base:royal_road_station_978_146",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "susa:susa_town"
+   ],
+   "offsets": [
+    0.949,
+    0.378,
+    0.674
+   ]
+  },
+  {
+   "actor": "parsa.p_cart",
+   "route": {
+    "start": "babylon:etemenanki_court",
+    "end": "susa:susa_town"
+   },
+   "count": 1,
+   "carry": "world.goods_sacks",
+   "note": "ox carts with barley for the king's stores",
+   "by_month": "road",
+   "id": "anatolia.8",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "susa:susa_town"
+   ],
+   "offsets": [
+    0.079
+   ]
+  },
+  {
+   "actor": "parsa.p_cart",
+   "route": {
+    "start": "susa:susa_town",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "carry": "world.goods_dates",
+   "note": "carts with dates and grain for Pārsa's rations",
+   "by_month": "road",
+   "id": "anatolia.9",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "susa:susa_town",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.733
+   ]
+  },
+  {
+   "actor": "world.merchant",
+   "route": {
+    "start": "euphrates_crossing:euph_station",
+    "end": "babylon:babylon_quay"
+   },
+   "count": 1,
+   "note": "merchants following the Euphrates down to Babylon",
+   "by_month": "road",
+   "id": "anatolia.10",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:west_bank",
+    "babylon:babylon_quay"
+   ],
+   "offsets": [
+    0.747
+   ]
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "babylon:babylon_n",
+    "end": "euphrates_crossing:euph_station"
+   },
+   "count": 1,
+   "group": "donkeys_home",
+   "note": "boatmen walking their donkeys back upstream after selling their boats in Babylon (Herodotus 1.194)",
+   "by_month": "caravan",
+   "id": "anatolia.11",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "base:royal_road_station_1065_272",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_185",
+    "euphrates_crossing:euph_station"
+   ],
+   "offsets": [
+    0.835
+   ]
+  },
+  {
+   "actor": "parsa.cavalryman",
+   "route": {
+    "start": "babylon:etemenanki_court",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "group": "court",
+   "hours": [
+    "06:00",
+    "17:00"
+   ],
+   "when": {
+    "months": [
+     "mar",
+     "nov"
+    ]
+   },
+   "note": "the court on the move: out of Babylon in spring, back for the winter, as Greek writers say (Xenophon, Cyropaedia 8.6.22)",
+   "by_month": "road",
+   "id": "anatolia.12",
+   "rest": [
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.952
+   ]
+  },
+  {
+   "actor": "parsa.del_lydians_lead",
+   "route": {
+    "start": "sardis:sardis_station",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "group": "del_lydians",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "when": {
+    "months": [
+     "jan",
+     "feb",
+     "mar",
+     "apr"
+    ]
+   },
+   "note": "the Lydians' delegation travelling to Pārsa before the spring audience",
+   "by_month": "road",
+   "id": "anatolia.13",
+   "rest": [
+    "sardis:sardis_station",
+    "base:royal_road_station_896_212",
+    "base:royal_road_farm_901_213",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
+    "base:royal_road_farm_896_189",
+    "base:royal_road_station_896_187",
+    "base:royal_road_farm_897_178",
+    "base:royal_road_station_905_178",
+    "base:royal_road_station_912_169",
+    "base:royal_road_farm_912_165",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
+    "base:royal_road_farm_930_141",
+    "base:royal_road_station_932_141",
+    "base:royal_road_farm_942_141",
+    "base:royal_road_station_943_136",
+    "base:royal_road_station_967_137",
+    "base:royal_road_farm_978_138",
+    "base:royal_road_station_978_146",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.934
+   ]
+  },
+  {
+   "actor": "parsa.del_cappadocians_lead",
+   "route": {
+    "start": "halys:halys_station",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "group": "del_cappadocians",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "when": {
+    "months": [
+     "jan",
+     "feb",
+     "mar",
+     "apr"
+    ]
+   },
+   "note": "the Cappadocians' delegation on the way to the spring audience",
+   "by_month": "road",
+   "id": "anatolia.14",
+   "rest": [
+    "halys:halys_station",
+    "base:royal_road_station_967_137",
+    "base:royal_road_farm_978_138",
+    "base:royal_road_station_978_146",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.183
+   ]
+  },
+  {
+   "actor": "parsa.del_armenians_lead",
+   "route": {
+    "start": "euphrates_crossing:euph_station",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "group": "del_armenians",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "when": {
+    "months": [
+     "jan",
+     "feb",
+     "mar",
+     "apr"
+    ]
+   },
+   "note": "the Armenians' delegation coming down to the spring audience",
+   "by_month": "road",
+   "id": "anatolia.15",
+   "rest": [
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.793
+   ]
+  },
+  {
+   "actor": "parsa.del_babylonians_lead",
+   "route": {
+    "start": "babylon:etemenanki_court",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "group": "del_babylonians",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "when": {
+    "months": [
+     "jan",
+     "feb",
+     "mar",
+     "apr"
+    ]
+   },
+   "note": "the Babylonians' delegation on the way to the spring audience",
+   "by_month": "road",
+   "id": "anatolia.16",
+   "rest": [
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.775
+   ]
+  },
+  {
+   "actor": "parsa.del_elamites_lead",
+   "route": {
+    "start": "susa:susa_town",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "group": "del_elamites",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "when": {
+    "months": [
+     "jan",
+     "feb",
+     "mar",
+     "apr"
+    ]
+   },
+   "note": "the Elamites' delegation from Susa",
+   "by_month": "road",
+   "id": "anatolia.17",
+   "rest": [
+    "susa:susa_town",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.037
+   ]
+  },
+  {
+   "actor": "parsa.del_syrians_lead",
+   "route": {
+    "start": "sidon:sidon_quay",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 1,
+   "group": "del_syrians",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "when": {
+    "months": [
+     "jan",
+     "feb",
+     "mar",
+     "apr"
+    ]
+   },
+   "note": "the Syrians' delegation from the coast",
+   "by_month": "road",
+   "id": "anatolia.18",
+   "rest": [
+    "sidon:sidon_quay",
+    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_240",
+    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_983_225",
+    "base:cilician_road_station_983_212",
+    "base:cilician_road_station_985_201",
+    "base:cilician_road_farm_985_198",
+    "base:cilician_road_station_985_176",
+    "base:cilician_road_station_985_163",
+    "base:royal_road_station_985_151",
+    "base:royal_road_station_994_156",
+    "base:royal_road_farm_995_163",
+    "euphrates_crossing:west_landing",
+    "euphrates_crossing:west_bridge",
+    "euphrates_crossing:east_bridge",
+    "euphrates_crossing:euph_station",
+    "base:royal_road_station_1026_185",
+    "base:royal_road_farm_1026_195",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_farm_1032_215",
+    "base:royal_road_station_1033_226",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_farm_1040_247",
+    "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
+    "babylon:ishtar_gate",
+    "babylon:etemenanki_court",
+    "base:royal_road_station_1074_326",
+    "persian_gates:gates_guardpost",
+    "parsa:royal_road_station"
+   ],
+   "offsets": [
+    0.329
+   ]
+  },
+  {
+   "actor": "world.traveller",
+   "route": {
+    "start": "gordion:gordion_citadel",
+    "end": "base:royal_road_station_916_157"
+   },
+   "count": 1,
+   "note": "Phrygians on the way from Gordion to the Royal Road",
+   "by_month": "road",
+   "id": "anatolia.19",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "gordion:gordion_citadel",
+    "base:royal_road_station_916_157"
+   ],
+   "offsets": [
+    0.833
+   ]
   }
  ],
  "zones": [
@@ -2020,7 +3480,11 @@
   "season_turn.spring": "The storks are back on their nests.",
   "season_turn.summer": "The air shimmers over the land at noon.",
   "season_turn.autumn": "Cranes call high overhead, flying in a long V.",
-  "season_turn.winter": "Snow on the heights."
+  "season_turn.winter": "Snow on the heights.",
+  "shearing": "Shearing at the folds on the plateau.",
+  "threshing": "Oxen draw the threshing sledges round the floors.",
+  "flocks_down": "The flocks come down from the high pastures.",
+  "snowbound_station": "Snow on the road: travellers wait at the station."
  },
  "journal": [],
  "era": {
@@ -2641,11 +4105,784 @@
    "sound": {
     "oneshot": "sfx/world/sickle.wav"
    }
+  },
+  {
+   "id": "station_keeper",
+   "actor": "parsa.groom",
+   "name": "Station keeper",
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "21:00"
+     ],
+     "routine": "tend"
+    },
+    {
+     "hours": [
+      "21:00",
+      "05:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "tend": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "watch": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "station_guest",
+   "actor": "world.traveller",
+   "name": "Traveller resting at the station",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "rest"
+    }
+   ],
+   "routines": {
+    "rest": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "until": {
+        "hour": "05:30"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "relay_animal",
+   "actor": "parsa.nisaean_horse",
+   "name": "Relay horse",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "watchman",
+   "actor": "parsa.guard_spear",
+   "name": "Watchman on the tower",
+   "schedule": [
+    {
+     "hours": [
+      "18:00",
+      "07:00"
+     ],
+     "routine": "watch"
+    },
+    {
+     "hours": [
+      "07:00",
+      "18:00"
+     ],
+     "routine": "day"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    },
+    "day": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "beacon_keeper",
+   "actor": "parsa.guard_spear",
+   "name": "Beacon keeper",
+   "schedule": [
+    {
+     "hours": [
+      "17:00",
+      "06:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.beacon",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "shepherd",
+   "actor": "parsa.shepherd",
+   "name": "Shepherd",
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "19:30"
+     ],
+     "routine": "graze"
+    },
+    {
+     "hours": [
+      "19:30",
+      "05:00"
+     ],
+     "routine": "fold"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 8
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "gesture",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "fold": {
+     "steps": [
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "horse_herd",
+   "actor": "parsa.nisaean_horse",
+   "name": "Horses at pasture",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "farmer",
+   "actor": "parsa.farmer",
+   "name": "Farmer",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:30",
+      "18:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:00"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "yard_donkey",
+   "actor": "world.donkey",
+   "name": "Donkey in the yard",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "stand"
+    }
+   ],
+   "routines": {
+    "stand": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "parsa.p_house_small",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "14:00",
+      "17:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        25
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  },
+  {
+   "id": "gazelle",
+   "actor": "world.gazelle",
+   "name": "Gazelles",
+   "schedule": [
+    {
+     "hours": [
+      "04:30",
+      "20:30"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
   }
  ],
  "lights": {
   "version": 1,
   "profiles": {
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
    "door_lamp": {
     "kind": "door",
     "kelvin": 1900,
