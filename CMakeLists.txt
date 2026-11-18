@@ -135,3 +135,27 @@ if(LC_TESTS)
   add_test(NAME world_perf COMMAND lc_world_tests --test-case=perf:*)
   add_test(NAME worldinfo_summary COMMAND worldinfo summary)
 endif()
+
+# --- World renderer and viewer (src/worldview/) --------------------------------------------------
+# Draws the prebuilt world: atlas pages streamed by set, cached ground cells and impostors,
+# depth-sorted landmark pieces, region themes and the overview; laeticias-world shows it headless.
+find_package(Threads REQUIRED)
+add_library(lc_worldview STATIC
+  src/worldview/camera.cpp
+  src/worldview/cell_cache.cpp
+  src/worldview/cells.cpp
+  src/worldview/order.cpp
+  src/worldview/overview.cpp
+  src/worldview/page_atlas.cpp
+  src/worldview/renderer.cpp
+  src/worldview/script.cpp
+  src/worldview/theme.cpp
+  src/worldview/viewer.cpp
+  src/worldview/world_sprites.cpp
+)
+target_link_libraries(lc_worldview PUBLIC lc_engine lc_world Threads::Threads)
+lc_project_target(lc_worldview)
+
+add_executable(laeticias-world src/worldview/viewer_main.cpp)
+target_link_libraries(laeticias-world PRIVATE lc_worldview)
+lc_project_target(laeticias-world)
