@@ -108,7 +108,7 @@ def build(L: Layout) -> None:
 | `walk_tiles(placed)` | a landmark's walk tiles (plan) from the geometry file; `place` may put furniture on them |
 | `remove(placed)` | take back an item a filler placed (thinning, door clearing) |
 | `expect(landmark, rect=, level=)` | V4 check of your own placement |
-| `moved(landmark, rect=, why=)` | declare a landmark a deliberate step off its city-file rect: V4 reports the move, with the reason, as a warning |
+| `moved(landmark, rect=, why=, level=)` | declare a landmark a deliberate step off its city-file rect (or level): V4 reports the move, with the reason, as a warning |
 | `view(name, rect)` | a close-up preview |
 | `sightline(name, shape)` | mark a monumental approach: only the region's own set and home pieces with art may stand in it (V15) |
 | `below_terrain(c, r)`, `below_level(c, r)`, `land_below()`, `sea_below()`, `coast_below()`, `below_where(pred)` | read the committed layers underneath (the base's coast, rivers, levels) |
@@ -218,6 +218,18 @@ on one tile, carriers' profiles present, and no populated quarter without light 
 | V17 | the engine's walk rules on every graph edge (`worldgen/walk.py`) | error (a step only a landmark's `walk_z` makes: warning) |
 | V16 | crossings (`worldgen/crossings.py`): every step the graph makes onto or off a deck (a landmark's walk tiles at its level plus `walk_z`, walkable kit on water at the water's level) stays within half a level of what it meets; bridges, fords, pontoons, landmarks on water and gates a road passes through are joined at two ends (a pier may end at a `dest` node on its planks); a landmark bridge's walkway never ends over water; a one-wide span is entered over its ends, never from its side (only a stair may join it there); jetties and moles touch walkable land within a level of the water; connect decks run along one axis (two wide draws a frame); a stair's foot and head landings are walkable, at its level and `rise` higher, and met by a path (wide flights share landings) | error (a landmark floor on dry land, landmark stairs: warning) |
 
+| W-* | where walkers may be (`worldgen/walkable.py`, draw-order.md §5.2), by the engine walk model over the composed world: W-V3 one level under every footprint, walk tiles included; W-S3 a stair's head and foot meet the levels it joins; W-D1 decks reached and met by the land beside them; W-D2 only crossings and piers walkable on water; W-W5 every item's walk tiles reached by a graph; W-L1/L2/L3 slot spots on tiles their users can stand on, reached, moorings on water by a reached quay; W-G1 edge ends in one walk component; W-G2 nodes and edges never under an item without walk tiles; W-O2 lanes on water and under an item only through its geometry's `under` | error (art pending: warning) |
+
+Faults whose fix is a set's geometry (the art lane's) are listed in `plan/art_pending.py`: each
+turns its W error into a warning that names what the art must change, and `--check` fails on an
+entry no fault matches any more, so the list only shrinks. `--check` also writes
+`out/worldgen/walkable.md`: per region the walk tiles, those on items and how many of them no
+graph reaches (zero), walkable ground in components no graph reaches (country benches, islets),
+slot spots, nodes, lanes and edges by kind. The base drops its own kit that fails W-W5/L1/L2
+(`base.drop_unreached_kit`, after placement checked reach by its simpler rules), the layout API
+refuses walkable kit that is no crossing on water (`dsl.deck_kit`) and removes it where water is
+painted over it, and base lanes keep every leg on open water (`routes.on_water`), off piers.
+
 Additions: V1 also checks that every placed variant is a valid look or rotation of its catalog
 entry, retired stand-ins, and the region-set rule (a region of set S carries home, world and S ids
 only; seams also both neighbours'). V6 checks portal levels against the plan and that lane ports
@@ -321,7 +333,8 @@ only its own area, and all noise is a function of world position and a string ke
 `worldgen/`: `dsl.py` layout API · `shapes.py`, `raster.py` shapes and exact rasterisation ·
 `catalog.py` catalogs, atlas pages, geometry · `layer.py`, `graph.py` file formats ·
 `compiler.py` layout → layer and graph · `compose.py` the engine's composition rule ·
-`validate.py` V1–V12 · `bible.py` city-file landmark tables · `base.py` the base layer ·
+`validate.py` V1–V12 · `walk.py` the engine walk model (V17) · `walkable.py` W-* and the
+walkability report · `bible.py` city-file landmark tables · `base.py` the base layer ·
 `preview.py` maps, overview, isometric close-ups · `rng.py` SplitMix64 streams and noise ·
 `climates.py`, `seasons.py`, `seasonlife.py`, `seasoncheck.py`, `seasonreport.py` the seasons ·
 `build.py` the command line. Tests in `tests/`.

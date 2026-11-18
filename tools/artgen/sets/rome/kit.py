@@ -98,7 +98,7 @@ def shopfront(m, face, box, s0, w, h, trade, seed, open_=1.0):
                  z, z + 0.4, "wood", 0.0)
     x, y = gx(s0 - 0.8, -0.4)
     fill(m, (x - 0.4, x + 0.4, y - 0.4, y + 0.4, h - 3.0, h - 2.2), "lamp")
-    halo(m, x, y, h - 2.6, 6.0, LAMP, 0.45)
+    halo(m, x, y, h - 2.6, 6.0, LAMP, 0.45, kind="door")
 
 
 def windows(m, face, box, z, n, w=2.4, h=3.6, s_pad=3.0, seed=0, lit=0.35, glass=False):
@@ -688,6 +688,22 @@ def r_brazier(v, frame, frames, k):
     return m
 
 
+def r_bonfire(v, frame, frames, k):
+    """A Parilia bonfire at a crossroads (rome.md §8): a heap of straw and bean stalks round a
+    few stakes, burning, for the shepherds to leap over at nightfall."""
+    m = _m(1, 1, 16, k)
+    for a in (0.4, 1.9, 3.3, 4.8):
+        rod(m, (8 + 4.5 * math.cos(a), 8 + 4.5 * math.sin(a), 0.0), (8 + 0.8 * math.cos(a), 8 + 0.8 * math.sin(a), 8.5),
+            0.4, "wood", 0.1)
+    revolve(m, 8, 8, 0.0, 5.5, lambda t: 5.6 * (1 - t) ** 0.8 + 0.6, "straw",
+            tone=lambda X, Y, Z: 0.4 * (value_noise(X * 2, Y * 2, Z * 2, 1.0, 2711) - 0.5))
+    fill(m, (4, 12, 4, 12, 3.5, 6.0), "ember", lambda X, Y, Z: np.hypot(X - 8, Y - 8) < 3.8 - (Z - 3.5))
+    ellipsoid(m, (8, 8, 8.0), (2.4, 2.4, 3.2), "fire", tone=0.2)
+    ellipsoid(m, (8.3, 8, 10.4), (1.2, 1.2, 1.8), "lamp")
+    halo(m, 8, 8, 8.5, 16.0, FIRE, 1.0)
+    return m
+
+
 def r_altar(v, frame, frames, k):
     """An altar of marble carved with garlands and ox skulls, the fire on top, incense smoke."""
     m = _m(1, 1, 18, k)
@@ -953,6 +969,7 @@ ITEMS = {f"rome.{n}": it for n, it in {
     "r_column_honor": _item(r_column_honor),
     "r_lamp": _item(r_lamp),
     "r_brazier": _item(r_brazier, {}, {"fire": (8.0, 8.0, 13.0)}),
+    "r_bonfire": _item(r_bonfire, {}, {"bonfire": (8.0, 8.0, 11.0)}),
     "r_altar": _item(r_altar, {"sacrifice": [{"t": [0, 1], "face": "-y"}]}, {"incense": (8.0, 8.0, 12.0)}),
     "r_tomb": _item(r_tomb, {"mourn": [{"t": [0, 2], "face": "-y"}]}),
     "tomb_drum": _item(tomb_drum),
@@ -963,7 +980,7 @@ ITEMS = {f"rome.{n}": it for n, it in {
     "r_vigiles": _item(r_vigiles, {"door": [{"t": [1, 2], "face": "+y"}]}),
     "r_villa_farm": _item(r_villa_farm, {"door": [{"t": [1, -1], "face": "+x"}]}),
     "r_shed": _item(r_shed),
-    "mutatio": _item(mutatio, {"door": [{"t": [4, 4], "face": "+y"}], "change": [{"t": [3, 2]}, {"t": [4, 2]}]}),
+    "mutatio": _item(mutatio, {"door": [{"t": [4, 4], "face": "+y"}], "change": [{"t": [2, 4]}, {"t": [3, 4]}]}),
     "stair_travertine": _item(stair_travertine),
     "quay": _item(quay, {"mooring": [{"t": [0, 1], "face": "+y"}]}),
     "aqua_claudia": _walk_item(aqua_claudia),
@@ -998,6 +1015,7 @@ KIT_INFO = {
     "r_column_honor": ("Honorary column", (1, 1), "rotate", 1, "BS", 100, 0),
     "r_lamp": ("Lantern", (1, 1), "rotate", 4, "BSG", 10, 0),
     "r_brazier": ("Brazier", (1, 1), "rotate", 1, "BSG", 24, 0),
+    "r_bonfire": ("Parilia bonfire", (1, 1), "rotate", 1, "BSG", 26, 0),
     "r_altar": ("Altar", (1, 1), "rotate", 2, "BSG", 24, 0),
     "r_tomb": ("Small tomb with columbarium", (2, 2), "rotate", 4, "BS", 50, 0),
     "tomb_drum": ("Drum tomb of the Via Appia", (3, 3), "rotate", 4, "BS", 110, 0),

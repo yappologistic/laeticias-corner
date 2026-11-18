@@ -25,6 +25,8 @@ AMBIENT, DIFFUSE = 0.42, 0.58
 FACE_NORMALS = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], np.float32)  # top, +x, +y
 SHADOW_ALPHA = (0, 58, 88, 116)
 HALO_STEPS = 6  # alpha levels of a glow halo, so light falls off softly
+UP = np.array([0, 0, 1], np.float32)
+SNOW_NZ = 0.55  # faces at least this close to up can catch snow (graphics-plan §2.2)
 AO_PAD = 5  # design units
 
 BAYER4 = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]],
@@ -54,6 +56,7 @@ class Layers:
     base: Sprite
     shadow: Sprite
     glow: Sprite | None
+    hit: tuple | None = None    # (vx, vy) per base pixel: the voxel it shows, for cutting pieces
 
 
 def _bounds(model: Model):
@@ -197,6 +200,33 @@ class Shaded:
     outline_depth: np.ndarray
     vx: np.ndarray
     vy: np.ndarray
+    geo: np.ndarray | None = None   # (H, W) uint32: the data word's geometry bits (`geo_bits`)
+
+
+def geo_bits(nrm, hz, lit, sky) -> np.ndarray:
+    """The data word without ramp and step (README.md "Data pages"): the unit world normal's x
+    and y as 5-bit codes (n = (code - 15) / 15, so axis normals are exact), the height above
+    the anchor's ground in px (0..511), the baked-sun bit and the snow-catcher candidate bit
+    (up-facing and open to the sky; the packer keeps it only on ramps snow lies on)."""
+    nxc = np.clip(np.round(nrm[..., 0] * 15) + 15, 0, 30).astype(np.uint32)
+    nyc = np.clip(np.round(nrm[..., 1] * 15) + 15, 0, 30).astype(np.uint32)
+    if hz.size and hz.max() > 511.5:
+        raise ValueError(f"a sprite {hz.max():.0f} px tall does not fit the data word's 9-bit height")
+    h = np.clip(np.round(hz), 0, 511).astype(np.uint32)
+    # The snow bit follows the stored normal, so the engine sees the rule the bit was set by.
+    qx, qy = (nxc.astype(np.float32) - 15) / 15, (nyc.astype(np.float32) - 15) / 15
+    sky = sky & (1 - qx * qx - qy * qy > SNOW_NZ * SNOW_NZ)
+    return (nxc << 11) | (nyc << 16) | (h << 21) | (lit.astype(np.uint32) << 30) | \
+        (sky.astype(np.uint32) << 31)
+
+
+def data_word(sh: Shaded) -> np.ndarray | None:
+    """Per pixel of a shaded image: its geometry bits with the material id where the ramp goes
+    (the packer resolves ramp and step from the final colour, with this material as the hint);
+    0 where nothing was hit."""
+    if sh.geo is None:
+        return None
+    return np.where(sh.mat > 0, sh.geo | (sh.mat.astype(np.uint32) << 3), 0).astype(np.uint32)
 
 
 def shade(model: Model, ctx: Occupancy | None = None, zmax: int | None = None) -> Shaded:
@@ -216,6 +246,7 @@ def shade(model: Model, ctx: Occupancy | None = None, zmax: int | None = None) -
         outline_solid, outline_depth = full_mat > 0, np.where(mat > 0, depth, full_depth)
     hit = mat > 0
     level = np.zeros(px.size, np.float32)
+    geo = np.zeros(px.size, np.uint32)
     if hit.any():
         h = np.nonzero(hit)[0]
         m, f = mat[h], face[h]
@@ -235,6 +266,15 @@ def shade(model: Model, ctx: Occupancy | None = None, zmax: int | None = None) -
         else:  # the shared grid carries the ground plane itself
             occ, top = ctx, zmax
         lit = ~_shadowed(occ, origin, top)
+        unit = nrm / np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-6)
+        # A ray along (1, 1, 1) is at height t, so the sample depth is the hit's height; a top
+        # face is hit at its upper boundary.
+        hz = np.where(f == 0, kk[h] + model.z0 + 1, depth[h])
+        sky = unit[:, 2] > SNOW_NZ
+        if sky.any():
+            up = centre[sky] + UP * (0.5 + 0.01)
+            sky[sky] = ~_shadowed(occ, up, top, UP, 1.0)
+        geo[h] = geo_bits(unit, hz, lit, sky)
         diffuse = np.clip(nrm @ SUN, 0, 1) * np.where(lit, 1.0, 0.25)
         light = (AMBIENT + DIFFUSE * diffuse) * ao
         n = RAMP_LEN[m]
@@ -245,7 +285,7 @@ def shade(model: Model, ctx: Occupancy | None = None, zmax: int | None = None) -
         level[h] = lv
     return Shaded(c0, r0, mat.reshape(H, W), level.reshape(H, W), depth.reshape(H, W),
                   outline_solid.reshape(H, W), outline_depth.reshape(H, W),
-                  (ii + model.x0).reshape(H, W), (jj + model.y0).reshape(H, W))
+                  (ii + model.x0).reshape(H, W), (jj + model.y0).reshape(H, W), geo.reshape(H, W))
 
 
 def finish(sh: Shaded, k: int, halos=(), cull=False, edge=3.0):
@@ -309,6 +349,23 @@ def render_base(model: Model, cull=False, edge=3.0):
     return finish(shade(model), model.k, model.halos, cull, edge)
 
 
+def render_sprite(model: Model, cull=False, edge=3.0) -> Sprite:
+    """The model's base layer as a Sprite carrying its data word (`data_word`) and its glow
+    layer when anything on it glows (a lantern on a cart, a torch in a hand)."""
+    base, glow = render_layers(model, cull, edge)
+    if glow is not None and glow[..., 3].any():
+        base.glow = glow
+    return base
+
+
+def render_layers(model: Model, cull=False, edge=3.0, hit=False):
+    """(base Sprite with its data word, glow RGBA or None[, (vx, vy) per pixel])."""
+    sh = shade(model)
+    rgba, glow, ox, oy = finish(sh, model.k, model.halos, cull, edge)
+    out = Sprite(rgba, ox, oy, data_word(sh)), glow
+    return out + ((sh.vx, sh.vy),) if hit else out
+
+
 def render_shadow(model: Model) -> Sprite:
     """Cast shadow (plus soft contact darkening) on the ground plane z = 0, black with alpha."""
     nx, ny, nz = model.mat.shape
@@ -352,11 +409,11 @@ def render_shadow(model: Model) -> Sprite:
     return Sprite(rgba, -c0, -r0)
 
 
-def render(model: Model, want_glow: bool, cull=False) -> Layers:
-    base, glow, ox, oy = render_base(model, cull)
+def render(model: Model, want_glow: bool, cull=False, hit=False) -> Layers:
+    base, glow, *vxy = render_layers(model, cull, hit=hit)
     glow_sprite = None
     if want_glow:
         if glow is None:
-            glow = np.zeros_like(base)
-        glow_sprite = Sprite(glow, ox, oy)
-    return Layers(Sprite(base, ox, oy), render_shadow(model), glow_sprite)
+            glow = np.zeros_like(base.rgba)
+        glow_sprite = Sprite(glow, base.ox, base.oy)
+    return Layers(base, render_shadow(model), glow_sprite, vxy[0] if vxy else None)

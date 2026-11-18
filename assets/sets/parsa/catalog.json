@@ -4154,5 +4154,40 @@
    "parsa.lamp",
    "parsa.torch"
   ]
+ },
+ "audio": {
+  "music": [
+   "music/parsa/day.ogg",
+   "music/parsa/night.ogg"
+  ],
+  "ambience": [
+   "amb/parsa/plain_day.ogg",
+   "amb/parsa/plain_night.ogg",
+   "amb/parsa/channels.ogg",
+   "amb/parsa/site.ogg",
+   "amb/parsa/rain.ogg",
+   "amb/parsa/procession.ogg",
+   "amb/parsa/plain_day_summer.ogg",
+   "amb/parsa/plain_day_winter.ogg",
+   "amb/parsa/plain_night_winter.ogg",
+   "amb/parsa/feast.ogg"
+  ],
+  "sfx": [
+   "sfx/parsa/horn.wav",
+   "sfx/parsa/camel.wav",
+   "sfx/parsa/horse_bells.wav",
+   "sfx/parsa/hoopoe.wav",
+   "sfx/parsa/stork.wav",
+   "sfx/parsa/chant.wav",
+   "sfx/parsa/audience.wav",
+   "sfx/parsa/arrive.wav",
+   "sfx/parsa/response.wav",
+   "sfx/parsa/sting_sunrise.wav",
+   "sfx/parsa/sting_nightfall.wav",
+   "sfx/parsa/sting_storm_clear.wav",
+   "sfx/parsa/sting_rainbow.wav",
+   "sfx/parsa/sting_first_snow.wav",
+   "sfx/parsa/sting_season.wav"
+  ]
  }
 }

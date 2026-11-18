@@ -532,10 +532,10 @@ def cicadas(level):
     a chorus in the heat, a pulsing wall in the blazing afternoon."""
     p = CICADAS[level]
 
-    def render(rng, length=30.0):
+    def render(rng, length=41.0):  # 41 s: shares no factor with the wind or nature beds
         n = secs(length)
         bugs = sd.Bed(length, rng)
-        for _ in range(p["count"]):
+        for _ in range(round(p["count"] * length / 30.0)):
             kind = p["kinds"][int(rng.integers(len(p["kinds"])))]
             dur = rng.uniform(5, 14)
             bugs.add(sd.tymbal(rng, dur, kind), rng.uniform(0, length), rng.uniform(-0.9, 0.9),
@@ -741,7 +741,9 @@ for _name, _fn, _when, _climate, _where, _desc in (
         ("night_mountain", night_mountain, "night", "mountain",
          "night in the mountains (Apennines, Taurus, Zagros)",
          "Night in the mountains: owls across the valley, a stream, a far fox.")):
-    FILES[f"amb/{W}/{_name}.ogg"] = entry("bed", _fn, -23.0, _desc, when=_when, where=_where,
+    # The mountain dawn's calls are peaky: the limiter under q0's ceiling takes 0.6 LU back.
+    _lufs = -22.7 if _name == "dawn_mountain" else -23.0
+    FILES[f"amb/{W}/{_name}.ogg"] = entry("bed", _fn, _lufs, _desc, when=_when, where=_where,
                                           tags=["nature", _when, _climate])
 for _lvl, _p in enumerate(CICADAS):
     FILES[f"amb/{W}/cicadas_{_lvl + 1}.ogg"] = entry(

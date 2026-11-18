@@ -1,0 +1,4982 @@
+{
+ "version": 1,
+ "texture": "ramps.png",
+ "steps": 8,
+ "classes": [
+  "ground",
+  "grass",
+  "crop",
+  "stone",
+  "marble",
+  "plaster",
+  "roof",
+  "wood",
+  "metal",
+  "cloth",
+  "skin",
+  "foliage_deciduous",
+  "foliage_evergreen",
+  "water",
+  "glass",
+  "ink",
+  "snow",
+  "ice",
+  "flame"
+ ],
+ "states": [
+  "fresh",
+  "dry",
+  "dormant",
+  "turn"
+ ],
+ "ramps": [
+  {
+   "id": 1,
+   "name": "leaf",
+   "material": "leaf",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#2b4a41",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.3125,
+    0.3818,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "states": {
+    "fresh": 159,
+    "dry": 160,
+    "turn": 162
+   }
+  },
+  {
+   "id": 2,
+   "name": "leaf_dark",
+   "material": "leaf_dark",
+   "steps": 6,
+   "colours": [
+    "#22343b",
+    "#1e3a3c",
+    "#285046",
+    "#36694f",
+    "#4a7d47",
+    "#679a48"
+   ],
+   "L": [
+    0.3125,
+    0.3273,
+    0.3986,
+    0.4772,
+    0.5394,
+    0.631
+   ],
+   "class": "foliage_evergreen",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 3,
+   "name": "blossom",
+   "material": "blossom",
+   "steps": 6,
+   "colours": [
+    "#6a3d5e",
+    "#8f4363",
+    "#c4687f",
+    "#e597a6",
+    "#f6c9c8",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.4262,
+    0.4898,
+    0.6294,
+    0.7582,
+    0.8746,
+    0.9703
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 4,
+   "name": "bark",
+   "material": "bark",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#4a3034",
+    "#6b4539",
+    "#8f6343",
+    "#b2875a"
+   ],
+   "L": [
+    0.2681,
+    0.3415,
+    0.4306,
+    0.5385,
+    0.6546
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 5,
+   "name": "wood",
+   "material": "wood",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4a3034",
+    "#6b4539",
+    "#8f6343",
+    "#b2875a",
+    "#cfab79"
+   ],
+   "L": [
+    0.2681,
+    0.3415,
+    0.4306,
+    0.5385,
+    0.6546,
+    0.7617
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 6,
+   "name": "wood_light",
+   "material": "wood_light",
+   "steps": 5,
+   "colours": [
+    "#6b4539",
+    "#8f6343",
+    "#b2875a",
+    "#cfab79",
+    "#e8d4a4"
+   ],
+   "L": [
+    0.4306,
+    0.5385,
+    0.6546,
+    0.7617,
+    0.8747
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 7,
+   "name": "wood_grey",
+   "material": "wood_grey",
+   "steps": 6,
+   "colours": [
+    "#333449",
+    "#4d4f63",
+    "#6b4539",
+    "#6c6f7e",
+    "#8f939c",
+    "#cdbfac"
+   ],
+   "L": [
+    0.3334,
+    0.4336,
+    0.4306,
+    0.5444,
+    0.6628,
+    0.8111
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 8,
+   "name": "stone",
+   "material": "stone",
+   "steps": 7,
+   "colours": [
+    "#2a2136",
+    "#333449",
+    "#4d4f63",
+    "#6c6f7e",
+    "#8f939c",
+    "#b6b8b6",
+    "#dbd8cb"
+   ],
+   "L": [
+    0.2681,
+    0.3334,
+    0.4336,
+    0.5444,
+    0.6628,
+    0.7804,
+    0.881
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 9,
+   "name": "slate",
+   "material": "slate",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#333449",
+    "#4d4f63",
+    "#6c6f7e",
+    "#8f939c",
+    "#b6b8b6"
+   ],
+   "L": [
+    0.2681,
+    0.3334,
+    0.4336,
+    0.5444,
+    0.6628,
+    0.7804
+   ],
+   "class": "roof",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 10,
+   "name": "roof",
+   "material": "roof",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#c86849",
+    "#e29464"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.4131,
+    0.5149,
+    0.6231,
+    0.7352
+   ],
+   "class": "roof",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 11,
+   "name": "red_paint",
+   "material": "red_paint",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#c86849"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.4131,
+    0.5149,
+    0.6231
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 12,
+   "name": "plaster",
+   "material": "plaster",
+   "steps": 6,
+   "colours": [
+    "#4d4f63",
+    "#7a6b78",
+    "#a0928f",
+    "#cdbfac",
+    "#efe5cc",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.4336,
+    0.5462,
+    0.6713,
+    0.8111,
+    0.9233,
+    0.9703
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 13,
+   "name": "straw",
+   "material": "straw",
+   "steps": 5,
+   "colours": [
+    "#6b4539",
+    "#8a6b3a",
+    "#b49449",
+    "#d8bb5f",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4306,
+    0.5477,
+    0.6806,
+    0.7986,
+    0.8961
+   ],
+   "class": "roof",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 14,
+   "name": "soil",
+   "material": "soil",
+   "steps": 4,
+   "colours": [
+    "#2a2136",
+    "#4a3034",
+    "#6b4539",
+    "#8f6343"
+   ],
+   "L": [
+    0.2681,
+    0.3415,
+    0.4306,
+    0.5385
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 15,
+   "name": "glass",
+   "material": "glass",
+   "steps": 5,
+   "colours": [
+    "#333449",
+    "#273560",
+    "#2f4f7c",
+    "#3b729b",
+    "#86c0cc"
+   ],
+   "L": [
+    0.3334,
+    0.3399,
+    0.4252,
+    0.5326,
+    0.7721
+   ],
+   "class": "glass",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 16,
+   "name": "glass_cool",
+   "material": "glass_cool",
+   "steps": 5,
+   "colours": [
+    "#4d4f63",
+    "#3b729b",
+    "#5596b4",
+    "#86c0cc",
+    "#c4e3dc"
+   ],
+   "L": [
+    0.4336,
+    0.5326,
+    0.6416,
+    0.7721,
+    0.8913
+   ],
+   "class": "glass",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 17,
+   "name": "glass_warm",
+   "material": "glass_warm",
+   "steps": 5,
+   "colours": [
+    "#4d4f63",
+    "#3b729b",
+    "#5596b4",
+    "#86c0cc",
+    "#c4e3dc"
+   ],
+   "L": [
+    0.4336,
+    0.5326,
+    0.6416,
+    0.7721,
+    0.8913
+   ],
+   "class": "glass",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 18,
+   "name": "lamp",
+   "material": "lamp",
+   "steps": 4,
+   "colours": [
+    "#ff9a3a",
+    "#ffc95c",
+    "#ffeba4",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.7759,
+    0.8639,
+    0.9401,
+    0.9703
+   ],
+   "class": "flame",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 19,
+   "name": "fire",
+   "material": "fire",
+   "steps": 5,
+   "colours": [
+    "#a3463f",
+    "#c86849",
+    "#ff9a3a",
+    "#ffc95c",
+    "#ffeba4"
+   ],
+   "L": [
+    0.5149,
+    0.6231,
+    0.7759,
+    0.8639,
+    0.9401
+   ],
+   "class": "flame",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 20,
+   "name": "ember",
+   "material": "ember",
+   "steps": 3,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#ff9a3a"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.7759
+   ],
+   "class": "flame",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 21,
+   "name": "metal",
+   "material": "metal",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#333449",
+    "#4d4f63",
+    "#6c6f7e",
+    "#b6b8b6"
+   ],
+   "L": [
+    0.2681,
+    0.3334,
+    0.4336,
+    0.5444,
+    0.7804
+   ],
+   "class": "metal",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 22,
+   "name": "cream",
+   "material": "cream",
+   "steps": 5,
+   "colours": [
+    "#7a6b78",
+    "#a0928f",
+    "#cdbfac",
+    "#efe5cc",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.5462,
+    0.6713,
+    0.8111,
+    0.9233,
+    0.9703
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 23,
+   "name": "poppy",
+   "material": "poppy",
+   "steps": 5,
+   "colours": [
+    "#4c2333",
+    "#78303b",
+    "#c5333d",
+    "#ec6550",
+    "#e29464"
+   ],
+   "L": [
+    0.3184,
+    0.4131,
+    0.5486,
+    0.6714,
+    0.7352
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 24,
+   "name": "violet",
+   "material": "violet",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#3e3366",
+    "#5d4993",
+    "#8869bf",
+    "#b49de0"
+   ],
+   "L": [
+    0.2681,
+    0.3591,
+    0.4621,
+    0.5883,
+    0.7403
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 25,
+   "name": "yellow",
+   "material": "yellow",
+   "steps": 5,
+   "colours": [
+    "#8f6343",
+    "#b49449",
+    "#d8bb5f",
+    "#f0dd91",
+    "#ffeba4"
+   ],
+   "L": [
+    0.5385,
+    0.6806,
+    0.7986,
+    0.8961,
+    0.9401
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 26,
+   "name": "orange",
+   "material": "orange",
+   "steps": 5,
+   "colours": [
+    "#4a3034",
+    "#8f6343",
+    "#c86849",
+    "#ff9a3a",
+    "#e29464"
+   ],
+   "L": [
+    0.3415,
+    0.5385,
+    0.6231,
+    0.7759,
+    0.7352
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 27,
+   "name": "water",
+   "material": "water",
+   "steps": 6,
+   "colours": [
+    "#273560",
+    "#2f4f7c",
+    "#3b729b",
+    "#5596b4",
+    "#86c0cc",
+    "#c4e3dc"
+   ],
+   "L": [
+    0.3399,
+    0.4252,
+    0.5326,
+    0.6416,
+    0.7721,
+    0.8913
+   ],
+   "class": "water",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 28,
+   "name": "grass",
+   "material": "grass",
+   "steps": 6,
+   "colours": [
+    "#2b4a41",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.3818,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "states": {
+    "fresh": 163,
+    "dry": 164,
+    "dormant": 165,
+    "turn": 186
+   }
+  },
+  {
+   "id": 29,
+   "name": "ink",
+   "material": "ink",
+   "steps": 3,
+   "colours": [
+    "#2a2136",
+    "#333449",
+    "#4d4f63"
+   ],
+   "L": [
+    0.2681,
+    0.3334,
+    0.4336
+   ],
+   "class": "ink",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 30,
+   "name": "ginger",
+   "material": "ginger",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#8f6343",
+    "#c86849",
+    "#e29464",
+    "#f0dd91"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5385,
+    0.6231,
+    0.7352,
+    0.8961
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 31,
+   "name": "skin",
+   "material": "skin",
+   "steps": 5,
+   "colours": [
+    "#6b4539",
+    "#b97a66",
+    "#dea488",
+    "#f3cdb0",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.4306,
+    0.64,
+    0.7665,
+    0.8735,
+    0.9703
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 32,
+   "name": "hair",
+   "material": "hair",
+   "steps": 6,
+   "colours": [
+    "#333449",
+    "#4d4f63",
+    "#6c6f7e",
+    "#8f939c",
+    "#b6b8b6",
+    "#dbd8cb"
+   ],
+   "L": [
+    0.3334,
+    0.4336,
+    0.5444,
+    0.6628,
+    0.7804,
+    0.881
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 33,
+   "name": "cardigan",
+   "material": "cardigan",
+   "steps": 6,
+   "colours": [
+    "#22343b",
+    "#2b4a41",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752"
+   ],
+   "L": [
+    0.3125,
+    0.3818,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 34,
+   "name": "skirt",
+   "material": "skirt",
+   "steps": 5,
+   "colours": [
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#c86849",
+    "#e29464"
+   ],
+   "L": [
+    0.3184,
+    0.4131,
+    0.5149,
+    0.6231,
+    0.7352
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 35,
+   "name": "linen",
+   "material": "linen",
+   "steps": 5,
+   "colours": [
+    "#7a6b78",
+    "#a0928f",
+    "#cdbfac",
+    "#efe5cc",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.5462,
+    0.6713,
+    0.8111,
+    0.9233,
+    0.9703
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 36,
+   "name": "leather",
+   "material": "leather",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4a3034",
+    "#6b4539",
+    "#8f6343",
+    "#b2875a",
+    "#cfab79"
+   ],
+   "L": [
+    0.2681,
+    0.3415,
+    0.4306,
+    0.5385,
+    0.6546,
+    0.7617
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 37,
+   "name": "green_paint",
+   "material": "green_paint",
+   "steps": 6,
+   "colours": [
+    "#1e3a3c",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.3273,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 38,
+   "name": "blue_paint",
+   "material": "blue_paint",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#273560",
+    "#2f4f7c",
+    "#3b729b",
+    "#5596b4",
+    "#86c0cc"
+   ],
+   "L": [
+    0.2681,
+    0.3399,
+    0.4252,
+    0.5326,
+    0.6416,
+    0.7721
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 39,
+   "name": "white_paint",
+   "material": "white_paint",
+   "steps": 5,
+   "colours": [
+    "#6c6f7e",
+    "#a0928f",
+    "#cdbfac",
+    "#efe5cc",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.5444,
+    0.6713,
+    0.8111,
+    0.9233,
+    0.9703
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 40,
+   "name": "snow",
+   "material": "snow",
+   "steps": 5,
+   "colours": [
+    "#6c6f7e",
+    "#9fb2c6",
+    "#cbd9e0",
+    "#eef3f0",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.5444,
+    0.7555,
+    0.8768,
+    0.9595,
+    0.9703
+   ],
+   "class": "snow",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 41,
+   "name": "autumn",
+   "material": "autumn",
+   "steps": 7,
+   "colours": [
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#f0dd91"
+   ],
+   "L": [
+    0.3184,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.8961
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 42,
+   "name": "gold_leaf",
+   "material": "gold_leaf",
+   "steps": 7,
+   "colours": [
+    "#6b4539",
+    "#8f6343",
+    "#8a6b3a",
+    "#b49449",
+    "#d8bb5f",
+    "#f0dd91",
+    "#ffeba4"
+   ],
+   "L": [
+    0.4306,
+    0.5385,
+    0.5477,
+    0.6806,
+    0.7986,
+    0.8961,
+    0.9401
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 43,
+   "name": "rust_leaf",
+   "material": "rust_leaf",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#e29464"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.7352
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 44,
+   "name": "limestone",
+   "material": "limestone",
+   "steps": 6,
+   "colours": [
+    "#37323c",
+    "#514952",
+    "#6f6560",
+    "#8f8478",
+    "#b0a492",
+    "#cfc3ac"
+   ],
+   "L": [
+    0.3263,
+    0.4165,
+    0.5145,
+    0.6196,
+    0.7239,
+    0.8209
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 45,
+   "name": "ashlar",
+   "material": "ashlar",
+   "steps": 7,
+   "colours": [
+    "#2a2136",
+    "#37323c",
+    "#514952",
+    "#6f6560",
+    "#8f8478",
+    "#b0a492",
+    "#cfc3ac"
+   ],
+   "L": [
+    0.2681,
+    0.3263,
+    0.4165,
+    0.5145,
+    0.6196,
+    0.7239,
+    0.8209
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 46,
+   "name": "polished",
+   "material": "polished",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#22212b",
+    "#2f2e39",
+    "#45434d",
+    "#6f6560",
+    "#b0a492"
+   ],
+   "L": [
+    0.2681,
+    0.2533,
+    0.3068,
+    0.3886,
+    0.5145,
+    0.7239
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 47,
+   "name": "mudbrick",
+   "material": "mudbrick",
+   "steps": 5,
+   "colours": [
+    "#776049",
+    "#9a7e62",
+    "#bb9f7e",
+    "#d5bd99",
+    "#e9d8b6"
+   ],
+   "L": [
+    0.5057,
+    0.6123,
+    0.7191,
+    0.8097,
+    0.8874
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 48,
+   "name": "hematite",
+   "material": "hematite",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#4f2422",
+    "#6e3329",
+    "#8c4733",
+    "#c63f30"
+   ],
+   "L": [
+    0.2681,
+    0.3197,
+    0.3976,
+    0.4794,
+    0.5606
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 49,
+   "name": "cinnabar",
+   "material": "cinnabar",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#6e1c22",
+    "#9c2a2a",
+    "#c63f30",
+    "#e2663f"
+   ],
+   "L": [
+    0.2681,
+    0.3634,
+    0.4644,
+    0.5606,
+    0.6558
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 50,
+   "name": "lapis",
+   "material": "lapis",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#1f2557",
+    "#2a3a85",
+    "#3a56b0",
+    "#5f7fd0"
+   ],
+   "L": [
+    0.2681,
+    0.2902,
+    0.381,
+    0.4818,
+    0.6093
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 51,
+   "name": "eblue",
+   "material": "eblue",
+   "steps": 5,
+   "colours": [
+    "#1f2557",
+    "#2a3a85",
+    "#2f6e9e",
+    "#4d93c2",
+    "#86bfdc"
+   ],
+   "L": [
+    0.2902,
+    0.381,
+    0.5197,
+    0.6373,
+    0.7757
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 52,
+   "name": "gold",
+   "material": "gold",
+   "steps": 5,
+   "colours": [
+    "#6b4a1a",
+    "#9a7226",
+    "#c99d36",
+    "#e8c75a",
+    "#f8e9a0"
+   ],
+   "L": [
+    0.436,
+    0.5784,
+    0.7189,
+    0.8373,
+    0.9295
+   ],
+   "class": "metal",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 53,
+   "name": "cedar",
+   "material": "cedar",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#3f241e",
+    "#5f3626",
+    "#834d33",
+    "#a96c47"
+   ],
+   "L": [
+    0.2681,
+    0.2935,
+    0.3797,
+    0.4774,
+    0.5887
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 54,
+   "name": "purple",
+   "material": "purple",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#341838",
+    "#552452",
+    "#7a346c",
+    "#a14f86"
+   ],
+   "L": [
+    0.2681,
+    0.2639,
+    0.3487,
+    0.4407,
+    0.5466
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 55,
+   "name": "saffron",
+   "material": "saffron",
+   "steps": 5,
+   "colours": [
+    "#6b4539",
+    "#b67b1c",
+    "#dca23a",
+    "#e8c75a",
+    "#f8e9a0"
+   ],
+   "L": [
+    0.4306,
+    0.6288,
+    0.7495,
+    0.8373,
+    0.9295
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 56,
+   "name": "malachite",
+   "material": "malachite",
+   "steps": 5,
+   "colours": [
+    "#1e3a3c",
+    "#2c604c",
+    "#468a68",
+    "#74b38a",
+    "#c6d872"
+   ],
+   "L": [
+    0.3273,
+    0.4469,
+    0.5788,
+    0.7126,
+    0.8469
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 57,
+   "name": "skin_olive",
+   "material": "skin_olive",
+   "steps": 5,
+   "colours": [
+    "#6a4434",
+    "#8d5f45",
+    "#b07f5c",
+    "#cc9c76",
+    "#dea488"
+   ],
+   "L": [
+    0.4261,
+    0.5285,
+    0.637,
+    0.7287,
+    0.7665
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 58,
+   "name": "skin_dark",
+   "material": "skin_dark",
+   "steps": 5,
+   "colours": [
+    "#33221f",
+    "#4d3328",
+    "#6c4734",
+    "#8d5f45",
+    "#b07f5c"
+   ],
+   "L": [
+    0.2719,
+    0.3486,
+    0.4349,
+    0.5285,
+    0.637
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 59,
+   "name": "hair_black",
+   "material": "hair_black",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#22212b",
+    "#2f2e39",
+    "#1f2557",
+    "#2a3a85"
+   ],
+   "L": [
+    0.2681,
+    0.2533,
+    0.3068,
+    0.2902,
+    0.381
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 60,
+   "name": "naqsh",
+   "material": "naqsh",
+   "steps": 5,
+   "colours": [
+    "#5d4c50",
+    "#80696a",
+    "#a28a82",
+    "#c2ab9c",
+    "#dccabb"
+   ],
+   "L": [
+    0.4352,
+    0.5434,
+    0.653,
+    0.757,
+    0.8498
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 61,
+   "name": "glaze_blue",
+   "material": "glaze_blue",
+   "steps": 5,
+   "colours": [
+    "#1f2557",
+    "#2a3a85",
+    "#3a56b0",
+    "#4d93c2",
+    "#86bfdc"
+   ],
+   "L": [
+    0.2902,
+    0.381,
+    0.4818,
+    0.6373,
+    0.7757
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 62,
+   "name": "glaze_yellow",
+   "material": "glaze_yellow",
+   "steps": 5,
+   "colours": [
+    "#8f6343",
+    "#b67b1c",
+    "#e8c75a",
+    "#f8e9a0",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.5385,
+    0.6288,
+    0.8373,
+    0.9295,
+    0.9703
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 63,
+   "name": "wool",
+   "material": "wool",
+   "steps": 5,
+   "colours": [
+    "#6b4539",
+    "#9a7e62",
+    "#bb9f7e",
+    "#d5bd99",
+    "#e9d8b6"
+   ],
+   "L": [
+    0.4306,
+    0.6123,
+    0.7191,
+    0.8097,
+    0.8874
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 64,
+   "name": "felt",
+   "material": "felt",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#4a3034",
+    "#6b4539",
+    "#8f6343",
+    "#bb9f7e"
+   ],
+   "L": [
+    0.2681,
+    0.3415,
+    0.4306,
+    0.5385,
+    0.7191
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 65,
+   "name": "bronze",
+   "material": "bronze",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#5f3626",
+    "#6b4a1a",
+    "#9a7226",
+    "#c99d36",
+    "#e8c75a"
+   ],
+   "L": [
+    0.2681,
+    0.3797,
+    0.436,
+    0.5784,
+    0.7189,
+    0.8373
+   ],
+   "class": "metal",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 66,
+   "name": "marble",
+   "material": "marble",
+   "steps": 7,
+   "colours": [
+    "#4b4552",
+    "#6d6569",
+    "#928882",
+    "#b7ab9c",
+    "#d4c8b2",
+    "#e9dec6",
+    "#f6eedb"
+   ],
+   "L": [
+    0.4012,
+    0.5155,
+    0.6337,
+    0.7472,
+    0.8367,
+    0.903,
+    0.9503
+   ],
+   "class": "marble",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 67,
+   "name": "marble_rough",
+   "material": "marble_rough",
+   "steps": 6,
+   "colours": [
+    "#4b4552",
+    "#6d6569",
+    "#928882",
+    "#b7ab9c",
+    "#d4c8b2",
+    "#e9dec6"
+   ],
+   "L": [
+    0.4012,
+    0.5155,
+    0.6337,
+    0.7472,
+    0.8367,
+    0.903
+   ],
+   "class": "marble",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 68,
+   "name": "poros",
+   "material": "poros",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#5c4b3b",
+    "#7f6a50",
+    "#a28a66",
+    "#c0a87e",
+    "#d9c497"
+   ],
+   "L": [
+    0.2681,
+    0.4257,
+    0.5376,
+    0.6463,
+    0.7422,
+    0.8269
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 69,
+   "name": "eleusinian",
+   "material": "eleusinian",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#22212b",
+    "#2f2e39",
+    "#45434d",
+    "#6d6569",
+    "#928882"
+   ],
+   "L": [
+    0.2681,
+    0.2533,
+    0.3068,
+    0.3886,
+    0.5155,
+    0.6337
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 70,
+   "name": "attic_rock",
+   "material": "attic_rock",
+   "steps": 7,
+   "colours": [
+    "#2a2136",
+    "#46413f",
+    "#635b55",
+    "#837a6f",
+    "#a3998b",
+    "#c0b6a6",
+    "#dad1c0"
+   ],
+   "L": [
+    0.2681,
+    0.3796,
+    0.4769,
+    0.5843,
+    0.6876,
+    0.7801,
+    0.8633
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 71,
+   "name": "terracotta",
+   "material": "terracotta",
+   "steps": 6,
+   "colours": [
+    "#5b2b24",
+    "#87412d",
+    "#ad5b37",
+    "#cb7a48",
+    "#e09c66",
+    "#efbf8c"
+   ],
+   "L": [
+    0.3523,
+    0.4608,
+    0.5615,
+    0.6571,
+    0.7477,
+    0.8356
+   ],
+   "class": "roof",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 72,
+   "name": "clay",
+   "material": "clay",
+   "steps": 6,
+   "colours": [
+    "#5b2b24",
+    "#7c4a30",
+    "#a5643c",
+    "#c4804f",
+    "#d9a072",
+    "#efbf8c"
+   ],
+   "L": [
+    0.3523,
+    0.4615,
+    0.5671,
+    0.6601,
+    0.7494,
+    0.8356
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 73,
+   "name": "gloss",
+   "material": "gloss",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#17141b",
+    "#25202a",
+    "#38323f",
+    "#4d4f63"
+   ],
+   "L": [
+    0.2681,
+    0.198,
+    0.2535,
+    0.3287,
+    0.4336
+   ],
+   "class": "ink",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 74,
+   "name": "olive",
+   "material": "olive",
+   "steps": 5,
+   "colours": [
+    "#3a4638",
+    "#53634a",
+    "#72825d",
+    "#93a27a",
+    "#b8c39d"
+   ],
+   "L": [
+    0.3789,
+    0.4788,
+    0.5835,
+    0.6897,
+    0.7986
+   ],
+   "class": "foliage_evergreen",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 75,
+   "name": "olive_silver",
+   "material": "olive_silver",
+   "steps": 5,
+   "colours": [
+    "#53634a",
+    "#72825d",
+    "#93a27a",
+    "#b8c39d",
+    "#cbd9e0"
+   ],
+   "L": [
+    0.4788,
+    0.5835,
+    0.6897,
+    0.7986,
+    0.8768
+   ],
+   "class": "foliage_evergreen",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 76,
+   "name": "summer",
+   "material": "summer",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4306,
+    0.5399,
+    0.642,
+    0.7338,
+    0.808,
+    0.8961
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "states": {
+    "fresh": 167,
+    "dry": 168,
+    "dormant": 169,
+    "turn": 187
+   }
+  },
+  {
+   "id": 77,
+   "name": "pitch",
+   "material": "pitch",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#141217",
+    "#211c24",
+    "#322b35",
+    "#4d4f63"
+   ],
+   "L": [
+    0.2681,
+    0.1869,
+    0.2357,
+    0.3007,
+    0.4336
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 78,
+   "name": "triglyph",
+   "material": "triglyph",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#211c24",
+    "#1f2557",
+    "#2a3a85",
+    "#3a56b0"
+   ],
+   "L": [
+    0.2681,
+    0.2357,
+    0.2902,
+    0.381,
+    0.4818
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 79,
+   "name": "ochre",
+   "material": "ochre",
+   "steps": 5,
+   "colours": [
+    "#6b4539",
+    "#8f6343",
+    "#b67b1c",
+    "#dca23a",
+    "#e8c75a"
+   ],
+   "L": [
+    0.4306,
+    0.5385,
+    0.6288,
+    0.7495,
+    0.8373
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 80,
+   "name": "whitewash",
+   "material": "whitewash",
+   "steps": 5,
+   "colours": [
+    "#928882",
+    "#a0928f",
+    "#cdbfac",
+    "#efe5cc",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.6337,
+    0.6713,
+    0.8111,
+    0.9233,
+    0.9703
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 81,
+   "name": "rust",
+   "material": "rust",
+   "steps": 4,
+   "colours": [
+    "#4a3034",
+    "#8a5a43",
+    "#a8714f",
+    "#c4804f"
+   ],
+   "L": [
+    0.3415,
+    0.5145,
+    0.5982,
+    0.6601
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 82,
+   "name": "skin_tan",
+   "material": "skin_tan",
+   "steps": 5,
+   "colours": [
+    "#8d5f45",
+    "#b07f5c",
+    "#cc9c76",
+    "#dea488",
+    "#f3cdb0"
+   ],
+   "L": [
+    0.5285,
+    0.637,
+    0.7287,
+    0.7665,
+    0.8735
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 83,
+   "name": "bronze_cast",
+   "material": "bronze_cast",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#3f241e",
+    "#5f3626",
+    "#834d33",
+    "#9a7226",
+    "#c99d36"
+   ],
+   "L": [
+    0.2681,
+    0.2935,
+    0.3797,
+    0.4774,
+    0.5784,
+    0.7189
+   ],
+   "class": "metal",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 84,
+   "name": "gravel",
+   "material": "gravel",
+   "steps": 6,
+   "colours": [
+    "#4d4f63",
+    "#7f6a50",
+    "#a28a66",
+    "#8f939c",
+    "#c0a87e",
+    "#d4c8b2"
+   ],
+   "L": [
+    0.4336,
+    0.5376,
+    0.6463,
+    0.6628,
+    0.7422,
+    0.8367
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 85,
+   "name": "travertine",
+   "material": "travertine",
+   "steps": 7,
+   "colours": [
+    "#4d4234",
+    "#6d5f4c",
+    "#918066",
+    "#b3a081",
+    "#ccbb98",
+    "#e1d3b0",
+    "#efe4c6"
+   ],
+   "L": [
+    0.3862,
+    0.4936,
+    0.6084,
+    0.7143,
+    0.7974,
+    0.8693,
+    0.9198
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 86,
+   "name": "brick",
+   "material": "brick",
+   "steps": 7,
+   "colours": [
+    "#2a2136",
+    "#47221d",
+    "#6a3125",
+    "#8a432e",
+    "#a95839",
+    "#c2724a",
+    "#d68f63"
+   ],
+   "L": [
+    0.2681,
+    0.3017,
+    0.3871,
+    0.4689,
+    0.5511,
+    0.6318,
+    0.712
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 87,
+   "name": "tufa",
+   "material": "tufa",
+   "steps": 7,
+   "colours": [
+    "#2a2136",
+    "#3b3631",
+    "#564d46",
+    "#72675c",
+    "#8f8170",
+    "#aa9c87",
+    "#c4b7a0"
+   ],
+   "L": [
+    0.2681,
+    0.3363,
+    0.4269,
+    0.5208,
+    0.611,
+    0.6991,
+    0.7841
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 88,
+   "name": "basalt",
+   "material": "basalt",
+   "steps": 7,
+   "colours": [
+    "#2a2136",
+    "#1d1d24",
+    "#2a2a33",
+    "#393943",
+    "#4b4b55",
+    "#5f5f69",
+    "#77777f"
+   ],
+   "L": [
+    0.2681,
+    0.2338,
+    0.2888,
+    0.3485,
+    0.4165,
+    0.489,
+    0.5719
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 89,
+   "name": "giallo",
+   "material": "giallo",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#86672a",
+    "#ad883b",
+    "#cca753",
+    "#e3c576",
+    "#efe5cc"
+   ],
+   "L": [
+    0.4306,
+    0.5326,
+    0.6469,
+    0.745,
+    0.8322,
+    0.9233
+   ],
+   "class": "marble",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 90,
+   "name": "cipollino",
+   "material": "cipollino",
+   "steps": 5,
+   "colours": [
+    "#1e3a3c",
+    "#4c6856",
+    "#6c8a75",
+    "#91ad98",
+    "#d4c8b2"
+   ],
+   "L": [
+    0.3273,
+    0.4895,
+    0.6041,
+    0.7204,
+    0.8367
+   ],
+   "class": "marble",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 91,
+   "name": "porphyry",
+   "material": "porphyry",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#3a1921",
+    "#58242f",
+    "#77333f",
+    "#9c2a2a"
+   ],
+   "L": [
+    0.2681,
+    0.2641,
+    0.3383,
+    0.4172,
+    0.4644
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 92,
+   "name": "granite",
+   "material": "granite",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#434549",
+    "#5d5f66",
+    "#7b7d83",
+    "#9a9ca0",
+    "#d4c8b2"
+   ],
+   "L": [
+    0.2681,
+    0.39,
+    0.4861,
+    0.59,
+    0.6923,
+    0.8367
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 93,
+   "name": "granite_pink",
+   "material": "granite_pink",
+   "steps": 6,
+   "colours": [
+    "#6c4c46",
+    "#6c4c46",
+    "#8f665c",
+    "#b1887a",
+    "#cda798",
+    "#e9dec6"
+   ],
+   "L": [
+    0.4496,
+    0.4496,
+    0.5499,
+    0.6622,
+    0.7585,
+    0.903
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 94,
+   "name": "stucco_red",
+   "material": "stucco_red",
+   "steps": 5,
+   "colours": [
+    "#2a2136",
+    "#772c21",
+    "#9b3d2b",
+    "#ba583d",
+    "#cf7a59"
+   ],
+   "L": [
+    0.2681,
+    0.4001,
+    0.486,
+    0.5763,
+    0.6647
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 95,
+   "name": "tiber",
+   "material": "tiber",
+   "steps": 6,
+   "colours": [
+    "#475034",
+    "#5d6840",
+    "#74814d",
+    "#8e9961",
+    "#a7b17a",
+    "#c1c698"
+   ],
+   "L": [
+    0.4152,
+    0.4972,
+    0.5795,
+    0.6602,
+    0.7388,
+    0.8109
+   ],
+   "class": "water",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 96,
+   "name": "gilt",
+   "material": "gilt",
+   "steps": 6,
+   "colours": [
+    "#5f3626",
+    "#6b4a1a",
+    "#9a7226",
+    "#c99d36",
+    "#e8c75a",
+    "#f8e9a0"
+   ],
+   "L": [
+    0.3797,
+    0.436,
+    0.5784,
+    0.7189,
+    0.8373,
+    0.9295
+   ],
+   "class": "metal",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 97,
+   "name": "sand",
+   "material": "sand",
+   "steps": 6,
+   "colours": [
+    "#8e7656",
+    "#ae946b",
+    "#c9b083",
+    "#dec99d",
+    "#ede0bc",
+    "#f7efd6"
+   ],
+   "L": [
+    0.5804,
+    0.68,
+    0.7679,
+    0.8426,
+    0.908,
+    0.9518
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 98,
+   "name": "steppe",
+   "material": "steppe",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#bfb47c",
+    "#d4c995"
+   ],
+   "L": [
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.7658,
+    0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "states": {
+    "fresh": 171,
+    "dry": 172,
+    "dormant": 173,
+    "turn": 188
+   }
+  },
+  {
+   "id": 99,
+   "name": "sea",
+   "material": "sea",
+   "steps": 6,
+   "colours": [
+    "#15213f",
+    "#1b2d55",
+    "#22406f",
+    "#2b5588",
+    "#376c9f",
+    "#4d86b4"
+   ],
+   "L": [
+    0.2543,
+    0.3049,
+    0.3738,
+    0.445,
+    0.5187,
+    0.6005
+   ],
+   "class": "water",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 100,
+   "name": "hide",
+   "material": "hide",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4a3034",
+    "#6b4539",
+    "#8e7656",
+    "#ae946b",
+    "#c9b083"
+   ],
+   "L": [
+    0.2681,
+    0.3415,
+    0.4306,
+    0.5804,
+    0.68,
+    0.7679
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 101,
+   "name": "pal.ink",
+   "group": "ink",
+   "steps": 1,
+   "colours": [
+    "#2a2136"
+   ],
+   "L": [
+    0.2681
+   ],
+   "class": "ink",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 102,
+   "name": "pal.earth",
+   "group": "earth",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#8f6343",
+    "#b2875a",
+    "#cfab79",
+    "#e8d4a4"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5385,
+    0.6546,
+    0.7617,
+    0.8747
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 103,
+   "name": "pal.leaf",
+   "group": "leaf",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#2b4a41",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.3125,
+    0.3818,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "states": {
+    "fresh": 175,
+    "dry": 176,
+    "dormant": 177,
+    "turn": 189
+   }
+  },
+  {
+   "id": 104,
+   "name": "pal.pine",
+   "group": "pine",
+   "steps": 3,
+   "colours": [
+    "#1e3a3c",
+    "#285046",
+    "#36694f"
+   ],
+   "L": [
+    0.3273,
+    0.3986,
+    0.4772
+   ],
+   "class": "foliage_evergreen",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 105,
+   "name": "pal.blossom",
+   "group": "blossom",
+   "steps": 5,
+   "colours": [
+    "#6a3d5e",
+    "#8f4363",
+    "#c4687f",
+    "#e597a6",
+    "#f6c9c8"
+   ],
+   "L": [
+    0.4262,
+    0.4898,
+    0.6294,
+    0.7582,
+    0.8746
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 106,
+   "name": "pal.stone",
+   "group": "stone",
+   "steps": 6,
+   "colours": [
+    "#333449",
+    "#4d4f63",
+    "#6c6f7e",
+    "#8f939c",
+    "#b6b8b6",
+    "#dbd8cb"
+   ],
+   "L": [
+    0.3334,
+    0.4336,
+    0.5444,
+    0.6628,
+    0.7804,
+    0.881
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 107,
+   "name": "pal.roof",
+   "group": "roof",
+   "steps": 5,
+   "colours": [
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#c86849",
+    "#e29464"
+   ],
+   "L": [
+    0.3184,
+    0.4131,
+    0.5149,
+    0.6231,
+    0.7352
+   ],
+   "class": "roof",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 108,
+   "name": "pal.straw",
+   "group": "straw",
+   "steps": 4,
+   "colours": [
+    "#8a6b3a",
+    "#b49449",
+    "#d8bb5f",
+    "#f0dd91"
+   ],
+   "L": [
+    0.5477,
+    0.6806,
+    0.7986,
+    0.8961
+   ],
+   "class": "crop",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 109,
+   "name": "pal.water",
+   "group": "water",
+   "steps": 6,
+   "colours": [
+    "#273560",
+    "#2f4f7c",
+    "#3b729b",
+    "#5596b4",
+    "#86c0cc",
+    "#c4e3dc"
+   ],
+   "L": [
+    0.3399,
+    0.4252,
+    0.5326,
+    0.6416,
+    0.7721,
+    0.8913
+   ],
+   "class": "water",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 110,
+   "name": "pal.plaster",
+   "group": "plaster",
+   "steps": 5,
+   "colours": [
+    "#7a6b78",
+    "#a0928f",
+    "#cdbfac",
+    "#efe5cc",
+    "#fbf5e4"
+   ],
+   "L": [
+    0.5462,
+    0.6713,
+    0.8111,
+    0.9233,
+    0.9703
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 111,
+   "name": "pal.violet",
+   "group": "violet",
+   "steps": 4,
+   "colours": [
+    "#3e3366",
+    "#5d4993",
+    "#8869bf",
+    "#b49de0"
+   ],
+   "L": [
+    0.3591,
+    0.4621,
+    0.5883,
+    0.7403
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 112,
+   "name": "pal.poppy",
+   "group": "poppy",
+   "steps": 2,
+   "colours": [
+    "#c5333d",
+    "#ec6550"
+   ],
+   "L": [
+    0.5486,
+    0.6714
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 113,
+   "name": "pal.glow",
+   "group": "glow",
+   "steps": 3,
+   "colours": [
+    "#ff9a3a",
+    "#ffc95c",
+    "#ffeba4"
+   ],
+   "L": [
+    0.7759,
+    0.8639,
+    0.9401
+   ],
+   "class": "flame",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 114,
+   "name": "pal.skin",
+   "group": "skin",
+   "steps": 3,
+   "colours": [
+    "#b97a66",
+    "#dea488",
+    "#f3cdb0"
+   ],
+   "L": [
+    0.64,
+    0.7665,
+    0.8735
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 115,
+   "name": "pal.snow",
+   "group": "snow",
+   "steps": 3,
+   "colours": [
+    "#9fb2c6",
+    "#cbd9e0",
+    "#eef3f0"
+   ],
+   "L": [
+    0.7555,
+    0.8768,
+    0.9595
+   ],
+   "class": "snow",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 116,
+   "name": "pal.autumn",
+   "group": "autumn",
+   "steps": 2,
+   "colours": [
+    "#b9612c",
+    "#dd8f37"
+   ],
+   "L": [
+    0.5871,
+    0.715
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 117,
+   "name": "pal.limestone",
+   "group": "limestone",
+   "steps": 7,
+   "colours": [
+    "#37323c",
+    "#514952",
+    "#6f6560",
+    "#8f8478",
+    "#b0a492",
+    "#cfc3ac",
+    "#e8dec6"
+   ],
+   "L": [
+    0.3263,
+    0.4165,
+    0.5145,
+    0.6196,
+    0.7239,
+    0.8209,
+    0.9022
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 118,
+   "name": "pal.darkstone",
+   "group": "darkstone",
+   "steps": 3,
+   "colours": [
+    "#22212b",
+    "#2f2e39",
+    "#45434d"
+   ],
+   "L": [
+    0.2533,
+    0.3068,
+    0.3886
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 119,
+   "name": "pal.lapis",
+   "group": "lapis",
+   "steps": 4,
+   "colours": [
+    "#1f2557",
+    "#2a3a85",
+    "#3a56b0",
+    "#5f7fd0"
+   ],
+   "L": [
+    0.2902,
+    0.381,
+    0.4818,
+    0.6093
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 120,
+   "name": "pal.egypt_blue",
+   "group": "egypt_blue",
+   "steps": 3,
+   "colours": [
+    "#2f6e9e",
+    "#4d93c2",
+    "#86bfdc"
+   ],
+   "L": [
+    0.5197,
+    0.6373,
+    0.7757
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 121,
+   "name": "pal.cinnabar",
+   "group": "cinnabar",
+   "steps": 4,
+   "colours": [
+    "#6e1c22",
+    "#9c2a2a",
+    "#c63f30",
+    "#e2663f"
+   ],
+   "L": [
+    0.3634,
+    0.4644,
+    0.5606,
+    0.6558
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 122,
+   "name": "pal.hematite",
+   "group": "hematite",
+   "steps": 3,
+   "colours": [
+    "#4f2422",
+    "#6e3329",
+    "#8c4733"
+   ],
+   "L": [
+    0.3197,
+    0.3976,
+    0.4794
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 123,
+   "name": "pal.gold",
+   "group": "gold",
+   "steps": 5,
+   "colours": [
+    "#6b4a1a",
+    "#9a7226",
+    "#c99d36",
+    "#e8c75a",
+    "#f8e9a0"
+   ],
+   "L": [
+    0.436,
+    0.5784,
+    0.7189,
+    0.8373,
+    0.9295
+   ],
+   "class": "metal",
+   "shell": 255,
+   "porous": false,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 124,
+   "name": "pal.cedar",
+   "group": "cedar",
+   "steps": 4,
+   "colours": [
+    "#3f241e",
+    "#5f3626",
+    "#834d33",
+    "#a96c47"
+   ],
+   "L": [
+    0.2935,
+    0.3797,
+    0.4774,
+    0.5887
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 125,
+   "name": "pal.mudbrick",
+   "group": "mudbrick",
+   "steps": 5,
+   "colours": [
+    "#776049",
+    "#9a7e62",
+    "#bb9f7e",
+    "#d5bd99",
+    "#e9d8b6"
+   ],
+   "L": [
+    0.5057,
+    0.6123,
+    0.7191,
+    0.8097,
+    0.8874
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 126,
+   "name": "pal.purple",
+   "group": "purple",
+   "steps": 4,
+   "colours": [
+    "#341838",
+    "#552452",
+    "#7a346c",
+    "#a14f86"
+   ],
+   "L": [
+    0.2639,
+    0.3487,
+    0.4407,
+    0.5466
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 127,
+   "name": "pal.saffron",
+   "group": "saffron",
+   "steps": 2,
+   "colours": [
+    "#b67b1c",
+    "#dca23a"
+   ],
+   "L": [
+    0.6288,
+    0.7495
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 128,
+   "name": "pal.malachite",
+   "group": "malachite",
+   "steps": 3,
+   "colours": [
+    "#2c604c",
+    "#468a68",
+    "#74b38a"
+   ],
+   "L": [
+    0.4469,
+    0.5788,
+    0.7126
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 129,
+   "name": "pal.skin_olive",
+   "group": "skin_olive",
+   "steps": 4,
+   "colours": [
+    "#6a4434",
+    "#8d5f45",
+    "#b07f5c",
+    "#cc9c76"
+   ],
+   "L": [
+    0.4261,
+    0.5285,
+    0.637,
+    0.7287
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 130,
+   "name": "pal.skin_dark",
+   "group": "skin_dark",
+   "steps": 3,
+   "colours": [
+    "#33221f",
+    "#4d3328",
+    "#6c4734"
+   ],
+   "L": [
+    0.2719,
+    0.3486,
+    0.4349
+   ],
+   "class": "skin",
+   "shell": 8,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 131,
+   "name": "pal.naqsh",
+   "group": "naqsh",
+   "steps": 5,
+   "colours": [
+    "#5d4c50",
+    "#80696a",
+    "#a28a82",
+    "#c2ab9c",
+    "#dccabb"
+   ],
+   "L": [
+    0.4352,
+    0.5434,
+    0.653,
+    0.757,
+    0.8498
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 132,
+   "name": "pal.marble",
+   "group": "marble",
+   "steps": 7,
+   "colours": [
+    "#4b4552",
+    "#6d6569",
+    "#928882",
+    "#b7ab9c",
+    "#d4c8b2",
+    "#e9dec6",
+    "#f6eedb"
+   ],
+   "L": [
+    0.4012,
+    0.5155,
+    0.6337,
+    0.7472,
+    0.8367,
+    0.903,
+    0.9503
+   ],
+   "class": "marble",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 133,
+   "name": "pal.poros",
+   "group": "poros",
+   "steps": 5,
+   "colours": [
+    "#5c4b3b",
+    "#7f6a50",
+    "#a28a66",
+    "#c0a87e",
+    "#d9c497"
+   ],
+   "L": [
+    0.4257,
+    0.5376,
+    0.6463,
+    0.7422,
+    0.8269
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 134,
+   "name": "pal.attic_rock",
+   "group": "attic_rock",
+   "steps": 6,
+   "colours": [
+    "#46413f",
+    "#635b55",
+    "#837a6f",
+    "#a3998b",
+    "#c0b6a6",
+    "#dad1c0"
+   ],
+   "L": [
+    0.3796,
+    0.4769,
+    0.5843,
+    0.6876,
+    0.7801,
+    0.8633
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 135,
+   "name": "pal.rust",
+   "group": "rust",
+   "steps": 2,
+   "colours": [
+    "#8a5a43",
+    "#a8714f"
+   ],
+   "L": [
+    0.5145,
+    0.5982
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 136,
+   "name": "pal.terracotta",
+   "group": "terracotta",
+   "steps": 6,
+   "colours": [
+    "#5b2b24",
+    "#87412d",
+    "#ad5b37",
+    "#cb7a48",
+    "#e09c66",
+    "#efbf8c"
+   ],
+   "L": [
+    0.3523,
+    0.4608,
+    0.5615,
+    0.6571,
+    0.7477,
+    0.8356
+   ],
+   "class": "roof",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 137,
+   "name": "pal.clay",
+   "group": "clay",
+   "steps": 4,
+   "colours": [
+    "#7c4a30",
+    "#a5643c",
+    "#c4804f",
+    "#d9a072"
+   ],
+   "L": [
+    0.4615,
+    0.5671,
+    0.6601,
+    0.7494
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 138,
+   "name": "pal.gloss",
+   "group": "gloss",
+   "steps": 3,
+   "colours": [
+    "#17141b",
+    "#25202a",
+    "#38323f"
+   ],
+   "L": [
+    0.198,
+    0.2535,
+    0.3287
+   ],
+   "class": "ink",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 139,
+   "name": "pal.olive",
+   "group": "olive",
+   "steps": 5,
+   "colours": [
+    "#3a4638",
+    "#53634a",
+    "#72825d",
+    "#93a27a",
+    "#b8c39d"
+   ],
+   "L": [
+    0.3789,
+    0.4788,
+    0.5835,
+    0.6897,
+    0.7986
+   ],
+   "class": "foliage_evergreen",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 140,
+   "name": "pal.summer",
+   "group": "summer",
+   "steps": 4,
+   "colours": [
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.5399,
+    0.642,
+    0.7338,
+    0.808
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "states": {
+    "fresh": 179,
+    "dry": 180,
+    "dormant": 181,
+    "turn": 190
+   }
+  },
+  {
+   "id": 141,
+   "name": "pal.pitch",
+   "group": "pitch",
+   "steps": 3,
+   "colours": [
+    "#141217",
+    "#211c24",
+    "#322b35"
+   ],
+   "L": [
+    0.1869,
+    0.2357,
+    0.3007
+   ],
+   "class": "wood",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 142,
+   "name": "pal.travertine",
+   "group": "travertine",
+   "steps": 7,
+   "colours": [
+    "#4d4234",
+    "#6d5f4c",
+    "#918066",
+    "#b3a081",
+    "#ccbb98",
+    "#e1d3b0",
+    "#efe4c6"
+   ],
+   "L": [
+    0.3862,
+    0.4936,
+    0.6084,
+    0.7143,
+    0.7974,
+    0.8693,
+    0.9198
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 143,
+   "name": "pal.brick",
+   "group": "brick",
+   "steps": 6,
+   "colours": [
+    "#47221d",
+    "#6a3125",
+    "#8a432e",
+    "#a95839",
+    "#c2724a",
+    "#d68f63"
+   ],
+   "L": [
+    0.3017,
+    0.3871,
+    0.4689,
+    0.5511,
+    0.6318,
+    0.712
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 144,
+   "name": "pal.tufa",
+   "group": "tufa",
+   "steps": 6,
+   "colours": [
+    "#3b3631",
+    "#564d46",
+    "#72675c",
+    "#8f8170",
+    "#aa9c87",
+    "#c4b7a0"
+   ],
+   "L": [
+    0.3363,
+    0.4269,
+    0.5208,
+    0.611,
+    0.6991,
+    0.7841
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 145,
+   "name": "pal.basalt",
+   "group": "basalt",
+   "steps": 6,
+   "colours": [
+    "#1d1d24",
+    "#2a2a33",
+    "#393943",
+    "#4b4b55",
+    "#5f5f69",
+    "#77777f"
+   ],
+   "L": [
+    0.2338,
+    0.2888,
+    0.3485,
+    0.4165,
+    0.489,
+    0.5719
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 146,
+   "name": "pal.giallo",
+   "group": "giallo",
+   "steps": 4,
+   "colours": [
+    "#86672a",
+    "#ad883b",
+    "#cca753",
+    "#e3c576"
+   ],
+   "L": [
+    0.5326,
+    0.6469,
+    0.745,
+    0.8322
+   ],
+   "class": "marble",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 147,
+   "name": "pal.cipollino",
+   "group": "cipollino",
+   "steps": 3,
+   "colours": [
+    "#4c6856",
+    "#6c8a75",
+    "#91ad98"
+   ],
+   "L": [
+    0.4895,
+    0.6041,
+    0.7204
+   ],
+   "class": "marble",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 148,
+   "name": "pal.porphyry",
+   "group": "porphyry",
+   "steps": 3,
+   "colours": [
+    "#3a1921",
+    "#58242f",
+    "#77333f"
+   ],
+   "L": [
+    0.2641,
+    0.3383,
+    0.4172
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 149,
+   "name": "pal.granite",
+   "group": "granite",
+   "steps": 4,
+   "colours": [
+    "#434549",
+    "#5d5f66",
+    "#7b7d83",
+    "#9a9ca0"
+   ],
+   "L": [
+    0.39,
+    0.4861,
+    0.59,
+    0.6923
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 150,
+   "name": "pal.granite_pink",
+   "group": "granite_pink",
+   "steps": 4,
+   "colours": [
+    "#6c4c46",
+    "#8f665c",
+    "#b1887a",
+    "#cda798"
+   ],
+   "L": [
+    0.4496,
+    0.5499,
+    0.6622,
+    0.7585
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 151,
+   "name": "pal.stucco_red",
+   "group": "stucco_red",
+   "steps": 4,
+   "colours": [
+    "#772c21",
+    "#9b3d2b",
+    "#ba583d",
+    "#cf7a59"
+   ],
+   "L": [
+    0.4001,
+    0.486,
+    0.5763,
+    0.6647
+   ],
+   "class": "plaster",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 152,
+   "name": "pal.tiber",
+   "group": "tiber",
+   "steps": 6,
+   "colours": [
+    "#475034",
+    "#5d6840",
+    "#74814d",
+    "#8e9961",
+    "#a7b17a",
+    "#c1c698"
+   ],
+   "L": [
+    0.4152,
+    0.4972,
+    0.5795,
+    0.6602,
+    0.7388,
+    0.8109
+   ],
+   "class": "water",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 153,
+   "name": "pal.sea",
+   "group": "sea",
+   "steps": 6,
+   "colours": [
+    "#15213f",
+    "#1b2d55",
+    "#22406f",
+    "#2b5588",
+    "#376c9f",
+    "#4d86b4"
+   ],
+   "L": [
+    0.2543,
+    0.3049,
+    0.3738,
+    0.445,
+    0.5187,
+    0.6005
+   ],
+   "class": "water",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 154,
+   "name": "pal.shallow",
+   "group": "shallow",
+   "steps": 5,
+   "colours": [
+    "#2d7385",
+    "#3a8f9c",
+    "#4fabaf",
+    "#74c6bd",
+    "#a4dccd"
+   ],
+   "L": [
+    0.5192,
+    0.6039,
+    0.6873,
+    0.7717,
+    0.8517
+   ],
+   "class": "water",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": true,
+   "sway": false
+  },
+  {
+   "id": 155,
+   "name": "pal.sand",
+   "group": "sand",
+   "steps": 6,
+   "colours": [
+    "#8e7656",
+    "#ae946b",
+    "#c9b083",
+    "#dec99d",
+    "#ede0bc",
+    "#f7efd6"
+   ],
+   "L": [
+    0.5804,
+    0.68,
+    0.7679,
+    0.8426,
+    0.908,
+    0.9518
+   ],
+   "class": "ground",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 156,
+   "name": "pal.steppe",
+   "group": "steppe",
+   "steps": 5,
+   "colours": [
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#bfb47c",
+    "#d4c995"
+   ],
+   "L": [
+    0.5183,
+    0.607,
+    0.6927,
+    0.7658,
+    0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "states": {
+    "fresh": 183,
+    "dry": 184,
+    "dormant": 185,
+    "turn": 191
+   }
+  },
+  {
+   "id": 157,
+   "name": "pal.haze",
+   "group": "haze",
+   "steps": 5,
+   "colours": [
+    "#5d6a86",
+    "#76839c",
+    "#929db1",
+    "#adb6c5",
+    "#c8cfd8"
+   ],
+   "L": [
+    0.5242,
+    0.6083,
+    0.6939,
+    0.7739,
+    0.8518
+   ],
+   "class": "stone",
+   "shell": 255,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 158,
+   "name": "pal.sepia",
+   "group": "sepia",
+   "steps": 3,
+   "colours": [
+    "#4a3524",
+    "#6e5136",
+    "#94724e"
+   ],
+   "L": [
+    0.3482,
+    0.4589,
+    0.5769
+   ],
+   "class": "ink",
+   "shell": 255,
+   "porous": false,
+   "snow": false,
+   "specular": false,
+   "sway": false
+  },
+  {
+   "id": 159,
+   "name": "leaf@fresh",
+   "state_of": "leaf",
+   "state": "fresh",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.3125,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.7299,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 160,
+   "name": "leaf@dry",
+   "state_of": "leaf",
+   "state": "dry",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#4a3034",
+    "#6b4539",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.3125,
+    0.3415,
+    0.4306,
+    0.5399,
+    0.642,
+    0.7338,
+    0.808
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 162,
+   "name": "leaf@turn",
+   "state_of": "leaf",
+   "state": "turn",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#78303b",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.3125,
+    0.4131,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 163,
+   "name": "grass@fresh",
+   "state_of": "grass",
+   "state": "fresh",
+   "steps": 6,
+   "colours": [
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.7299,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 164,
+   "name": "grass@dry",
+   "state_of": "grass",
+   "state": "dry",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5399,
+    0.642,
+    0.7338,
+    0.808
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 165,
+   "name": "grass@dormant",
+   "state_of": "grass",
+   "state": "dormant",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#d4c995"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 167,
+   "name": "summer@fresh",
+   "state_of": "summer",
+   "state": "fresh",
+   "steps": 6,
+   "colours": [
+    "#376247",
+    "#679a48",
+    "#91b752",
+    "#91b752",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.631,
+    0.7299,
+    0.7299,
+    0.8469,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 168,
+   "name": "summer@dry",
+   "state_of": "summer",
+   "state": "dry",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4306,
+    0.5399,
+    0.642,
+    0.7338,
+    0.808,
+    0.8961
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 169,
+   "name": "summer@dormant",
+   "state_of": "summer",
+   "state": "dormant",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#bfb47c",
+    "#d4c995"
+   ],
+   "L": [
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.7658,
+    0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 171,
+   "name": "steppe@fresh",
+   "state_of": "steppe",
+   "state": "fresh",
+   "steps": 6,
+   "colours": [
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 172,
+   "name": "steppe@dry",
+   "state_of": "steppe",
+   "state": "dry",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.4306,
+    0.5399,
+    0.642,
+    0.7338,
+    0.7338,
+    0.808
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 173,
+   "name": "steppe@dormant",
+   "state_of": "steppe",
+   "state": "dormant",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#bfb47c",
+    "#d4c995"
+   ],
+   "L": [
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.7658,
+    0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 175,
+   "name": "pal.leaf@fresh",
+   "state_of": "pal.leaf",
+   "state": "fresh",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.3125,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.7299,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 176,
+   "name": "pal.leaf@dry",
+   "state_of": "pal.leaf",
+   "state": "dry",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#4a3034",
+    "#6b4539",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.3125,
+    0.3415,
+    0.4306,
+    0.5399,
+    0.642,
+    0.7338,
+    0.808
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 177,
+   "name": "pal.leaf@dormant",
+   "state_of": "pal.leaf",
+   "state": "dormant",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#4a3034",
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#d4c995"
+   ],
+   "L": [
+    0.3125,
+    0.3415,
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 179,
+   "name": "pal.summer@fresh",
+   "state_of": "pal.summer",
+   "state": "fresh",
+   "steps": 4,
+   "colours": [
+    "#679a48",
+    "#91b752",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.631,
+    0.7299,
+    0.7299,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 180,
+   "name": "pal.summer@dry",
+   "state_of": "pal.summer",
+   "state": "dry",
+   "steps": 4,
+   "colours": [
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.5399,
+    0.642,
+    0.7338,
+    0.808
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 181,
+   "name": "pal.summer@dormant",
+   "state_of": "pal.summer",
+   "state": "dormant",
+   "steps": 4,
+   "colours": [
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#bfb47c"
+   ],
+   "L": [
+    0.5183,
+    0.607,
+    0.6927,
+    0.7658
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 183,
+   "name": "pal.steppe@fresh",
+   "state_of": "pal.steppe",
+   "state": "fresh",
+   "steps": 5,
+   "colours": [
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469,
+    0.8469
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 184,
+   "name": "pal.steppe@dry",
+   "state_of": "pal.steppe",
+   "state": "dry",
+   "steps": 5,
+   "colours": [
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.5399,
+    0.642,
+    0.7338,
+    0.7338,
+    0.808
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 185,
+   "name": "pal.steppe@dormant",
+   "state_of": "pal.steppe",
+   "state": "dormant",
+   "steps": 5,
+   "colours": [
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#bfb47c",
+    "#d4c995"
+   ],
+   "L": [
+    0.5183,
+    0.607,
+    0.6927,
+    0.7658,
+    0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 186,
+   "name": "grass@turn",
+   "state_of": "grass",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.4131,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 187,
+   "name": "summer@turn",
+   "state_of": "summer",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.8961
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 188,
+   "name": "steppe@turn",
+   "state_of": "steppe",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 189,
+   "name": "pal.leaf@turn",
+   "state_of": "pal.leaf",
+   "state": "turn",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#78303b",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.3125,
+    0.4131,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 190,
+   "name": "pal.summer@turn",
+   "state_of": "pal.summer",
+   "state": "turn",
+   "steps": 4,
+   "colours": [
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 191,
+   "name": "pal.steppe@turn",
+   "state_of": "pal.steppe",
+   "state": "turn",
+   "steps": 5,
+   "colours": [
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  }
+ ]
+}

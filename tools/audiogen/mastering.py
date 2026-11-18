@@ -39,7 +39,7 @@ def _k_filter(x):
 
 def integrated_lufs(x):
     """Gated integrated loudness. Mono counts as a single channel, like ffmpeg ebur128."""
-    y = _k_filter(x) ** 2
+    y = _k_filter(np.asarray(x, dtype=np.float64)) ** 2  # float64 sums over long files
     block, step = int(0.4 * SR), int(0.1 * SR)
     if len(y) < block:
         y = np.concatenate([y, np.zeros((block - len(y), y.shape[1]))])
@@ -64,13 +64,37 @@ def max_short_lufs(x, window=0.1):
     return float(-0.691 + 10 * np.log10(ms.max() + 1e-20))
 
 
-def true_peak_db(x):
-    up = signal.resample_poly(x, 4, 1, axis=0)
-    return float(20 * np.log10(np.max(np.abs(up)) + 1e-20))
+def true_peak_db(x, block=1 << 17):
+    """4x-oversampled peak, a block at a time so a long file never holds its oversampled copy:
+    each block is filtered with a margin wider than the polyphase filter and only its centre
+    is kept, so the result equals filtering the whole file at once."""
+    pad = 256
+    best = 0.0
+    for i in range(0, len(x), block):
+        a = max(0, i - pad)
+        up = signal.resample_poly(x[a:i + block + pad], 4, 1, axis=0)
+        lo = 4 * (i - a)
+        best = max(best, float(np.max(np.abs(up[lo:lo + 4 * min(block, len(x) - i)]))))
+    return float(20 * np.log10(best + 1e-20))
 
 
 def sample_peak_db(x):
     return float(20 * np.log10(np.max(np.abs(x)) + 1e-20))
+
+
+def oversampled_peaks(x2, block=1 << 17):
+    """Per-sample peak of the 4x-oversampled signal (largest of the four sub-samples, over
+    channels), a block at a time with a margin wider than the filter: equal to filtering the
+    whole file at once, without holding its oversampled copy."""
+    pad = 256
+    peak = np.empty(len(x2))
+    for i in range(0, len(x2), block):
+        a = max(0, i - pad)
+        m = min(block, len(x2) - i)
+        up = np.abs(signal.resample_poly(x2[a:i + block + pad], 4, 1, axis=0)).max(axis=1)
+        lo = 4 * (i - a)
+        peak[i:i + m] = up[lo:lo + 4 * m].reshape(m, 4).max(axis=1)
+    return peak
 
 
 def limit(x, ceiling_db, loop):
@@ -81,9 +105,7 @@ def limit(x, ceiling_db, loop):
     mode = "wrap" if loop else "nearest"
     total = np.ones(len(x))
     for _ in range(4):
-        x2 = x if x.ndim == 2 else x[:, None]
-        up = np.abs(signal.resample_poly(x2, 4, 1, axis=0)).max(axis=1)
-        peak = up[: 4 * len(x2)].reshape(len(x2), 4).max(axis=1)
+        peak = oversampled_peaks(x if x.ndim == 2 else x[:, None])
         need = np.minimum(1.0, ceiling / np.maximum(peak, 1e-12))
         if need.min() >= 1.0:
             break

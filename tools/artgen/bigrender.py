@@ -20,8 +20,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from pack import Sprite
-from render import (SHADOW_ALPHA, SHADOW_SUN, Occupancy, Shaded, _shadowed, dither, finish,
-                    shade)
+from render import (SHADOW_ALPHA, SHADOW_SUN, Occupancy, Shaded, _shadowed, data_word, dither,
+                    finish, shade)
 from spec import DESIGN_TILE
 from voxel import Halo, Model
 
@@ -67,7 +67,8 @@ def _pass_shade(args):
     sh = shade(m, ctx, zmax)
     hit = sh.mat > 0
     r, c = np.nonzero(hit)
-    return (r + sh.r0, c + sh.c0, sh.mat[hit], sh.level[hit], sh.depth[hit], sh.vx[hit], sh.vy[hit])
+    return (r + sh.r0, c + sh.c0, sh.mat[hit], sh.level[hit], sh.depth[hit], sh.vx[hit], sh.vy[hit],
+            sh.geo[hit])
 
 
 @dataclass
@@ -78,6 +79,7 @@ class BigRender:
     tiles: np.ndarray               # (2, H, W): footprint tile (tx, ty) of each base pixel
     column: np.ndarray              # (fw, fh, nz) bool: solid at that height (px) on that tile
     top: int                        # highest solid voxel above the ground, px
+    clear: np.ndarray               # (fw, fh): the most room under anything on that tile, px
 
 
 def _grid_bounds(extent, k):
@@ -86,21 +88,45 @@ def _grid_bounds(extent, k):
     return x0, x1, y0, y1, zlo, z1
 
 
-def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRender:
-    """Render a big model with the worker pool; see the module notes."""
+def clearance(solid: np.ndarray, x0: int, y0: int, fw: int, fh: int, t: int) -> np.ndarray:
+    """(fw, fh): per footprint tile, the highest of its voxel columns' lowest solid (px above the
+    ground, `solid` starting at z 0 with its x, y origin at voxel (x0, y0)): the room under an arch
+    or a deck; 0 where everything stands on the ground."""
+    out = np.zeros((fw, fh), np.int64)
+    has = solid.any(axis=2)
+    low = np.argmax(solid, axis=2)
+    for i in range(fw):
+        for j in range(fh):
+            a, b = i * t - x0, j * t - y0
+            sub_has = has[max(a, 0):max(a + t, 0), max(b, 0):max(b + t, 0)]
+            if sub_has.any():
+                out[i, j] = int(low[max(a, 0):max(a + t, 0), max(b, 0):max(b + t, 0)][sub_has].max())
+    return out
+
+
+def solid_grid(big: BigModel, k: int, pool):
+    """Pass one: the model's solid mask over its whole grid (ground rows below z 0 set) and the
+    halos its chunks hold; returns (Occupancy, halos)."""
     gx0, gx1, gy0, gy1, gz0, gz1 = _grid_bounds(big.extent, k)
     occ = np.zeros((gx1 - gx0, gy1 - gy0, gz1 - gz0), bool)
     occ[:, :, :max(0, -gz0)] = True        # solid ground below z = 0
     halos: list[Halo] = []
-    chunks = list(_chunks(big.extent))
-    for box, packed, nz, own in pool.imap(_pass_solid, [(big, b, k) for b in chunks]):
+    for box, packed, nz, own in pool.imap(_pass_solid, [(big, b, k) for b in _chunks(big.extent)]):
         solid = np.unpackbits(packed, axis=2, count=nz).astype(bool)
         i0, j0, l0 = box[0] * k - gx0, box[2] * k - gy0, box[4] * k - gz0
         sub = occ[i0:i0 + solid.shape[0], j0:j0 + solid.shape[1], l0:l0 + nz]
         sub |= solid
         halos += own
     halos.sort(key=lambda h: (h.x, h.y, h.z))
-    ground = Occupancy(occ, gx0, gy0, gz0)
+    return Occupancy(occ, gx0, gy0, gz0), halos
+
+
+def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRender:
+    """Render a big model with the worker pool; see the module notes."""
+    gx0, gx1, gy0, gy1, gz0, gz1 = _grid_bounds(big.extent, k)
+    ground, halos = solid_grid(big, k, pool)
+    occ = ground.grid
+    chunks = list(_chunks(big.extent))
 
     # Each chunk needs the solids that can shade it: occlusion all round, and everything
     # towards the sun (-x, +y) up to the top of the model.
@@ -126,15 +152,16 @@ def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRe
     depth = np.full((H, W), -1e9, np.float32)
     vx = np.zeros((H, W), np.int64)
     vy = np.zeros((H, W), np.int64)
-    for rr, cc, m, lv, d, x, y in pool.imap(_pass_shade, jobs):
+    geo = np.zeros((H, W), np.uint32)
+    for rr, cc, m, lv, d, x, y, g in pool.imap(_pass_shade, jobs):
         rr, cc = rr - r0, cc - c0
         near = d > depth[rr, cc]
         rr, cc = rr[near], cc[near]
         mat[rr, cc], level[rr, cc], depth[rr, cc] = m[near], lv[near], d[near]
-        vx[rr, cc], vy[rr, cc] = x[near], y[near]
-    sh = Shaded(c0, r0, mat, level, depth, mat > 0, depth, vx, vy)
+        vx[rr, cc], vy[rr, cc], geo[rr, cc] = x[near], y[near], g[near]
+    sh = Shaded(c0, r0, mat, level, depth, mat > 0, depth, vx, vy, geo)
     rgba, glow, ox, oy = finish(sh, k, halos, cull=True)
-    base = Sprite(rgba, ox, oy)
+    base = Sprite(rgba, ox, oy, data_word(sh))
     glow_sprite = None
     if want_glow:
         glow_sprite = Sprite(glow if glow is not None else np.zeros_like(rgba), ox, oy)
@@ -152,7 +179,8 @@ def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRe
             column[i, j] = occ[a:a + t, b:b + t, zero:].any(axis=(0, 1))[:gz1]
     solid_z = np.nonzero(occ[:, :, zero:].any(axis=(0, 1)))[0]
     top = int(solid_z.max() + 1) if solid_z.size else 0
-    return BigRender(base, glow_sprite, _shadow(ground, gz1, k), tiles, column, top)
+    clear = clearance(occ[:, :, zero:], gx0, gy0, fw, fh, t)
+    return BigRender(base, glow_sprite, _shadow(ground, gz1, k), tiles, column, top, clear)
 
 
 def _shadow(occ: Occupancy, zmax: int, k: int) -> Sprite:

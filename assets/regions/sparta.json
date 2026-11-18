@@ -814,11 +814,11 @@
    "name": "The villages",
    "sound": {
     "surfaces": {
-     "roof": 0.23,
+     "roof": 0.31,
      "leaves": 0.03
     },
     "wind": "wind.open",
-    "exposure": 0.82,
+    "exposure": 0.75,
     "steps": {
      "surface": "earth",
      "files": [

@@ -7,10 +7,6 @@ from sets.parsa import animals, babylon, ground, kit, landmarks, people, plants,
 LANDMARKS = {**landmarks.LANDMARKS, **babylon.LANDMARKS, **waypoints.LANDMARKS}
 ITEMS = {**kit.ITEMS, **plants.ITEMS, **babylon.ITEMS}
 STATES = kit.STATES
-# With the Royal Road's waypoints the set fills its two pages to 88 %: one packing group with
-# the longest sides first keeps it on two.
-ONE_GROUP = True
-PACK_ORDER = "maxside"
 # Frame counts of animated items, terrain and effects (the manifest is authoritative).
 FRAMES = {**kit.FRAMES, **ground.FRAMES}
 

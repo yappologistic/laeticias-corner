@@ -893,11 +893,10 @@
    "area": "country",
    "sound": {
     "surfaces": {
-     "roof": 0.1,
-     "leaves": 0.02
+     "roof": 0.09
     },
     "wind": "wind.open",
-    "exposure": 0.92,
+    "exposure": 0.93,
     "steps": {
      "surface": "earth",
      "files": [
@@ -1189,10 +1188,10 @@
    "name": "Pastures",
    "sound": {
     "surfaces": {
-     "roof": 0.05
+     "roof": 0.02
     },
     "wind": "wind.open",
-    "exposure": 0.96,
+    "exposure": 0.98,
     "steps": {
      "surface": "earth",
      "files": [
@@ -1704,7 +1703,6 @@
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "base:royal_road_station_1074_326"
    ],
    "steps": [
@@ -2168,7 +2166,7 @@
    "count": 1,
    "route": {
     "start": "base:royal_road_farm_930_141",
-    "end": "base:royal_road_station_1065_272"
+    "end": "base:royal_road_station_1058_265"
    },
    "when": {
     "months": [
@@ -2201,14 +2199,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
-    "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272"
+    "base:royal_road_station_1058_265"
    ],
    "offsets": [
     0.146
@@ -2236,7 +2234,7 @@
     "base:royal_road_station_902_193",
     "base:royal_road_farm_896_189",
     "base:royal_road_station_896_187",
-    "base:royal_road_farm_897_178",
+    "base:royal_road_farm_896_179",
     "base:royal_road_station_905_178",
     "base:royal_road_station_912_169",
     "base:royal_road_farm_912_165",
@@ -2260,14 +2258,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court",
     "base:royal_road_station_1074_326",
@@ -2304,7 +2302,7 @@
     "base:royal_road_station_902_193",
     "base:royal_road_farm_896_189",
     "base:royal_road_station_896_187",
-    "base:royal_road_farm_897_178",
+    "base:royal_road_farm_896_179",
     "base:royal_road_station_905_178",
     "base:royal_road_station_912_169",
     "base:royal_road_farm_912_165",
@@ -2328,14 +2326,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court"
    ],
@@ -2425,7 +2423,7 @@
     "base:royal_road_station_902_193",
     "base:royal_road_farm_896_189",
     "base:royal_road_station_896_187",
-    "base:royal_road_farm_897_178",
+    "base:royal_road_farm_896_179",
     "base:royal_road_station_905_178",
     "base:royal_road_station_912_169",
     "base:royal_road_farm_912_165",
@@ -2463,7 +2461,7 @@
     "base:royal_road_station_902_193",
     "base:royal_road_farm_896_189",
     "base:royal_road_station_896_187",
-    "base:royal_road_farm_897_178",
+    "base:royal_road_farm_896_179",
     "base:royal_road_station_905_178",
     "base:royal_road_station_912_169",
     "base:royal_road_farm_912_165",
@@ -2487,14 +2485,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court",
     "base:royal_road_station_1074_326",
@@ -2574,14 +2572,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:west_bank",
     "babylon:babylon_quay"
@@ -2606,14 +2604,14 @@
     "19:30"
    ],
    "rest": [
-    "base:royal_road_station_1065_272",
     "base:royal_road_station_1058_265",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1041_250",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1040_233",
     "base:royal_road_station_1033_226",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_223",
+    "base:royal_road_farm_1032_213",
     "base:royal_road_station_1032_209",
     "base:royal_road_station_1026_199",
     "base:royal_road_farm_1026_195",
@@ -2686,7 +2684,7 @@
     "base:royal_road_station_902_193",
     "base:royal_road_farm_896_189",
     "base:royal_road_station_896_187",
-    "base:royal_road_farm_897_178",
+    "base:royal_road_farm_896_179",
     "base:royal_road_station_905_178",
     "base:royal_road_station_912_169",
     "base:royal_road_farm_912_165",
@@ -2710,14 +2708,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court",
     "base:royal_road_station_1074_326",
@@ -2767,14 +2765,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court",
     "base:royal_road_station_1074_326",
@@ -2814,14 +2812,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court",
     "base:royal_road_station_1074_326",
@@ -2922,9 +2920,8 @@
    "id": "anatolia.18",
    "rest": [
     "sidon:sidon_quay",
-    "base:cilician_road_station_980_254",
-    "base:cilician_road_station_983_240",
-    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_980_256",
+    "base:cilician_road_station_983_238",
     "base:cilician_road_station_983_225",
     "base:cilician_road_station_983_212",
     "base:cilician_road_station_985_201",
@@ -2942,14 +2939,14 @@
     "base:royal_road_farm_1026_195",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
-    "base:royal_road_farm_1032_215",
+    "base:royal_road_farm_1032_213",
+    "base:royal_road_farm_1032_223",
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
-    "base:royal_road_farm_1040_247",
+    "base:royal_road_farm_1040_245",
     "base:royal_road_station_1041_250",
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
-    "base:royal_road_station_1065_272",
     "babylon:ishtar_gate",
     "babylon:etemenanki_court",
     "base:royal_road_station_1074_326",
@@ -3190,7 +3187,7 @@
     157,
     379,
     169,
-    390
+    386
    ],
    "group": "flock"
   },
@@ -3198,19 +3195,9 @@
    "kind": "pasture",
    "rect": [
     157,
-    362,
+    370,
     169,
     378
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    157,
-    350,
-    169,
-    361
    ],
    "group": "flock"
   },
@@ -3220,7 +3207,7 @@
     170,
     379,
     173,
-    390
+    386
    ],
    "group": "flock"
   },
@@ -3228,19 +3215,9 @@
    "kind": "pasture",
    "rect": [
     170,
-    362,
+    370,
     173,
     378
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    170,
-    350,
-    173,
-    361
    ],
    "group": "flock"
   },
@@ -3429,7 +3406,7 @@
    "rect": [
     238,
     222,
-    243,
+    248,
     225
    ],
    "group": "flock"
@@ -5044,22 +5021,10 @@
  },
  "light_points": [
   [
-   275,
-   212,
-   "world.royal_station",
-   "station_lamp"
-  ],
-  [
    267,
    219,
    "world.royal_station",
    "station_lamp"
-  ],
-  [
-   247,
-   221,
-   "parsa.p_house_small",
-   "window_evening"
   ],
   [
    252,
@@ -5068,13 +5033,19 @@
    "station_lamp"
   ],
   [
-   206,
-   229,
+   245,
+   228,
    "parsa.p_house_small",
    "window_evening"
   ],
   [
-   211,
+   223,
+   230,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   216,
    234,
    "parsa.p_house_small",
    "window_evening"
@@ -5158,14 +5129,7 @@
    "station_lamp"
   ],
   [
-   282,
-   290,
-   "world.watchtower",
-   "watch_fire",
-   "fire"
-  ],
-  [
-   239,
+   237,
    291,
    "world.royal_station",
    "station_lamp"
@@ -5241,6 +5205,18 @@
    "station_lamp"
   ],
   [
+   206,
+   312,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   206,
+   312,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
    155,
    333,
    "parsa.p_house_small",
@@ -5290,24 +5266,6 @@
    "fire"
   ],
   [
-   165,
-   355,
-   "parsa.p_house_small",
-   "door_lamp"
-  ],
-  [
-   165,
-   355,
-   "parsa.p_house_small",
-   "window_late"
-  ],
-  [
-   162,
-   357,
-   "parsa.p_house_small",
-   "window_late"
-  ],
-  [
    156,
    358,
    "world.royal_station",
@@ -5352,6 +5310,12 @@
    "window_late"
   ],
   [
+   161,
+   377,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
    186,
    378,
    "world.royal_station",
@@ -5364,6 +5328,12 @@
    "station_lamp"
   ],
   [
+   165,
+   381,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
    215,
    381,
    "world.royal_station",
@@ -5374,6 +5344,12 @@
    389,
    "parsa.p_house_small",
    "window_evening"
+  ],
+  [
+   179,
+   398,
+   "parsa.p_house_small",
+   "window_predawn"
   ]
  ]
 }

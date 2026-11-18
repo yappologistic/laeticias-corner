@@ -12,19 +12,30 @@ PAD = 1  # transparent gutter around every rect so linear filtering never bleeds
 
 @dataclass
 class Sprite:
-    """An RGBA image (H, W, 4 uint8) and the pixel (ox, oy) that sits on the anchor."""
+    """An RGBA image (H, W, 4 uint8) and the pixel (ox, oy) that sits on the anchor; `data`,
+    for a sprite rendered from a model, its data word per pixel (H, W uint32, render.data_word),
+    which datapages.py turns into the packed page."""
     rgba: np.ndarray
     ox: int
     oy: int
+    data: np.ndarray | None = None
+    glow: np.ndarray | None = None      # an actor's emissive layer, split off by the set build
 
 
 def trim(s: Sprite) -> Sprite:
     alpha = s.rgba[:, :, 3]
     ys, xs = np.nonzero(alpha)
     if len(xs) == 0:  # keep empty frames addressable as a 1x1 transparent pixel at the anchor
-        return Sprite(np.zeros((1, 1, 4), np.uint8), 0, 0)
+        return Sprite(np.zeros((1, 1, 4), np.uint8), 0, 0, None if s.data is None else np.zeros((1, 1), np.uint32))
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-    return Sprite(s.rgba[y0:y1, x0:x1].copy(), s.ox - int(x0), s.oy - int(y0))
+    data = None if s.data is None else s.data[y0:y1, x0:x1].copy()
+    return Sprite(s.rgba[y0:y1, x0:x1].copy(), s.ox - int(x0), s.oy - int(y0), data)
+
+
+def signature(t: Sprite) -> bytes:
+    """Equal for sprites that may share one rectangle: same pixels, anchor and data."""
+    data = b"" if t.data is None else t.data.tobytes()
+    return hashlib.sha1(t.rgba.tobytes() + repr((t.rgba.shape, t.ox, t.oy)).encode() + data).digest()
 
 
 def pack(sprites: dict[str, Sprite], max_side: int = 4096):
@@ -34,7 +45,7 @@ def pack(sprites: dict[str, Sprite], max_side: int = 4096):
     same, first = {}, {}
     for k in sorted(trimmed):
         t = trimmed[k]
-        sig = hashlib.sha1(t.rgba.tobytes() + repr((t.rgba.shape, t.ox, t.oy)).encode()).digest()
+        sig = signature(t)
         if sig in first:
             same[k] = first[sig]
         else:
@@ -77,8 +88,16 @@ def pack(sprites: dict[str, Sprite], max_side: int = 4096):
 
 
 def write_atlas(sprites: dict[str, Sprite], png_path, json_path) -> tuple[int, int]:
+    """The colour page and manifest, its packed twin, the half-size shadow page and the ramp
+    table (`atlas/ramps.*` beside the page) for the shader path (datapages.py)."""
+    import datapages
+    import ramps
     atlas, manifest = pack(sprites)
     Image.fromarray(atlas, "RGBA").save(png_path, optimize=True)
     doc = {"version": 1, "image": png_path.name, "sprites": manifest}
     json_path.write_text(json.dumps(doc, indent=1, sort_keys=False) + "\n")
+    ramps.write(png_path.parent / "atlas")
+    datapages.write_packed(png_path, manifest, {k: trim(s) for k, s in sprites.items()}, atlas.shape,
+                           "atlas/ramps.json")
+    datapages.write_shadow_page(png_path.with_name(png_path.stem + ".s.png"), sprites)
     return atlas.shape[1], atlas.shape[0]

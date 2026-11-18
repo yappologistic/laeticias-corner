@@ -804,7 +804,7 @@
    "area": "wild",
    "sound": {
     "surfaces": {
-     "leaves": 0.19,
+     "leaves": 0.18,
      "water": 0.19
     },
     "wind": "wind.open",
@@ -1127,11 +1127,8 @@
    "show": "water",
    "steps": [],
    "string": "season_turn.apr",
-   "pending_sound": [
-    "amb/world/flood.ogg"
-   ],
    "ambience": {
-    "file": "amb/world/river_2.ogg",
+    "file": "amb/world/flood.ogg",
     "gain": 0.6
    }
   },

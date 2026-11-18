@@ -10,7 +10,7 @@ import math
 import numpy as np
 
 import materials as M
-from arch import carve, ellipsoid, face_box, fill, flight, halo, revolve, rod, slab
+from arch import carve, ellipsoid, face_box, fill, flight, halo, mark, revolve, rod, slab
 from greek import city_wall, herm, house_wall, stele, statue_base, tiled_roof, vase
 from setbuild import Item
 from sets.athens.common import FIRE, LAMP, crane, lamp_niche, olive_tree, scaffold
@@ -34,12 +34,15 @@ def _door(m, face, box, s0, w, h, leaf="cedar", lamp=True):
     if lamp:
         bx = face_box(face, x0, x1, y0, y1, h - 5.0, h - 3.6, s0 + w + 1.4, s0 + w + 2.6, -0.6, 0.2)
         fill(m, bx, "lamp")
-        halo(m, (bx[0] + bx[1]) / 2, (bx[2] + bx[3]) / 2, h - 4.2, 8.0, LAMP, 0.7)
+        halo(m, (bx[0] + bx[1]) / 2, (bx[2] + bx[3]) / 2, h - 4.2, 8.0, LAMP, 0.7, kind="door")
+    else:
+        mark(m, face_box(face, x0, x1, y0, y1, h - 1.0, h, s0, s0 + w, -0.6, 0.0), "door")
 
 
 def _window(m, face, box, s0, z0, w=2.0, h=2.6, shutter=None):
     x0, x1, y0, y1 = box[:4]
     fill(m, face_box(face, x0, x1, y0, y1, z0, z0 + h, s0, s0 + w, -0.1, 0.8), "ink", tone=0.0)
+    mark(m, face_box(face, x0, x1, y0, y1, z0, z0 + h, s0, s0 + w, -0.1, 0.0), "window", max(3.0, w * 1.6))
     if shutter:
         fill(m, face_box(face, x0, x1, y0, y1, z0, z0 + h, s0 + w, s0 + w + 1.2, -0.5, 0.0), shutter, tone=0.1)
 
@@ -642,9 +645,9 @@ ITEMS = {f"athens.{n}": it for n, it in {
     "g_wall_tower": _item(g_wall_tower, {}, {"torch": (24.0, 32.8, 29.0)}),
     "g_wall_gate": _item(g_wall_gate),
     "g_running_track": _item(g_running_track),
-    "g_fountain": _item(g_fountain, {"fill": [{"t": [1, 0], "face": "-x"}]}),
-    "g_workshop": _item(g_workshop, {"throw": [{"t": [1, 0], "face": "-x"}]}, {"smoke": (24.0, 24.0, 18.0)}),
-    "g_farmstead": _item(g_farmstead, {"door": [{"t": [0, 2], "face": "+y"}]}),
+    "g_fountain": _item(g_fountain, {"fill": [{"t": [1, 2], "face": "-y"}]}),
+    "g_workshop": _item(g_workshop, {"throw": [{"t": [1, 2], "face": "-y"}]}, {"smoke": (24.0, 24.0, 18.0)}),
+    "g_farmstead": _item(g_farmstead, {"door": [{"t": [0, 3], "face": "+y"}]}),
     "stair_marble": _item(stair_marble),
 }.items()}
 

@@ -5,8 +5,8 @@ and their tails folded back onto its start."""
 import numpy as np
 from scipy import signal
 
-from dsp import (SR, bandpass, circular, glide, highpass, impulse_response, line, lowpass, pan,
-                 phase_of, place, ramp_in, secs, shaped_noise, smooth_random,
+from dsp import (SR, bandpass, circular, glide, gust_curve, highpass, impulse_response, line,
+                 lowpass, pan, phase_of, place, ramp_in, secs, shaped_noise, smooth_random,
                  times, voiced, with_reverb, wrap)
 
 
@@ -339,7 +339,7 @@ def wind(n, rng, low, high, gust_hz, depth, channels=2):
     """Periodic wind: band-limited noise that swells and falls with slow random gusts."""
     air = shaped_noise(n, rng, lambda f: f**-0.5 / (1 + (low / f) ** 4) / (1 + (f / high) ** 2),
                        channels)
-    gusts = np.clip(1 + depth * smooth_random(n, rng, gust_hz), 0.15, None)
+    gusts = gust_curve(n, rng, gust_hz, depth)
     return air * (gusts[:, None] if channels == 2 else gusts), gusts
 
 

@@ -66,6 +66,12 @@ RIVER_PTS = [(104, 0), (98, 2), (90, 3), (82, 2), (74, 3), (66, 2), (58, 2), (50
              (34, 2), (29, 1), (27, 0)]
 
 
+# The residential wing's L-shaped footprint has its origin tile (the engine's level for the whole
+# item) in the corridor notch at the terrace's level: the wing stands there in full, its art's
+# plinth carrying the platform, so every footprint tile is at one level (W-V3).
+HAREM_LEVEL = ("the engine draws the wing from its origin tile, in the corridor notch at the "
+               "terrace's level; the platform is the art's plinth (W-V3: one level per footprint)")
+
 def build(L: Layout) -> None:
     cc, rr = np.meshgrid(np.arange(N), np.arange(N))
 
@@ -134,13 +140,12 @@ def build(L: Layout) -> None:
     L.paint(TERRACE, STONE)
     for rect, k in ((Rect(60, 54, 83, 77), 7),      # Apadāna
                     (Rect(87, 71, 93, 78), 7),      # Tripylon
-                    (Rect(86, 86, 99, 112), 7),     # residential wing (its L's bounding box)
                     (Rect(63, 82, 70, 91), 8),      # Tačara
                     (Rect(76, 88, 85, 101), 9)):    # Hadiš, the highest platform
         L.level(rect, k, face=P + "ashlar")
-    # The corridor down the residential wing's east side to the Treasury's west door stays at the
-    # terrace's level (the harem's walk tiles, one below its platform).
-    L.level(Rect(99, 86, 99, 103), 6)
+    # The residential wing stands at the terrace's level with the corridor down its east side to
+    # the Treasury's west door (HAREM_LEVEL).
+    L.moved("harem", rect=(86, 86, 99, 112), level=6, why=HAREM_LEVEL)
     # Painted red plaster under the porticoes and passages walkers use (walk tiles' floors).
     for rect in (Rect(65, 54, 78, 58), Rect(60, 59, 64, 72), Rect(64, 44, 69, 45),
                  Rect(66, 46, 67, 47), Rect(64, 89, 69, 91), Rect(76, 88, 85, 91),

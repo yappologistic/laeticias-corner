@@ -119,6 +119,10 @@ RUNS = [
 # The Via Aurelia is a cart road: it crosses the Janiculum in a cutting at street level, three
 # tiles wide between tufa faces, so no ramp (a world piece without art) stands on its sightline.
 AURELIA_CUT = Rect(0, 95, 25, 97)
+# The Baths of Trajan's south entrance run leaves the precinct at its west edge (local c 143,
+# r 40): two tiles of the Oppian's level carry it north to the Esquiline's ground, free of the
+# Carinae's houses below (W-W5: the run was sealed by an insula two levels down).
+BATHS_LANDING = Rect(143, 39, 143, 40)
 
 
 def build(L: Layout) -> None:
@@ -146,6 +150,11 @@ def build(L: Layout) -> None:
     # A gate's passage and a bridge's south end are not hidden behind a roof (QA5 L-04).
     for lid in ("porta_capena", "pons_cestius"):
         clear_front(L, Rect(*LM[lid]))
+    # Nor a travertine flight behind an insula's roof at 2x (QA5 Q5-L-04): the houses standing
+    # just in front of each stair go.
+    for p in [p for p in L.items if not p.removed and p.id == R + "stair_travertine"]:
+        c0, r0 = p.c - L.origin[0], p.r - L.origin[1]
+        clear_front(L, Rect(c0, r0, c0 + p.pw - 1, r0 + p.ph - 1), depth=2)
     _campus(L)
     _transtiberim(L)
     _port(L)
@@ -213,7 +222,7 @@ def _levels(L: Layout):
 
     # --- the Velia (1), the Oppian and Esquiline (2), the Castra (2) -----------------------
     lv[m(Rect(122, 64, 143, 78) | Rect(125, 56, 143, 63))] = 1
-    lv[m(Rect(138, 0, 175, 38) | Rect(144, 39, 175, 52))] = 2
+    lv[m(Rect(138, 0, 175, 38) | Rect(144, 39, 175, 52) | BATHS_LANDING)] = 2
     brick |= m(Rect(138, 50, 175, 52))
 
     # --- the Palatine (6): brick substructures over the Circus and the Forum ---------------
@@ -759,8 +768,8 @@ def _quarters(L: Layout, Wd: dict) -> None:
             fill_front=0.6)
     L.scatter(Mask(0, 0, m(Rect(98, 13, 137, 15)) & (L.LV > 0)),
               {R + "t_cypress": 1, R + "t_fig": 1, R + "p_acanthus": 2}, 0.3, seed="quirinal_slope")
-    quarter(L, "carinae", Rect(129, 39, 143, 55) | Rect(113, 53, 115, 54), MIXED, 0.06, 6, 0.08,
-            0.03, ground=BRICK, fill_front=0.4)
+    quarter(L, "carinae", Rect(129, 39, 143, 55) - BATHS_LANDING | Rect(113, 53, 115, 54), MIXED,
+            0.06, 6, 0.08, 0.03, ground=BRICK, fill_front=0.4)
     quarter(L, "velabrum", Rect(84, 70, 94, 106) | Rect(68, 70, 92, 84), DENSE, 0.04, 6, 0.1, 0.02,
             ground=EARTH, fill_front=0.5)
     quarter(L, "boarium", Rect(62, 86, 83, 106) - Rect(68, 94, 80, 103), MIXED, 0.08, 6, 0.06,
@@ -1019,9 +1028,11 @@ def _night(L: Layout) -> None:
 
 def _nodes(L: Layout) -> None:
     C.snap_nodes(L, NODES)
-    L.lane("tiber", [(56, 159), (56, 110), (56, 96), (62, 90), (62, 84), (45, 76), (30, 65),
-                     (20, 58), (9, 38), (5, 0)], kind="river",
-           ports={"ostia": 0, "emporium": 1, "forum_boarium": 2, "island": 4, "north": 9})
+    # Out of the island's east channel along its head (r 84) before turning upstream, so the
+    # keel never crosses the bank's corner (W-O2).
+    L.lane("tiber", [(56, 159), (56, 110), (56, 96), (62, 90), (62, 84), (48, 84), (45, 76),
+                     (30, 65), (20, 58), (9, 38), (5, 0)], kind="river",
+           ports={"ostia": 0, "emporium": 1, "forum_boarium": 2, "island": 4, "north": 10})
 
 
 def _views(L: Layout) -> None:

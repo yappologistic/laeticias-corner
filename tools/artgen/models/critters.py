@@ -10,7 +10,7 @@ import numpy as np
 
 from pack import Sprite
 from palette import GLOW, INK, PLASTER, ROOF, STONE, STRAW, WATER, _rgb
-from render import render_base
+from render import render_sprite
 from palette import MAT
 from rig import BEAST_DUTY, foot_cycle
 from voxel import Model, ellipsoid, ellipsoid_normal, segment
@@ -559,8 +559,7 @@ MODELS = {"duck": duck, "hen": hen, "cat": cat}
 def render_model(model, facing: str) -> Sprite:
     if facing == "back":
         model = model.rotated(3, 0, 0)
-    rgba, _glow, ox, oy = render_base(model)
-    return Sprite(rgba, ox, oy)
+    return render_sprite(model)
 
 
 def split_anim(anim: str) -> tuple[str, str]:

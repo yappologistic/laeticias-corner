@@ -239,8 +239,8 @@
       "file": "sfx/world/thunder_far.wav",
       "kind": "sfx",
       "loop": false,
-      "seconds": 4.4337,
-      "samples": 195527,
+      "seconds": 4.4338,
+      "samples": 195529,
       "gain": 1.0,
       "when": "event",
       "for": "Distant thunder (W1)."
@@ -633,8 +633,8 @@
       "file": "amb/world/rain_1.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 37.0,
+      "samples": 1631700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain, light: drops on open ground and in the air, no particular surface.",
@@ -651,8 +651,8 @@
       "file": "amb/world/rain_2.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 37.0,
+      "samples": 1631700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain, moderate: drops on open ground and in the air, no particular surface.",
@@ -669,8 +669,8 @@
       "file": "amb/world/rain_3.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 37.0,
+      "samples": 1631700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain, heavy: drops on open ground and in the air, no particular surface.",
@@ -687,8 +687,8 @@
       "file": "amb/world/rain_leaves_1.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 17.0,
+      "samples": 749700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on leaves, sparse (light rain).",
@@ -707,8 +707,8 @@
       "file": "amb/world/rain_leaves_2.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 19.0,
+      "samples": 837900,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on leaves, dense (moderate and heavy rain).",
@@ -727,8 +727,8 @@
       "file": "amb/world/rain_roof_1.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 17.0,
+      "samples": 749700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on roof, sparse (light rain).",
@@ -747,8 +747,8 @@
       "file": "amb/world/rain_roof_2.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 19.0,
+      "samples": 837900,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on roof, dense (moderate and heavy rain).",
@@ -767,8 +767,8 @@
       "file": "amb/world/rain_stone_1.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 17.0,
+      "samples": 749700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on stone, sparse (light rain).",
@@ -787,8 +787,8 @@
       "file": "amb/world/rain_stone_2.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 19.0,
+      "samples": 837900,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on stone, dense (moderate and heavy rain).",
@@ -807,8 +807,8 @@
       "file": "amb/world/rain_water_1.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 17.0,
+      "samples": 749700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on water, sparse (light rain).",
@@ -827,8 +827,8 @@
       "file": "amb/world/rain_water_2.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 19.0,
+      "samples": 837900,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on water, dense (moderate and heavy rain).",
@@ -847,8 +847,8 @@
       "file": "amb/world/rain_canvas_1.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 17.0,
+      "samples": 749700,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on canvas, sparse (light rain).",
@@ -867,8 +867,8 @@
       "file": "amb/world/rain_canvas_2.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 19.0,
+      "samples": 837900,
       "gain": 1.0,
       "when": "rain",
       "for": "Rain on canvas, dense (moderate and heavy rain).",
@@ -887,8 +887,8 @@
       "file": "amb/world/rain_dust.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 17.0,
+      "samples": 749700,
       "gain": 1.0,
       "when": "rain",
       "for": "The first heavy drops on dry dust, sparse.",
@@ -905,8 +905,8 @@
       "file": "amb/world/after_rain.ogg",
       "kind": "loop",
       "loop": true,
-      "seconds": 12.0,
-      "samples": 529200,
+      "seconds": 17.0,
+      "samples": 749700,
       "gain": 1.0,
       "when": "weather",
       "for": "Dripping from eaves and leaves, a gutter emptying.",
@@ -1026,7 +1026,7 @@
       ]
     },
     {
-      "file": "amb/world/coast_1.ogg",
+      "file": "amb/world/sea_coast_1.ogg",
       "kind": "bed",
       "loop": true,
       "seconds": 30.0,
@@ -1044,7 +1044,7 @@
       ]
     },
     {
-      "file": "amb/world/coast_2.ogg",
+      "file": "amb/world/sea_coast_2.ogg",
       "kind": "bed",
       "loop": true,
       "seconds": 30.0,
@@ -1062,7 +1062,7 @@
       ]
     },
     {
-      "file": "amb/world/coast_3.ogg",
+      "file": "amb/world/sea_coast_3.ogg",
       "kind": "bed",
       "loop": true,
       "seconds": 30.0,
@@ -1080,7 +1080,7 @@
       ]
     },
     {
-      "file": "amb/world/harbour_1.ogg",
+      "file": "amb/world/sea_harbour_1.ogg",
       "kind": "bed",
       "loop": true,
       "seconds": 30.0,
@@ -1098,7 +1098,7 @@
       ]
     },
     {
-      "file": "amb/world/harbour_2.ogg",
+      "file": "amb/world/sea_harbour_2.ogg",
       "kind": "bed",
       "loop": true,
       "seconds": 30.0,
@@ -1116,7 +1116,7 @@
       ]
     },
     {
-      "file": "amb/world/harbour_3.ogg",
+      "file": "amb/world/sea_harbour_3.ogg",
       "kind": "bed",
       "loop": true,
       "seconds": 30.0,
@@ -1563,8 +1563,8 @@
       "file": "amb/world/cicadas_1.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 41.0,
+      "samples": 1808100,
       "gain": 1.0,
       "when": "day",
       "for": "Midday cicadas, warm.",
@@ -1583,8 +1583,8 @@
       "file": "amb/world/cicadas_2.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 41.0,
+      "samples": 1808100,
       "gain": 1.0,
       "when": "day",
       "for": "Midday cicadas, hot.",
@@ -1603,8 +1603,8 @@
       "file": "amb/world/cicadas_3.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 41.0,
+      "samples": 1808100,
       "gain": 1.0,
       "when": "day",
       "for": "Midday cicadas, blazing.",
@@ -2377,8 +2377,8 @@
       "file": "amb/world/crowd_latin_1.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless latin crowd, a handful.",
@@ -2396,8 +2396,8 @@
       "file": "amb/world/crowd_latin_2.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless latin crowd, a market.",
@@ -2415,8 +2415,8 @@
       "file": "amb/world/crowd_latin_3.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless latin crowd, a festival.",
@@ -2434,8 +2434,8 @@
       "file": "amb/world/crowd_greek_1.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless greek crowd, a handful.",
@@ -2453,8 +2453,8 @@
       "file": "amb/world/crowd_greek_2.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless greek crowd, a market.",
@@ -2472,8 +2472,8 @@
       "file": "amb/world/crowd_greek_3.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless greek crowd, a festival.",
@@ -2491,8 +2491,8 @@
       "file": "amb/world/crowd_persian_1.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless persian crowd, a handful.",
@@ -2510,8 +2510,8 @@
       "file": "amb/world/crowd_persian_2.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless persian crowd, a market.",
@@ -2529,8 +2529,8 @@
       "file": "amb/world/crowd_persian_3.ogg",
       "kind": "bed",
       "loop": true,
-      "seconds": 30.0,
-      "samples": 1323000,
+      "seconds": 34.0,
+      "samples": 1499400,
       "gain": 1.0,
       "when": "day",
       "for": "Wordless persian crowd, a festival.",
@@ -2542,6 +2542,831 @@
         "crowd",
         "persian",
         "parsa"
+      ]
+    },
+    {
+      "file": "amb/world/dawn_autumn.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dawn",
+      "for": "Autumn dawn: robins, starlings, crows, a wren, a far cockerel, dry leaves.",
+      "where": "the dawn bed in autumn for climates mediterranean, river_plain, steppe",
+      "tags": [
+        "nature",
+        "dawn",
+        "autumn",
+        "mediterranean",
+        "river_plain",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/dawn_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dawn",
+      "for": "Winter dawn: a robin, a wren, sparrows, crows, a far cockerel; thin and cold.",
+      "where": "the dawn bed in winter for climates mediterranean, river_plain, mountain, east, steppe",
+      "tags": [
+        "nature",
+        "dawn",
+        "winter",
+        "mediterranean",
+        "river_plain",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/dusk_autumn.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dusk",
+      "for": "Autumn dusk: starlings gathering to roost, rooks, the last slow crickets, an owl.",
+      "where": "the dusk bed in autumn for climates mediterranean, river_plain, mountain, east, steppe",
+      "tags": [
+        "nature",
+        "dusk",
+        "autumn",
+        "mediterranean",
+        "river_plain",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/dusk_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dusk",
+      "for": "Winter dusk: jackdaws and rooks to roost, a robin ticking, a dog or a fox far off.",
+      "where": "the dusk bed in winter for climates mediterranean, river_plain, mountain, east, steppe",
+      "tags": [
+        "nature",
+        "dusk",
+        "winter",
+        "mediterranean",
+        "river_plain",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/night_autumn.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Autumn night: tawny owls calling to each other, a few slow crickets, a fox, leaves.",
+      "where": "the night bed in autumn for climates mediterranean, river_plain, mountain",
+      "tags": [
+        "nature",
+        "night",
+        "autumn",
+        "mediterranean",
+        "river_plain",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/night_cold.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Winter night without snow: no insects; an owl, a far dog, drips, a thin wind.",
+      "where": "the night bed in winter for climates mediterranean, river_plain, east, steppe",
+      "tags": [
+        "nature",
+        "night",
+        "winter",
+        "mediterranean",
+        "river_plain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/night_snow.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "A night under snow: muffled near silence, a breath of air, a bough creaking, a far owl.",
+      "where": "the night bed in winter for climates mountain, east, steppe while snow lies",
+      "tags": [
+        "nature",
+        "night",
+        "winter",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/day_snow.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "day",
+      "for": "A day under snow: a crow, tits, a bough shedding its load, wood split far off, drips.",
+      "where": "the day bed in winter for climates mountain, east, steppe while snow lies",
+      "tags": [
+        "nature",
+        "day",
+        "winter",
+        "mountain",
+        "east",
+        "steppe"
+      ]
+    },
+    {
+      "file": "amb/world/frogs_spring.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Spring frogs in full chorus, toads trilling, swelling and falling.",
+      "where": "a layer by rivers, marshes and ponds on spring nights (March to May), over the night bed",
+      "tags": [
+        "nature",
+        "night",
+        "spring",
+        "water",
+        "layer"
+      ]
+    },
+    {
+      "file": "amb/world/marsh_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "day",
+      "for": "A winter marsh: geese honking and lifting, ducks, wings, reeds.",
+      "where": "Mesopotamian and Susianan marshes, Tyrrhenian lagoons, November to February",
+      "tags": [
+        "nature",
+        "winter",
+        "water",
+        "river_plain"
+      ]
+    },
+    {
+      "file": "amb/world/flood.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Floodwater over the fields: lapping, gurgling into ditches, a heron, frogs.",
+      "where": "the flood_rising turn and flooded tiles (April and May: Babylon, Mesopotamia, Susa, Susiana; the Tiber's high months)",
+      "tags": [
+        "water",
+        "flood",
+        "spring"
+      ]
+    },
+    {
+      "file": "amb/world/reaping.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 14.0,
+      "samples": 617400,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Reapers in standing grain: sickles, handfuls laid down, a hum.",
+      "where": "positional: reapers (June-July; April-May in Mesopotamia)",
+      "tags": [
+        "work",
+        "season",
+        "summer",
+        "harvest"
+      ]
+    },
+    {
+      "file": "amb/world/winnowing.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "A winnowing floor: grain tossed into the wind, chaff hissing.",
+      "where": "positional: threshing floors after the harvest (July-August)",
+      "tags": [
+        "work",
+        "season",
+        "summer",
+        "harvest"
+      ]
+    },
+    {
+      "file": "amb/world/vintage.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 16.0,
+      "samples": 705600,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Grapes trodden in the vat to a double pipe, juice running.",
+      "where": "positional: grape pickers and treaders (September-October)",
+      "tags": [
+        "work",
+        "season",
+        "autumn",
+        "vintage"
+      ]
+    },
+    {
+      "file": "amb/world/olive_harvest.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 14.0,
+      "samples": 617400,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Poles beating olive branches, olives pattering on cloths.",
+      "where": "positional: olive pickers (November-January)",
+      "tags": [
+        "work",
+        "season",
+        "winter",
+        "olives"
+      ]
+    },
+    {
+      "file": "amb/world/ploughing.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 14.0,
+      "samples": 617400,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "An ox team ploughing: slow steps, the share in the soil, the yoke creaking, the ploughman's call.",
+      "where": "positional: ploughmen and oxen (October-November)",
+      "tags": [
+        "work",
+        "season",
+        "autumn",
+        "ploughing"
+      ]
+    },
+    {
+      "file": "sfx/world/sting_season.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft cue for the turn of a season on the open land (a fifth on A and E under a lute).",
+      "tags": [
+        "sting",
+        "season",
+        "world"
+      ]
+    },
+    {
+      "file": "sfx/world/cicada_start.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.9328,
+      "samples": 173435,
+      "gain": 0.8,
+      "when": "always",
+      "for": "The first cicada of summer starting up, two more joining.",
+      "tags": [
+        "turn",
+        "summer",
+        "insects"
+      ]
+    },
+    {
+      "file": "sfx/world/leaves_skitter.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.3517,
+      "samples": 147812,
+      "gain": 0.8,
+      "when": "always",
+      "for": "An autumn gust through dry leaves skittering away.",
+      "tags": [
+        "turn",
+        "autumn",
+        "leaves"
+      ]
+    },
+    {
+      "file": "sfx/world/frost_steps.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.108,
+      "samples": 92963,
+      "gain": 0.7,
+      "when": "always",
+      "for": "Steps crunching over rimed grass in still air.",
+      "tags": [
+        "turn",
+        "winter",
+        "frost"
+      ]
+    },
+    {
+      "file": "amb/world/wind_bare_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind through bare winter branches, breeze.",
+      "where": "woods and orchards from December to February, by wind strength (in place of the leafy wind.trees)",
+      "family": "wind.bare",
+      "level": 1,
+      "level_name": "breeze",
+      "tags": [
+        "weather",
+        "wind",
+        "trees",
+        "winter"
+      ]
+    },
+    {
+      "file": "amb/world/wind_bare_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind through bare winter branches, strong.",
+      "where": "woods and orchards from December to February, by wind strength (in place of the leafy wind.trees)",
+      "family": "wind.bare",
+      "level": 2,
+      "level_name": "strong",
+      "tags": [
+        "weather",
+        "wind",
+        "trees",
+        "winter"
+      ]
+    },
+    {
+      "file": "amb/world/wind_trees_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind in leafy trees, breeze.",
+      "where": "woods, groves and orchards in view (spring to autumn; wind.bare in winter), by wind strength: breeze from 0.25, strong from 0.55, gale from 0.85",
+      "family": "wind.trees",
+      "level": 1,
+      "level_name": "breeze",
+      "tags": [
+        "weather",
+        "wind",
+        "trees"
+      ]
+    },
+    {
+      "file": "amb/world/wind_trees_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind in leafy trees, strong.",
+      "where": "woods, groves and orchards in view (spring to autumn; wind.bare in winter), by wind strength: breeze from 0.25, strong from 0.55, gale from 0.85",
+      "family": "wind.trees",
+      "level": 2,
+      "level_name": "strong",
+      "tags": [
+        "weather",
+        "wind",
+        "trees"
+      ]
+    },
+    {
+      "file": "amb/world/wind_trees_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind in leafy trees, gale.",
+      "where": "woods, groves and orchards in view (spring to autumn; wind.bare in winter), by wind strength: breeze from 0.25, strong from 0.55, gale from 0.85",
+      "family": "wind.trees",
+      "level": 3,
+      "level_name": "gale",
+      "tags": [
+        "weather",
+        "wind",
+        "trees"
+      ]
+    },
+    {
+      "file": "amb/world/sea_rocks_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Waves on a rocky shore, calm.",
+      "where": "sea state 1/3 where the view holds rocky coast (cliffs, capes, islands)",
+      "family": "sea.rocks",
+      "level": 1,
+      "level_name": "calm",
+      "tags": [
+        "sea",
+        "coast",
+        "rocks"
+      ]
+    },
+    {
+      "file": "amb/world/sea_rocks_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Waves on a rocky shore, moderate.",
+      "where": "sea state 2/3 where the view holds rocky coast (cliffs, capes, islands)",
+      "family": "sea.rocks",
+      "level": 2,
+      "level_name": "moderate",
+      "tags": [
+        "sea",
+        "coast",
+        "rocks"
+      ]
+    },
+    {
+      "file": "amb/world/sea_rocks_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Waves on a rocky shore, storm.",
+      "where": "sea state 3/3 where the view holds rocky coast (cliffs, capes, islands)",
+      "family": "sea.rocks",
+      "level": 3,
+      "level_name": "storm",
+      "tags": [
+        "sea",
+        "coast",
+        "rocks"
+      ]
+    },
+    {
+      "file": "amb/world/sea_open_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 37.0,
+      "samples": 1631700,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Open water, swell.",
+      "where": "sea state 1/3 over open sea: 2 for the meltemi (Aegean, July-August afternoons), the bora and the shamal; 3 for the closed sea's winter storms",
+      "family": "sea.open",
+      "level": 1,
+      "level_name": "swell",
+      "tags": [
+        "sea",
+        "open"
+      ]
+    },
+    {
+      "file": "amb/world/sea_open_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 37.0,
+      "samples": 1631700,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Open water, whitecaps.",
+      "where": "sea state 2/3 over open sea: 2 for the meltemi (Aegean, July-August afternoons), the bora and the shamal; 3 for the closed sea's winter storms",
+      "family": "sea.open",
+      "level": 2,
+      "level_name": "whitecaps",
+      "tags": [
+        "sea",
+        "open"
+      ]
+    },
+    {
+      "file": "amb/world/sea_open_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 37.0,
+      "samples": 1631700,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Open water, storm.",
+      "where": "sea state 3/3 over open sea: 2 for the meltemi (Aegean, July-August afternoons), the bora and the shamal; 3 for the closed sea's winter storms",
+      "family": "sea.open",
+      "level": 3,
+      "level_name": "storm",
+      "tags": [
+        "sea",
+        "open"
+      ]
+    },
+    {
+      "file": "amb/world/stream.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 31.0,
+      "samples": 1367100,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A small stream burbling over stones.",
+      "where": "streams and brooks (narrow river tiles in hills and mountains, springs); river_1/2 for the broad rivers",
+      "tags": [
+        "water",
+        "stream"
+      ]
+    },
+    {
+      "file": "amb/world/flock.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 16.0,
+      "samples": 705600,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A flock grazing: bells, bleats, grass torn, a shepherd's whistle.",
+      "where": "positional: herds of sheep and goats (pastures, drove roads)",
+      "tags": [
+        "animal",
+        "flock",
+        "sheep"
+      ]
+    },
+    {
+      "file": "amb/world/oars.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 9.0,
+      "samples": 396900,
+      "gain": 1.0,
+      "when": "moving",
+      "for": "A crew rowing: blades catching together, drips, oars in the tholes.",
+      "where": "positional: rowed boats and galleys under oars (rivers, harbours, calm seas)",
+      "tags": [
+        "ship",
+        "oars"
+      ]
+    },
+    {
+      "file": "sfx/world/cart_pass.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.5846,
+      "samples": 202179,
+      "gain": 0.8,
+      "when": "always",
+      "for": "An ox-cart passing on a country road, rising and fading.",
+      "tags": [
+        "cart",
+        "road"
+      ]
+    },
+    {
+      "file": "sfx/world/sail_flap.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.1841,
+      "samples": 96319,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A sail luffing and filling again with a crack, the sheet creaking.",
+      "tags": [
+        "ship",
+        "sail"
+      ]
+    },
+    {
+      "file": "sfx/world/owl_tawny.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.3134,
+      "samples": 146119,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A tawny owl's long hoot and quavering answer (woods, all year; most in autumn).",
+      "tags": [
+        "animal",
+        "owl",
+        "night"
+      ]
+    },
+    {
+      "file": "sfx/world/owl_scops.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.1247,
+      "samples": 137798,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A scops owl's patient single note, twice (warm months, April to September).",
+      "tags": [
+        "animal",
+        "owl",
+        "night",
+        "summer"
+      ]
+    },
+    {
+      "file": "sfx/world/wolves_far.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.2499,
+      "samples": 187422,
+      "gain": 0.8,
+      "when": "always",
+      "for": "Wolves howling far off across the mountains (winter nights).",
+      "tags": [
+        "animal",
+        "wolf",
+        "night",
+        "winter",
+        "mountain"
+      ]
+    },
+    {
+      "file": "sfx/world/nightingale.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.2566,
+      "samples": 143617,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A nightingale's song in the dark (April to June nights: the Academy, Latium's gardens, Pārsa's paradise).",
+      "tags": [
+        "animal",
+        "bird",
+        "night",
+        "spring"
+      ]
+    },
+    {
+      "file": "sfx/world/stag_roar.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.6067,
+      "samples": 159054,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A stag roaring in the autumn rut (mountain woods, September-October).",
+      "tags": [
+        "animal",
+        "deer",
+        "autumn",
+        "mountain"
+      ]
+    },
+    {
+      "file": "sfx/world/geese_over.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.4379,
+      "samples": 151610,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A skein of geese going over, honking (winter marshes and lagoons).",
+      "tags": [
+        "animal",
+        "bird",
+        "winter",
+        "water"
+      ]
+    },
+    {
+      "file": "sfx/world/starlings.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.02,
+      "samples": 177280,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A starling murmuration wheeling overhead at dusk (Rome and Latium, October-February).",
+      "tags": [
+        "animal",
+        "bird",
+        "autumn",
+        "winter",
+        "dusk"
+      ]
+    },
+    {
+      "file": "sfx/world/lark.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.7734,
+      "samples": 122309,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A skylark singing high over the fields.",
+      "tags": [
+        "animal",
+        "bird",
+        "day",
+        "fields"
+      ]
+    },
+    {
+      "file": "sfx/world/gull_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.2747,
+      "samples": 56214,
+      "gain": 0.8,
+      "when": "always",
+      "for": "Gulls calling, a third variation (harbours, coasts, ships).",
+      "tags": [
+        "animal",
+        "gull"
+      ]
+    },
+    {
+      "file": "sfx/world/drip_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.1403,
+      "samples": 6189,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One drop from a leaf or an eave, variation 1.",
+      "tags": [
+        "weather",
+        "rain",
+        "drip"
+      ]
+    },
+    {
+      "file": "sfx/world/drip_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.1341,
+      "samples": 5913,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One drop from a leaf or an eave, variation 2.",
+      "tags": [
+        "weather",
+        "rain",
+        "drip"
+      ]
+    },
+    {
+      "file": "sfx/world/drip_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.126,
+      "samples": 5558,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One drop from a leaf or an eave, variation 3.",
+      "tags": [
+        "weather",
+        "rain",
+        "drip"
       ]
     }
   ]

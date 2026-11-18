@@ -39,6 +39,6 @@
     {"a": "ephesus_town", "b": "n14", "kind": "street"}
   ],
   "lanes": [
-    {"id": "ephesus", "kind": "sea", "points": [[243, 443], [241, 445], [242, 448]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 2}, {"id": "ephesus", "at": 2}]}
+    {"id": "ephesus", "kind": "sea", "points": [[242, 443], [241, 445], [242, 448]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 2}, {"id": "ephesus", "at": 2}]}
   ]
 }

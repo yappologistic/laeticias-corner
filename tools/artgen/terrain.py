@@ -680,7 +680,7 @@ def thicket(variant: int, k: int) -> Sprite:
     """Brambles, nettles and briar over a wild tile: dense, low contrast, cool and dim so the
     wild land reads as background behind what you build. Anchored like terrain."""
     from models.nature import leaf_mass
-    from render import render_base
+    from render import render_sprite
     from voxel import Model, Rng, curve
     rng = Rng(770, variant)
     m = Model.empty(-2, 18, -2, 18, 0, 20, k=k)
@@ -710,8 +710,7 @@ def thicket(variant: int, k: int) -> Sprite:
         for _n in range(6):
             m.put_points([(rng.uniform(3, 13), rng.uniform(3, 13), rng.uniform(5, 10))], "violet", tone=-0.8)
     m.carve(~np.broadcast_to(_inside_tile(m), m.mat.shape))
-    rgba, _glow, ox, oy = render_base(m)
-    return Sprite(rgba, ox, oy)
+    return render_sprite(m)
 
 
 def _inside_tile(m):

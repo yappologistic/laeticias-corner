@@ -11,7 +11,7 @@ import numpy as np
 
 from arch import ellipsoid, fill, rod, slab
 from pack import Sprite
-from render import render_base
+from render import render_sprite
 from rig import BEAST_DUTY, CART_FRAMES, CRITTER_FRAMES, Body, Dress, Frame, draw, foot_cycle, pose, horse as rig_horse
 from voxel import Model
 
@@ -165,6 +165,12 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
                 bd.limb(p0, p1, 0.42, "cream", 0.2)
         elif b.horns == "oryx":
             bd.limb(base, (head[0] - 2.8, side * b.head * 0.6, hz + b.head * 3.6), 0.22, "polished", 0.4)
+        elif b.horns == "antler":    # a stag's antlers: a beam swept back with two tines forward
+            top = (head[0] - 1.6, side * b.head * 1.6, hz + b.head * 3.4)
+            bd.limb(base, top, 0.24, "wood_light", 0.3)
+            for t in (0.4, 0.75):
+                p = tuple(np.asarray(base) + (np.asarray(top) - np.asarray(base)) * t)
+                bd.limb(p, (p[0] + 0.9, p[1] + side * 0.2, p[2] + 0.8), 0.18, "wood_light", 0.4)
     # Tail.
     t0 = (-L * 0.5, 0, bz + g * 0.4)
     if b.tail == "tied":         # the Nisaean horse's tail knotted short, as on the reliefs
@@ -352,8 +358,7 @@ CARTS = {"parsa.p_cart", "parsa.p_sledge", "parsa.chariot"}
 def _render(m: Model, facing: str) -> Sprite:
     if facing == "back":
         m = m.rotated(3, 0, 0)
-    rgba, _g, ox, oy = render_base(m)
-    return Sprite(rgba, ox, oy)
+    return render_sprite(m)
 
 
 def sprite(kind, variant, anim, facing, frame, k, frames=None):

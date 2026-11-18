@@ -23,6 +23,7 @@ class Halo:
     radius: float
     rgb: tuple[int, int, int]
     strength: float = 1.0
+    kind: str = ""                       # "door", "window": a light point the geometry lists
 
 
 @dataclass
@@ -38,6 +39,8 @@ class Model:
     # Context voxels (a neighbour's joining arm): they occlude light but are never drawn.
     ghost: np.ndarray | None = None
     k: int = 1                           # voxels per design unit
+    # Light points that draw no halo (an unlit window): listed in the geometry like halos.
+    marks: list[Halo] = field(default_factory=list)
 
     @classmethod
     def empty(cls, x0, x1, y0, y1, z0, z1, k=1) -> "Model":
@@ -140,9 +143,9 @@ class Model:
             nrm = rot(m.nrm)
             # A normal (nx, ny) turns like a direction: (x, y) -> (-y, x).
             nrm = np.stack([-nrm[..., 1], nrm[..., 0], nrm[..., 2]], axis=-1)
-            m = Model(hv - m.y0 - ny, m.x0, m.z0, rot(m.mat), rot(m.tone), nrm,
-                      [Halo(hf - h.y, h.x, h.z, h.radius, h.rgb, h.strength) for h in m.halos],
-                      m.hover, None if m.ghost is None else rot(m.ghost), m.k)
+            turn = lambda hs: [Halo(hf - h.y, h.x, h.z, h.radius, h.rgb, h.strength, h.kind) for h in hs]
+            m = Model(hv - m.y0 - ny, m.x0, m.z0, rot(m.mat), rot(m.tone), nrm, turn(m.halos),
+                      m.hover, None if m.ghost is None else rot(m.ghost), m.k, turn(m.marks))
             fw, fh = fh, fw
         return m
 

@@ -212,7 +212,7 @@ def channels(rng, layers=None, length=40.0):
     for _ in range(4):
         frogs.add(lowpass(ambience.frog(rng), 2500), t, rng.uniform(-0.8, 0.8), 0.5, 0.35)
         t += rng.uniform(8, 12)
-    flow = sd.loop_noise(n, rng, 300, 3500, 0.4) * sd.swell(n, rng, 0.3, 0.15)[:, None]
+    flow = sd.loop_noise(n, rng, 300, 3500, 0.4) * sd.swell(n, rng, 0.12, 0.35)[:, None]
     return sd.mix({
         "flow": 0.05 * flow,
         "bubbles": water.finish((0.8, 0.6, 0.3, 0.01), 0.25),
