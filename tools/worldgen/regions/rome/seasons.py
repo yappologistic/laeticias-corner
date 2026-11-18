@@ -234,11 +234,11 @@ def rome(doc: dict) -> dict:
     rome_cards(doc)
     doc["days_shown"] = [
         {"day": 1, "label": "The Parilia, 21 April (spring day 2): a Senate day"},
-        {"day": 0, "label": "March: market day and the races"},
+        {"day": 0, "label": "March: market day"},
         {"day": 4, "label": "July: the Ludi Apollinares"},
-        {"day": 7, "label": "October: the October Horse and the vintage"},
+        {"day": 7, "label": "October: the October Horse, the vintage and games in the arena"},
         {"day": 9, "label": "December: the Saturnalia (a Senate day)"},
-        {"day": 10, "label": "January: the Kalends; games day"},
+        {"day": 10, "label": "January: the Kalends; the grain dole"},
     ]
     return doc
 

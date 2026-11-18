@@ -1166,6 +1166,27 @@
    "snow_catch": false
   },
   {
+   "id": "parsa.p_lamp",
+   "name": "Doorway lamp",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 30,
+   "states": [
+    "lit"
+   ],
+   "snow_catch": false
+  },
+  {
    "id": "parsa.p_parasol",
    "name": "Royal parasol",
    "footprint": [
@@ -4128,6 +4149,10 @@
    "parsa.spray",
    "parsa.dust",
    "parsa.sparks"
+  ],
+  "props": [
+   "parsa.lamp",
+   "parsa.torch"
   ]
  }
 }

@@ -35,8 +35,9 @@ R = "rome."
 # on day 1, a game day at the amphitheatre on day 2, the grain distribution on day 3.
 MARKET = {"every": 4, "offset": 0}
 SENATE = {"every": 4, "offset": 1}
-GAMES = {"every": 4, "offset": 2}
-DOLE = {"every": 4, "offset": 3}
+RACES = SENATE      # the circus races on Senate days, never on a festival's own games
+GAMES = {"every": 4, "offset": 3}
+DOLE = {"every": 4, "offset": 2}
 FEAST = {"festival": "parilia"}
 WORKDAY = {"not_festival": "parilia"}     # courts, Senate and the building site rest on the day
 
@@ -712,7 +713,7 @@ def districts() -> list[dict]:
         {"id": "circus", "area": "town", "populations": [
             pop("stable_hand", "work", 12), pop("racehorse", "day", 6), pop("chariot", "morning", 4),
             pop("circus_trader", "market", 10), pop("valley_walker", "day", 14),
-            pop("race_fan", "afternoon", 24, when={"days": MARKET, "not_festival": "parilia"}),
+            pop("race_fan", "afternoon", 24, when={"days": RACES, "not_festival": "parilia"}),
             pop("race_fan", "afternoon", 24, when=FEAST), pop("dog", "always", 1)]},
         {"id": "velabrum", "area": "town", "populations": quarter(10, 8, 5, 6) + shops() + [
             per("baker", "r_bakery", 1, "dawn_work"), per("mill_donkey", "r_bakery", 1, "dawn_work"),
@@ -947,8 +948,8 @@ def events() -> list[dict]:
          (100, 115), [go(node="velabrum"), go(node="vicus_tuscus"), go(node="circus_carceres")],
          route=["clivus_foot", "velabrum", "vicus_tuscus", "circus_carceres"],
          cast=[{"group": "pompa_circensis"}], sfx="sfx/rome/tibia.wav", card="factions", string="pompa"))
-    a(ev("parilia_races", "festival", "large", {"on": "after", "event": "parilia_pompa"}, (150, 180),
-         [use(item=R + "circus_maximus", slot="spectator", anim="idle", dur=(140, 170))], zone="circus",
+    a(ev("parilia_races", "festival", "large", {"on": "after", "event": "parilia_pompa"}, (90, 100),
+         [use(item=R + "circus_maximus", slot="spectator", anim="idle", dur=(80, 95))], zone="circus",
          cast=[{"actor": R + "racing_chariot", "count": 4}, {"actor": R + "diocles", "count": 1},
                {"actor": R + "hadrian", "count": 1}, {"actor": R + "sabina", "count": 1}],
          ambience={"file": "amb/rome/circus.ogg", "gain": 0.9}, card="circus_maximus", string="races"))
@@ -957,7 +958,7 @@ def events() -> list[dict]:
          zone="janiculum", cast=[{"role": "shepherd", "count": 4, "from": "district"}, {"group": "shepherds_flock"},
                                  {"role": "youth", "count": 4, "from": "district"}],
          sfx="sfx/world/sheep_bells.wav", card="parilia_rite", string="parilia_purification"))
-    a(ev("parilia_bonfires", "festival", "large", {"on": "calendar", "festival": F, "hours": ["20:00", "20:30"]},
+    a(ev("parilia_bonfires", "festival", "large", {"on": "calendar", "festival": F, "hours": ["21:30", "22:00"]},
          (110, 120), [{"emit": {"fx": "bonfire"}}, use(anim="idle", dur=(20, 30)), wander(radius=3, dur=(60, 80))],
          zones=["janiculum", "transtiberim", "boarium", "campagna"],
          cast=[{"role": "youth", "count": 10, "from": "district"}, {"role": "shepherd", "count": 4},
@@ -1001,7 +1002,7 @@ def events() -> list[dict]:
          [go(item=R + "r_stall", slot="buy", within=8), use(anim="idle", dur=(120, 150)), {"emit": {"sfx": "sfx/world/vendor.wav"}}],
          zones=["boarium", "campus"], cast=[{"role": "shopper", "count": 16, "from": "district"},
                                             {"actor": R + "farmer", "count": 4}], card="nundinae", string="market_day"))
-    a(ev("pompa", "uncommon", "large", window(("13:30", "14:00"), days=MARKET, not_festival=F), (100, 115),
+    a(ev("pompa", "uncommon", "large", window(("13:30", "14:00"), days=RACES, not_festival=F), (100, 115),
          [go(node="velabrum"), go(node="vicus_tuscus"), go(node="circus_carceres")],
          route=["clivus_foot", "velabrum", "vicus_tuscus", "circus_carceres"], cast=[{"group": "pompa_circensis"}],
          sfx="sfx/rome/tibia.wav", card="factions", string="pompa"))
@@ -2003,8 +2004,8 @@ def _build(view) -> dict:
         "chains": chains(),
         "festivals": FESTIVALS,
         "events": events(),
-        "days_shown": [{"day": 9, "label": "An ordinary April day (week day 1: a Senate day)"},
-                       {"day": 0, "label": "Market day and the races (week day 0)"},
+        "days_shown": [{"day": 9, "label": "An April day (week day 1: the Senate meets, races in the Circus)"},
+                       {"day": 0, "label": "Market day (week day 0)"},
                        {"day": 1, "label": "The Parilia, 21 April (spring, day 2)"}],
         "figures": figures(),
         "lanes_tokens": [{"actor": R + "barge", "lane": "rome:tiber", "count": 3},

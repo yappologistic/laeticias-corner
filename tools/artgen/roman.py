@@ -23,7 +23,7 @@ import greek
 import materials as M
 import relief as R
 from arch import FACES, Scale, carve, ellipsoid, face_box, face_frame, face_length, fill, halo, revolve, rod, slab
-from voxel import hash01, value_noise
+from voxel import Halo, hash01, value_noise
 
 LAMP = (255, 201, 92)
 
@@ -492,9 +492,11 @@ def window(m, face, wall_box, s0, w, z0, h, arched=False, shutter=None, lit=None
         for a, b in ((s0 - w * 0.5, s0), (s0 + w, s0 + w * 1.5)):
             fill(m, face_box(face, x0, x1, y0, y1, z0, z0 + h, a, b, -0.45, 0.0), shutter,
                  tone=lambda X, Y, Z: -0.4 * ((Z % 1.0) < 0.3))
+    cx, cy = _face_point(face, wall_box, s0 + w / 2)
     if lit:
-        cx, cy = _face_point(face, wall_box, s0 + w / 2)
-        halo(m, cx, cy, z0 + h * 0.5, max(3.0, w * 1.6), LAMP, lit)
+        halo(m, cx, cy, z0 + h * 0.5, max(3.0, w * 1.6), LAMP, lit, kind="window")
+    else:
+        m.marks.append(Halo(cx, cy, z0 + h * 0.5, max(3.0, w * 1.6), (0, 0, 0), 0.0, "window"))
 
 
 def _face_point(face, box, s, d=0.0):

@@ -246,6 +246,16 @@
      ]
     }
    ],
+   "voices": {
+    "world.goat": [
+     "sfx/world/goat_1.wav",
+     "sfx/world/goat_2.wav"
+    ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ]
+   },
    "seam": {
     "bed": "amb/world/seam.ogg",
     "chime": "sfx/world/seam.wav",
@@ -579,7 +589,67 @@
    }
   }
  },
- "districts": [],
+ "districts": [
+  {
+   "id": "mist",
+   "populations": [
+    {
+     "actor": "world.goat",
+     "density": "herd",
+     "max_per_chunk": 1.5
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.6
+    },
+    {
+     "actor": "world.traveller",
+     "density": "daytime",
+     "max_per_chunk": 0.4,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    }
+   ],
+   "area": "wild",
+   "name": "Mist",
+   "sound": {
+    "surfaces": {
+     "leaves": 0.04,
+     "water": 0.05
+    },
+    "wind": "wind.open",
+    "exposure": 0.99,
+    "water": {
+     "family": "river",
+     "speed": "slow"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true
+   }
+  }
+ ],
  "densities": {
   "road_day": [
    0,
@@ -711,6 +781,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -841,6 +989,97 @@
     "file": "amb/world/brazier.ogg",
     "gain": 0.6
    }
+  },
+  {
+   "id": "hill_haze",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "15:00",
+     "15:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr",
+     "may",
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "weather/seam_haze"
+     }
+    }
+   ],
+   "zone": "mist",
+   "string": "hill_haze",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "haze_at_dawn",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:00",
+     "06:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct",
+     "nov",
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.goat",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "mist",
+   "string": "haze_at_dawn",
+   "sfx": "sfx/world/goat_2.wav"
   }
  ],
  "lanes_tokens": [],
@@ -850,7 +1089,9 @@
   "season_turn.spring": "The swallows are back under the eaves.",
   "season_turn.summer": "The cicadas have started.",
   "season_turn.autumn": "The grapes are in: the vintage begins.",
-  "season_turn.winter": "Braziers glow in the doorways against the cold."
+  "season_turn.winter": "Braziers glow in the doorways against the cold.",
+  "hill_haze": "A faint haze over the Kaystros hills: the years change here.",
+  "haze_at_dawn": "Goats graze in the dawn haze between two ages."
  },
  "journal": [],
  "water": [
@@ -937,6 +1178,194 @@
      0.92
     ]
    }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "fireflies",
+   "where": "land",
+   "hours": [
+    "21:00",
+    "01:00"
+   ],
+   "per_screen": 6,
+   "sprite": "fx/sparkle",
+   "months": [
+    "jun"
+   ]
+  },
+  {
+   "kind": "nightingale",
+   "where": "wood",
+   "hours": [
+    "22:00",
+    "04:00"
+   ],
+   "per_screen": 0,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun"
+   ]
+  },
+  {
+   "kind": "swifts",
+   "where": "land",
+   "hours": [
+    "18:30",
+    "20:30"
+   ],
+   "per_screen": 8,
+   "sprite": "world.swift",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "starlings",
+   "where": "land",
+   "hours": [
+    "17:00",
+    "18:30"
+   ],
+   "per_screen": 40,
+   "sprite": null,
+   "months": [
+    "oct",
+    "nov",
+    "dec",
+    "jan",
+    "feb"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
+  },
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
   }
  ],
  "lights": {

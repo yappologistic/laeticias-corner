@@ -304,7 +304,7 @@ def stair_stone(v, frame, frames, k):
     for i in range(n):
         z = 8.0 * (i + 1) / n
         y0 = 32.0 - (i + 1) * 32.0 / n
-        fill(m, (1.0, 15.0, y0, 32.0, 0.0, z), "attic_rock",
+        fill(m, (1.0, 15.0, y0, y0 + 32.0 / n, 0.0, z), "attic_rock",
              tone=lambda X, Y, Z, z=z, y0=y0: 0.7 * (Z > z - 0.6) - 0.8 * (Z <= z - 0.6) * (Y < y0 + 1.0)
              - 0.25 * (np.abs(X - 8) < 3.5) * (Z > z - 0.3) + (value_noise(X, Y, Z, 1.6, 6070 + i) - 0.5) * 0.5)
     for x0, x1 in ((-1.0, 1.6), (14.4, 17.0)):
@@ -321,7 +321,7 @@ def stair_earth(v, frame, frames, k):
     for i in range(n):
         z = 8.0 * (i + 1) / n
         y0 = 32.0 - (i + 1) * 32.0 / n
-        slab(m, 1.0, 15.0, y0, 32.0, 0.0, z, "sand", tone=lambda X, Y, Z, z=z: (value_noise(X, Y, Z, 1.2, 6080) - 0.5) * 0.7
+        slab(m, 1.0, 15.0, y0, y0 + 32.0 / n, 0.0, z, "sand", tone=lambda X, Y, Z, z=z: (value_noise(X, Y, Z, 1.2, 6080) - 0.5) * 0.7
              + 0.4 * (Z > z - 0.6) - 0.6)
         rod(m, (1.0, y0 + 0.8, z - 0.6), (15.0, y0 + 0.8, z - 0.6), 0.75, "wood", tone=0.2)
         for x in (2.0, 14.0):
@@ -729,7 +729,7 @@ def inn(v, frame, frames, k):
     revolve(m, 40.0, 40.0, 0.0, 4.0, lambda t: 1.6 * np.sin(np.pi * (0.2 + 0.6 * t)), "clay", tone=0.1)
     rod(m, (47.0, 63.0, 9.0), (47.0, 64.0, 11.0), 0.3, "metal")
     ellipsoid(m, (47.0, 64.2, 11.4), (0.7, 0.7, 0.9), "lamp", tone=0.2)
-    halo(m, 47.0, 64.2, 11.4, 9.0, LAMP, 0.7)
+    halo(m, 47.0, 64.2, 11.4, 9.0, LAMP, 0.7, kind="door")
     return m
 
 

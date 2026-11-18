@@ -15,8 +15,6 @@ FRAMES = {"world.sea": ground.FRAMES_WATER, "world.shallows": ground.FRAMES_WATE
           **kit.FRAMES, **plants.FRAMES, **sky.FX_FRAMES}
 # Day-only strips of two looks (world.md §6.1, decision 4: the engine grades them for night).
 BACKDROP_LOOKS = {"world.bd_far_hills": (("day",), 2)}
-# One page: shadows and glows share it with everything else.
-ALONE_PAGES = 1
 COAST_FRAMES = 4
 
 

@@ -22,6 +22,7 @@ tools/worldgen/build.sh --seasons             # catalogs' seasonal fields, flood
 tools/worldgen/build.sh --city athens --year --preview   # … and a year in the life, the season maps
 tools/worldgen/build.sh --year-all            # a year in the life of every region file
 tools/worldgen/build.sh --nights athens --preview   # lit nights: warm-lit share per view, night previews
+tools/worldgen/build.sh --alive [--before DIR]      # expected life everywhere, checks A1-A6
 ```
 
 After changing the base or a town that touches it, rebuild the towns and then the base once more:
@@ -324,3 +325,27 @@ only its own area, and all noise is a function of world position and a string ke
 `preview.py` maps, overview, isometric close-ups · `rng.py` SplitMix64 streams and noise ·
 `climates.py`, `seasons.py`, `seasonlife.py`, `seasoncheck.py`, `seasonreport.py` the seasons ·
 `build.py` the command line. Tests in `tests/`.
+
+## Life everywhere (`worldgen/traffic.py`, `countrylife.py`, `townlife.py`, `alive.py`)
+
+- **Traffic** (`traffic.TRAFFIC`): who travels each road, river and sea lane, filed as lane
+  tokens in the region it belongs to, with its groups. `traffic.finish` gives every token of
+  every region file (cities included) an `id`, `hours` (when under way), `rest` (the relay
+  stations, inns, towns and harbours on its way, or its lane's ports: where it waits outside
+  its hours), irregular `offsets` and, through `seasonlife.tokens`, its climate's `by_month`
+  row. Paths are found on the joined graph of all layers (`traffic.Joined`), as the engine walks.
+- **Countryside** (`countrylife.py`): roles and populations bound to what the base places
+  (stations, towers, beacons, folds, farmsteads, woods, groves, pines, thyme, reeds, palms),
+  the `pasture` districts' herds, goatherds, Thracian riders, gazelles, owls; area kinds for the
+  base districts; the year's events of every stretch, sea and seam (`EVENTS`); the corner's
+  borderland (`corner_file`); `ambient` lists for the engine's sky and sea layer.
+- **Towns** (`townlife.TOWNS`): each waypoint town's trades, chain, market day, night watch and
+  events, plus the household roles by set, calibrated so every district meets its area's
+  minimum in its leanest month and stays under its cap. Town files are held to every life check
+  (L1-L8); stretches, seams and the corner to all but L5.
+- **Numbers and checks** (`alive.py`, `--alive`, also run by `--check`): expected actors per
+  region and hour block and month, the share of empty screens, the worst active area at 1x and
+  1/4 zoom; A1 no daytime block without life, A2 no 1x active area over the live cap from the
+  lanes' own data, A3 every token has both ends, a path, rest stops on its way, hours and
+  offsets, A4 months filters without doubles or holes, A5 an event in every season, A6 no two
+  large events at once.

@@ -522,10 +522,11 @@
     {
      "actor": "world.gull",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 1.5
     }
    ],
    "name": "The open sea",
+   "area": "sea",
    "sound": {
     "surfaces": {
      "water": 1.0
@@ -684,6 +685,84 @@
    0.5,
    0.5,
    0.5
+  ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
   ],
   "daytime_hot": [
    0,
@@ -871,6 +950,144 @@
     "file": "amb/world/ship.ogg",
     "gain": 0.8
    }
+  },
+  {
+   "id": "triremes_put_out",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.wake"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "triremes_put_out",
+   "sfx": "sfx/athens/oars.wav",
+   "ambience": {
+    "file": "amb/world/ship.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "trireme_drill",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "09:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.wake"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "trireme_drill",
+   "sfx": "sfx/athens/trireme.wav",
+   "ambience": {
+    "file": "amb/world/march.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "autumn_storm",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "14:00",
+     "14:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "oct",
+     "nov"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "autumn_storm",
+   "sfx": "sfx/world/thunder_far.wav"
+  },
+  {
+   "id": "empty_gulf",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "11:00",
+     "11:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.whitecap"
+     }
+    }
+   ],
+   "zone": "sea",
+   "string": "empty_gulf",
+   "sfx": "sfx/world/gust_front.wav"
   }
  ],
  "lanes_tokens": [
@@ -878,19 +1095,99 @@
    "actor": "athens.merchant",
    "lane": "base:saronic",
    "count": 2,
-   "by_month": "sailing"
+   "by_month": "sailing",
+   "id": "saronic.0",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "kenchreai",
+    "piraeus"
+   ],
+   "offsets": [
+    0.031,
+    0.65
+   ]
   },
   {
    "actor": "athens.merchant",
    "lane": "base:aegean_delos",
    "count": 2,
-   "by_month": "sailing"
+   "by_month": "sailing",
+   "id": "saronic.1",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "piraeus",
+    "delos",
+    "ephesus"
+   ],
+   "offsets": [
+    0.087,
+    0.348
+   ]
   },
   {
    "actor": "athens.merchant",
    "lane": "base:hellespont",
    "count": 2,
-   "by_month": "sailing"
+   "by_month": "sailing",
+   "id": "saronic.2",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "piraeus",
+    "hellespont"
+   ],
+   "offsets": [
+    0.919,
+    0.594
+   ]
+  },
+  {
+   "actor": "athens.trireme",
+   "lane": "base:saronic",
+   "count": 2,
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "note": "triremes exercising in the gulf: the fleet trained through the sailing season (Thucydides 1.80, 2.85)",
+   "by_month": "sailing",
+   "id": "saronic.3",
+   "rest": [
+    "kenchreai",
+    "piraeus"
+   ],
+   "offsets": [
+    0.959,
+    0.52
+   ]
+  },
+  {
+   "actor": "athens.merchant",
+   "lane": "base:saronic",
+   "count": 2,
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "note": "merchant ships between Kenchreai and Piraeus",
+   "by_month": "sailing",
+   "id": "saronic.4",
+   "rest": [
+    "kenchreai",
+    "piraeus"
+   ],
+   "offsets": [
+    0.927,
+    0.645
+   ]
   }
  ],
  "zones": [],
@@ -901,7 +1198,11 @@
   "season_turn.autumn": "Autumn storms over the sea.",
   "season_turn.nov": "Cranes call high overhead, flying in a long V.",
   "season_turn.oct": "The first rain. The whole land smells of dust and earth.",
-  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
+  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter.",
+  "triremes_put_out": "The first triremes of the year put out from Piraeus.",
+  "trireme_drill": "Triremes drill in the gulf, oars flashing in time.",
+  "autumn_storm": "Autumn storms over Aegina.",
+  "empty_gulf": "The ships are in their sheds; only fishing boats go out."
  },
  "journal": [],
  "era": {
@@ -914,5 +1215,68 @@
    "winter": "432/431 BC"
   },
   "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
- }
+ },
+ "roles": [],
+ "ambient": [
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  }
+ ]
 }

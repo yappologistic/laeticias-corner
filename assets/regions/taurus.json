@@ -276,6 +276,13 @@
      "sfx/world/goat_1.wav",
      "sfx/world/goat_2.wav"
     ],
+    "world.mule": [
+     "sfx/world/donkey.wav"
+    ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
+    ],
     "world.sheep": [
      "sfx/world/sheep_1.wav",
      "sfx/world/sheep_2.wav"
@@ -686,6 +693,7 @@
     }
    ],
    "name": "The Cilician road",
+   "area": "road",
    "sound": {
     "surfaces": {
      "stone": 1.0
@@ -711,7 +719,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 6
     }
    }
   },
@@ -719,23 +727,34 @@
    "id": "farm",
    "populations": [
     {
-     "actor": "parsa.farmer",
+     "actor": "world.ox",
      "density": "fields",
-     "max_per_chunk": 3,
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
      }
     },
     {
      "actor": "world.ox",
      "density": "fields",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "world.dog",
-     "density": "daytime",
-     "max_per_chunk": 1
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     }
     },
     {
      "role": "ploughman",
@@ -753,17 +772,6 @@
      }
     },
     {
-     "actor": "world.ox",
-     "density": "fields",
-     "max_per_chunk": 1,
-     "when": {
-      "months": [
-       "sep",
-       "oct"
-      ]
-     }
-    },
-    {
      "role": "reaper",
      "density": "fields",
      "max_per_chunk": 3,
@@ -776,9 +784,24 @@
       "cold": "climate",
       "hot": "climate"
      }
+    },
+    {
+     "role": "farmer",
+     "density": "always",
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1
     }
    ],
    "name": "Farms",
+   "area": "country",
    "sound": {
     "surfaces": {
      "leaves": 0.14
@@ -800,7 +823,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 8
     }
    },
    "look": {
@@ -825,9 +848,123 @@
      "actor": "world.eagle",
      "density": "daytime",
      "max_per_chunk": 1
+    },
+    {
+     "role": "station_keeper",
+     "per_item": "world.royal_station",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "station_guest",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "relay_animal",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always"
+    },
+    {
+     "role": "watchman",
+     "per_item": "world.watchtower",
+     "count": 1,
+     "density": "always"
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_cedar",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_cedar",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "roof": 0.07
@@ -846,7 +983,73 @@
       "sfx/world/hoof_earth_2.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 12
+    }
+   }
+  },
+  {
+   "id": "pasture",
+   "populations": [
+    {
+     "role": "shepherd",
+     "density": "herd",
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "density": "herd",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "world.goat",
+     "density": "herd",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1
+    },
+    {
+     "role": "horse_herd",
+     "density": "herd",
+     "max_per_chunk": 1.5
+    }
+   ],
+   "area": "country",
+   "name": "Pastures",
+   "sound": {
+    "surfaces": {
+     "roof": 0.22,
+     "leaves": 0.07
+    },
+    "wind": "wind.mountain",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 8
+    }
    }
   }
  ],
@@ -981,6 +1184,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -1053,6 +1334,21 @@
     {
      "actor": "world.dog",
      "count": 1
+    }
+   ]
+  },
+  {
+   "id": "mule_train",
+   "formation": "line",
+   "spacing": 0.8,
+   "leader": {
+    "actor": "world.muleteer"
+   },
+   "members": [
+    {
+     "actor": "world.mule",
+     "variant": 1,
+     "count": 3
     }
    ]
   }
@@ -1180,6 +1476,230 @@
    "steps": [],
    "string": "season_turn.winter",
    "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "flocks_up",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.sheep",
+     "count": 8
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "pasture",
+   "string": "flocks_up",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "high_summer",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:30",
+     "08:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 1
+    },
+    {
+     "actor": "world.goat",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "high_summer",
+   "sfx": "sfx/world/goat_1.wav"
+  },
+  {
+   "id": "flocks_down",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "parsa.shepherd",
+     "count": 2
+    },
+    {
+     "actor": "world.sheep",
+     "count": 8
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "pasture",
+   "string": "flocks_down",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "pass_closed",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "09:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.muleteer",
+     "count": 2
+    },
+    {
+     "actor": "world.mule",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "road",
+   "string": "pass_closed",
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.6
+   }
   }
  ],
  "lanes_tokens": [
@@ -1197,7 +1717,80 @@
      "oct"
     ]
    },
-   "note": "flocks moving between summer and winter pastures"
+   "note": "flocks moving between summer and winter pastures",
+   "id": "taurus.0",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_279"
+   ],
+   "offsets": [
+    0.958
+   ]
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "base:cilician_road_station_985_163",
+    "end": "base:cilician_road_983_283"
+   },
+   "count": 1,
+   "group": "mule_train",
+   "note": "mule trains over the Cilician Gates between the plateau and the coast",
+   "by_month": "caravan",
+   "id": "taurus.1",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "base:cilician_road_station_985_163",
+    "base:cilician_road_station_985_176",
+    "base:cilician_road_farm_985_198",
+    "base:cilician_road_station_985_201",
+    "base:cilician_road_station_983_212",
+    "base:cilician_road_station_983_225",
+    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_983_240",
+    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_279"
+   ],
+   "offsets": [
+    0.96
+   ]
+  },
+  {
+   "actor": "world.traveller",
+   "route": {
+    "start": "base:cilician_road_station_985_163",
+    "end": "base:cilician_road_983_283"
+   },
+   "count": 1,
+   "note": "travellers through the Taurus pass",
+   "by_month": "road",
+   "id": "taurus.2",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "base:cilician_road_station_985_163",
+    "base:cilician_road_station_985_176",
+    "base:cilician_road_farm_985_198",
+    "base:cilician_road_station_985_201",
+    "base:cilician_road_station_983_212",
+    "base:cilician_road_station_983_225",
+    "base:cilician_road_farm_983_238",
+    "base:cilician_road_station_983_240",
+    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_279"
+   ],
+   "offsets": [
+    0.24
+   ]
   }
  ],
  "zones": [
@@ -1238,7 +1831,11 @@
   "season_turn.summer": "The flocks are on the high pastures.",
   "season_turn.autumn": "The woods are turning copper and gold.",
   "season_turn.oct": "The flocks come down to the lowlands.",
-  "season_turn.winter": "Snow on the heights."
+  "season_turn.winter": "Snow on the heights.",
+  "flocks_up": "The flocks climb to the summer pastures.",
+  "high_summer": "Goats on the high slopes under the snow.",
+  "flocks_down": "The flocks go down to the Cilician plain.",
+  "pass_closed": "Snow in the Cilician Gates: the mule trains wait."
  },
  "journal": [],
  "era": {
@@ -1389,11 +1986,610 @@
    "sound": {
     "oneshot": "sfx/world/sickle.wav"
    }
+  },
+  {
+   "id": "station_keeper",
+   "actor": "parsa.groom",
+   "name": "Station keeper",
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "21:00"
+     ],
+     "routine": "tend"
+    },
+    {
+     "hours": [
+      "21:00",
+      "05:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "tend": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "watch": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "station_guest",
+   "actor": "world.traveller",
+   "name": "Traveller resting at the station",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "rest"
+    }
+   ],
+   "routines": {
+    "rest": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "until": {
+        "hour": "05:30"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "relay_animal",
+   "actor": "parsa.nisaean_horse",
+   "name": "Relay horse",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "watchman",
+   "actor": "parsa.guard_spear",
+   "name": "Watchman on the tower",
+   "schedule": [
+    {
+     "hours": [
+      "18:00",
+      "07:00"
+     ],
+     "routine": "watch"
+    },
+    {
+     "hours": [
+      "07:00",
+      "18:00"
+     ],
+     "routine": "day"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    },
+    "day": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "shepherd",
+   "actor": "parsa.shepherd",
+   "name": "Shepherd",
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "19:30"
+     ],
+     "routine": "graze"
+    },
+    {
+     "hours": [
+      "19:30",
+      "05:00"
+     ],
+     "routine": "fold"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 8
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "gesture",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "fold": {
+     "steps": [
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "horse_herd",
+   "actor": "parsa.nisaean_horse",
+   "name": "Horses at pasture",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "farmer",
+   "actor": "parsa.farmer",
+   "name": "Farmer",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:30",
+      "18:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:00"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "14:00",
+      "17:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        25
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
   }
  ],
  "lights": {
   "version": 1,
   "profiles": {
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
    "station_lamp": {
     "kind": "lamp",
     "kelvin": 2000,

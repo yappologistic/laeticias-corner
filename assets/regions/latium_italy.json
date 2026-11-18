@@ -284,6 +284,16 @@
     }
    ],
    "voices": {
+    "rome.donkey": [
+     "sfx/world/donkey.wav"
+    ],
+    "rome.hen": [
+     "sfx/hen_2.wav",
+     "sfx/hen_3.wav"
+    ],
+    "rome.mule": [
+     "sfx/world/donkey.wav"
+    ],
     "world.crane": [
      "sfx/world/cranes.wav"
     ],
@@ -300,6 +310,10 @@
     ],
     "world.mule": [
      "sfx/world/donkey.wav"
+    ],
+    "world.raven": [
+     "sfx/world/crow_1.wav",
+     "sfx/world/crow_2.wav"
     ],
     "world.sheep": [
      "sfx/world/sheep_1.wav",
@@ -688,6 +702,7 @@
     }
    ],
    "name": "Via Appia",
+   "area": "road",
    "sound": {
     "surfaces": {
      "stone": 0.97
@@ -713,7 +728,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.latin",
-     "full": 12
+     "full": 6
     }
    }
   },
@@ -721,23 +736,34 @@
    "id": "farm",
    "populations": [
     {
-     "actor": "rome.farmer",
+     "actor": "world.ox",
      "density": "fields",
-     "max_per_chunk": 3,
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "dec",
+       "jan",
+       "feb"
+      ]
      }
     },
     {
      "actor": "world.ox",
      "density": "fields",
-     "max_per_chunk": 1
-    },
-    {
-     "actor": "world.dog",
-     "density": "daytime",
-     "max_per_chunk": 1
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "oct",
+       "nov"
+      ]
+     }
     },
     {
      "role": "ploughman",
@@ -752,17 +778,6 @@
      "variants": {
       "cold": "climate",
       "hot": "climate"
-     }
-    },
-    {
-     "actor": "world.ox",
-     "density": "fields",
-     "max_per_chunk": 1,
-     "when": {
-      "months": [
-       "oct",
-       "nov"
-      ]
      }
     },
     {
@@ -809,9 +824,36 @@
       "cold": "climate",
       "hot": "climate"
      }
+    },
+    {
+     "role": "farmer",
+     "density": "always",
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1
+    },
+    {
+     "role": "hens",
+     "per_item": "rome.r_villa_farm",
+     "count": 2,
+     "density": "always"
+    },
+    {
+     "role": "yard_donkey",
+     "per_item": "rome.r_villa_farm",
+     "count": 0.5,
+     "density": "always"
     }
    ],
    "name": "Farms",
+   "area": "country",
    "sound": {
     "surfaces": {
      "roof": 0.11,
@@ -834,7 +876,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.latin",
-     "full": 12
+     "full": 8
     }
    }
   },
@@ -844,7 +886,7 @@
     {
      "actor": "world.stork",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -859,7 +901,7 @@
     {
      "actor": "world.crane",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "mar",
@@ -871,7 +913,7 @@
     {
      "actor": "world.swift",
      "density": "daytime",
-     "max_per_chunk": 1,
+     "max_per_chunk": 0.5,
      "when": {
       "months": [
        "apr",
@@ -881,9 +923,132 @@
        "aug"
       ]
      }
+    },
+    {
+     "role": "station_keeper",
+     "per_item": "rome.mutatio",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "station_guest",
+     "per_item": "rome.mutatio",
+     "count": 0.7,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "relay_animal",
+     "per_item": "rome.mutatio",
+     "count": 0.7,
+     "density": "always"
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "rome.t_oak",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "rome.t_oak",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "olive_picker",
+     "per_item": "rome.t_olive",
+     "count": 0.02,
+     "density": "always",
+     "when": {
+      "months": [
+       "nov",
+       "dec"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.raven",
+     "density": "daytime",
+     "max_per_chunk": 0.25
     }
    ],
    "name": "Countryside",
+   "area": "wild",
    "sound": {
     "surfaces": {
      "leaves": 0.12
@@ -902,7 +1067,11 @@
       "sfx/world/hoof_earth_2.wav"
      ]
     },
-    "cart": "amb/world/cart_earth.ogg"
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.latin",
+     "full": 12
+    }
    }
   }
  ],
@@ -1037,6 +1206,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -1067,21 +1314,6 @@
  "figures": [],
  "groups": [
   {
-   "id": "mule_train",
-   "formation": "line",
-   "spacing": 0.8,
-   "leader": {
-    "actor": "world.muleteer"
-   },
-   "members": [
-    {
-     "actor": "world.mule",
-     "variant": 1,
-     "count": 3
-    }
-   ]
-  },
-  {
    "id": "drove",
    "formation": "cluster",
    "radius": 3,
@@ -1100,6 +1332,64 @@
     },
     {
      "actor": "world.dog",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "pack_donkeys",
+   "formation": "line",
+   "spacing": 0.8,
+   "leader": {
+    "actor": "world.muleteer"
+   },
+   "members": [
+    {
+     "actor": "world.donkey",
+     "variant": 1,
+     "count": 3
+    }
+   ]
+  },
+  {
+   "id": "travellers_r",
+   "formation": "pairs",
+   "spacing": 0.9,
+   "leader": {
+    "actor": "world.traveller"
+   },
+   "members": [
+    {
+     "actor": "rome.freedman",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "mule_train",
+   "formation": "line",
+   "spacing": 0.8,
+   "leader": {
+    "actor": "world.muleteer"
+   },
+   "members": [
+    {
+     "actor": "world.mule",
+     "variant": 1,
+     "count": 3
+    }
+   ]
+  },
+  {
+   "id": "farm_to_market_r",
+   "formation": "line",
+   "spacing": 0.9,
+   "leader": {
+    "actor": "rome.farmer"
+   },
+   "members": [
+    {
+     "actor": "rome.donkey",
      "count": 1
     }
    ]
@@ -1240,28 +1530,291 @@
     "file": "amb/world/brazier.ogg",
     "gain": 0.6
    }
+  },
+  {
+   "id": "robigalia",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "07:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "apr"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "rome.flamen",
+     "count": 1
+    },
+    {
+     "actor": "rome.citizen",
+     "count": 6
+    },
+    {
+     "actor": "rome.farmer",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "land",
+   "string": "robigalia",
+   "sfx": "sfx/rome/tibia.wav"
+  },
+  {
+   "id": "ambarvalia",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:30",
+     "08:00"
+    ],
+    "chance": 0.7,
+    "months": [
+     "may"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "rome.farmer",
+     "count": 4
+    },
+    {
+     "actor": "rome.pig",
+     "count": 1
+    },
+    {
+     "actor": "rome.sheep",
+     "count": 1
+    },
+    {
+     "actor": "rome.ox",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "farm",
+   "string": "ambarvalia",
+   "sfx": "sfx/rome/tibia.wav"
+  },
+  {
+   "id": "vinalia_rustica",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "rome.farmer",
+     "count": 5
+    },
+    {
+     "actor": "rome.working_woman",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "farm",
+   "string": "vinalia_rustica",
+   "sfx": "sfx/world/pour.wav",
+   "ambience": {
+    "file": "amb/world/crowd_latin_3.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "country_saturnalia",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "dec"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "rome.farmer",
+     "count": 6
+    },
+    {
+     "actor": "rome.working_woman",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "farm",
+   "string": "country_saturnalia",
+   "sfx": "sfx/rome/tibia.wav",
+   "ambience": {
+    "file": "amb/world/crowd_latin_3.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "rain_at_the_mutatio",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "weather",
+    "kind": "rain"
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [
+    {
+     "actor": "world.traveller",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "zone": "road",
+   "string": "rain_at_the_mutatio",
+   "ambience": {
+    "file": "amb/world/rain_roof_1.ogg",
+    "gain": 0.6
+   }
   }
  ],
  "lanes_tokens": [
-  {
-   "actor": "world.traveller",
-   "route": {
-    "start": "base:appia_se",
-    "end": "base:appia_brund_w"
-   },
-   "count": 3,
-   "by_month": "road"
-  },
-  {
-   "actor": "world.muleteer",
-   "route": {
-    "start": "base:appia_se",
-    "end": "base:appia_brund_w"
-   },
-   "count": 1,
-   "group": "mule_train",
-   "by_month": "caravan"
-  },
   {
    "actor": "rome.shepherd",
    "group": "drove",
@@ -1276,7 +1829,30 @@
      "oct"
     ]
    },
-   "note": "flocks moving between summer and winter pastures"
+   "note": "flocks moving between summer and winter pastures",
+   "id": "latium_italy.0",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:via_appia_farm_376_256",
+    "base:via_appia_station_376_252",
+    "base:via_appia_farm_368_240",
+    "base:via_appia_farm_363_229",
+    "base:via_appia_station_363_217",
+    "base:via_appia_station_315_204",
+    "base:via_appia_farm_315_188",
+    "base:via_appia_station_315_182",
+    "alban_mount:appia_foot",
+    "base:via_tiburtina_farm_275_121",
+    "base:via_tiburtina_station_275_117",
+    "base:via_tiburtina_farm_275_104",
+    "base:via_tiburtina_station_275_91"
+   ],
+   "offsets": [
+    0.211
+   ]
   },
   {
    "actor": "rome.shepherd",
@@ -1290,7 +1866,266 @@
     "season": "spring",
     "day": 2
    },
-   "note": "shepherds bring their flocks to Rome for the Parilia, the shepherds' feast of Pales"
+   "note": "shepherds bring their flocks to Rome for the Parilia, the shepherds' feast of Pales",
+   "id": "latium_italy.1",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:via_appia_farm_315_188",
+    "base:via_appia_station_315_182",
+    "alban_mount:appia_foot"
+   ],
+   "offsets": [
+    0.042,
+    0.564
+   ]
+  },
+  {
+   "actor": "world.traveller",
+   "route": {
+    "start": "corner:corner_road_s",
+    "end": "rome:aurelia_w"
+   },
+   "count": 2,
+   "note": "walkers on the corner's old road to Rome's western gate",
+   "by_month": "road",
+   "id": "latium_italy.2",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "corner:corner_road_s",
+    "rome:aurelia_w"
+   ],
+   "offsets": [
+    0.988,
+    0.441
+   ]
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "corner:corner_road_s",
+    "end": "rome:aurelia_w"
+   },
+   "count": 1,
+   "group": "pack_donkeys",
+   "note": "a pedlar with pack donkeys between the corner and Rome",
+   "by_month": "road",
+   "id": "latium_italy.3",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "corner:corner_road_s",
+    "rome:aurelia_w"
+   ],
+   "offsets": [
+    0.022
+   ]
+  },
+  {
+   "actor": "world.traveller",
+   "route": {
+    "start": "rome:appia_se",
+    "end": "brundisium:appia_brund_w"
+   },
+   "count": 4,
+   "note": "travellers on the Via Appia, the road to Brundisium and the ships for Greece (Horace's journey, Satires 1.5)",
+   "by_month": "road",
+   "id": "latium_italy.4",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "alban_mount:appia_foot",
+    "base:via_appia_station_315_182",
+    "base:via_appia_farm_315_188",
+    "base:via_appia_station_315_204",
+    "base:via_appia_station_363_217",
+    "base:via_appia_farm_363_229",
+    "base:via_appia_farm_368_240",
+    "base:via_appia_station_376_252",
+    "base:via_appia_farm_376_256"
+   ],
+   "offsets": [
+    0.994,
+    0.176,
+    0.481,
+    0.713
+   ]
+  },
+  {
+   "actor": "world.traveller",
+   "route": {
+    "start": "rome:appia_se",
+    "end": "capua:capua_station"
+   },
+   "count": 2,
+   "group": "travellers_r",
+   "note": "travellers with a freedman companion, staying at the mansiones and the inns of the Appia",
+   "by_month": "road",
+   "id": "latium_italy.5",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "alban_mount:appia_foot",
+    "base:via_appia_station_315_182",
+    "base:via_appia_farm_315_188",
+    "base:via_appia_station_315_204",
+    "capua:capua_station"
+   ],
+   "offsets": [
+    0.021,
+    0.648
+   ]
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "rome:appia_se",
+    "end": "brundisium:appia_brund_w"
+   },
+   "count": 2,
+   "group": "mule_train",
+   "note": "mule trains of the Appia",
+   "by_month": "caravan",
+   "id": "latium_italy.6",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "alban_mount:appia_foot",
+    "base:via_appia_station_315_182",
+    "base:via_appia_farm_315_188",
+    "base:via_appia_station_315_204",
+    "base:via_appia_station_363_217",
+    "base:via_appia_farm_363_229",
+    "base:via_appia_farm_368_240",
+    "base:via_appia_station_376_252",
+    "base:via_appia_farm_376_256"
+   ],
+   "offsets": [
+    0.061,
+    0.559
+   ]
+  },
+  {
+   "actor": "rome.cart",
+   "route": {
+    "start": "rome:appia_se",
+    "end": "beneventum:beneventum_fork"
+   },
+   "count": 2,
+   "carry": "rome.goods_wine_amphora",
+   "note": "ox carts with Campanian wine for Rome",
+   "by_month": "road",
+   "id": "latium_italy.7",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "alban_mount:appia_foot",
+    "base:via_appia_station_315_182",
+    "base:via_appia_farm_315_188",
+    "base:via_appia_station_315_204",
+    "beneventum:beneventum_fork"
+   ],
+   "offsets": [
+    0.024,
+    0.497
+   ]
+  },
+  {
+   "actor": "rome.carriage",
+   "route": {
+    "start": "rome:appia_se",
+    "end": "brundisium:appia_brund_w"
+   },
+   "count": 1,
+   "note": "a carriage of the cursus publicus, the state's post, changing mules at each mutatio",
+   "by_month": "courier",
+   "id": "latium_italy.8",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "alban_mount:appia_foot",
+    "base:via_appia_station_315_182",
+    "base:via_appia_farm_315_188",
+    "base:via_appia_station_315_204",
+    "base:via_appia_station_363_217",
+    "base:via_appia_farm_363_229",
+    "base:via_appia_farm_368_240",
+    "base:via_appia_station_376_252",
+    "base:via_appia_farm_376_256"
+   ],
+   "offsets": [
+    0.968
+   ]
+  },
+  {
+   "actor": "rome.cart",
+   "route": {
+    "start": "tibur:tibur_farm",
+    "end": "rome:appia_se"
+   },
+   "count": 1,
+   "carry": "rome.goods_marble",
+   "note": "travertine from the quarries below Tibur, carted to Rome",
+   "by_month": "road",
+   "id": "latium_italy.9",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "tibur:tibur_farm",
+    "base:via_tiburtina_station_275_91",
+    "base:via_tiburtina_farm_275_104",
+    "base:via_tiburtina_station_275_117",
+    "base:via_tiburtina_farm_275_121"
+   ],
+   "offsets": [
+    0.756
+   ]
+  },
+  {
+   "actor": "rome.farmer",
+   "route": {
+    "start": "tibur:tibur_farm",
+    "end": "rome:appia_se"
+   },
+   "count": 1,
+   "group": "farm_to_market_r",
+   "carry": "rome.goods_oil_amphora",
+   "note": "olive oil of Tibur taken down to Rome",
+   "by_month": "road",
+   "id": "latium_italy.10",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "tibur:tibur_farm",
+    "base:via_tiburtina_station_275_91",
+    "base:via_tiburtina_farm_275_104",
+    "base:via_tiburtina_station_275_117",
+    "base:via_tiburtina_farm_275_121"
+   ],
+   "offsets": [
+    0.84
+   ]
   }
  ],
  "zones": [],
@@ -1300,7 +2135,12 @@
   "season_turn.spring": "The swallows are back under the eaves.",
   "season_turn.summer": "The cicadas have started.",
   "season_turn.autumn": "The grapes are in: the vintage begins.",
-  "season_turn.winter": "Braziers glow in the doorways against the cold."
+  "season_turn.winter": "Braziers glow in the doorways against the cold.",
+  "robigalia": "The Robigalia: a procession goes out to Robigus' grove to keep the rust from the young wheat.",
+  "ambarvalia": "Farmers lead a pig, a sheep and a bull round their fields to purify them.",
+  "vinalia_rustica": "The country Vinalia: the first grapes are cut for Jupiter.",
+  "country_saturnalia": "The Saturnalia on the farms: masters wait on their slaves for a day.",
+  "rain_at_the_mutatio": "Rain: travellers crowd under the eaves of the mutatio."
  },
  "journal": [],
  "era": {
@@ -1674,41 +2514,41 @@
    }
   },
   {
-   "id": "olive_picker",
-   "actor": "rome.farmer",
-   "name": "Olive harvest",
+   "id": "station_keeper",
+   "actor": "rome.freedman",
+   "name": "Innkeeper of the mutatio",
    "schedule": [
     {
      "hours": [
-      "06:00",
-      "11:30"
+      "05:00",
+      "21:00"
      ],
-     "routine": "work"
+     "routine": "tend"
     },
     {
      "hours": [
-      "14:00",
-      "18:30"
+      "21:00",
+      "05:00"
      ],
-     "routine": "work"
+     "routine": "watch"
     }
    ],
    "routines": {
-    "work": {
+    "tend": {
      "loop": true,
      "steps": [
       {
        "go": {
-        "item": "rome.t_olive",
+        "item": "rome.mutatio",
         "spot": "beside",
-        "within": 48
+        "within": 12
        }
       },
       {
        "use": {
         "here": true
        },
-       "anim": "work_low",
+       "anim": "serve",
        "dur": [
         30,
         60
@@ -1716,11 +2556,181 @@
       },
       {
        "wander": {
-        "radius": 6
+        "radius": 3
        },
        "dur": [
         10,
         20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "watch": {
+     "steps": [
+      {
+       "go": {
+        "item": "rome.mutatio",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "station_guest",
+   "actor": "world.traveller",
+   "name": "Traveller resting at the station",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "rest"
+    }
+   ],
+   "routines": {
+    "rest": {
+     "steps": [
+      {
+       "go": {
+        "item": "rome.mutatio",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "until": {
+        "hour": "05:30"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "relay_animal",
+   "actor": "rome.mule",
+   "name": "Change of mules",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.mutatio",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "farmer",
+   "actor": "rome.farmer",
+   "name": "Farmer",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:30",
+      "18:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:00"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
        ]
       },
       {
@@ -1734,11 +2744,404 @@
        ]
       }
      ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "hens",
+   "actor": "rome.hen",
+   "name": "Hens in the yard",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "19:30"
+     ],
+     "routine": "peck"
+    }
+   ],
+   "routines": {
+    "peck": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.r_villa_farm",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "peck",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "peck",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "yard_donkey",
+   "actor": "rome.donkey",
+   "name": "Donkey in the yard",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "stand"
+    }
+   ],
+   "routines": {
+    "stand": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.r_villa_farm",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "woodcutter",
+   "actor": "world.logger",
+   "name": "Woodcutter",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "12:00"
+     ],
+     "routine": "cut"
+    },
+    {
+     "hours": [
+      "14:00",
+      "17:30"
+     ],
+     "routine": "cut"
+    }
+   ],
+   "routines": {
+    "cut": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        25
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/chop.wav"
+   }
+  },
+  {
+   "id": "olive_picker",
+   "actor": "rome.farmer",
+   "name": "Olive picker",
+   "schedule": [
+    {
+     "hours": [
+      "07:00",
+      "12:00"
+     ],
+     "routine": "pick"
+    },
+    {
+     "hours": [
+      "13:30",
+      "17:00"
+     ],
+     "routine": "pick"
+    }
+   ],
+   "routines": {
+    "pick": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.t_olive",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_high",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
     }
    },
    "sound": {
     "loop": "amb/world/press.ogg"
    }
+  }
+ ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "fireflies",
+   "where": "land",
+   "hours": [
+    "21:00",
+    "01:00"
+   ],
+   "per_screen": 6,
+   "sprite": "fx/sparkle",
+   "months": [
+    "jun"
+   ]
+  },
+  {
+   "kind": "nightingale",
+   "where": "wood",
+   "hours": [
+    "22:00",
+    "04:00"
+   ],
+   "per_screen": 0,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun"
+   ]
+  },
+  {
+   "kind": "swifts",
+   "where": "land",
+   "hours": [
+    "18:30",
+    "20:30"
+   ],
+   "per_screen": 8,
+   "sprite": "world.swift",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "starlings",
+   "where": "land",
+   "hours": [
+    "17:00",
+    "18:30"
+   ],
+   "per_screen": 40,
+   "sprite": null,
+   "months": [
+    "oct",
+    "nov",
+    "dec",
+    "jan",
+    "feb"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
   }
  ],
  "lights": {

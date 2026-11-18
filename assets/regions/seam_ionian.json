@@ -217,6 +217,11 @@
      ]
     }
    ],
+   "voices": {
+    "world.gull": [
+     "sfx/world/gull_call.wav"
+    ]
+   },
    "seam": {
     "bed": "amb/world/seam.ogg",
     "chime": "sfx/world/seam.wav",
@@ -536,7 +541,46 @@
    }
   }
  },
- "districts": [],
+ "districts": [
+  {
+   "id": "mist",
+   "populations": [
+    {
+     "actor": "world.gull",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ],
+   "area": "wild",
+   "name": "Mist",
+   "sound": {
+    "surfaces": {
+     "water": 1.0
+    },
+    "wind": "wind.sea",
+    "exposure": 1.0,
+    "water": {
+     "family": "sea.coast"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true
+   }
+  }
+ ],
  "densities": {
   "road_day": [
    0,
@@ -668,6 +712,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -796,6 +918,86 @@
     "file": "amb/world/ship.ogg",
     "gain": 0.8
    }
+  },
+  {
+   "id": "golden_mist",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "mar",
+     "apr",
+     "may",
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "weather/seam_mist"
+     }
+    }
+   ],
+   "zone": "mist",
+   "string": "golden_mist",
+   "sfx": "sfx/world/seam.wav",
+   "ambience": {
+    "file": "amb/world/fog.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "mist_bell",
+   "rarity": "seasonal",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:00",
+     "06:30"
+    ],
+    "chance": 0.7,
+    "months": [
+     "sep",
+     "oct",
+     "nov",
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    90,
+    150
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "weather/seam_mist"
+     }
+    }
+   ],
+   "zone": "mist",
+   "string": "mist_bell",
+   "sfx": "sfx/world/seam.wav",
+   "ambience": {
+    "file": "amb/world/fog.ogg",
+    "gain": 0.8
+   }
   }
  ],
  "lanes_tokens": [
@@ -816,6 +1018,62 @@
     0.5,
     0.5,
     0.6
+   ],
+   "id": "seam_ionian.0",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "mist_e",
+    "corcyra",
+    "lechaion"
+   ],
+   "offsets": [
+    0.91,
+    0.48
+   ]
+  },
+  {
+   "actor": "athens.merchant",
+   "lane": "base:ionian_greek",
+   "count": 3,
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "note": "Greek merchant ships between the gulf, Kerkyra and the west",
+   "by_month": "sailing",
+   "id": "seam_ionian.1",
+   "rest": [
+    "mist_e",
+    "corcyra",
+    "lechaion"
+   ],
+   "offsets": [
+    0.952,
+    0.394,
+    0.658
+   ]
+  },
+  {
+   "actor": "athens.trireme",
+   "lane": "base:ionian_greek",
+   "count": 1,
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "note": "an Athenian trireme on its way to Kerkyra, Athens' ally since 433",
+   "by_month": "sailing",
+   "id": "seam_ionian.2",
+   "rest": [
+    "mist_e",
+    "corcyra",
+    "lechaion"
+   ],
+   "offsets": [
+    0.216
    ]
   }
  ],
@@ -825,7 +1083,197 @@
   "season_turn.spring": "The sea opens: the first ships put out.",
   "season_turn.summer": "The air shimmers over the land at noon.",
   "season_turn.autumn": "Autumn storms over the sea.",
-  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
+  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter.",
+  "golden_mist": "The golden mist bank glows in the evening light.",
+  "mist_bell": "A bell sounds somewhere inside the mist."
  },
- "journal": []
+ "journal": [],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  },
+  {
+   "kind": "fireflies",
+   "where": "land",
+   "hours": [
+    "21:00",
+    "01:00"
+   ],
+   "per_screen": 6,
+   "sprite": "fx/sparkle",
+   "months": [
+    "jun"
+   ]
+  },
+  {
+   "kind": "nightingale",
+   "where": "wood",
+   "hours": [
+    "22:00",
+    "04:00"
+   ],
+   "per_screen": 0,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun"
+   ]
+  },
+  {
+   "kind": "swifts",
+   "where": "land",
+   "hours": [
+    "18:30",
+    "20:30"
+   ],
+   "per_screen": 8,
+   "sprite": "world.swift",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "starlings",
+   "where": "land",
+   "hours": [
+    "17:00",
+    "18:30"
+   ],
+   "per_screen": 40,
+   "sprite": null,
+   "months": [
+    "oct",
+    "nov",
+    "dec",
+    "jan",
+    "feb"
+   ],
+   "sound": "sfx/world/swifts.wav"
+  },
+  {
+   "kind": "cranes_overhead",
+   "where": "land",
+   "hours": [
+    "07:00",
+    "17:00"
+   ],
+   "per_screen": 12,
+   "sprite": "world.crane",
+   "months": [
+    "mar",
+    "oct",
+    "nov"
+   ],
+   "sound": "sfx/world/cranes.wav"
+  },
+  {
+   "kind": "gulls",
+   "where": "coast",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "per_screen": 4,
+   "sprite": "world.gull",
+   "sound": "sfx/world/gull_call.wav"
+  },
+  {
+   "kind": "dolphins",
+   "where": "sea",
+   "hours": [
+    "06:00",
+    "19:00"
+   ],
+   "per_screen": 0.4,
+   "sprite": "fx/world.dolphin",
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "fish_shoal",
+   "where": "sea",
+   "hours": [
+    "05:00",
+    "09:00"
+   ],
+   "per_screen": 0.5,
+   "sprite": "fx/world.fish_shoal",
+   "sound": "sfx/world/fish.wav"
+  },
+  {
+   "kind": "shearwaters",
+   "where": "sea",
+   "hours": [
+    "21:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": null,
+   "months": [
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  }
+ ]
 }

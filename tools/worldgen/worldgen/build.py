@@ -365,6 +365,12 @@ def main(argv=None) -> int:
     ap.add_argument("--nights", nargs="*", metavar="REGION",
                     help="lit nights: warm-lit share per view at dusk, night and the small hours "
                          "(out/worldgen/night/; the three cities when no region is named)")
+    ap.add_argument("--alive", action="store_true",
+                    help="how alive the world is: expected life per region, hour block and month, "
+                         "empty screens, active areas, checks A1-A6 (out/worldgen/alive/)")
+    ap.add_argument("--before", metavar="DIR",
+                    help="with --alive: region files to compare against (a copy of an older "
+                         "assets/regions)")
     ap.add_argument("--seasons", action="store_true",
                     help="write the catalogs' seasonal fields, the world's flood ranks and ground "
                          "classes, and the season needs file")
@@ -401,6 +407,9 @@ def main(argv=None) -> int:
             write_needs(b, world)
         if not a.city and not a.life and not targets_named(a):
             return 0
+    if a.alive:
+        from . import alive
+        return 0 if alive.run(b, Path(a.before) if a.before else None) else 1
     if a.nights is not None:
         from . import nights
         nights.run(b, a.nights or list(nights.CITIES), a.preview)
@@ -424,6 +433,8 @@ def main(argv=None) -> int:
         files = life.write(b.composed(), b.graphs, b.root / "assets/regions", b.cat)
         print(f"life: {len(files)} region files -> {b.root / 'assets/regions'}")
         write_needs(b, b.composed())
+        if not a.no_write:
+            b.write_world_json()   # a region file that appeared is named in world.json
         if not targets and not want_world:
             return 0
     if not targets and not want_world:
@@ -486,6 +497,9 @@ def main(argv=None) -> int:
         for code, level, where, msg in rep.errors[:15]:
             print(f"   {code} {level}: {where}: {msg}")
         if rep.errors:
+            failed = True
+        from . import alive
+        if not alive.run(b, hours=alive.CHECK_HOURS):
             failed = True
     if want_world and a.preview:
         for p in b.preview_world(world):

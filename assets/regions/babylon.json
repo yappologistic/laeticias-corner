@@ -265,7 +265,13 @@
       "17:00"
      ]
     }
-   ]
+   ],
+   "voices": {
+    "world.dog": [
+     "sfx/world/dog_1.wav",
+     "sfx/world/dog_2.wav"
+    ]
+   }
   },
   "look": {
    "phases": {
@@ -653,11 +659,12 @@
  "districts": [
   {
    "id": "east_bank",
+   "area": "town",
    "populations": [
     {
-     "actor": "parsa.scribe",
-     "density": "daytime",
-     "max_per_chunk": 4,
+     "role": "scribe",
+     "density": "always",
+     "max_per_chunk": 3.85,
      "when": {
       "months": [
        "mar",
@@ -675,9 +682,9 @@
      }
     },
     {
-     "actor": "parsa.scribe",
-     "density": "daytime_hot",
-     "max_per_chunk": 3.2,
+     "role": "scribe",
+     "density": "always",
+     "max_per_chunk": 3.08,
      "when": {
       "months": [
        "jun"
@@ -688,9 +695,9 @@
      }
     },
     {
-     "actor": "parsa.scribe",
-     "density": "daytime_hot",
-     "max_per_chunk": 2.8,
+     "role": "scribe",
+     "density": "always",
+     "max_per_chunk": 2.69,
      "when": {
       "months": [
        "jul",
@@ -702,9 +709,9 @@
      }
     },
     {
-     "actor": "parsa.scribe",
-     "density": "daytime",
-     "max_per_chunk": 3.6,
+     "role": "scribe",
+     "density": "always",
+     "max_per_chunk": 3.47,
      "when": {
       "months": [
        "sep"
@@ -715,73 +722,9 @@
      }
     },
     {
-     "actor": "parsa.labourer",
-     "density": "daytime",
-     "max_per_chunk": 3,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "oct",
-       "nov",
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.labourer",
-     "density": "daytime_hot",
-     "max_per_chunk": 2.4,
-     "when": {
-      "months": [
-       "jun"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.labourer",
-     "density": "daytime_hot",
-     "max_per_chunk": 2.1,
-     "when": {
-      "months": [
-       "jul",
-       "aug"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.labourer",
-     "density": "daytime",
-     "max_per_chunk": 2.7,
-     "when": {
-      "months": [
-       "sep"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.woman_worker",
-     "density": "daytime",
-     "max_per_chunk": 2,
+     "role": "boatman",
+     "density": "always",
+     "max_per_chunk": 3.85,
      "when": {
       "months": [
        "mar",
@@ -800,9 +743,9 @@
      }
     },
     {
-     "actor": "parsa.woman_worker",
-     "density": "daytime_hot",
-     "max_per_chunk": 1.6,
+     "role": "boatman",
+     "density": "always",
+     "max_per_chunk": 3.08,
      "when": {
       "months": [
        "jun"
@@ -814,9 +757,9 @@
      }
     },
     {
-     "actor": "parsa.woman_worker",
-     "density": "daytime_hot",
-     "max_per_chunk": 1.4,
+     "role": "boatman",
+     "density": "always",
+     "max_per_chunk": 2.69,
      "when": {
       "months": [
        "jul",
@@ -829,9 +772,9 @@
      }
     },
     {
-     "actor": "parsa.woman_worker",
-     "density": "daytime",
-     "max_per_chunk": 1.8,
+     "role": "boatman",
+     "density": "always",
+     "max_per_chunk": 3.47,
      "when": {
       "months": [
        "sep"
@@ -840,6 +783,406 @@
      "variants": {
       "cold": "climate",
       "hot": "climate"
+     }
+    },
+    {
+     "role": "craftsman",
+     "density": "always",
+     "max_per_chunk": 5.77,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "craftsman",
+     "density": "always",
+     "max_per_chunk": 4.62,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "craftsman",
+     "density": "always",
+     "max_per_chunk": 4.04,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "craftsman",
+     "density": "always",
+     "max_per_chunk": 5.19,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 60.57,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 48.46,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 42.4,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 54.51,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 3.85,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 3.08,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 2.69,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 3.47,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 3.85,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 3.08,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 2.69,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 3.47,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 3.85,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 3.08,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 2.69,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 3.47,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.craftsman",
+     "density": "daytime",
+     "max_per_chunk": 2.31,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.craftsman",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.85,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.craftsman",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.62,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.craftsman",
+     "density": "daytime",
+     "max_per_chunk": 2.08,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.92,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.54,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.34,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.73,
+     "when": {
+      "months": [
+       "sep"
+      ]
      }
     }
    ],
@@ -871,7 +1214,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 20
     }
    },
    "look": {
@@ -880,11 +1223,12 @@
   },
   {
    "id": "groves",
+   "area": "country",
    "populations": [
     {
-     "actor": "parsa.labourer",
-     "density": "daytime",
-     "max_per_chunk": 4,
+     "role": "gardener",
+     "density": "always",
+     "max_per_chunk": 14.22,
      "when": {
       "months": [
        "mar",
@@ -903,148 +1247,221 @@
      }
     },
     {
-     "actor": "parsa.labourer",
-     "density": "daytime_hot",
+     "role": "gardener",
+     "density": "always",
+     "max_per_chunk": 11.38,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "gardener",
+     "density": "always",
+     "max_per_chunk": 9.95,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "gardener",
+     "density": "always",
+     "max_per_chunk": 12.8,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 30.29,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 24.23,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 21.2,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 27.26,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 7.11,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 5.69,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 4.98,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 6.4,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 3.56,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 2.85,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 2.49,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
      "max_per_chunk": 3.2,
      "when": {
       "months": [
-       "jun"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.labourer",
-     "density": "daytime_hot",
-     "max_per_chunk": 2.8,
-     "when": {
-      "months": [
-       "jul",
-       "aug"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.labourer",
-     "density": "daytime",
-     "max_per_chunk": 3.6,
-     "when": {
-      "months": [
        "sep"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.woman_worker",
-     "density": "daytime",
-     "max_per_chunk": 3,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "oct",
-       "nov",
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.woman_worker",
-     "density": "daytime_hot",
-     "max_per_chunk": 2.4,
-     "when": {
-      "months": [
-       "jun"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.woman_worker",
-     "density": "daytime_hot",
-     "max_per_chunk": 2.1,
-     "when": {
-      "months": [
-       "jul",
-       "aug"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.woman_worker",
-     "density": "daytime",
-     "max_per_chunk": 2.7,
-     "when": {
-      "months": [
-       "sep"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "parsa.guard_spear",
-     "density": "daytime",
-     "max_per_chunk": 2,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "actor": "parsa.guard_spear",
-     "density": "daytime_hot",
-     "max_per_chunk": 2,
-     "when": {
-      "months": [
-       "jun",
-       "jul",
-       "aug"
-      ]
-     }
-    },
-    {
-     "actor": "parsa.guard_spear",
-     "density": "daytime",
-     "max_per_chunk": 4.0,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
       ]
      }
     }
@@ -1076,7 +1493,7 @@
     "cart": "amb/world/cart.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 8
     }
    },
    "look": {
@@ -1085,11 +1502,12 @@
   },
   {
    "id": "west_bank",
+   "area": "country",
    "populations": [
     {
-     "actor": "parsa.woman_worker",
-     "density": "daytime",
-     "max_per_chunk": 4,
+     "role": "brickmaker",
+     "density": "always",
+     "max_per_chunk": 6.45,
      "when": {
       "months": [
        "mar",
@@ -1108,9 +1526,9 @@
      }
     },
     {
-     "actor": "parsa.woman_worker",
-     "density": "daytime_hot",
-     "max_per_chunk": 3.2,
+     "role": "brickmaker",
+     "density": "always",
+     "max_per_chunk": 5.16,
      "when": {
       "months": [
        "jun"
@@ -1122,9 +1540,9 @@
      }
     },
     {
-     "actor": "parsa.woman_worker",
-     "density": "daytime_hot",
-     "max_per_chunk": 2.8,
+     "role": "brickmaker",
+     "density": "always",
+     "max_per_chunk": 4.51,
      "when": {
       "months": [
        "jul",
@@ -1137,9 +1555,9 @@
      }
     },
     {
-     "actor": "parsa.woman_worker",
-     "density": "daytime",
-     "max_per_chunk": 3.6,
+     "role": "brickmaker",
+     "density": "always",
+     "max_per_chunk": 5.81,
      "when": {
       "months": [
        "sep"
@@ -1151,38 +1569,144 @@
      }
     },
     {
-     "actor": "parsa.guard_spear",
-     "density": "daytime",
-     "max_per_chunk": 3,
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 30.29,
      "when": {
       "months": [
        "mar",
        "apr",
        "may",
-       "sep",
        "oct",
-       "nov"
+       "nov",
+       "dec",
+       "jan",
+       "feb"
       ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
      }
     },
     {
-     "actor": "parsa.guard_spear",
-     "density": "daytime_hot",
-     "max_per_chunk": 3,
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 24.23,
      "when": {
       "months": [
-       "jun",
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 21.2,
+     "when": {
+      "months": [
        "jul",
        "aug"
       ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
      }
     },
     {
-     "actor": "parsa.guard_spear",
-     "density": "daytime",
-     "max_per_chunk": 6.0,
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 27.26,
      "when": {
       "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 4.3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 3.44,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 3.01,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 3.87,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 4.3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
        "dec",
        "jan",
        "feb"
@@ -1190,9 +1714,40 @@
      }
     },
     {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 3.44,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 3.01,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 3.87,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     }
+    },
+    {
      "actor": "parsa.craftsman",
      "density": "daytime",
-     "max_per_chunk": 2,
+     "max_per_chunk": 2.58,
      "when": {
       "months": [
        "mar",
@@ -1213,7 +1768,7 @@
     {
      "actor": "parsa.craftsman",
      "density": "daytime_hot",
-     "max_per_chunk": 1.6,
+     "max_per_chunk": 2.06,
      "when": {
       "months": [
        "jun"
@@ -1227,7 +1782,7 @@
     {
      "actor": "parsa.craftsman",
      "density": "daytime_hot",
-     "max_per_chunk": 1.4,
+     "max_per_chunk": 1.81,
      "when": {
       "months": [
        "jul",
@@ -1242,7 +1797,7 @@
     {
      "actor": "parsa.craftsman",
      "density": "daytime",
-     "max_per_chunk": 1.8,
+     "max_per_chunk": 2.32,
      "when": {
       "months": [
        "sep"
@@ -1251,6 +1806,54 @@
      "variants": {
       "cold": "climate",
       "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 2.15,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.72,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.5,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1.94,
+     "when": {
+      "months": [
+       "sep"
+      ]
      }
     }
    ],
@@ -1287,7 +1890,7 @@
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.persian",
-     "full": 12
+     "full": 8
     }
    },
    "look": {
@@ -1438,6 +2041,84 @@
    0.5,
    0.5
   ],
+  "herd": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.9,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.9,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "town_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.6,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.8,
+   0.6,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.6,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.4,
+   1,
+   1,
+   1,
+   1
+  ],
   "daytime_hot": [
    0,
    0,
@@ -1465,10 +2146,1149 @@
    0
   ]
  },
+ "roles": [
+  {
+   "id": "scribe",
+   "actor": "parsa.scribe",
+   "name": "Scribe of a temple household",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "etemenanki_court"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "write",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "write",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "card": "babylon_scribe",
+   "sound": {
+    "oneshot": "sfx/world/stylus.wav"
+   }
+  },
+  {
+   "id": "brickmaker",
+   "actor": "parsa.labourer",
+   "name": "Brickmaker",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "boatman",
+   "actor": "parsa.labourer",
+   "name": "Boatman",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "babylon_quay"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/amphora.wav"
+   }
+  },
+  {
+   "id": "gardener",
+   "actor": "parsa.gardener",
+   "name": "Gardener in the palm groves",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "parsa.t_date",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "craftsman",
+   "actor": "parsa.craftsman",
+   "name": "Craftsman",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "parsa.p_house_small",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/hammer.wav"
+   }
+  },
+  {
+   "id": "townsfolk",
+   "actor": "parsa.labourer",
+   "name": "Townsfolk on their errands",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:30"
+     ],
+     "routine": "errands"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:30"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "errands": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "ishtar_gate"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "go": {
+        "node": "etemenanki_court"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "go": {
+        "node": "babylon_quay"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "water_carrier",
+   "actor": "parsa.woman_worker",
+   "name": "Fetching water",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "09:30"
+     ],
+     "routine": "water"
+    },
+    {
+     "hours": [
+      "16:30",
+      "19:00"
+     ],
+     "routine": "water"
+    }
+   ],
+   "routines": {
+    "water": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "carry_idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/pour.wav"
+   }
+  },
+  {
+   "id": "child",
+   "actor": "parsa.child",
+   "name": "Children at play",
+   "schedule": [
+    {
+     "hours": [
+      "08:00",
+      "12:00"
+     ],
+     "routine": "play"
+    },
+    {
+     "hours": [
+      "15:00",
+      "18:30"
+     ],
+     "routine": "play"
+    }
+   ],
+   "routines": {
+    "play": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "run",
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "night_watch",
+   "actor": "parsa.guard_spear",
+   "name": "The night watch",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "06:00"
+     ],
+     "routine": "round"
+    }
+   ],
+   "routines": {
+    "round": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "node": "ishtar_gate"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "go": {
+        "node": "etemenanki_court"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "go": {
+        "node": "babylon_quay"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_lamp",
+    "prop": "lantern"
+   }
+  },
+  {
+   "id": "date_porter",
+   "actor": "parsa.labourer",
+   "name": "Date porter",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "carry",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/amphora.wav"
+   }
+  }
+ ],
  "figures": [],
  "groups": [],
- "chains": [],
+ "chains": [
+  {
+   "id": "babylon_dates",
+   "name": "Dates for the river boats",
+   "period": 240,
+   "hours": [
+    "06:00",
+    "18:00"
+   ],
+   "stages": [
+    {
+     "slot": "parsa.t_date.beside",
+     "makes": "world.goods_dates",
+     "by": "gardener",
+     "label": "dates picked in the groves"
+    },
+    {
+     "carry": "world.goods_dates",
+     "from": "parsa.t_date.beside",
+     "to": "node:babylon_quay",
+     "by": "date_porter",
+     "label": "carried to the quay"
+    },
+    {
+     "slot": "node:babylon_quay",
+     "sink": "world.goods_dates",
+     "by": "boatman",
+     "label": "loaded on the boats"
+    }
+   ]
+  }
+ ],
  "events": [
+  {
+   "id": "market_day",
+   "rarity": "common",
+   "size": "medium",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:30",
+     "08:00"
+    ],
+    "chance": 1.0,
+    "days": {
+     "every": 4,
+     "offset": 3
+    }
+   },
+   "duration": [
+    200,
+    260
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 6
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "count": 4
+    },
+    {
+     "actor": "world.merchant",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "ishtar_gate"
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    },
+    {
+     "wander": {
+      "radius": 5
+     },
+     "dur": [
+      40,
+      60
+     ]
+    }
+   ],
+   "sfx": "sfx/world/vendor.wav",
+   "string": "market_day",
+   "zone": "east_bank",
+   "ambience": {
+    "file": "amb/world/crowd_persian_1.ogg",
+    "gain": 0.5
+   }
+  },
+  {
+   "id": "market_rain",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "weather",
+    "kind": "rain",
+    "days": {
+     "every": 4,
+     "offset": 3
+    }
+   },
+   "duration": [
+    60,
+    90
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "ishtar_gate"
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      30,
+      50
+     ]
+    }
+   ],
+   "ambience": {
+    "file": "amb/world/rain_roof_1.ogg",
+    "gain": 0.6
+   },
+   "string": "market_rain",
+   "zone": "east_bank"
+  },
+  {
+   "id": "lamps_lit",
+   "rarity": "daily",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "19:00",
+     "19:30"
+    ],
+    "chance": 1.0
+   },
+   "duration": [
+    60,
+    60
+   ],
+   "cast": [
+    {
+     "role": "night_watch",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "each": {
+      "item": "parsa.p_torch",
+      "within": 64
+     },
+     "state": "lit",
+     "every": 4
+    },
+    {
+     "each": {
+      "item": "parsa.p_brazier",
+      "within": 64
+     },
+     "state": "lit",
+     "every": 4
+    }
+   ],
+   "sfx": "sfx/world/lamp.wav",
+   "string": "lamps_lit",
+   "zone": "east_bank",
+   "carries": {
+    "light": "carried_lamp",
+    "prop": "lamp"
+   }
+  },
+  {
+   "id": "wedding",
+   "rarity": "uncommon",
+   "size": "medium",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.25,
+    "months": [
+     "apr",
+     "may"
+    ]
+   },
+   "duration": [
+    150,
+    200
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 6
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      40,
+      60
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/wedding_song.wav",
+   "string": "wedding",
+   "zone": "east_bank",
+   "ambience": {
+    "file": "amb/world/crowd_persian_1.ogg",
+    "gain": 0.8
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "shearing",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "mar",
+     "apr"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 3
+    },
+    {
+     "actor": "world.sheep",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/sheep_bells.wav",
+   "string": "shearing",
+   "zone": "east_bank"
+  },
+  {
+   "id": "early_market",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "05:30",
+     "06:00"
+    ],
+    "chance": 0.6,
+    "months": [
+     "jun",
+     "jul",
+     "aug"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 6
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "count": 3
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/vendor.wav",
+   "string": "early_market",
+   "zone": "east_bank",
+   "ambience": {
+    "file": "amb/world/crowd_persian_2.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "harvest_in",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "08:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "apr",
+     "may"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 4
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "carry",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "sfx": "sfx/world/step_earth_2.wav",
+   "string": "harvest_in",
+   "zone": "east_bank"
+  },
+  {
+   "id": "winter_fires",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "17:30"
+    ],
+    "chance": 0.6,
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "parsa.labourer",
+     "count": 5
+    }
+   ],
+   "steps": [
+    {
+     "wander": {
+      "radius": 6
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ],
+   "ambience": {
+    "file": "amb/world/hearth.ogg",
+    "gain": 0.6
+   },
+   "string": "winter_fires",
+   "zone": "east_bank"
+  },
   {
    "id": "royal_guard_winter",
    "rarity": "uncommon",
@@ -1778,27 +3598,50 @@
    "actor": "world.reed_boat",
    "lane": "babylon:babylon",
    "count": 2,
-   "by_month": "barge"
+   "by_month": "barge",
+   "id": "babylon.0",
+   "hours": [
+    "05:00",
+    "20:00"
+   ],
+   "rest": [
+    "quay",
+    "babylon"
+   ],
+   "offsets": [
+    0.949,
+    0.556
+   ]
   }
  ],
  "zones": [],
  "cards": {
   "ishtar_gate": {
+   "kind": "landmark",
    "title": "Ishtar Gate",
    "epithet": "The blue gate",
    "text": "Nebuchadnezzar's gate of about 575 BC, faced with blue glazed bricks bearing aurochs and the dragon mušḫuššu in relief; the procession of the spring festival passed through it."
   },
   "processional_way": {
+   "kind": "landmark",
    "title": "Processional Way",
    "epithet": "The street of lions",
    "text": "The paved way from the Ishtar Gate south through the city, its walls faced with glazed bricks showing striding lions."
   },
   "etemenanki": {
+   "kind": "landmark",
    "title": "Etemenanki",
    "epithet": "The great ziggurat",
    "text": "Marduk's stepped temple tower beside his temple Esagila. How much of it stood under Xerxes is debated; it is shown standing."
   },
+  "babylon_scribe": {
+   "kind": "role",
+   "title": "Scribe",
+   "epithet": "",
+   "text": "Babylon's temples and business houses kept their accounts in cuneiform on clay, and thousands of tablets survive."
+  },
   "winter_court": {
+   "kind": "idea",
    "title": "The king's winter",
    "epithet": "Babylon, as Greek writers say",
    "text": "Xenophon writes that the Persian king spent seven winter months in Babylon, three spring months at Susa and two summer months at Ecbatana. Other Greek writers say much the same. The court's moves are not described in any Persian record, so the game shows them as Greek writers say."
@@ -1806,6 +3649,14 @@
  },
  "strings": {
   "first_visit": "Babylon. The road enters by the blue gate of Ishtar.",
+  "market_day": "Market day: stalls, voices and goods from the country around.",
+  "market_rain": "Rain: the stallholders cover their goods and wait under the eaves.",
+  "lamps_lit": "Dusk: the lamps are lit along the street.",
+  "wedding": "A wedding: the bride is led to her new home with torches and songs.",
+  "shearing": "Shearing time: wool for the looms.",
+  "early_market": "The market opens at dawn, before the heat.",
+  "harvest_in": "The harvest is carried in to the stores.",
+  "winter_fires": "Fires in the doorways against the cold evening.",
   "king_in_babylon": "Royal guards and banners at the palace: the court winters here, Greek writers say.",
   "date_harvest": "Climbers in the palms cut the heavy clusters of dates.",
   "palm_pollination": "Gardeners climb the palms to dust the female flowers.",
@@ -1816,7 +3667,8 @@
   "season_turn.winter": "Cranes call high overhead, flying in a long V."
  },
  "journal": [
-  "landmark:*"
+  "landmark:*",
+  "chain:*"
  ],
  "era": {
   "edge": "The Persian empire of Xerxes · c. 470 BC",
@@ -1913,6 +3765,54 @@
    ]
   }
  ],
+ "ambient": [
+  {
+   "kind": "bats",
+   "where": "land",
+   "hours": [
+    "19:30",
+    "05:00"
+   ],
+   "per_screen": 2,
+   "sprite": null,
+   "months": [
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct"
+   ]
+  },
+  {
+   "kind": "moths",
+   "where": "town",
+   "hours": [
+    "20:00",
+    "04:00"
+   ],
+   "per_screen": 3,
+   "sprite": "fx/moth",
+   "months": [
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
+  },
+  {
+   "kind": "owl",
+   "where": "land",
+   "hours": [
+    "20:00",
+    "05:00"
+   ],
+   "per_screen": 0.3,
+   "sprite": null
+  }
+ ],
  "lights": {
   "version": 1,
   "profiles": {
@@ -1965,6 +3865,50 @@
     "festivals": {
      "*": 1.5
     }
+   },
+   "carried_lamp": {
+    "kind": "lantern",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
    },
    "door_lamp": {
     "kind": "door",

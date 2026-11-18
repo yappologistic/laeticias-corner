@@ -7,7 +7,6 @@ them with the set's models (`sets/<set>/`), cuts large landmarks into pieces, pa
 walk tiles, slots, emitters, carry points). Other sets and the home atlas are never touched.
 """
 
-import hashlib
 import importlib
 import json
 import re
@@ -20,6 +19,7 @@ from multiprocessing import Pool
 import numpy as np
 
 import pack
+import props
 import rig
 import spec
 from bigrender import BigModel, render_big
@@ -30,6 +30,8 @@ SETS = spec.ROOT / "assets" / "sets"
 PAGE = 4096
 WALK_HEADROOM = 48          # px at 64x32: 1.5 tile.h above a walk tile's floor
 MAX_PIECE = 8
+# Pages a set may fill (graphics-plan §2.5: every set keeps its page count).
+MAX_PAGES = {"parsa": 2, "athens": 2, "rome": 4, "world": 1}
 FACINGS = ("front", "back")
 
 
@@ -160,6 +162,8 @@ def required_keys(cat: dict, mod, pieces: dict) -> list[str]:
         keys += [f"fx/{fxid}/f{f}" for f in range(mod.FRAMES.get(fxid, 6))]
     for g in cat.get("goods", []):        # living-world.md §3.2: the carried unit and 1..stack at a slot
         keys += [g["sprite"]] + [f"{g['sprite']}/s{n}" for n in range(1, g.get("stack", 3) + 1)]
+    for pid in art.get("props", ()):     # carried lights (props.py)
+        keys += props.keys(pid)
     if hasattr(mod, "extra_keys"):      # keys a set's art implies beyond the shared scheme
         keys += mod.extra_keys(cat)
     seen = set()
@@ -245,7 +249,19 @@ def _item_job(args):
     sprites = {"base": out.base, "shadow": out.shadow, "glow": out.glow}
     res = {f"item/{item_id}/{layer}/{variant}/f{frame}": sprites[layer] for layer in layers}
     zmax = int(np.nonzero((model.mat > 0).any(axis=(0, 1)))[0].max() + 1 + model.z0) if model.mat.any() else 0
-    return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax}}
+    return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax, "lights": _lights(model, k)}}
+
+
+def _lights(model, k) -> dict:
+    """The model's door and window light points (halos and marks with a kind), as pixel offsets
+    from the anchor with their height: `{"door_0": {"at": [x, y], "z": z}, ...}`."""
+    out, seen = {}, defaultdict(int)
+    for h in sorted((h for h in model.halos + model.marks if h.kind), key=lambda h: (h.kind, h.x, h.y, h.z)):
+        name = f"{h.kind}_{seen[h.kind]}"
+        seen[h.kind] += 1
+        out[name] = {"at": [int(round((h.x - h.y) * k)), int(round(((h.x + h.y) / 2 - h.z) * k))],
+                     "z": int(round(h.z * k))}
+    return out
 
 
 def _state_job(args):
@@ -264,7 +280,18 @@ def _actor_job(args):
     set_id, kind, prefix, variant, anim, facing, frame, k = args
     mod = _set_mod(set_id)
     key = f"{prefix}{'' if variant is None else f'/v{variant}'}/{anim}_{facing}/f{frame}"
-    return {key: mod.actor_sprite(kind, variant, anim, facing, frame, k)}, {}
+    s = mod.actor_sprite(kind, variant, anim, facing, frame, k)
+    out = {key: s}
+    if s.glow is not None:      # a lantern or torch on the figure or cart: its glow frame
+        out[key.rsplit("/", 1)[0] + f"/glow/f{frame}"] = Sprite(s.glow, s.ox, s.oy)
+        s.glow = None
+    return out, {}
+
+
+def _prop_job(args):
+    pid, frame, k = args
+    out = render(props.model(pid, frame, k), True)
+    return {f"prop/{pid}/f{frame}": out.base, f"prop/{pid}/glow/f{frame}": out.glow}, {}
 
 
 def _flat_job(args):
@@ -307,6 +334,10 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
                                           tuple(it["footprint"]), k)))
         elif key.startswith("item/") and "/p" in key:
             lm_wanted.add(key.split("/")[1])
+        elif key.startswith("prop/"):
+            pid, rest = key[5:].split("/", 1)
+            if not rest.startswith("glow/"):
+                jobs.append((_prop_job, (pid, int(rest[1:]), k)))
         elif m := ACTOR_KEY.fullmatch(key):
             kind_type, kid, v, anim, facing, frame = m.groups()
             prefix = f"{kind_type}/{kid}"
@@ -344,9 +375,11 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
             solid = r.base.rgba[..., 3] > 0
             owner = idx[np.clip(tile[0], 0, fw - 1), np.clip(tile[1], 0, fh - 1)]
             for i in range(len(pieces[iid])):
+                keep = solid & (owner == i)
                 part = r.base.rgba.copy()
-                part[~(solid & (owner == i))] = 0
-                sprites[f"item/{iid}/base/r0/p{i}/f0"] = Sprite(part, r.base.ox, r.base.oy)
+                part[~keep] = 0
+                data = np.where(keep, r.base.data, 0).astype(np.uint32)
+                sprites[f"item/{iid}/base/r0/p{i}/f0"] = Sprite(part, r.base.ox, r.base.oy, data)
         else:
             sprites[f"item/{iid}/base/r0/f0"] = r.base
         if "shadow" in layers:
@@ -359,7 +392,25 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
     missing = sorted(keyset - set(sprites))
     if missing:
         raise SystemExit(f"setbuild: builders did not make {len(missing)} keys, e.g. {missing[:5]}")
-    return {key: sprites[key] for key in keys}, pieces, meta, lm_info
+    glows = sorted(k_ for k_ in sprites if k_ not in keyset and "/glow/" in k_)
+    meta["glow_at"] = _glow_at({k_: sprites[k_] for k_ in glows})
+    return {key: sprites[key] for key in keys + glows}, pieces, meta, lm_info
+
+
+def _glow_at(glows: dict) -> dict:
+    """Per actor with glow frames (variant 0): the alpha-weighted centre of each frame's glow,
+    as a pixel offset from the anchor, for the light pool it casts."""
+    out = defaultdict(dict)
+    for key, s in glows.items():
+        m = ACTOR_KEY.fullmatch(key.replace("/glow/", "/"))
+        if m is None or (m[3] not in (None, "0")):
+            continue
+        a = s.rgba[..., 3].astype(np.float64)
+        ys, xs = np.mgrid[:a.shape[0], :a.shape[1]]
+        at = [int(round((a * xs).sum() / a.sum())) - s.ox, int(round((a * ys).sum() / a.sum())) - s.oy]
+        frames = out[m[2]].setdefault(f"{m[4]}_{m[5]}", {})
+        frames[int(m[6])] = at
+    return {aid: {anim: [fr[i] for i in sorted(fr)] for anim, fr in anims.items()} for aid, anims in out.items()}
 
 
 def _clip_hidden(shadow: Sprite, base: Sprite) -> Sprite:
@@ -459,13 +510,37 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                     g["walk"] = sorted(_rot_tile(t, n, fw, fh) for t in walk)
                 if it.get("rise"):      # kit stairs climb away from their front: r0 toward -y
                     g["climb"] = _rot_face("-y", n)
+                if info.get("lights"):  # door and window light points (world-nights.md §7)
+                    g["lights"] = info["lights"]
                 entry[v] = g
         if entry:
             out["items"][iid] = entry
+    people = getattr(mod, "people", None)
     for a in cat.get("actors", []):
+        entry = {}
         if "carry" in a["anims"] or "carry_idle" in a["anims"]:
-            out["actors"][a["id"]] = {"carry_at": mod.carry_at(a["id"], k)}
+            entry["carry_at"] = mod.carry_at(a["id"], k)
+        # Where a carried light sits, frame by frame (props.py), for people on foot.
+        hands = {an: anim_frames(mod, a, an) for an in HAND_ANIMS if an in a["anims"]}
+        if people is not None and hands and a["sprite"].startswith(("walker/", "figure/")) \
+                and people._posed(a["id"], 0, next(iter(hands))).mount is None:
+            entry["hand_at"] = rig.hand_table(lambda an, aid=a["id"]: people._posed(aid, 0, an), hands, k)
+        if a["id"] in meta.get("glow_at", {}):
+            entry["glow_at"] = meta["glow_at"][a["id"]]
+        if entry:
+            out["actors"][a["id"]] = entry
     return out
+
+
+HAND_ANIMS = ("move", "idle", "march", "run")
+
+
+def compact_json(doc) -> str:
+    """JSON with one key per line but every list of numbers on one line (geometry files hold
+    thousands of short points)."""
+    text = json.dumps(doc, indent=1)
+    num = r"-?\d+(?:\.\d+)?"
+    return re.sub(rf"\[\s*((?:{num},\s*)*{num})\s*\]", lambda m: "[" + re.sub(r",\s+", ", ", m[1]) + "]", text) + "\n"
 
 
 # ---------- packing ----------
@@ -515,47 +590,63 @@ class Skyline:
         self.sky = merged
 
 
-def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=(), order="height"):
-    """Pack keys group by group into pages of at most page x page (skyline, tallest first within
-    a group); a group whose index is in `fresh` starts on a new page. Earlier pages stay open,
-    so small sprites of a later group fill gaps left on them. Identical sprites (same pixels and
-    anchor: a two-pose loop stored as four frames, a still cart's idle) share one rectangle; the
+def pack_pages(sprites: dict, groups: list[tuple[list[str], bool]], page=PAGE):
+    """Pack groups of keys into pages of at most page x page (skyline, longest side first). An
+    atomic group lands whole on the first page with room for all of it (a new page when none
+    has), so a district or a city's people never straddle two pages; a non-atomic group fills
+    gaps sprite by sprite from the first page on. Identical sprites (same pixels, anchor and
+    data: a two-pose loop stored as four frames, a still cart's idle) share one rectangle; the
     manifest lists every key. Returns [(atlas RGBA, manifest)]."""
     trimmed = {k: pack.trim(s) for k, s in sprites.items()}
     first: dict[bytes, str] = {}
     same: dict[str, str] = {}          # key -> the earlier key (in sorted order) it shares pixels with
     for k_ in sorted(trimmed):
-        t = trimmed[k_]
-        sig = hashlib.sha1(t.rgba.tobytes() + repr((t.rgba.shape, t.ox, t.oy)).encode()).digest()
+        sig = pack.signature(trimmed[k_])
         if sig in first:
             same[k_] = first[sig]
         else:
             first[sig] = k_
-    groups = [[k_ for k_ in g if k_ not in same] for g in groups]
     pad = pack.PAD
-    pages: list[tuple[Skyline, dict]] = [(Skyline(page - pad, page - pad), {})]
-    first_open = 0
-    for gi, keys in enumerate(groups):
-        if gi in fresh and pages[-1][1]:
-            first_open = len(pages)
-            pages.append((Skyline(page - pad, page - pad), {}))
-        if order == "maxside":         # longest side first: denser when the set is nearly full
-            seq = sorted(keys, key=lambda k_: (-max(trimmed[k_].rgba.shape[:2]), k_))
-        else:
-            seq = sorted(keys, key=lambda k_: (-trimmed[k_].rgba.shape[0], -trimmed[k_].rgba.shape[1], k_))
+    pages: list[tuple[Skyline, dict]] = []
+
+    def size(key):
+        h, w = trimmed[key].rgba.shape[:2]
+        if w + 2 * pad > page or h + 2 * pad > page:
+            raise SystemExit(f"setbuild: {key} ({w}x{h}) does not fit a {page} page")
+        return w + pad, h + pad
+
+    def place_all(sky: Skyline, rects: dict, seq) -> bool:
+        trial = Skyline(sky.W, sky.H)
+        trial.sky = [list(seg) for seg in sky.sky]
+        got = {}
         for key in seq:
-            h, w = trimmed[key].rgba.shape[:2]
-            if w + 2 * pad > page or h + 2 * pad > page:
-                raise SystemExit(f"setbuild: {key} ({w}x{h}) does not fit a {page} page")
-            for sky, rects in pages[first_open:]:
-                spot = sky.fit(w + pad, h + pad)
-                if spot:
+            spot = trial.fit(*size(key))
+            if spot is None:
+                return False
+            trial.place(*spot, *size(key))
+            got[key] = (spot[0] + pad, spot[1] + pad)
+        sky.sky = trial.sky
+        rects.update(got)
+        return True
+
+    def new_page():
+        pages.append((Skyline(page - pad, page - pad), {}))
+        return pages[-1]
+
+    for keys, atomic in groups:
+        seq = sorted((k_ for k_ in keys if k_ not in same), key=lambda k_: (-max(size(k_)), k_))
+        if not seq:
+            continue
+        if atomic and (any(place_all(sky, rects, seq) for sky, rects in pages) or place_all(*new_page(), seq)):
+            continue
+        for key in seq:                # a non-atomic group, or one larger than a page
+            for sky, rects in pages:
+                if (spot := sky.fit(*size(key))) is not None:
                     break
             else:
-                pages.append((Skyline(page - pad, page - pad), {}))
-                sky, rects = pages[-1]
-                spot = sky.fit(w + pad, h + pad)
-            sky.place(*spot, w + pad, h + pad)
+                sky, rects = new_page()
+                spot = sky.fit(*size(key))
+            sky.place(*spot, *size(key))
             rects[key] = (spot[0] + pad, spot[1] + pad)
     placed = {k_: n for n, (_sky, rects) in enumerate(pages) for k_ in rects}
     for k_, src in same.items():
@@ -576,29 +667,33 @@ def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=(), orde
     return out
 
 
-def page_groups(keys, cat, mod):
-    """Packing groups: kit and actors, each landmark district, then shadows and glows. Districts
-    a set lists in `LATE_DISTRICTS` (landmarks added after its pages were laid out) follow as
-    one last group with their own shadows and glows, on pages of their own, so the earlier
-    pages keep their layout; so do the keys a set's `late_key(key)` picks."""
+FILLER_PREFIX = ("terrain/", "edge/", "backdrop/", "fx/", "weather/", "ui/")
+
+
+def page_groups(keys, cat, mod) -> list[tuple[list[str], bool]]:
+    """Packing groups by what one view draws together (out/reports/perf-notes-for-art.md): the
+    city's people with the kit and plants they move among (seasonal looks beside their plain
+    sprites), then each landmark district whole (a set's `DISTRICT_ORDER` first: its busiest
+    views share the people's page when they fit), then glows, shadows, ground, faces, backdrops
+    and effects filling the gaps: the engine draws glows and shadows in passes of their own
+    sorted by page and caches ground in cells, so where they sit costs a draw at most."""
     lm_ids = {it["id"]: mod.LANDMARKS[it["id"]].district for it in cat["items"] if it["id"] in mod.LANDMARKS}
-    late = getattr(mod, "LATE_DISTRICTS", frozenset())
-    late_key = getattr(mod, "late_key", lambda key: False)    # other keys a set sends to its late pages
-    small, layer, landmark, later = [], [], defaultdict(list), []
+    people, glow, shadow, filler, landmark = [], [], [], [], defaultdict(list)
     for key in keys:
         parts = key.split("/")
-        if (parts[0] == "item" and lm_ids.get(parts[1]) in late) or late_key(key):
-            later.append(key)
-        elif "/shadow/" in key or "/glow/" in key:
-            layer.append(key)
+        if "/shadow/" in key:
+            shadow.append(key)
+        elif "/glow/" in key:
+            glow.append(key)
         elif parts[0] == "item" and parts[1] in lm_ids:
             landmark[lm_ids[parts[1]]].append(key)
+        elif key.startswith(FILLER_PREFIX):
+            filler.append(key)
         else:
-            small.append(key)
-    groups = [small, *[landmark[d] for d in sorted(landmark)], layer]
-    if getattr(mod, "ONE_GROUP", False):     # a full set packs densest as one group, tallest first
-        groups = [[k_ for g in groups for k_ in g]]
-    return groups + [later] if later else groups, ({len(groups)} if later else set())
+            people.append(key)
+    first = [d for d in getattr(mod, "DISTRICT_ORDER", ()) if d in landmark]
+    order = first + sorted(d for d in landmark if d not in first)
+    return [(people, True), *[(landmark[d], True) for d in order], (glow + shadow + filler, False)]
 
 
 # ---------- main ----------
@@ -609,39 +704,43 @@ def main(build: spec.Build, args) -> int:
     cat = json.loads(cat_path.read_text())
     mod = _set_mod(set_id)
     t0 = time.time()
-    with Pool(min(4, max(1, __import__("os").cpu_count() // 2))) as pool:
+    with Pool(spec.WORKERS) as pool:
         sprites, pieces, meta, lm_info = build_set(set_id, cat, build.k, pool, args.only)
     out_dir = build.out
     out_dir.mkdir(parents=True, exist_ok=True)
-    keys = list(sprites)
-    groups, late = page_groups(keys, cat, mod)
-    layer_i = len(groups) - 1 - len(late)
-    order = getattr(mod, "PACK_ORDER", "height")
-    pages = pack_pages(sprites, groups, fresh=late, order=order)
-    if len(groups) - len(late) == 1:           # one group: no separate shadow page to try
-        layer_i = None
-    # Shadows and glows on their own page when that costs no extra page.
-    alone = pack_pages(sprites, groups, fresh=({layer_i} if layer_i is not None else set()) | late, order=order)
-    if len(alone) <= max(len(pages), getattr(mod, "ALONE_PAGES", 2) + len(late)):
-        pages = alone
+    groups = page_groups(list(sprites), cat, mod)
+    budget = MAX_PAGES.get(set_id, 2)
+    pages = pack_pages(sprites, groups)
+    if len(pages) > budget:     # districts may straddle pages; the people stay whole
+        print(f"  {len(pages)} pages: districts packed loosely to keep {budget}")
+        pages = pack_pages(sprites, [groups[0], ([k_ for g, _a in groups[1:] for k_ in g], False)])
     for old in out_dir.glob(f"{set_id}.*.png"):
         old.unlink()
     for old in out_dir.glob(f"{set_id}.*.json"):
         if old.name != f"{set_id}.geom.json":
             old.unlink()
     from PIL import Image
+    import datapages
+    import ramps
+    ramps.write(out_dir)
+    trimmed = {k_: pack.trim(s) for k_, s in sprites.items()}
     total = 0
     for n, (atlas, manifest) in enumerate(pages):
         png = out_dir / f"{set_id}.{n}.png"
         Image.fromarray(atlas, "RGBA").save(png, optimize=True)
         doc = {"version": 1, "image": png.name, "sprites": manifest}
         (out_dir / f"{set_id}.{n}.json").write_text(json.dumps(doc, indent=1) + "\n")
-        total += png.stat().st_size
+        datapages.write_packed(png, manifest, trimmed, atlas.shape, "ramps.json")
+        size = png.stat().st_size + datapages.packed_path(png).stat().st_size
+        total += size
         print(f"page {png.name}: {atlas.shape[1]}x{atlas.shape[0]}, {len(manifest)} sprites, "
-              f"{png.stat().st_size / 1e6:.2f} MB")
+              f"{png.stat().st_size / 1e6:.2f} MB + packed {datapages.packed_path(png).stat().st_size / 1e6:.2f} MB")
+    sw, sh_, sn = datapages.write_shadow_page(out_dir / f"{set_id}.s.png", sprites)
+    total += (out_dir / f"{set_id}.s.png").stat().st_size
+    print(f"shadow page {set_id}.s.png: {sw}x{sh_}, {sn} sprites at half size")
     if not args.only:
         geom = geometry(set_id, cat, mod, pieces, meta, lm_info, build.k)
-        (out_dir / f"{set_id}.geom.json").write_text(json.dumps(geom, indent=1) + "\n")
+        (out_dir / f"{set_id}.geom.json").write_text(compact_json(geom))
     print(f"set {set_id}: {len(sprites)} sprites on {len(pages)} pages ({total / 1e6:.2f} MB) "
           f"in {time.time() - t0:.1f}s")
     import setvalidate

@@ -19,7 +19,7 @@ import terrain as home
 from pack import Sprite
 from palette import (BASALT, BRICK, EARTH, GLOW, INK, LEAF, PLASTER, POPPY, STONE, STRAW, TIBER, TRAVERTINE, TUFA,
                      VIOLET, WATER, CINNABAR, OLIVE, MARBLE, _rgb)
-from render import render_base
+from render import render_sprite
 from sets.parsa.ground import _face_grid, _fx, _overlay, _periodic
 from voxel import Model, hash01
 
@@ -414,8 +414,7 @@ def _goods_model(name, k, n=1):
 def goods(key, k):
     m_ = re.fullmatch(r"goods/rome\.(\w+?)(?:/s(\d))?", key)
     model = _goods_model(m_[1], k, int(m_[2] or 1))
-    rgba, _g, ox, oy = render_base(model)
-    return Sprite(rgba, ox, oy)
+    return render_sprite(model)
 
 
 # ---------------------------------------------------------------- dispatch

@@ -20,8 +20,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from pack import Sprite
-from render import (SHADOW_ALPHA, SHADOW_SUN, Occupancy, Shaded, _shadowed, dither, finish,
-                    shade)
+from render import (SHADOW_ALPHA, SHADOW_SUN, Occupancy, Shaded, _shadowed, data_word, dither,
+                    finish, shade)
 from spec import DESIGN_TILE
 from voxel import Halo, Model
 
@@ -67,7 +67,8 @@ def _pass_shade(args):
     sh = shade(m, ctx, zmax)
     hit = sh.mat > 0
     r, c = np.nonzero(hit)
-    return (r + sh.r0, c + sh.c0, sh.mat[hit], sh.level[hit], sh.depth[hit], sh.vx[hit], sh.vy[hit])
+    return (r + sh.r0, c + sh.c0, sh.mat[hit], sh.level[hit], sh.depth[hit], sh.vx[hit], sh.vy[hit],
+            sh.geo[hit])
 
 
 @dataclass
@@ -126,15 +127,16 @@ def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRe
     depth = np.full((H, W), -1e9, np.float32)
     vx = np.zeros((H, W), np.int64)
     vy = np.zeros((H, W), np.int64)
-    for rr, cc, m, lv, d, x, y in pool.imap(_pass_shade, jobs):
+    geo = np.zeros((H, W), np.uint32)
+    for rr, cc, m, lv, d, x, y, g in pool.imap(_pass_shade, jobs):
         rr, cc = rr - r0, cc - c0
         near = d > depth[rr, cc]
         rr, cc = rr[near], cc[near]
         mat[rr, cc], level[rr, cc], depth[rr, cc] = m[near], lv[near], d[near]
-        vx[rr, cc], vy[rr, cc] = x[near], y[near]
-    sh = Shaded(c0, r0, mat, level, depth, mat > 0, depth, vx, vy)
+        vx[rr, cc], vy[rr, cc], geo[rr, cc] = x[near], y[near], g[near]
+    sh = Shaded(c0, r0, mat, level, depth, mat > 0, depth, vx, vy, geo)
     rgba, glow, ox, oy = finish(sh, k, halos, cull=True)
-    base = Sprite(rgba, ox, oy)
+    base = Sprite(rgba, ox, oy, data_word(sh))
     glow_sprite = None
     if want_glow:
         glow_sprite = Sprite(glow if glow is not None else np.zeros_like(rgba), ox, oy)

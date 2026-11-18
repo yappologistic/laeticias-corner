@@ -31,7 +31,8 @@ class Pages:
 
     def __init__(self, set_id: str):
         root = spec.ASSETS
-        files = [root / "atlas.json"] if set_id == "home" else sorted((root / "atlas").glob(f"{set_id}.[0-9]*.json"))
+        files = [root / "atlas.json"] if set_id == "home" else \
+            sorted(p for p in (root / "atlas").glob(f"{set_id}.[0-9]*.json") if len(p.name.split(".")) == 3)
         self.sprites, self.images, self.strides = {}, {}, {}
         for f in files:
             doc = json.loads(f.read_text())

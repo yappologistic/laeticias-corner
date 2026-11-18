@@ -234,6 +234,8 @@ CARRIED_ROLES = {
     "night_unloader": ("carried_torch", "torch"), "wall_watch": ("carried_torch", "torch"),
     "spearman": ("carried_torch", "torch"), "patron": ("carried_lamp", "lamp"),
     "camp_guard": ("carried_torch", "torch"), "carter": ("cart_lantern", "lantern"),
+    "night_watch": ("carried_lamp", "lantern"), "watchman": ("carried_torch", "torch"),
+    "beacon_keeper": ("carried_torch", "torch"),
 }
 CARRIED_EVENTS = {
     "torch_race": ("carried_torch", "torch"), "wedding": ("carried_torch", "torch"),
@@ -331,7 +333,13 @@ def apply(doc: dict, world: World, cat) -> dict:
     rid = doc["id"]
     if rid not in P.REGIONS or P.REGIONS[rid][0] == "home":
         return doc
-    areas = {d["id"]: d.get("area", "town") for d in doc.get("districts", [])}
+    # The lights of the files `life.py` writes (towns without a life module, stretches,
+    # seams) were set with every district lit as a town quarter: their later area kinds, which
+    # size the crowds, do not dim the night.
+    from pathlib import Path
+    own = (Path(__file__).resolve().parent.parent / "regions" / rid / "life.py").exists()
+    areas = {d["id"]: d.get("area", "town") for d in doc.get("districts", [])} \
+        if own or P.REGIONS[rid][0] == "city" else {}
     festivals = {f["id"] for f in doc.get("festivals", [])}
     events = {e["id"] for e in doc.get("events", [])}
     pts = [p for p in points_for(world, cat, rid, areas)

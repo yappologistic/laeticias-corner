@@ -261,3 +261,23 @@ _ALL = set(PALETTE).union(*REGION_COLOURS.values())
 for _m_ in MATERIALS:
     assert all("#%02x%02x%02x" % c in _ALL for c in _m_.ramp), _m_.name
 assert len(MATERIALS) < 255
+
+# Every palette colour belongs to exactly one named group (the lists above, dark to light); the
+# ramp table (ramps.py) gives each group a ramp of its own, so a sprite drawn per pixel (ground,
+# faces) finds every colour it uses on exactly one ramp.
+GROUPS = {
+    "ink": [INK], "earth": EARTH, "leaf": LEAF, "pine": PINE, "blossom": BLOSSOM, "stone": STONE,
+    "roof": ROOF, "straw": STRAW, "water": WATER, "plaster": PLASTER, "violet": VIOLET,
+    "poppy": POPPY, "glow": GLOW, "skin": SKIN, "snow": SNOW, "autumn": AUTUMN,
+    "limestone": LIMESTONE, "darkstone": DARKSTONE, "lapis": LAPIS, "egypt_blue": EGYPT_BLUE,
+    "cinnabar": CINNABAR, "hematite": HEMATITE, "gold": GOLD, "cedar": CEDAR, "mudbrick": MUDBRICK,
+    "purple": PURPLE, "saffron": SAFFRON, "malachite": MALACHITE, "skin_olive": SKIN_OLIVE,
+    "skin_dark": SKIN_DARK, "naqsh": NAQSH, "marble": MARBLE, "poros": POROS,
+    "attic_rock": ATTIC_ROCK, "rust": RUST, "terracotta": TERRACOTTA, "clay": CLAY, "gloss": GLOSS,
+    "olive": OLIVE, "summer": SUMMER, "pitch": PITCH, "travertine": TRAVERTINE, "brick": BRICK,
+    "tufa": TUFA, "basalt": BASALT, "giallo": GIALLO, "cipollino": CIPOLLINO, "porphyry": PORPHYRY,
+    "granite": GRANITE, "granite_pink": GRANITE_PINK, "stucco_red": STUCCO_RED, "tiber": TIBER,
+    "sea": SEA, "shallow": SHALLOW, "sand": SAND, "steppe": STEPPE, "haze": HAZE, "sepia": SEPIA,
+}
+_grouped = [c for g in GROUPS.values() for c in g]
+assert len(_grouped) == len(set(_grouped)) and set(_grouped) == _ALL

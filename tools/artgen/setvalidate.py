@@ -22,14 +22,15 @@ import spec
 from palette import palette_for
 from validate import diamond
 
-MAX_PAGES = {"parsa": 2, "athens": 2, "rome": 4, "world": 1}
+MAX_PAGES = setbuild.MAX_PAGES
 
 
 def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str], list[str]]:
     cat = json.loads((setbuild.SETS / set_id / "catalog.json").read_text())
     mod = setbuild.load_set(set_id)
     errors, warnings = [], []
-    pages = sorted(out_dir.glob(f"{set_id}.[0-9]*.json"), key=lambda p: int(p.name.split(".")[1]))
+    pages = sorted((p for p in out_dir.glob(f"{set_id}.*.json") if re.fullmatch(rf"{set_id}\.\d+\.json", p.name)),
+                   key=lambda p: int(p.name.split(".")[1]))
     if len(pages) > MAX_PAGES.get(set_id, 2):
         warnings.append(f"{len(pages)} pages exceed the set budget of {MAX_PAGES.get(set_id, 2)}")
     sprites, owner, images = {}, {}, {}
@@ -50,7 +51,10 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
     pieces = {iid: e["r0"]["pieces"] for iid, e in geom["items"].items() if "pieces" in e.get("r0", {})}
     required = setbuild.required_keys(cat, mod, pieces)
     errors += [f"missing sprite {k_}" for k_ in required if k_ not in sprites]
-    errors += [f"unexpected sprite {k_}" for k_ in sorted(set(sprites) - set(required))]
+    # An actor frame with something alight on it carries its glow frame beside it.
+    glows = {k_ for k_ in sprites if "/glow/" in k_ and setbuild.ACTOR_KEY.fullmatch(k_.replace("/glow/", "/"))
+             and k_.replace("/glow/", "/") in sprites}
+    errors += [f"unexpected sprite {k_}" for k_ in sorted(set(sprites) - set(required) - glows)]
 
     allowed = {int(c[1:], 16) for c in palette_for(set_id)}
     want = diamond(32 * k)
@@ -163,13 +167,15 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
             if abs(top - it["height"] * k / 2) > 0.15 * it["height"] * k / 2:
                 warnings.append(f"{iid}: measured height {top * 2 // k} px, catalog {it['height']} px")
     for a in cat.get("actors", []):
-        if ("carry" in a["anims"]) != (a["id"] in geom["actors"]):
+        if ("carry" in a["anims"]) != ("carry_at" in geom["actors"].get(a["id"], {})):
             errors.append(f"{a['id']}: carry animation and carry_at disagree")
     return errors, warnings
 
 
 def main(set_id, out_dir, k, lm_info=None) -> int:
+    import datavalidate
     errors, warnings = validate(set_id, Path(out_dir), k, lm_info)
+    errors += datavalidate.check(set_id, Path(out_dir))
     for w in warnings:
         print(f"{set_id}: warning: {w}", file=sys.stderr)
     for e in errors:
