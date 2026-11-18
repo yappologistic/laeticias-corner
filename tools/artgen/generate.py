@@ -123,7 +123,7 @@ def main(argv) -> int:
     t0 = time.time()
     sprites = build_sprites(build.load_catalog(), build.k)
     build.out.mkdir(parents=True, exist_ok=True)
-    w, h = pack.write_atlas(sprites, build.atlas_png, build.atlas_json)
+    w, h = pack.write_atlas(sprites, build.atlas_png, build.atlas_json, registry.strides(sprites))
     print(f"atlas {w}x{h} for {build.tile_w}x{build.tile_h} tiles, {len(sprites)} sprites "
           f"in {time.time() - t0:.1f}s")
     status = validate.main(build)

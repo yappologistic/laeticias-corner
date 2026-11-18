@@ -161,6 +161,17 @@ def trajan_markets(m):
     fill(m, (0.0, D, 0.0, W + 20.0, 0.0, z), "brick",
          lambda X, Y, Z: (np.hypot(X - cx, Y - cy) > R + 11.0) & (np.hypot(X - cx, Y - cy) < R + 3 * T) &
          (Y < cy) & (Z < z - 3.0), tone=RM.brick(442))
+    # The terrace on top of the hemicycle's shops (QA4 V-A-009: it read as flat orange): a
+    # travertine walk along the façade, behind it the shops' low tiled roofs in curved rows.
+    def rr(X, Y):
+        return np.hypot(X - cx, Y - cy)
+    fill(m, (0.0, D, 0.0, W + 20.0, z - 3.6, z - 3.0), "travertine",
+         lambda X, Y, Z: (rr(X, Y) > R + 11.0) & (rr(X, Y) < R + 19.0) & (Y < cy), tone=M.paving(4.0, 3.0, 451),
+         only_solid=True)
+    fill(m, (0.0, D, 0.0, W + 20.0, z - 3.0, z + 1.0), "terracotta",
+         lambda X, Y, Z: (rr(X, Y) > R + 20.0) & (rr(X, Y) < R + 3 * T - 1.0) & (Y < cy) &
+         (Z < z - 3.0 + 3.0 * (((rr(X, Y) - R - 20.0) % 9.0) / 9.0)),
+         tone=lambda X, Y, Z: 0.3 * ((np.arctan2(Y - cy, X - cx) * 90.0) % 1.0 < 0.35) - 0.15)
     # Window frames: pilasters and pediments on the second storey.
     for i in range(22):
         th = -math.pi + (i + 0.5) * math.pi / 22

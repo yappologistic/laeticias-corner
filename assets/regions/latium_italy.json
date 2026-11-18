@@ -2,7 +2,8 @@
  "version": 1,
  "id": "latium_italy",
  "name": "Latium",
- "caption": "Latium · April AD 126",
+ "caption": "Latium · AD 126",
+ "climate": "med_green",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "rome",
   "ambience": {
    "beds": [
     {
@@ -59,6 +59,145 @@
      "when": "worked"
     }
    ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 2,
+    "clouds": 2,
+    "wind": 0.35,
+    "wind_from": "west",
+    "fog": 0.3
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.3,
+    "storm": 1
+   },
+   "autumn": {
+    "showers": 3,
+    "clouds": 3,
+    "wind": 0.4
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.45,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.99,
+     1.02,
+     0.97
+    ],
+    "haze": 0.12,
+    "ground": {
+     "muddy": [
+      "mar"
+     ],
+     "snow": [
+      "mar"
+     ]
+    },
+    "snow_line": [
+     8,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.04,
+     1.0,
+     0.92
+    ],
+    "look": {
+     "haze": 0.25,
+     "warmth": 0.04
+    },
+    "haze": 0.15,
+    "ground": {
+     "low_water": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.05,
+     0.97,
+     0.88
+    ],
+    "haze": 0.12,
+    "ground": {
+     "low_water": [
+      "sep"
+     ],
+     "muddy": [
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.94,
+     0.97,
+     1.04
+    ],
+    "look": {
+     "saturation": -0.06,
+     "haze": 0.2
+    },
+    "haze": 0.144,
+    "ground": {
+     "flooded": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow_dusted": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     6,
+     5,
+     6
+    ]
+   }
   },
   "sound": {
    "climate": "mediterranean",
@@ -88,7 +227,13 @@
      "summer"
     ],
     "weather": "clear",
-    "fade_s": 20
+    "fade_s": 20,
+    "months": [
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
    },
    "rain": {
     "family": "rain",
@@ -139,6 +284,9 @@
     }
    ],
    "voices": {
+    "world.crane": [
+     "sfx/world/cranes.wav"
+    ],
     "world.dog": [
      "sfx/world/dog_1.wav",
      "sfx/world/dog_2.wav"
@@ -156,6 +304,9 @@
     "world.sheep": [
      "sfx/world/sheep_1.wav",
      "sfx/world/sheep_2.wav"
+    ],
+    "world.stork": [
+     "sfx/world/stork_clatter.wav"
     ]
    },
    "waterfall": "waterfall"
@@ -515,12 +666,20 @@
     {
      "actor": "world.traveller",
      "density": "road_day",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.merchant",
      "density": "road_day",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.donkey",
@@ -564,7 +723,11 @@
     {
      "actor": "rome.farmer",
      "density": "fields",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.ox",
@@ -575,6 +738,77 @@
      "actor": "world.dog",
      "density": "daytime",
      "max_per_chunk": 1
+    },
+    {
+     "role": "ploughman",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "role": "reaper",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "jun",
+       "jul"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "pruner",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "olive_picker",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "nov",
+       "dec"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "Farms",
@@ -606,7 +840,49 @@
   },
   {
    "id": "land",
-   "populations": [],
+   "populations": [
+    {
+     "actor": "world.stork",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "world.crane",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "world.swift",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug"
+      ]
+     }
+    }
+   ],
    "name": "Countryside",
    "sound": {
     "surfaces": {
@@ -760,6 +1036,32 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
@@ -804,7 +1106,142 @@
   }
  ],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "starlings",
+   "rarity": "common",
+   "size": "small",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:00",
+     "18:30"
+    ],
+    "chance": 1.0,
+    "months": [
+     "oct",
+     "nov",
+     "dec",
+     "jan",
+     "feb"
+    ]
+   },
+   "duration": [
+    60,
+    90
+   ],
+   "cast": [],
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.starlings"
+     }
+    }
+   ],
+   "sfx": "sfx/world/swifts.wav",
+   "string": "starlings"
+  },
+  {
+   "id": "turn_spring_swallows_return",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "swallows_return",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/swifts.wav",
+   "cast": [
+    {
+     "actor": "world.swift",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_cicadas_begin",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cicadas_begin",
+   "show": "emitter",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/swifts.wav"
+  },
+  {
+   "id": "turn_autumn_vintage_begins",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "vintage_begins",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "ambience": {
+    "file": "amb/world/press.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_winter_braziers_lit",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "braziers_lit",
+   "show": "item_state",
+   "steps": [],
+   "string": "season_turn.winter",
+   "ambience": {
+    "file": "amb/world/brazier.ogg",
+    "gain": 0.6
+   }
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "world.traveller",
@@ -812,7 +1249,8 @@
     "start": "base:appia_se",
     "end": "base:appia_brund_w"
    },
-   "count": 3
+   "count": 3,
+   "by_month": "road"
   },
   {
    "actor": "world.muleteer",
@@ -821,7 +1259,8 @@
     "end": "base:appia_brund_w"
    },
    "count": 1,
-   "group": "mule_train"
+   "group": "mule_train",
+   "by_month": "caravan"
   },
   {
    "actor": "rome.shepherd",
@@ -832,9 +1271,9 @@
     "end": "base:via_tiburtina_station_275_91"
    },
    "when": {
-    "seasons": [
-     "spring",
-     "autumn"
+    "months": [
+     "may",
+     "oct"
     ]
    },
    "note": "flocks moving between summer and winter pastures"
@@ -856,7 +1295,450 @@
  ],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "starlings": "Clouds of starlings wheel over the Campagna at dusk.",
+  "season_turn.spring": "The swallows are back under the eaves.",
+  "season_turn.summer": "The cicadas have started.",
+  "season_turn.autumn": "The grapes are in: the vintage begins.",
+  "season_turn.winter": "Braziers glow in the doorways against the cold."
+ },
  "journal": [],
- "era": "The Rome of Hadrian · AD 126"
+ "era": {
+  "edge": "The Rome of Hadrian · AD 126",
+  "caption": "Latium · {year}",
+  "year": {
+   "spring": "AD 126",
+   "summer": "AD 126",
+   "autumn": "AD 126",
+   "winter": "AD 126/127"
+  },
+  "months": {
+   "jan": "AD 127",
+   "feb": "AD 127"
+  }
+ },
+ "water": [
+  {
+   "body": "aufidus",
+   "kind": "stream",
+   "tiles": 21,
+   "rect": [
+    216,
+    896,
+    222,
+    902
+   ],
+   "level": [
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.08,
+     1.0,
+     0.8
+    ],
+    "normal": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "low": [
+     0.96,
+     1.02,
+     0.92
+    ]
+   }
+  },
+  {
+   "body": "liris",
+   "kind": "stream",
+   "tiles": 232,
+   "rect": [
+    140,
+    962,
+    243,
+    1005
+   ],
+   "level": [
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.08,
+     1.0,
+     0.8
+    ],
+    "normal": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "low": [
+     0.96,
+     1.02,
+     0.92
+    ]
+   }
+  },
+  {
+   "body": "tiber",
+   "kind": "river",
+   "tiles": 47,
+   "rect": [
+    0,
+    1172,
+    19,
+    1175
+   ],
+   "level": [
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "high",
+    "flood",
+    "flood",
+    "flood"
+   ],
+   "rank": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1
+   ],
+   "colour": {
+    "flood": [
+     1.08,
+     1.0,
+     0.8
+    ],
+    "high": [
+     1.08,
+     1.0,
+     0.8
+    ],
+    "normal": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "low": [
+     0.96,
+     1.02,
+     0.92
+    ]
+   }
+  }
+ ],
+ "festivals": [],
+ "roles": [
+  {
+   "id": "ploughman",
+   "actor": "rome.farmer",
+   "name": "Ploughing and sowing",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "reaper",
+   "actor": "rome.farmer",
+   "name": "Reaping",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "pruner",
+   "actor": "rome.farmer",
+   "name": "Pruning the vines and trees",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "olive_picker",
+   "actor": "rome.farmer",
+   "name": "Olive harvest",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.t_olive",
+        "spot": "beside",
+        "within": 48
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/world/press.ogg"
+   }
+  }
+ ]
 }

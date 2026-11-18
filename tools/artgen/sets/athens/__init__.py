@@ -7,7 +7,7 @@ from sets.athens import animals, ground, kit, landmarks, people, plants
 
 LANDMARKS = landmarks.LANDMARKS
 ITEMS = {**kit.ITEMS, **plants.ITEMS}
-STATES = {}
+STATES = kit.STATES
 # Frame counts of animated items, terrain and effects (the manifest is authoritative).
 FRAMES = {**kit.FRAMES, **plants.FRAMES, **ground.FRAMES}
 

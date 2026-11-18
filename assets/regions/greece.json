@@ -2,7 +2,8 @@
  "version": 1,
  "id": "greece",
  "name": "Greece",
- "caption": "Greece · summer, 432 BC",
+ "caption": "Greece · 432 BC",
+ "climate": "med_dry",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "athens",
   "ambience": {
    "beds": [
     {
@@ -70,6 +70,164 @@
     }
    ]
   },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.35
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.5,
+    "wind_from": "north-east",
+    "dust": 1,
+    "storm": 1
+   },
+   "autumn": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.4
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.4,
+    "snow": true
+   },
+   "months": {
+    "jun": {
+     "wind": 0.35,
+     "wind_from": "north"
+    },
+    "sep": {
+     "showers": 0,
+     "clouds": 1,
+     "dust": 1
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.96
+    ],
+    "haze": 0.12,
+    "ground": {
+     "dry_beds": [
+      "may"
+     ],
+     "low_water": [
+      "apr"
+     ],
+     "muddy": [
+      "mar"
+     ],
+     "snow": [
+      "mar"
+     ]
+    },
+    "snow_line": [
+     7,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.06,
+     1.01,
+     0.9
+    ],
+    "look": {
+     "exposure": 0.04,
+     "contrast": 0.05,
+     "saturation": -0.04
+    },
+    "haze": 0.12,
+    "ground": {
+     "dry_beds": [
+      "jun",
+      "jul",
+      "aug"
+     ],
+     "dusty": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.03,
+     0.98,
+     0.92
+    ],
+    "haze": 0.12,
+    "ground": {
+     "dry_beds": [
+      "sep",
+      "oct"
+     ],
+     "dusty": [
+      "sep",
+      "oct"
+     ],
+     "low_water": [
+      "nov"
+     ],
+     "muddy": [
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.93,
+     0.98,
+     1.03
+    ],
+    "look": {
+     "foliage_saturation": 0.06
+    },
+    "haze": 0.12,
+    "ground": {
+     "flurries": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     6,
+     5,
+     5
+    ]
+   }
+  },
   "sound": {
    "climate": "mediterranean",
    "crowd": "crowd.greek",
@@ -98,7 +256,13 @@
      "summer"
     ],
     "weather": "clear",
-    "fade_s": 20
+    "fade_s": 20,
+    "months": [
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
    },
    "rain": {
     "family": "rain",
@@ -149,6 +313,9 @@
     }
    ],
    "voices": {
+    "world.crane": [
+     "sfx/world/cranes.wav"
+    ],
     "world.dog": [
      "sfx/world/dog_1.wav",
      "sfx/world/dog_2.wav"
@@ -166,9 +333,6 @@
     "world.sheep": [
      "sfx/world/sheep_1.wav",
      "sfx/world/sheep_2.wav"
-    ],
-    "world.stork": [
-     "sfx/world/stork_clatter.wav"
     ]
    },
    "waterfall": "waterfall"
@@ -516,12 +680,20 @@
     {
      "actor": "world.traveller",
      "density": "road_day",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.merchant",
      "density": "road_day",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.donkey",
@@ -564,7 +736,11 @@
     {
      "actor": "athens.farmer",
      "density": "fields",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.ox",
@@ -575,6 +751,77 @@
      "actor": "world.dog",
      "density": "daytime",
      "max_per_chunk": 1
+    },
+    {
+     "role": "ploughman",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "role": "reaper",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "may",
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "pruner",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "olive_picker",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "nov",
+       "dec",
+       "jan"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "Farms",
@@ -608,13 +855,30 @@
    "id": "land",
    "populations": [
     {
-     "actor": "world.stork",
+     "actor": "world.crane",
      "density": "daytime",
      "max_per_chunk": 1,
-     "seasons": [
-      "spring",
-      "summer"
-     ]
+     "when": {
+      "months": [
+       "mar",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "world.swift",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug"
+      ]
+     }
     }
    ],
    "name": "Countryside",
@@ -807,6 +1071,32 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
@@ -836,7 +1126,168 @@
   }
  ],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_swallows_return",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "swallows_return",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/swifts.wav",
+   "cast": [
+    {
+     "actor": "world.swift",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_cicadas_begin",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cicadas_begin",
+   "show": "emitter",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/swifts.wav"
+  },
+  {
+   "id": "turn_autumn_vintage_begins",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "vintage_begins",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "ambience": {
+    "file": "amb/world/press.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_nov_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "nov"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.nov",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_oct_first_rains",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_rains",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.oct",
+   "sfx": "sfx/world/first_drops.wav"
+  },
+  {
+   "id": "turn_winter_braziers_lit",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "braziers_lit",
+   "show": "item_state",
+   "steps": [],
+   "string": "season_turn.winter",
+   "ambience": {
+    "file": "amb/world/brazier.ogg",
+    "gain": 0.6
+   }
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "world.traveller",
@@ -844,7 +1295,8 @@
     "start": "eleusis:eleusis_town",
     "end": "delphi:temple"
    },
-   "count": 2
+   "count": 2,
+   "by_month": "road"
   },
   {
    "actor": "world.merchant",
@@ -852,7 +1304,8 @@
     "start": "corinth:lechaion",
     "end": "eleusis:eleusis_town"
    },
-   "count": 1
+   "count": 1,
+   "by_month": "sailing"
   },
   {
    "actor": "athens.herder",
@@ -863,9 +1316,9 @@
     "end": "base:olympia_road_farm_496_318"
    },
    "when": {
-    "seasons": [
-     "spring",
-     "autumn"
+    "months": [
+     "may",
+     "oct"
     ]
    },
    "note": "flocks moving between summer and winter pastures"
@@ -873,7 +1326,398 @@
  ],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "The swallows are back under the eaves.",
+  "season_turn.summer": "The cicadas have started.",
+  "season_turn.autumn": "The grapes are in: the vintage begins.",
+  "season_turn.nov": "Cranes call high overhead, flying in a long V.",
+  "season_turn.oct": "The first rain. The whole land smells of dust and earth.",
+  "season_turn.winter": "Braziers glow in the doorways against the cold."
+ },
  "journal": [],
- "era": "The Athens of Pericles · 432 BC"
+ "era": {
+  "edge": "The Athens of Pericles · 432 BC",
+  "caption": "Greece · {year}",
+  "year": {
+   "spring": "432 BC",
+   "summer": "432 BC",
+   "autumn": "432/431 BC",
+   "winter": "432/431 BC"
+  },
+  "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
+ },
+ "water": [
+  {
+   "body": "achelous",
+   "kind": "stream",
+   "tiles": 276,
+   "rect": [
+    160,
+    790,
+    264,
+    817
+   ],
+   "level": [
+    "high",
+    "low",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "low",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.02,
+     1.01,
+     0.96
+    ]
+   }
+  },
+  {
+   "body": "alpheios",
+   "kind": "stream",
+   "tiles": 9,
+   "rect": [
+    339,
+    810,
+    341,
+    813
+   ],
+   "level": [
+    "high",
+    "low",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "low",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.02,
+     1.01,
+     0.96
+    ]
+   }
+  },
+  {
+   "body": "eurotas",
+   "kind": "stream",
+   "tiles": 132,
+   "rect": [
+    386,
+    743,
+    430,
+    751
+   ],
+   "level": [
+    "high",
+    "low",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "dry",
+    "low",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.02,
+     1.01,
+     0.96
+    ]
+   }
+  }
+ ],
+ "roles": [
+  {
+   "id": "ploughman",
+   "actor": "athens.farmer",
+   "name": "Ploughing and sowing",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "reaper",
+   "actor": "athens.farmer",
+   "name": "Reaping",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "pruner",
+   "actor": "athens.farmer",
+   "name": "Pruning the vines and trees",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "olive_picker",
+   "actor": "athens.farmer",
+   "name": "Olive harvest",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "athens.t_olive",
+        "spot": "beside",
+        "within": 48
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/world/press.ogg"
+   }
+  }
+ ]
 }

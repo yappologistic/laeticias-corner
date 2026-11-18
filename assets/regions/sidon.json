@@ -3,7 +3,8 @@
  "id": "sidon",
  "name": "Sidon",
  "native": "Ṣīdōn",
- "caption": "Sidon · spring, c. 470 BC",
+ "caption": "Sidon · c. 470 BC",
+ "climate": "levant",
  "theme": {
   "grading": {
    "dawn": [
@@ -35,7 +36,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -54,6 +54,130 @@
     }
    ],
    "loops": []
+  },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.3
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 0,
+    "wind": 0.4,
+    "wind_from": "west"
+   },
+   "autumn": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.3
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.45,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 0,
+     "clouds": 1
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.96
+    ],
+    "haze": 0.12,
+    "ground": {
+     "muddy": [
+      "mar"
+     ]
+    },
+    "snow_line": [
+     7,
+     9,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.06,
+     1.01,
+     0.9
+    ],
+    "look": {
+     "exposure": 0.04,
+     "contrast": 0.05,
+     "saturation": -0.04
+    },
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.03,
+     0.98,
+     0.92
+    ],
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "sep",
+      "oct"
+     ],
+     "muddy": [
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.93,
+     0.98,
+     1.03
+    ],
+    "look": {
+     "foliage_saturation": 0.06
+    },
+    "haze": 0.12,
+    "ground": {
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     7,
+     6,
+     6
+    ]
+   }
   },
   "sound": {
    "climate": "mediterranean",
@@ -477,17 +601,116 @@
     {
      "actor": "parsa.labourer",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.labourer",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.woman_worker",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.craftsman",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.craftsman",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The shore",
@@ -538,17 +761,114 @@
     {
      "actor": "parsa.woman_worker",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.craftsman",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.craftsman",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.scribe",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "parsa.scribe",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     }
    ],
    "name": "The town",
@@ -715,22 +1035,199 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_swallows_return",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "swallows_return",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/swifts.wav",
+   "cast": [
+    {
+     "actor": "world.swift",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_cicadas_begin",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cicadas_begin",
+   "show": "emitter",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/swifts.wav"
+  },
+  {
+   "id": "turn_autumn_vintage_begins",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "vintage_begins",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "ambience": {
+    "file": "amb/world/press.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_oct_first_rains",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_rains",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.oct",
+   "sfx": "sfx/world/first_drops.wav"
+  },
+  {
+   "id": "turn_winter_first_snow",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_snow",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "world.fishing_boat",
    "lane": "sidon:sidon",
-   "count": 2
+   "count": 2,
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ]
   },
   {
    "actor": "world.fishing_boat",
    "lane": "sidon:sidon",
-   "count": 1
+   "count": 1,
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ]
   }
  ],
  "zones": [],
@@ -742,7 +1239,12 @@
   }
  },
  "strings": {
-  "first_visit": "Sidon: ships, cedar logs and a harbour on the Levant coast."
+  "first_visit": "Sidon: ships, cedar logs and a harbour on the Levant coast.",
+  "season_turn.spring": "The swallows are back under the eaves.",
+  "season_turn.summer": "The cicadas have started.",
+  "season_turn.autumn": "The grapes are in: the vintage begins.",
+  "season_turn.oct": "The first rain. The whole land smells of dust and earth.",
+  "season_turn.winter": "Snow on the heights."
  },
  "journal": [
   "landmark:*"
@@ -751,5 +1253,15 @@
   "node": "sidon:sidon_quay",
   "card": "sidon"
  },
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "Sidon · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "festivals": []
 }

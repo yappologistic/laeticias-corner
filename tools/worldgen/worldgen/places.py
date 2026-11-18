@@ -11,7 +11,8 @@ from plan import world_plan as P
 
 ERA = {"rome": "The Rome of Hadrian · AD 126", "athens": "The Athens of Pericles · 432 BC",
        "parsa": "The Persian empire of Xerxes · c. 470 BC"}
-MOMENT = {"rome": "April AD 126", "athens": "summer, 432 BC", "parsa": "c. 470 BC"}
+# The time a stretch's caption names (its season is the calendar's: seasons.md §6.2).
+MOMENT = {"rome": "AD 126", "athens": "432 BC", "parsa": "c. 470 BC"}
 # Seas and seams belong to the time on whose side they lie (world.md §8).
 SIDE = {"tyrrhenian": "rome", "adriatic": "rome", "ionian_sea": "rome", "aegean": "athens",
         "saronic": "athens", "east_med": "parsa", "persian_gulf": "parsa"}

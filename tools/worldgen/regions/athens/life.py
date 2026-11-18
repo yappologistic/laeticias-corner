@@ -1,4 +1,5 @@
-"""Athens' life and text: who is where at each hour of a summer day in 432 BC, what they do,
+"""Athens' life and text: who is where at each hour of a summer day in 432 BC (and, through
+`seasons.py`, in every month of the year), what they do,
 the chains, the Panathenaic procession and the other events, the figures and every card
 (`assets/regions/athens.json`).
 
@@ -14,10 +15,13 @@ Built by `tools/worldgen/build.sh --city athens`, checked by `worldgen.citylife`
 from __future__ import annotations
 
 from worldgen import citylife as CL
+from worldgen import seasonlife as SL
 from worldgen.citylife import card, curve, go, grid_rect, pop, role, sched, use, wait, wander
 
+SEASONS = SL.sibling(__file__, "seasons")
+SEASON_BEDS = SEASONS.SEASON_BEDS
+
 A = "athens."
-SEASON = "summer"
 ASSEMBLY = {"days": {"every": 4, "offset": 2}}
 FEAST = {"festival": "panathenaia"}
 WORKDAY = {"not_festival": "panathenaia"}   # the Panathenaia is a holiday for the workshops
@@ -566,9 +570,6 @@ def districts() -> list[dict]:
     ]
 
 
-PENDING = {"world.goods_block": "world.goods_bale", "world.goods_pot_raw": A + "goods_redfigure",
-           "world.goods_pot_painted": A + "goods_redfigure", "world.goods_oil_jar": "world.goods_amphorae",
-           "world.goods_silver": "world.goods_amphorae"}
 
 
 def chains() -> list[dict]:
@@ -1376,7 +1377,6 @@ def theme(view) -> dict:
         "grading": {"dawn": [1.03, 0.97, 0.93], "day": [1.02, 1.01, 0.97], "dusk": [1.02, 0.95, 0.89],
                     "night": [0.96, 0.97, 1.03]},
         "haze": {"colour": [0.93, 0.89, 0.80], "strength": 0.12, "toward": "south-west"},
-        "climate": "athens",
         "weather": {
             "summer": {"showers": 0, "clouds": 1, "wind": 0.5, "wind_from": "north-east",
                        "note": "calm mornings; the meltemi rises in the afternoon; one rare storm"},
@@ -1408,11 +1408,10 @@ def theme(view) -> dict:
 
 
 def build(view) -> dict:
-    return {
+    return SEASONS.apply({
         "version": 1, "id": "athens", "name": "Athens", "native": "Ἀθῆναι",
-        "caption": "Athens · the Panathenaia, summer 432 BC",
+        "caption": "Athens · 432 BC",
         "era": "The Athens of Pericles · 432 BC",
-        "season": SEASON,
         "theme": theme(view),
         "densities": DENSITIES,
         "districts": districts(),
@@ -1428,9 +1427,8 @@ def build(view) -> dict:
         "lanes_tokens": [{"actor": A + "merchant", "lane": "athens:kantharos", "count": 2},
                          {"actor": A + "trireme", "lane": "athens:zea", "count": 2},
                          {"actor": A + "fishing", "lane": "athens:mounychia", "count": 2}],
-        "pending": {"goods": PENDING},
         "cards": cards(),
         "strings": STRINGS,
         "decorate": {"rect": [286, 659, 296, 669]},
         "journal": ["landmark:*", "figure:*", "chain:*", "idea:*", "event:panathenaic_procession"],
-    }
+    })

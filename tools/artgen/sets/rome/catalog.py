@@ -7,6 +7,7 @@ import json
 import sys
 
 import spec
+import strides
 from sets.rome import landmarks
 from sets.rome.entries import LAYERS, slots_entry
 
@@ -34,7 +35,7 @@ def build():
     cat["actors"] = extra.get("actors", [])
     cat["goods"] = extra.get("goods", [])
     cat["art"] = extra.get("art", {"edges": [], "fx": []})
-    return cat
+    return strides.annotate("rome", cat)
 
 
 def dump(cat):

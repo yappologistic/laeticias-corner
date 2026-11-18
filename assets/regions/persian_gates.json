@@ -4,6 +4,7 @@
  "name": "The Persian Gates",
  "native": "Persian Gates",
  "caption": "The Persian Gates · c. 470 BC",
+ "climate": "high_mountain",
  "theme": {
   "grading": {
    "dawn": [
@@ -35,7 +36,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -54,6 +54,143 @@
     }
    ],
    "loops": []
+  },
+  "weather": {
+   "spring": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.45,
+    "fog": 0.5
+   },
+   "summer": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.4
+   },
+   "autumn": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.5,
+    "snow": true
+   },
+   "winter": {
+    "showers": 4,
+    "clouds": 4,
+    "wind": 0.7,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.96,
+     1.0,
+     1.04
+    ],
+    "look": {
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "mar",
+      "apr"
+     ],
+     "snow": [
+      "mar",
+      "apr",
+      "may"
+     ]
+    },
+    "snow_line": [
+     10,
+     11,
+     13
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "look": {
+     "haze": 0.25,
+     "warmth": 0.04
+    },
+    "haze": 0.15,
+    "ground": {
+     "snow": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     14,
+     14,
+     14
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.02,
+     0.97,
+     0.92
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "oct",
+      "nov"
+     ],
+     "snow": [
+      "sep",
+      "oct",
+      "nov"
+     ]
+    },
+    "snow_line": [
+     14,
+     13,
+     12
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.86,
+     0.93,
+     1.12
+    ],
+    "look": {
+     "warmth": -0.08,
+     "exposure": 0.04
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     10,
+     9,
+     9
+    ]
+   }
   },
   "sound": {
    "climate": "mountain",
@@ -491,12 +628,80 @@
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "parsa.archer",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.archer",
+     "density": "daytime",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.archer",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     }
    ],
    "name": "The cliffs",
@@ -529,12 +734,80 @@
     {
      "actor": "parsa.archer",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.archer",
+     "density": "daytime",
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.archer",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     }
    ],
    "name": "The road",
@@ -700,12 +973,161 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_snowmelt",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "snowmelt",
+   "show": "water",
+   "steps": [],
+   "string": "season_turn.spring",
+   "ambience": {
+    "file": "amb/world/river_2.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_summer_flocks_up",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flocks_up",
+   "show": "herd",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "turn_autumn_leaves_turn",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "leaves_turn",
+   "show": "particles",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.leaf"
+     }
+    }
+   ],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_oct_flocks_down",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flocks_down",
+   "show": "herd",
+   "steps": [],
+   "string": "season_turn.oct",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "turn_winter_first_snow",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_snow",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
+  }
+ ],
  "lanes_tokens": [],
  "zones": [],
  "cards": {
@@ -716,10 +1138,25 @@
   }
  },
  "strings": {
-  "first_visit": "The Persian Gates. Guards watch the defile on the road to Pārsa."
+  "first_visit": "The Persian Gates. Guards watch the defile on the road to Pārsa.",
+  "season_turn.spring": "Meltwater roars down the gorges.",
+  "season_turn.summer": "The flocks are on the high pastures.",
+  "season_turn.autumn": "The woods are turning copper and gold.",
+  "season_turn.oct": "The flocks come down to the lowlands.",
+  "season_turn.winter": "Snow on the heights."
  },
  "journal": [
   "landmark:*"
  ],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "The Persian Gates · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "festivals": []
 }

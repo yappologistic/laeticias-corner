@@ -12,7 +12,7 @@ from dataclasses import replace
 import numpy as np
 
 from arch import ellipsoid, fill, revolve, rod, slab
-from rig import Body, Dress, Frame, draw, pose
+from rig import CRITTER_FRAMES, Body, Dress, Frame, draw, pose
 from sets.parsa.animals import SIZE, Beast, _render, quadruped
 from voxel import Model
 
@@ -29,7 +29,7 @@ BEASTS = {
                            leg=0.24),
 }
 VARIANT_COAT = {("world.goat", 1): replace(BEASTS["world.goat"], coat="cedar", belly="cream", mane="cream")}
-FRAMES = {"move": 6, "idle": 2, "graze": 4, "peck": 4, "sleep": 2, "run": 4, "flap": 4}
+FRAMES = CRITTER_FRAMES
 
 
 def _beast(kind, variant):
@@ -40,7 +40,7 @@ def _load(m, kind, variant, anim, frame, frames):
     """Panniers, pack saddles and the fat tail, on the beast's barrel (body centre at x 0)."""
     b = _beast(kind, variant)
     L, H, g = b.length * SIZE, b.height * SIZE, b.girth * SIZE * 1.15
-    bob = 0.25 * abs(math.sin(2 * math.pi * frame / frames)) if anim == "move" else 0.0
+    bob = 0.125 * (1 - math.cos(4 * math.pi * frame / frames)) if anim == "move" else 0.0
     bz = H - g * 0.4 + bob
     if kind == "world.donkey":
         # The dark shoulder cross, and on v1 two wicker panniers over a blanket.
@@ -317,9 +317,8 @@ def sprite(kind, variant, anim, facing, frame, k):
         return _render(_bird(kind, anim, frame, n, k), facing)
     if kind == "world.dog" and anim == "sleep":
         return _render(dog_sleep(frame, k), facing)
-    if anim == "run":       # the dog's run: the walking gait at full stretch
-        m = quadruped(replace(BEASTS[kind], leg=BEASTS[kind].leg * 1.1), "move", frame * 6 // 4, 6, k)
-        return _render(m, facing)
+    if anim == "run":       # the dog's run: a trot, diagonal pairs together
+        return _render(quadruped(BEASTS[kind], "run", frame, n, k), facing)
     m = quadruped(_beast(kind, variant), anim, frame, n, k)
     _load(m, kind, variant, anim, frame, n)
     return _render(m, facing)

@@ -3,6 +3,7 @@
  "id": "susiana",
  "name": "Susiana",
  "caption": "Susiana · c. 470 BC",
+ "climate": "mesopotamian",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -59,6 +59,135 @@
      "when": "lit"
     }
    ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.3,
+    "fog": 0.2
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 0,
+    "wind": 0.5,
+    "wind_from": "north-west",
+    "dust": 3,
+    "shimmer": 1
+   },
+   "autumn": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.25
+   },
+   "winter": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.3,
+    "fog": 0.5
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.95
+    ],
+    "haze": 0.12,
+    "ground": {
+     "flooded": [
+      "apr",
+      "may"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.08,
+     0.98,
+     0.84
+    ],
+    "look": {
+     "haze": 0.4,
+     "dust": 0.4,
+     "shimmer": 0.4
+    },
+    "haze": 0.168,
+    "ground": {
+     "dusty": [
+      "jun",
+      "jul",
+      "aug"
+     ],
+     "low_water": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.04,
+     0.99,
+     0.9
+    ],
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "sep"
+     ],
+     "low_water": [
+      "sep",
+      "oct"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.96,
+     0.99,
+     1.02
+    ],
+    "look": {
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   }
   },
   "sound": {
    "climate": "river_plain",
@@ -134,6 +263,9 @@
     }
    ],
    "voices": {
+    "world.crane": [
+     "sfx/world/cranes.wav"
+    ],
     "world.donkey": [
      "sfx/world/donkey.wav"
     ],
@@ -497,12 +629,20 @@
     {
      "actor": "world.traveller",
      "density": "road_day",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.merchant",
      "density": "road_day",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.donkey",
@@ -512,7 +652,11 @@
     {
      "actor": "parsa.groom",
      "density": "watch",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The Royal Road",
@@ -561,10 +705,45 @@
      "actor": "world.stork",
      "density": "daytime",
      "max_per_chunk": 1,
-     "seasons": [
-      "spring",
-      "summer"
-     ]
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "world.crane",
+     "density": "daytime",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "world.swift",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
     }
    ],
    "name": "Countryside",
@@ -728,16 +907,304 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_storks_arrive",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storks_arrive",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/stork_clatter.wav",
+   "cast": [
+    {
+     "actor": "world.stork",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_apr_flood_rising",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "apr"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flood_rising",
+   "show": "water",
+   "steps": [],
+   "string": "season_turn.apr",
+   "pending_sound": [
+    "amb/world/flood.ogg"
+   ],
+   "ambience": {
+    "file": "amb/world/river_2.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_summer_heat_haze",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "heat_haze",
+   "show": "look",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.shimmer"
+     }
+    }
+   ],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_autumn_date_harvest",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "date_harvest",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/chop.wav"
+  },
+  {
+   "id": "turn_winter_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  }
+ ],
  "lanes_tokens": [],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "The storks are back on their nests.",
+  "season_turn.apr": "The river is rising over the low fields.",
+  "season_turn.summer": "The air shimmers over the land at noon.",
+  "season_turn.autumn": "Climbers in the palms: the date harvest.",
+  "season_turn.winter": "Cranes call high overhead, flying in a long V."
+ },
  "journal": [],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "Susiana · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "water": [
+  {
+   "body": "karun",
+   "kind": "stream",
+   "tiles": 274,
+   "rect": [
+    301,
+    176,
+    397,
+    195
+   ],
+   "level": [
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.1,
+     0.94,
+     0.82
+    ],
+    "normal": [
+     1.02,
+     0.99,
+     0.9
+    ],
+    "low": [
+     0.98,
+     1.0,
+     0.9
+    ]
+   }
+  },
+  {
+   "body": "tigris",
+   "kind": "river",
+   "tiles": 114,
+   "rect": [
+    285,
+    194,
+    396,
+    199
+   ],
+   "level": [
+    "normal",
+    "flood",
+    "flood",
+    "high",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "rank": [
+    0,
+    2,
+    3,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "colour": {
+    "flood": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "high": [
+     1.1,
+     0.94,
+     0.82
+    ],
+    "normal": [
+     1.02,
+     0.99,
+     0.9
+    ],
+    "low": [
+     0.98,
+     1.0,
+     0.9
+    ]
+   }
+  }
+ ]
 }

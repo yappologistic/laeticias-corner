@@ -2,7 +2,8 @@
  "version": 1,
  "id": "saronic",
  "name": "The Saronic Gulf",
- "caption": "The Saronic Gulf · summer, 432 BC",
+ "caption": "The Saronic Gulf · 432 BC",
+ "climate": "sea_aegean",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "athens",
   "ambience": {
    "beds": [
     {
@@ -53,6 +53,103 @@
     }
    ],
    "loops": []
+  },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.35
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.55,
+    "wind_from": "north-east"
+   },
+   "autumn": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.45,
+    "storm": 2
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.55,
+    "storm": 3
+   },
+   "months": {
+    "jun": {
+     "wind": 0.35,
+     "wind_from": "north"
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.96
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     7,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.06,
+     1.01,
+     0.9
+    ],
+    "look": {
+     "exposure": 0.04,
+     "contrast": 0.05,
+     "saturation": -0.04
+    },
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.03,
+     0.98,
+     0.92
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.93,
+     0.98,
+     1.03
+    ],
+    "look": {
+     "foliage_saturation": 0.06
+    },
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     6,
+     5,
+     5
+    ]
+   }
   },
   "sound": {
    "climate": "sea",
@@ -587,32 +684,235 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_sailing_opens",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "sailing_opens",
+   "show": "harbour",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/rope.wav"
+  },
+  {
+   "id": "turn_summer_meltemi",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "meltemi",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/gust_front.wav",
+   "ambience": {
+    "file": "amb/world/wind_sea_3.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_autumn_storms_return",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storms_return",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/thunder_far.wav"
+  },
+  {
+   "id": "turn_nov_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "nov"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.nov",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_oct_first_rains",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_rains",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.oct",
+   "sfx": "sfx/world/first_drops.wav"
+  },
+  {
+   "id": "turn_winter_ships_hauled_ashore",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "ships_hauled_ashore",
+   "show": "harbour",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/rope.wav",
+   "ambience": {
+    "file": "amb/world/ship.ogg",
+    "gain": 0.8
+   }
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "athens.merchant",
    "lane": "base:saronic",
-   "count": 2
+   "count": 2,
+   "by_month": "sailing"
   },
   {
    "actor": "athens.merchant",
    "lane": "base:aegean_delos",
-   "count": 2
+   "count": 2,
+   "by_month": "sailing"
   },
   {
    "actor": "athens.merchant",
    "lane": "base:hellespont",
-   "count": 2
+   "count": 2,
+   "by_month": "sailing"
   }
  ],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "The sea opens: the first ships put out.",
+  "season_turn.summer": "The north wind whitens the sea in the afternoons.",
+  "season_turn.autumn": "Autumn storms over the sea.",
+  "season_turn.nov": "Cranes call high overhead, flying in a long V.",
+  "season_turn.oct": "The first rain. The whole land smells of dust and earth.",
+  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
+ },
  "journal": [],
- "era": "The Athens of Pericles · 432 BC"
+ "era": {
+  "edge": "The Athens of Pericles · 432 BC",
+  "caption": "The Saronic Gulf · {year}",
+  "year": {
+   "spring": "432 BC",
+   "summer": "432 BC",
+   "autumn": "432/431 BC",
+   "winter": "432/431 BC"
+  },
+  "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
+ }
 }

@@ -21,8 +21,8 @@
     {"rank": "must", "requires": ["version:2", "visitor:hen"], "keys": [
       "critter/hen/peck/f{0-2}", "critter/hen/flap/f{0-2}"]},
     {"rank": "must", "requires": ["version:2", "visitor:duck"], "keys": [
-      "critter/duck/dabble/f{0-2}", "critter/duck/sleep/f{0-1}", "critter/duck/waddle_front/f{0-3}",
-      "critter/duck/waddle_back/f{0-3}", "critter/duck/flap/f{0-2}"]},
+      "critter/duck/dabble/f{0-2}", "critter/duck/sleep/f{0-1}", "critter/duck/waddle_front/f{0-7}",
+      "critter/duck/waddle_back/f{0-7}", "critter/duck/flap/f{0-2}"]},
     {"rank": "must", "requires": ["version:2", "visitor:butterfly"], "keys": ["critter/butterfly/rest/f{0-2}"]},
     {"rank": "must", "requires": ["version:2", "visitor:owl"], "keys": ["critter/owl/hoot/f{0-2}"]},
     {"rank": "must", "requires": ["version:2", "visitor:heron"], "keys": ["critter/heron/fish/f{0-3}"]},
@@ -32,7 +32,7 @@
     {"rank": "must", "requires": ["version:2", "visitor:deer"], "keys": ["critter/deer/graze/f{0-2}"]},
 
     {"rank": "must", "requires": ["version:2", "resident:laeticia"], "keys": [
-      "critter/laeticia/{move,carry}_{front,back}/f{0-5}",
+      "critter/laeticia/{move,carry}_{front,back}/f{0-11}",
       "critter/laeticia/{idle,sit,read,lie}_{front,back}/f{0-1}",
       "critter/laeticia/{water,scatter}_{front,back}/f{0-3}",
       "critter/laeticia/{sketch,warm,sleep}/f{0-1}",
@@ -52,7 +52,7 @@
     {"rank": "nice", "requires": ["version:2", "seasons", "item:sunflowers"], "keys": [
       "item/{flowers_red,flowers_white,flowers_violet,sunflowers}/base/r{0-3}/f0@winter"]},
     {"rank": "nice", "requires": ["version:2", "resident:laeticia"], "keys": [
-      "critter/laeticia/umbrella_{front,back}/f{0-5}"]},
+      "critter/laeticia/umbrella_{front,back}/f{0-11}"]},
     {"rank": "nice", "requires": ["version:2"], "keys": ["fx/footprint/f0", "fx/egg/f0"]}
   ]
 }

@@ -9,6 +9,7 @@ import math
 import numpy as np
 
 from models.critters import S, _blob, _model, _pitched, _put_points
+from rig import BEAST_DUTY, foot_cycle
 from voxel import ellipsoid, segment
 
 
@@ -16,18 +17,39 @@ def _coords(m):
     return tuple(a / S for a in m.coords())
 
 
+# Four-beat walk order of the legs as `_legs` lists them (fore left, fore right, hind left,
+# hind right): left hind, left fore, right hind, right fore.
+WALK_ORDER = (0.25, 0.75, 0.0, 0.5)
+
+
 def _legs(m, X, Y, Z, hips, length, t, swing, r, material, stride=1.0, tone=-0.3, socks=None):
-    """Four legs, diagonal pairs in phase: hips are (x, y, z) per leg; `t` the walk phase."""
+    """Four legs in a four-beat walk, each foot planted while it bears weight: hips are
+    (x, y, z) per leg; `t` the walk phase in radians; a foot sweeps `swing * stride` units
+    either side of its hip."""
     for n, (x, y, z) in enumerate(hips):
-        ph = 0.0 if n in (0, 3) else math.pi
-        sw = math.sin(t + ph) * swing
-        foot = (x + sw * stride, y, max(0.0, -math.cos(t + ph)) * swing * 0.35)
+        a, up = foot_cycle(t / (2 * math.pi) - WALK_ORDER[n], BEAST_DUTY) if swing else (0.0, 0.0)
+        foot = (x + a * swing * stride, y, up * swing * 0.5)
         knee = ((x + foot[0]) / 2 + 0.25 * (1 if x < 0 else -1), y, z - length * 0.5)
         m.put(segment(X, Y, Z, (x, y, z), knee, r), material, tone=tone)
         m.put(segment(X, Y, Z, knee, foot, r * 0.85), material, tone=tone)
         if socks:
             m.put(segment(X, Y, Z, (knee[0] * 0.6 + foot[0] * 0.4, y, knee[2] * 0.6), foot, r * 0.9),
                   socks, tone=-0.2)
+
+
+def _hop(u: float, height: float) -> tuple[float, bool]:
+    """One hop a cycle: a crouch on the ground, then a parabola through the air (the legs
+    stretched while rising)."""
+    if u < 0.25:
+        return 0.0, False
+    v = (u - 0.25) / 0.75
+    return height * 4 * v * (1 - v), v < 0.5
+
+
+HERON_REACH = 1.6
+HEDGEHOG_REACH = 0.6
+FOX_REACH = 1.2
+DEER_REACH = 1.2
 
 
 # ---- owl ----
@@ -45,7 +67,7 @@ def owl(anim, frame, frames, k):
     _blob(m, X, Y, Z, body, (2.4, 2.5, 3.5 + puff * 0.3), "wood_light", tone=streak)
     m.put(ellipsoid(X, Y, Z, 1.3, 0, 3.3, 1.4, 1.9, 2.4 + puff), "straw", tone=-0.3 + streak * 0.6)
     if flying:
-        up = (1.0, 0.3, -0.5, 0.3)[frame % 4]
+        up = 0.25 + 0.75 * math.cos(2 * math.pi * frame / frames)   # one wingbeat a cycle
         for side in (1, -1):
             tip = (-0.8, side * 7.0, 4.8 + up * 3.0)
             wing = segment(X, Y, Z, (0, side * 1.8, 4.6), tip, 1.4) | \
@@ -93,15 +115,15 @@ def heron(anim, frame, frames, k):
     X, Y, Z = _coords(m)
     t = 2 * math.pi * frame / frames
     walking = anim == "move"
-    for side, ph in ((0.7, 0.0), (-0.7, math.pi)):
-        sw = math.sin(t + ph) * 1.6 if walking else 0.0
-        lift = max(0.0, math.sin(t + ph)) * 1.2 if walking else 0.0
+    for side, off in ((0.7, 0.0), (-0.7, 0.5)):
+        a, up = foot_cycle(frame / frames + off) if walking else (0.0, 0.0)
+        sw, lift = a * HERON_REACH, up * 1.2
         knee = (0.2 + sw * 0.6, side, 4.2 + lift)
         foot = (0.6 + sw, side, lift * 0.6)
         m.put(segment(X, Y, Z, (0.0, side * 0.8, 8.4), knee, 0.26), "yellow", tone=-1.3)
         m.put(segment(X, Y, Z, knee, foot, 0.24), "yellow", tone=-1.3)
         _put_points(m, [(foot[0] + 0.8, side, 0.1), (foot[0] - 0.5, side, 0.1)], "yellow", tone=-1.4)
-    bob = 0.3 * abs(math.sin(t)) if walking else 0.0
+    bob = 0.15 * (1 - math.cos(2 * t)) if walking else 0.0
     body = (-0.6, 0, 10.2 + bob)
     _blob(m, X, Y, Z, body, (3.2, 1.7, 1.8), "stone", tone=0.8)
     for side in (1, -1):   # folded wings: blue-grey with darker flight feathers behind
@@ -147,10 +169,11 @@ def hedgehog(anim, frame, frames, k):
         _put_points(m, [(2.4, 0.4, 1.0)], "ink")     # the nose peeping out
         return m
     scurry = anim == "move"
-    bob = 0.2 * abs(math.sin(t)) if scurry else 0.0
-    for x0, side, ph in ((1.2, 1, 0), (1.2, -1, math.pi), (-1.2, 1, math.pi), (-1.2, -1, 0)):
-        sw = math.sin(t + ph) * 0.5 if scurry else 0.0
-        m.put(segment(X, Y, Z, (x0, side * 1.0, 1.0), (x0 + sw, side * 1.1, 0.2), 0.35), "wood", tone=-0.8)
+    bob = 0.1 * (1 - math.cos(2 * t)) if scurry else 0.0
+    for n, (x0, side) in enumerate(((1.2, 1), (1.2, -1), (-1.2, 1), (-1.2, -1))):
+        a, up = foot_cycle(frame / frames - WALK_ORDER[n], BEAST_DUTY) if scurry else (0.0, 0.0)
+        m.put(segment(X, Y, Z, (x0, side * 1.0, 1.0), (x0 + a * HEDGEHOG_REACH, side * 1.1, 0.2 + up * 0.4), 0.35),
+              "wood", tone=-0.8)
     shell = ellipsoid(X, Y, Z, -0.4, 0, 1.8 + bob, 2.9, 2.3, 1.9) & (Z > 0.7)
     m.put(shell, "wood", tone=-0.3 + tips * 1.5 - (X > 1.6) * 0.2,
           normal=((X + 0.4) / 2.9 ** 2, Y / 2.3 ** 2, (Z - 1.8) / 1.9 ** 2))
@@ -186,8 +209,8 @@ def fox(anim, frame, frames, k):
         return m
     walking = anim == "move"
     hips = [(2.4, 1.0, 4.0), (2.4, -1.0, 4.0), (-2.4, 1.0, 4.0), (-2.4, -1.0, 4.0)]
-    _legs(m, X, Y, Z, hips, 4.0, t, 1.2 if walking else 0.0, 0.5, "ginger", socks="ink")
-    bob = 0.3 * abs(math.sin(t)) if walking else 0.0
+    _legs(m, X, Y, Z, hips, 4.0, t, FOX_REACH if walking else 0.0, 0.5, "ginger", socks="ink")
+    bob = 0.15 * (1 - math.cos(2 * t)) if walking else 0.0
     _blob(m, X, Y, Z, (0, 0, 4.6 + bob), (3.8, 1.6, 1.7), "ginger", tone=0.0)
     m.put(ellipsoid(X, Y, Z, 2.4, 0, 4.4 + bob, 1.4, 1.3, 1.5) & (Z < 4.6 + bob), "cream", tone=0.6)
     sway = 0.5 * math.sin(t) if walking else 0.4 * (frame % 2)
@@ -214,8 +237,7 @@ def frog(anim, frame, frames, k):
     """A small green frog with a gold eye; it moves by hopping and croaks with a pale throat."""
     m = _model(k, -3, 4, -3, 3, 0, 6)
     X, Y, Z = _coords(m)
-    hop = (0.0, 1.6, 2.2, 0.6)[frame % 4] if anim == "move" else 0.0
-    stretch = anim == "move" and frame % 4 in (1, 2)
+    hop, stretch = _hop(frame / frames, 2.2) if anim == "move" else (0.0, False)
     m.hover = hop > 0
     sac = 0.5 * (frame % 2) if anim == "croak" else 0.0
     pitch = -0.4 if stretch else 0.0
@@ -263,7 +285,7 @@ def robin(anim, frame, frames, k):
     """A round little robin with an orange-red breast; it moves in hops."""
     m = _model(k, -3, 4, -2, 3, 0, 6)
     X, Y, Z = _coords(m)
-    hop = (0.0, 1.0, 1.4, 0.4)[frame % 4] if anim == "move" else 0.0
+    hop = _hop(frame / frames, 1.4)[0] if anim == "move" else 0.0
     m.hover = hop > 0
     tilt = 0.25 * (frame % 2) if anim == "idle" else 0.0
     for side in (0.5, -0.5):
@@ -288,8 +310,8 @@ def deer(anim, frame, frames, k):
     t = 2 * math.pi * frame / frames
     walking = anim == "move"
     hips = [(2.6, 0.8, 7.6), (2.6, -0.8, 7.6), (-2.6, 0.8, 7.6), (-2.6, -0.8, 7.6)]
-    _legs(m, X, Y, Z, hips, 7.6, t, 1.0 if walking else 0.0, 0.42, "wood_light", stride=1.2)
-    bob = 0.25 * abs(math.sin(t)) if walking else 0.0
+    _legs(m, X, Y, Z, hips, 7.6, t, DEER_REACH / 1.2 if walking else 0.0, 0.42, "wood_light", stride=1.2)
+    bob = 0.125 * (1 - math.cos(2 * t)) if walking else 0.0
     _blob(m, X, Y, Z, (0, 0, 8.6 + bob), (4.0, 1.7, 1.9), "wood_light", tone=0.2)
     m.put(ellipsoid(X, Y, Z, -3.4, 0, 8.8 + bob, 1.0, 1.5, 1.4) & (X < -2.9), "cream", tone=0.8)  # rump
     m.put(ellipsoid(X, Y, Z, 0.2, 0, 7.4 + bob, 3.0, 1.4, 0.8) & (Z < 7.4 + bob), "cream", tone=-0.2)

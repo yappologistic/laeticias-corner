@@ -142,8 +142,11 @@ def tiber_island(m):
     RM.obelisk(m, cx, cy + 26.0, zt, S.v(13.0), 3.4, base_h=4.0)
     for i, (x, y) in enumerate(((cx - 18.0, 104.0), (cx + 18.0, 14.0), (cx - 10.0, W - 44.0))):
         cypress(m, x, y, zt, h=24.0, seed=i)
-    RM.wall(m, (cx - 4.0, cx + 14.0, 14.0, 28.0), zt, zt + 12.0, "stucco", 616, "ochre")
-    RM.hip(m, (cx - 5.0, cx + 15.0, 13.0, 29.0), zt + 12.0, 5.0, seed=617)
+    # The house stands beside the way on tile dx 1, behind the Fabricius' landing as seen,
+    # so the landing at (2, 0)..(2, 2) shows as open paving.
+    RM.wall(m, ISLAND_HOUSE, zt, zt + 12.0, "stucco", 616, "ochre")
+    x0, x1, y0, y1 = ISLAND_HOUSE
+    RM.hip(m, (x0 - 1.0, x1 + 1.0, y0 - 1.0, y1 + 1.0), zt + 12.0, 5.0, seed=617)
     lamp(m, cx + 21.0, cy - 10.0, zt + 6.0, 0.5)
 
 
@@ -192,7 +195,8 @@ def emporium(m):
     for tx, ty in EMP_SACKS:
         for j in range(6):
             ellipsoid(m, (tx * T + 4.0 + (j % 3) * 4.0, ty * T + 5.0 + (j // 3) * 5.0, 4.0), (2.2, 2.0, 2.0), "wool", 0.1)
-    slab(m, 9 * T + 3.0, 9 * T + 12.0, qy0 + 4.0, qy0 + 12.0, 2.0, 6.0, "marble", tone=0.2)
+    bx, by = EMP_BLOCK      # a marble block landed by the crane, clear of the lane along the wharf
+    slab(m, bx * T + 3.0, bx * T + 12.0, by * T + 4.0, by * T + 12.0, 2.0, 6.0, "marble", tone=0.2)
     treadwheel_crane(m, tc(EMP_CRANE[0]), tc(EMP_CRANE[1]), 2.0, 46.0, along="y", load="marble")
     # The Porticus Aemilia: 50 bays of barrel vaults stepping up toward the east.
     ws = 0.25 / 0.65                # the warehouse drawn at s = 0.25 inside a 0.65 landmark
@@ -212,6 +216,7 @@ def emporium(m):
 # The way across the island (floor on the island): from the Pons Fabricius' landing at the east
 # end (2, 0) round the temple's east side, along the portico where the sick sleep (dx 5 and 6)
 # and up to the Pons Cestius' landing at the west end (4, 10).
+ISLAND_HOUSE = (21.0, 30.5, 28.0, 44.0)   # x, y in design units, its roof clear of tile dx 2
 ISLAND_WALK = sorted({(2, 0), (2, 1), (2, 2), (3, 2), (4, 2), *((5, y) for y in range(2, 10)), (4, 9), (4, 10),
                       (6, 4), (6, 5), (6, 6)})
 ON = {"rome.tiber_island": "water", "rome.pons_fabricius": "water", "rome.pons_cestius": "water",
@@ -224,8 +229,10 @@ EMP_BOLLARDS = (1, 4, 7, 10)
 EMP_AMPHORAE = ((1, 20), (3, 22), (9, 20))
 EMP_SACKS = ((5, 21), (10, 22))
 EMP_CRANE = (8, 22)
+EMP_BLOCK = (9, 23)
+# Row 19, the wharf's inner edge, stays open end to end (the Via Ostiensis runs along it).
 EMP_SOLID = {(x, 24) for x in EMP_BOLLARDS} | set(EMP_AMPHORAE) | set(EMP_SACKS) | {EMP_CRANE, (7, 22), (8, 21), (8, 23),
-                                                                                    (7, 21), (9, 19)}
+                                                                                    (7, 21), EMP_BLOCK}
 EMP_WALK = [(x, y) for x in range(11) for y in range(19, 25) if (x, y) not in EMP_SOLID]
 
 

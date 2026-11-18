@@ -325,6 +325,24 @@ class Builder:
         return out
 
 
+def write_needs(b, world) -> None:
+    """The season needs file from the catalogs and region files as they now stand."""
+    import json as _json
+    from . import seasoncheck, sound
+    regions = {f.stem: _json.loads(f.read_text())
+               for f in sorted((b.root / "assets/regions").glob("*.json"))}
+    files, _ = sound.manifests(b.root)
+    text = seasoncheck.needs_text(seasoncheck.needs(b.root, world, regions, files))
+    f = b.root / "assets/world/season-needs.json"
+    if not f.exists() or f.read_text() != text:
+        f.write_text(text)
+        print(f"seasons: {f}")
+
+
+def targets_named(a) -> bool:
+    return bool(a.layers) or a.all or a.check
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="worldgen")
     ap.add_argument("layers", nargs="*")
@@ -336,10 +354,17 @@ def main(argv=None) -> int:
     ap.add_argument("--out")
     ap.add_argument("--reports")
     ap.add_argument("--no-write", action="store_true")
+    ap.add_argument("--year", action="store_true",
+                    help="with --city: a year in the life and the season maps")
+    ap.add_argument("--year-all", action="store_true",
+                    help="a year in the life of every region file (out/worldgen/seasons/)")
     ap.add_argument("--life", action="store_true",
                     help="write the region files of the stretches, seas, seams and waypoints")
     ap.add_argument("--city", nargs="+", metavar="REGION",
                     help="build, check and write these cities' life (regions/<layer>/life.py)")
+    ap.add_argument("--seasons", action="store_true",
+                    help="write the catalogs' seasonal fields, the world's flood ranks and ground "
+                         "classes, and the season needs file")
     a = ap.parse_args(argv)
     t0 = time.time()
     b = Builder(Path(a.root), a.out, a.reports, write=not a.no_write)
@@ -359,14 +384,39 @@ def main(argv=None) -> int:
         targets = names
     else:
         targets = [n for n in b.order if n in b.layers]
+    if a.seasons:
+        from . import seasons as SEAS
+        world = b.composed()
+        if not a.no_write:
+            for rel, _ in SEAS.write_catalogs(b.root, world).items():
+                print(f"seasons: {rel}")
+            b.cat = Catalog(b.root)
+            from . import seasonlife
+            ctx = seasonlife.Context(world, b.graphs, b.cat, b.root)
+            for f in SEAS.write_world(b.root, world, b.cat, ctx.flood):
+                print(f"seasons: {f}")
+            write_needs(b, world)
+        if not a.city and not a.life and not targets_named(a):
+            return 0
+    if a.year_all:
+        from . import seasonreport
+        seasonreport.run_all(b)
+        if not a.city:
+            return 0
     if a.city:
         from . import lifereport
         ok = lifereport.run(b, a.city, a.preview, not a.no_write)
+        if ok and not a.no_write:
+            write_needs(b, b.composed())
+        if a.year:
+            from . import seasonreport
+            seasonreport.run(b, a.city, a.preview)
         return 0 if ok else 1
     if a.life:
         from . import life
         files = life.write(b.composed(), b.graphs, b.root / "assets/regions", b.cat)
         print(f"life: {len(files)} region files -> {b.root / 'assets/regions'}")
+        write_needs(b, b.composed())
         if not targets and not want_world:
             return 0
     if not targets and not want_world:
@@ -420,6 +470,15 @@ def main(argv=None) -> int:
         if lifereport.check_committed(b, world):
             failed = True
         if lifereport.check_regions(b):
+            failed = True
+        from . import seasoncheck
+        rep = seasoncheck.run(b, world)
+        (b.reports / "seasons_check.txt").write_text("\n".join(rep.lines()) + "\n")
+        print(f"seasons: {len(rep.errors)} error(s), {len(rep.items) - len(rep.errors)} "
+              f"warning(s) -> {b.reports / 'seasons_check.txt'}")
+        for code, level, where, msg in rep.errors[:15]:
+            print(f"   {code} {level}: {where}: {msg}")
+        if rep.errors:
             failed = True
     if want_world and a.preview:
         for p in b.preview_world(world):

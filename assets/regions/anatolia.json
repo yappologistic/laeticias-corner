@@ -3,6 +3,7 @@
  "id": "anatolia",
  "name": "Anatolia",
  "caption": "Anatolia · c. 470 BC",
+ "climate": "anatolian",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -69,6 +69,152 @@
      "when": "lit"
     }
    ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.4
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 2,
+    "wind": 0.55,
+    "shimmer": 1
+   },
+   "autumn": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.4
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.6,
+    "fog": 0.3,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.98,
+     1.03,
+     0.98
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "mar",
+      "apr"
+     ],
+     "muddy": [
+      "mar",
+      "apr"
+     ],
+     "snow": [
+      "mar",
+      "apr"
+     ]
+    },
+    "snow_line": [
+     5,
+     8,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.05,
+     1.0,
+     0.9
+    ],
+    "look": {
+     "shimmer": 0.5
+    },
+    "haze": 0.12,
+    "ground": {
+     "low_water": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.04,
+     0.96,
+     0.88
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "oct",
+      "nov"
+     ],
+     "low_water": [
+      "sep"
+     ],
+     "muddy": [
+      "oct",
+      "nov"
+     ],
+     "snow": [
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     7
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.88,
+     0.94,
+     1.1
+    ],
+    "look": {
+     "exposure": 0.05,
+     "blue_shadows": 0.5
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "frozen": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     5,
+     0,
+     0
+    ]
+   }
   },
   "sound": {
    "climate": "steppe",
@@ -138,6 +284,9 @@
    "voices": {
     "parsa.dromedary": [
      "sfx/world/camel_grumble.wav"
+    ],
+    "world.crane": [
+     "sfx/world/cranes.wav"
     ],
     "world.dog": [
      "sfx/world/dog_1.wav",
@@ -562,12 +711,20 @@
     {
      "actor": "world.traveller",
      "density": "road_day",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.merchant",
      "density": "road_day",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.donkey",
@@ -577,7 +734,11 @@
     {
      "actor": "parsa.groom",
      "density": "watch",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The Royal Road",
@@ -616,7 +777,11 @@
     {
      "actor": "parsa.farmer",
      "density": "fields",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.ox",
@@ -627,15 +792,70 @@
      "actor": "world.dog",
      "density": "daytime",
      "max_per_chunk": 1
+    },
+    {
+     "role": "ploughman",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "role": "reaper",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "jul"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "pruner",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "Farms",
    "sound": {
     "surfaces": {
-     "roof": 0.12
+     "roof": 0.1,
+     "leaves": 0.02
     },
     "wind": "wind.open",
-    "exposure": 0.9,
+    "exposure": 0.92,
     "steps": {
      "surface": "earth",
      "files": [
@@ -676,16 +896,49 @@
      "actor": "world.stork",
      "density": "daytime",
      "max_per_chunk": 1,
-     "seasons": [
-      "spring",
-      "summer"
-     ]
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "world.crane",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "world.swift",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     }
     }
    ],
    "name": "Countryside",
    "sound": {
     "surfaces": {
-     "leaves": 0.05,
+     "leaves": 0.04,
      "water": 0.08
     },
     "wind": "wind.open",
@@ -848,6 +1101,32 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
@@ -959,8 +1238,9 @@
     }
    ],
    "route": [
-    "base:royal_road_station_900_213",
-    "base:royal_road_station_902_195",
+    "base:royal_road_station_896_212",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
     "base:royal_road_station_896_187",
     "base:royal_road_station_905_178",
     "base:royal_road_station_912_169",
@@ -978,7 +1258,9 @@
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
     "base:royal_road_station_1041_250",
+    "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
+    "base:royal_road_station_1065_272",
     "base:royal_road_station_1074_326"
    ],
    "steps": [
@@ -1076,13 +1358,124 @@
     }
    ],
    "sfx": "sfx/world/lamp.wav"
+  },
+  {
+   "id": "turn_spring_storks_arrive",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storks_arrive",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/stork_clatter.wav",
+   "cast": [
+    {
+     "actor": "world.stork",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_heat_haze",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "heat_haze",
+   "show": "look",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.shimmer"
+     }
+    }
+   ],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_autumn_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_winter_first_snow",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_snow",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
   }
  ],
  "lanes_tokens": [
   {
    "actor": "world.reed_boat",
    "lane": "base:euphrates_boats",
-   "count": 2
+   "count": 2,
+   "by_month": "barge"
   },
   {
    "actor": "parsa.courier",
@@ -1090,7 +1483,8 @@
     "start": "sardis:sardis_station",
     "end": "parsa:royal_road_station"
    },
-   "count": 3
+   "count": 3,
+   "by_month": "courier"
   },
   {
    "actor": "parsa.caravan_driver",
@@ -1099,7 +1493,8 @@
     "end": "babylon:etemenanki_court"
    },
    "count": 2,
-   "group": "caravan"
+   "group": "caravan",
+   "by_month": "caravan"
   },
   {
    "actor": "world.muleteer",
@@ -1108,20 +1503,21 @@
     "end": "euphrates_crossing:euph_station"
    },
    "count": 1,
-   "group": "mule_train"
+   "group": "mule_train",
+   "by_month": "caravan"
   },
   {
    "actor": "parsa.shepherd",
    "group": "drove",
    "count": 1,
    "route": {
-    "start": "base:royal_road_station_1058_265",
-    "end": "base:royal_road_station_932_141"
+    "start": "base:royal_road_farm_930_141",
+    "end": "base:royal_road_station_1065_272"
    },
    "when": {
-    "seasons": [
-     "spring",
-     "autumn"
+    "months": [
+     "may",
+     "oct"
     ]
    },
    "note": "flocks moving between summer and winter pastures"
@@ -1272,26 +1668,6 @@
    "kind": "pasture",
    "rect": [
     119,
-    345,
-    135,
-    350
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    119,
-    334,
-    135,
-    344
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    119,
     294,
     125,
     306
@@ -1314,7 +1690,7 @@
     150,
     328,
     152,
-    334
+    331
    ],
    "group": "flock"
   },
@@ -1342,8 +1718,8 @@
    "kind": "pasture",
    "rect": [
     153,
-    311,
-    169,
+    318,
+    166,
     327
    ],
    "group": "flock"
@@ -1351,119 +1727,59 @@
   {
    "kind": "pasture",
    "rect": [
-    156,
+    157,
     379,
     169,
-    384
+    390
    ],
    "group": "flock"
   },
   {
    "kind": "pasture",
    "rect": [
-    156,
-    368,
-    169,
-    378
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    167,
-    296,
-    169,
-    310
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    170,
-    379,
-    186,
-    395
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    170,
-    368,
-    172,
-    378
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    170,
-    311,
-    183,
-    311
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    170,
-    295,
-    183,
-    310
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    180,
-    396,
-    186,
-    402
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    187,
-    396,
-    196,
-    402
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    187,
-    386,
-    196,
-    395
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    188,
+    157,
     362,
-    203,
-    371
+    169,
+    378
    ],
    "group": "flock"
   },
   {
    "kind": "pasture",
    "rect": [
-    188,
-    355,
-    203,
+    157,
+    350,
+    169,
+    361
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    170,
+    379,
+    173,
+    390
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    170,
+    362,
+    173,
+    378
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    170,
+    350,
+    173,
     361
    ],
    "group": "flock"
@@ -1492,26 +1808,6 @@
    "kind": "pasture",
    "rect": [
     204,
-    362,
-    220,
-    371
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    204,
-    347,
-    220,
-    361
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    204,
     277,
     219,
     284
@@ -1525,6 +1821,26 @@
     268,
     219,
     276
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    211,
+    362,
+    220,
+    363
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    211,
+    347,
+    220,
+    361
    ],
    "group": "flock"
   },
@@ -1643,7 +1959,7 @@
    "rect": [
     238,
     226,
-    254,
+    248,
     237
    ],
    "group": "flock"
@@ -1652,8 +1968,8 @@
    "kind": "pasture",
    "rect": [
     238,
-    209,
-    254,
+    222,
+    243,
     225
    ],
    "group": "flock"
@@ -1681,16 +1997,6 @@
   {
    "kind": "pasture",
    "rect": [
-    245,
-    207,
-    254,
-    208
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
     255,
     413,
     261,
@@ -1705,42 +2011,636 @@
     405,
     261,
     412
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    255,
-    226,
-    255,
-    232
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    255,
-    209,
-    261,
-    225
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    255,
-    207,
-    261,
-    208
    ],
    "group": "flock"
   }
  ],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "The storks are back on their nests.",
+  "season_turn.summer": "The air shimmers over the land at noon.",
+  "season_turn.autumn": "Cranes call high overhead, flying in a long V.",
+  "season_turn.winter": "Snow on the heights."
+ },
  "journal": [],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "Anatolia · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "water": [
+  {
+   "body": "euphrates",
+   "kind": "river",
+   "tiles": 1471,
+   "rect": [
+    0,
+    228,
+    284,
+    289
+   ],
+   "level": [
+    "high",
+    "high",
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  },
+  {
+   "body": "halys",
+   "kind": "river",
+   "tiles": 829,
+   "rect": [
+    0,
+    277,
+    201,
+    369
+   ],
+   "level": [
+    "high",
+    "high",
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  },
+  {
+   "body": "hermos",
+   "kind": "river",
+   "tiles": 80,
+   "rect": [
+    198,
+    378,
+    210,
+    399
+   ],
+   "level": [
+    "high",
+    "high",
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  },
+  {
+   "body": "kaystros",
+   "kind": "stream",
+   "tiles": 34,
+   "rect": [
+    235,
+    399,
+    242,
+    419
+   ],
+   "level": [
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  },
+  {
+   "body": "orontes",
+   "kind": "stream",
+   "tiles": 6,
+   "rect": [
+    279,
+    275,
+    284,
+    275
+   ],
+   "level": [
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  },
+  {
+   "body": "sangarios",
+   "kind": "river",
+   "tiles": 711,
+   "rect": [
+    0,
+    330,
+    193,
+    391
+   ],
+   "level": [
+    "high",
+    "high",
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  },
+  {
+   "body": "tigris",
+   "kind": "river",
+   "tiles": 1019,
+   "rect": [
+    0,
+    181,
+    284,
+    223
+   ],
+   "level": [
+    "high",
+    "high",
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  }
+ ],
+ "roles": [
+  {
+   "id": "ploughman",
+   "actor": "parsa.farmer",
+   "name": "Ploughing and sowing",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "reaper",
+   "actor": "parsa.farmer",
+   "name": "Reaping",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "pruner",
+   "actor": "parsa.farmer",
+   "name": "Pruning the vines and trees",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  }
+ ]
 }

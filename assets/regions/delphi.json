@@ -3,7 +3,8 @@
  "id": "delphi",
  "name": "Delphi",
  "native": "Δελφοί",
- "caption": "Delphi · summer, 432 BC",
+ "caption": "Delphi · 432 BC",
+ "climate": "highland",
  "theme": {
   "grading": {
    "dawn": [
@@ -35,7 +36,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "athens",
   "ambience": {
    "beds": [
     {
@@ -65,6 +65,141 @@
      "when": "worked"
     }
    ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.4,
+    "fog": 0.5
+   },
+   "summer": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.35,
+    "storm": 2
+   },
+   "autumn": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.4,
+    "fog": 0.6
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.5,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.98,
+     1.02,
+     0.98
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "mar"
+     ],
+     "muddy": [
+      "mar",
+      "apr"
+     ],
+     "snow": [
+      "mar",
+      "apr"
+     ]
+    },
+    "snow_line": [
+     8,
+     10,
+     12
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.02,
+     1.0,
+     0.95
+    ],
+    "look": {
+     "haze": 0.25,
+     "warmth": 0.04
+    },
+    "haze": 0.15,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.04,
+     0.96,
+     0.88
+    ],
+    "look": {
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "nov"
+     ],
+     "muddy": [
+      "oct",
+      "nov"
+     ],
+     "snow": [
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     11
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.9,
+     0.95,
+     1.08
+    ],
+    "look": {
+     "warmth": -0.06,
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     8,
+     7,
+     7
+    ]
+   }
   },
   "sound": {
    "climate": "mountain",
@@ -493,17 +628,88 @@
     {
      "actor": "athens.priest",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "athens.citizen",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 0.9,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "athens.ionian",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
     }
    ],
    "name": "The Phaedriades",
@@ -536,17 +742,94 @@
     {
      "actor": "athens.citizen",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "athens.ionian",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
     },
     {
      "actor": "athens.woman",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     }
    ],
    "name": "The sanctuary of Apollo",
@@ -601,17 +884,86 @@
     {
      "actor": "athens.ionian",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
     },
     {
      "actor": "athens.woman",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     },
     {
      "actor": "athens.priest",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     }
    ],
    "name": "The olive slope",
@@ -777,12 +1129,254 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "consultation_day",
+   "rarity": "festival",
+   "size": "medium",
+   "trigger": {
+    "on": "calendar",
+    "hours": [
+     "08:00",
+     "09:00"
+    ],
+    "chance": 1.0,
+    "festival": "pythia_returns"
+   },
+   "duration": [
+    240,
+    300
+   ],
+   "cast": [
+    {
+     "actor": "athens.citizen",
+     "count": 8
+    },
+    {
+     "actor": "athens.ionian",
+     "count": 4
+    },
+    {
+     "actor": "athens.priest",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "delphi:delphi_s"
+     }
+    },
+    {
+     "go": {
+      "node": "delphi:temple"
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      90,
+      120
+     ]
+    }
+   ],
+   "sfx": "sfx/world/hush.wav",
+   "string": "pythia_returns",
+   "route": [
+    "delphi:delphi_s",
+    "delphi:treasury",
+    "delphi:temple"
+   ],
+   "card": "god_away"
+  },
+  {
+   "id": "turn_spring_snowmelt",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "snowmelt",
+   "show": "water",
+   "steps": [],
+   "string": "season_turn.spring",
+   "ambience": {
+    "file": "amb/world/river_2.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_apr_swallows_return",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "apr"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "swallows_return",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.apr",
+   "sfx": "sfx/world/swifts.wav",
+   "cast": [
+    {
+     "actor": "world.swift",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_flocks_up",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flocks_up",
+   "show": "herd",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "turn_autumn_flocks_down",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flocks_down",
+   "show": "herd",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "turn_oct_leaves_turn",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "leaves_turn",
+   "show": "particles",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.leaf"
+     }
+    }
+   ],
+   "string": "season_turn.oct",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_winter_first_snow",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_snow",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
+  }
+ ],
  "lanes_tokens": [],
  "zones": [],
  "cards": {
@@ -795,13 +1389,66 @@
    "title": "Temple of Apollo",
    "epithet": "The Alkmaeonid temple",
    "text": "Apollo's temple, rebuilt after a fire in the late sixth century; the Alkmaeonids, an Athenian family in exile, gave it a front of marble. Here the Pythia spoke the god's answers to those who came to ask."
+  },
+  "god_away": {
+   "title": "The god's winter",
+   "epithet": "Delphi, December to February",
+   "text": "Plutarch, a priest at Delphi, says that for the three winter months the paean fell silent and Dionysus was honoured instead, while Apollo was thought to be away in the north. No consultants queued; in spring the god returned and the Pythia spoke again, on the seventh day of the month."
   }
  },
  "strings": {
-  "first_visit": "Delphi under the shining cliffs. The Sacred Way climbs to Apollo's temple."
+  "first_visit": "Delphi under the shining cliffs. The Sacred Way climbs to Apollo's temple.",
+  "pythia_returns": "Apollo is back from the north: the first consultation of the year.",
+  "season_turn.winter": "The paean is silent: these three months belong to Dionysus.",
+  "season_turn.spring": "Meltwater roars down the gorges.",
+  "season_turn.apr": "The swallows are back under the eaves.",
+  "season_turn.summer": "The flocks are on the high pastures.",
+  "season_turn.autumn": "The flocks come down to the lowlands.",
+  "season_turn.oct": "The woods are turning copper and gold."
  },
  "journal": [
   "landmark:*"
  ],
- "era": "The Athens of Pericles · 432 BC"
+ "era": {
+  "edge": "The Athens of Pericles · 432 BC",
+  "caption": "Delphi · {year}",
+  "year": {
+   "spring": "432 BC",
+   "summer": "432 BC",
+   "autumn": "432/431 BC",
+   "winter": "432/431 BC"
+  },
+  "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
+ },
+ "moment": {
+  "season": "spring",
+  "day": 1,
+  "festival": "pythia_returns",
+  "caption": "Delphi · the god returns, spring 432 BC",
+  "calendar_day": 0,
+  "month": "mar"
+ },
+ "festivals": [
+  {
+   "id": "pythia_returns",
+   "season": "spring",
+   "day": 1,
+   "hours": [
+    "07:00",
+    "18:00"
+   ]
+  },
+  {
+   "id": "god_away",
+   "months": [
+    "dec",
+    "jan",
+    "feb"
+   ],
+   "hours": [
+    "00:00",
+    "24:00"
+   ]
+  }
+ ]
 }

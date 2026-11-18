@@ -14,8 +14,8 @@ from dataclasses import replace
 import numpy as np
 
 from arch import ellipsoid, fill, rod, slab
-from rig import Body, Dress, Frame, draw, pose
-from sets.parsa.animals import SIZE, Beast, _merge, _render, _wheel, quadruped
+from rig import CART_FRAMES, CRITTER_FRAMES, WALK_FRAMES, WALK_STRIDE, Body, Dress, Frame, draw, pose
+from sets.parsa.animals import SIZE, Beast, _merge, _render, _wheel, bird_feet, quadruped, stride
 from greek import paste
 from voxel import Model
 
@@ -35,7 +35,7 @@ BEASTS = {
 }
 
 
-def _bird(m, coat, belly, beak, flying, frame, scale=1.0, tail=1.0):
+def _bird(m, coat, belly, beak, flying, t, scale=1.0, tail=1.0):
     bd = Body(m, rot=np.eye(3) / scale)
     bd.blob((0, 0, 2.0), (1.6, 0.9, 0.9), coat, 0.1)
     bd.blob((0.2, 0, 1.6), (1.2, 0.75, 0.6), belly, 0.2)
@@ -43,7 +43,7 @@ def _bird(m, coat, belly, beak, flying, frame, scale=1.0, tail=1.0):
     bd.limb((1.8, 0, 2.6), (2.4, 0, 2.4), 0.15, beak)
     bd.limb((-1.2, 0, 2.2), (-2.6 * tail, 0, 2.3), 0.35, coat, -0.1)
     if flying:
-        a = (0.6, 1.2, 0.4, -0.4)[frame % 4]
+        a = 0.4 + 0.8 * math.sin(2 * math.pi * t)     # one wingbeat a cycle
         for s in (1, -1):
             bd.limb((0, s * 0.6, 2.4), (-0.5, s * 3.4, 2.4 + a * 1.4), 0.45, coat, 0.1)
     else:
@@ -54,7 +54,7 @@ def _bird(m, coat, belly, beak, flying, frame, scale=1.0, tail=1.0):
 def pigeon(anim, frame, frames, k):
     """A pigeon of the temple roofs: blue-grey with a green-violet sheen at the neck."""
     m = Model.empty(-6, 7, -6, 6, 0, 9, k=k)
-    _bird(m, "stone", "slate", "cinnabar", anim == "move", frame, 1.5)
+    _bird(m, "stone", "slate", "cinnabar", anim == "move", frame / frames, 1.5)
     bd = Body(m, rot=np.eye(3) / 1.5)
     bd.blob((1.1, 0, 2.5), (0.45, 0.55, 0.4), "malachite", 0.3)
     return m
@@ -62,14 +62,14 @@ def pigeon(anim, frame, frames, k):
 
 def gull(anim, frame, frames, k):
     m = Model.empty(-7, 7, -7, 7, 0, 9, k=k)
-    _bird(m, "whitewash", "whitewash", "yellow", anim == "move", frame, 1.3)
+    _bird(m, "whitewash", "whitewash", "yellow", anim == "move", frame / frames, 1.3)
     return m
 
 
 def swallow(anim, frame, frames, k):
     """A swallow, back in April: dark blue back, pale belly, the long forked tail."""
     m = Model.empty(-6, 6, -6, 6, 0, 8, k=k)
-    _bird(m, "lapis", "cream", "ink", anim == "move", frame, 2.0, tail=1.5)
+    _bird(m, "lapis", "cream", "ink", anim == "move", frame / frames, 2.0, tail=1.5)
     return m
 
 
@@ -83,8 +83,8 @@ def goose(anim, frame, frames, k):
     bd.limb((1.4, 0, 2.8), (1.9, 0, hz), 0.45, "whitewash", 0.2)
     bd.blob((2.1, 0, hz + 0.2), (0.6, 0.45, 0.5), "whitewash", 0.3)
     bd.limb((2.5, 0, hz + 0.1), (3.2, 0, hz - 0.1), 0.2, "orange")
-    for y in (0.4, -0.4):
-        bd.limb((0.2, y, 1.2), (0.2 + (0.4 if anim == "move" and frame % 2 else 0), y, 0.0), 0.15, "orange")
+    for y, (fx, fz) in zip((0.4, -0.4), bird_feet(frame / frames, anim == "move")):
+        bd.limb((0.2, y, 1.2), (0.2 + fx, y, fz), 0.15, "orange")
     return m
 
 
@@ -94,10 +94,11 @@ def hen(anim, frame, frames, k):
 
 
 BIRDS = {"rome.pigeon": pigeon, "rome.gull": gull, "rome.swallow": swallow, "rome.goose": goose, "rome.hen": hen}
+WALKING_BIRDS = {"rome.goose": 1.3, "rome.hen": 1.4}   # walking birds: body scale (strides)
 CRITTERS = {**{k_: None for k_ in BEASTS}, **BIRDS}
 CRITTER_ANIMS = {
     "rome.donkey": ("graze",), "rome.mule": ("graze",), "rome.ox": ("graze",), "rome.horse": ("graze",),
-    "rome.racehorse": (), "rome.dog_molossian": ("sleep",), "rome.dog": ("sleep",), "rome.cat": ("sleep",),
+    "rome.racehorse": ("graze",), "rome.dog_molossian": ("sleep",), "rome.dog": ("sleep",), "rome.cat": ("sleep",),
     "rome.sheep": ("graze",), "rome.goat": ("graze",), "rome.pig": ("graze",), "rome.pigeon": ("peck",),
     "rome.gull": (), "rome.swallow": (), "rome.goose": ("peck",), "rome.hen": ("peck",),
 }
@@ -190,11 +191,17 @@ SHIPS = {"rome.merchantman", "rome.barge"}
 
 # ---------------------------------------------------------------- carts, litters, chariots
 
-def _person(m, x, y, z, dress, anim, frame):
+def _person(m, x, y, z, dress, anim, frame, cycle=None):
     fr = Frame(dress)
-    a = "move" if anim == "move" else "idle"
-    p = pose(a, frame * 6 // 4 if a == "move" else frame % 2, 6 if a == "move" else 2, fr, dress)
+    p = pose("move", frame, CART_FRAMES, fr, dress, cycle) if anim == "move" else pose("idle", frame % 2, 2, fr, dress)
     draw(Body(m, shift=(x, y, z)), dress, p, fr)
+
+
+def cart_stride(kind) -> float:
+    """Ground one cycle of a cart's `move` covers, design units (its team's walk; the litter
+    at its bearers' step)."""
+    return {"rome.cart": stride(BEASTS["rome.ox"]), "rome.carriage": stride(BEASTS["rome.mule"]),
+            "rome.racing_chariot": stride(BEASTS["rome.racehorse"])}.get(kind, 4 * WALK_STRIDE)
 
 
 CARTER = Dress(garment="tunic", colour="felt", belt="leather", beard="short", beard_mat="ochre", hair_style="short",
@@ -207,10 +214,10 @@ FACTIONS = ("whitewash", "cinnabar", "malachite", "lapis")       # Whites, Reds,
 
 def cart_model(kind, variant, anim, frame, k):
     """Carts with their teams and drivers baked in (world-tech.md §1.9)."""
-    turn = frame / 4 * (math.pi / 3) if anim == "move" else 0.0
-    f6 = frame * 6 // 4
+    n = CART_FRAMES
+    turn = frame / n * (math.pi / 3) if anim == "move" else 0.0
     team = "move" if anim == "move" else "idle"
-    tf, tn = (f6 % 6, 6) if team == "move" else (frame % 2, 2)
+    tf, tn = (frame, n) if team == "move" else (frame % 2, 2)
     m = Model.empty(-46, 44, -16, 16, 0, 48, k=k)
     bd = Body(m)
     if kind == "rome.cart":
@@ -235,7 +242,7 @@ def cart_model(kind, variant, anim, frame, k):
                 ellipsoid(m, (x, y, 13.0 + (i // 3) * 3.0), (3.2, 2.6, 2.6), "wool", tone=0.1 * i)
         rod(m, (-12.0, 7.0, 10.0), (-12.0, 7.0, 18.0), 0.25, "wood")
         ellipsoid(m, (-12.0, 7.0, 17.0), (0.8, 0.8, 1.1), "lamp", 0.2)
-        _person(m, 16.0, 12.0, 0.0, CARTER, anim, frame)
+        _person(m, 16.0, 12.0, 0.0, CARTER, anim, frame, stride(BEASTS["rome.ox"]))
     elif kind == "rome.carriage":
         # A travelling raeda: a four-wheeled covered carriage behind two mules.
         for y in (-4.5, 4.5):
@@ -260,13 +267,13 @@ def cart_model(kind, variant, anim, frame, k):
         for y in (-7.0, 7.0):
             rod(m, (-26.0, y, 18.0), (26.0, y, 18.0), 0.6, "wood", 0.2)
         for i, (x, y) in enumerate(((20.0, -7.0), (20.0, 7.0), (-20.0, -7.0), (-20.0, 7.0))):
-            _person(m, x, y, 0.0, BEARER, anim, (frame + i) % 4)
+            _person(m, x, y, 0.0, BEARER, anim, (frame + i * n // 4) % n)
     else:
         # A racing quadriga of the Circus in its faction's colour (variant: Whites, Reds, Greens,
         # Blues), the charioteer with laced bands round his body and the reins tied round him.
         col = FACTIONS[variant % 4]
         for i, y in enumerate((-9.0, -3.0, 3.0, 9.0)):
-            m = _merge(m, quadruped(BEASTS["rome.racehorse"], team, (tf + i) % tn, tn, k), 20.0, y)
+            m = _merge(m, quadruped(BEASTS["rome.racehorse"], team, (tf + i * tn // 4) % tn, tn, k), 20.0, y)
         bd = Body(m)
         rod(m, (8.0, 0, 13.0), (-10.0, 0, 9.0), 0.6, "wood")
         slab(m, -18, -9, -5.0, 5.0, 7.0, 8.0, "wood", tone=0.2)
@@ -289,7 +296,7 @@ def sprite(kind, variant, anim, facing, frame, k):
         return _render(cart_model(kind, variant or 0, anim, frame, k), facing)
     if kind in SHIPS:
         return _render(ship_model(kind, anim, frame, k), facing)
-    frames = {"move": 6, "idle": 2, "graze": 4, "peck": 4, "sleep": 2, "flap": 4}[anim]
+    frames = CRITTER_FRAMES[anim]
     if kind in BIRDS:
         return _render(BIRDS[kind](anim, frame, frames, k), facing)
     return _render(quadruped(BEASTS[kind], anim, frame, frames, k), facing)
@@ -313,5 +320,8 @@ def actors_catalog():
 def horse_mount(b0: Body, phase: float):
     """A horse under a rider (a callable rig mount): returns the saddle height."""
     beast = BEASTS["rome.horse"]
-    paste(b0.m, quadruped(beast, "move", int(phase * 6) % 6, 6, b0.m.k), 0.0, 0.0, 0.0)
+    paste(b0.m, quadruped(beast, "move", round(phase * WALK_FRAMES) % WALK_FRAMES, WALK_FRAMES, b0.m.k), 0.0, 0.0, 0.0)
     return beast.height * SIZE + 1.0
+
+
+horse_mount.stride = stride(BEASTS["rome.horse"])   # the walk cycle the rider is drawn over (design units)

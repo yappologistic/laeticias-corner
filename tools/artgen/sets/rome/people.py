@@ -11,7 +11,7 @@ nobody in purple who should not be, no thumbs, no gladiators outside the arena."
 
 from dataclasses import replace
 
-from rig import Dress, carry_point, person_sprite
+from rig import Dress, carry_table, person_sprite
 from sets.rome.animals import horse_mount
 
 D = Dress
@@ -39,22 +39,23 @@ def _a(**extra):
 
 # kind: (name, anims, [dresses])
 WALKERS = {
-    "citizen": ("Citizen in a tunic", _a(talk=4, sit=2), [
+    "citizen": ("Citizen in a tunic", _a(talk=4, sit=2, gesture=4), [
         MAN, replace(MAN, colour="cinnabar", beard="none", hair_style="curls"),
         replace(MAN, colour="malachite", cloak="felt"), replace(MAN, colour="eblue", hair="hair_black",
                                                                 beard_mat="cedar")]),
-    "togatus": ("Citizen in a toga", _a(talk=4, gesture=4), [
+    "togatus": ("Citizen in a toga", _a(talk=4, gesture=4, sit=2), [
         TOGA, replace(TOGA, hair="snow", beard="none", body="elder"), replace(TOGA, hair_style="curls", hand_l="scroll")]),
-    "senator": ("Senator (broad stripe and toga)", _a(talk=4, gesture=4), [
+    "senator": ("Senator (broad stripe and toga)", _a(talk=4, gesture=4, sit=2), [
         replace(TOGA, under="whitewash", clavi="purple", clavi_broad=True, hand_l="scroll", feet="boots",
                 feet_mat="pitch"),
         replace(TOGA, body="elder", hair="snow", beard="none", under="whitewash", clavi="purple", clavi_broad=True,
                 feet="boots", feet_mat="pitch")]),
-    "matron": ("Matron in stola and palla", _a(talk=4, serve=4), [
+    "matron": ("Matron in stola and palla", _a(talk=4, serve=4, pray=4), [
         replace(WOMAN, hair_style="coil", jewels=("earrings", "necklace")),
         replace(WOMAN, colour="malachite", mantle="saffron"),
         replace(WOMAN, colour="eblue", mantle="whitewash", mantle_head=False, hair_style="coil", hair="ochre")]),
-    "working_woman": ("Working woman (seller, innkeeper, midwife)", _a(serve=4, carry=8, carry_idle=3), [
+    "working_woman": ("Working woman (seller, innkeeper, midwife)", _a(serve=4, carry=8, carry_idle=3, talk=4,
+                                                                       throw=4), [
         WORKER_W, replace(WORKER_W, colour="ochre", head="none", hair_style="knot"),
         replace(WORKER_W, colour="cinnabar", head_mat="saffron", hold="head", hand_l="basket"),
         replace(WORKER_W, colour="linen", mantle="eblue", head="none", hair_style="knot", skin=TAN)]),
@@ -67,7 +68,7 @@ WALKERS = {
                                                             beard="none"),
         replace(WORKER_W, colour="wool"), replace(MAN, colour="linen", skin=PALE, hair="ochre", beard="short",
                                                   beard_mat="ochre")]),
-    "freedman": ("Freedman or freedwoman shopkeeper", _a(serve=4, talk=4), [
+    "freedman": ("Freedman or freedwoman shopkeeper", _a(serve=4, talk=4, carry=8, carry_idle=3), [
         replace(MAN, colour="saffron", jewels=("bracelets",)), replace(WORKER_W, colour="cinnabar", head="none",
                                                                        hair_style="knot", skin=TAN),
         replace(MAN, colour="ochre", head="pilleus", head_mat="felt")]),
@@ -75,13 +76,13 @@ WALKERS = {
         replace(SOLDIER, worn=("cuirass", "gladius"), head="galea", head_mat="bronze", head_trim="gold",
                 cape="cinnabar", hand_l="oval_shield", hand_r="spear", pattern_mat="eblue", colour="whitewash"),
         replace(MAN, colour="whitewash", cloak="cinnabar", worn=("gladius",), hand_l="spear", feet="boots")]),
-    "vigil": ("Vigil (fireman of the night watch)", _a(), [
+    "vigil": ("Vigil (fireman of the night watch)", _a(carry=8, carry_idle=3), [
         replace(WORKER, garment="tunic", colour="felt", cloak="wool", hand_l="bucket", hand_r="axe", feet="boots"),
         replace(WORKER, garment="tunic", colour="wool", hand_l="lantern", hand_r="hook_pole", feet="boots")]),
     "lictor": ("Lictor with fasces", _a(guard=3), [
         replace(MAN, colour="whitewash", cape="cinnabar", hand_l="fasces", beard="none"),
         replace(MAN, colour="linen", cape="cinnabar", hand_l="fasces")]),
-    "vestal": ("Vestal Virgin", _a(pray=4), [
+    "vestal": ("Vestal Virgin", _a(pray=4, carry=8, carry_idle=3), [
         D(body="woman", skin=TAN, hair="cedar", hair_style="braids", beard="none", garment="stola", colour="whitewash",
           under="whitewash", head="suffibulum", head_mat="whitewash", head_trim="cinnabar", feet="shoes",
           hand_l="simpulum")]),
@@ -91,7 +92,7 @@ WALKERS = {
                                                                            carry_idle=3), [
         replace(WORKER, hand_r="trowel"), replace(WORKER, colour="mudbrick", head="pilos", head_mat="felt"),
         replace(WORKER, colour="linen", skin=TAN, hand_r="mallet", hand_l="chisel")]),
-    "docker": ("Porter and docker", _a(carry=8, carry_idle=3), [
+    "docker": ("Porter and docker", _a(carry=8, carry_idle=3, haul=4), [
         WORKER, replace(WORKER, skin=DARK, hair="hair_black", beard="none", colour="linen"),
         replace(WORKER, colour="felt", head="pilos", head_mat="wool")]),
     "hauler": ("Barge hauler", _a(haul=4), [
@@ -119,7 +120,7 @@ WALKERS = {
     "farmer": ("Vine-dresser and gardener", _a(work_low=4, work_high=4), [
         replace(WORKER, garment="tunic", colour="mudbrick", head="petasos", head_mat="straw", hand_r="pruning_knife"),
         replace(WORKER, garment="tunic", colour="felt", hand_r="hoe")]),
-    "bather": ("Bather with oil flask and strigil", _a(), [
+    "bather": ("Bather with oil flask and strigil", _a(sit=2, scrape=4), [
         replace(MAN, colour="linen", hand_l="flask"), replace(WOMAN, mantle_head=False, hand_l="flask")]),
     "teacher": ("Schoolteacher", _a(talk=4, write=4), [
         replace(MAN, garment="himation", colour="wool", beard="full", hand_l="staff")]),
@@ -150,6 +151,19 @@ WALKERS = {
     "moorish_horseman": ("Moorish horseman", _a(), [
         D(skin=DARK, hair="hair_black", hair_style="curls", beard="short", garment="tunic", colour="whitewash",
           feet="bare", hand_l="spear", mount=horse_mount)]),
+    # Kinds the life data asks for (world-life-rome.md): the Iseum's priest with his sistrum,
+    # the baths' attendant, and the arena's pairs (murmillo, retiarius, thraex).
+    "isis_priest": ("Priest of Isis with sistrum", _a(pray=4, play=4), [
+        D(skin=OLIVE, hair="skin_olive", hair_style="short", beard="none", garment="long_tunic", colour="whitewash",
+          mantle="linen", feet="bare", hand_l="sistrum")]),
+    "bath_attendant": ("Bath attendant", _a(serve=4, carry=8, carry_idle=3), [
+        replace(WORKER, garment="tunic", colour="linen", beard="none", hand_l="strigil", hand_r="flask")]),
+    "gladiator": ("Gladiator (murmillo, retiarius, thraex)", _a(guard=3, wrestle=4), [
+        replace(WORKER, garment="wrap", colour="linen", belt="bronze", head="galea", head_mat="bronze",
+                head_trim="cinnabar", hand_l="scutum", worn=("gladius",), pattern_mat="cinnabar", feet="bare"),
+        replace(WORKER, garment="wrap", colour="linen", belt="bronze", hand_l="trident", hand_r="net", feet="bare"),
+        replace(WORKER, garment="wrap", colour="ochre", belt="bronze", head="galea", head_mat="bronze",
+                head_trim="saffron", hand_l="oval_shield", worn=("gladius",), pattern_mat="saffron", feet="boots")]),
     "jewish_trader": ("Jewish trader of Transtiberim", _a(talk=4), [
         D(skin=OLIVE, hair="hair_black", hair_style="curls", beard="full", beard_mat="cedar", garment="long_tunic",
           colour="wool", mantle="linen", feet="shoes", hand_l="basket", pattern_mat="eblue")]),
@@ -230,7 +244,13 @@ WORK_PROPS = {
     "aelius_eutyches": {"write": dict(hand_l="wax_tablet", hand_r="stylus")},
     "sextus": {"carry": dict(), "carry_idle": dict()},
     "flamen": {"pour": dict(hand_l="phiale")},
-    "vestal": {"pray": dict(hand_l=None)},
+    "vestal": {"pray": dict(hand_l=None), "carry": dict(hand_l=None), "carry_idle": dict(hand_l=None)},
+    "vigil": {"carry": dict(hand_r=None), "carry_idle": dict(hand_r=None)},
+    "freedman": {"carry": dict(), "carry_idle": dict()},
+    "docker": {"haul": dict(hand_l="rope")},
+    "bather": {"scrape": dict(hand_l="strigil")},
+    "bath_attendant": {"carry": dict(hand_l=None, hand_r=None), "carry_idle": dict(hand_l=None, hand_r=None)},
+    "isis_priest": {"pray": dict(hand_l=None)},
     "vestalis_maxima": {"pray": dict(hand_l=None)},
 }
 
@@ -252,12 +272,7 @@ def sprite(kind, variant, anim, facing, frame, k):
 
 
 def carry_at(kind, k):
-    out = {}
-    for anim, n in (("carry", 6), ("carry_idle", 2)):
-        d = _posed(kind, 0, anim)
-        for facing in ("front", "back"):
-            out[f"{anim}_{facing}"] = [carry_point(d, anim, f, facing, k) for f in range(n)]
-    return out
+    return carry_table(lambda anim: _posed(kind, 0, anim), k)
 
 
 def actors_catalog():

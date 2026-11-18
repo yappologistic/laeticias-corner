@@ -19,8 +19,16 @@ DESIGN_TILE = 16
 WATER_FRAMES = 4
 ITEM_FRAMES = {"campfire": 6, "windmill": 6}
 DEFAULT_ANIMATED_FRAMES = 4
-# Every visitor has these four; anything more comes from the art list.
-CRITTER_ANIMS = {"move_front": 4, "move_back": 4, "idle_front": 2, "idle_back": 2}
+# Every visitor has these four; anything more comes from the art list. Walks, swims and wingbeats
+# are eight frames with planted feet; the tiny flyers are hand-drawn stencils of four poses.
+CRITTER_ANIMS = {"move_front": 8, "move_back": 8, "idle_front": 2, "idle_back": 2}
+STENCIL_FLYERS = {"butterfly", "bee", "firefly"}
+
+
+def critter_anims(cid: str) -> dict[str, int]:
+    if cid in STENCIL_FLYERS:
+        return {**CRITTER_ANIMS, "move_front": 4, "move_back": 4}
+    return CRITTER_ANIMS
 # Flat things lying on the ground or water cast no shadow.
 NO_SHADOW = {"lily_pads", "stepping_stones"}
 SEASONS = ("spring", "summer", "autumn", "winter")
@@ -202,7 +210,7 @@ def required_keys(cat: dict) -> list[str]:
         keys += [f"item/{s.id}/base/{v}/g{g}/f{f}" for v in s.variants for g in range(stages)
                  for f in range(s.frames)]
     for v in cat["visitors"]:
-        keys += [f"critter/{v['id']}/{a}/f{f}" for a, n in CRITTER_ANIMS.items() for f in range(n)]
+        keys += [f"critter/{v['id']}/{a}/f{f}" for a, n in critter_anims(v["id"]).items() for f in range(n)]
     keys += art_list_keys(cat)
     seen = set()
     return [k for k in keys if not (k in seen or seen.add(k))]

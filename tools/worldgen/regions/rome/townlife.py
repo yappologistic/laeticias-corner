@@ -17,6 +17,7 @@ ROME = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ROME)
 
 R = ROME.R
+SEASONS = ROME.SEASONS
 DENSITIES = ROME.DENSITIES
 RAIN = ROME.RAIN
 loop, once, per, ev, window = ROME.loop, ROME.once, ROME.per, ROME.ev, ROME.window
@@ -38,7 +39,7 @@ def role_cards(roles: list[dict]) -> dict:
 def theme(beds: list[dict], zones: list[dict] = (), loops: list[dict] = (), weather_note: str = "") -> dict:
     """Rome's grading, haze and climate (the same April light along the coast and in the hills)."""
     return {
-        "grading": ROME.GRADING, "haze": {"colour": [0.93, 0.91, 0.85], "strength": 0.1}, "climate": "rome",
+        "grading": ROME.GRADING, "haze": {"colour": [0.93, 0.91, 0.85], "strength": 0.1},
         "weather": {"spring": {"showers": 2, "clouds": 2, "wind": 0.4, "wind_from": "west",
                                "note": weather_note or "April showers; the west wind in the afternoons"},
                     "summer": {"showers": 0, "clouds": 1, "wind": 0.35},

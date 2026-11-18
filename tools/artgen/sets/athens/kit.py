@@ -181,9 +181,10 @@ def g_shrine(v, frame, frames, k):
 STALL_GOODS = ("pottery", "fish", "garlands", "figs", "perfume", "sandals")
 
 
-def g_stall(v, frame, frames, k):
+def g_stall(v, frame, frames, k, closed=False):
     """A market stall of the Agora: a wooden trestle under a cloth awning on poles, wicker screens,
-    the goods by trade (variant: pottery, fish, garlands, figs and cheese, perfume, sandals)."""
+    the goods by trade (variant: pottery, fish, garlands, figs and cheese, perfume, sandals).
+    `closed`: after the market, the goods taken in and the board under a tied cloth."""
     m = _m(2, 1, 30, k)
     trade = STALL_GOODS[v % len(STALL_GOODS)]
     seed = 660 + v
@@ -198,6 +199,12 @@ def g_stall(v, frame, frames, k):
         slab(m, x - 0.6, x + 0.6, 9.0, 13.0, 0.0, 6.0, "wood", tone=0.0)
     fill(m, (2.5, 29.5, 1.0, 2.2, 0.0, 9.0), "straw", tone=lambda X, Y, Z: -0.3 * (((X + Z) % 1.6) < 0.4))   # wicker
     rng = Rng(seed)
+    if closed:
+        fill(m, (2.6, 29.4, 7.4, 14.6, 7.0, 10.0), cloth,
+             lambda X, Y, Z: Z < 9.6 - 0.8 * np.abs(Y - 11.0) / 3.6, tone=lambda X, Y, Z: -0.25 - 0.3 * ((X % 6.0) < 0.6))
+        for x in (8.0, 16.0, 24.0):
+            rod(m, (x, 7.3, 7.2), (x, 14.7, 7.2), 0.25, "straw", tone=0.3)
+        return m
     if trade == "pottery":
         for i in range(6):
             vase(m, 5.0 + i * 4.0, 11.0, 7.0, 3.6 + rng.uniform(0, 1.5),
@@ -240,9 +247,10 @@ def g_table_banker(v, frame, frames, k):
     return m
 
 
-def g_kiln(v, frame, frames, k):
+def g_kiln(v, frame, frames, k, firing=False):
     """A potter's updraught kiln: a domed clay chamber on its firebox, soot-blackened at the vent,
-    the stoking mouth glowing, brushwood stacked by it."""
+    the stoking mouth glowing, brushwood stacked by it. `firing`: flames out of the stoking mouth
+    and the vent, the brushwood half burnt."""
     m = _m(1, 1, 26, k)
     revolve(m, 8, 8, 0, 18.0, lambda t: 6.5 * np.sqrt(np.clip(1 - t ** 1.6, 0, 1)) + 0.6, "clay",
             tone=lambda X, Y, Z: M.mud_plaster(640, 0.5, 0, 2.0)(X, Y, Z) - 0.9 * (Z > 14) - 0.4 * (Z > 16.5))
@@ -250,9 +258,13 @@ def g_kiln(v, frame, frames, k):
     fill(m, (6, 10, 11, 12, 1.0, 6.0), "ember")
     M.stain(m, (5, 11, 12, 16, 5.0, 11.0), lambda X, Y, Z: True, -0.8)
     revolve(m, 8, 8, 17.5, 19.5, lambda t: 1.4, "clay", tone=-0.9)
-    for i in range(3):
+    for i in range(1 if firing else 3):
         fill(m, (12.5 + i * 0.4, 14.5, 1 + i * 2.2, 3 + i * 2.2, 0, 1.4 + i * 0.3), "wood", tone=0.1)
-    halo(m, 8, 14, 3.0, 9.0, FIRE, 0.9)
+    if firing:
+        fill(m, (6.5, 9.5, 15.5, 17.5, 1.0, 7.5), "ember",
+             lambda X, Y, Z: np.abs(X - 8.0) < 1.6 - (Z - 1.0) * 0.2 - (Y - 15.5) * 0.25)
+        fill(m, (7.0, 9.0, 7.0, 9.0, 19.5, 23.0), "ember", lambda X, Y, Z: np.hypot(X - 8, Y - 8) < 1.1 - (Z - 19.5) * 0.3)
+    halo(m, 8, 14, 3.0, 9.0, FIRE, 1.0 if firing else 0.9)
     return m
 
 
@@ -635,5 +647,12 @@ ITEMS = {f"athens.{n}": it for n, it in {
     "g_farmstead": _item(g_farmstead, {"door": [{"t": [0, 2], "face": "+y"}]}),
     "stair_marble": _item(stair_marble),
 }.items()}
+
+# Looks the life data switches (living-world §2.5): drawn instead of the base layer.
+STATES = {
+    ("athens.g_kiln", "firing"): lambda v, f, n, k: g_kiln(v, f, n, k, firing=True),
+    ("athens.g_stall", "open"): g_stall,
+    ("athens.g_stall", "closed"): lambda v, f, n, k: g_stall(v, f, n, k, closed=True),
+}
 
 FRAMES = {"athens.g_wheel": 2, "athens.g_crane": 2, "athens.g_stall": 2, "athens.g_fountain": 3}

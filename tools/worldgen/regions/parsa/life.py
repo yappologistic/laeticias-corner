@@ -11,10 +11,12 @@ Built by `tools/worldgen/build.sh --city parsa`, checked by `worldgen.citylife`.
 from __future__ import annotations
 
 from worldgen import citylife as CL
+from worldgen import seasonlife as SL
 from worldgen.citylife import card, curve, go, grid_rect, pop, role, sched, use, wait, wander
 
+SEASONS = SL.sibling(__file__, "seasons")
+SEASON_BEDS = SEASONS.SEASON_BEDS
 P = "parsa."
-SEASON = "spring"
 
 # -- hours -------------------------------------------------------------------------------------
 
@@ -638,11 +640,6 @@ def districts() -> list[dict]:
 
 # -- chains you can watch ------------------------------------------------------------------------
 
-PENDING = {"world.goods_block": "world.goods_bale", "world.goods_flour": "world.goods_sacks",
-           "world.goods_bread": "world.goods_dates", "world.goods_tablet": "world.goods_letter",
-           "world.goods_gift_vessels": "world.goods_amphorae", "world.goods_yarn": "world.goods_fleece",
-           "world.goods_cloth": "world.goods_bale", "world.goods_brick": "world.goods_bale",
-           "world.goods_glazed_brick": "world.goods_bale", "world.goods_dish": "world.goods_dates"}
 
 
 def chains() -> list[dict]:
@@ -1451,7 +1448,6 @@ def theme(view) -> dict:
         "grading": {"dawn": [1.03, 0.98, 0.92], "day": [0.98, 0.99, 1.0],
                     "dusk": [1.02, 0.93, 0.90], "night": [0.92, 0.95, 1.04]},
         "haze": {"colour": [0.84, 0.86, 0.90], "strength": 0.12, "toward": "west"},
-        "climate": "parsa",
         "weather": {
             "spring": {"showers": 1, "clouds": 3, "wind": 0.35, "wind_from": "north-west",
                        "note": "rare, memorable showers build over the mountain in the afternoon"},
@@ -1478,11 +1474,10 @@ def theme(view) -> dict:
 
 
 def build(view) -> dict:
-    return {
+    return SEASONS.apply({
         "version": 1, "id": "parsa", "name": "Pārsa", "native": "تخت جمشید",
-        "caption": "Pārsa · the spring audience, c. 470 BC",
+        "caption": "Pārsa · c. 470 BC",
         "era": "The Persian empire of Xerxes · c. 470 BC",
-        "season": SEASON,
         "theme": theme(view),
         "densities": DENSITIES,
         "districts": districts(),
@@ -1496,12 +1491,11 @@ def build(view) -> dict:
         "figures": figures(),
         "delegations": [f"delegation_{p}" for p in PEOPLES],
         "lanes_tokens": [],
-        "pending": {"goods": PENDING},
         "cards": cards(),
         "strings": STRINGS,
         "decorate": {"rect": _decorate(view)},
         "journal": ["landmark:*", "figure:*", "delegation:*", "chain:*", "idea:*"],
-    }
+    })
 
 
 def _decorate(view) -> list[int]:

@@ -4,6 +4,7 @@
  "name": "Halys",
  "native": "Halys",
  "caption": "The Halys crossing · c. 470 BC",
+ "climate": "anatolian",
  "theme": {
   "grading": {
    "dawn": [
@@ -35,7 +36,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -60,6 +60,146 @@
      "when": "lit"
     }
    ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.4
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 2,
+    "wind": 0.55,
+    "shimmer": 1
+   },
+   "autumn": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.4
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.6,
+    "fog": 0.3,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.98,
+     1.03,
+     0.98
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "mar",
+      "apr"
+     ],
+     "muddy": [
+      "mar",
+      "apr"
+     ],
+     "snow": [
+      "mar"
+     ]
+    },
+    "snow_line": [
+     5,
+     8,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.05,
+     1.0,
+     0.9
+    ],
+    "look": {
+     "shimmer": 0.5
+    },
+    "haze": 0.12,
+    "ground": {
+     "low_water": [
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.04,
+     0.96,
+     0.88
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "oct",
+      "nov"
+     ],
+     "low_water": [
+      "sep"
+     ],
+     "muddy": [
+      "oct",
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     7
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.88,
+     0.94,
+     1.1
+    ],
+    "look": {
+     "exposure": 0.05,
+     "blue_shadows": 0.5
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "frozen": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     5,
+     0,
+     0
+    ]
+   }
   },
   "sound": {
    "climate": "steppe",
@@ -505,17 +645,143 @@
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "parsa.groom",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.groom",
+     "density": "daytime",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.groom",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.caravan_driver",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.caravan_driver",
+     "density": "daytime",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.caravan_driver",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The crossing",
@@ -576,17 +842,143 @@
     {
      "actor": "parsa.groom",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.groom",
+     "density": "daytime",
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.groom",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.caravan_driver",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.caravan_driver",
+     "density": "daytime",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.caravan_driver",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "mar",
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     }
    ],
    "name": "The road",
@@ -765,12 +1157,149 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_storks_arrive",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storks_arrive",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/stork_clatter.wav",
+   "cast": [
+    {
+     "actor": "world.stork",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_heat_haze",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "heat_haze",
+   "show": "look",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.shimmer"
+     }
+    }
+   ],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_autumn_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_winter_first_snow",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_snow",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
+  }
+ ],
  "lanes_tokens": [],
  "zones": [],
  "cards": {
@@ -781,10 +1310,83 @@
   }
  },
  "strings": {
-  "first_visit": "The gates on the Halys: the road is guarded here."
+  "first_visit": "The gates on the Halys: the road is guarded here.",
+  "season_turn.spring": "The storks are back on their nests.",
+  "season_turn.summer": "The air shimmers over the land at noon.",
+  "season_turn.autumn": "Cranes call high overhead, flying in a long V.",
+  "season_turn.winter": "Snow on the heights."
  },
  "journal": [
   "landmark:*"
  ],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "Halys · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "water": [
+  {
+   "body": "halys",
+   "kind": "river",
+   "tiles": 48,
+   "rect": [
+    120,
+    322,
+    135,
+    324
+   ],
+   "level": [
+    "high",
+    "high",
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "colour": {
+    "high": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "normal": [
+     1.06,
+     0.96,
+     0.88
+    ],
+    "low": [
+     1.04,
+     0.97,
+     0.9
+    ]
+   },
+   "ice": {
+    "months": [
+     "dec",
+     "jan",
+     "feb"
+    ],
+    "hours": [
+     "00:00",
+     "11:00"
+    ],
+    "all_day": [
+     "jan"
+    ],
+    "margins": true
+   }
+  }
+ ],
+ "festivals": []
 }

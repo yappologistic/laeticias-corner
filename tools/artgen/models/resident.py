@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from rig import foot_cycle
 from voxel import Model, box, ellipsoid, hash01, segment
 
 # ---- body measurements (design units) ----
@@ -449,23 +450,31 @@ def _umbrella(hand):
     return draw
 
 
+# Half a step, design units: how far each foot swings from under the hip. One cycle covers
+# 4 x STEP units (0.8 tile): at her 0.9-1.1 tiles/s, 1.1-1.4 cycles a second with planted feet.
+STEP = 3.2
+
+
 def _walk(frame, frames, carry=False, umbrella=False):
-    ph = 2 * math.pi * frame / frames
-    s = math.sin(ph)
-    feet = ((0.3 + 1.4 * s, 0.85), (0.3 - 1.4 * s, -0.85))
-    toe = (max(0.0, -s) * 0.7, max(0.0, s) * 0.7)
-    lift = 1.0 * (1 - abs(s)) ** 2
-    left, right = rest_arms(swing=-1.5 * s)
+    t = frame / frames
+    (a, la), (b, lb) = foot_cycle(t), foot_cycle(t + 0.5)
+    feet = ((0.3 + STEP * a, 0.85), (0.3 + STEP * b, -0.85))
+    toe = (la * 1.6, lb * 1.6)
+    # Lowest as a heel strikes, highest as the feet pass; arms swing a touch behind the legs,
+    # the skirt and the satchel later still.
+    lift = 0.5 * (1.0 - math.cos(4 * math.pi * t))
+    left, right = rest_arms(swing=-1.5 * math.cos(2 * math.pi * (t - 0.04)))
     props = []
     if carry:
-        left = Arm((0.2, 3.15, 11.0), (1.0, 3.25, 9.5))
-        props.append(_basket((0.7, 3.4, 8.8 + lift * 0.5)))
+        left = Arm((0.2, 3.15, 11.0), (1.0, 3.25, 9.5))      # props move with the body (dz)
+        props.append(_basket((0.7, 3.4, 8.8)))
     if umbrella:
-        hand = (1.3, 1.9, 14.6 + lift * 0.5)
+        hand = (1.3, 1.9, 14.6)
         left = Arm((0.8, 3.1, 12.6), hand)
         props.append(_umbrella(hand))
     return Pose(lift=lift, left=left, right=right, feet=feet, toe_lift=toe,
-                hem=(0.3 * s, 0.0), bag_swing=0.35 * math.sin(ph - 0.9), props=props)
+                hem=(0.35 * math.cos(2 * math.pi * (t - 0.1)), 0.0),
+                bag_swing=0.35 * math.cos(2 * math.pi * (t - 0.2)), props=props)
 
 
 def _idle(frame, frames):

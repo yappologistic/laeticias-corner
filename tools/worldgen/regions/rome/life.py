@@ -25,10 +25,12 @@ Built by `tools/worldgen/build.sh --city rome`, checked by `worldgen.citylife`.
 from __future__ import annotations
 
 from worldgen import citylife as CL
+from worldgen import seasonlife as SL
 from worldgen.citylife import card, curve, go, grid_rect, pop, role, sched, use, wait, wander
 
+SEASONS = SL.sibling(__file__, "seasons")
+SEASON_BEDS = SEASONS.ROME_BEDS
 R = "rome."
-SEASON = "spring"
 # The four-day week (living-world §4.1): market day (nundinae) and the races on day 0, the Senate
 # on day 1, a game day at the amphitheatre on day 2, the grain distribution on day 3.
 MARKET = {"every": 4, "offset": 0}
@@ -804,7 +806,6 @@ def districts() -> list[dict]:
     ]
 
 
-PENDING = {"world.goods_block": R + "goods_marble"}
 
 
 def chains() -> list[dict]:
@@ -1927,7 +1928,6 @@ def theme(view) -> dict:
         "grading": GRADING,
         "haze": {"colour": [0.95, 0.89, 0.79], "strength": 0.13, "toward": "west",
                  "note": "bakery and bath-furnace smoke, stronger in the afternoon"},
-        "climate": "rome",
         "weather": {
             "spring": {"showers": 2, "clouds": 2, "wind": 0.35, "wind_from": "west", "fog": 0.3,
                        "note": "April: mild days, spring showers, the Favonius in the afternoons, mist on the Tiber at dawn"},
@@ -1987,15 +1987,14 @@ def _baths(doc: dict, view) -> dict:
 
 
 def build(view) -> dict:
-    return _baths(_build(view), view)
+    return SEASONS.rome(_baths(_build(view), view))
 
 
 def _build(view) -> dict:
     return {
         "version": 1, "id": "rome", "name": "Rome", "native": "Roma",
-        "caption": "Rome · the Parilia, 21 April AD 126",
+        "caption": "Rome · AD 126",
         "era": "The Rome of Hadrian · AD 126",
-        "season": SEASON,
         "theme": theme(view),
         "densities": DENSITIES,
         "districts": districts(),
@@ -2010,7 +2009,6 @@ def _build(view) -> dict:
         "figures": figures(),
         "lanes_tokens": [{"actor": R + "barge", "lane": "rome:tiber", "count": 3},
                          {"actor": "world.fishing_boat", "lane": "rome:tiber", "count": 1}],
-        "pending": {"goods": PENDING},
         "cards": cards(),
         "strings": STRINGS,
         "decorate": {"rect": grid_rect(view, "decorate")},

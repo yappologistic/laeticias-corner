@@ -31,11 +31,29 @@ BODIES = {
     "king": (20.5, (1.6, 1.5, 1.8), 2.3, 1.7, 0.0),
 }
 
+HEAD_WIDEN = 1.12
+ROBE_FOLLOW = 0.25  # share of the feet's spread a long hem widens by
+FACE_LIFT = 0.35   # faces a step lighter than the ramp's middle (warm, readable)
+
+# Half a step, in design units at the adult body: how far each foot swings from the hip. A
+# natural stride (graphics-rnd.md §2.9): one cycle covers 4 x WALK_STRIDE units (0.75 tile for
+# an adult), so a walker at 0.9 tiles/s takes 1.2 cycles a second with planted feet.
+WALK_STRIDE = 3.0
+MARCH_STRIDE = 3.5
+# Locomotion cycles: twelve frames, smooth at 1x and 2x (graphics-rnd.md §2.9).
+WALK_FRAMES = 12
+LOCOMOTION = ("move", "carry", "march", "run", "ride")
+# Carts and their teams (big sprites): eight frames of the same planted gait.
+CART_FRAMES = 8
+# Animals of the sets: walks and trots on twelve frames like the people.
+CRITTER_FRAMES = {"move": WALK_FRAMES, "run": WALK_FRAMES, "idle": 2, "graze": 4, "sleep": 2, "flap": 4, "peck": 4}
+
 # Frames of every pose (world-tech.md §1.9); `shoot` is a set addition (archery drill).
-POSES = {"move": 6, "idle": 2, "carry": 6, "carry_idle": 2, "run": 6, "sit": 2, "lie": 2,
+POSES = {"move": WALK_FRAMES, "idle": 2, "carry": WALK_FRAMES, "carry_idle": 2, "run": WALK_FRAMES,
+         "sit": 2, "lie": 2,
          "sleep": 2, "talk": 4, "gesture": 4, "bow": 4, "kneel": 2, "work_low": 4,
          "work_high": 4, "haul": 4, "stir": 4, "pour": 4, "write": 4, "play": 4, "throw": 4,
-         "serve": 4, "guard": 2, "march": 6, "shoot": 4, "ride": 6,
+         "serve": 4, "guard": 2, "march": WALK_FRAMES, "shoot": 4, "ride": WALK_FRAMES,
          "wrestle": 4, "scrape": 4, "pray": 4, "dance": 4}
 
 LONG = {"court_robe", "long_tunic", "cloak_long", "striped_robe", "royal_robe", "himation", "chiton_long", "peplos",
@@ -126,6 +144,9 @@ class Frame:
 
     def __init__(self, dress: Dress):
         H, head_r, sw, hw, stoop = BODIES[dress.body]
+        # Heads a little wider than true, so they read as their own mass at 1x (the height,
+        # and so the walkers' size and anchors, stays).
+        head_r = (head_r[0] * HEAD_WIDEN, head_r[1] * HEAD_WIDEN, head_r[2])
         self.H, self.head_r, self.sw, self.hw, self.stoop = H, head_r, sw, hw, stoop
         f = H / 19.0
         self.f = f
@@ -152,20 +173,47 @@ def rest_arms(fr: Frame, swing=0.0, lift=0.0, out=0.35):
 
 # ---------- the pose library ----------
 
-def _walk(fr: Frame, frame, frames, stride=1.25, swing=1.3, bob=0.6, run=False):
-    ph = 2 * math.pi * frame / frames
-    s = math.sin(ph)
+def foot_cycle(u: float, duty: float = 0.5) -> tuple[float, float]:
+    """One foot over a cycle (u in [0, 1), 0 = heel strike): its offset along the walk in
+    [-1, 1] (1 = fully forward) and its lift in [0, 1]. On the ground it moves back at a
+    constant rate, so with the body moving forward at the stride's speed it stays planted;
+    in the air it eases forward with the lift peaking mid-swing."""
+    u %= 1.0
+    if u < duty:
+        return 1.0 - 2.0 * u / duty, 0.0
+    v = (u - duty) / (1.0 - duty)
+    return -1.0 + 2.0 * v * v * (3.0 - 2.0 * v), math.sin(math.pi * v)
+
+
+def stride_tiles(dress: Dress, anim: str = "move") -> float:
+    """Ground covered by one cycle of `anim`, in tiles (16 design units each): the length the
+    engine plays the cycle over, frame = int(distance / stride * frames) % frames."""
+    if callable(dress.mount):
+        return dress.mount.stride / 16.0
+    if dress.mount:
+        return HORSE_STRIDE * (0.78 if dress.mount == "pony" else 1.0) / 16.0
+    f = Frame(dress).f
+    st = (MARCH_STRIDE if anim == "march" else WALK_STRIDE) * f * (1.5 if anim == "run" else 1.0)
+    return 4.0 * st / 16.0
+
+
+def _walk(fr: Frame, frame, frames, stride=WALK_STRIDE, swing=1.3, bob=0.6, run=False):
+    t = frame / frames
     st = stride * fr.f * (1.5 if run else 1.0)
-    lift_a, lift_b = max(0.0, math.cos(ph)) * 0.8, max(0.0, -math.cos(ph)) * 0.8
-    if run:
-        lift_a, lift_b = lift_a * 2.2, lift_b * 2.2
-    feet = ((0.15 + st * s, 0.75 * fr.f, lift_a), (0.15 - st * s, -0.75 * fr.f, lift_b))
-    left, right = rest_arms(fr, swing=-swing * s * fr.f * (1.4 if run else 1.0))
+    rise = (2.2 if run else 1.0) * fr.f
+    (a, la), (b, lb) = foot_cycle(t), foot_cycle(t + 0.5)
+    feet = ((0.15 + st * a, 0.75 * fr.f, la * rise), (0.15 + st * b, -0.75 * fr.f, lb * rise))
+    # Arms swing against the legs, a touch behind them; the robe follows later still.
+    arm = math.cos(2 * math.pi * (t - 0.04))
+    left, right = rest_arms(fr, swing=-swing * arm * fr.f * (1.4 if run else 1.0))
     if run:
         left = Arm((left.elbow[0], left.elbow[1], left.elbow[2] + 1.0), (left.hand[0] + 0.4, left.hand[1], left.hand[2] + 2.2))
         right = Arm((right.elbow[0], right.elbow[1], right.elbow[2] + 1.0), (right.hand[0] + 0.4, right.hand[1], right.hand[2] + 2.2))
-    return Pose(feet=feet, bob=bob * fr.f * abs(math.cos(ph)) * (1.5 if run else 1.0), left=left,
-                right=right, hem=0.5 * s, lean=0.5 if run else 0.0, phase=frame / frames)
+    # Lowest as a heel strikes (twice a cycle), highest as the feet pass.
+    up = 0.5 * (1.0 - math.cos(4 * math.pi * t))
+    return Pose(feet=feet, bob=bob * fr.f * up * (1.5 if run else 1.0), left=left,
+                right=right, hem=0.5 * math.cos(2 * math.pi * (t - 0.1)), lean=0.5 if run else 0.0,
+                phase=t)
 
 
 def _hands_front(fr: Frame, z=None, reach=1.9, gap=0.9, lift=0.0):
@@ -174,14 +222,18 @@ def _hands_front(fr: Frame, z=None, reach=1.9, gap=0.9, lift=0.0):
             Arm((0.6 * fr.f, -fr.sw - 0.2, fr.shoulder - fr.upper * 0.85 + lift * 0.5), (reach * fr.f, -gap, z)))
 
 
-def pose(name: str, frame: int, frames: int, fr: Frame, dress: Dress) -> Pose:
+def pose(name: str, frame: int, frames: int, fr: Frame, dress: Dress, cycle: float | None = None) -> Pose:
+    """`cycle`: ground one walk cycle covers (design units), for walkers keeping step with
+    something else (a driver beside his ox); the natural stride otherwise."""
     t = frame / frames
     wave = math.sin(2 * math.pi * t)
     f = fr.f
     sh = fr.shoulder
     if name in ("move", "march", "carry"):
-        p = _walk(fr, frame, frames, stride=1.45 if name == "march" else 1.25,
-                  swing=0.35 if name == "march" else 1.3)
+        stride = MARCH_STRIDE if name == "march" else WALK_STRIDE
+        if cycle:
+            stride = cycle / (4 * fr.f)
+        p = _walk(fr, frame, frames, stride=stride, swing=0.35 if name == "march" else 1.3)
         if name == "march":
             p.bob *= 0.5
         if name == "carry":
@@ -545,6 +597,13 @@ def _garment(b: Body, d: Dress, p: Pose, fr: Frame, lift, up):
     wx = 1.35 * f * (1.0 + (flare[1] / 1.6 - 1.0) * (1 - t) ** 1.3) * (1.4 if p.kneel or p.sit else 1.0)
     drift = p.hem * f * (1 - t) ** 1.6
     ccx = 0.1 * f + drift + (1.2 * f if (p.kneel or p.sit) and not d.mount else 0)
+    if d.garment in LONG and not (p.kneel or p.sit or d.mount or p.lying):
+        # A long robe takes the shape of the stride: wider at the hem as the feet part, its
+        # middle over them, so the legs read through it.
+        (fa, *_), (fb, *_) = p.feet[0], p.feet[1]
+        low = (1 - t) ** 2
+        wx = wx + ROBE_FOLLOW * abs(fa - fb) * low
+        ccx = ccx + 0.5 * (fa + fb - 0.3 * f) * low
     ang = np.arctan2(Y, X - ccx)
     rr = ((X - ccx) / wx) ** 2 + (Y / wy) ** 2
     skirt = (rr <= 1) & (Z >= hem_z) & (Z < top_z) & (d.garment != "none")
@@ -815,8 +874,8 @@ def _head(b: Body, d: Dress, p: Pose, fr: Frame, up):
     hz -= p.nod * 0.3
     # Neck.
     nb = up((0.05, 0.0, fr.shoulder - 0.2))
-    b.limb(nb, (hx - 0.2, 0.0, hz - rz * 0.6), 0.65 * f, d.skin, tone=-0.3)
-    b.blob((hx, hy, hz), (rx, ry, rz), d.skin)
+    b.limb(nb, (hx - 0.2, 0.0, hz - rz * 0.6), 0.65 * f, d.skin, tone=-0.6)
+    b.blob((hx, hy, hz), (rx, ry, rz), d.skin, tone=FACE_LIFT)
     turn = 0.75                                    # the face turns toward the camera
     c, s = math.cos(turn), math.sin(turn)
     U = (X - hx) * c + (Y - hy) * s
@@ -1616,6 +1675,11 @@ def _prop_pole(b: Body, d: Dress, p: Pose, fr: Frame, up):
 # ---------- mounts ----------
 
 HORSE = 2.3     # a horse about 44 px at the withers under a 40 px rider (world.md toy scale)
+# Four-legged walks: each hoof is on the ground this share of the cycle and sweeps 2 x reach
+# under the body meanwhile, so one cycle covers 2 x reach / duty.
+BEAST_DUTY = 0.65
+HORSE_REACH = 1.6
+HORSE_STRIDE = 2 * HORSE_REACH * HORSE / BEAST_DUTY
 
 def horse(b: Body, phase: float, coat="cedar", mane="hair_black", trappings="cinnabar", f=1.0, pony=False):
     """A horse under a rider (rider's body space: the saddle at the origin's hips). The tail
@@ -1623,14 +1687,15 @@ def horse(b: Body, phase: float, coat="cedar", mane="hair_black", trappings="cin
     s = 0.78 if pony else 1.0
     g = s * f * HORSE
     H = 8.6 * g                     # withers above the ground (the rider's soles are lifted)
-    gait = math.sin(2 * math.pi * phase)
+    gait = math.sin(4 * math.pi * phase)
     b.blob((0.3 * g, 0.0, H - 0.6 * g), (4.2 * g, 1.5 * g, 1.7 * g), coat, 0.1)
-    for lx, side, ph in ((3.0, 1, 0.0), (3.0, -1, 0.5), (-2.6, 1, 0.5), (-2.6, -1, 0.0)):
-        sw = math.sin(2 * math.pi * (phase + ph)) * 1.0 * g
+    # A four-beat walk (left hind, left fore, right hind, right fore), hooves planted.
+    for lx, side, off in ((3.0, 1, 0.25), (3.0, -1, 0.75), (-2.6, 1, 0.0), (-2.6, -1, 0.5)):
+        a, lift = foot_cycle(phase - off, BEAST_DUTY)
         top = (lx * g, side * 0.8 * g, H - 1.6 * g)
-        foot = (lx * g + sw, side * 0.8 * g, 0.4 + max(0.0, -math.cos(2 * math.pi * (phase + ph))) * 0.8)
+        foot = (lx * g + a * HORSE_REACH * g, side * 0.8 * g, 0.4 + lift * 0.9 * g)
         b.limb(top, foot, 0.45 * g, coat, -0.2)
-        b.blob((foot[0] + 0.15, foot[1], 0.35), (0.45 * g, 0.4 * g, 0.4), "ink", 0.3)
+        b.blob((foot[0] + 0.15, foot[1], 0.35 + lift * 0.9 * g), (0.45 * g, 0.4 * g, 0.4), "ink", 0.3)
     neck0 = (3.4 * g, 0.0, H + 0.2 * g)
     head = (5.6 * g, 0.0, H + 2.6 * g + 0.2 * gait)
     b.limb(neck0, head, 1.0 * g, coat, 0.1, r2=0.7 * g)
@@ -1645,11 +1710,16 @@ def horse(b: Body, phase: float, coat="cedar", mane="hair_black", trappings="cin
 
 # ---------- entry points ----------
 
+# Front edges at a depth step of this many design units: an arm before the body, the head
+# before the shoulders and the near leg before the far one each get their line at 1x.
+FIGURE_EDGE = 1.1
+
 FACING = ("front", "back")
 
 
-def person_model(dress: Dress, anim: str, frame: int, k: int) -> Model:
-    frames = POSES[anim]
+def person_model(dress: Dress, anim: str, frame: int, k: int, frames: int | None = None) -> Model:
+    """The posed body for `frame` of `frames` (default: the pose library's count)."""
+    frames = frames or POSES[anim]
     fr = Frame(dress)
     p = pose(anim, frame, frames, fr, dress)
     poles = ("spear", "lance", "dory", "trident", "torch_tall")
@@ -1678,11 +1748,12 @@ def person_model(dress: Dress, anim: str, frame: int, k: int) -> Model:
     return m
 
 
-def person_sprite(dress: Dress, anim: str, facing: str, frame: int, k: int) -> Sprite:
-    m = person_model(dress, anim, frame, k)
+def person_sprite(dress: Dress, anim: str, facing: str, frame: int, k: int,
+                  frames: int | None = None) -> Sprite:
+    m = person_model(dress, anim, frame, k, frames)
     if facing == "back":
         m = m.rotated(3, 0, 0)
-    rgba, _glow, ox, oy = render_base(m)
+    rgba, _glow, ox, oy = render_base(m, edge=FIGURE_EDGE)
     return Sprite(rgba, ox, oy)
 
 
@@ -1696,6 +1767,13 @@ def carry_point(dress: Dress, anim: str, frame: int, facing: str, k: int) -> lis
     if facing == "back":     # turned to face -y: (x, y) -> (y, -x)
         x, y = y, -x
     return [int(round((x - y) * k)), int(round(((x + y) / 2 - z) * k))]
+
+
+def carry_table(posed, k: int) -> dict:
+    """Carry points of every frame of `carry` and `carry_idle`, both facings; `posed(anim)` is
+    the dress the person wears for that animation."""
+    return {f"{anim}_{facing}": [carry_point(posed(anim), anim, f, facing, k) for f in range(POSES[anim])]
+            for anim in ("carry", "carry_idle") for facing in FACING}
 
 
 def variant(dress: Dress, **changes) -> Dress:

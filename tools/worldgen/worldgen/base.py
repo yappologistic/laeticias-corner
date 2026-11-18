@@ -336,6 +336,16 @@ def region_map(land: np.ndarray) -> tuple[np.ndarray, list[str], np.ndarray]:
                     srck = np.roll(np.roll(kind, dr, axis=0), dc, axis=1)
                     take = todo & (src >= 0) & srck & (target < 0)
                     target[take] = src[take]
+        # An islet no land rule names takes the region of the water round it (a rock in the Gulf
+        # belongs to the Gulf, its climate and its art), never a far sea's.
+        for _ in range(64):
+            todo = target < 0
+            if not todo.any():
+                break
+            for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                src = np.roll(np.roll(target, dr, axis=0), dc, axis=1)
+                take = todo & (src >= 0) & (target < 0)
+                target[take] = src[take]
         target[target < 0] = idx["tyrrhenian"]
     stretch[rect_mask(P.REGIONS["corner"][3]) & land] = corner
     return reg, names, stretch

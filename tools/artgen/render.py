@@ -248,10 +248,12 @@ def shade(model: Model, ctx: Occupancy | None = None, zmax: int | None = None) -
                   (ii + model.x0).reshape(H, W), (jj + model.y0).reshape(H, W))
 
 
-def finish(sh: Shaded, k: int, halos=(), cull=False):
+def finish(sh: Shaded, k: int, halos=(), cull=False, edge=3.0):
     """Outline and quantise a shaded image; returns (rgba, glow_rgba or None, ox, oy). With
     `cull`, a halo whose centre lies behind the drawn surface (a lamp in a window on a face the
-    camera does not see) is left out, so it does not shine through the roof in front of it."""
+    camera does not see) is left out, so it does not shine through the roof in front of it.
+    `edge`: the depth step (design units) that draws a front edge; small figures use a finer
+    one so arms, heads and legs separate from the body at 1x."""
     c0, r0 = sh.c0, sh.r0
     mat2, lvl, dep = sh.mat, sh.level, sh.depth
     H, W = mat2.shape
@@ -265,7 +267,7 @@ def finish(sh: Shaded, k: int, halos=(), cull=False):
     lvl = lvl - solid * (0.9 * (up | left) + 1.6 * (down | right))
     front = np.zeros_like(solid)
     for nb in (pad_d[:-2, 1:-1], pad_d[2:, 1:-1], pad_d[1:-1, :-2], pad_d[1:-1, 2:]):
-        front |= (nb > -1e8) & (dep - nb > 3.0 * k)
+        front |= (nb > -1e8) & (dep - nb > edge * k)
     lvl = lvl - solid * front * 1.0
     pyy, pxx = np.mgrid[r0:r1, c0:c1]
     # Finer grids have smoother normals, so a narrower dither band keeps ramps in clean steps.
@@ -302,9 +304,9 @@ def finish(sh: Shaded, k: int, halos=(), cull=False):
     return rgba, glow, -c0, -r0
 
 
-def render_base(model: Model, cull=False):
+def render_base(model: Model, cull=False, edge=3.0):
     """Return (rgba, glow_rgba or None, ox, oy) for the model's visible surfaces."""
-    return finish(shade(model), model.k, model.halos, cull)
+    return finish(shade(model), model.k, model.halos, cull, edge)
 
 
 def render_shadow(model: Model) -> Sprite:

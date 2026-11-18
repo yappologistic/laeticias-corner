@@ -365,7 +365,8 @@ def _lyceum_landmark():
     walk = [t for t in tiles(0, 16, 0, 11) if t not in blocked]
     return Landmark((17, 12), (0, 56), ref("lyceum"), walk=walk,
                     slots={"drill": [{"t": [x, 2], "face": "+x"} for x in (3, 6, 9, 12)],
-                           "run": [{"t": [1, 1]}, {"t": [15, 2]}], "talk": [{"t": [5, 7]}, {"t": [6, 7]}]},
+                           "run": [{"t": [1, 1]}, {"t": [15, 2]}], "talk": [{"t": [5, 7]}, {"t": [6, 7]}],
+                           "wrestle": [{"t": [14, 4], "face": "+x"}, {"t": [15, 4], "face": "-x"}]},
                     district=6)
 
 

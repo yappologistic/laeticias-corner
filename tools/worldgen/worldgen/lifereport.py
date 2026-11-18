@@ -22,6 +22,7 @@ from plan import world_plan as P
 
 from . import citylife as CL
 from . import lifesim, rng
+from . import seasons as SEAS
 from .compose import NONE16
 from .preview import font
 
@@ -88,15 +89,9 @@ def events_at(doc, h: float, day: int, season: str, fest: set[str]) -> list[dict
     out = []
     for e in doc.get("events", []):
         t = e.get("trigger", {})
-        if t.get("festival") and t["festival"] not in fest:
+        if not CL.event_on_day(doc, e, day, fest):
             continue
-        if t.get("not_festival") and t["not_festival"] in fest:
-            continue
-        if t.get("season") and season not in t["season"]:
-            continue
-        if "days" in t and day % t["days"]["every"] != t["days"].get("offset", 0):
-            continue
-        if t.get("on") not in ("window", "calendar"):
+        if t.get("on") not in ("window", "calendar", "season_turn"):
             continue
         if "chance" in t and rng.hash64(f"{doc['id']}:{e['id']}:{day}") % 1000 >= t["chance"] * 1000:
             continue   # the day plan's draw (living-world §5.2), the same on every run
@@ -112,17 +107,18 @@ def chains_at(doc, h: float) -> list[str]:
 
 def day_report(doc: dict, view, problems: list) -> str:
     roles = CL.roles_by_id(doc)
-    season = doc.get("season", "spring")
     area = {d["id"]: d.get("area") for d in doc.get("districts", [])}
-    out = [f"# A day in the life: {doc.get('name')} ({season})", "",
+    mday = doc.get("moment", {}).get("calendar_day", 0)
+    out = [f"# A day in the life: {doc.get('name')}", "",
            f"{doc.get('caption', '')}. Written by `build.sh --city {doc['id']}` from "
            f"`assets/regions/{doc['id']}.json`; numbers are the population model's (actors "
            "present; movers per screenful = visible actors x 0.85 x 250 tiles / the district's "
            "tiles).", ""]
     out += [f"Checks: {CL.report_lines(problems)[0]}.", ""]
     for day, label in _days(doc):
-        fest = CL.festivals_on(doc, season, day % 3) | set(label[1])
-        out += [f"## {label[0]}", "", "| Hour | Present | Visible | Busiest districts (movers per "
+        season = CL.season_of(day)
+        fest = CL.festivals_on(doc, day) | set(label[1])
+        out += [f"## {label[0]} (day {day}: {season}, {SEAS.month_of(day)})", "", "| Hour | Present | Visible | Busiest districts (movers per "
                 "screenful) | Chains running | Events |", "|---|---:|---:|---|---|---|"]
         for h in range(24):
             hh = h + 0.5
@@ -144,9 +140,10 @@ def day_report(doc: dict, view, problems: list) -> str:
     for d in sorted(view.districts):
         cells = []
         who = ""
+        season = CL.season_of(mday)
         for hh in (5.0, 10.5, 13.0, 16.5, 19.5, 23.5):
-            pop = CL.population(doc, view, hh, 1, season, set())
-            vis = _visible(doc, roles, pop.get(d, {}), hh, 1, season, set())
+            pop = CL.population(doc, view, hh, mday, season, set())
+            vis = _visible(doc, roles, pop.get(d, {}), hh, mday, season, set())
             cells.append(f"{screen_movers(view, d, sum(vis.values())):.0f}")
             if hh == 10.5:
                 tot = sum(pop.get(d, {}).values()) or 1
@@ -154,15 +151,17 @@ def day_report(doc: dict, view, problems: list) -> str:
                 who = ", ".join(f"{k} {v / tot:.0%}" for k, v in top if v > 0)
         out.append(f"| {d} | {area.get(d)} | {view.districts[d]['tiles']} | {who} | "
                    f"{' / '.join(cells)} |")
-    out += ["", "## Chains (simulated week)", "", "| Chain | Hours | Period | Units used per day | "
-            "Stages: share of working time waiting / full |", "|---|---|---:|---|---|"]
+    out += ["", "## Chains (simulated week)", "", "| Chain | Hours | Period | Months | Units used per day | "
+            "Stages: share of working time waiting / full |", "|---|---|---:|---|---|---|"]
     for c in doc.get("chains", []):
         res = lifesim.simulate(c, view, roles)
+        ms = [SEAS.month_of(d) for d in range(12) if CL.chain_factor(c, d) > 0]
         parts = []
         for s, st in zip(c["stages"], res.get("stages", [])):
             w = max(1, st["work"])
             parts.append(f"{s.get('by')} {st['starve'] / w:.0%}/{st['block'] / w:.0%}")
         out.append(f"| {c['id']} | {'-'.join(c.get('hours', []))} | {c['period']} | "
+                   f"{'all year' if len(ms) == 12 else ', '.join(ms)} | "
                    f"{res.get('per_day')} | {'; '.join(parts)} |")
     out += ["", "## Events", "", "| Event | When | Rarity | Route | Cast |", "|---|---|---|---|---|"]
     for e in doc.get("events", []):
@@ -170,7 +169,7 @@ def day_report(doc: dict, view, problems: list) -> str:
         when = t.get("on", "")
         if t.get("hours"):
             when += f" {t['hours'][0]}-{t['hours'][1]}"
-        for k in ("festival", "season", "days", "every"):
+        for k in ("festival", "season", "months", "days", "every"):
             if k in t:
                 when += f" {k} {json.dumps(t[k], ensure_ascii=False)}"
         cast = sum(c.get("count", 1) for c in e.get("cast", []))
@@ -202,8 +201,8 @@ def _shade(v: float) -> tuple[int, int, int]:
 def activity_map(doc: dict, view, world, root: Path, day: int, label: str,
                  fest: tuple = (), panels=PANELS) -> Image.Image:
     roles = CL.roles_by_id(doc)
-    season = doc.get("season", "spring")
-    area = {d["id"]: d.get("area", "town") for d in doc.get("districts", [])}
+    season = CL.season_of(day)
+    area = {d["id"]: CL.area_of(d, day) for d in doc.get("districts", [])}
     rid = doc["id"]
     c0, r0, c1, r1 = P.REGIONS[rid][3]
     w, h = c1 - c0 + 1, r1 - r0 + 1
@@ -217,7 +216,7 @@ def activity_map(doc: dict, view, world, root: Path, day: int, label: str,
     img = Image.new("RGB", (pw * cols + 10 * cols + 10, (ph + 40) * rows + 50), (22, 24, 30))
     dr = ImageDraw.Draw(img)
     dr.text((10, 8), f"{doc.get('name')} · {label}", font=fT, fill=(240, 236, 226))
-    fests = set(fest) | CL.festivals_on(doc, season, day % 3)
+    fests = set(fest) | CL.festivals_on(doc, day)
     for k, (pname, hh) in enumerate(panels):
         ox, oy = 10 + (k % cols) * (pw + 10), 40 + (k // cols) * (ph + 40)
         pop = CL.population(doc, view, hh, day, season, fests)
@@ -255,11 +254,13 @@ def activity_map(doc: dict, view, world, root: Path, day: int, label: str,
 
 # -- the command ------------------------------------------------------------------------------
 
-def finish_doc(doc: dict, world, b) -> dict:
-    """What every region file gets beside its life: its sound and its look."""
-    from . import look, places, sound
-    doc = sound.apply(places.apply(doc), world, b.cat, b.root)
-    return look.apply(doc, world, b.cat, b.root)
+def finish_doc(doc: dict, world, b, beds: dict | None = None) -> dict:
+    """What every region file gets beside its life: its year (climate, era, water, seasonal life
+    and themes), its sound and its look."""
+    from . import look, places, seasonlife, sound
+    doc = seasonlife.apply(places.apply(doc), world, b.graphs, b.cat, b.root, beds)
+    doc = sound.apply(doc, world, b.cat, b.root)
+    return seasonlife.finish(look.apply(doc, world, b.cat, b.root), b.root)
 
 
 def run(b, rids: list[str], preview: bool, write: bool) -> bool:
@@ -274,7 +275,7 @@ def run(b, rids: list[str], preview: bool, write: bool) -> bool:
         if mod is None:
             raise SystemExit(f"no regions/{layer}/life.py for {rid!r}")
         view = CL.region_view(world, b.cat, b.graphs, b.root, rid, layer)
-        doc = finish_doc(mod.build(view), world, b)
+        doc = finish_doc(mod.build(view), world, b, getattr(mod, "SEASON_BEDS", None))
         problems = CL.check(doc, view)
         errs = [p for p in problems if p.level == "error"]
         (out_dir / f"{rid}_check.txt").write_text("\n".join(CL.report_lines(problems)) + "\n")

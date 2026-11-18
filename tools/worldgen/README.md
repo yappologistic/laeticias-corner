@@ -18,6 +18,9 @@ tools/worldgen/build.sh world --preview       # world.png, overview_full.png, as
 tools/worldgen/build.sh parsa --no-write      # validate only
 tools/worldgen/build.sh --test                # the test suite (about 25 s)
 tools/worldgen/build.sh --life                # region files of the stretches, seas, seams, waypoints
+tools/worldgen/build.sh --seasons             # catalogs' seasonal fields, flood ranks, ground classes, needs
+tools/worldgen/build.sh --city athens --year --preview   # … and a year in the life, the season maps
+tools/worldgen/build.sh --year-all            # a year in the life of every region file
 ```
 
 After changing the base or a town that touches it, rebuild the towns and then the base once more:
@@ -247,6 +250,35 @@ road's own lane only.
 `--check` validates committed files without their layouts, so checks that need the layout source
 (V4 expectations, V7 slots, source lines) only run when the layer is built.
 
+## Seasons (docs/design/seasons.md)
+
+One world calendar: calendar day n is month `n mod 12` (0 = March), season `(n / 3) mod 4`,
+season day `n mod 3 + 1`, week day `n mod 4`. Twelve days hold every month with its week day, so
+the life checks (L3-L5, L8) run over days 0..11 and have seen the whole year; a festival is on a
+day by its `season` + `day` or its `months`; a population, schedule block, event trigger or chain
+may say `months`; a chain may say `by_month` (twelve pace factors, its period divided by them; a
+slowed chain is judged after two days of filling); a district may say `seasonal_area` (`area`,
+`months`: a terrace whose court is away is held to a town's numbers in those months).
+
+- `worldgen/climates.py`: the fifteen climates (classes of plant and ground state by month, snow
+  lines, frost, wet and dusty months, water levels and ice, travel and sailing rows, weather,
+  grades, looks, dress, turn events, birds, work, transhumance), the calendar and its turns, which
+  climate each region has, which climates may meet, and the set pieces that change with the
+  seasons. `--seasons` writes them into the catalogs (only those fields, each file's own layout).
+- `worldgen/seasons.py`: the calendar, climate resolution (`inherits`), the catalog writer, the
+  water bodies, flood ranks and ground classes (`assets/world/seasons.json`, `groundclass.png`).
+- `worldgen/seasonlife.py`: what every region file gets (climate, era, moment, weather and themes
+  by season, water by month, tokens by month, harbours, dress, birds, herds between summer and
+  winter pastures, seasonal work on the farms, the turns of the seasons) and the helpers the
+  cities' own `regions/<city>/seasons.py` use (`monthly`, `vary`, `factors`).
+- `worldgen/seasoncheck.py`: S1-S17 (`--check`, report `out/worldgen/seasons_check.txt`) and the
+  needs file `assets/world/season-needs.json` (seasonal art and audio not made yet).
+- `worldgen/seasonreport.py`: a year in the life and the season maps (`out/worldgen/seasons/`).
+
+A city keeps its famous month exactly as its day in the life was built (the Parilia in April,
+the Panathenaia in July, the spring audience in April); its `seasons.py` lays the other months
+over it. The checks hold every month to the same rules as that day.
+
 ## The base layer and the plan (worldgen core)
 
 `plan/world_plan.py` holds the coarse authored world: regions and stretches, district ownership
@@ -272,4 +304,5 @@ only its own area, and all noise is a function of world position and a string ke
 `compiler.py` layout → layer and graph · `compose.py` the engine's composition rule ·
 `validate.py` V1–V12 · `bible.py` city-file landmark tables · `base.py` the base layer ·
 `preview.py` maps, overview, isometric close-ups · `rng.py` SplitMix64 streams and noise ·
+`climates.py`, `seasons.py`, `seasonlife.py`, `seasoncheck.py`, `seasonreport.py` the seasons ·
 `build.py` the command line. Tests in `tests/`.

@@ -161,7 +161,7 @@ def chains() -> list[dict]:
     ]
 
 
-FESTIVALS = [{"id": "grain_fleet", "season": "spring", "day": 1, "hours": ["06:00", "12:00"]}]
+FESTIVALS = [{"id": "grain_fleet", "day": 1, "hours": ["06:00", "12:00"]}]
 
 
 def events() -> list[dict]:
@@ -252,9 +252,9 @@ def cards() -> dict:
 
 
 def build(view) -> dict:
-    return {
+    return T.SEASONS.ostia({
         "version": 1, "id": "ostia", "name": "Ostia and Portus", "native": "Ostia · Portus",
-        "caption": "Ostia and Portus · April AD 126", "era": "The Rome of Hadrian · AD 126", "season": "spring",
+        "caption": "Ostia and Portus · April AD 126", "era": "The Rome of Hadrian · AD 126",
         "theme": T.theme([{"file": "amb/rome/river.ogg", "hours": ["05:30", "19:30"]},
                           {"file": "amb/rome/night.ogg", "hours": ["19:30", "05:30"]}],
                          [{"rect": grid_rect(view, "harbour"), "file": "amb/world/sea.ogg", "gain": 0.8},
@@ -284,4 +284,4 @@ def build(view) -> dict:
                     "grain_fleet": "The grain fleet is coming in: a line of big ships rounds the lighthouse.",
                     "lighthouse": "Dusk: the fire is lit on the lighthouse."},
         "journal": ["landmark:*", "chain:*", "idea:*", "event:grain_fleet"],
-    }
+    })

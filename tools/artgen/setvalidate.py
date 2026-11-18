@@ -20,7 +20,7 @@ import spec
 from palette import palette_for
 from validate import diamond
 
-MAX_PAGES = {"parsa": 2, "athens": 2, "rome": 3, "world": 1}
+MAX_PAGES = {"parsa": 2, "athens": 2, "rome": 4, "world": 1}
 
 
 def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str], list[str]]:

@@ -3,6 +3,7 @@
  "id": "seam_dell",
  "name": "The misty dell",
  "caption": "Between the corner and Rome",
+ "climate": "home",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "world",
   "ambience": {
    "beds": [
     {
@@ -55,6 +55,101 @@
    "loops": []
   },
   "seam": true,
+  "weather": {
+   "spring": {
+    "showers": 0.6,
+    "clouds": 1.2,
+    "wind": 0.35
+   },
+   "summer": {
+    "showers": 0.15,
+    "clouds": 0.6,
+    "wind": 0.2
+   },
+   "autumn": {
+    "showers": 0.7,
+    "clouds": 1.4,
+    "wind": 0.6
+   },
+   "winter": {
+    "showers": 0.5,
+    "clouds": 1.0,
+    "wind": 0.4,
+    "snow": true
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.98,
+     1.02,
+     0.96
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.03,
+     1.0,
+     0.94
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.06,
+     0.96,
+     0.86
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.9,
+     0.95,
+     1.06
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "frozen": [
+      "jan"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
   "sound": {
    "climate": "mediterranean",
    "nature": {
@@ -557,6 +652,32 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
@@ -567,5 +688,43 @@
  "zones": [],
  "cards": {},
  "strings": {},
- "journal": []
+ "journal": [],
+ "water": [
+  {
+   "body": "tiber",
+   "kind": "river",
+   "tiles": 59,
+   "rect": [
+    0,
+    1176,
+    23,
+    1179
+   ],
+   "level": [
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "ice": {
+    "months": [
+     "jan"
+    ],
+    "hours": [
+     "00:00",
+     "12:00"
+    ],
+    "rim": true,
+    "note": "rim ice on winter day 2; the middle stays open for the ducks"
+   }
+  }
+ ]
 }

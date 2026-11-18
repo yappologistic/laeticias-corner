@@ -3,6 +3,7 @@
  "id": "syrian_steppe",
  "name": "The Syrian steppe",
  "caption": "The Syrian steppe · c. 470 BC",
+ "climate": "steppe",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -53,6 +53,122 @@
     }
    ],
    "loops": []
+  },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.35
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 0,
+    "wind": 0.45,
+    "dust": 3,
+    "shimmer": 1
+   },
+   "autumn": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.35,
+    "dust": 1
+   },
+   "winter": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.35
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.96
+    ],
+    "haze": 0.12,
+    "ground": {
+     "flooded": [
+      "apr",
+      "may"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.08,
+     1.0,
+     0.86
+    ],
+    "look": {
+     "shimmer": 0.6,
+     "contrast": 0.08
+    },
+    "haze": 0.12,
+    "ground": {
+     "low_water": [
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.05,
+     1.0,
+     0.9
+    ],
+    "haze": 0.12,
+    "ground": {
+     "low_water": [
+      "sep",
+      "oct"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.96,
+     0.98,
+     1.02
+    ],
+    "look": {
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   }
   },
   "sound": {
    "climate": "steppe",
@@ -120,6 +236,9 @@
     }
    ],
    "voices": {
+    "world.crane": [
+     "sfx/world/cranes.wav"
+    ],
     "world.stork": [
      "sfx/world/stork_clatter.wav"
     ]
@@ -466,10 +585,25 @@
      "actor": "world.stork",
      "density": "daytime",
      "max_per_chunk": 1,
-     "seasons": [
-      "spring",
-      "summer"
-     ]
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "sep"
+      ]
+     }
+    },
+    {
+     "actor": "world.crane",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "oct",
+       "nov"
+      ]
+     }
     }
    ],
    "name": "Countryside",
@@ -641,16 +775,224 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_first_green",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_green",
+   "show": "ground",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/cuckoo.wav"
+  },
+  {
+   "id": "turn_summer_heat_haze",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "heat_haze",
+   "show": "look",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.shimmer"
+     }
+    }
+   ],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_autumn_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_winter_first_frost",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_frost",
+   "show": "ground",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
+  }
+ ],
  "lanes_tokens": [],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "A green flush over the land.",
+  "season_turn.summer": "The air shimmers over the land at noon.",
+  "season_turn.autumn": "Cranes call high overhead, flying in a long V.",
+  "season_turn.winter": "Frost on the ground this morning."
+ },
  "journal": [],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "The Syrian steppe · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "water": [
+  {
+   "body": "euphrates",
+   "kind": "river",
+   "tiles": 33,
+   "rect": [
+    401,
+    206,
+    409,
+    215
+   ],
+   "level": [
+    "normal",
+    "flood",
+    "flood",
+    "high",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "normal",
+    "normal"
+   ],
+   "rank": [
+    0,
+    2,
+    3,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "colour": {
+    "flood": [
+     1.12,
+     0.92,
+     0.8
+    ],
+    "high": [
+     1.1,
+     0.94,
+     0.82
+    ],
+    "normal": [
+     1.02,
+     0.99,
+     0.9
+    ],
+    "low": [
+     0.98,
+     1.0,
+     0.9
+    ]
+   }
+  }
+ ]
 }

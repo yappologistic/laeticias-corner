@@ -12,6 +12,13 @@
     "athens.limestone",
     "athens.ashlar",
     "world.coast"
+   ],
+   "season_class": "grass",
+   "plain_state": "dry",
+   "season_states": [
+    "fresh",
+    "green",
+    "dormant"
    ]
   },
   {
@@ -61,6 +68,14 @@
    "edges": 16,
    "faces": [
     "athens.earth"
+   ],
+   "season_class": "crop",
+   "plain_state": "stubble",
+   "season_states": [
+    "green",
+    "ploughed",
+    "sprout",
+    "ripe"
    ]
   },
   {
@@ -70,6 +85,12 @@
    "edges": 16,
    "faces": [
     "athens.earth"
+   ],
+   "season_class": "grass",
+   "plain_state": "dry",
+   "season_states": [
+    "fresh",
+    "green"
    ]
   },
   {
@@ -1465,7 +1486,8 @@
    ],
    "emitters": {
     "smoke": "smoke"
-   }
+   },
+   "snow_catch": false
   },
   {
    "id": "athens.g_wheel",
@@ -1748,7 +1770,8 @@
    "height": 26,
    "emitters": {
     "fire": "athens.fire"
-   }
+   },
+   "snow_catch": false
   },
   {
    "id": "athens.g_lamp",
@@ -1764,7 +1787,8 @@
     "base",
     "glow"
    ],
-   "height": 8
+   "height": 8,
+   "snow_catch": false
   },
   {
    "id": "athens.g_couch",
@@ -1894,7 +1918,8 @@
      "kind": "work",
      "cap": 1
     }
-   ]
+   ],
+   "snow_catch": false
   },
   {
    "id": "athens.g_workshop",
@@ -1978,7 +2003,10 @@
     "base",
     "shadow"
    ],
-   "height": 60
+   "height": 60,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": []
   },
   {
    "id": "athens.t_plane",
@@ -1994,7 +2022,14 @@
     "base",
     "shadow"
    ],
-   "height": 110
+   "height": 110,
+   "season_class": "deciduous",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "athens.t_cypress",
@@ -2010,7 +2045,10 @@
     "base",
     "shadow"
    ],
-   "height": 100
+   "height": 100,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": []
   },
   {
    "id": "athens.t_pine",
@@ -2026,7 +2064,10 @@
     "base",
     "shadow"
    ],
-   "height": 90
+   "height": 90,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": []
   },
   {
    "id": "athens.t_fig",
@@ -2042,7 +2083,14 @@
     "base",
     "shadow"
    ],
-   "height": 55
+   "height": 55,
+   "season_class": "deciduous",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "athens.t_vine",
@@ -2058,7 +2106,15 @@
     "base",
     "shadow"
    ],
-   "height": 30
+   "height": 30,
+   "season_class": "vine",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare",
+    "fruit"
+   ]
   },
   {
    "id": "athens.t_poplar",
@@ -2074,7 +2130,14 @@
     "base",
     "shadow"
    ],
-   "height": 100
+   "height": 100,
+   "season_class": "deciduous",
+   "plain_state": "green",
+   "season_states": [
+    "fresh",
+    "turn",
+    "bare"
+   ]
   },
   {
    "id": "athens.t_agnus",
@@ -2090,7 +2153,18 @@
     "base",
     "shadow"
    ],
-   "height": 35
+   "height": 35,
+   "season_class": "deciduous",
+   "plain_state": "bloom",
+   "season_states": [
+    "fresh",
+    "green",
+    "turn",
+    "bare"
+   ],
+   "bloom": [
+    "jul"
+   ]
   },
   {
    "id": "athens.t_oleander",
@@ -2106,7 +2180,18 @@
     "base",
     "shadow"
    ],
-   "height": 30
+   "height": 30,
+   "season_class": "evergreen",
+   "plain_state": "bloom",
+   "season_states": [
+    "green"
+   ],
+   "bloom": [
+    "jun",
+    "jul",
+    "aug",
+    "sep"
+   ]
   },
   {
    "id": "athens.t_myrtle",
@@ -2122,7 +2207,10 @@
     "base",
     "shadow"
    ],
-   "height": 25
+   "height": 25,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": []
   },
   {
    "id": "athens.t_laurel",
@@ -2138,7 +2226,10 @@
     "base",
     "shadow"
    ],
-   "height": 40
+   "height": 40,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": []
   },
   {
    "id": "athens.p_thyme",
@@ -2153,7 +2244,16 @@
    "layers": [
     "base"
    ],
-   "height": 8
+   "height": 8,
+   "season_class": "evergreen",
+   "plain_state": "green",
+   "season_states": [
+    "bloom"
+   ],
+   "bloom": [
+    "may",
+    "jun"
+   ]
   },
   {
    "id": "athens.p_barley",
@@ -2168,7 +2268,15 @@
    "layers": [
     "base"
    ],
-   "height": 6
+   "height": 6,
+   "season_class": "crop",
+   "plain_state": "stubble",
+   "season_states": [
+    "green",
+    "ploughed",
+    "sprout",
+    "ripe"
+   ]
   },
   {
    "id": "athens.p_acanthus",
@@ -2183,7 +2291,13 @@
    "layers": [
     "base"
    ],
-   "height": 12
+   "height": 12,
+   "season_class": "wildflower",
+   "plain_state": "green",
+   "season_states": [
+    "dry",
+    "bloom"
+   ]
   },
   {
    "id": "athens.p_reeds",
@@ -2199,7 +2313,12 @@
     "base"
    ],
    "height": 30,
-   "fps": 2
+   "fps": 2,
+   "season_class": "reed",
+   "plain_state": "green",
+   "season_states": [
+    "dry"
+   ]
   },
   {
    "id": "athens.p_asphodel",
@@ -2214,7 +2333,13 @@
    "layers": [
     "base"
    ],
-   "height": 10
+   "height": 10,
+   "season_class": "wildflower",
+   "plain_state": "dry",
+   "season_states": [
+    "green",
+    "bloom"
+   ]
   },
   {
    "id": "athens.delphi_apollo",

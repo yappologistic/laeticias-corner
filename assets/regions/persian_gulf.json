@@ -3,6 +3,7 @@
  "id": "persian_gulf",
  "name": "The Persian Gulf",
  "caption": "The Persian Gulf · c. 470 BC",
+ "climate": "gulf",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -53,6 +53,102 @@
     }
    ],
    "loops": []
+  },
+  "weather": {
+   "spring": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.25
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 0,
+    "wind": 0.5,
+    "wind_from": "north-west",
+    "dust": 3
+   },
+   "autumn": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.25
+   },
+   "winter": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.3
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.95
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.08,
+     0.98,
+     0.84
+    ],
+    "look": {
+     "haze": 0.4,
+     "dust": 0.4,
+     "shimmer": 0.4
+    },
+    "haze": 0.168,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.04,
+     0.99,
+     0.9
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.96,
+     0.99,
+     1.02
+    ],
+    "look": {
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   }
   },
   "sound": {
    "climate": "sea",
@@ -105,8 +201,14 @@
     }
    ],
    "voices": {
+    "world.crane": [
+     "sfx/world/cranes.wav"
+    ],
     "world.gull": [
      "sfx/world/gull_call.wav"
+    ],
+    "world.stork": [
+     "sfx/world/stork_clatter.wav"
     ]
    }
   },
@@ -446,6 +548,88 @@
  },
  "districts": [
   {
+   "id": "land",
+   "populations": [
+    {
+     "actor": "world.stork",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "world.crane",
+     "density": "daytime",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "world.swift",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    }
+   ],
+   "name": "Countryside",
+   "sound": {
+    "surfaces": {},
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "air": {
+     "mist": {
+      "where": "plain",
+      "hours": [
+       "05:00",
+       "07:30"
+      ],
+      "seasons": [
+       "spring"
+      ]
+     }
+    }
+   }
+  },
+  {
    "id": "sea",
    "populations": [
     {
@@ -625,27 +809,187 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_storks_arrive",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storks_arrive",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/stork_clatter.wav",
+   "cast": [
+    {
+     "actor": "world.stork",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_shamal",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "shamal",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/gust_front.wav"
+  },
+  {
+   "id": "turn_autumn_date_harvest",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "date_harvest",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/chop.wav"
+  },
+  {
+   "id": "turn_winter_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "world.fishing_boat",
    "lane": "base:gulf_lane",
-   "count": 2
+   "count": 2,
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ]
   },
   {
    "actor": "world.reed_boat",
    "lane": "base:karun_boats",
-   "count": 2
+   "count": 2,
+   "by_month": "barge"
   }
  ],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "The storks are back on their nests.",
+  "season_turn.summer": "The north-west wind blows dust over the water.",
+  "season_turn.autumn": "Climbers in the palms: the date harvest.",
+  "season_turn.winter": "Cranes call high overhead, flying in a long V."
+ },
  "journal": [],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "The Persian Gulf · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ }
 }
