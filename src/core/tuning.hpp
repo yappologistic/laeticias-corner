@@ -415,10 +415,12 @@ inline constexpr float kShownSmooth = 0.2f;    // seconds the drawn speed follow
 inline constexpr float kProgressWindow = 1.0f; // seconds
 inline constexpr float kStillTiles = 0.15f;    // closer than this to a window's start: standing
 inline constexpr int kBenchCrowdMin = 100;     // live actors a city bench case must hold to count
-inline constexpr float kStallGiveUp = 4.0f;    // seconds stuck before the step is given up
-inline constexpr float kStallLeave = 12.0f;    // seconds stuck (steps given up) before it leaves
-inline constexpr float kTurnHold = 0.17f;      // radians past a sector's edge before a sprite turns
-inline constexpr float kRate0 = 0.85f;         // animation pace range, per actor
+inline constexpr float kTokenJump =
+    1.5f; // tiles a traveller moves in a step past which it fades in
+inline constexpr float kStallGiveUp = 4.0f; // seconds stuck before the step is given up
+inline constexpr float kStallLeave = 12.0f; // seconds stuck (steps given up) before it leaves
+inline constexpr float kTurnHold = 0.17f;   // radians past a sector's edge before a sprite turns
+inline constexpr float kRate0 = 0.85f;      // animation pace range, per actor
 inline constexpr float kRate1 = 1.15f;
 inline constexpr float kStationDwell = 6.0f;  // seconds a courier stops at a relay station
 inline constexpr float kFishingStay = 150.0f; // seconds a fishing boat works its ground

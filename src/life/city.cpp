@@ -2513,6 +2513,12 @@ void CityLife::puppet(int i) {
                 release(i);
             return;
         }
+        // Its hours over in view, it stands at the last rest stop it passed: there it fades in,
+        // rather than popping across the road.
+        if (!materialising_ && dist2(at.pos, a.pos) > tl::kTokenJump * tl::kTokenJump) {
+            a.alpha = 0;
+            a.flags |= live_flag::kFadeIn;
+        }
         place(at.pos);
         a.anim = at.moving ? kAnimMove : kAnimIdle;
         if (tk.carry >= 0 && member > 0) {
