@@ -199,9 +199,9 @@ WorldLights::WorldLights(const world::LoadedWorld& world, const WorldSprites& sp
             l.at = flame;
             l.ground = groundUnder(flame, it, iso_, raise);
             l.profile = prof->second;
-            l.seed = static_cast<std::uint32_t>(at.x * 73856093) ^
-                     static_cast<std::uint32_t>(at.y * 19349663) ^
-                     static_cast<std::uint32_t>(prof->second * 83492791);
+            l.seed = static_cast<std::uint32_t>(at.x) * 73856093U ^
+                     static_cast<std::uint32_t>(at.y) * 19349663U ^
+                     static_cast<std::uint32_t>(prof->second) * 83492791U;
             named_.push_back({item, prof->second, l.seed});
             pending.push_back({l, static_cast<std::size_t>((at.y >> kChunkShift) * map_.chunksX() +
                                                            (at.x >> kChunkShift))});
