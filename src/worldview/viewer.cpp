@@ -95,6 +95,8 @@ private:
     bool init();
     void frame(float dt);
     void present();
+    // Reading a pixel back waits until the GPU has drawn everything queued.
+    void gpuSync();
     [[nodiscard]] std::optional<Vec2> tileOf(std::string_view target) const;
     void lookAtTile(Vec2 tile);
     bool go(std::string_view target);
@@ -248,6 +250,12 @@ void Viewer::frame(float dt) {
 
 void Viewer::present() {
     if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
+}
+
+void Viewer::gpuSync() {
+    const SDL_Rect one{0, 0, 1, 1};
+    if (const SurfacePtr px{SDL_RenderReadPixels(renderer_.get(), &one)}; !px)
+        SDL_Log("gpu sync: %s", SDL_GetError());
 }
 
 void Viewer::settle() {
@@ -491,9 +499,11 @@ int Viewer::runBench() {
         if (!o_.benchCase.empty() && o_.benchCase != c.name) continue;
         c.setup();
         view_->jumped(cam);
-        for (int i = 0; i < kWarmFrames; ++i) {
+        // Warm up until the start is loaded and built: the cases measure what follows.
+        for (int i = 0; i < kWarmFrames || (!view_->settled() && i < kSettleFrames); ++i) {
             frame(kBenchStep);
             present();
+            gpuSync();
         }
         std::vector<Sample> samples;
         samples.reserve(static_cast<std::size_t>(c.frames));
@@ -503,10 +513,7 @@ int Viewer::runBench() {
             frame(kBenchStep);
             const Uint64 t1 = SDL_GetPerformanceCounter();
             present();
-            // Reading a pixel back waits for the GPU: the frame's whole time.
-            const SDL_Rect one{0, 0, 1, 1};
-            if (const SurfacePtr px{SDL_RenderReadPixels(renderer_.get(), &one)}; !px)
-                SDL_Log("bench: %s", SDL_GetError());
+            gpuSync();
             const Uint64 t2 = SDL_GetPerformanceCounter();
             const double f = static_cast<double>(SDL_GetPerformanceFrequency()) / 1000.0;
             const FrameStats& st = view_->stats();

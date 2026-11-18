@@ -74,6 +74,15 @@ std::vector<SpriteRef> variants(const PageAtlas& pages, const std::string& prefi
     return out;
 }
 
+// How far a sprite reaches beyond the screen diamond of its footprint `f` (tiles relative to the
+// anchor's tile): gathering finds an item from the tiles its sprite can cover.
+void span(Reach& r, const SpriteRef& s, TileRect f, Iso iso) {
+    r.left = std::max(r.left, static_cast<float>(f.x0 - f.y1) * iso.hw + s.ox);
+    r.right = std::max(r.right, (s.w - s.ox) - static_cast<float>(f.x1 - f.y0) * iso.hw);
+    r.up = std::max(r.up, static_cast<float>(f.x0 + f.y0) * iso.hh + s.oy);
+    r.down = std::max(r.down, (s.h - s.oy) - static_cast<float>(f.x1 + f.y1) * iso.hh);
+}
+
 void reach(Reach& r, const SpriteRef& s) {
     r.left = std::max(r.left, s.ox);
     r.right = std::max(r.right, s.w - s.ox);
@@ -261,8 +270,13 @@ void WorldSprites::resolveItems(const world::WorldMap& map, Atlas& home, PageAtl
                     boxes_.push_back({static_cast<std::uint32_t>(i), v, fp.w, fp.h});
                 }
             }
-            for (const SpriteRef& s : look.base.f) reach(itemReach_, s);
-            for (const SpriteRef& s : look.pieces) reach(itemReach_, s);
+            const Footprint fp = info.footprint(connect ? 0 : v);
+            for (const SpriteRef& s : look.base.f) span(itemSpan_, s, {0, 0, fp.w, fp.h}, iso_);
+            if (const world::GeomVariant* g =
+                    content.geometry(static_cast<int>(i), connect ? 0 : v, connect ? v : 0);
+                g != nullptr && g->pieces.size() == look.pieces.size())
+                for (std::size_t p = 0; p < look.pieces.size(); ++p)
+                    span(itemSpan_, look.pieces[p], g->pieces[p].rect, iso_);
         }
     }
     homeShadowPeak_ = peaks > 0 ? peakSum / static_cast<float>(peaks) : -1.0f;
@@ -417,7 +431,7 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
         VariantLook& look = items_[b.info][static_cast<std::size_t>(b.variant)];
         if (b.y + b.h > pageH) continue; // did not fit: the generic box below
         look.base.f = {pages.generated(b.x, b.y, b.w, b.h, b.ox, b.oy)};
-        reach(itemReach_, look.base.f.front());
+        span(itemSpan_, look.base.f.front(), {0, 0, b.fw, b.fh}, iso_);
     }
     unknown_.base.f = {diamond_};
     unknown_.look = Look::Placeholder;
@@ -425,7 +439,7 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
         for (VariantLook& v : variants)
             if (v.base.empty() && v.pieces.empty()) v.base = unknown_.base;
     groundReach_.up += static_cast<float>(15 * lvl);
-    itemReach_.up += static_cast<float>(15 * lvl);
+    itemSpan_.up += static_cast<float>(15 * lvl);
 }
 
 const VariantLook& WorldSprites::item(const world::Placed& it) const {

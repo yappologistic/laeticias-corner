@@ -20,6 +20,7 @@
 #include "world/loader.hpp"
 #include "worldview/camera.hpp"
 #include "worldview/cell_cache.hpp"
+#include "worldview/gather.hpp"
 #include "worldview/order.hpp"
 #include "worldview/overview.hpp"
 #include "worldview/page_atlas.hpp"
@@ -38,10 +39,11 @@ enum class Lod : std::uint8_t { Native, Half, Quarter, Overview };
 
 struct FrameStats {
     Lod lod = Lod::Native;
-    int drawCalls = 0;
-    int spritesDrawn = 0;  // items, pieces and occluding tiles drawn live
-    int spritesCulled = 0; // in the gathered region but off screen
-    int cellsBuilt = 0;    // native cells (re)built this frame
+    int drawCalls = 0;      // composing the frame
+    int buildDrawCalls = 0; // rendering cells into the cache
+    int spritesDrawn = 0;   // items, pieces and occluding tiles drawn live
+    int spritesCulled = 0;  // in the gathered region but off screen
+    int cellsBuilt = 0;     // native cells (re)built this frame
     int impostorsBuilt = 0;
     int cellsCached = 0;
     int cellsPending = 0; // visible cells still to build (shown from a coarser level)
@@ -84,35 +86,30 @@ public:
     [[nodiscard]] static Lod lodFor(float scale);
 
 private:
-    struct Elem {
-        const VariantLook* look = nullptr;
-        std::uint32_t item = 0;
-        std::int16_t piece = -1; // -1: the whole sprite
-        bool ground = false;     // a raised tile drawn over what it hides
-        bool first = false;      // the item's first element: draws its shadow and glow
-        TilePos tile;
-        Vec2 anchor;
-    };
     struct Target {
         TexturePtr texture;
         int w = 0;
         int h = 0;
     };
 
+    void warmUp();
     [[nodiscard]] bool put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
                            SDL_BlendMode mode, bool mirror = false);
     // One tile: faces down to its neighbours, the ground, foam, face caps. False when a sprite's
     // page was not resident.
     bool drawTile(TilePos p, const Xform& x, float now, bool* animated);
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
-    // Elements whose sprites meet `clip` among the items over `tiles`, with the raised tiles
-    // that hide them, into elems_/items_ (cleared first).
-    void gather(TileRect tiles, const FRect& clip);
-    void sortGathered();
     bool drawElem(const Elem& e, const Xform& x, float now);
-    bool drawShadows(std::span<const std::uint32_t> order, const FRect& clip, const Xform& x,
-                     Target& layer, Target& onto);
-    void buildCell(CellKey key, int slot, double now);
+    bool drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
+                     Target& onto);
+    void buildGround(CellKey key, int slot, double now);
+    // Impostors: their blocks are gathered on the worker, then drawn a few per frame.
+    void requestImpostor(CellKey key, int slot);
+    void drawBlock(CellKey key, int slot, int block, const Gathered& g);
+    void progressImpostors();
+    // The native level's objects: re-gathered on the worker before the view leaves them.
+    // `needed`: drawn this frame, so something must exist even if it has to be gathered now.
+    void updateRegion(const FRect& view, bool needed);
     void drawCells(int level, const FRect& view, const Xform& x, double now);
     void drawOverview(const Xform& x);
     void drawBackdrops(const FRect& view, const Xform& x, bool night);
@@ -145,20 +142,28 @@ private:
     int viewW_ = 0;
     int viewH_ = 0;
 
-    // The native level's region: elements around the view in draw order.
-    TileRect region_;
-    std::vector<Elem> regionElems_;
-    std::vector<OrderItem> regionItems_;
-    std::vector<std::uint32_t> regionOrder_;
-    // Scratch for gathering (regions and impostor blocks).
-    std::vector<world::DrawPiece> pieces_;
-    std::vector<Elem> elems_;
-    std::vector<OrderItem> items_;
-    std::vector<std::uint32_t> order_;
-    std::vector<std::uint32_t> stamp_; // per map item: gathering pass it was last seen in
-    std::uint32_t pass_ = 0;
-    PageOrder sorter_;
+    // The native level's region: elements around the view in draw order, and the next one.
+    std::unique_ptr<Prep> prep_;
+    Gathered region_;
+    Gathered next_;
+    TileRect regionRect_;
+    TileRect pendingRect_;
+    bool regionPending_ = false;
+    Gathered block_;
+    struct Building {
+        CellKey key;
+        int slot = 0;
+        std::uint32_t done = 0; // blocks drawn
+    };
+    std::vector<Building> building_;
+    std::vector<std::pair<std::uint16_t, std::uint32_t>> shadows_; // page, element: by page
     std::vector<CellKey> keys_;
+    struct Composite {
+        CellKey key;
+        CellKey from; // the cell drawn for it: itself, or a coarser one while it builds
+        int slot = 0;
+    };
+    std::vector<Composite> composite_;
     std::vector<bool> setSeen_;
 
     // Backdrop sprites by region (day, night), resolved at load; empty when the set has none.

@@ -56,6 +56,8 @@ void WorldCamera::setLevel(int level) {
     level_ = std::clamp(level, 0, levels() - 1);
     flight_.duration = 0;
     scale_ = levelScale(level_);
+    // The overview shows the whole world.
+    if (level_ == 0) pos_ = clamped({(box_.x0 + box_.x1) * 0.5f, (box_.y0 + box_.y1) * 0.5f});
 }
 
 Vec2 WorldCamera::clamped(Vec2 world) const {
@@ -77,8 +79,9 @@ void WorldCamera::panBy(Vec2 d) {
 }
 
 void WorldCamera::flyTo(Vec2 world, int level, float seconds) {
-    const Vec2 to = clamped(world);
     level = std::clamp(level, 0, levels() - 1);
+    const Vec2 to =
+        clamped(level == 0 ? Vec2{(box_.x0 + box_.x1) * 0.5f, (box_.y0 + box_.y1) * 0.5f} : world);
     const float s1 = levelScale(level);
     const float dist = std::hypot(to.x - pos_.x, to.y - pos_.y);
     // Mid-way the view is wide enough to hold both ends, but never wider than the overview.

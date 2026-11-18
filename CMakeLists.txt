@@ -144,6 +144,7 @@ add_library(lc_worldview STATIC
   src/worldview/camera.cpp
   src/worldview/cell_cache.cpp
   src/worldview/cells.cpp
+  src/worldview/gather.cpp
   src/worldview/order.cpp
   src/worldview/overview.cpp
   src/worldview/page_atlas.cpp

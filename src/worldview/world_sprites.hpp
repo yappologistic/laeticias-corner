@@ -92,9 +92,10 @@ public:
     [[nodiscard]] const SpriteRef& white() const { return white_; }
     [[nodiscard]] const MaterialLook& waterFace() const { return waterFace_; }
 
-    // How far ground and item sprites reach from their tile's top vertex (raise included).
+    // How far ground sprites reach from their tile's top vertex, and item sprites beyond the
+    // screen diamond of their footprint (both with the raise of the highest level).
     [[nodiscard]] const Reach& groundReach() const { return groundReach_; }
-    [[nodiscard]] const Reach& itemReach() const { return itemReach_; }
+    [[nodiscard]] const Reach& itemSpan() const { return itemSpan_; }
     [[nodiscard]] float homeShadowPeak() const { return homeShadowPeak_; }
 
     // Placed items drawn as stand-ins or placeholders, and terrain and faces without art.
@@ -140,7 +141,7 @@ private:
     std::array<SpriteRef, 2> face_{};
     SpriteRef white_;
     Reach groundReach_;
-    Reach itemReach_;
+    Reach itemSpan_;
     float homeShadowPeak_ = -1;
     std::vector<MissingArt> missingItems_;
     std::vector<MissingArt> missingTerrain_;

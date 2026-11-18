@@ -1,9 +1,11 @@
 #pragma once
 // Every atlas page the world draws from, as one key space (docs/design/world-tech.md §4.5): the
 // home atlas and the generated page are always resident; each set's pages stream in: decoded on
-// a worker thread, uploaded a slice of rows per frame (one page at a time), and evicted
-// least-recently-used under a memory budget once idle. In synchronous mode (headless runs) a
-// wanted page loads at once, so screenshots are reproducible.
+// a worker thread, uploaded a slice of rows per frame (one page at a time) into one of a few
+// page-sized texture slots, and evicted least-recently-used under a memory budget once idle.
+// The slots are made (and touched, so the driver allocates them) when streaming starts, as a GPU
+// stalls a frame for every fresh 64 MB texture. In synchronous mode (headless runs) a wanted
+// page loads at once, so screenshots are reproducible.
 
 #include "platform/batch.hpp"
 #include "platform/sdl_ptr.hpp"
@@ -87,8 +89,9 @@ private:
         int w = 0;
         int h = 0;
         State state = State::Unloaded;
-        SDL_Texture* texture = nullptr; // owned below for streamed pages
+        SDL_Texture* texture = nullptr; // a slot's, or owned (the generated page)
         TexturePtr owned;
+        int slot = -1;     // the texture slot of a streamed page while it holds one
         SurfacePtr pixels; // decoded, waiting for upload
         int uploadedRows = 0;
         mutable double lastUsed = 0;
@@ -101,6 +104,8 @@ private:
     void work(const std::stop_token& stop);
     void upload(Page& p, int rows);
     void evict(double now);
+    [[nodiscard]] int freeSlot(double now);
+    int makeSlot();
 
     SDL_Renderer* renderer_;
     const Atlas& home_;
@@ -108,6 +113,8 @@ private:
     bool async_;
     std::size_t budget_;
     std::vector<Page> pages_;
+    std::vector<TexturePtr> slots_; // kMaxPageSide square, shared by the streamed pages
+    std::vector<int> slotPage_;     // page in each slot, -1 free
     std::uint32_t generation_ = 0;
     double now_ = 0;
     int uploads_ = 0;
@@ -123,6 +130,11 @@ private:
     std::vector<Decoded> done_;
     std::jthread worker_; // last: joined before the rest is destroyed
 };
+
+// Textures filled once from pixels: static on GPU renderers (no CPU copy kept), streaming on the
+// software renderer (whose static textures are run-length encoded, slow to draw from deep in a
+// large page; see platform/sdl_ptr.hpp).
+[[nodiscard]] SDL_TextureAccess uploadAccess(SDL_Renderer* renderer);
 
 // Width and height of a PNG from its header, without decoding it.
 [[nodiscard]] std::optional<std::pair<int, int>> pngSize(const std::filesystem::path& file);

@@ -10,15 +10,17 @@ namespace {
 
 constexpr std::size_t kSlotBytes =
     static_cast<std::size_t>(tuning::kCellTexels) * tuning::kCellTexels * 4;
-constexpr int kPerPage = tuning::kCellPageSlots * tuning::kCellPageSlots;
+constexpr int kPerPage = tuning::kCellPageSlotsX * tuning::kCellPageSlotsY;
+constexpr int kPageW = tuning::kCellTexels * tuning::kCellPageSlotsX;
+constexpr int kPageH = tuning::kCellTexels * tuning::kCellPageSlotsY;
 
 } // namespace
 
 CellCache::CellCache(SDL_Renderer* renderer, std::size_t budget)
     : renderer_(renderer), maxSlots_(std::max<std::size_t>(kPerPage, budget / kSlotBytes)) {}
 
-int CellCache::pageSide() const {
-    return tuning::kCellTexels * tuning::kCellPageSlots;
+Vec2 CellCache::pageSize() {
+    return {static_cast<float>(kPageW), static_cast<float>(kPageH)};
 }
 
 int CellCache::find(std::uint64_t key) {
@@ -35,7 +37,7 @@ int CellCache::acquire(std::uint64_t key) {
         const int page = n / kPerPage;
         if (page == static_cast<int>(pages_.size())) {
             TexturePtr t{SDL_CreateTexture(renderer_, kTextureFormat, SDL_TEXTUREACCESS_TARGET,
-                                           pageSide(), pageSide())};
+                                           kPageW, kPageH)};
             if (!t) {
                 SDL_Log("cells: cannot create a cache page: %s", SDL_GetError());
                 maxSlots_ = slots_.size();
@@ -47,8 +49,8 @@ int CellCache::acquire(std::uint64_t key) {
             const int k = n % kPerPage;
             CellSlot s;
             s.page = page;
-            s.x = (k % tuning::kCellPageSlots) * tuning::kCellTexels;
-            s.y = (k / tuning::kCellPageSlots) * tuning::kCellTexels;
+            s.x = (k % tuning::kCellPageSlotsX) * tuning::kCellTexels;
+            s.y = (k / tuning::kCellPageSlotsX) * tuning::kCellTexels;
             slots_.push_back(s);
             used_.push_back(0);
             i = n;
@@ -63,6 +65,7 @@ int CellCache::acquire(std::uint64_t key) {
     s.key = key;
     s.complete = false;
     s.animated = false;
+    s.ready = true;
     used_[static_cast<std::size_t>(i)] = frame_;
     byKey_[key] = i;
     return i;

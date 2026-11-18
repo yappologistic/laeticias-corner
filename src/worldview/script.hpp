@@ -4,8 +4,9 @@
 // A script is one command per line; `#` starts a comment. Grid tiles are (x, y) as world.json
 // and worldinfo use them.
 //
-//   goto <region> | goto <x> <y>     jump to a region's marker or a grid tile (centred on its
-//   level) zoom <overview|0.25|0.5|1|2|3> clock <day|dusk|night|dawn|t>    time of day; t in 0..1
+//   goto <region> | goto <x> <y>     jump to a region's marker or a grid tile, centred as drawn
+//   zoom <overview|0.25|0.5|1|2|3>
+//   clock <day|dusk|night|dawn|t>    time of day; t in 0..1
 //   pan <dx> <dy>                    move the view by window pixels
 //   fly <region> [zoom] [seconds] | fly <x> <y> [zoom] [seconds]
 //                                    start an eased flight; frames run it

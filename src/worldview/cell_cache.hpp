@@ -2,6 +2,7 @@
 // Slots for cells (worldview/cells.hpp) in shared page textures under a memory budget, reused
 // least-recently-used. What goes into a slot is the renderer's business.
 
+#include "core/iso.hpp"
 #include "platform/sdl_ptr.hpp"
 
 #include <cstdint>
@@ -17,6 +18,7 @@ struct CellSlot {
     int y = 0;
     std::uint32_t generation = 0; // atlas generation it was drawn with
     bool complete = false;        // every sprite's page was resident
+    bool ready = true;            // drawn (impostors fill in over a few frames)
     bool animated = false;        // holds animated terrain
     std::uint64_t anim = 0;       // animation step it was drawn at
 };
@@ -34,7 +36,7 @@ public:
     [[nodiscard]] SDL_Texture* page(int p) const {
         return pages_[static_cast<std::size_t>(p)].get();
     }
-    [[nodiscard]] int pageSide() const;
+    [[nodiscard]] static Vec2 pageSize(); // texels of a cache page
     void clear();
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] int cached() const { return static_cast<int>(byKey_.size()); }

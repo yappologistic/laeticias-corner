@@ -34,6 +34,9 @@ public:
     void flyTo(Vec2 world, int level, float seconds);
     void update(float dt);
     [[nodiscard]] bool flying() const { return flight_.duration > 0; }
+    // Where the flight ends: the view's centre and scale (meaningful while flying).
+    [[nodiscard]] Vec2 arrival() const { return flight_.to; }
+    [[nodiscard]] float arrivalScale() const { return flight_.s1; }
 
     [[nodiscard]] Vec2 centre() const { return pos_; }
     [[nodiscard]] FRect view() const; // world px on screen

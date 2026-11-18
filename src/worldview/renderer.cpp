@@ -12,8 +12,8 @@ namespace lc::worldview {
 namespace {
 
 constexpr SDL_FColor kWhite{1, 1, 1, 1};
-constexpr float kSortCell = 128.0f; // screen grid of the depth sort, world px
 constexpr int kMaxLevel = 15;
+constexpr std::uint64_t kRegionTag = 1ULL << 63; // block tags are cell keys shifted by two
 
 SDL_FColor times(SDL_FColor c, float k) {
     return {c.r * k, c.g * k, c.b * k, c.a};
@@ -69,7 +69,8 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
                                          tuning::kPageBudget);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_, font);
     overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async);
-    stamp_.assign(map_.items().size(), 0);
+    prep_ = std::make_unique<Prep>(map_, *sprites_, async);
+    if (async) warmUp();
     for (std::size_t t = 0; t < map_.terrainCount(); ++t) {
         const TerrainLook& l = sprites_->terrain(static_cast<int>(t));
         if (l.animated() || (!l.foam[0].empty() && l.fps > 0)) animFps_ = std::max(animFps_, l.fps);
@@ -91,6 +92,35 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
 }
 
 WorldView::~WorldView() = default;
+
+void WorldView::warmUp() {
+    // Drivers prepare blend and filter state on first use, a stall of several milliseconds in
+    // the middle of a run: use every combination once, into a scratch target, and wait.
+    SDL_Texture* out = SDL_GetRenderTarget(renderer_);
+    ensure(half_, tuning::kImpostorBlock / 2, tuning::kImpostorBlock / 2);
+    SDL_Texture* white = pages_->texture(sprites_->white().page);
+    if (!SDL_SetRenderTarget(renderer_, half_.texture.get()))
+        SDL_Log("worldview: %s", SDL_GetError());
+    for (const SDL_BlendMode mode :
+         {SDL_BLENDMODE_NONE, SDL_BLENDMODE_BLEND, SDL_BLENDMODE_BLEND_PREMULTIPLIED,
+          SDL_BLENDMODE_ADD, SDL_BLENDMODE_MOD})
+        for (const SDL_ScaleMode scale : {SDL_SCALEMODE_NEAREST, SDL_SCALEMODE_LINEAR}) {
+            batch_.use(white, mode, scale);
+            batch_.quad(SDL_FRect{0, 0, 2, 2}, sprites_->white().uv, kWhite);
+            batch_.flush();
+        }
+    batch_.use(nullptr, SDL_BLENDMODE_NONE);
+    static constexpr int kTri[3] = {0, 1, 2};
+    const SDL_Vertex v[3] = {
+        {{0, 0}, kWhite, {0, 0}}, {{2, 0}, kWhite, {0, 0}}, {{0, 2}, kWhite, {0, 0}}};
+    batch_.triangles(v, 3, kTri, 3);
+    batch_.flush();
+    const SDL_Rect one{0, 0, 1, 1};
+    if (const SurfacePtr px{SDL_RenderReadPixels(renderer_, &one)}; !px)
+        SDL_Log("worldview: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("worldview: %s", SDL_GetError());
+    batch_.resetStats();
+}
 
 bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
                     SDL_BlendMode mode, bool mirror) {
@@ -207,82 +237,6 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     return ok;
 }
 
-void WorldView::gather(TileRect tiles, const FRect& clip) {
-    elems_.clear();
-    items_.clear();
-    tiles = tiles.clipped(map_.bounds());
-    if (tiles.empty()) return;
-    ++pass_;
-    map_.piecesIn(tiles, pieces_);
-    const auto placed = map_.items();
-    for (const world::DrawPiece& d : pieces_) {
-        const world::Placed& it = placed[d.item];
-        const VariantLook& look = sprites_->item(it);
-        // Geometry pieces without piece art draw the whole sprite once.
-        const bool split = d.piece >= 0 && !look.pieces.empty();
-        const bool first = stamp_[d.item] != pass_;
-        if (!split && !first) continue;
-        const SpriteRef& s =
-            split ? look.pieces[static_cast<std::size_t>(d.piece)] : look.base.f.front();
-        const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
-        const Vec2 a{w.x, w.y - static_cast<float>(it.level * lvl_)};
-        const FRect box{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
-        if (!box.overlaps(clip)) continue;
-        stamp_[d.item] = pass_;
-        const FRect foot =
-            split ? FRect{static_cast<float>(d.rect.x0), static_cast<float>(d.rect.y0),
-                          static_cast<float>(d.rect.x1), static_cast<float>(d.rect.y1)}
-                  : FRect{static_cast<float>(it.x), static_cast<float>(it.y),
-                          static_cast<float>(it.x + it.w), static_cast<float>(it.y + it.h)};
-        elems_.push_back({&look,
-                          d.item,
-                          static_cast<std::int16_t>(split ? d.piece : -1),
-                          false,
-                          first,
-                          {it.x, it.y},
-                          a});
-        items_.push_back({foot, box, s.page, false});
-    }
-    // Raised tiles that hide an item behind them join the sort (world-tech §4.3): Q hides P when
-    // P lies behind it, lower by dL > 0, within dL + 1 rows.
-    const Reach& gr = sprites_->groundReach();
-    for (int qy = tiles.y0; qy < tiles.y1; ++qy)
-        for (int qx = tiles.x0; qx < tiles.x1; ++qx) {
-            const TilePos q{qx, qy};
-            const int t = map_.terrainAt(q);
-            if (t == world::kNone) continue;
-            const int lq = map_.level(q);
-            if (lq == 0) continue;
-            bool hides = false;
-            for (int a = 0; a <= lq + 1 && !hides; ++a)
-                for (int b = 0; a + b <= lq + 1 && !hides; ++b) {
-                    const TilePos p{qx - a, qy - b};
-                    if ((a == 0 && b == 0) || !map_.inBounds(p) || map_.itemAt(p) < 0) continue;
-                    const int dl = lq - map_.level(p);
-                    hides = dl > 0 && a + b <= dl + 1;
-                }
-            if (!hides) continue;
-            const Vec2 w = iso_.toWorld(q);
-            const float top = w.y - static_cast<float>(lq * lvl_);
-            const FRect box{w.x - gr.left, top - (gr.up - static_cast<float>(kMaxLevel * lvl_)),
-                            w.x + gr.right, w.y + gr.down};
-            if (!box.overlaps(clip)) continue;
-            const TerrainLook& look = sprites_->terrain(t);
-            const std::uint16_t page =
-                look.base.empty() ? PageAtlas::kGeneratedPage : look.base.front().page;
-            elems_.push_back({nullptr, 0, -1, true, false, q, {}});
-            items_.push_back({{static_cast<float>(qx), static_cast<float>(qy),
-                               static_cast<float>(qx + 1), static_cast<float>(qy + 1)},
-                              box,
-                              page,
-                              true});
-        }
-}
-
-void WorldView::sortGathered() {
-    sorter_.sort(items_, kSortCell, order_);
-}
-
 bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     if (e.ground) return drawTile(e.tile, x, now, nullptr);
     const VariantLook& look = *e.look;
@@ -291,8 +245,8 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     return put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
 }
 
-bool WorldView::drawShadows(std::span<const std::uint32_t> order, const FRect& clip, const Xform& x,
-                            Target& layer, Target& onto) {
+bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
+                            Target& onto) {
     // Shadow sprites saturate in their own layer (their alpha was scaled to a peak of 1), which
     // is then laid over the ground once at the art's opacity: overlaps never double-darken.
     bool ok = true;
@@ -300,17 +254,20 @@ bool WorldView::drawShadows(std::span<const std::uint32_t> order, const FRect& c
     if (!SDL_SetRenderTarget(renderer_, layer.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: shadow layer: %s", SDL_GetError());
-    bool any = false;
-    for (const std::uint32_t i : order) {
-        const Elem& e = elems_[i];
+    // The layer's coverage does not depend on order: drawn page by page, one draw each.
+    shadows_.clear();
+    for (const std::uint32_t i : g.order) {
+        const Elem& e = g.elems[i];
         if (!e.first || e.look == nullptr || !e.look->shadow) continue;
         const SpriteRef& s = *e.look->shadow;
         const FRect box{e.anchor.x - s.ox, e.anchor.y - s.oy, e.anchor.x - s.ox + s.w,
                         e.anchor.y - s.oy + s.h};
-        if (!box.overlaps(clip)) continue;
-        ok &= put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
-        any = true;
+        if (box.overlaps(clip)) shadows_.emplace_back(s.page, i);
     }
+    std::ranges::stable_sort(shadows_, {}, &std::pair<std::uint16_t, std::uint32_t>::first);
+    for (const auto& [page, i] : shadows_)
+        ok &= put(*g.elems[i].look->shadow, g.elems[i].anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    const bool any = !shadows_.empty();
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, onto.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
@@ -331,152 +288,237 @@ float WorldView::shadowOpacity() const {
     return home >= 0 ? (home + sets) * 0.5f : sets;
 }
 
-void WorldView::buildCell(CellKey key, int si, double now) {
+void WorldView::buildGround(CellKey key, int si, double now) {
+    // The ground straight into the slot, at native resolution.
+    const int before = batch_.drawCalls();
     CellSlot& slot = cells_.slot(si);
     const FRect cell = cellRect(key);
-    const auto t = static_cast<float>(now);
-    bool complete = true;
     bool animated = false;
     batch_.flush();
-    SDL_Texture* page = cells_.page(slot.page);
     const auto fx = static_cast<float>(slot.x);
     const auto fy = static_cast<float>(slot.y);
-    if (key.level == 0) {
-        // The ground straight into the slot, at native resolution.
-        const SDL_Rect clip{slot.x, slot.y, tuning::kCellTexels, tuning::kCellTexels};
-        const SDL_FRect fill{fx, fy, static_cast<float>(tuning::kCellTexels),
-                             static_cast<float>(tuning::kCellTexels)};
-        if (!SDL_SetRenderTarget(renderer_, page) || !SDL_SetRenderClipRect(renderer_, &clip) ||
-            !SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE) ||
-            !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) ||
-            !SDL_RenderFillRect(renderer_, &fill))
-            SDL_Log("worldview: cell: %s", SDL_GetError());
-        complete = drawTiles(cell, {{cell.x0 - fx, cell.y0 - fy}, 1.0f, SDL_SCALEMODE_NEAREST}, t,
-                             &animated);
-        batch_.flush();
-        if (!SDL_SetRenderClipRect(renderer_, nullptr)) SDL_Log("worldview: %s", SDL_GetError());
-        ++stats_.cellsBuilt;
-    } else {
-        // An impostor: blocks rendered at full resolution with everything static, then halved
-        // with filtering into the slot (each halving averages 2 x 2 texels).
-        const int block = tuning::kImpostorBlock;
-        ensure(scratch_, block, block);
-        ensure(scratchShadow_, block, block);
-        ensure(half_, block / 2, block / 2);
-        const int perSide = cellPx(key.level) / block;
-        const int dst = tuning::kCellTexels / perSide;
-        for (int by = 0; by < perSide; ++by)
-            for (int bx = 0; bx < perSide; ++bx) {
-                const FRect r{cell.x0 + static_cast<float>(bx * block),
-                              cell.y0 + static_cast<float>(by * block),
-                              cell.x0 + static_cast<float>((bx + 1) * block),
-                              cell.y0 + static_cast<float>((by + 1) * block)};
-                const Xform x{{r.x0, r.y0}, 1.0f, SDL_SCALEMODE_NEAREST};
-                if (!SDL_SetRenderTarget(renderer_, scratch_.texture.get()) ||
-                    !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) ||
-                    !SDL_RenderClear(renderer_))
-                    SDL_Log("worldview: impostor: %s", SDL_GetError());
-                complete &= drawTiles(r, x, 0, nullptr);
-                gather(tilesUnder(grown(r, sprites_->itemReach()), iso_), r);
-                sortGathered();
-                complete &= drawShadows(order_, r, x, scratchShadow_, scratch_);
-                for (const std::uint32_t i : order_) complete &= drawElem(elems_[i], x, 0);
-                batch_.flush();
-                // Halve down to the slot's share: 1024 -> 512 (level 1), -> 512 -> 256 (level 2).
-                SDL_Texture* src = scratch_.texture.get();
-                int size = block;
-                while (size / 2 > dst) {
-                    if (!SDL_SetRenderTarget(renderer_, half_.texture.get()))
-                        SDL_Log("worldview: %s", SDL_GetError());
-                    batch_.use(src, SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
-                    const auto hs = static_cast<float>(size / 2);
-                    batch_.quad(SDL_FRect{0, 0, hs, hs},
-                                {0, 0, static_cast<float>(size) / static_cast<float>(scratch_.w),
-                                 static_cast<float>(size) / static_cast<float>(scratch_.h)},
-                                kWhite);
-                    batch_.flush();
-                    src = half_.texture.get();
-                    size /= 2;
-                }
-                if (!SDL_SetRenderTarget(renderer_, page)) SDL_Log("worldview: %s", SDL_GetError());
-                const Target& from = src == half_.texture.get() ? half_ : scratch_;
-                batch_.use(src, SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
-                batch_.quad(SDL_FRect{fx + static_cast<float>(bx * dst),
-                                      fy + static_cast<float>(by * dst), static_cast<float>(dst),
-                                      static_cast<float>(dst)},
-                            {0, 0, static_cast<float>(size) / static_cast<float>(from.w),
-                             static_cast<float>(size) / static_cast<float>(from.h)},
-                            kWhite);
-                batch_.flush();
-            }
-        ++stats_.impostorsBuilt;
-    }
-    slot.complete = complete;
+    const SDL_Rect clip{slot.x, slot.y, tuning::kCellTexels, tuning::kCellTexels};
+    const SDL_FRect fill{fx, fy, static_cast<float>(tuning::kCellTexels),
+                         static_cast<float>(tuning::kCellTexels)};
+    if (!SDL_SetRenderTarget(renderer_, cells_.page(slot.page)) ||
+        !SDL_SetRenderClipRect(renderer_, &clip) ||
+        !SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_NONE) ||
+        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) ||
+        !SDL_RenderFillRect(renderer_, &fill))
+        SDL_Log("worldview: cell: %s", SDL_GetError());
+    slot.complete = drawTiles(cell, {{cell.x0 - fx, cell.y0 - fy}, 1.0f, SDL_SCALEMODE_NEAREST},
+                              static_cast<float>(now), &animated);
+    batch_.flush();
+    if (!SDL_SetRenderClipRect(renderer_, nullptr)) SDL_Log("worldview: %s", SDL_GetError());
     slot.animated = animated;
     slot.generation = pages_->generation();
     slot.anim = animFps_ > 0 ? static_cast<std::uint64_t>(now * animFps_) : 0;
+    slot.ready = true;
+    ++stats_.cellsBuilt;
+    stats_.buildDrawCalls += batch_.drawCalls() - before;
+}
+
+namespace {
+
+int blocksPerSide(int level) {
+    return cellPx(level) / tuning::kImpostorBlock;
+}
+
+FRect blockRect(CellKey key, int block) {
+    const FRect c = cellRect(key);
+    const int n = blocksPerSide(key.level);
+    const auto b = static_cast<float>(tuning::kImpostorBlock);
+    const auto bx = static_cast<float>(block % n);
+    const auto by = static_cast<float>(block / n);
+    return {c.x0 + bx * b, c.y0 + by * b, c.x0 + (bx + 1) * b, c.y0 + (by + 1) * b};
+}
+
+std::uint64_t blockTag(CellKey key, int block) {
+    return (packCell(key) << 2) | static_cast<std::uint64_t>(block);
+}
+
+} // namespace
+
+void WorldView::requestImpostor(CellKey key, int si) {
+    const int n = blocksPerSide(key.level);
+    for (int b = 0; b < n * n; ++b) {
+        const FRect r = blockRect(key, b);
+        prep_->request({blockTag(key, b), gatherTiles(r, sprites_->itemSpan(), iso_), r});
+    }
+    cells_.slot(si).complete = true;
+    building_.push_back({key, si, 0});
+}
+
+void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
+    // The block at full resolution with everything static, then halved with filtering into its
+    // share of the slot (each halving averages 2 x 2 texels): 1024 -> 512 for level 1, and
+    // -> 512 -> 256 for level 2.
+    const int before = batch_.drawCalls();
+    batch_.flush();
+    const int size0 = tuning::kImpostorBlock;
+    ensure(scratch_, size0, size0);
+    ensure(scratchShadow_, size0, size0);
+    ensure(half_, size0 / 2, size0 / 2);
+    CellSlot& slot = cells_.slot(si);
+    const FRect r = blockRect(key, block);
+    const Xform x{{r.x0, r.y0}, 1.0f, SDL_SCALEMODE_NEAREST};
+    if (!SDL_SetRenderTarget(renderer_, scratch_.texture.get()) ||
+        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
+        SDL_Log("worldview: impostor: %s", SDL_GetError());
+    bool complete = drawTiles(r, x, 0, nullptr);
+    complete &= drawShadows(g, r, x, scratchShadow_, scratch_);
+    for (const std::uint32_t i : g.order) complete &= drawElem(g.elems[i], x, 0);
+    batch_.flush();
+    const int n = blocksPerSide(key.level);
+    const int dst = tuning::kCellTexels / n;
+    const Target* src = &scratch_;
+    int size = size0;
+    while (size / 2 > dst) {
+        if (!SDL_SetRenderTarget(renderer_, half_.texture.get()))
+            SDL_Log("worldview: %s", SDL_GetError());
+        batch_.use(src->texture.get(), SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
+        const auto hs = static_cast<float>(size / 2);
+        batch_.quad(SDL_FRect{0, 0, hs, hs},
+                    {0, 0, static_cast<float>(size) / static_cast<float>(src->w),
+                     static_cast<float>(size) / static_cast<float>(src->h)},
+                    kWhite);
+        batch_.flush();
+        src = &half_;
+        size /= 2;
+    }
+    if (!SDL_SetRenderTarget(renderer_, cells_.page(slot.page)))
+        SDL_Log("worldview: %s", SDL_GetError());
+    batch_.use(src->texture.get(), SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
+    batch_.quad(SDL_FRect{static_cast<float>(slot.x + (block % n) * dst),
+                          static_cast<float>(slot.y + (block / n) * dst), static_cast<float>(dst),
+                          static_cast<float>(dst)},
+                {0, 0, static_cast<float>(size) / static_cast<float>(src->w),
+                 static_cast<float>(size) / static_cast<float>(src->h)},
+                kWhite);
+    batch_.flush();
+    slot.complete = slot.complete && complete;
+    stats_.buildDrawCalls += batch_.drawCalls() - before;
+}
+
+void WorldView::progressImpostors() {
+    int budget = async_ ? tuning::kImpostorBlocksPerFrame : 1 << 30;
+    for (auto it = building_.begin(); it != building_.end();) {
+        Building& b = *it;
+        const int n = blocksPerSide(b.key.level);
+        const std::uint32_t all = (1u << (n * n)) - 1;
+        // Looking the cell up keeps its slot from being reused while it fills in.
+        const bool alive = cells_.find(packCell(b.key)) == b.slot;
+        for (int k = 0; k < n * n; ++k) {
+            const std::uint32_t bit = 1u << k;
+            if ((b.done & bit) != 0) continue;
+            if (alive && budget <= 0) break;
+            if (!prep_->take(blockTag(b.key, k), block_)) continue;
+            b.done |= bit;
+            if (!alive) continue;
+            drawBlock(b.key, b.slot, k, block_);
+            --budget;
+        }
+        if (b.done != all) {
+            ++it;
+            continue;
+        }
+        if (alive) {
+            CellSlot& s = cells_.slot(b.slot);
+            s.ready = true;
+            s.generation = pages_->generation();
+            ++stats_.impostorsBuilt;
+        }
+        it = building_.erase(it);
+    }
 }
 
 void WorldView::drawCells(int level, const FRect& view, const Xform& x, double now) {
     const std::uint64_t anim = animFps_ > 0 ? static_cast<std::uint64_t>(now * animFps_) : 0;
-    int budget = async_
-                     ? (level == 0 ? tuning::kCellBuildsPerFrame : tuning::kImpostorBuildsPerFrame)
-                     : 1 << 30;
     const auto stale = [&](int si) {
         const CellSlot& s = cells_.slot(si);
         return (!s.complete && s.generation != pages_->generation()) ||
                (level == 0 && s.animated && s.anim != anim);
     };
+    const auto building = [&](CellKey k) {
+        return std::ranges::any_of(building_, [&](const Building& b) { return b.key == k; });
+    };
+    int budget = async_ ? tuning::kCellBuildsPerFrame : 1 << 30;
+    // Brings a cell up to date if the budget allows; false when it is not drawn yet.
     const auto build = [&](CellKey k) {
         const std::uint64_t key = packCell(k);
         int si = cells_.find(key);
-        if (si >= 0 && !stale(si)) return true;
-        if (budget <= 0) return false;
-        if (si < 0) si = cells_.acquire(key);
-        if (si < 0) return false;
-        --budget;
-        buildCell(k, si, now);
-        return true;
+        if (si >= 0 && !stale(si)) return cells_.slot(si).ready;
+        if (level == 0) {
+            if (budget <= 0) return false;
+            if (si < 0) si = cells_.acquire(key);
+            if (si < 0) return false;
+            --budget;
+            buildGround(k, si, now);
+            return true;
+        }
+        if (building(k)) return si >= 0 && cells_.slot(si).ready;
+        if (async_ && static_cast<int>(building_.size()) >= tuning::kImpostorCellsInFlight)
+            return si >= 0 && cells_.slot(si).ready;
+        if (si < 0) {
+            si = cells_.acquire(key);
+            if (si < 0) return false;
+            cells_.slot(si).ready = false;
+        }
+        requestImpostor(k, si);
+        return cells_.slot(si).ready;
     };
+    if (level > 0) progressImpostors();
     keys_.clear();
     forEachCell(view, level, [&](CellKey k) { keys_.push_back(k); });
-    for (const CellKey& k : keys_)
-        if (!build(k)) ++stats_.cellsPending;
+    for (const CellKey& k : keys_) (void)build(k);
     // Spare budget prepares the ring around the view.
-    if (async_ && budget > 0) {
+    if (async_) {
         const auto s = static_cast<float>(cellPx(level) * tuning::kCellPrefetch);
         forEachCell({view.x0 - s, view.y0 - s, view.x1 + s, view.y1 + s}, level, [&](CellKey k) {
-            if (budget > 0 && cells_.find(packCell(k)) < 0) (void)build(k);
+            if (cells_.find(packCell(k)) < 0) (void)build(k);
         });
+    }
+    if (level > 0 && !async_) progressImpostors();
+    for (const CellKey& k : keys_) {
+        const int si = cells_.find(packCell(k));
+        if (si < 0 || !cells_.slot(si).ready) ++stats_.cellsPending;
     }
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
     // Cells not built yet show the overview underneath, or their coarser level.
     if (stats_.cellsPending > 0) drawOverview(x);
-    const auto side = static_cast<float>(cells_.pageSide());
+    // Cells never overlap, so they go page by page: one draw per cache page.
+    const Vec2 side = CellCache::pageSize();
+    composite_.clear();
     for (const CellKey& k : keys_) {
         int si = -1;
         CellKey from = k;
         for (int l = level; l <= 2 && si < 0; ++l) {
             from = {l, k.cx >> (l - level), k.cy >> (l - level)};
             si = cells_.find(packCell(from));
+            if (si >= 0 && !cells_.slot(si).ready) si = -1;
         }
-        if (si < 0) continue;
-        const CellSlot& s = cells_.slot(si);
-        // The part of the slot that covers k (all of it unless a coarser cell stands in).
-        const int shift = from.level - level;
+        if (si >= 0) composite_.push_back({k, from, si});
+    }
+    std::ranges::stable_sort(composite_, [&](const Composite& a, const Composite& b) {
+        return cells_.slot(a.slot).page < cells_.slot(b.slot).page;
+    });
+    for (const Composite& c : composite_) {
+        const CellSlot& s = cells_.slot(c.slot);
+        // The part of the slot that covers the cell (all of it unless a coarser one stands in).
+        const int shift = c.from.level - level;
         const int part = tuning::kCellTexels >> shift;
-        const int ox = (k.cx - (from.cx << shift)) * part;
-        const int oy = (k.cy - (from.cy << shift)) * part;
-        const FRect r = cellRect(k);
+        const int ox = (c.key.cx - (c.from.cx << shift)) * part;
+        const int oy = (c.key.cy - (c.from.cy << shift)) * part;
+        const FRect r = cellRect(c.key);
         const Vec2 p0 = x.apply({r.x0, r.y0});
         const Vec2 p1 = x.apply({r.x1, r.y1});
         batch_.use(cells_.page(s.page), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
                    shift == 0 ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
         batch_.quad(SDL_FRect{p0.x, p0.y, p1.x - p0.x, p1.y - p0.y},
-                    {static_cast<float>(s.x + ox) / side, static_cast<float>(s.y + oy) / side,
-                     static_cast<float>(s.x + ox + part) / side,
-                     static_cast<float>(s.y + oy + part) / side},
+                    {static_cast<float>(s.x + ox) / side.x, static_cast<float>(s.y + oy) / side.y,
+                     static_cast<float>(s.x + ox + part) / side.x,
+                     static_cast<float>(s.y + oy + part) / side.y},
                     kWhite);
     }
 }
@@ -626,47 +668,36 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
         const int level = lod == Lod::Native ? 0 : (lod == Lod::Half ? 1 : 2);
         drawCells(level, view, xf, now);
     }
+    // A flight down to the native level gathers its destination on the way.
+    if (camera.flying() && lodFor(camera.arrivalScale()) == Lod::Native) {
+        const Vec2 to = camera.arrival();
+        const float k = 0.5f / camera.arrivalScale();
+        updateRegion(
+            {to.x - screen.x * k, to.y - screen.y * k, to.x + screen.x * k, to.y + screen.y * k},
+            false);
+    }
     if (lod == Lod::Native) {
-        // Objects around the view, sorted once per region.
-        const TileRect need = tilesUnder(grown(view, sprites_->itemReach()), iso_);
-        if (!region_.contains(need) || regionElems_.empty()) {
-            const int gx = std::max(
-                tuning::kRegionMinGrow,
-                static_cast<int>(static_cast<float>(need.x1 - need.x0) * tuning::kRegionGrow));
-            const int gy = std::max(
-                tuning::kRegionMinGrow,
-                static_cast<int>(static_cast<float>(need.y1 - need.y0) * tuning::kRegionGrow));
-            region_ = {need.x0 - gx, need.y0 - gy, need.x1 + gx, need.y1 + gy};
-            const FRect all{-1e9f, -1e9f, 1e9f, 1e9f};
-            gather(region_, all);
-            sortGathered();
-            regionElems_ = elems_;
-            regionItems_ = items_;
-            regionOrder_ = order_;
-            stats_.regionRebuilt = true;
-        }
-        stats_.regionElements = static_cast<int>(regionElems_.size());
-        elems_.swap(regionElems_);
-        (void)drawShadows(regionOrder_, view, xf, shadow_, view_);
-        for (const std::uint32_t i : regionOrder_) {
-            if (!regionItems_[i].screen.overlaps(view)) {
+        if (!camera.flying()) updateRegion(view, true);
+        stats_.regionElements = static_cast<int>(region_.elems.size());
+        (void)drawShadows(region_, view, xf, shadow_, view_);
+        for (const std::uint32_t i : region_.order) {
+            if (!region_.items[i].screen.overlaps(view)) {
                 ++stats_.spritesCulled;
                 continue;
             }
-            (void)drawElem(elems_[i], xf, static_cast<float>(now));
+            (void)drawElem(region_.elems[i], xf, static_cast<float>(now));
             ++stats_.spritesDrawn;
         }
-        elems_.swap(regionElems_);
     }
     batch_.flush();
     // Grading, then what glows (drawn after it, additively).
     fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
     if (lod == Lod::Native && light.glow > 0.01f) {
         const SDL_FColor g{light.glow, light.glow, light.glow, 1};
-        for (const std::uint32_t i : regionOrder_) {
-            const Elem& e = regionElems_[i];
+        for (const std::uint32_t i : region_.order) {
+            const Elem& e = region_.elems[i];
             if (e.first && e.look != nullptr && e.look->glow &&
-                regionItems_[i].screen.overlaps(view))
+                region_.items[i].screen.overlaps(view))
                 (void)put(*e.look->glow, e.anchor, xf, g, SDL_BLENDMODE_ADD);
         }
     }
@@ -698,7 +729,7 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
                  SDL_BLENDMODE_BLEND);
     batch_.flush();
 
-    stats_.drawCalls = batch_.drawCalls();
+    stats_.drawCalls = batch_.drawCalls() - stats_.buildDrawCalls;
     stats_.cellsCached = cells_.cached();
     stats_.cellBytes = cells_.bytes();
     stats_.overviewBytes = overview_->texture() != nullptr ? overview_->bytes() : 0;
@@ -706,9 +737,42 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
     stats_.targetBytes = targetBytes();
 }
 
+void WorldView::updateRegion(const FRect& view, bool needed) {
+    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_);
+    const auto grow = [&](float k) {
+        const int gx = std::max(tuning::kRegionMinGrow,
+                                static_cast<int>(static_cast<float>(need.x1 - need.x0) * k));
+        const int gy = std::max(tuning::kRegionMinGrow,
+                                static_cast<int>(static_cast<float>(need.y1 - need.y0) * k));
+        return TileRect{need.x0 - gx, need.y0 - gy, need.x1 + gx, need.y1 + gy};
+    };
+    const FRect all{-1e9f, -1e9f, 1e9f, 1e9f};
+    // A finished gather takes over when it covers the view (one overtaken by a jump is dropped).
+    if (regionPending_ && prep_->take(kRegionTag, next_)) {
+        regionPending_ = false;
+        if (pendingRect_.contains(need)) {
+            std::swap(region_, next_);
+            regionRect_ = pendingRect_;
+            stats_.regionRebuilt = true;
+        }
+    }
+    if (needed && !regionRect_.intersects(need)) {
+        // Nothing gathered here (a jump): gather now rather than show empty land.
+        regionRect_ = grow(tuning::kRegionGrow);
+        prep_->now(regionRect_, all, region_);
+        stats_.regionRebuilt = true;
+    } else if (!regionPending_ && !regionRect_.contains(grow(tuning::kRegionEarly))) {
+        pendingRect_ = grow(tuning::kRegionGrow);
+        prep_->request({kRegionTag, pendingRect_, all});
+        regionPending_ = true;
+        // Synchronous gathering finishes at once.
+        if (!async_) updateRegion(view, needed);
+    }
+}
+
 bool WorldView::settled() const {
-    return stats_.cellsPending == 0 && stats_.pages.streaming == 0 &&
-           overview_->texture() != nullptr;
+    return stats_.cellsPending == 0 && stats_.pages.streaming == 0 && !regionPending_ &&
+           building_.empty() && overview_->texture() != nullptr;
 }
 
 std::string WorldView::caption() const {

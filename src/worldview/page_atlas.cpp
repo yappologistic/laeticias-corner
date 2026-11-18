@@ -8,6 +8,12 @@
 #include <fstream>
 
 namespace lc::worldview {
+namespace {
+
+constexpr std::size_t kSlotBytes =
+    static_cast<std::size_t>(world::kMaxPageSide) * world::kMaxPageSide * 4;
+
+} // namespace
 
 std::optional<std::pair<int, int>> pngSize(const std::filesystem::path& file) {
     // Signature (8 bytes), IHDR length and type (8), then width and height, big-endian.
@@ -22,6 +28,13 @@ std::optional<std::pair<int, int>> pngSize(const std::filesystem::path& file) {
                                 (static_cast<unsigned>(h[i + 2]) << 8) | h[i + 3]);
     };
     return std::pair{be(16), be(20)};
+}
+
+SDL_TextureAccess uploadAccess(SDL_Renderer* renderer) {
+    const char* name = SDL_GetRendererName(renderer);
+    return name != nullptr && std::string_view(name) == SDL_SOFTWARE_RENDERER
+               ? SDL_TEXTUREACCESS_STREAMING
+               : SDL_TEXTUREACCESS_STATIC;
 }
 
 PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::AtlasPages& pages,
@@ -55,7 +68,67 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         }
         pages_.push_back(std::move(p));
     }
-    if (async_) worker_ = std::jthread([this](const std::stop_token& st) { work(st); });
+    // As many slots as the budget holds beside the fixed pages, made up front when streaming.
+    const std::size_t fixed = static_cast<std::size_t>(pages_[kHomePage].w) *
+                              static_cast<std::size_t>(pages_[kHomePage].h) * 4;
+    const std::size_t want =
+        std::min(pages_.size() - 2,
+                 std::max<std::size_t>(1, (budget_ - std::min(budget_, fixed)) / kSlotBytes));
+    if (async_) {
+        for (std::size_t i = 0; i < want; ++i)
+            if (makeSlot() < 0) break;
+        worker_ = std::jthread([this](const std::stop_token& st) { work(st); });
+    }
+}
+
+int PageAtlas::makeSlot() {
+    TexturePtr t{SDL_CreateTexture(renderer_, kTextureFormat, uploadAccess(renderer_),
+                                   world::kMaxPageSide, world::kMaxPageSide)};
+    if (!t || !SDL_SetTextureBlendMode(t.get(), SDL_BLENDMODE_BLEND)) {
+        SDL_Log("atlas: cannot create a page texture: %s", SDL_GetError());
+        return -1;
+    }
+    // Touch it: one texel written and drawn, read back so the driver allocates it now.
+    const std::uint32_t texel = 0;
+    const SDL_Rect one{0, 0, 1, 1};
+    const SDL_FRect dot{0, 0, 1, 1};
+    if (!SDL_UpdateTexture(t.get(), &one, &texel, 4) ||
+        !SDL_RenderTexture(renderer_, t.get(), &dot, &dot))
+        SDL_Log("atlas: %s", SDL_GetError());
+    if (const SurfacePtr px{SDL_RenderReadPixels(renderer_, &one)}; !px)
+        SDL_Log("atlas: %s", SDL_GetError());
+    slots_.push_back(std::move(t));
+    slotPage_.push_back(-1);
+    return static_cast<int>(slots_.size() - 1);
+}
+
+int PageAtlas::freeSlot(double now) {
+    for (std::size_t i = 0; i < slots_.size(); ++i)
+        if (slotPage_[i] < 0) return static_cast<int>(i);
+    evict(now);
+    for (std::size_t i = 0; i < slots_.size(); ++i)
+        if (slotPage_[i] < 0) return static_cast<int>(i);
+    // Nothing idle long enough: the least recently used page this frame does not want.
+    int lru = -1;
+    for (std::size_t i = 0; i < slots_.size(); ++i) {
+        const Page& p = pages_[static_cast<std::size_t>(slotPage_[i])];
+        if (p.state == State::Resident && !p.wanted &&
+            (lru < 0 ||
+             p.lastUsed < pages_[static_cast<std::size_t>(slotPage_[static_cast<std::size_t>(lru)])]
+                              .lastUsed))
+            lru = static_cast<int>(i);
+    }
+    if (lru >= 0) {
+        Page& p = pages_[static_cast<std::size_t>(slotPage_[static_cast<std::size_t>(lru)])];
+        p.slot = -1;
+        p.texture = nullptr;
+        p.state = State::Unloaded;
+        slotPage_[static_cast<std::size_t>(lru)] = -1;
+        return lru;
+    }
+    // Every slot holds a page the view needs (a seam of two sets): one more rather than stall.
+    SDL_Log("atlas: over the page budget by one page");
+    return makeSlot();
 }
 
 PageAtlas::~PageAtlas() {
@@ -71,10 +144,10 @@ std::optional<SpriteRef> PageAtlas::find(std::string_view key) const {
     const world::PageSprite* ps = index_.find(key);
     if (ps == nullptr) return std::nullopt;
     const auto page = static_cast<std::uint16_t>(ps->page + 2);
-    const Page& p = pages_[page];
-    if (p.w <= 0 || p.h <= 0) return std::nullopt;
-    const auto fw = static_cast<float>(p.w);
-    const auto fh = static_cast<float>(p.h);
+    if (pages_[page].w <= 0 || pages_[page].h <= 0) return std::nullopt;
+    // Streamed pages live in square slots: texture coordinates are over the slot.
+    const auto fw = static_cast<float>(world::kMaxPageSide);
+    const auto fh = static_cast<float>(world::kMaxPageSide);
     return SpriteRef{page,
                      {ps->x / fw, ps->y / fh, (ps->x + ps->w) / fw, (ps->y + ps->h) / fh},
                      static_cast<float>(ps->w),
@@ -107,8 +180,8 @@ SpriteRef PageAtlas::generated(int x, int y, int w, int h, float ox, float oy) c
 void PageAtlas::markShadow(const SpriteRef& s) {
     Page& p = pages_[s.page];
     if (p.state == State::Fixed) return;
-    const auto fw = static_cast<float>(p.w);
-    const auto fh = static_cast<float>(p.h);
+    const auto fw = static_cast<float>(world::kMaxPageSide);
+    const auto fh = static_cast<float>(world::kMaxPageSide);
     p.shadows.push_back({static_cast<int>(std::lround(s.uv.u0 * fw)),
                          static_cast<int>(std::lround(s.uv.v0 * fh)), static_cast<int>(s.w),
                          static_cast<int>(s.h)});
@@ -180,28 +253,27 @@ void PageAtlas::work(const std::stop_token& stop) {
 }
 
 void PageAtlas::upload(Page& p, int rows) {
-    if (!p.owned) {
-        p.owned.reset(
-            SDL_CreateTexture(renderer_, kTextureFormat, SDL_TEXTUREACCESS_STREAMING, p.w, p.h));
-        if (!p.owned || !SDL_SetTextureBlendMode(p.owned.get(), SDL_BLENDMODE_BLEND)) {
-            SDL_Log("atlas: cannot create a page texture: %s", SDL_GetError());
-            p.owned.reset();
+    if (p.slot < 0) {
+        p.slot = freeSlot(now_);
+        if (p.slot < 0) {
             p.pixels.reset();
             p.state = State::Unloaded;
             return;
         }
+        slotPage_[static_cast<std::size_t>(p.slot)] = static_cast<int>(&p - pages_.data());
     }
+    SDL_Texture* tex = slots_[static_cast<std::size_t>(p.slot)].get();
     const int n = std::min(rows, p.h - p.uploadedRows);
     const SDL_Rect r{0, p.uploadedRows, p.w, n};
     const auto* src = static_cast<const std::uint8_t*>(p.pixels->pixels) +
                       static_cast<std::ptrdiff_t>(p.uploadedRows) * p.pixels->pitch;
-    if (!SDL_UpdateTexture(p.owned.get(), &r, src, p.pixels->pitch))
+    if (!SDL_UpdateTexture(tex, &r, src, p.pixels->pitch))
         SDL_Log("atlas: upload failed: %s", SDL_GetError());
     p.uploadedRows += n;
     ++uploads_;
     if (p.uploadedRows < p.h) return;
     p.pixels.reset();
-    p.texture = p.owned.get();
+    p.texture = tex;
     p.state = State::Resident;
     p.lastUsed = now_;
     ++generation_;
@@ -261,12 +333,13 @@ void PageAtlas::evict(double now) {
     for (const Page& p : pages_) {
         const auto bytes = static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
         if (p.state == State::Fixed) fixed += bytes;
-        use.push_back({bytes, p.lastUsed, p.state == State::Resident, p.wanted});
+        use.push_back({kSlotBytes, p.lastUsed, p.state == State::Resident, p.wanted});
     }
     const std::size_t budget = budget_ > fixed ? budget_ - fixed : 0;
     for (const int i : pagesToEvict(use, now, tuning::kPageIdleSeconds, budget)) {
         Page& p = pages_[static_cast<std::size_t>(i)];
-        p.owned.reset();
+        slotPage_[static_cast<std::size_t>(p.slot)] = -1;
+        p.slot = -1;
         p.texture = nullptr;
         p.state = State::Unloaded;
     }
@@ -300,24 +373,17 @@ float PageAtlas::shadowOpacity() const {
 }
 
 PageStats PageAtlas::stats() const {
+    // Texture memory: the fixed pages and every slot made (resident or free).
     PageStats s;
     s.uploads = uploads_;
+    s.bytes = slots_.size() * kSlotBytes;
     for (const Page& p : pages_) {
-        const auto bytes = static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
-        switch (p.state) {
-        case State::Fixed: s.bytes += bytes; break;
-        case State::Resident:
-            s.bytes += bytes;
+        if (p.state == State::Fixed)
+            s.bytes += static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
+        else if (p.state == State::Resident)
             ++s.resident;
-            break;
-        case State::Uploading:
-            s.bytes += bytes;
+        else if (p.state != State::Unloaded)
             ++s.streaming;
-            break;
-        case State::Queued:
-        case State::Decoded: ++s.streaming; break;
-        case State::Unloaded: break;
-        }
     }
     return s;
 }

@@ -200,8 +200,8 @@ Overview::Overview(const world::WorldMap& map, const WorldSprites& sprites, cons
 bool Overview::upload(SDL_Renderer* renderer) {
     if (complete_ || !ready_.load(std::memory_order_acquire)) return complete_;
     if (!texture_) {
-        texture_.reset(SDL_CreateTexture(renderer, kTextureFormat, SDL_TEXTUREACCESS_STREAMING,
-                                         image_.w, image_.h));
+        texture_.reset(SDL_CreateTexture(renderer, kTextureFormat, uploadAccess(renderer), image_.w,
+                                         image_.h));
         if (!texture_ || !SDL_SetTextureBlendMode(texture_.get(), SDL_BLENDMODE_BLEND)) {
             SDL_Log("overview: %s", SDL_GetError());
             texture_.reset();

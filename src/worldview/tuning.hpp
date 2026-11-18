@@ -16,24 +16,27 @@ inline constexpr int kDefaultZoom = 3; // index into the viewer's levels (0: ove
 inline constexpr float kOverviewMargin = 0.94f; // share of the window the whole world fills
 
 // Cell cache: square cells of world pixels, rendered once into slots of shared page textures.
-inline constexpr int kCellTexels = 512;               // slot side; a level-L cell spans 512 << L px
-inline constexpr int kCellPageSlots = 4;              // slots per cache page side (2048 x 2048)
+inline constexpr int kCellTexels = 512;   // slot side; a level-L cell spans 512 << L px
+inline constexpr int kCellPageSlotsX = 8; // cache pages of 4096 x 2048: few pages, few draws
+inline constexpr int kCellPageSlotsY = 4;
 inline constexpr std::size_t kCellBudget = 96 * kMiB; // world-tech §4.14: ground cache 96 MB
-inline constexpr int kImpostorBlock = 1024;   // impostor cells render in blocks of this many px
-inline constexpr int kCellBuildsPerFrame = 4; // native cells (re)built per frame at most
-inline constexpr int kImpostorBuildsPerFrame = 1;
+inline constexpr int kImpostorBlock = 1024;       // impostor cells render in blocks of this many px
+inline constexpr int kCellBuildsPerFrame = 4;     // native cells (re)built per frame at most
+inline constexpr int kImpostorBlocksPerFrame = 1; // impostor blocks drawn per frame at most
+inline constexpr int kImpostorCellsInFlight = 4;  // impostor cells gathering at once
 inline constexpr int kCellPrefetch = 1; // ring of cells around the view built when budget allows
 
 // Atlas pages: streamed per set, decoded off the main thread, uploaded in slices.
 inline constexpr std::size_t kPageBudget = 320 * kMiB; // world-tech §4.14
-inline constexpr int kUploadRowsPerFrame = 512;        // 8 MB of a 4096-wide page per frame
+inline constexpr int kUploadRowsPerFrame = 64;         // 1 MB of a 4096-wide page per frame
 inline constexpr double kPageIdleSeconds = 10.0;       // unused this long: may be evicted
 inline constexpr int kNeededSetGrow = 64;              // tiles around the view whose sets load
 inline constexpr int kNeededSetSpacing = 8;            // district sampling step, tiles
 
 // Objects near the camera are gathered into a region this much larger than the view.
 inline constexpr float kRegionGrow = 0.5f;
-inline constexpr int kRegionMinGrow = 12; // tiles
+inline constexpr float kRegionEarly = 0.2f; // re-gather once the view comes this close to its edge
+inline constexpr int kRegionMinGrow = 12;   // tiles
 
 // The overview: an isometric map of the whole world generated at load, at this scale.
 inline constexpr int kOverviewDivisor = 16; // world px per overview px
