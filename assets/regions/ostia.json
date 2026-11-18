@@ -1,0 +1,566 @@
+{
+ "version": 1,
+ "id": "ostia",
+ "name": "Ostia and Portus",
+ "native": "Ostia · Portus",
+ "caption": "Ostia and Portus · April AD 126",
+ "theme": {
+  "grading": {
+   "dawn": [
+    1.0,
+    0.86,
+    0.78
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    1.0,
+    0.78,
+    0.6
+   ],
+   "night": [
+    0.42,
+    0.48,
+    0.72
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.92,
+    0.9,
+    0.84
+   ],
+   "strength": 0.1
+  },
+  "climate": "rome",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/rome/river.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/rome/night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ],
+   "zones": []
+  },
+  "music": {
+   "day": "music/rome/day.ogg",
+   "night": "music/rome/night.ogg"
+  }
+ },
+ "districts": [
+  {
+   "id": "portus",
+   "populations": [
+    {
+     "actor": "rome.docker",
+     "density": "work",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.egyptian_sailor",
+     "density": "market",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.gull",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "harbour",
+   "populations": [
+    {
+     "actor": "rome.gull",
+     "density": "daytime",
+     "max_per_chunk": 4
+    }
+   ]
+  },
+  {
+   "id": "town",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 7
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.vigil",
+     "density": "night",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.carter",
+     "density": "night",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.dog",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.docker",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.syrian_merchant",
+     "density": "market",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "forum",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.togatus",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "isola_sacra",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "saltpans",
+   "populations": [
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "rome.carriage",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cart",
+     "density": "night",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "fields",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.sheep",
+     "density": "daytime",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "rome.goat",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.ox",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "river",
+   "populations": [
+    {
+     "actor": "rome.gull",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "sea",
+   "populations": []
+  }
+ ],
+ "densities": {
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "market": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.9,
+   1,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.3,
+   0.4,
+   0.6,
+   0.7,
+   0.6,
+   0.4,
+   0.2,
+   0.05,
+   0,
+   0,
+   0
+  ],
+  "houses": [
+   0.05,
+   0.05,
+   0.05,
+   0.05,
+   0.1,
+   0.3,
+   0.6,
+   0.8,
+   0.8,
+   0.7,
+   0.6,
+   0.6,
+   0.5,
+   0.4,
+   0.5,
+   0.6,
+   0.7,
+   0.8,
+   0.8,
+   0.6,
+   0.4,
+   0.2,
+   0.1,
+   0.05
+  ],
+  "watch": [
+   0.4,
+   0.4,
+   0.4,
+   0.4,
+   0.4,
+   0.5,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.5,
+   0.4,
+   0.4,
+   0.4
+  ],
+  "afternoon": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.4,
+   0.3,
+   0.3,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.9,
+   0.6,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "work": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.3,
+   0.8,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.4,
+   0.6,
+   0.9,
+   1,
+   0.9,
+   0.7,
+   0.3,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   0.8,
+   0.3,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1
+  ],
+  "dawn": [
+   0,
+   0,
+   0,
+   0,
+   0.3,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.2,
+   0.1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "figures": [
+  {
+   "actor": "rome.apion",
+   "presence": "present",
+   "card": "apion"
+  },
+  {
+   "actor": "rome.mulvius",
+   "presence": "present",
+   "card": "mulvius"
+  }
+ ],
+ "lanes_tokens": [
+  {
+   "actor": "rome.merchantman",
+   "lane": "ostia:portus",
+   "count": 3
+  },
+  {
+   "actor": "rome.barge",
+   "lane": "ostia:tiber_ostia",
+   "count": 2
+  },
+  {
+   "actor": "rome.barge",
+   "lane": "ostia:portus_canal",
+   "count": 1
+  }
+ ],
+ "cards": {
+  "portus_hexagon": {
+   "title": "Portus Traiani",
+   "epithet": "Trajan's harbour",
+   "text": "Trajan's hexagonal basin, about 358 metres a side, opened around 112: quays and warehouses all round, ships moored side by side, the grain of Egypt and Africa unloaded for Rome."
+  },
+  "portus_lighthouse": {
+   "title": "Pharus",
+   "epithet": "The lighthouse of Portus",
+   "text": "A tower of diminishing storeys with a fire on top, built on the sunken ship that once carried Caligula's obelisk, at the mouth of Claudius's harbour."
+  },
+  "ostia_guilds": {
+   "title": "Forum of the Corporations",
+   "epithet": "The square of the shipping offices",
+   "text": "Offices of shipowners and traders from every port line a portico behind the theatre. Most of the emblem mosaics seen today were laid later in the century."
+  },
+  "ostia_capitolium": {
+   "title": "Capitolium Ostiense",
+   "epithet": "Ostia's Capitolium",
+   "text": "Ostia's brick temple to Jupiter, Juno and Minerva, newly built in the 120s at the head of the forum."
+  },
+  "apion": {
+   "title": "Apion",
+   "epithet": "Sailor",
+   "text": "Apion came from a village in Egypt and joined the fleet. In a real letter, a sailor of that name told his father he had arrived safely at Misenum and had been given a Roman name. Today he rides a grain barge upriver."
+  },
+  "mulvius": {
+   "title": "Quintus Mulvius",
+   "epithet": "Barge master",
+   "text": "Mulvius steers a barge up the Tiber from Portus, towed by men and oxen on the bank path: a few days against the current for some thirty-five kilometres, much quicker back down with the stream."
+  }
+ },
+ "strings": {
+  "first_visit": "Ostia and Portus, April AD 126: the sailing season is open and the grain fleet is in."
+ },
+ "journal": [
+  "landmark:*"
+ ]
+}

@@ -1,28 +1,22 @@
-# Layer `ostia`
+# Ostia layer
 
-Region: `ostia` (Ostia and Portus, world C 100..170, R 184..239, base level 1), `rome.md` §3.7.
-The template waypoint town: copy its structure for other towns.
+Status: complete
 
-Status: first version (WG0).
+Ostia and Portus, AD 126 (`rome.md` §3.7). World rect C 100..170, R 184..239; local (c, r) =
+world (C − 100, R − 184); local level 0 = world level 1; sea, river and canals at local −1.
 
-Built:
-- Coast from the base layer; water one level below land so banks and quays read as embankments.
-- The Tiber from Rome's south edge (local (52, 0), matching the base's course) to its mouth at
-  about (26, 46), quays with mooring posts on the Ostia bank, river lane `tiber_ostia`.
-- Portus: `rome.portus_hexagon` (20 × 18) over a hexagonal basin with a quay ring, its mouth to
-  Claudius's outer harbour, moles, `rome.portus_lighthouse` on the mole island, the Fossa Traiana
-  canal to the Tiber, warehouses along a service street.
-- Ostia: decumanus (the Via Ostiensis, leaving north-east to portal `ostiensis` at (63, 0)),
-  cardo to the shore, lanes, forum with the Capitolium (`rome.r_temple` as kit) and statues,
-  insulae, shop-houses, warehouses, shops and a bakery filled by `houses`, yards with amphorae,
-  fountains and crossroads shrines.
-- A road from Portus over the Tiber on bridge spans to Ostia; tombs and umbrella pines along the
-  Via Ostiensis; market gardens east and north.
+- `layout.py`: Claudius's outer harbour cut into the shore with its moles and the lighthouse
+  island (`portus_lighthouse`), Trajan's hexagon (`portus_hexagon`, its own quays and
+  warehouses) with its canal to the Tiber, the Fossa between the outer harbour and the Tiber,
+  warehouses on Portus's service street; the Isola Sacra with its tombs and gardens; Ostia's
+  decumanus, cardo, forum with the Capitolium (`ostia_capitolium`), the square of the shipping
+  offices (`ostia_guilds`), river quays, insulae, warehouses, shops in lanes, salt pans; the Via
+  Ostiensis between tombs and market gardens to portal `ostiensis` (63, 0). Shared helpers from
+  `regions/rome/common.py`.
+- `assets/regions/ostia.json`: theme, populations, lane tokens, cards.
+- Lanes: `portus` (its first two points are the plan's sea-lane ends), `portus_canal`,
+  `tiber_ostia` (meets Rome's `tiber` lane across the edge).
+- Not built: the theatre (no item in the set); the bridges over the canals and the Tiber are
+  `world.bridge_arch` (no art yet).
 
-Missing / deviations:
-- All `rome.*` ids are provisional (no `rome` set catalog or art yet); they draw as placeholders.
-- `ostia_town` is a kit area in `rome.md`, built here from kit pieces; the Capitolium is the
-  generic `rome.r_temple`, and the shipping guilds' square, the theatre and the barges (actors)
-  are not built yet.
-- Portal `ostiensis` needs Rome's layer to end its Via Ostiensis on (163, 183) next to it.
-- No region file yet (theme, life, cards).
+Build: `tools/worldgen/build.sh ostia [--preview]`.

@@ -1,0 +1,2878 @@
+{
+ "version": 1,
+ "id": "rome",
+ "name": "Rome",
+ "native": "Roma",
+ "caption": "Roma · the Parilia, 21 April AD 126",
+ "theme": {
+  "grading": {
+   "dawn": [
+    1.0,
+    0.86,
+    0.78
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    1.0,
+    0.78,
+    0.6
+   ],
+   "night": [
+    0.42,
+    0.48,
+    0.72
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.95,
+    0.88,
+    0.76
+   ],
+   "strength": 0.14
+  },
+  "climate": "rome",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/rome/day.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/rome/night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ],
+   "zones": [
+    {
+     "rect": [
+      64,
+      1055,
+      102,
+      1099
+     ],
+     "file": "amb/rome/forum.ogg",
+     "gain": 0.8
+    },
+    {
+     "rect": [
+      104,
+      1117,
+      183,
+      1139
+     ],
+     "file": "amb/rome/river.ogg",
+     "gain": 0.8
+    },
+    {
+     "rect": [
+      130,
+      1049,
+      143,
+      1103
+     ],
+     "file": "amb/rome/circus.ogg",
+     "gain": 0.7
+    },
+    {
+     "rect": [
+      46,
+      1137,
+      59,
+      1149
+     ],
+     "file": "amb/rome/baths.ogg",
+     "gain": 0.6
+    },
+    {
+     "rect": [
+      79,
+      1040,
+      102,
+      1059
+     ],
+     "file": "amb/rome/treadwheel.ogg",
+     "gain": 0.6
+    },
+    {
+     "rect": [
+      40,
+      1046,
+      62,
+      1073
+     ],
+     "file": "amb/rome/fountain.ogg",
+     "gain": 0.4
+    }
+   ]
+  },
+  "music": {
+   "day": "music/rome/day.ogg",
+   "night": "music/rome/night.ogg"
+  }
+ },
+ "districts": [
+  {
+   "id": "forum",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.togatus",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.senator",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.lictor",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.teacher",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.greek_teacher",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.pigeon",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "fora",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.togatus",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.syrian_merchant",
+     "density": "market",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.pigeon",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "capitol",
+   "populations": [
+    {
+     "actor": "rome.togatus",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.flamen",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.musician",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.pigeon",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "markets",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.togatus",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "subura",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 7
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.vigil",
+     "density": "night",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.carter",
+     "density": "night",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.dog",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.fuller",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.baker",
+     "density": "dawn",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.smith",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "velabrum",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 7
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.vigil",
+     "density": "night",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.carter",
+     "density": "night",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.dog",
+     "density": "houses",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "boarium",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 7
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.vigil",
+     "density": "night",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.carter",
+     "density": "night",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.dog",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.ox",
+     "density": "market",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.docker",
+     "density": "work",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "campus",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.togatus",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.bather",
+     "density": "afternoon",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "quirinal",
+   "populations": [
+    {
+     "actor": "rome.togatus",
+     "density": "dawn",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "esquiline",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 7
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.vigil",
+     "density": "night",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.carter",
+     "density": "night",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.dog",
+     "density": "houses",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "oppian",
+   "populations": [
+    {
+     "actor": "rome.togatus",
+     "density": "dawn",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.bather",
+     "density": "afternoon",
+     "max_per_chunk": 4
+    }
+   ]
+  },
+  {
+   "id": "aventine",
+   "populations": [
+    {
+     "actor": "rome.togatus",
+     "density": "dawn",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "caelian",
+   "populations": [
+    {
+     "actor": "rome.togatus",
+     "density": "dawn",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.matron",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.litter",
+     "density": "dawn",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "velia",
+   "populations": [
+    {
+     "actor": "rome.builder",
+     "density": "work",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.ox",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "colosseum",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "afternoon",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.praetorian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "palatine",
+   "populations": [
+    {
+     "actor": "rome.praetorian",
+     "density": "watch",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.togatus",
+     "density": "dawn",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "circus",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "afternoon",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "rome.racehorse",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "island",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "transtiberim",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "market",
+     "max_per_chunk": 7
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.freedman",
+     "density": "market",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.vigil",
+     "density": "night",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.carter",
+     "density": "night",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cat",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.dog",
+     "density": "houses",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.jewish_trader",
+     "density": "market",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.glassblower",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.goat",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.egyptian_sailor",
+     "density": "market",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "janiculum",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.sheep",
+     "density": "daytime",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "rome.goat",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.ox",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "vatican",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.sheep",
+     "density": "daytime",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "rome.goat",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.ox",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "emporium",
+   "populations": [
+    {
+     "actor": "rome.docker",
+     "density": "work",
+     "max_per_chunk": 8
+    },
+    {
+     "actor": "rome.hauler",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.enslaved",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.egyptian_sailor",
+     "density": "market",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.syrian_merchant",
+     "density": "market",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.gull",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.mule",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "castra",
+   "populations": [
+    {
+     "actor": "rome.praetorian",
+     "density": "watch",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "rome.horse",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "appia",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.sheep",
+     "density": "daytime",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "rome.goat",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.ox",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.carriage",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.cart",
+     "density": "night",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "campagna",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.sheep",
+     "density": "daytime",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "rome.goat",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "rome.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "rome.ox",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "river",
+   "populations": [
+    {
+     "actor": "rome.swallow",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.gull",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "decorate",
+   "populations": []
+  }
+ ],
+ "densities": {
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "market": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.9,
+   1,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.3,
+   0.4,
+   0.6,
+   0.7,
+   0.6,
+   0.4,
+   0.2,
+   0.05,
+   0,
+   0,
+   0
+  ],
+  "houses": [
+   0.05,
+   0.05,
+   0.05,
+   0.05,
+   0.1,
+   0.3,
+   0.6,
+   0.8,
+   0.8,
+   0.7,
+   0.6,
+   0.6,
+   0.5,
+   0.4,
+   0.5,
+   0.6,
+   0.7,
+   0.8,
+   0.8,
+   0.6,
+   0.4,
+   0.2,
+   0.1,
+   0.05
+  ],
+  "watch": [
+   0.4,
+   0.4,
+   0.4,
+   0.4,
+   0.4,
+   0.5,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.5,
+   0.4,
+   0.4,
+   0.4
+  ],
+  "afternoon": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.4,
+   0.3,
+   0.3,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.9,
+   0.6,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "work": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.3,
+   0.8,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.4,
+   0.6,
+   0.9,
+   1,
+   0.9,
+   0.7,
+   0.3,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "night": [
+   1,
+   1,
+   1,
+   1,
+   0.8,
+   0.3,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1
+  ],
+  "dawn": [
+   0,
+   0,
+   0,
+   0,
+   0.3,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.2,
+   0.1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "figures": [
+  {
+   "actor": "rome.hadrian",
+   "presence": "present",
+   "card": "hadrian"
+  },
+  {
+   "actor": "rome.sabina",
+   "presence": "present",
+   "card": "sabina"
+  },
+  {
+   "actor": "rome.antinous",
+   "presence": "present",
+   "card": "antinous"
+  },
+  {
+   "actor": "rome.marcus",
+   "presence": "present",
+   "card": "marcus"
+  },
+  {
+   "actor": "rome.apollodorus",
+   "presence": "present",
+   "card": "apollodorus"
+  },
+  {
+   "actor": "rome.juvenal",
+   "presence": "present",
+   "card": "juvenal"
+  },
+  {
+   "actor": "rome.suetonius",
+   "presence": "present",
+   "card": "suetonius"
+  },
+  {
+   "actor": "rome.mesomedes",
+   "presence": "present",
+   "card": "mesomedes"
+  },
+  {
+   "actor": "rome.soranus",
+   "presence": "present",
+   "card": "soranus"
+  },
+  {
+   "actor": "rome.diocles",
+   "presence": "present",
+   "card": "diocles"
+  },
+  {
+   "actor": "rome.vestalis_maxima",
+   "presence": "present",
+   "card": "vestalis_maxima"
+  },
+  {
+   "actor": "rome.plotina",
+   "presence": "memory",
+   "card": "plotina"
+  },
+  {
+   "actor": "rome.trajan",
+   "presence": "memory",
+   "card": "trajan"
+  },
+  {
+   "actor": "rome.numa",
+   "presence": "memory",
+   "card": "numa"
+  },
+  {
+   "actor": "rome.scipio",
+   "presence": "memory",
+   "card": "scipio"
+  },
+  {
+   "actor": "rome.caesar",
+   "presence": "memory",
+   "card": "caesar"
+  },
+  {
+   "actor": "rome.cicero",
+   "presence": "memory",
+   "card": "cicero"
+  },
+  {
+   "actor": "rome.castor",
+   "presence": "apparition",
+   "card": "castor"
+  },
+  {
+   "actor": "rome.claudia_helpis",
+   "presence": "present",
+   "card": "claudia_helpis"
+  },
+  {
+   "actor": "rome.vibius_primus",
+   "presence": "present",
+   "card": "vibius_primus"
+  },
+  {
+   "actor": "rome.aelius_eutyches",
+   "presence": "present",
+   "card": "aelius_eutyches"
+  },
+  {
+   "actor": "rome.apion",
+   "presence": "present",
+   "card": "apion"
+  },
+  {
+   "actor": "rome.mulvius",
+   "presence": "present",
+   "card": "mulvius"
+  },
+  {
+   "actor": "rome.flavius_valens",
+   "presence": "present",
+   "card": "flavius_valens"
+  },
+  {
+   "actor": "rome.felicula",
+   "presence": "present",
+   "card": "felicula"
+  },
+  {
+   "actor": "rome.rufina",
+   "presence": "present",
+   "card": "rufina"
+  },
+  {
+   "actor": "rome.sextus",
+   "presence": "present",
+   "card": "sextus"
+  },
+  {
+   "actor": "rome.iulia_ianuaria",
+   "presence": "present",
+   "card": "iulia_ianuaria"
+  }
+ ],
+ "groups": [
+  {
+   "id": "parilia_procession",
+   "leader": {
+    "actor": "rome.lictor"
+   },
+   "members": [
+    {
+     "actor": "rome.lictor",
+     "count": 3
+    },
+    {
+     "actor": "rome.hadrian",
+     "count": 1
+    },
+    {
+     "actor": "rome.sabina",
+     "count": 1
+    },
+    {
+     "actor": "rome.flamen",
+     "count": 2
+    },
+    {
+     "actor": "rome.vestalis_maxima",
+     "count": 1
+    },
+    {
+     "actor": "rome.vestal",
+     "count": 2
+    },
+    {
+     "actor": "rome.musician",
+     "count": 2
+    },
+    {
+     "actor": "rome.senator",
+     "count": 6
+    },
+    {
+     "actor": "rome.praetorian",
+     "count": 4
+    },
+    {
+     "actor": "rome.shepherd",
+     "count": 3
+    },
+    {
+     "actor": "rome.sheep",
+     "count": 4
+    }
+   ],
+   "formation": {
+    "kind": "column",
+    "spacing": 0.9
+   }
+  },
+  {
+   "id": "pompa_circensis",
+   "leader": {
+    "actor": "rome.lictor"
+   },
+   "members": [
+    {
+     "actor": "rome.musician",
+     "count": 3
+    },
+    {
+     "actor": "rome.togatus",
+     "count": 6
+    },
+    {
+     "actor": "rome.racing_chariot",
+     "count": 4
+    },
+    {
+     "actor": "rome.diocles",
+     "count": 1
+    },
+    {
+     "actor": "rome.flamen",
+     "count": 1
+    }
+   ],
+   "formation": {
+    "kind": "column",
+    "spacing": 1.0
+   }
+  },
+  {
+   "id": "senators_arrive",
+   "leader": {
+    "actor": "rome.lictor"
+   },
+   "members": [
+    {
+     "actor": "rome.senator",
+     "count": 4
+    },
+    {
+     "actor": "rome.togatus",
+     "count": 6
+    }
+   ],
+   "formation": {
+    "kind": "pairs",
+    "spacing": 0.8
+   }
+  },
+  {
+   "id": "vestals_walk",
+   "leader": {
+    "actor": "rome.lictor"
+   },
+   "members": [
+    {
+     "actor": "rome.vestalis_maxima",
+     "count": 1
+    },
+    {
+     "actor": "rome.vestal",
+     "count": 2
+    }
+   ],
+   "formation": {
+    "kind": "column",
+    "spacing": 0.8
+   }
+  },
+  {
+   "id": "vigiles_patrol",
+   "leader": {
+    "actor": "rome.flavius_valens"
+   },
+   "members": [
+    {
+     "actor": "rome.vigil",
+     "count": 3
+    }
+   ],
+   "formation": {
+    "kind": "column",
+    "spacing": 0.8
+   }
+  },
+  {
+   "id": "night_carts",
+   "leader": {
+    "actor": "rome.cart"
+   },
+   "members": [
+    {
+     "actor": "rome.cart",
+     "count": 3
+    },
+    {
+     "actor": "rome.carter",
+     "count": 2
+    }
+   ],
+   "formation": {
+    "kind": "column",
+    "spacing": 2.5
+   }
+  }
+ ],
+ "chains": [
+  {
+   "id": "rome_grain",
+   "period": 300,
+   "stages": [
+    {
+     "slot": "rome.quay.mooring",
+     "makes": "rome.goods_grain_sack",
+     "by": "rome.docker"
+    },
+    {
+     "carry": "rome.goods_grain_sack",
+     "from": "rome.quay.mooring",
+     "to": "rome.horrea_galbana.door",
+     "by": "rome.docker"
+    },
+    {
+     "carry": "rome.goods_grain_sack",
+     "from": "rome.horrea_galbana.door",
+     "to": "rome.r_bakery.work",
+     "by": "rome.mule"
+    },
+    {
+     "slot": "rome.r_bakery.work",
+     "needs": "rome.goods_grain_sack",
+     "makes": "rome.goods_bread",
+     "by": "rome.baker"
+    },
+    {
+     "carry": "rome.goods_bread",
+     "from": "rome.r_bakery.work",
+     "to": "rome.r_taberna.sell",
+     "by": "rome.working_woman"
+    },
+    {
+     "slot": "rome.r_taberna.sell",
+     "sink": "rome.goods_bread",
+     "by": "rome.citizen"
+    }
+   ]
+  },
+  {
+   "id": "rome_oil",
+   "period": 260,
+   "stages": [
+    {
+     "slot": "rome.quay.mooring",
+     "makes": "rome.goods_oil_amphora",
+     "by": "rome.docker"
+    },
+    {
+     "carry": "rome.goods_oil_amphora",
+     "from": "rome.quay.mooring",
+     "to": "rome.r_horrea.door",
+     "by": "rome.docker"
+    },
+    {
+     "carry": "rome.goods_oil_amphora",
+     "from": "rome.r_horrea.door",
+     "to": "rome.r_thermopolium.serve",
+     "by": "rome.enslaved"
+    },
+    {
+     "slot": "rome.r_thermopolium.serve",
+     "sink": "rome.goods_oil_amphora",
+     "by": "rome.claudia_helpis"
+    }
+   ]
+  },
+  {
+   "id": "rome_marble",
+   "period": 320,
+   "stages": [
+    {
+     "slot": "rome.quay.mooring",
+     "makes": "rome.goods_marble",
+     "by": "rome.hauler"
+    },
+    {
+     "carry": "rome.goods_marble",
+     "from": "rome.quay.mooring",
+     "to": "rome.r_crane.work",
+     "by": "rome.cart"
+    },
+    {
+     "slot": "rome.r_crane.work",
+     "needs": "rome.goods_marble",
+     "makes": "rome.goods_marble",
+     "by": "rome.builder"
+    },
+    {
+     "slot": "rome.venus_roma.work",
+     "sink": "rome.goods_marble",
+     "by": "rome.builder"
+    }
+   ]
+  },
+  {
+   "id": "rome_cloth",
+   "period": 240,
+   "stages": [
+    {
+     "slot": "rome.r_fullonica.work",
+     "makes": "rome.goods_cloth",
+     "by": "rome.fuller"
+    },
+    {
+     "carry": "rome.goods_cloth",
+     "from": "rome.r_fullonica.work",
+     "to": "rome.r_dyeworks.work",
+     "by": "rome.felicula"
+    },
+    {
+     "slot": "rome.r_dyeworks.work",
+     "needs": "rome.goods_cloth",
+     "makes": "rome.goods_cloth",
+     "by": "rome.working_woman"
+    },
+    {
+     "slot": "rome.r_taberna.sell",
+     "sink": "rome.goods_cloth",
+     "by": "rome.matron"
+    }
+   ]
+  },
+  {
+   "id": "rome_water",
+   "period": 120,
+   "stages": [
+    {
+     "slot": "rome.r_lacus.fill",
+     "makes": "rome.goods_water_jug",
+     "by": "rome.working_woman"
+    },
+    {
+     "carry": "rome.goods_water_jug",
+     "from": "rome.r_lacus.fill",
+     "to": "rome.r_insula.door",
+     "by": "rome.working_woman"
+    },
+    {
+     "slot": "rome.r_insula.door",
+     "sink": "rome.goods_water_jug",
+     "by": "rome.working_woman"
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "parilia_procession",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "10:00"
+    ],
+    "chance": 1.0
+   },
+   "size": "large",
+   "duration": [
+    600,
+    720
+   ],
+   "cast": [
+    {
+     "group": "parilia_procession"
+    }
+   ],
+   "route": [
+    "forum",
+    "vesta",
+    "via_sacra_velia",
+    "arch_titus",
+    "venus_roma_site"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "forum"
+     }
+    },
+    {
+     "go": {
+      "node": "vesta"
+     }
+    },
+    {
+     "go": {
+      "node": "arch_titus"
+     }
+    },
+    {
+     "go": {
+      "node": "venus_roma_site"
+     }
+    },
+    {
+     "use": {
+      "item": "rome.venus_roma",
+      "slot": "work"
+     },
+     "anim": "pray",
+     "dur": [
+      60,
+      90
+     ]
+    },
+    {
+     "emit": {
+      "sfx": "sfx/rome/tibia.wav"
+     }
+    }
+   ],
+   "ambience": {
+    "file": "amb/rome/procession.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "parilia_bonfires",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "19:00",
+     "20:30"
+    ],
+    "chance": 1.0
+   },
+   "size": "large",
+   "duration": [
+    900,
+    1200
+   ],
+   "cast": [
+    {
+     "actor": "rome.shepherd",
+     "count": 6,
+     "from": "district"
+    },
+    {
+     "actor": "rome.citizen",
+     "count": 20,
+     "from": "district"
+    },
+    {
+     "actor": "rome.child",
+     "count": 8,
+     "from": "district"
+    },
+    {
+     "actor": "rome.sheep",
+     "count": 10
+    }
+   ],
+   "route": [
+    "janiculum",
+    "transtiberim",
+    "forum_boarium",
+    "aventine"
+   ],
+   "steps": [
+    {
+     "emit": {
+      "fx": "rome.bonfire"
+     }
+    },
+    {
+     "emit": {
+      "sfx": "sfx/rome/tibia.wav"
+     }
+    }
+   ]
+  },
+  {
+   "id": "circus_races",
+   "trigger": {
+    "on": "window",
+    "every": 1200,
+    "hours": [
+     "13:30",
+     "17:30"
+    ]
+   },
+   "size": "large",
+   "duration": [
+    420,
+    600
+   ],
+   "cast": [
+    {
+     "group": "pompa_circensis"
+    }
+   ],
+   "route": [
+    "capitolium",
+    "clivus_foot",
+    "velabrum",
+    "vicus_tuscus",
+    "circus_carceres",
+    "circus_stands"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "vicus_tuscus"
+     }
+    },
+    {
+     "go": {
+      "node": "circus_carceres"
+     }
+    },
+    {
+     "use": {
+      "item": "rome.circus_maximus",
+      "slot": "spectator"
+     },
+     "anim": "idle",
+     "dur": [
+      300,
+      400
+     ]
+    },
+    {
+     "emit": {
+      "sfx": "sfx/rome/cornu.wav"
+     }
+    }
+   ],
+   "ambience": {
+    "file": "amb/rome/circus.ogg",
+    "gain": 1.0
+   }
+  },
+  {
+   "id": "colosseum_game_day",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "14:00",
+     "17:00"
+    ],
+    "chance": 0.3
+   },
+   "size": "large",
+   "duration": [
+    600,
+    900
+   ],
+   "cast": [
+    {
+     "actor": "rome.citizen",
+     "count": 30,
+     "from": "district"
+    }
+   ],
+   "route": [
+    "colossus",
+    "meta_sudans",
+    "colosseum"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "colosseum"
+     }
+    },
+    {
+     "use": {
+      "item": "rome.colosseum",
+      "slot": "entrance"
+     },
+     "anim": "idle",
+     "dur": [
+      400,
+      600
+     ]
+    },
+    {
+     "emit": {
+      "sfx": "sfx/rome/hydraulis.wav"
+     }
+    }
+   ]
+  },
+  {
+   "id": "salutatio",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "05:30",
+     "07:30"
+    ],
+    "chance": 1.0
+   },
+   "size": "medium",
+   "duration": [
+    600,
+    900
+   ],
+   "cast": [
+    {
+     "actor": "rome.togatus",
+     "count": 12,
+     "from": "district"
+    }
+   ],
+   "zone": "caelian",
+   "steps": [
+    {
+     "use": {
+      "item": "rome.r_domus",
+      "slot": "salutatio"
+     },
+     "anim": "idle",
+     "dur": [
+      300,
+      500
+     ]
+    },
+    {
+     "go": {
+      "node": "forum"
+     }
+    }
+   ]
+  },
+  {
+   "id": "senate_session",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "10:00"
+    ],
+    "chance": 0.3
+   },
+   "size": "medium",
+   "duration": [
+    480,
+    600
+   ],
+   "cast": [
+    {
+     "group": "senators_arrive"
+    }
+   ],
+   "route": [
+    "caelian",
+    "colosseum",
+    "arch_titus",
+    "vestals",
+    "curia"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "curia"
+     }
+    },
+    {
+     "use": {
+      "item": "rome.curia",
+      "slot": "senator"
+     },
+     "anim": "talk",
+     "dur": [
+      300,
+      400
+     ]
+    }
+   ]
+  },
+  {
+   "id": "grain_fleet",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "06:00",
+     "11:00"
+    ],
+    "chance": 0.4
+   },
+   "size": "medium",
+   "duration": [
+    900,
+    1200
+   ],
+   "cast": [
+    {
+     "actor": "rome.barge",
+     "count": 3,
+     "lane": "rome:tiber"
+    },
+    {
+     "actor": "rome.hauler",
+     "count": 4
+    },
+    {
+     "actor": "rome.mulvius",
+     "count": 1
+    },
+    {
+     "actor": "rome.apion",
+     "count": 1
+    },
+    {
+     "actor": "rome.aelius_eutyches",
+     "count": 1
+    }
+   ],
+   "route": [
+    "emporium",
+    "horrea_galbana"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "emporium"
+     }
+    },
+    {
+     "use": {
+      "item": "rome.quay",
+      "slot": "mooring"
+     },
+     "anim": "carry",
+     "dur": [
+      300,
+      500
+     ]
+    },
+    {
+     "go": {
+      "node": "horrea_galbana"
+     }
+    }
+   ]
+  },
+  {
+   "id": "vestals_walk",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "13:00",
+     "14:00"
+    ],
+    "chance": 0.8
+   },
+   "size": "small",
+   "duration": [
+    300,
+    420
+   ],
+   "cast": [
+    {
+     "group": "vestals_walk"
+    }
+   ],
+   "route": [
+    "vestals",
+    "vicus_tuscus",
+    "circus_stands"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "circus_stands"
+     }
+    }
+   ]
+  },
+  {
+   "id": "fire_alarm",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "20:00",
+     "04:00"
+    ],
+    "chance": 0.05
+   },
+   "size": "medium",
+   "duration": [
+    300,
+    480
+   ],
+   "cast": [
+    {
+     "group": "vigiles_patrol"
+    }
+   ],
+   "zone": "subura",
+   "steps": [
+    {
+     "emit": {
+      "fx": "rome.smoke"
+     }
+    },
+    {
+     "go": {
+      "node": "subura"
+     }
+    },
+    {
+     "emit": {
+      "sfx": "sfx/rome/cornu.wav"
+     }
+    }
+   ]
+  },
+  {
+   "id": "night_carts",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "20:00",
+     "21:00"
+    ],
+    "chance": 1.0
+   },
+   "size": "medium",
+   "duration": [
+    1800,
+    2400
+   ],
+   "cast": [
+    {
+     "group": "night_carts"
+    }
+   ],
+   "route": [
+    "appia_tombs",
+    "porta_capena",
+    "circus_stands",
+    "venus_roma_site"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "porta_capena"
+     }
+    },
+    {
+     "go": {
+      "node": "venus_roma_site"
+     }
+    },
+    {
+     "go": {
+      "node": "appia_tombs"
+     }
+    }
+   ]
+  },
+  {
+   "id": "spring_shower",
+   "trigger": {
+    "on": "weather",
+    "kind": "rain",
+    "hours": [
+     "10:00",
+     "18:00"
+    ]
+   },
+   "size": "small",
+   "duration": [
+    300,
+    600
+   ],
+   "steps": [
+    {
+     "emit": {
+      "fx": "rome.steam"
+     }
+    }
+   ]
+  },
+  {
+   "id": "starlings",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "18:30",
+     "19:30"
+    ],
+    "chance": 0.6
+   },
+   "size": "small",
+   "duration": [
+    240,
+    360
+   ],
+   "zone": "river",
+   "steps": [
+    {
+     "emit": {
+      "fx": "rome.glint"
+     }
+    }
+   ]
+  },
+  {
+   "id": "school_morning",
+   "zone": "forum",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "11:00"
+    ],
+    "chance": 0.9
+   },
+   "size": "small",
+   "duration": [
+    600,
+    900
+   ],
+   "cast": [
+    {
+     "actor": "rome.teacher",
+     "count": 1
+    },
+    {
+     "actor": "rome.child",
+     "count": 6
+    }
+   ],
+   "steps": [
+    {
+     "use": {
+      "item": "rome.forum_square",
+      "slot": "school"
+     },
+     "anim": "talk",
+     "dur": [
+      400,
+      600
+     ]
+    }
+   ]
+  },
+  {
+   "id": "trial_basilica",
+   "zone": "forum",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "08:00",
+     "12:00"
+    ],
+    "chance": 0.6
+   },
+   "size": "small",
+   "duration": [
+    480,
+    600
+   ],
+   "cast": [
+    {
+     "actor": "rome.togatus",
+     "count": 8,
+     "from": "district"
+    }
+   ],
+   "steps": [
+    {
+     "use": {
+      "item": "rome.julia",
+      "slot": "court"
+     },
+     "anim": "talk",
+     "dur": [
+      300,
+      500
+     ]
+    }
+   ]
+  }
+ ],
+ "lanes_tokens": [
+  {
+   "actor": "rome.barge",
+   "lane": "rome:tiber",
+   "count": 3
+  }
+ ],
+ "cards": {
+  "capitolium": {
+   "title": "Capitolium",
+   "epithet": "Temple of Jupiter Best and Greatest",
+   "text": "Rome's greatest temple stands on the Capitol: three cellae for Jupiter, Juno and Minerva behind six Corinthian columns of Pentelic marble, rebuilt by Domitian with gilded bronze roof tiles and a bronze chariot on the pediment. Generals ended their triumphs here."
+  },
+  "arx": {
+   "title": "Arx",
+   "epithet": "Citadel and Juno Moneta",
+   "text": "The northern summit of the Capitol, where augurs watched the birds and the geese of Juno once warned of the Gauls. Rome's mint stood near the temple of Juno Moneta, and 'money' still carries her name."
+  },
+  "tabularium": {
+   "title": "Tabularium",
+   "epithet": "The record office",
+   "text": "A massive tufa base with an arcaded gallery of Doric half-columns, looking down the length of the Forum. Bronze tablets of laws and the state's records were kept on the Capitol."
+  },
+  "concord": {
+   "title": "Aedes Concordiae",
+   "epithet": "Temple of Concord",
+   "text": "A wide temple whose cella runs across its width behind a six-column porch. Inside, a gallery of famous statues and paintings; the Senate sometimes met here."
+  },
+  "vespasian": {
+   "title": "Templum Vespasiani",
+   "epithet": "Temple of Vespasian and Titus",
+   "text": "A Corinthian temple on a high podium, raised by Domitian to his deified father and brother below the Tabularium."
+  },
+  "saturn": {
+   "title": "Aedes Saturni",
+   "epithet": "Temple of Saturn",
+   "text": "One of Rome's oldest temples, with Ionic columns on a high podium. The state treasury, the aerarium, was kept in its podium. Saturn's December feast, the Saturnalia, turned masters into servants for a week."
+  },
+  "rostra": {
+   "title": "Rostra",
+   "epithet": "The speakers' platform",
+   "text": "A curved platform faced with the bronze rams of captured warships, crowded with honorific statues. Beside it stands the Golden Milestone, from which the roads of the empire were measured."
+  },
+  "curia": {
+   "title": "Curia Iulia",
+   "epithet": "The Senate house",
+   "text": "A tall brick hall with a plain gabled front and bronze doors. About six hundred senators meet here to pass decrees and judge their peers; their prestige is great, their power now the emperor's to share."
+  },
+  "lapis_niger": {
+   "title": "Lapis Niger",
+   "epithet": "The black stone",
+   "text": "A square of black paving behind a low fence marks an ancient, half-forgotten shrine. Some said Romulus was buried here."
+  },
+  "aemilia": {
+   "title": "Basilica Aemilia",
+   "epithet": "Hall of the Aemilii",
+   "text": "A two-storey arcade of white marble with shops along its front: a covered hall for business, money and law on the north side of the Forum."
+  },
+  "forum_square": {
+   "title": "Forum Romanum",
+   "epithet": "The Forum square",
+   "text": "Travertine paving set with honorary columns and statues, the well-head of the Lacus Curtius and, as Pliny says, a fig, an olive and a vine growing in the square. Schoolmasters teach under awnings here."
+  },
+  "julia": {
+   "title": "Basilica Iulia",
+   "epithet": "The law courts",
+   "text": "A great two-storey arcaded hall where the centumviral court hears cases about inheritance. Idlers scratched gaming boards into its steps, and you can still find them."
+  },
+  "castor": {
+   "title": "The Dioscuri",
+   "epithet": "Divine twins",
+   "text": "After the battle of Lake Regillus two young riders were seen watering their horses at Juturna's spring, announcing the victory, then vanishing. Rome built them a temple beside the spring."
+  },
+  "lacus_iuturnae": {
+   "title": "Lacus Iuturnae",
+   "epithet": "Spring of Juturna",
+   "text": "A basin fed by the nymph's spring, with statues of the Dioscuri and their horses. Water from it was used in sacred rites."
+  },
+  "divus_julius": {
+   "title": "Aedes Divi Iulii",
+   "epithet": "Temple of the Deified Julius",
+   "text": "Built where Caesar's body was burned by the people in 44 BC. Its speakers' platform carries the rams of ships from Actium; a round altar sits in a niche at its front."
+  },
+  "regia": {
+   "title": "Regia",
+   "epithet": "The king's house",
+   "text": "A small, very old building, said to be King Numa's house, later the seat of the chief priest. The calendar and the sacred shields were kept here."
+  },
+  "vesta": {
+   "title": "Aedes Vestae",
+   "epithet": "Temple of Vesta",
+   "text": "A round temple of twenty Corinthian columns under a conical roof with an opening for the smoke. Inside burns the eternal fire of Rome, tended day and night by the Vestal Virgins."
+  },
+  "vestals": {
+   "title": "Atrium Vestae",
+   "epithet": "House of the Vestals",
+   "text": "A two-storey courtyard house with long pools, home of the six Vestal Virgins who serve for thirty years. Statues of the senior Vestals line the court."
+  },
+  "piperataria": {
+   "title": "Horrea Piperataria",
+   "epithet": "The spice warehouses",
+   "text": "Domitian's brick warehouses, with small barred windows, for pepper and spices brought from India through the Red Sea and Egypt."
+  },
+  "arch_titus": {
+   "title": "Arcus Titi",
+   "epithet": "Arch of Titus",
+   "text": "A single marble arch on the Via Sacra. Inside, reliefs show Titus's triumph and the spoils of the Temple of Jerusalem with the menorah, destroyed in AD 70. For Rome's Jewish community it is a monument to loss, not glory."
+  },
+  "venus_roma": {
+   "title": "Templum Veneris et Romae",
+   "epithet": "Temple of Venus and Roma, a building site",
+   "text": "Hadrian himself designed this vast double temple on the Velia, begun around 121: Venus faces east, Roma west, back to back. Cranes, column drums and capitals lie everywhere; it will be dedicated in 135."
+  },
+  "colossus": {
+   "title": "Colossus",
+   "epithet": "The bronze Sun",
+   "text": "A colossal bronze statue, made for Nero and turned into the Sun god with a radiate crown. To make room for the new temple, Hadrian had it moved upright with the help of elephants. The amphitheatre will one day take its name."
+  },
+  "meta_sudans": {
+   "title": "Meta Sudans",
+   "epithet": "The sweating cone",
+   "text": "A tall conical fountain of brick faced with marble; water runs down its sides into a round basin, where the procession routes meet."
+  },
+  "colosseum": {
+   "title": "Amphitheatrum Flavium",
+   "epithet": "The Colosseum",
+   "text": "Three storeys of eighty arches and an attic, 48 metres high, with statues in the upper arches and masts for the great awning. Some fifty thousand people come here for gladiators and animal hunts. The name Colosseum is medieval."
+  },
+  "trajan_forum": {
+   "title": "Forum Traiani",
+   "epithet": "Forum of Trajan",
+   "text": "The newest and grandest forum: a vast paved square with a gilded bronze Trajan on horseback, colonnades with statues of captive Dacians, hemicycles on both sides. It was paid for with Dacian gold."
+  },
+  "basilica_ulpia": {
+   "title": "Basilica Ulpia",
+   "epithet": "Trajan's basilica",
+   "text": "A huge hall with columns of coloured marble and gilded bronze roof tiles, closing the north side of Trajan's Forum. Courts sit inside; slaves were freed here."
+  },
+  "trajan_column": {
+   "title": "Columna Traiani",
+   "epithet": "Trajan's Column",
+   "text": "A hundred Roman feet of Luna marble wound with a spiral relief of the Dacian wars, 2,500 figures in 23 turns, and a bronze Trajan on top. His ashes rest in its base, between two libraries."
+  },
+  "trajan_temple": {
+   "title": "Templum Divi Traiani",
+   "epithet": "Temple of the Deified Trajan",
+   "text": "Hadrian's temple to Trajan, shown north of the Column as the traditional reconstruction places it; recent work debates where it stood."
+  },
+  "trajan_markets": {
+   "title": "Mercatus Traiani",
+   "epithet": "Trajan's Markets",
+   "text": "A semicircle of brick shops in tiers climbing the Quirinal, with a vaulted hall above and the Via Biberatica running through it: oil, wine, spices, cloth and offices for the grain dole."
+  },
+  "augustus_forum": {
+   "title": "Forum Augusti",
+   "epithet": "Forum of Augustus and Mars Ultor",
+   "text": "The temple of Mars the Avenger stands against a huge grey tufa firewall that kept the Subura's fires away. In the porticoes, statues of Aeneas, Romulus and the great men of Rome, each with his deeds inscribed."
+  },
+  "caesar_forum": {
+   "title": "Forum Iulium",
+   "epithet": "Forum of Caesar",
+   "text": "Caesar's narrow colonnaded square with the temple of Venus Genetrix, mother of his family, restored by Trajan in 113, and the bankers' hall beside it."
+  },
+  "nerva_forum": {
+   "title": "Forum Transitorium",
+   "epithet": "Forum of Nerva",
+   "text": "A narrow forum where the old street into the Subura ran; columns stand close to the wall under a frieze of women's crafts and the myth of Arachne. The temple is Minerva's."
+  },
+  "pacis": {
+   "title": "Templum Pacis",
+   "epithet": "Temple of Peace",
+   "text": "Vespasian's garden square with long water channels and flower beds, porticoes full of famous art, a library, and the spoils of Jerusalem, among them the menorah."
+  },
+  "palatine_tiberiana": {
+   "title": "Domus Tiberiana",
+   "epithet": "Palace of Tiberius",
+   "text": "The older palace on the Palatine's north edge, its brick substructures rising over the Forum."
+  },
+  "domus_flavia": {
+   "title": "Domus Flavia",
+   "epithet": "The state palace",
+   "text": "Domitian's palace of state: a vast throne hall, a basilica, a dining hall between fountains, and a peristyle round an octagonal fountain maze. The emperor receives the Senate here."
+  },
+  "domus_augustana": {
+   "title": "Domus Augustana",
+   "epithet": "The emperor's residence",
+   "text": "The private palace, whose curved façade and high brick substructures look down over the Circus Maximus. 'Palace' comes from this hill, the Palatium."
+  },
+  "palatine_stadium": {
+   "title": "Hippodromus Palatii",
+   "epithet": "The palace garden stadium",
+   "text": "A sunken garden shaped like a stadium, with porticoes, plane trees and fountains, for walks in the shade."
+  },
+  "apollo_palatinus": {
+   "title": "Aedes Apollinis Palatini",
+   "epithet": "Temple of Apollo",
+   "text": "Augustus's temple of Luna marble beside his house, sacred to his patron god, with a famous library."
+  },
+  "house_augustus": {
+   "title": "Domus Augusti",
+   "epithet": "House of Augustus",
+   "text": "A modest house with painted rooms where the first emperor lived for forty years, preferring simplicity to palaces."
+  },
+  "casa_romuli": {
+   "title": "Casa Romuli",
+   "epithet": "Hut of Romulus",
+   "text": "A small thatched hut of wattle and daub, piously rebuilt whenever it is damaged, where Romulus was said to have lived. Today is the city's birthday."
+  },
+  "lupercal": {
+   "title": "Lupercal",
+   "epithet": "The wolf's cave",
+   "text": "A cave shrine at the foot of the Palatine where the she-wolf nursed Romulus and Remus. In February the Luperci run round the hill from here."
+  },
+  "circus_maximus": {
+   "title": "Circus Maximus",
+   "epithet": "The great racecourse",
+   "text": "A long arena with tiered seats for some 150,000, shops in its outer arcades, twelve starting gates and a central barrier with Augustus's obelisk, seven bronze dolphins and seven eggs to count the laps. Four factions race: Red, White, Green, Blue."
+  },
+  "porta_capena": {
+   "title": "Porta Capena",
+   "epithet": "The wet gate",
+   "text": "An old tufa gate of the Servian wall under an aqueduct branch, always dripping. The Via Appia begins here; Rome itself has no circuit wall in 126."
+  },
+  "portunus": {
+   "title": "Aedes Portuni",
+   "epithet": "Temple of Portunus",
+   "text": "A small Ionic temple on a podium by the old river port, sacred to the god of harbours. It still stands."
+  },
+  "hercules_victor": {
+   "title": "Aedes Herculis Victoris",
+   "epithet": "Round temple of Hercules",
+   "text": "A round temple of twenty white marble columns in the cattle market by the river. It still stands, the oldest marble building in Rome."
+  },
+  "ara_maxima": {
+   "title": "Ara Maxima",
+   "epithet": "Great Altar of Hercules",
+   "text": "Where Hercules, the story goes, rested his cattle by the Tiber. Merchants paid a tenth of their profits here."
+  },
+  "tiber_island": {
+   "title": "Insula Tiberina",
+   "epithet": "Tiber Island",
+   "text": "The island is faced with travertine like a ship's prow and stern, with an obelisk for a mast. The healing god Aesculapius has his temple here; the sick sleep in its porticoes, hoping for a cure."
+  },
+  "pons_fabricius": {
+   "title": "Pons Fabricius",
+   "epithet": "Bridge of Fabricius",
+   "text": "A stone bridge of 62 BC joining the island to the left bank. It is still in use."
+  },
+  "pons_cestius": {
+   "title": "Pons Cestius",
+   "epithet": "Bridge of Cestius",
+   "text": "The stone bridge from the island to Transtiberim."
+  },
+  "pons_aemilius": {
+   "title": "Pons Aemilius",
+   "epithet": "The first stone bridge",
+   "text": "Rome's first stone bridge, carrying the road from the cattle market across to Transtiberim and the Via Aurelia."
+  },
+  "pons_sublicius": {
+   "title": "Pons Sublicius",
+   "epithet": "The wooden bridge",
+   "text": "The oldest bridge, rebuilt always in wood without a single iron nail: it is sacred. Here Horatius held off the Etruscans."
+  },
+  "marcellus": {
+   "title": "Theatrum Marcelli",
+   "epithet": "Theatre of Marcellus",
+   "text": "Augustus's theatre for his nephew, its curved travertine façade of arcades in Doric and Ionic storeys. Some 15,000 people watch comedies and mimes here."
+  },
+  "octavia": {
+   "title": "Porticus Octaviae",
+   "epithet": "Portico of Octavia",
+   "text": "A colonnaded precinct with temples of Jupiter and Juno, full of art. A seated statue of Cornelia, mother of the Gracchi, stood in a portico here."
+  },
+  "pantheon": {
+   "title": "Pantheum",
+   "epithet": "The Pantheon",
+   "text": "Hadrian has just rebuilt it: sixteen granite columns, Agrippa's name kept in the inscription, and a brick rotunda under a dome 43 metres across, covered in bronze tiles, open to the sky through its oculus. It is still the largest unreinforced concrete dome."
+  },
+  "pantheon_court": {
+   "title": "Area Panthei",
+   "epithet": "The Pantheon's forecourt",
+   "text": "A colonnaded court in front of the portico; from here the rotunda hides behind the temple front."
+  },
+  "matidia": {
+   "title": "Templum Matidiae",
+   "epithet": "Temple of Matidia",
+   "text": "Hadrian's temple to his deified mother-in-law, Matidia, built after 119."
+  },
+  "agrippa_baths": {
+   "title": "Thermae Agrippae",
+   "epithet": "Baths of Agrippa",
+   "text": "Rome's first great public baths, with a domed hall, vaulted rooms and an exercise yard, beside the Stagnum, an artificial lake fed by the Aqua Virgo."
+  },
+  "castra_praetoria": {
+   "title": "Castra Praetoria",
+   "epithet": "Camp of the Praetorians",
+   "text": "The walled brick camp of the emperor's guard, about ten thousand men. Guards drill outside its gates."
+  },
+  "horrea_galbana": {
+   "title": "Horrea Galbana",
+   "epithet": "The grain warehouses",
+   "text": "Long warehouses round courtyards where grain brought up the Tiber from Portus is measured, recorded and stored for the monthly dole and the bakers."
+  },
+  "suburban_villa": {
+   "title": "Villa suburbana",
+   "epithet": "A villa on the Via Appia",
+   "text": "A rich family's country house with its vineyard and kitchen gardens just outside the city."
+  },
+  "synagogue": {
+   "title": "Synagoga",
+   "epithet": "A synagogue of Transtiberim",
+   "text": "Rome's Jews had their own synagogues and burial places; one community lived across the Tiber. Its form is not known archaeologically, so it is shown as a modest house."
+  },
+  "emporium": {
+   "title": "Emporium",
+   "epithet": "The river port",
+   "text": "A travertine quay with ramps and mooring stones and the giant Porticus Aemilia warehouse. Barges towed up from Portus unload grain, oil and wine here."
+  },
+  "testaccio": {
+   "title": "Mons Testaceus",
+   "epithet": "Monte Testaccio",
+   "text": "A hill made of broken oil amphorae from southern Spain, layered and limed; it will keep growing until the third century."
+  },
+  "aqua_claudia": {
+   "title": "Aqua Claudia",
+   "epithet": "The aqueduct",
+   "text": "Tall arches of rusticated tufa and brick carry the channel across the Caelian to the Palatine. Rome has ten aqueducts in 126; the curator of the waters and his public slaves keep them running."
+  },
+  "hadrian": {
+   "title": "Hadrianus",
+   "epithet": "Emperor and traveller",
+   "text": "He has walked the empire from Britain, where his wall is being built, to Syria. Back in Rome he is rebuilding the Pantheon and designing a temple to Venus and Roma himself. The game imagines him here for the festival."
+  },
+  "sabina": {
+   "title": "Vibia Sabina",
+   "epithet": "Augusta",
+   "text": "Trajan's grand-niece and Hadrian's wife, she travelled with him across the provinces. Coins carry her portrait and her elaborate hairstyle, copied by fashionable women across the empire."
+  },
+  "antinous": {
+   "title": "Antinous",
+   "epithet": "of Bithynia",
+   "text": "A youth from Bithynia, beloved of Hadrian. After his death in the Nile in 130, Hadrian made him a god and founded a city in his name. Today he rides out to hunt."
+  },
+  "marcus": {
+   "title": "Marcus Annius Verus",
+   "epithet": "nearly five",
+   "text": "Hadrian calls this serious little boy 'Verissimus', the most truthful. In 35 years he will be emperor and write, in Greek, a private book of reflections that people still read."
+  },
+  "apollodorus": {
+   "title": "Apollodorus of Damascus",
+   "epithet": "Architect",
+   "text": "He built Trajan's Forum, Column and Baths and a bridge over the Danube. A later historian says he mocked Hadrian's temple design and paid with his life; many historians think the story is gossip."
+  },
+  "juvenal": {
+   "title": "Iuvenalis",
+   "epithet": "Satirist",
+   "text": "He hates the noise: carts at night, crowds by day, tiles falling from tall blocks. He said the people want only two things, bread and circuses. Come and listen, he has more to say."
+  },
+  "suetonius": {
+   "title": "Suetonius",
+   "epithet": "Biographer",
+   "text": "Once Hadrian's secretary for letters, now writing lives of the Caesars full of habits, sayings and scandal. He was dismissed, the story goes, for a lapse of manners toward the empress."
+  },
+  "mesomedes": {
+   "title": "Mesomedes",
+   "epithet": "Court musician",
+   "text": "A freed lyre-singer from Crete who composes hymns for Hadrian. Some of his songs survive with their melodies written above the words, and can still be sung today."
+  },
+  "soranus": {
+   "title": "Soranus",
+   "epithet": "Physician",
+   "text": "Trained in Alexandria, he writes about childbirth, the care of mothers and newborns, and what makes a good midwife. His book was used for more than a thousand years."
+  },
+  "diocles": {
+   "title": "Diocles",
+   "epithet": "Charioteer",
+   "text": "A young driver from Lusitania. By the end of his career he will have won 1,462 races and a fortune greater than many senators'. Today he drives four horses for the Whites."
+  },
+  "vestalis_maxima": {
+   "title": "Virgo Vestalis Maxima",
+   "epithet": "Keeper of the fire",
+   "text": "Six women guard the eternal fire of Vesta for thirty years each. They have seats of honour at the games, can free a condemned man they meet by chance, and keep the wills of emperors."
+  },
+  "plotina": {
+   "title": "Plotina",
+   "epithet": "Trajan's widow (a memory)",
+   "text": "Praised for her modesty and her learning, she supported Hadrian when Trajan died. Hadrian built her a temple and wore mourning for nine days."
+  },
+  "trajan": {
+   "title": "Traianus",
+   "epithet": "The best emperor",
+   "text": "The Senate called him optimus princeps. His Column tells the Dacian wars in a spiral of 2,500 figures; his ashes rest in its base."
+  },
+  "numa": {
+   "title": "Numa",
+   "epithet": "The peaceful king (a memory)",
+   "text": "Rome's second king gave the city its priests, its calendar and the cult of Vesta, advised, they said, by the nymph Egeria in a sacred grove."
+  },
+  "scipio": {
+   "title": "Scipio Africanus",
+   "epithet": "Victor over Hannibal (a memory)",
+   "text": "Before any public business he climbed to Jupiter's temple and sat there alone, Livy says. Some Romans whispered he was the god's son."
+  },
+  "caesar": {
+   "title": "Divus Iulius",
+   "epithet": "(a memory)",
+   "text": "Dictator, killed by senators in 44 BC. The people burned his body here in the Forum; on that spot rose his temple, the first to a Roman made a god."
+  },
+  "cicero": {
+   "title": "Cicero",
+   "epithet": "Orator (a memory)",
+   "text": "He spoke from these Rostra against Catiline and Mark Antony. After his murder, Antony had his head and hands nailed here. At dusk, he still seems to speak."
+  },
+  "claudia_helpis": {
+   "title": "Claudia Helpis",
+   "epithet": "Innkeeper",
+   "text": "Born a slave, freed by her mistress, Claudia Helpis now runs her own counter of hot chickpeas, lentils, wine and bread. Freed men and women ran a large share of Rome's shops; many proudly carved their trade on their tombs."
+  },
+  "vibius_primus": {
+   "title": "Lucius Vibius Primus",
+   "epithet": "Baker",
+   "text": "Primus's donkeys turn the stone mills before dawn; by sunrise the loaves are stamped with his mark. Every month the state hands out free grain to two hundred thousand citizens; most take it to bakers like him."
+  },
+  "aelius_eutyches": {
+   "title": "Publius Aelius Eutyches",
+   "epithet": "Clerk",
+   "text": "An imperial freedman, he counts the grain ships' cargoes for the prefect of the grain supply. Under Hadrian more such posts went to equestrians, but freedmen still ran the daily paperwork of the empire."
+  },
+  "apion": {
+   "title": "Apion",
+   "epithet": "Sailor",
+   "text": "Apion came from a village in Egypt and joined the fleet. In a real letter, a sailor of that name told his father he had arrived safely at Misenum and had been given a Roman name. Today he rides a grain barge upriver."
+  },
+  "mulvius": {
+   "title": "Quintus Mulvius",
+   "epithet": "Barge master",
+   "text": "Mulvius steers a barge up the Tiber from Portus, towed by men and oxen on the bank path: a few days against the current for some thirty-five kilometres, much quicker back down with the stream."
+  },
+  "flavius_valens": {
+   "title": "Titus Flavius Valens",
+   "epithet": "Fireman",
+   "text": "Valens walks the streets at night with buckets, axes and blankets. Fire is the great terror of a city of wooden floors and oil lamps. Informally freed slaves who served in the watch could earn full citizenship."
+  },
+  "felicula": {
+   "title": "Felicula",
+   "epithet": "A fuller's daughter",
+   "text": "Felicula fetches water from the fountain twice a day and plays with walnuts on the pavement with her brother. Her mother dyes cloth; her father treads it clean. She wants to see the races."
+  },
+  "rufina": {
+   "title": "Rufina",
+   "epithet": "Weaver",
+   "text": "Rufina's family has lived across the Tiber for generations among dockers, potters and traders from the East. Rome's Jews had their own synagogues and burial places; the Arch of Titus, with its spoils of Jerusalem, is not a monument they love."
+  },
+  "sextus": {
+   "title": "Sextus",
+   "epithet": "Litter-bearer",
+   "text": "Sextus carries his master's litter across the city every morning with seven others. Rome had no uniform for slaves: the Senate once rejected one, Seneca says, in case the slaves saw how many they were."
+  },
+  "iulia_ianuaria": {
+   "title": "Iulia Ianuaria",
+   "epithet": "Midwife",
+   "text": "Ianuaria has delivered half the children of her street. Soranus wrote that a good midwife must be literate, calm and have soft hands and short nails. Inscriptions remember several midwives by name."
+  }
+ },
+ "strings": {
+  "first_visit": "21 April, AD 126: Rome's birthday. The Pantheon is new, the Temple of Venus and Roma is rising on the Velia, and at dusk the shepherds' fires of the Parilia are lit.",
+  "parilia": "The Parilia procession leaves the Forum for the Velia.",
+  "bonfires": "Dusk on the Parilia: the folds are smoked and the young leap the burning straw.",
+  "races": "The pompa leaves the Capitol for the Circus: the races begin.",
+  "salutatio": "Dawn: clients queue at their patrons' doors for the morning greeting.",
+  "grain_fleet": "Grain barges are being towed up the Tiber from Portus.",
+  "night_carts": "Dusk: the carts banned by day rumble in through the gates.",
+  "decorate_zone": "A peristyle garden of a house on the Caelian, waiting for box hedges, roses and a fountain."
+ },
+ "decorate": {
+  "rect": [
+   132,
+   1017,
+   142,
+   1027
+  ]
+ },
+ "journal": [
+  "landmark:*",
+  "figure:*",
+  "chain:*",
+  "event:parilia_procession",
+  "event:circus_races"
+ ]
+}

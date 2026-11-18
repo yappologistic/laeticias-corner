@@ -124,6 +124,7 @@ def build(L: Layout) -> None:
         C.build_run(L, path, lvl0, rise, name, TRAV)
     _districts(L)
     _reserved(L)
+    _aqueduct(L)
     _capitol(L)
     _forum(L)
     _fora(L)
@@ -421,6 +422,7 @@ def _ways(L: Layout) -> dict:
     st("caelian", [(150, 120), (175, 120)])
     st("caelian", [(158, 95), (158, 106), (155, 106)])
     st("caelian", [(140, 104), (150, 104)])
+    st("caelian", [(150, DECORATE.r0 + 8), (DECORATE.c0, DECORATE.r0 + 8)], 1, EARTH)  # plot gate
     st("caelian", [(140, 104), (140, 119)])
     # Forum Boarium, the river road, the Via Ostiensis (portal across at (67, 159)).
     st("boarium", [(76, 85), (76, 95), (82, 95), (82, 106)], 2)
@@ -748,7 +750,6 @@ def _decorate(L: Layout) -> None:
         put(L, R + "t_box", (r.c1, rr))
         if rr not in (r.r0 + 7, r.r0 + 8):
             put(L, R + "t_box", (r.c0, rr))
-    L.street([(150, r.r0 + 8), (r.c0, r.r0 + 8)], width=1, paving=EARTH)
 
 
 # =============================================================================================
@@ -845,12 +846,28 @@ def _port(L: Layout) -> None:
 # 12. The Campagna: the Via Appia, the aqueduct, the villa, vineyards, fields and flocks
 # =============================================================================================
 
-def _campagna(L: Layout) -> None:
-    # The Aqua Claudia striding in on its arcade over the Caelian to the Palatine.
+def _aqueduct(L: Layout) -> None:
+    """The Aqua Claudia striding in on its arcade over the Caelian to the Palatine (the ways
+    pass under it through gaps); placed before the quarters fill in round it."""
     for c, r in Line(AQUEDUCT, 1).path():
-        lc, lr = c - L.origin[0], r - L.origin[1]
-        if 0 <= lc < W and 0 <= lr < H and not L.STREET[lr, lc]:
-            put(L, R + "aqua_claudia", (lc, lr))
+        if 0 <= c < W and 0 <= r < H and not L.STREET[r, c]:
+            put(L, R + "aqua_claudia", (c, r))
+
+
+def _campagna(L: Layout) -> None:
+    # Market gardens and orchards outside the Porta Ostiensis between Testaccio and the Appia,
+    # and on the Caelian's south foot.
+    south = m(Rect(97, 141, 136, 159)) & (L.OCC < 0) & ~L.STREET
+    for at in ((100, 141), (116, 141), (128, 141)):
+        put(L, R + "r_villa_farm", at, face="north")
+    L.fields(Mask(0, 0, south) & Rect(97, 145, 125, 159), FIELD, plot=(4, 3), path=EARTH,
+             seed="ostiensis_gardens")
+    L.scatter(Mask(0, 0, south) & Rect(97, 145, 125, 159), {R + "p_cabbage": 3, R + "r_well": 0.2},
+              0.25, seed="ostiensis_beds")
+    C.grove(L, south & m(Rect(126, 145, 136, 159)), "ostiensis_figs", R + "t_fig", step=(3, 2),
+            variants=2)
+    foot = m(Rect(136, 118, 152, 139)) & (L.LV == 0) & (L.OCC < 0) & ~L.STREET
+    C.grove(L, foot, "caelian_vines", R + "r_vine", step=(1, 2), soil=VINES)
     # Tombs along the Via Appia facing the road, pines and cypresses behind; milestones.
     road = [s for s in L.streets if s.points[0] == (135 + L.origin[0], 122 + L.origin[1])][0]
     tombs = [R + "r_tomb", R + "tomb_drum", R + "tomb_house", R + "tomb_altar"]
