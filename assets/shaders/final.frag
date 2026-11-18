@@ -184,13 +184,16 @@ void main() {
         // h px below it), found by walking up the screen to the edge; rippled in whole pixels.
         if (deep.w > 0.5) {
             float ox = floor((rip - 0.5) * 3.0 + 0.5);
-            float stepPx = max(world.z, 1.0) * 2.0;
+            // Up the screen to the edge, no further than a reflection reaches (44 art px): in
+            // steps of four art px, then one of two back (open sea finds no edge and stops early).
+            float stepPx = max(world.z, 1.0) * 4.0;
             float e = -1.0;
-            for (int i = 1; i <= 40; ++i) {
+            for (int i = 1; i <= 11; ++i) {
                 vec2 p = px + vec2(0.0, -stepPx * float(i));
                 if (p.y < 0.0) break;
                 if (solid(texture(u_scene, p / texel.xy))) {
-                    e = p.y;
+                    vec2 back = p + vec2(0.0, stepPx * 0.5);
+                    e = solid(texture(u_scene, back / texel.xy)) ? back.y : p.y;
                     break;
                 }
             }

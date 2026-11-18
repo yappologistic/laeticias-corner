@@ -78,6 +78,7 @@ inline constexpr float kRiverSpeed = 0.55f; // tiles per second along a river's 
 // quarter of the resolution and read on a grid of two art pixels; seen faint near (the world
 // stays visible) and fuller far; their shadows on the ground are the stronger cue.
 inline constexpr int kClouds = 32;
+inline constexpr int kCloudBillows = 5;             // round billows on a cloud's base
 inline constexpr float kCloudWidth[2] = {320, 820}; // px, the smallest and largest at full growth
 inline constexpr float kCloudAltitude = 520;        // px a cloud's base stands above its point
 inline constexpr float kCloudParallax = 0.12f;      // share of its offset from the view's centre

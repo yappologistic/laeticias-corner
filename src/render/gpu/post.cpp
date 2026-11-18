@@ -40,6 +40,7 @@ struct CloudUniforms {
     float frame[4];
     float sun[4];
     float clouds[2 * tuning::kClouds][4];
+    float billows[tuning::kClouds * tuning::kCloudBillows][4];
 };
 
 // std140 mirror of shaders/shade.frag's block.
@@ -382,6 +383,20 @@ void Post::clouds(Batch& b, const CloudParams& p, int w, int h) {
         const Cloud& c = p.clouds[static_cast<std::size_t>(i)];
         set4(u.clouds[2 * i], c.ground.x, c.ground.y, c.width, c.seed);
         set4(u.clouds[2 * i + 1], c.growth, c.dark, c.parallax.x, c.parallax.y);
+        // Its billows, in widths: across the cloud, larger in the middle, lifted off the base.
+        const auto hash = [](float v) {
+            const float s = std::sin(v * 12.9898f) * 43758.5453f;
+            return s - std::floor(s);
+        };
+        for (int k = 0; k < tuning::kCloudBillows; ++k) {
+            const auto fk = static_cast<float>(k);
+            const float across = fk / static_cast<float>(tuning::kCloudBillows - 1) - 0.5f;
+            const float r =
+                0.16f + 0.12f * (1.0f - std::abs(across) * 2.0f) + 0.05f * hash(c.seed + fk * 7.1f);
+            set4(u.billows[i * tuning::kCloudBillows + k],
+                 across * 0.62f + (hash(c.seed + fk * 3.3f) - 0.5f) * 0.08f,
+                 -r * 0.55f - hash(c.seed + fk * 5.9f) * 0.06f, r, 0);
+        }
     }
     if (!SDL_SetGPURenderStateFragmentUniforms(cloudState_, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());

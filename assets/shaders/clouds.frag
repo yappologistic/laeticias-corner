@@ -17,19 +17,13 @@ layout(std140, set = 3, binding = 0) uniform U {
     // Per cloud: its ground point x, y (world px), width px, seed; then its growth 0..1, how
     // dark (rain), and its parallax (world px the cloud is seen moved from over its point).
     vec4 clouds[kClouds * 2];
+    // Per cloud, its billows: centre x, y from the cloud's base centre and radius, in widths
+    // (worked out once on the CPU from its seed).
+    vec4 billows[kClouds * kBillows];
 };
 
-float hash(float n) {
-    return fract(sin(n * 12.9898) * 43758.5453);
-}
-
-// One billow of cloud `i`: its centre from the cloud's centre (screen px, y down) and radius.
-vec3 billow(float seed, float width, int k) {
-    float u = float(k) / float(kBillows - 1) - 0.5; // -0.5 .. 0.5 across
-    float r = width * (0.16 + 0.12 * (1.0 - abs(u) * 2.0) + 0.05 * hash(seed + float(k) * 7.1));
-    float x = u * width * 0.62 + (hash(seed + float(k) * 3.3) - 0.5) * width * 0.08;
-    float y = -r * 0.55 - hash(seed + float(k) * 5.9) * width * 0.06;
-    return vec3(x, y, r);
+vec3 billow(int i, float width, int k) {
+    return billows[i * kBillows + k].xyz * width;
 }
 
 void main() {
@@ -54,7 +48,7 @@ void main() {
             float d = 0.0;
             float top = 0.0;
             for (int k = 0; k < kBillows; ++k) {
-                vec3 c = billow(a.w, width, k);
+                vec3 c = billow(i, width, k);
                 float e = 1.0 - length(p - c.xy) / c.z;
                 if (e > d) {
                     d = e;
@@ -73,7 +67,7 @@ void main() {
         }
         if (abs(g.x) < width && abs(g.y) < width * 0.6) {
             for (int k = 0; k < kBillows; ++k) {
-                vec3 c = billow(a.w, width, k);
+                vec3 c = billow(i, width, k);
                 vec2 q = vec2(g.x - c.x, (g.y - c.y * 0.3) * 2.0);
                 shade = max(shade, clamp((1.0 - length(q) / c.z) * 4.0, 0.0, 1.0) * growth);
             }
