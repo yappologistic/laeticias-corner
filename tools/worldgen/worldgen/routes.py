@@ -560,6 +560,7 @@ def put(W: World, item: str, c: int, r: int, face: str = "west", variant: int = 
     lv = level if level is not None else int(L.LV[r, c])
     p = L._new_placed(item, c, r, k, None, SRC, face if d.layout == "rotate" else None)
     level_these = []
+    ring = None
     for options in access_tiles(p):
         ok = None
         for x, y in options:
@@ -573,9 +574,17 @@ def put(W: World, item: str, c: int, r: int, face: str = "west", variant: int = 
                     and L.LV[y + b, x + a] == lv for a, b in DIRS):
                 ok = ok or (x, y, True)   # free ground beside a road tile at this level
         if ok is None:
+            # A spot on the far side is reached round the building: a free walk all round
+            # the footprint, levelled with it, that touches the road at its level.
+            ring = ring if ring is not None else walk_round(W, tiles, lv)
+            ok = next(((x, y, True) for x, y in options if (x, y) in ring), None) if ring \
+                else None
+        if ok is None:
             return None
         if ok[2]:
             level_these.append(ok[:2])
+    if ring:
+        level_these += [t for t in ring if t not in level_these]
     for x, y in tiles + level_these:
         L.LV[y, x] = lv
     for x, y in level_these:
@@ -583,6 +592,31 @@ def put(W: World, item: str, c: int, r: int, face: str = "west", variant: int = 
     L.items.append(p)
     L._occupy(p)
     return p
+
+
+def walk_round(W: World, tiles, lv: int) -> list[tuple[int, int]]:
+    """The tiles round a footprint (corners included) if every one is free ground or a road at
+    `lv` and one of them is or touches a road tile at `lv`; else an empty list."""
+    L = W.L
+    own = set(tiles)
+    ring = sorted({(x + a, y + b) for x, y in tiles for a in (-1, 0, 1) for b in (-1, 0, 1)}
+                  - own)
+    touch = False
+    out = []
+    for x, y in ring:
+        if not (0 <= x < COLS and 0 <= y < ROWS):
+            return []
+        if L.STREET[y, x]:
+            if L.LV[y, x] != lv or L.OCC[y, x] >= 0:
+                return []
+            touch = True
+            continue
+        if not free_tile(W, x, y) or abs(int(L.LV[y, x]) - lv) > 2:
+            return []
+        touch = touch or any(0 <= x + a < COLS and 0 <= y + b < ROWS and L.STREET[y + b, x + a]
+                             and L.LV[y + b, x + a] == lv for a, b in DIRS)
+        out.append((x, y))
+    return out if touch else []
 
 
 def side_tiles(way: Way, i: int, side: int, gap: int = 1):
@@ -775,8 +809,10 @@ def watch_points(W: World, way: Way) -> None:
 
 
 def beacon_near(W: World, way: Way, i: int, item: str) -> None:
+    """A beacon on the highest free ground near the road where its fire can be tended from the
+    road's level (the best few heights are tried in turn)."""
     c, r = way.path[i]
-    best = None
+    cands = []
     for dr in range(-6, 7):
         for dc in range(-6, 7):
             x, y = c + dc, r + dr
@@ -785,11 +821,11 @@ def beacon_near(W: World, way: Way, i: int, item: str) -> None:
             if any(W.L.STREET[y + a, x + b] for a in (-1, 0, 1) for b in (-1, 0, 1)
                    if 0 <= y + a < ROWS and 0 <= x + b < COLS):
                 continue
-            key = (int(W.L.LV[y, x]), -abs(dc) - abs(dr))
-            if best is None or key > best[0]:
-                best = (key, x, y)
-    if best and put(W, item, best[1], best[2]):
-        W.stats["beacons"] = W.stats.get("beacons", 0) + 1
+            cands.append(((int(W.L.LV[y, x]), -abs(dc) - abs(dr)), x, y))
+    for _key, x, y in sorted(cands, reverse=True)[:24]:
+        if put(W, item, x, y):
+            W.stats["beacons"] = W.stats.get("beacons", 0) + 1
+            return
 
 
 # --- farms, harbours, charcoal --------------------------------------------------------------

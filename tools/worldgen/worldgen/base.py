@@ -2,12 +2,14 @@
 
 Order (every step seeded and a pure function of position and the plan entry it serves):
  1. coasts: land polygons rasterised, outlines roughened at three scales (bays and headlands,
-    capes, rocks), specks removed, authored inlets kept;
+    capes, rocks), specks removed, authored inlets kept; rocky islets beside the open-sea lanes;
  2. relief: plains rise inland to each stretch's plateau, hills by noise, headlands raised and
-    bays lowered, mountain bands with saddles at their passes, contours bent into terraces and
-    cut by gullies; reserved city rects flat; slopes limited to 2 levels per tile;
- 3. rivers: meandering, widening downstream, splitting into deltas, carved non-increasing from
-    source to mouth with their valleys, flow written to aux;
+    bays lowered, mountain bands with saddles at their passes, wide gullies on slopes; the height
+    grouped into benches and scarps, every level's outline cleaned (plan LANDFORM); reserved city
+    rects flat;
+ 3. rivers: meandering, widening downstream, splitting into deltas; level in reaches with the
+    drops gathered into falls, flat valley floors rising in scarps (plan RIVER_FORM), flow
+    written to aux;
  4. terrain by stretch (docs/design/sets/world.md §9.3): rock, snow, scree, scrub, forest floor,
     desert, marsh, canals, beaches, margins where two bases meet;
  5. routes and lanes (worldgen.routes): roads graded with ramps, bridges, roadside kit, stations,
@@ -247,6 +249,48 @@ def make_land(A: Anchors) -> tuple[np.ndarray, np.ndarray]:
     return land, bays
 
 
+def islets(land: np.ndarray, A: Anchors) -> np.ndarray:
+    """Rocks and islets beside the open-sea lanes (plan ISLETS): one every `every` tiles of a
+    lane's plan line, `offset` tiles to a side, wherever the open sea would otherwise run on
+    for screens with nothing in it; never near a coast, an authored layer or a seam."""
+    F = P.ISLETS
+    far = distance_to(land, F["clear"] + 1) > F["clear"]
+    seams = np.zeros_like(land)
+    for rid, (kind, _s, _t, rect, _b) in P.REGIONS.items():
+        if kind == "seam":
+            seams |= rect_mask(rect)
+    near_seam = distance_to(seams, 12) < 12
+    out = np.zeros_like(land)
+    for lid, ln in P.LANES.items():
+        if ln["kind"] != "sea":
+            continue
+        pts = ln["points"]
+        walked = 0.0
+        for (ac, ar), (bc, br) in zip(pts, pts[1:]):
+            length = math.hypot(bc - ac, br - ar)
+            if length == 0:
+                continue
+            nx, ny = -(br - ar) / length, (bc - ac) / length
+            t = (F["every"] - walked % F["every"]) if walked else F["every"] / 2
+            while t < length:
+                k = int(walked + t)
+                h = rng.hash64(SEED, "islet", lid, k)
+                side = 1 if h % 2 else -1
+                off = F["offset"][0] + (h >> 8) % (F["offset"][1] - F["offset"][0] + 1)
+                c = int(round(ac + (bc - ac) * t / length + nx * off * side))
+                r = int(round(ar + (br - ar) * t / length + ny * off * side))
+                t += F["every"]
+                if not (4 <= c < COLS - 4 and 4 <= r < ROWS - 4) or not far[r, c] or \
+                        near_seam[r, c] or A.dist[r, c] <= ANCHOR_BAND + 4:
+                    continue
+                rad = F["radius"][0] + ((h >> 16) % 100) / 100 * (F["radius"][1] - F["radius"][0])
+                win = (slice(r - 4, r + 5), slice(c - 4, c + 5))
+                wob = noise(3.0, "islet_shape")[win] * 0.9
+                out[win] |= np.hypot(CC[win] - c, RR[win] - r) + wob <= rad
+            walked += length
+    return out
+
+
 # --- regions ---------------------------------------------------------------------------------
 
 def region_map(land: np.ndarray) -> tuple[np.ndarray, list[str], np.ndarray]:
@@ -463,7 +507,7 @@ def relief(land, stretch, names, bays, courses, A: Anchors):
     ic = np.clip(np.rint(CC + wc), 0, COLS - 1).astype(np.intp)
     ir = np.clip(np.rint(RR + wr), 0, ROWS - 1).astype(np.intp)
     plateau, ramp, amp = (box_blur(box_blur(x[ir, ic], 10), 10) for x in (plateau, ramp, amp))
-    hills = noise(22.0, "hills", octaves=4)
+    hills = noise(P.LANDFORM["hills_scale"], "hills", octaves=4)
     lv = 1 + np.minimum(plateau - 1, dist / ramp) + amp * hills * np.clip(dist / 6, 0, 1)
     # Headlands stand up from the sea, bays stay low with beaches.
     shore = np.clip(1 - dist / 6.0, 0, 1)
@@ -506,40 +550,21 @@ def relief(land, stretch, names, bays, courses, A: Anchors):
         bandsoft[win] = np.maximum(bandsoft[win], soft)
         bi = (soft > 0.6) & (blv * soft >= b["impassable"]) & ~passable
         imp[win] |= bi
-    # Terraces: contours bent by a domain warp and offset in patches, so plateau edges step in
-    # irregular benches instead of long parallel lines.
-    t = P.TERRACES
-    ws = noise(t["warp_scale"], "twarp_c") * t["warp"]
-    wt = noise(t["warp_scale"], "twarp_r") * t["warp"]
-    ic = np.clip(np.rint(CC + ws), 0, COLS - 1).astype(np.intp)
-    ir = np.clip(np.rint(RR + wt), 0, ROWS - 1).astype(np.intp)
-    warped = lv[ir, ic]
-    lv = np.where(land & land[ir, ic], warped, lv)
-    lv += noise(t["scale"], "terrace") * t["amp"]
-    # Gullies: ridged-noise valleys cut where the ground slopes.
+    # Gullies: wide ridged-noise valleys cut where the ground slopes.
     g = P.GULLIES
     sm = box_blur(lv, 3)
     gy, gx = np.gradient(sm)
     slope = np.clip(np.hypot(gx, gy) * 2.5, 0, 1)
     ridged = (1 - np.abs(noise(g["scale"], "gully", octaves=3))) ** g["sharp"]
     lv -= g["depth"] * ridged * slope * np.clip(lv - 1.5, 0, 1)
-    # Valleys: land falls toward the big rivers.
-    for co in courses:
-        if co.valley <= 0:
-            continue
-        on = co.mask & land
-        if not on.any():
-            continue
-        dv, base = nearest_value(on, lv, co.valley + 1)
-        near = (dv <= co.valley) & land & ~on
-        frac = dv / (co.valley + 1.0)
-        lv = np.where(near & (lv > base), base + (lv - base) * frac ** 0.9, lv)
-    # Authored layers' edges: blend into their levels over the anchor band.
+    # Authored layers' edges: blend into their levels over the anchor band, where the benches
+    # fade into plain rounding so the edge level holds exactly.
     has = (A.dist >= 1) & (A.dist <= ANCHOR_BAND) & (A.water != 1)
     w = smoothstep((A.dist.astype(np.float64) - 1) / ANCHOR_BAND)
     lv = np.where(has, A.level * (1 - w) + lv * w, lv)
-    level = np.where(land, np.clip(np.rint(lv), 1, 15), 0).astype(np.int16)
-    despeckle(level, land)
+    # Mountain bands are benched more loosely, so their summits keep their levels.
+    calm = np.where(A.dist <= ANCHOR_BAND, w, 1.0) * (1 - 0.6 * np.clip(bandsoft * 1.5, 0, 1))
+    level = terraced(lv, land, calm)
 
     reserved = np.zeros((ROWS, COLS), dtype=bool)
     flat = []
@@ -556,14 +581,17 @@ def relief(land, stretch, names, bays, courses, A: Anchors):
             level[m & land] = max(base, 1)
 
     flatten()
+    fixed = (A.dist <= 1) | np.any([m for m, _ in flat], axis=0)
+    clean(level, land, fixed)
     imp &= ~reserved
-    river = np.zeros((ROWS, COLS), dtype=bool)
-    for co in courses:
-        river |= co.mask
-    river &= land
-    smooth(level, land, courses, A)
+    river, water_level, floor = river_levels(level, land, courses, A)
+    limit_steps(level, land)
     flatten()
-    smooth(level, land, courses, A)
+    level[river] = np.minimum(level[river], water_level[river])
+    clean(level, land, fixed | river | floor)
+    limit_steps(level, land)
+    level[river] = np.minimum(level[river], water_level[river])
+    unpimple(level, land & ~river & ~fixed)
     ring = (A.dist == 1) & land & (A.water == 0) & ~river
     level[ring] = A.level[ring]
     flow = np.zeros((ROWS, COLS), dtype=np.int8)
@@ -577,24 +605,163 @@ def relief(land, stretch, names, bays, courses, A: Anchors):
     return level, imp, river, flow, reserved, bandsoft
 
 
-def despeckle(level: np.ndarray, land: np.ndarray, passes: int = 3) -> None:
-    """Small islands of one level in another (a tile or two left by the noise) take the level
-    most of their eight neighbours share, so plateaus read as benches, not as scattered steps."""
-    for _ in range(passes):
-        best = np.zeros_like(level)
-        best_n = np.zeros(level.shape, dtype=np.int16)
-        for v in np.unique(level[land]).tolist():
-            n = np.zeros(level.shape, dtype=np.int16)
-            m = level == v
-            for dr, dc in N8:
-                n += _shift(m, dr, dc, False)
-            better = n > best_n
-            best[better] = v
-            best_n[better] = n[better]
-        change = land & (best != level) & (best_n >= 6) & (best > 0)
-        if not change.any():
+def terraced(h: np.ndarray, land: np.ndarray, calm: np.ndarray) -> np.ndarray:
+    """Integer levels from the continuous height, grouped into benches (plan LANDFORM): within
+    each bench the riser takes only a share of the run, so the steps of a slope gather into one
+    scarp. `calm` (0..1) widens the riser back to plain rounding (0) near authored edges."""
+    F = P.LANDFORM
+    B = F["bench"]
+    # A phase and the same phase plus one bench give the same benches, so it wraps freely.
+    phase = np.mod((noise(F["phase_scale"], "bench_phase", octaves=2) + 1) * 2 * B, B)
+    x = (h - 1 + phase) / B
+    k = np.floor(x)
+    rw = F["riser"] + (1 - F["riser"]) * (1 - np.clip(calm, 0, 1))
+    f = np.clip((x - k - 0.5) / rw + 0.5, 0, 1)
+    h2 = (k + f) * B - phase + 1
+    return np.where(land, np.clip(np.rint(h2), 1, 15), 0).astype(np.int16)
+
+
+def dilate(m: np.ndarray, r: int) -> np.ndarray:
+    """Grow a mask by r tiles, alternating 4- and 8-neighbour steps (an octagon, not a box)."""
+    for k in range(r):
+        g = m.copy()
+        for dr, dc in (N4 if k % 2 == 0 else N8):
+            g |= _shift(m, dr, dc, False)
+        m = g
+    return m
+
+
+def erode(m: np.ndarray, r: int) -> np.ndarray:
+    return ~dilate(~m, r)
+
+
+def clean(level: np.ndarray, land: np.ndarray, fixed: np.ndarray) -> None:
+    """Every level's outline opened and closed (plan LANDFORM `open`): no spur, island, notch or
+    hole narrower than 2 * open + 1 tiles; a bench narrower than `min_bench` joins the level
+    above it (one taller scarp instead of two steps). Outlines stay nested; `fixed` tiles keep
+    their level. The sea counts as neither high nor low ground, so headlands keep their rims."""
+    F = P.LANDFORM
+    r, wb = F["open"], F["min_bench"]
+    out = np.where(land, 1, 0).astype(np.int16)
+    prev = land.copy()
+    for k in range(2, 16):
+        raw = land & (level >= k)
+        if not raw.any() and not (fixed & (level >= k)).any():
+            break
+        m = dilate(erode(raw | ~land, r), r) & land
+        m = erode(dilate(m, r), r) & land
+        m &= prev
+        if m.any():
+            # A bench too narrow to stand on joins the scarp above it; the joined edge is
+            # opened once more so it leaves no single-tile teeth.
+            m |= prev & ~m & (distance_to(~prev, wb + 1) + distance_to(m, wb + 1) <= wb)
+            m = dilate(erode(m | ~land, 1), 1) & prev
+        m = (m | (fixed & (level >= k))) & ~(fixed & (level < k)) & land
+        out[m] = k
+        prev = m
+    level[:] = out
+
+
+def unpimple(level: np.ndarray, free: np.ndarray) -> None:
+    """A tile above or below four neighbours that share one level takes theirs (V14)."""
+    for _ in range(3):
+        n = _shift(level, 1, 0, -1)
+        same = (n >= 0) & (n == _shift(level, -1, 0, -1)) & (n == _shift(level, 0, 1, -1)) & \
+            (n == _shift(level, 0, -1, -1)) & (n != level) & free
+        if not same.any():
             return
-        level[change] = best[change]
+        level[same] = n[same]
+
+
+def limit_steps(level: np.ndarray, land: np.ndarray) -> None:
+    """No land tile more than LANDFORM `max_step` levels above its lowest 4-neighbour (lowering
+    only, so rivers and coasts are never raised)."""
+    top = P.LANDFORM["max_step"]
+    for _ in range(16):
+        lim = level.copy()
+        for dr, dc in N4:
+            lim = np.minimum(lim, _shift(level, dr, dc, 15) + top)
+        lim = np.where(land, np.maximum(lim, 1), 0)
+        if (lim == level).all():
+            return
+        level[:] = lim
+
+
+def river_levels(level, land, courses, A: Anchors):
+    """Each river's water level along its course and its valley (plan RIVER_FORM): level for at
+    least `reach` tiles; where the ground falls faster, the drops ahead within one reach gather
+    into one fall here; inside an authored layer the layer's water level holds and caps the
+    river below it. Land within a third of the river's `valley` takes the water's level (a flat
+    floor), then rises at most two levels a tile to the country. Returns (river tiles, water
+    level per tile, valley floor tiles); delta land lies flat at its river's mouth level."""
+    reach = P.RIVER_FORM["reach"]
+    water = np.full((ROWS, COLS), 99, dtype=np.int16)
+    river = np.zeros((ROWS, COLS), dtype=bool)
+    floor = np.zeros((ROWS, COLS), dtype=bool)
+    for co in courses:
+        seq = []
+        for (c, r) in co.path:
+            if A.dist[r, c] == 0:
+                seq.append((c, r, int(A.level[r, c]), True))
+                continue
+            if not land[r, c]:
+                break
+            seq.append((c, r, int(level[r, c]), False))
+        if not seq:
+            continue
+        caps = np.minimum.accumulate(np.array([s[2] for s in seq]))
+        fixed = [s[3] for s in seq]
+        z = np.zeros(len(seq), dtype=np.int16)
+        cur = int(caps[0])
+        for i in range(len(seq)):
+            if fixed[i]:
+                cur = int(caps[i])
+            elif caps[i] < cur:
+                # Gather the drops of the next reach, short of an authored layer ahead (the
+                # river meets it at its own level there).
+                j = i + 1
+                while j < min(len(seq), i + reach) and not fixed[j]:
+                    j += 1
+                cur = int(caps[i:j].min())
+            z[i] = cur
+        if co.delta_land is not None:
+            # A delta lies low and flat: its reach is at the shore's level from where it forks.
+            fork = max(0, len(seq) - P.RIVERS[co.id]["delta"][0])
+            z[fork:] = np.where(np.array(fixed[fork:]), z[fork:], np.minimum(z[fork:], 1))
+        free = [i for i in range(len(seq)) if not fixed[i]]
+        on = co.mask & land & (A.dist > 0)
+        if not free or not on.any():
+            continue
+        # Every tile within the river's half-width of a path tile takes the lowest level of
+        # the path tiles that reach it, so a fall crosses the whole width on one line instead
+        # of leaving slivers of the upper reach beside the lower one.
+        mine = np.full((ROWS, COLS), 99, dtype=np.int16)
+        for i in free:
+            c, r = seq[i][0], seq[i][1]
+            rad = co.widths[min(i, len(co.widths) - 1)] // 2 + 1
+            win = (slice(max(r - rad, 0), r + rad + 1), slice(max(c - rad, 0), c + rad + 1))
+            mine[win] = np.minimum(mine[win], z[i])
+        keys = np.array([(seq[i][0], seq[i][1]) for i in free])
+        vals = z[free]
+        js, is_ = np.nonzero(on & (mine == 99))
+        for j, i in zip(js.tolist(), is_.tolist()):
+            k = int(np.argmin(np.abs(keys[:, 0] - i) + np.abs(keys[:, 1] - j)))
+            mine[j, i] = int(vals[k])
+        water[on] = np.minimum(water[on], mine[on])
+        river |= on
+        if co.delta_land is not None:
+            dl = co.delta_land & land & (A.dist > 0)
+            level[dl] = np.minimum(level[dl], max(int(z[-1]), 1))
+            floor |= dl
+        if co.valley > 0:
+            dv, wl = nearest_value(on, water.astype(np.float64), co.valley + 1)
+            near = (dv <= co.valley) & land & ~on & (A.dist > 0)
+            fw = max(1, co.valley // 3)
+            allowed = wl + np.maximum(0, dv - fw) * 2
+            level[near] = np.minimum(level[near], np.maximum(allowed[near], 1)).astype(np.int16)
+            floor |= near & (dv <= fw)
+    level[river] = np.minimum(level[river], water[river])
+    return river, water, floor
 
 
 def fix_flow(level, river, flow) -> None:
@@ -615,43 +782,6 @@ def fix_flow(level, river, flow) -> None:
         if not changed:
             return
 
-
-def carve(level, courses, A: "Anchors | None" = None, land=None):
-    """Rivers never rise downstream; where a course passes through an authored layer, its
-    water there (the layer's level) caps everything below it."""
-    for co in courses:
-        run = 15
-        best = {}
-        for (c, r) in co.path:
-            if A is not None and A.dist[r, c] == 0:
-                run = min(run, int(A.level[r, c]))
-                continue
-            if level[r, c] == 0 and (land is None or not land[r, c]):
-                break
-            run = max(min(run, int(level[r, c])), 0)
-            best[(c, r)] = run
-        if not best:
-            continue
-        js, is_ = np.nonzero(co.mask & (level > 0))
-        keys = np.array(list(best.keys()))
-        vals = np.array(list(best.values()))
-        for j, i in zip(js.tolist(), is_.tolist()):
-            k = np.argmin(np.abs(keys[:, 0] - i) + np.abs(keys[:, 1] - j))
-            level[j, i] = min(level[j, i], vals[k])
-
-
-def smooth(level, land, courses, A=None):
-    """Carve rivers, then limit every land tile to 2 levels above its lowest 4-neighbour."""
-    carve(level, courses, A, land)
-    for _ in range(16):
-        lim = level.copy()
-        for dr, dc in N4:
-            lim = np.minimum(lim, _shift(level, dr, dc, 15) + 2)
-        lim = np.where(land, np.maximum(lim, 1), 0)
-        if (lim == level).all():
-            break
-        level[:] = lim
-    carve(level, courses, A, land)
 
 
 # --- 4. terrain ------------------------------------------------------------------------------
@@ -900,6 +1030,8 @@ def build_base(cat: Catalog, layers: dict[str, PlanLayer] | None = None) -> tupl
     from . import country, routes
     anchors = make_anchors(layers or {}, cat)
     land, bays = make_land(anchors)
+    isle = islets(land, anchors)
+    land |= isle
     reg, names, stretch = region_map(land)
     courses = plan_rivers(land)
     level, imp, river, flow, reserved, bandsoft = relief(land, stretch, names, bays, courses,
@@ -913,6 +1045,7 @@ def build_base(cat: Catalog, layers: dict[str, PlanLayer] | None = None) -> tupl
     W.stats["_courses"] = courses
     W.keep = np.zeros((ROWS, COLS), dtype=bool)
     terrain(W)
+    L.T[isle] = W.tidx("world.rock")   # bare rock: gulls, not farms
     water_and_faces(W, flow)
     g = Graph("base")
     routes.build(W, g)

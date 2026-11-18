@@ -105,6 +105,7 @@ def build(L: Layout) -> None:
 | `expect(landmark, rect=, level=)` | V4 check of your own placement |
 | `moved(landmark, rect=, why=)` | declare a landmark a deliberate step off its city-file rect: V4 reports the move, with the reason, as a warning |
 | `view(name, rect)` | a close-up preview |
+| `sightline(name, shape)` | mark a monumental approach: only the region's own set and home pieces with art may stand in it (V15) |
 | `below_terrain(c, r)`, `below_level(c, r)`, `land_below()`, `sea_below()`, `coast_below()`, `below_where(pred)` | read the committed layers underneath (the base's coast, rivers, levels) |
 | `terrain_at(C, R)` | what this layer has painted so far (world coordinates) |
 
@@ -190,6 +191,8 @@ Between two portals of a town without a layout the base carries the road through
 | V11 | ≤ 25 % of walkable tiles hidden behind raised ground | warning |
 | V12 | item cards exist in the region file | error |
 | V13 | determinism: two compiles give the same bytes (test suite) | test |
+| V14 | the base's relief: no isolated single-tile level change on open country, at most 2 % of it on one-tile benches, no river reach under 6 tiles between two falls of under 3 levels | error (base) |
+| V15 | a marked `sightline` holds no world kit (fords, plank ramps, timber bridges, …) and no placeholder | error |
 
 Additions: V1 also checks that every placed variant is a valid look or rotation of its catalog
 entry, retired stand-ins, and the region-set rule (a region of set S carries home, world and S ids
@@ -217,8 +220,16 @@ commit it with the layer that changed it. A region README is complete when it ha
 `plan/world_plan.py` holds the coarse authored world: regions and stretches, district ownership
 rules, layers, portals, land/sea/island polygons, relief per stretch, mountain bands, rivers,
 routes and lanes, stretch looks, overview labels. `worldgen/base.py` turns it into the base layer
-(coasts roughened by bounded noise, relief with domain-warped stretch settings, carved rivers,
-routes by A*, fields and forests by stretch look, districts). City rects are reserved flat at the
+(coasts roughened by bounded noise, islets beside the open-sea lanes, relief with domain-warped
+stretch settings, rivers, routes by A*, fields and forests by stretch look, districts).
+
+Relief reads as landforms at the game's camera (plan `LANDFORM`, `RIVER_FORM`): the continuous
+height is grouped into benches two levels tall whose risers take a third of the run (looser in
+mountain bands, plain rounding next to authored edges), every level's outline is opened and
+closed by two tiles, a bench too narrow to stand on joins the scarp above it, pimples go, and no
+scarp is taller than three levels. Rivers run level for at least a reach (24 tiles), the drops of
+the next reach gathered into one fall; their valleys have a flat floor a third of `valley` wide
+and rise in a scarp; deltas lie flat at the shore's level. V14 holds the result. City rects are reserved flat at the
 city's base level; town rects keep natural ground but no country items. Each table entry affects
 only its own area, and all noise is a function of world position and a string key.
 

@@ -161,6 +161,7 @@ class Layout:
         self.expects: list[Expect] = []
         self.moves: dict[str, tuple[Rect, str, str]] = {}  # landmark -> (rect, why, src)
         self.views: dict[str, Rect] = {}
+        self.sightlines: dict[str, np.ndarray] = {}  # name -> local mask (V15)
         self.issues: list[Issue] = []
         self.below = None  # the composed committed layers under this one (compose.World)
         self.graphs: dict = {}  # the graphs of the layers known to the build (fresh or committed)
@@ -702,6 +703,11 @@ class Layout:
 
     def view(self, name: str, rect) -> None:
         self.views[name] = self._world(rect)
+
+    def sightline(self, name: str, shape) -> None:
+        """Mark a monumental approach (V15): nothing of the connective world's rustic kit and no
+        placeholder may stand in it, only the region's own set and the home set."""
+        self.sightlines[name] = self._mask(shape)
 
     # -- district filler and fields -----------------------------------------------------------
 

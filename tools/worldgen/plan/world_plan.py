@@ -308,10 +308,20 @@ RELIEF = {
     "zagros": (6, 6, 1.5), "iran_plateau": (6, 8, 1.4),
 }
 
-# Plateau edges break into terraces and gullies: contour offsets by patchy noise (terraces) and
-# ridged-noise valleys cut where the ground slopes (gullies). Depth in levels.
-TERRACES = {"scale": 13.0, "amp": 0.45, "warp": 5.0, "warp_scale": 18.0}
-GULLIES = {"scale": 9.0, "depth": 1.9, "sharp": 5.0}
+# Landforms at the game's camera: the continuous height is grouped into benches `bench` levels
+# tall whose risers take only `riser` of each bench's horizontal run, so a slope reads as a few
+# broad terraces and clear scarps instead of a step every few tiles. The bench grid's phase
+# drifts (`phase_scale`) so scarps never line up across a whole stretch. Every level's outline
+# is then opened and closed by `open` tiles (no spur, notch or island narrower than 2 * open + 1),
+# a bench narrower than `min_bench` joins the scarp above it, and no scarp is taller than
+# `max_step` levels from one tile to the next. Gullies: wide ridged-noise valleys on slopes.
+LANDFORM = {"bench": 2, "riser": 0.3, "phase_scale": 90.0, "open": 2, "min_bench": 3,
+            "max_step": 3, "hills_scale": 30.0}
+GULLIES = {"scale": 18.0, "depth": 1.4, "sharp": 3.0}
+# Rivers run level for at least `reach` tiles; where the ground falls faster, the drops within
+# the next reach are gathered into one fall. Each river's valley floor is flat for a third of
+# its `valley` either side, then rises in a scarp to the land.
+RIVER_FORM = {"reach": 24}
 
 # Mountain bands: polygon, level range, noise scale, impassable from level, passes (tile, radius,
 # saddle level): the band falls to the saddle level there, so a road crosses on ramps.
@@ -532,6 +542,11 @@ LANES = {
     "euphrates_boats": {"points": [(1015, 187), (1020, 220), (1032, 258), (1048, 284)],
                         "kind": "river", "ports": {"crossing": 0, "babylon": 3}},
 }
+
+# Rocks and islets beside the open-sea lanes, so no stretch of a crossing runs for screens with
+# nothing in sight: one every `every` tiles of a lane's plan line, `offset` tiles to a side,
+# `radius` tiles across, only where the sea is clear of land for `clear` tiles.
+ISLETS = {"every": 26, "offset": (6, 10), "radius": (1.0, 2.6), "clear": 14}
 
 # Where the seams of time join two lanes by design: a ship sails into the mist on one side and
 # out of it on the other (world.md §8).

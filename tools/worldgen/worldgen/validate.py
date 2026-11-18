@@ -1,4 +1,5 @@
-"""Semantic validation of a layer on the composed world (world-tech §3.5, V1-V12).
+"""Semantic validation of a layer on the composed world (world-tech §3.5, V1-V12; V14 relief
+and V15 sightlines, added after the first visual sweep).
 
 Every issue names the check, the layer, the object and the tile (local, plan and grid
 coordinates), and the source line of the layout call that made it when the layer was compiled in
@@ -32,6 +33,14 @@ MAX_GLOW_CHUNK = 40
 MAX_DEST = 64
 MAX_DISTRICTS = 254
 HIDDEN_SHARE = 0.25
+# V14, the procedural base's relief at the game's camera: no isolated single-tile level change
+# (a pimple or pit whose four neighbours share one level) on open country; at most this share
+# of open country on one-tile benches (a tile strictly between its two opposite neighbours); no
+# river reach shorter than RIVER_REACH tiles between two falls of under WATERFALL levels each
+# (a staircase river; a cascade down a scarp has a tall fall on one side).
+STAIR_SHARE = 0.02
+RIVER_REACH = 6
+WATERFALL = 3
 # Seams of time may use the sets on both their sides (docs/design/sets/world.md §0.1).
 PLAN_PORTS = {pid for ln in P.LANES.values() for pid in ln["ports"]}
 SEAM_SETS = {"seam_dell": ("rome",), "seam_ionian": ("rome", "athens"),
@@ -664,6 +673,27 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             issue("V11", f"{share:.0%} of walkable tiles are hidden behind raised ground "
                   f"(at most {HIDDEN_SHARE:.0%})", level="warning")
 
+    # V15: marked sightlines hold only the region's own set and home pieces with art.
+    if tg.layout is not None and tg.layout.sightlines:
+        Lo = tg.layout
+        for vname, m in Lo.sightlines.items():
+            for _, it in items:
+                d = cat.items.get(it.id)
+                own = [(c, r) for c, r in it.tiles()
+                       if 0 <= c - origin[0] < m.shape[1] and 0 <= r - origin[1] < m.shape[0]
+                       and m[r - origin[1], c - origin[0]]]
+                if not own:
+                    continue
+                if it.id.startswith("world.") or d is None or d.source != "catalog":
+                    issue("V15", f"{it.id} stands in the sightline {vname!r}: a monumental "
+                          "approach shows only its own set's pieces with art", (it.c, it.r),
+                          isrc(it))
+
+    # V14: relief quality of the procedural base.
+    if name == "base":
+        for msg, at in relief_issues(world, cat, sl, mine):
+            issue("V14", msg, at)
+
     # V12: cards and actor kinds named by the region files.
     for rid in tg.regions:
         f = Path(root) / "assets/regions" / f"{rid}.json"
@@ -676,6 +706,93 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             if d and d.card and d.card not in cards and P.REGIONS.get(rid, ("",))[0] != "stretch":
                 issue("V12", f"{it.id} names card {d.card!r}, missing from {f.name}",
                       (it.c, it.r), isrc(it))
+    return out
+
+
+def _same_level_parts(mask: np.ndarray, lv: np.ndarray) -> list[list[tuple[int, int]]]:
+    """4-connected parts of `mask` at one level each, as (row, col) lists."""
+    seen = np.zeros(mask.shape, dtype=bool)
+    out = []
+    h, w = mask.shape
+    for j0, i0 in zip(*np.nonzero(mask)):
+        if seen[j0, i0]:
+            continue
+        v = lv[j0, i0]
+        part, todo = [], [(int(j0), int(i0))]
+        seen[j0, i0] = True
+        while todo:
+            a, b = todo.pop()
+            part.append((a, b))
+            for da, db in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                x, y = a + da, b + db
+                if 0 <= x < h and 0 <= y < w and mask[x, y] and not seen[x, y] and lv[x, y] == v:
+                    seen[x, y] = True
+                    todo.append((x, y))
+        out.append(part)
+    return out
+
+
+def relief_issues(world: World, cat: Catalog, sl, mine: np.ndarray) -> list[tuple[str, tuple]]:
+    """V14 on a layer's own tiles (see STAIR_SHARE): isolated level changes, one-tile benches
+    and staircase rivers. Country next to another layer, a road, a river or anything placed is
+    left out: those are graded on purpose."""
+    T, lv = world.T[sl], (world.L[sl] & 0x0F).astype(np.int16)
+    c0, r0 = sl[1].start, sl[0].start
+    tid = np.array([cat.is_water(t) for t in world.terrains] + [True])
+    sea_ids = [i for i, t in enumerate(world.terrains) if t in ("world.sea", "world.shallows")]
+    roads = {v for st in P.ROAD_STYLES.values() for k, v in st.items()
+             if k in ("paving", "track")}
+    road_ids = [i for i, t in enumerate(world.terrains) if t in roads]
+    Ti = np.where(T == NONE16, len(world.terrains), T).astype(np.intp)
+    water = tid[Ti]
+    river = water & ~np.isin(T, sea_ids) & mine
+    busy = ~mine | np.isin(T, road_ids) | water | (T == NONE16)
+    occ = world.occ[sl] >= 0
+    for _ in range(2):
+        grown = busy.copy()
+        for da, db in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            grown |= np.roll(np.roll(busy | occ, da, 0), db, 1)
+        busy = grown
+    open_ = mine & ~busy
+    out = []
+
+    def sh(a, da, db, fill):
+        p = np.pad(a, 1, constant_values=fill)
+        return p[1 + da:1 + da + a.shape[0], 1 + db:1 + db + a.shape[1]]
+
+    n, s_, e, w = sh(lv, -1, 0, -1), sh(lv, 1, 0, -1), sh(lv, 0, 1, -1), sh(lv, 0, -1, -1)
+    pimple = open_ & (n == s_) & (n == e) & (n == w) & (n != lv) & (n >= 0)
+    if pimple.any():
+        j, i = np.argwhere(pimple)[0]
+        out.append((f"{int(pimple.sum())} isolated single-tile level changes on open country "
+                    "(a tile above or below four neighbours of one level)", (i + c0, j + r0)))
+    bench = open_ & (((n < lv) & (lv < s_)) | ((n > lv) & (lv > s_)) |
+                     ((e < lv) & (lv < w)) | ((e > lv) & (lv > w)))
+    total = int(open_.sum())
+    if total and bench.sum() / total > STAIR_SHARE:
+        j, i = np.argwhere(bench)[0]
+        out.append((f"{bench.sum() / total:.1%} of open country on one-tile benches (at most "
+                    f"{STAIR_SHARE:.0%}): slopes read as staircases", (i + c0, j + r0)))
+    short = []
+    for part in _same_level_parts(river, lv):
+        if len(part) >= RIVER_REACH:
+            continue
+        v = lv[part[0]]
+        cells = set(part)
+        up = down = 0
+        for a, b in part:
+            for da, db in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                x, y = a + da, b + db
+                if 0 <= x < lv.shape[0] and 0 <= y < lv.shape[1] and river[x, y] and \
+                        (x, y) not in cells:
+                    up = max(up, int(lv[x, y]) - int(v))
+                    down = max(down, int(v) - int(lv[x, y]))
+        if up > 0 and down > 0 and max(up, down) < WATERFALL:
+            short.append(part[0])
+    if short:
+        j, i = short[0]
+        out.append((f"{len(short)} river reaches shorter than {RIVER_REACH} tiles between two "
+                    f"small falls (a staircase river)", (i + c0, j + r0)))
     return out
 
 
