@@ -414,6 +414,7 @@ inline constexpr float kShownStop = 0.07f;     // tiles/s
 inline constexpr float kShownSmooth = 0.2f;    // seconds the drawn speed follows the body over
 inline constexpr float kProgressWindow = 1.0f; // seconds
 inline constexpr float kStillTiles = 0.15f;    // closer than this to a window's start: standing
+inline constexpr int kBenchCrowdMin = 100;     // live actors a city bench case must hold to count
 inline constexpr float kStallGiveUp = 4.0f;    // seconds stuck before the step is given up
 inline constexpr float kStallLeave = 12.0f;    // seconds stuck (steps given up) before it leaves
 inline constexpr float kTurnHold = 0.17f;      // radians past a sector's edge before a sprite turns

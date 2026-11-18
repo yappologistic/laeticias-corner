@@ -418,6 +418,11 @@ int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& 
                 b.ok = false;
                 b.why = "enumeration over 0.25 ms";
             }
+            // Every case is a city's crowd: one that measured an empty view measured nothing.
+            if (b.liveMax < tuning::life::kBenchCrowdMin) {
+                b.ok = false;
+                b.why = "the view held no crowd";
+            }
         }
         (void)std::printf(
             "%-46s %5.3f/%5.3f/%5.3f/%5.2f   %5.3f/%5.3f/%5.3f %6.3f/%5.3f  %4d/%4d/%4d "
