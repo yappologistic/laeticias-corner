@@ -194,9 +194,10 @@ lantern>/f<n>` with `…/glow/f<n>`, anchored at the grip, listed in the set cat
 **Geometry for the draw order** (`docs/design/draw-order.md` §1.2, §3.4, §5.1), per item and
 look in `<set>.geom.json`: `tops` (rows by `dy`, one value per footprint tile: the highest solid
 voxel in px above the anchor's ground; a walk tile gives its floor), `roof` (`{"dx,dy": px}`:
-over a walk tile, the top of what stands above the walker's headroom) and, for every item with
-`pieces`, `under` (per piece, the height of its lowest solid: 0 on the ground, a deck's
-underside on a bridge). Kit items with walk tiles (the relay station, the sheepfold, the
+over a walk tile, the top of what stands above the walker's headroom) and `under` (per piece of
+an item with `pieces`, the most room under it on its walk and water tiles: a deck's underside
+between the piers, an arch's crown; 0 for solid pieces; one value for an unsplit walkable kit
+crossing). Kit items with walk tiles (the relay station, the sheepfold, the
 aqueduct's arches) are cut into `pieces` like landmarks: walk tiles in runs of their own,
 sprites `item/<id>/base/<look>/p<i>/f0` beside the whole sprite.
 
