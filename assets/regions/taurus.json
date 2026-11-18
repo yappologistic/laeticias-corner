@@ -3,6 +3,7 @@
  "id": "taurus",
  "name": "The Taurus",
  "caption": "The Taurus · c. 470 BC",
+ "climate": "high_mountain",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -59,6 +59,136 @@
      "when": "lit"
     }
    ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.45,
+    "fog": 0.5
+   },
+   "summer": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.4
+   },
+   "autumn": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.5,
+    "snow": true
+   },
+   "winter": {
+    "showers": 4,
+    "clouds": 4,
+    "wind": 0.7,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.96,
+     1.0,
+     1.04
+    ],
+    "look": {
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "mar",
+      "apr"
+     ],
+     "snow": [
+      "mar",
+      "apr",
+      "may"
+     ]
+    },
+    "snow_line": [
+     10,
+     11,
+     13
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "look": {
+     "haze": 0.25,
+     "warmth": 0.04
+    },
+    "haze": 0.15,
+    "ground": {},
+    "snow_line": [
+     14,
+     14,
+     14
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.02,
+     0.97,
+     0.92
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "oct",
+      "nov"
+     ],
+     "snow": [
+      "oct",
+      "nov"
+     ]
+    },
+    "snow_line": [
+     14,
+     13,
+     12
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.86,
+     0.93,
+     1.12
+    ],
+    "look": {
+     "warmth": -0.08,
+     "exposure": 0.04
+    },
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     10,
+     9,
+     9
+    ]
+   }
   },
   "sound": {
    "climate": "mountain",
@@ -491,6 +621,18 @@
     "sea_state": 0
    },
    "lights": {
+    "world.royal_station": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    },
     "world.watchtower": {
      "kind": "beacon",
      "colour": "#ffa04a",
@@ -513,12 +655,20 @@
     {
      "actor": "world.traveller",
      "density": "road_day",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.merchant",
      "density": "road_day",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "world.donkey",
@@ -528,7 +678,11 @@
     {
      "actor": "parsa.groom",
      "density": "watch",
-     "max_per_chunk": 1
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The Cilician road",
@@ -562,6 +716,109 @@
    }
   },
   {
+   "id": "farm",
+   "populations": [
+    {
+     "actor": "parsa.farmer",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.dog",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "role": "ploughman",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "role": "reaper",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    }
+   ],
+   "name": "Farms",
+   "sound": {
+    "surfaces": {
+     "leaves": 0.14
+    },
+    "wind": "wind.mountain",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 12
+    }
+   },
+   "look": {
+    "air": {
+     "mist": {
+      "where": "plain",
+      "hours": [
+       "05:00",
+       "07:30"
+      ],
+      "seasons": [
+       "spring"
+      ]
+     }
+    }
+   }
+  },
+  {
    "id": "land",
    "populations": [
     {
@@ -573,7 +830,7 @@
    "name": "Countryside",
    "sound": {
     "surfaces": {
-     "roof": 0.06
+     "roof": 0.07
     },
     "wind": "wind.mountain",
     "exposure": 1.0,
@@ -723,6 +980,32 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
@@ -749,11 +1032,174 @@
      "count": 1
     }
    ]
+  },
+  {
+   "id": "drove",
+   "formation": "cluster",
+   "radius": 3,
+   "leader": {
+    "actor": "parsa.shepherd"
+   },
+   "members": [
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "count": 8
+    },
+    {
+     "actor": "world.goat",
+     "count": 3
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ]
   }
  ],
  "chains": [],
- "events": [],
- "lanes_tokens": [],
+ "events": [
+  {
+   "id": "turn_spring_snowmelt",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "snowmelt",
+   "show": "water",
+   "steps": [],
+   "string": "season_turn.spring",
+   "ambience": {
+    "file": "amb/world/river_2.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_summer_flocks_up",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flocks_up",
+   "show": "herd",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "turn_autumn_leaves_turn",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "leaves_turn",
+   "show": "particles",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.leaf"
+     }
+    }
+   ],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_oct_flocks_down",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flocks_down",
+   "show": "herd",
+   "steps": [],
+   "string": "season_turn.oct",
+   "sfx": "sfx/world/sheep_bells.wav"
+  },
+  {
+   "id": "turn_winter_first_snow",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_snow",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
+  }
+ ],
+ "lanes_tokens": [
+  {
+   "actor": "parsa.shepherd",
+   "group": "drove",
+   "count": 1,
+   "route": {
+    "start": "base:cilician_road_station_980_254",
+    "end": "base:levant_road_station_982_281"
+   },
+   "when": {
+    "months": [
+     "may",
+     "oct"
+    ]
+   },
+   "note": "flocks moving between summer and winter pastures"
+  }
+ ],
  "zones": [
   {
    "kind": "pasture",
@@ -787,7 +1233,162 @@
   }
  ],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "Meltwater roars down the gorges.",
+  "season_turn.summer": "The flocks are on the high pastures.",
+  "season_turn.autumn": "The woods are turning copper and gold.",
+  "season_turn.oct": "The flocks come down to the lowlands.",
+  "season_turn.winter": "Snow on the heights."
+ },
  "journal": [],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "The Taurus · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "roles": [
+  {
+   "id": "ploughman",
+   "actor": "parsa.farmer",
+   "name": "Ploughing and sowing",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "reaper",
+   "actor": "parsa.farmer",
+   "name": "Reaping",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  }
+ ]
 }

@@ -2,7 +2,8 @@
  "version": 1,
  "id": "tyrrhenian",
  "name": "The Tyrrhenian Sea",
- "caption": "The Tyrrhenian Sea · April AD 126",
+ "caption": "The Tyrrhenian Sea · AD 126",
+ "climate": "sea_west",
  "theme": {
   "grading": {
    "dawn": [
@@ -34,7 +35,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "rome",
   "ambience": {
    "beds": [
     {
@@ -53,6 +53,103 @@
     }
    ],
    "loops": []
+  },
+  "weather": {
+   "spring": {
+    "showers": 2,
+    "clouds": 2,
+    "wind": 0.35,
+    "wind_from": "west"
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.3
+   },
+   "autumn": {
+    "showers": 3,
+    "clouds": 3,
+    "wind": 0.5,
+    "storm": 2
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.6,
+    "storm": 3
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.99,
+     1.02,
+     0.97
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     8,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.04,
+     1.0,
+     0.92
+    ],
+    "look": {
+     "haze": 0.25,
+     "warmth": 0.04
+    },
+    "haze": 0.15,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.05,
+     0.97,
+     0.88
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.94,
+     0.97,
+     1.04
+    ],
+    "look": {
+     "saturation": -0.06,
+     "haze": 0.2
+    },
+    "haze": 0.144,
+    "ground": {},
+    "snow_line": [
+     6,
+     5,
+     6
+    ]
+   }
   },
   "sound": {
    "climate": "sea",
@@ -437,29 +534,6 @@
  },
  "districts": [
   {
-   "id": "land",
-   "populations": [],
-   "name": "Countryside",
-   "sound": {
-    "surfaces": {},
-    "wind": "wind.open",
-    "exposure": 1.0,
-    "steps": {
-     "surface": "earth",
-     "files": [
-      "sfx/world/step_earth_1.wav",
-      "sfx/world/step_earth_2.wav",
-      "sfx/world/step_earth_3.wav"
-     ],
-     "hooves": [
-      "sfx/world/hoof_earth_1.wav",
-      "sfx/world/hoof_earth_2.wav"
-     ]
-    },
-    "cart": "amb/world/cart_earth.ogg"
-   }
-  },
-  {
    "id": "sea",
    "populations": [
     {
@@ -627,27 +701,172 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_sailing_opens",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "sailing_opens",
+   "show": "harbour",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/rope.wav"
+  },
+  {
+   "id": "turn_summer_heat_haze",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "heat_haze",
+   "show": "look",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.shimmer"
+     }
+    }
+   ],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_autumn_storms_return",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storms_return",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/thunder_far.wav"
+  },
+  {
+   "id": "turn_winter_ships_hauled_ashore",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "ships_hauled_ashore",
+   "show": "harbour",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/rope.wav",
+   "ambience": {
+    "file": "amb/world/ship.ogg",
+    "gain": 0.8
+   }
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "rome.merchantman",
    "lane": "base:corner_portus",
-   "count": 2
+   "count": 2,
+   "by_month": "sailing"
   },
   {
    "actor": "rome.merchantman",
    "lane": "base:grain_fleet",
-   "count": 2
+   "count": 2,
+   "by_month": "grain"
   }
  ],
  "zones": [],
  "cards": {},
- "strings": {},
+ "strings": {
+  "season_turn.spring": "The sea opens: the first ships put out.",
+  "season_turn.summer": "The air shimmers over the land at noon.",
+  "season_turn.autumn": "Autumn storms over the sea.",
+  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
+ },
  "journal": [],
- "era": "The Rome of Hadrian · AD 126"
+ "era": {
+  "edge": "The Rome of Hadrian · AD 126",
+  "caption": "The Tyrrhenian Sea · {year}",
+  "year": {
+   "spring": "AD 126",
+   "summer": "AD 126",
+   "autumn": "AD 126",
+   "winter": "AD 126/127"
+  },
+  "months": {
+   "jan": "AD 127",
+   "feb": "AD 127"
+  }
+ }
 }

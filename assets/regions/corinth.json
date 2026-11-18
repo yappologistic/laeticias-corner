@@ -3,7 +3,8 @@
  "id": "corinth",
  "name": "Korinthos",
  "native": "Κόρινθος",
- "caption": "Corinth · summer, 432 BC",
+ "caption": "Corinth · 432 BC",
+ "climate": "med_dry",
  "theme": {
   "grading": {
    "dawn": [
@@ -35,7 +36,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "athens",
   "ambience": {
    "beds": [
     {
@@ -66,6 +66,157 @@
     }
    ]
   },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.35
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.5,
+    "wind_from": "north-east",
+    "dust": 1,
+    "storm": 1
+   },
+   "autumn": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.4
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.4,
+    "snow": true
+   },
+   "months": {
+    "jun": {
+     "wind": 0.35,
+     "wind_from": "north"
+    },
+    "sep": {
+     "showers": 0,
+     "clouds": 1,
+     "dust": 1
+    }
+   }
+  },
+  "snow": {
+   "line": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    7,
+    null
+   ]
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.96
+    ],
+    "haze": 0.12,
+    "ground": {
+     "muddy": [
+      "mar"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.06,
+     1.01,
+     0.9
+    ],
+    "look": {
+     "exposure": 0.04,
+     "contrast": 0.05,
+     "saturation": -0.04
+    },
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.03,
+     0.98,
+     0.92
+    ],
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "sep",
+      "oct"
+     ],
+     "muddy": [
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.93,
+     0.98,
+     1.03
+    ],
+    "look": {
+     "foliage_saturation": 0.06
+    },
+    "haze": 0.12,
+    "ground": {
+     "flurries": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "jan"
+     ]
+    },
+    "snow_line": [
+     null,
+     7,
+     null
+    ]
+   }
+  },
   "sound": {
    "climate": "mediterranean",
    "crowd": "crowd.greek",
@@ -94,7 +245,13 @@
      "summer"
     ],
     "weather": "clear",
-    "fade_s": 20
+    "fade_s": 20,
+    "months": [
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
    },
    "rain": {
     "family": "rain",
@@ -491,17 +648,112 @@
     {
      "actor": "athens.citizen",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "athens.woman",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     },
     {
      "actor": "athens.metic",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.metic",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     }
    ],
    "name": "Acrocorinth",
@@ -556,17 +808,110 @@
     {
      "actor": "athens.woman",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     },
     {
      "actor": "athens.metic",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.metic",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     },
     {
      "actor": "athens.rower",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.rower",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "hot": "climate"
+     }
     }
    ],
    "name": "Lechaion and Kenchreai",
@@ -617,17 +962,112 @@
     {
      "actor": "athens.metic",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.metic",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     },
     {
      "actor": "athens.rower",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.rower",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "hot": "climate"
+     }
     },
     {
      "actor": "athens.citizen",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "Countryside",
@@ -668,17 +1108,112 @@
     {
      "actor": "athens.rower",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.rower",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "hot": "climate"
+     }
     },
     {
      "actor": "athens.citizen",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "athens.woman",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     }
    ],
    "name": "The town",
@@ -838,32 +1373,250 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_swallows_return",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "swallows_return",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/swifts.wav",
+   "cast": [
+    {
+     "actor": "world.swift",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_cicadas_begin",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cicadas_begin",
+   "show": "emitter",
+   "steps": [],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/swifts.wav"
+  },
+  {
+   "id": "turn_autumn_vintage_begins",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "vintage_begins",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "ambience": {
+    "file": "amb/world/press.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_nov_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "nov"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.nov",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_oct_first_rains",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "oct"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_rains",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.oct",
+   "sfx": "sfx/world/first_drops.wav"
+  },
+  {
+   "id": "turn_winter_ships_hauled_ashore",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "ships_hauled_ashore",
+   "show": "harbour",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/rope.wav",
+   "ambience": {
+    "file": "amb/world/ship.ogg",
+    "gain": 0.8
+   }
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "athens.merchant",
    "lane": "corinth:lechaion",
-   "count": 2
+   "count": 2,
+   "by_month": "sailing"
   },
   {
    "actor": "world.fishing_boat",
    "lane": "corinth:lechaion",
-   "count": 1
+   "count": 1,
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ]
   },
   {
    "actor": "athens.merchant",
    "lane": "corinth:kenchreai",
-   "count": 2
+   "count": 2,
+   "by_month": "sailing"
   },
   {
    "actor": "world.fishing_boat",
    "lane": "corinth:kenchreai",
-   "count": 1
+   "count": 1,
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ]
   }
  ],
  "zones": [],
@@ -885,10 +1638,37 @@
   }
  },
  "strings": {
-  "first_visit": "Corinth, between two seas. Ships cross the isthmus on the diolkos."
+  "first_visit": "Corinth, between two seas. Ships cross the isthmus on the diolkos.",
+  "season_turn.spring": "The swallows are back under the eaves.",
+  "season_turn.summer": "The cicadas have started.",
+  "season_turn.autumn": "The grapes are in: the vintage begins.",
+  "season_turn.nov": "Cranes call high overhead, flying in a long V.",
+  "season_turn.oct": "The first rain. The whole land smells of dust and earth.",
+  "season_turn.winter": "The sea is closed. Ships are hauled up on the shore for the winter."
  },
  "journal": [
   "landmark:*"
  ],
- "era": "The Athens of Pericles · 432 BC"
+ "era": {
+  "edge": "The Athens of Pericles · 432 BC",
+  "caption": "Korinthos · {year}",
+  "year": {
+   "spring": "432 BC",
+   "summer": "432 BC",
+   "autumn": "432/431 BC",
+   "winter": "432/431 BC"
+  },
+  "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
+ },
+ "festivals": [],
+ "harbours": [
+  {
+   "zone": "harbours",
+   "laid_up": "sailing",
+   "below": 0.3,
+   "props": [
+    "world.hull_ashore"
+   ]
+  }
+ ]
 }

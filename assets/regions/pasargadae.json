@@ -3,7 +3,8 @@
  "id": "pasargadae",
  "name": "Pasargadae",
  "native": "Pāθragadā",
- "caption": "Pasargadae · spring, c. 470 BC",
+ "caption": "Pasargadae · c. 470 BC",
+ "climate": "plateau",
  "theme": {
   "grading": {
    "dawn": [
@@ -35,7 +36,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -65,6 +65,140 @@
      "when": "worked"
     }
    ]
+  },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 3,
+    "wind": 0.35,
+    "wind_from": "north-west"
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.45,
+    "dust": 2
+   },
+   "autumn": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.3
+   },
+   "winter": {
+    "showers": 3,
+    "clouds": 4,
+    "wind": 0.45,
+    "snow": true
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     0.99,
+     1.01,
+     0.98
+    ],
+    "haze": 0.12,
+    "ground": {
+     "frost": [
+      "mar",
+      "apr"
+     ],
+     "muddy": [
+      "mar"
+     ]
+    },
+    "snow_line": [
+     6,
+     9,
+     11
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.06,
+     1.0,
+     0.88
+    ],
+    "look": {
+     "dust": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.04,
+     0.98,
+     0.9
+    ],
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "sep"
+     ],
+     "frost": [
+      "oct",
+      "nov"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     7
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.9,
+     0.95,
+     1.08
+    ],
+    "look": {
+     "haze": -0.4,
+     "stars": 0.2
+    },
+    "haze": 0.072,
+    "ground": {
+     "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "snow": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     5,
+     4,
+     4
+    ]
+   }
   },
   "sound": {
    "climate": "east",
@@ -513,17 +647,131 @@
     {
      "actor": "parsa.magus",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.magus",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.magus",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "parsa.gardener",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.gardener",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.gardener",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     }
    ],
    "name": "The palace garden",
@@ -560,17 +808,131 @@
     {
      "actor": "parsa.gardener",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.gardener",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.gardener",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "parsa.magus",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.magus",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.magus",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     }
    ],
    "name": "The plain",
@@ -620,17 +982,131 @@
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "parsa.magus",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.magus",
+     "density": "daytime",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.magus",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
     },
     {
      "actor": "parsa.gardener",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.gardener",
+     "density": "daytime",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.gardener",
+     "density": "daytime",
+     "max_per_chunk": 1.2,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The tomb of Cyrus",
@@ -791,6 +1267,32 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [
@@ -845,7 +1347,112 @@
  ],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_storks_arrive",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storks_arrive",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/stork_clatter.wav",
+   "cast": [
+    {
+     "actor": "world.stork",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_summer_first_dust",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_dust",
+   "show": "weather",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.dust_puff"
+     }
+    }
+   ],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/seam.wav",
+   "ambience": {
+    "file": "amb/world/dust_1.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "turn_autumn_ploughing_begins",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "ploughing_begins",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/hoof_earth_1.wav"
+  },
+  {
+   "id": "turn_winter_first_snow",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "first_snow",
+   "show": "weather",
+   "steps": [],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/seam.wav"
+  }
+ ],
  "lanes_tokens": [],
  "zones": [],
  "cards": {
@@ -871,10 +1478,24 @@
   }
  },
  "strings": {
-  "first_visit": "Pasargadae: Cyrus' gardens and his tomb on the plain."
+  "first_visit": "Pasargadae: Cyrus' gardens and his tomb on the plain.",
+  "season_turn.spring": "The storks are back on their nests.",
+  "season_turn.summer": "Dust on the wind: the dry months have come.",
+  "season_turn.autumn": "Ploughing time: oxen in the fields.",
+  "season_turn.winter": "Snow on the heights."
  },
  "journal": [
   "landmark:*"
  ],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "Pasargadae · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "festivals": []
 }

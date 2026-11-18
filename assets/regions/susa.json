@@ -3,7 +3,8 @@
  "id": "susa",
  "name": "Susa",
  "native": "Šušan",
- "caption": "Susa · spring, c. 470 BC",
+ "caption": "Susa · c. 470 BC",
+ "climate": "mesopotamian",
  "theme": {
   "grading": {
    "dawn": [
@@ -35,7 +36,6 @@
    ],
    "strength": 0.12
   },
-  "climate": "parsa",
   "ambience": {
    "beds": [
     {
@@ -54,6 +54,129 @@
     }
    ],
    "loops": []
+  },
+  "weather": {
+   "spring": {
+    "showers": 1,
+    "clouds": 2,
+    "wind": 0.3,
+    "fog": 0.2
+   },
+   "summer": {
+    "showers": 0,
+    "clouds": 0,
+    "wind": 0.5,
+    "wind_from": "north-west",
+    "dust": 3,
+    "shimmer": 1
+   },
+   "autumn": {
+    "showers": 0,
+    "clouds": 1,
+    "wind": 0.25
+   },
+   "winter": {
+    "showers": 2,
+    "clouds": 3,
+    "wind": 0.3,
+    "fog": 0.5
+   },
+   "months": {
+    "sep": {
+     "showers": 1,
+     "clouds": 2
+    }
+   }
+  },
+  "seasons": {
+   "spring": {
+    "grade": [
+     1.0,
+     1.02,
+     0.95
+    ],
+    "haze": 0.12,
+    "ground": {},
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "summer": {
+    "grade": [
+     1.08,
+     0.98,
+     0.84
+    ],
+    "look": {
+     "haze": 0.4,
+     "dust": 0.4,
+     "shimmer": 0.4
+    },
+    "haze": 0.168,
+    "ground": {
+     "dusty": [
+      "jun",
+      "jul",
+      "aug"
+     ],
+     "low_water": [
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "autumn": {
+    "grade": [
+     1.04,
+     0.99,
+     0.9
+    ],
+    "haze": 0.12,
+    "ground": {
+     "dusty": [
+      "sep"
+     ],
+     "low_water": [
+      "sep"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   },
+   "winter": {
+    "grade": [
+     0.96,
+     0.99,
+     1.02
+    ],
+    "look": {
+     "fog": 0.3
+    },
+    "haze": 0.12,
+    "ground": {
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    "snow_line": [
+     null,
+     null,
+     null
+    ]
+   }
   },
   "sound": {
    "climate": "river_plain",
@@ -495,17 +618,174 @@
     {
      "actor": "parsa.scribe",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "parsa.scribe",
+     "density": "daytime_hot",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "parsa.scribe",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.8,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "actor": "parsa.scribe",
+     "density": "daytime",
+     "max_per_chunk": 3.6,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     },
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.1,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 2.7,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     }
     },
     {
      "actor": "parsa.woman_worker",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.4,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The citadel mound",
@@ -545,17 +825,178 @@
     {
      "actor": "parsa.guard_spear",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime_hot",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.8,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     }
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 3.6,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     }
     },
     {
      "actor": "parsa.woman_worker",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.1,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime",
+     "max_per_chunk": 2.7,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.labourer",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.labourer",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.labourer",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.4,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.labourer",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The plain",
@@ -615,17 +1056,194 @@
     {
      "actor": "parsa.woman_worker",
      "density": "daytime",
-     "max_per_chunk": 4
+     "max_per_chunk": 4,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime_hot",
+     "max_per_chunk": 3.2,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.8,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.woman_worker",
+     "density": "daytime",
+     "max_per_chunk": 3.6,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.labourer",
      "density": "daytime",
-     "max_per_chunk": 3
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.labourer",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.4,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.labourer",
+     "density": "daytime_hot",
+     "max_per_chunk": 2.1,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.labourer",
+     "density": "daytime",
+     "max_per_chunk": 2.7,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     },
     {
      "actor": "parsa.elamite",
      "density": "daytime",
-     "max_per_chunk": 2
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.elamite",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.6,
+     "when": {
+      "months": [
+       "jun"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.elamite",
+     "density": "daytime_hot",
+     "max_per_chunk": 1.4,
+     "when": {
+      "months": [
+       "jul",
+       "aug"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "parsa.elamite",
+     "density": "daytime",
+     "max_per_chunk": 1.8,
+     "when": {
+      "months": [
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
     }
    ],
    "name": "The town",
@@ -794,17 +1412,186 @@
    0.5,
    0.5,
    0.5
+  ],
+  "daytime_hot": [
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.25,
+   0.1,
+   0.1,
+   0.2,
+   0.4,
+   0.7,
+   0.9,
+   1,
+   0.8,
+   0.5,
+   0.2,
+   0.05,
+   0
   ]
  },
  "figures": [],
  "groups": [],
  "chains": [],
- "events": [],
+ "events": [
+  {
+   "id": "turn_spring_storks_arrive",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "storks_arrive",
+   "show": "flock",
+   "steps": [],
+   "string": "season_turn.spring",
+   "sfx": "sfx/world/stork_clatter.wav",
+   "cast": [
+    {
+     "actor": "world.stork",
+     "count": 6
+    }
+   ]
+  },
+  {
+   "id": "turn_apr_flood_rising",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "spring",
+    "hours": [
+     "05:30",
+     "07:00"
+    ],
+    "months": [
+     "apr"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "flood_rising",
+   "show": "water",
+   "steps": [],
+   "string": "season_turn.apr",
+   "pending_sound": [
+    "amb/world/flood.ogg"
+   ],
+   "ambience": {
+    "file": "amb/world/river_2.ogg",
+    "gain": 0.6
+   }
+  },
+  {
+   "id": "turn_summer_heat_haze",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "summer",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "heat_haze",
+   "show": "look",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.shimmer"
+     }
+    }
+   ],
+   "string": "season_turn.summer",
+   "sfx": "sfx/world/seam.wav"
+  },
+  {
+   "id": "turn_autumn_date_harvest",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "autumn",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "date_harvest",
+   "show": "work",
+   "steps": [],
+   "string": "season_turn.autumn",
+   "sfx": "sfx/world/chop.wav"
+  },
+  {
+   "id": "turn_winter_cranes_overhead",
+   "rarity": "festival",
+   "size": "small",
+   "trigger": {
+    "on": "season_turn",
+    "season": "winter",
+    "hours": [
+     "05:30",
+     "07:00"
+    ]
+   },
+   "duration": [
+    40,
+    60
+   ],
+   "turn": "cranes_overhead",
+   "show": "sky_flock",
+   "steps": [
+    {
+     "emit": {
+      "fx": "fx/world.crane_flock"
+     }
+    }
+   ],
+   "string": "season_turn.winter",
+   "sfx": "sfx/world/cranes.wav",
+   "ambience": {
+    "file": "amb/rome/treadwheel.ogg",
+    "gain": 0.8
+   }
+  }
+ ],
  "lanes_tokens": [
   {
    "actor": "world.reed_boat",
    "lane": "susa:susa",
-   "count": 2
+   "count": 2,
+   "by_month": "barge"
   }
  ],
  "zones": [],
@@ -816,10 +1603,69 @@
   }
  },
  "strings": {
-  "first_visit": "Susa: the palace of Darius on its mound above the Shaur."
+  "first_visit": "Susa: the palace of Darius on its mound above the Shaur.",
+  "season_turn.summer": "Susa's summer: the streets are empty at midday, as Strabo says, hot enough to roast a lizard crossing them.",
+  "season_turn.spring": "The storks are back on their nests.",
+  "season_turn.apr": "The river is rising over the low fields.",
+  "season_turn.autumn": "Climbers in the palms: the date harvest.",
+  "season_turn.winter": "Cranes call high overhead, flying in a long V."
  },
  "journal": [
   "landmark:*"
  ],
- "era": "The Persian empire of Xerxes · c. 470 BC"
+ "era": {
+  "edge": "The Persian empire of Xerxes · c. 470 BC",
+  "caption": "Susa · {year}",
+  "year": {
+   "spring": "c. 470 BC",
+   "summer": "c. 470 BC",
+   "autumn": "c. 470/469 BC",
+   "winter": "c. 470/469 BC"
+  }
+ },
+ "water": [
+  {
+   "body": "karun",
+   "kind": "stream",
+   "tiles": 57,
+   "rect": [
+    315,
+    180,
+    340,
+    185
+   ],
+   "level": [
+    "high",
+    "normal",
+    "normal",
+    "low",
+    "low",
+    "low",
+    "low",
+    "normal",
+    "normal",
+    "high",
+    "high",
+    "high"
+   ],
+   "colour": {
+    "high": [
+     1.1,
+     0.94,
+     0.82
+    ],
+    "normal": [
+     1.02,
+     0.99,
+     0.9
+    ],
+    "low": [
+     0.98,
+     1.0,
+     0.9
+    ]
+   }
+  }
+ ],
+ "festivals": []
 }
