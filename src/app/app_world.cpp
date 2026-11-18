@@ -52,6 +52,8 @@ bool App::loadWorldData() {
     arriveFiles_.emplace_back(sfx::kArriveHome);
     arriveFiles_.emplace_back(sfx::kSeamChime);
     soundscape_ = std::make_unique<worldview::Soundscape>(*loaded_, assets_ / "audio");
+    viewWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
+    homeWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
     themeWeights_.assign(loaded_->file.regions.size(), 0.0f);
     SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)",
             msBetween(t0, SDL_GetPerformanceCounter()), loaded_->layers.size(),
@@ -86,6 +88,7 @@ void App::createWorldView() {
     worldView_ = std::make_unique<worldview::WorldView>(renderer_.get(), *loaded_, assets_, *atlas_,
                                                         measuring() || !opts_.headless,
                                                         worldview::Hole{home.rect, box}, figures_);
+    worldView_->setWeather(viewWeather_.get());
     setupMap();
 }
 
@@ -689,6 +692,49 @@ void App::drawPlaceholderLabels(Painter& p) {
                theme::kCaptionShadow);
         p.text(Face::Body, id, std::round(s.x - w * 0.5f), std::round(s.y), theme::kWarn);
     }
+}
+
+} // namespace lc
+
+namespace lc {
+
+void App::followWorldWeather() {
+    if (!viewWeather_) return;
+    // One weather for the whole map: the home takes the world field's cells over its land, and
+    // the view's field is what the renderer draws everywhere else.
+    const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
+    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow};
+    const TileRect h = loaded_->file.home.rect;
+    const int m = tuning::kWorldWeatherMargin;
+    homeWeather_->update(played_, weather_.wind(), sc, {h.x0 - m, h.y0 - m, h.x1 + m, h.y1 + m},
+                         WeatherMode::Natural);
+    homeCells_.assign(homeWeather_->cells().begin(), homeWeather_->cells().end());
+    for (WeatherCell& c : homeCells_)
+        c.centre = {c.centre.x - static_cast<float>(h.x0), c.centre.y - static_cast<float>(h.y0)};
+    weather_.follow(homeCells_);
+    const TileRect v = cameraTiles();
+    viewWeather_->update(played_, weather_.wind(), sc, {v.x0 - m, v.y0 - m, v.x1 + m, v.y1 + m},
+                         weather_.mode());
+}
+
+TileRect App::cameraTiles() const {
+    // The grid tiles under the window (a box around the view's diamond).
+    const TileRect h = loaded_->file.home.rect;
+    const float s = view_.scale();
+    const Vec2 c = view_.position();
+    const Vec2 half{screen().x * 0.5f / s, screen().y * 0.5f / s};
+    const Iso iso = cat_.iso();
+    float x0 = 1e9f, y0 = 1e9f, x1 = -1e9f, y1 = -1e9f;
+    for (const Vec2 corner : {Vec2{c.x - half.x, c.y - half.y}, Vec2{c.x + half.x, c.y - half.y},
+                              Vec2{c.x - half.x, c.y + half.y}, Vec2{c.x + half.x, c.y + half.y}}) {
+        const Vec2 t = iso.toTile(corner);
+        x0 = std::min(x0, t.x);
+        y0 = std::min(y0, t.y);
+        x1 = std::max(x1, t.x);
+        y1 = std::max(y1, t.y);
+    }
+    return {static_cast<int>(std::floor(x0)) + h.x0, static_cast<int>(std::floor(y0)) + h.y0,
+            static_cast<int>(std::ceil(x1)) + h.x0, static_cast<int>(std::ceil(y1)) + h.y0};
 }
 
 } // namespace lc

@@ -27,6 +27,7 @@
 #include "worldview/page_atlas.hpp"
 #include "worldview/places.hpp"
 #include "worldview/theme.hpp"
+#include "worldview/weather_field.hpp"
 #include "worldview/world_sprites.hpp"
 
 #include <array>
@@ -154,6 +155,9 @@ public:
     [[nodiscard]] int missingArt() const;
     // Placeholders on screen in the last frame: where (world px, at their anchor) and what.
     void placeholdersInView(std::vector<std::pair<Vec2, std::uint32_t>>& out) const;
+    // The weather drawn over the world (cloud shadows, wet ground, rain and snow) from now on;
+    // null draws none. The home's hole is left to the game's scene, which draws the same cells.
+    void setWeather(const WeatherField* weather) { weather_ = weather; }
     // The season whose looks the world wears (the home catalog's index; -1: plain).
     void setSeason(int season);
     // Nothing reads the map on a worker but the gatherer (which never looks inside the hole).
@@ -209,6 +213,7 @@ private:
     std::unique_ptr<WorldSprites> sprites_;
     std::unique_ptr<Overview> overview_;
     Hole hole_;
+    const Atlas& homeAtlas_;
     CellCache cells_;
     Batch batch_;
     ThemeMixer theme_;
@@ -224,6 +229,12 @@ private:
         Vec2 anchor; // world px, raised by the level
     };
     std::vector<GlowSource> glow_;
+    const WeatherField* weather_ = nullptr;
+    Sprite blob_;
+    std::optional<SpriteId> raindrop_;
+    std::optional<SpriteId> snowflake_;
+    void drawWeatherGround(const FRect& view, const Xform& x);
+    void drawRain(const FRect& view, const Xform& x, double now);
     std::vector<std::uint32_t> glowStart_; // per chunk, then one past the end
     void buildGlow();
     void drawCoarseGlow(const FRect& view, const Xform& x, float strength);

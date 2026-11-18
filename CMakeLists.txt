@@ -196,6 +196,7 @@ add_library(lc_worldview STATIC
   src/worldview/script.cpp
   src/worldview/soundscape.cpp
   src/worldview/theme.cpp
+  src/worldview/weather_field.cpp
   src/worldview/viewer.cpp
   src/worldview/world_sprites.cpp
 )

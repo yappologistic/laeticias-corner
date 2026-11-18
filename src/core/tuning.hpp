@@ -359,6 +359,7 @@ inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 
 inline constexpr float kTravelFadeOut = 0.25f;
 inline constexpr float kTravelHold = 0.4f;
 inline constexpr float kTravelFadeIn = 0.3f;
+inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
 // The bench's world cases: frames allowed for a view to stream in, and the pan's step (px).
 inline constexpr int kBenchSettleFrames = 600;

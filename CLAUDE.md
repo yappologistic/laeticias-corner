@@ -55,6 +55,7 @@ The owner uses this computer while agents work, and disk space is limited.
 |---|---|---|
 | `src/core/` | Pure game logic, no SDL: world grid, catalog, placement, undo/redo, save, visitors, clock | engine |
 | `src/render/`, `src/ui/`, `src/audio/`, `src/app/` | SDL-facing code | engine |
+| `src/world/`, `src/worldview/` | The world's data runtime (pure) and its renderer, soundscape, weather field, places | engine |
 | `tests/`, `CMakeLists.txt`, `CMakePresets.json`, `cmake/`, `third_party/`, `.clang-*` | Build, tests, tooling config | engine |
 | `tools/artgen/`, `assets/atlas.png`, `assets/atlas.json`, `assets/atlas/` | Sprite generator and its output: the home page, set pages, manifests, geometry | art |
 | `tools/worldgen/worldgen/`, `tools/worldgen/plan/`, `tools/worldgen/fixtures/`, `tools/worldgen/build.sh`, `assets/world/world.json`, `assets/world/layers/base.*`, `assets/world/overview.png` | World authoring tool, world plan, base layer, overview, test world | worldgen core |
@@ -66,7 +67,8 @@ The owner uses this computer while agents work, and disk space is limited.
 | `docs/design/` | Game design specs: rules, content tables, art and audio lists for each batch | design |
 | `assets/catalog.json`, `CLAUDE.md` | Contracts | orchestrator, or the agent whose brief says so |
 
-`src/core` must not include SDL headers. Dependencies point one way: `app → ui/render/audio → core`.
+`src/core`, `src/world` and `src/life` must not include SDL headers. Dependencies point one way:
+`app → worldview → ui/render/audio → core`, `worldview → world → core`.
 
 ## Code standards
 
@@ -300,6 +302,36 @@ Design and formats: `docs/design/world-tech.md`. In short:
 
 The design is `docs/design/living-corner.md`; this is what the engine does today.
 
+- **One world.** When `assets/world/world.json` exists the game runs inside the world: it loads it
+  through `src/world` and draws it through `src/worldview` as its one scene (without it, the
+  floating island as before). The home region sits at `world.home` (grid (40, 1200), level 2):
+  the world renderer leaves its tiles and items to the game's scene (a hole in its cells and
+  gathering, one element for the home in its painter's order) and calls the scene at its turns
+  (ground, objects, light, glow, sky). No rim cliffs or waterfalls; the road, wall and gate meet
+  the world's road. Beyond the grid the sea runs on into haze. The world wears the season's looks.
+- **Roaming.** The camera roams the whole grid (`Home` returns to the corner); zooming out past
+  1/4 opens the map. Away from the home region the building tools rest with a quiet hint, and a
+  tool used off the home's land is refused ("This land belongs to the world"). Building,
+  conditions, wishes, nooks and actors stay over the home's open land.
+- **Map and travel.** `M` or the dock's map button: the overview art with the home, the cities and
+  visited towns; a click fades through paper to the place within a second, with its arrival
+  motif. Mute is `Ctrl+M`.
+- **Places.** The region under the view (held a moment) names the place; arriving in a named
+  place (home, city, town) shows its caption once per visit (with its native form when the font
+  can draw it); crossing into another moment plays the seam chime (and, once, its line). The
+  title card names the place while away.
+- **Cards and journal.** With an empty hand, landmarks with cards and named figures (standing
+  still at their routine's place for now) open a glass card from the region file; what is in
+  view on arrival is seen, what is clicked found; the sketchbook has a tab per place.
+- **Sound.** Region beds by theme weight and hour, seams ducking the rest, zones by nearness,
+  item loops (fountains, lit braziers) by the nearest, a city's music fading in over 4 s from a
+  phrase start and out when left; the home's stems and beds play by its share of the view.
+- **Weather is world-wide.** Clouds and showers come from a deterministic field over the whole
+  grid (seed, weather period, the region's climate times the season's); the home's weather
+  follows it, and the renderer draws cloud shadows, wet ground and rain or snow wherever the
+  camera is. `N` acts where the camera is.
+- Lights (glow) persist at every zoom level; the overview's are softer.
+
 - The home region is 40×40 tiles in five land stages. A new world opens on the front 20×20 corner
   (the catalog's starter scene); the rest is wild (dimmed brambles: no building, painting or
   walking). Stages open at 4, 9, 14 and 20 sketchbook pages (visitors seen plus nooks found),
@@ -417,8 +449,10 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   events, the population rule, the liveliness rule (`expect lively`) and image statistics. The
   first ten minutes of a new world run end to end in `first_ten.lcs`; behaviours
   each have a script; `determinism_check` compares two runs byte for byte.
-- Save format: version 3, documented at the top of `src/core/save.hpp` (versioned, tolerant;
-  versions 1 and 2 migrate on launch; damaged fields fall back one by one). A save directory
+- Save format: version 4, documented at the top of `src/core/save.hpp` (versioned, tolerant;
+  versions 1 and 2 migrate on launch, version 3 opens unchanged; damaged fields fall back one
+  by one). Its `world` block is the player's delta over the immutable world (view in grid tiles,
+  places visited, journal found and seen, one-time flags); the prebuilt world is never saved. A save directory
   holds `profile.json`, `window.json`, `worlds/<slug>/world.json` with `thumb.png`,
   `postcards/<slug>/`, and `corner.v1.json` after a migration.
 - Saves go to `--save-dir`, else `$LAETICIA_SAVE_DIR`, else SDL's pref path. Assets come from
@@ -435,11 +469,18 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   99th percentile is over 8.3 ms or its worst over 16.6 ms (a case missing only the worst frame
   is measured once more), the conditions take over 1 ms, simulation averages over 0.6 ms, or the
   process passes its memory ceiling at 1080p.
+- With the world, `--bench` adds each city's centre at 1x with the sketchbook and profiler open,
+  a pan across Rome at 1800 px/s and fast travel (no frame over 16.6 ms, each journey within
+  1 s), holds the world's textures to their measured budget (atlas page slots for the two largest
+  sets and the world set, the cell cache, targets) and prints the start-up time; the process
+  ceiling with the world is 832 MiB at 1080p (the soak's on the software renderer adds the
+  textures). The windowed `--benchmark` adds Rome, Athens and Pārsa by fast travel.
 - `--soak SECONDS` runs that much busy play fast (actors, events, weather, a calendar day every
   50 s so the default gate's 600 s cross four season turns, a frame drawn now and then) and
   exits 3 if memory grows after the first quarter, passes its
   ceiling, or the simulation averages over its budget.
-- `F3` shows the profiler; `--perf-log FILE` writes its counters per frame as CSV;
+- `F3` shows the profiler (with the world: page memory and its budget, placeholders in view and
+  ids without art, each placeholder named); `--perf-log FILE` writes its counters per frame as CSV;
   `--gpu-sync` waits for the GPU each frame (implied on the windowless GPU path);
   `--front-door` starts a headless run at the title (with the tour for a new profile).
 - Interactive play: `$B` with no flags. The window opens on a share of the display it is on and

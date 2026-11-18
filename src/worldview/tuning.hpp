@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cstddef>
+#include <string_view>
 
 namespace lc::worldview::tuning {
 
@@ -51,8 +52,37 @@ inline constexpr float kThemeSeconds = 1.0f;
 inline constexpr float kCaptionHysteresis = 0.1f;
 inline constexpr float kCaptionSeconds = 3.0f;
 inline constexpr float kCaptionFade = 0.5f;
-inline constexpr float kPlaceDwell = 0.4f;   // the region under the view counts after this long
-inline constexpr float kVisitGap = 20.0f;    // away from a place this long: coming back is a visit
+inline constexpr float kPlaceDwell = 0.4f; // the region under the view counts after this long
+inline constexpr float kVisitGap = 20.0f;  // away from a place this long: coming back is a visit
+// World weather (weather_field.hpp): blocks of the grid that each decide their cells per period.
+inline constexpr int kWeatherBlock = 48;             // tiles
+inline constexpr float kWeatherCellsPerBlock = 1.0f; // expected per period at clouds 1
+inline constexpr float kWeatherLifeMin = 200.0f;     // seconds
+inline constexpr float kWeatherLifeMax = 420.0f;
+inline constexpr std::size_t kWeatherCellsMax = 512; // considered per update
+inline constexpr float kWetMemory = 90.0f;           // seconds a shower's path stays wet
+inline constexpr int kWetSamples = 3;
+inline constexpr float kCloudShadow = 0.16f; // darkness under a cloud, a shower more
+inline constexpr float kShowerShadow = 0.26f;
+inline constexpr float kWetDarken = 0.22f;    // wet ground darkens by up to this
+inline constexpr int kRainStreaksPerTile = 2; // drawn per rained-on tile in view
+inline constexpr float kRainFall = 520.0f;    // px a streak falls per second
+inline constexpr float kSnowFall = 60.0f;
+// Climates the region files name, against the season's own (until the files carry numbers):
+// Rome's April showers, the Attic dry summer and its meltemi, dry bright Parsa, the open sea's
+// squalls.
+struct ClimateRow {
+    std::string_view name;
+    float showers;
+    float clouds;
+    float wind;
+};
+inline constexpr ClimateRow kClimates[] = {
+    {"rome", 1.2f, 1.1f, 1.0f},
+    {"athens", 0.35f, 0.6f, 1.6f},
+    {"parsa", 0.15f, 0.35f, 0.9f},
+    {"world", 1.0f, 1.0f, 1.3f},
+};
 inline constexpr float kOverviewGlow = 0.6f; // lights at the overview: fewer pixels, softer
 inline constexpr float kHazeShare = 0.5f;    // how much of a region's haze strength tints the view
 

@@ -1,6 +1,7 @@
 #include "worldview/renderer.hpp"
 
 #include "core/rng.hpp"
+#include "core/tuning.hpp"
 #include "render/draw.hpp"
 #include "worldview/tuning.hpp"
 
@@ -64,7 +65,7 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
                      const std::filesystem::path& assets, Atlas& home, bool async, Hole hole,
                      const std::vector<world::FigurePlace>& figures)
     : renderer_(renderer), world_(world), map_(*world.map), iso_(map_.content().home().iso()),
-      lvl_(map_.content().tileLevel()), async_(async), hole_(hole),
+      lvl_(map_.content().tileLevel()), async_(async), hole_(hole), homeAtlas_(home),
       cells_(renderer, tuning::kCellBudget), batch_(renderer), theme_([&] {
           std::vector<world::Theme> themes;
           for (const world::RegionFile& r : world.regions) themes.push_back(r.theme);
@@ -107,6 +108,9 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
     }
     prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
     buildGlow();
+    blob_ = home.sprite(home.lightBlob());
+    raindrop_ = home.find("fx/raindrop/f0");
+    snowflake_ = home.find("fx/snowflake/f0");
     if (async) warmUp();
     for (std::size_t t = 0; t < map_.terrainCount(); ++t) {
         const world::TerrainInfo& info = map_.terrainInfo(static_cast<int>(t));
@@ -721,6 +725,65 @@ std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
     return std::nullopt;
 }
 
+void WorldView::drawWeatherGround(const FRect& view, const Xform& x) {
+    // Cloud shadows: soft dark blobs drifting with the cells (showers darker); then the wet ground
+    // where showers passed, darkened tile by tile. The home's own scene shades its land.
+    const float blobR = blob_.w * 0.5f;
+    for (const WeatherCell& c : weather_->cells()) {
+        const Vec2 w = iso_.toWorld(c.centre.x, c.centre.y);
+        const float rpx = c.radius * iso_.tileW() * 0.5f;
+        if (w.x + rpx < view.x0 || w.x - rpx > view.x1 || w.y + rpx < view.y0 ||
+            w.y - rpx > view.y1)
+            continue;
+        const float k = rpx / blobR;
+        const float a = c.intensity() * (c.rain ? tuning::kShowerShadow : tuning::kCloudShadow);
+        putSprite(batch_, blob_, w, x, {0, 0, 0, a}, SDL_BLENDMODE_BLEND, false, w, {k, k * 0.5f});
+    }
+    // Wet ground: darker along each shower's path over the last kWetMemory seconds.
+    for (const WeatherTrail& t : weather_->trails()) {
+        const Vec2 w = iso_.toWorld(t.at.x, t.at.y);
+        const float rpx = t.radius * iso_.tileW() * 0.5f;
+        if (w.x + rpx < view.x0 || w.x - rpx > view.x1 || w.y + rpx < view.y0 ||
+            w.y - rpx > view.y1)
+            continue;
+        const float k = rpx / blobR;
+        putSprite(batch_, blob_, w, x, {0, 0, 0.02f, t.wet * tuning::kWetDarken},
+                  SDL_BLENDMODE_BLEND, false, w, {k, k * 0.5f});
+    }
+    batch_.flush();
+}
+
+void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
+    // Rain (or snow) falls where a shower is: streaks at stable places per tile, falling through
+    // a tile's height over and over; nothing is stored, so any view of the world has its rain.
+    const bool snow = weather_->snow();
+    const std::optional<SpriteId>& id = snow ? snowflake_ : raindrop_;
+    if (!id) return;
+    const Sprite& s = homeAtlas_.sprite(*id);
+    const TileRect tiles = tilesUnder(view, iso_).clipped(map_.bounds());
+    const float fall = snow ? tuning::kSnowFall : tuning::kRainFall;
+    const float drop = iso_.tileH() * 6.0f; // px a streak falls before it starts again
+    for (int y = tiles.y0; y < tiles.y1; ++y)
+        for (int tx = tiles.x0; tx < tiles.x1; ++tx) {
+            const Vec2 c{static_cast<float>(tx) + 0.5f, static_cast<float>(y) + 0.5f};
+            if (hole_.tiles.contains(TilePos{tx, y})) continue;
+            const float r = weather_->rainAt(c);
+            if (r < ::lc::tuning::kRainThreshold) continue;
+            const Vec2 w = iso_.toWorld(c.x, c.y);
+            for (int k = 0; k < tuning::kRainStreaksPerTile; ++k) {
+                const std::uint32_t h = tileHash(tx, y, 31u + static_cast<std::uint32_t>(k));
+                if (static_cast<float>(h % 1000) / 1000.0f > r) continue;
+                const float ox = (static_cast<float>(h % 61) / 60.0f - 0.5f) * iso_.tileW();
+                const float phase = static_cast<float>((h >> 8) % 1000) / 1000.0f;
+                const float t = std::fmod(static_cast<float>(now) * fall / drop + phase, 1.0f);
+                const Vec2 at{std::round(w.x + ox), std::round(w.y - drop * (1.0f - t))};
+                if (at.y < view.y0 - 16 || at.y > view.y1 + 16) continue;
+                putSprite(batch_, s, at, x, {1, 1, 1, snow ? 0.9f : 0.55f}, SDL_BLENDMODE_BLEND);
+            }
+        }
+    batch_.flush();
+}
+
 void WorldView::buildGlow() {
     const auto chunks = static_cast<std::size_t>(map_.chunksX() * map_.chunksY());
     std::vector<std::uint32_t> count(chunks + 1, 0);
@@ -920,6 +983,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The game's scene works only while its home is in view.
     const bool home = lod != Lod::Overview && !hole_.empty() && hole_.screen.overlaps(view);
     if (hooks.ground && home) hooks.ground(frame);
+    if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
     // A flight down to the native level gathers its destination on the way.
     if (camera.flying && lodFor(camera.arrivalScale) == Lod::Native) {
         const Vec2 to = camera.arrival;
@@ -953,6 +1017,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     batch_.flush();
     // Coarser levels have no live objects of their own: the home's go over the impostors.
     if (!homeDrawn && hooks.objects && home) hooks.objects(frame);
+    if (weather_ != nullptr && (lod == Lod::Native || lod == Lod::Half)) drawRain(view, xf, now);
     // Grading, then what glows (drawn after it, additively).
     if (hooks.light && home)
         hooks.light(frame);

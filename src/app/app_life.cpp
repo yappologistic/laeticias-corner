@@ -29,6 +29,13 @@ Vec2 App::viewTile() const {
 }
 
 float App::rainHere() const {
+    // Off the home's land the world's weather is the one where the camera looks.
+    if (viewWeather_ && away() && weather_.mode() == WeatherMode::Natural) {
+        const TileRect h = loaded_->file.home.rect;
+        const Vec2 t = viewTile();
+        return viewWeather_->rainAt(
+            {t.x + static_cast<float>(h.x0), t.y + static_cast<float>(h.y0)});
+    }
     return weather_.rainAt(viewTile());
 }
 
@@ -93,6 +100,7 @@ void App::updateLife(float dt) {
         return static_cast<double>(SDL_GetPerformanceCounter() - t) * 1000.0 /
                static_cast<double>(SDL_GetPerformanceFrequency());
     };
+    followWorldWeather();
     weather_.update(dt, season(), openBounds(cat_, progress_.stage, world_));
     refreshNooks();
     if (world_.revision() != fallRevision_) {

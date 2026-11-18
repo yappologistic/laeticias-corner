@@ -3,7 +3,7 @@
 Draws the prebuilt world that `src/world` loads (docs/design/world-tech.md §4.3–§4.8), and
 `laeticias-world`, a headless viewer to look at it, measure it and take screenshots. Library
 `lc_worldview` (links `lc_engine` for the atlas, batching, `putSprite`, `ScreenGrid`/`behind`,
-the font and the clock's lighting, and `lc_world`). Nothing in the game uses it yet.
+the font and the clock's lighting, and `lc_world`). The game draws through it (`src/app/app_world.cpp`).
 
 ## Shape
 
@@ -79,16 +79,28 @@ drawing stand-ins from a copy on the city page. Load to first frame: world 60–
 renderer set-up (sprite tables, generated page, slots, warm-up) under 0.3 s; the overview builds
 on a worker in about 1 s and shows when ready.
 
-## Merging into the game (next round)
+## In the game
 
-1. Create `WorldView` beside the scene when `assets/world/world.json` exists; keep the island
-   otherwise. Apply the save's home with `applyHome` (the viewer applies the starter scene) and
-   call `CellCache::clear()`-style invalidation for the home rect's cells after every home edit
-   (today only a full clear exists: add a rect invalidation when wiring edits).
-2. Actors: merge them into `region_.order` per frame as world-tech §4.4 says (a `ScreenGrid`
-   query against the static boxes); `Elem::floor` marks stair and walk floors, under actors on
-   their tiles. The wild land's brambles and seasonal looks are not drawn yet.
-3. UI over it (the glass panels and blur stay the game's), the era caption as a ribbon, picking
-   (world-tech §4.3, §4.9), fast travel through the overview, audio themes from `ThemeMixer`
-   weights and `RegionFile::theme` beds.
-4. Move `tuning.hpp` into the game's tuning files if one place is wanted.
+- `WorldView::draw(ViewSpec, clock, Lighting, dt, now, Hooks)`: the game's scene draws the home
+  (the `Hole`) at the hooks' turns while it is in view; `composite()` redraws the last frame for
+  the glass blur. `places()` (the place, its caption, era changes), `pick()` and
+  `visibleCards()` (cards and the journal), `setSeason()`, `setWeather()` (a `WeatherField`:
+  cloud shadows, wet ground, rain and snow outside the hole), `holeChanged()` (the home's rim
+  terrain changed).
+- `Soundscape` (beds, zones, item loops, city music on phrases) and `WeatherField` (world-wide
+  deterministic weather) are pure; the app turns them into mixer calls and the home's weather.
+- Page slots follow the sets on disk (the two largest sets and the world set); glow is drawn
+  live over the impostors at the coarser levels.
+
+## For the joining round (city life)
+
+- Actors: `life::CityLife::gather(rect, alpha, span)` gives the live people; merge them into
+  `region_.order` per frame (a `ScreenGrid` over the region's boxes, insert after the last static
+  element behind each actor), resolve `walker/<kind>/v<k>/<anim>_<front|back>/f<n>` and
+  `figure/<id>/…` once per (kind, variant, anim, facing), and drop the static figures
+  (`world/figures.hpp`) when their routines run; the camera sets `CityLife::setView` from the
+  view's grid rect (the app's `cameraTiles()`).
+- Still home-only: trees, grass and smoke swaying in the wind and gusts, chimney and brazier
+  smoke, petals and leaves, moths at lamps, ripples and fish, waterfalls at drops, birds, and the
+  event delights (rainbow, shooting stars, birdsong) away from home; they belong in the world by
+  rule (items' `emitters` and `smoke_at`, terrain), within the particle budget.

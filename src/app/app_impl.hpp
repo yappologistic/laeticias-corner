@@ -41,6 +41,7 @@
 #include "world/loader.hpp"
 #include "worldview/renderer.hpp"
 #include "worldview/soundscape.hpp"
+#include "worldview/weather_field.hpp"
 
 #include <cstdio>
 #include <filesystem>
@@ -337,6 +338,9 @@ private:
     [[nodiscard]] float homeMusic() const;
     [[nodiscard]] float homeAmbience() const;
     void drawPlaceholderLabels(Painter& p);
+    // The world's weather around the view and over the home (followed by the home's Weather).
+    void followWorldWeather();
+    [[nodiscard]] TileRect cameraTiles() const;
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
@@ -503,7 +507,10 @@ private:
     std::vector<std::string> arriveFiles_; // each set's arrival motif
     std::vector<world::FigurePlace> figures_;
     std::unique_ptr<worldview::Soundscape> soundscape_;
-    std::vector<int> soundLoops_;     // the soundscape's files as mixer loops
+    std::vector<int> soundLoops_; // the soundscape's files as mixer loops
+    std::unique_ptr<worldview::WeatherField> viewWeather_;
+    std::unique_ptr<worldview::WeatherField> homeWeather_;
+    std::vector<WeatherCell> homeCells_;
     std::vector<float> themeWeights_; // per region, this frame
     std::vector<std::pair<Vec2, std::uint32_t>> placeholderScratch_;
     struct JournalItem {
