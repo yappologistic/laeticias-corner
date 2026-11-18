@@ -337,6 +337,8 @@ void Post::bloom(Batch& b, int w, int h) {
 }
 
 void Post::measure(Batch& b, SDL_Texture* scene, int w, int h) {
+    // The exposure follows the mean slowly: measured every few frames (the first at once).
+    if (measured_++ % tuning::kMeanEvery != 0) return;
     b.flush();
     use(b, nullptr);
     SDL_Texture* src = scene;

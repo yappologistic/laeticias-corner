@@ -50,6 +50,7 @@ inline constexpr float kDaySaturation = 0.12f;
 inline constexpr float kDayWarm[3] = {0.14f, 0.06f, -0.10f};
 inline constexpr float kTwilightWarm = 0.08f; // dawn and dusk: red up, blue down by this
 inline constexpr float kNightAdapt[2] = {0.45f, 2.0f};
+inline constexpr int kMeanEvery = 8; // frames between two measures of the scene's mean
 inline constexpr int kMeanSide = 64; // the scene is first sampled to this many texels across
 // The night shift starts past dusk: from the clock's night at this value to full at 1.
 inline constexpr float kNightFrom = 0.5f;

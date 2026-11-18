@@ -111,6 +111,7 @@ private:
     std::array<TexturePtr, kLevels> bloom_;
     TexturePtr falloff_;
     std::vector<TexturePtr> mean_; // kMeanSide wide, halved down to 1 x 1
+    std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
 };
 
 } // namespace lc::gpu
