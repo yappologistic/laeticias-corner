@@ -746,7 +746,19 @@
     "shadow"
    ],
    "occluder": true,
-   "card": "lawcourt"
+   "card": "lawcourt",
+   "slots": [
+    {
+     "id": "jurors",
+     "kind": "sit",
+     "cap": 10
+    },
+    {
+     "id": "speaker",
+     "kind": "stage",
+     "cap": 2
+    }
+   ]
   },
   {
    "id": "athens.horos",
@@ -1134,6 +1146,11 @@
      "id": "talk",
      "kind": "stand",
      "cap": 2
+    },
+    {
+     "id": "wrestle",
+     "kind": "work",
+     "cap": 2
     }
    ]
   },
@@ -1437,6 +1454,10 @@
      "kind": "stand",
      "cap": 1
     }
+   ],
+   "states": [
+    "open",
+    "closed"
    ]
   },
   {
@@ -1487,6 +1508,9 @@
    "emitters": {
     "smoke": "smoke"
    },
+   "states": [
+    "firing"
+   ],
    "snow_catch": false
   },
   {
@@ -2609,7 +2633,8 @@
    "variants": 4,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2619,6 +2644,9 @@
     },
     "sit": {
      "fps": 2
+    },
+    "gesture": {
+     "fps": 4
     }
    }
   },
@@ -2629,7 +2657,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.9,
+     "stride": 0.726
     },
     "idle": {
      "fps": 3
@@ -2646,7 +2675,8 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2660,16 +2690,21 @@
    "variants": 4,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
     },
     "carry": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "carry_idle": {
      "fps": 3
+    },
+    "throw": {
+     "fps": 4
     }
    }
   },
@@ -2680,7 +2715,8 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
@@ -2700,13 +2736,15 @@
    "variants": 4,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 20.4,
+     "stride": 0.529
     },
     "idle": {
      "fps": 3
     },
     "run": {
-     "fps": 8
+     "fps": 13.6,
+     "stride": 0.793
     },
     "kneel": {
      "fps": 2
@@ -2720,13 +2758,15 @@
    "variants": 4,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
     },
     "carry": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "carry_idle": {
      "fps": 3
@@ -2746,16 +2786,21 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
     },
     "carry": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "carry_idle": {
      "fps": 3
+    },
+    "stir": {
+     "fps": 4
     }
    }
   },
@@ -2766,7 +2811,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2786,7 +2832,8 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2806,13 +2853,15 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
     },
     "march": {
-     "fps": 8
+     "fps": 12.3,
+     "stride": 0.875
     },
     "guard": {
      "fps": 3
@@ -2826,7 +2875,8 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2843,7 +2893,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2852,7 +2903,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "carry_idle": {
      "fps": 3
@@ -2866,7 +2918,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2883,7 +2936,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2900,7 +2954,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2909,7 +2964,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "carry_idle": {
      "fps": 3
@@ -2926,7 +2982,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2943,7 +3000,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2952,7 +3010,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "carry_idle": {
      "fps": 3
@@ -2966,7 +3025,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -2980,7 +3040,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.7,
+     "stride": 0.734
     },
     "idle": {
      "fps": 3
@@ -3000,7 +3061,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3020,13 +3082,15 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
     },
     "run": {
-     "fps": 8
+     "fps": 9.6,
+     "stride": 1.125
     },
     "wrestle": {
      "fps": 4
@@ -3043,7 +3107,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3060,7 +3125,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
@@ -3074,7 +3140,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3088,7 +3155,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3102,7 +3170,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
@@ -3116,7 +3185,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.9,
+     "stride": 0.726
     },
     "idle": {
      "fps": 3
@@ -3130,7 +3200,8 @@
    "variants": 1,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3147,7 +3218,8 @@
    "variants": 1,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
@@ -3161,7 +3233,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3175,7 +3248,8 @@
    "variants": 3,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 20.1,
+     "stride": 0.537
     },
     "idle": {
      "fps": 3
@@ -3189,7 +3263,8 @@
    "variants": 2,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3206,7 +3281,8 @@
    "variants": 1,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3220,7 +3296,8 @@
    "variants": 1,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3234,7 +3311,8 @@
    "variants": 1,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3251,7 +3329,8 @@
    "variants": 1,
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3264,7 +3343,8 @@
    "sprite": "figure/athens.pericles",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3283,7 +3363,8 @@
    "sprite": "figure/athens.aspasia",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
@@ -3302,7 +3383,8 @@
    "sprite": "figure/athens.socrates",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3321,7 +3403,8 @@
    "sprite": "figure/athens.sophocles",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.9,
+     "stride": 0.726
     },
     "idle": {
      "fps": 3
@@ -3340,7 +3423,8 @@
    "sprite": "figure/athens.euripides",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3359,7 +3443,8 @@
    "sprite": "figure/athens.pheidias",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3375,7 +3460,8 @@
    "sprite": "figure/athens.mnesikles",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3391,7 +3477,8 @@
    "sprite": "figure/athens.protagoras",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3410,7 +3497,8 @@
    "sprite": "figure/athens.meton",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3426,7 +3514,8 @@
    "sprite": "figure/athens.alcibiades",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 20.1,
+     "stride": 0.537
     },
     "idle": {
      "fps": 3
@@ -3439,7 +3528,8 @@
    "sprite": "figure/athens.solon",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.9,
+     "stride": 0.726
     },
     "idle": {
      "fps": 3
@@ -3455,7 +3545,8 @@
    "sprite": "figure/athens.themistocles",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3471,7 +3562,8 @@
    "sprite": "figure/athens.theseus",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3484,7 +3576,8 @@
    "sprite": "figure/athens.rhapsode",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3503,7 +3596,8 @@
    "sprite": "figure/athens.philinna",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
@@ -3512,7 +3606,8 @@
      "fps": 4
     },
     "carry": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "carry_idle": {
      "fps": 3
@@ -3525,7 +3620,8 @@
    "sprite": "figure/athens.mania",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 15.0,
+     "stride": 0.718
     },
     "idle": {
      "fps": 3
@@ -3538,7 +3634,8 @@
    "sprite": "figure/athens.manes",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3554,7 +3651,8 @@
    "sprite": "figure/athens.kephalos",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.9,
+     "stride": 0.726
     },
     "idle": {
      "fps": 3
@@ -3570,7 +3668,8 @@
    "sprite": "figure/athens.sosias",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3583,7 +3682,8 @@
    "sprite": "figure/athens.nikarete",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.9,
+     "stride": 0.726
     },
     "idle": {
      "fps": 3
@@ -3599,7 +3699,8 @@
    "sprite": "figure/athens.toxamis",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3618,7 +3719,8 @@
    "sprite": "figure/athens.euphiletos",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3634,7 +3736,8 @@
    "sprite": "figure/athens.hegeso",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 20.4,
+     "stride": 0.529
     },
     "idle": {
      "fps": 3
@@ -3647,7 +3750,8 @@
    "sprite": "figure/athens.simon",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 14.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 3
@@ -3666,7 +3770,8 @@
    "sprite": "critter/athens.horse",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 20.1,
+     "stride": 0.537
     },
     "idle": {
      "fps": 3
@@ -3682,7 +3787,8 @@
    "sprite": "critter/athens.donkey",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 25.4,
+     "stride": 0.425
     },
     "idle": {
      "fps": 3
@@ -3698,7 +3804,8 @@
    "sprite": "critter/athens.mule",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 22.2,
+     "stride": 0.487
     },
     "idle": {
      "fps": 3
@@ -3714,7 +3821,8 @@
    "sprite": "critter/athens.ox",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 19.2,
+     "stride": 0.562
     },
     "idle": {
      "fps": 3
@@ -3730,7 +3838,8 @@
    "sprite": "critter/athens.heifer",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 20.6,
+     "stride": 0.525
     },
     "idle": {
      "fps": 3
@@ -3746,7 +3855,8 @@
    "sprite": "critter/athens.sheep",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 30.9,
+     "stride": 0.35
     },
     "idle": {
      "fps": 3
@@ -3762,7 +3872,8 @@
    "sprite": "critter/athens.goat",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 32.0,
+     "stride": 0.338
     },
     "idle": {
      "fps": 3
@@ -3778,7 +3889,8 @@
    "sprite": "critter/athens.dog_laconian",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 29.8,
+     "stride": 0.362
     },
     "idle": {
      "fps": 3
@@ -3794,7 +3906,8 @@
    "sprite": "critter/athens.dog_molossian",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 27.0,
+     "stride": 0.4
     },
     "idle": {
      "fps": 3
@@ -3810,7 +3923,8 @@
    "sprite": "critter/athens.pig",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 30.9,
+     "stride": 0.35
     },
     "idle": {
      "fps": 3
@@ -3826,7 +3940,7 @@
    "sprite": "critter/athens.owl",
    "anims": {
     "move": {
-     "fps": 8
+     "fps": 16.0
     },
     "idle": {
      "fps": 2
@@ -3839,7 +3953,8 @@
    "sprite": "critter/athens.hen",
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 38.6,
+     "stride": 0.28
     },
     "idle": {
      "fps": 2
@@ -3855,7 +3970,8 @@
    "sprite": "critter/athens.rooster",
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 38.6,
+     "stride": 0.28
     },
     "idle": {
      "fps": 2
@@ -3944,7 +4060,8 @@
    ],
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 8.5,
+     "stride": 0.562
     },
     "idle": {
      "fps": 2
@@ -3962,7 +4079,8 @@
    ],
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 6.4,
+     "stride": 0.75
     },
     "idle": {
      "fps": 2
@@ -3979,7 +4097,8 @@
    ],
    "anims": {
     "move": {
-     "fps": 6
+     "fps": 8.9,
+     "stride": 0.537
     },
     "idle": {
      "fps": 2

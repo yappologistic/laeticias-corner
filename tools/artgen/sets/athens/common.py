@@ -132,15 +132,25 @@ def crane(m, x, y, z, h, along="y", load=True, swing=0.0):
         slab(m, top[0] - 2.4, top[0] + 2.4, top[1] - 1.6, top[1] + 1.6, bz - 3.2, bz, "marble", tone=0.2)
 
 
+POLE = 0.55        # scaffold poles: thick enough to draw at 64x32 (thinner ones vanish and the decks float)
+
+
 def scaffold(m, x0, x1, y0, y1, z0, z1, decks=2):
-    """Scaffolding of lashed poles with plank decks."""
+    """Scaffolding of lashed poles standing on the ground, ledgers round each deck, a plank
+    walkway along the long side and a diagonal brace."""
     for x in (x0, x1):
         for y in (y0, y1):
-            rod(m, (x, y, z0), (x, y, z1), 0.35, "wood", tone=0.1)
+            rod(m, (x, y, z0), (x, y, z1), POLE, "wood_light", tone=0.1)
+    along_x = x1 - x0 >= y1 - y0
     for i in range(1, decks + 1):
         zz = z0 + (z1 - z0) * i / (decks + 0.3)
-        slab(m, x0, x1, y0, y1, zz, zz + 0.5, "wood_light", tone=M.timber("x" if x1 - x0 > y1 - y0 else "y", 3))
-        rod(m, (x0, y0, zz - 3), (x1, y1, zz), 0.2, "wood", tone=0.0)
+        for a, b in (((x0, y0), (x1, y0)), ((x0, y1), (x1, y1)), ((x0, y0), (x0, y1)), ((x1, y0), (x1, y1))):
+            rod(m, (*a, zz), (*b, zz), 0.35, "wood", tone=0.2)
+        if along_x:
+            slab(m, x0, x1, y1 - (y1 - y0) * 0.45, y1, zz, zz + 0.6, "wood_light", tone=M.timber("x", 3))
+        else:
+            slab(m, x1 - (x1 - x0) * 0.45, x1, y0, y1, zz, zz + 0.6, "wood_light", tone=M.timber("y", 3))
+        rod(m, (x0, y0, zz - 3), (x1, y1, zz), 0.35, "wood", tone=0.0)
 
 
 def bosses(m, face, wall, z0, z1, seed, material="marble", share=0.35, course=2.8, block=7.0):
