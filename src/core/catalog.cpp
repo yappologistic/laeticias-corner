@@ -628,6 +628,73 @@ public:
         if (cat_.seasons.empty() || cat_.seasons.size() > 8) fail("seasons: 1 to 8 are needed");
     }
 
+    void calendar(const json& root) {
+        if (!root.contains("calendar")) return;
+        const json& cal = section(root, "calendar", "catalog");
+        const json& months = cal.contains("months") ? cal["months"] : json();
+        if (!months.is_array()) fail("calendar: missing 'months'");
+        // Month i is calendar day i of the year, so it must lie in that day's season.
+        std::vector<std::string> seasonOfDay;
+        for (const SeasonDef& d : cat_.seasons)
+            for (int k = 0; k < d.days; ++k) seasonOfDay.push_back(d.id);
+        if (months.size() != seasonOfDay.size())
+            fail("calendar: one month per day of the year is needed");
+        for (std::size_t i = 0; i < months.size(); ++i) {
+            const std::string ctx = "calendar month " + std::to_string(i);
+            const std::string id = get<std::string>(months[i], "id", ctx);
+            if (get<std::string>(months[i], "season", ctx) != seasonOfDay[i])
+                fail(ctx + " ('" + id + "'): its season is not that day's");
+            if (std::ranges::find(cat_.months, id) != cat_.months.end())
+                fail(ctx + ": '" + id + "' twice");
+            cat_.months.push_back(id);
+        }
+    }
+
+    // Snow of each climate; a climate without its own `snow` block takes its parent's.
+    void climates(const json& root) {
+        if (!root.contains("climates")) return;
+        const json& list = root["climates"];
+        if (!list.is_array()) fail("climates: expected a list");
+        const auto byId = [&](const std::string& id) -> const json* {
+            for (const json& c : list)
+                if (c.is_object() && c.value("id", std::string()) == id) return &c;
+            return nullptr;
+        };
+        for (const json& c : list) {
+            const std::string id = get<std::string>(c, "id", "climates");
+            const std::string ctx = "climate " + id;
+            const json* from = &c;
+            for (int depth = 0; !from->contains("snow") && from->contains("inherits"); ++depth) {
+                from = byId(get<std::string>(*from, "inherits", ctx));
+                if (from == nullptr || depth > 16) fail(ctx + ": inherits no climate");
+            }
+            ClimateDef d;
+            d.id = id;
+            d.snowLine.assign(cat_.months.size(), -1);
+            if (from->contains("snow")) {
+                const json& snow = (*from)["snow"];
+                if (const auto line = snow.find("line"); line != snow.end()) {
+                    if (!line->is_array() || line->size() != cat_.months.size())
+                        fail(ctx + ": snow line needs one level (or null) per month");
+                    for (std::size_t m = 0; m < line->size(); ++m)
+                        if ((*line)[m].is_number_integer())
+                            d.snowLine[m] = std::max(0, (*line)[m].get<int>());
+                }
+                if (const auto low = snow.find("lowland"); low != snow.end()) {
+                    for (const json& m : low->value("months", json::array())) {
+                        const auto it = std::ranges::find(cat_.months, m.get<std::string>());
+                        if (it == cat_.months.end()) fail(ctx + ": lowland month unknown");
+                        d.lowlandMonths |=
+                            static_cast<std::uint16_t>(1u << (it - cat_.months.begin()));
+                    }
+                    d.lowlandChance = std::clamp(getOr(*low, "chance", 0.0f, ctx), 0.0f, 1.0f);
+                }
+            }
+            cat_.climates.push_back(std::move(d));
+        }
+        checkUnique(cat_.climates, "climate");
+    }
+
     void land(const json& root) {
         const json& land = section(root, "land", "catalog");
         if (get<std::string>(land, "measure", "land") != "pages")
@@ -1018,6 +1085,8 @@ public:
         }
         checkUnique(cat_.categories, "category");
         seasons(root);
+        calendar(root);
+        climates(root);
         goods(root);
         items(root);
         visitors(root);
@@ -1062,6 +1131,11 @@ private:
 };
 
 } // namespace
+
+const ClimateDef* Catalog::findClimate(std::string_view id) const {
+    const auto i = findById(climates, id);
+    return i ? &climates[static_cast<std::size_t>(*i)] : nullptr;
+}
 
 std::optional<int> Catalog::findTerrain(std::string_view id) const {
     return findById(terrain, id);

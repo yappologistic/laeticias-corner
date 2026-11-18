@@ -303,6 +303,15 @@ struct AudioList {
 inline constexpr int kMaxMapSide = 4096;
 inline constexpr long long kMaxMapTiles = 1LL << 22;
 
+// A climate of the world (the catalog's `climates`, parents resolved): what the engine reads of
+// it so far, its snow.
+struct ClimateDef {
+    std::string id;
+    std::vector<int> snowLine;       // per month: the lowest level snow falls and lies on; -1: none
+    std::uint16_t lowlandMonths = 0; // months snow may fall below the line too (bit per month)
+    float lowlandChance = 0;         // on how many of those days
+};
+
 struct Catalog {
     int tileW = 64;
     int tileH = 32;
@@ -315,6 +324,11 @@ struct Catalog {
     std::vector<std::string> tags;
     std::vector<SeasonDef> seasons;
     std::vector<int> seasonDays; // days of each season, for the calendar
+    // The world calendar's months in order (day n is month n mod size, as many as the year's
+    // days); empty when the catalog has no calendar.
+    std::vector<std::string> months;
+    std::vector<ClimateDef> climates;
+    [[nodiscard]] const ClimateDef* findClimate(std::string_view id) const;
     std::vector<StageDef> stages;
     std::optional<TilePos> gate; // the home region's way out (the road gate), if any
     StarterDef starter;
