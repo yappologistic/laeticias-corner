@@ -23,6 +23,7 @@ struct Elem {
     std::int16_t piece = -1; // -1: the whole sprite
     bool ground = false;     // a raised tile drawn over what it hides
     bool first = false;      // the item's first element: it draws the shadow and the glow
+    bool floor = false;      // a stair or walk floor piece: actors on its tiles go after it
     TilePos tile;            // the item's origin, or the ground tile
     Vec2 anchor;             // world px, raised by the level
 };

@@ -58,6 +58,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                              static_cast<std::int16_t>(split ? d.piece : -1),
                              false,
                              first,
+                             split && d.floor,
                              {it.x, it.y},
                              a});
         out.items.push_back({rectOf(split ? d.rect : it.rect()), box, s.page, false});
@@ -89,7 +90,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
             const TerrainLook& look = sprites_.terrain(t);
             const std::uint16_t page =
                 look.base.empty() ? PageAtlas::kGeneratedPage : look.base.front().page;
-            out.elems.push_back({nullptr, 0, -1, true, false, q, {}});
+            out.elems.push_back({nullptr, 0, -1, true, false, false, q, {}});
             out.items.push_back({rectOf({qx, qy, qx + 1, qy + 1}), box, page, true});
         }
     sorter_.sort(out.items, kSortCell, out.order);
