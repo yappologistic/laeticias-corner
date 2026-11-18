@@ -1113,7 +1113,17 @@ LifeData compileLife(const LoadedWorld& w) {
     for (std::size_t i = 0; i < w.regions.size(); ++i) {
         if (w.regions[i].id.empty()) continue;
         const std::size_t before = d.regions.size();
-        c.region(w.regions[i], static_cast<int>(i));
+        const std::size_t tokens = d.tokens.size();
+        try {
+            c.region(w.regions[i], static_cast<int>(i));
+        } catch (const nlohmann::json::exception& e) {
+            // A field of the wrong type (hours as numbers, a node as a list): named, and this
+            // region's life left out whole, never a half-compiled one or a crash at start.
+            d.problems.push_back(w.regions[i].id + ": " + e.what() + " (its life is left out)");
+            d.regions.resize(before);
+            d.tokens.resize(tokens);
+            continue;
+        }
         if (d.regions.size() > before) d.worldToLife[i] = static_cast<int>(d.regions.size() - 1);
     }
     return d;
