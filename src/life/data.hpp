@@ -299,7 +299,14 @@ struct Token {
     int group = kNoIndex; // region group following the token's leader
     int carry = kNoIndex; // goods
     int variant = -1;
-    Filter when; // the days it travels (months, season and its day); hours are ignored
+    Filter when;        // the days it travels (months, season and its day); hours are below
+    bool hours = false; // under way only from hourFrom to hourTo (game hours); waiting otherwise
+    float hourFrom = 0;
+    float hourTo = 0;
+    std::vector<std::string> rest; // where a waiting instance stands: "<layer>:<node>" or ports
+    std::vector<float> offsets;    // per instance, its share of the period (empty: k / count)
+    std::vector<float> share;      // per month, the share of instances under way (empty: all)
+    std::uint64_t seed = 0;        // from its id: the days each instance is under way
 };
 
 struct LifeRegion {

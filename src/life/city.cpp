@@ -289,6 +289,27 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
             ts.farStay = ts.fishing ? tl::kFishingStay : tl::kPortStay;
             ts.period = 2.0f * ts.length / speed + tl::kPortStay + ts.farStay;
             ts.ok = ts.length > 1.0f;
+            // Its rest stops as lengths along the line: a lane's ports by their points, a
+            // route's nodes by the nearest point of the line.
+            const auto lane = std::ranges::find(roads.lanes(), t.lane, &world::RoadLane::id);
+            for (const std::string& r : t.rest) {
+                std::size_t at = 0;
+                if (lane != roads.lanes().end()) {
+                    const auto port = std::ranges::find(lane->ports, r, &world::LanePort::id);
+                    at = static_cast<std::size_t>(port->at);
+                } else {
+                    const Vec2 n =
+                        centre(roads.nodes()[static_cast<std::size_t>(roads.findNode(r))].at);
+                    float best = 1e30f;
+                    for (std::size_t i = 0; i < ts.line.size(); ++i)
+                        if (const float d = dist2(ts.line[i], n); d < best) {
+                            best = d;
+                            at = i;
+                        }
+                }
+                ts.rest.push_back(ts.cum[std::min(at, ts.cum.size() - 1)]);
+            }
+            std::ranges::sort(ts.rest);
         }
         tokenPaths_.push_back(std::move(ts));
         for (int k = 0; k < t.count; ++k) tokenLast_.push_back({-1.0, 0.0});
@@ -363,6 +384,38 @@ bool CityLife::filterPasses(const LifeRegion& r, const Filter& f) const {
     if (f.weather == 1 && !clock_.rain) return false;
     if (f.weather == 0 && clock_.rain) return false;
     return true;
+}
+
+CityLife::TokenPhase CityLife::tokenPhase(std::size_t t, int k) const {
+    const Token& tk = w_->data.tokens[t];
+    const TokenState& ts = tokenPaths_[t];
+    // Its clock runs only in its hours: the seconds under way since day 0 06:00, so it stops
+    // where its hours end and goes on from there when they begin again.
+    double active = now_;
+    bool underway = tokenOn(tk);
+    if (tk.hours) {
+        const double a = std::fmod((tk.hourFrom - 6.0) * 30.0 + 7200.0, kDaySeconds);
+        double len = std::fmod((tk.hourTo - tk.hourFrom) * 30.0 + 7200.0, kDaySeconds);
+        if (len <= 0) len = kDaySeconds;
+        const double u = now_ - a;
+        const double into = u - std::floor(u / kDaySeconds) * kDaySeconds;
+        active = std::floor(u / kDaySeconds) * len + std::min(into, len);
+        underway = underway && into < len;
+    }
+    // by_month: the month's share of its instances is under way, a fresh draw each day.
+    if (underway && !tk.share.empty()) {
+        const int month = monthFor(clock_.day, clock_.season);
+        const float share = static_cast<std::size_t>(month) < tk.share.size()
+                                ? tk.share[static_cast<std::size_t>(month)]
+                                : 1.0f;
+        underway = unit(hashOf({tk.seed, static_cast<std::uint64_t>(k),
+                                static_cast<std::uint64_t>(clock_.day)})) < share;
+    }
+    const double offset = static_cast<std::size_t>(k) < tk.offsets.size()
+                              ? static_cast<double>(tk.offsets[static_cast<std::size_t>(k)])
+                              : static_cast<double>(k) / tk.count;
+    const double period = ts.period;
+    return {std::fmod(active + offset * period + 1e7 * period, period), underway};
 }
 
 bool CityLife::tokenOn(const Token& tk) const {
@@ -2202,9 +2255,8 @@ bool CityLife::tokenAt(std::size_t t, int k, int member, TokenAt& out) const {
     const KindDef& kd = w_->data.kinds[static_cast<std::size_t>(tk.kind)];
     const float speed =
         !tk.lane.empty() ? tl::kShipSpeed : (kd.cart ? tl::kCartSpeed : tl::kWalkSpeed);
-    const double period = ts.period;
-    const double phase =
-        std::fmod(now_ + static_cast<double>(k) * period / tk.count + 1e7 * period, period);
+    const TokenPhase cycle = tokenPhase(t, k);
+    const double phase = cycle.phase;
     const double run = ts.length / speed;
     const double stay = tl::kPortStay;
     const double far = ts.farStay;
@@ -2229,6 +2281,19 @@ bool CityLife::tokenAt(std::size_t t, int k, int member, TokenAt& out) const {
         flock = w_->data.regions[static_cast<std::size_t>(tk.region)]
                     .groups[static_cast<std::size_t>(tk.group)]
                     .formation == Formation::Cluster;
+    if (!cycle.underway) {
+        // Waiting (out of its hours, or not travelling today): at the last rest stop it passed,
+        // or where it stopped when it has none.
+        out.moving = false;
+        working = false;
+        if (back) {
+            const auto it = std::ranges::lower_bound(ts.rest, static_cast<float>(s));
+            if (it != ts.rest.end()) s = *it;
+        } else {
+            const auto it = std::ranges::upper_bound(ts.rest, static_cast<float>(s));
+            if (it != ts.rest.begin()) s = *std::prev(it);
+        }
+    }
     if (member > 0)
         s += (back ? 1.0 : -1.0) * static_cast<double>(tl::kTrainSpacing) *
              (flock ? 1.0 : static_cast<double>(member));
@@ -2946,12 +3011,16 @@ void CityLife::updateTokens() {
                 continue;
             }
             ++stats_.tokens;
+            const TokenPhase tp = tokenPhase(t, k);
+            if (!tp.underway) {
+                tokenLast_[inst] = {-1.0, 0.0}; // waiting: no arrival on its first step again
+                continue;
+            }
             const KindDef& kd = w_->data.kinds[static_cast<std::size_t>(tk.kind)];
             const float speed =
                 !tk.lane.empty() ? tl::kShipSpeed : (kd.cart ? tl::kCartSpeed : tl::kWalkSpeed);
             const double run = ts.length / speed;
-            const double phase = std::fmod(
-                now_ + static_cast<double>(k) * ts.period / tk.count + 1e7 * ts.period, ts.period);
+            const double phase = tp.phase;
             auto& last = tokenLast_[inst];
             const double before = last[0];
             last[0] = phase;

@@ -307,13 +307,14 @@ TEST_CASE("life: the calendar's months: festivals, populations, events and seaso
     MESSAGE("planned events running at once, at most " << most);
     CHECK(most + 16 <= tuning::life::kMaxRunningEvents);
     // Populations follow their months: the whole world's crowd at 10:00 is the month's, as
-    // the data means it (audit-alive: 3 949 to 4 513, where every month at once made 6 136).
+    // the data means it: about 5 000 to 5 400 with the towns and the land between alive
+    // (world-alive.md); before months were read, every month's variant at once was far more.
     const TileRect all = lifeWorld().map().bounds();
     for (int day = 0; day < 12; ++day) {
         const float n = city.expectedFor(all, LifeClock::at(day, 10.0, -1));
         CAPTURE(day);
-        CHECK(n > 3600.0f);
-        CHECK(n < 4800.0f);
+        CHECK(n > 4600.0f);
+        CHECK(n < 6000.0f);
     }
 }
 
@@ -576,6 +577,39 @@ TEST_CASE("city: the same clock gives the same people however often the area com
     }
 }
 
+TEST_CASE("city: travellers keep their hours, wait at rest stops, leave at their offsets") {
+    // The corner's walkers to Rome's western gate (latium_italy.2): two instances, 05:00 to
+    // 19:30, offsets 0.988 and 0.441, the climate's road row (all of spring).
+    const LifeData& d = lifeWorld().data;
+    const auto t = static_cast<std::size_t>(
+        std::ranges::find(d.tokens, worldgenHash("latium_italy.2"), &Token::seed) -
+        d.tokens.begin());
+    REQUIRE(t < d.tokens.size());
+    const Token& tk = d.tokens[t];
+    CHECK(tk.hours);
+    CHECK(tk.rest.size() == 2);
+    REQUIRE(tk.offsets.size() == 2);
+    REQUIRE(tk.share.size() == 12);
+    CityLife city(lifeWorld(), 1);
+    city.setFocus(centreOf("forum"));
+    city.settle(LifeClock::at(1, 2.0, -1));
+    CHECK_FALSE(city.tokenPhase(t, 0).underway); // 02:00: waiting
+    CHECK_FALSE(city.tokenPhase(t, 1).underway);
+    const double night = city.tokenPhase(t, 0).phase;
+    city.settle(LifeClock::at(1, 4.5, -1));
+    CHECK(city.tokenPhase(t, 0).phase == doctest::Approx(night)); // its clock stood still
+    city.settle(LifeClock::at(1, 10.0, -1));
+    CHECK(city.tokenPhase(t, 0).underway);
+    CHECK(city.tokenPhase(t, 1).underway);
+    // Spaced by their offsets, not evenly.
+    const double a = city.tokenPhase(t, 0).phase;
+    const double b = city.tokenPhase(t, 1).phase;
+    const double gap = a - b;
+    CHECK(gap != doctest::Approx(0));
+    // Bad token data is named: an unknown rest stop or climate row would be a problem line.
+    for (const std::string& p : d.problems) CHECK(p.find("token") == std::string::npos);
+}
+
 TEST_CASE("city: nobody walks in place, in the cities, towns, roads and seas, at four hours") {
     // Each place at four hours: after a settling minute, 20 s watched; every second each live
     // actor's window says whether it was drawn walking without getting anywhere (marching) or
@@ -588,7 +622,9 @@ TEST_CASE("city: nobody walks in place, in the cities, towns, roads and seas, at
                             "district:delphi/sanctuary",
                             "district:latium_italy/road",
                             "district:greece/road",
-                            "district:tyrrhenian/sea"};
+                            "district:tyrrhenian/sea",
+                            "district:saronic/sea",
+                            "district:corinth/town"};
     long marching = 0;
     long oscillating = 0;
     long stuckLong = 0;

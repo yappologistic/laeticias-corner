@@ -690,6 +690,42 @@ public:
                     d.lowlandChance = std::clamp(getOr(*low, "chance", 0.0f, ctx), 0.0f, 1.0f);
                 }
             }
+            // Traffic by month (`by_month` rows): the travel rows merge key by key down the
+            // parents (the nearer wins), the sea rows come whole from the nearest sea block, and
+            // a land climate's sailing is its coast's.
+            const auto rows = [&](const json& block) {
+                for (auto it = block.begin(); it != block.end(); ++it) {
+                    if (std::ranges::find(d.traffic, it.key(), &ClimateDef::Row::name) !=
+                        d.traffic.end())
+                        continue;
+                    std::vector<float> row(cat_.months.size(), 0.0f);
+                    if (it->is_number()) {
+                        std::ranges::fill(row, it->get<float>());
+                    } else if (it->is_array() && it->size() == row.size() &&
+                               std::ranges::all_of(*it,
+                                                   [](const json& v) { return v.is_number(); })) {
+                        for (std::size_t m = 0; m < row.size(); ++m) row[m] = (*it)[m].get<float>();
+                    } else {
+                        continue; // not a row of factors (notes, closed months, hours)
+                    }
+                    d.traffic.push_back({it.key(), std::move(row)});
+                }
+            };
+            const json* sea = nullptr;
+            std::string coast;
+            for (const json* k = &c; k != nullptr;
+                 k = k->contains("inherits") ? byId(get<std::string>(*k, "inherits", ctx))
+                                             : nullptr) {
+                if (const auto t = k->find("travel"); t != k->end() && t->is_object()) rows(*t);
+                if (sea == nullptr && k->contains("sea") && (*k)["sea"].is_object())
+                    sea = &(*k)["sea"];
+                if (coast.empty() && k->contains("coast"))
+                    coast = get<std::string>(*k, "coast", ctx);
+            }
+            if (sea == nullptr && !coast.empty())
+                if (const json* cc = byId(coast); cc != nullptr && cc->contains("sea"))
+                    sea = &(*cc)["sea"];
+            if (sea != nullptr) rows(*sea);
             cat_.climates.push_back(std::move(d));
         }
         checkUnique(cat_.climates, "climate");
@@ -1131,6 +1167,11 @@ private:
 };
 
 } // namespace
+
+const ClimateDef::Row* ClimateDef::row(std::string_view name) const {
+    const auto it = std::ranges::find(traffic, name, &Row::name);
+    return it == traffic.end() ? nullptr : &*it;
+}
 
 const ClimateDef* Catalog::findClimate(std::string_view id) const {
     const auto i = findById(climates, id);

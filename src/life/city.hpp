@@ -344,6 +344,14 @@ public:
     // The data's population (out of doors, by the schedules) over the chunks a view would make
     // live at a clock, without changing anything: what the cap must hold there.
     [[nodiscard]] float expectedFor(TileRect view, const LifeClock& clock);
+    // Where instance `k` of token `t` is in its cycle (seconds of its period, its clock running
+    // only in its hours), and whether it is under way (its hours, its `when`, its month's share);
+    // a waiting instance stands at the last rest stop it passed.
+    struct TokenPhase {
+        double phase = 0;
+        bool underway = true;
+    };
+    [[nodiscard]] TokenPhase tokenPhase(std::size_t t, int k) const;
 
     struct Desire {
         std::uint64_t key = 0;
@@ -504,7 +512,8 @@ private:
         std::vector<float> cum; // cumulative length
         float length = 0;
         float period = 0;
-        float farStay = 0; // seconds at the far end (in port, or working a fishing ground)
+        float farStay = 0;       // seconds at the far end (in port, or working a fishing ground)
+        std::vector<float> rest; // lengths along the line where a waiting instance stands
         bool fishing = false;
         bool ok = false;
     };

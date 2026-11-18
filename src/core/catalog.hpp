@@ -310,6 +310,14 @@ struct ClimateDef {
     std::vector<int> snowLine;       // per month: the lowest level snow falls and lies on; -1: none
     std::uint16_t lowlandMonths = 0; // months snow may fall below the line too (bit per month)
     float lowlandChance = 0;         // on how many of those days
+    // Traffic rows by month (road, caravan, courier, barge, sailing, grain ...): the share of a
+    // traveller's instances under way each month.
+    struct Row {
+        std::string name;
+        std::vector<float> share; // per month
+    };
+    std::vector<Row> traffic;
+    [[nodiscard]] const Row* row(std::string_view name) const;
 };
 
 struct Catalog {
