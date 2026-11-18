@@ -4,6 +4,7 @@
   python -m worldgen.build --all           the base, then every layer that has a layout
   python -m worldgen.build --check         validate the committed layers as they are
   python -m worldgen.build --preview <layer>|world
+  python -m worldgen.build --city <region>...  a city's life: region file, checks, day report
 Options: --root DIR (project root), --out DIR (world data; default <root>/assets/world),
          --reports DIR (default <root>/out/worldgen), --no-write (validate only).
 
@@ -307,6 +308,8 @@ def main(argv=None) -> int:
     ap.add_argument("--no-write", action="store_true")
     ap.add_argument("--life", action="store_true",
                     help="write the region files of the stretches, seas, seams and waypoints")
+    ap.add_argument("--city", nargs="+", metavar="REGION",
+                    help="build, check and write these cities' life (regions/<layer>/life.py)")
     a = ap.parse_args(argv)
     t0 = time.time()
     b = Builder(Path(a.root), a.out, a.reports, write=not a.no_write)
@@ -326,6 +329,10 @@ def main(argv=None) -> int:
         targets = names
     else:
         targets = [n for n in b.order if n in b.layers]
+    if a.city:
+        from . import lifereport
+        ok = lifereport.run(b, a.city, a.preview, not a.no_write)
+        return 0 if ok else 1
     if a.life:
         from . import life
         files = life.write(b.composed(), b.graphs, b.root / "assets/regions")
@@ -359,6 +366,12 @@ def main(argv=None) -> int:
         if a.preview:
             for p in b.previews(n, world, issues):
                 print(f"   preview {p}")
+    # The journey as one network, once every layer it names is there.
+    if all(n.split(":", 1)[0] in b.graphs for n in P.NETWORK):
+        for i in validate.network(b.graphs):
+            print("   " + i.text())
+            checked.append(i.text() + "\n")
+            failed = True
     if a.check:
         for i in validate.world_file(b.out, b.order):
             print("   " + i.text())
@@ -366,6 +379,9 @@ def main(argv=None) -> int:
             failed = True
         b.reports.mkdir(parents=True, exist_ok=True)
         (b.reports / "check.txt").write_text("\n".join(checked))
+        from . import lifereport
+        if lifereport.check_committed(b, world):
+            failed = True
     if want_world and a.preview:
         for p in b.preview_world(world):
             print(f"   preview {p}")
