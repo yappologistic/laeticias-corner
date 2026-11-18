@@ -54,10 +54,24 @@ def dump(cat):
     return "\n".join(lines + ["}"]) + "\n"
 
 
+def keep_others(cat, old):
+    """Fields other lanes add to entries this module writes (the seasons' `season_class`,
+    `season_states`, `snow_catch`, an art block's extras) survive a rewrite."""
+    for section in ("terrain", "items", "actors", "goods"):
+        before = {e["id"]: e for e in old.get(section, [])}
+        for e in cat.get(section, []):
+            for key, val in before.get(e["id"], {}).items():
+                e.setdefault(key, val)
+    for key, val in old.get("art", {}).items():
+        cat["art"].setdefault(key, val)
+    return cat
+
+
 def main():
     path = spec.ROOT / "assets" / "sets" / "rome" / "catalog.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(dump(build()))
+    old = json.loads(path.read_text()) if path.exists() else {}
+    path.write_text(dump(keep_others(build(), old)))
     print(f"wrote {path}")
 
 

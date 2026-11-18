@@ -9,6 +9,7 @@ The tile width comes from the catalog (`tile.w`) unless --tile overrides it; the
 assets/ unless --out names another directory (previews then go there too).
 """
 
+import json
 import os
 import re
 import sys
@@ -123,7 +124,11 @@ def main(argv) -> int:
     t0 = time.time()
     sprites = build_sprites(build.load_catalog(), build.k)
     build.out.mkdir(parents=True, exist_ok=True)
-    w, h = pack.write_atlas(sprites, build.atlas_png, build.atlas_json, registry.strides(sprites))
+    w, h = pack.write_atlas(sprites, build.atlas_png, build.atlas_json)
+    # The home walks' strides (tiles per cycle), beside the manifest (whose fields are fixed).
+    (build.out / "atlas").mkdir(exist_ok=True)
+    (build.out / "atlas" / "home.strides.json").write_text(
+        json.dumps({"version": 1, "strides": registry.strides(sprites)}, indent=1) + "\n")
     print(f"atlas {w}x{h} for {build.tile_w}x{build.tile_h} tiles, {len(sprites)} sprites "
           f"in {time.time() - t0:.1f}s")
     status = validate.main(build)

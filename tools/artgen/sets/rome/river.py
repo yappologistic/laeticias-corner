@@ -216,7 +216,7 @@ def emporium(m):
 # The way across the island (floor on the island): from the Pons Fabricius' landing at the east
 # end (2, 0) round the temple's east side, along the portico where the sick sleep (dx 5 and 6)
 # and up to the Pons Cestius' landing at the west end (4, 10).
-ISLAND_HOUSE = (21.0, 30.5, 28.0, 44.0)   # x, y in design units, its roof clear of tile dx 2
+ISLAND_HOUSE = (24.5, 30.5, 20.0, 32.0)   # x0, x1, y0, y1 (design units): on dx 1, its roof clear of dx 2
 ISLAND_WALK = sorted({(2, 0), (2, 1), (2, 2), (3, 2), (4, 2), *((5, y) for y in range(2, 10)), (4, 9), (4, 10),
                       (6, 4), (6, 5), (6, 6)})
 ON = {"rome.tiber_island": "water", "rome.pons_fabricius": "water", "rome.pons_cestius": "water",

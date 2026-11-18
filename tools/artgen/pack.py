@@ -63,12 +63,9 @@ def pack(sprites: dict[str, Sprite], max_side: int = 4096):
     return atlas, manifest
 
 
-def write_atlas(sprites: dict[str, Sprite], png_path, json_path, strides=None) -> tuple[int, int]:
-    """`strides`: tiles per cycle of each walking animation, stated beside the sprites."""
+def write_atlas(sprites: dict[str, Sprite], png_path, json_path) -> tuple[int, int]:
     atlas, manifest = pack(sprites)
     Image.fromarray(atlas, "RGBA").save(png_path, optimize=True)
     doc = {"version": 1, "image": png_path.name, "sprites": manifest}
-    if strides:
-        doc["strides"] = strides
     json_path.write_text(json.dumps(doc, indent=1, sort_keys=False) + "\n")
     return atlas.shape[1], atlas.shape[0]
