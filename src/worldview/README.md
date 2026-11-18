@@ -61,7 +61,21 @@ as not drawn.
 
 ## Measured (release, development machine's GPU, opengl offscreen, vsync off, GPU synced)
 
-See the branch report for the table at 1080p, 1440p and 4K. Load to first frame: world 60–70 ms,
+Whole frame in ms (average / 95th / 99th / worst), most draw calls in a frame, texture MiB:
+
+| Case | 1920 x 1080 | 2560 x 1440 | 3840 x 2160 |
+|---|---|---|---|
+| Parsa terrace, 1x | 0.34 / 0.43 / 0.75 / 1.90, 15, 381 | 0.55 / 0.76 / 1.00 / 2.26, 20, 394 | 1.08 / 1.45 / 1.54 / 1.63, 29, 525 |
+| Agora, 1x, dusk | 0.44 / 0.47 / 0.73 / 3.25, 38, 477 | 0.67 / 0.71 / 0.90 / 2.08, **52**, 490 | 1.33 / 1.42 / 1.59 / 1.79, **79**, 621 |
+| Acropolis, 1x, night | 0.53 / 0.57 / 0.82 / 0.87, 17, 477 | 0.78 / 0.86 / 0.93 / 1.23, 23, 490 | 1.53 / 1.64 / 1.81 / 2.41, **61**, 653 |
+| Pan at 1800 px/s | 0.39 / 0.55 / 0.79 / 1.87, 25 | 0.59 / 0.81 / 1.09 / 2.16, 26 | 1.20 / 1.54 / 1.70 / 1.99, 27 |
+| Flight Parsa to Athens | 0.33 / 1.00 / 1.29 / 2.19, 12 | 0.44 / 1.14 / 1.29 / 2.97, 21 | 0.72 / 1.72 / 2.09 / 2.58, 26 |
+| Overview | 0.18 / 0.19 / 0.42 / 1.84, 5 | 0.26 / 0.26 / 0.27 / 0.54, 5 | 0.53 / 0.54 / 0.80 / 1.79, 5 |
+
+CPU (update and submission) averages 0.1–0.5 ms. Draw calls go over world-tech's 40 at 1440p and
+4K where home stand-ins (the world set's trees) interleave with a city's pages in depth; the world
+set's own page will not remove that interleaving, so the next step is merging small pages or
+drawing stand-ins from a copy on the city page. Load to first frame: world 60–70 ms,
 renderer set-up (sprite tables, generated page, slots, warm-up) under 0.3 s; the overview builds
 on a worker in about 1 s and shows when ready.
 
