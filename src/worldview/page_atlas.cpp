@@ -404,12 +404,15 @@ PageStats PageAtlas::stats() const {
     // Texture memory: the fixed pages and every slot made (resident or free).
     PageStats s;
     s.uploads = uploads_;
-    s.budget = budget_;
+    s.budget = slotLimit_ * kSlotBytes;
     s.bytes = slots_.size() * kSlotBytes;
     for (const Page& p : pages_) {
-        if (p.state == State::Fixed)
-            s.bytes += static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
-        else if (p.state == State::Resident)
+        if (p.state == State::Fixed) {
+            // The home page and the generated one are always there, in the budget too.
+            const auto fixed = static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
+            s.bytes += fixed;
+            s.budget += fixed;
+        } else if (p.state == State::Resident)
             ++s.resident;
         else if (p.state != State::Unloaded)
             ++s.streaming;
