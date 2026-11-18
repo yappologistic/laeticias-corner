@@ -555,18 +555,13 @@ int Viewer::runBench() {
             static_cast<double>(cs.p99), draws, drawn / n, culled / n, st.cellsCached,
             static_cast<double>(st.textureBytes()) / 1048576.0, processMemory().first);
         const bool bad = fs.p99 > tuning::kFrameP99Ms || fs.worst > tuning::kFrameWorstMs ||
-                         cs.avg > tuning::kCpuAvgMs || (c.city && draws > tuning::kDrawCallsGate);
+                         cs.avg > tuning::kCpuAvgMs || (c.city && draws > tuning::kDrawCallsMax);
         if (bad) std::printf("  over budget: %s\n", c.what);
-        if (c.city && draws > tuning::kDrawCallsMax)
-            std::printf("  over the %d-draw target (gate %d): %s\n", tuning::kDrawCallsMax,
-                        tuning::kDrawCallsGate, c.what);
         over = over || bad;
     }
     std::printf(
-        "budgets: frame p99 <= %.1f ms, worst <= %.1f ms, cpu avg <= %.1f ms, city draws <= %d "
-        "(target %d)\n",
-        tuning::kFrameP99Ms, tuning::kFrameWorstMs, tuning::kCpuAvgMs, tuning::kDrawCallsGate,
-        tuning::kDrawCallsMax);
+        "budgets: frame p99 <= %.1f ms, worst <= %.1f ms, cpu avg <= %.1f ms, city draws <= %d\n",
+        tuning::kFrameP99Ms, tuning::kFrameWorstMs, tuning::kCpuAvgMs, tuning::kDrawCallsMax);
     return over && o_.budget ? 3 : 0;
 }
 
