@@ -554,6 +554,7 @@ def apply(doc: dict, world: World, cat, root) -> dict:
     climate = sound.climate_of(rid)
     th = doc.setdefault("theme", {})
     amb = th.setdefault("ambience", {})
+    amb.setdefault("loops", [])   # beds, loops, zones: the order the files have always had
     seasons = th.setdefault("seasons", {})
     f = facts(world, rid)
     # Beds: the place's own, by season and hour.
