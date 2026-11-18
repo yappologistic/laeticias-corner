@@ -10,12 +10,12 @@ inline constexpr float kGustRate = 0.22f;      // crests passing a point per sec
 inline constexpr float kGustGain = 1.6f;       // a crest's lean over the steady sway
 inline constexpr int kSwayStrips = 4;          // a swaying sprite is bent in this many strips
 // Lean at the top of the sprite in a full wind, art px, by kind.
-inline constexpr float kSwayTree = 2.2f;
-inline constexpr float kSwayReeds = 2.6f;
-inline constexpr float kSwayCloth = 3.2f; // banners, awnings, flags, sails at rest
-inline constexpr float kSwayCrop = 1.4f;
-inline constexpr float kSwayBush = 0.9f;
-inline constexpr float kWindFloor = 0.25f; // the stillest air still stirs a little
+inline constexpr float kSwayTree = 4.0f;
+inline constexpr float kSwayReeds = 4.5f;
+inline constexpr float kSwayCloth = 5.0f; // banners, awnings, flags, sails at rest
+inline constexpr float kSwayCrop = 3.0f;
+inline constexpr float kSwayBush = 2.0f;
+inline constexpr float kWindFloor = 0.35f; // the stillest air still stirs a little
 
 // Bloom: halvings of the glow layer by tier (Low, Medium, High), and its strength.
 inline constexpr int kBloomLevelsLow = 3;
