@@ -110,6 +110,13 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
         figureOf_.push_back(static_cast<std::uint32_t>(f));
     }
     prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
+    {
+        const Uint64 t0 = SDL_GetPerformanceCounter();
+        cover_ = std::make_unique<CoverMap>(map_, *sprites_, hole_);
+        SDL_Log("worldview: cover map in %.0f ms",
+                static_cast<double>(SDL_GetPerformanceCounter() - t0) * 1000.0 /
+                    static_cast<double>(SDL_GetPerformanceFrequency()));
+    }
     buildGlow();
     blob_ = home.sprite(home.lightBlob());
     raindrop_ = home.find("fx/raindrop/f0");
@@ -343,7 +350,7 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
 }
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
-                            Target& onto) {
+                            Target& onto, std::span<const std::uint32_t> visible) {
     // Shadow sprites saturate in their own layer (their alpha was scaled to a peak of 1), which
     // is then laid over the ground once at the art's opacity: overlaps never double-darken.
     bool ok = true;
@@ -353,7 +360,10 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
         SDL_Log("worldview: shadow layer: %s", SDL_GetError());
     // The layer's coverage does not depend on order: drawn page by page, one draw each.
     shadows_.clear();
-    for (const std::uint32_t i : g.order) {
+    // An element's screen box holds its shadow: what is not drawn casts none in view.
+    const std::size_t n = visible.empty() ? g.order.size() : visible.size();
+    for (std::size_t j = 0; j < n; ++j) {
+        const std::uint32_t i = g.order[visible.empty() ? j : visible[j]];
         const Elem& e = g.elems[i];
         if (!e.first || e.look == nullptr || !e.look->shadow) continue;
         const SpriteRef& s = *e.look->shadow;
@@ -769,16 +779,37 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
     const std::optional<SpriteId>& id = snow ? snowflake_ : raindrop_;
     if (!id) return;
     const Sprite& s = homeAtlas_.sprite(*id);
-    const TileRect tiles = tilesUnder(view, iso_).clipped(map_.bounds());
+    // Only the tiles under a shower are looked at: none in view (most frames) costs nothing.
+    const TileRect inView = tilesUnder(view, iso_).clipped(map_.bounds());
+    TileRect tiles{inView.x1, inView.y1, inView.x0, inView.y0};
+    for (const WeatherCell& c : weather_->cells()) {
+        if (!c.rain) continue;
+        const TileRect r = TileRect{static_cast<int>(std::floor(c.centre.x - c.radius)),
+                                    static_cast<int>(std::floor(c.centre.y - c.radius)),
+                                    static_cast<int>(std::ceil(c.centre.x + c.radius)) + 1,
+                                    static_cast<int>(std::ceil(c.centre.y + c.radius)) + 1}
+                               .clipped(inView);
+        if (r.empty()) continue;
+        tiles = {std::min(tiles.x0, r.x0), std::min(tiles.y0, r.y0), std::max(tiles.x1, r.x1),
+                 std::max(tiles.y1, r.y1)};
+    }
+    if (tiles.x0 >= tiles.x1 || tiles.y0 >= tiles.y1) return;
     const float fall = snow ? tuning::kSnowFall : tuning::kRainFall;
     const float drop = iso_.tileH() * 6.0f; // px a streak falls before it starts again
-    for (int y = tiles.y0; y < tiles.y1; ++y)
-        for (int tx = tiles.x0; tx < tiles.x1; ++tx) {
+    // Farther out, every other tile each way: as many streaks on screen at any zoom.
+    const int step = res_ < 1.0f ? 2 : 1;
+    const float margin = drop + iso_.tileW();
+    for (int y = tiles.y0 - tiles.y0 % step; y < tiles.y1; y += step)
+        for (int tx = tiles.x0 - tiles.x0 % step; tx < tiles.x1; tx += step) {
             const Vec2 c{static_cast<float>(tx) + 0.5f, static_cast<float>(y) + 0.5f};
+            const Vec2 w = iso_.toWorld(c.x, c.y);
+            // The box of tiles under a screen is twice the screen: skip what lies off it.
+            if (w.x < view.x0 - margin || w.x > view.x1 + margin || w.y < view.y0 ||
+                w.y > view.y1 + margin)
+                continue;
             if (hole_.tiles.contains(TilePos{tx, y})) continue;
             const float r = weather_->rainAt(c);
             if (r < ::lc::tuning::kRainThreshold) continue;
-            const Vec2 w = iso_.toWorld(c.x, c.y);
             for (int k = 0; k < tuning::kRainStreaksPerTile; ++k) {
                 const std::uint32_t h = tileHash(tx, y, 31u + static_cast<std::uint32_t>(k));
                 if (static_cast<float>(h % 1000) / 1000.0f > r) continue;
@@ -1011,14 +1042,11 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         if (!camera.flying) updateRegion(view, true);
         stats_.regionElements = static_cast<int>(region_.elems.size());
         prepareActors(view, lod);
-        (void)drawShadows(region_, view, xf, shadow_, view_);
-        for (std::size_t k = 0; k < region_.order.size(); ++k) {
+        (void)drawShadows(region_, view, xf, shadow_, view_, merge_.visible());
+        stats_.spritesCulled = static_cast<int>(region_.order.size() - merge_.visible().size());
+        for (const std::uint32_t k : merge_.visible()) {
             for (const std::uint32_t a : merge_.before(k)) drawActor(actorOf_[a], xf);
             const std::uint32_t i = region_.order[k];
-            if (!region_.items[i].screen.overlaps(view)) {
-                ++stats_.spritesCulled;
-                continue;
-            }
             const Elem& e = region_.elems[i];
             if (e.home) {
                 batch_.flush();
@@ -1054,10 +1082,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
                        light.glow * (lod == Lod::Overview ? tuning::kOverviewGlow : 1.0f));
     if (lod == Lod::Native && light.glow > 0.01f) {
         const SDL_FColor g{light.glow, light.glow, light.glow, 1};
-        for (const std::uint32_t i : region_.order) {
+        for (const std::uint32_t k : merge_.visible()) {
+            const std::uint32_t i = region_.order[k];
             const Elem& e = region_.elems[i];
-            if (e.first && e.look != nullptr && e.look->glow &&
-                region_.items[i].screen.overlaps(view))
+            if (e.first && e.look != nullptr && e.look->glow)
                 (void)put(*e.look->glow, e.anchor, xf, g, SDL_BLENDMODE_ADD);
         }
     }
@@ -1180,7 +1208,7 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         if (lod == Lod::Native)
             merge_.plan(
                 region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; },
-                [](std::uint32_t) { return false; });
+                [&](std::uint32_t e) { return region_.items[e].screen.overlaps(view); });
         return;
     }
     TileRect tiles = tilesUnder(view, iso_);
@@ -1217,8 +1245,13 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         if (!box.overlaps(view)) continue;
         if (ad.goods != nullptr) box.y0 = std::min(box.y0, ad.goodsAt.y - ad.goods->oy);
         if (lod != Lod::Native) {
-            // Under a roof or a colonnade there is nothing to see from this far.
-            if (d.item < 0 || d.floor) coarse_.push_back(static_cast<std::uint32_t>(i));
+            // The impostor holds everything static, so whoever stands behind something in front
+            // (by the same depth relation as the native order) is not drawn over it; under a roof
+            // or a colonnade there is nothing to see from this far either.
+            const float above = d.z - static_cast<float>(map_.level(t) * lvl_);
+            if ((d.item < 0 || d.floor) &&
+                static_cast<float>(cover_->at(t)) - above <= tuning::kCoverHidden)
+                coarse_.push_back(static_cast<std::uint32_t>(i));
             continue;
         }
         const float f = tuning::kActorFoot;

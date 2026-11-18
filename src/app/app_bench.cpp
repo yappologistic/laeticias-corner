@@ -261,6 +261,8 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
     drawerOpen_ = false;
     journalOpen_ = true;
     profilerOn_ = true;
+    // The world's camera limits (the corner's cases keep the camera on the filled home).
+    camera_.setLand(cameraLand(), 0, 0);
     const auto settle = [&] {
         for (int i = 0; i < tuning::kBenchSettleFrames; ++i) {
             (void)benchFrame();

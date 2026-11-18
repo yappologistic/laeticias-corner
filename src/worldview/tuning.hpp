@@ -124,6 +124,7 @@ inline constexpr float kActorMoving = 0.05f;  // tiles/s: faster than this walks
 inline constexpr float kActorWalkPace = 0.9f; // tiles/s at which walk frames play at the art's fps
 inline constexpr Vec2 kCarryAt{3, -31};       // px from the feet: goods in hand, no carry point
 inline constexpr float kActorFoot = 0.2f;     // half the square round the feet, tiles
+inline constexpr float kCoverHidden = 4.0f;   // px of something in front over the feet: hidden
 inline constexpr int kActorMargin = 3;        // tiles beyond the view gathered (sprites overhang)
 inline constexpr std::size_t kActorBuffer = 2048; // actors gathered per frame at most
 inline constexpr float kActorShadowW = 0.42f;     // the soft shadow under the feet, tiles wide
@@ -174,10 +175,6 @@ inline constexpr float kPanTilesPerSecond = 24.0f; // keyboard pan in the intera
 inline constexpr double kFrameP99Ms = 8.3;
 inline constexpr double kFrameWorstMs = 16.6;
 inline constexpr double kCpuAvgMs = 2.0;
-inline constexpr int kDrawCallsMax = 40; // world-tech §4.4, a full city view at zoom 1: the target
-// What the gate holds today: Athens' pages since the Greek waypoints interleave with the world
-// set's kit in depth (53 at the Agora, fault F-5 in out/reports/world-game-faults.md); the target
-// above is reported beside it, never silently dropped.
-inline constexpr int kDrawCallsGate = 60;
+inline constexpr int kDrawCallsMax = 40; // world-tech §4.4, a full city view at zoom 1
 
 } // namespace lc::worldview::tuning

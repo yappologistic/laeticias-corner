@@ -23,6 +23,7 @@
 #include "worldview/actor_looks.hpp"
 #include "worldview/camera.hpp"
 #include "worldview/cell_cache.hpp"
+#include "worldview/cover.hpp"
 #include "worldview/gather.hpp"
 #include "worldview/order.hpp"
 #include "worldview/overview.hpp"
@@ -200,8 +201,9 @@ private:
     // Open sea beyond the grid, deep and fading into haze with the distance from its edge.
     bool drawBeyond(TilePos p, const Xform& x, float now);
     bool drawElem(const Elem& e, const Xform& x, float now);
+    // `visible`: the order's positions drawn this frame (empty: look at all of them).
     bool drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
-                     Target& onto);
+                     Target& onto, std::span<const std::uint32_t> visible = {});
     void buildGround(CellKey key, int slot, double now);
     // Impostors: their blocks are gathered on the worker, then drawn a few per frame.
     void requestImpostor(CellKey key, int slot);
@@ -234,6 +236,7 @@ private:
     std::unique_ptr<PageAtlas> pages_;
     std::unique_ptr<WorldSprites> sprites_;
     std::unique_ptr<Overview> overview_;
+    std::unique_ptr<CoverMap> cover_; // what hides a ground point at the coarser levels
     Hole hole_;
     const Atlas& homeAtlas_;
     CellCache cells_;
