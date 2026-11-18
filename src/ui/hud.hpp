@@ -212,6 +212,10 @@ public:
     // Window area the interface leaves free (below the title, above the docks and hint line), as
     // of the last update.
     [[nodiscard]] Box safeArea() const { return safe_; }
+    [[nodiscard]] Box titleBox() const { return titleBox_; }
+    [[nodiscard]] Box cardBox() const { return cardBox_; } // a landmark's or figure's card
+    // Where the name beside the pointer is drawn (clear of the title card and the docks).
+    [[nodiscard]] Box worldTipBox(const Font& f, std::string_view tip) const;
     // The top of whatever sits at the bottom now (docks, an open drawer, the hint line): the
     // tour's coach card stands just above it.
     [[nodiscard]] float bottomPanelsTop() const;
@@ -365,8 +369,11 @@ private:
     bool reduceMotion_ = false;
     float flash_ = 0;
     std::string clockLabel_;
-    std::string titleCut_;       // a long world name, cut short
-    std::string_view titleName_; // the name as the title card shows it
+    std::string titleCut_;              // a long world name, cut short
+    std::string cardTitleCut_;          // a long card title, cut short
+    std::string_view cardTitle_;        // the card's title as drawn
+    int cardLines_ = theme::kCardLines; // the card text's lines, as the window has room for
+    std::string_view titleName_;        // the name as the title card shows it
     std::string hintText_;
     std::string lockLabel_; // "+N" and its tooltip for the open tab's lock tile
     std::string lockTip_;

@@ -58,6 +58,8 @@ void App::resetWorld() {
     rimTerrain_.clear();
     cornerToasts_.clear(); // the last world's news is not this one's
     follow_.reset();
+    travel_ = {}; // a journey under way in the last world does not land in this one
+    travelFadeIn_ = -1;
     progress_ = Progress(cat_);
     progression_ = Progression(cat_);
     evalRevision_ = ~0ULL;
@@ -134,6 +136,14 @@ void App::startPlay() {
         speak(cat_.resident.context("greet"), SpeechWeight::Important))
         actors_.wave();
     if (!profile_.onboarded && frontDoor() && tourStep_ == kTourOff) startTour();
+    tellMuted();
+}
+
+void App::tellMuted() {
+    // A profile left muted is silent with no clue why (the owner pressed M, which opens the
+    // map): once a session, say how the sound comes back.
+    if (!muted_ || std::exchange(mutedTold_, true)) return;
+    hud_.toast(std::string(strings::kToastMuted));
 }
 
 void App::leaveWorld() {

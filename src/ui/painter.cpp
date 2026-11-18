@@ -281,6 +281,13 @@ void dropLastCharacter(std::string_view& s) {
     if (!s.empty()) s.remove_suffix(1);
 }
 
+bool namedAlready(std::string_view name, std::string_view title, std::string_view epithet) {
+    std::string_view base = name.substr(0, std::min(name.find(','), name.find(" (")));
+    while (base.ends_with(' ')) base.remove_suffix(1);
+    if (base.empty()) return true;
+    return title.contains(base) || epithet.contains(base);
+}
+
 std::string_view elide(const Font& font, Face face, std::string_view s, float width,
                        std::string& out) {
     if (font.measure(face, s) <= width) return s;

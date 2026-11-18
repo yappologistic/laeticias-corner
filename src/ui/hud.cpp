@@ -535,12 +535,19 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         const float pad = theme::kPanelPad * s;
         const float w = std::min(theme::kPlaceCardW * s, screen.x - 2 * margin);
         const float textW = w - 2 * pad;
-        const float lines =
-            static_cast<float>(wrapLines(font, Face::Body, m.cardText, textW, theme::kCardLines));
-        float h =
-            2 * pad + font.lineHeight(Face::Title) + lines * font.lineHeight(Face::Body) + gap;
+        cardTitle_ =
+            elide(font, Face::Title, m.cardTitle, textW - theme::kCloseSize * s, cardTitleCut_);
+        float h = 2 * pad + font.lineHeight(Face::Title) + gap;
         if (!m.cardNative.empty()) h += font.lineHeight(Face::Body);
         if (!m.cardEpithet.empty()) h += font.lineHeight(Face::Body);
+        // A long text takes the height there is above the docks (Q5-E-12: it was cut at nine
+        // lines, so the endings of the longest cards never showed).
+        const float room = bottomTop_ - gap - margin - h;
+        cardLines_ = std::max(theme::kCardLines,
+                              static_cast<int>(room / std::max(1.0f, font.lineHeight(Face::Body))));
+        const float lines =
+            static_cast<float>(wrapLines(font, Face::Body, m.cardText, textW, cardLines_));
+        h += lines * font.lineHeight(Face::Body);
         const float x = screen.x - margin - w;
         const float y = std::max(margin, (bottomTop_ - gap - h) * 0.5f);
         cardBox_ = {x + (1.0f - smooth(cardT_)) * slideBy(s), y, w, h};
@@ -1619,7 +1626,7 @@ void Hud::drawCard(Painter& p, const HudModel& m) const {
     p.glass(b, theme::kPanelRadius * s, a, theme::kGlass);
     p.endGlass();
     float y = b.y + pad;
-    p.text(Face::Title, m.cardTitle, b.x + pad, y + f.ascent(Face::Title),
+    p.text(Face::Title, cardTitle_, b.x + pad, y + f.ascent(Face::Title),
            withAlpha(theme::kInk, a));
     y += f.lineHeight(Face::Title);
     for (const std::string_view line : {m.cardNative, m.cardEpithet}) {
@@ -1629,7 +1636,7 @@ void Hud::drawCard(Painter& p, const HudModel& m) const {
         y += f.lineHeight(Face::Body);
     }
     y += theme::kGap * s;
-    p.wrapped(Face::Body, m.cardText, b.x + pad, y, b.w - 2 * pad, theme::kCardLines,
+    p.wrapped(Face::Body, m.cardText, b.x + pad, y, b.w - 2 * pad, cardLines_,
               withAlpha(theme::kInk, a));
     for (const Widget& w : widgets_)
         if (w.id == kCardClose) drawButton(p, w, a);
@@ -1796,22 +1803,33 @@ void Hud::drawCalendar(Painter& p, const HudModel& m) const {
     p.endLayer();
 }
 
-void Hud::drawWorldTip(Painter& p, const HudModel& m) const {
-    const float a = smooth(worldTipT_);
-    if (a <= 0 || m.worldTip.empty()) return;
+Box Hud::worldTipBox(const Font& f, std::string_view tip) const {
     const float s = scale_;
-    const Font& f = p.font();
     const float pad = theme::kTipPad * s;
-    const float bw = f.measure(Face::Body, m.worldTip) + 2 * pad;
+    const float bw = f.measure(Face::Body, tip) + 2 * pad;
     const float bh = theme::kTipH * s;
     const float x = std::clamp(pointer_.x + theme::kWorldTipOffset * s, theme::kMargin * s * 0.5f,
                                screen_.x - bw - theme::kMargin * s * 0.5f);
     float y = pointer_.y + theme::kWorldTipOffset * s;
     if (y + bh > screen_.y - theme::kMargin * s) y = pointer_.y - bh - theme::kWorldTipOffset * s;
-    const Box b{x, y, bw, bh};
-    p.glass(b, theme::kTipRadius * s, a, theme::kGlassTip);
+    // Never under the title card or a dock (Q5-E-14): clear below the title, above the docks.
+    const auto over = [&](const Box& q) {
+        return x < q.x + q.w && q.x < x + bw && y < q.y + q.h && q.y < y + bh;
+    };
+    if (titleBox_.w > 0 && over(titleBox_)) y = titleBox_.y + titleBox_.h + theme::kGap * s;
+    for (const Panel& q : panels_)
+        if (over(q.box)) y = q.box.y - bh - theme::kGap * s;
+    return {x, y, bw, bh};
+}
+
+void Hud::drawWorldTip(Painter& p, const HudModel& m) const {
+    const float a = smooth(worldTipT_);
+    if (a <= 0 || m.worldTip.empty()) return;
+    const Font& f = p.font();
+    const Box b = worldTipBox(f, m.worldTip);
+    p.glass(b, theme::kTipRadius * scale_, a, theme::kGlassTip);
     p.endGlass();
-    p.text(Face::Body, m.worldTip, b.x + pad,
+    p.text(Face::Body, m.worldTip, b.x + theme::kTipPad * scale_,
            b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(theme::kInk, a));
 }
 

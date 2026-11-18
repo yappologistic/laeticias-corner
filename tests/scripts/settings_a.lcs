@@ -1,0 +1,45 @@
+# Settings survive a restart (one of two, settings_b reads them back): a first launch, a world,
+# the tour skipped, then every setting changed through the pause menu, the sound muted last.
+wait 20
+expect page title
+click ui:menu:continue
+wait 8
+expect page newworld
+type Settle
+click ui:menu:create
+wait 8
+expect page none
+click ui:menu:skip_tour
+wait 4
+expect tour 0
+key escape
+wait 8
+expect page pause
+click ui:menu:pause_settings
+wait 8
+expect page settings
+click ui:menu:music
+click ui:menu:effects
+click ui:menu:ambience
+click ui:menu:reduce_motion
+click ui:menu:grid
+click ui:menu:vsync
+click ui:menu:ui_scale
+click ui:menu:mute
+wait 4
+shot shots/settings_changed.png
+expect volume music 50
+expect volume effects 50
+expect volume ambience 50
+expect reduce_motion yes
+expect grid yes
+expect vsync no
+expect ui_scale 1
+expect muted yes
+click ui:menu:done
+wait 6
+expect page pause
+click ui:menu:resume
+wait 6
+expect page none
+quit

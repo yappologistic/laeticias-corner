@@ -858,6 +858,77 @@ TEST_CASE("the toast and the hint line stop the pointer; small windows keep dock
     }
 }
 
+TEST_CASE("the name beside the pointer stays clear of the title card and the docks (Q5-E-14)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Actors vis(c, 1);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Progress progress(c);
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.progress = &progress;
+    m.worldTip = "Basilica Aemilia";
+    Hud hud;
+    const Vec2 screen{1280, 800};
+    UiInput in;
+    in.inside = true;
+    const auto clear = [&](float x, float y) {
+        in.x = x;
+        in.y = y;
+        hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+        const Box tip = hud.worldTipBox(ui.font, m.worldTip);
+        CHECK_FALSE(overlap(tip, hud.titleBox()));
+        for (const char* name : {"build", "journal", "zoom_in", "clock"}) {
+            const auto at = hud.widgetCentre(name, m);
+            REQUIRE(at);
+            CHECK_FALSE(overlap(tip, {at->x - 1, at->y - 1, 2, 2}));
+        }
+        CHECK(tip.y >= 0);
+        CHECK(tip.y + tip.h <= screen.y);
+    };
+    clear(0, 0); // where a scripted pointer rests: the tip used to cover the title
+    const Box title = hud.titleBox();
+    clear(title.x + title.w + 2, title.y + 4);
+    clear(640, 790);
+    clear(1270, 790);
+}
+
+TEST_CASE("a long card shows its whole text above the docks; a long title is cut short (Q5-E-12)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Actors vis(c, 1);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Progress progress(c);
+    std::string text;
+    for (int i = 0; i < 14; ++i)
+        text += "Nowruz: the king receives the gifts of every land on the terrace at Pārsa. ";
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.progress = &progress;
+    m.cardTitle = "A title far too long for any card the world would ever open at all";
+    m.cardText = text;
+    m.cardEpithet = "The new year";
+    Hud hud;
+    const Vec2 screen{1280, 800};
+    UiInput in;
+    in.inside = true;
+    in.x = in.y = -100;
+    for (int i = 0; i < 60; ++i) hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    const Box card = hud.cardBox();
+    REQUIRE(card.w > 0);
+    const float textW = card.w - 2 * theme::kPanelPad;
+    const int lines = wrapLines(ui.font, Face::Body, text, textW, 100);
+    REQUIRE(lines > theme::kCardLines);
+    CHECK(card.h >= static_cast<float>(lines) * ui.font.lineHeight(Face::Body));
+    CHECK(card.y >= 0);
+    // ... and clear of the docks.
+    const auto build = hud.widgetCentre("build", m);
+    REQUIRE(build);
+    CHECK(card.y + card.h < build->y);
+}
+
 TEST_CASE("sketchbook widgets have ids of their own: many places, no nook, a wish's Not now") {
     UiFixture ui;
     const Catalog& c = test::catalog();
@@ -901,6 +972,14 @@ TEST_CASE("sketchbook widgets have ids of their own: many places, no nook, a wis
         acts, [](const HudAction& a) { return a.kind == HudAction::Kind::Snooze; });
     REQUIRE(snooze != acts.end());
     CHECK(snooze->arg == 5);
+}
+
+TEST_CASE("a figure's own name is shown only when the card does not already say it (Q5-E-13)") {
+    CHECK(namedAlready("Kūruš (a memory)", "Kūruš", "Cyrus, founder (a memory)"));
+    CHECK(namedAlready("Hermon, stonecutter", "Hermon", "Stonecutter from Ionia"));
+    CHECK(namedAlready("Aspasia", "Ἀσπασία", "Aspasia of Miletus"));
+    CHECK_FALSE(namedAlready("Hadrianus", "Hadrian", "Emperor"));
+    CHECK_FALSE(namedAlready("Xšayāršā", "Xerxes", "King of kings"));
 }
 
 TEST_CASE("cutting text drops whole characters, never half of one (L-017)") {
@@ -1028,6 +1107,49 @@ TEST_CASE("text faces carry the minus sign and kerning") {
     CHECK(ui.font.measure(Face::Body, "look") > ui.font.measure(Face::Body, "loo"));
 }
 
+TEST_CASE("a scale the glyphs cannot be built at keeps the last atlas (L-014)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const float word = ui.font.measure(Face::Body, "Laeticia");
+    SDL_Texture* const before = ui.font.texture();
+    // At this size the glyphs fit no texture: the game used to quit on the spot, unsaved.
+    CHECK(ui.font.build(ui.renderer.get(), 60.0f));
+    CHECK(ui.font.texture() == before);
+    CHECK(ui.font.scale() == doctest::Approx(1.0f));
+    CHECK(ui.font.measure(Face::Body, "Laeticia") == doctest::Approx(word));
+    // Asked again it is not retried every frame, and a good scale builds at once.
+    CHECK(ui.font.build(ui.renderer.get(), 60.0f));
+    REQUIRE(ui.font.build(ui.renderer.get(), 2.0f));
+    CHECK(ui.font.scale() == doctest::Approx(2.0f));
+    CHECK(ui.font.measure(Face::Body, "Laeticia") > word * 1.5f);
+}
+
+namespace {
+
+// A click is a jump between neighbouring samples far beyond the local motion of the signal.
+int clicksIn(const std::vector<float>& s) {
+    constexpr std::size_t kWindow = 512;
+    const std::size_t frames = s.size() / 2;
+    int clicks = 0;
+    for (int ch = 0; ch < 2; ++ch) {
+        std::vector<float> d(frames, 0);
+        for (std::size_t i = 1; i < frames; ++i)
+            d[i] = std::abs(s[i * 2 + static_cast<std::size_t>(ch)] -
+                            s[(i - 1) * 2 + static_cast<std::size_t>(ch)]);
+        double sum = 0;
+        for (std::size_t i = 0; i < std::min(frames, 2 * kWindow); ++i) sum += d[i] * d[i];
+        for (std::size_t i = kWindow; i + kWindow < frames; ++i) {
+            const double local = std::sqrt((sum - d[i] * d[i]) / (2.0 * kWindow - 1));
+            if (d[i] > 0.05f && d[i] > 8.0 * local + 0.01) ++clicks;
+            sum += static_cast<double>(d[i + kWindow]) * d[i + kWindow] -
+                   static_cast<double>(d[i - kWindow]) * d[i - kWindow];
+        }
+    }
+    return clicks;
+}
+
+} // namespace
+
 // Analyses the mix captured by the audio_capture run (path in LC_AUDIO_CAPTURE): a drag-paint,
 // a mute toggle and a day/night crossfade must neither clip nor click.
 TEST_CASE("capture: the mix has no clipping and no clicks") {
@@ -1055,23 +1177,44 @@ TEST_CASE("capture: the mix has no clipping and no clicks") {
         right += static_cast<double>((*s)[i + 1]) * (*s)[i + 1];
     }
     CHECK(std::abs(left - right) > 0.01 * (left + right));
-    // A click is a jump between neighbouring samples far beyond the local motion of the signal.
-    constexpr std::size_t kWindow = 512;
-    const std::size_t frames = s->size() / 2;
-    int clicks = 0;
-    for (int ch = 0; ch < 2; ++ch) {
-        std::vector<float> d(frames, 0);
-        for (std::size_t i = 1; i < frames; ++i)
-            d[i] = std::abs((*s)[i * 2 + static_cast<std::size_t>(ch)] -
-                            (*s)[(i - 1) * 2 + static_cast<std::size_t>(ch)]);
-        double sum = 0;
-        for (std::size_t i = 0; i < std::min(frames, 2 * kWindow); ++i) sum += d[i] * d[i];
-        for (std::size_t i = kWindow; i + kWindow < frames; ++i) {
-            const double local = std::sqrt((sum - d[i] * d[i]) / (2.0 * kWindow - 1));
-            if (d[i] > 0.05f && d[i] > 8.0 * local + 0.01) ++clicks;
-            sum += static_cast<double>(d[i + kWindow]) * d[i + kWindow] -
-                   static_cast<double>(d[i - kWindow]) * d[i - kWindow];
-        }
+    CHECK(clicksIn(*s) == 0);
+}
+
+// Analyses the mix of the world_year run (path in LC_AUDIO_YEAR): Rome's and Pārsa's seasons
+// and nights, the open sea and the snow, crossfaded as the year turns.
+TEST_CASE("capture: the year away from home is never silent, balanced, unclipped and smooth") {
+    const char* file = std::getenv("LC_AUDIO_YEAR");
+    if (file == nullptr) {
+        MESSAGE("LC_AUDIO_YEAR not set; run through ctest");
+        return;
     }
-    CHECK(clicks == 0);
+    const auto s = readWavFloat(file);
+    REQUIRE_MESSAGE(s.has_value(), s.error());
+    const auto second = static_cast<std::size_t>(kMixRate) * 2;
+    REQUIRE(s->size() > second * 60);
+    float peak = 0;
+    for (const float v : *s) peak = std::max(peak, std::abs(v));
+    CHECK(peak <= tuning::kLimiterCeiling + 1e-4f);
+    // Every second is heard (above -60 dBFS) and none is loud (under -10 dBFS); the beds sit in
+    // the middle of the field, not to one side (L-113: within 3 dB over the whole run).
+    double left = 0;
+    double right = 0;
+    int quiet = 0;
+    int loud = 0;
+    for (std::size_t at = 0; at + second <= s->size(); at += second) {
+        double e = 0;
+        for (std::size_t i = at; i + 1 < at + second; i += 2) {
+            left += static_cast<double>((*s)[i]) * (*s)[i];
+            right += static_cast<double>((*s)[i + 1]) * (*s)[i + 1];
+            e += static_cast<double>((*s)[i]) * (*s)[i] +
+                 static_cast<double>((*s)[i + 1]) * (*s)[i + 1];
+        }
+        const double db = 10.0 * std::log10(e / static_cast<double>(second) + 1e-20);
+        if (db < -60.0) ++quiet;
+        if (db > -10.0) ++loud;
+    }
+    CHECK(quiet == 0);
+    CHECK(loud == 0);
+    CHECK(std::abs(10.0 * std::log10(left / right)) < 3.0);
+    CHECK(clicksIn(*s) == 0);
 }

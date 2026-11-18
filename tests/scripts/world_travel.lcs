@@ -1,5 +1,6 @@
 # The map and fast travel: open the map, travel to each city and home again; the era caption
-# shows once per visit; a landmark's and a figure's card; the journal fills.
+# shows once per visit; a landmark's and a figure's card (closed by Esc, and by a journey); the
+# journal fills.
 expect away no
 expect region corner
 expect widget map yes
@@ -47,11 +48,12 @@ wait 20
 expect info Xšayāršā
 expect found parsa 1
 shot shots/world_card_figure.png
-key escape
+# A journey leaves the card behind (it used to stay open over the next place).
 key m
 wait 20
 click map:corner
 waitfor 70 travelling no
 expect region corner
 expect away no
+expect info no
 quit
