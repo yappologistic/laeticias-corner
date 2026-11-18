@@ -1594,6 +1594,7 @@ CityLife::Begin CityLife::beginStep(int i, std::uint32_t s, float& estimate) {
         }
         if (best < 0) return Begin::Failed;
         a.follow = best;
+        a.followGen = pool_[static_cast<std::size_t>(best)].gen;
         a.state = ActState::Follow;
         a.anim = kAnimMove;
         a.timer = st.dur1 > 0 ? range(a, st.dur0, st.dur1) : 1e9f;
@@ -2217,8 +2218,11 @@ void CityLife::think(int i, float dt) {
     }
     case ActState::Follow: {
         a.timer -= dt;
-        const bool lost = a.follow < 0 || (pool_[static_cast<std::size_t>(a.follow)].flags &
-                                           live_flag::kAlive) == 0;
+        // Lost when it is gone, or when its slot holds someone else now (L-115).
+        const bool lost =
+            a.follow < 0 ||
+            (pool_[static_cast<std::size_t>(a.follow)].flags & live_flag::kAlive) == 0 ||
+            pool_[static_cast<std::size_t>(a.follow)].gen != a.followGen;
         if (lost || a.timer <= 0) {
             a.follow = -1;
             endStep(i);

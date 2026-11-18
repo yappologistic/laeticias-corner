@@ -206,6 +206,7 @@ struct LiveActor {
     std::int32_t a = -1;             // puppets: chain run, token, running event
     std::int32_t b = -1;             // puppets: worker, instance, member
     std::uint16_t gen = 0;
+    std::uint16_t followGen = 0; // the followed actor's generation: a new occupant is a stranger
     std::uint16_t kind = 0;
     std::int16_t role = -1;
     std::int16_t district = -1; // life district in its region
