@@ -58,6 +58,8 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
         const auto [it, fresh] = source.emplace(id, file);
         return fresh;
     };
+    // Actors are their own namespace (see set_catalog.cpp): unique among actors in all sets.
+    std::unordered_map<std::string, std::string> actorSource;
     const std::string homeFile = "assets/catalog.json";
     const std::string& homeBase = home.terrain[static_cast<std::size_t>(home.baseTerrain)].id;
     for (const auto& t : home.terrain) {
@@ -141,9 +143,9 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
             c.items_.push_back(std::move(info));
         }
         for (const SetActor& a : sc.actors)
-            if (!claim(a.id, sc.file))
+            if (!actorSource.emplace(a.id, sc.file).second)
                 return std::unexpected("actor '" + a.id + "' is defined in both " +
-                                       source.at(a.id) + " and " + sc.file);
+                                       actorSource.at(a.id) + " and " + sc.file);
         for (const SetGoods& g : sc.goods)
             if (!claim(g.id, sc.file))
                 return std::unexpected("goods '" + g.id + "' are defined in both " +

@@ -29,7 +29,8 @@ Layout layoutOf(const std::string& s, const std::string& ctx) {
 Surface surfaceOf(const std::string& s, const std::string& ctx) {
     if (s == "land") return Surface::Land;
     if (s == "water") return Surface::Water;
-    if (s == "either") return Surface::Any;
+    // Set catalogs say "either"; the home schema's "any" is accepted too (world.t_reeds uses it).
+    if (s == "either" || s == "any") return Surface::Any;
     fail(ctx + ": on '" + s + "' is not land, water or either");
 }
 
@@ -177,7 +178,11 @@ std::expected<SetCatalog, std::string> parseSetCatalog(std::string_view text, st
         cat.file = f;
         cat.set = asString(field(doc, "set", f), f + ": set");
         if (cat.set != set) fail(f + ": set '" + cat.set + "' differs from '" + s + "'");
+        // Actors live in their own namespace: their sprites (figure/, walker/) and every reference
+        // to them (roles, figures, events) never meet item ids. rome.castor is both a temple and
+        // its apparition.
         std::unordered_set<std::string> ids;
+        std::unordered_set<std::string> actorIds;
         const auto each = [&](const char* key, auto&& parse) {
             if (!has(doc, key)) return;
             const json& list = asArray(doc.at(key), f + ": " + key);
@@ -194,7 +199,7 @@ std::expected<SetCatalog, std::string> parseSetCatalog(std::string_view text, st
         });
         each("actors", [&](const json& j, const std::string& c) {
             cat.actors.push_back(actor(j, c, s));
-            unique(ids, cat.actors.back().id, c);
+            unique(actorIds, cat.actors.back().id, c);
         });
         each("goods", [&](const json& j, const std::string& c) {
             cat.goods.push_back(goods(j, c, s));

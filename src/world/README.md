@@ -120,8 +120,9 @@ build/release/worldinfo digest             # same JSON as tests/world_tools/worl
 build/release/worldinfo --assets DIR ...   # another assets directory
 ```
 
-The digest fixture is regenerated after any change to `assets/world/` or the catalogs:
-`tools/worldgen/.venv/bin/python tests/world_tools/world_digest.py > tests/fixtures/world/digest.json`.
+The digest cross-check (`ctest -R world_digest`) runs worldgen's reader on today's data at test
+time and compares; it is skipped when `tools/worldgen/.venv` is absent. The invariant checks in
+`world_unit` always run.
 
 ## Wiring it into the engine (next round)
 
