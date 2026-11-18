@@ -184,8 +184,101 @@ def lanes(L: Layout, area: np.ndarray, seed: str, spacing: int = 7, paving: str 
         path = connect(L, (c, r), area, turn=turn, reach=reach)
         if path is None or len(path) < min_len:
             continue
+        if near_other_level(L, path[0], L.LV[path[0][1], path[0][0]]):
+            continue
         out.append(L.street(corners(path), width=1, paving=paving))
     return out
+
+
+def near_other_level(L: Layout, tile, lvl: int, d: int = 2) -> bool:
+    """Whether a street of another level passes within `d` tiles: the compiler joins a street
+    end to the nearest street within reach whatever its level, so a lane may not stop there."""
+    c, r = tile
+    h, w = L.T.shape
+    sub = (slice(max(r - d, 0), min(r + d + 1, h)), slice(max(c - d, 0), min(c + d + 1, w)))
+    return bool((L.STREET[sub] & (L.LV[sub] != lvl)).any())
+
+
+def drop_bad_spots(L: Layout) -> None:
+    """Kit whose door or slot spots (off its own footprint) fall outside the layer, on water, on
+    no ground, or on a landmark's closed tiles cannot be used: it goes."""
+    water = np.zeros(L.T.shape, dtype=bool)
+    for t, name in enumerate(L.terrains):
+        if L.cat.is_water(name):
+            water |= L.T == t
+    for p in L.items:
+        d = L.cat.items[p.id]
+        if p.removed or d.landmark or d.rise:
+            continue
+        own = set(p.tiles())
+        spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
+        if p.door:
+            spots.append(p.door)
+        for c, r in spots:
+            if (c, r) in own:
+                continue
+            loc = L._local(c, r)
+            bad = loc is None or L.T[loc] < 0 or water[loc] or L.IMP[loc]
+            if not bad and L.OCC[loc] >= 0:
+                o = L.items[L.OCC[loc]]
+                bad = L.cat.items[o.id].landmark and (c, r) not in L.walk_tiles(o)
+            if bad:
+                L.remove(p)
+                break
+
+
+def drop_unreached(L: Layout, reach: int = 22) -> None:
+    """Kit with any slot spot (off its footprint) that no street reaches within `reach` steps of
+    one level over open ground goes (V7 asks it of every spot, `clear_doors` of one)."""
+    from collections import deque
+    water = np.zeros(L.T.shape, dtype=bool)
+    for t, name in enumerate(L.terrains):
+        if L.cat.is_water(name):
+            water |= L.T == t
+    open_ = (L.T >= 0) & ~L.IMP & ~water & (L.OCC < 0)
+    for p in L.items:
+        if p.removed:
+            continue
+        d = L.cat.items[p.id]
+        tiles = L.walk_tiles(p) if d.landmark else (set(p.tiles()) if d.walkable or d.rise else ())
+        for c, r in tiles:
+            loc = L._local(c, r)
+            if loc is not None:
+                open_[loc] = True
+    h, w = L.T.shape
+    dist = np.full((h, w), 999, dtype=np.int32)
+    q = deque()
+    for j, i in np.argwhere(L.STREET & open_):
+        dist[j, i] = 0
+        q.append((j, i))
+    while q:
+        j, i = q.popleft()
+        if dist[j, i] >= reach:
+            continue
+        for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            a, b = j + dj, i + di
+            if 0 <= a < h and 0 <= b < w and open_[a, b] and dist[a, b] > dist[j, i] + 1 \
+                    and L.LV[a, b] == L.LV[j, i]:
+                dist[a, b] = dist[j, i] + 1
+                q.append((a, b))
+    for p in L.items:
+        d = L.cat.items[p.id]
+        if p.removed or d.landmark or d.rise:
+            continue
+        own = set(p.tiles())
+        spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
+        if p.door:
+            spots.append(p.door)
+        for c, r in spots:
+            if (c, r) in own:
+                near = [(c + a, r + b) for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                        if (c + a, r + b) not in own]
+            else:
+                near = [(c, r)]
+            locs = [L._local(*t) for t in near]
+            if not any(loc is not None and dist[loc] <= reach for loc in locs):
+                L.remove(p)
+                break
 
 
 def beside_street(L: Layout, area: np.ndarray, items: dict, density: float, seed: str) -> list:
