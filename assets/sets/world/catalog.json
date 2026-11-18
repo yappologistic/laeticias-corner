@@ -7,7 +7,7 @@
    "name": "Sand",
    "water": false,
    "base": true,
-   "variants": 4,
+   "variants": 8,
    "faces": [
     "world.coast",
     "world.earth"
@@ -23,7 +23,7 @@
    "name": "Dry steppe",
    "water": false,
    "base": true,
-   "variants": 4,
+   "variants": 8,
    "faces": [
     "world.earth",
     "world.rock",
@@ -40,7 +40,7 @@
    "name": "River silt",
    "water": false,
    "base": true,
-   "variants": 4,
+   "variants": 8,
    "faces": [
     "world.earth",
     "world.coast"
