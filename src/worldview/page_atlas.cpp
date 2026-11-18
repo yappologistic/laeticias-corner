@@ -284,9 +284,19 @@ void PageAtlas::upload(Page& p, int rows) {
 void PageAtlas::update(double now) {
     now_ = now;
     uploads_ = 0;
+    // At most two pages between the disk and their slot (one uploading, one decoding): each
+    // decoded page holds 64 MiB until it is uploaded.
+    int inFlight = 0;
+    for (const Page& p : pages_)
+        inFlight +=
+            p.state == State::Queued || p.state == State::Decoded || p.state == State::Uploading
+                ? 1
+                : 0;
     for (std::size_t i = 0; i < pages_.size(); ++i) {
         Page& p = pages_[i];
         if (p.state != State::Unloaded || !p.wanted || p.w <= 0) continue;
+        if (async_ && inFlight >= tuning::kPagesInFlight) break;
+        ++inFlight;
         if (!async_) {
             p.pixels = decode(p, &p.shadowPeak);
             if (!p.pixels) continue;

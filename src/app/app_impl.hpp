@@ -354,6 +354,7 @@ private:
     int runBench();
     // The process's stated memory ceiling at 1080p (more with the world).
     [[nodiscard]] double memoryCeiling() const;
+    [[nodiscard]] double soakCeiling() const;
     // The bench's world cases (cities, a pan, fast travel); false when one is over budget.
     bool benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
                     const std::function<void()>& warm, int frames);

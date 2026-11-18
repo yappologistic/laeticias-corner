@@ -9,7 +9,7 @@ import math
 import numpy as np
 
 import materials as M
-from arch import (ashlar_tone, awning, carve, ellipsoid, face_box, fill, halo, merlons, mudbrick_wall,
+from arch import (ashlar_tone, awning, carve, ellipsoid, face_box, fill, flight, halo, merlons, mudbrick_wall,
                   plaster_tone, revolve, rod, slab, stair, stone_frame, tent)
 from setbuild import Item
 from voxel import Model, hash01
@@ -623,11 +623,14 @@ def fort_tower(v, frame, frames, k):
 
 
 def stair_relief(v, frame, frames, k):
-    """A short stone flight two tiles wide rising one level over one tile. Like every kit
-    stair it climbs away from its front: toward -y at r0 (the geometry's `climb`)."""
+    """A short stone flight two tiles wide rising one level over one tile: four deep steps with
+    lit nosings and shaded risers between ashlar cheek walls crowned with stepped merlons (QA4
+    V-A-005). Like every kit stair it climbs away from its front: toward -y at r0 (the
+    geometry's `climb`)."""
     m = Model.empty(-1, 33, -1, 17, 0, 16, k=k)
-    from sets.parsa.landmarks import relief_stair
-    relief_stair(m, 2, 1, 8.0, "y", "hi", [(0, 1)], seed=13)
+    flight(m, 0.5, 31.5, 0.0, 16.0, 8.0, 4, "limestone", tone=M.ashlar(2.0, 6.0, 13, spread=0.3), cheek=2.0)
+    for x0, x1 in ((0.5, 2.5), (29.5, 31.5)):
+        merlons(m, x0, x1, 0.0, 6.0, 9.4, 2.4, "limestone", pitch=3.0, sides=("+x", "-x"), thick=2.0)
     return m
 
 
@@ -684,15 +687,16 @@ def p_sluice(v, frame, frames, k, open_=False):
 ITEMS = {f"parsa.{name}": Item(fn, slots=slots, emitters=em) for name, fn, slots, em in (
     ("p_house", p_house, {"door": [{"t": [0, 3], "face": "+y"}]}, {}),
     ("p_house_small", p_house_small, {"door": [{"t": [0, 2], "face": "+y"}]}, {}),
-    ("p_granary", p_granary, {"door": [{"t": [0, 2], "face": "+y"}]}, {}),
+    ("p_granary", p_granary, {"door": [{"t": [0, 2], "face": "+y"}],
+                                 "queue": [{"t": [1, 2], "face": "-y"}, {"t": [1, 3], "face": "-y"}, {"t": [0, 3], "face": "-y"}]}, {}),
     ("p_workshop", p_workshop, {"work": [{"t": [0, 1], "face": "-y"}, {"t": [1, 1], "face": "-y"},
                                           {"t": [2, 1], "face": "-y"}]}, {}),
-    ("p_kiln", p_kiln, {}, {"smoke": (8.0, 8.0, 20.0)}),
+    ("p_kiln", p_kiln, {"load": [{"t": [0, 1], "face": "-y"}]}, {"smoke": (8.0, 8.0, 20.0)}),
     ("p_brickfield", p_brickfield, {"mould": [{"t": [2, 0], "face": "-x"}, {"t": [2, 1], "face": "-x"}]}, {}),
-    ("p_oven", p_oven, {}, {"smoke": (8.0, 8.0, 11.0)}),
+    ("p_oven", p_oven, {"bake": [{"t": [0, 1], "face": "-y"}]}, {"smoke": (8.0, 8.0, 11.0)}),
     ("p_well", p_well, {"draw": [{"t": [1, 0], "face": "-x"}]}, {}),
     ("p_channel", p_channel, {}, {}),
-    ("p_basin", p_basin, {}, {}),
+    ("p_basin", p_basin, {"fill": [{"t": [0, 1], "face": "-y"}]}, {}),
     ("p_qanat_shaft", p_qanat_shaft, {}, {}),
     ("p_fire_altar", p_fire_altar, {"tend": [{"t": [1, 0], "face": "-x"}]}, {"fire": (8.0, 8.0, 18.0)}),
     ("p_incense", p_incense, {}, {"smoke": (8.0, 8.0, 16.5)}),
@@ -700,18 +704,18 @@ ITEMS = {f"parsa.{name}": Item(fn, slots=slots, emitters=em) for name, fn, slots
     ("p_torch", p_torch, {}, {"flame": (8.0, 5.4, 16.0)}),
     ("p_parasol", p_parasol, {}, {}),
     ("p_throne", p_throne, {"seat": [{"t": [0, 0], "face": "+x", "z": 18}]}, {}),
-    ("p_crane", p_crane, {}, {}),
+    ("p_crane", p_crane, {"rope": [{"t": [2, 0], "face": "-x"}]}, {}),
     ("p_scaffold", p_scaffold, {}, {}),
-    ("p_drum_stack", p_drum_stack, {}, {}),
+    ("p_drum_stack", p_drum_stack, {"carve": [{"t": [0, 1], "face": "-y"}]}, {}),
     ("p_jars", p_jars, {}, {}),
     ("p_sacks", p_sacks, {}, {}),
     ("p_scribe_desk", p_scribe_desk, {"write": [{"t": [0, 1], "face": "-y"}]}, {}),
-    ("p_scales", p_scales, {}, {}),
+    ("p_scales", p_scales, {"weigh": [{"t": [0, 1], "face": "-y"}]}, {}),
     ("p_tent", p_tent, {"door": [{"t": [2, 0], "face": "+x"}]}, {}),
     ("p_loom", p_loom, {"weave": [{"t": [1, 0], "face": "-x"}]}, {}),
-    ("p_horse_line", p_horse_line, {}, {}),
-    ("p_trough", p_trough, {}, {}),
-    ("p_threshing", p_threshing, {}, {}),
+    ("p_horse_line", p_horse_line, {"groom": [{"t": [0, 1], "face": "-y"}, {"t": [2, 1], "face": "-y"}]}, {}),
+    ("p_trough", p_trough, {"groom": [{"t": [0, 1], "face": "-y"}]}, {}),
+    ("p_threshing", p_threshing, {"thresh": [{"t": [1, 3], "face": "-y"}, {"t": [3, 1], "face": "-x"}]}, {}),
     ("p_dovecote", p_dovecote, {}, {}),
     ("p_carpet", p_carpet, {}, {}),
     ("p_archery_butt", p_archery_butt, {}, {}),
@@ -722,12 +726,15 @@ ITEMS = {f"parsa.{name}": Item(fn, slots=slots, emitters=em) for name, fn, slots
     ("stair_relief", stair_relief, {}, {}),
     ("drain_outfall", drain_outfall, {}, {}),
     ("p_banner", p_banner, {}, {}),
-    ("p_sluice", p_sluice, {}, {}),
+    ("p_sluice", p_sluice, {"open": [{"t": [1, 0], "face": "-x"}]}, {}),
 )}
 
 STATES = {
     ("parsa.drain_outfall", "rain"): lambda v, f, n, k: drain_outfall(v, f, n, k, rain=True),
     ("parsa.p_sluice", "open"): lambda v, f, n, k: p_sluice(v, f, n, k, open_=True),
+    # 'lit' gates the glow layer (living-world §2.5): the look is the plain one.
+    ("parsa.p_torch", "lit"): p_torch,
+    ("parsa.p_brazier", "lit"): p_brazier,
 }
 
 FRAMES = {"parsa.p_well": 2, "parsa.p_crane": 2, "parsa.p_channel": 4, "parsa.p_basin": 4, "parsa.p_banner": 6}

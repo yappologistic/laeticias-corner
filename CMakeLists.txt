@@ -98,6 +98,26 @@ add_library(lc_world STATIC
 target_link_libraries(lc_world PUBLIC lc_core)
 lc_project_target(lc_world)
 
+# City life (src/life/): the regions' people, chains, events, figures and tokens simulated over
+# the world. Pure logic: no SDL.
+add_library(lc_life STATIC
+  src/life/chains.cpp
+  src/life/city.cpp
+  src/life/data.cpp
+  src/life/paths.cpp
+  src/life/report.cpp
+  src/life/session.cpp
+)
+target_link_libraries(lc_life PUBLIC lc_world)
+lc_project_target(lc_life)
+
+# Debugging aid for city life: summary, problems, chains (the worldgen cross-check), dumps, the
+# city bench and the roaming soak.
+add_executable(lifeinfo src/life/lifeinfo_main.cpp)
+target_link_libraries(lifeinfo PRIVATE lc_life)
+target_compile_definitions(lifeinfo PRIVATE LC_LIFEINFO_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+lc_project_target(lifeinfo)
+
 # Debugging aid for world builders and QA: summary, validation, region and tile dumps, digest.
 add_executable(worldinfo src/world/worldinfo_main.cpp)
 target_link_libraries(worldinfo PRIVATE lc_world)
@@ -127,12 +147,36 @@ if(LC_TESTS)
     -DSCRIPT=${CMAKE_SOURCE_DIR}/tests/world_tools/world_digest.py
     -DOUT=${CMAKE_CURRENT_BINARY_DIR}/world_digest.json
     -DTESTS=$<TARGET_FILE:lc_world_tests>
+    -DENV=LC_WORLD_DIGEST
+    "-DCASE=real world: the digest*"
     -P ${CMAKE_SOURCE_DIR}/tests/world_tools/digest_check.cmake)
   set_tests_properties(world_digest PROPERTIES SKIP_RETURN_CODE 77)
   # Load time, memory and query throughput on the committed world; budgets assert in optimised
   # builds only (sanitizer builds report the figures).
   add_test(NAME world_perf COMMAND lc_world_tests --test-case=perf:*)
   add_test(NAME worldinfo_summary COMMAND worldinfo summary)
+
+  add_executable(lc_life_tests tests/world_main.cpp tests/world_support.cpp tests/life_tests.cpp)
+  target_link_libraries(lc_life_tests PRIVATE lc_life lc_doctest)
+  target_compile_definitions(lc_life_tests PRIVATE
+    LC_WORLD_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
+    LC_WORLD_FIXTURES_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures/world")
+  lc_project_target(lc_life_tests)
+  target_compile_options(lc_life_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
+  add_test(NAME life_unit COMMAND lc_life_tests "--test-case-exclude=city:*,*lifesim*")
+  add_test(NAME life_city COMMAND lc_life_tests "--test-case=city:*")
+  # The chains against tools/worldgen's own simulator, made at test time from today's data
+  # (skipped without worldgen's virtualenv).
+  add_test(NAME life_chains COMMAND ${CMAKE_COMMAND}
+    -DPY=${CMAKE_SOURCE_DIR}/tools/worldgen/.venv/bin/python
+    -DSCRIPT=${CMAKE_SOURCE_DIR}/tests/world_tools/life_chains.py
+    -DOUT=${CMAKE_CURRENT_BINARY_DIR}/life_chains.json
+    -DTESTS=$<TARGET_FILE:lc_life_tests>
+    -DENV=LC_LIFE_CHAINS
+    "-DCASE=*lifesim*"
+    -P ${CMAKE_SOURCE_DIR}/tests/world_tools/digest_check.cmake)
+  set_tests_properties(life_chains PROPERTIES SKIP_RETURN_CODE 77)
+  add_test(NAME lifeinfo_summary COMMAND lifeinfo summary)
 endif()
 
 # --- World renderer and viewer (src/worldview/) --------------------------------------------------

@@ -153,6 +153,7 @@ std::expected<RegionFile, std::string> parseRegionFile(std::string_view text, st
                 d.id = asString(field(ds[i], "id", dc), dc + ": id");
                 if (d.id.empty() || !seen.insert(d.id).second)
                     fail(dc + ": empty or duplicated district id '" + d.id + "'");
+                if (has(ds[i], "area")) d.area = asString(ds[i].at("area"), dc + ": area");
                 d.populations = has(ds[i], "populations")
                                     ? asArray(ds[i].at("populations"), dc + ": populations")
                                     : json::array();

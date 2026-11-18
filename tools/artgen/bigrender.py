@@ -133,7 +133,7 @@ def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRe
         mat[rr, cc], level[rr, cc], depth[rr, cc] = m[near], lv[near], d[near]
         vx[rr, cc], vy[rr, cc] = x[near], y[near]
     sh = Shaded(c0, r0, mat, level, depth, mat > 0, depth, vx, vy)
-    rgba, glow, ox, oy = finish(sh, k, halos)
+    rgba, glow, ox, oy = finish(sh, k, halos, cull=True)
     base = Sprite(rgba, ox, oy)
     glow_sprite = None
     if want_glow:

@@ -3,6 +3,7 @@
 // (average, 95th percentile, worst) at the working zoom and the overview, plus memory.
 
 #include "app/app_impl.hpp"
+#include "worldview/tuning.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -333,6 +334,12 @@ double App::memoryCeiling() const {
     return worldView_ ? tuning::kBenchWorldMemoryMiB : tuning::kBenchMemoryMiB;
 }
 
+double App::soakCeiling() const {
+    // On the software renderer (the soak's) the world's textures are process memory too.
+    const bool software = std::string_view(SDL_GetRendererName(renderer_.get())) == "software";
+    return memoryCeiling() + (worldView_ && software ? worldview::tuning::kTextureBudgetMiB : 0.0);
+}
+
 int App::runSoak() {
     // A busy corner left running: every visitor kind welcome, the clock and calendar going,
     // natural weather, events by their schedules. BenchFrames are drawn now and then so the scene's
@@ -391,7 +398,7 @@ int App::runSoak() {
                 static_cast<double>(f.worst));
     std::printf("soak: rss %.1f MiB after a quarter, %.1f MiB at the end, peak %.1f (allowed "
                 "growth %.1f MiB, ceiling %.0f MiB)\n",
-                warm, end, peak, tuning::kSoakGrowthMiB, memoryCeiling());
+                warm, end, peak, tuning::kSoakGrowthMiB, soakCeiling());
     bool over = false;
     if (end - warm > tuning::kSoakGrowthMiB) {
         std::printf("soak: memory grew\n");
@@ -399,7 +406,7 @@ int App::runSoak() {
     }
     // The ceiling and the simulation budget are held where budgets apply (--budget-ms): a
     // sanitizer build's shadow memory and pace are not the game's.
-    if (opts_.budgetMs > 0 && peak > memoryCeiling()) {
+    if (opts_.budgetMs > 0 && peak > soakCeiling()) {
         std::printf("soak: memory over its ceiling\n");
         over = true;
     }

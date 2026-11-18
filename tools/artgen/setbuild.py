@@ -58,7 +58,7 @@ class Landmark:
 class Item:
     """A kit item: `build(variant, frame, frames, k) -> Model` in canonical orientation.
     `walk`: footprint tiles at r0 that walkers may enter (a fold's pen, a gate's passage).
-    `slots` may be a function of the look (`m<mask>` of a connect piece) giving its spots."""
+    `slots` and `walk` may be functions of the look (`m<mask>` of a connect piece)."""
     build: object
     slots: dict = field(default_factory=dict)
     emitters: dict = field(default_factory=dict)  # name -> (x, y, z) design units at r0
@@ -229,7 +229,7 @@ def _item_job(args):
         model = item.build(0, frame, frames, k).rotated(n, fw, fh)
     else:
         model = item.build(n, frame, frames, k)
-    out = render(model, "glow" in layers)
+    out = render(model, "glow" in layers, cull=True)
     sprites = {"base": out.base, "shadow": out.shadow, "glow": out.glow}
     res = {f"item/{item_id}/{layer}/{variant}/f{frame}": sprites[layer] for layer in layers}
     zmax = int(np.nonzero((model.mat > 0).any(axis=(0, 1)))[0].max() + 1 + model.z0) if model.mat.any() else 0
@@ -442,8 +442,9 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                                         for s in spots] for sid, spots in slots.items()}
                 if item and item.emitters:
                     g["emitters"] = {name: _emitter(pt, n, fw, fh, k) for name, pt in item.emitters.items()}
-                if item and item.walk:
-                    g["walk"] = sorted(_rot_tile(t, n, fw, fh) for t in item.walk)
+                walk = (item.walk(v) if callable(item.walk) else item.walk) if item else []
+                if walk:
+                    g["walk"] = sorted(_rot_tile(t, n, fw, fh) for t in walk)
                 if it.get("rise"):      # kit stairs climb away from their front: r0 toward -y
                     g["climb"] = _rot_face("-y", n)
                 entry[v] = g
@@ -502,7 +503,7 @@ class Skyline:
         self.sky = merged
 
 
-def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=()):
+def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=(), order="height"):
     """Pack keys group by group into pages of at most page x page (skyline, tallest first within
     a group); a group whose index is in `fresh` starts on a new page. Earlier pages stay open,
     so small sprites of a later group fill gaps left on them. Returns [(atlas RGBA, manifest)]."""
@@ -514,8 +515,11 @@ def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=()):
         if gi in fresh and pages[-1][1]:
             first_open = len(pages)
             pages.append((Skyline(page - pad, page - pad), {}))
-        order = sorted(keys, key=lambda k_: (-trimmed[k_].rgba.shape[0], -trimmed[k_].rgba.shape[1], k_))
-        for key in order:
+        if order == "maxside":         # longest side first: denser when the set is nearly full
+            seq = sorted(keys, key=lambda k_: (-max(trimmed[k_].rgba.shape[:2]), k_))
+        else:
+            seq = sorted(keys, key=lambda k_: (-trimmed[k_].rgba.shape[0], -trimmed[k_].rgba.shape[1], k_))
+        for key in seq:
             h, w = trimmed[key].rgba.shape[:2]
             if w + 2 * pad > page or h + 2 * pad > page:
                 raise SystemExit(f"setbuild: {key} ({w}x{h}) does not fit a {page} page")
@@ -546,17 +550,27 @@ def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=()):
 
 
 def page_groups(keys, cat, mod):
+    """Packing groups: kit and actors, each landmark district, then shadows and glows. Districts
+    a set lists in `LATE_DISTRICTS` (landmarks added after its pages were laid out) follow as
+    one last group with their own shadows and glows, on pages of their own, so the earlier
+    pages keep their layout."""
     lm_ids = {it["id"]: mod.LANDMARKS[it["id"]].district for it in cat["items"] if it["id"] in mod.LANDMARKS}
-    small, layer, landmark = [], [], defaultdict(list)
+    late = getattr(mod, "LATE_DISTRICTS", frozenset())
+    small, layer, landmark, later = [], [], defaultdict(list), []
     for key in keys:
         parts = key.split("/")
-        if "/shadow/" in key or "/glow/" in key:
+        if parts[0] == "item" and lm_ids.get(parts[1]) in late:
+            later.append(key)
+        elif "/shadow/" in key or "/glow/" in key:
             layer.append(key)
         elif parts[0] == "item" and parts[1] in lm_ids:
             landmark[lm_ids[parts[1]]].append(key)
         else:
             small.append(key)
-    return [small, *[landmark[d] for d in sorted(landmark)], layer]
+    groups = [small, *[landmark[d] for d in sorted(landmark)], layer]
+    if getattr(mod, "ONE_GROUP", False):     # a full set packs densest as one group, tallest first
+        groups = [[k_ for g in groups for k_ in g]]
+    return groups + [later] if later else groups, ({len(groups)} if later else set())
 
 
 # ---------- main ----------
@@ -572,11 +586,15 @@ def main(build: spec.Build, args) -> int:
     out_dir = build.out
     out_dir.mkdir(parents=True, exist_ok=True)
     keys = list(sprites)
-    groups = page_groups(keys, cat, mod)
-    pages = pack_pages(sprites, groups)
+    groups, late = page_groups(keys, cat, mod)
+    layer_i = len(groups) - 1 - len(late)
+    order = getattr(mod, "PACK_ORDER", "height")
+    pages = pack_pages(sprites, groups, fresh=late, order=order)
+    if len(groups) - len(late) == 1:           # one group: no separate shadow page to try
+        layer_i = None
     # Shadows and glows on their own page when that costs no extra page.
-    alone = pack_pages(sprites, groups, fresh={len(groups) - 1})
-    if len(alone) <= max(len(pages), getattr(mod, "ALONE_PAGES", 2)):
+    alone = pack_pages(sprites, groups, fresh=({layer_i} if layer_i is not None else set()) | late, order=order)
+    if len(alone) <= max(len(pages), getattr(mod, "ALONE_PAGES", 2) + len(late)):
         pages = alone
     for old in out_dir.glob(f"{set_id}.*.png"):
         old.unlink()

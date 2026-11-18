@@ -33,6 +33,7 @@ inline constexpr int kCellPrefetch = 1; // ring of cells around the view built w
 // Atlas pages: streamed per set, decoded off the main thread, uploaded in slices.
 inline constexpr std::size_t kPageBudget = 320 * kMiB; // world-tech §4.14
 inline constexpr int kUploadRowsPerFrame = 64;         // 1 MB of a 4096-wide page per frame
+inline constexpr int kPagesInFlight = 2;               // decoded or decoding, not yet in their slot
 inline constexpr double kPageIdleSeconds = 10.0;       // unused this long: may be evicted
 inline constexpr int kNeededSetGrow = 64;              // tiles around the view whose sets load
 inline constexpr int kNeededSetSpacing = 8;            // district sampling step, tiles

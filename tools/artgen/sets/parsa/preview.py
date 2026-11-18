@@ -278,6 +278,96 @@ def town(pieces):
     return s
 
 
+# ---------------------------------------------------------------- the Persian waypoints
+
+WAYPOINTS = ("ishtar_gate", "processional_way", "etemenanki", "susa_palace", "pasargadae_garden", "halys_gates",
+             "gates_station", "royal_road_head")
+
+
+def _connect(p, item, cells):
+    """Place connect pieces on plan cells with their neighbour masks (N -y 1, E +x 2, S +y 4, W -x 8)."""
+    grid = {p.t(c, r) for c, r in cells}
+    for (x, y) in sorted(grid):
+        mask = (1 if (x, y - 1) in grid else 0) | (2 if (x + 1, y) in grid else 0) | \
+               (4 if (x, y + 1) in grid else 0) | (8 if (x - 1, y) in grid else 0)
+        p.s.add(P + item, f"m{mask}", x, y)
+
+
+def babylon(pieces, lion_walls=True):
+    """Babylon's east bank after the waypoint layout (local plan c east, r south): the Ishtar
+    Gate with the double wall and its towers running west, the Processional Way south to
+    Etemenanki; the glazed lion walls along the way are the proposed kit lining (c 31, c 34)."""
+    p = Plan(14, 37, 0, 30)
+    p.s.base = P + "plain_grass"
+    p.paint("packed_earth", 14, 37, 0, 30)
+    p.paint("paving_stone", 32, 33, 0, 30)
+    p.paint("paving_stone", 18, 37, 29, 30)
+    p.place("ishtar_gate", 30, 1, 35, 4, pieces)
+    p.place("processional_way", 32, 5, 33, 18, pieces)
+    p.place("etemenanki", 20, 17, 31, 28, pieces)
+    walls = []
+    for c in range(18, 30):
+        if (c - 18) % 3 == 0:
+            p.kit("babylon_tower", c + 1, 2, fw=2, fh=2)
+        elif (c - 18) % 3 == 2:
+            walls += [(c, 2), (c, 3)]
+    _connect(p, "babylon_wall", walls)
+    if lion_walls:
+        _connect(p, "lion_wall", [(31, r) for r in range(5, 17)])
+        _connect(p, "lion_wall", [(34, r) for r in range(5, 17)])
+    for (c, r, f) in ((27, 7, "r0"), (24, 6, "r1"), (27, 11, "r2"), (23, 10, "r3"), (19, 7, "r1")):
+        p.place("p_house", c - 2, r, c, r + 2, {}, var=f)
+    for (c, r) in ((16, 1), (15, 6), (17, 12), (16, 20), (15, 26), (36, 22), (36, 26), (17, 0), (21, 0), (25, 0)):
+        p.kit("t_date", c, r, var="r%d" % ((c + r) % 2))
+    for key, c, r in (("walker/parsa.noble/v0/move_front", 32, 8), ("walker/parsa.guard_spear/v0/guard_front", 33, 5),
+                      ("walker/parsa.magus/v0/move_back", 33, 14), ("walker/parsa.labourer/v0/carry_front", 32, 20),
+                      ("critter/parsa.zebu/move_front", 33, 23)):
+        p.walker(key, c, r)
+    return p.s
+
+
+def susa(pieces):
+    p = Plan(0, 23, 0, 25)
+    p.s.base = P + "plain_grass"
+    p.level(4, 0, 13, 0, 14, edge=P + "earth")
+    p.paint("packed_earth", 0, 13, 0, 14)
+    p.paint("packed_earth", 0, 23, 16, 16)
+    p.place("susa_palace", 0, 2, 13, 13, pieces)
+    for i, (c, r) in enumerate(((2, 18), (6, 18), (10, 18), (2, 22), (7, 22), (19, 6), (19, 11), (19, 18))):
+        p.place("p_house", c, r, c + 2, r + 2, {}, var=f"r{i % 4}")
+    for (c, r) in ((15, 2), (16, 8), (15, 14), (17, 22), (14, 24), (22, 3)):
+        p.kit("t_date", c, r, var="r%d" % ((c + r) % 2))
+    p.walker("walker/parsa.guard_spear/v0/guard_front", 1, 14, z=64)
+    p.walker("walker/parsa.noble/v0/move_front", 4, 16)
+    return p.s
+
+
+def pasargadae(pieces):
+    p = Plan(2, 26, 2, 26)
+    p.s.base = P + "plain_grass"
+    p.paint("gravel", 11, 24, 3, 14)
+    p.paint("packed_earth", 14, 15, 14, 26)
+    p.place("pasargadae_garden", 12, 4, 23, 13, pieces)
+    p.place("cyrus_tomb", 4, 18, 8, 22, pieces)
+    p.place("p_house_small", 9, 20, 10, 21, {}, var="r1")
+    for (c, r) in ((11, 5), (11, 9), (11, 13), (25, 6), (25, 11), (16, 16), (21, 16)):
+        p.kit("t_cypress", c, r)
+    p.walker("walker/parsa.magus/v0/move_front", 9, 23)
+    p.walker("walker/parsa.noble/v0/move_back", 14, 15)
+    return p.s
+
+
+def waypoint_previews(pages, cat, pieces, dst):
+    out = dst / "waypoints"
+    for name in WAYPOINTS:
+        s = landmark_scene(name, cat, pieces, "packed_earth")
+        save(s.render(pages), out, name, scales=(1, 2))
+    save(babylon(pieces).render(pages), out, "scene_babylon", scales=(1, 2))
+    save(babylon(pieces).render(pages, night=True), out, "scene_babylon_night", scales=(1,))
+    save(susa(pieces).render(pages), out, "scene_susa", scales=(1, 2))
+    save(pasargadae(pieces).render(pages), out, "scene_pasargadae", scales=(1, 2))
+
+
 # ---------------------------------------------------------------- sheets
 
 def _ascii(text):
@@ -354,6 +444,7 @@ def main(build, out_dir):
     save(img, dst, "terrace", scales=(1, 0.5))
     img = terrace(pieces, floors).render(pages, night=True)
     save(img, dst, "terrace_night", scales=(0.5,))
+    waypoint_previews(pages, cat, pieces, dst)
     for name in LANDMARK_ORDER:
         s = landmark_scene(name, cat, pieces, "paving_red" if name in ("apadana", "pavilion") else "paving_stone")
         save(s.render(pages), dst / "landmarks", name, scales=(1,))

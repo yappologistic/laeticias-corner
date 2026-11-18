@@ -953,3 +953,30 @@ def pixels(m: Model, x, y, z):
 
 def circle_pts(cx, cy, r, n):
     return [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in np.linspace(0, 2 * math.pi, n, endpoint=False)]
+
+
+def flight(m, x0, x1, y0, y1, rise, steps, material, tone=None, cheek=1.4, cheek_mat=None, seed=1):
+    """A short kit stair rising toward -y from y1 (foot, z 0) to y0 (head, z `rise`): a few deep
+    steps that read from every side, each tread lit with a bright nosing and a dark line where
+    the riser above meets it, each riser in shade; sloping cheek walls on both sides carry the
+    flight's line even where the treads are seen from above (the flight turned toward the
+    camera)."""
+    base = tone or (lambda X, Y, Z: 0.0)
+    run = (y1 - y0) / steps
+    h = rise / steps
+    for i in range(steps):
+        zt = h * (i + 1)
+        ya = y1 - run * (i + 1)
+
+        def tn(X, Y, Z, zt=zt, ya=ya):
+            top = Z > zt - 0.45
+            nose = top & (Y > ya + run - 0.7)
+            back = top & (Y < ya + 0.6)
+            return base(X, Y, Z) + 0.45 * top + 0.45 * nose - 1.1 * back - 0.55 * (~top) - 0.04 * i
+        slab(m, x0 + cheek, x1 - cheek, ya, y1, 0.0, zt, material, tone=tn)
+    if cheek > 0:
+        cm = cheek_mat or material
+        for a, b in ((x0, x0 + cheek), (x1 - cheek, x1)):
+            fill(m, (a, b, y0, y1, 0.0, rise + 1.6), cm,
+                 lambda X, Y, Z: Z < rise * np.clip((y1 - Y) / (y1 - y0), 0, 1) + 1.4,
+                 tone=lambda X, Y, Z: base(X, Y, Z) * 0.6 - 0.15 + 0.4 * (Z > rise * np.clip((y1 - Y) / (y1 - y0), 0, 1) + 0.9))
