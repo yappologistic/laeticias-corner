@@ -197,3 +197,22 @@ def climb(L: Layout, points, z0: int, *, rise: int, paving: str, kind: str = "st
         i += 1
     L.level(Rect(*path[0], *path[0]), z0)
     return z
+
+
+def pier(L: Layout, item: str, land: tuple[int, int], step: tuple[int, int], n: int) -> list:
+    """A jetty or mole of up to n pieces from the land tile `land` (local) out over the water in
+    direction `step`, starting on the first water tile, so its planks meet the strand (V16)."""
+    def wet(c, r):
+        return L.cat.is_water(L.terrain_at(c + L.origin[0], r + L.origin[1]) or "")
+    c, r = land
+    while not wet(c + step[0], r + step[1]):
+        c, r = c + step[0], r + step[1]
+        if not (0 <= c < L.size[0] and 0 <= r < L.size[1]):
+            return []
+    out = []
+    for _ in range(n):
+        c, r = c + step[0], r + step[1]
+        if not (0 <= c < L.size[0] and 0 <= r < L.size[1]) or not wet(c, r):
+            break
+        out.append(L.place(item, at=(c, r)))
+    return out

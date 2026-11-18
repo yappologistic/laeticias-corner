@@ -71,8 +71,7 @@ def build(L: Layout) -> None:
     put(L, "athens.g_herm", (19, 13), face="west")
 
     # The shore: a jetty into the bay, nets drying, a fishing boat's lane.
-    for r in range(25, 28):
-        L.place("world.jetty", at=(9, r))
+    WP.pier(L, "world.jetty", (9, 23), (0, 1), 3)
     put(L, "world.drying_rack", (8, 23))
     put(L, "world.fish_hut", (11, 22), face="west")
     L.lane("eleusis_fishing", [(9, 27), (14, 27)], kind="sea",

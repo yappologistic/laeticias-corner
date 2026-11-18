@@ -180,6 +180,52 @@ def check(world: World, cat: Catalog, layer: str, graph: Graph, walk: np.ndarray
                     out.append(("error", f"{it.id}: its walkway ends over open water at "
                                 f"{(c, r)} (the art spans less than the gap)", n))
 
+    # A one-wide span is walked along its axis, entered over its ends (a road turning onto the
+    # planks from the side meets the bank at one end only); only a stair climbing to the bank
+    # may join it from the side.
+    groups_seen: set[int] = set()
+    for i, it in live_items(world):
+        if it.layer != layer or i in groups_seen:
+            continue
+        d = cat.items.get(it.id)
+        if d is None or not _is_crossing(d, cat) or d.landmark:
+            continue
+        group = _crossing_group(items, owner, i, cat)
+        groups_seen |= group
+        tiles = {t for j in group for t in items[j].tiles()}
+        cs, rs = {c for c, _ in tiles}, {r for _, r in tiles}
+        if len(tiles) < 2 or (len(cs) > 1 and len(rs) > 1):
+            continue
+        if len(cs) == 1:
+            ok = {(next(iter(cs)), min(rs) - 1), (next(iter(cs)), max(rs) + 1)}
+        else:
+            ok = {(min(cs) - 1, next(iter(rs))), (max(cs) + 1, next(iter(rs)))}
+        met = {t for j in group for t in entries.get(j, set())} - tiles
+        side = sorted(met - ok - stairs)
+        if side:
+            out.append(("error", f"{it.id}: entered from its side at {side[0]}, not over "
+                        f"both ends of the span {sorted(ok)}", side[0]))
+
+    # Piers (jetties, moles) reach land: a walkable tile beside them no more than a level above
+    # the water (a quay's kerb), or they are planks in open water.
+    for i, it in live_items(world):
+        if it.layer != layer or i in groups_seen:
+            continue
+        d = cat.items.get(it.id)
+        if d is None or not any(p in d.id for p in PIERS):
+            continue
+        group = {j for j in _crossing_group(items, owner, i, cat)} | {i}
+        groups_seen |= group
+        tiles = {t for j in group for t in items[j].tiles()}
+        base = min(height.get(t, int(lv[t[1], t[0]]) * lp) for t in tiles)
+        land = [(c + dc, r + dr) for c, r in tiles for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+        land = [t for t in land if t not in tiles and 0 <= t[0] < COLS and 0 <= t[1] < ROWS
+                and walk[t[1], t[0]] and not water[t[1], t[0]]
+                and (t not in owner or cat.items[items[owner[t]].id].on != "water")]
+        if not any(0 <= ground_h(t) - base <= lp for t in land):
+            out.append(("error", f"{it.id}: touches no land (no walkable tile beside it within a "
+                        "level of the water)", (it.c, it.r)))
+
     # Connect crossings and piers run along one axis: a piece with neighbours of its own kind on
     # both axes draws a crossroads of decks, and a run two wide reads as a hollow frame.
     runs = {(it.id, it.c, it.r) for _, it in live_items(world)

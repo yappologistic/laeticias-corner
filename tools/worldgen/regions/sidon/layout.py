@@ -17,6 +17,24 @@ from worldgen.shapes import Mask, Rect
 EARTH = "parsa.packed_earth"
 
 
+def _wet(L: Layout, c: int, r: int) -> bool:
+    return L.cat.is_water(L.terrain_at(c + L.origin[0], r + L.origin[1]) or "")
+
+
+def _pier(L: Layout, item: str, r: int, n: int) -> int | None:
+    """Up to n pieces west from the first water tile west of the road on row r; returns the
+    column of the piece that meets the strand."""
+    c = 11
+    while c > 0 and not _wet(L, c - 1, r):
+        c -= 1
+    first = c - 1
+    for k in range(n):
+        if first - k < 0 or not _wet(L, first - k, r):
+            break
+        L.place(item, at=(first - k, r))
+    return first if first >= 0 and _wet(L, first, r) else None
+
+
 def build(L: Layout) -> None:
     W, H = L.size
     WP.ground(L, "shore")
@@ -25,12 +43,13 @@ def build(L: Layout) -> None:
     L.level(dry & strip, 0, face="world.earth")
     L.district("town", strip)
     road = WP.portal_street(L, "sidon_n", [(11, 0), (11, 26)], width=1, paving=EARTH)
-    for r in range(18, 22):
-        if L.cat.is_water(L.terrain_at(8 + L.origin[0], r + L.origin[1]) or ""):
-            L.place("world.mole", at=(8, r))
-    if L.cat.is_water(L.terrain_at(8 + L.origin[0], 23 + L.origin[1]) or ""):
-        L.place("world.jetty", at=(8, 23))
-    put(L, "world.beacon", (9, 17))
+    # The mole and the jetty run west from the strand into the water (the base's coast decides
+    # where the strand ends), one tile wide, met by the road's edge.
+    mole = _pier(L, "world.mole", 18, 4)
+    _pier(L, "world.jetty", 23, 3)
+    if mole is not None:
+        next((p for at in ((mole + 1, 17), (mole + 1, 16), (mole, 17), (mole + 1, 15))
+              if (p := put(L, "world.beacon", at)) is not None), None)
     for at in ((9, 25), (9, 27)):
         put(L, "world.log_stack", at, face="west")
     L.houses(Rect(12, 2, 15, 28), {"parsa.p_house": 1, "parsa.p_house_small": 3}, front=[road],
