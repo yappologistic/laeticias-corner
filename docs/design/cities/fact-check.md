@@ -36,7 +36,7 @@ instead, and positions on the excavation plan remain for a builder to check.
 | 0 | Old Persian *paridaida* | corrected | Iranica "Garden i" (Eilers) (summary): reconstructed *\*paridayda-*; Elamite *partetaš*; a late spelling *paradayadām* is debated | asterisk added |
 | 1 | Royal tombs in the mountain are Artaxerxes II and III | confirmed | Shahbazi | — |
 | 1 | Fortification tablets 509–493, Treasury 492–458 | confirmed | Iranica "Persepolis Elamite tablets": PF regnal years 13–28 of Darius (509–494; the last tablet month XII of year 28 = spring 493); PT "492–458" | — |
-| 2.5 | Achaemenid qanats debated; Polybius 10.28 | confirmed + filled in | Polybius 10.28 (Loeb, LacusCurtius, read): local story of five generations' use for whoever brought water; Wuttmann et al.: qanat at ʿAyn Manawir (Kharga, Egypt) in use by the late 5th c. BC, dated by Demotic ostraca of Artaxerxes I | card note: technique known in the empire; none dated at Pārsa |
+| 2.5 | Achaemenid qanats debated; Polybius 10.28 | confirmed + filled in | Polybius 10.28 (Loeb, LacusCurtius, read): local story of five generations' use for whoever brought water; Wuttmann et al. (summary): qanat at ʿAyn Manawir (Kharga, Egypt) in use by the late 5th c. BC, dated by Demotic ostraca of Artaxerxes I | card note: technique known in the empire; none dated at Pārsa |
 | 3.1 | Apadāna: bulls in hall and north portico; lions east, griffins west "as a choice" | corrected | Iranica "Apadāna" (read): composite bull capitals "reserved for the hall and the principal, northern portico"; "addorsed animal capitals set directly on a fluted shaft were restricted to the west and east porticoes". Shahbazi (read): "in the western portico the double-headed bull capitals rested directly on the fluted shafts"; "the eastern portico had lion-headed capitals" | west portico: **bulls on the bare shaft**; east: lions on the bare shaft; no griffins |
 | 3.2 | Great stair: 10 cm rise, 31 cm tread, 6.9 m wide, 111 per side | corrected | Shahbazi: each flight "ascends for sixty-three steps", then "another forty-eight"; "Each step is 6.70 m long, 10 cm high, and 38 cm wide" | 63 + 48, 38 cm, 6.70 m |
 | 3.2 | Gate of All Lands: 4 columns, 16.5 m, double-bull capitals, three doors, bulls west, lamassu east | confirmed | Shahbazi: "four-columned square hall", columns "over 16.5 m", "two addorsed kneeling bulls"; Livius: "16½ meters", "A third entrance was to the south" | source note |
@@ -266,3 +266,75 @@ for that agent:
 5. Cloelia: statue's presence uncertain, Valeria variant.
 6. Parilia event and the "Romaea" wording.
 7. Toga row: Juvenal is about country Italy.
+
+---
+
+## 4. Waypoints (`docs/design/sets/world.md` §4 and the city tables)
+
+| Waypoint | Claim | Verdict | Source | Change |
+|---|---|---|---|---|
+| Babylon | "the timber deck lifted at night is in later commentary, not certain" | **corrected** | Herodotus 1.186 (read): planks laid by day, removed at night against thieves | sets/world.md and persepolis.md |
+| Babylon | Etemenanki seven stages | uncertain | Herodotus 1.181: eight towers | note |
+| Euphrates crossing | round hide boats (Herodotus 1.194) | confirmed with nuance | they came downriver from Armenia and were broken up at Babylon | note |
+| Pasargadae | magi guardhouse, a sheep a day | confirmed and filled in | Arrian 6.29 (read): also flour, wine and a monthly horse; office hereditary since Cambyses | note |
+| Pasargadae | Cyrus's tomb door direction | uncertain | north-west in secondary sources only | flagged |
+| Delphi | no theatre in 432 | confirmed in outline (the stone theatre is 4th century; standard; not re-read) | — | — |
+| Delphi | Athenian Treasury in Pentelic marble (athens.md) | **corrected** | Parian marble | athens.md |
+| Eleusis | Telesterion by Iktinos | corrected | Plutarch *Pericles* 13 | athens.md |
+| Delos | before the purification of 426/5 | confirmed in outline (Thucydides 3.104; not re-read) | — | — |
+| Ephesus | archaic Artemision with Croesus's drums; Pliny's 120 years | unverifiable here (Herodotus 1.92, Pliny 36.95 not re-read) | — | — |
+| Corinth | Apollo temple c. 540, 6 × 15 monolithic | unverifiable here (not re-read) | — | — |
+| Sardis | reed and reed-roofed houses (Herodotus 5.101) | unverifiable here (not re-read) | — | — |
+| Halys | gates and a fort (Herodotus 5.52); Croesus's bridges (1.75) | unverifiable here (Perseus blocked) | — | — |
+| Gordion | Tumulus MM c. 740 BC, about 53 m | unverifiable here (not re-read) | — | — |
+| Persian Gates | site debated | confirmed (as stated) | — | — |
+| Ostia | guild mosaics | **corrected** | late 2nd century | rome.md |
+| Capua | Hadrian restored, Antoninus dedicated the amphitheatre | unverifiable here (CIL X 3832 not re-read) | — | — |
+| Brundisium | one or two columns | corrected (consistency) | — | world.md |
+
+---
+
+## 5. Counts
+
+| City | Confirmed | Corrected | Uncertain | Unverifiable |
+|---|---:|---:|---:|---:|
+| Pārsa (incl. Persian waypoints) | 25 | 14 | 6 | 4 |
+| Athens (incl. Greek waypoints) | 10 | 6 | 4 | 7 |
+| Rome (incl. Roman waypoints) | 8 | 8 | 2 | 5 |
+
+"Confirmed" includes the rows marked "confirmed in outline" (standard facts whose primary passage
+could not be opened this time); a stricter count would move those to "unverifiable". The waypoint
+rows of §4 are counted under their era, without counting twice a claim already in a city table.
+
+---
+
+## 6. What remains genuinely uncertain, and how to present it
+
+Ordered by how visible they are in play.
+
+1. **The New Year at Pārsa.** Present as §1.5: an event called "the spring audience", one card with
+   both sides.
+2. **Pheidias in 432.** A memory with both ancient versions; never a busy sculptor at the yard.
+3. **Hadrian, Sabina and Antinous in Rome on 21 April 126.** Plausible, unrecorded. Their cards say
+   "the game imagines them here for the festival".
+4. **The annual peplos and the 432 festival programme.** The procession and sacrifice are safe; the
+   robe is "perhaps"; Homer contests and prize games are Great Panathenaia events.
+5. **Apadāna delegation names and order.** Use "probably" for doubtful peoples; no numbering on
+   cards.
+6. **Royal women's dress at Pārsa.** Reconstructed from seals and Anatolian art; the card says so.
+7. **The Tripylon and the Stoa of Zeus.** Both may not have been finished (or begun) at the chosen
+   moments; the bibles name the choice.
+8. **The Old Temple of Athena after 480.** Shown with a repaired west chamber; card: "scholars
+   disagree".
+9. **Atossa = Udusana; Parnakka's kinship.** Proposals; cards avoid them or say "some scholars".
+10. **Gilding of the Pantheon's bronze tiles; Cloelia's statue in 126.** Choices, labelled.
+11. **Qanats at Pārsa.** Known in the empire (Egypt), not dated at Pārsa.
+12. **Avestan figures.** The hymns are old but were written down in Sasanian times; cards say the
+    storyteller tells "old Iranian tales" without claiming these exact words were told in 470.
+
+A rule for all cards that grows out of this check: when a card cites an inscription made for one
+place (DSf at Susa) or a writer centuries later (Arrian, Athenaeus, the *Historia Augusta*), say
+where or when in a few words.
+
+`sources.md` now marks every source with whether its text was read in this check and lists the
+sources the check added.

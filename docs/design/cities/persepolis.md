@@ -239,7 +239,7 @@ quarry, `M` mountain slope (backdrop beyond the east edge).
   qanat was in use by the second half of the 5th century BC, dated by Demotic ostraca of the reign
   of Artaxerxes I. No qanat at Pārsa is dated to 470. Keep it nice-to-have; the card says the
   technique was known in the empire and that this line is the game's choice. [checked: Polybius
-  10.28 (Loeb, LacusCurtius); Wuttmann, Gonon & Thiers, "The Qanats of ʿAyn Manawir"]
+  10.28 (Loeb, LacusCurtius); Wuttmann, Gonon & Thiers, "The Qanats of ʿAyn Manawir" (search summary only)]
 - **Walls:** the terrace edge is a cliff of fitted grey limestone blocks; a mudbrick wall with
   towers crowns the mountain side. The town has no circuit wall in the game.
 

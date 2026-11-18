@@ -772,7 +772,7 @@ The game is set at the Panathenaia; other festivals can be enabled as rotating e
 | **Drama** | the theatre with rehearsals; cards for Sophocles and Euripides; a mask found in the theatre (journal) |
 | **History** | a card on Herodotus (who read from his *Histories* in Athens, tradition says) and the young Thucydides |
 | **Geometry and astronomy** | Meton's sundial; a card on the 19-year cycle |
-| **Sculpture and architecture** | the sculptors' yard, Pheidias, Mnesikles; card on the Parthenon's subtle curves (the base rises about 6 cm in the middle of the short ends and about 10–11 cm along the long sides; columns lean inward; why the builders did it is still argued) [checked: Stevens's survey via Cambridge UP: 0.103 m on the north flank] |
+| **Sculpture and architecture** | the sculptors' yard, Pheidias, Mnesikles; card on the Parthenon's subtle curves (the base rises about 6 cm in the middle of the short ends and about 10–11 cm along the long sides; columns lean inward; why the builders did it is still argued) [checked: Stevens's survey via a Cambridge UP appendix (search summary only): 0.103 m on the north flank] |
 | **City planning** | Piraeus's grid by Hippodamos (card) |
 | **Medicine** | the physician (card on Hippocratic observation) |
 
