@@ -43,7 +43,7 @@ REGIONS = {
     "halys":        ("town", "parsa", "parsa", (950, 120, 965, 135), 5),
     "gordion":      ("town", "parsa", "parsa", (905, 130, 925, 150), 5),
     "sidon":        ("town", "parsa", "parsa", (990, 300, 1007, 340), 1),
-    "euphrates_crossing": ("town", "parsa", "parsa", (1008, 170, 1023, 185), 1),
+    "euphrates_crossing": ("town", "parsa", "parsa", (1008, 170, 1023, 185), 4),
     "babylon":      ("town", "parsa", "parsa", (1036, 285, 1071, 316), 1),
     "susa":         ("town", "parsa", "parsa", (1080, 315, 1103, 340), 1),
     "persian_gates": ("town", "parsa", "parsa", (1112, 330, 1127, 345), 6),
@@ -124,23 +124,54 @@ LAYERS = [
 HOME = {"origin_plan": (40, 40), "size": (40, 40), "level": 2, "region": "corner"}
 
 # --- portals: the agreed meeting points of layers ----------------------------------------------
-# id: (layer that owns the far side, plan tile, level). The tile is the street end on the edge of
-# the authored layer; the base's route ends on the same tile.
+# id: (layers that share the node, plan tile, world level). The tile is the street end on the edge
+# of the first layer named; a base route starts or ends on that same tile. Where two authored
+# layers touch (Athens and Eleusis), the second may carry the node on the tile across the shared
+# edge. Portals of towns not built yet (Rome's) are where their builder will meet the base road,
+# which runs through the town's rect until then.
 
 PORTALS = {
-    # id: (layers that share the node, plan tile, world level)
     "corner_road_s": (("corner", "base"), (94, 111), 1),
     "aurelia_w": (("rome", "base"), (96, 120), 1),          # rome.md §2.5: c 0, r 96
     "appia_se": (("rome", "base"), (271, 174), 1),          # rome.md §2.5: c 175, r 150
     "ostiensis": (("ostia", "rome"), (163, 184), 1),        # Via Ostiensis, Ostia's north edge
     "royal_road_w": (("parsa", "base"), (1136, 354), 4),    # persepolis.md: c 0, r 50
     "pasargadae_n": (("parsa", "base"), (1190, 304), 4),
-    # athens.md §2.5: the Sacred Way leaves the Sacred Gate west (c 0, r 16); the Academy road
-    # from the Dipylon, the Acharnai road from the north gate, the Mesogeia road past the Lyceum.
-    "sacred_way_w": (("athens", "base"), (576, 236), 1),
+    # athens.md §2.5: the Sacred Way leaves the Sacred Gate west (c 0, r 16) straight into
+    # Eleusis' layer; the Academy road from the Dipylon, the Acharnai road from the north gate,
+    # the Mesogeia road past the Lyceum.
+    "sacred_way_w": (("athens", "eleusis"), (576, 236), 1),
     "academy_road_n": (("athens", "base"), (580, 220), 2),
     "acharnai_n": (("athens", "base"), (617, 220), 1),
     "mesogeia_e": (("athens", "base"), (735, 265), 1),
+    # The Via Appia through Rome's waypoints (rome.md §3.7; built by Rome's builder).
+    "appia_alban_w": (("alban_mount", "base"), (278, 172), 2),
+    "appia_alban_e": (("alban_mount", "base"), (311, 172), 2),
+    "appia_capua_w": (("capua", "base"), (318, 210), 1),
+    "appia_capua_e": (("capua", "base"), (333, 210), 1),
+    "appia_benev_w": (("beneventum", "base"), (344, 213), 2),
+    "appia_benev_e": (("beneventum", "base"), (355, 213), 2),
+    "appia_brund_w": (("brundisium", "base"), (380, 266), 1),
+    # Greek waypoints (docs/design/sets/world.md §4.2).
+    "academy_e": (("academy", "base"), (575, 215), 2),
+    "eleusis_w": (("eleusis", "base"), (556, 240), 1),
+    "corinth_n": (("corinth", "base"), (566, 280), 1),
+    "delphi_s": (("delphi", "base"), (518, 265), 3),
+    "ephesus_e": (("ephesus", "base"), (851, 241), 3),
+    # Persian waypoints on the Royal Road (§4.3).
+    "sardis_w": (("sardis", "base"), (860, 214), 2),
+    "sardis_e": (("sardis", "base"), (879, 212), 2),
+    "halys_w": (("halys", "base"), (950, 129), 5),
+    "halys_e": (("halys", "base"), (965, 129), 5),
+    "euph_w": (("euphrates_crossing", "base"), (1008, 178), 4),
+    "euph_e": (("euphrates_crossing", "base"), (1023, 178), 4),
+    "babylon_n": (("babylon", "base"), (1068, 285), 1),
+    "babylon_e": (("babylon", "base"), (1071, 305), 1),
+    "susa_w": (("susa", "base"), (1080, 331), 1),
+    "susa_e": (("susa", "base"), (1103, 325), 1),
+    "gates_w": (("persian_gates", "base"), (1112, 337), 4),
+    "gates_e": (("persian_gates", "base"), (1127, 338), 6),
+    "pasargadae_s": (("pasargadae", "base"), (1190, 287), 5),
 }
 
 # --- coastlines ------------------------------------------------------------------------------
@@ -211,6 +242,13 @@ SEA = {
     ],
 }
 
+# Enclosed waters kept although no open sea reaches them on this map: the bay of Eleusis (its
+# strait past Salamis lies under Athens' layer).
+INLETS = {
+    "eleusis_bay": [(558, 246), (566, 245), (575, 246), (575, 256), (570, 259), (562, 258),
+                    (558, 254)],
+}
+
 ISLANDS = {
     "corsica": [(22, 148), (30, 150), (33, 162), (31, 176), (27, 188), (21, 184), (19, 168),
                 (17, 156)],
@@ -230,8 +268,10 @@ ISLANDS = {
     "andros": [(764, 288), (770, 286), (772, 296), (766, 300)],
     "tenos": [(774, 312), (779, 310), (781, 318), (776, 320)],
     "kea": [(748, 326), (753, 324), (754, 332), (749, 334)],
-    "delos": [(780, 336), (784, 335), (786, 340), (782, 343), (779, 340)],
-    "rheneia": [(774, 337), (778, 336), (778, 344), (774, 345)],
+    # Delos enlarged for its sanctuary (docs/design/sets/world.md §4.2): about 12 x 13 tiles.
+    "delos": [(778, 333), (784, 332), (789, 335), (789, 341), (786, 344), (780, 344),
+              (777, 340), (777, 336)],
+    "rheneia": [(768, 336), (773, 335), (774, 344), (769, 346)],
     "paros": [(784, 356), (790, 354), (792, 362), (786, 366), (782, 361)],
     "naxos": [(796, 350), (804, 348), (808, 358), (804, 370), (796, 368), (794, 358)],
     "melos": [(756, 376), (764, 374), (766, 382), (758, 386)],
@@ -246,10 +286,9 @@ ISLANDS = {
                (956, 334), (940, 340), (924, 338), (916, 334)],
 }
 
-COAST_NOISE = {"amp": 4.5, "scale": 22.0, "blur": 3}  # bounded roughening of every coastline
-
-# Where the coast must stay exactly as authored (rects other layers own or that hold portals).
-COAST_FROZEN = [REGIONS["corner"][3], REGIONS["ostia"][3]]
+# Coast roughening at three scales: bays and headlands, capes and coves, rocks. Signed distance to
+# the authored outline plus amp * noise, so the coast never strays more than the sum of the amps.
+COAST_NOISE = {"bays": (40.0, 5.5), "capes": (15.0, 2.6), "rocks": (5.0, 1.0)}
 
 # --- relief ----------------------------------------------------------------------------------
 # Per stretch: plateau level reached inland, how fast land climbs from the coast (tiles per
@@ -265,14 +304,19 @@ RELIEF = {
     "zagros": (6, 6, 1.5), "iran_plateau": (6, 8, 1.4),
 }
 
-# Mountain bands: polygon, level range, noise scale, impassable from level, passes (tiles that
-# stay passable, with a radius).
+# Plateau edges break into terraces and gullies: contour offsets by patchy noise (terraces) and
+# ridged-noise valleys cut where the ground slopes (gullies). Depth in levels.
+TERRACES = {"scale": 13.0, "amp": 0.45, "warp": 5.0, "warp_scale": 18.0}
+GULLIES = {"scale": 9.0, "depth": 1.9, "sharp": 5.0}
+
+# Mountain bands: polygon, level range, noise scale, impassable from level, passes (tile, radius,
+# saddle level): the band falls to the saddle level there, so a road crosses on ramps.
 BANDS = {
     "apennines": {"poly": [(244, -8), (300, -8), (306, 30), (322, 70), (338, 110), (356, 150),
                            (372, 190), (378, 226), (362, 232), (348, 210), (336, 180),
                            (322, 150), (306, 116), (288, 80), (266, 46), (250, 20)],
                   "levels": (7, 12), "scale": 14, "impassable": 9,
-                  "passes": [((356, 218), 6)]},
+                  "passes": [((356, 218), 14, 3)]},   # the Appia's crossing by Beneventum
     "pindus": {"poly": [(452, 20), (470, 10), (486, 40), (496, 90), (506, 140), (514, 190),
                         (522, 240), (514, 256), (500, 244), (490, 200), (480, 150), (468, 100),
                         (458, 60)],
@@ -283,6 +327,10 @@ BANDS = {
     "arcadia": {"poly": [(486, 330), (506, 322), (530, 324), (552, 334), (550, 358),
                          (530, 364), (506, 362), (488, 352)],
                 "levels": (7, 11), "scale": 10, "impassable": 9, "passes": []},
+    # A small Taygetos west of Sparta: the backdrop of the Eurotas valley (world.md §4.2).
+    "taygetos": {"poly": [(500, 360), (510, 356), (514, 372), (513, 392), (508, 410),
+                          (500, 404), (497, 384)],
+                 "levels": (6, 10), "scale": 7, "impassable": 9, "passes": []},
     "parnes": {"poly": [(580, 150), (620, 146), (660, 152), (690, 166), (680, 192),
                         (640, 196), (600, 188), (582, 172)],
                "levels": (4, 8), "scale": 10, "impassable": 99, "passes": []},
@@ -291,7 +339,9 @@ BANDS = {
     "taurus": {"poly": [(880, 270), (900, 250), (930, 238), (962, 236), (990, 244),
                         (1004, 258), (1000, 276), (980, 282), (950, 280), (920, 286),
                         (896, 288)],
-               "levels": (9, 14), "scale": 12, "impassable": 9, "passes": [((980, 262), 5)]},
+               "levels": (9, 14), "scale": 12, "impassable": 9,
+               "passes": [((981, 240), 8, 7), ((980, 254), 8, 7), ((980, 266), 8, 6),
+                          ((982, 278), 7, 4)]},     # the Taurus gates on the Cilician road
     "argaios": {"poly": [(966, 182), (980, 178), (988, 190), (978, 200), (966, 196)],
                 "levels": (8, 13), "scale": 5, "impassable": 9, "passes": [], "cone": True},
     "armenia": {"poly": [(1000, -8), (1110, -8), (1104, 60), (1090, 120), (1060, 140),
@@ -304,7 +354,8 @@ BANDS = {
                         (1138, 340), (1140, 400), (1122, 404), (1110, 360), (1102, 300),
                         (1098, 220), (1094, 150)],
                "levels": (10, 15), "scale": 12, "impassable": 11,
-               "passes": [((1120, 338), 6)]},
+               # the climb from Susa to the Persian Gates, and the Gates themselves
+               "passes": [((1108, 328), 7, 3), ((1120, 338), 10, 6), ((1131, 346), 8, 5)]},
     "elburz": {"poly": [(1136, -8), (1290, -8), (1290, 40), (1220, 60), (1170, 50),
                         (1140, 30)],
                "levels": (8, 14), "scale": 14, "impassable": 11, "passes": []},
@@ -320,150 +371,304 @@ BANDS = {
 }
 
 # --- rivers ----------------------------------------------------------------------------------
-# Source to mouth. Width in tiles. The generator meanders them a little (bounded, seeded by id).
+# Source to mouth. `width` at the mouth (rivers start at about half of it and widen downstream);
+# `meander` the amplitude of the bends (tiles); `valley` how far either side the land falls
+# toward the river; `delta` (length, branches) splits the last tiles into distributaries with
+# marsh between; `sink` rivers end inland in a marsh. Bends fade out near town rects, so a
+# river enters and leaves a town where the town's plan has it.
 
 RIVERS = {
     "tiber": {"points": [(104, -1), (102, 24), (101, 50), (116, 82), (136, 94), (146, 108),
                          (152, 122), (152, 183), (148, 196), (140, 208), (132, 218),
-                         (126, 229)], "width": 5, "meander": 2},
+                         (126, 229)], "width": 5, "meander": 2, "valley": 4},
     "anio": {"points": [(300, 52), (286, 58), (271, 62), (240, 70), (200, 74), (160, 70),
-                        (128, 76), (112, 74)], "width": 2, "meander": 4},
+                        (128, 76), (112, 74)], "width": 2, "meander": 3, "valley": 3},
     "liris": {"points": [(318, 140), (304, 170), (290, 200), (288, 236)], "width": 2,
-              "meander": 4},
+              "meander": 3, "valley": 3, "delta": (8, 2)},
     "aufidus": {"points": [(350, 200), (362, 206), (374, 214), (382, 224)], "width": 2,
-                "meander": 2},
+                "meander": 2, "valley": 3, "delta": (7, 2)},
     "achelous": {"points": [(486, 160), (482, 200), (472, 240), (466, 262)], "width": 2,
-                 "meander": 4},
-    "eurotas": {"points": [(520, 350), (524, 370), (526, 396), (530, 420), (534, 432)],
-                "width": 2, "meander": 2},
-    "alpheios": {"points": [(510, 330), (494, 334), (480, 336), (466, 340)], "width": 2,
-                 "meander": 2},
-    "kaystros": {"points": [(880, 236), (866, 240), (852, 244), (839, 246)], "width": 2,
-                 "meander": 2},
-    "hermos": {"points": [(900, 200), (880, 206), (862, 210), (846, 214), (830, 210)],
-               "width": 2, "meander": 4},
-    "halys": {"points": [(1000, 200), (986, 168), (968, 140), (956, 128), (940, 108),
-                         (926, 70), (918, 30), (914, -1)], "width": 3, "meander": 4},
-    "euphrates": {"points": [(1010, -1), (1000, 50), (994, 110), (1006, 150), (1016, 178),
-                             (1020, 220), (1032, 258), (1048, 286), (1056, 312), (1060, 348),
-                             (1068, 384), (1078, 402)], "width": 4, "meander": 4},
-    "tigris": {"points": [(1060, -1), (1068, 60), (1084, 130), (1096, 200), (1092, 260),
-                          (1086, 320), (1080, 370), (1078, 402)], "width": 3,
-               "meander": 4},
-    "karun": {"points": [(1112, 280), (1102, 304), (1094, 324), (1090, 360), (1088, 398)],
-              "width": 2, "meander": 2},
+                 "meander": 3, "valley": 4, "delta": (9, 3)},
+    "eurotas": {"points": [(520, 350), (534, 358), (534, 388), (530, 420), (534, 432)],
+                "width": 2, "meander": 2, "valley": 4, "delta": (6, 2)},
+    "alpheios": {"points": [(510, 330), (494, 334), (478, 337), (466, 340)], "width": 2,
+                 "meander": 2, "valley": 4},
+    "kaystros": {"points": [(880, 236), (866, 240), (852, 245), (839, 246)], "width": 2,
+                 "meander": 2, "valley": 5},
+    "hermos": {"points": [(900, 200), (880, 208), (860, 208), (846, 214), (830, 210)],
+               "width": 3, "meander": 3, "valley": 6, "delta": (10, 3)},
+    # The Sangarios flows north past Gordion's citadel to the Black Sea (world.md §4.3).
+    "sangarios": {"points": [(946, 192), (934, 172), (927, 151), (924, 128), (912, 92),
+                             (900, 48), (892, -1)], "width": 3, "meander": 3, "valley": 5},
+    "halys": {"points": [(1000, 200), (986, 168), (968, 145), (956, 137), (956, 118),
+                         (940, 108), (926, 70), (918, 30), (914, -1)], "width": 3,
+              "meander": 3, "valley": 5},
+    "euphrates": {"points": [(1010, -1), (1000, 50), (994, 110), (1006, 150), (1015, 168),
+                             (1015, 187), (1020, 220), (1032, 258), (1048, 284), (1056, 312),
+                             (1057, 318), (1060, 348), (1068, 384), (1078, 402)], "width": 4,
+                  "meander": 4, "valley": 10, "delta": (14, 3)},
+    # The Tigris keeps west of Susa (its mound and the Shaur are the town's).
+    "tigris": {"points": [(1060, -1), (1068, 60), (1084, 130), (1096, 200), (1090, 250),
+                          (1078, 290), (1076, 320), (1077, 350), (1078, 380), (1078, 402)],
+               "width": 3, "meander": 3, "valley": 8},
+    "karun": {"points": [(1112, 280), (1104, 300), (1098, 314), (1094, 341), (1090, 370),
+                         (1088, 398)], "width": 2, "meander": 2, "valley": 4},
     "orontes": {"points": [(1018, 370), (1016, 340), (1012, 310), (1000, 290)], "width": 2,
-                "meander": 2},
-    "kur": {"points": [(1180, 200), (1170, 240), (1160, 280), (1150, 303)], "width": 2,
-            "meander": 4},
+                "meander": 2, "valley": 3, "delta": (6, 2)},
+    # Pārsa's river enters its layer at local (104, 0) and leaves at (27, 0) (regions/parsa).
+    "pulvar": {"points": [(1254, 232), (1246, 268), (1240, 303)], "width": 2, "meander": 3,
+               "valley": 3},
+    "kur": {"points": [(1163, 303), (1157, 297), (1149, 293)], "width": 2, "meander": 1,
+            "valley": 2, "sink": True},
     "corner_brook": {"points": [(64, 80), (66, 90), (62, 100), (60, 103)], "width": 1,
-                     "meander": 2},
+                     "meander": 2, "valley": 0},
 }
 
-# --- routes and lanes (world.md §5.3; world-tech §4.1) ------------------------------------------
-# A waypoint is a plain tile or "<layer>:<portal>". `build` routes are generated into the base
-# now; the others are planned (drawn dotted on the overview) and built by task WG4.
+# --- routes and lanes (world.md §5.3; docs/design/sets/world.md §9.4) -------------------------
+# A route point is a plain tile or "<layer>:<portal>". Between two portals of one town the base
+# carries the road through the town's rect only while that town has no layout (Rome's
+# waypoints); a built town carries it itself. Routes sharing a point tile meet there.
+
+ROAD_STYLES = {
+    # docs/design/sets/world.md §9.4: paving, crossings, and what stands along the way.
+    "roman": {"paving": "rome.basalt_paving", "bridge": "world.bridge_arch",
+              "ford": "world.ford", "marker": ("rome.r_milestone", 8),
+              "station": ("rome.mutatio", 24),
+              "tombs": (["rome.r_tomb", "rome.tomb_drum", "rome.tomb_house", "rome.tomb_altar"],
+                        5, 16, 20),
+              "tomb_trees": ["rome.t_stone_pine", "rome.t_cypress"],
+              "track": "rome.packed_earth"},
+    "greek": {"paving": "world.road_earth", "bridge": "world.bridge_timber",
+              "ford": "world.ford", "marker": ("athens.g_herm", 16),
+              "station": ("athens.g_shrine", 24),
+              "graves": (["athens.g_grave_stele", "athens.g_grave_mound"], 10),
+              "slope_wall": "world.terrace_wall", "track": "athens.packed_earth"},
+    "persian": {"paving": "world.road_royal", "bridge": "world.bridge_timber",
+                "ford": "world.ford", "station": ("world.royal_station", 16),
+                "stop": (["parsa.p_well", "parsa.p_trough"], 8),
+                "watch": "world.watchtower", "beacon": ("world.beacon", 32),
+                "track": "parsa.packed_earth"},
+    "corner": {"paving": "world.road_earth", "ford": "world.ford",
+               "marker": ("world.milestone", 12), "track": "world.road_earth"},
+}
 
 ROUTES = {
-    "corner_road": {"points": ["corner:corner_road_s", "rome:aurelia_w"],
-                    "paving": "world.road_earth", "width": 1, "kind": "road", "build": True},
-    "via_appia": {"points": ["rome:appia_se", (292, 160), (326, 206), (350, 214), (392, 262)],
-                  "paving": "rome.basalt_paving", "width": 2, "kind": "road", "build": False},
-    "royal_road": {"points": [(870, 210), (912, 150), (958, 128), (985, 150), (1015, 178),
-                              (1036, 250), (1054, 300), (1092, 326), (1120, 338),
-                              "parsa:royal_road_w"],
-                   "paving": "world.road_earth", "width": 2, "kind": "road", "build": False},
-    "pasargadae_road": {"points": ["parsa:pasargadae_n", (1190, 286)],
-                        "paving": "world.road_earth", "width": 2, "kind": "road",
-                        "build": False},
-    "delphi_way": {"points": [(556, 284), (530, 262), (510, 258)], "paving": "world.road_earth",
-                   "width": 1, "kind": "track", "build": False},
-    "sacred_way": {"points": ["athens:sacred_way_w", (566, 236)], "paving": "world.road_earth",
-                   "width": 2, "kind": "road", "build": False},
-    "academy_road": {"points": ["athens:academy_road_n", (568, 212)],
-                     "paving": "world.road_earth", "width": 2, "kind": "road", "build": False},
-    "acharnai_road": {"points": ["athens:acharnai_n", (618, 200), (630, 160)],
-                      "paving": "world.road_earth", "width": 1, "kind": "road", "build": False},
-    "mesogeia_road": {"points": ["athens:mesogeia_e", (744, 252)],
-                      "paving": "world.road_earth", "width": 1, "kind": "track", "build": False},
+    "corner_road": {"points": ["corner:corner_road_s", "rome:aurelia_w"], "style": "corner",
+                    "width": 1, "kind": "road"},
+    "via_appia": {"points": ["rome:appia_se", "alban_mount:appia_alban_w",
+                             "alban_mount:appia_alban_e", "capua:appia_capua_w",
+                             "capua:appia_capua_e", "beneventum:appia_benev_w",
+                             "beneventum:appia_benev_e", (368, 236),
+                             "brundisium:appia_brund_w"],
+                  "style": "roman", "width": 2, "kind": "road"},
+    "academy_road": {"points": ["athens:academy_road_n", "academy:academy_e"], "style": "greek",
+                     "width": 1, "kind": "road"},
+    "acharnai_road": {"points": ["athens:acharnai_n", (618, 202), (626, 176)],
+                      "style": "greek", "width": 1, "kind": "road", "end": "charcoal"},
+    "mesogeia_road": {"points": ["athens:mesogeia_e", (738, 258)], "style": "greek",
+                      "width": 1, "kind": "track", "end": "fishing"},
+    # The Megarid road from Eleusis round its bay to Corinth's isthmus, and the way to Delphi
+    # along the north shore of the gulf.
+    "megarid_road": {"points": ["eleusis:eleusis_w", (551, 252), (556, 268),
+                                "corinth:corinth_n"], "style": "greek", "width": 1,
+                     "kind": "road"},
+    "delphi_way": {"points": [(556, 268), (532, 262), "delphi:delphi_s"], "style": "greek",
+                   "width": 1, "kind": "road"},
+    "ionian_road": {"points": ["ephesus:ephesus_e", (856, 228), "sardis:sardis_w"],
+                    "style": "greek", "width": 1, "kind": "road"},
+    # The Royal Road (Herodotus 5.52-54), by the Euphrates and Babylon (world.md §5.3).
+    "royal_road": {"points": ["sardis:sardis_e", (896, 190), (916, 158),
+                              "halys:halys_w", "halys:halys_e", (985, 150), (1000, 168),
+                              "euphrates_crossing:euph_w", "euphrates_crossing:euph_e",
+                              (1032, 214), (1044, 250), (1062, 272), "babylon:babylon_n",
+                              "babylon:babylon_e", (1079, 312), "susa:susa_w", "susa:susa_e",
+                              (1107, 334), "persian_gates:gates_w", "persian_gates:gates_e",
+                              (1132, 346), "parsa:royal_road_w"],
+                   "style": "persian", "width": 2, "kind": "road"},
+    "pasargadae_road": {"points": ["parsa:pasargadae_n", "pasargadae:pasargadae_s"],
+                        "style": "persian", "width": 2, "kind": "road",
+                        "rows": ("parsa.t_cypress", 6)},
+    # From the Royal Road in Cappadocia over the Taurus gates to a Cilician harbour.
+    "cilician_road": {"points": [(985, 150), (983, 206), (980, 248), (980, 266), (983, 283)],
+                      "style": "persian", "width": 1, "kind": "road", "end": "harbour"},
 }
 
+# Sea and river lanes. Ports name the places a lane serves; `start` and `end` are added to every
+# lane (route tokens), fishing lanes have `home` and `grounds`. A port named after a town meets
+# that town's own harbour lane on the same tile. `harbour` puts a mole and a beacon at a lane end
+# that no town holds.
 LANES = {
     "corner_portus": {"points": [(34, 112), (60, 130), (80, 170), (96, 205), (104, 216)],
-                      "kind": "sea", "ports": {"corner_jetty": 0, "portus": 4}, "build": True},
-    "grain_fleet": {"points": [(200, 447), (180, 330), (130, 250), (106, 220)], "kind": "sea",
-                    "ports": {"south_edge": 0, "portus": 3}, "build": False},
-    "ionian_crossing": {"points": [(404, 270), (436, 270)], "kind": "sea",
-                        "ports": {"brundisium": 0, "mist_w": 1}, "build": False},
-    "ionian_greek": {"points": [(446, 250), (448, 232), (462, 270), (520, 275), (554, 282)],
-                     "kind": "sea", "ports": {"mist_e": 0, "lechaion": 4}, "build": False},
+                      "kind": "sea", "ports": {"corner_jetty": 0, "portus": 4}},
+    "grain_fleet": {"points": [(200, 447), (180, 330), (130, 250), (106, 222)], "kind": "sea",
+                    "ports": {"south_edge": 0, "portus": 3}},
+    "ostia_brundisium": {"points": [(106, 222), (240, 280), (300, 372), (380, 336),
+                                    (412, 300), (406, 272)], "kind": "sea",
+                         "ports": {"portus": 0, "brundisium": 5}},
+    "ionian_crossing": {"points": [(406, 270), (436, 270)], "kind": "sea",
+                        "ports": {"brundisium": 0, "mist_w": 1}},
+    "ionian_greek": {"points": [(442, 250), (448, 216), (460, 256), (470, 272), (520, 274),
+                                (553, 284)], "kind": "sea",
+                     "ports": {"mist_e": 0, "corcyra": 1, "lechaion": 5}},
     # Piraeus' lanes meet Athens' own harbour lane off the Kantharos mouth (athens local c 12,
     # r 159 = world (588, 379)), in open water just beyond the layer's south edge.
-    "saronic": {"points": [(572, 300), (568, 334), (570, 364), (580, 384), (588, 380)],
-                "kind": "sea", "ports": {"kenchreai": 0, "piraeus": 4}, "build": False},
-    "aegean_delos": {"points": [(588, 380), (600, 392), (700, 392), (782, 346), (840, 252)],
-                     "kind": "sea", "ports": {"piraeus": 0, "delos": 3, "ephesus": 4},
-                     "build": False},
+    "saronic": {"points": [(571, 306), (568, 334), (570, 364), (580, 384), (588, 380)],
+                "kind": "sea", "ports": {"kenchreai": 0, "piraeus": 4}},
+    "aegean_delos": {"points": [(588, 380), (600, 392), (700, 392), (774, 339), (831, 242)],
+                     "kind": "sea", "ports": {"piraeus": 0, "delos": 3, "ephesus": 4}},
     "hellespont": {"points": [(588, 380), (600, 392), (720, 392), (790, 200), (800, 104)],
-                   "kind": "sea", "ports": {"piraeus": 0, "hellespont": 4}, "build": False},
-    "gulf_lane": {"points": [(1080, 420), (1088, 400)], "kind": "sea",
-                  "ports": {"gulf": 0, "susiana": 1}, "build": False},
+                   "kind": "sea", "ports": {"piraeus": 0, "hellespont": 4}, "harbour": 4},
+    "levant": {"points": [(984, 288), (996, 304), (998, 322)], "kind": "sea",
+               "ports": {"cilicia": 0, "sidon": 2}},
+    "gulf_lane": {"points": [(1104, 444), (1090, 412), (1088, 400)], "kind": "sea",
+                  "ports": {"gulf": 0, "shatt": 2}},
+    "karun_boats": {"points": [(1088, 398), (1090, 370), (1094, 341)], "kind": "river",
+                    "ports": {"shatt": 0, "susa": 2}},
+    "euphrates_boats": {"points": [(1015, 187), (1020, 220), (1032, 258), (1048, 284)],
+                        "kind": "river", "ports": {"crossing": 0, "babylon": 3}},
 }
 
-# --- country looks per stretch (world-tech §3.8) ---------------------------------------------
-# base: the stretch's base terrain; plants: item -> weight; forest: share of land that is wood;
-# fields: share that is cultivated near water and roads.
+# --- country by stretch (docs/design/sets/world.md §9.3) ------------------------------------
+# base: base terrain; plants: item -> weight; open: plants per land tile outside woods; forest:
+# share of land that is wood (forest_density inside, with clearings); floor: overlay under woods;
+# field/fields: ploughland terrain and its share near water and roads; vines: a second crop near
+# roads; scrub: overlay share on hills; rock/snow: overlay from these levels; flowers: the
+# world.p_wildflowers look of the stretch; river_tree: the riverside tree; props: scattered
+# natural props with their density; hamlet: kit family of the farms along its roads.
 
-STRETCH_LOOK = {
-    "corner": {"base": "grass", "plants": {"oak": 3, "pine": 2, "blossom": 0.3},
-               "forest": 0.30, "fields": 0.0, "field": None},
-    "seam_dell": {"base": "grass", "plants": {"oak": 1}, "forest": 0.1, "fields": 0.0,
-                  "field": None},
+BIOMES = {
+    "corner": {"base": "grass", "plants": {"oak": 3, "pine": 2, "blossom": 0.3}, "open": 0.012,
+               "forest": 0.30, "forest_density": 0.4},
+    "seam_dell": {"base": "grass", "plants": {"oak": 1}, "open": 0.01, "forest": 0.1,
+                  "forest_density": 0.3},
     "latium_italy": {"base": "rome.grass_spring",
-                     "plants": {"rome.t_stone_pine": 3, "rome.t_cypress": 2, "rome.t_oak": 2,
-                                "world.t_poplar": 1},
-                     "forest": 0.22, "fields": 0.18, "field": "rome.field_spring"},
-    "tyrrhenian": {"base": "rome.grass_spring", "plants": {"rome.t_stone_pine": 2,
-                                                           "rome.t_oak": 2},
-                   "forest": 0.25, "fields": 0.08, "field": "rome.field_spring"},
-    "apennines": {"base": "rome.grass_spring", "plants": {"world.t_beech": 3, "rome.t_oak": 2},
-                  "forest": 0.45, "fields": 0.0, "field": None},
-    "greece": {"base": "athens.dry_grass", "plants": {"athens.t_olive": 3, "world.t_oak": 1,
-                                                       "athens.t_cypress": 1},
-               "forest": 0.18, "fields": 0.10, "field": "athens.field_stubble"},
-    "arcadia": {"base": "athens.dry_grass", "plants": {"world.t_oak": 2, "world.t_fir": 2},
-                "forest": 0.35, "fields": 0.0, "field": None},
-    "attica_north": {"base": "athens.dry_grass", "plants": {"athens.t_olive": 4,
-                                                             "world.t_pine_aleppo": 1},
-                     "forest": 0.22, "fields": 0.12, "field": "athens.olive_soil"},
+                     "plants": {"rome.t_oak": 2, "world.t_oak": 2, "rome.t_olive": 2,
+                                "rome.t_stone_pine": 1, "rome.t_cypress": 1},
+                     "open": 0.05, "forest": 0.22, "forest_density": 0.42,
+                     "floor": "world.forest_floor", "field": "rome.field_spring",
+                     "fields": 0.18, "vines": "rome.vineyard_soil", "rock": 8, "snow": 12,
+                     "flowers": 0, "river_tree": "rome.t_poplar",
+                     "props": {"world.boulder": 0.004}, "hamlet": "roman"},
+    "tyrrhenian": {"base": "rome.grass_spring",
+                   "plants": {"world.p_maquis": 3, "rome.t_oak": 2, "rome.t_stone_pine": 1},
+                   "open": 0.05, "forest": 0.20, "forest_density": 0.38, "scrub": 0.4,
+                   "field": "rome.field_spring", "fields": 0.06, "rock": 7, "snow": 12,
+                   "flowers": 4, "river_tree": "rome.t_poplar",
+                   "props": {"world.boulder": 0.006}, "hamlet": "roman"},
+    "apennines": {"base": "rome.grass_spring",
+                  "plants": {"world.t_beech": 3, "world.t_oak": 2, "world.t_fir": 2},
+                  "open": 0.03, "forest": 0.45, "forest_density": 0.45,
+                  "floor": "world.forest_floor", "rock": 9, "snow": 11, "flowers": 0,
+                  "high": {"world.t_fir": 1}, "river_tree": "rome.t_poplar",
+                  "props": {"world.boulder": 0.006, "world.crag": 0.004}, "peaks": True,
+                  "hamlet": "roman"},
+    "greece": {"base": "athens.dry_grass",
+               "plants": {"athens.t_olive": 3, "world.p_maquis": 2, "athens.t_cypress": 1,
+                          "athens.t_pine": 1, "world.t_oak": 1, "athens.p_thyme": 1,
+                          "world.p_thistle": 1},
+               "open": 0.045, "forest": 0.16, "forest_density": 0.38, "scrub": 0.30,
+               "field": "athens.field_stubble", "fields": 0.10, "vines": "athens.olive_soil",
+               "rock": 7, "snow": 12, "flowers": 1, "river_tree": "athens.t_plane",
+               "props": {"world.boulder": 0.006}, "hamlet": "greek"},
+    "arcadia": {"base": "athens.dry_grass",
+                "plants": {"world.t_fir": 3, "world.t_oak": 2}, "open": 0.03, "forest": 0.40,
+                "forest_density": 0.45, "floor": "world.forest_floor", "rock": 8, "snow": 11,
+                "flowers": 1, "river_tree": "athens.t_plane",
+                "props": {"world.boulder": 0.006, "world.crag": 0.004}, "peaks": True,
+                "hamlet": "greek"},
+    "attica_north": {"base": "athens.dry_grass",
+                     "plants": {"athens.t_olive": 4, "athens.t_pine": 1, "world.p_maquis": 1},
+                     "open": 0.05, "forest": 0.22, "forest_density": 0.4,
+                     "field": "athens.olive_soil", "fields": 0.12, "scrub": 0.2, "rock": 7,
+                     "flowers": 1, "river_tree": "athens.t_plane",
+                     "props": {"world.boulder": 0.005}, "hamlet": "greek"},
     "thrace": {"base": "athens.dry_grass", "plants": {"world.t_oak": 3, "world.t_beech": 1},
-               "forest": 0.30, "fields": 0.10, "field": "athens.field_stubble"},
-    "ionia_lydia": {"base": "athens.dry_grass", "plants": {"athens.t_olive": 2,
-                                                            "world.t_plane": 1,
-                                                            "world.t_poplar": 1},
-                    "forest": 0.2, "fields": 0.18, "field": "athens.field_stubble"},
-    "seam_ionia": {"base": "athens.dry_grass", "plants": {"world.t_plane": 1}, "forest": 0.15,
-                   "fields": 0.05, "field": "athens.field_stubble"},
-    "anatolia": {"base": "world.steppe", "plants": {"world.t_oak": 1, "world.t_poplar": 1},
-                 "forest": 0.06, "fields": 0.05, "field": "world.field"},
-    "taurus": {"base": "world.steppe", "plants": {"world.t_cedar": 2, "world.t_fir": 1},
-               "forest": 0.3, "fields": 0.0, "field": None},
-    "east_med": {"base": "world.steppe", "plants": {"world.t_cedar": 2, "athens.t_olive": 1},
-                 "forest": 0.2, "fields": 0.08, "field": "world.field"},
-    "mesopotamia": {"base": "world.alluvium", "plants": {"world.t_palm": 4, "world.t_poplar": 1},
-                    "forest": 0.10, "fields": 0.30, "field": "world.field"},
-    "susiana": {"base": "world.alluvium", "plants": {"world.t_palm": 3}, "forest": 0.08,
-                "fields": 0.35, "field": "world.field"},
-    "syrian_steppe": {"base": "world.steppe", "plants": {"world.t_tamarisk": 1},
-                      "forest": 0.02, "fields": 0.0, "field": None},
-    "zagros": {"base": "world.steppe", "plants": {"world.t_oak": 3}, "forest": 0.25,
-               "fields": 0.0, "field": None},
-    "iran_plateau": {"base": "parsa.plain_grass", "plants": {"parsa.t_cypress": 1,
-                                                              "world.t_poplar": 1},
-                     "forest": 0.05, "fields": 0.06, "field": "parsa.field_barley"},
+               "open": 0.03, "forest": 0.30, "forest_density": 0.42,
+               "floor": "world.forest_floor", "field": "athens.field_stubble", "fields": 0.10,
+               "rock": 8, "flowers": 1, "river_tree": "athens.t_poplar",
+               "props": {"world.tumulus": 0.0008, "world.boulder": 0.003}, "hamlet": "greek"},
+    "ionia_lydia": {"base": "athens.dry_grass",
+                    "plants": {"athens.t_olive": 2, "athens.t_plane": 1, "athens.t_poplar": 1,
+                               "world.p_maquis": 1},
+                    "open": 0.04, "forest": 0.18, "forest_density": 0.38,
+                    "field": "athens.field_stubble", "fields": 0.18, "rock": 7, "flowers": 1,
+                    "river_tree": "athens.t_plane", "props": {"world.boulder": 0.003},
+                    "hamlet": "greek"},
+    "seam_ionia": {"base": "athens.dry_grass",
+                   "plants": {"athens.t_plane": 1, "athens.t_olive": 1, "world.p_maquis": 1},
+                   "open": 0.03, "forest": 0.15, "forest_density": 0.35, "rock": 7,
+                   "flowers": 1, "river_tree": "athens.t_plane"},
+    "anatolia": {"base": "world.steppe",
+                 "plants": {"parsa.p_steppe": 3, "world.p_thistle": 2, "world.t_oak": 1},
+                 "open": 0.025, "forest": 0.05, "forest_density": 0.3,
+                 "field": "world.field", "fields": 0.05, "rock": 8, "snow": 12, "flowers": 5,
+                 "river_tree": "parsa.t_poplar", "river_tree2": "parsa.t_willow",
+                 "props": {"world.boulder": 0.004, "world.sheepfold": 0.0004,
+                           "world.tumulus": 0.0003}, "peaks": True, "hamlet": "anatolian"},
+    "taurus": {"base": "world.steppe", "plants": {"world.t_cedar": 2, "world.t_fir": 2},
+               "open": 0.03, "forest": 0.32, "forest_density": 0.42,
+               "floor": "world.forest_floor", "rock": 9, "snow": 11, "flowers": 5,
+               "river_tree": "parsa.t_poplar",
+               "props": {"world.crag": 0.005, "world.boulder": 0.004}, "peaks": True},
+    "east_med": {"base": "world.steppe",
+                 "plants": {"world.p_maquis": 2, "parsa.t_date": 1, "world.t_cedar": 1},
+                 "open": 0.04, "forest": 0.18, "forest_density": 0.4, "scrub": 0.4,
+                 "field": "world.field", "fields": 0.08, "rock": 7, "snow": 12, "flowers": 4,
+                 "river_tree": "parsa.t_poplar", "props": {"world.boulder": 0.004},
+                 "hamlet": "anatolian"},
+    "mesopotamia": {"base": "world.alluvium",
+                    "plants": {"parsa.t_date": 3, "world.t_palm": 2, "parsa.t_poplar": 1,
+                               "world.t_tamarisk": 1},
+                    "open": 0.02, "forest": 0.10, "forest_density": 0.38,
+                    "field": "world.field", "fields": 0.32, "canals": (8, 0.5), "flowers": 3,
+                    "river_tree": "parsa.t_date", "marsh": True, "hamlet": "marsh"},
+    "susiana": {"base": "world.alluvium",
+                "plants": {"parsa.t_date": 3, "world.t_palm": 2, "world.t_tamarisk": 1},
+                "open": 0.02, "forest": 0.08, "forest_density": 0.38, "field": "world.field",
+                "fields": 0.35, "canals": (7, 0.6), "flowers": 3, "river_tree": "parsa.t_date",
+                "marsh": True, "hamlet": "marsh"},
+    "syrian_steppe": {"base": "world.steppe",
+                      "plants": {"parsa.p_steppe": 2, "world.p_thistle": 2,
+                                 "world.t_tamarisk": 0.5, "world.t_pistachio": 0.2},
+                      "open": 0.015, "forest": 0.0, "desert_from": 382, "flowers": 3,
+                      "river_tree": "world.t_tamarisk", "props": {"world.boulder": 0.002}},
+    "zagros": {"base": "world.steppe",
+               "plants": {"world.t_oak_zagros": 3, "world.t_pistachio": 1}, "open": 0.03,
+               "forest": 0.30, "forest_density": 0.25, "rock": 9, "snow": 11, "flowers": 2,
+               "river_tree": "parsa.t_poplar",
+               "props": {"world.crag": 0.006, "world.boulder": 0.005}, "peaks": True},
+    "iran_plateau": {"base": "parsa.plain_grass",
+                     "plants": {"parsa.t_cypress": 1, "parsa.t_poplar": 1, "parsa.t_almond": 1,
+                                "world.t_pistachio": 1, "parsa.p_steppe": 2},
+                     "open": 0.02, "forest": 0.05, "forest_density": 0.3,
+                     "field": "parsa.field_barley", "fields": 0.06, "rock": 8, "snow": 11,
+                     "flowers": 2, "river_tree": "parsa.t_poplar",
+                     "props": {"world.boulder": 0.003, "world.sheepfold": 0.0004},
+                     "peaks": True, "hamlet": "anatolian"},
 }
 
-# City and town rects are reserved in the base: flat at the region's base level, no items, in the
+# Farm kit by family: (item, weight); a hamlet is a yard with 3-6 of them around it.
+HAMLETS = {
+    "roman": {"rome.r_villa_farm": 2, "rome.r_shed": 2, "rome.r_well": 1,
+              "world.field_hut": 1},
+    "greek": {"athens.g_farmstead": 2, "athens.g_threshing": 1, "athens.g_well": 1,
+              "athens.g_press": 1, "world.field_hut": 1},
+    "anatolian": {"parsa.p_house_small": 3, "parsa.p_granary": 1, "parsa.p_threshing": 1,
+                  "parsa.p_well": 1, "parsa.p_dovecote": 1, "world.sheepfold": 1},
+    "marsh": {"world.reed_hut": 3, "parsa.p_house_small": 1, "parsa.p_granary": 1,
+              "world.shaduf": 1},
+    "fishing": {"world.fish_hut": 2, "world.drying_rack": 2, "world.field_hut": 1},
+    "charcoal": {"world.charcoal_kiln": 3, "world.field_hut": 1},
+}
+HAMLET_EVERY = 40   # tiles of road between farms (§9.5: a beat every 30-40 tiles)
+
+# Base terrains meeting another base get this overlay on their side (V8; §1.2 margins).
+MARGIN = {"world.steppe": "world.scrub", "world.alluvium": "world.field",
+          "world.sand": "world.gravel_desert", "rome.grass_spring": "rome.field_spring",
+          "athens.dry_grass": "athens.field_stubble", "parsa.plain_grass": "parsa.rough_ground",
+          "grass": "meadow"}
+
+# City rects are reserved in the base: flat at the region's base level, no items, in the
 # region's set base terrain, so the builder of that layer starts from clean ground.
 RESERVED_BASE = {"rome": "rome.grass_spring", "athens": "athens.dry_grass",
                  "parsa": "parsa.plain_grass"}
@@ -493,10 +698,20 @@ SEA_LABELS = [("Tyrrhenian Sea", (150, 330)), ("Adriatic", (372, 70)),
               ("Mediterranean", (930, 400)), ("Persian Gulf", (1090, 430))]
 
 # Close-ups of the generated country written with the base layer's previews.
+# Close-ups of the generated country written with the base layer's previews (1x).
 BASE_VIEWS = {
-    "latium": (172, 186, 208, 214), "campania_coast": (290, 214, 322, 244),
-    "greece": (520, 166, 552, 196), "anatolia": (930, 150, 962, 178),
-    "mesopotamia": (1040, 262, 1070, 290), "zagros": (1100, 300, 1132, 328),
+    "relay_station": (893, 166, 915, 188), "sangarios_bridge": (917, 142, 939, 164),
+    "taurus_gates": (966, 244, 994, 280), "zagros_climb": (1098, 316, 1137, 352),
+    "via_appia": (330, 200, 372, 240), "megarid_road": (538, 238, 570, 280),
+    "canals": (1036, 236, 1072, 272), "campania_coast": (290, 214, 322, 244),
+}
+
+# The journey at reduced scale, written with `world --preview` (whole composed world).
+JOURNEY_VIEWS = {
+    "1_home_to_rome": (0, 60, 150, 200), "2_rome_to_brundisium": (260, 140, 420, 290),
+    "3_crossing_west_greece": (400, 190, 560, 300), "4_isthmus_attica": (530, 200, 640, 320),
+    "5_aegean_ionia": (720, 180, 880, 400), "6_anatolia": (860, 100, 1030, 240),
+    "7_mesopotamia": (1000, 160, 1110, 340), "8_zagros_parsa": (1070, 250, 1210, 380),
 }
 
 TIME_BANDS = {"rome": "AD 126", "athens": "432 BC", "parsa": "c. 470 BC"}

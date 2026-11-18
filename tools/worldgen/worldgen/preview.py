@@ -289,6 +289,11 @@ def _dashed_rect(d, box, fill, dash=8, gap=6):
 
 # --- isometric close-ups -----------------------------------------------------------------------
 
+PLACEHOLDER_COLOURS = {
+    "landmark": (196, 112, 86), "building": (214, 176, 112), "stair": (190, 170, 140),
+    "water": (120, 150, 170), "wall": (168, 160, 150), "prop": (176, 172, 166),
+    "plant": (110, 156, 92), "unknown": (220, 60, 200)}
+
 FACE_COLOURS = {"water": (150, 196, 214), "world.coast": (168, 146, 112), "world.rock": (132, 124, 116),
                 "world.earth": (140, 108, 76), "world.snow": (226, 230, 238)}
 
@@ -306,6 +311,7 @@ class IsoRenderer:
         self.lp = cat.level_px
         self.cols = terrain_colours(world, cat, atlas)
         self.font = font(root, 10)
+        self.font_label = font(root, 11, bold=True)
         self._diamonds: dict = {}
         self._place: dict = {}
         self.missing: set[str] = set()
@@ -377,48 +383,80 @@ class IsoRenderer:
             out.append((tuple(rc), s))
         return out
 
+    def category(self, item_id: str) -> str:
+        """What kind of thing a placeholder stands for, by its catalog entry."""
+        d = self.cat.items.get(item_id)
+        if d is None:
+            return "unknown"
+        if d.landmark:
+            return "landmark"
+        if d.rise > 0:
+            return "stair"
+        if d.on == "water" or "crossing" in d.extra.get("tags", []):
+            return "water"
+        if d.layout == "variant" and d.footprint == (1, 1) and d.stand_in:
+            return "plant"
+        if d.has_door or d.glow:
+            return "building"
+        if d.layout == "connect":
+            return "wall"
+        return "prop"
+
     def placeholder(self, item_id: str, fx: int, fy: int) -> tuple[Image.Image, int, int]:
-        """A grey box of the catalog height over the footprint, with the id written on it."""
+        """A box of the catalog height over the footprint, coloured by category (landmark,
+        building, stair, water deck, wall, prop, plant) with the id written on it, legible at
+        1x: the label sits on the box, or above it when the box is narrower than the text."""
         key = (item_id, fx, fy)
         if key in self._place:
             return self._place[key]
         d = self.cat.items.get(item_id)
         hpx = int(d.height) if d and d.height else 32
         hw, hh = self.hw, self.hh
-        # Footprint corners relative to the anchor (top vertex of origin tile).
         top = (0, 0)
         right = (fx * hw, fx * hh)
         bottom = ((fx - fy) * hw, (fx + fy) * hh)
         left = (-fy * hw, fy * hh)
         xs = [p[0] for p in (top, right, bottom, left)]
         minx, maxx = min(xs), max(xs)
-        W = maxx - minx + 2
-        H = (fx + fy) * hh + hpx + 2
+        label = item_id.split(".", 1)[-1]
+        f = self.font_label
+        tw = int(ImageDraw.Draw(Image.new("RGBA", (1, 1))).textlength(label, font=f))
+        bw = maxx - minx + 2
+        W = max(bw, tw + 6)
+        pad = (W - bw) // 2
+        above = 14 if tw + 4 > bw else 0
+        H = (fx + fy) * hh + hpx + 2 + above
         im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         dr = ImageDraw.Draw(im)
-        # Big footprints (harbours, terraces) are drawn see-through, so their ground still shows.
-        a = 235 if fx * fy < 36 else 70
+        base = PLACEHOLDER_COLOURS[self.category(item_id)]
+        a = 235 if fx * fy < 36 else 90
 
         def P_(p, up=0):
-            return (p[0] - minx + 1, p[1] + hpx + 1 - up)
+            return (p[0] - minx + 1 + pad, p[1] + hpx + 1 - up + above)
 
-        dr.polygon([P_(left), P_(bottom), P_(bottom, hpx), P_(left, hpx)], fill=(176, 172, 166, a))
-        dr.polygon([P_(bottom), P_(right), P_(right, hpx), P_(bottom, hpx)], fill=(140, 136, 132, a))
+        def shade(k):
+            return tuple(int(min(255, v * k)) for v in base) + (a,)
+
+        dr.polygon([P_(left), P_(bottom), P_(bottom, hpx), P_(left, hpx)], fill=shade(0.92))
+        dr.polygon([P_(bottom), P_(right), P_(right, hpx), P_(bottom, hpx)], fill=shade(0.74))
         dr.polygon([P_(top, hpx), P_(right, hpx), P_(bottom, hpx), P_(left, hpx)],
-                   fill=(206, 202, 196, a))
-        for a, b in ((left, bottom), (bottom, right)):
-            dr.line([P_(a), P_(b)], fill=(70, 66, 62, 255))
+                   fill=shade(1.12))
+        ink = (40, 34, 30, 255)
+        for a_, b_ in ((left, bottom), (bottom, right)):
+            dr.line([P_(a_), P_(b_)], fill=ink)
         dr.line([P_(top, hpx), P_(right, hpx), P_(bottom, hpx), P_(left, hpx), P_(top, hpx)],
-                fill=(70, 66, 62, 255))
+                fill=ink)
         for p in (left, bottom, right):
-            dr.line([P_(p), P_(p, hpx)], fill=(70, 66, 62, 255))
-        label = item_id.split(".", 1)[-1]
-        tw = dr.textlength(label, font=self.font)
-        cx, cy = P_(((left[0] + right[0]) / 2, (top[1] + bottom[1]) / 2), hpx // 2)
-        if tw < W - 4 or fx * fy > 1:
-            dr.text((cx - tw / 2 + 1, cy - 5), label, font=self.font, fill=(255, 255, 255, 255))
-            dr.text((cx - tw / 2, cy - 6), label, font=self.font, fill=(30, 28, 26, 255))
-        self._place[key] = (im, -minx + 1, hpx + 1)
+            dr.line([P_(p), P_(p, hpx)], fill=ink)
+        if above:
+            tx, ty = (W - tw) / 2, 0
+        else:
+            cx, cy = P_(((left[0] + right[0]) / 2, (top[1] + bottom[1]) / 2), hpx // 2)
+            tx, ty = cx - tw / 2, cy - 7
+        for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            dr.text((tx + ox, ty + oy), label, font=f, fill=(255, 252, 244, 255))
+        dr.text((tx, ty), label, font=f, fill=ink)
+        self._place[key] = (im, -minx + 1 + pad, hpx + 1 + above)
         return self._place[key]
 
     # the frame ----------------------------------------------------------------------------

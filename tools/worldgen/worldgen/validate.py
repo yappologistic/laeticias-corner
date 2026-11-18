@@ -289,9 +289,11 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
     for n in g.nodes:
         comps.setdefault(find(n.id), []).append(n)
     if len(comps) > 1:
+        # A part of the graph that reaches a portal joins the world through another layer (the
+        # base's roads of Italy, Greece and Persia meet only in the towns between them).
         main = max(comps.values(), key=len)
         for nodes in comps.values():
-            if nodes is main:
+            if nodes is main or any(n.kind == "portal" for n in nodes):
                 continue
             n = nodes[0]
             issue("V6", f"node {n.id!r} ({len(nodes)} node(s)) is not connected to the rest of "
@@ -352,6 +354,14 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             # A seat, a work yard under a shed: used from the walkable tile beside it.
             start = [(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))
                      if 0 <= c + dc < COLS and 0 <= r + dr < ROWS and walk[r + dr, c + dc]]
+            beside = [(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                      if not (p.c <= c + dc < p.c + p.pw and p.r <= r + dr < p.r + p.ph)]
+            if not beside:
+                # Deep inside the kit's own footprint (a station's yard): only its art geometry
+                # can open it with walk tiles.
+                issue("V7", f"{p.name or p.id}: slot {sid!r} lies inside its own footprint with "
+                      "no walk tiles (art geometry)", (c, r), p.src, level="warning")
+                continue
         art = inside and marks[r, c] >= 0 and not cat.items[p.id].rise
         if not inside or not start or not walk[start[0][1], start[0][0]]:
             if inside and unknown[r, c]:
@@ -427,13 +437,19 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
     # V10: budgets on the composed world.
     counts: dict = {}
     glows: dict = {}
+    own_items: set = set()
+    own_glows: set = set()
     for _, it in live_items(world):
         tx, ty = it.r, COLS - 1 - (it.c + it.pw - 1)
         k = (tx // P.CHUNK, ty // P.CHUNK)
         counts[k] = counts.get(k, 0) + 1
         d = cat.items.get(it.id)
+        if it.layer == name:
+            own_items.add(k)
         if d is not None and d.glow:
             glows[k] = glows.get(k, 0) + 1
+            if it.layer == name:
+                own_glows.add(k)
     def touches(k) -> bool:
         """Whether chunk k overlaps the target layer (budgets are the composed world's, but each
         layer answers for the chunks it shares)."""
@@ -443,8 +459,9 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         rr0, rr1 = min(r for _, r in cs), max(r for _, r in cs)
         return cc0 <= c1 and c0 <= cc1 and rr0 <= r1 and r0 <= rr1
 
-    counts = {k: n for k, n in counts.items() if touches(k)}
-    glows = {k: n for k, n in glows.items() if touches(k)}
+    # A layer answers for an over-budget chunk it shares and adds to.
+    counts = {k: n for k, n in counts.items() if touches(k) and k in own_items}
+    glows = {k: n for k, n in glows.items() if touches(k) and k in own_glows}
     for k, n in sorted(counts.items()):
         if n > MAX_ITEMS_CHUNK:
             issue("V10", f"chunk {k} holds {n} items; at most {MAX_ITEMS_CHUNK}",

@@ -145,7 +145,8 @@ class Builder:
 
     def build_base(self) -> None:
         t = time.time()
-        L, g, st = base_mod.build_base(self.cat)
+        L, g, st = base_mod.build_base(
+            self.cat, {n: pl for n, pl in self.layers.items() if n != "base"})
         L.views = {k: Rect(*v) for k, v in P.BASE_VIEWS.items()}
         pl, issues = compiler.compile_layer(L)
         self.layers["base"], self.graphs["base"], self.layouts["base"] = pl, g, L
@@ -274,7 +275,15 @@ class Builder:
         if self.write:
             self.out.mkdir(parents=True, exist_ok=True)
             ov.quantize(colors=96, method=2, dither=0).save(target, optimize=True)
-        return [d / "world.png", d / "overview_full.png", target]
+        out = [d / "world.png", d / "overview_full.png", target]
+        preview.home_preview(world, self.cat, self.root)
+        iso = preview.IsoRenderer(world, self.cat, self.atlas, self.root)
+        for vname, rect in P.JOURNEY_VIEWS.items():
+            f = d / f"journey_{vname}.png"
+            iso.render(rect, 1, title=f"journey · {vname.split('_', 1)[1].replace('_', ' ')}",
+                       max_px=2400).save(f)
+            out.append(f)
+        return out
 
 
 def main(argv=None) -> int:
