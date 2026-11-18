@@ -337,6 +337,21 @@ def way_split(W, g, way: Way, path, marks, levels, taken) -> None:
         if path[i] in taken:
             fixed[i] = taken[path[i]][1]
     fixed.setdefault(0, int(L.LV[path[0][1], path[0][0]]))
+    # A crossing's decks meet their banks at the water's level (the kit's end pieces ramp down
+    # to their own tile), so the road reaches the tiles either side of a water run at that level.
+    i = 0
+    while i < len(path):
+        if not water[path[i][1], path[i][0]]:
+            i += 1
+            continue
+        j = i
+        while j < len(path) and water[path[j][1], path[j][0]]:
+            j += 1
+        wl = min(int(L.LV[r, c]) for c, r in path[i:j])
+        for k in (i - 1, j):
+            if 0 <= k < len(path) and k not in fixed:
+                fixed[k] = wl
+        i = j
     # Between two fixed levels (portals, junctions) the profile is laid piece by piece, so a
     # road meets every portal at the plan's level.
     cuts = sorted(fixed) + ([len(path) - 1] if len(path) - 1 not in fixed else [])
@@ -414,10 +429,11 @@ def way_split(W, g, way: Way, path, marks, levels, taken) -> None:
                 W.stats.setdefault("ramp_failures", []).append(f"{way.id} at {rect}")
     W.stats.setdefault("ramps", 0)
     W.stats["ramps"] += len(ramps) * (1 if way.width < 2 else 2)
-    # Crossings.
+    # Crossings, on the road's own lane only: connect decks run along one axis (two lanes of
+    # them draw a hollow frame), so a wide road narrows to one tile over water.
     river_of = W.stats.get("_river_of", {})
     for i in range(len(path)):
-        for c, r in section(path, i, way.width, W.blocked):
+        for c, r in section(path, i, 1, W.blocked):
             if not water[r, c] or not W.land[r, c] and not W.river[r, c]:
                 continue
             if L.OCC[r, c] >= 0:

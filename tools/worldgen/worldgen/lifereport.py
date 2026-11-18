@@ -255,6 +255,13 @@ def activity_map(doc: dict, view, world, root: Path, day: int, label: str,
 
 # -- the command ------------------------------------------------------------------------------
 
+def finish_doc(doc: dict, world, b) -> dict:
+    """What every region file gets beside its life: its sound and its look."""
+    from . import look, places, sound
+    doc = sound.apply(places.apply(doc), world, b.cat, b.root)
+    return look.apply(doc, world, b.cat, b.root)
+
+
 def run(b, rids: list[str], preview: bool, write: bool) -> bool:
     """Build, check and write the region files of the cities with a life module."""
     world = b.composed()
@@ -267,7 +274,7 @@ def run(b, rids: list[str], preview: bool, write: bool) -> bool:
         if mod is None:
             raise SystemExit(f"no regions/{layer}/life.py for {rid!r}")
         view = CL.region_view(world, b.cat, b.graphs, b.root, rid, layer)
-        doc = mod.build(view)
+        doc = finish_doc(mod.build(view), world, b)
         problems = CL.check(doc, view)
         errs = [p for p in problems if p.level == "error"]
         (out_dir / f"{rid}_check.txt").write_text("\n".join(CL.report_lines(problems)) + "\n")
@@ -287,6 +294,26 @@ def run(b, rids: list[str], preview: bool, write: bool) -> bool:
                              getattr(mod, "PANELS", PANELS)).save(f)
                 print(f"   preview {f}")
     return ok
+
+
+def check_regions(b) -> int:
+    """Sound (L9), look (L10) and names and eras (L11) errors in every committed region file,
+    cities or not."""
+    from . import look, places, sound
+    files, families = sound.manifests(b.root)
+    n = 0
+    for f in sorted((b.root / "assets/regions").glob("*.json")):
+        doc = json.loads(f.read_text())
+        probs = [("L9",) + x for x in sound.check(doc, files, families)] + \
+                [("L10",) + x for x in look.check(doc)] + \
+                [("L11",) + x for x in places.check(doc)]
+        errs = [x for x in probs if x[1] == "error"]
+        if errs:
+            print(f"{doc.get('id')}: sound and look {len(errs)} error(s)")
+            for code, level, where, msg in errs[:8]:
+                print(f"   {code} {level}: {doc.get('id')}: {where}: {msg}")
+        n += len(errs)
+    return n
 
 
 def check_committed(b, world) -> int:

@@ -41,7 +41,7 @@ def build(L: Layout) -> None:
     L.street([(20, 10), (20, 4)], width=1, paving=EARTH)
     up = WP.climb(L, [(13, 15), (13, 14), (1, 14)], 0, rise=4, paving=EARTH)
     L.river(SHAUR, width=2, terrain="world.river", banks={"world.t_reeds": 0.3}, seed="shaur")
-    L.level(Line(SHAUR, 2), WP.river_level(L, SHAUR, -1))
+    L.level(Line(SHAUR, 2), 0)  # flush with its banks, as the kit decks are drawn (the base meets it)
     F.fords(L, [road], item="world.bridge_timber")
     F.fords(L, town_w + town_e)
     L.place("parsa.susa_palace", rect=(0, 2, 13, 13), name="susa_palace")

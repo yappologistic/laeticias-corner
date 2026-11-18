@@ -365,7 +365,7 @@ def main(argv=None) -> int:
         return 0 if ok else 1
     if a.life:
         from . import life
-        files = life.write(b.composed(), b.graphs, b.root / "assets/regions")
+        files = life.write(b.composed(), b.graphs, b.root / "assets/regions", b.cat)
         print(f"life: {len(files)} region files -> {b.root / 'assets/regions'}")
         if not targets and not want_world:
             return 0
@@ -418,6 +418,8 @@ def main(argv=None) -> int:
         (b.reports / "check.txt").write_text("\n".join(checked))
         from . import lifereport
         if lifereport.check_committed(b, world):
+            failed = True
+        if lifereport.check_regions(b):
             failed = True
     if want_world and a.preview:
         for p in b.preview_world(world):

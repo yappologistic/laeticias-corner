@@ -42,9 +42,12 @@ def build(L: Layout) -> None:
 
     # Ways: the road from the Megarid down to the town, streets, the diolkos' haul road.
     main = WP.portal_street(L, "corinth_n", [(13, 7), (3, 7), (3, 9)], width=1, paving=EARTH)
-    st1 = L.street([(13, 7), (13, 17), (2, 17)], width=1, paving=EARTH)
-    st2 = L.street([(3, 9), (3, 16)], width=1, paving=EARTH)
-    kench = L.street([(13, 12), (14, 12), (14, 22), (17, 22)], width=1, paving=EARTH)
+    # Round the temple (its footprint c 4..15, r 10..15 is solid), not through it.
+    st1 = L.street([(13, 7), (13, 9)], width=1, paving=EARTH)
+    st2 = L.street([(3, 9), (3, 17), (14, 17)], width=1, paving=EARTH)
+    kench = L.street([(14, 17), (14, 22), (17, 22)], width=1, paving=EARTH)
+    # The south gate: the road down the Argolid shore to Sparta and along the gulf to Olympia.
+    WP.portal_street(L, "corinth_s", [(12, 22), (14, 22)], width=1, paving=EARTH)
     top = WP.climb(L, [(10, 17), (10, 25), (1, 25), (1, 21), (3, 21)], 0, rise=6,
                    paving=EARTH)
     L.level(Rect(4, 19, 6, 21), top)  # the summit bench, where the path arrives
@@ -79,7 +82,7 @@ def build(L: Layout) -> None:
     L.scatter(Rect(0, 0, W - 1, H - 1) - Rect(0, 8, 14, 17),
               {"athens.t_olive": 3, "athens.t_cypress": 1, "athens.t_pine": 1, "athens.p_thyme": 2},
               0.12, seed="country", clump=0.6)
-    L.node("corinth_temple", (13, 13))
+    L.node("corinth_temple", (13, 9))
     L.node("lechaion", (5, 7))
     L.node("kenchreai", (17, 22))
     L.node("acrocorinth", (3, 21))

@@ -34,7 +34,7 @@ def view() -> RegionView:
         landmarks=["t.shop"])
 
 
-def doc() -> dict:
+def life_doc() -> dict:
     """A region where people stroll, a seller keeps the shop and goods go from it to a bench."""
     return {
         "id": "parsa", "season": "spring", "densities": {"work": WORK},
@@ -60,6 +60,25 @@ def doc() -> dict:
                                "A small shop on the square where the seller keeps her goods and the "
                                "strollers stop to talk on their way to the benches.")},
     }
+
+
+def doc() -> dict:
+    """The fixture region with its atmosphere."""
+    return atmosphere(life_doc())
+
+
+def atmosphere(d: dict) -> dict:
+    """What every region file carries beside its life: names, era, sound and look (L9-L11)."""
+    from tests.test_sound_look import with_look
+    d.update({"name": "Test square", "caption": "Test square · c. 470 BC",
+              "era": "The Persian empire of Xerxes · c. 470 BC"})
+    d.setdefault("theme", {})["look"] = with_look()["theme"]["look"]
+    for x in d["districts"]:
+        x.update({"name": "The square", "sound": {"surfaces": {"stone": 0.5}, "wind": "wind.street",
+                                                   "crowd": {"family": "crowd.persian", "full": 20}}})
+    for r in d["roles"]:
+        r["sound"] = {"oneshot": "sfx/t.wav"}
+    return d
 
 
 def errors(d, v=None, code=None):

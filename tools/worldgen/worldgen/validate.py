@@ -1,5 +1,6 @@
 """Semantic validation of a layer on the composed world (world-tech §3.5, V1-V12; V14 relief
-and V15 sightlines, added after the first visual sweep).
+and V15 sightlines, added after the first visual sweep; V16 crossings, after the owner found
+bridges that do not meet their banks).
 
 Every issue names the check, the layer, the object and the tile (local, plan and grid
 coordinates), and the source line of the layout call that made it when the layer was compiled in
@@ -18,7 +19,7 @@ import numpy as np
 
 from plan import world_plan as P
 
-from . import bible
+from . import bible, crossings
 from .catalog import Catalog
 from .compose import NONE16, World, live_items
 from .coords import COLS, ROWS, to_plan
@@ -284,6 +285,17 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
 
     # V4: landmark rects and levels against the city file and the layout's expectations.
     marks, mfile = bible.for_region(root, tg.regions[0])
+
+    def landmark_level(p) -> int:
+        """A landmark's local level as the city files mean it: a landmark standing on the water
+        (an island, a bridge) is at the level of its deck, the lowest of its walk tiles."""
+        got = int(lv[p.r, p.c]) - tg.layout.base_level
+        d_ = cat.items.get(p.id)
+        if d_ is not None and d_.on == "water":
+            z = cat.geom.get(p.id, {}).get(f"r{p.k}", {}).get("walk_z", {})
+            if z:
+                got += round(min(z.values()) / cat.level_px)
+        return got
     if tg.layout is not None:
         placed = [p for p in tg.layout.items if not p.removed]
         for ex in tg.layout.expects:
@@ -298,7 +310,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                 issue("V4", f"{ex.landmark}: placed at {p.rect.bounds()}, expected "
                       f"{ex.rect.bounds()} (world plan)", (p.c, p.r), ex.src)
             if ex.level is not None:
-                got = int(lv[p.r, p.c]) - tg.layout.base_level
+                got = landmark_level(p)
                 if got != ex.level:
                     issue("V4", f"{ex.landmark}: local level {got}, expected {ex.level}",
                           (p.c, p.r), ex.src)
@@ -335,7 +347,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                         issue("V4", f"{lid}: placed at local {_local(p.rect.bounds(), origin)}, "
                               f"{mfile}:{m.line} says {m.rect}", (p.c, p.r), p.src)
                 if m.level is not None:
-                    got = int(lv[p.r, p.c]) - tg.layout.base_level
+                    got = landmark_level(p)
                     if not (m.level[0] <= got <= m.level[1]):
                         issue("V4", f"{lid}: local level {got}, {mfile}:{m.line} says "
                               f"{m.level[0]}" + (f"..{m.level[1]}" if m.level[1] != m.level[0]
@@ -373,6 +385,12 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                       f"to {lv[r, c]} without a stair or ramp", (c, r))
                 break
             prev = (c, r)
+
+    # V16: crossings meet what they join (bridges, fords, pontoons, gates, stairs and ramps).
+    joined = dict(graphs)
+    joined[name] = g
+    for level, msg, at in crossings.check(world, cat, name, g, walk, joined):
+        issue("V16", msg, at, level=level)
 
     # V6: connected, portals agreed, dest budget.
     parent = {n.id: n.id for n in g.nodes}

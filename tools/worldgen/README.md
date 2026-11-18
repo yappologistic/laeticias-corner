@@ -193,6 +193,7 @@ Between two portals of a town without a layout the base carries the road through
 | V13 | determinism: two compiles give the same bytes (test suite) | test |
 | V14 | the base's relief: no isolated single-tile level change on open country, at most 2 % of it on one-tile benches, no river reach under 6 tiles between two falls of under 3 levels | error (base) |
 | V15 | a marked `sightline` holds no world kit (fords, plank ramps, timber bridges, …) and no placeholder | error |
+| V16 | crossings (`worldgen/crossings.py`): every step the graph makes onto or off a deck (a landmark's walk tiles at its level plus `walk_z`, walkable kit on water at the water's level) stays within half a level of what it meets; bridges, fords, pontoons, landmarks on water and gates a road passes through are joined at two ends (a pier may end at a `dest` node on its planks); a landmark bridge's walkway never ends over water; connect decks run along one axis (two wide draws a frame); a stair's foot and head landings are walkable, at its level and `rise` higher, and met by a path (wide flights share landings) | error (a landmark floor on dry land, landmark stairs: warning) |
 
 Additions: V1 also checks that every placed variant is a valid look or rotation of its catalog
 entry, retired stand-ins, and the region-set rule (a region of set S carries home, world and S ids
@@ -211,6 +212,21 @@ commit it with the layer that changed it. A region README is complete when it ha
 
 `build.sh --city <region>…` runs the life checks of a city's region file (`worldgen/citylife.py`,
 `lifesim.py`, `lifereport.py`); `--check` runs them on the committed city files too.
+
+Every region file (cities through `--city`, the rest through `--life`) also gets its sound
+(`worldgen/sound.py`: `theme.sound`, `districts[].sound`, event `sfx`/`ambience`/`sounds`,
+working roles' `sound`, positional loops on placed workplaces, all measured on the built world
+and named from `assets/audio/*/manifest.json`), its look (`worldgen/look.py`: `theme.look` of
+docs/design/look.md §3.5 and `districts[].look`) and its names (`worldgen/places.py`: a specific
+name, caption and era for every region, a name for every district). `--check` runs L9 (sound:
+every file and family in a manifest; no silent event, working role or populated district), L10
+(look: schema and ranges) and L11 (names and eras) on every committed region file.
+
+Crossings over a river sunk below its banks: `finish.landings(L)` steps the street down to the
+decks (a ramp on four straight tiles, else a two-tile stair); kit decks (`world.bridge_*`,
+`world.pontoon`, `world.ford`) meet banks flush with the water, so towns on plains keep their
+rivers flush; the base's routes meet every crossing at the water's level and lay decks on the
+road's own lane only.
 
 `--check` validates committed files without their layouts, so checks that need the layout source
 (V4 expectations, V7 slots, source lines) only run when the layer is built.

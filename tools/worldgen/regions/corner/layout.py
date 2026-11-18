@@ -83,11 +83,13 @@ def build(L: Layout) -> None:
     jetty_c = 33
     shore = coast_south(L, jetty_c, 90)
     cove = Ellipse(jetty_c, shore, 6, 3) - sea
-    L.level(cove, -1, face="world.coast")
+    # The cove lies at the sea's level, so the planks (drawn at the water's level) meet it.
+    L.level(cove, -2, face="world.coast")
     L.paint(cove, "meadow")
     L.district("coast", cove)
     L.level(Rect(jetty_c, shore - 6, jetty_c, shore - 2), -1)
     L.stair("world.ramp", rect=(jetty_c, shore - 6, jetty_c, shore - 3), face="south")
+    L.stair("world.stair_earth", rect=(jetty_c, shore - 1, jetty_c, shore), face="south")
     L.street([(79, 92), (70, 93), (64, 95), (56, 96), (44, 96), (jetty_c, shore - 10),
               (jetty_c, shore)], width=1, paving="path", kind="track")
     for r in range(shore + 1, min(shore + 10, 111)):
