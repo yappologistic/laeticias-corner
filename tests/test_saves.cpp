@@ -286,6 +286,26 @@ TEST_CASE("a real chunked save keeps everything, opening the stages it built on"
     CHECK(data->seen == std::vector<std::string>{"duck", "cat"});
 }
 
+TEST_CASE("a chunked save keeps a water piece across a chunk line (L-011)") {
+    // Water on both sides of x = 32, the rowboat (2 x 1, on water) at (31, 25): its origin's
+    // chunk is listed first, so its second tile's water comes from the chunk after it.
+    const std::string text = R"({"version": 2, "base": "blank", "chunk": 32,
+        "palette": ["grass", "meadow", "path", "cobble", "water"],
+        "map": {"w": 40, "h": 40}, "clock": {"pin": "none", "t": 0.3},
+        "chunks": [
+          {"x": 0, "y": 0, "terrain": [[0, 830], [4, 2], [0, 192]],
+           "items": [{"id": "rowboat", "v": 0, "x": 31, "y": 25}]},
+          {"x": 1, "y": 0, "terrain": [[0, 200], [4, 2], [0, 54]]}
+        ]})";
+    const Catalog& c = test::catalog();
+    const auto data = deserialize(text, c);
+    REQUIRE(data.has_value());
+    CHECK(data->warnings.empty());
+    const Item* boat = data->world.itemAt({32, 25});
+    REQUIRE(boat != nullptr);
+    CHECK(boat->type == item("rowboat"));
+}
+
 TEST_CASE("world folder names and the profile") {
     const std::vector<std::string> none;
     CHECK(worldSlug("Laeticia's Corner", none) == "laeticias-corner");
