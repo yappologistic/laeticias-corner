@@ -418,7 +418,10 @@ parts: W `world.jetty` landing stages on both banks, W `world.quffa` boats (Hero
 boats of hide over willow frames, carrying a donkey), W `world.kelek` (N: log rafts on inflated
 skins, Assyrian reliefs), W `world.royal_station`, ✔ `parsa.p_tent` camp, W `world.t_tamarisk` and
 `world.t_reeds`, ✔ `parsa.t_poplar`. Uncertainty: the site (Thapsacus, Zeugma or Carchemish
-are candidates; Herodotus says only that the river must be crossed by boat). Plan: river c 6..9,
+are candidates; Herodotus says only that the river must be crossed by boat). Herodotus 1.194 says
+the round hide boats came *down* the river from Armenia and were broken up at Babylon, the skins
+carried home by the donkey on board; at a crossing they are a plausible borrowing. [checked:
+Herodotus 1.194, Rawlinson] Plan: river c 6..9,
 r 0..15; landings c 4..5 and c 10..11 at r 7..9; station c 11..14, r 3..6; camp c 0..3, r 9..12;
 `quffa` lane across r 8.
 
@@ -426,8 +429,9 @@ r 0..15; landings c 4..5 and c 10..11 at r 7..9; station c 11..14, r 3..6; camp 
 with relief aurochs and *mušḫuššu*, Nebuchadnezzar II, c. 575 BC), ＋ `parsa.processional_way`
 (2 × 14, glazed striding lions), ＋ `parsa.etemenanki` (12 × 12; recommend `s = 0.4`, height
 ≈ 210 px, to save area), ＋ `parsa.babylon_wall` (kit wall and tower), ＋ `parsa.euphrates_bridge`
-(N; Herodotus 1.186: stone piers bound with iron and lead; the timber deck lifted at night is in
-later commentary, not certain), ＋ `parsa.esagila` (N), ✔ `parsa.p_house` and `parsa.t_date`, W
+(N; Herodotus 1.186: stone piers bound with iron and lead, and a deck of squared timbers laid by
+day and taken up at night against thieves; the night lifting is in Herodotus himself [checked:
+Herodotus 1.186, Rawlinson, Wikisource]), ＋ `parsa.esagila` (N), ✔ `parsa.p_house` and `parsa.t_date`, W
 `world.t_palm`, W `world.reed_boat`, W `world.quffa`, W `world.shaduf`. Etemenanki's state under
 Xerxes is debated (persepolis.md §3.7): shown standing. Plan (the base Euphrates runs from c 12,
 r 1 to c 20, r 27, 4 wide): Ishtar Gate c 30..35, r 1..4; inner wall west of it c 18..29, r 2..3,
@@ -458,7 +462,8 @@ beacon c 14, r 2 at +5.
 basins), ✔ `parsa.p_channel` and `parsa.water_channel`, ✔ `parsa.t_cypress` and `parsa.t_plane`,
 ＋ `parsa.pasargadae_gate` (N: Gate R with the four-winged figure; who it shows is debated), ✔
 `parsa.p_house_small` as the magi's guardhouse by the tomb (Arrian, *Anabasis* 6.29: magi kept the
-tomb and received a sheep a day), ＋ `parsa.tall_e_takht` (N: the stone platform on the hill).
+tomb, father to son since Cambyses, and received a sheep a day, flour and wine, and a horse a month
+for sacrifice to Cyrus [checked: Arrian 6.29, Chinnock]), ＋ `parsa.tall_e_takht` (N: the stone platform on the hill).
 Founded by Cyrus c. 546–530. Plan: tomb c 4..8, r 18..22 with the guardhouse c 9..10, r 20..21;
 garden c 12..23, r 4..13; gate (N) c 16..21, r 16..21; road from the south edge c 14, r 27 (the
 Pārsa road) north to the gate; platform (N) c 2..10, r 0..3 at +2.

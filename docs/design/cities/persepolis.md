@@ -13,6 +13,9 @@ Pārsa, Yaunā (Ionians), *dahyu* (land, people), *bāji* (tribute, share), *ta�
 word for his building), *hadiš* (palace; Xerxes's word for his), *duvarθi visadahyu* ("gate of all
 lands", Xerxes's name for the Gate, inscription XPa). *Apadāna* is the term later kings used for a
 columned hall (Artaxerxes II at Susa); scholars apply it to Darius's hall, and so does the game.
+The mountain's name Kuh-e Raḥmat ("mount of mercy") is itself medieval: Shahbazi (Iranica,
+"Persepolis") gives the older name as Kuh-e Mehr, "translated" as Raḥmat from the 13th century;
+use it on maps only, never in a card voice set in 470 BC. [checked: Iranica "Persepolis"]
 
 ---
 
@@ -36,16 +39,25 @@ Why this moment:
   to Artaxerxes II and III, decades later. Darius I's tomb at Naqsh-e Rostam is finished.
 - **Spring** is when the Marvdasht plain is green with young barley, the Zagros peaks still carry
   snow, almond and pomegranate gardens flower and the water channels run full. The Apadāna stair
-  reliefs show gift-bearing delegations from 23 lands; a connection with the New Year at the
-  equinox (later Nowruz) is a **modern hypothesis**, not attested in any ancient text (Livius says
-  so plainly). The game shows a spring audience of delegations and never claims it was "Nowruz".
+  reliefs show gift-bearing delegations from 23 lands. Two things must be kept apart:
+  (1) **a fact**: the administrative year used at Pārsa (the Babylonian-based calendar with Old
+  Persian month names) began with the month *Ādukanaiša*, near the spring equinox; (2) **a
+  hypothesis**: that the terrace was built for, or the reliefs show, a New Year festival. That
+  hypothesis is held by Herzfeld, Krefter, Erdmann, Ghirshman and Porada and defended by the
+  Iranian historian A. Sh. Shahbazi ("cannot be taken lightly"); Nylander, Calmeyer and Mousavi
+  deny there is any evidence for it, and Root reads the reliefs as a timeless image of empire,
+  not a record of one day. No Achaemenid text names such a festival, and the name Nowruz
+  (Middle Persian *nōg rōz*) first appears in Pahlavi texts many centuries later. The game shows a
+  **spring audience of delegations**, never calls it "Nowruz", and explains the debate in one
+  card (§6.10). [checked: Iranica "Persepolis" (Shahbazi); Iranica "Nowruz i" (Boyce); Livius
+  "Apadana" offers the link only as "perhaps", with "no hard evidence"]
 
 **The feeling, in five sentences.**
 You smell cold thin air off the snow, wet earth in the gardens, cedar and resin, incense smoke from
 the stands before the king, and the warm dust of horses and barley chaff on the plain. You hear
 water in stone channels, swallows and hoopoes, the low continuous ring of chisels from the
 building site, horse bells and the measured tread of a delegation on the shallow steps. You see a
-forest of slender grey columns, 19 m tall, standing on a stone platform against a bare mountain,
+forest of slender grey columns, 19.5 m tall, standing on a stone platform against a bare mountain,
 their capitals carrying paired bulls, with painted walls of red, blue and gold behind them. Below
 lies a green plain with walled gardens, cypress rows and mudbrick villages under a huge clear sky.
 Pārsa is most itself in the **early morning**, when the low sun turns the terrace honey-gold, the
@@ -94,7 +106,7 @@ orange of fire altars and torches against an enormous star field.
 | D2 | Mountain slope and fortification | c 120..143, r 0..143 | 7–9, backdrop beyond | wall with towers, rock-cut cistern, drainage outfalls, quarry face, a mountain shrine |
 | D3 | Stairway forecourt and royal road | c 26..48, r 36..60 | 0 | arrival plaza, horse lines, the road from the west edge (enters at c 0, r 49..51 = world R 353..355, from the Persian Gates) |
 | D4 | Town of Pārsa | c 0..48, r 62..112 | 0 | mudbrick courtyard houses, workshops, workers' quarters, granaries, kitchens, a small shrine |
-| D5 | Paradise garden (*partetaš* in Elamite tablets; Old Persian *paridaida*) | c 26..54, r 8..34, and a garden strip c 49..55, r 60..118 below the terrace | 0 | walled garden with stone channels, pavilion, cypress and plane rows, orchards; a glazed-brick gate (after Tol-e Ajori) |
+| D5 | Paradise garden (*partetaš* in Elamite tablets; Old Persian \**paridaida*, reconstructed [checked: Iranica "Garden i" (Eilers); the late spelling *paradayadām* is debated]) | c 26..54, r 8..34, and a garden strip c 49..55, r 60..118 below the terrace | 0 | walled garden with stone channels, pavilion, cypress and plane rows, orchards; a glazed-brick gate (after Tol-e Ajori) |
 | D6 | Fields, canals, village | c 26..56, r 0..7; c 0..25, r 21..61; c 0..19, r 113..143 | 0 | barley and wheat plots, threshing floor, canal, village, flocks |
 | D7 | Royal-road station and caravan yard | c 20..34, r 113..126 | 0 | station with stables and storeroom, camel caravan, relay horses |
 | D8 | Cavalry and archery ground | c 35..55, r 113..134 | 0 | riding track, archery butts, the guard at drill |
@@ -221,8 +233,13 @@ quarry, `M` mountain slope (backdrop beyond the east edge).
 - **Qanat:** a line of shaft mounds (ring of spoil around a hole every 2 tiles) runs from the
   mountain foot at c 119, r 139 west along r 138..140 to the fields at c 19, r 139, ending in an
   open channel. Achaemenid
-  qanats are **debated** (Polybius 10.28 attributes underground channels to the Persian period in
-  Hyrcania); mark as a nice-to-have with a careful card.
+  qanats are **debated** for Iran itself: Polybius 10.28 reports a local story that under Persian
+  rule whoever brought water to dry land by underground channels might farm it for five
+  generations. The firmest evidence is in Achaemenid **Egypt**: at ʿAyn Manawir (Kharga oasis) a
+  qanat was in use by the second half of the 5th century BC, dated by Demotic ostraca of the reign
+  of Artaxerxes I. No qanat at Pārsa is dated to 470. Keep it nice-to-have; the card says the
+  technique was known in the empire and that this line is the game's choice. [checked: Polybius
+  10.28 (Loeb, LacusCurtius); Wuttmann, Gonon & Thiers, "The Qanats of ʿAyn Manawir"]
 - **Walls:** the terrace edge is a cliff of fitted grey limestone blocks; a mudbrick wall with
   towers crowns the mountain side. The town has no circuit wall in the game.
 
@@ -266,9 +283,13 @@ B base, S shadow, G glow.
 - **Columns:** square two-step plinth or bell-shaped base carved with hanging petals; very slender
   fluted shaft (about 40–48 flutes); composite capital: a palm/bell element, then tall vertical
   double volutes, then **addorsed animal protomes** (two foreparts back to back) whose saddle holds
-  the main roof beam. Apadāna hall and north portico: bulls (Iranica). Lion and griffin protome
-  capitals also exist at Pārsa; which portico carried which is uncertain: use lions on the Apadāna's
-  east portico and griffins on the west, flagged as a choice.
+  the main roof beam. **Apadāna** [checked: Iranica "Apadāna" (Schmitt & Stronach) and
+  "Persepolis" (Shahbazi)]: the hall and the north portico have the full composite capital with
+  addorsed **bulls**; in the **west** and **east** porticoes the protome capital sits **directly on
+  the fluted shaft**, without the bell and volute stages: **bulls on the west, lions on the east**.
+  Griffin (eagle-headed) capitals are known at Pārsa, but a pair found north of the terrace had been
+  discarded soon after carving; no portico in use is known to have carried them. Gate of All
+  Lands: two addorsed kneeling bulls. Hall of a Hundred Columns' north portico: human-headed bulls.
 - **Roofs:** flat, on cedar and other fine timbers (excavators found a burnt layer of cedar, ebony
   and teak 30–60 cm thick in the Apadāna, Livius), with earth/clay above and a parapet of **stepped
   merlons** (stone examples survive).
@@ -292,13 +313,13 @@ B base, S shadow, G glow.
 | Id | Name | Footprint | Height px | Layers | Anim | M/N | Look (what must be right) |
 |---|---|---|---|---|---|---|---|
 | `terrace` (edge set) | Terrace face and merlons | per tile | 96 (6 levels) | B,S | — | M | fitted polygonal-to-rectangular grey ashlar, huge blocks at the base, a stepped-merlon parapet along the top; drainage outfalls every 10 tiles |
-| `great_stair` | Great double stairway | 7 × 18 | 100 | B,S | — | M | shallow broad steps (about 10 cm rise, 31 cm tread, 6.9 m wide; 111 steps per side by the most common count), low stone parapets, two lower flights diverging from the centre, square landings, two upper flights converging. Plain, no reliefs (the reliefs are on the Apadāna) |
-| `gate_all_lands` | Gate of All Lands | 6 × 6 | 155 | B,S,G | torch flicker (G) | M | square hall with 4 columns about 16.5 m tall (commonly cited), double-bull capitals; three doorways. West door: a pair of colossal **bulls** in profile, striding out; east door: colossal **human-headed winged bulls** (lamassu) with tall feathered crowns, curled beards, wings raised. Trilingual XPa panels above the bulls. Mudbrick walls painted, flat roof, merlons |
-| `apadana` | Apadāna | 24 × 24 | 200 | B,S,G | incense smoke emitters | M | main hall 6 × 6 = 36 columns, over 19 m tall (Iranica); porticoes on north, west and east, each 2 rows of 6 = 12 columns (72 in all); four square corner towers (mudbrick on stone, two storeys, merlons, small windows); south side closed by service rooms. Walls painted, glazed-brick panels. North stair (visible): double stair, relief front with nobles and delegations in two registers each side, lions attacking bulls in the triangles, central panel with 8 guards under the winged disc and sphinxes (the original audience panel of the king was later moved to the Treasury, Livius; at 470 the audience panel is still here: show it). Build so walkers enter the north portico (`walk` tiles) |
+| `great_stair` | Great double stairway | 7 × 18 | 100 | B,S | — | M | shallow broad steps (10 cm rise, 38 cm tread, 6.70 m wide; each side climbs **63 steps** to a landing, then **48 more** to the top: 111 per side, about 11 m of rise) [checked: Iranica "Persepolis" (Shahbazi); the earlier "31 cm, 6.9 m" came from a wiki mirror], low stone parapets, two lower flights diverging from the centre, square landings, two upper flights converging. Plain, no reliefs (the reliefs are on the Apadāna) |
+| `gate_all_lands` | Gate of All Lands | 6 × 6 | 155 | B,S,G | torch flicker (G) | M | square hall with 4 columns "over 16.5 m" tall, capitals of two addorsed kneeling bulls [checked: Iranica "Persepolis"; Livius]; three doorways. West door: a pair of colossal **bulls** in profile, striding out; east door: colossal **human-headed winged bulls** (lamassu) with tall feathered crowns, curled beards, wings raised. Trilingual XPa panels above the bulls. Mudbrick walls painted, flat roof, merlons |
+| `apadana` | Apadāna | 24 × 24 | 200 | B,S,G | incense smoke emitters | M | main hall 6 × 6 = 36 columns, 19.5 m tall (Shahbazi; Iranica "Apadāna": "more than 19 m"); porticoes on north, west and east, each 2 rows of 6 = 12 columns (72 in all); capitals as §3.1 (composite bulls in hall and north portico; bulls directly on the shaft in the **west** portico, which the default view shows; lions in the east portico); four square corner towers (mudbrick on stone, two storeys, merlons, small windows); south side closed by service rooms. Walls painted, glazed-brick panels. North stair (faces north: **hidden** in the default view, as §2.3 says): double stair, relief front in **three registers** each wing (guards, staff-bearers and nobles on one wing, the gift-bearing delegations on the other), lions attacking bulls in the triangles. Central panel **in 470: the audience scene** (the king enthroned under a canopy, the crown prince behind him, an official saluting with hand before mouth, incense stands). It was later removed (Shahbazi: under Artaxerxes I) to the Treasury, where Schmidt found it, and replaced by the panel of 8 guards under the winged disc and sphinxes seen today (Tilia). [checked: Iranica "Persepolis"; Livius "Apadana east stairs"]. Build so walkers enter the north portico (`walk` tiles) |
 | `tacara` | Tačara | 8 × 10 | 120 | B,S,G | lamp glow | M | small palace of dark polished stone (the "hall of mirrors" sheen), hall of 12 columns (3 × 4) with 8-column portico (2 × 4) on the south; stone door and window frames with reliefs of the king under a parasol with attendants, heroes fighting monsters; DPa inscription "I built this *tačara*". West stair plain in 470 |
 | `hadish` | Hadiš | 10 × 14 | 140 | B,S,G | lamp glow | M | hall of 36 columns (6 × 6) with a 12-column portico; on the highest platform; stair reliefs of servants carrying food, wineskins and kid goats; XPe-type inscriptions. Visible from the plain as the top of the terrace silhouette |
-| `tripylon` | Tripylon | 7 × 8 | 110 | B,S | — | M | small 4-column hall with three doors; stair façade with Persian and Median nobles climbing, holding flowers, chatting, hands on each other's shoulders |
-| `hall_100` | Hall of a Hundred Columns (building site) | 16 × 16 | 120 (finished columns); 40–110 (rising) | B,S | crane swing, chisel sparks | M | grid of 10 × 10 bases, about a third with full shafts, some with capitals, others shafts at mid-height with timber scaffolds and earth ramps; north portico of 16 columns; two colossal bulls flanking the portico, roughly blocked out; stacks of drums, a capital on rollers, ox sledges |
+| `tripylon` | Tripylon | 7 × 8 | 110 | B,S | — | M | small 4-column hall with three doors; stair façade with Persian and Median nobles climbing, holding flowers, chatting, hands on each other's shoulders. Shahbazi attributes it to "Xerxes and Artaxerxes I", so in 470 it may still have been unfinished; showing it complete is a choice [checked: Iranica "Persepolis"] |
+| `hall_100` | Hall of a Hundred Columns (building site) | 16 × 16 | 120 (finished columns); 40–110 (rising) | B,S | crane swing, chisel sparks | M | grid of 10 × 10 bases, columns "nearly 14 m" when finished (Shahbazi; built between 486 and about 450), about a third with full shafts, some with capitals, others shafts at mid-height with timber scaffolds and earth ramps; north portico of 16 columns, whose finished capitals are **double human-headed bulls** (Shahbazi); two colossal bulls flanking the portico, roughly blocked out; stacks of drums, a capital on rollers, ox sledges [checked: Iranica "Persepolis"; Livius] |
 | `treasury` | Treasury | 17 × 30 | 80 | B,S | — | M | low, flat-roofed mudbrick complex, plastered walls, small high windows, many columned halls with **wooden columns plastered and painted** in patterns on stone bases; guarded doors |
 | `harem` | Residential wing ("Harem") | L, 13 × 27 | 70 | B,S,G | lamp glow | M | rows of apartments around courts, small 4-column halls, stone door frames with royal reliefs |
 | `garrison` | Garrison quarters | 24 × 13 | 70 | B,S,G | brazier | M | barracks rooms, armoury, a courtyard for drill, a gate tower |
@@ -309,9 +330,9 @@ B base, S shadow, G glow.
 | `paradise_gate` | Glazed-brick gate | 5 × 5 | 110 | B,S | — | N | mudbrick gate faced with glazed bricks: blue ground with yellow-white bulls and dragons (*mušḫuššu*) in relief, after Tol-e Ajori and the Ishtar Gate type |
 | `pavilion` | Garden pavilion | 6 × 6 | 90 | B,S,G | — | M | open columned pavilion (wooden or slender stone columns), flat roof, over the channel; carpets inside |
 | `road_station` | Royal-road station | 9 × 8 | 60 | B,S,G | — | M | walled yard, stable range, storeroom, a room for the official; tethered horses |
-| `naqsh_cliff` | Naqsh-e Rostam and Darius I's tomb | 21 × 9 | 230 | B,S | — | M | a pinkish-grey cliff; the tomb is a **cross-shaped** façade: lower arm blank; middle arm a palace front with 4 engaged columns (bull capitals) and a door; upper arm the king on a three-stepped dais before a **fire altar**, under the winged figure, on a throne-platform carried by 30 figures of the subject peoples; Gobryas (spear-bearer) and Aspathines (bow-bearer) at the sides; DNa/DNb inscription panels |
+| `naqsh_cliff` | Naqsh-e Rostam and Darius I's tomb | 21 × 9 | 230 | B,S | — | M | a pinkish-grey cliff; the tomb is a **cross-shaped** façade: lower arm blank; middle arm a palace front with 4 engaged columns (bull capitals) and a door; upper arm the king on a three-stepped dais before a **fire altar**, under the winged figure, on a throne-platform carried by 30 figures of the subject peoples; Gobryas (spear-bearer) and Aspathines (holding the king's battle-axe; his title *vaçabara* is usually rendered "bow-bearer", meaning debated) at the sides; DNa/DNb inscription panels [checked: Livius DNd] |
 | `kaba` | Ka'ba-ye Zartosht | 3 × 3 | 120 | B,S | — | N | square stone tower about 12 m, dark limestone blind windows in contrasting stone, a stair to a single high door |
-| `cyrus_tomb` | Tomb of Cyrus | 5 × 5 | 110 | B,S | — | M | six-stepped stone plinth carrying a small gabled chamber with a low door; pale limestone; a few trees and a channel (Arrian describes trees and a meadow watered by a stream) |
+| `cyrus_tomb` | Tomb of Cyrus | 5 × 5 | 110 | B,S | — | M | six-stepped stone plinth carrying a small gabled chamber with a low, narrow door (about 0.78 × 1.40 m today; secondary sources put it on the north-west side, to confirm against Stronach 1978 before re-modelling) and a rosette in the gable; pale limestone; a grove and a channel (Arrian 6.29, after Aristobulus: a grove of all kinds of trees, watered, deep grass in the meadow; a small house of the magi who guarded it) [checked: Arrian 6.29 (Chinnock, Wikisource)] |
 
 ### 3.3 Kit: buildings, structures and props
 
@@ -417,15 +438,15 @@ houses, walkers, caravans, plants); each adds a few unique landmarks at `s ≈ 0
 |---|---|---|---|---|---|
 | **Pasargadae** (C 1176..1203, R 260..287) | `cyrus_tomb` | 5 × 5 | 110 | M | see §3.2 |
 | | `pasargadae_garden` | 12 × 10 | 70 | M | Palace P: a columned hall facing a garden divided by narrow stone channels with square basins (Met essay); cypresses and planes |
-| | `pasargadae_gate` | 6 × 6 | 90 | N | Gate R with the relief of a four-winged figure wearing an Egyptian-style crown (once inscribed "I, Cyrus the king, an Achaemenid"; who it shows is debated) |
+| | `pasargadae_gate` | 6 × 6 | 90 | N | Gate R with the relief of a four-winged figure wearing an Egyptian-style crown (once inscribed "I, Cyrus the king, an Achaemenid", inscription CMa, which many scholars think was added under Darius; who the figure shows is debated) |
 | **Persian Gates** (C 1112..1127, R 330..345) | `gates_station` | 8 × 6 | 60 | M | a narrow defile between cliffs (`rock` edges, levels 12–15), the road on a ledge, a walled station with guards and a beacon |
 | **Susa** (C 1080..1103, R 315..340) | `susa_palace` | 14 × 12 | 150 | M | Darius's palace on the high citadel mound: an apadāna of 36 columns with bull capitals (like Pārsa) beside courtyard buildings of mudbrick faced with **glazed-brick friezes**: archers in patterned robes, lions, winged bulls, on blue and green grounds |
 | | `susa_mound` (terrain set) | — | — | M | high earthen mound (`earth` edges), mudbrick town below, the Shaur river |
 | **Babylon** (C 1036..1071, R 285..316) | `ishtar_gate` | 6 × 4 | 140 | M | double gate in **blue glazed brick** with alternating rows of yellow-brown aurochs and white-yellow *mušḫuššu* dragons in relief (Nebuchadnezzar II, c. 575 BC), crenellated towers |
 | | `processional_way` | 2 × 14 | 60 | M | walled street lined with glazed-brick striding lions |
-| | `etemenanki` | 12 × 12 | 260 | M | the stepped temple tower of Marduk: seven stepped stages in mudbrick with baked-brick facing, a long front stair, a shrine on top (proportions after the Esagila tablet; uncertain). Its state under Xerxes is debated (Greek writers say he damaged Marduk's sanctuary after the revolts of 484; many historians doubt it). Shown standing |
+| | `etemenanki` | 12 × 12 | 260 | M | the stepped temple tower of Marduk: seven stepped stages in mudbrick with baked-brick facing, a long front stair, a shrine on top (proportions after the Esagila tablet; uncertain; Herodotus 1.181 counts eight towers including the base) [checked: Herodotus 1.181, 1.183 (Rawlinson, Wikisource)]. Its state under Xerxes is debated (Greek writers say he damaged Marduk's sanctuary after the revolts of 484; many historians doubt it). Shown standing |
 | | `babylon_wall` (kit) | 1 × 1 / 2 × 2 tower | 70 / 100 | M | mudbrick double wall with towers |
-| | `euphrates_bridge` | 10 × 2 | 30 | N | stone piers with timber deck (Herodotus describes it) |
+| | `euphrates_bridge` | 10 × 2 | 30 | N | stone piers bound with iron and lead, with a timber deck laid by day and taken up at night against thieves (Herodotus 1.186) [checked] |
 | **Euphrates crossing** (C 1008..1023, R 170..185) | `ferry_station` | 6 × 6 | 40 | M | landing stages on both banks, round hide-covered boats and log rafts on inflated skins, a station |
 | **Halys crossing** (C 950..965, R 120..135) | `halys_gates` | 8 × 4 | 80 | M | a gate with towers and a guard post on the road before the river (Herodotus mentions gates and a fort here), timber bridge or ferry |
 | **Gordion** (C 905..925, R 130..150) | `gordion_mound` | 10 × 10 | 70 | N | the great burial mound and the citadel walls of the old Phrygian capital |
@@ -453,16 +474,16 @@ crowns or attributes). "How to recognise" lists what must survive at that size.
 | 1 | **Xšayāršā (Xerxes I)** | r. 486–465 BC | present | Son of Darius I and Atossa; finished his father's buildings and added the Gate of All Lands, the Hadiš and the Hall of a Hundred Columns. His inscriptions call him "great king, king of kings, king of lands". | tallest figure; long pleated court robe in deep red-purple with gold border; tall fluted crown; long squared beard; staff in right hand, lotus in left; an attendant holds a parasol over him | morning: enthroned in the Apadāna north portico during audiences; afternoon: walks the Hadiš terrace; rarely: inspects the Hall of a Hundred Columns site | M |
 | 2 | **Amestris** | fl. 480–420s BC | present | Wife of Xerxes and mother of Artaxerxes I. She is known only from Greek authors (Herodotus, Ctesias), who paint her darkly; the game shows her as a royal householder, which is what Achaemenid royal women were in the tablets. | long robe, veil from a low crown down her back, jewelled collar; attendants | the residential wing courts and the garden pavilion; visits the weaving workshop of her household | N |
 | 3 | **Artaxšaça (Artaxerxes), the young prince** | b. c. 480s?, r. 465–424 BC | present | Younger son of Xerxes who became king in 465 and finished the Hall of a Hundred Columns. In 470 he is a boy or a youth; his exact age is uncertain. | small court robe, simple cap, riding a pony with a groom | the cavalry ground learning to ride and shoot (Persian boys were taught "to ride, to shoot, to speak the truth", Herodotus 1.136, a Greek source) | N |
-| 4 | **Baradkama, treasurer** | attested 490s–460s BC (tablets; exact span to check) | present | A treasurer of Pārsa named in the Persepolis Treasury tablets, which record silver paid to workers in place of rations. | Median dress with a rounded cap, seal on a cord at his wrist, a scribe beside him | Treasury doorway: weighs silver, seals tablets, receives the delegations' gifts after the audience | M |
-| 5 | **Artemisia I of Caria** | fl. 480 BC | present (visitor) | Queen of Halicarnassus, a Persian vassal, who commanded ships for Xerxes at Salamis (Herodotus). Her visit to Pārsa is the game's invention, framed as a vassal bringing gifts. | Carian dress like the Lydians on the reliefs (long striped garment) with a wreath, plus a short cloak; two attendants with a bull and shield (the Carian gifts) | climbs the great stairway with the Carian delegation; later rests in the visitors' tents | N |
-| 6 | **Kūruš (Cyrus II, "the Great")** | r. 559–530 BC | memory | Founder of the Achaemenid empire, conqueror of Media, Lydia and Babylon; buried at Pasargadae in the stepped tomb. His Babylonian cylinder is discussed in §6.10. | translucent; Elamite-style robe and a simple crown (we do not have a certain contemporary image; the winged genius relief at Pasargadae is not him) | appears at dusk beside his tomb in the Pasargadae vignette; walks once around it and fades at dawn | M |
-| 7 | **Dārayavauš (Darius I)** | r. 522–486 BC | relief + memory | Took the throne in 522 and recorded it at Bisitun; founded Pārsa and the Apadāna, reorganised the empire into satrapies, standardised weights and coinage and built roads and the Nile–Red Sea canal. | relief: the king on his tomb and in the audience panel; memory: like Xerxes but older, white beard | at dusk on the Tačara steps; his tomb at Naqsh-e Rostam is clickable | M |
+| 4 | **Mauš, treasurer** (Elamite spelling, also *Mawuš*; the Old Persian form is uncertain) | attested Xerxes years 12–19 (c. 474–467 BC) | present | The treasurer at Pārsa to whom the Treasury tablets of exactly our years are addressed: orders to pay workers partly in silver in place of rations. **Correction:** the bible first named Baradkama (Elamite *Baratkama*), but his tablets run only from Darius year 32 to Xerxes year 6 (490–480 BC); by 470 the letters go to Mauš, and from 467 to Ratininda. Baradkama may appear as a memory. [checked: CDLI catalogue of Cameron, *Persepolis Treasury Tablets* (OIP 65), nos. 1–22 and 27–48] | Median dress with a rounded cap, seal on a cord at his wrist, a scribe beside him | Treasury doorway: weighs silver, seals tablets, receives the delegations' gifts after the audience | M |
+| 5 | **Artemisia I of Caria** | fl. 480 BC | present (visitor) | Queen of Halicarnassus, a Persian vassal, who commanded ships for Xerxes at Salamis (Herodotus). Her visit to Pārsa is the game's invention, framed as a vassal bringing gifts; whether she was still alive or ruling in 470 is not known. | Carian dress like the Lydians on the reliefs (long striped garment) with a wreath, plus a short cloak; two attendants with a bull and shield (the Carian gifts) | climbs the great stairway with the Carian delegation; later rests in the visitors' tents | N |
+| 6 | **Kūruš (Cyrus II, "the Great")** | r. 559–530 BC | memory | Founder of the Achaemenid empire, conqueror of Media, Lydia and Babylon; buried at Pasargadae in the stepped tomb. His Babylonian cylinder is discussed in §6.10. | translucent; Elamite-style robe and a simple crown (we do not have a certain contemporary image; whether the winged figure of Gate R at Pasargadae represents him is debated, and the game does not use it as his portrait) | appears at dusk beside his tomb in the Pasargadae vignette; walks once around it and fades at dawn | M |
+| 7 | **Dārayavauš (Darius I)** | r. 522–486 BC | relief + memory | Took the throne in 522 and recorded it at Bisitun; founded Pārsa (site chosen about 518) and began the Apadāna, reorganised the empire's satrapies, standardised weights and coinage, built roads and completed the Nile–Red Sea canal begun by the Egyptian king Necho II. [checked: Iranica "Persepolis"] | relief: the king on his tomb and in the audience panel; memory: like Xerxes but older, white beard | at dusk on the Tačara steps; his tomb at Naqsh-e Rostam is clickable | M |
 | 8 | **Atossa (Old Persian probably *Utauθā*)** | c. 550–after 486 BC | memory | Daughter of Cyrus, wife of Darius, mother of Xerxes; very influential according to Herodotus. Some scholars find her in the tablets as "Udusana" (Henkelman); that identification is discussed, not certain. | memory; dignified older woman, veil and crown, a staff | residential-wing court at dusk | N |
 | 9 | **Irtašduna (Artystone)** | fl. c. 500 BC | memory | A wife of Darius I, daughter of Cyrus. The Fortification tablets show her running her own estates, giving orders under her own seal and receiving wine and sheep from the palace stores. | memory; seated with a seal and a tablet; attendants with jars | at a garden table, giving instructions to an estate scribe | M |
-| 10 | **Parnakka (Old Persian *Farnaka*)** | fl. 506–497 BC | memory | Darius's uncle and head of the institutional economy of Fārs in the Fortification tablets: he authorised rations, travel and payments across the region with his seals. | memory; Median dress, two seals, a stack of tablets | the granary scribes' yard at dusk, inspecting the tablets | M |
-| 11 | **Gaubaruva (Gobryas), spear-bearer, and Aspačanā (Aspathines), bow-bearer** | fl. 520–490 BC | relief (clickable) | Two of Darius's highest courtiers, carved beside his tomb with trilingual labels naming their offices. | relief figures on the tomb façade | Naqsh-e Rostam vignette | N |
+| 10 | **Parnakka (Old Persian \**Farnaka*)** | fl. 506–497 BC | memory | Head of the institutional economy of Fārs in the Fortification tablets: he authorised rations, travel and payments across the region with his seals. Often called Darius's uncle (a son of Aršam); Henkelman doubts any kinship, so cards say only "a great Persian noble". [checked: Iranica "Persepolis administrative archives", via search summary only] | memory; Median dress, two seals, a stack of tablets | the granary scribes' yard at dusk, inspecting the tablets | M |
+| 11 | **Gaubaruva (Gobryas), spear-bearer, and Aspačanā (Aspathines), bow-bearer** | fl. 520–490 BC | relief (clickable) | Two of Darius's highest courtiers, carved beside his tomb with trilingual labels naming their offices (DNc, DNd). Aspathines's label says he "holds the battle-axe" of Darius; his title *vaçabara* is usually translated "bow-bearer", but its meaning is debated. [checked: Livius DNd] | relief figures on the tomb façade | Naqsh-e Rostam vignette | N |
 | 12 | **Auramazdā** | — | shrine | The great god of the royal inscriptions ("a great god is Auramazdā, who created this earth, who created yonder sky, who created man, who created happiness for man"). The winged figure in a disc above royal reliefs may represent him or the royal fortune: scholars disagree. | not a figure: the winged disc on reliefs and a fire altar | the fire altars on the terrace and before the tomb; the card explains what the inscriptions say | M |
-| 13 | **Tištrya, the rain star** | Avesta | shrine / apparition | The star Sirius, hymned in the Avesta's Tištar Yašt: as a white horse with golden ears he fights the drought demon Apaoša and brings rain to the lands. | a faint white horse with golden ears seen on the mountain ridge during a spring shower | appears only during the "spring shower" weather event | M |
+| 13 | **Tištrya, the rain star** (rows 13–17: the Avesta was handed down orally and written down only in Sasanian times; whether these hymns were told at Pārsa in 470 in this form is not known, and the cards say so) | Avesta | shrine / apparition | The star Sirius, hymned in the Avesta's Tištar Yašt: as a white horse with golden ears he fights the drought demon Apaoša and brings rain to the lands. | a faint white horse with golden ears seen on the mountain ridge during a spring shower | appears only during the "spring shower" weather event | M |
 | 14 | **Yima (later Jamshid)** | Avesta | storyteller tale | In the Avesta, the radiant king of a golden age without heat, cold, sickness or death, who built the *vara* enclosure. Persians of the Middle Ages credited the ruins to him (Takht-e Jamshid). | told by an old storyteller near the stairway at dusk; the tale appears as a faint golden silhouette over the terrace | dusk, stairway plaza | N |
 | 15 | **Ərəxša (Arash) the archer** | Avesta | storyteller tale | The Tištar Yašt compares the rain star's flight to the arrow of Ərəxša, "the swiftest archer of the Aryans". The famous story of his arrow setting the frontier is told by much later writers. | storyteller tale; an archer silhouette and an arrow streak across the dusk sky | archery ground at dusk | N |
 | 16 | **Θraētaona (later Fereydun)** | Avesta | storyteller tale | In the Avesta he is the hero who defeats the three-headed dragon Aži Dahāka. The Shahnameh retelling, with the tyrant Zahhak and the smith Kaveh, is 1,500 years later and is not used here. | tale silhouette: a hero with a mace and a three-headed dragon | dusk, stairway plaza | N |
@@ -472,13 +493,18 @@ crowns or attributes). "How to recognise" lists what must survive at that size.
 
 Names are typical forms of the period (Old Persian, Elamite renderings in the tablets,
 Babylonian, Egyptian, Greek, Lydian); the persons are invented. The Susa building inscription of
-Darius (DSf) names which peoples did which crafts, and the game follows it.
+Darius (DSf) names which peoples did which crafts **for his palace at Susa** (stonecutters:
+Ionians and Lydians; goldsmiths: Medes and Egyptians; woodworkers: Lydians and Egyptians; baked
+brick: Babylonians; wall decorators: Medes and Egyptians), and the game follows it for Pārsa too;
+cards say "at Susa" when they cite it. [checked: Livius DSf translation] The daughter's name
+Udusana in the last row is also the Elamite name Henkelman proposes for Queen Atossa; renaming the
+child would avoid confusing the two (owner's choice).
 
 | Figure | Who | Where / routine | Card (40–60 words) |
 |---|---|---|---|
 | **Miθradāta**, scribe | Persian; writes Aramaic on leather and checks Elamite clay tablets | granary yard → treasury | "Miθradāta writes in two worlds: Aramaic in ink on soft leather, and checks the Elamite scribes pressing wedges into clay. Every jar of wine, every sack of barley and every traveller's meal on the royal road ends up on one of his tablets, sealed and filed." |
 | **Ṛtakāmā**, overseer of weavers | Persian woman; head of a workshop of women weavers | weaving workshop in town | "Ṛtakāmā leads forty weavers. The tablets show women like her drawing the highest rations in their group, and mothers receiving extra grain after a birth. Her workshop's patterned cloth will become robes for the court and gifts for honoured guests." |
-| **Hermon**, stonecutter | Ionian (*Yauna*); DSf says stonecutters came from Ionia and Sardis | quarry ↔ Hall of a Hundred Columns | "Hermon came from Ionia to cut stone for the king. He reads a block by the sound it makes under his hammer. Today he is shaping a column drum for the new hall; his pay comes partly in barley and partly in weighed silver." |
+| **Hermon**, stonecutter | Ionian (*Yauna*); DSf says the stonecutters of Darius's Susa palace were Ionians and Lydians | quarry ↔ Hall of a Hundred Columns | "Hermon came from Ionia to cut stone for the king. He reads a block by the sound it makes under his hammer. Today he is shaping a column drum for the new hall; his pay comes partly in barley and partly in weighed silver." |
 | **Bēl-iddin**, brickmaker | Babylonian; DSf says Babylonians made the baked bricks | brickfield and kiln in town | "Bēl-iddin's family has made bricks for generations, in Babylon and now in Pārsa. Mudbricks dry in the sun for walls; the best are fired and glazed in blue and yellow. He stamps each mould with a careful thumb." |
 | **Pediese**, goldsmith | Egyptian; DSf names Egyptians and Medes as goldsmiths | workshop near the treasury | "Pediese beats gold into leaf thin enough to float, for door fittings and the edges of painted reliefs. He also makes armlets with griffin heads like the ones the Lydians bring as gifts." |
 | **Manes**, carpenter | Lydian (Sardian); DSf names Sardians and Egyptians as woodworkers | roof of the new hall | "Manes fits cedar beams that travelled from Lebanon, across rivers and over mountains, to rest on the bull capitals. Up on the scaffold the whole plain lies below him." |
@@ -490,16 +516,16 @@ Darius (DSf) names which peoples did which crafts, and the game follows it.
 
 | Figure | Card title · epithet | Text |
 |---|---|---|
-| Xerxes | **Xšayāršā** · Great King, King of Kings | "Xerxes finished what his father began here and built the Gate of All Lands. His inscriptions say Auramazdā made him king. Each spring he receives gifts from the peoples of an empire that runs from the Aegean to the Indus, seated beneath a parasol among slender columns." |
+| Xerxes | **Xšayāršā** · Great King, King of Kings | "Xerxes finished what his father began here and built the Gate of All Lands. His inscriptions say Auramazdā made him king. On the Apadāna stairs, the peoples of an empire from the Aegean to the Indus bring him gifts; here he receives them enthroned under a canopy among slender columns." [checked: "each spring" removed: no ancient text dates the audience; the audience relief shows a canopy, the parasol belongs to the walking king on the door reliefs] |
 | Amestris | **Amestris** · Queen | "Wife of Xerxes and mother of the next king. Greek historians told dark stories about her; Persian records tell us more about how royal women lived: they owned estates, travelled with their own staff and sealed their own orders." |
 | Artaxerxes | **Artaxšaça** · A young prince | "One day he will finish the Hall of a Hundred Columns. Today he is learning to ride and draw a bow on the plain below the terrace. Greek writers said Persian boys were taught three things: to ride, to shoot and to tell the truth." |
-| Baradkama | **Baradkama** · Treasurer | "His name survives on the Treasury tablets, the receipts of a working empire. He weighs silver to pay craftsmen when barley runs short, seals each payment and files the record. The gifts the delegations bring this morning will pass through his doors." |
+| Mauš (was Baradkama) | **Mauš** · Treasurer | "His name survives on the Treasury tablets of these very years, the receipts of a working empire. Orders reach him to pay craftsmen partly in weighed silver instead of barley; he seals each payment and files the record. The gifts the delegations bring this morning will pass through his doors." [checked: OIP 65 nos. 27–48, addressed to Mauš/Mawuš, Xerxes years 12–19] |
 | Artemisia | **Artemisia of Caria** · Queen of Halicarnassus (a visit imagined) | "A Carian queen who commanded ships for Xerxes at Salamis, as Herodotus tells. Here we imagine her climbing the stairway with the Carians, who bring a bull, a shield and a spear on the Apadāna reliefs." |
-| Cyrus | **Kūruš** · Founder (a memory) | "Cyrus joined Persians, Medes and Elamites into one empire and took Lydia and Babylon. He rests at Pasargadae in a small stone house on six steps. Alexander, two centuries later, found it guarded and honoured." |
-| Darius | **Dārayavauš** · Builder of Pārsa (a memory) | "Darius chose this mountain foot for a new royal city, raised the terrace and began the Apadāna. He divided the empire into satrapies, fixed weights and coinage and cut his story into the cliff at Bisitun in three languages." |
+| Cyrus | **Kūruš** · Founder (a memory) | "Cyrus joined Persians, Medes and Elamites into one empire and took Lydia and Babylon. He rests at Pasargadae in a small stone house on six steps, where magi kept watch, father to son. Two centuries later Alexander found it robbed and had it restored." [checked: Arrian 6.29: the tomb had been plundered; the magi guards had served since Cambyses] |
+| Darius | **Dārayavauš** · Builder of Pārsa (a memory) | "Darius chose this mountain foot for a new royal city, raised the terrace and began the Apadāna. He reorganised the empire's satrapies, fixed weights and coinage and cut his story into the cliff at Bisitun in three languages." |
 | Atossa | **Atossa** · Daughter of Cyrus (a memory) | "Daughter of one king, wife of another, mother of a third. Greek writers made her powerful and proud. Some scholars think the tablets mention her under the Elamite name Udusana; others are less sure." |
-| Irtašduna | **Irtašduna** · Queen of estates (a memory) | "The Fortification tablets show this wife of Darius managing estates, workers and stores in her own name. One order from the king sends her two hundred jars of wine and a hundred sheep." |
-| Parnakka | **Parnakka** · Head of the stores (a memory) | "For ten years his seal moved barley, wine, sheep and travellers across Fārs. The tens of thousands of clay tablets found in the fortification wall are largely the paperwork of his office: the most detailed record of daily life in the empire." |
+| Irtašduna | **Irtašduna** · Queen of estates (a memory) | "The Fortification tablets show this wife of Darius managing estates, workers and stores in her own name. One order from the king sends her two hundred jars of wine and a hundred sheep." [checked: Iranica "Persepolis Elamite tablets": 200 *marriš* of wine and 100 sheep, PF 1795; a *marriš* is a jar measure of about ten litres] |
+| Parnakka | **Parnakka** · Head of the stores (a memory) | "For ten years his seal moved barley, wine, sheep and travellers across Fārs. The tens of thousands of clay tablets found in the fortification wall are largely the paperwork of his office: the most detailed record of daily life in the empire." [checked: Iranica gives "over 30,000 tablets, whole or fragmentary"] |
 | Gobryas & Aspathines | **Gaubaruva and Aspačanā** · Spear-bearer and bow-bearer | "Carved beside Darius's tomb, each labelled by name and office in three languages: the king's spear-bearer and his bow-bearer, the closest companions of the throne." |
 | Auramazdā | **Auramazdā** · The great god of the inscriptions | "Every royal inscription begins with him: creator of earth, sky, people and happiness. The tablets also show offerings to other gods, Iranian and Elamite. The winged figure in a disc above the reliefs may be him, or the king's fortune; scholars still debate it." |
 | Tištrya | **Tištrya** · The rain star | "In the Avesta, the star Sirius takes the shape of a white horse with golden ears, fights the drought demon on the shore of the cosmic sea and wins rain for the lands. Watch the ridge when spring clouds gather." |
@@ -609,7 +635,8 @@ the Medes' **rounded felt cap**; the riding **hood** with side and neck flaps (G
 (the Achaemenid sword is the short straight *akinakes*). Chain mail or plate armour on courtiers.
 Greek hoplite gear on Persians. Clean-shaven Persian men. Everything gold: the court was colourful
 textile first, gold second. Calling the winged disc "Faravahar" as if that were its ancient name
-(that name is modern). Masks or monstrous "Immortals". Persians in Median dress only (both
+(the name comes from Middle Persian *fravahr* and was attached to the symbol in modern times;
+cards may say "known in Iran today as the Faravahar", with respect: it is a cherished symbol). Masks or monstrous "Immortals". Persians in Median dress only (both
 costumes appear side by side). Camels and elephants as ridden war animals in the city.
 
 ### 6.3 Occupations and work
@@ -689,7 +716,7 @@ sheep → shearing → dyer → weaver → robe → noble on the terrace.
 | Writing | Elamite cuneiform on clay (most documents), Aramaic in ink on leather and clay, Old Persian cuneiform for royal inscriptions (one Old Persian administrative tablet is known), a few tablets in Greek and Phrygian. | scribes, tablet racks, inscription panels |
 | Schooling | Scribes were trained by apprenticeship; noble boys trained in riding, archery and truthfulness (Greek report). | scribe teaching a boy; prince on the archery ground |
 | Medicine | Egyptian and Greek physicians served at court (the Udjahorresnet inscription, an Egyptian source; Democedes, in Herodotus). | card only (N) |
-| Religion and festivals | Fire altars (shown on royal tombs); offerings of the *lan* type for Auramazdā; Elamite gods (Humban and others) also served; offerings to mountains and rivers; the month *Bāgayādi* ("worship of the gods"). Later sources mention an autumn festival of Miθra (Mithrakāna). | altars, priests, river offering, festival events |
+| Religion and festivals | Fire altars (shown on royal tombs; Herodotus 1.131–132 claims the Persians used "no altar" and "no fire" in sacrifice, a Greek outsider's view that the Persian reliefs contradict, so the game follows the reliefs [checked: Herodotus 1.131–132, Rawlinson]); offerings of the *lan* type for Auramazdā; Elamite gods (Humban and others) also served; offerings to mountains and rivers; the month *Bāgayādi* ("worship of the gods"). Later sources mention an autumn festival of Miθra (Mithrakāna). | altars, priests, river offering, festival events |
 | Music and dance | Harps, pipes and drums of a long Elamite and Mesopotamian tradition; women singers at court (Greek writers). | evening music in the pavilion |
 | Death and burial | Kings in rock-cut tombs (Naqsh-e Rostam); Cyrus in a free-standing tomb. Burial customs of ordinary people varied; Herodotus reports that magi exposed the dead to birds and dogs, while Persians coated bodies in wax and buried them. | the two tomb vignettes; no burial scene in the city |
 | Hunting and riding | Royal hunts in game parks; horse breeding (the Nisaean horses of Media). | riders on the plain; hounds |
@@ -718,7 +745,10 @@ shows them as:
   relief (Medes first, then Elamites, Armenians, Parthians, Babylonians, Lydians, Arians, Syrians,
   Cappadocians, Saka, Egyptians, Yaunā, Bactrians, Gandharans, Arachosians, Sagartians, Sogdians,
   Indians, Thracians, Arabs, Carians, Libyans, Kushites). Must-have sets: Medes, Elamites,
-  Babylonians, Lydians, Saka, Yaunā, Indians, Arabs.
+  Babylonians, Lydians, Saka, Yaunā, Indians, Arabs. [checked: Livius "Apadana east stairs" lists
+  the same 23 peoples and gifts (in photo order, not procession order). The order above follows
+  one modern numbering; Schmidt (1953) and Walser (1966) number and name some delegations
+  differently, so cards never say "the fourth delegation" and mark doubtful names as "probably".]
 - **Goods**: storeroom and caravan props labelled by origin (cedar from Lebanon, gold from
   Bactria and Sardis, lapis from Sogdiana, ivory from Kush, ebony from Egypt, silver, textiles).
 - **World map labels**: satrapies named in Old Persian with English beneath (Māda, Ūja/Elam, Bābiruš,
@@ -763,7 +793,8 @@ for variety (owner's choice). Default: spring only.
 | **The royal road and relay riders** | the station and couriers; card quoting Herodotus's admiring description (that nothing mortal travels faster than these riders) as a Greek outsider's view |
 | **Gardens and "paradise"** | the paradise with channels; card on the word |
 | **Monumental art drawing on many peoples** | lamassu from Assyria, Egyptian cornices, Ionian stone techniques, all made Persian; card on the Gate |
-| **The Cyrus Cylinder (careful)** | card attached to Cyrus's memory: "A clay cylinder written in Babylonian after Cyrus took Babylon in 539 BC. In the traditional style of Mesopotamian kings, it says Marduk chose Cyrus, blames the previous king, and states that Cyrus restored temples and let deported people and their gods return home. It is often called the first charter of human rights; historians see it as a royal proclamation that shows a policy of restoring local cults, not a declaration of rights." |
+| **The Cyrus Cylinder (careful)** | card attached to Cyrus's memory: "A clay cylinder written in Babylonian cuneiform after Cyrus, 'king of Anšan', took Babylon in 539 BC, and buried in the city's wall. In the manner of Mesopotamian kings, it says Marduk chose Cyrus, blames the previous king, and says Cyrus entered Babylon without battle, returned the images of gods to their shrines in a list of cities from Aššur and Susa to the Zagros, and gathered their people and gave them back their homes. It does not name the Jews; their return is told in the Hebrew Bible. Often called the first charter of human rights, and treasured in Iran today, it is to historians a royal proclamation of a policy of restoring local cults and peoples." [checked: Cylinder lines 12, 17, 20–21, 30–32 in the Livius translation (after Cogan and Schaudig)] |
+| **A New Year at Pārsa? (careful)** | card at the great stairway, shown on the first audience: "The Persian year began with the month Ādukanaiša, near the spring equinox. Many scholars, among them the Iranian historian Shapur Shahbazi, think this terrace was built for the New Year, the festival later called Nowruz; others answer that no ancient text says so and that the reliefs show an ideal, timeless empire. The name Nowruz first appears centuries later, in Middle Persian. Whether today's Nowruz reaches back to these stairs, no one can yet prove." The word "Nowruz" appears only on this card, never as the name of the in-game event. [checked: see §1] |
 | **Religion and its limits** | the Auramazdā card, plus a fair note: Xerxes's own "daiva inscription" says he destroyed a sanctuary of false gods, so royal tolerance had limits |
 | **Standards** | the karša weight and the daric card; Darius's canal from the Nile to the Red Sea (his Suez inscriptions) as a card |
 
@@ -899,23 +930,27 @@ The world-map motif: four rising harp notes D–E–F–A.
 
 ## 11. Uncertainties for a human to check
 
-1. **Apadāna column height**: Iranica (Schmitt & Stronach) "more than 19 m"; Livius 25 m;
-   Wikipedia 24 m. The design uses 19–20 m.
-2. **Great stairway**: 111 steps per side is the common count (Coste counted 106); the split per
-   flight is not secure.
-3. **Gate of All Lands column height** (16.5 m is a commonly repeated figure without a primary
-   reference found).
-4. **Which capitals stood where** (bulls in the Apadāna hall and north portico per Iranica; lions
-   and griffins assignment chosen by us).
-5. **Hall of a Hundred Columns column height** (about 11 m; not verified) and **the exact state of
-   the site in 470**.
-6. **Tripylon date** (Darius/Xerxes vs. Artaxerxes I in different sources). We show it finished.
-7. **Delegation identifications** follow Livius; some peoples (Arians/Arachosians, Syrians/
-   Assyrians, Sogdians, the okapi) are debated.
+Status after the fact-check (`fact-check.md`, November 2026):
+
+1. **Apadāna column height**: resolved: 19.5 m (Shahbazi, Iranica "Persepolis"; Iranica
+   "Apadāna": "more than 19 m"). Livius's 25 m and Wikipedia's 24 m are unsupported.
+2. **Great stairway**: resolved: 63 + 48 = 111 steps per side, 10 cm rise, 38 cm tread, 6.70 m wide
+   (Shahbazi). Coste's 106 is an older count.
+3. **Gate of All Lands column height**: "over 16.5 m" (Shahbazi; Livius).
+4. **Which capitals stood where**: resolved: bulls (composite) in the hall and north portico, bulls
+   directly on the shaft in the west portico, lions in the east portico; **no griffins** on the
+   Apadāna.
+5. **Hall of a Hundred Columns**: columns "nearly 14 m" (Shahbazi), built 486–c. 450; the exact
+   state of the site in 470 is unknown (the building-site look is a reasoned choice).
+6. **Tripylon date**: Shahbazi: Xerxes and Artaxerxes I. Possibly unfinished in 470; shown finished
+   as a choice.
+7. **Delegation identifications** follow Livius; several are debated (§6.7).
 8. **Royal women's dress** is reconstructed (weak evidence).
 9. **Atossa = Udusana** (Henkelman) is a proposal.
-10. **Baradkama's** dates as treasurer: check against Cameron's *Persepolis Treasury Tablets*.
-11. **Achaemenid qanats** are debated; the qanat line is marked nice-to-have.
-12. **Orientation of Cyrus's tomb door** (to check before modelling).
-13. **The spring audience = New Year** link is a modern hypothesis; the game never names Nowruz.
-14. **Artemisia's visit** is invented (labelled in her card).
+10. **Baradkama**: resolved: treasurer 490–480 only; the treasurer of 470 is **Mauš** (§4.1).
+11. **Achaemenid qanats**: attested in Achaemenid Egypt (ʿAyn Manawir, 5th century BC), not dated
+    at Pārsa; nice-to-have with a careful card.
+12. **Orientation of Cyrus's tomb door**: north-west in secondary sources; confirm in Stronach 1978.
+13. **The spring audience = New Year**: a hypothesis with serious supporters and critics; the game
+    explains it in one card and never names the event Nowruz (§1, §6.10).
+14. **Artemisia's visit** is invented (labelled in her card); her life after 480 is unknown.
