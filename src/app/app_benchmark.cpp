@@ -182,7 +182,7 @@ int App::runBenchmark() {
 
     // The results card stays until the window is closed or a key is pressed. Headless, it is
     // drawn once into an image beside the report (for the tests' eyes) and the run ends.
-    lines.push_back(std::string(strings::kBenchmarkClose));
+    lines.emplace_back(strings::kBenchmarkClose);
     drawerOpen_ = journalOpen_ = false;
     hudHidden_ = true;
     if (opts_.headless) running_ = false;

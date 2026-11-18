@@ -235,6 +235,7 @@ private:
     bool openWorld(const std::string& slug);
     void createWorld(std::string name, bool freeBuild);
     void refreshWorlds();
+    [[nodiscard]] std::vector<std::string> takenSlugs() const;
     const MenuModel& menuModel();
     void profileChanged();
     void writeProfileIfDue();

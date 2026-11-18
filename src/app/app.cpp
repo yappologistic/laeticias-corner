@@ -1553,7 +1553,9 @@ void App::render() {
         // The interface shows in play; the front door's pages and the pause menu draw over a
         // world without it.
         if (menus_.page() == Page::None) hud_.draw(painter, ui_);
-        menus_.draw(painter, menuModel_);
+        const MenuModel& menus = menuModel();
+        menus_.relayout(menus, font_);
+        menus_.draw(painter, menus);
         if (profilerOn_) profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
         uiBatch_->flush();
     }

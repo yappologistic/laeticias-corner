@@ -243,11 +243,6 @@ add_test(NAME perf_log_check COMMAND ${CMAKE_COMMAND} -DFILE=${LC_SCRATCH}/perf.
   -P ${CMAKE_CURRENT_SOURCE_DIR}/check_perf_log.cmake)
 set_tests_properties(perf_log_check PROPERTIES FIXTURES_REQUIRED perf)
 
-# Memory stays flat over a long busy session (actors, events and weather running).
-add_test(NAME soak
-  COMMAND laeticias-corner --soak 600 --size 640x400 --seed 1 --save-dir "${LC_SCRATCH}/save_soak")
-set_tests_properties(soak PROPERTIES ENVIRONMENT "${LC_RUN_ENV}" FIXTURES_REQUIRED clean_saves)
-
 # Frame budget (CLAUDE.md: under 2 ms for update + draw submission) on the GPU path, windowless.
 # Sanitizer builds run many times slower, so there the bench only has to run cleanly. Skipped
 # (exit 77) where no GPU renderer can be created.
@@ -256,6 +251,13 @@ if(LC_SANITIZE)
 else()
   set(LC_BUDGET --budget-ms 2)
 endif()
+# Memory stays flat over a long busy session (actors, events and weather running), and under its
+# ceiling with the simulation in budget where the budgets apply (not in sanitizer builds).
+add_test(NAME soak
+  COMMAND laeticias-corner --soak 600 --size 640x400 --seed 1 --save-dir "${LC_SCRATCH}/save_soak"
+          ${LC_BUDGET})
+set_tests_properties(soak PROPERTIES ENVIRONMENT "${LC_RUN_ENV}" FIXTURES_REQUIRED clean_saves)
+
 add_test(NAME bench
   COMMAND laeticias-corner --bench --renderer opengl --size 1920x1080 --seed 1 --frames 240
           ${LC_BUDGET} --save-dir "${LC_SCRATCH}/save_bench")

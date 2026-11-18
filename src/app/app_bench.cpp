@@ -306,11 +306,13 @@ int App::runSoak() {
         std::printf("soak: memory grew\n");
         over = true;
     }
-    if (peak > tuning::kBenchMemoryMiB) {
+    // The ceiling and the simulation budget are held where budgets apply (--budget-ms): a
+    // sanitizer build's shadow memory and pace are not the game's.
+    if (opts_.budgetMs > 0 && peak > tuning::kBenchMemoryMiB) {
         std::printf("soak: memory over its ceiling\n");
         over = true;
     }
-    if (s.avg > static_cast<float>(tuning::kSimBudgetMs)) {
+    if (opts_.budgetMs > 0 && s.avg > static_cast<float>(tuning::kSimBudgetMs)) {
         std::printf("soak: simulation over its budget\n");
         over = true;
     }

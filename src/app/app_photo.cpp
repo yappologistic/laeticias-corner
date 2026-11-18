@@ -163,22 +163,22 @@ void App::drawPostcard(Painter& p) {
             p.thumbnail(s, {x, y, s.w * k, s.h * k}, k, 1.0f);
         };
         // Edges tiled between the corners, the last tile cut to fit.
-        for (float x = tl.w * k; x < sc.x - tr.w * k; x += top.w * k) {
-            const float room = (sc.x - tr.w * k - x) / k;
-            put(crop(top, room, top.h), x, 0);
-        }
-        for (float x = bl.w * k; x < sc.x - br.w * k; x += bottom.w * k) {
-            const float room = (sc.x - br.w * k - x) / k;
-            put(crop(bottom, room, bottom.h), x, sc.y - bottom.h * k);
-        }
-        for (float y = tl.h * k; y < sc.y - bl.h * k; y += left.h * k) {
-            const float room = (sc.y - bl.h * k - y) / k;
-            put(crop(left, left.w, room), 0, y);
-        }
-        for (float y = tr.h * k; y < sc.y - br.h * k; y += right.h * k) {
-            const float room = (sc.y - br.h * k - y) / k;
-            put(crop(right, right.w, room), sc.x - right.w * k, y);
-        }
+        const auto tile = [&](const Sprite& e, bool across, float from, float to, float at) {
+            const float step = (across ? e.w : e.h) * k;
+            const int n = static_cast<int>(std::ceil((to - from) / step));
+            for (int i = 0; i < n; ++i) {
+                const float pos = from + static_cast<float>(i) * step;
+                const float room = (to - pos) / k;
+                if (across)
+                    put(crop(e, room, e.h), pos, at);
+                else
+                    put(crop(e, e.w, room), at, pos);
+            }
+        };
+        tile(top, true, tl.w * k, sc.x - tr.w * k, 0);
+        tile(bottom, true, bl.w * k, sc.x - br.w * k, sc.y - bottom.h * k);
+        tile(left, false, tl.h * k, sc.y - bl.h * k, 0);
+        tile(right, false, tr.h * k, sc.y - br.h * k, sc.x - right.w * k);
         put(tl, 0, 0);
         put(tr, sc.x - tr.w * k, 0);
         put(bl, 0, sc.y - bl.h * k);

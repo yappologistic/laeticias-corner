@@ -144,9 +144,7 @@ bool App::openWorld(const std::string& slug) {
     slug_ = slug;
     if (!loadWorld(saveDir_ / kWorldsDir / slug / kWorldFile)) {
         // Shown as "couldn't be opened"; the corner behind the menus is a fresh one.
-        std::vector<std::string> taken;
-        for (const WorldSummary& w : worldList_) taken.push_back(w.slug);
-        startNewWorld(taken);
+        startNewWorld(takenSlugs());
         freshWorld_ = true;
         enterWorld();
         return false;
@@ -158,13 +156,7 @@ bool App::openWorld(const std::string& slug) {
 void App::createWorld(std::string name, bool freeBuild) {
     leaveWorld();
     resetWorld();
-    std::vector<std::string> taken;
-    for (const WorldSummary& w : worldList_) taken.push_back(w.slug);
-    std::error_code ec;
-    for (auto it = fs::directory_iterator(saveDir_ / kWorldsDir, ec);
-         !ec && it != fs::directory_iterator(); it.increment(ec))
-        taken.push_back(it->path().filename().string());
-    startNewWorld(taken, std::move(name));
+    startNewWorld(takenSlugs(), std::move(name));
     freeBuild_ = freeBuild;
     if (freeBuild) {
         // Everything unlocked and all land open from the start (R10.4).
@@ -174,6 +166,16 @@ void App::createWorld(std::string name, bool freeBuild) {
     enterWorld();
     (void)save(true);
     (void)writeThumbnail();
+}
+
+std::vector<std::string> App::takenSlugs() const {
+    // Every folder under worlds/, readable or not, so a new world never shares one.
+    std::vector<std::string> taken;
+    std::error_code ec;
+    for (auto it = fs::directory_iterator(saveDir_ / kWorldsDir, ec);
+         !ec && it != fs::directory_iterator(); it.increment(ec))
+        taken.emplace_back(it->path().filename().string());
+    return taken;
 }
 
 void App::refreshWorlds() {
@@ -298,9 +300,8 @@ void App::applyMenuActions() {
         case K::Play: {
             if (std::cmp_greater_equal(a.arg, worldList_.size())) break;
             const WorldSummary& w = worldList_[static_cast<std::size_t>(a.arg)];
-            if (w.slug == slug_ && !freshWorld_) {
-                startPlay();
-            } else if (openWorld(w.slug)) {
+            // The world behind the menus plays at once; another one is opened first.
+            if ((w.slug == slug_ && !freshWorld_) || openWorld(w.slug)) {
                 startPlay();
             } else {
                 refreshWorlds();
@@ -338,9 +339,7 @@ void App::applyMenuActions() {
                     // The world behind the menus goes too: a fresh preview takes its place.
                     resetWorld();
                     refreshWorlds();
-                    std::vector<std::string> taken;
-                    for (const WorldSummary& w : worldList_) taken.push_back(w.slug);
-                    startNewWorld(taken);
+                    startNewWorld(takenSlugs());
                     freshWorld_ = true;
                     enterWorld();
                 }

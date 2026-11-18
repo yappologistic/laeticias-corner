@@ -950,11 +950,15 @@ void Menus::drawWidget(Painter& p, const Widget& w, float a) const {
             // A dashed outline: short rounded dashes along the edges.
             const float dash = 8 * s;
             const SDL_FColor c = withAlpha(theme::kInkMuted, a * (0.5f + 0.5f * h));
-            for (float x = w.box.x + r; x < w.box.x + w.box.w - r; x += 2 * dash) {
+            const int across = static_cast<int>((w.box.w - 2 * r) / (2 * dash)) + 1;
+            const int down = static_cast<int>((w.box.h - 2 * r) / (2 * dash)) + 1;
+            for (int i = 0; i < across; ++i) {
+                const float x = w.box.x + r + static_cast<float>(i) * 2 * dash;
                 p.roundRect({x, w.box.y, dash, s * 1.5f}, 0, c, 0);
                 p.roundRect({x, w.box.y + w.box.h - s * 1.5f, dash, s * 1.5f}, 0, c, 0);
             }
-            for (float y = w.box.y + r; y < w.box.y + w.box.h - r; y += 2 * dash) {
+            for (int i = 0; i < down; ++i) {
+                const float y = w.box.y + r + static_cast<float>(i) * 2 * dash;
                 p.roundRect({w.box.x, y, s * 1.5f, dash}, 0, c, 0);
                 p.roundRect({w.box.x + w.box.w - s * 1.5f, y, s * 1.5f, dash}, 0, c, 0);
             }

@@ -105,6 +105,10 @@ class Menus {
 public:
     void update(const UiInput& in, const MenuModel& m, const Font& font, Vec2 screen, float scale,
                 float dt);
+    // Lays out again from `m` without input: called before draw() whenever actions may have
+    // changed what the model points at (a refreshed worlds list), so drawing never reads a stale
+    // layout.
+    void relayout(const MenuModel& m, const Font& font) { layout(m, font, scale_); }
     void draw(Painter& p, const MenuModel& m) const;
 
     [[nodiscard]] std::span<const MenuAction> actions() const { return actions_; }
