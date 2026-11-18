@@ -529,6 +529,27 @@ LANES = {
                         "kind": "river", "ports": {"crossing": 0, "babylon": 3}},
 }
 
+# Where the seams of time join two lanes by design: a ship sails into the mist on one side and
+# out of it on the other (world.md §8).
+SEAM_CROSSINGS = {"seam_ionian": ("mist_w", "mist_e")}
+
+# The journey as one network (validated by name, in order): home gate, Rome, the Appia to
+# Brundisium, the Ionian crossing through the mist to Corinth, Athens and Piraeus, the Aegean
+# to Ephesus, the Royal Road to Pārsa. `layer:node` names graph nodes; the network joins
+# layers at portals, lanes at their shared ports (or ports within a tile), a lane to the node
+# within 4 tiles of each of its ports, and the seam crossings above.
+NETWORK = [
+    "corner:corner_road_s", "rome:aurelia_w", "rome:forum", "rome:pons_aemilius",
+    "rome:ostiensis", "ostia:portus", "rome:appia_se", "alban_mount:appia_alban_w",
+    "alban_mount:latiaris", "alban_mount:appia_alban_e", "base:appia_capua_w",
+    "base:appia_benev_e", "brundisium:appia_brund_w", "brundisium:column",
+    "brundisium:brundisium_quay", "corinth:lechaion", "corinth:corinth_n", "eleusis:eleusis_w",
+    "eleusis:sacred_way_w", "athens:market", "ephesus:ephesus_harbour", "ephesus:ephesus_e",
+    "sardis:sardis_w", "sardis:sardis_e", "halys:halys_w", "euphrates_crossing:euph_w",
+    "babylon:babylon_n", "susa:susa_w", "persian_gates:gates_w", "parsa:royal_road_w",
+    "parsa:hall_forecourt",
+]
+
 # --- country by stretch (docs/design/sets/world.md §9.3) ------------------------------------
 # base: base terrain; plants: item -> weight; open: plants per land tile outside woods; forest:
 # share of land that is wood (forest_density inside, with clearings); floor: overlay under woods;

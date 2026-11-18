@@ -630,6 +630,65 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
     return out
 
 
+def network(graphs: dict[str, Graph], chain: list[str] = P.NETWORK) -> list[Issue]:
+    """The named nodes of `chain` lie in one network: graph edges; portals of one id across
+    layers; lanes joined at a shared plan port, at ports within a tile of each other across
+    layers, and at the plan's seam crossings; a lane port to the nearest node within 4 tiles
+    of it in its own layer (a quay). Reports where the chain first breaks."""
+    parent: dict = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def join(a, b):
+        parent[find(a)] = find(b)
+
+    ports = []   # (layer, lane key, port id, plan tile)
+    for name, g in graphs.items():
+        nodes = [(n.id, to_plan(*n.at)) for n in g.nodes]
+        for n in g.nodes:
+            find(f"{name}:{n.id}")
+            if n.kind == "portal":
+                join(f"{name}:{n.id}", f"portal:{n.id}")
+        for e in g.edges:
+            join(f"{name}:{e.a}", f"{name}:{e.b}")
+        for ln in g.lanes:
+            key = f"{name}:lane:{ln.id}"
+            for pt in ln.ports:
+                at = to_plan(*ln.points[pt.at])
+                ports.append((name, key, pt.id, at))
+                if pt.id in PLAN_PORTS:
+                    join(key, f"port:{pt.id}")
+                near = [(max(abs(c - at[0]), abs(r - at[1])), nid) for nid, (c, r) in nodes]
+                if near and min(near)[0] <= 4:
+                    join(key, f"{name}:{min(near)[1]}")
+    for a, b in P.SEAM_CROSSINGS.values():
+        join(f"port:{a}", f"port:{b}")
+    for i, (la, ka, _pa, ta) in enumerate(ports):
+        for lb, kb, _pb, tb in ports[i + 1:]:
+            if la != lb and max(abs(ta[0] - tb[0]), abs(ta[1] - tb[1])) <= 1:
+                join(ka, kb)
+    out = []
+    for nid in chain:
+        layer, node = nid.split(":", 1)
+        g = graphs.get(layer)
+        if g is None or g.node(node) is None:
+            out.append(Issue("V6", "error", "world", f"network: {nid} does not exist"))
+    if out:
+        return out
+    root = find(chain[0])
+    for prev, nid in zip(chain, chain[1:]):
+        if find(nid) != root:
+            out.append(Issue("V6", "error", "world", f"network: {nid} is not connected to "
+                             f"{chain[0]} (the chain breaks after {prev})"))
+            break
+    return out
+
+
 def world_file(out: Path, order: list[str]) -> list[Issue]:
     """world.json lists exactly the layer files present, in composition order, so the engine
     loads every built layer and never a planned one."""
