@@ -21,7 +21,8 @@ ref = referrer("sets.rome.campus")
 def pantheon(m):
     """The Pantheon (rome.md §3.1): the brick rotunda with its three cornices and relieving
     arches, the stepped rings round the foot of the dome, the dome 43.3 m across covered with
-    gilded bronze tiles, the oculus open to the sky (the coffered inside seen through it), the
+    bronze tiles (warm bronze with a gilded sheen: whether they were gilded is not certain), the
+    oculus open to the sky (the coffered inside seen through it), the
     high intermediate block with its own pediment, and the portico facing north: sixteen
     monolithic Corinthian columns (eight across the front of grey granite, the rest pink) with
     white marble bases and capitals, the inscription of Agrippa kept by Hadrian, a pediment
@@ -51,9 +52,9 @@ def pantheon(m):
     fill(m, (cx - Ri, cx + Ri, cy - Ri, cy + Ri, zb, zb + 1.0), "porphyry",
          lambda X, Y, Z: (np.hypot(((X - cx) % 12.0) - 6.0, ((Y - cy) % 12.0) - 6.0) < 3.0) &
          (np.hypot(X - cx, Y - cy) < Ri), tone=0.1, only_solid=True)
-    # The dome: step rings round its foot, gilded bronze tiles, the oculus.
+    # The dome: step rings round its foot, bronze tiles, the oculus.
     zd = zc[2]
-    RM.dome(m, cx, cy, zd - 4.0, R - 1.5, material="gilt", rise=S.v(43.3) - zd + 4.0, thick=6.0, steps=7,
+    RM.dome(m, cx, cy, zd - 4.0, R - 1.5, material="bronze", rise=S.v(43.3) - zd + 4.0, thick=6.0, steps=7,
             step_h=2.6, step_mat="whitewash", oculus=S.h(9.0) / 2, inner="whitewash", coffers=True, tiles=True,
             seed=72)
     halo(m, cx, cy, zb + 6.0, 34.0, LAMP, 0.35)       # the oculus's light on the floor (card)

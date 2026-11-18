@@ -103,8 +103,8 @@ def portus_lighthouse(m):
 def ostia_guilds(m):
     """The Square of the Guilds at Ostia (Piazzale delle Corporazioni): a long colonnaded
     square behind the theatre, a small temple in the middle, the offices of the shipping guilds
-    in the porticoes, each with its black-and-white mosaic (a ship, a lighthouse, an elephant,
-    amphorae) on the pavement before it."""
+    in the porticoes before plain floors; most of the emblem mosaics seen today were laid later
+    in the 2nd century, so in 126 only a few offices have a black-and-white emblem."""
     W, D = 12 * T, 6 * T
     fill(m, (0.0, D, 0.0, W, 0.0, 0.6), "grass", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 3.0, 841) - 0.5) * 0.7)
     o = RM.ROrder("tuscan", D=0.6, H=5.0, shaft="brick", trim="travertine", fluted=False)
@@ -114,6 +114,8 @@ def ostia_guilds(m):
         for i in range(12):
             y = 10.0 + i * (W - 20.0) / 12
             fill(m, (xm, xm + 4.0, y, y + 12.0, 0.0, 0.7), "whitewash", tone=0.2)
+            if i % 5 != 2:      # a plain floor: only a few emblems by 126
+                continue
             fill(m, (xm, xm + 4.0, y, y + 12.0, 0.0, 0.75), "gloss",
                  lambda X, Y, Z, y=y, i=i: (hash01(np.floor(X * 2).astype(np.int64), np.floor((Y - y) * 2).astype(np.int64),
                                                    i, 842) < 0.45) & (np.abs(X - xm - 2.0) < 1.6), tone=0.1,
