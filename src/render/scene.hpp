@@ -136,7 +136,13 @@ public:
     void embedObjects(const FrameParams& p);
     // Multiplies the target by the light map: `ambient` with the light pools of lamps and fire.
     void embedLight(const FrameParams& p, Rgb ambient);
-    void embedGlow(const FrameParams& p);
+    // `into`: the glow goes there instead (the shader path's glow target).
+    void embedGlow(const FrameParams& p, SDL_Texture* into = nullptr);
+    // The lamps and fires of the region in view: `f(Vec2 centre, float reach)`, world px.
+    template <typename F>
+    void forEachLamp(F&& f) const {
+        for (const Light& l : lights_) f(l.pos, l.radius);
+    }
     // The rainbow and shooting stars over the composited view (window px).
     void embedSky(const FrameParams& p);
     // Composites the layers rendered by the last draw() onto the current render target, scaled

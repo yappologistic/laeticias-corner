@@ -41,8 +41,17 @@ bool App::loadWorldData() {
     hooks_.light = [this](const worldview::FrameInfo& fi) {
         scene_->embedLight(sceneFrame_, {fi.ambient.r, fi.ambient.g, fi.ambient.b});
     };
-    hooks_.glow = [this](const worldview::FrameInfo&) { scene_->embedGlow(sceneFrame_); };
+    hooks_.glow = [this](const worldview::FrameInfo& fi) {
+        scene_->embedGlow(sceneFrame_, fi.target);
+    };
     hooks_.overlay = [this](const worldview::FrameInfo&) { scene_->embedSky(sceneFrame_); };
+    hooks_.lamps = [this] {
+        lamps_.clear();
+        scene_->forEachLamp([this](Vec2 at, float reach) {
+            lamps_.push_back({{at.x + homeOffset_.x, at.y + homeOffset_.y}, reach});
+        });
+        return std::span<const worldview::HomeLamp>(lamps_);
+    };
     // Each set's arrival motif (audiogen's `sfx/<set>/arrive.wav`), loaded with the effects.
     for (const world::RegionRef& r : loaded_->file.regions) {
         const std::string f = "sfx/" + r.set + "/arrive.wav";
@@ -92,6 +101,7 @@ void App::createWorldView() {
         // Living figures walk with city life.
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
+    (void)worldView_->setQuality(wantedQuality());
     if (city_) worldView_->setLife(city_->city.get());
     setupMap();
 }
@@ -120,6 +130,7 @@ void App::syncHome() {
 }
 
 void App::drawScene(const FrameParams& p, SDL_Texture* out) {
+    if (out == nullptr) out = screenTarget(); // the window, or what stands in for it
     if (!worldView_) {
         scene_->draw(p, out);
         return;
@@ -877,6 +888,8 @@ void App::followWorldWeather() {
     const TileRect v = cameraTiles();
     viewWeather_->update(played_, weather_.wind(), sc, {v.x0 - m, v.y0 - m, v.x1 + m, v.y1 + m},
                          weather_.mode());
+    if (worldView_)
+        worldView_->setWind(weather_.wind().dir, weather_.wind().strength, profile_.reduceMotion);
 }
 
 TileRect App::cameraTiles() const {

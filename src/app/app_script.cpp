@@ -418,6 +418,10 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "reduce_motion") return yesNo(profile_.reduceMotion);
     if (what == "vsync") return yesNo(profile_.vsync);
+    if (what == "look")
+        return equal(
+            std::string(gpu::qualityId(worldView_ ? worldView_->quality() : gpu::Quality::Classic)),
+            a[1]);
     if (what == "ui_scale") return equal(std::to_string(profile_.uiScale), a[1]);
     if (what == "caption") return yesNo(profile_.caption);
     if (what == "frame") {

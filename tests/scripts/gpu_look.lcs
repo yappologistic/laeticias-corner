@@ -1,0 +1,37 @@
+# The shader path (graphics plan task E1), on SDL's gpu driver: run with --quality high (skipped,
+# exit 77, where no gpu device can be made). The Agora at 22:00 is dark and moonlit with warm
+# lamplight where the world data puts lights (quality bar §4.3: 2-8 % warm-lit in a city view);
+# the Forum at 10:00 sits in the day key (median 95-125); lights stay lit at quarter scale.
+set season summer
+set world agora 2
+set time 0.6667
+wait 40
+expect look high
+expect lit 0,180,2560,1080 0.01
+expect luma 0,180,2560,1080 18 60
+shot shots/gpu_agora_2200.png
+set season spring
+set world forum 1
+set time 0.1667
+wait 40
+expect luma 0,180,2560,1080 95 135
+shot shots/gpu_forum_1000.png
+set world forum 0.25
+set time 0.7
+wait 60
+expect lit 0,180,2560,1080 0.003
+shot shots/gpu_rome_quarter_night.png
+# The Look in the settings switches live on this renderer: High, then Classic, then Low.
+click ui:menu
+wait 8
+expect page pause
+click ui:menu:pause_settings
+wait 8
+expect page settings
+click ui:menu:look
+wait 4
+expect look classic
+click ui:menu:look
+wait 4
+expect look low
+quit

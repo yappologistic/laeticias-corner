@@ -54,7 +54,9 @@ struct MenuModel {
     std::string_view frameName;
     float barBottom = 0; // the bar stands above this (the postcard's caption, else the edge)
     bool caption = true;
-    int frames = 1; // postcard frames unlocked (the arrows show when there are more)
+    int frames = 1;                // postcard frames unlocked (the arrows show when there are more)
+    int look = 3;                  // the Look: 0 Classic .. 3 High (graphics plan §3.2)
+    bool lookAfterRestart = false; // this renderer cannot show it: it applies on the next start
 };
 
 struct MenuAction {
@@ -77,6 +79,7 @@ struct MenuAction {
         ReduceMotion,
         Grid,
         Vsync,
+        Look,    // arg: 0 Classic .. 3 High
         Chatter, // arg: 1 chatty
         ReplayTour,
         Resume,
@@ -228,6 +231,7 @@ private:
     bool barHidden_ = false;
     std::array<std::string, 3> volumeText_;
     std::string scaleText_;
+    std::string lookText_;
     mutable std::vector<std::string> nameCut_; // card names cut to fit
 };
 

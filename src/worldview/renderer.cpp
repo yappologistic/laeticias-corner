@@ -3,7 +3,9 @@
 #include "core/rng.hpp"
 #include "core/tuning.hpp"
 #include "render/draw.hpp"
+#include "render/gpu/post.hpp"
 #include "worldview/tuning.hpp"
+#include "worldview/world_lights.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -339,6 +341,11 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     const SpriteRef& s =
         e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
                      : look.baseIn(season_).at(now, sprites_->itemFps(map_.items()[e.item]));
+    if (post_ && e.piece < 0)
+        if (const Sway& w = swayOf_[map_.items()[e.item].info]; w.lean > 0) {
+            putSwaying(w.frames ? s : look.baseIn(season_).f.front(), e.anchor, x, w.lean);
+            return true;
+        }
     return put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
 }
 
@@ -691,8 +698,11 @@ void WorldView::ensure(Target& t, int w, int h) {
     if (!t.texture || t.w < w || t.h < h) {
         t.w = std::max(w, t.w);
         t.h = std::max(h, t.h);
-        t.texture.reset(
-            SDL_CreateTexture(renderer_, kTextureFormat, SDL_TEXTUREACCESS_TARGET, t.w, t.h));
+        // The shader path samples the world target: in the format its shaders read.
+        t.texture.reset(SDL_CreateTexture(
+            renderer_,
+            post_ && (&t == &view_ || &t == &shadow_) ? gpu::Post::kFormat : kTextureFormat,
+            SDL_TEXTUREACCESS_TARGET, t.w, t.h));
         if (!t.texture ||
             !SDL_SetTextureBlendMode(t.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED))
             SDL_Log("worldview: cannot create a target: %s", SDL_GetError());
@@ -703,7 +713,7 @@ std::size_t WorldView::targetBytes() const {
     std::size_t n = 0;
     for (const Target* t : {&view_, &shadow_, &scratch_, &scratchShadow_, &half_})
         if (t->texture) n += static_cast<std::size_t>(t->w) * static_cast<std::size_t>(t->h) * 4;
-    return n;
+    return n + (post_ ? post_->bytes() : 0);
 }
 
 void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
@@ -813,7 +823,9 @@ void WorldView::buildGlow() {
         const std::optional<SpriteRef>& gl = sprites_->item(it).glow;
         if (!gl) continue; // glows() said it has one
         const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
-        glow_[count[chunkOf(it)]++] = {&*gl, {w.x, w.y - static_cast<float>(it.level * lvl_)}};
+        glow_[count[chunkOf(it)]++] = {&*gl,
+                                       {w.x, w.y - static_cast<float>(it.level * lvl_)},
+                                       static_cast<std::uint32_t>(&it - map_.items().data())};
     }
 }
 
@@ -829,7 +841,8 @@ void WorldView::drawCoarseGlow(const FRect& view, const Xform& x, float strength
                 const SpriteRef& r = *s.sprite;
                 const FRect box{s.anchor.x - r.ox, s.anchor.y - r.oy, s.anchor.x - r.ox + r.w,
                                 s.anchor.y - r.oy + r.h};
-                if (box.overlaps(view)) (void)put(r, s.anchor, x, g, SDL_BLENDMODE_ADD);
+                if (box.overlaps(view) && glowing(s.item))
+                    (void)put(r, s.anchor, x, g, SDL_BLENDMODE_ADD);
             }
         }
     batch_.flush();
@@ -946,6 +959,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     viewW_ = static_cast<int>(std::ceil(screen.x / s * res)) + 3;
     viewH_ = static_cast<int>(std::ceil(screen.y / s * res)) + 3;
     ensure(view_, viewW_, viewH_);
+    if (post_) post_->prepare(view_.w, view_.h);
     if (lod == Lod::Native) ensure(shadow_, viewW_, viewH_);
     const Xform xf{origin, res, res < 1.0f ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST};
     const FRect view{origin.x, origin.y, origin.x + static_cast<float>(viewW_) * px,
@@ -968,6 +982,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const SDL_FColor ambient{light.ambient.r * grade.mul.r, light.ambient.g * grade.mul.g,
                              light.ambient.b * grade.mul.b, 1};
     const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
+    if (post_) gradeGpu(clock, now, light, lod, origin);
     lastView_ = {topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
 
     // Streaming.
@@ -1044,8 +1059,11 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The home's objects go over the impostors at the coarser levels.
     if (!homeDrawn && hooks.objects && home) hooks.objects(frame);
     if (weather_ != nullptr && (lod == Lod::Native || lod == Lod::Half)) drawRain(view, xf, now);
-    // Grading, then what glows (drawn after it, additively).
-    if (hooks.light && home)
+    // Grading, then what glows (drawn after it, additively). The shader path grades in its
+    // final pass and lights and glows in targets of its own.
+    if (post_)
+        lightGpu(view, xf, lod, light.glow, hooks, frame, home);
+    else if (hooks.light && home)
         hooks.light(frame);
     else
         fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
@@ -1057,12 +1075,16 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         for (const std::uint32_t i : region_.order) {
             const Elem& e = region_.elems[i];
             if (e.first && e.look != nullptr && e.look->glow &&
-                region_.items[i].screen.overlaps(view))
+                region_.items[i].screen.overlaps(view) && glowing(e.item))
                 (void)put(*e.look->glow, e.anchor, xf, g, SDL_BLENDMODE_ADD);
         }
     }
     batch_.flush();
-    if (hooks.glow && home) hooks.glow(frame);
+    if (hooks.glow && home)
+        hooks.glow(
+            post_ ? FrameInfo{post_->glow(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft}
+                  : frame);
+    if (post_) bloomGpu(view, xf, lod, light.glow);
 
     // Onto the window: sky, the world, the haze.
     if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("worldview: %s", SDL_GetError());
@@ -1080,6 +1102,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
 
 void WorldView::composite(Vec2 scale, bool smooth) {
     if (!present_.valid) return;
+    if (post_) {
+        compositeGpu(scale, smooth);
+        return;
+    }
     const Present& p = present_;
     const float w = p.screen.x * scale.x;
     const float h = p.screen.y * scale.y;

@@ -1188,7 +1188,8 @@ void Scene::embedLight(const FrameParams& p, Rgb ambient) {
     drawMoths(p);
 }
 
-void Scene::embedGlow(const FrameParams& p) {
+void Scene::embedGlow(const FrameParams& p, SDL_Texture* into) {
+    if (into != nullptr) into_ = into;
     if (into_ == nullptr || !glow_.texture) return;
     drawGlow(p);
 }

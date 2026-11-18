@@ -17,6 +17,7 @@
 #include "platform/batch.hpp"
 #include "render/atlas.hpp"
 #include "render/draw.hpp"
+#include "render/gpu/look.hpp"
 #include "ui/font.hpp"
 #include "world/figures.hpp"
 #include "world/loader.hpp"
@@ -41,7 +42,13 @@
 #include <string>
 #include <vector>
 
+namespace lc::gpu {
+class Post;
+}
+
 namespace lc::worldview {
+
+class WorldLights;
 
 enum class Lod : std::uint8_t { Native, Half, Quarter, Overview };
 
@@ -93,6 +100,12 @@ struct FrameInfo {
     Vec2 topLeft;                   // world px at the window's top-left corner
 };
 
+// A lamp of the game's scene: world px of its flame and its reach (world px).
+struct HomeLamp {
+    Vec2 at;
+    float radius = 0;
+};
+
 // The game's scene (the home region, its actors and effects) drawn at its turns in the frame,
 // while the home is in view (else the world grades itself). Each draws into FrameInfo::target
 // and leaves it bound; any may be empty.
@@ -102,6 +115,8 @@ struct Hooks {
     std::function<void(const FrameInfo&)> light;   // grades the target (else: flat ambient)
     std::function<void(const FrameInfo&)> glow;    // after the world's glow
     std::function<void(const FrameInfo&)> overlay; // on the output, over the composited world
+    // The shader path lights the home's lamps with the world's (else its light map does).
+    std::function<std::span<const HomeLamp>()> lamps;
 };
 
 class WorldView {
@@ -180,6 +195,15 @@ public:
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);
     }
+    // The Look (graphics plan §3.2, src/render/gpu/README.md): Classic draws today's frame; the
+    // other tiers, on SDL's gpu driver, grade by the regions' `theme.look`, light the lamps of
+    // the world data, bloom what glows and sway what the wind moves. Returns the tier in effect:
+    // Classic where the shader path cannot be made (logged once).
+    gpu::Quality setQuality(gpu::Quality q);
+    [[nodiscard]] gpu::Quality quality() const;
+    // The world's wind (unit direction in grid tiles, strength 0..1) for sway; reduce motion
+    // halves it.
+    void setWind(Vec2 dir, float strength, bool reduceMotion);
 
 private:
     struct Target {
@@ -187,6 +211,19 @@ private:
         int w = 0;
         int h = 0;
     };
+    // The shader path's half of a frame (renderer_gpu.cpp): this frame's grade, then the light
+    // and glow targets and bloom; composite() hands the final pass.
+    void gradeGpu(double clock, double now, const Lighting& light, Lod lod, Vec2 origin);
+    // Pools into the light target, then binds the glow target for the glow drawn next.
+    void lightGpu(const FRect& view, const Xform& x, Lod lod, float glow, const Hooks& hooks,
+                  const FrameInfo& frame, bool home);
+    // Lights seen from afar (the overview) into the glow target, bloom, back to the world.
+    void bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow);
+    void compositeGpu(Vec2 scale, bool smooth);
+    // A swaying item, bent in strips by the wind.
+    void putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean);
+    // Whether an item's glow layer burns now (the world data's lights on the shader path).
+    [[nodiscard]] bool glowing(std::uint32_t item) const;
 
     void warmUp();
     [[nodiscard]] bool put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
@@ -249,6 +286,7 @@ private:
     struct GlowSource {
         const SpriteRef* sprite = nullptr;
         Vec2 anchor; // world px, raised by the level
+        std::uint32_t item = 0;
     };
     std::vector<GlowSource> glow_;
     const WeatherField* weather_ = nullptr;
@@ -331,6 +369,30 @@ private:
     std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, back to front
     ActorMerge merge_;
     bool mergeIndexed_ = false;
+
+    // The shader path (null: Classic), the world's lights, the regions' looks, sway weights per
+    // content item (art px at the top in a full wind) and the wind.
+    std::unique_ptr<gpu::Post> post_;
+    std::unique_ptr<WorldLights> lights_;
+    std::vector<gpu::RegionLook> regionLooks_;
+    struct Sway {
+        float lean = 0;      // art px at the top in a full wind, 0: still
+        bool frames = false; // cloth keeps its own flapping frames; plants bend instead
+    };
+    std::vector<Sway> swayOf_;
+    Vec2 windDir_{1, 0}; // world px, unit
+    float windStrength_ = 0;
+    int seasonLook_ = -1; // index into gpu::kSeasonIds
+    struct GpuFrame {
+        gpu::GradeAt grade;
+        float glow = 0;
+        float night = 0;
+        bool shadows = false;
+        Vec2 artOrigin;
+        float res = 1;
+        double now = 0;
+    };
+    GpuFrame gpuFrame_;
 
     // Backdrop sprites by region (day, night), resolved at load; empty when the set has none.
     std::vector<std::array<std::vector<SpriteRef>, 2>> backdrops_;

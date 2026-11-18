@@ -78,6 +78,7 @@
 //       world NAME... (the open world's name) | fresh yes|no (an unbegun preview)
 //       card N NAME... (the N-th world on the worlds screen, newest first)
 //       volume music|effects|ambience N | reduce_motion yes|no | ui_scale N | vsync yes|no
+//       look classic|low|medium|high (the Look in effect)
 //       frame ID (the postcard frame) | caption yes|no | postcards N (files in its folder)
 //       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
