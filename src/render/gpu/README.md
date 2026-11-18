@@ -28,18 +28,27 @@ renderer and the fallback wherever this path cannot be made; headless runs stay 
    world-wide wind with gust crests rolling downwind (their stepped wiggle frames dropped);
    banners, awnings and parasols lean and keep their own frames. SDL's renderer takes custom
    fragment shaders only, so the bend is in the vertices (ten per swaying sprite, on the CPU).
-2. **Lights**: one pool per burning light of the visible chunks, the home's lamps and city
-   life's actors who carry a light, into the light target (stored at 0.4 so overlapping flames do
-   not clip), additive: an ellipse on the ground `(1 - (d/R)^2)^2` below the pool's centre, and
+   Water tiles stay still in the cells and are **marked**: the cell's alpha is lowered a step
+   (to 0.98) under them by a blend that keeps colour (`Post::markBlend`), one blend switch per
+   diagonal; anything drawn over water later restores alpha 1. The tile **water field** round the
+   view (shore distance, river flow, flags and level; at most 512², rebuilt on a worker as the
+   view pans) feeds the final pass.
+2. **Lights**: one pool per burning light of the visible chunks (the list cached and rebuilt on
+   a chunk crossing, an hour step or every 30 frames; flicker per frame), the home's lamps and
+   city life's actors who carry a light, into the glow target's alpha (stored at 0.4 so
+   overlapping flames do not clip; ONE/ONE/ADD on alpha), additive: an ellipse on the ground `(1 - (d/R)^2)^2` below the pool's centre, and
    above it a fade up the walls behind to half strength at near the flame's height. Colour,
    strength, hours (with `dusk`/`dawn`, windows and doors lit one by one), rain (`dim`, `out`),
    festivals (brighter, or lit only that night; `only: event:<id>` while the event runs) and
    flicker by style come from the region files.
-3. **Glow**: glow layers (only of items the data lights, in regions with light points), the
+3. **Glow** (the same target's rgb): glow layers (only of items the data lights, in regions with light points), the
    carried flames as points, the coarse levels' glow and, at the overview, every light as a warm
    point, into the glow target.
-4. **Bloom**: dual-filter halvings of the glow target (3 levels on Low, 5 on Medium and High) and
-   back up. **Mean**: the world target sampled to 64 × 32 and halved to one texel.
+4. **Bloom**: dual-filter halvings of the glow target (none on Low, 3 levels on Medium, 5 on
+   High) and back up. **Clouds** (`clouds.frag`, a quarter of the target, one draw; cleared once
+   when the sky is empty or the setting is Off): the weather field's cells shaped by drifting
+   noise, red the deck seen, green its shadow offset toward the sun. **Mean**: the world target
+   sampled to 64 × 32 and halved to one texel, one level a frame.
 5. **Final** (onto the window over the region's three-stop sky): exposure toward the hour's key
    from the scene's mean (by day never darker than the art; night lifted or held to one key); the
    grade (white balance and exposure, split toning whose cool darks come only with twilight and
@@ -48,7 +57,11 @@ renderer and the fallback wherever this path cannot be made; headless runs stay 
    cool shift of low light at night); lamp light screened on as its amber share plus a little of
    the albedo, in six bands dithered by a 4 × 4 Bayer cell anchored to world art pixels; haze by
    zoom and hour that leans only what is lit (thin near by day); the glow layer sharp and its
-   bloom. Sampled "sharp": whole texels stay whole, a camera between window pixels glides by one
+   bloom. Before the grade, open water (marked pixels) is redrawn in layers from the field:
+   depth bands, a ripple advected along the flow in two cross-faded phases, rain rings, on High
+   what stands at its edge mirrored and fading; after it the sky in the water, the shore line,
+   foam and glints. Cloud shadows lower the sunlight in dithered steps; the deck goes over
+   everything in three posterised steps, thin near and fuller far. Sampled "sharp": whole texels stay whole, a camera between window pixels glides by one
    blended pixel at texel edges, never by a blur.
 
 ## Tiers in this round
@@ -56,9 +69,9 @@ renderer and the fallback wherever this path cannot be made; headless runs stay 
 | Tier | Draws |
 |---|---|
 | Classic | today's frame |
-| Low | grade, cool shade, lamp pools, glow, 3-level bloom, sway |
-| Medium | Low with 5-level bloom |
-| High | as Medium; its own passes (height-field shadows, reflections) need the packed pages of task A1 |
+| Low | grade, cool shade, lamp pools, glow (no bloom), sway, water in 3 bands, clouds |
+| Medium | Low with 3-level bloom and 4 water bands |
+| High | Medium with 5-level bloom and water reflections; height-field shadows wait for the packed pages |
 
 ## Shaders
 
@@ -66,7 +79,7 @@ renderer and the fallback wherever this path cannot be made; headless runs stay 
 shaderc 2026.4, the system package here); the `shaders_fresh` test fails when a blob is stale and
 skips with any other glslc. Interface (SDL 3.4): input location 0 colour, 1 uv; the drawn texture
 at set 2 binding 0 and the extra samplers after it (SDL 3.4.20 takes at most five); uniforms at
-set 3 binding 0 (the final pass uses four of the five; the cast shade moved to `shade.frag`).
+set 3 binding 0 (the final pass uses all five: glow, bloom, mean, water field, clouds).
 Every texture a shader samples is `ABGR8888`. Sampler bindings and uniforms are
 fixed per render state, so each pass and bloom level has its own state.
 
