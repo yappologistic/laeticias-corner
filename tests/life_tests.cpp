@@ -388,8 +388,9 @@ TEST_CASE("city: the three centres live their day as the data says") {
                 CAPTURE(d.expected);
                 // Fractional people are rounded by hash, one draw per population entry and
                 // chunk: the spread is about a square root.
-                CHECK(std::abs(static_cast<float>(d.live + d.inside) - d.expected) <=
-                      3.0f + 1.5f * std::sqrt(d.expected));
+                const float want = d.expected * city.stats().scale; // the cap's share
+                CHECK(std::abs(static_cast<float>(d.live + d.inside) - want) <=
+                      3.0f + 1.5f * std::sqrt(want));
             }
             // Over the cap (the Panathenaia's Agora) populations are scaled down in proportion.
             expected *= city.stats().scale;
