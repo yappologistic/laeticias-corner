@@ -17,6 +17,7 @@ track edge to every farm yard. Lanes are A* over sea or river tiles with their p
 from __future__ import annotations
 
 import heapq
+from collections import deque
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,7 +29,7 @@ from plan import world_plan as P
 from . import rng
 from .base import CC, RR, SEED, World, distance_to, flood, noise, rect_mask
 from .coords import COLS, ROWS, FACING_NAMES, FACINGS
-from .dsl import Placed
+from .dsl import PIERS, Placed
 from .graph import Edge, Graph, Lane, Node, Port
 
 DIRS = ((1, 0), (0, 1), (-1, 0), (0, -1))          # plan steps (dc, dr): east, south, west, north
@@ -588,9 +589,7 @@ def put(W: World, item: str, c: int, r: int, face: str = "west", variant: int = 
             if L.STREET[y, x] and L.LV[y, x] == lv and L.OCC[y, x] < 0:
                 ok = (x, y, False)
                 break
-            if free_tile(W, x, y) and any(
-                    0 <= x + a < COLS and 0 <= y + b < ROWS and L.STREET[y + b, x + a]
-                    and L.LV[y + b, x + a] == lv for a, b in DIRS):
+            if free_tile(W, x, y) and any(road_beside(W, x + a, y + b, lv) for a, b in DIRS):
                 ok = ok or (x, y, True)   # free ground beside a road tile at this level
         if ok is None:
             # A spot on the far side is reached round the building: a free walk all round
@@ -613,6 +612,16 @@ def put(W: World, item: str, c: int, r: int, face: str = "west", variant: int = 
     return p
 
 
+def road_beside(W: World, x: int, y: int, lv: int) -> bool:
+    """A road tile at level `lv` a walker may step onto from beside it: no stair or ramp on it
+    (their sides are parapets; the engine enters a flight at its foot and its head only)."""
+    L = W.L
+    if not (0 <= x < COLS and 0 <= y < ROWS) or not L.STREET[y, x] or L.LV[y, x] != lv:
+        return False
+    o = L.OCC[y, x]
+    return o < 0 or not W.cat.items[L.items[o].id].rise
+
+
 def walk_round(W: World, tiles, lv: int) -> list[tuple[int, int]]:
     """The tiles round a footprint (corners included) if every one is free ground or a road at
     `lv` and one of them is or touches a road tile at `lv`; else an empty list."""
@@ -632,8 +641,7 @@ def walk_round(W: World, tiles, lv: int) -> list[tuple[int, int]]:
             continue
         if not free_tile(W, x, y) or abs(int(L.LV[y, x]) - lv) > 2:
             return []
-        touch = touch or any(0 <= x + a < COLS and 0 <= y + b < ROWS and L.STREET[y + b, x + a]
-                             and L.LV[y + b, x + a] == lv for a, b in DIRS)
+        touch = touch or any(road_beside(W, x + a, y + b, lv) for a, b in DIRS)
         out.append((x, y))
     return out if touch else []
 
@@ -1038,13 +1046,14 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
     and a fishing lane from its head to grounds offshore."""
     L = W.L
     sea = ~W.land
+    near = shore_reach(W, c, r, 10)
+    item = "world.mole" if mole else "world.jetty"
     best = None
     for dr in range(-10, 11):
         for dc in range(-10, 11):
             x, y = c + dc, r + dr
-            if not (0 <= x < COLS and 0 <= y < ROWS) or not W.land[y, x] or W.reserved[y, x] \
-                    or L.IMP[y, x]:
-                continue
+            if (x, y) not in near:
+                continue   # the planks start where walkers from a road can get to
             for sx, sy in DIRS:
                 # The planks meet a strand or a quay's kerb, not a cliff (V16 piers).
                 if not (0 <= y + sy < ROWS and 0 <= x + sx < COLS) or \
@@ -1057,12 +1066,12 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
                 if run >= 4:
                     key = (abs(dc) + abs(dr), dc, dr, sx, sy)
                     if best is None or key < best[0]:
-                        best = (key, x, y, sx, sy)
+                        best = (key, x, y, sx, sy, run)
     if best is None:
         return None
-    _, x, y, sx, sy = best
-    item = "world.mole" if mole else "world.jetty"
-    n = 4 if mole else 3
+    _, x, y, sx, sy, run = best
+    # Planks out to a tile short of the open water's end: boats lie off the head.
+    n = min(4 if mole else 3, run - 1)
     tiles = [(x + sx * k, y + sy * k) for k in range(1, n + 1)]
     for tx, ty in tiles:
         if L.OCC[ty, tx] < 0:
@@ -1074,8 +1083,9 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
             if put(W, "world.beacon", x + dx, y + dy):
                 break
     head = tiles[-1]
-    # Fishing grounds: straight out, then wherever open sea is.
-    gx, gy = head
+    # Fishing grounds: straight out, then wherever open sea is. The lane starts on the water
+    # off the head, where boats lie beside the planks (never over them).
+    gx, gy = head = (head[0] + sx, head[1] + sy)
     for _ in range(18):
         nx_, ny_ = gx + sx, gy + sy
         if not (0 <= nx_ < COLS and 0 <= ny_ < ROWS) or not sea[ny_, nx_]:
@@ -1089,6 +1099,60 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
     W.stats.setdefault("harbours", []).append((name, item, (x, y)))
     W.stats.setdefault("_harbour_nodes", []).append((name, (x, y)))
     return head
+
+
+def shore_reach(W: World, c: int, r: int, radius: int, reach: int = 12) -> set[tuple[int, int]]:
+    """Free land tiles within `radius` of (c, r) that walkers reach from a road in at most
+    `reach` steps of one level (a road tile under a stair or ramp is entered at its ends only,
+    so it starts no walk from its side)."""
+    L = W.L
+    m = radius + reach
+    seen: dict[tuple[int, int], int] = {}
+    q = deque()
+    for y in range(max(r - m, 0), min(r + m + 1, ROWS)):
+        for x in range(max(c - m, 0), min(c + m + 1, COLS)):
+            if road_beside(W, x, y, int(L.LV[y, x])):
+                seen[(x, y)] = 0
+                q.append((x, y))
+    while q:
+        x, y = q.popleft()
+        if seen[(x, y)] >= reach:
+            continue
+        for a, b in DIRS:
+            n = (x + a, y + b)
+            if n in seen or not (abs(n[0] - c) <= m and abs(n[1] - r) <= m) or \
+                    not (0 <= n[0] < COLS and 0 <= n[1] < ROWS):
+                continue
+            if not free_tile(W, *n) or L.LV[n[1], n[0]] != L.LV[y, x]:
+                continue
+            seen[n] = seen[(x, y)] + 1
+            q.append(n)
+    return {t for t in seen if abs(t[0] - c) <= radius and abs(t[1] - r) <= radius
+            and not W.reserved[t[1], t[0]] and not L.IMP[t[1], t[0]] and L.OCC[t[1], t[0]] < 0}
+
+
+def street_reach(W: World, limit: int) -> np.ndarray:
+    """Steps from the nearest road over free land of one level, up to `limit` (`limit` where
+    no walk from a road gets there): where kit off the roads can still be walked to."""
+    L = W.L
+    dist = np.full((ROWS, COLS), limit, dtype=np.int16)
+    q = deque()
+    for y, x in zip(*np.nonzero(L.STREET)):
+        if road_beside(W, int(x), int(y), int(L.LV[y, x])):
+            dist[y, x] = 0
+            q.append((int(x), int(y)))
+    while q:
+        x, y = q.popleft()
+        k = dist[y, x] + 1
+        if k >= limit:
+            continue
+        for a, b in DIRS:
+            nx_, ny_ = x + a, y + b
+            if 0 <= nx_ < COLS and 0 <= ny_ < ROWS and dist[ny_, nx_] > k and \
+                    L.LV[ny_, nx_] == L.LV[y, x] and free_tile(W, nx_, ny_):
+                dist[ny_, nx_] = k
+                q.append((nx_, ny_))
+    return dist
 
 
 def raster_line(a, b):
@@ -1154,12 +1218,21 @@ def build(W: World, g: Graph) -> None:
 
 
 def lanes(W: World, g: Graph) -> None:
-    sea = ~W.land
+    # Open water: the base's sea, not land another layer draws there (an island town), and no
+    # pier the routes built (boats lie beside planks, never over them: W-O2).
+    piers = np.zeros((ROWS, COLS), dtype=bool)
+    for p in W.L.items:
+        if not p.removed and p.id.split(".")[-1] in PIERS:
+            piers[p.r, p.c] = True
+    for c, r in W.anchors.piers:
+        piers[r, c] = True
+    sea = ~W.land & ~((W.anchors.dist == 0) & (W.anchors.water == 0)) & ~piers
     dland = distance_to(W.land, 3)
     jitter = noise(5.0, "lanejitter")
     for lid, lane in P.LANES.items():
         if lane["kind"] == "river":
-            cost = np.where(W.river | (sea & (dland <= 2)), 1.0 + 0.2 * (jitter + 1), np.inf)
+            cost = np.where((W.river & ~piers) | (sea & (dland <= 2)), 1.0 + 0.2 * (jitter + 1),
+                            np.inf)
         else:
             cost = np.where(sea, 1.0 + 3.0 * (dland <= 1) + 0.4 * (jitter + 1), np.inf)
         pts = [snap_water(W, tuple(p), lane["kind"]) for p in lane["points"]]
@@ -1173,6 +1246,7 @@ def lanes(W: World, g: Graph) -> None:
             full += seg if not full else seg[1:]
             marks.append(len(full) - 1)
         keep = sorted(set(simplify(full, 1.5)) | {full[i] for i in marks}, key=full.index)
+        keep = on_water(full, keep, np.isfinite(cost))
         index_of = {i: keep.index(full[marks[i]]) for i in range(len(pts))}
         ports = [Port(pid, index_of[at]) for pid, at in sorted(lane["ports"].items(),
                                                                 key=lambda x: (x[1], x[0]))]
@@ -1241,6 +1315,28 @@ def astar8(cost: np.ndarray, a, b, margin: int = 60) -> list[tuple[int, int]]:
         out.append(prev[out[-1]])
     out.reverse()
     return [(c + c0, r + r0) for r, c in out]
+
+
+def on_water(full, keep, water: np.ndarray):
+    """The simplified lane with points of the full path put back wherever a straight leg
+    between two kept points would carry a keel over land (W-O2): each such leg gets the point
+    of the path between its ends that lies farthest from it, until every leg is on water."""
+    from .walkable import lane_tiles
+    idx = sorted(full.index(p) for p in keep)
+    i = 0
+    while i < len(idx) - 1:
+        a, b = idx[i], idx[i + 1]
+        leg = lane_tiles([full[a], full[b]])[1:-1]
+        if b - a > 1 and not all(water[r, c] for c, r in leg):
+            (ac, ar), (bc, br) = full[a], full[b]
+            ll = math.hypot(bc - ac, br - ar) or 1.0
+            mid = max(range(a + 1, b), key=lambda k: (abs((br - ar) * (full[k][0] - ac)
+                                                          - (bc - ac) * (full[k][1] - ar)) / ll,
+                                                      -k))
+            idx.insert(i + 1, mid)
+            continue
+        i += 1
+    return [full[k] for k in idx]
 
 
 def simplify(points, tol=1.5):

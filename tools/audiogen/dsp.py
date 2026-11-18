@@ -177,11 +177,15 @@ def sweep_lowpass(x, cutoff, block=128):
     return out
 
 
-def circular(fn, x):
-    """Run a causal filter on a loop as if it had been playing forever: filter two
-    periods and keep the second, so the filter state at the seam is continuous."""
+def circular(fn, x, warm=2.0):
+    """Run a causal filter on a loop as if it had been playing forever: filter the loop's
+    last `warm` seconds and then the loop, and keep the loop, so the filter state at the seam
+    is continuous. Every filter run this way settles within milliseconds (cutoffs of 20 Hz and
+    up, 2nd to 8th order), so two seconds of run-up are exact to double precision without
+    holding a second copy of a long file."""
     n = len(x)
-    return fn(np.concatenate([x, x]))[n:]
+    w = min(n, secs(warm))
+    return fn(np.concatenate([x[n - w:], x]))[w:]
 
 
 # --- noise -----------------------------------------------------------------------------
@@ -202,8 +206,23 @@ def shaped_noise(n, rng, gain_of_freq, channels=1):
 
 
 def smooth_random(n, rng, cutoff_hz):
-    """Periodic slowly-wandering curve with zero mean and unit deviation."""
-    return shaped_noise(n, rng, lambda f: np.exp(-((f / cutoff_hz) ** 2)))
+    """Periodic, slowly wandering curve with zero mean and unit deviation, built on the true
+    frequencies (shaped_noise floors them at 1 Hz, which left curves slower than about 0.2 Hz
+    flat and faster ones wobbling at up to 1 Hz)."""
+    f = np.fft.rfftfreq(n, 1 / SR)
+    g = np.exp(-((f / cutoff_hz) ** 2))
+    g[0] = 0
+    g[1] = max(g[1], 1e-3)  # at least one slow cycle per loop, however low the cutoff
+    x = np.fft.irfft((rng.standard_normal(len(f)) + 1j * rng.standard_normal(len(f))) * g, n)
+    return x / (np.std(x) + 1e-12)
+
+
+def gust_curve(n, rng, rate, depth):
+    """Slow gusts as a level curve around 1: log-normal, so a wind swells and eases without
+    dropping to nothing (a linear curve clipped at a floor, as the older beds had, swings some
+    20 dB once its slow wander is real); `depth` 0.5 is a fair breeze's 6-8 LU range."""
+    g = np.exp(0.35 * depth * smooth_random(n, rng, rate))
+    return g / np.mean(g)
 
 
 # --- space -----------------------------------------------------------------------------

@@ -861,28 +861,6 @@
    "populations": [
     {
      "role": "shepherd",
-     "per_item": "world.sheepfold",
-     "count": 1,
-     "density": "always",
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "actor": "world.sheep",
-     "per_item": "world.sheepfold",
-     "count": 3,
-     "density": "herd"
-    },
-    {
-     "actor": "world.dog",
-     "per_item": "world.sheepfold",
-     "count": 0.5,
-     "density": "always"
-    },
-    {
-     "role": "shepherd",
      "density": "herd",
      "max_per_chunk": 1,
      "variants": {
@@ -916,11 +894,10 @@
    "name": "Pastures",
    "sound": {
     "surfaces": {
-     "roof": 0.04,
      "leaves": 0.02
     },
     "wind": "wind.mountain",
-    "exposure": 0.97,
+    "exposure": 0.99,
     "steps": {
      "surface": "earth",
      "files": [

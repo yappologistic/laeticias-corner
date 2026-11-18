@@ -12,7 +12,8 @@ import numpy as np
 import ambience
 import ancient
 import sounds as sd
-from atmos import band, conv, entry, kernels, noise_burst, resonant_burst, scatter_train, swell, train
+from atmos import (band, conv, entry, eq, kernels, noise_burst, resonant_burst, scatter_train,
+                   swell, train)
 from dsp import (bandpass, formant_gain, lowpass, midi_hz, pan, phase_of, place, ramp_in, secs,
                  times, wobble)
 from wildlife import calls, syllable
@@ -145,6 +146,13 @@ SIZES = (dict(name="a handful", talkers=4, far=0, callers=0, dist=(0.25, 0.5), e
          dict(name="a market", talkers=14, far=8, callers=3, dist=(0.3, 0.8), extras=1.0),
          dict(name="a festival", talkers=28, far=18, callers=6, dist=(0.3, 0.9), extras=1.6))
 CROWD_LUFS = (-27.0, -23.5, -20.0)
+CROWD_S = 34.0  # shares no factor with the 30 s wind and 32 s nature beds it plays over
+# The talkers' voices stop at 3.2 kHz, which left the crowds some 6 dB dull at 1 kHz and 20 dB
+# at 4 kHz against long-term speech spectra (voices behind a wall): a shelf and a presence
+# lift put back the consonants and the near voices' edge; a dip at 420 Hz takes off the boxiness
+# of many vowels piled on one another.
+CROWD_EQ = (("peak", 420.0, -3.0, 0.8), ("high", 1300.0, 6.0, 0.7), ("peak", 2700.0, 3.0, 0.9))
+CROWD_SURGE = (0.12, 0.16, 0.2)  # how far a crowd's talk swells and ebbs, by size
 
 
 def crowd(character, level):
@@ -153,7 +161,7 @@ def crowd(character, level):
     c = CHARACTERS[character]
     s = SIZES[level]
 
-    def render(rng, length=30.0):
+    def render(rng, length=CROWD_S):
         n = secs(length)
         b = sd.Bed(length, rng, tail=length + 5)  # each talker runs the whole loop
         for _ in range(s["talkers"]):
@@ -188,7 +196,9 @@ def crowd(character, level):
             claps = clapping(rng, 4.0, 10, lambda a: np.sin(np.pi * a / 4.0))
             k = secs(rng.uniform(0, length - 4))
             out[k:k + len(claps)] += 0.3 * pan(lowpass(claps, 5000), rng.uniform(-0.5, 0.5))
-        return out
+        # The whole crowd's talk swells and ebbs (a story told, a stall's bargain struck).
+        out = out * swell(n, rng, 0.06, CROWD_SURGE[level], 0.3)[:, None]
+        return eq(out, CROWD_EQ)
 
     return render
 

@@ -3,7 +3,7 @@
 World rect C 553..575, R 280..305; local (c, r) = world (C - 553, R - 280); local level 0 = world
 level 1. Lechaion on the gulf in the north-west (moles, a beacon, the lane `lechaion` meets the
 Ionian route's base lane); the town with the archaic temple of Apollo (c 4..15, r 10..15); the
-diolkos (c 15..16, r 2..21), the paved ship trackway across the isthmus; Kenchreai on the
+diolkos (c 16..17, r 0..19), the paved ship trackway across the isthmus; Kenchreai on the
 Saronic side (c 17..22, r 14..19; lane `kenchreai`); Acrocorinth as ground (c 0..10, r 16..25,
 rising to +7) with the summit sanctuary on top and a stepped path up. The Megarid road arrives
 over the north edge (portal `corinth_n`).
@@ -53,7 +53,9 @@ def build(L: Layout) -> None:
     L.level(Rect(4, 19, 6, 21), top)  # the summit bench, where the path arrives
 
     L.place("athens.corinth_apollo", rect=(4, 10, 15, 15), name="corinth_apollo")
-    L.place("athens.diolkos", rect=(16, 2, 17, 21), name="diolkos")
+    # Two tiles north of the town plan's r 2..21: the temple's east steps (c 16, r 12) then meet
+    # the trackway's paved walk, not the hauling cradle's closed middle (W-L1).
+    L.place("athens.diolkos", rect=(16, 0, 17, 19), name="diolkos")
     L.place("athens.acrocorinth_summit", rect=(4, 19, 6, 21), name="acrocorinth_summit")
 
     # Lechaion: a mole closing the basin, a beacon at its root, fishermen.
@@ -72,7 +74,7 @@ def build(L: Layout) -> None:
         if sea_at(L, 18, r):
             L.place("world.mole", at=(18, r))
     put(L, "world.beacon", (17, 13))
-    WP.harbour_lane(L, "kenchreai", [(20, 21), (19, 24)], port="kenchreai", home="quay")
+    WP.harbour_lane(L, "kenchreai", [(21, 22), (20, 24)], port="kenchreai", home="quay")
 
     L.district("town", Rect(1, 8, 14, 17))
     L.houses(Rect(0, 8, 14, 17) - Rect(4, 10, 15, 15), HOUSES, front=[main, st1, st2, kench],
@@ -88,5 +90,5 @@ def build(L: Layout) -> None:
     L.node("acrocorinth", (3, 21))
     WP.finish(L, "athens.limestone", {"athens.g_house_small": 0})
     L.expect("corinth_apollo", rect=(4, 10, 15, 15), level=0)
-    L.expect("diolkos", rect=(16, 2, 17, 21), level=0)
+    L.expect("diolkos", rect=(16, 0, 17, 19), level=0)
     L.view("whole", Rect(0, 0, W - 1, H - 1))

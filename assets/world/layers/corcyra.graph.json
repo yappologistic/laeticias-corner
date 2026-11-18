@@ -23,6 +23,6 @@
     {"a": "n7", "b": "n8", "kind": "street"}
   ],
   "lanes": [
-    {"id": "corcyra", "kind": "sea", "points": [[213, 826], [216, 827]], "ports": [{"id": "harbour", "at": 0}, {"id": "start", "at": 0}, {"id": "corcyra", "at": 1}, {"id": "end", "at": 1}]}
+    {"id": "corcyra", "kind": "sea", "points": [[213, 826], [216, 826], [216, 827]], "ports": [{"id": "harbour", "at": 0}, {"id": "start", "at": 0}, {"id": "corcyra", "at": 2}, {"id": "end", "at": 2}]}
   ]
 }

@@ -471,6 +471,21 @@ def main(argv=None) -> int:
             checked.append(i.text() + "\n")
             failed = True
     if a.check:
+        from . import walkable
+        found = walkable.findings(world, b.cat, b.graphs, b.root)
+        for k in walkable.stale_art(found):
+            i = Issue("W", "error", "world", f"plan/art_pending.py entry {k} matches no fault "
+                      "any more: the art has landed, remove the entry")
+            print("   " + i.text())
+            checked.append(i.text() + "\n")
+            failed = True
+        b.reports.mkdir(parents=True, exist_ok=True)
+        (b.reports / "walkable.md").write_text(
+            "# Walkability by region (`build.sh --check`)\n\n"
+            + walkable.report_md(walkable.stats(world, b.cat, b.graphs)))
+        print(f"walkable: {sum(f.level == 'error' for f in found)} error(s), "
+              f"{sum(f.level != 'error' for f in found)} art pending -> "
+              f"{b.reports / 'walkable.md'}")
         pf = b.out / "placeholders.json"
         if not pf.exists() or pf.read_text() != b.placeholders_json():
             i = Issue("V1", "error", "world", f"{pf} does not list the placed stand-ins of the "

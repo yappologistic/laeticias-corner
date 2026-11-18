@@ -308,6 +308,68 @@
         "rainbow",
         "rome"
       ]
+    },
+    {
+      "file": "amb/rome/day_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 44.0,
+      "samples": 1940400,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Rome in winter: no swallows; the murmur, hearths in the shops, wind in the streets, gutters dripping, jackdaws, a cart.",
+      "where": "replaces amb/rome/day.ogg from December to February (theme.seasons)",
+      "tags": [
+        "season",
+        "winter",
+        "rome"
+      ]
+    },
+    {
+      "file": "amb/rome/saturnalia.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 20.0,
+      "samples": 882000,
+      "gain": 1.0,
+      "when": "event",
+      "for": "A Saturnalia night in the street: laughter, little bells, dice, a tibia, clapping.",
+      "where": "follows the Saturnalia's cast (winter day 1)",
+      "tags": [
+        "festival",
+        "rome",
+        "winter"
+      ]
+    },
+    {
+      "file": "sfx/rome/lituus.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.0897,
+      "samples": 224456,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A lituus call: the curved horn of processions and rites (Lupercalia, the October Horse, the Ludi).",
+      "tags": [
+        "festival",
+        "instrument",
+        "rome"
+      ]
+    },
+    {
+      "file": "sfx/rome/sting_season.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft cue for the turn of a season, in Rome's F lydian-type mode (cithara and hydraulis).",
+      "tags": [
+        "sting",
+        "season",
+        "rome"
+      ]
     }
   ]
 }

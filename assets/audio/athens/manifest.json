@@ -322,6 +322,87 @@
         "rainbow",
         "athens"
       ]
+    },
+    {
+      "file": "amb/athens/day_cool.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 44.0,
+      "samples": 1940400,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Athens without cicadas: wind in the olives, goat bells, sparrows and a robin, a plough ox far off, chisels, voices.",
+      "where": "replaces amb/athens/day.ogg from October to May (theme.seasons)",
+      "tags": [
+        "season",
+        "autumn",
+        "winter",
+        "spring",
+        "athens"
+      ]
+    },
+    {
+      "file": "amb/athens/night_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 44.0,
+      "samples": 1940400,
+      "gain": 1.0,
+      "when": "night",
+      "for": "An Athenian winter night: no crickets; wind, a dog, the little owl, a symposium behind shutters, eaves dripping.",
+      "where": "replaces amb/athens/night.ogg from November to March (theme.seasons)",
+      "tags": [
+        "season",
+        "winter",
+        "athens"
+      ]
+    },
+    {
+      "file": "amb/athens/komos.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 20.0,
+      "samples": 882000,
+      "gain": 1.0,
+      "when": "event",
+      "for": "A Dionysiac revel passing: aulos, tympanon and krotala, voices calling and laughing.",
+      "where": "follows the cast of the Dionysia, Lenaia, Anthesteria and Rural Dionysia",
+      "tags": [
+        "festival",
+        "athens",
+        "winter",
+        "spring"
+      ]
+    },
+    {
+      "file": "sfx/athens/tympanon.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.3683,
+      "samples": 148541,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A tympanon roll and strokes with krotala (Dionysiac festivals).",
+      "tags": [
+        "festival",
+        "instrument",
+        "athens"
+      ]
+    },
+    {
+      "file": "sfx/athens/sting_season.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft cue for the turn of a season, in Athens' Dorian on E (kithara and lyra).",
+      "tags": [
+        "sting",
+        "season",
+        "athens"
+      ]
     }
   ]
 }

@@ -39,7 +39,7 @@ def build(L: Layout) -> None:
              seed="town")
     L.scatter(Rect(0, 0, 13, 3) | Rect(0, 21, 13, H - 1), {"athens.t_olive": 3,
               "athens.t_cypress": 1, "world.p_maquis": 2}, 0.2, seed="island", clump=0.5)
-    WP.harbour_lane(L, "corcyra", [(13, 13)], port="corcyra", home="harbour")
+    WP.harbour_lane(L, "corcyra", [(13, 13), (13, 16)], port="corcyra", home="harbour")
     L.node("corcyra_quay", (11, 12))
     WP.finish(L, "athens.earth")
     L.view("whole", Rect(0, 0, W - 1, H - 1))

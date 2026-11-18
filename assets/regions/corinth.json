@@ -914,7 +914,7 @@
    "name": "Lechaion and Kenchreai",
    "sound": {
     "surfaces": {
-     "roof": 0.08,
+     "roof": 0.07,
      "water": 0.88
     },
     "wind": "wind.sea",
@@ -1109,11 +1109,11 @@
    "name": "Countryside",
    "sound": {
     "surfaces": {
-     "roof": 0.16,
-     "leaves": 0.06
+     "roof": 0.17,
+     "leaves": 0.05
     },
     "wind": "wind.open",
-    "exposure": 0.87,
+    "exposure": 0.86,
     "steps": {
      "surface": "earth",
      "files": [

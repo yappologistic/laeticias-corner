@@ -1165,79 +1165,6 @@
    ]
   },
   {
-   "actor": "world.fishing_boat",
-   "lane": "base:hellespont_fishing",
-   "count": 2,
-   "by_month": [
-    0.7,
-    0.8,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.9,
-    0.7,
-    0.5,
-    0.5,
-    0.6
-   ],
-   "id": "aegean.2",
-   "hours": [
-    "03:30",
-    "11:00"
-   ],
-   "rest": [
-    "home",
-    "grounds"
-   ],
-   "offsets": [
-    0.153,
-    0.409
-   ]
-  },
-  {
-   "actor": "world.fishing_boat",
-   "lane": "base:hellespont_fishing",
-   "count": 1,
-   "hours": [
-    "20:30",
-    "03:30"
-   ],
-   "when": {
-    "months": [
-     "may",
-     "jun",
-     "jul",
-     "aug",
-     "sep"
-    ]
-   },
-   "note": "fishing by torchlight on calm summer nights",
-   "by_month": [
-    0.7,
-    0.8,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0.9,
-    0.7,
-    0.5,
-    0.5,
-    0.6
-   ],
-   "id": "aegean.3",
-   "rest": [
-    "home",
-    "grounds"
-   ],
-   "offsets": [
-    0.096
-   ]
-  },
-  {
    "actor": "athens.merchant",
    "lane": "base:aegean_delos",
    "count": 2,
@@ -1247,15 +1174,15 @@
    ],
    "note": "ships for Delos and Ephesus, island to island",
    "by_month": "sailing",
-   "id": "aegean.4",
+   "id": "aegean.2",
    "rest": [
     "piraeus",
     "delos",
     "ephesus"
    ],
    "offsets": [
-    0.892,
-    0.37
+    0.153,
+    0.409
    ]
   },
   {
@@ -1273,14 +1200,14 @@
    },
    "note": "the sacred ship carrying Athens' delegation to Apollo's festival on Delos",
    "by_month": "sailing",
-   "id": "aegean.5",
+   "id": "aegean.3",
    "rest": [
     "piraeus",
     "delos",
     "ephesus"
    ],
    "offsets": [
-    0.729
+    0.096
    ]
   },
   {
@@ -1294,16 +1221,16 @@
    ],
    "note": "grain ships from the Black Sea through the Hellespont for Piraeus",
    "by_month": "grain",
-   "id": "aegean.6",
+   "id": "aegean.4",
    "rest": [
     "piraeus",
     "hellespont"
    ],
    "offsets": [
-    0.947,
-    0.175,
-    0.543,
-    0.692
+    0.946,
+    0.185,
+    0.494,
+    0.685
    ]
   }
  ],
@@ -1312,21 +1239,11 @@
    "kind": "fishing",
    "rect": [
     263,
-    519,
+    518,
     267,
-    523
+    522
    ],
    "lane": "base:mesogeia_road_harbour_fishing"
-  },
-  {
-   "kind": "fishing",
-   "rect": [
-    127,
-    487,
-    131,
-    491
-   ],
-   "lane": "base:hellespont_fishing"
   }
  ],
  "cards": {},

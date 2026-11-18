@@ -45,6 +45,10 @@ def _src() -> str:
     return f"{p.name}:{f.f_lineno}"
 
 
+# Walkable kit allowed on water besides catalog `crossing`s: piers boats tie up to.
+PIERS = ("jetty", "mole", "pier", "quay")
+
+
 @dataclass
 class Issue:
     code: str
@@ -118,6 +122,12 @@ class Expect:
     src: str
 
 
+def deck_kit(d) -> bool:
+    """Walkable kit that may stand on water: catalog `crossing`s (bridges, fords, pontoons,
+    stepping stones) and piers (jetties, moles); anything else walkable stays on land."""
+    return "crossing" in (d.extra.get("tags") or []) or d.id.split(".")[-1] in PIERS
+
+
 def _grid_dir_of(dc: int, dr: int) -> int:
     """River flow enum from a plan step: 0 = -y (east), 1 = +x (south), 2 = +y (west), 3 = -x."""
     if abs(dc) >= abs(dr):
@@ -160,6 +170,7 @@ class Layout:
         self.lanes: list[LaneSpec] = []
         self.expects: list[Expect] = []
         self.moves: dict[str, tuple[Rect, str, str]] = {}  # landmark -> (rect, why, src)
+        self.level_moves: dict[str, tuple[int, str, str]] = {}  # landmark -> (level, why, src)
         self.views: dict[str, Rect] = {}
         self.sightlines: dict[str, np.ndarray] = {}  # name -> local mask (V15)
         self.issues: list[Issue] = []
@@ -235,6 +246,8 @@ class Layout:
                 water = self.cat.is_water(self.terrains[t])
                 if (d.on == "land" and water) or (d.on == "water" and not water):
                     return False
+                if water and d.walkable and not deck_kit(d):
+                    return False   # a walkable reed bed on water would be a deck (W-D2)
                 if lv is None:
                     lv = self.LV[loc]
                 elif self.LV[loc] != lv:
@@ -331,7 +344,18 @@ class Layout:
 
     def paint(self, shape, terrain: str) -> None:
         src = _src()
-        self.T[self._mask(shape)] = self._terrain_index(terrain, src)
+        m = self._mask(shape)
+        self.T[m] = self._terrain_index(terrain, src)
+        if self.cat.is_water(terrain):
+            self._drown(m)
+
+    def _drown(self, m: np.ndarray) -> None:
+        """Walkable kit that is no deck (a reed bed on a bank) goes where water is painted over
+        it: on water it would carry walkers (W-D2)."""
+        for i in sorted({int(o) for o in np.unique(self.OCC[m]) if o >= 0}):
+            d = self.cat.items[self.items[i].id]
+            if d.walkable and not d.rise and not deck_kit(d):
+                self._remove(self.items[i])
 
     def no_ground(self, shape) -> None:
         """Open sky: the tile has no ground at all (the home island's rim, chasms)."""
@@ -407,10 +431,16 @@ class Layout:
             raise TypeError("place() needs rect= or at=")
         c, r = c + self.origin[0], r + self.origin[1]
         p = self._new_placed(item, c, r, k, name, src, face)
+        d = self.cat.items[item]
         for cc, rr_ in p.tiles():
             loc = self._local(cc, rr_)
             if loc is None:
                 self._err("V9", f"{name or item}: footprint leaves the layer", src, at=(cc, rr_))
+                return None
+            if d.walkable and not d.rise and not deck_kit(d) and self.T[loc] >= 0 and \
+                    self.cat.is_water(self.terrains[self.T[loc]]):
+                self._err("W-D2", f"{name or item} is walkable and no crossing: on water it "
+                          "would carry walkers", src, at=(cc, rr_))
                 return None
             if self.OCC[loc] >= 0:
                 other = self.items[self.OCC[loc]]
@@ -652,6 +682,7 @@ class Layout:
         w, h = self.size
         m = Line(wpts, width).mask(self.origin[0], self.origin[1], w, h)
         self.T[m] = self._terrain_index(terrain, src)
+        self._drown(m)
         # Flow per tile: direction of the nearest segment.
         js, is_ = np.nonzero(m)
         if js.size == 0:
@@ -696,10 +727,13 @@ class Layout:
     def expect(self, landmark: str, *, rect, level: int | None = None) -> None:
         self.expects.append(Expect(landmark, self._world(rect), level, _src()))
 
-    def moved(self, landmark: str, *, rect, why: str) -> None:
-        """Declare that a landmark stands off its city-file rect on purpose (V4 then reports the
-        move as a warning with the reason, instead of an error)."""
+    def moved(self, landmark: str, *, rect, why: str, level: int | None = None) -> None:
+        """Declare that a landmark stands off its city-file rect (or, with `level`, its level)
+        on purpose (V4 then reports the move as a warning with the reason, instead of an
+        error)."""
         self.moves[landmark] = (self._world(rect), why, _src())
+        if level is not None:
+            self.level_moves[landmark] = (level, why, _src())
 
     def view(self, name: str, rect) -> None:
         self.views[name] = self._world(rect)
