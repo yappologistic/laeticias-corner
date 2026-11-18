@@ -197,6 +197,14 @@ class Catalog:
     def walk_tiles(self, item_id: str, k: int) -> list[tuple[int, int]]:
         return [tuple(t) for t in self.geom.get(item_id, {}).get(f"r{k}", {}).get("walk", [])]
 
+    def slot_kind(self, item_id: str, slot_id: str) -> str | None:
+        """The catalog `kind` of an item's slot (`mooring` spots are a boat's, on water)."""
+        d = self.items.get(item_id)
+        for s in d.extra.get("slots", []) if d else []:
+            if isinstance(s, dict) and s.get("id") == slot_id:
+                return s.get("kind")
+        return None
+
 
 class Atlas:
     """All atlas pages present, as one key space. Images load lazily, sprites are cached."""

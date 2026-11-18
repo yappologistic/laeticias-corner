@@ -5,6 +5,7 @@
   "home": {"origin": [40, 1200], "size": [40, 40], "level": 2, "region": "corner"},
   "layers": [
     {"id": "base", "file": "layers/base.lcw", "graph": "layers/base.graph.json"},
+    {"id": "rome", "file": "layers/rome.lcw", "graph": "layers/rome.graph.json"},
     {"id": "athens", "file": "layers/athens.lcw", "graph": "layers/athens.graph.json"},
     {"id": "parsa", "file": "layers/parsa.lcw", "graph": "layers/parsa.graph.json"},
     {"id": "ostia", "file": "layers/ostia.lcw", "graph": "layers/ostia.graph.json"},
@@ -25,10 +26,10 @@
   ],
   "regions": [
     {"id": "corner", "set": "home", "kind": "home", "time": "timeless"},
-    {"id": "rome", "set": "rome", "kind": "city", "time": "rome"},
+    {"id": "rome", "set": "rome", "kind": "city", "time": "rome", "life": "regions/rome.json"},
     {"id": "athens", "set": "athens", "kind": "city", "time": "athens", "life": "regions/athens.json"},
     {"id": "parsa", "set": "parsa", "kind": "city", "time": "parsa"},
-    {"id": "ostia", "set": "rome", "kind": "town", "time": "rome"},
+    {"id": "ostia", "set": "rome", "kind": "town", "time": "rome", "life": "regions/ostia.json"},
     {"id": "tibur", "set": "rome", "kind": "town", "time": "rome"},
     {"id": "alban_mount", "set": "rome", "kind": "town", "time": "rome"},
     {"id": "capua", "set": "rome", "kind": "town", "time": "rome"},

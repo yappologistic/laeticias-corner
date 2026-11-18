@@ -135,6 +135,7 @@ PORTALS = {
     "aurelia_w": (("rome", "base"), (96, 120), 1),          # rome.md §2.5: c 0, r 96
     "appia_se": (("rome", "base"), (271, 174), 1),          # rome.md §2.5: c 175, r 150
     "ostiensis": (("ostia", "rome"), (163, 184), 1),        # Via Ostiensis, Ostia's north edge
+    "portuensis": (("ostia", "rome"), (140, 184), 1),       # Via Portuensis, Rome c 44 -> Portus
     "royal_road_w": (("parsa", "base"), (1136, 354), 4),    # persepolis.md: c 0, r 50
     "pasargadae_n": (("parsa", "base"), (1190, 304), 4),
     # athens.md §2.5: the Sacred Way leaves the Sacred Gate west (c 0, r 16) straight into

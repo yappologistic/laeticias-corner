@@ -133,6 +133,26 @@ def _project(p, pts):
     return best
 
 
+def _level_rule(L: Layout):
+    """same(a, b): whether walkers may go between plan tiles a and b of this layout without a
+    stair: the same level, or either tile a stair, ramp or deck (tiles outside the layer are
+    not judged here)."""
+    from .validate import deck_tiles
+
+    def water_at(c, r):
+        t = L.terrain_at(c, r)
+        return t is not None and L.cat.is_water(t)
+
+    decks = deck_tiles(L.cat, [p for p in L.items if not p.removed], water_at)
+
+    def same(a, b):
+        la, lb = L._local(*a), L._local(*b)
+        if la is None or lb is None or a in decks or b in decks:
+            return True
+        return L.LV[la] == L.LV[lb]
+    return same
+
+
 def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
     issues: list[Issue] = []
     streets = L.streets
@@ -153,10 +173,12 @@ def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
                         tile = (round(a[0] + t * (b[0] - a[0])), round(a[1] + t * (b[1] - a[1])))
                         bps[i].append((si + t, tile))
                         bps[j].append((sj + u, tile))
+    same_level = _level_rule(L)
     # T-junctions: a street end near another street joins it. An end that already lies on a
     # street is joined there by the crossing above; otherwise it joins only the nearest street
     # within reach (joining every street within reach drew short diagonal edges across
-    # whatever stood between two lanes that both start on a third).
+    # whatever stood between two lanes that both start on a third), and only one at its own
+    # level: streets on two levels meet only through a stair, a ramp or a deck.
     for i, s in enumerate(streets):
         for end in (polys[i][0], polys[i][-1]):
             near = []
@@ -164,7 +186,7 @@ def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
                 if j == i:
                     continue
                 dist, pos, tile = _project(end, polys[j])
-                if dist <= o.width / 2 + 1:
+                if dist <= o.width / 2 + 1 and same_level(tuple(end), tile):
                     near.append((dist, j, pos, tile))
             if not near or min(near)[0] < 1e-9:
                 continue

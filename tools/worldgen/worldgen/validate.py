@@ -96,7 +96,35 @@ def walk_map(world: World, cat: Catalog) -> tuple[np.ndarray, np.ndarray]:
             for dx, dy in cat.walk_tiles(it.id, it.k):
                 c, r = it.c + it.pw - 1 - dy, it.r + dx
                 walk[r, c] = True
+                # A landmark's floor over water (a bridge's deck, the island's quay) is a deck:
+                # its art rises from the water to the banks, so walkers change level on it.
+                if d.on == "water" or water[r, c]:
+                    stair[r, c] = True
     return walk, stair
+
+
+def deck_tiles(cat: Catalog, items, water_at) -> set[tuple[int, int]]:
+    """Plan tiles where walkers may change level, from a list of placed items: stairs and
+    ramps, walkable items on water, and landmark walk tiles over water (`water_at(c, r)`)."""
+    out: set[tuple[int, int]] = set()
+    for it in items:
+        d = cat.items.get(it.id)
+        if d is None:
+            continue
+        if d.rise > 0 or (d.walkable and d.on == "water"):
+            out |= {(c, r) for r in range(it.r, it.r + it.ph) for c in range(it.c, it.c + it.pw)}
+        elif not d.walkable:
+            for dx, dy in cat.walk_tiles(it.id, it.k):
+                c, r = it.c + it.pw - 1 - dy, it.r + dx
+                if d.on == "water" or water_at(c, r):
+                    out.add((c, r))
+    return out
+
+
+def readme_complete(text: str) -> bool:
+    """A region README declares itself complete on a line of its own (`Status: complete`), not
+    by mentioning the phrase in a sentence."""
+    return any(line.strip() == "Status: complete" for line in text.splitlines())
 
 
 def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[str, Graph],
@@ -248,7 +276,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                           (p.c, p.r), ex.src)
         if marks:
             readme = Path(root) / "tools/worldgen/regions" / name / "README.md"
-            complete = readme.exists() and "Status: complete" in readme.read_text()
+            complete = readme.exists() and readme_complete(readme.read_text())
             by_id = {p.id.split(".", 1)[-1]: p for p in placed if "." in p.id}
             for lid, m in marks.items():
                 p = by_id.get(lid)
@@ -411,6 +439,17 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             marks[it.r:it.r + it.ph, it.c:it.c + it.pw] = i
     for p, sid, c, r in spots:
         inside = 0 <= c < COLS and 0 <= r < ROWS
+        if (inside and int(world.T[r, c]) in water_ids and not walk[r, c]
+                and cat.slot_kind(p.id, sid) == "mooring"):
+            # A boat's spot: on water, worked from the quay beside it (or beside the post).
+            start = mooring_access(p, (c, r), walk)
+            if not start:
+                issue("V7", f"{p.name or p.id}: mooring slot {sid!r} touches no walkable tile",
+                      (c, r), p.src)
+            elif not any(_near_graph(t, graph_tiles, walk, lv, stair) for t in start):
+                issue("V7", f"{p.name or p.id}: mooring slot {sid!r} is not within {SLOT_REACH} "
+                      "walking tiles of the path graph", (c, r), p.src)
+            continue
         own = p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph
         start = [(c, r)]
         if inside and not walk[r, c] and own and not cat.items[p.id].landmark:
@@ -591,6 +630,20 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
     return out
 
 
+def world_file(out: Path, order: list[str]) -> list[Issue]:
+    """world.json lists exactly the layer files present, in composition order, so the engine
+    loads every built layer and never a planned one."""
+    f = Path(out) / "world.json"
+    if not f.exists():
+        return [Issue("V6", "error", "world", f"{f} is missing")]
+    listed = [e["id"] for e in json.loads(f.read_text()).get("layers", [])]
+    present = [n for n in order if (Path(out) / "layers" / f"{n}.lcw").exists()]
+    if listed != present:
+        return [Issue("V6", "error", "world", f"world.json lists layers {listed}; the files "
+                      f"present, in composition order, are {present}")]
+    return []
+
+
 def variant_problem(d, k: int) -> str | None:
     """Why variant byte k is not a valid look or rotation of item d (None when it is). The engine
     reads it as r<k>: a look below `count` for `variant` layouts, a rotation below `count` (and
@@ -602,6 +655,20 @@ def variant_problem(d, k: int) -> str | None:
     if d.landmark and k not in d.rotations:
         return f"rotation {k} is not one the landmark is modelled in {d.rotations}"
     return None
+
+
+def mooring_access(p, spot, walk) -> list[tuple[int, int]]:
+    """Walkable land tiles a boat moored at `spot` (a water tile) is worked from: beside the
+    spot, or beside the item whose slot it is when the spot lies against its footprint (a quay
+    post on the bank's edge)."""
+    def beside(t):
+        return [(t[0] + dc, t[1] + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+
+    own = {(c, r) for r in range(p.r, p.r + p.ph) for c in range(p.c, p.c + p.pw)}
+    cand = beside(spot)
+    cand += [n for t in cand if t in own for n in beside(t)]
+    return [(c, r) for c, r in dict.fromkeys(cand)
+            if 0 <= c < COLS and 0 <= r < ROWS and (c, r) not in own and walk[r, c]]
 
 
 def _local(b, origin):

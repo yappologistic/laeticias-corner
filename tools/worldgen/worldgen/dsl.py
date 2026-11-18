@@ -562,8 +562,10 @@ class Layout:
 
     # -- ways and water -----------------------------------------------------------------------
 
-    def street(self, points: list[tuple[int, int]], *, width: int, paving: str,
+    def street(self, points: list[tuple[int, int]], *, width: int, paving: str | None,
                kerb: str | None = None, kind: str = "street", portal: str | None = None) -> Street:
+        """A way: paints `paving` and makes graph edges. `paving=None` keeps the ground as it is
+        (a way over a bridge's deck or a landmark's floor, whose water or paving stays)."""
         src = _src()
         wpts = [(c + self.origin[0], r + self.origin[1]) for c, r in points]
         line = Line(wpts, width)
@@ -572,7 +574,8 @@ class Layout:
         if kerb:
             grown = Line(wpts, width + 2).mask(self.origin[0], self.origin[1], w, h) & ~m
             self.T[grown & ~self.STREET] = self._terrain_index(kerb, src)
-        self.T[m] = self._terrain_index(paving, src)
+        if paving is not None:
+            self.T[m] = self._terrain_index(paving, src)
         self.STREET |= m
         s = Street(wpts, width, paving, kind, portal, src)
         self.streets.append(s)

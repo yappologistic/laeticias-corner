@@ -125,8 +125,13 @@ class Builder:
         return "\n".join(lines) + "\n"
 
     def write_world_json(self) -> None:
+        """Rewritten only when its text changes (a layer file appeared or went), and said so,
+        so the builder commits it with the layer that changed it."""
         self.out.mkdir(parents=True, exist_ok=True)
-        (self.out / "world.json").write_text(self.world_json())
+        f, text = self.out / "world.json", self.world_json()
+        if not f.exists() or f.read_text() != text:
+            f.write_text(text)
+            print(f"   {f} updated: commit it with the layer files it lists")
 
     # -- building ---------------------------------------------------------------------------
 
@@ -201,6 +206,11 @@ class Builder:
     def report(self, name: str, issues: list[Issue], sizes: dict | None) -> Path:
         d = self.reports / name
         d.mkdir(parents=True, exist_ok=True)
+        f = d / "report.txt"
+        f.write_text(self.report_text(name, issues, sizes))
+        return f
+
+    def report_text(self, name: str, issues: list[Issue], sizes: dict | None) -> str:
         pl = self.layers[name]
         origin = (pl.c0, pl.r0)
         errs = [i for i in issues if i.level == "error"]
@@ -212,9 +222,7 @@ class Builder:
         lines.append("")
         for n, i in enumerate(errs + warns, 1):
             lines.append(f"{n:3}. " + i.text(origin))
-        f = d / "report.txt"
-        f.write_text("\n".join(lines) + "\n")
-        return f
+        return "\n".join(lines) + "\n"
 
     def previews(self, name: str, world: compose.World, issues: list[Issue]) -> list[Path]:
         d = self.reports / name
@@ -329,11 +337,18 @@ def main(argv=None) -> int:
         return 2
     world = b.composed()
     failed = False
+    # The full check writes every layer's report into one file (out/worldgen/check.txt); a
+    # build writes its layer's report beside that layer's previews.
+    checked = []
     for n in targets:
         issues = b.check(n, world)
         errs = sum(1 for i in issues if i.level == "error")
         sizes = b.write_layer(n) if (not a.check and errs == 0) else None
-        f = b.report(n, issues, sizes)
+        if a.check:
+            checked.append(b.report_text(n, issues, sizes))
+            f = b.reports / "check.txt"
+        else:
+            f = b.report(n, issues, sizes)
         print(f"{n}: {errs} error(s), {len(issues) - errs} warning(s) -> {f}")
         for i in [i for i in issues if i.level == "error"][:12]:
             print("   " + i.text((b.layers[n].c0, b.layers[n].r0)))
@@ -344,6 +359,13 @@ def main(argv=None) -> int:
         if a.preview:
             for p in b.previews(n, world, issues):
                 print(f"   preview {p}")
+    if a.check:
+        for i in validate.world_file(b.out, b.order):
+            print("   " + i.text())
+            checked.append(i.text() + "\n")
+            failed = True
+        b.reports.mkdir(parents=True, exist_ok=True)
+        (b.reports / "check.txt").write_text("\n".join(checked))
     if want_world and a.preview:
         for p in b.preview_world(world):
             print(f"   preview {p}")

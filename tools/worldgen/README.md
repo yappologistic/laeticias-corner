@@ -13,7 +13,7 @@ tools/worldgen/build.sh parsa                 # compile + validate one layer, wr
 tools/worldgen/build.sh parsa --preview       # … and write previews to out/worldgen/parsa/
 tools/worldgen/build.sh base                  # regenerate the procedural base (worldgen core only)
 tools/worldgen/build.sh --all                 # base, then every layer with a layout
-tools/worldgen/build.sh --check               # validate the committed files as they are
+tools/worldgen/build.sh --check               # validate the committed files (report: out/worldgen/check.txt)
 tools/worldgen/build.sh world --preview       # world.png, overview_full.png, assets/world/overview.png
 tools/worldgen/build.sh parsa --no-write      # validate only
 tools/worldgen/build.sh --test                # the test suite (about 25 s)
@@ -30,7 +30,8 @@ The first run creates `.venv` from `requirements.txt` (numpy, Pillow). Everythin
 every other layer, so builders of different layers never wait on each other. A layer with errors
 is not written; the report says why.
 
-Outputs per layer in `out/worldgen/<layer>/`: `report.txt` (every error and warning, numbered,
+Outputs per built layer in `out/worldgen/<layer>/` (`--check` writes one `out/worldgen/check.txt`
+for all layers instead): `report.txt` (every error and warning, numbered,
 with file:line of the layout call and local/plan/grid coordinates), `map.png` (1 px per tile for
 the base, 4 px for a layer: terrain colours, level shading, items as dots, graph in yellow),
 `issues.png` (the map with every issue circled and numbered as in the report),
@@ -91,7 +92,7 @@ def build(L: Layout) -> None:
 | `houses(shape, kit, front=[streets], gap=, seed=)` | district filler: frontage first, doors to the street, alleys, then smaller pieces inside facing reachable tiles; houses whose door gets cut off are removed |
 | `fields(shape, crop, plot=(w, h), path=None, seed=)` | plots that wobble by a tile, one in five fallow; `crop` is a terrain or an item planted in rows |
 | `wall(line, kit, tower=, every=, gates=[(c, r, item)])` | connect-layout walls with towers and gates |
-| `street(points, width=, paving=, kerb=, kind=, portal=)` | paints and makes graph edges; crossings and T-junctions become nodes; `portal` names the end on the layer edge |
+| `street(points, width=, paving=, kerb=, kind=, portal=)` | paints and makes graph edges; crossings and T-junctions become nodes (a street end joins only a street at its own level, or one it meets on a stair, ramp or deck); `portal` names the end on the layer edge; `paving=None` keeps the ground (a way over a bridge's deck, whose water stays) |
 | `stair(item, rect=, face=, name=)` | see above; makes a `stair` edge. Where the end lands inside a landmark, it snaps to the landmark's nearest walk tile; a landing shared by two stairs joins only their flights |
 | `river(points, width=, terrain=, banks={item: density}, seed=)`, `channel(...)` | water with flow (aux) following the points |
 | `lane(id, points, kind=, ports={id: point index})` | ship and barge lanes |
@@ -179,9 +180,9 @@ Between two portals of a town without a layout the base carries the road through
 | V2 | no overlaps in a layer; items of lower layers dropped by this one | error / warning |
 | V3 | footprints on ground of their `on` kind, flat; stairs: foot at the stair's level, head `rise` higher | error |
 | V4 | `expect()` rects and levels; city-file §2.3 landmark rects and levels (a set footprint that holds the bible's rect, e.g. a hall modelled with its portico, warns; rows without a footprint are not landmarks) | error (missing: warning) |
-| V5 | every graph edge walkable along its course; levels change only on stairs, ramps, or decks on water (jetties, bridges, fords stand at their bank's height, ±1 level); entering a landmark whose set has no geometry yet warns | error / warning |
+| V5 | every graph edge walkable along its course; levels change only on stairs, ramps, or decks on water (jetties, bridges, fords, and a landmark's walk tiles over water or on an `on: water` landmark: a bridge's deck, the island's quay); entering a landmark whose set has no geometry yet warns | error / warning |
 | V6 | graph connected; portals declared in the plan with the same tile, present in the other layer when it is built (a base route still planned warns); dest nodes ≤ 64 | error / warning |
-| V7 | slot spots (geometry files) and doors of buildings walkable and within 24 walking tiles of the graph; a kit slot on its own footprint (a seat, a shed's yard) counts from the walkable tile beside it; spots inside a landmark that only its geometry can open warn ("art geometry") | error / warning |
+| V7 | slot spots (geometry files) and doors of buildings walkable and within 24 walking tiles of the graph; a kit slot on its own footprint (a seat, a shed's yard) counts from the walkable tile beside it; a `mooring` slot on water is a boat's spot: it must touch a walkable tile (beside the spot or beside its post) within reach of the graph; spots inside a landmark that only its geometry can open warn ("art geometry") | error / warning |
 | V8 | two base terrains never touch; seas at level 0; rivers never flow uphill | error |
 | V9 | layer rect inside its regions; every tile with ground has a district | error |
 | V10 | ≤ 1 200 items and ≤ 40 glowing items per chunk, ≤ 254 districts | error |
@@ -196,6 +197,11 @@ named in the plan's lanes meet across layers within a tile; a graph part that re
 stand apart. V7 warns (art geometry) for kit slots deep inside their own footprint. V8 counts river
 flows between two layers as the base's errors (warnings elsewhere). V10 holds a layer to the chunk
 budgets it adds to.
+
+`--check` also checks that `assets/world/world.json` lists exactly the layer files present, in
+composition order; a build rewrites `world.json` only when that list changes and says so, so
+commit it with the layer that changed it. A region README is complete when it has the line
+`Status: complete` on its own.
 
 `--check` validates committed files without their layouts, so checks that need the layout source
 (V4 expectations, V7 slots, source lines) only run when the layer is built.

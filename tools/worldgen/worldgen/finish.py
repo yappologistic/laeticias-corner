@@ -84,6 +84,28 @@ def fords(L: Layout, streets, item: str = "world.ford") -> None:
             L.place(item, at=(c - L.origin[0], r - L.origin[1]))
 
 
+def _beside(c: int, r: int):
+    return [(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+
+
+def use_tiles(L: Layout, p, sid: str, c: int, r: int) -> list[tuple[int, int]]:
+    """Tiles a walker uses a slot spot from, as V7 counts them: the spot itself; the tiles
+    beside it off the footprint when it lies on the item's own footprint (a door in a front
+    wall); for a mooring on water (a boat's spot against a quay post), the land beside the spot
+    and beside the post."""
+    def own(t):
+        return p.c <= t[0] < p.c + p.pw and p.r <= t[1] < p.r + p.ph
+
+    if own((c, r)):
+        return [t for t in _beside(c, r) if not own(t)]
+    t = L.terrain_at(c, r)
+    if t is not None and L.cat.is_water(t) and L.cat.slot_kind(p.id, sid) == "mooring":
+        near = _beside(c, r)
+        near += [n for x in near if own(x) for n in _beside(*x)]
+        return [x for x in dict.fromkeys(near) if not own(x)]
+    return [(c, r)]
+
+
 def clear_doors(L: Layout, reach: int = 24, all_slots: bool = False) -> None:
     """Keep every door step and work spot free: small things standing on one go; a building
     standing on another's door step goes instead of the step's owner. Then houses and stalls
@@ -136,20 +158,13 @@ def clear_doors(L: Layout, reach: int = 24, all_slots: bool = False) -> None:
         if p.removed or d.landmark or d.rise:
             continue
         if p.door is not None:
-            spots = [p.door]
+            spots = [("door", *p.door)]
         elif all_slots and p.slots:
-            spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
+            spots = [(sid, c, r) for sid, lst in p.slots.items() for c, r, _f in lst]
         else:
             continue
-        # A spot on the item's own footprint (a door in its front wall) is used from the tile
-        # beside it, as V7 counts it.
-        near = set()
-        for c, r in spots:
-            if p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph:
-                near |= {(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))}
-            else:
-                near.add((c, r))
-        locs = [L._local(c, r) for c, r in near]
+        near = {t for sid, c, r in spots for t in use_tiles(L, p, sid, c, r)}
+        locs = [L._local(c, r) for c, r in sorted(near)]
         if not any(loc is not None and dist[loc] <= reach for loc in locs):
             L.remove(p)
 

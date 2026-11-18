@@ -12,7 +12,7 @@ import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import put, use_tiles
 from worldgen.shapes import Mask, Rect
 
 STEP = {"west": (-1, 0), "north": (0, -1), "east": (1, 0), "south": (0, 1)}
@@ -196,14 +196,15 @@ def drop_bad_spots(L: Layout) -> None:
         if p.removed or d.landmark or d.rise:
             continue
         own = set(p.tiles())
-        spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
+        spots = [(sid, c, r) for sid, lst in p.slots.items() for c, r, _f in lst]
         if p.door:
-            spots.append(p.door)
-        for c, r in spots:
+            spots.append(("door", *p.door))
+        for sid, c, r in spots:
             if (c, r) in own:
                 continue
             loc = L._local(c, r)
-            bad = loc is None or L.T[loc] < 0 or water[loc] or L.IMP[loc]
+            boat = loc is not None and water[loc] and L.cat.slot_kind(p.id, sid) == "mooring"
+            bad = loc is None or L.T[loc] < 0 or (water[loc] and not boat) or L.IMP[loc]
             if not bad and L.OCC[loc] >= 0:
                 o = L.items[L.OCC[loc]]
                 bad = L.cat.items[o.id].landmark and (c, r) not in L.walk_tiles(o)
@@ -250,17 +251,11 @@ def drop_unreached(L: Layout, reach: int = 22) -> None:
         d = L.cat.items[p.id]
         if p.removed or d.landmark or d.rise:
             continue
-        own = set(p.tiles())
-        spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
+        spots = [(sid, c, r) for sid, lst in p.slots.items() for c, r, _f in lst]
         if p.door:
-            spots.append(p.door)
-        for c, r in spots:
-            if (c, r) in own:
-                near = [(c + a, r + b) for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))
-                        if (c + a, r + b) not in own]
-            else:
-                near = [(c, r)]
-            locs = [L._local(*t) for t in near]
+            spots.append(("door", *p.door))
+        for sid, c, r in spots:
+            locs = [L._local(*t) for t in use_tiles(L, p, sid, c, r)]
             if not any(loc is not None and dist[loc] <= reach for loc in locs):
                 L.remove(p)
                 break

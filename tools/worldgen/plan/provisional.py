@@ -64,6 +64,13 @@ ITEMS = [
      "rotations": [0], "on": "any", "landmark": True, "height": 40},
     {"id": "rome.portus_lighthouse", "footprint": [3, 3], "layout": "rotate", "count": 4,
      "rotations": [0], "on": "land", "landmark": True, "height": 160, "glow": True},
+    # Rome's landmarks whose art was cut (rome.md §2.3, §3.2: N), at the bible's footprints so
+    # the layout places them as labelled placeholders instead of dressed stand-ins.
+    *[_mark(i, fp, h) for i, fp, h in (
+        ("rome.saepta", [23, 9], 70), ("rome.iseum", [9, 7], 90),
+        ("rome.stadium_domitian", [25, 10], 60), ("rome.pompey_theatre", [12, 12], 110),
+        ("rome.trajan_baths", [30, 30], 110),
+    )],
     # Waypoint landmarks proposed for the city sets (docs/design/sets/world.md §4, city files
     # §3.7). Footprints are the plans' rects (grid [x, y] = [rows, columns] at r0), heights from
     # the city files. They draw as labelled placeholders until the athens and parsa sets add them.
