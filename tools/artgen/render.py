@@ -248,8 +248,10 @@ def shade(model: Model, ctx: Occupancy | None = None, zmax: int | None = None) -
                   (ii + model.x0).reshape(H, W), (jj + model.y0).reshape(H, W))
 
 
-def finish(sh: Shaded, k: int, halos=()):
-    """Outline and quantise a shaded image; returns (rgba, glow_rgba or None, ox, oy)."""
+def finish(sh: Shaded, k: int, halos=(), cull=False):
+    """Outline and quantise a shaded image; returns (rgba, glow_rgba or None, ox, oy). With
+    `cull`, a halo whose centre lies behind the drawn surface (a lamp in a window on a face the
+    camera does not see) is left out, so it does not shine through the roof in front of it."""
     c0, r0 = sh.c0, sh.r0
     mat2, lvl, dep = sh.mat, sh.level, sh.depth
     H, W = mat2.shape
@@ -280,6 +282,10 @@ def finish(sh: Shaded, k: int, halos=()):
         glow[g, 3] = 255
         for halo in halos:
             hx, hy = (halo.x - halo.y) * k, ((halo.x + halo.y) / 2 - halo.z) * k
+            if cull:
+                ci, ri = int(np.floor(hx)) - c0, int(np.floor(hy)) - r0
+                if 0 <= ri < H and 0 <= ci < W and dep[ri, ci] > halo.z * k + 2.0 * k:
+                    continue
             d = np.hypot(pxx + 0.5 - hx, (pyy + 0.5 - hy) * 1.6) / (halo.radius * k)
             inten = halo.strength * np.clip(1 - d, 0, 1) ** 1.6 * HALO_STEPS
             q = np.clip(dither(inten, pxx, pyy), 0, HALO_STEPS)
@@ -291,9 +297,9 @@ def finish(sh: Shaded, k: int, halos=()):
     return rgba, glow, -c0, -r0
 
 
-def render_base(model: Model):
+def render_base(model: Model, cull=False):
     """Return (rgba, glow_rgba or None, ox, oy) for the model's visible surfaces."""
-    return finish(shade(model), model.k, model.halos)
+    return finish(shade(model), model.k, model.halos, cull)
 
 
 def render_shadow(model: Model) -> Sprite:
@@ -339,8 +345,8 @@ def render_shadow(model: Model) -> Sprite:
     return Sprite(rgba, -c0, -r0)
 
 
-def render(model: Model, want_glow: bool) -> Layers:
-    base, glow, ox, oy = render_base(model)
+def render(model: Model, want_glow: bool, cull=False) -> Layers:
+    base, glow, ox, oy = render_base(model, cull)
     glow_sprite = None
     if want_glow:
         if glow is None:

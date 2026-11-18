@@ -2,11 +2,15 @@
 of its set (docs/design/cities/persepolis.md). Models are in grid axes (+x south, +y west) at
 landmark scale s = 0.85 for the terrace (arch.Scale)."""
 
-from sets.parsa import animals, ground, kit, landmarks, people, plants
+from sets.parsa import animals, babylon, ground, kit, landmarks, people, plants, waypoints
 
-LANDMARKS = landmarks.LANDMARKS
-ITEMS = {**kit.ITEMS, **plants.ITEMS}
+LANDMARKS = {**landmarks.LANDMARKS, **babylon.LANDMARKS, **waypoints.LANDMARKS}
+ITEMS = {**kit.ITEMS, **plants.ITEMS, **babylon.ITEMS}
 STATES = kit.STATES
+# With the Royal Road's waypoints the set fills its two pages to 88 %: one packing group with
+# the longest sides first keeps it on two.
+ONE_GROUP = True
+PACK_ORDER = "maxside"
 # Frame counts of animated items, terrain and effects (the manifest is authoritative).
 FRAMES = {**kit.FRAMES, **ground.FRAMES}
 
