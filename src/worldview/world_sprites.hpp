@@ -28,10 +28,27 @@ struct Frames {
     }
 };
 
+// Seasons with their own looks (`<key>@<season>`, CLAUDE.md "Atlas"): the home catalog's order.
+inline constexpr int kSeasonLooks = 4;
+
 struct TerrainLook {
     std::vector<SpriteRef> base;    // the base drawn first: this terrain's variants or its under's
     std::array<Frames, 16> overlay; // overlays: by same-terrain neighbour mask (empty: no art)
-    std::array<Frames, 16> foam;    // water: by land-neighbour mask, where the art has foam
+    // Per season, when the art has a look of its own for it (else empty: the plain one).
+    std::array<std::vector<SpriteRef>, kSeasonLooks> seasonBase;
+    std::array<std::array<Frames, 16>, kSeasonLooks> seasonOverlay;
+    [[nodiscard]] const std::vector<SpriteRef>& baseIn(int season) const {
+        return season >= 0 && !seasonBase[static_cast<std::size_t>(season)].empty()
+                   ? seasonBase[static_cast<std::size_t>(season)]
+                   : base;
+    }
+    [[nodiscard]] const Frames& overlayIn(int mask, int season) const {
+        const auto m = static_cast<std::size_t>(mask);
+        return season >= 0 && !seasonOverlay[static_cast<std::size_t>(season)][m].empty()
+                   ? seasonOverlay[static_cast<std::size_t>(season)][m]
+                   : overlay[m];
+    }
+    std::array<Frames, 16> foam; // water: by land-neighbour mask, where the art has foam
     float fps = 0;
     SDL_FColor flat{1, 1, 1, 1};     // the whole tile when there is no art
     SDL_FColor flatBase{1, 1, 1, 1}; // under an overlay that has art, when the base has none
@@ -53,7 +70,13 @@ struct MaterialLook {
 enum class Look : std::uint8_t { Art, StandIn, Placeholder };
 
 struct VariantLook {
-    Frames base;                   // the whole sprite (unsplit items, stand-ins, placeholders)
+    Frames base; // the whole sprite (unsplit items, stand-ins, placeholders)
+    std::array<Frames, kSeasonLooks> seasonBase; // per season when the art has one
+    [[nodiscard]] const Frames& baseIn(int season) const {
+        return season >= 0 && !seasonBase[static_cast<std::size_t>(season)].empty()
+                   ? seasonBase[static_cast<std::size_t>(season)]
+                   : base;
+    }
     std::vector<SpriteRef> pieces; // split landmarks: one per geometry piece
     std::optional<SpriteRef> shadow;
     std::optional<SpriteRef> glow;

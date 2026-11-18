@@ -37,6 +37,8 @@
 #include "ui/hud.hpp"
 #include "ui/menus.hpp"
 #include "ui/profiler.hpp"
+#include "world/loader.hpp"
+#include "worldview/renderer.hpp"
 
 #include <cstdio>
 #include <filesystem>
@@ -84,7 +86,6 @@ inline constexpr std::string_view kHarvest = "sfx/harvest.wav";
 [[nodiscard]] inline bool oneTile(const ItemDef& def) {
     return def.footprintW == 1 && def.footprintH == 1;
 }
-
 
 // Files under the save directory (docs/design/living-corner.md §2.2).
 inline constexpr std::string_view kWorldsDir = "worlds";
@@ -254,6 +255,19 @@ private:
     void updatePostcardDate();
     void drawPostcard(Painter& p);
 
+    // The world (app_world.cpp): loaded when assets/world/world.json exists, else the island.
+    bool loadWorldData();
+    // The world renderer, once the home is known (after the save is read).
+    void createWorldView();
+    // The world's copy of the home region follows the player's edits (walking, the overview).
+    void syncHome();
+    // Draws the frame: the world with the home inside it, or the floating island.
+    void drawScene(const FrameParams& p, SDL_Texture* out = nullptr);
+    void compositeScene(const FrameParams& p, Vec2 scale, bool smooth);
+    [[nodiscard]] int sceneDrawCalls() const;
+    // The whole world grid in home tiles (empty without a world).
+    [[nodiscard]] TileRect cameraLand() const;
+
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
     void prepareView();
@@ -376,6 +390,16 @@ private:
     RendererPtr renderer_;
     std::unique_ptr<Atlas> atlas_;
     std::unique_ptr<Scene> scene_;
+    // The world around the home (null: the floating island). World px = home px + homeOffset_.
+    std::unique_ptr<world::LoadedWorld> loaded_;
+    std::unique_ptr<worldview::WorldView> worldView_;
+    worldview::Hooks hooks_;
+    FrameParams sceneFrame_; // this frame's scene, for the hooks
+    Vec2 homeOffset_;
+    std::uint64_t homeSynced_ = ~0ULL; // the home's revision the world's copy has
+    std::vector<int> rimTerrain_;      // the home's rim terrain the world's cells were drawn with
+    std::vector<int> rimScratch_;
+    float frameDt_ = 0; // real seconds of this frame (themes ease by it)
     std::unique_ptr<Batch> uiBatch_;
     std::unique_ptr<Blur> blur_;
     ThumbSet thumbs_;

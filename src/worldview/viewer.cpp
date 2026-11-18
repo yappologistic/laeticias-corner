@@ -1,8 +1,8 @@
 #include "worldview/viewer.hpp"
 
-#include "platform/process.hpp"
 #include "core/perf.hpp"
 #include "core/starter.hpp"
+#include "platform/process.hpp"
 #include "world/loader.hpp"
 #include "worldview/renderer.hpp"
 #include "worldview/tuning.hpp"

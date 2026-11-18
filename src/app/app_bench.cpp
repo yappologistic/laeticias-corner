@@ -93,7 +93,7 @@ FrameSample App::benchFrame() {
     f.uiMs = static_cast<float>(msBetween(t0, tUpdate)); // the update half: step and interface
     f.sceneMs = static_cast<float>(msBetween(tUpdate, tSubmit)); // the draw submission half
     f.presentMs = static_cast<float>(msBetween(tPresent, t1));
-    f.drawCalls = scene_->drawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
+    f.drawCalls = sceneDrawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
     uiBatch_->resetStats();
     f.actorsLive = static_cast<int>(std::ranges::count_if(
         actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; }));

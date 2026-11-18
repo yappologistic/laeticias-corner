@@ -24,6 +24,7 @@ struct Elem {
     bool ground = false;     // a raised tile drawn over what it hides
     bool first = false;      // the item's first element: it draws the shadow and the glow
     bool floor = false;      // a stair or walk floor piece: actors on its tiles go after it
+    bool home = false;       // the game's home region, drawn by its own scene at this turn
     TilePos tile;            // the item's origin, or the ground tile
     Vec2 anchor;             // world px, raised by the level
 };
@@ -43,15 +44,24 @@ struct Gathered {
 // at most span.up and overhang them by span.left/right/down.
 [[nodiscard]] TileRect gatherTiles(const FRect& clip, const Reach& span, Iso iso);
 
+// Tiles the game's own scene draws (the home region): their items are left out, and one element
+// stands for all of them in the painter's order, with this screen box (world px).
+struct Hole {
+    TileRect tiles;
+    FRect screen;
+    [[nodiscard]] bool empty() const { return tiles.empty(); }
+};
+
 class Gatherer {
 public:
-    Gatherer(const world::WorldMap& map, const WorldSprites& sprites);
+    Gatherer(const world::WorldMap& map, const WorldSprites& sprites, Hole hole = {});
     // Elements over `tiles` whose boxes meet `clip`, sorted, into `out` (cleared first).
     void run(TileRect tiles, const FRect& clip, Gathered& out);
 
 private:
     const world::WorldMap& map_;
     const WorldSprites& sprites_;
+    Hole hole_;
     Iso iso_;
     int lvl_;
     std::vector<world::DrawPiece> pieces_;
@@ -69,7 +79,7 @@ public:
         FRect clip;
     };
 
-    Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async);
+    Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async, Hole hole = {});
     ~Prep();
     Prep(const Prep&) = delete;
     Prep& operator=(const Prep&) = delete;

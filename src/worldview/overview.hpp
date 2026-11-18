@@ -36,6 +36,8 @@ public:
     // Uploads a slice of rows per call once the image is ready; true when the texture is whole.
     bool upload(SDL_Renderer* renderer);
     [[nodiscard]] SDL_Texture* texture() const { return complete_ ? texture_.get() : nullptr; }
+    // The image is made (the worker no longer reads the map).
+    [[nodiscard]] bool built() const { return ready_; }
     [[nodiscard]] const OverviewImage& image() const { return image_; }
     [[nodiscard]] std::size_t bytes() const;
 

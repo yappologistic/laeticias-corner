@@ -160,6 +160,7 @@ add_library(lc_app STATIC
   src/app/app_life.cpp
   src/app/app_perf.cpp
   src/app/window_state.cpp
+  src/app/app_world.cpp
 )
 target_link_libraries(lc_app PUBLIC lc_worldview)
 lc_project_target(lc_app)

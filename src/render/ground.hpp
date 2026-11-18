@@ -36,6 +36,12 @@ public:
 
     // Every cached chunk is drawn afresh (the sprites changed, say for a new season).
     void invalidate();
+    // Cliffs and waterfalls under rims that face open sky (the floating island); none when the
+    // land around is the world's.
+    void setRims(bool on) {
+        if (rims_ != on) invalidate();
+        rims_ = on;
+    }
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] int slotsRendered() const { return rendered_; }
     // Chunks held in the cache now.
@@ -73,6 +79,7 @@ private:
     const SpriteTables& tables_;
     Iso iso_;
     float waterFps_; // waterfalls move with the water
+    bool rims_ = true;
     int slotW_ = 0;
     int slotH_ = 0;
     int slotsX_ = 0; // per page

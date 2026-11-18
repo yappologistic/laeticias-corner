@@ -1,9 +1,10 @@
-# Each phase, with the island centre measured: night is genuinely dark, day is bright.
+# Each phase, with the corner and the world beside it measured: night is genuinely dark, day is
+# bright.
 set clock day
 expect phase day
 wait 3
 expect luma 290,175,60,20 95 140
-expect luma 10,110,30,30 150 230
+expect luma 10,110,30,30 80 140
 shot shots/clock_day.png
 set clock dusk
 expect phase dusk
@@ -13,7 +14,7 @@ set clock night
 expect phase night
 wait 30
 expect luma 290,175,60,20 25 55
-expect luma 10,110,30,30 5 35
+expect luma 10,110,30,30 5 40
 shot shots/clock_night.png
 set clock dawn
 expect phase dawn

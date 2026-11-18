@@ -196,8 +196,10 @@ bool App::init() {
         else
             (void)std::fprintf(perfLog_.get(), "%s\n", kPerfHeader);
     }
+    if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
     // The measuring modes build a world of their own and never touch the player's saves.
     if (!measuring()) loadOrStart();
+    createWorldView();
     logo_ = atlas_->sprite(atlas_->resolve("title/logo", atlas_->placeholderBox()));
     if (!opts_.headless && !opts_.benchmark && !profile_.vsync &&
         !SDL_SetRenderVSync(renderer_.get(), 0))
@@ -420,7 +422,9 @@ bool App::writeThumbnail() {
     p.camera = &cam;
     p.screen = size;
     p.light = lighting();
-    scene_->draw(p, target.get());
+    drawScene(p, target.get());
+    if (!SDL_SetRenderTarget(renderer_.get(), target.get()))
+        SDL_Log("thumbnail: %s", SDL_GetError());
     const SurfacePtr pixels{SDL_RenderReadPixels(renderer_.get(), nullptr)};
     if (!SDL_SetRenderTarget(renderer_.get(), nullptr)) SDL_Log("thumbnail: %s", SDL_GetError());
     std::error_code ec;
@@ -592,6 +596,11 @@ void App::fitCameraLand() {
     TileRect r = openBounds(cat_, progress_.stage, world_);
     const int m = tuning::kCameraOpenMargin;
     r = TileRect{r.x0 - m, r.y0 - m, r.x1 + m, r.y1 + m}.clipped(world_.landBounds());
+    if (loaded_ && !measuring()) {
+        // In the world the camera roams over all of it.
+        camera_.setLand(cameraLand(), 0, 0);
+        return;
+    }
     camera_.setLand(measuring() ? world_.landBounds() : r, scene_->cliffDepth());
 }
 
@@ -1320,6 +1329,7 @@ void App::applyHudActions() {
 }
 
 void App::step(float dt) {
+    syncHome();
     camera_.beginStep();
     actorPrev_.resize(actors_.all().size());
     for (std::size_t i = 0; i < actorPrev_.size(); ++i) actorPrev_[i] = actors_.all()[i].pos;
@@ -1408,6 +1418,7 @@ void App::updateSeason(float dt) {
         seasonByPin_ = false;
         seasonShown_ = s;
         scene_->setSeason(s);
+        if (worldView_) worldView_->setSeason(s);
     }
     if (clock_.day() != lastDay_) {
         lastDay_ = clock_.day();
@@ -1527,7 +1538,7 @@ void App::render() {
             0.0f, 1.0f);
     }
     const Uint64 t0 = SDL_GetPerformanceCounter();
-    scene_->draw(p);
+    drawScene(p);
     if (photo_ && font_.build(renderer_.get(), uiScale_)) {
         // The postcard's frame and caption over the view; a postcard is taken with them and
         // before the bar is drawn.
@@ -1542,7 +1553,7 @@ void App::render() {
     // The glass panels show a blurred copy of the scene.
     blur_->invalidate();
     if (blur_->begin(p.screen, theme::kBlurRadius * uiScale_)) {
-        scene_->composite(p, blur_->sourceScale(), true);
+        compositeScene(p, blur_->sourceScale(), true);
         blur_->end();
     }
     const Uint64 t1 = SDL_GetPerformanceCounter();
@@ -1642,6 +1653,7 @@ int App::run() {
         last = now;
         const float frameDt = fixed ? static_cast<float>(tuning::kStepSeconds)
                                     : static_cast<float>(std::min(real, 0.1));
+        frameDt_ = frameDt;
         refreshScale();
         if (!font_.build(renderer_.get(), uiScale_)) return 1;
 

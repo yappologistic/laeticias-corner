@@ -282,6 +282,7 @@ void Scene::rebuild(const World& world, TileRect region) {
                 // Water at a rim falls over it; mist rises at the foot of the fall.
                 const Vec2 a = iso_.toWorld(TilePos{x, y});
                 const float foot = tuning::kMistDrop * iso_.tileH();
+                if (!floating_) continue;
                 if (!world.hasGround({x + 1, y}))
                     falls_.push_back({{a.x + iso_.hw * 0.5f, a.y + iso_.hh * 1.5f + foot}});
                 if (!world.hasGround({x, y + 1}))
@@ -644,7 +645,7 @@ void Scene::shootingStar(Rng& rng) {
     star_.dir = {std::cos(ang), std::sin(ang)};
 }
 
-void Scene::ensureTargets(int w, int h) {
+void Scene::ensureTargets(int w, int h, bool own) {
     targetW_ = w;
     targetH_ = h;
     // Allocated with headroom and never shrunk, so zoom transitions and window resizes reuse
@@ -659,7 +660,7 @@ void Scene::ensureTargets(int w, int h) {
         t.h = t.texture ? ah : 0;
         if (!t.texture) SDL_Log("render: cannot create %dx%d target: %s", aw, ah, SDL_GetError());
     };
-    make(world_);
+    if (own) make(world_);
     make(light_);
     make(glow_);
     make(shadow_);
@@ -895,8 +896,7 @@ void Scene::drawShadows(const FrameParams& p) {
         }
     }
     batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()))
-        SDL_Log("render: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer_, into_)) SDL_Log("render: %s", SDL_GetError());
     fullQuad(shadow_.texture.get(), SDL_BLENDMODE_BLEND, {1, 1, 1, tables_.shadowOpacity});
 }
 
@@ -1010,8 +1010,7 @@ void Scene::drawParticles(bool ground) {
     }
 }
 
-void Scene::drawLighting(const FrameParams& p) {
-    const Rgb amb = p.light.ambient;
+void Scene::drawLighting(const FrameParams& p, Rgb amb) {
     const float glow = p.light.glow;
     const bool emissive = std::ranges::any_of(
         p.actors, [&](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0 && glows(a); });
@@ -1051,8 +1050,7 @@ void Scene::drawLighting(const FrameParams& p) {
         }
         batch_.flush();
     }
-    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()))
-        SDL_Log("render: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer_, into_)) SDL_Log("render: %s", SDL_GetError());
     fullQuad(light_.texture.get(), SDL_BLENDMODE_MUL, kWhite);
     batch_.flush();
 }
@@ -1080,35 +1078,29 @@ void Scene::drawGlow(const FrameParams& p) {
                {0.12f, 0.12f});
     }
     batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()))
-        SDL_Log("render: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer_, into_)) SDL_Log("render: %s", SDL_GetError());
     fullQuad(glow_.texture.get(), SDL_BLENDMODE_ADD, kWhite);
     batch_.flush();
 }
 
-void Scene::draw(const FrameParams& p, SDL_Texture* out) {
-    batch_.resetStats();
+void Scene::setFloating(bool on) {
+    floating_ = on;
+    ground_->setRims(on);
+    regionRevision_ = ~0ULL; // waterfalls are gathered with the region
+}
+
+void Scene::beginFrame(const FrameParams& p) {
     const World& world = *p.world;
+    view_ = {xf_.origin.x, xf_.origin.y, xf_.origin.x + static_cast<float>(targetW_) / xf_.res,
+             xf_.origin.y + static_cast<float>(targetH_) / xf_.res};
     const float s = p.camera->scale();
-    // Target pixels per world pixel: native, except below 1x where the target matches the window.
-    const float res = std::min(1.0f, s);
     const Vec2 cam = p.camera->position();
     topLeft_ = {cam.x - p.screen.x * 0.5f / s, cam.y - p.screen.y * 0.5f / s};
-    // The origin sits on the target's pixel grid so cached ground lands on whole pixels.
-    const float px = 1.0f / res;
-    const Vec2 origin{std::floor(topLeft_.x / px) * px - px, std::floor(topLeft_.y / px) * px - px};
-    ensureTargets(static_cast<int>(std::ceil(p.screen.x / s * res)) + 3,
-                  static_cast<int>(std::ceil(p.screen.y / s * res)) + 3);
-    if (!world_.texture || !light_.texture || !glow_.texture || !shadow_.texture) return;
-    xf_ = {origin, res, res < 1.0f ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST};
-    view_ = {origin.x, origin.y, origin.x + static_cast<float>(targetW_) * px,
-             origin.y + static_cast<float>(targetH_) * px};
     night_ = std::clamp(p.light.night, 0.0f, 1.0f);
     actors_ = p.actors;
     resident_ = p.resident;
     map_ = p.world;
     fireflySync_ = p.fireflySync;
-
     const TileRect vis = visibleTiles(*p.camera, p.screen, world);
     if (world.revision() != regionRevision_ || !region_.contains(vis)) {
         const int gx =
@@ -1120,12 +1112,50 @@ void Scene::draw(const FrameParams& p, SDL_Texture* out) {
         rebuild(world, TileRect{vis.x0 - gx, vis.y0 - gy, vis.x1 + gx, vis.y1 + gy}.clipped(
                            world.bounds()));
     }
+}
 
-    if (!SDL_SetRenderTarget(renderer_, world_.texture.get()) ||
+void Scene::draw(const FrameParams& p, SDL_Texture* out) {
+    batch_.resetStats();
+    const float s = p.camera->scale();
+    // Target pixels per world pixel: native, except below 1x where the target matches the window.
+    const float res = std::min(1.0f, s);
+    const Vec2 cam = p.camera->position();
+    const Vec2 topLeft{cam.x - p.screen.x * 0.5f / s, cam.y - p.screen.y * 0.5f / s};
+    // The origin sits on the target's pixel grid so cached ground lands on whole pixels.
+    const float px = 1.0f / res;
+    const Vec2 origin{std::floor(topLeft.x / px) * px - px, std::floor(topLeft.y / px) * px - px};
+    ensureTargets(static_cast<int>(std::ceil(p.screen.x / s * res)) + 3,
+                  static_cast<int>(std::ceil(p.screen.y / s * res)) + 3, true);
+    if (!world_.texture || !light_.texture || !glow_.texture || !shadow_.texture) return;
+    xf_ = {origin, res, res < 1.0f ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST};
+    into_ = world_.texture.get();
+    beginFrame(p);
+
+    if (!SDL_SetRenderTarget(renderer_, into_) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
         SDL_Log("render: world target: %s", SDL_GetError());
     }
-    ground_->draw(batch_, world, view_, xf_, world_.texture.get(), now_);
+    embedGround(p);
+    embedObjects(p);
+    drawLighting(p, p.light.ambient);
+    drawMoths(p);
+    drawGlow(p);
+
+    if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("render: %s", SDL_GetError());
+    composite(p, {1, 1}, false);
+}
+
+void Scene::embedBegin(const FrameParams& p, const Embed& e) {
+    batch_.resetStats();
+    ensureTargets(e.w, e.h, false);
+    into_ = e.target;
+    xf_ = {{e.xf.origin.x - e.offset.x, e.xf.origin.y - e.offset.y}, e.xf.res, e.xf.filter};
+    beginFrame(p);
+}
+
+void Scene::embedGround(const FrameParams& p) {
+    if (into_ == nullptr || !light_.texture || !glow_.texture || !shadow_.texture) return;
+    ground_->draw(batch_, *p.world, view_, xf_, into_, now_);
     buildDynamic(p);
     drawShadows(p);
     blend_ = SDL_BLENDMODE_BLEND;
@@ -1136,15 +1166,31 @@ void Scene::draw(const FrameParams& p, SDL_Texture* out) {
         const int v = cat_.kinds[a.kind].visitor;
         if (v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].underwater) drawActor(a, false);
     }
+    batch_.flush();
+}
+
+void Scene::embedObjects(const FrameParams& p) {
+    if (into_ == nullptr || !shadow_.texture) return;
+    blend_ = SDL_BLENDMODE_BLEND;
     drawEntries(p, false);
     drawParticles(false);
     batch_.flush();
-    drawLighting(p);
-    drawMoths(p);
-    drawGlow(p);
+}
 
-    if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("render: %s", SDL_GetError());
-    composite(p, {1, 1}, false);
+void Scene::embedLight(const FrameParams& p, Rgb ambient) {
+    if (into_ == nullptr || !light_.texture) return;
+    drawLighting(p, ambient);
+    drawMoths(p);
+}
+
+void Scene::embedGlow(const FrameParams& p) {
+    if (into_ == nullptr || !glow_.texture) return;
+    drawGlow(p);
+}
+
+void Scene::embedSky(const FrameParams& p) {
+    drawSky(p, {1, 1});
+    batch_.flush();
 }
 
 void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {

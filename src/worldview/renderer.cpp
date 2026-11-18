@@ -49,27 +49,29 @@ Lod WorldView::lodFor(float scale) {
 }
 
 WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
-                     const std::filesystem::path& assets, Atlas& home, Font& font, bool async)
+                     const std::filesystem::path& assets, Atlas& home, Font& font, bool async,
+                     Hole hole)
     : renderer_(renderer), world_(world), map_(*world.map), iso_(map_.content().home().iso()),
-      lvl_(map_.content().tileLevel()), async_(async), cells_(renderer, tuning::kCellBudget),
-      batch_(renderer), theme_(
-                            [&] {
-                                std::vector<world::Theme> themes;
-                                for (const world::RegionFile& r : world.regions)
-                                    themes.push_back(r.theme);
-                                return themes;
-                            }(),
-                            [&] {
-                                std::vector<std::string> times;
-                                for (const world::RegionRef& r : world.file.regions)
-                                    times.push_back(r.time);
-                                return times;
-                            }()) {
+      lvl_(map_.content().tileLevel()), async_(async), hole_(hole),
+      cells_(renderer, tuning::kCellBudget), batch_(renderer),
+      theme_(
+          [&] {
+              std::vector<world::Theme> themes;
+              for (const world::RegionFile& r : world.regions) themes.push_back(r.theme);
+              return themes;
+          }(),
+          [&] {
+              std::vector<std::string> times;
+              for (const world::RegionRef& r : world.file.regions) times.push_back(r.time);
+              return times;
+          }()) {
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
                                          tuning::kPageBudget);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_, font);
-    overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async);
-    prep_ = std::make_unique<Prep>(map_, *sprites_, async);
+    // Asynchronous runs build the overview on a worker from the start; synchronous ones only
+    // when a frame needs it (it stands in for cells not built yet, which they never have).
+    if (async) overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async);
+    prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_);
     if (async) warmUp();
     for (std::size_t t = 0; t < map_.terrainCount(); ++t) {
         const TerrainLook& l = sprites_->terrain(static_cast<int>(t));
@@ -190,17 +192,17 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     const SDL_FColor shade{tint, tint, tint, 1};
     const bool overlay = !map_.terrainInfo(t).base;
     if (!overlay || look.hasOverlay()) {
-        if (look.base.empty())
+        const std::vector<SpriteRef>& base = look.baseIn(season_);
+        if (base.empty())
             ok &=
                 put(sprites_->diamond(), a, x,
                     times(overlay ? look.flatBase : look.flat, jitter * tint), SDL_BLENDMODE_BLEND);
         else
-            ok &= put(look.base[tileHash(p.x, p.y, 1) % look.base.size()], a, x, shade,
-                      SDL_BLENDMODE_BLEND);
+            ok &= put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, shade, SDL_BLENDMODE_BLEND);
     }
     if (overlay) {
         if (look.hasOverlay()) {
-            const Frames& f = look.overlay[static_cast<std::size_t>(sameMask(map_, p, t))];
+            const Frames& f = look.overlayIn(sameMask(map_, p, t), season_);
             ok &= put(f.at(now, look.fps), a, x, shade, SDL_BLENDMODE_BLEND);
             if (look.animated() && animated != nullptr) *animated = true;
         } else {
@@ -243,6 +245,10 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     bool ok = true;
     diagonals(tiles, [&](TilePos p) {
         const Vec2 w = iso_.toWorld(p);
+        // The game's scene draws the hole; its rim tiles are drawn here too, under the scene's,
+        // so the soft edges of its tile art meet the world's ground, not the sky.
+        const TileRect& h = hole_.tiles;
+        if (h.contains(p) && p.x > h.x0 && p.y > h.y0 && p.x < h.x1 - 1 && p.y < h.y1 - 1) return;
         const float top = w.y - static_cast<float>(map_.level(p) * lvl_) - lift;
         if (w.x + r.right < px.x0 || w.x - r.left > px.x1 || w.y + r.down < px.y0 || top > px.y1)
             return;
@@ -252,10 +258,12 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
 }
 
 bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
+    if (e.home) return true; // the game's scene draws it
     if (e.ground) return drawTile(e.tile, x, now, nullptr);
     const VariantLook& look = *e.look;
-    const SpriteRef& s = e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
-                                      : look.base.at(now, sprites_->itemFps(map_.items()[e.item]));
+    const SpriteRef& s =
+        e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
+                     : look.baseIn(season_).at(now, sprites_->itemFps(map_.items()[e.item]));
     return put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
 }
 
@@ -542,9 +550,11 @@ void WorldView::drawCells(int level, const FRect& view, const Xform& x, double n
 }
 
 void WorldView::drawOverview(const Xform& x) {
-    SDL_Texture* t = overview_->texture();
+    Overview& ov = overview();
+    while (!ov.upload(renderer_) && !async_) {}
+    SDL_Texture* t = ov.texture();
     if (t == nullptr) return;
-    const OverviewImage& img = overview_->image();
+    const OverviewImage& img = ov.image();
     const float k = 1.0f / img.scale;
     const Vec2 p0 = x.apply(img.origin);
     const Vec2 p1 = x.apply({img.origin.x + static_cast<float>(img.w) * k,
@@ -623,28 +633,69 @@ void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
     batch_.quad(SDL_FRect{0, 0, static_cast<float>(w), static_cast<float>(h)}, white.uv, c);
 }
 
+void WorldView::setSeason(int season) {
+    season = season >= 0 && season < kSeasonLooks ? season : -1;
+    if (season == season_) return;
+    season_ = season;
+    // Ground and impostors hold the season's looks: draw them again.
+    cells_.clear(); // impostors in flight finish into slots no longer theirs and are dropped
+}
+
+void WorldView::holeChanged() {
+    const Vec2 a = iso_.toWorld(TilePos{hole_.tiles.x0, hole_.tiles.y1});
+    const Vec2 b = iso_.toWorld(TilePos{hole_.tiles.x1, hole_.tiles.y0});
+    const float top = iso_.toWorld(TilePos{hole_.tiles.x0, hole_.tiles.y0}).y;
+    const float bottom = iso_.toWorld(TilePos{hole_.tiles.x1, hole_.tiles.y1}).y;
+    const float raise = static_cast<float>(kMaxLevel * lvl_);
+    const FRect r{a.x, top - raise, b.x, bottom + iso_.tileH()};
+    for (int level = 0; level <= 2; ++level)
+        forEachCell(r, level, [&](CellKey k) {
+            const int si = cells_.find(packCell(k));
+            if (si < 0) return;
+            CellSlot& slot = cells_.slot(si);
+            slot.complete = false;
+            slot.generation = ~0u;
+        });
+}
+
 void WorldView::jumped(const WorldCamera& camera) {
+    jumped(camera.centre());
+}
+
+void WorldView::jumped(Vec2 centre) {
     std::array<world::RegionWeight, 16> w{};
-    const int n = map_.themeWeights(iso_.toTile(camera.centre()), w);
+    const int n = map_.themeWeights(iso_.toTile(centre), w);
     theme_.reset(std::span(w).first(static_cast<std::size_t>(n)));
     themed_ = true;
 }
 
 void WorldView::draw(const WorldCamera& camera, double clock, float dt, double now) {
+    ViewSpec v{camera.centre(), camera.scale(),   camera.screen(),
+               camera.flying(), camera.arrival(), camera.arrivalScale()};
+    static const Hooks kNone;
+    draw(v, clock, lightingAt(clock, 0), dt, now, kNone);
+}
+
+Overview& WorldView::overview() {
+    if (!overview_) overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async_);
+    return *overview_;
+}
+
+void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light, float dt,
+                     double now, const Hooks& hooks) {
     SDL_Texture* out = SDL_GetRenderTarget(renderer_);
     stats_ = {};
     batch_.resetStats();
     cells_.beginFrame();
-    const float s = camera.scale();
+    const float s = camera.scale;
     const Lod lod = lodFor(s);
     stats_.lod = lod;
-    const OverviewImage& ov = overview_->image();
     const float res = lod == Lod::Native    ? 1.0f
                       : lod == Lod::Half    ? 0.5f
                       : lod == Lod::Quarter ? 0.25f
-                                            : std::min(ov.scale, s);
-    const Vec2 screen = camera.screen();
-    const Vec2 c = camera.centre();
+                                            : std::min(overview().image().scale, s);
+    const Vec2 screen = camera.screen;
+    const Vec2 c = camera.centre;
     const Vec2 topLeft{c.x - screen.x * 0.5f / s, c.y - screen.y * 0.5f / s};
     // The target's origin sits on its own pixel grid, so cached cells land on whole texels.
     const float px = 1.0f / res;
@@ -667,10 +718,10 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
     } else {
         theme_.update(ws, dt);
     }
-    const Lighting light = lightingAt(clock, 0);
     const Grade grade = theme_.grade(clock);
     const SDL_FColor ambient{light.ambient.r * grade.mul.r, light.ambient.g * grade.mul.g,
                              light.ambient.b * grade.mul.b, 1};
+    const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
 
     // Streaming.
     if (lod != Lod::Overview) wantSets(view, lod == Lod::Native);
@@ -679,7 +730,9 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
         static_cast<double>(tuning::kCellBudget) *
         std::max(1.0, static_cast<double>(screen.x * screen.y) / tuning::kCellBudgetArea)));
     pages_->update(now);
-    while (!overview_->upload(renderer_) && !async_) {}
+    if (overview_) {
+        while (!overview_->upload(renderer_) && !async_) {}
+    }
 
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
@@ -691,16 +744,19 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
         const int level = lod == Lod::Native ? 0 : (lod == Lod::Half ? 1 : 2);
         drawCells(level, view, xf, now);
     }
+    batch_.flush();
+    if (hooks.ground && lod != Lod::Overview) hooks.ground(frame);
     // A flight down to the native level gathers its destination on the way.
-    if (camera.flying() && lodFor(camera.arrivalScale()) == Lod::Native) {
-        const Vec2 to = camera.arrival();
-        const float k = 0.5f / camera.arrivalScale();
+    if (camera.flying && lodFor(camera.arrivalScale) == Lod::Native) {
+        const Vec2 to = camera.arrival;
+        const float k = 0.5f / camera.arrivalScale;
         updateRegion(
             {to.x - screen.x * k, to.y - screen.y * k, to.x + screen.x * k, to.y + screen.y * k},
             false);
     }
+    bool homeDrawn = false;
     if (lod == Lod::Native) {
-        if (!camera.flying()) updateRegion(view, true);
+        if (!camera.flying) updateRegion(view, true);
         stats_.regionElements = static_cast<int>(region_.elems.size());
         (void)drawShadows(region_, view, xf, shadow_, view_);
         for (const std::uint32_t i : region_.order) {
@@ -708,13 +764,27 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
                 ++stats_.spritesCulled;
                 continue;
             }
-            (void)drawElem(region_.elems[i], xf, static_cast<float>(now));
+            const Elem& e = region_.elems[i];
+            if (e.home) {
+                batch_.flush();
+                if (hooks.objects) hooks.objects(frame);
+                homeDrawn = true;
+                continue;
+            }
+            (void)drawElem(e, xf, static_cast<float>(now));
             ++stats_.spritesDrawn;
         }
     }
     batch_.flush();
+    // Coarser levels have no live objects of their own: the home's go over the impostors.
+    if (!homeDrawn && hooks.objects && lod != Lod::Overview && !hole_.empty() &&
+        hole_.screen.overlaps(view))
+        hooks.objects(frame);
     // Grading, then what glows (drawn after it, additively).
-    fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
+    if (hooks.light && lod != Lod::Overview)
+        hooks.light(frame);
+    else
+        fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
     if (lod == Lod::Native && light.glow > 0.01f) {
         const SDL_FColor g{light.glow, light.glow, light.glow, 1};
         for (const std::uint32_t i : region_.order) {
@@ -725,39 +795,52 @@ void WorldView::draw(const WorldCamera& camera, double clock, float dt, double n
         }
     }
     batch_.flush();
+    if (hooks.glow && lod != Lod::Overview) hooks.glow(frame);
 
     // Onto the window: sky, the world, the haze.
     if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("worldview: %s", SDL_GetError());
-    const SDL_FColor top{light.skyTop.r, light.skyTop.g, light.skyTop.b, 1};
-    const SDL_FColor bottom{light.skyBottom.r, light.skyBottom.g, light.skyBottom.b, 1};
-    const SDL_Vertex sky[4] = {{{0, 0}, top, {0, 0}},
-                               {{screen.x, 0}, top, {0, 0}},
-                               {{screen.x, screen.y}, bottom, {0, 0}},
-                               {{0, screen.y}, bottom, {0, 0}}};
-    static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
-    batch_.use(nullptr, SDL_BLENDMODE_NONE);
-    batch_.triangles(sky, 4, kQuad, 6);
-    const float k = s / res; // window px per target px
-    const bool whole = std::abs(k - std::round(k)) < 1e-3f;
-    batch_.use(view_.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
-               whole ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
-    batch_.quad(SDL_FRect{(origin.x - topLeft.x) * s, (origin.y - topLeft.y) * s,
-                          static_cast<float>(viewW_) * k, static_cast<float>(viewH_) * k},
-                {0, 0, static_cast<float>(viewW_) / static_cast<float>(view_.w),
-                 static_cast<float>(viewH_) / static_cast<float>(view_.h)},
-                kWhite);
-    if (grade.hazeStrength > 0.001f)
-        fullQuad(static_cast<int>(screen.x), static_cast<int>(screen.y),
-                 {grade.haze.r, grade.haze.g, grade.haze.b, grade.hazeStrength},
-                 SDL_BLENDMODE_BLEND);
-    batch_.flush();
+    present_ = {origin, topLeft, s, res, light.skyTop, light.skyBottom, grade, screen, true};
+    composite({1, 1}, false);
+    if (hooks.overlay) hooks.overlay(frame);
 
     stats_.drawCalls = batch_.drawCalls() - stats_.buildDrawCalls;
     stats_.cellsCached = cells_.cached();
     stats_.cellBytes = cells_.bytes();
-    stats_.overviewBytes = overview_->texture() != nullptr ? overview_->bytes() : 0;
+    stats_.overviewBytes = overview_ && overview_->texture() != nullptr ? overview_->bytes() : 0;
     stats_.pages = pages_->stats();
     stats_.targetBytes = targetBytes();
+}
+
+void WorldView::composite(Vec2 scale, bool smooth) {
+    if (!present_.valid) return;
+    const Present& p = present_;
+    const float w = p.screen.x * scale.x;
+    const float h = p.screen.y * scale.y;
+    const SDL_FColor top{p.skyTop.r, p.skyTop.g, p.skyTop.b, 1};
+    const SDL_FColor bottom{p.skyBottom.r, p.skyBottom.g, p.skyBottom.b, 1};
+    const SDL_Vertex sky[4] = {{{0, 0}, top, {0, 0}},
+                               {{w, 0}, top, {0, 0}},
+                               {{w, h}, bottom, {0, 0}},
+                               {{0, h}, bottom, {0, 0}}};
+    static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+    batch_.use(nullptr, SDL_BLENDMODE_NONE);
+    batch_.triangles(sky, 4, kQuad, 6);
+    const float k = p.scale / p.res; // window px per target px
+    const bool whole = std::abs(k - std::round(k)) < 1e-3f;
+    batch_.use(view_.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
+               whole && !smooth ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
+    batch_.quad(SDL_FRect{(p.origin.x - p.topLeft.x) * p.scale * scale.x,
+                          (p.origin.y - p.topLeft.y) * p.scale * scale.y,
+                          static_cast<float>(viewW_) * k * scale.x,
+                          static_cast<float>(viewH_) * k * scale.y},
+                {0, 0, static_cast<float>(viewW_) / static_cast<float>(view_.w),
+                 static_cast<float>(viewH_) / static_cast<float>(view_.h)},
+                kWhite);
+    if (p.grade.hazeStrength > 0.001f)
+        fullQuad(static_cast<int>(w), static_cast<int>(h),
+                 {p.grade.haze.r, p.grade.haze.g, p.grade.haze.b, p.grade.hazeStrength},
+                 SDL_BLENDMODE_BLEND);
+    batch_.flush();
 }
 
 void WorldView::updateRegion(const FRect& view, bool needed) {
@@ -795,7 +878,7 @@ void WorldView::updateRegion(const FRect& view, bool needed) {
 
 bool WorldView::settled() const {
     return stats_.cellsPending == 0 && stats_.pages.streaming == 0 && !regionPending_ &&
-           building_.empty() && overview_->texture() != nullptr;
+           building_.empty() && (!overview_ || overview_->texture() != nullptr);
 }
 
 std::string WorldView::caption() const {

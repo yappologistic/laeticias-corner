@@ -74,6 +74,25 @@ std::vector<SpriteRef> variants(const PageAtlas& pages, const std::string& prefi
     return out;
 }
 
+// The season's look of `n` numbered sprites `<prefix><sep><k>` (`<key>@<season>`, falling back
+// to the plain sprite one by one); empty when none of them has a seasonal look.
+std::vector<SpriteRef> seasonal(const PageAtlas& pages, const std::string& prefix,
+                                std::string_view sep, const std::string& at, std::size_t n) {
+    std::vector<SpriteRef> out;
+    bool any = false;
+    for (std::size_t k = 0; k < n; ++k) {
+        const std::string key = std::format("{}{}{}", prefix, sep, k);
+        if (auto s = pages.find(key + at)) {
+            out.push_back(*s);
+            any = true;
+        } else if (auto plain = pages.find(key)) {
+            out.push_back(*plain);
+        }
+    }
+    if (!any) out.clear();
+    return out;
+}
+
 // How far a sprite reaches beyond the screen diamond of its footprint `f` (tiles relative to the
 // anchor's tile): gathering finds an item from the tiles its sprite can cover.
 void span(Reach& r, const SpriteRef& s, TileRect f, Iso iso) {
@@ -198,6 +217,23 @@ void WorldSprites::resolveTerrain(const world::WorldMap& map, PageAtlas& pages) 
             if (std::ranges::any_of(look.foam, &Frames::empty))
                 for (Frames& f : look.foam) f.f.clear();
         }
+        const auto& seasons = content.home().seasons;
+        for (std::size_t sn = 0; sn < seasons.size() && sn < kSeasonLooks; ++sn) {
+            const std::string at = "@" + seasons[sn].id;
+            const std::string baseId = info.base || !info.known ? info.id : info.under;
+            look.seasonBase[sn] = seasonal(pages, "terrain/" + baseId, "/v", at, look.base.size());
+            if (look.hasOverlay()) {
+                bool all = true;
+                for (int m = 0; m < 16 && all; ++m) {
+                    auto& f = look.seasonOverlay[sn][static_cast<std::size_t>(m)];
+                    f.f = seasonal(pages, std::format("terrain/{}/m{}", info.id, m), "/f", at,
+                                   look.overlay[static_cast<std::size_t>(m)].f.size());
+                    all = !f.empty();
+                }
+                if (!all)
+                    for (Frames& f : look.seasonOverlay[sn]) f.f.clear();
+            }
+        }
         for (std::size_t k = 0; k < faces.size() && k < look.faces.size(); ++k)
             look.faces[k] = internMaterial(faces[k], pages);
         for (const SpriteRef& s : look.base) reach(groundReach_, s);
@@ -250,6 +286,10 @@ void WorldSprites::resolveItems(const world::WorldMap& map, Atlas& home, PageAtl
                     look.pieces.push_back(*s);
                 }
             }
+            if (!look.base.empty() && look.pieces.empty())
+                for (std::size_t sn = 0; sn < cat.seasons.size() && sn < kSeasonLooks; ++sn)
+                    look.seasonBase[sn].f = seasonal(pages, prefix + "/base/" + vk, "/f",
+                                                     "@" + cat.seasons[sn].id, look.base.f.size());
             if (!look.base.empty() || !look.pieces.empty()) {
                 look.shadow = shadow(prefix + "/shadow/" + vk + "/f0");
                 look.glow = pages.find(prefix + "/glow/" + vk + "/f0");
@@ -262,6 +302,9 @@ void WorldSprites::resolveItems(const world::WorldMap& map, Atlas& home, PageAtl
                 look.base = frames(pages, "item/" + d.id + "/base/" + hk);
                 look.shadow = shadow("item/" + d.id + "/shadow/" + hk + "/f0");
                 look.look = Look::StandIn;
+                for (std::size_t sn = 0; sn < cat.seasons.size() && sn < kSeasonLooks; ++sn)
+                    look.seasonBase[sn].f = seasonal(pages, "item/" + d.id + "/base/" + hk, "/f",
+                                                     "@" + cat.seasons[sn].id, look.base.f.size());
             }
             if (look.base.empty() && look.pieces.empty()) {
                 look.look = Look::Placeholder;

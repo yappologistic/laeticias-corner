@@ -22,8 +22,8 @@ TileRect gatherTiles(const FRect& clip, const Reach& span, Iso iso) {
         {clip.x0 - span.right, clip.y0 - span.down, clip.x1 + span.left, clip.y1 + span.up}, iso);
 }
 
-Gatherer::Gatherer(const world::WorldMap& map, const WorldSprites& sprites)
-    : map_(map), sprites_(sprites), iso_(map.content().home().iso()),
+Gatherer::Gatherer(const world::WorldMap& map, const WorldSprites& sprites, Hole hole)
+    : map_(map), sprites_(sprites), hole_(hole), iso_(map.content().home().iso()),
       lvl_(map.content().tileLevel()), stamp_(map.items().size(), 0) {}
 
 void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
@@ -35,6 +35,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
     const auto placed = map_.items();
     for (const world::DrawPiece& d : pieces_) {
         const world::Placed& it = placed[d.item];
+        if (hole_.tiles.contains(TilePos{it.x, it.y})) continue;
         const VariantLook& look = sprites_.item(it);
         // Geometry pieces without piece art draw the whole sprite once.
         const bool split = d.piece >= 0 && !look.pieces.empty();
@@ -59,6 +60,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                              false,
                              first,
                              split && d.floor,
+                             false,
                              {it.x, it.y},
                              a});
         out.items.push_back({rectOf(split ? d.rect : it.rect()), box, s.page, false});
@@ -70,6 +72,8 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
     for (int qy = tiles.y0; qy < tiles.y1; ++qy)
         for (int qx = tiles.x0; qx < tiles.x1; ++qx) {
             const TilePos q{qx, qy};
+            // Never read inside the hole: the game writes it while this runs on a worker.
+            if (hole_.tiles.contains(q)) continue;
             const int t = map_.terrainAt(q);
             if (t == world::kNone) continue;
             const int lq = map_.level(q);
@@ -82,7 +86,9 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
             for (int a = 0; a <= lq + 1 && !hides; ++a)
                 for (int b = 0; a + b <= lq + 1 && !hides; ++b) {
                     const TilePos p{qx - a, qy - b};
-                    if ((a == 0 && b == 0) || !map_.inBounds(p) || map_.itemAt(p) < 0) continue;
+                    if ((a == 0 && b == 0) || !map_.inBounds(p) || hole_.tiles.contains(p) ||
+                        map_.itemAt(p) < 0)
+                        continue;
                     const int dl = lq - map_.level(p);
                     hides = dl > 0 && a + b <= dl + 1;
                 }
@@ -90,14 +96,19 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
             const TerrainLook& look = sprites_.terrain(t);
             const std::uint16_t page =
                 look.base.empty() ? PageAtlas::kGeneratedPage : look.base.front().page;
-            out.elems.push_back({nullptr, 0, -1, true, false, false, q, {}});
+            out.elems.push_back({nullptr, 0, -1, true, false, false, false, q, {}});
             out.items.push_back({rectOf({qx, qy, qx + 1, qy + 1}), box, page, true});
         }
+    if (!hole_.empty() && hole_.tiles.intersects(tiles) && hole_.screen.overlaps(clip)) {
+        out.elems.push_back(
+            {nullptr, 0, -1, false, false, false, true, {hole_.tiles.x0, hole_.tiles.y0}, {}});
+        out.items.push_back({rectOf(hole_.tiles), hole_.screen, PageAtlas::kGeneratedPage, false});
+    }
     sorter_.sort(out.items, kSortCell, out.order);
 }
 
-Prep::Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async)
-    : async_(async), mine_(map, sprites), theirs_(map, sprites) {
+Prep::Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async, Hole hole)
+    : async_(async), mine_(map, sprites, hole), theirs_(map, sprites, hole) {
     if (async_) worker_ = std::jthread([this](const std::stop_token& st) { work(st); });
 }
 

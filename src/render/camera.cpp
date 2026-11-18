@@ -29,9 +29,10 @@ Camera::Camera(Iso iso, TileRect land, float cliffDepth)
     pos_ = target_ = prevPos_ = {(b.x0 + b.x1) * 0.5f, (b.y0 + b.y1) * 0.5f};
 }
 
-void Camera::setLand(TileRect land, float cliffDepth) {
+void Camera::setLand(TileRect land, float cliffDepth, float reach) {
     land_ = land;
     cliffDepth_ = cliffDepth;
+    reach_ = reach;
 }
 
 void Camera::clamp(Vec2& p, Vec2 screen, float scale) const {
@@ -42,8 +43,7 @@ void Camera::clamp(Vec2& p, Vec2 screen, float scale) const {
     // window at every zoom.
     const float halfW = screen.x * 0.5f / scale;
     const float halfH = screen.y * 0.5f / scale;
-    const float m =
-        std::max(0.0f, tuning::kCameraReach * std::min(halfW / iso_.tileW(), halfH / iso_.tileH()));
+    const float m = std::max(0.0f, reach_ * std::min(halfW / iso_.tileW(), halfH / iso_.tileH()));
     Vec2 t = iso_.toTile(p);
     t.x = std::clamp(t.x, static_cast<float>(land_.x0) - m, static_cast<float>(land_.x1) + m);
     t.y = std::clamp(t.y, static_cast<float>(land_.y0) - m, static_cast<float>(land_.y1) + m);

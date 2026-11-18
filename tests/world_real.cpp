@@ -39,14 +39,18 @@ constexpr std::array<const char*, 7> kKnownDataErrors{
 };
 // Ids the layers place that their set catalogs do not have yet (same findings).
 constexpr std::array<const char*, 26> kKnownUnresolved{
-    "rome.pons_span",         "rome.quay_mooring",       "rome.r_temple",
-    "rome.trajan_baths",      "rome.stadium_domitian",   "rome.saepta",
-    "rome.pompey_theatre",    "rome.iseum",              "parsa.susa_palace",
-    "parsa.royal_road_head",  "parsa.processional_way",  "parsa.pasargadae_garden",
-    "parsa.ishtar_gate",      "parsa.halys_gates",       "parsa.gates_station",
-    "parsa.etemenanki",       "parsa.babylon_wall",      "parsa.babylon_tower",
-    "athens.naxian_lions",    "athens.diolkos",          "athens.delphi_apollo",
-    "athens.delos_sanctuary", "athens.corinth_apollo",   "athens.athenian_treasury",
+    "rome.pons_span",         "rome.quay_mooring",
+    "rome.r_temple",          "rome.trajan_baths",
+    "rome.stadium_domitian",  "rome.saepta",
+    "rome.pompey_theatre",    "rome.iseum",
+    "parsa.susa_palace",      "parsa.royal_road_head",
+    "parsa.processional_way", "parsa.pasargadae_garden",
+    "parsa.ishtar_gate",      "parsa.halys_gates",
+    "parsa.gates_station",    "parsa.etemenanki",
+    "parsa.babylon_wall",     "parsa.babylon_tower",
+    "athens.naxian_lions",    "athens.diolkos",
+    "athens.delphi_apollo",   "athens.delos_sanctuary",
+    "athens.corinth_apollo",  "athens.athenian_treasury",
     "athens.artemision",      "athens.acrocorinth_summit"};
 // Layers whose graphs are not yet one component (the base's long routes are planned, not built).
 constexpr std::array<const char*, 1> kKnownDisconnected{"base"};

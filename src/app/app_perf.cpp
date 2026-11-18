@@ -43,7 +43,7 @@ double App::syncGpu(Uint64 frameStart) {
 void App::recordFrame(FrameSample& s) {
     s.sceneMs = static_cast<float>(sceneMs_);
     s.audioLoad = mixer_.load();
-    s.drawCalls = scene_->drawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
+    s.drawCalls = sceneDrawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
     uiBatch_->resetStats();
     const SceneStats st = scene_->stats();
     s.spritesDrawn = static_cast<int>(st.drawnItems);
