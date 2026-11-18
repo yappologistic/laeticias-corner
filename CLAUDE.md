@@ -151,7 +151,8 @@ profiler overlay (frame-time graph with the 120 and 60 FPS lines; whole frame av
 99th percentile and worst over the last 512 frames; CPU, GPU done, simulation, conditions,
 scene, interface, present, audio callback load; draw calls, sprites drawn and culled, actors,
 cached chunks, texture and process memory). `--gpu-sync` makes "GPU done" honest by reading one
-pixel back each frame. `--perf-log FILE` writes the same per frame as CSV. `--bench` and
+pixel back each frame. `--perf-log FILE` writes the same per frame as CSV (with city life:
+`city_ms`, `crowd_ms`, `city_live`, `city_drawn`). `--bench` and
 `--soak` are the gates; `--benchmark` is the 75-second windowed tour a person runs on their own
 machine, with a results card and a report beside the save. A change that makes a budget fail is not done. The built-in profiler overlay
 (frame-time graph, per-system times, draw calls, actors, chunks, texture memory) and `--perf-log`
@@ -372,12 +373,31 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   shaping or right-to-left, such as Persian in Arabic script, are left out; the `coverage` test
   fails on any region or catalog string with a missing glyph); crossing into another moment plays the seam chime (and, once, its line). The
   title card names the place while away.
-- **Cards and journal.** With an empty hand, landmarks with cards and named figures (standing
-  still at their routine's place for now) open a glass card from the region file; what is in
-  view on arrival is seen, what is clicked found; the sketchbook has a tab per place.
+- **The living world.** City life (`src/life/`) runs with the world: the camera's view (grown
+  by a ring, so people walk in) is its active area, stepped at 60 Hz with the game's clock; the
+  renderer merges every live actor into the region's painter's order each frame (after what is
+  behind, before what is in front, a walk-floor piece under the feet and a landmark piece over
+  the head; waiting for its own page, so a crowd costs a few draws), walk frames by distance at
+  the set catalog's `stride`, goods in hand, shadows in the shared layer, whole window pixels at
+  2x and 3x; at half and quarter scale people go over the impostors; nobody at the overview or
+  with the map open. The home's own actors keep the scene's path.
+- **Cards and journal.** With an empty hand, landmarks with cards and named figures (city life's
+  actors: clicked while they walk, a figure winning over the crowd round it) open a glass card
+  from the region file; ordinary people show their role on hover, animals their kind; `F` on a
+  living figure's card follows it (damped camera; Esc or a pan lets go). What is in view on
+  arrival is seen, what is clicked found, events running in view are witnessed; the sketchbook
+  has a tab per place.
 - **Sound.** Region beds by theme weight and hour, seams ducking the rest, zones by nearness,
   item loops (fountains, lit braziers) by the nearest, a city's music fading in over 4 s from a
   phrase start and out when left; the home's stems and beds play by its share of the view.
+  City sound (`worldview/city_sound.hpp`, from the region files' `theme.sound` and districts'
+  `sound`): the crowd family by people in view (handful, market, festival; equal-power between
+  neighbouring levels, hushed in rain), wind by strength, rain and the district's two largest
+  surfaces by intensity, the climate's dawn, dusk and night beds, cicadas in their hours, roles'
+  work loops at the nearest worker, events' ambience by nearness, the life's one-shots placed,
+  footsteps and hooves near the view at 2x and closer, animals' voices and birds now and then.
+  Away from home the corner's toasts wait for the return; the home's panels (building dock,
+  undo and redo, wish tray, land chip) fold away.
 - **Weather is world-wide.** Clouds and showers come from a deterministic field over the whole
   grid (seed, weather period, the region's climate times the season's); the home's weather
   follows it, and the renderer draws cloud shadows, wet ground and rain or snow wherever the
@@ -536,9 +556,15 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
 - City life without the world renderer: `--focus F` keeps an active area round F (`x,y`,
   `layer:node`, `forum`, `agora`, `terrace`, `district:<region>/<name>`); `--life-dump FILE
   --focus F --life-hours 5.5,10,15.5 --life-day N` writes life dumps and exits;
-  `tests/world_tools/life_picture.py DUMP.json` draws one. Scripts: `set city F|off`,
-  `set city_dump FILE`, `expect city live|ground|slots|event|district ...`. The same from the
+  `tests/world_tools/life_picture.py DUMP.json` draws one. Scripts: `set city F|off|camera`
+  (a fixed active area, nobody, or the camera's again), `set world PLACE ZOOM`, `set look KIND
+  ZOOM` (a living actor first), point `life:KIND`, `set city_dump FILE`, `expect city
+  live|ground|slots|event|district|drawn|people|sound ...`, `expect following`. The same from the
   tool: `build/release/lifeinfo [summary|problems|chains|dump|bench|soak]`.
+- With the world, `--bench` adds crowd cases: Rome, Athens and Pārsa at the life's busiest view
+  and hour on an ordinary day and on their festival (live and drawn actors, the city's
+  simulation against 0.6 ms and the cap, crowd preparation, the world's draw calls against 40,
+  reported).
 - `F3` shows the profiler (with the world: page memory and its budget, placeholders in view and
   ids without art, each placeholder named); `--perf-log FILE` writes its counters per frame as CSV;
   `--gpu-sync` waits for the GPU each frame (implied on the windowless GPU path);

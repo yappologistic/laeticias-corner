@@ -301,6 +301,64 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
             }
             if (judgeCase(spot.name, fr, attempt == 1)) break;
         }
+    // Crowds (src/life/): each city at its busiest view and hour, on an ordinary day and on its
+    // festival, the life simulated and drawn with the world.
+    if (city_) {
+        struct Crowd {
+            const char* name;
+            const char* region;
+            const char* season;
+            int day;
+        };
+        clock_.setPin(ClockPin::Auto, true);
+        for (const Crowd& c :
+             {Crowd{"rome crowd", "rome", "spring", 9}, Crowd{"rome parilia", "rome", "spring", 1},
+              Crowd{"athens crowd", "athens", "summer", 5},
+              Crowd{"athens panathenaia", "athens", "summer", 4},
+              Crowd{"parsa crowd", "parsa", "spring", 0},
+              Crowd{"parsa audience", "parsa", "spring", 1}}) {
+            const int season = cat_.findSeason(c.season).value_or(0);
+            const life::Busiest b = life::busiestView(*city_, c.region, c.day, season);
+            seasonPin_ = season;
+            clock_.setDay(c.day);
+            clock_.setTime((b.hour - 6.0) / 24.0 + (b.hour < 6.0 ? 1.0 : 0.0));
+            for (int attempt = 0; attempt < 2; ++attempt) {
+                look({static_cast<float>(b.focus.x) + 0.5f, static_cast<float>(b.focus.y) + 0.5f});
+                warm();
+                BenchFrames fr;
+                int draws = 0;
+                int world = 0;
+                std::vector<float> sim;
+                std::vector<float> crowd;
+                int drawn = 0;
+                for (int f = 0; f < frames; ++f) {
+                    fr.all.push_back(benchFrame());
+                    draws = std::max(draws, fr.all.back().drawCalls);
+                    world = std::max(world, worldView_->stats().drawCalls);
+                    sim.push_back(static_cast<float>(cityMs_));
+                    crowd.push_back(static_cast<float>(worldView_->stats().actorMs));
+                    drawn = std::max(drawn, worldView_->stats().actorsDrawn);
+                }
+                const PerfStats s = perfStats(sim);
+                const PerfStats p = perfStats(crowd);
+                std::printf("bench: %s: %d live, %d drawn at most, city simulation avg %.3f worst "
+                            "%.3f ms, crowd preparation avg %.3f ms, %d draw calls at most "
+                            "(world %d%s)\n",
+                            c.name, city_->city->liveCount(), drawn, static_cast<double>(s.avg),
+                            static_cast<double>(s.worst), static_cast<double>(p.avg), draws, world,
+                            world > tuning::kSceneDrawCalls ? ", over the scene's 40 (reported)"
+                                                            : "");
+                if (opts_.budgetMs > 0 && (s.avg > tuning::kSimBudgetMs ||
+                                           city_->city->liveCount() > tuning::life::kLiveCap)) {
+                    std::printf("bench: over budget: %s simulation\n", c.name);
+                    over = true;
+                }
+                if (judgeCase(c.name, fr, attempt == 1)) break;
+            }
+        }
+        seasonPin_ = -1;
+        clock_.setPin(ClockPin::Day, true);
+    }
     // A pan across Rome at 1800 px a second (30 px a step).
     for (int attempt = 0; attempt < 2; ++attempt) {
         look({60, 1050});

@@ -60,6 +60,8 @@ void MapScreen::update(float x, float y, bool inside, bool pressed, bool release
     const float availW = screen.x - 2 * margin - 2 * pad;
     const float availH = screen.y - 2 * margin - 2 * pad - header;
     k_ = std::max(1e-3f, std::min(availW / iw, availH / ih));
+    // Enlarged, the art is drawn at a whole scale (crisp pixels): markers use the same one.
+    if (k_ >= 1.0f) k_ = std::floor(k_);
     // The panel hugs the art, centred in the window.
     const float fw = iw * k_ + 2 * pad;
     const float fh = ih * k_ + 2 * pad + header;

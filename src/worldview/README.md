@@ -92,15 +92,20 @@ on a worker in about 1 s and shows when ready.
 - Page slots follow the sets on disk (the two largest sets and the world set); glow is drawn
   live over the impostors at the coarser levels.
 
-## For the joining round (city life)
+## City life on screen
 
-- Actors: `life::CityLife::gather(rect, alpha, span)` gives the live people; merge them into
-  `region_.order` per frame (a `ScreenGrid` over the region's boxes, insert after the last static
-  element behind each actor), resolve `walker/<kind>/v<k>/<anim>_<front|back>/f<n>` and
-  `figure/<id>/…` once per (kind, variant, anim, facing), and drop the static figures
-  (`world/figures.hpp`) when their routines run; the camera sets `CityLife::setView` from the
-  view's grid rect (the app's `cameraTiles()`).
+- `setLife(city)` resolves every kind's frames (`ActorLooks`: per variant, animation and facing;
+  carry points from the geometry; goods and stacks); `setLifeAlpha` places actors between steps.
+  Each native frame `prepareActors` gathers the view (plus a margin), resolves frames (walks by
+  distance at the catalog's `stride`), and `ActorMerge` (order.hpp) bounds each actor between
+  the static elements behind and in front of it (a walk-floor piece or an unsplit deck under
+  the feet, a landmark piece over the tile over the head), propagates the bounds between
+  overlapping actors and schedules them where their page is bound. Half and quarter scale draw
+  people over the impostors (not those under a roof); the overview none.
+- `CitySound` (pure) turns the region files' sound data and what is drawn into loop gains and
+  one-shots; the app plays them.
 - Still home-only: trees, grass and smoke swaying in the wind and gusts, chimney and brazier
   smoke, petals and leaves, moths at lamps, ripples and fish, waterfalls at drops, birds, and the
   event delights (rainbow, shooting stars, birdsong) away from home; they belong in the world by
-  rule (items' `emitters` and `smoke_at`, terrain), within the particle budget.
+  rule (items' `emitters` and `smoke_at`, terrain), within the particle budget. Actors carry no
+  light of their own (no `glow` frames in the walker art yet).

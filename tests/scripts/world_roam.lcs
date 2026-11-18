@@ -31,6 +31,7 @@ expect region rome
 expect tool none
 expect widget build no
 expect widget remove no
+expect widget undo no
 expect widget card:0 no
 expect widget map yes
 expect widget sound yes
@@ -47,6 +48,7 @@ wait 60
 expect away no
 expect region corner
 expect widget build yes
+expect widget undo yes
 expect widget card:0 yes
 # A piece placed off the home's land is refused.
 click ui:build

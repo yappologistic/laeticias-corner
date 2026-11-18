@@ -645,7 +645,7 @@ void App::openLand(int stage, bool wave) {
     play(sfx::kLandOpen);
     const StageDef& def = cat_.stages[static_cast<std::size_t>(stage)];
     if (!def.line.empty()) (void)speakText(def.line, SpeechWeight::Important);
-    hud_.toast(std::vformat(strings::kToastNewLand, std::make_format_args(def.name)));
+    cornerToast(std::vformat(strings::kToastNewLand, std::make_format_args(def.name)));
     // The camera never moves on its own: when the new land is out of sight, a chip offers it.
     TileRect box = def.rects.front();
     for (const TileRect& r : def.rects)
@@ -696,7 +696,8 @@ void App::onNookFound(int nook) {
     play(sfx::kNook);
     const int pages = actors_.seenCount() + progress_.nooksFound();
     const int total = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
-    hud_.toast(std::vformat(strings::kToastNewNook, std::make_format_args(def.name, pages, total)));
+    cornerToast(
+        std::vformat(strings::kToastNewNook, std::make_format_args(def.name, pages, total)));
     lively_.happening(simTime_);
     std::vector<NearInstance> found;
     cat_.conditions.instances(def.near, world_, found);

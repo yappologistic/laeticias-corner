@@ -314,6 +314,10 @@ private:
     void toggleMap();
     // The view is off the home region: the building tools rest.
     [[nodiscard]] bool away() const;
+    // News of the corner (a visitor, a nook, new land, her lines): shown at once at home, kept
+    // until the view comes back when it is out in the world.
+    void cornerToast(std::string text);
+    std::vector<std::string> cornerToasts_;
     void travelTo(int region);
     // Once per frame: travel's fade and jump, places visited, the seam's chime and line.
     void updateWorld(float dt);

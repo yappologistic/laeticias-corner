@@ -118,16 +118,18 @@ TEST_CASE("coverage: catalog vs audio") {
 }
 
 TEST_CASE("coverage: the interface's fonts draw every string the world shows") {
-    // No card, caption, map label or journal line may show a missing glyph. A `native` form in a
-    // script that needs shaping or right-to-left layout (Arabic script) is left out by the game,
-    // which shows the transliteration instead; everything else must be covered.
+    // No card, caption, map label or journal line may show a missing glyph. Text in a script that
+    // needs shaping or right-to-left layout (Arabic script: a `native` form, a native caption) is
+    // left out by the game, which shows the transliteration instead; everything else must be
+    // covered.
     const std::filesystem::path assets = LC_TEST_ASSETS_DIR;
     Font font;
     REQUIRE(font.load(assets / "fonts"));
-    const auto arabic = [](std::string_view s) {
+    // Every glyph the fonts lack is Arabic script (or a joiner).
+    const auto arabic = [&](std::string_view s) {
         for (std::size_t i = 0; i < s.size();) {
             const char32_t c = nextCodepoint(s, i);
-            if (c == ' ' || c == 0x200C || c == 0x200D) continue;
+            if (font.covers(c) || c == 0x200C || c == 0x200D) continue;
             if (!((c >= 0x600 && c <= 0x6FF) || (c >= 0x750 && c <= 0x77F) ||
                   (c >= 0xFB50 && c <= 0xFDFF) || (c >= 0xFE70 && c <= 0xFEFF)))
                 return false;
@@ -140,7 +142,7 @@ TEST_CASE("coverage: the interface's fonts draw every string the world shows") {
             if (j.is_string()) {
                 const auto& s = j.get_ref<const std::string&>();
                 if (font.coversAll(s)) return;
-                if (key == "native" && arabic(s)) return;
+                if (arabic(s)) return;
                 missing.push_back(where + " " + key + ": " + s);
             } else if (j.is_object()) {
                 for (const auto& [k, v] : j.items()) scan(v, k, where);

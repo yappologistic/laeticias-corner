@@ -246,6 +246,16 @@ void App::toggleMap() {
     }
 }
 
+void App::cornerToast(std::string text) {
+    if (!away()) {
+        hud_.toast(std::move(text));
+        return;
+    }
+    if (cornerToasts_.size() == tuning::kCornerToastsKept)
+        cornerToasts_.erase(cornerToasts_.begin());
+    cornerToasts_.push_back(std::move(text));
+}
+
 bool App::away() const {
     if (!loaded_) return false;
     const Vec2 t = cat_.iso().toTile(camera_.position());
@@ -261,6 +271,10 @@ void App::travelTo(int region) {
 
 void App::updateWorld(float dt) {
     if (!worldView_) return;
+    if (!away() && !cornerToasts_.empty()) {
+        for (std::string& t : cornerToasts_) hud_.toast(std::move(t));
+        cornerToasts_.clear();
+    }
     followActor(dt);
     eventsSeenIn_ -= dt;
     if (eventsSeenIn_ <= 0) {

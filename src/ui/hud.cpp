@@ -272,7 +272,8 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
     const float buildW = btn + theme::kBuildExtra * s;
     const float leftW = buildW + 2 * (gap + dockH);
     const float divider = gap * 2;
-    const float rightW = 5 * btn + 2 * divider + 2 * pad;
+    // Away from home, undo and redo (the corner's edits) rest with the building dock.
+    const float rightW = m.away ? 3 * btn + divider + 2 * pad : 5 * btn + 2 * divider + 2 * pad;
     const float centreW = (m.world ? 7.0f : 6.0f) * btn + 2 * pad;
     const float avail = screen.x - 2 * margin;
     // One row when everything fits; otherwise the centre dock, then the right dock, move up a
@@ -330,14 +331,18 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
             w.enabled = enabled;
             x += btn;
         };
-        button(kUndo, theme::icon::kUndo, strings::kUndo, strings::kKeyUndo, m.canUndo);
-        button(kRedo, theme::icon::kRedo, strings::kRedo, strings::kKeyRedo, m.canRedo);
         const auto rule = [&](Box& b) {
             b = {std::round(x + divider * 0.5f - theme::kRim * s * 0.5f),
                  rightY + pad + btn * 0.25f, theme::kRim * s, btn * 0.5f};
             x += divider;
         };
-        rule(dividers_[0]);
+        if (!m.away) {
+            button(kUndo, theme::icon::kUndo, strings::kUndo, strings::kKeyUndo, m.canUndo);
+            button(kRedo, theme::icon::kRedo, strings::kRedo, strings::kKeyRedo, m.canRedo);
+            rule(dividers_[0]);
+        } else {
+            dividers_[0] = {};
+        }
         button(kRecentre, theme::icon::kHome, strings::kRecentre, strings::kKeyRecentre, true);
         rule(dividers_[1]);
         button(kZoomOut, theme::icon::kMinus, strings::kZoomOut, strings::kKeyZoomOut,

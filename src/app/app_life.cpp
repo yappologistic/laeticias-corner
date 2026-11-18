@@ -203,7 +203,7 @@ void App::handleActorEvents() {
                 cat_.visitors[static_cast<std::size_t>(e.arg >= 0 ? e.arg : k.visitor)];
             lively_.happening(simTime_);
             if (!e.first) break;
-            hud_.toast(std::string(strings::kToastNewVisitor) + def.name);
+            cornerToast(std::string(strings::kToastNewVisitor) + def.name);
             play(kDiscoverSound);
             if (!k.voice.empty()) playAt(k.voice, tuning::kVoiceLevel, e.pos, true);
             markDirty();
@@ -331,7 +331,7 @@ void App::handleWorldEvents() {
             if (seasonPin_ >= 0) break;
             if (sound) play(d.sfx, tuning::kSfxLevel * d.gain);
             const SeasonDef& s = cat_.seasons[static_cast<std::size_t>(season())];
-            if (!speakText(s.line, SpeechWeight::Important)) hud_.toast(signedLine(s.line, -1));
+            if (!speakText(s.line, SpeechWeight::Important)) cornerToast(signedLine(s.line, -1));
             break;
         }
         case EventShow::Chorus:

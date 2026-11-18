@@ -42,7 +42,7 @@ expect place parsa
 expect era Pārsa
 set look parsa.xerxes 2
 wait 10
-click figure:parsa.xerxes
+click life:parsa.xerxes
 wait 20
 expect info Xšayāršā
 expect found parsa 1
