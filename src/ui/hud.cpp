@@ -777,7 +777,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             (toastT_ > 0.5f && !toast_.empty() && toastBox_.contains(in.x, in.y)) ||
             (trayT_ > 0.5f && trayBox_.contains(in.x, in.y)) ||
             (ribbonT_ > 0.5f && ribbonBox_.contains(in.x, in.y)) ||
-            (calendarT_ > 0.5f && calendarBox_.contains(in.x, in.y)))
+            (calendarT_ > 0.5f && calendarBox_.contains(in.x, in.y)) ||
+            (cardT_ > 0.5f && cardBox_.contains(in.x, in.y))) // a click on a card stays on it
             overUi_ = true;
         // A drawer on its way out no longer holds the pointer: the map is usable at once after
         // picking a piece.
@@ -1003,6 +1004,9 @@ std::optional<Vec2> Hud::widgetCentre(std::string_view name, const HudModel& m) 
         return std::nullopt;
     }
     if (name == "hint" && hintT_ > 0.5f) return Vec2{hintBox_.cx(), hintBox_.cy()};
+    // "info": the middle of a landmark's or figure's card.
+    if (name == "info" && cardT_ > 0.5f && cardBox_.w > 0)
+        return Vec2{cardBox_.cx(), cardBox_.cy()};
     const Widget* w = find(name, m);
     if (w == nullptr) return std::nullopt;
     return Vec2{w->box.cx(), w->box.cy()};
@@ -1808,15 +1812,18 @@ Box Hud::worldTipBox(const Font& f, std::string_view tip) const {
     const float pad = theme::kTipPad * s;
     const float bw = f.measure(Face::Body, tip) + 2 * pad;
     const float bh = theme::kTipH * s;
-    const float x = std::clamp(pointer_.x + theme::kWorldTipOffset * s, theme::kMargin * s * 0.5f,
-                               screen_.x - bw - theme::kMargin * s * 0.5f);
+    float x = std::clamp(pointer_.x + theme::kWorldTipOffset * s, theme::kMargin * s * 0.5f,
+                         screen_.x - bw - theme::kMargin * s * 0.5f);
     float y = pointer_.y + theme::kWorldTipOffset * s;
     if (y + bh > screen_.y - theme::kMargin * s) y = pointer_.y - bh - theme::kWorldTipOffset * s;
-    // Never under the title card or a dock (Q5-E-14): clear below the title, above the docks.
+    // Never under the title card, a card or a dock (Q5-E-14): below the title, beside the card,
+    // above the docks.
     const auto over = [&](const Box& q) {
         return x < q.x + q.w && q.x < x + bw && y < q.y + q.h && q.y < y + bh;
     };
     if (titleBox_.w > 0 && over(titleBox_)) y = titleBox_.y + titleBox_.h + theme::kGap * s;
+    if (cardT_ > 0 && cardBox_.w > 0 && over(cardBox_)) // the card is on the right: to its left
+        x = std::max(theme::kMargin * s * 0.5f, cardBox_.x - bw - theme::kGap * s);
     for (const Panel& q : panels_)
         if (over(q.box)) y = q.box.y - bh - theme::kGap * s;
     return {x, y, bw, bh};

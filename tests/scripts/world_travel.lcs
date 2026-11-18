@@ -32,6 +32,13 @@ click landmark:athens.parthenon
 wait 20
 expect info yes
 shot shots/world_card_landmark.png
+# The card holds the pointer: no name of what lies under it, and a click stays on the card.
+move ui:info
+wait 3
+expect tip no
+click ui:info
+wait 10
+expect info Παρθενών
 key escape
 wait 15
 expect info no
