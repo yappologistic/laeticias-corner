@@ -136,20 +136,22 @@ def clear_doors(L: Layout, reach: int = 24, all_slots: bool = False) -> None:
         if p.removed or d.landmark or d.rise:
             continue
         if p.door is not None:
-            loc = L._local(*p.door)
-            if loc is None or dist[loc] > reach:
-                L.remove(p)
+            spots = [p.door]
         elif all_slots and p.slots:
             spots = [(c, r) for lst in p.slots.values() for c, r, _f in lst]
-            near = set()
-            for c, r in spots:
-                if p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph:
-                    near |= {(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))}
-                else:
-                    near.add((c, r))
-            locs = [L._local(c, r) for c, r in near]
-            if not any(loc is not None and dist[loc] <= reach for loc in locs):
-                L.remove(p)
+        else:
+            continue
+        # A spot on the item's own footprint (a door in its front wall) is used from the tile
+        # beside it, as V7 counts it.
+        near = set()
+        for c, r in spots:
+            if p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph:
+                near |= {(c + dc, r + dr) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))}
+            else:
+                near.add((c, r))
+        locs = [L._local(c, r) for c, r in near]
+        if not any(loc is not None and dist[loc] <= reach for loc in locs):
+            L.remove(p)
 
 
 def glow_cap(L: Layout, rank: dict[str, int], cap: int = 38) -> None:

@@ -1,0 +1,2143 @@
+{
+ "version": 1,
+ "id": "athens",
+ "name": "Athens",
+ "native": "Ἀθῆναι",
+ "caption": "Athens · the Panathenaia, summer 432 BC",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.98,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.99,
+    0.95
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.68
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.7
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.93,
+    0.89,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "athens",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/athens/day.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/athens/night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ],
+   "zones": [
+    {
+     "rect": [
+      246,
+      651,
+      282,
+      683
+     ],
+     "file": "amb/athens/agora.ogg",
+     "gain": 0.8
+    },
+    {
+     "rect": [
+      295,
+      578,
+      323,
+      641
+     ],
+     "file": "amb/athens/rock.ogg",
+     "gain": 0.7
+    },
+    {
+     "rect": [
+      227,
+      672,
+      247,
+      699
+     ],
+     "file": "amb/athens/potters.ogg",
+     "gain": 0.7
+    },
+    {
+     "rect": [
+      351,
+      646,
+      379,
+      703
+     ],
+     "file": "amb/athens/sea.ogg",
+     "gain": 0.8
+    }
+   ]
+  },
+  "music": {
+   "day": "music/athens/day.ogg",
+   "night": "music/athens/night.ogg"
+  }
+ },
+ "districts": [
+  {
+   "id": "agora",
+   "populations": [
+    {
+     "actor": "athens.citizen",
+     "density": "market",
+     "max_per_chunk": 10
+    },
+    {
+     "actor": "athens.metic",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.working_woman",
+     "density": "market",
+     "max_per_chunk": 5
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "market",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.scythian",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.philosopher",
+     "density": "afternoon",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.donkey",
+     "density": "market",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "council",
+   "populations": [
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.scythian",
+     "density": "watch",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "kerameikos",
+   "populations": [
+    {
+     "actor": "athens.potter",
+     "density": "work",
+     "max_per_chunk": 5
+    },
+    {
+     "actor": "athens.painter",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "cemetery",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "acropolis",
+   "populations": [
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.mason",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.sculptor",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.owl",
+     "density": "watch",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "slopes",
+   "populations": [
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.owl",
+     "density": "watch",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "areopagus",
+   "populations": [
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "pnyx",
+   "populations": [
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "kolonos",
+   "populations": [
+    {
+     "actor": "athens.smith",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "dionysos",
+   "populations": [
+    {
+     "actor": "athens.chorus",
+     "density": "afternoon",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.musician",
+     "density": "afternoon",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "melite",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "houses",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_woman",
+     "density": "houses",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.dog_laconian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.hen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "koile",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "houses",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_woman",
+     "density": "houses",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.dog_laconian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.hen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "kollytos",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "houses",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_woman",
+     "density": "houses",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.dog_laconian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.hen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "kydathenaion",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "houses",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_woman",
+     "density": "houses",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.dog_laconian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.hen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "skambonidai",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "houses",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_woman",
+     "density": "houses",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.dog_laconian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.hen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "east_quarter",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "houses",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_woman",
+     "density": "houses",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.dog_laconian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.hen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "piraeus",
+   "populations": [
+    {
+     "actor": "athens.rower",
+     "density": "work",
+     "max_per_chunk": 5
+    },
+    {
+     "actor": "athens.metic",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.ionian",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.thracian",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.enslaved_man",
+     "density": "work",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.woman",
+     "density": "houses",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.child",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "long_walls",
+   "populations": [
+    {
+     "actor": "athens.drover",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.donkey",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "north_fields",
+   "populations": [
+    {
+     "actor": "athens.farmer",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.sheep",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "south_fields",
+   "populations": [
+    {
+     "actor": "athens.farmer",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.sheep",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "ilissos",
+   "populations": [
+    {
+     "actor": "athens.farmer",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.sheep",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "countryside",
+   "populations": [
+    {
+     "actor": "athens.farmer",
+     "density": "work",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.sheep",
+     "density": "daytime",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.donkey",
+     "density": "work",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "lyceum",
+   "populations": [
+    {
+     "actor": "athens.athlete",
+     "density": "afternoon",
+     "max_per_chunk": 5
+    },
+    {
+     "actor": "athens.hoplite",
+     "density": "work",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "athens.cavalryman",
+     "density": "afternoon",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.philosopher",
+     "density": "afternoon",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "pentelikon",
+   "populations": [
+    {
+     "actor": "athens.mason",
+     "density": "work",
+     "max_per_chunk": 6
+    },
+    {
+     "actor": "athens.drover",
+     "density": "work",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "athens.ox",
+     "density": "work",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "lykabettos",
+   "populations": [
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 4
+    }
+   ]
+  },
+  {
+   "id": "hymettos",
+   "populations": [
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 4
+    }
+   ]
+  },
+  {
+   "id": "mouseion",
+   "populations": [
+    {
+     "actor": "athens.herder",
+     "density": "daytime",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "athens.goat",
+     "density": "daytime",
+     "max_per_chunk": 4
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "market": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.9,
+   1,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.3,
+   0.4,
+   0.6,
+   0.7,
+   0.6,
+   0.4,
+   0.2,
+   0.05,
+   0,
+   0,
+   0
+  ],
+  "houses": [
+   0.05,
+   0.05,
+   0.05,
+   0.05,
+   0.1,
+   0.3,
+   0.6,
+   0.8,
+   0.8,
+   0.7,
+   0.6,
+   0.6,
+   0.5,
+   0.4,
+   0.5,
+   0.6,
+   0.7,
+   0.8,
+   0.8,
+   0.6,
+   0.4,
+   0.2,
+   0.1,
+   0.05
+  ],
+  "watch": [
+   0.4,
+   0.4,
+   0.4,
+   0.4,
+   0.4,
+   0.5,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.6,
+   0.5,
+   0.4,
+   0.4,
+   0.4
+  ],
+  "afternoon": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.4,
+   0.3,
+   0.3,
+   0.6,
+   0.9,
+   1,
+   1,
+   0.9,
+   0.6,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "work": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.3,
+   0.8,
+   1,
+   1,
+   1,
+   1,
+   0.9,
+   0.4,
+   0.6,
+   0.9,
+   1,
+   0.9,
+   0.7,
+   0.3,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "figures": [
+  {
+   "actor": "athens.pericles",
+   "presence": "present",
+   "card": "pericles"
+  },
+  {
+   "actor": "athens.aspasia",
+   "presence": "present",
+   "card": "aspasia"
+  },
+  {
+   "actor": "athens.socrates",
+   "presence": "present",
+   "card": "socrates"
+  },
+  {
+   "actor": "athens.sophocles",
+   "presence": "present",
+   "card": "sophocles"
+  },
+  {
+   "actor": "athens.euripides",
+   "presence": "present",
+   "card": "euripides"
+  },
+  {
+   "actor": "athens.pheidias",
+   "presence": "present",
+   "card": "pheidias"
+  },
+  {
+   "actor": "athens.mnesikles",
+   "presence": "present",
+   "card": "mnesikles"
+  },
+  {
+   "actor": "athens.protagoras",
+   "presence": "present",
+   "card": "protagoras"
+  },
+  {
+   "actor": "athens.meton",
+   "presence": "present",
+   "card": "meton"
+  },
+  {
+   "actor": "athens.alcibiades",
+   "presence": "present",
+   "card": "alcibiades"
+  },
+  {
+   "actor": "athens.solon",
+   "presence": "memory",
+   "card": "solon"
+  },
+  {
+   "actor": "athens.themistocles",
+   "presence": "memory",
+   "card": "themistocles"
+  },
+  {
+   "actor": "athens.theseus",
+   "presence": "reenactor",
+   "card": "theseus"
+  },
+  {
+   "actor": "athens.rhapsode",
+   "presence": "reenactor",
+   "card": "rhapsode"
+  },
+  {
+   "actor": "athens.philinna",
+   "presence": "present",
+   "card": "philinna"
+  },
+  {
+   "actor": "athens.mania",
+   "presence": "present",
+   "card": "mania"
+  },
+  {
+   "actor": "athens.manes",
+   "presence": "present",
+   "card": "manes"
+  },
+  {
+   "actor": "athens.kephalos",
+   "presence": "present",
+   "card": "kephalos"
+  },
+  {
+   "actor": "athens.sosias",
+   "presence": "present",
+   "card": "sosias"
+  },
+  {
+   "actor": "athens.nikarete",
+   "presence": "present",
+   "card": "nikarete"
+  },
+  {
+   "actor": "athens.toxamis",
+   "presence": "present",
+   "card": "toxamis"
+  },
+  {
+   "actor": "athens.euphiletos",
+   "presence": "present",
+   "card": "euphiletos"
+  },
+  {
+   "actor": "athens.hegeso",
+   "presence": "present",
+   "card": "hegeso"
+  },
+  {
+   "actor": "athens.simon",
+   "presence": "present",
+   "card": "simon"
+  }
+ ],
+ "groups": [
+  {
+   "id": "panathenaic_procession",
+   "leader": {
+    "actor": "athens.marshal"
+   },
+   "members": [
+    {
+     "actor": "athens.peplos_bearer",
+     "count": 2,
+     "carry": "athens.goods_peplos"
+    },
+    {
+     "actor": "athens.kanephoros",
+     "count": 4,
+     "carry": "athens.goods_kanoun"
+    },
+    {
+     "actor": "athens.hydriaphoros",
+     "count": 3,
+     "carry": "athens.goods_hydria"
+    },
+    {
+     "actor": "athens.skaphephoros",
+     "count": 3
+    },
+    {
+     "actor": "athens.metic_daughter",
+     "count": 2
+    },
+    {
+     "actor": "athens.thallophoros",
+     "count": 4
+    },
+    {
+     "actor": "athens.musician",
+     "count": 2
+    },
+    {
+     "actor": "athens.drover",
+     "count": 2
+    },
+    {
+     "actor": "athens.heifer",
+     "count": 4
+    },
+    {
+     "actor": "athens.sheep",
+     "count": 4
+    },
+    {
+     "actor": "athens.hoplite",
+     "count": 6
+    },
+    {
+     "actor": "athens.cavalryman",
+     "count": 4
+    },
+    {
+     "actor": "athens.chariot",
+     "count": 1
+    }
+   ],
+   "formation": {
+    "kind": "pairs",
+    "spacing": 0.9
+   }
+  },
+  {
+   "id": "hoplites_for_potidaea",
+   "leader": {
+    "actor": "athens.hoplite"
+   },
+   "members": [
+    {
+     "actor": "athens.hoplite",
+     "count": 11
+    }
+   ],
+   "formation": {
+    "kind": "pairs",
+    "spacing": 0.8
+   }
+  },
+  {
+   "id": "assembly_sweep",
+   "leader": {
+    "actor": "athens.toxamis"
+   },
+   "members": [
+    {
+     "actor": "athens.scythian",
+     "count": 3
+    }
+   ],
+   "formation": {
+    "kind": "line",
+    "spacing": 1.2
+   }
+  }
+ ],
+ "chains": [
+  {
+   "id": "athens_marble",
+   "period": 260,
+   "stages": [
+    {
+     "slot": "athens.pentelikon_quarry.cut",
+     "makes": "marble_block",
+     "by": "athens.mason"
+    },
+    {
+     "carry": "marble_block",
+     "from": "athens.pentelikon_quarry.sledge",
+     "to": "athens.sculpt_yard.hoist",
+     "by": "athens.sledge"
+    },
+    {
+     "slot": "athens.sculpt_yard.carve",
+     "needs": "marble_block",
+     "makes": "carved_block",
+     "by": "athens.sculptor"
+    },
+    {
+     "slot": "athens.sculpt_yard.pheidias",
+     "sink": "carved_block",
+     "by": "athens.pheidias"
+    }
+   ]
+  },
+  {
+   "id": "athens_pottery",
+   "period": 200,
+   "stages": [
+    {
+     "slot": "athens.g_workshop.throw",
+     "makes": "athens.goods_redfigure",
+     "by": "athens.potter"
+    },
+    {
+     "slot": "athens.g_kiln.stoke",
+     "needs": "athens.goods_redfigure",
+     "makes": "athens.goods_redfigure",
+     "by": "athens.painter"
+    },
+    {
+     "carry": "athens.goods_redfigure",
+     "from": "athens.g_kiln.stoke",
+     "to": "athens.g_stall.sell",
+     "by": "athens.enslaved_man"
+    },
+    {
+     "slot": "athens.harbour.load",
+     "sink": "athens.goods_redfigure",
+     "by": "athens.rower"
+    }
+   ]
+  },
+  {
+   "id": "athens_oil",
+   "period": 240,
+   "stages": [
+    {
+     "slot": "athens.g_press.work",
+     "makes": "athens.goods_prize_amphora",
+     "by": "athens.farmer"
+    },
+    {
+     "carry": "athens.goods_prize_amphora",
+     "from": "athens.g_press.work",
+     "to": "athens.g_stall.sell",
+     "by": "athens.cart"
+    },
+    {
+     "slot": "athens.g_stall.buy",
+     "sink": "athens.goods_prize_amphora",
+     "by": "athens.citizen"
+    }
+   ]
+  },
+  {
+   "id": "athens_water",
+   "period": 90,
+   "stages": [
+    {
+     "slot": "athens.se_fountain.fill",
+     "makes": "athens.goods_hydria",
+     "by": "athens.woman"
+    },
+    {
+     "carry": "athens.goods_hydria",
+     "from": "athens.se_fountain.fill",
+     "to": "athens.g_house.door",
+     "by": "athens.enslaved_woman"
+    },
+    {
+     "slot": "athens.g_house.door",
+     "sink": "athens.goods_hydria",
+     "by": "athens.woman"
+    }
+   ]
+  },
+  {
+   "id": "athens_charcoal",
+   "period": 180,
+   "stages": [
+    {
+     "carry": "athens.goods_charcoal",
+     "from": "portal:acharnai_n",
+     "to": "athens.g_kiln.stoke",
+     "by": "athens.sosias"
+    },
+    {
+     "slot": "athens.g_forge.work",
+     "sink": "athens.goods_charcoal",
+     "by": "athens.smith"
+    }
+   ]
+  },
+  {
+   "id": "athens_shields",
+   "period": 220,
+   "stages": [
+    {
+     "slot": "athens.g_forge.work",
+     "makes": "athens.goods_shield",
+     "by": "athens.smith"
+    },
+    {
+     "carry": "athens.goods_shield",
+     "from": "athens.g_forge.work",
+     "to": "athens.lyceum.drill",
+     "by": "athens.enslaved_man"
+    },
+    {
+     "slot": "athens.lyceum.drill",
+     "sink": "athens.goods_shield",
+     "by": "athens.hoplite"
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "panathenaic_procession",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "05:30",
+     "06:30"
+    ],
+    "chance": 1.0
+   },
+   "size": "large",
+   "duration": [
+    600,
+    720
+   ],
+   "cast": [
+    {
+     "group": "panathenaic_procession"
+    }
+   ],
+   "route": [
+    "dipylon",
+    "kerameikos_kilns",
+    "agora",
+    "eleusinion",
+    "klepsydra",
+    "approach_foot",
+    "propylaia",
+    "pandroseion",
+    "great_altar"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "dipylon"
+     }
+    },
+    {
+     "go": {
+      "node": "agora"
+     }
+    },
+    {
+     "go": {
+      "node": "eleusinion"
+     }
+    },
+    {
+     "go": {
+      "node": "approach_foot"
+     }
+    },
+    {
+     "go": {
+      "node": "propylaia"
+     }
+    },
+    {
+     "go": {
+      "node": "great_altar"
+     }
+    },
+    {
+     "use": {
+      "item": "athens.great_altar",
+      "slot": "sacrifice"
+     },
+     "anim": "pray",
+     "dur": [
+      40,
+      60
+     ]
+    },
+    {
+     "emit": {
+      "sfx": "sfx/athens/aulos.wav"
+     }
+    }
+   ],
+   "ambience": {
+    "file": "amb/athens/procession.ogg",
+    "gain": 0.8
+   }
+  },
+  {
+   "id": "assembly_morning",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "09:00"
+    ],
+    "chance": 0.35
+   },
+   "size": "large",
+   "duration": [
+    480,
+    600
+   ],
+   "cast": [
+    {
+     "group": "assembly_sweep"
+    },
+    {
+     "actor": "athens.citizen",
+     "count": 24,
+     "from": "district"
+    },
+    {
+     "actor": "athens.pericles",
+     "count": 1
+    }
+   ],
+   "route": [
+    "agora",
+    "simon_shop",
+    "melite_school",
+    "pnyx"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "agora"
+     }
+    },
+    {
+     "go": {
+      "node": "pnyx"
+     }
+    },
+    {
+     "use": {
+      "item": "athens.pnyx",
+      "slot": "assembly"
+     },
+     "anim": "idle",
+     "dur": [
+      300,
+      400
+     ]
+    }
+   ]
+  },
+  {
+   "id": "theatre_rehearsal",
+   "zone": "theatre",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "14:00",
+     "17:00"
+    ],
+    "chance": 0.8
+   },
+   "size": "medium",
+   "duration": [
+    240,
+    360
+   ],
+   "cast": [
+    {
+     "actor": "athens.chorus",
+     "count": 6
+    },
+    {
+     "actor": "athens.musician",
+     "count": 1
+    },
+    {
+     "actor": "athens.euripides",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "use": {
+      "item": "athens.theatre",
+      "slot": "chorus"
+     },
+     "anim": "dance",
+     "dur": [
+      200,
+      300
+     ]
+    }
+   ]
+  },
+  {
+   "id": "hoplites_embark",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "09:00",
+     "12:00"
+    ],
+    "chance": 1.0
+   },
+   "size": "medium",
+   "duration": [
+    600,
+    900
+   ],
+   "cast": [
+    {
+     "group": "hoplites_for_potidaea"
+    }
+   ],
+   "route": [
+    "lyceum",
+    "diochares_gate",
+    "agora",
+    "piraeus_gate",
+    "long_walls_gate",
+    "long_walls_road",
+    "piraeus_agora",
+    "kantharos_quay"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "lyceum"
+     }
+    },
+    {
+     "go": {
+      "node": "long_walls_gate"
+     }
+    },
+    {
+     "go": {
+      "node": "long_walls_road"
+     }
+    },
+    {
+     "go": {
+      "node": "kantharos_quay"
+     }
+    }
+   ]
+  },
+  {
+   "id": "tribute_ship",
+   "zone": "kantharos_quay",
+   "trigger": {
+    "on": "token_arrived",
+    "actor": "athens.merchant",
+    "chance": 0.2
+   },
+   "size": "medium",
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "athens.enslaved_man",
+     "count": 4,
+     "from": "district"
+    },
+    {
+     "actor": "athens.hoplite",
+     "count": 2
+    }
+   ],
+   "steps": [
+    {
+     "use": {
+      "item": "athens.harbour",
+      "slot": "load"
+     },
+     "anim": "carry",
+     "dur": [
+      60,
+      90
+     ]
+    },
+    {
+     "go": {
+      "node": "long_walls_road"
+     }
+    },
+    {
+     "go": {
+      "node": "propylaia"
+     }
+    }
+   ]
+  },
+  {
+   "id": "meton_solstice",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "05:00",
+     "06:00"
+    ],
+    "chance": 0.5
+   },
+   "size": "small",
+   "duration": [
+    120,
+    180
+   ],
+   "cast": [
+    {
+     "actor": "athens.meton",
+     "count": 1
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "meton_dial"
+     }
+    },
+    {
+     "use": {
+      "item": "athens.meton_dial",
+      "slot": "observe"
+     },
+     "anim": "idle",
+     "dur": [
+      90,
+      120
+     ]
+    }
+   ]
+  },
+  {
+   "id": "torch_race",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "21:00",
+     "23:00"
+    ],
+    "chance": 0.5
+   },
+   "size": "medium",
+   "duration": [
+    180,
+    240
+   ],
+   "cast": [
+    {
+     "actor": "athens.youth",
+     "count": 6
+    }
+   ],
+   "route": [
+    "cemetery",
+    "dipylon",
+    "agora",
+    "approach_foot",
+    "propylaia",
+    "great_altar"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "cemetery"
+     }
+    },
+    {
+     "go": {
+      "node": "dipylon"
+     }
+    },
+    {
+     "go": {
+      "node": "agora"
+     }
+    },
+    {
+     "go": {
+      "node": "approach_foot"
+     }
+    },
+    {
+     "go": {
+      "node": "great_altar"
+     }
+    }
+   ]
+  },
+  {
+   "id": "meltemi_afternoon",
+   "trigger": {
+    "on": "weather",
+    "kind": "wind",
+    "hours": [
+     "13:00",
+     "18:00"
+    ]
+   },
+   "size": "small",
+   "duration": [
+    600,
+    900
+   ],
+   "steps": [
+    {
+     "emit": {
+      "fx": "athens.sea_glint"
+     }
+    }
+   ]
+  }
+ ],
+ "lanes_tokens": [
+  {
+   "actor": "athens.merchant",
+   "lane": "athens:kantharos",
+   "count": 2
+  },
+  {
+   "actor": "athens.trireme",
+   "lane": "athens:zea",
+   "count": 2
+  },
+  {
+   "actor": "athens.fishing",
+   "lane": "athens:mounychia",
+   "count": 2
+  }
+ ],
+ "cards": {
+  "parthenon": {
+   "title": "Παρθενών",
+   "epithet": "Parthenon",
+   "text": "Begun in 447 and finished this year with its pediments, the Doric temple of 8 by 17 columns houses Pheidias's gold and ivory Athena. Its west pediment shows Athena and Poseidon contesting Attica; the frieze inside the colonnade shows a procession like the one you can follow today. Temples were painted, never plain white."
+  },
+  "propylaia": {
+   "title": "Προπύλαια",
+   "epithet": "The gateway, unfinished",
+   "text": "Mnesikles's gateway turns the steep west end of the rock into a stately climb: a central hall with Doric fronts, a ramp for the animals, a picture gallery in the north-west wing. This year the work stops; the lifting bosses stay on the blocks, and they are still there today."
+  },
+  "nike_bastion": {
+   "title": "Πύργος",
+   "epithet": "Nike bastion",
+   "text": "A poros bastion beside the gateway with a small old shrine and altar of Athena Nike. The Ionic temple that stands here today is not built until the 420s."
+  },
+  "approach": {
+   "title": "The approach",
+   "epithet": "Ramp to the rock",
+   "text": "A broad gravel ramp between retaining walls climbs from the Panathenaic Way to the gateway. Sacrificial cattle, riders and the whole procession come up this way."
+  },
+  "old_temple": {
+   "title": "Ἀρχαῖος νεώς",
+   "epithet": "Old Temple of Athena",
+   "text": "The temple burned by the Persians in 480. Whether its western rooms were repaired and used is debated; here its foundations lie open with a repaired, roofed west chamber where the old olive-wood Athena Polias may be kept."
+  },
+  "pandroseion": {
+   "title": "Πανδρόσειον",
+   "epithet": "The sacred olive",
+   "text": "A walled court round Athena's olive tree, her gift to the city in the contest with Poseidon. Burned in 480, it sprouted again the next day, people said. The tomb of the hero Kekrops lies beside it."
+  },
+  "promachos": {
+   "title": "Ἀθηνᾶ Πρόμαχος",
+   "epithet": "The bronze Athena",
+   "text": "Pheidias's colossal bronze Athena, made around 460-450, stands between the gateway and the Old Temple. Sailors rounding Cape Sounion are said to have seen the glint of her spear tip. Her height is uncertain, perhaps 7 to 9 metres."
+  },
+  "brauronion": {
+   "title": "Βραυρώνιον",
+   "epithet": "Artemis Brauronia",
+   "text": "A sanctuary of Artemis of Brauron with a stoa of two wings, where women dedicated clothing to the goddess."
+  },
+  "chalkotheke": {
+   "title": "Χαλκοθήκη",
+   "epithet": "The bronze store",
+   "text": "A plain hall where bronze dedications, weapons and votive offerings of Athena were stored and listed."
+  },
+  "great_altar": {
+   "title": "Βωμός",
+   "epithet": "Great Altar of Athena",
+   "text": "The altar where the procession ends: a hundred cattle are sacrificed at the Great Panathenaia, and the meat is shared out to the people in the Kerameikos."
+  },
+  "zeus_polieus": {
+   "title": "Διὸς Πολιέως",
+   "epithet": "Zeus of the city",
+   "text": "The sanctuary of Zeus Polieus, where the old ox-sacrifice of the Dipolieia is held at midsummer."
+  },
+  "sculpt_yard": {
+   "title": "The sculptors' yard",
+   "epithet": "Behind the Parthenon",
+   "text": "Blocks with their bosses, roughed-out figures and a two-legged crane: the last of the pediment work is coming down. Citizens, metics and slaves cut stone here side by side."
+  },
+  "hephaisteion": {
+   "title": "Ἡφαιστεῖον",
+   "epithet": "Temple of Hephaistos",
+   "text": "A Doric temple of 6 by 13 columns on Kolonos Agoraios, almost finished. Its metopes show Herakles and Theseus; its cult statues are not made until 421-415. Bronze casters work in pits on the hill around it."
+  },
+  "royal_stoa": {
+   "title": "Στοὰ Βασίλειος",
+   "epithet": "Royal Stoa",
+   "text": "A small Doric stoa where the king archon sits; the laws of Solon are displayed here on wooden boards and stone."
+  },
+  "stoa_zeus": {
+   "title": "Στοὰ τοῦ Διός",
+   "epithet": "Stoa of Zeus, rising",
+   "text": "The Stoa of Zeus Eleutherios is only a building site: foundations, the first columns, scaffolding."
+  },
+  "old_bouleuterion": {
+   "title": "Βουλευτήριον",
+   "epithet": "Council house",
+   "text": "The council of 500, fifty men from each tribe chosen by lot for a year, meets here to prepare the assembly's business."
+  },
+  "tholos": {
+   "title": "Θόλος",
+   "epithet": "Round dining hall",
+   "text": "The fifty councillors on duty, the prytaneis, eat here at public expense, and a third of them sleep here, so the city is never without a government."
+  },
+  "stoa_poikile": {
+   "title": "Στοὰ Ποικίλη",
+   "epithet": "The Painted Stoa",
+   "text": "A long colonnade facing the Agora, hung with great painted panels of Marathon, the Amazons, the fall of Troy and Oinoe, and with shields captured from the Spartans. Anyone may walk and talk here."
+  },
+  "twelve_gods": {
+   "title": "Βωμὸς τῶν δώδεκα θεῶν",
+   "epithet": "Altar of the Twelve Gods",
+   "text": "A fenced altar and place of refuge; distances from Athens were measured from here."
+  },
+  "tyrannicides": {
+   "title": "Harmodios and Aristogeiton",
+   "epithet": "The Tyrannicides",
+   "text": "The bronze group by Kritios and Nesiotes (477/6) honours the two men who killed the tyrant's brother in 514. When the Persians carried off the first statue, the city simply made a new one."
+  },
+  "se_fountain": {
+   "title": "Κρήνη",
+   "epithet": "South-east fountain house",
+   "text": "Water runs from lion-head spouts into the basin; women and enslaved girls fill their hydriai here at dawn and in the evening."
+  },
+  "lawcourt": {
+   "title": "Δικαστήριον",
+   "epithet": "Law court enclosure",
+   "text": "A walled enclosure probably used by the courts (the identification is debated). Juries of hundreds of citizens over thirty are paid two obols a day."
+  },
+  "horos": {
+   "title": "Ὅρος",
+   "epithet": "Boundary stone",
+   "text": "\"I am the boundary of the Agora\", says the inscribed marble post. Beyond it, people under a curse may not pass."
+  },
+  "simon_shop": {
+   "title": "Σίμων",
+   "epithet": "Simon's shop",
+   "text": "A shoemaker's house and shop at the Agora's edge, where hobnails and a cup inscribed SIMONOS were found. Socrates is said to have sat at his bench."
+  },
+  "eleusinion": {
+   "title": "Ἐλευσίνιον",
+   "epithet": "City Eleusinion",
+   "text": "The city sanctuary of Demeter and Kore on the Panathenaic Way, linked by the Sacred Way to Eleusis and its Mysteries."
+  },
+  "dipylon": {
+   "title": "Δίπυλον",
+   "epithet": "The double gate",
+   "text": "The largest gate of Athens: two gate towers and a deep court. The Panathenaic Way begins here, and the procession sets out at dawn."
+  },
+  "sacred_gate": {
+   "title": "Ἱερὰ Πύλη",
+   "epithet": "The Sacred Gate",
+   "text": "The Sacred Way to Eleusis leaves through this gate, with the Eridanos flowing in its channel beside the road."
+  },
+  "pnyx": {
+   "title": "Πνύξ",
+   "epithet": "The assembly",
+   "text": "Every adult male citizen may come here to speak and vote by a show of hands. The audience sits on the natural slope facing the speakers' platform; perhaps forty meetings a year."
+  },
+  "meton_dial": {
+   "title": "Ἡλιοτρόπιον",
+   "epithet": "Meton's sundial",
+   "text": "Here the astronomer Meton observed the summer solstice of 432 BC and proposed a cycle of 19 years that brings the moon's months back into step with the sun's year."
+  },
+  "theatre": {
+   "title": "Θέατρον Διονύσου",
+   "epithet": "Theatre of Dionysos",
+   "text": "Wooden bleachers on the south slope face a round earth orchestra with an altar and a simple wooden stage. The stone theatre comes a century later. Next spring Euripides will stage the Medea here."
+  },
+  "dionysos_temple": {
+   "title": "Ναὸς Διονύσου",
+   "epithet": "Old temple of Dionysos",
+   "text": "A small poros temple of Dionysos Eleuthereus beside the theatre."
+  },
+  "odeion": {
+   "title": "Ὠιδεῖον",
+   "epithet": "Odeion of Pericles",
+   "text": "A square hall with a forest of columns under a pyramidal roof; Plutarch says it imitated the Persian king's tent. Music contests of the Panathenaia are held here."
+  },
+  "olympieion": {
+   "title": "Ὀλυμπιεῖον",
+   "epithet": "Olympieion foundations",
+   "text": "A huge platform begun by the tyrants in the 6th century and abandoned; column drums lie in the grass. It will not be finished for six hundred years."
+  },
+  "kallirrhoe": {
+   "title": "Καλλιρρόη",
+   "epithet": "The fair-flowing spring",
+   "text": "A spring in the bed of the Ilissos whose water was used for bridal baths."
+  },
+  "lyceum": {
+   "title": "Λύκειον",
+   "epithet": "The Lyceum",
+   "text": "A gymnasium in a grove outside the walls with a running track and a shrine of Apollo Lykeios. Hoplites and cavalry drill here; athletes run and wrestle in the afternoon."
+  },
+  "shipsheds": {
+   "title": "Νεώσοικοι",
+   "epithet": "Ship sheds of Zea",
+   "text": "Long rows of roofed slipways where the triremes are hauled out of the water to dry. Athens has some 300 warships in 431."
+  },
+  "harbour": {
+   "title": "Κάνθαρος",
+   "epithet": "Kantharos and the emporion",
+   "text": "The great harbour of Piraeus: quays, the long stoas of the emporion where merchants deal in grain from the Black Sea and Egypt, moles with towers narrowing the mouth."
+  },
+  "pentelikon_quarry": {
+   "title": "Πεντελικόν",
+   "epithet": "The marble quarry",
+   "text": "Bright white-gold faces cut in steps, wedge slots, a sledge ramp: the Parthenon's marble starts here and goes down to the city on sledges and ox carts."
+  },
+  "pericles": {
+   "title": "Περικλῆς",
+   "epithet": "First citizen",
+   "text": "Elected general year after year, Pericles persuaded the Athenians to rebuild the Acropolis with the allies' tribute. Thucydides wrote that Athens was in name a democracy but in fact ruled by its first man. This summer, Sparta's patience is running out."
+  },
+  "aspasia": {
+   "title": "Ἀσπασία",
+   "epithet": "of Miletus",
+   "text": "A foreign woman of learning and wit, Pericles's partner. Socrates is said to have learned rhetoric from her. Comic poets mocked her; later writers admired her. As a metic, her son by Pericles needed a special vote to become a citizen."
+  },
+  "socrates": {
+   "title": "Σωκράτης",
+   "epithet": "The questioner",
+   "text": "A stonemason's son who walks barefoot in all weather and asks people what courage, justice or beauty really are. He wrote nothing. Soon he will march to Potidaea as a hoplite."
+  },
+  "sophocles": {
+   "title": "Σοφοκλῆς",
+   "epithet": "Tragic poet",
+   "text": "Winner of more drama contests than anyone, and general with Pericles in the war against Samos. His Antigone asks what a citizen owes to the city and to the gods."
+  },
+  "euripides": {
+   "title": "Εὐριπίδης",
+   "epithet": "Tragic poet",
+   "text": "Restless, questioning, fond of books. Next spring he will stage the Medea, a woman's fury against the man who betrayed her. It will come third."
+  },
+  "pheidias": {
+   "title": "Φειδίας",
+   "epithet": "Sculptor",
+   "text": "He made the gold and ivory Athena inside the Parthenon and directed its sculpture. Enemies of Pericles accused him of theft; ancient accounts disagree about when and what happened next. His Zeus at Olympia became a wonder of the world."
+  },
+  "mnesikles": {
+   "title": "Μνησικλῆς",
+   "epithet": "Architect",
+   "text": "His gateway to the Acropolis turns a steep rock into a stately climb. This year the work stops, with the stone bosses for lifting still on the blocks. They are still there today."
+  },
+  "protagoras": {
+   "title": "Πρωταγόρας",
+   "epithet": "Sophist",
+   "text": "'Man is the measure of all things.' The famous teacher from Abdera charges fees to train young men in argument. Plato imagined Socrates debating him here, at the house of Kallias."
+  },
+  "meton": {
+   "title": "Μέτων",
+   "epithet": "Astronomer",
+   "text": "On the Pnyx this summer he marks the solstice and proposes a cycle of 19 years that brings the moon's months back into step with the sun's year."
+  },
+  "alcibiades": {
+   "title": "Ἀλκιβιάδης",
+   "epithet": "Pericles's ward",
+   "text": "Eighteen, rich, beautiful and reckless, and adored by the city. At Potidaea, Socrates will save his life. Later he will betray Athens and return to it, twice."
+  },
+  "solon": {
+   "title": "Σόλων",
+   "epithet": "Lawgiver (a memory)",
+   "text": "Long ago he freed Athenians enslaved for debt and wrote the laws still kept on revolving wooden boards. He wrote poems, too: 'I grow old, always learning many things.'"
+  },
+  "themistocles": {
+   "title": "Θεμιστοκλῆς",
+   "epithet": "Founder of the fleet (a memory)",
+   "text": "He persuaded Athens to spend its silver on ships, won at Salamis and walled Piraeus. Ostracised, he ended his life as a Persian governor. His harbour still hums below him."
+  },
+  "theseus": {
+   "title": "Θησεύς",
+   "epithet": "Founder-hero",
+   "text": "Slayer of the Minotaur, he joined the villages of Attica into a single city. Kimon found his bones on Skyros and brought them home in triumph."
+  },
+  "rhapsode": {
+   "title": "The rhapsode",
+   "epithet": "Singer of Homer",
+   "text": "At the Panathenaia, singers recite the Iliad and Odyssey in turn, by law. Listen, and Achilles' anger and Odysseus' long road home rise in the dusk."
+  },
+  "philinna": {
+   "title": "Philinna",
+   "epithet": "Wool-worker and mother",
+   "text": "Philinna spins wool before sunrise and weaves until noon. Her husband sits on the Council this year. She goes out for water, for festivals and to visit her sister. Her daughter will carry a basket in next year's procession."
+  },
+  "mania": {
+   "title": "Mania",
+   "epithet": "Nurse",
+   "text": "Mania was born in Phrygia and sold at Ephesus as a girl. She has raised two of Philinna's children. Athenian grave stones sometimes honour nurses like her by name, kindly. She hums Phrygian songs to the baby."
+  },
+  "manes": {
+   "title": "Manes",
+   "epithet": "Kiln-man",
+   "text": "Manes knows the kiln's moods: three firings, air in, air out, then in again, and red clay turns black where the painter's slip lies. He has saved some coins; some enslaved craftsmen in Athens worked on their own and paid their master a share."
+  },
+  "kephalos": {
+   "title": "Kephalos",
+   "epithet": "Shield-maker",
+   "text": "Kephalos came from Syracuse at Pericles's invitation and makes shields in Piraeus with more than a hundred workers. Metics like him pay a special tax, serve in the army and cannot own land, but Athens could not run without them."
+  },
+  "sosias": {
+   "title": "Sosias",
+   "epithet": "Charcoal seller",
+   "text": "Sosias walks from Acharnai with two donkeys of oak charcoal. He votes in the assembly when the harvest allows, and grumbles that the city folk talk too much. His charcoal feeds the potters' kilns and the smithies."
+  },
+  "nikarete": {
+   "title": "Nikarete",
+   "epithet": "Bread-seller",
+   "text": "Nikarete sells barley cakes and wheat loaves from a basket in the Agora. Bread-women had a reputation for sharp tongues. She has seen every general of the last thirty years buy her bread, and tells you so."
+  },
+  "toxamis": {
+   "title": "Toxamis",
+   "epithet": "Archer",
+   "text": "Toxamis is one of the city's Scythian archers: public slaves who keep order in the assembly and the courts. On assembly mornings they sweep the Agora with a rope dyed red, and anyone marked with red paint loses their pay."
+  },
+  "euphiletos": {
+   "title": "Euphiletos",
+   "epithet": "Farmer",
+   "text": "Euphiletos tends olives and vines outside the walls and brings his oil to the city. In a war he would serve as a hoplite. Tonight he will sleep in the city to see the procession at dawn."
+  },
+  "hegeso": {
+   "title": "Hegeso",
+   "epithet": "Girl",
+   "text": "Hegeso is eleven. Girls her age weave the new robe for Athena with the priestesses, and a few of good family carry baskets in the procession. She practises walking with a basket on her head, very straight."
+  },
+  "simon": {
+   "title": "Simon",
+   "epithet": "Shoemaker",
+   "text": "Simon makes sandals at the corner of the Agora. Ancient writers said Socrates often sat at his bench to talk with young men too young to enter the Agora. The hobnails and his cup were found by archaeologists."
+  }
+ },
+ "strings": {
+  "first_visit": "Hekatombaion, 432 BC. The Parthenon is finished, the Propylaia has just stopped, and at dawn the procession leaves the Dipylon for the rock.",
+  "procession": "The Panathenaic procession has left the Dipylon.",
+  "assembly": "The archers sweep the Agora with the red rope: the assembly meets on the Pnyx.",
+  "embark": "Hoplites march down between the Long Walls to the ships for Potidaea.",
+  "decorate_zone": "A courtyard house in Melite, with a garden to furnish."
+ },
+ "decorate": {
+  "rect": [
+   286,
+   659,
+   296,
+   669
+  ]
+ },
+ "journal": [
+  "landmark:*",
+  "figure:*",
+  "chain:*",
+  "event:panathenaic_procession"
+ ]
+}

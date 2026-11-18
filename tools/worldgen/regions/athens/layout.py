@@ -453,6 +453,12 @@ def _ways(L: Layout, lv) -> dict:
     st("piraeus", [(20, 133), (20, 150)], 2, EARTH)                  # down to the Kantharos quay
     st("piraeus", [(36, 140), (40, 140), (40, 152), (50, 152)], 1, EARTH)
     st("piraeus", [(51, 146), (53, 146)], 1, ROCK)                   # Mounychia's summit
+    # Sea lanes: from the Kantharos quay, the Zea sheds and the Mounychia landing out through
+    # each mouth; Kantharos' lane ends where the plan's Saronic and Aegean lanes begin.
+    L.lane("kantharos", [(11, 152), (11, 156), (12, 159)], kind="sea",
+           ports={"quay": 0, "piraeus": 2})
+    L.lane("zea", [(31, 148), (31, 152), (30, 159)], kind="sea", ports={"sheds": 0, "zea_mouth": 2})
+    L.lane("mounychia", [(51, 154), (51, 159)], kind="sea", ports={"landing": 0, "mouth": 1})
     return W
 
 
@@ -1022,11 +1028,53 @@ def _grove(L: Layout, shape, seed: str, item: str = A + "t_olive", step=(3, 2)) 
                 put(L, item, at, variant=int(h >> 16) % 3)
 
 
+def _track(L: Layout, starts, reach: int = 30):
+    """A farm track: the shortest way over free ground of one level from `starts` to the
+    nearest street, laid as an earth track (nothing when no street is within reach)."""
+    from collections import deque
+    starts = [t for t in starts if 0 <= t[0] < N and 0 <= t[1] < N and L.OCC[t[1], t[0]] < 0
+              and L.T[t[1], t[0]] >= 0 and not L.cat.is_water(L.terrains[L.T[t[1], t[0]]])]
+    if not starts:
+        return None
+    lvl = L.LV[starts[0][1], starts[0][0]]
+    prev = {t: None for t in starts}
+    q = deque((t, 0) for t in starts)
+    while q:
+        t, d = q.popleft()
+        if L.STREET[t[1], t[0]]:
+            path = [t]
+            while prev[path[-1]] is not None:
+                path.append(prev[path[-1]])
+            if len(path) < 2:
+                return None
+            return L.street(_corners(path[::-1]), width=1, paving=EARTH, kind="track")
+        if d >= reach:
+            continue
+        for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            n = (t[0] + dc, t[1] + dr)
+            if not (0 <= n[0] < N and 0 <= n[1] < N) or n in prev:
+                continue
+            if L.LV[n[1], n[0]] != lvl or L.OCC[n[1], n[0]] >= 0 or L.IMP[n[1], n[0]]:
+                continue
+            if L.T[n[1], n[0]] < 0 or L.cat.is_water(L.terrains[L.T[n[1], n[0]]]):
+                continue
+            prev[n] = t
+            q.append((n, d + 1))
+    return None
+
+
 def _farm(L: Layout, at, face: str, seed: str) -> None:
-    """An Attic farm: the farmstead with its tower, a threshing floor on the open ground beside
-    it, an olive press under its wall, jars."""
+    """An Attic farm: the farmstead with its tower, a track to the nearest road, a threshing
+    floor on the open ground beside it, an olive press under its wall, jars."""
     c, r = at
-    if put(L, A + "g_farmstead", at, face=face) is None:
+    p = put(L, A + "g_farmstead", at, face=face)
+    if p is None:
+        return
+    door = (p.door[0] - L.origin[0], p.door[1] - L.origin[1])
+    own = {(x - L.origin[0], y - L.origin[1]) for x, y in p.tiles()}
+    if _track(L, [(door[0] + a, door[1] + b) for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                  if (door[0] + a, door[1] + b) not in own]) is None:
+        L.remove(p)
         return
     st = rng.stream("athens", "farm", seed)
     # The threshing floor is flat ground that people and animals work on; it goes in once the
@@ -1045,8 +1093,6 @@ def _farm(L: Layout, at, face: str, seed: str) -> None:
 def _country(L: Layout, inside, noise) -> None:
     out = ~inside
     # --- north of the wall: fields and olive rows, a few farms -------------------------------
-    for i, c in enumerate(range(48, 132, 14)):
-        _farm(L, (c, 1), "south", f"north{i}")
     L.fields(Rect(36, 0, 135, 4) - Rect(38, 0, 44, 4), STUBBLE, plot=(6, 2), path=EARTH,
              seed="north_fields")
     _grove(L, Rect(52, 0, 70, 4) | Rect(96, 0, 108, 4), "north_olives", step=(3, 2))
@@ -1065,7 +1111,8 @@ def _country(L: Layout, inside, noise) -> None:
     # --- south of the wall: farms, fields, olive groves down the Ilissos, vineyards ----------
     south = Mask(0, 0, out & _m(Rect(39, 139, 159, 159)) & ~_m(Line(ILISSOS, 7))
                  & ~_m(MOUNYCHIA_HILL) & (L.LV == 0))
-    for i, at in enumerate(((66, 141), (92, 143), (104, 150), (72, 154), (88, 153))):
+    for i, at in enumerate(((66, 141), (92, 143), (104, 150), (72, 154), (88, 153), (140, 152),
+                            (152, 145), (122, 153))):
         _farm(L, at, "north" if i % 2 else "west", f"south{i}")
     L.fields(south & Rect(58, 139, 100, 148), STUBBLE, plot=(5, 3), path=EARTH, seed="south_f")
     _grove(L, south & Rect(60, 149, 110, 159), "south_olives")
