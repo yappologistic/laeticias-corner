@@ -50,6 +50,15 @@ bool Blur::begin(Vec2 screen, float radius) {
     return true;
 }
 
+std::size_t Blur::bytes() const {
+    std::size_t total = 0;
+    for (int i = 0; i < count_; ++i) {
+        const auto k = static_cast<std::size_t>(1) << (count_ - 1 - i);
+        total += static_cast<std::size_t>(baseW_) * k * static_cast<std::size_t>(baseH_) * k * 4;
+    }
+    return total;
+}
+
 void Blur::pass(int from, int to) {
     SDL_Texture* src = levels_[static_cast<std::size_t>(from)].get();
     SDL_Texture* dst = levels_[static_cast<std::size_t>(to)].get();

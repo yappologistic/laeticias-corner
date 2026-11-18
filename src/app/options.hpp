@@ -31,6 +31,10 @@ struct Options {
     float density = 0.5f;    // bench: share of tiles filled around the camera
     double budgetMs = 0;     // bench: fail when update + draw averages more than this
     double soak = 0;         // seconds of play to run checking that memory stays flat (0: no)
+    std::optional<std::filesystem::path> perfLog; // per-frame timings and counters as CSV
+    bool gpuSync = false;   // wait for the GPU each frame to time it (the profiler's GPU line)
+    bool benchmark = false; // the windowed tour a person runs (never from automation)
+    bool frontDoor = false; // headless runs start in the world unless this asks for the title
     bool help = false;
 };
 

@@ -26,7 +26,7 @@ int fitLevel(WorldBounds box, SafeArea safe) {
 Camera::Camera(Iso iso, TileRect land, float cliffDepth)
     : iso_(iso), land_(land), cliffDepth_(cliffDepth) {
     const WorldBounds b = landBox(iso_, land_, cliffDepth_);
-    pos_ = target_ = {(b.x0 + b.x1) * 0.5f, (b.y0 + b.y1) * 0.5f};
+    pos_ = target_ = prevPos_ = {(b.x0 + b.x1) * 0.5f, (b.y0 + b.y1) * 0.5f};
 }
 
 void Camera::setLand(TileRect land, float cliffDepth) {
@@ -50,10 +50,19 @@ void Camera::clamp(Vec2& p, Vec2 screen, float scale) const {
     p = iso_.toWorld(t.x, t.y);
 }
 
+Camera Camera::interpolated(float alpha) const {
+    if (alpha >= 1.0f) return *this;
+    Camera c = *this;
+    c.pos_ = {prevPos_.x + (pos_.x - prevPos_.x) * alpha,
+              prevPos_.y + (pos_.y - prevPos_.y) * alpha};
+    c.scale_ = std::exp(std::log(prevScale_) + (std::log(scale_) - std::log(prevScale_)) * alpha);
+    return c;
+}
+
 void Camera::update(float dt, Vec2 screen) {
     if (scale_ != zoom()) {
         // Ease in log space so every level change feels the same, keeping the anchor in place.
-        const float k = 1.0f - std::exp(-tuning::kZoomEase * dt);
+        const float k = easing_ ? 1.0f - std::exp(-tuning::kZoomEase * dt) : 1.0f;
         const float a = std::log(scale_);
         const float b = std::log(zoom());
         scale_ = std::abs(b - a) < 0.002f ? zoom() : std::exp(a + (b - a) * k);
@@ -63,7 +72,7 @@ void Camera::update(float dt, Vec2 screen) {
         target_ = pos_;
         return;
     }
-    const float k = 1.0f - std::exp(-tuning::kCameraEase * dt);
+    const float k = easing_ ? 1.0f - std::exp(-tuning::kCameraEase * dt) : 1.0f;
     clamp(target_, screen, scale_);
     pos_.x += (target_.x - pos_.x) * k;
     pos_.y += (target_.y - pos_.y) * k;
@@ -82,7 +91,8 @@ void Camera::frame(SafeArea safe, Vec2 screen, TileRect focus) {
     pos_ = target_ = {centre.x - (safeCentre.x - screen.x * 0.5f) / scale_,
                       centre.y - (safeCentre.y - screen.y * 0.5f) / scale_};
     clamp(pos_, screen, scale_);
-    target_ = pos_;
+    target_ = prevPos_ = pos_;
+    prevScale_ = scale_;
 }
 
 void Camera::place(Vec2 world, float zoom, Vec2 screen) {
@@ -94,7 +104,8 @@ void Camera::place(Vec2 world, float zoom, Vec2 screen) {
     scale_ = this->zoom();
     pos_ = world;
     clamp(pos_, screen, scale_);
-    target_ = pos_;
+    target_ = prevPos_ = pos_;
+    prevScale_ = scale_;
 }
 
 void Camera::panTo(Vec2 world, Vec2 screen) {
@@ -105,6 +116,9 @@ void Camera::panTo(Vec2 world, Vec2 screen) {
 void Camera::dragBy(Vec2 d, Vec2 screen) {
     target_ = {target_.x - d.x / scale_, target_.y - d.y / scale_};
     clamp(target_, screen, scale_);
+    // The hand moves the view at once: the last step's view moves with it, so no smoothing lags
+    // behind the pointer.
+    prevPos_ = {prevPos_.x + target_.x - pos_.x, prevPos_.y + target_.y - pos_.y};
     pos_ = target_;
     anchorWorld_ = {anchorWorld_.x - d.x / scale_, anchorWorld_.y - d.y / scale_};
 }

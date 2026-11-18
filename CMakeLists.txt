@@ -29,6 +29,7 @@ add_library(lc_core STATIC
   src/core/land.cpp
   src/core/notes.cpp
   src/core/path.cpp
+  src/core/perf.cpp
   src/core/progress.cpp
   src/core/progression.cpp
   src/core/save.cpp
@@ -37,6 +38,7 @@ add_library(lc_core STATIC
   src/core/visitors.cpp
   src/core/weather.cpp
   src/core/world.cpp
+  src/core/writer.cpp
 )
 target_include_directories(lc_core PUBLIC src)
 target_link_libraries(lc_core PUBLIC nlohmann_json::nlohmann_json)
@@ -50,6 +52,7 @@ add_library(lc_engine STATIC
   src/app/app_script.cpp
   src/app/app_bench.cpp
   src/app/app_life.cpp
+  src/app/app_perf.cpp
   src/app/window_state.cpp
   src/audio/mixer.cpp
   src/audio/decode.cpp
@@ -67,6 +70,7 @@ add_library(lc_engine STATIC
   src/ui/font.cpp
   src/ui/hud.cpp
   src/ui/painter.cpp
+  src/ui/profiler.cpp
 )
 target_link_libraries(lc_engine PUBLIC lc_core SDL3::SDL3 PRIVATE lc_stb)
 target_compile_definitions(lc_engine PUBLIC LC_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")

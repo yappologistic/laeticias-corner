@@ -14,6 +14,7 @@
 #include "core/events.hpp"
 #include "core/lively.hpp"
 #include "core/notes.hpp"
+#include "core/perf.hpp"
 #include "core/progress.hpp"
 #include "core/progression.hpp"
 #include "core/rng.hpp"
@@ -23,6 +24,7 @@
 #include "core/visitors.hpp"
 #include "core/weather.hpp"
 #include "core/world.hpp"
+#include "core/writer.hpp"
 #include "platform/batch.hpp"
 #include "platform/sdl_ptr.hpp"
 #include "render/atlas.hpp"
@@ -31,7 +33,9 @@
 #include "render/scene.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+#include "ui/profiler.hpp"
 
+#include <cstdio>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -48,6 +52,11 @@ namespace fs = std::filesystem;
 inline constexpr int kExitBadScript = 2;
 inline constexpr int kExitOverBudget = 3;
 inline constexpr int kExitNoRenderer = 77; // ctest treats it as "skipped"
+
+// Milliseconds between two performance-counter readings.
+[[nodiscard]] double msBetween(Uint64 a, Uint64 b);
+// This process's resident memory in MiB (Linux; 0 elsewhere), and its peak.
+[[nodiscard]] std::pair<double, double> processMemory();
 
 // Files under the save directory (docs/design/living-corner.md §2.2).
 inline constexpr std::string_view kWorldsDir = "worlds";
@@ -70,7 +79,12 @@ private:
     void startNewWorld(std::vector<std::string> taken);
     void adopt(SaveData& data);
     bool loadWorld(const fs::path& file);
-    bool save();
+    // Saves the world (and the profile when it changed). Written in the background unless
+    // `wait`; failures are reported by pollSaves().
+    bool save(bool wait = false);
+    void saveFailed(const std::string& why);
+    // Collects the writer's outcomes; false while saving fails.
+    bool pollSaves();
     [[nodiscard]] fs::path worldDir() const { return saveDir_ / kWorldsDir / slug_; }
     // Renders the open home region into a small image beside the world save.
     bool writeThumbnail();
@@ -86,6 +100,8 @@ private:
     void zoomBy(int steps, Vec2 px);
     void undoRedo(bool redo);
     void updateAudio();
+    // Capture mode: mixes `steps` simulation steps of sound into capture_.
+    void captureAudio(int steps);
     void play(std::string_view file, float gain = tuning::kSfxLevel, bool jitter = false);
     void feedback(std::span<const Op> ops);
     void setTool(Tool t, int selection);
@@ -102,6 +118,8 @@ private:
     // Opens the next land stage; with `wave`, the brambles clear visibly and a chip points the
     // way when it is out of sight.
     void openLand(int stage, bool wave);
+    // Limits the camera to the open land and a margin around it (QA2 design 4).
+    void fitCameraLand();
     [[nodiscard]] int pages() const;
     // Seasons: the effective one (pinned or from the calendar), its grade gliding in, and the
     // lighting with that grade applied.
@@ -162,8 +180,16 @@ private:
     std::optional<std::string> check(const ScriptCommand& c);
     bool shot(const fs::path& file);
 
+    // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
+    // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
+    void prepareView();
+    void recordFrame(FrameSample& s);
+    [[nodiscard]] double syncGpu(Uint64 frameStart);
+
     // Benchmark (app_bench.cpp)
     int runBench();
+    // One frame of the bench, timed whole (with the GPU waited for).
+    FrameSample benchFrame();
     void fillBenchWorld();
     // The soak run: busy play for opts_.soak seconds, memory checked to stay flat.
     int runSoak();
@@ -261,6 +287,10 @@ private:
     float retireAt_ = 0;      // when to try that again after a failed write
     bool welcomePending_ = false;
     Camera camera_;
+    Camera view_;                   // the camera as this frame draws it (between steps)
+    float alpha_ = 1;               // how far this frame lies from the last step toward the next
+    std::vector<Vec2> actorPrev_;   // every actor's position at the last step
+    std::vector<Actor> drawActors_; // the actors as this frame draws them
 
     WindowPtr window_;
     RendererPtr renderer_;
@@ -278,6 +308,19 @@ private:
     float density_ = 1;
     float uiScale_ = 1;
     WindowState windowState_;
+    bool hidden_ = false; // minimised or hidden: nothing is drawn and the corner waits
+
+    // Profiling
+    PerfRing perf_;
+    Profiler profiler_;
+    bool profilerOn_ = false;
+    double sceneMs_ = 0;   // building and queuing the world's draws, last frame
+    double hudDrawMs_ = 0; // drawing the interface, last frame
+    struct FileCloser {
+        void operator()(std::FILE* f) const { (void)std::fclose(f); }
+    };
+    std::unique_ptr<std::FILE, FileCloser> perfLog_;
+    std::int64_t perfFrames_ = 0;
 
     // Input
     Vec2 mouse_;
@@ -317,6 +360,7 @@ private:
     // Time and saving
     float simTime_ = 0;
     AutosaveClock autosave_;
+    FileWriter writer_;
     bool saveFailing_ = false;
     bool saveBlocked_ = false; // an unreadable save could not be moved aside: never overwrite it
     bool newerSave_ = false;   // the world to open came from a newer build and was left alone

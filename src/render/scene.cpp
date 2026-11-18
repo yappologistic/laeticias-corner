@@ -1203,6 +1203,7 @@ SceneStats Scene::stats() const {
         st.targetBytes += static_cast<std::size_t>(t->w) * static_cast<std::size_t>(t->h) * 4;
     st.groundBytes = ground_->bytes();
     st.groundSlotsRendered = ground_->slotsRendered();
+    st.groundChunksCached = ground_->chunksCached();
     return st;
 }
 

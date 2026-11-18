@@ -166,6 +166,23 @@ void Mixer::setLoopPan(int loop, float pan) {
 void SDLCALL Mixer::callback(void* self, SDL_AudioStream* stream, int additional, int /*total*/) {
     auto& m = *static_cast<Mixer*>(self);
     int frames = additional / static_cast<int>(2 * sizeof(float));
+    if (frames <= 0) return;
+    const Uint64 t0 = SDL_GetPerformanceCounter();
+    const int asked = frames;
+    // Measured for the profiler: mixing time over the time the mixed audio lasts.
+    struct Load {
+        Mixer& m;
+        Uint64 t0;
+        int frames;
+        ~Load() {
+            const double spent = static_cast<double>(SDL_GetPerformanceCounter() - t0) /
+                                 static_cast<double>(SDL_GetPerformanceFrequency());
+            const double lasts = static_cast<double>(frames) / kMixRate;
+            const float now = static_cast<float>(spent / lasts);
+            const float old = m.load_.load(std::memory_order_relaxed);
+            m.load_.store(old + (now - old) * 0.1f, std::memory_order_relaxed);
+        }
+    } load{m, t0, asked};
     while (frames > 0) {
         const int n = std::min(frames, kChunk);
         m.mix(m.mixBuf_.data(), n);

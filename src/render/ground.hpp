@@ -38,6 +38,8 @@ public:
     void invalidate();
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] int slotsRendered() const { return rendered_; }
+    // Chunks held in the cache now.
+    [[nodiscard]] int chunksCached() const { return static_cast<int>(byKey_.size()); }
     // Chunk side in tiles at a level (0: native resolution, 1: overview).
     [[nodiscard]] static int chunkTiles(int level) { return kBaseChunk << level; }
 

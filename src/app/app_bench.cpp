@@ -18,40 +18,22 @@ constexpr int kLakeSide = 12;
 constexpr int kWarmup = 30;
 constexpr float kPanPxPerFrame = 6.0f; // the second half of each phase pans
 
-struct Series {
-    std::vector<double> samples;
-    void add(double ms) { samples.push_back(ms); }
-    [[nodiscard]] double avg() const {
-        double s = 0;
-        for (const double v : samples) s += v;
-        return samples.empty() ? 0 : s / static_cast<double>(samples.size());
-    }
-    [[nodiscard]] double pct(double p) const {
-        if (samples.empty()) return 0;
-        std::vector<double> v = samples;
-        const auto k = static_cast<std::size_t>(p * static_cast<double>(v.size() - 1));
-        std::ranges::nth_element(v, v.begin() + static_cast<std::ptrdiff_t>(k));
-        return v[k];
-    }
-    [[nodiscard]] double max() const {
-        return samples.empty() ? 0 : *std::ranges::max_element(samples);
+// A case's frames, and the statistics of one measure over them.
+struct Frames {
+    std::vector<FrameSample> all;
+    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
+        std::vector<float> v;
+        v.reserve(all.size());
+        for (const FrameSample& f : all)
+            if (f.*field >= 0) v.push_back(f.*field);
+        return perfStats(v);
     }
 };
 
-// Resident and peak memory of this process in MiB (Linux; 0 elsewhere).
-std::pair<double, double> processMemory() {
-    std::ifstream in("/proc/self/status");
-    double rss = 0;
-    double peak = 0;
-    for (std::string line; std::getline(in, line);) {
-        const auto field = [&](const char* key, double& out) {
-            if (line.starts_with(key))
-                out = std::stod(line.substr(std::string_view(key).size())) / 1024.0;
-        };
-        field("VmRSS:", rss);
-        field("VmHWM:", peak);
-    }
-    return {rss, peak};
+void report(const char* name, const char* what, const PerfStats& s) {
+    std::printf("bench: %s: %-12s avg %.3f p95 %.3f p99 %.3f worst %.3f ms\n", name, what,
+                static_cast<double>(s.avg), static_cast<double>(s.p95), static_cast<double>(s.p99),
+                static_cast<double>(s.worst));
 }
 
 } // namespace
@@ -87,6 +69,38 @@ void App::fillBenchWorld() {
     }
 }
 
+FrameSample App::benchFrame() {
+    // The same work as a frame of play (a step, the interface, the scene, presentation), timed
+    // whole: the GPU is waited for before presenting, so the frame's time includes its drawing.
+    const Uint64 t0 = SDL_GetPerformanceCounter();
+    step(static_cast<float>(tuning::kStepSeconds));
+    alpha_ = 1;
+    prepareView();
+    ui_ = model();
+    hud_.update({}, ui_, font_, screen(), uiScale_, static_cast<float>(tuning::kStepSeconds));
+    const Uint64 tUpdate = SDL_GetPerformanceCounter();
+    render();
+    const Uint64 tSubmit = SDL_GetPerformanceCounter();
+    FrameSample f;
+    f.gpuMs = static_cast<float>(syncGpu(t0));
+    const Uint64 tPresent = SDL_GetPerformanceCounter();
+    if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
+    const Uint64 t1 = SDL_GetPerformanceCounter();
+    f.frameMs = static_cast<float>(msBetween(t0, t1));
+    f.cpuMs = static_cast<float>(msBetween(t0, tSubmit));
+    f.simMs = static_cast<float>(actorMs_ + lifeMs_ + progressMs_);
+    f.condMs = static_cast<float>(progressMs_);
+    f.uiMs = static_cast<float>(msBetween(t0, tUpdate)); // the update half: step and interface
+    f.sceneMs = static_cast<float>(msBetween(tUpdate, tSubmit)); // the draw submission half
+    f.presentMs = static_cast<float>(msBetween(tPresent, t1));
+    f.drawCalls = scene_->drawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
+    uiBatch_->resetStats();
+    f.actorsLive = static_cast<int>(std::ranges::count_if(
+        actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; }));
+    f.steps = 1;
+    return f;
+}
+
 int App::runBench() {
     fillBenchWorld();
     clock_.setPin(ClockPin::Night, true);
@@ -94,21 +108,22 @@ int App::runBench() {
     drawerOpen_ = true;
     journalOpen_ = true;
     camera_.setLand(world_.landBounds(), scene_->cliffDepth());
-    const auto ms = [](Uint64 a, Uint64 b) {
-        return static_cast<double>(b - a) * 1000.0 /
-               static_cast<double>(SDL_GetPerformanceFrequency());
-    };
     const int frames = opts_.frames > 0 ? opts_.frames : 600;
     std::printf("bench: map %dx%d, %zu items, %dx%d px, %s renderer, density %.2f near\n",
                 world_.width(), world_.height(), world_.items().size(), pixelW_, pixelH_,
                 SDL_GetRendererName(renderer_.get()), static_cast<double>(opts_.density));
+    const bool judge = opts_.budgetMs > 0;
     bool over = false;
+    const auto fail = [&](const char* what) {
+        std::printf("bench: over budget: %s\n", what);
+        over = true;
+    };
     {
         // Every condition the progress loop knows, evaluated over the filled map at once (the
         // worst case: in play only open wishes and changed facts are looked at).
         const CondFacts f = facts();
         const ConditionSet& cs = cat_.conditions;
-        Series cond;
+        std::vector<float> cond;
         int holding = 0;
         for (int i = 0; i < 40; ++i) {
             holding = 0;
@@ -121,86 +136,86 @@ int App::runBench() {
             for (const VisitorDef& v : cat_.visitors)
                 if (v.recipe >= 0) holding += cs.eval(v.recipe, world_, f) ? 1 : 0;
             for (const auto* piece : {&cat_.audio.dayStems, &cat_.audio.nightStems})
-                for (const StemDef& s : *piece)
-                    if (s.when >= 0) holding += cs.eval(s.when, world_, f) ? 1 : 0;
-            cond.add(ms(t0, SDL_GetPerformanceCounter()));
+                for (const StemDef& st : *piece)
+                    if (st.when >= 0) holding += cs.eval(st.when, world_, f) ? 1 : 0;
+            cond.push_back(static_cast<float>(msBetween(t0, SDL_GetPerformanceCounter())));
         }
-        std::printf("bench: conditions: every wish, gate, nook, recipe and stem: avg %.3f max %.3f "
-                    "ms (%d hold)\n",
-                    cond.avg(), cond.max(), holding);
-        if (opts_.budgetMs > 0 && cond.avg() > tuning::kConditionBudgetMs) {
-            std::printf("bench: conditions are over the %.2f ms budget\n",
-                        tuning::kConditionBudgetMs);
-            over = true;
-        }
+        const PerfStats c = perfStats(cond);
+        std::printf("bench: conditions: every wish, gate, nook, recipe and stem: avg %.3f worst "
+                    "%.3f ms (%d hold)\n",
+                    static_cast<double>(c.avg), static_cast<double>(c.worst), holding);
+        if (judge && c.avg > tuning::kConditionBudgetMs) fail("conditions");
     }
-    for (const int level : {kDefaultZoomLevel, kDefaultZoomLevel - 1}) {
-        // Centre the camera on the built-up middle at this level.
-        const Vec2 mid = cat_.iso().toWorld(static_cast<float>(world_.width()) * 0.5f,
-                                            static_cast<float>(world_.height()) * 0.5f);
-        const Vec2 here = camera_.worldToScreen(mid, screen());
-        camera_.dragBy({screen().x * 0.5f - here.x, screen().y * 0.5f - here.y}, screen());
-        camera_.zoomTo(level, {screen().x * 0.5f, screen().y * 0.5f}, screen());
-        for (int i = 0; i < 120 && !camera_.settled(); ++i)
-            camera_.update(static_cast<float>(tuning::kStepSeconds), screen());
-        actors_.populate(actorEnv());
-        Series upd;
-        Series drw;
-        Series pan;
-        Series act;
-        int calls = 0;
-        int slots = 0;
-        for (int f = 0; f < kWarmup + frames; ++f) {
-            const bool panning = f >= kWarmup + frames / 2;
-            if (panning) camera_.dragBy({kPanPxPerFrame, kPanPxPerFrame * 0.5f}, screen());
-            const Uint64 t0 = SDL_GetPerformanceCounter();
-            step(static_cast<float>(tuning::kStepSeconds));
-            ui_ = model();
-            hud_.update({}, ui_, font_, screen(), uiScale_,
-                        static_cast<float>(tuning::kStepSeconds));
-            const Uint64 t1 = SDL_GetPerformanceCounter();
-            render();
-            const Uint64 t2 = SDL_GetPerformanceCounter();
-            calls = scene_->drawCalls() + blur_->drawCalls() + uiBatch_->drawCalls();
-            uiBatch_->resetStats();
-            if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
-            if (f < kWarmup) continue;
-            slots += scene_->stats().groundSlotsRendered;
-            upd.add(ms(t0, t1));
-            drw.add(ms(t1, t2));
-            act.add(actorMs_);
-            if (panning) pan.add(ms(t0, t2));
-        }
-        const SceneStats st = scene_->stats();
+    // One case: its frames timed, reported and held to the budgets of CLAUDE.md (whole frame
+    // 99th percentile and worst; the CPU's update and draw submission on average).
+    // Returns false when only the worst frame was over: a lone frame on a busy machine can be
+    // the scheduler's, so the caller measures that case once more before calling it a failure.
+    const auto judgeCase = [&](const char* name, const Frames& fr, bool last) {
+        const PerfStats whole = fr.of(&FrameSample::frameMs);
+        const PerfStats cpu = fr.of(&FrameSample::cpuMs);
+        report(name, "whole frame", whole);
+        report(name, "gpu done", fr.of(&FrameSample::gpuMs));
+        report(name, "cpu", cpu);
+        report(name, "update", fr.of(&FrameSample::uiMs));
+        report(name, "draw submit", fr.of(&FrameSample::sceneMs));
+        report(name, "simulation", fr.of(&FrameSample::simMs));
         const auto [rss, peak] = processMemory();
-        const double total = upd.avg() + drw.avg();
-        std::printf(
-            "bench: zoom %g: %zu actors, %zu items in region, %zu drawn, %d draw calls, "
-            "%d ground chunks redrawn\n",
-            static_cast<double>(camera_.zoom()),
-            static_cast<std::size_t>(std::ranges::count_if(
-                actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; })),
-            st.regionItems, st.drawnItems, calls, slots);
-        std::printf(
-            "bench: zoom %g: update avg %.3f p95 %.3f max %.3f ms (actors avg %.3f p95 %.3f)\n",
-            static_cast<double>(camera_.zoom()), upd.avg(), upd.pct(0.95), upd.max(), act.avg(),
-            act.pct(0.95));
-        std::printf("bench: zoom %g: draw   avg %.3f p95 %.3f max %.3f ms\n",
-                    static_cast<double>(camera_.zoom()), drw.avg(), drw.pct(0.95), drw.max());
-        std::printf("bench: zoom %g: total  avg %.3f ms (panning avg %.3f p95 %.3f ms)\n",
-                    static_cast<double>(camera_.zoom()), total, pan.avg(), pan.pct(0.95));
-        std::printf("bench: zoom %g: memory rss %.0f MiB, peak %.0f MiB; textures: atlas %.0f, "
-                    "targets %.0f, ground cache %.0f MiB\n",
-                    static_cast<double>(camera_.zoom()), rss, peak,
-                    static_cast<double>(atlas_->textureBytes()) / 1048576.0,
-                    static_cast<double>(st.targetBytes) / 1048576.0,
-                    static_cast<double>(st.groundBytes) / 1048576.0);
-        if (opts_.budgetMs > 0 && total > opts_.budgetMs) {
-            std::printf("bench: zoom %g is over the %.2f ms budget\n",
-                        static_cast<double>(camera_.zoom()), opts_.budgetMs);
-            over = true;
+        std::printf("bench: %s: memory rss %.0f MiB, peak %.0f MiB (ceiling %.0f at 1080p)\n", name,
+                    rss, peak, tuning::kBenchMemoryMiB);
+        if (!judge) return true;
+        if (cpu.avg > opts_.budgetMs || whole.p99 > tuning::kFrameP99Ms) fail(name);
+        if (whole.worst <= tuning::kFrameWorstMs) return true;
+        if (last) {
+            fail(name);
+            return true;
         }
-    }
+        std::printf("bench: %s: one frame over %.1f ms; measuring again\n", name,
+                    tuning::kFrameWorstMs);
+        return false;
+    };
+    const auto warm = [&] {
+        for (int f = 0; f < kWarmup; ++f) (void)benchFrame();
+    };
+    for (const int level : {kDefaultZoomLevel, kDefaultZoomLevel - 1})
+        for (int attempt = 0; attempt < 2; ++attempt) {
+            // Centre the camera on the built-up middle at this level.
+            const Vec2 mid = cat_.iso().toWorld(static_cast<float>(world_.width()) * 0.5f,
+                                                static_cast<float>(world_.height()) * 0.5f);
+            const Vec2 here = camera_.worldToScreen(mid, screen());
+            camera_.dragBy({screen().x * 0.5f - here.x, screen().y * 0.5f - here.y}, screen());
+            camera_.zoomTo(level, {screen().x * 0.5f, screen().y * 0.5f}, screen());
+            for (int i = 0; i < 120 && !camera_.settled(); ++i)
+                camera_.update(static_cast<float>(tuning::kStepSeconds), screen());
+            actors_.populate(actorEnv());
+            warm();
+            Frames still;
+            Frames pan;
+            int slots = 0;
+            for (int f = 0; f < frames; ++f) {
+                const bool panning = f >= frames / 2;
+                if (panning) camera_.dragBy({kPanPxPerFrame, kPanPxPerFrame * 0.5f}, screen());
+                const FrameSample s = benchFrame();
+                (panning ? pan : still).all.push_back(s);
+                slots += scene_->stats().groundSlotsRendered;
+            }
+            const SceneStats st = scene_->stats();
+            char name[32];
+            (void)std::snprintf(name, sizeof name, "zoom %g", static_cast<double>(camera_.zoom()));
+            std::printf(
+                "bench: %s: %d actors, %zu items in region, %zu drawn, %d draw calls, %d "
+                "ground chunks redrawn; textures: atlas %.0f, targets %.0f, ground cache %.0f, "
+                "blur %.0f MiB\n",
+                name, pan.all.back().actorsLive, st.regionItems, st.drawnItems,
+                pan.all.back().drawCalls, slots,
+                static_cast<double>(atlas_->textureBytes()) / 1048576.0,
+                static_cast<double>(st.targetBytes) / 1048576.0,
+                static_cast<double>(st.groundBytes) / 1048576.0,
+                static_cast<double>(blur_->bytes()) / 1048576.0);
+            Frames all = still;
+            all.all.insert(all.all.end(), pan.all.begin(), pan.all.end());
+            report(name, "panning", pan.of(&FrameSample::frameMs));
+            if (judgeCase(name, all, attempt == 1)) break;
+        }
     // A busy corner: every visitor kind seen and allowed, at its full number; then a crowd of
     // kBenchCrowd actors. The actor update is timed on its own against its share of the frame.
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
@@ -209,60 +224,45 @@ int App::runBench() {
     }
     clock_.setPin(ClockPin::Day, true);
     weather_.setMode(WeatherMode::Natural);
-    for (const int crowd : {0, tuning::kBenchCrowd}) {
-        actors_.populate(actorEnv());
-        if (crowd > 0)
-            actors_.crowd(actorEnv(), crowd - static_cast<int>(std::ranges::count_if(
-                                                  actors_.all(), [](const Actor& a) {
-                                                      return (a.flags & actor_flag::kAlive) != 0;
-                                                  })));
-        Series act;
-        Series sim;
-        Series frame;
-        for (int f = 0; f < kWarmup + frames; ++f) {
-            const Uint64 t0 = SDL_GetPerformanceCounter();
-            step(static_cast<float>(tuning::kStepSeconds));
-            ui_ = model();
-            hud_.update({}, ui_, font_, screen(), uiScale_,
-                        static_cast<float>(tuning::kStepSeconds));
-            render();
-            const Uint64 t1 = SDL_GetPerformanceCounter();
-            if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
-            if (f < kWarmup) continue;
-            act.add(actorMs_);
-            sim.add(actorMs_ + lifeMs_ + progressMs_);
-            frame.add(ms(t0, t1));
+    for (const int crowd : {0, tuning::kBenchCrowd})
+        for (int attempt = 0; attempt < 2; ++attempt) {
+            actors_.populate(actorEnv());
+            if (crowd > 0)
+                actors_.crowd(actorEnv(),
+                              crowd - static_cast<int>(
+                                          std::ranges::count_if(actors_.all(), [](const Actor& a) {
+                                              return (a.flags & actor_flag::kAlive) != 0;
+                                          })));
+            warm();
+            Frames fr;
+            std::vector<float> act;
+            for (int f = 0; f < frames; ++f) {
+                fr.all.push_back(benchFrame());
+                act.push_back(static_cast<float>(actorMs_));
+            }
+            const char* name = crowd > 0 ? "crowd" : "busy corner";
+            const PerfStats a = perfStats(act);
+            std::printf("bench: %s: %d actors (path searches in the last step %d)\n", name,
+                        fr.all.back().actorsLive, actors_.searches());
+            report(name, "actors", a);
+            const double actorBudget = crowd > 0 ? tuning::kCrowdBudgetMs : tuning::kSimBudgetMs;
+            if (judge && (a.avg > actorBudget || fr.of(&FrameSample::simMs).avg >
+                                                     static_cast<float>(tuning::kSimBudgetMs)))
+                fail(name);
+            if (judgeCase(name, fr, attempt == 1)) break;
         }
-        const auto alive = std::ranges::count_if(
-            actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; });
-        const char* name = crowd > 0 ? "crowd" : "busy corner";
-        std::printf("bench: %s: %td actors: actors avg %.3f p95 %.3f p99 %.3f worst %.3f ms "
-                    "(path searches in the last step %d)\n",
-                    name, alive, act.avg(), act.pct(0.95), act.pct(0.99), act.max(),
-                    actors_.searches());
-        std::printf("bench: %s: simulation avg %.3f p95 %.3f p99 %.3f worst %.3f ms (budget avg "
-                    "%.2f)\n",
-                    name, sim.avg(), sim.pct(0.95), sim.pct(0.99), sim.max(), tuning::kSimBudgetMs);
-        std::printf("bench: %s: frame (update + draw) avg %.3f p95 %.3f p99 %.3f worst %.3f ms "
-                    "(budgets avg %.1f, p99 %.1f, worst %.1f)\n",
-                    name, frame.avg(), frame.pct(0.95), frame.pct(0.99), frame.max(),
-                    opts_.budgetMs, tuning::kFrameP99Ms, tuning::kFrameWorstMs);
-        const double actorBudget = crowd > 0 ? tuning::kCrowdBudgetMs : tuning::kSimBudgetMs;
-        if (opts_.budgetMs > 0 &&
-            (act.avg() > actorBudget || sim.avg() > tuning::kSimBudgetMs ||
-             frame.avg() > opts_.budgetMs || frame.pct(0.99) > tuning::kFrameP99Ms ||
-             frame.max() > tuning::kFrameWorstMs)) {
-            std::printf("bench: %s is over its budget\n", name);
-            over = true;
-        }
-    }
+    // Memory is held to its ceiling at the size the gate runs (1080p and below).
+    if (judge && pixelW_ * pixelH_ <= 1920 * 1080 &&
+        processMemory().second > tuning::kBenchMemoryMiB)
+        fail("memory");
     return over ? kExitOverBudget : 0;
 }
 
 int App::runSoak() {
     // A busy corner left running: every visitor kind welcome, the clock and calendar going,
     // natural weather, events by their schedules. Frames are drawn now and then so the scene's
-    // caches take part too. Memory must stay flat once the first quarter has warmed it up.
+    // caches take part too. Memory must stay flat once the first quarter has warmed it up, and
+    // under the ceiling.
     fillBenchWorld();
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v) actors_.markSeen(static_cast<int>(v));
     clock_.setPin(ClockPin::Auto, true);
@@ -271,31 +271,50 @@ int App::runSoak() {
     actors_.populate(actorEnv());
     const auto steps = static_cast<long long>(opts_.soak / tuning::kStepSeconds);
     double warm = 0;
-    double peakActors = 0;
-    for (long long s = 0; s < steps; ++s) {
-        step(static_cast<float>(tuning::kStepSeconds));
-        peakActors = std::max(peakActors, actorMs_);
-        if (s % tuning::kSoakDrawEvery == 0) {
-            ui_ = model();
-            hud_.update({}, ui_, font_, screen(), uiScale_,
-                        static_cast<float>(tuning::kStepSeconds));
-            render();
-            if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
+    std::vector<float> sim;
+    std::vector<float> frames;
+    sim.reserve(static_cast<std::size_t>(steps));
+    for (long long st = 0; st < steps; ++st) {
+        if (st % tuning::kSoakDrawEvery == 0) {
+            frames.push_back(benchFrame().frameMs);
+        } else {
+            step(static_cast<float>(tuning::kStepSeconds));
         }
-        if (s == steps / 4) warm = processMemory().first;
+        sim.push_back(static_cast<float>(actorMs_ + lifeMs_ + progressMs_));
+        if (st == steps / 4) warm = processMemory().first;
     }
-    const double end = processMemory().first;
+    const auto [end, peak] = processMemory();
     const auto alive = std::ranges::count_if(
         actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; });
+    const PerfStats s = perfStats(sim);
+    const PerfStats f = perfStats(frames);
+    std::printf("soak: %.0f s of play, day %d, %td actors at the end\n", opts_.soak, clock_.day(),
+                alive);
     std::printf(
-        "soak: %.0f s of play, day %d, %td actors at the end; rss %.1f MiB after a quarter, "
-        "%.1f MiB at the end (allowed growth %.1f MiB); slowest actor step %.3f ms\n",
-        opts_.soak, clock_.day(), alive, warm, end, tuning::kSoakGrowthMiB, peakActors);
+        "soak: simulation step avg %.3f p95 %.3f p99 %.3f worst %.3f ms (budget avg %.2f)\n",
+        static_cast<double>(s.avg), static_cast<double>(s.p95), static_cast<double>(s.p99),
+        static_cast<double>(s.worst), tuning::kSimBudgetMs);
+    std::printf("soak: drawn frames (%s renderer) avg %.3f p95 %.3f p99 %.3f worst %.3f ms\n",
+                SDL_GetRendererName(renderer_.get()), static_cast<double>(f.avg),
+                static_cast<double>(f.p95), static_cast<double>(f.p99),
+                static_cast<double>(f.worst));
+    std::printf("soak: rss %.1f MiB after a quarter, %.1f MiB at the end, peak %.1f (allowed "
+                "growth %.1f MiB, ceiling %.0f MiB)\n",
+                warm, end, peak, tuning::kSoakGrowthMiB, tuning::kBenchMemoryMiB);
+    bool over = false;
     if (end - warm > tuning::kSoakGrowthMiB) {
         std::printf("soak: memory grew\n");
-        return kExitOverBudget;
+        over = true;
     }
-    return 0;
+    if (peak > tuning::kBenchMemoryMiB) {
+        std::printf("soak: memory over its ceiling\n");
+        over = true;
+    }
+    if (s.avg > static_cast<float>(tuning::kSimBudgetMs)) {
+        std::printf("soak: simulation over its budget\n");
+        over = true;
+    }
+    return over ? kExitOverBudget : 0;
 }
 
 } // namespace lc

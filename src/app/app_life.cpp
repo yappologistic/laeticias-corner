@@ -391,7 +391,7 @@ void App::disturbed(TileRect rect, int type, bool fresh) {
 
 std::optional<int> App::actorUnder(Vec2 px) const {
     if (!scene_) return std::nullopt;
-    return scene_->actorAt(actors_.all(), camera_.screenToWorld(px, screen()));
+    return scene_->actorAt(drawActors_, view_.screenToWorld(px, screen()));
 }
 
 int App::moversInView() const {

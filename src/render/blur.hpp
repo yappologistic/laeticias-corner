@@ -27,6 +27,8 @@ public:
     void invalidate() { ready_ = false; }
     [[nodiscard]] int drawCalls() const { return drawCalls_; }
     [[nodiscard]] int levels() const { return count_; }
+    // Texture memory of the chain.
+    [[nodiscard]] std::size_t bytes() const;
 
     static constexpr int kMaxLevels = 6;
 

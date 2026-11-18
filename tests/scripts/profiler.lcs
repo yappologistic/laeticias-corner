@@ -1,0 +1,11 @@
+# The profiler overlay (F3): frame-time graph with the 60 and 120 FPS lines, statistics,
+# per-system times, draw calls, actors, chunks and memory; F3 again hides it.
+expect profiler no
+key f3
+wait 90
+expect profiler yes
+shot shots/profiler.png
+key f3
+wait 2
+expect profiler no
+quit

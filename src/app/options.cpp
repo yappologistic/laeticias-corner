@@ -33,6 +33,11 @@ std::string_view usage() {
            "  --budget-ms MS      bench: exit 3 when update + draw averages more than MS\n"
            "  --soak SECONDS      run that much busy play fast and exit 3 if memory grows "
            "(implies --headless)\n"
+           "  --perf-log FILE     write per-frame timings and counters to FILE as CSV\n"
+           "  --gpu-sync          wait for the GPU every frame so its time can be measured\n"
+           "  --benchmark         open a window and play a fixed 75 s tour, then show and save\n"
+           "                      frame-time results beside the save (for a person to run)\n"
+           "  --front-door        start at the title screen even when headless (tests)\n"
            "  --help              show this text\n";
 }
 
@@ -48,6 +53,16 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             o.headless = true;
         } else if (a == "--bench") {
             o.bench = o.headless = true;
+        } else if (a == "--gpu-sync") {
+            o.gpuSync = true;
+        } else if (a == "--benchmark") {
+            o.benchmark = o.gpuSync = true;
+        } else if (a == "--front-door") {
+            o.frontDoor = true;
+        } else if (a == "--perf-log") {
+            const auto v = value();
+            if (!v) return std::unexpected(v.error());
+            o.perfLog = std::filesystem::path(*v);
         } else if (a == "--help" || a == "-h") {
             o.help = true;
         } else if (a == "--size" || a == "--map") {
@@ -118,6 +133,9 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             return std::unexpected("unknown option " + std::string(a));
         }
     }
+    // The windowless GPU driver never really presents, so without a wait for the GPU its queue
+    // of frames (and the process's memory) grows without bound.
+    if (o.headless && !o.renderer.empty() && o.renderer != "software") o.gpuSync = true;
     return o;
 }
 

@@ -130,4 +130,21 @@ inline constexpr std::string_view kToastWelcome =
     "Welcome back. Laeticia has started a sketchbook: {} pages so far.";
 inline constexpr std::string_view kPhotoFile = "laeticias-corner-{:04}.png"; // numbered
 
+// The profiler overlay (F3): numbers over the last seconds of frames.
+inline constexpr std::string_view kProfFrame =
+    "Frame {:.0f} FPS · avg {:.2f} · p95 {:.2f} · p99 {:.2f} · worst {:.2f} ms";
+inline constexpr std::string_view kProfCpu = "CPU avg {:.2f} · p99 {:.2f} · worst {:.2f} ms";
+inline constexpr std::string_view kProfGpu = "GPU done avg {:.2f} · p99 {:.2f} · worst {:.2f} ms";
+inline constexpr std::string_view kProfGpuOff = "GPU done: not synchronised (--gpu-sync)";
+inline constexpr std::string_view kProfSim =
+    "Simulation {:.3f} · p99 {:.3f} · conditions {:.3f} ms";
+inline constexpr std::string_view kProfScene =
+    "Scene {:.3f} · interface {:.3f} · present {:.3f} ms";
+inline constexpr std::string_view kProfAudio = "Audio callback load {:.1f}%";
+inline constexpr std::string_view kProfDraw = "Draw calls {} · sprites {} drawn, {} culled";
+inline constexpr std::string_view kProfActors = "Actors {} live, {} abstract · chunks {} cached";
+inline constexpr std::string_view kProfMemory = "Memory: textures {:.0f} MiB · process {:.0f} MiB";
+inline constexpr std::string_view kProfWithin = "Within budget: p99 {:.1f} ms, worst {:.1f} ms";
+inline constexpr std::string_view kProfOver = "Over budget: p99 {:.1f} ms, worst {:.1f} ms";
+
 } // namespace lc::strings

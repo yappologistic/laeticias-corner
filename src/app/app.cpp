@@ -147,7 +147,7 @@ App::App(const Options& o, Catalog cat, fs::path assets)
                            std::chrono::steady_clock::now().time_since_epoch().count()))),
       rng_(seed_), actors_(cat_, seed_), gates_(cat_.visitors.size()), weather_(cat_, seed_),
       events_(cat_, seed_), speech_(cat_, seed_), progress_(cat_), progression_(cat_),
-      camera_(cat_.iso(), world_.landBounds(), 0) {
+      camera_(cat_.iso(), world_.landBounds(), 0), view_(camera_) {
     for (std::size_t v = 0; v < cat_.visitors.size(); ++v)
         gates_[v].allowed = !cat_.visitors[v].rare;
 }
@@ -245,8 +245,15 @@ bool App::init() {
     else
         (void)mixer_.open();
 
+    if (opts_.perfLog) {
+        perfLog_.reset(std::fopen(opts_.perfLog->string().c_str(), "w"));
+        if (!perfLog_)
+            SDL_Log("perf log: cannot write %s", opts_.perfLog->string().c_str());
+        else
+            (void)std::fprintf(perfLog_.get(), "%s\n", kPerfHeader);
+    }
     if (!opts_.bench) loadOrStart();
-    camera_.setLand(world_.landBounds(), scene_->cliffDepth());
+    fitCameraLand();
     return true;
 }
 
@@ -408,7 +415,7 @@ void App::loadOrStart() {
     startNewWorld(taken);
 }
 
-bool App::save() {
+bool App::save(bool wait) {
     SaveData data(world_, cat_);
     data.progress = progress_;
     data.name = worldName_;
@@ -427,28 +434,42 @@ bool App::save() {
         data.zoom = camera_.zoom();
     }
     // Never write over a save that could not be read and could not be moved aside.
-    auto r = saveBlocked_ ? std::expected<void, std::string>(std::unexpect,
-                                                             "an unreadable save is in the way")
-                          : writeFileAtomic(worldDir() / kWorldFile, serialize(data, cat_));
-    if (r) {
-        profile_.muted = muted_;
-        profile_.lastWorld = slug_;
-        const std::string text = serialize(profile_);
-        if (text != profileWritten_) {
-            r = writeFileAtomic(saveDir_ / kProfileFile, text);
-            if (r) profileWritten_ = text;
-        }
-    }
-    if (!r) {
-        SDL_Log("save: %s", r.error().c_str());
-        if (!saveFailing_) hud_.toast(std::string(strings::kToastSaveFailed));
-        saveFailing_ = true;
-        autosave_.failed();
+    if (saveBlocked_) {
+        saveFailed("an unreadable save is in the way");
         return false;
     }
-    saveFailing_ = false;
+    // The text is made here; the writing (and its flush to disk) happens on the writer's thread,
+    // so an autosave never stalls a frame. `wait` is for the moments that need it on disk now.
+    writer_.write(worldDir() / kWorldFile, serialize(data, cat_));
+    profile_.muted = muted_;
+    profile_.lastWorld = slug_;
+    if (std::string text = serialize(profile_); text != profileWritten_) {
+        profileWritten_ = text;
+        writer_.write(saveDir_ / kProfileFile, std::move(text));
+    }
     autosave_.saved();
-    return true;
+    if (!wait) return true;
+    writer_.flush();
+    return pollSaves();
+}
+
+void App::saveFailed(const std::string& why) {
+    SDL_Log("save: %s", why.c_str());
+    if (!saveFailing_) hud_.toast(std::string(strings::kToastSaveFailed));
+    saveFailing_ = true;
+    profileWritten_.clear(); // write the profile again with the next save
+    autosave_.changed();     // still unsaved: try again after the retry delay
+    autosave_.failed();
+}
+
+bool App::pollSaves() {
+    const FileWriter::Outcome o = writer_.poll();
+    if (o.error) {
+        saveFailed(*o.error);
+        return false;
+    }
+    if (o.finished) saveFailing_ = false;
+    return !saveFailing_;
 }
 
 bool App::writeThumbnail() {
@@ -635,9 +656,19 @@ int App::pages() const {
     return actors_.seenCount() + progress_.nooksFound();
 }
 
+void App::fitCameraLand() {
+    // The view stays near the land that is open, with a margin of wild land to look at; the bench
+    // and soak worlds are open everywhere.
+    TileRect r = openBounds(cat_, progress_.stage, world_);
+    const int m = tuning::kCameraOpenMargin;
+    r = TileRect{r.x0 - m, r.y0 - m, r.x1 + m, r.y1 + m}.clipped(world_.landBounds());
+    camera_.setLand(opts_.bench || opts_.soak > 0 ? world_.landBounds() : r, scene_->cliffDepth());
+}
+
 void App::openLand(int stage, bool wave) {
     std::vector<Item> revealed;
     openStage(world_, cat_, stage, revealed);
+    fitCameraLand();
     markDirty();
     if (!wave) return;
     (void)scene_->landWave(world_, cat_, stage, revealed);
@@ -957,6 +988,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         windowState_.fullscreen = !fs;
         return;
     }
+    case SDLK_F3: profilerOn_ = !profilerOn_; return;
     case SDLK_P: togglePhoto(); return;
     case SDLK_SPACE:
     case SDLK_RETURN:
@@ -1023,6 +1055,11 @@ void App::handleEvent(const SDL_Event& e) {
                 SDL_Log("window: %s", SDL_GetError());
         }
         break;
+    case SDL_EVENT_WINDOW_MINIMIZED:
+    case SDL_EVENT_WINDOW_HIDDEN: hidden_ = true; break;
+    case SDL_EVENT_WINDOW_RESTORED:
+    case SDL_EVENT_WINDOW_SHOWN:
+    case SDL_EVENT_WINDOW_EXPOSED: hidden_ = false; break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
         // Keys released while another window has focus never arrive here.
         std::ranges::fill(keyPan_, false);
@@ -1125,7 +1162,7 @@ HudModel App::model() const {
     for (const NookLabel& l : nookLabels_) {
         const float k = (simTime_ - l.start) / tuning::kNookLabelSeconds;
         const float fade = std::min({1.0f, k * 6.0f, (1.0f - k) * 4.0f});
-        floatLabels_.push_back({camera_.worldToScreen(l.world, screen()),
+        floatLabels_.push_back({view_.worldToScreen(l.world, screen()),
                                 cat_.nooks[static_cast<std::size_t>(l.nook)].name, fade});
     }
     m.labels = floatLabels_;
@@ -1150,10 +1187,12 @@ HudModel App::model() const {
     m.weather = weather_.mode();
     m.raining = raining();
     // Her speech bubble, above her head wherever she is on screen.
-    if (const Bubble* b = speech_.showing(simTime_); b != nullptr && residentOnScreen()) {
-        const Actor& r = actors_.all()[static_cast<std::size_t>(actors_.resident())];
+    if (const Bubble* b = speech_.showing(simTime_);
+        b != nullptr && residentOnScreen() &&
+        std::cmp_less(actors_.resident(), drawActors_.size())) {
+        const Actor& r = drawActors_[static_cast<std::size_t>(actors_.resident())];
         m.bubble = b->text;
-        m.bubbleAt = camera_.worldToScreen(scene_->headOf(r), screen());
+        m.bubbleAt = view_.worldToScreen(scene_->headOf(r), screen());
         m.bubbleAlpha = speech_.alpha(simTime_) * std::clamp(r.alpha, 0.0f, 1.0f);
     }
     m.pin = clock_.pin();
@@ -1374,7 +1413,7 @@ void App::worldInput() {
     const bool uiOwns = hud_.wantsMouse() && drag_ != Drag::Tool;
     hover_.reset();
     if (mouseInside_ && !uiOwns && !photo_) {
-        const TilePos t = cat_.iso().tileAt(camera_.screenToWorld(mouse_, screen()));
+        const TilePos t = cat_.iso().tileAt(view_.screenToWorld(mouse_, screen()));
         if (world_.hasGround(t)) hover_ = t;
     }
     // Whole notches step the zoom; small deltas (touchpads, smooth wheels) add up to a step.
@@ -1429,6 +1468,9 @@ void App::worldInput() {
 }
 
 void App::step(float dt) {
+    camera_.beginStep();
+    actorPrev_.resize(actors_.all().size());
+    for (std::size_t i = 0; i < actorPrev_.size(); ++i) actorPrev_[i] = actors_.all()[i].pos;
     simTime_ += dt;
     played_ += dt;
     thumbTimer_ += dt;
@@ -1462,6 +1504,7 @@ void App::step(float dt) {
     warnTime_ = std::max(0.0f, warnTime_ - dt);
     if (warnTime_ <= 0) warning_ = {};
     if (autosave_.due(dt, drag_ == Drag::Tool)) (void)save();
+    (void)pollSaves();
 }
 
 int App::season() const {
@@ -1599,12 +1642,12 @@ void App::updateAudio() {
 void App::render() {
     FrameParams p;
     p.world = &world_;
-    p.actors = actors_.all();
+    p.actors = drawActors_;
     p.resident = actors_.resident();
     p.weather = &weather_;
     p.ghost = ghost();
     p.outlines = hoverNook_;
-    p.camera = &camera_;
+    p.camera = &view_;
     p.screen = screen();
     p.light = lighting();
     p.fireflySync = events_.active(EventShow::FireflySync);
@@ -1615,6 +1658,7 @@ void App::render() {
             std::min(t / tuning::kRainbowIn, (tuning::kRainbowSeconds - t) / tuning::kRainbowOut),
             0.0f, 1.0f);
     }
+    const Uint64 t0 = SDL_GetPerformanceCounter();
     scene_->draw(p);
     if (capturePending_) {
         capturePending_ = false;
@@ -1626,12 +1670,22 @@ void App::render() {
         scene_->composite(p, blur_->sourceScale(), true);
         blur_->end();
     }
+    const Uint64 t1 = SDL_GetPerformanceCounter();
+    sceneMs_ = msBetween(t0, t1);
     if (font_.build(renderer_.get(), uiScale_)) {
         // The model the interface was laid out from this frame: drawing never sees another.
         Painter painter(*uiBatch_, font_, {blur_->result(), p.screen, ui_.brightness}, uiScale_);
         hud_.draw(painter, ui_);
+        if (profilerOn_) profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
         uiBatch_->flush();
     }
+    hudDrawMs_ = msBetween(t1, SDL_GetPerformanceCounter());
+}
+
+void App::captureAudio(int steps) {
+    const std::size_t n = capture_.size();
+    capture_.resize(n + static_cast<std::size_t>(steps * kAudioFramesPerStep * 2));
+    mixer_.render(capture_.data() + n, steps * kAudioFramesPerStep);
 }
 
 void App::refreshScale() {
@@ -1657,6 +1711,7 @@ int App::run() {
     refreshScale();
     if (!font_.build(renderer_.get(), uiScale_)) return 1;
     // One interface layout first, so the camera can frame the land clear of it.
+    prepareView();
     ui_ = model();
     hud_.update({}, ui_, font_, screen(), uiScale_, 0);
     if (savedCamera_)
@@ -1676,8 +1731,17 @@ int App::run() {
     Uint64 last = SDL_GetTicksNS();
     double acc = 0;
     while (running_) {
+        const Uint64 t0 = SDL_GetPerformanceCounter();
         leftPressed_ = leftReleased_ = rightPressed_ = rightReleased_ = false;
         for (SDL_Event e; SDL_PollEvent(&e);) handleEvent(e);
+        if (hidden_ && !opts_.headless) {
+            // Minimised or hidden: nothing to draw and nothing moves on (the corner waits for its
+            // player); sleep until something happens instead of spinning.
+            if (SDL_Event e; SDL_WaitEventTimeout(&e, tuning::kHiddenWaitMs)) handleEvent(e);
+            last = SDL_GetTicksNS();
+            acc = 0;
+            continue;
+        }
 
         const Uint64 now = SDL_GetTicksNS();
         const double real = static_cast<double>(now - last) * 1e-9;
@@ -1697,8 +1761,19 @@ int App::run() {
                 acc = 0;
             }
         }
-        for (int i = 0; i < steps; ++i) step(static_cast<float>(tuning::kStepSeconds));
+        double simMs = 0;
+        double condMs = 0;
+        for (int i = 0; i < steps; ++i) {
+            step(static_cast<float>(tuning::kStepSeconds));
+            simMs += actorMs_ + lifeMs_ + progressMs_;
+            condMs += progressMs_;
+        }
+        // Drawing runs between steps: the camera and every actor are shown where they are this
+        // far toward the next step, so motion is smooth at any refresh rate.
+        alpha_ = fixed ? 1.0f : static_cast<float>(acc / tuning::kStepSeconds);
+        prepareView();
 
+        const Uint64 tUi = SDL_GetPerformanceCounter();
         // One interface model per frame, built after the simulation: the interface is laid out,
         // hit-tested and drawn from it alone, so what is drawn always matches the layout even
         // when a click or a grant changes the game in between (QA2-01).
@@ -1716,12 +1791,9 @@ int App::run() {
         hud_.update(in, ui_, font_, screen(), uiScale_, frameDt);
         applyHudActions();
         worldInput();
+        const double uiMs = msBetween(tUi, SDL_GetPerformanceCounter());
         updateAudio();
-        if (opts_.audioOut) {
-            const std::size_t n = capture_.size();
-            capture_.resize(n + static_cast<std::size_t>(steps * kAudioFramesPerStep * 2));
-            mixer_.render(capture_.data() + n, steps * kAudioFramesPerStep);
-        }
+        if (opts_.audioOut) captureAudio(steps);
         render();
 
         // The script runs after the frame is drawn: shots capture it, and the input it queues is
@@ -1738,12 +1810,26 @@ int App::run() {
             }
             if (!scriptStep()) running_ = false;
         }
+        const Uint64 tSubmit = SDL_GetPerformanceCounter();
+        const double gpuMs = opts_.gpuSync ? syncGpu(t0) : -1.0;
+        const Uint64 tPresent = SDL_GetPerformanceCounter();
         if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
+        const Uint64 t1 = SDL_GetPerformanceCounter();
+        FrameSample fs;
+        fs.frameMs = static_cast<float>(msBetween(t0, t1));
+        fs.cpuMs = static_cast<float>(msBetween(t0, tSubmit));
+        fs.gpuMs = static_cast<float>(gpuMs);
+        fs.presentMs = static_cast<float>(msBetween(tPresent, t1));
+        fs.simMs = static_cast<float>(simMs);
+        fs.condMs = static_cast<float>(condMs);
+        fs.uiMs = static_cast<float>(uiMs + hudDrawMs_);
+        fs.steps = steps;
+        recordFrame(fs);
         if (!legacyToRetire_.empty() && simTime_ >= retireAt_) {
             // The migrated world and its thumbnail exist now; the old file is kept, renamed. A
             // folder that cannot be written is tried again only after the save retry delay.
             std::error_code ec;
-            if (save() && writeThumbnail()) {
+            if (save(true) && writeThumbnail()) {
                 fs::rename(legacyToRetire_, saveDir_ / kLegacyKept, ec);
                 if (ec) SDL_Log("save: cannot rename the old save: %s", ec.message().c_str());
                 legacyToRetire_.clear();
@@ -1765,7 +1851,7 @@ int App::run() {
     }
     if (editor_.inGroup()) editor_.commit();
     if (!saveBlocked_) (void)writeThumbnail();
-    if (!save() && exitCode_ == 0 && opts_.script) SDL_Log("save: the final save failed");
+    if (!save(true) && exitCode_ == 0 && opts_.script) SDL_Log("save: the final save failed");
     rememberWindow();
     mixer_.close();
     if (opts_.audioOut) {

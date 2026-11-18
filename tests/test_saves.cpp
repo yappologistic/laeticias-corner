@@ -5,6 +5,7 @@
 #include "core/save.hpp"
 #include "core/starter.hpp"
 #include "core/tuning.hpp"
+#include "core/writer.hpp"
 #include "test_support.hpp"
 
 #include <doctest.h>
@@ -311,4 +312,24 @@ TEST_CASE("world folder names and the profile") {
     CHECK(back.muted);
     CHECK(back.lastWorld == "fern-bank");
     CHECK(utcNow().size() == 20);
+}
+
+TEST_CASE("the background writer writes, keeps the newest text and reports failures") {
+    const auto dir = test::tempDir("writer");
+    {
+        FileWriter w;
+        for (int i = 0; i < 50; ++i) w.write(dir / "a.json", "text " + std::to_string(i));
+        w.flush();
+        const auto done = w.poll();
+        CHECK(done.finished);
+        CHECK_FALSE(done.error.has_value());
+        CHECK(readTextFile(dir / "a.json").value_or("") == "text 49");
+        CHECK_FALSE(w.poll().finished); // nothing new since
+        // A path that cannot be a file fails, and says so.
+        w.write(dir / "a.json" / "inside", "x");
+        w.flush();
+        CHECK(w.poll().error.has_value());
+        w.write(dir / "b.json", "last words");
+    } // the destructor writes what is still waiting
+    CHECK(readTextFile(dir / "b.json").value_or("") == "last words");
 }

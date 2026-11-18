@@ -71,7 +71,8 @@ void App::pushKey(std::string_view combo, bool down) {
     SDL_Keymod mod = SDL_KMOD_NONE;
     std::string name(combo);
     for (const auto& [prefix, m] :
-         {std::pair{"ctrl+", SDL_KMOD_LCTRL}, std::pair{"shift+", SDL_KMOD_LSHIFT}}) {
+         {std::pair{"ctrl+", SDL_KMOD_LCTRL}, std::pair{"shift+", SDL_KMOD_LSHIFT},
+          std::pair{"alt+", SDL_KMOD_LALT}}) {
         for (auto pos = name.find(prefix); pos != std::string::npos; pos = name.find(prefix)) {
             name.erase(pos, std::string_view(prefix).size());
             mod = static_cast<SDL_Keymod>(mod | m);
@@ -85,6 +86,8 @@ void App::pushKey(std::string_view combo, bool down) {
         name = "left ctrl";
     else if (name == "shift")
         name = "left shift";
+    else if (name == "alt")
+        name = "left alt";
     SDL_Event e{};
     e.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
     e.key.windowID = SDL_GetWindowID(window_.get());
@@ -93,6 +96,7 @@ void App::pushKey(std::string_view combo, bool down) {
     // A held modifier key shows in the modifier state of later events, as with real input.
     if (e.key.key == SDLK_LCTRL) mod = static_cast<SDL_Keymod>(mod | (down ? SDL_KMOD_LCTRL : 0));
     if (e.key.key == SDLK_LSHIFT) mod = static_cast<SDL_Keymod>(mod | (down ? SDL_KMOD_LSHIFT : 0));
+    if (e.key.key == SDLK_LALT) mod = static_cast<SDL_Keymod>(mod | (down ? SDL_KMOD_LALT : 0));
     e.key.mod = mod;
     e.key.down = down;
     if (e.key.key == SDLK_UNKNOWN)
@@ -238,6 +242,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::string(kNames[static_cast<std::size_t>(tool_)]), a[1]);
     }
     if (what == "drawer") return yesNo(drawerOpen_);
+    if (what == "profiler") return yesNo(profilerOn_);
     if (what == "journal") return yesNo(journalOpen_);
     if (what == "photo") return yesNo(photo_);
     if (what == "undo") return yesNo(editor_.canUndo());
@@ -245,11 +250,13 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "muted") return yesNo(muted_);
     if (what == "rain") return yesNo(weather_.mode() == WeatherMode::Rain);
     if (what == "saved") {
+        writer_.flush(); // what has been saved by now is on disk
         std::error_code ec;
         return yesNo(fs::is_regular_file(worldDir() / kWorldFile, ec));
     }
     if (what == "file") {
         if (a.size() != 3) return std::string("expect file PATH yes|no");
+        writer_.flush();
         std::error_code ec;
         const bool want = a[2] == "yes";
         return fs::exists(saveDir_ / a[1], ec) == want
@@ -294,6 +301,14 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::string(kTabs[static_cast<std::size_t>(hud_.sketchTab())]), a[1]);
     }
     if (what == "zoom") return equal(scaleName(camera_.zoom()), a[1]);
+    if (what == "stem") {
+        // expect stem FILE MIN: in an audio capture, the stem has faded in at least that far.
+        if (a.size() != 3 || !opts_.audioOut) return std::string("expect stem FILE MIN (capture)");
+        const float level = mixer_.stemLevel(mixer_.loopIndex(a[1]));
+        return level >= std::stof(a[2])
+                   ? std::nullopt
+                   : std::optional(std::format("stem {} at {:.2f}", a[1], level));
+    }
     if (what == "toast") {
         if (a.size() == 2 && (a[1] == "yes" || a[1] == "no")) return yesNo(hud_.toastShowing());
         // expect toast WORDS...: the toast showing now contains them.
@@ -561,6 +576,11 @@ bool App::scriptStep() {
             std::optional<std::string> err = c.args.empty() ? std::nullopt : check(c);
             for (long long n = 0; n < steps && (c.args.empty() || err); ++n) {
                 step(static_cast<float>(tuning::kStepSeconds));
+                if (opts_.audioOut) {
+                    // The mix keeps time with the simulation, so a capture can cover minutes.
+                    updateAudio();
+                    captureAudio(1);
+                }
                 if (!c.args.empty()) err = check(c);
             }
             if (!c.args.empty() && err) return fail("fast-forwarded in vain: " + *err);
@@ -584,6 +604,9 @@ bool App::scriptStep() {
             const auto& def = cat_.items[static_cast<std::size_t>(*type)];
             const int v = static_cast<int>(c.amount);
             if (v < 0 || v >= def.count) return fail("variant out of range");
+            // As the build drawer would: only unlocked pieces can be placed.
+            if (progress_.items[static_cast<std::size_t>(*type)] == 0)
+                return fail(c.args[0] + " is not unlocked");
             const Item item =
                 makeItem(cat_, *type, v, {static_cast<int>(c.a.x), static_cast<int>(c.a.y)});
             const bool fresh = world_.itemCount(*type) == 0;
@@ -600,6 +623,8 @@ bool App::scriptStep() {
         case K::Paint: {
             const auto terrain = cat_.findTerrain(c.args[0]);
             if (!terrain) return fail("unknown terrain " + c.args[0]);
+            if (progress_.terrain[static_cast<std::size_t>(*terrain)] == 0)
+                return fail(c.args[0] + " is not unlocked");
             const ScriptPoint& b = c.hasPoint ? c.b : c.a;
             editor_.begin();
             for (int y = static_cast<int>(std::min(c.a.y, b.y));

@@ -57,6 +57,15 @@ public:
     // lifting); it fades away as the lead fades in. `stems` are the piece's loops.
     void setMakeup(std::span<const int> stems, int lead, float gain);
     void setMuted(bool muted) { muted_.store(muted); }
+    // Share of the audio callback's time budget spent mixing (smoothed, 0..1; 0 without a device).
+    [[nodiscard]] float load() const { return load_.load(std::memory_order_relaxed); }
+    // Fade-in level (0..1) a stem has reached; read only in capture mode, where the game thread
+    // is the one mixing.
+    [[nodiscard]] float stemLevel(int loop) const {
+        return loop >= 0 && static_cast<std::size_t>(loop) < loops_.size()
+                   ? stemLevel_[static_cast<std::size_t>(loop)]
+                   : 0.0f;
+    }
     // Master sample position of the music (for tests of the arithmetic's wiring).
     [[nodiscard]] std::uint64_t musicPosition() const { return musicPos_; }
 
@@ -111,6 +120,7 @@ private:
     std::atomic<std::uint32_t> head_{0}; // written by the game thread
     std::atomic<std::uint32_t> tail_{0}; // written by the audio thread
     std::atomic<bool> muted_{false};
+    std::atomic<float> load_{0};
     std::atomic<bool> closing_{false};
     std::atomic<bool> silent_{true}; // master gain has reached zero while closing
     bool capture_ = false;

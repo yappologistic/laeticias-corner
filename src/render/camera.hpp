@@ -62,6 +62,16 @@ public:
     [[nodiscard]] float scale() const { return scale_; }
     [[nodiscard]] bool settled() const { return scale_ == zoom(); }
     [[nodiscard]] Vec2 position() const { return pos_; }
+    // Rendering runs between simulation steps: call beginStep() before each step's update, then
+    // draw with interpolated(alpha), alpha being how far the frame is from the last step toward
+    // the next (1: exactly the latest step). Immediate moves (drags, framing) are never smoothed.
+    void beginStep() {
+        prevPos_ = pos_;
+        prevScale_ = scale_;
+    }
+    [[nodiscard]] Camera interpolated(float alpha) const;
+    // Reduce motion: pans and zooms arrive at once instead of easing.
+    void setEasing(bool on) { easing_ = on; }
     [[nodiscard]] Vec2 screenToWorld(Vec2 px, Vec2 screen) const;
     [[nodiscard]] Vec2 worldToScreen(Vec2 world, Vec2 screen) const;
 
@@ -78,6 +88,9 @@ private:
     // Zoom transitions keep this world point under this screen point.
     Vec2 anchorWorld_;
     Vec2 anchorPx_;
+    Vec2 prevPos_; // at the last step, for interpolated drawing
+    float prevScale_ = kZoomLevels[kDefaultZoomLevel];
+    bool easing_ = true;
 };
 
 } // namespace lc

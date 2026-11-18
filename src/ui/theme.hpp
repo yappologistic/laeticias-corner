@@ -170,6 +170,11 @@ inline constexpr float kReferenceW = 1600.0f;
 inline constexpr float kReferenceH = 900.0f;
 inline constexpr float kMaxScale = 3.0f;
 
+// The profiler overlay.
+inline constexpr float kProfGraphW = 360.0f;
+inline constexpr float kProfGraphH = 72.0f;
+inline constexpr float kProfTop = 96.0f; // below the title card
+
 namespace icon {
 inline constexpr char32_t kPlus = 0xE13D;
 inline constexpr char32_t kMinus = 0xE11C;

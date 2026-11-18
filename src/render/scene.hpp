@@ -60,6 +60,7 @@ struct SceneStats {
     std::size_t targetBytes = 0;
     std::size_t groundBytes = 0;
     int groundSlotsRendered = 0;
+    int groundChunksCached = 0;
 };
 
 class Scene {

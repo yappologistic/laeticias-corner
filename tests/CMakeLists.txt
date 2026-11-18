@@ -9,6 +9,7 @@ add_executable(lc_tests
   test_progress.cpp
   test_actors.cpp
   test_engine.cpp
+  test_perf.cpp
   test_coverage.cpp
 )
 target_link_libraries(lc_tests PRIVATE lc_engine lc_doctest)
@@ -74,6 +75,7 @@ set(LC_SCRIPTS
   "lively|lively|640x400|"
   "sketch_lists|sketch_lists|960x600|"
   "newer_save|newer_save|640x400|"
+  "profiler|profiler|960x600|"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
   "launch_1440|launch_2560x1440|2560x1440|heavy"
@@ -115,6 +117,7 @@ endforeach()
 # Every run starts from a clean save directory; the reload pair runs in order.
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art"
      "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench" "${LC_SCRATCH}/save_soak"
+     "${LC_SCRATCH}/save_perf"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
@@ -209,6 +212,16 @@ set_tests_properties(prepare_determinism PROPERTIES FIXTURES_SETUP determinism_d
 add_test(NAME determinism_check COMMAND ${CMAKE_COMMAND} -DA=${LC_SCRATCH}/determinism_a
   -DB=${LC_SCRATCH}/determinism_b -P ${CMAKE_CURRENT_SOURCE_DIR}/compare_runs.cmake)
 set_tests_properties(determinism_check PROPERTIES FIXTURES_REQUIRED determinism)
+
+# --perf-log writes a frame of timings and counters per line.
+add_test(NAME perf_log
+  COMMAND laeticias-corner --headless --size 640x400 --seed 1 --frames 120
+          --perf-log "${LC_SCRATCH}/perf.csv" --save-dir "${LC_SCRATCH}/save_perf")
+set_tests_properties(perf_log PROPERTIES ENVIRONMENT "${LC_RUN_ENV}" FIXTURES_SETUP perf
+  FIXTURES_REQUIRED clean_saves)
+add_test(NAME perf_log_check COMMAND ${CMAKE_COMMAND} -DFILE=${LC_SCRATCH}/perf.csv -DFRAMES=120
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/check_perf_log.cmake)
+set_tests_properties(perf_log_check PROPERTIES FIXTURES_REQUIRED perf)
 
 # Memory stays flat over a long busy session (actors, events and weather running).
 add_test(NAME soak

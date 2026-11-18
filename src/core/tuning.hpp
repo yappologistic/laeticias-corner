@@ -64,7 +64,11 @@ inline constexpr double kSimBudgetMs = 0.6;   // actors, events, weather and con
 inline constexpr double kCrowdBudgetMs = 0.4; // the crowd's actors alone
 inline constexpr double kFrameP99Ms = 8.3;    // CLAUDE.md "Performance": 99th percentile frame
 inline constexpr double kFrameWorstMs = 16.6;
-inline constexpr double kSoakGrowthMiB = 4.0;    // memory a long session may add after warming up
+inline constexpr double kSoakGrowthMiB = 4.0; // memory a long session may add after warming up
+// The process's resident memory may not pass this in the bench at 1080p, nor the soak at its size.
+// It covers the atlas, the four world targets and the blur chain at that size, the ground cache's
+// budget and the code and drivers around them; see out/reports/engine-frontdoor.md for the sums.
+inline constexpr double kBenchMemoryMiB = 512.0;
 inline constexpr long long kSoakDrawEvery = 120; // steps between frames drawn during a soak
 inline constexpr int kBenchCrowd = 400;
 // Rare visitors: the recipe holds this long before one comes; a visit lasts, then it stays away.
@@ -271,6 +275,10 @@ inline constexpr float kCritterActFps = 5.0f;  // actions of three frames or mor
 inline constexpr float kCritterSlowFps = 1.5f; // two-frame loops: breathing, a page turn
 inline constexpr float kWarnSeconds = 1.6f;    // how long a refusal stays in the hint line
 inline constexpr float kClickSlop = 4.0f;      // window px a click may move and still be a click
+
+inline constexpr int kCameraOpenMargin = 6; // tiles of wild land the camera may look over
+
+inline constexpr int kHiddenWaitMs = 250; // a hidden window sleeps on events this long at most
 
 // Rendering budgets
 inline constexpr std::size_t kGroundCacheBytes = 128u << 20; // GPU memory for cached ground

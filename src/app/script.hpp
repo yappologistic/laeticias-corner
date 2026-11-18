@@ -20,7 +20,8 @@
 //   drag P1 P2 [right]      press at P1, move to P2 over 8 frames, release
 //   press P [right]         move to P and press the button (hold it)
 //   release P [right]       move to P and release the button
-//   key COMBO               e.g. r, escape, ctrl+z, ctrl+shift+z, home, f11, equals, minus, space
+//   key COMBO               e.g. r, escape, ctrl+z, ctrl+shift+z, alt+x, home, f3, f11, equals,
+//                           minus, space
 //   keydown COMBO           press (and hold) a key, e.g. keydown d, keydown ctrl
 //   keyup COMBO             release a held key
 //   wheel DY [P]            scroll (positive = away from the user), optionally at P
@@ -45,10 +46,11 @@
 //   set wish ID open        offer that wish now (it joins the tray even past three)
 //   waitfor N WHAT ARGS...  wait up to N frames until `expect WHAT ARGS...` holds, else fail
 //   fast S [WHAT ARGS...]   simulate S seconds without drawing (or until `expect WHAT ARGS...`
-//                           holds, failing if it never does); state checks only
+//                           holds, failing if it never does); state checks only; an audio
+//                           capture keeps recording through it
 //   expect WHAT ARGS...     fail the run unless the state matches:
 //       tile P TERRAIN | item P ITEM|none | count ITEM|all N | tool none|place|paint|remove
-//       drawer open|closed | journal open|closed | photo on|off | phase PHASE
+//       drawer open|closed | journal open|closed | photo on|off | phase PHASE | profiler yes|no
 //       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
 //       where it may) | saved yes|no (a save file exists) | zoom 0.25|0.5|1|2|3
@@ -66,6 +68,7 @@
 //                               the resident's) is doing that now, at that item's slot if given
 //       bubble yes|no (the resident is speaking) | raining yes|no (where the camera looks)
 //       weather natural|rain|clear | event SHOW yes|no (rainbow, gust, chorus, smoke...)
+//       stem FILE MIN (in an --audio-out capture: that music stem has faded in to at least MIN)
 //       lively MIN CAP HMIN HCAP SHARE   since `set lively reset`, at least SHARE (0..1) of the
 //                               one-second samples had MIN..CAP purposeful movers in view and
 //                               HMIN..HCAP new happenings in the last minute
