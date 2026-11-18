@@ -1,17 +1,19 @@
 # Rome layer
 
 Status: built. Every landmark with usable art stands at its bible rect and level (Saturn and the
-Templum Pacis a tile off it, below); the five without art stand as provisional placeholders
-(`plan/provisional.py`); the island, bridges, Emporium and Testaccio switch to their corrected
-art by themselves once the set catalog carries it. Mark the layer complete here once they are
+Templum Pacis a tile off it, below); the five without art (`saepta`, `iseum`,
+`stadium_domitian`, `pompey_theatre`, `trajan_baths`) are dressed as what stood there, not placed
+as provisional placeholders, because a provisional entry draws nothing in the engine (QA4 V-B-001:
+the Baths of Trajan read as an empty lawn); each is placed by itself once a real catalog entry
+gives the bible's footprint. The island, bridges and Testaccio stand on their corrected art. Mark the layer complete here once they are
 placed (V4 then makes a missing landmark an error).
 
 Second pass (world-rome-connect): the Argiletum runs from the Forum past the Forum of Nerva's
 east side into the Subura (the Templum Pacis moved a tile east); the Vicus Iugarius enters the
 Forum between Saturn (moved a tile west) and the Basilica Iulia; mooring posts (`rome.quay`)
 along the Emporium's wharf and the river road's embankment; the Via Portuensis to portal
-`portuensis` (44, 159); the Via Aurelia crosses the Janiculum in a cutting at +2 on ramps (four
-tiles a level); ways over the decks of the bridges and across the island once the art joins
+`portuensis` (44, 159); the Via Aurelia crosses the Janiculum in a cutting at street level
+between tufa faces (no ramps: `world.ramp` has no art and stood on the sightline, QA4 V-B-004); ways over the decks of the bridges and across the island once the art joins
 them, the water left under them; the Via Ostiensis along the Emporium's wharf once the Porticus
 reaches Testaccio. `quarter()` (the neighbourhood filler) lives in `common.py`, shared with
 Ostia and Brundisium.
@@ -38,9 +40,10 @@ R 24..183; local (c, r) = world (C − 96, R − 24); local level 0 = world leve
 
 Waiting on art (footprints kept, stand-ins built, placed automatically when the set catalog
 holds them at the bible's footprint): `saepta`, `iseum`, `stadium_domitian`, `pompey_theatre`,
-`trajan_baths` (no art), `testaccio` (set footprint 12 × 11, bible 11 × 12: built as a terraced
-mound of sherds). `tarpeian` is the tufa cliff itself (art: not a landmark). The Emporium item
-covers the Horrea Galbana's rect, so a kit quay and warehouses stand in for it; the island and
-the four bridges stand on mud until the set catalog marks them `on: water`.
+`trajan_baths` (no art: the Baths of Trajan are a paved block of vaulted halls with two exercise
+yards, gardens and a ring of planes). `tarpeian` is the tufa cliff itself (art: not a landmark).
+The Emporium item (corrected to 11 × 25) is not placed: its walk tiles split the wharf in two at
+the crane (r 147..149), so the Via Ostiensis could not run along it; a kit quay with moorings and
+warehouse rows stands in until the wharf is walkable from end to end.
 
 Build: `tools/worldgen/build.sh rome [--preview]`.

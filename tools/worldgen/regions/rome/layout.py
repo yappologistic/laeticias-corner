@@ -115,12 +115,9 @@ RUNS = [
     ([(140, 51), (146, 51)], 0, 2, "carinae_steps"),
     ([(99, 106), (108, 106), (108, 97)], 0, 6, "scalae_caci"),   # the Circus -> the Palatine
 ]
-# The Via Aurelia is a cart road: it crosses the Janiculum in a cutting at +2 on ramps (four
-# tiles a level), from the portal at its west foot and from Transtiberim.
-RAMP_RUNS = [
-    ([(0, 96), (10, 96)], 0, 2, "aurelia_west"),
-    ([(25, 96), (15, 96)], 0, 2, "aurelia_east"),
-]
+# The Via Aurelia is a cart road: it crosses the Janiculum in a cutting at street level, three
+# tiles wide between tufa faces, so no ramp (a world piece without art) stands on its sightline.
+AURELIA_CUT = Rect(0, 95, 25, 97)
 
 
 def build(L: Layout) -> None:
@@ -136,8 +133,6 @@ def build(L: Layout) -> None:
     _island_way(L)
     for path, lvl0, rise, name in RUNS:
         C.build_run(L, path, lvl0, rise, name, TRAV)
-    for path, lvl0, rise, name in RAMP_RUNS:
-        C.build_run(L, path, lvl0, rise, name, BASALT, flight=4, item=C.RAMP)
     _districts(L)
     _reserved(L)
     _aqueduct(L)
@@ -233,12 +228,13 @@ def _levels(L: Layout):
     lv[m(Rect(3, 60, 10, 159))] = 3
     lv[m(Rect(11, 60, 12, 159))] = 2
     lv[m(Rect(13, 60, 14, 159))] = 1
-    lv[96, 10:16] = 2                                     # the Aurelia's cutting
+    lv[m(AURELIA_CUT)] = 0                                # the Aurelia's cutting
+    rock |= m(Rect(0, 94, 25, 98))
 
     keep = np.zeros((H, W), dtype=bool)
     for lid, rect in list(LM.items()) + list(RESERVED.items()):
         keep |= m(Rect(*rect))
-    keep[96, 0:3] = True
+    keep |= m(AURELIA_CUT)
     keep |= m(Rect(166, 134, 175, 152))                   # the Via Appia leaving east
     keep |= m(Rect(10, 0, 70, 6))                         # the Campus's roads leaving north
     C.meet_edges(L, lv, keep=keep)
@@ -246,9 +242,6 @@ def _levels(L: Layout):
     for path, lvl0, rise, _name in RUNS:
         lv[path[0][1], path[0][0]] = lvl0                 # each run's foot on its street
         C.carve_run(lv, path, lvl0, rise)
-    for path, lvl0, rise, _name in RAMP_RUNS:
-        lv[path[0][1], path[0][0]] = lvl0
-        C.carve_run(lv, path, lvl0, rise, flight=4)
     for lid, rect in LM.items():
         lv[m(Rect(*rect))] = LEVEL.get(lid, 0)
     if not _testaccio_fits(L):
@@ -509,7 +502,7 @@ def _ways(L: Layout) -> dict:
     # Transtiberim: the Via Aurelia from the Pons Aemilius over the Janiculum (portal at (0, 96)),
     # the Via Portuensis from the Pons Sublicius along the river, the Cestius road, lanes.
     st("aurelia", [(50, 97), (26, 97), (26, 96), (25, 96)], 2, kind="road")
-    st("aurelia", [(10, 96), (15, 96)], 1, kind="road")
+    st("aurelia", [(1, 96), (25, 96)], 1, kind="road")
     st("aurelia", [(0, 96), (0, 96)], 1, kind="road", portal="aurelia_w")
     st("portuensis", [(50, 107), (44, 107), (44, 159)], 2, kind="road")
     st("portuensis", [(44, 159), (44, 159)], 1, kind="road", portal="portuensis")
@@ -546,7 +539,9 @@ def _reserved(L: Layout) -> None:
     for lid, rect in RESERVED.items():
         if lid == "emporium":
             continue
-        if _fits_bible(L, lid):
+        # A provisional entry draws nothing in the engine yet (QA4 V-B-001: the Baths of
+        # Trajan read as an empty lawn), so only real art is placed; the rest is dressed.
+        if _fits_bible(L, lid) and L.cat.items[R + lid].source != "provisional":
             L.place(R + lid, rect=rect, name=lid)
             continue
         r = Rect(*rect)
@@ -575,24 +570,31 @@ def _reserved(L: Layout) -> None:
             L.paint(Mask(0, 0, m(Ellipse(31, 41, 6, 6)) & m(r)) & free(L, r), TRAV)
             L.scatter(r, {R + "t_plane": 2, R + "r_statue": 1}, 0.08, seed="pompey_portico")
         elif lid == "trajan_baths":
-            # The Baths of Trajan's precinct until the art returns: its gardens in a ring of
-            # plane trees, bath halls along the axis, exercise yards of trampled earth.
-            L.street([(r.c0 + 1, r.r0 + 15), (r.c1 - 1, r.r0 + 15)], width=1, paving=TRAV)
+            # The Baths of Trajan's precinct until the art returns (bible §3.2: a huge symmetrical
+            # complex of great halls round a central block, exercise yards, gardens in an
+            # enclosure): a paved platform packed with vaulted bath halls either side of the
+            # axis, a palaestra of trampled earth on each flank, gardens to the south, a ring of
+            # plane trees, and through streets on the axis and along the gardens.
+            core = Rect(r.c0 + 4, r.r0 + 3, r.c1 - 4, r.r0 + 20)
+            L.paint(core & free(L, r), TRAV)
             L.street([(r.c0 + 15, 17), (r.c0 + 15, 51)], width=1, paving=TRAV)
-            for k, c in enumerate(range(r.c0 + 3, r.c1 - 3, 6)):
-                put(L, R + "r_bath_small", (c, r.r0 + 12), face="south")
-                put(L, R + "r_bath_small", (c, r.r0 + 16), face="north")
-            L.paint(Rect(r.c0 + 3, r.r0 + 3, r.c0 + 11, r.r0 + 9) & free(L, r), EARTH)
-            L.paint(Rect(r.c1 - 11, r.r0 + 3, r.c1 - 3, r.r0 + 9) & free(L, r), EARTH)
+            L.street([(r.c0 + 1, r.r0 + 22), (r.c1 - 1, r.r0 + 22)], width=1, paving=TRAV)
+            for rr in (r.r0 + 4, r.r0 + 8, r.r0 + 12):
+                for c in (r.c0 + 6, r.c0 + 10, r.c0 + 17, r.c0 + 21):
+                    put(L, R + "r_bath_small", (c, rr), face="south" if rr < r.r0 + 12 else "north")
+            L.paint(Rect(r.c0 + 5, r.r0 + 16, r.c0 + 13, r.r0 + 19) & free(L, r), EARTH)
+            L.paint(Rect(r.c1 - 13, r.r0 + 16, r.c1 - 5, r.r0 + 19) & free(L, r), EARTH)
+            for c in (r.c0 + 4, r.c1 - 4):
+                put(L, R + "r_lacus", (c, r.r0 + 16), face="south")
             for c in range(r.c0, r.c1 + 1, 2):
                 put(L, R + "t_plane", (c, r.r0))
                 put(L, R + "t_plane", (c, r.r1))
             for rr in range(r.r0 + 2, r.r1, 2):
                 put(L, R + "t_plane", (r.c0, rr))
                 put(L, R + "t_plane", (r.c1, rr))
-            L.scatter(Rect(r.c0 + 1, r.r0 + 19, r.c1 - 1, r.r1 - 1),
+            L.scatter(Rect(r.c0 + 1, r.r0 + 24, r.c1 - 1, r.r1 - 1),
                       {R + "t_box": 3, R + "t_rose": 2, R + "t_cypress": 1, R + "r_statue": 0.5,
-                       R + "r_lacus": 0.3}, 0.25, seed="baths_gardens")
+                       R + "r_lacus": 0.3}, 0.22, seed="baths_gardens")
         elif lid == "testaccio":
             # The mound of broken oil amphorae, built as terraced ground (see _levels).
             L.scatter(Mask(0, 0, m(Ellipse(91, 154, 5.5, 6.5)) & m(r)), {R + "r_amphorae": 1},
@@ -983,3 +985,5 @@ def _views(L: Layout) -> None:
     L.view("appia", Rect(128, 115, 175, 159))
     L.view("transtiberim", Rect(0, 60, 54, 159))
     L.view("capitol", Rect(56, 36, 96, 74))
+    L.view("oppian", Rect(136, 8, 175, 58))
+    L.view("aurelia_cutting", Rect(0, 82, 36, 110))

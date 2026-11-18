@@ -1,12 +1,7 @@
 {
   "version": 1,
-  "ids": ["athens.acrocorinth_summit", "athens.artemision", "athens.athenian_treasury", "athens.corinth_apollo", "athens.delos_sanctuary", "athens.delphi_apollo", "athens.diolkos", "athens.naxian_lions", "parsa.babylon_tower", "parsa.babylon_wall", "parsa.etemenanki", "parsa.gates_station", "parsa.halys_gates", "parsa.ishtar_gate", "parsa.pasargadae_garden", "parsa.processional_way", "parsa.royal_road_head", "parsa.susa_palace", "rome.iseum", "rome.pompey_theatre", "rome.saepta", "rome.stadium_domitian", "rome.trajan_baths"],
+  "ids": ["athens.acrocorinth_summit", "athens.artemision", "athens.athenian_treasury", "athens.corinth_apollo", "athens.delos_sanctuary", "athens.delphi_apollo", "athens.diolkos", "athens.naxian_lions", "parsa.babylon_tower", "parsa.babylon_wall", "parsa.etemenanki", "parsa.gates_station", "parsa.halys_gates", "parsa.ishtar_gate", "parsa.pasargadae_garden", "parsa.processional_way", "parsa.royal_road_head", "parsa.susa_palace"],
   "items": [
-    {"id": "rome.stadium_domitian", "set": "rome", "source": "provisional", "layer": "rome", "at": [26, 1162], "variant": 0, "footprint": [25, 10], "size": [25, 10], "height": 60, "landmark": true},
-    {"id": "rome.saepta", "set": "rome", "source": "provisional", "layer": "rome", "at": [32, 1127], "variant": 0, "footprint": [23, 9], "size": [23, 9], "height": 70, "landmark": true},
-    {"id": "rome.iseum", "set": "rome", "source": "provisional", "layer": "rome", "at": [38, 1119], "variant": 0, "footprint": [9, 7], "size": [9, 7], "height": 90, "landmark": true},
-    {"id": "rome.trajan_baths", "set": "rome", "source": "provisional", "layer": "rome", "at": [44, 1010], "variant": 0, "footprint": [30, 30], "size": [30, 30], "height": 110, "landmark": true},
-    {"id": "rome.pompey_theatre", "set": "rome", "source": "provisional", "layer": "rome", "at": [60, 1146], "variant": 0, "footprint": [12, 12], "size": [12, 12], "height": 110, "landmark": true},
     {"id": "athens.delphi_apollo", "set": "athens", "source": "provisional", "layer": "delphi", "at": [254, 762], "variant": 0, "footprint": [6, 12], "size": [6, 12], "height": 100, "landmark": true},
     {"id": "athens.athenian_treasury", "set": "athens", "source": "provisional", "layer": "delphi", "at": [260, 774], "variant": 0, "footprint": [2, 3], "size": [2, 3], "height": 50, "landmark": true},
     {"id": "athens.diolkos", "set": "athens", "source": "provisional", "layer": "corinth", "at": [282, 709], "variant": 0, "footprint": [20, 2], "size": [20, 2], "height": 4, "landmark": true},
