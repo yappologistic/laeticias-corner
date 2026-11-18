@@ -46,7 +46,8 @@
 //   set chatter chatty|quiet   the resident's idle remarks
 //   set camera TX TY ZOOM   look at tile (TX, TY) at a zoom level (0.25, 0.5, 1, 2, 3)
 //   set world TX TY ZOOM    the same at a world grid tile (a jump: themes and places snap)
-//   set look KIND ZOOM      look at the first actor of that kind, or at a named figure
+//   set look KIND ZOOM      look at the first actor of that kind, a named figure, or a
+//                           landmark:ID (the first placed)
 //   set lively reset        start a fresh liveliness record (see expect lively)
 //   set shower now          a shower enters at the upwind edge of the open land
 //   set unlock all          unlock every piece, frame and clue (as a free-build world has)

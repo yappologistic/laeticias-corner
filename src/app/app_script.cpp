@@ -742,16 +742,29 @@ bool App::scriptStep() {
                         found = true;
                         break;
                     }
-                // Or a named figure out in the world (a jump: themes and places snap).
+                // Or a named figure or a landmark out in the world (a jump: themes and places
+                // snap).
+                std::optional<Vec2> spot;
                 for (const world::FigurePlace& f : figures_)
-                    if (!found && f.actor == c.args[1]) {
-                        camera_.place(gridToHome(f.at), std::stof(c.args[2]), screen());
-                        camera_.beginStep();
-                        view_ = camera_;
-                        worldView_->jumped({camera_.position().x + homeOffset_.x,
-                                            camera_.position().y + homeOffset_.y});
-                        found = true;
-                    }
+                    if (!spot && f.actor == c.args[1]) spot = f.at;
+                if (loaded_ && !spot && c.args[1].starts_with("landmark:")) {
+                    const int info =
+                        loaded_->content->findItem(std::string_view(c.args[1]).substr(9));
+                    for (const world::Placed& it : loaded_->map->items())
+                        if (!spot && static_cast<int>(it.info) == info) {
+                            const TileRect r = it.rect();
+                            spot = Vec2{static_cast<float>(r.x0 + r.x1) * 0.5f,
+                                        static_cast<float>(r.y0 + r.y1) * 0.5f};
+                        }
+                }
+                if (!found && spot) {
+                    camera_.place(gridToHome(*spot), std::stof(c.args[2]), screen());
+                    camera_.beginStep();
+                    view_ = camera_;
+                    worldView_->jumped({camera_.position().x + homeOffset_.x,
+                                        camera_.position().y + homeOffset_.y});
+                    found = true;
+                }
                 if (!found) return fail("no " + c.args[1] + " to look at");
             } else if (c.args[0] == "shower") {
                 weather_.shower();
