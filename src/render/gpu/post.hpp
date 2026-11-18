@@ -15,6 +15,7 @@
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <vector>
 
 namespace lc::gpu {
 
@@ -66,6 +67,8 @@ public:
     [[nodiscard]] SDL_Texture* falloff() const { return falloff_.get(); }
     // Halves the glow target's used `w` x `h` down the tier's levels and back up.
     void bloom(Batch& b, int w, int h);
+    // Averages the scene's used `w` x `h` down to one texel for the night's exposure.
+    void measure(Batch& b, SDL_Texture* scene, int w, int h);
     // Grades `scene` (premultiplied, the size prepare() was given) with the light and glow
     // targets onto the current target at `dst`, `uv` being the scene's used part. `aux` draws a
     // second copy in the same frame (the glass panels' blurred source) with its own uniforms.
@@ -106,6 +109,7 @@ private:
     TexturePtr glow_;
     std::array<TexturePtr, kLevels> bloom_;
     TexturePtr falloff_;
+    std::vector<TexturePtr> mean_; // kMeanSide wide, halved down to 1 x 1
     SDL_Texture* shadow_ = nullptr;
 };
 

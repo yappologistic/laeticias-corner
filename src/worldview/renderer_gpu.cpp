@@ -205,6 +205,7 @@ void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow)
     }
     post_->setShadow(lod == Lod::Native ? shadow_.texture.get() : nullptr);
     post_->bloom(batch_, viewW_, viewH_);
+    post_->measure(batch_, view_.texture.get(), viewW_, viewH_);
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get())) SDL_Log("look: %s", SDL_GetError());
 }
 

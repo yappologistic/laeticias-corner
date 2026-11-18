@@ -67,9 +67,7 @@ RegionLook makeHome() {
                    0.30f, 1.10f, 0.3f),
                 ph({1.0f, 0.80f, 0.62f}, 0.80f, {0.30f, 0.32f, 0.62f}, {0.92f, 0.62f, 0.30f}, 0.36f,
                    0.34f, 1.18f, 0.2f),
-                // Night exposure 0.78 (look.py's family: 0.48): the corner's grass and gardens
-                // are darker than the cities' stone, which tuning::kNightExposure is set for.
-                ph({0.78f, 0.82f, 1.0f}, 0.78f, {0.26f, 0.30f, 0.56f}, {0.54f, 0.52f, 0.60f}, 0.28f,
+                ph({0.78f, 0.82f, 1.0f}, 0.48f, {0.26f, 0.30f, 0.56f}, {0.54f, 0.52f, 0.60f}, 0.28f,
                    0.22f, 0.85f, 0.0f)};
     l.sky = {{{hex("#384a7a"), hex("#eaa47e"), hex("#f8dcb4")},
               {hex("#4a8ad0"), hex("#a6cdee"), hex("#eef2ee")},

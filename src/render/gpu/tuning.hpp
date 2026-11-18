@@ -28,20 +28,25 @@ inline constexpr float kBloomUpWeight = 0.9f; // each finer level adds this much
 // Night: low light shifts toward cool blue at its own luma (the eye's rods), keeping the
 // value structure; this share at deep night (the regions' night grade alone leaves warm earth
 // brown).
-inline constexpr float kNightTint[3] = {0.80f, 0.97f, 1.50f};
+inline constexpr float kNightTint[3] = {0.84f, 0.97f, 1.36f};
 inline constexpr float kNightCool = 0.55f;
-// Exposure at deep night against the regions' own night grade, which leaves the bright city art
-// above the bar's night key (median 22-45; the owner's recommendation 28-38).
-inline constexpr float kNightExposure = 0.62f;
+// The exposure follows the scene (its mean luma after the regions' white balance and exposure,
+// averaged on the GPU, no readback) toward a key by the hour: the art is drawn for the bright
+// classic frame (city days median 140+ against the bar's 95-125), and the regions' night grade
+// leaves bright stone above the bar's night key and gardens near black. Keys by day, at dawn and
+// dusk (the clock's glow) and at night (bar: median 22-45, the owner's recommendation 28-38),
+// with the range the exposure may move in by day and by night.
+inline constexpr float kDayKey = 0.44f;
+inline constexpr float kTwilightKey = 0.34f;
+inline constexpr float kNightKey = 0.17f;
+inline constexpr float kDayAdapt[2] = {0.80f, 1.12f};
+inline constexpr float kNightAdapt[2] = {0.45f, 2.0f};
+inline constexpr int kMeanSide = 64; // the scene is first sampled to this many texels across
 // The night shift starts past dusk: from the clock's night at this value to full at 1.
 inline constexpr float kNightFrom = 0.5f;
-// The key by day against the regions' exposure (none at dusk and night, by the clock's glow):
-// the art is drawn for the bright classic frame (day median 140+ in the cities against the
-// bar's 95-125).
-inline constexpr float kKey = 0.9f;
 // Shade takes the sky's colour (the regions' `theme.look.shade`) by the shadow layer's coverage
 // times this: shade is the sky's colour, not grey (quality bar §4.1, graphics plan §1.2).
-inline constexpr float kShadeTint = 1.0f;
+inline constexpr float kShadeTint = 0.8f;
 
 // Light pools (world_lights.hpp): falloff strength * (1 - (d/R)^2)^2, as the worldgen
 // measuring assumes (out/reports/world-nights.md §1).

@@ -22,6 +22,7 @@ struct FinalUniforms {
     float world[4];
     float night[4];
     float shade[4];
+    float key[4];
 };
 
 // std140 mirror of the bloom shaders' block.
@@ -94,7 +95,7 @@ Post::Post(SDL_Renderer* renderer) : renderer_(renderer) {}
 bool Post::init() {
     device_ = SDL_GetGPURendererDevice(renderer_);
     if (device_ == nullptr) return false;
-    finalShader_ = makeShader(device_, "final", 5);
+    finalShader_ = makeShader(device_, "final", 6);
     downShader_ = makeShader(device_, "bloom_down", 1);
     upShader_ = makeShader(device_, "bloom_up", 1);
     SDL_GPUSamplerCreateInfo si{};
@@ -109,6 +110,13 @@ bool Post::init() {
     if (finalShader_ == nullptr || downShader_ == nullptr || upShader_ == nullptr ||
         linear_ == nullptr)
         return false;
+    // The scene's mean: kMeanSide x (side / 2), halved to one texel (cleared: a black night).
+    for (int w = tuning::kMeanSide, h = tuning::kMeanSide / 2; w >= 1;
+         w /= 2, h = std::max(1, h / 2)) {
+        mean_.push_back(target(w, h));
+        if (!mean_.back()) return false;
+        begin(mean_.back().get());
+    }
     // The falloff: (1 - r^2)^2 inside the unit disc, premultiplied white.
     constexpr int kSide = tuning::kPoolTexture;
     std::vector<std::uint32_t> px(static_cast<std::size_t>(kSide * kSide));
@@ -220,15 +228,16 @@ void Post::rebuildStates() {
         drop(up_[i]);
     }
     if (!light_ || !glow_ || !bloom_[0]) return;
-    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): four here.
-    const SDL_GPUTextureSamplerBinding bind[4] = {
+    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): all five.
+    const SDL_GPUTextureSamplerBinding bind[5] = {
         {gpuOf(light_.get()), linear_},
         {gpuOf(glow_.get()), linear_},
         {gpuOf(bloom_[0].get()), linear_},
-        {gpuOf(shadow_ != nullptr ? shadow_ : light_.get()), linear_}};
+        {gpuOf(shadow_ != nullptr ? shadow_ : light_.get()), linear_},
+        {gpuOf(mean_.back().get()), linear_}};
     SDL_GPURenderStateCreateInfo info{};
     info.fragment_shader = finalShader_;
-    info.num_sampler_bindings = 4;
+    info.num_sampler_bindings = 5;
     info.sampler_bindings = bind;
     for (SDL_GPURenderState*& s : final_) s = SDL_CreateGPURenderState(renderer_, &info);
     SDL_GPURenderStateCreateInfo bi{};
@@ -312,6 +321,26 @@ void Post::bloom(Batch& b, int w, int h) {
     use(b, nullptr);
 }
 
+void Post::measure(Batch& b, SDL_Texture* scene, int w, int h) {
+    b.flush();
+    use(b, nullptr);
+    SDL_Texture* src = scene;
+    float u = static_cast<float>(w) / static_cast<float>(w_);
+    float v = static_cast<float>(h) / static_cast<float>(h_);
+    for (const TexturePtr& t : mean_) {
+        float tw = 0;
+        float th = 0;
+        if (!SDL_GetTextureSize(t.get(), &tw, &th) || !SDL_SetRenderTarget(renderer_, t.get()))
+            SDL_Log("gpu: %s", SDL_GetError());
+        b.use(src, SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
+        b.quad(SDL_FRect{0, 0, tw, th}, {0, 0, u, v}, {1, 1, 1, 1});
+        b.flush();
+        src = t.get();
+        u = 1;
+        v = 1;
+    }
+}
+
 void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect dst, UvRect uv,
                  bool aux) {
     SDL_GPURenderState* s = final_[aux ? 1 : 0];
@@ -320,8 +349,7 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
     FinalUniforms u{};
     const float night =
         std::clamp((f.night - tuning::kNightFrom) / (1.0f - tuning::kNightFrom), 0.0f, 1.0f);
-    const float key = tuning::kKey + (1.0f - tuning::kKey) * std::clamp(f.glow, 0.0f, 1.0f);
-    const float exposure = key * g.exposure * (1.0f - (1.0f - tuning::kNightExposure) * night);
+    const float exposure = g.exposure;
     set4(u.gain, g.wb.r * exposure, g.wb.g * exposure, g.wb.b * exposure, g.tint);
     set4(u.shadow, g.shadowTint.r - 0.5f, g.shadowTint.g - 0.5f, g.shadowTint.b - 0.5f, g.contrast);
     set4(u.high, g.highTint.r - 0.5f, g.highTint.g - 0.5f, g.highTint.b - 0.5f, g.saturation);
@@ -337,6 +365,12 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
     const float sl = std::max(1e-3f, 0.299f * f.shade.r + 0.587f * f.shade.g + 0.114f * f.shade.b);
     set4(u.shade, f.shade.r / sl, f.shade.g / sl, f.shade.b / sl,
          f.shadows ? tuning::kShadeTint : 0.0f);
+    const auto lerp = [](float from, float to, float k) { return from + (to - from) * k; };
+    const float twilight = std::clamp(f.glow, 0.0f, 1.0f);
+    const float aim =
+        lerp(lerp(tuning::kDayKey, tuning::kTwilightKey, twilight), tuning::kNightKey, night);
+    set4(u.key, aim, lerp(tuning::kDayAdapt[0], tuning::kNightAdapt[0], night),
+         lerp(tuning::kDayAdapt[1], tuning::kNightAdapt[1], night), 1.0f);
     if (!SDL_SetGPURenderStateFragmentUniforms(s, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());
     use(b, s);
