@@ -12,7 +12,7 @@ import numpy as np
 
 import materials as M
 from arch import carve, ellipsoid, fill, halo, rod, slab
-from greek import (Order, Temple, column, crepidoma, doric_entablature, geison_ring, hip_roof, house_wall, marble_wall,
+from greek import (Order, Temple, column, crepidoma, doric_entablature, geison_ring, herm, hip_roof, house_wall, marble_wall,
                    pediment, poros_wall, stele, statue_base, temple, tiled_roof)
 from rig import Dress
 from setbuild import Landmark
@@ -230,14 +230,33 @@ def approach(m):
         return n + grain + lane + ruts
     fill(m, (16.0, 96.0, 0.0, L, 0.0, RAMP_RISE + 1.0), "gravel",
          lambda X, Y, Z: (Z >= top(Y) - 1.0) & (Z < top(Y)), tone=gravel)
+    # QA4 V-A-007: the ramp read as one plank. Cross ribs of poros set into the gravel every
+    # few metres give footing to the sacrificial animals and carry the climb's rhythm; kerb
+    # stones line the lanes; the trodden lane is paler between darker margins.
+    for y in np.arange(6.0, L - 2.0, 7.0):
+        fill(m, (18.0, 94.0, y - 0.7, y + 0.7, 0.0, RAMP_RISE + 1.6), "poros",
+             lambda X, Y, Z: (Z >= top(Y) - 1.0) & (Z < top(Y) + 0.4),
+             tone=lambda X, Y, Z: 0.3 * ((X % 5.0) > 0.4) - 0.2)
+    for x in (18.0, 94.0):
+        fill(m, (x - 1.2, x + 1.2, 0.0, L, 0.0, RAMP_RISE + 2.0), "poros",
+             lambda X, Y, Z: (Z >= top(Y) - 1.0) & (Z < top(Y) + 0.9),
+             tone=M.ashlar(0.9, 3.2, seed + 3, joint=0.4, spread=0.8))
+    fill(m, (16.0, 96.0, 0.0, L, 0.0, RAMP_RISE + 1.0), "gravel",
+         lambda X, Y, Z: (Z >= top(Y) - 0.5) & (Z < top(Y)) & (np.abs(X - 56.0) > 26.0),
+         tone=lambda X, Y, Z: gravel(X, Y, Z) - 0.45, only_solid=True)
     # Retaining walls with parapets along both sides.
     for x0, x1 in ((0.0, 16.0), (96.0, 112.0)):
         fill(m, (x0 + 4.0, x1 - 4.0, 0.0, L, 0.0, RAMP_RISE + 6.0), "poros",
              lambda X, Y, Z: Z < top(Y) + 4.0, tone=M.ashlar(2.6, 7.0, seed + 1, joint=0.35, spread=0.6, polygonal=0.4))
         fill(m, (x0 + 3.6, x1 - 3.6, 0.0, L, 0.0, RAMP_RISE + 7.0), "poros",
              lambda X, Y, Z: (Z >= top(Y) + 4.0) & (Z < top(Y) + 4.8), tone=0.3)
-    # A few kerbs and hitching stones; a statue base at the foot.
+    # Statue bases on the parapets (dedications line the way), a base at the foot.
     statue_base(m, 56.0, L - 6.0, 0.0, 6.0, 3.0)
+    for i, y in enumerate((30.0, 90.0, 150.0, 200.0)):
+        for x in (8.0, 104.0):
+            zt = float(top(np.float32(y))) + 4.8
+            slab(m, x - 2.6, x + 2.6, y - 2.6, y + 2.6, zt, zt + 3.0, "marble", tone=M.ashlar(1.5, 2.6, seed + 9 + i))
+            herm(m, x, y, zt + 3.0, h=8.0, face="+y" if x > 56 else "-y")
 
 
 def _approach_landmark():

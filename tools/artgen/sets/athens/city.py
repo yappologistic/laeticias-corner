@@ -107,10 +107,17 @@ def pnyx(m):
     def top(X, Y):
         n = (value_noise(X, Y, X * 0, 9.0, seed) - 0.5) * 1.0
         return np.maximum(_pnyx_ground(X) + n, 0.3)
-    rock_field(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), top, seed=seed)
-    fill(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), "summer",
-         lambda X, Y, Z: (Z > top(X, Y) - 0.8) & (value_noise(X * 0.6, Y * 0.6, Z * 0, 5.0, seed + 2) > 0.48),
-         tone=lambda X, Y, Z: (value_noise(X * 3, Y * 3, Z, 1.0, seed + 3) - 0.5) * 0.9, only_solid=True)
+    rock_field(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), top, seed=seed, stains=False)
+    # Thin dry earth over most of the slope in broad soft patches (QA4 V-A-006: no mottle):
+    # bare grey bedrock shows in long ledges along the contours, thyme in the earth.
+    def earth(X, Y, Z):
+        n = value_noise(X * 0.35, Y * 0.35, Z * 0, 12.0, seed + 2) + 0.18 * np.sin(X * 0.09 + Y * 0.01)
+        return (Z > top(X, Y) - 0.8) & (n > 0.36)
+    fill(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), "summer", earth,
+         tone=lambda X, Y, Z: (value_noise(X, Y, Z * 0, 6.0, seed + 3) - 0.5) * 0.5 - 0.25, only_solid=True)
+    fill(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), "olive",
+         lambda X, Y, Z: earth(X, Y, Z) & (value_noise(X * 2.0, Y * 2.0, Z * 0, 1.0, seed + 4) > 0.8),
+         tone=-0.2, only_solid=True)
     # The retaining wall along the north edge and the rock-cut bema with its steps.
     poros_wall(m, 0.0, 6.0, 0.0, Lh, 0.0, 4.0, seed + 4, course=2.0)
     fill(m, (6.0, 30.0, 7 * T, 10 * T, 0.0, BEMA), "attic_rock", tone=M.ashlar(2.5, 8.0, seed + 5, spread=0.5))
@@ -296,7 +303,13 @@ def kallirrhoe(m):
     a stone kerb and steps down to it, maidenhair and reeds."""
     seed = 471
     rock_field(m, (0.0, 48.0, 0.0, 22.0, 0.0, 14.0), lambda X, Y: 12.0 * np.clip((22.0 - Y) / 20.0, 0, 1) ** 0.6 +
-               (value_noise(X, Y, X * 0, 4.0, seed) - 0.5) * 2, seed=seed)
+               (value_noise(X, Y, X * 0, 4.0, seed) - 0.5) * 2, seed=seed, stains=False)
+    # Damp dark rock and moss round the basin, maidenhair on the ledge (QA4 V-A-009).
+    fill(m, (0.0, 48.0, 12.0, 22.0, 0.0, 14.0), "leaf_dark",
+         lambda X, Y, Z: (value_noise(X, Y, Z, 2.0, seed + 1) > 0.55) & (Y > 15.0), tone=-0.1, only_solid=True)
+    fill(m, (0.0, 48.0, 0.0, 22.0, 0.0, 14.0), "slate",
+         lambda X, Y, Z: (Y > 17.0) & (Z < 3.0) & (value_noise(X, Y, Z, 2.0, seed + 2) > 0.4), tone=-0.2,
+         only_solid=True)
     fill(m, (8.0, 40.0, 20.0, 40.0, 0.0, 1.0), "water", lambda X, Y, Z: np.hypot((X - 24) / 15.0, (Y - 30) / 9.0) < 1,
          tone=lambda X, Y, Z: 0.5 * ((X + Y * 0.5) % 4.0 < 0.6))
     fill(m, (6.0, 42.0, 18.0, 42.0, 0.0, 2.0), "poros",

@@ -494,7 +494,7 @@ def pediment_image(width, height, subject="west"):
             for d in range(2):
                 horse(cv, xx - side * d * h * 0.3, base + h * 0.35, h * 0.9, "stand", -side, "H", "h",
                       dress_cols(i))
-    elif subject == "hephaisteion":
+    elif subject in ("hephaisteion", "gigantomachy"):
         for side in (-1, 1):
             for j, u in enumerate((0.04, 0.14, 0.26, 0.36)):
                 xx = cx + side * width * u

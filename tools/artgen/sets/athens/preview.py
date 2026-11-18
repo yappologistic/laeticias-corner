@@ -304,12 +304,82 @@ def procession():
     return s
 
 
+WAYPOINTS = ("delphi_apollo", "athenian_treasury", "corinth_apollo", "acrocorinth_summit", "diolkos",
+             "delos_sanctuary", "naxian_lions", "artemision")
+
+
+def delphi(pieces):
+    """The temple terrace at Delphi after its layout (local plan c east, r south): the terrace
+    at +2 on its polygonal wall, the Treasury below at +1, olives on the slope."""
+    p = Plan(0, 19, 2, 15)
+    p.paint("packed_earth", 0, 19, 2, 15)
+    p.level(2, 4, 19, 3, 9)
+    p.level(1, 0, 19, 10, 12)
+    p.paint("marble_paving", 4, 19, 3, 9)
+    p.place("delphi_apollo", 6, 17, 4, 9, pieces)
+    p.place("athenian_treasury", 3, 5, 10, 11, pieces)
+    for (c, r) in ((2, 14), (8, 14), (14, 13), (17, 15), (11, 15)):
+        p.kit("t_olive", c, r)
+    p.walker(_w("citizen", 0, "move", "back"), 18, 11, z=16)
+    p.walker(_w("priest", 0), 18, 6, z=32)
+    return p.s
+
+
+def corinth(pieces):
+    p = Plan(0, 19, 8, 23)
+    p.paint("packed_earth", 0, 19, 8, 23)
+    p.level(1, 3, 15, 9, 16)
+    p.level(3, 3, 8, 18, 23)
+    p.level(5, 4, 6, 19, 21)
+    p.place("corinth_apollo", 4, 15, 10, 15, pieces)
+    p.place("acrocorinth_summit", 4, 6, 19, 21, pieces)
+    p.place("diolkos", 16, 17, 2, 21, pieces)
+    for (c, r) in ((1, 10), (13, 18), (10, 21), (1, 16)):
+        p.kit("t_olive", c, r)
+    p.walker(_w("citizen", 1, "move"), 16, 17)
+    return p.s
+
+
+def delos(pieces):
+    p = Plan(2, 15, 1, 16)
+    p.paint("marble_paving", 3, 14, 2, 13)
+    p.paint("riverbed", 6, 10, 14, 15)
+    p.place("delos_sanctuary", 4, 13, 2, 9, pieces)
+    p.place("naxian_lions", 4, 11, 10, 11, pieces)
+    p.walker(_w("citizen", 0, "move"), 5, 12)
+    p.walker(_w("priest", 0), 6, 11)
+    return p.s
+
+
+def ephesus(pieces):
+    p = Plan(0, 19, 11, 22)
+    p.paint("packed_earth", 0, 19, 11, 22)
+    p.place("artemision", 2, 17, 13, 20, pieces)
+    for (c, r) in ((0, 12), (19, 12), (0, 21), (19, 21), (10, 22)):
+        p.kit("p_reeds", c, r)
+    p.walker(_w("citizen", 0, "move", "back"), 18, 17)
+    return p.s
+
+
+def waypoint_previews(pages, cat, pieces, floors, dst):
+    out = dst / "waypoints"
+    for name in WAYPOINTS:
+        s = landmark_scene(P + name, cat, pieces, ground="athens.packed_earth",
+                           walkers=(_w("citizen", 0), _w("hoplite", 0, "guard")))
+        s.floors = floors
+        save(s.render(pages), out, name, scales=(1, 2))
+    for name, fn in (("scene_delphi", delphi), ("scene_corinth", corinth), ("scene_delos", delos),
+                     ("scene_ephesus", ephesus)):
+        save(fn(pieces).render(pages), out, name, scales=(1, 2))
+
+
 def main(build, out_dir):
     from sets.parsa.preview import anim_sheet, item_sheet, walker_sheet
     cat = json.loads((setbuild.SETS / "athens" / "catalog.json").read_text())
     pages = Pages(out_dir, ["athens"], build.k, home=HOME)
     pieces, floors = _geom(out_dir)
     dst = build.previews
+    waypoint_previews(pages, cat, pieces, floors, dst)
     for it in cat["items"]:
         if it.get("landmark"):
             iid = it["id"]

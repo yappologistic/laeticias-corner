@@ -10,7 +10,7 @@ import math
 import numpy as np
 
 import materials as M
-from arch import carve, ellipsoid, face_box, fill, halo, revolve, rod, slab
+from arch import carve, ellipsoid, face_box, fill, flight, halo, revolve, rod, slab
 from greek import city_wall, herm, house_wall, stele, statue_base, tiled_roof, vase
 from setbuild import Item
 from sets.athens.common import FIRE, LAMP, crane, lamp_niche, olive_tree, scaffold
@@ -589,11 +589,10 @@ def g_farmstead(v, frame, frames, k):
 
 
 def stair_marble(v, frame, frames, k):
-    """A marble stair of one level (16 px) rising toward -y across two tiles."""
+    """A marble stair of one level (16 px) rising toward -y across two tiles: four deep steps
+    with lit nosings and shaded risers between poros cheek walls (QA4 V-A-005)."""
     m = _m(1, 2, 12, k)
-    for i in range(6):
-        slab(m, 0.5, 15.5, 32.0 - (i + 1) * 5.33, 32.0, 0.0, 8.0 * (i + 1) / 6, "marble",
-             tone=lambda X, Y, Z, i=i: 0.35 * (Z > 8.0 * (i + 1) / 6 - 0.5) - 0.05 * i)
+    flight(m, 0.5, 15.5, 0.0, 32.0, 8.0, 4, "marble", tone=M.ashlar(2.0, 5.0, 591, spread=0.25), cheek_mat="poros")
     return m
 
 

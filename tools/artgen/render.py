@@ -283,8 +283,13 @@ def finish(sh: Shaded, k: int, halos=(), cull=False):
         for halo in halos:
             hx, hy = (halo.x - halo.y) * k, ((halo.x + halo.y) / 2 - halo.z) * k
             if cull:
+                # Seen if any pixel near its centre shows something no more than 3 units in
+                # front of it (or nothing): a lamp in a window, behind columns or inside a
+                # lantern still shows; one behind the whole building does not.
+                rr = max(2, int(halo.radius * k * 0.5))
                 ci, ri = int(np.floor(hx)) - c0, int(np.floor(hy)) - r0
-                if 0 <= ri < H and 0 <= ci < W and dep[ri, ci] > halo.z * k + 2.0 * k:
+                win = dep[max(ri - rr, 0):max(min(ri + rr + 1, H), 0), max(ci - rr, 0):max(min(ci + rr + 1, W), 0)]
+                if win.size and (win > halo.z * k + 3.0 * k).all():
                     continue
             d = np.hypot(pxx + 0.5 - hx, (pyy + 0.5 - hy) * 1.6) / (halo.radius * k)
             inten = halo.strength * np.clip(1 - d, 0, 1) ** 1.6 * HALO_STEPS
