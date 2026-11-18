@@ -351,4 +351,50 @@ inline constexpr float kDayMakeup = 1.259f;        // +2 dB
 inline constexpr float kNightMakeup = 1.122f;      // +1 dB
 inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 dB
 
+
+// City life (docs/design/living-world.md §7, src/life/): the simulation of the prebuilt regions.
+namespace life {
+// Live actors at most (population, chains, casts, tokens and figures together); populations are
+// scaled down proportionally only when the active area would need more. Measured by the bench:
+// out/reports/engine-city-life.md.
+inline constexpr int kLiveCap = 720;
+inline constexpr double kSimBudgetMs = 0.6;       // simulation average per step (CLAUDE.md)
+inline constexpr std::size_t kPool = 1024;        // actor records, preallocated
+inline constexpr int kBuckets = 3;                // round-robin update buckets (20 Hz each)
+inline constexpr int kSpawnsPerStep = 40;         // materialisations per simulation step
+inline constexpr int kTableBuildsPerStep = 6;     // next-hop tables a step expects to build (stat)
+inline constexpr std::size_t kTablesPerRegion = 1024;             // cached tables at most (LRU)
+inline constexpr std::size_t kTableBytesPerRegion = 1024 * 1024;  // and their bytes
+inline constexpr int kMoveReach = 40;   // tiles a walker may be from the path graph
+inline constexpr int kLabelReach = 24;  // worldgen's REACH (citylife.py), for chain slots
+inline constexpr float kWalkSpeed = 0.9f; // tiles/s: a person (lifesim SPEED["walk"])
+inline constexpr float kCartSpeed = 0.6f; // tiles/s: carts and sledges (lifesim SPEED["cart"])
+inline constexpr float kFormationSpeed = 0.8f; // processions and groups
+inline constexpr float kFadeSeconds = 0.5f;    // fading in from a doorway or out into one
+inline constexpr int kLiveMargin = 12;  // tiles around the view whose chunks are live
+inline constexpr float kDoorReach = 12.0f;   // tiles searched for a door to come out of or enter
+inline constexpr float kSlotReach = 24.0f;   // tiles searched for a slot target without `within`
+inline constexpr float kFailPause0 = 1.0f;   // seconds of standing after a step that failed
+inline constexpr float kFailPause1 = 2.5f;
+inline constexpr float kIdle0 = 6.0f;        // a routine that ran out: idle, then a short wander
+inline constexpr float kIdle1 = 14.0f;
+inline constexpr float kIdleWander = 3.0f;   // tiles
+inline constexpr int kWanderTries = 6;       // straight walkable lines tried per wander move
+inline constexpr float kFollowReach = 16.0f; // tiles: whom a `follow` step may follow
+inline constexpr double kGameSecondsPerReal = 120.0; // a game hour is 30 real seconds
+inline constexpr float kDefaultEventSeconds = 60.0f;
+inline constexpr int kMaxRunningEvents = 24;      // world-wide
+inline constexpr int kEventTrail = 2048;          // route tiles kept per running event
+inline constexpr double kReactiveCooldown = 90.0; // seconds, per region
+inline constexpr double kEventStartGap = 20.0;    // seconds between starts in the active area
+inline constexpr float kLargeEventsVisible = 1;   // living-world §1.1
+inline constexpr float kPortStay = 75.0f;         // seconds a ship stays at a port
+inline constexpr float kShipSpeed = 0.7f;         // tiles/s on a lane
+inline constexpr int kTokenCap = 256;
+inline constexpr int kChainCap = 3;     // lifesim CAP: goods a slot or a hand holds
+inline constexpr int kPeriodicSearchDays = 64; // days simulated to find the chains' cycle
+inline constexpr float kLeaveTimeout = 30.0f;  // a folded-back actor still in view goes anyway
+inline constexpr double kChunkLinger = 2.0;    // seconds a chunk stays live after the area left
+} // namespace life
+
 } // namespace lc::tuning

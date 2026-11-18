@@ -45,7 +45,8 @@ struct Theme {
 };
 
 struct RegionDistrict {
-    std::string id;             // the name part of "<region>/<name>"
+    std::string id;   // the name part of "<region>/<name>"
+    std::string area; // living-world §1.1 area kind: centre, town, country, road, sea, wild
     nlohmann::json populations; // living-world.md shapes, kept as written
 };
 
