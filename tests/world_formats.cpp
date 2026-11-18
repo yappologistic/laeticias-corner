@@ -214,6 +214,17 @@ TEST_CASE("graph: failing fixtures") {
               .find("layer 'town' differs from 'base'") != std::string::npos);
 }
 
+TEST_CASE("region files cut short or corrupted anywhere are refused or read, never a crash") {
+    const std::string text = fixture("region_ok.json");
+    for (std::size_t k = 0; k < text.size(); k += 1 + text.size() / 400) {
+        CAPTURE(k);
+        CHECK_NOTHROW((void)parseRegionFile(text.substr(0, k), "cut.json", "town", 64, 96));
+        std::string flipped = text;
+        flipped[k] = static_cast<char>(flipped[k] ^ 0x5A);
+        CHECK_NOTHROW((void)parseRegionFile(flipped, "flipped.json", "town", 64, 96));
+    }
+}
+
 TEST_CASE("region: the fixture parses, unknown sections stay raw") {
     const auto r = parseRegionFile(fixture("region_ok.json"), "region_ok.json", "town", 64, 96);
     REQUIRE_MESSAGE(r.has_value(), errorOf(r));
