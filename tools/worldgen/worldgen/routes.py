@@ -163,8 +163,7 @@ def straight(st, i: int, n: int) -> bool:
     return i >= 0 and i + n <= len(st) and all(s == st[i] for s in st[i:i + n])
 
 
-def profile(path, lv, water, z0, z1, keep: set, wide=None,
-            landing: int = 0) -> tuple[list, list, int]:
+def profile(path, lv, water, z0, z1, keep: set, landing: int = 0) -> tuple[list, list, int]:
     """Road levels along the path, changing only on ramps: returns (z, ramps, failures), ramps
     as (first ramp index, +1 up / -1 down in travel direction). A ramp occupies 4 straight path
     tiles at the lower level, with the tile before and after it in line (foot and head)."""
@@ -330,15 +329,25 @@ def way_split(W, g, way: Way, path, marks, levels, taken) -> None:
     way.path = path
     water = W.river | ~W.land
     keep = set(marks) | {i for i, t in enumerate(path) if t in taken}
-    z0 = levels.get(0, int(L.LV[path[0][1], path[0][0]]))
-    z1 = levels.get(len(path) - 1)
-    if path[-1] in taken:
-        z1 = taken[path[-1]][1]
-    if path[0] in taken:
-        z0 = taken[path[0]][1]
-    z, ramps, fails = profile(path, L.LV, water, z0, z1, keep,
-                              lambda i: section(path, i, way.width, W.blocked),
-                              landing=1 if way.width >= 2 else 0)
+    fixed = dict(levels)
+    for i in (0, len(path) - 1):
+        if path[i] in taken:
+            fixed[i] = taken[path[i]][1]
+    fixed.setdefault(0, int(L.LV[path[0][1], path[0][0]]))
+    # Between two fixed levels (portals, junctions) the profile is laid piece by piece, so a
+    # road meets every portal at the plan's level.
+    cuts = sorted(fixed) + ([len(path) - 1] if len(path) - 1 not in fixed else [])
+    z, ramps, fails = [], [], 0
+    for a, b in zip(cuts, cuts[1:]):
+        sub = path[a:b + 1]
+        zz, rr, ff = profile(sub, L.LV, water, fixed[a], fixed.get(b),
+                             {k - a for k in keep if a <= k <= b},
+                             landing=1 if way.width >= 2 else 0)
+        z += zz if not z else zz[1:]
+        ramps += [(i + a, up) for i, up in rr]
+        fails += ff
+    if len(path) == 1:
+        z = [fixed[0]]
     way.z = z
     if fails:
         W.stats.setdefault("profile_failures", []).append(f"{way.id}: {fails} level(s) short")

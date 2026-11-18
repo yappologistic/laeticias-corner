@@ -138,7 +138,7 @@
     {"a": "acharnai_road_farm_621_189", "b": "acharnai_road_farm_626_177", "kind": "road", "via": [[183, 658], [183, 653]]},
     {"a": "acharnai_road_farm_626_177", "b": "acharnai_road_626_176", "kind": "road"},
     {"a": "mesogeia_e", "b": "mesogeia_road_738_258", "kind": "track", "via": [[265, 542], [258, 542]]},
-    {"a": "eleusis_w", "b": "megarid_road_551_252", "kind": "road", "via": [[240, 725], [244, 725], [244, 727], [252, 727]]},
+    {"a": "eleusis_w", "b": "megarid_road_551_252", "kind": "road", "via": [[240, 726], [252, 726]]},
     {"a": "megarid_road_551_252", "b": "megarid_road_farm_551_255", "kind": "road"},
     {"a": "megarid_road_farm_551_255", "b": "megarid_road_556_268", "kind": "road", "via": [[258, 728], [258, 723]]},
     {"a": "megarid_road_556_268", "b": "corinth_n", "kind": "road", "via": [[276, 723], [276, 713]]},

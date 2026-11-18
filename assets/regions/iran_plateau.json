@@ -1,0 +1,494 @@
+{
+ "version": 1,
+ "id": "iran_plateau",
+ "name": "Iran Plateau",
+ "caption": "Iran Plateau",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.92,
+    0.84,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    0.95,
+    0.78,
+    0.66
+   ],
+   "night": [
+    0.42,
+    0.48,
+    0.66
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.86,
+    0.82,
+    0.74
+   ],
+   "strength": 0.12
+  },
+  "climate": "parsa",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/fields.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/desert_night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "world.traveller",
+     "density": "road_day",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "world.merchant",
+     "density": "road_day",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.donkey",
+     "density": "road_day",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "parsa.groom",
+     "density": "watch",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "land",
+   "populations": [
+    {
+     "actor": "world.stork",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "seasons": [
+      "spring",
+      "summer"
+     ]
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [
+  {
+   "id": "flock",
+   "formation": "cluster",
+   "radius": 3,
+   "leader": {
+    "actor": "parsa.shepherd"
+   },
+   "members": [
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "count": 6
+    },
+    {
+     "actor": "world.goat",
+     "count": 3
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ]
+  }
+ ],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [],
+ "zones": [
+  {
+   "kind": "pasture",
+   "rect": [
+    0,
+    22,
+    12,
+    28
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    0,
+    12,
+    12,
+    21
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    39,
+    124,
+    50,
+    138
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    39,
+    122,
+    50,
+    123
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    51,
+    124,
+    55,
+    138
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    51,
+    122,
+    55,
+    123
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    80,
+    5,
+    84,
+    12
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    80,
+    0,
+    84,
+    4
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    85,
+    5,
+    96,
+    12
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    85,
+    0,
+    96,
+    4
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    91,
+    73,
+    101,
+    89
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    102,
+    73,
+    107,
+    89
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    124,
+    22,
+    135,
+    26
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    124,
+    10,
+    135,
+    21
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    136,
+    22,
+    140,
+    26
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    136,
+    10,
+    140,
+    21
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    170,
+    56,
+    186,
+    66
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    170,
+    50,
+    186,
+    55
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    199,
+    90,
+    203,
+    99
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    199,
+    83,
+    203,
+    89
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    204,
+    90,
+    215,
+    99
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    204,
+    83,
+    215,
+    89
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    289,
+    107,
+    303,
+    123
+   ],
+   "group": "flock"
+  }
+ ],
+ "cards": {},
+ "strings": {},
+ "journal": []
+}

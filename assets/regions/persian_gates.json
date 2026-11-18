@@ -1,0 +1,250 @@
+{
+ "version": 1,
+ "id": "persian_gates",
+ "name": "The Persian Gates",
+ "native": "Persian Gates",
+ "caption": "The Persian Gates · c. 470 BC",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.92,
+    0.84,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    0.95,
+    0.78,
+    0.66
+   ],
+   "night": [
+    0.42,
+    0.48,
+    0.66
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.86,
+    0.82,
+    0.74
+   ],
+   "strength": 0.12
+  },
+  "climate": "parsa",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "cliffs",
+   "populations": [
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "parsa.archer",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "reserved",
+   "populations": [
+    {
+     "actor": "parsa.archer",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  },
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "parsa.guard_spear",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "parsa.archer",
+     "density": "daytime",
+     "max_per_chunk": 3
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [],
+ "zones": [],
+ "cards": {},
+ "strings": {
+  "first_visit": "The Persian Gates. Guards watch the defile on the road to Pārsa."
+ },
+ "journal": [
+  "landmark:*"
+ ]
+}

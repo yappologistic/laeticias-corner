@@ -1,0 +1,265 @@
+{
+ "version": 1,
+ "id": "attica_north",
+ "name": "Attica North",
+ "caption": "Attica North",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.98,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.99,
+    0.95
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.68
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.7
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.93,
+    0.89,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "athens",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/fields.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/desert_night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "world.traveller",
+     "density": "road_day",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "world.merchant",
+     "density": "road_day",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.donkey",
+     "density": "road_day",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "farm",
+   "populations": [
+    {
+     "actor": "athens.farmer",
+     "density": "fields",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.dog",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "land",
+   "populations": [
+    {
+     "actor": "world.stork",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "seasons": [
+      "spring",
+      "summer"
+     ]
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [
+  {
+   "actor": "world.donkey",
+   "variant": 1,
+   "route": {
+    "start": "base:acharnai_road_yard_633_177",
+    "end": "base:acharnai_n"
+   },
+   "count": 2,
+   "carry": "world.goods_charcoal"
+  }
+ ],
+ "zones": [],
+ "cards": {},
+ "strings": {},
+ "journal": []
+}

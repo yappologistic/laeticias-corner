@@ -1,0 +1,278 @@
+{
+ "version": 1,
+ "id": "latium_italy",
+ "name": "Latium Italy",
+ "caption": "Latium Italy",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.96,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.66
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.68
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.9,
+    0.88,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "rome",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/fields.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/desert_night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "world.traveller",
+     "density": "road_day",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "world.merchant",
+     "density": "road_day",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.donkey",
+     "density": "road_day",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "farm",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "fields",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.dog",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "land",
+   "populations": []
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [
+  {
+   "id": "mule_train",
+   "formation": "line",
+   "spacing": 0.8,
+   "leader": {
+    "actor": "world.muleteer"
+   },
+   "members": [
+    {
+     "actor": "world.mule",
+     "variant": 1,
+     "count": 3
+    }
+   ]
+  }
+ ],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [
+  {
+   "actor": "world.traveller",
+   "route": {
+    "start": "base:appia_se",
+    "end": "base:appia_brund_w"
+   },
+   "count": 3
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "base:appia_se",
+    "end": "base:appia_brund_w"
+   },
+   "count": 1,
+   "group": "mule_train"
+  }
+ ],
+ "zones": [],
+ "cards": {},
+ "strings": {},
+ "journal": []
+}

@@ -201,30 +201,36 @@ def overview_image(world: World, cat: Catalog, atlas: Atlas, root: Path, px: int
             if lv[rr, cc] >= 12:
                 d.polygon([top, (x - s * 0.3, y - s * 0.55), (x + s * 0.3, y - s * 0.55)],
                           fill=(246, 246, 240))
-    # Planned routes dotted, built roads solid-dotted darker.
-    for rid, route in P.ROUTES.items():
-        pts = []
-        for p in route["points"]:
-            if isinstance(p, str):
-                pts.append(P.PORTALS[p.split(":", 1)[1]][1])
-            else:
-                pts.append(p)
-        _dotted(d, [(c * px + px / 2, r * px + px / 2) for c, r in pts],
-                (120, 84, 52) if not route.get("build") else (70, 44, 26), 2 * px, 3 * px)
+    # The seams of time: a faint hatched band (the Ionian mist, the Ionian-coast haze).
+    for rid in ("seam_ionian", "seam_ionia"):
+        c0, r0, c1, r1 = P.REGIONS[rid][3]
+        for k in range(r0, r1, 6):
+            d.line([(c0 * px, k * px), (c1 * px, (k + 4) * px)], fill=(206, 196, 170), width=1)
+    # Roads as built (every layer's road and track edges), lanes dotted, stations as squares.
     for g in graphs:
+        city = P.REGIONS.get(g.layer, ("",))[0] in ("city", "home")
         for e in g.edges:
             a_, b_ = g.node(e.a), g.node(e.b)
-            if a_ and b_ and e.kind == "road":
-                pts = [a_.at, *e.via, b_.at]
-                xy = [((COLS - 1 - ty) * px + px / 2, tx * px + px / 2) for tx, ty in pts]
-                _dotted(d, xy, (60, 36, 20), px, px)
+            if city or not (a_ and b_) or e.kind not in ("road", "track", "bridge", "ford"):
+                continue
+            pts = [a_.at, *e.via, b_.at]
+            xy = [((COLS - 1 - ty) * px + px / 2, tx * px + px / 2) for tx, ty in pts]
+            d.line(xy, fill=(96, 58, 34) if e.kind != "track" else (138, 104, 72),
+                   width=max(1, px if e.kind != "track" else px // 2))
         for ln in g.lanes:
             xy = [((COLS - 1 - ty) * px + px / 2, tx * px + px / 2) for tx, ty in ln.points]
             _dotted(d, xy, (70, 96, 120), px, 2 * px)
-    for lid, lane in P.LANES.items():
-        if not lane.get("build"):
-            xy = [(c * px + px / 2, r * px + px / 2) for c, r in lane["points"]]
-            _dotted(d, xy, (110, 136, 156), px, 3 * px)
+        for n in g.nodes:
+            if n.kind == "station":
+                x, y = (COLS - 1 - n.at[1]) * px, n.at[0] * px
+                d.rectangle((x - px, y - px, x + px, y + px), fill=(150, 46, 36), outline=SEPIA)
+    # Lands, ranges and rivers named in small capitals.
+    f_land = font(root, 11 * px // 2, bold=True)
+    f_river = font(root, 8 * px // 2)
+    for name, (c, r) in P.LAND_LABELS:
+        _text(d, (c * px, r * px), name, f_land, fill=(132, 104, 76))
+    for name, (c, r) in P.RIVER_LABELS:
+        _text(d, (c * px, r * px), name, f_river, fill=(70, 104, 132), halo=False)
     # Region frames for the three cities and the home, labels and markers.
     f_big = font(root, 15 * px // 2, bold=True)
     f_mid = font(root, 10 * px // 2, bold=True)

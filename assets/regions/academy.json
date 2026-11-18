@@ -1,0 +1,251 @@
+{
+ "version": 1,
+ "id": "academy",
+ "name": "Akademeia",
+ "native": "Ἀκαδήμεια",
+ "caption": "The Academy · 432 BC",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.98,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.99,
+    0.95
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.68
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.7
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.93,
+    0.89,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "athens",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "grove",
+   "populations": [
+    {
+     "actor": "athens.youth",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.athlete",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "reserved",
+   "populations": [
+    {
+     "actor": "athens.athlete",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.elder",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [],
+ "zones": [],
+ "cards": {
+  "academy_grove": {
+   "title": "Akademeia",
+   "epithet": "Gymnasium in the sacred grove",
+   "text": "A gymnasium among the sacred olives and planes outside the Dipylon; the torch races start at the altar of Prometheus."
+  }
+ },
+ "strings": {
+  "first_visit": "The Academy: the grove of the hero Akademos, olives and running boys."
+ },
+ "journal": [
+  "landmark:*"
+ ]
+}

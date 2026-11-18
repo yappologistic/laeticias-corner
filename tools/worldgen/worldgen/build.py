@@ -297,6 +297,8 @@ def main(argv=None) -> int:
     ap.add_argument("--out")
     ap.add_argument("--reports")
     ap.add_argument("--no-write", action="store_true")
+    ap.add_argument("--life", action="store_true",
+                    help="write the region files of the stretches, seas, seams and waypoints")
     a = ap.parse_args(argv)
     t0 = time.time()
     b = Builder(Path(a.root), a.out, a.reports, write=not a.no_write)
@@ -316,6 +318,12 @@ def main(argv=None) -> int:
         targets = names
     else:
         targets = [n for n in b.order if n in b.layers]
+    if a.life:
+        from . import life
+        files = life.write(b.composed(), b.graphs, b.root / "assets/regions")
+        print(f"life: {len(files)} region files -> {b.root / 'assets/regions'}")
+        if not targets and not want_world:
+            return 0
     if not targets and not want_world:
         ap.print_usage()
         return 2

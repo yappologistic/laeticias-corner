@@ -1,0 +1,958 @@
+{
+ "version": 1,
+ "id": "anatolia",
+ "name": "Anatolia",
+ "caption": "Anatolia",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.92,
+    0.84,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    0.95,
+    0.78,
+    0.66
+   ],
+   "night": [
+    0.42,
+    0.48,
+    0.66
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.86,
+    0.82,
+    0.74
+   ],
+   "strength": 0.12
+  },
+  "climate": "parsa",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/road.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/desert_night.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "world.traveller",
+     "density": "road_day",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "world.merchant",
+     "density": "road_day",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.donkey",
+     "density": "road_day",
+     "max_per_chunk": 2
+    },
+    {
+     "actor": "parsa.groom",
+     "density": "watch",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "farm",
+   "populations": [
+    {
+     "actor": "parsa.farmer",
+     "density": "fields",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.dog",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  },
+  {
+   "id": "land",
+   "populations": [
+    {
+     "actor": "world.stork",
+     "density": "daytime",
+     "max_per_chunk": 1,
+     "seasons": [
+      "spring",
+      "summer"
+     ]
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [
+  {
+   "id": "flock",
+   "formation": "cluster",
+   "radius": 3,
+   "leader": {
+    "actor": "parsa.shepherd"
+   },
+   "members": [
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "count": 6
+    },
+    {
+     "actor": "world.goat",
+     "count": 3
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "caravan",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.caravan_driver"
+   },
+   "members": [
+    {
+     "actor": "parsa.dromedary",
+     "count": 4
+    },
+    {
+     "actor": "world.donkey",
+     "variant": 1,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "mule_train",
+   "formation": "line",
+   "spacing": 0.8,
+   "leader": {
+    "actor": "world.muleteer"
+   },
+   "members": [
+    {
+     "actor": "world.mule",
+     "variant": 1,
+     "count": 4
+    }
+   ]
+  }
+ ],
+ "chains": [],
+ "events": [
+  {
+   "id": "courier_relay",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "07:00",
+     "18:00"
+    ],
+    "every": 7200
+   },
+   "size": "small",
+   "duration": [
+    30,
+    60
+   ],
+   "cast": [
+    {
+     "actor": "parsa.courier"
+    },
+    {
+     "actor": "parsa.groom"
+    }
+   ],
+   "route": [
+    "base:royal_road_station_887_212",
+    "base:royal_road_station_889_196",
+    "base:royal_road_station_896_189",
+    "base:royal_road_station_906_183",
+    "base:royal_road_station_906_167",
+    "base:royal_road_station_916_161",
+    "base:royal_road_station_923_152",
+    "base:royal_road_station_930_141",
+    "base:royal_road_station_944_141",
+    "base:royal_road_station_969_133",
+    "base:royal_road_station_977_141",
+    "base:royal_road_station_984_150",
+    "base:royal_road_station_990_160",
+    "base:royal_road_station_998_168",
+    "base:royal_road_station_1004_178",
+    "base:royal_road_station_1026_183",
+    "base:royal_road_station_1026_199",
+    "base:royal_road_station_1032_209",
+    "base:royal_road_station_1032_225",
+    "base:royal_road_station_1040_233",
+    "base:royal_road_station_1040_249",
+    "base:royal_road_station_1050_253",
+    "base:royal_road_station_1057_262",
+    "base:royal_road_station_1065_272",
+    "base:royal_road_station_1080_310",
+    "base:royal_road_station_1130_339"
+   ],
+   "steps": [
+    {
+     "go": {
+      "node": "next"
+     }
+    },
+    {
+     "use": {
+      "item": "world.royal_station",
+      "slot": "change"
+     },
+     "anim": "idle",
+     "dur": [
+      4,
+      6
+     ]
+    }
+   ],
+   "sfx": "sfx/world/gallop.wav"
+  },
+  {
+   "id": "caravan_dusk",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "17:30",
+     "19:00"
+    ],
+    "chance": 1.0
+   },
+   "size": "medium",
+   "duration": [
+    180,
+    240
+   ],
+   "cast": [
+    {
+     "group": "caravan"
+    }
+   ],
+   "steps": [
+    {
+     "go": {
+      "item": "world.royal_station",
+      "slot": "horse",
+      "within": 64
+     }
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "idle",
+     "dur": [
+      60,
+      90
+     ]
+    }
+   ]
+  },
+  {
+   "id": "beacons_lit",
+   "trigger": {
+    "on": "window",
+    "hours": [
+     "19:00",
+     "19:30"
+    ],
+    "chance": 1.0
+   },
+   "size": "small",
+   "duration": [
+    60,
+    60
+   ],
+   "steps": [
+    {
+     "each": {
+      "item": "world.beacon",
+      "within": 4096
+     },
+     "state": "lit",
+     "every": 4
+    }
+   ]
+  }
+ ],
+ "lanes_tokens": [
+  {
+   "actor": "world.reed_boat",
+   "lane": "base:euphrates_boats",
+   "count": 2
+  },
+  {
+   "actor": "parsa.courier",
+   "route": {
+    "start": "sardis:sardis_station",
+    "end": "parsa:royal_road_station"
+   },
+   "count": 3
+  },
+  {
+   "actor": "parsa.caravan_driver",
+   "route": {
+    "start": "sardis:sardis_station",
+    "end": "babylon:etemenanki_court"
+   },
+   "count": 2,
+   "group": "caravan"
+  },
+  {
+   "actor": "world.muleteer",
+   "route": {
+    "start": "halys:halys_station",
+    "end": "euphrates_crossing:euph_station"
+   },
+   "count": 1,
+   "group": "mule_train"
+  }
+ ],
+ "zones": [
+  {
+   "kind": "pasture",
+   "rect": [
+    5,
+    243,
+    16,
+    249
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    5,
+    233,
+    16,
+    242
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    17,
+    243,
+    21,
+    249
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    17,
+    233,
+    21,
+    242
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    37,
+    311,
+    50,
+    316
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    37,
+    300,
+    50,
+    310
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    51,
+    311,
+    53,
+    316
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    51,
+    300,
+    53,
+    310
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    88,
+    226,
+    101,
+    235
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    88,
+    219,
+    101,
+    225
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    102,
+    226,
+    104,
+    235
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    102,
+    219,
+    104,
+    225
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    109,
+    294,
+    118,
+    306
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    109,
+    290,
+    118,
+    293
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    119,
+    294,
+    125,
+    306
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    119,
+    290,
+    125,
+    293
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    150,
+    328,
+    152,
+    334
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    150,
+    318,
+    152,
+    327
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    153,
+    328,
+    166,
+    334
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    153,
+    318,
+    166,
+    327
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    176,
+    362,
+    186,
+    371
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    176,
+    357,
+    186,
+    361
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    187,
+    362,
+    192,
+    373
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    187,
+    357,
+    192,
+    361
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    203,
+    277,
+    203,
+    284
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    203,
+    269,
+    203,
+    276
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    204,
+    277,
+    219,
+    284
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    204,
+    268,
+    219,
+    276
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    211,
+    362,
+    220,
+    363
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    211,
+    347,
+    220,
+    361
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    221,
+    362,
+    237,
+    378
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    221,
+    347,
+    227,
+    361
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    228,
+    226,
+    237,
+    237
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    228,
+    221,
+    237,
+    225
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    233,
+    379,
+    237,
+    386
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    233,
+    294,
+    237,
+    295
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    233,
+    279,
+    237,
+    293
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    238,
+    379,
+    249,
+    386
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    238,
+    370,
+    249,
+    378
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    238,
+    294,
+    242,
+    295
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    238,
+    279,
+    249,
+    293
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    238,
+    226,
+    244,
+    237
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    238,
+    221,
+    244,
+    225
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    245,
+    413,
+    254,
+    419
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    245,
+    405,
+    254,
+    412
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    255,
+    413,
+    261,
+    419
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    255,
+    405,
+    261,
+    412
+   ],
+   "group": "flock"
+  }
+ ],
+ "cards": {},
+ "strings": {},
+ "journal": []
+}

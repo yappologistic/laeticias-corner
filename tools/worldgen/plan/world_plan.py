@@ -145,7 +145,7 @@ PORTALS = {
     "acharnai_n": (("athens", "base"), (617, 220), 1),
     "mesogeia_e": (("athens", "base"), (735, 265), 1),
     # The Via Appia through Rome's waypoints (rome.md §3.7; built by Rome's builder).
-    "appia_alban_w": (("alban_mount", "base"), (278, 172), 2),
+    "appia_alban_w": (("alban_mount", "base"), (278, 172), 1),
     "appia_alban_e": (("alban_mount", "base"), (311, 172), 2),
     "appia_capua_w": (("capua", "base"), (318, 210), 1),
     "appia_capua_e": (("capua", "base"), (333, 210), 1),
@@ -692,6 +692,16 @@ LABELS = {  # overview names (map art only; in-game names live in the region fil
     "sidon": "Sidon", "euphrates_crossing": "Euphrates", "babylon": "Babylon", "susa": "Susa",
     "persian_gates": "Persian Gates", "pasargadae": "Pasargadae",
 }
+
+LAND_LABELS = [("LATIVM", (150, 205)), ("APENNINI", (300, 70)), ("CAMPANIA", (320, 235)),
+               ("SICILIA", (318, 330)), ("EPEIROS", (470, 140)), ("PELOPONNESOS", (500, 395)),
+               ("ATTIKE", (650, 200)), ("THRAKE", (640, 90)), ("IONIA", (842, 190)),
+               ("PHRYGIA", (905, 105)), ("KAPPADOKIA", (975, 205)), ("TAURUS", (925, 268)),
+               ("KYPROS", (930, 345)), ("SYRIA", (1030, 395)), ("MESOPOTAMIA", (1040, 200)),
+               ("ZAGROS", (1112, 230)), ("PARSA", (1165, 235)), ("MEDIA", (1200, 90))]
+
+RIVER_LABELS = [("Tiberis", (140, 140)), ("Halys", (945, 95)), ("Euphrates", (1010, 240)),
+                ("Tigris", (1080, 160)), ("Hermos", (880, 200)), ("Sangarios", (906, 70))]
 
 SEA_LABELS = [("Tyrrhenian Sea", (150, 330)), ("Adriatic", (372, 70)),
               ("Ionian Sea", (420, 380)), ("Aegean", (785, 270)),

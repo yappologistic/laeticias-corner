@@ -1,0 +1,357 @@
+{
+ "version": 1,
+ "id": "eleusis",
+ "name": "Eleusis",
+ "native": "Ἐλευσίς",
+ "caption": "Eleusis · summer, 432 BC",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.98,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.99,
+    0.95
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.68
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.7
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.93,
+    0.89,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "athens",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "acropolis",
+   "populations": [
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "fields",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.farmer",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "plain",
+   "populations": [
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.farmer",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "reserved",
+   "populations": [
+    {
+     "actor": "athens.farmer",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "sanctuary",
+   "populations": [
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "shore",
+   "populations": [
+    {
+     "actor": "athens.woman",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.farmer",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "town",
+   "populations": [
+    {
+     "actor": "athens.priest",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "athens.farmer",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "athens.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [
+  {
+   "actor": "world.fishing_boat",
+   "lane": "eleusis:eleusis_fishing",
+   "count": 1
+  }
+ ],
+ "zones": [],
+ "cards": {
+  "telesterion": {
+   "title": "Telesterion",
+   "epithet": "Hall of the Mysteries",
+   "text": "The square hall where the initiates of Demeter and Kore gathered. Its Periclean rebuilding is under way; the roof is not finished."
+  }
+ },
+ "strings": {
+  "first_visit": "Eleusis, on its bay. The Sacred Way from Athens ends at the gate of Demeter's sanctuary."
+ },
+ "journal": [
+  "landmark:*"
+ ]
+}

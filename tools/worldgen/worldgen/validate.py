@@ -32,6 +32,10 @@ MAX_GLOW_CHUNK = 40
 MAX_DEST = 64
 MAX_DISTRICTS = 254
 HIDDEN_SHARE = 0.25
+# Seams of time may use the sets on both their sides (docs/design/sets/world.md §0.1).
+PLAN_PORTS = {pid for ln in P.LANES.values() for pid in ln["ports"]}
+SEAM_SETS = {"seam_dell": ("rome",), "seam_ionian": ("rome", "athens"),
+             "seam_ionia": ("athens", "parsa")}
 
 
 @dataclass
@@ -140,6 +144,41 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             bad = variant_problem(d, it.k)
             if bad:
                 issue("V1", f"{it.id}: {bad}", (it.c, it.r), isrc(it))
+    # The region-set rule (docs/design/sets/world.md §0.1): a tile of a region of set S carries
+    # ids of home, world and S only (a seam also those of the sets on its two sides), so the
+    # engine never meets an id whose pages are not loaded there.
+    def sets_of(dname):
+        rid = dname.split("/", 1)[0]
+        v = P.REGIONS.get(rid)
+        if v is None:
+            return None
+        return {"home", "world", v[1]} | set(SEAM_SETS.get(rid, ()))
+
+    bad_sets: dict = {}
+    for _, it in items:
+        d_ = int(world.D[it.r, it.c])
+        if d_ == NONE16:
+            continue
+        ok = sets_of(world.districts[d_])
+        st_ = it.id.split(".", 1)[0] if "." in it.id else "home"
+        if ok is not None and st_ not in ok:
+            bad_sets.setdefault((it.id, world.districts[d_]), (it.c, it.r))
+    tsub, dsub = world.T[sl], world.D[sl]
+    for t in np.unique(tsub[mine]).tolist():
+        if t == NONE16:
+            continue
+        tid = world.terrains[t]
+        st_ = tid.split(".", 1)[0] if "." in tid else "home"
+        for d_ in np.unique(dsub[mine & (tsub == t)]).tolist():
+            if d_ == NONE16:
+                continue
+            ok = sets_of(world.districts[d_])
+            if ok is not None and st_ not in ok:
+                j, i = np.argwhere(mine & (tsub == t) & (dsub == d_))[0]
+                bad_sets.setdefault((tid, world.districts[d_]), (int(i) + c0, int(j) + r0))
+    for (ident, dname), at in sorted(bad_sets.items()):
+        issue("V1", f"{ident} stands in {dname!r}, whose region's set does not load its pages "
+              "(region-set rule)", at)
     for dname in sorted({world.districts[d] for d in np.unique(world.D[sl][mine])
                          if d != NONE16}):
         if "/" not in dname or dname.split("/", 1)[0] not in tg.regions:
@@ -306,7 +345,11 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         if decl is None:
             issue("V6", f"portal {n.id!r} is not declared in plan/world_plan.py PORTALS", at)
             continue
-        layers, tile, _lvl = decl
+        layers, tile, want = decl
+        got = int(lv[at[1], at[0]])
+        if got != want:
+            issue("V6", f"portal {n.id!r} is at level {got}, the plan says {want}: the road on the "
+                  "other side meets it there", at)
         if name not in layers:
             issue("V6", f"portal {n.id!r} belongs to layers {layers}, not {name}", at)
         across = (abs(tile[0] - at[0]) + abs(tile[1] - at[1]) == 1 and
@@ -329,6 +372,23 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                           "not built yet", at, level="warning")
                 else:
                     issue("V6", f"portal {n.id!r} is missing from layer {other!r}'s graph", at)
+    # Lanes meet across layers: a port id another layer's lane also carries is the same place.
+    for ln in g.lanes:
+        for pt in ln.ports:
+            if pt.id not in PLAN_PORTS:
+                continue   # a lane's own port names (landing, mouth, home) are local
+            here = to_plan(*ln.points[pt.at])
+            for other, og in graphs.items():
+                if other == name:
+                    continue
+                for ol in og.lanes:
+                    for op in ol.ports:
+                        if op.id != pt.id:
+                            continue
+                        there = to_plan(*ol.points[op.at])
+                        if max(abs(here[0] - there[0]), abs(here[1] - there[1])) > 1:
+                            issue("V6", f"lane {ln.id!r} port {pt.id!r} at {here} does not meet "
+                                  f"layer {other!r}'s lane {ol.id!r} port at {there}", here)
     dests = sum(1 for n in g.nodes if n.kind == "dest")
     if dests > MAX_DEST:
         issue("V10", f"{dests} dest nodes; at most {MAX_DEST} per region")

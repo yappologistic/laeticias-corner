@@ -1,0 +1,230 @@
+{
+ "version": 1,
+ "id": "apennines",
+ "name": "Apennines",
+ "caption": "Apennines",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.96,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.66
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.68
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.9,
+    0.88,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "rome",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/mountain.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/mountain.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "world.traveller",
+     "density": "road_day",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "world.merchant",
+     "density": "road_day",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.donkey",
+     "density": "road_day",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "land",
+   "populations": [
+    {
+     "actor": "world.eagle",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [],
+ "zones": [],
+ "cards": {},
+ "strings": {},
+ "journal": []
+}
