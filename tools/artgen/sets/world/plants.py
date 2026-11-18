@@ -155,7 +155,7 @@ def t_pistachio(v, frame, frames, k):
     m = _tree(k, 32, 13)
     _trunk(m, (8, 8, 0), (8 + rng.uniform(-1, 1), 8, 9.0), 1.6, "wood_grey")
     clumps = _crown(m, 8, 8, 17.0, 5, 5.0, 5.0, rng, (-1, 3)) + [(8, 8, 22.0, 5.4)]
-    leaf_mass(m, clumps, 5151 + v, materials=(("olive", 0.7), ("olive_silver", 0.3)), under="olive", level=-0.5)
+    leaf_mass(m, clumps, 5151 + v, materials=(("olive", 0.75), ("olive_silver", 0.25)), under="olive", level=-0.9)
     for i in range(7 + 3 * v):
         a, r = rng.uniform(0, 2 * math.pi), rng.uniform(3, 7)
         ellipsoid(m, (8 + r * math.cos(a), 8 + r * math.sin(a), rng.uniform(14, 22)), (0.8, 0.8, 0.7),
@@ -175,7 +175,7 @@ def t_tamarisk(v, frame, frames, k):
         rod(m, (8 + math.cos(a), 8 + math.sin(a), 0), top, 0.45, "bark")
         clumps.append((*top, rng.uniform(3.0, 4.2)))
     mats = (("olive_silver", 0.55), ("olive", 0.45)) if v != 1 else (("olive_silver", 0.4), ("blossom", 0.45), ("olive", 0.15))
-    leaf_mass(m, clumps, 5161 + v, materials=mats, under="olive", cluster=(1.4, 2.0), squash=1.1, level=-0.2)
+    leaf_mass(m, clumps, 5161 + v, materials=mats, under="olive", cluster=(1.4, 2.0), squash=1.1, level=-0.8)
     return m
 
 
@@ -193,18 +193,22 @@ def t_palm(v, frame, frames, k):
         for i in range(n):
             az = i * 2 * math.pi / n + rng.uniform(-0.25, 0.25)
             L = frond * rng.uniform(0.85, 1.1)
-            mid = (top[0] + L * 0.5 * math.cos(az), top[1] + L * 0.5 * math.sin(az), top[2] + 2.2)
-            end = (top[0] + L * math.cos(az), top[1] + L * math.sin(az), top[2] - 3.8)
-            rod(m, top, mid, 0.65, "leaf", tone=0.3)
-            rod(m, mid, end, 0.5, ("leaf", "olive")[i % 2], tone=0.0)
+            # Fronds arch up and out, then droop: three segments, leaflets thickening the middle.
+            up = 2.6 if i % 2 else 1.2
+            p1 = (top[0] + L * 0.35 * math.cos(az), top[1] + L * 0.35 * math.sin(az), top[2] + up)
+            p2 = (top[0] + L * 0.7 * math.cos(az), top[1] + L * 0.7 * math.sin(az), top[2] + up * 0.3 - 1.5)
+            end = (top[0] + L * math.cos(az), top[1] + L * math.sin(az), top[2] - 5.5)
+            rod(m, top, p1, 0.75, "leaf", tone=0.3)
+            rod(m, p1, p2, 0.95, ("leaf", "olive")[i % 2], tone=0.15)
+            rod(m, p2, end, 0.6, ("leaf", "olive")[i % 2], tone=-0.1)
         if dates:
             for i in range(3):
                 ellipsoid(m, (top[0] + math.cos(i * 2.1) * 1.3, top[1] + math.sin(i * 2.1) * 1.3, top[2] - 2.0),
                           (0.9, 0.9, 1.4), "orange", tone=0.1)
     if v == 0:
-        palm(7.0, 7.0, 46.0, (2.0, 1.0))
-        palm(10.0, 10.0, 34.0, (-2.5, 2.0))
-        palm(6.0, 11.0, 24.0, (1.0, -2.0), n=10, frond=9.0)
+        palm(7.0, 7.0, 46.0, (2.0, 1.0), n=14, frond=13.0)
+        palm(10.0, 10.0, 34.0, (-2.5, 2.0), n=13, frond=12.0)
+        palm(6.0, 11.0, 24.0, (1.0, -2.0), n=11, frond=10.0)
         for (x, y) in ((11.5, 6.0), (4.5, 8.5)):          # offshoots
             for a in np.linspace(0, 2 * math.pi, 6, endpoint=False):
                 rod(m, (x, y, 0.5), (x + 3.5 * math.cos(a), y + 3.5 * math.sin(a), 4.5), 0.4, "leaf", tone=0.2)
@@ -337,8 +341,8 @@ def t_oleaster(v, frame, frames, k):
         top = (8 + 4.5 * math.cos(a), 8 + 4.5 * math.sin(a), rng.uniform(10, 15))
         rod(m, (8 + math.cos(a), 8 + math.sin(a), 0), top, 0.7, "bark")
         clumps.append((*top, rng.uniform(3.4, 4.4)))
-    leaf_mass(m, clumps, 5241 + v, materials=(("olive", 0.55), ("olive_silver", 0.45)), under="olive",
-              cluster=(1.8, 2.4), level=-0.4)
+    leaf_mass(m, clumps, 5241 + v, materials=(("olive", 0.6), ("olive_silver", 0.4)), under="olive",
+              cluster=(1.8, 2.4), level=-0.85)
     return m
 
 
@@ -389,7 +393,7 @@ def crag(v, frame, frames, k):
             d = np.hypot(X - bx, Y - by) / (r * 1.4)
             out = np.maximum(out, h * np.clip(1 - d ** 2.4, 0, 1) ** 0.5)
         return out + (value_noise(X, Y, X * 0, 2.5, 5311 + v) - 0.5) * 3.0
-    _rock(m, (0, 32, 0, 32, 0, 30), top, ("attic_rock", "stone", "attic_rock")[v], 5312 + v, stains="rust" if v != 1 else "olive")
+    _rock(m, (0, 32, 0, 32, 0, 30), top, ("attic_rock", "stone", "attic_rock")[v], 5312 + v, stains="olive")
     bx, by, r, h = blobs[0]
     leaf_mass(m, [(bx + r, by, float(top(np.array(bx + r), np.array(by))) + 2.0, 3.0)], 5313 + v,
               materials=(("leaf_dark", 0.6), ("olive", 0.4)), under="leaf_dark", cluster=(1.6, 2.2), level=-0.6)

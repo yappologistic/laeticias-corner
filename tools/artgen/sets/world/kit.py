@@ -305,8 +305,8 @@ def stair_stone(v, frame, frames, k):
         z = 8.0 * (i + 1) / n
         y0 = 32.0 - (i + 1) * 32.0 / n
         fill(m, (1.0, 15.0, y0, 32.0, 0.0, z), "attic_rock",
-             tone=lambda X, Y, Z, z=z: 0.4 * (Z > z - 0.6) - 0.6 * (np.abs(X - 8) < 3.5) * (Z > z - 0.3) * 0.5
-             + (value_noise(X, Y, Z, 1.6, 6070 + i) - 0.5) * 0.6)
+             tone=lambda X, Y, Z, z=z, y0=y0: 0.7 * (Z > z - 0.6) - 0.8 * (Z <= z - 0.6) * (Y < y0 + 1.0)
+             - 0.25 * (np.abs(X - 8) < 3.5) * (Z > z - 0.3) + (value_noise(X, Y, Z, 1.6, 6070 + i) - 0.5) * 0.5)
     for x0, x1 in ((-1.0, 1.6), (14.4, 17.0)):
         fill(m, (x0, x1, 0.0, 32.0, 0.0, 12.0), "attic_rock",
              lambda X, Y, Z: Z < 9.0 + 2.5 * value_noise(X, Y, X * 0, 2.0, 6076) - (Y / 32.0) * 6.0,
@@ -321,7 +321,8 @@ def stair_earth(v, frame, frames, k):
     for i in range(n):
         z = 8.0 * (i + 1) / n
         y0 = 32.0 - (i + 1) * 32.0 / n
-        slab(m, 1.0, 15.0, y0, 32.0, 0.0, z, "soil", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 1.2, 6080) - 0.5) * 0.8)
+        slab(m, 1.0, 15.0, y0, 32.0, 0.0, z, "sand", tone=lambda X, Y, Z, z=z: (value_noise(X, Y, Z, 1.2, 6080) - 0.5) * 0.7
+             + 0.4 * (Z > z - 0.6) - 0.6)
         rod(m, (1.0, y0 + 0.8, z - 0.6), (15.0, y0 + 0.8, z - 0.6), 0.75, "wood", tone=0.2)
         for x in (2.0, 14.0):
             rod(m, (x, y0 + 1.6, z - 2.0), (x, y0 + 1.6, z + 0.4), 0.35, "wood")
@@ -333,8 +334,12 @@ def ramp(v, frame, frames, k):
     kerb of stones (roads climbing between levels)."""
     m = _m(1, 4, 12, k)
     L = 64.0
-    fill(m, (1.0, 15.0, 0.0, L, 0.0, 9.0), "soil", lambda X, Y, Z: Z < 8.0 * (L - Y) / L + 0.4,
-         tone=lambda X, Y, Z: (value_noise(X, Y, Z, 1.5, 6090) - 0.5) * 0.7 - 0.5 * (np.abs(np.abs(X - 8) - 3.0) < 0.6))
+    fill(m, (1.0, 15.0, 0.0, L, 0.0, 9.0), "sand", lambda X, Y, Z: Z < 8.0 * (L - Y) / L + 0.4,
+         tone=lambda X, Y, Z: (value_noise(X, Y, Z, 1.5, 6090) - 0.5) * 0.6 - 0.9 * (np.abs(np.abs(X - 8) - 3.0) < 0.6)
+         - 0.4 * (np.abs(X - 8) < 0.9) - 0.3)
+    # Cross drains of laid stones every few metres, as on graded mountain roads.
+    for y in (14.0, 30.0, 46.0):
+        fill(m, (1.5, 14.5, y - 0.6, y + 0.6, 0.0, 9.0), "stone", lambda X, Y, Z: Z < 8.0 * (L - Y) / L + 0.7, tone=0.1)
     for x0 in (0.0, 14.5):
         fill(m, (x0, x0 + 1.5, 0.0, L, 0.0, 10.0), "stone", lambda X, Y, Z: Z < 8.0 * (L - Y) / L + 1.4,
              tone=M.ashlar(1.4, 2.6, 6091, polygonal=0.8, spread=0.8))
@@ -652,8 +657,8 @@ def tumulus(v, frame, frames, k):
     from arch import field_fill
     R = 21.0 if v == 0 else 22.5
     field_fill(m, (0, 48, 0, 48, 0.0, 22.0), lambda X, Y, Z: Z - (19.0 if v == 0 else 16.0) * np.clip(1 - (np.hypot(X - c, Y - c) / R) ** 2, 0, 1) ** 0.8,
-               "grass", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 1.6, 6230 + v) - 0.5) * 0.7 - 0.3)
-    fill(m, (0, 48, 0, 48, 0.0, 22.0), "summer", lambda X, Y, Z: value_noise(X, Y, Z * 0, 2.5, 6231) > 0.6, tone=0.0,
+               "steppe", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 1.6, 6230 + v) - 0.5) * 0.7)
+    fill(m, (0, 48, 0, 48, 0.0, 22.0), "olive", lambda X, Y, Z: value_noise(X, Y, Z * 0, 2.5, 6231) > 0.62, tone=-0.2,
          only_solid=True)
     if v == 0:
         fill(m, (0, 48, 0, 48, 0.0, 3.5), "attic_rock",
@@ -763,7 +768,7 @@ def treading_vat(v, frame, frames, k):
     m = _m(2, 2, 10, k)
     slab(m, 3.0, 27.0, 3.0, 20.0, 0.0, 3.0, "whitewash", tone=M.mud_plaster(6300, 0.3, 0.0, 1.0))
     carve(m, (4.5, 25.5, 4.5, 18.5, 2.2, 3.1))
-    fill(m, (4.5, 25.5, 4.5, 18.5, 2.0, 2.3), "purple", lambda X, Y, Z: value_noise(X, Y, Z, 1.5, 6301) > 0.45, tone=0.1)
+    fill(m, (4.5, 25.5, 4.5, 18.5, 2.0, 2.3), "purple", lambda X, Y, Z: value_noise(X, Y, Z, 1.5, 6301) > 0.72, tone=-0.2)
     slab(m, 13.0, 17.0, 20.0, 22.0, 1.4, 2.0, "whitewash", tone=0.2)
     revolve(m, 15.0, 25.5, 0.0, 2.0, lambda t: 3.2, "whitewash", tone=0.1)
     carve(m, (11.0, 19.0, 22.0, 29.0, 0.4, 2.1), lambda X, Y, Z: np.hypot(X - 15, Y - 25.5) < 2.4)

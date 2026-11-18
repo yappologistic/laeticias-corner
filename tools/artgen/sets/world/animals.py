@@ -13,7 +13,7 @@ import numpy as np
 
 from arch import ellipsoid, fill, revolve, rod, slab
 from rig import Body, Dress, Frame, draw, pose
-from sets.parsa.animals import SIZE, Beast, _merge, _render, quadruped
+from sets.parsa.animals import SIZE, Beast, _render, quadruped
 from voxel import Model
 
 BEASTS = {
@@ -22,7 +22,8 @@ BEASTS = {
                         ears="long"),
     "world.sheep": Beast(5.6, 4.0, 1.8, 1.3, 0.4, 0.8, coat="wool", mane="wool", tail="bushy", leg=0.32),
     "world.goat": Beast(5.4, 4.4, 1.3, 1.6, 0.6, 0.8, coat="gloss", belly="gloss", horns="ram", tail="tuft", leg=0.3),
-    "world.ox": Beast(9.2, 7.2, 2.1, 1.6, 0.2, 1.1, coat="ochre", horns="bull", tail="tuft", dewlap=True),
+    "world.ox": Beast(9.2, 7.2, 2.1, 1.6, 0.2, 1.1, coat="wood_light", belly="cream", horns="bull", tail="tuft",
+                      dewlap=True),
     "world.dog": Beast(5.6, 4.6, 0.95, 1.8, 0.6, 0.8, coat="wool", belly="cream", tail="bushy", leg=0.3),
     "world.gazelle": Beast(5.8, 5.6, 1.0, 2.4, 0.75, 0.75, coat="ochre", belly="cream", horns="oryx", tail="thin",
                            leg=0.24),
@@ -222,16 +223,14 @@ def ship_model(kind, anim, frame, k):
             _crew(m, 7.0, 0.0, 2.6, CREW, "idle", frame + 1)
         return m
     if kind == "world.quffa":
-        # A round boat of hide over a willow frame (Herodotus 1.194), paddled, sacks and a donkey.
+        # A round boat of hide over a willow frame (Herodotus 1.194), paddled, laden with sacks.
         m = Model.empty(-14, 14, -14, 14, 0, 26, k=k)
         fill(m, (-8, 8, -8, 8, 0.0, 4.5), "hide",
              lambda X, Y, Z: (np.hypot(X, Y) < 7.0 + Z * 0.15) & (np.hypot(X, Y) > 6.2 + Z * 0.15 - (Z < 1.0) * 8),
              tone=lambda X, Y, Z: -0.4 * (((np.arctan2(Y, X) * 8) % 1.0) < 0.15) + 0.1 * (Z > 3.8))
         revolve(m, 0, 0, 4.0, 4.8, lambda tt: 7.6, "wood_light", tone=0.2)
-        for i, (x, y) in enumerate(((-3.0, -3.0), (-1.0, -4.5))):
-            ellipsoid(m, (x, y, 2.6), (1.6, 1.3, 1.5), "straw", tone=0.1 * i)
-        don = quadruped(BEASTS["world.donkey"], "idle", frame % 2, 2, k)
-        m = _merge(m, don, 1.0, 2.0)
+        for i, (x, y) in enumerate(((-3.0, -3.0), (-0.5, -4.2), (2.0, -2.5), (1.0, 0.5), (3.5, 0.0))):
+            ellipsoid(m, (x, y, 2.6 + (i == 3) * 2.2), (1.6, 1.3, 1.5), ("straw", "linen")[i % 2], tone=0.1 * i)
         sw = math.sin(t * 2 * math.pi) * 2.0 if anim == "move" else 0.0
         _crew(m, -4.5, 3.0, 1.0, CREW_EAST, "idle", frame)
         rod(m, (-3.0, 4.5, 9.0), (-6.0 + sw, 9.0, 0.0), 0.25, "wood")
