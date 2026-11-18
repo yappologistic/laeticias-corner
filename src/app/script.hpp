@@ -55,6 +55,7 @@
 //   set unlock all          unlock every piece, frame and clue (as a free-build world has)
 //   set played [+]SECONDS   move the play clock on (wish pacing and the like) without frames:
 //                           to SECONDS (never backwards), or by them with a +
+//   set session SECONDS     the session clock (bubbles, events, labels) as after that long open
 //   set land N              open land stages up to N at once, with their reveals
 //   set season ID|auto      keep a season (as the calendar's pin does), or follow the days
 //   set day N               the calendar day (the season follows unless pinned)

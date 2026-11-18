@@ -1,0 +1,9 @@
+# A corner left open for days (L-006): past 2^19 seconds the session clock still advances, so
+# her bubble ends and the next one can come.
+set session 600000
+set unlock all
+set season summer
+set chatter chatty
+fast 300 bubble yes
+fast 60 bubble no
+quit

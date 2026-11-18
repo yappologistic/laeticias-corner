@@ -1233,7 +1233,7 @@ HudModel App::model() const {
     m.worldTip = worldTip();
     floatLabels_.clear();
     for (const NookLabel& l : nookLabels_) {
-        const float k = (simTime_ - l.start) / tuning::kNookLabelSeconds;
+        const auto k = static_cast<float>((simTime_ - l.start) / tuning::kNookLabelSeconds);
         const float fade = std::min({1.0f, k * 6.0f, (1.0f - k) * 4.0f});
         floatLabels_.push_back({view_.worldToScreen(l.world, screen()),
                                 cat_.nooks[static_cast<std::size_t>(l.nook)].name, fade});
@@ -1857,7 +1857,7 @@ int App::run() {
                 if (ec) SDL_Log("save: cannot rename the old save: %s", ec.message().c_str());
                 legacyToRetire_.clear();
             } else {
-                retireAt_ = simTime_ + static_cast<float>(tuning::kSaveRetrySeconds);
+                retireAt_ = simTime_ + tuning::kSaveRetrySeconds;
             }
         }
         if (welcomePending_) {

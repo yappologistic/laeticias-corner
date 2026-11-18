@@ -49,6 +49,7 @@ set(LC_SCRIPTS
   "wish_first|wish_first|640x400|"
   "hover_panel|hover_panel|960x600|"
   "idle_lines|idle_lines|640x400|"
+  "long_session|long_session|640x400|"
   "sketchbook|sketchbook|960x600|"
   "nook|nook|640x400|"
   "land|land|640x400|"
