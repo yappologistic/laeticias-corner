@@ -1637,13 +1637,14 @@ def idea_cards(I) -> dict:
             "opinions into a body of rules and reasoning that later Europe studied again. Hadrian will "
             "soon have the jurist Salvius Iulianus fix the praetor's edict in a permanent form, about 130."),
         "concrete": card(I, "Opus caementicium", "Roman concrete",
-            "Lime mortar mixed with volcanic ash from round Naples sets hard, even under water. Poured "
+            "Lime mortar mixed with volcanic ash, dug round Rome and named for Puteoli near Naples, sets "
+            "hard, even under water. Poured "
             "with rubble behind neat brick faces, it let Romans vault halls and baths of a size no one had "
             "built before. The Pantheon's dome uses lighter stone toward the top; it is still the largest "
             "unreinforced concrete dome in the world."),
         "aqueducts": card(I, "Aquae", "Water for a million",
-            "Ten aqueducts bring water to Rome in 126, the newest Trajan's of 109, some from springs more "
-            "than eighty kilometres away. The water runs down gentle slopes in covered channels, crosses "
+            "Ten aqueducts bring water to Rome in 126, the newest Trajan's of 109, some in channels more "
+            "than eighty kilometres long. The water runs down gentle slopes in covered channels, crosses "
             "valleys on arcades, and ends in settling tanks and distribution towers that feed fountains, "
             "baths and the few houses granted a private pipe. Most Romans carry theirs from a street "
             "fountain."),

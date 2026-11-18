@@ -128,7 +128,7 @@ def cards() -> dict:
             "A branching natural harbour with quays and warehouses, sheltered from the open sea. Here the Via "
             "Appia ends, and ships sail across the Ionian Sea for Greece and the East."),
         "appia_end": card(I, "Finis Viae Appiae", "The road's end",
-            "The Via Appia, the 'queen of roads', runs some 580 kilometres from the Porta Capena in Rome to "
+            "The Via Appia, the 'queen of roads', runs some 540 kilometres from the Porta Capena in Rome to "
             "this harbour. A column marks its end; two stand on the waterfront today, and the date of the "
             "surviving one is debated, so the game shows a simple marker column."),
         "crossing": card(I, "Traiectus", "The crossing to Greece",
