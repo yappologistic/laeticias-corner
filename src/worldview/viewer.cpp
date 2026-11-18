@@ -174,6 +174,7 @@ bool Viewer::init() {
     if (!font_.load(assets_ / "fonts") || !font_.build(renderer_.get(), 1.0f)) return false;
     ui_ = std::make_unique<Batch>(renderer_.get());
     async_ = o_.interactive || o_.bench;
+    if (!world_) return false;
     view_ = std::make_unique<WorldView>(renderer_.get(), *world_, assets_, *atlas_, async_);
     const world::WorldMap& m = *world_->map;
     camera_ = std::make_unique<WorldCamera>(cat_.iso(), m.width(), m.height(),
@@ -185,11 +186,13 @@ bool Viewer::init() {
 }
 
 std::optional<Vec2> Viewer::tileOf(std::string_view target) const {
+    if (!world_) return std::nullopt;
     const world::WorldFile& wf = world_->file;
     if (const auto comma = target.find(','); comma != std::string_view::npos) {
         int x = 0;
         int y = 0;
-        const auto a = std::from_chars(target.data(), target.data() + comma, x);
+        const std::string_view head = target.substr(0, comma);
+        const auto a = std::from_chars(head.data(), head.data() + head.size(), x);
         const auto b = std::from_chars(target.data() + comma + 1, target.data() + target.size(), y);
         if (a.ec != std::errc{} || b.ec != std::errc{}) return std::nullopt;
         return Vec2{static_cast<float>(x) + 0.5f, static_cast<float>(y) + 0.5f};
@@ -218,6 +221,7 @@ std::optional<Vec2> Viewer::tileOf(std::string_view target) const {
 
 void Viewer::lookAtTile(Vec2 t) {
     // Centre on the tile as drawn, lifted by its level.
+    if (!world_) return;
     const world::WorldMap& m = *world_->map;
     const TilePos p{static_cast<int>(t.x), static_cast<int>(t.y)};
     const int level = m.inBounds(p) ? m.level(p) : 0;
@@ -418,6 +422,7 @@ void Viewer::report() const {
         std::printf("  terrain %-25s %6d tiles  flat colour\n", m.id.c_str(), m.count);
     for (const std::string& m : s.flatMaterials())
         std::printf("  faces %-27s flat colour\n", m.c_str());
+    if (!world_) return;
     for (const auto& [id, n] : world_->map->unresolved())
         std::printf("  item %-28s %6d placed  in no catalog (not drawn)\n", id.c_str(), n);
 }

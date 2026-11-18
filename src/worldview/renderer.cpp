@@ -68,17 +68,20 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
       lvl_(map_.content().tileLevel()), async_(async), hole_(hole), homeAtlas_(home),
       cells_(renderer, tuning::kCellBudget), batch_(renderer), theme_([&] {
           std::vector<world::Theme> themes;
+          themes.reserve(world.regions.size());
           for (const world::RegionFile& r : world.regions) themes.push_back(r.theme);
           return themes;
       }()),
       places_(
           [&] {
               std::vector<world::RegionKind> kinds;
+              kinds.reserve(world.file.regions.size());
               for (const world::RegionRef& r : world.file.regions) kinds.push_back(r.kind);
               return kinds;
           }(),
           [&] {
               std::vector<std::string> times;
+              times.reserve(world.file.regions.size());
               for (const world::RegionRef& r : world.file.regions) times.push_back(r.time);
               return times;
           }()) {
@@ -360,7 +363,8 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     }
     std::ranges::stable_sort(shadows_, {}, &std::pair<std::uint16_t, std::uint32_t>::first);
     for (const auto& [page, i] : shadows_)
-        ok &= put(*g.elems[i].look->shadow, g.elems[i].anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+        if (const std::optional<SpriteRef>& sh = g.elems[i].look->shadow)
+            ok &= put(*sh, g.elems[i].anchor, x, kWhite, SDL_BLENDMODE_BLEND);
     drawActorShadows(x);
     const bool any = !shadows_.empty() || !actorDraw_.empty();
     batch_.flush();
@@ -424,7 +428,8 @@ FRect blockRect(CellKey key, int block) {
     const int n = blocksPerSide(key.level);
     const auto b = static_cast<float>(tuning::kImpostorBlock);
     const auto bx = static_cast<float>(block % n);
-    const auto by = static_cast<float>(block / n);
+    const int row = block / n; // whole blocks
+    const auto by = static_cast<float>(row);
     return {c.x0 + bx * b, c.y0 + by * b, c.x0 + (bx + 1) * b, c.y0 + (by + 1) * b};
 }
 
@@ -472,7 +477,8 @@ void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
         if (!SDL_SetRenderTarget(renderer_, half_.texture.get()))
             SDL_Log("worldview: %s", SDL_GetError());
         batch_.use(src->texture.get(), SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
-        const auto hs = static_cast<float>(size / 2);
+        const int half = size / 2; // whole texels
+        const auto hs = static_cast<float>(half);
         batch_.quad(SDL_FRect{0, 0, hs, hs},
                     {0, 0, static_cast<float>(size) / static_cast<float>(src->w),
                      static_cast<float>(size) / static_cast<float>(src->h)},
@@ -484,8 +490,10 @@ void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
     if (!SDL_SetRenderTarget(renderer_, cells_.page(slot.page)))
         SDL_Log("worldview: %s", SDL_GetError());
     batch_.use(src->texture.get(), SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
-    batch_.quad(SDL_FRect{static_cast<float>(slot.x + (block % n) * dst),
-                          static_cast<float>(slot.y + (block / n) * dst), static_cast<float>(dst),
+    const int col = block % n; // whole blocks
+    const int row = block / n;
+    batch_.quad(SDL_FRect{static_cast<float>(slot.x + col * dst),
+                          static_cast<float>(slot.y + row * dst), static_cast<float>(dst),
                           static_cast<float>(dst)},
                 {0, 0, static_cast<float>(size) / static_cast<float>(src->w),
                  static_cast<float>(size) / static_cast<float>(src->h)},
@@ -802,9 +810,10 @@ void WorldView::buildGlow() {
     glow_.resize(count[chunks]);
     for (const world::Placed& it : map_.items()) {
         if (!glows(it)) continue;
+        const std::optional<SpriteRef>& gl = sprites_->item(it).glow;
+        if (!gl) continue; // glows() said it has one
         const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
-        glow_[count[chunkOf(it)]++] = {&*sprites_->item(it).glow,
-                                       {w.x, w.y - static_cast<float>(it.level * lvl_)}};
+        glow_[count[chunkOf(it)]++] = {&*gl, {w.x, w.y - static_cast<float>(it.level * lvl_)}};
     }
 }
 

@@ -126,7 +126,7 @@ void ActorMerge::bounds(std::span<const OrderItem> items, std::span<const MergeA
     for (std::size_t p = 0; p < pairEl_.size(); ++p) {
         const std::uint32_t e = pairEl_[p];
         const std::uint32_t a = pairAc_[p];
-        int r = rel_[p];
+        int r = rel_[p]; // -1, 0 or 1
         if (r == 0) r = drawnBefore(items[e], asItem(a)) ? -1 : 1;
         const int k = static_cast<int>(rank_[e]);
         if (r < 0)

@@ -134,7 +134,8 @@ const SpriteRef* ActorLooks::goods(int goods, int stack) const {
     const auto& g = goods_[static_cast<std::size_t>(goods)];
     const std::optional<SpriteRef>& s = g[static_cast<std::size_t>(std::clamp(stack, 0, 3))];
     if (s) return &*s;
-    return g[0] ? &*g[0] : nullptr;
+    if (const std::optional<SpriteRef>& one = g[0]) return &*one;
+    return nullptr;
 }
 
 } // namespace lc::worldview

@@ -83,7 +83,7 @@ private:
     std::vector<FRect> screens_;
     // Per frame.
     std::vector<int> lo_, hi_;          // per actor: positions it may be drawn before
-    std::vector<std::int8_t> rel_;      // per candidate pair, from the caller
+    std::vector<int> rel_;              // per candidate pair, from the caller
     std::vector<std::uint32_t> pairEl_; // candidates (element, actor)
     std::vector<std::uint32_t> pairAc_;
     ScreenGrid actorGrid_;
@@ -112,7 +112,7 @@ void ActorMerge::plan(std::span<const OrderItem> items, std::span<const MergeAct
             if (!screens_[e].overlaps(actors[a].screen)) return;
             pairEl_.push_back(e);
             pairAc_.push_back(a);
-            rel_.push_back(static_cast<std::int8_t>(relation(e, a)));
+            rel_.push_back(static_cast<int>(relation(e, a)));
         });
     drawnAt_.assign(order_.size(), 0);
     for (std::size_t k = 0; k < order_.size(); ++k) drawnAt_[k] = drawn(order_[k]) ? 1 : 0;
