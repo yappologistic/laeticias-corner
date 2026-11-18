@@ -55,6 +55,7 @@
 //   set unlock all          unlock every piece, frame and clue (as a free-build world has)
 //   set played [+]SECONDS   move the play clock on (wish pacing and the like) without frames:
 //                           to SECONDS (never backwards), or by them with a +
+//   set session SECONDS     the session clock (bubbles, events, labels) as after that long open
 //   set land N              open land stages up to N at once, with their reveals
 //   set season ID|auto      keep a season (as the calendar's pin does), or follow the days
 //   set day N               the calendar day (the season follows unless pinned)
@@ -119,6 +120,7 @@
 //                               one-second samples had MIN..CAP purposeful movers in view and
 //                               HMIN..HCAP new happenings in the last minute
 //       city live MIN MAX | city ground ok (every live person on a walkable tile at its level)
+//       | city moving (nobody drawn walking on the spot, nobody stuck past the watchdog)
 //       | city slots ok (no slot over capacity) | city event ID yes|no (running in the area)
 //       | city district NAME MIN MAX (live people of the district) | city drawn MIN MAX (actors
 //       drawn this frame) | city people MIN MAX (people the crowd hears) | city sound FILE MIN

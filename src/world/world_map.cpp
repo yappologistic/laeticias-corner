@@ -301,6 +301,7 @@ void WorldMap::index(TileRect area, std::uint32_t from, Diagnostics& diag) {
     });
     for (std::uint32_t i = from; i < items_.size(); ++i) {
         const Placed& it = items_[i];
+        if (underHome(i)) continue;
         if (isBig(it)) {
             forEachChunkIn(it.rect(),
                            [&](int cx, int cy) { chunks_[chunkIndex(cx, cy)].big.push_back(i); });
@@ -652,14 +653,7 @@ std::expected<void, std::string> WorldMap::applyHome(const HomeDelta& delta, Dia
     if (homeDistrict < 0) return std::unexpected("the world would hold more than 255 districts");
 
     const bool full = !homeCleared_;
-    if (full) {
-        std::size_t keep = 0;
-        for (std::size_t i = 0; i < homeBegin_; ++i)
-            if (!items_[i].rect().intersects(hr)) items_[keep++] = items_[i];
-        items_.resize(keep);
-        homeBegin_ = static_cast<std::uint32_t>(keep);
-        homeCleared_ = true;
-    }
+    homeCleared_ = true;
     items_.resize(homeBegin_);
     for (int y = 0; y < hh; ++y)
         for (int x = 0; x < hw; ++x) {

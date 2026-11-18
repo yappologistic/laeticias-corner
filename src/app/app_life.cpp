@@ -40,7 +40,7 @@ float App::rainHere() const {
 }
 
 bool App::raining() const {
-    return weather_.raining(viewTile());
+    return rainHere() >= tuning::kRainThreshold; // where the camera looks, home or away (L-107)
 }
 
 void App::cycleWeather() {
@@ -158,7 +158,7 @@ void App::updateLife(float dt) {
                     seasonOf(clock_.day(), cat_.seasonDays).day == 0;
     ev.now = simTime_;
     lastPhase_ = phase;
-    events_.update(ev, dt);
+    events_.update(ev);
     handleWorldEvents();
     const bool rain = raining(); // the view: rain reaching or leaving it is a happening
     if (rain != rainWas_) lively_.happening(simTime_);

@@ -486,6 +486,58 @@ TEST_CASE("a busy corner: no two actors ever hold one spot") {
     CHECK(!l.of("butterfly").empty());
 }
 
+TEST_CASE("a busy corner: nobody is drawn walking on the spot") {
+    // Every second, each actor drawn in a walk (as the home scene decides it, render/scene.cpp
+    // animOf: travelling, or following on foot) must have covered ground; a walk drawn on a
+    // standing body would freeze mid-stride.
+    const auto walkDrawn = [](const Actor& a) {
+        return a.state == ActorState::Travel || (a.state == ActorState::Follow && a.anim == 0 &&
+                                                 (a.flags & actor_flag::kOnHat) == 0);
+    };
+    Life l;
+    l.world = makeStarterWorld(l.cat);
+    for (const auto& [id, x, y] : {std::tuple{"cottage", 32, 30},
+                                   {"coop", 26, 32},
+                                   {"beehive", 36, 31},
+                                   {"flowers_red", 34, 28},
+                                   {"flowers_white", 35, 28},
+                                   {"flowers_violet", 36, 28},
+                                   {"flowers_red", 36, 29},
+                                   {"campfire", 30, 36},
+                                   {"planter", 24, 33},
+                                   {"bench", 33, 34},
+                                   {"stump", 27, 27}})
+        l.place(id, x, y);
+    l.water({22, 22, 27, 26});
+    for (std::size_t v = 0; v < l.cat.visitors.size(); ++v) l.actors.markSeen(static_cast<int>(v));
+    l.actors.populate(l.env());
+    std::vector<Vec2> mark(512);
+    std::vector<int> drawnWalking(512, 0);
+    long frozen = 0;
+    long windows = 0;
+    for (int s = 0; s < 240; ++s) {
+        for (std::size_t i = 0; i < l.actors.all().size(); ++i) mark[i] = l.actors.all()[i].pos;
+        std::ranges::fill(drawnWalking, 0);
+        for (int k = 0; k < 60; ++k) {
+            l.step();
+            for (std::size_t i = 0; i < l.actors.all().size(); ++i)
+                if (walkDrawn(l.actors.all()[i])) ++drawnWalking[i];
+        }
+        for (std::size_t i = 0; i < l.actors.all().size(); ++i) {
+            const Actor& a = l.actors.all()[i];
+            if ((a.flags & actor_flag::kAlive) == 0 || drawnWalking[i] < 30) continue;
+            ++windows;
+            if (std::hypot(a.pos.x - mark[i].x, a.pos.y - mark[i].y) < 0.07f) {
+                ++frozen;
+                MESSAGE(l.cat.kinds[a.kind].id << " state " << static_cast<int>(a.state) << " at "
+                                               << a.pos.x << "," << a.pos.y);
+            }
+        }
+    }
+    MESSAGE("walking windows " << windows << ", on the spot " << frozen);
+    CHECK(frozen == 0);
+}
+
 TEST_CASE("the same seed gives the same life; another seed another") {
     const auto runWith = [](std::uint64_t seed) {
         Life l(test::catalog(), seed);
@@ -744,15 +796,15 @@ TEST_CASE("events: a pure plan per seed, cooldowns, spacing and once a day") {
     const Catalog& c = test::catalog();
     World w(c);
     for (int x = 0; x < 10; ++x) w.setTerrain({x, 0}, c.waterTerrain);
-    const auto plan = [&](std::uint64_t seed) {
+    const auto plan = [&](std::uint64_t seed, double from = 0) {
         EventScheduler s(c, seed);
         std::vector<std::pair<int, int>> starts;
         EventEnv e;
         e.world = &w;
         for (int i = 0; i < 60 * 600; ++i) {
-            e.now = i * tuning::kStepSeconds;
+            e.now = from + i * tuning::kStepSeconds;
             e.phase = (i / (60 * 120)) % 2 == 0 ? Phase::Day : Phase::Night;
-            s.update(e, static_cast<float>(tuning::kStepSeconds));
+            s.update(e);
             for (const FiredEvent& f : s.fired()) starts.emplace_back(f.event, i);
             s.clearFired();
         }
@@ -760,6 +812,8 @@ TEST_CASE("events: a pure plan per seed, cooldowns, spacing and once a day") {
     };
     const auto a = plan(9);
     CHECK(a == plan(9));
+    // A world opened late in a session plans from then: the same starts, none all at once (F-308).
+    CHECK(a == plan(9, 600000.0));
     CHECK(a != plan(10));
     CHECK(!a.empty());
     // Scheduled (window) starts keep at least kEventSpacing apart.
@@ -787,7 +841,7 @@ TEST_CASE("events: a pure plan per seed, cooldowns, spacing and once a day") {
             e.now = t2;
             e.day = day;
             e.facts.raining = t2 < to - 1.0;
-            r.update(e, 0.5f);
+            r.update(e);
             for (const FiredEvent& f : r.fired())
                 rainbows +=
                     c.events[static_cast<std::size_t>(f.event)].show == EventShow::Rainbow ? 1 : 0;

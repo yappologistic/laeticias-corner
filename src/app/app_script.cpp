@@ -736,6 +736,8 @@ bool App::scriptStep() {
                 // "+S" moves it on by S; a plain number sets it (never backwards).
                 const double v = std::stod(c.args[1]);
                 played_ = c.args[1].starts_with('+') ? played_ + v : std::max(played_, v);
+            } else if (c.args[0] == "session") {
+                simTime_ = std::stod(c.args[1]);
             } else if (c.args[0] == "season") {
                 seasonPin_ = c.args[1] == "auto" ? -1 : cat_.findSeason(c.args[1]).value_or(-2);
                 if (seasonPin_ < -1) return fail("unknown season " + c.args[1]);

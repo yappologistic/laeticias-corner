@@ -61,6 +61,9 @@ public:
     // Return the ops as they were applied (inverted for undo), for feedback; empty if nothing.
     std::span<const Op> undo(World& world);
     std::span<const Op> redo(World& world);
+    // Forgets the redo steps: for a change outside the history (a harvest) to an item they
+    // would bring back as it was recorded.
+    void dropRedo() { redo_.clear(); }
 
 private:
     void record(const Op& op);

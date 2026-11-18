@@ -31,20 +31,24 @@ enum Wid : int {
     kScrollUp,
     kScrollDown,
     kTrayHeader,
-    kCard0,                            // wish cards: kCard0 + slot
-    kNotNow = kCard0 + 8,              // the card menu's only entry
-    kSketchTab0,                       // sketchbook tabs: kSketchTab0 + tab
-    kSketchNotNow0 = kSketchTab0 + 12, // "Not now" on the sketchbook's open wishes
-    kEdgeChip = kSketchNotNow0 + 3,    // "New land"
-    kTitleCard,                        // opens the calendar
-    kCalPin0,                          // calendar: follow the days, then each season
-    kMap = kCalPin0 + 9,               // the world map
-    kCardClose,                        // the landmark or figure card's close button
-    kSoundButton,                      // mute and unmute, anywhere
-    kTab0 = 72,                        // drawer tabs: kTab0 + category
-    kTile0 = 96,                       // drawer tiles: see tileId
+    kCard0,               // wish cards: kCard0 + slot
+    kNotNow = kCard0 + 8, // the card menu's only entry
+    // Sketchbook tabs: wishes, visitors and nooks, then a place each at kSketchPlace0 + place
+    // (their own ids whether the nooks tab is there or not, so none can reach another widget).
+    kSketchTab0,
+    kSketchPlace0 = kSketchTab0 + 3,
+    kSketchNotNow0 = kSketchPlace0 + 48, // "Not now" on the sketchbook's open wishes
+    kEdgeChip = kSketchNotNow0 + 3,      // "New land"
+    kTitleCard,                          // opens the calendar
+    kCalPin0,                            // calendar: follow the days, then each season
+    kMap = kCalPin0 + 9,                 // the world map
+    kCardClose,                          // the landmark or figure card's close button
+    kSoundButton,                        // mute and unmute, anywhere
+    kTab0 = 128,                         // drawer tabs: kTab0 + category
+    kTile0 = 160,                        // drawer tiles: see tileId
 };
 constexpr int kTraySlots = kNotNow - kCard0;
+static_assert(kSoundButton < kTab0, "widget ids below the drawer's must not reach its tabs");
 
 struct Named {
     std::string_view name;
@@ -75,8 +79,8 @@ constexpr Named kNames[] = {
     {"sketch:wishes", kSketchTab0},
     {"sketch:visitors", kSketchTab0 + 1},
     {"sketch:nooks", kSketchTab0 + 2},
-    {"sketch:place0", kSketchTab0 + 3},
-    {"sketch:place1", kSketchTab0 + 4},
+    {"sketch:place0", kSketchPlace0},
+    {"sketch:place1", kSketchPlace0 + 1},
     {"sketch_not_now", kSketchNotNow0},
     {"edge_chip", kEdgeChip},
     {"calendar", kTitleCard},
@@ -864,24 +868,6 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kCalPin0 + 7:
             case kCalPin0 + 8: emit(HudAction::Kind::SeasonPin, active_ - kCalPin0 - 1); break;
             case kEdgeChip: emit(HudAction::Kind::EdgeChip); break;
-            case kSketchTab0:
-            case kSketchTab0 + 1:
-            case kSketchTab0 + 2:
-            case kSketchTab0 + 3:
-            case kSketchTab0 + 4:
-            case kSketchTab0 + 5:
-            case kSketchTab0 + 6:
-            case kSketchTab0 + 7:
-            case kSketchTab0 + 8:
-            case kSketchTab0 + 9:
-            case kSketchTab0 + 10:
-            case kSketchTab0 + 11:
-                if (entry.index != sketchTab_) {
-                    sketchTab_ = entry.index;
-                    sketchScroll_ = 0;
-                    emit(HudAction::Kind::PageTurn);
-                }
-                break;
             case kSketchNotNow0:
             case kSketchNotNow0 + 1:
             case kSketchNotNow0 + 2: emit(HudAction::Kind::Snooze, entry.index); break;
@@ -894,6 +880,12 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                     const auto slot = static_cast<std::size_t>(active_ - kCard0);
                     if (slot < tray_.size())
                         emit(HudAction::Kind::OpenWishes, tray_[slot].card.wish);
+                } else if (active_ >= kSketchTab0 && active_ < kSketchNotNow0) {
+                    if (entry.index != sketchTab_) {
+                        sketchTab_ = entry.index;
+                        sketchScroll_ = 0;
+                        emit(HudAction::Kind::PageTurn);
+                    }
                 } else if (active_ >= kTile0 && entry.locked) {
                     emit(HudAction::Kind::OpenWishes, -1);
                 } else if (active_ >= kTile0) {
@@ -1131,7 +1123,7 @@ void Hud::drawTile(Painter& p, const Widget& w, const HudModel& m, float alpha) 
     float tw = f.measure(Face::Body, label);
     bool cut = false;
     while (tw > maxW && label.size() > 1) {
-        label.remove_suffix(1);
+        dropLastCharacter(label);
         tw = f.measure(Face::Body, label) + f.measure(Face::Body, "…");
         cut = true;
     }
@@ -1161,7 +1153,7 @@ void Hud::drawTitle(Painter& p, const HudModel& m) const {
 }
 
 void Hud::openSketchbook(int tab) {
-    sketchTab_ = std::clamp(tab, 0, kSketchNotNow0 - kSketchTab0 - 1);
+    sketchTab_ = std::clamp(tab, 0, 3 + kSketchNotNow0 - kSketchPlace0 - 1);
     sketchScroll_ = 0;
 }
 
@@ -1180,7 +1172,7 @@ const JournalPlace& Hud::placeOpen(const HudModel& m) const {
 int Hud::sketchTabs(const HudModel& m) {
     // The nooks tab appears with the first nook found; then a tab per place visited.
     const int home = m.progress != nullptr && m.progress->nooksFound() > 0 ? 3 : 2;
-    return std::min(home + static_cast<int>(m.places.size()), kSketchNotNow0 - kSketchTab0);
+    return home + std::min(static_cast<int>(m.places.size()), kSketchNotNow0 - kSketchPlace0);
 }
 
 void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, float s) {
@@ -1229,8 +1221,8 @@ void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, flo
             tx = x + pad;
             y += theme::kTabH * s + gap * 0.5f;
         }
-        // The home's tabs keep their ids (scripts name them); places follow the nooks' slot.
-        Widget& w = add(t < homeTabs ? kSketchTab0 + t : kSketchTab0 + 3 + (t - homeTabs),
+        // The home's tabs keep their ids (scripts name them); places have their own.
+        Widget& w = add(t < homeTabs ? kSketchTab0 + t : kSketchPlace0 + (t - homeTabs),
                         {tx, y, tw, theme::kTabH * s});
         w.label = name;
         w.entry.index = t;

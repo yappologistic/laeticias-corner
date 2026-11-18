@@ -315,3 +315,55 @@ TEST_CASE("weather: world-wide, deterministic, continuous across views, by clima
     CHECK(forced.rainAt({100, 1090}) == doctest::Approx(0));
     (void)shared;
 }
+
+TEST_CASE("weather: young showers exist and fade in; snow falls only where the climate has it") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    const Wind wind{{1, 0}, 0.5f, 0.3f};
+    // Rome's spring is the busiest sky: once the cap cut the youngest periods, so showers came
+    // in at full strength (L-112). A cell new in the middle of the view has just been born.
+    const SeasonClimate spring{0.6f, 1.2f, false};
+    const TileRect rome{60, 1050, 140, 1130};
+    WeatherField f(w, 7);
+    std::vector<std::uint32_t> before;
+    int born = 0;
+    for (int k = 0; k < 600; ++k) {
+        f.update(5000.0 + k, wind, spring, rome, WeatherMode::Natural);
+        for (const WeatherCell& c : f.cells()) {
+            const float m = c.radius + 2.0f;
+            const bool inner = c.centre.x - m > static_cast<float>(rome.x0) &&
+                               c.centre.x + m < static_cast<float>(rome.x1) &&
+                               c.centre.y - m > static_cast<float>(rome.y0) &&
+                               c.centre.y + m < static_cast<float>(rome.y1);
+            if (k == 0 || !inner || std::ranges::find(before, c.id) != before.end()) continue;
+            CAPTURE(k);
+            CHECK(c.intensity() < 0.25f);
+            ++born;
+        }
+        before.clear();
+        for (const WeatherCell& c : f.cells()) before.push_back(c.id);
+    }
+    CHECK(born > 0);
+    // Every cell over a place is there whichever view holds it.
+    WeatherField a(w, 7);
+    WeatherField b(w, 7);
+    a.update(5000.0, wind, spring, rome, WeatherMode::Natural);
+    b.update(5000.0, wind, spring, {rome.x0 + 40, rome.y0, rome.x1 + 40, rome.y1},
+             WeatherMode::Natural);
+    for (const WeatherCell& x : a.cells()) {
+        if (x.centre.x - x.radius < static_cast<float>(rome.x0 + 40)) continue;
+        CHECK(std::ranges::any_of(b.cells(), [&](const WeatherCell& y) { return y.id == x.id; }));
+    }
+    // Winter (December): it snows at home, never on Babylon's plain.
+    const int babylon = w.map->regionAt({300, 225});
+    REQUIRE(babylon >= 0);
+    REQUIRE(w.file.regions[static_cast<std::size_t>(babylon)].id == "babylon");
+    const SeasonClimate winter{0.5f, 1.0f, true, 9, 9};
+    WeatherField s(w, 7);
+    s.update(5000.0, wind, winter, {290, 215, 310, 235}, WeatherMode::Rain);
+    CHECK_FALSE(s.snow());
+    const TileRect h = w.file.home.rect;
+    s.update(5000.0, wind, winter, h, WeatherMode::Rain);
+    CHECK(s.snow());
+}

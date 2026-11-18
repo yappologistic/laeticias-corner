@@ -26,6 +26,9 @@ struct Box {
     [[nodiscard]] float cy() const { return y + h * 0.5f; }
 };
 
+// Drops the last character of `s`: a whole UTF-8 sequence, so a cut never leaves half of one.
+void dropLastCharacter(std::string_view& s);
+
 // `s` as it fits in `width`: whole, or cut short with an ellipsis (built in `out`).
 [[nodiscard]] std::string_view elide(const Font& font, Face face, std::string_view s, float width,
                                      std::string& out);

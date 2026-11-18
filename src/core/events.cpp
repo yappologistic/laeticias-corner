@@ -54,9 +54,16 @@ void EventScheduler::start(int e, double now, Vec2 at) {
     fired_.push_back({e, at, false});
 }
 
-void EventScheduler::update(const EventEnv& env, float dt) {
-    (void)dt;
+void EventScheduler::update(const EventEnv& env) {
     const double now = env.now;
+    if (!begun_) {
+        // The plan starts at the first update, whatever the session clock reads by then (a world
+        // opened late in a session must not find every event overdue at once).
+        begun_ = true;
+        for (std::size_t e = 0; e < due_.size(); ++e)
+            if (cat_->events[e].on == EventOn::Window || cat_->events[e].on == EventOn::Reactive)
+                due_[e] += now;
+    }
     const bool rain = env.facts.raining;
     if (rain && !wasRaining_) rainSince_ = now;
     const bool stopped = !rain && wasRaining_;

@@ -39,7 +39,7 @@ class EventScheduler {
 public:
     EventScheduler(const Catalog& cat, std::uint64_t seed);
 
-    void update(const EventEnv& env, float dt);
+    void update(const EventEnv& env);
     // A placement, move or removal over `rect` (player triggers).
     void placed(const World& world, TileRect rect, double now);
     // The resident cooked a harvest.
@@ -70,6 +70,7 @@ private:
     std::uint64_t seed_;
     std::vector<double> due_;          // window events: when the next one is due
     std::vector<double> last_;         // when each last started
+    bool begun_ = false;               // the plan has been placed at the first update's time
     std::vector<int> lastDay_;         // the calendar day each last started (daily ones)
     std::vector<std::uint32_t> drawn_; // draws made from each event's stream
     std::vector<Running> running_;

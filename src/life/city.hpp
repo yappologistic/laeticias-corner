@@ -43,8 +43,8 @@ struct LifeWorld {
     // Slots grouped by (placed item, slot name): reservations count per group against its cap.
     std::vector<std::uint32_t> slotGroup; // per WorldSlot
     std::vector<std::uint8_t> groupCap;
-    std::vector<std::uint32_t> groupFirst; // first WorldSlot of the group
-    std::vector<std::uint8_t> groupSpots;  // its spots
+    std::vector<std::uint32_t> groupSpotsAt; // per group, its first entry in groupSlots (+1)
+    std::vector<std::uint32_t> groupSlots;   // the WorldSlots (spots) of each group in turn
     // Per map chunk: the life districts on it, (region, district, tiles).
     struct ChunkDistrict {
         std::uint16_t region;
@@ -66,6 +66,10 @@ struct LifeClock {
     double t = 0.2; // the clock, 0..1: hour = 6 + 24 t
     int season = 0; // index into the catalog's seasons
     bool rain = false;
+    // The caller's count of clock jumps (the time or day set outright): a change is a jump, and
+    // anything else (the clock running, gliding to a pin, a pinned day turning) continues. -1:
+    // no count, a change of over 2 s is taken for a jump (tools and tests).
+    std::int64_t epoch = -1;
     [[nodiscard]] double hour() const;    // 0..24
     [[nodiscard]] double seconds() const; // real seconds since day 0 06:00
     [[nodiscard]] static LifeClock at(int day, double hour, int season, bool rain = false);
@@ -155,6 +159,13 @@ struct LifeStats {
     int spawnedThisStep = 0;
     int tablesBuilt = 0;
     int failedSteps = 0;
+    // Bodies against what is drawn, over each actor's last second (life tuning: kProgressWindow):
+    int marching = 0;    // drawn walking but not getting anywhere (the gate: always 0)
+    int oscillating = 0; // walking to and fro without getting anywhere (always 0)
+    int stuck = 0;       // wanting to move, not getting anywhere (the watchdog acts on these)
+    int waiting = 0;     // standing between steps of their day (drawn idle)
+    int lost = 0;        // going nowhere past the watchdog's bound (always 0)
+    long unstuck = 0;    // the watchdog's interventions since the start
 };
 
 // The pooled record of a live actor (internal to CityLife; exposed for the inline templates).
@@ -195,6 +206,7 @@ struct LiveActor {
     std::int32_t a = -1;             // puppets: chain run, token, running event
     std::int32_t b = -1;             // puppets: worker, instance, member
     std::uint16_t gen = 0;
+    std::uint16_t followGen = 0; // the followed actor's generation: a new occupant is a stranger
     std::uint16_t kind = 0;
     std::int16_t role = -1;
     std::int16_t district = -1; // life district in its region
@@ -211,7 +223,25 @@ struct LiveActor {
     std::uint8_t flags = 0;
     ActState state = ActState::Idle;
     Source source = Source::Population;
+    // Progress (what the body does, which the drawing follows): where it stood and how far it had
+    // walked at the start of the current window, and what the last window found.
+    Vec2 mark;
+    float markStride = 0;
+    float markAge = 0;
+    float walkTime = 0;    // of the window: seconds drawn walking
+    float walkDist = 0;    // and the ground covered meanwhile (tiles)
+    float shown = 0;       // speed over the ground as drawn, smoothed (tiles/s)
+    float stall = 0;       // seconds it has wanted to move without getting anywhere
+    std::uint8_t body = 0; // body_flag bits
 };
+namespace body_flag {
+inline constexpr std::uint8_t kWalking = 1;     // drawn walking (from its speed over the ground)
+inline constexpr std::uint8_t kMarching = 2;    // last window: drawn walking, not moving
+inline constexpr std::uint8_t kOscillating = 4; // last window: walked to and fro
+inline constexpr std::uint8_t kStuck = 8;       // last window: wanted to move, did not
+inline constexpr std::uint8_t kTurned = 16;     // last window: walked and came back (once)
+inline constexpr std::uint8_t kGaveUp = 32;     // the watchdog gave up its step (still stuck)
+} // namespace body_flag
 namespace live_flag {
 inline constexpr std::uint8_t kAlive = 1;
 inline constexpr std::uint8_t kUnwanted = 2; // its identity is no longer desired
@@ -280,7 +310,10 @@ public:
         int step; // LifeData::steps index running, -1
         int goods;
         int goodsCount;
-        int slot; // reserved WorldSlot group, -1
+        int slot;          // reserved WorldSlot group, -1
+        int spot;          // the WorldSlot it stands at in that group, -1
+        std::uint8_t body; // body_flag bits of its last progress window
+        float stall;       // seconds it has wanted to move without getting anywhere
         bool visible;
         std::uint64_t key;
     };
@@ -307,9 +340,19 @@ public:
     [[nodiscard]] bool festivalOn(int region, int festival, int day, int season) const;
     // `season`, or the world calendar's for `day` when it is -1.
     [[nodiscard]] int seasonFor(int day, int season) const;
+    // The calendar month of `day` in that season (-1: the calendar's own).
+    [[nodiscard]] int monthFor(int day, int season) const;
     // The data's population (out of doors, by the schedules) over the chunks a view would make
     // live at a clock, without changing anything: what the cap must hold there.
     [[nodiscard]] float expectedFor(TileRect view, const LifeClock& clock);
+    // Where instance `k` of token `t` is in its cycle (seconds of its period, its clock running
+    // only in its hours), and whether it is under way (its hours, its `when`, its month's share);
+    // a waiting instance stands at the last rest stop it passed.
+    struct TokenPhase {
+        double phase = 0;
+        bool underway = true;
+    };
+    [[nodiscard]] TokenPhase tokenPhase(std::size_t t, int k) const;
 
     struct Desire {
         std::uint64_t key = 0;
@@ -369,10 +412,10 @@ private:
     // Where token instance `k` of token `t` (or its group member) is now.
     bool tokenAt(std::size_t t, int k, int member, TokenAt& out) const;
     [[nodiscard]] int memberKind(const Token& tk, int member) const;
-    bool resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& at, float& z,
+    bool resolve(int i, const Target& t, TilePos& goal, int& group, int& spot, Vec2& at, float& z,
                  std::uint8_t& face);
     int nearestDoor(Vec2 p, float reach, TilePos& goal) const;
-    void reserve(int i, int group);
+    void reserve(int i, int group, int spot); // a group's place, standing at that WorldSlot
     void unreserve(int i);
     void puppet(int i);
     // Abstract layers.
@@ -389,6 +432,14 @@ private:
     [[nodiscard]] bool inView(Vec2 p) const;
     [[nodiscard]] bool festivalToday(int region, int festival) const;
     [[nodiscard]] bool filterPasses(const LifeRegion& r, const Filter& f) const;
+    // A filter's calendar terms that hold for a whole day: its months and its day of the season.
+    [[nodiscard]] bool dayPasses(const Filter& f, int day, int season) const;
+    [[nodiscard]] bool tokenOn(const Token& tk) const; // travels today (its `when`)
+    // The animation drawn for an actor: from what its body does, not from its intent.
+    [[nodiscard]] std::uint16_t shownAnim(const LiveActor& a) const;
+    // Its last progress window: drawn walking or wanting to walk while getting nowhere.
+    void judgeWindow(int i);
+    void countBodies(); // LifeStats' marching, oscillating, stuck, waiting
     [[nodiscard]] int blockAt(int region, const Role& role) const;
     void countDistricts();
 
@@ -442,6 +493,9 @@ private:
     std::vector<Desire> queue_;
     std::size_t queueHead_ = 0;
     std::vector<std::uint8_t> groupCount_;
+    std::vector<std::uint8_t> spotUse_; // per WorldSlot: reservations standing at it
+    std::vector<std::int16_t> idleOf_;  // per animation: a walk's standing form, -1: no walk
+    int carryWalk_ = -1;                // the walk with goods in hand, -1: none
     std::vector<std::uint8_t> slotCount_;
     std::vector<std::uint8_t> itemState_;
     std::vector<float> itemStateUntil_;
@@ -453,13 +507,15 @@ private:
     std::vector<double> reactiveCool_;
     double lastStart_ = -1e9;
     double lastNow_ = -1e18;
+    std::int64_t lastEpoch_ = -1; // the clock's jump count at the last step
     std::vector<std::tuple<int, double, double>> planScratch_;
     struct TokenState {
         std::vector<Vec2> line; // polyline (tile coordinates)
         std::vector<float> cum; // cumulative length
         float length = 0;
         float period = 0;
-        float farStay = 0; // seconds at the far end (in port, or working a fishing ground)
+        float farStay = 0;       // seconds at the far end (in port, or working a fishing ground)
+        std::vector<float> rest; // lengths along the line where a waiting instance stands
         bool fishing = false;
         bool ok = false;
     };
@@ -526,6 +582,9 @@ void CityLife::forEachInfo(F&& f) const {
         in.goods = a.goods;
         in.goodsCount = a.goodsCount;
         in.slot = a.group;
+        in.spot = a.group >= 0 ? a.slot : -1;
+        in.body = a.body;
+        in.stall = a.stall;
         in.visible = a.state != ActState::Inside && a.alpha > 0.0f;
         in.key = a.key;
         f(in);

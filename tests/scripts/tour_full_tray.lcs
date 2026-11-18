@@ -1,0 +1,27 @@
+# The tour's wish step never opens a fourth wish (L-005): with three already in the tray, the
+# step is skipped and its wish waits for its turn.
+wait 20
+click ui:menu:continue
+wait 8
+type Fern Bank
+click ui:menu:create
+wait 8
+expect tour 1
+set wish a_roof open
+set wish path_to_door open
+set wish cat_bench open
+expect wishes 3
+drag 640,320 560,340
+wait 4
+expect tour 2
+click ui:build
+wait 6
+expect tour 3
+click ui:tile:flowers_white
+wait 3
+click @24,34
+wait 4
+expect tour 5
+expect wishes 3
+expect wish first_flowers waiting
+quit

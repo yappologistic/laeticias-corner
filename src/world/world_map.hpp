@@ -276,7 +276,13 @@ private:
     std::vector<District> districts_;
     std::vector<Placed> items_;
     std::uint32_t homeBegin_ = 0; // items_[homeBegin_..] are the player's
-    bool homeCleared_ = false;    // prebuilt items touching the home rect dropped
+    bool homeCleared_ = false;    // the home has been applied once
+    // A prebuilt item touching the home rect once the home is applied: kept in the list and its
+    // slots (the composed world and every index stay as loaded; city life keeps indices, L-018)
+    // but no longer on the map's tiles, so the game's home stands there alone.
+    [[nodiscard]] bool underHome(std::uint32_t i) const {
+        return homeCleared_ && i < homeBegin_ && items_[i].rect().intersects(home_.rect);
+    }
     std::vector<std::uint8_t> homeWild_;
     std::vector<WorldSlot> slots_; // prebuilt slots sorted by chunk, then the home's
     std::uint32_t homeSlotBegin_ = 0;

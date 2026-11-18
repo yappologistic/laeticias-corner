@@ -177,6 +177,14 @@ std::expected<LoadedWorld, std::string> loadWorld(const std::filesystem::path& a
             diag.error(rf.error() + "; region file skipped");
             continue;
         }
+        // The home keeps its own look (the home catalog's seasons grade it in the game's scene):
+        // its region file styles the land around it with sound, weather and life, never with a
+        // tint or haze laid over the corner the player built.
+        if (r.kind == RegionKind::Home) {
+            rf->theme.grading = Theme{}.grading;
+            rf->theme.haze = Theme{}.haze;
+            rf->theme.hazeStrength = 0;
+        }
         w.regions[i] = std::move(*rf);
     }
     w.timings.regions = msSince(t);

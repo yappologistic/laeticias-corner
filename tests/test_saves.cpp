@@ -13,6 +13,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
+#include <ctime>
 
 using namespace lc;
 
@@ -284,6 +286,55 @@ TEST_CASE("a real chunked save keeps everything, opening the stages it built on"
             CHECK(data->world.terrainAt({x, y}) == before.terrainAt({x, y}));
     CHECK(data->world.itemAt({12, 16})->type == item("cottage"));
     CHECK(data->seen == std::vector<std::string>{"duck", "cat"});
+}
+
+TEST_CASE("a chunked save keeps a water piece across a chunk line (L-011)") {
+    // Water on both sides of x = 32, the rowboat (2 x 1, on water) at (31, 25): its origin's
+    // chunk is listed first, so its second tile's water comes from the chunk after it.
+    const std::string text = R"({"version": 2, "base": "blank", "chunk": 32,
+        "palette": ["grass", "meadow", "path", "cobble", "water"],
+        "map": {"w": 40, "h": 40}, "clock": {"pin": "none", "t": 0.3},
+        "chunks": [
+          {"x": 0, "y": 0, "terrain": [[0, 830], [4, 2], [0, 192]],
+           "items": [{"id": "rowboat", "v": 0, "x": 31, "y": 25}]},
+          {"x": 1, "y": 0, "terrain": [[0, 200], [4, 2], [0, 54]]}
+        ]})";
+    const Catalog& c = test::catalog();
+    const auto data = deserialize(text, c);
+    REQUIRE(data.has_value());
+    CHECK(data->warnings.empty());
+    const Item* boat = data->world.itemAt({32, 25});
+    REQUIRE(boat != nullptr);
+    CHECK(boat->type == item("rowboat"));
+}
+
+TEST_CASE("a postcard is named by the local date its caption shows (L-012)") {
+    // 22:30 on 18 November 2026 at six hours west of Greenwich is 04:30 the next day in UTC.
+    const char* old = std::getenv("TZ");
+    const std::string keep = old != nullptr ? old : "";
+    REQUIRE(setenv("TZ", "UTC+6", 1) == 0);
+    tzset();
+    CHECK(postcardStem("plum-hollow", 1795062600) == "plum-hollow-20261118-223000");
+    if (old != nullptr)
+        (void)setenv("TZ", keep.c_str(), 1);
+    else
+        (void)unsetenv("TZ");
+    tzset();
+}
+
+TEST_CASE("a save cut short or corrupted anywhere is refused or read, never a crash") {
+    const Catalog& c = test::catalog();
+    for (const char* name : {"save_v1.json", "save_v2.json", "save_v3.json"}) {
+        const std::string text = fixture(name);
+        CAPTURE(name);
+        for (std::size_t k = 0; k < text.size(); k += 1 + text.size() / 400) {
+            CAPTURE(k);
+            CHECK_NOTHROW((void)deserialize(text.substr(0, k), c));
+            std::string flipped = text;
+            flipped[k] = static_cast<char>(flipped[k] ^ 0x5A);
+            CHECK_NOTHROW((void)deserialize(flipped, c));
+        }
+    }
 }
 
 TEST_CASE("world folder names and the profile") {

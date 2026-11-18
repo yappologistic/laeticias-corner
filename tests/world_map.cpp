@@ -370,6 +370,12 @@ TEST_CASE("map: a home delta overlays the home rect") {
     WorldMap& m = *f.map;
     const std::size_t prebuilt = m.items().size();
     const int hall = f.find("tst.hall", {2, 2});
+    // Prebuilt items under the home stay in the list as composed (off the map's tiles once the
+    // home is applied), so applying the home moves no index (city life keeps them; L-018).
+    const int oak = f.find("oak", {44, 64});
+    REQUIRE(oak >= 0);
+    std::vector<std::pair<std::uint32_t, TilePos>> before;
+    for (const Placed& it : m.items()) before.emplace_back(it.info, TilePos{it.x, it.y});
     HomeDelta d;
     d.w = 8;
     d.h = 8;
@@ -398,9 +404,15 @@ TEST_CASE("map: a home delta overlays the home rect") {
     REQUIRE(cottage >= 0);
     CHECK(m.info(m.items()[std::size_t(cottage)]).id == "cottage");
     CHECK(m.items()[std::size_t(cottage)].layer == kHomeLayer);
-    CHECK(f.find("oak", {44, 64}) == -1); // prebuilt items under the home are gone
-    CHECK(f.find("tst.house", {39, 59}) == -1);
-    CHECK(m.items().size() == prebuilt - 2 + 2);
+    CHECK(m.itemAt({44, 64}) != oak); // prebuilt items under the home are not on the map
+    const int under = m.itemAt({39, 59});
+    CHECK((under < 0 || m.info(m.items()[std::size_t(under)]).id != "tst.house"));
+    CHECK(m.items().size() == prebuilt + 2);
+    for (std::size_t i = 0; i < prebuilt; ++i) {
+        CAPTURE(i);
+        CHECK(m.items()[i].info == before[i].first);
+        CHECK(TilePos{m.items()[i].x, m.items()[i].y} == before[i].second);
+    }
     CHECK(m.walkable({41, 61}));
     CHECK_FALSE(m.walkable({41, 67})); // wild land
     CHECK(f.find("tst.hall", {2, 2}) == hall);
@@ -410,7 +422,7 @@ TEST_CASE("map: a home delta overlays the home rect") {
     CHECK(m.itemAt({42, 62}) == -1);
     REQUIRE(m.itemAt({46, 66}) >= 0);
     CHECK(m.info(m.items()[std::size_t(m.itemAt({46, 66}))]).id == "oak");
-    CHECK(m.items().size() == prebuilt - 2 + 1);
+    CHECK(m.items().size() == prebuilt + 1);
     CHECK(f.find("tst.hall", {2, 2}) == hall);
     int cottageSlots = 0;
     std::set<std::uint32_t> cottages;

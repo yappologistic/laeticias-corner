@@ -607,6 +607,7 @@ bool App::pick(TilePos t) {
     if (!idx || !ripe(cat_, world_.items()[*idx])) return false;
     const Item bed = world_.items()[*idx];
     harvest(world_, *idx);
+    editor_.dropRedo();
     ++progress_.harvests;
     progress_.lastHarvestDay = clock_.day();
     playAt(sfx::kHarvest, tuning::kSfxLevel,
@@ -903,6 +904,7 @@ void App::zoomBy(int steps, Vec2 px) {
 }
 
 void App::frameCamera() {
+    follow_.reset(); // the camera goes elsewhere: it no longer follows anyone
     const Box s = hud_.safeArea();
     camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen(),
                   openBounds(cat_, progress_.stage, world_));
@@ -1064,6 +1066,11 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     default: break;
     }
     if (photo_) return; // editing keys do nothing while framing a photo
+    // Away from home the home's tools rest: no unseen undo, no armed eyedropper (L-108).
+    static constexpr SDL_Keycode kEditing[] = {SDLK_Z, SDLK_Y,           SDLK_R,
+                                               SDLK_B, SDLK_X,           SDLK_V,
+                                               SDLK_I, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};
+    if (away() && std::ranges::find(kEditing, key) != std::end(kEditing)) return;
 
     switch (key) {
     case SDLK_Z:
@@ -1147,9 +1154,10 @@ void App::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_MOUSE_MOTION: {
         const Vec2 p{e.motion.x * density_, e.motion.y * density_};
         mouseInside_ = true;
-        if (drag_ == Drag::Pan) {
+        if (drag_ == Drag::Pan && (p.x != lastPan_.x || p.y != lastPan_.y)) {
             camera_.dragBy({p.x - lastPan_.x, p.y - lastPan_.y}, screen());
             tourMoved_ = true;
+            follow_.reset(); // a pan takes the camera back
         }
         lastPan_ = p;
         mouse_ = p;
@@ -1243,7 +1251,7 @@ HudModel App::model() const {
     m.worldTip = worldTip();
     floatLabels_.clear();
     for (const NookLabel& l : nookLabels_) {
-        const float k = (simTime_ - l.start) / tuning::kNookLabelSeconds;
+        const auto k = static_cast<float>((simTime_ - l.start) / tuning::kNookLabelSeconds);
         const float fade = std::min({1.0f, k * 6.0f, (1.0f - k) * 4.0f});
         floatLabels_.push_back({view_.worldToScreen(l.world, screen()),
                                 cat_.nooks[static_cast<std::size_t>(l.nook)].name, fade});
@@ -1453,7 +1461,7 @@ void App::step(float dt) {
         playNote();
     }
     // Never saved with a piece in hand (it is out of the world until it is put down).
-    if (autosave_.due(dt, drag_ == Drag::Tool || carry_)) (void)save();
+    if (autosave_.due(dt, drag_ == Drag::Tool, carry_.has_value())) (void)save();
     (void)pollSaves();
 }
 
@@ -1462,6 +1470,8 @@ int App::season() const {
 }
 
 bool App::snowing() const {
+    // Away, as the world's weather has it by the climate there (no snow on the desert).
+    if (viewWeather_ && away()) return raining() && viewWeather_->snow();
     return raining() && cat_.seasons[static_cast<std::size_t>(season())].snow;
 }
 
@@ -1915,7 +1925,7 @@ int App::run() {
                 if (ec) SDL_Log("save: cannot rename the old save: %s", ec.message().c_str());
                 legacyToRetire_.clear();
             } else {
-                retireAt_ = simTime_ + static_cast<float>(tuning::kSaveRetrySeconds);
+                retireAt_ = simTime_ + tuning::kSaveRetrySeconds;
             }
         }
         if (welcomePending_) {

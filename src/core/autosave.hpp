@@ -1,6 +1,7 @@
 #pragma once
 // When to autosave: after a quiet moment, at the latest after a stretch of continuous editing,
-// never mid-drag unless overdue, and not again too soon after a failed attempt.
+// never mid-drag unless overdue, never with a piece in hand, and not again too soon after a
+// failed attempt.
 
 #include "core/tuning.hpp"
 
@@ -14,15 +15,16 @@ public:
         dirty_ = true;
         quiet_ = 0;
     }
-    // Advances time; true when a save should be attempted now.
-    [[nodiscard]] bool due(double dt, bool dragging) {
+    // Advances time; true when a save should be attempted now. A held piece is out of the world
+    // until it is put down, so nothing is written while `holding`, however overdue.
+    [[nodiscard]] bool due(double dt, bool dragging, bool holding) {
         retry_ = std::max(0.0, retry_ - dt);
         if (!dirty_) return false;
         quiet_ += dt;
         unsaved_ += dt;
         const bool quiet = quiet_ >= tuning::kAutosaveDelay && !dragging;
         const bool overdue = unsaved_ >= tuning::kAutosaveMaxDelay;
-        return (quiet || overdue) && retry_ <= 0;
+        return (quiet || overdue) && retry_ <= 0 && !holding;
     }
     void saved() {
         dirty_ = false;

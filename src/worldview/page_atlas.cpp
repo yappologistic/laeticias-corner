@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <fstream>
 
 namespace lc::worldview {
@@ -131,6 +132,7 @@ int PageAtlas::freeSlot(double now) {
         p.slot = -1;
         p.texture = nullptr;
         p.state = State::Unloaded;
+        p.opaque = {}; // its mask goes with it (memory follows the resident pages)
         slotPage_[static_cast<std::size_t>(lru)] = -1;
         return lru;
     }
@@ -204,7 +206,7 @@ void PageAtlas::want(std::string_view set) {
         if (p.state != State::Fixed && p.set == set) p.wanted = true;
 }
 
-SurfacePtr PageAtlas::decode(const Page& p, float* peak) const {
+SurfacePtr PageAtlas::decode(const Page& p, float* peak, std::vector<std::uint64_t>& opaque) const {
     SurfacePtr loaded{SDL_LoadPNG(p.file.string().c_str())};
     SurfacePtr px;
     if (loaded) px.reset(SDL_ConvertSurface(loaded.get(), kTextureFormat));
@@ -238,7 +240,31 @@ SurfacePtr PageAtlas::decode(const Page& p, float* peak) const {
         }
     }
     *peak = count > 0 ? sum / static_cast<float>(count) : -1.0f;
+    // What is drawn where, a bit per pixel: picking asks it (draw-order.md 4.5).
+    const auto words = static_cast<std::size_t>((px->w + 63) / 64);
+    opaque.assign(words * static_cast<std::size_t>(px->h), 0);
+    for (int y = 0; y < px->h; ++y) {
+        const auto* row =
+            reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(px->pixels) +
+                                                   static_cast<std::ptrdiff_t>(y) * px->pitch);
+        std::uint64_t* bits = opaque.data() + static_cast<std::size_t>(y) * words;
+        for (int x = 0; x < px->w; ++x)
+            if ((row[x] >> 24) != 0) bits[x >> 6] |= std::uint64_t{1} << (x & 63);
+    }
     return px;
+}
+
+bool PageAtlas::drawsAt(const SpriteRef& s, float x, float y) const {
+    if (s.page >= pages_.size()) return true;
+    const Page& p = pages_[s.page];
+    if (p.opaque.empty() || p.w <= 0 || p.h <= 0) return true;
+    const int px = static_cast<int>(std::floor(s.uv.u0 * static_cast<float>(p.w) + x));
+    const int py = static_cast<int>(std::floor(s.uv.v0 * static_cast<float>(p.h) + y));
+    if (px < 0 || py < 0 || px >= p.w || py >= p.h) return false;
+    const auto words = static_cast<std::size_t>((p.w + 63) / 64);
+    return ((p.opaque[static_cast<std::size_t>(py) * words + static_cast<std::size_t>(px >> 6)] >>
+             (px & 63)) &
+            1u) != 0;
 }
 
 SurfacePtr PageAtlas::decodePage(std::uint16_t page) const {
@@ -258,9 +284,10 @@ void PageAtlas::work(const std::stop_token& stop) {
         }
         // Pages in the queue are only read here; their shadow list is fixed before streaming.
         float peak = -1;
-        SurfacePtr px = decode(pages_[page], &peak);
+        std::vector<std::uint64_t> opaque;
+        SurfacePtr px = decode(pages_[page], &peak, opaque);
         const std::scoped_lock lock(mutex_);
-        done_.push_back({page, std::move(px), peak});
+        done_.push_back({page, std::move(px), peak, std::move(opaque)});
     }
 }
 
@@ -308,7 +335,7 @@ void PageAtlas::update(double now) {
         Page& p = pages_[i];
         ++inFlight;
         if (!async_) {
-            p.pixels = decode(p, &p.shadowPeak);
+            p.pixels = decode(p, &p.shadowPeak, p.opaque);
             if (!p.pixels) return;
             p.uploadedRows = 0;
             upload(p, p.h);
@@ -348,6 +375,7 @@ void PageAtlas::update(double now) {
                 Page& p = pages_[d.page];
                 p.pixels = std::move(d.pixels);
                 p.shadowPeak = d.peak;
+                p.opaque = std::move(d.opaque);
                 p.uploadedRows = 0;
                 p.state = p.pixels ? State::Decoded : State::Unloaded;
             }
@@ -398,6 +426,7 @@ void PageAtlas::evict(double now) {
         p.slot = -1;
         p.texture = nullptr;
         p.state = State::Unloaded;
+        p.opaque = {};
     }
 }
 

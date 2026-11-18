@@ -114,6 +114,9 @@ std::optional<ActorLooks::Drawn> ActorLooks::resolve(const life::DrawActor& d) c
     const bool moving = d.speed > tuning::kActorMoving;
     std::int16_t slot = d.anim < kind.slot.size() ? kind.slot[d.anim] : -1;
     if (slot < 0) slot = moving ? kind.move : kind.idle;
+    // A walk is never played by the clock: a body not covering ground stands (city life hands
+    // the body's own animation; this keeps any other caller from marching on the spot).
+    if (!moving && slot == kind.move && kind.idle >= 0) slot = kind.idle;
     const int v = d.variant < kind.variants ? d.variant : 0;
     const Anim* an = &kind.anims[static_cast<std::size_t>(v * kind.slots + slot)];
     if (an->frames[0].empty()) an = &kind.anims[static_cast<std::size_t>(slot)];
