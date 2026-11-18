@@ -496,7 +496,8 @@ private:
         Uint64 t0_;
         std::uint64_t a0_;
     };
-    double stepMs_ = 0; // this frame's steps, whole
+    double startupMs_ = 0; // the process's start to the first frame's setup (the bench)
+    double stepMs_ = 0;    // this frame's steps, whole
     std::uint64_t stepAllocs_ = 0;
     double actorMs_ = 0;    // actors
     double lifeMs_ = 0;     // weather, events, speech and sound around them

@@ -88,6 +88,8 @@ public:
 
 private:
     void clamp(Vec2& p, Vec2 screen, float scale) const;
+    // `p` moved so that the window's top-left corner falls on a whole window pixel.
+    [[nodiscard]] Vec2 wholePixel(Vec2 p, Vec2 screen) const;
 
     Iso iso_;
     TileRect land_;

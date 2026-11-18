@@ -200,6 +200,13 @@ public:
     [[nodiscard]] const ActorLooks* actorLooks() const { return looks_.get(); }
     // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
     void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
+    // Of the people drawn over the impostors in the last frame (half and quarter scale), how
+    // many stand, their whole width, with more than `px` of something in front of them over
+    // their feet: worked out
+    // one by one from the map's items by the order's depth relation, not from the cover map
+    // that hid the others, so tests can hold the one against the other.
+    [[nodiscard]] int coarseActorsCovered(float px) const;
+    [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
     // The actors drawn in the last frame.
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);

@@ -7,6 +7,7 @@
 #include <doctest.h>
 
 #include <array>
+#include <cmath>
 #include <string_view>
 #include <vector>
 
@@ -118,4 +119,40 @@ TEST_CASE("drawing between steps: the camera interpolates, a drag never lags") {
     cam.dragBy({-40, 0}, screen);
     CHECK(cam.interpolated(0).position().x == doctest::Approx(cam.position().x));
     CHECK(cam.interpolated(0.3f).position().x == doctest::Approx(cam.position().x));
+}
+
+TEST_CASE("a pan eases out evenly and comes to rest on a whole window pixel") {
+    const Catalog& c = test::catalog();
+    for (const float zoom : {1.0f, 2.0f, 3.0f}) {
+        Camera cam(c.iso(), {0, 0, 40, 40}, 0);
+        const Vec2 screen{1281, 801}; // odd: the centre lies between pixels
+        cam.place(c.iso().toWorld(20, 20), zoom, screen);
+        // A held key, then let go: every step after that is shorter than the one before
+        // (never a step back, never a longer one), down to rest.
+        for (int i = 0; i < 30; ++i) {
+            cam.beginStep();
+            cam.nudge({7.3f, 3.1f}, screen);
+            cam.update(1.0f / 60.0f, screen);
+        }
+        float last = 1e9f;
+        int steps = 0;
+        while (cam.moving() || steps == 0) {
+            const Vec2 before = cam.position();
+            cam.beginStep();
+            cam.update(1.0f / 60.0f, screen);
+            const float moved =
+                std::hypot(cam.position().x - before.x, cam.position().y - before.y);
+            // The very last step closes what is left (under a hundredth of a pixel short).
+            CHECK(moved <= last + 0.02f / zoom);
+            last = moved;
+            REQUIRE(++steps < 600);
+        }
+        // At rest the window's corner is on a whole pixel: drawing it snapped changes nothing.
+        const Vec2 rest = cam.position();
+        const Vec2 snapped = cam.snapped(screen).position();
+        CHECK(snapped.x == doctest::Approx(rest.x).epsilon(1e-6));
+        CHECK(snapped.y == doctest::Approx(rest.y).epsilon(1e-6));
+        const float corner = (rest.x - screen.x * 0.5f / zoom) * zoom;
+        CHECK(std::abs(corner - std::round(corner)) < 1e-2f);
+    }
 }

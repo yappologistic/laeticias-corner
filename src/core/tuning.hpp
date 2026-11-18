@@ -365,6 +365,7 @@ inline constexpr float kTravelHold = 0.4f;
 inline constexpr float kTravelFadeIn = 0.3f;
 inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
+inline constexpr double kStartupBudgetMs = 3000.0;  // and start-up to a playable frame in three
 inline constexpr std::size_t kCornerToastsKept = 4; // the corner's news kept while away
 inline constexpr int kSceneDrawCalls = 40;      // world-tech §4.4: the world's draws in a city view
 inline constexpr float kFollowHalfLife = 0.09f; // s: the follow camera's spring (quality bar)

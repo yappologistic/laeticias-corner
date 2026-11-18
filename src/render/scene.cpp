@@ -127,7 +127,15 @@ Vec2 Scene::actorAnchor(const Actor& a) const {
     w.y -= a.lift;
     if (cat_.kinds[a.kind].move == Locomotion::Fly && a.state != ActorState::Act)
         w.y -= std::sin(a.animTime * 3.1f) * 0.12f * iso_.tileH();
-    return {std::round(w.x), std::round(w.y)};
+    return snapped(w);
+}
+
+Vec2 Scene::snapped(Vec2 w) const {
+    // Moving things sit on the target's pixels, not the art's: at 2x and 3x the target has two
+    // or three texels per art pixel, and a walker placed to whole art pixels would move in
+    // jumps of that many window pixels and stand still one frame in four (L-105).
+    const float res = std::max(1.0f, xf_.res);
+    return {std::round(w.x * res) / res, std::round(w.y * res) / res};
 }
 
 FRect Scene::actorRect(const Actor& a) const {
@@ -880,7 +888,7 @@ void Scene::drawShadows(const FrameParams& p) {
         // Something sitting on an item is in that item's shadow already.
         if (kd.move != Locomotion::Fly && a.lift > 0.5f) continue;
         Vec2 w = iso_.toWorld(a.pos.x, a.pos.y);
-        w = {std::round(w.x), std::round(w.y)};
+        w = snapped(w);
         const bool air = kd.move == Locomotion::Fly;
         const bool swim = kd.move == Locomotion::Swim;
         const float k = air ? 0.5f : (swim ? 0.85f : 0.7f);
@@ -1011,7 +1019,7 @@ void Scene::drawParticles(bool ground) {
             break;
         default: break;
         }
-        sprite(id, {std::round(pt.pos.x), std::round(pt.pos.y)}, {1, 1, 1, alpha});
+        sprite(id, snapped(pt.pos), {1, 1, 1, alpha});
     }
 }
 

@@ -250,7 +250,14 @@ int App::runBench() {
         std::printf("bench: %s: memory rss %.0f MiB, peak %.0f MiB (ceiling %.0f at 1080p)\n", name,
                     rss, peak, memoryCeiling());
         if (!judge) return true;
-        if (cpu.avg > opts_.budgetMs || whole.p99 > tuning::kFrameP99Ms) fail(name);
+        // The CPU budget is for the work the game does: where the system counts the main
+        // thread's own CPU time that is what is judged, so a core taken away by another
+        // program is not read as the game's work. The whole-frame budgets stay wall time: what
+        // a player would see.
+        const PerfStats work = fr.of(&FrameSample::threadMs);
+        if ((work.count > 0 ? work.avg : cpu.avg) > opts_.budgetMs ||
+            whole.p99 > tuning::kFrameP99Ms)
+            fail(name);
         if (whole.worst <= tuning::kFrameWorstMs) return true;
         if (last) {
             fail(name);
@@ -263,6 +270,26 @@ int App::runBench() {
     const auto warm = [&] {
         for (int f = 0; f < kWarmup; ++f) (void)benchFrame();
     };
+    if (worldView_) {
+        // Start-up: the frames from the first one until the world around the view is whole and
+        // what loads ahead of need has loaded (pages, the wider levels). Their work is spread
+        // out, so none may be slow; the CPU average is the steady state's budget, not theirs.
+        BenchFrames fr;
+        for (int f = 0; f < tuning::kBenchSettleFrames * 4; ++f) {
+            fr.all.push_back(benchFrame());
+            const worldview::FrameStats& ws = worldView_->stats();
+            if (worldView_->settled() && ws.prefetchPending == 0 && ws.pages.streaming == 0) break;
+        }
+        const PerfStats whole = fr.of(&FrameSample::frameMs);
+        report("start-up", "whole frame", whole);
+        report("start-up", "cpu (thread)", fr.of(&FrameSample::threadMs));
+        reportSmooth("start-up", fr);
+        std::printf("bench: start-up: everything around the first view ready after %zu frames\n",
+                    fr.all.size());
+        if (judge && (whole.p99 > tuning::kFrameP99Ms || whole.worst > tuning::kFrameWorstMs))
+            fail("start-up frames");
+        if (judge && startupMs_ > tuning::kStartupBudgetMs) fail("start-up time");
+    }
     for (const int level : {kDefaultZoomLevel, kDefaultZoomLevel - 1})
         for (int attempt = 0; attempt < 2; ++attempt) {
             // Centre the camera on the built-up middle at this level.

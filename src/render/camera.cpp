@@ -50,12 +50,16 @@ void Camera::clamp(Vec2& p, Vec2 screen, float scale) const {
     p = iso_.toWorld(t.x, t.y);
 }
 
+Vec2 Camera::wholePixel(Vec2 p, Vec2 screen) const {
+    const auto snap = [&](float v, float half) {
+        return (std::round((v - half / scale_) * scale_) / scale_) + half / scale_;
+    };
+    return {snap(p.x, screen.x * 0.5f), snap(p.y, screen.y * 0.5f)};
+}
+
 Camera Camera::snapped(Vec2 screen) const {
     Camera c = *this;
-    const auto snap = [&](float p, float half) {
-        return (std::round((p - half / scale_) * scale_) / scale_) + half / scale_;
-    };
-    c.pos_ = {snap(pos_.x, screen.x * 0.5f), snap(pos_.y, screen.y * 0.5f)};
+    c.pos_ = wholePixel(pos_, screen);
     return c;
 }
 
@@ -83,10 +87,19 @@ void Camera::update(float dt, Vec2 screen) {
     }
     const float k = easing_ ? 1.0f - std::exp(-tuning::kCameraEase * dt) : 1.0f;
     clamp(target_, screen, scale_);
-    pos_.x += (target_.x - pos_.x) * k;
-    pos_.y += (target_.y - pos_.y) * k;
-    if (std::abs(target_.x - pos_.x) < 0.01f && std::abs(target_.y - pos_.y) < 0.01f)
-        pos_ = target_;
+    // Where it was put it stays (a placed view is drawn from its nearest pixel as it is).
+    if (std::abs(target_.x - pos_.x) * scale_ < 0.01f &&
+        std::abs(target_.y - pos_.y) * scale_ < 0.01f)
+        return;
+    // A pan comes to rest on a whole window pixel: it eases there, so the filtering of a view
+    // between pixels fades out as it arrives, instead of the resting view being pulled to the
+    // pixel (and sharpened) in its last frame.
+    const Vec2 rest = wholePixel(target_, screen);
+    pos_.x += (rest.x - pos_.x) * k;
+    pos_.y += (rest.y - pos_.y) * k;
+    // Within a hundredth of a window pixel it is there.
+    if (std::abs(rest.x - pos_.x) * scale_ < 0.01f && std::abs(rest.y - pos_.y) * scale_ < 0.01f)
+        pos_ = target_ = rest;
 }
 
 Vec2 Camera::arrival(Vec2 screen) const {
@@ -133,6 +146,9 @@ void Camera::panTo(Vec2 world, Vec2 screen) {
 void Camera::dragBy(Vec2 d, Vec2 screen) {
     target_ = {target_.x - d.x / scale_, target_.y - d.y / scale_};
     clamp(target_, screen, scale_);
+    // A dragged view sits on whole window pixels, so it is as sharp in the hand as at rest and
+    // letting go changes nothing.
+    if (settled()) target_ = wholePixel(target_, screen);
     // The hand moves the view at once: the last step's view moves with it, so no smoothing lags
     // behind the pointer.
     prevPos_ = {prevPos_.x + target_.x - pos_.x, prevPos_.y + target_.y - pos_.y};

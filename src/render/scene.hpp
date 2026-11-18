@@ -212,6 +212,8 @@ private:
     [[nodiscard]] bool flying(const Actor& a) const;
     [[nodiscard]] bool glows(const Actor& a) const;
     [[nodiscard]] Vec2 actorAnchor(const Actor& a) const;
+    // A world px point on the nearest pixel of this frame's target.
+    [[nodiscard]] Vec2 snapped(Vec2 world) const;
     [[nodiscard]] float popOf(TilePos origin) const;
     void buildDynamic(const FrameParams& p);
     void sprite(SpriteId id, Vec2 anchor, SDL_FColor color, bool mirror = false, Vec2 pivot = {},

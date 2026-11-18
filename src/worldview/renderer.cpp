@@ -1521,8 +1521,7 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
             // (by the same depth relation as the native order) is not drawn over it; under a roof
             // or a colonnade there is nothing to see from this far either.
             const float above = d.z - static_cast<float>(map_.level(t) * lvl_);
-            if ((d.item < 0 || d.floor) &&
-                static_cast<float>(cover_->at(t)) - above <= tuning::kCoverHidden)
+            if ((d.item < 0 || d.floor) && cover_->at(d.pos) - above <= tuning::kCoverHidden)
                 coarse_.push_back(static_cast<std::uint32_t>(i));
             continue;
         }
@@ -1575,6 +1574,48 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
         return a.first != b.first ? a.first < b.first : a.second.index < b.second.index;
     });
     for (const auto& h : hits) out.push_back(h.second);
+}
+
+int WorldView::coarseActorsCovered(float px) const {
+    constexpr int kRows = 40; // tiles in front whose art can reach back over someone
+    int covered = 0;
+    std::vector<world::DrawPiece> pieces; // a test's question, not a frame's: allocation is fine
+    for (const std::uint32_t i : coarse_) {
+        const life::DrawActor& d = actorBuf_[i];
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
+        const Vec2 feet{w.x, w.y - d.z};
+        map_.piecesIn(TileRect{t.x - 2, t.y - 2, t.x + kRows, t.y + kRows}.clipped(map_.bounds()),
+                      pieces);
+        float most = 0;
+        for (const world::DrawPiece& p : pieces) {
+            if (d.item >= 0 && p.item == static_cast<std::uint32_t>(d.item)) continue;
+            const world::Placed& it = map_.items()[p.item];
+            if (hole_.tiles.contains(TilePos{it.x, it.y})) continue;
+            const VariantLook& look = sprites_->item(it);
+            const bool split = p.piece >= 0 && !look.pieces.empty();
+            if (!split && look.base.empty()) continue;
+            const SpriteRef& s =
+                split ? look.pieces[static_cast<std::size_t>(p.piece)] : look.base.f.front();
+            const Vec2 o = iso_.toWorld(TilePos{it.x, it.y});
+            const Vec2 a{o.x, o.y - static_cast<float>(it.level * lvl_)};
+            const TileRect r = split ? p.rect : it.rect();
+            // Hidden means behind it with their whole width: the feet a few px either side
+            // (someone half past a pier's edge is as rightly drawn as not).
+            const FRect foot{static_cast<float>(r.x0), static_cast<float>(r.y0),
+                             static_cast<float>(r.x1), static_cast<float>(r.y1)};
+            const FRect box{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
+            const auto raise = static_cast<float>(it.level * lvl_);
+            const auto at = [&](float dx) {
+                return coverOf(iso_, {feet.x + dx, feet.y}, t, foot, raise, box);
+            };
+            most =
+                std::max(most, std::min(at(-tuning::kCoverHalfBody), at(tuning::kCoverHalfBody)));
+        }
+        covered += most > px ? 1 : 0;
+    }
+    return covered;
 }
 
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {

@@ -1713,8 +1713,10 @@ int App::run() {
     else
         frameCamera();
     if (opts_.bench) {
-        std::printf("bench: start-up to the first frame's setup %llu ms\n",
-                    static_cast<unsigned long long>(SDL_GetTicks()));
+        // SDL started with the process: its clock is the start-up time.
+        startupMs_ = static_cast<double>(SDL_GetTicks());
+        std::printf("bench: start-up to the first frame's setup %.0f ms (budget %.0f)\n",
+                    startupMs_, tuning::kStartupBudgetMs);
         return runBench();
     }
     if (opts_.benchmark) return runBenchmark();
