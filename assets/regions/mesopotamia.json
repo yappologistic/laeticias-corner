@@ -336,6 +336,9 @@
     "world.donkey": [
      "sfx/world/donkey.wav"
     ],
+    "world.owl": [
+     "sfx/world/owl_tawny.wav"
+    ],
     "world.raven": [
      "sfx/world/crow_1.wav",
      "sfx/world/crow_2.wav"
@@ -908,9 +911,19 @@
      }
     },
     {
+     "role": "owl",
+     "density": "night",
+     "max_per_chunk": 0.5
+    },
+    {
      "actor": "world.raven",
      "density": "daytime",
      "max_per_chunk": 0.25
+    },
+    {
+     "actor": "world.heron",
+     "density": "daytime",
+     "max_per_chunk": 0.2
     }
    ],
    "name": "Countryside",
@@ -2126,6 +2139,46 @@
    "sound": {
     "oneshot": "sfx/world/chop.wav"
    }
+  },
+  {
+   "id": "owl",
+   "actor": "world.owl",
+   "name": "Owl",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "hunt"
+    }
+   ],
+   "routines": {
+    "hunt": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        90
+       ]
+      }
+     ]
+    }
+   }
   }
  ],
  "ambient": [
@@ -2137,7 +2190,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -2173,7 +2226,8 @@
     "05:00"
    ],
    "per_screen": 0.3,
-   "sprite": null
+   "sprite": "world.owl",
+   "sound": "sfx/world/owl_tawny.wav"
   }
  ],
  "lights": {

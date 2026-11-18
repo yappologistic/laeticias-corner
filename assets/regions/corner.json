@@ -755,11 +755,7 @@
     {
      "role": "farmhand",
      "density": "always",
-     "max_per_chunk": 6,
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
+     "max_per_chunk": 6
     },
     {
      "actor": "world.ox",
@@ -790,10 +786,6 @@
        "aug",
        "sep"
       ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
      }
     }
    ],
@@ -826,11 +818,7 @@
     {
      "role": "shepherd",
      "density": "daytime",
-     "max_per_chunk": 0.6,
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
+     "max_per_chunk": 0.6
     },
     {
      "actor": "world.sheep",
@@ -1280,7 +1268,7 @@
      "count": 6
     },
     {
-     "actor": "world.traveller",
+     "actor": "world.farmer",
      "count": 1
     }
    ],
@@ -1331,7 +1319,7 @@
    ],
    "cast": [
     {
-     "actor": "world.traveller",
+     "actor": "world.farmer",
      "count": 4
     }
    ],
@@ -1382,7 +1370,7 @@
    ],
    "cast": [
     {
-     "actor": "world.traveller",
+     "actor": "world.farmer",
      "count": 3
     }
    ],
@@ -1570,7 +1558,7 @@
  "roles": [
   {
    "id": "farmhand",
-   "actor": "world.traveller",
+   "actor": "world.farmer",
    "name": "Farm folk",
    "schedule": [
     {
@@ -1650,7 +1638,7 @@
        "use": {
         "here": true
        },
-       "anim": "sit",
+       "anim": "idle",
        "until": {
         "hour": "21:00"
        }
@@ -1661,7 +1649,7 @@
   },
   {
    "id": "shepherd",
-   "actor": "world.traveller",
+   "actor": "world.farmer",
    "name": "Shepherd on the hills",
    "schedule": [
     {
@@ -1689,7 +1677,7 @@
        "use": {
         "here": true
        },
-       "anim": "sit",
+       "anim": "idle",
        "dur": [
         20,
         40
@@ -1818,7 +1806,7 @@
   },
   {
    "id": "beekeeper",
-   "actor": "world.traveller",
+   "actor": "world.farmer",
    "name": "Beekeeper",
    "schedule": [
     {
@@ -1967,7 +1955,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -2003,7 +1991,8 @@
     "05:00"
    ],
    "per_screen": 0.3,
-   "sprite": null
+   "sprite": "world.owl",
+   "sound": "sfx/world/owl_tawny.wav"
   },
   {
    "kind": "fireflies",

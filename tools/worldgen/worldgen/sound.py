@@ -97,7 +97,7 @@ VOICES = {"sheep": ["sfx/world/sheep_1.wav", "sfx/world/sheep_2.wav"],
           "cat": ["sfx/cat_2.wav", "sfx/cat_3.wav"],
           "hen": ["sfx/hen_2.wav", "sfx/hen_3.wav"],
           "duck": ["sfx/duck_2.wav", "sfx/duck_3.wav"],
-          "owl": ["sfx/world/owl_tawny.wav"]}
+          "owl": ["sfx/world/owl_tawny.wav"], "athens.owl": ["sfx/athens/owl.wav"]}
 # Calls the engine sprinkles over a climate's land (one at a time, far, by season and hour).
 CALLS = {"mediterranean": [{"file": "sfx/world/cuckoo.wav", "seasons": ["spring"], "hours": ["06:00", "11:00"]},
                            {"file": "sfx/world/crow_2.wav", "hours": ["07:00", "18:00"]}],
@@ -549,7 +549,8 @@ def apply(doc: dict, world: World, cat, root: Path) -> dict:
         kinds |= {p.get("actor", "") for p in d.get("populations", [])}
     for g in doc.get("groups", []):
         kinds |= {m.get("actor", "") for m in [g.get("leader", {})] + g.get("members", [])}
-    voices = {k: VOICES[k.split(".")[-1]] for k in sorted(kinds) if k and k.split(".")[-1] in VOICES}
+    voices = {k: VOICES.get(k) or VOICES[k.split(".")[-1]] for k in sorted(kinds)
+              if k and (k in VOICES or k.split(".")[-1] in VOICES)}
     if voices:
         snd.setdefault("voices", voices)
     if _falls(world, rid):

@@ -427,7 +427,7 @@
      "sfx/hen_3.wav"
     ],
     "athens.owl": [
-     "sfx/world/owl_tawny.wav"
+     "sfx/athens/owl.wav"
     ],
     "world.crane": [
      "sfx/world/cranes.wav"
@@ -1205,6 +1205,16 @@
      "role": "owl",
      "density": "night",
      "max_per_chunk": 0.5
+    },
+    {
+     "actor": "world.deer",
+     "density": "fields",
+     "max_per_chunk": 0.15
+    },
+    {
+     "actor": "world.boar",
+     "density": "night",
+     "max_per_chunk": 0.1
     },
     {
      "role": "shrine_keeper",
@@ -3273,7 +3283,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -3325,7 +3335,8 @@
     "apr",
     "may",
     "jun"
-   ]
+   ],
+   "sound": "sfx/world/nightingale.wav"
   },
   {
    "kind": "swifts",
@@ -3380,7 +3391,7 @@
     "19:00"
    ],
    "per_screen": 0.4,
-   "sprite": "fx/world.dolphin",
+   "sprite": "world.dolphin",
    "months": [
     "apr",
     "may",
