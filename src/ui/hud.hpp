@@ -60,6 +60,19 @@ struct FloatLabel {
     float alpha = 1;
 };
 
+// A visited place's page in the sketchbook (world-tech §4.9): what has been seen there and what
+// was found (its card opened).
+struct JournalEntry {
+    std::string_view name;
+    std::string_view epithet;
+    bool found = false;
+};
+struct JournalPlace {
+    std::string_view name;
+    std::string_view summary; // "3 of 12 found"
+    std::span<const JournalEntry> entries;
+};
+
 struct HudModel {
     const Catalog* cat = nullptr;
     const ThumbSet* thumbs = nullptr;
@@ -100,6 +113,21 @@ struct HudModel {
     int seasonPin = -1;   // -1: follow the days
     bool snow = false;    // this season's rain falls as snow
     float brightness = 0; // of the scene behind the glass, 0 dark .. 1 bright
+    // The world around the home (docs/design/world-tech.md §4): a map button when it exists; away
+    // from the home region the building tools rest and the title names the place in view.
+    bool world = false;
+    bool away = false;
+    std::string_view place; // the title's name while away
+    // The era caption fading in at the top when the view arrives somewhere (§4.8).
+    std::string_view caption;
+    std::string_view captionSub; // its native form, or a second line
+    float captionAlpha = 0;
+    // A landmark's or figure's card (§4.9): open while title is set.
+    std::string_view cardTitle;
+    std::string_view cardNative;
+    std::string_view cardEpithet;
+    std::string_view cardText;
+    std::span<const JournalPlace> places; // sketchbook tabs after the home's own
 };
 
 struct UiInput {
@@ -130,6 +158,8 @@ struct HudAction {
         Undo,
         Redo,
         Recentre,
+        Map,       // the world map
+        CloseCard, // the landmark or figure card
         ZoomOut,
         ZoomIn,
         SeenNew,    // the pointer reached a tile with a "new" dot: `arg` is its entry code
@@ -274,6 +304,9 @@ private:
     void layoutTray(const Font& font, Vec2 screen, float s);
     void drawTray(Painter& p) const;
     void drawRibbon(Painter& p) const;
+    void drawCard(Painter& p, const HudModel& m) const;
+    [[nodiscard]] const JournalPlace& placeOpen(const HudModel& m) const;
+    void drawCaption(Painter& p, const HudModel& m) const;
     void drawTooltip(Painter& p) const;
     void drawPulse(Painter& p, const HudModel& m) const;
     // How far panels slide as they fade (nothing with reduce motion).
@@ -309,6 +342,8 @@ private:
     bool overUi_ = false;
     bool captured_ = false;
     float drawerT_ = 0;
+    float cardT_ = 0;
+    Box cardBox_;
     float journalT_ = 0;
     float hintT_ = 0;
     float hoverTime_ = 0;
@@ -336,9 +371,9 @@ private:
 
     // The sketchbook: tabs of rows, scrolled a row at a time.
     struct Row {
-        enum class Kind : std::uint8_t { Section, OpenWish, GrantedWish, Visitor, Nook };
+        enum class Kind : std::uint8_t { Section, OpenWish, GrantedWish, Visitor, Nook, Entry };
         Kind kind;
-        int index; // section, wish card, wish, visitor or nook
+        int index; // section, wish card, wish, visitor, nook or entry of the open place
         float h;
     };
     std::vector<Row> rows_;

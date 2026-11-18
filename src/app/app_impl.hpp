@@ -35,6 +35,7 @@
 #include "render/scene.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+#include "ui/map_screen.hpp"
 #include "ui/menus.hpp"
 #include "ui/profiler.hpp"
 #include "world/loader.hpp"
@@ -78,6 +79,9 @@ inline constexpr std::string_view kPage = "sfx/page.wav";
 inline constexpr std::string_view kNook = "sfx/nook.wav";
 inline constexpr std::string_view kLandOpen = "sfx/land_open.wav";
 inline constexpr std::string_view kHarvest = "sfx/harvest.wav";
+// The world's: arriving home by fast travel, and crossing into another moment.
+inline constexpr std::string_view kArriveHome = "sfx/world/arrive_home.wav";
+inline constexpr std::string_view kSeamChime = "sfx/world/seam.wav";
 } // namespace sfx
 
 // The hint line's words for a placement the rules refuse.
@@ -267,6 +271,41 @@ private:
     [[nodiscard]] int sceneDrawCalls() const;
     // The whole world grid in home tiles (empty without a world).
     [[nodiscard]] TileRect cameraLand() const;
+    // The map, fast travel, places and captions (app_world.cpp).
+    void setupMap();
+    [[nodiscard]] const world::RegionFile* regionFile(int region) const;
+    // A region's name for the player (the home's is the world's name).
+    [[nodiscard]] std::string_view regionName(int region) const;
+    const MapModel& mapModel();
+    void toggleMap();
+    // The view is off the home region: the building tools rest.
+    [[nodiscard]] bool away() const;
+    void travelTo(int region);
+    // Once per frame: travel's fade and jump, places visited, the seam's chime and line.
+    void updateWorld(float dt);
+    // How much of the window the travel fade covers (0..1).
+    [[nodiscard]] float travelVeil() const;
+    [[nodiscard]] std::string_view arriveMotif(std::string_view set) const;
+    void fillWorldModel(HudModel& m) const;
+    // Cards and the journal: what has a card under a window point (off the home's land), its
+    // names, an entry seen or found, the card shown, the sketchbook's places.
+    struct CardRef {
+        int region = -1;
+        std::string entry; // "landmark:<id>" or "figure:<id>"
+        std::string card;  // card id in the region file
+    };
+    [[nodiscard]] std::optional<CardRef> cardAt(Vec2 px) const;
+    [[nodiscard]] std::string_view entryName(const CardRef& c, std::string& storage) const;
+    [[nodiscard]] std::string_view nativeName(const CardRef& c) const;
+    void recordEntry(const CardRef& c, bool found);
+    bool openCardAt(Vec2 px);
+    void closeCard();
+    void noteArrival();
+    void buildJournal();
+    // A script's point in the world (grid:X,Y, landmark:ID, figure:ID) in window px.
+    [[nodiscard]] std::optional<Vec2> gridPoint(std::string_view name) const;
+    // A world grid tile (continuous) in home px, raised by its level as the world draws it.
+    [[nodiscard]] Vec2 gridToHome(Vec2 tile) const;
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
@@ -400,6 +439,51 @@ private:
     std::vector<int> rimTerrain_;      // the home's rim terrain the world's cells were drawn with
     std::vector<int> rimScratch_;
     float frameDt_ = 0; // real seconds of this frame (themes ease by it)
+    struct Place {
+        int region = -1;
+        MapMarker marker = MapMarker::Town;
+        TilePos at; // grid tile of its world.json marker
+    };
+    std::vector<Place> allPlaces_;
+    std::vector<MapPlace> mapPlaces_; // those shown now
+    std::vector<int> mapShown_;       // their regions
+    MapModel mapModel_;
+    MapScreen map_;
+    TexturePtr mapTexture_;
+    Sprite mapSprite_;
+    float mapScale_ = 2;                // overview px per tile
+    std::vector<std::uint8_t> visited_; // per region: the view has been there
+    bool seamExplained_ = false;        // the first crossing's line was shown
+    struct Travel {
+        int region = -1; // -1: not travelling
+        float t = 0;
+        bool jumped = false;
+    };
+    Travel travel_;
+    float travelFadeIn_ = -1;
+    std::vector<std::string> arriveFiles_; // each set's arrival motif
+    std::vector<world::FigurePlace> figures_;
+    struct JournalItem {
+        std::string entry;
+        std::string card;
+        bool found = false; // its card was opened (else seen on arrival)
+    };
+    std::vector<std::vector<JournalItem>> journal_; // per region
+    struct OpenCard {
+        std::string title;
+        std::string native;
+        std::string epithet;
+        std::string text;
+    };
+    OpenCard card_;
+    bool cardOpen_ = false;
+    bool journalDirty_ = true;
+    std::vector<worldview::WorldView::Picked> pickedScratch_;
+    std::vector<JournalEntry> journalEntries_;
+    std::vector<JournalPlace> journalPlaces_;
+    std::vector<std::string> journalSummaries_;
+    std::vector<std::string> journalNames_;
+    mutable std::string hoverName_;
     std::unique_ptr<Batch> uiBatch_;
     std::unique_ptr<Blur> blur_;
     ThumbSet thumbs_;

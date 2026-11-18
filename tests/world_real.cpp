@@ -3,6 +3,7 @@
 
 #include "core/starter.hpp"
 #include "world/digest.hpp"
+#include "world/figures.hpp"
 #include "world/loader.hpp"
 #include "world_support.hpp"
 
@@ -11,6 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
+#include <map>
 #include <numeric>
 #include <random>
 #include <set>
@@ -374,4 +376,33 @@ TEST_CASE("perf: query throughput") {
     CHECK(walk < 200.0);
     CHECK(hop < 50.0);
 #endif
+}
+
+TEST_CASE("real world: named figures stand on open ground in their regions, one per tile") {
+    const LoadedWorld& w = realWorld();
+    const WorldMap& m = *w.map;
+    const auto figures = placeFigures(w);
+    std::set<std::pair<int, int>> tiles;
+    std::map<std::string, int> perRegion;
+    for (const FigurePlace& f : figures) {
+        CAPTURE(f.actor);
+        const TilePos t{static_cast<int>(f.at.x), static_cast<int>(f.at.y)};
+        REQUIRE(m.inBounds(t));
+        CHECK(m.walkable(t));
+        CHECK(m.itemAt(t) < 0);
+        CHECK(m.regionAt(t) == f.region);
+        CHECK(f.level == m.level(t));
+        CHECK(tiles.insert({t.x, t.y}).second);
+        CHECK_FALSE(f.sprite.empty());
+        ++perRegion[w.file.regions[static_cast<std::size_t>(f.region)].id];
+    }
+    // Every figure of the three cities that is a person (an actor; shrines, statues, reliefs
+    // and tales are shown by places) has a place.
+    for (const std::string city : {"rome", "athens", "parsa"}) {
+        const RegionFile& rf = w.regions[static_cast<std::size_t>(w.file.findRegion(city))];
+        CAPTURE(city);
+        const auto people = std::ranges::count_if(
+            rf.life["figures"], [](const nlohmann::json& f) { return f.contains("actor"); });
+        CHECK(perRegion[city] == static_cast<int>(people));
+    }
 }

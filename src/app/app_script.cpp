@@ -40,6 +40,15 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
             return std::nullopt;
         }
         if (p.widget.starts_with("menu:")) return menus_.widgetCentre(p.widget.substr(5));
+        if (loaded_ && p.widget.starts_with("map:")) {
+            const int region = loaded_->file.findRegion(p.widget.substr(4));
+            for (std::size_t i = 0; i < mapShown_.size(); ++i)
+                if (mapShown_[i] == region) return map_.markerAt(mapModel_, static_cast<int>(i));
+            return std::nullopt;
+        }
+        if (loaded_ && (p.widget.starts_with("grid:") || p.widget.starts_with("landmark:") ||
+                        p.widget.starts_with("figure:")))
+            return gridPoint(p.widget);
         return hud_.widgetCentre(p.widget, ui_);
     }
     return std::nullopt;
@@ -203,6 +212,56 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return yesNo(showing);
     }
     if (what == "raining") return yesNo(raining());
+    if (loaded_ && a.size() >= 2) {
+        const worldview::PlaceTracker& pl = worldView_->places();
+        const auto regionId = [&](int r) {
+            return r < 0 ? std::string("none")
+                         : loaded_->file.regions[static_cast<std::size_t>(r)].id;
+        };
+        const auto words = [&] {
+            std::string w;
+            for (std::size_t i = 1; i < a.size(); ++i) w += (i > 1 ? " " : "") + a[i];
+            return w;
+        };
+        const auto contains = [&](std::string_view have) -> std::optional<std::string> {
+            if (have.find(words()) != std::string_view::npos) return std::nullopt;
+            return std::format("expected {} '{}' but found '{}'", what, words(), have);
+        };
+        if (what == "region") return equal(regionId(pl.region()), a[1]);
+        if (what == "place") return equal(regionId(pl.place()), a[1]);
+        if (what == "away") return yesNo(away());
+        if (what == "map") return yesNo(map_.isOpen());
+        if (what == "travelling") return yesNo(travel_.region >= 0);
+        if (what == "era" || what == "info" || what == "tip") {
+            const HudModel m = model();
+            const std::string_view have = what == "era"    ? m.caption
+                                          : what == "info" ? m.cardTitle
+                                                           : m.worldTip;
+            if (a[1] == "yes" || a[1] == "no") return yesNo(!have.empty());
+            return contains(have);
+        }
+        if (what == "figures" && a.size() == 2) {
+            const std::size_t want = std::stoul(a[1]);
+            return figures_.size() >= want
+                       ? std::nullopt
+                       : std::optional(mismatch(std::to_string(figures_.size())));
+        }
+        if ((what == "visited" || what == "journal" || what == "found") && a.size() == 3) {
+            const int r = loaded_->file.findRegion(a[1]);
+            if (r < 0) return std::format("no region {}", a[1]);
+            const auto& list = journal_[static_cast<std::size_t>(r)];
+            if (what == "visited") {
+                const bool v = visited_[static_cast<std::size_t>(r)] != 0;
+                return (a[2] == "yes") == v ? std::nullopt
+                                            : std::optional(mismatch(v ? "yes" : "no"));
+            }
+            const auto n =
+                what == "journal"
+                    ? list.size()
+                    : static_cast<std::size_t>(std::ranges::count_if(list, &JournalItem::found));
+            return equal(std::to_string(n), a[2]);
+        }
+    }
     if (what == "weather") {
         static constexpr std::string_view kModes[] = {"natural", "rain", "clear"};
         return equal(std::string(kModes[static_cast<std::size_t>(weather_.mode())]), a[1]);
@@ -595,6 +654,15 @@ bool App::scriptStep() {
                 if (c.args.size() != 4) return fail("set camera TX TY ZOOM");
                 camera_.place(cat_.iso().toWorld(std::stof(c.args[1]), std::stof(c.args[2])),
                               std::stof(c.args[3]), screen());
+            } else if (c.args[0] == "world") {
+                // set world TX TY ZOOM: look at a world grid tile; themes and places snap.
+                if (c.args.size() != 4 || !loaded_) return fail("set world TX TY ZOOM");
+                camera_.place(gridToHome({std::stof(c.args[1]), std::stof(c.args[2])}),
+                              std::stof(c.args[3]), screen());
+                camera_.beginStep();
+                view_ = camera_;
+                worldView_->jumped(
+                    {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
             } else if (c.args[0] == "look") {
                 // set look KIND ZOOM: the camera on the first actor of that kind.
                 if (c.args.size() != 3) return fail("set look KIND ZOOM");
@@ -605,6 +673,16 @@ bool App::scriptStep() {
                                       screen());
                         found = true;
                         break;
+                    }
+                // Or a named figure out in the world (a jump: themes and places snap).
+                for (const world::FigurePlace& f : figures_)
+                    if (!found && f.actor == c.args[1]) {
+                        camera_.place(gridToHome(f.at), std::stof(c.args[2]), screen());
+                        camera_.beginStep();
+                        view_ = camera_;
+                        worldView_->jumped({camera_.position().x + homeOffset_.x,
+                                            camera_.position().y + homeOffset_.y});
+                        found = true;
                     }
                 if (!found) return fail("no " + c.args[1] + " to look at");
             } else if (c.args[0] == "shower") {

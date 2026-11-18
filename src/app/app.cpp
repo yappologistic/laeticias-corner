@@ -182,7 +182,9 @@ bool App::init() {
     buildThumbs();
     if (!font_.load(assets_ / "fonts")) return false;
 
+    if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
     mixer_.load(assets_ / "audio", cat_.audio);
+    mixer_.loadMore(assets_ / "audio", arriveFiles_, {});
     setupMusic();
     if (opts_.audioOut)
         mixer_.startCapture();
@@ -196,7 +198,6 @@ bool App::init() {
         else
             (void)std::fprintf(perfLog_.get(), "%s\n", kPerfHeader);
     }
-    if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
     // The measuring modes build a world of their own and never touch the player's saves.
     if (!measuring()) loadOrStart();
     createWorldView();
@@ -898,7 +899,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         if (menus_.editing()) return; // letters arrive as text input
         if (key == SDLK_F11)
             setFullscreen((SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) == 0);
-        if (key == SDLK_M) {
+        if (key == SDLK_M && ctrl) {
             muted_ = !muted_;
             profileChanged();
         }
@@ -944,7 +945,11 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     const Vec2 centre{screen().x * 0.5f, screen().y * 0.5f};
     switch (key) {
     case SDLK_ESCAPE:
-        if (photo_)
+        if (map_.isOpen())
+            toggleMap();
+        else if (cardOpen_)
+            closeCard();
+        else if (photo_)
             togglePhoto();
         else if (carry_)
             cancelMove();
@@ -996,8 +1001,12 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_MINUS:
     case SDLK_KP_MINUS: zoomBy(-1, centre); return;
     case SDLK_M:
-        muted_ = !muted_;
-        profileChanged();
+        if (ctrl) {
+            muted_ = !muted_;
+            profileChanged();
+        } else if (!photo_) {
+            toggleMap();
+        }
         return;
     default: break;
     }
@@ -1244,11 +1253,15 @@ HudModel App::model() const {
     const Lighting l = lighting();
     m.brightness =
         std::clamp(((l.ambient.r + l.ambient.g + l.ambient.b) / 3.0f - 0.3f) / 0.6f, 0.0f, 1.0f);
-    if (photo_) return m; // the photo bar names its keys
+    if (photo_) {
+        fillWorldModel(m);
+        return m; // the photo bar names its keys
+    }
     m.hint = toolHint();
     m.warning = warning_;
     if ((tool_ == Tool::Place || carry_) && hover_ && warnTime_ <= 0 && shape_ == Shape::None)
         m.warning = placeWarning(canPlace(world_, cat_, ghostItem(*hover_)));
+    fillWorldModel(m);
     return m;
 }
 
@@ -1291,6 +1304,8 @@ void App::applyHudActions() {
         case K::Undo: undoRedo(false); break;
         case K::Redo: undoRedo(true); break;
         case K::Recentre: frameCamera(); break;
+        case K::Map: toggleMap(); break;
+        case K::CloseCard: closeCard(); break;
         case K::ZoomOut: zoomBy(-1, centre); break;
         case K::ZoomIn: zoomBy(1, centre); break;
         case K::SeenNew: {
@@ -1564,10 +1579,18 @@ void App::render() {
         // The interface shows in play; the front door's pages and the pause menu draw over a
         // world without it.
         if (menus_.page() == Page::None) hud_.draw(painter, ui_);
+        if (map_.showing()) map_.draw(painter, mapModel_);
         const MenuModel& menus = menuModel();
         menus_.relayout(menus, font_);
         menus_.draw(painter, menus);
         if (profilerOn_) profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
+        uiBatch_->flush();
+    }
+    if (const float veil = travelVeil(); veil > 0 && font_.build(renderer_.get(), uiScale_)) {
+        Painter painter(*uiBatch_, font_, {nullptr, p.screen, 0.5f}, uiScale_);
+        painter.roundRect({0, 0, p.screen.x, p.screen.y}, 0,
+                          {theme::kTravelVeil.r, theme::kTravelVeil.g, theme::kTravelVeil.b, veil},
+                          0);
         uiBatch_->flush();
     }
     hudDrawMs_ = msBetween(t1, SDL_GetPerformanceCounter());
@@ -1683,6 +1706,7 @@ int App::run() {
         }
         if (!blocked)
             updateTour(static_cast<float>(steps) * static_cast<float>(tuning::kStepSeconds));
+        updateWorld(frameDt);
         // Drawing runs between steps: the camera and every actor are shown where they are this
         // far toward the next step, so motion is smooth at any refresh rate.
         alpha_ = fixed ? 1.0f : static_cast<float>(acc / tuning::kStepSeconds);
@@ -1705,7 +1729,15 @@ int App::run() {
         in.blocked = drag_ != Drag::None;
         // The menus (a page, the coach card, the photo bar) see the pointer first.
         menus_.update(in, menuModel(), font_, screen(), uiScale_, frameDt);
-        const bool menusOwn = menus_.wantsMouse() || menus_.blocking();
+        bool menusOwn = menus_.wantsMouse() || menus_.blocking();
+        if (loaded_) {
+            // The map takes the pointer while it is open, and nothing moves while travelling.
+            const bool free = !menusOwn && menus_.page() == Page::None;
+            map_.update(in.x, in.y, in.inside && free, in.pressed && free, in.released && free,
+                        mapModel(), font_, screen(), uiScale_, frameDt);
+            if (const auto c = map_.clicked()) travelTo(mapShown_[static_cast<std::size_t>(*c)]);
+            menusOwn = menusOwn || map_.isOpen() || travel_.region >= 0;
+        }
         UiInput hudIn = in;
         if (menusOwn || menus_.page() != Page::None) hudIn = UiInput{};
         hud_.update(hudIn, ui_, font_, screen(), uiScale_, frameDt);

@@ -63,6 +63,7 @@ add_library(lc_engine STATIC
   src/render/sprites.cpp
   src/ui/font.cpp
   src/ui/hud.cpp
+  src/ui/map_screen.cpp
   src/ui/menus.cpp
   src/ui/painter.cpp
   src/ui/profiler.cpp
@@ -82,6 +83,7 @@ add_library(lc_world STATIC
   src/world/atlas_pages.cpp
   src/world/content.cpp
   src/world/digest.cpp
+  src/world/figures.cpp
   src/world/geometry.cpp
   src/world/graph_file.cpp
   src/world/json_util.cpp
@@ -136,6 +138,7 @@ add_library(lc_worldview STATIC
   src/worldview/order.cpp
   src/worldview/overview.cpp
   src/worldview/page_atlas.cpp
+  src/worldview/places.cpp
   src/worldview/renderer.cpp
   src/worldview/script.cpp
   src/worldview/theme.cpp

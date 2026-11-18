@@ -193,6 +193,14 @@ bool Font::has(char32_t cp) const {
     return find(Face::Body, cp) != nullptr && find(Face::Title, cp) != nullptr;
 }
 
+bool Font::hasAll(std::string_view utf8) const {
+    for (std::size_t i = 0; i < utf8.size();) {
+        const char32_t cp = nextCodepoint(utf8, i);
+        if (cp != ' ' && !has(cp)) return false;
+    }
+    return true;
+}
+
 const Glyph* Font::find(Face face, char32_t cp) const {
     const auto& g = faces_[idx(face)].glyphs;
     const auto it = std::ranges::lower_bound(g, cp, {}, &Glyph::cp);

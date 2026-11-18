@@ -32,9 +32,9 @@ expect stem music/day_melody.ogg 0
 fast 18
 expect stem music/day_melody.ogg 0.99
 wait 30
-key m
+key ctrl+m
 wait 30
-key m
+key ctrl+m
 wait 30
 click ui:clock
 click ui:clock

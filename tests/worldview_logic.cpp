@@ -4,6 +4,7 @@
 
 #include "worldview/camera.hpp"
 #include "worldview/cells.hpp"
+#include "worldview/places.hpp"
 #include "worldview/script.hpp"
 #include "worldview/theme.hpp"
 
@@ -146,31 +147,81 @@ TEST_CASE("themes: keyframes at the phase centres, blended between them") {
     CHECK(mid.r == doctest::Approx(0.7f));
 }
 
-TEST_CASE("themes: weights fade over a second, captions change past the hysteresis") {
+TEST_CASE("themes: weights fade over a second, the dominant region changes past the hysteresis") {
     world::Theme warm;
     warm.grading[1] = {1.0f, 0.5f, 0.5f};
     warm.hazeStrength = 0.2f;
     warm.haze = {1, 0.9f, 0.8f};
-    ThemeMixer m({world::Theme{}, warm, world::Theme{}}, {"timeless", "athens", "none"});
+    ThemeMixer m({world::Theme{}, warm, world::Theme{}});
     const std::array<world::RegionWeight, 1> home{{{0, 1.0f}}};
     const std::array<world::RegionWeight, 1> city{{{1, 1.0f}}};
     m.reset(home);
     CHECK(m.dominant() == 0);
-    CHECK(m.captionRegion() == 0);
-    CHECK(m.captionAlpha() == doctest::Approx(0).epsilon(0.01));
     m.update(city, 0.1f);
     CHECK(m.weight(1) == doctest::Approx(1 - std::exp(-0.1f)));
     CHECK(m.dominant() == 0); // not yet past the other by the margin
     for (int i = 0; i < 30; ++i) m.update(city, 0.1f);
     CHECK(m.dominant() == 1);
-    CHECK(m.captionRegion() == 1);
     const Grade g = m.grade(phaseCentre(Phase::Day));
     CHECK(g.mul.g < 0.6f);
     CHECK(g.hazeStrength > 0.05f);
-    // A seam names no time: its caption never shows.
-    const std::array<world::RegionWeight, 1> seam{{{2, 1.0f}}};
-    m.reset(seam);
-    CHECK(m.captionRegion() == 1);
+}
+
+TEST_CASE("places: the caption names the place the view is in, once per visit") {
+    using K = world::RegionKind;
+    // 0 home, 1 a stretch of Athens' time, 2 Athens, 3 a seam, 4 a stretch of Parsa's time,
+    // 5 a town of Parsa's time.
+    PlaceTracker p({K::Home, K::Stretch, K::City, K::Seam, K::Stretch, K::Town},
+                   {"timeless", "athens", "athens", "none", "parsa", "parsa"});
+    const auto run = [&](int region, float seconds) {
+        bool era = false;
+        bool arrived = false;
+        for (float t = 0; t < seconds; t += 0.1f) {
+            p.update(region, 0.1f);
+            era |= p.eraChanged();
+            arrived |= p.arrived();
+        }
+        return std::pair{era, arrived};
+    };
+    p.reset(0);
+    CHECK(p.place() == 0);
+    CHECK(p.caption() == 0);
+    CHECK(p.captionAlpha() == doctest::Approx(0).epsilon(0.01));
+    // A brush with a boundary counts for nothing.
+    (void)run(1, 0.2f);
+    CHECK(p.region() == 0);
+    // Out into the countryside: a new moment, but no named place and no caption.
+    auto [era, arrived] = run(1, 1.0f);
+    CHECK(era);
+    CHECK_FALSE(arrived);
+    CHECK(p.place() == -1);
+    // Into the city: its caption, not the stretch's.
+    std::tie(era, arrived) = run(2, 1.0f);
+    CHECK(arrived);
+    CHECK_FALSE(era); // the same moment as the stretch around it
+    CHECK(p.caption() == 2);
+    CHECK(p.captionAlpha() == doctest::Approx(1));
+    (void)run(2, 4.0f);
+    CHECK(p.captionAlpha() == doctest::Approx(0));
+    // Out for a moment and back: the same visit, no caption again.
+    (void)run(1, 2.0f);
+    std::tie(era, arrived) = run(2, 1.0f);
+    CHECK_FALSE(arrived);
+    // A seam names no moment; the far side does.
+    (void)run(3, 1.0f);
+    std::tie(era, arrived) = run(4, 1.0f);
+    CHECK(era);
+    std::tie(era, arrived) = run(5, 1.0f);
+    CHECK(arrived);
+    CHECK(p.caption() == 5);
+    // Away long enough, coming back is a new visit.
+    (void)run(4, 25.0f);
+    std::tie(era, arrived) = run(5, 1.0f);
+    CHECK(arrived);
+    // A jump shows the destination's caption at once.
+    p.reset(2);
+    CHECK(p.caption() == 2);
+    CHECK(p.place() == 2);
 }
 
 TEST_CASE("viewer: options and scripts are checked before anything runs") {

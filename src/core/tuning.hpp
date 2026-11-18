@@ -346,4 +346,13 @@ inline constexpr float kDayMakeup = 1.259f;        // +2 dB
 inline constexpr float kNightMakeup = 1.122f;      // +1 dB
 inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 dB
 
+// Fast travel (docs/design/world-tech.md §4.7): fade out, jump, wait at most this long for the
+// destination's pages, fade in; within CLAUDE.md's 1 s.
+inline constexpr float kTravelFadeOut = 0.25f;
+inline constexpr float kTravelHold = 0.4f;
+inline constexpr float kTravelFadeIn = 0.3f;
+// Scripts point into a landmark's or a figure's sprite this far above its feet (px).
+inline constexpr float kLandmarkPointLift = 24.0f;
+inline constexpr float kFigurePointLift = 14.0f;
+
 } // namespace lc::tuning

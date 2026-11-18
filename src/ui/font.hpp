@@ -34,6 +34,8 @@ public:
     [[nodiscard]] float measure(Face face, std::string_view text) const;
     // Whether every text face can draw this character (after build()).
     [[nodiscard]] bool has(char32_t cp) const;
+    // Whether every text face can draw all of this UTF-8 text (after build()).
+    [[nodiscard]] bool hasAll(std::string_view utf8) const;
     [[nodiscard]] float ascent(Face face) const { return faces_[idx(face)].ascent; }
     [[nodiscard]] float lineHeight(Face face) const { return faces_[idx(face)].lineHeight; }
     // Draws with the pen's baseline at y; returns the advance.

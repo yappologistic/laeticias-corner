@@ -17,6 +17,7 @@
 #include "render/atlas.hpp"
 #include "render/draw.hpp"
 #include "ui/font.hpp"
+#include "world/figures.hpp"
 #include "world/loader.hpp"
 #include "worldview/camera.hpp"
 #include "worldview/cell_cache.hpp"
@@ -24,6 +25,7 @@
 #include "worldview/order.hpp"
 #include "worldview/overview.hpp"
 #include "worldview/page_atlas.hpp"
+#include "worldview/places.hpp"
 #include "worldview/theme.hpp"
 #include "worldview/world_sprites.hpp"
 
@@ -31,6 +33,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -100,7 +103,7 @@ public:
     // the game's scene draws itself (the home region), left out of cells and gathering.
     WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
               const std::filesystem::path& assets, Atlas& home, Font& font, bool async,
-              Hole hole = {});
+              Hole hole = {}, const std::vector<world::FigurePlace>& figures = {});
     ~WorldView();
     WorldView(const WorldView&) = delete;
     WorldView& operator=(const WorldView&) = delete;
@@ -124,11 +127,23 @@ public:
     [[nodiscard]] const ThemeMixer& theme() const { return theme_; }
     [[nodiscard]] const WorldSprites& sprites() const { return *sprites_; }
     [[nodiscard]] const PageAtlas& pages() const { return *pages_; }
+    // The place the view is in and its era caption (world-tech §4.8).
+    [[nodiscard]] const PlaceTracker& places() const { return places_; }
     // The era caption showing now (empty when none) and its opacity.
     [[nodiscard]] std::string caption() const;
-    [[nodiscard]] float captionAlpha() const { return theme_.captionAlpha(); }
+    [[nodiscard]] float captionAlpha() const { return places_.captionAlpha(); }
     [[nodiscard]] static Lod lodFor(float scale);
     [[nodiscard]] const Hole& hole() const { return hole_; }
+    // What is drawn under a world px point, topmost first: an item that has a card, or a figure.
+    struct Picked {
+        bool figure = false;
+        std::uint32_t index = 0; // map item, or index into the figures given
+    };
+    [[nodiscard]] std::optional<Picked> pick(Vec2 worldPx) const;
+    // Everything with a card, and every figure, on screen in the last frame (once each).
+    void visibleCards(std::vector<Picked>& out) const;
+    // Figures without art (not drawn).
+    [[nodiscard]] int figuresMissing() const { return figuresMissing_; }
     // The season whose looks the world wears (the home catalog's index; -1: plain).
     void setSeason(int season);
     // Nothing reads the map on a worker but the gatherer (which never looks inside the hole).
@@ -154,6 +169,8 @@ private:
     // The overview image, built on first need in synchronous runs.
     Overview& overview();
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
+    // Open sea beyond the grid, deep and fading into haze with the distance from its edge.
+    bool drawBeyond(TilePos p, const Xform& x, float now);
     bool drawElem(const Elem& e, const Xform& x, float now);
     bool drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
                      Target& onto);
@@ -187,8 +204,14 @@ private:
     CellCache cells_;
     Batch batch_;
     ThemeMixer theme_;
+    PlaceTracker places_;
     bool themed_ = false;
     int season_ = -1;
+    int sea_ = -1;                        // the terrain beyond the grid (the deep sea), -1: none
+    FRect lastView_;                      // world px the last frame showed
+    std::vector<FigureLook> figures_;     // resolved once, before the gatherer's worker starts
+    std::vector<std::uint32_t> figureOf_; // figures_ entry -> index into the figures given
+    int figuresMissing_ = 0;
     float animFps_ = 0;
 
     Target view_;    // the world at the level's resolution, graded, then composited

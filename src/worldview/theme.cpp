@@ -42,16 +42,15 @@ Rgb gradingAt(const world::Theme& theme, double t) {
     return {1, 1, 1};
 }
 
-ThemeMixer::ThemeMixer(std::vector<world::Theme> themes, std::vector<std::string> times)
-    : themes_(std::move(themes)), times_(std::move(times)), target_(themes_.size(), 0.0f),
-      smoothed_(themes_.size(), 0.0f) {}
+ThemeMixer::ThemeMixer(std::vector<world::Theme> themes)
+    : themes_(std::move(themes)), target_(themes_.size(), 0.0f), smoothed_(themes_.size(), 0.0f) {}
 
 void ThemeMixer::reset(std::span<const world::RegionWeight> w) {
     std::ranges::fill(target_, 0.0f);
     for (const world::RegionWeight& r : w) target_[static_cast<std::size_t>(r.region)] = r.weight;
     smoothed_ = target_;
     dominant_ = -1;
-    settle(0);
+    settle();
 }
 
 void ThemeMixer::update(std::span<const world::RegionWeight> w, float dt) {
@@ -60,10 +59,10 @@ void ThemeMixer::update(std::span<const world::RegionWeight> w, float dt) {
     const float k = 1.0f - std::exp(-dt / tuning::kThemeSeconds);
     for (std::size_t i = 0; i < smoothed_.size(); ++i)
         smoothed_[i] += (target_[i] - smoothed_[i]) * k;
-    settle(dt);
+    settle();
 }
 
-void ThemeMixer::settle(float dt) {
+void ThemeMixer::settle() {
     const auto best = std::ranges::max_element(smoothed_);
     if (best != smoothed_.end() && *best > 0) {
         const int b = static_cast<int>(best - smoothed_.begin());
@@ -71,21 +70,6 @@ void ThemeMixer::settle(float dt) {
             *best > smoothed_[static_cast<std::size_t>(dominant_)] + tuning::kCaptionHysteresis)
             dominant_ = b;
     }
-    captionAge_ += dt;
-    if (dominant_ < 0) return;
-    const std::string& time = times_[static_cast<std::size_t>(dominant_)];
-    if (time != "none" && !time.empty() && time != captionedTime_) {
-        captionedTime_ = time;
-        caption_ = dominant_;
-        captionAge_ = 0;
-    }
-}
-
-float ThemeMixer::captionAlpha() const {
-    if (caption_ < 0 || captionAge_ >= tuning::kCaptionSeconds) return 0;
-    constexpr float kFade = 0.5f;
-    return std::clamp(std::min(captionAge_, tuning::kCaptionSeconds - captionAge_) / kFade, 0.0f,
-                      1.0f);
 }
 
 Grade ThemeMixer::grade(double clockT) const {

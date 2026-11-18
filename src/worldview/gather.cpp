@@ -22,9 +22,11 @@ TileRect gatherTiles(const FRect& clip, const Reach& span, Iso iso) {
         {clip.x0 - span.right, clip.y0 - span.down, clip.x1 + span.left, clip.y1 + span.up}, iso);
 }
 
-Gatherer::Gatherer(const world::WorldMap& map, const WorldSprites& sprites, Hole hole)
-    : map_(map), sprites_(sprites), hole_(hole), iso_(map.content().home().iso()),
-      lvl_(map.content().tileLevel()), stamp_(map.items().size(), 0) {}
+Gatherer::Gatherer(const world::WorldMap& map, const WorldSprites& sprites, Hole hole,
+                   std::span<const FigureLook> figures)
+    : map_(map), sprites_(sprites), hole_(hole), figures_(figures),
+      iso_(map.content().home().iso()), lvl_(map.content().tileLevel()),
+      stamp_(map.items().size(), 0) {}
 
 void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
     out.clear();
@@ -61,6 +63,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                              first,
                              split && d.floor,
                              false,
+                             false,
                              {it.x, it.y},
                              a});
         out.items.push_back({rectOf(split ? d.rect : it.rect()), box, s.page, false});
@@ -96,19 +99,40 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
             const TerrainLook& look = sprites_.terrain(t);
             const std::uint16_t page =
                 look.base.empty() ? PageAtlas::kGeneratedPage : look.base.front().page;
-            out.elems.push_back({nullptr, 0, -1, true, false, false, false, q, {}});
+            out.elems.push_back({nullptr, 0, -1, true, false, false, false, false, q, {}});
             out.items.push_back({rectOf({qx, qy, qx + 1, qy + 1}), box, page, true});
         }
+    for (std::size_t f = 0; f < figures_.size(); ++f) {
+        const FigureLook& fg = figures_[f];
+        if (!tiles.contains(fg.tile)) continue;
+        const SpriteRef& s = fg.sprite;
+        const FRect box{fg.anchor.x - s.ox, fg.anchor.y - s.oy, fg.anchor.x - s.ox + s.w,
+                        fg.anchor.y - s.oy + s.h};
+        if (!box.overlaps(clip)) continue;
+        out.elems.push_back({nullptr, static_cast<std::uint32_t>(f), -1, false, false, false, false,
+                             true, fg.tile, fg.anchor});
+        out.items.push_back(
+            {rectOf({fg.tile.x, fg.tile.y, fg.tile.x + 1, fg.tile.y + 1}), box, s.page, false});
+    }
     if (!hole_.empty() && hole_.tiles.intersects(tiles) && hole_.screen.overlaps(clip)) {
-        out.elems.push_back(
-            {nullptr, 0, -1, false, false, false, true, {hole_.tiles.x0, hole_.tiles.y0}, {}});
+        out.elems.push_back({nullptr,
+                             0,
+                             -1,
+                             false,
+                             false,
+                             false,
+                             true,
+                             false,
+                             {hole_.tiles.x0, hole_.tiles.y0},
+                             {}});
         out.items.push_back({rectOf(hole_.tiles), hole_.screen, PageAtlas::kGeneratedPage, false});
     }
     sorter_.sort(out.items, kSortCell, out.order);
 }
 
-Prep::Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async, Hole hole)
-    : async_(async), mine_(map, sprites, hole), theirs_(map, sprites, hole) {
+Prep::Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async, Hole hole,
+           std::span<const FigureLook> figures)
+    : async_(async), mine_(map, sprites, hole, figures), theirs_(map, sprites, hole, figures) {
     if (async_) worker_ = std::jthread([this](const std::stop_token& st) { work(st); });
 }
 

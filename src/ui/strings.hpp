@@ -49,6 +49,16 @@ inline constexpr std::string_view kRecentre = "Recentre";
 inline constexpr std::string_view kZoomOut = "Zoom out";
 inline constexpr std::string_view kZoomIn = "Zoom in";
 inline constexpr std::string_view kClose = "Close";
+// The world (docs/design/world-tech.md §4).
+inline constexpr std::string_view kMap = "Map";
+inline constexpr std::string_view kWorldsLand = "This land belongs to the world";
+inline constexpr std::string_view kAwayHint = "The tools rest here: Home returns to the corner";
+inline constexpr std::string_view kSeamLine =
+    "Each land here is remembered as it was in one moment. The sea keeps the years apart.";
+inline constexpr std::string_view kMapTitle = "The world";
+inline constexpr std::string_view kMapHint = "Click a place to travel there";
+inline constexpr std::string_view kMapHome = "Home";
+inline constexpr std::string_view kJournalFound = "{} of {} found";
 inline constexpr std::string_view kScrollUp = "Previous row";
 inline constexpr std::string_view kScrollDown = "Next row";
 inline constexpr std::string_view kWishes = "Wishes";
@@ -82,6 +92,7 @@ inline constexpr std::string_view kKeyPhoto = "P";
 inline constexpr std::string_view kKeyClock = "C";
 inline constexpr std::string_view kKeyRain = "N";
 inline constexpr std::string_view kKeyJournal = "J";
+inline constexpr std::string_view kKeyMap = "M";
 inline constexpr std::string_view kKeyWheel = "Wheel";
 
 inline constexpr std::string_view kPhaseDay = "Day";
@@ -205,7 +216,7 @@ inline constexpr std::string_view kReplay = "Replay";
 inline constexpr std::string_view kDone = "Done";
 inline constexpr std::string_view kOn = "on";
 inline constexpr std::string_view kOff = "off";
-inline constexpr std::string_view kKeyMute = "M";
+inline constexpr std::string_view kKeyMute = "Ctrl+M";
 inline constexpr std::string_view kKeyFullscreen = "F11";
 inline constexpr std::string_view kKeyGrid = "G";
 // The first-minute tour (R10.5).

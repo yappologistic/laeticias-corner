@@ -39,6 +39,13 @@ void diagonals(TileRect r, F&& f) {
             f(TilePos{tx, s - tx});
 }
 
+// The region of the tile under a world px point (on the ground plane), -1 off the grid.
+int regionUnder(const world::WorldMap& m, Iso iso, Vec2 px) {
+    const Vec2 t = iso.toTile(px);
+    const TilePos p{static_cast<int>(std::floor(t.x)), static_cast<int>(std::floor(t.y))};
+    return m.inBounds(p) ? m.regionAt(p) : -1;
+}
+
 } // namespace
 
 Lod WorldView::lodFor(float scale) {
@@ -50,15 +57,19 @@ Lod WorldView::lodFor(float scale) {
 
 WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
                      const std::filesystem::path& assets, Atlas& home, Font& font, bool async,
-                     Hole hole)
+                     Hole hole, const std::vector<world::FigurePlace>& figures)
     : renderer_(renderer), world_(world), map_(*world.map), iso_(map_.content().home().iso()),
       lvl_(map_.content().tileLevel()), async_(async), hole_(hole),
-      cells_(renderer, tuning::kCellBudget), batch_(renderer),
-      theme_(
+      cells_(renderer, tuning::kCellBudget), batch_(renderer), theme_([&] {
+          std::vector<world::Theme> themes;
+          for (const world::RegionFile& r : world.regions) themes.push_back(r.theme);
+          return themes;
+      }()),
+      places_(
           [&] {
-              std::vector<world::Theme> themes;
-              for (const world::RegionFile& r : world.regions) themes.push_back(r.theme);
-              return themes;
+              std::vector<world::RegionKind> kinds;
+              for (const world::RegionRef& r : world.file.regions) kinds.push_back(r.kind);
+              return kinds;
           }(),
           [&] {
               std::vector<std::string> times;
@@ -71,9 +82,30 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
     // Asynchronous runs build the overview on a worker from the start; synchronous ones only
     // when a frame needs it (it stands in for cells not built yet, which they never have).
     if (async) overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async);
-    prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_);
+    for (std::size_t f = 0; f < figures.size(); ++f) {
+        const world::FigurePlace& fp = figures[f];
+        auto s = pages_->find(fp.sprite + "/idle_front/f0");
+        if (!s) s = pages_->find(fp.sprite + "/idle/f0");
+        if (!s) {
+            ++figuresMissing_;
+            continue;
+        }
+        const Vec2 w = iso_.toWorld(fp.at.x, fp.at.y);
+        const TilePos t{static_cast<int>(std::floor(fp.at.x)),
+                        static_cast<int>(std::floor(fp.at.y))};
+        figures_.push_back(
+            {*s,
+             {std::round(w.x), std::round(w.y) - static_cast<float>(fp.level * lvl_)},
+             t,
+             fp.region});
+        figureOf_.push_back(static_cast<std::uint32_t>(f));
+    }
+    prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
     if (async) warmUp();
     for (std::size_t t = 0; t < map_.terrainCount(); ++t) {
+        const world::TerrainInfo& info = map_.terrainInfo(static_cast<int>(t));
+        if (info.water && (sea_ < 0 || info.id.find("sea") != std::string::npos))
+            sea_ = static_cast<int>(t);
         const TerrainLook& l = sprites_->terrain(static_cast<int>(t));
         if (l.animated() || (!l.foam[0].empty() && l.fps > 0)) animFps_ = std::max(animFps_, l.fps);
     }
@@ -239,12 +271,18 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
 
 bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* animated) {
     const Reach& r = sprites_->groundReach();
-    const TileRect tiles = tilesUnder(grown(px, r), iso_).clipped(map_.bounds());
+    const TileRect tiles = tilesUnder(grown(px, r), iso_);
     if (tiles.empty()) return true;
     const float lift = r.up - static_cast<float>(kMaxLevel * lvl_);
     bool ok = true;
     diagonals(tiles, [&](TilePos p) {
         const Vec2 w = iso_.toWorld(p);
+        if (!map_.inBounds(p)) {
+            if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
+                w.y - iso_.tileH() <= px.y1)
+                ok &= drawBeyond(p, x, now);
+            return;
+        }
         // The game's scene draws the hole; its rim tiles are drawn here too, under the scene's,
         // so the soft edges of its tile art meet the world's ground, not the sky.
         const TileRect& h = hole_.tiles;
@@ -257,8 +295,34 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     return ok;
 }
 
+bool WorldView::drawBeyond(TilePos p, const Xform& x, float now) {
+    const Vec2 a = iso_.toWorld(p);
+    // Tiles beyond the edge, along the grid's axes (outside a corner, the larger of the two).
+    const int dx = p.x < 0 ? -p.x : std::max(0, p.x - map_.width() + 1);
+    const int dy = p.y < 0 ? -p.y : std::max(0, p.y - map_.height() + 1);
+    const float k = std::min(1.0f, static_cast<float>(std::max(dx, dy)) / tuning::kHorizonTiles);
+    bool ok = true;
+    const float tint = 1.0f - tuning::kWaterDepthTint * 3.0f;
+    if (sea_ >= 0) {
+        const TerrainLook& look = sprites_->terrain(sea_);
+        const std::vector<SpriteRef>& base = look.baseIn(season_);
+        if (base.empty())
+            ok &= put(sprites_->diamond(), a, x, times(look.flat, tint), SDL_BLENDMODE_BLEND);
+        else
+            ok &= put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, {tint, tint, tint, 1},
+                      SDL_BLENDMODE_BLEND);
+    }
+    const auto& h = tuning::kHorizonHaze;
+    const float alpha = sea_ >= 0 ? k * tuning::kHorizonHazeMax : 1.0f;
+    if (alpha > 0.0f)
+        ok &= put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
+    (void)now;
+    return ok;
+}
+
 bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     if (e.home) return true; // the game's scene draws it
+    if (e.figure) return put(figures_[e.item].sprite, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
     if (e.ground) return drawTile(e.tile, x, now, nullptr);
     const VariantLook& look = *e.look;
     const SpriteRef& s =
@@ -633,6 +697,39 @@ void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
     batch_.quad(SDL_FRect{0, 0, static_cast<float>(w), static_cast<float>(h)}, white.uv, c);
 }
 
+std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
+    // Figures first: they are small and stand clear (world/figures.hpp), while a landmark's box
+    // is much larger than what it draws.
+    for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
+        const Elem& e = region_.elems[*it];
+        const FRect& b = region_.items[*it].screen;
+        if (e.figure && px.x >= b.x0 && px.x < b.x1 && px.y >= b.y0 && px.y < b.y1)
+            return Picked{true, figureOf_[e.item]};
+    }
+    for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
+        const Elem& e = region_.elems[*it];
+        const FRect& b = region_.items[*it].screen;
+        if (e.ground || e.home || px.x < b.x0 || px.x >= b.x1 || px.y < b.y0 || px.y >= b.y1)
+            continue;
+        if (e.figure) return Picked{true, figureOf_[e.item]};
+        if (!map_.info(map_.items()[e.item]).card.empty()) return Picked{false, e.item};
+    }
+    return std::nullopt;
+}
+
+void WorldView::visibleCards(std::vector<Picked>& out) const {
+    out.clear();
+    for (std::size_t i = 0; i < region_.elems.size(); ++i) {
+        const Elem& e = region_.elems[i];
+        if (e.ground || e.home || !region_.items[i].screen.overlaps(lastView_)) continue;
+        if (e.figure) {
+            out.push_back({true, figureOf_[e.item]});
+        } else if (e.first && !map_.info(map_.items()[e.item]).card.empty()) {
+            out.push_back({false, e.item});
+        }
+    }
+}
+
 void WorldView::setSeason(int season) {
     season = season >= 0 && season < kSeasonLooks ? season : -1;
     if (season == season_) return;
@@ -666,6 +763,7 @@ void WorldView::jumped(Vec2 centre) {
     std::array<world::RegionWeight, 16> w{};
     const int n = map_.themeWeights(iso_.toTile(centre), w);
     theme_.reset(std::span(w).first(static_cast<std::size_t>(n)));
+    places_.reset(regionUnder(map_, iso_, centre));
     themed_ = true;
 }
 
@@ -712,16 +810,20 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     std::array<world::RegionWeight, 16> weights{};
     const int nw = map_.themeWeights(iso_.toTile(c), weights);
     const auto ws = std::span(weights).first(static_cast<std::size_t>(nw));
+    const int here = regionUnder(map_, iso_, c);
     if (!themed_) {
         theme_.reset(ws);
+        places_.reset(here);
         themed_ = true;
     } else {
         theme_.update(ws, dt);
+        places_.update(here, dt);
     }
     const Grade grade = theme_.grade(clock);
     const SDL_FColor ambient{light.ambient.r * grade.mul.r, light.ambient.g * grade.mul.g,
                              light.ambient.b * grade.mul.b, 1};
     const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
+    lastView_ = {topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
 
     // Streaming.
     if (lod != Lod::Overview) wantSets(view, lod == Lod::Native);
@@ -882,8 +984,8 @@ bool WorldView::settled() const {
 }
 
 std::string WorldView::caption() const {
-    const int r = theme_.captionRegion();
-    if (r < 0 || theme_.captionAlpha() <= 0) return {};
+    const int r = places_.caption();
+    if (r < 0 || places_.captionAlpha() <= 0) return {};
     const world::RegionFile& f = world_.regions[static_cast<std::size_t>(r)];
     return f.caption;
 }

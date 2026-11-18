@@ -47,12 +47,19 @@ inline constexpr int kOverviewDivisor = 16; // world px per overview px
 inline constexpr float kThemeSeconds = 1.0f;
 inline constexpr float kCaptionHysteresis = 0.1f;
 inline constexpr float kCaptionSeconds = 3.0f;
-inline constexpr float kHazeShare = 0.5f; // how much of a region's haze strength tints the view
+inline constexpr float kCaptionFade = 0.5f;
+inline constexpr float kPlaceDwell = 0.4f; // the region under the view counts after this long
+inline constexpr float kVisitGap = 20.0f;  // away from a place this long: coming back is a visit
+inline constexpr float kHazeShare = 0.5f;  // how much of a region's haze strength tints the view
 
 // Look of things that have no art yet.
 inline constexpr float kFaceShadeSE = 0.78f; // flat faces: the south-east side is darker
 inline constexpr float kFaceShadeSW = 0.92f;
 inline constexpr float kWaterDepthTint = 0.08f; // per sea depth band
+// Beyond the grid the sea runs on to the horizon, fading into haze over this many tiles.
+inline constexpr float kHorizonTiles = 40.0f;
+inline constexpr float kHorizonHazeMax = 0.85f;
+inline constexpr std::array<float, 3> kHorizonHaze{0.70f, 0.79f, 0.84f};
 inline constexpr float kFlatJitter = 0.04f;     // per-tile brightness variation of flat terrain
 inline constexpr float kPlaceholderHeight = 32; // px, when the catalog gives none
 inline constexpr float kPlaceholderAlphaBig = 0.45f; // large landmark placeholders let land show
