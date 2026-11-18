@@ -18,7 +18,7 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 from pack import Sprite
-from render import render_base
+from render import render_sprite
 from voxel import Model
 
 # ---- body types: (height to the crown of the head, head radii, shoulder half-width,
@@ -1196,8 +1196,11 @@ def _worn(b: Body, d: Dress, p: Pose, fr: Frame, up):
             b.put(ring, "leather", tone=0.2)
 
 
-PROP_LEN = {"spear": 2.0, "lance": 1.75, "staff": 1.05, "crook": 1.0, "dory": 1.45, "trident": 1.25,
-            "torch_tall": 1.15}
+# Shaft lengths in body heights, measured from where the shaft starts below the hand: a guard's
+# spear stands about a head above him, a hoplite's dory a little more, a rider's lance well over
+# his head; the heads and butts are added on top (QA: spears more than twice body height).
+PROP_LEN = {"spear": 0.95, "lance": 1.25, "staff": 1.05, "crook": 1.0, "dory": 1.0, "trident": 0.9,
+            "torch_tall": 0.8, "pilum": 1.15}
 
 
 def _held(b: Body, d: Dress, p: Pose, fr: Frame, up):
@@ -1578,7 +1581,7 @@ def _roman_prop(b: Body, prop, hand, side, d: Dress, p: Pose, fr: Frame, hl, hr)
         if prop == "scutum":      # wings and thunderbolt painted in yellow
             b.put(board & (np.abs(b.Z - sz) < 0.3) & (np.abs(b.X - sx) > 0.6) & (np.abs(b.X - sx) < hw - 0.6), "ochre", 0.2)
     elif prop == "pilum":
-        L = 1.6 * fr.H
+        L = PROP_LEN["pilum"] * fr.H
         lo = max(0.15, z - 0.25 * fr.H)
         b.limb((x, y, lo), (x + 0.05, y, lo + L * 0.65), 0.28, "cedar", 0.2)
         b.limb((x + 0.05, y, lo + L * 0.65), (x + 0.05, y, lo + L), 0.17, "metal", 0.5)
@@ -1723,8 +1726,8 @@ def person_model(dress: Dress, anim: str, frame: int, k: int, frames: int | None
     frames = frames or POSES[anim]
     fr = Frame(dress)
     p = pose(anim, frame, frames, fr, dress)
-    poles = ("spear", "lance", "dory", "trident", "torch_tall")
-    tall = fr.H * (2.2 if dress.hand_l in poles or dress.hand_r in poles else 1.0)
+    poles = [PROP_LEN[h] for h in (dress.hand_l, dress.hand_r) if h in PROP_LEN and h not in ("staff", "crook")]
+    tall = fr.H * (0.8 + max(poles)) + 2.5 * fr.f if poles else fr.H
     shades = ("parasol", "skiadion")
     tall = max(tall, fr.H + (9.0 if dress.hand_l in shades or dress.hand_r in shades else 6.5))
     if dress.mount:
@@ -1754,8 +1757,7 @@ def person_sprite(dress: Dress, anim: str, facing: str, frame: int, k: int,
     m = person_model(dress, anim, frame, k, frames)
     if facing == "back":
         m = m.rotated(3, 0, 0)
-    rgba, _glow, ox, oy = render_base(m, edge=FIGURE_EDGE)
-    return Sprite(rgba, ox, oy)
+    return render_sprite(m, edge=FIGURE_EDGE)
 
 
 def carry_point(dress: Dress, anim: str, frame: int, facing: str, k: int) -> list[int]:
@@ -1770,11 +1772,40 @@ def carry_point(dress: Dress, anim: str, frame: int, facing: str, k: int) -> lis
     return [int(round((x - y) * k)), int(round(((x + y) / 2 - z) * k))]
 
 
+def hand_point(dress: Dress, anim: str, frame: int, frames: int, facing: str, k: int) -> list[int]:
+    """Where a carried light sits in `frame`: pixel offset from the anchor to the free hand (the
+    right one unless it holds something), and 1 when that hand is nearer the camera than the
+    body (the light draws over the figure) or 0 (under it)."""
+    fr = Frame(dress)
+    p = pose(anim, frame, frames, fr, dress)
+    if p.left is None or p.right is None:
+        l0, r0 = rest_arms(fr)
+        p.left, p.right = p.left or l0, p.right or r0
+    hand = p.left.hand if dress.hand_r is not None and dress.hand_l is None else p.right.hand
+    x, y, z = hand[0], hand[1], hand[2] + p.bob
+    if facing == "back":     # turned to face -y: (x, y) -> (y, -x)
+        x, y = y, -x
+    return [int(round((x - y) * k)), int(round(((x + y) / 2 - z) * k)), int(x + y > 0)]
+
+
+def hand_table(posed, anims: dict, k: int) -> dict:
+    """Hand points of every frame of the walking and standing animations, both facings;
+    `posed(anim)` is the dress for that animation, `anims` {anim: frames}."""
+    return {f"{anim}_{facing}": [hand_point(posed(anim), anim, f, n, facing, k) for f in range(n)]
+            for anim, n in anims.items() for facing in FACING}
+
+
 def carry_table(posed, k: int) -> dict:
     """Carry points of every frame of `carry` and `carry_idle`, both facings; `posed(anim)` is
     the dress the person wears for that animation."""
     return {f"{anim}_{facing}": [carry_point(posed(anim), anim, f, facing, k) for f in range(POSES[anim])]
             for anim in ("carry", "carry_idle") for facing in FACING}
+
+
+def trade(dresses: list[Dress], accent: str) -> list[Dress]:
+    """A working kind's own colour (QA: plain workers' trades did not read apart): a dyed sash
+    for the belt and the hem border, on every dress of the kind; trims already worn stay."""
+    return [replace(d, belt=accent, trim=d.trim or accent) for d in dresses]
 
 
 def variant(dress: Dress, **changes) -> Dress:

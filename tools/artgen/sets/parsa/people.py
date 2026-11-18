@@ -6,7 +6,7 @@ straight akinakes, no veil ever covers a woman's face."""
 
 from dataclasses import replace
 
-from rig import Dress, carry_table, person_sprite
+from rig import Dress, carry_table, person_sprite, trade
 
 D = Dress
 
@@ -87,6 +87,12 @@ WALKERS = {
     "storyteller": [replace(WORKER, body="elder", garment="long_tunic", colour="wool", cape="felt", hair="snow",
                             beard="full", hand_l="staff", feet="shoes")],
 }
+
+# Each trade its own colour, so a mason reads apart from a gardener at 1x.
+TRADES = {"mason": "ochre", "craftsman": "eblue", "gardener": "malachite", "farmer": "cinnabar",
+          "shepherd": "lapis"}
+for _kind, _accent in TRADES.items():
+    WALKERS[_kind] = trade(WALKERS[_kind], _accent)
 
 # ---- the delegations of the Apadāna stairs (persepolis.md §6.2, in the order of the relief) ----
 RIDER = replace(MEDE, coat=None, worn=(), jewels=())

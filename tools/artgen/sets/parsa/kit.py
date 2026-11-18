@@ -9,7 +9,7 @@ import math
 import numpy as np
 
 import materials as M
-from arch import (ashlar_tone, awning, carve, ellipsoid, face_box, fill, flight, halo, merlons, mudbrick_wall,
+from arch import (ashlar_tone, awning, carve, ellipsoid, face_box, fill, flight, halo, mark, merlons, mudbrick_wall,
                   plaster_tone, revolve, rod, slab, stair, stone_frame, tent)
 from setbuild import Item
 from voxel import Model, hash01
@@ -77,10 +77,11 @@ def p_house(v, frame, frames, k):
     _awning(m, 0, 7, 32, 46, 14.0, "linen")
     slab(m, 1, 6, 40, 45, 0, 3.2, "wood", tone=M.timber("y", seed))
     fill(m, (8.4, 11.6, 48.2, 49.4, 12.0, 14.0), "lamp")
-    halo(m, 10.0, 49.0, 13.0, 8.0, LAMP, 0.7)
+    halo(m, 10.0, 49.0, 13.0, 8.0, LAMP, 0.7, kind="door")
     # Small high windows; a niche with a lamp shelf.
     for face, b, s0 in (("+x", wing, 6.0), ("+x", house, 30.0), ("-x", house, 12.0), ("-y", house, 8.0), ("-y", wing, 10.0)):
         fill(m, face_box(face, *b[:4], 17.0, 19.5, s0, s0 + 3.0, -0.2, 1.2), "ink", tone=0.4)
+        mark(m, face_box(face, *b[:4], 17.0, 19.5, s0, s0 + 3.0, -0.2, 0.0), "window")
     # South: the court gate, a bread oven beside it.
     carve(m, (45, 49, 26, 34, 0.5, 12.0))
     fill(m, (45.5, 46.5, 26, 34, 0.5, 12.0), "cedar", tone=lambda X, Y, Z: -0.4 * ((Y % 2.0) < 0.4))
@@ -118,13 +119,14 @@ def p_house_small(v, frame, frames, k):
     _door(m, "+y", box, 10.0, 7.0, 14.0, seed)
     _awning(m, 2, 9, 18, 30, 12.0, "straw")
     fill(m, face_box("+x", 2, 30, 2, 30, 16.0, 18.5, 12.0, 15.0, -0.2, 1.2), "ink", tone=0.4)
+    mark(m, face_box("+x", 2, 30, 2, 30, 16.0, 18.5, 12.0, 15.0, -0.2, 0.0), "window")
     stair(m, 6, 28, -1.0, 2.0, 0, 22.0, "-x", step=1.6, material="mudbrick")
     revolve(m, 33.0 - 2.0, 8.0, 0, 5.0, lambda t: 2.4 - 0.8 * t, "mudbrick", tone=M.mud_plaster(seed + 2, 0.5))
     fill(m, (4, 9, -1.5, 2, 0, 6.0), "straw", tone=lambda X, Y, Z: (hash01(np.floor(X * 2).astype(np.int64),
                                                                             np.floor(Z * 2).astype(np.int64), seed) - 0.5))
     _house_roof(m, 2, 30, 2, 30, 22.0, seed, clutter=2, parapet=1.2)
     fill(m, (12.4, 15.6, 30.2, 31.2, 14.0, 15.5), "lamp")
-    halo(m, 14.0, 31.0, 15.0, 6.0, LAMP, 0.6)
+    halo(m, 14.0, 31.0, 15.0, 6.0, LAMP, 0.6, kind="door")
     return m
 
 
@@ -337,6 +339,20 @@ def p_torch(v, frame, frames, k):
     rod(m, (8, 5, 11.0), (8, 5.4, 14.0), 0.5, "wood")
     ellipsoid(m, (8, 5.4, 15.0), (0.9, 0.9, 1.5), "fire")
     halo(m, 8, 5.4, 15.0, 10.0, FIRE, 0.9)
+    return m
+
+
+def p_lamp(v, frame, frames, k):
+    """A doorway lamp: a bronze lamp hung from an iron arm on a plastered door post (the
+    houses' and stores' doors at night, where a torch would be too much)."""
+    m = _m(1, 1, 18, k)
+    slab(m, 6.5, 9.5, 1.0, 3.5, 0.0, 14.0, "mudbrick", tone=M.mud_plaster(330, 0.4))
+    slab(m, 6.0, 10.0, 0.5, 4.0, 14.0, 15.0, "cedar", tone=0.1)
+    rod(m, (8.0, 3.5, 12.5), (8.0, 6.5, 12.5), 0.25, "metal")
+    rod(m, (8.0, 6.5, 12.5), (8.0, 6.5, 11.2), 0.12, "metal")
+    ellipsoid(m, (8.0, 6.5, 10.6), (1.0, 0.8, 0.5), "bronze", tone=0.3)
+    ellipsoid(m, (8.8, 6.5, 11.3), (0.35, 0.35, 0.7), "fire")
+    halo(m, 8.6, 6.5, 11.2, 7.0, LAMP, 0.8)
     return m
 
 
@@ -702,6 +718,7 @@ ITEMS = {f"parsa.{name}": Item(fn, slots=slots, emitters=em) for name, fn, slots
     ("p_incense", p_incense, {}, {"smoke": (8.0, 8.0, 16.5)}),
     ("p_brazier", p_brazier, {}, {"fire": (8.0, 8.0, 10.5)}),
     ("p_torch", p_torch, {}, {"flame": (8.0, 5.4, 16.0)}),
+    ("p_lamp", p_lamp, {}, {}),
     ("p_parasol", p_parasol, {}, {}),
     ("p_throne", p_throne, {"seat": [{"t": [0, 0], "face": "+x", "z": 18}]}, {}),
     ("p_crane", p_crane, {"rope": [{"t": [2, 0], "face": "-x"}]}, {}),
@@ -734,6 +751,7 @@ STATES = {
     ("parsa.p_sluice", "open"): lambda v, f, n, k: p_sluice(v, f, n, k, open_=True),
     # 'lit' gates the glow layer (living-world §2.5): the look is the plain one.
     ("parsa.p_torch", "lit"): p_torch,
+    ("parsa.p_lamp", "lit"): p_lamp,
     ("parsa.p_brazier", "lit"): p_brazier,
 }
 

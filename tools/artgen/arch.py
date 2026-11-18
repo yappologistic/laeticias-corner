@@ -79,9 +79,17 @@ def carve(m: Model, box, mask=None):
     m.nrm[sl][msk] = 0.0
 
 
-def halo(m: Model, x, y, z, radius, rgb, strength=1.0):
-    """Halos are kept by the chunk that contains them (bigrender), so add them always."""
-    m.halos.append(Halo(x, y, z, radius, rgb, strength))
+def halo(m: Model, x, y, z, radius, rgb, strength=1.0, kind=""):
+    """Halos are kept by the chunk that contains them (bigrender), so add them always. A `kind`
+    ("door", "window") also lists the halo as a light point in the item's geometry."""
+    m.halos.append(Halo(x, y, z, radius, rgb, strength, kind))
+
+
+def mark(m: Model, box, kind, radius=4.0):
+    """A light point with no halo (an unlit window) at the centre of `box` (x0, x1, y0, y1, z0,
+    z1 in design units), listed in the geometry beside the halos of its kind."""
+    x0, x1, y0, y1, z0, z1 = box
+    m.marks.append(Halo((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, radius, (0, 0, 0), 0.0, kind))
 
 
 def face_frame(face, X, Y, Z, x0, x1, y0, y1):

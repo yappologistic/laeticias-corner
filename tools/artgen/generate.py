@@ -10,7 +10,6 @@ assets/ unless --out names another directory (previews then go there too).
 """
 
 import json
-import os
 import re
 import sys
 import time
@@ -33,8 +32,7 @@ MODULES = {"terrain": terrain, "fx": fx, "decor": decor}
 FLAT = (("terrain/", "terrain"), ("edge/", "terrain"), ("wild/", "terrain"), ("ui/tile", "terrain"),
         ("fx/", "fx"), ("ui/portrait/", "decor"), ("sky/", "decor"), ("title/", "decor"),
         ("frame/", "decor"))
-# Workers: the courtesy limit for this machine is four build processes.
-WORKERS = max(1, min(4, (os.cpu_count() or 4) // 2))
+WORKERS = spec.WORKERS
 
 
 def _item_job(job):
