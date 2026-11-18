@@ -7,6 +7,27 @@ who visits (ducks find ponds, a cat moves into the cottage, fireflies come out a
 
 Everything in this game is original: its own art, palette, UI, names, sounds and music.
 
+## Where this is going
+
+The owner's direction, which outranks any older wording in this file or in the design documents:
+
+- The game is **one connected, living world**: the player's buildable home corner, the prebuilt
+  ancient cities with their whole civilizations, and the land and sea between. No part of the map
+  may be a still picture: people work and travel, goods move, weather crosses, light changes.
+- **It must look and move beautifully.** Nothing pale, flat or stale. Motion is fluid: no visible
+  frame steps in walks, water or reflections; water behaves like water; light behaves like light
+  (a moving sun, shadows that turn, lamps that light what is near them, lights that persist at
+  every zoom level). Use the tricks good 2D games use (generator-made normal and height maps,
+  shader lighting, reflections, bloom, grading, wind-driven ambient motion) before settling for less.
+- **Four seasons everywhere**: spring, summer, autumn and winter must show correctly in every
+  region of the world, not only at home.
+- **Smooth always**: the budgets in "Performance" are part of "done" for every change.
+- Connections must be right: every bridge, stair, gate and road meets what it joins, in the data
+  and on screen.
+- Long term the owner wants to grow this toward running a whole society (in the spirit of grand
+  civilization-building games): keep simulation data-driven and scalable; do not hard-wire
+  anything that would block player-run cities later.
+
 ## Non-negotiables
 
 - **Small, fast, correct.** Prefer the simplest design that is right. No speculative abstractions,
