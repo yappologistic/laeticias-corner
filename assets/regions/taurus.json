@@ -1708,7 +1708,7 @@
    "group": "drove",
    "count": 1,
    "route": {
-    "start": "base:cilician_road_station_980_254",
+    "start": "base:cilician_road_station_980_256",
     "end": "base:cilician_road_station_983_279"
    },
    "when": {
@@ -1724,7 +1724,7 @@
     "18:00"
    ],
    "rest": [
-    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_980_256",
     "base:cilician_road_station_983_279"
    ],
    "offsets": [
@@ -1753,9 +1753,8 @@
     "base:cilician_road_station_985_201",
     "base:cilician_road_station_983_212",
     "base:cilician_road_station_983_225",
-    "base:cilician_road_farm_983_238",
-    "base:cilician_road_station_983_240",
-    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_238",
+    "base:cilician_road_station_980_256",
     "base:cilician_road_station_983_279"
    ],
    "offsets": [
@@ -1783,9 +1782,8 @@
     "base:cilician_road_station_985_201",
     "base:cilician_road_station_983_212",
     "base:cilician_road_station_983_225",
-    "base:cilician_road_farm_983_238",
-    "base:cilician_road_station_983_240",
-    "base:cilician_road_station_980_254",
+    "base:cilician_road_station_983_238",
+    "base:cilician_road_station_980_256",
     "base:cilician_road_station_983_279"
    ],
    "offsets": [
@@ -2651,7 +2649,7 @@
    "station_lamp"
   ],
   [
-   253,
+   255,
    301,
    "world.royal_station",
    "station_lamp"
