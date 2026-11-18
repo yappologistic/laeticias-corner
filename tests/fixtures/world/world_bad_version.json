@@ -1,0 +1,65 @@
+{
+ "version": 2,
+ "grid": [
+  64,
+  96
+ ],
+ "chunk": 32,
+ "home": {
+  "origin": [
+   40,
+   60
+  ],
+  "size": [
+   8,
+   8
+  ],
+  "level": 1,
+  "region": "home"
+ },
+ "layers": [
+  {
+   "id": "base",
+   "file": "layers/base.lcw",
+   "graph": "layers/base.graph.json"
+  },
+  {
+   "id": "town",
+   "file": "layers/town.lcw",
+   "graph": "layers/town.graph.json"
+  }
+ ],
+ "regions": [
+  {
+   "id": "home",
+   "set": "home",
+   "kind": "home",
+   "time": "timeless",
+   "life": "regions/home.json"
+  },
+  {
+   "id": "town",
+   "set": "tst",
+   "kind": "city",
+   "time": "tst",
+   "life": "regions/town.json"
+  },
+  {
+   "id": "wild",
+   "set": "tst",
+   "kind": "stretch",
+   "time": "tst",
+   "life": "regions/wild.json"
+  }
+ ],
+ "markers": [
+  {
+   "region": "town",
+   "at": [
+    10,
+    10
+   ],
+   "icon": "town"
+  }
+ ]
+}

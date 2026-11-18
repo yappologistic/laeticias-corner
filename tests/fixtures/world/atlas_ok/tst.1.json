@@ -1,0 +1,3 @@
+{"version": 1, "image": "tst.1.png", "sprites": {
+  "item/tst.hall/shadow/r0/f0": {"x": 0, "y": 0, "w": 700, "h": 300, "ox": 300, "oy": -20}
+}}

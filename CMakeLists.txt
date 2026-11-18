@@ -108,3 +108,24 @@ target_link_libraries(worldinfo PRIVATE lc_world)
 target_compile_definitions(worldinfo PRIVATE LC_WORLDINFO_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 lc_project_target(worldinfo)
 
+if(LC_TESTS)
+  add_executable(lc_world_tests
+    tests/world_main.cpp
+    tests/world_support.cpp
+    tests/world_formats.cpp
+    tests/world_map.cpp
+    tests/world_real.cpp
+  )
+  target_link_libraries(lc_world_tests PRIVATE lc_world lc_doctest)
+  target_compile_definitions(lc_world_tests PRIVATE
+    LC_WORLD_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
+    LC_WORLD_FIXTURES_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures/world")
+  lc_project_target(lc_world_tests)
+  # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
+  target_compile_options(lc_world_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
+  add_test(NAME world_unit COMMAND lc_world_tests --test-case-exclude=perf:*)
+  # Load time, memory and query throughput on the committed world; budgets assert in optimised
+  # builds only (sanitizer builds report the figures).
+  add_test(NAME world_perf COMMAND lc_world_tests --test-case=perf:*)
+  add_test(NAME worldinfo_summary COMMAND worldinfo summary)
+endif()
