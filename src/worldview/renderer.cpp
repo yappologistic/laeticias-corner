@@ -387,7 +387,9 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, onto.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
-    if (any) {
+    if (any && post_) {
+        shadeGpu(layer.texture.get(), static_cast<float>(layer.w), static_cast<float>(layer.h));
+    } else if (any) {
         const float w = static_cast<float>(layer.w);
         const float h = static_cast<float>(layer.h);
         batch_.use(layer.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);

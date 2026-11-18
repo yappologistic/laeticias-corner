@@ -38,8 +38,17 @@ inline constexpr float kNightCool = 0.55f;
 // with the range the exposure may move in by day and by night.
 inline constexpr float kDayKey = 0.44f;
 inline constexpr float kTwilightKey = 0.34f;
-inline constexpr float kNightKey = 0.17f;
-inline constexpr float kDayAdapt[2] = {0.80f, 1.12f};
+inline constexpr float kNightKey = 0.20f;
+inline constexpr float kDayAdapt[2] = {1.0f, 1.12f};
+inline constexpr float kTwilightAdaptMin = 0.8f; // dawn and dusk may be held down toward their key
+// Haze at the native zooms by day, as a share of the region's: near, the air is clear (the
+// cities' pale stone went grey under a full share); it rises with distance, zoom and twilight.
+inline constexpr float kNearDayHaze = 0.3f;
+// By day lit surfaces keep at least the art's saturation plus this, and their highlights lean
+// warm by this much (added to the region's high tint before its amount).
+inline constexpr float kDaySaturation = 0.12f;
+inline constexpr float kDayWarm[3] = {0.14f, 0.06f, -0.10f};
+inline constexpr float kTwilightWarm = 0.08f; // dawn and dusk: red up, blue down by this
 inline constexpr float kNightAdapt[2] = {0.45f, 2.0f};
 inline constexpr int kMeanSide = 64; // the scene is first sampled to this many texels across
 // The night shift starts past dusk: from the clock's night at this value to full at 1.
@@ -50,10 +59,12 @@ inline constexpr float kShadeTint = 0.8f;
 
 // Light pools (world_lights.hpp): falloff strength * (1 - (d/R)^2)^2, as the worldgen
 // measuring assumes (out/reports/world-nights.md §1).
-inline constexpr float kPoolGain = 1.35f;  // albedo * light added
-inline constexpr float kPoolWarm = 0.22f;  // plus this much of the light by the pixel's luma
-inline constexpr float kPoolDay = 0.12f;   // share of a pool still seen at full day
-inline constexpr float kPoolRise = 0.9f;   // walls above a light lit to this share of its height
+inline constexpr float kPoolGain = 1.1f;  // albedo * light added
+inline constexpr float kPoolWarm = 0.22f; // plus this much of the light by the pixel's luma
+inline constexpr float kPoolDay = 0.12f;  // share of a pool still seen at full day
+inline constexpr float kPoolRise = 0.7f;
+inline constexpr float kPoolWall = 0.5f; // the pool's upper half (walls behind) at this strength //
+                                         // walls above a light lit to this share of its height
 inline constexpr int kPoolLevels = 6;      // a pool's light in this many dithered bands
 inline constexpr int kPoolTexture = 64;    // the falloff texture's side
 inline constexpr float kFarLightPx = 2.5f; // window px radius of a light seen from afar, at least

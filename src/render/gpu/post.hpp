@@ -33,8 +33,7 @@ struct FinalParams {
     float hazeStrength = 0;
     float glow = 0;            // the clock's emissive strength, 0..1
     float night = 0;           // 0 day .. 1 deep night (the low light's cool shift)
-    Rgb shade{1, 1, 1};        // the sky's colour in shade
-    bool shadows = false;      // the shadow layer given to setShadow() holds this frame's shadows
+    bool near = true;          // a native zoom (clear air by day)
     float windowPerTarget = 1; // window px per target px (sharp sampling)
     Vec2 artOrigin;            // art px at the target's (0, 0), for the world-anchored dither
     float targetPerArt = 1;    // target px per art px
@@ -56,9 +55,9 @@ public:
     [[nodiscard]] Quality quality() const { return quality_; }
     // Targets for a world target allocated at `w` x `h` (grown, never shrunk).
     void prepare(int w, int h);
-    // The shadow layer the final pass reads (premultiplied black, alpha the coverage), the same
-    // size as the scene; null: none.
-    void setShadow(SDL_Texture* layer);
+    // Lays the shadow layer (premultiplied black, alpha its coverage) over the current target by
+    // multiplying with `tint` where it covers: the classic darkening, in the sky's colour.
+    void shade(Batch& b, SDL_Texture* layer, SDL_FRect dst, UvRect uv, Rgb tint);
     // Binds `t` (light() or glow()) as the render target, cleared to transparent black.
     void begin(SDL_Texture* t);
     [[nodiscard]] SDL_Texture* light() const { return light_.get(); }
@@ -95,6 +94,8 @@ private:
     SDL_GPUShader* finalShader_ = nullptr;
     SDL_GPUShader* downShader_ = nullptr;
     SDL_GPUShader* upShader_ = nullptr;
+    SDL_GPUShader* shadeShader_ = nullptr;
+    SDL_GPURenderState* shadeState_ = nullptr;
     SDL_GPUSampler* linear_ = nullptr;
     // Sampler bindings and uniforms are fixed per state, so each pass and level has its own.
     std::array<SDL_GPURenderState*, 2> final_{}; // the window, the glass copy
@@ -110,7 +111,6 @@ private:
     std::array<TexturePtr, kLevels> bloom_;
     TexturePtr falloff_;
     std::vector<TexturePtr> mean_; // kMeanSide wide, halved down to 1 x 1
-    SDL_Texture* shadow_ = nullptr;
 };
 
 } // namespace lc::gpu

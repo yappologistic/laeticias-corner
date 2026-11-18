@@ -221,6 +221,8 @@ private:
     // Lights seen from afar (the overview) into the glow target, bloom, back to the world.
     void bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow);
     void compositeGpu(Vec2 scale, bool smooth);
+    // The shadow layer laid on in the sky's colour of the hour (the classic darkening's place).
+    void shadeGpu(SDL_Texture* layer, float w, float h);
     // A swaying item, bent in strips by the wind.
     void putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean);
     // Whether an item's glow layer burns now (the world data's lights on the shader path).
@@ -390,7 +392,7 @@ private:
         gpu::GradeAt grade;
         float glow = 0;
         float night = 0;
-        bool shadows = false;
+        bool near = true;
         Vec2 artOrigin;
         float res = 1;
         double now = 0;

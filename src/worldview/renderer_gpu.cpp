@@ -162,7 +162,17 @@ void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow,
             const Vec2 g = x.apply(ground);
             const SDL_FColor col{c.r * day, c.g * day, c.b * day, 1};
             batch_.quad(SDL_FRect{g.x - a, g.y, 2 * a, b}, {0, 0.5f, 1, 1}, col);
-            batch_.quad(SDL_FRect{g.x - a, g.y - up, 2 * a, up}, {0, 0, 1, 0.5f}, col);
+            // Above the pool's centre stand walls as often as ground: the light fades toward
+            // the top to tuning::kPoolWall, so a white wall behind a flame is warmed, not turned
+            // into a lit block (and no step shows where the halves meet).
+            const float w = t::kPoolWall;
+            const SDL_FColor top{col.r * w, col.g * w, col.b * w, 1};
+            const SDL_Vertex v[4] = {{{g.x - a, g.y - up}, top, {0, 0}},
+                                     {{g.x + a, g.y - up}, top, {1, 0}},
+                                     {{g.x + a, g.y}, col, {1, 0.5f}},
+                                     {{g.x - a, g.y}, col, {0, 0.5f}}};
+            static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+            batch_.triangles(v, 4, kQuad, 6);
         };
         TileRect tiles = gatherTiles(view, sprites_->itemSpan(), iso_);
         const int margin = 13; // the widest pool's reach, tiles
@@ -203,7 +213,6 @@ void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow)
             });
         batch_.flush();
     }
-    post_->setShadow(lod == Lod::Native ? shadow_.texture.get() : nullptr);
     post_->bloom(batch_, viewW_, viewH_);
     post_->measure(batch_, view_.texture.get(), viewW_, viewH_);
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get())) SDL_Log("look: %s", SDL_GetError());
@@ -230,8 +239,7 @@ void WorldView::compositeGpu(Vec2 scale, bool smooth) {
     f.hazeStrength = gpuFrame_.grade.hazeStrength;
     f.glow = gpuFrame_.glow;
     f.night = gpuFrame_.night;
-    f.shade = gpuFrame_.grade.shade;
-    f.shadows = gpuFrame_.shadows;
+    f.near = gpuFrame_.near;
     f.windowPerTarget = k * scale.x;
     f.artOrigin = gpuFrame_.artOrigin;
     f.targetPerArt = gpuFrame_.res;
@@ -243,6 +251,19 @@ void WorldView::compositeGpu(Vec2 scale, bool smooth) {
                  {0, 0, static_cast<float>(viewW_) / static_cast<float>(view_.w),
                   static_cast<float>(viewH_) / static_cast<float>(view_.h)},
                  smooth || scale.x != 1.0f || scale.y != 1.0f);
+}
+
+void WorldView::shadeGpu(SDL_Texture* layer, float w, float h) {
+    // Full shade: the classic darkening, its colour leaning to the region's shade colour (luma
+    // kept) by tuning::kShadeTint.
+    const float k = shadowOpacity();
+    const Rgb s = gpuFrame_.grade.shade;
+    const float l = std::max(1e-3f, 0.299f * s.r + 0.587f * s.g + 0.114f * s.b);
+    const auto tint = [&](float c) {
+        return (1.0f - k) * (1.0f + (c / l - 1.0f) * gpu::tuning::kShadeTint);
+    };
+    post_->shade(batch_, layer, SDL_FRect{0, 0, w, h}, {0, 0, 1, 1},
+                 {tint(s.r), tint(s.g), tint(s.b)});
 }
 
 void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean) {

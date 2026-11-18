@@ -21,8 +21,12 @@ struct FinalUniforms {
     float texel[4];
     float world[4];
     float night[4];
-    float shade[4];
     float key[4];
+};
+
+// std140 mirror of shaders/shade.frag's block.
+struct ShadeUniforms {
+    float tint[4];
 };
 
 // std140 mirror of the bloom shaders' block.
@@ -95,7 +99,8 @@ Post::Post(SDL_Renderer* renderer) : renderer_(renderer) {}
 bool Post::init() {
     device_ = SDL_GetGPURendererDevice(renderer_);
     if (device_ == nullptr) return false;
-    finalShader_ = makeShader(device_, "final", 6);
+    finalShader_ = makeShader(device_, "final", 5);
+    shadeShader_ = makeShader(device_, "shade", 1);
     downShader_ = makeShader(device_, "bloom_down", 1);
     upShader_ = makeShader(device_, "bloom_up", 1);
     SDL_GPUSamplerCreateInfo si{};
@@ -108,8 +113,15 @@ bool Post::init() {
     linear_ = SDL_CreateGPUSampler(device_, &si);
     if (linear_ == nullptr) SDL_Log("gpu: sampler: %s", SDL_GetError());
     if (finalShader_ == nullptr || downShader_ == nullptr || upShader_ == nullptr ||
-        linear_ == nullptr)
+        shadeShader_ == nullptr || linear_ == nullptr)
         return false;
+    SDL_GPURenderStateCreateInfo si2{};
+    si2.fragment_shader = shadeShader_;
+    shadeState_ = SDL_CreateGPURenderState(renderer_, &si2);
+    if (shadeState_ == nullptr) {
+        SDL_Log("gpu: render state: %s", SDL_GetError());
+        return false;
+    }
     // The scene's mean: kMeanSide x (side / 2), halved to one texel (cleared: a black night).
     for (int w = tuning::kMeanSide, h = tuning::kMeanSide / 2; w >= 1;
          w /= 2, h = std::max(1, h / 2)) {
@@ -160,12 +172,9 @@ bool Post::channelsRead() {
     if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("gpu: %s", SDL_GetError());
     if (!rgba) return false;
     const auto* c = static_cast<const std::uint8_t*>(rgba->pixels);
-    // In: r 0xE0, g 0x40, b 0x20; out the same channels in the same proportions (the key scales
-    // them all).
-    if (c[0] < 0x40) return false;
-    const float k = static_cast<float>(c[0]) / 224.0f;
-    return std::abs(static_cast<float>(c[1]) - 64.0f * k) <= 4.0f &&
-           std::abs(static_cast<float>(c[2]) - 32.0f * k) <= 4.0f;
+    // In: r 0xE0, g 0x40, b 0x20. The grade moves the values; swapped channels (the ARGB
+    // trap) would put blue on top.
+    return c[0] > 0x60 && c[0] > 2 * c[2] && c[0] > c[1] && c[1] > c[2];
 }
 
 Post::~Post() {
@@ -175,12 +184,13 @@ Post::~Post() {
         SDL_Log("gpu: %s", SDL_GetError());
     for (SDL_GPURenderState* s : final_)
         if (s != nullptr) SDL_DestroyGPURenderState(s);
+    if (shadeState_ != nullptr) SDL_DestroyGPURenderState(shadeState_);
     for (std::size_t i = 0; i < kLevels; ++i) {
         if (down_[i] != nullptr) SDL_DestroyGPURenderState(down_[i]);
         if (up_[i] != nullptr) SDL_DestroyGPURenderState(up_[i]);
     }
     if (device_ == nullptr) return;
-    for (SDL_GPUShader* s : {finalShader_, downShader_, upShader_})
+    for (SDL_GPUShader* s : {finalShader_, downShader_, upShader_, shadeShader_})
         if (s != nullptr) SDL_ReleaseGPUShader(device_, s);
     if (linear_ != nullptr) SDL_ReleaseGPUSampler(device_, linear_);
 }
@@ -228,16 +238,14 @@ void Post::rebuildStates() {
         drop(up_[i]);
     }
     if (!light_ || !glow_ || !bloom_[0]) return;
-    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): all five.
-    const SDL_GPUTextureSamplerBinding bind[5] = {
-        {gpuOf(light_.get()), linear_},
-        {gpuOf(glow_.get()), linear_},
-        {gpuOf(bloom_[0].get()), linear_},
-        {gpuOf(shadow_ != nullptr ? shadow_ : light_.get()), linear_},
-        {gpuOf(mean_.back().get()), linear_}};
+    // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): four here.
+    const SDL_GPUTextureSamplerBinding bind[4] = {{gpuOf(light_.get()), linear_},
+                                                  {gpuOf(glow_.get()), linear_},
+                                                  {gpuOf(bloom_[0].get()), linear_},
+                                                  {gpuOf(mean_.back().get()), linear_}};
     SDL_GPURenderStateCreateInfo info{};
     info.fragment_shader = finalShader_;
-    info.num_sampler_bindings = 5;
+    info.num_sampler_bindings = 4;
     info.sampler_bindings = bind;
     for (SDL_GPURenderState*& s : final_) s = SDL_CreateGPURenderState(renderer_, &info);
     SDL_GPURenderStateCreateInfo bi{};
@@ -251,10 +259,16 @@ void Post::rebuildStates() {
         if (s == nullptr) SDL_Log("gpu: render state: %s", SDL_GetError());
 }
 
-void Post::setShadow(SDL_Texture* layer) {
-    if (layer == shadow_) return;
-    shadow_ = layer;
-    rebuildStates();
+void Post::shade(Batch& b, SDL_Texture* layer, SDL_FRect dst, UvRect uv, Rgb tint) {
+    ShadeUniforms u{};
+    set4(u.tint, tint.r, tint.g, tint.b, 0);
+    if (!SDL_SetGPURenderStateFragmentUniforms(shadeState_, 0, &u, sizeof u))
+        SDL_Log("gpu: %s", SDL_GetError());
+    use(b, shadeState_);
+    b.use(layer, SDL_BLENDMODE_MUL, SDL_SCALEMODE_NEAREST);
+    b.quad(dst, uv, {1, 1, 1, 1});
+    b.flush();
+    use(b, nullptr);
 }
 
 void Post::use(Batch& b, SDL_GPURenderState* s) {
@@ -349,11 +363,30 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
     FinalUniforms u{};
     const float night =
         std::clamp((f.night - tuning::kNightFrom) / (1.0f - tuning::kNightFrom), 0.0f, 1.0f);
-    const float exposure = g.exposure;
-    set4(u.gain, g.wb.r * exposure, g.wb.g * exposure, g.wb.b * exposure, g.tint);
-    set4(u.shadow, g.shadowTint.r - 0.5f, g.shadowTint.g - 0.5f, g.shadowTint.b - 0.5f, g.contrast);
-    set4(u.high, g.highTint.r - 0.5f, g.highTint.g - 0.5f, g.highTint.b - 0.5f, g.saturation);
-    set4(u.haze, f.haze.r, f.haze.g, f.haze.b, f.hazeStrength);
+    // By day nothing says which pixels are in shade but the shadow layer (laid on by shade()), so
+    // the split toning's cool darks stay off lit surfaces: they come in with the twilight. Lit
+    // surfaces keep at least the art's saturation and lean a little warmer.
+    // Full day only while the clock gives no glow; dawn and dusk are mostly twilight's.
+    const float day =
+        (1.0f - std::clamp(f.glow, 0.0f, 1.0f)) * (1.0f - std::clamp(f.glow, 0.0f, 1.0f));
+    // By day never darker than the art (a darker day read as greyer, not deeper).
+    const float exposure = g.exposure + (std::max(g.exposure, 1.0f) - g.exposure) * day;
+    const float darks = 1.0f - day;
+    // A low sun warms what it lights at dawn and dusk (honey, not lilac, on stone).
+    const float low = (1.0f - day) * (1.0f - night) * tuning::kTwilightWarm;
+    set4(u.gain, g.wb.r * exposure * (1.0f + low), g.wb.g * exposure,
+         g.wb.b * exposure * (1.0f - low), g.tint);
+    set4(u.shadow, (g.shadowTint.r - 0.5f) * darks, (g.shadowTint.g - 0.5f) * darks,
+         (g.shadowTint.b - 0.5f) * darks, g.contrast);
+    // Sunlit (day, dawn and dusk, not night): the warm lift and saturation floor hold.
+    const float lit = 1.0f - night;
+    const float sat =
+        g.saturation + (std::max(g.saturation, 1.0f) + tuning::kDaySaturation - g.saturation) * lit;
+    set4(u.high, g.highTint.r - 0.5f + tuning::kDayWarm[0] * lit,
+         g.highTint.g - 0.5f + tuning::kDayWarm[1] * lit,
+         g.highTint.b - 0.5f + tuning::kDayWarm[2] * lit, sat);
+    set4(u.haze, f.haze.r, f.haze.g, f.haze.b,
+         f.hazeStrength * (f.near ? 1.0f - (1.0f - tuning::kNearDayHaze) * day : 1.0f));
     set4(u.mixes, g.shoulder, tuning::kPoolGain, tuning::kPoolWarm,
          tuning::kBloomGain * (tuning::kBloomFloor + (1.0f - tuning::kBloomFloor) * f.glow));
     set4(u.texel, static_cast<float>(w_), static_cast<float>(h_), f.windowPerTarget,
@@ -362,15 +395,14 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
          static_cast<float>(tuning::kPoolLevels));
     const Rgb moon = nightTint();
     set4(u.night, moon.r, moon.g, moon.b, night * tuning::kNightCool);
-    const float sl = std::max(1e-3f, 0.299f * f.shade.r + 0.587f * f.shade.g + 0.114f * f.shade.b);
-    set4(u.shade, f.shade.r / sl, f.shade.g / sl, f.shade.b / sl,
-         f.shadows ? tuning::kShadeTint : 0.0f);
     const auto lerp = [](float from, float to, float k) { return from + (to - from) * k; };
     const float twilight = std::clamp(f.glow, 0.0f, 1.0f);
     const float aim =
         lerp(lerp(tuning::kDayKey, tuning::kTwilightKey, twilight), tuning::kNightKey, night);
-    set4(u.key, aim, lerp(tuning::kDayAdapt[0], tuning::kNightAdapt[0], night),
-         lerp(tuning::kDayAdapt[1], tuning::kNightAdapt[1], night), 1.0f);
+    set4(u.key, aim,
+         lerp(lerp(tuning::kTwilightAdaptMin, tuning::kDayAdapt[0], day), tuning::kNightAdapt[0],
+              night),
+         lerp(tuning::kDayAdapt[1], tuning::kNightAdapt[1], night), day);
     if (!SDL_SetGPURenderStateFragmentUniforms(s, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());
     use(b, s);
