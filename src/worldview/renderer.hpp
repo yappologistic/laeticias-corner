@@ -229,11 +229,13 @@ private:
     Overview& overview();
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
     // Open sea beyond the grid, deep and fading into haze with the distance from its edge.
-    bool drawBeyond(TilePos p, const Xform& x, float now);
+    // (`haze`: the haze over it, drawn after all of the water.)
+    bool drawBeyond(TilePos p, const Xform& x, bool haze);
     bool drawElem(const Elem& e, const Xform& x, float now);
-    // `visible`: the order's positions drawn this frame (empty: look at all of them).
+    // `actors`: with the live people's shadows (the frame, not a cached picture). `visible`:
+    // the order's positions drawn this frame (empty: look at all of them).
     bool drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
-                     Target& onto, std::span<const std::uint32_t> visible = {});
+                     Target& onto, bool actors, std::span<const std::uint32_t> visible = {});
     // Cells (cells.hpp): each frame says what it wants, in order of need: the view's own
     // cells, those of a destination it is heading for, a ring around the view leaning the way
     // it moves, and the wider levels about the pointer. They are built within a time budget

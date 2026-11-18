@@ -314,14 +314,20 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     if (tiles.empty()) return true;
     const float lift = r.up - static_cast<float>(kMaxLevel * lvl_);
     bool ok = true;
+    // The sea beyond the grid first, in two passes (the water, then its haze): flat and under
+    // everything, and each pass one texture instead of two draws per tile.
+    if (!map_.bounds().contains(tiles))
+        for (const bool haze : {false, true})
+            diagonals(tiles, [&](TilePos p) {
+                if (map_.inBounds(p)) return;
+                const Vec2 w = iso_.toWorld(p);
+                if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
+                    w.y - iso_.tileH() <= px.y1)
+                    ok &= drawBeyond(p, x, haze);
+            });
     diagonals(tiles, [&](TilePos p) {
+        if (!map_.inBounds(p)) return;
         const Vec2 w = iso_.toWorld(p);
-        if (!map_.inBounds(p)) {
-            if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
-                w.y - iso_.tileH() <= px.y1)
-                ok &= drawBeyond(p, x, now);
-            return;
-        }
         // The game's scene draws the hole; its rim tiles are drawn here too, under the scene's,
         // so the soft edges of its tile art meet the world's ground, not the sky.
         const TileRect& h = hole_.tiles;
@@ -334,29 +340,26 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     return ok;
 }
 
-bool WorldView::drawBeyond(TilePos p, const Xform& x, float now) {
+bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze) {
     const Vec2 a = iso_.toWorld(p);
+    if (!haze) {
+        if (sea_ < 0) return true;
+        const float tint = 1.0f - tuning::kWaterDepthTint * 3.0f;
+        const TerrainLook& look = sprites_->terrain(sea_);
+        const std::vector<SpriteRef>& base = look.baseIn(season_);
+        return base.empty()
+                   ? put(sprites_->diamond(), a, x, times(look.flat, tint), SDL_BLENDMODE_BLEND)
+                   : put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, {tint, tint, tint, 1},
+                         SDL_BLENDMODE_BLEND);
+    }
     // Tiles beyond the edge, along the grid's axes (outside a corner, the larger of the two).
     const int dx = p.x < 0 ? -p.x : std::max(0, p.x - map_.width() + 1);
     const int dy = p.y < 0 ? -p.y : std::max(0, p.y - map_.height() + 1);
     const float k = std::min(1.0f, static_cast<float>(std::max(dx, dy)) / tuning::kHorizonTiles);
-    bool ok = true;
-    const float tint = 1.0f - tuning::kWaterDepthTint * 3.0f;
-    if (sea_ >= 0) {
-        const TerrainLook& look = sprites_->terrain(sea_);
-        const std::vector<SpriteRef>& base = look.baseIn(season_);
-        if (base.empty())
-            ok &= put(sprites_->diamond(), a, x, times(look.flat, tint), SDL_BLENDMODE_BLEND);
-        else
-            ok &= put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, {tint, tint, tint, 1},
-                      SDL_BLENDMODE_BLEND);
-    }
     const auto& h = tuning::kHorizonHaze;
     const float alpha = sea_ >= 0 ? k * tuning::kHorizonHazeMax : 1.0f;
-    if (alpha > 0.0f)
-        ok &= put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
-    (void)now;
-    return ok;
+    return alpha <= 0.0f ||
+           put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
 }
 
 bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
@@ -371,14 +374,9 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
 }
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
-                            Target& onto, std::span<const std::uint32_t> visible) {
+                            Target& onto, bool actors, std::span<const std::uint32_t> visible) {
     // Shadow sprites saturate in their own layer (their alpha was scaled to a peak of 1), which
     // is then laid over the ground once at the art's opacity: overlaps never double-darken.
-    bool ok = true;
-    batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, layer.texture.get()) ||
-        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
-        SDL_Log("worldview: shadow layer: %s", SDL_GetError());
     // The layer's coverage does not depend on order: drawn page by page, one draw each.
     shadows_.clear();
     // An element's screen box holds its shadow: what is not drawn casts none in view.
@@ -392,6 +390,14 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
                         e.anchor.y - s.oy + s.h};
         if (box.overlaps(clip)) shadows_.emplace_back(s.page, static_cast<std::uint32_t>(j));
     }
+    // Open sea and bare land cast nothing: no layer is cleared, bound and laid over for them
+    // (half the cost of an impostor block that has no shadow in it).
+    if (shadows_.empty() && !(actors && !actorOf_.empty())) return true;
+    bool ok = true;
+    batch_.flush();
+    if (!SDL_SetRenderTarget(renderer_, layer.texture.get()) ||
+        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
+        SDL_Log("worldview: shadow layer: %s", SDL_GetError());
     // By page, then in the order's sequence: a total order, so the plain sort (which, unlike
     // the stable one, allocates nothing) gives the same result every time.
     std::ranges::sort(shadows_);
@@ -400,19 +406,17 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
         if (const std::optional<SpriteRef>& sh = e.look->shadow)
             ok &= put(*sh, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
     }
-    drawActorShadows(x);
-    const bool any = !shadows_.empty() || !actorDraw_.empty();
+    // People's shadows belong to the frame they are drawn in, never to a cached picture.
+    if (actors) drawActorShadows(x);
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, onto.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
-    if (any) {
-        const float w = static_cast<float>(layer.w);
-        const float h = static_cast<float>(layer.h);
-        batch_.use(layer.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);
-        const float k = shadowOpacity();
-        batch_.quad(SDL_FRect{0, 0, w, h}, {0, 0, 1, 1}, {k, k, k, k});
-        batch_.flush();
-    }
+    const float w = static_cast<float>(layer.w);
+    const float h = static_cast<float>(layer.h);
+    batch_.use(layer.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);
+    const float k = shadowOpacity();
+    batch_.quad(SDL_FRect{0, 0, w, h}, {0, 0, 1, 1}, {k, k, k, k});
+    batch_.flush();
     return ok;
 }
 
@@ -506,7 +510,7 @@ void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: impostor: %s", SDL_GetError());
     bool complete = drawTiles(r, x, 0, nullptr);
-    complete &= drawShadows(g, r, x, scratchShadow_, scratch_);
+    complete &= drawShadows(g, r, x, scratchShadow_, scratch_, false);
     for (const std::uint32_t i : g.order) complete &= drawElem(g.elems[i], x, 0);
     batch_.flush();
     const int n = blocksPerSide(key.level);
@@ -1273,7 +1277,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         stats_.regionShort = !regionRect_.contains(
             gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds()));
         prepareActors(view, lod);
-        (void)drawShadows(region_, view, xf, shadow_, view_, merge_.visible());
+        (void)drawShadows(region_, view, xf, shadow_, view_, true, merge_.visible());
         stats_.spritesCulled = static_cast<int>(region_.order.size() - merge_.visible().size());
         for (const std::uint32_t k : merge_.visible()) {
             for (const std::uint32_t a : merge_.before(k)) drawActor(actorOf_[a], xf);
