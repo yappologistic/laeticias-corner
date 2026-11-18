@@ -1,0 +1,26 @@
+# The coop undone and redone while the hens walk home at nightfall (Q3-02): none stays out at
+# night, and tomorrow's flock is the coop's, never one on top of a lingering hen.
+set unlock all
+set season summer
+set time 0.3
+place coop @26,30 0
+set camera 27 31 2
+fast 30
+set time 0.62
+fast 2
+set time 0.626
+fast 1.4
+key ctrl+z
+wait 2
+key ctrl+shift+z
+wait 2
+expect count coop 1
+fast 160
+set time 0.75
+fast 60
+expect visible hen 0
+expect population yes
+set time 0.30
+fast 90
+expect population yes
+quit

@@ -253,6 +253,8 @@
       "nook_found": ["Oh, that's a proper little spot.", "I'll have to sketch that.", "That deserves a name. Let me think."],
       "click": ["Yes? I'm listening.", "Did you know daisies close at night?", "My sketchbook's nearly full. Nearly.", "Hello, you.", "Forty years drawing other people's gardens.", "I'm not old. I'm well watered."],
       "idle": ["I talk to the plants. They don't mind.", "Hm. That corner wants a little something.", "The light here is good for drawing.", "I wonder who lived here before.", "Quiet. Just how I like it.", "I could sit here all afternoon."],
+      "idle_rain": ["Rain on the leaves. Best sound there is.", "The beds will be glad of this.", "I'll wait it out. No hurry.", "Good weather for ducks, they'd say."],
+      "idle_night": ["Listen. Even the grass is quiet.", "The stars are out properly tonight.", "Lamps make everything feel smaller. Nicer.", "One more minute, then bed."],
       "first_duck": ["Ducks already. They don't waste time."],
       "first_hen": ["Hens. Opinionated ones, by the look."],
       "first_cat": ["Well. I suppose we have a cat now."],

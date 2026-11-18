@@ -7,6 +7,7 @@ set played 29
 wait 70
 expect wish first_flowers open
 expect widget card:0 yes
+expect portrait 0 yes
 shot shots/wish_tray.png
 click ui:build
 wait 3
@@ -23,6 +24,7 @@ set played 40
 wait 4
 expect wish first_flowers done
 expect ribbon yes
+expect thanks — Laeticia
 expect wishes 0
 wait 20
 shot shots/wish_granted.png

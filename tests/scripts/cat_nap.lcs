@@ -6,6 +6,8 @@ place cottage @32,30 0
 place stump @27,27 0
 set camera 29 29 2
 fast 150 actor cat sleep
+# Asleep on a seat, not on the ground beside one.
+expect actor cat sleep seat
 expect habitat ok
 wait 30
 shot shots/cat_nap.png

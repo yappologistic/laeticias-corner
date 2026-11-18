@@ -676,7 +676,10 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     }
 
     if (noteLabel_.empty())
-        noteLabel_ = std::vformat(strings::kNoteLabel, std::make_format_args(m.cat->resident.name));
+        noteLabel_ =
+            m.cat->residentKind >= 0
+                ? std::vformat(strings::kNoteLabel, std::make_format_args(m.cat->resident.name))
+                : std::string(strings::kNoteLabelAlone);
 
     clockLabel_.assign(phaseName(m.phase));
     if (!m.cat->seasons.empty()) {
@@ -1488,7 +1491,10 @@ void Hud::drawTray(Painter& p) const {
                   withAlpha(theme::kGold, ca * 0.5f));
         const Box pic{b.x + pad, b.y + pad, portrait, portrait};
         p.roundRect(pic, portrait * 0.5f, withAlpha(theme::kInset, ca));
-        p.thumbnail(t.card.portrait, pic, pic.w / std::max(1.0f, t.card.portrait.w), ca);
+        if (t.card.portrait.texture != nullptr)
+            p.thumbnail(t.card.portrait, pic, pic.w / std::max(1.0f, t.card.portrait.w), ca);
+        else
+            p.icon(theme::icon::kSparkles, pic.cx(), pic.cy(), withAlpha(theme::kGold, ca));
         const float tx = pic.x + portrait + theme::kCardGap * s;
         const float tw = b.x + b.w - pad - tx;
         p.wrapped(Face::Body, t.card.text, tx, b.y + pad, tw, 2, withAlpha(theme::kInk, ca));

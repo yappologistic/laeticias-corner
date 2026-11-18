@@ -40,7 +40,8 @@ inline constexpr std::string_view kAllOpen = "Every part of the map is open";
 inline constexpr std::string_view kOpenSection = "Open";
 inline constexpr std::string_view kGrantedSection = "Granted";
 inline constexpr std::string_view kRarer = "Rarer visitors";
-inline constexpr std::string_view kNoteLabel = "{}'s note:"; // the resident's name
+inline constexpr std::string_view kNoteLabel = "{}'s note:";   // the resident's name
+inline constexpr std::string_view kNoteLabelAlone = "A note:"; // nobody lives there
 inline constexpr std::string_view kHereNow = "Here now";
 inline constexpr std::string_view kUnknownNook = "? ? ?";
 inline constexpr std::string_view kUndo = "Undo";
@@ -57,7 +58,9 @@ inline constexpr std::string_view kWishGranted = "Wish granted";
 inline constexpr std::string_view kNewInBuild = "New in Build:";
 inline constexpr std::string_view kNewFrame = "New postcard frame: {}";
 inline constexpr std::string_view kNoteAdded = "{}'s note added to the sketchbook"; // resident
+inline constexpr std::string_view kNoteAddedAlone = "A note added to the sketchbook";
 inline constexpr std::string_view kThanks = "“{}” — {}";     // the thanks line, who says it
+inline constexpr std::string_view kThanksAlone = "“{}”";     // nobody to sign it
 inline constexpr std::string_view kWishCount = "{} / {} {}"; // have, need, progress label
 inline constexpr std::string_view kWaitNight = "Waiting for nightfall";
 inline constexpr std::string_view kWaitDusk = "Waiting for dusk";
@@ -136,7 +139,9 @@ inline constexpr std::string_view kToastSaveFailed = "Couldn't save your corner;
 inline constexpr std::string_view kToastNotOpened =
     "Your world couldn't be opened, so it is left as it is. This is a fresh corner.";
 inline constexpr std::string_view kToastWelcome =
-    "Welcome back. Laeticia has started a sketchbook: {} pages so far.";
+    "Welcome back. {} has started a sketchbook: {} pages so far."; // the resident, pages
+inline constexpr std::string_view kToastWelcomeAlone =
+    "Welcome back. There is a sketchbook now: {} pages so far.";
 
 inline constexpr std::string_view kBenchmarkTitle = "Laeticia's Corner benchmark";
 inline constexpr std::string_view kBenchmarkClose = "Press any key or click to close.";

@@ -1,0 +1,14 @@
+# A hen in view can be pointed at; once the camera looks far away, pointing at it fails the run
+# (line 13) rather than moving the pointer outside the window (Q3-15).
+set unlock all
+set season summer
+set clock day
+place coop @36,36 0
+set camera 36 36 2
+fast 60 visible hen 1
+set look hen 3
+wait 10
+move actor:hen
+set camera 22 22 3
+move actor:hen
+quit

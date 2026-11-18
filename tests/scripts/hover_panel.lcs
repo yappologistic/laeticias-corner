@@ -1,0 +1,22 @@
+# An empty hand over the napping cat names it; with the sketchbook open over it, nothing is named
+# through the panel (Q3-15).
+set unlock all
+set season summer
+set clock day
+place cottage @32,30 0
+place stump @27,27 0
+set camera 29 29 2
+fast 150 actor cat sleep
+# The stump under where the sketchbook opens (top right).
+set camera 28 32 2
+wait 2
+move actor:cat
+wait 2
+expect tip The cat
+key j
+wait 10
+expect journal open
+move actor:cat
+wait 2
+expect tip no
+quit

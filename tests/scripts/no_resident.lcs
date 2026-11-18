@@ -1,0 +1,17 @@
+# With the resident turned off in the catalog (Q3-08) her first wish still comes, from the tray:
+# its card has no portrait and the thanks on the ribbon are signed by nobody.
+expect wishes 0
+set played 29
+wait 70
+expect wish first_flowers open
+expect portrait 0 no
+place flowers_white @24,34
+place flowers_white @25,34
+wait 20
+set played 40
+wait 4
+expect wish first_flowers done
+expect ribbon yes
+expect thanks not —
+shot shots/no_resident.png
+quit

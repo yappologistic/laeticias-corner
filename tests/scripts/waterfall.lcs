@@ -1,8 +1,16 @@
-# Water painted to the south-east rim falls over it, with mist at its foot.
+# Water painted to the south-east rim falls over it, with mist at its foot; undone, it stops, and
+# the count follows each edit (Q3-09: the rims alone are looked at).
 set season summer
 set clock day
 paint water @36,31 @39,33
 set camera 38 33 2
 wait 120
+expect falls 3
 shot shots/waterfall.png
+key ctrl+z
+wait 2
+expect falls 0
+key ctrl+shift+z
+wait 2
+expect falls 3
 quit

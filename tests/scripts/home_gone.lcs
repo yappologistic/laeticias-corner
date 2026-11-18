@@ -1,0 +1,16 @@
+# The cottage undone while she is inside at night (Q3-06): she is out again at once and on her
+# way to her bedroll, not "inside" nothing until morning.
+set unlock all
+set season summer
+set time 0.3
+place cottage @32,26 0
+set camera 31 28 2
+fast 20
+set time 0.70
+fast 90 actor laeticia inside
+key ctrl+z
+wait 2
+expect count cottage 0
+fast 10
+expect visible laeticia 1
+quit

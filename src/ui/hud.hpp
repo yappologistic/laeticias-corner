@@ -196,6 +196,7 @@ public:
     void toast(std::string text);
     void ribbon(Ribbon r);
     [[nodiscard]] bool ribbonShowing() const { return ribbonTime_ > 0.0f; }
+    [[nodiscard]] std::string_view ribbonQuote() const { return ribbon_.quote; }
     void flash() { flash_ = 1.0f; }
     // Toasts wait (queued) while held: the tour's first steps keep the screen quiet.
     void holdToasts(bool held) { toastsHeld_ = held; }

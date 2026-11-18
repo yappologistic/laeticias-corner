@@ -11,8 +11,8 @@
 //                               autumn|winter, edge_chip,
 //                               scroll_up, scroll_down, tab:<category id>, tile:<item or terrain
 //                               id>, or of the toast and hint panels: toast, hint
-//                  actor:KIND   the middle of the first actor of that kind (a visitor id or the
-//                               resident's)
+//                  actor:KIND   the middle of the first actor of that kind in the window (a
+//                               visitor id or the resident's); none in view fails the run
 //                  ui:menu:NAME the front door's widgets: continue (also Begin), worlds, settings,
 //                               quit, back, new, card:N, play:N, rename:N, delete:N, field,
 //                               freebuild, cancel, create, keep, confirm_delete, error_back,
@@ -71,6 +71,9 @@
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
 //       where it may) | saved yes|no (a save file exists) | zoom 0.25|0.5|1|2|3
 //       toast yes|no (a toast is showing) | toast WORDS... (the toast showing contains them)
+//       | toast not WORDS... (it does not); tip and thanks likewise for the name beside the
+//       pointer and the granted wish's thanks | portrait N yes|no (the N-th open wish card
+//       shows a portrait)
 //       panning yes|no (a pan key is held)
 //       file PATH yes|no (PATH, relative to the save directory, exists)
 //       widget NAME yes|no (the widget is laid out now; also card:N, the N-th wish card)
@@ -82,10 +85,14 @@
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 //       actor KIND ANIM|moving|inside|hat|any [ITEM]  one actor of that kind (a visitor id or
 //                               the resident's) is doing that now, at that item's slot if given
-//       bubble yes|no (the resident is speaking) | raining yes|no (where the camera looks)
-//       weather natural|rain|clear | event SHOW yes|no (rainbow, gust, chorus, smoke...)
-//       stem FILE MIN (in an --audio-out capture: that music stem has faded in to at least MIN)
-//       lively MIN CAP HMIN HCAP SHARE   since `set lively reset`, at least SHARE (0..1) of the
+//       bubble yes|no (the resident is speaking) | bubble CONTEXT (a line of that context) |
+//       raining yes|no (where the camera looks) visible KIND N (that many seen, not inside) | bank
+//       KIND (every one seen on land beside water) | together KIND D (every one seen within D tiles
+//       of another) | population yes (no visitor over its max, no leaver lingering) falls N (open
+//       water tiles on the rims, falling over) | weather natural|rain|clear | event SHOW yes|no
+//       (rainbow, gust, chorus, smoke...) stem FILE MIN (in an --audio-out capture: that music stem
+//       has faded in to at least MIN) lively MIN CAP HMIN HCAP SHARE   since `set lively reset`, at
+//       least SHARE (0..1) of the
 //                               one-second samples had MIN..CAP purposeful movers in view and
 //                               HMIN..HCAP new happenings in the last minute
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
