@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <format>
+#include <numbers>
 
 namespace lc {
 
@@ -85,9 +86,11 @@ void App::createWorldView() {
     const FRect box{iso.toWorld(0.0f, f(h)).x - r.right + homeOffset_.x, homeOffset_.y - r.bottom,
                     iso.toWorld(f(w), 0.0f).x + r.left + homeOffset_.x,
                     iso.toWorld(f(w), f(h)).y + r.top + homeOffset_.y};
-    worldView_ = std::make_unique<worldview::WorldView>(renderer_.get(), *loaded_, assets_, *atlas_,
-                                                        measuring() || !opts_.headless,
-                                                        worldview::Hole{home.rect, box}, figures_);
+    worldView_ = std::make_unique<worldview::WorldView>(
+        renderer_.get(), *loaded_, assets_, *atlas_, measuring() || !opts_.headless,
+        worldview::Hole{home.rect, box},
+        // Living figures walk with city life.
+        city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
     if (city_) worldView_->setLife(city_->city.get());
     setupMap();
@@ -258,6 +261,12 @@ void App::travelTo(int region) {
 
 void App::updateWorld(float dt) {
     if (!worldView_) return;
+    followActor(dt);
+    eventsSeenIn_ -= dt;
+    if (eventsSeenIn_ <= 0) {
+        eventsSeenIn_ = 1.0f;
+        noteEvents();
+    }
     // Fast travel: fade out, jump, wait (briefly) for the destination to stream, fade in.
     if (travel_.region >= 0) {
         travel_.t += dt;
@@ -358,20 +367,74 @@ void App::fillWorldModel(HudModel& m) const {
     }
     m.places = journalPlaces_;
     // What the pointer rests on out in the world: its name.
-    if (m.worldTip.empty() && tool_ == Tool::None && mouseInside_ && !hud_.wantsMouse())
+    if (m.worldTip.empty() && tool_ == Tool::None && mouseInside_ && !hud_.wantsMouse()) {
         if (const auto c = cardAt(mouse_)) {
             hoverName_.assign(entryName(*c, hoverName_));
             m.worldTip = hoverName_;
+        } else if (const auto h = actorAt(mouse_)) {
+            // Ordinary people by what they do (a potter, a courier); animals by their kind.
+            if (const auto in = actorInfo(*h)) {
+                const life::LifeData& d = city_->life->data;
+                hoverName_ = in->role >= 0 ? d.regions[static_cast<std::size_t>(in->region)]
+                                                 .roles[static_cast<std::size_t>(in->role)]
+                                                 .name
+                                           : d.kinds[static_cast<std::size_t>(in->kind)].name;
+                m.worldTip = hoverName_;
+            }
         }
+    }
+    if (follow_ && m.hint.empty() && !photo_)
+        m.hint = strings::kFollowHint;
+    else if (cardOpen_ && cardActor_.index != 0xFFFF && m.hint.empty() && !photo_)
+        m.hint = strings::kFollowOffer;
 }
 
 } // namespace lc
 
 namespace lc {
 
+std::optional<life::CityLife::Info> App::actorInfo(life::Handle h) const {
+    std::optional<life::CityLife::Info> out;
+    if (!city_ || !city_->city->alive(h)) return out;
+    city_->city->forEachInfo([&](const life::CityLife::Info& in) {
+        if (in.handle == h) out = in;
+    });
+    return out;
+}
+
+const life::Figure* App::figureOf(const life::CityLife::Info& in) const {
+    // A named figure by its kind, whether on its own day or walking in an event's cast.
+    if (in.region < 0) return nullptr;
+    for (const life::Figure& f :
+         city_->life->data.regions[static_cast<std::size_t>(in.region)].figures)
+        if (f.kind == in.kind) return &f;
+    return nullptr;
+}
+
+std::optional<life::Handle> App::actorAt(Vec2 px) const {
+    // Of the people under the pointer the frontmost, unless a named figure is among them.
+    if (!worldView_ || !city_) return std::nullopt;
+    const Vec2 w = view_.screenToWorld(px, screen());
+    std::vector<life::Handle> hits;
+    worldView_->actorsAt({w.x + homeOffset_.x, w.y + homeOffset_.y}, hits);
+    if (hits.empty()) return std::nullopt;
+    for (const life::Handle h : hits)
+        if (const auto in = actorInfo(h); in && figureOf(*in) != nullptr) return h;
+    return hits.front();
+}
+
 std::optional<App::CardRef> App::cardAt(Vec2 px) const {
     // The corner's own things answer on its land; the world's everywhere else.
     if (!worldView_ || hover_) return std::nullopt;
+    // A living figure (city life) under the pointer: its card from its region's figures.
+    if (const auto h = actorAt(px))
+        if (const auto in = actorInfo(*h))
+            if (const life::Figure* f = figureOf(*in)) {
+                const int region =
+                    city_->life->data.regions[static_cast<std::size_t>(in->region)].worldRegion;
+                if (regionFile(region) != nullptr)
+                    return CardRef{region, "figure:" + f->actor, f->card, *h};
+            }
     const Vec2 w = view_.screenToWorld(px, screen());
     const auto picked = worldView_->pick({w.x + homeOffset_.x, w.y + homeOffset_.y});
     if (!picked) return std::nullopt;
@@ -379,11 +442,11 @@ std::optional<App::CardRef> App::cardAt(Vec2 px) const {
     CardRef r;
     if (picked->figure) {
         const world::FigurePlace& f = figures_[picked->index];
-        r = {f.region, "figure:" + f.actor, f.card};
+        r = {f.region, "figure:" + f.actor, f.card, {}};
     } else {
         const world::Placed& it = m.items()[picked->index];
         const world::ItemInfo& info = m.info(it);
-        r = {m.regionAt({it.x, it.y}), "landmark:" + info.id, info.card};
+        r = {m.regionAt({it.x, it.y}), "landmark:" + info.id, info.card, {}};
     }
     if (regionFile(r.region) == nullptr) return std::nullopt;
     return r;
@@ -447,6 +510,7 @@ bool App::openCardAt(Vec2 px) {
     card_.epithet = card != nullptr ? card->epithet : std::string{};
     card_.text = card != nullptr ? card->text : std::string{};
     cardOpen_ = true;
+    cardActor_ = c->actor;
     recordEntry(*c, true);
     play(sfx::kOpen, tuning::kUiSfxLevel);
     return true;
@@ -455,7 +519,46 @@ bool App::openCardAt(Vec2 px) {
 void App::closeCard() {
     if (!cardOpen_) return;
     cardOpen_ = false;
+    cardActor_ = {};
     play(sfx::kClose, tuning::kUiSfxLevel);
+}
+
+void App::followActor(float dt) {
+    if (!follow_) return;
+    const auto in = actorInfo(*follow_);
+    if (!in) {
+        follow_.reset(); // gone indoors or out of the area
+        return;
+    }
+    // The camera eases onto them (critically damped, framerate-independent).
+    Vec2 to = gridToHome(in->pos);
+    to.y -= tuning::kFollowLift;
+    const Vec2 at = camera_.position();
+    const float k = 1.0f - std::exp(-dt * std::numbers::ln2_v<float> / tuning::kFollowHalfLife);
+    camera_.nudge({(to.x - at.x) * k * camera_.scale(), (to.y - at.y) * k * camera_.scale()},
+                  screen());
+}
+
+void App::noteEvents() {
+    // Events running where the view is are witnessed: their card joins the region's journal.
+    if (!city_) return;
+    const TileRect v = cameraTiles();
+    const life::LifeData& d = city_->life->data;
+    for (const life::RunningEvent& e : city_->city->running()) {
+        if (!e.active || e.event < 0) continue;
+        const TilePos p{static_cast<int>(e.place.x), static_cast<int>(e.place.y)};
+        if (!v.contains(p)) continue;
+        const life::LifeRegion& lr = d.regions[static_cast<std::size_t>(e.region)];
+        const world::RegionFile* f = regionFile(lr.worldRegion);
+        if (f == nullptr) continue;
+        const std::string& id = lr.events[static_cast<std::size_t>(e.event)].id;
+        std::string card;
+        if (const auto evs = f->life.find("events"); evs != f->life.end() && evs->is_array())
+            for (const auto& ev : *evs)
+                if (ev.value("id", "") == id) card = ev.value("card", "");
+        if (card.empty() || f->card(card) == nullptr) continue;
+        recordEntry({lr.worldRegion, "event:" + id, card, {}}, true);
+    }
 }
 
 void App::noteArrival() {
@@ -466,10 +569,10 @@ void App::noteArrival() {
         CardRef r;
         if (p.figure) {
             const world::FigurePlace& f = figures_[p.index];
-            r = {f.region, "figure:" + f.actor, f.card};
+            r = {f.region, "figure:" + f.actor, f.card, {}};
         } else {
             const world::Placed& it = m.items()[p.index];
-            r = {m.regionAt({it.x, it.y}), "landmark:" + m.info(it).id, m.info(it).card};
+            r = {m.regionAt({it.x, it.y}), "landmark:" + m.info(it).id, m.info(it).card, {}};
         }
         if (regionFile(r.region) != nullptr) recordEntry(r, false);
     }
@@ -491,7 +594,7 @@ void App::buildJournal() {
         if (list.empty() || p.marker == MapMarker::Home) continue;
         const std::size_t begin = journalEntries_.size();
         for (const JournalItem& j : list) {
-            const CardRef c{p.region, j.entry, j.card};
+            const CardRef c{p.region, j.entry, j.card, {}};
             std::string& storage = journalNames_.emplace_back();
             const world::RegionFile* f = regionFile(p.region);
             const world::Card* card = f != nullptr ? f->card(j.card) : nullptr;
@@ -616,10 +719,19 @@ void App::adoptWorldState(const WorldProgress& w) {
                                                      &world::FigurePlace::actor);
                     if (f == figures_.end()) continue;
                     card = f->card;
+                } else if (e.starts_with("event:")) {
+                    const world::RegionFile* f = regionFile(r);
+                    const std::string_view ev = std::string_view(e).substr(6);
+                    if (const auto evs = f != nullptr ? f->life.find("events")
+                                                      : nlohmann::json::const_iterator{};
+                        f != nullptr && evs != f->life.end() && evs->is_array())
+                        for (const auto& x : *evs)
+                            if (x.value("id", "") == ev) card = x.value("card", "");
+                    if (card.empty()) continue;
                 } else {
                     continue;
                 }
-                recordEntry({r, e, card}, found);
+                recordEntry({r, e, card, {}}, found);
             }
         }
     };

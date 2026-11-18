@@ -325,9 +325,16 @@ private:
     // names, an entry seen or found, the card shown, the sketchbook's places.
     struct CardRef {
         int region = -1;
-        std::string entry; // "landmark:<id>" or "figure:<id>"
-        std::string card;  // card id in the region file
+        std::string entry;  // "landmark:<id>" or "figure:<id>"
+        std::string card;   // card id in the region file
+        life::Handle actor; // a living figure (city life), or none
     };
+    // City life: an actor's record by handle, the actor under the pointer, a role's name.
+    [[nodiscard]] std::optional<life::CityLife::Info> actorInfo(life::Handle h) const;
+    [[nodiscard]] std::optional<life::Handle> actorAt(Vec2 px) const;
+    [[nodiscard]] const life::Figure* figureOf(const life::CityLife::Info& in) const;
+    void followActor(float dt);
+    void noteEvents();
     [[nodiscard]] std::optional<CardRef> cardAt(Vec2 px) const;
     [[nodiscard]] std::string_view entryName(const CardRef& c, std::string& storage) const;
     [[nodiscard]] std::string_view nativeName(const CardRef& c) const;
@@ -394,9 +401,12 @@ private:
     std::unique_ptr<worldview::CitySound> citySound_; // what the city sounds like on screen
     std::vector<int> cityLoops_;                      // its loops and effects in the mixer
     std::vector<int> cityFx_;
-    std::optional<TilePos> cityFocus_; // a fixed active area instead of the camera's
-    bool cityOff_ = false;             // `set city off`: nobody about
-    std::uint64_t seed_;               // the game's one seed; every random stream derives from it
+    std::optional<TilePos> cityFocus_;   // a fixed active area instead of the camera's
+    std::optional<life::Handle> follow_; // the camera follows this actor (Esc or a pan ends it)
+    life::Handle cardActor_;             // the living figure whose card is open
+    float eventsSeenIn_ = 0;             // seconds to the next look for events in view
+    bool cityOff_ = false;               // `set city off`: nobody about
+    std::uint64_t seed_;                 // the game's one seed; every random stream derives from it
     Rng rng_;
     Actors actors_;
     std::vector<VisitorGate> gates_; // per visitor, from the progress loop

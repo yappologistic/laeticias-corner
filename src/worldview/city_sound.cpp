@@ -243,7 +243,9 @@ void CitySound::update(const Input& in) {
     const bool inside = map.inBounds(c);
     const int region = inside ? map.regionAt(c) : -1;
     const int district = inside ? map.districtAt(c) : -1;
-    const RegionSound* rs = region >= 0 ? &regions_[static_cast<std::size_t>(region)] : nullptr;
+    const RegionSound* rs = region >= 0 && regions_[static_cast<std::size_t>(region)].any
+                                ? &regions_[static_cast<std::size_t>(region)]
+                                : nullptr;
     const DistrictSound* ds = district >= 0 &&
                                       static_cast<std::size_t>(district) < districts_.size() &&
                                       districts_[static_cast<std::size_t>(district)].any
@@ -263,7 +265,7 @@ void CitySound::update(const Input& in) {
     }
     people_ = people;
 
-    if (rs != nullptr && rs->any && away > 0) {
+    if (rs != nullptr && away > 0) {
         // The crowd: a handful, a market, a festival; within a level by the square root.
         const Family& crowd = ds != nullptr && ds->crowd.count > 0 ? ds->crowd : rs->crowd;
         const float full = ds != nullptr && ds->crowdFull > 0 ? ds->crowdFull : rs->crowdFull;

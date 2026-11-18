@@ -174,6 +174,8 @@ public:
     void setLife(const life::CityLife* city);
     void setLifeAlpha(float alpha) { lifeAlpha_ = alpha; }
     [[nodiscard]] const ActorLooks* actorLooks() const { return looks_.get(); }
+    // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
+    void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
     // The actors drawn in the last frame.
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);

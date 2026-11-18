@@ -53,6 +53,8 @@ inline constexpr std::string_view kClose = "Close";
 // The world (docs/design/world-tech.md §4).
 inline constexpr std::string_view kMap = "Map";
 inline constexpr std::string_view kWorldsLand = "This land belongs to the world";
+inline constexpr std::string_view kFollowOffer = "F follows them";
+inline constexpr std::string_view kFollowHint = "Following: Esc or a pan lets go";
 inline constexpr std::string_view kSeamLine =
     "Each land here is remembered as it was in one moment. The sea keeps the years apart.";
 inline constexpr std::string_view kMapTitle = "The world";

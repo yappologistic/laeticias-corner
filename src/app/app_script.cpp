@@ -54,6 +54,17 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
         if (loaded_ && (p.widget.starts_with("grid:") || p.widget.starts_with("landmark:") ||
                         p.widget.starts_with("figure:")))
             return gridPoint(p.widget);
+        if (worldView_ && city_ && p.widget.starts_with("life:")) {
+            // The first living actor of that kind drawn now, at its body.
+            const int k = city_->life->data.findKind(p.widget.substr(5));
+            for (const life::DrawActor& d : worldView_->actorsDrawn())
+                if (static_cast<int>(d.kind) == k) {
+                    Vec2 w = gridToHome(d.pos);
+                    w.y -= tuning::kFigurePointLift;
+                    return camera_.worldToScreen(w, screen());
+                }
+            return std::nullopt;
+        }
         return hud_.widgetCentre(p.widget, ui_);
     }
     return std::nullopt;
@@ -296,6 +307,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
             return yesNo(map_.isOpen());
         }
         if (what == "travelling") return yesNo(travel_.region >= 0);
+        if (what == "following") return yesNo(follow_.has_value());
         if (what == "era" || what == "info" || what == "tip") {
             const HudModel m = model();
             const std::string_view have = what == "era"    ? m.caption
@@ -788,6 +800,13 @@ bool App::scriptStep() {
                 // Or a named figure or a landmark out in the world (a jump: themes and places
                 // snap).
                 std::optional<Vec2> spot;
+                if (city_) {
+                    // A living actor of that kind (city life), wherever its day has it.
+                    const int k = city_->life->data.findKind(c.args[1]);
+                    city_->city->forEachInfo([&](const life::CityLife::Info& in) {
+                        if (!spot && in.kind == k && in.visible) spot = in.pos;
+                    });
+                }
                 for (const world::FigurePlace& f : figures_)
                     if (!spot && f.actor == c.args[1]) spot = f.at;
                 if (loaded_ && !spot && c.args[1].starts_with("landmark:")) {

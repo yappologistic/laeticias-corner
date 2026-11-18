@@ -1241,6 +1241,25 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         [&](std::uint32_t e) { return region_.items[e].screen.overlaps(view); });
 }
 
+void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
+    out.clear();
+    std::vector<std::pair<float, life::Handle>> hits; // a click, not a frame: allocation is fine
+    for (std::size_t i = 0; i < actorDraw_.size(); ++i) {
+        const ActorDraw& a = actorDraw_[i];
+        if (a.sprite == nullptr) continue;
+        const SpriteRef& s = *a.sprite;
+        const float x0 = a.anchor.x - (a.mirror ? s.w - s.ox : s.ox);
+        // A little narrower than the sprite: what is clicked is the person, not the air beside.
+        const float inset = s.w * 0.2f;
+        if (px.x < x0 + inset || px.x >= x0 + s.w - inset || px.y < a.anchor.y - s.oy ||
+            px.y >= a.anchor.y - s.oy + s.h)
+            continue;
+        hits.emplace_back(-a.depth, actorBuf_[i].handle);
+    }
+    std::ranges::sort(hits, {}, &std::pair<float, life::Handle>::first);
+    for (const auto& h : hits) out.push_back(h.second);
+}
+
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {
     const ActorDraw& a = actorDraw_[i];
     if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror)) ++stats_.actorsDrawn;

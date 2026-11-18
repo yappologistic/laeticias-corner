@@ -980,7 +980,9 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     const Vec2 centre{screen().x * 0.5f, screen().y * 0.5f};
     switch (key) {
     case SDLK_ESCAPE:
-        if (map_.isOpen())
+        if (follow_)
+            follow_.reset();
+        else if (map_.isOpen())
             toggleMap();
         else if (cardOpen_)
             closeCard();
@@ -1015,6 +1017,11 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_F:
     case SDLK_T:
     case SDLK_H:
+        // F follows the living figure whose card is open (Esc or a pan lets go).
+        if (!photo_ && key == SDLK_F && cardOpen_ && city_ && city_->city->alive(cardActor_)) {
+            follow_ = cardActor_;
+            return;
+        }
         if (!photo_) break;
         // The photo bar's keys: next frame, caption, hide the bar.
         if (key == SDLK_F) cycleFrame(1);
@@ -1379,7 +1386,10 @@ void App::step(float dt) {
     clock_.update(dt);
     const Vec2 pan{(keyPan_[3] ? 1.0f : 0.0f) - (keyPan_[2] ? 1.0f : 0.0f),
                    (keyPan_[1] ? 1.0f : 0.0f) - (keyPan_[0] ? 1.0f : 0.0f)};
-    if (pan.x != 0 || pan.y != 0) tourMoved_ = true;
+    if (pan.x != 0 || pan.y != 0) {
+        tourMoved_ = true;
+        follow_.reset(); // a pan takes the camera back
+    }
     if (pan.x != 0 || pan.y != 0)
         camera_.nudge({pan.x * tuning::kKeyPanSpeed * dt, pan.y * tuning::kKeyPanSpeed * dt},
                       screen());

@@ -365,6 +365,8 @@ inline constexpr float kTravelHold = 0.4f;
 inline constexpr float kTravelFadeIn = 0.3f;
 inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
+inline constexpr float kFollowHalfLife = 0.09f;   // s: the follow camera's spring (quality bar)
+inline constexpr float kFollowLift = 20.0f;       // px: it centres on the body, not the feet
 // The bench's world cases: frames allowed for a view to stream in, and the pan's step (px).
 inline constexpr int kBenchSettleFrames = 600;
 inline constexpr float kBenchWorldPanPx = 30.0f;

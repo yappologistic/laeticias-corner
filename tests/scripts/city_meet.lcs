@@ -1,0 +1,30 @@
+# Meeting the living figures (city life): Socrates in the Agora on the Panathenaia, found among
+# the crowd and the procession; his card opens while he moves (titled in Greek), F follows him,
+# Esc lets go; the journal keeps him and the procession witnessed.
+set season summer
+set day 10
+set time 0.125
+set world agora 1
+wait 60
+set look athens.socrates 2
+wait 120
+move life:athens.socrates
+wait 3
+expect tip Σωκράτης
+click life:athens.socrates
+wait 10
+expect info Σωκράτης
+key f
+wait 5
+expect following yes
+wait 180
+shot shots/city_meet_follow.png
+key escape
+wait 5
+expect following no
+expect info Σωκράτης
+key escape
+wait 5
+expect info no
+expect found athens 2
+quit

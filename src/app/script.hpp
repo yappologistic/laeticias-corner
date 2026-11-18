@@ -99,6 +99,9 @@
 //       info yes|no | info WORDS... (the open landmark or figure card's title contains them)
 //       visited REGION yes|no | journal REGION N (entries) | found REGION N (cards opened)
 //       figures N (named figures standing in the world, at least) | tip WORDS... (the world tip)
+//       following yes|no (the camera follows an actor: F on a living figure's card)
+// Points `life:KIND` (the first drawn city-life actor of that kind); `set look KIND ZOOM` finds
+// a living actor of that kind first.
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 //       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,

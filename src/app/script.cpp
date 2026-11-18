@@ -20,7 +20,7 @@ std::expected<ScriptPoint, std::string> point(std::string_view tok) {
         if (p.widget.empty()) return std::unexpected("empty widget name");
         return p;
     }
-    for (const std::string_view prefix : {"grid:", "map:", "landmark:", "figure:"})
+    for (const std::string_view prefix : {"grid:", "map:", "landmark:", "figure:", "life:"})
         if (tok.starts_with(prefix) && tok.size() > prefix.size()) {
             p.kind = ScriptPoint::Kind::Widget; // resolved by name each frame, like actors
             p.widget = std::string(tok);
