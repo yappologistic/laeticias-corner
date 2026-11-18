@@ -12,8 +12,12 @@ Palatium, Insula Tiberina, Tiberis, Via Appia, Ostia, Portus.
 
 ## 1. Identity
 
-**The moment: around 21 April AD 126, Rome's birthday (the Parilia, which Hadrian renamed the
-Romaea), in the ninth year of Hadrian (r. 117–138).**
+**The moment: around 21 April AD 126, Rome's birthday (the Parilia, which Athenaeus, writing
+about AD 200, says was "now called" the Romaia, in honour of the Fortune of Rome whose temple
+Hadrian built; Hadrian's coins of 121 already celebrate the city's 874th birthday with circus
+games), in the ninth year of Hadrian (r. 117–138).** [checked: Athenaeus 8.361f (Gulick,
+LacusCurtius): "the Parilia, as it used to be called, though it is now called the Roman
+Festival"; "renamed by Hadrian" was an overstatement]
 
 Why this moment:
 
@@ -24,7 +28,7 @@ Why this moment:
   rotunda to about 114–128, with dedication usually placed around 125–128 (some scholars argue the
   project began under Trajan). The game shows it complete.
 - **The Temple of Venus and Roma is a building site.** Begun around 121 on the Velia, on the day of
-  Rome's birthday (tradition links its foundation with the Romaea), it was dedicated in 135 and
+  Rome's birthday (the 121 date is inferred from Athenaeus and the coins), it was dedicated in 135 and
   finished by 141. To make room, the colossal bronze statue (the Colossus, now a sun god) was moved
   upright by the architect Decrianus with the help of elephants (Historia Augusta).
 - **Hadrian is in Italy** between his first great journey (121–125) and the second (from 128); his
@@ -327,7 +331,9 @@ base, S shadow, G glow.
 - **Pantheon:** portico of 16 monolithic Corinthian columns (8 across the front of grey Egyptian
   granite, the rest pink granite), bronze trusses in the portico roof, the inscription
   M·AGRIPPA·L·F·COS·TERTIVM·FECIT (Hadrian kept Agrippa's dedication); a high intermediate block;
-  the brick rotunda with a stepped dome 43.3 m across, covered with **gilded bronze tiles**; the
+  the brick rotunda with a stepped dome 43.3 m across, covered with **bronze tiles** (removed in
+  663; whether they were gilded is not certain: show warm bronze, with a gilded sheen as a choice;
+  not re-checked in this pass); the
   **oculus** (about 9 m) open to the sky; the colonnaded forecourt to the north.
 - **Colosseum:** an ellipse about 188 × 156 m and 48.5 m high: **three storeys of 80 arches**
   framed by half-columns (Tuscan, Ionic, Corinthian) and an **attic** with Corinthian pilasters,
@@ -525,7 +531,7 @@ World coordinates (`world.md` §5–6). Same moment (AD 126), Rome kit; unique l
 |---|---|---|---|---|---|
 | **Ostia and Portus** (C 100..170, R 184..239; the Tiber reaches the sea at about C 126, R 226) | `portus_hexagon` | 20 × 18 | 40 | M | Trajan's hexagonal harbour basin (about 358 m a side; opened c. 112), lined with warehouses and quays, connected by a canal to the Tiber; ships moored side by side |
 | | `portus_lighthouse` | 3 × 3 | 160 | M | the lighthouse of Claudius's outer harbour, a tower of diminishing storeys with a fire on top (built on the sunken ship that had carried Caligula's obelisk) |
-| | `ostia_town` | kit, 24 × 16 | — | M | brick insulae and warehouses (*horrea*), the square of the shipping guilds with mosaics of each guild's emblem in front of its office, the Capitolium of Ostia (Hadrianic, 120s), the river harbour with barges |
+| | `ostia_town` | kit, 24 × 16 | — | M | brick insulae and warehouses (*horrea*), the square of the shipping offices (Piazzale delle Corporazioni; most of the emblem mosaics seen today were laid in the **late 2nd century**, after our date, so in 126 show plainer floors or few emblems [checked: ostia-antica.org, regio II.vii.4]), the Capitolium of Ostia (Hadrianic, 120s), the river harbour with barges |
 | **Tibur and Hadrian's Villa** (C 272..303, R 40..79) | `hadrian_villa` | 22 × 24 | 110 | N | a sprawling villa under construction since about 118: the round "Maritime Theatre" (a moated island house), long pools, colonnades, scaffolding and workers; Tibur town on its hill with the round temple above the Anio waterfalls |
 | **Alban Mount** (C 278..311, R 130..175) | `latiaris` | 6 × 6 | 70 | M | the sanctuary of Jupiter Latiaris on the summit, where the consuls held the Latin Festival (*Feriae Latinae*) each year; below it the round crater lake (Lacus Albanus) and villas; the Via Appia passes at its foot |
 | **Capua** (C 318..333, R 198..213) | `capua_amphitheatre` | 10 × 8 | 110 | N | the great amphitheatre of Capua, the second largest in Italy |
@@ -552,7 +558,7 @@ Alban Mount, Brundisium) builds a convincing Rome on its own.
 | 1 | **Hadrian** (Publius Aelius Hadrianus) | 76–138; r. 117–138 | present | Emperor, Trajan's successor, tireless traveller, lover of Greek culture, architect-amateur; he made the beard fashionable for Roman men. | **short curly beard**, curled hair; toga with purple border on formal occasions, otherwise tunic and cloak; lictors ahead | the Palatine; the Venus and Roma site inspecting plans; the Pantheon; the Circus box during races | M |
 | 2 | **Vibia Sabina** | c. 83–136/7 | present | Empress, grand-niece of Trajan, Hadrian's wife; she travelled with him and received the title Augusta. | elegant stola and palla, her portrait hairstyle (hair swept up into a high coil with a diadem-like band) | Palatine gardens; visits the Vestals; the Circus | M |
 | 3 | **Antinous** | c. 111–130 | present (probable) | A youth from Bithynia, Hadrian's beloved, with him from about 124 until his death in the Nile in 130, after which Hadrian made him a god. His presence in Rome in 126 is likely but not documented. | youth with thick curly hair, chlamys, often with hunting gear | Palatine; rides out with Hadrian's hunting party | N |
-| 4 | **Marcus Annius Verus (the future Marcus Aurelius)**, aged 5 | b. 121 | present | A child of a senatorial family whom Hadrian noticed and nicknamed "Verissimus" (most truthful); he would become emperor in 161 and write the *Meditations*. | small boy in a toga with purple border (*praetexta*) and a gold *bulla* amulet; a tutor beside him | Caelian (his family's house was there); watches the procession | M |
+| 4 | **Marcus Annius Verus (the future Marcus Aurelius)**, aged 4 (five on 26 April) | b. 26 April 121 [checked: *Historia Augusta*, *Marcus* 1.5, 1.10 (LacusCurtius): born "the sixth day before the Kalends of May", consulship = AD 121, on the Caelian; Hadrian called him Verissimus after his father's death] | present | A child of a senatorial family whom Hadrian noticed and nicknamed "Verissimus" (most truthful); he would become emperor in 161 and write the *Meditations*. | small boy in a toga with purple border (*praetexta*) and a gold *bulla* amulet; a tutor beside him | Caelian (his family's house was there); watches the procession | M |
 | 5 | **Apollodorus of Damascus** | fl. 100s–120s | present (uncertain) | Trajan's architect: the Forum and Column of Trajan, the Baths of Trajan, the Danube bridge. Cassius Dio says he mocked Hadrian's design for Venus and Roma and was exiled and killed; many historians doubt the story. | Greek-style mantle (pallium) over tunic, a scroll of plans, a measuring rod | Trajan's Forum, looking at the Column; his card tells the story with its doubts | M |
 | 6 | **Juvenal** (Decimus Iunius Iuvenalis) | c. 55–after 127 | present | Satirical poet whose verses complain of noisy streets, falling roof tiles, rich patrons and the city's crowds; the source of "bread and circuses". | thin older man in a worn toga, grumbling | Subura streets and the morning *salutatio* queues | M |
 | 7 | **Suetonius** (Gaius Suetonius Tranquillus) | c. 69–after 122 | present | Biographer of the Caesars and Hadrian's former secretary for correspondence, dismissed in about 122. | tunic with the narrow stripe of an equestrian, writing tablets | libraries of Trajan's Forum | N |
@@ -565,7 +571,7 @@ Alban Mount, Brundisium) builds a convincing Rome on its own.
 | 14 | **Aeneas** | myth | statue | Trojan hero, son of Venus, who carried his father Anchises out of burning Troy and led his son Ascanius to Italy, ancestor of the Romans (Virgil's *Aeneid*). | statue group in the Forum of Augustus: Aeneas with the old Anchises on his shoulder and the boy Ascanius by the hand | Forum of Augustus | M |
 | 15 | **Romulus and Remus, the she-wolf** | myth | statue + shrine | Twin sons of Mars, set adrift on the Tiber, nursed by a she-wolf at the Lupercal; Romulus founded Rome on 21 April (traditionally 753 BC) and was later worshipped as Quirinus. | the statue of Romulus carrying the spoils of a defeated king in the Forum of Augustus; the Lupercal with a wolf image; a festival reenactor at the Parilia | Lupercal, hut of Romulus, Forum of Augustus | M |
 | 16 | **Numa Pompilius** | legend | memory | Second king, the peaceful founder of Rome's religious institutions, advised by the nymph Egeria; the Regia and the cult of Vesta were credited to him. | translucent bearded king in a toga, a scroll | the Regia at dusk | N |
-| 17 | **Cloelia** | legend | statue | A young hostage who escaped from the Etruscan king's camp by swimming the Tiber and led other girls to safety; Rome honoured her with an equestrian statue on the Via Sacra (Livy). | bronze girl on horseback | Via Sacra | M |
+| 17 | **Cloelia** | legend | statue | A young hostage who escaped from the Etruscan king's camp by swimming the Tiber and led other girls to safety; Rome honoured her with an equestrian statue on the Via Sacra (Livy 2.13). Whether a statue stood there in 126 is uncertain: Dionysius (5.35) found the old one gone, "said to have been destroyed when a fire broke out in the adjacent houses", while Pliny and Seneca later speak of one on the Sacred Way, and some said it showed Valeria, not Cloelia. [checked: Dionysius 5.35 (LacusCurtius); Plutarch, *Publicola* 19 (summary)] | bronze girl on horseback | Via Sacra | M |
 | 18 | **Cornelia, mother of the Gracchi** | c. 190–c. 115 BC | statue | Daughter of Scipio Africanus, educated, famous for raising her sons (the reformers Tiberius and Gaius Gracchus) and for calling them her jewels. A base inscribed "Cornelia, daughter of Africanus, mother of the Gracchi" survives (Capitoline Museums); Pliny mentions her seated statue in a portico (the Porticus Octaviae area; details debated). | seated marble matron | Porticus Octaviae | M |
 | 19 | **Scipio Africanus** | 236–183 BC | memory | Victor over Hannibal at Zama; Livy says he went up to the Capitoline temple before dawn and sat alone with Jupiter before any public business. | translucent general in a toga | Capitolium, only at dawn | N |
 | 20 | **Julius Caesar** | 100–44 BC | memory | Dictator, assassinated in 44 BC; cremated in the Forum where his temple now stands; deified. | translucent, laurel wreath, toga | Temple of Divus Iulius at dusk | M |
@@ -583,8 +589,8 @@ name; Trajan's and Hadrian's freedmen were *Ulpii* and *Aelii*. Persons invented
 | **Lucius Vibius Primus**, baker | citizen, master of a bakery with four donkey mills | bakery | "Primus's donkeys turn the stone mills before dawn; by sunrise the loaves are stamped with his mark. Every month the state hands out free grain to two hundred thousand citizens; most take it to bakers like him." |
 | **Publius Aelius Eutyches**, clerk | imperial freedman in the grain office | Forum → warehouses | "An imperial freedman, he counts the grain ships' cargoes for the prefect of the grain supply. Under Hadrian more such posts went to equestrians, but freedmen still ran the daily paperwork of the empire." |
 | **Apion**, sailor | Egyptian, serving in the fleet (a real letter of a 2nd-century Egyptian recruit named Apion survives) | Portus ↔ Emporium | "Apion came from a village in Egypt and joined the fleet. In a real letter, a sailor of that name told his father he had arrived safely at Misenum and had been given a Roman name. Today he rides a grain barge upriver." |
-| **Quintus Mulvius**, barge master | citizen, Tiber boatman | the towpath | "Mulvius steers a barge up the Tiber from Portus, towed by men and oxen on the bank path: about two days against the current for some thirty-five kilometres, an easy half-day back down with the stream." |
-| **Titus Flavius Valens**, fireman | a freedman's son serving in the *vigiles*, the night watch and fire brigade | patrols at night | "Valens walks the streets at night with buckets, axes and blankets. Fire is the great terror of a city of wooden floors and oil lamps. Freedmen who served six years in the watch earned citizenship." |
+| **Quintus Mulvius**, barge master | citizen, Tiber boatman | the towpath | "Mulvius steers a barge up the Tiber from Portus, towed by men and oxen on the bank path: a few days against the current for some thirty-five kilometres, much quicker back down with the stream." [checked: softened; the bible's "two days" had no source] |
+| **Titus Flavius Valens**, fireman | a freedman's son serving in the *vigiles*, the night watch and fire brigade | patrols at night | "Valens walks the streets at night with buckets, axes and blankets. Fire is the great terror of a city of wooden floors and oil lamps. Informally freed slaves who served six years in the watch earned full citizenship." [checked: lex Visellia (AD 24) as reported by Gaius 1.32b (secondary summaries): the reward was for Junian Latins, later shortened to three years by a decree of the Senate (date unknown)] |
 | **Felicula**, girl | daughter of a fuller, aged 9 | streets, fountain, games | "Felicula fetches water from the fountain twice a day and plays with walnuts on the pavement with her brother. Her mother dyes cloth; her father treads it clean. She wants to see the races." |
 | **Rufina**, weaver | woman of the Jewish community of Transtiberim | home loom, market | "Rufina's family has lived across the Tiber for generations among dockers, potters and traders from the East. Rome's Jews had their own synagogues and burial places; the Arch of Titus, with its spoils of Jerusalem, is not a monument they love." |
 | **Sextus**, enslaved litter-bearer | from Thrace, owned by a senatorial household | carries a litter at the morning salutatio | "Sextus carries his master's litter across the city every morning with seven others. Rome had no uniform for slaves: the Senate once rejected one, Seneca says, in case the slaves saw how many they were." |
@@ -594,10 +600,10 @@ name; Trajan's and Hadrian's freedmen were *Ulpii* and *Aelii*. Persons invented
 
 | Figure | Title · epithet | Text |
 |---|---|---|
-| Hadrian | **Hadrianus** · Emperor and traveller | "He has walked the empire from Britain, where his wall is being built, to Syria. Back in Rome he is rebuilding the Pantheon and designing a temple to Venus and Roma himself. He is the first emperor to wear a beard." |
+| Hadrian | **Hadrianus** · Emperor and traveller | "He has walked the empire from Britain, where his wall is being built, to Syria. Back in Rome he is rebuilding the Pantheon and designing a temple to Venus and Roma himself. He is the first emperor whose portraits always show a full beard." [checked: softened: earlier emperors had been shown with light beards in mourning or youth] |
 | Sabina | **Vibia Sabina** · Augusta | "Trajan's grand-niece and Hadrian's wife, she travelled with him across the provinces. Coins carry her portrait and her elaborate hairstyle, copied by fashionable women across the empire." |
 | Antinous | **Antinous** · of Bithynia | "A youth from Bithynia, beloved of Hadrian. After his death in the Nile in 130, Hadrian made him a god and founded a city in his name. Today he rides out to hunt." |
-| Marcus | **Marcus Annius Verus** · aged five | "Hadrian calls this serious little boy 'Verissimus', the most truthful. In 35 years he will be emperor and write, in Greek, a private book of reflections that people still read." |
+| Marcus | **Marcus Annius Verus** · nearly five | "Hadrian calls this serious little boy 'Verissimus', the most truthful. In 35 years he will be emperor and write, in Greek, a private book of reflections that people still read." |
 | Apollodorus | **Apollodorus of Damascus** · Architect | "He built Trajan's Forum, Column and Baths and a bridge over the Danube. A later historian says he mocked Hadrian's temple design and paid with his life; many historians think the story is gossip." |
 | Juvenal | **Iuvenalis** · Satirist | "He hates the noise: carts at night, crowds by day, tiles falling from tall blocks. He said the people want only two things, bread and circuses. Come and listen, he has more to say." |
 | Suetonius | **Suetonius** · Biographer | "Once Hadrian's secretary for letters, now writing lives of the Caesars full of habits, sayings and scandal. He was dismissed, the story goes, for a lapse of manners toward the empress." |
@@ -672,7 +678,7 @@ crescent buckle); *soleae*: sandals for home; *caligae*: soldiers' hobnailed boo
 | Senator | white toga over tunic with broad purple stripes | wool | **short beard in Hadrian's fashion** (many men followed him), or clean-shaven older men | bare | black senatorial calcei | gold ring | scroll | toga + stripe + attendants | statues, reliefs |
 | Equestrian | tunic with narrow stripes, toga in public | wool | as above | — | calcei | **gold ring** of rank | tablets | — | texts |
 | Citizen at work | belted tunic, knee length; cloak (lacerna or paenula) in bad weather | undyed wool, browns, reds, greens, blue; rich colours costlier | short hair, beard or not | hooded paenula in rain, felt cap | sandals, shoes | — | tools | short tunic | reliefs of trades |
-| Citizen formal | white toga | toga required at the games and in public business; Juvenal says the poor wore it only for their funerals | — | — | calcei | — | — | white mantle wrapped over the left arm | Quintilian, Juvenal |
+| Citizen formal | white toga | toga required at the games and in public business; Juvenal says that in many parts of **Italy** nobody puts on a toga until he is dead [checked: Juvenal 3 (Ramsay, tertullian.org); the line is about country towns, not the poor of Rome] | — | — | calcei | — | — | white mantle wrapped over the left arm | Quintilian, Juvenal |
 | Matron | ankle-length tunic, **stola** (long overdress with shoulder straps), **palla** over the head outside | fine wool or linen, coloured (saffron, green, blue, violet), patterned | **Sabina-style** high coiffure, or hair parted and gathered in a bun; wigs and hairpieces (blond hair from Germany prized) | palla, ribbons (*vittae*) | soft shoes | earrings, necklaces, rings, hairpins | — | long dress + mantle over the head + hair high | statues of Sabina and Plotina |
 | Working woman | long tunic, belt, apron, shawl | undyed or simple colours | hair tied up, kerchief | kerchief | sandals | — | baskets, jugs | — | funerary reliefs (sellers, midwives) |
 | Boy (freeborn) | tunic; toga praetexta formally | — | short hair | — | sandals | **bulla** (gold or leather amulet at the neck) | walnuts, writing tablet | bulla dot | statues |
@@ -905,7 +911,7 @@ by finding their goods.
 
 | Event | Trigger | Route and cast | Effects |
 |---|---|---|---|
-| **Parilia / Romaea** (M, the game's moment) | dawn and dusk of each festival day | at dawn shepherds' rite: straw bonfires that young people jump over, flocks sprinkled with water (Ovid's *Fasti*); in the day a procession from the Forum to the Venus and Roma site where Hadrian, Sabina and priests offer sacrifice; at dusk feasting in the streets | bonfires (glow), tibia music, crowd cheers |
+| **Parilia / Romaea** (M, the game's moment) | dusk (and the prayer at dawn) of each festival day | Ovid's shepherds' rite, at twilight: the fold swept and sprinkled with water and hung with green boughs, the sheep purified with smoke of burning sulphur, olive wood, pine and juniper; the people fetch fumigants from Vesta's altar (horse blood, calf ash, bean stalks); the prayer to Pales said four times facing the east, hands washed in dew; then young people leap three times over heaps of burning straw. [checked: Ovid, *Fasti* 4 (Kline translation): "purify your sated sheep at twilight", "sprinkle the ground with water"; the flocks are smoked, not sprinkled; the bible's "at dawn" corrected] In the day a procession from the Forum to the Venus and Roma site where Hadrian, Sabina and priests offer sacrifice; at dusk feasting in the streets | bonfires (glow), tibia music, crowd cheers |
 | **Races at the Circus Maximus** (M) | every 20 in-game minutes in the afternoon | procession (*pompa circensis*) from the Capitol through the Forum to the Circus with images of the gods; then chariot races of four-horse teams in faction colours, seven laps, dolphins tipping at each lap | the roar of the crowd carries across the city |
 | Game day at the Colosseum (N) | some afternoons | crowds enter through numbered arches, the awning drawn, the water organ and horns play; inside not shown (card) | distant roar, hydraulis and cornu |
 | Salutatio (M) | each morning | clients gather at domus doors | murmurs |
@@ -1010,7 +1016,8 @@ Overview-map motif: three cithara notes and a soft cornu answer (F–A–C, then
 3. **Colossus**: its height (about 30–35 m) and the date of its move.
 4. **Temple of Divus Traianus** location (north of the Column in the traditional reconstruction;
    recent work questions it). Marked nice-to-have.
-5. **Hadrian's and Antinous's presence in Rome on 21 April 126** is not documented.
+5. **Hadrian's and Antinous's presence in Rome on 21 April 126** is not documented (still true after
+   the fact-check; the cards should say "the game imagines him here").
 6. **Apollodorus's fate** (Dio's story is doubted).
 7. **Cornelia's statue** location and the date of its base (Augustan by letter forms).
 8. **Population figures** (all estimates).
@@ -1020,3 +1027,7 @@ Overview-map motif: three cithara notes and a soft cornu answer (F–A–C, then
 11. **The column at Brundisium** (its date is debated).
 12. **Legionary tunic colour** (red vs. undyed) is debated.
 13. **The Pantheon sunbeam on 21 April** is a modern hypothesis.
+14. **Fact-check (November 2026)**: Marcus is four on 21 April 126 (born 26 April 121); the Parilia
+    was "now called" the Romaia by Athenaeus's time (not renamed by decree); Ovid's rite is at
+    twilight with the sheep smoked, not sprinkled; Ostia's guild mosaics are mostly late 2nd century;
+    Cloelia's statue in 126 is uncertain; the vigiles reward was for Junian Latins (`fact-check.md`).

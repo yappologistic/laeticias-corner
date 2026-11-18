@@ -202,3 +202,67 @@ instead, and positions on the excavation plan remain for a builder to check.
 4. Toxamis: the fine as "ancient commentators said".
 5. Curvature card: about 6 cm on the ends, about 10–11 cm on the long sides; purpose debated.
 6. §1 festival note: peplos "perhaps".
+
+---
+
+## 3. Rome (`rome.md` and the Roman waypoints)
+
+### 3.1 Claims checked
+
+| § | Claim (before) | Verdict | Best source and what it says | Change made |
+|---|---|---|---|---|
+| 1 | The Parilia, "which Hadrian renamed the Romaea" | corrected | Athenaeus 8.361f (Gulick, LacusCurtius, read): "the festival of the Parilia, as it used to be called, though it is now called the Roman Festival", linked to the temple of the Fortune of Rome built by Hadrian | "now called" (by c. AD 200) |
+| 1 | Venus and Roma begun c. 121, dedicated 135, finished by 141; the Colossus moved by Decrianus with elephants | confirmed in outline (HA *Hadrian* 19 and the researcher's sources; not re-read) | the 121 start is inferred | note |
+| 1 | Pantheon c. 114–128, shown complete | confirmed in outline (brick-stamp arguments as summarised; not re-read) | — | — |
+| 1 | Hadrian in Italy 125–128; presence on 21 April 126 not recorded | confirmed (as stated) | — | card must say "imagined" |
+| 3.1 | Pantheon dome "covered with gilded bronze tiles" | uncertain | the bronze tiles are recorded (removed in 663); gilding is not secure (not re-read) | "bronze tiles", gilding a choice |
+| 3.7 | Ostia: the square of the guilds "with mosaics of each guild's emblem" | **corrected** | ostia-antica.org (regio II.vii.4, read): "Most mosaics were installed in the late second century" | plainer floors in 126 |
+| 4.1 | Marcus Annius Verus "aged 5" | **corrected** | *Historia Augusta*, *Marcus* 1.5 (LacusCurtius, read): born the sixth day before the Kalends of May (26 April) in AD 121, on the Caelian; 1.10: Hadrian called him Verissimus after his father's death | aged four, five on 26 April |
+| 4.1 | Diocles: Lusitanian, born 104, began 122 with the Whites, 1,462 wins | confirmed (secondary: Wikipedia citing CIL VI 10048) | first win 124; six years with the Whites, so still a White in 126 | — |
+| 4.1 | Cloelia's equestrian statue on the Via Sacra | uncertain | Dionysius 5.35 (LacusCurtius, read): "This statue I found no longer standing"; Plutarch *Publicola* 19 (summary): stood on the Via Sacra, some said it was Valeria | note: presence in 126 uncertain |
+| 4.2 | Vigiles: "Freedmen who served six years … earned citizenship" | corrected | lex Visellia via Gaius 1.32b (secondary): for Junian Latins (informally freed); later three years | card wording |
+| 4.2 | Barge "about two days" upstream | unverifiable | no source given or found | softened to "a few days" |
+| 4.3 | Hadrian "the first emperor to wear a beard" | corrected (overstated) | earlier emperors appear with light or mourning beards (general knowledge; not re-read) | "whose portraits always show a full beard" |
+| 6.2 | Juvenal: "the poor wore [the toga] only for their funerals" | **corrected** | Juvenal 3 (Ramsay, read): "many parts of Italy … in which no man puts on a toga until he is dead" | about Italy's country towns |
+| 7.2 | Parilia: "at dawn … flocks sprinkled with water" | **corrected** | Ovid *Fasti* 4 (Kline, read): "purify your sated sheep at twilight"; "sprinkle the ground with water"; sulphur smoke; olive, pine, juniper; prayer "four times, facing east"; hands washed in dew; leaping "over the crackling heaps of burning straw"; fumigants from Vesta (horse blood, calf ash, bean stalks) | rite rewritten |
+| 4.3 | Plotina: Hadrian wore mourning nine days | unverifiable here (Dio 69.10; not re-read) | — | — |
+| 4.2 | Seneca: the Senate rejected a uniform for slaves | unverifiable here (*De clementia* 1.24; not re-read) | — | — |
+| 4.2 | Apion's letter (BGU II 423) | confirmed in outline (standard; not re-read) | — | — |
+| 4.3 | Scipio alone with Jupiter before dawn (Livy 26.19) | unverifiable here (not re-read) | — | — |
+| 4.1 | Apollodorus: Dio's story doubted | confirmed (as stated: Dio 69.4; doubts in modern work) | — | — |
+| 4.1 | Cornelia's base (CIL VI 10043), Pliny 34.31 seated statue | confirmed in outline (researcher's Kajava source; not re-read) | — | — |
+| 6.5 | Brick stamps naming the consuls of 123 | confirmed in outline (standard; not re-read) | — | — |
+| world 6 | Brundisium "two columns" vs one column in `rome.md` | corrected (consistency) | two stand today, dates debated | `world.md` aligned |
+
+### 3.2 Changes that affect art already built (Rome)
+
+The `rome` set is in progress in the working tree (uncommitted art by the art agent), so these are
+for that agent:
+
+1. **`rome.ostia_guilds`**: `tools/artgen/sets/rome/ostia.py` (line ~106) gives each office a
+   black-and-white emblem mosaic. Most of those mosaics are late 2nd century; for 126 use plain or
+   simple floors, or keep a few emblems and label the card "most of the mosaics seen today are
+   later".
+2. **`rome.pantheon`**: `campus.py` line ~54 draws "gilded bronze tiles". Bronze tiles are
+   certain; gilding is not. A warm bronze with a little sheen is the safer look.
+3. **`rome.marcus`** actor: no art change (a child of four or five looks the same); card only.
+4. No change needed for the Colosseum, the Forum temples' orientations, Trajan's Column, Circus
+   Maximus or the Venus and Roma site from what was checked.
+
+### 3.3 Changes that affect layouts (Rome)
+
+1. **Cloelia statue** (on the Via Sacra; no plan coordinates given): optional; if placed, its card
+   carries the doubt.
+2. **Ostia guild square** (world C 100..170, R 184..239): no layout change.
+3. No landmark found in the wrong place or anachronistic among those checked; the Temple of Divus
+   Traianus position stays flagged as debated (nice-to-have).
+
+### 3.4 Changes to card and figure text (Rome)
+
+1. Marcus: "nearly five".
+2. Hadrian: beard wording; presence "imagined".
+3. Valens (vigiles): Junian Latins.
+4. Mulvius: "a few days".
+5. Cloelia: statue's presence uncertain, Valeria variant.
+6. Parilia event and the "Romaea" wording.
+7. Toga row: Juvenal is about country Italy.
