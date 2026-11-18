@@ -110,6 +110,13 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
         figureOf_.push_back(static_cast<std::uint32_t>(f));
     }
     prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
+    {
+        const Uint64 t0 = SDL_GetPerformanceCounter();
+        cover_ = std::make_unique<CoverMap>(map_, *sprites_, hole_);
+        SDL_Log("worldview: cover map in %.0f ms",
+                static_cast<double>(SDL_GetPerformanceCounter() - t0) * 1000.0 /
+                    static_cast<double>(SDL_GetPerformanceFrequency()));
+    }
     buildGlow();
     blob_ = home.sprite(home.lightBlob());
     raindrop_ = home.find("fx/raindrop/f0");
@@ -1238,8 +1245,13 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         if (!box.overlaps(view)) continue;
         if (ad.goods != nullptr) box.y0 = std::min(box.y0, ad.goodsAt.y - ad.goods->oy);
         if (lod != Lod::Native) {
-            // Under a roof or a colonnade there is nothing to see from this far.
-            if (d.item < 0 || d.floor) coarse_.push_back(static_cast<std::uint32_t>(i));
+            // The impostor holds everything static, so whoever stands behind something in front
+            // (by the same depth relation as the native order) is not drawn over it; under a roof
+            // or a colonnade there is nothing to see from this far either.
+            const float above = d.z - static_cast<float>(map_.level(t) * lvl_);
+            if ((d.item < 0 || d.floor) &&
+                static_cast<float>(cover_->at(t)) - above <= tuning::kCoverHidden)
+                coarse_.push_back(static_cast<std::uint32_t>(i));
             continue;
         }
         const float f = tuning::kActorFoot;

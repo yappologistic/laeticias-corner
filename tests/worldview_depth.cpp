@@ -3,6 +3,7 @@
 // page-aware tie-break.
 
 #include "worldview/actor_looks.hpp"
+#include "worldview/cover.hpp"
 #include "worldview/order.hpp"
 #include "worldview/tuning.hpp"
 
@@ -271,4 +272,25 @@ TEST_CASE("actors: walk frames follow the distance walked, evenly, at any pace")
         CHECK(cycleFrame(true, 0.75f * 2 + 0.0625f * 5 + 0.01f, 0, fps, 0.75f, 12) == 5);
     }
     CHECK(cycleFrame(false, 5.0f, 0.5f, 4, 0, 4) == 2);
+}
+
+TEST_CASE("cover: at the coarser levels a building hides who is behind it, not who is beside it") {
+    // A 4x2 building on tiles (10..14, 10..12), 80 px tall over its top vertex (owner's report:
+    // people walked on the roofs at half and quarter scale).
+    const FRect foot{10, 10, 14, 12};
+    const Vec2 top = kIso.toWorld(10.0f, 10.0f);
+    const Vec2 left = kIso.toWorld(10.0f, 12.0f);
+    const Vec2 right = kIso.toWorld(14.0f, 10.0f);
+    const FRect sprite{left.x, top.y - 80, right.x, kIso.toWorld(14.0f, 12.0f).y};
+    const auto point = [](TilePos t) {
+        return kIso.toWorld(static_cast<float>(t.x) + 0.5f, static_cast<float>(t.y) + 0.5f);
+    };
+    // Right behind it: covered by most of its height.
+    CHECK(coverOf(kIso, point({11, 9}), {11, 9}, foot, 0, sprite) > 40);
+    // In front of it: never covered.
+    CHECK(coverOf(kIso, point({11, 13}), {11, 13}, foot, 0, sprite) == 0);
+    // Beside its low end, inside its sprite's box but outside its silhouette: not covered.
+    CHECK(coverOf(kIso, point({16, 7}), {16, 7}, foot, 0, sprite) == 0);
+    // Far behind, above its roof: not covered.
+    CHECK(coverOf(kIso, point({6, 4}), {6, 4}, foot, 0, sprite) == 0);
 }
