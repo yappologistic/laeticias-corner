@@ -15,10 +15,31 @@ PACK_ORDER = "maxside"
 FRAMES = {**kit.FRAMES, **ground.FRAMES}
 
 
+# Two pages hold the set with its twelve-frame walks only if the least-seen walk on fewer
+# frames (out/reports/art-motion.md): the most-seen people keep twelve; the delegations, the
+# other walkers, the guards' parade march and the animals walk on eight, carts move on six.
+MOST_SEEN = frozenset({"parsa.noble", "parsa.guard_spear", "parsa.guard_mede", "parsa.usher", "parsa.labourer",
+                       "parsa.woman_worker", "parsa.farmer", "parsa.scribe"})
+
+
+def anim_frames(kind, anim):
+    """Frames of a locomotion cycle where the page budget sets them (None: the scheme's)."""
+    if kind in animals.CARTS:
+        return 6 if anim == "move" else None
+    if kind in animals.CRITTERS:
+        return 8 if anim in ("move", "run") else None
+    if kind.split(".", 1)[1] in people.FIGURES:
+        return None
+    if anim == "march" or (anim in ("move", "run") and kind not in MOST_SEEN):
+        return 8
+    return None
+
+
 def actor_sprite(kind, variant, anim, facing, frame, k):
+    n = anim_frames(kind, anim)
     if kind in animals.CRITTERS or kind in animals.CARTS:
-        return animals.sprite(kind, variant, anim, facing, frame, k)
-    return people.sprite(kind, variant, anim, facing, frame, k)
+        return animals.sprite(kind, variant, anim, facing, frame, k, n)
+    return people.sprite(kind, variant, anim, facing, frame, k, n)
 
 
 def carry_at(kind, k):

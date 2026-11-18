@@ -244,9 +244,9 @@ def _wheel(bd: Body, cx, cz, r, side_y, turn, mat="cedar"):
     bd.put(rim | spokes | hub, mat, 0.2)
 
 
-def _driver(m, x, y, dress, frame, k, seated=False, anim="move", cycle=None):
+def _driver(m, x, y, dress, frame, k, seated=False, anim="move", cycle=None, frames=CART_FRAMES):
     fr = Frame(dress)
-    p = pose(anim, frame, CART_FRAMES, fr, dress, cycle) if anim == "move" else pose(anim, frame % 2, 2, fr, dress)
+    p = pose(anim, frame, frames, fr, dress, cycle) if anim == "move" else pose(anim, frame % 2, 2, fr, dress)
     b = Body(m, shift=(x, y, 0.0))
     draw(b, dress, p, fr)
 
@@ -275,10 +275,9 @@ def rig_stride() -> float:
     return HORSE_STRIDE
 
 
-def cart_model(kind, variant, anim, frame, k):
+def cart_model(kind, variant, anim, frame, k, frames=CART_FRAMES):
     """Carts with their teams and drivers baked in (world-tech.md §1.9), at toy scale: an ox
     about as tall as a man at the shoulder, wheels as tall as his waist."""
-    frames = CART_FRAMES
     turn = frame / frames * (math.pi / 3) if anim == "move" else 0.0
     m = Model.empty(-44, 40, -14, 14, 0, 46, k=k)
     team = "move" if anim == "move" else "idle"
@@ -299,7 +298,8 @@ def cart_model(kind, variant, anim, frame, k):
                 ellipsoid(m, (x, y, 14.0), (3.4, 2.8, 3.6), "straw", tone=0.1 * i)
         else:
             slab(m, -30, -14, -5, 5, 10.5, 18.0, "limestone", tone=0.3)
-        _driver(m, 14.0, 11.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle", cycle=stride(ox))
+        _driver(m, 14.0, 11.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle", cycle=stride(ox),
+                frames=frames)
     elif kind == "parsa.p_sledge":
         # Two oxen yoked to a wooden sledge carrying a column drum, rollers under it.
         for y in (-5.5, 5.5):
@@ -310,7 +310,8 @@ def cart_model(kind, variant, anim, frame, k):
         for x in _rollers(-38.0, 27.0, frame / frames if anim == "move" else 0.0):
             rod(m, (x, -9, 1.2), (x, 9, 1.2), 1.2, "wood")
         rod(m, (-34, 0, 9.5), (-18, 0, 9.5), 5.0, "limestone", tone=0.3)
-        _driver(m, 10.0, 12.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle", cycle=stride(SLEDGE_OX))
+        _driver(m, 10.0, 12.0, DRIVER, frame, k, anim="move" if anim == "move" else "idle",
+                cycle=stride(SLEDGE_OX), frames=frames)
     else:
         # The two-horse chariot of the Lydian (and Libyan) gift: light box, big spoked wheels.
         for y in (-4.5, 4.5):
@@ -355,10 +356,11 @@ def _render(m: Model, facing: str) -> Sprite:
     return Sprite(rgba, ox, oy)
 
 
-def sprite(kind, variant, anim, facing, frame, k):
+def sprite(kind, variant, anim, facing, frame, k, frames=None):
+    """`frames`: the cycle's length where the set's page budget sets it."""
     if kind in CARTS:
-        return _render(cart_model(kind, variant or 0, anim, frame, k), facing)
-    frames = CRITTER_FRAMES[anim]
+        return _render(cart_model(kind, variant or 0, anim, frame, k, frames or CART_FRAMES), facing)
+    frames = frames or CRITTER_FRAMES[anim]
     if kind == "parsa.hoopoe":
         return _render(hoopoe(anim, frame, frames, k), facing)
     return _render(quadruped(BEASTS[kind], anim, frame, frames, k), facing)

@@ -7,6 +7,7 @@ them with the set's models (`sets/<set>/`), cuts large landmarks into pieces, pa
 walk tiles, slots, emitters, carry points). Other sets and the home atlas are never touched.
 """
 
+import hashlib
 import importlib
 import json
 import re
@@ -95,21 +96,30 @@ def item_frames(it: dict, mod) -> int:
     return mod.FRAMES.get(it["id"], 4) if "fps" in it else 1
 
 
-def actor_keys(a: dict) -> list[str]:
+def anim_frames(mod, a: dict, anim: str) -> int:
+    """Frames of one animation of an actor: the set's `anim_frames(kind, anim)` where it gives
+    one (a page budget), else the scheme's (people, animals, carts, ships)."""
+    n = getattr(mod, "anim_frames", lambda kind, anim: None)(a["id"], anim)
+    if n:
+        return n
+    prefix = a["sprite"]
+    if prefix.startswith("critter/"):
+        return CRITTER_FRAMES.get(anim, 4)
+    if prefix.startswith("cart/"):
+        return rig.CART_FRAMES if anim == "move" else 4
+    if prefix.startswith("ship/"):
+        return 4                                        # world-tech.md §1.9: ships
+    return rig.POSES.get(anim, 4)
+
+
+def actor_keys(a: dict, mod) -> list[str]:
     prefix = a["sprite"]
     variants = a.get("variants", 0)
     vs = [f"/v{v}" for v in range(variants)] if variants else [""]
     keys = []
     for v in vs:
         for anim in a["anims"]:
-            if prefix.startswith("critter/"):
-                n = CRITTER_FRAMES.get(anim, 4)
-            elif prefix.startswith("cart/"):
-                n = rig.CART_FRAMES if anim == "move" else 4
-            elif prefix.startswith("ship/"):
-                n = 4                                   # world-tech.md §1.9: ships
-            else:
-                n = rig.POSES.get(anim, 4)
+            n = anim_frames(mod, a, anim)
             keys += [f"{prefix}{v}/{anim}_{fc}/f{f}" for fc in FACINGS for f in range(n)]
     return keys
 
@@ -137,7 +147,7 @@ def required_keys(cat: dict, mod, pieces: dict) -> list[str]:
         for state in it.get("states", ()):
             keys += [f"item/{it['id']}/{state}/{v}/f{f}" for v in item_variants(it) for f in range(n)]
     for a in cat.get("actors", []):
-        keys += actor_keys(a)
+        keys += actor_keys(a, mod)
     art = cat.get("art", {})
     for e in art.get("edges", ()):
         keys += [f"edge/{e}_{side}/v{n}" for side in ("se", "sw") for n in range(4)]
@@ -508,8 +518,20 @@ class Skyline:
 def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=(), order="height"):
     """Pack keys group by group into pages of at most page x page (skyline, tallest first within
     a group); a group whose index is in `fresh` starts on a new page. Earlier pages stay open,
-    so small sprites of a later group fill gaps left on them. Returns [(atlas RGBA, manifest)]."""
+    so small sprites of a later group fill gaps left on them. Identical sprites (same pixels and
+    anchor: a two-pose loop stored as four frames, a still cart's idle) share one rectangle; the
+    manifest lists every key. Returns [(atlas RGBA, manifest)]."""
     trimmed = {k: pack.trim(s) for k, s in sprites.items()}
+    first: dict[bytes, str] = {}
+    same: dict[str, str] = {}          # key -> the earlier key (in sorted order) it shares pixels with
+    for k_ in sorted(trimmed):
+        t = trimmed[k_]
+        sig = hashlib.sha1(t.rgba.tobytes() + repr((t.rgba.shape, t.ox, t.oy)).encode()).digest()
+        if sig in first:
+            same[k_] = first[sig]
+        else:
+            first[sig] = k_
+    groups = [[k_ for k_ in g if k_ not in same] for g in groups]
     pad = pack.PAD
     pages: list[tuple[Skyline, dict]] = [(Skyline(page - pad, page - pad), {})]
     first_open = 0
@@ -535,6 +557,9 @@ def pack_pages(sprites: dict, groups: list[list[str]], page=PAGE, fresh=(), orde
                 spot = sky.fit(w + pad, h + pad)
             sky.place(*spot, w + pad, h + pad)
             rects[key] = (spot[0] + pad, spot[1] + pad)
+    placed = {k_: n for n, (_sky, rects) in enumerate(pages) for k_ in rects}
+    for k_, src in same.items():
+        pages[placed[src]][1][k_] = pages[placed[src]][1][src]
     out = []
     for _sky, rects in pages:
         height = max(yy + trimmed[k_].rgba.shape[0] for k_, (_xx, yy) in rects.items()) + pad
