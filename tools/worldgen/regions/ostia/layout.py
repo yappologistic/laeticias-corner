@@ -17,6 +17,9 @@ toward the shore; the Via Ostiensis leaves north to Rome (portal `ostiensis`) be
 market gardens.
 """
 
+import importlib.util
+from pathlib import Path
+
 import numpy as np
 
 from worldgen import rng
@@ -24,14 +27,10 @@ from worldgen.dsl import Layout
 from worldgen.finish import clear_doors, fit_faces, free, glow_cap, put, seam
 from worldgen.shapes import Line, Mask, Poly, Rect
 
-import importlib.util
-from pathlib import Path
-
 _spec = importlib.util.spec_from_file_location(
-    "worldgen_region_rome_common_loader", Path(__file__).resolve().parent.parent / "rome" / "common.py")
-_mod = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_mod)
-C = _mod.load()
+    "worldgen_region_rome_common", Path(__file__).resolve().parent.parent / "rome" / "common.py")
+C = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(C)
 
 R = "rome."
 GRASS, BASALT, TRAV, EARTH = R + "grass_spring", R + "basalt_paving", R + "travertine_paving", R + "packed_earth"
@@ -93,7 +92,9 @@ def build(L: Layout) -> None:
     _ostia(L, ways)
     _country(L)
     _nodes(L)
+    C.drop_bad_spots(L)
     clear_doors(L, all_slots=True)
+    C.drop_unreached(L)
     glow_cap(L, {R + "r_insula_low": 0, R + "r_insula": 1, R + "r_taberna": 2,
                  R + "r_thermopolium": 3, R + "r_compitum": 4, R + "r_bakery": 5})
     seam(L, GRASS, R + "packed_earth")
@@ -193,8 +194,6 @@ def _portus(L: Layout) -> None:
              gap=0.1, seed="portus_horrea")
     for c, r in ((5, 10), (8, 10), (12, 13), (13, 22), (14, 24)):
         put(L, R + "r_amphorae", (c, r), variant=(c + r) % 4)
-    for r in (13, 17, 21, 25):
-        put(L, R + "quay", (13, r), face="west")
     put(L, R + "r_crane", (11, 13))
     put(L, R + "r_statue", (16, 9), face="west")
     put(L, R + "r_altar", (2, 22), face="south")
@@ -214,12 +213,6 @@ def _ostia(L: Layout, W_: dict) -> None:
     put(L, R + "r_lacus", (50, 41), face="north")
     put(L, R + "r_altar", (51, 39), face="north")
     L.paint(Rect(50, 30, 61, 31) & free(L, Rect(50, 30, 61, 31)), TRAV)
-    # River quays with mooring posts, warehouses behind them.
-    for r in range(20, 34):
-        row = [c for c in range(L.origin[0] + 30, L.origin[0] + 50)
-               if L.terrain_at(c, r + L.origin[1]) == TIBER]
-        if row and r % 3 == 0:
-            put(L, R + "quay", (row[-1] - L.origin[0] + 1, r), face="west")
     lanes = C.lanes(L, town & ~C.mask(L, FORUM | CAPITOLIUM | GUILDS), "ostia", spacing=6,
                     paving=EARTH, reach=24)
     front = [W_[k] for k in ("decumanus", "cardo", "ostiensis", "quay", "quay_n", "portus_road")]

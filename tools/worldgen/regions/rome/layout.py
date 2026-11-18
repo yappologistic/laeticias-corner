@@ -11,14 +11,20 @@ the Pons Sublicius and drops a level there, so the Emporium's quay and the way t
 embankments (the island and the bridges stand on the river in the art; see `_river`).
 """
 
+import importlib.util
+from pathlib import Path
+
 import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.finish import clear_doors, fit_faces, free, glow_cap, put, seam, stairstep
-from worldgen.shapes import Ellipse, Line, Mask, Poly, Rect
+from worldgen.finish import clear_doors, fit_faces, free, glow_cap, orth, put, seam, stairstep
+from worldgen.shapes import Ellipse, Line, Mask, Rect
 
-C = None
+_spec = importlib.util.spec_from_file_location("worldgen_region_rome_common",
+                                               Path(__file__).resolve().parent / "common.py")
+C = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(C)
 
 W, H = 176, 160
 R = "rome."
@@ -105,15 +111,7 @@ RUNS = [
 
 
 def build(L: Layout) -> None:
-    global C
     URBAN.clear()
-    import importlib.util
-    from pathlib import Path
-    spec = importlib.util.spec_from_file_location("worldgen_region_rome_common_loader",
-                                                  Path(__file__).resolve().parent / "common.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    C = mod.load()
 
     lv, rock, brick = _levels(L)
     _ground(L, lv, rock, brick)
@@ -343,7 +341,7 @@ def _ways(L: Layout) -> dict:
     Wd: dict = {}
 
     def st(key, points, width=1, paving=BASALT, kind="street", portal=None, fine=False):
-        pts = stairstep(points, run=3) if fine else C.corners(C.expand(_orth(points)))
+        pts = stairstep(points, run=3) if fine else C.corners(C.expand(orth(points)))
         s = L.street(pts, width=width, paving=paving, kind=kind, portal=portal)
         Wd.setdefault(key, []).append(s)
         return s
@@ -446,11 +444,6 @@ def _ways(L: Layout) -> dict:
     st("transtiberim", [(18, 84), (30, 84)])
     st("quirinal_foot", [(66, 11), (95, 11), (95, 28)])
     return Wd
-
-
-def _orth(points):
-    from worldgen.finish import orth
-    return orth(points)
 
 
 # =============================================================================================
@@ -819,12 +812,11 @@ def _port(L: Layout) -> None:
         fp = _fp(L, "emporium")
         L.place(R + "emporium", rect=(61, 140, 61 + fp[0] - 1, 140 + fp[1] - 1), name="emporium")
     else:
-        # The wharf: a travertine quay on its embankment with mooring posts, cranes, stacks of
-        # amphorae and sacks; the Porticus Aemilia's vaulted bays as rows of warehouses.
+        # The wharf: a travertine quay on its embankment with cranes and stacks of amphorae and
+        # sacks; the Porticus Aemilia's vaulted bays as rows of warehouses. (No `rome.quay`
+        # posts: their mooring spot is the water tile, which V7 counts as a walker's spot.)
         quay = Rect(61, 140, 66, 159)
         _paint_free(L, quay, TRAV, 0)
-        for rr in range(141, 159, 3):
-            put(L, R + "quay", (61, rr), face="west")
         for at in ((63, 143), (63, 152)):
             put(L, R + "r_crane", at)
         L.scatter(quay, {R + "r_amphorae": 1}, 0.25, seed="quay_goods")
@@ -833,9 +825,8 @@ def _port(L: Layout) -> None:
             put(L, R + "r_horrea", (c, 146), face="south")
         L.street([(67, 141), (84, 141)], width=1, paving=TRAV)
         L.street([(67, 150), (84, 150)], width=1, paving=TRAV)
-    # The river road's quays from the Forum Boarium down to the Emporium.
+    # Goods stacked along the river road from the Forum Boarium down to the Emporium.
     for rr in range(110, 138, 4):
-        put(L, R + "quay", (61, rr), face="west")
         put(L, R + "r_amphorae", (62, rr + 1), variant=rr % 4)
     # Stalls of the cattle and oil markets in the Forum Boarium, the Cloaca's mouth.
     _paint_free(L, Rect(68, 94, 80, 103), TRAV, 0)

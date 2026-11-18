@@ -1,16 +1,12 @@
 """Layout helpers shared by the Roman layers (`rome`, `ostia`): stair runs carved into a level
 array, irregular lanes grown from the streets, kit that opens on a street, meeting the world at
-the layer's edges, and named nodes snapped to the streets.
-
-Loaded by path from each layout (`load()` below), so the two layers use one copy.
+the layer's edges, named nodes snapped to the streets, and clean-up of kit whose slots cannot be
+used. Layouts are loaded by path, so each loads this file by path too.
 """
 
 from __future__ import annotations
 
 import heapq
-import importlib.util
-import sys
-from pathlib import Path
 
 import numpy as np
 
@@ -21,17 +17,6 @@ from worldgen.shapes import Mask, Rect
 
 STEP = {"west": (-1, 0), "north": (0, -1), "east": (1, 0), "south": (0, 1)}
 STAIR = "rome.stair_travertine"
-
-
-def load():
-    """This module, loaded once under a fixed name (layouts are imported by path)."""
-    name = "worldgen_region_rome_common"
-    if name not in sys.modules:
-        spec = importlib.util.spec_from_file_location(name, Path(__file__))
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules[name] = mod
-        spec.loader.exec_module(mod)
-    return sys.modules[name]
 
 
 def mask(L: Layout, shape) -> np.ndarray:
