@@ -21,6 +21,7 @@ tools/worldgen/build.sh --life                # region files of the stretches, s
 tools/worldgen/build.sh --seasons             # catalogs' seasonal fields, flood ranks, ground classes, needs
 tools/worldgen/build.sh --city athens --year --preview   # … and a year in the life, the season maps
 tools/worldgen/build.sh --year-all            # a year in the life of every region file
+tools/worldgen/build.sh --nights athens --preview   # lit nights: warm-lit share per view, night previews
 ```
 
 After changing the base or a town that touches it, rebuild the towns and then the base once more:
@@ -165,7 +166,9 @@ tile at the plan's level (across the edge where two authored layers touch); `WP.
 a mound or acropolis in benches; `WP.climb` lays a path up a slope with a flight per level;
 `WP.river_level` gives a town's river a level no higher than where the base's river flows in;
 `WP.harbour_lane` ends the town's lane on the base lane's port tile; `WP.finish` clears door steps,
-caps glow and fits faces. Landmarks a city set has not drawn yet are provisional ids at their final
+lights the town for the night (`WP.night`: a fire where each road comes in, lamps at its named
+places, crossings and along its streets, from the set's kit), caps glow and fits faces; `WP.pier`
+lays a jetty or mole from the strand out over the water. Landmarks a city set has not drawn yet are provisional ids at their final
 footprints (`plan/provisional.py`).
 
 ## Routes and lanes (`worldgen/routes.py`)
@@ -176,6 +179,21 @@ on `world.ramp` flights (a level per 4 tiles plus a landing), meeting every port
 fixed level; paving; a ford, bridge or pontoon on water; then markers, stations, stops, tombs,
 graves, terrace walls, watchtowers, beacons and farms with tracks; harbours at route and lane ends.
 Between two portals of a town without a layout the base carries the road through the town's rect.
+
+## Lit nights (`worldgen/lights.py`, `worldgen/nights.py`)
+
+Every region file gets `lights` (the profiles: kind, colour temperature, radius, strength,
+flicker, hours, rain, festivals) and `light_points` (`[tx, ty, item, profile(, emitter)]` at placed
+light-giving items, chosen by rule per item kind and district, at most 48 per chunk); night roles
+and evening events get `carries` (the lamp or torch they hold). Glowing items no point names stay
+dark at night. Layouts add the street-level lights a civilization had with `night_posts`
+(lamps in niches at crossings, braziers at gates, torches on processional ways) and `crossings`
+(finish.py). `--nights` measures each populated quarter and the golden views at 1x: the share
+warm-lit at dusk, 22:00 and 02:00 against the quality bar (2–8 % in a city, 1–4 % in a village),
+the unlit median, and writes `out/worldgen/night/nights.md` and previews. The checks are L12
+(`lights.check`): every point at a placed light-giving item or one of its emitters, profiles in
+range (warm 1700–2600 K, flicker depth ≤ 0.08, valid hours and conditions), no two lights of a kind
+on one tile, carriers' profiles present, and no populated quarter without light at dusk.
 
 ## Validation (world-tech §3.5)
 
@@ -197,7 +215,7 @@ Between two portals of a town without a layout the base carries the road through
 | V14 | the base's relief: no isolated single-tile level change on open country, at most 2 % of it on one-tile benches, no river reach under 6 tiles between two falls of under 3 levels | error (base) |
 | V15 | a marked `sightline` holds no world kit (fords, plank ramps, timber bridges, …) and no placeholder | error |
 | V17 | the engine's walk rules on every graph edge (`worldgen/walk.py`) | error (a step only a landmark's `walk_z` makes: warning) |
-| V16 | crossings (`worldgen/crossings.py`): every step the graph makes onto or off a deck (a landmark's walk tiles at its level plus `walk_z`, walkable kit on water at the water's level) stays within half a level of what it meets; bridges, fords, pontoons, landmarks on water and gates a road passes through are joined at two ends (a pier may end at a `dest` node on its planks); a landmark bridge's walkway never ends over water; connect decks run along one axis (two wide draws a frame); a stair's foot and head landings are walkable, at its level and `rise` higher, and met by a path (wide flights share landings) | error (a landmark floor on dry land, landmark stairs: warning) |
+| V16 | crossings (`worldgen/crossings.py`): every step the graph makes onto or off a deck (a landmark's walk tiles at its level plus `walk_z`, walkable kit on water at the water's level) stays within half a level of what it meets; bridges, fords, pontoons, landmarks on water and gates a road passes through are joined at two ends (a pier may end at a `dest` node on its planks); a landmark bridge's walkway never ends over water; a one-wide span is entered over its ends, never from its side (only a stair may join it there); jetties and moles touch walkable land within a level of the water; connect decks run along one axis (two wide draws a frame); a stair's foot and head landings are walkable, at its level and `rise` higher, and met by a path (wide flights share landings) | error (a landmark floor on dry land, landmark stairs: warning) |
 
 Additions: V1 also checks that every placed variant is a valid look or rotation of its catalog
 entry, retired stand-ins, and the region-set rule (a region of set S carries home, world and S ids

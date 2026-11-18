@@ -55,7 +55,17 @@
    ],
    "loops": [
     {
+     "item": "parsa.p_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
      "item": "parsa.p_fire_altar",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
+     "item": "parsa.p_torch",
      "file": "amb/world/brazier.ogg",
      "when": "lit"
     },
@@ -613,6 +623,18 @@
     "sea_state": 0
    },
    "lights": {
+    "parsa.p_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
     "parsa.p_fire_altar": {
      "kind": "fire",
      "colour": "#ff8a3c",
@@ -635,6 +657,18 @@
        "20:00"
       ],
       "depth": 0.03
+     }
+    },
+    "parsa.p_torch": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
      }
     }
    }
@@ -778,11 +812,11 @@
    "sound": {
     "surfaces": {
      "stone": 0.21,
-     "roof": 0.54,
+     "roof": 0.55,
      "leaves": 0.07
     },
     "wind": "wind.street",
-    "exposure": 0.57,
+    "exposure": 0.56,
     "steps": {
      "surface": "earth",
      "files": [
@@ -1497,5 +1531,116 @@
    "winter": "c. 470/469 BC"
   }
  },
- "festivals": []
+ "festivals": [],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "open_fire_altar": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "leap",
+     "hz": [
+      1.5,
+      3.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "00:00",
+      "24:00"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "wall_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   }
+  }
+ },
+ "light_points": [
+  [
+   267,
+   77,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
+   271,
+   77,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   275,
+   90,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   282,
+   92,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   284,
+   96,
+   "parsa.p_fire_altar",
+   "open_fire_altar",
+   "fire"
+  ]
+ ]
 }

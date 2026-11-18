@@ -583,6 +583,18 @@
       ],
       "depth": 0.12
      }
+    },
+    "athens.g_lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
+     }
     }
    }
   }
@@ -1775,5 +1787,95 @@
     "world.hull_ashore"
    ]
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "temple_hearth": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.4,
+    "strength": 0.6,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.6,
+      1.4
+     ],
+     "depth": 0.06
+    },
+    "hours": [
+     [
+      "00:00",
+      "24:00"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.5
+    }
+   }
+  }
+ },
+ "light_points": [
+  [
+   341,
+   490,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   332,
+   491,
+   "athens.delos_sanctuary",
+   "temple_hearth"
+  ],
+  [
+   345,
+   497,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   343,
+   500,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   335,
+   502,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   339,
+   502,
+   "athens.g_lamp",
+   "niche_lamp"
+  ]
  ]
 }

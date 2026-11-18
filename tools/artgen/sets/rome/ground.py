@@ -164,9 +164,9 @@ def river_tiber(mask, frame, frames, k):
     level = home._ripples(g, f, shade, frame, frames)
     swirl = home._pnoise(g.u - frame / frames * 4.0, g.v, 4, 1471) - 0.5
     rgb = home._paint(RIVER, level * 1.15 - 0.2 + swirl * 0.6, g.px, g.py, band=0.2, k=k)
-    # The silt: green-brown drifts in the current and along the banks, over clear blue depth,
-    # so the Tiber reads as water and still joins the blue rivers of the world beside it.
-    silt = ((swirl > 0.18) | (f < 1.6)) & (hash01(g.px, g.py, 1472) < 0.55) & (level < 3.6)
+    # The silt: green-brown along the banks only, over clear blue depth, so the Tiber reads as
+    # water (drifts in mid-channel repeated tile by tile as an olive motif, QA5 Q5-A-03).
+    silt = (f < 1.6) & (hash01(g.px, g.py, 1472) < 0.55) & (level < 3.6)
     rgb = np.where(silt[..., None], home._paint(SILT, level * 0.9 - 0.6 + swirl, g.px, g.py, band=0.2, k=k), rgb)
     lip = f < 0.6
     rgb = np.where((lip & ~wall2)[..., None], np.array(_rgb(TIBER[4]), np.uint8), rgb)

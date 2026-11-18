@@ -1,0 +1,15 @@
+{
+ "version": 1,
+ "strides": {
+  "critter/laeticia/move": 0.8,
+  "critter/laeticia/carry": 0.8,
+  "critter/laeticia/umbrella": 0.8,
+  "critter/hen/move": 0.304,
+  "critter/duck/waddle": 0.304,
+  "critter/cat/move": 0.312,
+  "critter/fox/move": 0.312,
+  "critter/deer/move": 0.312,
+  "critter/heron/move": 0.54,
+  "critter/hedgehog/move": 0.156
+ }
+}

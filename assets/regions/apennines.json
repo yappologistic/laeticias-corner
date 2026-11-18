@@ -1566,5 +1566,40 @@
     "oneshot": "sfx/world/sickle.wav"
    }
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   }
+  }
+ },
+ "light_points": [
+  [
+   215,
+   917,
+   "rome.mutatio",
+   "station_lamp"
+  ]
  ]
 }

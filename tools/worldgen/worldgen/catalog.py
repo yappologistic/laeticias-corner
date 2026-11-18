@@ -224,6 +224,8 @@ class Atlas:
             if not manifest.exists():
                 continue
             doc = json.loads(manifest.read_text())
+            if "image" not in doc:
+                continue   # not a page manifest (a set's strides or other side files)
             png = manifest.parent / doc["image"]
             for key, rect in doc["sprites"].items():
                 self.where.setdefault(key, (png, rect))

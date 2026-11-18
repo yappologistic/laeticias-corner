@@ -11,7 +11,7 @@ from arch import Scale, fill, halo, rod, slab
 from models.nature import leaf_mass
 from rig import Dress
 from roman import ROrder
-from sets.athens.common import cypress, olive_tree  # noqa: F401  (shared Mediterranean trees)
+from sets.athens.common import cypress, olive_tree, scaffold  # noqa: F401  (shared trees and scaffolding)
 from voxel import Rng, hash01, value_noise
 
 T = 16                      # design units per tile
@@ -165,17 +165,6 @@ def treadwheel_crane(m, x, y, z, h, along="y", load="marble", swing=0.0):
     if load:
         bz = z + h * 0.35
         slab(m, top[0] - 2.4, top[0] + 2.4, top[1] - 1.6, top[1] + 1.6, bz - 3.2, bz, load, tone=0.2)
-
-
-def scaffold(m, x0, x1, y0, y1, z0, z1, decks=3):
-    """Scaffolding of lashed poles with putlog decks."""
-    for x in (x0, x1):
-        for y in (y0, y1):
-            rod(m, (x, y, z0), (x, y, z1), 0.32, "wood", tone=0.1)
-    for i in range(1, decks + 1):
-        zz = z0 + (z1 - z0) * i / (decks + 0.2)
-        slab(m, x0, x1, y0, y1, zz, zz + 0.5, "wood_light", tone=M.timber("x" if x1 - x0 > y1 - y0 else "y", 3))
-        rod(m, (x0, y0, zz - 4), (x1, y1, zz), 0.2, "wood", tone=0.0)
 
 
 def drums(m, x, y, z, r, n, seed=0, material="marble", along="y"):

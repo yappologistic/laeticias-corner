@@ -20,8 +20,8 @@ import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.finish import (clear_doors, fit_faces, fords, glow_cap, orth, put, seam,
-                             stairstep)
+from worldgen.finish import (clear_doors, crossings, fit_faces, fords, glow_cap, night_posts,
+                             orth, put, seam, stairstep)
 from worldgen.shapes import Ellipse, Line, Mask, Poly, Rect
 
 N = 160
@@ -104,6 +104,7 @@ def build(L: Layout) -> None:
     _kerameikos(L, noise)
     _piraeus(L, noise)
     _country(L, inside, noise)
+    _night(L, inside)
     _nodes(L)
     clear_doors(L, all_slots=True)
     glow_cap(L, {A + "g_house_small": 0, A + "g_house_two": 1, A + "g_house": 2,
@@ -1251,6 +1252,32 @@ NODES = {
     "north_farms": (60, 3), "south_farms": (80, 142), "melite_school": (36, 80),
     "player_house": (39, 66), "kollytos_tavern": (88, 118),
 }
+
+
+# Lit nights (W1): Athens had no public lighting. Light came from doorways and shop counters,
+# lamps in wall niches at corners and herms, the gates' torches and braziers, the Tholos where a
+# third of the prytaneis kept watch all night, the quays of Piraeus, and altar embers.
+NIGHT_LAMPS = ("tholos", "royal_stoa", "stoa_poikile", "bouleuterion", "se_fountain", "simon_shop",
+               "eleusinion", "approach_foot", "theatre", "kollytos_tavern", "piraeus_agora",
+               "zea_sheds", "kephalos_workshop", "kydathenaion_fountain", "melite_school",
+               "hephaisteion", "market", "agora", "lawcourt")
+NIGHT_BRAZIERS = ("dipylon", "sacred_gate", "propylaia", "nike_bastion", "kantharos_quay",
+                  "mounychia_landing", "long_walls_gate", "piraeus_gate")
+
+
+def _night(L: Layout, inside: np.ndarray) -> None:
+    gates = [(p.c - L.origin[0] + p.pw // 2, p.r - L.origin[1] + p.ph // 2) for p in L.items
+             if p.id == A + "g_wall_gate" and not p.removed]
+    night_posts(L, A + "g_brazier", [NODES[n] for n in NIGHT_BRAZIERS] + gates, ring=3, gap=6)
+    # the Altar of the Twelve Gods, the city's milestone zero and an asylum: a lamp all night
+    night_posts(L, A + "g_shrine", [(33, 31), (36, 33), (31, 37)], ring=3, gap=12)
+    # the Scythian archers, the city's public slaves who kept order, camped in the Agora
+    night_posts(L, A + "g_brazier", [(31, 47), (34, 50)], ring=3, gap=30)
+    night_posts(L, A + "g_lamp", [NODES[n] for n in NIGHT_LAMPS], ring=3, gap=4)
+    piraeus = np.zeros_like(inside)
+    piraeus[128:, :60] = True
+    night_posts(L, A + "g_lamp", [(c, 150) for c in range(3, 20, 6)], ring=2, gap=5)
+    night_posts(L, A + "g_lamp", crossings(L, inside | piraeus, gap=9), ring=2, gap=7)
 
 
 def _nodes(L: Layout) -> None:

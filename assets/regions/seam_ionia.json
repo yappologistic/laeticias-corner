@@ -938,5 +938,43 @@
     ]
    }
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "shrine_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 1.8,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      3,
+      6
+     ],
+     "depth": 0.04
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 1.4
+    }
+   }
+  }
+ },
+ "light_points": [
+  [
+   229,
+   425,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ]
  ]
 }

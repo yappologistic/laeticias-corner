@@ -39,6 +39,7 @@ from pathlib import Path
 
 from plan import world_plan as P
 
+from . import lights as LIGHTS_MOD
 from . import sound
 from .compose import World, live_items
 
@@ -367,7 +368,7 @@ def apply(doc: dict, world: World, cat, root: Path) -> dict:
             d["look"] = dl
         else:
             d.pop("look", None)
-    return doc
+    return LIGHTS_MOD.apply(doc, world, cat)
 
 
 # -- checking ------------------------------------------------------------------------------------

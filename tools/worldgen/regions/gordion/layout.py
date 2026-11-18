@@ -9,7 +9,7 @@ its own: the card says so; the cemetery is shown with the common tumulus.
 
 from worldgen import waypoint as WP
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import night_posts, put
 from worldgen.shapes import Rect
 
 EARTH = "parsa.packed_earth"
@@ -35,5 +35,7 @@ def build(L: Layout) -> None:
     L.scatter(Rect(0, 11, 6, H - 1), {"parsa.t_poplar": 1, "parsa.p_steppe": 3}, 0.15,
               seed="plain", clump=0.5)
     L.node("gordion_citadel", (13, 15))
+    # the citadel gate's fire and one before Matar's shrine (W1)
+    night_posts(L, "parsa.p_brazier", [(10, 20), (14, 13), (11, 16)], ring=2, gap=2)
     WP.finish(L, "world.earth")
     L.view("whole", Rect(0, 0, W - 1, H - 1))

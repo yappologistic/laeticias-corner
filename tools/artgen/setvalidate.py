@@ -16,6 +16,8 @@ import numpy as np
 from PIL import Image
 
 import setbuild
+
+STEP_PX = 8           # px at 64x32: the rise a walker takes in one tile (the engine's step)
 import spec
 from palette import palette_for
 from validate import diamond
@@ -137,6 +139,11 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
             for (x, y) in sorted(walk):
                 z0 = floor.get((x, y), 0) + 2 * k // 2
                 z1 = floor.get((x, y), 0) + setbuild.WALK_HEADROOM * k // 2
+                # A tile's floor is its middle: treads or a ramp rising on from it within a
+                # step (8 px at 64x32) are floor too; anything taller is in the way.
+                step = floor.get((x, y), 0) + STEP_PX * k // 2
+                while z0 < step and col[x, y, z0]:
+                    z0 += 1
                 if col[x, y, z0:z1].any():
                     zs = np.nonzero(col[x, y, z0:z1])[0] + z0
                     errors.append(f"{iid}: walk tile ({x},{y}) has geometry {zs.min()}..{zs.max()} px above "

@@ -96,10 +96,12 @@ def cost_grid(W: World) -> np.ndarray:
 
 
 def astar4(cost: np.ndarray, a, b, allow: np.ndarray | None = None, turn: float = 6.0,
-           pull: float = 0.15, margin: int = 40) -> list[tuple[int, int]]:
+           pull: float = 0.15, margin: int = 40,
+           water: np.ndarray | None = None) -> list[tuple[int, int]]:
     """Cheapest 4-connected path from tile a to b with a penalty per turn and per tile of
     distance from the straight line a-b. `allow` opens tiles the cost grid closes (a town's own
-    rect for a road through it); the end tiles are always open."""
+    rect for a road through it); the end tiles are always open. On `water` the path never
+    turns: a bridge or ford is one straight span from bank to bank, met at both ends."""
     c0 = max(min(a[0], b[0]) - margin, 0)
     c1 = min(max(a[0], b[0]) + margin, COLS - 1)
     r0 = max(min(a[1], b[1]) - margin, 0)
@@ -118,6 +120,7 @@ def astar4(cost: np.ndarray, a, b, allow: np.ndarray | None = None, turn: float 
     ll = math.hypot(dx, dy) or 1.0
     dev = np.abs(dy * (cc - ax) - dx * (rr - ay)) / ll
     sub = sub + pull * dev
+    wet = water[r0:r1 + 1, c0:c1 + 1] if water is not None else np.zeros((h, w), dtype=bool)
     INF = math.inf
     start = (ay, ax, 4)
     dist = {start: 0.0}
@@ -138,7 +141,7 @@ def astar4(cost: np.ndarray, a, b, allow: np.ndarray | None = None, turn: float 
             if not (0 <= ny < h and 0 <= nx < w):
                 continue
             k = sub[ny, nx]
-            if not np.isfinite(k):
+            if not np.isfinite(k) or (wet[y, x] and d != 4 and nd != d):
                 continue
             ncost = d0 + k + (turn if d != 4 and d != nd else 0.0)
             key = (ny, nx, nd)
@@ -295,7 +298,7 @@ def lay_ways(W: World, g: Graph) -> list[Way]:
             own = np.zeros((ROWS, COLS), dtype=bool)
             for c_, r_ in path[:-1]:
                 own[r_, c_] = True
-            seg = astar4(np.where(own, np.inf, cost), a, b, allow)
+            seg = astar4(np.where(own, np.inf, cost), a, b, allow, water=W.river)
             if not seg:
                 W.stats.setdefault("route_failures", []).append(f"{rid}: {a} -> {b}")
                 continue
@@ -1039,9 +1042,14 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
     for dr in range(-10, 11):
         for dc in range(-10, 11):
             x, y = c + dc, r + dr
-            if not (0 <= x < COLS and 0 <= y < ROWS) or not W.land[y, x] or W.reserved[y, x]:
+            if not (0 <= x < COLS and 0 <= y < ROWS) or not W.land[y, x] or W.reserved[y, x] \
+                    or L.IMP[y, x]:
                 continue
             for sx, sy in DIRS:
+                # The planks meet a strand or a quay's kerb, not a cliff (V16 piers).
+                if not (0 <= y + sy < ROWS and 0 <= x + sx < COLS) or \
+                        L.LV[y, x] - L.LV[y + sy, x + sx] > 1:
+                    continue
                 run = 0
                 while run < 6 and 0 <= y + sy * (run + 1) < ROWS and 0 <= x + sx * (run + 1) < COLS \
                         and sea[y + sy * (run + 1), x + sx * (run + 1)]:

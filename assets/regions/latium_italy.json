@@ -1740,5 +1740,70 @@
     "loop": "amb/world/press.ogg"
    }
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   }
+  }
+ },
+ "light_points": [
+  [
+   250,
+   904,
+   "rome.mutatio",
+   "station_lamp"
+  ],
+  [
+   234,
+   906,
+   "rome.mutatio",
+   "station_lamp"
+  ],
+  [
+   180,
+   959,
+   "rome.mutatio",
+   "station_lamp"
+  ],
+  [
+   202,
+   965,
+   "rome.mutatio",
+   "station_lamp"
+  ],
+  [
+   89,
+   1000,
+   "rome.mutatio",
+   "station_lamp"
+  ],
+  [
+   115,
+   1000,
+   "rome.mutatio",
+   "station_lamp"
+  ]
  ]
 }

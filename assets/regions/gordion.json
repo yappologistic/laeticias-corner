@@ -53,7 +53,18 @@
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "parsa.p_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
+     "item": "parsa.p_torch",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -581,6 +592,18 @@
     "sea_state": 0
    },
    "lights": {
+    "parsa.p_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
     "parsa.p_house_small": {
      "kind": "window",
      "colour": "#ffd08a",
@@ -591,6 +614,18 @@
        "20:00"
       ],
       "depth": 0.03
+     }
+    },
+    "parsa.p_torch": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
      }
     }
    }
@@ -745,10 +780,10 @@
    "name": "The citadel mound",
    "sound": {
     "surfaces": {
-     "roof": 0.63
+     "roof": 0.65
     },
     "wind": "wind.street",
-    "exposure": 0.5,
+    "exposure": 0.48,
     "steps": {
      "surface": "earth",
      "files": [
@@ -1260,5 +1295,165 @@
    "winter": "c. 470/469 BC"
   }
  },
- "festivals": []
+ "festivals": [],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "door_lamp": {
+    "kind": "door",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "23:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "wall_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "22:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
+   }
+  }
+ },
+ "light_points": [
+  [
+   143,
+   357,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   146,
+   357,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
+   143,
+   359,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   143,
+   359,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   144,
+   362,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
+  ],
+  [
+   146,
+   362,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
+  ],
+  [
+   143,
+   363,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   146,
+   363,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
+   150,
+   365,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
+  ]
+ ]
 }

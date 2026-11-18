@@ -55,6 +55,11 @@
    ],
    "loops": [
     {
+     "item": "rome.r_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
      "item": "rome.t_cypress",
      "file": "amb/world/press.ogg",
      "when": "worked"
@@ -599,6 +604,18 @@
       "depth": 0.12
      }
     },
+    "rome.r_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
     "rome.r_insula_low": {
      "kind": "window",
      "colour": "#ffd08a",
@@ -609,6 +626,18 @@
        "20:00"
       ],
       "depth": 0.03
+     }
+    },
+    "rome.r_lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
      }
     }
    }
@@ -1198,5 +1227,188 @@
    "feb": "AD 127"
   }
  },
- "festivals": []
+ "festivals": [],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "22:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
+   },
+   "window_late": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.5,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "01:30"
+     ]
+    ],
+    "rain": "sheltered"
+   }
+  }
+ },
+ "light_points": [
+  [
+   200,
+   947,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   209,
+   948,
+   "rome.r_brazier",
+   "brazier_watch"
+  ],
+  [
+   202,
+   949,
+   "rome.r_insula_low",
+   "window_evening"
+  ],
+  [
+   199,
+   951,
+   "rome.r_insula_low",
+   "window_late"
+  ],
+  [
+   206,
+   952,
+   "rome.r_insula_low",
+   "window_late"
+  ],
+  [
+   199,
+   954,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   203,
+   955,
+   "rome.mutatio",
+   "station_lamp"
+  ],
+  [
+   209,
+   955,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   201,
+   956,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   209,
+   958,
+   "rome.r_brazier",
+   "brazier_watch"
+  ]
+ ]
 }

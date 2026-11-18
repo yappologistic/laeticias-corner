@@ -14,6 +14,7 @@ import json
 import sys
 
 import rig
+import setbuild
 import spec
 
 LOCOMOTION = ("move", "carry", "march", "run", "ride")
@@ -58,17 +59,9 @@ def stride_tiles(set_id: str, actor: dict, anim: str) -> float | None:
     return None
 
 
-def frames_of(actor: dict, anim: str) -> int:
-    prefix = actor["sprite"].split("/")[0]
-    if prefix == "critter":
-        return rig.CRITTER_FRAMES.get(anim, 4)
-    if prefix == "cart":
-        return rig.CART_FRAMES if anim == "move" else 4
-    return rig.POSES.get(anim, 4)
-
-
 def annotate(set_id: str, cat: dict) -> dict:
     """The catalog with `stride` and a matching `fps` on every locomotion animation."""
+    mod = importlib.import_module(f"sets.{set_id}")
     for actor in cat.get("actors", []):
         if actor["sprite"].startswith("ship/"):
             continue
@@ -79,11 +72,11 @@ def annotate(set_id: str, cat: dict) -> dict:
             if anim not in LOCOMOTION:
                 continue
             s = stride_tiles(set_id, actor, anim)
-            n = frames_of(actor, anim)
+            n = setbuild.anim_frames(mod, actor, anim)
             if s is None:
                 entry.pop("stride", None)
                 if anim == "move" and actor["sprite"].startswith("critter/"):
-                    entry["fps"] = FLIGHT_FPS
+                    entry["fps"] = round(FLIGHT_FPS * n / rig.WALK_FRAMES, 1)
                 continue
             entry["stride"] = round(s, 3)
             entry["fps"] = round(n * speed / s, 1)

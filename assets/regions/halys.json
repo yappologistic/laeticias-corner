@@ -55,6 +55,16 @@
    ],
    "loops": [
     {
+     "item": "parsa.p_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
+     "item": "parsa.p_torch",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
      "item": "world.watchtower",
      "file": "amb/world/brazier.ogg",
      "when": "lit"
@@ -600,6 +610,30 @@
    },
    "lights": {
     "parsa.halys_gates": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    },
+    "parsa.p_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
+    "parsa.p_torch": {
      "kind": "torch",
      "colour": "#ff9a4a",
      "radius": 3.0,
@@ -1388,5 +1422,159 @@
    }
   }
  ],
- "festivals": []
+ "festivals": [],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "gate_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 3.4,
+    "strength": 0.95,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "watch_fire": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   }
+  }
+ },
+ "light_points": [
+  [
+   128,
+   314,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
+  ],
+  [
+   124,
+   316,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   131,
+   316,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ],
+  [
+   126,
+   320,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   126,
+   326,
+   "parsa.halys_gates",
+   "gate_torch",
+   "fire"
+  ]
+ ]
 }

@@ -38,7 +38,7 @@ def _a(**extra):
 
 
 WALKERS = {
-    "citizen": ("Citizen in a himation", _a(talk=4, sit=2), [
+    "citizen": ("Citizen in a himation", _a(talk=4, sit=2, gesture=4), [
         replace(MAN, colour="wool", hand_l="staff"), replace(MAN, colour="lapis", trim="saffron"),
         replace(MAN, colour="cinnabar", hair="gloss", hand_l="staff"), replace(MAN, colour="ochre", beard="short")]),
     "elder": ("Old man with a staff", _a(sit=2), [
@@ -47,7 +47,7 @@ WALKERS = {
     "youth": ("Young man in chlamys and petasos", _a(), [
         YOUTH, replace(YOUTH, colour="whitewash", cape="purple"), replace(YOUTH, colour="eblue", cape="ochre",
                                                                           head="petasos")]),
-    "woman": ("Citizen woman", _a(carry=8, carry_idle=3), [
+    "woman": ("Citizen woman", _a(carry=8, carry_idle=3, throw=4), [
         replace(WOMAN, colour="saffron", mantle="cinnabar", mantle_head=True),
         replace(WOMAN, colour="linen", mantle="eblue", mantle_head=True, jewels=("earrings", "necklace")),
         replace(WOMAN, garment="peplos", colour="cinnabar", trim="saffron", head="sakkos", head_mat="eblue"),
@@ -64,7 +64,7 @@ WALKERS = {
         WORKER, replace(WORKER, colour="felt", head="pilos", head_mat="felt"),
         replace(WORKER, colour="mudbrick", beard="none", skin=PALE, hair="ochre"),
         replace(WORKER, colour="linen", skin="skin_dark", beard="none")]),
-    "enslaved_woman": ("Enslaved woman (nurse, water carrier)", _a(carry=8, carry_idle=3), [
+    "enslaved_woman": ("Enslaved woman (nurse, water carrier)", _a(carry=8, carry_idle=3, stir=4), [
         SLAVE_W, replace(SLAVE_W, colour="felt", skin=PALE, hair="ochre", hold="front", hand_l="baby"),
         replace(SLAVE_W, colour="linen", hold="head", hand_l="hydria")]),
     "scythian": ("Scythian archer", _a(guard=3, gesture=4), [
@@ -228,10 +228,12 @@ FIGURES = {
 
 # Tools change with the work being done (the dress carries the walking look).
 WORK_PROPS = {
-    "woman": {"carry": dict(mantle_head=False), "carry_idle": dict(mantle_head=False)},
+    "woman": {"carry": dict(mantle_head=False), "carry_idle": dict(mantle_head=False),
+              "throw": dict(mantle_head=False, hand_l="spindle")},
     "working_woman": {"throw": dict(hand_l="spindle"), "serve": dict(hand_l="bread")},
     "enslaved_man": {"work_low": dict(hand_r="hoe"), "haul": dict(hand_l="rope")},
-    "enslaved_woman": {"carry": dict(hold=None, hand_l=None), "carry_idle": dict(hold=None, hand_l=None)},
+    "enslaved_woman": {"carry": dict(hold=None, hand_l=None), "carry_idle": dict(hold=None, hand_l=None),
+                       "stir": dict(hold=None, hand_l=None)},
     "potter": {"carry": dict(hand_l=None), "carry_idle": dict(hand_l=None)},
     "mason": {"carry": dict(hand_l=None, hand_r=None), "carry_idle": dict(hand_l=None, hand_r=None),
               "haul": dict(hand_l="rope", hand_r=None)},

@@ -128,3 +128,53 @@ class EngineWalkRules(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SideEntry(unittest.TestCase):
+    """The Royal Road north of Sidon turned onto its bridge's planks from the side (QA5)."""
+
+    def bridge(self, side: bool):
+        L = meadow()
+        L.paint(Rect(0, 10, 31, 14), "world.river")
+        for r in range(10, 15):
+            L.place("world.bridge_timber", at=(16, r))
+        if side:
+            L.street([(15, 0), (15, 10), (16, 10), (16, 15), (16, 23)], width=1, paving=None)
+        else:
+            L.street([(16, 0), (16, 23)], width=1, paving=None)
+        L.paint(Rect(15, 0, 16, 9) | Rect(16, 15, 16, 23) | Rect(15, 10, 15, 10), "path")
+        L.node("north", (16 - side, 0))
+        L.node("south", (16, 23))
+        return L
+
+    def test_a_span_met_over_its_ends_passes(self):
+        self.assertEqual([m for m in v16(check(self.bridge(side=False))) if "side" in m], [])
+
+    def test_a_road_turning_onto_the_planks_fails(self):
+        self.assertTrue(any("entered from its side" in m
+                            for m in v16(check(self.bridge(side=True)))))
+
+
+class Piers(unittest.TestCase):
+    """Sidon's mole and jetty stood in open water a tile off the strand (QA5)."""
+
+    def pier(self, gap: int, cliff: int = 0):
+        L = meadow()
+        L.paint(Rect(0, 0, 13, 23), "water")
+        L.level(Rect(0, 0, 13, 23), -1)
+        L.level(Rect(14, 0, 31, 23), cliff)
+        L.street([(20, 0), (20, 23)], width=1, paving="path")
+        for c in range(13 - gap - 3, 14 - gap):
+            L.place("world.jetty", at=(c, 12))
+        L.node("quay", (20, 12))
+        return L
+
+    def test_a_jetty_from_the_strand_passes(self):
+        self.assertEqual([m for m in v16(check(self.pier(gap=0))) if "land" in m], [])
+
+    def test_a_jetty_in_open_water_fails(self):
+        self.assertTrue(any("touches no land" in m for m in v16(check(self.pier(gap=1)))))
+
+    def test_a_jetty_against_a_cliff_fails(self):
+        self.assertTrue(any("touches no land" in m
+                            for m in v16(check(self.pier(gap=0, cliff=2)))))

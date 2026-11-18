@@ -271,3 +271,99 @@ def seam(L: Layout, base: str, overlay: str) -> None:
         out = L.below_terrain(oc, orr)
         if here == base and out is not None and out != base and L.cat.terrain[out].base:
             L.paint(Rect(c, r, c, r), overlay)
+
+
+def crossings(L: Layout, inside: np.ndarray | None = None, gap: int = 6) -> list[tuple[int, int]]:
+    """Local tiles where two of the layer's streets cross or meet, one per cluster (`gap` apart),
+    optionally only where `inside` (a local mask) holds."""
+    w, h = L.size
+    count = np.zeros((h, w), dtype=np.int16)
+    for s in L.streets:
+        count += Line(s.points, s.width).mask(L.origin[0], L.origin[1], w, h)
+    js, is_ = np.nonzero(count >= 2)
+    out: list[tuple[int, int]] = []
+    for c, r in sorted(zip(is_.tolist(), js.tolist()), key=lambda t: rng.hash64(L.region, "x", *t)):
+        if inside is not None and not inside[r, c]:
+            continue
+        if all(max(abs(c - a), abs(r - b)) >= gap for a, b in out):
+            out.append((c, r))
+    return sorted(out, key=lambda t: (t[1], t[0]))
+
+
+def night_posts(L: Layout, item: str, anchors, *, ring: int = 2, gap: int = 5,
+                cap: int = 36, kin: tuple[str, ...] = ()) -> list:
+    """Light-giving detail (a lamp in a niche, a brazier, a wall torch) beside each anchor tile
+    (local), where a light is wanted after dark: on a free tile within `ring`, never within `gap`
+    of another light of its kind (the item or any of `kin`), and never filling a chunk past `cap`
+    glowing items (V10)."""
+    from .validate import MAX_GLOW_CHUNK
+    cap = min(cap, MAX_GLOW_CHUNK - 2)
+    glow: dict = {}
+    mine = []
+    for p in L.items:
+        if p.removed or not L.cat.items[p.id].glow:
+            continue
+        k = (p.r // 32, (COLS - 1 - (p.c + p.pw - 1)) // 32)
+        glow[k] = glow.get(k, 0) + 1
+        if p.id == item or p.id in kin:
+            mine.append((p.c - L.origin[0], p.r - L.origin[1]))
+    keep = set()        # door steps and slot spots stay free (clear_doors would drop the house)
+    for p in L.items:
+        if p.removed:
+            continue
+        if p.door is not None:
+            keep.add(p.door)
+        keep |= {(c, r) for lst in p.slots.values() for c, r, _f in lst}
+    keep |= {(c + dc, r + dr) for c, r in list(keep) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))}
+    w, h = L.size
+
+    def open_(c, r):
+        return 0 <= c < w and 0 <= r < h and L.OCC[r, c] < 0 and L.T[r, c] >= 0 and \
+            not L.cat.is_water(L.terrains[L.T[r, c]])
+
+    def corridor(c, r):
+        """A tile walkers may need to pass: open on two opposite sides only, or a dead end."""
+        n, s_, e, w_ = open_(c, r - 1), open_(c, r + 1), open_(c + 1, r), open_(c - 1, r)
+        return (n and s_ and not e and not w_) or (e and w_ and not n and not s_) or \
+            (n + s_ + e + w_) <= 1
+    placed = []
+    for ac, ar in anchors:
+        if any(max(abs(ac - a), abs(ar - b)) < gap for a, b in mine):
+            continue
+        cand = sorted(((dc, dr) for dr in range(-ring, ring + 1) for dc in range(-ring, ring + 1)
+                       if (dc, dr) != (0, 0)),
+                      key=lambda d: (max(abs(d[0]), abs(d[1])),
+                                     rng.hash64(L.region, item, ac + d[0], ar + d[1])))
+        for dc, dr in cand:
+            at = (ac + dc, ar + dr)
+            wc, wr = at[0] + L.origin[0], at[1] + L.origin[1]
+            k = (wr // 32, (COLS - 1 - wc) // 32)
+            if glow.get(k, 0) >= cap or (wc, wr) in keep or not L.fits(item, at) or \
+                    corridor(*at):
+                continue
+            p = L.place(item, at=at)
+            if p is not None:
+                glow[k] = glow.get(k, 0) + 1
+                mine.append(at)
+                placed.append(p)
+                break
+    return placed
+
+
+def clear_front(L: Layout, rect: Rect, depth: int = 4) -> None:
+    """Take away the buildings standing in front of `rect` (local) as the camera sees it: the
+    tiles south of it and west of it, `depth` deep, where a roof would hide a gate's passage or a
+    bridge's end at 1x and 2x."""
+    zone = Rect(rect.c0 - depth, rect.r0, rect.c1, rect.r1 + depth)
+    for p in L.items:
+        d = L.cat.items[p.id]
+        if p.removed or d.landmark or not d.has_door:
+            continue
+        pr = p.rect
+        c0, r0 = pr.c0 - L.origin[0], pr.r0 - L.origin[1]
+        c1, r1 = pr.c1 - L.origin[0], pr.r1 - L.origin[1]
+        if c1 < zone.c0 or c0 > zone.c1 or r1 < zone.r0 or r0 > zone.r1:
+            continue
+        if c0 >= rect.c0 and c1 <= rect.c1 and r1 < rect.r0:
+            continue
+        L.remove(p)

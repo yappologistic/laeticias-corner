@@ -220,8 +220,8 @@ def _posed(kind, variant, anim):
     return replace(d, **WORK_PROPS.get(name, {}).get(anim, {}))
 
 
-def sprite(kind, variant, anim, facing, frame, k):
-    return person_sprite(_posed(kind, variant, anim), anim, facing, frame, k)
+def sprite(kind, variant, anim, facing, frame, k, frames=None):
+    return person_sprite(_posed(kind, variant, anim), anim, facing, frame, k, frames)
 
 
 def carry_at(kind, k):

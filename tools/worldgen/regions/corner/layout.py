@@ -92,9 +92,10 @@ def build(L: Layout) -> None:
     L.stair("world.stair_earth", rect=(jetty_c, shore - 1, jetty_c, shore), face="south")
     L.street([(79, 92), (70, 93), (64, 95), (56, 96), (44, 96), (jetty_c, shore - 10),
               (jetty_c, shore)], width=1, paving="path", kind="track")
-    for r in range(shore + 1, min(shore + 10, 111)):
-        L.place("bridge", at=(jetty_c, r), face="north")
-    end = min(shore + 9, 110)
+    # A fisherman's jetty of planks on posts (the garden footbridge is for the home's ponds).
+    for r in range(shore + 1, min(shore + 6, 111)):
+        L.place("world.jetty", at=(jetty_c, r))
+    end = min(shore + 5, 110)
     L.place("rowboat", at=(jetty_c + 1, end - 1), face="north")
     for dc in (-2, 2, -3, 3):
         if L.terrain_at(jetty_c + dc, shore - 1) == "meadow":

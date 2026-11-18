@@ -1719,5 +1719,97 @@
     "loop": "amb/world/press.ogg"
    }
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "shrine_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 1.8,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      3,
+      6
+     ],
+     "depth": 0.04
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 1.4
+    }
+   }
+  }
+ },
+ "light_points": [
+  [
+   308,
+   724,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   267,
+   725,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   329,
+   725,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   247,
+   729,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   373,
+   733,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   311,
+   737,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   265,
+   740,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   267,
+   757,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   317,
+   758,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   317,
+   785,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ]
  ]
 }

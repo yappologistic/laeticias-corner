@@ -34,6 +34,7 @@ BODIES = {
 HEAD_WIDEN = 1.12
 ROBE_FOLLOW = 0.25  # share of the feet's spread a long hem widens by
 FACE_LIFT = 0.35   # faces a step lighter than the ramp's middle (warm, readable)
+ACCENT = 0.3       # trims, belts and hat bands a step brighter: each figure's accent reads at 1x
 
 # Half a step, in design units at the adult body: how far each foot swings from the hip. A
 # natural stride (graphics-rnd.md §2.9): one cycle covers 4 x WALK_STRIDE units (0.75 tile for
@@ -623,7 +624,7 @@ def _garment(b: Body, d: Dress, p: Pose, fr: Frame, lift, up):
     if d.trim:
         hem = skirt & (Z < hem_z + (0.8 if d.garment in LONG else 0.6) + (1.6 * f * np.clip(np.cos(ang), 0, 1) ** 2
                                                                           if d.garment in ("court_robe", "royal_robe") and not (p.kneel or p.sit) else 0))
-        b.put(hem, d.trim, tone=0.3, normal=nrm)
+        b.put(hem, d.trim, tone=0.3 + ACCENT, normal=nrm)
     if d.pattern == "fringe":
         fr_ = (rr <= 1.08) & (Z >= hem_z - 0.6) & (Z < hem_z + 0.3) & ((np.floor(ang * 8) % 2) == 0)
         b.put(fr_, d.trim or d.colour, tone=-0.3)
@@ -631,7 +632,7 @@ def _garment(b: Body, d: Dress, p: Pose, fr: Frame, lift, up):
         band = (rr <= 1.12) & (np.abs(Z - waist) < 0.45)
         band |= ((X - cx(Z)) / (1.4 * f)) ** 2 + (Y / (fr.sw * 0.86)) ** 2 <= 1
         band &= np.abs(Z - waist) < 0.45
-        b.put(band, d.belt, tone=0.0)
+        b.put(band, d.belt, tone=ACCENT)
     if d.garment == "wrap":
         b.put(skirt & (np.abs(ang) < 0.25), d.colour, tone=-0.6)
     if d.garment in ("himation", "chiton_long", "peplos", "exomis", "none") and not p.bend:
@@ -681,7 +682,7 @@ def _greek_garment(b, d, p, fr, lift, cx, skirt, nrm):
             (Z < sh + 0.3 * f)
         b.put(over, d.colour, tone=0.15 - 0.4 * ((np.arctan2(Y, X) * 3 + Z * 0.4) % 1.0 < 0.25))
         if d.trim:
-            b.put(over & (Z < hip_z + 0.9 * f), d.trim, tone=0.25)
+            b.put(over & (Z < hip_z + 0.9 * f), d.trim, tone=0.25 + ACCENT)
     elif d.garment == "chiton_long":   # fine linen pleats
         b.put(skirt & (np.cos(np.arctan2(Y, X) * 14) > 0.55), d.colour, tone=-0.45)
 
@@ -733,7 +734,7 @@ def _roman_garment(b, d, p, fr, lift, cx, skirt, nrm):
         (Z > waist - 1.6 * f) & (Z < sh + 0.6 * f)
     b.put(roll, d.colour, tone=0.4)
     if d.trim:
-        b.put(roll & (Z < roll_c(Y) - 0.35 * f), d.trim, tone=0.15)
+        b.put(roll & (Z < roll_c(Y) - 0.35 * f), d.trim, tone=0.15 + ACCENT)
     # The umbo: a pouch of cloth pulled over the roll at the middle of the chest.
     b.blob((cx(waist) + 1.25 * f, 0.35 * f, waist + 0.4 * f), (0.6 * f, 0.75 * f, 0.7 * f), d.colour, tone=0.3)
     # The mass over the left shoulder and down the left side, front and back.
@@ -810,7 +811,7 @@ def _kandys(b, d, p, fr, lift):
         b.limb((-0.4 * f, side * (fr.sw + 0.35), sh - 0.2), (-0.9 * f, side * (fr.sw + 0.5), sh - 4.6 * f), 0.55 * f,
                d.coat, tone=-0.3)
     if d.trim:
-        b.put(back & ~hollow & (Z < hem + 0.6), d.trim, tone=0.2)
+        b.put(back & ~hollow & (Z < hem + 0.6), d.trim, tone=0.2 + ACCENT)
 
 
 def _pattern(b, d, mask, X, Y, Z, ang):
@@ -972,7 +973,7 @@ def _headgear(b, d: Dress, p: Pose, fr: Frame, c, at):
             b.m.mat[np.broadcast_to(crest, b.m.mat.shape)] = 0
             b.put(cap & (np.abs(Z - (z0 + 0.8)) < 0.35), "lapis", tone=0.5)
         if d.head_trim:
-            b.put(cap & (Z < z0 + 0.5), d.head_trim, tone=0.3)
+            b.put(cap & (Z < z0 + 0.5), d.head_trim, tone=0.3 + ACCENT)
     elif g == "round_cap":
         cap = (((X - hx + 0.15) / (rx + 0.3)) ** 2 + ((Y - hy) / (ry + 0.3)) ** 2 + ((Z - hz - 0.5) / (rz + 0.25)) ** 2 <= 1) & \
             (Z > hz + 0.15 * f)
@@ -980,7 +981,7 @@ def _headgear(b, d: Dress, p: Pose, fr: Frame, c, at):
             (Z > hz - rz * 1.0) & (Z <= hz + 0.3)
         b.put(cap | flap, mat, tone=-0.1, normal=((X - hx) / rx ** 2, (Y - hy) / ry ** 2, (Z - hz) / rz ** 2))
         if d.head_trim:
-            b.put(cap & (Z < hz + 0.6 * f), d.head_trim, tone=0.2)
+            b.put(cap & (Z < hz + 0.6 * f), d.head_trim, tone=0.2 + ACCENT)
     elif g in ("hood", "hood_mouth", "pointed_hood"):
         shell = ((X - hx + 0.1) / (rx + 0.35)) ** 2 + ((Y - hy) / (ry + 0.35)) ** 2 + ((Z - hz) / (rz + 0.3)) ** 2 <= 1
         U = (X - hx)
@@ -1082,7 +1083,7 @@ def _headgear(b, d: Dress, p: Pose, fr: Frame, c, at):
         brow = (rad > 0.95) & (rad < 1.22) & (np.abs(Z - (hz + rz * 0.42)) < 0.3) & (U > 0)
         b.put(shell | guard | cheek | brow, mat, tone=0.25, normal=((X - hx) / rx ** 2, (Y - hy) / ry ** 2, (Z - hz) / rz ** 2))
         if d.head_trim:            # brass trim and, on parade, a crest
-            b.put(brow, d.head_trim, tone=0.4)
+            b.put(brow, d.head_trim, tone=0.4 + ACCENT)
             crest = (np.abs(Y - hy) < 0.38 * f) & (Z > top + 0.4) & (Z < top + 1.5 * f) & (np.abs(X - hx) < rx * 0.9)
             b.put(crest, "cinnabar", tone=0.1 - 0.4 * ((X * 3) % 1.0 < 0.3))
     elif g == "apex":      # the flamen's close cap topped by a spike of olive wood with a tuft of wool

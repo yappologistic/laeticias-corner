@@ -557,11 +557,13 @@ def r_crane(v, frame, frames, k):
 
 def r_scaffold(v, frame, frames, k):
     """Scaffolding of lashed poles with putlog decks and a ladder."""
-    from sets.rome.common import scaffold
+    from sets.athens.common import scaffold
     m = _m(1, 1, 64, k)
     scaffold(m, 2.0, 14.0, 2.0, 14.0, 0.0, 60.0, decks=4)
+    for y in (5.0, 8.0):                                    # the ladder: rails and rungs
+        rod(m, (14.8, y, 0.0), (14.8, y, 58.0), 0.4, "wood", 0.1)
     for z in np.arange(1.0, 58.0, 3.0):
-        rod(m, (14.6, 5.0, z), (14.6, 8.0, z), 0.2, "wood", 0.1)
+        rod(m, (14.8, 5.0, z), (14.8, 8.0, z), 0.35, "wood", 0.1)
     return m
 
 
