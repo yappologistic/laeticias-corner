@@ -102,6 +102,7 @@ void App::createWorldView() {
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
     (void)worldView_->setQuality(wantedQuality());
+    worldView_->setClouds(gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On));
     if (city_) worldView_->setLife(city_->city.get());
     setupMap();
 }

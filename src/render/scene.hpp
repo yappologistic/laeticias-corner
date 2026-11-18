@@ -44,8 +44,9 @@ struct Ghost {
 struct FrameParams {
     const World* world = nullptr;
     std::span<const Actor> actors;
-    int resident = -1;                      // her actor, for butterflies on her hat
-    const Weather* weather = nullptr;       // cloud shadows, wet ground, rain on her umbrella
+    int resident = -1;                // her actor, for butterflies on her hat
+    const Weather* weather = nullptr; // cloud shadows, wet ground, rain on her umbrella
+    bool cloudShadows = true; // false: none (the setting, or the world's shader path shades all)
     std::span<const Ghost> ghosts;          // what the tool would do: one, or a line, brush or area
     std::span<const NearInstance> outlines; // nook areas to outline (the hovered nook, or all)
     float grid = 0;                         // opacity of the tile grid over open land (0: off)

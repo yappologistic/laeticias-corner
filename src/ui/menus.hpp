@@ -57,6 +57,7 @@ struct MenuModel {
     int frames = 1;                // postcard frames unlocked (the arrows show when there are more)
     int look = 3;                  // the Look: 0 Classic .. 3 High (graphics plan §3.2)
     bool lookAfterRestart = false; // this renderer cannot show it: it applies on the next start
+    int clouds = 0;                // the clouds: 0 on, 1 shadows only, 2 off
 };
 
 struct MenuAction {
@@ -80,6 +81,7 @@ struct MenuAction {
         Grid,
         Vsync,
         Look,    // arg: 0 Classic .. 3 High
+        Clouds,  // arg: 0 on, 1 shadows only, 2 off
         Chatter, // arg: 1 chatty
         ReplayTour,
         Resume,

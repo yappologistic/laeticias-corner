@@ -143,6 +143,7 @@ struct Profile {
     bool vsync = true;  // frames wait for the display
     std::string frame = "plain"; // the postcard frame last used
     std::string look = "high";   // the Look: classic | low | medium | high
+    std::string clouds = "on";   // the clouds: on | shadows | off
     bool caption = true;         // postcards carry the world's name and the date
     bool onboarded = false;      // the first-minute tour was finished or skipped
     std::string lastWorld;       // folder name of the world played last

@@ -52,6 +52,7 @@ enum Id : int {
     kFolder,
     kClosePhoto,
     kLook = 80,
+    kClouds,
     kCard0 = 100, // per world: card, play, rename, delete
     kPlay0 = 200,
     kRename0 = 300,
@@ -87,6 +88,7 @@ constexpr Named kNames[] = {
     {"grid", kGrid},
     {"vsync", kVsync},
     {"look", kLook},
+    {"clouds", kClouds},
     {"chatty", kChatty},
     {"quiet", kQuiet},
     {"replay", kReplay},
@@ -285,6 +287,8 @@ bool Menus::key(MenuKey k, const MenuModel& m) {
                  std::clamp(m.profile->uiScale + d, 0, kUiScaleCount - 1));
         } else if (w->id == kLook) {
             emit(MenuAction::Kind::Look, std::clamp(m.look + d, 0, 3));
+        } else if (w->id == kClouds) {
+            emit(MenuAction::Kind::Clouds, std::clamp(m.clouds + d, 0, 2));
         }
         return true;
     }
@@ -352,6 +356,7 @@ void Menus::activate(const Widget& w, const MenuModel& m, float px) {
     case kGrid: emit(K::Grid); break;
     case kVsync: emit(K::Vsync); break;
     case kLook: emit(K::Look, (m.look + 1) % 4); break;
+    case kClouds: emit(K::Clouds, (m.clouds + 1) % 3); break;
     case kChatty: emit(K::Chatter, 1); break;
     case kQuiet: emit(K::Chatter, 0); break;
     case kReplay: emit(K::ReplayTour); break;
@@ -627,7 +632,7 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
                         : std::min(colW + 2 * pad, screen_.x - 2 * theme::kMargin * s);
     const float cw = two ? colW : w - 2 * pad;
     const float sectionH = lh + theme::kGap * s;
-    const float leftH = 2 * sectionH + 10 * row;
+    const float leftH = 2 * sectionH + 11 * row;
     const float rightH = 2 * sectionH + 2 * row;
     const float bodyH = two ? std::max(leftH, rightH) : leftH + rightH;
     const float bh = theme::kMenuButtonH * s * 0.85f;
@@ -687,6 +692,9 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
                     : std::string(lookName);
     Widget& lk = add(kLook, Kind::Choice, {x, y, cw, row}, strings::kLook);
     lk.value = lookText_;
+    y += row;
+    Widget& cl = add(kClouds, Kind::Choice, {x, y, cw, row}, strings::kClouds);
+    cl.value = strings::kCloudNames[std::clamp(m.clouds, 0, 2)];
     y += row;
     if (two) {
         x += cw + gap;

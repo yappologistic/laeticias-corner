@@ -889,7 +889,7 @@ void Scene::drawShadows(const FrameParams& p) {
                {k, k});
     }
     // Clouds slide their soft shadows over the ground; showers are darker.
-    if (p.weather != nullptr) {
+    if (p.weather != nullptr && p.cloudShadows) {
         // A round blob that fades all the way to nothing, darkened: no edge shows however large.
         const Sprite& blob = atlas_.sprite(atlas_.lightBlob());
         for (const WeatherCell& c : p.weather->cells()) {

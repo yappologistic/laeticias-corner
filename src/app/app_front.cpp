@@ -244,6 +244,7 @@ const MenuModel& App::menuModel() {
     m.look = static_cast<int>(look);
     m.lookAfterRestart = look != gpu::Quality::Classic && worldView_ &&
                          worldView_->quality() == gpu::Quality::Classic;
+    m.clouds = static_cast<int>(gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On));
     return m;
 }
 
@@ -420,6 +421,13 @@ void App::applyMenuActions() {
             profile_.look = std::string(gpu::qualityId(q));
             // Tiers switch live on SDL's gpu driver; another renderer shows them after a restart.
             if (worldView_ && gpu::isGpu(renderer_.get())) (void)worldView_->setQuality(q);
+            profileChanged();
+            break;
+        }
+        case K::Clouds: {
+            const auto c = static_cast<gpu::Clouds>(std::clamp(a.arg, 0, gpu::kCloudModes - 1));
+            profile_.clouds = std::string(gpu::cloudsId(c));
+            if (worldView_) worldView_->setClouds(c);
             profileChanged();
             break;
         }

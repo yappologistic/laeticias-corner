@@ -317,7 +317,10 @@ TEST_CASE("world folder names and the profile") {
     p.frame = "starry";
     p.caption = false;
     p.onboarded = true;
+    p.clouds = "shadows";
     const Profile back = parseProfile(serialize(p));
+    CHECK(back.clouds == "shadows");
+    CHECK(defaults.clouds == "on");
     CHECK(back.muted);
     CHECK(back.lastWorld == "fern-bank");
     CHECK(back.music == 35);

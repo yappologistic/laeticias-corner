@@ -766,6 +766,7 @@ Profile parseProfile(std::string_view text) {
         }
         p.vsync = boolField(j, "vsync", p.vsync, ignored);
         if (const std::string l = stringField(j, "look", ignored); !l.empty()) p.look = l;
+        if (const std::string c = stringField(j, "clouds", ignored); !c.empty()) p.clouds = c;
         if (const std::string f = stringField(j, "frame", ignored); !f.empty()) p.frame = f;
         p.caption = boolField(j, "caption", p.caption, ignored);
         p.onboarded = boolField(j, "onboarded", p.onboarded, ignored);
@@ -786,6 +787,7 @@ std::string serialize(const Profile& p) {
               {"brush", p.brush},
               {"vsync", p.vsync},
               {"look", p.look},
+              {"clouds", p.clouds},
               {"frame", p.frame},
               {"caption", p.caption},
               {"onboarded", p.onboarded},

@@ -1573,6 +1573,9 @@ void App::render() {
     p.actors = drawActors_;
     p.resident = actors_.resident();
     p.weather = &weather_;
+    p.cloudShadows =
+        gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On) != gpu::Clouds::Off &&
+        (!worldView_ || worldView_->quality() == gpu::Quality::Classic);
     p.ghosts = buildGhosts();
     p.grid = grid_ ? tuning::kGridAlphaDay + (tuning::kGridAlphaNight - tuning::kGridAlphaDay) *
                                                  std::clamp(p.light.night, 0.0f, 1.0f)
