@@ -21,7 +21,7 @@ from PIL import Image, ImageDraw
 from plan import world_plan as P
 
 from . import citylife as CL
-from . import lifesim, rng
+from . import lifesim, lights, rng
 from . import seasons as SEAS
 from .compose import NONE16
 from .preview import font
@@ -276,7 +276,8 @@ def run(b, rids: list[str], preview: bool, write: bool) -> bool:
             raise SystemExit(f"no regions/{layer}/life.py for {rid!r}")
         view = CL.region_view(world, b.cat, b.graphs, b.root, rid, layer)
         doc = finish_doc(mod.build(view), world, b, getattr(mod, "SEASON_BEDS", None))
-        problems = CL.check(doc, view)
+        problems = CL.check(doc, view) + [
+            CL.Problem("L12", level, where, msg) for level, where, msg in lights.check(doc, world, b.cat)]
         errs = [p for p in problems if p.level == "error"]
         (out_dir / f"{rid}_check.txt").write_text("\n".join(CL.report_lines(problems)) + "\n")
         (out_dir / f"{rid}_day.md").write_text(day_report(doc, view, problems))
@@ -297,9 +298,9 @@ def run(b, rids: list[str], preview: bool, write: bool) -> bool:
     return ok
 
 
-def check_regions(b) -> int:
-    """Sound (L9), look (L10) and names and eras (L11) errors in every committed region file,
-    cities or not."""
+def check_regions(b, world) -> int:
+    """Sound (L9), look (L10), names and eras (L11) and lights (L12) errors in every committed
+    region file, cities or not."""
     from . import look, places, sound
     files, families = sound.manifests(b.root)
     n = 0
@@ -307,7 +308,8 @@ def check_regions(b) -> int:
         doc = json.loads(f.read_text())
         probs = [("L9",) + x for x in sound.check(doc, files, families)] + \
                 [("L10",) + x for x in look.check(doc)] + \
-                [("L11",) + x for x in places.check(doc)]
+                [("L11",) + x for x in places.check(doc)] + \
+                [("L12",) + x for x in lights.check(doc, world, b.cat)]
         errs = [x for x in probs if x[1] == "error"]
         if errs:
             print(f"{doc.get('id')}: sound and look {len(errs)} error(s)")

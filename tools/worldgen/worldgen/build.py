@@ -362,6 +362,9 @@ def main(argv=None) -> int:
                     help="write the region files of the stretches, seas, seams and waypoints")
     ap.add_argument("--city", nargs="+", metavar="REGION",
                     help="build, check and write these cities' life (regions/<layer>/life.py)")
+    ap.add_argument("--nights", nargs="*", metavar="REGION",
+                    help="lit nights: warm-lit share per view at dusk, night and the small hours "
+                         "(out/worldgen/night/; the three cities when no region is named)")
     ap.add_argument("--seasons", action="store_true",
                     help="write the catalogs' seasonal fields, the world's flood ranks and ground "
                          "classes, and the season needs file")
@@ -398,6 +401,10 @@ def main(argv=None) -> int:
             write_needs(b, world)
         if not a.city and not a.life and not targets_named(a):
             return 0
+    if a.nights is not None:
+        from . import nights
+        nights.run(b, a.nights or list(nights.CITIES), a.preview)
+        return 0
     if a.year_all:
         from . import seasonreport
         seasonreport.run_all(b)
@@ -469,7 +476,7 @@ def main(argv=None) -> int:
         from . import lifereport
         if lifereport.check_committed(b, world):
             failed = True
-        if lifereport.check_regions(b):
+        if lifereport.check_regions(b, world):
             failed = True
         from . import seasoncheck
         rep = seasoncheck.run(b, world)

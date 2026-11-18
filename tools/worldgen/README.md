@@ -21,6 +21,7 @@ tools/worldgen/build.sh --life                # region files of the stretches, s
 tools/worldgen/build.sh --seasons             # catalogs' seasonal fields, flood ranks, ground classes, needs
 tools/worldgen/build.sh --city athens --year --preview   # … and a year in the life, the season maps
 tools/worldgen/build.sh --year-all            # a year in the life of every region file
+tools/worldgen/build.sh --nights athens --preview   # lit nights: warm-lit share per view, night previews
 ```
 
 After changing the base or a town that touches it, rebuild the towns and then the base once more:
@@ -176,6 +177,21 @@ on `world.ramp` flights (a level per 4 tiles plus a landing), meeting every port
 fixed level; paving; a ford, bridge or pontoon on water; then markers, stations, stops, tombs,
 graves, terrace walls, watchtowers, beacons and farms with tracks; harbours at route and lane ends.
 Between two portals of a town without a layout the base carries the road through the town's rect.
+
+## Lit nights (`worldgen/lights.py`, `worldgen/nights.py`)
+
+Every region file gets `lights` (the profiles: kind, colour temperature, radius, strength,
+flicker, hours, rain, festivals) and `light_points` (`[tx, ty, item, profile(, emitter)]` at placed
+light-giving items, chosen by rule per item kind and district, at most 48 per chunk); night roles
+and evening events get `carries` (the lamp or torch they hold). Glowing items no point names stay
+dark at night. Layouts add the street-level lights a civilization had with `night_posts`
+(lamps in niches at crossings, braziers at gates, torches on processional ways) and `crossings`
+(finish.py). `--nights` measures each populated quarter and the golden views at 1x: the share
+warm-lit at dusk, 22:00 and 02:00 against the quality bar (2–8 % in a city, 1–4 % in a village),
+the unlit median, and writes `out/worldgen/night/nights.md` and previews. The checks are L12
+(`lights.check`): every point at a placed light-giving item or one of its emitters, profiles in
+range (warm 1700–2600 K, flicker depth ≤ 0.08, valid hours and conditions), no two lights of a kind
+on one tile, carriers' profiles present, and no populated quarter without light at dusk.
 
 ## Validation (world-tech §3.5)
 
