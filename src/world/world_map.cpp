@@ -189,6 +189,10 @@ WorldMap::WorldMap(const WorldFile& wf, const Content& content, std::span<const 
     for (const auto& [key, s] : dropped)
         diag.warn("layers/" + key.first + ".lcw drops " + std::to_string(s.count) + " item(s) of " +
                   key.second + " under its cells (first at " + at(s.first) + ")");
+    // Prebuilt items touching the home rect give way to the game's home now, not when the home
+    // is applied: item indices never change after load (city life keeps them; L-018).
+    for (std::size_t i = 0; i < items_.size(); ++i)
+        if (items_[i].rect().intersects(home_.rect)) dead[i] = 1;
     std::size_t keep = 0;
     for (std::size_t i = 0; i < items_.size(); ++i)
         if (!dead[i]) items_[keep++] = items_[i];
@@ -652,14 +656,7 @@ std::expected<void, std::string> WorldMap::applyHome(const HomeDelta& delta, Dia
     if (homeDistrict < 0) return std::unexpected("the world would hold more than 255 districts");
 
     const bool full = !homeCleared_;
-    if (full) {
-        std::size_t keep = 0;
-        for (std::size_t i = 0; i < homeBegin_; ++i)
-            if (!items_[i].rect().intersects(hr)) items_[keep++] = items_[i];
-        items_.resize(keep);
-        homeBegin_ = static_cast<std::uint32_t>(keep);
-        homeCleared_ = true;
-    }
+    homeCleared_ = true;
     items_.resize(homeBegin_);
     for (int y = 0; y < hh; ++y)
         for (int x = 0; x < hw; ++x) {

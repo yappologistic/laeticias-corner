@@ -276,7 +276,7 @@ private:
     std::vector<District> districts_;
     std::vector<Placed> items_;
     std::uint32_t homeBegin_ = 0; // items_[homeBegin_..] are the player's
-    bool homeCleared_ = false;    // prebuilt items touching the home rect dropped
+    bool homeCleared_ = false;    // the home has been applied once
     std::vector<std::uint8_t> homeWild_;
     std::vector<WorldSlot> slots_; // prebuilt slots sorted by chunk, then the home's
     std::uint32_t homeSlotBegin_ = 0;
