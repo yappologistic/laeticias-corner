@@ -217,6 +217,18 @@ TEST_CASE("real world: the digest equals tools/worldgen's, byte for byte") {
     CHECK(toJson(actual) == *text);
 }
 
+TEST_CASE("real world: the home region keeps its own look, its file the rest") {
+    // corner.json styles the land round the corner (sound, weather, life) but lays no tint or
+    // haze on the home: the game's scene grades it from the home catalog's seasons.
+    const world::LoadedWorld& w = realWorld();
+    const std::size_t home = static_cast<std::size_t>(w.file.home.region);
+    REQUIRE(home < w.regions.size());
+    const world::Theme& t = w.regions[home].theme;
+    CHECK(t.hazeStrength == 0.0f);
+    for (const auto& g : t.grading) CHECK(g == world::Rgb3{1, 1, 1});
+    CHECK_FALSE(w.regions[home].life.is_null()); // its life is read
+}
+
 TEST_CASE("real world: loading twice gives the same world") {
     const auto again = loadWorld(assetsDir(), homeCatalog());
     REQUIRE(again.has_value());
