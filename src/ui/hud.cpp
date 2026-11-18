@@ -861,8 +861,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kSketchTab0 + 9:
             case kSketchTab0 + 10:
             case kSketchTab0 + 11:
-                if (active_ - kSketchTab0 != sketchTab_) {
-                    sketchTab_ = active_ - kSketchTab0;
+                if (entry.index != sketchTab_) {
+                    sketchTab_ = entry.index;
                     sketchScroll_ = 0;
                     emit(HudAction::Kind::PageTurn);
                 }
@@ -1214,8 +1214,11 @@ void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, flo
             tx = x + pad;
             y += theme::kTabH * s + gap * 0.5f;
         }
-        Widget& w = add(kSketchTab0 + t, {tx, y, tw, theme::kTabH * s});
+        // The home's tabs keep their ids (scripts name them); places follow the nooks' slot.
+        Widget& w = add(t < homeTabs ? kSketchTab0 + t : kSketchTab0 + 3 + (t - homeTabs),
+                        {tx, y, tw, theme::kTabH * s});
         w.label = name;
+        w.entry.index = t;
         w.selected = t == sketchTab_;
         tx += tw + gap;
     }
@@ -1942,6 +1945,8 @@ bool Hud::reveal(std::string_view name, const HudModel& m) {
 }
 
 void Hud::draw(Painter& p, const HudModel& m) const {
+    // The era caption lies under every panel.
+    if (!m.photo) drawCaption(p, m);
     if (!m.photo) {
         const float radius = theme::kPanelRadius * scale_;
         // Title, docks and journal never overlap, so they share one layer.
@@ -2009,7 +2014,6 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         drawCalendar(p, m);
         drawLabels(p, m);
         drawBubble(p, m);
-        drawCaption(p, m);
         drawCard(p, m);
         drawRibbon(p);
         drawWorldTip(p, m);

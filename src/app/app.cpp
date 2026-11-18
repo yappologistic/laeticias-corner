@@ -243,6 +243,7 @@ void App::adopt(SaveData& data) {
         savedCamera_ = cat_.iso().toWorld(data.camera->x, data.camera->y);
         savedZoom_ = data.zoom;
     }
+    adoptWorldState(data.worldState);
     // Critters are placed once the camera exists (see run()).
 }
 
@@ -301,7 +302,7 @@ void App::loadOrStart() {
     if (fs::exists(legacy, ec) && !anyWorld()) {
         auto text = readTextFile(legacy);
         auto data = text ? deserialize(*text, cat_) : std::unexpected(text.error());
-        if (data && data->fromVersion < kSaveVersion) {
+        if (data && data->fromVersion < 3) {
             migrateLegacy(*data, cat_);
             if (data->muted) muted_ = true;
             adopt(*data);
@@ -368,6 +369,7 @@ bool App::save(bool wait) {
         data.camera = cat_.iso().toTile(camera_.position());
         data.zoom = camera_.zoom();
     }
+    data.worldState = worldState();
     if (measuring()) return true; // a measuring world is never saved
     // The front door's preview of a new corner is not a world until it is begun.
     if (freshWorld_ && frontDoor()) return true;
@@ -849,6 +851,11 @@ void App::undoRedo(bool redo) {
 
 void App::zoomBy(int steps, Vec2 px) {
     tourMoved_ = true;
+    // Zooming out past the widest view opens the world's map (world-tech §4.7).
+    if (steps < 0 && camera_.level() == 0 && loaded_ && !map_.isOpen()) {
+        toggleMap();
+        return;
+    }
     camera_.zoomTo(camera_.level() + steps, px, screen());
 }
 
@@ -1249,7 +1256,7 @@ HudModel App::model() const {
     m.canUndo = editor_.canUndo();
     m.canRedo = editor_.canRedo();
     m.canZoomIn = camera_.level() + 1 < static_cast<int>(kZoomLevels.size());
-    m.canZoomOut = camera_.level() > 0;
+    m.canZoomOut = camera_.level() > 0 || loaded_ != nullptr;
     const Lighting l = lighting();
     m.brightness =
         std::clamp(((l.ambient.r + l.ambient.g + l.ambient.b) / 3.0f - 0.3f) / 0.6f, 0.0f, 1.0f);

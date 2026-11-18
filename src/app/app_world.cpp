@@ -29,6 +29,9 @@ bool App::loadWorldData() {
     const Vec2 o = iso.toWorld(TilePos{home.rect.x0, home.rect.y0});
     homeOffset_ = {o.x, o.y - static_cast<float>(home.level * lvl)};
     scene_->setFloating(false);
+    figures_ = world::placeFigures(*loaded_);
+    journal_.assign(loaded_->file.regions.size(), {});
+    visited_.assign(loaded_->file.regions.size(), 0);
     hooks_.ground = [this](const worldview::FrameInfo& fi) {
         scene_->embedBegin(sceneFrame_, {fi.target, fi.xf, fi.w, fi.h, homeOffset_});
         scene_->embedGround(sceneFrame_);
@@ -68,8 +71,6 @@ void App::createWorldView() {
     if (auto r = loaded_->map->applyHome(delta, diag); !r)
         SDL_Log("world: home: %s", r.error().c_str());
     homeSynced_ = world_.revision();
-    figures_ = world::placeFigures(*loaded_);
-    journal_.resize(loaded_->file.regions.size());
     const world::HomePlacement& home = loaded_->file.home;
     const Iso iso = cat_.iso();
     // The home's screen box in world px: its ground and whatever stands on it.
@@ -177,7 +178,6 @@ void App::setupMap() {
         allPlaces_.push_back({mk.region, kind, mk.at});
     }
     std::ranges::stable_sort(allPlaces_, {}, [](const Place& p) { return p.marker; });
-    visited_.assign(wf.regions.size(), 0);
 }
 
 const world::RegionFile* App::regionFile(int region) const {
@@ -556,6 +556,74 @@ Vec2 App::gridToHome(Vec2 tile) const {
         w.y -= static_cast<float>((m.level(t) - loaded_->file.home.level) *
                                   loaded_->content->tileLevel());
     return w;
+}
+
+} // namespace lc
+
+namespace lc {
+
+WorldProgress App::worldState() const {
+    WorldProgress w;
+    if (!loaded_) return w;
+    const world::WorldFile& wf = loaded_->file;
+    const Vec2 t = cat_.iso().toTile(camera_.position());
+    w.camera =
+        Vec2{t.x + static_cast<float>(wf.home.rect.x0), t.y + static_cast<float>(wf.home.rect.y0)};
+    w.zoom = camera_.zoom();
+    for (std::size_t r = 0; r < wf.regions.size(); ++r) {
+        if (visited_[r] != 0) w.visited.push_back(wf.regions[r].id);
+        std::vector<std::string> found;
+        std::vector<std::string> seen;
+        for (const JournalItem& j : journal_[r]) (j.found ? found : seen).push_back(j.entry);
+        if (!found.empty()) w.found.emplace_back(wf.regions[r].id, std::move(found));
+        if (!seen.empty()) w.seen.emplace_back(wf.regions[r].id, std::move(seen));
+    }
+    if (seamExplained_) w.flags.emplace_back(kFlagSeamExplained);
+    return w;
+}
+
+void App::adoptWorldState(const WorldProgress& w) {
+    seamExplained_ = std::ranges::find(w.flags, kFlagSeamExplained) != w.flags.end();
+    journalDirty_ = true;
+    cardOpen_ = false;
+    if (!loaded_) return;
+    const world::WorldFile& wf = loaded_->file;
+    std::ranges::fill(visited_, std::uint8_t{0});
+    for (auto& list : journal_) list.clear();
+    for (const std::string& id : w.visited)
+        if (const int r = wf.findRegion(id); r >= 0) visited_[static_cast<std::size_t>(r)] = 1;
+    // Entries name their card through the catalogs and the figures; unknown ones are dropped.
+    const auto add = [&](const auto& lists, bool found) {
+        for (const auto& [id, entries] : lists) {
+            const int r = wf.findRegion(id);
+            if (r < 0) continue;
+            for (const std::string& e : entries) {
+                std::string card;
+                if (e.starts_with("landmark:")) {
+                    const int i = loaded_->content->findItem(std::string_view(e).substr(9));
+                    if (i < 0) continue;
+                    card = loaded_->content->item(i).card;
+                } else if (e.starts_with("figure:")) {
+                    const auto f = std::ranges::find(figures_, std::string_view(e).substr(7),
+                                                     &world::FigurePlace::actor);
+                    if (f == figures_.end()) continue;
+                    card = f->card;
+                } else {
+                    continue;
+                }
+                recordEntry({r, e, card}, found);
+            }
+        }
+    };
+    add(w.found, true);
+    add(w.seen, false);
+    if (w.camera) {
+        // Clamped to the grid if the world changed under it.
+        const Vec2 at{std::clamp(w.camera->x, 0.0f, static_cast<float>(wf.gridW)),
+                      std::clamp(w.camera->y, 0.0f, static_cast<float>(wf.gridH))};
+        savedCamera_ = gridToHome(at);
+        savedZoom_ = w.zoom;
+    }
 }
 
 } // namespace lc

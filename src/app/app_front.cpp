@@ -67,6 +67,7 @@ void App::resetWorld() {
     notes_ = PhraseWalker{};
     lastNote_ = -1;
     anyRipe_ = false;
+    adoptWorldState({});
     worldName_.clear();
     created_.clear();
     slug_.clear();

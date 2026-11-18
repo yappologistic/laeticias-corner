@@ -98,6 +98,8 @@ inline constexpr std::string_view kThumbFile = "thumb.png";
 inline constexpr std::string_view kProfileFile = "profile.json";
 inline constexpr std::string_view kLegacyFile = "corner.json";
 inline constexpr std::string_view kLegacyKept = "corner.v1.json";
+// One-time facts kept in the save's world block.
+inline constexpr std::string_view kFlagSeamExplained = "seam_explained";
 
 class App {
 public:
@@ -306,6 +308,9 @@ private:
     [[nodiscard]] std::optional<Vec2> gridPoint(std::string_view name) const;
     // A world grid tile (continuous) in home px, raised by its level as the world draws it.
     [[nodiscard]] Vec2 gridToHome(Vec2 tile) const;
+    // The player's delta over the world for the save, and taking one from it.
+    [[nodiscard]] WorldProgress worldState() const;
+    void adoptWorldState(const WorldProgress& w);
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.

@@ -78,6 +78,11 @@ set(LC_SCRIPTS
   "profiler|profiler|960x600|"
   "builder|builder|960x600|"
   "front_door|front_door|1280x800||--front-door"
+  "world_old_save|world_old_save|960x600|"
+  "world_save_a|world_save_a|960x600|"
+  "world_save_b|world_save_b|960x600|"
+  "world_travel|world_travel|1280x800|"
+  "world_roam|world_roam|1280x800|"
   "postcards|postcards|960x600|"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
@@ -110,6 +115,8 @@ foreach(entry IN LISTS LC_SCRIPTS)
   set(save "${LC_SCRATCH}/save_${name}")
   if(name MATCHES "^save_reload_")
     set(save "${LC_SCRATCH}/save_reload")
+  elseif(name MATCHES "^world_save_")
+    set(save "${LC_SCRATCH}/save_world_reload")
   endif()
   set(file "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${script}.lcs")
   if(script MATCHES "^(launch|front_sizes)_")
@@ -137,6 +144,15 @@ add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
 set_tests_properties(script_save_reload_a PROPERTIES FIXTURES_SETUP reload)
 set_tests_properties(script_save_reload_b PROPERTIES FIXTURES_REQUIRED "clean_saves;reload")
+set_tests_properties(script_world_save_a PROPERTIES FIXTURES_SETUP world_reload)
+set_tests_properties(script_world_save_b PROPERTIES FIXTURES_REQUIRED "clean_saves;world_reload")
+# A world saved by the previous version (3) opens in the world.
+add_test(NAME prepare_world_old_save COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v3.json
+  ${LC_SCRATCH}/save_world_old_save/worlds/laeticias-corner/world.json)
+set_tests_properties(prepare_world_old_save PROPERTIES FIXTURES_SETUP world_old
+  FIXTURES_REQUIRED clean_saves)
+set_tests_properties(script_world_old_save PROPERTIES FIXTURES_REQUIRED "clean_saves;world_old")
 # The corrupt-save run needs a garbage file in place before launch; it is left untouched.
 add_test(NAME prepare_corrupt_save COMMAND ${CMAKE_COMMAND}
   -DFILE=${LC_SCRATCH}/save_corrupt_save/worlds/laeticias-corner/world.json -P ${CMAKE_CURRENT_SOURCE_DIR}/write_garbage.cmake)
@@ -158,7 +174,7 @@ set_tests_properties(script_migrate_v1 PROPERTIES FIXTURES_REQUIRED "clean_saves
 
 # A world from a newer build: left untouched, byte for byte (QA2-03).
 set(newer "${LC_SCRATCH}/save_newer_save/worlds/laeticias-corner/world.json")
-set(newer_text "{\"version\": 4, \"name\": \"From the future\", \"home\": {}}")
+set(newer_text "{\"version\": 5, \"name\": \"From the future\", \"home\": {}}")
 add_test(NAME prepare_newer_save COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DCONTENT=${newer_text}"
   -P ${CMAKE_CURRENT_SOURCE_DIR}/write_file.cmake)
 set_tests_properties(prepare_newer_save PROPERTIES FIXTURES_SETUP newer FIXTURES_REQUIRED clean_saves)

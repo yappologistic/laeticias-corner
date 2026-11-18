@@ -2,9 +2,9 @@
 // World saves: versioned JSON with atomic, durable writes and graceful handling of bad input, the
 // migration of older saves, and world folder names.
 //
-// World save format, version 3 (the only place it is documented; layout from
+// World save format, version 4 (the only place it is documented; layout from
 // docs/design/living-corner.md §2.4 and world-tech.md §2.7). One JSON object:
-//   "version"    3
+//   "version"    4
 //   "name"       the world's name (its home corner's), "free_build" bool,
 //   "created"    UTC "YYYY-MM-DDTHH:MM:SSZ", "played" active play time in seconds
 //   "clock"      {"t": 0..1, "pin": "auto|day|dusk|night|dawn", "day": calendar day from 0}
@@ -20,14 +20,23 @@
 //                 "terrain": [[palette index, run], ...] over the map, x fastest,
 //                 "items": [{"id", "x", "y", "v", "g": [stage, progress] for growing items}],
 //                 "stage": highest open land stage}; coordinates are home-relative
-//   "world"      {"camera": {"at": [tx, ty] view centre in home tiles, "zoom": scale}}
+//   "world"      the player's delta over the prebuilt world (never the world itself):
+//                {"camera": {"at": [tx, ty] view centre in world grid tiles, "zoom": scale},
+//                 "home_view": {"at": [tx, ty] view centre in home tiles, "zoom"} (without a
+//                 world: the floating island), "visited": [region ids],
+//                 "journal": {region id: [entries found: "landmark:<id>", "figure:<id>"]},
+//                 "seen": {region id: [entries seen, not found yet]}, "flags": [one-time facts,
+//                 e.g. "seam_explained"]}
 // Everything outside "home" is global to the world. Readers ignore what they do not know, skip
 // ids the catalog no longer has (with a warning) and fall back to defaults for missing optional
 // fields (or fields of the wrong type, each with a warning); counters and timers are clamped to
 // what play could have made; files from a newer version are refused. Wild tiles (stages not yet
 // open) hold nothing.
 //
-// Older files are still read, for migration (see migrateLegacy):
+// Older files are still read:
+// Version 3: as above but "world" holds only {"camera": {"at", "zoom"}} in home tiles (read as
+//   "home_view"); nothing else changes, the world block starts empty.
+// Versions 1 and 2, for migration (see migrateLegacy):
 // Version 2 (engine chunked): "map", "chunk" (32), "base": "blank", "palette", "chunks":
 //   [{"x", "y", "terrain": [[v, n], ...] rows of the chunk's in-map tiles (-1 = no ground),
 //   "items": [{"id", "x", "y", "v"}] absolute}], "clock" {"t", "pin"}, "settings" {"rain",
@@ -51,7 +60,18 @@
 
 namespace lc {
 
-inline constexpr int kSaveVersion = 3;
+inline constexpr int kSaveVersion = 4;
+
+// What the player has done in the wider world: their delta over the immutable prebuilt world.
+struct WorldProgress {
+    std::optional<Vec2> camera; // view centre in world grid tiles
+    float zoom = 1;
+    std::vector<std::string> visited; // region ids
+    // Per region id: entries found (card opened) and seen (on arrival), in the order they came.
+    std::vector<std::pair<std::string, std::vector<std::string>>> found;
+    std::vector<std::pair<std::string, std::vector<std::string>>> seen;
+    std::vector<std::string> flags;
+};
 
 struct SaveData {
     SaveData(World w, const Catalog& cat) : world(std::move(w)), progress(cat) {}
@@ -68,8 +88,9 @@ struct SaveData {
     int seasonPin = -1; // season index, -1: follow the calendar
     WeatherMode weather = WeatherMode::Natural;
     std::vector<std::string> seen; // visitor ids
-    std::optional<Vec2> camera;    // view centre in home tiles
+    std::optional<Vec2> camera;    // view centre in home tiles (the floating island)
     float zoom = 1;
+    WorldProgress worldState;
     int fromVersion = kSaveVersion;
     bool muted = false;                // older files only: it now lives in the profile
     std::vector<std::string> warnings; // entries skipped or repaired, one line per kind

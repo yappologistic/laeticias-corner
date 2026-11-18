@@ -230,7 +230,9 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         if (what == "region") return equal(regionId(pl.region()), a[1]);
         if (what == "place") return equal(regionId(pl.place()), a[1]);
         if (what == "away") return yesNo(away());
-        if (what == "map") return yesNo(map_.isOpen());
+        if (what == "map") {
+            return yesNo(map_.isOpen());
+        }
         if (what == "travelling") return yesNo(travel_.region >= 0);
         if (what == "era" || what == "info" || what == "tip") {
             const HudModel m = model();

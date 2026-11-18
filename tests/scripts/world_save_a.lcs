@@ -1,0 +1,14 @@
+# The player's delta over the world is saved: places visited, a card found, the view.
+key m
+wait 20
+click map:parsa
+wait 90
+expect place parsa
+expect visited parsa yes
+set look parsa.xerxes 2
+wait 10
+click figure:parsa.xerxes
+wait 20
+expect info Xšayāršā
+expect found parsa 1
+quit

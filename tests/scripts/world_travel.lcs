@@ -1,0 +1,57 @@
+# The map and fast travel: open the map, travel to each city and home again; the era caption
+# shows once per visit; a landmark's and a figure's card; the journal fills.
+expect away no
+expect region corner
+expect widget map yes
+key m
+wait 20
+expect map open
+shot shots/world_map.png
+move map:rome
+wait 3
+shot shots/world_map_hover.png
+click map:rome
+waitfor 70 travelling no
+expect place rome
+expect era Roma
+expect away yes
+expect visited rome yes
+shot shots/world_rome.png
+# Once per visit: the caption fades, and a short step out and back brings no new one.
+wait 240
+expect era no
+key m
+wait 20
+click map:athens
+waitfor 70 travelling no
+expect place athens
+expect era Athens
+shot shots/world_athens.png
+click landmark:athens.parthenon
+wait 20
+expect info yes
+shot shots/world_card_landmark.png
+key escape
+wait 15
+expect info no
+key m
+wait 20
+click map:parsa
+waitfor 70 travelling no
+expect place parsa
+expect era Pārsa
+set look parsa.xerxes 2
+wait 10
+click figure:parsa.xerxes
+wait 20
+expect info Xšayāršā
+expect found parsa 1
+shot shots/world_card_figure.png
+key escape
+key m
+wait 20
+click map:corner
+waitfor 70 travelling no
+expect region corner
+expect away no
+quit
