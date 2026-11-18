@@ -361,3 +361,13 @@ TEST_CASE("the note walker starts on D, F sharp or A, walks in small steps and l
     PhraseWalker wa, wb;
     for (int i = 0; i < 50; ++i) CHECK(wa.next(i * 0.2, a) == wb.next(i * 0.2, b));
 }
+
+TEST_CASE("a note about a visitor already drawn is not asked for (QA2 design 1)") {
+    Game g;
+    g.seen[static_cast<std::size_t>(*g.cat.findVisitor("owl"))] = 1;
+    g.run(2.0);
+    CHECK(g.done("cat_pines"));
+    CHECK(std::ranges::none_of(
+        g.log, [](const ProgressEvent& e) { return e.kind == ProgressEvent::Kind::WishGranted; }));
+    CHECK_FALSE(g.done("snuffling")); // the hedgehog is still to find: its note still waits
+}

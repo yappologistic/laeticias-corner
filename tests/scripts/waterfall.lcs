@@ -1,5 +1,4 @@
 # Water painted to the south-east rim falls over it, with mist at its foot.
-set unlock all
 set season summer
 set clock day
 paint water @36,31 @39,33

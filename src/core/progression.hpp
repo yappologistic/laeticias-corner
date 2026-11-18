@@ -78,6 +78,7 @@ private:
     void tickRare(const CondFacts& facts, double played, Rng& rng);
     [[nodiscard]] int rareRate(int visitor) const;
     void offer(const World& world, Progress& p, const CondFacts& facts, double played);
+    void settleClues(Progress& p, const CondFacts& facts);
     void grant(int wish, Progress& p, double played);
     void refresh(int wish, const World& world, const CondFacts& facts, double played);
 

@@ -26,7 +26,12 @@ wait 2
 set played 34
 wait 2
 expect wish first_flowers done
-wait 210
+wait 30
+expect stem music/day_melody.ogg 0
+# The melody joins on the next bar line and fades in over four bars (about 17 s in all).
+fast 18
+expect stem music/day_melody.ogg 0.99
+wait 30
 key m
 wait 30
 key m

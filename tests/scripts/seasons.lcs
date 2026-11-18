@@ -5,16 +5,21 @@ set clock day
 set season spring
 wait 10
 expect season spring
+# The land's mean colour follows the season's looks and grade, so a look that fell back to the
+# plain sprite or a grade that never changed fails here.
+expect color 240,180,120,60 108 133 98 6
 shot shots/season_spring.png
 set season summer
 wait 10
 shot shots/season_summer.png
 set season autumn
 wait 10
+expect color 240,180,120,60 121 127 95 6
 shot shots/season_autumn.png
 set season winter
 wait 130
 expect season winter
+expect color 240,180,120,60 158 167 170 8
 shot shots/season_winter.png
 set clock night
 set rain on

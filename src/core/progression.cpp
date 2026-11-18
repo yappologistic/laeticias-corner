@@ -175,7 +175,25 @@ void Progression::grant(int wish, Progress& p, double played) {
     events_.push_back({ProgressEvent::Kind::WishGranted, wish, false});
 }
 
+void Progression::settleClues(Progress& p, const CondFacts& facts) {
+    // A wish whose only gift is a note about a visitor already drawn has nothing left to give:
+    // it is done quietly, so later wishes that wait for it still come (QA2 design 1).
+    for (std::size_t w = 0; w < cat_.wishes.size(); ++w) {
+        const Reward& r = cat_.wishes[w].reward;
+        if (p.wishes[w].state != WishState::Waiting || r.clue < 0 || !r.items.empty() ||
+            !r.terrain.empty() || r.frame >= 0)
+            continue;
+        const auto v = static_cast<std::size_t>(r.clue);
+        if (v >= facts.seen.size() || facts.seen[v] == 0) continue;
+        p.wishes[w].state = WishState::Done;
+        p.wishes[w].snoozedUntil = -1;
+        p.granted.push_back(static_cast<int>(w));
+        p.clues[v] = 1;
+    }
+}
+
 void Progression::offer(const World& world, Progress& p, const CondFacts& facts, double played) {
+    settleClues(p, facts);
     if (std::cmp_greater_equal(p.open.size(), tuning::kMaxOpenWishes)) return;
     const double gap = p.open.empty() ? tuning::kWishOfferGapEmpty : tuning::kWishOfferGap;
     if (played - p.lastOffer < gap) return;
