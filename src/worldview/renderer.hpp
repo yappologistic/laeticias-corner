@@ -95,6 +95,8 @@ private:
     void warmUp();
     [[nodiscard]] bool put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
                            SDL_BlendMode mode, bool mirror = false);
+    [[nodiscard]] bool putFace(const SpriteRef& s, int side, Vec2 anchor, const Xform& x,
+                               SDL_FColor c);
     // One tile: faces down to its neighbours, the ground, foam, face caps. False when a sprite's
     // page was not resident.
     bool drawTile(TilePos p, const Xform& x, float now, bool* animated);

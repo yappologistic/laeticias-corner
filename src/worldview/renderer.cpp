@@ -130,6 +130,20 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
     return true;
 }
 
+bool WorldView::putFace(const SpriteRef& s, int side, Vec2 anchor, const Xform& x, SDL_FColor c) {
+    // A face spans the columns from its tile's bottom vertex to the side vertex, both included
+    // (hw + 1 of them), or straight cliffs show a seam at every tile and concave corners a gap.
+    // Narrower art gets a copy shifted two columns outward at each end, along the edge's 2:1
+    // slope, underneath it.
+    bool ok = true;
+    if (s.w <= iso_.hw) {
+        const float out = side == 0 ? -2.0f : 2.0f; // towards the bottom vertex
+        ok &= put(s, {anchor.x + out, anchor.y + 1.0f}, x, c, SDL_BLENDMODE_BLEND);
+        ok &= put(s, {anchor.x - out, anchor.y - 1.0f}, x, c, SDL_BLENDMODE_BLEND);
+    }
+    return put(s, anchor, x, c, SDL_BLENDMODE_BLEND) && ok;
+}
+
 bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     const int t = map_.terrainAt(p);
     if (t == world::kNone) return true;
@@ -160,8 +174,8 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
             if (mat != nullptr && !mat->band[s].empty()) {
                 if (b == 0 && mat->top[s]) continue;
                 const auto& v = mat->band[s];
-                ok &= put(v[tileHash(p.x, p.y, 3u + static_cast<std::uint32_t>(b)) % v.size()], at,
-                          x, kWhite, SDL_BLENDMODE_BLEND);
+                ok &= putFace(v[tileHash(p.x, p.y, 3u + static_cast<std::uint32_t>(b)) % v.size()],
+                              side, at, x, kWhite);
             } else {
                 const SDL_FColor c = times(mat != nullptr ? mat->flat : look.flat,
                                            side == 0 ? tuning::kFaceShadeSE : tuning::kFaceShadeSW);
@@ -216,7 +230,7 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     for (int side = 0; side < 2; ++side) {
         const auto s = static_cast<std::size_t>(side);
         if (mat != nullptr && mat->top[s] && drop[s] > 0)
-            ok &= put(*mat->top[s], a, x, kWhite, SDL_BLENDMODE_BLEND);
+            ok &= putFace(*mat->top[s], side, a, x, kWhite);
     }
     return ok;
 }

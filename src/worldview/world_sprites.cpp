@@ -290,11 +290,19 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
     const int hw = static_cast<int>(iso_.hw);
     const int hh = static_cast<int>(iso_.hh);
     const int lvl = level_;
-    // Faces: one band under each lower edge, exactly below the diamond's raster.
+    // Faces: one band under each lower edge, exactly below the diamond's raster, from the bottom
+    // vertex to the side vertex with both included (south-east columns -1 .. hw-1, south-west
+    // -hw .. 0), so faces meet along straight cliffs and in corners. The side vertex column has
+    // no diamond pixel: the edge there lies one row above its neighbour's.
+    const auto edgeBottom = [&](int x) {
+        if (x >= hw - 1) return diamondBottom(hw - 2, hw, hh) - 1;
+        if (x <= -hw) return diamondBottom(-hw + 1, hw, hh) - 1;
+        return diamondBottom(x, hw, hh);
+    };
     int faceTop = 2 * hh;
     int faceBottom = 0;
-    for (int x = 0; x < hw - 1; ++x) {
-        const int yb = diamondBottom(x, hw, hh);
+    for (int x = -hw; x < hw; ++x) {
+        const int yb = edgeBottom(x);
         faceTop = std::min(faceTop, yb + 1);
         faceBottom = std::max(faceBottom, yb + lvl);
     }
@@ -354,12 +362,12 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
         for (int i = 0; i < 2 * hw; ++i)
             if (inDiamond(i - hw, j, hw, hh)) putWhite(px.get(), dx + i, j);
     const int fx = dx + 2 * hw + kPagePad;
-    for (int i = 0; i < hw - 1; ++i) {
-        const int yb = diamondBottom(i, hw, hh);
-        for (int j = yb + 1; j <= yb + lvl; ++j) putWhite(px.get(), fx + i, j - faceTop);
-        const int yw = diamondBottom(-(i + 1), hw, hh);
-        for (int j = yw + 1; j <= yw + lvl; ++j)
-            putWhite(px.get(), fx + 2 * (hw - 1) - 1 - i + kPagePad, j - faceTop);
+    for (int i = 0; i <= hw; ++i) {
+        const int se = edgeBottom(i - 1);
+        for (int j = se + 1; j <= se + lvl; ++j) putWhite(px.get(), fx + i, j - faceTop);
+        const int sw = edgeBottom(i - hw);
+        for (int j = sw + 1; j <= sw + lvl; ++j)
+            putWhite(px.get(), fx + hw + 1 + kPagePad + i, j - faceTop);
     }
     TexturePtr page{
         SDL_CreateTexture(renderer, kTextureFormat, SDL_TEXTUREACCESS_TARGET, pageW, pageH)};
@@ -423,8 +431,8 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
 
     white_ = pages.generated(1, 1, 2, 2, 1, 1);
     diamond_ = pages.generated(dx, 0, 2 * hw, 2 * hh, static_cast<float>(hw), 0);
-    face_[0] = pages.generated(fx, 0, hw - 1, faceH, 0, static_cast<float>(-faceTop));
-    face_[1] = pages.generated(fx + hw - 1 + kPagePad, 0, hw - 1, faceH, static_cast<float>(hw - 1),
+    face_[0] = pages.generated(fx, 0, hw + 1, faceH, 1, static_cast<float>(-faceTop));
+    face_[1] = pages.generated(fx + hw + 1 + kPagePad, 0, hw + 1, faceH, static_cast<float>(hw),
                                static_cast<float>(-faceTop));
     reach(groundReach_, diamond_);
     reach(groundReach_, face_[0]);
