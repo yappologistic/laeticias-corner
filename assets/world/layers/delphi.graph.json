@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "layer": "delphi",
+  "nodes": [
+    {"id": "delphi_s", "at": [265, 761], "kind": "portal"},
+    {"id": "way_stair_low.foot", "at": [265, 774]},
+    {"id": "way_stair_low.head", "at": [262, 774]},
+    {"id": "treasury", "at": [262, 773], "kind": "dest"},
+    {"id": "way_stair_high.foot", "at": [262, 761]},
+    {"id": "way_stair_high.head", "at": [259, 761]},
+    {"id": "temple", "at": [256, 761], "kind": "dest"},
+    {"id": "n7", "at": [254, 761]}
+  ],
+  "edges": [
+    {"a": "delphi_s", "b": "way_stair_low.foot", "kind": "road"},
+    {"a": "way_stair_low.head", "b": "treasury", "kind": "street"},
+    {"a": "treasury", "b": "way_stair_high.foot", "kind": "street"},
+    {"a": "way_stair_high.head", "b": "temple", "kind": "street"},
+    {"a": "temple", "b": "n7", "kind": "street"},
+    {"a": "way_stair_low.foot", "b": "way_stair_low.head", "kind": "stair"},
+    {"a": "way_stair_high.foot", "b": "way_stair_high.head", "kind": "stair"}
+  ],
+  "lanes": [
+  ]
+}

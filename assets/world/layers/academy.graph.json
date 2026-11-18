@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "layer": "academy",
+  "nodes": [
+    {"id": "academy_e", "at": [215, 704], "kind": "portal"},
+    {"id": "n1", "at": [217, 704]},
+    {"id": "academy", "at": [217, 711], "kind": "dest"},
+    {"id": "n3", "at": [217, 717]}
+  ],
+  "edges": [
+    {"a": "academy_e", "b": "n1", "kind": "road"},
+    {"a": "n1", "b": "academy", "kind": "road"},
+    {"a": "academy", "b": "n3", "kind": "road"}
+  ],
+  "lanes": [
+  ]
+}

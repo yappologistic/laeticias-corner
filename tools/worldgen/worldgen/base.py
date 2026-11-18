@@ -549,9 +549,9 @@ def relief(land, stretch, names, bays, courses, A: Anchors):
     for co in courses:
         river |= co.mask
     river &= land
-    smooth(level, land, courses)
+    smooth(level, land, courses, A)
     flatten()
-    smooth(level, land, courses)
+    smooth(level, land, courses, A)
     ring = (A.dist == 1) & land & (A.water == 0) & ~river
     level[ring] = A.level[ring]
     flow = np.zeros((ROWS, COLS), dtype=np.int8)
@@ -604,14 +604,19 @@ def fix_flow(level, river, flow) -> None:
             return
 
 
-def carve(level, courses):
+def carve(level, courses, A: "Anchors | None" = None, land=None):
+    """Rivers never rise downstream; where a course passes through an authored layer, its
+    water there (the layer's level) caps everything below it."""
     for co in courses:
         run = 15
         best = {}
         for (c, r) in co.path:
-            if level[r, c] == 0:
+            if A is not None and A.dist[r, c] == 0:
+                run = min(run, int(A.level[r, c]))
+                continue
+            if level[r, c] == 0 and (land is None or not land[r, c]):
                 break
-            run = min(run, int(level[r, c]))
+            run = max(min(run, int(level[r, c])), 0)
             best[(c, r)] = run
         if not best:
             continue
@@ -623,9 +628,9 @@ def carve(level, courses):
             level[j, i] = min(level[j, i], vals[k])
 
 
-def smooth(level, land, courses):
+def smooth(level, land, courses, A=None):
     """Carve rivers, then limit every land tile to 2 levels above its lowest 4-neighbour."""
-    carve(level, courses)
+    carve(level, courses, A, land)
     for _ in range(16):
         lim = level.copy()
         for dr, dc in N4:
@@ -634,7 +639,7 @@ def smooth(level, land, courses):
         if (lim == level).all():
             break
         level[:] = lim
-    carve(level, courses)
+    carve(level, courses, A, land)
 
 
 # --- 4. terrain ------------------------------------------------------------------------------
@@ -834,6 +839,8 @@ def water_and_faces(W: World, flow: np.ndarray) -> None:
     shallows = sea & near_low & (dland <= 2)
     L.T[shallows] = W.tidx("world.shallows")
     L.AUX[shallows] = 0
+    # Canals join the rivers at the rivers' level: no water runs up into them.
+    fix_flow(L.LV, river, L.AUX)
     # Faces: raised land at the sea uses its terrain's coast material, high ground rock.
     coast = land & (distance_to(sea, 2) <= 1) & (W.level >= 2)
     high = land & ~coast & (W.level >= 7)

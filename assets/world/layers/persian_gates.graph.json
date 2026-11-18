@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "layer": "persian_gates",
+  "nodes": [
+    {"id": "gates_w", "at": [337, 167], "kind": "portal"},
+    {"id": "gates_guardpost", "at": [337, 165], "kind": "dest"},
+    {"id": "world.ramp@1116,337.foot", "at": [337, 164]},
+    {"id": "world.ramp@1116,337.head", "at": [337, 159]},
+    {"id": "gates_e", "at": [338, 152], "kind": "portal"},
+    {"id": "n5", "at": [337, 152]},
+    {"id": "world.ramp@1121,337.head", "at": [337, 154]},
+    {"id": "world.ramp@1116,338.foot", "at": [338, 164]},
+    {"id": "world.ramp@1116,338.head", "at": [338, 159]},
+    {"id": "world.ramp@1121,338.head", "at": [338, 154]}
+  ],
+  "edges": [
+    {"a": "gates_w", "b": "gates_guardpost", "kind": "road"},
+    {"a": "gates_guardpost", "b": "world.ramp@1116,337.foot", "kind": "road"},
+    {"a": "world.ramp@1116,337.foot", "b": "world.ramp@1116,337.head", "kind": "road"},
+    {"a": "gates_e", "b": "n5", "kind": "road"},
+    {"a": "n5", "b": "world.ramp@1121,337.head", "kind": "road"},
+    {"a": "world.ramp@1121,337.head", "b": "world.ramp@1116,337.head", "kind": "road"},
+    {"a": "world.ramp@1116,338.foot", "b": "world.ramp@1116,338.head", "kind": "stair"},
+    {"a": "world.ramp@1116,338.head", "b": "world.ramp@1121,338.head", "kind": "stair"},
+    {"a": "world.ramp@1116,338.foot", "b": "world.ramp@1116,337.foot", "kind": "track"},
+    {"a": "world.ramp@1121,338.head", "b": "world.ramp@1121,337.head", "kind": "track"}
+  ],
+  "lanes": [
+  ]
+}

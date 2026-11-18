@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "layer": "ephesus",
+  "nodes": [
+    {"id": "ephesus_e", "at": [241, 428], "kind": "portal"},
+    {"id": "town_steps.head", "at": [241, 429]},
+    {"id": "town_steps.foot", "at": [241, 432]},
+    {"id": "n3", "at": [241, 433]},
+    {"id": "n4", "at": [241, 436]},
+    {"id": "harbour_steps.head", "at": [241, 438]},
+    {"id": "harbour_steps.foot", "at": [241, 441]},
+    {"id": "ephesus_harbour", "at": [243, 441], "kind": "dest"},
+    {"id": "n8", "at": [243, 439]},
+    {"id": "n9", "at": [247, 439]},
+    {"id": "n10", "at": [247, 446]},
+    {"id": "artemision", "at": [248, 446], "kind": "dest"},
+    {"id": "n12", "at": [237, 433]},
+    {"id": "n13", "at": [237, 429]},
+    {"id": "n14", "at": [239, 436]},
+    {"id": "n15", "at": [237, 436]},
+    {"id": "ephesus_town", "at": [239, 437], "kind": "dest"}
+  ],
+  "edges": [
+    {"a": "ephesus_e", "b": "town_steps.head", "kind": "road"},
+    {"a": "town_steps.foot", "b": "n3", "kind": "street"},
+    {"a": "n3", "b": "n4", "kind": "street"},
+    {"a": "n4", "b": "harbour_steps.head", "kind": "street"},
+    {"a": "harbour_steps.foot", "b": "ephesus_harbour", "kind": "street"},
+    {"a": "ephesus_harbour", "b": "n8", "kind": "street"},
+    {"a": "n8", "b": "n9", "kind": "street"},
+    {"a": "n9", "b": "n10", "kind": "street"},
+    {"a": "n10", "b": "artemision", "kind": "street"},
+    {"a": "n3", "b": "n12", "kind": "street"},
+    {"a": "n12", "b": "n13", "kind": "street"},
+    {"a": "n4", "b": "n14", "kind": "street"},
+    {"a": "n14", "b": "n15", "kind": "street"},
+    {"a": "town_steps.foot", "b": "town_steps.head", "kind": "stair"},
+    {"a": "harbour_steps.foot", "b": "harbour_steps.head", "kind": "stair"},
+    {"a": "ephesus_town", "b": "n14", "kind": "street"}
+  ],
+  "lanes": [
+    {"id": "ephesus", "kind": "sea", "points": [[243, 443], [241, 445], [242, 448]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 2}, {"id": "ephesus", "at": 2}]}
+  ]
+}

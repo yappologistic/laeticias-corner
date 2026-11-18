@@ -309,7 +309,10 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         layers, tile, _lvl = decl
         if name not in layers:
             issue("V6", f"portal {n.id!r} belongs to layers {layers}, not {name}", at)
-        if tuple(tile) != at:
+        across = (abs(tile[0] - at[0]) + abs(tile[1] - at[1]) == 1 and
+                  not (c0 <= tile[0] <= c1 and r0 <= tile[1] <= r1))
+        if tuple(tile) != at and not across:
+            # (Where two authored layers touch, the second carries the node across the edge.)
             issue("V6", f"portal {n.id!r} at {at}, the plan says {tuple(tile)}", at)
         for other in layers:
             if other == name:
@@ -403,20 +406,40 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         j, i = np.argwhere(bad)[0]
         issue("V8", f"{int(bad.sum())} sea tiles above level 0", (i + c0, j + r0))
     riv = [i for i, t in enumerate(world.terrains) if cat.is_water(t) and i not in sea_ids]
-    rm = np.isin(T, riv) & mine
-    flow = (world.L[sl] >> 4) & 3
     step = {0: (1, 0), 1: (0, 1), 2: (-1, 0), 3: (0, -1)}  # aux -> plan (dc, dr)
-    up = 0
-    first = None
+    me = world.layers.index(name)
+    # Every river tile of this layer, and (for the base) every river tile of another layer that
+    # flows into the base: a flow between two layers is the base's to meet (it adapts its
+    # carving to the authored layers), so it is an error there and a warning elsewhere.
+    wr = (slice(max(r0 - 1, 0), min(r1 + 2, ROWS)), slice(max(c0 - 1, 0), min(c1 + 2, COLS)))
+    Tw = world.T[wr]
+    rm = np.isin(Tw, riv)
+    own = world.owner[wr] == me
+    up_same, up_cross, first_same, first_cross = 0, 0, None, None
+    oc, orr = wr[1].start, wr[0].start
     for j, i in np.argwhere(rm):
-        dc, dr = step[int(flow[j, i])]
-        c, r = i + c0 + dc, j + r0 + dr
-        if 0 <= c < COLS and 0 <= r < ROWS and world.T[r, c] in riv and \
-                lv[r, c] > lv[j + r0, i + c0]:
-            up += 1
-            first = first or (c, r)
-    if up:
-        issue("V8", f"{up} river tiles flow uphill", first)
+        r, c = j + orr, i + oc
+        dc, dr = step[int((world.L[r, c] >> 4) & 3)]
+        cn, rn = c + dc, r + dr
+        if not (0 <= cn < COLS and 0 <= rn < ROWS) or world.T[rn, cn] not in riv:
+            continue
+        if lv[rn, cn] <= lv[r, c]:
+            continue
+        a_me, b_me = world.owner[r, c] == me, world.owner[rn, cn] == me
+        if not (a_me or b_me):
+            continue
+        if a_me and b_me:
+            up_same += 1
+            first_same = first_same or (cn, rn)
+        else:
+            up_cross += 1
+            first_cross = first_cross or (cn, rn)
+    if up_same:
+        issue("V8", f"{up_same} river tiles flow uphill", first_same)
+    if up_cross:
+        issue("V8", f"{up_cross} river tiles flow uphill where this layer's water meets "
+              "another layer's (the base carves to the authored layers when it is rebuilt)",
+              first_cross, level="error" if name == "base" else "warning")
 
     # V9: inside the region extents; districts everywhere there is ground.
     if name != "base":

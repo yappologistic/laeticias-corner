@@ -482,7 +482,7 @@ ROUTES = {
                               "euphrates_crossing:euph_w", "euphrates_crossing:euph_e",
                               (1032, 214), (1044, 250), (1062, 272), "babylon:babylon_n",
                               "babylon:babylon_e", (1079, 312), "susa:susa_w", "susa:susa_e",
-                              (1107, 334), "persian_gates:gates_w", "persian_gates:gates_e",
+                              (1106, 325), (1106, 337), "persian_gates:gates_w", "persian_gates:gates_e",
                               (1132, 346), "parsa:royal_road_w"],
                    "style": "persian", "width": 2, "kind": "road"},
     "pasargadae_road": {"points": ["parsa:pasargadae_n", "pasargadae:pasargadae_s"],

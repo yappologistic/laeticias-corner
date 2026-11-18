@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "layer": "eleusis",
+  "nodes": [
+    {"id": "sacred_way_w", "at": [236, 704], "kind": "portal"},
+    {"id": "n1", "at": [236, 705]},
+    {"id": "gate_stair.foot", "at": [233, 705]},
+    {"id": "eleusis_w", "at": [240, 723], "kind": "portal"},
+    {"id": "n4", "at": [240, 714]},
+    {"id": "n5", "at": [240, 706]},
+    {"id": "n6", "at": [236, 706]},
+    {"id": "gate_stair.head", "at": [233, 708]},
+    {"id": "n8", "at": [233, 709]},
+    {"id": "telesterion", "at": [235, 709], "kind": "dest"},
+    {"id": "n10", "at": [238, 709]},
+    {"id": "n11", "at": [238, 718]},
+    {"id": "eleusis_town", "at": [241, 714], "kind": "dest"},
+    {"id": "eleusis_shore", "at": [245, 714], "kind": "dest"},
+    {"id": "athens.stair_marble@572,232.foot", "at": [232, 705]},
+    {"id": "athens.stair_marble@572,232.head", "at": [232, 708]}
+  ],
+  "edges": [
+    {"a": "sacred_way_w", "b": "n1", "kind": "road"},
+    {"a": "n1", "b": "gate_stair.foot", "kind": "road"},
+    {"a": "eleusis_w", "b": "n4", "kind": "road"},
+    {"a": "n4", "b": "n5", "kind": "road"},
+    {"a": "n5", "b": "n6", "kind": "road"},
+    {"a": "gate_stair.head", "b": "n8", "kind": "street"},
+    {"a": "n8", "b": "telesterion", "kind": "street"},
+    {"a": "telesterion", "b": "n10", "kind": "street"},
+    {"a": "n10", "b": "n11", "kind": "street"},
+    {"a": "eleusis_town", "b": "eleusis_shore", "kind": "street"},
+    {"a": "n6", "b": "n1", "kind": "road"},
+    {"a": "eleusis_town", "b": "n4", "kind": "street"},
+    {"a": "athens.stair_marble@572,232.foot", "b": "athens.stair_marble@572,232.head", "kind": "stair"},
+    {"a": "gate_stair.foot", "b": "gate_stair.head", "kind": "stair"},
+    {"a": "athens.stair_marble@572,232.foot", "b": "gate_stair.foot", "kind": "track"},
+    {"a": "athens.stair_marble@572,232.head", "b": "gate_stair.head", "kind": "street"}
+  ],
+  "lanes": [
+    {"id": "eleusis_fishing", "kind": "sea", "points": [[249, 714], [249, 709]], "ports": [{"id": "home", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 1}, {"id": "grounds", "at": 1}]}
+  ]
+}

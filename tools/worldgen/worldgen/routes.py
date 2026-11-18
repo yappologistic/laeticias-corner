@@ -163,7 +163,8 @@ def straight(st, i: int, n: int) -> bool:
     return i >= 0 and i + n <= len(st) and all(s == st[i] for s in st[i:i + n])
 
 
-def profile(path, lv, water, z0, z1, keep: set, wide=None) -> tuple[list, list, int]:
+def profile(path, lv, water, z0, z1, keep: set, wide=None,
+            landing: int = 0) -> tuple[list, list, int]:
     """Road levels along the path, changing only on ramps: returns (z, ramps, failures), ramps
     as (first ramp index, +1 up / -1 down in travel direction). A ramp occupies 4 straight path
     tiles at the lower level, with the tile before and after it in line (foot and head)."""
@@ -171,13 +172,6 @@ def profile(path, lv, water, z0, z1, keep: set, wide=None) -> tuple[list, list, 
     st = steps(path)
     h = np.array([lv[r, c] for c, r in path], dtype=np.float64)
     wet = np.array([water[r, c] for c, r in path])
-    for i in range(n):
-        if wide and any(water[y, x] for x, y in wide(i)):
-            wet_side = True
-        else:
-            wet_side = False
-        if wet_side and not wet[i]:
-            keep = keep | {i - 1, i, i + 1}     # no ramp beside water on the other lane
     for i in range(n):
         if wet[i]:
             j = i
@@ -197,7 +191,7 @@ def profile(path, lv, water, z0, z1, keep: set, wide=None) -> tuple[list, list, 
         remaining = n - 1 - i
         need = end - cur
         want = 0
-        if need and abs(need) * (run + 1) >= remaining - run:
+        if need and abs(need) * (run + 1) * 2.5 >= remaining - run:
             want = 1 if need > 0 else -1
         else:
             ahead = tgt[i + 2:i + 14]
@@ -207,7 +201,8 @@ def profile(path, lv, water, z0, z1, keep: set, wide=None) -> tuple[list, list, 
                     want = 1
                 elif m <= cur - 0.9:
                     want = -1
-                if want and abs(end - (cur + want)) * (run + 1) > remaining - run - 2:
+                slack = 2.5 if z1 is not None else 1.0
+                if want and abs(end - (cur + want)) * (run + 1) * slack > remaining - run - 2:
                     want = 0
         ok = want and i + run < n and straight(st, i, run) and \
             not any(wet[i:i + run + 1]) and not any(k in keep for k in range(i + 1, i + run))
@@ -219,6 +214,9 @@ def profile(path, lv, water, z0, z1, keep: set, wide=None) -> tuple[list, list, 
             z[i + run] = cur
             ramps.append((i + 1, want))
             i += run
+            if landing and i < n - 1:
+                z[i + 1] = cur   # a landing before the next flight (a wide road's corners)
+                i += 1
             continue
         z[i + 1] = cur
         i += 1
@@ -291,7 +289,11 @@ def lay_ways(W: World, g: Graph) -> list[Way]:
                 path, marks, levels = [], [], {}
                 continue
             allow = rect_mask(town_of(ta)) if through else None
-            seg = astar4(cost, a, b, allow)
+            # A route never doubles back over its own way.
+            own = np.zeros((ROWS, COLS), dtype=bool)
+            for c_, r_ in path[:-1]:
+                own[r_, c_] = True
+            seg = astar4(np.where(own, np.inf, cost), a, b, allow)
             if not seg:
                 W.stats.setdefault("route_failures", []).append(f"{rid}: {a} -> {b}")
                 continue
@@ -335,7 +337,8 @@ def way_split(W, g, way: Way, path, marks, levels, taken) -> None:
     if path[0] in taken:
         z0 = taken[path[0]][1]
     z, ramps, fails = profile(path, L.LV, water, z0, z1, keep,
-                              lambda i: section(path, i, way.width, W.blocked))
+                              lambda i: section(path, i, way.width, W.blocked),
+                              landing=1 if way.width >= 2 else 0)
     way.z = z
     if fails:
         W.stats.setdefault("profile_failures", []).append(f"{way.id}: {fails} level(s) short")
@@ -375,8 +378,20 @@ def way_split(W, g, way: Way, path, marks, levels, taken) -> None:
         foot = (-dc, -dr) if up > 0 else (dc, dr)
         face = FACE_OF[foot]
         offs = [(0, 0)] + ([offset(path, i0 + 1, W.blocked)[0]] if way.width >= 2 else [])
+        low = way.z[i0]
         for off in offs:
-            tiles = [(path[k][0] + off[0], path[k][1] + off[1]) for k in range(i0, i0 + RAMP_RUN)]
+            line = [(path[k][0] + off[0], path[k][1] + off[1])
+                    for k in range(i0 - 1, i0 + RAMP_RUN + 1)]
+            if any(not (0 <= c < COLS and 0 <= r < ROWS) or water[r, c] for c, r in line):
+                continue   # that lane is a deck over water here: no ramp on it
+            tiles = line[1:-1]
+            # The flight, its foot and its head at their levels (a corner's other lane may have
+            # been graded by the neighbouring reach).
+            for c, r in tiles:
+                L.LV[r, c] = low
+            lo_end, hi_end = (line[0], line[-1]) if up > 0 else (line[-1], line[0])
+            L.LV[lo_end[1], lo_end[0]] = low
+            L.LV[hi_end[1], hi_end[0]] = low + 1
             cs = [t[0] for t in tiles]
             rs = [t[1] for t in tiles]
             rect = (min(cs), min(rs), max(cs), max(rs))

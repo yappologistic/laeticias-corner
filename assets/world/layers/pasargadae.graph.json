@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "layer": "pasargadae",
+  "nodes": [
+    {"id": "pasargadae_s", "at": [287, 89], "kind": "portal"},
+    {"id": "n1", "at": [283, 89]},
+    {"id": "pasargadae_garden", "at": [275, 89], "kind": "dest"},
+    {"id": "n3", "at": [275, 79]},
+    {"id": "n4", "at": [263, 79]},
+    {"id": "n5", "at": [263, 92]},
+    {"id": "n6", "at": [274, 92]},
+    {"id": "cyrus_tomb", "at": [283, 93], "kind": "dest"},
+    {"id": "n8", "at": [282, 93]}
+  ],
+  "edges": [
+    {"a": "pasargadae_s", "b": "n1", "kind": "road"},
+    {"a": "n1", "b": "pasargadae_garden", "kind": "road"},
+    {"a": "pasargadae_garden", "b": "n3", "kind": "street"},
+    {"a": "n3", "b": "n4", "kind": "street"},
+    {"a": "n4", "b": "n5", "kind": "street"},
+    {"a": "n5", "b": "n6", "kind": "street"},
+    {"a": "n1", "b": "cyrus_tomb", "kind": "street"},
+    {"a": "cyrus_tomb", "b": "n8", "kind": "street"}
+  ],
+  "lanes": [
+  ]
+}

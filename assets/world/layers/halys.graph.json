@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "layer": "halys",
+  "nodes": [
+    {"id": "halys_w", "at": [129, 329], "kind": "portal"},
+    {"id": "n1", "at": [129, 320]},
+    {"id": "halys_e", "at": [129, 314], "kind": "portal"},
+    {"id": "n3", "at": [129, 318]},
+    {"id": "halys_station", "at": [128, 318], "kind": "dest"}
+  ],
+  "edges": [
+    {"a": "halys_w", "b": "n1", "kind": "road"},
+    {"a": "halys_e", "b": "n3", "kind": "road"},
+    {"a": "n3", "b": "n1", "kind": "road"},
+    {"a": "n3", "b": "halys_station", "kind": "street"}
+  ],
+  "lanes": [
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "layer": "euphrates_crossing",
+  "nodes": [
+    {"id": "euph_w", "at": [178, 271], "kind": "portal"},
+    {"id": "west_landing", "at": [178, 267], "kind": "dest"},
+    {"id": "n2", "at": [181, 267]},
+    {"id": "west_bridge", "at": [181, 266], "kind": "dest"},
+    {"id": "euph_e", "at": [178, 256], "kind": "portal"},
+    {"id": "euph_station", "at": [178, 260], "kind": "dest"},
+    {"id": "n6", "at": [181, 260]},
+    {"id": "east_bridge", "at": [181, 261], "kind": "dest"}
+  ],
+  "edges": [
+    {"a": "euph_w", "b": "west_landing", "kind": "road"},
+    {"a": "west_landing", "b": "n2", "kind": "road"},
+    {"a": "n2", "b": "west_bridge", "kind": "road"},
+    {"a": "euph_e", "b": "euph_station", "kind": "road"},
+    {"a": "euph_station", "b": "n6", "kind": "road"},
+    {"a": "n6", "b": "east_bridge", "kind": "road"},
+    {"a": "west_bridge", "b": "east_bridge", "kind": "bridge"}
+  ],
+  "lanes": [
+    {"id": "quffa_ferry", "kind": "river", "points": [[178, 265], [178, 262]], "ports": [{"id": "start", "at": 0}, {"id": "west_landing", "at": 0}, {"id": "east_landing", "at": 1}, {"id": "end", "at": 1}]},
+    {"id": "euphrates_boats", "kind": "sea", "points": [[183, 263], [185, 263], [187, 264]], "ports": [{"id": "landing", "at": 0}, {"id": "start", "at": 0}, {"id": "crossing", "at": 2}, {"id": "end", "at": 2}]}
+  ]
+}
