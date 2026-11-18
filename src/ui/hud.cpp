@@ -240,9 +240,11 @@ float Hud::pressOf(int id) const {
     return i < press_.size() ? smooth(press_[i]) : 0.0f;
 }
 
-void Hud::toast(std::string text) {
-    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ == 0 && !toastsHeld_) {
+void Hud::toast(std::string text, bool corner) {
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ == 0 && !toastsHeld_ &&
+        !(corner && away_)) {
         toast_ = std::move(text);
+        toastCorner_ = corner;
         toastTime_ = theme::kToastSeconds;
         toastShown_ = 0;
         return;
@@ -250,8 +252,10 @@ void Hud::toast(std::string text) {
     if (toastWaiting_ == theme::kToastQueue) {
         // Full: the oldest waiting one gives way.
         std::ranges::rotate(toastQueue_, toastQueue_.begin() + 1);
+        std::ranges::rotate(toastQueueCorner_, toastQueueCorner_.begin() + 1);
         --toastWaiting_;
     }
+    toastQueueCorner_[static_cast<std::size_t>(toastWaiting_)] = corner;
     toastQueue_[static_cast<std::size_t>(toastWaiting_++)] = std::move(text);
 }
 
@@ -666,13 +670,25 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     hintT_ = approach(hintT_, !m.hint.empty() || !m.warning.empty(), dt);
     // While others wait, a toast steps aside once it has been up long enough to read.
     toastShown_ += dt;
-    if (toastWaiting_ > 0)
+    // News of the corner is for the corner: it folds away when the view leaves (QA5 Q5-E-02),
+    // and what waits behind it waits for the view to come home.
+    away_ = m.away;
+    if (m.away && toastCorner_) toastTime_ = 0;
+    // The next to show: the first in line, or away from home the first that is not the corner's.
+    int next = 0;
+    while (m.away && next < toastWaiting_ && toastQueueCorner_[static_cast<std::size_t>(next)])
+        ++next;
+    if (next < toastWaiting_)
         toastTime_ = std::min(toastTime_, std::max(0.0f, theme::kToastQueuedSeconds - toastShown_));
     toastTime_ = std::max(0.0f, toastTime_ - dt);
     toastT_ = approach(toastT_, toastTime_ > 0.0f, dt);
-    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ > 0 && !toastsHeld_) {
-        toast_ = std::move(toastQueue_[0]);
-        std::ranges::rotate(toastQueue_, toastQueue_.begin() + 1);
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && next < toastWaiting_ && !toastsHeld_) {
+        const auto k = static_cast<std::size_t>(next);
+        toast_ = std::move(toastQueue_[k]);
+        toastCorner_ = toastQueueCorner_[k];
+        std::rotate(toastQueue_.begin() + next, toastQueue_.begin() + next + 1, toastQueue_.end());
+        std::rotate(toastQueueCorner_.begin() + next, toastQueueCorner_.begin() + next + 1,
+                    toastQueueCorner_.end());
         --toastWaiting_;
         toastTime_ = theme::kToastSeconds;
         toastShown_ = 0;

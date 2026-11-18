@@ -929,6 +929,39 @@ TEST_CASE("a long card shows its whole text above the docks; a long title is cut
     CHECK(card.y + card.h < build->y);
 }
 
+TEST_CASE("the corner's news folds away when the view leaves home and waits for it (Q5-E-02)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Actors vis(c, 1);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Progress progress(c);
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.progress = &progress;
+    Hud hud;
+    UiInput in;
+    const auto run = [&](int frames) {
+        for (int i = 0; i < frames; ++i)
+            hud.update(in, m, ui.font, {1280, 800}, 1.0f, 1.0f / 60.0f);
+    };
+    hud.toast("New visitor: Ducks", true);
+    run(10);
+    CHECK(hud.toastText() == "New visitor: Ducks");
+    m.away = true; // a journey to Athens with the toast still up
+    run(2);
+    CHECK(hud.toastText().empty());
+    hud.toast("New land: the meadow", true);
+    hud.toast("Postcard saved"); // not the corner's: shown wherever the view is
+    run(60);
+    CHECK(hud.toastText() == "Postcard saved"); // the corner's waits; others go on by
+    run(600);
+    CHECK(hud.toastText().empty());
+    m.away = false;
+    run(60);
+    CHECK(hud.toastText() == "New land: the meadow");
+}
+
 TEST_CASE("sketchbook widgets have ids of their own: many places, no nook, a wish's Not now") {
     UiFixture ui;
     const Catalog& c = test::catalog();

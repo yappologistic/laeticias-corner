@@ -248,7 +248,7 @@ void App::toggleMap() {
 
 void App::cornerToast(std::string text) {
     if (!away()) {
-        hud_.toast(std::move(text));
+        hud_.toast(std::move(text), true);
         return;
     }
     if (cornerToasts_.size() == tuning::kCornerToastsKept)
@@ -274,7 +274,7 @@ void App::travelTo(int region) {
 void App::updateWorld(float dt) {
     if (!worldView_) return;
     if (!away() && !cornerToasts_.empty()) {
-        for (std::string& t : cornerToasts_) hud_.toast(std::move(t));
+        for (std::string& t : cornerToasts_) hud_.toast(std::move(t), true);
         cornerToasts_.clear();
     }
     followActor(dt);

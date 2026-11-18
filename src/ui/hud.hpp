@@ -228,7 +228,8 @@ public:
     [[nodiscard]] int sketchTab() const { return sketchTab_; }
     [[nodiscard]] bool calendarOpen() const { return calendarOpen_; }
     void closeCalendar() { calendarOpen_ = false; }
-    void toast(std::string text);
+    // `corner`: news of the home corner, shown only while the view is home.
+    void toast(std::string text, bool corner = false);
     void ribbon(Ribbon r);
     [[nodiscard]] bool ribbonShowing() const { return ribbonTime_ > 0.0f; }
     [[nodiscard]] std::string_view ribbonQuote() const { return ribbon_.quote; }
@@ -358,6 +359,9 @@ private:
     // Toasts take turns: one shows, the next few wait in arrival order (QA2-04).
     std::string toast_;
     std::array<std::string, theme::kToastQueue> toastQueue_;
+    std::array<bool, theme::kToastQueue> toastQueueCorner_{};
+    bool toastCorner_ = false; // the toast showing is the corner's
+    bool away_ = false;        // the view was away from home at the last update
     int toastWaiting_ = 0;
     float toastTime_ = 0;  // left to show
     float toastShown_ = 0; // shown so far
