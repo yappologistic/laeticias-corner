@@ -671,7 +671,15 @@ TEST_CASE("city: the land between the cities is alive: travellers, couriers, boa
     CityLife city(lifeWorld(), 21);
     // The Royal Road in Anatolia: couriers ride station to station every two game hours, the
     // road's travellers and grooms are about.
-    const auto station = parseFocus(lifeWorld(), "base:royal_road_station_921_152");
+    // A relay station of the base graph in Anatolia (found by name: the builders renumber them).
+    std::optional<TilePos> station;
+    const world::RoadGraph& roads = realWorld().roads;
+    const int anatolia = realWorld().file.findRegion("anatolia");
+    for (const world::RoadNode& n : roads.nodes())
+        if (n.id.find("royal_road_station") != std::string::npos && n.region == anatolia) {
+            station = n.at;
+            break;
+        }
     REQUIRE(station.has_value());
     city.setFocus(*station, 24, 24);
     LifeClock clock = LifeClock::at(2, 8.0, 0);

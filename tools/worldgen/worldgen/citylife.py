@@ -220,7 +220,7 @@ def content_facts(root: Path, sets: list[str]) -> tuple[dict, set, set]:
             kinds[a["id"]] = set(anims) if isinstance(anims, dict) else set(anims)
         goods |= {g["id"] for g in doc.get("goods", [])}
     audio: set[str] = set()
-    for s in sets:
+    for s in dict.fromkeys(list(sets) + ["home"]):      # home's voices serve the world's animals
         f = root / f"assets/audio/{s}/manifest.json"
         if f.exists():
             for e in json.loads(f.read_text()).get("files", []):

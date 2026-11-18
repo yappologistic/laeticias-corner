@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "layer": "tibur",
+  "nodes": [
+    {"id": "tiburtina", "at": [79, 1003], "kind": "portal"},
+    {"id": "n1", "at": [68, 1003]},
+    {"id": "tibur_farm", "at": [68, 999], "kind": "dest"},
+    {"id": "n3", "at": [68, 994]},
+    {"id": "n4", "at": [73, 999]},
+    {"id": "n5", "at": [73, 994]}
+  ],
+  "edges": [
+    {"a": "tiburtina", "b": "n1", "kind": "road"},
+    {"a": "n1", "b": "tibur_farm", "kind": "road"},
+    {"a": "tibur_farm", "b": "n3", "kind": "road"},
+    {"a": "tibur_farm", "b": "n4", "kind": "street"},
+    {"a": "n4", "b": "n5", "kind": "street"}
+  ],
+  "lanes": [
+  ]
+}

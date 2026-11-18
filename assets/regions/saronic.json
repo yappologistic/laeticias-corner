@@ -1,8 +1,8 @@
 {
  "version": 1,
  "id": "saronic",
- "name": "Saronic",
- "caption": "Saronic",
+ "name": "The Saronic Gulf",
+ "caption": "The Saronic Gulf · summer, 432 BC",
  "theme": {
   "grading": {
    "dawn": [
@@ -51,7 +51,371 @@
       "06:00"
      ]
     }
-   ]
+   ],
+   "loops": []
+  },
+  "sound": {
+   "climate": "sea",
+   "crowd": "crowd.greek",
+   "stings": {
+    "sunrise": "sfx/athens/sting_sunrise.wav",
+    "nightfall": "sfx/athens/sting_nightfall.wav",
+    "storm_clear": "sfx/athens/sting_storm_clear.wav",
+    "rainbow": "sfx/athens/sting_rainbow.wav"
+   },
+   "wind": "wind.sea",
+   "weather": [],
+   "rain": {
+    "family": "rain",
+    "snow": "snow"
+   },
+   "turns": {
+    "front": "sfx/world/gust_front.wav",
+    "calm": "sfx/world/calm_before.wav",
+    "drops": "sfx/world/first_drops.wav",
+    "onset": "amb/world/rain_dust.ogg",
+    "after": "amb/world/after_rain.ogg",
+    "storm": "amb/world/storm.ogg"
+   },
+   "thunder": {
+    "near": [
+     "sfx/world/thunder_near_1.wav",
+     "sfx/world/thunder_near_2.wav",
+     "sfx/world/thunder_near_3.wav"
+    ],
+    "roll": [
+     "sfx/world/thunder_roll_1.wav",
+     "sfx/world/thunder_roll_2.wav",
+     "sfx/world/thunder_roll_3.wav"
+    ],
+    "far": [
+     "sfx/world/thunder_far.wav",
+     "sfx/world/thunder_far_2.wav",
+     "sfx/world/thunder_far_3.wav"
+    ]
+   },
+   "calls": [
+    {
+     "file": "sfx/world/gull_call.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    }
+   ],
+   "voices": {
+    "world.gull": [
+     "sfx/world/gull_call.wav"
+    ]
+   }
+  },
+  "look": {
+   "phases": {
+    "dawn": {
+     "wb": [
+      0.98,
+      0.88,
+      0.84
+     ],
+     "exposure": 0.88,
+     "shadow_tint": [
+      0.4,
+      0.38,
+      0.72
+     ],
+     "high_tint": [
+      0.7,
+      0.58,
+      0.46
+     ],
+     "tint": 0.26,
+     "contrast": 0.32,
+     "saturation": 1.0,
+     "shoulder": 0.2
+    },
+    "day": {
+     "wb": [
+      1.02,
+      1.0,
+      0.96
+     ],
+     "exposure": 1.0,
+     "shadow_tint": [
+      0.28,
+      0.4,
+      0.76
+     ],
+     "high_tint": [
+      0.56,
+      0.54,
+      0.48
+     ],
+     "tint": 0.3,
+     "contrast": 0.48,
+     "saturation": 1.06,
+     "shoulder": 0.45,
+     "bands": {
+      "foliage": {
+       "hue": -6,
+       "sat": -0.08,
+       "val": 0.02
+      },
+      "water": {
+       "hue": 0,
+       "sat": 0.1,
+       "val": -0.06
+      }
+     }
+    },
+    "dusk": {
+     "wb": [
+      1.0,
+      0.86,
+      0.72
+     ],
+     "exposure": 0.82,
+     "shadow_tint": [
+      0.36,
+      0.3,
+      0.62
+     ],
+     "high_tint": [
+      0.88,
+      0.64,
+      0.5
+     ],
+     "tint": 0.3,
+     "contrast": 0.32,
+     "saturation": 1.02,
+     "shoulder": 0.3
+    },
+    "night": {
+     "wb": [
+      0.74,
+      0.82,
+      1.0
+     ],
+     "exposure": 0.46,
+     "shadow_tint": [
+      0.24,
+      0.3,
+      0.56
+     ],
+     "high_tint": [
+      0.5,
+      0.52,
+      0.62
+     ],
+     "tint": 0.28,
+     "contrast": 0.2,
+     "saturation": 0.8,
+     "shoulder": 0.0
+    }
+   },
+   "sky": {
+    "dawn": [
+     "#3a4a7a",
+     "#f0a878",
+     "#fbe3b8"
+    ],
+    "day": [
+     "#3f7fd0",
+     "#8fc3ef",
+     "#f2f4f2"
+    ],
+    "dusk": [
+     "#40305e",
+     "#d8784a",
+     "#f6c27a"
+    ],
+    "night": [
+     "#0c1430",
+     "#1c2a52",
+     "#28365e"
+    ]
+   },
+   "sun": {
+    "dawn": "#f6c8a0",
+    "day": "#fffbef",
+    "dusk": "#f2b07a",
+    "night": "#b4c8ee"
+   },
+   "shade": {
+    "dawn": "#8c84b8",
+    "day": "#6f98d8",
+    "dusk": "#5e4e8c",
+    "night": "#263258"
+   },
+   "haze": {
+    "colour": "#dce6ee",
+    "strength": 0.12,
+    "toward": "south-west",
+    "by_zoom": {
+     "half": 0.19,
+     "quarter": 0.26,
+     "overview": 0.34
+    }
+   },
+   "stars": 0.9,
+   "palette": {
+    "large": {
+     "marble": "#f1ede3",
+     "marble_shade": "#b7b4c8",
+     "dry_earth": "#c9a465",
+     "limestone": "#a39a8a"
+    },
+    "accents": {
+     "frieze_blue": "#2a5ba8",
+     "frieze_red": "#b2342a",
+     "olive": "#8c9a6b",
+     "sea": "#1f5e8c"
+    }
+   },
+   "light": "deep blue water, bright; a sea haze toward the horizon",
+   "targets": {
+    "day": {
+     "p2": [
+      20,
+      45
+     ],
+     "median": [
+      100,
+      135
+     ],
+     "p98": [
+      205,
+      230
+     ],
+     "sat_mean": [
+      33,
+      48
+     ],
+     "sat_high": [
+      8,
+      30
+     ],
+     "cool_min": 15
+    },
+    "dawn": {
+     "p2": [
+      10,
+      30
+     ],
+     "median": [
+      70,
+      125
+     ],
+     "p98": [
+      180,
+      215
+     ],
+     "sat_mean": [
+      30,
+      45
+     ],
+     "sat_high": [
+      0,
+      25
+     ],
+     "warm": [
+      35,
+      75
+     ],
+     "cool_min": 7
+    },
+    "dusk": {
+     "p2": [
+      8,
+      25
+     ],
+     "median": [
+      45,
+      85
+     ],
+     "p98": [
+      165,
+      215
+     ],
+     "sat_mean": [
+      38,
+      55
+     ],
+     "sat_high": [
+      0,
+      40
+     ],
+     "warm": [
+      55,
+      80
+     ],
+     "cool_min": 8
+    },
+    "night": {
+     "p2": [
+      4,
+      14
+     ],
+     "median": [
+      22,
+      45
+     ],
+     "p98_lights_only": 200,
+     "sat_mean": [
+      18,
+      35
+     ],
+     "sat_high": [
+      0,
+      10
+     ],
+     "cool_unlit_min": 50
+    }
+   },
+   "weather": {
+    "spring": {
+     "storm": 0.06,
+     "fog": 0.05,
+     "dust": 0.0
+    },
+    "summer": {
+     "storm": 0.04,
+     "fog": 0.03,
+     "dust": 0.0
+    },
+    "autumn": {
+     "storm": 0.15,
+     "fog": 0.05,
+     "dust": 0.0
+    },
+    "winter": {
+     "storm": 0.15,
+     "fog": 0.08,
+     "dust": 0.0
+    }
+   },
+   "air": {
+    "haze_toward_sea": {
+     "strength": 0.04
+    },
+    "shimmer": {
+     "where": "paving",
+     "hours": [
+      "11:00",
+      "15:00"
+     ],
+     "seasons": [
+      "summer"
+     ]
+    },
+    "sea_mist": {
+     "where": "horizon"
+    }
+   },
+   "water": {
+    "body": "#1f5e8c",
+    "reflect": true,
+    "sea_state": 1
+   }
   }
  },
  "districts": [
@@ -63,7 +427,34 @@
      "density": "daytime",
      "max_per_chunk": 2
     }
-   ]
+   ],
+   "name": "The open sea",
+   "sound": {
+    "surfaces": {
+     "water": 1.0
+    },
+    "wind": "wind.sea",
+    "exposure": 1.0,
+    "water": {
+     "family": "sea.coast"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true
+   }
   }
  ],
  "densities": {
@@ -222,5 +613,6 @@
  "zones": [],
  "cards": {},
  "strings": {},
- "journal": []
+ "journal": [],
+ "era": "The Athens of Pericles · 432 BC"
 }

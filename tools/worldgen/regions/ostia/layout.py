@@ -153,12 +153,14 @@ def _ways(L: Layout) -> dict:
     W_["ostiensis"] = L.street([(63, 0), (63, 38)], width=2, paving=BASALT, kind="road",
                                portal="ostiensis")
     # The decumanus from the Porta Romana west past the forum to the sea gate.
-    W_["decumanus"] = L.street([(63, 38), (39, 38)], width=2, paving=BASALT)
+    W_["decumanus"] = L.street([(63, 38), (41, 38)], width=2, paving=BASALT)
     # The cardo from the river quays through the forum to the shore.
     W_["cardo"] = L.street([(45, 30), (45, 49)], width=1, paving=BASALT)
     # The road from Portus over the canal, across the Isola Sacra and the Tiber into Ostia.
-    W_["portus_road"] = L.street([(26, 20), (26, 36), (39, 36), (39, 38)], width=1, paving=BASALT,
-                                 kind="road")
+    # It comes off the Tiber bridge down quay steps to the decumanus' end (the steps clear of
+    # the decumanus, which may not meet them from the side).
+    W_["portus_road"] = L.street([(26, 20), (26, 36), (39, 36), (39, 39), (41, 39)], width=1,
+                                 paving=BASALT, kind="road")
     # Portus's service street round the north and east of the basin; the Via Portuensis from
     # Rome comes in over the north edge (portal `portuensis`).
     W_["portus"] = L.street([(15, 1), (38, 1), (38, 21), (26, 21)], width=1, paving=EARTH)

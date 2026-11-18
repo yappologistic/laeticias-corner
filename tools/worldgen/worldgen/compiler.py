@@ -155,6 +155,56 @@ def _level_rule(L: Layout):
     return same
 
 
+def _on_floor(L: Layout, tile) -> bool:
+    """Whether a tile is a walk tile of the landmark standing on it (not a stair)."""
+    loc = L._local(*tile)
+    if loc is None or L.OCC[loc] < 0:
+        return False
+    q = L.items[L.OCC[loc]]
+    d = L.cat.items.get(q.id)
+    return bool(d and d.landmark and d.rise == 0 and tuple(tile) in L.walk_tiles(q))
+
+
+def _stair_course(L: Layout, p, foot, head) -> list[tuple[int, int]]:
+    """The turning points of a landmark stair's walk from its foot to its head over the walk
+    tiles its geometry lists (the engine walks only those; a straight line through the middle
+    may cross balustrades or the plain between two flights), with the landings outside the
+    foot and head edges to reach them. [] when the stair lists no walk tiles or a straight walk
+    already uses only them."""
+    walk = L.walk_tiles(p) if L.cat.items[p.id].landmark else set()
+    if not walk:
+        return []
+    inside = {(c, r) for c in range(p.c, p.c + p.pw) for r in range(p.r, p.r + p.ph)}
+    foot, head = tuple(foot), tuple(head)
+
+    def edge_row(t):
+        """The tiles outside the footprint on the same side as t (a landing row)."""
+        if t[1] < p.r or t[1] >= p.r + p.ph:
+            return {(c, t[1]) for c in range(p.c - 1, p.c + p.pw + 1)}
+        return {(t[0], r) for r in range(p.r - 1, p.r + p.ph + 1)}
+
+    ok = (walk & inside) | edge_row(foot) | edge_row(head) | {foot, head}
+    prev, todo = {foot: None}, [foot]
+    for t in todo:
+        if t == head:
+            break
+        for dc, dr in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            n = (t[0] + dc, t[1] + dr)
+            if n in ok and n not in prev and (n not in inside or n in walk):
+                prev[n] = t
+                todo.append(n)
+    if head not in prev:
+        return []
+    path = [head]
+    while prev[path[-1]] is not None:
+        path.append(prev[path[-1]])
+    path.reverse()
+    turns = [path[i] for i in range(1, len(path) - 1)
+             if (path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]) !=
+             (path[i + 1][0] - path[i][0], path[i + 1][1] - path[i][1])]
+    return turns
+
+
 def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
     issues: list[Issue] = []
     streets = L.streets
@@ -212,9 +262,11 @@ def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
         base = p.name or f"{p.id}@{p.c},{p.r}"
         for tile, tag in ((foot, "foot"), (head, "head")):
             named.setdefault(tuple(tile), (f"{base}.{tag}", None))
-            if ends[tuple(tile)] == 1:
+            # An end inside a landmark (the stair lands on its floor) is reached by the stair
+            # alone: snapping it to the nearest street would cut across the flight or the walls.
+            if ends[tuple(tile)] == 1 and not _on_floor(L, tile):
                 want.append((tuple(tile), named[tuple(tile)][0]))
-        extra.append((tuple(foot), tuple(head), "stair"))
+        extra.append((tuple(foot), tuple(head), "stair", _stair_course(L, p, foot, head)))
     for p, slot, nid, src in L.links:
         spots = p.slots.get(slot)
         if not spots:
@@ -305,12 +357,13 @@ def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
                 continue
             seen_edges.add(key)
             g.edges.append(Edge(a, b, s.kind, [to_grid(*p) for p in via]))
-    for ta, tb, kind in extra:
+    for ta, tb, kind, *course in extra:
         a, b = node_for(ta), node_for(tb)
         key = (min(a, b), max(a, b))
         if a != b and key not in seen_edges:
             seen_edges.add(key)
-            g.edges.append(Edge(a, b, kind))
+            via = course[0] if course and course[0] else []
+            g.edges.append(Edge(a, b, kind, [to_grid(*t) for t in via]))
     for tile in named:
         node_for(tile)
     for a, b, kind, via, src in L.edges:

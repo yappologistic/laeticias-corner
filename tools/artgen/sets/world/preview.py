@@ -30,6 +30,7 @@ class WorldScene(SetScene):
         super().__init__(w, h, base, margin=margin)
         self.bases = {}
         self.flow = {}
+        self.interior = True        # draw the overlays' interior looks as the engine is asked to
 
     def base_rect(self, tid, x0, x1, y0, y1):
         for x in range(max(0, x0), min(self.w, x1 + 1)):
@@ -82,6 +83,17 @@ class WorldScene(SetScene):
         def fkey(prefix, f=frame):
             return f"{prefix}/f{f % pages.frames(prefix)}"
 
+        def okey(tid, mask, x, y):
+            """An overlay's key, an interior look by tile hash where the tile is surrounded."""
+            if mask == 15 and self.interior:
+                n = 1
+                while f"terrain/{tid}/m15/v{n}/f0" in pages.rects:
+                    n += 1
+                v = int(hash01(x, y, 1) * n)
+                if v:
+                    return fkey(f"terrain/{tid}/m15/v{v}")
+            return fkey(f"terrain/{tid}/m{mask}")
+
         order = sorted(((int(self.level[x, y]), x + y, x, y) for x in range(self.w) for y in range(self.h)))
         for lv, _d, x, y in order:
             ax, ay = anchor(x, y, lv)
@@ -90,11 +102,11 @@ class WorldScene(SetScene):
             blit(f"terrain/{base}/v{int(hash01(x, y, 99) * nv)}", ax, ay)
             tid = self.over.get((x, y))
             if tid == "world.shallows":     # shallows lie over the sea (the engine's water group)
-                blit(fkey(f"terrain/world.sea/m{self._water_mask(x, y)}"), ax, ay)
+                blit(okey("world.sea", self._water_mask(x, y), x, y), ax, ay)
             if tid == "world.sea":
-                blit(fkey(f"terrain/{tid}/m{self._water_mask(x, y)}"), ax, ay)
+                blit(okey(tid, self._water_mask(x, y), x, y), ax, ay)
             elif tid:
-                blit(fkey(f"terrain/{tid}/m{self._mask(x, y, tid)}"), ax, ay)
+                blit(okey(tid, self._mask(x, y, tid), x, y), ax, ay)
             if tid in ("world.sea", "world.shallows"):
                 land = 0
                 for bit, (dx, dy) in ((1, (0, -1)), (2, (1, 0)), (4, (0, 1)), (8, (-1, 0))):
@@ -605,6 +617,9 @@ def main(build, out_dir):
             pages.images[kk] = city.images[kk]
     dst = build.previews
     save(coast().render(pages), dst, "coast", scales=(1, 2))
+    plain = coast()
+    plain.interior = False
+    save(plain.render(pages), dst, "coast_plain", scales=(2,))
     save(coast().render(pages, night=True, frame=1), dst, "coast_night", scales=(1,))
     for i, name in enumerate(BIOMES):
         save(biome(name, 100 + 37 * i).render(pages), dst / "biomes", name, scales=(1, 2))

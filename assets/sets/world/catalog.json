@@ -830,6 +830,42 @@
    "axis": "y"
   },
   {
+   "id": "world.ramp_basalt",
+   "name": "Paved ramp (Roman)",
+   "footprint": [
+    1,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 18,
+   "rise": 1,
+   "axis": "y"
+  },
+  {
+   "id": "world.ramp_royal",
+   "name": "Graded ramp (Royal Road)",
+   "footprint": [
+    1,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 18,
+   "rise": 1,
+   "axis": "y"
+  },
+  {
    "id": "world.stile",
    "name": "Dry-stone stile",
    "footprint": [
@@ -3157,6 +3193,90 @@
    "sprite": "goods/world.goods_logs",
    "stack": 3,
    "nice": true
+  },
+  {
+   "id": "world.goods_block",
+   "name": "Dressed stone block",
+   "sprite": "goods/world.goods_block",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_flour",
+   "name": "Sack of flour",
+   "sprite": "goods/world.goods_flour",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_bread",
+   "name": "Loaves",
+   "sprite": "goods/world.goods_bread",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_tablet",
+   "name": "Clay tablet",
+   "sprite": "goods/world.goods_tablet",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_gift_vessels",
+   "name": "Gift vessels of gold",
+   "sprite": "goods/world.goods_gift_vessels",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_yarn",
+   "name": "Hanks of dyed yarn",
+   "sprite": "goods/world.goods_yarn",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_cloth",
+   "name": "Folded cloth",
+   "sprite": "goods/world.goods_cloth",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_brick",
+   "name": "Mudbricks",
+   "sprite": "goods/world.goods_brick",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_glazed_brick",
+   "name": "Glazed bricks",
+   "sprite": "goods/world.goods_glazed_brick",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_dish",
+   "name": "Stack of dishes",
+   "sprite": "goods/world.goods_dish",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_pot_raw",
+   "name": "Unfired pot",
+   "sprite": "goods/world.goods_pot_raw",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_pot_painted",
+   "name": "Painted pot",
+   "sprite": "goods/world.goods_pot_painted",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_oil_jar",
+   "name": "Oil jar",
+   "sprite": "goods/world.goods_oil_jar",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_silver",
+   "name": "Silver ingots",
+   "sprite": "goods/world.goods_silver",
+   "stack": 3
   }
  ],
  "audio": {

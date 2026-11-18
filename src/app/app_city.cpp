@@ -113,7 +113,8 @@ int App::benchCity(bool judge) {
 
 int App::soakCity() {
     if (!openCity()) return 0;
-    return life::runLifeSoak(*city_, opts_.soak, tuning::kSimBudgetMs);
+    // The budget where budgets apply (--budget-ms), as the corner's soak; memory always.
+    return life::runLifeSoak(*city_, opts_.soak, opts_.budgetMs > 0 ? tuning::kSimBudgetMs : 0);
 }
 
 int runLifeDumps(const Options& o, const std::filesystem::path& assets) {
@@ -132,7 +133,7 @@ int runLifeDumps(const Options& o, const std::filesystem::path& assets) {
     d.focus = *focus;
     d.day = o.lifeDay;
     d.hours = life::parseHours(o.lifeHours);
-    d.out = *o.lifeDump;
+    d.out = o.lifeDump.value_or("life.json");
     d.label = o.focus.value_or("forum");
     if (d.hours.empty()) {
         SDL_Log("life dump: no hours in %s", o.lifeHours.c_str());

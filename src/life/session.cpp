@@ -126,8 +126,10 @@ std::optional<TilePos> parseFocus(const LifeWorld& w, std::string_view text) {
     const auto comma = text.find(',');
     if (comma == std::string_view::npos) return std::nullopt;
     TilePos p;
-    if (std::from_chars(text.data(), text.data() + comma, p.x).ec != std::errc{} ||
-        std::from_chars(text.data() + comma + 1, text.data() + text.size(), p.y).ec != std::errc{})
+    const std::string str(text);
+    const char* c = str.c_str();
+    if (std::from_chars(c, c + comma, p.x).ec != std::errc{} ||
+        std::from_chars(c + comma + 1, c + str.size(), p.y).ec != std::errc{})
         return std::nullopt;
     if (!map.inBounds(p)) return std::nullopt;
     return p;
@@ -203,8 +205,8 @@ std::vector<std::filesystem::path> writeLifeDumps(LifeSession& s, const DumpOpti
         std::filesystem::path f = o.out;
         if (o.hours.size() > 1) {
             char buf[16];
-            std::snprintf(buf, sizeof buf, "_%02d%02d.json", static_cast<int>(h),
-                          static_cast<int>(std::lround((h - std::floor(h)) * 60.0)) % 60);
+            (void)std::snprintf(buf, sizeof buf, "_%02d%02d.json", static_cast<int>(h),
+                                static_cast<int>(std::lround((h - std::floor(h)) * 60.0)) % 60);
             f = o.out.string() + buf;
         }
         std::ofstream out(f, std::ios::binary);
@@ -307,7 +309,7 @@ int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& 
     const auto agora = parseFocus(w, "agora");
     const auto terrace = parseFocus(w, "terrace");
     if (!forum || !agora || !terrace) {
-        std::fprintf(stderr, "life bench: the city centres are not on the map\n");
+        (void)std::fprintf(stderr, "life bench: the city centres are not on the map\n");
         return 1;
     }
     std::vector<CaseSpec> cases;
@@ -339,9 +341,10 @@ int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& 
                                    : 0;
             const Busiest b = busiestView(s, c.region, c.day, season);
             char name[96];
-            std::snprintf(name, sizeof name, "%s %s, busiest %02d:%02d (%.0f)", c.region, c.what,
-                          static_cast<int>(b.hour), static_cast<int>(b.hour * 60) % 60,
-                          static_cast<double>(b.expected));
+            (void)std::snprintf(name, sizeof name, "%s %s, busiest %02d:%02d (%.0f)", c.region,
+                                c.what, static_cast<int>(b.hour),
+                                static_cast<int>(b.hour * 60) % 60,
+                                static_cast<double>(b.expected));
             cases.emplace_back(name, b.focus, c.day, b.hour);
         }
         CaseSpec sweep("rome, a fast pan across", {40, 1080}, 9, 10.5, CaseSpec::Sweep);
@@ -352,9 +355,9 @@ int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& 
         cases.push_back(jump);
     }
     int rc = 0;
-    std::printf("%-46s %24s %20s %13s %15s %5s %6s\n", "city case (ms per step)",
-                "simulation avg/p95/p99/max", "view enum avg/p99/max", "area avg/max",
-                "live min/avg/max", "spawn", "RSS MB");
+    (void)std::printf("%-46s %24s %20s %13s %15s %5s %6s\n", "city case (ms per step)",
+                      "simulation avg/p95/p99/max", "view enum avg/p99/max", "area avg/max",
+                      "live min/avg/max", "spawn", "RSS MB");
     for (CaseSpec& spec : cases) {
         if (spec.scale < 0) {
             // Find the scale that gives this many live actors: the data's count at scale 1 first.
@@ -386,15 +389,16 @@ int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& 
                 b.why = "enumeration over 0.25 ms";
             }
         }
-        std::printf("%-46s %5.3f/%5.3f/%5.3f/%5.2f   %5.3f/%5.3f/%5.3f %6.3f/%5.3f  %4d/%4d/%4d "
-                    "%5d %6.1f %s\n",
-                    b.name.c_str(), b.simAvg, b.simP95, b.simP99, b.simWorst, b.enumAvg, b.enumP99,
-                    b.enumWorst, b.enumAllAvg, b.enumAllWorst, b.liveMin, b.liveAvg, b.liveMax,
-                    b.spawnMax, b.memoryMb, b.ok ? "" : ("FAIL: " + b.why).c_str());
+        (void)std::printf(
+            "%-46s %5.3f/%5.3f/%5.3f/%5.2f   %5.3f/%5.3f/%5.3f %6.3f/%5.3f  %4d/%4d/%4d "
+            "%5d %6.1f %s\n",
+            b.name.c_str(), b.simAvg, b.simP95, b.simP99, b.simWorst, b.enumAvg, b.enumP99,
+            b.enumWorst, b.enumAllAvg, b.enumAllWorst, b.liveMin, b.liveAvg, b.liveMax, b.spawnMax,
+            b.memoryMb, b.ok ? "" : ("FAIL: " + b.why).c_str());
         if (!b.ok) rc = 3;
         out.push_back(b);
     }
-    std::fflush(stdout);
+    (void)std::fflush(stdout);
     return rc;
 }
 
@@ -450,18 +454,18 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
     }
     const double endRss = rssMb();
     const std::size_t endBytes = city.memoryBytes();
-    std::printf(
+    (void)std::printf(
         "life soak: %.0f s, day %d; simulation avg %.3f ms, p99 %.3f, worst %.2f; live at end %d; "
         "rss %.1f MB after a quarter, %.1f MB at the end; life memory %.2f -> %.2f MB\n",
         seconds, c.day, sim.avg(), sim.pct(0.99), worst, city.stats().live, quarterRss, endRss,
         static_cast<double>(quarterBytes) / 1e6, static_cast<double>(endBytes) / 1e6);
     int rc = 0;
     if (endRss > quarterRss + tuning::kSoakGrowthMiB || endBytes > quarterBytes) {
-        std::printf("life soak: FAIL memory grew\n");
+        (void)std::printf("life soak: FAIL memory grew\n");
         rc = 3;
     }
-    if (sim.avg() > budgetMs) {
-        std::printf("life soak: FAIL simulation average over %.2f ms\n", budgetMs);
+    if (budgetMs > 0 && sim.avg() > budgetMs) {
+        (void)std::printf("life soak: FAIL simulation average over %.2f ms\n", budgetMs);
         rc = 3;
     }
     return rc;

@@ -1,6 +1,7 @@
 """Semantic validation of a layer on the composed world (world-tech §3.5, V1-V12; V14 relief
 and V15 sightlines, added after the first visual sweep; V16 crossings, after the owner found
-bridges that do not meet their banks).
+bridges that do not meet their banks; V17 the engine's walk rules, after its city-life
+round found edges its walkers refuse).
 
 Every issue names the check, the layer, the object and the tile (local, plan and grid
 coordinates), and the source line of the layout call that made it when the layer was compiled in
@@ -20,6 +21,7 @@ import numpy as np
 from plan import world_plan as P
 
 from . import bible, crossings
+from . import walk as engine_walk
 from .catalog import Catalog
 from .compose import NONE16, World, live_items
 from .coords import COLS, ROWS, to_plan
@@ -391,6 +393,9 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
     joined[name] = g
     for level, msg, at in crossings.check(world, cat, name, g, walk, joined):
         issue("V16", msg, at, level=level)
+    # V17: every edge walkable step by step by the engine's own rules.
+    for msg, at, level in engine_walk.check(world, cat, g):
+        issue("V17", msg, at, level=level)
 
     # V6: connected, portals agreed, dest budget.
     parent = {n.id: n.id for n in g.nodes}

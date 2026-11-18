@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "layer": "sparta",
+  "nodes": [
+    {"id": "sparta_e", "at": [372, 744], "kind": "portal"},
+    {"id": "n1", "at": [372, 746]},
+    {"id": "n2", "at": [368, 746]},
+    {"id": "sparta_shrine", "at": [368, 752], "kind": "dest"},
+    {"id": "n4", "at": [368, 756]},
+    {"id": "n5", "at": [374, 756]},
+    {"id": "n6", "at": [380, 756]},
+    {"id": "n7", "at": [374, 748]},
+    {"id": "n8", "at": [380, 748]}
+  ],
+  "edges": [
+    {"a": "sparta_e", "b": "n1", "kind": "road"},
+    {"a": "n1", "b": "n2", "kind": "road"},
+    {"a": "n2", "b": "sparta_shrine", "kind": "road"},
+    {"a": "sparta_shrine", "b": "n4", "kind": "road"},
+    {"a": "n4", "b": "n5", "kind": "road"},
+    {"a": "n5", "b": "n6", "kind": "road"},
+    {"a": "n5", "b": "n7", "kind": "street"},
+    {"a": "n7", "b": "n8", "kind": "street"}
+  ],
+  "lanes": [
+  ]
+}

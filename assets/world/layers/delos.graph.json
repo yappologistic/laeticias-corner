@@ -5,20 +5,25 @@
     {"id": "n0", "at": [338, 502]},
     {"id": "n1", "at": [338, 501]},
     {"id": "delos_harbour", "at": [339, 501], "kind": "dest"},
-    {"id": "n3", "at": [344, 501]},
+    {"id": "n3", "at": [342, 501]},
+    {"id": "n4", "at": [344, 501]},
     {"id": "lions", "at": [344, 496], "kind": "dest"},
-    {"id": "n5", "at": [344, 492]},
-    {"id": "n6", "at": [340, 492]},
-    {"id": "n7", "at": [333, 501]}
+    {"id": "n6", "at": [344, 492]},
+    {"id": "n7", "at": [342, 492]},
+    {"id": "n8", "at": [340, 492]},
+    {"id": "n9", "at": [333, 501]}
   ],
   "edges": [
     {"a": "n0", "b": "n1", "kind": "street"},
     {"a": "n1", "b": "delos_harbour", "kind": "street"},
     {"a": "delos_harbour", "b": "n3", "kind": "street"},
-    {"a": "n3", "b": "lions", "kind": "street"},
-    {"a": "lions", "b": "n5", "kind": "street"},
-    {"a": "n5", "b": "n6", "kind": "street"},
-    {"a": "n1", "b": "n7", "kind": "street"}
+    {"a": "n3", "b": "n4", "kind": "street"},
+    {"a": "n4", "b": "lions", "kind": "street"},
+    {"a": "lions", "b": "n6", "kind": "street"},
+    {"a": "n6", "b": "n7", "kind": "street"},
+    {"a": "n7", "b": "n8", "kind": "street"},
+    {"a": "n1", "b": "n9", "kind": "street"},
+    {"a": "n3", "b": "n7", "kind": "street"}
   ],
   "lanes": [
     {"id": "delos", "kind": "sea", "points": [[341, 503], [342, 504], [339, 505]], "ports": [{"id": "sacred_harbour", "at": 0}, {"id": "start", "at": 0}, {"id": "delos", "at": 2}, {"id": "end", "at": 2}]}

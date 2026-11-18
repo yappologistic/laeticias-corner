@@ -25,8 +25,10 @@ float parseHour(std::string_view s) {
     if (colon == std::string_view::npos) return -1;
     int h = 0;
     int m = 0;
-    const auto a = std::from_chars(s.data(), s.data() + colon, h);
-    const auto b = std::from_chars(s.data() + colon + 1, s.data() + s.size(), m);
+    const std::string text(s);
+    const char* p = text.c_str();
+    const auto a = std::from_chars(p, p + colon, h);
+    const auto b = std::from_chars(p + colon + 1, p + text.size(), m);
     if (a.ec != std::errc{} || b.ec != std::errc{} || h < 0 || h > 24 || m < 0 || m > 59) return -1;
     return static_cast<float>(h) + static_cast<float>(m) / 60.0f;
 }

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "layer": "gordion",
+  "nodes": [
+    {"id": "gordion_s", "at": [150, 364], "kind": "portal"},
+    {"id": "n1", "at": [145, 364]},
+    {"id": "gordion_citadel", "at": [145, 361], "kind": "dest"},
+    {"id": "n3", "at": [145, 358]},
+    {"id": "n4", "at": [141, 361]}
+  ],
+  "edges": [
+    {"a": "gordion_s", "b": "n1", "kind": "road"},
+    {"a": "n1", "b": "gordion_citadel", "kind": "road"},
+    {"a": "gordion_citadel", "b": "n3", "kind": "road"},
+    {"a": "gordion_citadel", "b": "n4", "kind": "street"}
+  ],
+  "lanes": [
+  ]
+}

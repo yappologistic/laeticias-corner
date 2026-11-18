@@ -1394,6 +1394,42 @@
     "climb": "-x"
    }
   },
+  "world.ramp_basalt": {
+   "r0": {
+    "h": 30,
+    "climb": "-y"
+   },
+   "r1": {
+    "h": 30,
+    "climb": "+x"
+   },
+   "r2": {
+    "h": 30,
+    "climb": "+y"
+   },
+   "r3": {
+    "h": 30,
+    "climb": "-x"
+   }
+  },
+  "world.ramp_royal": {
+   "r0": {
+    "h": 30,
+    "climb": "-y"
+   },
+   "r1": {
+    "h": 30,
+    "climb": "+x"
+   },
+   "r2": {
+    "h": 30,
+    "climb": "+y"
+   },
+   "r3": {
+    "h": 30,
+    "climb": "-x"
+   }
+  },
   "world.stile": {
    "r0": {
     "h": 26
