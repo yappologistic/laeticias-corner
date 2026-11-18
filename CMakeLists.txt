@@ -51,6 +51,7 @@ add_library(lc_engine STATIC
   src/app/script.cpp
   src/app/app_script.cpp
   src/app/app_bench.cpp
+  src/app/app_benchmark.cpp
   src/app/app_life.cpp
   src/app/app_perf.cpp
   src/app/window_state.cpp

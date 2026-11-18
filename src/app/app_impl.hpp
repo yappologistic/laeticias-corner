@@ -187,6 +187,12 @@ private:
     [[nodiscard]] double syncGpu(Uint64 frameStart);
 
     // Benchmark (app_bench.cpp)
+    [[nodiscard]] bool measuring() const {
+        return opts_.bench || opts_.benchmark || opts_.soak > 0;
+    }
+    // The windowed tour (--benchmark): a fixed, seeded walk through the corner's busiest views,
+    // then a results card and a report beside the save.
+    int runBenchmark();
     int runBench();
     // One frame of the bench, timed whole (with the GPU waited for).
     FrameSample benchFrame();
@@ -314,6 +320,7 @@ private:
     PerfRing perf_;
     Profiler profiler_;
     bool profilerOn_ = false;
+    bool hudHidden_ = false; // the benchmark's results card draws instead of the interface
     double sceneMs_ = 0;   // building and queuing the world's draws, last frame
     double hudDrawMs_ = 0; // drawing the interface, last frame
     struct FileCloser {

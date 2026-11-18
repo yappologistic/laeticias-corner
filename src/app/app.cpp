@@ -225,7 +225,8 @@ bool App::init() {
         SDL_Log("cannot create renderer: %s", SDL_GetError());
         return false;
     }
-    if (!opts_.headless && !SDL_SetRenderVSync(renderer_.get(), 1))
+    // The benchmark measures with vsync off: frame times then show what the machine can do.
+    if (!opts_.headless && !SDL_SetRenderVSync(renderer_.get(), opts_.benchmark ? 0 : 1))
         SDL_Log("vsync unavailable: %s", SDL_GetError());
     if (!SDL_GetRenderOutputSize(renderer_.get(), &pixelW_, &pixelH_)) return false;
     density_ = SDL_GetWindowPixelDensity(window_.get());
@@ -252,7 +253,8 @@ bool App::init() {
         else
             (void)std::fprintf(perfLog_.get(), "%s\n", kPerfHeader);
     }
-    if (!opts_.bench) loadOrStart();
+    // The measuring modes build a world of their own and never touch the player's saves.
+    if (!measuring()) loadOrStart();
     fitCameraLand();
     return true;
 }
@@ -433,6 +435,7 @@ bool App::save(bool wait) {
         data.camera = cat_.iso().toTile(camera_.position());
         data.zoom = camera_.zoom();
     }
+    if (measuring()) return true; // a measuring world is never saved
     // Never write over a save that could not be read and could not be moved aside.
     if (saveBlocked_) {
         saveFailed("an unreadable save is in the way");
@@ -662,7 +665,7 @@ void App::fitCameraLand() {
     TileRect r = openBounds(cat_, progress_.stage, world_);
     const int m = tuning::kCameraOpenMargin;
     r = TileRect{r.x0 - m, r.y0 - m, r.x1 + m, r.y1 + m}.clipped(world_.landBounds());
-    camera_.setLand(opts_.bench || opts_.soak > 0 ? world_.landBounds() : r, scene_->cliffDepth());
+    camera_.setLand(measuring() ? world_.landBounds() : r, scene_->cliffDepth());
 }
 
 void App::openLand(int stage, bool wave) {
@@ -1672,7 +1675,7 @@ void App::render() {
     }
     const Uint64 t1 = SDL_GetPerformanceCounter();
     sceneMs_ = msBetween(t0, t1);
-    if (font_.build(renderer_.get(), uiScale_)) {
+    if (!hudHidden_ && font_.build(renderer_.get(), uiScale_)) {
         // The model the interface was laid out from this frame: drawing never sees another.
         Painter painter(*uiBatch_, font_, {blur_->result(), p.screen, ui_.brightness}, uiScale_);
         hud_.draw(painter, ui_);
@@ -1698,7 +1701,7 @@ void App::refreshScale() {
 }
 
 int App::run() {
-    if (!init()) return opts_.bench ? kExitNoRenderer : 1;
+    if (!init()) return opts_.bench || opts_.benchmark ? kExitNoRenderer : 1;
     if (opts_.script) {
         auto text = readTextFile(*opts_.script);
         auto parsed = text ? parseScript(*text) : std::unexpected(text.error());
@@ -1719,6 +1722,7 @@ int App::run() {
     else
         frameCamera();
     if (opts_.bench) return runBench();
+    if (opts_.benchmark) return runBenchmark();
     if (opts_.soak > 0) return runSoak();
     actors_.populate(actorEnv());
     refreshNooks();

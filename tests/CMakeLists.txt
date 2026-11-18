@@ -117,7 +117,7 @@ endforeach()
 # Every run starts from a clean save directory; the reload pair runs in order.
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art"
      "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench" "${LC_SCRATCH}/save_soak"
-     "${LC_SCRATCH}/save_perf"
+     "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
@@ -244,12 +244,21 @@ add_test(NAME bench
 add_test(NAME bench_world
   COMMAND laeticias-corner --bench --renderer opengl --size 1920x1080 --seed 1 --frames 240
           --map 1024x512 --density 0.6 --save-dir "${LC_SCRATCH}/save_bench")
+# The windowed benchmark's tour and report, run windowless: the report is written beside the save
+# (the windowed card is the same code with a window). Never run with a visible window here.
+add_test(NAME benchmark
+  COMMAND laeticias-corner --benchmark --headless --renderer opengl --size 1280x720 --seed 1
+          --save-dir "${LC_SCRATCH}/save_benchmark")
+add_test(NAME benchmark_report COMMAND ${CMAKE_COMMAND} -DDIR=${LC_SCRATCH}/save_benchmark
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/check_benchmark.cmake)
+set_tests_properties(benchmark PROPERTIES FIXTURES_SETUP benchmark_run)
+set_tests_properties(benchmark_report PROPERTIES FIXTURES_REQUIRED benchmark_run)
 set(LC_BENCH_ENV "${LC_RUN_ENV}")
 if(LC_SANITIZE)
   # The GPU driver and D-Bus behind the offscreen EGL path leak a few allocations of their own;
   # project code is leak-checked by every software-rendered test.
   list(APPEND LC_BENCH_ENV "ASAN_OPTIONS=detect_leaks=0")
 endif()
-set_tests_properties(bench bench_world PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
+set_tests_properties(bench bench_world benchmark PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 set_tests_properties(bench_world PROPERTIES LABELS heavy)

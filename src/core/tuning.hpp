@@ -64,6 +64,7 @@ inline constexpr double kSimBudgetMs = 0.6;   // actors, events, weather and con
 inline constexpr double kCrowdBudgetMs = 0.4; // the crowd's actors alone
 inline constexpr double kFrameP99Ms = 8.3;    // CLAUDE.md "Performance": 99th percentile frame
 inline constexpr double kFrameWorstMs = 16.6;
+inline constexpr double kCpuBudgetMs = 2.0; // update + draw submission on the CPU, on average
 inline constexpr double kSoakGrowthMiB = 4.0; // memory a long session may add after warming up
 // The process's resident memory may not pass this in the bench at 1080p, nor the soak at its size.
 // It covers the atlas, the four world targets and the blur chain at that size, the ground cache's

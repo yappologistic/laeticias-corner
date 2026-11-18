@@ -130,6 +130,9 @@ inline constexpr std::string_view kToastWelcome =
     "Welcome back. Laeticia has started a sketchbook: {} pages so far.";
 inline constexpr std::string_view kPhotoFile = "laeticias-corner-{:04}.png"; // numbered
 
+inline constexpr std::string_view kBenchmarkTitle = "Laeticia's Corner benchmark";
+inline constexpr std::string_view kBenchmarkClose = "Press any key or click to close.";
+
 // The profiler overlay (F3): numbers over the last seconds of frames.
 inline constexpr std::string_view kProfFrame =
     "Frame {:.0f} FPS · avg {:.2f} · p95 {:.2f} · p99 {:.2f} · worst {:.2f} ms";

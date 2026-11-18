@@ -110,4 +110,52 @@ void Profiler::draw(Painter& p, const PerfRing& ring, Vec2 screen, float s, bool
     p.endLayer();
 }
 
+void Profiler::drawCard(Painter& p, std::span<const std::string> lines, Vec2 screen, float s,
+                        bool pass) {
+    const Font& f = p.font();
+    const float pad = theme::kPanelPad * s * 1.5f;
+    const float lh = f.lineHeight(Face::Body);
+    // A tab splits a line into a label and a value, the values lined up in one column.
+    float labels = 0;
+    for (const std::string& l : lines)
+        if (const auto tab = l.find('\t'); tab != std::string::npos)
+            labels = std::max(labels, f.measure(Face::Body, std::string_view(l).substr(0, tab)));
+    const float col = labels + theme::kGap * s * 2;
+    float w = 0;
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::string_view l = lines[i];
+        const auto tab = l.find('\t');
+        w = std::max(w, tab == std::string_view::npos
+                            ? f.measure(i == 0 ? Face::Title : Face::Body, l)
+                            : col + f.measure(Face::Body, l.substr(tab + 1)));
+    }
+    w = std::min(w + 2 * pad, screen.x - 2 * theme::kMargin * s);
+    const float h = 2 * pad + f.lineHeight(Face::Title) + lh * 0.5f +
+                    static_cast<float>(lines.size() - 1) * lh;
+    const Box b{std::round((screen.x - w) * 0.5f), std::round((screen.y - h) * 0.5f), w, h};
+    p.glass(b, theme::kPanelRadius * s, 1, theme::kGlass);
+    p.endGlass();
+    float y = b.y + pad;
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::string_view l = lines[i];
+        if (i == 0) {
+            p.text(Face::Title, l, b.x + pad, y + f.ascent(Face::Title), theme::kInk);
+            y += f.lineHeight(Face::Title) + lh * 0.5f;
+            continue;
+        }
+        const SDL_FColor ink = i == 1 ? (pass ? theme::kAccent : theme::kWarn)
+                                      : (i + 1 == lines.size() ? theme::kInk : theme::kInkMuted);
+        const auto tab = l.find('\t');
+        const float base = y + f.ascent(Face::Body);
+        if (tab == std::string_view::npos) {
+            p.text(Face::Body, l, b.x + pad, base, ink);
+        } else {
+            p.text(Face::Body, l.substr(0, tab), b.x + pad, base, ink);
+            p.text(Face::Body, l.substr(tab + 1), b.x + pad + col, base, theme::kInk);
+        }
+        y += lh;
+    }
+    p.endLayer();
+}
+
 } // namespace lc

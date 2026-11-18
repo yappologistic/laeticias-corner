@@ -8,6 +8,8 @@
 #include "ui/painter.hpp"
 
 #include <array>
+#include <span>
+#include <string>
 #include <string_view>
 
 namespace lc {
@@ -16,6 +18,9 @@ class Profiler {
 public:
     // Laid out at the top centre of `screen`, under the interface's top band.
     void draw(Painter& p, const PerfRing& ring, Vec2 screen, float scale, bool gpuSync);
+    // The benchmark's results: lines of text on a centred card, the verdict line coloured.
+    static void drawCard(Painter& p, std::span<const std::string> lines, Vec2 screen, float scale,
+                         bool pass);
 
 private:
     static constexpr std::size_t kLines = 10;
