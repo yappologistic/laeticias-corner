@@ -42,6 +42,7 @@ import numpy as np
 
 from plan import world_plan as P
 
+from . import seasons as SEAS
 from .compose import NONE16, World, live_items
 from .coords import COLS, ROWS, to_grid, to_plan
 from .graph import Graph
@@ -51,10 +52,11 @@ CHUNK_TILES = P.CHUNK * P.CHUNK
 SCREEN_TILES = 250          # living-world §1.1: a screenful at the default zoom
 REACH = 24                  # tiles from a slot spot to the path graph (validate.SLOT_REACH)
 LIVE_BLOCK = 3              # the live window: the view's chunk and one ring (living-world §7.1)
-LIVE_ACTORS = 400           # living-world §7.5
+LIVE_ACTORS = 800           # the engine's live cap (tuning::life::kLiveCap; living-world §7.5 said 400)
 GO_SECONDS = 25             # nominal travel time of a `go` step when estimating routine shares
 LONG_SECONDS = 300          # an `until` step held for the block
-WEEK_CYCLE = 12             # days until week day (4) and season day (3) repeat together
+WEEK_CYCLE = 12             # calendar days until month (12) and week day (4) repeat together:
+                            # day n is month n mod 12, season (n / 3) mod 4, week day n mod 4
 
 MOVING = 0.85               # share of visible people moving with purpose at any moment
 # Area kinds (living-world §1.1): movers with purpose per screenful, minimum and cap; the hours a
@@ -387,14 +389,22 @@ def in_hours(hours, h: float) -> bool:
     return a <= h < b if a <= b else (h >= a or h < b)
 
 
+def _as_list(v) -> list:
+    return v if isinstance(v, list) else [v]
+
+
 def filters_pass(f: dict, h: float, day: int, season: str, festivals: set[str]) -> bool:
+    """A filter (`hours`, `days`, `season`, `months`, `festival`, `not_festival`, `weather`) on
+    calendar day `day` (its month is `day mod 12`) in `season`."""
     if "hours" in f and not in_hours(f["hours"], h):
         return False
     if "days" in f:
         d = f["days"]
         if day % d["every"] != d.get("offset", 0) % d["every"]:
             return False
-    if "season" in f and season not in f["season"]:
+    if "season" in f and season not in _as_list(f["season"]):
+        return False
+    if "months" in f and SEAS.month_of(day) not in f["months"]:
         return False
     if "festival" in f and f["festival"] not in festivals:
         return False
@@ -512,10 +522,31 @@ def roles_by_id(doc: dict) -> dict[str, dict]:
     return {r["id"]: r for r in doc.get("roles", [])}
 
 
-def festivals_on(doc: dict, season: str, day_index: int) -> set[str]:
-    """Festivals on the given day of the season (0-based; calendar entries count days from 1)."""
-    return {f["id"] for f in doc.get("festivals", [])
-            if f.get("season") in (None, season) and f.get("day") in (None, day_index + 1)}
+def festival_on(f: dict, day: int) -> bool:
+    """A calendar entry on calendar day `day`: by its `months`, else its `season` and season
+    `day` (counted from 1; no day: every day of the season)."""
+    if "months" in f:
+        return SEAS.month_of(day) in f["months"]
+    return f.get("season") in (None, SEAS.season_of(day)) and \
+        f.get("day") in (None, SEAS.season_day(day))
+
+
+def festivals_on(doc: dict, day: int) -> set[str]:
+    """Festivals on calendar day `day`."""
+    return {f["id"] for f in doc.get("festivals", []) if festival_on(f, day)}
+
+
+def season_of(day: int) -> str:
+    return SEAS.season_of(day)
+
+
+def area_of(d: dict, day: int) -> str:
+    """A district's area kind on calendar day `day`: its `seasonal_area` in those months (a
+    terrace whose court is away is a working place, not a crowd), else its `area`."""
+    sa = d.get("seasonal_area")
+    if sa and SEAS.month_of(day) in sa.get("months", []):
+        return sa["area"]
+    return d.get("area", "town")
 
 
 def population(doc: dict, view: RegionView, h: float, day: int, season: str,
@@ -847,7 +878,6 @@ def _start_nodes(view, role, homes) -> set[int]:
 
 
 def _check_reach_and_capacity(doc, view, roles, bad):
-    days, season = _calendar(doc)
     for r in doc.get("roles", []):
         homes = _role_districts(doc, r["id"])
         start = _start_nodes(view, r, homes)
@@ -876,7 +906,8 @@ def _check_reach_and_capacity(doc, view, roles, bad):
                             "slot(s) can be reached on the path graph from where it starts")
     # L3: expected occupancy of each slot pool at every hour of every week day.
     for day in range(WEEK_CYCLE):
-        fest = festivals_on(doc, season, day % 3)
+        fest = festivals_on(doc, day)
+        season = season_of(day)
         for h in range(24):
             pop = population(doc, view, h + 0.5, day, season, fest)
             demand: dict[str, float] = {}
@@ -911,14 +942,29 @@ def _check_reach_and_capacity(doc, view, roles, bad):
                         f"they have {cap[key]}")
 
 
-def _calendar(doc) -> tuple[int, str]:
-    return 4, doc.get("season", "spring")
+def chain_factor(c: dict, day: int) -> float:
+    """How hard a chain works on calendar day `day`: 0 outside its `months` or `season`, else its
+    `by_month` factor (its period is divided by it)."""
+    if "months" in c and SEAS.month_of(day) not in c["months"]:
+        return 0.0
+    if "season" in c and season_of(day) not in _as_list(c["season"]):
+        return 0.0
+    return float(c.get("by_month", [1.0] * 12)[day % 12])
+
+
+def present(doc: dict, role_id: str, day: int, h: float, festivals: set[str]) -> bool:
+    """Some district holds the role at hour h of calendar day `day`."""
+    for d in doc.get("districts", []):
+        for p in d.get("populations", []):
+            if p.get("role") == role_id and \
+                    filters_pass(p.get("when", {}), h, day, season_of(day), festivals):
+                return True
+    return False
 
 
 def _check_chains(doc, view, roles, bad, sim):
     from . import lifesim
     run = sim or lifesim.simulate
-    days, season = _calendar(doc)
     for c in doc.get("chains", []):
         where = f"chain {c['id']}"
         st = c.get("stages", [])
@@ -938,28 +984,52 @@ def _check_chains(doc, view, roles, bad, sim):
                 have.add(s["carry"])
         if "sink" not in st[-1]:
             bad("L4", where, "the last stage must be a sink, where the goods are visibly used")
+        if len(c.get("by_month", [1] * 12)) != 12:
+            bad("L4", where, "by_month needs twelve factors (March first)")
+            continue
         hours = c.get("hours", ["06:00", "18:00"])
+        days = [d for d in range(WEEK_CYCLE) if chain_factor(c, d) > 0]
+        if not days:
+            bad("L4", where, "never runs: no month of the year has it")
+            continue
+        # Its workers are out in its hours on every day it runs (seasonal work included).
         for s in st:
             r = roles.get(s.get("by"))
             if r is None or (c.get("event") and not r.get("schedule")):
                 continue   # cast by the chain's event, which keeps their hours
-            ok = any(block_at(r, h + 0.5, d, season, set()) is not None and
-                     routine_visible((block_at(r, h + 0.5, d, season, set()) or {}).get("routine", ""),
-                                     r.get("routines", {}))
-                     for d in range(WEEK_CYCLE) for h in range(24) if in_hours(hours, h + 0.5))
-            if not ok:
-                bad("L4", where, f"stage worker {s['by']!r} is never out at work in the chain's "
-                    f"hours {hours}")
-        res = run(c, view, roles)
-        for msg in res.get("errors", []):
-            bad("L4", where, msg)
+            placed = _role_districts(doc, r["id"])   # chain-only workers are the chain's puppets
+            for d in days:
+                # Festivals aside (a holiday rests the chain with its workers): who works in
+                # this month at all?
+                ok = any((not placed or present(doc, r["id"], d, h + 0.5, set())) and
+                         block_at(r, h + 0.5, d, season_of(d), set()) is not None and
+                         routine_visible((block_at(r, h + 0.5, d, season_of(d), set()) or {})
+                                         .get("routine", ""), r.get("routines", {}))
+                         for h in range(24) if in_hours(hours, h + 0.5))
+                if not ok:
+                    bad("L4", where, f"stage worker {s['by']!r} is not out at work in the "
+                        f"chain's hours {hours} in {SEAS.month_of(d)} ({season_of(d)}), when "
+                        "the chain runs")
+                    break
+        # The week-long simulation at every pace the chain keeps through the year.
+        paces: dict[float, list[str]] = {}
+        for d in days:
+            paces.setdefault(chain_factor(c, d), []).append(SEAS.month_of(d))
+        for f, ms in sorted(paces.items()):
+            if f != 1.0:
+                res = run(dict(c, period=c["period"] / f), view, roles, days=6, warmup=2)
+            else:
+                res = run(c, view, roles)
+            for msg in res.get("errors", []):
+                bad("L4", where, msg + ("" if len(paces) == 1 else
+                                        f" (at {f:g} pace, {', '.join(ms)})"))
 
 
 def _check_populations(doc, view, roles, bad):
-    days, season = _calendar(doc)
-    area = {d["id"]: d.get("area", "town") for d in doc.get("districts", [])}
     for day in range(WEEK_CYCLE):
-        fest = festivals_on(doc, season, day % 3)
+        fest = festivals_on(doc, day)
+        season = season_of(day)
+        area = {d["id"]: area_of(d, day) for d in doc.get("districts", [])}
         for h in range(24):
             pop = population(doc, view, h + 0.5, day, season, fest)
             chunk_tot: dict[tuple[int, int], float] = {}
@@ -1064,9 +1134,14 @@ def _texts(doc):
             for s in walk_steps(rt.get("steps", []), r.get("routines", {})):
                 if "label" in s:
                     yield f"role {r['id']} label", None, s["label"]
-    for k in ("caption", "era"):
-        if doc.get(k):
-            yield k, None, doc[k]
+    if doc.get("caption"):
+        yield "caption", None, doc["caption"]
+    era = doc.get("era")
+    for k, v in ((era or {}).items() if isinstance(era, dict) else [("edge", era)]):
+        if isinstance(v, str) and v:
+            yield f"era.{k}", None, v
+    if doc.get("moment", {}).get("caption"):
+        yield "moment.caption", None, doc["moment"]["caption"]
 
 
 def _check_names(doc, rid, bad):
@@ -1095,32 +1170,33 @@ def event_window(e) -> tuple[float, float]:
     return a, b + dur
 
 
-def _days_meet(a: dict, b: dict, fest_season: dict[str, str | None]) -> bool:
-    ta, tb = a.get("trigger", {}), b.get("trigger", {})
-    fa, fb = ta.get("festival"), tb.get("festival")
-    if fa and fb and fa != fb:
-        sa, sb = fest_season.get(fa), fest_season.get(fb)
-        if sa and sb and sa != sb:
-            return False
-    for f, other in ((fa, tb), (fb, ta)):
-        if f and fest_season.get(f) and other.get("season") and fest_season[f] not in other["season"]:
-            return False
-    if ta.get("season") and tb.get("season") and not set(ta["season"]) & set(tb["season"]):
+def event_on_day(doc: dict, e: dict, day: int, fest: set[str] | None = None) -> bool:
+    """Whether an event's trigger allows it on calendar day `day` (its festival, season, months,
+    week days and festival exclusions; chance and hours aside)."""
+    t = e.get("trigger", {})
+    fest = festivals_on(doc, day) if fest is None else fest
+    if t.get("festival") and t["festival"] not in fest:
         return False
-    if ta.get("festival") and tb.get("not_festival") == ta["festival"]:
+    if t.get("not_festival") and t["not_festival"] in fest:
         return False
-    if tb.get("festival") and ta.get("not_festival") == tb["festival"]:
+    if t.get("season") and season_of(day) not in _as_list(t["season"]):
         return False
-    da, db = ta.get("days"), tb.get("days")
-    if da and db and da["every"] == db["every"] and \
-            da.get("offset", 0) % da["every"] != db.get("offset", 0) % db["every"]:
+    if t.get("months") and SEAS.month_of(day) not in t["months"]:
+        return False
+    if "days" in t and day % t["days"]["every"] != t["days"].get("offset", 0) % t["days"]["every"]:
+        return False
+    if t.get("on") == "season_turn" and season_day(day) != 1 and not t.get("months"):
         return False
     return True
 
 
+def season_day(day: int) -> int:
+    return SEAS.season_day(day)
+
+
 def _check_events(doc, bad):
     ev = [e for e in doc.get("events", []) if e.get("route")]
-    fest_season = {f["id"]: f.get("season") for f in doc.get("festivals", [])}
+    days = {e["id"]: {d for d in range(WEEK_CYCLE) if event_on_day(doc, e, d)} for e in ev}
     for i, a in enumerate(ev):
         for b in ev[i + 1:]:
             ra, rb = a["route"], b["route"]
@@ -1132,7 +1208,11 @@ def _check_events(doc, bad):
             (a0, a1), (b0, b1) = event_window(a), event_window(b)
             overlap = (a0 < b1 and b0 < a1) or (a0 < b1 - 24 and b0 - 24 < a1) or \
                 (a0 - 24 < b1 and b0 < a1 - 24)
-            if overlap and _days_meet(a, b, fest_season):
+            # An event that runs past midnight meets the next day's events too.
+            da, db = days[a["id"]], days[b["id"]]
+            late = (a1 > 24 and {(d + 1) % WEEK_CYCLE for d in da} & db) or \
+                (b1 > 24 and {(d + 1) % WEEK_CYCLE for d in db} & da)
+            if overlap and (da & db or late):
                 bad("L8", f"events {a['id']} / {b['id']}",
                     f"can hold the same route ({shared[0][0]} - {shared[0][1]}) at the same time")
 

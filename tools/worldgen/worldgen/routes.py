@@ -696,14 +696,19 @@ def kit(W: World, g: Graph, ways: list[Way]) -> None:
             item, every = st["station"]
             st_spots = W.stats.setdefault("_station_spots", [])
             for i in spaced(every, every // 2):
-                for di in (0, 2, -2, 4, -4, 6, -6):
+                # Near the chainage mark first, then further along either way and a tile off the
+                # road: a station on benched relief needs its yard level with the road.
+                for di, gap in [(d, 1) for d in (0, 2, -2, 4, -4, 6, -6)] + \
+                        [(d, g) for g in (1, 2) for d in (8, -8, 10, -10)] + \
+                        [(d, 2) for d in (0, 2, -2, 4, -4, 6, -6)]:
                     j = i + di
                     if not (0 < j < n - 1) or not ok[j] or j in occupied_at:
                         continue
                     jc, jr = way.path[j]
                     if any(abs(jc - a) + abs(jr - b) < every * 0.7 for a, b in st_spots):
                         continue   # the road doubles back: keep stations apart on the ground too
-                    p = place_beside(W, way, j, side, item) or place_beside(W, way, j, -side, item)
+                    p = place_beside(W, way, j, side, item, gap) or \
+                        place_beside(W, way, j, -side, item, gap)
                     if p:
                         st_spots.append((jc, jr))
                         occupied_at.add(j)

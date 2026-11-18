@@ -155,9 +155,9 @@ def cards() -> dict:
 
 
 def build(view) -> dict:
-    return {
+    return T.SEASONS.brundisium({
         "version": 1, "id": "brundisium", "name": "Brundisium", "native": "Brundisium",
-        "caption": "Brundisium · April AD 126", "era": "The Rome of Hadrian · AD 126", "season": "spring",
+        "caption": "Brundisium · April AD 126", "era": "The Rome of Hadrian · AD 126",
         "theme": T.theme([{"file": "amb/rome/day.ogg", "hours": ["05:30", "19:30"]},
                           {"file": "amb/rome/night.ogg", "hours": ["19:30", "05:30"]}],
                          [{"rect": grid_rect(view, "harbour"), "file": "amb/world/sea.ogg", "gain": 0.7},
@@ -180,4 +180,4 @@ def build(view) -> dict:
         "strings": {"first_visit": "Brundisium: the Via Appia ends at the harbour, and ships leave for Greece.",
                     "ship_departs": "A ship for Greece is casting off."},
         "journal": ["landmark:*", "chain:*", "idea:*"],
-    }
+    })

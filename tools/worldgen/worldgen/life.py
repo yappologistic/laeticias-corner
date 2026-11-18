@@ -78,7 +78,7 @@ DENSITIES = {
 # The towns: who lives there, their landmarks' cards, the line on arrival.
 TOWN = {
     "alban_mount": {"name": "Mons Albanus", "native": "Mons Albanus",
-                    "caption": "The Alban Mount · April AD 126",
+                    "caption": "The Alban Mount · AD 126",
                     "people": ["rome.farmer", "rome.citizen", "rome.shepherd", "rome.carter"],
                     "cards": {"latiaris": ("Iuppiter Latiaris", "On the Alban Mount",
                                            "Jupiter's sanctuary on the summit, where the consuls "
@@ -88,7 +88,7 @@ TOWN = {
                     "first": "The Alban Mount. The paved way climbs to Jupiter's sanctuary above "
                              "the crater lake."},
     "brundisium": {"name": "Brundisium", "native": "Brundisium",
-                   "caption": "Brundisium · April AD 126",
+                   "caption": "Brundisium · AD 126",
                    "people": ["rome.docker", "rome.citizen", "rome.egyptian_sailor",
                               "rome.syrian_merchant", "rome.working_woman"],
                    "cards": {"brundisium_harbour": ("Portus Brundisinus", "The harbour for Greece",
@@ -98,7 +98,7 @@ TOWN = {
                                                     "Sea.")},
                    "first": "Brundisium: the Via Appia ends at the harbour, and ships leave for "
                             "Greece."},
-    "tibur": {"name": "Tibur", "native": "Tibur", "caption": "Tibur · April AD 126",
+    "tibur": {"name": "Tibur", "native": "Tibur", "caption": "Tibur · AD 126",
               "people": ["rome.farmer", "rome.citizen", "rome.carter", "rome.working_woman"],
               "cards": {"tibur": ("Tibur", "Olives above the Anio",
                                   "A hill town famous for its olives, its travertine and the "
@@ -109,7 +109,7 @@ TOWN = {
               "place": ("tibur_farm", "tibur"),
               "first": "Tibur: olive groves on the plain below the hills, and a quarry of "
                        "travertine."},
-    "capua": {"name": "Capua", "native": "Capua", "caption": "Capua · April AD 126",
+    "capua": {"name": "Capua", "native": "Capua", "caption": "Capua · AD 126",
               "people": ["rome.citizen", "rome.carter", "rome.freedman", "rome.working_woman"],
               "cards": {"capua": ("Capua", "The city of Campania",
                                   "The great city of the Campanian plain, on the Via Appia. Its "
@@ -121,7 +121,7 @@ TOWN = {
               "first": "Capua: the Via Appia runs between shops and tombs past a posting "
                        "station."},
     "beneventum": {"name": "Beneventum", "native": "Beneventum",
-                   "caption": "Beneventum · April AD 126",
+                   "caption": "Beneventum · AD 126",
                    "people": ["rome.citizen", "rome.carter", "rome.farmer"],
                    "cards": {"beneventum": ("Beneventum", "Where the Via Traiana begins",
                                             "Here Trajan's new road to Brundisium leaves the "
@@ -131,7 +131,7 @@ TOWN = {
                                             "houses made of common Roman pieces.")},
                    "place": ("beneventum_fork", "beneventum"),
               "first": "Beneventum: the Via Traiana leaves the Appia here."},
-    "corcyra": {"name": "Kerkyra", "native": "Κέρκυρα", "caption": "Kerkyra · summer, 432 BC",
+    "corcyra": {"name": "Kerkyra", "native": "Κέρκυρα", "caption": "Kerkyra · 432 BC",
                 "people": ["athens.citizen", "athens.woman", "athens.rower", "athens.metic"],
                 "cards": {"corcyra": ("Kerkyra", "Island of the strong fleet",
                                       "A rich island city with the second fleet of Greece, "
@@ -141,7 +141,7 @@ TOWN = {
                                       "Greek pieces.")},
                 "place": ("corcyra_quay", "corcyra"),
               "first": "Kerkyra: a harbour on the island's east shore."},
-    "olympia": {"name": "Olympia", "native": "Ὀλυμπία", "caption": "Olympia · summer, 432 BC",
+    "olympia": {"name": "Olympia", "native": "Ὀλυμπία", "caption": "Olympia · 432 BC",
                 "people": ["athens.priest", "athens.citizen", "athens.athlete", "athens.ionian"],
                 "cards": {"altis": ("Altis", "Zeus' precinct at Olympia",
                                     "The walled grove of Zeus, crowded with altars and statues, "
@@ -151,7 +151,7 @@ TOWN = {
                                     "bases and olives made of common Greek pieces.")},
                 "place": ("altis", "altis"),
               "first": "Olympia: the Altis among its olives and planes."},
-    "sparta": {"name": "Sparta", "native": "Σπάρτη", "caption": "Sparta · summer, 432 BC",
+    "sparta": {"name": "Sparta", "native": "Σπάρτη", "caption": "Sparta · 432 BC",
                "people": ["athens.farmer", "athens.citizen", "athens.woman", "athens.herder"],
                "cards": {"sparta": ("Sparta", "Villages without a wall",
                                     "Sparta is a cluster of villages in the Eurotas valley, "
@@ -161,7 +161,7 @@ TOWN = {
                                     "and a shrine made of common Greek pieces.")},
                "place": ("sparta_shrine", "sparta"),
               "first": "Sparta: farmhouses in the Eurotas valley, and no wall."},
-    "gordion": {"name": "Gordion", "native": "Gordion", "caption": "Gordion · spring, c. 470 BC",
+    "gordion": {"name": "Gordion", "native": "Gordion", "caption": "Gordion · c. 470 BC",
                 "people": ["parsa.labourer", "parsa.woman_worker", "parsa.guard_spear",
                            "parsa.caravan_driver"],
                 "cards": {"gordion": ("Gordion", "The old Phrygian capital",
@@ -172,7 +172,7 @@ TOWN = {
                                       "with common mounds, the town with common pieces.")},
                 "place": ("gordion_citadel", "gordion"),
               "first": "Gordion: a walled mound by the Sangarios, burial mounds beyond."},
-    "sidon": {"name": "Sidon", "native": "Ṣīdōn", "caption": "Sidon · spring, c. 470 BC",
+    "sidon": {"name": "Sidon", "native": "Ṣīdōn", "caption": "Sidon · c. 470 BC",
               "people": ["parsa.labourer", "parsa.woman_worker", "parsa.craftsman",
                          "parsa.scribe"],
               "cards": {"sidon": ("Sidon", "A Phoenician harbour",
@@ -183,7 +183,7 @@ TOWN = {
                                   "of common pieces.")},
               "place": ("sidon_quay", "sidon"),
               "first": "Sidon: ships, cedar logs and a harbour on the Levant coast."},
-    "eleusis": {"name": "Eleusis", "native": "Ἐλευσίς", "caption": "Eleusis · summer, 432 BC",
+    "eleusis": {"name": "Eleusis", "native": "Ἐλευσίς", "caption": "Eleusis · 432 BC",
                 "people": ["athens.citizen", "athens.woman", "athens.priest", "athens.farmer"],
                 "cards": {"telesterion": ("Telesterion", "Hall of the Mysteries",
                                           "The square hall where the initiates of Demeter and "
@@ -200,7 +200,7 @@ TOWN = {
                                             "altar of Prometheus.")},
                 "first": "The Academy: the grove of the hero Akademos, olives and running "
                          "boys."},
-    "delphi": {"name": "Delphi", "native": "Δελφοί", "caption": "Delphi · summer, 432 BC",
+    "delphi": {"name": "Delphi", "native": "Δελφοί", "caption": "Delphi · 432 BC",
                "people": ["athens.priest", "athens.citizen", "athens.ionian", "athens.woman"],
                "cards": {"athenian_treasury": ("Treasury of the Athenians", "On the Sacred Way",
                                                "A small Doric treasury of Parian marble, its "
@@ -214,7 +214,7 @@ TOWN = {
                                            "spoke the god's answers to those who came to ask.")},
                "first": "Delphi under the shining cliffs. The Sacred Way climbs to "
                         "Apollo's temple."},
-    "corinth": {"name": "Korinthos", "native": "Κόρινθος", "caption": "Corinth · summer, 432 BC",
+    "corinth": {"name": "Korinthos", "native": "Κόρινθος", "caption": "Corinth · 432 BC",
                 "people": ["athens.citizen", "athens.woman", "athens.metic", "athens.rower"],
                 "cards": {"corinth_apollo": ("Temple of Apollo", "On its low hill",
                                    "Built about 540 BC and one of the oldest Doric temples in "
@@ -228,7 +228,7 @@ TOWN = {
                                        "The steep rock above the city, walled on its summit, "
                                        "with a small temple of Aphrodite at the top.")}, "first": "Corinth, between two seas. Ships cross the isthmus on "
                                       "the diolkos."},
-    "delos": {"name": "Delos", "native": "Δῆλος", "caption": "Delos · summer, 432 BC",
+    "delos": {"name": "Delos", "native": "Δῆλος", "caption": "Delos · 432 BC",
               "people": ["athens.priest", "athens.ionian", "athens.citizen"],
               "cards": {"delos_sanctuary": ("Sanctuary of Apollo", "Where the god was born",
                                   "The old temple of poros stone, a marble temple begun after "
@@ -238,14 +238,14 @@ TOWN = {
                                "Marble lions set up by the Naxians about 600 BC, sitting in a row "
                                "and looking out over the sacred lake.")}, "first": "Delos, Apollo's island. The lions keep watch over the "
                                     "sacred lake."},
-    "ephesus": {"name": "Ephesos", "native": "Ἔφεσος", "caption": "Ephesus · summer, 432 BC",
+    "ephesus": {"name": "Ephesos", "native": "Ἔφεσος", "caption": "Ephesus · 432 BC",
                 "people": ["athens.ionian", "athens.citizen", "athens.woman", "athens.rower"],
                 "cards": {"artemision": ("Artemision", "Temple of Artemis",
                              "Artemis' great temple in the wet plain of the Kaystros, begun about "
                              "560 BC with column drums given by Croesus of Lydia. Pliny gives 120 "
                              "years of building, so work may still be going on.")}, "first": "Ephesus at the mouth of the Kaystros. Artemis' great "
                                       "temple stands in the wet plain."},
-    "sardis": {"name": "Sardis", "native": "Sfarda", "caption": "Sardis · spring, c. 470 BC",
+    "sardis": {"name": "Sardis", "native": "Sfarda", "caption": "Sardis · c. 470 BC",
                "people": ["parsa.labourer", "parsa.woman_worker", "parsa.guard_spear",
                           "parsa.scribe"],
                "cards": {"royal_road_head": ("Head of the Royal Road", "The first station",
@@ -264,7 +264,7 @@ TOWN = {
                            "people": ["parsa.caravan_driver", "parsa.groom", "parsa.labourer"],
                            "cards": {}, "first": "The Euphrates. Round boats ferry the loads "
                                                  "across."},
-    "babylon": {"name": "Babylon", "native": "Bābili", "caption": "Babylon · spring, c. 470 BC",
+    "babylon": {"name": "Babylon", "native": "Bābili", "caption": "Babylon · c. 470 BC",
                 "people": ["parsa.scribe", "parsa.labourer", "parsa.woman_worker",
                            "parsa.guard_spear", "parsa.craftsman"],
                 "cards": {"ishtar_gate": ("Ishtar Gate", "The blue gate",
@@ -278,7 +278,7 @@ TOWN = {
                 "etemenanki": ("Etemenanki", "The great ziggurat",
                                "Marduk's stepped temple tower beside his temple Esagila. How "
                                "much of it stood under Xerxes is debated; it is shown standing.")}, "first": "Babylon. The road enters by the blue gate of Ishtar."},
-    "susa": {"name": "Susa", "native": "Šušan", "caption": "Susa · spring, c. 470 BC",
+    "susa": {"name": "Susa", "native": "Šušan", "caption": "Susa · c. 470 BC",
              "people": ["parsa.scribe", "parsa.guard_spear", "parsa.woman_worker",
                         "parsa.labourer", "parsa.elamite"],
              "cards": {"susa_palace": ("Palace of Darius", "Susa",
@@ -297,7 +297,7 @@ TOWN = {
                                     "king's road; its famous battle came 140 years later.")}, "first": "The Persian Gates. Guards watch the defile on the "
                                             "road to Pārsa."},
     "pasargadae": {"name": "Pasargadae", "native": "Pāθragadā",
-                   "caption": "Pasargadae · spring, c. 470 BC",
+                   "caption": "Pasargadae · c. 470 BC",
                    "people": ["parsa.magus", "parsa.gardener", "parsa.guard_spear"],
                    "cards": {"pasargadae_garden": ("Palace P and its garden", "Cyrus' garden",
                                                    "Cyrus' palace faces a garden watered by "
@@ -368,7 +368,6 @@ def theme(rid: str) -> dict:
         bed = "sea"
     day, night = BEDS[bed]
     out = {"grading": GRADING[t], "haze": {"colour": HAZE[t], "strength": 0.12},
-           "climate": set_ if set_ in ("rome", "athens", "parsa") else "world",
            "ambience": {"beds": [{"file": day, "hours": ["06:00", "19:00"]},
                                  {"file": night, "hours": ["19:00", "06:00"]}]}}
     if kind == "seam":
@@ -609,7 +608,7 @@ def town_file(rid: str, layout_world: World, graphs: dict[str, Graph]) -> dict:
                 tokens.append({"actor": "world.fishing_boat", "lane": f"{rid}:{ln.id}", "count": 1})
     cards = {k: {"title": a, "epithet": b, "text": c} for k, (a, b, c) in t["cards"].items()}
     return {"version": 1, "id": rid, "name": t["name"], "native": t["native"],
-            "caption": t["caption"], "theme": theme(rid) | {"climate": set_},
+            "caption": t["caption"], "theme": theme(rid),
             "districts": pops, "densities": DENSITIES, "figures": t.get("figures", []),
             "groups": [], "chains": [],
             "events": [], "lanes_tokens": tokens, "zones": [], "cards": cards,
@@ -653,12 +652,16 @@ def write(world: World, graphs: dict[str, Graph], out_dir: Path, cat=None) -> li
         # A town with its own life module is a city file (`build.sh --city`), never written here.
         if rid in graphs and not (regions / rid / "life.py").exists():
             docs[rid] = town_file(rid, world, graphs)
-    from . import look, places, sound
+    from . import look, places, seasonlife, sound
     root = Path(__file__).resolve().parents[3]
+    for rid in list(docs):
+        docs[rid] = seasonlife.apply(places.apply(docs[rid]), world, graphs, cat, root)
+    ctx = seasonlife.context(world, graphs, cat, root)
+    seasonlife.transhumance(docs, world, graphs, ctx.clims)
     for rid, doc in docs.items():
-        places.apply(doc)
         sound.apply(doc, world, cat, root)
         look.apply(doc, world, cat, root)
+        seasonlife.finish(doc, root)
     problems = check_refs(docs, graphs)
     if problems:
         raise SystemExit("region files name missing graph parts:\n  " + "\n  ".join(problems))

@@ -1,7 +1,8 @@
 """A deterministic simulator of the chain rules (living-world §3.3), for checking chains offline.
 
 One second per tick over a simulated week (four game days of 720 s; the clock starts at 06:00).
-The first day fills the empty chain; the shares and the daily counts are judged on the others.
+The first day fills the empty chain (`warmup` days for a chain slowed by its month); the shares
+and the daily counts are judged on the others.
 A chain runs only inside its `hours`. Every slot holds at most three units; a source makes one
 unit per `period` while its slot has room; a transform turns one input into one output in `dur`
 seconds (default half a period); a carrier takes up to `units` (default 1) from one slot to
@@ -46,7 +47,7 @@ def _node(ref: str, near: str | None, view) -> tuple[str | None, str]:
     return insts[0].nodes[slot], ref
 
 
-def simulate(chain: dict, view, roles: dict, days: int = 4) -> dict:
+def simulate(chain: dict, view, roles: dict, days: int = 4, warmup: int = 1) -> dict:
     stages = chain["stages"]
     period = float(chain["period"])
     hours = chain.get("hours", ["06:00", "18:00"])
@@ -98,7 +99,7 @@ def simulate(chain: dict, view, roles: dict, days: int = 4) -> dict:
     sunk_day = [0] * days
     for t in range(days * DAY):
         on = _active(hours, _hour(t))
-        if t == DAY:   # judge the chain once it has filled
+        if t == DAY * warmup:   # judge the chain once it has filled
             stat = [{"work": 0, "starve": 0, "block": 0, "done": 0} for _ in stages]
         for k, (i, s) in enumerate(run):
             st, sm = state[k], stat[i]
@@ -204,7 +205,7 @@ def simulate(chain: dict, view, roles: dict, days: int = 4) -> dict:
             errors.append(f"stage {i} ({what}) walks {travel[i]:.0f} s each way, over three "
                           "periods")
     for d, n in enumerate(sunk_day):
-        if d > 0 and n < 1:
+        if d >= warmup and n < 1:
             errors.append(f"nothing reached the sink on day {d}")
             break
     return {"errors": errors, "stages": stat, "per_day": sunk_day, "travel": travel}

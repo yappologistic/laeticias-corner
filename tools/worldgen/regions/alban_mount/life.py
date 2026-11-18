@@ -92,7 +92,7 @@ def chains() -> list[dict]:
     ]
 
 
-FESTIVALS = [{"id": "feriae_latinae", "season": "spring", "day": 3, "hours": ["07:00", "14:00"]}]
+FESTIVALS = [{"id": "feriae_latinae", "day": 3, "hours": ["07:00", "14:00"]}]
 
 
 def events() -> list[dict]:
@@ -154,9 +154,9 @@ def cards() -> dict:
 
 
 def build(view) -> dict:
-    return {
+    return T.SEASONS.alban({
         "version": 1, "id": "alban_mount", "name": "Mons Albanus", "native": "Mons Albanus",
-        "caption": "The Alban Mount · April AD 126", "era": "The Rome of Hadrian · AD 126", "season": "spring",
+        "caption": "The Alban Mount · April AD 126", "era": "The Rome of Hadrian · AD 126",
         "theme": T.theme([{"file": "amb/world/fields.ogg", "hours": ["05:00", "19:30"]},
                           {"file": "amb/world/desert_night.ogg", "hours": ["19:30", "05:00"]}],
                          [{"rect": grid_rect(view, "woods"), "file": "amb/world/mountain.ogg", "gain": 0.5},
@@ -178,4 +178,4 @@ def build(view) -> dict:
         "strings": {"first_visit": "The Alban Mount. The paved way climbs to Jupiter's sanctuary above the crater lake.",
                     "feriae": "The Latin Festival: the magistrates climb to Jupiter's altar with a white bull."},
         "journal": ["landmark:*", "chain:*", "idea:*", "event:feriae_latinae"],
-    }
+    })
