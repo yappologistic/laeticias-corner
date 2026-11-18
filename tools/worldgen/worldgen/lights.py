@@ -71,8 +71,6 @@ PROFILES = {
     "door_lamp": _p("door", 1900, 2.2, 0.7, "steady", (4, 7), 0.05, [("dusk", "23:00")], "dim"),
     "symposium": _p("lamp", 2000, 2.4, 0.75, "steady", (3, 6), 0.05, [("20:00", "01:30")],
                     only="event:symposium"),
-    "wedding_torches": _p("torch", 1900, 3.0, 0.9, "gutter", (6, 10), 0.08, [("19:00", "22:00")],
-                          "out", only="event:wedding"),
     # trade: lamps at shop counters, taverns open late, workshops lit at the bench
     "shop_lamp": _p("lamp", 2000, 2.4, 0.75, "steady", (4, 7), 0.05, [("dusk", "21:30")], "dim"),
     "tavern_lamp": _p("lamp", 1900, 2.6, 0.8, "steady", (4, 7), 0.06, [("dusk", "00:30")], "dim",
@@ -126,7 +124,7 @@ PROFILES = {
     # festival nights
     "parilia_bonfire": _p("bonfire", 1800, 5.0, 1.0, "leap", (2, 4), 0.08, [("20:00", "00:30")],
                           "out", only="parilia"),
-    "saturnalia_tapers": _p("window", 2100, 1.8, 0.6, "steady", (3, 6), 0.04, [("dusk", "01:00")],
+    "saturnalia_tapers": _p("lamp", 2100, 1.8, 0.6, "steady", (3, 6), 0.04, [("dusk", "01:00")],
                             only="saturnalia"),
     "audience_braziers": _p("brazier", 1800, 3.4, 0.95, "breathe", (1.0, 2.0), 0.07,
                             [("dusk", "01:00")], "out", only="spring_audience"),
@@ -165,9 +163,11 @@ RULES: list[tuple[str, list[list[tuple]]]] = [
     # the undying hearth of Hestia in Apollo's temple at Delphi; the Prytaneion's at Delos
     (r"^athens\.(delphi_apollo|delos_sanctuary)$", [[("temple_hearth", 1.0)]]),
     # --- Rome ---------------------------------------------------------------------------------
+    # the Saturnalia's wax tapers (cerei), given as gifts and lit in every room
     (r"^rome\.r_insula(_corner|_low)?$", [[("window_evening", 0.36), ("window_late", 0.12),
-                                            ("window_predawn", 0.08)]]),
-    (r"^rome\.r_domus$", [HOUSE, [("door_lamp", 0.45)]]),
+                                            ("window_predawn", 0.08)],
+                                           [("saturnalia_tapers", 0.3)]]),
+    (r"^rome\.r_domus$", [HOUSE, [("door_lamp", 0.45)], [("saturnalia_tapers", 0.5)]]),
     (r"^rome\.r_taberna$", [[("shop_lamp", 0.45)]]),
     (r"^rome\.r_thermopolium$", [[("tavern_lamp", 0.8)]]),
     (r"^rome\.r_bakery$", [[("oven_predawn", 1.0)]]),
