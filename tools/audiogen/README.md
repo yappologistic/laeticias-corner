@@ -7,6 +7,8 @@ output is fully original and licence-free. Rendering is deterministic (each file
 seeded from its name; Ogg is written with ffmpeg's bit-exact flags).
 
 ```sh
+# Two worker processes; run under a memory limit so a mistake fails fast:
+(ulimit -v 4000000; nice -n 19 tools/audiogen/generate.sh)
 tools/audiogen/generate.sh              # render everything, then validate
 tools/audiogen/generate.sh sfx/ duck    # re-render only names containing a filter
 tools/audiogen/generate.sh --catalog docs/design/catalog.next.json   # a batch's catalog
@@ -15,6 +17,18 @@ tools/audiogen/.venv/bin/python tools/audiogen/validate.py [--catalog PATH]   # 
 
 Files in `assets/audio/` that the chosen catalog does not list are reported, not failed,
 so the live catalog still validates while the folder runs ahead of it during a batch.
+
+Measure (resumable: rows go to `OUT.rows.jsonl` as each file finishes; one file per task):
+
+```sh
+(ulimit -v 4000000; nice -n 19 tools/audiogen/.venv/bin/python tools/audiogen/measure.py \
+    out/audiogen/after.json --compare out/audiogen/before.json --md out/audiogen/after.md)
+```
+
+Memory: every process stays under 1 GB. Long signals are processed a block or a channel at a
+time (true peak and the limiter's oversampled envelope in blocks, circular filters warmed up from
+the loop's last two seconds instead of a second copy, music stems in float32 and finished one at
+a time); mono files are flat arrays, never `(n, 1)` (they broadcast against windows).
 
 Needs Python 3, `ffmpeg`/`ffprobe` with libvorbis. The script creates `.venv` from the
 pinned `requirements.txt`. Nothing is ever played back.
@@ -37,6 +51,9 @@ pinned `requirements.txt`. Nothing is ever played back.
 | `wildlife.py` | dawn, dusk and night beds by climate, cicadas in three heats, animal voices (syllable model) with variations, the home duck/hen/cat |
 | `people.py` | wordless crowds (3 sizes × Latin, Greek, Persian), footsteps, hooves and carts, work loops and effects, crowd responses, a far chorus, a wedding song, Laeticia's steps and watering can |
 | `stings.py` | sunrise, nightfall, storm clearing, rainbow and first-snow stings in the home key and each city's mode |
+| `seasons.py` | the year in sound: the cities' seasonal beds, autumn and winter nature beds and snow beds for the countryside, spring frogs, wind in bare branches, the winter marsh, floodwater, the seasons' work loops, each civilization's festival loops and instruments, the season-turn stings and turn cues |
+| `between.py` | the land and sea between the cities: wind in leafy trees, rocky shores and the open sea by state, streams, a grazing flock, oars; one-shots (cart passing, sail, owls, wolves, nightingale, stag, geese, starlings, lark, gulls, drips) |
+| `measure.py` | the quality pass by instrument: per file loudness, true peak, loudness range, loudest 100 ms, spectral balance against a stated target, stereo width and mono fold, seam (jump, level and spectral step), period of repetition, DC, edges, noise floor; music stems, bars, sums, day/night match, notes against the key; before/after tables |
 | `generate.py` | catalog ↔ renderer table, loudness targets, region sets and their manifests, parallel build |
 
 ## Intensity families

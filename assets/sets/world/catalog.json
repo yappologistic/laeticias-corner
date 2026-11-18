@@ -3701,7 +3701,19 @@
    "amb/world/olive_harvest.ogg",
    "amb/world/ploughing.ogg",
    "amb/world/wind_bare_1.ogg",
-   "amb/world/wind_bare_2.ogg"
+   "amb/world/wind_bare_2.ogg",
+   "amb/world/wind_trees_1.ogg",
+   "amb/world/wind_trees_2.ogg",
+   "amb/world/wind_trees_3.ogg",
+   "amb/world/sea_rocks_1.ogg",
+   "amb/world/sea_rocks_2.ogg",
+   "amb/world/sea_rocks_3.ogg",
+   "amb/world/sea_open_1.ogg",
+   "amb/world/sea_open_2.ogg",
+   "amb/world/sea_open_3.ogg",
+   "amb/world/stream.ogg",
+   "amb/world/flock.ogg",
+   "amb/world/oars.ogg"
   ],
   "sfx": [
    "sfx/world/step.wav",
@@ -3780,7 +3792,21 @@
    "sfx/world/sting_season.wav",
    "sfx/world/cicada_start.wav",
    "sfx/world/leaves_skitter.wav",
-   "sfx/world/frost_steps.wav"
+   "sfx/world/frost_steps.wav",
+   "sfx/world/cart_pass.wav",
+   "sfx/world/sail_flap.wav",
+   "sfx/world/owl_tawny.wav",
+   "sfx/world/owl_scops.wav",
+   "sfx/world/wolves_far.wav",
+   "sfx/world/nightingale.wav",
+   "sfx/world/stag_roar.wav",
+   "sfx/world/geese_over.wav",
+   "sfx/world/starlings.wav",
+   "sfx/world/lark.wav",
+   "sfx/world/gull_3.wav",
+   "sfx/world/drip_1.wav",
+   "sfx/world/drip_2.wav",
+   "sfx/world/drip_3.wav"
   ]
  },
  "art": {
