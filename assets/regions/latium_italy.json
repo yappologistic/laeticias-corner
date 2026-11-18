@@ -1821,7 +1821,7 @@
    "count": 1,
    "route": {
     "start": "base:via_appia_farm_376_256",
-    "end": "base:via_tiburtina_station_275_91"
+    "end": "base:via_tiburtina_station_275_93"
    },
    "when": {
     "months": [
@@ -1843,12 +1843,12 @@
     "base:via_appia_station_363_217",
     "base:via_appia_station_315_204",
     "base:via_appia_farm_315_188",
-    "base:via_appia_station_315_182",
+    "base:via_appia_station_315_184",
     "alban_mount:appia_foot",
     "base:via_tiburtina_farm_275_121",
     "base:via_tiburtina_station_275_117",
     "base:via_tiburtina_farm_275_104",
-    "base:via_tiburtina_station_275_91"
+    "base:via_tiburtina_station_275_93"
    ],
    "offsets": [
     0.211
@@ -1874,7 +1874,7 @@
    ],
    "rest": [
     "base:via_appia_farm_315_188",
-    "base:via_appia_station_315_182",
+    "base:via_appia_station_315_184",
     "alban_mount:appia_foot"
    ],
    "offsets": [
@@ -1944,7 +1944,7 @@
    ],
    "rest": [
     "alban_mount:appia_foot",
-    "base:via_appia_station_315_182",
+    "base:via_appia_station_315_184",
     "base:via_appia_farm_315_188",
     "base:via_appia_station_315_204",
     "base:via_appia_station_363_217",
@@ -1977,7 +1977,7 @@
    ],
    "rest": [
     "alban_mount:appia_foot",
-    "base:via_appia_station_315_182",
+    "base:via_appia_station_315_184",
     "base:via_appia_farm_315_188",
     "base:via_appia_station_315_204",
     "capua:capua_station"
@@ -2004,7 +2004,7 @@
    ],
    "rest": [
     "alban_mount:appia_foot",
-    "base:via_appia_station_315_182",
+    "base:via_appia_station_315_184",
     "base:via_appia_farm_315_188",
     "base:via_appia_station_315_204",
     "base:via_appia_station_363_217",
@@ -2035,7 +2035,7 @@
    ],
    "rest": [
     "alban_mount:appia_foot",
-    "base:via_appia_station_315_182",
+    "base:via_appia_station_315_184",
     "base:via_appia_farm_315_188",
     "base:via_appia_station_315_204",
     "beneventum:beneventum_fork"
@@ -2061,7 +2061,7 @@
    ],
    "rest": [
     "alban_mount:appia_foot",
-    "base:via_appia_station_315_182",
+    "base:via_appia_station_315_184",
     "base:via_appia_farm_315_188",
     "base:via_appia_station_315_204",
     "base:via_appia_station_363_217",
@@ -2091,7 +2091,7 @@
    ],
    "rest": [
     "tibur:tibur_farm",
-    "base:via_tiburtina_station_275_91",
+    "base:via_tiburtina_station_275_93",
     "base:via_tiburtina_farm_275_104",
     "base:via_tiburtina_station_275_117",
     "base:via_tiburtina_farm_275_121"
@@ -2118,7 +2118,7 @@
    ],
    "rest": [
     "tibur:tibur_farm",
-    "base:via_tiburtina_station_275_91",
+    "base:via_tiburtina_station_275_93",
     "base:via_tiburtina_farm_275_104",
     "base:via_tiburtina_station_275_117",
     "base:via_tiburtina_farm_275_121"
@@ -3185,7 +3185,7 @@
    "station_lamp"
   ],
   [
-   180,
+   182,
    959,
    "rome.mutatio",
    "station_lamp"
@@ -3197,7 +3197,7 @@
    "station_lamp"
   ],
   [
-   89,
+   91,
    1000,
    "rome.mutatio",
    "station_lamp"

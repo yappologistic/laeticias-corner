@@ -150,6 +150,12 @@ TRAFFIC = [
     R("ionia_lydia", "athens.ionian", "ephesus:ephesus_e", "base:ionian_road_856_228", 2,
       row="road", note="Ephesians on the road up the Kaystros valley; they turn back in the haze "
                        "of the seam, where the Greek years end"),
+    R("ionia_lydia", "world.traveller", "base:ionian_road_856_228", "base:troad_road_820_104", 2,
+      row="road", note="travellers on the road through the Troad to Abydos and the crossing "
+                       "to Sestos"),
+    R("ionia_lydia", "athens.cart", "base:troad_road_820_104", "base:ionian_road_856_228", 1,
+      row="road", carry="world.goods_sacks",
+      note="an ox cart with Black Sea grain landed at Abydos"),
     # -- the Royal Road and the roads off it (c. 470 BC) ----------------------------------------
     R("anatolia", "parsa.courier", "sardis:sardis_station", "parsa:royal_road_station", 4,
       row="courier", hours=ALL_DAY,
@@ -223,6 +229,12 @@ TRAFFIC = [
     R("iran_plateau", "parsa.magus", "parsa:pasargadae_n", "pasargadae:cyrus_tomb", 1,
       row="road", hours=["06:00", "17:00"],
       note="a magus with the month's horse for Cyrus' tomb (Arrian 6.29)"),
+    R("iran_plateau", "parsa.courier", "pasargadae:pasargadae_s", "base:ecbatana_road_1125_2", 1,
+      row="courier", note="the king's couriers on the road north to Ecbatana, the summer "
+                          "capital"),
+    R("iran_plateau", "parsa.caravan_driver", "base:ecbatana_road_1125_2",
+      "pasargadae:pasargadae_s", 1, group="caravan", row="caravan",
+      note="a caravan down from Media to Pasargadae"),
     # -- sea lanes ---------------------------------------------------------------------------
     L("tyrrhenian", "world.fishing_boat", "base:corner_portus", 1, hours=SHORT_SEA,
       note="the corner's small coasting boat down to Portus"),
