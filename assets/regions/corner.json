@@ -40,15 +40,15 @@
     {
      "file": "amb/world/fields.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
      "file": "amb/world/desert_night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
@@ -56,7 +56,11 @@
     {
      "item": "windmill",
      "file": "amb/world/mill.ogg",
-     "when": "worked"
+     "when": "worked",
+     "hours": [
+      "07:00",
+      "17:00"
+     ]
     }
    ]
   },
@@ -204,12 +208,14 @@
    "calls": [
     {
      "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
-     ],
      "hours": [
       "06:00",
       "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
      ]
     },
     {
@@ -217,6 +223,83 @@
      "hours": [
       "07:00",
       "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/nightingale.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_call.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
      ]
     }
    ],
@@ -243,6 +326,36 @@
      "sfx/world/sheep_1.wav",
      "sfx/world/sheep_2.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
    }
   },
   "look": {
@@ -875,7 +988,7 @@
     "wind": "wind.sea",
     "exposure": 1.0,
     "water": {
-     "family": "sea.coast"
+     "family": "sea.rocks"
     },
     "steps": {
      "surface": "earth",
