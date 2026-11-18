@@ -197,8 +197,9 @@ def agora(rng, layers=None, length=48.0):
                  rng.uniform(0.2, 0.6), rng.uniform(0.2, 0.5))
     bugs = sd.Bed(length, rng)
     sd.cicadas(bugs, 8, level=0.5, dist=(0.5, 0.7))
+    surge = sd.swell(n, rng, 0.06, 0.25, 0.3)[:, None]  # bargains struck, a crowd's ebb and flow
     return sd.mix({
-        "near": 0.5 * near,
+        "near": 0.5 * near * surge,
         "far": 0.35 * far,
         "herald": 0.2 * herald,
         "life": life.finish((1.5, 1.0, 0.5, 0.02), 0.35),

@@ -6,9 +6,9 @@ CEILING. Loop helpers fold events past the end back onto the start."""
 import numpy as np
 from scipy import signal
 
-from dsp import (SR, bandpass, circular, glide, highpass, impulse_response, line, lowpass, pan, perc,
-                 phase_of, place, ramp_in, secs, shaped_noise, smooth_random, times, voice,
-                 with_reverb, wobble, wrap)
+from dsp import (SR, bandpass, circular, glide, gust_curve, highpass, impulse_response, line,
+                 lowpass, pan, perc, phase_of, place, ramp_in, secs, shaped_noise, smooth_random,
+                 times, voice, with_reverb, wobble, wrap)
 
 CEILING = 7500.0
 
@@ -73,7 +73,7 @@ def swell(n, rng, rate, depth, floor=0.1):
 def wind(n, rng, lo=120.0, hi=1800.0, gust=0.08, depth=0.5, whistle=0.0):
     """Wind over open ground or stone: gusting noise whose colour brightens in the gusts;
     `whistle` adds a faint hollow tone where it passes edges."""
-    g = swell(n, rng, gust, depth, 0.15)
+    g = gust_curve(n, rng, gust, depth)
     low = loop_noise(n, rng, lo, hi * 0.5, 0.6)
     high = loop_noise(n, rng, hi * 0.4, hi * 1.5, 0.6)
     out = low * g[:, None] + 0.5 * high * (g**2)[:, None]

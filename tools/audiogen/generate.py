@@ -38,7 +38,7 @@ from dsp import stereo  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "assets" / "audio"
-WORKERS = 4  # machine courtesy: the owner uses this computer while it renders
+WORKERS = 2  # machine courtesy: two processes, each run under `ulimit -v 4000000`
 
 # Loops: name -> (renderer, integrated loudness target in LUFS, Vorbis quality).
 LOOPS = {

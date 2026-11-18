@@ -5,10 +5,11 @@ borrowed freely) and one tempo, so the engine's day/night crossfade never clashe
 The night piece reuses the day motif (A B C# A) at half speed over B minor harmony."""
 
 import numpy as np
+from scipy import signal
 
 import instruments as ins
 from dsp import (SR, circular, highpass, impulse_response, lowpass, midi_hz, pan, place, secs,
-                 with_reverb, wrap)
+                 wrap)
 
 NOTE_INDEX = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 
@@ -131,9 +132,15 @@ def render(piece, rng, colour_rng=None):
     loop_n = secs(total_beats * beat_s)
     assert loop_n == round(total_beats * beat_s * SR), "loop must be an exact number of samples"
     tail = secs(piece["tail"])
-    buses = {name: np.zeros((loop_n + tail, 2)) for name in piece["mix"]}
-    # Each stem keeps its own dry and reverb-send sums, weighted exactly like the mix.
-    stems = {s: (np.zeros((loop_n + tail, 2)), np.zeros((loop_n + tail, 2))) for s in STEMS}
+    with_stems = colour_rng is not None
+    # With stems, each stem keeps its own dry and reverb-send sums, weighted exactly like the
+    # mix, and the mix is their sum (every note belongs to one stem and the room is linear), so
+    # no bus buffers are needed; float32 keeps a 106 s piece's buffers under 400 MB (the
+    # rounding sits some 140 dB down).
+    buf = np.float32 if with_stems else np.float64
+    buses = {} if with_stems else {name: np.zeros((loop_n + tail, 2)) for name in piece["mix"]}
+    stems = {s: (np.zeros((loop_n + tail, 2), buf), np.zeros((loop_n + tail, 2), buf))
+             for s in STEMS} if with_stems else {}
     for bus, beat, (kind, m, dur, vel), position, stem in events:
         jitter = 0.0 if kind in ("pad", "bass") else rng.normal(0, 0.006)
         at = max(0, secs(beat * beat_s + jitter))
@@ -147,25 +154,36 @@ def render(piece, rng, colour_rng=None):
             x = ins.pad(f, dur + 0.4, vel, rng, cutoff=piece["pad_cutoff"])
         else:
             x = pan(ins.sub_bass(f, dur, vel), position)
-        place(buses[bus], x, at)
-        if colour_rng is not None:
+        if with_stems:
             gain, send = piece["mix"][bus]
             place(stems[stem][0], x * gain, at)
             place(stems[stem][1], x * (gain * send), at)
+        else:
+            place(buses[bus], x, at)
 
     ir = impulse_response(rng, piece["reverb"][0], piece["reverb"][1], piece["reverb"][2])
 
     def finish(dry, send):
-        out = wrap(with_reverb(dry, send, ir), loop_n)
-        return circular(lambda y: lowpass(highpass(y, 35, 2), 9000, 2), out)
+        # The room, tail wrap and tone filters one channel at a time (each channel is
+        # independent, so this equals the stereo computation with a third of the memory).
+        out = np.empty((loop_n, 2))
+        for c in range(2):
+            wet = signal.oaconvolve(np.asarray(send[:, c], np.float64), ir[:, c])
+            wet[: len(dry)] += dry[:, c]
+            out[:, c] = circular(lambda y: lowpass(highpass(y, 35, 2), 9000, 2), wrap(wet, loop_n))
+        return out
 
-    dry = sum(buses[b] * piece["mix"][b][0] for b in buses)
-    send = sum(buses[b] * piece["mix"][b][0] * piece["mix"][b][1] for b in buses)
-    mix = finish(dry, send)
-    if colour_rng is None:
-        return mix
-    out = {s: finish(*stems[s]) for s in STEMS}
-    out["colour"] = finish(*colour(piece, colour_rng, loop_n + tail))
+    if not with_stems:
+        dry = sum(buses[b] * piece["mix"][b][0] for b in buses)
+        send = sum(buses[b] * piece["mix"][b][0] * piece["mix"][b][1] for b in buses)
+        return finish(dry, send)
+    out = {}
+    mix = np.zeros((loop_n, 2))
+    for s in STEMS:  # one stem's room at a time, its buffers freed as it is finished
+        y = finish(*stems.pop(s))
+        mix += y
+        out[s] = y.astype(np.float32)
+    out["colour"] = finish(*colour(piece, colour_rng, loop_n + tail)).astype(np.float32)
     return mix, out
 
 
@@ -173,7 +191,7 @@ def colour(piece, rng, n):
     """The colour layer's dry and reverb-send buffers: its voices' note lines plus, for
     the day, a brushed shaker on the off-beats of the sections that ask for it."""
     beat_s = 60.0 / piece["bpm"]
-    dry, send = np.zeros((n, 2)), np.zeros((n, 2))
+    dry, send = np.zeros((n, 2), np.float32), np.zeros((n, 2), np.float32)  # as the stems
 
     def add(x, beat, voice):
         gain, wet, position = piece["colour"][voice]

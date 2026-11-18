@@ -153,14 +153,17 @@ def check_stems(piece, entries):
     files = [f"music/{piece}.ogg"] + [e["file"] for e in entries]
     if not all((AUDIO / f).is_file() for f in files):
         return [], ["files missing"]
-    stems = {e["id"]: mastering.decode(AUDIO / e["file"]) for e in entries}
-    mix = mastering.decode(AUDIO / f"music/{piece}.ogg")
+    # float32 stems and one subset sum at a time: six 106 s stereo files in float64 and their
+    # sums were over a gigabyte.
+    stems = {e["id"]: mastering.decode(AUDIO / e["file"]).astype(np.float32) for e in entries}
+    mix = mastering.decode(AUDIO / f"music/{piece}.ogg").astype(np.float32)
     lines, problems = [], []
     base = sum(stems[s] for s in stems if s != "colour")
-    residual = db(np.sum((base - mix) ** 2)) - db(np.sum(mix**2))
+    residual = db(np.sum((base - mix) ** 2, dtype=np.float64)) - db(np.sum(mix**2, dtype=np.float64))
     mix_lufs = mastering.integrated_lufs(mix)
     lines.append(f"stem sum vs mix residual {residual:6.1f} dB "
                  f"(residual loudness {mastering.integrated_lufs(base - mix) - mix_lufs:6.1f} LU)")
+    del base, mix
     if residual > STEM_RESIDUAL_DB:
         problems.append(f"stems do not sum to the mix: residual {residual:.1f} dB")
     always = [e["id"] for e in entries if "when" not in e]
@@ -170,6 +173,7 @@ def check_stems(piece, entries):
             ids = always + list(extra)
             y = sum(stems[s] for s in ids)
             lufs, peak = mastering.integrated_lufs(y), mastering.true_peak_db(y)
+            del y
             lines.append(f"{'+'.join(ids):30s} {lufs:6.1f} LUFS {lufs - mix_lufs:+5.1f} LU "
                          f"peak {peak:6.2f} dB")
             if peak > RULES["music"][5]:
