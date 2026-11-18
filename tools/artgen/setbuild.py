@@ -22,7 +22,7 @@ import pack
 import props
 import rig
 import spec
-from bigrender import BigModel, render_big
+from bigrender import BigModel, clearance, render_big
 from pack import Sprite
 from render import render
 
@@ -247,9 +247,10 @@ def kit_piece_map(cat: dict, mod) -> dict:
     return out
 
 
-def columns(model, fw: int, fh: int) -> np.ndarray:
-    """(fw, fh, top) bool: solid at that height (px above the anchor's ground) on that footprint
-    tile, from the model's own voxels (context excluded)."""
+def columns(model, fw: int, fh: int):
+    """((fw, fh, top) bool: solid at that height (px above the anchor's ground) on that footprint
+    tile, (fw, fh) clearance (bigrender.clearance)), from the model's own voxels (context
+    excluded)."""
     vis = model.visible() > 0
     t = spec.DESIGN_TILE * model.k
     nz = max(0, model.z0 + vis.shape[2])
@@ -263,17 +264,19 @@ def columns(model, fw: int, fh: int) -> np.ndarray:
             if sub.size:
                 c = sub.any(axis=(0, 1))
                 col[x, y, z[(z >= 0) & c]] = True
-    return col
+    above = vis[:, :, max(0, -model.z0):]
+    return col, clearance(above, model.x0, model.y0, fw, fh, t)
 
 
-def order_geometry(col: np.ndarray, walk, walk_z: dict, pieces, k: int) -> dict:
+def order_geometry(col: np.ndarray, clear: np.ndarray, walk, walk_z: dict, pieces, k: int, water=(),
+                   crossing=False) -> dict:
     """What the global draw order needs of an item in one look (draw-order.md §3.4, §5 O1):
     `tops`, the highest point in px above the anchor's ground of what stands on each footprint
     tile, rows by dy (a walk tile gives its floor); `roof`, over each walk tile with something
     above the headroom, that thing's top; `under`, per piece, the clearance where something can
-    pass beneath it: the highest of its tiles' lowest solids (a deck's underside between the
-    piers; 0 for what stands on the ground). An unsplit item with such a clearance (a kit
-    bridge) gives one value for its whole footprint."""
+    pass beneath it: the most room under it on its walk and water tiles (`clear`: under an arch's
+    crown, a deck's underside between the piers; 0 for a piece with neither, eaves included). An
+    unsplit crossing (a kit bridge) gives one value for its whole footprint."""
     fw, fh = col.shape[:2]
     head = WALK_HEADROOM * k // 2
     top = np.where(col.any(axis=2), col.shape[2] - np.argmax(col[:, :, ::-1], axis=2), 0)
@@ -287,11 +290,12 @@ def order_geometry(col: np.ndarray, walk, walk_z: dict, pieces, k: int) -> dict:
             roof[f"{x},{y}"] = int(top[x, y])
     if roof:
         out["roof"] = roof
-    low = np.where(col.any(axis=2), np.argmax(col, axis=2), 0)
+    passable = set(map(tuple, walk)) | set(map(tuple, water))
     if pieces:
-        out["under"] = [int(low[x:x + w, y:y + h].max()) for x, y, w, h in pieces]
-    elif low.max() > 0:
-        out["under"] = [int(low.max())]
+        out["under"] = [max([int(clear[a, b]) for a in range(x, x + w) for b in range(y, y + h)
+                             if (a, b) in passable], default=0) for x, y, w, h in pieces]
+    elif crossing and clear.max() > 0:
+        out["under"] = [int(clear.max())]
     return out
 
 
@@ -313,7 +317,7 @@ def _set_mod(set_id):
 
 
 def _item_job(args):
-    set_id, item_id, layout, variant, frame, frames, footprint, layers, k, pieces = args
+    set_id, item_id, layout, variant, frame, frames, footprint, layers, k, pieces, crossing = args
     mod = _set_mod(set_id)
     item: Item = mod.ITEMS[item_id]
     n = int(variant[1:])
@@ -342,7 +346,7 @@ def _item_job(args):
     walk = kit_walk(item, {"layout": layout, "footprint": footprint}, variant)
     if frame:                       # every frame of a look shares its geometry: frame 0 gives it
         return res, {}
-    order = order_geometry(columns(model, rfw, rfh), walk, {}, pieces, k)
+    order = order_geometry(*columns(model, rfw, rfh), walk, {}, pieces, k, crossing=crossing)
     return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax, "lights": _lights(model, k), **order}}
 
 
@@ -444,7 +448,7 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
         it = items[iid]
         jobs.append((_item_job, (set_id, iid, it["layout"], variant, frame, item_frames(it, mod),
                                  tuple(it["footprint"]), tuple(sorted(layers)), k,
-                                 kit_pieces.get(iid, {}).get(variant))))
+                                 kit_pieces.get(iid, {}).get(variant), bool(it.get("crossing") or it.get("walkable")))))
     jobs.sort(key=lambda j: 0 if j[0] is _item_job else 1)
     for group, ks in flat.items():
         for i in range(0, len(ks), 24):
@@ -485,7 +489,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
             sprites[f"item/{iid}/glow/r0/f0"] = r.glow
         floor = {t: int(round(z * k)) for t, z in lm.floor.items()}
         lm_info[iid] = {"h": int(r.base.oy), "top": r.top, "column": r.column,
-                        "order": order_geometry(r.column, lm.walk, floor, pieces.get(iid), k)}
+                        "order": order_geometry(r.column, r.clear, lm.walk, floor, pieces.get(iid), k,
+                                                lm.water)}
         print(f"  {iid}: {r.base.rgba.shape[1]}x{r.base.rgba.shape[0]} px, "
               f"{len(pieces.get(iid, [1]))} pieces, {time.time() - t1:.1f}s")
     missing = sorted(keyset - set(sprites))
