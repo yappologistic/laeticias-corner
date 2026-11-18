@@ -20,6 +20,7 @@ T = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(T)
 
 R, loop, once, per, ev, window = T.R, T.loop, T.once, T.per, T.ev, T.window
+PANELS = T.ROME.PANELS      # the activity maps: dawn, mid-morning, afternoon, twilight, deep night
 
 
 def roles() -> list[dict]:
