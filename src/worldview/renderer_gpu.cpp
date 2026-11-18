@@ -11,7 +11,9 @@
 #include "worldview/world_lights.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <future>
 #include <numbers>
 
 namespace lc::worldview {
@@ -106,6 +108,9 @@ gpu::Quality WorldView::setQuality(gpu::Quality q) {
         view_ = {}; // remade in the format the shaders read
         shadow_ = {};
         reserveGpuTargets();
+        // A new path has an empty water field: built again on the next frame.
+        if (waterJob_.valid()) waterJob_.get();
+        waterTexels_.clear();
         if (!lights_) {
             lights_ = std::make_unique<WorldLights>(world_, *sprites_, hole_);
             if (lights_->unmatched() > 0)
@@ -164,9 +169,31 @@ void WorldView::refreshWater(const FRect& view) {
     const TileRect seen = tilesUnder(view, iso_);
     constexpr int kNear = 4;   // tiles the view may near the field's edge before it is remade
     constexpr int kAhead = 16; // tiles held beyond the view each side
-    constexpr int kPad = 10;   // tiles of land read beyond the field (shore distances reach 9)
     const TileRect need{seen.x0 - kNear, seen.y0 - kNear, seen.x1 + kNear, seen.y1 + kNear};
+    if (waterJob_.valid()) {
+        // A field on its way: taken when ready; waited for only when the view left both fields
+        // (a jump).
+        const bool ready = waterJob_.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+        if (!ready && waterPending_.contains(need)) return;
+        waterJob_.get();
+        waterRect_ = waterPending_;
+        post_->setWaterField(waterTexels_, waterRect_.x1 - waterRect_.x0,
+                             waterRect_.y1 - waterRect_.y0);
+    }
     if (!waterTexels_.empty() && waterRect_.contains(need)) return;
+    // Per terrain: 0 land, 1 water, 2 a channel (rivers, canals: clear, flowing, no foam).
+    if (waterKind_.size() != map_.terrainCount()) {
+        waterKind_.resize(map_.terrainCount());
+        for (std::size_t k = 0; k < waterKind_.size(); ++k) {
+            const int tt = static_cast<int>(k);
+            const std::string_view id = map_.terrainInfo(tt).id;
+            waterKind_[k] = !sprites_->terrain(tt).water ? std::uint8_t{0}
+                            : contains(id, "river") || contains(id, "channel") ||
+                                    contains(id, "stream") || contains(id, "canal")
+                                ? std::uint8_t{2}
+                                : std::uint8_t{1};
+        }
+    }
     const auto side = [&](int a0, int a1) {
         const int c = (a0 + a1) / 2;
         const int n = std::min(t::kWaterField, a1 - a0 + 2 * kAhead);
@@ -174,43 +201,62 @@ void WorldView::refreshWater(const FRect& view) {
     };
     const auto [x0, x1] = side(seen.x0, seen.x1);
     const auto [y0, y1] = side(seen.y0, seen.y1);
-    waterRect_ = {x0, y0, x1, y1};
-    const int w = x1 - x0 + 2 * kPad;
-    const int h = y1 - y0 + 2 * kPad;
-    const auto at = [&](int x, int y) { return static_cast<std::size_t>(y * w + x); };
-    const auto tile = [&](int x, int y) { return TilePos{x0 - kPad + x, y0 - kPad + y}; };
-    const auto waterAt = [&](TilePos p) {
-        if (!map_.inBounds(p)) return sea_ >= 0;
-        const int tt = map_.terrainAt(p);
-        return tt != world::kNone && sprites_->terrain(tt).water;
-    };
-    // Chamfered distance to the nearest land, in tiles (land -0.5), two passes.
-    constexpr float kFar = 99;
-    waterDist_.resize(static_cast<std::size_t>(w * h));
-    for (int y = 0; y < h; ++y)
-        for (int x = 0; x < w; ++x) waterDist_[at(x, y)] = waterAt(tile(x, y)) ? kFar : -0.5f;
-    const float diag = std::numbers::sqrt2_v<float>;
-    for (int pass = 0; pass < 2; ++pass) {
-        const int s = pass == 0 ? -1 : 1;
-        for (int k = 0; k < w * h; ++k) {
-            const int x = pass == 0 ? k % w : w - 1 - k % w;
-            const int y = pass == 0 ? k / w : h - 1 - k / w;
-            float& d = waterDist_[at(x, y)];
-            if (d < 0) continue;
-            const auto from = [&](int dx, int dy, float c) {
-                const int nx = x + dx;
-                const int ny = y + dy;
-                if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
-                d = std::min(d, std::max(waterDist_[at(nx, ny)], 0.0f) + c);
-            };
-            from(s, 0, 1);
-            from(0, s, 1);
-            from(s, s, diag);
-            from(-s, s, diag);
-        }
+    const TileRect rect{x0, y0, x1, y1};
+    // Panning, the next field is built on a worker while this one serves (its margin is ahead of
+    // the view); the first field, a jump and scripted runs build it at once.
+    if (async_ && !waterTexels_.empty() && waterRect_.intersects(need)) {
+        waterPending_ = rect;
+        waterJob_ = std::async(std::launch::async, [this, rect] { buildWater(rect); });
+        return;
     }
-    // Texels: r the shore distance ((d + 0.5) / 10), g b the flow (rivers by their aux direction,
-    // tiles per second), a the flags (bit 7 water, bit 6 a channel, bits 0-3 the level).
+    buildWater(rect);
+    waterRect_ = rect;
+    post_->setWaterField(waterTexels_, x1 - x0, y1 - y0);
+}
+
+void WorldView::buildWater(TileRect rect) {
+    // Reads only the immutable map and the per-terrain table; writes only the field's buffers.
+    namespace t = gpu::tuning;
+    constexpr int kPad = 10; // tiles of land read beyond the field (shore distances reach 9)
+    const auto [x0, y0, x1, y1] = rect;
+    // The padded block (a one-tile land-free border keeps the passes free of bounds checks).
+    const int w = x1 - x0 + 2 * kPad + 2;
+    const int h = y1 - y0 + 2 * kPad + 2;
+    const int bx = x0 - kPad - 1;
+    const int by = y0 - kPad - 1;
+    constexpr float kFar = 99;
+    const auto kindAt = [&](int x, int y) -> std::uint8_t {
+        const TilePos p{bx + x, by + y};
+        if (!map_.inBounds(p)) return sea_ >= 0 ? 1 : 0;
+        const int tt = map_.terrainAt(p);
+        return tt == world::kNone ? std::uint8_t{0} : waterKind_[static_cast<std::size_t>(tt)];
+    };
+    waterDist_.resize(static_cast<std::size_t>(w * h));
+    float* d = waterDist_.data();
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x)
+            d[y * w + x] = x == 0 || y == 0 || x == w - 1 || y == h - 1 ? kFar
+                           : kindAt(x, y) != 0                          ? kFar
+                                                                        : 0.0f;
+    // Chamfered distance to the nearest land in tiles (land 0, water from 1), two passes.
+    const float diag = std::numbers::sqrt2_v<float>;
+    for (int y = 1; y < h - 1; ++y)
+        for (int x = 1; x < w - 1; ++x) {
+            float& v = d[y * w + x];
+            if (v == 0.0f) continue;
+            const float* up = d + (y - 1) * w + x;
+            v = std::min({v, d[y * w + x - 1] + 1, up[0] + 1, up[-1] + diag, up[1] + diag});
+        }
+    for (int y = h - 2; y > 0; --y)
+        for (int x = w - 2; x > 0; --x) {
+            float& v = d[y * w + x];
+            if (v == 0.0f) continue;
+            const float* dn = d + (y + 1) * w + x;
+            v = std::min({v, d[y * w + x + 1] + 1, dn[0] + 1, dn[1] + diag, dn[-1] + diag});
+        }
+    // Texels: r the shore distance ((d + 0.5) / 10, land -0.5), g b the flow (rivers by their aux
+    // direction, tiles per second), a the flags (bit 7 water, bit 6 a channel, bits 0-3 the
+    // level).
     const int fw = x1 - x0;
     const int fh = y1 - y0;
     waterTexels_.resize(static_cast<std::size_t>(fw * fh));
@@ -218,28 +264,27 @@ void WorldView::refreshWater(const FRect& view) {
         return static_cast<std::uint32_t>(std::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f);
     };
     static constexpr float kDir[4][2] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+    constexpr std::uint32_t kStill = 128u << 8 | 128u << 16;
     for (int y = 0; y < fh; ++y)
         for (int x = 0; x < fw; ++x) {
             const TilePos p{x0 + x, y0 + y};
-            const float d = waterDist_[at(x + kPad, y + kPad)];
-            std::uint32_t flags = d >= 0 ? 128u : 0u;
-            Vec2 flow;
+            const float dist = d[(y + kPad + 1) * w + x + kPad + 1];
+            std::uint32_t texel = byte((std::max(dist - 0.5f, -0.5f) + 1.0f) / 10.0f) | kStill;
+            if (dist > 0) texel |= 128u << 24;
             if (map_.inBounds(p)) {
+                const std::uint8_t lb = map_.levelByte(p);
+                texel |= static_cast<std::uint32_t>(world::levelOf(lb) & 15) << 24;
                 const int tt = map_.terrainAt(p);
-                flags |= static_cast<std::uint32_t>(map_.level(p) & 15);
-                const std::string_view id = tt != world::kNone ? map_.terrainInfo(tt).id : "";
-                if (d >= 0 && (contains(id, "river") || contains(id, "channel") ||
-                               contains(id, "stream") || contains(id, "canal"))) {
-                    const int a = world::auxOf(map_.levelByte(p)) & 3;
-                    flow = {kDir[a][0] * t::kRiverSpeed, kDir[a][1] * t::kRiverSpeed};
-                    flags |= 64u;
+                if (dist > 0 && tt != world::kNone &&
+                    waterKind_[static_cast<std::size_t>(tt)] == 2) {
+                    const int a = world::auxOf(lb) & 3;
+                    texel = (texel & 0xff0000ffu) |
+                            byte(kDir[a][0] * t::kRiverSpeed * 0.5f + 0.5f) << 8 |
+                            byte(kDir[a][1] * t::kRiverSpeed * 0.5f + 0.5f) << 16 | 64u << 24;
                 }
             }
-            waterTexels_[static_cast<std::size_t>(y * fw + x)] =
-                byte((d + 0.5f) / 10.0f) | byte(flow.x * 0.5f + 0.5f) << 8 |
-                byte(flow.y * 0.5f + 0.5f) << 16 | flags << 24;
+            waterTexels_[static_cast<std::size_t>(y * fw + x)] = texel;
         }
-    post_->setWaterField(waterTexels_, fw, fh);
 }
 
 void WorldView::cloudsGpu(Lod lod) {

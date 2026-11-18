@@ -37,6 +37,7 @@
 #include <array>
 #include <filesystem>
 #include <functional>
+#include <future>
 #include <memory>
 #include <optional>
 #include <span>
@@ -237,6 +238,7 @@ private:
     void flushMarks(const Xform& x);
     // The tile water field round the view, rebuilt when the view nears its edge.
     void refreshWater(const FRect& view);
+    void buildWater(TileRect rect);
     // The cloud pass for this frame (or none).
     void cloudsGpu(Lod lod);
     // A swaying item, bent in strips by the wind.
@@ -445,6 +447,11 @@ private:
     TileRect waterRect_;
     std::vector<std::uint32_t> waterTexels_;
     std::vector<float> waterDist_;
+    std::vector<std::uint8_t> waterKind_; // per terrain: 0 land, 1 water, 2 a channel
+    // The next field, built on a worker while the view pans (declared last of the field's
+    // members: it finishes before they go).
+    TileRect waterPending_;
+    std::future<void> waterJob_;
 
     // Backdrop sprites by region (day, night), resolved at load; empty when the set has none.
     std::vector<std::array<std::vector<SpriteRef>, 2>> backdrops_;
