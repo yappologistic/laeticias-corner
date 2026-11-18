@@ -308,6 +308,9 @@ private:
     bool loadWorldData();
     // The world renderer, once the home is known (after the save is read).
     void createWorldView();
+    // The home's terrain into the world's map (and, the first time, the world's own things off
+    // the home's land: items and slots are renumbered then).
+    void applyHomeToMap();
     // The world's copy of the home region follows the player's edits (walking, the overview).
     void syncHome();
     // Draws the frame: the world with the home inside it, or the floating island.

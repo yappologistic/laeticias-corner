@@ -183,8 +183,14 @@ bool App::init() {
     if (!font_.load(assets_ / "fonts")) return false;
 
     if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
-    // The cities' life runs with the world (src/life/): the camera is its active area.
-    if (loaded_) (void)openCity();
+    // The cities' life runs with the world (src/life/): the camera is its active area. It
+    // keeps the map's item and slot numbers, so the home's land is cleared in the map first
+    // (applying the home later renumbered them under it: an item index past the end as soon as
+    // the world's layers placed anything on the home's land).
+    if (loaded_) {
+        applyHomeToMap();
+        (void)openCity();
+    }
     mixer_.load(assets_ / "audio", cat_.audio);
     loadWorldAudio();
     setupMusic();

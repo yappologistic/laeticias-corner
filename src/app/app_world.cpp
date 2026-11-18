@@ -63,11 +63,11 @@ bool App::loadWorldData() {
     return true;
 }
 
-void App::createWorldView() {
-    if (!loaded_ || worldView_) return;
-    // The home goes into the world's map once, before anything reads it on another thread: its
-    // terrain (every home terrain id interned, so later edits only write bytes) and wild land.
-    // Its items stay the game's (core World); the world's map never holds them.
+void App::applyHomeToMap() {
+    // The home goes into the world's map: its terrain (every home terrain id interned, so
+    // later edits only write bytes) and wild land. Its items stay the game's (core World); the
+    // world's map never holds them. The first time, the map drops whatever the world's layers
+    // placed on the home's land and renumbers its items and slots.
     world::HomeDelta delta = world::homeDeltaFrom(world_, cat_);
     delta.items.clear();
     for (const TerrainDef& t : cat_.terrain)
@@ -77,6 +77,12 @@ void App::createWorldView() {
     if (auto r = loaded_->map->applyHome(delta, diag); !r)
         SDL_Log("world: home: %s", r.error().c_str());
     homeSynced_ = world_.revision();
+}
+
+void App::createWorldView() {
+    if (!loaded_ || worldView_) return;
+    // Once more with the world that was opened, before anything reads the map on another thread.
+    applyHomeToMap();
     const world::HomePlacement& home = loaded_->file.home;
     const Iso iso = cat_.iso();
     // The home's screen box in world px: its ground and whatever stands on it.
