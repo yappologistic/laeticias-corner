@@ -40,6 +40,7 @@
 #include "ui/profiler.hpp"
 #include "world/loader.hpp"
 #include "worldview/renderer.hpp"
+#include "worldview/soundscape.hpp"
 
 #include <cstdio>
 #include <filesystem>
@@ -315,6 +316,13 @@ private:
     // The player's delta over the world for the save, and taking one from it.
     [[nodiscard]] WorldProgress worldState() const;
     void adoptWorldState(const WorldProgress& w);
+    // The world's sound (world-tech §4.6): its loops into the mixer before it opens; each
+    // frame, the regions' beds, zones, item loops and music by where the view is. The home's
+    // own music and beds play by its share of the view.
+    void loadWorldAudio();
+    void updateWorldAudio(float night);
+    [[nodiscard]] float homeMusic() const;
+    [[nodiscard]] float homeAmbience() const;
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
@@ -474,6 +482,9 @@ private:
     float travelFadeIn_ = -1;
     std::vector<std::string> arriveFiles_; // each set's arrival motif
     std::vector<world::FigurePlace> figures_;
+    std::unique_ptr<worldview::Soundscape> soundscape_;
+    std::vector<int> soundLoops_;     // the soundscape's files as mixer loops
+    std::vector<float> themeWeights_; // per region, this frame
     struct JournalItem {
         std::string entry;
         std::string card;

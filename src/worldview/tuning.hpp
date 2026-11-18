@@ -52,6 +52,19 @@ inline constexpr float kPlaceDwell = 0.4f; // the region under the view counts a
 inline constexpr float kVisitGap = 20.0f;  // away from a place this long: coming back is a visit
 inline constexpr float kHazeShare = 0.5f;  // how much of a region's haze strength tints the view
 
+// The soundscape (world-tech §4.6, §4.12). Levels are mixer gains before the player's buses.
+inline constexpr float kBedLevel = 0.5f;      // a region's bed at its full weight
+inline constexpr float kZoneLevel = 0.6f;     // a zone with the view inside it
+inline constexpr float kZoneReach = 12.0f;    // tiles outside a zone where it fades to nothing
+inline constexpr float kItemLoopLevel = 0.5f; // the nearest fountain, brazier ... on its tile
+inline constexpr float kLoopReach = 14.0f;    // tiles
+inline constexpr float kLoopRefresh = 0.1f;   // seconds between nearest-source searches
+inline constexpr float kSeamDuck = 0.5f;      // -6 dB under a seam's drone
+inline constexpr float kMusicThreshold = 0.5f;
+inline constexpr float kMusicHysteresis = 0.1f;
+inline constexpr float kMusicFadeSeconds = 4.0f;
+inline constexpr float kMusic = 0.55f; // a city's piece, as the home's stems (core kMusicLevel)
+
 // Look of things that have no art yet.
 inline constexpr float kFaceShadeSE = 0.78f; // flat faces: the south-east side is darker
 inline constexpr float kFaceShadeSW = 0.92f;

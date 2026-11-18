@@ -51,6 +51,8 @@ bool App::loadWorldData() {
     }
     arriveFiles_.emplace_back(sfx::kArriveHome);
     arriveFiles_.emplace_back(sfx::kSeamChime);
+    soundscape_ = std::make_unique<worldview::Soundscape>(*loaded_, assets_ / "audio");
+    themeWeights_.assign(loaded_->file.regions.size(), 0.0f);
     SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)",
             msBetween(t0, SDL_GetPerformanceCounter()), loaded_->layers.size(),
             loaded_->file.regions.size());
@@ -624,6 +626,49 @@ void App::adoptWorldState(const WorldProgress& w) {
         savedCamera_ = gridToHome(at);
         savedZoom_ = w.zoom;
     }
+}
+
+} // namespace lc
+
+namespace lc {
+
+void App::loadWorldAudio() {
+    if (!soundscape_) return;
+    mixer_.loadMore(assets_ / "audio", arriveFiles_, soundscape_->files());
+    soundLoops_.clear();
+    for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
+}
+
+void App::updateWorldAudio(float night) {
+    if (!soundscape_ || !worldView_) return;
+    const worldview::ThemeMixer& theme = worldView_->theme();
+    for (std::size_t r = 0; r < themeWeights_.size(); ++r)
+        themeWeights_[r] = theme.weight(static_cast<int>(r));
+    const Vec2 t = cat_.iso().toTile(camera_.position());
+    const TileRect h = loaded_->file.home.rect;
+    worldview::Soundscape::Input in;
+    in.weights = themeWeights_;
+    in.centre = {t.x + static_cast<float>(h.x0), t.y + static_cast<float>(h.y0)};
+    in.halfView = screen().x * 0.5f / camera_.scale() / cat_.iso().tileW();
+    in.clock = clock_.time();
+    in.night = night;
+    in.dt = frameDt_;
+    soundscape_->update(in);
+    const auto out = soundscape_->out();
+    for (std::size_t i = 0; i < out.size(); ++i) {
+        mixer_.setLoopGain(soundLoops_[i], out[i].gain);
+        mixer_.setLoopPan(soundLoops_[i], out[i].pan);
+    }
+    for (const auto& [file, sample] : soundscape_->seeks())
+        mixer_.seekLoop(soundLoops_[static_cast<std::size_t>(file)], sample);
+}
+
+float App::homeMusic() const {
+    return soundscape_ ? soundscape_->homeMusic() : 1.0f;
+}
+
+float App::homeAmbience() const {
+    return soundscape_ ? soundscape_->homeWeight() : 1.0f;
 }
 
 } // namespace lc

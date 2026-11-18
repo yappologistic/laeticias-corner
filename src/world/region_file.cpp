@@ -93,7 +93,27 @@ Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
                 if (z.rect.empty()) fail(zc + ": empty rect");
                 z.file = asString(field(zones[i], "file", zc), zc + ": file");
                 z.gain = floatOr(zones[i], "gain", 1.0f, zc);
+                if (has(zones[i], "hours")) {
+                    const json& hv = zones[i].at("hours");
+                    if (!hv.is_array() || hv.size() != 2) fail(zc + ": hours is [from, to]");
+                    z.from = hours(hv[0], zc + ": hours");
+                    z.to = hours(hv[1], zc + ": hours");
+                }
                 out.zones.push_back(std::move(z));
+            }
+        }
+        // Loops placed by an item (a fountain, a brazier); those tied to a slot's work wait for
+        // the actors that work it.
+        if (has(a, "loops")) {
+            const json& loops = asArray(a.at("loops"), ac + ": loops");
+            for (std::size_t i = 0; i < loops.size(); ++i) {
+                const std::string lc = ac + ": loops[" + std::to_string(i) + "]";
+                if (!has(loops[i], "item")) continue;
+                ItemLoop l;
+                l.item = asString(loops[i].at("item"), lc + ": item");
+                l.file = asString(field(loops[i], "file", lc), lc + ": file");
+                l.when = stringOr(loops[i], "when", "always", lc);
+                out.loops.push_back(std::move(l));
             }
         }
     }

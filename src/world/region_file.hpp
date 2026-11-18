@@ -29,6 +29,14 @@ struct AmbienceZone {
     TileRect rect; // grid, half-open (inclusive in the file)
     std::string file;
     float gain = 1;
+    float from = 0; // game hours it plays; from > to wraps over midnight
+    float to = 24;
+};
+
+struct ItemLoop {
+    std::string item; // set item id: every placed one is a source
+    std::string file;
+    std::string when; // "always", "lit" (dusk and night), "afternoon", ...
 };
 
 struct Theme {
@@ -39,6 +47,7 @@ struct Theme {
     std::string climate;
     std::vector<AmbienceBed> beds;
     std::vector<AmbienceZone> zones;
+    std::vector<ItemLoop> loops;
     std::string musicDay; // empty: none (stretches)
     std::string musicNight;
     bool seam = false;

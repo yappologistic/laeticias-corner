@@ -184,7 +184,7 @@ bool App::init() {
 
     if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
     mixer_.load(assets_ / "audio", cat_.audio);
-    mixer_.loadMore(assets_ / "audio", arriveFiles_, {});
+    loadWorldAudio();
     setupMusic();
     if (opts_.audioOut)
         mixer_.startCapture();
@@ -1501,8 +1501,11 @@ void App::updateAudio() {
     applyVolumes(); // the music ducks while paused
     const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);
-    for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n));
-    for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n);
+    // In the world the home's stems play while the home holds the music (its share of the view).
+    const float home = homeMusic();
+    for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n) * home);
+    for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n * home);
+    updateWorldAudio(n);
     // The season's beds follow the weather where the camera looks: rain ducks the birds and
     // brings its own bed (snow brings none and lifts the winter bed). Birds swell at dawn and
     // after rain (the chorus events).
@@ -1545,7 +1548,7 @@ void App::updateAudio() {
             pan = panOf(fallCentre_);
         }
         const int loop = mixer_.loopIndex(file);
-        mixer_.setLoopGain(loop, g);
+        mixer_.setLoopGain(loop, g * homeAmbience());
         mixer_.setLoopPan(loop, pan);
     }
 }

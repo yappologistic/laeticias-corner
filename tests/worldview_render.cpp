@@ -8,6 +8,7 @@
 #include "world/loader.hpp"
 #include "worldview/gather.hpp"
 #include "worldview/renderer.hpp"
+#include "worldview/soundscape.hpp"
 
 #include <doctest.h>
 
@@ -202,4 +203,62 @@ TEST_CASE("render: missing art is drawn as placeholders or stand-ins and counted
         const VariantLook& look = s.item(it);
         CHECK((!look.base.empty() || !look.pieces.empty()));
     }
+}
+
+TEST_CASE("sound: beds, zones and music follow the view; a city's piece starts on a phrase") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    Soundscape s(w, std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "audio");
+    const auto file = [&](std::string_view f) {
+        const auto it = std::ranges::find(s.files(), f);
+        REQUIRE(it != s.files().end());
+        return static_cast<std::size_t>(it - s.files().begin());
+    };
+    std::vector<float> weights(w.file.regions.size(), 0.0f);
+    const auto at = [&](std::string_view region, Vec2 centre, double clock, float seconds) {
+        std::ranges::fill(weights, 0.0f);
+        weights[static_cast<std::size_t>(w.file.findRegion(region))] = 1.0f;
+        bool seek = false;
+        for (float t = 0; t < seconds; t += 0.1f) {
+            s.update({weights, centre, 16, clock, 0, 0.1f});
+            seek = seek || !s.seeks().empty();
+        }
+        return seek;
+    };
+    const int rome = w.file.findRegion("rome");
+    // At home: the home's own music, no city's.
+    (void)at("corner", {60, 1220}, 0.2, 1);
+    CHECK(s.musicRegion() == w.file.home.region);
+    CHECK(s.homeMusic() == doctest::Approx(1));
+    // Into the Forum by day: Rome's piece starts on a phrase and fades in over four seconds; the
+    // day bed and the forum zone play; the home's music fades out.
+    CHECK(at("rome", {80, 1077}, 0.2, 0.2f));
+    CHECK(s.musicRegion() == rome);
+    CHECK(s.out()[file("music/rome/day.ogg")].gain < 0.2f);
+    (void)at("rome", {80, 1077}, 0.2, 5);
+    CHECK(s.out()[file("music/rome/day.ogg")].gain > 0.4f);
+    CHECK(s.out()[file("music/rome/night.ogg")].gain == doctest::Approx(0));
+    CHECK(s.out()[file("amb/rome/day.ogg")].gain > 0.2f);
+    CHECK(s.out()[file("amb/rome/forum.ogg")].gain > 0.2f);
+    CHECK(s.homeMusic() == doctest::Approx(0));
+    // Far from the forum its zone is silent.
+    (void)at("rome", {140, 1130}, 0.2, 1);
+    CHECK(s.out()[file("amb/rome/forum.ogg")].gain == doctest::Approx(0));
+    // Out into a stretch: no music after the fade, the stretch's bed.
+    CHECK_FALSE(at("latium_italy", {150, 1150}, 0.2, 5));
+    CHECK(s.musicRegion() == -1);
+    CHECK(s.out()[file("music/rome/day.ogg")].gain == doctest::Approx(0));
+    CHECK(s.out()[file("amb/world/fields.ogg")].gain > 0.2f);
+    // Back again: a phrase start again.
+    CHECK(at("rome", {80, 1077}, 0.2, 0.5f));
+}
+
+TEST_CASE("sound: game hours wrap over midnight") {
+    CHECK(gameHour(0.0) == doctest::Approx(6));
+    CHECK(gameHour(0.75) == doctest::Approx(0));
+    CHECK(inHours(23, 19, 6));
+    CHECK(inHours(3, 19, 6));
+    CHECK_FALSE(inHours(12, 19, 6));
+    CHECK(inHours(12, 6, 19));
 }
