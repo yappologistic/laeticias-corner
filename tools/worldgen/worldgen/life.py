@@ -470,8 +470,10 @@ def write(world: World, graphs: dict[str, Graph], out_dir: Path) -> list[Path]:
         if v[0] in ("stretch", "seam"):
             docs[rid] = stretch_file(rid, world, graphs)
     road_life(docs, graphs)
+    regions = Path(__file__).resolve().parent.parent / "regions"
     for rid in TOWNS:
-        if rid in graphs:
+        # A town with its own life module is a city file (`build.sh --city`), never written here.
+        if rid in graphs and not (regions / rid / "life.py").exists():
             docs[rid] = town_file(rid, world, graphs)
     problems = check_refs(docs, graphs)
     if problems:

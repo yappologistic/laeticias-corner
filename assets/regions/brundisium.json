@@ -4,319 +4,123 @@
  "name": "Brundisium",
  "native": "Brundisium",
  "caption": "Brundisium · April AD 126",
- "theme": {
-  "grading": {
-   "dawn": [
-    0.96,
-    0.86,
-    0.8
-   ],
-   "day": [
-    1.0,
-    0.98,
-    0.94
-   ],
-   "dusk": [
-    0.98,
-    0.8,
-    0.66
-   ],
-   "night": [
-    0.44,
-    0.5,
-    0.68
-   ]
-  },
-  "haze": {
-   "colour": [
-    0.9,
-    0.88,
-    0.8
-   ],
-   "strength": 0.12
-  },
-  "climate": "rome",
-  "ambience": {
-   "beds": [
-    {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
-    }
-   ]
-  }
+ "era": "The Rome of Hadrian · AD 126",
+ "season": "spring",
+ "theme": {"grading": {"dawn": [1.03, 0.97, 0.93], "day": [1.02, 1.0, 0.96], "dusk": [1.03, 0.95, 0.87], "night": [0.96, 0.97, 1.04]}, "haze": {"colour": [0.93, 0.91, 0.85], "strength": 0.1}, "climate": "rome", "weather": {"spring": {"showers": 2, "clouds": 2, "wind": 0.4, "wind_from": "west", "note": "April showers; the sailing season is open"}, "summer": {"showers": 0, "clouds": 1, "wind": 0.35}, "autumn": {"showers": 3, "clouds": 3, "wind": 0.45}, "winter": {"showers": 3, "clouds": 4, "wind": 0.5}}, "ambience": {"beds": [{"file": "amb/rome/day.ogg", "hours": ["05:30", "19:30"]}, {"file": "amb/rome/night.ogg", "hours": ["19:30", "05:30"]}], "zones": [{"rect": [254, 876, 264, 899], "file": "amb/world/sea.ogg", "gain": 0.7}, {"rect": [248, 872, 263, 896], "file": "amb/world/sea.ogg", "gain": 0.9}], "loops": [{"item": "rome.r_lacus", "file": "amb/rome/fountain.ogg", "when": "always"}, {"slot": "rome.r_smithy.work", "file": "amb/world/smith.ogg", "when": "worked"}]}, "music": {"day": "music/rome/day.ogg", "night": "music/rome/night.ogg"}, "arrive": "sfx/rome/arrive.wav"},
+ "densities": {
+  "always": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  "day": [0, 0, 0, 0, 0, 0.2, 0.7, 1, 1, 1, 1, 1, 0.75, 0.75, 0.9, 0.9, 1, 1, 0.6, 0.35, 0.15, 0.05, 0, 0],
+  "forum": [0, 0, 0, 0, 0, 0.15, 0.6, 1, 1, 1, 1, 1, 0.75, 0.75, 0.85, 0.85, 1, 1, 0.55, 0.3, 0.1, 0, 0, 0],
+  "market": [0, 0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 1, 1, 0.7, 0.7, 0.85, 0.85, 0.85, 0.7, 0.4, 0.1, 0, 0, 0, 0],
+  "work": [0, 0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 1, 0.6, 0.6, 1, 1, 1, 0.7, 0.3, 0, 0, 0, 0, 0],
+  "morning": [0, 0, 0, 0, 0, 0, 0.6, 1, 1, 1, 1, 1, 0.3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "dawn_work": [0, 0, 0.7, 1, 1, 1, 1, 1, 1, 1, 1, 0.7, 0.7, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.1, 0, 0, 0, 0],
+  "houses": [0, 0, 0, 0, 0.2, 0.6, 1, 1, 1, 1, 1, 1, 0.75, 0.75, 0.85, 0.85, 0.85, 1, 1, 0.6, 0.35, 0.15, 0, 0],
+  "salutatio": [0, 0, 0, 0, 0.5, 1, 1, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "baths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.15, 0.15, 0.15, 0.4, 0.8, 1, 1, 1, 0.7, 0.3, 0, 0, 0, 0, 0],
+  "evening": [0.15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 0.5, 0.2],
+  "night": [1, 1, 1, 1, 0.6, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0.8, 1, 1, 1],
+  "watch": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.8, 0.8, 0.6, 0.6],
+  "children": [0, 0, 0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 0.6, 0.6, 1, 1, 1, 1, 0.6, 0.3, 0, 0, 0, 0],
+  "graze": [0.2, 0.2, 0.2, 0.2, 0.2, 0.7, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.6, 0.2, 0.2, 0.2, 0.2],
+  "fields": [0, 0, 0, 0, 0, 0.5, 1, 1, 1, 1, 1, 0.8, 0.5, 0.5, 0.8, 1, 1, 1, 0.5, 0.1, 0, 0, 0, 0],
+  "harbour": [0.05, 0.05, 0.05, 0.05, 0.3, 0.8, 1, 1, 1, 1, 1, 1, 0.7, 0.7, 1, 1, 1, 1, 0.6, 0.3, 0.1, 0.1, 0.1, 0.1],
+  "afternoon": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 0.8, 0.3, 0, 0, 0, 0, 0],
+  "festival": [0.05, 0.05, 0.05, 0.05, 0.2, 0.5, 0.8, 0.8, 1, 1, 1, 1, 0.8, 0.8, 1, 1, 1, 1, 1, 1, 0.9, 0.6, 0.3, 0.05],
+  "birds": [0, 0, 0, 0, 0.3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.4, 0, 0, 0],
+  "parilia_night": [0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0.8, 1, 1, 1, 0.6, 0.1],
+  "evening_shop": [0, 0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 1, 1, 0.8, 0.8, 0.8, 1, 1, 1, 1, 1, 0.6, 0.2, 0],
+  "road": [0, 0, 0, 0, 0, 0.3, 0.8, 0.8, 1, 1, 1, 1, 0.7, 0.7, 0.9, 0.9, 0.9, 1, 0.6, 0.2, 0, 0, 0, 0]
  },
  "districts": [
-  {
-   "id": "harbour",
-   "populations": [
-    {
-     "actor": "rome.docker",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "rome.citizen",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "rome.egyptian_sailor",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "reserved",
-   "populations": [
-    {
-     "actor": "rome.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "rome.egyptian_sailor",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "rome.syrian_merchant",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "road",
-   "populations": [
-    {
-     "actor": "rome.egyptian_sailor",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "rome.syrian_merchant",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "rome.working_woman",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "sea",
-   "populations": [
-    {
-     "actor": "rome.syrian_merchant",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "rome.working_woman",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "rome.docker",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  },
-  {
-   "id": "town",
-   "populations": [
-    {
-     "actor": "rome.working_woman",
-     "density": "daytime",
-     "max_per_chunk": 4
-    },
-    {
-     "actor": "rome.docker",
-     "density": "daytime",
-     "max_per_chunk": 3
-    },
-    {
-     "actor": "rome.citizen",
-     "density": "daytime",
-     "max_per_chunk": 2
-    }
-   ]
-  }
+  {"id": "town", "area": "town", "populations": [{"role": "housewife", "density": "houses", "max_per_chunk": 10}, {"role": "townsman", "density": "day", "max_per_chunk": 8}, {"role": "child", "density": "children", "max_per_chunk": 5}, {"role": "errand_slave", "density": "work", "max_per_chunk": 6}, {"role": "freedwoman", "density": "day", "max_per_chunk": 3}, {"role": "reveller", "density": "evening", "max_per_chunk": 3}, {"role": "dog", "density": "always", "max_per_chunk": 1}, {"role": "cat", "density": "always", "max_per_chunk": 1}, {"role": "shopkeeper", "per_item": "rome.r_taberna", "count": 1, "density": "market"}, {"role": "counter_keeper", "per_item": "rome.r_thermopolium", "count": 1, "density": "evening_shop"}, {"role": "insula_shop", "per_item": "rome.r_insula", "count": 1, "density": "market"}, {"role": "baker", "per_item": "rome.r_bakery", "count": 1, "density": "dawn_work"}, {"role": "smith", "per_item": "rome.r_smithy", "count": 1, "density": "work"}, {"role": "water_carrier", "per_item": "rome.r_lacus", "count": 1, "density": "houses"}, {"role": "mourner", "per_item": "rome.r_tomb", "count": 1, "density": "day"}, {"role": "passenger", "density": "day", "max_per_chunk": 4}, {"role": "merchant", "density": "day", "max_per_chunk": 3}]},
+  {"id": "harbour", "area": "centre", "populations": [{"role": "harbour_docker", "density": "harbour", "max_per_chunk": 24}, {"role": "sailor", "density": "harbour", "max_per_chunk": 10}, {"role": "passenger", "density": "day", "max_per_chunk": 10}, {"role": "merchant", "density": "day", "max_per_chunk": 6}, {"role": "fisher", "density": "harbour", "max_per_chunk": 6}, {"role": "customs", "density": "work", "max_per_chunk": 3}, {"role": "gull", "density": "birds", "max_per_chunk": 6}, {"role": "cat", "density": "always", "max_per_chunk": 1}]},
+  {"id": "road", "area": "road", "populations": [{"role": "road_traveller", "density": "road", "max_per_chunk": 12}, {"role": "carriage", "density": "road", "max_per_chunk": 2}, {"role": "dog", "density": "always", "max_per_chunk": 1}]},
+  {"id": "sea", "area": "sea", "populations": [{"role": "gull", "density": "birds", "max_per_chunk": 12}]}
  ],
- "densities": {
-  "road_day": [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0.1,
-   0.4,
-   0.8,
-   1,
-   1,
-   1,
-   0.8,
-   0.5,
-   0.4,
-   0.6,
-   1,
-   1,
-   0.9,
-   0.5,
-   0.2,
-   0,
-   0,
-   0,
-   0
-  ],
-  "daytime": [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0.15,
-   0.5,
-   0.85,
-   1,
-   1,
-   1,
-   1,
-   0.85,
-   0.6,
-   0.7,
-   0.9,
-   1,
-   0.95,
-   0.7,
-   0.4,
-   0.15,
-   0.05,
-   0,
-   0
-  ],
-  "fields": [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0.2,
-   0.7,
-   1,
-   1,
-   1,
-   0.8,
-   0.5,
-   0.3,
-   0.5,
-   0.9,
-   1,
-   1,
-   0.8,
-   0.4,
-   0.1,
-   0,
-   0,
-   0,
-   0
-  ],
-  "always": [
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1,
-   1
-  ],
-  "watch": [
-   0.5,
-   0.5,
-   0.5,
-   0.5,
-   0.5,
-   0.5,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.7,
-   0.5,
-   0.5,
-   0.5,
-   0.5,
-   0.5
-  ]
- },
- "figures": [],
+ "roles": [
+  {"id": "housewife", "actor": "rome.working_woman", "name": "Woman of the house", "schedule": [{"hours": ["05:00", "10:00"], "routine": "water"}, {"hours": ["10:00", "17:00"], "routine": "errands"}, {"hours": ["17:00", "20:30"], "routine": "water"}], "routines": {"water": {"loop": true, "steps": [{"pick": [{"weight": 1, "steps": [{"go": {"item": "rome.r_lacus", "slot": "fill", "within": 18}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [3, 5]}, {"take": "rome.goods_water_jug"}, {"go": {"slot_kind": "door", "within": 10}}, {"put": "rome.goods_water_jug"}]}, {"weight": 2, "steps": [{"go": {"slot_kind": "door", "within": 10}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [20, 40]}, {"wander": {"radius": 5}, "dur": [20, 30]}]}]}]}, "errands": {"loop": true, "steps": [{"pick": [{"weight": 3, "steps": [{"go": {"slot_kind": "door", "within": 12}}, {"wait": {"dur": [30, 50]}}, {"wander": {"radius": 6}, "dur": [20, 30]}]}, {"weight": 1, "steps": [{"go": {"item": "rome.r_compitum", "slot": "pray", "within": 14}}, {"use": {"here": true}, "anim": "idle", "dur": [4, 6]}]}]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "women"},
+  {"id": "townsman", "actor": "rome.citizen", "name": "Neighbour", "schedule": [{"hours": ["05:30", "12:00"], "routine": "errands"}, {"hours": ["13:30", "20:00"], "routine": "errands"}], "routines": {"errands": {"loop": true, "steps": [{"go": {"slot_kind": "door", "within": 12}}, {"wait": {"dur": [10, 20]}}, {"wander": {"radius": 8}, "dur": [30, 50]}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "plebs"},
+  {"id": "child", "actor": "rome.child", "name": "Child", "schedule": [{"hours": ["06:30", "19:30"], "routine": "play"}], "routines": {"play": {"loop": true, "steps": [{"pick": [{"weight": 3, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "run", "dur": [6, 10]}]}, {"weight": 2, "steps": [{"wander": {"radius": 3}, "dur": [10, 15]}, {"use": {"here": true}, "anim": "kneel", "dur": [20, 30]}]}]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "children"},
+  {"id": "errand_slave", "actor": "rome.enslaved", "name": "Enslaved worker", "schedule": [{"hours": ["05:00", "12:00"], "routine": "errands"}, {"hours": ["13:30", "20:00"], "routine": "errands"}], "routines": {"errands": {"loop": true, "steps": [{"pick": [{"weight": 2, "steps": [{"go": {"slot_kind": "door", "within": 12}}, {"take": "world.goods_firewood"}, {"wander": {"radius": 8}, "dur": [20, 40]}, {"go": {"slot_kind": "door", "within": 12}}, {"put": "world.goods_firewood"}]}, {"weight": 1, "steps": [{"go": {"item": "rome.r_lacus", "slot": "fill", "within": 18}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [4, 6]}, {"take": "rome.goods_water_jug"}, {"go": {"slot_kind": "door", "within": 10}}, {"put": "rome.goods_water_jug"}]}]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "enslaved"},
+  {"id": "freedwoman", "actor": "rome.freedman", "name": "Freed shopkeeper on an errand", "schedule": [{"hours": ["06:00", "12:00"], "routine": "errands"}, {"hours": ["14:00", "19:00"], "routine": "errands"}], "routines": {"errands": {"loop": true, "steps": [{"go": {"slot_kind": "door", "within": 12}}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}, {"wander": {"radius": 6}, "dur": [20, 40]}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 12}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "freedman"},
+  {"id": "reveller", "actor": "rome.citizen", "name": "Late diner with a lamp", "schedule": [{"hours": ["19:00", "01:00"], "routine": "home"}], "routines": {"home": {"loop": true, "steps": [{"go": {"item": "rome.r_thermopolium", "spot": "beside", "within": 14}}, {"use": {"here": true}, "anim": "talk", "dur": [20, 40]}, {"wander": {"radius": 8}, "dur": [30, 50]}, {"go": {"slot_kind": "door", "within": 12}}, {"wait": {"dur": [10, 20]}}]}}, "card": "popina"},
+  {"id": "dog", "actor": "rome.dog", "name": "Dog", "schedule": [{"hours": ["00:00", "24:00"], "routine": "roam"}], "routines": {"roam": {"loop": true, "steps": [{"wander": {"radius": 8}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "sleep", "dur": [30, 60]}]}}, "card": "dogs"},
+  {"id": "cat", "actor": "rome.cat", "name": "Cat", "schedule": [{"hours": ["00:00", "24:00"], "routine": "prowl"}], "routines": {"prowl": {"loop": true, "steps": [{"wander": {"radius": 5}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "sleep", "dur": [40, 80]}]}}, "card": "cats"},
+  {"id": "shopkeeper", "actor": "rome.freedman", "name": "Shopkeeper", "schedule": [{"hours": ["06:00", "12:00"], "routine": "shop"}, {"hours": ["14:00", "19:30"], "routine": "shop"}], "routines": {"shop": {"loop": true, "steps": [{"go": {"home": "sell"}}, {"use": {"home": "sell"}, "anim": "serve", "dur": [30, 50], "effect": "open_shutters"}, {"use": {"here": true}, "anim": "talk", "dur": [15, 25]}]}}, "home": {"item": "rome.r_taberna", "slot": "sell"}, "card": "taberna"},
+  {"id": "insula_shop", "actor": "rome.working_woman", "name": "Woman at a shop counter", "schedule": [{"hours": ["06:00", "12:00"], "routine": "shop"}, {"hours": ["14:00", "19:00"], "routine": "shop"}], "routines": {"shop": {"loop": true, "steps": [{"go": {"home": "sell"}}, {"use": {"home": "sell"}, "anim": "serve", "dur": [30, 50], "effect": "open_shutters"}, {"use": {"here": true}, "anim": "idle", "dur": [6, 12]}]}}, "home": {"item": "rome.r_insula", "slot": "sell"}, "card": "taberna"},
+  {"id": "counter_keeper", "actor": "rome.freedman", "name": "Hot-food seller", "schedule": [{"hours": ["06:00", "22:00"], "routine": "serve"}], "routines": {"serve": {"loop": true, "steps": [{"go": {"home": "serve"}}, {"use": {"home": "serve"}, "anim": "serve", "dur": [30, 50]}, {"use": {"here": true}, "anim": "talk", "dur": [10, 20]}]}}, "home": {"item": "rome.r_thermopolium", "slot": "serve"}, "card": "thermopolium"},
+  {"id": "baker", "actor": "rome.baker", "name": "Baker", "schedule": [{"hours": ["02:00", "12:00"], "routine": "bake"}, {"hours": ["14:00", "17:00"], "routine": "bake"}], "routines": {"bake": {"loop": true, "steps": [{"go": {"home": "work"}}, {"use": {"home": "work"}, "anim": "stir", "dur": [40, 60]}, {"use": {"here": true}, "anim": "carry_idle", "dur": [8, 14]}]}}, "home": {"item": "rome.r_bakery", "slot": "work"}, "card": "baker"},
+  {"id": "smith", "actor": "rome.smith", "name": "Smith", "schedule": [{"hours": ["05:30", "12:00"], "routine": "forge"}, {"hours": ["13:30", "18:30"], "routine": "forge"}], "routines": {"forge": {"loop": true, "steps": [{"go": {"home": "work"}}, {"use": {"home": "work"}, "anim": "work_high", "dur": [40, 60]}, {"use": {"here": true}, "anim": "idle", "dur": [6, 10]}]}}, "home": {"item": "rome.r_smithy", "slot": "work"}, "card": "smith"},
+  {"id": "water_carrier", "actor": "rome.working_woman", "name": "Water carrier", "schedule": [{"hours": ["05:00", "10:00"], "routine": "water"}, {"hours": ["16:00", "19:30"], "routine": "water"}], "routines": {"water": {"loop": true, "steps": [{"go": {"home": "fill"}}, {"use": {"home": "fill"}, "anim": "carry_idle", "dur": [10, 16]}, {"take": "rome.goods_water_jug"}, {"go": {"slot_kind": "door", "within": 16}}, {"put": "rome.goods_water_jug"}]}}, "home": {"item": "rome.r_lacus", "slot": "fill"}, "card": "fountain"},
+  {"id": "mourner", "actor": "rome.matron", "name": "Mourner at a tomb", "schedule": [{"hours": ["06:00", "11:00"], "routine": "tomb"}, {"hours": ["15:00", "18:30"], "routine": "tomb"}], "routines": {"tomb": {"loop": true, "steps": [{"go": {"home": "mourn"}}, {"use": {"home": "mourn"}, "anim": "idle", "dur": [40, 70]}, {"wander": {"radius": 4}, "dur": [15, 25]}]}}, "home": {"item": "rome.r_tomb", "slot": "mourn"}, "card": "tombs"},
+  {"id": "gull", "actor": "rome.gull", "name": "Gull", "schedule": [{"hours": ["04:30", "20:30"], "routine": "fly"}], "routines": {"fly": {"loop": true, "steps": [{"wander": {"radius": 14}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "idle", "dur": [10, 20]}]}}},
+  {"id": "harbour_docker", "actor": "rome.docker", "name": "Docker", "schedule": [{"hours": ["05:00", "12:00"], "routine": "load"}, {"hours": ["13:30", "19:00"], "routine": "load"}], "routines": {"load": {"loop": true, "steps": [{"go": {"item": "rome.r_horrea", "slot": "door", "within": 12}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [8, 14]}, {"take": "rome.goods_wine_amphora"}, {"go": {"node": "brundisium_quay"}}, {"put": "rome.goods_wine_amphora"}, {"wait": {"dur": [8, 14]}}]}}, "card": "docker"},
+  {"id": "sailor", "actor": "world.sailor", "name": "Sailor of a Greek ship", "schedule": [{"hours": ["05:30", "19:00"], "routine": "ship"}], "routines": {"ship": {"loop": true, "steps": [{"go": {"item": "rome.brundisium_harbour", "spot": "beside"}}, {"use": {"here": true}, "anim": "haul", "dur": [20, 40]}, {"go": {"node": "brundisium_quay"}}, {"wander": {"radius": 4}, "dur": [20, 30]}]}}, "card": "crossing_sailor"},
+  {"id": "passenger", "actor": "world.traveller", "name": "Passenger waiting for a ship", "schedule": [{"hours": ["05:30", "18:30"], "routine": "wait"}], "routines": {"wait": {"loop": true, "steps": [{"go": {"node": "brundisium_quay"}}, {"use": {"here": true}, "anim": "sit", "dur": [60, 100]}, {"wander": {"radius": 4}, "dur": [20, 30]}, {"go": {"node": "brundisium_town"}}, {"wait": {"dur": [20, 30]}}]}}, "card": "passenger"},
+  {"id": "merchant", "actor": "world.merchant", "name": "Merchant", "schedule": [{"hours": ["06:30", "12:00"], "routine": "trade"}, {"hours": ["14:00", "18:00"], "routine": "trade"}], "routines": {"trade": {"loop": true, "steps": [{"go": {"node": "brundisium_quay"}}, {"use": {"here": true}, "anim": "talk", "dur": [30, 50]}, {"go": {"node": "brundisium_town"}}, {"use": {"here": true}, "anim": "serve", "dur": [15, 25]}]}}, "card": "merchant"},
+  {"id": "fisher", "actor": "world.fisher", "name": "Fisherman", "schedule": [{"hours": ["04:30", "11:00"], "routine": "fish"}, {"hours": ["15:00", "18:30"], "routine": "fish"}], "routines": {"fish": {"loop": true, "steps": [{"go": {"item": "rome.brundisium_harbour", "spot": "beside"}}, {"use": {"here": true}, "anim": "haul", "dur": [20, 30]}, {"take": "rome.goods_fish"}, {"go": {"item": "rome.r_taberna", "slot": "sell", "within": 12}}, {"put": "rome.goods_fish"}, {"use": {"here": true}, "anim": "sit", "dur": [20, 30]}]}}, "card": "fish_market"},
+  {"id": "customs", "actor": "rome.togatus", "name": "Customs officer", "schedule": [{"hours": ["06:30", "12:00"], "routine": "inspect"}, {"hours": ["14:00", "17:30"], "routine": "inspect"}], "routines": {"inspect": {"loop": true, "steps": [{"go": {"node": "brundisium_quay"}}, {"use": {"here": true}, "anim": "gesture", "dur": [20, 30]}, {"wander": {"radius": 4}, "dur": [15, 25]}]}}, "card": "customs_officer"},
+  {"id": "road_traveller", "actor": "world.traveller", "name": "Traveller at the road's end", "schedule": [{"hours": ["05:30", "18:30"], "routine": "arrive"}], "routines": {"arrive": {"loop": true, "steps": [{"go": {"node": "column"}}, {"use": {"here": true}, "anim": "idle", "dur": [20, 30]}, {"go": {"node": "brundisium_town"}}, {"use": {"here": true}, "anim": "sit", "dur": [20, 30]}]}}, "card": "cursus_role"},
+  {"id": "carriage", "actor": "rome.carriage", "name": "Travelling carriage", "schedule": [{"hours": ["06:00", "17:30"], "routine": "travel"}], "routines": {"travel": {"loop": true, "steps": [{"go": {"node": "column"}}, {"wait": {"dur": [40, 60]}}, {"go": {"node": "brundisium_town"}}, {"wait": {"dur": [30, 50]}}]}}, "locomotion": {"mode": "walk", "speed": 0.8, "network": "roads", "turn_radius": 2}, "card": "cursus_role"}
+ ],
  "groups": [],
- "chains": [],
- "events": [],
- "lanes_tokens": [
-  {
-   "actor": "rome.merchantman",
-   "lane": "brundisium:brundisium",
-   "count": 2
-  },
-  {
-   "actor": "world.fishing_boat",
-   "lane": "brundisium:brundisium",
-   "count": 1
-  }
+ "chains": [
+  {"id": "brundisium_wine", "name": "Wine and oil for Greece", "period": 160, "hours": ["05:00", "18:30"], "stages": [{"slot": "rome.r_horrea.door", "makes": "rome.goods_wine_amphora", "by": "harbour_docker", "label": "an amphora of Apulian wine from the warehouse"}, {"carry": "rome.goods_wine_amphora", "from": "rome.r_horrea.door", "to": "rome.brundisium_harbour.mooring", "by": "harbour_docker", "workers": 2}, {"slot": "rome.brundisium_harbour.mooring", "sink": "rome.goods_wine_amphora", "by": "sailor", "label": "stowed aboard a ship for Greece"}]},
+  {"id": "brundisium_fish", "name": "Fish", "period": 150, "hours": ["05:00", "12:00"], "stages": [{"slot": "rome.brundisium_harbour.mooring", "makes": "rome.goods_fish", "by": "fisher", "label": "landed from a fishing boat"}, {"carry": "rome.goods_fish", "from": "rome.brundisium_harbour.mooring", "to": "rome.r_taberna.sell", "near": "brundisium_town", "by": "fisher"}, {"slot": "rome.r_taberna.sell", "sink": "rome.goods_fish", "near": "brundisium_town", "by": "shopkeeper", "label": "sold"}]}
  ],
- "zones": [],
+ "festivals": [],
+ "events": [
+  {"id": "ship_departs", "rarity": "daily", "size": "medium", "trigger": {"on": "window", "hours": ["07:00", "07:30"], "chance": 0.7}, "duration": [100, 120], "steps": [{"go": {"item": "rome.brundisium_harbour", "spot": "beside"}}, {"use": {"here": true}, "anim": "idle", "dur": [60, 80]}, {"emit": {"sfx": "sfx/world/rope.wav"}}], "zone": "harbour", "cast": [{"role": "passenger", "count": 6, "from": "district"}, {"role": "sailor", "count": 4}, {"role": "harbour_docker", "count": 4}], "card": "crossing", "string": "ship_departs"},
+  {"id": "ship_arrives", "rarity": "common", "size": "medium", "trigger": {"on": "token_arrived", "actor": "rome.merchantman"}, "duration": [90, 120], "steps": [{"go": {"item": "rome.brundisium_harbour", "spot": "beside"}}, {"use": {"here": true}, "anim": "carry_idle", "dur": [60, 90], "effect": "unload"}], "zone": "harbour", "cast": [{"role": "harbour_docker", "count": 6, "from": "district"}], "ambience": {"file": "amb/world/ship.ogg", "gain": 0.6}, "sfx": "sfx/world/gull.wav", "card": "crossing"},
+  {"id": "road_end", "rarity": "common", "size": "small", "trigger": {"on": "window", "hours": ["08:00", "17:00"], "chance": 1.0, "every": 1800}, "duration": [60, 80], "steps": [{"go": {"node": "column"}}, {"use": {"here": true}, "anim": "idle", "dur": [40, 60]}], "route": ["brundisium_town", "column"], "cast": [{"role": "road_traveller", "count": 3}, {"role": "carriage", "count": 1}], "card": "appia_end"},
+  {"id": "fishing_fleet", "rarity": "daily", "size": "small", "trigger": {"on": "window", "hours": ["04:30", "05:00"], "chance": 1.0}, "duration": [60, 90], "steps": [], "zone": "sea", "cast": [{"actor": "world.fishing_boat", "count": 2}], "sfx": "sfx/world/gull.wav"},
+  {"id": "lamps_lit", "rarity": "daily", "size": "small", "trigger": {"on": "window", "hours": ["18:30", "19:00"], "chance": 1.0}, "duration": [60, 80], "steps": [{"each": {"item": "rome.r_compitum", "max": 2}, "state": "lit"}], "zone": "town", "sfx": "sfx/world/lamp.wav", "card": "compitum"},
+  {"id": "dogs_bark", "rarity": "common", "size": "small", "trigger": {"on": "window", "hours": ["21:00", "03:00"], "chance": 1.0, "every": 5400}, "duration": [5, 6], "steps": [], "zone": "town", "sfx": "sfx/world/dog_far.wav"}
+ ],
+ "days_shown": [
+  {"day": 0, "label": "A sailing day in April"}
+ ],
+ "figures": [],
+ "lanes_tokens": [
+  {"actor": "rome.merchantman", "lane": "brundisium:brundisium", "count": 2},
+  {"actor": "world.fishing_boat", "lane": "brundisium:brundisium", "count": 1}
+ ],
  "cards": {
-  "brundisium_harbour": {
-   "title": "Portus Brundisinus",
-   "epithet": "The harbour for Greece",
-   "text": "A branching natural harbour with quays and warehouses. Here the Via Appia ends, and ships sail for Greece across the Ionian Sea."
-  }
+  "brundisium_harbour": {"kind": "landmark", "title": "Portus Brundisinus", "text": "A branching natural harbour with quays and warehouses, sheltered from the open sea. Here the Via Appia ends, and ships sail across the Ionian Sea for Greece and the East.", "epithet": "The harbour for Greece"},
+  "appia_end": {"kind": "idea", "title": "Finis Viae Appiae", "text": "The Via Appia, the 'queen of roads', runs some 580 kilometres from the Porta Capena in Rome to this harbour. A column marks its end; two stand on the waterfront today, and the date of the surviving one is debated, so the game shows a simple marker column.", "epithet": "The road's end"},
+  "crossing": {"kind": "idea", "title": "Traiectus", "text": "From Brundisium ships cross the Ionian Sea to Dyrrachium or Apollonia in a day or two with a fair wind, and travellers go on by the Via Egnatia to the East; others sail round to Corinth. In winter few ships risk the open sea.", "epithet": "The crossing to Greece"},
+  "virgil": {"kind": "idea", "title": "Vergilius", "text": "The poet of the Aeneid fell ill in Greece and died here, at Brundisium, in 19 BC, on his way home with Augustus. He had asked for the unfinished poem to be burned; Augustus had it published instead, and it became Rome's own epic.", "epithet": "Virgil's last journey"},
+  "passenger": {"kind": "role", "title": "Vector", "text": "A passenger waits on the quay with his baggage for a ship and a fair wind to Greece."},
+  "crossing_sailor": {"kind": "role", "title": "Nauta", "text": "A sailor of a Greek merchant ship hauls ropes and stows the cargo for the crossing."},
+  "merchant": {"kind": "role", "title": "Mercator", "text": "A merchant bargains on the quay over wine, oil and wool bound for the Greek ports."},
+  "customs_officer": {"kind": "role", "title": "Portitor", "text": "A customs officer checks the cargo and the declaration before goods leave the quay."},
+  "compitum": {"kind": "role", "title": "Compitum", "text": "A shrine of the Lares at a crossroads, tended by the neighbourhood's magistrates; its lamp is lit at dusk."},
+  "women": {"kind": "role", "title": "Mulieres", "text": "Women fetch water, shop, work at looms and counters, visit neighbours and keep the household going."},
+  "plebs": {"kind": "role", "title": "Plebs", "text": "Ordinary citizens in coloured or undyed tunics: shopkeepers, craftsmen, labourers and clients. The toga is for formal business and the games."},
+  "children": {"kind": "role", "title": "Pueri et puellae", "text": "Children play with walnuts, knucklebones and hoops in the street; boys wear a bulla, girls a lunula."},
+  "enslaved": {"kind": "role", "title": "Servus", "text": "Perhaps a fifth to a third of Rome's people are enslaved. They wear no special dress; you know them only by the work they are made to do."},
+  "freedman": {"kind": "role", "title": "Libertus", "text": "A freed man or woman running a shop: Rome's small trade was largely in their hands."},
+  "popina": {"kind": "role", "title": "Popina", "text": "Late diners and drinkers leave the street counters with lamps; the night watch keeps an eye on them."},
+  "dogs": {"kind": "role", "title": "Canes", "text": "Dogs guard doors (cave canem, says the mosaic) and roam the streets for scraps."},
+  "cats": {"kind": "role", "title": "Feles", "text": "Cats have become common in Roman houses and shops, good at keeping mice from the grain."},
+  "taberna": {"kind": "role", "title": "Taberna", "text": "A shop open to the street with a masonry counter, closed at night with wooden shutters, selling bread, oil, cloth or lamps."},
+  "thermopolium": {"kind": "role", "title": "Thermopolium", "text": "A street counter with sunk jars of hot food and wine; most flats have no kitchen, so people eat here."},
+  "baker": {"kind": "role", "title": "Pistor", "text": "The baker kneads, shapes, stamps and bakes before dawn; donkeys turn his lava mills."},
+  "smith": {"kind": "role", "title": "Faber ferrarius", "text": "A smith at his forge making nails, tools, hinges and fittings for the quarter."},
+  "fountain": {"kind": "role", "title": "Lacus", "text": "Street fountains stand every few blocks, running day and night; women and children fetch water and news there."},
+  "tombs": {"kind": "role", "title": "Sepulcra", "text": "Burial is forbidden inside the city, so tombs line the roads leading out of it; families visit with offerings."},
+  "docker": {"kind": "role", "title": "Saccarius", "text": "Dockers carry sacks and amphorae from the barges to the warehouses; they had their own guilds."},
+  "fish_market": {"kind": "role", "title": "Piscator", "text": "River fishermen land their catch for the stalls of the cattle market."},
+  "cursus_role": {"kind": "role", "title": "Viator", "text": "A traveller on the Via Appia, resting at the relay stations between Rome and the south."}
  },
  "strings": {
-  "first_visit": "Brundisium: the Via Appia ends at the harbour, and ships leave for Greece."
+  "first_visit": "Brundisium: the Via Appia ends at the harbour, and ships leave for Greece.",
+  "ship_departs": "A ship for Greece is casting off."
  },
  "journal": [
-  "landmark:*"
+  "landmark:*",
+  "chain:*",
+  "idea:*"
  ]
 }

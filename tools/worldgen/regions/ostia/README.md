@@ -25,3 +25,5 @@ world (C − 100, R − 184); local level 0 = world level 1; sea, river and cana
 - The bridges over the canals and the Tiber are `world.bridge_arch`.
 
 Build: `tools/worldgen/build.sh ostia [--preview]`.
+
+Life and text: `life.py` (built by `tools/worldgen/build.sh --city ostia`) writes `assets/regions/ostia.json`; the townsfolk and trades are Rome's, borrowed through `regions/rome/townlife.py`.

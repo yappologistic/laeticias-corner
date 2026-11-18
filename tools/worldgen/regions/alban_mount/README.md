@@ -18,3 +18,5 @@ C 278..311, R 130..175; local (c, r) = world (C − 278, R − 130); local level
 - Region file `assets/regions/alban_mount.json` (written by `build.sh --life`).
 
 Build: `tools/worldgen/build.sh alban_mount [--preview]`.
+
+Life and text: `life.py` (built by `tools/worldgen/build.sh --city alban_mount`) writes `assets/regions/alban_mount.json`; the townsfolk and trades are Rome's, borrowed through `regions/rome/townlife.py`.

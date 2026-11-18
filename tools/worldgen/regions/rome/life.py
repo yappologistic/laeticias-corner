@@ -1912,15 +1912,18 @@ STRINGS = {
 PANELS = [("dawn", 5.5), ("mid-morning", 10.0), ("afternoon", 15.5), ("twilight", 19.5), ("deep night", 1.5)]
 
 
+# Multipliers on the engine's phase grade ([1, 1, 1] = the corner), chosen as Athens' and Pārsa's
+# were: the earlier absolute-looking values (dusk blue 0.60) gave an all-orange dusk in the engine
+# (out/qa4/shots/V-D-005_rome_grading.png). Pink-gold dawn on travertine, a warm neutral day for
+# brick and green, Rome's honey-gold dusk without the orange cast, a mild blue night whose warm
+# points come from the glow layers. The Roman towns share it.
+GRADING = {"dawn": [1.03, 0.97, 0.93], "day": [1.02, 1.0, 0.96], "dusk": [1.03, 0.95, 0.87],
+           "night": [0.96, 0.97, 1.04]}
+
+
 def theme(view) -> dict:
     return {
-        # Multipliers on the engine's phase grade ([1, 1, 1] = the corner), chosen as Athens' and
-        # Pārsa's were: the earlier absolute-looking values (dusk blue 0.60) gave an all-orange dusk
-        # in the engine (out/qa4/shots/V-D-005_rome_grading.png). Pink-gold dawn on travertine, a warm
-        # neutral day for brick and green, Rome's honey-gold dusk without the orange cast, a mild blue
-        # night whose warm points come from the glow layers.
-        "grading": {"dawn": [1.03, 0.97, 0.93], "day": [1.02, 1.0, 0.96], "dusk": [1.03, 0.95, 0.87],
-                    "night": [0.96, 0.97, 1.04]},
+        "grading": GRADING,
         "haze": {"colour": [0.95, 0.89, 0.79], "strength": 0.13, "toward": "west",
                  "note": "bakery and bath-furnace smoke, stronger in the afternoon"},
         "climate": "rome",

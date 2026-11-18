@@ -24,3 +24,5 @@ the sea at −1 (world 0).
 - Region file `assets/regions/brundisium.json` (written by `build.sh --life`).
 
 Build: `tools/worldgen/build.sh brundisium [--preview]`.
+
+Life and text: `life.py` (built by `tools/worldgen/build.sh --city brundisium`) writes `assets/regions/brundisium.json`; the townsfolk and trades are Rome's, borrowed through `regions/rome/townlife.py`.

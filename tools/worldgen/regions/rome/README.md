@@ -47,3 +47,5 @@ the crane (r 147..149), so the Via Ostiensis could not run along it; a kit quay 
 warehouse rows stands in until the wharf is walkable from end to end.
 
 Build: `tools/worldgen/build.sh rome [--preview]`.
+
+Life and text: `life.py` writes `assets/regions/rome.json` (`build.sh --city rome`); `townlife.py` lends its roles, role cards and theme to Ostia, the Alban Mount and Brundisium.
