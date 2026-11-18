@@ -53,11 +53,20 @@ int sameMask(const world::WorldMap& m, TilePos p, int t) {
     return mask;
 }
 
+// Calls f for the tiles of `r` in painter's order (diagonal by diagonal) whose top vertex lies
+// between world x `x0` and `x1`: a screen rectangle is a diamond in the grid, and its bounding
+// tile rectangle holds twice the tiles that can draw into it.
 template <typename F>
-void diagonals(TileRect r, F&& f) {
-    for (int s = r.x0 + r.y0; s <= r.x1 + r.y1 - 2; ++s)
-        for (int tx = std::max(r.x0, s - (r.y1 - 1)); tx <= std::min(r.x1 - 1, s - r.y0); ++tx)
+void diagonals(TileRect r, float halfW, float x0, float x1, F&& f) {
+    for (int s = r.x0 + r.y0; s <= r.x1 + r.y1 - 2; ++s) {
+        // A tile's top vertex is at x = (tx - ty) * halfW = (2 tx - s) * halfW.
+        const auto fs = static_cast<float>(s);
+        const int lo = static_cast<int>(std::floor((fs + x0 / halfW) * 0.5f));
+        const int hi = static_cast<int>(std::ceil((fs + x1 / halfW) * 0.5f));
+        for (int tx = std::max({r.x0, s - (r.y1 - 1), lo});
+             tx <= std::min({r.x1 - 1, s - r.y0, hi}); ++tx)
             f(TilePos{tx, s - tx});
+    }
 }
 
 // The region of the tile under a world px point (on the ground plane), -1 off the grid.
@@ -316,16 +325,18 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     bool ok = true;
     // The sea beyond the grid first, in two passes (the water, then its haze): flat and under
     // everything, and each pass one texture instead of two draws per tile.
+    const float x0 = px.x0 - r.right;
+    const float x1 = px.x1 + r.left;
     if (!map_.bounds().contains(tiles))
         for (const bool haze : {false, true})
-            diagonals(tiles, [&](TilePos p) {
+            diagonals(tiles, iso_.hw, x0, x1, [&](TilePos p) {
                 if (map_.inBounds(p)) return;
                 const Vec2 w = iso_.toWorld(p);
                 if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
                     w.y - iso_.tileH() <= px.y1)
                     ok &= drawBeyond(p, x, haze);
             });
-    diagonals(tiles, [&](TilePos p) {
+    diagonals(tiles, iso_.hw, x0, x1, [&](TilePos p) {
         if (!map_.inBounds(p)) return;
         const Vec2 w = iso_.toWorld(p);
         // The game's scene draws the hole; its rim tiles are drawn here too, under the scene's,
@@ -731,6 +742,23 @@ int WorldView::shownSlot(CellKey k) {
     return first;
 }
 
+bool WorldView::nativeMostlyReady(const FRect& view) {
+    int cells = 0;
+    int built = 0;
+    forEachCell(view, 0, [&](CellKey k) {
+        const int si = cells_.peek(packCell(k));
+        ++cells;
+        built += si >= 0 && cells_.slot(si).ready ? 1 : 0;
+    });
+    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds());
+    const TileRect have = need.clipped(regionRect_);
+    const auto area = [](const TileRect& r) {
+        return r.empty() ? 0.0f : static_cast<float>(r.x1 - r.x0) * static_cast<float>(r.y1 - r.y0);
+    };
+    return static_cast<float>(built) >= tuning::kNativeReadyShare * static_cast<float>(cells) &&
+           area(have) >= tuning::kNativeReadyShare * area(need);
+}
+
 bool WorldView::cellsReady(int level, const FRect& view) {
     bool ready = true;
     forEachCell(view, level, [&](CellKey k) {
@@ -1118,11 +1146,14 @@ void WorldView::holeChanged() {
     const FRect r{a.x, top - raise, b.x, bottom + iso_.tileH()};
     for (int level = 0; level <= 2; ++level)
         forEachCell(r, level, [&](CellKey k) {
-            const int si = cells_.find(packCell(k));
-            if (si < 0) return;
-            CellSlot& slot = cells_.slot(si);
-            slot.complete = false;
-            slot.generation = ~0u;
+            // Every step of the cell's water that is cached.
+            for (k.frame = 0; k.frame < animPeriod_; ++k.frame) {
+                const int si = cells_.find(packCell(k));
+                if (si < 0) continue;
+                CellSlot& slot = cells_.slot(si);
+                slot.complete = false;
+                slot.generation = ~0u;
+            }
         });
 }
 
@@ -1173,14 +1204,14 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // Objects gathered for this view meanwhile (a destination's, on arrival) are taken over
     // before the level is chosen, so an arrival that was made ready is shown at once.
     if (want == Lod::Native) adoptRegion(seen);
-    // The native level needs its ground cells and its objects. While they are still on their
-    // way (a zoom in that arrived at once, a jump) the half-scale impostors stay up, magnified,
-    // if they are whole: the previous level until the new one is complete, never a hole.
+    // The native level needs its ground cells and its objects. While most of them are still on
+    // their way (a zoom in that arrived at once, a jump) the half-scale impostors stay up,
+    // magnified, if they are whole: the previous level until the new one is there, never a hole.
+    // A view that only lacks a strip at its leading edge (a fast pan) stays native: a cell not
+    // built yet shows its coarser level by itself, which is far less to see than the whole view
+    // changing level for a frame.
     Lod lod = want;
-    if (async_ && want == Lod::Native && cellsReady(1, seen) &&
-        (!cellsReady(0, seen) ||
-         !regionRect_.contains(
-             gatherTiles(seen, sprites_->itemSpan(), iso_).clipped(map_.bounds()))))
+    if (async_ && want == Lod::Native && !nativeMostlyReady(seen) && cellsReady(1, seen))
         lod = Lod::Half;
     stats_.lod = lod;
     stats_.lodHeld = lod != want;
@@ -1247,6 +1278,8 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         // What to build is planned for the level the view wants, even while a coarser one
         // stands in for it.
         planCells(levelOf(want), lod == want ? view : seen, camera, seen);
+        // A level standing in is wanted as long as it is shown.
+        if (lod != want) wantCells(view, levelOf(lod), kRankView);
         buildCells();
     }
     if (lod == Lod::Overview) {

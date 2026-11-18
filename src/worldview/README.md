@@ -41,7 +41,7 @@ the font and the clock's lighting, and `lc_world`). The game draws through it (`
   and the two wider levels where a turn of the wheel about the pointer would show them. The list
   is deduplicated and cut to what the cache holds, so nothing wanted is ever pushed out by
   something else wanted. Cells are built on the main thread within a time budget per frame
-  (2.5 ms for what is needed, 1 ms for what is built ahead; `tuning.hpp`), impostor blocks after
+  (2 ms for what is needed, 1 ms for what is built ahead; `tuning.hpp`), impostor blocks after
   their gather comes back from the worker. Drawing only composites: a cell not built yet shows
   its coarser level, or the overview under it. The cache holds, at a window's size, its own
   level with the ring and the two wider levels, half as much again (128 MiB at 1080p, 160 at

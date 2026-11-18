@@ -277,8 +277,7 @@ int App::runBench() {
         BenchFrames fr;
         for (int f = 0; f < tuning::kBenchSettleFrames * 4; ++f) {
             fr.all.push_back(benchFrame());
-            const worldview::FrameStats& ws = worldView_->stats();
-            if (worldView_->settled() && ws.prefetchPending == 0 && ws.pages.streaming == 0) break;
+            if (worldView_->idle()) break;
         }
         const PerfStats whole = fr.of(&FrameSample::frameMs);
         report("start-up", "whole frame", whole);
@@ -387,7 +386,9 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
     const auto settle = [&] {
         for (int i = 0; i < tuning::kBenchSettleFrames; ++i) {
             (void)benchFrame();
-            if (worldView_->settled()) break;
+            // A steady view: what is built ahead of need (the wider levels) is done too. The
+            // zoom, pan and travel cases are where that work is measured.
+            if (worldView_->idle()) break;
         }
     };
     const auto look = [&](Vec2 grid) {
@@ -525,7 +526,7 @@ bool App::benchPlay(const std::function<bool(const char*, const BenchFrames&, bo
     const auto settle = [&] {
         for (int i = 0; i < tuning::kBenchSettleFrames; ++i) {
             (void)benchFrame();
-            if (worldView_->settled() && worldView_->stats().prefetchPending == 0) break;
+            if (worldView_->idle()) break;
         }
     };
     const auto look = [&](Vec2 grid, int level) {

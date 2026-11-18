@@ -639,7 +639,8 @@ private:
     std::vector<std::string> journalSummaries_;
     std::vector<std::string> journalNames_;
     mutable std::string hoverName_;
-    mutable std::optional<CardPick> hoverPick_; // what hoverName_ names
+    mutable std::optional<CardPick> hoverPick_; // what hoverCardName_ names
+    mutable std::string hoverCardName_;         // (hoverName_ is also a person's role or kind)
     mutable std::vector<life::Handle> actorHits_;
     std::unique_ptr<Batch> uiBatch_;
     std::unique_ptr<Blur> blur_;

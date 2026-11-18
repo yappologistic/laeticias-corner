@@ -421,9 +421,9 @@ void App::fillWorldModel(HudModel& m) const {
             if (!(hoverPick_ == pick)) {
                 hoverPick_ = pick;
                 std::string storage;
-                hoverName_.assign(entryName(cardOf(*pick), storage));
+                hoverCardName_.assign(entryName(cardOf(*pick), storage));
             }
-            m.worldTip = hoverName_;
+            m.worldTip = hoverCardName_;
         } else if (const auto h = actorAt(mouse_)) {
             // Ordinary people by what they do (a potter, a courier); animals by their kind.
             if (const auto in = actorInfo(*h)) {

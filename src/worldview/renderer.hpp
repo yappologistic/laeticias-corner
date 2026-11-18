@@ -154,6 +154,10 @@ public:
     void jumped(Vec2 centre);
     // Nothing is left to stream or build for the last frame's view.
     [[nodiscard]] bool settled() const;
+    // And nothing is being built or loaded ahead of need either: the steady state.
+    [[nodiscard]] bool idle() const {
+        return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0;
+    }
 
     [[nodiscard]] const FrameStats& stats() const { return stats_; }
     [[nodiscard]] const ThemeMixer& theme() const { return theme_; }
@@ -257,6 +261,8 @@ private:
     [[nodiscard]] int shownSlot(CellKey k);
     // Every cell of a level over `view` is built (the cache is not touched).
     [[nodiscard]] bool cellsReady(int level, const FRect& view);
+    // Most of the native level over `view` is there: its ground cells and its objects.
+    [[nodiscard]] bool nativeMostlyReady(const FRect& view);
     // Milliseconds of a frame that building cells of this rank may use.
     [[nodiscard]] double buildLimit(int rank) const;
     // What the cell cache may hold at this window size.

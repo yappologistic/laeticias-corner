@@ -36,12 +36,15 @@ inline constexpr int kCellRing = 1;              // cells around the view kept b
 // Cells are built on the main thread within a time budget per frame (at least one build a frame
 // whatever it costs): more while something in view or at a zoom's destination is missing, less
 // for what is only built ahead (the ring, the wider levels). In milliseconds.
-inline constexpr double kBuildMsNeeded = 2.5;
+inline constexpr double kBuildMsNeeded = 2.0;
 inline constexpr double kBuildMsAhead = 1.0;
 // The ring leans toward where the view is going: this many frames of its motion ahead, at most
 // kCellAheadMax cells.
 inline constexpr float kCellAheadFrames = 24.0f;
 inline constexpr int kCellAheadMax = 2;
+// The native level is shown once this share of its ground cells and of its objects' tiles over
+// the view is there (the rest fills in cell by cell); below it the half-scale level stays up.
+inline constexpr float kNativeReadyShare = 0.75f;
 // Water loops longer than this many steps are cut to it (each step is a cached copy of a cell).
 inline constexpr int kCellPeriodMax = 4;
 
