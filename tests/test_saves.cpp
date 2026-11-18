@@ -13,6 +13,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
+#include <ctime>
 
 using namespace lc;
 
@@ -304,6 +306,20 @@ TEST_CASE("a chunked save keeps a water piece across a chunk line (L-011)") {
     const Item* boat = data->world.itemAt({32, 25});
     REQUIRE(boat != nullptr);
     CHECK(boat->type == item("rowboat"));
+}
+
+TEST_CASE("a postcard is named by the local date its caption shows (L-012)") {
+    // 22:30 on 18 November 2026 at six hours west of Greenwich is 04:30 the next day in UTC.
+    const char* old = std::getenv("TZ");
+    const std::string keep = old != nullptr ? old : "";
+    REQUIRE(setenv("TZ", "UTC+6", 1) == 0);
+    tzset();
+    CHECK(postcardStem("plum-hollow", 1795062600) == "plum-hollow-20261118-223000");
+    if (old != nullptr)
+        (void)setenv("TZ", keep.c_str(), 1);
+    else
+        (void)unsetenv("TZ");
+    tzset();
 }
 
 TEST_CASE("world folder names and the profile") {

@@ -5,7 +5,6 @@
 #include "ui/strings.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -235,8 +234,7 @@ void App::capturePhoto() {
     const fs::path dir = postcardDir();
     std::error_code ec;
     fs::create_directories(dir, ec);
-    const auto stamp = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
-    const std::string base = std::format("{}-{:%Y%m%d-%H%M%S}", slug_, stamp);
+    const std::string base = postcardStem(slug_, std::time(nullptr));
     fs::path file = dir / (base + ".png");
     for (int n = 2; fs::exists(file, ec) && n < 10000; ++n)
         file = dir / (base + "-" + std::to_string(n) + ".png");

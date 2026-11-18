@@ -740,6 +740,17 @@ std::string utcNow() {
     return std::format("{:%Y-%m-%dT%H:%M:%SZ}", now);
 }
 
+std::string postcardStem(std::string_view slug, std::time_t when) {
+    std::tm t{};
+#if defined(_WIN32)
+    (void)localtime_s(&t, &when);
+#else
+    (void)localtime_r(&when, &t);
+#endif
+    return std::format("{}-{:04}{:02}{:02}-{:02}{:02}{:02}", slug, t.tm_year + 1900, t.tm_mon + 1,
+                       t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
+}
+
 Profile parseProfile(std::string_view text) {
     Profile p;
     try {
