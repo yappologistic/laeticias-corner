@@ -2215,6 +2215,265 @@
     "base"
    ],
    "height": 10
+  },
+  {
+   "id": "athens.delphi_apollo",
+   "name": "Temple of Apollo at Delphi",
+   "footprint": [
+    6,
+    12
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.65,
+   "height": 140,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "delphi_apollo",
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "consult",
+     "kind": "stand",
+     "cap": 1
+    },
+    {
+     "id": "priest",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.athenian_treasury",
+   "name": "Treasury of the Athenians",
+   "footprint": [
+    2,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.9,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "athenian_treasury",
+   "slots": [
+    {
+     "id": "visit",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.corinth_apollo",
+   "name": "Temple of Apollo at Corinth",
+   "footprint": [
+    6,
+    12
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.65,
+   "height": 110,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "corinth_apollo",
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "athens.acrocorinth_summit",
+   "name": "Summit of Acrocorinth",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 56,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "acrocorinth_summit"
+  },
+  {
+   "id": "athens.diolkos",
+   "name": "Diolkos",
+   "footprint": [
+    20,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 48,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "card": "diolkos",
+   "slots": [
+    {
+     "id": "haul",
+     "kind": "work",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "athens.delos_sanctuary",
+   "name": "Sanctuary of Apollo on Delos",
+   "footprint": [
+    8,
+    10
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 56,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "delos_sanctuary",
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "priest",
+     "kind": "work",
+     "cap": 1
+    },
+    {
+     "id": "pilgrim",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "athens.naxian_lions",
+   "name": "Terrace of the Lions",
+   "footprint": [
+    2,
+    8
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 1.0,
+   "height": 46,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "naxian_lions",
+   "slots": [
+    {
+     "id": "look",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "athens.artemision",
+   "name": "Temple of Artemis at Ephesus",
+   "footprint": [
+    8,
+    16
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.53,
+   "height": 140,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "artemision",
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "priest",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
   }
  ],
  "actors": [
