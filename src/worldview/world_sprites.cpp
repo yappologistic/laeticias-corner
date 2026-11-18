@@ -272,6 +272,8 @@ void WorldSprites::resolveItems(const world::WorldMap& map, Atlas& home, PageAtl
             }
             const Footprint fp = info.footprint(connect ? 0 : v);
             for (const SpriteRef& s : look.base.f) span(itemSpan_, s, {0, 0, fp.w, fp.h}, iso_);
+            // Shadows fall beyond the sprite: an item off the view may still shade it.
+            if (look.shadow) span(itemSpan_, *look.shadow, {0, 0, fp.w, fp.h}, iso_);
             if (const world::GeomVariant* g =
                     content.geometry(static_cast<int>(i), connect ? 0 : v, connect ? v : 0);
                 g != nullptr && g->pieces.size() == look.pieces.size())

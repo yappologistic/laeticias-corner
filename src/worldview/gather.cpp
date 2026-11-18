@@ -45,7 +45,13 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
         const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
         const Vec2 a{w.x, w.y - static_cast<float>(it.level * lvl_)};
         const FRect box{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
-        if (!box.overlaps(clip)) continue;
+        // An item off the clip whose shadow falls on it still belongs (for its shadow).
+        const bool shades =
+            first && look.shadow &&
+            FRect{a.x - look.shadow->ox, a.y - look.shadow->oy,
+                  a.x - look.shadow->ox + look.shadow->w, a.y - look.shadow->oy + look.shadow->h}
+                .overlaps(clip);
+        if (!box.overlaps(clip) && !shades) continue;
         stamp_[d.item] = pass_;
         out.elems.push_back({&look,
                              d.item,
