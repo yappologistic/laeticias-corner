@@ -22,19 +22,40 @@ inline constexpr float kOverviewMargin = 0.94f; // share of the window the whole
 inline constexpr int kCellTexels = 512;   // slot side; a level-L cell spans 512 << L px
 inline constexpr int kCellPageSlotsX = 8; // cache pages of 4096 x 2048: few pages, few draws
 inline constexpr int kCellPageSlotsY = 4;
-inline constexpr std::size_t kCellBudget = 96 * kMiB;      // world-tech §4.14: ground cache 96 MB
-inline constexpr double kCellBudgetArea = 2560.0 * 1440.0; // ... per this much window,
-inline constexpr double kCellBudgetMaxScale = 1.5; // and at most this many times it (144 at 4K)
-inline constexpr int kImpostorBlock = 1024;       // impostor cells render in blocks of this many px
-inline constexpr int kCellBuildsPerFrame = 4;     // native cells (re)built per frame at most
-inline constexpr int kImpostorBlocksPerFrame = 1; // impostor blocks drawn per frame at most
-inline constexpr int kImpostorCellsInFlight = 4;  // impostor cells gathering at once
-inline constexpr int kCellPrefetch = 1; // ring of cells around the view built when budget allows
+// What the cache holds (world-tech §4.14, restated by the smoothness round): the view at its own
+// level with a ring around it, and the two wider levels a zoom out would show, each cell once
+// per step of its water's loop where it has water; kCellSpare times that, so a pan or a turn of
+// the wheel finds its cells still there. In MiB (one per slot, in whole pages of 32): 128 at
+// 1080p, 160 at 1440p, 320 at 4K.
+inline constexpr double kCellSpare = 1.5;
+inline constexpr std::size_t kCellBudgetMin = 96 * kMiB;
+inline constexpr std::size_t kCellBudgetMax = 384 * kMiB;
+inline constexpr int kImpostorBlock = 1024;      // impostor cells render in blocks of this many px
+inline constexpr int kImpostorCellsInFlight = 8; // impostor cells gathering or drawing at once
+inline constexpr int kCellRing = 1;              // cells around the view kept built, at its level
+// Cells are built on the main thread within a time budget per frame (at least one build a frame
+// whatever it costs): more while something in view or at a zoom's destination is missing, less
+// for what is only built ahead (the ring, the wider levels). In milliseconds.
+inline constexpr double kBuildMsNeeded = 2.0;
+inline constexpr double kBuildMsAhead = 1.0;
+// The ring leans toward where the view is going: this many frames of its motion ahead, at most
+// kCellAheadMax cells.
+inline constexpr float kCellAheadFrames = 24.0f;
+inline constexpr int kCellAheadMax = 2;
+// The native level is shown once this share of its ground cells and of its objects' tiles over
+// the view is there (the rest fills in cell by cell); below it the half-scale level stays up.
+inline constexpr float kNativeReadyShare = 0.75f;
+// Water loops longer than this many steps are cut to it (each step is a cached copy of a cell).
+inline constexpr int kCellPeriodMax = 4;
 
 // Atlas pages: streamed per set, decoded off the main thread, uploaded in slices.
 // Page slots follow what the sets on disk need (PageAtlas); this only caps them.
 inline constexpr std::size_t kPageCeiling = 640 * kMiB;
-inline constexpr int kUploadRowsPerFrame = 64;   // 1 MB of a 4096-wide page per frame
+inline constexpr int kUploadRows = 64; // a slice: 1 MB of a 4096-wide page (about 0.9 ms)
+// Slices go up until this much of a frame is spent (at least one): more for a page the view is
+// waiting for than for one loaded ahead of need.
+inline constexpr double kUploadMsWanted = 1.5;
+inline constexpr double kUploadMsAhead = 0.5;
 inline constexpr int kPagesInFlight = 2;         // decoded or decoding, not yet in their slot
 inline constexpr double kPageIdleSeconds = 10.0; // unused this long: may be evicted
 inline constexpr int kNeededSetGrow = 64;        // tiles around the view whose sets load
@@ -127,6 +148,7 @@ inline constexpr float kActorMoving = 0.05f;  // tiles/s: faster than this walks
 inline constexpr float kActorWalkPace = 0.9f; // tiles/s at which walk frames play at the art's fps
 inline constexpr Vec2 kCarryAt{3, -31};       // px from the feet: goods in hand, no carry point
 inline constexpr float kActorFoot = 0.2f;     // half the square round the feet, tiles
+inline constexpr float kCoverHalfBody = 6.0f; // px either side of the feet a body takes
 inline constexpr float kCoverHidden = 4.0f;   // px of something in front over the feet: hidden
 inline constexpr int kActorMargin = 3;        // tiles beyond the view gathered (sprites overhang)
 inline constexpr std::size_t kActorBuffer = 2048; // actors gathered per frame at most

@@ -97,7 +97,8 @@ public:
     Prep(const Prep&) = delete;
     Prep& operator=(const Prep&) = delete;
 
-    void request(const Job& job);
+    // `urgent`: ahead of everything queued (the view's own objects, before cells built ahead).
+    void request(const Job& job, bool urgent);
     // Moves the finished result for `tag` into `out`; false while it is not ready.
     [[nodiscard]] bool take(std::uint64_t tag, Gathered& out);
     // Gathers on the calling thread (when nothing usable exists yet).

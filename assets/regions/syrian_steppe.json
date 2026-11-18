@@ -40,15 +40,15 @@
     {
      "file": "amb/world/road.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
      "file": "amb/world/desert_night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
@@ -183,7 +183,8 @@
     "nightfall": "sfx/parsa/sting_nightfall.wav",
     "storm_clear": "sfx/parsa/sting_storm_clear.wav",
     "rainbow": "sfx/parsa/sting_rainbow.wav",
-    "first_snow": "sfx/parsa/sting_first_snow.wav"
+    "first_snow": "sfx/parsa/sting_first_snow.wav",
+    "season": "sfx/parsa/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -233,6 +234,50 @@
       "07:00",
       "18:00"
      ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_call.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
     }
    ],
    "voices": {
@@ -246,6 +291,32 @@
     "world.stork": [
      "sfx/world/stork_clatter.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
    }
   },
   "look": {
@@ -943,7 +1014,10 @@
     }
    ],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/heat.ogg",
+    "gain": 0.4
+   }
   },
   {
    "id": "turn_autumn_cranes_overhead",
@@ -997,7 +1071,7 @@
    "show": "ground",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "sfx": "sfx/world/frost_steps.wav"
   },
   {
    "id": "green_steppe",

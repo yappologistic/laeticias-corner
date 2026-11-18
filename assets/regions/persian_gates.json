@@ -39,18 +39,7 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
+     "file": "amb/world/mountain.ogg"
     }
    ],
    "loops": [
@@ -216,7 +205,8 @@
     "nightfall": "sfx/parsa/sting_nightfall.wav",
     "storm_clear": "sfx/parsa/sting_storm_clear.wav",
     "rainbow": "sfx/parsa/sting_rainbow.wav",
-    "first_snow": "sfx/parsa/sting_first_snow.wav"
+    "first_snow": "sfx/parsa/sting_first_snow.wav",
+    "season": "sfx/parsa/sting_season.wav"
    },
    "wind": "wind.mountain",
    "weather": [
@@ -260,6 +250,18 @@
    },
    "calls": [
     {
+     "file": "sfx/world/cuckoo.wav",
+     "hours": [
+      "06:00",
+      "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
+     ]
+    },
+    {
      "file": "sfx/world/crow_1.wav",
      "hours": [
       "07:00",
@@ -267,13 +269,36 @@
      ]
     },
     {
-     "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
-     ],
+     "file": "sfx/world/owl_tawny.wav",
      "hours": [
-      "06:00",
-      "11:00"
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/wolves_far.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
      ]
     }
    ],
@@ -282,6 +307,36 @@
      "sfx/world/crow_1.wav",
      "sfx/world/crow_2.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_mountain.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
    }
   },
   "look": {
@@ -1849,7 +1904,11 @@
    ],
    "sfx": "sfx/world/step_earth_2.wav",
    "string": "harvest_in",
-   "zone": "cliffs"
+   "zone": "cliffs",
+   "ambience": {
+    "file": "amb/world/reaping.ogg",
+    "gain": 0.75
+   }
   },
   {
    "id": "winter_fires",
@@ -1979,7 +2038,7 @@
     }
    ],
    "string": "season_turn.autumn",
-   "sfx": "sfx/world/seam.wav"
+   "sfx": "sfx/world/leaves_skitter.wav"
   },
   {
    "id": "turn_oct_flocks_down",
@@ -2026,7 +2085,10 @@
    "show": "weather",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.5
+   }
   }
  ],
  "lanes_tokens": [],

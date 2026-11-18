@@ -251,7 +251,12 @@ void Compiler::filter(const json& o, Filter& f, const std::string& where) {
         f.notFestival = r_->findFestival(fest);
         if (f.notFestival < 0) problem(where + ": festival '" + fest + "' is not in the calendar");
     }
-    if (const std::string wx = str(o, "weather"); !wx.empty()) f.weather = wx == "clear" ? 0 : 1;
+    if (const std::string wx = str(o, "weather"); !wx.empty()) {
+        // Only clear and rain are the clock's weathers; another word would quietly mean rain.
+        if (wx != "clear" && wx != "rain")
+            problem(where + ": weather '" + wx + "' is not clear or rain");
+        f.weather = wx == "clear" ? 0 : 1;
+    }
 }
 
 std::uint16_t Compiler::months(const json& list, const std::string& where) {
@@ -860,6 +865,12 @@ void Compiler::events(const json& life) {
             }
             ev.cast.push_back(std::move(ce));
         }
+        // A group the trigger brings along (the Carian delegation to the spring audience).
+        if (const std::string g = str(t, "with_group"); !g.empty()) {
+            CastEntry ce;
+            ce.group = need(r_->findGroup(g), "group", g);
+            if (ce.group >= 0) ev.cast.push_back(ce);
+        }
         for (const json& n : e.value("route", json::array())) {
             const int nd = node(n.get<std::string>(), where + " route");
             if (nd >= 0) ev.route.push_back(nd);
@@ -1113,7 +1124,17 @@ LifeData compileLife(const LoadedWorld& w) {
     for (std::size_t i = 0; i < w.regions.size(); ++i) {
         if (w.regions[i].id.empty()) continue;
         const std::size_t before = d.regions.size();
-        c.region(w.regions[i], static_cast<int>(i));
+        const std::size_t tokens = d.tokens.size();
+        try {
+            c.region(w.regions[i], static_cast<int>(i));
+        } catch (const nlohmann::json::exception& e) {
+            // A field of the wrong type (hours as numbers, a node as a list): named, and this
+            // region's life left out whole, never a half-compiled one or a crash at start.
+            d.problems.push_back(w.regions[i].id + ": " + e.what() + " (its life is left out)");
+            d.regions.resize(before);
+            d.tokens.resize(tokens);
+            continue;
+        }
         if (d.regions.size() > before) d.worldToLife[i] = static_cast<int>(d.regions.size() - 1);
     }
     return d;

@@ -48,6 +48,7 @@ enum class Lod : std::uint8_t { Native, Half, Quarter, Overview };
 
 struct FrameStats {
     Lod lod = Lod::Native;
+    bool lodHeld = false;   // a coarser level stood in while the native one was made ready
     int drawCalls = 0;      // composing the frame
     int buildDrawCalls = 0; // rendering cells into the cache
     int spritesDrawn = 0;   // items, pieces and occluding tiles drawn live
@@ -57,6 +58,21 @@ struct FrameStats {
     int impostorsBuilt = 0;
     int cellsCached = 0;
     int cellsPending = 0; // visible cells still to build (shown from a coarser level)
+    // Pop-in, as the player would see it: the share of the view those cells cover, how many of
+    // them had no coarser cell either (the overview map shows through), live sprites left out
+    // because their page was still streaming, and whether the gathered objects fell short of
+    // the view (things missing along an edge).
+    float pendingShare = 0;
+    int cellsBare = 0;
+    int spritesMissing = 0;
+    bool regionShort = false;
+    // Cache work done on the main thread this frame.
+    int blocksBuilt = 0;         // impostor blocks drawn
+    double buildMs = 0;          // ground cells and impostor blocks
+    double uploadMs = 0;         // page slices
+    std::size_t uploadBytes = 0; // page pixels uploaded
+    double gatherMs = 0;         // a region gathered at once (nothing gathered there yet)
+    int prefetchPending = 0;     // cells of the neighbouring levels and the ring still to build
     int regionElements = 0;
     int actorsDrawn = 0; // city life's people, animals, carts and ships
     double actorMs = 0;  // gathering, resolving and merging them
@@ -68,17 +84,24 @@ struct FrameStats {
     [[nodiscard]] std::size_t textureBytes() const {
         return cellBytes + targetBytes + overviewBytes + pages.bytes;
     }
+    // Something in view is not what it should be yet.
+    [[nodiscard]] bool popIn() const {
+        return cellsPending > 0 || spritesMissing > 0 || regionShort || lodHeld;
+    }
 };
 
-// Where a frame looks: the centre in world px, window px per world px, the window size, and the
-// destination of a flight in progress (gathered on the way).
+// Where a frame looks: the centre in world px, window px per world px, the window size; where
+// the view is heading while a zoom, a flight or a journey is under way (its destination is made
+// ready on the way); and the world px under the pointer, about which a turn of the wheel zooms
+// (the wider levels are built ahead around it).
 struct ViewSpec {
     Vec2 centre;
     float scale = 1;
     Vec2 screen{1280, 800};
-    bool flying = false;
+    bool heading = false;
     Vec2 arrival;
     float arrivalScale = 1;
+    Vec2 pointer;
 };
 
 // What a frame draws into, for the game's own scene drawn inside it.
@@ -131,6 +154,10 @@ public:
     void jumped(Vec2 centre);
     // Nothing is left to stream or build for the last frame's view.
     [[nodiscard]] bool settled() const;
+    // And nothing is being built or loaded ahead of need either: the steady state.
+    [[nodiscard]] bool idle() const {
+        return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0;
+    }
 
     [[nodiscard]] const FrameStats& stats() const { return stats_; }
     [[nodiscard]] const ThemeMixer& theme() const { return theme_; }
@@ -177,6 +204,13 @@ public:
     [[nodiscard]] const ActorLooks* actorLooks() const { return looks_.get(); }
     // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
     void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
+    // Of the people drawn over the impostors in the last frame (half and quarter scale), how
+    // many stand, their whole width, with more than `px` of something in front of them over
+    // their feet: worked out
+    // one by one from the map's items by the order's depth relation, not from the cover map
+    // that hid the others, so tests can hold the one against the other.
+    [[nodiscard]] int coarseActorsCovered(float px) const;
+    [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
     // The actors drawn in the last frame.
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);
@@ -199,20 +233,53 @@ private:
     Overview& overview();
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
     // Open sea beyond the grid, deep and fading into haze with the distance from its edge.
-    bool drawBeyond(TilePos p, const Xform& x, float now);
+    // (`haze`: the haze over it, drawn after all of the water.)
+    bool drawBeyond(TilePos p, const Xform& x, bool haze);
     bool drawElem(const Elem& e, const Xform& x, float now);
-    // `visible`: the order's positions drawn this frame (empty: look at all of them).
+    // `actors`: with the live people's shadows (the frame, not a cached picture). `visible`:
+    // the order's positions drawn this frame (empty: look at all of them).
     bool drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
-                     Target& onto, std::span<const std::uint32_t> visible = {});
-    void buildGround(CellKey key, int slot, double now);
-    // Impostors: their blocks are gathered on the worker, then drawn a few per frame.
-    void requestImpostor(CellKey key, int slot);
+                     Target& onto, bool actors, std::span<const std::uint32_t> visible = {});
+    // Cells (cells.hpp): each frame says what it wants, in order of need: the view's own
+    // cells, those of a destination it is heading for, a ring around the view leaning the way
+    // it moves, and the wider levels about the pointer. They are built within a time budget
+    // per frame; drawing only composites what exists.
+    static constexpr int kRankView = 0;
+    static constexpr int kRankArrival = 1;
+    static constexpr int kRankRing = 2;
+    static constexpr int kRankAhead = 3;
+    struct CellWant {
+        CellKey key;
+        int rank = 0;
+    };
+    void planCells(int level, const FRect& view, const ViewSpec& spec, const FRect& seen);
+    void wantCells(const FRect& rect, int level, int rank);
+    void buildCells();
+    // The step of its water's loop a cell shows `ahead` steps from now (0 for a still cell).
+    [[nodiscard]] int cellFrame(int level, int cx, int cy, int ahead);
+    // The slot to show for a cell: its own, or its last built step (-1: none).
+    [[nodiscard]] int shownSlot(CellKey k);
+    // Every cell of a level over `view` is built (the cache is not touched).
+    [[nodiscard]] bool cellsReady(int level, const FRect& view);
+    // Most of the native level over `view` is there: its ground cells and its objects.
+    [[nodiscard]] bool nativeMostlyReady(const FRect& view);
+    // Milliseconds of a frame that building cells of this rank may use.
+    [[nodiscard]] double buildLimit(int rank) const;
+    // What the cell cache may hold at this window size.
+    [[nodiscard]] static std::size_t cellBudget(Vec2 screen);
+    void buildGround(CellKey key, int slot);
+    // Impostors: their blocks are gathered on the worker, then drawn as time allows.
+    void requestImpostor(CellKey key, int slot, int rank);
     void drawBlock(CellKey key, int slot, int block, const Gathered& g);
     void progressImpostors();
-    // The native level's objects: re-gathered on the worker before the view leaves them.
-    // `needed`: drawn this frame, so something must exist even if it has to be gathered now.
-    void updateRegion(const FRect& view, bool needed);
-    void drawCells(int level, const FRect& view, const Xform& x, double now);
+    // The native level's objects: re-gathered on the worker before the view leaves them, and
+    // gathered ahead for a destination the view is heading to.
+    void updateRegion(const FRect& view);
+    // Takes over a finished gather that covers `view`.
+    void adoptRegion(const FRect& view);
+    void gatherAhead(const FRect& view);
+    [[nodiscard]] static TileRect regionAround(const TileRect& need, float k);
+    void drawCells(int level, const FRect& view, const Xform& x);
     void drawOverview(const Xform& x);
     void drawBackdrops(const FRect& view, const Xform& x, bool night);
     void wantSets(const FRect& view, bool prefetch);
@@ -247,6 +314,10 @@ private:
     int season_ = -1;
     int sea_ = -1;   // the terrain beyond the grid (the deep sea), -1: none
     FRect lastView_; // world px the last frame showed
+    Vec2 velocity_;  // world px the view moved since the frame before
+    bool jumped_ = true;
+    std::uint64_t animStep_ = 0; // the step of the water's loop this frame
+    int animPeriod_ = 1;         // steps in the water's loop
     // What glows, by map chunk (CSR), for the coarser levels: their impostors hold no glow, so
     // lit windows, lamps and fires are drawn live over them (the native level draws its own).
     struct GlowSource {
@@ -284,14 +355,20 @@ private:
     TileRect regionRect_;
     TileRect pendingRect_;
     bool regionPending_ = false;
+    Gathered ahead_; // gathered for a destination, taken over once the view is there
+    TileRect aheadRect_;
+    bool aheadPending_ = false;
+    bool aheadReady_ = false;
     Gathered block_;
     struct Building {
         CellKey key;
         int slot = 0;
         std::uint32_t done = 0; // blocks drawn
+        int rank = 0;
     };
     std::vector<Building> building_;
-    std::vector<std::pair<std::uint16_t, std::uint32_t>> shadows_; // page, element: by page
+    std::vector<CellWant> wants_;
+    std::vector<std::pair<std::uint16_t, std::uint32_t>> shadows_; // page, place in the order
     std::vector<CellKey> keys_;
     struct Composite {
         CellKey key;
@@ -332,6 +409,16 @@ private:
     std::vector<MergeActor> mergeActors_;
     std::vector<std::uint32_t> actorOf_; // merge entry -> actorDraw_/actorBuf_ index
     std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, back to front
+    mutable std::vector<std::pair<float, life::Handle>> actorHits_; // actorsAt's scratch
+    // How far an actor's art reaches from its feet, px: twice the largest in today's sets (112
+    // sideways, 152 up with goods, 51 down), and widened by anything larger that is drawn.
+    Reach actorReach_{256, 256, 320, 128};
+    struct Shower {
+        Vec2 centre; // tiles
+        float invR2 = 0;
+        float intensity = 0;
+    };
+    std::vector<Shower> showers_; // drawRain's scratch
     ActorMerge merge_;
     bool mergeIndexed_ = false;
 

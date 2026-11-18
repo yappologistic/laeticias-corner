@@ -279,6 +279,36 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
             }
         }
     }
+    // Districts with people to place and no ground their region's walkers reach: nobody of
+    // them ever appears (gulls over the open sea would need to fly).
+    for (std::size_t r = 0; r < w.data.regions.size(); ++r) {
+        const int pi = w.pathsOf[r];
+        const LifeRegion& reg = w.data.regions[r];
+        for (const District& d : reg.districts) {
+            if (d.populations.empty() || d.map < 0) continue;
+            bool ground = false;
+            for (const auto& [chunk, tiles] : d.chunks) {
+                const int cx = static_cast<int>(chunk) % m.chunksX();
+                const int cy = static_cast<int>(chunk) / m.chunksX();
+                for (int y = cy * kChunk; y < (cy + 1) * kChunk && !ground; ++y)
+                    for (int x = cx * kChunk; x < (cx + 1) * kChunk && !ground; ++x) {
+                        const TilePos t{x, y};
+                        ground = m.inBounds(t) && m.districtAt(t) == d.map && m.walkable(t) &&
+                                 pi >= 0 && w.paths[static_cast<std::size_t>(pi)].reachable(t);
+                    }
+                if (ground) break;
+            }
+            if (ground) continue;
+            const TilePos at =
+                d.chunks.empty()
+                    ? TilePos{0, 0}
+                    : TilePos{static_cast<int>(d.chunks.front().first) % m.chunksX() * kChunk,
+                              static_cast<int>(d.chunks.front().first) / m.chunksX() * kChunk};
+            out.push_back(std::format("{}: district {}: {} populations but no ground its walkers "
+                                      "reach, first chunk at grid ({}, {})",
+                                      reg.id, d.id, d.populations.size(), at.x, at.y));
+        }
+    }
     // Slot spots: a walker stands on the spot or beside it (a seat on its item is used from
     // the tile next to it), as resolve() does; a spot with neither is never used.
     std::vector<std::tuple<std::uint32_t, std::uint16_t, int, int>> seen;

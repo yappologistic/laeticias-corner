@@ -197,6 +197,39 @@ TEST_CASE("life: the walk data's faults are named with their tiles, and nobody i
     }
 }
 
+TEST_CASE("life: a region file with a field of the wrong type is named and left out") {
+    // Hours written as numbers: once an uncaught type error at start; now a problem line and
+    // that region without life, the rest compiled.
+    auto w = world::loadWorld(assetsDir(), homeCatalog());
+    REQUIRE(w.has_value());
+    const auto r = static_cast<std::size_t>(
+        std::ranges::find(w->regions, std::string("ostia"), &world::RegionFile::id) -
+        w->regions.begin());
+    REQUIRE(r < w->regions.size());
+    nlohmann::json& life = w->regions[r].life;
+    REQUIRE(life.contains("roles"));
+    life["roles"][0]["schedule"][0]["hours"] = nlohmann::json::array({6, 18});
+    const LifeData d = compileLife(*w);
+    CHECK(d.findRegion("ostia") < 0);
+    CHECK(d.findRegion("rome") >= 0);
+    CHECK(std::ranges::any_of(d.problems, [](const std::string& p) {
+        return p.starts_with("ostia: ") && p.find("left out") != std::string::npos;
+    }));
+    for (const Token& t : d.tokens) CHECK(t.region < static_cast<int>(d.regions.size()));
+}
+
+TEST_CASE("life: a trigger's with_group joins the event's cast") {
+    // Parsa's Carian visit brings the Carian delegation (once dropped by the compiler: L-102).
+    const LifeData& d = lifeWorld().data;
+    const LifeRegion& parsa = d.regions[static_cast<std::size_t>(d.findRegion("parsa"))];
+    const int e = parsa.findEvent("carian_visit");
+    REQUIRE(e >= 0);
+    const int g = parsa.findGroup("delegation_carians");
+    REQUIRE(g >= 0);
+    const auto& cast = parsa.events[static_cast<std::size_t>(e)].cast;
+    CHECK(std::ranges::any_of(cast, [&](const CastEntry& c) { return c.group == g; }));
+}
+
 TEST_CASE("life: courses are worldgen's staircases, tile for tile") {
     const int cols = lifeWorld().map().height();
     const auto grid = [&](int c, int r) { return TilePos{r, cols - 1 - c}; };

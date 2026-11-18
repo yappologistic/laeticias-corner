@@ -368,6 +368,7 @@ inline constexpr float kTravelHold = 0.4f;
 inline constexpr float kTravelFadeIn = 0.3f;
 inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
+inline constexpr double kStartupBudgetMs = 3000.0;  // and start-up to a playable frame in three
 inline constexpr std::size_t kCornerToastsKept = 4; // the corner's news kept while away
 inline constexpr int kSceneDrawCalls = 40;      // world-tech §4.4: the world's draws in a city view
 inline constexpr float kFollowHalfLife = 0.09f; // s: the follow camera's spring (quality bar)
@@ -375,6 +376,14 @@ inline constexpr float kFollowLift = 20.0f;     // px: it centres on the body, n
 // The bench's world cases: frames allowed for a view to stream in, and the pan's step (px).
 inline constexpr int kBenchSettleFrames = 600;
 inline constexpr float kBenchWorldPanPx = 30.0f;
+// The bench's player cases: zoom sweeps through every level with a short rest at each, pans of
+// this many frames, the map opened and closed. Once a view has settled nothing in it may arrive
+// late: no frame of a case may show a cell from a coarser level or leave a sprite out.
+inline constexpr int kBenchZoomSweeps = 3;
+inline constexpr int kBenchZoomRest = 20; // frames at a level before the next notch
+inline constexpr int kBenchPanFrames = 360;
+inline constexpr int kBenchMapFrames = 45;
+inline constexpr int kPopInFramesAllowed = 0;
 // Scripts point into a landmark's or a figure's sprite this far above its feet (px).
 inline constexpr float kLandmarkPointLift = 24.0f;
 inline constexpr float kFigurePointLift = 14.0f;
@@ -417,10 +426,13 @@ inline constexpr float kShownStop = 0.07f;     // tiles/s
 inline constexpr float kShownSmooth = 0.2f;    // seconds the drawn speed follows the body over
 inline constexpr float kProgressWindow = 1.0f; // seconds
 inline constexpr float kStillTiles = 0.15f;    // closer than this to a window's start: standing
-inline constexpr float kStallGiveUp = 4.0f;    // seconds stuck before the step is given up
-inline constexpr float kStallLeave = 12.0f;    // seconds stuck (steps given up) before it leaves
-inline constexpr float kTurnHold = 0.17f;      // radians past a sector's edge before a sprite turns
-inline constexpr float kRate0 = 0.85f;         // animation pace range, per actor
+inline constexpr int kBenchCrowdMin = 100;     // live actors a city bench case must hold to count
+inline constexpr float kTokenJump =
+    1.5f; // tiles a traveller moves in a step past which it fades in
+inline constexpr float kStallGiveUp = 4.0f; // seconds stuck before the step is given up
+inline constexpr float kStallLeave = 12.0f; // seconds stuck (steps given up) before it leaves
+inline constexpr float kTurnHold = 0.17f;   // radians past a sector's edge before a sprite turns
+inline constexpr float kRate0 = 0.85f;      // animation pace range, per actor
 inline constexpr float kRate1 = 1.15f;
 inline constexpr float kStationDwell = 6.0f;  // seconds a courier stops at a relay station
 inline constexpr float kFishingStay = 150.0f; // seconds a fishing boat works its ground
@@ -454,6 +466,8 @@ inline constexpr int kChainCap = 3;            // lifesim CAP: goods a slot or a
 inline constexpr int kPeriodicSearchDays = 64; // days simulated to find the chains' cycle
 inline constexpr float kLeaveTimeout = 30.0f;  // a folded-back actor still in view goes anyway
 inline constexpr double kChunkLinger = 2.0;    // seconds a chunk stays live after the area left
+// Seconds between reconciliations while the area slides within the chunks it touches.
+inline constexpr double kReconcileMoving = 0.25;
 } // namespace life
 
 } // namespace lc::tuning

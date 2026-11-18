@@ -39,17 +39,17 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/sea.ogg",
+     "file": "amb/athens/day.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
-     "file": "amb/world/sea.ogg",
+     "file": "amb/athens/night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
@@ -58,11 +58,42 @@
      "item": "athens.g_brazier",
      "file": "amb/world/brazier.ogg",
      "when": "lit"
+    }
+   ],
+   "zones": [
+    {
+     "rect": [
+      245,
+      704,
+      250,
+      723
+     ],
+     "file": "amb/athens/sea.ogg",
+     "gain": 0.8
     },
     {
-     "item": "athens.t_cypress",
-     "file": "amb/world/press.ogg",
-     "when": "worked"
+     "rect": [
+      245,
+      704,
+      250,
+      723
+     ],
+     "file": "amb/world/oars.ogg",
+     "gain": 0.5,
+     "hours": [
+      "06:30",
+      "17:30"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct"
+     ]
     }
    ]
   },
@@ -120,7 +151,28 @@
      7,
      null,
      null
-    ]
+    ],
+    "ambience": {
+     "beds": [
+      {
+       "file": "amb/athens/day_cool.ogg",
+       "hours": [
+        "05:30",
+        "19:30"
+       ]
+      },
+      {
+       "file": "amb/athens/night_winter.ogg",
+       "hours": [
+        "19:30",
+        "05:30"
+       ],
+       "months": [
+        "mar"
+       ]
+      }
+     ]
+    }
    },
    "summer": {
     "grade": [
@@ -167,7 +219,32 @@
      null,
      null,
      null
-    ]
+    ],
+    "ambience": {
+     "beds": [
+      {
+       "file": "amb/athens/day_cool.ogg",
+       "hours": [
+        "05:30",
+        "19:30"
+       ],
+       "months": [
+        "oct",
+        "nov"
+       ]
+      },
+      {
+       "file": "amb/athens/night_winter.ogg",
+       "hours": [
+        "19:30",
+        "05:30"
+       ],
+       "months": [
+        "nov"
+       ]
+      }
+     ]
+    }
    },
    "winter": {
     "grade": [
@@ -195,7 +272,25 @@
      6,
      5,
      5
-    ]
+    ],
+    "ambience": {
+     "beds": [
+      {
+       "file": "amb/athens/day_cool.ogg",
+       "hours": [
+        "05:30",
+        "19:30"
+       ]
+      },
+      {
+       "file": "amb/athens/night_winter.ogg",
+       "hours": [
+        "19:30",
+        "05:30"
+       ]
+      }
+     ]
+    }
    }
   },
   "sound": {
@@ -210,7 +305,8 @@
     "sunrise": "sfx/athens/sting_sunrise.wav",
     "nightfall": "sfx/athens/sting_nightfall.wav",
     "storm_clear": "sfx/athens/sting_storm_clear.wav",
-    "rainbow": "sfx/athens/sting_rainbow.wav"
+    "rainbow": "sfx/athens/sting_rainbow.wav",
+    "season": "sfx/athens/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -266,12 +362,14 @@
    "calls": [
     {
      "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
-     ],
      "hours": [
       "06:00",
       "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
      ]
     },
     {
@@ -279,6 +377,64 @@
      "hours": [
       "07:00",
       "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_call.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
      ]
     }
    ],
@@ -291,6 +447,36 @@
      "sfx/world/crow_1.wav",
      "sfx/world/crow_2.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
    }
   },
   "look": {
@@ -2387,16 +2573,20 @@
      ]
     }
    ],
-   "sfx": "sfx/athens/aulos.wav",
+   "sfx": "sfx/athens/tympanon.wav",
    "string": "rural_dionysia",
    "zone": "town",
    "ambience": {
-    "file": "amb/world/crowd_greek_1.ogg",
-    "gain": 0.8
+    "file": "amb/athens/komos.ogg",
+    "gain": 0.85
    },
    "sounds": [
     {
      "file": "sfx/world/applause.wav",
+     "at": "end"
+    },
+    {
+     "file": "sfx/athens/aulos.wav",
      "at": "end"
     }
    ]
@@ -2515,7 +2705,7 @@
    "show": "emitter",
    "steps": [],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/swifts.wav"
+   "sfx": "sfx/world/cicada_start.wav"
   },
   {
    "id": "turn_autumn_vintage_begins",
@@ -2538,7 +2728,7 @@
    "steps": [],
    "string": "season_turn.autumn",
    "ambience": {
-    "file": "amb/world/press.ogg",
+    "file": "amb/world/vintage.ogg",
     "gain": 0.6
    }
   },

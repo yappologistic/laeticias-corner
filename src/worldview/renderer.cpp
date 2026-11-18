@@ -2,6 +2,7 @@
 
 #include "core/rng.hpp"
 #include "core/tuning.hpp"
+#include "platform/process.hpp"
 #include "render/draw.hpp"
 #include "worldview/tuning.hpp"
 
@@ -13,8 +14,22 @@ namespace lc::worldview {
 namespace {
 
 constexpr SDL_FColor kWhite{1, 1, 1, 1};
+
+// Adds the time a scope takes to `ms` (cache work on the main thread, for the profiler).
+class Timed {
+public:
+    explicit Timed(double& ms) : ms_(ms), t0_(SDL_GetPerformanceCounter()) {}
+    ~Timed() { ms_ += msBetween(t0_, SDL_GetPerformanceCounter()); }
+    Timed(const Timed&) = delete;
+    Timed& operator=(const Timed&) = delete;
+
+private:
+    double& ms_;
+    Uint64 t0_;
+};
 constexpr int kMaxLevel = 15;
 constexpr std::uint64_t kRegionTag = 1ULL << 63; // block tags are cell keys shifted by two
+constexpr std::uint64_t kAheadTag = kRegionTag | 1;
 
 SDL_FColor times(SDL_FColor c, float k) {
     return {c.r * k, c.g * k, c.b * k, c.a};
@@ -38,11 +53,20 @@ int sameMask(const world::WorldMap& m, TilePos p, int t) {
     return mask;
 }
 
+// Calls f for the tiles of `r` in painter's order (diagonal by diagonal) whose top vertex lies
+// between world x `x0` and `x1`: a screen rectangle is a diamond in the grid, and its bounding
+// tile rectangle holds twice the tiles that can draw into it.
 template <typename F>
-void diagonals(TileRect r, F&& f) {
-    for (int s = r.x0 + r.y0; s <= r.x1 + r.y1 - 2; ++s)
-        for (int tx = std::max(r.x0, s - (r.y1 - 1)); tx <= std::min(r.x1 - 1, s - r.y0); ++tx)
+void diagonals(TileRect r, float halfW, float x0, float x1, F&& f) {
+    for (int s = r.x0 + r.y0; s <= r.x1 + r.y1 - 2; ++s) {
+        // A tile's top vertex is at x = (tx - ty) * halfW = (2 tx - s) * halfW.
+        const auto fs = static_cast<float>(s);
+        const int lo = static_cast<int>(std::floor((fs + x0 / halfW) * 0.5f));
+        const int hi = static_cast<int>(std::ceil((fs + x1 / halfW) * 0.5f));
+        for (int tx = std::max({r.x0, s - (r.y1 - 1), lo});
+             tx <= std::min({r.x1 - 1, s - r.y0, hi}); ++tx)
             f(TilePos{tx, s - tx});
+    }
 }
 
 // The region of the tile under a world px point (on the ground plane), -1 off the grid.
@@ -66,7 +90,7 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
                      const std::vector<world::FigurePlace>& figures)
     : renderer_(renderer), world_(world), map_(*world.map), iso_(map_.content().home().iso()),
       lvl_(map_.content().tileLevel()), async_(async), hole_(hole), homeAtlas_(home),
-      cells_(renderer, tuning::kCellBudget), batch_(renderer), theme_([&] {
+      cells_(renderer, tuning::kCellBudgetMin, async), batch_(renderer), theme_([&] {
           std::vector<world::Theme> themes;
           themes.reserve(world.regions.size());
           for (const world::RegionFile& r : world.regions) themes.push_back(r.theme);
@@ -127,7 +151,13 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
         if (info.water && (sea_ < 0 || info.id.find("sea") != std::string::npos))
             sea_ = static_cast<int>(t);
         const TerrainLook& l = sprites_->terrain(static_cast<int>(t));
-        if (l.animated() || (!l.foam[0].empty() && l.fps > 0)) animFps_ = std::max(animFps_, l.fps);
+        if (l.animated() || (!l.foam[0].empty() && l.fps > 0)) {
+            animFps_ = std::max(animFps_, l.fps);
+            // A cell with water is cached once per step of the longest loop in it.
+            std::size_t frames = l.animated() ? l.overlay[0].f.size() : 1;
+            for (const Frames& f : l.foam) frames = std::max(frames, f.f.size());
+            animPeriod_ = std::clamp(static_cast<int>(frames), animPeriod_, tuning::kCellPeriodMax);
+        }
     }
     // Backdrops by region: the first strip of the region's set (world-tech §1.11).
     backdrops_.resize(world.file.regions.size());
@@ -293,14 +323,22 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     if (tiles.empty()) return true;
     const float lift = r.up - static_cast<float>(kMaxLevel * lvl_);
     bool ok = true;
-    diagonals(tiles, [&](TilePos p) {
+    // The sea beyond the grid first, in two passes (the water, then its haze): flat and under
+    // everything, and each pass one texture instead of two draws per tile.
+    const float x0 = px.x0 - r.right;
+    const float x1 = px.x1 + r.left;
+    if (!map_.bounds().contains(tiles))
+        for (const bool haze : {false, true})
+            diagonals(tiles, iso_.hw, x0, x1, [&](TilePos p) {
+                if (map_.inBounds(p)) return;
+                const Vec2 w = iso_.toWorld(p);
+                if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
+                    w.y - iso_.tileH() <= px.y1)
+                    ok &= drawBeyond(p, x, haze);
+            });
+    diagonals(tiles, iso_.hw, x0, x1, [&](TilePos p) {
+        if (!map_.inBounds(p)) return;
         const Vec2 w = iso_.toWorld(p);
-        if (!map_.inBounds(p)) {
-            if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
-                w.y - iso_.tileH() <= px.y1)
-                ok &= drawBeyond(p, x, now);
-            return;
-        }
         // The game's scene draws the hole; its rim tiles are drawn here too, under the scene's,
         // so the soft edges of its tile art meet the world's ground, not the sky.
         const TileRect& h = hole_.tiles;
@@ -313,29 +351,26 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     return ok;
 }
 
-bool WorldView::drawBeyond(TilePos p, const Xform& x, float now) {
+bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze) {
     const Vec2 a = iso_.toWorld(p);
+    if (!haze) {
+        if (sea_ < 0) return true;
+        const float tint = 1.0f - tuning::kWaterDepthTint * 3.0f;
+        const TerrainLook& look = sprites_->terrain(sea_);
+        const std::vector<SpriteRef>& base = look.baseIn(season_);
+        return base.empty()
+                   ? put(sprites_->diamond(), a, x, times(look.flat, tint), SDL_BLENDMODE_BLEND)
+                   : put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, {tint, tint, tint, 1},
+                         SDL_BLENDMODE_BLEND);
+    }
     // Tiles beyond the edge, along the grid's axes (outside a corner, the larger of the two).
     const int dx = p.x < 0 ? -p.x : std::max(0, p.x - map_.width() + 1);
     const int dy = p.y < 0 ? -p.y : std::max(0, p.y - map_.height() + 1);
     const float k = std::min(1.0f, static_cast<float>(std::max(dx, dy)) / tuning::kHorizonTiles);
-    bool ok = true;
-    const float tint = 1.0f - tuning::kWaterDepthTint * 3.0f;
-    if (sea_ >= 0) {
-        const TerrainLook& look = sprites_->terrain(sea_);
-        const std::vector<SpriteRef>& base = look.baseIn(season_);
-        if (base.empty())
-            ok &= put(sprites_->diamond(), a, x, times(look.flat, tint), SDL_BLENDMODE_BLEND);
-        else
-            ok &= put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, {tint, tint, tint, 1},
-                      SDL_BLENDMODE_BLEND);
-    }
     const auto& h = tuning::kHorizonHaze;
     const float alpha = sea_ >= 0 ? k * tuning::kHorizonHazeMax : 1.0f;
-    if (alpha > 0.0f)
-        ok &= put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
-    (void)now;
-    return ok;
+    return alpha <= 0.0f ||
+           put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
 }
 
 bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
@@ -350,44 +385,49 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
 }
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
-                            Target& onto, std::span<const std::uint32_t> visible) {
+                            Target& onto, bool actors, std::span<const std::uint32_t> visible) {
     // Shadow sprites saturate in their own layer (their alpha was scaled to a peak of 1), which
     // is then laid over the ground once at the art's opacity: overlaps never double-darken.
+    // The layer's coverage does not depend on order: drawn page by page, one draw each.
+    shadows_.clear();
+    // An element's screen box holds its shadow: what is not drawn casts none in view.
+    const std::size_t n = visible.empty() ? g.order.size() : visible.size();
+    const auto at = [&](std::size_t j) { return g.order[visible.empty() ? j : visible[j]]; };
+    for (std::size_t j = 0; j < n; ++j) {
+        const Elem& e = g.elems[at(j)];
+        if (!e.first || e.look == nullptr || !e.look->shadow) continue;
+        const SpriteRef& s = *e.look->shadow;
+        const FRect box{e.anchor.x - s.ox, e.anchor.y - s.oy, e.anchor.x - s.ox + s.w,
+                        e.anchor.y - s.oy + s.h};
+        if (box.overlaps(clip)) shadows_.emplace_back(s.page, static_cast<std::uint32_t>(j));
+    }
+    // Open sea and bare land cast nothing: no layer is cleared, bound and laid over for them
+    // (half the cost of an impostor block that has no shadow in it).
+    if (shadows_.empty() && !(actors && !actorOf_.empty())) return true;
     bool ok = true;
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, layer.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: shadow layer: %s", SDL_GetError());
-    // The layer's coverage does not depend on order: drawn page by page, one draw each.
-    shadows_.clear();
-    // An element's screen box holds its shadow: what is not drawn casts none in view.
-    const std::size_t n = visible.empty() ? g.order.size() : visible.size();
-    for (std::size_t j = 0; j < n; ++j) {
-        const std::uint32_t i = g.order[visible.empty() ? j : visible[j]];
-        const Elem& e = g.elems[i];
-        if (!e.first || e.look == nullptr || !e.look->shadow) continue;
-        const SpriteRef& s = *e.look->shadow;
-        const FRect box{e.anchor.x - s.ox, e.anchor.y - s.oy, e.anchor.x - s.ox + s.w,
-                        e.anchor.y - s.oy + s.h};
-        if (box.overlaps(clip)) shadows_.emplace_back(s.page, i);
+    // By page, then in the order's sequence: a total order, so the plain sort (which, unlike
+    // the stable one, allocates nothing) gives the same result every time.
+    std::ranges::sort(shadows_);
+    for (const auto& [page, j] : shadows_) {
+        const Elem& e = g.elems[at(j)];
+        if (const std::optional<SpriteRef>& sh = e.look->shadow)
+            ok &= put(*sh, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
     }
-    std::ranges::stable_sort(shadows_, {}, &std::pair<std::uint16_t, std::uint32_t>::first);
-    for (const auto& [page, i] : shadows_)
-        if (const std::optional<SpriteRef>& sh = g.elems[i].look->shadow)
-            ok &= put(*sh, g.elems[i].anchor, x, kWhite, SDL_BLENDMODE_BLEND);
-    drawActorShadows(x);
-    const bool any = !shadows_.empty() || !actorDraw_.empty();
+    // People's shadows belong to the frame they are drawn in, never to a cached picture.
+    if (actors) drawActorShadows(x);
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, onto.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
-    if (any) {
-        const float w = static_cast<float>(layer.w);
-        const float h = static_cast<float>(layer.h);
-        batch_.use(layer.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);
-        const float k = shadowOpacity();
-        batch_.quad(SDL_FRect{0, 0, w, h}, {0, 0, 1, 1}, {k, k, k, k});
-        batch_.flush();
-    }
+    const float w = static_cast<float>(layer.w);
+    const float h = static_cast<float>(layer.h);
+    batch_.use(layer.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);
+    const float k = shadowOpacity();
+    batch_.quad(SDL_FRect{0, 0, w, h}, {0, 0, 1, 1}, {k, k, k, k});
+    batch_.flush();
     return ok;
 }
 
@@ -397,8 +437,9 @@ float WorldView::shadowOpacity() const {
     return home >= 0 ? (home + sets) * 0.5f : sets;
 }
 
-void WorldView::buildGround(CellKey key, int si, double now) {
-    // The ground straight into the slot, at native resolution.
+void WorldView::buildGround(CellKey key, int si) {
+    // The ground straight into the slot, at native resolution, at this step of its water's loop.
+    const Timed timed(stats_.buildMs);
     const int before = batch_.drawCalls();
     CellSlot& slot = cells_.slot(si);
     const FRect cell = cellRect(key);
@@ -415,13 +456,16 @@ void WorldView::buildGround(CellKey key, int si, double now) {
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) ||
         !SDL_RenderFillRect(renderer_, &fill))
         SDL_Log("worldview: cell: %s", SDL_GetError());
-    slot.complete = drawTiles(cell, {{cell.x0 - fx, cell.y0 - fy}, 1.0f, SDL_SCALEMODE_NEAREST},
-                              static_cast<float>(now), &animated);
+    // Half a step in, so rounding never lands on the step before.
+    const float at = animFps_ > 0 ? (static_cast<float>(key.frame) + 0.5f) / animFps_ : 0.0f;
+    slot.complete =
+        drawTiles(cell, {{cell.x0 - fx, cell.y0 - fy}, 1.0f, SDL_SCALEMODE_NEAREST}, at, &animated);
     batch_.flush();
-    if (!SDL_SetRenderClipRect(renderer_, nullptr)) SDL_Log("worldview: %s", SDL_GetError());
-    slot.animated = animated;
+    // Flushed here so the driver's share of the build is timed with it, not with what follows.
+    if (!SDL_SetRenderClipRect(renderer_, nullptr) || !SDL_FlushRenderer(renderer_))
+        SDL_Log("worldview: %s", SDL_GetError());
+    slot.period = animated ? static_cast<std::uint8_t>(animPeriod_) : 1;
     slot.generation = pages_->generation();
-    slot.anim = animFps_ > 0 ? static_cast<std::uint64_t>(now * animFps_) : 0;
     slot.ready = true;
     ++stats_.cellsBuilt;
     stats_.buildDrawCalls += batch_.drawCalls() - before;
@@ -449,20 +493,21 @@ std::uint64_t blockTag(CellKey key, int block) {
 
 } // namespace
 
-void WorldView::requestImpostor(CellKey key, int si) {
+void WorldView::requestImpostor(CellKey key, int si, int rank) {
     const int n = blocksPerSide(key.level);
     for (int b = 0; b < n * n; ++b) {
         const FRect r = blockRect(key, b);
-        prep_->request({blockTag(key, b), gatherTiles(r, sprites_->itemSpan(), iso_), r});
+        prep_->request({blockTag(key, b), gatherTiles(r, sprites_->itemSpan(), iso_), r}, false);
     }
     cells_.slot(si).complete = true;
-    building_.push_back({key, si, 0});
+    building_.push_back({key, si, 0, rank});
 }
 
 void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
     // The block at full resolution with everything static, then halved with filtering into its
     // share of the slot (each halving averages 2 x 2 texels): 1024 -> 512 for level 1, and
     // -> 512 -> 256 for level 2.
+    const Timed timed(stats_.buildMs);
     const int before = batch_.drawCalls();
     batch_.flush();
     const int size0 = tuning::kImpostorBlock;
@@ -476,7 +521,7 @@ void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: impostor: %s", SDL_GetError());
     bool complete = drawTiles(r, x, 0, nullptr);
-    complete &= drawShadows(g, r, x, scratchShadow_, scratch_);
+    complete &= drawShadows(g, r, x, scratchShadow_, scratch_, false);
     for (const std::uint32_t i : g.order) complete &= drawElem(g.elems[i], x, 0);
     batch_.flush();
     const int n = blocksPerSide(key.level);
@@ -509,12 +554,26 @@ void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
                  static_cast<float>(size) / static_cast<float>(src->h)},
                 kWhite);
     batch_.flush();
+    if (!SDL_FlushRenderer(renderer_)) SDL_Log("worldview: %s", SDL_GetError());
     slot.complete = slot.complete && complete;
+    ++stats_.blocksBuilt;
     stats_.buildDrawCalls += batch_.drawCalls() - before;
 }
 
+double WorldView::buildLimit(int rank) const {
+    if (!async_) return 1e9;
+    // A moving view needs its ring soon: it builds at the pace of what is needed.
+    const bool moving = velocity_.x != 0 || velocity_.y != 0;
+    return rank <= kRankArrival || (rank == kRankRing && moving) ? tuning::kBuildMsNeeded
+                                                                 : tuning::kBuildMsAhead;
+}
+
 void WorldView::progressImpostors() {
-    int budget = async_ ? tuning::kImpostorBlocksPerFrame : 1 << 30;
+    // Blocks whose gathers are back are drawn, the cells the view waits for first, while the
+    // frame's build time lasts.
+    std::ranges::sort(building_, [](const Building& a, const Building& b) {
+        return a.rank != b.rank ? a.rank < b.rank : packCell(a.key) < packCell(b.key);
+    });
     for (auto it = building_.begin(); it != building_.end();) {
         Building& b = *it;
         const int n = blocksPerSide(b.key.level);
@@ -524,12 +583,10 @@ void WorldView::progressImpostors() {
         for (int k = 0; k < n * n; ++k) {
             const std::uint32_t bit = 1u << k;
             if ((b.done & bit) != 0) continue;
-            if (alive && budget <= 0) break;
+            if (alive && stats_.buildMs >= buildLimit(b.rank)) break;
             if (!prep_->take(blockTag(b.key, k), block_)) continue;
             b.done |= bit;
-            if (!alive) continue;
-            drawBlock(b.key, b.slot, k, block_);
-            --budget;
+            if (alive) drawBlock(b.key, b.slot, k, block_);
         }
         if (b.done != all) {
             ++it;
@@ -543,82 +600,217 @@ void WorldView::progressImpostors() {
         }
         it = building_.erase(it);
     }
+    // What is built ahead waits its turn anew each frame.
+    for (Building& b : building_) b.rank = kRankAhead;
 }
 
-void WorldView::drawCells(int level, const FRect& view, const Xform& x, double now) {
-    const std::uint64_t anim = animFps_ > 0 ? static_cast<std::uint64_t>(now * animFps_) : 0;
+int WorldView::cellFrame(int level, int cx, int cy, int ahead) {
+    // A cell's first build (step 0) tells whether anything in it moves.
+    const int si = cells_.find(packCell({level, cx, cy, 0}));
+    if (si < 0 || !cells_.slot(si).ready) return 0;
+    const int period = cells_.slot(si).period;
+    return period > 1 ? static_cast<int>((animStep_ + static_cast<std::uint64_t>(ahead)) %
+                                         static_cast<std::uint64_t>(period))
+                      : 0;
+}
+
+void WorldView::wantCells(const FRect& rect, int level, int rank) {
+    forEachCell(rect, level, [&](CellKey k) {
+        // Out of view any step of a cell's water will do (its first exists once it is built):
+        // only what is seen is kept step by step, so the loop costs slots where it shows.
+        if (rank != kRankView) {
+            wants_.push_back({k, rank});
+            return;
+        }
+        k.frame = cellFrame(level, k.cx, k.cy, 0);
+        wants_.push_back({k, rank});
+        // The next step is built before its turn comes; the rest of the loop is kept while
+        // there is room, so a loop that fits is built once.
+        const int next = cellFrame(level, k.cx, k.cy, 1);
+        if (next == k.frame) return;
+        wants_.push_back({{k.level, k.cx, k.cy, next}, kRankRing});
+        for (int f = 0; f < animPeriod_; ++f)
+            if (f != k.frame && f != next) wants_.push_back({{k.level, k.cx, k.cy, f}, kRankAhead});
+    });
+}
+
+void WorldView::planCells(int level, const FRect& view, const ViewSpec& spec, const FRect& seen) {
+    wants_.clear();
+    wantCells(view, level, kRankView);
+    // Everything else is work ahead of need: synchronous runs build exactly what they show.
+    if (!async_) return;
+    const Vec2 screen = spec.screen;
+    if (spec.heading && lodFor(spec.arrivalScale) != Lod::Overview) {
+        // A zoom or a journey under way: its destination is built while it is on its way.
+        const float k = 0.5f / spec.arrivalScale;
+        const Lod to = lodFor(spec.arrivalScale);
+        wantCells({spec.arrival.x - screen.x * k, spec.arrival.y - screen.y * k,
+                   spec.arrival.x + screen.x * k, spec.arrival.y + screen.y * k},
+                  to == Lod::Native ? 0 : (to == Lod::Half ? 1 : 2), kRankArrival);
+    }
+    // The ring around the view, leaning the way the view moves.
+    const auto cell = static_cast<float>(cellPx(level));
+    const float ring = cell * static_cast<float>(tuning::kCellRing);
+    const float reach = cell * static_cast<float>(tuning::kCellAheadMax);
+    const Vec2 lead{std::clamp(velocity_.x * tuning::kCellAheadFrames, -reach, reach),
+                    std::clamp(velocity_.y * tuning::kCellAheadFrames, -reach, reach)};
+    wantCells({view.x0 - ring + std::min(0.0f, lead.x), view.y0 - ring + std::min(0.0f, lead.y),
+               view.x1 + ring + std::max(0.0f, lead.x), view.y1 + ring + std::max(0.0f, lead.y)},
+              level, kRankRing);
+    // The wider levels, where a turn of the wheel about the pointer would show them: zooming
+    // out finds its cells already there.
+    for (int l = level + 1; l <= 2; ++l)
+        wantCells(zoomedAbout(seen, spec.pointer, spec.scale, 1.0f / static_cast<float>(1 << l)), l,
+                  kRankAhead);
+}
+
+void WorldView::buildCells() {
     const auto stale = [&](int si) {
         const CellSlot& s = cells_.slot(si);
-        return (!s.complete && s.generation != pages_->generation()) ||
-               (level == 0 && s.animated && s.anim != anim);
+        return !s.complete && s.generation != pages_->generation();
     };
-    const auto building = [&](CellKey k) {
-        return std::ranges::any_of(building_, [&](const Building& b) { return b.key == k; });
-    };
-    int budget = async_ ? tuning::kCellBuildsPerFrame : 1 << 30;
-    // Brings a cell up to date if the budget allows; false when it is not drawn yet.
-    const auto build = [&](CellKey k) {
-        const std::uint64_t key = packCell(k);
-        int si = cells_.find(key);
-        if (si >= 0 && !stale(si)) return cells_.slot(si).ready;
-        if (level == 0) {
-            if (budget <= 0) return false;
-            if (si < 0) si = cells_.acquire(key);
-            if (si < 0) return false;
-            --budget;
-            buildGround(k, si, now);
-            return true;
+    progressImpostors();
+    // Each cell once, at its most urgent rank, in order of need: the view, a destination, the
+    // ring, the wider levels.
+    std::ranges::sort(wants_, [](const CellWant& a, const CellWant& b) {
+        const std::uint64_t ka = packCell(a.key);
+        const std::uint64_t kb = packCell(b.key);
+        return ka != kb ? ka < kb : a.rank < b.rank;
+    });
+    const auto dup =
+        std::ranges::unique(wants_, {}, [](const CellWant& w) { return packCell(w.key); });
+    wants_.erase(dup.begin(), dup.end());
+    std::ranges::sort(wants_, [](const CellWant& a, const CellWant& b) {
+        return a.rank != b.rank ? a.rank < b.rank : packCell(a.key) < packCell(b.key);
+    });
+    // No more is wanted than the cache holds (impostors filling in keep their slots too): what
+    // is left out is the least urgent, and nothing wanted is ever pushed out by something else
+    // wanted, so the cache never churns.
+    const std::size_t room =
+        cells_.capacity() > building_.size() ? cells_.capacity() - building_.size() : 0;
+    if (wants_.size() > room) {
+        stats_.prefetchPending += static_cast<int>(wants_.size() - room);
+        wants_.resize(room);
+    }
+    for (const CellWant& w : wants_) (void)cells_.find(packCell(w.key));
+    for (const CellWant& w : wants_) {
+        const std::uint64_t key = packCell(w.key);
+        int si = cells_.peek(key);
+        const auto inFlight = std::ranges::find(building_, w.key, &Building::key);
+        if (inFlight != building_.end()) {
+            inFlight->rank = std::min(inFlight->rank, w.rank);
+            if (w.rank != kRankView) ++stats_.prefetchPending;
+            continue;
         }
-        if (building(k)) return si >= 0 && cells_.slot(si).ready;
+        if (si >= 0 && cells_.slot(si).ready && !stale(si)) continue;
+        if (w.rank != kRankView) ++stats_.prefetchPending;
+        // What is built ahead leaves alone what the last frame showed (a stand-in, a step of
+        // the water's loop).
+        const std::uint64_t spare = w.rank == kRankView ? 0 : 1;
+        if (w.key.level == 0) {
+            if (stats_.buildMs >= buildLimit(w.rank)) continue;
+            if (si < 0) si = cells_.acquire(key, spare);
+            if (si < 0) continue;
+            buildGround(w.key, si);
+            if (w.rank != kRankView) --stats_.prefetchPending;
+            continue;
+        }
         if (async_ && static_cast<int>(building_.size()) >= tuning::kImpostorCellsInFlight)
-            return si >= 0 && cells_.slot(si).ready;
+            continue;
         if (si < 0) {
-            si = cells_.acquire(key);
-            if (si < 0) return false;
+            si = cells_.acquire(key, spare);
+            if (si < 0) continue;
             cells_.slot(si).ready = false;
         }
-        requestImpostor(k, si);
-        return cells_.slot(si).ready;
+        requestImpostor(w.key, si, w.rank);
+    }
+    // Synchronous gathers are back at once: draw them now.
+    if (!async_) progressImpostors();
+}
+
+int WorldView::shownSlot(CellKey k) {
+    int si = cells_.find(packCell(k));
+    if (si >= 0 && cells_.slot(si).ready) return si;
+    // Moving water whose step is not built yet keeps its last one: the nearest step before.
+    const int first = cells_.find(packCell({k.level, k.cx, k.cy, 0}));
+    if (first < 0 || !cells_.slot(first).ready) return -1;
+    const int period = cells_.slot(first).period;
+    for (int back = 1; back < period; ++back) {
+        si = cells_.find(packCell({k.level, k.cx, k.cy, (k.frame + period - back) % period}));
+        if (si >= 0 && cells_.slot(si).ready) return si;
+    }
+    return first;
+}
+
+bool WorldView::nativeMostlyReady(const FRect& view) {
+    int cells = 0;
+    int built = 0;
+    forEachCell(view, 0, [&](CellKey k) {
+        const int si = cells_.peek(packCell(k));
+        ++cells;
+        built += si >= 0 && cells_.slot(si).ready ? 1 : 0;
+    });
+    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds());
+    const TileRect have = need.clipped(regionRect_);
+    const auto area = [](const TileRect& r) {
+        return r.empty() ? 0.0f : static_cast<float>(r.x1 - r.x0) * static_cast<float>(r.y1 - r.y0);
     };
-    if (level > 0) progressImpostors();
+    return static_cast<float>(built) >= tuning::kNativeReadyShare * static_cast<float>(cells) &&
+           area(have) >= tuning::kNativeReadyShare * area(need);
+}
+
+bool WorldView::cellsReady(int level, const FRect& view) {
+    bool ready = true;
+    forEachCell(view, level, [&](CellKey k) {
+        const int si = cells_.peek(packCell(k));
+        ready = ready && si >= 0 && cells_.slot(si).ready;
+    });
+    return ready;
+}
+
+void WorldView::drawCells(int level, const FRect& view, const Xform& x) {
     keys_.clear();
-    forEachCell(view, level, [&](CellKey k) { keys_.push_back(k); });
-    for (const CellKey& k : keys_) (void)build(k);
-    // Spare budget prepares the ring around the view.
-    if (async_) {
-        const auto s = static_cast<float>(cellPx(level) * tuning::kCellPrefetch);
-        forEachCell({view.x0 - s, view.y0 - s, view.x1 + s, view.y1 + s}, level, [&](CellKey k) {
-            if (cells_.find(packCell(k)) < 0) (void)build(k);
-        });
-    }
-    if (level > 0 && !async_) progressImpostors();
-    for (const CellKey& k : keys_) {
-        const int si = cells_.find(packCell(k));
-        if (si < 0 || !cells_.slot(si).ready) ++stats_.cellsPending;
-    }
+    forEachCell(view, level, [&](CellKey k) {
+        k.frame = cellFrame(level, k.cx, k.cy, 0);
+        keys_.push_back(k);
+    });
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
-    // Cells not built yet show the overview underneath, or their coarser level.
-    if (stats_.cellsPending > 0) drawOverview(x);
-    // Cells never overlap, so they go page by page: one draw per cache page.
+    // Cells never overlap, so they go page by page: one draw per cache page. A cell not built
+    // yet shows its coarser level, or the overview underneath.
     const Vec2 side = CellCache::pageSize();
     composite_.clear();
+    float pendingArea = 0;
     for (const CellKey& k : keys_) {
-        int si = -1;
+        int si = shownSlot(k);
         CellKey from = k;
-        for (int l = level; l <= 2 && si < 0; ++l) {
-            from = {l, k.cx >> (l - level), k.cy >> (l - level)};
+        const bool pending = si < 0;
+        for (int l = level + 1; l <= 2 && si < 0; ++l) {
+            from = {l, k.cx >> (l - level), k.cy >> (l - level), 0};
             si = cells_.find(packCell(from));
             if (si >= 0 && !cells_.slot(si).ready) si = -1;
         }
         if (si >= 0) composite_.push_back({k, from, si});
+        if (!pending) continue;
+        // Only what the window shows counts as seen (the target is a few px larger).
+        const FRect r = cellRect(k);
+        const float w = std::min(r.x1, lastView_.x1) - std::max(r.x0, lastView_.x0);
+        const float h = std::min(r.y1, lastView_.y1) - std::max(r.y0, lastView_.y0);
+        if (w <= 0 || h <= 0) continue;
+        ++stats_.cellsPending;
+        pendingArea += w * h;
+        if (si < 0) ++stats_.cellsBare;
     }
-    std::ranges::stable_sort(composite_, [&](const Composite& a, const Composite& b) {
+    stats_.pendingShare =
+        pendingArea / ((lastView_.x1 - lastView_.x0) * (lastView_.y1 - lastView_.y0));
+    if (stats_.cellsBare > 0) drawOverview(x);
+    std::ranges::sort(composite_, [&](const Composite& a, const Composite& b) {
         const int sa = a.from.level - a.key.level;
         const int sb = b.from.level - b.key.level;
         const int pa = cells_.slot(a.slot).page;
         const int pb = cells_.slot(b.slot).page;
-        return pa != pb ? pa < pb : sa < sb;
+        if (pa != pb) return pa < pb;
+        return sa != sb ? sa < sb : packCell(a.key) < packCell(b.key);
     });
     for (const Composite& c : composite_) {
         const CellSlot& s = cells_.slot(c.slot);
@@ -815,6 +1007,27 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
                  std::max(tiles.y1, r.y1)};
     }
     if (tiles.x0 >= tiles.x1 || tiles.y0 >= tiles.y1) return;
+    // The showers that reach the tiles looked at, once: each tile then asks only them, and
+    // without a square root (intensity x (1 - d^2 / r^2), as WeatherField::rainAt gives).
+    showers_.clear();
+    for (const WeatherCell& c : weather_->cells()) {
+        if (!c.rain || c.centre.x + c.radius < static_cast<float>(tiles.x0) ||
+            c.centre.x - c.radius > static_cast<float>(tiles.x1) ||
+            c.centre.y + c.radius < static_cast<float>(tiles.y0) ||
+            c.centre.y - c.radius > static_cast<float>(tiles.y1))
+            continue;
+        showers_.push_back({c.centre, 1.0f / (c.radius * c.radius), c.intensity()});
+    }
+    const auto rainAt = [&](Vec2 t) {
+        float r = 0;
+        for (const Shower& sh : showers_) {
+            const float dx = t.x - sh.centre.x;
+            const float dy = t.y - sh.centre.y;
+            const float d2 = (dx * dx + dy * dy) * sh.invR2;
+            if (d2 < 1) r = std::max(r, sh.intensity * (1.0f - d2));
+        }
+        return std::min(1.0f, r);
+    };
     const float fall = snow ? tuning::kSnowFall : tuning::kRainFall;
     const float drop = iso_.tileH() * 6.0f; // px a streak falls before it starts again
     // Farther out, every other tile each way: as many streaks on screen at any zoom.
@@ -829,7 +1042,7 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
                 w.y > view.y1 + margin)
                 continue;
             if (hole_.tiles.contains(TilePos{tx, y})) continue;
-            const float r = weather_->rainAt(c);
+            const float r = rainAt(c);
             if (r < ::lc::tuning::kRainThreshold) continue;
             for (int k = 0; k < tuning::kRainStreaksPerTile; ++k) {
                 const std::uint32_t h = tileHash(tx, y, 31u + static_cast<std::uint32_t>(k));
@@ -887,6 +1100,18 @@ void WorldView::drawCoarseGlow(const FRect& view, const Xform& x, float strength
     batch_.flush();
 }
 
+std::size_t WorldView::cellBudget(Vec2 screen) {
+    // Cells per level over a window (every level's cells cover the same share of it), the view's
+    // own level with its ring, and the two wider levels: tuning.hpp says why.
+    const auto side = static_cast<float>(tuning::kCellTexels);
+    const double nx = std::ceil(screen.x / side) + 1;
+    const double ny = std::ceil(screen.y / side) + 1;
+    const double ring = 2.0 * tuning::kCellRing;
+    const double slots = ((nx + ring) * (ny + ring) + 2 * nx * ny) * tuning::kCellSpare;
+    return std::clamp(static_cast<std::size_t>(slots) * tuning::kMiB, tuning::kCellBudgetMin,
+                      tuning::kCellBudgetMax);
+}
+
 std::size_t WorldView::textureBudget() const {
     return pages_->stats().budget + cells_.budget() + targetBytes() +
            (overview_ ? overview_->bytes() : 0);
@@ -903,6 +1128,7 @@ int WorldView::missingArt() const {
 
 void WorldView::placeholdersInView(std::vector<std::pair<Vec2, std::uint32_t>>& out) const {
     out.clear();
+    if (stats_.placeholders == 0) return; // nothing to look for among thousands of elements
     for (std::size_t i = 0; i < region_.elems.size(); ++i) {
         const Elem& e = region_.elems[i];
         if (e.look != nullptr && e.first && e.look->look == Look::Placeholder &&
@@ -941,11 +1167,14 @@ void WorldView::holeChanged() {
     const FRect r{a.x, top - raise, b.x, bottom + iso_.tileH()};
     for (int level = 0; level <= 2; ++level)
         forEachCell(r, level, [&](CellKey k) {
-            const int si = cells_.find(packCell(k));
-            if (si < 0) return;
-            CellSlot& slot = cells_.slot(si);
-            slot.complete = false;
-            slot.generation = ~0u;
+            // Every step of the cell's water that is cached.
+            for (k.frame = 0; k.frame < animPeriod_; ++k.frame) {
+                const int si = cells_.find(packCell(k));
+                if (si < 0) continue;
+                CellSlot& slot = cells_.slot(si);
+                slot.complete = false;
+                slot.generation = ~0u;
+            }
         });
 }
 
@@ -959,11 +1188,12 @@ void WorldView::jumped(Vec2 centre) {
     theme_.reset(std::span(w).first(static_cast<std::size_t>(n)));
     places_.reset(regionUnder(map_, iso_, centre));
     themed_ = true;
+    jumped_ = true;
 }
 
 void WorldView::draw(const WorldCamera& camera, double clock, float dt, double now) {
-    ViewSpec v{camera.centre(), camera.scale(),   camera.screen(),
-               camera.flying(), camera.arrival(), camera.arrivalScale()};
+    ViewSpec v{camera.centre(),  camera.scale(),        camera.screen(), camera.flying(),
+               camera.arrival(), camera.arrivalScale(), camera.centre()};
     static const Hooks kNone;
     draw(v, clock, lightingAt(clock, 0), dt, now, kNone);
 }
@@ -980,17 +1210,38 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     batch_.resetStats();
     cells_.beginFrame();
     const float s = camera.scale;
-    const Lod lod = lodFor(s);
+    const Vec2 screen = camera.screen;
+    const Vec2 c = camera.centre;
+    const Vec2 topLeft{c.x - screen.x * 0.5f / s, c.y - screen.y * 0.5f / s};
+    const FRect seen{topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
+    // How fast the view moves, for building ahead of it; a jump is no motion.
+    velocity_ = jumped_ || !lastView_.overlaps(seen)
+                    ? Vec2{}
+                    : Vec2{(seen.x0 + seen.x1 - lastView_.x0 - lastView_.x1) * 0.5f,
+                           (seen.y0 + seen.y1 - lastView_.y0 - lastView_.y1) * 0.5f};
+    jumped_ = false;
+    animStep_ = animFps_ > 0 ? static_cast<std::uint64_t>(now * animFps_) : 0;
+    const Lod want = lodFor(s);
+    // Objects gathered for this view meanwhile (a destination's, on arrival) are taken over
+    // before the level is chosen, so an arrival that was made ready is shown at once.
+    if (want == Lod::Native) adoptRegion(seen);
+    // The native level needs its ground cells and its objects. While most of them are still on
+    // their way (a zoom in that arrived at once, a jump) the half-scale impostors stay up,
+    // magnified, if they are whole: the previous level until the new one is there, never a hole.
+    // A view that only lacks a strip at its leading edge (a fast pan) stays native: a cell not
+    // built yet shows its coarser level by itself, which is far less to see than the whole view
+    // changing level for a frame.
+    Lod lod = want;
+    if (async_ && want == Lod::Native && !nativeMostlyReady(seen) && cellsReady(1, seen))
+        lod = Lod::Half;
     stats_.lod = lod;
+    stats_.lodHeld = lod != want;
     // At 2x and 3x the native level is drawn at the zoom's resolution: sprites stay whole art
     // pixels, while moving things are placed to the window's pixel.
     const float res = lod == Lod::Native    ? std::max(1.0f, std::floor(s + 1e-3f))
                       : lod == Lod::Half    ? 0.5f
                       : lod == Lod::Quarter ? 0.25f
                                             : std::min(overview().image().scale, s);
-    const Vec2 screen = camera.screen;
-    const Vec2 c = camera.centre;
-    const Vec2 topLeft{c.x - screen.x * 0.5f / s, c.y - screen.y * 0.5f / s};
     // The target's origin sits on its own pixel grid, so cached cells land on whole texels.
     const float px = 1.0f / res;
     const Vec2 origin{std::floor(topLeft.x / px) * px - px, std::floor(topLeft.y / px) * px - px};
@@ -1020,16 +1271,21 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const SDL_FColor ambient{light.ambient.r * grade.mul.r, light.ambient.g * grade.mul.g,
                              light.ambient.b * grade.mul.b, 1};
     const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
-    lastView_ = {topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
+    lastView_ = seen;
 
-    // Streaming.
-    if (lod != Lod::Overview) wantSets(view, lod == Lod::Native);
-    // The cell cache holds what a frame needs at this window size, at least its stated budget.
-    cells_.reserve(static_cast<std::size_t>(
-        static_cast<double>(tuning::kCellBudget) *
-        std::clamp(static_cast<double>(screen.x * screen.y) / tuning::kCellBudgetArea, 1.0,
-                   tuning::kCellBudgetMaxScale)));
-    pages_->update(now);
+    // Streaming: the sets of the view, and of where it is heading.
+    const float half = 0.5f / camera.arrivalScale;
+    const FRect arrival{camera.arrival.x - screen.x * half, camera.arrival.y - screen.y * half,
+                        camera.arrival.x + screen.x * half, camera.arrival.y + screen.y * half};
+    const bool arriving = camera.heading && lodFor(camera.arrivalScale) != Lod::Overview;
+    if (want != Lod::Overview) wantSets(view, want == Lod::Native);
+    if (arriving) wantSets(arrival, lodFor(camera.arrivalScale) == Lod::Native);
+    cells_.reserve(cellBudget(screen));
+    {
+        const Timed timed(stats_.uploadMs);
+        pages_->update(now);
+        stats_.uploadBytes = pages_->uploadedBytes();
+    }
     if (overview_) {
         while (!overview_->upload(renderer_) && !async_) {}
     }
@@ -1038,32 +1294,38 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: %s", SDL_GetError());
     if (lod != Lod::Overview) drawBackdrops(view, xf, light.night > 0.5f);
+    const auto levelOf = [](Lod l) { return l == Lod::Native ? 0 : (l == Lod::Half ? 1 : 2); };
+    if (want != Lod::Overview) {
+        // What to build is planned for the level the view wants, even while a coarser one
+        // stands in for it.
+        planCells(levelOf(want), lod == want ? view : seen, camera, seen);
+        // A level standing in is wanted as long as it is shown.
+        if (lod != want) wantCells(view, levelOf(lod), kRankView);
+        buildCells();
+    }
     if (lod == Lod::Overview) {
         drawOverview(xf);
     } else {
-        const int level = lod == Lod::Native ? 0 : (lod == Lod::Half ? 1 : 2);
-        drawCells(level, view, xf, now);
+        drawCells(levelOf(lod), view, xf);
     }
     batch_.flush();
+    if (!SDL_SetRenderTarget(renderer_, view_.texture.get()))
+        SDL_Log("worldview: %s", SDL_GetError());
     // The game's scene works only while its home is in view.
     const bool home = lod != Lod::Overview && !hole_.empty() && hole_.screen.overlaps(view);
     // The world's cloud shadows go under the home's ground: the home's scene shades its own land.
     if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
     if (hooks.ground && home) hooks.ground(frame);
-    // A flight down to the native level gathers its destination on the way.
-    if (camera.flying && lodFor(camera.arrivalScale) == Lod::Native) {
-        const Vec2 to = camera.arrival;
-        const float k = 0.5f / camera.arrivalScale;
-        updateRegion(
-            {to.x - screen.x * k, to.y - screen.y * k, to.x + screen.x * k, to.y + screen.y * k},
-            false);
-    }
+    // A zoom or a journey down to the native level gathers its destination on the way.
+    if (arriving && lodFor(camera.arrivalScale) == Lod::Native) gatherAhead(arrival);
+    if (want == Lod::Native) updateRegion(lod == want ? view : seen);
     bool homeDrawn = false;
     if (lod == Lod::Native) {
-        if (!camera.flying) updateRegion(view, true);
         stats_.regionElements = static_cast<int>(region_.elems.size());
+        stats_.regionShort = !regionRect_.contains(
+            gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds()));
         prepareActors(view, lod);
-        (void)drawShadows(region_, view, xf, shadow_, view_, merge_.visible());
+        (void)drawShadows(region_, view, xf, shadow_, view_, true, merge_.visible());
         stats_.spritesCulled = static_cast<int>(region_.order.size() - merge_.visible().size());
         for (const std::uint32_t k : merge_.visible()) {
             for (const std::uint32_t a : merge_.before(k)) drawActor(actorOf_[a], xf);
@@ -1075,7 +1337,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
                 homeDrawn = true;
                 continue;
             }
-            (void)drawElem(e, xf, static_cast<float>(now));
+            if (!drawElem(e, xf, static_cast<float>(now))) ++stats_.spritesMissing;
             ++stats_.spritesDrawn;
             if (e.look != nullptr && e.look->look == Look::Placeholder) ++stats_.placeholders;
         }
@@ -1165,39 +1427,72 @@ void WorldView::composite(Vec2 scale, bool smooth) {
     batch_.flush();
 }
 
-void WorldView::updateRegion(const FRect& view, bool needed) {
-    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_);
-    const auto grow = [&](float k) {
-        const int gx = std::max(tuning::kRegionMinGrow,
-                                static_cast<int>(static_cast<float>(need.x1 - need.x0) * k));
-        const int gy = std::max(tuning::kRegionMinGrow,
-                                static_cast<int>(static_cast<float>(need.y1 - need.y0) * k));
-        return TileRect{need.x0 - gx, need.y0 - gy, need.x1 + gx, need.y1 + gy};
-    };
-    const FRect all{-1e9f, -1e9f, 1e9f, 1e9f};
+TileRect WorldView::regionAround(const TileRect& need, float k) {
+    const int gx = std::max(tuning::kRegionMinGrow,
+                            static_cast<int>(static_cast<float>(need.x1 - need.x0) * k));
+    const int gy = std::max(tuning::kRegionMinGrow,
+                            static_cast<int>(static_cast<float>(need.y1 - need.y0) * k));
+    return TileRect{need.x0 - gx, need.y0 - gy, need.x1 + gx, need.y1 + gy};
+}
+
+void WorldView::adoptRegion(const FRect& view) {
+    const TileRect inMap = gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds());
     // A finished gather takes over when it covers the view (one overtaken by a jump is dropped).
     if (regionPending_ && prep_->take(kRegionTag, next_)) {
         regionPending_ = false;
-        if (pendingRect_.contains(need)) {
+        if (pendingRect_.contains(inMap)) {
             std::swap(region_, next_);
             regionRect_ = pendingRect_;
             stats_.regionRebuilt = true;
             mergeIndexed_ = false;
         }
     }
-    if (needed && !regionRect_.intersects(need)) {
-        // Nothing gathered here (a jump): gather now rather than show empty land.
-        regionRect_ = grow(tuning::kRegionGrow);
+    // So does what was gathered ahead for a destination, once the view is there.
+    if (aheadPending_ && prep_->take(kAheadTag, ahead_)) {
+        aheadPending_ = false;
+        aheadReady_ = true;
+    }
+    if (aheadReady_ && !regionRect_.contains(inMap) && aheadRect_.contains(inMap)) {
+        std::swap(region_, ahead_);
+        regionRect_ = aheadRect_;
+        aheadReady_ = false;
+        stats_.regionRebuilt = true;
+        mergeIndexed_ = false;
+    }
+}
+
+void WorldView::updateRegion(const FRect& view) {
+    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_);
+    const FRect all{-1e9f, -1e9f, 1e9f, 1e9f};
+    adoptRegion(view);
+    if (!async_ && !regionRect_.intersects(need)) {
+        // Nothing gathered here (a jump): synchronous runs gather before they draw. With a
+        // worker the request below is back within a frame or two, and nothing blocks.
+        regionRect_ = regionAround(need, tuning::kRegionGrow);
+        const Timed timed(stats_.gatherMs);
         prep_->now(regionRect_, all, region_);
         stats_.regionRebuilt = true;
         mergeIndexed_ = false;
-    } else if (!regionPending_ && !regionRect_.contains(grow(tuning::kRegionEarly))) {
-        pendingRect_ = grow(tuning::kRegionGrow);
-        prep_->request({kRegionTag, pendingRect_, all});
+    } else if (!regionPending_ &&
+               !regionRect_.contains(
+                   regionAround(need, tuning::kRegionEarly).clipped(map_.bounds()))) {
+        pendingRect_ = regionAround(need, tuning::kRegionGrow);
+        prep_->request({kRegionTag, pendingRect_, all}, true);
         regionPending_ = true;
         // Synchronous gathering finishes at once.
-        if (!async_) updateRegion(view, needed);
+        if (!async_) updateRegion(view);
     }
+}
+
+void WorldView::gatherAhead(const FRect& view) {
+    const TileRect need = gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds());
+    if (regionRect_.contains(need) || aheadPending_ || (aheadReady_ && aheadRect_.contains(need)) ||
+        (regionPending_ && pendingRect_.contains(need)))
+        return;
+    aheadRect_ = regionAround(need, tuning::kRegionGrow);
+    aheadReady_ = false;
+    aheadPending_ = true;
+    prep_->request({kAheadTag, aheadRect_, {-1e9f, -1e9f, 1e9f, 1e9f}}, true);
 }
 
 void WorldView::setLife(const life::CityLife* city) {
@@ -1227,9 +1522,7 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
     }
     if (life_ == nullptr || !looks_) {
         if (lod == Lod::Native)
-            merge_.plan(
-                region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; },
-                [&](std::uint32_t e) { return region_.items[e].screen.overlaps(view); });
+            merge_.plan(region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; }, view);
         return;
     }
     TileRect tiles = tilesUnder(view, iso_);
@@ -1243,9 +1536,14 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         ActorDraw ad;
         const TilePos t{static_cast<int>(std::floor(d.pos.x)),
                         static_cast<int>(std::floor(d.pos.y))};
-        const auto look = hole_.tiles.contains(t) ? std::nullopt : looks_->resolve(d);
+        const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
+        // The tiles under a view are a box twice the view: half of those gathered stand off
+        // screen, and are passed over before anything is resolved for them.
+        const float feetY = w.y - d.z;
+        const bool near = w.x + actorReach_.right >= view.x0 && w.x - actorReach_.left <= view.x1 &&
+                          feetY + actorReach_.down >= view.y0 && feetY - actorReach_.up <= view.y1;
+        const auto look = !near || hole_.tiles.contains(t) ? std::nullopt : looks_->resolve(d);
         if (look) {
-            const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
             // Whole pixels of the target, so sprites stay crisp.
             ad.anchor = {std::round(w.x / px) * px, std::round((w.y - d.z) / px) * px};
             ad.sprite = look->sprite;
@@ -1263,6 +1561,11 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         const SpriteRef& s = *ad.sprite;
         const float x0 = ad.anchor.x - (ad.mirror ? s.w - s.ox : s.ox);
         FRect box{x0, ad.anchor.y - s.oy, x0 + s.w, ad.anchor.y - s.oy + s.h};
+        // Art larger than anything seen so far widens the reach for the frames to come.
+        const float side = std::max(s.ox, s.w - s.ox) + 1;
+        actorReach_ = {std::max(actorReach_.left, side), std::max(actorReach_.right, side),
+                       std::max(actorReach_.up, s.oy + 1),
+                       std::max(actorReach_.down, s.h - s.oy + 1)};
         if (!box.overlaps(view)) continue;
         if (ad.goods != nullptr) box.y0 = std::min(box.y0, ad.goodsAt.y - ad.goods->oy);
         if (lod != Lod::Native) {
@@ -1270,8 +1573,7 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
             // (by the same depth relation as the native order) is not drawn over it; under a roof
             // or a colonnade there is nothing to see from this far either.
             const float above = d.z - static_cast<float>(map_.level(t) * lvl_);
-            if ((d.item < 0 || d.floor) &&
-                static_cast<float>(cover_->at(t)) - above <= tuning::kCoverHidden)
+            if ((d.item < 0 || d.floor) && cover_->at(d.pos) - above <= tuning::kCoverHidden)
                 coarse_.push_back(static_cast<std::uint32_t>(i));
             continue;
         }
@@ -1301,12 +1603,13 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
             if (el.floor || el.piece < 0) return -1;
             return on ? 1 : 0;
         },
-        [&](std::uint32_t e) { return region_.items[e].screen.overlaps(view); });
+        view);
 }
 
 void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
     out.clear();
-    std::vector<std::pair<float, life::Handle>> hits; // a click, not a frame: allocation is fine
+    auto& hits = actorHits_; // kept: the pointer asks every frame it rests on the world
+    hits.clear();
     for (std::size_t i = 0; i < actorDraw_.size(); ++i) {
         const ActorDraw& a = actorDraw_[i];
         if (a.sprite == nullptr) continue;
@@ -1319,13 +1622,60 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
             continue;
         hits.emplace_back(-a.depth, actorBuf_[i].handle);
     }
-    std::ranges::sort(hits, {}, &std::pair<float, life::Handle>::first);
+    std::ranges::sort(hits, [](const auto& a, const auto& b) {
+        return a.first != b.first ? a.first < b.first : a.second.index < b.second.index;
+    });
     for (const auto& h : hits) out.push_back(h.second);
+}
+
+int WorldView::coarseActorsCovered(float px) const {
+    constexpr int kRows = 40; // tiles in front whose art can reach back over someone
+    int covered = 0;
+    std::vector<world::DrawPiece> pieces; // a test's question, not a frame's: allocation is fine
+    for (const std::uint32_t i : coarse_) {
+        const life::DrawActor& d = actorBuf_[i];
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
+        const Vec2 feet{w.x, w.y - d.z};
+        map_.piecesIn(TileRect{t.x - 2, t.y - 2, t.x + kRows, t.y + kRows}.clipped(map_.bounds()),
+                      pieces);
+        float most = 0;
+        for (const world::DrawPiece& p : pieces) {
+            if (d.item >= 0 && p.item == static_cast<std::uint32_t>(d.item)) continue;
+            const world::Placed& it = map_.items()[p.item];
+            if (hole_.tiles.contains(TilePos{it.x, it.y})) continue;
+            const VariantLook& look = sprites_->item(it);
+            const bool split = p.piece >= 0 && !look.pieces.empty();
+            if (!split && look.base.empty()) continue;
+            const SpriteRef& s =
+                split ? look.pieces[static_cast<std::size_t>(p.piece)] : look.base.f.front();
+            const Vec2 o = iso_.toWorld(TilePos{it.x, it.y});
+            const Vec2 a{o.x, o.y - static_cast<float>(it.level * lvl_)};
+            const TileRect r = split ? p.rect : it.rect();
+            // Hidden means behind it with their whole width: the feet a few px either side
+            // (someone half past a pier's edge is as rightly drawn as not).
+            const FRect foot{static_cast<float>(r.x0), static_cast<float>(r.y0),
+                             static_cast<float>(r.x1), static_cast<float>(r.y1)};
+            const FRect box{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
+            const auto raise = static_cast<float>(it.level * lvl_);
+            const auto at = [&](float dx) {
+                return coverOf(iso_, {feet.x + dx, feet.y}, t, foot, raise, box);
+            };
+            most =
+                std::max(most, std::min(at(-tuning::kCoverHalfBody), at(tuning::kCoverHalfBody)));
+        }
+        covered += most > px ? 1 : 0;
+    }
+    return covered;
 }
 
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {
     const ActorDraw& a = actorDraw_[i];
-    if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror)) ++stats_.actorsDrawn;
+    if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror))
+        ++stats_.actorsDrawn;
+    else
+        ++stats_.spritesMissing;
     if (a.goods != nullptr) (void)put(*a.goods, a.goodsAt, x, a.colour, SDL_BLENDMODE_BLEND);
 }
 
@@ -1341,8 +1691,10 @@ void WorldView::drawActorShadows(const Xform& x) {
 }
 
 bool WorldView::settled() const {
-    return stats_.cellsPending == 0 && stats_.pages.streaming == 0 && !regionPending_ &&
-           building_.empty() && (!overview_ || overview_->texture() != nullptr);
+    // The view itself is whole: its cells at its own level, its pages, its objects. What is
+    // built ahead of need (stats().prefetchPending, pages loaded ahead) is not waited for.
+    return !stats_.popIn() && stats_.pages.wanted == 0 &&
+           (!overview_ || overview_->texture() != nullptr);
 }
 
 std::string WorldView::caption() const {
