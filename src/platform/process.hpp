@@ -16,6 +16,10 @@ namespace lc {
 // Against the wall clock it tells running from waiting: a thread that was blocked on a file or a
 // lock, or taken off its core, used no CPU meanwhile.
 [[nodiscard]] double threadCpuMs();
+// Instructions the calling thread has run in user mode since its first call here (Linux, where
+// the kernel lets a process count its own; 0 elsewhere). Unlike time it does not depend on how
+// busy the machine is: the measure to compare two builds by on a loaded machine.
+[[nodiscard]] std::uint64_t threadInstructions();
 // Heap allocations the calling thread has made since it started. The game's executable counts
 // them (platform/alloc_count.cpp replaces operator new there); a program that does not count
 // (the tests, sanitizer builds) reports none: allocCounting() says which.

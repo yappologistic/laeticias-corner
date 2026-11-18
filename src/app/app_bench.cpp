@@ -76,6 +76,17 @@ void reportSmooth(const char* name, const BenchFrames& fr) {
                     sum / static_cast<double>(std::max<std::size_t>(fr.all.size(), 1)));
     }
     std::printf("\n");
+    if (allocFrames > 0) {
+        std::printf("bench: %s: allocations by part:", name);
+        for (std::size_t i = 0; i < kFrameParts; ++i) {
+            double sum = 0;
+            for (const FrameSample& f : fr.all) sum += f.partAllocs[i];
+            if (sum > 0)
+                std::printf(" %s %.1f", partName(static_cast<Part>(i)),
+                            sum / static_cast<double>(fr.all.size()));
+        }
+        std::printf("\n");
+    }
 }
 
 } // namespace
@@ -117,8 +128,10 @@ FrameSample App::benchFrame() {
     const Uint64 t0 = SDL_GetPerformanceCounter();
     const FrameMark mark = markFrame();
     partMs_ = {};
+    partAllocs_ = {};
     step(static_cast<float>(tuning::kStepSeconds));
     stepMs_ = msBetween(t0, SDL_GetPerformanceCounter());
+    stepAllocs_ = threadAllocs() - mark.allocs;
     frameDt_ = static_cast<float>(tuning::kStepSeconds);
     {
         const Timed timed(*this, Part::World);
@@ -221,6 +234,12 @@ int App::runBench() {
         report(name, "gpu done", fr.of(&FrameSample::gpuMs));
         report(name, "cpu", cpu);
         report(name, "cpu (thread)", fr.of(&FrameSample::threadMs));
+        // Not a time: millions of instructions, the same on a busy machine as on a quiet one.
+        if (const PerfStats in = fr.of(&FrameSample::instrM); in.count > 0)
+            std::printf("bench: %s: cpu work     avg %.2f p95 %.2f p99 %.2f worst %.2f M "
+                        "instructions\n",
+                        name, static_cast<double>(in.avg), static_cast<double>(in.p95),
+                        static_cast<double>(in.p99), static_cast<double>(in.worst));
         report(name, "update", fr.of(&FrameSample::updateMs));
         report(name, "draw submit",
                fr.stats([](const FrameSample& f) { return f.cpuMs - f.updateMs; }));

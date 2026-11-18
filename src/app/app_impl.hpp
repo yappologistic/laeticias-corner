@@ -350,6 +350,18 @@ private:
     [[nodiscard]] const life::Figure* figureOf(const life::CityLife::Info& in) const;
     void followActor(float dt);
     void noteEvents();
+    // The same without its texts (nothing allocated: the hover name asks every frame): the
+    // living figure, the standing one, or the placed item it is.
+    struct CardPick {
+        int region = -1;
+        const life::Figure* living = nullptr;
+        const world::FigurePlace* placed = nullptr;
+        int item = -1;
+        life::Handle actor;
+        friend bool operator==(const CardPick&, const CardPick&) = default;
+    };
+    [[nodiscard]] std::optional<CardPick> pickCard(Vec2 px) const;
+    [[nodiscard]] CardRef cardOf(const CardPick& p) const;
     [[nodiscard]] std::optional<CardRef> cardAt(Vec2 px) const;
     [[nodiscard]] std::string_view entryName(const CardRef& c, std::string& storage) const;
     [[nodiscard]] std::string_view nativeName(const CardRef& c) const;
@@ -394,6 +406,7 @@ private:
     struct FrameMark {
         double threadMs = 0;
         std::uint64_t allocs = 0;
+        std::uint64_t instructions = 0;
     };
     [[nodiscard]] static FrameMark markFrame();
     static void closeMark(const FrameMark& m, FrameSample& s);
@@ -463,19 +476,28 @@ private:
     // Per-system times of the last step (ms), kept measurable for the bench and a profiler.
     // Time by part of the frame (core/perf.hpp), added up over the frame's steps.
     std::array<double, kFrameParts> partMs_{};
+    std::array<std::uint64_t, kFrameParts> partAllocs_{}; // and heap allocations, the same way
     class Timed {
     public:
         Timed(App& app, Part part)
-            : ms_(app.partMs_[static_cast<std::size_t>(part)]), t0_(SDL_GetPerformanceCounter()) {}
-        ~Timed() { ms_ += msBetween(t0_, SDL_GetPerformanceCounter()); }
+            : ms_(app.partMs_[static_cast<std::size_t>(part)]),
+              allocs_(app.partAllocs_[static_cast<std::size_t>(part)]),
+              t0_(SDL_GetPerformanceCounter()), a0_(threadAllocs()) {}
+        ~Timed() {
+            ms_ += msBetween(t0_, SDL_GetPerformanceCounter());
+            allocs_ += threadAllocs() - a0_;
+        }
         Timed(const Timed&) = delete;
         Timed& operator=(const Timed&) = delete;
 
     private:
         double& ms_;
+        std::uint64_t& allocs_;
         Uint64 t0_;
+        std::uint64_t a0_;
     };
-    double stepMs_ = 0;     // this frame's steps, whole
+    double stepMs_ = 0; // this frame's steps, whole
+    std::uint64_t stepAllocs_ = 0;
     double actorMs_ = 0;    // actors
     double lifeMs_ = 0;     // weather, events, speech and sound around them
     double cityMs_ = 0;     // city life's last step (src/life/)
@@ -616,6 +638,8 @@ private:
     std::vector<std::string> journalSummaries_;
     std::vector<std::string> journalNames_;
     mutable std::string hoverName_;
+    mutable std::optional<CardPick> hoverPick_; // what hoverName_ names
+    mutable std::vector<life::Handle> actorHits_;
     std::unique_ptr<Batch> uiBatch_;
     std::unique_ptr<Blur> blur_;
     ThumbSet thumbs_;

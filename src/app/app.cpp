@@ -379,6 +379,12 @@ void App::loadOrStart() {
 }
 
 bool App::save(bool wait) {
+    // A measuring world is never saved: nothing is gathered for it either, and the autosave
+    // rests (it would otherwise come due again every step and be measured as the game's work).
+    if (measuring()) {
+        autosave_.saved();
+        return true;
+    }
     SaveData data(world_, cat_);
     data.progress = progress_;
     data.name = worldName_;
@@ -397,7 +403,6 @@ bool App::save(bool wait) {
         data.zoom = camera_.zoom();
     }
     data.worldState = worldState();
-    if (measuring()) return true; // a measuring world is never saved
     // The front door's preview of a new corner is not a world until it is begun.
     if (freshWorld_ && frontDoor()) return true;
     // The text is made here; the writing (and its flush to disk) happens on the writer's thread,
@@ -1398,19 +1403,28 @@ void App::step(float dt) {
     wheelIdle_ += dt;
     if (wheelIdle_ > tuning::kWheelIdleReset) wheelAcc_ = 0;
 
-    const double before = partMs_[static_cast<std::size_t>(Part::Weather)];
-    updateLife(dt);
-    // What the home's life took besides its actors and the weather.
-    partMs_[static_cast<std::size_t>(Part::Actors)] += actorMs_;
-    partMs_[static_cast<std::size_t>(Part::HomeLife)] +=
-        lifeMs_ - (partMs_[static_cast<std::size_t>(Part::Weather)] - before);
-    stepCity(dt);
-    partMs_[static_cast<std::size_t>(Part::City)] += cityMs_;
-    const Uint64 p0 = SDL_GetPerformanceCounter();
-    updateProgress();
-    progressMs_ = static_cast<double>(SDL_GetPerformanceCounter() - p0) * 1000.0 /
-                  static_cast<double>(SDL_GetPerformanceFrequency());
-    partMs_[static_cast<std::size_t>(Part::Progress)] += progressMs_;
+    {
+        // The home's life, less its actors and the weather (timed inside it).
+        const auto at = [](Part p) { return static_cast<std::size_t>(p); };
+        const double weather = partMs_[at(Part::Weather)];
+        const std::uint64_t weatherAllocs = partAllocs_[at(Part::Weather)];
+        const std::uint64_t a0 = threadAllocs();
+        updateLife(dt);
+        partMs_[at(Part::Actors)] += actorMs_;
+        partMs_[at(Part::HomeLife)] += lifeMs_ - (partMs_[at(Part::Weather)] - weather);
+        partAllocs_[at(Part::HomeLife)] +=
+            threadAllocs() - a0 - (partAllocs_[at(Part::Weather)] - weatherAllocs);
+    }
+    {
+        const Timed timed(*this, Part::City);
+        stepCity(dt);
+    }
+    {
+        const Timed timed(*this, Part::Progress);
+        const Uint64 p0 = SDL_GetPerformanceCounter();
+        updateProgress();
+        progressMs_ = msBetween(p0, SDL_GetPerformanceCounter());
+    }
     std::erase_if(nookLabels_, [&](const NookLabel& l) {
         return simTime_ - l.start > tuning::kNookLabelSeconds;
     });
@@ -1629,6 +1643,7 @@ void App::render() {
     }
     const Uint64 t1 = SDL_GetPerformanceCounter();
     sceneMs_ = msBetween(t0, t1);
+    const std::uint64_t uiAllocs = threadAllocs();
     if (!hudHidden_ && font_.build(renderer_.get(), uiScale_)) {
         // The model the interface was laid out from this frame: drawing never sees another.
         Painter painter(*uiBatch_, font_, {blur_->result(), p.screen, ui_.brightness}, uiScale_);
@@ -1654,6 +1669,7 @@ void App::render() {
     }
     hudDrawMs_ = msBetween(t1, SDL_GetPerformanceCounter());
     partMs_[static_cast<std::size_t>(Part::UiDraw)] += hudDrawMs_;
+    partAllocs_[static_cast<std::size_t>(Part::UiDraw)] += threadAllocs() - uiAllocs;
 }
 
 void App::captureAudio(int steps) {
@@ -1730,6 +1746,7 @@ int App::run() {
         const Uint64 t0 = SDL_GetPerformanceCounter();
         const FrameMark mark = markFrame();
         partMs_ = {};
+        partAllocs_ = {};
         leftPressed_ = leftReleased_ = rightPressed_ = rightReleased_ = false;
         for (SDL_Event e; SDL_PollEvent(&e);) handleEvent(e);
         if (hidden_ && !opts_.headless) {
@@ -1772,8 +1789,10 @@ int App::run() {
         }
         for (int i = 0; i < steps; ++i) {
             const Uint64 s0 = SDL_GetPerformanceCounter();
+            const std::uint64_t a0 = threadAllocs();
             step(static_cast<float>(tuning::kStepSeconds));
             stepMs_ += msBetween(s0, SDL_GetPerformanceCounter());
+            stepAllocs_ += threadAllocs() - a0;
             simMs += actorMs_ + lifeMs_ + progressMs_;
             condMs += progressMs_;
             cityMs += cityMs_;

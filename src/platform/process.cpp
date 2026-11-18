@@ -2,6 +2,11 @@
 
 #include <atomic>
 #include <ctime>
+#if defined(__linux__)
+#include <linux/perf_event.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -35,6 +40,41 @@ double threadCpuMs() {
 #endif
     return -1.0;
 }
+
+#if defined(__linux__)
+namespace {
+// One counter per thread, opened on first use and closed with the thread.
+struct InstructionCounter {
+    int fd = -1;
+    InstructionCounter() {
+        perf_event_attr attr{};
+        attr.type = PERF_TYPE_HARDWARE;
+        attr.size = sizeof attr;
+        attr.config = PERF_COUNT_HW_INSTRUCTIONS;
+        attr.exclude_kernel = 1; // what an unprivileged process may count
+        attr.exclude_hv = 1;
+        fd = static_cast<int>(syscall(SYS_perf_event_open, &attr, 0, -1, -1, 0));
+    }
+    ~InstructionCounter() {
+        if (fd >= 0) close(fd);
+    }
+    InstructionCounter(const InstructionCounter&) = delete;
+    InstructionCounter& operator=(const InstructionCounter&) = delete;
+};
+} // namespace
+
+std::uint64_t threadInstructions() {
+    thread_local const InstructionCounter counter;
+    std::uint64_t n = 0;
+    if (counter.fd < 0 || read(counter.fd, &n, sizeof n) != static_cast<ssize_t>(sizeof n))
+        return 0;
+    return n;
+}
+#else
+std::uint64_t threadInstructions() {
+    return 0;
+}
+#endif
 
 namespace {
 // Plain thread-local integers: operator new runs before and after every other object's life.

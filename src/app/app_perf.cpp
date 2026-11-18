@@ -42,13 +42,15 @@ double App::syncGpu(Uint64 frameStart) {
 }
 
 App::FrameMark App::markFrame() {
-    return {threadCpuMs(), threadAllocs()};
+    return {threadCpuMs(), threadAllocs(), threadInstructions()};
 }
 
 void App::closeMark(const FrameMark& m, FrameSample& s) {
     const double now = threadCpuMs();
     s.threadMs = now >= 0 ? static_cast<float>(now - m.threadMs) : -1.0f;
     s.allocs = allocCounting() ? static_cast<int>(threadAllocs() - m.allocs) : -1;
+    const std::uint64_t instructions = threadInstructions();
+    s.instrM = instructions > 0 ? static_cast<float>(instructions - m.instructions) * 1e-6f : -1.0f;
 }
 
 void App::worldSample(FrameSample& s) const {
@@ -81,8 +83,18 @@ void App::closeParts(FrameSample& s) {
     at(Part::StepRest) =
         std::max(0.0, stepMs_ - at(Part::Weather) - at(Part::Actors) - at(Part::HomeLife) -
                           at(Part::City) - at(Part::Progress) - at(Part::Effects));
-    // The blur is timed inside the scene's share.
-    for (std::size_t i = 0; i < kFrameParts; ++i) s.part[i] = static_cast<float>(partMs_[i]);
+    std::uint64_t counted = 0;
+    for (const Part p :
+         {Part::Weather, Part::Actors, Part::HomeLife, Part::City, Part::Progress, Part::Effects})
+        counted += partAllocs_[static_cast<std::size_t>(p)];
+    partAllocs_[static_cast<std::size_t>(Part::StepRest)] =
+        stepAllocs_ > counted ? stepAllocs_ - counted : 0;
+    stepAllocs_ = 0;
+    for (std::size_t i = 0; i < kFrameParts; ++i) {
+        s.part[i] = static_cast<float>(partMs_[i]);
+        s.partAllocs[i] =
+            static_cast<std::uint16_t>(std::min<std::uint64_t>(partAllocs_[i], 65535));
+    }
     stepMs_ = 0;
 }
 

@@ -33,7 +33,8 @@ inline constexpr std::size_t kFrameParts = static_cast<std::size_t>(Part::Count)
 
 // One frame. Times in milliseconds; a time that was not measured is negative.
 struct FrameSample {
-    std::array<float, kFrameParts> part{}; // by Part
+    std::array<float, kFrameParts> part{};               // by Part
+    std::array<std::uint16_t, kFrameParts> partAllocs{}; // heap allocations inside the timed parts
     float frameMs = 0;   // start of this frame to the start of the next: the whole frame
     float cpuMs = 0;     // simulation, interface and draw submission on the main thread
     float gpuMs = -1;    // until the GPU had finished the frame (only when synchronised)
@@ -75,6 +76,9 @@ struct FrameSample {
     float updateMs = 0;  // the frame's start to the start of drawing (steps, interface update)
     float threadMs = -1; // CPU time the main thread used for update and draw submission
     int allocs = -1;     // heap allocations the main thread made this frame (-1: not counted)
+    // Millions of instructions the main thread ran in user mode for update and draw submission
+    // (-1: not counted). The load on the machine does not move it.
+    float instrM = -1;
 };
 
 // Why a frame was slow: the system that took the largest share of it.
@@ -145,7 +149,8 @@ inline constexpr const char* kPerfHeader =
     "frame,frame_ms,cpu_ms,gpu_ms,present_ms,sim_ms,cond_ms,scene_ms,ui_ms,audio_load,steps,"
     "draw_calls,sprites_drawn,sprites_culled,actors_live,actors_abstract,chunks_cached,"
     "texture_mib,total_mib,city_ms,crowd_ms,city_live,city_drawn,pop_cells,pop_share,"
-    "pop_sprites,build_ms,upload_ms,gather_ms,cells_built,upload_kib,thread_ms,allocs,cause";
+    "pop_sprites,build_ms,upload_ms,gather_ms,cells_built,upload_kib,thread_ms,allocs,instr_m,"
+    "cause";
 inline constexpr std::size_t kPerfLineMax = 384;
 std::size_t perfLine(std::int64_t frame, const FrameSample& s, std::span<char> out);
 
