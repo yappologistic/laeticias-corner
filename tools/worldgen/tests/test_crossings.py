@@ -103,5 +103,28 @@ class Stairs(unittest.TestCase):
                             for m in v16(check(self.terrace(head_path=False)))))
 
 
+class EngineWalkRules(unittest.TestCase):
+    """V17: the engine enters a stair only at its foot and head, never over its sides."""
+
+    def flight(self, across: bool):
+        L = meadow()
+        L.level(Rect(0, 0, 31, 9), 1)
+        L.street([(5, 23), (5, 14)], width=1, paving="path")
+        L.level(Rect(5, 10, 5, 11), 1)
+        L.street([(5, 11), (5, 2)], width=1, paving="path")
+        L.stair("world.stair_stone", rect=(5, 12, 5, 13), face="south")
+        if across:
+            L.street([(0, 13), (12, 13)], width=1, paving="path")   # across the flight's side
+        return L
+
+    def test_a_path_up_the_flight_passes(self):
+        self.assertEqual([i.message for i in check(self.flight(False))
+                          if i.code == "V17" and i.level == "error"], [])
+
+    def test_a_street_over_the_flights_side_fails(self):
+        self.assertTrue(any("side" in i.message for i in check(self.flight(True))
+                            if i.code == "V17" and i.level == "error"))
+
+
 if __name__ == "__main__":
     unittest.main()

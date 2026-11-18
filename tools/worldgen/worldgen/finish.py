@@ -113,6 +113,12 @@ def landings(L: Layout) -> list[str]:
                 if head is None or any(x is None or not L.STREET[x] or L.OCC[x] >= 0 or
                                        int(L.LV[x]) != low + 1 for x in run + [head]):
                     continue
+                # No street may meet the flight from the side (walkers enter a stair only at
+                # its foot and head).
+                sides = [L._local(t[0] + dr, t[1] + dc) for t in line[:n]] + \
+                        [L._local(t[0] - dr, t[1] - dc) for t in line[:n]]
+                if any(x is not None and L.STREET[x] for x in sides):
+                    continue
                 cs = [t[0] - L.origin[0] for t in line[:n]]
                 rs = [t[1] - L.origin[1] for t in line[:n]]
                 rect = (min(cs), min(rs), max(cs), max(rs))

@@ -420,7 +420,8 @@ def _ways(L: Layout) -> dict:
     st("sacra", [(124, 75), (124, 77)])
     st("valley", [(147, 53), (147, 88)])
     st("valley", [(145, 74), (146, 74)], 2)
-    st("valley", [(147, 53), (169, 53)], 2)
+    # South of the Oppian steps' flights, not across them (walkers cannot cross a stair's side).
+    st("valley", [(147, 59), (169, 59), (169, 53)], 2)
     st("valley", [(147, 88), (169, 88)])
     st("valley", [(147, 58), (150, 58)])
     # Across the square, to the Curia, the Vicus Iugarius and the Clivus Capitolinus.
@@ -484,10 +485,11 @@ def _ways(L: Layout) -> dict:
     st("appia", [(134, 122), (134, 139)], 2)
     st("appia", [(134, 139), (61, 139)])
     # The Caelian.
-    st("caelian", [(145, 95), (170, 95)], 2)
+    # Below the head of the Caelian steps, not across their top flight.
+    st("caelian", [(145, 95), (145, 98), (170, 98), (170, 95)], 2)
     st("caelian", [(150, 97), (150, 125)])
     st("caelian", [(150, 120), (175, 120)])
-    st("caelian", [(158, 95), (158, 106), (155, 106)])
+    st("caelian", [(158, 98), (158, 106), (155, 106)])
     st("caelian", [(140, 104), (150, 104)])
     st("caelian", [(150, DECORATE.r0 + 8), (DECORATE.c0, DECORATE.r0 + 8)], 1, EARTH)  # plot gate
     st("caelian", [(140, 104), (140, 119)])
@@ -716,7 +718,10 @@ def _velia(L: Layout) -> None:
 def _palatine(L: Layout) -> None:
     """The palace terraces: walks to the clivus heads, gardens of box, roses, laurel and planes in
     the open courts, guards' braziers at the stairs."""
-    L.street([(114, 83), (114, 79), (126, 79), (126, 95)], width=1, paving=TRAV)
+    # Round the south end of the Clivus Palatinus' trench, never across its flights.
+    L.street([(114, 83), (114, 79), (122, 79)], width=1, paving=TRAV)
+    L.street([(115, 83), (115, 84), (126, 84), (126, 95)], width=1, paving=TRAV)
+    L.street([(126, 79), (126, 84)], width=1, paving=TRAV)
     L.street([(126, 79), (132, 79)], width=1, paving=TRAV)
     L.street([(108, 96), (108, 86), (100, 86), (100, 104)], width=1, paving=TRAV)
     top = Mask(0, 0, L.LV == 6) & Rect(98, 78, 134, 104)

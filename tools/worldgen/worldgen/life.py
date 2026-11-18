@@ -540,6 +540,46 @@ def road_life(docs: dict, graphs: dict[str, Graph]) -> None:
              "end": "base:acharnai_n"}, "count": 2, "carry": "world.goods_charcoal"})
 
 
+def droves(docs: dict, world: World, graphs: dict[str, Graph]) -> None:
+    """Flocks on the move (seasonal movement between pastures; the Parilia's flocks brought to
+    Rome): a herder leading a `drove` (sheep, goats and a dog in a cluster) along the roads
+    between the two farthest farms or stations of each stretch of an era."""
+    base = graphs.get("base")
+    if base is None:
+        return
+    for rid, doc in docs.items():
+        set_ = P.REGIONS[rid][1]
+        if set_ not in SHEPHERD or P.REGIONS[rid][0] != "stretch":
+            continue
+        stops = sorted((n.id, to_plan(*n.at)) for n in base.nodes
+                       if ("_farm_" in n.id or n.kind == "station")
+                       and region_of(world, *to_plan(*n.at)) == rid)
+        if len(stops) < 2:
+            continue
+        a, b = max(((x, y) for x in stops for y in stops if x[0] < y[0]),
+                   key=lambda xy: (abs(xy[0][1][0] - xy[1][1][0]) + abs(xy[0][1][1] - xy[1][1][1]),
+                                   xy[0][0], xy[1][0]))
+        sheep = {"actor": "world.sheep", "variant": 1 if set_ == "parsa" else 0, "count": 8}
+        doc["groups"].append({"id": "drove", "formation": "cluster", "radius": 3,
+                              "leader": {"actor": SHEPHERD[set_]},
+                              "members": [sheep, {"actor": "world.goat", "count": 3},
+                                          {"actor": "world.dog", "count": 1}]})
+        doc["lanes_tokens"].append({"actor": SHEPHERD[set_], "group": "drove", "count": 1,
+                                    "route": {"start": f"base:{a[0]}", "end": f"base:{b[0]}"},
+                                    "when": {"seasons": ["spring", "autumn"]},
+                                    "note": "flocks moving between summer and winter pastures"})
+    if "latium_italy" in docs and "rome" in graphs:
+        doc = docs["latium_italy"]
+        farms = sorted(n.id for n in base.nodes if n.id.startswith("via_appia_farm_"))
+        if farms and any(g["id"] == "drove" for g in doc["groups"]):
+            doc["lanes_tokens"].append({"actor": "rome.shepherd", "group": "drove", "count": 2,
+                                        "route": {"start": f"base:{farms[0]}",
+                                                  "end": "rome:appia_se"},
+                                        "when": {"season": "spring", "day": 2},
+                                        "note": "shepherds bring their flocks to Rome for the "
+                                                "Parilia, the shepherds' feast of Pales"})
+
+
 def town_file(rid: str, layout_world: World, graphs: dict[str, Graph]) -> dict:
     kind, set_, time, rect, _b = P.REGIONS[rid]
     t = TOWN[rid]
@@ -607,6 +647,7 @@ def write(world: World, graphs: dict[str, Graph], out_dir: Path, cat=None) -> li
         if v[0] in ("stretch", "seam"):
             docs[rid] = stretch_file(rid, world, graphs)
     road_life(docs, graphs)
+    droves(docs, world, graphs)
     regions = Path(__file__).resolve().parent.parent / "regions"
     for rid in TOWNS:
         # A town with its own life module is a city file (`build.sh --city`), never written here.

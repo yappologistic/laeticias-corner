@@ -438,7 +438,7 @@ def _ways(L: Layout, lv) -> dict:
                      (118, 48), (128, 54), (136, 58), (147, 60)], 2, EARTH, "road")
     st("diochares", [(147, 60), (147, 45), (159, 45)], 1, EARTH, "road", portal="mesogeia_e")
     st("ne_gate", [(104, 46), (106, 26), (110, 16), (110, 3)], 2, EARTH, "road")
-    st("quarry", [(4, 3), (111, 3)], 1, EARTH, "road")
+    st("quarry", [(4, 5), (6, 5), (6, 3), (111, 3)], 1, EARTH, "road")   # from the ramp's foot
     st("quarry", [(126, 3), (126, 6), (124, 6), (124, 8)], 1, EARTH, "road")   # the bend
     st("quarry", [(139, 8), (142, 8), (142, 15)], 1, EARTH, "road")
     st("tripods", [(118, 48), (126, 56), (134, 64), (134, 117), (119, 117)], 2, EARTH)
@@ -449,7 +449,7 @@ def _ways(L: Layout, lv) -> dict:
     st("koile", [(96, 116), (90, 112), (76, 110), (62, 108), (48, 106), (36, 104), (33, 104)],
        2, EARTH)
     st("melitides", [(34, 105), (34, 106), (30, 110), (24, 113)], 1, EARTH, "road")
-    st("koile", [(42, 105), (42, 86), (40, 85)], 2, EARTH)
+    st("koile", [(40, 105), (40, 85)], 2, EARTH)     # along the approach steps' foot, not over them
     st("itonian", [(96, 116), (98, 128), (133, 128), (133, 140), (135, 140)], 1, EARTH, "road")
     st("long_walls", [(5, 66), (5, 104), (10, 104), (10, 108), (9, 118), (7, 128), (7, 136)], 2,
        EARTH, "road")
@@ -457,7 +457,7 @@ def _ways(L: Layout, lv) -> dict:
        EARTH, "road")
     st("melite", [(29, 65), (30, 70), (30, 73)], 1, EARTH)
     st("pnyx", [(30, 86), (30, 96)], 1, ROCK)                        # the apron east of the Pnyx
-    st("pnyx", [(28, 101), (31, 101)], 1, ROCK)                      # by Meton's sundial
+    st("pnyx", [(28, 102), (31, 102)], 1, ROCK)                      # by Meton's sundial, at the steps' head
     st("areopagus", [(50, 74), (48, 74)], 1, ROCK)
     # The Agora: walks along its west buildings, under the Stoa Poikile, along its south side.
     st("agora", [(26, 23), (26, 61)], 2, GRAVEL)
@@ -1239,7 +1239,7 @@ NODES = {
     "eleusinion": (60, 68), "klepsydra": (60, 73), "areopagus": (48, 74),
     "approach_foot": (41, 89), "propylaia": (64, 88), "great_altar": (112, 87),
     "sculptors_yard": (116, 87), "pandroseion": (85, 84), "nike_bastion": (67, 94),
-    "peripatos_caves": (66, 78), "pnyx": (30, 90), "meton_dial": (29, 101),
+    "peripatos_caves": (66, 78), "pnyx": (30, 90), "meton_dial": (29, 102),
     "theatre": (119, 117), "odeion": (134, 108), "acharnian_gate": (41, 8),
     "diochares_gate": (145, 60), "ne_gate": (110, 12), "halade_gate": (80, 135),
     "itonian_gate": (126, 128), "melitides_gate": (31, 110), "piraeus_gate": (3, 66),

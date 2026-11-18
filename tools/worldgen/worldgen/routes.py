@@ -846,6 +846,11 @@ def beacon_near(W: World, way: Way, i: int, item: str) -> None:
 
 # --- farms, harbours, charcoal --------------------------------------------------------------
 
+def on_stair(W: World, c: int, r: int) -> bool:
+    o = int(W.L.OCC[r, c])
+    return o >= 0 and W.cat.items[W.L.items[o].id].rise > 0
+
+
 def family_at(W: World, c: int, r: int) -> str | None:
     return W.biome(int(W.stretch[r, c])).get("hamlet")
 
@@ -862,8 +867,9 @@ def farms(W: World, g: Graph, way: Way) -> None:
         mark = start
         i = 3
         while i < n - 6:
-            if way.chain[i] < mark or i in way.skip or way.near_town[i] < 8:
-                i += 1
+            if way.chain[i] < mark or i in way.skip or way.near_town[i] < 8 or \
+                    any(on_stair(W, c_, r_) for c_, r_ in section(way.path, i, way.width)):
+                i += 1   # a track never leaves the road over a ramp's side (walkers cannot)
                 continue
             c, r = way.path[i]
             fam = family_at(W, c, r)

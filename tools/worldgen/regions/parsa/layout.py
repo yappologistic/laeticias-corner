@@ -13,12 +13,21 @@ detail. Every coordinate below is from the bible's tables (§2.2-§2.6) unless a
 it differs.
 """
 
+import importlib.util
+from pathlib import Path
+
 import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
 from worldgen.finish import clear_doors, fit_faces, fords, free, glow_cap, orth, put, seam
 from worldgen.shapes import Ellipse, Line, Mask, Rect
+
+# Rome's clean-up passes for kit whose spots no walker can use.
+_spec = importlib.util.spec_from_file_location(
+    "worldgen_region_rome_common", Path(__file__).resolve().parent.parent / "rome" / "common.py")
+C = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(C)
 
 N = 144
 P = "parsa."
@@ -193,8 +202,8 @@ def build(L: Layout) -> None:
     street([(57, 47), (58, 50), (71, 50)], width=1, paving=STONE)         # round the Gate's south
     street([(66, 48), (66, 50)], width=1, paving=STONE)                   # Gate south door
     east_st = street([(89, 47), (89, 68)], width=3, paving=STONE)         # bible c 88..90
-    street([(85, 68), (85, 81)], width=1, paving=STONE)                   # west of the Tripylon
-    street([(85, 68), (89, 68)], width=1, paving=STONE)
+    street([(85, 72), (85, 81)], width=1, paving=STONE)                   # west of the Tripylon,
+    # clear of the Apadāna's east stair (rows 64..71), whose sides walkers cannot cross
     court = street([(57, 80), (99, 80)], width=2, paving=STONE)          # courts r 80..81
     street([(71, 82), (71, 96)], width=1, paving=STONE)                   # Tačara / Hadiš lane
     street([(99, 81), (99, 103)], width=1, paving=STONE)                  # to the Treasury's west door
@@ -203,7 +212,8 @@ def build(L: Layout) -> None:
     street([(100, 36), (100, 44)], width=1, paving=STONE)                 # forecourt cross-path
     street([(92, 44), (111, 44)], width=1, paving=STONE)                  # through the building site
     street([(94, 75), (118, 75)], width=2, paving=STONE)                  # masons' yard
-    street([(118, 36), (118, 110)], width=2, paving=STONE)                # east service street
+    street([(118, 36), (118, 74)], width=2, paving=STONE)                 # east service street,
+    street([(114, 77), (118, 77), (118, 110)], width=2, paving=STONE)     # round the haul ramp
     street([(100, 110), (118, 110)], width=2, paving=STONE)               # treasury's south door
     street([(57, 104), (79, 104)], width=1, paving=STONE)                 # Hadiš kitchens
     street([(76, 104), (76, 117)], width=1, paving=STONE)
@@ -378,7 +388,14 @@ def build(L: Layout) -> None:
         if L.OCC[r, c] < 0:
             L.place(kit[int(kind[r, c] * len(kit))], at=(int(c), int(r)))
 
+    # Kit whose slot spots (the set's basins, sluices, kilns, ovens, horse lines and troughs
+    # gained them) fall on closed ground or beyond a walker's reach goes, as in Rome.
+    # The kilns, the throne and the scribes' desks stay: the region's life works at them (V7
+    # still judges them).
+    keep = frozenset({P + "p_kiln", P + "p_throne", P + "p_scribe_desk"})
     clear_doors(L)
+    C.drop_bad_spots(L, keep)
+    C.drop_unreached(L, keep=keep)
     glow_cap(L, {P + "p_house_small": 0, P + "p_house": 1, P + "p_workshop": 2, P + "p_oven": 3})
     seam(L, GRASS, ROUGH)
     fit_faces(L, P + "rock")
@@ -557,17 +574,19 @@ def _town(L: Layout, spur, noise) -> None:
                      ((33, 102), "west")):
         L.place(P + "p_granary", at=at, face=face)
     L.paint(Rect(27, 99, 32, 104), GRAVEL)
-    for at in ((28, 100), (31, 100)):
+    for at in ((28, 100), (30, 100)):      # (31, 100) is the east granary's door step
         L.place(P + "p_scribe_desk", at=at, face="south")
     L.place(P + "p_scales", at=(31, 103))
     for at in ((28, 104), (30, 104), (27, 103)):
         L.place(P + "p_sacks", at=at)
     L.place(P + "p_jars", at=(32, 104))
     # Brickfield and kilns (Bēl-iddin) by the canal; drying fields in rows with gaps.
-    for at in ((38, 92), (41, 92), (44, 92), (38, 95), (44, 95), (40, 101), (43, 101)):
+    for at in ((38, 92), (41, 92), (43, 92), (38, 95), (44, 95), (40, 101), (43, 101)):
         L.place(P + "p_brickfield", at=at)
-    for at in ((46, 93), (46, 96), (37, 103)):
-        L.place(P + "p_kiln", at=at)
+    # The kiln by the road, its loading side (west, a slot in the set now) kept free of the
+    # brickfields; the old second and third kilns would load onto a brickfield or where no way
+    # reaches.
+    L.place(P + "p_kiln", at=(46, 93))
     L.place(P + "p_workshop", at=(41, 95), face="south")
     # Weaving workshop (Ṛtakāmā's forty weavers): sheds with upright looms in a yard.
     L.place(P + "p_workshop", at=(38, 81), face="north")
@@ -600,7 +619,7 @@ def _town(L: Layout, spur, noise) -> None:
     L.houses(near, {P + "p_house": 1}, front=near_front, gap=0.12, seed="upper_town")
     L.houses(near, {P + "p_house_small": 3, P + "p_granary": 0.5}, front=near_front, gap=0.2,
              seed="upper_town_fill")
-    crafts = Rect(22, 87, 48, 111)
+    crafts = Rect(22, 87, 48, 111) - Rect(26, 99, 32, 105)   # the granary court stays open
     crafts_front = [lanes[2], lanes[3], lanes[4], lanes[7]]
     L.houses(crafts, {P + "p_house": 2, P + "p_workshop": 1}, front=crafts_front, gap=0.25,
              seed="crafts")

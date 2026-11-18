@@ -193,6 +193,7 @@ Between two portals of a town without a layout the base carries the road through
 | V13 | determinism: two compiles give the same bytes (test suite) | test |
 | V14 | the base's relief: no isolated single-tile level change on open country, at most 2 % of it on one-tile benches, no river reach under 6 tiles between two falls of under 3 levels | error (base) |
 | V15 | a marked `sightline` holds no world kit (fords, plank ramps, timber bridges, …) and no placeholder | error |
+| V17 | the engine's walk rules on every graph edge (`worldgen/walk.py`) | error (a step only a landmark's `walk_z` makes: warning) |
 | V16 | crossings (`worldgen/crossings.py`): every step the graph makes onto or off a deck (a landmark's walk tiles at its level plus `walk_z`, walkable kit on water at the water's level) stays within half a level of what it meets; bridges, fords, pontoons, landmarks on water and gates a road passes through are joined at two ends (a pier may end at a `dest` node on its planks); a landmark bridge's walkway never ends over water; connect decks run along one axis (two wide draws a frame); a stair's foot and head landings are walkable, at its level and `rise` higher, and met by a path (wide flights share landings) | error (a landmark floor on dry land, landmark stairs: warning) |
 
 Additions: V1 also checks that every placed variant is a valid look or rotation of its catalog
@@ -212,6 +213,21 @@ commit it with the layer that changed it. A region README is complete when it ha
 
 `build.sh --city <region>…` runs the life checks of a city's region file (`worldgen/citylife.py`,
 `lifesim.py`, `lifereport.py`); `--check` runs them on the committed city files too.
+
+Chains (`worldgen/lifesim.py`, read the same way by the engine): a slot reference
+(`<item>.<slot>`) names one instance per chain. When two stages of a chain name the same slot
+reference with a different `near`, **the later stage's choice wins for both** (the simulator
+resolves references into one table, the last stage writing it): to send two stages to two
+instances of one kind, give them different slot references or one `near` each that resolves to
+the same instance. `athens_oil` (`g_stall.sell`) and `ostia_grain` (`rome.quay.mooring`) rely on
+this today.
+
+V17 mirrors the engine's walk rules (`worldgen/walk.py`, from `src/world/world_map.cpp`) for every
+graph edge: tiles walkable as the engine builds them (a landmark stair only on its walk tiles), a
+step within half a level of the facing edges (a level onto a deck), a stair entered only at its
+foot or head. A step onto a landmark's own floor or tread that only its `walk_z` makes (half to
+one level) is a warning for the art or the engine. Landmark stairs' edges run over their walk
+tiles (`compiler._stair_course`); a stair end on a landmark's floor is not snapped to a street.
 
 Every region file (cities through `--city`, the rest through `--life`) also gets its sound
 (`worldgen/sound.py`: `theme.sound`, `districts[].sound`, event `sfx`/`ambience`/`sounds`,

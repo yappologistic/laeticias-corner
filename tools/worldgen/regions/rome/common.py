@@ -189,16 +189,16 @@ def near_other_level(L: Layout, tile, lvl: int, d: int = 2) -> bool:
     return bool((L.STREET[sub] & (L.LV[sub] != lvl)).any())
 
 
-def drop_bad_spots(L: Layout) -> None:
+def drop_bad_spots(L: Layout, keep: frozenset = frozenset()) -> None:
     """Kit whose door or slot spots (off its own footprint) fall outside the layer, on water, on
-    no ground, or on a landmark's closed tiles cannot be used: it goes."""
+    no ground, or on a landmark's closed tiles cannot be used: it goes (kinds in `keep` stay)."""
     water = np.zeros(L.T.shape, dtype=bool)
     for t, name in enumerate(L.terrains):
         if L.cat.is_water(name):
             water |= L.T == t
     for p in L.items:
         d = L.cat.items[p.id]
-        if p.removed or d.landmark or d.rise:
+        if p.removed or d.landmark or d.rise or p.id in keep:
             continue
         own = set(p.tiles())
         spots = [(sid, c, r) for sid, lst in p.slots.items() for c, r, _f in lst]
@@ -218,9 +218,10 @@ def drop_bad_spots(L: Layout) -> None:
                 break
 
 
-def drop_unreached(L: Layout, reach: int = 22) -> None:
+def drop_unreached(L: Layout, reach: int = 22, keep: frozenset = frozenset()) -> None:
     """Kit with any slot spot (off its footprint) that no street reaches within `reach` steps of
-    one level over open ground goes (V7 asks it of every spot, `clear_doors` of one)."""
+    one level over open ground goes (V7 asks it of every spot, `clear_doors` of one); kinds in
+    `keep` stay."""
     from collections import deque
     water = np.zeros(L.T.shape, dtype=bool)
     for t, name in enumerate(L.terrains):
@@ -254,7 +255,7 @@ def drop_unreached(L: Layout, reach: int = 22) -> None:
                 q.append((a, b))
     for p in L.items:
         d = L.cat.items[p.id]
-        if p.removed or d.landmark or d.rise:
+        if p.removed or d.landmark or d.rise or p.id in keep:
             continue
         spots = [(sid, c, r) for sid, lst in p.slots.items() for c, r, _f in lst]
         if p.door:
