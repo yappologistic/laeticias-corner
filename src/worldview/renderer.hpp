@@ -23,6 +23,7 @@
 #include "worldview/actor_looks.hpp"
 #include "worldview/camera.hpp"
 #include "worldview/cell_cache.hpp"
+#include "worldview/cover.hpp"
 #include "worldview/gather.hpp"
 #include "worldview/order.hpp"
 #include "worldview/overview.hpp"
@@ -235,6 +236,7 @@ private:
     std::unique_ptr<PageAtlas> pages_;
     std::unique_ptr<WorldSprites> sprites_;
     std::unique_ptr<Overview> overview_;
+    std::unique_ptr<CoverMap> cover_; // what hides a ground point at the coarser levels
     Hole hole_;
     const Atlas& homeAtlas_;
     CellCache cells_;
