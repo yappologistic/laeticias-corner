@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <map>
 #include <numeric>
 #include <random>
@@ -441,4 +442,40 @@ TEST_CASE("real world: stairs and ramps stand on their lower tile and reach thei
     CHECK(stairs > 50);
     CHECK(drawnHigh == 0);
     for (const std::string& s : unreached) MESSAGE("data finding: no head at its rise: " << s);
+}
+
+TEST_CASE("real world: a stair is stepped onto at its foot and off at its head") {
+    // world-loose-ends.md: first treads drawn 10-14 px up (`walk_z` is a tread's middle) refused
+    // the step from the ground. Every walkable tile on a stair's foot edge takes the step from
+    // the ground before it at the stair's level, and the head edge to the ground `rise` up.
+    const WorldMap& m = *realWorld().map;
+    int edges = 0;
+    std::vector<std::string> refused;
+    for (const Placed& it : m.items()) {
+        const ItemInfo& info = m.info(it);
+        if (info.rise <= 0 || it.head < 0) continue;
+        const TileRect r = it.rect();
+        for (const auto& [end, level] : {std::pair{(it.head + 2) % 4, int(it.level)},
+                                         std::pair{int(it.head), it.level + info.rise}}) {
+            const TilePos d = lc::world::kSteps[static_cast<std::size_t>(end)];
+            for (int y = r.y0; y < r.y1; ++y)
+                for (int x = r.x0; x < r.x1; ++x) {
+                    const TilePos p{x, y};
+                    const TilePos q{x + d.x, y + d.y};
+                    if (r.contains(q) || !m.inBounds(q) || !m.walkable(p) || !m.walkable(q) ||
+                        m.itemAt(q) >= 0 || m.level(q) != level)
+                        continue;
+                    ++edges;
+                    std::array<WalkStep, 4> steps{};
+                    const int n = m.walkNeighbours(q, steps);
+                    if (std::none_of(steps.begin(), steps.begin() + n,
+                                     [&](const WalkStep& s) { return s.to == p; }))
+                        refused.push_back(
+                            std::format("{} ({}, {}) from ({}, {})", info.id, p.x, p.y, q.x, q.y));
+                }
+        }
+    }
+    for (const std::string& s : refused) MESSAGE("refused: " << s);
+    CHECK(edges > 100);
+    CHECK(refused.empty());
 }

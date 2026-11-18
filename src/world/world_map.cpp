@@ -497,14 +497,15 @@ int WorldMap::edgeZ(TilePos p, int dir) const {
     const Placed& it = items_[c.occupancy[l] - 1];
     const ItemInfo& inf = info(it);
     const TilePos rel{p.x - it.x, p.y - it.y};
+    // A stair meets its foot and head at their levels: `walk_z` is a tread's middle, and a first
+    // tread drawn 10-14 px up must still be stepped onto from the ground.
+    const bool stair = inf.rise > 0 && it.head >= 0;
+    if (stair && dir == it.head) return (it.level + inf.rise) * levelPx_;
+    if (stair && dir == (it.head + 2) % 4) return it.level * levelPx_;
     if (const GeomVariant* g = geometry(it))
         for (const auto& [t, z] : g->walkZ)
             if (t == rel) return it.level * levelPx_ + z;
-    if (inf.rise > 0 && it.head >= 0) {
-        if (dir == it.head) return (it.level + inf.rise) * levelPx_;
-        if (dir == (it.head + 2) % 4) return it.level * levelPx_;
-        return INT_MIN; // the sides of a stair are parapets
-    }
+    if (stair) return INT_MIN; // the sides of a stair are parapets
     return it.level * levelPx_;
 }
 
