@@ -870,6 +870,11 @@
      "id": "door",
      "kind": "door",
      "cap": 1
+    },
+    {
+     "id": "queue",
+     "kind": "stand",
+     "cap": 3
     }
    ]
   },
@@ -915,7 +920,14 @@
    "height": 40,
    "emitters": {
     "smoke": "smoke"
-   }
+   },
+   "slots": [
+    {
+     "id": "load",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
   },
   {
    "id": "parsa.p_brickfield",
@@ -957,7 +969,14 @@
    "height": 24,
    "emitters": {
     "smoke": "smoke"
-   }
+   },
+   "slots": [
+    {
+     "id": "bake",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
   },
   {
    "id": "parsa.p_well",
@@ -1009,7 +1028,14 @@
     "base"
    ],
    "height": 6,
-   "fps": 4
+   "fps": 4,
+   "slots": [
+    {
+     "id": "fill",
+     "kind": "use",
+     "cap": 1
+    }
+   ]
   },
   {
    "id": "parsa.p_qanat_shaft",
@@ -1091,7 +1117,10 @@
    "height": 22,
    "emitters": {
     "fire": "parsa.fire"
-   }
+   },
+   "states": [
+    "lit"
+   ]
   },
   {
    "id": "parsa.p_torch",
@@ -1110,7 +1139,10 @@
    "height": 30,
    "emitters": {
     "flame": "parsa.torch_flame"
-   }
+   },
+   "states": [
+    "lit"
+   ]
   },
   {
    "id": "parsa.p_parasol",
@@ -1158,7 +1190,14 @@
    "count": 2,
    "on": "land",
    "height": 110,
-   "fps": 2
+   "fps": 2,
+   "slots": [
+    {
+     "id": "rope",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
   },
   {
    "id": "parsa.p_scaffold",
@@ -1182,7 +1221,14 @@
    "layout": "rotate",
    "count": 2,
    "on": "land",
-   "height": 24
+   "height": 24,
+   "slots": [
+    {
+     "id": "carve",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
   },
   {
    "id": "parsa.p_jars",
@@ -1243,7 +1289,14 @@
    "layers": [
     "base"
    ],
-   "height": 30
+   "height": 30,
+   "slots": [
+    {
+     "id": "weigh",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
   },
   {
    "id": "parsa.p_tent",
@@ -1301,7 +1354,14 @@
    "layout": "rotate",
    "count": 2,
    "on": "land",
-   "height": 30
+   "height": 30,
+   "slots": [
+    {
+     "id": "groom",
+     "kind": "work",
+     "cap": 2
+    }
+   ]
   },
   {
    "id": "parsa.p_trough",
@@ -1316,7 +1376,14 @@
    "layers": [
     "base"
    ],
-   "height": 12
+   "height": 12,
+   "slots": [
+    {
+     "id": "groom",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
   },
   {
    "id": "parsa.p_threshing",
@@ -1332,7 +1399,14 @@
     "base"
    ],
    "height": 4,
-   "walkable": true
+   "walkable": true,
+   "slots": [
+    {
+     "id": "thresh",
+     "kind": "work",
+     "cap": 2
+    }
+   ]
   },
   {
    "id": "parsa.p_dovecote",
@@ -1491,6 +1565,13 @@
    "height": 12,
    "states": [
     "open"
+   ],
+   "slots": [
+    {
+     "id": "open",
+     "kind": "work",
+     "cap": 1
+    }
    ]
   },
   {
@@ -1672,6 +1753,328 @@
     "base"
    ],
    "height": 8
+  },
+  {
+   "id": "parsa.ishtar_gate",
+   "name": "Ishtar Gate",
+   "footprint": [
+    4,
+    6
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 144,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "ishtar_gate",
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "admire",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "parsa.processional_way",
+   "name": "Processional Way",
+   "footprint": [
+    14,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 2,
+   "layers": [
+    "base"
+   ],
+   "card": "processional_way"
+  },
+  {
+   "id": "parsa.etemenanki",
+   "name": "Etemenanki",
+   "footprint": [
+    12,
+    12
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.35,
+   "height": 322,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "etemenanki",
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "priest",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.babylon_wall",
+   "name": "Babylon's inner wall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 1,
+   "on": "land",
+   "height": 70
+  },
+  {
+   "id": "parsa.babylon_tower",
+   "name": "Tower of the inner wall",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "height": 106
+  },
+  {
+   "id": "parsa.lion_wall",
+   "name": "Lion wall of the Processional Way",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 1,
+   "on": "land",
+   "height": 42
+  },
+  {
+   "id": "parsa.susa_palace",
+   "name": "Palace of Darius at Susa",
+   "footprint": [
+    12,
+    14
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.4,
+   "height": 136,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "susa_palace",
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "petition",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.pasargadae_garden",
+   "name": "Palace P and its garden",
+   "footprint": [
+    10,
+    12
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 70,
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "occluder": true,
+   "card": "pasargadae_garden",
+   "slots": [
+    {
+     "id": "stroll",
+     "kind": "stand",
+     "cap": 3
+    },
+    {
+     "id": "gardener",
+     "kind": "tend",
+     "cap": 1
+    },
+    {
+     "id": "throne",
+     "kind": "stand",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.halys_gates",
+   "name": "Gates at the Halys",
+   "footprint": [
+    8,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 90,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "halys_gates",
+   "emitters": {
+    "fire": "parsa.fire"
+   },
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "seal_check",
+     "kind": "stand",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "parsa.gates_station",
+   "name": "Station at the Persian Gates",
+   "footprint": [
+    6,
+    8
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 106,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "gates_station",
+   "emitters": {
+    "beacon": "parsa.fire"
+   },
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "parsa.royal_road_head",
+   "name": "Royal Road station at Sardis",
+   "footprint": [
+    4,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "rotations": [
+    0
+   ],
+   "landmark": true,
+   "scale": 0.5,
+   "height": 40,
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "occluder": true,
+   "card": "royal_road_head",
+   "slots": [
+    {
+     "id": "seal_check",
+     "kind": "stand",
+     "cap": 1
+    },
+    {
+     "id": "groom",
+     "kind": "work",
+     "cap": 1
+    },
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
   }
  ],
  "actors": [
