@@ -102,6 +102,7 @@ gpu::Quality WorldView::setQuality(gpu::Quality q) {
         }
         view_ = {}; // remade in the format the shaders read
         shadow_ = {};
+        reserveGpuTargets();
         if (!lights_) {
             lights_ = std::make_unique<WorldLights>(world_, *sprites_, hole_);
             if (lights_->unmatched() > 0)
@@ -119,6 +120,22 @@ gpu::Quality WorldView::setQuality(gpu::Quality q) {
     }
     post_->setQuality(q);
     return q;
+}
+
+void WorldView::reserveGpuTargets() {
+    // Every target the path draws into, sized for the whole display at once: a window resized or
+    // made fullscreen later never allocates in the middle of play (a 15 MiB target costs a driver
+    // stall). Windowless renderers have their one size already.
+    SDL_Window* win = SDL_GetRenderWindow(renderer_);
+    const SDL_DisplayMode* m =
+        win != nullptr ? SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(win)) : nullptr;
+    if (m == nullptr) return;
+    const float density = m->pixel_density > 0 ? m->pixel_density : 1.0f;
+    const int w = static_cast<int>(std::ceil(static_cast<float>(m->w) * density)) + 3;
+    const int h = static_cast<int>(std::ceil(static_cast<float>(m->h) * density)) + 3;
+    ensure(view_, w, h);
+    ensure(shadow_, w, h);
+    post_->prepare(view_.w, view_.h);
 }
 
 gpu::Quality WorldView::quality() const {

@@ -224,6 +224,8 @@ private:
     // Lights seen from afar (the overview) into the glow target, bloom, back to the world.
     void bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow);
     void compositeGpu(Vec2 scale, bool smooth);
+    // The targets sized for the display when the path is made (no allocation on a resize).
+    void reserveGpuTargets();
     // The shadow layer laid on in the sky's colour of the hour (the classic darkening's place).
     void shadeGpu(SDL_Texture* layer, float w, float h);
     // A swaying item, bent in strips by the wind.

@@ -5,6 +5,8 @@
 #include "app/app_impl.hpp"
 #include "render/gpu/post.hpp"
 
+#include <array>
+
 namespace lc {
 
 gpu::Quality App::wantedQuality() const {
@@ -75,31 +77,42 @@ bool App::benchLook(const std::function<bool(const char*, const BenchFrames&, bo
     seasonPin_ = season;
     clock_.setDay(9);
     clock_.setPin(ClockPin::Auto, true);
-    for (int t = 0; t < gpu::kQualityCount; ++t) {
-        const auto q = static_cast<gpu::Quality>(t);
-        if (worldView_->setQuality(q) != q) continue;
-        for (const LookSpot& s : spots) {
+    // The tiers alternate in short rounds on the same view, so a busy machine's drift falls on
+    // all of them alike; each tier's frames from every round are judged together.
+    constexpr int kRounds = 6;
+    const int per = std::max(1, frames / kRounds);
+    for (const LookSpot& s : spots) {
+        clock_.setTime((s.hour - 6.0) / 24.0 + (s.hour < 6.0 ? 1.0 : 0.0));
+        camera_.place(gridToHome(s.grid), kZoomLevels[kDefaultZoomLevel], screen());
+        camera_.beginStep();
+        worldView_->jumped(
+            {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
+        for (int i = 0; i < tuning::kBenchSettleFrames && !worldView_->settled(); ++i)
+            (void)benchFrame();
+        warm();
+        std::array<BenchFrames, gpu::kQualityCount> fr;
+        std::array<worldview::FrameStats, gpu::kQualityCount> st{};
+        for (int round = 0; round < kRounds; ++round)
+            for (int t = 0; t < gpu::kQualityCount; ++t) {
+                const auto q = static_cast<gpu::Quality>(t);
+                if (worldView_->setQuality(q) != q) continue;
+                for (int f = 0; f < 8; ++f) (void)benchFrame(); // the switch's first frames
+                for (int f = 0; f < per; ++f)
+                    fr[static_cast<std::size_t>(t)].all.push_back(benchFrame());
+                st[static_cast<std::size_t>(t)] = worldView_->stats();
+            }
+        for (int t = 0; t < gpu::kQualityCount; ++t) {
+            const auto ti = static_cast<std::size_t>(t);
+            if (fr[ti].all.empty()) continue;
             char name[64];
             (void)std::snprintf(name, sizeof name, "look %s: %s",
-                                std::string(gpu::qualityId(q)).c_str(), s.name);
-            clock_.setTime((s.hour - 6.0) / 24.0 + (s.hour < 6.0 ? 1.0 : 0.0));
-            for (int attempt = 0; attempt < 2; ++attempt) {
-                camera_.place(gridToHome(s.grid), kZoomLevels[kDefaultZoomLevel], screen());
-                camera_.beginStep();
-                worldView_->jumped(
-                    {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
-                for (int i = 0; i < tuning::kBenchSettleFrames && !worldView_->settled(); ++i)
-                    (void)benchFrame();
-                warm();
-                BenchFrames fr;
-                for (int f = 0; f < frames; ++f) fr.all.push_back(benchFrame());
-                const worldview::FrameStats& st = worldView_->stats();
-                std::printf("bench: %s: world draw calls %d, look targets and world targets %.0f "
-                            "MiB, world textures %.0f MiB\n",
-                            name, st.drawCalls, static_cast<double>(st.targetBytes) / 1048576.0,
-                            static_cast<double>(st.textureBytes()) / 1048576.0);
-                if (judgeCase(name, fr, attempt == 1)) break;
-            }
+                                std::string(gpu::qualityId(static_cast<gpu::Quality>(t))).c_str(),
+                                s.name);
+            std::printf(
+                "bench: %s: world draw calls %d, targets %.1f MiB, world textures %.0f MiB\n", name,
+                st[ti].drawCalls, static_cast<double>(st[ti].targetBytes) / 1048576.0,
+                static_cast<double>(st[ti].textureBytes()) / 1048576.0);
+            (void)judgeCase(name, fr[ti], true);
         }
     }
     seasonPin_ = -1;
