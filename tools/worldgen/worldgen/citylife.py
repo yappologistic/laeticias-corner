@@ -160,7 +160,15 @@ class RegionView:
     districts: dict[str, dict]                       # name -> {"tiles", "walk", "chunks", "bbox"}
     landmarks: list[str] = field(default_factory=list)
     item_cards: dict[str, str] = field(default_factory=dict)   # placed item -> its catalog card
+    layer: str = ""
     _comp: dict[str, int] | None = None
+
+    def has_node(self, n: str) -> bool:
+        """A node of the region's graph, named bare or as `<layer>:<id>` (as the engine reads),
+        or `next`: the next node of the event's route."""
+        return n in self.nodes or n == "next" or (
+            bool(self.layer) and n.startswith(self.layer + ":") and
+            n[len(self.layer) + 1:] in self.nodes)
 
     def component(self, node: str) -> int:
         if self._comp is None:
@@ -339,7 +347,7 @@ def region_view(world: World, cat, graphs: dict[str, Graph], root: Path, rid: st
             "bbox": (int(is_.min()) + c0, int(js.min()) + r0, int(is_.max()) + c0,
                      int(js.max()) + r0)}
     return RegionView(rid, kinds, goods, audio, slots, instances, nodes, adj, ports, districts,
-                      sorted(set(landmarks)), dict(sorted(item_cards.items())))
+                      sorted(set(landmarks)), dict(sorted(item_cards.items())), layer)
 
 
 def _ring(it):
@@ -697,7 +705,7 @@ def _check_refs(doc, view, roles, bad):
     for e in doc.get("events", []):
         where = f"event {e['id']}"
         for n in e.get("route", []):
-            if n not in view.nodes:
+            if not view.has_node(n):
                 bad("L1", where, f"route node {n!r} is not in the region's graph")
         for c in e.get("cast", []):
             for g in c.get("rotate", []):
@@ -771,7 +779,7 @@ def _check_target(t: dict, where: str, view, doc, roles, bad):
         slot = t.get("slot") or ("beside" if t.get("spot") == "beside" else None)
         if slot and slot != "beside" and slot not in view.slots.get(t["item"], {}):
             bad("L1", where, f"{t['item']} has no slot {slot!r}")
-    if "node" in t and t["node"] not in view.nodes:
+    if "node" in t and not view.has_node(t["node"]):
         bad("L1", where, f"node {t['node']!r} is not in the region's graph")
     if "zone" in t and t["zone"] not in view.districts:
         bad("L1", where, f"zone {t['zone']!r} is not a district of the region")

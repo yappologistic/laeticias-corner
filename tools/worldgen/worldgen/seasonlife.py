@@ -311,7 +311,7 @@ def tokens(doc: dict, clim: dict, raw: dict) -> None:
     for tk in doc.get("lanes_tokens", []):
         if "by_month" in tk:
             continue
-        row = token_row(tk)
+        row = tk.pop("_row", None) or token_row(tk)
         if row is None:
             continue
         if isinstance(row, str):
@@ -438,16 +438,16 @@ def fauna(doc: dict, clim: dict) -> None:
             continue
         pops = [p for p in d.get("populations", []) if p.get("actor") != "world.stork"]
         if fa.get("storks"):
-            pops.append({"actor": "world.stork", "density": "daytime", "max_per_chunk": 1,
+            pops.append({"actor": "world.stork", "density": "daytime", "max_per_chunk": 0.5,
                          "when": in_months(fa["storks"])})
         cranes = sorted(set(fa.get("cranes_pass", [])) | set(fa.get("cranes_winter", [])),
                         key=S.month_index)
         if cranes:
             pops.append({"actor": "world.crane", "density": "daytime",
-                         "max_per_chunk": 2 if fa.get("cranes_winter") else 1,
+                         "max_per_chunk": 1 if fa.get("cranes_winter") else 0.5,
                          "when": in_months(cranes)})
         if fa.get("swifts") or fa.get("swallows"):
-            pops.append({"actor": "world.swift", "density": "daytime", "max_per_chunk": 1,
+            pops.append({"actor": "world.swift", "density": "daytime", "max_per_chunk": 0.5,
                          "when": in_months(fa.get("swifts") or fa["swallows"])})
         d["populations"] = pops
 
@@ -710,7 +710,7 @@ def _ev(id_, months, hours, cast, steps, sfx, string, size="medium", rarity="fes
 
 
 def _card(title, epithet, text):
-    return {"title": title, "epithet": epithet, "text": text}
+    return {"kind": "idea", "title": title, "epithet": epithet, "text": text}
 
 
 # Per town: festivals on their months, events, population factors by month (a rule of
