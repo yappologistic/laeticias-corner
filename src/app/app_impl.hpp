@@ -24,6 +24,7 @@
 #include "core/visitors.hpp"
 #include "core/weather.hpp"
 #include "core/world.hpp"
+#include "core/worlds.hpp"
 #include "core/writer.hpp"
 #include "platform/batch.hpp"
 #include "platform/sdl_ptr.hpp"
@@ -33,6 +34,7 @@
 #include "render/scene.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+#include "ui/menus.hpp"
 #include "ui/profiler.hpp"
 
 #include <cstdio>
@@ -105,7 +107,9 @@ private:
     bool init();
     bool createWindow();
     void loadOrStart();
-    void startNewWorld(std::vector<std::string> taken);
+    void startNewWorld(std::vector<std::string> taken, std::string name = {});
+    // "{resident}'s Corner" (data, never a name in code), or a plain one with nobody there.
+    [[nodiscard]] std::string defaultWorldName() const;
     void adopt(SaveData& data);
     bool loadWorld(const fs::path& file);
     // Saves the world (and the profile when it changed). Written in the background unless
@@ -221,6 +225,36 @@ private:
     void pushKey(std::string_view combo, bool down);
     std::optional<std::string> check(const ScriptCommand& c);
     bool shot(const fs::path& file);
+
+    // The front door (app_front.cpp).
+    [[nodiscard]] bool frontDoor() const; // title, menus and tour (always, but in tests)
+    void resetWorld();
+    void enterWorld();
+    void startPlay();
+    void leaveWorld();
+    bool openWorld(const std::string& slug);
+    void createWorld(std::string name, bool freeBuild);
+    void refreshWorlds();
+    const MenuModel& menuModel();
+    void profileChanged();
+    void writeProfileIfDue();
+    void applyVolumes();
+    void applyReduceMotion();
+    void setFullscreen(bool on);
+    void applyMenuActions();
+    [[nodiscard]] static std::string_view nameProblem(NameProblem p);
+    void titleDrift(float dt);
+    void startTour();
+    void endTour();
+    void setTourText();
+    void updateTour(float dt);
+    // Postcards (app_photo.cpp).
+    [[nodiscard]] fs::path postcardDir() const;
+    void openPostcardsFolder();
+    void cycleFrame(int d);
+    [[nodiscard]] int postcardFrame() const;
+    void updatePostcardDate();
+    void drawPostcard(Painter& p);
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
@@ -363,8 +397,38 @@ private:
     Profiler profiler_;
     bool profilerOn_ = false;
     bool hudHidden_ = false; // the benchmark's results card draws instead of the interface
-    double sceneMs_ = 0;     // building and queuing the world's draws, last frame
-    double hudDrawMs_ = 0;   // drawing the interface, last frame
+
+    // The front door
+    Menus menus_;
+    MenuModel menuModel_;
+    std::vector<WorldSummary> worldList_;
+    std::vector<TexturePtr> worldThumbs_;
+    std::vector<std::string> worldDetails_;
+    std::vector<MenuWorld> menuWorlds_;
+    Sprite logo_;
+    int deleteIndex_ = -1;   // the world the delete dialog asks about
+    float profileDue_ = -1;  // real seconds when the profile is to be written (-1: not due)
+    float effectsTick_ = 0;  // when the effects slider last clicked
+    float titleAngle_ = 0;   // the title's drifting camera
+    int tourStep_ = 0;       // 0: no tour
+    float tourT_ = 0;        // seconds in this step
+    bool tourMoved_ = false; // the player looked around (pan or zoom)
+    int placements_ = 0;     // pieces placed (the tour's planting step)
+    int tourPlacements_ = 0;
+    std::string coachText_;
+    std::string tourPulse_;
+    int frameIndex_ = 0;
+    // Postcards
+    std::array<Sprite, 9> frameParts_{}; // the chosen frame's nine pieces and plate
+    int framePartsOf_ = -2;
+    bool framePlain_ = true;
+    std::string captionDate_;
+    std::int64_t captionKey_ = -1;
+    float captionTop_ = 0;      // where the postcard's caption begins (the bar keeps above it)
+    bool greetPending_ = false; // she greets the player as they walk in from the title
+    bool textInput_ = false;    // SDL text input is on (a name is being typed)
+    double sceneMs_ = 0;        // building and queuing the world's draws, last frame
+    double hudDrawMs_ = 0;      // drawing the interface, last frame
     struct FileCloser {
         void operator()(std::FILE* f) const { (void)std::fclose(f); }
     };
@@ -417,7 +481,6 @@ private:
     bool journalOpen_ = false;
     bool photo_ = false;
     bool capturePending_ = false;
-    bool photoSaved_ = false;
     std::string_view warning_;
     float warnTime_ = 0;
     float lastPaintSound_ = -1;
@@ -427,8 +490,7 @@ private:
     AutosaveClock autosave_;
     FileWriter writer_;
     bool saveFailing_ = false;
-    bool saveBlocked_ = false; // an unreadable save could not be moved aside: never overwrite it
-    bool newerSave_ = false;   // the world to open came from a newer build and was left alone
+    bool freshWorld_ = false; // a new corner nobody has begun yet (the title's preview)
     bool running_ = true;
     int exitCode_ = 0;
     int frame_ = 0;

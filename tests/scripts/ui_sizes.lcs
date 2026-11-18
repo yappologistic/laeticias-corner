@@ -17,8 +17,12 @@ expect tool place
 move @30,31
 wait 10
 shot shots/size_placing.png
-click ui:sound
-expect muted yes
+click ui:menu
+wait 4
+expect page pause
+key escape
+wait 4
+expect page none
 expect count cottage 0
 click ui:journal_close
 wait 15

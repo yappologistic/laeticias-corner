@@ -65,6 +65,18 @@ inline constexpr Glass kGlassTip{
     .shadowSoftness = 10.0f,
     .shadowDrop = 2.0f,
 };
+// The veil over the whole world behind the pause menu and dialogs: mostly the blur itself.
+inline constexpr Glass kGlassVeil{
+    .backdrop = {0.92f, 0.92f, 0.90f, 1.0f},
+    .tint = {0.06f, 0.07f, 0.065f, 0.28f},
+    .sheenTop = {1.0f, 1.0f, 1.0f, 0.0f},
+    .sheenBottom = {1.0f, 1.0f, 1.0f, 0.0f},
+    .rimTop = {1.0f, 1.0f, 1.0f, 0.0f},
+    .rimBottom = {1.0f, 1.0f, 1.0f, 0.0f},
+    .shadow = {0.0f, 0.0f, 0.0f, 0.0f},
+    .shadowSoftness = 0.0f,
+    .shadowDrop = 0.0f,
+};
 // Over a bright scene the glass deepens toward these, keeping text contrast high (about 8:1 or
 // more over a white backdrop); over a dark scene it stays lighter and more see-through.
 inline constexpr float kGlassBrightBackdrop = 0.62f;
@@ -169,6 +181,24 @@ inline constexpr float kCardOut = 0.3f;
 inline constexpr float kReferenceW = 1600.0f;
 inline constexpr float kReferenceH = 900.0f;
 inline constexpr float kMaxScale = 3.0f;
+
+// The front door's panels (UI units).
+inline constexpr float kMenuW = 340.0f;      // title and pause panels
+inline constexpr float kMenuButtonH = 44.0f; // their buttons
+inline constexpr float kCardW = 208.0f;      // a world card
+inline constexpr float kCardThumbH = 120.0f; // its thumbnail (384 x 240 halved, near enough)
+inline constexpr float kDialogW = 440.0f;
+inline constexpr float kSettingsColW = 380.0f;
+inline constexpr float kRowH = 36.0f; // a settings row
+inline constexpr float kSliderW = 150.0f;
+inline constexpr float kFieldH = 40.0f;
+inline constexpr float kPhotoBarH = 44.0f; // the photo bar
+inline constexpr float kSliderTrack = 5.0f;
+inline constexpr float kBarFadeAfter = 2.0f; // seconds without pointer movement
+inline constexpr float kLogoScale = 2.0f;    // the pixel-art logo at this many pixels per pixel
+
+inline constexpr float kPulseSpeed = 4.0f; // the tour's highlight breathes this fast
+inline constexpr float kPulseGrow = 4.0f;  // and grows this far (UI units)
 
 // The profiler overlay.
 inline constexpr float kProfGraphW = 360.0f;

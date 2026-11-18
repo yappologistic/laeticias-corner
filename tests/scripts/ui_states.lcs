@@ -32,10 +32,12 @@ click ui:tab:nature
 wait 3
 click ui:tile:oak
 wait 3
-click ui:sound
-expect muted yes
-click ui:sound
-expect muted no
+click ui:menu
+wait 4
+expect page pause
+key escape
+wait 4
+expect page none
 expect count oak 4
 key b
 wait 12

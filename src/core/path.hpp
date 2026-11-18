@@ -44,7 +44,7 @@ private:
         float f;
         std::uint32_t node;
     };
-    const Catalog& cat_;
+    const Catalog* cat_; // a pointer, so a fresh one can be assigned when another world opens
     std::vector<float> g_;
     std::vector<std::uint32_t> parent_;
     std::vector<std::uint32_t> stamp_; // the search a node's data belongs to

@@ -302,7 +302,7 @@ private:
     static float range(Actor& a, float lo, float hi) { return lo + (hi - lo) * uniform(a); }
     static int range(Actor& a, int lo, int hi);
 
-    const Catalog& cat_;
+    const Catalog* cat_; // a pointer, so a fresh one can be assigned when another world opens
     std::uint64_t seed_;
     std::uint64_t spawned_ = 0; // spawn counter: each actor's stream key
     std::vector<Actor> pool_;

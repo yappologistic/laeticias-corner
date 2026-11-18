@@ -7,7 +7,6 @@ namespace lc::strings {
 
 inline constexpr std::string_view kTitle = "Laeticia's Corner";
 inline constexpr std::string_view kWindowTitle = "Laeticia's Corner";
-inline constexpr std::string_view kDefaultWorldName = "Laeticia's Corner";
 
 inline constexpr std::string_view kBuild = "Build";
 inline constexpr std::string_view kRemove = "Remove";
@@ -113,8 +112,6 @@ inline constexpr std::string_view kHintMovePick = "Click something to pick it up
 inline constexpr std::string_view kHintMoveCarry =
     "Click to put it down · R to rotate · Esc to put it back";
 inline constexpr std::string_view kHintPipette = "Click something to copy it · Esc to cancel";
-inline constexpr std::string_view kHintPhoto =
-    "Frame your photo · Space or click to take it · Esc to return";
 
 inline constexpr std::string_view kWarnOccupied = "Something is already here";
 inline constexpr std::string_view kWarnLand = "This needs dry land";
@@ -135,17 +132,109 @@ inline constexpr std::string_view kTipWild = "Wild land · opens at {} pages ({}
 inline constexpr std::string_view kTipGate = "The road out";
 inline constexpr std::string_view kTipRipe = "Ripe · click to pick";
 inline constexpr std::string_view kHintRipe = "Ripe beds can be picked. Click one.";
-inline constexpr std::string_view kToastPhoto = "Photo saved";
-inline constexpr std::string_view kToastPhotoFailed = "Couldn't save the photo";
 inline constexpr std::string_view kToastSaveFailed = "Couldn't save your corner; will keep trying";
-inline constexpr std::string_view kToastNewerSave =
-    "Your world was saved by a newer version of the game. It is left as it is.";
+inline constexpr std::string_view kToastNotOpened =
+    "Your world couldn't be opened, so it is left as it is. This is a fresh corner.";
 inline constexpr std::string_view kToastWelcome =
     "Welcome back. Laeticia has started a sketchbook: {} pages so far.";
-inline constexpr std::string_view kPhotoFile = "laeticias-corner-{:04}.png"; // numbered
 
 inline constexpr std::string_view kBenchmarkTitle = "Laeticia's Corner benchmark";
 inline constexpr std::string_view kBenchmarkClose = "Press any key or click to close.";
+
+// The front door (docs/design/living-corner.md §6.5–6.10).
+inline constexpr std::string_view kDefaultWorldOf = "{}'s Corner";  // the resident's name
+inline constexpr std::string_view kDefaultWorldAlone = "My Corner"; // when nobody lives there
+inline constexpr std::string_view kContinue = "Continue · {}";
+inline constexpr std::string_view kBegin = "Begin";
+inline constexpr std::string_view kWorldsButton = "Worlds";
+inline constexpr std::string_view kSettings = "Settings";
+inline constexpr std::string_view kQuit = "Quit";
+inline constexpr std::string_view kYourWorlds = "Your worlds";
+inline constexpr std::string_view kNewWorld = "New world";
+inline constexpr std::string_view kPlay = "Play";
+inline constexpr std::string_view kRename = "Rename";
+inline constexpr std::string_view kDelete = "Delete";
+inline constexpr std::string_view kBack = "Back";
+inline constexpr std::string_view kKeyEsc = "Esc";
+inline constexpr std::string_view kWorldDetail = "{}, day {} · {} pages"; // season, day, pages
+inline constexpr std::string_view kCannotOpen = "Can't be opened here";
+inline constexpr std::string_view kCouldNotOpen = "This world couldn't be opened";
+inline constexpr std::string_view kCouldNotOpenText =
+    "Its file is left exactly as it was. It may come from a newer version of the game.";
+inline constexpr std::string_view kNameYourWorld = "Name your world";
+inline constexpr std::string_view kFreeBuild = "Free build";
+inline constexpr std::string_view kFreeBuildText = "Everything unlocked and all land open from "
+                                                   "the start. Wishes still come, just for the "
+                                                   "company.";
+inline constexpr std::string_view kCreate = "Create";
+inline constexpr std::string_view kCancel = "Cancel";
+inline constexpr std::string_view kNameEmpty = "Give it a name first";
+inline constexpr std::string_view kNameTaken = "You already have a world with that name";
+inline constexpr std::string_view kNameTooLong = "At most 28 letters";
+inline constexpr std::string_view kLetterMissing = "That letter isn't in the game's font yet";
+inline constexpr std::string_view kDeleteTitle = "Delete “{}”?";
+inline constexpr std::string_view kDeleteText = "The whole world goes, corner and all. Its "
+                                                "postcards stay where they are. This can't be "
+                                                "undone.";
+inline constexpr std::string_view kKeepIt = "Keep it";
+inline constexpr std::string_view kPaused = "Paused";
+inline constexpr std::string_view kResume = "Resume";
+inline constexpr std::string_view kOpenPostcards = "Open postcards folder";
+inline constexpr std::string_view kBackToWorlds = "Back to worlds";
+inline constexpr std::string_view kMenu = "Menu";
+inline constexpr std::string_view kSound = "Sound";
+inline constexpr std::string_view kMusic = "Music";
+inline constexpr std::string_view kEffects = "Effects";
+inline constexpr std::string_view kAmbience = "Ambience";
+inline constexpr std::string_view kMuteAll = "Mute all";
+inline constexpr std::string_view kDisplay = "Display";
+inline constexpr std::string_view kFullscreen = "Fullscreen";
+inline constexpr std::string_view kInterfaceSize = "Interface size";
+inline constexpr std::string_view kAuto = "Auto";
+inline constexpr std::string_view kPercent = "{}%";
+inline constexpr std::string_view kReduceMotion = "Reduce motion";
+inline constexpr std::string_view kShowGrid = "Show grid";
+inline constexpr std::string_view kVsync = "Wait for the display";
+inline constexpr std::string_view kChatter = "Chatter";
+inline constexpr std::string_view kChatty = "Chatty";
+inline constexpr std::string_view kQuiet = "Quiet";
+inline constexpr std::string_view kHelp = "Help";
+inline constexpr std::string_view kTourSetting = "First-minute tour";
+inline constexpr std::string_view kReplay = "Replay";
+inline constexpr std::string_view kDone = "Done";
+inline constexpr std::string_view kOn = "on";
+inline constexpr std::string_view kOff = "off";
+inline constexpr std::string_view kKeyMute = "M";
+inline constexpr std::string_view kKeyFullscreen = "F11";
+inline constexpr std::string_view kKeyGrid = "G";
+// The first-minute tour (R10.5).
+inline constexpr std::string_view kTourLook = "Drag to look around.";
+inline constexpr std::string_view kTourBuild = "Open Build to plant something.";
+inline constexpr std::string_view kTourPlant = "Pick the {}, then click the ground."; // piece
+inline constexpr std::string_view kTourWish = "{} has a wish. Granting it unlocks new pieces.";
+inline constexpr std::string_view kTourWishAlone = "A wish has come. Granting it unlocks new "
+                                                   "pieces.";
+inline constexpr std::string_view kTourKeys = "Ctrl+Z undoes anything. J opens the sketchbook.";
+inline constexpr std::string_view kTourEnd = "That's all. Make yourself at home.";
+inline constexpr std::string_view kSkipTour = "Skip tour";
+// The photo bar (§6.8) and postcards (R12).
+inline constexpr std::string_view kFrameLabel = "Frame: {}";
+inline constexpr std::string_view kCaption = "Caption";
+inline constexpr std::string_view kHideBar = "Hide bar";
+inline constexpr std::string_view kTakePostcard = "Take postcard";
+inline constexpr std::string_view kOpenFolder = "Open folder";
+inline constexpr std::string_view kClosePhoto = "Close";
+inline constexpr std::string_view kKeyFrame = "F";
+inline constexpr std::string_view kKeyCaption = "T";
+inline constexpr std::string_view kKeyHideBar = "H";
+inline constexpr std::string_view kKeyTake = "Space";
+inline constexpr std::string_view kPostcardSaved = "Postcard saved";
+inline constexpr std::string_view kPostcardFailed = "Couldn't save the postcard";
+inline constexpr std::string_view kPostcardDate =
+    "{}, day {} · {} {} {}"; // season, day, d, month, y
+inline constexpr std::string_view kMonths[] = {"January",   "February", "March",    "April",
+                                               "May",       "June",     "July",     "August",
+                                               "September", "October",  "November", "December"};
 
 // The profiler overlay (F3): numbers over the last seconds of frames.
 inline constexpr std::string_view kProfFrame =

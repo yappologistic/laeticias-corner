@@ -122,7 +122,7 @@ struct HudAction {
         PickTerrain,
         RemoveTool,
         MoveTool,
-        Sound,
+        Menu, // the pause menu
         Photo,
         Clock,
         Rain,
@@ -181,6 +181,9 @@ public:
     // Window area the interface leaves free (below the title, above the docks and hint line), as
     // of the last update.
     [[nodiscard]] Box safeArea() const { return safe_; }
+    // The top of whatever sits at the bottom now (docks, an open drawer, the hint line): the
+    // tour's coach card stands just above it.
+    [[nodiscard]] float bottomPanelsTop() const;
     // Scrolls the open drawer so a named tile ("tile:<id>") is laid out from the next update;
     // false when the tile is not in the open tab.
     bool reveal(std::string_view name, const HudModel& m);
@@ -194,6 +197,14 @@ public:
     void ribbon(Ribbon r);
     [[nodiscard]] bool ribbonShowing() const { return ribbonTime_ > 0.0f; }
     void flash() { flash_ = 1.0f; }
+    // Toasts wait (queued) while held: the tour's first steps keep the screen quiet.
+    void holdToasts(bool held) { toastsHeld_ = held; }
+    // Up to two widgets (by script name: "build", "tile:<id>", "tray"...) pulse softly.
+    void setPulse(std::string_view a, std::string_view b) {
+        pulse_ = {std::string(a), std::string(b)};
+    }
+    // Panels fade instead of sliding.
+    void setReduceMotion(bool on) { reduceMotion_ = on; }
     [[nodiscard]] bool toastShowing() const { return toastTime_ > 0.0f; }
     // The toast showing now (empty when none).
     [[nodiscard]] std::string_view toastText() const {
@@ -264,6 +275,9 @@ private:
     void drawTray(Painter& p) const;
     void drawRibbon(Painter& p) const;
     void drawTooltip(Painter& p) const;
+    void drawPulse(Painter& p, const HudModel& m) const;
+    // How far panels slide as they fade (nothing with reduce motion).
+    [[nodiscard]] float slideBy(float s) const { return reduceMotion_ ? 0.0f : theme::kSlide * s; }
     void drawWorldTip(Painter& p, const HudModel& m) const;
     void drawLabels(Painter& p, const HudModel& m) const;
     void drawBubble(Painter& p, const HudModel& m) const;
@@ -308,6 +322,10 @@ private:
     float toastShown_ = 0; // shown so far
     float toastT_ = 0;
     int toastLines_ = 1;
+    bool toastsHeld_ = false;
+    std::array<std::string, 2> pulse_;
+    float pulseT_ = 0;
+    bool reduceMotion_ = false;
     float flash_ = 0;
     std::string clockLabel_;
     std::string titleCut_;       // a long world name, cut short

@@ -2,6 +2,7 @@
 
 #include "app/app_impl.hpp"
 
+#include <charconv>
 #include <cmath>
 #include <format>
 
@@ -10,7 +11,6 @@ namespace {
 
 constexpr int kDragSteps = 8;     // frames a scripted drag takes
 constexpr int kRevealRetries = 3; // frames to wait for a drawer tile to scroll into view
-constexpr std::string_view kPhotoDir = "photos";
 
 std::string scaleName(float s) {
     return std::format("{:g}", s);
@@ -39,6 +39,7 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
             }
             return std::nullopt;
         }
+        if (p.widget.starts_with("menu:")) return menus_.widgetCentre(p.widget.substr(5));
         return hud_.widgetCentre(p.widget, ui_);
     }
     return std::nullopt;
@@ -246,6 +247,58 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "drawer") return yesNo(drawerOpen_);
     if (what == "profiler") return yesNo(profilerOn_);
     if (what == "grid") return yesNo(grid_);
+    if (what == "page") {
+        static constexpr std::string_view kPages[] = {"none",   "title",     "worlds",   "newworld",
+                                                      "delete", "loaderror", "settings", "pause"};
+        return equal(std::string(kPages[static_cast<std::size_t>(menus_.page())]), a[1]);
+    }
+    if (what == "tour") return equal(std::to_string(tourStep_), a[1]);
+    if (what == "onboarded") return yesNo(profile_.onboarded);
+    if (what == "worlds")
+        return equal(std::to_string(listWorlds(saveDir_ / kWorldsDir).size()), a[1]);
+    if (what == "fresh") return yesNo(freshWorld_);
+    if (what == "card") {
+        // expect card N NAME...: the N-th world on the worlds screen (the newest first).
+        int n = 0;
+        if (a.size() < 3 ||
+            std::from_chars(a[1].data(), a[1].data() + a[1].size(), n).ec != std::errc{})
+            return std::string("expect card N NAME");
+        const auto list = listWorlds(saveDir_ / kWorldsDir);
+        std::string want;
+        for (std::size_t i = 2; i < a.size(); ++i) want += (i > 2 ? " " : "") + a[i];
+        return std::cmp_less(n, list.size()) ? equal(list[static_cast<std::size_t>(n)].name, want)
+                                             : std::optional<std::string>("no card " + a[1]);
+    }
+    if (what == "world") {
+        std::string want;
+        for (std::size_t i = 1; i < a.size(); ++i) want += (i > 1 ? " " : "") + a[i];
+        return equal(worldName_, want);
+    }
+    if (what == "volume") {
+        if (a.size() != 3) return std::string("expect volume BUS N");
+        const int v = a[1] == "music"     ? profile_.music
+                      : a[1] == "effects" ? profile_.effects
+                                          : profile_.ambience;
+        return equal(std::to_string(v), a[2]);
+    }
+    if (what == "reduce_motion") return yesNo(profile_.reduceMotion);
+    if (what == "vsync") return yesNo(profile_.vsync);
+    if (what == "ui_scale") return equal(std::to_string(profile_.uiScale), a[1]);
+    if (what == "caption") return yesNo(profile_.caption);
+    if (what == "frame") {
+        const int f = postcardFrame();
+        return equal(f >= 0 ? cat_.frames[static_cast<std::size_t>(f)].id : std::string("none"),
+                     a[1]);
+    }
+    if (what == "postcards") {
+        writer_.flush();
+        int n = 0;
+        std::error_code ec;
+        for (auto it = fs::directory_iterator(postcardDir(), ec);
+             !ec && it != fs::directory_iterator(); ++it)
+            n += it->path().extension() == ".png" ? 1 : 0;
+        return equal(std::to_string(n), a[1]);
+    }
     if (what == "footprints") return yesNo(footprintsHeld_);
     if (what == "carrying") return yesNo(carry_.has_value());
     if (what == "pipette") return yesNo(pipette_);
@@ -339,7 +392,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "photos") {
         int n = 0;
         std::error_code ec;
-        for (auto it = fs::directory_iterator(saveDir_ / kPhotoDir, ec);
+        for (auto it = fs::directory_iterator(postcardDir(), ec);
              !ec && it != fs::directory_iterator(); ++it)
             n += it->path().extension() == ".png" ? 1 : 0;
         return equal(std::to_string(n), a[1]);
@@ -643,6 +696,13 @@ bool App::scriptStep() {
                         disturbed({x, y, x + 1, y + 1}, -1, false);
             editor_.commit();
             markDirty();
+            next();
+            continue;
+        }
+        case K::Type: {
+            std::string text;
+            for (std::size_t i = 0; i < c.args.size(); ++i) text += (i > 0 ? " " : "") + c.args[i];
+            if (!menus_.text(text, font_)) return fail("no name field is open");
             next();
             continue;
         }

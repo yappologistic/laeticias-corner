@@ -1,0 +1,132 @@
+# The front door (docs/design/living-corner.md R10), run as a first launch: the title over a
+# fresh corner, the name dialog, the first-minute tour taught by doing, the pause menu and
+# settings, "Your worlds" with a second world, renaming (a taken name is refused), deleting with
+# its confirmation, and a world that cannot be opened.
+wait 20
+expect page title
+expect fresh yes
+shot shots/front_title_first.png
+click ui:menu:continue
+wait 8
+expect page newworld
+type Plum Hollow
+click ui:menu:create
+wait 8
+expect page none
+expect world Plum Hollow
+expect fresh no
+expect file worlds/plum-hollow/world.json yes
+# The tour: each step is done by doing it.
+expect tour 1
+shot shots/front_tour_1.png
+drag 640,320 560,340
+wait 4
+expect tour 2
+click ui:build
+wait 6
+expect tour 3
+shot shots/front_tour_3.png
+click ui:tile:flowers_white
+wait 3
+click @24,34
+wait 4
+expect tour 4
+expect wish first_flowers open
+shot shots/front_tour_4.png
+click @25,34
+key escape
+waitfor 300 tour 5
+shot shots/front_tour_5.png
+waitfor 400 tour 6
+waitfor 300 tour 0
+expect onboarded yes
+# Pause: Esc with nothing to cancel; the corner stands still behind the glass.
+key escape
+wait 8
+expect page pause
+shot shots/front_pause.png
+click ui:menu:pause_settings
+wait 8
+expect page settings
+shot shots/front_settings.png
+click ui:menu:reduce_motion
+wait 2
+expect reduce_motion yes
+click ui:menu:music
+wait 2
+expect volume music 50
+click ui:menu:ui_scale
+wait 2
+expect ui_scale 1
+shot shots/front_settings_75.png
+click ui:menu:ui_scale
+wait 2
+click ui:menu:ui_scale
+wait 2
+click ui:menu:ui_scale
+wait 2
+click ui:menu:ui_scale
+wait 2
+click ui:menu:ui_scale
+wait 2
+expect ui_scale 0
+click ui:menu:reduce_motion
+click ui:menu:done
+wait 6
+expect page pause
+click ui:menu:back_to_worlds
+wait 8
+expect page worlds
+expect worlds 1
+click ui:menu:new
+wait 6
+type Fernbank
+key return
+wait 8
+expect page none
+expect world Fernbank
+key escape
+wait 4
+click ui:menu:back_to_worlds
+wait 8
+expect worlds 2
+expect card 0 Fernbank
+expect card 1 Plum Hollow
+move ui:menu:card:1
+wait 4
+shot shots/front_worlds.png
+click ui:menu:rename:1
+wait 2
+type Fernbank
+key return
+wait 2
+expect card 1 Plum Hollow
+shot shots/front_rename_taken.png
+key backspace
+type Moss Bank
+key return
+wait 4
+expect card 1 Moss Bank
+move ui:menu:card:1
+wait 4
+click ui:menu:delete:1
+wait 6
+expect page delete
+shot shots/front_delete.png
+click ui:menu:keep
+wait 4
+expect worlds 2
+move ui:menu:card:1
+wait 4
+click ui:menu:delete:1
+wait 6
+click ui:menu:confirm_delete
+wait 6
+expect page worlds
+expect worlds 1
+expect file worlds/plum-hollow no
+expect file worlds/fernbank yes
+click ui:menu:back
+wait 6
+expect page title
+quit

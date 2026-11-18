@@ -17,7 +17,7 @@ enum Wid : int {
     kBuild,
     kRemove,
     kMove,
-    kSound,
+    kMenu,
     kPhoto,
     kClock,
     kRain,
@@ -51,7 +51,7 @@ constexpr Named kNames[] = {
     {"build", kBuild},
     {"remove", kRemove},
     {"move", kMove},
-    {"sound", kSound},
+    {"menu", kMenu},
     {"photo", kPhoto},
     {"clock", kClock},
     {"rain", kRain},
@@ -229,7 +229,7 @@ float Hud::pressOf(int id) const {
 }
 
 void Hud::toast(std::string text) {
-    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ == 0) {
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ == 0 && !toastsHeld_) {
         toast_ = std::move(text);
         toastTime_ = theme::kToastSeconds;
         toastShown_ = 0;
@@ -349,8 +349,7 @@ float Hud::layoutDocks(const HudModel& m, Vec2 screen, float s) {
             w.selected = selected;
             x += btn;
         };
-        button(kSound, m.muted ? theme::icon::kSoundOff : theme::icon::kSoundOn,
-               m.muted ? strings::kSoundOff : strings::kSoundOn, strings::kKeySound, false);
+        button(kMenu, theme::icon::kMenu, strings::kMenu, strings::kKeyEsc, false);
         button(kPhoto, theme::icon::kCamera, strings::kPhoto, strings::kKeyPhoto, false);
         button(kClock, pinIcon(m.pin), pinTooltip(m.pin), strings::kKeyClock,
                m.pin != ClockPin::Auto);
@@ -434,7 +433,7 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
                                                        static_cast<float>(used - 1) * gap);
         const float h = 2 * ppad + theme::kTabH * s + gap + static_cast<float>(rows) * tileH +
                         static_cast<float>(rows - 1) * gap;
-        const float slide = (1.0f - smooth(drawerT_)) * theme::kSlide * s;
+        const float slide = (1.0f - smooth(drawerT_)) * slideBy(s);
         drawerBox_ = {margin, bottomTop_ - gap - h + slide, w, h};
 
         float tx = drawerBox_.x + ppad;
@@ -612,8 +611,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     if (toastWaiting_ > 0)
         toastTime_ = std::min(toastTime_, std::max(0.0f, theme::kToastQueuedSeconds - toastShown_));
     toastTime_ = std::max(0.0f, toastTime_ - dt);
-    toastT_ = approach(toastT_, toastTime_ > 0.0f && !m.photo, dt);
-    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ > 0) {
+    toastT_ = approach(toastT_, toastTime_ > 0.0f, dt);
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ > 0 && !toastsHeld_) {
         toast_ = std::move(toastQueue_[0]);
         std::ranges::rotate(toastQueue_, toastQueue_.begin() + 1);
         --toastWaiting_;
@@ -621,6 +620,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         toastShown_ = 0;
     }
     flash_ = std::max(0.0f, flash_ - dt / theme::kFlashSeconds);
+    pulseT_ += dt;
     if (m.photo) calendarOpen_ = false;
     calendarT_ = approach(calendarT_, calendarOpen_, dt);
     ribbonTime_ = std::max(0.0f, ribbonTime_ - dt);
@@ -782,7 +782,7 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             case kBuild: emit(HudAction::Kind::ToggleBuild); break;
             case kRemove: emit(HudAction::Kind::RemoveTool); break;
             case kMove: emit(HudAction::Kind::MoveTool); break;
-            case kSound: emit(HudAction::Kind::Sound); break;
+            case kMenu: emit(HudAction::Kind::Menu); break;
             case kPhoto: emit(HudAction::Kind::Photo); break;
             case kClock: emit(HudAction::Kind::Clock); break;
             case kRain: emit(HudAction::Kind::Rain); break;
@@ -865,7 +865,7 @@ void Hud::layoutTray(const Font& font, Vec2 screen, float s) {
     const float pad = theme::kCardPad * s;
     const float portrait = theme::kPortrait * s;
     const float w = std::min(theme::kTrayW * s, screen.x - 2 * margin);
-    const float x = screen.x - margin - w + (1.0f - smooth(trayT_)) * theme::kSlide * s;
+    const float x = screen.x - margin - w + (1.0f - smooth(trayT_)) * slideBy(s);
     const float header = theme::kTrayHeader * s;
     Widget& h = add(kTrayHeader, {x, margin, w, header});
     h.tooltip = strings::kWishes;
@@ -1120,7 +1120,7 @@ void Hud::layoutSketchbook(const HudModel& m, const Font& font, Vec2 screen, flo
     const float pad = theme::kPanelPad * s;
     const float lh = font.lineHeight(Face::Body);
     const float jw = std::min(theme::kSketchW * s, screen.x - 2 * margin);
-    const float slide = (1.0f - smooth(journalT_)) * theme::kSlide * s;
+    const float slide = (1.0f - smooth(journalT_)) * slideBy(s);
     const float x = screen.x - margin - jw + slide;
     float bottom = bottomTop_ - gap;
     if (drawerT_ > 0.0f && x < drawerBox_.x + drawerBox_.w) bottom = drawerBox_.y - gap;
@@ -1581,7 +1581,7 @@ void Hud::layoutCalendar(const HudModel& m, const Font& font, float s) {
     for (const auto& sd : seasons)
         chips += font.measure(Face::Body, sd.name) + theme::kIcon * s + 3 * theme::kGap * s;
     w = std::max(w, chips) + 2 * pad;
-    const float slide = (1.0f - smooth(calendarT_)) * theme::kSlide * s * 0.5f;
+    const float slide = (1.0f - smooth(calendarT_)) * slideBy(s) * 0.5f;
     const float x = titleBox_.x;
     float y = titleBox_.y + titleBox_.h + theme::kGap * s - slide;
     const float top = y;
@@ -1725,6 +1725,36 @@ void Hud::drawBubble(Painter& p, const HudModel& m) const {
               withAlpha(theme::kInk, a));
 }
 
+float Hud::bottomPanelsTop() const {
+    float top = bottomTop_;
+    if (drawerT_ > 0.0f && drawerBox_.w > 0) top = std::min(top, drawerBox_.y);
+    if (hintT_ > 0.0f && hintBox_.w > 0) top = std::min(top, hintBox_.y);
+    return top - theme::kGap * scale_;
+}
+
+void Hud::drawPulse(Painter& p, const HudModel& m) const {
+    // A soft ring breathing around the widgets the tour points at.
+    const float k = 0.5f + 0.5f * std::sin(pulseT_ * theme::kPulseSpeed);
+    for (const std::string& name : pulse_) {
+        if (name.empty()) continue;
+        Box b;
+        if (name == "tray") {
+            if (trayT_ <= 0.5f || trayBox_.w <= 0) continue;
+            b = trayBox_;
+        } else if (const Widget* w = find(name, m); w != nullptr) {
+            b = w->box;
+        } else {
+            continue;
+        }
+        const float g = theme::kPulseGrow * scale_ * k;
+        const Box ring{b.x - g, b.y - g, b.w + 2 * g, b.h + 2 * g};
+        const float r = std::min(ring.w, ring.h) * 0.5f;
+        p.rim(ring, std::min(r, theme::kPanelRadius * scale_ + g), 2 * theme::kRim * scale_,
+              withAlpha(theme::kAccent, 0.5f + 0.5f * k),
+              withAlpha(theme::kAccent, 0.3f + 0.4f * k));
+    }
+}
+
 void Hud::drawTooltip(Painter& p) const {
     const float a = smooth(tooltipT_);
     if (a <= 0) return;
@@ -1838,7 +1868,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         }
     }
     const float ha = smooth(hintT_);
-    const float ta = toast_.empty() || m.photo ? 0.0f : smooth(toastT_);
+    const float ta = toast_.empty() ? 0.0f : smooth(toastT_);
     if (ha > 0 || ta > 0) {
         p.glass(hintBox_, hintBox_.h * 0.5f, ha, theme::kGlass);
         p.glass(toastBox_, std::min(toastBox_.h, theme::kToastH * scale_) * 0.5f, ta,
@@ -1847,6 +1877,7 @@ void Hud::draw(Painter& p, const HudModel& m) const {
         drawHint(p, m);
         drawToast(p);
     }
+    if (!m.photo) drawPulse(p, m);
     if (!m.photo) {
         drawCalendar(p, m);
         drawLabels(p, m);

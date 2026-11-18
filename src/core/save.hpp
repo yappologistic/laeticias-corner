@@ -105,13 +105,25 @@ void migrateLegacy(SaveData& data, const Catalog& cat);
                                                                std::string_view contents);
 
 // Settings shared by every world (docs/design/living-corner.md §2.3); a missing or malformed
-// file falls back to defaults field by field.
+// file falls back to defaults field by field. Fullscreen and the window's place are kept in
+// window.json beside it (they belong to this machine's display, not to the player's taste).
+inline constexpr int kUiScaleCount = 6; // Auto, then the factors below
+inline constexpr float kUiScales[kUiScaleCount] = {0.0f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f};
 struct Profile {
+    int music = 70; // volumes, 0..100 in steps of 5
+    int effects = 85;
+    int ambience = 60;
     bool muted = false;
-    bool grid = false;     // the tile grid over open land (G)
-    int brush = 1;         // paint brush side: 1, 3 or 5
-    bool chatty = true;    // "chatter": the resident's idle remarks ("chatty") or not ("quiet")
-    std::string lastWorld; // folder name of the world played last
+    int uiScale = 0; // index into kUiScales (0: auto)
+    bool reduceMotion = false;
+    bool chatty = true; // "chatter": the resident's idle remarks ("chatty") or not ("quiet")
+    bool grid = false;  // the tile grid over open land (G)
+    int brush = 1;      // paint brush side: 1, 3 or 5
+    bool vsync = true;  // frames wait for the display
+    std::string frame = "plain"; // the postcard frame last used
+    bool caption = true;         // postcards carry the world's name and the date
+    bool onboarded = false;      // the first-minute tour was finished or skipped
+    std::string lastWorld;       // folder name of the world played last
 };
 [[nodiscard]] Profile parseProfile(std::string_view text);
 [[nodiscard]] std::string serialize(const Profile& p);

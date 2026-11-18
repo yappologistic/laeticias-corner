@@ -114,7 +114,7 @@ int Actors::range(Actor& a, int lo, int hi) {
 }
 
 Actors::Actors(const Catalog& cat, std::uint64_t seed)
-    : cat_(cat), seed_(seed), finder_(cat), seen_(cat.visitors.size(), 0),
+    : cat_(&cat), seed_(seed), finder_(cat), seen_(cat.visitors.size(), 0),
       presence_(cat.visitors.size(), 0), cooldown_(cat.visitors.size(), 0.0f),
       leaders_(cat.visitors.size(), -1) {
     pool_.reserve(tuning::kActorPool);
@@ -140,7 +140,7 @@ bool Actors::purposeful(const Actor& a) const {
 }
 
 bool Actors::asleep(const Actor& a) const {
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     return k.sleepAnim != 0xFF && a.anim == k.sleepAnim && a.state == ActorState::Act;
 }
 
@@ -154,7 +154,7 @@ void Actors::countPresence() {
     std::ranges::fill(presence_, 0);
     for (const Actor& a : pool_) {
         if ((a.flags & kAlive) == 0 || (a.flags & kLeaving) != 0) continue;
-        const int v = cat_.kinds[a.kind].visitor;
+        const int v = cat_->kinds[a.kind].visitor;
         if (v >= 0) ++presence_[static_cast<std::size_t>(v)];
     }
 }
@@ -164,8 +164,8 @@ float Actors::hour(const ActorEnv& env) const {
 }
 
 int Actors::scheduleBlock(const ActorEnv& env) const {
-    if (cat_.residentKind < 0) return -1;
-    const auto& sched = cat_.kinds[static_cast<std::size_t>(cat_.residentKind)].schedule;
+    if (cat_->residentKind < 0) return -1;
+    const auto& sched = cat_->kinds[static_cast<std::size_t>(cat_->residentKind)].schedule;
     const float h = hour(env);
     for (std::size_t b = 0; b < sched.size(); ++b)
         if (hourIn(h, sched[b].from, sched[b].to)) return static_cast<int>(b);
@@ -179,7 +179,7 @@ bool Actors::rainAt(const ActorEnv& env, Vec2 p) const {
 CondFacts Actors::factsFor(const ActorEnv& env, const Actor& a) const {
     CondFacts f = env.facts;
     f.raining = rainAt(env, a.pos);
-    f.home = cat_.kinds[a.kind].visitor < 0 && home_.has_value();
+    f.home = cat_->kinds[a.kind].visitor < 0 && home_.has_value();
     return f;
 }
 
@@ -233,7 +233,7 @@ void Actors::release(int i) {
 
 bool Actors::anchor(const ActorEnv& env, int visitor, TilePos& out, std::uint64_t& rng) const {
     const World& world = *env.world;
-    const auto& def = cat_.visitors[static_cast<std::size_t>(visitor)];
+    const auto& def = cat_->visitors[static_cast<std::size_t>(visitor)];
     // Reservoir sampling over everything in the area that attracts this visitor.
     int count = 0;
     const auto offer = [&](TilePos p) {
@@ -259,11 +259,11 @@ bool Actors::anchor(const ActorEnv& env, int visitor, TilePos& out, std::uint64_
 }
 
 std::optional<Vec2> Actors::doorOf(const ActorEnv& env, const Item& it) const {
-    const ItemDef& def = cat_.items[it.type];
-    const auto door = std::ranges::find(cat_.slotKinds, "door");
+    const ItemDef& def = cat_->items[it.type];
+    const auto door = std::ranges::find(cat_->slotKinds, "door");
     const SlotDef* pick = nullptr;
     for (const SlotDef& s : def.slots)
-        if (door != cat_.slotKinds.end() && s.kind == door - cat_.slotKinds.begin()) {
+        if (door != cat_->slotKinds.end() && s.kind == door - cat_->slotKinds.begin()) {
             pick = &s;
             break;
         }
@@ -275,13 +275,14 @@ std::optional<Vec2> Actors::doorOf(const ActorEnv& env, const Item& it) const {
     const TileRect fp = it.rect();
     for (int y = fp.y0 - 1; y <= fp.y1; ++y)
         for (int x = fp.x0 - 1; x <= fp.x1; ++x)
-            if (!fp.contains(TilePos{x, y}) && passable(*env.world, cat_, Locomotion::Walk, {x, y}))
+            if (!fp.contains(TilePos{x, y}) &&
+                passable(*env.world, *cat_, Locomotion::Walk, {x, y}))
                 return centre({x, y});
     return std::nullopt;
 }
 
 int Actors::spawn(const ActorEnv& env, int kind, float alpha, bool fromHome) {
-    const ActorKind& k = cat_.kinds[static_cast<std::size_t>(kind)];
+    const ActorKind& k = cat_->kinds[static_cast<std::size_t>(kind)];
     // A free record, or a new one while the pool has room.
     std::size_t slot = pool_.size();
     for (std::size_t s = 0; s < pool_.size(); ++s)
@@ -329,19 +330,19 @@ int Actors::spawn(const ActorEnv& env, int kind, float alpha, bool fromHome) {
                 }
         }
         if (!placed && anchor(env, v, at, rng)) {
-            const Habitat h = cat_.visitors[static_cast<std::size_t>(v)].habitat;
+            const Habitat h = cat_->visitors[static_cast<std::size_t>(v)].habitat;
             for (int attempt = 0; attempt < tuning::kSpawnAttempts && !placed; ++attempt) {
                 const int r = attempt < tuning::kSpawnAttempts / 2 ? 1 : tuning::kWanderRadius;
                 const Vec2 p{static_cast<float>(at.x + range(a, -r, r)) + range(a, 0.25f, 0.75f),
                              static_cast<float>(at.y + range(a, -r, r)) + range(a, 0.25f, 0.75f)};
-                if (!area_.contains(tileOf(p)) || !habitatAllows(h, *env.world, cat_, p)) continue;
+                if (!area_.contains(tileOf(p)) || !habitatAllows(h, *env.world, *cat_, p)) continue;
                 a.pos = k.move == Locomotion::Swim ? offShore(*env.world, p) : p;
                 placed = true;
             }
         }
         a.rng ^= rng;
         if (k.move == Locomotion::Fly)
-            a.lift = range(a, tuning::kHoverMin, tuning::kHoverMax) * cat_.iso().tileH();
+            a.lift = range(a, tuning::kHoverMin, tuning::kHoverMax) * cat_->iso().tileH();
     }
     if (!placed) return -1;
     a.goal = a.pos;
@@ -362,12 +363,12 @@ int Actors::spawn(const ActorEnv& env, int kind, float alpha, bool fromHome) {
 void Actors::leave(const ActorEnv& env, int i) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
     a.flags |= kLeaving;
-    const ActorKind& k = cat_.kinds[a.kind];
-    const int r = k.findRoutine("leave", cat_.program);
+    const ActorKind& k = cat_->kinds[a.kind];
+    const int r = k.findRoutine("leave", cat_->program);
     Pick p;
     if (r >= 0 && homePick(env, i, -1, p)) {
         restart(i);
-        push(a, cat_.program.routines[static_cast<std::size_t>(r)].block, 0);
+        push(a, cat_->program.routines[static_cast<std::size_t>(r)].block, 0);
         a.prio = 0xFF; // nothing interrupts going home
         return;
     }
@@ -381,7 +382,7 @@ void Actors::presence(const ActorEnv& env, float dt) {
         area_ = env.area;
         for (std::size_t i = 0; i < pool_.size(); ++i) {
             Actor& a = pool_[i];
-            if ((a.flags & kAlive) != 0 && cat_.kinds[a.kind].visitor >= 0 &&
+            if ((a.flags & kAlive) != 0 && cat_->kinds[a.kind].visitor >= 0 &&
                 !area_.contains(tileOf(a.pos))) {
                 release(static_cast<int>(i));
                 a.flags = 0;
@@ -389,14 +390,14 @@ void Actors::presence(const ActorEnv& env, float dt) {
         }
     }
     if (moved || tallyRevision_ != world.revision()) {
-        tallyArea(world, cat_, area_, tally_);
+        tallyArea(world, *cat_, area_, tally_);
         tallyRevision_ = world.revision();
     }
     countPresence();
     const bool night = env.phase == Phase::Night;
-    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
+    for (std::size_t v = 0; v < cat_->visitors.size(); ++v) {
         const int vi = static_cast<int>(v);
-        const int want = desiredCount(cat_.visitors[v], tally_, night, env.gates[v]);
+        const int want = desiredCount(cat_->visitors[v], tally_, night, env.gates[v]);
         int have = presence_[v];
         if (moved && seen(vi))
             for (; have < want && spawn(env, vi, 0.0f, false) >= 0; ++have) {}
@@ -435,9 +436,9 @@ void Actors::presence(const ActorEnv& env, float dt) {
 // --- The resident's world ---------------------------------------------------------------------
 
 void Actors::updateHome(const ActorEnv& env) {
-    if (cat_.residentKind < 0) return;
+    if (cat_->residentKind < 0) return;
     const World& world = *env.world;
-    const int homeType = cat_.kinds[static_cast<std::size_t>(cat_.residentKind)].home;
+    const int homeType = cat_->kinds[static_cast<std::size_t>(cat_->residentKind)].home;
     // Her home is the first of its kind in the item list; she keeps it while it stands.
     const bool kept = home_ && world.itemAt(*home_) != nullptr &&
                       world.itemAt(*home_)->pos == *home_ && world.itemAt(*home_)->type == homeType;
@@ -451,13 +452,13 @@ void Actors::updateHome(const ActorEnv& env) {
                     break;
                 }
         if (had && !home_ && resident_ >= 0) {
-            const int ctx = cat_.resident.context("home_lost");
+            const int ctx = cat_->resident.context("home_lost");
             if (ctx >= 0) say(resident_, ctx);
         }
     }
     // Without a home she sleeps on her bedroll: by a campfire, else her spot, else near the
     // middle of the first land.
-    const auto fire = cat_.findItem("campfire");
+    const auto fire = cat_->findItem("campfire");
     std::optional<TilePos> spot;
     if (fire)
         for (const Item& it : world.items())
@@ -465,22 +466,22 @@ void Actors::updateHome(const ActorEnv& env) {
                 for (const TilePos d :
                      {TilePos{1, 0}, TilePos{0, 1}, TilePos{-1, 0}, TilePos{0, -1}}) {
                     const TilePos t{it.pos.x + d.x, it.pos.y + d.y};
-                    if (passable(world, cat_, Locomotion::Walk, t)) {
+                    if (passable(world, *cat_, Locomotion::Walk, t)) {
                         spot = t;
                         break;
                     }
                 }
                 if (spot) break;
             }
-    if (!spot && passable(world, cat_, Locomotion::Walk, cat_.starter.resident))
-        spot = cat_.starter.resident;
-    if (!spot && !cat_.stages.empty()) {
-        const TileRect r = cat_.stages.front().rects.front();
+    if (!spot && passable(world, *cat_, Locomotion::Walk, cat_->starter.resident))
+        spot = cat_->starter.resident;
+    if (!spot && !cat_->stages.empty()) {
+        const TileRect r = cat_->stages.front().rects.front();
         const TilePos mid{(r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2};
         int best = 1 << 30;
         for (int y = r.y0; y < r.y1; ++y)
             for (int x = r.x0; x < r.x1; ++x)
-                if (passable(world, cat_, Locomotion::Walk, {x, y})) {
+                if (passable(world, *cat_, Locomotion::Walk, {x, y})) {
                     const int d = std::abs(x - mid.x) + std::abs(y - mid.y);
                     if (d < best) {
                         best = d;
@@ -488,7 +489,7 @@ void Actors::updateHome(const ActorEnv& env) {
                     }
                 }
     }
-    bedroll_ = spot.value_or(cat_.starter.resident);
+    bedroll_ = spot.value_or(cat_->starter.resident);
 }
 
 // --- Targets ----------------------------------------------------------------------------------
@@ -502,16 +503,16 @@ float Actors::prefer(const ActorEnv& env, int kind, int activity, TilePos t) con
 }
 
 bool Actors::freeTile(const ActorEnv& env, const Actor& a, TilePos t) const {
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     if (!env.world->hasGround(t) || env.world->isWild(t)) return false;
     if (k.move == Locomotion::Fly) return true;
-    return passable(*env.world, cat_, k.move, t);
+    return passable(*env.world, *cat_, k.move, t);
 }
 
 bool Actors::slotPick(const ActorEnv& env, int i, const Item& it, const Target& t, Pick& out,
                       float& weight) {
     const Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ItemDef& def = cat_.items[it.type];
+    const ItemDef& def = cat_->items[it.type];
     // Which of the item's slots the target means.
     int chosen = -1;
     std::uint8_t implicit = 0;
@@ -613,7 +614,7 @@ bool Actors::slotPick(const ActorEnv& env, int i, const Item& it, const Target& 
 }
 
 const Item* Actors::homeItem(const ActorEnv& env, const Actor& a) const {
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     if (k.visitor < 0) return home_ ? env.world->itemAt(*home_) : nullptr;
     if (k.home < 0) return nullptr;
     const Item* best = nullptr;
@@ -633,15 +634,15 @@ bool Actors::homePick(const ActorEnv& env, int i, int slot, Pick& out) {
     const Actor& a = pool_[static_cast<std::size_t>(i)];
     const Item* it = homeItem(env, a);
     if (it == nullptr) return false;
-    const ItemDef& def = cat_.items[it->type];
+    const ItemDef& def = cat_->items[it->type];
     Target t;
     t.kind = Target::Kind::Items;
     t.slot = slot;
     if (slot < 0) {
         // Its door if it has one, else its first slot, else beside it.
-        const auto door = std::ranges::find(cat_.slotKinds, "door");
+        const auto door = std::ranges::find(cat_->slotKinds, "door");
         const int doorKind =
-            door == cat_.slotKinds.end() ? -1 : static_cast<int>(door - cat_.slotKinds.begin());
+            door == cat_->slotKinds.end() ? -1 : static_cast<int>(door - cat_->slotKinds.begin());
         for (const SlotDef& s : def.slots)
             if (s.kind == doorKind) {
                 t.slot = s.name;
@@ -665,10 +666,10 @@ bool Actors::bankPick(const ActorEnv& env, int i, bool shore, Pick& out) {
         for (int x = c.x - r; x <= c.x + r; ++x) {
             const TilePos t{x, y};
             if (!area_.contains(t) || !world.hasGround(t) || world.isWild(t)) continue;
-            const bool ok = shore ? habitatAllows(Habitat::Shore, world, cat_, centre(t))
+            const bool ok = shore ? habitatAllows(Habitat::Shore, world, *cat_, centre(t))
                                   : !world.isWater(t) &&
-                                        passable(world, cat_, Locomotion::Swim, t, true) &&
-                                        passable(world, cat_, Locomotion::Walk, t);
+                                        passable(world, *cat_, Locomotion::Swim, t, true) &&
+                                        passable(world, *cat_, Locomotion::Walk, t);
             if (!ok) continue;
             const Reservation q{
                 static_cast<std::int16_t>(x), static_cast<std::int16_t>(y), kTileRes, 0, 0, 0};
@@ -690,7 +691,7 @@ bool Actors::bankPick(const ActorEnv& env, int i, bool shore, Pick& out) {
 bool Actors::wanderPick(const ActorEnv& env, int i, float radius, Pick& out, int activity) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
     const World& world = *env.world;
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     TilePos from = tileOf(a.pos);
     if (k.visitor >= 0) {
         // Mostly drift around the current spot, sometimes head back to what attracted it, and
@@ -709,19 +710,19 @@ bool Actors::wanderPick(const ActorEnv& env, int i, float radius, Pick& out, int
         }
     }
     const int r = static_cast<int>(radius);
-    const Habitat h =
-        k.visitor >= 0 ? cat_.visitors[static_cast<std::size_t>(k.visitor)].habitat : Habitat::Land;
+    const Habitat h = k.visitor >= 0 ? cat_->visitors[static_cast<std::size_t>(k.visitor)].habitat
+                                     : Habitat::Land;
     for (int attempt = 0; attempt < tuning::kTargetAttempts; ++attempt) {
         const Vec2 p{static_cast<float>(from.x + range(a, -r, r)) + range(a, 0.2f, 0.8f),
                      static_cast<float>(from.y + range(a, -r, r)) + range(a, 0.2f, 0.8f)};
         const TilePos t = tileOf(p);
         if (!area_.contains(t)) continue;
-        const bool ok = k.visitor >= 0 ? habitatAllows(h, world, cat_, p)
-                                       : passable(world, cat_, Locomotion::Walk, t);
+        const bool ok = k.visitor >= 0 ? habitatAllows(h, world, *cat_, p)
+                                       : passable(world, *cat_, Locomotion::Walk, t);
         if (!ok) continue;
         out.point = k.move == Locomotion::Swim ? offShore(world, p) : p;
         out.lift = k.move == Locomotion::Fly
-                       ? range(a, tuning::kHoverMin, tuning::kHoverMax) * cat_.iso().tileH()
+                       ? range(a, tuning::kHoverMin, tuning::kHoverMax) * cat_->iso().tileH()
                        : 0.0f;
         out.reserve = false;
         return true;
@@ -753,7 +754,7 @@ bool Actors::poiPick(const ActorEnv& env, int i, Poi poi, int activity, Pick& ou
         for (std::size_t j = 0; j < pool_.size(); ++j) {
             const Actor& o = pool_[j];
             if (static_cast<int>(j) == i || (o.flags & kAlive) == 0 || hidden(o) ||
-                cat_.kinds[o.kind].visitor < 0)
+                cat_->kinds[o.kind].visitor < 0)
                 continue;
             offer(o.pos, 1.0f);
         }
@@ -842,7 +843,7 @@ bool Actors::resolve(const ActorEnv& env, int i, const Target& t, int activity, 
     bool found = false;
     env.world->forEachItemIn(search, [&](const Item& it) {
         if (env.world->isWild(it.pos) || !area_.contains(it.pos)) return;
-        const ItemDef& def = cat_.items[it.type];
+        const ItemDef& def = cat_->items[it.type];
         bool match = false;
         switch (t.kind) {
         case Target::Kind::Items: match = std::ranges::find(t.ids, it.type) != t.ids.end(); break;
@@ -890,13 +891,13 @@ void Actors::restart(int i) {
     a.prio = (a.flags & kLeaving) != 0 ? a.prio : 0;
     a.pathLen = 0;
     a.flags &= static_cast<std::uint16_t>(~(kErrand | kOnHat | kFadeOut));
-    if (cat_.kinds[a.kind].move != Locomotion::Fly) a.lift = 0;
+    if (cat_->kinds[a.kind].move != Locomotion::Fly) a.lift = 0;
 }
 
 void Actors::chooseRoutine(const ActorEnv& env, int i) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorKind& k = cat_.kinds[a.kind];
-    const ActorProgram& p = cat_.program;
+    const ActorKind& k = cat_->kinds[a.kind];
+    const ActorProgram& p = cat_->program;
     if (k.visitor >= 0) {
         push(a, p.routines[static_cast<std::size_t>(k.main)].block, kLoopFrame);
         return;
@@ -927,8 +928,8 @@ void Actors::chooseRoutine(const ActorEnv& env, int i) {
 
 void Actors::run(const ActorEnv& env, int i) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorProgram& p = cat_.program;
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorProgram& p = cat_->program;
+    const ActorKind& k = cat_->kinds[a.kind];
     for (int guard = 0; guard < 24 && a.state == ActorState::Choose; ++guard) {
         // The resident follows her schedule between activities.
         if (k.visitor < 0 && a.prio == 0 && a.depth > 0 && scheduleBlock(env) != a.sched)
@@ -1012,7 +1013,7 @@ bool Actors::goTo(const ActorEnv& env, int i, const Pick& p, bool bank) {
     dests_[static_cast<std::size_t>(i)] = p;
     a.goal = p.point;
     a.state = ActorState::Travel;
-    if (cat_.kinds[a.kind].move == Locomotion::Fly || dist(a.pos, a.goal) < 0.05f) {
+    if (cat_->kinds[a.kind].move == Locomotion::Fly || dist(a.pos, a.goal) < 0.05f) {
         a.pathLen = 0;
         return true;
     }
@@ -1026,7 +1027,7 @@ bool Actors::goTo(const ActorEnv& env, int i, const Pick& p, bool bank) {
 
 bool Actors::plan(const ActorEnv& env, int i, bool bank) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     const TilePos from = tileOf(a.pos);
     const TilePos to = tileOf(a.goal);
     a.pathPos = 0;
@@ -1043,7 +1044,7 @@ bool Actors::plan(const ActorEnv& env, int i, bool bank) {
             const float f = static_cast<float>(s) / static_cast<float>(steps);
             const TilePos t =
                 tileOf({a.pos.x + (a.goal.x - a.pos.x) * f, a.pos.y + (a.goal.y - a.pos.y) * f});
-            clear = t == to || t == from || passable(*env.world, cat_, k.move, t, bank);
+            clear = t == to || t == from || passable(*env.world, *cat_, k.move, t, bank);
         }
         if (clear) {
             a.pathLen = 0;
@@ -1084,7 +1085,7 @@ bool Actors::untilMet(const ActorEnv& env, const Actor& a, const Step& s) const 
     case Until::Hour: {
         // Until H: done once the hour has left the span from her block's start to H (so a
         // clock that jumps ahead lets her out, and a pinned night keeps her in).
-        const ActorKind& k = cat_.kinds[a.kind];
+        const ActorKind& k = cat_->kinds[a.kind];
         if (a.sched < k.schedule.size())
             return !hourIn(hour(env), k.schedule[a.sched].from, s.hour);
         return hourIn(hour(env), s.hour, std::fmod(s.hour + 1.0f, 24.0f));
@@ -1098,7 +1099,7 @@ bool Actors::untilMet(const ActorEnv& env, const Actor& a, const Step& s) const 
 
 Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorProgram& p = cat_.program;
+    const ActorProgram& p = cat_->program;
     const auto targetOf = [&](int t) -> const Target& {
         return p.targets[static_cast<std::size_t>(t)];
     };
@@ -1121,8 +1122,8 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
             bool there = false;
             if (a.reserved && a.resType != kTileRes) {
                 const Item* it = env.world->itemAt({a.resX, a.resY});
-                const SlotDef* sd = it != nullptr && a.resSlot < cat_.items[it->type].slots.size()
-                                        ? &cat_.items[it->type].slots[a.resSlot]
+                const SlotDef* sd = it != nullptr && a.resSlot < cat_->items[it->type].slots.size()
+                                        ? &cat_->items[it->type].slots[a.resSlot]
                                         : nullptr;
                 there = it != nullptr && dist(a.pos, a.goal) < 0.1f &&
                         (t.kind != Target::Kind::Items ||
@@ -1203,7 +1204,7 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
             if (opt.weight <= 0 || ((opt.phases >> static_cast<int>(env.phase)) & 1) == 0 ||
                 ((opt.seasons >> env.season) & 1) == 0)
                 continue;
-            if (opt.cond >= 0 && !cat_.conditions.eval(opt.cond, *env.world, facts)) continue;
+            if (opt.cond >= 0 && !cat_->conditions.eval(opt.cond, *env.world, facts)) continue;
             if (opt.needsSitting > 0 &&
                 (resident_ < 0 || sat_ < opt.needsSitting ||
                  dist(pool_[static_cast<std::size_t>(resident_)].pos, a.pos) > tuning::kHatReach))
@@ -1237,7 +1238,7 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
         return Start::Running;
     }
     case Verb::If: {
-        const bool ok = cat_.conditions.eval(s.cond, *env.world, factsFor(env, a));
+        const bool ok = cat_->conditions.eval(s.cond, *env.world, factsFor(env, a));
         if (ok) {
             push(a, s.a, 0);
             return Start::Running;
@@ -1268,10 +1269,10 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
             const bool hadLast = a.reserved;
             release(i);
             float best = 1e9f;
-            const float seasonGrowth = cat_.seasons[static_cast<std::size_t>(env.season)].growth;
+            const float seasonGrowth = cat_->seasons[static_cast<std::size_t>(env.season)].growth;
             env.world->forEachItemIn(area_, [&](const Item& it) {
                 if (env.world->isWild(it.pos)) return;
-                const ItemDef& def = cat_.items[it.type];
+                const ItemDef& def = cat_->items[it.type];
                 const bool match = t.kind == Target::Kind::Items
                                        ? std::ranges::find(t.ids, it.type) != t.ids.end()
                                    : t.kind == Target::Kind::Tag
@@ -1281,7 +1282,7 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
                 if (watering) {
                     if (def.growth.stages == 0 || it.stage + 1 >= def.growth.stages ||
                         rainAt(env, centre(it.pos)) ||
-                        growthRate(*env.world, cat_, it.rect(), false, seasonGrowth, 1.0f) <= 0)
+                        growthRate(*env.world, *cat_, it.rect(), false, seasonGrowth, 1.0f) <= 0)
                         return;
                     if (std::ranges::any_of(watered_, [&](const auto& w) {
                             return w.first == it.pos && w.second == env.day;
@@ -1345,7 +1346,7 @@ void Actors::finishStep(const ActorEnv& env, int i) {
         restart(i);
         return;
     }
-    const ActorProgram& p = cat_.program;
+    const ActorProgram& p = cat_->program;
     const ActorFrame& f = a.stack[a.depth - 1];
     const Step& s = p.steps[static_cast<std::size_t>(
         p.blockSteps[static_cast<std::size_t>(p.blocks[f.block].first + f.pc)])];
@@ -1369,7 +1370,7 @@ void Actors::fireEffect(const ActorEnv& env, int i, Effect e) {
         if (!a.reserved) return;
         for (std::size_t j = 0; j < pool_.size(); ++j) {
             Actor& h = pool_[j];
-            const ActorKind& hk = cat_.kinds[h.kind];
+            const ActorKind& hk = cat_->kinds[h.kind];
             if ((h.flags & kAlive) == 0 || (h.flags & kLeaving) != 0 || hk.home != a.resType ||
                 dist(h.pos, a.pos) > tuning::kCallRadius)
                 continue;
@@ -1393,14 +1394,14 @@ void Actors::fireEffect(const ActorEnv& env, int i, Effect e) {
         a.facing = facingFor({static_cast<float>(placedAt_.x) + 0.5f - a.pos.x,
                               static_cast<float>(placedAt_.y) + 0.5f - a.pos.y});
         int ctx = -1;
-        if (placedType_ == -1) ctx = cat_.resident.context("place_water");
+        if (placedType_ == -1) ctx = cat_->resident.context("place_water");
         if (placedType_ >= 0) {
-            const auto& tags = cat_.items[static_cast<std::size_t>(placedType_)].tags;
+            const auto& tags = cat_->items[static_cast<std::size_t>(placedType_)].tags;
             if (!tags.empty())
-                ctx = cat_.resident.context("place_" +
-                                            cat_.tags[static_cast<std::size_t>(tags.front())]);
+                ctx = cat_->resident.context("place_" +
+                                             cat_->tags[static_cast<std::size_t>(tags.front())]);
         }
-        if (ctx < 0) ctx = cat_.resident.context("place_other");
+        if (ctx < 0) ctx = cat_->resident.context("place_other");
         if (ctx >= 0) say(i, ctx);
         return;
     }
@@ -1418,7 +1419,7 @@ void Actors::say(int i, int context) {
 
 void Actors::travel(const ActorEnv& env, int i, float dt) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     const World& world = *env.world;
     const Pick& d = dests_[static_cast<std::size_t>(i)];
     if (a.pathLen == kPathPending && !plan(env, i, false)) {
@@ -1431,7 +1432,7 @@ void Actors::travel(const ActorEnv& env, int i, float dt) {
     const Vec2 next = last ? a.goal : centre(paths_[static_cast<std::size_t>(i)][a.pathPos]);
     float speed = k.speed;
     if (k.visitor < 0)
-        speed = stepCost(world, cat_, Locomotion::Walk, tileOf(a.pos)) <= tuning::kPathCostPaved
+        speed = stepCost(world, *cat_, Locomotion::Walk, tileOf(a.pos)) <= tuning::kPathCostPaved
                     ? tuning::kResidentSpeedPath
                     : tuning::kResidentSpeedOther;
     if ((a.flags & (kFleeing | kStepAside)) != 0) speed *= tuning::kStartleSpeed;
@@ -1442,7 +1443,7 @@ void Actors::travel(const ActorEnv& env, int i, float dt) {
     if (k.move == Locomotion::Fly) {
         // Flyers rise to their flight height and settle at the end.
         const float near = std::min(1.0f, len / 1.0f);
-        const float hover = tuning::kHoverMin * cat_.iso().tileH();
+        const float hover = tuning::kHoverMin * cat_->iso().tileH();
         const float want = d.lift + (std::max(hover, d.lift) - d.lift) * near;
         a.lift += (want - a.lift) * std::min(1.0f, dt * 4.0f);
     } else {
@@ -1455,7 +1456,7 @@ void Actors::travel(const ActorEnv& env, int i, float dt) {
     // a seat) a straight line may clip a corner the plan went round, so it goes to the middle
     // first; a tile that closed since the way was planned means planning again.
     if (k.move != Locomotion::Fly && !(nt == tileOf(a.pos)) && !(nt == tileOf(a.goal)) &&
-        !passable(world, cat_, k.move, nt, true)) {
+        !passable(world, *cat_, k.move, nt, true)) {
         const Vec2 mid = centre(tileOf(a.pos));
         const float off = dist(a.pos, mid);
         if (off > 0.02f) {
@@ -1506,7 +1507,7 @@ void Actors::travel(const ActorEnv& env, int i, float dt) {
         a.flags |= kPause;
         return;
     }
-    const ActorProgram& p = cat_.program;
+    const ActorProgram& p = cat_->program;
     const ActorFrame& f = a.stack[a.depth - 1];
     const Step& s = p.steps[static_cast<std::size_t>(
         p.blockSteps[static_cast<std::size_t>(p.blocks[f.block].first + f.pc)])];
@@ -1536,7 +1537,7 @@ void Actors::finishFailed(int i) {
 
 void Actors::follow(const ActorEnv& env, int i, float dt) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     a.timer -= dt;
     const bool line = (a.flags & kFollower) != 0;
     int leader = line ? lineAhead(i) : resident_;
@@ -1551,7 +1552,7 @@ void Actors::follow(const ActorEnv& env, int i, float dt) {
         return;
     }
     const Actor& l = pool_[static_cast<std::size_t>(leader)];
-    const ActorProgram& p = cat_.program;
+    const ActorProgram& p = cat_->program;
     // A swimmer in line goes ashore only behind a leader that went ashore.
     const bool ashore = !env.world->isWater(tileOf(l.pos));
     // On her hat: once she has sat long enough, land there and rest.
@@ -1574,7 +1575,7 @@ void Actors::follow(const ActorEnv& env, int i, float dt) {
                         : l.facing == Facing::BackMirrored  ? 2
                                                             : 3;
         want = {l.pos.x + kBack[dir].x * spacing, l.pos.y + kBack[dir].y * spacing};
-        if (k.move != Locomotion::Fly && !passable(*env.world, cat_, k.move, tileOf(want), ashore))
+        if (k.move != Locomotion::Fly && !passable(*env.world, *cat_, k.move, tileOf(want), ashore))
             want = l.pos;
         if (k.move == Locomotion::Swim && !ashore) want = offShore(*env.world, want);
     }
@@ -1587,7 +1588,7 @@ void Actors::follow(const ActorEnv& env, int i, float dt) {
         const float step = std::min(len - gap * 0.5f, k.speed * 1.2f * dt);
         const Vec2 np{a.pos.x + dlt.x / len * step, a.pos.y + dlt.y / len * step};
         if (k.move == Locomotion::Fly || tileOf(np) == tileOf(a.pos) ||
-            passable(*env.world, cat_, k.move, tileOf(np), ashore))
+            passable(*env.world, *cat_, k.move, tileOf(np), ashore))
             a.pos = np;
         a.facing = facingFor(dlt);
         a.anim = 0;
@@ -1603,7 +1604,7 @@ void Actors::follow(const ActorEnv& env, int i, float dt) {
         a.flags &= static_cast<std::uint16_t>(~kOnHat);
     }
     if (k.move == Locomotion::Fly && (a.flags & kOnHat) == 0) {
-        const float hover = tuning::kHoverMin * cat_.iso().tileH();
+        const float hover = tuning::kHoverMin * cat_->iso().tileH();
         a.lift += (hover - a.lift) * std::min(1.0f, dt * 4.0f);
     }
 }
@@ -1625,7 +1626,7 @@ void Actors::beginInterrupt(int i, const Interrupt& in) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
     a.flags &= static_cast<std::uint16_t>(~(kErrand | kFleeing | kFollower));
     restart(i);
-    const Routine& r = cat_.program.routines[static_cast<std::size_t>(in.routine)];
+    const Routine& r = cat_->program.routines[static_cast<std::size_t>(in.routine)];
     push(a, r.block, r.loop ? kLoopFrame : 0);
     a.prio = static_cast<std::uint8_t>(std::max(1, in.priority));
 }
@@ -1656,7 +1657,7 @@ void Actors::beginErrand(const ActorEnv& env, int i) {
 
 bool Actors::interrupts(const ActorEnv& env, int i, float dt) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     (void)dt;
     const bool rain = rainAt(env, a.pos);
     if (rain) {
@@ -1685,7 +1686,7 @@ void Actors::disturb(const ActorEnv& env, TileRect rect, int type, bool fresh) {
     for (std::size_t j = 0; j < pool_.size(); ++j) {
         Actor& a = pool_[j];
         if ((a.flags & kAlive) == 0 || hidden(a)) continue;
-        const ActorKind& k = cat_.kinds[a.kind];
+        const ActorKind& k = cat_->kinds[a.kind];
         const int i = static_cast<int>(j);
         if (k.visitor < 0) {
             // She turns to look: always at the first of its kind, otherwise sometimes.
@@ -1693,7 +1694,7 @@ void Actors::disturb(const ActorEnv& env, TileRect rect, int type, bool fresh) {
                 a.prio != 0 || reactCool_ > 0 || a.state == ActorState::Inside)
                 continue;
             if (a.state == ActorState::Act && a.anim != 1 &&
-                cat_.kinds[a.kind].anims[a.anim] == "read")
+                cat_->kinds[a.kind].anims[a.anim] == "read")
                 continue;
             for (const Interrupt& in : k.interrupts) {
                 if (in.on != Interrupt::On::PlacedNearby) continue;
@@ -1728,7 +1729,7 @@ void Actors::flee(const ActorEnv& env, int i) {
     Vec2 away{a.pos.x - cause.x, a.pos.y - cause.y};
     const float l = std::hypot(away.x, away.y);
     away = l > 1e-3f ? Vec2{away.x / l, away.y / l} : Vec2{1, 0};
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     for (int attempt = 0; attempt < 8; ++attempt) {
         const float ang = range(a, -0.8f, 0.8f);
         const float r = range(a, tuning::kStartleMin, tuning::kStartleMax);
@@ -1739,9 +1740,9 @@ void Actors::flee(const ActorEnv& env, int i) {
         if (!area_.contains(t)) continue;
         const bool ok =
             k.visitor >= 0
-                ? habitatAllows(cat_.visitors[static_cast<std::size_t>(k.visitor)].habitat,
-                                *env.world, cat_, p)
-                : passable(*env.world, cat_, k.move, t);
+                ? habitatAllows(cat_->visitors[static_cast<std::size_t>(k.visitor)].habitat,
+                                *env.world, *cat_, p)
+                : passable(*env.world, *cat_, k.move, t);
         if (!ok) continue;
         Pick pk;
         pk.point = p;
@@ -1759,12 +1760,12 @@ bool Actors::pet(int i) {
     if (i < 0 || std::cmp_greater_equal(i, pool_.size())) return false;
     Actor& a = pool_[static_cast<std::size_t>(i)];
     if ((a.flags & kAlive) == 0 || hidden(a)) return false;
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     if (k.visitor < 0) {
         if (clickCool_ > 0) return false;
         clickCool_ = tuning::kClickCooldown;
         if (a.state != ActorState::Travel) a.facing = Facing::Front;
-        say(i, cat_.resident.context("click"));
+        say(i, cat_->resident.context("click"));
         return true;
     }
     if (a.petCool > 0) return false;
@@ -1784,15 +1785,15 @@ bool Actors::harvested(const ActorEnv& env, TilePos bed) {
     for (std::size_t j = 0; j < pool_.size(); ++j) {
         Actor& a = pool_[j];
         if ((a.flags & kAlive) == 0 || hidden(a) || (a.flags & kLeaving) != 0) continue;
-        const ActorKind& k = cat_.kinds[a.kind];
+        const ActorKind& k = cat_->kinds[a.kind];
         const int i = static_cast<int>(j);
         if (k.visitor < 0) {
             if (dist(a.pos, c) > tuning::kHarvestReach || !residentAvailable()) continue;
-            const auto produce = std::ranges::find(cat_.goods, "produce", &GoodsDef::id);
+            const auto produce = std::ranges::find(cat_->goods, "produce", &GoodsDef::id);
             for (const Interrupt& in : k.interrupts) {
-                if (in.on != Interrupt::On::Harvest || produce == cat_.goods.end()) continue;
+                if (in.on != Interrupt::On::Harvest || produce == cat_->goods.end()) continue;
                 beginInterrupt(i, in);
-                a.goods = static_cast<std::uint8_t>(produce - cat_.goods.begin());
+                a.goods = static_cast<std::uint8_t>(produce - cat_->goods.begin());
                 a.goodsCount = 1;
                 taken = true;
                 break;
@@ -1822,7 +1823,7 @@ void Actors::visit(const ActorEnv& env, Vec2 tile, int context, float reach, boo
     er.look = tile;
     er.say = context;
     // A new visitor gets drawn: she sits down to sketch it a while.
-    const auto& names = cat_.kinds[a.kind].anims;
+    const auto& names = cat_->kinds[a.kind].anims;
     const auto pencil = std::ranges::find(names, "sketch");
     er.anim =
         sketch && pencil != names.end() ? static_cast<std::uint8_t>(pencil - names.begin()) : 1;
@@ -1833,7 +1834,7 @@ void Actors::visit(const ActorEnv& env, Vec2 tile, int context, float reach, boo
 void Actors::wave() {
     if (resident_ < 0 || !residentAvailable()) return;
     Actor& a = pool_[static_cast<std::size_t>(resident_)];
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     if (k.waveAnim == 0xFF || a.state == ActorState::Travel) return;
     a.overlay = tuning::kWaveSeconds;
     a.overlayAnim = k.waveAnim;
@@ -1847,7 +1848,7 @@ void Actors::lookAt(std::optional<TilePos> tile) {
 int Actors::call(int visitor) {
     for (std::size_t j = 0; j < pool_.size(); ++j) {
         Actor& a = pool_[j];
-        const ActorKind& k = cat_.kinds[a.kind];
+        const ActorKind& k = cat_->kinds[a.kind];
         if ((a.flags & kAlive) == 0 || k.visitor != visitor || hidden(a) || a.overlay > 0) continue;
         a.overlay = tuning::kCallSeconds;
         a.overlayAnim = k.callAnim != 0xFF ? k.callAnim : 1;
@@ -1863,7 +1864,7 @@ int Actors::call(int visitor) {
 void Actors::validate(const ActorEnv& env, int i) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
     const World& world = *env.world;
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     // Its slot's item was removed or replaced: let go and choose again.
     if (a.reserved && a.resType != kTileRes) {
         const Item* it = world.itemAt({a.resX, a.resY});
@@ -1885,14 +1886,14 @@ void Actors::validate(const ActorEnv& env, int i) {
     }
     const TilePos t = tileOf(a.pos);
     // Walking off (from a seat, say) is fine; standing where it may not stand is not.
-    if (seated || a.state == ActorState::Travel || passable(world, cat_, k.move, t, true)) return;
+    if (seated || a.state == ActorState::Travel || passable(world, *cat_, k.move, t, true)) return;
     // Displaced: step to the nearest tile it may stand on, within a few; else go.
     float best = 1e9f;
     Vec2 to{};
     const int r = k.visitor < 0 ? tuning::kDisplaceReach : 1;
     for (int y = t.y - r; y <= t.y + r; ++y)
         for (int x = t.x - r; x <= t.x + r; ++x) {
-            if (!passable(world, cat_, k.move, {x, y})) continue;
+            if (!passable(world, *cat_, k.move, {x, y})) continue;
             const float d = dist(a.pos, centre({x, y}));
             if (d < best) {
                 best = d;
@@ -1925,7 +1926,7 @@ void Actors::validate(const ActorEnv& env, int i) {
 
 void Actors::tick(const ActorEnv& env, int i, float dt) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
-    const ActorKind& k = cat_.kinds[a.kind];
+    const ActorKind& k = cat_->kinds[a.kind];
     a.animTime += dt;
     const float fade = dt / tuning::kFadeSeconds;
     if ((a.flags & kFadeOut) != 0 || a.state == ActorState::Inside)
@@ -1978,7 +1979,7 @@ void Actors::tick(const ActorEnv& env, int i, float dt) {
         if (k.visitor < 0 && a.prio == 0 && thinks && a.depth > 0 && scheduleBlock(env) != a.sched)
             done = true;
         if (a.depth > 0 && (a.flags & (kPause | kErrand)) == 0) {
-            const ActorProgram& p = cat_.program;
+            const ActorProgram& p = cat_->program;
             const ActorFrame& f = a.stack[a.depth - 1];
             const Step& s = p.steps[static_cast<std::size_t>(
                 p.blockSteps[static_cast<std::size_t>(p.blocks[f.block].first + f.pc)])];
@@ -2005,7 +2006,7 @@ void Actors::tick(const ActorEnv& env, int i, float dt) {
     }
     case ActorState::Inside: {
         if (a.depth == 0) break;
-        const ActorProgram& p = cat_.program;
+        const ActorProgram& p = cat_->program;
         const ActorFrame& f = a.stack[a.depth - 1];
         const Step& s = p.steps[static_cast<std::size_t>(
             p.blockSteps[static_cast<std::size_t>(p.blocks[f.block].first + f.pc)])];
@@ -2038,13 +2039,13 @@ void Actors::update(const ActorEnv& env, float dt) {
     }
     wasPinned_ = env.pinned;
     presence(env, dt);
-    if (resident_ < 0 && cat_.residentKind >= 0) {
-        resident_ = spawn(env, cat_.residentKind, 0.0f, false);
+    if (resident_ < 0 && cat_->residentKind >= 0) {
+        resident_ = spawn(env, cat_->residentKind, 0.0f, false);
     }
     // Lines: everyone but the first of a kind follows the one ahead.
     for (std::size_t j = 0; j < pool_.size(); ++j) {
         Actor& a = pool_[j];
-        if ((a.flags & kAlive) == 0 || !cat_.kinds[a.kind].line || (a.flags & kLeaving) != 0)
+        if ((a.flags & kAlive) == 0 || !cat_->kinds[a.kind].line || (a.flags & kLeaving) != 0)
             continue;
         const bool follower = lineAhead(static_cast<int>(j)) >= 0;
         if (follower && (a.flags & kFollower) == 0 && a.overlay <= 0 &&
@@ -2091,22 +2092,22 @@ int Actors::crowd(const ActorEnv& env, int count) {
     std::uint64_t rng = seed_ ^ 0xC40DULL;
     int placed = 0;
     for (int n = 0; n < count * 4 && placed < count; ++n) {
-        const int kind = n % static_cast<int>(cat_.visitors.size());
-        const Habitat h = cat_.visitors[static_cast<std::size_t>(kind)].habitat;
+        const int kind = n % static_cast<int>(cat_->visitors.size());
+        const Habitat h = cat_->visitors[static_cast<std::size_t>(kind)].habitat;
         const TilePos t{
             area_.x0 +
                 static_cast<int>(splitmix(rng) % static_cast<std::uint64_t>(area_.x1 - area_.x0)),
             area_.y0 +
                 static_cast<int>(splitmix(rng) % static_cast<std::uint64_t>(area_.y1 - area_.y0))};
-        if (!habitatAllows(h, *env.world, cat_, centre(t))) continue;
+        if (!habitatAllows(h, *env.world, *cat_, centre(t))) continue;
         Actor a;
         a.rng = seed_ ^ (0xC0FFEEULL + spawned_++);
         a.kind = static_cast<std::uint16_t>(kind);
         a.flags = kAlive;
         a.alpha = 1;
         a.pos = a.goal = centre(t);
-        if (cat_.kinds[static_cast<std::size_t>(kind)].move == Locomotion::Fly)
-            a.lift = tuning::kHoverMin * cat_.iso().tileH();
+        if (cat_->kinds[static_cast<std::size_t>(kind)].move == Locomotion::Fly)
+            a.lift = tuning::kHoverMin * cat_->iso().tileH();
         if (pool_.size() >= tuning::kActorPool) break;
         pool_.push_back(a);
         paths_.emplace_back();
@@ -2128,19 +2129,19 @@ void Actors::populate(const ActorEnv& env) {
     reservations_.clear();
     resident_ = -1;
     area_ = env.area;
-    tallyArea(*env.world, cat_, area_, tally_);
+    tallyArea(*env.world, *cat_, area_, tally_);
     tallyRevision_ = env.world->revision();
     updateHome(env);
     const bool night = env.phase == Phase::Night;
-    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
+    for (std::size_t v = 0; v < cat_->visitors.size(); ++v) {
         // Kinds never seen arrive the normal way, so their first sighting is still an event.
         if (!seen(static_cast<int>(v))) continue;
-        const int want = desiredCount(cat_.visitors[v], tally_, night, env.gates[v]);
+        const int want = desiredCount(cat_->visitors[v], tally_, night, env.gates[v]);
         for (int n = 0; n < want; ++n) (void)spawn(env, static_cast<int>(v), 1.0f, false);
         cooldown_[v] = tuning::kArrivalInterval;
     }
-    if (cat_.residentKind >= 0) {
-        resident_ = spawn(env, cat_.residentKind, 1.0f, false);
+    if (cat_->residentKind >= 0) {
+        resident_ = spawn(env, cat_->residentKind, 1.0f, false);
         // At night, with a home, she is already inside.
         if (resident_ >= 0 && env.phase == Phase::Night && home_) {
             Actor& a = pool_[static_cast<std::size_t>(resident_)];

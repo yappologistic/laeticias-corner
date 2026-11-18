@@ -24,6 +24,7 @@ float rampTowards(float v, float target, float maxStep) {
 Mixer::Mixer() {
     for (auto& t : loopTargets_) t.store(0.0f);
     for (auto& u : unlocked_) u.store(0);
+    for (auto& b : busTargets_) b.store(1.0f);
 }
 
 void Mixer::VorbisCloser::operator()(stb_vorbis* v) const {
@@ -87,6 +88,11 @@ void Mixer::load(const std::filesystem::path& dir, const AudioList& list) {
 int Mixer::loopIndex(std::string_view file) const {
     const auto it = std::ranges::find(loops_, file, &LoopTrack::file);
     return it == loops_.end() ? -1 : static_cast<int>(it - loops_.begin());
+}
+
+void Mixer::resetStems() {
+    for (auto& u : unlocked_) u.store(0);
+    resetStems_.store(true);
 }
 
 void Mixer::unlockStem(int loop, bool instant) {
@@ -218,6 +224,24 @@ void Mixer::decodeLoop(LoopTrack& t, float* dst, int frames) {
 void Mixer::mix(float* out, int frames) {
     std::fill(out, out + frames * 2, 0.0f);
     const float chunkSeconds = static_cast<float>(frames) / kMixRate;
+    if (resetStems_.exchange(false)) {
+        stemLevel_.fill(0.0f);
+        for (LoopTrack& t : loops_) {
+            t.fading = false;
+            t.at = ~0ULL;
+        }
+    }
+    // The player's bus volumes, each gliding across this chunk.
+    std::array<float, 3> bus0{};
+    for (std::size_t b = 0; b < bus_.size(); ++b) {
+        bus0[b] = bus_[b];
+        bus_[b] = rampTowards(bus_[b], busTargets_[b].load(std::memory_order_relaxed),
+                              chunkSeconds / tuning::kLoopFadeSeconds);
+    }
+    const auto busRamp = [&](Bus b, int i) {
+        const auto k = static_cast<std::size_t>(b);
+        return bus0[k] + (bus_[k] - bus0[k]) * static_cast<float>(i) / static_cast<float>(frames);
+    };
 
     for (std::uint32_t tail = tail_.load(std::memory_order_relaxed);
          tail != head_.load(std::memory_order_acquire); ++tail) {
@@ -241,7 +265,7 @@ void Mixer::mix(float* out, int frames) {
             }
             const auto idx = static_cast<std::size_t>(v.pos);
             const auto frac = static_cast<float>(v.pos - static_cast<double>(idx));
-            const float sample = s[idx] + (s[idx + 1] - s[idx]) * frac;
+            const float sample = (s[idx] + (s[idx + 1] - s[idx]) * frac) * busRamp(Bus::Effects, i);
             out[i * 2] += sample * v.left;
             out[i * 2 + 1] += sample * v.right;
             v.pos += v.step;
@@ -315,7 +339,8 @@ void Mixer::mix(float* out, int frames) {
         pan_[li] = p1;
         for (int i = 0; i < frames; ++i) {
             const float k = static_cast<float>(i) / static_cast<float>(frames);
-            const float g = (g0 + (g1 - g0) * k) * (l0 + (l1 - l0) * k);
+            const float g = (g0 + (g1 - g0) * k) * (l0 + (l1 - l0) * k) *
+                            busRamp(t.stem ? Bus::Music : Bus::Ambience, i);
             const float pan = p0 + (p1 - p0) * k;
             out[i * 2] +=
                 loopBuf_[static_cast<std::size_t>(i * 2)] * g * std::min(1.0f, 1.0f - pan);

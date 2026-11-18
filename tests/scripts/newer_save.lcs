@@ -1,6 +1,6 @@
 # A world saved by a newer build is refused and left exactly as it was: never renamed, never
-# replaced; the corner opens fresh in a folder of its own and says so (QA2-03).
-expect toast newer version
+# replaced; the corner opens fresh in a folder of its own and says so (QA2-03, R10.3).
+expect toast left as it is
 expect file worlds/laeticias-corner/world.json yes
 expect file worlds/laeticias-corner/world.json.bad1 no
 place oak @30,30

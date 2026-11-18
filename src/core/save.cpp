@@ -700,16 +700,35 @@ Profile parseProfile(std::string_view text) {
     try {
         const json j = json::parse(text);
         if (!j.is_object()) return p;
-        if (j.contains("muted") && j["muted"].is_boolean()) p.muted = j["muted"].get<bool>();
+        Warnings ignored; // a profile repairs itself quietly
+        if (j.contains("volume") && j["volume"].is_object()) {
+            const json& v = j["volume"];
+            const auto vol = [&](const char* key, int def) {
+                return static_cast<int>(intField(v, key, def, 0, 100, ignored)) / 5 * 5;
+            };
+            p.music = vol("music", p.music);
+            p.effects = vol("effects", p.effects);
+            p.ambience = vol("ambience", p.ambience);
+        }
+        p.muted = boolField(j, "muted", p.muted, ignored);
+        if (j.contains("ui_scale") && j["ui_scale"].is_number()) {
+            const double f = j["ui_scale"].get<double>();
+            for (int i = 1; i < kUiScaleCount; ++i)
+                if (std::abs(f - static_cast<double>(kUiScales[i])) < 1e-3) p.uiScale = i;
+        }
+        p.reduceMotion = boolField(j, "reduce_motion", p.reduceMotion, ignored);
         if (j.contains("chatter") && j["chatter"].is_string())
             p.chatty = j["chatter"].get<std::string>() != "quiet";
-        if (j.contains("grid") && j["grid"].is_boolean()) p.grid = j["grid"].get<bool>();
+        p.grid = boolField(j, "grid", p.grid, ignored);
         if (j.contains("brush") && j["brush"].is_number_integer()) {
             const auto b = j["brush"].get<long long>();
             if (b == 1 || b == 3 || b == 5) p.brush = static_cast<int>(b);
         }
-        if (j.contains("last_world") && j["last_world"].is_string())
-            p.lastWorld = j["last_world"].get<std::string>();
+        p.vsync = boolField(j, "vsync", p.vsync, ignored);
+        if (const std::string f = stringField(j, "frame", ignored); !f.empty()) p.frame = f;
+        p.caption = boolField(j, "caption", p.caption, ignored);
+        p.onboarded = boolField(j, "onboarded", p.onboarded, ignored);
+        p.lastWorld = stringField(j, "last_world", ignored);
     } catch (const json::exception&) {
         return Profile{}; // a broken profile never stops the game: defaults
     }
@@ -717,9 +736,23 @@ Profile parseProfile(std::string_view text) {
 }
 
 std::string serialize(const Profile& p) {
-    return json{{"version", 1},   {"muted", p.muted}, {"chatter", p.chatty ? "chatty" : "quiet"},
-                {"grid", p.grid}, {"brush", p.brush}, {"last_world", p.lastWorld}}
-        .dump(1);
+    json j = {{"version", 1},
+              {"volume", {{"music", p.music}, {"effects", p.effects}, {"ambience", p.ambience}}},
+              {"muted", p.muted},
+              {"reduce_motion", p.reduceMotion},
+              {"chatter", p.chatty ? "chatty" : "quiet"},
+              {"grid", p.grid},
+              {"brush", p.brush},
+              {"vsync", p.vsync},
+              {"frame", p.frame},
+              {"caption", p.caption},
+              {"onboarded", p.onboarded},
+              {"last_world", p.lastWorld}};
+    if (p.uiScale > 0 && p.uiScale < kUiScaleCount)
+        j["ui_scale"] = kUiScales[p.uiScale];
+    else
+        j["ui_scale"] = "auto";
+    return j.dump(1);
 }
 
 std::expected<void, std::string> writeFileAtomic(const std::filesystem::path& file,

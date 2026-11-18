@@ -1,0 +1,49 @@
+# Postcards (R12): photo mode's bar, every unlocked frame (Plain, then the nine-slice ones),
+# the caption on and off, hiding the bar, taking postcards into the world's postcards folder,
+# and leaving with the choice remembered.
+set unlock all
+set clock day
+set camera 30 30 1
+wait 4
+key p
+wait 8
+expect photo on
+expect frame plain
+expect caption yes
+shot shots/postcard_plain.png
+key space
+wait 4
+expect postcards 1
+key f
+wait 4
+expect frame pressed_flowers
+shot shots/postcard_pressed_flowers.png
+click ui:menu:frame_next
+wait 4
+expect frame watercolour
+shot shots/postcard_watercolour.png
+key f
+wait 4
+expect frame starry
+key t
+wait 4
+expect caption no
+shot shots/postcard_starry_nocaption.png
+key t
+key h
+wait 12
+shot shots/postcard_starry_nobar.png
+click 480,300
+wait 4
+expect postcards 2
+waitfor 300 toast Postcard saved
+key h
+move 300,300
+wait 8
+click ui:menu:folder
+wait 2
+key escape
+wait 10
+expect photo off
+expect frame starry
+quit

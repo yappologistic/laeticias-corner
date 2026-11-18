@@ -31,6 +31,7 @@ public:
     void spawn(Fx kind, Vec2 pos, Vec2 vel, float life, float sway = 0);
     // Raindrops landing on water leave a ripple, on land a short splash; off the map, nothing.
     void update(float dt, const World& world);
+    void clear() { count_ = 0; }
     [[nodiscard]] std::span<const Particle> all() const { return {pool_.data(), count_}; }
 
 private:

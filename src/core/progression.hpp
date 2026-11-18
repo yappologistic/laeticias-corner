@@ -82,7 +82,7 @@ private:
     void grant(int wish, Progress& p, double played);
     void refresh(int wish, const World& world, const CondFacts& facts, double played);
 
-    const Catalog& cat_;
+    const Catalog* cat_; // a pointer, so a fresh one can be assigned when another world opens
     std::vector<double> trueSince_; // per wish: play time its goal began to hold, -1: false
     std::vector<double> grantAt_;   // per wish: an offered wish already met, granted then
     std::vector<WishStatus> status_;

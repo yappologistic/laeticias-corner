@@ -10,7 +10,7 @@
 namespace lc {
 
 EventScheduler::EventScheduler(const Catalog& cat, std::uint64_t seed)
-    : cat_(cat), seed_(seed ^ 0xE7E47ULL), due_(cat.events.size(), 0.0),
+    : cat_(&cat), seed_(seed ^ 0xE7E47ULL), due_(cat.events.size(), 0.0),
       last_(cat.events.size(), -1e9), lastDay_(cat.events.size(), -1),
       drawn_(cat.events.size(), 0) {
     running_.reserve(cat.events.size());
@@ -22,14 +22,14 @@ EventScheduler::EventScheduler(const Catalog& cat, std::uint64_t seed)
 
 double EventScheduler::gap(int e) {
     // The k-th draw of an event's own stream: a pure function of the seed, the event and k.
-    const EventDef& d = cat_.events[static_cast<std::size_t>(e)];
+    const EventDef& d = cat_->events[static_cast<std::size_t>(e)];
     Rng r(seed_ ^ (static_cast<std::uint64_t>(e) << 40) ^ drawn_[static_cast<std::size_t>(e)]++);
     if (d.mean > 0) return -std::log(1.0 - static_cast<double>(r.uniform())) * d.mean;
     return d.every0 + (d.every1 - d.every0) * static_cast<double>(r.uniform());
 }
 
 double EventScheduler::duration(int e) {
-    const EventDef& d = cat_.events[static_cast<std::size_t>(e)];
+    const EventDef& d = cat_->events[static_cast<std::size_t>(e)];
     if (d.dur1 <= d.dur0) return d.dur0;
     Rng r(seed_ ^ (static_cast<std::uint64_t>(e) << 40) ^ 0xD0ULL ^
           drawn_[static_cast<std::size_t>(e)]++);
@@ -40,7 +40,7 @@ bool EventScheduler::filters(const EventDef& d, const EventEnv& env) const {
     if (((d.phases >> static_cast<int>(env.phase)) & 1) == 0) return false;
     if (((d.seasons >> env.season) & 1) == 0) return false;
     if (d.weather >= 0 && (d.weather == 1) != env.facts.raining) return false;
-    return d.when < 0 || cat_.conditions.eval(d.when, *env.world, env.facts);
+    return d.when < 0 || cat_->conditions.eval(d.when, *env.world, env.facts);
 }
 
 void EventScheduler::start(int e, double now, Vec2 at) {
@@ -48,7 +48,7 @@ void EventScheduler::start(int e, double now, Vec2 at) {
     last_[i] = now;
     std::erase_if(running_, [&](const Running& r) { return r.event == e; });
     const double len = duration(e);
-    const EventDef& d = cat_.events[i];
+    const EventDef& d = cat_->events[i];
     running_.push_back(
         {e, now, now + len, d.every1 > 0 && d.on == EventOn::Rain ? now : now + 1e9});
     fired_.push_back({e, at, false});
@@ -61,8 +61,8 @@ void EventScheduler::update(const EventEnv& env, float dt) {
     if (rain && !wasRaining_) rainSince_ = now;
     const bool stopped = !rain && wasRaining_;
     if (stopped) rainEnded_ = now;
-    for (std::size_t i = 0; i < cat_.events.size(); ++i) {
-        const EventDef& d = cat_.events[i];
+    for (std::size_t i = 0; i < cat_->events.size(); ++i) {
+        const EventDef& d = cat_->events[i];
         const int e = static_cast<int>(i);
         const bool running =
             std::ranges::any_of(running_, [&](const Running& r) { return r.event == e; });
@@ -121,10 +121,10 @@ void EventScheduler::update(const EventEnv& env, float dt) {
     }
     // Running events end, and repeat inside themselves (the frog's croak every few seconds).
     for (Running& r : running_) {
-        const EventDef& d = cat_.events[static_cast<std::size_t>(r.event)];
+        const EventDef& d = cat_->events[static_cast<std::size_t>(r.event)];
         if (d.on == EventOn::Rain && !rain && r.end > 1e17) r.end = rainEnded_ + d.dur0;
         if (d.on == EventOn::Rain && d.when >= 0 &&
-            !cat_.conditions.eval(d.when, *env.world, env.facts))
+            !cat_->conditions.eval(d.when, *env.world, env.facts))
             r.end = now;
         if (now >= r.nextPulse && now < r.end) {
             fired_.push_back({r.event, {-1, -1}, true});
@@ -136,8 +136,8 @@ void EventScheduler::update(const EventEnv& env, float dt) {
 }
 
 void EventScheduler::placed(const World& world, TileRect rect, double now) {
-    for (std::size_t i = 0; i < cat_.events.size(); ++i) {
-        const EventDef& d = cat_.events[i];
+    for (std::size_t i = 0; i < cat_->events.size(); ++i) {
+        const EventDef& d = cat_->events[i];
         if (d.on != EventOn::Placed || now - last_[i] < d.cooldown) continue;
         // Something carrying the tag within reach of what changed.
         const int r = static_cast<int>(std::ceil(d.within));
@@ -145,7 +145,7 @@ void EventScheduler::placed(const World& world, TileRect rect, double now) {
         Vec2 at{-1, -1};
         world.forEachItemIn(around, [&](const Item& it) {
             if (at.x >= 0 || it.rect() == rect) return;
-            const auto& tags = cat_.items[it.type].tags;
+            const auto& tags = cat_->items[it.type].tags;
             if (std::ranges::find(tags, d.nearTag) != tags.end())
                 at = {static_cast<float>(it.pos.x) + 0.5f, static_cast<float>(it.pos.y) + 0.5f};
         });
@@ -154,20 +154,20 @@ void EventScheduler::placed(const World& world, TileRect rect, double now) {
 }
 
 void EventScheduler::cooked(double now) {
-    for (std::size_t i = 0; i < cat_.events.size(); ++i)
-        if (cat_.events[i].on == EventOn::Cook) start(static_cast<int>(i), now, {-1, -1});
+    for (std::size_t i = 0; i < cat_->events.size(); ++i)
+        if (cat_->events[i].on == EventOn::Cook) start(static_cast<int>(i), now, {-1, -1});
 }
 
 bool EventScheduler::active(EventShow show) const {
     return std::ranges::any_of(running_, [&](const Running& r) {
-        return cat_.events[static_cast<std::size_t>(r.event)].show == show;
+        return cat_->events[static_cast<std::size_t>(r.event)].show == show;
     });
 }
 
 float EventScheduler::gain(EventShow show) const {
     float g = 1.0f;
     for (const Running& r : running_) {
-        const EventDef& d = cat_.events[static_cast<std::size_t>(r.event)];
+        const EventDef& d = cat_->events[static_cast<std::size_t>(r.event)];
         if (d.show == show) g = std::max(g, d.gain);
     }
     return g;
@@ -175,7 +175,7 @@ float EventScheduler::gain(EventShow show) const {
 
 float EventScheduler::progress(EventShow show, double now) const {
     for (const Running& r : running_) {
-        const EventDef& d = cat_.events[static_cast<std::size_t>(r.event)];
+        const EventDef& d = cat_->events[static_cast<std::size_t>(r.event)];
         if (d.show == show && r.end > r.start && r.end < 1e17)
             return static_cast<float>(std::clamp((now - r.start) / (r.end - r.start), 0.0, 1.0));
     }

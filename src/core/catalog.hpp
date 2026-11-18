@@ -333,6 +333,8 @@ struct Catalog {
     std::vector<ActorKind> kinds;           // visitors first (same index), then the resident
     ActorProgram program;
     int residentKind = -1; // -1: nobody lives here
+    int tourWish = -1;     // the first-minute tour: the wish it shows, the piece it plants
+    int tourPiece = -1;
     ConditionSet conditions;
     AudioList audio;
     int baseTerrain = 0;

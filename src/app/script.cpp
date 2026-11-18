@@ -192,6 +192,10 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
                     c.hasPoint = true;
                 }
             }
+        } else if (cmd == "type") {
+            if (tok.size() < 2) return err("type TEXT");
+            c.kind = ScriptCommand::Kind::Type;
+            for (std::size_t i = 1; i < tok.size(); ++i) c.args.push_back(tok[i]);
         } else if (cmd == "quit") {
             c.kind = ScriptCommand::Kind::Quit;
         } else {

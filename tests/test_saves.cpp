@@ -5,12 +5,14 @@
 #include "core/save.hpp"
 #include "core/starter.hpp"
 #include "core/tuning.hpp"
+#include "core/worlds.hpp"
 #include "core/writer.hpp"
 #include "test_support.hpp"
 
 #include <doctest.h>
 
 #include <algorithm>
+#include <chrono>
 
 using namespace lc;
 
@@ -308,9 +310,30 @@ TEST_CASE("world folder names and the profile") {
     Profile p;
     p.muted = true;
     p.lastWorld = "fern-bank";
+    p.music = 35;
+    p.uiScale = 3; // 125 %
+    p.reduceMotion = true;
+    p.vsync = false;
+    p.frame = "starry";
+    p.caption = false;
+    p.onboarded = true;
     const Profile back = parseProfile(serialize(p));
     CHECK(back.muted);
     CHECK(back.lastWorld == "fern-bank");
+    CHECK(back.music == 35);
+    CHECK(back.effects == 85);
+    CHECK(back.uiScale == 3);
+    CHECK(back.reduceMotion);
+    CHECK_FALSE(back.vsync);
+    CHECK(back.frame == "starry");
+    CHECK_FALSE(back.caption);
+    CHECK(back.onboarded);
+    // Out of range or off the 5-step grid: clamped and snapped; an unknown scale is auto.
+    const Profile clamped =
+        parseProfile(R"({"volume": {"music": 140, "effects": 33}, "ui_scale": 1.1})");
+    CHECK(clamped.music == 100);
+    CHECK(clamped.effects == 30);
+    CHECK(clamped.uiScale == 0);
     CHECK(utcNow().size() == 20);
 }
 
@@ -332,4 +355,56 @@ TEST_CASE("the background writer writes, keeps the newest text and reports failu
         w.write(dir / "b.json", "last words");
     } // the destructor writes what is still waiting
     CHECK(readTextFile(dir / "b.json").value_or("") == "last words");
+}
+
+TEST_CASE("the worlds screen's list: names, days, pages, newest first; rename and delete") {
+    const Catalog& c = test::catalog();
+    const auto dir = test::tempDir("worlds");
+    const auto write = [&](const std::string& slug, const std::string& name, int day, int seen) {
+        SaveData d(makeStarterWorld(c), c);
+        d.name = name;
+        d.day = day;
+        for (int i = 0; i < seen; ++i) d.seen.push_back(c.visitors[static_cast<std::size_t>(i)].id);
+        REQUIRE(writeFileAtomic(dir / slug / "world.json", serialize(d, c)).has_value());
+    };
+    write("plum-hollow", "Plum Hollow", 7, 3);
+    write("fernbank", "Fernbank", 2, 0);
+    REQUIRE(writeFileAtomic(dir / "future" / "world.json", R"({"version": 9})").has_value());
+    REQUIRE(writeFileAtomic(dir / "broken" / "world.json", "{ oops").has_value());
+    std::filesystem::create_directories(dir / "empty");
+    // The newest first: give them distinct times.
+    using namespace std::chrono_literals;
+    const auto t = std::filesystem::file_time_type::clock::now();
+    std::filesystem::last_write_time(dir / "plum-hollow" / "world.json", t);
+    std::filesystem::last_write_time(dir / "fernbank" / "world.json", t - 60s);
+    std::filesystem::last_write_time(dir / "future" / "world.json", t - 120s);
+    std::filesystem::last_write_time(dir / "broken" / "world.json", t - 180s);
+    const auto list = listWorlds(dir);
+    REQUIRE(list.size() == 4); // the empty folder is not a world
+    CHECK(list[0].name == "Plum Hollow");
+    CHECK(list[0].day == 7);
+    CHECK(list[0].pages == 3);
+    CHECK(list[1].slug == "fernbank");
+    CHECK_FALSE(list[2].readable); // newer
+    CHECK_FALSE(list[3].readable); // damaged
+    CHECK(list[3].name == "broken");
+
+    CHECK(trimName("  Moss Bank \t") == "Moss Bank");
+    CHECK(checkName("", list) == NameProblem::Empty);
+    CHECK(checkName("Fernbank", list) == NameProblem::Taken);
+    CHECK(checkName("Fernbank", list, "fernbank") == NameProblem::None); // its own name
+    CHECK(checkName(std::string(29, 'a'), list) == NameProblem::TooLong);
+    CHECK(checkName("Ünïcødé Gärden Ünïcødé Gärde", list) == NameProblem::None); // 28 letters
+    CHECK(freshName("Plum Hollow", list) == "Plum Hollow 2");
+    CHECK(freshName("Moss Bank", list) == "Moss Bank");
+
+    REQUIRE(renameWorld(dir / "fernbank" / "world.json", "Fern Bank").has_value());
+    const auto again = listWorlds(dir);
+    CHECK(std::ranges::any_of(again, [](const WorldSummary& w) { return w.name == "Fern Bank"; }));
+    // A world from a newer version is not changed.
+    const std::string before = readTextFile(dir / "future" / "world.json").value_or("");
+    CHECK_FALSE(renameWorld(dir / "future" / "world.json", "Mine now").has_value());
+    CHECK(readTextFile(dir / "future" / "world.json").value_or("") == before);
+    REQUIRE(deleteWorld(dir / "broken").has_value());
+    CHECK_FALSE(std::filesystem::exists(dir / "broken"));
 }

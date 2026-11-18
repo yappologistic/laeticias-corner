@@ -13,6 +13,14 @@
 //                               id>, or of the toast and hint panels: toast, hint
 //                  actor:KIND   the middle of the first actor of that kind (a visitor id or the
 //                               resident's)
+//                  ui:menu:NAME the front door's widgets: continue (also Begin), worlds, settings,
+//                               quit, back, new, card:N, play:N, rename:N, delete:N, field,
+//                               freebuild, cancel, create, keep, confirm_delete, error_back,
+//                               music, effects, ambience, mute, fullscreen, ui_scale,
+//                               reduce_motion, grid, vsync, chatty, quiet, replay, done, resume,
+//                               pause_settings, postcards, back_to_worlds, pause_quit, skip_tour,
+//                               frame_prev, frame_next, caption, hide_bar, take, folder,
+//                               close_photo
 //
 // Commands:
 //   move P                  pointer motion
@@ -53,6 +61,12 @@
 //       drawer open|closed | journal open|closed | photo on|off | phase PHASE | profiler yes|no
 //       grid yes|no | footprints yes|no (Tab held) | carrying yes|no (a piece being moved)
 //       brush N | pipette yes|no
+//       page none|title|worlds|newworld|delete|loaderror|settings|pause (the menus' top page)
+//       tour N (its step, 0: none) | onboarded yes|no | worlds N (on the worlds screen)
+//       world NAME... (the open world's name) | fresh yes|no (an unbegun preview)
+//       card N NAME... (the N-th world on the worlds screen, newest first)
+//       volume music|effects|ambience N | reduce_motion yes|no | ui_scale N | vsync yes|no
+//       frame ID (the postcard frame) | caption yes|no | postcards N (files in its folder)
 //       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
 //       where it may) | saved yes|no (a save file exists) | zoom 0.25|0.5|1|2|3
@@ -77,6 +91,7 @@
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would
+//   type TEXT...            type into the open name field (words joined by single spaces)
 //   quit
 
 #include <cstdint>
@@ -115,6 +130,7 @@ struct ScriptCommand {
         Fast,
         Place,
         Paint,
+        Type,
         Quit
     };
     Kind kind = Kind::Wait;

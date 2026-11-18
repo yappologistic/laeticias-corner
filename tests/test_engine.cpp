@@ -773,8 +773,8 @@ TEST_CASE("the toast and the hint line stop the pointer; small windows keep dock
         for (int i = 0; i < 30; ++i) hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
         // Every dock button is reachable and no two docks overlap.
         std::vector<Box> buttons;
-        for (const char* name : {"build", "remove", "sound", "photo", "clock", "rain", "journal",
-                                 "undo", "redo", "recentre", "zoom_out", "zoom_in"}) {
+        for (const char* name : {"build", "remove", "move", "menu", "photo", "clock", "rain",
+                                 "journal", "undo", "redo", "recentre", "zoom_out", "zoom_in"}) {
             const auto p = hud.widgetCentre(name, m);
             REQUIRE(p);
             CHECK(p->x > 0);

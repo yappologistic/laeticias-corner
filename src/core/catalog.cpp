@@ -1041,6 +1041,15 @@ public:
                                                    "visitor '" + d.id + "' recipe");
         }
         wishes(root, nookIds);
+        if (root.contains("tour")) {
+            // The first-minute tour's wish and the piece it asks to plant (R10.5).
+            const json& t = root["tour"];
+            const auto wish = cat_.findWish(get<std::string>(t, "wish", "tour"));
+            const auto piece = cat_.findItem(get<std::string>(t, "piece", "tour"));
+            if (!wish || !piece) fail("tour: wish and piece must name a wish and an item");
+            cat_.tourWish = *wish;
+            cat_.tourPiece = *piece;
+        }
         nooks(root, nookIds);
         stems(root, nookIds);
         events(root, nookIds);

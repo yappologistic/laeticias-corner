@@ -31,7 +31,7 @@ set_tests_properties(coverage PROPERTIES ENVIRONMENT "${LC_HEADLESS_ENV};LAETICI
 
 # Scripted headless runs through the real executable. Each script lives in tests/scripts/ and
 # fails the run (non-zero exit) when one of its `expect` lines does not hold. Entries are
-# test-name|script|size|labels; screenshots land in <build>/shots/. Runs at large sizes are slow
+# test-name|script|size|labels[|options]; screenshots land in <build>/shots/. Runs at large sizes are slow
 # with the software renderer and carry the "heavy" label: the default presets skip them.
 set(LC_SCRIPTS
   "launch_960|launch_960x600|960x600|"
@@ -77,6 +77,8 @@ set(LC_SCRIPTS
   "newer_save|newer_save|640x400|"
   "profiler|profiler|960x600|"
   "builder|builder|960x600|"
+  "front_door|front_door|1280x800||--front-door"
+  "postcards|postcards|960x600|"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
   "launch_1440|launch_2560x1440|2560x1440|heavy"
@@ -96,6 +98,11 @@ foreach(entry IN LISTS LC_SCRIPTS)
   list(GET parts 1 script)
   list(GET parts 2 size)
   list(GET parts 3 labels)
+  set(extra "")
+  list(LENGTH parts nparts)
+  if(nparts GREATER 4)
+    list(GET parts 4 extra)
+  endif()
   set(save "${LC_SCRATCH}/save_${name}")
   if(name MATCHES "^save_reload_")
     set(save "${LC_SCRATCH}/save_reload")
@@ -107,6 +114,7 @@ foreach(entry IN LISTS LC_SCRIPTS)
   list(APPEND LC_SAVE_DIRS "${save}")
   add_test(NAME script_${name}
     COMMAND laeticias-corner --headless --size ${size} --seed 1 --save-dir "${save}" --script "${file}"
+            ${extra}
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
   set_tests_properties(script_${name} PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
     FIXTURES_REQUIRED clean_saves)
@@ -125,11 +133,18 @@ add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
 set_tests_properties(script_save_reload_a PROPERTIES FIXTURES_SETUP reload)
 set_tests_properties(script_save_reload_b PROPERTIES FIXTURES_REQUIRED "clean_saves;reload")
-# The corrupt-save run needs a garbage file in place before launch.
+# The corrupt-save run needs a garbage file in place before launch; it is left untouched.
 add_test(NAME prepare_corrupt_save COMMAND ${CMAKE_COMMAND}
   -DFILE=${LC_SCRATCH}/save_corrupt_save/worlds/laeticias-corner/world.json -P ${CMAKE_CURRENT_SOURCE_DIR}/write_garbage.cmake)
 set_tests_properties(prepare_corrupt_save PROPERTIES FIXTURES_SETUP corrupt FIXTURES_REQUIRED clean_saves)
 set_tests_properties(script_corrupt_save PROPERTIES FIXTURES_REQUIRED "clean_saves;corrupt")
+add_test(NAME corrupt_save_untouched COMMAND ${CMAKE_COMMAND}
+  -DFILE=${LC_SCRATCH}/save_corrupt_save/worlds/laeticias-corner/world.json
+  "-DCONTENT={\"version\": 1, \"terrain\": [0, 0, oops"
+  -DEXISTS=${LC_SCRATCH}/save_corrupt_save/worlds/laeticias-corner-2/world.json
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/check_file.cmake)
+set_tests_properties(corrupt_save_untouched PROPERTIES DEPENDS script_corrupt_save
+  FIXTURES_REQUIRED corrupt)
 
 # A real save from the first release, migrated on launch.
 add_test(NAME prepare_migrate_v1 COMMAND ${CMAKE_COMMAND} -E copy

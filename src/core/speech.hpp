@@ -41,7 +41,7 @@ public:
 private:
     [[nodiscard]] bool free(SpeechWeight weight, double now) const;
 
-    const Catalog& cat_;
+    const Catalog* cat_; // a pointer, so a fresh one can be assigned when another world opens
     Rng rng_;
     std::vector<std::vector<std::uint8_t>> order_;
     std::vector<std::uint8_t> pos_;

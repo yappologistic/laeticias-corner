@@ -24,11 +24,9 @@
 namespace lc {
 namespace {
 
-constexpr std::string_view kPhotoDir = "photos";
 constexpr std::string_view kRainBed = "amb/rain.ogg";           // under rain, not snow
 constexpr std::string_view kWaterBed = "amb/water.ogg";         // with the water on screen
 constexpr std::string_view kWaterfallBed = "amb/waterfall.ogg"; // where water meets the rim
-constexpr int kBadSaveCopies = 3;                               // world.json.bad1 (newest) .. bad3
 constexpr int kThumbW = 384; // world thumbnail for the worlds screen
 constexpr int kThumbH = 240;
 constexpr int kHeadlessW = 1280; // headless window when --size is not given
@@ -200,6 +198,10 @@ bool App::init() {
     }
     // The measuring modes build a world of their own and never touch the player's saves.
     if (!measuring()) loadOrStart();
+    logo_ = atlas_->sprite(atlas_->resolve("title/logo", atlas_->placeholderBox()));
+    if (!opts_.headless && !opts_.benchmark && !profile_.vsync &&
+        !SDL_SetRenderVSync(renderer_.get(), 0))
+        SDL_Log("vsync: %s", SDL_GetError());
     fitCameraLand();
     return true;
 }
@@ -223,7 +225,7 @@ void App::adopt(SaveData& data) {
     for (const auto& w : data.warnings) SDL_Log("save: %s", w.c_str());
     world_ = std::move(data.world);
     progress_ = std::move(data.progress);
-    worldName_ = data.name.empty() ? std::string(strings::kDefaultWorldName) : data.name;
+    worldName_ = data.name.empty() ? defaultWorldName() : data.name;
     created_ = data.created.empty() ? utcNow() : data.created;
     freeBuild_ = data.freeBuild;
     played_ = data.played;
@@ -249,42 +251,27 @@ bool App::loadWorld(const fs::path& file) {
         SDL_Log("save: restored %s", file.string().c_str());
         return true;
     }
-    // A world from a newer build is refused and left exactly as it is (living-corner §2.4): an
-    // older binary pointed at a newer save directory must never move or replace it.
-    if (text && saveFileVersion(*text) > kSaveVersion) {
-        SDL_Log("save: %s was written by a newer version of the game; left untouched",
-                file.string().c_str());
-        newerSave_ = true;
-        return false;
-    }
-    // Keep the unreadable file for inspection instead of overwriting it: the newest few bad
-    // copies are kept, oldest dropped.
-    std::error_code ec;
-    const auto bad = [&](int n) {
-        fs::path p = file;
-        p += ".bad" + std::to_string(n);
-        return p;
-    };
-    fs::remove_all(bad(kBadSaveCopies), ec);
-    for (int n = kBadSaveCopies - 1; n >= 1; --n)
-        if (fs::exists(bad(n), ec)) fs::rename(bad(n), bad(n + 1), ec);
-    fs::rename(file, bad(1), ec);
-    saveBlocked_ = static_cast<bool>(ec);
-    if (ec)
-        SDL_Log("save: %s; could not move it aside (%s), starting fresh without saving over it",
-                data.error().c_str(), ec.message().c_str());
-    else
-        SDL_Log("save: %s; moved aside to %s and starting fresh", data.error().c_str(),
-                bad(1).string().c_str());
+    // A world that cannot be opened (damaged, or from a newer build: living-corner §2.4, R10.3)
+    // is refused and left exactly as it is: never renamed, never written over.
+    const bool newer = text && saveFileVersion(*text) > kSaveVersion;
+    SDL_Log("save: %s could not be opened (%s); left untouched", file.string().c_str(),
+            newer ? "written by a newer version" : data.error().c_str());
     return false;
 }
 
-void App::startNewWorld(std::vector<std::string> taken) {
+void App::startNewWorld(std::vector<std::string> taken, std::string name) {
     world_ = makeStarterWorld(cat_);
     progress_ = Progress(cat_);
-    worldName_ = strings::kDefaultWorldName;
+    worldName_ = name.empty() ? defaultWorldName() : std::move(name);
     created_ = utcNow();
     slug_ = worldSlug(worldName_, taken);
+}
+
+std::string App::defaultWorldName() const {
+    // Named after whoever lives there, as data says; nobody: a plain name.
+    return cat_.residentKind >= 0
+               ? std::vformat(strings::kDefaultWorldOf, std::make_format_args(cat_.resident.name))
+               : std::string(strings::kDefaultWorldAlone);
 }
 
 void App::loadOrStart() {
@@ -350,18 +337,14 @@ void App::loadOrStart() {
     if (!dir.empty()) {
         slug_ = dir.filename().string();
         if (loadWorld(dir / kWorldFile)) return;
-        if (newerSave_) {
-            // A fresh corner in a folder of its own, beside the newer world.
-            startNewWorld(taken);
-            hud_.toast(std::string(strings::kToastNewerSave));
-            return;
-        }
-        const std::string slug = slug_;
-        startNewWorld({});
-        slug_ = slug; // a fresh corner in the same folder, beside the unreadable file
+        // A fresh corner in a folder of its own, beside the world that could not be opened.
+        startNewWorld(taken);
+        freshWorld_ = true;
+        if (!frontDoor()) hud_.toast(std::string(strings::kToastNotOpened));
         return;
     }
     startNewWorld(taken);
+    freshWorld_ = true;
 }
 
 bool App::save(bool wait) {
@@ -383,11 +366,8 @@ bool App::save(bool wait) {
         data.zoom = camera_.zoom();
     }
     if (measuring()) return true; // a measuring world is never saved
-    // Never write over a save that could not be read and could not be moved aside.
-    if (saveBlocked_) {
-        saveFailed("an unreadable save is in the way");
-        return false;
-    }
+    // The front door's preview of a new corner is not a world until it is begun.
+    if (freshWorld_ && frontDoor()) return true;
     // The text is made here; the writing (and its flush to disk) happens on the writer's thread,
     // so an autosave never stalls a frame. `wait` is for the moments that need it on disk now.
     writer_.write(worldDir() / kWorldFile, serialize(data, cat_));
@@ -809,30 +789,12 @@ void App::togglePhoto() {
     photo_ = !photo_;
     if (photo_) {
         // Photo mode hides the interface; the player frames the shot, then takes it.
+        cancelMove();
         if (editor_.inGroup()) editor_.commit();
         drag_ = Drag::None;
-    } else if (photoSaved_) {
-        hud_.toast(std::string(strings::kToastPhoto));
-        photoSaved_ = false;
-    }
-}
-
-void App::capturePhoto() {
-    const fs::path dir = saveDir_ / kPhotoDir;
-    std::error_code ec;
-    fs::create_directories(dir, ec);
-    fs::path file;
-    for (int n = 1; n < 100000; ++n) {
-        file = dir / std::vformat(strings::kPhotoFile, std::make_format_args(n));
-        if (!fs::exists(file, ec)) break;
-    }
-    if (shot(file)) {
-        photoSaved_ = true;
-        play(sfx::kShutter);
-        hud_.flash();
-        SDL_Log("photo: saved %s", file.string().c_str());
-    } else {
-        hud_.toast(std::string(strings::kToastPhotoFailed));
+        frameIndex_ = postcardFrame();
+        menus_.hideBar(false);
+        menus_.wakeBar();
     }
 }
 
@@ -876,6 +838,7 @@ void App::undoRedo(bool redo) {
 }
 
 void App::zoomBy(int steps, Vec2 px) {
+    tourMoved_ = true;
     camera_.zoomTo(camera_.level() + steps, px, screen());
 }
 
@@ -904,6 +867,35 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         mods_ = static_cast<SDL_Keymod>(k.down ? (mods_ | bit) : (mods_ & ~bit));
     const bool ctrl = (k.mod & SDL_KMOD_CTRL) != 0;
     const bool shift = (k.mod & SDL_KMOD_SHIFT) != 0;
+    // While a page of the menus is open (or a name is being typed) the keys are theirs.
+    if (k.down && (menus_.blocking() || menus_.editing())) {
+        const auto menuKey = [&]() -> std::optional<MenuKey> {
+            switch (key) {
+            case SDLK_UP: return MenuKey::Up;
+            case SDLK_DOWN: return MenuKey::Down;
+            case SDLK_LEFT: return MenuKey::Left;
+            case SDLK_RIGHT: return MenuKey::Right;
+            case SDLK_RETURN:
+            case SDLK_KP_ENTER: return MenuKey::Enter;
+            case SDLK_ESCAPE: return MenuKey::Escape;
+            case SDLK_BACKSPACE: return MenuKey::Backspace;
+            default: return std::nullopt;
+            }
+        }();
+        if (menuKey) {
+            (void)menus_.key(*menuKey, menuModel());
+            return;
+        }
+        if (menus_.editing()) return; // letters arrive as text input
+        if (key == SDLK_F11)
+            setFullscreen((SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) == 0);
+        if (key == SDLK_M) {
+            muted_ = !muted_;
+            profileChanged();
+        }
+        return;
+    }
+    if (!k.down && (menus_.blocking() || menus_.editing())) return;
     // Held Tab shows every footprint and nook; it lets go when released.
     if (key == SDLK_TAB) {
         footprintsHeld_ = k.down && !photo_;
@@ -962,16 +954,28 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         } else if (journalOpen_) {
             journalOpen_ = false;
             play(sfx::kClose, tuning::kUiSfxLevel);
+        } else if (frontDoor()) {
+            menus_.open(Page::Pause); // nothing left to cancel: the pause menu
         }
         return;
-    case SDLK_F11: {
-        const bool fs = (SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) != 0;
-        if (!SDL_SetWindowFullscreen(window_.get(), !fs)) SDL_Log("fullscreen: %s", SDL_GetError());
-        windowState_.fullscreen = !fs;
+    case SDLK_F11:
+        setFullscreen((SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) == 0);
         return;
-    }
     case SDLK_F3: profilerOn_ = !profilerOn_; return;
     case SDLK_P: togglePhoto(); return;
+    case SDLK_F:
+    case SDLK_T:
+    case SDLK_H:
+        if (!photo_) break;
+        // The photo bar's keys: next frame, caption, hide the bar.
+        if (key == SDLK_F) cycleFrame(1);
+        if (key == SDLK_T) {
+            profile_.caption = !profile_.caption;
+            profileChanged();
+        }
+        if (key == SDLK_H) menus_.hideBar(!menus_.barHidden());
+        menus_.wakeBar();
+        return;
     case SDLK_SPACE:
     case SDLK_RETURN:
         if (photo_) capturePending_ = true;
@@ -984,7 +988,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     case SDLK_KP_MINUS: zoomBy(-1, centre); return;
     case SDLK_M:
         muted_ = !muted_;
-        markDirty();
+        profileChanged();
         return;
     default: break;
     }
@@ -1072,7 +1076,10 @@ void App::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_MOUSE_MOTION: {
         const Vec2 p{e.motion.x * density_, e.motion.y * density_};
         mouseInside_ = true;
-        if (drag_ == Drag::Pan) camera_.dragBy({p.x - lastPan_.x, p.y - lastPan_.y}, screen());
+        if (drag_ == Drag::Pan) {
+            camera_.dragBy({p.x - lastPan_.x, p.y - lastPan_.y}, screen());
+            tourMoved_ = true;
+        }
         lastPan_ = p;
         mouse_ = p;
         break;
@@ -1123,6 +1130,9 @@ void App::handleEvent(const SDL_Event& e) {
         break;
     case SDL_EVENT_KEY_DOWN:
     case SDL_EVENT_KEY_UP: handleKey(e.key); break;
+    case SDL_EVENT_TEXT_INPUT:
+        if (e.text.text != nullptr) (void)menus_.text(e.text.text, font_);
+        break;
     default: break;
     }
 }
@@ -1225,10 +1235,7 @@ HudModel App::model() const {
     const Lighting l = lighting();
     m.brightness =
         std::clamp(((l.ambient.r + l.ambient.g + l.ambient.b) / 3.0f - 0.3f) / 0.6f, 0.0f, 1.0f);
-    if (photo_) {
-        m.hint = strings::kHintPhoto;
-        return m;
-    }
+    if (photo_) return m; // the photo bar names its keys
     m.hint = toolHint();
     m.warning = warning_;
     if ((tool_ == Tool::Place || carry_) && hover_ && warnTime_ <= 0 && shape_ == Shape::None)
@@ -1264,10 +1271,7 @@ void App::applyHudActions() {
         }
         case K::RemoveTool: setTool(tool_ == Tool::Remove ? Tool::None : Tool::Remove, -1); break;
         case K::MoveTool: setTool(tool_ == Tool::Move ? Tool::None : Tool::Move, -1); break;
-        case K::Sound:
-            muted_ = !muted_;
-            markDirty();
-            break;
+        case K::Menu: menus_.open(Page::Pause); break;
         case K::Photo: togglePhoto(); break;
         case K::Clock: cycleClock(); break;
         case K::Rain: cycleWeather(); break;
@@ -1325,6 +1329,7 @@ void App::step(float dt) {
     clock_.update(dt);
     const Vec2 pan{(keyPan_[3] ? 1.0f : 0.0f) - (keyPan_[2] ? 1.0f : 0.0f),
                    (keyPan_[1] ? 1.0f : 0.0f) - (keyPan_[0] ? 1.0f : 0.0f)};
+    if (pan.x != 0 || pan.y != 0) tourMoved_ = true;
     if (pan.x != 0 || pan.y != 0)
         camera_.nudge({pan.x * tuning::kKeyPanSpeed * dt, pan.y * tuning::kKeyPanSpeed * dt},
                       screen());
@@ -1441,6 +1446,7 @@ void App::unlockStems(const CondFacts& f, bool instant) {
 
 void App::updateAudio() {
     mixer_.setMuted(muted_);
+    applyVolumes(); // the music ducks while paused
     const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);
     for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n));
@@ -1522,13 +1528,20 @@ void App::render() {
     }
     const Uint64 t0 = SDL_GetPerformanceCounter();
     scene_->draw(p);
+    if (photo_ && font_.build(renderer_.get(), uiScale_)) {
+        // The postcard's frame and caption over the view; a postcard is taken with them and
+        // before the bar is drawn.
+        Painter painter(*uiBatch_, font_, {nullptr, p.screen, 0.5f}, uiScale_);
+        drawPostcard(painter);
+        uiBatch_->flush();
+    }
     if (capturePending_) {
         capturePending_ = false;
         capturePhoto();
     }
-    // The glass panels show a blurred copy of the scene; photo mode has no panels to feed.
+    // The glass panels show a blurred copy of the scene.
     blur_->invalidate();
-    if (!photo_ && blur_->begin(p.screen, theme::kBlurRadius * uiScale_)) {
+    if (blur_->begin(p.screen, theme::kBlurRadius * uiScale_)) {
         scene_->composite(p, blur_->sourceScale(), true);
         blur_->end();
     }
@@ -1537,7 +1550,10 @@ void App::render() {
     if (!hudHidden_ && font_.build(renderer_.get(), uiScale_)) {
         // The model the interface was laid out from this frame: drawing never sees another.
         Painter painter(*uiBatch_, font_, {blur_->result(), p.screen, ui_.brightness}, uiScale_);
-        hud_.draw(painter, ui_);
+        // The interface shows in play; the front door's pages and the pause menu draw over a
+        // world without it.
+        if (menus_.page() == Page::None) hud_.draw(painter, ui_);
+        menus_.draw(painter, menuModel_);
         if (profilerOn_) profiler_.draw(painter, perf_, screen(), uiScale_, opts_.gpuSync);
         uiBatch_->flush();
     }
@@ -1555,8 +1571,12 @@ void App::refreshScale() {
     const float fit = std::min(static_cast<float>(pixelW_) / theme::kReferenceW,
                                static_cast<float>(pixelH_) / theme::kReferenceH);
     // Quarter steps keep glyph re-rasterisation rare while a window is being resized.
-    uiScale_ = std::clamp(std::round(std::max(display > 0 ? display : 1.0f, fit) * 4.0f) / 4.0f,
-                          1.0f, theme::kMaxScale);
+    // The player's interface size multiplies the automatic scale (R10.7).
+    const float factor =
+        profile_.uiScale > 0 ? kUiScales[std::clamp(profile_.uiScale, 0, kUiScaleCount - 1)] : 1.0f;
+    uiScale_ =
+        std::clamp(std::round(std::max(display > 0 ? display : 1.0f, fit) * factor * 4.0f) / 4.0f,
+                   factor < 1.0f ? 0.75f : 1.0f, theme::kMaxScale);
 }
 
 int App::run() {
@@ -1585,9 +1605,18 @@ int App::run() {
     if (opts_.soak > 0) return runSoak();
     actors_.populate(actorEnv());
     refreshNooks();
-    // She greets the player when the corner opens and she can be seen.
-    if (residentOnScreen() && speak(cat_.resident.context("greet"), SpeechWeight::Important))
+    applyVolumes();
+    applyReduceMotion();
+    if (frontDoor()) {
+        // The title over the last world; her greeting waits until the player walks in.
+        refreshWorlds();
+        menus_.open(Page::Title);
+        greetPending_ = true;
+    } else if (residentOnScreen() &&
+               speak(cat_.resident.context("greet"), SpeechWeight::Important)) {
+        // She greets the player when the corner opens and she can be seen.
         actors_.wave();
+    }
 
     // Headless runs advance exactly one fixed step per frame so scripts are reproducible.
     const bool fixed = opts_.headless;
@@ -1626,11 +1655,20 @@ int App::run() {
         }
         double simMs = 0;
         double condMs = 0;
+        // Menus stop the corner (pause and the front door); the title's camera drifts on.
+        const bool blocked = menus_.blocking();
+        if (blocked) {
+            if (menus_.page() != Page::Pause) titleDrift(frameDt);
+            acc = std::min(acc, tuning::kStepSeconds);
+            steps = 0;
+        }
         for (int i = 0; i < steps; ++i) {
             step(static_cast<float>(tuning::kStepSeconds));
             simMs += actorMs_ + lifeMs_ + progressMs_;
             condMs += progressMs_;
         }
+        if (!blocked)
+            updateTour(static_cast<float>(steps) * static_cast<float>(tuning::kStepSeconds));
         // Drawing runs between steps: the camera and every actor are shown where they are this
         // far toward the next step, so motion is smooth at any refresh rate.
         alpha_ = fixed ? 1.0f : static_cast<float>(acc / tuning::kStepSeconds);
@@ -1651,9 +1689,30 @@ int App::run() {
         in.rightReleased = rightReleased_;
         in.wheel = wheel_;
         in.blocked = drag_ != Drag::None;
-        hud_.update(in, ui_, font_, screen(), uiScale_, frameDt);
+        // The menus (a page, the coach card, the photo bar) see the pointer first.
+        menus_.update(in, menuModel(), font_, screen(), uiScale_, frameDt);
+        const bool menusOwn = menus_.wantsMouse() || menus_.blocking();
+        UiInput hudIn = in;
+        if (menusOwn || menus_.page() != Page::None) hudIn = UiInput{};
+        hud_.update(hudIn, ui_, font_, screen(), uiScale_, frameDt);
+        applyMenuActions();
         applyHudActions();
-        worldInput();
+        if (menusOwn && drag_ != Drag::Tool) {
+            hover_.reset();
+            if (drag_ == Drag::Pan && leftReleased_) drag_ = Drag::None;
+            wheel_ = 0;
+            wheelAcc_ = 0;
+        } else {
+            worldInput();
+        }
+        // Text input is on while a name is being typed (the system's composition window).
+        if (menus_.editing() != textInput_) {
+            textInput_ = menus_.editing();
+            if (!(textInput_ ? SDL_StartTextInput(window_.get())
+                             : SDL_StopTextInput(window_.get())))
+                SDL_Log("text input: %s", SDL_GetError());
+        }
+        writeProfileIfDue();
         const double uiMs = msBetween(tUi, SDL_GetPerformanceCounter());
         updateAudio();
         if (opts_.audioOut) captureAudio(steps);
@@ -1714,7 +1773,9 @@ int App::run() {
     }
     cancelMove();
     if (editor_.inGroup()) editor_.commit();
-    if (!saveBlocked_) (void)writeThumbnail();
+    profileDue_ = 0;
+    writeProfileIfDue();
+    if (!(freshWorld_ && frontDoor())) (void)writeThumbnail();
     if (!save(true) && exitCode_ == 0 && opts_.script) SDL_Log("save: the final save failed");
     rememberWindow();
     mixer_.close();

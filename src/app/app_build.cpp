@@ -295,6 +295,7 @@ void App::finishShape() {
                 const Item item = ghostItem(t);
                 const bool fresh = world_.itemCount(item.type) == 0;
                 if (editor_.place(world_, cat_, item) != PlaceResult::Ok) continue;
+                ++placements_;
                 scene_->onPlaced(item, rng_);
                 disturbed(item.rect(), item.type, fresh);
             } else if (editor_.paint(world_, cat_, t, selection_) == PaintResult::Ok) {
@@ -335,6 +336,7 @@ void App::applyTool(TilePos t, bool first) {
         const bool fresh = w.itemCount(item.type) == 0;
         const auto r = editor_.place(w, cat_, item);
         if (r == PlaceResult::Ok) {
+            ++placements_;
             scene_->onPlaced(item, rng_);
             disturbed(item.rect(), item.type, fresh);
             play(cat_.items[item.type].sound, tuning::kSfxLevel, true);

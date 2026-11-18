@@ -55,7 +55,7 @@ float stepCost(const World& world, const Catalog& cat, Locomotion move, TilePos 
     return tuning::kPathCostOther;
 }
 
-PathFinder::PathFinder(const Catalog& cat) : cat_(cat) {
+PathFinder::PathFinder(const Catalog& cat) : cat_(&cat) {
     heap_.reserve(1024);
     route_.reserve(256);
 }
@@ -84,7 +84,7 @@ int PathFinder::find(const World& world, const PathQuery& q, std::span<TilePos> 
     };
     const auto open = [&](TilePos p) {
         // The start may be a seat it is getting up from; the goal may be one it sits on.
-        return p == q.to || p == q.from || passable(world, cat_, q.move, p, q.bank);
+        return p == q.to || p == q.from || passable(world, *cat_, q.move, p, q.bank);
     };
     const auto h = [&](TilePos p) {
         const auto dx = static_cast<float>(std::abs(p.x - q.to.x));
@@ -120,7 +120,7 @@ int PathFinder::find(const World& world, const PathQuery& q, std::span<TilePos> 
             if (diagonal && (!open({p.x + kDirs[d].x, p.y}) || !open({p.x, p.y + kDirs[d].y})))
                 continue;
             const std::uint32_t ni = index(n);
-            const float cost = stepCost(world, cat_, q.move, n) * (diagonal ? kDiagonal : 1.0f);
+            const float cost = stepCost(world, *cat_, q.move, n) * (diagonal ? kDiagonal : 1.0f);
             const float ng = g_[cur] + cost;
             if (stamp_[ni] == search_ && (closed_[ni] != 0 || g_[ni] <= ng)) continue;
             stamp_[ni] = search_;
@@ -148,7 +148,7 @@ int PathFinder::find(const World& world, const PathQuery& q, std::span<TilePos> 
             const TilePos t{static_cast<int>(std::floor(static_cast<float>(a.x) + 0.5f + dx * k)),
                             static_cast<int>(std::floor(static_cast<float>(a.y) + 0.5f + dy * k))};
             if (t == prev) continue;
-            if (!open(t) || stepCost(world, cat_, q.move, t) > worst) return false;
+            if (!open(t) || stepCost(world, *cat_, q.move, t) > worst) return false;
             if (t.x != prev.x && t.y != prev.y && (!open({t.x, prev.y}) || !open({prev.x, t.y})))
                 return false;
             prev = t;
@@ -160,10 +160,10 @@ int PathFinder::find(const World& world, const PathQuery& q, std::span<TilePos> 
     std::size_t i = 0;
     while (i < route_.size() && written < static_cast<int>(out.size())) {
         std::size_t best = i;
-        float worst = stepCost(world, cat_, q.move, route_[i]);
+        float worst = stepCost(world, *cat_, q.move, route_[i]);
         for (std::size_t j = i + 1; j < route_.size() && j < i + 12; ++j) {
-            worst = std::max(worst, stepCost(world, cat_, q.move, route_[j]));
-            if (route_[j] == q.to && !passable(world, cat_, q.move, q.to, q.bank)) break;
+            worst = std::max(worst, stepCost(world, *cat_, q.move, route_[j]));
+            if (route_[j] == q.to && !passable(world, *cat_, q.move, q.to, q.bank)) break;
             if (lineOk(anchor, route_[j], worst)) best = j;
         }
         out[static_cast<std::size_t>(written++)] = route_[best];

@@ -336,7 +336,7 @@ void Scene::produce(const Item& bed, int crop) {
 }
 
 void Scene::flourish(const NearInstance& nook, const World& world, Rng& rng) {
-    pulses_.push_back({nook, now_});
+    if (!reduceMotion_) pulses_.push_back({nook, now_}); // the ring is motion; sparkles stay
     const TileRect& f = nook.footprint;
     for (int i = 0; i < 8; ++i) {
         const TilePos t{rng.range(f.x0 - nook.within, f.x1 + nook.within - 1),
@@ -382,16 +382,21 @@ float Scene::landWave(const World& world, const Catalog& cat, int stage,
     for (const TileRect& r : def.rects)
         for (int y = r.y0; y < r.y1; ++y)
             for (int x = r.x0; x < r.x1; ++x) {
-                const float delay =
-                    static_cast<float>(std::max(0, dist[idx({x, y})])) * tuning::kLandWaveStep;
+                // With reduce motion the land opens in one short fade instead of a wave.
+                const float delay = reduceMotion_
+                                        ? 0.0f
+                                        : static_cast<float>(std::max(0, dist[idx({x, y})])) *
+                                              tuning::kLandWaveStep;
                 longest = std::max(longest, delay);
                 wave_.push_back({{x, y}, now_ + delay, thicketAt(tables_, {x, y})});
             }
     // Revealed items pop up as the wave reaches them (invisible until then).
     for (const Item& it : revealed) {
         if (pops_.size() == kMaxPops) break;
-        pops_.push_back({it.pos, now_ + static_cast<float>(std::max(0, dist[idx(it.pos)])) *
-                                            tuning::kLandWaveStep});
+        pops_.push_back(
+            {it.pos, now_ + (reduceMotion_ ? 0.0f
+                                           : static_cast<float>(std::max(0, dist[idx(it.pos)])) *
+                                                 tuning::kLandWaveStep)});
     }
     waveEnd_ = now_ + longest + tuning::kLandClearFade;
     return longest + tuning::kLandClearFade;
@@ -403,6 +408,21 @@ void Scene::drawArea(const World& world, const NearInstance& area, SDL_FColor co
         for (int x = f.x0 - area.within; x < f.x1 + area.within; ++x)
             if (!f.contains(TilePos{x, y}) && world.hasGround({x, y}))
                 sprite(tables_.tileArea, iso_.toWorld(TilePos{x, y}), color);
+}
+
+void Scene::resetWorld() {
+    ground_->invalidate();
+    regionRevision_ = ~0ULL;
+    fades_.clear();
+    pops_.clear();
+    pulses_.clear();
+    wave_.clear();
+    waveEnd_ = 0;
+    rustles_.clear();
+    cooking_.reset();
+    star_ = {};
+    particles_.clear();
+    season_ = -1;
 }
 
 void Scene::onRemoved(const Item& item) {
@@ -511,7 +531,7 @@ void Scene::update(float dt, const World& world, std::span<const Actor> actors,
         // Keep room in the pool for smoke, ripples and leaves however large the view.
         const float maxRate = tuning::kRainPoolShare * static_cast<float>(Particles::kCapacity) /
                               (fall / speed + tuning::kSplashSeconds);
-        const float rate = std::min(tuning::kRainDropsPerSecondPerTile * tiles, maxRate);
+        const float rate = std::min(tuning::kRainDropsPerSecondPerTile * tiles, maxRate) * thin_;
         // Drops fall only where a shower is, slanting with the wind.
         const float slant = 0.15f + lean * tuning::kRainLean;
         if (snow) {
@@ -544,7 +564,7 @@ void Scene::update(float dt, const World& world, std::span<const Actor> actors,
             weather.gustAt({static_cast<float>(tp.x) + 0.5f, static_cast<float>(tp.y) + 0.5f});
         const float rate = (petal ? tuning::kPetalsPerSecondPerTree * petals
                                   : tuning::kLeavesPerSecondPerTree * leaves) *
-                           (1.0f + tuning::kGustLeaves * gust);
+                           (1.0f + tuning::kGustLeaves * gust) * thin_;
         if (!rng.chance(rate * dt)) continue;
         const FRect& r = placed_[i].screen;
         particles_.spawn(
@@ -570,8 +590,8 @@ void Scene::update(float dt, const World& world, std::span<const Actor> actors,
             rng.chance(dt / tuning::kWakeInterval))
             particles_.spawn(Fx::Ripple, iso_.toWorld(a.pos.x, a.pos.y), {0, 0},
                              tuning::kRippleSeconds);
-        if (zzz && k.sleepAnim != 0xFF && a.anim == k.sleepAnim && a.state == ActorState::Act &&
-            a.overlay <= 0) {
+        if (zzz && !reduceMotion_ && k.sleepAnim != 0xFF && a.anim == k.sleepAnim &&
+            a.state == ActorState::Act && a.overlay <= 0) {
             const Vec2 h = headOf(a);
             particles_.spawn(Fx::Zzz, {h.x + 2, h.y + 2}, {0.1f * u, -0.3f * u}, 1.5f);
         }
@@ -617,6 +637,7 @@ void Scene::fishJump(Vec2 tile) {
 }
 
 void Scene::shootingStar(Rng& rng) {
+    if (reduceMotion_) return; // no streaks with reduce motion (its sound still plays)
     star_.start = now_;
     star_.from = {rng.range(0.15f, 0.75f), rng.range(0.05f, 0.3f)};
     const float ang = rng.range(0.15f, 0.4f);
@@ -689,7 +710,8 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
     float fps = def.fps;
     if (fps > 0 && !def.glow) {
         const Vec2 c{static_cast<float>(item.pos.x) + 0.5f, static_cast<float>(item.pos.y) + 0.5f};
-        const float gust = weather_ != nullptr ? weather_->gustAt(c) : 0.0f;
+        // Reduce motion keeps the gust's sound but not its wave through the plants.
+        const float gust = weather_ != nullptr && !reduceMotion_ ? weather_->gustAt(c) : 0.0f;
         clock = sway_ * (1.0f + tuning::kGustSway * gust);
         if (std::ranges::any_of(rustles_, [&](const Rustle& r) { return r.tile == item.pos; })) {
             clock = now_;
@@ -1160,6 +1182,7 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
 }
 
 void Scene::drawMoths(const FrameParams& p) {
+    if (reduceMotion_) return;
     // Two moths circle each lamp head at night, lit by it (drawn after the night grade).
     if (p.light.night < 0.3f || moths_.empty()) return;
     const FrameSet& set = tables_.fx[static_cast<std::size_t>(Fx::Moth)];

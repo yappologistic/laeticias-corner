@@ -57,6 +57,14 @@ public:
     // lifting); it fades away as the lead fades in. `stems` are the piece's loops.
     void setMakeup(std::span<const int> stems, int lead, float gain);
     void setMuted(bool muted) { muted_.store(muted); }
+    // The player's volumes (0..1) for music (stems), effects (one-shots) and ambience (the other
+    // loops), glided to so a slider never clicks.
+    enum class Bus : std::uint8_t { Music, Effects, Ambience };
+    void setBus(Bus bus, float gain) {
+        busTargets_[static_cast<std::size_t>(bus)].store(gain, std::memory_order_relaxed);
+    }
+    // Every stem goes quiet and locked again (another world opens with its own progress).
+    void resetStems();
     // Share of the audio callback's time budget spent mixing (smoothed, 0..1; 0 without a device).
     [[nodiscard]] float load() const { return load_.load(std::memory_order_relaxed); }
     // Fade-in level (0..1) a stem has reached; read only in capture mode, where the game thread
@@ -121,6 +129,9 @@ private:
     std::atomic<std::uint32_t> tail_{0}; // written by the audio thread
     std::atomic<bool> muted_{false};
     std::atomic<float> load_{0};
+    std::array<std::atomic<float>, 3> busTargets_{};
+    std::array<float, 3> bus_{1, 1, 1}; // audio thread: each bus's gain, gliding to its target
+    std::atomic<bool> resetStems_{false};
     std::atomic<bool> closing_{false};
     std::atomic<bool> silent_{true}; // master gain has reached zero while closing
     bool capture_ = false;

@@ -8,7 +8,7 @@
 namespace lc {
 
 Progression::Progression(const Catalog& cat)
-    : cat_(cat), trueSince_(cat.wishes.size(), -1.0), grantAt_(cat.wishes.size(), -1.0),
+    : cat_(&cat), trueSince_(cat.wishes.size(), -1.0), grantAt_(cat.wishes.size(), -1.0),
       status_(cat.wishes.size()), nookHere_(cat.nooks.size(), 0), rare_(cat.visitors.size()) {
     events_.reserve(16);
     instances_.reserve(64);
@@ -16,19 +16,19 @@ Progression::Progression(const Catalog& cat)
 
 int Progression::extraVisitors(int visitor) const {
     int extra = 0;
-    for (std::size_t n = 0; n < cat_.nooks.size(); ++n)
+    for (std::size_t n = 0; n < cat_->nooks.size(); ++n)
         if (nookHere_[n] != 0)
-            for (const Amount& c : cat_.nooks[n].caps)
+            for (const Amount& c : cat_->nooks[n].caps)
                 if (c.index == visitor) extra += c.count;
     return extra;
 }
 
 float Progression::nookGrowth(const World& world, TileRect rect) const {
     float mul = 1.0f;
-    for (std::size_t n = 0; n < cat_.nooks.size(); ++n) {
-        const NookDef& def = cat_.nooks[n];
+    for (std::size_t n = 0; n < cat_->nooks.size(); ++n) {
+        const NookDef& def = cat_->nooks[n];
         if (nookHere_[n] == 0 || def.growth == 1.0f) continue;
-        cat_.conditions.instances(def.near, world, instances_);
+        cat_->conditions.instances(def.near, world, instances_);
         for (const NearInstance& in : instances_) {
             const TileRect area{in.footprint.x0 - in.within, in.footprint.y0 - in.within,
                                 in.footprint.x1 + in.within, in.footprint.y1 + in.within};
@@ -44,7 +44,7 @@ float Progression::nookGrowth(const World& world, TileRect rect) const {
 bool Progression::offerable(int wish, const World& world, const Progress& p, const CondFacts& facts,
                             double played) const {
     const auto w = static_cast<std::size_t>(wish);
-    const WishDef& def = cat_.wishes[w];
+    const WishDef& def = cat_->wishes[w];
     const WishProgress& wp = p.wishes[w];
     if (wp.state != WishState::Waiting) return false;
     if (wp.snoozedUntil >= 0 && played < wp.snoozedUntil) return false;
@@ -54,7 +54,7 @@ bool Progression::offerable(int wish, const World& world, const Progress& p, con
         return false;
     // Every piece the goal needs must be unlocked, so a wish never asks for the impossible.
     for (const int s : def.needed) {
-        const Selector& sel = cat_.conditions.selector(s);
+        const Selector& sel = cat_->conditions.selector(s);
         const auto& unlocked = sel.terrain ? p.terrain : p.items;
         if (!std::ranges::any_of(sel.ids,
                                  [&](int id) { return unlocked[static_cast<std::size_t>(id)]; }))
@@ -68,13 +68,13 @@ bool Progression::offerable(int wish, const World& world, const Progress& p, con
     } else if (!facts.residentAbout) {
         return false;
     }
-    return def.gate < 0 || cat_.conditions.eval(def.gate, world, facts);
+    return def.gate < 0 || cat_->conditions.eval(def.gate, world, facts);
 }
 
 void Progression::refresh(int wish, const World& world, const CondFacts& facts, double played) {
     const auto w = static_cast<std::size_t>(wish);
-    const WishDef& def = cat_.wishes[w];
-    const bool holds = cat_.conditions.eval(def.goal, world, facts);
+    const WishDef& def = cat_->wishes[w];
+    const bool holds = cat_->conditions.eval(def.goal, world, facts);
     if (!holds) {
         trueSince_[w] = -1;
         // A wish met when offered and then undone waits for its goal like any other (QA2-06).
@@ -84,7 +84,7 @@ void Progression::refresh(int wish, const World& world, const CondFacts& facts, 
     WishStatus& st = status_[w];
     st.ready = holds;
     st.count = -1;
-    if (const auto c = cat_.conditions.countProgress(def.goal, world)) {
+    if (const auto c = cat_->conditions.countProgress(def.goal, world)) {
         st.count = c->first;
         st.min = c->second;
     }
@@ -92,15 +92,15 @@ void Progression::refresh(int wish, const World& world, const CondFacts& facts, 
     if (!holds) {
         CondFacts waiting = facts;
         waiting.waiting = true;
-        if (cat_.conditions.eval(def.goal, world, waiting))
-            st.waiting = cat_.conditions.firstWaiting(def.goal, facts).value_or(-1);
+        if (cat_->conditions.eval(def.goal, world, waiting))
+            st.waiting = cat_->conditions.firstWaiting(def.goal, facts).value_or(-1);
     }
 }
 
 void Progression::evaluate(const World& world, Progress& p, const CondFacts& facts, double played) {
     // Nooks first: wishes and recipes may name them.
-    for (std::size_t n = 0; n < cat_.nooks.size(); ++n) {
-        nookHere_[n] = cat_.conditions.eval(cat_.nooks[n].condition, world, facts) ? 1 : 0;
+    for (std::size_t n = 0; n < cat_->nooks.size(); ++n) {
+        nookHere_[n] = cat_->conditions.eval(cat_->nooks[n].condition, world, facts) ? 1 : 0;
         if (nookHere_[n] != 0 && p.nooks[n] == 0) {
             p.nooks[n] = 1;
             events_.push_back({ProgressEvent::Kind::NookFound, static_cast<int>(n), false});
@@ -109,27 +109,27 @@ void Progression::evaluate(const World& world, Progress& p, const CondFacts& fac
     CondFacts f = facts;
     f.nookHere = nookHere_;
     for (const int w : p.open) refresh(w, world, f, played);
-    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
-        const VisitorDef& def = cat_.visitors[v];
+    for (std::size_t v = 0; v < cat_->visitors.size(); ++v) {
+        const VisitorDef& def = cat_->visitors[v];
         if (!def.rare) continue;
         rare_[v].holds =
-            ((def.seasons >> f.season) & 1) != 0 && cat_.conditions.eval(def.recipe, world, f);
+            ((def.seasons >> f.season) & 1) != 0 && cat_->conditions.eval(def.recipe, world, f);
     }
 }
 
 int Progression::rareRate(int visitor) const {
     int rate = 1;
-    for (std::size_t n = 0; n < cat_.nooks.size(); ++n)
+    for (std::size_t n = 0; n < cat_->nooks.size(); ++n)
         if (nookHere_[n] != 0)
-            for (const Amount& r : cat_.nooks[n].rareRate)
+            for (const Amount& r : cat_->nooks[n].rareRate)
                 if (r.index == visitor) rate *= r.count;
     return rate;
 }
 
 void Progression::tickRare(const CondFacts& facts, double played, Rng& rng) {
-    for (std::size_t v = 0; v < cat_.visitors.size(); ++v) {
+    for (std::size_t v = 0; v < cat_->visitors.size(); ++v) {
         Rare& r = rare_[v];
-        if (!cat_.visitors[v].rare) continue;
+        if (!cat_->visitors[v].rare) continue;
         if (!r.holds) {
             // It leaves as soon as the recipe stops holding.
             r.since = -1;
@@ -167,7 +167,7 @@ void Progression::grant(int wish, Progress& p, double played) {
     p.wishes[w].snoozedUntil = -1;
     std::erase(p.open, wish);
     p.granted.push_back(wish);
-    p.unlock(cat_.wishes[w].reward, true);
+    p.unlock(cat_->wishes[w].reward, true);
     p.lastOffer = played; // the next offer waits from the grant too
     trueSince_[w] = -1;
     grantAt_[w] = -1;
@@ -178,8 +178,8 @@ void Progression::grant(int wish, Progress& p, double played) {
 void Progression::settleClues(Progress& p, const CondFacts& facts) {
     // A wish whose only gift is a note about a visitor already drawn has nothing left to give:
     // it is done quietly, so later wishes that wait for it still come (QA2 design 1).
-    for (std::size_t w = 0; w < cat_.wishes.size(); ++w) {
-        const Reward& r = cat_.wishes[w].reward;
+    for (std::size_t w = 0; w < cat_->wishes.size(); ++w) {
+        const Reward& r = cat_->wishes[w].reward;
         if (p.wishes[w].state != WishState::Waiting || r.clue < 0 || !r.items.empty() ||
             !r.terrain.empty() || r.frame >= 0)
             continue;
@@ -201,7 +201,7 @@ void Progression::offer(const World& world, Progress& p, const CondFacts& facts,
     // and have come back ranking after the rest.
     int pick = -1;
     for (int pass = 0; pass < 2 && pick < 0; ++pass)
-        for (std::size_t w = 0; w < cat_.wishes.size() && pick < 0; ++w) {
+        for (std::size_t w = 0; w < cat_->wishes.size() && pick < 0; ++w) {
             const bool returned = p.wishes[w].snoozedUntil >= 0;
             if (returned == (pass == 1) && offerable(static_cast<int>(w), world, p, facts, played))
                 pick = static_cast<int>(w);
@@ -228,7 +228,7 @@ void Progression::tick(const World& world, Progress& p, const CondFacts& facts, 
         if (offering) offer(world, p, facts, played);
     }
     // Land opens as the sketchbook fills; several stages reached at once open one by one.
-    const int next = nextStagePages(cat_, p.stage);
+    const int next = nextStagePages(*cat_, p.stage);
     if (next >= 0 && facts.counters[static_cast<std::size_t>(Counter::Pages)] >= next &&
         played >= stageReady_) {
         ++p.stage;

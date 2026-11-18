@@ -66,7 +66,7 @@ private:
     [[nodiscard]] bool filters(const EventDef& d, const EventEnv& env) const;
     [[nodiscard]] double duration(int e);
 
-    const Catalog& cat_;
+    const Catalog* cat_; // a pointer, so a fresh one can be assigned when another world opens
     std::uint64_t seed_;
     std::vector<double> due_;          // window events: when the next one is due
     std::vector<double> last_;         // when each last started

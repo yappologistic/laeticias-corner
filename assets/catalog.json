@@ -133,6 +133,7 @@
     ],
     "resident": [28, 31]
   },
+  "tour": {"wish": "first_flowers", "piece": "flowers_white"},
   "progression": {
     "start": {"terrain": ["grass", "meadow", "path", "water"], "items": ["oak", "bush", "flowers_red", "flowers_white", "tall_grass", "rock", "bench", "fence", "cottage"], "frames": ["plain"]},
     "legacy": {"terrain": ["grass", "meadow", "path", "cobble", "water"], "items": ["oak", "pine", "blossom", "bush", "berry_bush", "tall_grass", "flowers_red", "flowers_white", "flowers_violet", "mushrooms", "rock", "stump", "reeds", "lily_pads", "hedge", "fence", "planter", "beehive", "scarecrow", "well", "lamp", "bench", "picnic_table", "campfire", "bridge", "cottage", "toolshed", "coop", "greenhouse", "barn", "windmill"]}

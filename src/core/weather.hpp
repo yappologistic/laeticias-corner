@@ -66,7 +66,7 @@ public:
 private:
     void spawnPeriod(int season, TileRect region);
 
-    const Catalog& cat_;
+    const Catalog* cat_; // a pointer, so a fresh one can be assigned when another world opens
     std::uint64_t seed_;
     WeatherMode mode_ = WeatherMode::Natural;
     double time_ = 0; // seconds of weather simulated

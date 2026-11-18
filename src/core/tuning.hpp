@@ -281,6 +281,13 @@ inline constexpr int kCameraOpenMargin = 6; // tiles of wild land the camera may
 
 inline constexpr int kHiddenWaitMs = 250; // a hidden window sleeps on events this long at most
 
+// The first-minute tour (R10.5)
+inline constexpr float kTourLookSeconds = 6.0f;
+inline constexpr float kTourKeysSeconds = 5.0f;
+inline constexpr float kTourEndSeconds = 4.0f;
+
+inline constexpr float kReduceMotionParticles = 0.3f; // particles kept with reduce motion
+
 // Builder comforts (docs/design/living-corner.md R11)
 inline constexpr float kGridAlphaDay = 0.14f;
 inline constexpr float kGridAlphaNight = 0.10f;

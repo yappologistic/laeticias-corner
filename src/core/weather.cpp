@@ -29,7 +29,7 @@ float WeatherCell::intensity() const {
 }
 
 Weather::Weather(const Catalog& cat, std::uint64_t seed)
-    : cat_(cat), seed_(seed ^ 0x57EA7E5ULL),
+    : cat_(&cat), seed_(seed ^ 0x57EA7E5ULL),
       bw_((cat.mapW + tuning::kWetBlock - 1) / tuning::kWetBlock),
       bh_((cat.mapH + tuning::kWetBlock - 1) / tuning::kWetBlock),
       wet_(static_cast<std::size_t>(bw_ * bh_), 0.0f) {
@@ -37,7 +37,7 @@ Weather::Weather(const Catalog& cat, std::uint64_t seed)
 }
 
 void Weather::spawnPeriod(int season, TileRect region) {
-    const SeasonDef& s = cat_.seasons[static_cast<std::size_t>(season)];
+    const SeasonDef& s = cat_->seasons[static_cast<std::size_t>(season)];
     const auto key = static_cast<std::uint64_t>(period_) * 64;
     const auto count = [&](float expected, std::uint64_t k) {
         return static_cast<int>(std::floor(expected + hashed(seed_, key + k)));
@@ -75,7 +75,7 @@ void Weather::spawnPeriod(int season, TileRect region) {
 void Weather::update(float dt, int season, TileRect region) {
     time_ += dt;
     region_ = region;
-    const SeasonDef& s = cat_.seasons[static_cast<std::size_t>(season)];
+    const SeasonDef& s = cat_->seasons[static_cast<std::size_t>(season)];
     // The wind drifts slowly in direction and strength; the same for everyone.
     const auto t = static_cast<float>(time_);
     const float phase = hashed(seed_, 7) * 6.2831853f;

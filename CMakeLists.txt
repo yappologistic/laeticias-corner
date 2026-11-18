@@ -38,6 +38,7 @@ add_library(lc_core STATIC
   src/core/visitors.cpp
   src/core/weather.cpp
   src/core/world.cpp
+  src/core/worlds.cpp
   src/core/writer.cpp
 )
 target_include_directories(lc_core PUBLIC src)
@@ -53,6 +54,8 @@ add_library(lc_engine STATIC
   src/app/app_bench.cpp
   src/app/app_benchmark.cpp
   src/app/app_build.cpp
+  src/app/app_front.cpp
+  src/app/app_photo.cpp
   src/app/app_life.cpp
   src/app/app_perf.cpp
   src/app/window_state.cpp
@@ -71,6 +74,7 @@ add_library(lc_engine STATIC
   src/render/sprites.cpp
   src/ui/font.cpp
   src/ui/hud.cpp
+  src/ui/menus.cpp
   src/ui/painter.cpp
   src/ui/profiler.cpp
 )

@@ -13,6 +13,7 @@
 #include "core/clock.hpp"
 #include "core/condition.hpp"
 #include "core/rng.hpp"
+#include "core/tuning.hpp"
 #include "core/weather.hpp"
 #include "core/world.hpp"
 #include "platform/batch.hpp"
@@ -69,6 +70,8 @@ class Scene {
 public:
     Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat);
 
+    // Another world opens: every cache keyed by world revisions and every passing effect goes.
+    void resetWorld();
     void onPlaced(const Item& item, Rng& rng);
     void onRemoved(const Item& item);
     // A few sparkles rising from a spot on the ground (continuous tile coordinates).
@@ -103,6 +106,12 @@ public:
     [[nodiscard]] std::optional<int> actorAt(std::span<const Actor> actors, Vec2 world) const;
     // The season's sprite looks, falling things and whether rain falls as snow (-1: plain).
     void setSeason(int season);
+    // Reduce motion (living-corner R10.8): particles at 30 %, no streaks, moths, z's, pulse
+    // ring or gust wave; land opens in a short fade.
+    void setReduceMotion(bool on) {
+        reduceMotion_ = on;
+        thin_ = on ? tuning::kReduceMotionParticles : 1.0f;
+    }
     // Renders the frame's layers and composites them onto `out` (the window when null).
     void draw(const FrameParams& p, SDL_Texture* out = nullptr);
     // Composites the layers rendered by the last draw() onto the current render target, scaled
@@ -261,6 +270,8 @@ private:
     float sway_ = 0;      // wind-driven sway clock for trees and grass
     float sleepTick_ = 0; // z's rise from sleepers every few seconds
     bool fireflySync_ = false;
+    bool reduceMotion_ = false;
+    float thin_ = 1.0f; // particle rate factor
     std::vector<std::uint32_t> trees_;
     std::vector<TilePos> water_;
     std::size_t drawnItems_ = 0;
