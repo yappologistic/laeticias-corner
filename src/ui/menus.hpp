@@ -174,7 +174,7 @@ private:
     Widget& add(int id, Kind kind, Box box, std::string_view label = {});
     void emit(MenuAction::Kind k, int arg = 0, int value = 0, std::string text = {});
     void layout(const MenuModel& m, const Font& font, float s);
-    void layoutTitle(const MenuModel& m, const Font& font, float s);
+    void layoutTitle(const MenuModel& m, float s);
     void layoutWorlds(const MenuModel& m, const Font& font, float s);
     void layoutDialog(const MenuModel& m, const Font& font, float s);
     void layoutSettings(const MenuModel& m, const Font& font, float s);

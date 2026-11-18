@@ -16,6 +16,7 @@
 #include "test_support.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+#include "ui/menus.hpp"
 #include "ui/painter.hpp"
 
 #include <SDL3/SDL.h>
@@ -855,6 +856,110 @@ TEST_CASE("the toast and the hint line stop the pointer; small windows keep dock
             CHECK(toastAt());
         }
     }
+}
+
+TEST_CASE("sketchbook widgets have ids of their own: many places, no nook, a wish's Not now") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Actors vis(c, 1);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    // Twelve places and no nook found (L-008: the tenth place's tab took the first "Not now"'s
+    // id, so its click snoozed another wish).
+    static constexpr std::string_view kNames[] = {"A", "B", "C", "D", "E", "F",
+                                                  "G", "H", "I", "J", "K", "L"};
+    std::vector<JournalPlace> places;
+    for (const std::string_view n : kNames) places.push_back({n, "", {}});
+    WishCard wish;
+    wish.wish = 5;
+    wish.text = "A wish";
+    const Progress progress(c); // no nook found yet
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.progress = &progress;
+    m.journalOpen = true;
+    m.places = places;
+    m.wishes = std::span(&wish, 1);
+    Hud hud;
+    const Vec2 screen{1280, 800};
+    UiInput in;
+    in.inside = true;
+    in.x = in.y = -100;
+    for (int i = 0; i < 30; ++i) hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    const auto at = hud.widgetCentre("sketch_not_now", m);
+    REQUIRE(at);
+    in.x = at->x;
+    in.y = at->y;
+    hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    in.pressed = true;
+    hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    in.pressed = false;
+    in.released = true;
+    hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    const auto acts = hud.actions();
+    const auto snooze = std::ranges::find_if(
+        acts, [](const HudAction& a) { return a.kind == HudAction::Kind::Snooze; });
+    REQUIRE(snooze != acts.end());
+    CHECK(snooze->arg == 5);
+}
+
+TEST_CASE("cutting text drops whole characters, never half of one (L-017)") {
+    // "Pārsa": the ā is two bytes; every cut leaves valid UTF-8.
+    std::string_view s = "P\xC4\x81rsa";
+    std::vector<std::string_view> cuts;
+    while (!s.empty()) {
+        dropLastCharacter(s);
+        cuts.push_back(s);
+    }
+    CHECK(cuts == std::vector<std::string_view>{"P\xC4\x81rs", "P\xC4\x81r", "P\xC4\x81", "P", ""});
+}
+
+TEST_CASE("world cards keep their own ids past a hundred worlds (L-111)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Profile profile;
+    std::vector<MenuWorld> worlds(120);
+    for (MenuWorld& w : worlds) w.name = "A world";
+    MenuModel m;
+    m.profile = &profile;
+    m.worlds = worlds;
+    Menus menus;
+    menus.open(Page::Worlds);
+    const Vec2 screen{1280, 800};
+    UiInput in;
+    in.inside = true;
+    for (int i = 0; i < 60; ++i) {
+        in.wheel = i < 50 ? -1.0f : 0.0f; // scrolled to the last cards
+        menus.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    }
+    in.wheel = 0;
+    const auto click = [&](const std::string& name) {
+        const auto at = menus.widgetCentre(name);
+        REQUIRE(at);
+        menus.clearActions();
+        in.x = at->x;
+        in.y = at->y;
+        menus.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+        in.pressed = true;
+        menus.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+        in.pressed = false;
+        in.released = true;
+        menus.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+        in.released = false;
+    };
+    const auto played = [&] {
+        for (const MenuAction& a : menus.actions())
+            if (a.kind == MenuAction::Kind::Play) return a.arg;
+        return -1;
+    };
+    // A card past the hundredth (world 110's card once had the id of world 10's Play button).
+    int n = 119;
+    while (n >= 100 && !menus.widgetCentre("card:" + std::to_string(n))) --n;
+    REQUIRE(n >= 100);
+    click("card:" + std::to_string(n));
+    CHECK(played() == -1);
+    click("play:" + std::to_string(n));
+    CHECK(played() == n);
 }
 
 TEST_CASE("the drawer scrolls to tiles off its page and shows row arrows") {

@@ -51,12 +51,19 @@ enum Id : int {
     kTake,
     kFolder,
     kClosePhoto,
-    kCard0 = 100, // per world: card, play, rename, delete
-    kPlay0 = 200,
-    kRename0 = 300,
-    kDelete0 = 400,
-    kIdCount = 500,
+    kWorld0 = 100, // per world i, four ids from kWorld0 + 4 i: its card, play, rename, delete
 };
+enum WorldPart : int { kCardPart, kPlayPart, kRenamePart, kDeletePart, kParts };
+// Ids that cannot meet another world's however many worlds there are (L-111).
+constexpr int worldId(int world, WorldPart part) {
+    return kWorld0 + world * kParts + part;
+}
+constexpr int worldOf(int id) {
+    return id >= kWorld0 ? (id - kWorld0) / kParts : -1;
+}
+constexpr int partOf(int id) {
+    return (id - kWorld0) % kParts;
+}
 
 struct Named {
     std::string_view name;
@@ -181,14 +188,15 @@ std::optional<Vec2> Menus::widgetCentre(std::string_view name) const {
     for (const Named& n : kNames)
         if (n.name == name) id = n.id;
     // "card:N", "play:N", "rename:N", "delete:N"
-    for (const auto& [prefix, base] : {std::pair{std::string_view("card:"), kCard0},
-                                       std::pair{std::string_view("play:"), kPlay0},
-                                       std::pair{std::string_view("rename:"), kRename0},
-                                       std::pair{std::string_view("delete:"), kDelete0}})
+    for (const auto& [prefix, part] : {std::pair{std::string_view("card:"), kCardPart},
+                                       std::pair{std::string_view("play:"), kPlayPart},
+                                       std::pair{std::string_view("rename:"), kRenamePart},
+                                       std::pair{std::string_view("delete:"), kDeletePart}})
         if (name.starts_with(prefix)) {
             int n = 0;
             const std::string_view d = name.substr(prefix.size());
-            if (std::from_chars(d.data(), d.data() + d.size(), n).ec == std::errc{}) id = base + n;
+            if (std::from_chars(d.data(), d.data() + d.size(), n).ec == std::errc{})
+                id = worldId(n, part);
         }
     if (const Widget* w = find(id); w != nullptr) return Vec2{w->box.cx(), w->box.cy()};
     return std::nullopt;
@@ -265,7 +273,7 @@ bool Menus::key(MenuKey k, const MenuModel& m) {
         std::ptrdiff_t i = it == order.end() ? (k == MenuKey::Down ? -1 : 0) : it - order.begin();
         i = (i + (k == MenuKey::Down ? 1 : n - 1)) % n;
         focus_ = order[static_cast<std::size_t>(i)];
-        if (focus_ >= kCard0 && focus_ < kIdCount) selectedWorld_ = (focus_ - kCard0) % 100;
+        if (worldOf(focus_) >= 0) selectedWorld_ = worldOf(focus_);
         emit(MenuAction::Kind::Hover);
         return true;
     }
@@ -296,23 +304,18 @@ void Menus::activate(const Widget& w, const MenuModel& m, float px) {
     using K = MenuAction::Kind;
     emit(K::Click);
     const int id = w.id;
-    if (id >= kCard0 && id < kPlay0) {
-        selectedWorld_ = id - kCard0;
-        return;
-    }
-    if (id >= kPlay0 && id < kRename0) {
-        emit(K::Play, id - kPlay0);
-        return;
-    }
-    if (id >= kRename0 && id < kDelete0) {
-        const int i = id - kRename0;
-        if (i < static_cast<int>(m.worlds.size()))
-            editName(m.worlds[static_cast<std::size_t>(i)].name, i);
-        return;
-    }
-    if (id >= kDelete0 && id < kIdCount) {
-        deleteWorld_ = id - kDelete0;
-        emit(K::Delete, -1 - deleteWorld_); // asks; the app opens the dialog with the name
+    if (const int world = worldOf(id); world >= 0) {
+        switch (partOf(id)) {
+        case kCardPart: selectedWorld_ = world; break;
+        case kPlayPart: emit(K::Play, world); break;
+        case kRenamePart:
+            if (world < static_cast<int>(m.worlds.size()))
+                editName(m.worlds[static_cast<std::size_t>(world)].name, world);
+            break;
+        default:
+            deleteWorld_ = world;
+            emit(K::Delete, -1 - deleteWorld_); // asks; the app opens the dialog with the name
+        }
         return;
     }
     if (id >= kMusic && id < kMusic + 3) {
@@ -376,7 +379,9 @@ void Menus::update(const UiInput& in, const MenuModel& m, const Font& font, Vec2
     barIdle_ = moved ? 0.0f : barIdle_ + dt;
     barT_ = approach(barT_, m.photo && !barHidden_ && barIdle_ < theme::kBarFadeAfter, dt);
     layout(m, font, s);
-    if (hover_.size() != static_cast<std::size_t>(kIdCount)) hover_.assign(kIdCount, 0.0f);
+    if (const auto ids = static_cast<std::size_t>(worldId(static_cast<int>(m.worlds.size()), {}));
+        hover_.size() != ids)
+        hover_.assign(ids, 0.0f);
 
     overUi_ = false;
     int hovered = 0;
@@ -396,7 +401,7 @@ void Menus::update(const UiInput& in, const MenuModel& m, const Font& font, Vec2
     }
     if (hovered != hovered_ && hovered != 0) {
         emit(MenuAction::Kind::Hover);
-        if (hovered >= kCard0 && hovered < kIdCount) selectedWorld_ = (hovered - kCard0) % 100;
+        if (worldOf(hovered) >= 0) selectedWorld_ = worldOf(hovered);
     }
     hovered_ = hovered;
     if (in.pressed && hovered != 0) {
@@ -438,7 +443,7 @@ void Menus::layout(const MenuModel& m, const Font& font, float s) {
     headingBox_ = bodyBox_ = logoBox_ = coachBox_ = barBox_ = {};
     switch (page()) {
     case Page::None: break;
-    case Page::Title: layoutTitle(m, font, s); break;
+    case Page::Title: layoutTitle(m, s); break;
     case Page::Worlds: layoutWorlds(m, font, s); break;
     case Page::NewWorld:
     case Page::Delete:
@@ -450,7 +455,7 @@ void Menus::layout(const MenuModel& m, const Font& font, float s) {
     if (page() == Page::None && m.photo && barT_ > 0) layoutBar(m, font, s);
 }
 
-void Menus::layoutTitle(const MenuModel& m, const Font& font, float s) {
+void Menus::layoutTitle(const MenuModel& m, float s) {
     const float pad = theme::kPanelPad * s * 1.5f;
     const float bh = theme::kMenuButtonH * s;
     const float gap = theme::kGap * s * 1.25f;
@@ -477,7 +482,6 @@ void Menus::layoutTitle(const MenuModel& m, const Font& font, float s) {
     if (!m.firstLaunch) button(kWorlds, strings::kWorldsButton);
     button(kSettings, strings::kSettings);
     button(kQuit, strings::kQuit);
-    (void)font;
 }
 
 void Menus::layoutWorlds(const MenuModel& m, const Font& font, float s) {
@@ -519,7 +523,7 @@ void Menus::layoutWorlds(const MenuModel& m, const Font& font, float s) {
             continue;
         }
         const MenuWorld& world = m.worlds[static_cast<std::size_t>(i)];
-        Widget& c = add(kCard0 + i, Kind::Card, card, world.name);
+        Widget& c = add(worldId(i, kCardPart), Kind::Card, card, world.name);
         c.value = world.detail;
         c.on = selectedWorld_ == i;
         c.enabled = true;
@@ -528,19 +532,19 @@ void Menus::layoutWorlds(const MenuModel& m, const Font& font, float s) {
         const float bh = theme::kTipH * s;
         const float by = card.y + card.h - bh - theme::kGap * s;
         const float ix = card.x + card.w - theme::kGap * s - 2 * bh - theme::kGap * s * 0.5f;
-        Widget& play = add(kPlay0 + i, Kind::Button,
+        Widget& play = add(worldId(i, kPlayPart), Kind::Button,
                            {card.x + theme::kGap * s, by, ix - card.x - 2 * theme::kGap * s, bh},
                            strings::kPlay);
         play.icon = theme::icon::kPlay; // a world that cannot be opened says so when played
-        Widget& ren = add(kRename0 + i, Kind::Icon, {ix, by, bh, bh}, strings::kRename);
+        Widget& ren = add(worldId(i, kRenamePart), Kind::Icon, {ix, by, bh, bh}, strings::kRename);
         ren.icon = theme::icon::kPencil;
         ren.enabled = world.readable;
-        add(kDelete0 + i, Kind::Icon, {ix + bh + theme::kGap * s * 0.5f, by, bh, bh},
+        add(worldId(i, kDeletePart), Kind::Icon, {ix + bh + theme::kGap * s * 0.5f, by, bh, bh},
             strings::kDelete)
             .icon = theme::icon::kTrash;
     }
     if (fieldOpen_ && fieldWorld_ >= 0)
-        if (const Widget* c = find(kCard0 + fieldWorld_); c != nullptr)
+        if (const Widget* c = find(worldId(fieldWorld_, kCardPart)); c != nullptr)
             add(kField, Kind::Field,
                 {c->box.x + theme::kGap * s, c->box.y + thumbH + theme::kGap * s,
                  c->box.w - 2 * theme::kGap * s, theme::kFieldH * s});
@@ -1025,7 +1029,7 @@ void Menus::draw(Painter& p, const MenuModel& m) const {
         drawWidget(p, w, wa);
         if (w.kind == Kind::Card) {
             // The card's thumbnail, name and detail.
-            const std::size_t i = static_cast<std::size_t>(w.id - kCard0);
+            const auto i = static_cast<std::size_t>(worldOf(w.id));
             const float in = theme::kGap * s;
             const Box thumb{w.box.x + in, w.box.y + in, w.box.w - 2 * in, theme::kCardThumbH * s};
             if (i < m.worlds.size() && m.worlds[i].thumb.texture != nullptr)
