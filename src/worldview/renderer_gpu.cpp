@@ -2,7 +2,6 @@
 // regions in view, the world's lamp pools and glow, bloom, wind sway and the final composite.
 // Classic frames never reach this file.
 
-#include "core/tuning.hpp"
 #include "render/gpu/post.hpp"
 #include "render/gpu/tuning.hpp"
 #include "worldview/cells.hpp"
@@ -21,6 +20,10 @@ namespace {
 
 bool contains(std::string_view s, std::string_view w) {
     return s.find(w) != std::string_view::npos;
+}
+
+bool byRow(TilePos a, TilePos b) {
+    return a.y != b.y ? a.y < b.y : a.x < b.x;
 }
 
 // How far an item leans at its top in a full wind (art px), and whether it keeps its frames:
@@ -157,11 +160,6 @@ void WorldView::setWind(Vec2 dir, float strength, bool reduceMotion) {
     windDir_ = n > 1e-4f ? Vec2{w.x / n, w.y / n} : Vec2{1, 0};
     windStrength_ = std::max(gpu::tuning::kWindFloor, std::clamp(strength, 0.0f, 1.0f)) *
                     (reduceMotion ? 0.5f : 1.0f);
-    // The deck drifts as the weather's cells do (core tuning: their speed in the wind).
-    const float speed = (::lc::tuning::kCellMinSpeed +
-                         ::lc::tuning::kCellWindSpeed * std::clamp(strength, 0.0f, 1.0f)) *
-                        gpu::tuning::kCloudDrift;
-    windQ_ = {(dir.x - dir.y) * iso_.hw * speed, (dir.x + dir.y) * 2.0f * iso_.hh * speed};
 }
 
 void WorldView::refreshWater(const FRect& view) {
@@ -180,7 +178,15 @@ void WorldView::refreshWater(const FRect& view) {
         post_->setWaterField(waterTexels_, waterRect_.x1 - waterRect_.x0,
                              waterRect_.y1 - waterRect_.y0);
     }
-    if (!waterTexels_.empty() && waterRect_.contains(need)) return;
+    if (!waterTexels_.empty() && waterRect_.contains(need) && !waterStale_) return;
+    // The items' water tiles (basins, harbours), once.
+    if (!itemWaterRead_) {
+        itemWaterRead_ = true;
+        for (const world::Placed& it : map_.items())
+            if (const world::GeomVariant* g = map_.geometry(it); g != nullptr)
+                for (const TilePos t : g->water) itemWater_.push_back({it.x + t.x, it.y + t.y});
+        std::ranges::sort(itemWater_, byRow);
+    }
     // Per terrain: 0 land, 1 water, 2 a channel (rivers, canals: clear, flowing, no foam).
     if (waterKind_.size() != map_.terrainCount()) {
         waterKind_.resize(map_.terrainCount());
@@ -204,6 +210,7 @@ void WorldView::refreshWater(const FRect& view) {
     const TileRect rect{x0, y0, x1, y1};
     // Panning, the next field is built on a worker while this one serves (its margin is ahead of
     // the view); the first field, a jump and scripted runs build it at once.
+    waterStale_ = false;
     if (async_ && !waterTexels_.empty() && waterRect_.intersects(need)) {
         waterPending_ = rect;
         waterJob_ = std::async(std::launch::async, [this, rect] { buildWater(rect); });
@@ -229,7 +236,11 @@ void WorldView::buildWater(TileRect rect) {
         const TilePos p{bx + x, by + y};
         if (!map_.inBounds(p)) return sea_ >= 0 ? 1 : 0;
         const int tt = map_.terrainAt(p);
-        return tt == world::kNone ? std::uint8_t{0} : waterKind_[static_cast<std::size_t>(tt)];
+        const std::uint8_t k =
+            tt == world::kNone ? std::uint8_t{0} : waterKind_[static_cast<std::size_t>(tt)];
+        return k != 0 || itemWater_.empty() || !std::ranges::binary_search(itemWater_, p, byRow)
+                   ? k
+                   : std::uint8_t{1};
     };
     waterDist_.resize(static_cast<std::size_t>(w * h));
     float* d = waterDist_.data();
@@ -287,31 +298,132 @@ void WorldView::buildWater(TileRect rect) {
         }
 }
 
-void WorldView::cloudsGpu(Lod lod) {
+void WorldView::homeTerrainChanged() {
+    // The worker reads the map's home tiles: it finishes before they change.
+    if (waterJob_.valid()) {
+        waterJob_.get();
+        waterRect_ = waterPending_;
+        if (post_)
+            post_->setWaterField(waterTexels_, waterRect_.x1 - waterRect_.x0,
+                                 waterRect_.y1 - waterRect_.y0);
+    }
+    waterStale_ = true;
+    homeWaterDirty_ = true;
+}
+
+void WorldView::markItemWater(const Elem& e, const Xform& x) {
+    if (e.ground || e.figure || e.home) return;
+    const world::GeomVariant* g = map_.geometry(map_.items()[e.item]);
+    if (g == nullptr || g->water.empty()) return;
+    const bool piece = e.piece >= 0 && static_cast<std::size_t>(e.piece) < g->pieces.size();
+    const auto in = [&](TilePos t) {
+        return !piece || g->pieces[static_cast<std::size_t>(e.piece)].rect.contains(t);
+    };
+    const auto mark = [&](TilePos t, bool maybe) {
+        markWater(sprites_->diamond(),
+                  {e.anchor.x + static_cast<float>(t.x - t.y) * iso_.hw,
+                   e.anchor.y + static_cast<float>(t.x + t.y) * iso_.hh},
+                  maybe);
+    };
+    // The water tiles, and the rim round them (the art's water reaches into the tiles of the
+    // quay: there, only water-coloured pixels count).
+    rimScratch_.clear();
+    for (const TilePos t : g->water) {
+        if (in(t)) mark(t, false);
+        for (int dy = -1; dy <= 1; ++dy)
+            for (int dx = -1; dx <= 1; ++dx) rimScratch_.push_back({t.x + dx, t.y + dy});
+    }
+    std::ranges::sort(rimScratch_, byRow);
+    const auto [first, last] = std::ranges::unique(rimScratch_);
+    rimScratch_.erase(first, last);
+    for (const TilePos t : rimScratch_)
+        if (in(t) && std::ranges::find(g->water, t) == g->water.end()) mark(t, true);
+    flushMarks(x);
+}
+
+void WorldView::markHomeWater(const FRect& view, const Xform& x) {
+    if (homeWaterDirty_ && !waterKind_.empty()) {
+        homeWaterDirty_ = false;
+        homeWater_.clear();
+        const TileRect& h = hole_.tiles;
+        for (int y = h.y0; y < h.y1; ++y)
+            for (int tx = h.x0; tx < h.x1; ++tx) {
+                const TilePos p{tx, y};
+                const int tt = map_.inBounds(p) ? map_.terrainAt(p) : world::kNone;
+                if (tt != world::kNone && waterKind_[static_cast<std::size_t>(tt)] != 0)
+                    homeWater_.push_back(p);
+            }
+    }
+    for (const TilePos p : homeWater_) {
+        const Vec2 w = iso_.toWorld(p);
+        const Vec2 a{w.x, w.y - static_cast<float>(map_.level(p) * lvl_)};
+        if (a.x + iso_.hw < view.x0 || a.x - iso_.hw > view.x1 || a.y + iso_.tileH() < view.y0 ||
+            a.y > view.y1)
+            continue;
+        markWater(sprites_->diamond(), a);
+    }
+    flushMarks(x);
+}
+
+void WorldView::cloudsGpu() {
     namespace t = gpu::tuning;
-    cloudCells_.clear();
+    // A few cumulus per weather cell, placed and shaped by its id: they ride the cell with the
+    // wind and grow and fade with it, so none pops in or out.
+    const auto unit = [](std::uint32_t h) {
+        h ^= h >> 16;
+        h *= 0x7feb352du;
+        h ^= h >> 15;
+        h *= 0x846ca68bu;
+        h ^= h >> 16;
+        return static_cast<float>(h & 0xffffffu) / static_cast<float>(0x1000000);
+    };
+    cloudList_.clear();
+    const Vec2 centre{(lastView_.x0 + lastView_.x1) * 0.5f, (lastView_.y0 + lastView_.y1) * 0.5f};
+    const float sunX = -0.4f * t::kCloudAltitude;
+    const float sunY = -0.3f * t::kCloudAltitude; // world px (the ground plane's y halved)
     if (weather_ != nullptr && clouds_ != gpu::Clouds::Off)
         for (const WeatherCell& c : weather_->cells()) {
-            if (c.age < 0 || cloudCells_.size() >= static_cast<std::size_t>(t::kCloudCells))
-                continue;
-            const Vec2 w = iso_.toWorld(c.centre.x, c.centre.y);
-            const float k = c.intensity() * (c.rain ? 1.0f : 0.7f);
-            if (k > 0.01f)
-                cloudCells_.push_back(
-                    {{w.x, 2.0f * w.y}, c.radius * iso_.hw * std::numbers::sqrt2_v<float>, k});
+            const float growth = c.intensity();
+            if (c.age < 0 || growth < 0.02f) continue;
+            const int n = 1 + (c.radius > 12.0f ? 1 : 0) + (c.radius > 16.0f ? 1 : 0);
+            for (int k = 0; k < n && cloudList_.size() < static_cast<std::size_t>(t::kClouds);
+                 ++k) {
+                const std::uint32_t h = c.id * 2654435761u + static_cast<std::uint32_t>(k) * 97u;
+                const float r = c.radius * 0.5f * unit(h + 1);
+                const float a = 6.2831853f * unit(h + 2);
+                const Vec2 g =
+                    iso_.toWorld(c.centre.x + r * std::cos(a), c.centre.y + r * std::sin(a));
+                // Growing, a cloud swells a little and fades in (dithered), so none is ever a
+                // speck.
+                const float width =
+                    (t::kCloudWidth[0] + (t::kCloudWidth[1] - t::kCloudWidth[0]) * unit(h + 3)) *
+                    (c.rain ? 1.25f : 1.0f) * (0.75f + 0.25f * growth);
+                const Vec2 parallax{(g.x - centre.x) * t::kCloudParallax,
+                                    (g.y - centre.y) * t::kCloudParallax};
+                // Seen or casting a shadow in view (with a margin of its size).
+                const float m = width;
+                const float sx = g.x + parallax.x;
+                const float sy = g.y + parallax.y - t::kCloudAltitude;
+                const bool seen = sx + m > lastView_.x0 && sx - m < lastView_.x1 &&
+                                  sy + m > lastView_.y0 && sy - m < lastView_.y1;
+                const bool shadow = g.x + sunX + m > lastView_.x0 &&
+                                    g.x + sunX - m < lastView_.x1 &&
+                                    g.y + sunY + m > lastView_.y0 && g.y + sunY - m < lastView_.y1;
+                if (seen || shadow)
+                    cloudList_.push_back(
+                        {g, width, unit(h + 4) * 97.0f, growth, c.rain ? 1.0f : 0.0f, parallax});
+            }
         }
-    if (cloudCells_.empty()) {
+    if (cloudList_.empty()) {
         post_->noClouds();
         return;
     }
     gpu::CloudParams p;
     p.origin = gpuFrame_.artOrigin;
     p.worldPerTexel = 4.0f / res_;
-    p.drift = {-cloudDrift_.x, -cloudDrift_.y};
-    p.size = t::kCloudSize;
-    p.altitude = lod == Lod::Native ? t::kCloudAltitude : t::kCloudAltitude * 0.5f;
-    p.sunShift = {-0.4f * p.altitude, -0.6f * p.altitude};
-    p.cells = cloudCells_;
+    p.altitude = t::kCloudAltitude;
+    p.sunShift = {sunX, 2.0f * sunY};
+    p.clouds = cloudList_;
     post_->clouds(batch_, p, viewW_, viewH_);
 }
 
@@ -368,7 +480,8 @@ void WorldView::gradeGpu(double clock, double now, const Lighting& light, Lod lo
                  lod == Lod::Native,
                  origin,
                  res_,
-                 now};
+                 now,
+                 season};
     lights_->update(clock, now, life_);
 }
 
@@ -493,7 +606,7 @@ void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow)
         batch_.flush();
     }
     post_->bloom(batch_, viewW_, viewH_);
-    cloudsGpu(lod);
+    cloudsGpu();
     post_->measure(batch_, view_.texture.get(), viewW_, viewH_);
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get())) SDL_Log("look: %s", SDL_GetError());
 }
@@ -534,16 +647,21 @@ void WorldView::compositeGpu(Vec2 scale, bool smooth) {
         f.horizonTiles = tuning::kHorizonTiles;
         f.levelPx = static_cast<float>(lvl_);
         f.time = gpuFrame_.now;
-        const Rgb body = gpuFrame_.grade.water;
-        const auto mix = [](Rgb a, Rgb b, float u) {
-            return Rgb{a.r + (b.r - a.r) * u, a.g + (b.g - a.g) * u, a.b + (b.b - a.b) * u};
-        };
-        f.shallow = mix(body, {t::kShallow[0], t::kShallow[1], t::kShallow[2]}, 0.6f);
-        f.deep = mix(body, {t::kDeep[0], t::kDeep[1], t::kDeep[2]}, 0.6f);
+        const gpu::WaterColours wc = gpu::waterColours(gpuFrame_.grade.water, gpuFrame_.season);
+        f.shallow = wc.shallow;
+        f.deep = wc.deep;
+        f.river = wc.river;
         f.bands = q == gpu::Quality::Low ? t::kWaterBandsLow : t::kWaterBandsHigh;
         f.reflections = q == gpu::Quality::High && lod == Lod::Native;
-        f.skyInWater = gpuFrame_.grade.sky[1];
-        f.skyShare = t::kSkyInWater;
+        // The sky it mirrors, seen from above: mostly the upper sky, with some of the horizon's
+        // warmth (at a low sun the water is mostly the sky's).
+        const Rgb s0 = gpuFrame_.grade.sky[0];
+        const Rgb s2 = gpuFrame_.grade.sky[2];
+        f.skyInWater = {s0.r * 0.6f + s2.r * 0.4f, s0.g * 0.6f + s2.g * 0.4f,
+                        s0.b * 0.6f + s2.b * 0.4f};
+        // Little sky by day (the water keeps its colour), more as the light goes.
+        const float day = std::clamp(1.0f - std::max(gpuFrame_.glow, gpuFrame_.night), 0.0f, 1.0f);
+        f.skyShare = t::kSkyInWater[1] + (t::kSkyInWater[0] - t::kSkyInWater[1]) * day;
         f.glints = t::kGlints * (1.0f - gpuFrame_.night) * (lod == Lod::Native ? 1.0f : 0.0f);
         if (weather_ != nullptr)
             f.rain = weather_->rainAt(iso_.toTile(
@@ -553,10 +671,14 @@ void WorldView::compositeGpu(Vec2 scale, bool smooth) {
     if (clouds_ != gpu::Clouds::Off) {
         f.cloudShadow = t::kCloudShadow * (1.0f - gpuFrame_.night);
         if (clouds_ == gpu::Clouds::On) f.deckAlpha = t::kDeckAlpha[static_cast<std::size_t>(lod)];
+        // Sunlit tops nearly white, warmed by a low sun; bases the sky's blue-grey; dim at night.
         const Rgb hz = gpuFrame_.grade.sky[2];
-        f.deckColour = {0.55f + 0.45f * hz.r, 0.55f + 0.45f * hz.g, 0.55f + 0.45f * hz.b};
-        const float dim = 1.0f - 0.75f * gpuFrame_.night;
-        f.deckColour = {f.deckColour.r * dim, f.deckColour.g * dim, f.deckColour.b * dim};
+        const Rgb skyMid = gpuFrame_.grade.sky[1];
+        const float dim = 1.0f - 0.72f * gpuFrame_.night;
+        f.deckColour = {(0.82f + 0.18f * hz.r) * dim, (0.82f + 0.18f * hz.g) * dim,
+                        (0.82f + 0.18f * hz.b) * dim};
+        f.deckBase = {(0.50f + 0.22f * skyMid.r) * dim, (0.53f + 0.22f * skyMid.g) * dim,
+                      (0.60f + 0.22f * skyMid.b) * dim};
     }
     post_->final(batch_, view_.texture.get(), f,
                  SDL_FRect{(p.origin.x - p.topLeft.x) * p.scale * scale.x,

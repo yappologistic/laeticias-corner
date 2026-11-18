@@ -56,27 +56,34 @@ inline constexpr float kTwilightWarm = 0.08f; // dawn and dusk: red up, blue dow
 inline constexpr float kNightAdapt[2] = {0.45f, 2.0f};
 inline constexpr int kMeanSide = 64; // the scene is first sampled to this many texels across
 
-// Water (E2): the tile water field's side (tiles round the view, one texel each), the water's
-// colours (shallow, deep; mixed with the region's body colour), bands by tier, the sky's share
-// in it, glints by day; channels (rivers, canals) clear and without foam.
+// Water: the tile water field's side (tiles round the view, one texel each); the colours come
+// from the region's body colour: deeper and richer offshore, turquoise in the shallows, rivers
+// greener and a little turbid, winter seas greyer; bands by tier, the sky's share by day and at
+// dawn, dusk and night, glints by day; channels (rivers, canals) clear and without foam.
 inline constexpr int kWaterField = 512;
-inline constexpr float kShallow[3] = {0.40f, 0.68f, 0.66f};
-inline constexpr float kDeep[3] = {0.07f, 0.22f, 0.32f};
+inline constexpr float kShallowTint[3] = {0.22f, 0.78f, 0.74f}; // the shallows lean to this
+inline constexpr float kShallowShare = 0.45f;
+inline constexpr float kRiverTint[3] = {0.26f, 0.56f, 0.38f}; // rivers lean to this
+inline constexpr float kRiverShare = 0.50f;
+inline constexpr float kDeepValue = 0.86f; // offshore: the body's value times this ...
+inline constexpr float kDeepChroma = 1.4f; // ... and its chroma times this
+inline constexpr float kSeasonGrey[4] = {0.0f, 0.0f, 0.15f, 0.40f}; // spring .. winter
 inline constexpr float kWaterBandsLow = 3;
 inline constexpr float kWaterBandsHigh = 4;
-inline constexpr float kSkyInWater = 0.35f;
+inline constexpr float kSkyInWater[2] = {0.12f, 0.6f}; // by day, at dawn, dusk and night
 inline constexpr float kGlints = 0.9f;
 inline constexpr float kRiverSpeed = 0.55f; // tiles per second along a river's flow
 
-// Clouds (E2): the world's weather cells shaped by noise in a quarter-resolution pass; the deck
-// thin at the native zooms and fuller zoomed out, its shadows lowering only the sun.
-inline constexpr int kCloudCells = 16;
-inline constexpr float kCloudSize = 900;     // noise feature size, world px
-inline constexpr float kCloudAltitude = 520; // px the deck stands above the ground
-inline constexpr float kCloudShadow = 0.25f; // a full cloud's shadow takes this of the light
-inline constexpr float kDeckAlpha[4] = {0.18f, 0.40f, 0.6f,
-                                        0.75f}; // native, half, quarter, overview
-inline constexpr float kCloudDrift = 1.0f;      // the deck's drift, times the weather cells' speed
+// Clouds: cumulus over the world's weather cells (a few per cell, a few sizes), drawn at a
+// quarter of the resolution and read on a grid of two art pixels; seen faint near (the world
+// stays visible) and fuller far; their shadows on the ground are the stronger cue.
+inline constexpr int kClouds = 32;
+inline constexpr float kCloudWidth[2] = {320, 820}; // px, the smallest and largest at full growth
+inline constexpr float kCloudAltitude = 520;        // px a cloud's base stands above its point
+inline constexpr float kCloudParallax = 0.12f;      // share of its offset from the view's centre
+inline constexpr float kCloudShadow = 0.26f;        // a cloud's shadow takes this of the sunlight
+inline constexpr float kDeckAlpha[4] = {0.35f, 0.72f, 0.85f,
+                                        0.9f}; // native, half, quarter, overview
 // The night shift starts past dusk: from the clock's night at this value to full at 1.
 inline constexpr float kNightFrom = 0.5f;
 // Shade takes the sky's colour (the regions' `theme.look.shade`) by the shadow layer's coverage

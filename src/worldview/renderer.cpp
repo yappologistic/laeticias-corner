@@ -331,14 +331,16 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     return ok;
 }
 
-void WorldView::markWater(const SpriteRef& s, Vec2 anchor) {
-    marks_.push_back({s, anchor});
+void WorldView::markWater(const SpriteRef& s, Vec2 anchor, bool maybe) {
+    marks_.push_back({s, anchor, maybe});
 }
 
 void WorldView::flushMarks(const Xform& x) {
     if (marks_.empty()) return;
-    for (const auto& [s, a] : marks_)
-        (void)put(s, a, x, {1, 1, 1, gpu::Post::kWaterMark}, post_->markBlend());
+    for (const Mark& m : marks_)
+        (void)put(m.sprite, m.anchor, x,
+                  {1, 1, 1, m.maybe ? gpu::Post::kMaybeWaterMark : gpu::Post::kWaterMark},
+                  post_->markBlend());
     marks_.clear();
 }
 
@@ -382,7 +384,9 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
             putSwaying(w.frames ? s : look.baseIn(season_).f.front(), e.anchor, x, w.lean);
             return true;
         }
-    return put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    const bool ok = put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    if (post_) markItemWater(e, x); // over the item's own pixels
+    return ok;
 }
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
@@ -1069,7 +1073,6 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
     if (post_) {
         gradeGpu(clock, now, light, lod, origin);
-        cloudDrift_ = {cloudDrift_.x + windQ_.x * dt, cloudDrift_.y + windQ_.y * dt};
         if (lod != Lod::Overview) refreshWater(view);
     }
     lastView_ = {topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
@@ -1102,6 +1105,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The world's cloud shadows go under the home's ground: the home's scene shades its own land.
     if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
     if (hooks.ground && home) hooks.ground(frame);
+    if (post_ && home) markHomeWater(view, xf);
     // A flight down to the native level gathers its destination on the way.
     if (camera.flying && lodFor(camera.arrivalScale) == Lod::Native) {
         const Vec2 to = camera.arrival;

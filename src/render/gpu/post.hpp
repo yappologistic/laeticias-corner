@@ -52,24 +52,24 @@ struct FinalParams {
     bool reflections = false;
     Rgb skyInWater;
     float skyShare = 0;
-    // Clouds: the deck's opacity at this zoom, its shadows' strength, its colour; rain; glints.
+    // Clouds: their opacity at this zoom, their shadows' strength, their sunlit and shaded
+    // colours; rain; glints. Rivers' colour.
     float deckAlpha = 0;
     float cloudShadow = 0;
     Rgb deckColour{1, 1, 1};
+    Rgb deckBase{0.7f, 0.74f, 0.82f};
+    Rgb river{0.25f, 0.42f, 0.38f};
     float rain = 0;
     float glints = 0;
 };
 
-// The cloud pass's inputs (the cells are look.hpp's CloudCell).
+// The cloud pass's inputs.
 struct CloudParams {
     Vec2 origin;             // world px at the scene target's (0, 0)
     float worldPerTexel = 4; // world px per cloud texel
-    Vec2 drift;              // the wind's drift so far, world px
-    float size = 900;        // the noise's feature size, px
-    float cover = 0;         // cloud everywhere (overcast), 0..1
-    Vec2 sunShift;           // ground-plane px from a point to the cloud that shades it
-    float altitude = 520;    // px the deck stands above the ground
-    std::span<const CloudCell> cells;
+    Vec2 sunShift;           // ground-plane px from a cloud's point to its shadow
+    float altitude = 520;    // px a cloud's base stands above its point
+    std::span<const Cloud> clouds;
 };
 
 class Post {
@@ -100,14 +100,16 @@ public:
     [[nodiscard]] SDL_BlendMode poolBlend() const { return poolBlend_; }
     // Marks water in the ground cells: the target's alpha lowered by the sprite's coverage times
     // the vertex alpha (kWaterMark), its colour kept. The final pass reads alpha in (0.5, 0.995)
-    // as water; whatever is drawn over it later restores alpha 1.
+    // as water (under 0.97: only where the colour is water's); whatever is drawn over it later
+    // restores alpha 1.
     [[nodiscard]] SDL_BlendMode markBlend() const { return markBlend_; }
     static constexpr float kWaterMark = 0.02f;
+    static constexpr float kMaybeWaterMark = 0.045f; // water if the colour is water's
     // A soft round falloff (white, premultiplied: (1 - r^2)^2), for pools and far lights.
     [[nodiscard]] SDL_Texture* falloff() const { return falloff_.get(); }
     // Halves the glow target's used `w` x `h` down the tier's levels and back up.
     void bloom(Batch& b, int w, int h);
-    // The cloud deck and its shadows for this frame at a quarter of the scene's used size.
+    // The clouds and their shadows for this frame at a quarter of the scene's used size.
     void clouds(Batch& b, const CloudParams& p, int w, int h);
     // No clouds this frame (the setting Off, or none in the sky): the cloud target cleared.
     void noClouds();

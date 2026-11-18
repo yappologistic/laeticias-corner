@@ -31,14 +31,15 @@ struct FinalUniforms {
     float skyw[4];
     float cloud[4];
     float deck[4];
+    float deckBase[4];
+    float river[4];
 };
 
 // std140 mirror of shaders/clouds.frag's block.
 struct CloudUniforms {
     float frame[4];
-    float drift[4];
     float sun[4];
-    float cells[tuning::kCloudCells][4];
+    float clouds[2 * tuning::kClouds][4];
 };
 
 // std140 mirror of shaders/shade.frag's block.
@@ -374,13 +375,13 @@ void Post::bloom(Batch& b, int w, int h) {
 
 void Post::clouds(Batch& b, const CloudParams& p, int w, int h) {
     CloudUniforms u{};
-    const int n = std::min<int>(static_cast<int>(p.cells.size()), tuning::kCloudCells);
+    const int n = std::min<int>(static_cast<int>(p.clouds.size()), tuning::kClouds);
     set4(u.frame, p.origin.x, p.origin.y, p.worldPerTexel, static_cast<float>(n));
-    set4(u.drift, p.drift.x, p.drift.y, p.size, p.cover);
     set4(u.sun, p.sunShift.x, p.sunShift.y, p.altitude, 0);
     for (int i = 0; i < n; ++i) {
-        const CloudCell& c = p.cells[static_cast<std::size_t>(i)];
-        set4(u.cells[i], c.at.x, c.at.y, c.radius, c.intensity);
+        const Cloud& c = p.clouds[static_cast<std::size_t>(i)];
+        set4(u.clouds[2 * i], c.ground.x, c.ground.y, c.width, c.seed);
+        set4(u.clouds[2 * i + 1], c.growth, c.dark, c.parallax.x, c.parallax.y);
     }
     if (!SDL_SetGPURenderStateFragmentUniforms(cloudState_, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());
@@ -500,6 +501,8 @@ void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect d
     set4(u.skyw, f.skyInWater.r, f.skyInWater.g, f.skyInWater.b, f.skyShare);
     set4(u.cloud, f.deckAlpha, f.cloudShadow, f.rain, f.glints);
     set4(u.deck, f.deckColour.r, f.deckColour.g, f.deckColour.b, 0);
+    set4(u.deckBase, f.deckBase.r, f.deckBase.g, f.deckBase.b, 0);
+    set4(u.river, f.river.r, f.river.g, f.river.b, 0);
     if (!SDL_SetGPURenderStateFragmentUniforms(s, 0, &u, sizeof u))
         SDL_Log("gpu: %s", SDL_GetError());
     use(b, s);

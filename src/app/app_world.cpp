@@ -112,6 +112,7 @@ void App::syncHome() {
     // The overview is built from the map on a worker at first; edits wait until it is done.
     if (!worldView_->overviewBuilt()) return;
     homeSynced_ = world_.revision();
+    worldView_->homeTerrainChanged(); // before the map's copy changes (a worker may read it)
     if (!loaded_->map->updateHomeTerrain(world::homeDeltaFrom(world_, cat_)))
         SDL_Log("world: the home's terrain does not fit the world's copy");
     // The world's cells draw the home's rim tiles under the scene's: redraw them when it changes.

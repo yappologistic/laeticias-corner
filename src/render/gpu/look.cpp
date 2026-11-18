@@ -164,6 +164,34 @@ std::string_view qualityId(Quality q) {
     return kQualityIds[static_cast<std::size_t>(q)];
 }
 
+WaterColours waterColours(Rgb body, int season) {
+    namespace t = tuning;
+    const auto mix = [](Rgb a, Rgb b, float u) {
+        return Rgb{a.r + (b.r - a.r) * u, a.g + (b.g - a.g) * u, a.b + (b.b - a.b) * u};
+    };
+    const auto grey = [](Rgb c, float g) {
+        const float l = 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
+        return Rgb{c.r + (l - c.r) * g, c.g + (l - c.g) * g, c.b + (l - c.b) * g};
+    };
+    const float l = 0.299f * body.r + 0.587f * body.g + 0.114f * body.b;
+    const float v = t::kDeepValue;
+    const float k = t::kDeepChroma;
+    WaterColours w;
+    w.deep = {std::clamp((l + (body.r - l) * k) * v, 0.0f, 1.0f),
+              std::clamp((l + (body.g - l) * k) * v, 0.0f, 1.0f),
+              std::clamp((l + (body.b - l) * k) * v, 0.0f, 1.0f)};
+    w.shallow =
+        mix(body, {t::kShallowTint[0], t::kShallowTint[1], t::kShallowTint[2]}, t::kShallowShare);
+    w.river = mix(body, {t::kRiverTint[0], t::kRiverTint[1], t::kRiverTint[2]}, t::kRiverShare);
+    if (season >= 0 && season < kSeasons) {
+        const float g = t::kSeasonGrey[static_cast<std::size_t>(season)];
+        w.deep = grey(w.deep, g);
+        w.shallow = grey(w.shallow, g);
+        w.river = grey(w.river, g);
+    }
+    return w;
+}
+
 constexpr std::array<std::string_view, kCloudModes> kCloudIds{"on", "shadows", "off"};
 
 std::optional<Clouds> parseClouds(std::string_view id) {

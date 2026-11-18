@@ -21,11 +21,24 @@ enum class Quality : std::uint8_t { Classic, Low, Medium, High };
 inline constexpr int kQualityCount = 4;
 [[nodiscard]] std::optional<Quality> parseQuality(std::string_view id);
 [[nodiscard]] std::string_view qualityId(Quality q);
-// A weather cell for the cloud pass (post.hpp CloudParams).
-struct CloudCell {
-    Vec2 at;          // world px, the ground plane (y doubled)
-    float radius = 0; // px, the same plane
-    float intensity = 0;
+// A region's water in one season, from its body colour (`theme.look.water.body`): offshore
+// deeper and richer, the shallows leaning turquoise, rivers greener and a little turbid; autumn
+// and winter greyer (`season` indexes kSeasonIds, -1 none).
+struct WaterColours {
+    Rgb shallow;
+    Rgb deep;
+    Rgb river;
+};
+[[nodiscard]] WaterColours waterColours(Rgb body, int season);
+
+// A cumulus for the cloud pass (post.hpp CloudParams).
+struct Cloud {
+    Vec2 ground;      // world px of the point it stands over
+    float width = 0;  // px at full growth
+    float seed = 0;   // its billows' shape
+    float growth = 0; // 0..1 as its weather cell grows and fades
+    float dark = 0;   // 0 fair, 1 a rain cloud
+    Vec2 parallax;    // world px it is seen moved from over its point (it is high up)
 };
 // The clouds setting: the deck and its shadows, the shadows alone, or neither.
 enum class Clouds : std::uint8_t { On, Shadows, Off };

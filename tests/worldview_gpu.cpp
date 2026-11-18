@@ -247,3 +247,22 @@ TEST_CASE("lights: every light point of the committed world names its item") {
     }
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
+
+TEST_CASE(
+    "gpu: water takes the region's colour: deeper offshore, turquoise shallows, greyer winter") {
+    const Rgb body{0.12f, 0.37f, 0.55f}; // an Aegean blue
+    const auto chroma = [](Rgb c) { return std::max({c.r, c.g, c.b}) - std::min({c.r, c.g, c.b}); };
+    const auto luma = [](Rgb c) { return 0.299f * c.r + 0.587f * c.g + 0.114f * c.b; };
+    const gpu::WaterColours summer = gpu::waterColours(body, 1);
+    CHECK(luma(summer.deep) < luma(body));
+    CHECK(chroma(summer.deep) > 0.3f); // offshore stays a clear blue, never slate
+    CHECK(summer.deep.b > summer.deep.g);
+    CHECK(summer.shallow.g / summer.shallow.b > body.g / body.b); // the shallows lean green
+    CHECK(luma(summer.shallow) > luma(body));
+    CHECK(summer.river.g / summer.river.b > summer.deep.g / summer.deep.b); // rivers greener
+    const gpu::WaterColours winter = gpu::waterColours(body, 3);
+    CHECK(chroma(winter.deep) < chroma(summer.deep));
+    CHECK(chroma(winter.shallow) < chroma(summer.shallow));
+    const gpu::WaterColours none = gpu::waterColours(body, -1);
+    CHECK(near(none.deep.b, summer.deep.b)); // summer adds no grey
+}

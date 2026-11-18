@@ -186,6 +186,8 @@ public:
     [[nodiscard]] bool overviewBuilt() const { return !overview_ || overview_->built(); }
     // The hole's tiles changed in the map (its rim is drawn into the cells): redraw them.
     void holeChanged();
+    // The home's terrain changed: its water is marked and the water field built again.
+    void homeTerrainChanged();
     // City life drawn from now on, in the world's painter's order (null: none). Its looks are
     // resolved on the first call. `alpha` places actors between the last two simulation steps.
     void setLife(const life::CityLife* city);
@@ -234,13 +236,19 @@ private:
     // The shadow layer laid on in the sky's colour of the hour (the classic darkening's place).
     void shadeGpu(SDL_Texture* layer, float w, float h);
     // Marks a water sprite's pixels in a cell for the shader path (alpha lowered a step).
-    void markWater(const SpriteRef& s, Vec2 anchor);
+    // `maybe`: water only where the art's colour is water's (the rim round an item's water).
+    void markWater(const SpriteRef& s, Vec2 anchor, bool maybe = false);
     void flushMarks(const Xform& x);
+    // Water inside items (their geometry's water tiles), marked after the item is drawn.
+    void markItemWater(const Elem& e, const Xform& x);
+    // The home's water, marked after the game's scene draws its ground (the scene's ground is
+    // its own; its water tiles are known from the map's copy of the home's terrain).
+    void markHomeWater(const FRect& view, const Xform& x);
     // The tile water field round the view, rebuilt when the view nears its edge.
     void refreshWater(const FRect& view);
     void buildWater(TileRect rect);
     // The cloud pass for this frame (or none).
-    void cloudsGpu(Lod lod);
+    void cloudsGpu();
     // A swaying item, bent in strips by the wind.
     void putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean);
     // Whether an item's glow layer burns now (the world data's lights on the shader path).
@@ -435,19 +443,29 @@ private:
         Vec2 artOrigin;
         float res = 1;
         double now = 0;
+        int season = -1; // index into gpu::kSeasonIds
     };
     GpuFrame gpuFrame_;
     gpu::Clouds clouds_ = gpu::Clouds::On;
-    Vec2 windQ_;      // the clouds' drift, ground-plane px (y doubled) per second
-    Vec2 cloudDrift_; // ... so far
-    std::vector<gpu::CloudCell> cloudCells_;
+    std::vector<gpu::Cloud> cloudList_;
     // Water marks waiting for the end of their diagonal (drawTiles).
-    std::vector<std::pair<SpriteRef, Vec2>> marks_;
+    struct Mark {
+        SpriteRef sprite;
+        Vec2 anchor;
+        bool maybe = false;
+    };
+    std::vector<Mark> marks_;
+    std::vector<TilePos> rimScratch_; // an item's rim round its water tiles (markItemWater)
     // The tile water field (refreshWater): the tiles it holds, its texels, the distances.
     TileRect waterRect_;
     std::vector<std::uint32_t> waterTexels_;
     std::vector<float> waterDist_;
     std::vector<std::uint8_t> waterKind_; // per terrain: 0 land, 1 water, 2 a channel
+    std::vector<TilePos> itemWater_;      // the items' water tiles, sorted (y, x)
+    bool itemWaterRead_ = false;
+    std::vector<TilePos> homeWater_; // the home's water tiles
+    bool homeWaterDirty_ = true;
+    bool waterStale_ = false; // the field must be built again (the home's terrain changed)
     // The next field, built on a worker while the view pans (declared last of the field's
     // members: it finishes before they go).
     TileRect waterPending_;

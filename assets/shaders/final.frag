@@ -17,7 +17,7 @@ layout(set = 2, binding = 1) uniform sampler2D u_glow;  // rgb what glows; a the
 layout(set = 2, binding = 2) uniform sampler2D u_bloom;
 layout(set = 2, binding = 3) uniform sampler2D u_mean;  // the scene averaged to one texel
 layout(set = 2, binding = 4) uniform sampler2D u_water; // per tile: shore distance, flow, flags
-layout(set = 2, binding = 5) uniform sampler2D u_cloud; // r the deck seen, g its shadow
+layout(set = 2, binding = 5) uniform sampler2D u_cloud; // r cloud, g its light, b dark, a shadow
 
 layout(std140, set = 3, binding = 0) uniform U {
     vec4 gain;   // white balance times exposure; tint amount
@@ -38,7 +38,9 @@ layout(std140, set = 3, binding = 0) uniform U {
     vec4 deep;   // deep water's colour; 1: mirror what stands at the water's edge
     vec4 skyw;   // the sky's colour in the water; how much of it
     vec4 cloud;  // the deck's opacity at this zoom; its shadows' strength; rain 0..1; glints
-    vec4 deck;   // the deck's colour; unused
+    vec4 deck;   // the clouds' sunlit colour; unused
+    vec4 deckBase; // the clouds' shaded base; unused
+    vec4 river;  // rivers' and canals' colour (greener, a little turbid); unused
 };
 
 uint hashU(ivec2 p) {
@@ -59,8 +61,15 @@ float noise(vec2 p) {
 float fbm2(vec2 p) {
     return 0.65 * noise(p) + 0.35 * noise(p * 2.03 + vec2(17.1, 9.3));
 }
-bool isWater(float a) {
-    return a > 0.5 && a < 0.995;
+bool isWater(float a, vec3 c) {
+    // Under 0.97 a rim mark: water only where the art is water-coloured (a blue darker than
+    // stone, bluer than it is green).
+    return a > 0.5 && a < 0.995 &&
+           (a > 0.97 || (c.b > c.r * 1.3 && c.b > c.g * 0.95 && c.b - c.r > 0.08));
+}
+// Something standing (not water, not empty): what the shore line and reflections look for.
+bool solid(vec4 t) {
+    return t.a >= 0.995 || (t.a > 0.5 && !isWater(t.a, t.rgb / t.a));
 }
 int flagsAt(vec2 tile) {
     ivec2 i = clamp(ivec2(floor(tile - water.xy)), ivec2(0), ivec2(textureSize(u_water, 0)) - 1);
@@ -108,7 +117,7 @@ void main() {
     ivec2 bc = ivec2(mod(floor(w), 4.0));
     float dither = kBayer[bc.x][bc.y];
     float t = tiles.w;
-    bool wet = shallow.w > 0.0 && isWater(s.a);
+    bool wet = shallow.w > 0.0 && isWater(s.a, albedo);
     float band = 0.0;
     float rip = 0.5;
     vec2 q = vec2(w.x, 2.0 * w.y); // the ground plane, round
@@ -117,16 +126,28 @@ void main() {
     float foam = 0.0;
     float far = 0.0;
     float reflected = 0.0;
+    vec2 tt = vec2(0.0);
+    vec4 f = vec4(0.0);
+    int flags = 0;
     if (wet) {
         // The tile under this pixel on the water's own level (the field holds the level).
         vec2 t0 = 0.5 * vec2(w.y / tiles.y + w.x / tiles.x, w.y / tiles.y - w.x / tiles.x);
-        int flags = flagsAt(t0);
+        flags = flagsAt(t0);
         float lift = float(flags & 15) * tiles.z;
-        vec2 tt = 0.5 * vec2((w.y + lift) / tiles.y + w.x / tiles.x,
-                             (w.y + lift) / tiles.y - w.x / tiles.x);
-        vec4 f = texture(u_water, (tt - water.xy) * water.zw);
+        tt = 0.5 * vec2((w.y + lift) / tiles.y + w.x / tiles.x,
+                        (w.y + lift) / tiles.y - w.x / tiles.x);
+        f = texture(u_water, (tt - water.xy) * water.zw);
         flags = flagsAt(tt);
-        bool channel = (flags & 64) != 0;
+        // A mark counts only on or beside water the field knows: an alpha just under 1 where
+        // something else's edges meet (the home scene's ground chunks) is not water.
+        if (s.a > 0.97 && f.a * 255.0 < 40.0) wet = false;
+    }
+    if (wet) {
+        // How much of a river this is: its flow, read smoothly, with a wobbling edge, so a river
+        // mouth spreads into the sea instead of meeting it at a tile's edge.
+        vec2 flowS = f.gb * 2.0 - 1.0;
+        float riverness = clamp(length(flowS) / 0.5 + (noise(q * 0.02 + 7.3) - 0.5) * 0.8, 0.0, 1.0);
+        bool channel = riverness > 0.5;
         // Beyond the grid the art's haze takes over with distance.
         vec2 out2 = max(max(-tt, tt - guard.yz), 0.0);
         far = smoothstep(0.0, 1.0, max(out2.x, out2.y) * guard.w);
@@ -146,7 +167,9 @@ void main() {
         float wob = (noise(q * 0.018 + vec2(t * 0.05, -t * 0.03)) - 0.5) * 0.7;
         float depth = channel ? 0.75 : clamp((shore + wob) / 2.2, 0.0, 1.0);
         band = min(floor(depth * shallow.w + dither * 0.35), shallow.w - 1.0) / max(shallow.w - 1.0, 1.0);
-        vec3 body = mix(mix(shallow.rgb, deep.rgb, band), albedo, 0.3);
+        vec3 body = mix(mix(shallow.rgb, deep.rgb, band), river.rgb,
+                        step(dither, riverness));
+        body = mix(body, albedo, 0.12);
         body *= 0.93 + 0.14 * step(0.64, rip); // crests: faint lighter dashes in whole pixels
         // Rain rings, growing and fading.
         if (cloud.z > 0.01) {
@@ -166,8 +189,7 @@ void main() {
             for (int i = 1; i <= 40; ++i) {
                 vec2 p = px + vec2(0.0, -stepPx * float(i));
                 if (p.y < 0.0) break;
-                float a = texture(u_scene, p / texel.xy).a;
-                if (a >= 0.995) {
+                if (solid(texture(u_scene, p / texel.xy))) {
                     e = p.y;
                     break;
                 }
@@ -178,7 +200,7 @@ void main() {
                 // Darker than what it mirrors and tinted by the water; it fades with distance
                 // from the edge (the ripples break it up).
                 float reach = 1.0 - smoothstep(8.0, 44.0, (px.y - e) / max(world.z, 1e-3));
-                if (m.y >= 0.0 && r.a >= 0.995) {
+                if (m.y >= 0.0 && solid(r)) {
                     reflected = 0.5 * reach;
                     body = mix(body, r.rgb * vec3(0.62, 0.70, 0.78) + body * 0.2, reflected);
                 }
@@ -188,7 +210,7 @@ void main() {
         // The bright shore line where water meets what stands in it, and foam that breathes.
         for (int i = 0; i < 4; ++i) {
             vec2 o = vec2(i == 0 ? 1.0 : (i == 1 ? -1.0 : 0.0), i == 2 ? 1.0 : (i == 3 ? -1.0 : 0.0));
-            if (texture(u_scene, (px + o * 2.0 * max(world.z, 1.0)) / texel.xy).a >= 0.995)
+            if (solid(texture(u_scene, (px + o * max(world.z, 1.0)) / texel.xy)))
                 shoreLine = 1.0;
         }
         float breathe = 0.18 + 0.12 * sin(t * 0.9 + q.x * 0.03 + q.y * 0.02);
@@ -204,8 +226,8 @@ void main() {
     float pivot = mix(0.5, clamp(mean * adapt, 0.3, 0.62), key.w);
     // Cloud shadows: the sun's share taken, cooler (a cloud's shadow lowers only the sun).
     vec4 cl = texture(u_cloud, v_uv);
-    // In dithered steps, as the deck is drawn (pixel art, no airbrushed smudge).
-    float shadowLevel = floor(cl.g * 4.0 + dither * 0.999) / 4.0;
+    // A hard edge dithered over a pixel or two, as the art draws a shadow (no airbrushed smudge).
+    float shadowLevel = step(0.5 + (dither - 0.5) * 0.9, cl.a);
     albedo *= 1.0 - shadowLevel * cloud.y * vec3(1.0, 0.94, 0.82);
     vec3 c = grade(albedo, adapt, pivot);
     // Richer, never garish: by day no pixel's saturation grows past a share over the art's own.
@@ -222,9 +244,9 @@ void main() {
         // The sky in the water, deeper water showing more of it; the shore line and foam; glints
         // on the sun's side, few and short.
         c = mix(c, skyw.rgb,
-                skyw.a * (0.3 + 0.45 * band) * (1.0 - cl.g * 0.5) * (1.0 - far) * (1.0 - reflected));
+                skyw.a * (0.3 + 0.45 * band) * (1.0 - shadowLevel * 0.5) * (1.0 - far) * (1.0 - reflected));
         float lum = max(luma(c) * 1.6, 0.25);
-        c = mix(c, white * lum, shoreLine * 0.75);
+        c = mix(c, white * lum, shoreLine * 0.5);
         c = mix(c, white * lum, foam * 0.5);
         vec2 cq = q - vec2(t * 4.0, t * 2.0);
         vec2 cellq = floor(cq / vec2(22.0, 14.0));
@@ -235,7 +257,7 @@ void main() {
         float len = life < 0.08 ? 1.5 : (life < 0.16 ? 3.5 : 1.5);
         float glint = step(abs(dq.x), len) * step(abs(dq.y), 0.9) * step(life, 0.2) *
                       step(0.74, hc) * step(0.2, band);
-        c = mix(c, vec3(1.0, 0.98, 0.9), glint * cloud.w * (1.0 - cl.g));
+        c = mix(c, vec3(1.0, 0.98, 0.9), glint * cloud.w * (1.0 - shadowLevel));
     }
     // Lamp light in a few bands with a dithered edge, the cell anchored to world art pixels so
     // nothing crawls while the camera pans.
@@ -248,9 +270,15 @@ void main() {
     c = 1.0 - (1.0 - clamp(c, 0.0, 1.0)) * (1.0 - lit);
     // Haze leans the lit toward the air and leaves the darks dark (never milky).
     c = mix(c, haze.rgb, haze.a * (0.25 + 0.75 * luma(c)));
-    // The deck over everything, in three soft steps dithered at their edges (pixel-art cloud).
-    float level = floor(cl.r * 3.0 + dither * 0.999) / 3.0;
-    c = mix(c, deck.rgb, level * cloud.x);
+    // The clouds over everything, drawn like the art: read on a grid of two art pixels, a hard
+    // edge dithered over a pixel, three tones from the sunlit top to the shaded base, rain
+    // clouds darker.
+    vec2 wS = (floor(w * 0.5) + 0.5) * 2.0;
+    vec4 cs = texture(u_cloud, (wS - world.xy) * world.z / texel.xy);
+    float seen = step(0.5 + (dither - 0.5) * 0.9, cs.r); // (a growing cloud fades in by dither)
+    float tone = floor(cs.g * 2.0 + dither * 0.999) * 0.5;
+    vec3 cloudColour = mix(deckBase.rgb, deck.rgb, tone) * (1.0 - 0.38 * cs.b);
+    c = mix(c, cloudColour, seen * cloud.x);
     vec3 glow = g.rgb * texel.w + texture(u_bloom, v_uv).rgb * mixes.w;
     float alpha = wet ? 1.0 : s.a;
     o_color = vec4(min(c, 1.0) * alpha + glow, alpha);
