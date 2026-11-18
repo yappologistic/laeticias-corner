@@ -436,6 +436,9 @@ def _ways(L: Layout) -> dict:
     st("aurelia", [(9, 96), (16, 96)], 1, kind="road")
     st("aurelia", [(0, 96), (0, 96)], 1, kind="road", portal="aurelia_w")
     st("portuensis", [(51, 107), (44, 107), (44, 159)], 2, kind="road")
+    # Over the decks of the Pons Aemilius and the Pons Sublicius (their middle rows).
+    st("bridges", [(51, 97), (62, 97)], 1, kind="road")
+    st("bridges", [(51, 107), (62, 107)], 1, kind="road")
     st("transtiberim", [(45, 90), (36, 90), (36, 97)])
     st("transtiberim", [(36, 90), (36, 76), (30, 76), (30, 140)])
     st("transtiberim", [(18, 120), (44, 120)])
