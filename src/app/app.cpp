@@ -183,6 +183,8 @@ bool App::init() {
     if (!font_.load(assets_ / "fonts")) return false;
 
     if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
+    // The cities' life runs with the world (src/life/): the camera is its active area.
+    if (loaded_) (void)openCity();
     mixer_.load(assets_ / "audio", cat_.audio);
     loadWorldAudio();
     setupMusic();
@@ -201,8 +203,6 @@ bool App::init() {
     // The measuring modes build a world of their own and never touch the player's saves.
     if (!measuring()) loadOrStart();
     createWorldView();
-    // The cities' life runs with the world (src/life/): the camera is its active area.
-    if (worldView_) (void)openCity();
     logo_ = atlas_->sprite(atlas_->resolve("title/logo", atlas_->placeholderBox()));
     if (!opts_.headless && !opts_.benchmark && !profile_.vsync &&
         !SDL_SetRenderVSync(renderer_.get(), 0))

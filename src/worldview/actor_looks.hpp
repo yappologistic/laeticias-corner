@@ -17,6 +17,10 @@
 
 namespace lc::worldview {
 
+// The frame of an `n`-frame cycle playing at `fps`: walking, by the tiles walked (`moving`), so
+// frames change every `kActorWalkPace / fps` tiles whatever the pace; otherwise by `time`.
+[[nodiscard]] int cycleFrame(bool moving, float stride, float time, float fps, int n);
+
 class ActorLooks {
 public:
     ActorLooks(const PageAtlas& pages, const life::LifeData& data, const world::Content& content);

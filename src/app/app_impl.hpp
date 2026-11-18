@@ -40,6 +40,7 @@
 #include "ui/menus.hpp"
 #include "ui/profiler.hpp"
 #include "world/loader.hpp"
+#include "worldview/city_sound.hpp"
 #include "worldview/renderer.hpp"
 #include "worldview/soundscape.hpp"
 #include "worldview/weather_field.hpp"
@@ -390,6 +391,9 @@ private:
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
     std::unique_ptr<life::LifeSession> city_;
+    std::unique_ptr<worldview::CitySound> citySound_; // what the city sounds like on screen
+    std::vector<int> cityLoops_;                      // its loops and effects in the mixer
+    std::vector<int> cityFx_;
     std::optional<TilePos> cityFocus_; // a fixed active area instead of the camera's
     bool cityOff_ = false;             // `set city off`: nobody about
     std::uint64_t seed_;               // the game's one seed; every random stream derives from it

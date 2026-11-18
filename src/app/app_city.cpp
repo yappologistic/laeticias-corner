@@ -67,6 +67,7 @@ void App::stepCity(float dt) {
     city_->city->setView(cityView());
     city_->city->update(cityClock(), dt);
     cityMs_ = msBetween(t0, SDL_GetPerformanceCounter());
+    if (citySound_) citySound_->addLifeSounds(city_->city->sounds());
 }
 
 std::optional<std::string> App::checkCity(std::span<const std::string> a) {
@@ -119,6 +120,18 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         if (live >= std::stoi(a[3]) && live <= std::stoi(a[4])) return std::nullopt;
         return std::format("expected city district {} in {}..{} but found {}", a[2], a[3], a[4],
                            live);
+    }
+    if (what == "drawn")
+        return range(worldView_ ? static_cast<int>(worldView_->actorsDrawn().size()) : 0, 2);
+    if (what == "people") return range(citySound_ ? citySound_->people() : 0, 2);
+    if (what == "sound" && a.size() >= 5) {
+        // expect city sound FILE MIN MAX: the gain (x100) its loop is set to now.
+        if (!citySound_) return "no city sound";
+        const auto& files = citySound_->loops();
+        const auto it = std::ranges::find(files, a[2]);
+        if (it == files.end()) return "the city plays no " + a[2];
+        const float g = citySound_->out()[static_cast<std::size_t>(it - files.begin())].gain;
+        return range(static_cast<int>(std::lround(g * 100.0f)), 3);
     }
     return "unknown city expectation " + what;
 }

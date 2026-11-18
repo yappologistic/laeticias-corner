@@ -88,6 +88,7 @@ set(LC_SCRIPTS
   "world_roam|world_roam|1280x800|"
   "world_profiler|world_profiler|1280x800|"
   "world_lights|world_lights|1280x800|"
+  "city_world|city_world|1280x800|"
   "rain_pan|rain_pan|640x400|"
   "walk_home|walk_home|640x400|"
   "home_gone|home_gone|640x400|"

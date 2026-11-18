@@ -51,12 +51,14 @@ struct Theme {
     std::string musicDay; // empty: none (stretches)
     std::string musicNight;
     bool seam = false;
+    nlohmann::json sound; // world-loose-ends.md §2: families, nature, stings, voices (as written)
 };
 
 struct RegionDistrict {
     std::string id;   // the name part of "<region>/<name>"
     std::string area; // living-world §1.1 area kind: centre, town, country, road, sea, wild
     nlohmann::json populations; // living-world.md shapes, kept as written
+    nlohmann::json sound;       // surfaces, wind, steps, cart, crowd (as written)
 };
 
 struct Card {

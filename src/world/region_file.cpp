@@ -123,6 +123,7 @@ Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
         out.musicNight = stringOr(m, "night", "", ctx + ": music");
     }
     out.seam = boolOr(t, "seam", false, ctx);
+    if (has(t, "sound")) out.sound = asObject(t.at("sound"), ctx + ": sound");
     return out;
 }
 
@@ -157,6 +158,7 @@ std::expected<RegionFile, std::string> parseRegionFile(std::string_view text, st
                 d.populations = has(ds[i], "populations")
                                     ? asArray(ds[i].at("populations"), dc + ": populations")
                                     : json::array();
+                if (has(ds[i], "sound")) d.sound = asObject(ds[i].at("sound"), dc + ": sound");
                 rf.districts.push_back(std::move(d));
             }
         }

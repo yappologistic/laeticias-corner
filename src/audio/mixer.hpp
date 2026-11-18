@@ -125,7 +125,7 @@ private:
 
     std::vector<std::string> sfxNames_;
     std::vector<std::vector<float>> sfx_;
-    static constexpr std::size_t kMaxLoops = 64;
+    static constexpr std::size_t kMaxLoops = 256;
     std::vector<LoopTrack> loops_; // fixed once loaded
     std::array<std::atomic<float>, kMaxLoops> loopTargets_{};
     std::array<std::atomic<float>, kMaxLoops> loopPans_{};

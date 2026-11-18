@@ -99,6 +99,13 @@ ActorLooks::ActorLooks(const PageAtlas& pages, const life::LifeData& data,
     }
 }
 
+int cycleFrame(bool moving, float stride, float time, float fps, int n) {
+    if (n <= 1) return 0;
+    // Walking: the art's fps reads as drawn at the usual pace, so feet stay planted at any speed.
+    const float t = moving ? stride / tuning::kActorWalkPace : time;
+    return ((static_cast<int>(std::floor(t * fps)) % n) + n) % n;
+}
+
 std::optional<ActorLooks::Drawn> ActorLooks::resolve(const life::DrawActor& d) const {
     const Kind& kind = kinds_[d.kind];
     if (kind.variants == 0) return std::nullopt;
@@ -111,11 +118,7 @@ std::optional<ActorLooks::Drawn> ActorLooks::resolve(const life::DrawActor& d) c
     const std::size_t side = d.facing < 2 ? 0 : 1;
     const std::vector<SpriteRef>& f = an->frames[side];
     if (f.empty()) return std::nullopt;
-    // Walking: frames by distance (the art's fps reads as drawn at the usual pace), so feet
-    // stay planted at any speed; otherwise by time, each actor in its own phase.
-    const float t = moving ? d.stride / tuning::kActorWalkPace : d.animTime;
-    const auto n = static_cast<int>(f.size());
-    const int i = ((static_cast<int>(std::floor(t * an->fps)) % n) + n) % n;
+    const int i = cycleFrame(moving, d.stride, d.animTime, an->fps, static_cast<int>(f.size()));
     const bool mirror = d.facing == 1 || d.facing == 3;
     const std::vector<Vec2>& c = an->carry[side];
     Vec2 carry = c.empty() ? tuning::kCarryAt : c[static_cast<std::size_t>(i) % c.size()];

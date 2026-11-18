@@ -643,6 +643,14 @@ void App::loadWorldAudio() {
     mixer_.loadMore(assets_ / "audio", arriveFiles_, soundscape_->files());
     soundLoops_.clear();
     for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
+    if (!city_) return;
+    citySound_ = std::make_unique<worldview::CitySound>(*loaded_, city_->life->data,
+                                                        assets_ / "audio", seed_);
+    mixer_.loadMore(assets_ / "audio", citySound_->effects(), citySound_->loops());
+    cityLoops_.clear();
+    cityFx_.clear();
+    for (const std::string& f : citySound_->loops()) cityLoops_.push_back(mixer_.loopIndex(f));
+    for (const std::string& f : citySound_->effects()) cityFx_.push_back(mixer_.sfxIndex(f));
 }
 
 void App::updateWorldAudio(float night) {
@@ -667,6 +675,31 @@ void App::updateWorldAudio(float night) {
     }
     for (const auto& [file, sample] : soundscape_->seeks())
         mixer_.seekLoop(soundLoops_[static_cast<std::size_t>(file)], sample);
+    if (!citySound_ || !city_) return;
+    // The living city: crowds, wind, rain, work and events as the simulation shows them.
+    worldview::CitySound::Input ci;
+    ci.centre = in.centre;
+    ci.halfView = in.halfView;
+    ci.scale = camera_.scale();
+    ci.away = 1.0f - soundscape_->homeWeight();
+    ci.wind = weather_.wind().strength;
+    ci.rain = rainHere();
+    ci.snow = cat_.seasons[static_cast<std::size_t>(season())].snow;
+    ci.clock = clock_.time();
+    ci.season = season();
+    ci.dt = frameDt_;
+    ci.actors = worldView_->actorsDrawn();
+    ci.city = city_->city.get();
+    citySound_->update(ci);
+    const auto co = citySound_->out();
+    for (std::size_t i = 0; i < co.size(); ++i) {
+        if (cityLoops_[i] < 0) continue;
+        mixer_.setLoopGain(cityLoops_[i], co[i].gain);
+        mixer_.setLoopPan(cityLoops_[i], co[i].pan);
+    }
+    for (const worldview::CitySound::Shot& sh : citySound_->shots())
+        if (sh.effect >= 0 && cityFx_[static_cast<std::size_t>(sh.effect)] >= 0)
+            mixer_.play(cityFx_[static_cast<std::size_t>(sh.effect)], sh.gain, sh.pitch, sh.pan);
 }
 
 float App::homeMusic() const {

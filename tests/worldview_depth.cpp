@@ -2,10 +2,13 @@
 // among other items, ground tiles under what stands on them, and fewer page switches with the
 // page-aware tie-break.
 
+#include "worldview/actor_looks.hpp"
 #include "worldview/order.hpp"
+#include "worldview/tuning.hpp"
 
 #include <doctest.h>
 
+#include <algorithm>
 #include <random>
 #include <vector>
 
@@ -230,4 +233,40 @@ TEST_CASE("depth: an actor on a floor goes after it, under a roof before it") {
     CHECK(m.before(0).empty());
     REQUIRE(m.before(1).size() == 1);
     CHECK(m.before(2).empty());
+}
+
+TEST_CASE("actors: walk frames follow the distance walked, evenly, at any pace") {
+    // Two walkers, one twice as fast: after the same distance both show the same frame, and a
+    // frame lasts the same distance for both (feet never slide).
+    const float fps = 8;
+    const int n = 8;
+    for (const float speed : {0.5f, 0.9f, 1.8f}) {
+        float stride = 0;
+        int changes = 0;
+        int last = cycleFrame(true, 0, 0, fps, n);
+        float since = 0;
+        float minRun = 1e9f;
+        float maxRun = 0;
+        for (int step = 0; step < 6000; ++step) {
+            stride += speed / 600.0f;
+            since += speed / 600.0f;
+            const int f = cycleFrame(true, stride, 99.0f, fps, n);
+            if (f != last) {
+                if (changes > 0) {
+                    minRun = std::min(minRun, since);
+                    maxRun = std::max(maxRun, since);
+                }
+                ++changes;
+                since = 0;
+                CHECK(f == (last + 1) % n);
+                last = f;
+            }
+        }
+        CAPTURE(speed);
+        const float run = lc::worldview::tuning::kActorWalkPace / fps;
+        CHECK(minRun > run - 0.01f);
+        CHECK(maxRun < run + 0.01f);
+        CHECK(cycleFrame(true, 3.0f, 0, fps, n) == cycleFrame(true, 3.0f, 50, fps, n));
+    }
+    CHECK(cycleFrame(false, 5.0f, 0.5f, 4, 4) == 2);
 }
