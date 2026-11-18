@@ -409,9 +409,12 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
 - **Sound.** Region beds by theme weight, hour, season and month (a season's own beds,
   `theme.seasons.<id>.ambience.beds` with optional `months`, replace the plain ones for the
   hours they cover; a bed with `"weather": "rain"` plays only under rain; every change
-  crossfades over 20 s with equal power; +3 dB where no music plays; -3 dB while snow lies),
-  seams ducking the rest, zones by nearness (panned from their nearest point, centred inside),
-  item loops (fountains, lit braziers) as loud as the nearest and panned from all in reach, a
+  crossfades over 20 s with equal power; +3 dB where no music plays; while snow falls or lies
+  the beds pass a 2.5 kHz low-pass in the mixer, faded in over 4 s, and are 3 dB down; the snow
+  beds stay dry),
+  seams ducking the rest, zones by nearness and their `months` (panned from their nearest point,
+  centred inside), item loops (fountains, lit braziers; `worked` ones in their `hours`; any in its
+  `months`) as loud as the nearest and panned from all in reach, a
   city's music fading in over 4 s from a phrase start and out when left (ducked 2 dB under a
   sting); the home's stems and beds play by its share of the view. Season and month are the
   world calendar's (`calendarDay`), snow lying is the view's climate that month.
@@ -428,11 +431,13 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   `sea.harbour`, `river` with `speed`) by sea state (the wind) or speed, cicadas in their hours
   and months, roles' work loops at the nearest worker, events' ambience by nearness, the life's
   one-shots placed, footsteps and hooves near the view at 2x and closer, animals' voices, calls
-  of their seasons, months and hours (never the same twice running) and, on land, the world
-  manifest's night animals of the climate from dusk to dawn; drips (`rain`, `drip` tags) in the
+  of their seasons, months and hours (never the same twice running; a region's `calls` are the
+  whole list, and only where it names none the world manifest's night animals of the climate
+  play from dusk to dawn, logged); drips (`rain`, `drip` tags) in the
   rain and a minute after; the region's `stings` (`sunrise`, `nightfall`, `storm_clear` after
   90 s of rain, and a new season's first dawn: `stings.season`, else `sfx/<set>/sting_season.wav`).
-  `expect sound beds` holds every region to a loaded bed in every month by day and night.
+  `expect sound beds` holds every region to a loaded bed in every month by day and night;
+  whatever the engine had to guess from the manifest's tags is logged once per region.
   Away from home the corner's toasts fold away and wait for the return; the home's panels
   (building dock, undo and redo, wish tray, land chip) fold away.
 - **Weather is world-wide.** Clouds and showers come from a deterministic field over the whole
@@ -513,7 +518,8 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   size, and every state has hover/pressed/disabled feedback; toasts queue and wrap. Every
   visible panel (a landmark's card too) holds the pointer, the name beside it keeps clear of
   the title card, a card and the docks; a card's text takes the height above the docks and a
-  long title is cut short; a key let go under the menus lets go. A glyph atlas that cannot be
+  long title is cut short; a key let go under the menus lets go. The settings flow into as many
+  columns as fit, tighten their rows, and scroll as one column when even that is too tall. A glyph atlas that cannot be
   built at a new interface scale keeps the last one. The window is at least 960×600.
 - The front door (R10): the title over the last world (Continue or Begin, Worlds, Settings,
   Quit), "Your worlds" (cards with thumbnails; play, rename, delete with confirmation, new world
