@@ -865,7 +865,13 @@ void App::followWorldWeather() {
     // One weather for the whole map: the home takes the world field's cells over its land, and
     // the view's field is what the renderer draws everywhere else.
     const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
-    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow};
+    // The month of the season's day (a kept season keeps its own months), for each region's
+    // snow by its climate.
+    int month = clock_.day() % std::max(1, sd.days);
+    for (int k = 0; k < season(); ++k) month += cat_.seasonDays[static_cast<std::size_t>(k)];
+    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow,
+                                      month < static_cast<int>(cat_.months.size()) ? month : -1,
+                                      clock_.day()};
     const TileRect h = loaded_->file.home.rect;
     const int m = tuning::kWorldWeatherMargin;
     homeWeather_->update(played_, weather_.wind(), sc, {h.x0 - m, h.y0 - m, h.x1 + m, h.y1 + m},

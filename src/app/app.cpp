@@ -1433,6 +1433,8 @@ int App::season() const {
 }
 
 bool App::snowing() const {
+    // Away, as the world's weather has it by the climate there (no snow on the desert).
+    if (viewWeather_ && away()) return raining() && viewWeather_->snow();
     return raining() && cat_.seasons[static_cast<std::size_t>(season())].snow;
 }
 

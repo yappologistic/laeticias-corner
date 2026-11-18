@@ -8,6 +8,7 @@
 // jump across the world finds the weather already there. Wet ground follows the cells' recent
 // paths. The player's choice (rain here, clear here) acts around the view. Pure logic (no SDL).
 
+#include "core/catalog.hpp"
 #include "core/iso.hpp"
 #include "core/weather.hpp"
 #include "world/loader.hpp"
@@ -32,7 +33,9 @@ struct Climate {
 struct SeasonClimate {
     float showers = 0.5f; // expected per block and period
     float clouds = 1;
-    bool snow = false;
+    bool snow = false; // the home's: its rain falls as snow
+    int month = -1;    // the calendar month (-1: none, the season's snow everywhere)
+    int day = 0;       // the calendar day (lowland snow comes on some days)
 };
 
 // A place a shower passed lately, and how wet it left the ground (for drawing).
@@ -55,15 +58,21 @@ public:
     [[nodiscard]] float rainAt(Vec2 tile) const;
     // How wet the ground is at a grid point, 0..1: the showers that crossed it lately.
     [[nodiscard]] float wetAt(Vec2 tile) const;
+    // Whether showers over the view fall as snow: by the climate of the region under the view's
+    // centre, its snow line that month against the ground's level (no snow in the desert).
     [[nodiscard]] bool snow() const { return snow_; }
     [[nodiscard]] std::span<const WeatherTrail> trails() const { return trails_; }
 
 private:
-    void blockCells(int bx, int by, std::int64_t period, const Wind& wind, SeasonClimate season);
+    void blockCells(int bx, int by, std::int64_t period, const Wind& wind, SeasonClimate season,
+                    TileRect view);
 
     const world::LoadedWorld& world_;
     std::uint64_t seed_;
-    std::vector<Climate> climates_; // per region
+    [[nodiscard]] bool snowsAt(TilePos t, SeasonClimate season) const;
+
+    std::vector<Climate> climates_;         // per region
+    std::vector<const ClimateDef*> snowOf_; // per region: its catalog climate, null: none
     std::vector<WeatherCell> cells_;
     std::vector<Vec2> drift_; // per cell: tiles per second it travels
     std::vector<WeatherTrail> trails_;
