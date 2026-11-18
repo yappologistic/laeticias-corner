@@ -1,112 +1,285 @@
-"""Ostia and Portus, AD 126 (rome.md §3.7): the template waypoint town.
+"""Ostia and Portus, AD 126 (rome.md §3.7, §6.3): Rome's harbour towns at the Tiber mouth.
 
 World rect C 100..170, R 184..239; local (c, r) = world (C - 100, R - 184); local level 0 = world
-level 1. The Tiber comes in from Rome's south edge at local (52, 0) and reaches the sea at about
-(26, 45). North-west of the mouth, Trajan's hexagonal basin (`portus_hexagon`, 20 x 18) behind
-Claudius's outer harbour with the lighthouse on its mole; south-east of the mouth, the town of
-Ostia (`ostia_town`, kit, about 24 x 16) on a decumanus and cardo, its forum and Capitolium, the
-river harbour with quays; the Via Ostiensis leaves north-east for Rome past tombs and pines.
+level 1. Sea, river and canals lie one level below the land (world level 0), so quays and moles
+read as embankments. The Tiber comes in from Rome's south edge (local c 49..56) and reaches the sea
+at about (25, 48).
 
-Water sits one level below the land (world level 0), so river banks and quays read as
-embankments. The coast follows the base layer's generated shoreline.
+North-west of the mouth, Portus: Claudius's outer harbour cut into the shore, its moles and the
+lighthouse on an island in its mouth; Trajan's hexagonal basin behind it (`portus_hexagon`, which
+carries its own quays and warehouses), joined to the outer harbour by a channel and to the Tiber
+by the Fossa Traiana; warehouses and the customs yard on a service street. Between the canal and
+the river, the Isola Sacra with the tombs along the road from Portus to Ostia. South-east of the
+mouth, Ostia: the decumanus from the Porta Romana to the sea gate, the forum with the Capitolium
+(`ostia_capitolium`), the square of the shipping offices behind the theatre (`ostia_guilds`),
+the river harbour with quays, insulae, warehouses, bakeries and fulleries in lanes, salt pans
+toward the shore; the Via Ostiensis leaves north to Rome (portal `ostiensis`) between tombs and
+market gardens.
 """
 
-from worldgen.dsl import Layout
-from worldgen.shapes import Line, Poly, Rect
+import numpy as np
 
-TIBER = [(52, 0), (49, 10), (44, 19), (38, 27), (32, 35), (28, 41), (26, 46)]
+from worldgen import rng
+from worldgen.dsl import Layout
+from worldgen.finish import clear_doors, fit_faces, free, glow_cap, put, seam
+from worldgen.shapes import Line, Mask, Poly, Rect
+
+import importlib.util
+from pathlib import Path
+
+_spec = importlib.util.spec_from_file_location(
+    "worldgen_region_rome_common_loader", Path(__file__).resolve().parent.parent / "rome" / "common.py")
+_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+C = _mod.load()
+
+R = "rome."
+GRASS, BASALT, TRAV, EARTH = R + "grass_spring", R + "basalt_paving", R + "travertine_paving", R + "packed_earth"
+BRICK, FIELD, MUD, TIBER = R + "brick_ground", R + "field_spring", R + "mud_bank", R + "river_tiber"
+SEA, SHALLOWS = "world.sea", "world.shallows"
+W, H = 71, 56
+
+RIVER = [(52, 0), (51, 6), (48, 13), (44, 20), (40, 27), (35, 34), (30, 41), (26, 47), (23, 55)]
+BASIN = Poly([(0, 12), (10, 12), (14, 16), (14, 27), (10, 30), (0, 30)])   # Claudius's harbour
+HEXAGON = Rect(17, 2, 36, 19)                                                # Trajan's basin
+LIGHTHOUSE = Rect(1, 19, 3, 21)
+FOSSA = [(12, 28), (22, 28), (30, 27), (38, 26)]       # Claudius's harbour to the Tiber
+CANAL = [(37, 16), (44, 16)]                              # the hexagon's own mouth to the Tiber
+TOWN = Poly([(39, 21), (70, 21), (70, 40), (62, 46), (53, 50), (45, 49), (38, 42)])
+FORUM = Rect(44, 40, 53, 45)
+CAPITOLIUM = Rect(52, 32, 55, 37)
+GUILDS = Rect(50, 24, 61, 29)
+PANS = Rect(57, 42, 69, 50)
 
 
 def build(L: Layout) -> None:
-    sea = L.sea_below()
-    L.fill("rome.grass_spring", level=0, district="fields")
-    L.paint(sea, "world.sea")
-    L.level(sea, -1)
-    L.district("sea", sea)
-    L.level(L.coast_below(), 0, face="world.coast")
+    lv = np.zeros((H, W), dtype=np.int32)
+    sea = C.mask(L, L.sea_below()) | C.mask(L, BASIN)
+    river = C.mask(L, Line(RIVER, 8)) | C.mask(L, Line(FOSSA, 2)) | C.mask(L, Line(CANAL, 2))
+    pans = C.mask(L, PANS) & ~sea
+    moles = C.mask(L, Line([(0, 11), (10, 11), (15, 16)], 1) | Line([(15, 27), (11, 31), (6, 31)], 1))
+    island = C.mask(L, LIGHTHOUSE)
+    water = (sea | river) & ~moles & ~island
+    lv[water] = -1
+    pan_beds = pans & ~C.mask(L, _dykes())
+    lv[pan_beds] = -1
+    C.meet_edges(L, lv, sides="esw")
+    lv[water | pan_beds] = -1
 
-    # --- Portus: the outer harbour (open to the sea), the lighthouse mole, the hexagon ------
-    outer = Poly([(1, 27), (12, 26), (16, 30), (14, 36), (6, 38), (0, 36)]) | (sea & Rect(0, 30, 20, 55))
-    L.paint(outer, "world.sea")
-    L.level(outer, -1)
-    L.district("portus", Rect(0, 8, 30, 40))
-    L.district("sea", outer)
-    # Moles: two arms of travertine closing the outer harbour, the lighthouse island between.
-    L.paint(Line([(12, 26), (16, 30), (16, 34)], 1), "rome.travertine_paving")
-    L.level(Line([(12, 26), (16, 30), (16, 34)], 1), 0)
-    L.paint(Rect(5, 37, 7, 39), "rome.travertine_paving")
-    L.level(Rect(5, 37, 7, 39), 0, face="world.coast")
-    L.place("rome.portus_lighthouse", rect=(5, 37, 7, 39), name="portus_lighthouse")
+    L.fill(GRASS, level=0, district="fields")
+    C.write_levels(L, lv, lambda k, m: [(R + "earth", m)])
+    _flow(L)
+    open_sea = sea & ~moles & ~island
+    L.paint(Mask(0, 0, open_sea), SEA)
+    L.paint(Mask(0, 0, _grow(~open_sea) & open_sea), SHALLOWS)
+    L.paint(Mask(0, 0, moles | island), TRAV)
+    L.level(Mask(0, 0, moles | island), 0, face=R + "travertine")
+    L.paint(Mask(0, 0, pan_beds), SHALLOWS)
+    L.paint(Mask(0, 0, pans & ~pan_beds), MUD)
 
-    # --- the road between Portus and Ostia, over the Tiber on spans (laid before any houses) --
-    bridge_road = [(24, 15), (34, 17), (40, 20), (47, 22), (52, 28), (56, 38)]
-    L.street(bridge_road, width=1, paving="rome.basalt_paving", kind="road")
-    L.node("portus", (24, 15))
+    L.district("sea", Mask(0, 0, sea))
+    L.district("portus", Rect(0, 0, 38, 24) - Mask(0, 0, sea))
+    L.district("harbour", BASIN | HEXAGON)
+    L.district("isola_sacra", Poly([(0, 31), (14, 29), (38, 27), (34, 34), (26, 46), (0, 46)])
+               - Mask(0, 0, sea | river))
+    L.district("river", Mask(0, 0, river))
+    L.district("town", TOWN - Mask(0, 0, river))
+    L.district("forum", FORUM | CAPITOLIUM | GUILDS)
+    L.district("saltpans", PANS)
+    L.district("road", Rect(60, 0, 70, 20))
 
-    # Trajan's basin: a hexagon of harbour water inside a quay ring, warehouses round it.
-    hexa = Rect(4, 9, 23, 26)
-    L.level(hexa, -1)
-    L.paint(hexa, "rome.travertine_paving")
-    basin = Poly([(9, 11), (18, 11), (21, 17), (18, 24), (9, 24), (6, 17)])
-    L.paint(basin, "world.sea")
-    L.place("rome.portus_hexagon", rect=hexa, name="portus_hexagon")
-    L.channel([(13, 24), (12, 27)], terrain="world.sea", width=2)  # basin mouth to the outer harbour
-    L.level(Rect(12, 25, 13, 27), -1)
-    # The Fossa Traiana: a canal from the basin to the Tiber.
-    L.channel([(23, 20), (30, 22), (39, 25)], terrain="world.river", width=2)
-    L.level(Line([(23, 20), (30, 22), (39, 25)], 2), -1)
-    L.houses(Rect(0, 4, 30, 8) | Rect(24, 8, 30, 19), {"rome.r_horrea": 3, "rome.r_insula_low": 1},
-             front=[L.street([(2, 7), (28, 7), (28, 19)], width=1, paving="rome.packed_earth")],
-             gap=0.1, seed="portus_horrea")
-
-    # --- the Tiber, its quays and the river harbour ------------------------------------------
-    L.paint(Line([(46, 20), (41, 27), (35, 36), (31, 43)], 3), "rome.travertine_paving")
-    L.river(TIBER, width=5, terrain="world.river", banks={"world.t_reeds": 0.25}, seed="tiber")
-    L.level(Line(TIBER, 5), -1)
-    L.district("river", Line(TIBER, 7))
-    L.row(Line([(45, 22), (40, 29), (36, 35)], 1), "rome.quay_mooring", every=3)
-    L.lane("tiber_ostia", TIBER[:5], kind="river", ports={"rome_edge": 0, "ostia_quay": 4})
-    for c, r in Line(bridge_road, 1).path():
-        if L.terrain_at(c + L.origin[0], r + L.origin[1]) == "world.river":
-            L.place("rome.pons_span", at=(c, r), face="north")
-
-    # --- Ostia: decumanus, cardo, forum and Capitolium, lanes, insulae ------------------------
-    forum = Rect(39, 35, 48, 38)
-    town = Rect(30, 28, 56, 47) - Line(TIBER, 9) - sea - forum
-    L.district("town", town | forum)
-    dec = L.street([(33, 39), (57, 39), (63, 30), (63, 0)], width=2, paving="rome.basalt_paving",
-                   kind="road", portal="ostiensis")
-    cardo = L.street([(43, 41), (43, 48)], width=2, paving="rome.basalt_paving")
-    north = L.street([(37, 38), (37, 33)], width=1, paving="rome.basalt_paving")
-    lanes = [L.street([(34, 44), (55, 44)], width=1, paving="rome.packed_earth"),
-             L.street([(50, 30), (50, 47)], width=1, paving="rome.packed_earth"),
-             L.street([(44, 31), (55, 31)], width=1, paving="rome.packed_earth")]
-    L.paint(forum, "rome.travertine_paving")
-    L.place("rome.r_temple", rect=(41, 32, 45, 34), face="south", name="capitolium")
-    L.place("rome.r_statue", at=(39, 36))
-    L.place("rome.r_statue", at=(48, 36))
-    L.place("rome.r_lacus", at=(46, 37))
-    L.node("forum", (44, 37))
-    L.node("quay", (37, 33))
-    L.houses(town, {"rome.r_insula": 3, "rome.r_insula_low": 3, "rome.r_horrea": 1,
-                    "rome.r_taberna": 2, "rome.r_bakery": 0.6},
-             front=[dec, cardo, north, *lanes], gap=0.12, seed="ostia")
-    L.scatter(town, {"rome.r_amphorae": 2, "rome.r_lacus": 0.5, "rome.r_compitum": 0.5}, 0.03,
-              seed="yards")
-
-    # --- outside the walls: tombs and pines along the Via Ostiensis, market gardens ----------
-    L.district("road", Line([(57, 39), (63, 30), (63, 0)], 5))
-    L.row(Line([(61, 29), (61, 3)], 1), "rome.r_tomb", every=5, face="east", offset=1)
-    L.row(Line([(66, 28), (66, 2)], 1), "rome.t_stone_pine", every=3)
-    L.fields(Rect(56, 41, 70, 52) - sea, "rome.field_spring", plot=(4, 3), path="rome.packed_earth",
-             seed="gardens")
-    L.fields(Rect(52, 4, 59, 24), "rome.field_spring", plot=(3, 4), path="rome.packed_earth",
-             seed="north_gardens")
-    L.scatter(Rect(0, 0, 70, 55) - town, {"rome.t_stone_pine": 3, "rome.t_cypress": 1,
-                                         "rome.t_oak": 1}, 0.05, seed="country", clump=0.7)
-
-    L.expect("portus_hexagon", rect=(4, 9, 23, 26), level=-1)
-    L.expect("portus_lighthouse", rect=(5, 37, 7, 39), level=0)
-    L.view("town", Rect(28, 26, 58, 52))
-    L.view("portus", Rect(0, 6, 30, 40))
+    ways = _ways(L)
+    _portus(L)
+    _ostia(L, ways)
+    _country(L)
+    _nodes(L)
+    clear_doors(L, all_slots=True)
+    glow_cap(L, {R + "r_insula_low": 0, R + "r_insula": 1, R + "r_taberna": 2,
+                 R + "r_thermopolium": 3, R + "r_compitum": 4, R + "r_bakery": 5})
+    seam(L, GRASS, R + "packed_earth")
+    fit_faces(L, R + "earth")
     L.view("whole", Rect(0, 0, 70, 55))
+    L.view("portus", Rect(0, 0, 40, 34))
+    L.view("town", Rect(34, 18, 70, 52))
+    L.view("isola_sacra", Rect(8, 24, 44, 50))
+
+
+def _grow(m: np.ndarray) -> np.ndarray:
+    g = m.copy()
+    g[1:, :] |= m[:-1, :]
+    g[:-1, :] |= m[1:, :]
+    g[:, 1:] |= m[:, :-1]
+    g[:, :-1] |= m[:, 1:]
+    return g
+
+
+def _dykes():
+    """The earth banks of the salt pans: a grid of 1-tile walks round 3 x 3 beds."""
+    shape = Line([(PANS.c0, PANS.r0), (PANS.c1, PANS.r0)], 1)
+    for r in range(PANS.r0, PANS.r1 + 1, 4):
+        shape = shape | Line([(PANS.c0, r), (PANS.c1, r)], 1)
+    for c in range(PANS.c0, PANS.c1 + 1, 4):
+        shape = shape | Line([(c, PANS.r0), (c, PANS.r1)], 1)
+    return shape
+
+
+def _flow(L: Layout) -> None:
+    """Flow directions for the Tiber and the canals (painted above as plain water)."""
+    L.river(RIVER, width=8, terrain=TIBER)
+    L.channel(FOSSA, terrain=TIBER, width=2)
+    L.channel(CANAL, terrain=TIBER, width=2)
+
+
+# =============================================================================================
+
+def _ways(L: Layout) -> dict:
+    W_ = {}
+    wet = {(c, r): L.terrain_at(c, r) for r in range(L.origin[1], L.origin[1] + H)
+           for c in range(L.origin[0], L.origin[0] + W)
+           if L.terrain_at(c, r) and L.cat.is_water(L.terrain_at(c, r))}
+    # The Via Ostiensis: from the Porta Romana north between tombs to Rome (portal at (63, 0)).
+    W_["ostiensis"] = L.street([(63, 0), (63, 38)], width=2, paving=BASALT, kind="road",
+                               portal="ostiensis")
+    # The decumanus from the Porta Romana west past the forum to the sea gate.
+    W_["decumanus"] = L.street([(63, 38), (39, 38)], width=2, paving=BASALT)
+    # The cardo from the river quays through the forum to the shore.
+    W_["cardo"] = L.street([(45, 30), (45, 49)], width=1, paving=BASALT)
+    # The road from Portus over the canal, across the Isola Sacra and the Tiber into Ostia.
+    W_["portus_road"] = L.street([(26, 20), (26, 36), (39, 36), (39, 38)], width=1, paving=BASALT,
+                                 kind="road")
+    # Portus's service street round the north and east of the basin.
+    W_["portus"] = L.street([(15, 1), (38, 1), (38, 21), (26, 21)], width=1, paving=EARTH)
+    W_["mole"] = L.street([(15, 2), (15, 11), (4, 11)], width=1, paving=TRAV)
+    # The quay street along Ostia's river bank.
+    bank = []
+    for r in range(18, 35):
+        wet_c = [c - L.origin[0] for c in range(L.origin[0] + 30, L.origin[0] + 56)
+                 if (c, r + L.origin[1]) in wet]
+        if wet_c:
+            bank.append((max(wet_c) + 2, r))
+    W_["quay"] = L.street(C.corners(_orth_tiles(bank)), width=1, paving=TRAV)
+    W_["quay_n"] = L.street([bank[0], (62, bank[0][1])], width=1, paving=EARTH)
+    # Decks where ways cross water: the canal and the Tiber (stone spans), the basin channel.
+    for s in (W_["portus_road"], W_["mole"], W_["portus"]):
+        for c, r in Line(s.points, s.width).tiles():
+            if (c, r) in wet:
+                lc, lr = c - L.origin[0], r - L.origin[1]
+                L.paint(Rect(lc, lr, lc, lr), wet[(c, r)])
+                L.place("world.bridge_arch", at=(lc, lr), face="north")
+    return W_
+
+
+def _orth_tiles(pts) -> list:
+    """A chain of tiles made 4-connected (a step in both axes becomes two steps)."""
+    out = [pts[0]]
+    for c, r in pts[1:]:
+        pc, pr = out[-1]
+        while (pc, pr) != (c, r):
+            if pc != c:
+                pc += 1 if c > pc else -1
+            else:
+                pr += 1 if r > pr else -1
+            out.append((pc, pr))
+    return out
+
+
+def _portus(L: Layout) -> None:
+    L.place(R + "portus_hexagon", rect=HEXAGON, name="portus_hexagon")
+    L.place(R + "portus_lighthouse", rect=LIGHTHOUSE, name="portus_lighthouse")
+    # Warehouses and the customs yard along the service street, amphorae and grain on the moles.
+    L.houses(Rect(0, 0, 16, 10) | Rect(37, 0, 40, 23) - Rect(37, 0, 37, 23),
+             {R + "r_horrea": 3, R + "r_insula_low": 1}, front=[s for s in L.streets
+                                                               if s.paving == EARTH][:1],
+             gap=0.1, seed="portus_horrea")
+    for c, r in ((5, 10), (8, 10), (12, 13), (13, 22), (14, 24)):
+        put(L, R + "r_amphorae", (c, r), variant=(c + r) % 4)
+    for r in (13, 17, 21, 25):
+        put(L, R + "quay", (13, r), face="west")
+    put(L, R + "r_crane", (11, 13))
+    put(L, R + "r_statue", (16, 9), face="west")
+    put(L, R + "r_altar", (2, 22), face="south")
+    L.lane("portus", [(6, 38), (4, 32), (4, 26), (12, 27)], kind="sea",
+           ports={"sea_s": 0, "sea_w": 1, "claudius": 3})
+    L.lane("portus_canal", [(42, 16), (38, 16)], kind="river", ports={"tiber": 0, "hexagon": 1})
+
+
+def _ostia(L: Layout, W_: dict) -> None:
+    town = C.mask(L, TOWN) & (L.LV == 0)
+    # The forum and the Capitolium; the square of the shipping offices behind the theatre.
+    L.paint(FORUM, TRAV)
+    L.place(R + "ostia_capitolium", rect=CAPITOLIUM, name="ostia_capitolium")
+    L.place(R + "ostia_guilds", rect=GUILDS, name="ostia_guilds")
+    for at in ((44, 40), (53, 40), (49, 45)):
+        put(L, R + "r_statue", at, face="north")
+    put(L, R + "r_lacus", (50, 41), face="north")
+    put(L, R + "r_altar", (51, 39), face="north")
+    L.paint(Rect(50, 30, 61, 31) & free(L, Rect(50, 30, 61, 31)), TRAV)
+    # River quays with mooring posts, warehouses behind them.
+    for r in range(20, 34):
+        row = [c for c in range(L.origin[0] + 30, L.origin[0] + 50)
+               if L.terrain_at(c, r + L.origin[1]) == TIBER]
+        if row and r % 3 == 0:
+            put(L, R + "quay", (row[-1] - L.origin[0] + 1, r), face="west")
+    lanes = C.lanes(L, town & ~C.mask(L, FORUM | CAPITOLIUM | GUILDS), "ostia", spacing=6,
+                    paving=EARTH, reach=24)
+    front = [W_[k] for k in ("decumanus", "cardo", "ostiensis", "quay", "quay_n", "portus_road")]
+    front += lanes
+    area = Mask(0, 0, town) - FORUM - CAPITOLIUM - GUILDS
+    C.beside_street(L, C.mask(L, area), {R + "r_bakery": 1, R + "r_fullonica": 1,
+                                         R + "r_thermopolium": 2, R + "r_taberna": 3}, 0.05,
+                    "ostia_shops")
+    L.houses(area, {R + "r_horrea": 1, R + "r_insula": 3, R + "r_insula_corner": 1},
+             front=front, gap=0.1, seed="ostia")
+    L.houses(area, {R + "r_insula_low": 3, R + "r_taberna": 1}, front=front, gap=0.15,
+             seed="ostia_fill")
+    L.scatter(area, {R + "r_amphorae": 2, R + "r_lacus": 1, R + "r_compitum": 1, R + "t_fig": 1},
+              0.03, min_gap=2, seed="yards")
+    put(L, R + "r_bath_small", (56, 40), face="north")
+    put(L, R + "r_vigiles", (40, 40), face="north")
+
+
+def _country(L: Layout) -> None:
+    # Tombs both sides of the Via Ostiensis outside the Porta Romana, pines behind them.
+    road = [s for s in L.streets if s.portal == "ostiensis"][0]
+    for c, r in Line(road.points, 1).path():
+        lc, lr = c - L.origin[0], r - L.origin[1]
+        if lr > 18 or lr % 4:
+            continue
+        put(L, [R + "r_tomb", R + "tomb_house", R + "tomb_altar"][lr // 4 % 3], (lc - 2, lr),
+            face="east")
+        put(L, R + "tomb_altar", (lc + 2, lr), face="west")
+    L.row(Line([(67, 2), (67, 18)], 1), R + "t_stone_pine", every=3)
+    L.row(Line([(60, 1), (60, 19)], 1), R + "t_cypress", every=4)
+    # The Isola Sacra: the cemetery along the road from Portus, market gardens, pines.
+    for r in range(29, 35):
+        for c in (24, 28):
+            if rng.hash64("ostia", "isola", c, r) % 2 == 0:
+                put(L, R + "tomb_house", (c, r), face="east" if c < 26 else "west")
+    for c in range(28, 38, 3):
+        put(L, R + "r_tomb", (c, 37), face="north")
+    isola = Poly([(0, 32), (14, 30), (36, 28), (31, 35), (25, 45), (0, 45)])
+    L.fields(isola & Rect(6, 37, 24, 44), FIELD, plot=(4, 3), path=EARTH, seed="isola_fields")
+    L.scatter(isola, {R + "t_stone_pine": 3, R + "t_cypress": 1, R + "p_poppy": 2}, 0.06,
+              seed="isola_green", clump=0.6)
+    # Market gardens between the river and the road, and east of the road.
+    L.fields(Rect(52, 2, 61, 19), FIELD, plot=(3, 4), path=EARTH, seed="north_gardens")
+    L.fields(Rect(66, 22, 70, 40), FIELD, plot=(3, 4), path=EARTH, seed="east_gardens")
+    L.scatter(Rect(40, 0, 70, 20), {R + "p_cabbage": 2, R + "t_olive": 1, R + "r_well": 0.3},
+              0.05, seed="gardens")
+    L.scatter(Rect(0, 0, 70, 55), {R + "t_stone_pine": 2, R + "t_oak": 1, R + "p_poppy": 3,
+                                   R + "p_reeds": 0.5}, 0.03, seed="country", clump=0.7)
+    banks = Line(RIVER, 10) - Line(RIVER, 8) - L.sea_below()
+    L.scatter(banks, {R + "p_reeds": 3, R + "t_poplar": 1}, 0.2, seed="tiber_banks")
+
+
+NODES = {
+    "portus": (26, 21), "portus_mole": (8, 11), "hexagon_quay": (37, 10), "isola_tombs": (26, 32),
+    "tiber_bridge": (40, 36), "ostia_forum": (45, 42), "ostia_guilds": (56, 30),
+    "ostia_capitolium": (54, 38), "river_quay": (45, 26), "porta_romana": (63, 37),
+    "salt_pans": (56, 46), "ostiensis_tombs": (63, 10),
+}
+
+
+def _nodes(L: Layout) -> None:
+    C.snap_nodes(L, NODES)
+    L.lane("tiber_ostia", RIVER[:6], kind="river", ports={"rome": 0, "ostia_quay": 4, "mouth": 5})
