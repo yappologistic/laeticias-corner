@@ -88,6 +88,8 @@ PLAN = {
     "pons_aemilius": (52, 61, 96, 98), "pons_sublicius": (52, 61, 106, 108), "emporium": (61, 85, 140, 159),
     "horrea_galbana": (67, 84, 151, 156), "testaccio": (86, 96, 148, 158), "trajan_baths": (144, 173, 20, 49),
     "castra_praetoria": (158, 175, 0, 14), "suburban_villa": (150, 166, 140, 154), "synagogue": (24, 28, 104, 107),
+    "saepta": (48, 56, 8, 30), "iseum": (58, 64, 14, 22), "stadium_domitian": (12, 21, 2, 26),
+    "pompey_theatre": (26, 37, 36, 47),
 }
 
 
@@ -249,6 +251,15 @@ def campus(pages):
     _houses(pl, pages, (8, 72, 0, 84), 5)
     crowd(pl, (34, 46, 2, 7), 6, CROWD, 18)
     crowd(pl, (47, 70, 0, 84), 7, CROWD, 24)
+    return pl.s
+
+
+def baths(pages):
+    """The Baths of Trajan on the Oppian at level 2, with houses round their precinct."""
+    pl = Plan(138, 177, 14, 55)
+    pl.level(2, 138, 177, 14, 55, edge=P + "brick")
+    pl.place_all(pages)
+    _houses(pl, pages, (138, 177, 14, 55), 9)
     return pl.s
 
 
@@ -432,6 +443,7 @@ def aqueduct_strip(pages):
     """The Aqua Claudia arcade crossing fields: a run with a corner and an end."""
     s = SetScene(14, 22, "rome.grass_spring", margin=20)
     s.paint("rome.field_spring", 0, 13, 0, 21)
+    s.paint("rome.basalt_paving", 0, 13, 8, 8)            # a street passing under one arch
     path = [(6, y) for y in range(1, 15)] + [(x, 14) for x in range(7, 12)]
     cells = set(path)
     for (x, y) in path:
@@ -453,7 +465,7 @@ def main(build, out_dir):
     for name, scene, scales in (("colosseum_valley", colosseum_valley, (1, 0.5)), ("campus", campus, (1, 0.5)),
                                 ("palatine_circus", palatine_circus, (1, 0.5)), ("tiber", tiber, (1, 0.5)),
                                 ("emporium", emporium_scene, (1, 0.5)), ("portus", portus, (1, 0.5)),
-                                ("aqueduct", aqueduct_strip, (1, 2))):
+                                ("aqueduct", aqueduct_strip, (1, 2)), ("baths", baths, (1, 0.5))):
         save(scene(pages).render(pages), out_dir, name, scales=scales)
     save(street(pages).render(pages), out_dir, "street", scales=(1, 2))
     save(street(pages, night=True).render(pages, night=True), out_dir, "street_night", scales=(1, 2))

@@ -124,7 +124,12 @@ def palatine_tiberiana(m):
     W, D = 13 * T, 7 * T
     RM.wall(m, (2.0, D - 2.0, 2.0, W - 2.0), 0.0, S.v(12.0), "brick", 521)
     RM.arcade_front(m, "+x", (2.0, D - 2.0, 2.0, W - 2.0), 0.0, [(S.v(12.0), "tuscan", "brick")], 12, depth=2.0)
-    fill(m, (6.0, D - 6.0, 6.0, W - 6.0, S.v(12.0), S.v(12.0) + 1.0), "soil", tone=0.0)
+    # The roof garden (QA4 V-A-009: it read as flat brown): lawns between gravel walks.
+    fill(m, (6.0, D - 6.0, 6.0, W - 6.0, S.v(12.0), S.v(12.0) + 1.0), "grass",
+         tone=lambda X, Y, Z: (value_noise(X, Y, Z * 0, 3.0, 524) - 0.5) * 0.9)
+    fill(m, (6.0, D - 6.0, 6.0, W - 6.0, S.v(12.0), S.v(12.0) + 1.0), "travertine",
+         lambda X, Y, Z: (np.abs(X - D / 2) < 2.0) | ((Y - 6.0) % 36.0 < 3.0) | (np.abs(X - 8.0) < 2.0) |
+         (np.abs(X - (D - 8.0)) < 2.0), tone=lambda X, Y, Z: (value_noise(X * 3, Y * 3, Z, 1.0, 525) - 0.5) * 0.6)
     for i in range(5):
         box_hedge(m, 8.0, D - 8.0, 10.0 + i * 36.0, 13.0 + i * 36.0, S.v(12.0) + 1.0)
         laurel(m, D / 2, 26.0 + i * 36.0, S.v(12.0) + 1.0, 14.0, seed=i)

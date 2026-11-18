@@ -16,7 +16,7 @@ import numpy as np
 
 import materials as M
 import roman as RM
-from arch import carve, ellipsoid, face_box, fill, halo, revolve, rod, slab
+from arch import carve, ellipsoid, face_box, fill, flight, halo, revolve, rod, slab
 from models.nature import leaf_mass
 from setbuild import Item
 from sets.rome.common import FIRE, LAMP, TOGATE, cypress, laurel, stone_pine, treadwheel_crane
@@ -625,10 +625,19 @@ def r_amphorae(v, frame, frames, k):
     in slender jars, African oil in cylinders, Eastern wine), some lying in a pyramid."""
     m = _m(1, 1, 22, k)
     kind = ("dressel20", "wine", "african", "eastern")[v % 4]
-    pts = ((4.0, 4.0), (4.0, 9.0), (9.0, 4.0), (9.0, 9.0), (12.0, 12.0), (5.0, 13.0), (13.0, 5.0))
-    for x, y in pts:
-        amphora(m, x, y, 0.0, kind)
-    amphora(m, 6.5, 6.5, 7.0, kind)
+    mat = {"dressel20": "clay", "wine": "terracotta", "african": "clay", "eastern": "giallo"}[kind]
+    # QA4 V-A-010: upright jars in rows read as candles. Most lie stacked in a pyramid, necks
+    # out, as they were stored and shipped; two stand leaning against the stack.
+    r = 2.4 if kind == "dressel20" else 1.6
+    for layer, (n, z) in enumerate(((3, r), (2, 3 * r - 0.8), (1, 5 * r - 1.6))):
+        for i in range(n):
+            x = 8.0 + (i - (n - 1) / 2) * 2 * r
+            fill(m, (x - r, x + r, 1.5, 13.0, z - r, z + r), mat,
+                 lambda X, Y, Z, x=x, z=z: np.hypot(X - x, Z - z) < r * np.clip(np.sin(np.pi * (Y - 1.5) / 11.5) * 1.3, 0.3, 1.0),
+                 tone=lambda X, Y, Z: 0.15 * ((Y % 3.0) < 0.4) + (hash01(np.floor(Y).astype(np.int64), layer, v) - 0.5) * 0.3)
+            fill(m, (x - 0.7, x + 0.7, 12.5, 15.0, z - 0.7, z + 0.7), mat, tone=0.3)
+    amphora(m, 13.5, 4.0, 0.0, kind)
+    amphora(m, 3.0, 13.0, 0.0, kind)
     return m
 
 
@@ -857,11 +866,10 @@ def mutatio(v, frame, frames, k):
 
 
 def stair_travertine(v, frame, frames, k):
-    """A travertine stair of one level (16 px) rising toward -y across two tiles."""
+    """A travertine stair of one level (16 px) rising toward -y across two tiles: four deep
+    steps with lit nosings and shaded risers between brick cheek walls (QA4 V-A-005)."""
     m = _m(1, 2, 12, k, pad=2)
-    for i in range(6):
-        slab(m, 0.5, 15.5, 32.0 - (i + 1) * 5.33, 32.0, 0.0, 8.0 * (i + 1) / 6, "travertine",
-             tone=lambda X, Y, Z, i=i: 0.35 * (Z > 8.0 * (i + 1) / 6 - 0.5) - 0.05 * i + (hash01(i, 3) - 0.5) * 0.3)
+    flight(m, 0.5, 15.5, 0.0, 32.0, 8.0, 4, "travertine", tone=RM.travertine(2.0, 6.0, 859), cheek_mat="brick")
     return m
 
 
@@ -881,35 +889,38 @@ def quay(v, frame, frames, k):
 
 def aqua_claudia(v, frame, frames, k):
     """The Aqua Claudia arcade (with the Anio Novus above it) as a joined item: tall piers of
-    rusticated tufa ashlar, one round arch to each tile along the run (half in each of two
-    neighbouring tiles, so runs join seamlessly), the brick attic and the covered channels on
-    top; corners and ends close with a pier. Variant `m<mask>`: N (-y) 1, E (+x) 2, S (+y) 4,
-    W (-x) 8."""
+    rusticated tufa ashlar, the brick attic and the covered channels on top. The piers stand on
+    the tile edges, half in each of two neighbouring tiles, so every straight piece is one
+    whole arch a street can pass under (its tile is walkable; QA4 V-B-002); a corner or an end
+    turns or closes on a pier in the middle, with a narrow arch out to each edge pier.
+    Variant `m<mask>`: N (-y) 1, E (+x) 2, S (+y) 4, W (-x) 8."""
     mask = v
     m = _m(1, 1, 84, k, pad=2)
-    H = 80.0
-    pier = 3.0
-    RM.aqueduct(m, 8.0 - pier, 8.0 + pier, 8.0 - pier, 8.0 + pier, "x" if mask & 10 else "y", 0.0, H,
-                material="tufa", seed=3801)
-    span = 16.0 - 2 * pier
-    spring = 52.0
-    if mask & 2:
-        RM.aqueduct(m, 8.0, 16.0, 8.0 - pier, 8.0 + pier, "x", 0.0, H, arches=((16.0 - span / 2, 16.0 + span / 2, spring),),
+    H, half, spring, t = 80.0, 2.0, 52.0, 3.0
+    straight = mask in (5, 10) or mask == 0
+    if straight:
+        along_x = mask == 10
+        box = (0.0, 16.0, 8.0 - t, 8.0 + t) if along_x else (8.0 - t, 8.0 + t, 0.0, 16.0)
+        RM.aqueduct(m, *box, "x" if along_x else "y", 0.0, H, arches=((half, 16.0 - half, spring),),
                     material="tufa", seed=3801)
-    if mask & 8:
-        RM.aqueduct(m, 0.0, 8.0, 8.0 - pier, 8.0 + pier, "x", 0.0, H, arches=((-span / 2, span / 2, spring),),
-                    material="tufa", seed=3801)
-    if mask & 4:
-        RM.aqueduct(m, 8.0 - pier, 8.0 + pier, 8.0, 16.0, "y", 0.0, H, arches=((16.0 - span / 2, 16.0 + span / 2, spring),),
-                    material="tufa", seed=3801)
-    if mask & 1:
-        RM.aqueduct(m, 8.0 - pier, 8.0 + pier, 0.0, 8.0, "y", 0.0, H, arches=((-span / 2, span / 2, spring),),
-                    material="tufa", seed=3801)
+        return m
+    RM.aqueduct(m, 8.0 - t, 8.0 + t, 8.0 - t, 8.0 + t, "x" if mask & 10 else "y", 0.0, H, material="tufa", seed=3801)
+    for bit, box, axis, arch in ((2, (8.0, 16.0, 8.0 - t, 8.0 + t), "x", (8.0 + t, 16.0 - half)),
+                                 (8, (0.0, 8.0, 8.0 - t, 8.0 + t), "x", (half, 8.0 - t)),
+                                 (4, (8.0 - t, 8.0 + t, 8.0, 16.0), "y", (8.0 + t, 16.0 - half)),
+                                 (1, (8.0 - t, 8.0 + t, 0.0, 8.0), "y", (half, 8.0 - t))):
+        if mask & bit:
+            RM.aqueduct(m, *box, axis, 0.0, H, arches=((arch[0], arch[1], spring),), material="tufa", seed=3801)
     return m
 
 
 def _item(fn, slots=None, emitters=None):
     return Item(fn, slots=slots or {}, emitters=emitters or {})
+
+
+def _walk_item(fn):
+    """A joined piece whose straight looks are walkable (the aqueduct's single arches)."""
+    return Item(fn, walk=lambda v: [(0, 0)] if v in ("m0", "m5", "m10") else [])
 
 
 ITEMS = {f"rome.{n}": it for n, it in {
@@ -953,7 +964,7 @@ ITEMS = {f"rome.{n}": it for n, it in {
     "mutatio": _item(mutatio, {"door": [{"t": [4, 4], "face": "+y"}], "change": [{"t": [3, 2]}, {"t": [4, 2]}]}),
     "stair_travertine": _item(stair_travertine),
     "quay": _item(quay, {"mooring": [{"t": [0, 1], "face": "+y"}]}),
-    "aqua_claudia": _item(aqua_claudia),
+    "aqua_claudia": _walk_item(aqua_claudia),
 }.items()}
 
 FRAMES = {"rome.r_bakery": 2, "rome.r_crane": 2, "rome.r_stall": 2, "rome.r_lacus": 2, "rome.r_fullonica": 2}

@@ -183,12 +183,15 @@ def meta_sudans(m):
         x, y = c + math.cos(a) * rc * 1.15, c + math.sin(a) * rc * 1.15
         fill(m, (x - 1.2, x + 1.2, y - 1.2, y + 1.2, 4.0, 4.0 + h * 0.18), "ink",
              lambda X, Y, Z, x=x, y=y: np.hypot(X - x, Y - y) < 1.0, tone=0.0)
-    revolve(m, c, c, 2.0 + h * 0.3, 2.0 + h, lambda t: rc * (1.0 - 0.75 * t), "marble",
-            tone=lambda X, Y, Z: -0.2 + 0.3 * (np.sin(np.arctan2(Y - c, X - c) * 16 + Z * 0.5) > 0.6))
-    # Water sheeting down the cone.
-    fill(m, (c - rc - 1, c + rc + 1, c - rc - 1, c + rc + 1, 2.0 + h * 0.3, 2.0 + h + 1.0), "water",
-         lambda X, Y, Z: (np.abs(np.hypot(X - c, Y - c) - rc * (1.0 - 0.75 * (Z - 2.0 - h * 0.3) / (h * 0.7)) - 0.25) < 0.35) &
-         (np.sin(np.arctan2(Y - c, X - c) * 12) > 0.75), tone=0.4)
+    # The cone: a broad concave meta of marble-faced brick (QA4 V-A-010: stripes made it read
+    # as a lighthouse), crowned by a bronze bud from which the water wells.
+    revolve(m, c, c, 2.0 + h * 0.3, 2.0 + h, lambda t: rc * (1.05 - 0.85 * t ** 0.8), "marble",
+            tone=lambda X, Y, Z: RM.marble_veneer(6, 5.0, 4.0)(X, Y, Z) * 0.5 - 0.1)
+    revolve(m, c, c, 2.0 + h, 2.0 + h + 2.4, lambda t: 0.9 * np.sin(np.pi * np.clip(t, 0.05, 1.0)) + 0.2, "bronze",
+            tone=0.3)
+    # A film of water glistening down the cone's foot into the basin (no stripes: QA4 V-A-010).
+    fill(m, (c - rc * 1.4, c + rc * 1.4, c - rc * 1.4, c + rc * 1.4, 2.0 + h * 0.3, 2.0 + h * 0.42), "water",
+         lambda X, Y, Z: np.abs(np.hypot(X - c, Y - c) - rc * 1.05 - 0.2) < 0.3, tone=0.3)
     ellipsoid(m, (c, c, 2.0 + h + 0.6), (1.4, 1.4, 1.0), "water", 0.5)
 
 

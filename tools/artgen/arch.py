@@ -955,28 +955,31 @@ def circle_pts(cx, cy, r, n):
     return [(cx + r * math.cos(a), cy + r * math.sin(a)) for a in np.linspace(0, 2 * math.pi, n, endpoint=False)]
 
 
-def flight(m, x0, x1, y0, y1, rise, steps, material, tone=None, cheek=1.4, cheek_mat=None, seed=1):
+def flight(m, x0, x1, y0, y1, rise, steps, material, tone=None, cheek=2.0, cheek_mat=None, seed=1):
     """A short kit stair rising toward -y from y1 (foot, z 0) to y0 (head, z `rise`): a few deep
-    steps that read from every side, each tread lit with a bright nosing and a dark line where
-    the riser above meets it, each riser in shade; sloping cheek walls on both sides carry the
-    flight's line even where the treads are seen from above (the flight turned toward the
-    camera)."""
+    steps that read from every side, each tread a little darker than the stone's lit face with
+    a bright nosing, slab joints across it and a broad dark band where the riser above meets
+    it, each riser in shade; sloping cheek walls on both sides, standing proud of the treads,
+    carry the flight's line even where the treads are seen from above (the flight turned
+    toward the camera)."""
     base = tone or (lambda X, Y, Z: 0.0)
     run = (y1 - y0) / steps
     h = rise / steps
     for i in range(steps):
         zt = h * (i + 1)
-        ya = y1 - run * (i + 1)
+        front = y1 - run * i               # step i: its nosing here, the next riser at front - run
 
-        def tn(X, Y, Z, zt=zt, ya=ya):
+        def tn(X, Y, Z, zt=zt, front=front, i=i):
             top = Z > zt - 0.45
-            nose = top & (Y > ya + run - 0.7)
-            back = top & (Y < ya + 0.6)
-            return base(X, Y, Z) + 0.45 * top + 0.45 * nose - 1.1 * back - 0.55 * (~top) - 0.04 * i
-        slab(m, x0 + cheek, x1 - cheek, ya, y1, 0.0, zt, material, tone=tn)
+            nose = top & (Y > front - 0.8)
+            back = top & (Y < front - run + 1.6)
+            joint = top & ((X - x0 + 1.7 * (i % 2)) % 3.4 < 0.35)
+            return (base(X, Y, Z) * 0.6 - 0.35 + 0.95 * nose - 1.3 * back - 0.6 * joint
+                    - 0.75 * (~top) - 0.05 * i)
+        slab(m, x0 + cheek, x1 - cheek, y0, front, 0.0, zt, material, tone=tn)
     if cheek > 0:
         cm = cheek_mat or material
         for a, b in ((x0, x0 + cheek), (x1 - cheek, x1)):
-            fill(m, (a, b, y0, y1, 0.0, rise + 1.6), cm,
-                 lambda X, Y, Z: Z < rise * np.clip((y1 - Y) / (y1 - y0), 0, 1) + 1.4,
-                 tone=lambda X, Y, Z: base(X, Y, Z) * 0.6 - 0.15 + 0.4 * (Z > rise * np.clip((y1 - Y) / (y1 - y0), 0, 1) + 0.9))
+            fill(m, (a, b, y0, y1, 0.0, rise + 3.0), cm,
+                 lambda X, Y, Z: Z < rise * np.clip((y1 - Y) / (y1 - y0), 0, 1) + 2.4,
+                 tone=lambda X, Y, Z: base(X, Y, Z) * 0.6 - 0.3 + 0.6 * (Z > rise * np.clip((y1 - Y) / (y1 - y0), 0, 1) + 1.9))

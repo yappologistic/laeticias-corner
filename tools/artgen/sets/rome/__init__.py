@@ -8,6 +8,13 @@ from sets.rome import animals, ground, kit, landmarks, people, plants
 LANDMARKS = landmarks.LANDMARKS
 ITEMS = {**kit.ITEMS, **plants.ITEMS}
 STATES = {}
+# The Campus Martius monuments and the Baths of Trajan came after the first three pages: they
+# pack on a page of their own (setbuild.page_groups).
+LATE_DISTRICTS = frozenset({30, 31})
+# The three first pages are full: one group with the longest sides first keeps everything
+# earlier on them.
+ONE_GROUP = True
+PACK_ORDER = "maxside"
 # Frame counts of animated items, terrain and effects (the manifest is authoritative).
 FRAMES = {**kit.FRAMES, **plants.FRAMES, **ground.FRAMES}
 

@@ -11,7 +11,7 @@ import numpy as np
 
 import materials as M
 import roman as RM
-from arch import carve, ellipsoid, fill, halo, revolve, rod, slab
+from arch import Scale, carve, ellipsoid, fill, halo, revolve, rod, slab
 from setbuild import Landmark
 from sets.rome.common import (ARMOURED, CAPITOLINE, CASTOR, FIRE, GODDESS, S65, SATURN, SMALL, T, TEMPLE, TOGATE,
                               VESTAL, cypress, lamp, olive_tree, paving, referrer, tc)
@@ -175,8 +175,12 @@ def forum_square(m):
     fig, olive and vine Pliny saw growing in the Forum. All open tiles are walk tiles."""
     W, D = 13 * T, 10 * T
     paving(m, (0.0, D, 0.0, W), 0.0, 0.6, "travertine", 7.0, 5.0, 291)
-    fill(m, (4 * T, 4 * T + 4.0, 2 * T, 11 * T, 0.4, 0.7), "gold",
-         lambda X, Y, Z: ((np.floor(Y * 2) % 3) < 2) & ((np.floor(X * 2) % 4) < 2), tone=0.2, only_solid=True)
+    # Surdinus's inscription in bronze letters set into the paving (QA4 V-A-009: not a yellow
+    # patch): a line of dark bronze glyphs with gaps between the words.
+    fill(m, (4 * T + 1.0, 4 * T + 3.0, 2 * T, 11 * T, 0.4, 0.7), "bronze",
+         lambda X, Y, Z: ((np.floor(Y * 2) % 3) < 2) & (np.floor(Y / 7.0) % 4 != 3) &
+         (hash01(np.floor(Y * 2).astype(np.int64), np.floor(X * 2).astype(np.int64), 291) < 0.7),
+         tone=-0.3, only_solid=True)
     # The Lacus Curtius: a round well-head in a paved enclosure (tile 7, 3).
     x, y = tc(7), tc(3)
     slab(m, x - 6.0, x + 6.0, y - 6.0, y + 6.0, 0.0, 1.2, "marble", tone=0.25)
@@ -262,12 +266,17 @@ def regia(m):
     fill(m, (2 * T - 4.5, 2 * T - 3.5, 20.0, 26.0, 0.0, 11.0), "bronze", tone=0.2)
 
 
+VESTA_S = Scale(0.85)
+
+
 def vesta(m):
-    """The Temple of Vesta: round, twenty Corinthian columns on a round podium, a conical roof
-    with a smoke opening at its top; the eternal fire glowing at the door at night."""
-    RM.round_temple(m, 1.5 * T, 1.5 * T, 0.0, 1.5 * T - 1.5, 20, RM.ROrder("corinthian", D=0.55, H=6.8), S, steps=4,
-                    roof="bronze_cast", smoke_hole=True, door_face="-y", glow=0.9, seed=341)
-    halo(m, 1.5 * T, 1.5 * T, 30.0, 10.0, FIRE, 0.5)
+    """The Temple of Vesta: round, twenty Corinthian columns on a high round podium, a conical
+    roof with a smoke opening at its top; the eternal fire glowing at the door at night. Drawn
+    at s = 0.85, filling its 3 x 3 tiles, so the roof shows over Castor's and the Regia's
+    eaves (QA4 V-B-003: at the monuments' 0.65 it was hidden)."""
+    RM.round_temple(m, 1.5 * T, 1.5 * T, 0.0, 1.5 * T - 0.8, 20, RM.ROrder("corinthian", D=0.55, H=6.8), VESTA_S,
+                    steps=6, roof="bronze_cast", smoke_hole=True, door_face="-y", glow=0.9, seed=341)
+    halo(m, 1.5 * T, 1.5 * T, 38.0, 10.0, FIRE, 0.5)
 
 
 def vestals(m):
@@ -278,7 +287,7 @@ def vestals(m):
     for wb in ((2.0, 20.0, 2.0, W - 2.0), (D - 20.0, D - 2.0, 2.0, W - 2.0), (20.0, D - 20.0, 2.0, 18.0),
                (20.0, D - 20.0, W - 18.0, W - 2.0)):
         RM.wall(m, wb, 0.0, H, "brick", 351)
-        RM.hip(m, (wb[0] - 1.0, wb[1] + 1.0, wb[2] - 1.0, wb[3] + 1.0), H, 6.0, seed=352)
+        RM.hip(m, (wb[0] - 1.0, wb[1] + 1.0, wb[2] - 1.0, wb[3] + 1.0), H, 9.0, seed=352)
     for s_ in np.arange(8.0, W - 12.0, 12.0):
         RM.window(m, "+x", (D - 20.0, D - 2.0, 2.0, W - 2.0), s_, 3.0, H * 0.6, 4.0, shutter="wood", lit=0.35)
     paving(m, (20.0, D - 20.0, 18.0, W - 18.0), 0.0, 0.6, "marble", 5.0, 5.0, 353)
@@ -339,7 +348,7 @@ LANDMARKS = {
                                     slots={"fill": [{"t": [1, 1], "face": "-y"}]}),
     "rome.divus_julius": Landmark((5, 4), (0, 96), ref("divus_julius"), district=2),
     "rome.regia": Landmark((2, 3), (0, 40), ref("regia"), district=2),
-    "rome.vesta": Landmark((3, 3), (0, 72), ref("vesta"), district=2,
+    "rome.vesta": Landmark((3, 3), (0, 96), ref("vesta"), district=2,
                            slots={"vestal": [{"t": [1, -1], "face": "+y"}]}, emitters={"smoke": (24.0, 24.0, 60.0)}),
     "rome.vestals": Landmark((7, 7), (0, 48), ref("vestals"), district=2,
                              slots={"door": [{"t": [7, 3], "face": "+x"}]}),
@@ -364,7 +373,7 @@ INFO = {
     "rome.lacus_iuturnae": ("Spring of Juturna", 0.65, 20, "B", "lacus_iuturnae"),
     "rome.divus_julius": ("Temple of Divus Iulius", 0.65, 115, "BS", "divus_julius"),
     "rome.regia": ("Regia", 0.65, 50, "BS", "regia"),
-    "rome.vesta": ("Temple of Vesta", 0.65, 100, "BSG", "vesta"),
+    "rome.vesta": ("Temple of Vesta", 0.85, 100, "BSG", "vesta"),
     "rome.vestals": ("House of the Vestals", 0.65, 70, "BSG", "vestals"),
     "rome.piperataria": ("Horrea Piperataria", 0.65, 70, "BS", "piperataria"),
 }
