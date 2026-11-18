@@ -341,8 +341,13 @@ describe them, compiled by `src/life/data.cpp`, which lists what it cannot resol
   `events` (`window` with `chance`, `every` in game seconds; `season_turn` on its season's first
   day, or its month; `calendar`, `after`, `token_arrived`, `chain`, `weather` `rain`/`rain_stop`,
   `reactive`), `figures` (`present` and `memory` with a day are actors, the rest are places and
-  casts), `lanes_tokens` (with `when`). Every filter may name `months` (the catalog's
-  `calendar.months`).
+  casts), `lanes_tokens` (with `when`, `hours`: under way only then, their clock standing
+  still outside them; `rest`: where a waiting traveller stands, the last stop it passed;
+  `offsets`: each instance's share of the period; `by_month`: twelve shares or a row of the
+  region's climate, `travel` or its coast's `sea`). Every filter may name `months` (the
+  catalog's `calendar.months`). `lifeinfo problems` also names the walk data's faults with
+  their grid tiles (road edges walkers cannot use, slot spots no walker can stand at or beside);
+  the engine routes around them.
 - Day `n`: week day `n mod 4`, season day `n mod 3 + 1`, month `n mod 12` (with a season kept,
   that season's month for the season day); a game hour is 30 real seconds; events
   start at their hour and run in real seconds (they may overrun it); the day plan's chance draw
@@ -362,7 +367,9 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   through `src/world` and draws it through `src/worldview` as its one scene (without it, the
   floating island as before). The home region sits at `world.home` (grid (40, 1200), level 2):
   the world renderer leaves its tiles and items to the game's scene (a hole in its cells and
-  gathering, one element for the home in its painter's order) and calls the scene at its turns
+  gathering, one element for the home in its painter's order; prebuilt items touching the home
+  are dropped when the world is composed, and the home region keeps its own look: its region
+  file brings sound, weather and life, no tint or haze) and calls the scene at its turns
   (ground, objects, light, glow, sky). No rim cliffs or waterfalls; the road, wall and gate meet
   the world's road. Beyond the grid the sea runs on into haze. The world wears the season's looks.
 - **Roaming.** The camera roams the whole grid (`Home` returns to the corner); zooming out past
@@ -384,11 +391,16 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   renderer merges every live actor into the region's painter's order each frame (after what is
   behind, before what is in front, a walk-floor piece under the feet and a landmark piece over
   the head; waiting for its own page, so a crowd costs a few draws), walk frames by distance at
-  the set catalog's `stride`, goods in hand, shadows in the shared layer, whole window pixels at
+  the set catalog's `stride` (the body drives the drawing: a walk only while the body covers
+  ground, its standing form otherwise, never a walk played by the clock; a watchdog gives up a
+  step after 4 s going nowhere and lets the actor leave after 12 s; `expect city moving` and the
+  life soak hold it at zero), goods in hand, shadows in the shared layer, whole window pixels at
   2x and 3x; at half and quarter scale people go over the impostors; nobody at the overview or
   with the map open. The home's own actors keep the scene's path.
 - **Cards and journal.** With an empty hand, landmarks with cards and named figures (city life's
   actors: clicked while they walk, a figure winning over the crowd round it) open a glass card
+  (what is clicked is what is drawn under the pointer, nearest first by the drawing's order;
+  where nothing is drawn, the footprint under it)
   from the region file; ordinary people show their role on hover, animals their kind; `F` on a
   living figure's card follows it (damped camera; Esc, a pan or drag, Home or a journey lets
   go). What is in view on arrival is seen, what is clicked found, events running in view are
