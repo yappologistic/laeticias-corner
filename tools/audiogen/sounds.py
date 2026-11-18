@@ -389,17 +389,37 @@ def crickets(bed, count=5, length=None, level=0.5):
                 bed.add(cricket(bed.rng, carrier, pulses), t, pos, dist, min(1, 2 * a) * level)
 
 
-def cicada(rng, dur):
-    """One cicada's song: tymbal clicks at a fast pulse rate exciting a resonance near
-    5 kHz, ramping up, holding, then winding down; softened to sit under 7.5 kHz."""
+def tymbal(rng, dur, kind):
+    """One cicada singing, built from its tymbal clicks: a pulse train at a few hundred
+    clicks a second exciting a body resonance near 5 kHz. 'buzz' swells and holds,
+    'pulsed' sings in short echemes ('zik-zik-zik'), 'phrase' in crescendo bouts."""
     n = secs(dur)
     t = times(n)
-    rate = rng.uniform(140, 220)
-    clicks = (0.5 + 0.5 * np.sin(2 * np.pi * rate * t)) ** 6
-    carrier = bandpass(rng.standard_normal(n), rng.uniform(4300, 4900), rng.uniform(5600, 6400), 3)
-    env = np.minimum(1, t / rng.uniform(1.0, 2.5)) * np.minimum(1, (dur - t) / rng.uniform(0.8, 2.0))
-    env *= 1 + 0.25 * np.sin(2 * np.pi * rng.uniform(0.3, 0.8) * t)
-    return lowpass(carrier * (0.25 + clicks) * np.clip(env, 0, None), 7000, 4)
+    rate = rng.uniform(240, 480)
+    hits = np.zeros(n)
+    period = 44100 / rate
+    idx = (np.arange(int(n / period)) * period + rng.normal(0, period * 0.04, int(n / period)))
+    idx = np.clip(idx.astype(int), 0, n - 1)
+    hits[idx] = rng.lognormal(0, 0.2, len(idx))
+    f = rng.uniform(4200, 6000)
+    click = modes(secs(0.004), [f, f * 0.63], [1.0, 0.45], [0.0006, 0.0009], rng)
+    x = signal.oaconvolve(hits, click)[:n]
+    ramp = np.minimum(1, t / rng.uniform(0.8, 2.0)) * np.minimum(1, (dur - t) / rng.uniform(0.8, 1.5))
+    if kind == "buzz":
+        env = ramp * (1 + 0.25 * np.sin(2 * np.pi * rng.uniform(0.3, 0.8) * t))
+    elif kind == "pulsed":
+        gate = (np.sin(2 * np.pi * rng.uniform(3, 7) * t) > rng.uniform(-0.3, 0.2)).astype(float)
+        env = ramp * lowpass(gate, 60, 2)
+    else:
+        bout = rng.uniform(2.0, 4.0)
+        phase = (t % (bout + 1.2)) / bout
+        env = ramp * np.where(phase < 1, np.sin(np.pi * np.clip(phase, 0, 1)) ** 0.7, 0.0)
+    return lowpass(x * np.clip(env, 0, None), 7000, 4)
+
+
+def cicada(rng, dur):
+    """One cicada's song for a bed, buzzing or in echemes."""
+    return tymbal(rng, dur, ("buzz", "pulsed")[int(rng.integers(2))])
 
 
 def cicadas(bed, count, level=1.0, dist=(0.3, 0.95)):

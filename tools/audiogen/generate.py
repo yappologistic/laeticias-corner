@@ -25,10 +25,14 @@ import athens  # noqa: E402
 import mastering  # noqa: E402
 import music  # noqa: E402
 import parsa  # noqa: E402
+import people  # noqa: E402
 import rome  # noqa: E402
 import score  # noqa: E402
 import sfx  # noqa: E402
+import stings  # noqa: E402
 import validate  # noqa: E402
+import weather  # noqa: E402
+import wildlife  # noqa: E402
 import world  # noqa: E402
 from dsp import stereo  # noqa: E402
 
@@ -74,9 +78,9 @@ EFFECTS = {
     "sfx/ui_close.wav": (sfx.ui_close, -25.0),
     "sfx/shutter.wav": (sfx.shutter, -21.0),
     "sfx/discover.wav": (sfx.discover, -20.0),
-    "sfx/duck.wav": (sfx.duck, -21.0),
-    "sfx/hen.wav": (sfx.hen, -21.0),
-    "sfx/cat.wav": (sfx.cat, -21.0),
+    "sfx/duck.wav": (wildlife.duck_1, -21.0),
+    "sfx/hen.wav": (wildlife.hen_1, -21.0),
+    "sfx/cat.wav": (wildlife.cat_1, -21.0),
     # Notes are played by the engine ~8 dB under the place sounds (kNoteLevel).
     **{f"sfx/note_{i}.wav": (sfx.note(i), -21.0) for i in range(len(sfx.NOTES))},
     "sfx/owl.wav": (sfx.owl, -23.0),
@@ -110,7 +114,13 @@ EFFECTS = {
 
 # Region sets (world-tech §2.2: assets/audio/<music|amb|sfx>/<set>/…), each with a manifest
 # at assets/audio/<set>/manifest.json for the engine and the region theme files.
-SETS = {"parsa": parsa.FILES, "athens": athens.FILES, "rome": rome.FILES, "world": world.FILES}
+SETS = {"parsa": {**parsa.FILES, **people.PARSA, **stings.PARSA},
+        "athens": {**athens.FILES, **people.ATHENS, **stings.ATHENS},
+        "rome": {**rome.FILES, **people.ROME, **stings.ROME},
+        "world": {**world.FILES, **weather.FILES, **wildlife.FILES, **people.FILES},
+        # Home-only additions not in the catalog (variations, steps, stings) live in the home
+        # folders and are listed in assets/audio/home/manifest.json.
+        "home": {**wildlife.HOME, **people.HOME, **stings.HOME}}
 REGION = {name: entry for files in SETS.values() for name, entry in files.items()}
 
 
@@ -176,7 +186,10 @@ def build_region(name, entry, rng):
     x = stereo(x)  # positional loops may be built mono; every loop file is stereo
     if "piece" not in entry:
         x = quiet_start(x)
-    x = mastering.master_loop(x, entry["lufs"], -1.5 if entry["quality"] >= 2 else -2.5)[0]
+    # Low-bitrate Vorbis overshoots more on transients, so the lower the quality, the more
+    # headroom (q0 is used only by the atmosphere sets).
+    ceiling = -1.5 if entry["quality"] >= 2 else -2.5 if entry["quality"] == 1 else -3.0
+    x = mastering.master_loop(x, entry["lufs"], ceiling)[0]
     return write_loop(name, x, entry["quality"])
 
 
@@ -200,6 +213,10 @@ def write_manifest(set_name, files):
                 "gain": e["gain"], "when": e.get("when", "event"), "for": e["purpose"]}
         if "where" in e:
             item["where"] = e["where"]
+        if "family" in e:  # intensity families: the engine cross-fades by level at unity gain
+            item.update(family=e["family"], level=e["level"], level_name=e["level_name"])
+        if e.get("tags"):
+            item["tags"] = e["tags"]
         if "piece" in e:
             item["music"] = score.info(e["piece"])
             assert item["music"]["samples"] == samples, name
