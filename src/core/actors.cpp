@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <functional>
 
 namespace lc {
 namespace {
@@ -129,7 +130,8 @@ Actors::Actors(const Catalog& cat, std::uint64_t seed)
     lineAhead_.reserve(tuning::kActorPool);
     lineTail_.reserve(16);
     bodyOpen_.reserve(256);
-    reservations_.reserve(tuning::kActorPool);
+    held_.reserve(tuning::kActorPool);
+    freed_.reserve(tuning::kActorPool);
     events_.reserve(tuning::kActorPool);
     recent_.reserve(64);
     watered_.reserve(32);
@@ -193,19 +195,67 @@ CondFacts Actors::factsFor(const ActorEnv& env, const Actor& a) const {
 
 // --- Reservations ----------------------------------------------------------------------------
 
+namespace {
+
+// Keys of the reservation counts: the slot of an item (any spot), one spot of it, a ground tile;
+// each a hash of its kind and fields (never 0, the table's empty mark).
+std::uint64_t keyOf(std::uint64_t kind, std::uint64_t a, std::uint64_t b) {
+    std::uint64_t z =
+        kind * 0x9E3779B97F4A7C15ULL ^ a * 0xBF58476D1CE4E5B9ULL ^ b * 0x94D049BB133111EBULL;
+    z = (z ^ (z >> 31)) * 0xD6E8FEB86659FD93ULL;
+    z ^= z >> 32;
+    return z == 0 ? 1 : z;
+}
+std::uint64_t slotKey(int x, int y, int type, int slot) {
+    return keyOf(1,
+                 (static_cast<std::uint64_t>(static_cast<std::uint16_t>(x)) << 16) |
+                     static_cast<std::uint16_t>(y),
+                 (static_cast<std::uint64_t>(type & 0xFFFF) << 8) |
+                     static_cast<std::uint64_t>(slot & 0xFF));
+}
+std::uint64_t spotKey(int x, int y, int type, int slot, int spot) {
+    return keyOf(2,
+                 (static_cast<std::uint64_t>(static_cast<std::uint16_t>(x)) << 16) |
+                     static_cast<std::uint16_t>(y),
+                 (static_cast<std::uint64_t>(type & 0xFFFF) << 16) |
+                     (static_cast<std::uint64_t>(slot & 0xFF) << 8) |
+                     static_cast<std::uint64_t>(spot & 0xFF));
+}
+std::uint64_t tileKey(int x, int y) {
+    return keyOf(3, static_cast<std::uint64_t>(static_cast<std::uint16_t>(x)),
+                 static_cast<std::uint64_t>(static_cast<std::uint16_t>(y)));
+}
+} // namespace
+
+void Actors::pushFreed(int i) {
+    freed_.push_back(i);
+    std::ranges::push_heap(freed_, std::greater<>{});
+}
+
+void Actors::popFreed() {
+    std::ranges::pop_heap(freed_, std::greater<>{});
+    freed_.pop_back();
+}
+
 int Actors::taken(const Reservation& r, int self) const {
-    int n = 0;
-    for (const Reservation& o : reservations_)
-        if (o.actor != self && o.x == r.x && o.y == r.y && o.type == r.type && o.slot == r.slot &&
+    int n = r.spot == kAnyTile ? reserved_.get(slotKey(r.x, r.y, r.type, r.slot))
+                               : reserved_.get(spotKey(r.x, r.y, r.type, r.slot, r.spot));
+    if (self >= 0 && pool_[static_cast<std::size_t>(self)].reserved) {
+        const Reservation& o = held_[static_cast<std::size_t>(self)];
+        if (o.x == r.x && o.y == r.y && o.type == r.type && o.slot == r.slot &&
             (r.spot == kAnyTile || o.spot == r.spot))
-            ++n;
+            --n;
+    }
     return n;
 }
 
 bool Actors::tileTaken(TilePos t, int self) const {
-    return std::ranges::any_of(reservations_, [&](const Reservation& r) {
-        return r.actor != self && r.tx == t.x && r.ty == t.y;
-    });
+    int n = reserved_.get(tileKey(t.x, t.y));
+    if (self >= 0 && pool_[static_cast<std::size_t>(self)].reserved) {
+        const Reservation& o = held_[static_cast<std::size_t>(self)];
+        if (o.tx == t.x && o.ty == t.y) --n;
+    }
+    return n > 0;
 }
 
 void Actors::reserve(int i, const Reservation& r, Vec2 at) {
@@ -221,7 +271,10 @@ void Actors::reserve(int i, const Reservation& r, Vec2 at) {
         k.tx = static_cast<std::int16_t>(t.x);
         k.ty = static_cast<std::int16_t>(t.y);
     }
-    reservations_.push_back(k);
+    held_[static_cast<std::size_t>(i)] = k;
+    reserved_.add(slotKey(k.x, k.y, k.type, k.slot));
+    reserved_.add(spotKey(k.x, k.y, k.type, k.slot, k.spot));
+    if (k.tx >= 0) reserved_.add(tileKey(k.tx, k.ty));
     a.resX = r.x;
     a.resY = r.y;
     a.resType = r.type;
@@ -233,7 +286,10 @@ void Actors::reserve(int i, const Reservation& r, Vec2 at) {
 void Actors::release(int i) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
     if (!a.reserved) return;
-    std::erase_if(reservations_, [&](const Reservation& r) { return r.actor == i; });
+    const Reservation& k = held_[static_cast<std::size_t>(i)];
+    reserved_.remove(slotKey(k.x, k.y, k.type, k.slot));
+    reserved_.remove(spotKey(k.x, k.y, k.type, k.slot, k.spot));
+    if (k.tx >= 0) reserved_.remove(tileKey(k.tx, k.ty));
     a.reserved = false;
 }
 
@@ -291,13 +347,12 @@ std::optional<Vec2> Actors::doorOf(const ActorEnv& env, const Item& it) const {
 
 int Actors::spawn(const ActorEnv& env, int kind, float alpha, bool fromHome) {
     const ActorKind& k = cat_->kinds[static_cast<std::size_t>(kind)];
-    // A free record, or a new one while the pool has room.
+    // The lowest free record (as a scan would find, so runs keep their order), or a new one
+    // while the pool has room.
     std::size_t slot = pool_.size();
-    for (std::size_t s = 0; s < pool_.size(); ++s)
-        if ((pool_[s].flags & kAlive) == 0) {
-            slot = s;
-            break;
-        }
+    while (!freed_.empty() && (pool_[static_cast<std::size_t>(freed_.front())].flags & kAlive) != 0)
+        popFreed();
+    if (!freed_.empty()) slot = static_cast<std::size_t>(freed_.front());
     if (slot == pool_.size() && pool_.size() >= tuning::kActorPool) return -1;
     Actor a;
     // Each actor's stream comes from the one seed and its spawn number.
@@ -355,6 +410,7 @@ int Actors::spawn(const ActorEnv& env, int kind, float alpha, bool fromHome) {
     if (!placed) return -1;
     a.goal = a.pos;
     ++spawned_;
+    if (!freed_.empty() && static_cast<std::size_t>(freed_.front()) == slot) popFreed();
     claim(slot, a);
     return static_cast<int>(slot);
 }
@@ -363,6 +419,7 @@ void Actors::claim(std::size_t slot, const Actor& a) {
     // Every array kept per actor grows or is reset with its record.
     if (slot == pool_.size()) {
         pool_.push_back(a);
+        held_.emplace_back();
         paths_.emplace_back();
         errands_.emplace_back();
         dests_.emplace_back();
@@ -410,6 +467,7 @@ void Actors::presence(const ActorEnv& env, float dt) {
                 !area_.contains(tileOf(a.pos))) {
                 release(static_cast<int>(i));
                 a.flags = 0;
+                pushFreed(static_cast<int>(i));
             }
         }
     }
@@ -1193,11 +1251,8 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
         if (a.state == ActorState::Inside || a.alpha < 1.0f) {
             a.flags &= static_cast<std::uint16_t>(~kFadeOut);
             Pick pk;
-            if (homePick(env, i, -1, pk)) {
-                a.pos = a.goal = pk.point;
-                reserve(i, pk.res, pk.point);
-                release(i);
-            }
+            if (homePick(env, i, -1, pk))
+                a.pos = a.goal = pk.point; // out of its door: no seat held
         }
         a.state = ActorState::Choose;
         return Start::Done;
@@ -1438,7 +1493,8 @@ void Actors::fireEffect(const ActorEnv& env, int i, Effect e) {
                 continue;
             const auto peck = std::ranges::find(hk.anims, "peck");
             Errand& er = errands_[j];
-            er.point = {a.pos.x + range(h, -1.5f, 1.5f), a.pos.y + range(h, -1.5f, 1.5f)};
+            er.point = {a.pos.x + range(h, -tuning::kFeedScatter, tuning::kFeedScatter),
+                        a.pos.y + range(h, -tuning::kFeedScatter, tuning::kFeedScatter)};
             er.dur = tuning::kHenPeckSeconds;
             er.anim =
                 peck == hk.anims.end() ? 1 : static_cast<std::uint8_t>(peck - hk.anims.begin());
@@ -1894,8 +1950,8 @@ void Actors::flee(const ActorEnv& env, int i) {
     const float l = std::hypot(away.x, away.y);
     away = l > 1e-3f ? Vec2{away.x / l, away.y / l} : Vec2{1, 0};
     const ActorKind& k = cat_->kinds[a.kind];
-    for (int attempt = 0; attempt < 8; ++attempt) {
-        const float ang = range(a, -0.8f, 0.8f);
+    for (int attempt = 0; attempt < tuning::kFleeAttempts; ++attempt) {
+        const float ang = range(a, -tuning::kFleeAngle, tuning::kFleeAngle);
         const float r = range(a, tuning::kStartleMin, tuning::kStartleMax);
         const Vec2 d{away.x * std::cos(ang) - away.y * std::sin(ang),
                      away.x * std::sin(ang) + away.y * std::cos(ang)};
@@ -1968,7 +2024,8 @@ bool Actors::harvested(const ActorEnv& env, TilePos bed) {
         const auto peck = std::ranges::find(k.anims, "peck");
         if (peck == k.anims.end() || dist(a.pos, c) > tuning::kHarvestPeckReach) continue;
         Errand& er = errands_[j];
-        er.point = {c.x + range(a, -1.2f, 1.2f), c.y + range(a, -1.2f, 1.2f)};
+        er.point = {c.x + range(a, -tuning::kHarvestScatter, tuning::kHarvestScatter),
+                    c.y + range(a, -tuning::kHarvestScatter, tuning::kHarvestScatter)};
         er.dur = tuning::kHenPeckSeconds;
         er.anim = static_cast<std::uint8_t>(peck - k.anims.begin());
         er.say = -1;
@@ -2118,6 +2175,7 @@ void Actors::tick(const ActorEnv& env, int i, float dt) {
         if (a.alpha <= 0.0f) {
             release(i);
             a.flags = 0;
+            pushFreed(i);
         }
         return;
     }
@@ -2350,7 +2408,9 @@ void Actors::populate(const ActorEnv& env) {
     paths_.clear();
     errands_.clear();
     dests_.clear();
-    reservations_.clear();
+    reserved_.clear();
+    held_.clear();
+    freed_.clear();
     resident_ = -1;
     area_ = env.area;
     tallyArea(*env.world, *cat_, area_, tally_);
