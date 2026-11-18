@@ -359,15 +359,18 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   (ground, objects, light, glow, sky). No rim cliffs or waterfalls; the road, wall and gate meet
   the world's road. Beyond the grid the sea runs on into haze. The world wears the season's looks.
 - **Roaming.** The camera roams the whole grid (`Home` returns to the corner); zooming out past
-  1/4 opens the map. Away from the home region the building tools rest with a quiet hint, and a
+  1/4 opens the map. Away from the home region the home's own panels (building dock and drawer,
+  wish tray, land chip) fold away and return with it; the place, map, journal and cards stay. A
   tool used off the home's land is refused ("This land belongs to the world"). Building,
   conditions, wishes, nooks and actors stay over the home's open land.
 - **Map and travel.** `M` or the dock's map button: the overview art with the home, the cities and
   visited towns; a click fades through paper to the place within a second, with its arrival
-  motif. Mute is `Ctrl+M`.
+  motif. Mute is `Ctrl+M` or the dock's speaker button (lit while muted, saved at once).
 - **Places.** The region under the view (held a moment) names the place; arriving in a named
   place (home, city, town) shows its caption once per visit (with its native form when the font
-  can draw it); crossing into another moment plays the seam chime (and, once, its line). The
+  can draw it: Nunito with Noto Sans and Noto Sans Old Persian as fallbacks; scripts that need
+  shaping or right-to-left, such as Persian in Arabic script, are left out; the `coverage` test
+  fails on any region or catalog string with a missing glyph); crossing into another moment plays the seam chime (and, once, its line). The
   title card names the place while away.
 - **Cards and journal.** With an empty hand, landmarks with cards and named figures (standing
   still at their routine's place for now) open a glass card from the region file; what is in
