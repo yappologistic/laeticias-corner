@@ -1444,8 +1444,12 @@ def theme(view) -> dict:
     zones += [{"rect": grid_rect(view, d), "file": "amb/parsa/site.ogg", "gain": 0.8,
                "hours": ["06:00", "18:00"]} for d in ("building_site", "quarry")]
     return {
-        "grading": {"dawn": [0.96, 0.86, 0.78], "day": [0.99, 0.99, 0.98],
-                    "dusk": [0.98, 0.78, 0.68], "night": [0.40, 0.47, 0.68]},
+        # Multipliers on the engine's own phase grade (world-tech §2.6: [1, 1, 1] is the
+        # corner's look). The corner's night is the reference for a readable night, so these stay
+        # near 1 and only lean: honey-gold dawn, clear slightly cool day, rose-copper dusk, a
+        # cool high-desert night a touch darker than the corner's (bright stars, no city glow).
+        "grading": {"dawn": [1.03, 0.98, 0.92], "day": [0.98, 0.99, 1.0],
+                    "dusk": [1.02, 0.93, 0.90], "night": [0.92, 0.95, 1.04]},
         "haze": {"colour": [0.84, 0.86, 0.90], "strength": 0.12, "toward": "west"},
         "climate": "parsa",
         "weather": {

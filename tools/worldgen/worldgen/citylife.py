@@ -376,6 +376,8 @@ def filters_pass(f: dict, h: float, day: int, season: str, festivals: set[str]) 
         return False
     if "festival" in f and f["festival"] not in festivals:
         return False
+    if "not_festival" in f and f["not_festival"] in festivals:
+        return False
     if f.get("weather") not in (None, "clear"):
         return False
     return True

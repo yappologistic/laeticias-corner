@@ -19,6 +19,8 @@ from worldgen.citylife import card, curve, go, grid_rect, pop, role, sched, use,
 A = "athens."
 SEASON = "summer"
 ASSEMBLY = {"days": {"every": 4, "offset": 2}}
+FEAST = {"festival": "panathenaia"}
+WORKDAY = {"not_festival": "panathenaia"}   # the Panathenaia is a holiday for the workshops
 
 DENSITIES = {
     "always": [1.0] * 24,
@@ -266,6 +268,11 @@ def roles() -> list[dict]:
         {"escort": {"loop": True, "steps": [
             {"follow": {"actor": A + "youth"}, "dur": [40, 60], "spacing": 1.2},
             go(node="melite_school"), wait(dur=(30, 60))]}}, card="paidagogos"))
+    R.append(role("spectator", A + "citizen", "Festival-goer", sched(("05:00", "20:00", "watch")),
+        {"watch": {"loop": True, "steps": [
+            go(node="eleusinion"), use(anim="talk", dur=(30, 50)), go(node="agora"),
+            use(anim="idle", dur=(30, 50)), go(node="kerameikos_kilns"), wait(dur=(20, 30))]}},
+        card="spectator"))
     R.append(role("night_walker", A + "citizen", "Citizen with a lamp", sched(
         ("19:30", "01:00", "home")),
         {"home": {"loop": True, "steps": [
@@ -473,6 +480,7 @@ def districts() -> list[dict]:
         {"id": "agora", "area": "centre", "populations": [
             per("stall_keeper", "g_stall", 1, "market"), per("banker", "g_table_banker", 1, "market"),
             pop("shopper", "market", 30), pop("elder", "day", 7), pop("porter", "market", 10),
+            pop("spectator", "day", 12, when=FEAST),
             pop("archer", "watch", 6), per("fountain_woman", "se_fountain", 2, "always"),
             pop("philosopher", "afternoon", 3), pop("pupil", "afternoon", 6), pop("child", "children", 4),
             pop("donkey", "market", 2), per("shopkeeper", "g_house_small", 1, "market")]},
@@ -480,17 +488,20 @@ def districts() -> list[dict]:
             pop("councillor", "day", 36), per("herald", "royal_stoa", 1, "day"), pop("archer", "watch", 6),
             pop("juror", "day", 6), pop("shopper", "market", 10)]},
         {"id": "kerameikos", "area": "town", "populations": [
-            per("potter", "g_wheel", 1, "work"), per("vase_painter", "g_workshop", 1, "work"),
-            per("kiln_man", "g_kiln", 1, "work"), pop("clay_digger", "work", 9),
+            per("potter", "g_wheel", 1, "work", when=WORKDAY),
+            per("vase_painter", "g_workshop", 1, "work", when=WORKDAY),
+            per("kiln_man", "g_kiln", 1, "work", when=WORKDAY), pop("clay_digger", "work", 9, when=WORKDAY),
             per("shopkeeper", "g_house_small", 1, "market"), pop("child", "children", 6),
-            pop("donkey", "work", 2), pop("housewife", "houses", 6)]},
+            pop("donkey", "work", 2), pop("housewife", "houses", 6),
+            pop("spectator", "day", 36, when=FEAST)]},
         {"id": "cemetery", "area": "country", "populations": [
             pop("mourner", "day", 10), per("potter", "g_wheel", 1, "work"),
             per("vase_painter", "g_workshop", 1, "work"), pop("clay_digger", "work", 6),
             per("gate_guard", "dipylon", 2, "watch")]},
         {"id": "acropolis", "area": "centre", "populations": [
             pop("priestess", "day", 8), pop("visitor", "day", 38), pop("visitor_woman", "day", 16),
-            pop("yard_mason", "work", 4), per("sculptor", "sculpt_yard", 3, "work"),
+            pop("yard_mason", "work", 4, when=WORKDAY), per("sculptor", "sculpt_yard", 3, "work", when=WORKDAY),
+            pop("spectator", "day", 14, when=FEAST),
             pop("owl", "always", 1)]},
         {"id": "slopes", "area": "wild", "populations": [
             pop("goat", "graze", 4), pop("owl", "always", 2), pop("townsman", "day", 4)]},
@@ -548,6 +559,7 @@ def districts() -> list[dict]:
         {"id": "pentelikon", "area": "town", "populations": [
             per("quarryman", "pentelikon_quarry", 4, "work"), pop("sledge", "work", 4),
             pop("drover", "work", 8), pop("ox", "work", 8), pop("quarry_hauler", "work", 14)]},
+        # (the quarry works on: it is outside the city and its gangs are not festival-goers)
         {"id": "lykabettos", "area": "wild", "populations": [pop("herder", "day", 2), pop("goat", "graze", 6)]},
         {"id": "hymettos", "area": "wild", "populations": [pop("herder", "day", 2), pop("goat", "graze", 6)]},
         {"id": "mouseion", "area": "wild", "populations": [pop("herder", "day", 2), pop("goat", "graze", 6)]},
@@ -1319,6 +1331,9 @@ def cards() -> dict:
                        "cities across the Aegean."),
         "thracian": card("role", "Thracian", None, "From the north, where Athens gets timber and silver, "
                          "and many of its slaves."),
+        "spectator": card("role", "Festival-goer", None, "Out for the Panathenaia in a clean "
+                          "himation, to watch the procession pass and claim a share of the "
+                          "meat."),
         "farmer": card("role", "Farmer", None, "Hoes the vines and olives, brings the threshed barley "
                        "home and goes to the city on market days."),
         "thresher": card("role", "Thresher", None, "Spreads the barley on the floor, drives the animals "
@@ -1355,8 +1370,11 @@ STRINGS = {
 
 def theme(view) -> dict:
     return {
-        "grading": {"dawn": [0.98, 0.86, 0.80], "day": [1.0, 0.99, 0.95], "dusk": [0.98, 0.80, 0.68],
-                    "night": [0.44, 0.50, 0.70]},
+        # Multipliers on the engine's own phase grade ([1, 1, 1] = the corner's look; see the
+        # Pārsa note): pink-gold dawn, a bright warm summer day, honey-rose dusk without the
+        # all-orange cast a strong multiplier gives, a mild night as readable as the corner's.
+        "grading": {"dawn": [1.03, 0.97, 0.93], "day": [1.02, 1.01, 0.97], "dusk": [1.02, 0.95, 0.89],
+                    "night": [0.96, 0.97, 1.03]},
         "haze": {"colour": [0.93, 0.89, 0.80], "strength": 0.12, "toward": "south-west"},
         "climate": "athens",
         "weather": {
