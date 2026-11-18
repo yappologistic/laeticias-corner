@@ -285,7 +285,7 @@ private:
     [[nodiscard]] int waterBody(const World& world, Vec2 p) const;
     void chooseRoutine(const ActorEnv& env, int i);
     [[nodiscard]] float hour(const ActorEnv& env) const;
-    bool interrupts(const ActorEnv& env, int i, float dt);
+    bool interrupts(const ActorEnv& env, int i);
     void beginInterrupt(int i, const Interrupt& in);
     void finishStep(const ActorEnv& env, int i);
     void travel(const ActorEnv& env, int i, float dt);

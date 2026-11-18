@@ -2233,7 +2233,6 @@ float CityLife::atLength(std::span<const float> cum, float d) {
 const std::vector<Tile16>& CityLife::carrierPath(std::size_t key, TilePos from, TilePos to) {
     std::vector<Tile16>& path = carrierPaths_[key];
     if (!path.empty()) return path;
-    const ChainRun& run = chains_.run(key / 16);
     const int pi = w_->pathsOf[static_cast<std::size_t>(chains_.regionOf(key / 16))];
     path.push_back(tile16(from));
     if (pi >= 0) {
@@ -2250,7 +2249,6 @@ const std::vector<Tile16>& CityLife::carrierPath(std::size_t key, TilePos from, 
             }
         }
     }
-    (void)run;
     std::vector<float>& cum = carrierCum_[key];
     cum.assign(1, 0.0f);
     for (std::size_t k = 1; k < path.size(); ++k)

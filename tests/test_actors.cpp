@@ -752,7 +752,7 @@ TEST_CASE("events: a pure plan per seed, cooldowns, spacing and once a day") {
         for (int i = 0; i < 60 * 600; ++i) {
             e.now = i * tuning::kStepSeconds;
             e.phase = (i / (60 * 120)) % 2 == 0 ? Phase::Day : Phase::Night;
-            s.update(e, static_cast<float>(tuning::kStepSeconds));
+            s.update(e);
             for (const FiredEvent& f : s.fired()) starts.emplace_back(f.event, i);
             s.clearFired();
         }
@@ -787,7 +787,7 @@ TEST_CASE("events: a pure plan per seed, cooldowns, spacing and once a day") {
             e.now = t2;
             e.day = day;
             e.facts.raining = t2 < to - 1.0;
-            r.update(e, 0.5f);
+            r.update(e);
             for (const FiredEvent& f : r.fired())
                 rainbows +=
                     c.events[static_cast<std::size_t>(f.event)].show == EventShow::Rainbow ? 1 : 0;

@@ -39,7 +39,7 @@ class EventScheduler {
 public:
     EventScheduler(const Catalog& cat, std::uint64_t seed);
 
-    void update(const EventEnv& env, float dt);
+    void update(const EventEnv& env);
     // A placement, move or removal over `rect` (player triggers).
     void placed(const World& world, TileRect rect, double now);
     // The resident cooked a harvest.
