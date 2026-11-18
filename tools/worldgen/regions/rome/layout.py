@@ -254,9 +254,10 @@ def _dist(src: np.ndarray, limit: int) -> np.ndarray:
 
 
 def _fp(L: Layout, lid: str):
-    """Plan (w, h) of a set landmark at r0, or None when the set has no such item."""
+    """Plan (w, h) of a landmark at r0 (set catalog, or a provisional placeholder with the
+    bible's footprint), or None when there is no such item."""
     d = L.cat.items.get(R + lid)
-    if d is None or d.source != "catalog":
+    if d is None:
         return None
     fx, fy = d.footprint
     return fy, fx
