@@ -39,17 +39,17 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/sea.ogg",
+     "file": "amb/rome/day.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
-     "file": "amb/world/sea.ogg",
+     "file": "amb/rome/night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
@@ -58,11 +58,6 @@
      "item": "rome.r_brazier",
      "file": "amb/world/brazier.ogg",
      "when": "lit"
-    },
-    {
-     "item": "rome.t_cypress",
-     "file": "amb/world/press.ogg",
-     "when": "worked"
     }
    ]
   },
@@ -180,7 +175,18 @@
      6,
      5,
      6
-    ]
+    ],
+    "ambience": {
+     "beds": [
+      {
+       "file": "amb/rome/day_winter.ogg",
+       "hours": [
+        "05:30",
+        "19:30"
+       ]
+      }
+     ]
+    }
    }
   },
   "sound": {
@@ -195,7 +201,8 @@
     "sunrise": "sfx/rome/sting_sunrise.wav",
     "nightfall": "sfx/rome/sting_nightfall.wav",
     "storm_clear": "sfx/rome/sting_storm_clear.wav",
-    "rainbow": "sfx/rome/sting_rainbow.wav"
+    "rainbow": "sfx/rome/sting_rainbow.wav",
+    "season": "sfx/rome/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -251,12 +258,14 @@
    "calls": [
     {
      "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
-     ],
      "hours": [
       "06:00",
       "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
      ]
     },
     {
@@ -265,8 +274,115 @@
       "07:00",
       "18:00"
      ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/nightingale.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun"
+     ]
+    },
+    {
+     "file": "sfx/world/starlings.wav",
+     "hours": [
+      "16:30",
+      "19:00"
+     ],
+     "months": [
+      "oct",
+      "nov",
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
     }
-   ]
+   ],
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
+   }
   },
   "look": {
    "phases": {
@@ -2263,8 +2379,8 @@
    "string": "saturnalia",
    "zone": "town",
    "ambience": {
-    "file": "amb/world/crowd_latin_3.ogg",
-    "gain": 0.8
+    "file": "amb/rome/saturnalia.ogg",
+    "gain": 0.85
    }
   },
   {
@@ -2315,7 +2431,7 @@
    "show": "emitter",
    "steps": [],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/swifts.wav"
+   "sfx": "sfx/world/cicada_start.wav"
   },
   {
    "id": "turn_autumn_vintage_begins",
@@ -2338,7 +2454,7 @@
    "steps": [],
    "string": "season_turn.autumn",
    "ambience": {
-    "file": "amb/world/press.ogg",
+    "file": "amb/world/vintage.ogg",
     "gain": 0.6
    }
   },

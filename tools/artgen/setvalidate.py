@@ -48,8 +48,11 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
             sprites[key] = r
             owner[key] = p.name
     geom = json.loads((out_dir / f"{set_id}.geom.json").read_text())
-    pieces = {iid: e["r0"]["pieces"] for iid, e in geom["items"].items() if "pieces" in e.get("r0", {})}
-    required = setbuild.required_keys(cat, mod, pieces)
+    pieces = {iid: e["r0"]["pieces"] for iid, e in geom["items"].items()
+              if "pieces" in e.get("r0", {}) and iid in mod.LANDMARKS}
+    kit_pieces = {iid: {v: g["pieces"] for v, g in e.items() if "pieces" in g}
+                  for iid, e in geom["items"].items() if iid not in mod.LANDMARKS and any("pieces" in g for g in e.values())}
+    required = setbuild.required_keys(cat, mod, pieces, kit_pieces)
     errors += [f"missing sprite {k_}" for k_ in required if k_ not in sprites]
     # An actor frame with something alight on it carries its glow frame beside it.
     glows = {k_ for k_ in sprites if "/glow/" in k_ and setbuild.ACTOR_KEY.fullmatch(k_.replace("/glow/", "/"))

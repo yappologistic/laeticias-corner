@@ -322,6 +322,21 @@ TEST_CASE("a postcard is named by the local date its caption shows (L-012)") {
     tzset();
 }
 
+TEST_CASE("a save cut short or corrupted anywhere is refused or read, never a crash") {
+    const Catalog& c = test::catalog();
+    for (const char* name : {"save_v1.json", "save_v2.json", "save_v3.json"}) {
+        const std::string text = fixture(name);
+        CAPTURE(name);
+        for (std::size_t k = 0; k < text.size(); k += 1 + text.size() / 400) {
+            CAPTURE(k);
+            CHECK_NOTHROW((void)deserialize(text.substr(0, k), c));
+            std::string flipped = text;
+            flipped[k] = static_cast<char>(flipped[k] ^ 0x5A);
+            CHECK_NOTHROW((void)deserialize(flipped, c));
+        }
+    }
+}
+
 TEST_CASE("world folder names and the profile") {
     const std::vector<std::string> none;
     CHECK(worldSlug("Laeticia's Corner", none) == "laeticias-corner");

@@ -1066,7 +1066,7 @@ def build_base(cat: Catalog, layers: dict[str, PlanLayer] | None = None) -> tupl
     g = Graph("base")
     routes.build(W, g)
     routes.lanes(W, g)
-    country.place(W)
+    country.place(W, g)
     districts(W)
     drop_unreached_kit(W, g, layers or {})
     W.stats.pop("_courses")

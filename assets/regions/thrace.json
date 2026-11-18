@@ -40,19 +40,78 @@
     {
      "file": "amb/world/fields.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
      "file": "amb/world/desert_night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "athens.g_press",
+     "file": "amb/world/press.ogg",
+     "when": "worked",
+     "hours": [
+      "07:00",
+      "17:00"
+     ],
+     "months": [
+      "nov",
+      "dec",
+      "jan"
+     ]
+    },
+    {
+     "item": "athens.g_press",
+     "file": "amb/world/vintage.ogg",
+     "when": "worked",
+     "hours": [
+      "07:00",
+      "17:00"
+     ],
+     "months": [
+      "sep",
+      "oct"
+     ]
+    },
+    {
+     "item": "athens.g_threshing",
+     "file": "amb/world/threshing.ogg",
+     "when": "worked",
+     "hours": [
+      "08:00",
+      "17:00"
+     ],
+     "months": [
+      "jun",
+      "jul"
+     ]
+    },
+    {
+     "item": "athens.g_threshing",
+     "file": "amb/world/winnowing.ogg",
+     "when": "worked",
+     "hours": [
+      "10:00",
+      "18:00"
+     ],
+     "months": [
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "item": "world.beacon",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -96,6 +155,10 @@
      "frost": [
       "mar"
      ],
+     "muddy": [
+      "mar",
+      "apr"
+     ],
      "snow": [
       "mar"
      ]
@@ -134,6 +197,9 @@
     "ground": {
      "frost": [
       "nov"
+     ],
+     "muddy": [
+      "nov"
      ]
     },
     "snow_line": [
@@ -155,6 +221,11 @@
     "haze": 0.12,
     "ground": {
      "frost": [
+      "dec",
+      "jan",
+      "feb"
+     ],
+     "muddy": [
       "dec",
       "jan",
       "feb"
@@ -184,7 +255,8 @@
     "sunrise": "sfx/athens/sting_sunrise.wav",
     "nightfall": "sfx/athens/sting_nightfall.wav",
     "storm_clear": "sfx/athens/sting_storm_clear.wav",
-    "rainbow": "sfx/athens/sting_rainbow.wav"
+    "rainbow": "sfx/athens/sting_rainbow.wav",
+    "season": "sfx/athens/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -238,12 +310,14 @@
    "calls": [
     {
      "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
-     ],
      "hours": [
       "06:00",
       "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
      ]
     },
     {
@@ -252,15 +326,120 @@
       "07:00",
       "18:00"
      ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/wolves_far.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/stag_roar.wav",
+     "hours": [
+      "19:00",
+      "06:00"
+     ],
+     "months": [
+      "sep",
+      "oct"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_call.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
     }
    ],
    "voices": {
+    "athens.donkey": [
+     "sfx/world/donkey.wav"
+    ],
+    "athens.hen": [
+     "sfx/hen_2.wav",
+     "sfx/hen_3.wav"
+    ],
     "athens.horse": [
      "sfx/world/horse_whinny.wav",
      "sfx/world/horse_blow.wav"
     ],
+    "athens.owl": [
+     "sfx/world/owl_tawny.wav"
+    ],
     "world.crane": [
      "sfx/world/cranes.wav"
+    ],
+    "world.dog": [
+     "sfx/world/dog_1.wav",
+     "sfx/world/dog_2.wav"
+    ],
+    "world.donkey": [
+     "sfx/world/donkey.wav"
     ],
     "world.raven": [
      "sfx/world/crow_1.wav",
@@ -269,6 +448,36 @@
     "world.stork": [
      "sfx/world/stork_clatter.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
    }
   },
   "look": {
@@ -582,6 +791,32 @@
     "reflect": true,
     "sea_state": 1
    },
+   "lights": {
+    "athens.g_shrine": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
+     }
+    },
+    "world.beacon": {
+     "kind": "beacon",
+     "colour": "#ffa04a",
+     "radius": 4.0,
+     "flicker": {
+      "breathe": [
+       0.8,
+       1.6
+      ],
+      "depth": 0.15
+     }
+    }
+   },
    "backdrop": {
     "north": {
      "id": "world.bd_pontic",
@@ -594,6 +829,194 @@
   }
  },
  "districts": [
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "world.traveller",
+     "density": "road_day",
+     "max_per_chunk": 4,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.merchant",
+     "density": "road_day",
+     "max_per_chunk": 1,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.donkey",
+     "density": "road_day",
+     "max_per_chunk": 2
+    }
+   ],
+   "name": "The road",
+   "area": "road",
+   "sound": {
+    "surfaces": {},
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 6
+    }
+   }
+  },
+  {
+   "id": "farm",
+   "populations": [
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "role": "ploughman",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "reaper",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "jul"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "pruner",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "farmer",
+     "density": "always",
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1
+    },
+    {
+     "role": "hens",
+     "per_item": "athens.g_farmstead",
+     "count": 2,
+     "density": "always"
+    },
+    {
+     "role": "yard_donkey",
+     "per_item": "athens.g_farmstead",
+     "count": 0.5,
+     "density": "always"
+    }
+   ],
+   "name": "Farms",
+   "area": "country",
+   "sound": {
+    "surfaces": {
+     "roof": 0.12,
+     "leaves": 0.1
+    },
+    "wind": "wind.open",
+    "exposure": 0.9,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 8
+    }
+   }
+  },
   {
    "id": "land",
    "populations": [
@@ -637,6 +1060,16 @@
        "aug",
        "sep"
       ]
+     }
+    },
+    {
+     "role": "beacon_keeper",
+     "per_item": "world.beacon",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
      }
     },
     {
@@ -740,13 +1173,19 @@
      "role": "owl",
      "density": "night",
      "max_per_chunk": 0.5
+    },
+    {
+     "role": "shrine_keeper",
+     "per_item": "athens.g_shrine",
+     "count": 1,
+     "density": "always"
     }
    ],
    "name": "Countryside",
    "area": "wild",
    "sound": {
     "surfaces": {
-     "leaves": 0.12
+     "leaves": 0.11
     },
     "wind": "wind.open",
     "exposure": 1.0,
@@ -1058,7 +1497,7 @@
    "show": "emitter",
    "steps": [],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/swifts.wav"
+   "sfx": "sfx/world/cicada_start.wav"
   },
   {
    "id": "turn_autumn_cranes_overhead",
@@ -1112,7 +1551,10 @@
    "show": "weather",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.5
+   }
   },
   {
    "id": "horses_to_pasture",
@@ -1217,7 +1659,11 @@
    ],
    "zone": "land",
    "string": "thracian_harvest",
-   "sfx": "sfx/world/sickle.wav"
+   "sfx": "sfx/world/sickle.wav",
+   "ambience": {
+    "file": "amb/world/reaping.ogg",
+    "gain": 0.75
+   }
   },
   {
    "id": "hunting_party",
@@ -1365,6 +1811,470 @@
   "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
  },
  "roles": [
+  {
+   "id": "ploughman",
+   "actor": "athens.farmer",
+   "name": "Ploughing and sowing",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/world/ploughing.ogg"
+   }
+  },
+  {
+   "id": "reaper",
+   "actor": "athens.farmer",
+   "name": "Reaping",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/world/reaping.ogg",
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "pruner",
+   "actor": "athens.farmer",
+   "name": "Pruning the vines and trees",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "beacon_keeper",
+   "actor": "athens.citizen",
+   "name": "Beacon keeper",
+   "schedule": [
+    {
+     "hours": [
+      "17:00",
+      "06:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.beacon",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "farmer",
+   "actor": "athens.farmer",
+   "name": "Farmer",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:30",
+      "18:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:00"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "hens",
+   "actor": "athens.hen",
+   "name": "Hens in the yard",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "19:30"
+     ],
+     "routine": "peck"
+    }
+   ],
+   "routines": {
+    "peck": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "athens.g_farmstead",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "peck",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "peck",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "yard_donkey",
+   "actor": "athens.donkey",
+   "name": "Donkey in the yard",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "stand"
+    }
+   ],
+   "routines": {
+    "stand": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "athens.g_farmstead",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   }
+  },
   {
    "id": "woodcutter",
    "actor": "world.logger",
@@ -1544,6 +2454,73 @@
      ]
     }
    }
+  },
+  {
+   "id": "shrine_keeper",
+   "actor": "athens.priest",
+   "name": "Keeper of a country shrine",
+   "schedule": [
+    {
+     "hours": [
+      "06:30",
+      "11:00"
+     ],
+     "routine": "offer"
+    },
+    {
+     "hours": [
+      "16:00",
+      "18:30"
+     ],
+     "routine": "offer"
+    }
+   ],
+   "routines": {
+    "offer": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "athens.g_shrine",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "pour",
+       "dur": [
+        40,
+        70
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "pour",
+       "dur": [
+        20,
+        35
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
   }
  ],
  "ambient": [
@@ -1610,5 +2587,106 @@
    ],
    "sound": "sfx/world/cranes.wav"
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "shrine_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 1.8,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      3,
+      6
+     ],
+     "depth": 0.04
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 1.4
+    }
+   },
+   "signal_watch": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.2,
+    "strength": 0.6,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   }
+  }
+ },
+ "light_points": [
+  [
+   145,
+   447,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   127,
+   453,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   103,
+   455,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   104,
+   460,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ]
  ]
 }

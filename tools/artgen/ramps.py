@@ -89,8 +89,9 @@ SWAY = {"foliage_deciduous", "foliage_evergreen", "grass", "crop", "cloth"}
 # states (bare, bloom, fruit, crops' stages, snow looks) change shapes and stay drawn.
 STATES = ("fresh", "dry", "dormant", "turn")
 # The states each green ramp has, by what it is (seasons.md §4.3: grass greens, dries and goes
-# dormant; deciduous leaves come fresh, dry in drought and turn in autumn).
-GRASS_STATES, LEAF_STATES = ("fresh", "dry", "dormant"), ("fresh", "dry", "turn")
+# dormant, and a woodland floor turns under fallen leaves; deciduous leaves come fresh, dry in
+# drought and turn in autumn). The engine picks the state by the item's or terrain's season class.
+GRASS_STATES, LEAF_STATES = ("fresh", "dry", "dormant", "turn"), ("fresh", "dry", "turn")
 STATE_RAMPS = {"leaf": LEAF_STATES, "grass": GRASS_STATES, "summer": GRASS_STATES, "steppe": GRASS_STATES,
                "pal.leaf": GRASS_STATES, "pal.summer": GRASS_STATES, "pal.steppe": GRASS_STATES}
 # Each state: one hue family it is drawn from (palette colours) and a lightness shift (Oklab L). Steps darker than

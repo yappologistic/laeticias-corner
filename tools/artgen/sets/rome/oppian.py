@@ -177,9 +177,10 @@ def trajan_baths(m):
 
 def _baths_landmark():
     # The lawns either side of the statue walk (dy 13..16 holds the paving and the statues),
-    # each joined to its gate.
+    # each joined to its gate and to each other across the paving between the statues (dx 20,
+    # 23 and 25 hold them), so either gate reaches the whole garden (draw-order audit V-W3).
     walk = sorted(set(tiles(19, 24, 3, 12) + tiles(19, 24, 17, 26) + [(20, y) for y in range(0, 3)] +
-                      [(20, y) for y in range(27, 30)]))
+                      [(20, y) for y in range(27, 30)] + tiles(21, 22, 13, 16) + tiles(24, 24, 13, 16)))
     return Landmark((30, 30), (0, 104), ref("trajan_baths"), walk=walk,
                     slots={"bathe": [{"t": [19, 12], "face": "-x"}, {"t": [19, 17], "face": "-x"}],
                            "stroll": [{"t": [21, 8]}, {"t": [23, 20]}, {"t": [22, 11]}],

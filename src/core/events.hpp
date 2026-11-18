@@ -70,6 +70,7 @@ private:
     std::uint64_t seed_;
     std::vector<double> due_;          // window events: when the next one is due
     std::vector<double> last_;         // when each last started
+    bool begun_ = false;               // the plan has been placed at the first update's time
     std::vector<int> lastDay_;         // the calendar day each last started (daily ones)
     std::vector<std::uint32_t> drawn_; // draws made from each event's stream
     std::vector<Running> running_;

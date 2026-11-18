@@ -141,7 +141,7 @@ Prep::~Prep() {
     wake_.notify_all();
 }
 
-void Prep::request(const Job& job) {
+void Prep::request(const Job& job, bool urgent) {
     if (!async_) {
         Done d{job.tag, {}};
         mine_.run(job.tiles, job.clip, d.result);
@@ -149,7 +149,10 @@ void Prep::request(const Job& job) {
         return;
     }
     const std::scoped_lock lock(mutex_);
-    queue_.push_back(job);
+    if (urgent)
+        queue_.push_front(job);
+    else
+        queue_.push_back(job);
     wake_.notify_one();
 }
 

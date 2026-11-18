@@ -511,9 +511,9 @@ ROUTES = {
     "pasargadae_road": {"points": ["parsa:pasargadae_n", "pasargadae:pasargadae_s"],
                         "style": "persian", "width": 2, "kind": "road",
                         "rows": ("parsa.t_cypress", 6)},
-    # From the Royal Road in Cappadocia over the Taurus gates to a Cilician harbour.
+    # From the Royal Road in Cappadocia over the Taurus gates to the Cilician coast.
     "cilician_road": {"points": [(985, 150), (983, 206), (980, 248), (980, 266), (983, 283)],
-                      "style": "persian", "width": 1, "kind": "road", "end": "harbour"},
+                      "style": "persian", "width": 1, "kind": "road"},
     # The Via Tiburtina's last stretch, from the Appia below the city up to Tibur's plain.
     "via_tiburtina": {"points": ["tibur:tiburtina", (275, 173)], "style": "roman", "width": 1,
                       "kind": "road"},
@@ -528,6 +528,21 @@ ROUTES = {
                     "kind": "road"},
     "levant_road": {"points": [(980, 266), "sidon:sidon_n"], "style": "persian", "width": 1,
                     "kind": "road"},
+    # From the Ionian road north through the Troad to Abydos on the Hellespont, where the strait
+    # was crossed to Sestos and the grain ships from the Black Sea passed (its harbour is the
+    # `hellespont` lane's).
+    "troad_road": {"points": [(856, 228), (846, 212), (820, 104)], "style": "greek", "width": 1,
+                   "kind": "road"},
+    # Off the Cilician road's end, down from the coastal bench on ramps to the strand where the
+    # harbour of Tarsus lay.
+    "cilician_harbour": {"points": [(983, 283), (969, 292)], "style": "persian", "width": 1,
+                         "kind": "road", "end": "harbour"},
+    # From Pasargadae's gate north over the plateau and out by the valley west of the Alborz
+    # toward Ecbatana (by Gabae), the royal road the Persian kings took between their summer
+    # and their spring capitals.
+    "ecbatana_road": {"points": ["pasargadae:pasargadae_s", (1205, 180), (1180, 90), (1128, 40),
+                                 (1125, 2)],
+                      "style": "persian", "width": 1, "kind": "road"},
 }
 
 # Sea and river lanes. Ports name the places a lane serves; `start` and `end` are added to every
@@ -554,7 +569,7 @@ LANES = {
                 "kind": "sea", "ports": {"kenchreai": 0, "piraeus": 4}},
     "aegean_delos": {"points": [(588, 380), (600, 392), (700, 392), (774, 339), (831, 242)],
                      "kind": "sea", "ports": {"piraeus": 0, "delos": 3, "ephesus": 4}},
-    "hellespont": {"points": [(588, 380), (600, 392), (720, 392), (790, 200), (800, 104)],
+    "hellespont": {"points": [(588, 380), (600, 392), (720, 392), (790, 200), (816, 106)],
                    "kind": "sea", "ports": {"piraeus": 0, "hellespont": 4}, "harbour": 4},
     "levant": {"points": [(984, 288), (996, 304), (998, 322)], "kind": "sea",
                "ports": {"cilicia": 0, "sidon": 2}},

@@ -38,25 +38,174 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/fields.ogg",
+     "file": "amb/world/road.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
      "file": "amb/world/desert_night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
    "loops": [
     {
-     "item": "parsa.t_cypress",
-     "file": "amb/world/press.ogg",
-     "when": "worked"
+     "item": "parsa.p_threshing",
+     "file": "amb/world/threshing.ogg",
+     "when": "worked",
+     "hours": [
+      "08:00",
+      "17:00"
+     ],
+     "months": [
+      "jun",
+      "jul"
+     ]
+    },
+    {
+     "item": "parsa.p_threshing",
+     "file": "amb/world/winnowing.ogg",
+     "when": "worked",
+     "hours": [
+      "10:00",
+      "18:00"
+     ],
+     "months": [
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "item": "world.beacon",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
+     "item": "world.sheepfold",
+     "file": "amb/world/flock.ogg",
+     "when": "worked",
+     "hours": [
+      "17:00",
+      "21:00"
+     ]
+    }
+   ],
+   "zones": [
+    {
+     "rect": [
+      0,
+      12,
+      12,
+      28
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      27,
+      157,
+      43,
+      173
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      65,
+      122,
+      81,
+      138
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      80,
+      0,
+      96,
+      12
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      124,
+      10,
+      140,
+      26
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      170,
+      50,
+      221,
+      99
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      243,
+      98,
+      259,
+      114
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      278,
+      107,
+      303,
+      125
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
     }
    ]
   },
@@ -103,6 +252,9 @@
      "frost": [
       "mar",
       "apr"
+     ],
+     "muddy": [
+      "mar"
      ],
      "snow": [
       "mar",
@@ -195,6 +347,11 @@
       "jan",
       "feb"
      ],
+     "muddy": [
+      "dec",
+      "jan",
+      "feb"
+     ],
      "snow": [
       "dec",
       "jan",
@@ -221,7 +378,8 @@
     "nightfall": "sfx/parsa/sting_nightfall.wav",
     "storm_clear": "sfx/parsa/sting_storm_clear.wav",
     "rainbow": "sfx/parsa/sting_rainbow.wav",
-    "first_snow": "sfx/parsa/sting_first_snow.wav"
+    "first_snow": "sfx/parsa/sting_first_snow.wav",
+    "season": "sfx/parsa/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -266,29 +424,96 @@
    },
    "calls": [
     {
-     "file": "sfx/parsa/hoopoe.wav",
-     "seasons": [
-      "spring",
-      "summer"
-     ],
-     "hours": [
-      "06:00",
-      "12:00"
-     ]
-    },
-    {
      "file": "sfx/world/stork_clatter.wav",
-     "seasons": [
-      "spring",
-      "summer"
-     ],
      "hours": [
       "07:00",
       "17:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/parsa/hoopoe.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/wolves_far.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
      ]
     }
    ],
    "voices": {
+    "parsa.dromedary": [
+     "sfx/world/camel_grumble.wav"
+    ],
     "world.crane": [
      "sfx/world/cranes.wav"
     ],
@@ -315,7 +540,37 @@
      "sfx/world/stork_clatter.wav"
     ]
    },
-   "waterfall": "waterfall"
+   "waterfall": "waterfall",
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_mountain.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
+   }
   },
   "look": {
    "phases": {
@@ -649,6 +904,30 @@
     "sea_state": 0
    },
    "lights": {
+    "parsa.p_house_small": {
+     "kind": "window",
+     "colour": "#ffd08a",
+     "radius": 1.5,
+     "flicker": {
+      "stagger": [
+       "18:00",
+       "20:00"
+      ],
+      "depth": 0.03
+     }
+    },
+    "world.beacon": {
+     "kind": "beacon",
+     "colour": "#ffa04a",
+     "radius": 4.0,
+     "flicker": {
+      "breathe": [
+       0.8,
+       1.6
+      ],
+      "depth": 0.15
+     }
+    },
     "world.royal_station": {
      "kind": "torch",
      "colour": "#ff9a4a",
@@ -721,7 +1000,7 @@
    "area": "road",
    "sound": {
     "surfaces": {
-     "stone": 1.0
+     "stone": 0.69
     },
     "wind": "wind.street",
     "exposure": 1.0,
@@ -745,6 +1024,146 @@
     "crowd": {
      "family": "crowd.persian",
      "full": 6
+    }
+   }
+  },
+  {
+   "id": "farm",
+   "populations": [
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "nov",
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     }
+    },
+    {
+     "role": "ploughman",
+     "density": "fields",
+     "max_per_chunk": 2,
+     "when": {
+      "months": [
+       "sep",
+       "oct"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "reaper",
+     "density": "fields",
+     "max_per_chunk": 3,
+     "when": {
+      "months": [
+       "jul"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "pruner",
+     "density": "fields",
+     "max_per_chunk": 1,
+     "when": {
+      "months": [
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "shepherd",
+     "per_item": "world.sheepfold",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.sheep",
+     "per_item": "world.sheepfold",
+     "count": 3,
+     "density": "herd"
+    },
+    {
+     "role": "farmer",
+     "density": "always",
+     "max_per_chunk": 3,
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.dog",
+     "density": "always",
+     "max_per_chunk": 1
+    },
+    {
+     "role": "yard_donkey",
+     "per_item": "parsa.p_house_small",
+     "count": 0.5,
+     "density": "always"
+    }
+   ],
+   "name": "Farms",
+   "area": "country",
+   "sound": {
+    "surfaces": {
+     "roof": 0.13
+    },
+    "wind": "wind.open",
+    "exposure": 0.9,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 8
     }
    }
   },
@@ -819,6 +1238,12 @@
      "density": "always"
     },
     {
+     "role": "beacon_keeper",
+     "per_item": "world.beacon",
+     "count": 1,
+     "density": "always"
+    },
+    {
      "role": "gazelle",
      "density": "daytime",
      "max_per_chunk": 0.3
@@ -833,10 +1258,11 @@
    "area": "wild",
    "sound": {
     "surfaces": {
+     "roof": 0.02,
      "leaves": 0.02
     },
     "wind": "wind.mountain",
-    "exposure": 0.99,
+    "exposure": 0.98,
     "steps": {
      "surface": "earth",
      "files": [
@@ -859,6 +1285,60 @@
   {
    "id": "pasture",
    "populations": [
+    {
+     "role": "station_keeper",
+     "per_item": "world.royal_station",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "station_guest",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "relay_animal",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always"
+    },
+    {
+     "role": "beacon_keeper",
+     "per_item": "world.beacon",
+     "count": 1,
+     "density": "always"
+    },
+    {
+     "role": "shepherd",
+     "per_item": "world.sheepfold",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "actor": "world.sheep",
+     "per_item": "world.sheepfold",
+     "count": 3,
+     "density": "herd"
+    },
+    {
+     "actor": "world.dog",
+     "per_item": "world.sheepfold",
+     "count": 0.5,
+     "density": "always"
+    },
     {
      "role": "shepherd",
      "density": "herd",
@@ -894,10 +1374,11 @@
    "name": "Pastures",
    "sound": {
     "surfaces": {
+     "roof": 0.04,
      "leaves": 0.02
     },
     "wind": "wind.mountain",
-    "exposure": 0.99,
+    "exposure": 0.97,
     "steps": {
      "surface": "earth",
      "files": [
@@ -1178,6 +1659,48 @@
      "count": 1
     }
    ]
+  },
+  {
+   "id": "drove",
+   "formation": "cluster",
+   "radius": 3,
+   "leader": {
+    "actor": "parsa.shepherd"
+   },
+   "members": [
+    {
+     "actor": "world.sheep",
+     "variant": 1,
+     "count": 8
+    },
+    {
+     "actor": "world.goat",
+     "count": 3
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "caravan",
+   "formation": "line",
+   "spacing": 1.0,
+   "leader": {
+    "actor": "parsa.caravan_driver"
+   },
+   "members": [
+    {
+     "actor": "parsa.dromedary",
+     "count": 4
+    },
+    {
+     "actor": "world.donkey",
+     "variant": 1,
+     "count": 2
+    }
+   ]
   }
  ],
  "chains": [],
@@ -1236,10 +1759,9 @@
     }
    ],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/seam.wav",
    "ambience": {
     "file": "amb/world/dust_1.ogg",
-    "gain": 0.8
+    "gain": 0.5
    }
   },
   {
@@ -1262,7 +1784,11 @@
    "show": "work",
    "steps": [],
    "string": "season_turn.autumn",
-   "sfx": "sfx/world/hoof_earth_1.wav"
+   "sfx": "sfx/world/hoof_earth_1.wav",
+   "ambience": {
+    "file": "amb/world/ploughing.ogg",
+    "gain": 0.6
+   }
   },
   {
    "id": "turn_winter_first_snow",
@@ -1284,7 +1810,10 @@
    "show": "weather",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.5
+   }
   },
   {
    "id": "almond_blossom",
@@ -1387,7 +1916,11 @@
    ],
    "zone": "land",
    "string": "plateau_harvest",
-   "sfx": "sfx/world/sickle.wav"
+   "sfx": "sfx/world/sickle.wav",
+   "ambience": {
+    "file": "amb/world/reaping.ogg",
+    "gain": 0.75
+   }
   },
   {
    "id": "pistachio_harvest",
@@ -1495,6 +2028,73 @@
  ],
  "lanes_tokens": [
   {
+   "actor": "parsa.shepherd",
+   "group": "drove",
+   "count": 1,
+   "route": {
+    "start": "base:fold_1164_295",
+    "end": "base:ecbatana_road_station_1125_7"
+   },
+   "when": {
+    "months": [
+     "may",
+     "oct"
+    ]
+   },
+   "note": "flocks moving between summer and winter pastures",
+   "id": "iran_plateau.0",
+   "hours": [
+    "05:00",
+    "18:00"
+   ],
+   "rest": [
+    "base:pasargadae_road_station_1190_296",
+    "base:ecbatana_road_station_1183_289",
+    "base:ecbatana_road_farm_1173_286",
+    "base:ecbatana_road_station_1173_282",
+    "base:ecbatana_road_station_1173_266",
+    "base:ecbatana_road_farm_1173_258",
+    "base:ecbatana_road_station_1181_258",
+    "base:ecbatana_road_farm_1185_258",
+    "base:ecbatana_road_station_1193_258",
+    "base:ecbatana_road_farm_1198_243",
+    "base:ecbatana_road_station_1198_241",
+    "base:ecbatana_road_station_1198_227",
+    "base:ecbatana_road_station_1198_211",
+    "base:ecbatana_road_farm_1203_208",
+    "base:ecbatana_road_station_1205_202",
+    "base:ecbatana_road_farm_1205_195",
+    "base:ecbatana_road_station_1205_186",
+    "base:ecbatana_road_station_1199_180",
+    "base:ecbatana_road_farm_1199_173",
+    "base:ecbatana_road_station_1199_158",
+    "base:ecbatana_road_station_1199_146",
+    "base:ecbatana_road_farm_1193_137",
+    "base:ecbatana_road_station_1192_137",
+    "base:ecbatana_road_farm_1189_129",
+    "base:ecbatana_road_station_1189_122",
+    "base:ecbatana_road_farm_1182_107",
+    "base:ecbatana_road_station_1180_107",
+    "base:ecbatana_road_station_1179_89",
+    "base:ecbatana_road_station_1177_78",
+    "base:ecbatana_road_station_1164_78",
+    "base:ecbatana_road_farm_1162_73",
+    "base:ecbatana_road_station_1162_66",
+    "base:ecbatana_road_station_1151_61",
+    "base:ecbatana_road_farm_1147_55",
+    "base:ecbatana_road_station_1137_55",
+    "base:ecbatana_road_station_1134_46",
+    "base:ecbatana_road_station_1125_39",
+    "base:ecbatana_road_farm_1125_35",
+    "base:ecbatana_road_farm_1125_29",
+    "base:ecbatana_road_station_1125_25",
+    "base:ecbatana_road_station_1125_7"
+   ],
+   "offsets": [
+    0.169
+   ]
+  },
+  {
    "actor": "parsa.p_cart",
    "route": {
     "start": "parsa:pasargadae_n",
@@ -1504,7 +2104,7 @@
    "carry": "world.goods_sacks",
    "note": "carts between Pārsa and Pasargadae",
    "by_month": "road",
-   "id": "iran_plateau.0",
+   "id": "iran_plateau.1",
    "hours": [
     "05:00",
     "19:30"
@@ -1514,7 +2114,7 @@
     "pasargadae:pasargadae_garden"
    ],
    "offsets": [
-    0.169
+    0.751
    ]
   },
   {
@@ -1526,7 +2126,7 @@
    "count": 1,
    "note": "riders on the cypress road to Pasargadae",
    "by_month": "road",
-   "id": "iran_plateau.1",
+   "id": "iran_plateau.2",
    "hours": [
     "05:00",
     "19:30"
@@ -1536,7 +2136,7 @@
     "pasargadae:cyrus_tomb"
    ],
    "offsets": [
-    0.751
+    0.745
    ]
   },
   {
@@ -1552,13 +2152,134 @@
    ],
    "note": "a magus with the month's horse for Cyrus' tomb (Arrian 6.29)",
    "by_month": "road",
-   "id": "iran_plateau.2",
+   "id": "iran_plateau.3",
    "rest": [
     "base:pasargadae_road_station_1190_296",
     "pasargadae:cyrus_tomb"
    ],
    "offsets": [
-    0.745
+    0.681
+   ]
+  },
+  {
+   "actor": "parsa.courier",
+   "route": {
+    "start": "pasargadae:pasargadae_s",
+    "end": "base:ecbatana_road_1125_2"
+   },
+   "count": 1,
+   "note": "the king's couriers on the road north to Ecbatana, the summer capital",
+   "by_month": "courier",
+   "id": "iran_plateau.4",
+   "hours": [
+    "00:00",
+    "24:00"
+   ],
+   "rest": [
+    "base:ecbatana_road_station_1183_289",
+    "base:ecbatana_road_farm_1173_286",
+    "base:ecbatana_road_station_1173_282",
+    "base:ecbatana_road_station_1173_266",
+    "base:ecbatana_road_farm_1173_258",
+    "base:ecbatana_road_station_1181_258",
+    "base:ecbatana_road_farm_1185_258",
+    "base:ecbatana_road_station_1193_258",
+    "base:ecbatana_road_farm_1198_243",
+    "base:ecbatana_road_station_1198_241",
+    "base:ecbatana_road_station_1198_227",
+    "base:ecbatana_road_station_1198_211",
+    "base:ecbatana_road_farm_1203_208",
+    "base:ecbatana_road_station_1205_202",
+    "base:ecbatana_road_farm_1205_195",
+    "base:ecbatana_road_station_1205_186",
+    "base:ecbatana_road_station_1199_180",
+    "base:ecbatana_road_farm_1199_173",
+    "base:ecbatana_road_station_1199_158",
+    "base:ecbatana_road_station_1199_146",
+    "base:ecbatana_road_farm_1193_137",
+    "base:ecbatana_road_station_1192_137",
+    "base:ecbatana_road_farm_1189_129",
+    "base:ecbatana_road_station_1189_122",
+    "base:ecbatana_road_farm_1182_107",
+    "base:ecbatana_road_station_1180_107",
+    "base:ecbatana_road_station_1179_89",
+    "base:ecbatana_road_station_1177_78",
+    "base:ecbatana_road_station_1164_78",
+    "base:ecbatana_road_farm_1162_73",
+    "base:ecbatana_road_station_1162_66",
+    "base:ecbatana_road_station_1151_61",
+    "base:ecbatana_road_farm_1147_55",
+    "base:ecbatana_road_station_1137_55",
+    "base:ecbatana_road_station_1134_46",
+    "base:ecbatana_road_station_1125_39",
+    "base:ecbatana_road_farm_1125_35",
+    "base:ecbatana_road_farm_1125_29",
+    "base:ecbatana_road_station_1125_25",
+    "base:ecbatana_road_station_1125_7"
+   ],
+   "offsets": [
+    0.202
+   ]
+  },
+  {
+   "actor": "parsa.caravan_driver",
+   "route": {
+    "start": "base:ecbatana_road_1125_2",
+    "end": "pasargadae:pasargadae_s"
+   },
+   "count": 1,
+   "group": "caravan",
+   "note": "a caravan down from Media to Pasargadae",
+   "by_month": "caravan",
+   "id": "iran_plateau.5",
+   "hours": [
+    "05:00",
+    "19:30"
+   ],
+   "rest": [
+    "base:ecbatana_road_station_1125_7",
+    "base:ecbatana_road_station_1125_25",
+    "base:ecbatana_road_farm_1125_29",
+    "base:ecbatana_road_farm_1125_35",
+    "base:ecbatana_road_station_1125_39",
+    "base:ecbatana_road_station_1134_46",
+    "base:ecbatana_road_station_1137_55",
+    "base:ecbatana_road_farm_1147_55",
+    "base:ecbatana_road_station_1151_61",
+    "base:ecbatana_road_station_1162_66",
+    "base:ecbatana_road_farm_1162_73",
+    "base:ecbatana_road_station_1164_78",
+    "base:ecbatana_road_station_1177_78",
+    "base:ecbatana_road_station_1179_89",
+    "base:ecbatana_road_station_1180_107",
+    "base:ecbatana_road_farm_1182_107",
+    "base:ecbatana_road_station_1189_122",
+    "base:ecbatana_road_farm_1189_129",
+    "base:ecbatana_road_station_1192_137",
+    "base:ecbatana_road_farm_1193_137",
+    "base:ecbatana_road_station_1199_146",
+    "base:ecbatana_road_station_1199_158",
+    "base:ecbatana_road_farm_1199_173",
+    "base:ecbatana_road_station_1199_180",
+    "base:ecbatana_road_station_1205_186",
+    "base:ecbatana_road_farm_1205_195",
+    "base:ecbatana_road_station_1205_202",
+    "base:ecbatana_road_farm_1203_208",
+    "base:ecbatana_road_station_1198_211",
+    "base:ecbatana_road_station_1198_227",
+    "base:ecbatana_road_station_1198_241",
+    "base:ecbatana_road_farm_1198_243",
+    "base:ecbatana_road_station_1193_258",
+    "base:ecbatana_road_farm_1185_258",
+    "base:ecbatana_road_station_1181_258",
+    "base:ecbatana_road_farm_1173_258",
+    "base:ecbatana_road_station_1173_266",
+    "base:ecbatana_road_station_1173_282",
+    "base:ecbatana_road_farm_1173_286",
+    "base:ecbatana_road_station_1183_289"
+   ],
+   "offsets": [
+    0.261
    ]
   }
  ],
@@ -1586,9 +2307,49 @@
   {
    "kind": "pasture",
    "rect": [
-    39,
+    27,
+    158,
+    33,
+    173
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    27,
+    157,
+    33,
+    157
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    34,
+    158,
+    43,
+    173
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    34,
+    157,
+    43,
+    157
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    65,
     124,
-    50,
+    67,
     138
    ],
    "group": "flock"
@@ -1596,9 +2357,9 @@
   {
    "kind": "pasture",
    "rect": [
-    39,
+    66,
     122,
-    50,
+    67,
     123
    ],
    "group": "flock"
@@ -1606,9 +2367,9 @@
   {
    "kind": "pasture",
    "rect": [
-    51,
+    68,
     124,
-    55,
+    81,
     138
    ],
    "group": "flock"
@@ -1616,9 +2377,9 @@
   {
    "kind": "pasture",
    "rect": [
-    51,
+    68,
     122,
-    55,
+    81,
     123
    ],
    "group": "flock"
@@ -1726,7 +2487,7 @@
   {
    "kind": "pasture",
    "rect": [
-    199,
+    187,
     90,
     203,
     99
@@ -1736,8 +2497,8 @@
   {
    "kind": "pasture",
    "rect": [
-    199,
-    83,
+    187,
+    79,
     203,
     89
    ],
@@ -1757,9 +2518,109 @@
    "kind": "pasture",
    "rect": [
     204,
-    83,
-    215,
+    73,
+    220,
     89
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    205,
+    68,
+    220,
+    72
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    221,
+    73,
+    221,
+    84
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    221,
+    68,
+    221,
+    72
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    243,
+    107,
+    254,
+    114
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    243,
+    98,
+    254,
+    106
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    255,
+    107,
+    259,
+    114
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    255,
+    98,
+    259,
+    106
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    278,
+    124,
+    288,
+    125
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    278,
+    109,
+    288,
+    123
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    289,
+    124,
+    294,
+    125
    ],
    "group": "flock"
   },
@@ -1907,6 +2768,214 @@
   }
  ],
  "roles": [
+  {
+   "id": "ploughman",
+   "actor": "parsa.farmer",
+   "name": "Ploughing and sowing",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/world/ploughing.ogg"
+   }
+  },
+  {
+   "id": "reaper",
+   "actor": "parsa.farmer",
+   "name": "Reaping",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "loop": "amb/world/reaping.ogg",
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "pruner",
+   "actor": "parsa.farmer",
+   "name": "Pruning the vines and trees",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "11:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
   {
    "id": "station_keeper",
    "actor": "parsa.groom",
@@ -2088,6 +3157,67 @@
    }
   },
   {
+   "id": "beacon_keeper",
+   "actor": "parsa.guard_spear",
+   "name": "Beacon keeper",
+   "schedule": [
+    {
+     "hours": [
+      "17:00",
+      "06:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.beacon",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
    "id": "shepherd",
    "actor": "parsa.shepherd",
    "name": "Shepherd",
@@ -2190,6 +3320,144 @@
        "dur": [
         20,
         40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "farmer",
+   "actor": "parsa.farmer",
+   "name": "Farmer",
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:30",
+      "18:30"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "18:30",
+      "21:00"
+     ],
+     "routine": "evening"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "evening": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        80
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/sickle.wav"
+   }
+  },
+  {
+   "id": "yard_donkey",
+   "actor": "world.donkey",
+   "name": "Donkey in the yard",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "stand"
+    }
+   ],
+   "routines": {
+    "stand": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "parsa.p_house_small",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        30,
+        60
        ]
       }
      ]
@@ -2304,6 +3572,72 @@
  "lights": {
   "version": 1,
   "profiles": {
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "door_lamp": {
+    "kind": "door",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "23:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "signal_watch": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.2,
+    "strength": 0.6,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
    "station_lamp": {
     "kind": "lamp",
     "kelvin": 2000,
@@ -2325,13 +3659,350 @@
      ]
     ],
     "rain": "sheltered"
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "22:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
+   },
+   "window_late": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.5,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "01:30"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "window_predawn": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.4,
+    "strength": 0.45,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "04:00",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
    }
   }
  },
  "light_points": [
   [
+   239,
+   69,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   201,
+   70,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   185,
+   75,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   145,
+   76,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   226,
+   77,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   163,
+   78,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   246,
+   79,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   157,
+   81,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   179,
+   81,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   210,
+   82,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   240,
+   82,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   139,
+   83,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   148,
+   83,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   192,
+   83,
+   "parsa.p_house_small",
+   "window_late"
+  ],
+  [
+   254,
+   84,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
    295,
    84,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   133,
+   85,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   121,
+   86,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   148,
+   88,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   245,
+   90,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   114,
+   94,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   290,
+   94,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   254,
+   96,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   74,
+   100,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   88,
+   101,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   106,
+   101,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   251,
+   102,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   247,
+   105,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   265,
+   107,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   281,
+   107,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   65,
+   113,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   74,
+   113,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   86,
+   114,
+   "parsa.p_house_small",
+   "window_predawn"
+  ],
+  [
+   84,
+   117,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   75,
+   119,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   60,
+   124,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   44,
+   128,
+   "parsa.p_house_small",
+   "window_late"
+  ],
+  [
+   69,
+   129,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   76,
+   129,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   40,
+   131,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   56,
+   140,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   45,
+   141,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   24,
+   150,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   6,
+   155,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   38,
+   155,
    "world.royal_station",
    "station_lamp"
   ]

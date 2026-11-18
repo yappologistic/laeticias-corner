@@ -800,7 +800,8 @@ def _tripylon_landmark():
     cols = {(2, 2), (2, 4), (5, 2), (5, 4)}
     walk = [t for t in tiles(1, 6, 1, 5) if t not in cols] + [(0, 3), (7, 3), (3, 0), (4, 0)]
     return Landmark((8, 7), (0, 76), ref("tripylon"), walk=walk,
-                    slots={"guard": [{"t": [-1, 2], "face": "-x"}, {"t": [-1, 4], "face": "-x"}]}, district=2)
+                    # The guards flank the north door inside the hall: outside it the stair stands.
+                    slots={"guard": [{"t": [1, 2], "face": "-x"}, {"t": [1, 4], "face": "-x"}]}, district=2)
 
 
 # ---------------------------------------------------------------- the Hall of a Hundred Columns

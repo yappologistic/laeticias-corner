@@ -40,15 +40,15 @@
     {
      "file": "amb/world/road.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
      "file": "amb/world/desert_night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
@@ -56,7 +56,28 @@
     {
      "item": "parsa.p_threshing",
      "file": "amb/world/threshing.ogg",
-     "when": "worked"
+     "when": "worked",
+     "hours": [
+      "08:00",
+      "17:00"
+     ],
+     "months": [
+      "jun",
+      "jul"
+     ]
+    },
+    {
+     "item": "parsa.p_threshing",
+     "file": "amb/world/winnowing.ogg",
+     "when": "worked",
+     "hours": [
+      "10:00",
+      "18:00"
+     ],
+     "months": [
+      "jul",
+      "aug"
+     ]
     },
     {
      "item": "world.beacon",
@@ -64,9 +85,174 @@
      "when": "lit"
     },
     {
+     "item": "world.sheepfold",
+     "file": "amb/world/flock.ogg",
+     "when": "worked",
+     "hours": [
+      "17:00",
+      "21:00"
+     ]
+    },
+    {
      "item": "world.watchtower",
      "file": "amb/world/brazier.ogg",
      "when": "lit"
+    }
+   ],
+   "zones": [
+    {
+     "rect": [
+      5,
+      233,
+      21,
+      249
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      37,
+      300,
+      53,
+      316
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      88,
+      219,
+      104,
+      235
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      109,
+      290,
+      125,
+      306
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      150,
+      318,
+      166,
+      334
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      157,
+      370,
+      173,
+      386
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      203,
+      268,
+      219,
+      284
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      211,
+      347,
+      249,
+      386
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      232,
+      222,
+      248,
+      237
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      233,
+      279,
+      249,
+      295
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      245,
+      405,
+      261,
+      419
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
     }
    ]
   },
@@ -229,7 +415,8 @@
     "nightfall": "sfx/parsa/sting_nightfall.wav",
     "storm_clear": "sfx/parsa/sting_storm_clear.wav",
     "rainbow": "sfx/parsa/sting_rainbow.wav",
-    "first_snow": "sfx/parsa/sting_first_snow.wav"
+    "first_snow": "sfx/parsa/sting_first_snow.wav",
+    "season": "sfx/parsa/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -279,6 +466,69 @@
       "07:00",
       "18:00"
      ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/wolves_far.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "dec",
+      "jan",
+      "feb"
+     ]
+    },
+    {
+     "file": "sfx/world/dog_far.wav",
+     "hours": [
+      "21:00",
+      "04:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
     }
    ],
    "voices": {
@@ -314,7 +564,37 @@
      "sfx/world/stork_clatter.wav"
     ]
    },
-   "waterfall": "waterfall"
+   "waterfall": "waterfall",
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_east.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
+   }
   },
   "look": {
    "phases": {
@@ -749,7 +1029,7 @@
    "area": "road",
    "sound": {
     "surfaces": {
-     "stone": 1.0
+     "stone": 0.55
     },
     "wind": "wind.street",
     "exposure": 1.0,
@@ -1066,7 +1346,7 @@
    "area": "wild",
    "sound": {
     "surfaces": {
-     "leaves": 0.04,
+     "leaves": 0.05,
      "water": 0.08
     },
     "wind": "wind.open",
@@ -1188,10 +1468,10 @@
    "name": "Pastures",
    "sound": {
     "surfaces": {
-     "roof": 0.02
+     "roof": 0.05
     },
     "wind": "wind.open",
-    "exposure": 0.98,
+    "exposure": 0.96,
     "steps": {
      "surface": "earth",
      "files": [
@@ -1855,7 +2135,10 @@
     }
    ],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/heat.ogg",
+    "gain": 0.4
+   }
   },
   {
    "id": "turn_autumn_cranes_overhead",
@@ -1909,7 +2192,10 @@
    "show": "weather",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.5
+   }
   },
   {
    "id": "shearing",
@@ -2165,8 +2451,8 @@
    "group": "drove",
    "count": 1,
    "route": {
-    "start": "base:royal_road_farm_930_141",
-    "end": "base:royal_road_station_1058_265"
+    "start": "base:fold_866_251",
+    "end": "base:fold_1038_11"
    },
    "when": {
     "months": [
@@ -2181,6 +2467,19 @@
     "18:00"
    ],
    "rest": [
+    "sardis:paktolos",
+    "base:royal_road_station_896_212",
+    "base:royal_road_farm_901_213",
+    "base:royal_road_station_902_205",
+    "base:royal_road_station_902_193",
+    "base:royal_road_farm_896_189",
+    "base:royal_road_station_896_187",
+    "base:royal_road_farm_896_179",
+    "base:royal_road_station_905_178",
+    "base:royal_road_station_912_169",
+    "base:royal_road_farm_912_165",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
     "base:royal_road_farm_930_141",
     "base:royal_road_station_932_141",
     "base:royal_road_farm_942_141",
@@ -2204,9 +2503,7 @@
     "base:royal_road_station_1033_226",
     "base:royal_road_station_1040_233",
     "base:royal_road_farm_1040_245",
-    "base:royal_road_station_1041_250",
-    "base:royal_road_station_1050_253",
-    "base:royal_road_station_1058_265"
+    "base:royal_road_station_1041_250"
    ],
    "offsets": [
     0.146
@@ -3266,7 +3563,7 @@
    "rect": [
     211,
     362,
-    220,
+    219,
     363
    ],
    "group": "flock"
@@ -3305,7 +3602,7 @@
    "kind": "pasture",
    "rect": [
     232,
-    226,
+    227,
     237,
     237
    ],
@@ -3942,7 +4239,7 @@
     }
    },
    "sound": {
-    "oneshot": "sfx/world/sickle.wav"
+    "loop": "amb/world/ploughing.ogg"
    }
   },
   {
@@ -4011,6 +4308,7 @@
     }
    },
    "sound": {
+    "loop": "amb/world/reaping.ogg",
     "oneshot": "sfx/world/sickle.wav"
    }
   },

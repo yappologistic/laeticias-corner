@@ -40,19 +40,30 @@
     {
      "file": "amb/world/fields.ogg",
      "hours": [
-      "06:00",
-      "19:00"
+      "05:30",
+      "19:30"
      ]
     },
     {
      "file": "amb/world/desert_night.ogg",
      "hours": [
-      "19:00",
-      "06:00"
+      "19:30",
+      "05:30"
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "world.beacon",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
+     "item": "world.watchtower",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -214,7 +225,8 @@
     "nightfall": "sfx/parsa/sting_nightfall.wav",
     "storm_clear": "sfx/parsa/sting_storm_clear.wav",
     "rainbow": "sfx/parsa/sting_rainbow.wav",
-    "first_snow": "sfx/parsa/sting_first_snow.wav"
+    "first_snow": "sfx/parsa/sting_first_snow.wav",
+    "season": "sfx/parsa/sting_season.wav"
    },
    "wind": "wind.open",
    "weather": [
@@ -252,12 +264,14 @@
    "calls": [
     {
      "file": "sfx/world/cuckoo.wav",
-     "seasons": [
-      "spring"
-     ],
      "hours": [
       "06:00",
       "11:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may"
      ]
     },
     {
@@ -265,6 +279,64 @@
      "hours": [
       "07:00",
       "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/lark.wav",
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_tawny.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ]
+    },
+    {
+     "file": "sfx/world/owl_scops.wav",
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "months": [
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep"
+     ]
+    },
+    {
+     "file": "sfx/world/cart_pass.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_call.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
      ]
     }
    ],
@@ -285,6 +357,36 @@
      "sfx/world/crow_1.wav",
      "sfx/world/crow_2.wav"
     ]
+   },
+   "nature_seasons": {
+    "spring": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "summer": {
+     "dawn": "amb/world/dawn_scrub.ogg",
+     "dusk": "amb/world/dusk_town.ogg",
+     "night": "amb/world/night_scrub.ogg",
+     "day": ""
+    },
+    "autumn": {
+     "dawn": "amb/world/dawn_autumn.ogg",
+     "dusk": "amb/world/dusk_autumn.ogg",
+     "night": "amb/world/night_autumn.ogg",
+     "day": ""
+    },
+    "winter": {
+     "dawn": "amb/world/dawn_winter.ogg",
+     "dusk": "amb/world/dusk_winter.ogg",
+     "night": "amb/world/night_cold.ogg",
+     "day": ""
+    }
+   },
+   "nature_snow": {
+    "day": "amb/world/day_snow.ogg",
+    "night": "amb/world/night_snow.ogg"
    }
   },
   "look": {
@@ -617,6 +719,44 @@
     "body": "#3f7fa0",
     "reflect": true,
     "sea_state": 0
+   },
+   "lights": {
+    "world.beacon": {
+     "kind": "beacon",
+     "colour": "#ffa04a",
+     "radius": 4.0,
+     "flicker": {
+      "breathe": [
+       0.8,
+       1.6
+      ],
+      "depth": 0.15
+     }
+    },
+    "world.royal_station": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    },
+    "world.watchtower": {
+     "kind": "beacon",
+     "colour": "#ffa04a",
+     "radius": 4.0,
+     "flicker": {
+      "breathe": [
+       0.8,
+       1.6
+      ],
+      "depth": 0.15
+     }
+    }
    }
   }
  },
@@ -674,6 +814,11 @@
      ],
      "hooves": [
       "sfx/world/hoof.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
      ]
     },
     "cart": "amb/world/cart.ogg",
@@ -727,6 +872,44 @@
      }
     },
     {
+     "role": "station_keeper",
+     "per_item": "world.royal_station",
+     "count": 1,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "station_guest",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always",
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "relay_animal",
+     "per_item": "world.royal_station",
+     "count": 0.7,
+     "density": "always"
+    },
+    {
+     "role": "watchman",
+     "per_item": "world.watchtower",
+     "count": 1,
+     "density": "always"
+    },
+    {
+     "role": "beacon_keeper",
+     "per_item": "world.beacon",
+     "count": 1,
+     "density": "always"
+    },
+    {
      "role": "woodcutter",
      "per_item": "world.t_cedar",
      "count": 0.012,
@@ -774,10 +957,10 @@
    "area": "wild",
    "sound": {
     "surfaces": {
-     "leaves": 0.05
+     "leaves": 0.04
     },
     "wind": "wind.open",
-    "exposure": 1.0,
+    "exposure": 0.99,
     "steps": {
      "surface": "earth",
      "files": [
@@ -820,7 +1003,7 @@
     "wind": "wind.sea",
     "exposure": 1.0,
     "water": {
-     "family": "sea.coast"
+     "family": "sea.rocks"
     },
     "steps": {
      "surface": "earth",
@@ -832,6 +1015,11 @@
      "hooves": [
       "sfx/world/hoof_earth_1.wav",
       "sfx/world/hoof_earth_2.wav"
+     ],
+     "decks": [
+      "sfx/world/step_timber_1.wav",
+      "sfx/world/step_timber_2.wav",
+      "sfx/world/step_timber_3.wav"
      ]
     },
     "cart": "amb/world/cart_earth.ogg"
@@ -1175,7 +1363,7 @@
    "show": "emitter",
    "steps": [],
    "string": "season_turn.summer",
-   "sfx": "sfx/world/swifts.wav"
+   "sfx": "sfx/world/cicada_start.wav"
   },
   {
    "id": "turn_autumn_vintage_begins",
@@ -1198,7 +1386,7 @@
    "steps": [],
    "string": "season_turn.autumn",
    "ambience": {
-    "file": "amb/world/press.ogg",
+    "file": "amb/world/vintage.ogg",
     "gain": 0.6
    }
   },
@@ -1247,7 +1435,10 @@
    "show": "weather",
    "steps": [],
    "string": "season_turn.winter",
-   "sfx": "sfx/world/seam.wav"
+   "ambience": {
+    "file": "amb/world/snow.ogg",
+    "gain": 0.5
+   }
   },
   {
    "id": "cedar_hauling",
@@ -1345,7 +1536,11 @@
    ],
    "zone": "land",
    "string": "levant_harvest",
-   "sfx": "sfx/world/sickle.wav"
+   "sfx": "sfx/world/sickle.wav",
+   "ambience": {
+    "file": "amb/world/reaping.ogg",
+    "gain": 0.75
+   }
   },
   {
    "id": "levant_vintage",
@@ -1434,7 +1629,7 @@
  "lanes_tokens": [
   {
    "actor": "world.fishing_boat",
-   "lane": "base:levant",
+   "lane": "base:cilician_harbour_harbour_fishing",
    "count": 2,
    "by_month": [
     0.7,
@@ -1456,12 +1651,85 @@
     "11:00"
    ],
    "rest": [
-    "cilicia",
-    "sidon"
+    "home",
+    "grounds"
    ],
    "offsets": [
     0.034,
     0.498
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "base:cilician_harbour_harbour_fishing",
+   "count": 1,
+   "hours": [
+    "20:30",
+    "03:30"
+   ],
+   "when": {
+    "months": [
+     "may",
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "note": "fishing by torchlight on calm summer nights",
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "east_med.1",
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.996
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "base:levant",
+   "count": 2,
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "east_med.2",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "cilicia",
+    "sidon"
+   ],
+   "offsets": [
+    0.064,
+    0.497
    ]
   },
   {
@@ -1474,7 +1742,7 @@
    "group": "caravan",
    "note": "a caravan with Phoenician goods (glass, purple cloth, cedar) bound for Babylon",
    "by_month": "caravan",
-   "id": "east_med.1",
+   "id": "east_med.3",
    "hours": [
     "05:00",
     "19:30"
@@ -1512,7 +1780,7 @@
     "babylon:etemenanki_court"
    ],
    "offsets": [
-    0.996
+    0.149
    ]
   },
   {
@@ -1525,7 +1793,7 @@
    "group": "del_arabs",
    "note": "Arabs with dromedaries bringing frankincense, a gift Herodotus says they gave each year (3.97)",
    "by_month": "caravan",
-   "id": "east_med.2",
+   "id": "east_med.4",
    "hours": [
     "05:00",
     "19:30"
@@ -1563,7 +1831,7 @@
     "babylon:etemenanki_court"
    ],
    "offsets": [
-    0.129
+    0.807
    ]
   },
   {
@@ -1576,7 +1844,7 @@
    "carry": "world.goods_logs",
    "note": "cedar from the mountains carted down to Sidon's ship-sheds",
    "by_month": "road",
-   "id": "east_med.3",
+   "id": "east_med.5",
    "hours": [
     "05:00",
     "19:30"
@@ -1585,7 +1853,7 @@
     "sidon:sidon_quay"
    ],
    "offsets": [
-    0.149
+    0.262
    ]
   },
   {
@@ -1598,19 +1866,30 @@
    ],
    "note": "Phoenician ships of Sidon along the coast",
    "by_month": "sailing",
-   "id": "east_med.4",
+   "id": "east_med.6",
    "rest": [
     "cilicia",
     "sidon"
    ],
    "offsets": [
-    0.936,
-    0.33,
-    0.675
+    0.08,
+    0.224,
+    0.732
    ]
   }
  ],
- "zones": [],
+ "zones": [
+  {
+   "kind": "fishing",
+   "rect": [
+    292,
+    282,
+    296,
+    286
+   ],
+   "lane": "base:cilician_harbour_harbour_fishing"
+  }
+ ],
  "cards": {},
  "strings": {
   "season_turn.spring": "The swallows are back under the eaves.",
@@ -1669,6 +1948,346 @@
   }
  ],
  "roles": [
+  {
+   "id": "station_keeper",
+   "actor": "parsa.groom",
+   "name": "Station keeper",
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "21:00"
+     ],
+     "routine": "tend"
+    },
+    {
+     "hours": [
+      "21:00",
+      "05:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "tend": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "stir",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    },
+    "watch": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "station_guest",
+   "actor": "world.traveller",
+   "name": "Traveller resting at the station",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "rest"
+    }
+   ],
+   "routines": {
+    "rest": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "until": {
+        "hour": "05:30"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "relay_animal",
+   "actor": "parsa.nisaean_horse",
+   "name": "Relay horse",
+   "schedule": [
+    {
+     "hours": [
+      "00:00",
+      "24:00"
+     ],
+     "routine": "graze"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.royal_station",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "watchman",
+   "actor": "parsa.guard_spear",
+   "name": "Watchman on the tower",
+   "schedule": [
+    {
+     "hours": [
+      "18:00",
+      "07:00"
+     ],
+     "routine": "watch"
+    },
+    {
+     "hours": [
+      "07:00",
+      "18:00"
+     ],
+     "routine": "day"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    },
+    "day": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.watchtower",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
+  {
+   "id": "beacon_keeper",
+   "actor": "parsa.guard_spear",
+   "name": "Beacon keeper",
+   "schedule": [
+    {
+     "hours": [
+      "17:00",
+      "06:00"
+     ],
+     "routine": "watch"
+    }
+   ],
+   "routines": {
+    "watch": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.beacon",
+        "spot": "beside",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        60,
+        120
+       ]
+      },
+      {
+       "wander": {
+        "radius": 2
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "guard",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "carries": {
+    "light": "carried_torch",
+    "prop": "torch"
+   }
+  },
   {
    "id": "woodcutter",
    "actor": "world.logger",
@@ -1886,5 +2505,120 @@
     "oct"
    ]
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "carried_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.6,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "signal_watch": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.2,
+    "strength": 0.6,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "watch_fire": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   }
+  }
+ },
+ "light_points": [
+  [
+   285,
+   296,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ],
+  [
+   293,
+   308,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   288,
+   311,
+   "world.royal_station",
+   "station_lamp"
+  ]
  ]
 }

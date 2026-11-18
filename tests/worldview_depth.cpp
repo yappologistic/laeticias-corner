@@ -19,6 +19,7 @@ using namespace lc::worldview;
 namespace {
 
 constexpr Iso kIso{32, 16};
+constexpr FRect kEverywhere{-1e9f, -1e9f, 1e9f, 1e9f}; // a view that culls nothing
 
 // The screen box of a footprint extruded `height` px up, as an item sprite covers it.
 FRect boxOf(FRect f, float height) {
@@ -170,9 +171,7 @@ TEST_CASE("depth: actors merge into the static order behind and in front of what
         const std::vector<MergeActor> actors = crowd(items, seed * 7, 120, 3);
         ActorMerge m;
         m.index(items, order, 64.0f);
-        m.plan(
-            items, actors, [](std::uint32_t, std::uint32_t) { return 0; },
-            [](std::uint32_t) { return true; });
+        m.plan(items, actors, [](std::uint32_t, std::uint32_t) { return 0; }, kEverywhere);
         const Merged s = merged(items, order, m);
         REQUIRE(s.seq.size() == items.size() + actors.size());
         std::vector<std::size_t> atS(items.size()), atA(actors.size());
@@ -229,8 +228,7 @@ TEST_CASE("depth: an actor on a floor goes after it, under a roof before it") {
     std::vector<MergeActor> actors{
         {{1.8f, 1.8f, 2.2f, 2.2f}, {a.x - 8, a.y - 40, a.x + 8, a.y}, 1}};
     m.plan(
-        items, actors, [](std::uint32_t e, std::uint32_t) { return e == 0 ? -1 : 1; },
-        [](std::uint32_t) { return true; });
+        items, actors, [](std::uint32_t e, std::uint32_t) { return e == 0 ? -1 : 1; }, kEverywhere);
     CHECK(m.before(0).empty());
     REQUIRE(m.before(1).size() == 1);
     CHECK(m.before(2).empty());

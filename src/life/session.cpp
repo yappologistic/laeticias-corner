@@ -418,6 +418,11 @@ int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& 
                 b.ok = false;
                 b.why = "enumeration over 0.25 ms";
             }
+            // Every case is a city's crowd: one that measured an empty view measured nothing.
+            if (b.liveMax < tuning::life::kBenchCrowdMin) {
+                b.ok = false;
+                b.why = "the view held no crowd";
+            }
         }
         (void)std::printf(
             "%-46s %5.3f/%5.3f/%5.3f/%5.2f   %5.3f/%5.3f/%5.3f %6.3f/%5.3f  %4d/%4d/%4d "
@@ -453,6 +458,7 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
     std::vector<DrawActor> buf(2048);
     double worst = 0;
     long inPlace = 0; // actor-seconds drawn walking on the spot, or stuck past the watchdog
+    int mostLive = 0;
     const long unstuck0 = city.stats().unstuck;
     for (long k = 0; k < steps; ++k) {
         // The clock at play speed; a calendar day every 50 s so the soak crosses the seasons.
@@ -480,6 +486,7 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
         worst = std::max(worst, ms);
         if (k % 4 == 0) (void)city.gather(city.view(), 0.5f, buf);
         if (k % 60 == 30) inPlace += city.stats().marching + city.stats().lost;
+        mostLive = std::max(mostLive, city.stats().live);
         if (k == steps / 4) {
             quarterRss = rssMb();
             quarterBytes = city.memoryBytes();
@@ -498,6 +505,11 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
     int rc = 0;
     if (inPlace > 0) {
         (void)std::printf("life soak: FAIL people walking in place\n");
+        rc = 3;
+    }
+    // The roam crosses three city centres: a run that met nobody measured nothing.
+    if (mostLive < tuning::life::kBenchCrowdMin) {
+        (void)std::printf("life soak: FAIL the roam met no crowd (at most %d live)\n", mostLive);
         rc = 3;
     }
     if (endRss > quarterRss + tuning::kSoakGrowthMiB || endBytes > quarterBytes) {

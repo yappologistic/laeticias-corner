@@ -783,7 +783,8 @@
    "states": {
     "fresh": 163,
     "dry": 164,
-    "dormant": 165
+    "dormant": 165,
+    "turn": 186
    }
   },
   {
@@ -2084,7 +2085,8 @@
    "states": {
     "fresh": 167,
     "dry": 168,
-    "dormant": 169
+    "dormant": 169,
+    "turn": 187
    }
   },
   {
@@ -2693,7 +2695,8 @@
    "states": {
     "fresh": 171,
     "dry": 172,
-    "dormant": 173
+    "dormant": 173,
+    "turn": 188
    }
   },
   {
@@ -2830,7 +2833,8 @@
    "states": {
     "fresh": 175,
     "dry": 176,
-    "dormant": 177
+    "dormant": 177,
+    "turn": 189
    }
   },
   {
@@ -3731,7 +3735,8 @@
    "states": {
     "fresh": 179,
     "dry": 180,
-    "dormant": 181
+    "dormant": 181,
+    "turn": 190
    }
   },
   {
@@ -4148,7 +4153,8 @@
    "states": {
     "fresh": 183,
     "dry": 184,
-    "dormant": 185
+    "dormant": 185,
+    "turn": 191
    }
   },
   {
@@ -4794,6 +4800,176 @@
     0.6927,
     0.7658,
     0.8323
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 186,
+   "name": "grass@turn",
+   "state_of": "grass",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.4131,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 187,
+   "name": "summer@turn",
+   "state_of": "summer",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.8961
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 188,
+   "name": "steppe@turn",
+   "state_of": "steppe",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 189,
+   "name": "pal.leaf@turn",
+   "state_of": "pal.leaf",
+   "state": "turn",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#78303b",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.3125,
+    0.4131,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 190,
+   "name": "pal.summer@turn",
+   "state_of": "pal.summer",
+   "state": "turn",
+   "steps": 4,
+   "colours": [
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "grass",
+   "shell": 6,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true
+  },
+  {
+   "id": 191,
+   "name": "pal.steppe@turn",
+   "state_of": "pal.steppe",
+   "state": "turn",
+   "steps": 5,
+   "colours": [
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.7986
    ],
    "class": "grass",
    "shell": 6,

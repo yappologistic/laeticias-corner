@@ -191,11 +191,25 @@ facings negate `x`) and, for actors whose frames hold something alight, `glow_at
 centre per frame) beside their `…/glow/f<n>` frames. Carried lights are `prop/<set>.<lamp|torch|
 lantern>/f<n>` with `…/glow/f<n>`, anchored at the grip, listed in the set catalog's `art.props`.
 
+**Geometry for the draw order** (`docs/design/draw-order.md` §1.2, §3.4, §5.1), per item and
+look in `<set>.geom.json`: `tops` (rows by `dy`, one value per footprint tile: the highest solid
+voxel in px above the anchor's ground; a walk tile gives its floor), `roof` (`{"dx,dy": px}`:
+over a walk tile, the top of what stands above the walker's headroom) and `under` (per piece of
+an item with `pieces`, the most room under it on its walk and water tiles: a deck's underside
+between the piers, an arch's crown; 0 for solid pieces; one value for an unsplit walkable kit
+crossing). Kit items with walk tiles (the relay station, the sheepfold, the
+aqueduct's arches) are cut into `pieces` like landmarks: walk tiles in runs of their own,
+sprites `item/<id>/base/<look>/p<i>/f0` beside the whole sprite.
+
 **Checks** (`datavalidate.py`, run by `validate.py` and `setvalidate.py`): the ramp table is well
 formed and its ids stable against the committed one; every page has its packed twin of the same
 size; no coloured pixel without data, no data outside a sprite or on a transparent pixel, ramp
 and step inside the table, every decoded colour equal to the pixel's, normals on the unit sphere
 within half a code, the snow bit only on snow ramps with `nz > 0.55`, heights consistent with
 where each pixel sits on screen for its item's footprint (items, ground, people, carts); the
-shadow page holds every shadow sprite at half size. `datapreview.py` draws preview scenes from
+shadow page holds every shadow sprite at half size; for the draw order, every pixel's height
+and screen place put it on one of its own piece's tiles (heights right at seams), walk floors
+stand at `walk_z`, stair treads rise toward `climb`, and the rules P1–P3, W2–W4, S1 and O1 of
+draw-order.md §5.1 hold (fixtures from the audit: `tests/test_datavalidate.py`, run as
+`tools/artgen/.venv/bin/python tools/artgen/tests/test_datavalidate.py`). `datapreview.py` draws preview scenes from
 the packed pages (normals, heights, classes, sun and snow bits, autumn and winter by ramp swap).

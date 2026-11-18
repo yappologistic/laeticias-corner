@@ -371,6 +371,9 @@ def main(argv=None) -> int:
     ap.add_argument("--before", metavar="DIR",
                     help="with --alive: region files to compare against (a copy of an older "
                          "assets/regions)")
+    ap.add_argument("--sounds", action="store_true",
+                    help="what every region plays by season, day and night, and the audio files "
+                         "no region uses (out/worldgen/sounds.md)")
     ap.add_argument("--seasons", action="store_true",
                     help="write the catalogs' seasonal fields, the world's flood ranks and ground "
                          "classes, and the season needs file")
@@ -407,6 +410,10 @@ def main(argv=None) -> int:
             write_needs(b, world)
         if not a.city and not a.life and not targets_named(a):
             return 0
+    if a.sounds:
+        from . import soundreport
+        print(f"sounds: {soundreport.run(b)}")
+        return 0
     if a.alive:
         from . import alive
         return 0 if alive.run(b, Path(a.before) if a.before else None) else 1

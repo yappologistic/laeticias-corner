@@ -38,18 +38,7 @@
   "ambience": {
    "beds": [
     {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "06:00",
-      "19:00"
-     ]
-    },
-    {
-     "file": "amb/world/sea.ogg",
-     "hours": [
-      "19:00",
-      "06:00"
-     ]
+     "file": "amb/world/sea.ogg"
     }
    ],
    "loops": []
@@ -158,7 +147,8 @@
     "sunrise": "sfx/athens/sting_sunrise.wav",
     "nightfall": "sfx/athens/sting_nightfall.wav",
     "storm_clear": "sfx/athens/sting_storm_clear.wav",
-    "rainbow": "sfx/athens/sting_rainbow.wav"
+    "rainbow": "sfx/athens/sting_rainbow.wav",
+    "season": "sfx/athens/sting_season.wav"
    },
    "wind": "wind.sea",
    "weather": [],
@@ -197,6 +187,30 @@
      "hours": [
       "06:00",
       "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/gull_3.wav",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "sfx/world/sail_flap.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ],
+     "months": [
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct"
      ]
     }
    ],
@@ -534,7 +548,7 @@
     "wind": "wind.sea",
     "exposure": 1.0,
     "water": {
-     "family": "sea.coast"
+     "family": "sea.rocks"
     },
     "steps": {
      "surface": "earth",
@@ -1165,6 +1179,79 @@
    ]
   },
   {
+   "actor": "world.fishing_boat",
+   "lane": "base:hellespont_fishing",
+   "count": 2,
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "aegean.2",
+   "hours": [
+    "03:30",
+    "11:00"
+   ],
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.153,
+    0.409
+   ]
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "base:hellespont_fishing",
+   "count": 1,
+   "hours": [
+    "20:30",
+    "03:30"
+   ],
+   "when": {
+    "months": [
+     "may",
+     "jun",
+     "jul",
+     "aug",
+     "sep"
+    ]
+   },
+   "note": "fishing by torchlight on calm summer nights",
+   "by_month": [
+    0.7,
+    0.8,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.9,
+    0.7,
+    0.5,
+    0.5,
+    0.6
+   ],
+   "id": "aegean.3",
+   "rest": [
+    "home",
+    "grounds"
+   ],
+   "offsets": [
+    0.096
+   ]
+  },
+  {
    "actor": "athens.merchant",
    "lane": "base:aegean_delos",
    "count": 2,
@@ -1174,15 +1261,15 @@
    ],
    "note": "ships for Delos and Ephesus, island to island",
    "by_month": "sailing",
-   "id": "aegean.2",
+   "id": "aegean.4",
    "rest": [
     "piraeus",
     "delos",
     "ephesus"
    ],
    "offsets": [
-    0.153,
-    0.409
+    0.892,
+    0.37
    ]
   },
   {
@@ -1200,14 +1287,14 @@
    },
    "note": "the sacred ship carrying Athens' delegation to Apollo's festival on Delos",
    "by_month": "sailing",
-   "id": "aegean.3",
+   "id": "aegean.5",
    "rest": [
     "piraeus",
     "delos",
     "ephesus"
    ],
    "offsets": [
-    0.096
+    0.729
    ]
   },
   {
@@ -1221,16 +1308,16 @@
    ],
    "note": "grain ships from the Black Sea through the Hellespont for Piraeus",
    "by_month": "grain",
-   "id": "aegean.4",
+   "id": "aegean.6",
    "rest": [
     "piraeus",
     "hellespont"
    ],
    "offsets": [
-    0.946,
-    0.185,
-    0.494,
-    0.685
+    0.947,
+    0.175,
+    0.543,
+    0.692
    ]
   }
  ],
@@ -1244,6 +1331,16 @@
     522
    ],
    "lane": "base:mesogeia_road_harbour_fishing"
+  },
+  {
+   "kind": "fishing",
+   "rect": [
+    121,
+    458,
+    125,
+    462
+   ],
+   "lane": "base:hellespont_fishing"
   }
  ],
  "cards": {},

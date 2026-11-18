@@ -460,6 +460,7 @@ private:
     std::vector<double> chunkSeen_;
     std::vector<std::uint32_t> activeChunks_;
     bool dirty_ = true;
+    bool moved_ = false; // the area slid within its chunks since the last reconciliation
     float forcedScale_ = 0;
     int liveCap_ = tuning::life::kLiveCap;
     float scale_ = 1;

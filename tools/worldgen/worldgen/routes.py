@@ -335,7 +335,9 @@ def way_split(W, g, way: Way, path, marks, levels, taken) -> None:
                 W.blocked |= rect_mask(rect)
     way.path = path
     water = W.river | ~W.land
-    keep = set(marks) | {i for i, t in enumerate(path) if t in taken}
+    # No ramp on a junction, nor on a tile an earlier road already paves (its walkers would meet
+    # the flight's side).
+    keep = set(marks) | {i for i, t in enumerate(path) if t in taken or W.road[t[1], t[0]]}
     fixed = dict(levels)
     for i in (0, len(path) - 1):
         if path[i] in taken:
@@ -786,7 +788,8 @@ def kit(W: World, g: Graph, ways: list[Way]) -> None:
                 if i in way.skip or not (2 <= way.near_town[i] <= within):
                     continue
                 item = items[0] if (i // 2) % 4 else items[-1]
-                if place_beside(W, way, i, 1 if (i // 2) % 2 else -1, item):
+                s = 1 if (i // 2) % 2 else -1
+                if place_beside(W, way, i, s, item) or place_beside(W, way, i, -s, item):
                     W.stats["graves"] = W.stats.get("graves", 0) + 1
         # Terrace walls where a Greek road runs along a slope.
         if st.get("slope_wall"):
@@ -903,6 +906,17 @@ YARD_SPOTS = {5: [(0, -3, "south"), (0, 3, "north"), (-3, 0, "east"), (3, 0, "we
               3: [(0, -2, "south"), (0, 2, "north"), (-2, 0, "east"), (2, 0, "west")]}
 
 
+def region_set(W: World, c: int, r: int, which=None) -> str:
+    """The set of the region a tile belongs to (`which`: W.reg by default, or W.stretch)."""
+    m = W.reg if which is None else which
+    k = int(m[r, c])
+    return P.REGIONS[W.names[k]][1] if k >= 0 else "world"
+
+
+def region_sets(W: World, tiles) -> set[str]:
+    return {region_set(W, x, y) for x, y in tiles}
+
+
 def hamlet(W: World, g: Graph, way: Way, i: int, side: int, fam: str,
            lengths: tuple | None = None) -> bool:
     """A yard off the road with farm kit around it, a track (of the first of `lengths` that
@@ -920,6 +934,8 @@ def hamlet(W: World, g: Graph, way: Way, i: int, side: int, fam: str,
         track = [(x0 + nx * k, y0 + ny * k) for k in range(0, length_)]
         if not all(free_tile(W, x, y) for x, y in track + area):
             continue
+        if region_sets(W, track + area) != {region_set(W, *way.path[i], W.stretch)}:
+            continue   # its kit and track belong to the set of the region it stands in
         if any(abs(int(L.LV[y, x]) - way.z[i]) > 2 for x, y in track):
             continue   # a long track stays on the bench the road runs on
         # The farm stands at the road's level: only where the ground is near it already.
@@ -1063,7 +1079,7 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
                 while run < 6 and 0 <= y + sy * (run + 1) < ROWS and 0 <= x + sx * (run + 1) < COLS \
                         and sea[y + sy * (run + 1), x + sx * (run + 1)]:
                     run += 1
-                if run >= 4:
+                if run >= 4 and not cliff_beside(W, x, y, sx, sy, min(4 if mole else 3, run - 1)):
                     key = (abs(dc) + abs(dr), dc, dr, sx, sy)
                     if best is None or key < best[0]:
                         best = (key, x, y, sx, sy, run)
@@ -1079,7 +1095,10 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
             L.items.append(p)
             L.OCC[ty, tx] = p.index
     if mole:
-        for dx, dy in ((sy, sx), (-sy, -sx), (-sx, -sy)):
+        # The beacon beside the mole's root, else on the strand within three tiles of it.
+        ring = [(a, b) for d in (1, 2, 3) for b in range(-d, d + 1) for a in range(-d, d + 1)
+                if max(abs(a), abs(b)) == d]
+        for dx, dy in [(sy, sx), (-sy, -sx), (-sx, -sy)] + ring:
             if put(W, "world.beacon", x + dx, y + dy):
                 break
     head = tiles[-1]
@@ -1099,6 +1118,20 @@ def harbour(W: World, g: Graph, c: int, r: int, name: str, mole: bool = False) -
     W.stats.setdefault("harbours", []).append((name, item, (x, y)))
     W.stats.setdefault("_harbour_nodes", []).append((name, (x, y)))
     return head
+
+
+def cliff_beside(W: World, x: int, y: int, sx: int, sy: int, n: int) -> bool:
+    """Whether land more than a level above the water stands beside the planks a pier from
+    (x, y) toward (sx, sy) would lay: a deck against a scarp walkers cannot step off (W-D1)."""
+    L = W.L
+    for k in range(1, n + 1):
+        c, r = x + sx * k, y + sy * k
+        for a, b in ((sy, sx), (-sy, -sx)):
+            nc, nr = c + a, r + b
+            if 0 <= nc < COLS and 0 <= nr < ROWS and W.land[nr, nc] and not W.river[nr, nc] \
+                    and int(L.LV[nr, nc]) - int(L.LV[r, c]) > 1:
+                return True
+    return False
 
 
 def shore_reach(W: World, c: int, r: int, radius: int, reach: int = 12) -> set[tuple[int, int]]:
@@ -1153,6 +1186,134 @@ def street_reach(W: World, limit: int) -> np.ndarray:
                 dist[ny_, nx_] = k
                 q.append((nx_, ny_))
     return dist
+
+
+DROVE_REACH = 260    # tiles a fold's drove track may run to the nearest node of the graph
+DROVE_TERRAIN = {"rome": "rome.packed_earth", "athens": "athens.packed_earth",
+                 "parsa": "parsa.packed_earth", "world": "world.road_earth"}
+
+
+def drove_tracks(W: World, g: Graph) -> None:
+    """A drove track from every fold no walk from a road reaches to the nearest node of the
+    base graph: an earth track laid like a road (axis-parallel, its level changing only on
+    ramps), with a node at the fold's gate and a track edge to that node, so shepherds and
+    their flocks have a way in and out. A fold no such track can reach stays without one (the
+    last walk check then takes it out and the stats say so)."""
+    L = W.L
+    folds = [p for p in L.items if not p.removed and p.id == "world.sheepfold"]
+    if not folds:
+        return
+    water = W.river | ~W.land
+    node_at = {}
+    for n in g.nodes:
+        c, r = COLS - 1 - n.at[1], n.at[0]
+        o = L.OCC[r, c]
+        if n.kind != "portal" and (o < 0 or not W.cat.items[L.items[o].id].rise):
+            node_at[(c, r)] = n.id
+    base_cost = cost_grid(W)
+    # In passes: a fold beyond the reach of every road may reach another fold's track.
+    todo = folds
+    while todo:
+        failed = [p for p in todo if not _drove_track(W, g, p, node_at, base_cost, water)]
+        if len(failed) == len(todo):
+            break
+        todo = failed
+    for p in todo:
+        W.stats.setdefault("drove_failures", []).append(f"no way from {p.c, p.r}")
+
+
+def _drove_track(W: World, g: Graph, p, node_at: dict, base_cost, water) -> bool:
+    """Lay the drove track of fold `p` if it needs one and one can be laid; False when it
+    needs one and none fits yet."""
+    L = W.L
+    L._door_and_slots(p)
+    gates = [(c, r) for c, r, _f in p.slots.get("gate", [])]
+    if not gates:
+        return True
+    gate = gates[0]
+    if _walks_to_road(W, gate):
+        return True   # a walk of one level from a road gets there
+    cost = np.where((L.OCC >= 0) | L.STREET | W.keep | water | L.IMP, np.inf, base_cost)
+    target = _nearest_node(cost, gate, node_at)
+    if target is None:
+        return False
+    path = astar4(cost, gate, target, margin=32)
+    if len(path) < 3 or any(water[r, c] for c, r in path):
+        return False
+    z0, z1 = int(L.LV[gate[1], gate[0]]), int(L.LV[target[1], target[0]])
+    z, ramps, fails = profile(path, L.LV, water, z0, z1, {len(path) - 1})
+    if fails:
+        return False
+    for i, (c, r) in enumerate(path[:-1]):
+        L.LV[r, c] = z[i]
+        L.T[r, c] = W.tidx(DROVE_TERRAIN.get(region_set(W, c, r), "world.road_earth"))
+        L.STREET[r, c] = True
+        W.road[r, c] = True
+    for i0, up in ramps:
+        dc, dr = path[i0 + 1][0] - path[i0][0], path[i0 + 1][1] - path[i0][1]
+        tiles = path[i0:i0 + RAMP_RUN]
+        cs, rs = [t[0] for t in tiles], [t[1] for t in tiles]
+        rp = L.stair("world.ramp", rect=(min(cs), min(rs), max(cs), max(rs)),
+                     face=FACE_OF[(-dc, -dr) if up > 0 else (dc, dr)])
+        if rp is None:
+            W.stats.setdefault("ramp_failures", []).append(f"drove track at {tiles[0]}")
+        else:
+            rp.src = SRC
+    fid = f"fold_{gate[0]}_{gate[1]}"
+    g.nodes.append(Node(fid, grid(*gate), None))
+    g.edges.append(Edge(fid, node_at[target], "track", [grid(*q) for q in corners(path)]))
+    node_at[gate] = fid
+    W.stats["drove_tracks"] = W.stats.get("drove_tracks", 0) + 1
+    return True
+
+
+FOLD_WALK = 24       # steps of one level from a road within which a fold needs no track
+
+
+def _walks_to_road(W: World, start) -> bool:
+    """Whether a walk of one level over open ground (door steps included) leads from `start` to
+    a road within FOLD_WALK steps."""
+    L = W.L
+    seen = {start: 0}
+    q = deque([start])
+    while q:
+        c, r = q.popleft()
+        if road_beside(W, c, r, int(L.LV[r, c])):
+            return True
+        if seen[(c, r)] >= FOLD_WALK:
+            continue
+        for a, b in DIRS:
+            n = (c + a, r + b)
+            if n in seen or not (0 <= n[0] < COLS and 0 <= n[1] < ROWS) or \
+                    L.LV[n[1], n[0]] != L.LV[r, c]:
+                continue
+            if L.STREET[n[1], n[0]] or (W.land[n[1], n[0]] and not W.river[n[1], n[0]] and
+                                         L.OCC[n[1], n[0]] < 0 and not L.IMP[n[1], n[0]]):
+                seen[n] = seen[(c, r)] + 1
+                q.append(n)
+    return False
+
+
+def _nearest_node(cost: np.ndarray, start, node_at: dict):
+    """The node tile nearest `start` by steps over open ground (any level), within
+    DROVE_REACH."""
+    seen = {start: 0}
+    q = deque([start])
+    while q:
+        c, r = q.popleft()
+        if seen[(c, r)] >= DROVE_REACH:
+            continue
+        for a, b in DIRS:
+            n = (c + a, r + b)
+            if n in seen or not (0 <= n[0] < COLS and 0 <= n[1] < ROWS):
+                continue
+            if n in node_at:
+                return n
+            if not np.isfinite(cost[n[1], n[0]]):
+                continue
+            seen[n] = seen[(c, r)] + 1
+            q.append(n)
+    return None
 
 
 def raster_line(a, b):

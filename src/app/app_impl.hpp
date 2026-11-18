@@ -46,6 +46,7 @@
 #include "worldview/soundscape.hpp"
 #include "worldview/weather_field.hpp"
 
+#include <array>
 #include <cstdio>
 #include <filesystem>
 #include <functional>
@@ -110,12 +111,22 @@ inline constexpr std::string_view kFlagSeamExplained = "seam_explained";
 // A bench case's frames, and the statistics of one measure over them.
 struct BenchFrames {
     std::vector<FrameSample> all;
-    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
+    // Statistics of `value(sample)` over the frames that measured it (negative: not measured).
+    template <typename F>
+    [[nodiscard]] PerfStats stats(F&& value) const {
         std::vector<float> v;
         v.reserve(all.size());
         for (const FrameSample& f : all)
-            if (f.*field >= 0) v.push_back(f.*field);
+            if (const float x = value(f); x >= 0) v.push_back(x);
         return perfStats(v);
+    }
+    [[nodiscard]] PerfStats of(float FrameSample::* field) const {
+        return stats([field](const FrameSample& f) { return f.*field; });
+    }
+    [[nodiscard]] HitchLog hitches() const {
+        HitchLog log;
+        for (const FrameSample& f : all) log.add(f);
+        return log;
     }
 };
 
@@ -305,6 +316,9 @@ private:
     bool loadWorldData();
     // The world renderer, once the home is known (after the save is read).
     void createWorldView();
+    // The home's terrain into the world's map (and, the first time, the world's own things off
+    // the home's land: items and slots are renumbered then).
+    void applyHomeToMap();
     // The world's copy of the home region follows the player's edits (walking, the overview).
     void syncHome();
     // Draws the frame: the world with the home inside it, or the floating island.
@@ -347,6 +361,18 @@ private:
     [[nodiscard]] const life::Figure* figureOf(const life::CityLife::Info& in) const;
     void followActor(float dt);
     void noteEvents();
+    // The same without its texts (nothing allocated: the hover name asks every frame): the
+    // living figure, the standing one, or the placed item it is.
+    struct CardPick {
+        int region = -1;
+        const life::Figure* living = nullptr;
+        const world::FigurePlace* placed = nullptr;
+        int item = -1;
+        life::Handle actor;
+        friend bool operator==(const CardPick&, const CardPick&) = default;
+    };
+    [[nodiscard]] std::optional<CardPick> pickCard(Vec2 px) const;
+    [[nodiscard]] CardRef cardOf(const CardPick& p) const;
     [[nodiscard]] std::optional<CardRef> cardAt(Vec2 px) const;
     [[nodiscard]] std::string_view entryName(const CardRef& c, std::string& storage) const;
     [[nodiscard]] std::string_view nativeName(const CardRef& c) const;
@@ -359,6 +385,12 @@ private:
     [[nodiscard]] std::optional<Vec2> gridPoint(std::string_view name) const;
     // A world grid tile (continuous) in home px, raised by its level as the world draws it.
     [[nodiscard]] Vec2 gridToHome(Vec2 tile) const;
+    // Where a journey that has not jumped yet will put the view: its centre (home px) and scale.
+    struct Destination {
+        Vec2 centre;
+        float scale = 1;
+    };
+    [[nodiscard]] std::optional<Destination> travelDestination() const;
     // The player's delta over the world for the save, and taking one from it.
     [[nodiscard]] WorldProgress worldState() const;
     void adoptWorldState(const WorldProgress& w);
@@ -378,6 +410,19 @@ private:
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
     void prepareView();
     void recordFrame(FrameSample& s);
+    // This frame's times by part into the sample.
+    void closeParts(FrameSample& s);
+    // The main thread's CPU time and allocation count at a frame's start, and what the frame
+    // used of each by the time its draws are submitted (into the sample).
+    struct FrameMark {
+        double threadMs = 0;
+        std::uint64_t allocs = 0;
+        std::uint64_t instructions = 0;
+    };
+    [[nodiscard]] static FrameMark markFrame();
+    static void closeMark(const FrameMark& m, FrameSample& s);
+    // The world's share of a sample: sprites, cells, pages, pop-in and cache work.
+    void worldSample(FrameSample& s) const;
     [[nodiscard]] double syncGpu(Uint64 frameStart);
 
     // Benchmark (app_bench.cpp)
@@ -394,6 +439,8 @@ private:
     // The bench's world cases (cities, a pan, fast travel); false when one is over budget.
     bool benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
                     const std::function<void()>& warm, int frames);
+    // The player's cases: zoom sweeps, fast pans, travel between places, the map.
+    bool benchPlay(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase);
     // The Look's tiers on SDL's gpu driver (app_gpu.cpp): one dense city view by day and the
     // Agora at night, each tier switched live and measured; nothing on other renderers.
     bool benchLook(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
@@ -443,6 +490,31 @@ private:
     double idleLineAt_ = 0;            // when she may next say an idle line
     double livelyAt_ = 0;              // next liveliness sample
     // Per-system times of the last step (ms), kept measurable for the bench and a profiler.
+    // Time by part of the frame (core/perf.hpp), added up over the frame's steps.
+    std::array<double, kFrameParts> partMs_{};
+    std::array<std::uint64_t, kFrameParts> partAllocs_{}; // and heap allocations, the same way
+    class Timed {
+    public:
+        Timed(App& app, Part part)
+            : ms_(app.partMs_[static_cast<std::size_t>(part)]),
+              allocs_(app.partAllocs_[static_cast<std::size_t>(part)]),
+              t0_(SDL_GetPerformanceCounter()), a0_(threadAllocs()) {}
+        ~Timed() {
+            ms_ += msBetween(t0_, SDL_GetPerformanceCounter());
+            allocs_ += threadAllocs() - a0_;
+        }
+        Timed(const Timed&) = delete;
+        Timed& operator=(const Timed&) = delete;
+
+    private:
+        double& ms_;
+        std::uint64_t& allocs_;
+        Uint64 t0_;
+        std::uint64_t a0_;
+    };
+    double startupMs_ = 0; // the process's start to the first frame's setup (the bench)
+    double stepMs_ = 0;    // this frame's steps, whole
+    std::uint64_t stepAllocs_ = 0;
     double actorMs_ = 0;    // actors
     double lifeMs_ = 0;     // weather, events, speech and sound around them
     double cityMs_ = 0;     // city life's last step (src/life/)
@@ -587,6 +659,9 @@ private:
     std::vector<std::string> journalSummaries_;
     std::vector<std::string> journalNames_;
     mutable std::string hoverName_;
+    mutable std::optional<CardPick> hoverPick_; // what hoverCardName_ names
+    mutable std::string hoverCardName_;         // (hoverName_ is also a person's role or kind)
+    mutable std::vector<life::Handle> actorHits_;
     std::unique_ptr<Batch> uiBatch_;
     std::unique_ptr<Blur> blur_;
     ThumbSet thumbs_;

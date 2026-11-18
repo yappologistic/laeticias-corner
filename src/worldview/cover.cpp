@@ -63,9 +63,11 @@ CoverMap::CoverMap(const world::WorldMap& map, const WorldSprites& sprites, cons
         const auto rect = [&](const SpriteRef& s) {
             return FRect{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
         };
+        // Split exactly as the native order splits it (Gatherer: a piece wherever the geometry
+        // has pieces and the look has art for them), so both levels hide the same people.
         const world::GeomVariant* g = map.geometry(it);
-        if (g != nullptr && !g->pieces.empty() && look.pieces.size() == g->pieces.size()) {
-            for (std::size_t k = 0; k < g->pieces.size(); ++k) {
+        if (g != nullptr && !g->pieces.empty() && !look.pieces.empty()) {
+            for (std::size_t k = 0; k < g->pieces.size() && k < look.pieces.size(); ++k) {
                 const TileRect& p = g->pieces[k].rect;
                 occlude({static_cast<float>(it.x + p.x0), static_cast<float>(it.y + p.y0),
                          static_cast<float>(it.x + p.x1), static_cast<float>(it.y + p.y1)},
