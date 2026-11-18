@@ -14,6 +14,9 @@ The owner's direction, which outranks any older wording in this file or in the d
 - The game is **one connected, living world**: the player's buildable home corner, the prebuilt
   ancient cities with their whole civilizations, and the land and sea between. No part of the map
   may be a still picture: people work and travel, goods move, weather crosses, light changes.
+  **Every system is world-wide**: clock, weather, wind, seasons, ambient effects, events, actors
+  and sound run over the whole map by each region's own character. A feature that works only in
+  the home region is not finished.
 - **It must look and move beautifully.** Nothing pale, flat or stale. Motion is fluid: no visible
   frame steps in walks, water or reflections; water behaves like water; light behaves like light
   (a moving sun, shadows that turn, lamps that light what is near them, lights that persist at
