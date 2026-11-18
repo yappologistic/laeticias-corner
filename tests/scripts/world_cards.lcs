@@ -1,0 +1,24 @@
+# Clicks pick what is drawn under the pointer, nearest first, by the drawing's own order
+# (draw-order.md 4.5; Q5-E-03): the Great Altar behind the Parthenon opens its own card, the
+# Stoa of Zeus (art over part of its footprint) and the Parsa garrison (a courtyard of walk
+# floors) open theirs.
+set look landmark:athens.great_altar 1
+wait 90
+click landmark:athens.great_altar
+wait 10
+expect info Βωμός
+key escape
+wait 5
+set look landmark:athens.stoa_zeus 1
+wait 90
+click landmark:athens.stoa_zeus
+wait 10
+expect info Στοὰ τοῦ Διός
+key escape
+wait 5
+set look landmark:parsa.garrison 1
+wait 90
+click landmark:parsa.garrison
+wait 10
+expect info Garrison
+quit

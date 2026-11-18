@@ -91,6 +91,7 @@ set(LC_SCRIPTS
   "world_profiler|world_profiler|1280x800|"
   "world_lights|world_lights|1280x800|"
   "world_away|world_away|960x600|"
+  "world_cards|world_cards|1280x800|"
   "city_world|city_world|1280x800|"
   "city_meet|city_meet|1280x800|"
   "rain_pan|rain_pan|640x400|"

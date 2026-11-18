@@ -66,6 +66,10 @@ public:
     void want(std::string_view set);
     // Starts decodes, uploads one slice, evicts what is idle over budget; `now` in seconds.
     void update(double now);
+    // Whether a sprite draws a pixel at (x, y) of itself (sprite pixels from its top-left): its
+    // page's opacity, kept from the decode while the page is resident; true when unknown (a
+    // fixed page, or one not decoded here), so picking falls back to the sprite's box.
+    [[nodiscard]] bool drawsAt(const SpriteRef& s, float x, float y) const;
     // Null while the page is not resident (its sprites are skipped this frame).
     [[nodiscard]] SDL_Texture* texture(std::uint16_t page) const;
     [[nodiscard]] bool setResident(std::string_view set) const;
@@ -98,10 +102,12 @@ private:
         mutable double lastUsed = 0;
         bool wanted = false;
         std::vector<SDL_Rect> shadows;
-        float shadowPeak = -1; // measured at decode, -1 before
+        float shadowPeak = -1;             // measured at decode, -1 before
+        std::vector<std::uint64_t> opaque; // 1 bit per pixel (drawn: alpha > 0), for picking
     };
 
-    [[nodiscard]] SurfacePtr decode(const Page& p, float* peak) const;
+    [[nodiscard]] SurfacePtr decode(const Page& p, float* peak,
+                                    std::vector<std::uint64_t>& opaque) const;
     void work(const std::stop_token& stop);
     void upload(Page& p, int rows);
     void evict(double now);
@@ -129,6 +135,7 @@ private:
         std::uint16_t page = 0;
         SurfacePtr pixels;
         float peak = -1;
+        std::vector<std::uint64_t> opaque;
     };
     std::vector<Decoded> done_;
     std::jthread worker_; // last: joined before the rest is destroyed
