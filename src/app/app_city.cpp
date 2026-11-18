@@ -123,12 +123,6 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
     }
     if (what == "drawn")
         return range(worldView_ ? static_cast<int>(worldView_->actorsDrawn().size()) : 0, 2);
-    // expect city covered PX MIN MAX: people drawn at half or quarter scale with more than PX
-    // of something in front of them over their feet (nobody on the roofs); expect city coarse
-    // MIN MAX: people drawn at those scales at all.
-    if (what == "covered" && a.size() >= 5)
-        return range(worldView_ ? worldView_->coarseActorsCovered(std::stof(a[2])) : 0, 3);
-    if (what == "coarse") return range(worldView_ ? worldView_->coarseActorsDrawn() : 0, 2);
     if (what == "people") return range(citySound_ ? citySound_->people() : 0, 2);
     if (what == "sound" && a.size() >= 5) {
         // expect city sound FILE MIN MAX: the gain (x100) its loop is set to now.
@@ -139,6 +133,12 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         const float g = citySound_->out()[static_cast<std::size_t>(it - files.begin())].gain;
         return range(static_cast<int>(std::lround(g * 100.0f)), 3);
     }
+    // expect city covered PX MIN MAX: people drawn at half or quarter scale with more than PX
+    // of something in front of them over their feet (nobody on the roofs); expect city coarse
+    // MIN MAX: people drawn at those scales at all.
+    if (what == "covered" && a.size() >= 5)
+        return range(worldView_ ? worldView_->coarseActorsCovered(std::stof(a[2])) : 0, 3);
+    if (what == "coarse") return range(worldView_ ? worldView_->coarseActorsDrawn() : 0, 2);
     return "unknown city expectation " + what;
 }
 

@@ -889,23 +889,17 @@ void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
 }
 
 std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
-    // Only what the last frame drew can be under the pointer (topmost: last drawn first). Just
-    // after other objects took over (a journey's destination) nothing of them is drawn yet.
-    if (!mergeIndexed_) return std::nullopt;
-    const std::span<const std::uint32_t> drawn = merge_.visible();
     // Figures first: they are small and stand clear (world/figures.hpp), while a landmark's box
     // is much larger than what it draws.
-    for (auto it = drawn.rbegin(); it != drawn.rend(); ++it) {
-        const std::uint32_t i = region_.order[*it];
-        const Elem& e = region_.elems[i];
-        const FRect& b = region_.items[i].screen;
+    for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
+        const Elem& e = region_.elems[*it];
+        const FRect& b = region_.items[*it].screen;
         if (e.figure && px.x >= b.x0 && px.x < b.x1 && px.y >= b.y0 && px.y < b.y1)
             return Picked{true, figureOf_[e.item]};
     }
-    for (auto it = drawn.rbegin(); it != drawn.rend(); ++it) {
-        const std::uint32_t i = region_.order[*it];
-        const Elem& e = region_.elems[i];
-        const FRect& b = region_.items[i].screen;
+    for (auto it = region_.order.rbegin(); it != region_.order.rend(); ++it) {
+        const Elem& e = region_.elems[*it];
+        const FRect& b = region_.items[*it].screen;
         if (e.ground || e.home || px.x < b.x0 || px.x >= b.x1 || px.y < b.y0 || px.y >= b.y1)
             continue;
         if (e.figure) return Picked{true, figureOf_[e.item]};

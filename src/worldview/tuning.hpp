@@ -25,8 +25,8 @@ inline constexpr int kCellPageSlotsY = 4;
 // What the cache holds (world-tech §4.14, restated by the smoothness round): the view at its own
 // level with a ring around it, and the two wider levels a zoom out would show, each cell once
 // per step of its water's loop where it has water; kCellSpare times that, so a pan or a turn of
-// the wheel finds its cells still there. In MiB (one per slot): about 96 at 1080p, 144 at 1440p,
-// 288 at 4K.
+// the wheel finds its cells still there. In MiB (one per slot, in whole pages of 32): 128 at
+// 1080p, 160 at 1440p, 320 at 4K.
 inline constexpr double kCellSpare = 1.5;
 inline constexpr std::size_t kCellBudgetMin = 96 * kMiB;
 inline constexpr std::size_t kCellBudgetMax = 384 * kMiB;
@@ -51,7 +51,7 @@ inline constexpr std::size_t kPageCeiling = 640 * kMiB;
 inline constexpr int kUploadRows = 64; // a slice: 1 MB of a 4096-wide page (about 0.9 ms)
 // Slices go up until this much of a frame is spent (at least one): more for a page the view is
 // waiting for than for one loaded ahead of need.
-inline constexpr double kUploadMsWanted = 3.0;
+inline constexpr double kUploadMsWanted = 1.5;
 inline constexpr double kUploadMsAhead = 0.5;
 inline constexpr int kPagesInFlight = 2;         // decoded or decoding, not yet in their slot
 inline constexpr double kPageIdleSeconds = 10.0; // unused this long: may be evicted

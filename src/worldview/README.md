@@ -25,15 +25,31 @@ the font and the clock's lighting, and `lc_world`). The game draws through it (`
 
 - **Levels of detail** by scale: native (1, 2, 3), half and quarter (cell impostors), overview.
 - **Cells** are squares of world pixels, not grid chunks: a level-L cell spans 512 << L px and is
-  stored in a 512 x 512 slot of a 4096 x 2048 cache page (96 MB, LRU, world-tech §4.14). Screen
-  squares waste nothing (a chunk's diamond in a box wastes half), so 4K at 1x needs ~54 cells.
-  Level 0 holds the ground: tiles in diagonal order at `level × tile.level` px, faces stacked
-  under the +x/+y edges down to the neighbour by material (`aux` → terrain `faces`), the base and
-  the overlay by mask, foam on water by land mask, the cap band (`…/top`) after the ground.
-  Levels 1 and 2 are impostors of everything static: 1024-px blocks drawn at full resolution
-  (ground, shadow layer, sorted items) and halved with filtering (2 x 2 box per halving). A cell is
-  rebuilt only when its pages arrive late or its water animates; a cell not built yet shows its
-  coarser level or the overview, so nothing flashes.
+  stored in a 512 x 512 slot of a 4096 x 2048 cache page (made and touched at load: a driver
+  stalls a frame on the first draw into a fresh one). Screen squares waste nothing (a chunk's
+  diamond in a box wastes half). Level 0 holds the ground: tiles in diagonal order at
+  `level × tile.level` px, faces stacked under the +x/+y edges down to the neighbour by material
+  (`aux` → terrain `faces`), the base and the overlay by mask, foam on water by land mask, the cap
+  band (`…/top`) after the ground. A cell with water in it is cached once per step of the water's
+  loop (four), so water moves at no cost per frame; the steps of cells in view are kept while
+  there is room. Levels 1 and 2 are impostors of everything static: 1024-px blocks drawn at full
+  resolution (ground, the shadow layer where something casts one, sorted items) and halved with
+  filtering (2 x 2 box per halving).
+- **Nothing arrives late.** Each frame lists the cells it wants in order of need: the view's
+  own; those of a destination the view is heading for (the level a zoom under way ends at, a
+  journey's place while the veil comes down); a ring around the view leaning the way it moves;
+  and the two wider levels where a turn of the wheel about the pointer would show them. The list
+  is deduplicated and cut to what the cache holds, so nothing wanted is ever pushed out by
+  something else wanted. Cells are built on the main thread within a time budget per frame
+  (2.5 ms for what is needed, 1 ms for what is built ahead; `tuning.hpp`), impostor blocks after
+  their gather comes back from the worker. Drawing only composites: a cell not built yet shows
+  its coarser level, or the overview under it. The cache holds, at a window's size, its own
+  level with the ring and the two wider levels, half as much again (128 MiB at 1080p, 160 at
+  1440p, 320 at 4K).
+- **The native level waits whole.** Its objects are gathered on the worker, never on the main
+  thread when frames are streamed: for the view as it moves, and ahead for a destination. While
+  its ground cells or objects are still on their way the half-scale impostors stay up,
+  magnified, if they are whole.
 - **Objects** at the native level come from a region around the view, gathered and depth-sorted
   on a worker thread from tight tile spans (every sprite measured against its footprint, shadows
   included), re-gathered before the view reaches the region's edge and at a flight's destination
@@ -43,11 +59,14 @@ the font and the clock's lighting, and `lc_world`). The game draws through it (`
 - **Shadows** are one layer (alpha normalised to a peak of 1, page by page, composited once at
   the measured opacity); **grading** multiplies the clock's ambient by the themes' keyframes;
   **glow** is added after it; **haze** leans the frame toward the themes' colour.
-- **Pages**: the sets of the regions sampled every 8 tiles over the view grown by 64 are wanted;
-  PNGs decode on a worker, upload in 1 MB slices into pre-made, pre-touched 4096² slots (drivers
-  stall 20–40 ms on a fresh 64 MB texture), static on GPU renderers, streaming on the software
-  one. Idle pages (10 s) are evicted LRU over 320 MB; when none is idle the least recent unwanted
-  page goes; only a view needing more pages than the budget holds adds a slot (logged).
+- **Pages**: the sets of the regions sampled every 8 tiles over the view grown by 64 (and over
+  a destination) are wanted; PNGs decode on a worker and upload in 1 MB slices within a time
+  budget per frame (1.5 ms for a page the view waits for, 0.5 ms for one loaded ahead) into
+  pre-made, pre-touched 4096² slots, static on GPU renderers, streaming on the software one.
+  Every page on disk has a slot while the ceiling (640 MiB) holds them all: then nothing is ever
+  evicted and the pages the view does not need yet load ahead in the background, so a journey to
+  any city finds its art resident. Sets that outgrow the ceiling stream as before (idle pages
+  out least recently used first; only a view needing more pages than the budget adds a slot).
 - **Draw calls** stay in the tens: cells and shadows are drawn page by page, items in the
   page-aware order (22 at the Agora, 10–17 on the Parsa terrace and the Acropolis).
 
