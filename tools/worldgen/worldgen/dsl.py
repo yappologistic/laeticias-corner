@@ -378,6 +378,9 @@ class Layout:
         """Place one item. `at` is the footprint's north-west tile; `rect` the whole footprint
         (checked against the catalog footprint after rotation)."""
         src = _src()
+        if item in self.cat.retired:
+            self._err("V1", f"{item!r} is a retired stand-in; use {self.cat.retired[item]}", src)
+            return None
         if item not in self.cat.items:
             self._err("V1", f"unknown item {item!r}", src,
                       at=(self.origin[0] + (at or rect)[0], self.origin[1] + (at or rect)[1]))
@@ -497,6 +500,9 @@ class Layout:
         return out
 
     def _known_item(self, item: str, src: str) -> bool:
+        if item in self.cat.retired:
+            self._err("V1", f"{item!r} is a retired stand-in; use {self.cat.retired[item]}", src)
+            return False
         if item in self.cat.items:
             return True
         self._err("V1", f"unknown item {item!r}", src)

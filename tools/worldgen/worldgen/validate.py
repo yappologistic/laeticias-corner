@@ -136,6 +136,10 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             issue("V1", f"item {it.id!r} comes from a {d.source} entry ({d.file})",
                   (it.c, it.r), isrc(it), level="warning")
         seen.add(it.id)
+        if d is not None:
+            bad = variant_problem(d, it.k)
+            if bad:
+                issue("V1", f"{it.id}: {bad}", (it.c, it.r), isrc(it))
     for dname in sorted({world.districts[d] for d in np.unique(world.D[sl][mine])
                          if d != NONE16}):
         if "/" not in dname or dname.split("/", 1)[0] not in tg.regions:
@@ -485,6 +489,19 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                 issue("V12", f"{it.id} names card {d.card!r}, missing from {f.name}",
                       (it.c, it.r), isrc(it))
     return out
+
+
+def variant_problem(d, k: int) -> str | None:
+    """Why variant byte k is not a valid look or rotation of item d (None when it is). The engine
+    reads it as r<k>: a look below `count` for `variant` layouts, a rotation below `count` (and
+    one the landmark is modelled in) for `rotate`, 0 for `connect` (it derives the mask)."""
+    if d.layout == "connect":
+        return None if k == 0 else f"variant {k} on a connect layout (must be 0)"
+    if not 0 <= k < max(d.count, 1):
+        return f"variant {k} outside the catalog's {d.count} {'rotations' if d.layout == 'rotate' else 'looks'}"
+    if d.landmark and k not in d.rotations:
+        return f"rotation {k} is not one the landmark is modelled in {d.rotations}"
+    return None
 
 
 def _local(b, origin):

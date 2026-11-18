@@ -102,6 +102,7 @@ class Catalog:
             elif draft.exists():
                 self._load_doc(json.loads(draft.read_text()), "draft", str(draft.relative_to(self.root)))
         self._load_provisional()
+        self.retired: dict[str, str] = dict(provisional.RETIRED)
         self.geom = self._load_geometry()
 
     # -- loading ----------------------------------------------------------------------------

@@ -89,14 +89,19 @@ class Previews(unittest.TestCase):
 
 
 class BuilderOutput(unittest.TestCase):
-    def test_world_json_lists_every_layer_and_region(self):
+    def test_world_json_lists_existing_layers_and_every_region(self):
         with tempfile.TemporaryDirectory() as tmp:
             b = Builder(ROOT, Path(tmp), Path(tmp) / "reports")
             import json
             doc = json.loads(b.world_json())
             self.assertEqual(doc["grid"], [448, 1280])
             self.assertEqual(doc["home"]["origin"], [40, 1200])
-            self.assertEqual(doc["layers"][0]["id"], "base")
+            self.assertEqual(doc["layers"], [])  # no layer files in this output tree yet
+            (Path(tmp) / "layers").mkdir()
+            for n in ("base", "parsa"):
+                (Path(tmp) / "layers" / f"{n}.lcw").write_bytes(b"")
+            doc = json.loads(b.world_json())
+            self.assertEqual([x["id"] for x in doc["layers"]], ["base", "parsa"])
             self.assertIn("parsa", [r["id"] for r in doc["regions"]])
 
 

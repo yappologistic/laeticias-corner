@@ -39,6 +39,13 @@ class Checks(unittest.TestCase):
         self.assertIn("no.such_item", texts)
         self.assertIn("elsewhere/x", texts)
 
+    def test_v1_variant_out_of_range(self):
+        L, _ = clean()
+        p = L.place("oak", at=(20, 2))
+        p.k = catalog().items["oak"].count  # one past the last look, as a stale build left it
+        self.assertTrue(any("outside the catalog" in i.message for i in check(L)
+                            if i.code == "V1" and i.level == "error"))
+
     def test_v2_overlap(self):
         L, _ = clean()
         L.place("oak", at=(10, 11))  # inside the cottage

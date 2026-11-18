@@ -96,10 +96,15 @@ class Builder:
                                 COLS - P.HOME["origin_plan"][0] - P.HOME["size"][0]],
                      "size": list(P.HOME["size"]), "level": P.HOME["level"],
                      "region": P.HOME["region"]},
+            # Only layers whose files exist, in composition order: a strict loader never has to
+            # guess about a planned layer (the plan's full list is plan/world_plan.py LAYERS).
             "layers": [{"id": n, "file": f"layers/{n}.lcw", "graph": f"layers/{n}.graph.json"}
-                       for n in self.order],
+                       for n in self.order if (self.out / "layers" / f"{n}.lcw").exists()],
+            # A region's life file is named only once it exists (assets/regions/<id>.json).
             "regions": [{"id": rid, "set": v[1], "kind": v[0], "time": v[2],
-                         "life": f"regions/{rid}.json"} for rid, v in P.REGIONS.items()],
+                         **({"life": f"regions/{rid}.json"}
+                            if (self.root / "assets/regions" / f"{rid}.json").exists() else {})}
+                        for rid, v in P.REGIONS.items()],
             "markers": [{"region": rid, "at": [r, COLS - 1 - c], "icon": icon}
                         for rid, (c, r), icon in P.MARKERS],
         }

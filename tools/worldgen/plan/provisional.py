@@ -11,32 +11,7 @@ x = north-south, y = east-west for a model facing west).
 previews draw for a plant without art, so country previews can be judged before the art exists.
 """
 
-_W = ["world.earth", "world.coast", "world.rock"]
-
 TERRAIN = [
-    # world set (world-tech §1.7)
-    {"id": "world.sand", "base": True, "variants": 4, "colour": [222, 204, 160],
-     "faces": ["world.coast", "world.earth"]},
-    {"id": "world.steppe", "base": True, "variants": 4, "colour": [184, 172, 112], "faces": _W},
-    {"id": "world.alluvium", "base": True, "variants": 4, "colour": [150, 156, 96],
-     "faces": ["world.earth", "world.coast"]},
-    {"id": "world.sea", "under": "world.sand", "fps": 4, "water": True, "colour": [44, 96, 146]},
-    {"id": "world.shallows", "under": "world.sand", "fps": 4, "water": True,
-     "colour": [70, 138, 164]},
-    {"id": "world.river", "under": "world.sand", "fps": 8, "water": True,
-     "colour": [66, 124, 160]},
-    {"id": "world.rock", "under": "world.steppe", "colour": [132, 124, 114],
-     "faces": ["world.rock", "world.coast", "world.snow"]},
-    {"id": "world.snow", "under": "world.steppe", "colour": [234, 238, 244],
-     "faces": ["world.snow", "world.rock"]},
-    {"id": "world.marsh", "under": "world.alluvium", "colour": [104, 136, 92],
-     "faces": ["world.earth"]},
-    {"id": "world.road_earth", "under": "world.steppe", "colour": [170, 142, 102],
-     "faces": ["world.earth"]},
-    {"id": "world.field", "under": "world.steppe", "colour": [196, 174, 92],
-     "faces": ["world.earth"]},
-    {"id": "world.scree", "under": "world.steppe", "colour": [158, 148, 128],
-     "faces": ["world.rock"]},
     # rome
     {"id": "rome.grass_spring", "base": True, "variants": 4, "colour": [98, 146, 66],
      "faces": ["world.earth", "world.coast", "world.rock", "rome.tufa"]},
@@ -59,29 +34,20 @@ def _plant(i, stand_in, height=80, walkable=False):
             "height": height, "stand_in": stand_in, "walkable": walkable}
 
 
+def _mark(i, fp, height):
+    return {"id": i, "footprint": fp, "layout": "rotate", "count": 4, "rotations": [0],
+            "on": "land", "landmark": True, "height": height}
+
+
 def _kit(i, fp, height, count=4, on="land", **kw):
     return {"id": i, "footprint": fp, "layout": "rotate", "count": count, "on": on,
             "height": height, **kw}
 
 
 ITEMS = [
-    # plants
+    # rome plants until the rome set catalog is committed
     _plant("rome.t_stone_pine", "pine", 120), _plant("rome.t_cypress", "pine", 110),
     _plant("rome.t_oak", "oak", 80), _plant("rome.t_plane", "oak", 110),
-    _plant("world.t_poplar", "pine", 100), _plant("world.t_plane", "oak", 110),
-    _plant("world.t_oak", "oak", 80), _plant("world.t_beech", "oak", 90),
-    _plant("world.t_fir", "pine", 100), _plant("world.t_cedar", "pine", 110),
-    _plant("world.t_palm", "pine", 100), _plant("world.t_tamarisk", "bush", 40),
-    _plant("world.t_pine_aleppo", "pine", 90),
-    {"id": "world.t_reeds", "footprint": [1, 1], "layout": "variant", "count": 4, "on": "any",
-     "height": 30, "stand_in": "reeds", "walkable": True},
-    # world kit
-    _kit("world.wayside_shrine", [1, 1], 44),
-    _kit("world.milestone", [1, 1], 26),
-    _kit("world.stair_earth", [1, 2], 20, rise=1, axis="y"),
-    _kit("world.ramp", [1, 4], 18, rise=1, axis="y"),
-    {"id": "world.ford", "footprint": [1, 1], "layout": "variant", "count": 2, "on": "water",
-     "height": 6, "walkable": True},
     # rome (rome.md §3.3, §3.7)
     _kit("rome.r_insula", [3, 4], 140, door=True), _kit("rome.r_insula_corner", [3, 3], 140, door=True),
     _kit("rome.r_insula_low", [2, 3], 85, door=True), _kit("rome.r_horrea", [4, 4], 60, door=True),
@@ -98,4 +64,28 @@ ITEMS = [
      "rotations": [0], "on": "any", "landmark": True, "height": 40},
     {"id": "rome.portus_lighthouse", "footprint": [3, 3], "layout": "rotate", "count": 4,
      "rotations": [0], "on": "land", "landmark": True, "height": 160, "glow": True},
+    # Waypoint landmarks proposed for the city sets (docs/design/sets/world.md §4, city files
+    # §3.7). Footprints are the plans' rects (grid [x, y] = [rows, columns] at r0), heights from
+    # the city files. They draw as labelled placeholders until the athens and parsa sets add them.
+    *[_mark(i, fp, h) for i, fp, h in (
+        ("athens.delphi_apollo", [6, 12], 100), ("athens.athenian_treasury", [2, 3], 50),
+        ("athens.castalian_spring", [2, 2], 20), ("athens.corinth_apollo", [6, 12], 90),
+        ("athens.acrocorinth_summit", [3, 3], 70), ("athens.diolkos", [20, 2], 4),
+        ("athens.naxian_lions", [2, 8], 40), ("athens.delos_sanctuary", [8, 10], 70),
+        ("athens.artemision", [8, 16], 150),
+        ("parsa.royal_road_head", [4, 4], 60), ("parsa.halys_gates", [8, 4], 80),
+        ("parsa.ferry_station", [6, 6], 40), ("parsa.ishtar_gate", [4, 6], 140),
+        ("parsa.processional_way", [14, 2], 60), ("parsa.etemenanki", [12, 12], 260),
+        ("parsa.susa_palace", [12, 14], 150), ("parsa.gates_station", [6, 8], 60),
+        ("parsa.pasargadae_garden", [10, 12], 70),
+    )],
+    # Babylon's wall kit (city file §3.7: "babylon_wall (kit) 1 x 1 / 2 x 2 tower").
+    {"id": "parsa.babylon_wall", "footprint": [1, 1], "layout": "connect", "count": 16,
+     "on": "land", "height": 70},
+    _kit("parsa.babylon_tower", [2, 2], 100, count=1),
 ]
+
+# Stand-ins the world set retired (docs/design/sets/world.md §0.2): the city sets' own trees.
+RETIRED = {"world.t_plane": "athens.t_plane, parsa.t_plane or rome.t_plane by region set",
+           "world.t_poplar": "athens.t_poplar, parsa.t_poplar or rome.t_poplar by region set",
+           "world.t_pine_aleppo": "athens.t_pine"}
