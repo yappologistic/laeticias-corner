@@ -16,7 +16,7 @@ import numpy as np
 
 import materials as M
 import relief as R
-from arch import Scale, brick_tone, carve, face_box, face_frame, face_length, fill, merlons, rod, slab, stair
+from arch import Scale, brick_tone, carve, face_box, face_length, fill, merlons, slab, stair
 from setbuild import Item, Landmark
 from voxel import Model, hash01, value_noise
 

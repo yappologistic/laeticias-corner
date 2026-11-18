@@ -628,9 +628,9 @@ def stair_relief(v, frame, frames, k):
     V-A-005). Like every kit stair it climbs away from its front: toward -y at r0 (the
     geometry's `climb`)."""
     m = Model.empty(-1, 33, -1, 17, 0, 16, k=k)
-    flight(m, 0.5, 31.5, 0.0, 16.0, 8.0, 4, "limestone", tone=M.ashlar(2.0, 6.0, 13, spread=0.3), cheek=2.0)
-    for x0, x1 in ((0.5, 2.5), (29.5, 31.5)):
-        merlons(m, x0, x1, 0.0, 6.0, 9.4, 2.4, "limestone", pitch=3.0, sides=("+x", "-x"), thick=2.0)
+    flight(m, 0.5, 31.5, 0.0, 16.0, 8.0, 4, "limestone", tone=M.ashlar(2.0, 6.0, 13, spread=0.3), cheek=2.4)
+    for x0, x1 in ((0.5, 2.9), (29.1, 31.5)):
+        merlons(m, x0, x1, 0.0, 6.0, 10.4, 2.4, "limestone", pitch=3.0, sides=("+x", "-x"), thick=2.0)
     return m
 
 
