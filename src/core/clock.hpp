@@ -69,4 +69,16 @@ struct SeasonDay {
 };
 [[nodiscard]] SeasonDay seasonOf(int day, std::span<const int> days);
 
+// The one answer to "which season and month is it today" (every region shares the calendar; a
+// region's climate, `Catalog::findClimate`, says what that season and month bring there): the
+// season follows the days, or is `pinned` (a kept season, >= 0); the month is that season's
+// month for the day of the season (the catalog's `calendar.months`, -1 when it has none).
+struct CalendarDay {
+    int season = 0;
+    int seasonDay = 0; // from 0
+    int month = -1;
+};
+[[nodiscard]] CalendarDay calendarDay(int day, int pinned, std::span<const int> seasonDays,
+                                      int months);
+
 } // namespace lc

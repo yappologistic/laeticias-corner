@@ -869,11 +869,9 @@ void App::followWorldWeather() {
     const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
     // The month of the season's day (a kept season keeps its own months), for each region's
     // snow by its climate.
-    int month = clock_.day() % std::max(1, sd.days);
-    for (int k = 0; k < season(); ++k) month += cat_.seasonDays[static_cast<std::size_t>(k)];
-    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow,
-                                      month < static_cast<int>(cat_.months.size()) ? month : -1,
-                                      clock_.day()};
+    const CalendarDay cd = calendarDay(clock_.day(), seasonPin_, cat_.seasonDays,
+                                       static_cast<int>(cat_.months.size()));
+    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow, cd.month, clock_.day()};
     const TileRect h = loaded_->file.home.rect;
     const int m = tuning::kWorldWeatherMargin;
     homeWeather_->update(played_, weather_.wind(), sc, {h.x0 - m, h.y0 - m, h.x1 + m, h.y1 + m},
