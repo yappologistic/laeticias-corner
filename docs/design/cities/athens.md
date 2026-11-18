@@ -23,7 +23,8 @@ Why this moment:
   lifting bosses still visible on its blocks today were never cut away. The city is at the very end
   of the Periclean building programme.
 - **What does not yet exist**, and so is not shown: the Erechtheion (built 421–406), the Ionic
-  temple of Athena Nike (420s), the Stoa of Zeus is only rising (c. 430–420), the New Bouleuterion
+  temple of Athena Nike (420s), the Stoa of Zeus (c. 430–420: in 432 at most a fresh building site,
+  possibly not begun; showing foundations is a choice), the New Bouleuterion
   (late 5th century), the Pompeion (c. 400), the stone theatre (4th century), the Pnyx's later
   remodelling (c. 404), and nothing Roman. The Theatre of Dionysos still has wooden seating.
 - **Peace, just.** Athens is at the height of the Delian League's wealth; the war begins in spring
@@ -31,8 +32,12 @@ Why this moment:
   on the horizon: the Megarian decree has just shut Megarian traders out of the Agora, and hoplites
   are sailing to besiege Potidaea. The cards mention this lightly; the city does not know.
 - **The Panathenaia** gives the city its great procession every year (the Great Panathenaia fell
-  in 434 and 430; 432 is the annual festival, still with a procession, a sacrifice and a new robe
-  for Athena's old olive-wood statue).
+  in 434 and 430; 432 is the annual festival, still with a procession and a sacrifice). Whether a
+  new robe (peplos) was given every year or only at the Great Panathenaia is **debated**; the game
+  shows a small folded robe and the card says "perhaps". The rhapsodes' Homer contest and most of
+  the games with prize amphorae belonged to the **Great** Panathenaia, so in 432 they appear only
+  as memories of 434 or informal recitals (§4.1, §7.2). [checked: secondary summaries only; the
+  primary passages ([Plato] *Hipparchus* 228b, Lycurgus *Leocr.* 102) were not readable here]
 
 **The feeling, in five sentences.**
 You smell dry thyme and dust, hot pine resin, olive oil, charcoal smoke from the potters' kilns,
@@ -311,7 +316,7 @@ in the fixed view; four if the optional view rotation is built. Layers: B base, 
 | `stoa_zeus` | Stoa of Zeus (site) | 4 × 11 | 50 | B,S | — | N | foundations, column drums, scaffolding |
 | `old_bouleuterion` | Old Bouleuterion | 6 × 6 | 70 | B,S,G | — | M | square hall, tiled roof, benches inside |
 | `tholos` | Tholos | 5 × 5 | 80 | B,S,G | kitchen smoke | M | round building, conical roof with lozenge-shaped tiles, a small kitchen annex; the 50 prytaneis eat and some sleep here |
-| `stoa_poikile` | Stoa Poikile | 10 × 3 | 70 | B,S,G | — | M | long Doric colonnade, Ionic inside; on the back wall large painted wooden panels: Marathon, the Amazons, the fall of Troy, Oinoe; captured shields hanging |
+| `stoa_poikile` | Stoa Poikile | 10 × 3 | 70 | B,S,G | — | M | long Doric colonnade, Ionic inside; on the back wall large painted wooden panels: Marathon, the Amazons, the fall of Troy, Oinoe. **No captured shields in 432**: the bronze shields Pausanias saw were taken from the Spartans on Sphacteria (425) and from Scione (421) [checked: Pausanias 1.15 (theoi.com, Jones)] |
 | `twelve_gods` | Altar of the Twelve Gods | 2 × 2 | 20 | B,S | — | M | |
 | `tyrannicides` | Tyrannicides | 2 × 2 | 60 | B,S | — | M | two striding bronze men, one bearded, one young, swords raised |
 | `se_fountain` | SE fountain house | 4 × 4 | 50 | B,S | water spouts | M | Doric porch, spouts shaped as lion heads, basin |
@@ -432,14 +437,14 @@ World coordinates (`world.md` §5–6). Same moment (summer 432 BC), Athens kit;
 
 | Waypoint (world rect) | Landmark id | Footprint | Height px | M/N | Look (what must be right) |
 |---|---|---|---|---|---|
-| **Eleusis** (C 556..575, R 222..250; the Sacred Way arrives from Athens' Sacred Gate) | `telesterion` | 10 × 10 | 90 | M | the square hall of the Mysteries, rows of interior columns, stepped seating along the walls; Iktinos's Periclean rebuilding was under way (its progress in 432 is uncertain: show walls up, roof unfinished); sanctuary wall, the Kallichoron well |
+| **Eleusis** (C 556..575, R 222..250; the Sacred Way arrives from Athens' Sacred Gate) | `telesterion` | 10 × 10 | 90 | M | the square hall of the Mysteries, rows of interior columns, stepped seating along the walls; the Periclean rebuilding was under way: Plutarch names **Koroibos**, who began it, **Metagenes**, who finished the frieze and upper columns, and **Xenokles**, who added the lantern; Strabo and Vitruvius credit a design to Iktinos, which many think was abandoned. Its progress in 432 is uncertain: show walls up, roof unfinished [checked: Plutarch, *Pericles* 13 (LacusCurtius)]; sanctuary wall, the Kallichoron well |
 | **Academy** (C 560..575, R 205..219) | `academy_grove` | 12 × 10 | 40 | N | gymnasium in a grove of sacred olives (*moriai*) and planes, a running track, an altar of Prometheus (start of torch races) |
 | **Corinth** (C 553..575, R 280..305) | `corinth_apollo` | 6 × 12 | 90 | M | archaic Doric temple of Apollo (c. 540), stocky monolithic columns, 6 × 15 |
 | | `acrocorinth` | 10 × 10 | 200 | M | the steep citadel mountain with a small temple of Aphrodite on top |
 | | `diolkos` | 2 × 20 | 4 | M | the paved ship-trackway across the isthmus, a ship on a wheeled cradle hauled by men and oxen |
 | | `lechaion_kenchreai` | kit | — | M | two small harbours on the two seas |
 | **Delphi** (C 500..519, R 250..265) | `delphi_apollo` | 6 × 12 | 100 | M | Doric temple of Apollo (the Alkmaeonid temple, late 6th century, with a marble east front) on a terrace against cliffs (the Phaedriades) |
-| | `athenian_treasury` | 2 × 3 | 50 | M | small Doric treasury with two columns between antae, Pentelic marble, metopes of Herakles and Theseus |
+| | `athenian_treasury` | 2 × 3 | 50 | M | small Doric treasury with two columns between antae, **Parian** marble (not Pentelic), metopes of Herakles and Theseus; date debated between about 510 and 480 (Pausanias links it to Marathon, 490) [checked: secondary sources agree on Parian marble; Delphi museum page] |
 | | `serpent_column` | 1 × 1 | 70 | N | bronze column of three intertwined snakes that carried the gold tripod for Plataea (479) |
 | | `castalian_spring` | 2 × 2 | 20 | N | rock-cut fountain |
 | **Olympia** (C 470..491, R 320..340) | `olympia_zeus` | 7 × 15 | 110 | N | Doric temple of Zeus (finished c. 456), 6 × 13, with pediments of the chariot race of Pelops and the Lapiths and centaurs |
@@ -469,7 +474,7 @@ World coordinates (`world.md` §5–6). Same moment (summer 432 BC), Athens kit;
 | 3 | **Socrates** (Σωκράτης) | 469–399 BC | present (aged 37) | Stonemason's son and philosopher, who wrote nothing and questioned everyone. He served as a hoplite (at Potidaea from 432). | snub nose, bald crown, bushy beard, **barefoot**, a worn coarse cloak (*tribon*) | walks the Agora and stoas asking questions; sits at Simon's shop; by the Ilissos under the plane tree | M |
 | 4 | **Sophocles** (Σοφοκλῆς) | c. 497–406 BC | present | Tragic poet (the *Antigone* c. 441), general alongside Pericles in 441/440, priest of a healing hero. | elder with a fine white himation, wreath, staff | theatre, rehearsing a chorus; the Agora | M |
 | 5 | **Euripides** (Εὐριπίδης) | c. 480–406 BC | present | Tragic poet; the *Medea* will be staged in spring 431. Tradition says he liked solitude and books. | thin, long beard, scroll | rehearses the *Medea* chorus in the theatre; reads on a bench in the Stoa | M |
-| 6 | **Pheidias** (Φειδίας) | c. 490–430 BC | present (disputed) | Sculptor of the Athena Parthenos and the bronze Athena, overseer of the Parthenon's sculpture. He was accused of stealing gold or ivory, probably in 438 or 432, and worked at Olympia on the Zeus; whether he is in Athens in 432 is uncertain. | workman's short chiton, leather apron, a chisel and a small wax model | the sculptors' yard east of the Parthenon, first week of the game day; card states the uncertainty | M |
+| 6 | **Pheidias** (Φειδίας) | c. 490–430 BC | memory (was "present (disputed)") | Sculptor of the Athena Parthenos and the bronze Athena, overseer of the Parthenon's sculpture (Plutarch, *Pericles* 13). Two ancient versions: **Plutarch** (*Pericles* 31) puts the charge of stealing gold among the attacks on Pericles just before the war and has him die in prison in Athens; **Philochorus** (in a scholion to Aristophanes) dates the trial to 438/7 and has him go to Olympia, make the Zeus and die among the Eleans. The workshop at Olympia, with finds of the 430s, makes the second version the more widely held. Either way he is not freely at work on the Acropolis in summer 432: away at Olympia or on trial. [checked: Plutarch *Pericles* 13, 31 (LacusCurtius); Philochorus via secondary sources] | workman's short chiton, leather apron, a chisel and a small wax model | appears at dusk in the sculptors' yard as a memory; card states both versions | M |
 | 7 | **Mnesikles** (Μνησικλῆς) | fl. 437–432 BC | present | Architect of the Propylaia, whose work is being stopped. | himation, a measuring rod and a wax tablet | at the Propylaia, gazing at the unfinished bosses | N |
 | 8 | **Protagoras** (Πρωταγόρας) | c. 490–420 BC | present (visiting) | The great sophist from Abdera, teacher for fees; "man is the measure of all things". Plato sets a famous dialogue with him in Athens around 433/432 at the house of the rich Kallias. | elegant travelling cloak, followers trailing behind him | walks in a courtyard with a crowd of pupils, turning about together (as Plato describes) | N |
 | 9 | **Meton** (Μέτων) | fl. 432 BC | present | Astronomer who observed the summer solstice of 432 BC in Athens and proposed the 19-year lunisolar cycle. | himation, a rod, a sundial | Pnyx, at his sundial at dawn | N |
@@ -480,7 +485,7 @@ World coordinates (`world.md` §5–6). Same moment (summer 432 BC), Athens kit;
 | 14 | **Athena** (Ἀθηνᾶ) | goddess | shrine | Virgin goddess of the city, of crafts and of wisdom, who gave Athens the olive and won the land from Poseidon. Worshipped as Polias (the old olive-wood statue), Parthenos (the gold and ivory statue) and Promachos. | the three statues, the olive, the owl; at the end of the procession, a faint apparition of the goddess in helmet and aegis above the Parthenon's west pediment | Acropolis | M |
 | 15 | **Poseidon** (Ποσειδῶν) | god | shrine | God of the sea who struck the rock with his trident and made a salt spring, losing the contest for Attica to Athena; honoured with Erechtheus on the rock. | trident marks in the rock near the Old Temple; the west pediment | Acropolis; Piraeus shrine | N |
 | 16 | **Theseus** (Θησεύς) | hero | shrine + reenactor | The hero-king who killed the Minotaur and united the villages of Attica into one city; Kimon brought his bones home around 475. | a youth with a club in the Hephaisteion metopes; a festival reenactor with a club and a lion-skin-free short cloak | Hephaisteion (card); Agora in the procession | M |
-| 17 | **Achilles and Odysseus (in the rhapsode's song)** | heroes | reenactor | At the Panathenaia, rhapsodes recited Homer by law, in order. | a rhapsode in an ornate robe with a staff; as he sings, faint silhouettes of the heroes appear | Agora stage on festival afternoons | N |
+| 17 | **Achilles and Odysseus (in the rhapsode's song)** | heroes | reenactor | At the **Great** Panathenaia (434 and 430, not 432), rhapsodes recited Homer by law, in order; in 432 the rhapsode gives an informal recital and the card says so. [checked: see §1] | a rhapsode in an ornate robe with a staff; as he sings, faint silhouettes of the heroes appear | Agora stage on festival afternoons | N |
 | 18 | **Herakles** (Ἡρακλῆς) | hero | statue | Son of Zeus, the strongest hero, with labours carved on the Hephaisteion and the Athenian treasury at Delphi. | lion skin, club | Hephaisteion metopes (card) | N |
 
 ### 4.2 Ordinary people (named)
@@ -492,10 +497,10 @@ Names typical of 5th-century Athens; persons invented unless stated.
 | **Philinna**, wool-worker and mother | citizen woman of Kydathenaion | home loom at dawn → fountain → home | "Philinna spins wool before sunrise and weaves until noon. Her husband sits on the Council this year. She goes out for water, for festivals and to visit her sister. Her daughter will carry a basket in next year's procession." |
 | **Mania**, nurse | enslaved, from Phrygia (Mania was a common name for Phrygian women in Athens) | carries Philinna's baby; fetches water | "Mania was born in Phrygia and sold at Ephesus as a girl. She has raised two of Philinna's children. Athenian grave stones sometimes honour nurses like her by name, kindly. She hums Phrygian songs to the baby." |
 | **Manes**, kiln-man | enslaved, Phrygian, works in a potter's workshop | Kerameikos kiln | "Manes knows the kiln's moods: three firings, air in, air out, then in again, and red clay turns black where the painter's slip lies. He has saved some coins; some enslaved craftsmen in Athens worked on their own and paid their master a share." |
-| **Kephalos**, shield-maker | historical metic from Syracuse, rich owner of a shield workshop in Piraeus (Lysias, Plato) | Piraeus workshop and house | "Kephalos came from Syracuse at Pericles's invitation and makes shields in Piraeus with more than a hundred workers. Metics like him pay a special tax, serve in the army and cannot own land, but Athens could not run without them." |
+| **Kephalos**, shield-maker | historical metic from Syracuse, rich owner of a shield workshop in Piraeus (Lysias, Plato); the workforce of "more than a hundred" is a figure for his sons' workshop in 404 (Lysias 12; not re-read in this check), so the card no longer gives a number | Piraeus workshop and house | "Kephalos came from Syracuse at Pericles's invitation and makes shields in Piraeus in a large workshop. Metics like him pay a special tax, serve in the army and cannot own land, but Athens could not run without them." |
 | **Sosias**, charcoal seller | citizen farmer from Acharnai | road from the north gate to the Agora | "Sosias walks from Acharnai with two donkeys of oak charcoal. He votes in the assembly when the harvest allows, and grumbles that the city folk talk too much. His charcoal feeds the potters' kilns and the smithies." |
 | **Nikarete**, bread-seller | citizen widow | Agora stall | "Nikarete sells barley cakes and wheat loaves from a basket in the Agora. Bread-women had a reputation for sharp tongues. She has seen every general of the last thirty years buy her bread, and tells you so." |
-| **Toxamis**, archer | Scythian, a public slave owned by the city | Agora, Pnyx | "Toxamis is one of the city's Scythian archers: public slaves who keep order in the assembly and the courts. On assembly mornings they sweep the Agora with a rope dyed red, and anyone marked with red paint loses their pay." |
+| **Toxamis**, archer | Scythian, a public slave owned by the city | Agora, Pnyx | "Toxamis is one of the city's Scythian archers: public slaves who keep order in the assembly and the courts. On assembly mornings they sweep the Agora with a rope dyed red, and, ancient commentators said, anyone marked with the red loses their pay." [checked: wording softened; the red rope is in Aristophanes, *Acharnians* 22, the fine in later scholia, neither re-read here] |
 | **Euphiletos**, farmer | citizen of a rural deme (name from a court speech of Lysias) | olive groves by the Ilissos | "Euphiletos tends olives and vines outside the walls and brings his oil to the city. In a war he would serve as a hoplite. Tonight he will sleep in the city to see the procession at dawn." |
 | **Hegeso**, girl | a citizen's daughter (the name is from a famous grave stele) | home → festival | "Hegeso is eleven. Girls her age weave the new robe for Athena with the priestesses, and a few of good family carry baskets in the procession. She practises walking with a basket on her head, very straight." |
 | **Simon**, shoemaker | citizen; a 5th-century house with a cup inscribed SIMONOS was found at the Agora's edge | his shop | "Simon makes sandals at the corner of the Agora. Ancient writers said Socrates often sat at his bench to talk with young men too young to enter the Agora. The hobnails and his cup were found by archaeologists." |
@@ -509,7 +514,7 @@ Names typical of 5th-century Athens; persons invented unless stated.
 | Socrates | **Σωκράτης** · The questioner | "A stonemason's son who walks barefoot in all weather and asks people what courage, justice or beauty really are. He wrote nothing. Soon he will march to Potidaea as a hoplite." |
 | Sophocles | **Σοφοκλῆς** · Tragic poet | "Winner of more drama contests than anyone, and general with Pericles in the war against Samos. His *Antigone* asks what a citizen owes to the city and to the gods." |
 | Euripides | **Εὐριπίδης** · Tragic poet | "Restless, questioning, fond of books. Next spring he will stage the *Medea*, a woman's fury against the man who betrayed her. It will come third." |
-| Pheidias | **Φειδίας** · Sculptor | "He made the gold and ivory Athena inside the Parthenon and directed its sculpture. Enemies of Pericles accused him of theft; ancient accounts disagree about when and what happened next. His Zeus at Olympia became a wonder of the world." |
+| Pheidias | **Φειδίας** · Sculptor (a memory) | "He made the gold and ivory Athena inside the Parthenon and directed its sculpture. Enemies of Pericles accused him of stealing the statue's gold. One ancient writer says he died in an Athenian prison; another that he left for Olympia, where his Zeus became a wonder of the world. This summer, his yard works on without him." |
 | Mnesikles | **Μνησικλῆς** · Architect | "His gateway to the Acropolis turns a steep rock into a stately climb. This year the work stops, with the stone bosses for lifting still on the blocks. They are still there today." |
 | Protagoras | **Πρωταγόρας** · Sophist | "'Man is the measure of all things.' The famous teacher from Abdera charges fees to train young men in argument. Plato imagined Socrates debating him here, at the house of Kallias." |
 | Meton | **Μέτων** · Astronomer | "On the Pnyx this summer he marks the solstice and proposes a cycle of 19 years that brings the moon's months back into step with the sun's year." |
@@ -520,7 +525,7 @@ Names typical of 5th-century Athens; persons invented unless stated.
 | Athena | **Ἀθηνᾶ** · Polias, Parthenos, Promachos | "She won Attica from Poseidon by giving the olive. Every summer the Athenians bring her old olive-wood statue a new woven robe. The gold and ivory Athena in the Parthenon was a treasure as much as an image." |
 | Poseidon | **Ποσειδῶν** · Earth-shaker | "He struck the rock with his trident and a salt spring rose, but the gods gave the land to Athena. Athenians still showed the marks, and honoured him beside the hero Erechtheus." |
 | Theseus | **Θησεύς** · Founder-hero | "Slayer of the Minotaur, he joined the villages of Attica into a single city. Kimon found his bones on Skyros and brought them home in triumph." |
-| Rhapsode | **The rhapsode** · Singer of Homer | "At the Panathenaia, singers recite the *Iliad* and *Odyssey* in turn, by law. Listen, and Achilles' anger and Odysseus' long road home rise in the dusk." |
+| Rhapsode | **The rhapsode** · Singer of Homer | "Every fourth summer, at the Great Panathenaia, singers recite the *Iliad* and *Odyssey* in turn, by law. This year is not a great year, but he sings anyway. Listen, and Achilles' anger and Odysseus' long road home rise in the dusk." |
 | Herakles | **Ἡρακλῆς** · Hero of the labours | "Strongest of heroes, son of Zeus and a mortal woman. His labours fill the metopes of the Hephaisteion; the Athenians claimed he was the first to honour them as a god." |
 
 ---
@@ -767,7 +772,7 @@ The game is set at the Panathenaia; other festivals can be enabled as rotating e
 | **Drama** | the theatre with rehearsals; cards for Sophocles and Euripides; a mask found in the theatre (journal) |
 | **History** | a card on Herodotus (who read from his *Histories* in Athens, tradition says) and the young Thucydides |
 | **Geometry and astronomy** | Meton's sundial; a card on the 19-year cycle |
-| **Sculpture and architecture** | the sculptors' yard, Pheidias, Mnesikles; card on the Parthenon's subtle curves (the base rises 6–7 cm in the middle; columns lean inward) |
+| **Sculpture and architecture** | the sculptors' yard, Pheidias, Mnesikles; card on the Parthenon's subtle curves (the base rises about 6 cm in the middle of the short ends and about 10–11 cm along the long sides; columns lean inward; why the builders did it is still argued) [checked: Stevens's survey via Cambridge UP: 0.103 m on the north flank] |
 | **City planning** | Piraeus's grid by Hippodamos (card) |
 | **Medicine** | the physician (card on Hippocratic observation) |
 
@@ -898,14 +903,22 @@ Overview-map motif: a rising kithara figure E–A–B–E.
 
 ## 11. Uncertainties for a human to check
 
+Status after the fact-check (`fact-check.md`, November 2026) is noted per item.
+
 1. **The Old Temple of Athena after 480** (foundations only vs. a repaired rear part): we show a
-   repaired western chamber.
-2. **Pheidias's trial and whereabouts in 432** (438 or 432; Athens or Olympia).
+   repaired western chamber. Still uncertain; the choice is defensible (Xenophon, *Hellenica*
+   1.6.1, records that "the old temple of Athena" burned in 406/5, so something stood; not re-read).
+2. **Pheidias's trial and whereabouts in 432**: two ancient versions (Plutarch: c. 432, died in
+   prison in Athens; Philochorus: 438/7, then Olympia). The game makes him a memory (§4.1).
 3. **Athena Promachos height** (estimates 7–9 m or more).
 4. **Stoa of Zeus and South Stoa I dates** (c. 430–420): shown as one building site (Stoa of Zeus),
    South Stoa I omitted.
 5. **The law court enclosure** identification (Heliaia?) is debated.
-6. **Telesterion at Eleusis in 432** (Iktinos's project; progress uncertain).
+6. **Telesterion at Eleusis in 432**: Plutarch names Koroibos, Metagenes and Xenokles; progress in
+   432 uncertain.
+12. **The annual peplos and the 432 festival**: an annual robe is debated; rhapsodes and most games
+    belonged to the Great Panathenaia (§1).
+13. **Stoa Poikile shields**: resolved: none in 432 (Pausanias 1.15: Sphacteria 425, Scione 421).
 7. **Population figures** (all estimates).
 8. **The Pnyx in phase I**: orientation as reconstructed (audience on the natural slope facing
    north toward the bema); details of the early bema are uncertain.

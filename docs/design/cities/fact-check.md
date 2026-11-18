@@ -138,3 +138,67 @@ instead, and positions on the excavation plan remain for a builder to check.
   the name Nowruz first appears in Middle Persian texts. End honestly: no one can yet prove it.
 - Treat Nowruz with warmth as a living festival of hundreds of millions of people, never as a
   "myth" to be debunked. The question is only whether its story is documented at Pārsa in 470 BC.
+
+---
+
+## 2. Athens (`athens.md` and the Greek waypoints)
+
+### 2.1 Claims checked
+
+| § | Claim (before) | Verdict | Best source and what it says | Change made |
+|---|---|---|---|---|
+| 1 | 432 is the annual Panathenaia with procession, sacrifice and a new robe | uncertain | secondary summaries: Great Panathenaia every fourth year (434, 430); whether a peplos was given annually is debated | "perhaps" for the robe |
+| 4.1, 7.2 | Rhapsodes recite Homer at "the Panathenaia" (in 432) | corrected | the rhapsodic contest belonged to the Great Panathenaia ([Plato] *Hipparchus* 228b; Lycurgus *Leocr.* 102; not readable here, secondary summaries agree) | informal recital in 432 |
+| 3.2 | Stoa Poikile: four paintings; "captured shields hanging" | **corrected** | Pausanias 1.15 (Jones, theoi.com, read): paintings of Oinoe, the Amazons, Troy, Marathon; shields from Scione (421) and Sphacteria (425) | no shields in 432 |
+| 3.7 | Telesterion: "Iktinos's Periclean rebuilding" | corrected | Plutarch *Pericles* 13 (LacusCurtius, read): Koroibos began it, Metagenes finished the frieze and upper columns, Xenokles the lantern; Iktinos not named | architects named; Iktinos as an abandoned design |
+| 3.7 | Athenian Treasury at Delphi of Pentelic marble | **corrected** | secondary sources agree: entirely **Parian** marble; date debated 510–480 | Parian |
+| 4.1 | Pheidias "present (disputed)" in the yard | corrected (presence) | Plutarch *Pericles* 31 (read): charge of embezzling gold, "died there of sickness" in prison; Philochorus (scholion, via Wikipedia/Spivey): killed by the Eleans after making the Zeus; workshop at Olympia active around 430 (Perseus Olympics site, summary) | memory figure; card gives both versions |
+| 4.1 | Pericles's helmet hid a long head | confirmed | Plutarch *Pericles* 3 (read) | — |
+| 3.2 | Odeion imitates the Persian king's tent | confirmed | Plutarch *Pericles* 13 (read): "an exact reproduction of the Great King's pavilion" (as reported) | — |
+| 4.3 | Aspasia's son needed a special vote | confirmed | Plutarch *Pericles* 37 (read): the Athenians let Pericles enrol his illegitimate son | — |
+| 4.2 | Kephalos "with more than a hundred workers" | uncertain | the 120-worker figure is usually cited for his sons' workshop in 404 (Lysias 12; not re-read) | number removed from card |
+| 4.2 | Scythian archers' red rope; red-marked lose pay | uncertain | Aristophanes *Acharnians* 22 (rope), later scholia (fine); not re-read | softened |
+| 6.10 | Parthenon base rises 6–7 cm in the middle | corrected (incomplete) | Stevens's survey (Cambridge UP appendix, summary): 0.103 m on the north flank; about 6 cm on the short ends | both figures; purpose "still argued" |
+| 1 | Stoa of Zeus "only rising" in 432 | uncertain | dated c. 430–420 (Ancient Athens 3D, as the researcher cited) | "at most a fresh building site, possibly not begun" |
+| 1 | Parthenon complete; Parthenos dedicated 438; pediments finished 432; Propylaia 437–432 | confirmed in outline (building accounts as summarised in standard works; not re-read) | — | — |
+| 1 | Erechtheion 421–406, Nike temple 420s, no stone theatre, Pnyx phase II c. 404 | confirmed in outline (standard dates; not re-read) | — | — |
+| 3.1 | Parthenon 8 × 17, 46 outer columns, 10.4 m; metope subjects; pediments | confirmed in outline (WHE as cited; not re-read) | — | — |
+| 4.3 | Solon "I grow old, always learning many things" | confirmed in outline (Solon fr. 18 West; not re-read) | — | — |
+| 4.3 | Thucydides 2.65 "in name a democracy" | unverifiable here (Perseus blocked) | — | — |
+| 6.1 | Thucydides 1.6, Ps.-Xenophon 1.10, Thucydides 2.13 figures | unverifiable here (Perseus blocked) | standard passages | — |
+| 4.1 | Socrates at Potidaea; saves Alcibiades | unverifiable here (Plato *Symposium* 219e–220e; not re-read) | — | — |
+| 4.3 | Medea in 431 came third | unverifiable here (hypothesis to the play; not re-read) | — | — |
+| 4.1 | Meton's solstice of 432 | unverifiable here (Ptolemy, *Almagest* 3.1; not re-read) | — | — |
+| sets 4.2 | Delos: graves removed to Rheneia in 426/5, after our date | confirmed in outline (Thucydides 3.104; not re-read) | — | — |
+| sets 4.2 | Corcyra allied to Athens since 433 | confirmed in outline (Thucydides 1.44; not re-read) | — | — |
+
+### 2.2 Changes that affect art already built (Athens)
+
+1. **`athens.stoa_poikile`: remove the captured shields.** `tools/artgen/sets/athens/agora.py`
+   line ~144 builds it with `shields=7`; set `shields=0` (and drop "captured shields hung above"
+   from the docstring at line ~141). The shields date from 425 and 421.
+2. **`athens.pheidias` actor**: keep the sprite; change presence to a dusk memory in the sculptors'
+   yard (and translucency if memories use it), with the new card.
+3. **`athens.athenian_treasury`** (proposal, not yet built): Parian marble, a cooler, more
+   translucent white than Pentelic's warm tone.
+4. **`athens.telesterion`**: no change to the look (walls up, roof unfinished stays the honest
+   choice).
+5. **`athens.rhapsode` actor**: no art change; card and routine change only.
+6. **`athens.stoa_zeus`**: optional: show fewer columns (pegged-out foundations), since it may not
+   have been begun in 432.
+
+### 2.3 Changes that affect layouts (Athens)
+
+1. **Stoa of Zeus site** (c 20..23, r 38..48): keep the footprint, but as foundations at most.
+2. No landmark found misplaced or anachronistic beyond the above; Pnyx phase I orientation, the
+   theatre facing south and the Stoa Poikile facing south agree with the standard reconstructions
+   (not re-checked against the Agora publications).
+
+### 2.4 Changes to card and figure text (Athens)
+
+1. Pheidias: memory, both ancient versions.
+2. Rhapsode: the Homer contest is a Great Panathenaia event; in 432 an informal recital.
+3. Kephalos: no workforce number.
+4. Toxamis: the fine as "ancient commentators said".
+5. Curvature card: about 6 cm on the ends, about 10–11 cm on the long sides; purpose debated.
+6. §1 festival note: peplos "perhaps".
