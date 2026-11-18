@@ -1525,6 +1525,8 @@ void App::unlockStems(const CondFacts& f, bool instant) {
 
 void App::updateAudio() {
     mixer_.setMuted(muted_);
+    // Snow falling or lying where the view is muffles the beds (audio-seasons.md §5.10).
+    mixer_.setMuffle(snowing() || snowLiesHere() ? 1.0f : 0.0f);
     applyVolumes(); // the music ducks while paused
     const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);

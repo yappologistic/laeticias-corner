@@ -339,6 +339,9 @@ inline constexpr float kLoopFadeSeconds = 2.5f;
 inline constexpr float kMasterFadeSeconds = 0.05f;
 inline constexpr float kLimiterCeiling = 0.89f; // about -1 dBFS
 inline constexpr float kLimiterReleaseSeconds = 0.25f;
+// Snow's low-pass on the ambience beds, and how long it takes to settle or melt into the sound.
+inline constexpr float kMuffleHz = 2500.0f;
+inline constexpr float kMuffleGlideSeconds = 4.0f;
 inline constexpr float kRainBirdsDuck = 0.3f;    // birds under rain
 inline constexpr float kRainCricketsDuck = 0.5f; // crickets under rain
 inline constexpr float kVoiceLevel = 0.48f;

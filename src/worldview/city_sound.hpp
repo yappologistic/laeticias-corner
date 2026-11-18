@@ -71,6 +71,9 @@ public:
     // People in view as the crowd counts them, and the crowd's level position (0..2), for tests.
     [[nodiscard]] int people() const { return people_; }
     [[nodiscard]] float crowdLevel() const { return crowdLevel_; }
+    // One line per region whose seasonal nature beds were guessed from the world manifest's tags
+    // because its file does not name them (`nature_seasons`, `nature_snow`): missing data.
+    [[nodiscard]] const std::vector<std::string>& guesses() const { return guesses_; }
     // The music's gain while a sting plays (1 otherwise).
     [[nodiscard]] float musicDuck() const { return duckFor_ > 0 ? tuning::kStingDuck : 1.0f; }
     // The nature bed a region plays at that season and phase (0 dawn, 1 dusk, 2 night, 3 day),
@@ -199,6 +202,7 @@ private:
     int stingSeason_ = -1; // the season whose turn has been heard
     float duckFor_ = 0;    // s left of the music's duck under a sting
     int lastCall_ = -1;
+    std::vector<std::string> guesses_;
 };
 
 } // namespace lc::worldview

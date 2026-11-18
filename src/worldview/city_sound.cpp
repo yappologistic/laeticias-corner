@@ -128,6 +128,7 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
         // A season's own nature beds: as the region names them (`nature_seasons`), else the
         // world's beds tagged for that season, phase and climate; snow's likewise.
         rs.natureBy.assign(life.seasons.size(), {-1, -1, -1, -1});
+        std::string guess; // what the region file does not name, taken from the tags
         const auto seasonal = s.find("nature_seasons");
         for (std::size_t k = 0; k < life.seasons.size(); ++k) {
             const std::string& id = life.seasons[k];
@@ -144,6 +145,7 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
                     if (t.kind == "bed" && t.has("nature") && t.has(kPhases[p]) && t.has(id) &&
                         !climate.empty() && t.has(climate) && !t.file.contains("_snow")) {
                         rs.natureBy[k][p] = loop(t.file);
+                        guess += std::format(" {} {}={};", id, kPhases[p], t.file);
                         break;
                     }
             }
@@ -156,9 +158,15 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
                     if (t.kind == "bed" && t.has("nature") && t.has(kPhases[3 - p]) &&
                         !climate.empty() && t.has(climate) && t.file.contains("_snow")) {
                         rs.natureSnow[p] = loop(t.file);
+                        guess += std::format(" snow {}={};", kPhases[3 - p], t.file);
                         break;
                     }
         }
+        if (!guess.empty())
+            guesses_.push_back(world.file.regions[r].id +
+                               ": nature beds guessed from the world "
+                               "manifest's tags:" +
+                               guess);
         if (const auto st = s.find("stings"); st != s.end() && st->is_object()) {
             const char* keys[4] = {"sunrise", "nightfall", "storm_clear", "season"};
             for (std::size_t k = 0; k < 4; ++k) rs.stings[k] = effect(text(*st, keys[k]));

@@ -368,6 +368,8 @@ private:
     // The world's weather around the view and over the home (followed by the home's Weather).
     void followWorldWeather();
     [[nodiscard]] int calendarMonth() const; // the world calendar's month now, -1: none
+    [[nodiscard]] bool snowLiesHere() const; // snow lies where the view is
+    void markDryLoops(std::span<const std::string> files); // snow beds pass snow's muffle
     [[nodiscard]] TileRect cameraTiles() const;
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into

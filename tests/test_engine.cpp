@@ -440,6 +440,58 @@ TEST_CASE("mixer buses: the player's volumes glide, never click, and stems reset
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
+TEST_CASE("mixer: snow's muffle low-passes the beds, glides in without a click, spares the dry") {
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+    REQUIRE(SDL_Init(SDL_INIT_AUDIO));
+    {
+        // Three mixers play the same rain bed in step: open, muffled, and muffled but dry.
+        const AudioList& list = test::catalog().audio;
+        const auto rain = std::ranges::find_if(
+            list.ambience, [](const std::string& f) { return f.contains("rain"); });
+        REQUIRE(rain != list.ambience.end());
+        std::array<Mixer, 3> mixers;
+        for (Mixer& m : mixers) {
+            m.load(test::assetsDir() / "audio", list);
+            m.startCapture();
+            m.setLoopGain(m.loopIndex(*rain), 0.5f);
+        }
+        mixers[1].setMuffle(1.0f);
+        mixers[2].setMuffle(1.0f);
+        mixers[2].setLoopDry(mixers[2].loopIndex(*rain), true);
+        constexpr int kFrames = 4096;
+        std::vector<float> out(kFrames * 2);
+        struct Sum {
+            double e = 0; // energy
+            double d = 0; // energy of the sample-to-sample differences: brightness
+            float prev = 0;
+            float jump = 0;
+        };
+        std::array<Sum, 3> sums;
+        for (int k = 0; k < 120; ++k)
+            for (std::size_t m = 0; m < 3; ++m) {
+                mixers[m].render(out.data(), kFrames);
+                Sum& s = sums[m];
+                for (std::size_t i = 0; i < out.size(); i += 2) {
+                    const float diff = out[i] - s.prev;
+                    s.prev = out[i];
+                    s.jump = std::max(s.jump, std::abs(diff));
+                    if (k < 80) continue; // the gains and the muffle glide in first
+                    s.e += static_cast<double>(out[i]) * out[i];
+                    s.d += static_cast<double>(diff) * diff;
+                }
+            }
+        const auto bright = [](const Sum& s) { return s.e > 0 ? s.d / s.e : 0.0; };
+        REQUIRE(sums[0].e > 0);
+        MESSAGE("open " << sums[0].e << " / " << bright(sums[0]) << ", muffled " << sums[1].e
+                        << " / " << bright(sums[1]));
+        CHECK(bright(sums[1]) < bright(sums[0]) * 0.7);    // the highs are gone
+        CHECK(sums[1].e > sums[0].e * 0.2);                // the bed is still there
+        CHECK(sums[1].jump < sums[0].jump * 1.5f + 0.01f); // gliding in made no click
+        CHECK(sums[2].e == doctest::Approx(sums[0].e));    // the dry bed untouched
+    }
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
 TEST_CASE("music stems: bar lines, fades and a stem joining in step with the others") {
     constexpr std::uint64_t kBar = tuning::kMusicBarSamples;
     CHECK(nextBar(0, kBar) == 0);

@@ -773,6 +773,7 @@ void App::loadWorldAudio() {
     mixer_.loadMore(assets_ / "audio", arriveFiles_, soundscape_->files());
     soundLoops_.clear();
     for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
+    markDryLoops(soundscape_->files());
     if (!city_) return;
     citySound_ = std::make_unique<worldview::CitySound>(*loaded_, city_->life->data,
                                                         assets_ / "audio", seed_);
@@ -781,6 +782,21 @@ void App::loadWorldAudio() {
     cityFx_.clear();
     for (const std::string& f : citySound_->loops()) cityLoops_.push_back(mixer_.loopIndex(f));
     for (const std::string& f : citySound_->effects()) cityFx_.push_back(mixer_.sfxIndex(f));
+    markDryLoops(citySound_->loops());
+    for (const std::string& g : citySound_->guesses()) SDL_Log("sound: %s", g.c_str());
+}
+
+void App::markDryLoops(std::span<const std::string> files) {
+    // The snow beds are muffled already: snow's low-pass leaves them as they are.
+    for (const std::string& f : files)
+        if (f.contains("snow")) mixer_.setLoopDry(mixer_.loopIndex(f), true);
+}
+
+bool App::snowLiesHere() const {
+    // Snow lies where the view is: the climate there that month (the season's snow without a
+    // world).
+    return viewWeather_ ? viewWeather_->snow()
+                        : cat_.seasons[static_cast<std::size_t>(season())].snow;
 }
 
 void App::updateWorldAudio(float night) {
@@ -801,8 +817,7 @@ void App::updateWorldAudio(float night) {
     in.season = season();
     in.month = calendarMonth();
     in.rain = rainHere();
-    const bool snowLies =
-        viewWeather_ ? viewWeather_->snow() : cat_.seasons[static_cast<std::size_t>(season())].snow;
+    const bool snowLies = snowLiesHere();
     in.snowCover = snowLies ? 1.0f : 0.0f;
     in.musicDuck = citySound_ ? citySound_->musicDuck() : 1.0f;
     soundscape_->update(in);
