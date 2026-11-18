@@ -113,7 +113,16 @@ frame pacing through vsync with adaptive sync left to the driver.
 
 Every engine round keeps the gates green: `--bench` cases for the home region, a dense city view
 and the overview assert the budgets (average, 95th and 99th percentile, worst), and a soak run
-asserts flat memory. A change that makes a budget fail is not done. The built-in profiler overlay
+asserts flat memory.
+
+The tools (`src/core/perf.hpp`, `src/app/app_perf.cpp`, `src/ui/profiler.cpp`): `F3` shows the
+profiler overlay (frame-time graph with the 120 and 60 FPS lines; whole frame average, 95th,
+99th percentile and worst over the last 512 frames; CPU, GPU done, simulation, conditions,
+scene, interface, present, audio callback load; draw calls, sprites drawn and culled, actors,
+cached chunks, texture and process memory). `--gpu-sync` makes "GPU done" honest by reading one
+pixel back each frame. `--perf-log FILE` writes the same per frame as CSV. `--bench` and
+`--soak` are the gates; `--benchmark` is the 75-second windowed tour a person runs on their own
+machine, with a results card and a report beside the save. A change that makes a budget fail is not done. The built-in profiler overlay
 (frame-time graph, per-system times, draw calls, actors, chunks, texture memory) and `--perf-log`
 are the tools for finding where time goes; guesses are not.
 
@@ -138,7 +147,8 @@ It is `"version": 2`; its fields are documented in `docs/design/living-corner.md
 validated by the engine, which names the offending entry. Besides `terrain`, `categories`,
 `items`, `visitors` and `audio` it holds the progress loop as data: `seasons`, `land` (stages
 by sketchbook pages, their reveals, the `gate`), `starter`, `progression` (`start` and `legacy`
-unlocks), `frames`, `wishes`, `nooks` and `resident` (Laeticia: name, lines, her day). Wish
+unlocks), `frames`, `wishes`, `nooks`, `resident` (Laeticia: name, lines, her day) and `tour` (`wish`, `piece`: the wish the
+first-minute tour shows and the piece it asks to plant). Wish
 goals and gates, nook recipes, rare-visitor recipes and stem conditions share one condition
 vocabulary (`living-corner.md` §3). Item fields added by the engine round: `sheds` (`"leaves"`
 or `"blossom"`: what a tree drops), `shelter` (beds within this many tiles grow when the season
@@ -300,11 +310,16 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   → pick → ghost (valid/invalid tint) → click, drag for 1×1 pieces; `R` rotates or cycles looks;
   Remove deletes; everything is undoable (`Ctrl+Z` / `Ctrl+Shift+Z`), drags as one step. The
   drawer lists only unlocked pieces (lock tile "+N" while a tab has more; dots on new ones).
+  Comforts (R11): Move (`V`; picked up and put down as one step, Esc or a right click puts it
+  back with none); the eyedropper (Alt+click, middle click, or `I` then a click); Shift-drag for
+  a straight line of 1×1 pieces, a painted rectangle or clearing an area; brushes 1, 3, 5 (`[`
+  `]`); `G` grid; hold `Tab` for every footprint and nook. Each is one undo step.
 - Wishes: the first offerable wish in catalog order is offered after 30 s of play with none open,
   75 s otherwise, at most three, from Laeticia (when she is about: not asleep or indoors; her
   bubble and the card arrive together) or a present visitor. A goal that
   holds for 1.5 s grants the wish and its unlocks, frame or clue; "Not now" snoozes it for 600 s.
-  Nothing is ever taken away.
+  A wish met when offered and undone before its grant waits again; a wish whose only gift is a
+  note about a visitor already seen is done quietly. Nothing is ever taken away.
 - Visitors come by `needs` and season; rare ones by their recipe after it holds 20–60 s, staying
   180–360 s. Nooks are recognised from their recipes and kept in the sketchbook (`J`), which also
   holds the wishes and the visitors (rarer ones as silhouettes with hints).
@@ -329,18 +344,34 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   breathe z's, waterfalls fall at the rims with mist and their own sound. Water, the waterfall
   and every voice are placed in the stereo field by where they are on screen.
 - Time: the clock cycles day → dusk → night → dawn and can be pinned; a calendar day begins at
-  midnight while it runs, three days a season; the season can be pinned from the title card.
+  midnight while it runs and, while it is pinned, one day passes per day length of play, so
+  pinning never holds the seasons back; three days a season; the season can be pinned from the
+  title card (a pinned season's first dawn is not announced).
   Seasons change looks, grade, ambience, falling things and visitors; winter rain is snow. Veggie
   beds grow through four stages in play time (faster in rain, resting in winter unless near a
   greenhouse) and ripe ones are picked with an empty hand.
 - Music grows in stems with progress; each placement also plays a tuned note of a little phrase.
 - Camera: drag or WASD/arrows to pan, wheel or `+`/`-` to zoom in steps toward the cursor, `Home`
-  recentres on the open land. The world autosaves (atomic write) and reopens where it was left.
-  Photo mode hides the UI and saves a PNG.
+  recentres on the open land; it stays within the open land plus a margin. Drawing interpolates
+  the camera and actors between the 60 Hz steps. The world autosaves (atomic write, on a worker
+  thread) and reopens where it was left; a world that cannot be opened (damaged, or from a newer
+  version) is never renamed or written over: a fresh corner opens in a folder of its own.
+- Postcards (R12): `P` hides the interface and shows the photo bar (frames Plain and the unlocked
+  nine-slice ones at the world's whole zoom, the caption with the world's name, in-game and real
+  date, `F` `T` `H`, Space to take); files go to `postcards/<slug>/` beside a named save
+  directory, else the Pictures folder, as `<slug>-YYYYMMDD-HHMMSS.png`.
 - UI is quiet glass: title card (world, phase, season day; calendar), build button and drawer,
   docks of round controls, wish tray, sketchbook, ribbons, hints and tooltips. It is drawn at
-  native resolution (the world stays pixel-scaled), scales with DPI, and every state has
-  hover/pressed/disabled feedback.
+  native resolution (the world stays pixel-scaled), scales with DPI and the player's interface
+  size, and every state has hover/pressed/disabled feedback; toasts queue and wrap. The window
+  is at least 960×600.
+- The front door (R10): the title over the last world (Continue or Begin, Worlds, Settings,
+  Quit), "Your worlds" (cards with thumbnails; play, rename, delete with confirmation, new world
+  with Free build), settings kept in the profile (volumes on mixer buses, mute, fullscreen,
+  interface size, reduce motion, grid, vsync, the resident's chatter, replay tour), the pause
+  menu (Esc with nothing to cancel, or the Menu button; the corner stands still and the music
+  ducks), and the first-minute tour, taught by doing and skippable. Headless runs start in the
+  world unless `--front-door` is given.
 
 ## Running
 
@@ -382,26 +413,34 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   statistics. The first ten minutes of a new world run end to end in `first_ten.lcs`; behaviours
   each have a script; `determinism_check` compares two runs byte for byte.
 - Save format: version 3, documented at the top of `src/core/save.hpp` (versioned, tolerant;
-  versions 1 and 2 migrate on launch). A save directory holds `profile.json`,
-  `worlds/<slug>/world.json` with `thumb.png`, and `corner.v1.json` after a migration.
+  versions 1 and 2 migrate on launch; damaged fields fall back one by one). A save directory
+  holds `profile.json`, `window.json`, `worlds/<slug>/world.json` with `thumb.png`,
+  `postcards/<slug>/`, and `corner.v1.json` after a migration.
 - Saves go to `--save-dir`, else `$LAETICIA_SAVE_DIR`, else SDL's pref path. Assets come from
   `--assets`, `$LAETICIA_ASSETS_DIR`, `<exe dir>/assets`, then the source tree.
 - Headless uses the `dummy` video driver with the software renderer (reproducible screenshots);
   `--renderer opengl` switches to the `offscreen` driver (EGL, still windowless) for GPU timings.
   Without `--size` a headless window is 1280x800.
 - `--bench` fills the map (dense around the centre, sparse elsewhere), times every condition of
-  the progress loop at once, runs at night in the rain with the drawer and sketchbook open, and
-  reports update/draw times (average, 95th percentile, worst) at 1x and at the half-scale
-  overview, plus memory; then a busy corner (every visitor kind at its number) and a crowd of 400
-  actors, reporting actors, simulation and frame times (average, 95th, 99th percentile, worst).
-  `--budget-ms` makes it exit 3 when a frame averages over that budget, the conditions take
-  over 1 ms, simulation averages over 0.6 ms, the busy frames' 99th percentile is over 8.3 ms or
-  the worst over 16.6 ms.
+  the progress loop at once, runs at night in the rain with the drawer and sketchbook open at 1x
+  and at the half-scale overview, then a busy corner (every visitor kind at its number) and a
+  crowd of 400 actors. Every case reports the whole frame (with the GPU waited for), GPU done,
+  CPU, update, draw submission and simulation (average, 95th, 99th percentile, worst) and memory.
+  `--budget-ms` makes it exit 3 when a case's CPU averages over that budget, its whole frame's
+  99th percentile is over 8.3 ms or its worst over 16.6 ms (a case missing only the worst frame
+  is measured once more), the conditions take over 1 ms, simulation averages over 0.6 ms, or the
+  process passes its memory ceiling at 1080p.
 - `--soak SECONDS` runs that much busy play fast (actors, events, weather, the calendar turning,
-  a frame drawn now and then) and exits 3 if memory grows after the first quarter.
+  a frame drawn now and then) and exits 3 if memory grows after the first quarter, passes its
+  ceiling, or the simulation averages over its budget.
+- `F3` shows the profiler; `--perf-log FILE` writes its counters per frame as CSV;
+  `--gpu-sync` waits for the GPU each frame (implied on the windowless GPU path);
+  `--front-door` starts a headless run at the title (with the tour for a new profile).
 - Interactive play: `$B` with no flags. The window opens on a share of the display it is on and
   remembers its size, place and fullscreen state (`window.json` beside the save). Do not run it
-  from automation.
+  from automation. `$B --benchmark` opens a window on purpose, plays a 75-second tour and writes
+  `benchmark-<date>.txt` beside the save: for a person to run, never automation (its tests run
+  it with `--headless --renderer opengl`).
 
 Asset regeneration (owned by the art, audio and world agents):
 
