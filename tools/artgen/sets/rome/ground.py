@@ -153,9 +153,9 @@ def vineyard_soil(mask, k):
 
 
 def river_tiber(mask, frame, frames, k):
-    """The "flavus Tiberis": muddy yellow-green water, darker in the channel, shaded under its
-    banks, with ripple crests catching the sky and glints drifting with the frames, so the
-    silt colour still reads plainly as water."""
+    """The "flavus Tiberis": blue water darkening in the channel, carrying drifts of
+    yellow-green silt in the current and along the banks, shaded under them, with ripple crests
+    catching the sky and glints drifting with the frames."""
     g = home._grid(k)
     field = lambda du: home.shape_field(mask, g.u - du, g.v - du, 0.8, 3.5, 0.5, 1470, k)
     f = field(0)
@@ -163,7 +163,11 @@ def river_tiber(mask, frame, frames, k):
     wall1, wall2, shade = field(1) <= 0, field(2) <= 0, field(3) <= 0
     level = home._ripples(g, f, shade, frame, frames)
     swirl = home._pnoise(g.u - frame / frames * 4.0, g.v, 4, 1471) - 0.5
-    rgb = home._paint(RIVER, level * 1.25 - 0.4 + swirl * 0.8, g.px, g.py, band=0.2, k=k)
+    rgb = home._paint(RIVER, level * 1.15 - 0.2 + swirl * 0.6, g.px, g.py, band=0.2, k=k)
+    # The silt: green-brown drifts in the current and along the banks, over clear blue depth,
+    # so the Tiber reads as water and still joins the blue rivers of the world beside it.
+    silt = ((swirl > 0.18) | (f < 1.6)) & (hash01(g.px, g.py, 1472) < 0.55) & (level < 3.6)
+    rgb = np.where(silt[..., None], home._paint(SILT, level * 0.9 - 0.6 + swirl, g.px, g.py, band=0.2, k=k), rgb)
     lip = f < 0.6
     rgb = np.where((lip & ~wall2)[..., None], np.array(_rgb(TIBER[4]), np.uint8), rgb)
     bank = home._paint([INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]], np.where(wall1, 3.2, 2.0), g.px, g.py, k=k)
@@ -171,7 +175,8 @@ def river_tiber(mask, frame, frames, k):
     return home._sprite(g, rgb, cover * 255)
 
 
-RIVER = [WATER[1], TIBER[1], TIBER[2], TIBER[3], TIBER[4], WATER[4], WATER[5], PLASTER[4]]
+RIVER = [WATER[0], WATER[1], WATER[2], WATER[3], WATER[4], WATER[5], PLASTER[4]]
+SILT = [WATER[1], TIBER[0], TIBER[1], TIBER[2], TIBER[3]]
 
 
 def mud_bank(mask, k):
