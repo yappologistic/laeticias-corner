@@ -45,25 +45,14 @@ target_include_directories(lc_core PUBLIC src)
 target_link_libraries(lc_core PUBLIC nlohmann_json::nlohmann_json)
 lc_project_target(lc_core)
 
-# SDL-facing engine pieces, split from main() so tests can link them.
+# SDL-facing engine pieces (render, interface, audio), linked by the world renderer and the app.
 add_library(lc_engine STATIC
-  src/app/app.cpp
-  src/app/options.cpp
-  src/app/script.cpp
-  src/app/app_script.cpp
-  src/app/app_bench.cpp
-  src/app/app_benchmark.cpp
-  src/app/app_build.cpp
-  src/app/app_front.cpp
-  src/app/app_photo.cpp
-  src/app/app_life.cpp
-  src/app/app_perf.cpp
-  src/app/window_state.cpp
   src/audio/mixer.cpp
   src/audio/decode.cpp
   src/audio/wav.cpp
   src/render/atlas.cpp
   src/platform/batch.cpp
+  src/platform/process.cpp
   src/render/blur.cpp
   src/render/camera.cpp
   src/render/depth.cpp
@@ -82,13 +71,8 @@ target_link_libraries(lc_engine PUBLIC lc_core SDL3::SDL3 PRIVATE lc_stb)
 target_compile_definitions(lc_engine PUBLIC LC_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 lc_project_target(lc_engine)
 
-add_executable(laeticias-corner src/app/main.cpp)
-target_link_libraries(laeticias-corner PRIVATE lc_engine)
-lc_project_target(laeticias-corner)
-
 if(LC_TESTS)
   enable_testing()
-  add_subdirectory(tests)
 endif()
 
 # --- World data runtime (src/world/) -------------------------------------------------------------
@@ -160,6 +144,33 @@ add_library(lc_worldview STATIC
 )
 target_link_libraries(lc_worldview PUBLIC lc_engine lc_world Threads::Threads)
 lc_project_target(lc_worldview)
+
+# The game: the app (main loop, input, scripts, bench, front door) over the engine and the world,
+# split from main() so tests can link it.
+add_library(lc_app STATIC
+  src/app/app.cpp
+  src/app/options.cpp
+  src/app/script.cpp
+  src/app/app_script.cpp
+  src/app/app_bench.cpp
+  src/app/app_benchmark.cpp
+  src/app/app_build.cpp
+  src/app/app_front.cpp
+  src/app/app_photo.cpp
+  src/app/app_life.cpp
+  src/app/app_perf.cpp
+  src/app/window_state.cpp
+)
+target_link_libraries(lc_app PUBLIC lc_worldview)
+lc_project_target(lc_app)
+
+add_executable(laeticias-corner src/app/main.cpp)
+target_link_libraries(laeticias-corner PRIVATE lc_app)
+lc_project_target(laeticias-corner)
+
+if(LC_TESTS)
+  add_subdirectory(tests)
+endif()
 
 add_executable(laeticias-world src/worldview/viewer_main.cpp)
 target_link_libraries(laeticias-world PRIVATE lc_worldview)

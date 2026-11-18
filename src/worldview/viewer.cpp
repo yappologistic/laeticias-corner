@@ -1,6 +1,6 @@
 #include "worldview/viewer.hpp"
 
-#include "app/app_impl.hpp" // processMemory
+#include "platform/process.hpp"
 #include "core/perf.hpp"
 #include "core/starter.hpp"
 #include "world/loader.hpp"

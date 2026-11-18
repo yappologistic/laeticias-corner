@@ -27,6 +27,7 @@
 #include "core/worlds.hpp"
 #include "core/writer.hpp"
 #include "platform/batch.hpp"
+#include "platform/process.hpp"
 #include "platform/sdl_ptr.hpp"
 #include "render/atlas.hpp"
 #include "render/blur.hpp"
@@ -84,10 +85,6 @@ inline constexpr std::string_view kHarvest = "sfx/harvest.wav";
     return def.footprintW == 1 && def.footprintH == 1;
 }
 
-// Milliseconds between two performance-counter readings.
-[[nodiscard]] double msBetween(Uint64 a, Uint64 b);
-// This process's resident memory in MiB (Linux; 0 elsewhere), and its peak.
-[[nodiscard]] std::pair<double, double> processMemory();
 
 // Files under the save directory (docs/design/living-corner.md §2.2).
 inline constexpr std::string_view kWorldsDir = "worlds";

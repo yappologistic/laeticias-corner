@@ -12,7 +12,7 @@ add_executable(lc_tests
   test_perf.cpp
   test_coverage.cpp
 )
-target_link_libraries(lc_tests PRIVATE lc_engine lc_doctest)
+target_link_libraries(lc_tests PRIVATE lc_app lc_doctest)
 target_compile_definitions(lc_tests PRIVATE
   LC_TEST_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
   LC_TEST_SCRATCH_DIR="${LC_SCRATCH}"
