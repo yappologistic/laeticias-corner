@@ -99,6 +99,8 @@ PROFILES = {
                           "dim", festivals={"*": 1.5}),
     "sanctuary_lamp": _p("lamp", 2100, 2.6, 0.55, "steady", (2, 4), 0.03, [("dusk", "22:00")],
                          festivals={"*": 1.5}),
+    "temple_hearth": _p("fire", 1800, 2.4, 0.6, "breathe", (0.6, 1.4), 0.06, [("00:00", "24:00")],
+                        festivals={"*": 1.5}),
     "council_lamps": _p("window", 2000, 3.0, 0.7, "steady", (3, 6), 0.04, [("dusk", "dawn")]),
     "hall_lamps": _p("window", 2100, 2.6, 0.6, "steady", (2, 4), 0.03, [("dusk", "21:30")],
                      festivals={"*": 1.5}),
@@ -149,7 +151,7 @@ RULES: list[tuple[str, list[list[tuple]]]] = [
     (r"^athens\.g_kiln$", [[("kiln_firing", 1.0)]]),
     (r"^athens\.g_forge$", [[("forge", 1.0)]]),
     (r"^athens\.g_workshop$", [[("bench_lamp", 0.5)]]),
-    (r"^athens\.g_brazier$", [[("brazier", 1.0)]]),
+    (r"^athens\.g_brazier$", [[("brazier_watch", 0.5), ("brazier", 0.5)]]),
     (r"^athens\.g_lamp$", [[("niche_lamp", 1.0)]]),
     (r"^athens\.g_wall_tower$", [[("watch_fire", 0.3)]]),
     (r"^athens\.dipylon$", [[("gate_torch", 1.0, "torch_a")], [("gate_torch", 1.0, "torch_b")]]),
@@ -160,8 +162,8 @@ RULES: list[tuple[str, list[list[tuple]]]] = [
     (r"^athens\.stoa_poikile$", [[("hall_lamps", 1.0)]]),
     (r"^athens\.simon_shop$", [[("shop_lamp", 1.0)]]),
     (r"^athens\.harbour$", [[("harbour_beacon", 1.0, "beacon")]]),
-    (r"^athens\.delphi_apollo$", [[("sanctuary_lamp", 1.0)]]),
-    (r"^athens\.delos_sanctuary$", [[("sanctuary_lamp", 1.0)]]),
+    # the undying hearth of Hestia in Apollo's temple at Delphi; the Prytaneion's at Delos
+    (r"^athens\.(delphi_apollo|delos_sanctuary)$", [[("temple_hearth", 1.0)]]),
     # --- Rome ---------------------------------------------------------------------------------
     (r"^rome\.r_insula(_corner|_low)?$", [[("window_evening", 0.36), ("window_late", 0.12),
                                             ("window_predawn", 0.08)]]),
@@ -189,15 +191,16 @@ RULES: list[tuple[str, list[list[tuple]]]] = [
      [[("hall_lamps", 1.0)]]),
     # --- Parsa --------------------------------------------------------------------------------
     (r"^parsa\.p_house$", [HOUSE, [("door_lamp", 0.16)]]),
-    (r"^parsa\.p_house_small$", [HOUSE]),
+    (r"^parsa\.p_house_small$", [HOUSE, [("door_lamp", 0.08)]]),
     (r"^parsa\.p_workshop$", [[("bench_lamp", 0.5)]]),
     (r"^parsa\.p_kiln$", [[("kiln_firing", 1.0)]]),
     (r"^parsa\.p_oven$", [[("oven_predawn", 1.0)]]),
     (r"^parsa\.p_fire_altar$", [[("open_fire_altar", 1.0, "fire")], [("fire_evening", 1.0)]]),
     (r"^parsa\.p_incense$", [[("altar_embers", 1.0)]]),
-    (r"^parsa\.p_brazier$", [[("brazier_watch", 1.0, "fire")]]),
-    (r"^parsa\.p_torch$", [[("wall_torch", 1.0, "flame")]]),
-    (r"^parsa\.p_tent$", [[("camp_fire", 0.6)]]),
+    (r"^parsa\.p_brazier$", [[("brazier_watch", 0.45, "fire"), ("brazier", 0.35, "fire"),
+                              ("audience_braziers", 0.2, "fire")]]),
+    (r"^parsa\.p_torch$", [[("wall_torch", 0.5, "flame"), ("niche_lamp", 0.5, "flame")]]),
+    (r"^parsa\.p_tent$", [[("camp_fire", 0.45)]]),
     (r"^parsa\.fort_tower$", [[("wall_torch", 0.5, "torch")]]),
     (r"^parsa\.gate_all_lands$", [[("gate_torch", 1.0, "torch_w")], [("gate_torch", 1.0, "torch_e")]]),
     (r"^parsa\.garrison$", [[("brazier_watch", 1.0, "brazier")]]),
@@ -216,6 +219,8 @@ RULES: list[tuple[str, list[list[tuple]]]] = [
     (r"^world\.(fish_hut|reed_hut)$", [[("hut_hearth", 0.6)]]),
     (r"^world\.tent_black$", [[("camp_fire", 0.7)]]),
 ]
+# In a waypoint town a beacon is the harbour's or the gate's light, kept every night.
+TOWN_RULES = {"world.beacon": [[("harbour_beacon", 1.0, "fire")]]}
 # Glowing items left dark on purpose: a statue's gleam is the sun's, not a lamp's; arenas and
 # circuses held their games by day.
 DARK = {"athens.promachos", "rome.colossus", "rome.colosseum", "rome.circus_maximus",
@@ -279,7 +284,8 @@ def points_for(world: World, cat, rid: str, areas: dict[str, str]) -> list[list]
         d = cat.items.get(it.id)
         if d is None or not d.glow or it.id in DARK or region_of(world, it) != rid:
             continue
-        groups = _rules(it.id)
+        groups = TOWN_RULES.get(it.id) if P.REGIONS[rid][0] == "town" else None
+        groups = groups or _rules(it.id)
         if groups is None:
             continue
         di = int(world.D[it.r, it.c])
@@ -436,7 +442,7 @@ def check(doc: dict, world: World, cat) -> list[tuple[str, str, str]]:
             di = int(world.D[it.r, it.c])
             built[di] = built.get(di, 0) + 1
     for dd in doc.get("districts", []):
-        if dd.get("area") not in ("centre", "town") or not dd.get("populations"):
+        if not inhabited(doc, dd):
             continue
         name = f"{rid}/{dd['id']}"
         if name not in world.districts:
@@ -445,6 +451,17 @@ def check(doc: dict, world: World, cat) -> list[tuple[str, str, str]]:
         if built.get(di) and di not in lit_dusk:
             out.append(("error", f"district {dd['id']}", "a populated district with no light at dusk"))
     return out
+
+
+def inhabited(doc: dict, d: dict) -> bool:
+    """A quarter people live in: a city's centre or town quarter, or any peopled district of a
+    waypoint town (their files name no areas)."""
+    if not d.get("populations"):
+        return False
+    area = d.get("area")
+    if area is None:
+        return P.REGIONS.get(doc["id"], ("",))[0] == "town"
+    return area in ("centre", "town")
 
 
 def profile_problems(p: dict, festivals: set[str], events: set[str]) -> list[str]:

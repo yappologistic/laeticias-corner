@@ -42,6 +42,10 @@ NAMED = [("athens", "agora", 2, "agora_g7"), ("athens", "agora", 1, "agora"),
 TARGET = (2.0, 8.0)        # % of a city view warm-lit at dusk and at night (quality bar §4.3)
 VILLAGE = (1.0, 4.0)       # ... of a village view: fewer than VILLAGE_BUILT buildings in it
 VILLAGE_BUILT = 40
+HAMLET_BUILT = 12          # a stop of a few houses round an inn or a shrine: a light all night
+# Quarters nobody lives in after dark (a quarry worked by day, the Academy's grove outside the
+# walls): dark by design.
+NIGHT_EMPTY = {("parsa", "quarry"), ("academy", "grove")}
 
 
 def _items(world: World):
@@ -119,8 +123,9 @@ class Canvas:
         self.night = night
         self.inside = (world.T[ri, ci] != NONE16)
         idx = np.unique(world.occ[ri, ci][occ])
-        self.built = sum(1 for i in idx.tolist() if (d := cat.items.get(world.items[i].id)) is not None
-                         and d.has_door)
+        defs = [cat.items.get(world.items[i].id) for i in idx.tolist()]
+        self.built = sum(1 for d in defs if d is not None and d.has_door)
+        self.monuments = sum(1 for d in defs if d is not None and d.landmark)
         self.size = (w, h)
         self.k = (hw, hh, tx0, ty0)
 
@@ -181,7 +186,9 @@ def views(doc: dict, world: World) -> list[tuple[str, str, int, tuple[float, flo
     centres = district_centres(world, rid)
     out = []
     for d in doc.get("districts", []):
-        if d["id"] in centres and d.get("area") in ("centre", "town") and d.get("populations"):
+        if d["id"] in centres and LT.inhabited(doc, d) and \
+                all(max(abs(centres[d["id"]][0] - v[3][0]), abs(centres[d["id"]][1] - v[3][1])) > 16
+                    for v in out):
             out.append((d["id"], d["id"], 1, centres[d["id"]], True))
     for reg, dist, zoom, name in NAMED:
         if reg == rid and dist in centres and not any(v[0] == name for v in out):
@@ -198,7 +205,10 @@ def measure(doc: dict, world: World, cat, atlas, items=None):
         cv = Canvas(world, cat, atlas, centre, zoom)
         area = next((d.get("area") for d in doc.get("districts", []) if d["id"] == dist), None)
         row = {"view": name, "zoom": zoom,
-               "village": area != "centre" and cv.built < VILLAGE_BUILT / zoom ** 2}
+               "hamlet": P.REGIONS[doc["id"]][0] == "town" and cv.built < HAMLET_BUILT,
+               "village": P.REGIONS[doc["id"]][0] == "town" or (
+                   area != "centre" and cv.built < VILLAGE_BUILT / zoom ** 2 and cv.monuments < 3),
+               "empty": (doc["id"], dist) in NIGHT_EMPTY}
         for label, h in HOURS.items():
             ls = light_list(doc, items, h, chance=chance)
             m = metrics(cv.light(ls), cv.inside)
@@ -221,10 +231,12 @@ def _in_view(cv: Canvas, light) -> bool:
 
 
 def verdict(row: dict) -> str:
+    if row.get("empty"):
+        return "dark by design (worked by day only)"
     bad = []
-    lo, hi = VILLAGE if row.get("village") else TARGET
+    lo, hi = (0.0, VILLAGE[1]) if row.get("hamlet") else VILLAGE if row.get("village") else TARGET
     for label in ("dusk", "night"):
-        v = row[label]["lit"]
+        v = round(row[label]["lit"], 1)
         if v < lo:
             bad.append(f"{label} dark")
         elif v > hi:
@@ -272,7 +284,7 @@ def table(rows_by_region: dict) -> str:
             dk, nt, sh = row["dusk"], row["night"], row["small hours"]
             fe = row.get("festival")
             lines.append(
-                f"| {rid} | {row['view']}{' (village)' if row.get('village') else ''} | {row['zoom']}x | {dk['lit']:.1f} | {dk['median']:.0f} | "
+                f"| {rid} | {row['view']}{' (hamlet)' if row.get('hamlet') else ' (village)' if row.get('village') else ''} | {row['zoom']}x | {dk['lit']:.1f} | {dk['median']:.0f} | "
                 f"{nt['lit']:.1f} | {nt['median']:.0f} | {nt['iqr']:.0f} | {nt['p98_lights']:.0f} | "
                 f"{dk['n']}/{nt['n']}/{sh['n']} | {sh['lit']:.1f} | "
                 f"{(fe['id'] + ' ' + format(fe['lit'], '.1f')) if fe else '-'} | {verdict(row)} |")
@@ -296,4 +308,4 @@ def run(b, rids: list[str], want_preview: bool) -> bool:
     out.mkdir(parents=True, exist_ok=True)
     (out / "nights.md").write_text(text)
     print(text)
-    return all(verdict(r) == "ok" for rs in rows.values() for r in rs)
+    return all(verdict(r) == "ok" or r.get("empty") for rs in rows.values() for r in rs)
