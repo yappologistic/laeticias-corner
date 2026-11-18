@@ -590,6 +590,8 @@ def _forum(L: Layout) -> None:
     """Travertine paving between the Forum's buildings, honorary columns and statues, the
     Cloelia statue on the Via Sacra, fountains, lamps at the shrines."""
     _paint_free(L, Rect(86, 52, 121, 77), TRAV, 0)
+    URBAN.append((m(Rect(86, 52, 121, 77)) & (L.LV == 0), TRAV))
+    URBAN.append((m(Rect(66, 11, 96, 43) | Rect(97, 34, 128, 54)) & (L.LV == 0), TRAV))
     for at in ((91, 62), (91, 64), (108, 59), (110, 60), (114, 57), (113, 61), (120, 63),
                (116, 63), (94, 66), (110, 66)):
         put(L, R + "r_statue", at, face="south")
@@ -620,6 +622,7 @@ def _velia(L: Layout) -> None:
         put(L, R + "r_crane", at)
     for c in (128, 131, 136, 139):
         put(L, R + "r_scaffold", (c, 61))
+    URBAN.append((m(Rect(122, 55, 143, 78)) & (L.LV == 1), EARTH))
     L.scatter(Rect(125, 56, 143, 60), {R + "r_amphorae": 1, R + "r_stall": 0.3}, 0.06,
               seed="velia_site")
     _paint_free(L, Rect(143, 53, 175, 90), TRAV, 0)
