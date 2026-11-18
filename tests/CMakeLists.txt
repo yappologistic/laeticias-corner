@@ -72,6 +72,8 @@ set(LC_SCRIPTS
   "shower|shower|640x400|"
   "waterfall|waterfall|640x400|"
   "lively|lively|640x400|"
+  "sketch_lists|sketch_lists|960x600|"
+  "newer_save|newer_save|640x400|"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
   "launch_1440|launch_2560x1440|2560x1440|heavy"
@@ -130,6 +132,19 @@ add_test(NAME prepare_migrate_v1 COMMAND ${CMAKE_COMMAND} -E copy
   ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v1.json ${LC_SCRATCH}/save_migrate_v1/corner.json)
 set_tests_properties(prepare_migrate_v1 PROPERTIES FIXTURES_SETUP migrate FIXTURES_REQUIRED clean_saves)
 set_tests_properties(script_migrate_v1 PROPERTIES FIXTURES_REQUIRED "clean_saves;migrate")
+
+# A world from a newer build: left untouched, byte for byte (QA2-03).
+set(newer "${LC_SCRATCH}/save_newer_save/worlds/laeticias-corner/world.json")
+set(newer_text "{\"version\": 4, \"name\": \"From the future\", \"home\": {}}")
+add_test(NAME prepare_newer_save COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DCONTENT=${newer_text}"
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/write_file.cmake)
+set_tests_properties(prepare_newer_save PROPERTIES FIXTURES_SETUP newer FIXTURES_REQUIRED clean_saves)
+set_tests_properties(script_newer_save PROPERTIES FIXTURES_REQUIRED "clean_saves;newer")
+add_test(NAME newer_save_untouched COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DCONTENT=${newer_text}"
+  -DEXISTS=${LC_SCRATCH}/save_newer_save/worlds/laeticias-corner-2/world.json
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/check_file.cmake)
+set_tests_properties(newer_save_untouched PROPERTIES DEPENDS script_newer_save
+  FIXTURES_REQUIRED newer)
 
 # A save directory the game cannot write to.
 if(UNIX)

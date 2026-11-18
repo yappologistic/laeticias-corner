@@ -55,6 +55,8 @@ constexpr int kThumbW = 384; // world thumbnail for the worlds screen
 constexpr int kThumbH = 240;
 constexpr int kHeadlessW = 1280; // headless window when --size is not given
 constexpr int kHeadlessH = 800;
+constexpr int kMinWindowW = 960; // the smallest window the interface is designed for
+constexpr int kMinWindowH = 600;
 constexpr int kAudioFramesPerStep = kMixRate / 60; // capture: one simulation step of sound
 
 // Owns SDL initialisation so it outlives every other SDL object in App.
@@ -195,6 +197,9 @@ bool App::createWindow() {
         return false;
     }
     if (!opts_.headless) {
+        // The interface is laid out for this size and up (QA2-11).
+        if (!SDL_SetWindowMinimumSize(window_.get(), kMinWindowW, kMinWindowH))
+            SDL_Log("window minimum size: %s", SDL_GetError());
         if (!opts_.size && !SDL_SetWindowPosition(window_.get(), place->x, place->y))
             SDL_Log("window position: %s", SDL_GetError());
         if (windowState_.fullscreen && !SDL_SetWindowFullscreen(window_.get(), true))
@@ -290,6 +295,14 @@ bool App::loadWorld(const fs::path& file) {
         SDL_Log("save: restored %s", file.string().c_str());
         return true;
     }
+    // A world from a newer build is refused and left exactly as it is (living-corner §2.4): an
+    // older binary pointed at a newer save directory must never move or replace it.
+    if (text && saveFileVersion(*text) > kSaveVersion) {
+        SDL_Log("save: %s was written by a newer version of the game; left untouched",
+                file.string().c_str());
+        newerSave_ = true;
+        return false;
+    }
     // Keep the unreadable file for inspection instead of overwriting it: the newest few bad
     // copies are kept, oldest dropped.
     std::error_code ec;
@@ -330,7 +343,16 @@ void App::loadOrStart() {
     // A save from before worlds existed becomes the first world (docs/design/living-corner.md
     // §2.5). It is renamed only once the new world and its thumbnail are written; if it cannot
     // be read it is left alone and the game starts as on a first launch.
-    if (fs::exists(legacy, ec) && !fs::exists(worlds, ec)) {
+    // Also when a `worlds` folder exists but holds no world yet (a crash in the middle of an
+    // earlier migration), so the old corner is never ignored (QA2-13).
+    const auto anyWorld = [&] {
+        for (auto it = fs::directory_iterator(worlds, ec); !ec && it != fs::directory_iterator();
+             it.increment(ec))
+            if (fs::exists(it->path() / kWorldFile, ec)) return true;
+        ec.clear();
+        return false;
+    };
+    if (fs::exists(legacy, ec) && !anyWorld()) {
         auto text = readTextFile(legacy);
         auto data = text ? deserialize(*text, cat_) : std::unexpected(text.error());
         if (data && data->fromVersion < kSaveVersion) {
@@ -372,6 +394,12 @@ void App::loadOrStart() {
     if (!dir.empty()) {
         slug_ = dir.filename().string();
         if (loadWorld(dir / kWorldFile)) return;
+        if (newerSave_) {
+            // A fresh corner in a folder of its own, beside the newer world.
+            startNewWorld(taken);
+            hud_.toast(std::string(strings::kToastNewerSave));
+            return;
+        }
         const std::string slug = slug_;
         startNewWorld({});
         slug_ = slug; // a fresh corner in the same folder, beside the unreadable file
@@ -506,7 +534,9 @@ void App::updateProgress() {
         progression_.evaluate(world_, progress_, f, played_);
         unlockStems(f, loading_);
     }
-    progression_.tick(world_, progress_, f, played_, !photo_, rng_);
+    // Nothing is judged in the middle of a stroke: a passing state during a drag never counts
+    // (docs/design/living-corner.md §3.3).
+    if (!editor_.inGroup()) progression_.tick(world_, progress_, f, played_, !photo_, rng_);
     // Who may come: the season allows them (rare visitors also by their recipe, in Progression).
     const auto bit = static_cast<std::uint8_t>(1u << season());
     for (std::size_t v = 0; v < gates_.size(); ++v) {
@@ -541,7 +571,8 @@ void App::updateProgress() {
         }
         case ProgressEvent::Kind::WishGranted: onWishGranted(e.index); break;
         case ProgressEvent::Kind::NookFound: onNookFound(e.index); break;
-        case ProgressEvent::Kind::StageOpens: openLand(e.index, true); break;
+        // A world opening with enough pages (a migrated one) gets its land without the wave.
+        case ProgressEvent::Kind::StageOpens: openLand(e.index, !quiet); break;
         }
         markDirty();
     }
@@ -733,10 +764,12 @@ std::string_view App::waitingText(int node, std::string& out) const {
         return {};
     }
     case CondKind::Season: {
+        // The first listed season still to come from now (QA2-15).
         const int count = static_cast<int>(cat_.seasons.size());
+        const int now = season();
         for (int k = 1; k <= count; ++k)
-            if (bit(k % count)) {
-                std::string name = cat_.seasons[static_cast<std::size_t>(k % count)].name;
+            if (bit((now + k) % count)) {
+                std::string name = cat_.seasons[static_cast<std::size_t>((now + k) % count)].name;
                 if (!name.empty())
                     name[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(name[0])));
                 out = std::vformat(strings::kWaitSeason, std::make_format_args(name));
@@ -886,7 +919,7 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     // While the sketchbook is open the arrows turn its pages (WASD still pans).
     if (journalOpen_ && !photo_ && (key == SDLK_LEFT || key == SDLK_RIGHT)) {
         if (k.down && !k.repeat) {
-            hud_.turnPage(key == SDLK_LEFT ? -1 : 1, model());
+            hud_.turnPage(key == SDLK_LEFT ? -1 : 1, ui_);
             play(sfx::kPage, tuning::kUiSfxLevel);
         }
         return;
@@ -1052,6 +1085,8 @@ HudModel App::model() const {
     m.visitors = &actors_;
     m.progress = &progress_;
     cards_.clear();
+    // One detail line per card, each in its own string, so no card's text points into another's.
+    if (cardDetail_.size() < progress_.open.size()) cardDetail_.resize(progress_.open.size());
     for (std::size_t i = 0; i < progress_.open.size(); ++i) {
         const int w = progress_.open[i];
         const WishDef& def = cat_.wishes[static_cast<std::size_t>(w)];
@@ -1062,7 +1097,7 @@ HudModel App::model() const {
         c.portrait = def.giver < 0 ? thumbs_.portrait
                                    : thumbs_.visitors[static_cast<std::size_t>(def.giver)];
         c.ready = st.ready;
-        std::string& detail = cardDetail_[std::min(i, cardDetail_.size() - 1)];
+        std::string& detail = cardDetail_[i];
         detail.clear();
         if (st.count >= 0 && !def.progress.empty()) {
             c.progress = static_cast<float>(st.count) / static_cast<float>(std::max(1, st.min));
@@ -1592,9 +1627,9 @@ void App::render() {
         blur_->end();
     }
     if (font_.build(renderer_.get(), uiScale_)) {
-        const HudModel m = model();
-        Painter painter(*uiBatch_, font_, {blur_->result(), p.screen, m.brightness}, uiScale_);
-        hud_.draw(painter, m);
+        // The model the interface was laid out from this frame: drawing never sees another.
+        Painter painter(*uiBatch_, font_, {blur_->result(), p.screen, ui_.brightness}, uiScale_);
+        hud_.draw(painter, ui_);
         uiBatch_->flush();
     }
 }
@@ -1622,7 +1657,8 @@ int App::run() {
     refreshScale();
     if (!font_.build(renderer_.get(), uiScale_)) return 1;
     // One interface layout first, so the camera can frame the land clear of it.
-    hud_.update({}, model(), font_, screen(), uiScale_, 0);
+    ui_ = model();
+    hud_.update({}, ui_, font_, screen(), uiScale_, 0);
     if (savedCamera_)
         camera_.place(*savedCamera_, savedZoom_, screen());
     else
@@ -1651,20 +1687,6 @@ int App::run() {
         refreshScale();
         if (!font_.build(renderer_.get(), uiScale_)) return 1;
 
-        UiInput in;
-        in.x = mouse_.x;
-        in.y = mouse_.y;
-        in.inside = mouseInside_;
-        in.pressed = leftPressed_;
-        in.released = leftReleased_;
-        in.rightPressed = rightPressed_;
-        in.rightReleased = rightReleased_;
-        in.wheel = wheel_;
-        in.blocked = drag_ != Drag::None;
-        hud_.update(in, model(), font_, screen(), uiScale_, frameDt);
-        applyHudActions();
-        worldInput();
-
         int steps = 1;
         if (!fixed) {
             acc += real;
@@ -1676,6 +1698,24 @@ int App::run() {
             }
         }
         for (int i = 0; i < steps; ++i) step(static_cast<float>(tuning::kStepSeconds));
+
+        // One interface model per frame, built after the simulation: the interface is laid out,
+        // hit-tested and drawn from it alone, so what is drawn always matches the layout even
+        // when a click or a grant changes the game in between (QA2-01).
+        ui_ = model();
+        UiInput in;
+        in.x = mouse_.x;
+        in.y = mouse_.y;
+        in.inside = mouseInside_;
+        in.pressed = leftPressed_;
+        in.released = leftReleased_;
+        in.rightPressed = rightPressed_;
+        in.rightReleased = rightReleased_;
+        in.wheel = wheel_;
+        in.blocked = drag_ != Drag::None;
+        hud_.update(in, ui_, font_, screen(), uiScale_, frameDt);
+        applyHudActions();
+        worldInput();
         updateAudio();
         if (opts_.audioOut) {
             const std::size_t n = capture_.size();
@@ -1699,13 +1739,16 @@ int App::run() {
             if (!scriptStep()) running_ = false;
         }
         if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());
-        if (!legacyToRetire_.empty()) {
-            // The migrated world and its thumbnail exist now; the old file is kept, renamed.
+        if (!legacyToRetire_.empty() && simTime_ >= retireAt_) {
+            // The migrated world and its thumbnail exist now; the old file is kept, renamed. A
+            // folder that cannot be written is tried again only after the save retry delay.
             std::error_code ec;
             if (save() && writeThumbnail()) {
                 fs::rename(legacyToRetire_, saveDir_ / kLegacyKept, ec);
                 if (ec) SDL_Log("save: cannot rename the old save: %s", ec.message().c_str());
                 legacyToRetire_.clear();
+            } else {
+                retireAt_ = simTime_ + static_cast<float>(tuning::kSaveRetrySeconds);
             }
         }
         if (welcomePending_) {

@@ -302,6 +302,8 @@ void App::handleWorldEvents() {
             if (d.who >= 0) (void)actors_.call(d.who);
             break;
         case EventShow::Season: {
+            // A pinned season does not change with the calendar, so nothing is announced.
+            if (seasonPin_ >= 0) break;
             if (sound) play(d.sfx, tuning::kSfxLevel * d.gain);
             const SeasonDef& s = cat_.seasons[static_cast<std::size_t>(season())];
             if (!speakText(s.line, SpeechWeight::Important))

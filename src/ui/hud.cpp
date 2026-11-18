@@ -227,8 +227,18 @@ float Hud::pressOf(int id) const {
 }
 
 void Hud::toast(std::string text) {
-    toast_ = std::move(text);
-    toastTime_ = theme::kToastSeconds;
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ == 0) {
+        toast_ = std::move(text);
+        toastTime_ = theme::kToastSeconds;
+        toastShown_ = 0;
+        return;
+    }
+    if (toastWaiting_ == theme::kToastQueue) {
+        // Full: the oldest waiting one gives way.
+        std::ranges::rotate(toastQueue_, toastQueue_.begin() + 1);
+        --toastWaiting_;
+    }
+    toastQueue_[static_cast<std::size_t>(toastWaiting_++)] = std::move(text);
 }
 
 void Hud::emit(HudAction::Kind kind, int arg) {
@@ -366,8 +376,10 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
     // Title and clock, top-left.
     {
         const float tpad = theme::kTitlePad * s;
-        const float w1 =
-            font.measure(Face::Title, m.worldName.empty() ? strings::kTitle : m.worldName);
+        const float maxName = std::min(theme::kTitleMaxW * s, screen.x * 0.5f);
+        titleName_ = elide(font, Face::Title, m.worldName.empty() ? strings::kTitle : m.worldName,
+                           maxName, titleCut_);
+        const float w1 = font.measure(Face::Title, titleName_);
         const float w2 =
             theme::kIcon * s + theme::kTitleIconGap * s + font.measure(Face::Body, clockLabel_);
         titleBox_ = {margin, margin, std::max(w1, w2) + 2 * tpad,
@@ -546,10 +558,13 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
     // when that band is too narrow; below the ribbon while one shows.
     {
         const float tpad = theme::kToastPad * s;
-        const float w = std::min(theme::kIcon * s + theme::kToastIconGap * s +
-                                     font.measure(Face::Body, toast_) + 2 * tpad,
-                                 screen.x - 2 * margin);
-        const float h = theme::kToastH * s;
+        const float chrome = theme::kIcon * s + theme::kToastIconGap * s + 2 * tpad;
+        const float w = std::min({chrome + font.measure(Face::Body, toast_), theme::kRibbonMaxW * s,
+                                  screen.x - 2 * margin});
+        // A long toast wraps to a second line rather than running off the glass.
+        toastLines_ = wrapLines(font, Face::Body, toast_, w - chrome, theme::kToastLines);
+        const float h =
+            theme::kToastH * s + static_cast<float>(toastLines_ - 1) * font.lineHeight(Face::Body);
         const float left = titleBox_.x + titleBox_.w + gap;
         float right = journalT_ > 0.0f ? journalBox_.x - gap : screen.x - margin;
         if (trayT_ > 0.0f && trayBox_.w > 0) right = std::min(right, trayBox_.x - gap);
@@ -584,8 +599,19 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     journalT_ = approach(journalT_, m.journalOpen && !m.photo, dt);
     // In photo mode only the hint line stays (it says how to take the photo and get back).
     hintT_ = approach(hintT_, !m.hint.empty() || !m.warning.empty(), dt);
+    // While others wait, a toast steps aside once it has been up long enough to read.
+    toastShown_ += dt;
+    if (toastWaiting_ > 0)
+        toastTime_ = std::min(toastTime_, std::max(0.0f, theme::kToastQueuedSeconds - toastShown_));
     toastTime_ = std::max(0.0f, toastTime_ - dt);
     toastT_ = approach(toastT_, toastTime_ > 0.0f && !m.photo, dt);
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ > 0) {
+        toast_ = std::move(toastQueue_[0]);
+        std::ranges::rotate(toastQueue_, toastQueue_.begin() + 1);
+        --toastWaiting_;
+        toastTime_ = theme::kToastSeconds;
+        toastShown_ = 0;
+    }
     flash_ = std::max(0.0f, flash_ - dt / theme::kFlashSeconds);
     if (m.photo) calendarOpen_ = false;
     calendarT_ = approach(calendarT_, calendarOpen_, dt);
@@ -621,11 +647,25 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
                                 drawerBox_.x + drawerBox_.w > trayLast_.x;
     const bool ribbonOverTray = ribbonT_ > 0.0f && trayLast_.w > 0 && ribbonBox_.w > 0 &&
                                 ribbonBox_.x + ribbonBox_.w > trayLast_.x;
-    trayT_ = approach(
-        trayT_, !tray_.empty() && !m.journalOpen && !m.photo && !drawerOverTray && !ribbonOverTray,
-        dt);
+    // On a narrow window the calendar can reach across to the tray: the tray waits (QA2-11).
+    const bool calendarOverTray = calendarT_ > 0.0f && trayLast_.w > 0 && calendarBox_.w > 0 &&
+                                  calendarBox_.x + calendarBox_.w > trayLast_.x &&
+                                  calendarBox_.y < trayLast_.y + trayLast_.h;
+    trayT_ = approach(trayT_,
+                      !tray_.empty() && !m.journalOpen && !m.photo && !drawerOverTray &&
+                          !ribbonOverTray && !calendarOverTray,
+                      dt);
     const auto end = std::format_to_n(trayCount_, sizeof trayCount_ - 1, "{}", m.wishes.size());
     *end.out = '\0';
+
+    // The wheel scrolls what the pointer was over in the frame on screen, before this frame's
+    // layout clamps the scroll, so drawing never runs past the end of a list (QA2-02).
+    if (in.wheel != 0 && in.inside && !in.blocked && !m.photo) {
+        if (drawerT_ > 0.5f && drawerBox_.contains(in.x, in.y) && !scroll_.empty())
+            scroll_[static_cast<std::size_t>(m.category)] += in.wheel > 0 ? -1 : 1;
+        if (journalT_ > 0.5f && journalBox_.contains(in.x, in.y))
+            sketchScroll_ += in.wheel > 0 ? -1 : 1;
+    }
 
     if (noteLabel_.empty())
         noteLabel_ = std::vformat(strings::kNoteLabel, std::make_format_args(m.cat->resident.name));
@@ -796,10 +836,6 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
         active_ = 0;
         captured_ = false;
     }
-    if (in.wheel != 0 && canPoint && drawerBox_.contains(in.x, in.y) && !scroll_.empty())
-        scroll_[static_cast<std::size_t>(m.category)] += in.wheel > 0 ? -1 : 1;
-    if (in.wheel != 0 && canPoint && journalT_ > 0.5f && journalBox_.contains(in.x, in.y))
-        sketchScroll_ = std::max(0, sketchScroll_ + (in.wheel > 0 ? -1 : 1));
 
     for (std::size_t i = 1; i < hover_.size(); ++i) {
         const int id = static_cast<int>(i);
@@ -1043,8 +1079,7 @@ void Hud::drawTitle(Painter& p, const HudModel& m) const {
     const float lh1 = f.lineHeight(Face::Title);
     const float lh2 = f.lineHeight(Face::Body);
     const Box b = titleBox_;
-    p.text(Face::Title, m.worldName.empty() ? strings::kTitle : m.worldName, b.x + pad,
-           b.y + pad + f.ascent(Face::Title), theme::kInk);
+    p.text(Face::Title, titleName_, b.x + pad, b.y + pad + f.ascent(Face::Title), theme::kInk);
     const float h = hoverOf(kTitleCard);
     if (h > 0) p.roundRect(b, theme::kPanelRadius * s, withAlpha(theme::kHover, h * 0.6f));
     const float y2 = b.y + pad + lh1;
@@ -1256,7 +1291,8 @@ void Hud::drawSketchbook(Painter& p, const HudModel& m) const {
         const Box in{box.x + iconPad, box.y + iconPad, box.w - 2 * iconPad, box.h - 2 * iconPad};
         p.thumbnail(spr, in, in.w / std::max(1.0f, std::max(spr.w, spr.h)), a, tint);
     };
-    for (int i = sketchScroll_; i < sketchScroll_ + sketchShown_; ++i) {
+    const int end = std::min(sketchScroll_ + sketchShown_, static_cast<int>(rows_.size()));
+    for (int i = sketchScroll_; i < end; ++i) {
         const Row& r = rows_[static_cast<std::size_t>(i)];
         const Box ib{b.x + pad, y + rowPad, icon, icon};
         const float tx = ib.x + icon + gapX;
@@ -1267,6 +1303,7 @@ void Hud::drawSketchbook(Painter& p, const HudModel& m) const {
                    withAlpha(theme::kGold, a));
             break;
         case Row::Kind::OpenWish: {
+            if (std::cmp_greater_equal(r.index, m.wishes.size())) break;
             const WishCard& c = m.wishes[static_cast<std::size_t>(r.index)];
             disc(ib, false);
             art(ib, c.portrait, {1, 1, 1, 1});
@@ -1391,8 +1428,15 @@ void Hud::drawToast(Painter& p) const {
     const float iconW = theme::kIcon * s;
     const Box b = toastBox_;
     p.icon(theme::icon::kSparkle, b.x + pad + iconW * 0.5f, b.cy(), withAlpha(theme::kAccent, a));
-    p.text(Face::Body, toast_, b.x + pad + iconW + theme::kToastIconGap * s,
-           b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(theme::kInk, a));
+    const float x = b.x + pad + iconW + theme::kToastIconGap * s;
+    if (toastLines_ <= 1) {
+        p.text(Face::Body, toast_, x, b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre,
+               withAlpha(theme::kInk, a));
+        return;
+    }
+    const float lh = f.lineHeight(Face::Body);
+    p.wrapped(Face::Body, toast_, x, b.cy() - lh * static_cast<float>(toastLines_) * 0.5f,
+              b.x + b.w - pad - x, toastLines_, withAlpha(theme::kInk, a));
 }
 
 void Hud::drawTray(Painter& p) const {
@@ -1787,7 +1831,8 @@ void Hud::draw(Painter& p, const HudModel& m) const {
     const float ta = toast_.empty() || m.photo ? 0.0f : smooth(toastT_);
     if (ha > 0 || ta > 0) {
         p.glass(hintBox_, hintBox_.h * 0.5f, ha, theme::kGlass);
-        p.glass(toastBox_, toastBox_.h * 0.5f, ta, theme::kGlass);
+        p.glass(toastBox_, std::min(toastBox_.h, theme::kToastH * scale_) * 0.5f, ta,
+                theme::kGlass);
         p.endGlass();
         drawHint(p, m);
         drawToast(p);

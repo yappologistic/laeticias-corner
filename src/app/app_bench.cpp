@@ -155,7 +155,8 @@ int App::runBench() {
             if (panning) camera_.dragBy({kPanPxPerFrame, kPanPxPerFrame * 0.5f}, screen());
             const Uint64 t0 = SDL_GetPerformanceCounter();
             step(static_cast<float>(tuning::kStepSeconds));
-            hud_.update({}, model(), font_, screen(), uiScale_,
+            ui_ = model();
+            hud_.update({}, ui_, font_, screen(), uiScale_,
                         static_cast<float>(tuning::kStepSeconds));
             const Uint64 t1 = SDL_GetPerformanceCounter();
             render();
@@ -221,7 +222,8 @@ int App::runBench() {
         for (int f = 0; f < kWarmup + frames; ++f) {
             const Uint64 t0 = SDL_GetPerformanceCounter();
             step(static_cast<float>(tuning::kStepSeconds));
-            hud_.update({}, model(), font_, screen(), uiScale_,
+            ui_ = model();
+            hud_.update({}, ui_, font_, screen(), uiScale_,
                         static_cast<float>(tuning::kStepSeconds));
             render();
             const Uint64 t1 = SDL_GetPerformanceCounter();
@@ -274,7 +276,8 @@ int App::runSoak() {
         step(static_cast<float>(tuning::kStepSeconds));
         peakActors = std::max(peakActors, actorMs_);
         if (s % tuning::kSoakDrawEvery == 0) {
-            hud_.update({}, model(), font_, screen(), uiScale_,
+            ui_ = model();
+            hud_.update({}, ui_, font_, screen(), uiScale_,
                         static_cast<float>(tuning::kStepSeconds));
             render();
             if (!SDL_RenderPresent(renderer_.get())) SDL_Log("present: %s", SDL_GetError());

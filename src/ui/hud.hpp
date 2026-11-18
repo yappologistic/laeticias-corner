@@ -11,6 +11,7 @@
 #include "core/weather.hpp"
 #include "platform/sprite.hpp"
 #include "ui/painter.hpp"
+#include "ui/theme.hpp"
 
 #include <array>
 #include <optional>
@@ -193,6 +194,10 @@ public:
     [[nodiscard]] bool ribbonShowing() const { return ribbonTime_ > 0.0f; }
     void flash() { flash_ = 1.0f; }
     [[nodiscard]] bool toastShowing() const { return toastTime_ > 0.0f; }
+    // The toast showing now (empty when none).
+    [[nodiscard]] std::string_view toastText() const {
+        return toastTime_ > 0.0f ? std::string_view(toast_) : std::string_view();
+    }
     // Centre of a named widget for scripted input ("build", "tile:oak", "tab:homes"...), or of
     // the "toast" and "hint" panels while they show.
     [[nodiscard]] std::optional<Vec2> widgetCentre(std::string_view name, const HudModel& m) const;
@@ -294,11 +299,18 @@ private:
     float hoverTime_ = 0;
     float tooltipT_ = 0;
     int tooltipId_ = 0;
+    // Toasts take turns: one shows, the next few wait in arrival order (QA2-04).
     std::string toast_;
-    float toastTime_ = 0;
+    std::array<std::string, theme::kToastQueue> toastQueue_;
+    int toastWaiting_ = 0;
+    float toastTime_ = 0;  // left to show
+    float toastShown_ = 0; // shown so far
     float toastT_ = 0;
+    int toastLines_ = 1;
     float flash_ = 0;
     std::string clockLabel_;
+    std::string titleCut_;       // a long world name, cut short
+    std::string_view titleName_; // the name as the title card shows it
     std::string hintText_;
     std::string lockLabel_; // "+N" and its tooltip for the open tab's lock tile
     std::string lockTip_;

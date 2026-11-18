@@ -39,7 +39,7 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
             }
             return std::nullopt;
         }
-        return hud_.widgetCentre(p.widget, model());
+        return hud_.widgetCentre(p.widget, ui_);
     }
     return std::nullopt;
 }
@@ -258,7 +258,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "widget") {
         if (a.size() != 3) return std::string("expect widget NAME yes|no");
-        const bool have = hud_.widgetCentre(a[1], model()).has_value();
+        const bool have = hud_.widgetCentre(a[1], ui_).has_value();
         return have == (a[2] == "yes")
                    ? std::nullopt
                    : std::optional(std::format("widget {} {}shown", a[1], have ? "" : "not "));
@@ -294,7 +294,16 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::string(kTabs[static_cast<std::size_t>(hud_.sketchTab())]), a[1]);
     }
     if (what == "zoom") return equal(scaleName(camera_.zoom()), a[1]);
-    if (what == "toast") return yesNo(hud_.toastShowing());
+    if (what == "toast") {
+        if (a.size() == 2 && (a[1] == "yes" || a[1] == "no")) return yesNo(hud_.toastShowing());
+        // expect toast WORDS...: the toast showing now contains them.
+        std::string want;
+        for (std::size_t i = 1; i < a.size(); ++i) want += (i > 1 ? " " : "") + a[i];
+        return hud_.toastText().find(want) != std::string_view::npos
+                   ? std::nullopt
+                   : std::optional(
+                         std::format("toast is \"{}\", not \"{}\"", hud_.toastText(), want));
+    }
     if (what == "panning") return yesNo(std::ranges::any_of(keyPan_, [](bool k) { return k; }));
     if (what == "phase") return equal(std::string(phaseId(clock_.phase())), a[1]);
     if (what == "seen") {
@@ -373,7 +382,7 @@ bool App::scriptStep() {
         const auto at = [&](const ScriptPoint& p) -> std::optional<Vec2> { return resolve(p); };
         const auto pending = [&](const ScriptPoint& p) {
             if (p.kind != ScriptPoint::Kind::Widget || scriptRetries_ >= kRevealRetries ||
-                !hud_.reveal(p.widget, model()))
+                !hud_.reveal(p.widget, ui_))
                 return false;
             ++scriptRetries_;
             return true;
@@ -479,6 +488,17 @@ bool App::scriptStep() {
             } else if (c.args[0] == "season") {
                 seasonPin_ = c.args[1] == "auto" ? -1 : cat_.findSeason(c.args[1]).value_or(-2);
                 if (seasonPin_ < -1) return fail("unknown season " + c.args[1]);
+                seasonByPin_ = true; // as the calendar's pin: the grade glides quickly
+            } else if (c.args[0] == "wish") {
+                // set wish ID open: offered now, as if its giver had asked.
+                const auto w = cat_.findWish(c.args[1]);
+                if (!w) return fail("unknown wish " + c.args[1]);
+                WishProgress& wp = progress_.wishes[static_cast<std::size_t>(*w)];
+                if (wp.state == WishState::Waiting) {
+                    wp.state = WishState::Open;
+                    progress_.open.push_back(*w);
+                    progression_.evaluate(world_, progress_, facts(), played_);
+                }
             } else if (c.args[0] == "grow") {
                 growBeds(std::stof(c.args[1]));
             } else if (c.args[0] == "day") {

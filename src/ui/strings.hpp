@@ -124,6 +124,8 @@ inline constexpr std::string_view kHintRipe = "Ripe beds can be picked. Click on
 inline constexpr std::string_view kToastPhoto = "Photo saved";
 inline constexpr std::string_view kToastPhotoFailed = "Couldn't save the photo";
 inline constexpr std::string_view kToastSaveFailed = "Couldn't save your corner; will keep trying";
+inline constexpr std::string_view kToastNewerSave =
+    "Your world was saved by a newer version of the game. It is left as it is.";
 inline constexpr std::string_view kToastWelcome =
     "Welcome back. Laeticia has started a sketchbook: {} pages so far.";
 inline constexpr std::string_view kPhotoFile = "laeticias-corner-{:04}.png"; // numbered

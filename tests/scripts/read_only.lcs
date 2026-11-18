@@ -9,5 +9,5 @@ click @12,16
 key escape
 wait 150
 expect saved no
-expect toast yes
+waitfor 300 toast Couldn't save
 quit

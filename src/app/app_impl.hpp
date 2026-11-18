@@ -232,7 +232,8 @@ private:
     int strokeTiles_ = 0; // tiles painted in this stroke, for its notes
     bool anyRipe_ = false;
     Vec2 edgeChipTarget_;
-    mutable std::array<std::string, tuning::kMaxOpenWishes> cardDetail_;
+    mutable std::vector<std::string> cardDetail_;
+    HudModel ui_; // this frame's interface model (see run())
     // The open world save and the profile shared by all of them.
     std::string worldName_;
     std::string created_;
@@ -257,6 +258,7 @@ private:
     float savedZoom_ = 1;
     double thumbTimer_ = 0;
     fs::path legacyToRetire_; // an old save to rename once its world and thumbnail are written
+    float retireAt_ = 0;      // when to try that again after a failed write
     bool welcomePending_ = false;
     Camera camera_;
 
@@ -317,6 +319,7 @@ private:
     AutosaveClock autosave_;
     bool saveFailing_ = false;
     bool saveBlocked_ = false; // an unreadable save could not be moved aside: never overwrite it
+    bool newerSave_ = false;   // the world to open came from a newer build and was left alone
     bool running_ = true;
     int exitCode_ = 0;
     int frame_ = 0;

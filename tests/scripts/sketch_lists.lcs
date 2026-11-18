@@ -1,0 +1,50 @@
+# The sketchbook at the ends of its lists (QA2-01, QA2-02; run under ASan in the sanitizer
+# preset): wheeling past the end of every tab, "Not now" on each open wish, and a wish granted
+# while the Wishes tab is open.
+set wish first_flowers open
+set wish a_roof open
+set wish path_to_door open
+wait 2
+expect wishes 3
+key j
+wait 12
+expect sketch wishes
+wheel -1 ui:journal_close
+wheel -1 ui:journal_close
+wheel -1 ui:journal_close
+wait 2
+key right
+wait 3
+expect sketch visitors
+wheel -1 ui:journal_close
+wait 1
+wheel -1 ui:journal_close
+wait 1
+wheel -1 ui:journal_close
+wheel -1 ui:journal_close
+wheel -1 ui:journal_close
+wait 2
+wheel 1 ui:journal_close
+wheel 1 ui:journal_close
+wait 2
+key left
+wait 3
+expect sketch wishes
+click ui:sketch_not_now
+wait 1
+expect wishes 2
+click ui:sketch_not_now
+wait 1
+click ui:sketch_not_now
+wait 2
+expect wishes 0
+# Met while the book is open on its Wishes tab: granted under the reader's eyes.
+paint grass @30,30
+place flowers_white @30,30
+place flowers_red @31,30
+set played 2000
+set wish first_flowers open
+waitfor 200 wish first_flowers done
+wait 3
+shot shots/sketch_lists.png
+quit

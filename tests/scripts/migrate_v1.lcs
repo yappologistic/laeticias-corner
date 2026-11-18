@@ -7,6 +7,8 @@ expect count all 43
 expect item @35,35 cottage
 wait 2
 expect toast yes
+# The welcome card takes its turn among the other toasts (QA2-04).
+waitfor 600 toast Welcome back
 shot shots/migrated_v1.png
 wait 3
 expect saved yes

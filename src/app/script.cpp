@@ -125,7 +125,17 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             static constexpr std::string_view kKeys[] = {
                 "clock", "rain",    "unlock",  "played", "land",   "season", "day",
                 "grow",  "weather", "chatter", "time",   "lively", "shower"};
-            if (tok.size() == 4 && tok[1] == "look") {
+            static constexpr std::string_view kNumeric[] = {"played", "grow", "day", "time"};
+            if (tok.size() == 3 && std::ranges::find(kNumeric, tok[1]) != std::end(kNumeric)) {
+                float v = 0;
+                const std::string_view n = tok[2].starts_with('+')
+                                               ? std::string_view(tok[2]).substr(1)
+                                               : std::string_view(tok[2]);
+                if (!number(n, v)) return err("set " + tok[1] + " expects a number");
+            }
+            if (tok.size() == 4 && tok[1] == "wish") {
+                if (tok[3] != "open") return err("set wish ID open");
+            } else if (tok.size() == 4 && tok[1] == "look") {
                 float v = 0;
                 if (!number(tok[3], v)) return err("set look KIND ZOOM");
             } else if (tok.size() == 5 && tok[1] == "camera") {
@@ -135,7 +145,8 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
                 }
             } else if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys)) {
                 return err("set clock|rain|weather|unlock|played|land|season|day|grow|chatter|"
-                           "time|lively VALUE, set camera TX TY ZOOM or set look KIND ZOOM");
+                           "time|lively VALUE, set camera TX TY ZOOM, set look KIND ZOOM or "
+                           "set wish ID open");
             }
             c.kind = ScriptCommand::Kind::Set;
             c.args.assign(tok.begin() + 1, tok.end());

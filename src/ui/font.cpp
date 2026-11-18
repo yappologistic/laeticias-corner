@@ -8,6 +8,8 @@
 #include <cmath>
 #include <fstream>
 #include <iterator>
+#include <span>
+#include <utility>
 
 namespace lc {
 namespace {
@@ -19,10 +21,27 @@ constexpr char32_t kKernFirst = 32;
 constexpr char32_t kKernLast = 126;
 constexpr std::size_t kKernSpan = kKernLast - kKernFirst + 1;
 
-std::vector<int> textCodepoints() {
+// Letters for names the player types: Latin-1, Latin Extended-A and basic Cyrillic, as far as
+// every text face has them. Anything else is refused at the keyboard (see Font::has), so a name
+// never shows a glyph the interface cannot draw.
+constexpr std::pair<char32_t, char32_t> kNameRanges[] = {{0xA1, 0x17F}, {0x400, 0x45F}};
+
+std::vector<int> textCodepoints(std::span<const std::vector<unsigned char>* const> faces) {
     std::vector<int> cps;
     for (int c = 32; c < 127; ++c) cps.push_back(c);
     for (char32_t c : kTextExtras) cps.push_back(static_cast<int>(c));
+    std::vector<stbtt_fontinfo> infos(faces.size());
+    for (std::size_t f = 0; f < faces.size(); ++f)
+        if (!stbtt_InitFont(&infos[f], faces[f]->data(),
+                            stbtt_GetFontOffsetForIndex(faces[f]->data(), 0)))
+            return cps;
+    for (const auto& [lo, hi] : kNameRanges)
+        for (char32_t c = lo; c <= hi; ++c)
+            if (std::ranges::none_of(kTextExtras, [&](char32_t e) { return e == c; }) &&
+                std::ranges::all_of(infos, [&](const stbtt_fontinfo& i) {
+                    return stbtt_FindGlyphIndex(&i, static_cast<int>(c)) != 0;
+                }))
+                cps.push_back(static_cast<int>(c));
     return cps;
 }
 
@@ -74,7 +93,9 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
         if (f.ttf.empty()) return false;
     scale_ = scale;
 
-    const std::vector<int> text = textCodepoints();
+    const std::vector<unsigned char>* textFaces[] = {&faces_[idx(Face::Body)].ttf,
+                                                     &faces_[idx(Face::Title)].ttf};
+    const std::vector<int> text = textCodepoints(textFaces);
     std::vector<int> icons;
     for (char32_t c : theme::icon::kAll) icons.push_back(static_cast<int>(c));
     const float sizes[] = {theme::kTextBody * scale, theme::kTextTitle * scale,
@@ -166,6 +187,10 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
     }
     SDL_Log("font: glyphs do not fit at scale %.2f", static_cast<double>(scale));
     return false;
+}
+
+bool Font::has(char32_t cp) const {
+    return find(Face::Body, cp) != nullptr && find(Face::Title, cp) != nullptr;
 }
 
 const Glyph* Font::find(Face face, char32_t cp) const {

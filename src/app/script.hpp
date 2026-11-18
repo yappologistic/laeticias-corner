@@ -7,7 +7,8 @@
 //                      ui:NAME  centre of a UI widget: build, remove, sound, photo, clock, rain,
 //                               journal (the sketchbook), journal_close, undo, redo, recentre,
 //                               zoom_out, zoom_in, tray, card:N, not_now, sketch:wishes|visitors|
-//                               nooks, sketch_not_now,
+//                               nooks, sketch_not_now, calendar, season_auto|spring|summer|
+//                               autumn|winter, edge_chip,
 //                               scroll_up, scroll_down, tab:<category id>, tile:<item or terrain
 //                               id>, or of the toast and hint panels: toast, hint
 //                  actor:KIND   the middle of the first actor of that kind (a visitor id or the
@@ -41,6 +42,7 @@
 //   set season ID|auto      keep a season (as the calendar's pin does), or follow the days
 //   set day N               the calendar day (the season follows unless pinned)
 //   set grow SECONDS        let the beds grow that much play time at once
+//   set wish ID open        offer that wish now (it joins the tray even past three)
 //   waitfor N WHAT ARGS...  wait up to N frames until `expect WHAT ARGS...` holds, else fail
 //   fast S [WHAT ARGS...]   simulate S seconds without drawing (or until `expect WHAT ARGS...`
 //                           holds, failing if it never does); state checks only
@@ -50,7 +52,8 @@
 //       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
 //       where it may) | saved yes|no (a save file exists) | zoom 0.25|0.5|1|2|3
-//       toast yes|no (a toast is showing) | panning yes|no (a pan key is held)
+//       toast yes|no (a toast is showing) | toast WORDS... (the toast showing contains them)
+//       panning yes|no (a pan key is held)
 //       file PATH yes|no (PATH, relative to the save directory, exists)
 //       widget NAME yes|no (the widget is laid out now; also card:N, the N-th wish card)
 //       wish ID open|done|waiting | wishes N (open now) | ribbon yes|no (a wish was granted)

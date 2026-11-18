@@ -237,6 +237,24 @@ int breakLines(const Font& font, Face face, std::string_view s, float width, int
 
 } // namespace
 
+std::string_view elide(const Font& font, Face face, std::string_view s, float width,
+                       std::string& out) {
+    if (font.measure(face, s) <= width) return s;
+    constexpr std::string_view kEllipsis = "\u2026";
+    const float room = width - font.measure(face, kEllipsis);
+    // Whole characters only, so a cut never splits a UTF-8 sequence.
+    std::size_t keep = 0;
+    for (std::size_t i = 0; i < s.size();) {
+        std::size_t j = i;
+        (void)nextCodepoint(s, j);
+        if (font.measure(face, s.substr(0, j)) > room) break;
+        keep = i = j;
+    }
+    while (keep > 0 && s[keep - 1] == ' ') --keep;
+    out.assign(s.substr(0, keep)).append(kEllipsis);
+    return out;
+}
+
 int wrapLines(const Font& font, Face face, std::string_view s, float width, int maxLines) {
     return breakLines(font, face, s, width, maxLines, [](std::string_view, bool) {});
 }

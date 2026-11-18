@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstddef>
+#include <string>
 #include <string_view>
 
 namespace lc {
@@ -24,6 +25,10 @@ struct Box {
     [[nodiscard]] float cx() const { return x + w * 0.5f; }
     [[nodiscard]] float cy() const { return y + h * 0.5f; }
 };
+
+// `s` as it fits in `width`: whole, or cut short with an ellipsis (built in `out`).
+[[nodiscard]] std::string_view elide(const Font& font, Face face, std::string_view s, float width,
+                                     std::string& out);
 
 // Lines `s` takes when word-wrapped to `width`, at most maxLines (the last one is cut short with
 // an ellipsis when drawn).
