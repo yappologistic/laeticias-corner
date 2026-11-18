@@ -34,11 +34,10 @@ void pathTiles(std::span<const TilePos> points, int cols, std::vector<Tile16>& o
         int ic = 0;
         int ir = 0;
         for (int k = 0; k < adc + adr; ++k) {
-            if (ic == adc)
-                ++ir;
-            else if (ir == adr)
-                ++ic;
-            else if (std::abs((ic + 1) * adr - ir * adc) <= std::abs(ic * adr - (ir + 1) * adc))
+            // Along c unless c is done: when r is done, or when it keeps closer to the line.
+            const bool alongC = ic != adc && (ir == adr || std::abs((ic + 1) * adr - ir * adc) <=
+                                                               std::abs(ic * adr - (ir + 1) * adc));
+            if (alongC)
                 ++ic;
             else
                 ++ir;

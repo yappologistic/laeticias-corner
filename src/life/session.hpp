@@ -74,7 +74,11 @@ struct BenchCase {
 struct BenchOptions {
     int frames = 1800;     // steps per case
     double budgetMs = 0.6; // simulation average (CLAUDE.md)
-    bool assert = true;
+#ifdef NDEBUG
+    bool assert = true; // timing budgets hold in optimised builds (a sanitizer's pace is not the game's)
+#else
+    bool assert = false;
+#endif
     std::vector<int> caps; // when set: the crowd-size study (live actors forced to each)
 };
 // The city cases: every city core at its busiest hour and on its festival, a fast move across
@@ -82,7 +86,7 @@ struct BenchOptions {
 int runLifeBench(LifeSession& s, const BenchOptions& o, std::vector<BenchCase>& out);
 
 // `seconds` of busy play at 60 Hz with the area roaming the world; exits 3 when memory grows
-// after the first quarter or the simulation averages over budget.
+// after the first quarter or, when `budgetMs` > 0, the simulation averages over it.
 int runLifeSoak(LifeSession& s, double seconds, double budgetMs);
 
 } // namespace lc::life

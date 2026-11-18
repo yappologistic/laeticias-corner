@@ -33,27 +33,36 @@ const char* arg(int argc, char** argv, int& i) {
     return i + 1 < argc ? argv[++i] : "";
 }
 
+// A number from an argument; `fallback` when it is not one.
+template <typename T>
+T number(std::string_view s, T fallback) {
+    const std::string text(s);
+    T v{};
+    const auto [p, ec] = std::from_chars(text.c_str(), text.c_str() + text.size(), v);
+    return ec == std::errc{} && p == text.c_str() + text.size() ? v : fallback;
+}
+
 void summary(const LifeSession& s) {
     const LifeWorld& w = *s.life;
-    std::printf("load %.0f ms (life %.0f ms); %zu kinds, %zu goods, %zu steps, %zu tokens\n",
-                s.loadMs, w.buildMs, w.data.kinds.size(), w.data.goods.size(), w.data.steps.size(),
-                w.data.tokens.size());
+    (void)std::printf("load %.0f ms (life %.0f ms); %zu kinds, %zu goods, %zu steps, %zu tokens\n",
+                      s.loadMs, w.buildMs, w.data.kinds.size(), w.data.goods.size(),
+                      w.data.steps.size(), w.data.tokens.size());
     for (std::size_t r = 0; r < w.data.regions.size(); ++r) {
         const LifeRegion& reg = w.data.regions[r];
         const int p = w.pathsOf[r];
-        std::printf("  %-20s roles %3zu districts %2zu chains %2zu events %2zu figures %2zu",
-                    reg.id.c_str(), reg.roles.size(), reg.districts.size(), reg.chains.size(),
-                    reg.events.size(), reg.figures.size());
+        (void)std::printf("  %-20s roles %3zu districts %2zu chains %2zu events %2zu figures %2zu",
+                          reg.id.c_str(), reg.roles.size(), reg.districts.size(), reg.chains.size(),
+                          reg.events.size(), reg.figures.size());
         if (p >= 0) {
             const RegionPaths& rp = w.paths[static_cast<std::size_t>(p)];
-            std::printf("  graph %d nodes, %zu edges; course tiles off the walk %d, steps %d",
-                        rp.nodeCount(), rp.edges().size(), rp.badCourseTiles(),
-                        rp.badCourseSteps());
+            (void)std::printf("  graph %d nodes, %zu edges; course tiles off the walk %d, steps %d",
+                              rp.nodeCount(), rp.edges().size(), rp.badCourseTiles(),
+                              rp.badCourseSteps());
         }
-        std::printf("\n");
+        (void)std::printf("\n");
     }
-    std::printf("life memory %.2f MB; %zu problems (lifeinfo problems)\n",
-                static_cast<double>(w.memoryBytes()) / 1e6, w.data.problems.size());
+    (void)std::printf("life memory %.2f MB; %zu problems (lifeinfo problems)\n",
+                      static_cast<double>(w.memoryBytes()) / 1e6, w.data.problems.size());
 }
 
 } // namespace
@@ -67,7 +76,7 @@ int main(int argc, char** argv) {
         if (a == "--assets")
             assets = arg(argc, argv, i);
         else if (a == "--seed")
-            seed = std::strtoull(arg(argc, argv, i), nullptr, 10);
+            seed = number<std::uint64_t>(arg(argc, argv, i), seed);
         else
             break;
     }
@@ -75,7 +84,7 @@ int main(int argc, char** argv) {
     std::string error;
     auto session = openLifeSession(assets, seed, error);
     if (!session) {
-        std::fprintf(stderr, "lifeinfo: %s\n", error.c_str());
+        (void)std::fprintf(stderr, "lifeinfo: %s\n", error.c_str());
         return 1;
     }
     if (cmd == "summary") {
@@ -85,7 +94,7 @@ int main(int argc, char** argv) {
     if (cmd == "problems") {
         for (const std::string& p : session->life->data.problems) std::printf("%s\n", p.c_str());
         for (const std::string& p : session->city->chains().problems())
-            std::printf("%s\n", p.c_str());
+            (void)std::printf("%s\n", p.c_str());
         // Road edges walkers cannot use: a course tile off the walkable ground, or a step no
         // walker could make (a level change without stairs). Left out of walking, kept for
         // worldgen's distances.
@@ -109,12 +118,12 @@ int main(int argc, char** argv) {
                                             [&](const world::WalkStep& w) { return w.to == t; });
                     }
                     if (!m.walkable(t) || !legal) {
-                        std::printf("%s: graph edge %s - %s: %s at grid (%d, %d), level %d\n",
-                                    session->life->data.regions[r].id.c_str(),
-                                    rp.nodeId(ed.a).c_str(), rp.nodeId(ed.b).c_str(),
-                                    !m.walkable(t) ? "course over unwalkable ground"
-                                                   : "a step no walker can make",
-                                    t.x, t.y, m.level(t));
+                        (void)std::printf("%s: graph edge %s - %s: %s at grid (%d, %d), level %d\n",
+                                          session->life->data.regions[r].id.c_str(),
+                                          rp.nodeId(ed.a).c_str(), rp.nodeId(ed.b).c_str(),
+                                          !m.walkable(t) ? "course over unwalkable ground"
+                                                         : "a step no walker can make",
+                                          t.x, t.y, m.level(t));
                         break;
                     }
                 }
@@ -123,7 +132,7 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (cmd == "chains") {
-        std::fputs(chainReport(*session->life).c_str(), stdout);
+        (void)std::fputs(chainReport(*session->life).c_str(), stdout);
         return 0;
     }
     if (cmd == "dump") {
@@ -134,7 +143,7 @@ int main(int argc, char** argv) {
             if (a == "--focus") {
                 const auto f = parseFocus(*session->life, arg(argc, argv, i));
                 if (!f) {
-                    std::fprintf(stderr, "lifeinfo: unknown focus\n");
+                    (void)std::fprintf(stderr, "lifeinfo: unknown focus\n");
                     return 2;
                 }
                 o.focus = *f;
@@ -142,9 +151,9 @@ int main(int argc, char** argv) {
             } else if (a == "--hours") {
                 o.hours = parseHours(arg(argc, argv, i));
             } else if (a == "--day") {
-                o.day = std::atoi(arg(argc, argv, i));
+                o.day = number(arg(argc, argv, i), o.day);
             } else if (a == "--season") {
-                o.season = std::atoi(arg(argc, argv, i));
+                o.season = number(arg(argc, argv, i), o.season);
             } else if (a == "--rain") {
                 o.rain = true;
             } else if (a == "--label") {
@@ -152,14 +161,16 @@ int main(int argc, char** argv) {
             } else if (a == "--view") {
                 const std::string_view v = arg(argc, argv, i);
                 const auto comma = v.find(',');
-                std::from_chars(v.data(), v.data() + comma, o.halfW);
-                std::from_chars(v.data() + comma + 1, v.data() + v.size(), o.halfH);
+                if (comma != std::string_view::npos) {
+                    o.halfW = number(v.substr(0, comma), o.halfW);
+                    o.halfH = number(v.substr(comma + 1), o.halfH);
+                }
             } else if (a == "--out") {
                 o.out = arg(argc, argv, i);
             }
         }
         if (!haveFocus || o.hours.empty() || o.out.empty()) {
-            std::fputs(kUsage, stderr);
+            (void)std::fputs(kUsage, stderr);
             return 2;
         }
         for (const auto& f : writeLifeDumps(*session, o)) std::printf("%s\n", f.c_str());
@@ -169,7 +180,7 @@ int main(int argc, char** argv) {
         BenchOptions o;
         for (; i < argc; ++i) {
             const std::string_view a = argv[i];
-            if (a == "--frames") o.frames = std::atoi(arg(argc, argv, i));
+            if (a == "--frames") o.frames = number(arg(argc, argv, i), o.frames);
             if (a == "--caps")
                 for (const double c : parseHours(arg(argc, argv, i)))
                     o.caps.push_back(static_cast<int>(c));
@@ -178,9 +189,14 @@ int main(int argc, char** argv) {
         return runLifeBench(*session, o, out);
     }
     if (cmd == "soak") {
-        const double seconds = i < argc ? std::atof(argv[i]) : 120.0;
+        const double seconds = i < argc ? number(argv[i], 120.0) : 120.0;
+#ifdef NDEBUG
         return runLifeSoak(*session, seconds, tuning::kSimBudgetMs);
+#else
+        return runLifeSoak(*session, seconds,
+                           0); // memory only: a sanitizer's pace is not the game's
+#endif
     }
-    std::fputs(kUsage, stderr);
+    (void)std::fputs(kUsage, stderr);
     return 2;
 }

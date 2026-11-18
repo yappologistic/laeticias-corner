@@ -20,6 +20,7 @@ using world::WorldSlot;
 namespace {
 
 constexpr std::uint32_t kNoStep = 0xFFFFFFFF;
+constexpr int kHalfChunk = kChunk / 2;
 constexpr double kDaySeconds = 720.0;
 constexpr double kSecondsPerHour = 30.0;
 
@@ -368,9 +369,9 @@ void CityLife::advanceAbstract(const LifeClock& clock) {
             for (std::size_t e = 0; e < reg.events.size(); ++e) {
                 const Event& ev = reg.events[e];
                 if (ev.trigger != Trigger::Weather) continue;
-                if (!((ev.weather == "rain" && clock.rain) ||
-                      (ev.weather == "rain_stop" && !clock.rain)))
-                    continue;
+                const bool fires = (ev.weather == "rain" && clock.rain) ||
+                                   (ev.weather == "rain_stop" && !clock.rain);
+                if (!fires) continue;
                 Filter f = ev.when;
                 if (!filterPasses(reg, f)) continue;
                 if (unit(hashOf({seed_, 0x57, r, e, static_cast<std::uint64_t>(day_)})) >=
@@ -641,6 +642,22 @@ void CityLife::reconcile() {
         desires_.insert(desires_.end(), rest.begin(), rest.end());
     }
     stats_.scale = scale_;
+    // Rounding by hash can leave a few over the cap: the farthest people from the view wait.
+    if (desires_.size() > static_cast<std::size_t>(liveCap_)) {
+        const Vec2 c{static_cast<float>(view_.x0 + view_.x1) * 0.5f,
+                     static_cast<float>(view_.y0 + view_.y1) * 0.5f};
+        const auto cxs = static_cast<std::uint32_t>(map_->chunksX());
+        for (Desire& d : desires_)
+            d.order = d.source == Source::Population
+                          ? dist2({static_cast<float>(static_cast<int>(d.chunk % cxs) * kChunk +
+                                                      kHalfChunk),
+                                   static_cast<float>(static_cast<int>(d.chunk / cxs) * kChunk +
+                                                      kHalfChunk)},
+                                  c)
+                          : -1.0f; // the rest first: chains, tokens, casts, figures
+        std::ranges::stable_sort(desires_, {}, &Desire::order);
+        desires_.resize(static_cast<std::size_t>(liveCap_));
+    }
     // Compare with who is live.
     for (LiveActor& a : pool_)
         if ((a.flags & live_flag::kAlive) != 0 && a.state != ActState::Leave)
@@ -668,8 +685,8 @@ void CityLife::reconcile() {
             }
             continue;
         }
-        const auto ccx = static_cast<float>(static_cast<int>(d.chunk % cx) * kChunk + kChunk / 2);
-        const auto ccy = static_cast<float>(static_cast<int>(d.chunk / cx) * kChunk + kChunk / 2);
+        const auto ccx = static_cast<float>(static_cast<int>(d.chunk % cx) * kChunk + kHalfChunk);
+        const auto ccy = static_cast<float>(static_cast<int>(d.chunk / cx) * kChunk + kHalfChunk);
         d.order = dist2({ccx, ccy}, vc);
         queue_.push_back(d);
     }
@@ -942,7 +959,7 @@ void CityLife::materialise(int i, const Desire& d) {
     a.pos = a.prev = a.endPoint = centre(start);
     a.z = a.prevZ = static_cast<float>(map_->floorZ(start));
     a.flags = live_flag::kAlive;
-    if (d.source == Source::Figure && reg.figures.size() > 0) {
+    if (d.source == Source::Figure && !reg.figures.empty()) {
         for (const Figure& f : reg.figures)
             if (f.role == d.role && f.translucent) a.flags |= live_flag::kTranslucent;
     }
@@ -1140,8 +1157,8 @@ bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& 
         // The node the herd of this chunk heads for this period: the same for every member.
         const auto cx = static_cast<int>(a.tile.x) >> kChunkShift;
         const auto cy = static_cast<int>(a.tile.y) >> kChunkShift;
-        const Vec2 c{static_cast<float>(cx * kChunk + kChunk / 2),
-                     static_cast<float>(cy * kChunk + kChunk / 2)};
+        const Vec2 c{static_cast<float>(cx * kChunk + kHalfChunk),
+                     static_cast<float>(cy * kChunk + kHalfChunk)};
         const float r2 = t.within * t.within;
         int count = 0;
         for (int n = 0; n < paths.nodeCount(); ++n)
@@ -2437,9 +2454,9 @@ void CityLife::dayPlan(int region, int day, int season,
         };
         if (ev.every > 0) {
             const double stepH = ev.every / 3600.0; // `every` is in game seconds
-            int occ = 0;
-            for (double h = 0; h < span && occ < 48; h += stepH, ++occ)
-                add(std::fmod(static_cast<double>(from) + h, 24.0), occ);
+            for (int occ = 0; occ < 48 && static_cast<double>(occ) * stepH < span; ++occ)
+                add(std::fmod(static_cast<double>(from) + static_cast<double>(occ) * stepH, 24.0),
+                    occ);
         } else {
             const double u = unit(hashOf({seed_, 0x0FF, static_cast<std::uint64_t>(region), e,
                                           static_cast<std::uint64_t>(day)}));
@@ -2516,7 +2533,7 @@ void CityLife::buildTrail(RunningEvent& re) {
         Route r;
         int builds = 4;
         if (paths.plan(a, b, r, desc, builds) != PlanResult::Ok) continue;
-        if (re.trail == 0 && re.trail < tl::kEventTrail) buf[re.trail++] = tile16(a);
+        if (re.trail == 0) buf[re.trail++] = tile16(a);
         TilePos cur = a;
         TilePos nx;
         while (re.trail < tl::kEventTrail && paths.next(r, cur, desc, nx)) {
