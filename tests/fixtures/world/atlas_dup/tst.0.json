@@ -1,0 +1,5 @@
+{"version": 1, "image": "tst.0.png", "sprites": {
+  "item/tst.house/base/r0/f0": {"x": 0, "y": 0, "w": 128, "h": 96, "ox": 64, "oy": 30},
+  "item/tst.hall/base/r0/p0/f0": {"x": 128, "y": 0, "w": 512, "h": 300, "ox": 200, "oy": 100},
+  "walker/tst.walker/v0/move_front/f0": {"x": 640, "y": 0, "w": 20, "h": 42, "ox": 10, "oy": 40}
+}}

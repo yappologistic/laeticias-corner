@@ -90,3 +90,52 @@ if(LC_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
+
+# --- World data runtime (src/world/) -------------------------------------------------------------
+# Loads, validates and serves the prebuilt world (layers, graphs, regions, set catalogs, atlas
+# manifests, geometry). Pure logic like lc_core: no SDL.
+add_library(lc_world STATIC
+  src/world/atlas_pages.cpp
+  src/world/content.cpp
+  src/world/digest.cpp
+  src/world/geometry.cpp
+  src/world/graph_file.cpp
+  src/world/json_util.cpp
+  src/world/layer_file.cpp
+  src/world/loader.cpp
+  src/world/region_file.cpp
+  src/world/road_graph.cpp
+  src/world/set_catalog.cpp
+  src/world/world_file.cpp
+  src/world/world_map.cpp
+)
+target_link_libraries(lc_world PUBLIC lc_core)
+lc_project_target(lc_world)
+
+# Debugging aid for world builders and QA: summary, validation, region and tile dumps, digest.
+add_executable(worldinfo src/world/worldinfo_main.cpp)
+target_link_libraries(worldinfo PRIVATE lc_world)
+target_compile_definitions(worldinfo PRIVATE LC_WORLDINFO_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+lc_project_target(worldinfo)
+
+if(LC_TESTS)
+  add_executable(lc_world_tests
+    tests/world_main.cpp
+    tests/world_support.cpp
+    tests/world_formats.cpp
+    tests/world_map.cpp
+    tests/world_real.cpp
+  )
+  target_link_libraries(lc_world_tests PRIVATE lc_world lc_doctest)
+  target_compile_definitions(lc_world_tests PRIVATE
+    LC_WORLD_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
+    LC_WORLD_FIXTURES_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures/world")
+  lc_project_target(lc_world_tests)
+  # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
+  target_compile_options(lc_world_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
+  add_test(NAME world_unit COMMAND lc_world_tests --test-case-exclude=perf:*)
+  # Load time, memory and query throughput on the committed world; budgets assert in optimised
+  # builds only (sanitizer builds report the figures).
+  add_test(NAME world_perf COMMAND lc_world_tests --test-case=perf:*)
+  add_test(NAME worldinfo_summary COMMAND worldinfo summary)
+endif()
