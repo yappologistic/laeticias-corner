@@ -17,7 +17,13 @@ tools/worldgen/build.sh --check               # validate the committed files as 
 tools/worldgen/build.sh world --preview       # world.png, overview_full.png, assets/world/overview.png
 tools/worldgen/build.sh parsa --no-write      # validate only
 tools/worldgen/build.sh --test                # the test suite (about 25 s)
+tools/worldgen/build.sh --life                # region files of the stretches, seas, seams, waypoints
 ```
+
+After changing the base or a town that touches it, rebuild the towns and then the base once more:
+the base blends into the committed layers' edges and carves rivers to their water, and the towns
+copy the base below them, so two rounds reach a fixed point (a fresh build then reproduces the
+committed files byte for byte).
 
 The first run creates `.venv` from `requirements.txt` (numpy, Pillow). Everything runs under
 `nice -n 19`, single-threaded, headless. A layer is compiled against the **committed** files of
@@ -144,6 +150,27 @@ heights from the city files). Draft and provisional ids validate with a V1 warni
 art draws as a grey box of the catalog height with the id on it; provisional plants draw a home
 sprite as a stand-in so country previews can be judged.
 
+## Waypoint towns (`worldgen/waypoint.py`)
+
+Small layers on the plans of `docs/design/sets/world.md` §4 (`regions/delphi/layout.py` is a short
+example). `WP.ground(L)` copies the base below (terrain, levels, sea depth, river flow) so the edges
+meet the world; `WP.portal_street(L, pid, points, width=, paving=)` lays a road from the plan's portal
+tile at the plan's level (across the edge where two authored layers touch); `WP.raise_levels` builds
+a mound or acropolis in benches; `WP.climb` lays a path up a slope with a flight per level;
+`WP.river_level` gives a town's river a level no higher than where the base's river flows in;
+`WP.harbour_lane` ends the town's lane on the base lane's port tile; `WP.finish` clears door steps,
+caps glow and fits faces. Landmarks a city set has not drawn yet are provisional ids at their final
+footprints (`plan/provisional.py`).
+
+## Routes and lanes (`worldgen/routes.py`)
+
+`ROUTES` and `ROAD_STYLES` in the plan say where roads go and what stands along them. Each route is
+an axis-parallel A* path (turn penalty, pull to the straight line), a profile that changes level only
+on `world.ramp` flights (a level per 4 tiles plus a landing), meeting every portal and junction at its
+fixed level; paving; a ford, bridge or pontoon on water; then markers, stations, stops, tombs,
+graves, terrace walls, watchtowers, beacons and farms with tracks; harbours at route and lane ends.
+Between two portals of a town without a layout the base carries the road through the town's rect.
+
 ## Validation (world-tech §3.5)
 
 | # | Check | Level |
@@ -161,6 +188,14 @@ sprite as a stand-in so country previews can be judged.
 | V11 | ≤ 25 % of walkable tiles hidden behind raised ground | warning |
 | V12 | item cards exist in the region file | error |
 | V13 | determinism: two compiles give the same bytes (test suite) | test |
+
+Additions: V1 also checks that every placed variant is a valid look or rotation of its catalog
+entry, retired stand-ins, and the region-set rule (a region of set S carries home, world and S ids
+only; seams also both neighbours'). V6 checks portal levels against the plan and that lane ports
+named in the plan's lanes meet across layers within a tile; a graph part that reaches a portal may
+stand apart. V7 warns (art geometry) for kit slots deep inside their own footprint. V8 counts river
+flows between two layers as the base's errors (warnings elsewhere). V10 holds a layer to the chunk
+budgets it adds to.
 
 `--check` validates committed files without their layouts, so checks that need the layout source
 (V4 expectations, V7 slots, source lines) only run when the layer is built.
