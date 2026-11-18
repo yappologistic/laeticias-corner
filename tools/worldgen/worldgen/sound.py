@@ -96,7 +96,8 @@ VOICES = {"sheep": ["sfx/world/sheep_1.wav", "sfx/world/sheep_2.wav"],
           "stork": ["sfx/world/stork_clatter.wav"], "crane": ["sfx/world/cranes.wav"],
           "cat": ["sfx/cat_2.wav", "sfx/cat_3.wav"],
           "hen": ["sfx/hen_2.wav", "sfx/hen_3.wav"],
-          "duck": ["sfx/duck_2.wav", "sfx/duck_3.wav"]}
+          "duck": ["sfx/duck_2.wav", "sfx/duck_3.wav"],
+          "owl": ["sfx/world/owl_tawny.wav"]}
 # Calls the engine sprinkles over a climate's land (one at a time, far, by season and hour).
 CALLS = {"mediterranean": [{"file": "sfx/world/cuckoo.wav", "seasons": ["spring"], "hours": ["06:00", "11:00"]},
                            {"file": "sfx/world/crow_2.wav", "hours": ["07:00", "18:00"]}],
@@ -256,7 +257,7 @@ def district_sound(m: dict, area: str | None, people: bool, char: str | None,
     out: dict = {"surfaces": surfaces, "wind": wind,
                  "exposure": round(float(np.clip(1.0 - m["roof"] * 0.8 + (0.2 if mountain else 0),
                                                  0.2, 1.0)), 2)}
-    if m["harbour"] >= 0.01 and m["sea"] + m["river"] >= 0.05:
+    if m["harbour"] >= 0.01 and m["sea"] >= 0.02:
         out["water"] = {"family": "sea.harbour"}
     elif m["sea"] >= 0.05:
         out["water"] = {"family": "sea.coast"}
@@ -578,7 +579,8 @@ def apply(doc: dict, world: World, cat, root: Path) -> dict:
             r["sound"] = s
     amb = th.setdefault("ambience", {})
     amb["loops"] = amb.get("loops", []) + placed_loops(world, rid, amb.get("loops", []))
-    return doc
+    from . import soundplan
+    return soundplan.apply(doc, world, cat, root)
 
 
 # -- checking ------------------------------------------------------------------------------------
@@ -589,6 +591,9 @@ def audio_names(doc: dict):
     amb = th.get("ambience", {})
     for b in amb.get("beds", []) + amb.get("zones", []) + amb.get("loops", []):
         yield "theme.ambience", b["file"], "file"
+    for sid, se in th.get("seasons", {}).items():
+        for b in (se.get("ambience") or {}).get("beds", []):
+            yield f"theme.seasons.{sid}.ambience", b["file"], "file"
     for f in amb.get("one_shots", {}).values():
         yield "theme.ambience.one_shots", f, "file"
     for k in ("day", "night"):
@@ -602,6 +607,12 @@ def audio_names(doc: dict):
             yield f"theme.sound.{k}", s[k], "family"
     for k, f in (s.get("nature") or {}).items():
         yield f"theme.sound.nature.{k}", f, "file"
+    for sid, ph in (s.get("nature_seasons") or {}).items():
+        for k, f in ph.items():
+            if f:
+                yield f"theme.sound.nature_seasons.{sid}.{k}", f, "file"
+    for k, f in (s.get("nature_snow") or {}).items():
+        yield f"theme.sound.nature_snow.{k}", f, "file"
     for k, f in s.get("stings", {}).items():
         yield f"theme.sound.stings.{k}", f, "file"
     for w in s.get("weather", []):
@@ -667,8 +678,9 @@ def audio_names(doc: dict):
 
 def check(doc: dict, files: set[str], families: dict) -> list[tuple[str, str, str]]:
     """[(level, where, message)]: names that exist in no manifest; silent events, working roles
-    and populated districts."""
-    out = []
+    and populated districts; the year's beds, festivals and loops (`soundplan.check`)."""
+    from . import soundplan
+    out = soundplan.check(doc)
     for where, name, kind in audio_names(doc):
         if kind == "file" and name not in files:
             out.append(("error", where, f"sound {name!r} is in no audio manifest"))
