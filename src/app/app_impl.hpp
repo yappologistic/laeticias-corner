@@ -259,6 +259,7 @@ private:
     [[nodiscard]] TileRect cityView() const;
     void stepCity(float dt);
     std::optional<std::string> checkCity(std::span<const std::string> a);
+    std::optional<std::string> checkSound(std::span<const std::string> a); // expect sound ...
     bool shot(const fs::path& file);
 
     // The front door (app_front.cpp).
@@ -274,6 +275,8 @@ private:
     const MenuModel& menuModel();
     void profileChanged();
     void toggleMute();
+    void tellMuted(); // a toast once a session when the game starts muted
+    bool mutedTold_ = false;
     void writeProfileIfDue();
     void applyVolumes();
     void applyReduceMotion();
@@ -364,6 +367,7 @@ private:
     void drawPlaceholderLabels(Painter& p);
     // The world's weather around the view and over the home (followed by the home's Weather).
     void followWorldWeather();
+    [[nodiscard]] int calendarMonth() const; // the world calendar's month now, -1: none
     [[nodiscard]] TileRect cameraTiles() const;
 
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into

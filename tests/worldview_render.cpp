@@ -3,9 +3,11 @@
 // at their scale, and missing art is drawn and counted.
 
 #include "core/catalog.hpp"
+#include "life/data.hpp"
 #include "render/atlas.hpp"
 #include "ui/font.hpp"
 #include "world/loader.hpp"
+#include "worldview/city_sound.hpp"
 #include "worldview/gather.hpp"
 #include "worldview/renderer.hpp"
 #include "worldview/soundscape.hpp"
@@ -253,6 +255,197 @@ TEST_CASE("sound: beds, zones and music follow the view; a city's piece starts o
     CHECK(s.out()[file("amb/world/fields.ogg")].gain > 0.2f);
     // Back again: a phrase start again.
     CHECK(at("rome", {80, 1077}, 0.2, 0.5f));
+}
+
+TEST_CASE("sound: a bed the view stands in surrounds it; loops sound from all their sources") {
+    // L-113: zones were panned toward their centre and loops toward their nearest source, so a
+    // resting view heard beds from one side.
+    const TileRect zone{0, 0, 100, 100};
+    CHECK(std::abs(zonePan(zone, {50, 50}, 15)) < 0.05f);
+    CHECK(std::abs(zonePan(zone, {2, 97}, 15)) < 0.05f);
+    // Outside, it comes from the side it lies on, and mirrored places hear it mirrored.
+    const float right = zonePan(zone, {110, 50}, 15);
+    CHECK(std::abs(right) > 0.1f);
+    CHECK(zonePan(zone, {50, 110}, 15) == doctest::Approx(-right));
+    // Two sources of one loop either side of the view and none other in reach: from the middle.
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    Soundscape s(w, std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "audio");
+    std::vector<float> weights(w.file.regions.size(), 0.0f);
+    bool tested = false;
+    for (const world::RegionFile& rf : w.regions) {
+        for (const world::ItemLoop& l : rf.theme.loops) {
+            const int item = w.content->findItem(l.item);
+            if (item < 0 || l.when != "always" || tested) continue;
+            std::vector<Vec2> at;
+            for (const world::Placed& it : w.map->items())
+                if (static_cast<int>(it.info) == item)
+                    at.push_back({static_cast<float>(it.x) + static_cast<float>(it.w) * 0.5f,
+                                  static_cast<float>(it.y) + static_cast<float>(it.h) * 0.5f});
+            for (std::size_t a = 0; a < at.size() && !tested; ++a)
+                for (std::size_t b = a + 1; b < at.size() && !tested; ++b) {
+                    const Vec2 mid{(at[a].x + at[b].x) * 0.5f, (at[a].y + at[b].y) * 0.5f};
+                    const float lean = (at[a].x - mid.x) - (at[a].y - mid.y);
+                    if (std::hypot(at[a].x - mid.x, at[a].y - mid.y) > 8 || std::abs(lean) < 2)
+                        continue;
+                    // Nothing else playing this file near the middle.
+                    bool alone = true;
+                    for (const world::RegionFile& rg : w.regions)
+                        for (const world::ItemLoop& o : rg.theme.loops)
+                            if (o.file == l.file)
+                                for (const world::Placed& it : w.map->items())
+                                    if (static_cast<int>(it.info) == w.content->findItem(o.item)) {
+                                        const Vec2 p{static_cast<float>(it.x) +
+                                                         static_cast<float>(it.w) * 0.5f,
+                                                     static_cast<float>(it.y) +
+                                                         static_cast<float>(it.h) * 0.5f};
+                                        const bool pair = (p.x == at[a].x && p.y == at[a].y) ||
+                                                          (p.x == at[b].x && p.y == at[b].y);
+                                        if (!pair && std::hypot(p.x - mid.x, p.y - mid.y) < 15)
+                                            alone = false;
+                                    }
+                    if (!alone) continue;
+                    s.update({weights, mid, 15, 0.2, 0, 0.5f});
+                    const auto f = static_cast<std::size_t>(std::ranges::find(s.files(), l.file) -
+                                                            s.files().begin());
+                    MESSAGE(l.file << " between " << at[a].x << "," << at[a].y << " and " << at[b].x
+                                   << "," << at[b].y);
+                    CHECK(s.out()[f].gain > 0);
+                    CHECK(std::abs(s.out()[f].pan) < 0.05f);
+                    tested = true;
+                }
+        }
+    }
+    CHECK(tested);
+}
+
+TEST_CASE("sound: every region has a bed in every month, by day and night; a season's own beds "
+          "replace the plain ones") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    const std::filesystem::path audio = std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "audio";
+    Soundscape s(w, audio);
+    const Catalog& cat = w.content->home();
+    const auto season = [&](std::string_view id) {
+        return static_cast<int>(std::ranges::find(cat.seasons, id, &SeasonDef::id) -
+                                cat.seasons.begin());
+    };
+    const auto month = [&](std::string_view id) {
+        return static_cast<int>(std::ranges::find(cat.months, id) - cat.months.begin());
+    };
+    REQUIRE(cat.months.size() == 12);
+    int m = 0;
+    for (std::size_t k = 0; k < cat.seasons.size(); ++k)
+        for (int d = 0; d < cat.seasonDays[k]; ++d, ++m)
+            for (const float hour : {12.0f, 0.0f})
+                for (std::size_t g = 0; g < w.file.regions.size(); ++g) {
+                    const auto beds =
+                        s.bedsOf(static_cast<int>(g), static_cast<int>(k), m, hour, false);
+                    CHECK_MESSAGE(!beds.empty(),
+                                  w.file.regions[g].id << " " << cat.seasons[k].id << " " << hour);
+                    for (const std::string& f : beds)
+                        CHECK_MESSAGE(std::filesystem::exists(audio / f), f);
+                }
+    const int rome = w.file.findRegion("rome");
+    const int parsa = w.file.findRegion("parsa");
+    using Files = std::vector<std::string>;
+    CHECK(s.bedsOf(rome, season("spring"), month("mar"), 12, false) == Files{"amb/rome/day.ogg"});
+    CHECK(s.bedsOf(rome, season("winter"), month("dec"), 12, false) ==
+          Files{"amb/rome/day_winter.ogg"});
+    CHECK(s.bedsOf(rome, season("winter"), month("jan"), 0, false) == Files{"amb/rome/night.ogg"});
+    // A season's beds for some of its months only: the plain ones in the others.
+    CHECK(s.bedsOf(parsa, season("autumn"), month("sep"), 12, false) ==
+          Files{"amb/parsa/plain_day_summer.ogg"});
+    CHECK(s.bedsOf(parsa, season("autumn"), month("oct"), 12, false) ==
+          Files{"amb/parsa/plain_day.ogg"});
+    CHECK(s.bedsOf(parsa, season("autumn"), month("nov"), 12, false) ==
+          Files{"amb/parsa/plain_day_winter.ogg"});
+    // Pārsa's rain bed only under rain (it played all day in dry weather).
+    CHECK(s.bedsOf(parsa, season("spring"), month("apr"), 12, false) ==
+          Files{"amb/parsa/plain_day.ogg"});
+    CHECK(s.bedsOf(parsa, season("spring"), month("apr"), 12, true) ==
+          Files{"amb/parsa/plain_day.ogg", "amb/parsa/rain.ogg"});
+}
+
+TEST_CASE("sound: a season's turn crossfades its beds with equal power, never a jump") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    Soundscape s(w, std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "audio");
+    const Catalog& cat = w.content->home();
+    const auto index = [&](std::string_view f) {
+        return static_cast<std::size_t>(std::ranges::find(s.files(), f) - s.files().begin());
+    };
+    const std::size_t plain = index("amb/rome/day.ogg");
+    const std::size_t winter = index("amb/rome/day_winter.ogg");
+    REQUIRE(winter < s.files().size());
+    std::vector<float> weights(w.file.regions.size(), 0.0f);
+    weights[static_cast<std::size_t>(w.file.findRegion("rome"))] = 1.0f;
+    const auto seasonOf = [&](std::string_view id) {
+        return static_cast<int>(std::ranges::find(cat.seasons, id, &SeasonDef::id) -
+                                cat.seasons.begin());
+    };
+    Soundscape::Input in{weights, {130, 1140}, 16, 0.2, 0, 0.1f};
+    in.season = seasonOf("autumn");
+    in.month = 8; // November
+    for (int i = 0; i < 10; ++i) s.update(in);
+    const float a0 = s.out()[plain].gain;
+    REQUIRE(a0 > 0);
+    CHECK(s.out()[winter].gain == doctest::Approx(0));
+    in.season = seasonOf("winter");
+    in.month = 9; // December
+    std::vector<std::pair<float, float>> trace;
+    for (int i = 0; i < 300; ++i) {
+        s.update(in);
+        trace.emplace_back(s.out()[plain].gain, s.out()[winter].gain);
+    }
+    const float b1 = trace.back().second;
+    REQUIRE(b1 > 0);
+    CHECK(trace.back().first == doctest::Approx(0));
+    float prevA = a0;
+    float prevB = 0;
+    for (const auto& [a, b] : trace) {
+        const float power = (a / a0) * (a / a0) + (b / b1) * (b / b1);
+        CHECK(power == doctest::Approx(1.0f).epsilon(0.05));
+        CHECK(std::abs(a - prevA) < 0.03f);
+        CHECK(std::abs(b - prevB) < 0.03f);
+        prevA = a;
+        prevB = b;
+    }
+}
+
+TEST_CASE("sound: nature beds of the season and of snow lying, on every land region") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    const Catalog& cat = w.content->home();
+    life::LifeData data;
+    for (const SeasonDef& sd : cat.seasons) data.seasons.push_back(sd.id);
+    data.months = cat.months;
+    const CitySound cs(w, data, std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "audio", 1);
+    const auto season = [&](std::string_view id) {
+        return static_cast<int>(std::ranges::find(cat.seasons, id, &SeasonDef::id) -
+                                cat.seasons.begin());
+    };
+    const int rome = w.file.findRegion("rome");
+    CHECK(cs.natureOf(rome, season("spring"), 0, false) == "amb/world/dawn_scrub.ogg");
+    CHECK(cs.natureOf(rome, season("autumn"), 0, false) == "amb/world/dawn_autumn.ogg");
+    CHECK(cs.natureOf(rome, season("winter"), 2, false) == "amb/world/night_cold.ogg");
+    CHECK(cs.natureOf(rome, season("spring"), 3, false).empty()); // no day bed but snow's
+    const int zagros = w.file.findRegion("zagros");
+    CHECK(cs.natureOf(zagros, season("winter"), 2, true) == "amb/world/night_snow.ogg");
+    CHECK(cs.natureOf(zagros, season("winter"), 3, true) == "amb/world/day_snow.ogg");
+    // Every region on land hears a night of its own in every season.
+    for (std::size_t g = 0; g < w.regions.size(); ++g) {
+        const nlohmann::json& snd = w.regions[g].theme.sound;
+        if (!snd.is_object() || snd.value("climate", "") == "sea" || !snd.contains("nature"))
+            continue;
+        for (std::size_t k = 0; k < cat.seasons.size(); ++k)
+            CHECK_MESSAGE(!cs.natureOf(static_cast<int>(g), static_cast<int>(k), 2, false).empty(),
+                          w.file.regions[g].id << " " << cat.seasons[k].id);
+    }
 }
 
 TEST_CASE("sound: game hours wrap over midnight") {

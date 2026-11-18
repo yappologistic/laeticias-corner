@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
+#include <fstream>
 #include <numbers>
+#include <set>
 
 namespace lc::worldview {
 namespace {
@@ -36,6 +38,48 @@ unsigned seasonMask(const json& j, const life::LifeData& life) {
     return m;
 }
 
+std::uint16_t monthMask(const json& j, const life::LifeData& life) {
+    const auto it = j.find("months");
+    if (it == j.end() || !it->is_array()) return 0;
+    std::uint16_t m = 0;
+    for (const json& id : *it)
+        if (id.is_string())
+            for (std::size_t k = 0; k < life.months.size() && k < 16; ++k)
+                if (life.months[k] == id.get<std::string>())
+                    m = static_cast<std::uint16_t>(m | (1u << k));
+    return m;
+}
+
+// The world set's audio manifest: what each file is for, by its tags (season, phase, climate,
+// kind of sound), for what the region files do not name yet.
+struct Tagged {
+    std::string file;
+    std::string kind;
+    std::vector<std::string> tags;
+    [[nodiscard]] bool has(std::string_view tag) const {
+        return std::ranges::find(tags, tag) != tags.end();
+    }
+};
+
+std::vector<Tagged> worldManifest(const std::filesystem::path& audioDir) {
+    std::vector<Tagged> out;
+    std::ifstream in(audioDir / "world" / "manifest.json");
+    if (!in) return out;
+    const json m = json::parse(in, nullptr, false);
+    if (!m.is_object() || !m.contains("files") || !m["files"].is_array()) return out;
+    for (const json& f : m["files"]) {
+        if (!f.is_object()) continue;
+        Tagged t{text(f, "file"), text(f, "kind"), {}};
+        if (const auto tags = f.find("tags"); tags != f.end() && tags->is_array())
+            for (const json& tag : *tags)
+                if (tag.is_string()) t.tags.push_back(tag.get<std::string>());
+        if (!t.file.empty()) out.push_back(std::move(t));
+    }
+    return out;
+}
+
+constexpr std::array<const char*, 4> kPhases{"dawn", "dusk", "night", "day"};
+
 // The nearer the louder: full within a few tiles, nothing beyond `reach`.
 float near(float d, float reach) {
     const float k = std::clamp(1.0f - d / reach, 0.0f, 1.0f);
@@ -48,12 +92,27 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
                      const std::filesystem::path& audioDir, std::uint64_t seed)
     : world_(world), life_(life), audioDir_(audioDir), rng_(seed ^ 0x5157A7E5C0DEULL) {
     const world::WorldMap& map = *world.map;
+    const std::vector<Tagged> tagged = worldManifest(audioDir);
+    std::set<std::string, std::less<>> climates; // every region's, to tell climate tags apart
+    for (const world::RegionFile& rf : world.regions)
+        if (rf.theme.sound.is_object()) climates.insert(text(rf.theme.sound, "climate"));
+    // A file of the manifest for this climate (it names none, or names this one).
+    const auto forClimate = [&](const Tagged& t, const std::string& climate) {
+        bool any = false;
+        for (const std::string& tag : t.tags)
+            if (climates.contains(tag)) {
+                if (tag == climate) return true;
+                any = true;
+            }
+        return !any;
+    };
     regions_.resize(world.regions.size());
     for (std::size_t r = 0; r < world.regions.size(); ++r) {
         const json& s = world.regions[r].theme.sound;
         if (!s.is_object()) continue;
         RegionSound& rs = regions_[r];
         rs.any = true;
+        const std::string climate = text(s, "climate");
         rs.crowd = family(text(s, "crowd"));
         rs.wind = family(text(s, "wind"));
         if (const auto rain = s.find("rain"); rain != s.end() && rain->is_object()) {
@@ -66,11 +125,53 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
             for (std::size_t p = 0; p < 3; ++p)
                 if (const std::string f = text(*n, phases[p]); !f.empty()) rs.nature[p] = loop(f);
         }
+        // A season's own nature beds: as the region names them (`nature_seasons`), else the
+        // world's beds tagged for that season, phase and climate; snow's likewise.
+        rs.natureBy.assign(life.seasons.size(), {-1, -1, -1, -1});
+        const auto seasonal = s.find("nature_seasons");
+        for (std::size_t k = 0; k < life.seasons.size(); ++k) {
+            const std::string& id = life.seasons[k];
+            const json* own = seasonal != s.end() && seasonal->is_object() &&
+                                      seasonal->contains(id) && (*seasonal)[id].is_object()
+                                  ? &(*seasonal)[id]
+                                  : nullptr;
+            for (std::size_t p = 0; p < kPhases.size(); ++p) {
+                if (own != nullptr) {
+                    rs.natureBy[k][p] = loop(text(*own, kPhases[p]));
+                    continue;
+                }
+                for (const Tagged& t : tagged)
+                    if (t.kind == "bed" && t.has("nature") && t.has(kPhases[p]) && t.has(id) &&
+                        !climate.empty() && t.has(climate) && !t.file.contains("_snow")) {
+                        rs.natureBy[k][p] = loop(t.file);
+                        break;
+                    }
+            }
+        }
+        if (const auto ns = s.find("nature_snow"); ns != s.end() && ns->is_object()) {
+            rs.natureSnow = {loop(text(*ns, "day")), loop(text(*ns, "night"))};
+        } else {
+            for (std::size_t p = 0; p < 2; ++p)
+                for (const Tagged& t : tagged)
+                    if (t.kind == "bed" && t.has("nature") && t.has(kPhases[3 - p]) &&
+                        !climate.empty() && t.has(climate) && t.file.contains("_snow")) {
+                        rs.natureSnow[p] = loop(t.file);
+                        break;
+                    }
+        }
+        if (const auto st = s.find("stings"); st != s.end() && st->is_object()) {
+            const char* keys[4] = {"sunrise", "nightfall", "storm_clear", "season"};
+            for (std::size_t k = 0; k < 4; ++k) rs.stings[k] = effect(text(*st, keys[k]));
+        }
+        if (rs.stings[3] < 0)
+            rs.stings[3] =
+                effect(std::format("sfx/{}/sting_season.wav", world.file.regions[r].set));
         if (const auto c = s.find("cicadas"); c != s.end() && c->is_object()) {
             rs.cicadas = family(text(*c, "family"));
             if (const auto h = c->find("hours"); h != c->end() && h->is_array() && h->size() == 2)
                 rs.cicadaHours = {hours((*h)[0].get<std::string>()),
-                                  hours((*h)[1].get<std::string>()), seasonMask(*c, life)};
+                                  hours((*h)[1].get<std::string>()), seasonMask(*c, life),
+                                  monthMask(*c, life)};
             rs.cicadaClear = text(*c, "weather") != "any";
         }
         if (const auto calls = s.find("calls"); calls != s.end() && calls->is_array())
@@ -82,6 +183,25 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
                                  hours((*h)[1].get<std::string>()), seasonMask(c, life)};
                 else
                     call.when.seasons = seasonMask(c, life);
+                call.when.months = monthMask(c, life);
+                rs.calls.push_back(call);
+            }
+        // Night voices on land: the world's night animals of this climate and their seasons,
+        // from dusk to dawn, beside the region's own calls.
+        if (!climate.empty() && climate != "sea")
+            for (const Tagged& t : tagged) {
+                if (t.kind != "sfx" || !t.has("animal") || !t.has("night") ||
+                    !forClimate(t, climate))
+                    continue;
+                RegionSound::Call call{effect(t.file), {tuning::kDuskTo, tuning::kDawnFrom}};
+                if (call.effect < 0 ||
+                    std::ranges::find(rs.calls, call.effect, &RegionSound::Call::effect) !=
+                        rs.calls.end())
+                    continue;
+                unsigned seasons = 0;
+                for (std::size_t k = 0; k < life.seasons.size(); ++k)
+                    if (t.has(life.seasons[k])) seasons |= 1u << k;
+                call.when.seasons = seasons != 0 ? seasons : ~0u;
                 rs.calls.push_back(call);
             }
         rs.voices.resize(life.kinds.size());
@@ -108,7 +228,15 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
         const json& s = it->sound;
         DistrictSound& ds = districts_[d];
         ds.any = true;
+        ds.sea = it->area == "sea";
         ds.wind = family(text(s, "wind"));
+        if (const auto n = s.find("nature"); n != s.end() && n->is_object())
+            for (std::size_t p = 0; p < 3; ++p) ds.nature[p] = loop(text(*n, kPhases[p]));
+        if (const auto w = s.find("water"); w != s.end() && w->is_object()) {
+            ds.water = family(text(*w, "family"));
+            if (const std::string speed = text(*w, "speed"); !speed.empty())
+                ds.waterLevel = speed == "fast" ? 1.0f : 0.0f;
+        }
         if (const auto c = s.find("crowd"); c != s.end() && c->is_object()) {
             ds.crowd = family(text(*c, "family"));
             ds.crowdFull = c->value("full", 0.0f);
@@ -120,6 +248,7 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
             std::ranges::sort(all, std::greater<>{});
             for (std::size_t i = 0; i < std::min<std::size_t>(2, all.size()); ++i)
                 ds.surfaces[i] = {family("rain." + all[i].second), all[i].first};
+            ds.leaves = sf->value("leaves", 0.0f);
         }
         if (const auto st = s.find("steps"); st != s.end() && st->is_object()) {
             const auto list = [&](const char* key, std::vector<int>& out) {
@@ -162,6 +291,14 @@ CitySound::CitySound(const world::LoadedWorld& world, const life::LifeData& life
         else if (f.ends_with(".wav"))
             lifeEffect_[i] = effect(f);
     }
+    seaOpen_ = family("sea.open");
+    treesLeafy_ = family("wind.trees");
+    treesBare_ = family("wind.bare");
+    for (const Tagged& t : tagged)
+        if (t.kind == "sfx" && t.has("rain") && t.has("drip"))
+            if (const int fx = effect(t.file); fx >= 0) drips_.push_back(fx);
+    for (std::size_t k = 0; k < life.seasons.size(); ++k)
+        if (life.seasons[k] == "winter") winter_ |= 1u << k;
     out_.resize(loops_.size());
     work_.resize(loops_.size());
     shots_.reserve(64);
@@ -233,6 +370,103 @@ void CitySound::addLifeSounds(std::span<const life::LifeSound> sounds) {
         if (!s.fx && pending_.size() < pending_.capacity()) pending_.push_back(s);
 }
 
+int CitySound::natureFile(const RegionSound& rs, const DistrictSound* ds, int season, int phase,
+                          bool snow) const {
+    // Snow lying: its own beds by day and night; else the season's own; else the plain ones
+    // (the district's over the region's). Only snow and a season's own beds have a day bed.
+    const auto p = static_cast<std::size_t>(phase);
+    if (snow && phase == 3 && rs.natureSnow[0] >= 0) return rs.natureSnow[0];
+    if (snow && phase == 2 && rs.natureSnow[1] >= 0) return rs.natureSnow[1];
+    if (season >= 0 && static_cast<std::size_t>(season) < rs.natureBy.size() &&
+        rs.natureBy[static_cast<std::size_t>(season)][p] >= 0)
+        return rs.natureBy[static_cast<std::size_t>(season)][p];
+    if (phase == 3) return -1;
+    return ds != nullptr && ds->nature[p] >= 0 ? ds->nature[p] : rs.nature[p];
+}
+
+std::string CitySound::natureOf(int region, int season, int phase, bool snow) const {
+    if (region < 0 || static_cast<std::size_t>(region) >= regions_.size()) return {};
+    const RegionSound& rs = regions_[static_cast<std::size_t>(region)];
+    const int f = rs.any ? natureFile(rs, nullptr, season, phase, snow) : -1;
+    return f >= 0 ? loops_[static_cast<std::size_t>(f)] : std::string();
+}
+
+void CitySound::listenWater() {
+    // Which water the view shows, sampled on a grid: open sea away from every shore, else the
+    // district's water (a shore's surf, a harbour, a river). Beyond the grid is open sea.
+    for (Heard& h : water_) h = {};
+    const world::WorldMap& map = *world_.map;
+    const float half = std::max(4.0f, in_.halfView * 0.7f);
+    const int n = tuning::kWaterSamples;
+    const auto water = [&](TilePos t) {
+        if (!map.inBounds(t)) return true;
+        const int ter = map.terrainAt(t);
+        return ter >= 0 && static_cast<std::size_t>(ter) < map.terrainCount() &&
+               map.terrainInfo(ter).water;
+    };
+    const auto add = [&](const Family* f, float level) {
+        if (f->count == 0) return;
+        for (Heard& h : water_)
+            if (h.family == f || h.family == nullptr) {
+                h = {f, h.share + 1.0f, level};
+                return;
+            }
+    };
+    for (int j = 0; j < n; ++j)
+        for (int i = 0; i < n; ++i) {
+            const auto at = [&](int k) {
+                return (static_cast<float>(k) + 0.5f) / static_cast<float>(n) * 2.0f - 1.0f;
+            };
+            const TilePos t{static_cast<int>(std::floor(in_.centre.x + at(i) * half)),
+                            static_cast<int>(std::floor(in_.centre.y + at(j) * half))};
+            if (!water(t)) continue;
+            const int d = map.inBounds(t) ? map.districtAt(t) : -1;
+            const DistrictSound* ds = d >= 0 && static_cast<std::size_t>(d) < districts_.size() &&
+                                              districts_[static_cast<std::size_t>(d)].any
+                                          ? &districts_[static_cast<std::size_t>(d)]
+                                          : nullptr;
+            const int k = tuning::kShoreTiles;
+            const bool open = water({t.x - k, t.y}) && water({t.x + k, t.y}) &&
+                              water({t.x, t.y - k}) && water({t.x, t.y + k});
+            if (open && (ds == nullptr || ds->sea))
+                add(&seaOpen_, -1);
+            else if (ds != nullptr && ds->water.count > 0)
+                add(&ds->water, ds->waterLevel);
+        }
+    for (Heard& h : water_) h.share /= static_cast<float>(n * n);
+}
+
+void CitySound::stings(const RegionSound& rs, float hour, bool raining, bool heard) {
+    // Sunrise (a new season's first dawn instead), nightfall and a long rain's end, played once
+    // each as the clock passes them; a jump of the clock passes nothing.
+    if (lastHour_ < 0) {
+        lastHour_ = hour;
+        stingSeason_ = in_.season;
+    }
+    const float step = std::fmod(hour - lastHour_ + 24.0f, 24.0f);
+    const auto passed = [&](float at) {
+        const float d = std::fmod(at - lastHour_ + 24.0f, 24.0f);
+        return step < 1.0f && d > 0 && d <= step;
+    };
+    int fx = -1;
+    if (passed(tuning::kDawnFrom)) {
+        fx = in_.season != stingSeason_ && rs.stings[3] >= 0 ? rs.stings[3] : rs.stings[0];
+        stingSeason_ = in_.season;
+    } else if (passed(tuning::kDuskTo)) {
+        fx = rs.stings[1];
+    }
+    lastHour_ = hour;
+    if (raining) {
+        rainFor_ += in_.dt;
+    } else {
+        if (rainFor_ >= tuning::kStormRain) fx = rs.stings[2];
+        rainFor_ = 0;
+    }
+    if (fx < 0 || !heard || shots_.size() >= tuning::kShotsPerUpdate) return;
+    shots_.push_back({fx, tuning::kSting, 0, 1.0f});
+    duckFor_ = tuning::kStingDuckSeconds;
+}
+
 void CitySound::update(const Input& in) {
     in_ = in;
     for (Out& o : out_) o = {};
@@ -299,23 +533,58 @@ void CitySound::update(const Input& in) {
                 }
             }
         }
-        // The climate's beds at dawn, dusk and night.
+        // Wind in the crowns where the district has trees: leafy, or bare in winter.
+        if (ds != nullptr && ds->leaves > 0) {
+            const Family& trees = ((winter_ >> in.season) & 1u) != 0 ? treesBare_ : treesLeafy_;
+            playFamily(trees, in.wind * static_cast<float>(std::max(0, trees.count - 1)),
+                       tuning::kTreesWind * std::min(1.0f, ds->leaves * tuning::kTreesFull) * away);
+        }
+        // The climate's beds at dawn, dusk and night, of the season (and of snow lying).
         const int phase = inHours(hour, tuning::kDawnFrom, tuning::kDawnTo)   ? 0
                           : inHours(hour, tuning::kDuskFrom, tuning::kDuskTo) ? 1
                           : inHours(hour, tuning::kDuskTo, tuning::kDawnFrom) ? 2
-                                                                              : -1;
-        if (phase >= 0 && rs->nature[static_cast<std::size_t>(phase)] >= 0)
-            out_[static_cast<std::size_t>(rs->nature[static_cast<std::size_t>(phase)])] = {
-                tuning::kNatureBed * away, 0};
+                                                                              : 3;
+        if (const int f = natureFile(*rs, ds, in.season, phase, in.snowCover); f >= 0)
+            out_[static_cast<std::size_t>(f)] = {tuning::kNatureBed * away, 0};
         // Cicadas in their hours and season, louder towards the afternoon's heat.
         const Window& w = rs->cicadaHours;
-        if (rs->cicadas.count > 0 && (w.seasons >> in.season & 1u) != 0 &&
+        const bool month = w.months == 0 || in.month < 0 || ((w.months >> in.month) & 1u) != 0;
+        if (rs->cicadas.count > 0 && (w.seasons >> in.season & 1u) != 0 && month &&
             inHours(hour, w.from, w.to) && (!rs->cicadaClear || !raining)) {
             const float mid = (w.from + w.to) * 0.5f;
             const float heat = 1.0f - std::abs(hour - mid) / std::max(0.5f, (w.to - w.from) * 0.5f);
             playFamily(rs->cicadas, heat * 2.0f, tuning::kCicadas * away);
         }
     }
+
+    // The water in view by its share: the sea by its state (the wind), a river by its speed.
+    waterIn_ -= in.dt;
+    if (waterIn_ <= 0) {
+        waterIn_ = tuning::kCitySlowTick;
+        listenWater();
+    }
+    for (const Heard& h : water_)
+        if (h.family != nullptr && h.share > 0) {
+            const float top = static_cast<float>(h.family->count - 1);
+            playFamily(*h.family, h.level >= 0 ? h.level * top : in.wind * top,
+                       tuning::kWater * std::sqrt(h.share) * away);
+        }
+    // Drops from leaves and eaves in the rain and a while after (never in snow).
+    sinceRain_ = raining ? 0.0f : sinceRain_ + in.dt;
+    dripIn_ -= in.dt;
+    if (dripIn_ <= 0) {
+        dripIn_ = tuning::kDripMin + rand01() * (tuning::kDripMax - tuning::kDripMin);
+        if (!drips_.empty() && !in.snow && sinceRain_ < tuning::kDripAfter && away > 0 &&
+            shots_.size() < tuning::kShotsPerUpdate) {
+            const int fx =
+                drips_[static_cast<std::size_t>(rand01() * static_cast<float>(drips_.size())) %
+                       drips_.size()];
+            shots_.push_back({fx, tuning::kDrip * away * (1.0f + (rand01() - 0.5f) * 0.8f),
+                              rand01() * 1.4f - 0.7f, 1.0f + (rand01() - 0.5f) * 0.1f});
+        }
+    }
+    duckFor_ = std::max(0.0f, duckFor_ - in.dt);
+    if (rs != nullptr) stings(*rs, hour, raining, away > 0.5f);
 
     // Running events' ambience, by nearness to where they happen.
     if (in.city != nullptr) {
@@ -423,15 +692,27 @@ void CitySound::update(const Input& in) {
     if (rs != nullptr && callIn_ <= 0) {
         callIn_ = tuning::kCallMin + rand01() * (tuning::kCallMax - tuning::kCallMin);
         // One of those in season and in its hours, each as likely (reservoir pick).
+        // Never the same one twice running while another may call.
         int pick = -1;
         int seen = 0;
-        for (const RegionSound::Call& call : rs->calls)
-            if (call.effect >= 0 && (call.when.seasons >> in.season & 1u) != 0 &&
-                inHours(hour, call.when.from, call.when.to) &&
-                rand01() * static_cast<float>(++seen) < 1.0f)
-                pick = call.effect;
-        if (pick >= 0 && !raining && shots_.size() < tuning::kShotsPerUpdate)
+        bool again = false;
+        for (const RegionSound::Call& call : rs->calls) {
+            const Window& when = call.when;
+            if (call.effect < 0 || (when.seasons >> in.season & 1u) == 0 ||
+                (when.months != 0 && in.month >= 0 && ((when.months >> in.month) & 1u) == 0) ||
+                !inHours(hour, when.from, when.to))
+                continue;
+            if (call.effect == lastCall_) {
+                again = true;
+                continue;
+            }
+            if (rand01() * static_cast<float>(++seen) < 1.0f) pick = call.effect;
+        }
+        if (pick < 0 && again) pick = lastCall_;
+        if (pick >= 0 && !raining && shots_.size() < tuning::kShotsPerUpdate) {
             shots_.push_back({pick, tuning::kCall * away, rand01() * 1.6f - 0.8f, 1.0f});
+            lastCall_ = pick;
+        }
     }
 }
 

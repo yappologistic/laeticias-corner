@@ -266,6 +266,7 @@ bool App::away() const {
 void App::travelTo(int region) {
     if (!loaded_ || travel_.region >= 0) return;
     follow_.reset(); // the journey takes the camera away from whoever it followed
+    closeCard();     // and the place's card stays behind
     travel_ = {region, 0, false};
     map_.open(false);
 }
@@ -487,7 +488,8 @@ std::string_view App::entryName(const CardRef& c, std::string& storage) const {
 
 std::string_view App::nativeName(const CardRef& c) const {
     // A figure's own name in its set is the original-language form (Hadrianus); show it when
-    // the card calls them otherwise. Landmarks' catalog names are descriptions, not forms.
+    // the card calls them otherwise (Q5-E-13: not "Kūruš (a memory)" under "Kūruš", nor
+    // "Hermon, stonecutter" under "Hermon"). Landmarks' catalog names are descriptions.
     if (!c.entry.starts_with("figure:")) return {};
     const std::string_view id = std::string_view(c.entry).substr(7);
     const world::RegionFile* f = regionFile(c.region);
@@ -495,7 +497,7 @@ std::string_view App::nativeName(const CardRef& c) const {
     for (const world::SetCatalog& s : loaded_->content->sets())
         for (const world::SetActor& a : s.actors)
             if (a.id == id &&
-                (card == nullptr || (a.name != card->title && a.name != card->epithet)))
+                (card == nullptr || !namedAlready(a.name, card->title, card->epithet)))
                 return a.name;
     return {};
 }
@@ -795,6 +797,14 @@ void App::updateWorldAudio(float night) {
     in.clock = clock_.time();
     in.night = night;
     in.dt = frameDt_;
+    // The year where the view is: the world calendar's season and month, rain and snow there.
+    in.season = season();
+    in.month = calendarMonth();
+    in.rain = rainHere();
+    const bool snowLies =
+        viewWeather_ ? viewWeather_->snow() : cat_.seasons[static_cast<std::size_t>(season())].snow;
+    in.snowCover = snowLies ? 1.0f : 0.0f;
+    in.musicDuck = citySound_ ? citySound_->musicDuck() : 1.0f;
     soundscape_->update(in);
     const auto out = soundscape_->out();
     for (std::size_t i = 0; i < out.size(); ++i) {
@@ -813,8 +823,10 @@ void App::updateWorldAudio(float night) {
     ci.wind = weather_.wind().strength;
     ci.rain = rainHere();
     ci.snow = cat_.seasons[static_cast<std::size_t>(season())].snow;
+    ci.snowCover = snowLies;
     ci.clock = clock_.time();
     ci.season = season();
+    ci.month = in.month;
     ci.dt = frameDt_;
     ci.actors = worldView_->actorsDrawn();
     ci.city = city_->city.get();
@@ -828,6 +840,58 @@ void App::updateWorldAudio(float night) {
     for (const worldview::CitySound::Shot& sh : citySound_->shots())
         if (sh.effect >= 0 && cityFx_[static_cast<std::size_t>(sh.effect)] >= 0)
             mixer_.play(cityFx_[static_cast<std::size_t>(sh.effect)], sh.gain, sh.pitch, sh.pan);
+}
+
+std::optional<std::string> App::checkSound(std::span<const std::string> a) {
+    // expect sound beds: every region plays a bed, loaded in the mixer, in each month of each
+    // season by day (12:00) and by night (00:00). expect sound FILE|FAMILY MIN MAX: the gain
+    // (x100) the world's sound sets that loop (or that family's loops together) to now.
+    if (!soundscape_ || !loaded_) return std::string("no world sound");
+    if (a.size() == 2 && a[1] == "beds") {
+        int first = 0; // the season's first month
+        for (std::size_t k = 0; k < cat_.seasons.size(); ++k) {
+            for (int d = 0; d < cat_.seasonDays[k]; ++d)
+                for (const float hour : {12.0f, 0.0f})
+                    for (std::size_t r = 0; r < loaded_->file.regions.size(); ++r) {
+                        const int month =
+                            first + d < static_cast<int>(cat_.months.size()) ? first + d : -1;
+                        const auto beds = soundscape_->bedsOf(
+                            static_cast<int>(r), static_cast<int>(k), month, hour, false);
+                        if (std::ranges::none_of(beds, [&](const std::string& f) {
+                                return mixer_.loopIndex(f) >= 0;
+                            }))
+                            return std::format("{} plays no bed in {} (month {}) at {:02}:00",
+                                               loaded_->file.regions[r].id, cat_.seasons[k].id,
+                                               month, static_cast<int>(hour));
+                    }
+            first += cat_.seasonDays[k];
+        }
+        return std::nullopt;
+    }
+    if (a.size() != 4) return std::string("expect sound beds | expect sound FILE|FAMILY MIN MAX");
+    std::string family = a[1];
+    std::ranges::replace(family, '.', '_');
+    const bool isFamily = !a[1].contains('/');
+    const auto matches = [&](const std::string& f) {
+        return isFamily ? f.starts_with("amb/world/" + family + "_") : f == a[1];
+    };
+    float g = 0;
+    bool known = false;
+    for (std::size_t i = 0; i < soundscape_->files().size(); ++i)
+        if (matches(soundscape_->files()[i])) {
+            known = true;
+            g += soundscape_->out()[i].gain;
+        }
+    if (citySound_)
+        for (std::size_t i = 0; i < citySound_->loops().size(); ++i)
+            if (matches(citySound_->loops()[i])) {
+                known = true;
+                g += citySound_->out()[i].gain;
+            }
+    if (!known) return "the world plays no " + a[1];
+    const long v = std::lround(g * 100.0f);
+    if (v >= std::stol(a[2]) && v <= std::stol(a[3])) return std::nullopt;
+    return std::format("expected sound {} in {}..{} but found {}", a[1], a[2], a[3], v);
 }
 
 float App::homeMusic() const {
@@ -862,17 +926,21 @@ void App::drawPlaceholderLabels(Painter& p) {
 
 namespace lc {
 
+int App::calendarMonth() const {
+    // The month of the season's day (a kept season keeps its own months); -1 without a calendar.
+    const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
+    int month = clock_.day() % std::max(1, sd.days);
+    for (int k = 0; k < season(); ++k) month += cat_.seasonDays[static_cast<std::size_t>(k)];
+    return month < static_cast<int>(cat_.months.size()) ? month : -1;
+}
+
 void App::followWorldWeather() {
     if (!viewWeather_) return;
     // One weather for the whole map: the home takes the world field's cells over its land, and
     // the view's field is what the renderer draws everywhere else.
     const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
-    // The month of the season's day (a kept season keeps its own months), for each region's
-    // snow by its climate.
-    int month = clock_.day() % std::max(1, sd.days);
-    for (int k = 0; k < season(); ++k) month += cat_.seasonDays[static_cast<std::size_t>(k)];
-    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow,
-                                      month < static_cast<int>(cat_.months.size()) ? month : -1,
+    // Each region's snow by its climate, that month.
+    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow, calendarMonth(),
                                       clock_.day()};
     const TileRect h = loaded_->file.home.rect;
     const int m = tuning::kWorldWeatherMargin;

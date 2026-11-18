@@ -41,6 +41,28 @@ float hours(const json& v, const std::string& ctx) {
     return static_cast<float>(h) + static_cast<float>(m) / 60.0f;
 }
 
+std::vector<AmbienceBed> parseBeds(const json& list, const std::string& ac) {
+    const json& beds = asArray(list, ac);
+    std::vector<AmbienceBed> out;
+    for (std::size_t i = 0; i < beds.size(); ++i) {
+        const std::string bc = ac + "[" + std::to_string(i) + "]";
+        AmbienceBed b;
+        b.file = asString(field(beds[i], "file", bc), bc + ": file");
+        if (has(beds[i], "hours")) {
+            const json& hv = beds[i].at("hours");
+            if (!hv.is_array() || hv.size() != 2) fail(bc + ": hours is [from, to]");
+            b.from = hours(hv[0], bc + ": hours");
+            b.to = hours(hv[1], bc + ": hours");
+        }
+        b.weather = stringOr(beds[i], "weather", "", bc);
+        if (has(beds[i], "months"))
+            for (const json& m : asArray(beds[i].at("months"), bc + ": months"))
+                b.months.push_back(asString(m, bc + ": months"));
+        out.push_back(std::move(b));
+    }
+    return out;
+}
+
 Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
     Theme out;
     if (!t.is_object()) fail(ctx + ": expected an object");
@@ -64,21 +86,7 @@ Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
     if (has(t, "ambience")) {
         const std::string ac = ctx + ": ambience";
         const json& a = asObject(t.at("ambience"), ac);
-        if (has(a, "beds")) {
-            const json& beds = asArray(a.at("beds"), ac + ": beds");
-            for (std::size_t i = 0; i < beds.size(); ++i) {
-                const std::string bc = ac + ": beds[" + std::to_string(i) + "]";
-                AmbienceBed b;
-                b.file = asString(field(beds[i], "file", bc), bc + ": file");
-                if (has(beds[i], "hours")) {
-                    const json& hv = beds[i].at("hours");
-                    if (!hv.is_array() || hv.size() != 2) fail(bc + ": hours is [from, to]");
-                    b.from = hours(hv[0], bc + ": hours");
-                    b.to = hours(hv[1], bc + ": hours");
-                }
-                out.beds.push_back(std::move(b));
-            }
-        }
+        if (has(a, "beds")) out.beds = parseBeds(a.at("beds"), ac + ": beds");
         if (has(a, "zones")) {
             const json& zones = asArray(a.at("zones"), ac + ": zones");
             for (std::size_t i = 0; i < zones.size(); ++i) {
@@ -124,6 +132,13 @@ Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
     }
     out.seam = boolOr(t, "seam", false, ctx);
     if (has(t, "sound")) out.sound = asObject(t.at("sound"), ctx + ": sound");
+    if (has(t, "seasons") && t.at("seasons").is_object())
+        for (const auto& [id, season] : t.at("seasons").items()) {
+            if (!season.is_object() || !has(season, "ambience")) continue;
+            const std::string sc = ctx + ": seasons: " + id + ": ambience";
+            const json& a = asObject(season.at("ambience"), sc);
+            if (has(a, "beds")) out.seasonBeds.emplace_back(id, parseBeds(a.at("beds"), sc));
+        }
     return out;
 }
 
