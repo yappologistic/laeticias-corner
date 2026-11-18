@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "layer": "corcyra",
+  "nodes": [
+    {"id": "n0", "at": [208, 828]},
+    {"id": "corcyra_quay", "at": [212, 828], "kind": "dest"},
+    {"id": "n2", "at": [216, 828]},
+    {"id": "n3", "at": [212, 831]},
+    {"id": "n4", "at": [212, 835]},
+    {"id": "n5", "at": [218, 835]},
+    {"id": "n6", "at": [218, 830]},
+    {"id": "n7", "at": [206, 831]},
+    {"id": "n8", "at": [206, 829]}
+  ],
+  "edges": [
+    {"a": "n0", "b": "corcyra_quay", "kind": "street"},
+    {"a": "corcyra_quay", "b": "n2", "kind": "street"},
+    {"a": "corcyra_quay", "b": "n3", "kind": "street"},
+    {"a": "n3", "b": "n4", "kind": "street"},
+    {"a": "n4", "b": "n5", "kind": "street"},
+    {"a": "n5", "b": "n6", "kind": "street"},
+    {"a": "n3", "b": "n7", "kind": "street"},
+    {"a": "n7", "b": "n8", "kind": "street"}
+  ],
+  "lanes": [
+    {"id": "corcyra", "kind": "sea", "points": [[213, 826], [216, 827]], "ports": [{"id": "harbour", "at": 0}, {"id": "start", "at": 0}, {"id": "corcyra", "at": 1}, {"id": "end", "at": 1}]}
+  ]
+}

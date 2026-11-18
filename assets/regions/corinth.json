@@ -52,7 +52,436 @@
       "06:00"
      ]
     }
+   ],
+   "loops": [
+    {
+     "item": "athens.t_cypress",
+     "file": "amb/world/press.ogg",
+     "when": "worked"
+    },
+    {
+     "item": "world.beacon",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
    ]
+  },
+  "sound": {
+   "climate": "mediterranean",
+   "crowd": "crowd.greek",
+   "nature": {
+    "dawn": "amb/world/dawn_scrub.ogg",
+    "dusk": "amb/world/dusk_town.ogg",
+    "night": "amb/world/night_scrub.ogg"
+   },
+   "stings": {
+    "sunrise": "sfx/athens/sting_sunrise.wav",
+    "nightfall": "sfx/athens/sting_nightfall.wav",
+    "storm_clear": "sfx/athens/sting_storm_clear.wav",
+    "rainbow": "sfx/athens/sting_rainbow.wav"
+   },
+   "wind": "wind.open",
+   "weather": [
+    "fog"
+   ],
+   "cicadas": {
+    "family": "cicadas",
+    "hours": [
+     "09:00",
+     "18:00"
+    ],
+    "seasons": [
+     "summer"
+    ],
+    "weather": "clear",
+    "fade_s": 20
+   },
+   "rain": {
+    "family": "rain",
+    "snow": "snow"
+   },
+   "turns": {
+    "front": "sfx/world/gust_front.wav",
+    "calm": "sfx/world/calm_before.wav",
+    "drops": "sfx/world/first_drops.wav",
+    "onset": "amb/world/rain_dust.ogg",
+    "after": "amb/world/after_rain.ogg",
+    "storm": "amb/world/storm.ogg"
+   },
+   "thunder": {
+    "near": [
+     "sfx/world/thunder_near_1.wav",
+     "sfx/world/thunder_near_2.wav",
+     "sfx/world/thunder_near_3.wav"
+    ],
+    "roll": [
+     "sfx/world/thunder_roll_1.wav",
+     "sfx/world/thunder_roll_2.wav",
+     "sfx/world/thunder_roll_3.wav"
+    ],
+    "far": [
+     "sfx/world/thunder_far.wav",
+     "sfx/world/thunder_far_2.wav",
+     "sfx/world/thunder_far_3.wav"
+    ]
+   },
+   "calls": [
+    {
+     "file": "sfx/world/cuckoo.wav",
+     "seasons": [
+      "spring"
+     ],
+     "hours": [
+      "06:00",
+      "11:00"
+     ]
+    },
+    {
+     "file": "sfx/world/crow_2.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
+    }
+   ]
+  },
+  "look": {
+   "phases": {
+    "dawn": {
+     "wb": [
+      0.98,
+      0.88,
+      0.84
+     ],
+     "exposure": 0.88,
+     "shadow_tint": [
+      0.4,
+      0.38,
+      0.72
+     ],
+     "high_tint": [
+      0.7,
+      0.58,
+      0.46
+     ],
+     "tint": 0.26,
+     "contrast": 0.32,
+     "saturation": 1.0,
+     "shoulder": 0.2
+    },
+    "day": {
+     "wb": [
+      1.02,
+      1.0,
+      0.96
+     ],
+     "exposure": 1.0,
+     "shadow_tint": [
+      0.28,
+      0.4,
+      0.76
+     ],
+     "high_tint": [
+      0.56,
+      0.54,
+      0.48
+     ],
+     "tint": 0.3,
+     "contrast": 0.48,
+     "saturation": 1.04,
+     "shoulder": 0.45,
+     "bands": {
+      "foliage": {
+       "hue": -6,
+       "sat": -0.08,
+       "val": 0.02
+      },
+      "water": {
+       "hue": 0,
+       "sat": 0.08,
+       "val": -0.04
+      }
+     }
+    },
+    "dusk": {
+     "wb": [
+      1.0,
+      0.86,
+      0.72
+     ],
+     "exposure": 0.82,
+     "shadow_tint": [
+      0.36,
+      0.3,
+      0.62
+     ],
+     "high_tint": [
+      0.88,
+      0.64,
+      0.5
+     ],
+     "tint": 0.3,
+     "contrast": 0.32,
+     "saturation": 1.02,
+     "shoulder": 0.3
+    },
+    "night": {
+     "wb": [
+      0.74,
+      0.82,
+      1.0
+     ],
+     "exposure": 0.46,
+     "shadow_tint": [
+      0.24,
+      0.3,
+      0.56
+     ],
+     "high_tint": [
+      0.5,
+      0.52,
+      0.62
+     ],
+     "tint": 0.28,
+     "contrast": 0.2,
+     "saturation": 0.8,
+     "shoulder": 0.0
+    }
+   },
+   "sky": {
+    "dawn": [
+     "#3a4a7a",
+     "#f0a878",
+     "#fbe3b8"
+    ],
+    "day": [
+     "#3f7fd0",
+     "#8fc3ef",
+     "#f2f4f2"
+    ],
+    "dusk": [
+     "#40305e",
+     "#d8784a",
+     "#f6c27a"
+    ],
+    "night": [
+     "#0c1430",
+     "#1c2a52",
+     "#28365e"
+    ]
+   },
+   "sun": {
+    "dawn": "#f6c8a0",
+    "day": "#fffbef",
+    "dusk": "#f2b07a",
+    "night": "#b4c8ee"
+   },
+   "shade": {
+    "dawn": "#8c84b8",
+    "day": "#6f98d8",
+    "dusk": "#5e4e8c",
+    "night": "#263258"
+   },
+   "haze": {
+    "colour": "#eee3cc",
+    "strength": 0.06,
+    "toward": "south-west",
+    "by_zoom": {
+     "half": 0.13,
+     "quarter": 0.2,
+     "overview": 0.28
+    }
+   },
+   "stars": 0.85,
+   "palette": {
+    "large": {
+     "marble": "#f1ede3",
+     "marble_shade": "#b7b4c8",
+     "dry_earth": "#c9a465",
+     "limestone": "#a39a8a"
+    },
+    "accents": {
+     "frieze_blue": "#2a5ba8",
+     "frieze_red": "#b2342a",
+     "olive": "#8c9a6b",
+     "sea": "#1f5e8c"
+    }
+   },
+   "light": "brilliant and high-contrast, short blue shadows; marble the brightest thing on screen",
+   "targets": {
+    "day": {
+     "p2": [
+      20,
+      45
+     ],
+     "median": [
+      100,
+      135
+     ],
+     "p98": [
+      205,
+      230
+     ],
+     "sat_mean": [
+      33,
+      48
+     ],
+     "sat_high": [
+      8,
+      30
+     ],
+     "cool_min": 15
+    },
+    "dawn": {
+     "p2": [
+      10,
+      30
+     ],
+     "median": [
+      70,
+      125
+     ],
+     "p98": [
+      180,
+      215
+     ],
+     "sat_mean": [
+      30,
+      45
+     ],
+     "sat_high": [
+      0,
+      25
+     ],
+     "warm": [
+      35,
+      75
+     ],
+     "cool_min": 7
+    },
+    "dusk": {
+     "p2": [
+      8,
+      25
+     ],
+     "median": [
+      45,
+      85
+     ],
+     "p98": [
+      165,
+      215
+     ],
+     "sat_mean": [
+      38,
+      55
+     ],
+     "sat_high": [
+      0,
+      40
+     ],
+     "warm": [
+      55,
+      80
+     ],
+     "cool_min": 8
+    },
+    "night": {
+     "p2": [
+      4,
+      14
+     ],
+     "median": [
+      22,
+      45
+     ],
+     "p98_lights_only": 200,
+     "sat_mean": [
+      18,
+      35
+     ],
+     "sat_high": [
+      0,
+      10
+     ],
+     "cool_unlit_min": 50
+    }
+   },
+   "weather": {
+    "spring": {
+     "storm": 0.05,
+     "fog": 0.12,
+     "dust": 0.0
+    },
+    "summer": {
+     "storm": 0.06,
+     "fog": 0.02,
+     "dust": 0.02
+    },
+    "autumn": {
+     "storm": 0.12,
+     "fog": 0.12,
+     "dust": 0.0
+    },
+    "winter": {
+     "storm": 0.1,
+     "fog": 0.18,
+     "dust": 0.0
+    }
+   },
+   "air": {
+    "haze_toward_sea": {
+     "strength": 0.04
+    },
+    "shimmer": {
+     "where": "paving",
+     "hours": [
+      "11:00",
+      "15:00"
+     ],
+     "seasons": [
+      "summer"
+     ]
+    },
+    "night_mist": {
+     "where": "water",
+     "hours": [
+      "22:00",
+      "05:00"
+     ]
+    }
+   },
+   "water": {
+    "body": "#1f5e8c",
+    "reflect": true,
+    "sea_state": 1
+   },
+   "lights": {
+    "athens.g_house_small": {
+     "kind": "window",
+     "colour": "#ffd08a",
+     "radius": 1.5,
+     "flicker": {
+      "stagger": [
+       "18:00",
+       "20:00"
+      ],
+      "depth": 0.03
+     }
+    },
+    "world.beacon": {
+     "kind": "beacon",
+     "colour": "#ffa04a",
+     "radius": 4.0,
+     "flicker": {
+      "breathe": [
+       0.8,
+       1.6
+      ],
+      "depth": 0.15
+     }
+    }
+   }
   }
  },
  "districts": [
@@ -74,7 +503,52 @@
      "density": "daytime",
      "max_per_chunk": 2
     }
-   ]
+   ],
+   "name": "Acrocorinth",
+   "sound": {
+    "surfaces": {
+     "stone": 0.62,
+     "roof": 0.11,
+     "leaves": 0.05
+    },
+    "wind": "wind.street",
+    "exposure": 0.91,
+    "steps": {
+     "surface": "stone",
+     "files": [
+      "sfx/world/step_stone_1.wav",
+      "sfx/world/step_stone_2.wav",
+      "sfx/world/step_stone_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 12
+    }
+   },
+   "look": {
+    "air": {
+     "shimmer": {
+      "where": "paving",
+      "hours": [
+       "11:00",
+       "15:00"
+      ],
+      "seasons": [
+       "summer"
+      ]
+     }
+    }
+   }
   },
   {
    "id": "harbours",
@@ -94,7 +568,48 @@
      "density": "daytime",
      "max_per_chunk": 2
     }
-   ]
+   ],
+   "name": "Lechaion and Kenchreai",
+   "sound": {
+    "surfaces": {
+     "roof": 0.08,
+     "water": 0.88
+    },
+    "wind": "wind.sea",
+    "exposure": 0.94,
+    "water": {
+     "family": "sea.harbour"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "decks": [
+      "sfx/world/step_timber_1.wav",
+      "sfx/world/step_timber_2.wav",
+      "sfx/world/step_timber_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 12
+    }
+   },
+   "look": {
+    "reflect": true,
+    "haze": {
+     "toward": "sea",
+     "strength_add": 0.03
+    }
+   }
   },
   {
    "id": "land",
@@ -114,10 +629,41 @@
      "density": "daytime",
      "max_per_chunk": 2
     }
-   ]
+   ],
+   "name": "Countryside",
+   "sound": {
+    "surfaces": {
+     "roof": 0.16,
+     "leaves": 0.06
+    },
+    "wind": "wind.open",
+    "exposure": 0.87,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 12
+    }
+   }
   },
   {
-   "id": "reserved",
+   "id": "town",
    "populations": [
     {
      "actor": "athens.rower",
@@ -134,27 +680,32 @@
      "density": "daytime",
      "max_per_chunk": 2
     }
-   ]
-  },
-  {
-   "id": "town",
-   "populations": [
-    {
-     "actor": "athens.citizen",
-     "density": "daytime",
-     "max_per_chunk": 4
+   ],
+   "name": "The town",
+   "sound": {
+    "surfaces": {
+     "roof": 0.68
     },
-    {
-     "actor": "athens.woman",
-     "density": "daytime",
-     "max_per_chunk": 3
+    "wind": "wind.street",
+    "exposure": 0.46,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
     },
-    {
-     "actor": "athens.metic",
-     "density": "daytime",
-     "max_per_chunk": 2
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.greek",
+     "full": 12
     }
-   ]
+   }
   }
  ],
  "densities": {
@@ -316,11 +867,28 @@
   }
  ],
  "zones": [],
- "cards": {},
+ "cards": {
+  "corinth_apollo": {
+   "title": "Temple of Apollo",
+   "epithet": "On its low hill",
+   "text": "Built about 540 BC and one of the oldest Doric temples in Greece: six by fifteen stocky columns, each shaft cut from a single block of limestone."
+  },
+  "diolkos": {
+   "title": "Diolkos",
+   "epithet": "The ship road",
+   "text": "A paved trackway across the isthmus, several kilometres long, on which ships or their cargoes were hauled on wheeled cradles from the gulf to the Saronic sea, sparing the voyage round the Peloponnese."
+  },
+  "acrocorinth_summit": {
+   "title": "Acrocorinth",
+   "epithet": "The citadel rock",
+   "text": "The steep rock above the city, walled on its summit, with a small temple of Aphrodite at the top."
+  }
+ },
  "strings": {
   "first_visit": "Corinth, between two seas. Ships cross the isthmus on the diolkos."
  },
  "journal": [
   "landmark:*"
- ]
+ ],
+ "era": "The Athens of Pericles · 432 BC"
 }

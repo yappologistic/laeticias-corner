@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "layer": "olympia",
+  "nodes": [
+    {"id": "olympia_n", "at": [320, 801], "kind": "portal"},
+    {"id": "altis", "at": [326, 801], "kind": "dest"},
+    {"id": "n2", "at": [326, 806]},
+    {"id": "n3", "at": [331, 801]},
+    {"id": "n4", "at": [331, 796]}
+  ],
+  "edges": [
+    {"a": "olympia_n", "b": "altis", "kind": "road"},
+    {"a": "altis", "b": "n2", "kind": "road"},
+    {"a": "altis", "b": "n3", "kind": "street"},
+    {"a": "n3", "b": "n4", "kind": "street"}
+  ],
+  "lanes": [
+  ]
+}

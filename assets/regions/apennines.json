@@ -1,8 +1,8 @@
 {
  "version": 1,
  "id": "apennines",
- "name": "Apennines",
- "caption": "Apennines",
+ "name": "The Apennines",
+ "caption": "The Apennines · April AD 126",
  "theme": {
   "grading": {
    "dawn": [
@@ -51,7 +51,460 @@
       "06:00"
      ]
     }
+   ],
+   "loops": [
+    {
+     "item": "rome.t_cypress",
+     "file": "amb/world/press.ogg",
+     "when": "worked"
+    }
    ]
+  },
+  "sound": {
+   "climate": "mountain",
+   "crowd": "crowd.latin",
+   "nature": {
+    "dawn": "amb/world/dawn_mountain.ogg",
+    "dusk": "amb/world/dusk_town.ogg",
+    "night": "amb/world/night_mountain.ogg"
+   },
+   "stings": {
+    "sunrise": "sfx/rome/sting_sunrise.wav",
+    "nightfall": "sfx/rome/sting_nightfall.wav",
+    "storm_clear": "sfx/rome/sting_storm_clear.wav",
+    "rainbow": "sfx/rome/sting_rainbow.wav"
+   },
+   "wind": "wind.mountain",
+   "weather": [
+    "fog",
+    "snow"
+   ],
+   "rain": {
+    "family": "rain",
+    "snow": "snow"
+   },
+   "turns": {
+    "front": "sfx/world/gust_front.wav",
+    "calm": "sfx/world/calm_before.wav",
+    "drops": "sfx/world/first_drops.wav",
+    "onset": "amb/world/rain_dust.ogg",
+    "after": "amb/world/after_rain.ogg",
+    "storm": "amb/world/storm.ogg"
+   },
+   "thunder": {
+    "near": [
+     "sfx/world/thunder_near_1.wav",
+     "sfx/world/thunder_near_2.wav",
+     "sfx/world/thunder_near_3.wav"
+    ],
+    "roll": [
+     "sfx/world/thunder_roll_1.wav",
+     "sfx/world/thunder_roll_2.wav",
+     "sfx/world/thunder_roll_3.wav"
+    ],
+    "far": [
+     "sfx/world/thunder_far.wav",
+     "sfx/world/thunder_far_2.wav",
+     "sfx/world/thunder_far_3.wav"
+    ]
+   },
+   "snow_steps": {
+    "step": [
+     "sfx/world/step_snow.wav"
+    ],
+    "group": "amb/world/snow_walk.ogg"
+   },
+   "calls": [
+    {
+     "file": "sfx/world/crow_1.wav",
+     "hours": [
+      "07:00",
+      "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/cuckoo.wav",
+     "seasons": [
+      "spring"
+     ],
+     "hours": [
+      "06:00",
+      "11:00"
+     ]
+    }
+   ],
+   "voices": {
+    "world.dog": [
+     "sfx/world/dog_1.wav",
+     "sfx/world/dog_2.wav"
+    ],
+    "world.donkey": [
+     "sfx/world/donkey.wav"
+    ],
+    "world.goat": [
+     "sfx/world/goat_1.wav",
+     "sfx/world/goat_2.wav"
+    ],
+    "world.sheep": [
+     "sfx/world/sheep_1.wav",
+     "sfx/world/sheep_2.wav"
+    ]
+   },
+   "waterfall": "waterfall"
+  },
+  "look": {
+   "phases": {
+    "dawn": {
+     "wb": [
+      0.98,
+      0.88,
+      0.86
+     ],
+     "exposure": 0.86,
+     "shadow_tint": [
+      0.34,
+      0.32,
+      0.62
+     ],
+     "high_tint": [
+      0.66,
+      0.54,
+      0.42
+     ],
+     "tint": 0.28,
+     "contrast": 0.3,
+     "saturation": 1.02,
+     "shoulder": 0.2
+    },
+    "day": {
+     "wb": [
+      0.97,
+      0.98,
+      1.02
+     ],
+     "exposure": 0.95,
+     "shadow_tint": [
+      0.28,
+      0.38,
+      0.74
+     ],
+     "high_tint": [
+      0.53,
+      0.52,
+      0.5
+     ],
+     "tint": 0.34,
+     "contrast": 0.4,
+     "saturation": 0.96,
+     "shoulder": 0.35,
+     "bands": {
+      "terracotta": {
+       "hue": -4,
+       "sat": 0.1,
+       "val": -0.06
+      },
+      "foliage": {
+       "hue": 4,
+       "sat": 0.0,
+       "val": -0.04
+      }
+     }
+    },
+    "dusk": {
+     "wb": [
+      1.0,
+      0.85,
+      0.68
+     ],
+     "exposure": 0.8,
+     "shadow_tint": [
+      0.32,
+      0.3,
+      0.6
+     ],
+     "high_tint": [
+      0.88,
+      0.68,
+      0.34
+     ],
+     "tint": 0.34,
+     "contrast": 0.34,
+     "saturation": 1.04,
+     "shoulder": 0.25,
+     "bands": {
+      "terracotta": {
+       "hue": 3,
+       "sat": -0.08,
+       "val": 0.0
+      }
+     }
+    },
+    "night": {
+     "wb": [
+      0.72,
+      0.8,
+      1.0
+     ],
+     "exposure": 0.42,
+     "shadow_tint": [
+      0.24,
+      0.28,
+      0.52
+     ],
+     "high_tint": [
+      0.5,
+      0.52,
+      0.62
+     ],
+     "tint": 0.3,
+     "contrast": 0.22,
+     "saturation": 0.78,
+     "shoulder": 0.0
+    }
+   },
+   "sky": {
+    "dawn": [
+     "#32406e",
+     "#e59b78",
+     "#f8d9b0"
+    ],
+    "day": [
+     "#4b86c9",
+     "#a3c9ea",
+     "#eef0ec"
+    ],
+    "dusk": [
+     "#3c2d55",
+     "#d6703f",
+     "#f4c37a"
+    ],
+    "night": [
+     "#0d1330",
+     "#20294d",
+     "#2c3458"
+    ]
+   },
+   "sun": {
+    "dawn": "#f3c9a0",
+    "day": "#fff6e3",
+    "dusk": "#f2b25e",
+    "night": "#afc3e8"
+   },
+   "shade": {
+    "dawn": "#7a6fa8",
+    "day": "#7fa6d8",
+    "dusk": "#6a5a93",
+    "night": "#2a3560"
+   },
+   "haze": {
+    "colour": "#d6dce6",
+    "strength": 0.1,
+    "toward": "west",
+    "by_zoom": {
+     "half": 0.17,
+     "quarter": 0.24,
+     "overview": 0.32
+    }
+   },
+   "stars": 0.55,
+   "palette": {
+    "large": {
+     "terracotta": "#b8512f",
+     "terracotta_shade": "#6e2a1e",
+     "terracotta_lit": "#e08a5a",
+     "travertine": "#e6dcc4",
+     "brick": "#9a4a32",
+     "basalt": "#3a3a40"
+    },
+    "accents": {
+     "umbrella_pine": "#3e5b2e",
+     "gilded_bronze": "#d9a93a"
+    }
+   },
+   "light": "cooler and bluer",
+   "targets": {
+    "day": {
+     "p2": [
+      20,
+      45
+     ],
+     "median": [
+      100,
+      135
+     ],
+     "p98": [
+      205,
+      230
+     ],
+     "sat_mean": [
+      33,
+      48
+     ],
+     "sat_high": [
+      8,
+      30
+     ],
+     "cool_min": 8
+    },
+    "dawn": {
+     "p2": [
+      10,
+      30
+     ],
+     "median": [
+      70,
+      125
+     ],
+     "p98": [
+      180,
+      215
+     ],
+     "sat_mean": [
+      30,
+      45
+     ],
+     "sat_high": [
+      0,
+      25
+     ],
+     "warm": [
+      35,
+      75
+     ],
+     "cool_min": 7
+    },
+    "dusk": {
+     "p2": [
+      8,
+      25
+     ],
+     "median": [
+      45,
+      85
+     ],
+     "p98": [
+      165,
+      215
+     ],
+     "sat_mean": [
+      38,
+      55
+     ],
+     "sat_high": [
+      0,
+      40
+     ],
+     "warm": [
+      55,
+      80
+     ],
+     "cool_min": 8
+    },
+    "night": {
+     "p2": [
+      4,
+      14
+     ],
+     "median": [
+      22,
+      45
+     ],
+     "p98_lights_only": 200,
+     "sat_mean": [
+      18,
+      35
+     ],
+     "sat_high": [
+      0,
+      10
+     ],
+     "cool_unlit_min": 50
+    }
+   },
+   "weather": {
+    "spring": {
+     "storm": 0.1,
+     "fog": 0.25,
+     "dust": 0.0
+    },
+    "summer": {
+     "storm": 0.15,
+     "fog": 0.1,
+     "dust": 0.0
+    },
+    "autumn": {
+     "storm": 0.12,
+     "fog": 0.3,
+     "dust": 0.0
+    },
+    "winter": {
+     "storm": 0.1,
+     "fog": 0.3,
+     "dust": 0.0
+    }
+   },
+   "air": {
+    "smoke_haze": {
+     "hours": [
+      "13:00",
+      "18:00"
+     ],
+     "strength": 0.05
+    },
+    "mist": {
+     "where": "river",
+     "hours": [
+      "05:00",
+      "08:00"
+     ],
+     "seasons": [
+      "spring",
+      "autumn"
+     ]
+    },
+    "night_mist": {
+     "where": "water",
+     "hours": [
+      "22:00",
+      "05:00"
+     ]
+    },
+    "fog": {
+     "where": "valleys",
+     "hours": [
+      "05:00",
+      "08:00"
+     ]
+    }
+   },
+   "water": {
+    "body": "#3d6f8f",
+    "reflect": true,
+    "sea_state": 0
+   },
+   "lights": {
+    "rome.mutatio": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    }
+   },
+   "backdrop": {
+    "north": {
+     "id": "world.bd_alps",
+     "span": [
+      240,
+      380
+     ]
+    }
+   }
   }
  },
  "districts": [
@@ -73,7 +526,82 @@
      "density": "road_day",
      "max_per_chunk": 2
     }
-   ]
+   ],
+   "name": "Via Appia",
+   "sound": {
+    "surfaces": {
+     "stone": 1.0
+    },
+    "wind": "wind.street",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "stone",
+     "files": [
+      "sfx/world/step_stone_1.wav",
+      "sfx/world/step_stone_2.wav",
+      "sfx/world/step_stone_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof.wav"
+     ],
+     "stairs": [
+      "sfx/world/step_stair_1.wav",
+      "sfx/world/step_stair_2.wav",
+      "sfx/world/step_stair_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart.ogg",
+    "crowd": {
+     "family": "crowd.latin",
+     "full": 12
+    }
+   }
+  },
+  {
+   "id": "farm",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "fields",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "world.ox",
+     "density": "fields",
+     "max_per_chunk": 1
+    },
+    {
+     "actor": "world.dog",
+     "density": "daytime",
+     "max_per_chunk": 1
+    }
+   ],
+   "name": "Farms",
+   "sound": {
+    "surfaces": {
+     "roof": 0.07,
+     "leaves": 0.21
+    },
+    "wind": "wind.mountain",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.latin",
+     "full": 12
+    }
+   }
   },
   {
    "id": "land",
@@ -83,7 +611,28 @@
      "density": "daytime",
      "max_per_chunk": 1
     }
-   ]
+   ],
+   "name": "Countryside",
+   "sound": {
+    "surfaces": {
+     "leaves": 0.04
+    },
+    "wind": "wind.mountain",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   }
   }
  ],
  "densities": {
@@ -219,12 +768,54 @@
   ]
  },
  "figures": [],
- "groups": [],
+ "groups": [
+  {
+   "id": "drove",
+   "formation": "cluster",
+   "radius": 3,
+   "leader": {
+    "actor": "rome.shepherd"
+   },
+   "members": [
+    {
+     "actor": "world.sheep",
+     "variant": 0,
+     "count": 8
+    },
+    {
+     "actor": "world.goat",
+     "count": 3
+    },
+    {
+     "actor": "world.dog",
+     "count": 1
+    }
+   ]
+  }
+ ],
  "chains": [],
  "events": [],
- "lanes_tokens": [],
+ "lanes_tokens": [
+  {
+   "actor": "rome.shepherd",
+   "group": "drove",
+   "count": 1,
+   "route": {
+    "start": "base:via_appia_farm_363_229",
+    "end": "base:via_appia_station_363_217"
+   },
+   "when": {
+    "seasons": [
+     "spring",
+     "autumn"
+    ]
+   },
+   "note": "flocks moving between summer and winter pastures"
+  }
+ ],
  "zones": [],
  "cards": {},
  "strings": {},
- "journal": []
+ "journal": [],
+ "era": "The Rome of Hadrian · AD 126"
 }

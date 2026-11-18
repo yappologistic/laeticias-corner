@@ -2,7 +2,7 @@
  "version": 1,
  "id": "mesopotamia",
  "name": "Mesopotamia",
- "caption": "Mesopotamia",
+ "caption": "Mesopotamia · c. 470 BC",
  "theme": {
   "grading": {
    "dawn": [
@@ -51,7 +51,437 @@
       "06:00"
      ]
     }
-   ]
+   ],
+   "loops": []
+  },
+  "sound": {
+   "climate": "river_plain",
+   "crowd": "crowd.persian",
+   "nature": {
+    "dawn": "amb/world/dawn_river.ogg",
+    "dusk": "amb/world/dusk_water.ogg",
+    "night": "amb/world/night_water.ogg"
+   },
+   "stings": {
+    "sunrise": "sfx/parsa/sting_sunrise.wav",
+    "nightfall": "sfx/parsa/sting_nightfall.wav",
+    "storm_clear": "sfx/parsa/sting_storm_clear.wav",
+    "rainbow": "sfx/parsa/sting_rainbow.wav",
+    "first_snow": "sfx/parsa/sting_first_snow.wav"
+   },
+   "wind": "wind.open",
+   "weather": [
+    "heat",
+    "fog"
+   ],
+   "rain": {
+    "family": "rain",
+    "snow": "snow"
+   },
+   "turns": {
+    "front": "sfx/world/gust_front.wav",
+    "calm": "sfx/world/calm_before.wav",
+    "drops": "sfx/world/first_drops.wav",
+    "onset": "amb/world/rain_dust.ogg",
+    "after": "amb/world/after_rain.ogg",
+    "storm": "amb/world/storm.ogg"
+   },
+   "thunder": {
+    "near": [
+     "sfx/world/thunder_near_1.wav",
+     "sfx/world/thunder_near_2.wav",
+     "sfx/world/thunder_near_3.wav"
+    ],
+    "roll": [
+     "sfx/world/thunder_roll_1.wav",
+     "sfx/world/thunder_roll_2.wav",
+     "sfx/world/thunder_roll_3.wav"
+    ],
+    "far": [
+     "sfx/world/thunder_far.wav",
+     "sfx/world/thunder_far_2.wav",
+     "sfx/world/thunder_far_3.wav"
+    ]
+   },
+   "calls": [
+    {
+     "file": "sfx/world/cranes.wav",
+     "seasons": [
+      "autumn",
+      "spring"
+     ],
+     "hours": [
+      "06:00",
+      "18:00"
+     ]
+    },
+    {
+     "file": "sfx/world/stork_clatter.wav",
+     "seasons": [
+      "spring",
+      "summer"
+     ],
+     "hours": [
+      "07:00",
+      "17:00"
+     ]
+    }
+   ],
+   "voices": {
+    "world.donkey": [
+     "sfx/world/donkey.wav"
+    ],
+    "world.stork": [
+     "sfx/world/stork_clatter.wav"
+    ]
+   },
+   "waterfall": "waterfall"
+  },
+  "look": {
+   "phases": {
+    "dawn": {
+     "wb": [
+      0.94,
+      0.86,
+      0.92
+     ],
+     "exposure": 0.92,
+     "shadow_tint": [
+      0.36,
+      0.32,
+      0.68
+     ],
+     "high_tint": [
+      0.62,
+      0.53,
+      0.44
+     ],
+     "tint": 0.26,
+     "contrast": 0.3,
+     "saturation": 1.0,
+     "shoulder": 0.2,
+     "bands": {
+      "stone": {
+       "hue": 6,
+       "sat": 0.06,
+       "val": 0.04
+      }
+     }
+    },
+    "day": {
+     "wb": [
+      1.02,
+      0.99,
+      0.94
+     ],
+     "exposure": 0.94,
+     "shadow_tint": [
+      0.32,
+      0.4,
+      0.7
+     ],
+     "high_tint": [
+      0.52,
+      0.52,
+      0.52
+     ],
+     "tint": 0.28,
+     "contrast": 0.26,
+     "saturation": 1.08,
+     "shoulder": 0.3,
+     "bands": {
+      "foliage": {
+       "hue": 0,
+       "sat": 0.12,
+       "val": 0.0
+      },
+      "stone": {
+       "hue": 0,
+       "sat": -0.06,
+       "val": -0.06
+      }
+     }
+    },
+    "dusk": {
+     "wb": [
+      1.0,
+      0.82,
+      0.74
+     ],
+     "exposure": 0.8,
+     "shadow_tint": [
+      0.36,
+      0.28,
+      0.58
+     ],
+     "high_tint": [
+      0.86,
+      0.56,
+      0.46
+     ],
+     "tint": 0.32,
+     "contrast": 0.32,
+     "saturation": 1.02,
+     "shoulder": 0.25,
+     "bands": {
+      "stone": {
+       "hue": -8,
+       "sat": 0.06,
+       "val": 0.0
+      }
+     }
+    },
+    "night": {
+     "wb": [
+      0.7,
+      0.78,
+      1.0
+     ],
+     "exposure": 0.4,
+     "shadow_tint": [
+      0.22,
+      0.26,
+      0.5
+     ],
+     "high_tint": [
+      0.48,
+      0.5,
+      0.62
+     ],
+     "tint": 0.3,
+     "contrast": 0.24,
+     "saturation": 0.72,
+     "shoulder": 0.0
+    }
+   },
+   "sky": {
+    "dawn": [
+     "#2b3a67",
+     "#e8a87c",
+     "#f6d7a7"
+    ],
+    "day": [
+     "#4a86c8",
+     "#9cc6e8",
+     "#e9eef0"
+    ],
+    "dusk": [
+     "#3d2c5a",
+     "#c75b39",
+     "#f2b46d"
+    ],
+    "night": [
+     "#0b1026",
+     "#1b2445",
+     "#262f52"
+    ]
+   },
+   "sun": {
+    "dawn": "#f0c090",
+    "day": "#fff8ec",
+    "dusk": "#e89a70",
+    "night": "#b8ccf2"
+   },
+   "shade": {
+    "dawn": "#7e74b0",
+    "day": "#7fa2d0",
+    "dusk": "#5a4682",
+    "night": "#1e2848"
+   },
+   "haze": {
+    "colour": "#e8d9b8",
+    "strength": 0.18,
+    "toward": "west",
+    "by_zoom": {
+     "half": 0.25,
+     "quarter": 0.32,
+     "overview": 0.4
+    }
+   },
+   "stars": 1.0,
+   "palette": {
+    "large": {
+     "limestone": "#c9b79c",
+     "limestone_shade": "#8e8597",
+     "mud_plaster": "#c8a27a",
+     "paving": "#a89f94"
+    },
+    "accents": {
+     "lapis": "#2648a0",
+     "cinnabar": "#b8322a",
+     "gold": "#d8ae3e",
+     "garden_green": "#4e8a3a"
+    }
+   },
+   "light": "humid gold, soft contrast, a heavy warm haze",
+   "targets": {
+    "day": {
+     "p2": [
+      20,
+      45
+     ],
+     "median": [
+      100,
+      135
+     ],
+     "p98": [
+      205,
+      230
+     ],
+     "sat_mean": [
+      33,
+      48
+     ],
+     "sat_high": [
+      8,
+      30
+     ],
+     "cool_min": 8
+    },
+    "dawn": {
+     "p2": [
+      10,
+      30
+     ],
+     "median": [
+      70,
+      125
+     ],
+     "p98": [
+      180,
+      215
+     ],
+     "sat_mean": [
+      30,
+      45
+     ],
+     "sat_high": [
+      0,
+      25
+     ],
+     "warm": [
+      35,
+      75
+     ],
+     "cool_min": 7
+    },
+    "dusk": {
+     "p2": [
+      8,
+      25
+     ],
+     "median": [
+      45,
+      85
+     ],
+     "p98": [
+      165,
+      215
+     ],
+     "sat_mean": [
+      38,
+      55
+     ],
+     "sat_high": [
+      0,
+      40
+     ],
+     "warm": [
+      55,
+      80
+     ],
+     "cool_min": 8
+    },
+    "night": {
+     "p2": [
+      4,
+      14
+     ],
+     "median": [
+      22,
+      45
+     ],
+     "p98_lights_only": 200,
+     "sat_mean": [
+      18,
+      35
+     ],
+     "sat_high": [
+      0,
+      10
+     ],
+     "cool_unlit_min": 50
+    }
+   },
+   "weather": {
+    "spring": {
+     "storm": 0.05,
+     "fog": 0.2,
+     "dust": 0.05
+    },
+    "summer": {
+     "storm": 0.03,
+     "fog": 0.05,
+     "dust": 0.12
+    },
+    "autumn": {
+     "storm": 0.06,
+     "fog": 0.2,
+     "dust": 0.05
+    },
+    "winter": {
+     "storm": 0.06,
+     "fog": 0.3,
+     "dust": 0.0
+    }
+   },
+   "air": {
+    "mist": {
+     "where": "plain",
+     "hours": [
+      "05:00",
+      "07:30"
+     ],
+     "seasons": [
+      "spring"
+     ]
+    },
+    "dust_motes": {
+     "hours": [
+      "15:00",
+      "19:00"
+     ],
+     "seasons": [
+      "summer"
+     ]
+    },
+    "night_mist": {
+     "where": "water",
+     "hours": [
+      "22:00",
+      "05:00"
+     ]
+    }
+   },
+   "water": {
+    "body": "#3f7fa0",
+    "reflect": true,
+    "sea_state": 0
+   },
+   "lights": {
+    "world.royal_station": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    }
+   }
   }
  },
  "districts": [
@@ -78,7 +508,45 @@
      "density": "watch",
      "max_per_chunk": 1
     }
-   ]
+   ],
+   "name": "The Royal Road",
+   "sound": {
+    "surfaces": {
+     "stone": 1.0
+    },
+    "wind": "wind.street",
+    "exposure": 1.0,
+    "steps": {
+     "surface": "stone",
+     "files": [
+      "sfx/world/step_stone_1.wav",
+      "sfx/world/step_stone_2.wav",
+      "sfx/world/step_stone_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof.wav"
+     ]
+    },
+    "cart": "amb/world/cart.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 12
+    }
+   },
+   "look": {
+    "air": {
+     "mist": {
+      "where": "plain",
+      "hours": [
+       "05:00",
+       "07:30"
+      ],
+      "seasons": [
+       "spring"
+      ]
+     }
+    }
+   }
   },
   {
    "id": "land",
@@ -92,7 +560,41 @@
       "summer"
      ]
     }
-   ]
+   ],
+   "name": "Countryside",
+   "sound": {
+    "surfaces": {
+     "leaves": 0.12,
+     "water": 0.19
+    },
+    "wind": "wind.open",
+    "exposure": 1.0,
+    "water": {
+     "family": "river",
+     "speed": "slow"
+    },
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ],
+     "decks": [
+      "sfx/world/step_timber_1.wav",
+      "sfx/world/step_timber_2.wav",
+      "sfx/world/step_timber_3.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true
+   }
   }
  ],
  "densities": {
@@ -235,5 +737,6 @@
  "zones": [],
  "cards": {},
  "strings": {},
- "journal": []
+ "journal": [],
+ "era": "The Persian empire of Xerxes · c. 470 BC"
 }

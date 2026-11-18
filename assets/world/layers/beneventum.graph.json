@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "layer": "beneventum",
+  "nodes": [
+    {"id": "appia_benev_w", "at": [213, 935], "kind": "portal"},
+    {"id": "n1", "at": [213, 929]},
+    {"id": "appia_benev_e", "at": [213, 924], "kind": "portal"},
+    {"id": "n3", "at": [213, 928]},
+    {"id": "beneventum_fork", "at": [215, 928], "kind": "dest"},
+    {"id": "n5", "at": [218, 928]},
+    {"id": "n6", "at": [218, 924]}
+  ],
+  "edges": [
+    {"a": "appia_benev_w", "b": "n1", "kind": "road"},
+    {"a": "appia_benev_e", "b": "n3", "kind": "road"},
+    {"a": "n3", "b": "n1", "kind": "road"},
+    {"a": "beneventum_fork", "b": "n5", "kind": "street"},
+    {"a": "n5", "b": "n6", "kind": "street"},
+    {"a": "beneventum_fork", "b": "n3", "kind": "street"}
+  ],
+  "lanes": [
+  ]
+}

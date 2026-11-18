@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "layer": "sidon",
+  "nodes": [
+    {"id": "sidon_n", "at": [300, 279], "kind": "portal"},
+    {"id": "n1", "at": [300, 278]},
+    {"id": "sidon_quay", "at": [322, 278], "kind": "dest"},
+    {"id": "n3", "at": [326, 278]}
+  ],
+  "edges": [
+    {"a": "sidon_n", "b": "n1", "kind": "road"},
+    {"a": "n1", "b": "sidon_quay", "kind": "road"},
+    {"a": "sidon_quay", "b": "n3", "kind": "road"}
+  ],
+  "lanes": [
+    {"id": "sidon", "kind": "sea", "points": [[322, 282], [322, 281]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 1}, {"id": "sidon", "at": 1}]}
+  ]
+}
