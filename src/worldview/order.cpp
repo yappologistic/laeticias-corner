@@ -115,7 +115,7 @@ void ActorMerge::index(std::span<const OrderItem> items, std::span<const std::ui
     for (std::size_t k = 0; k < order.size(); ++k) rank_[order[k]] = static_cast<std::uint32_t>(k);
     screens_.resize(items.size());
     for (std::size_t i = 0; i < items.size(); ++i) screens_[i] = items[i].screen;
-    grid_.build(screens_, cell);
+    cell_ = cell;
 }
 
 void ActorMerge::bounds(std::span<const OrderItem> items, std::span<const MergeActor> actors) {
@@ -215,7 +215,9 @@ void ActorMerge::schedule(std::span<const OrderItem> items, std::span<const Merg
         }
     };
     int flushedFor = -2; // the bound page the waiting list was last checked against
-    for (std::size_t k = 0; k <= n; ++k) {
+    // Only drawn positions are visited (then the end): actors go just before one of them.
+    for (std::size_t vi = 0; vi <= visible_.size(); ++vi) {
+        const std::size_t k = vi < visible_.size() ? visible_[vi] : n;
         if (bound != flushedFor && !pending_.empty()) {
             flushPage(k);
             flushedFor = bound;
