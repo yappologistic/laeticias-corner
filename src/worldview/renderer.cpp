@@ -982,8 +982,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     batch_.flush();
     // The game's scene works only while its home is in view.
     const bool home = lod != Lod::Overview && !hole_.empty() && hole_.screen.overlaps(view);
-    if (hooks.ground && home) hooks.ground(frame);
+    // The world's cloud shadows go under the home's ground: the home's scene shades its own land.
     if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
+    if (hooks.ground && home) hooks.ground(frame);
     // A flight down to the native level gathers its destination on the way.
     if (camera.flying && lodFor(camera.arrivalScale) == Lod::Native) {
         const Vec2 to = camera.arrival;
