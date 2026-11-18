@@ -1002,7 +1002,13 @@ void WorldView::composite(Vec2 scale, bool smooth) {
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
     const float k = p.scale / p.res; // window px per target px
-    const bool whole = std::abs(k - std::round(k)) < 1e-3f;
+    // Nearest only when whole target pixels land on whole window pixels; a view between pixels
+    // (a moving camera) is filtered, so it glides instead of stepping a pixel now and then.
+    const float ox = (p.origin.x - p.topLeft.x) * p.scale;
+    const float oy = (p.origin.y - p.topLeft.y) * p.scale;
+    const bool whole = std::abs(k - std::round(k)) < 1e-3f &&
+                       std::abs(ox - std::round(ox)) < 1e-2f &&
+                       std::abs(oy - std::round(oy)) < 1e-2f;
     batch_.use(view_.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
                whole && !smooth ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
     batch_.quad(SDL_FRect{(p.origin.x - p.topLeft.x) * p.scale * scale.x,

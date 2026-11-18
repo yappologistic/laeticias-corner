@@ -771,7 +771,12 @@ void Scene::drawActor(const Actor& a, bool silhouette) {
     const bool back = backward && !ka.back.empty();
     // Mirrored frames cover +y and -x (plain animations, drawn facing front, too).
     const bool mirror = a.facing == Facing::FrontMirrored || a.facing == Facing::BackMirrored;
-    const SpriteId id = (back ? ka.back : ka.front).at(a.animTime, ka.fps);
+    // Moving animations step with the ground covered (their fps is at the kind's speed), so a
+    // frame changes every so many pixels at any pace; the rest by the clock.
+    const bool moving = animOf(a) != a.anim || a.state == ActorState::Travel;
+    const float speed = std::max(0.05f, k.speed);
+    const SpriteId id =
+        (back ? ka.back : ka.front).at(moving ? a.stride / speed : a.animTime, ka.fps);
     const Vec2 w = actorAnchor(a);
     const float al = std::clamp(a.alpha, 0.0f, 1.0f);
     SDL_FColor color = silhouette && !glow ? SDL_FColor{0, 0, 0, al}
@@ -1214,7 +1219,11 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
     drawSky(p, scale);
     // Whole-number magnification stays nearest-neighbour; anything else (mid-transition, or a
     // blurred copy) is filtered.
-    const bool whole = std::abs(k - std::round(k)) < 1e-3f;
+    const float ox = (xf_.origin.x - topLeft_.x) * s;
+    const float oy = (xf_.origin.y - topLeft_.y) * s;
+    const bool whole = std::abs(k - std::round(k)) < 1e-3f &&
+                       std::abs(ox - std::round(ox)) < 1e-2f &&
+                       std::abs(oy - std::round(oy)) < 1e-2f;
     // The world layer was drawn over transparent black, so its colour is premultiplied.
     batch_.use(world_.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
                smooth || !whole ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);

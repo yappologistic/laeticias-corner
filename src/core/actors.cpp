@@ -2275,7 +2275,12 @@ void Actors::update(const ActorEnv& env, float dt) {
     reactCool_ = std::max(0.0f, reactCool_ - dt);
     clickCool_ = std::max(0.0f, clickCool_ - dt);
     for (std::size_t j = 0; j < pool_.size(); ++j)
-        if ((pool_[j].flags & kAlive) != 0) tick(env, static_cast<int>(j), dt);
+        if ((pool_[j].flags & kAlive) != 0) {
+            // Walk cycles follow the ground covered, not the clock (no sliding feet).
+            const Vec2 before = pool_[j].pos;
+            tick(env, static_cast<int>(j), dt);
+            pool_[j].stride += std::hypot(pool_[j].pos.x - before.x, pool_[j].pos.y - before.y);
+        }
     // How long she has been sitting (butterflies land on her hat after a while).
     if (resident_ >= 0) {
         const Actor& r = pool_[static_cast<std::size_t>(resident_)];

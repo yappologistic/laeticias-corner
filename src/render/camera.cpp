@@ -50,6 +50,15 @@ void Camera::clamp(Vec2& p, Vec2 screen, float scale) const {
     p = iso_.toWorld(t.x, t.y);
 }
 
+Camera Camera::snapped(Vec2 screen) const {
+    Camera c = *this;
+    const auto snap = [&](float p, float half) {
+        return (std::round((p - half / scale_) * scale_) / scale_) + half / scale_;
+    };
+    c.pos_ = {snap(pos_.x, screen.x * 0.5f), snap(pos_.y, screen.y * 0.5f)};
+    return c;
+}
+
 Camera Camera::interpolated(float alpha) const {
     if (alpha >= 1.0f) return *this;
     Camera c = *this;

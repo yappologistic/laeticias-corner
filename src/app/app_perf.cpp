@@ -17,7 +17,7 @@ constexpr float kSnapTiles =
 } // namespace
 
 void App::prepareView() {
-    view_ = camera_.interpolated(alpha_);
+    view_ = camera_.moving() ? camera_.interpolated(alpha_) : camera_.snapped(screen());
     const auto all = actors_.all();
     drawActors_.assign(all.begin(), all.end());
     if (alpha_ >= 1.0f) return;
@@ -28,6 +28,7 @@ void App::prepareView() {
         const float dy = a.pos.y - from.y;
         if (dx * dx + dy * dy > kSnapTiles * kSnapTiles) continue;
         a.pos = {from.x + dx * alpha_, from.y + dy * alpha_};
+        a.stride -= std::hypot(dx, dy) * (1.0f - alpha_); // the walk cycle between steps too
     }
 }
 

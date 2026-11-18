@@ -72,6 +72,13 @@ public:
         prevScale_ = scale_;
     }
     [[nodiscard]] Camera interpolated(float alpha) const;
+    // Moved or zoomed in the last step.
+    [[nodiscard]] bool moving() const {
+        return pos_.x != prevPos_.x || pos_.y != prevPos_.y || scale_ != prevScale_;
+    }
+    // The same view with its top-left corner on a whole window pixel (a resting view is drawn
+    // crisp; a moving one keeps its sub-pixel place and is filtered).
+    [[nodiscard]] Camera snapped(Vec2 screen) const;
     // Reduce motion: pans and zooms arrive at once instead of easing.
     void setEasing(bool on) { easing_ = on; }
     [[nodiscard]] Vec2 screenToWorld(Vec2 px, Vec2 screen) const;
