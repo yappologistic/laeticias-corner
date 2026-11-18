@@ -4,7 +4,10 @@
 
 #include "core/catalog.hpp"
 
+#include <array>
+#include <cstdint>
 #include <expected>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -23,6 +26,7 @@ struct SetTerrain {
     std::vector<std::string> faces; // edge materials raised tiles may use (aux picks one)
     bool water = false;
     bool paved = false;
+    std::optional<std::array<std::uint8_t, 3>> colour; // flat look while the set has no art
 };
 
 // Slot behaviour (living-world.md §2.3); its positions come from the geometry file.
@@ -49,8 +53,9 @@ struct SetItem {
     std::vector<std::string> states;
     bool occluder = false;
     std::string card;
-    int rise = 0;  // stairs and ramps: levels climbed from the foot to the head
-    char axis = 0; // 'x' or 'y' at r0 when rise > 0
+    std::string standIn; // a home item drawn in its place while the set has no art
+    int rise = 0;        // stairs and ramps: levels climbed from the foot to the head
+    char axis = 0;       // 'x' or 'y' at r0 when rise > 0
     float fps = 0;
     std::vector<SlotBehaviour> slots;
     std::vector<std::pair<std::string, std::string>> emitters; // point name, effect

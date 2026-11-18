@@ -69,8 +69,10 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
                          .base = t.base,
                          .water = t.water,
                          .paved = t.paved,
+                         .fps = t.fps,
                          .under = {},
-                         .faces = {}};
+                         .faces = {},
+                         .colour = {}};
         const auto extra = std::ranges::find(contract.terrain, t.id, &HomeTerrainExtra::id);
         if (extra != contract.terrain.end()) {
             info.under = extra->under;
@@ -94,6 +96,7 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
         info.on = d.on;
         info.walkable = d.walkable;
         info.crossing = d.crossing;
+        info.fps = d.fps;
         info.rotations = {0};
         if (d.layout == Layout::Rotate) {
             info.rotations.clear();
@@ -115,8 +118,10 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
                                   .base = t.base,
                                   .water = t.water,
                                   .paved = t.paved,
+                                  .fps = t.fps,
                                   .under = t.under,
-                                  .faces = t.faces});
+                                  .faces = t.faces,
+                                  .colour = t.colour});
         }
         for (const SetItem& d : sc.items) {
             if (!claim(d.id, sc.file))
@@ -137,7 +142,9 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
             info.rise = d.rise;
             info.axis = d.axis;
             info.height = d.height;
+            info.fps = d.fps;
             info.card = d.card;
+            info.standIn = d.standIn;
             info.slots = d.slots;
             c.itemIndex_.emplace(d.id, static_cast<int>(c.items_.size()));
             c.items_.push_back(std::move(info));
@@ -177,8 +184,10 @@ TerrainInfo Content::terrain(std::string_view id) const {
             .base = false,
             .water = waterByName(id),
             .paved = false,
+            .fps = 0,
             .under = {},
-            .faces = {}};
+            .faces = {},
+            .colour = {}};
 }
 
 int Content::findItem(std::string_view id) const {
