@@ -48,7 +48,11 @@ GroundCache::GroundCache(SDL_Renderer* renderer, const Atlas& atlas, const Catal
 
 void GroundCache::invalidate() {
     byKey_.clear();
-    for (Slot& s : slots_) s.key = ~0ULL;
+    free_.clear();
+    for (std::size_t i = 0; i < slots_.size(); ++i) {
+        slots_[i].key = ~0ULL;
+        free_.push_back(static_cast<int>(i));
+    }
 }
 
 std::size_t GroundCache::bytes() const {
@@ -144,6 +148,13 @@ void GroundCache::drawChunk(Batch& batch, const World& world, int level, int cx,
 }
 
 int GroundCache::acquire() {
+    // Slots freed by an invalidation (a season turn) are reused before any new page is made, so
+    // the cache holds what the view needs, not its whole budget (Q3-04).
+    if (!free_.empty()) {
+        const int i = free_.back();
+        free_.pop_back();
+        return i;
+    }
     const std::size_t perPage = static_cast<std::size_t>(slotsX_ * slotsY_);
     if (slots_.size() < maxPages_ * perPage) {
         const std::size_t i = slots_.size();
