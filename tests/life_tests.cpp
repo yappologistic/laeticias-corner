@@ -91,6 +91,27 @@ void checkSlots(const CityLife& c) {
         CAPTURE(group);
         CHECK(count <= cap);
     });
+    // Everyone stands at a spot of the group reserved, and nobody shares a spot while the group
+    // has a free one (L-116).
+    const LifeWorld& w = c.lifeWorld();
+    std::map<int, std::vector<int>> spots;
+    c.forEachInfo([&](const CityLife::Info& in) {
+        if (in.slot < 0) return;
+        CAPTURE(in.slot);
+        REQUIRE(in.spot >= 0);
+        CHECK(w.slotGroup[static_cast<std::size_t>(in.spot)] ==
+              static_cast<std::uint32_t>(in.slot));
+        spots[in.slot].push_back(in.spot);
+    });
+    for (auto& [group, taken] : spots) {
+        const auto g = static_cast<std::size_t>(group);
+        const std::size_t own = w.groupSpotsAt[g + 1] - w.groupSpotsAt[g];
+        std::ranges::sort(taken);
+        const auto distinct = static_cast<std::size_t>(
+            std::ranges::distance(taken.begin(), std::ranges::unique(taken).begin()));
+        CAPTURE(group);
+        CHECK(distinct == std::min(taken.size(), own));
+    }
 }
 
 struct Snapshot {

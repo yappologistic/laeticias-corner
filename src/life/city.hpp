@@ -43,8 +43,8 @@ struct LifeWorld {
     // Slots grouped by (placed item, slot name): reservations count per group against its cap.
     std::vector<std::uint32_t> slotGroup; // per WorldSlot
     std::vector<std::uint8_t> groupCap;
-    std::vector<std::uint32_t> groupFirst; // first WorldSlot of the group
-    std::vector<std::uint8_t> groupSpots;  // its spots
+    std::vector<std::uint32_t> groupSpotsAt; // per group, its first entry in groupSlots (+1)
+    std::vector<std::uint32_t> groupSlots;   // the WorldSlots (spots) of each group in turn
     // Per map chunk: the life districts on it, (region, district, tiles).
     struct ChunkDistrict {
         std::uint16_t region;
@@ -285,6 +285,7 @@ public:
         int goods;
         int goodsCount;
         int slot; // reserved WorldSlot group, -1
+        int spot; // the WorldSlot it stands at in that group, -1
         bool visible;
         std::uint64_t key;
     };
@@ -375,10 +376,10 @@ private:
     // Where token instance `k` of token `t` (or its group member) is now.
     bool tokenAt(std::size_t t, int k, int member, TokenAt& out) const;
     [[nodiscard]] int memberKind(const Token& tk, int member) const;
-    bool resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& at, float& z,
+    bool resolve(int i, const Target& t, TilePos& goal, int& group, int& spot, Vec2& at, float& z,
                  std::uint8_t& face);
     int nearestDoor(Vec2 p, float reach, TilePos& goal) const;
-    void reserve(int i, int group);
+    void reserve(int i, int group, int spot); // a group's place, standing at that WorldSlot
     void unreserve(int i);
     void puppet(int i);
     // Abstract layers.
@@ -450,6 +451,7 @@ private:
     std::vector<Desire> queue_;
     std::size_t queueHead_ = 0;
     std::vector<std::uint8_t> groupCount_;
+    std::vector<std::uint8_t> spotUse_; // per WorldSlot: reservations standing at it
     std::vector<std::uint8_t> slotCount_;
     std::vector<std::uint8_t> itemState_;
     std::vector<float> itemStateUntil_;
@@ -535,6 +537,7 @@ void CityLife::forEachInfo(F&& f) const {
         in.goods = a.goods;
         in.goodsCount = a.goodsCount;
         in.slot = a.group;
+        in.spot = a.group >= 0 ? a.slot : -1;
         in.visible = a.state != ActState::Inside && a.alpha > 0.0f;
         in.key = a.key;
         f(in);

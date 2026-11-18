@@ -153,22 +153,29 @@ std::unique_ptr<LifeWorld> buildLifeWorld(const LoadedWorld& w) {
         lw->pathsOf[r] = static_cast<int>(lw->paths.size());
         lw->paths.emplace_back(map, w.graphs[static_cast<std::size_t>(reg.layer)], reg.worldRegion);
     }
-    // Slot groups: the spots of one slot of one placed item.
+    // Slot groups: the spots of one slot of one placed item. The map keeps slots by chunk, so a
+    // group's spots need not be neighbours there: each group lists its own (L-116).
     const auto& slots = map.slots();
     lw->slotGroup.resize(slots.size());
     std::unordered_map<std::uint64_t, std::uint32_t> groups;
+    std::vector<std::uint32_t> spots;
     for (std::size_t s = 0; s < slots.size(); ++s) {
         const std::uint64_t k = (static_cast<std::uint64_t>(slots[s].item) << 16) | slots[s].name;
         const auto [it, fresh] = groups.emplace(k, static_cast<std::uint32_t>(lw->groupCap.size()));
         if (fresh) {
             lw->groupCap.push_back(slots[s].cap);
-            lw->groupFirst.push_back(static_cast<std::uint32_t>(s));
-            lw->groupSpots.push_back(0);
+            spots.push_back(0);
         }
         lw->slotGroup[s] = it->second;
-        lw->groupSpots[it->second] =
-            static_cast<std::uint8_t>(std::min(255, lw->groupSpots[it->second] + 1));
+        ++spots[it->second];
     }
+    lw->groupSpotsAt.assign(spots.size() + 1, 0);
+    for (std::size_t g = 0; g < spots.size(); ++g)
+        lw->groupSpotsAt[g + 1] = lw->groupSpotsAt[g] + spots[g];
+    lw->groupSlots.resize(slots.size());
+    std::vector<std::uint32_t> next(lw->groupSpotsAt.begin(), lw->groupSpotsAt.end() - 1);
+    for (std::size_t s = 0; s < slots.size(); ++s)
+        lw->groupSlots[next[lw->slotGroup[s]]++] = static_cast<std::uint32_t>(s);
     lw->chunkDistricts.resize(static_cast<std::size_t>(map.chunksX() * map.chunksY()));
     lw->regionItems.resize(lw->data.regions.size());
     for (std::size_t r = 0; r < lw->data.regions.size(); ++r) {
@@ -192,7 +199,7 @@ std::unique_ptr<LifeWorld> buildLifeWorld(const LoadedWorld& w) {
 
 std::size_t LifeWorld::memoryBytes() const {
     std::size_t n = data.memoryBytes() + slotGroup.capacity() * 4 + groupCap.capacity() +
-                    groupFirst.capacity() * 4 + groupSpots.capacity();
+                    groupSpotsAt.capacity() * 4 + groupSlots.capacity() * 4;
     for (const RegionPaths& p : paths) n += p.memoryBytes();
     for (const auto& c : chunkDistricts) n += c.capacity() * sizeof(ChunkDistrict);
     for (const auto& v : regionItems) n += v.capacity() * 8;
@@ -219,6 +226,7 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
     queue_.reserve(4096);
     activeChunks_.reserve(256);
     groupCount_.assign(w.groupCap.size(), 0);
+    spotUse_.assign(w.slotGroup.size(), 0);
     itemState_.assign(map_->items().size(), 0);
     itemStateUntil_.assign(map_->items().size(), 0);
     running_.reserve(tl::kMaxRunningEvents);
@@ -1089,16 +1097,20 @@ void CityLife::unreserve(int i) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     if (a.group >= 0 && groupCount_[static_cast<std::size_t>(a.group)] > 0)
         --groupCount_[static_cast<std::size_t>(a.group)];
+    if (a.slot >= 0 && spotUse_[static_cast<std::size_t>(a.slot)] > 0)
+        --spotUse_[static_cast<std::size_t>(a.slot)];
     a.group = -1;
     a.slot = -1;
 }
 
-void CityLife::reserve(int i, int group) {
+void CityLife::reserve(int i, int group, int spot) {
     unreserve(i);
     if (group < 0) return;
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     a.group = group;
     ++groupCount_[static_cast<std::size_t>(group)];
+    a.slot = spot;
+    if (spot >= 0) ++spotUse_[static_cast<std::size_t>(spot)];
 }
 
 int CityLife::nearestDoor(Vec2 p, float reach, TilePos& goal) const {
@@ -1132,10 +1144,11 @@ bool CityLife::planTo(int i, TilePos goal, Vec2 end, int& builds) {
     return true;
 }
 
-bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& at, float& z,
-                       std::uint8_t& face) {
+bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, int& spot, Vec2& at,
+                       float& z, std::uint8_t& face) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     group = -1;
+    spot = -1;
     face = 0xFF;
     const int pi = w_->pathsOf[a.region];
     if (pi < 0) return false;
@@ -1159,16 +1172,19 @@ bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& 
         const WorldSlot& s = map_->slots()[static_cast<std::size_t>(slotIndex)];
         if (!standOn(s.tile)) return false;
         group = static_cast<int>(w_->slotGroup[static_cast<std::size_t>(slotIndex)]);
+        spot = slotIndex;
         at = goal == s.tile ? s.at : centre(goal);
         z = goal == s.tile ? static_cast<float>(s.z) : 0.0f;
         face = s.face;
         return true;
     };
     const auto freeGroup = [&](std::uint32_t g) { return groupCount_[g] < w_->groupCap[g]; };
-    // The spot of a group to stand at: one per reservation, round the group's spots.
+    // The spot of a group to stand at: its least used (a free one while there is one).
     const auto spotOf = [&](std::uint32_t g) {
-        const std::uint32_t n = std::max<std::uint32_t>(1, w_->groupSpots[g]);
-        return static_cast<int>(w_->groupFirst[g]) + static_cast<int>(groupCount_[g] % n);
+        std::uint32_t best = w_->groupSlots[w_->groupSpotsAt[g]];
+        for (std::uint32_t k = w_->groupSpotsAt[g]; k < w_->groupSpotsAt[g + 1]; ++k)
+            if (spotUse_[w_->groupSlots[k]] < spotUse_[best]) best = w_->groupSlots[k];
+        return static_cast<int>(best);
     };
     at = {};
     z = 0;
@@ -1440,10 +1456,11 @@ CityLife::Begin CityLife::beginStep(int i, std::uint32_t s, float& estimate) {
         }
         TilePos goal;
         int group = -1;
+        int spot = -1;
         Vec2 at;
         float z = 0;
         std::uint8_t face = 0xFF;
-        if (!resolve(i, st.target, goal, group, at, z, face)) return Begin::Failed;
+        if (!resolve(i, st.target, goal, group, spot, at, z, face)) return Begin::Failed;
         if (goal == a.tile.pos()) {
             a.route = Route{};
             a.route.leg = Leg::Done;
@@ -1452,9 +1469,7 @@ CityLife::Begin CityLife::beginStep(int i, std::uint32_t s, float& estimate) {
             waited_ = false;
             if (!planTo(i, goal, at, builds_)) return waited_ ? Begin::Wait : Begin::Failed;
         }
-        reserve(i, group);
-        a.slot =
-            group >= 0 ? static_cast<int>(w_->groupFirst[static_cast<std::size_t>(group)]) : -1;
+        reserve(i, group, spot);
         a.face = face;
         a.anchor = tile16(goal);
         a.state = ActState::Travel;
@@ -2939,7 +2954,8 @@ std::size_t CityLife::memoryBytes() const {
            (chunkHead_.capacity() + chunkNext_.capacity() + chunkOf_.capacity()) * sizeof(int) +
            keys_->keys.capacity() * 12 +
            (desires_.capacity() + queue_.capacity()) * sizeof(Desire) + groupCount_.capacity() +
-           itemState_.capacity() * 5 + trails_.capacity() * sizeof(Tile16) + chains_.memoryBytes();
+           spotUse_.capacity() + itemState_.capacity() * 5 + trails_.capacity() * sizeof(Tile16) +
+           chains_.memoryBytes();
 }
 
 } // namespace lc::life
