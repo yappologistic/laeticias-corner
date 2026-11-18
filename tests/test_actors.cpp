@@ -547,6 +547,25 @@ TEST_CASE("petting: a heart, then a cooldown; she answers a click, then waits") 
     CHECK_FALSE(l.actors.pet(l.actors.resident()));
 }
 
+TEST_CASE("petting does not pause the activity under it (S3-4)") {
+    Life l;
+    l.place("coop", 10, 10);
+    l.run(12);
+    const auto hens = l.of("hen");
+    REQUIRE(!hens.empty());
+    const int hen = static_cast<int>(hens[0] - l.actors.all().data());
+    const Actor& h = l.actors.all()[static_cast<std::size_t>(hen)];
+    // Wait for a long enough activity, then pet: its timer runs on under the heart.
+    for (int s = 0; s < 3600 && !(h.state == ActorState::Act && h.timer > 1.0f); ++s)
+        l.run(1.0 / 60);
+    REQUIRE(h.state == ActorState::Act);
+    const float before = h.timer;
+    REQUIRE(l.actors.pet(hen));
+    l.run(0.5);
+    CHECK(h.overlay > 0);
+    CHECK(h.timer == doctest::Approx(before - 0.5f).epsilon(0.02));
+}
+
 TEST_CASE("startle: placements near a duck send it off; a cat only from sleep") {
     Life l;
     l.water({2, 2, 14, 14});
@@ -843,6 +862,16 @@ TEST_CASE("speech: no line repeats before the others; routine lines wait their t
                    b->end + tuning::kBubbleGap + 0.1));
 }
 
+TEST_CASE("speech: an empty line list says nothing (S3-5)") {
+    Catalog c = test::catalog();
+    const int idle = c.resident.context("idle");
+    c.resident.lines[static_cast<std::size_t>(idle)].clear();
+    Speech sp(c, 3);
+    CHECK(sp.next(idle).empty());
+    CHECK_FALSE(sp.offer(idle, SpeechWeight::Important, 10.0));
+    CHECK(sp.showing(10.1) == nullptr);
+}
+
 TEST_CASE("liveliness: too quiet and too busy both fail") {
     LivelyProbe p;
     for (int s = 0; s < 120; ++s) {
@@ -858,4 +887,302 @@ TEST_CASE("liveliness: too quiet and too busy both fail") {
     }
     const LivelyReport r = busy.check(3, 20, 1, 3);
     CHECK(r.busy == r.samples);
+}
+
+// --- The second QA pass (Q3) ------------------------------------------------------------------
+
+TEST_CASE("two bodies of water: a line per pond, and no duck paddles on the spot (Q3-01)") {
+    bool bothPonds = false;
+    for (std::uint64_t seed = 1; seed <= 8; ++seed) {
+        Life l(test::catalog(), seed);
+        l.water({2, 2, 9, 8});     // one pond...
+        l.water({20, 20, 28, 26}); // ...and another, far across the grass
+        l.actors.markSeen(*l.cat.findVisitor("duck"));
+        l.actors.populate(l.env());
+        // Seconds each duck has spent trying to move without moving.
+        std::map<const Actor*, float> stuck;
+        std::map<const Actor*, Vec2> last;
+        for (int i = 0; i < 180 * 60; ++i) {
+            l.step();
+            if (i % 30 != 0) continue;
+            for (const Actor* d : l.of("duck")) {
+                const Vec2 was = last.contains(d) ? last[d] : d->pos;
+                const bool paddling = d->state == ActorState::Follow && d->anim == 0;
+                const bool still = std::hypot(d->pos.x - was.x, d->pos.y - was.y) < 0.02f;
+                stuck[d] = paddling && still ? stuck[d] + 0.5f : 0.0f;
+                CHECK_MESSAGE(stuck[d] < 10.0f, "seed " << seed << ": a duck paddles on the spot");
+                last[d] = d->pos;
+            }
+        }
+        int west = 0;
+        int east = 0;
+        for (const Actor* d : l.of("duck")) (d->pos.x < 14 ? west : east) += 1;
+        bothPonds = bothPonds || (west > 0 && east > 0);
+    }
+    CHECK(bothPonds); // the case was actually exercised
+}
+
+TEST_CASE(
+    "a walk home that is disturbed: the hen still goes, and never more than the max (Q3-02)") {
+    Life l;
+    l.place("coop", 10, 10);
+    l.run(20);
+    REQUIRE(!l.of("hen").empty());
+    const auto leaving = [&] {
+        for (const Actor* h : l.of("hen"))
+            if ((h->flags & actor_flag::kLeaving) != 0 && h->alpha > 0.5f) return h;
+        return static_cast<const Actor*>(nullptr);
+    };
+    const auto visibleHens = [&] {
+        int n = 0;
+        for (const Actor* h : l.of("hen")) n += h->alpha > 0.5f && h->state != ActorState::Inside;
+        return n;
+    };
+    // Night: as the first hen sets out, the coop is taken away (an undo) and put back (a redo).
+    l.phase = Phase::Night;
+    l.clock = 0.7;
+    for (int i = 0; i < 60 * 60 && leaving() == nullptr; ++i) l.step();
+    REQUIRE(leaving() != nullptr);
+    const Item coop = *l.world.itemAt({10, 10});
+    l.world.removeItem(*l.world.itemIndexAt({10, 10}));
+    l.run(2);
+    l.world.addItem(coop);
+    l.run(150);
+    CHECK(visibleHens() == 0);
+    CHECK(l.actors.populationError(l.gates).empty());
+    // Next morning the flock is the coop's, not one on top of a lingering one.
+    l.phase = Phase::Day;
+    l.clock = 0.2;
+    for (int i = 0; i < 120 * 60; ++i) {
+        l.step();
+        if (i % 60 == 0)
+            REQUIRE_MESSAGE(l.actors.populationError(l.gates).empty(),
+                            l.actors.populationError(l.gates));
+    }
+    // A startle on the way home sends it off, then home all the same.
+    l.phase = Phase::Night;
+    l.clock = 0.7;
+    for (int i = 0; i < 60 * 60 && leaving() == nullptr; ++i) l.step();
+    REQUIRE(leaving() != nullptr);
+    const TilePos at = tileOf(leaving()->pos);
+    l.actors.disturb(l.env(), {at.x, at.y, at.x + 1, at.y + 1}, item("rock"), false);
+    l.run(150);
+    CHECK(visibleHens() == 0);
+    CHECK(l.actors.populationError(l.gates).empty());
+}
+
+TEST_CASE("each … max: with ten beds she waters six, then feeds the hens (Q3-05)") {
+    Life l;
+    l.world = makeStarterWorld(l.cat);
+    for (int x = 22; x < 32; ++x) l.place("planter", x, 37);
+    l.place("coop", 26, 30);
+    l.clock = 0.0; // 06:00: chores
+    l.run(300);
+    std::set<std::pair<int, int>> watered;
+    int fed = 0;
+    for (const ActorEvent& e : l.log) {
+        if (e.kind != ActorEvent::Kind::Effect) continue;
+        if (static_cast<Effect>(e.arg) == Effect::WaterBed)
+            CHECK(watered.insert({e.item.x, e.item.y}).second);
+        if (static_cast<Effect>(e.arg) == Effect::CallHens) ++fed;
+    }
+    CHECK(watered.size() == 6); // the catalog's max
+    CHECK(fed == 1);
+}
+
+TEST_CASE("the cottage removed while she is inside: she comes out at once (Q3-06)") {
+    Life l;
+    l.world = makeStarterWorld(l.cat);
+    l.place("cottage", 32, 30);
+    l.actors.populate(l.env());
+    l.phase = Phase::Night;
+    l.clock = 0.75; // midnight: she is home
+    for (int i = 0; i < 240 * 60 && l.her().state != ActorState::Inside; ++i) l.step();
+    REQUIRE(l.her().state == ActorState::Inside);
+    l.world.removeItem(*l.world.itemIndexAt({32, 30}));
+    l.run(2);
+    CHECK(l.her().state != ActorState::Inside);
+    l.run(20);
+    CHECK(l.her().alpha > 0.5f); // seen again, on her way to the bedroll
+}
+
+TEST_CASE(
+    "an hour of random edits: reservations, population and habitat rules hold (Q3-02, Q3-07)") {
+    Life l(test::catalog(), 5);
+    l.world = makeStarterWorld(l.cat);
+    for (const auto& [id, x, y] : {std::tuple{"cottage", 32, 30},
+                                   {"coop", 26, 32},
+                                   {"beehive", 36, 31},
+                                   {"hammock", 28, 26},
+                                   {"hay_bale", 24, 28},
+                                   {"campfire", 30, 36},
+                                   {"stump", 27, 27}})
+        l.place(id, x, y);
+    for (int x = 33; x < 37; ++x) l.place("flowers_red", x, 28);
+    l.actors.populate(l.env());
+    Rng rng(42);
+    // Seats that walkers may not stand on (hammocks, hay) are many, so getting up from one and
+    // pieces closing ways are frequent.
+    static constexpr std::string_view kPieces[] = {
+        "hammock", "hay_bale", "hammock", "flowers_white", "rock", "bench", "hay_bale"};
+    std::vector<float> bad(512, 0.0f); // seconds each actor has stood where it may not
+    const int minutes = 20;
+    for (int i = 0; i < minutes * 60 * 60; ++i) {
+        if (i % 60 == 0) {
+            // An edit a second, near where things live: a piece placed, one removed, or water.
+            const TilePos t{rng.range(20, 39), rng.range(20, 39)};
+            const float r = rng.uniform();
+            if (r < 0.45f) {
+                const Item it = makeItem(l.cat, item(kPieces[rng.range(0, 6)]), 0, t);
+                if (canPlace(l.world, l.cat, it) == PlaceResult::Ok) l.world.addItem(it);
+            } else if (r < 0.6f) {
+                if (const auto idx = l.world.itemIndexAt(t)) l.world.removeItem(*idx);
+            } else if (l.world.itemAt(t) == nullptr) {
+                l.world.setTerrain(t, l.cat.waterTerrain);
+            }
+            const float phase = std::fmod(static_cast<float>(i) / (60 * 60 * 6), 1.0f);
+            l.phase = phase < 0.6f ? Phase::Day : Phase::Night;
+            l.raining = rng.uniform() < 0.1f ? !l.raining : l.raining;
+        }
+        l.step();
+        if (i % 30 != 0) continue;
+        checkReservations(l);
+        const std::string pop = l.actors.populationError(l.gates);
+        REQUIRE_MESSAGE(pop.empty(), "minute " << i / 3600 << ": " << pop);
+        for (std::size_t j = 0; j < l.actors.all().size(); ++j) {
+            const Actor& a = l.actors.all()[j];
+            if ((a.flags & actor_flag::kAlive) == 0 || (a.flags & actor_flag::kLeaving) != 0 ||
+                a.state == ActorState::Inside) {
+                bad[j] = 0;
+                continue;
+            }
+            const ActorKind& k = l.cat.kinds[a.kind];
+            const TilePos t = tileOf(a.pos);
+            const Item* under = l.world.itemAt(t);
+            const bool seated =
+                a.reserved && under != nullptr && under->pos == TilePos{a.resX, a.resY};
+            const bool ok =
+                k.move == Locomotion::Fly || seated ||
+                (k.visitor >= 0
+                     ? habitatAllows(l.cat.visitors[static_cast<std::size_t>(k.visitor)].habitat,
+                                     l.world, l.cat, a.pos) ||
+                           passable(l.world, l.cat, k.move, t, true)
+                     : passable(l.world, l.cat, Locomotion::Walk, t));
+            bad[j] = ok ? 0.0f : bad[j] + 0.5f;
+            CHECK_MESSAGE(bad[j] <= 3.0f, l.cat.kinds[a.kind].id << " stands where it may not");
+        }
+    }
+}
+
+TEST_CASE("up from a hammock, her next step failing: not left standing on it (Q3-07)") {
+    // Her whole day: lie in the hammock a moment, then go to a well there is none of, so the
+    // step after getting up fails and she pauses where she is.
+    const Catalog c = edited([](nlohmann::json& j) {
+        auto& r = j["resident"];
+        r["routines"]["leisure"] = {{"loop", true},
+                                    {"steps",
+                                     {{{"go", {{"item", "hammock"}, {"slot", "lie"}}}},
+                                      {{"use", {{"here", true}}}, {"anim", "lie"}, {"dur", {2, 2}}},
+                                      {{"go", {{"item", "well"}, {"slot", "use"}}}}}}};
+        for (auto& b : r["schedule"]) b["routine"] = "leisure";
+        r["interrupts"] = nlohmann::json::array();
+    });
+    Life l(c);
+    l.world = makeStarterWorld(l.cat);
+    l.place("hammock", 28, 26);
+    l.actors.populate(l.env());
+    const auto onHammock = [&] {
+        const TilePos t = tileOf(l.her().pos);
+        return t.y == 26 && (t.x == 28 || t.x == 29);
+    };
+    // Idle on its tiles without holding it is what may not last.
+    double idling = 0;
+    int lay = 0;
+    bool was = false;
+    for (int i = 0; i < 5 * 60 * 60; ++i) {
+        l.step();
+        const Actor& h = l.her();
+        lay += h.reserved && !was ? 1 : 0;
+        was = h.reserved;
+        idling = onHammock() && h.state == ActorState::Act && !h.reserved
+                     ? idling + tuning::kStepSeconds
+                     : 0;
+        REQUIRE_MESSAGE(idling < 1.0, "minute " << i / 3600);
+    }
+    CHECK(lay >= 3);
+}
+
+TEST_CASE("the bench's crowd stays whole: it is not sent home by the needs (Q3-10)") {
+    Life l;
+    const int placed = l.actors.crowd(l.env(), 400);
+    REQUIRE(placed == 400);
+    l.run(30);
+    int alive = 0;
+    for (const Actor& a : l.actors.all())
+        alive += (a.flags & actor_flag::kCrowd) != 0 && (a.flags & actor_flag::kAlive) != 0 &&
+                         (a.flags & actor_flag::kLeaving) == 0
+                     ? 1
+                     : 0;
+    CHECK(alive == placed);
+    // Nor does it count as anyone's presence.
+    for (const int n : l.actors.presence()) CHECK(n == 0);
+}
+
+TEST_CASE("the liveliness probe keeps its last fifteen minutes, no more (Q3-11)") {
+    LivelyProbe p;
+    for (int s = 0; s < 3 * 3600; ++s) {
+        p.happening(s);
+        p.sample(4, s);
+    }
+    const LivelyReport r = p.check(3, 20, 1, 100);
+    CHECK(r.samples == 900);
+    CHECK(r.happeningsMax <= 64);
+}
+
+TEST_CASE("a resting flyer is drawn among the items, a flying one over them (Q3-13)") {
+    Life l;
+    l.world = makeStarterWorld(l.cat);
+    for (int x = 30; x < 36; ++x) l.place("flowers_red", x, 30);
+    l.actors.markSeen(*l.cat.findVisitor("butterfly"));
+    l.actors.populate(l.env());
+    bool resting = false;
+    bool flying = false;
+    for (int i = 0; i < 120 * 60 && !(resting && flying); ++i) {
+        l.step();
+        for (const Actor* b : l.of("butterfly")) {
+            const ActorKind& k = l.cat.kinds[b->kind];
+            if (b->state == ActorState::Act && b->reserved) {
+                resting = true;
+                CHECK_FALSE(inAir(*b, k));
+            } else if (b->state == ActorState::Travel) {
+                flying = true;
+                CHECK(inAir(*b, k));
+            }
+        }
+    }
+    CHECK(resting);
+    CHECK(flying);
+}
+
+TEST_CASE("routines nested deeper than the stack are refused, naming the routine (Q3-12)") {
+    const auto deep = [](int levels) {
+        nlohmann::json step = {{"wait", {{"dur", {1, 1}}}}};
+        for (int k = 0; k < levels; ++k)
+            step = {{"if", {{"visitor", {{"id", "hen"}}}}}, {"do", nlohmann::json::array({step})}};
+        return nlohmann::json{{"steps", nlohmann::json::array({step})}};
+    };
+    // Three ifs inside a routine: four frames, the most the stack holds.
+    (void)edited([&](nlohmann::json& j) { j["resident"]["routines"]["deep"] = deep(3); });
+    nlohmann::json j = nlohmann::json::parse(test::catalogText());
+    j["resident"]["routines"]["deep"] = deep(4);
+    const auto r = parseCatalog(j.dump());
+    REQUIRE_FALSE(r.has_value());
+    CHECK(r.error().find("routine 'deep'") != std::string::npos);
+    CHECK(r.error().find("at most 4") != std::string::npos);
+    // A routine that calls itself is refused too.
+    j = nlohmann::json::parse(test::catalogText());
+    j["resident"]["routines"]["loop"] = {{"steps", nlohmann::json::array({{{"routine", "loop"}}})}};
+    const auto self = parseCatalog(j.dump());
+    REQUIRE_FALSE(self.has_value());
+    CHECK(self.error().find("reaches itself") != std::string::npos);
 }

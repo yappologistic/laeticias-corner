@@ -1,5 +1,6 @@
 #include "core/actor_data.hpp"
 
+#include "core/actors.hpp"
 #include "core/catalog.hpp"
 #include "core/tuning.hpp"
 
@@ -598,6 +599,41 @@ int ActorKind::findRoutine(std::string_view name, const ActorProgram& p) const {
     return -1;
 }
 
+namespace {
+
+// How many frames running `block` can stack up (itself and everything it pushes); a routine that
+// reaches itself again is refused, since it would nest without end.
+int blockDepth(const ActorProgram& p, int block, std::vector<int>& path, const std::string& ctx) {
+    if (std::ranges::find(path, block) != path.end())
+        fail(ctx + ": a routine reaches itself again (endless nesting)");
+    path.push_back(block);
+    int deepest = 0;
+    const Block& b = p.blocks[static_cast<std::size_t>(block)];
+    for (int k = 0; k < b.count; ++k) {
+        const Step& s =
+            p.steps[static_cast<std::size_t>(p.blockSteps[static_cast<std::size_t>(b.first + k)])];
+        const auto child = [&](int c) {
+            if (c >= 0) deepest = std::max(deepest, blockDepth(p, c, path, ctx));
+        };
+        switch (s.verb) {
+        case Verb::Pick:
+            for (int o = 0; o < s.b; ++o) child(p.options[static_cast<std::size_t>(s.a + o)].block);
+            break;
+        case Verb::If:
+            child(s.a);
+            child(s.b);
+            break;
+        case Verb::Each: child(s.a); break;
+        case Verb::Routine: child(p.routines[static_cast<std::size_t>(s.a)].block); break;
+        default: break;
+        }
+    }
+    path.pop_back();
+    return 1 + deepest;
+}
+
+} // namespace
+
 void compileActors(const json& root, Catalog& cat) {
     ActorProgram program;
     std::size_t i = 0;
@@ -623,6 +659,18 @@ void compileActors(const json& root, Catalog& cat) {
                          "': the resident has no routine '" + e["routine"].get<std::string>() +
                          "'");
     }
+    // Every routine must fit the runtime's stack of frames (Q3-12): deeper data would be cut off
+    // silently while running, so it is refused here, naming the routine.
+    std::vector<int> path;
+    for (const ActorKind& k : cat.kinds)
+        for (const int r : k.routines) {
+            const Routine& routine = program.routines[static_cast<std::size_t>(r)];
+            const std::string ctx = "kind '" + k.id + "' routine '" + routine.name + "'";
+            const int depth = blockDepth(program, routine.block, path, ctx);
+            if (depth > kActorStack)
+                fail(ctx + ": nests " + std::to_string(depth) + " levels deep; at most " +
+                     std::to_string(kActorStack));
+        }
     cat.program = std::move(program);
 }
 

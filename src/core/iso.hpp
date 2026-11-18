@@ -37,6 +37,8 @@ struct TileRect {
     [[nodiscard]] constexpr TileRect clipped(const TileRect& r) const {
         return {std::max(x0, r.x0), std::max(y0, r.y0), std::min(x1, r.x1), std::min(y1, r.y1)};
     }
+    [[nodiscard]] constexpr int width() const { return x1 - x0; }
+    [[nodiscard]] constexpr int height() const { return y1 - y0; }
     friend constexpr bool operator==(const TileRect&, const TileRect&) = default;
 };
 

@@ -13,6 +13,8 @@ Speech::Speech(const Catalog& cat, std::uint64_t seed)
 std::string_view Speech::next(int context) {
     const auto c = static_cast<std::size_t>(context);
     const auto& lines = cat_->resident.lines[c];
+    // The catalog refuses empty line lists; this keeps a hand-built catalog from reading past one.
+    if (lines.empty()) return {};
     auto& order = order_[c];
     if (order.empty() || pos_[c] >= order.size()) {
         // A fresh shuffle; never start it with the line that ended the last one.
@@ -31,7 +33,8 @@ std::string_view Speech::next(int context) {
 bool Speech::offer(int context, SpeechWeight weight, double now) {
     if (context < 0 || std::cmp_greater_equal(context, cat_->resident.lines.size())) return false;
     if (!free(weight, now)) return false;
-    if (!offerText(next(context), SpeechWeight::Important, now)) return false;
+    const std::string_view line = next(context);
+    if (line.empty() || !offerText(line, SpeechWeight::Important, now)) return false;
     bubble_.context = context;
     return true;
 }

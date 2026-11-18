@@ -134,6 +134,23 @@ float Weather::rainAt(Vec2 p) const {
     return best;
 }
 
+bool Weather::rainingOnLand() const {
+    switch (mode_) {
+    case WeatherMode::Rain: return true;
+    case WeatherMode::Clear: return false;
+    case WeatherMode::Natural: break;
+    }
+    // Rain at the point of the land nearest each shower's middle.
+    for (const WeatherCell& c : cells_) {
+        if (!c.rain || c.age < 0) continue;
+        const Vec2 near{
+            std::clamp(c.centre.x, static_cast<float>(region_.x0), static_cast<float>(region_.x1)),
+            std::clamp(c.centre.y, static_cast<float>(region_.y0), static_cast<float>(region_.y1))};
+        if (raining(near)) return true;
+    }
+    return false;
+}
+
 bool Weather::raining(Vec2 p) const {
     return rainAt(p) >= tuning::kRainThreshold;
 }

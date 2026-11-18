@@ -4,6 +4,7 @@
 // brought, checked against an area's minimum and cap. Too quiet fails, and so does too busy.
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <vector>
 
@@ -25,14 +26,20 @@ struct LivelyReport {
 
 class LivelyProbe {
 public:
-    void happening(double now) { happenings_.push_back(now); }
-    // One sample: purposeful movers in view now; happenings counted over the last minute.
+    LivelyProbe() { happenings_.reserve(kMaxHappenings); }
+    void happening(double now) {
+        if (happenings_.size() < kMaxHappenings) happenings_.push_back(now);
+    }
+    // One sample: purposeful movers in view now; happenings counted over the last minute. The
+    // last kMaxSamples are kept (a fixed ring: a whole session never grows it, Q3-11).
     void sample(int movers, double now) {
         std::erase_if(happenings_, [&](double t) { return now - t > kWindow; });
-        samples_.push_back({movers, static_cast<int>(happenings_.size()), now});
+        samples_[next_] = {movers, static_cast<int>(happenings_.size()), now};
+        next_ = (next_ + 1) % kMaxSamples;
+        count_ = std::min(count_ + 1, kMaxSamples);
     }
     void reset() {
-        samples_.clear();
+        count_ = next_ = 0;
         happenings_.clear();
     }
     // Movers within [minMovers, capMovers]; happenings at most capHappenings per minute and,
@@ -40,10 +47,12 @@ public:
     [[nodiscard]] LivelyReport check(int minMovers, int capMovers, int minHappenings,
                                      int capHappenings) const {
         LivelyReport r;
-        if (samples_.empty()) return r;
-        const double first = samples_.front().at;
-        r.moversMin = samples_.front().movers;
-        for (const Sample& s : samples_) {
+        if (count_ == 0) return r;
+        const std::size_t oldest = (next_ + kMaxSamples - count_) % kMaxSamples;
+        const double first = samples_[oldest].at;
+        r.moversMin = samples_[oldest].movers;
+        for (std::size_t k = 0; k < count_; ++k) {
+            const Sample& s = samples_[(oldest + k) % kMaxSamples];
             ++r.samples;
             r.moversMin = std::min(r.moversMin, s.movers);
             r.moversMax = std::max(r.moversMax, s.movers);
@@ -59,12 +68,16 @@ public:
 
 private:
     static constexpr double kWindow = 60.0;
+    static constexpr std::size_t kMaxSamples = 900;   // fifteen minutes at one a second
+    static constexpr std::size_t kMaxHappenings = 64; // in a minute: far past any cap
     struct Sample {
-        int movers;
-        int happenings;
-        double at;
+        int movers = 0;
+        int happenings = 0;
+        double at = 0;
     };
-    std::vector<Sample> samples_;
+    std::array<Sample, kMaxSamples> samples_{};
+    std::size_t next_ = 0;
+    std::size_t count_ = 0;
     std::vector<double> happenings_;
 };
 
