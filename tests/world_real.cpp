@@ -409,3 +409,36 @@ TEST_CASE("real world: named figures stand on open ground in their regions, one 
         CHECK(perRegion[city] == static_cast<int>(people));
     }
 }
+
+TEST_CASE("real world: stairs and ramps stand on their lower tile and reach their head") {
+    // QA (owner, Acropolis): stair pieces floating over the ground. A stair is drawn at its
+    // item's level, which must be its footprint's lowest; its head (the side it climbs to) must
+    // stand `rise` levels up. Mismatches in the layouts are listed
+    // (out/reports/world-game-faults.md).
+    const LoadedWorld& w = realWorld();
+    const WorldMap& m = *w.map;
+    int stairs = 0;
+    int drawnHigh = 0;
+    std::vector<std::string> unreached;
+    for (const Placed& it : m.items()) {
+        const ItemInfo& info = m.info(it);
+        if (info.rise <= 0) continue;
+        ++stairs;
+        const TileRect r = it.rect();
+        int low = 99;
+        for (int y = r.y0; y < r.y1; ++y)
+            for (int x = r.x0; x < r.x1; ++x)
+                if (m.inBounds({x, y})) low = std::min(low, m.level({x, y}));
+        CAPTURE(info.id);
+        CAPTURE(it.x);
+        CAPTURE(it.y);
+        if (it.level > low) ++drawnHigh;
+        CHECK(it.level <= low);
+        if (it.head < 0)
+            unreached.push_back(info.id + " at (" + std::to_string(it.x) + ", " +
+                                std::to_string(it.y) + ")");
+    }
+    CHECK(stairs > 50);
+    CHECK(drawnHigh == 0);
+    for (const std::string& s : unreached) MESSAGE("data finding: no head at its rise: " << s);
+}
