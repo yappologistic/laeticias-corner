@@ -298,8 +298,16 @@ bool CityLife::inView(Vec2 p) const {
 
 // -- the calendar --------------------------------------------------------------------------------
 
+int CityLife::seasonFor(int day, int season) const {
+    // No season given (-1: the regions' own pins are gone): the world calendar's for the day.
+    if (season >= 0) return season;
+    const int n = std::max(1, static_cast<int>(w_->data.seasons.size()));
+    return (day / std::max(1, w_->data.seasonDays)) % n;
+}
+
 bool CityLife::festivalOn(int region, int festival, int day, int season) const {
     if (festival < 0) return false;
+    season = seasonFor(day, season);
     const Festival& f = w_->data.regions[static_cast<std::size_t>(region)]
                             .festivals[static_cast<std::size_t>(festival)];
     if (f.seasons != 0 && (f.seasons & (1u << season)) == 0) return false;
@@ -336,6 +344,7 @@ int CityLife::blockAt(int region, const Role& role) const {
 void CityLife::advanceAbstract(const LifeClock& clock) {
     const bool rainChanged = clock.rain != clock_.rain;
     clock_ = clock;
+    clock_.season = seasonFor(clock.day, clock.season);
     now_ = clock.seconds();
     hour_ = static_cast<float>(clock.hour());
     sounds_.clear();
@@ -2418,6 +2427,7 @@ void CityLife::puppet(int i) {
 void CityLife::dayPlan(int region, int day, int season,
                        std::vector<std::tuple<int, double, double>>& out) const {
     out.clear();
+    season = seasonFor(day, season);
     const LifeRegion& reg = w_->data.regions[static_cast<std::size_t>(region)];
     const auto secondsAt = [&](double hour) {
         // Hours before 06:00 belong to the calendar day's early morning.
