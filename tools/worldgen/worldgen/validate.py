@@ -430,6 +430,17 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         d = cat.items.get(it.id)
         if d is not None and d.glow:
             glows[k] = glows.get(k, 0) + 1
+    def touches(k) -> bool:
+        """Whether chunk k overlaps the target layer (budgets are the composed world's, but each
+        layer answers for the chunks it shares)."""
+        cs = [to_plan(k[0] * P.CHUNK + a, k[1] * P.CHUNK + b) for a in (0, P.CHUNK - 1)
+              for b in (0, P.CHUNK - 1)]
+        cc0, cc1 = min(c for c, _ in cs), max(c for c, _ in cs)
+        rr0, rr1 = min(r for _, r in cs), max(r for _, r in cs)
+        return cc0 <= c1 and c0 <= cc1 and rr0 <= r1 and r0 <= rr1
+
+    counts = {k: n for k, n in counts.items() if touches(k)}
+    glows = {k: n for k, n in glows.items() if touches(k)}
     for k, n in sorted(counts.items()):
         if n > MAX_ITEMS_CHUNK:
             issue("V10", f"chunk {k} holds {n} items; at most {MAX_ITEMS_CHUNK}",

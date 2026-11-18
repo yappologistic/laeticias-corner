@@ -116,6 +116,13 @@ class Checks(unittest.TestCase):
             L.place("lamp", at=(22 + i % 10, 14 + i // 10))
         self.assertIn("V10", codes(check(L)))
 
+    def test_v10_budget_of_a_chunk_elsewhere_is_not_this_layers(self):
+        L, _ = clean()
+        under = ground_layout(rect=(0, 0, 127, 47))
+        for i in range(41):  # world C 100..109: a chunk column the test layer does not touch
+            under.place("lamp", at=(100 + i % 10, 14 + i // 10))
+        self.assertNotIn("V10", codes(check(L, under)))
+
     def test_v11_hidden_ground_warns(self):
         L, _ = clean()
         # A ridge 12 levels high in front (south-west) of the street hides it.
