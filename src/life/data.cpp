@@ -137,8 +137,9 @@ void Compiler::kinds() {
                 k.fps.push_back(a.anims[i].second);
                 k.strides.push_back(i < a.strides.size() ? a.strides[i] : 0.0f);
             }
-            k.cart =
-                a.id.find("cart") != std::string::npos || a.id.find("sledge") != std::string::npos;
+            // A cart is what is drawn as one (its animal and load), not a name holding "cart":
+            // the carter walks (L-109).
+            k.cart = a.sprite.starts_with("cart/");
             d_.kindIndex.emplace(k.id, static_cast<int>(d_.kinds.size()));
             d_.kinds.push_back(std::move(k));
         }
@@ -246,8 +247,10 @@ void Compiler::filter(const json& o, Filter& f, const std::string& where) {
         f.festival = r_->findFestival(fest);
         if (f.festival < 0) problem(where + ": festival '" + fest + "' is not in the calendar");
     }
-    if (const std::string fest = str(o, "not_festival"); !fest.empty())
+    if (const std::string fest = str(o, "not_festival"); !fest.empty()) {
         f.notFestival = r_->findFestival(fest);
+        if (f.notFestival < 0) problem(where + ": festival '" + fest + "' is not in the calendar");
+    }
     if (const std::string wx = str(o, "weather"); !wx.empty()) f.weather = wx == "clear" ? 0 : 1;
 }
 
@@ -738,6 +741,8 @@ void Compiler::chains(const json& life) {
             ChainStage st;
             st.by = str(s, "by");
             st.role = r_->findRole(st.by);
+            if (!st.by.empty() && st.role < 0)
+                problem(where + ": stage by '" + st.by + "' is no role");
             st.near = str(s, "near");
             st.label = str(s, "label");
             st.units = s.value("units", 1);
@@ -798,16 +803,23 @@ void Compiler::events(const json& life) {
         ev.chance = num(t, "chance", 1);
         ev.every = t.value("every", 0.0);
         ev.festival = ev.when.festival;
-        if (ev.trigger == Trigger::After) ev.after = r_->findEvent(str(t, "event"));
-        if (ev.trigger == Trigger::TokenArrived) ev.tokenKind = d_.findKind(str(t, "actor"));
+        // A name that resolves to nothing would leave a dead event: each is reported (L-102).
+        const auto need = [&](int index, const char* what, const std::string& name) {
+            if (index < 0) problem(where + ": " + what + " '" + name + "' is unknown");
+            return index;
+        };
+        if (ev.trigger == Trigger::After)
+            ev.after = need(r_->findEvent(str(t, "event")), "event", str(t, "event"));
+        if (ev.trigger == Trigger::TokenArrived)
+            ev.tokenKind = need(d_.findKind(str(t, "actor")), "actor", str(t, "actor"));
         if (ev.trigger == Trigger::Chain) {
-            ev.chain = r_->findChain(str(t, "chain"));
+            ev.chain = need(r_->findChain(str(t, "chain")), "chain", str(t, "chain"));
             ev.chainStage = t.value("stage", -1);
         }
         if (ev.trigger == Trigger::Weather) ev.weather = str(t, "kind");
         if (ev.trigger == Trigger::Reactive) {
             const json nr = t.value("when", json::object()).value("near", json::object());
-            ev.reactKind = d_.findKind(str(nr, "actor"));
+            ev.reactKind = need(d_.findKind(str(nr, "actor")), "actor", str(nr, "actor"));
             ev.reactItem = map_.content().findItem(str(nr, "item"));
             ev.reactWithin = num(nr, "within", 2);
             if (nr.contains("goods")) ev.reactGoods = goods(str(nr, "goods"), where);
@@ -839,7 +851,10 @@ void Compiler::events(const json& life) {
             } else if (c.contains("rotate")) {
                 for (const json& g : c["rotate"]) {
                     const int gi = r_->findGroup(g.get<std::string>());
-                    if (gi >= 0) ce.rotate.push_back(gi);
+                    if (gi >= 0)
+                        ce.rotate.push_back(gi);
+                    else
+                        problem(where + ": cast group '" + g.get<std::string>() + "' unknown");
                 }
                 ce.spacing = num(c, "spacing_s", 40);
             }

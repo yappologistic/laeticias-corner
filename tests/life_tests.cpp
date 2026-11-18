@@ -317,6 +317,18 @@ TEST_CASE("life: the calendar's months: festivals, populations, events and seaso
     }
 }
 
+TEST_CASE("life: carts are what is drawn as one, not a name holding \"cart\" (L-109)") {
+    const LifeData& d = lifeWorld().data;
+    const auto cart = [&](std::string_view id) {
+        const int k = d.findKind(id);
+        REQUIRE(k >= 0);
+        return d.kinds[static_cast<std::size_t>(k)].cart;
+    };
+    CHECK_FALSE(cart("rome.carter"));
+    CHECK(cart("rome.cart"));
+    CHECK(cart("athens.sledge"));
+}
+
 TEST_CASE("life: next hops follow shortest ways, and every planned walk is legal") {
     LifeWorld& w = lifeWorld();
     const WorldMap& m = w.map();

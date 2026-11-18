@@ -122,8 +122,8 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         return std::format("expected city district {} in {}..{} but found {}", a[2], a[3], a[4],
                            live);
     }
-    if (what == "drawn")
-        return range(worldView_ ? static_cast<int>(worldView_->actorsDrawn().size()) : 0, 2);
+    if (what == "drawn") // the sprites put last frame, not the actors gathered round the view
+        return range(worldView_ ? worldView_->stats().actorsDrawn : 0, 2);
     if (what == "people") return range(citySound_ ? citySound_->people() : 0, 2);
     if (what == "sound" && a.size() >= 5) {
         // expect city sound FILE MIN MAX: the gain (x100) its loop is set to now.
