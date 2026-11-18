@@ -63,6 +63,9 @@ struct TerrainLook {
 struct MaterialLook {
     std::string id;
     std::array<std::vector<SpriteRef>, 2> band; // south-east, south-west: v0.. (empty: flat)
+    // The lowest level where the cliff's foot is in water (`v<n>/f<k>`: surf), per variant.
+    std::array<std::vector<Frames>, 2> foot;
+    float fps = 0;
     std::array<std::optional<SpriteRef>, 2> top;
     SDL_FColor flat{1, 1, 1, 1};
 };

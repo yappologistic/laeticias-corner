@@ -43,6 +43,9 @@ SDL_FColor terrainColour(const world::TerrainInfo& t) {
                80 + static_cast<int>((h >> 16) % 120));
 }
 
+// Surf on the lowest face of a sea cliff moves at the sea's pace (the art report's timing).
+constexpr float kFaceSurfFps = 4.0f;
+
 // Placeholder colours by what the item is (the preview's categories).
 SDL_FColor categoryColour(const world::ItemInfo& d, Footprint fp) {
     if (d.landmark) return rgb(196, 112, 86);
@@ -170,6 +173,19 @@ int WorldSprites::internMaterial(const std::string& id, PageAtlas& pages) {
     m.band[1] = variants(pages, "edge/" + id + "_sw");
     m.top[0] = pages.find("edge/" + id + "_se/top");
     m.top[1] = pages.find("edge/" + id + "_sw/top");
+    for (int side = 0; side < 2; ++side) {
+        const auto sd = static_cast<std::size_t>(side);
+        for (std::size_t v = 0; v < m.band[sd].size(); ++v) {
+            Frames f = frames(pages, std::format("edge/{}_{}/v{}", id, side == 0 ? "se" : "sw", v));
+            if (f.empty()) break;
+            m.foot[sd].push_back(std::move(f));
+        }
+    }
+    if (m.foot[0].size() != m.band[0].size() || m.foot[1].size() != m.band[1].size()) {
+        m.foot[0].clear();
+        m.foot[1].clear();
+    }
+    m.fps = kFaceSurfFps;
     m.flat = materialColour(id);
     if (m.band[0].empty() || m.band[1].empty()) {
         m.band[0].clear();

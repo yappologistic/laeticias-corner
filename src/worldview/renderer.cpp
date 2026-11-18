@@ -21,9 +21,14 @@ SDL_FColor times(SDL_FColor c, float k) {
 
 int sameMask(const world::WorldMap& m, TilePos p, int t) {
     int mask = 0;
+    // Waters are one water for each other's edges (sea, shallows and rivers meet without a rim of
+    // sand between them: art-world.md); beyond the grid the sea runs on.
+    const bool water = m.terrainInfo(t).water;
     const auto same = [&](int dx, int dy) {
         const TilePos n{p.x + dx, p.y + dy};
-        return m.inBounds(n) && m.terrainAt(n) == t;
+        if (!m.inBounds(n)) return water;
+        const int nt = m.terrainAt(n);
+        return nt == t || (water && nt != world::kNone && m.terrainInfo(nt).water);
     };
     if (same(0, -1)) mask |= kMaskN;
     if (same(1, 0)) mask |= kMaskE;
@@ -164,20 +169,6 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
     return true;
 }
 
-bool WorldView::putFace(const SpriteRef& s, int side, Vec2 anchor, const Xform& x, SDL_FColor c) {
-    // A face spans the columns from its tile's bottom vertex to the side vertex, both included
-    // (hw + 1 of them), or straight cliffs show a seam at every tile and concave corners a gap.
-    // Narrower art gets a copy shifted two columns outward at each end, along the edge's 2:1
-    // slope, underneath it.
-    bool ok = true;
-    if (s.w <= iso_.hw) {
-        const float out = side == 0 ? -2.0f : 2.0f; // towards the bottom vertex
-        ok &= put(s, {anchor.x + out, anchor.y + 1.0f}, x, c, SDL_BLENDMODE_BLEND);
-        ok &= put(s, {anchor.x - out, anchor.y - 1.0f}, x, c, SDL_BLENDMODE_BLEND);
-    }
-    return put(s, anchor, x, c, SDL_BLENDMODE_BLEND) && ok;
-}
-
 bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     const int t = map_.terrainAt(p);
     if (t == world::kNone) return true;
@@ -208,8 +199,20 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
             if (mat != nullptr && !mat->band[s].empty()) {
                 if (b == 0 && mat->top[s]) continue;
                 const auto& v = mat->band[s];
-                ok &= putFace(v[tileHash(p.x, p.y, 3u + static_cast<std::uint32_t>(b)) % v.size()],
-                              side, at, x, kWhite);
+                const std::size_t k =
+                    tileHash(p.x, p.y, 3u + static_cast<std::uint32_t>(b)) % v.size();
+                // Faces are one tile edge wide and abut exactly (art-corrections.md). The lowest
+                // level of a cliff standing in water carries the surf.
+                const bool surf = b == level - ln - 1 && !mat->foot[s].empty() &&
+                                  map_.inBounds(n) && map_.terrainAt(n) != world::kNone &&
+                                  sprites_->terrain(map_.terrainAt(n)).water;
+                if (surf) {
+                    ok &=
+                        put(mat->foot[s][k].at(now, mat->fps), at, x, kWhite, SDL_BLENDMODE_BLEND);
+                    if (animated != nullptr) *animated = true;
+                } else {
+                    ok &= put(v[k], at, x, kWhite, SDL_BLENDMODE_BLEND);
+                }
             } else {
                 const SDL_FColor c = times(mat != nullptr ? mat->flat : look.flat,
                                            side == 0 ? tuning::kFaceShadeSE : tuning::kFaceShadeSW);
@@ -264,7 +267,7 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     for (int side = 0; side < 2; ++side) {
         const auto s = static_cast<std::size_t>(side);
         if (mat != nullptr && mat->top[s] && drop[s] > 0)
-            ok &= putFace(*mat->top[s], side, a, x, kWhite);
+            ok &= put(*mat->top[s], a, x, kWhite, SDL_BLENDMODE_BLEND);
     }
     return ok;
 }
