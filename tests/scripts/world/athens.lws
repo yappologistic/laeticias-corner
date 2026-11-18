@@ -1,0 +1,33 @@
+# Athens: the Agora at dusk, the Acropolis from the south by day and by night, the Long Walls
+# and Piraeus; the era caption shows on arrival.
+goto 262 672            # the Agora (worldgen view agora)
+zoom 1
+clock dusk
+settle
+expect region athens
+expect caption
+expect page_resident athens
+expect draw_calls <= 40
+expect contrast > 0.08
+shot athens_agora_dusk.png
+goto 321 600            # the Acropolis from the south (acropolis_south_1x)
+clock day
+settle
+expect luma > 0.35
+shot athens_acropolis_1x.png
+clock night
+settle
+expect luma < 0.25
+shot athens_acropolis_night.png
+clock day
+goto 340 681            # the Long Walls
+settle
+shot athens_long_walls.png
+goto 363 673            # Piraeus
+settle
+shot athens_piraeus.png
+goto 313 615
+zoom 0.25
+settle
+expect lod quarter
+shot athens_quarter.png

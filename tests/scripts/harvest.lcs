@@ -33,4 +33,25 @@ expect harvests 1
 expect growth @33,30 0
 expect growth @34,30 3
 shot shots/harvest.png
+# A ripe bed removed and brought back by undo, then picked: the pick ends the redo (L-003), so
+# redo then undo cannot bring the bed back ripe to be picked again.
+click ui:remove
+wait 3
+click @34,30
+key escape
+wait 4
+expect item @34,30 none
+key ctrl+z
+wait 4
+expect growth @34,30 3
+expect redo yes
+move @34,30
+wait 4
+click @34,30
+wait 6
+expect harvests 2
+expect redo no
+key ctrl+shift+z
+wait 4
+expect growth @34,30 0
 quit

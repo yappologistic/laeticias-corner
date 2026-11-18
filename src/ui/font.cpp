@@ -21,28 +21,17 @@ constexpr char32_t kKernFirst = 32;
 constexpr char32_t kKernLast = 126;
 constexpr std::size_t kKernSpan = kKernLast - kKernFirst + 1;
 
-// Letters for names the player types: Latin-1, Latin Extended-A and basic Cyrillic, as far as
-// every text face has them. Anything else is refused at the keyboard (see Font::has), so a name
-// never shows a glyph the interface cannot draw.
-constexpr std::pair<char32_t, char32_t> kNameRanges[] = {{0xA1, 0x17F}, {0x400, 0x45F}};
+// What the interface writes: Latin with every accent, macron and dot its transliterations use,
+// Greek with its accents, basic Cyrillic (names the player types), Old Persian cuneiform; from the
+// fallback faces where the main one lacks a letter. Scripts that need shaping or right-to-left
+// layout (Arabic script) are not baked: such a line is left out and its transliteration stands
+// (callers check coversAll); nothing is ever drawn as "?".
+constexpr std::pair<char32_t, char32_t> kWorldRanges[] = {
+    {0xA1, 0x2FF},    {0x370, 0x3FF},   {0x400, 0x45F},    {0x1E00, 0x1EFF},
+    {0x1F00, 0x1FFF}, {0x2010, 0x2027}, {0x103A0, 0x103DF}};
 
-std::vector<int> textCodepoints(std::span<const std::vector<unsigned char>* const> faces) {
-    std::vector<int> cps;
-    for (int c = 32; c < 127; ++c) cps.push_back(c);
-    for (char32_t c : kTextExtras) cps.push_back(static_cast<int>(c));
-    std::vector<stbtt_fontinfo> infos(faces.size());
-    for (std::size_t f = 0; f < faces.size(); ++f)
-        if (!stbtt_InitFont(&infos[f], faces[f]->data(),
-                            stbtt_GetFontOffsetForIndex(faces[f]->data(), 0)))
-            return cps;
-    for (const auto& [lo, hi] : kNameRanges)
-        for (char32_t c = lo; c <= hi; ++c)
-            if (std::ranges::none_of(kTextExtras, [&](char32_t e) { return e == c; }) &&
-                std::ranges::all_of(infos, [&](const stbtt_fontinfo& i) {
-                    return stbtt_FindGlyphIndex(&i, static_cast<int>(c)) != 0;
-                }))
-                cps.push_back(static_cast<int>(c));
-    return cps;
+bool inFont(const stbtt_fontinfo& f, char32_t c) {
+    return stbtt_FindGlyphIndex(&f, static_cast<int>(c)) != 0;
 }
 
 } // namespace
@@ -75,16 +64,84 @@ char32_t nextCodepoint(std::string_view s, std::size_t& i) {
 bool Font::load(const std::filesystem::path& dir) {
     const std::filesystem::path files[] = {dir / "Nunito-SemiBold.ttf",
                                            dir / "Nunito-ExtraBold.ttf", dir / "lucide.ttf"};
+    const auto read = [&](const std::filesystem::path& file, std::vector<unsigned char>& out) {
+        std::ifstream in(file, std::ios::binary);
+        out.assign(std::istreambuf_iterator<char>(in), {});
+        if (out.empty()) SDL_Log("font: cannot read %s", file.string().c_str());
+        return !out.empty();
+    };
     bool ok = true;
-    for (std::size_t f = 0; f < faces_.size(); ++f) {
-        std::ifstream in(files[f], std::ios::binary);
-        faces_[f].ttf.assign(std::istreambuf_iterator<char>(in), {});
-        if (faces_[f].ttf.empty()) {
-            SDL_Log("font: cannot read %s", files[f].string().c_str());
-            ok = false;
+    for (std::size_t f = 0; f < faces_.size(); ++f) ok &= read(files[f], faces_[f].ttf);
+    // Fallbacks of the same weight for the text faces; a missing one only narrows the coverage.
+    const std::array<std::filesystem::path, 2> body{dir / "NotoSans-Medium.ttf",
+                                                    dir / "NotoSansOldPersian-Regular.ttf"};
+    const std::array<std::filesystem::path, 2> title{dir / "NotoSans-Bold.ttf",
+                                                     dir / "NotoSansOldPersian-Regular.ttf"};
+    for (const Face face : {Face::Body, Face::Title}) {
+        faces_[idx(face)].fallbacks.clear();
+        for (const auto& file : face == Face::Body ? body : title) {
+            std::vector<unsigned char> data;
+            if (read(file, data)) faces_[idx(face)].fallbacks.push_back(std::move(data));
         }
     }
+    if (ok) planFaces();
     return ok;
+}
+
+void Font::planFaces() {
+    // Each text face bakes ASCII and the extras from its main file, then every character of the
+    // world ranges from the first file (main, then fallbacks) that has it. A character either text
+    // face cannot draw is dropped from both, so has() and covers() agree for every face.
+    std::array<std::vector<std::pair<int, int>>, 2> picks; // per text face: (codepoint, file)
+    for (const Face face : {Face::Body, Face::Title}) {
+        FaceData& d = faces_[idx(face)];
+        std::vector<stbtt_fontinfo> infos(1 + d.fallbacks.size());
+        if (!stbtt_InitFont(&infos[0], d.ttf.data(), stbtt_GetFontOffsetForIndex(d.ttf.data(), 0)))
+            return;
+        for (std::size_t k = 0; k < d.fallbacks.size(); ++k)
+            if (!stbtt_InitFont(&infos[k + 1], d.fallbacks[k].data(),
+                                stbtt_GetFontOffsetForIndex(d.fallbacks[k].data(), 0)))
+                return;
+        auto& out = picks[idx(face)];
+        for (int c = 32; c < 127; ++c) out.emplace_back(c, 0);
+        for (char32_t c : kTextExtras) out.emplace_back(static_cast<int>(c), 0);
+        for (const auto& [lo, hi] : kWorldRanges)
+            for (char32_t c = lo; c <= hi; ++c) {
+                if (std::ranges::any_of(kTextExtras, [&](char32_t e) { return e == c; })) continue;
+                for (std::size_t k = 0; k < infos.size(); ++k)
+                    if (inFont(infos[k], c)) {
+                        out.emplace_back(static_cast<int>(c), static_cast<int>(k));
+                        break;
+                    }
+            }
+    }
+    const auto has = [](const std::vector<std::pair<int, int>>& v, int c) {
+        return std::ranges::any_of(v, [&](const auto& p) { return p.first == c; });
+    };
+    for (const Face face : {Face::Body, Face::Title}) {
+        FaceData& d = faces_[idx(face)];
+        const auto& other = picks[idx(face == Face::Body ? Face::Title : Face::Body)];
+        d.plan.assign(1 + d.fallbacks.size(), {});
+        for (const auto& [c, file] : picks[idx(face)])
+            if (has(other, c)) d.plan[static_cast<std::size_t>(file)].push_back(c);
+    }
+    FaceData& icons = faces_[idx(Face::Icon)];
+    icons.plan.assign(1, {});
+    for (char32_t c : theme::icon::kAll) icons.plan[0].push_back(static_cast<int>(c));
+}
+
+bool Font::covers(char32_t cp) const {
+    for (const auto& file : faces_[idx(Face::Body)].plan)
+        if (std::ranges::find(file, static_cast<int>(cp)) != file.end()) return true;
+    return false;
+}
+
+bool Font::coversAll(std::string_view utf8) const {
+    for (std::size_t i = 0; i < utf8.size();) {
+        const char32_t cp = nextCodepoint(utf8, i);
+        if (cp != ' ' && !covers(cp)) return false;
+    }
+    return true;
 }
 
 bool Font::build(SDL_Renderer* renderer, float scale) {
@@ -93,14 +150,12 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
         if (f.ttf.empty()) return false;
     scale_ = scale;
 
-    const std::vector<unsigned char>* textFaces[] = {&faces_[idx(Face::Body)].ttf,
-                                                     &faces_[idx(Face::Title)].ttf};
-    const std::vector<int> text = textCodepoints(textFaces);
-    std::vector<int> icons;
-    for (char32_t c : theme::icon::kAll) icons.push_back(static_cast<int>(c));
     const float sizes[] = {theme::kTextBody * scale, theme::kTextTitle * scale,
                            theme::kIcon * scale};
-    const std::vector<int>* sets[] = {&text, &text, &icons};
+    // A face's files: its main one, then its fallbacks, each with the characters it bakes.
+    const auto file = [&](std::size_t f, std::size_t k) -> const std::vector<unsigned char>& {
+        return k == 0 ? faces_[f].ttf : faces_[f].fallbacks[k - 1];
+    };
 
     for (int dim = 512; dim <= 4096; dim *= 2) {
         // Four extra rows at the bottom hold the white texel block.
@@ -108,15 +163,20 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
         stbtt_pack_context ctx;
         if (!stbtt_PackBegin(&ctx, bitmap.data(), dim, dim, 0, 1, nullptr)) return false;
         bool packed = true;
-        std::array<std::vector<stbtt_packedchar>, 3> chars;
+        std::array<std::vector<std::vector<stbtt_packedchar>>, 3> chars;
         for (std::size_t f = 0; f < faces_.size() && packed; ++f) {
-            chars[f].resize(sets[f]->size());
-            stbtt_pack_range range{};
-            range.font_size = sizes[f];
-            range.array_of_unicode_codepoints = const_cast<int*>(sets[f]->data());
-            range.num_chars = static_cast<int>(sets[f]->size());
-            range.chardata_for_range = chars[f].data();
-            packed = stbtt_PackFontRanges(&ctx, faces_[f].ttf.data(), 0, &range, 1) != 0;
+            chars[f].resize(faces_[f].plan.size());
+            for (std::size_t k = 0; k < faces_[f].plan.size() && packed; ++k) {
+                std::vector<int>& cps = faces_[f].plan[k];
+                if (cps.empty()) continue;
+                chars[f][k].resize(cps.size());
+                stbtt_pack_range range{};
+                range.font_size = sizes[f];
+                range.array_of_unicode_codepoints = cps.data();
+                range.num_chars = static_cast<int>(cps.size());
+                range.chardata_for_range = chars[f][k].data();
+                packed = stbtt_PackFontRanges(&ctx, file(f, k).data(), 0, &range, 1) != 0;
+            }
         }
         stbtt_PackEnd(&ctx);
         if (!packed) continue;
@@ -138,7 +198,7 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
             face.descent = static_cast<float>(desc) * px;
             face.lineHeight = static_cast<float>(asc - desc + gap) * px;
             face.kern.clear();
-            if (sets[f] == &text) {
+            if (f != idx(Face::Icon)) {
                 face.kern.resize(kKernSpan * kKernSpan);
                 for (std::size_t a = 0; a < kKernSpan; ++a)
                     for (std::size_t b = 0; b < kKernSpan; ++b)
@@ -149,18 +209,19 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
                             px;
             }
             face.glyphs.clear();
-            for (std::size_t g = 0; g < chars[f].size(); ++g) {
-                const auto& c = chars[f][g];
-                face.glyphs.push_back(
-                    {static_cast<char32_t>((*sets[f])[g]),
-                     c.xoff,
-                     c.yoff,
-                     c.xoff2,
-                     c.yoff2,
-                     {static_cast<float>(c.x0) / fw, static_cast<float>(c.y0) / fh,
-                      static_cast<float>(c.x1) / fw, static_cast<float>(c.y1) / fh},
-                     c.xadvance});
-            }
+            for (std::size_t k = 0; k < chars[f].size(); ++k)
+                for (std::size_t g = 0; g < chars[f][k].size(); ++g) {
+                    const auto& c = chars[f][k][g];
+                    face.glyphs.push_back(
+                        {static_cast<char32_t>(face.plan[k][g]),
+                         c.xoff,
+                         c.yoff,
+                         c.xoff2,
+                         c.yoff2,
+                         {static_cast<float>(c.x0) / fw, static_cast<float>(c.y0) / fh,
+                          static_cast<float>(c.x1) / fw, static_cast<float>(c.y1) / fh},
+                         c.xadvance});
+                }
             std::ranges::sort(face.glyphs, {}, &Glyph::cp);
         }
         for (int y = dim; y < dim + 4; ++y)
@@ -193,6 +254,14 @@ bool Font::has(char32_t cp) const {
     return find(Face::Body, cp) != nullptr && find(Face::Title, cp) != nullptr;
 }
 
+bool Font::hasAll(std::string_view utf8) const {
+    for (std::size_t i = 0; i < utf8.size();) {
+        const char32_t cp = nextCodepoint(utf8, i);
+        if (cp != ' ' && !has(cp)) return false;
+    }
+    return true;
+}
+
 const Glyph* Font::find(Face face, char32_t cp) const {
     const auto& g = faces_[idx(face)].glyphs;
     const auto it = std::ranges::lower_bound(g, cp, {}, &Glyph::cp);
@@ -211,8 +280,7 @@ float Font::measure(Face face, std::string_view text) const {
     for (std::size_t i = 0; i < text.size();) {
         const char32_t cp = nextCodepoint(text, i);
         const Glyph* g = find(face, cp);
-        if (g == nullptr) g = find(face, '?');
-        if (g == nullptr) continue;
+        if (g == nullptr) continue; // callers keep to what covers() allows
         w += kerning(face, prev, g->cp) + g->advance;
         prev = g->cp;
     }
@@ -227,8 +295,7 @@ float Font::draw(Batch& batch, Face face, std::string_view text, float x, float 
     char32_t prev = 0;
     for (std::size_t i = 0; i < text.size();) {
         const Glyph* g = find(face, nextCodepoint(text, i));
-        if (g == nullptr) g = find(face, '?'); // never draw a missing-glyph box
-        if (g == nullptr) continue;
+        if (g == nullptr) continue; // never a missing-glyph box or a "?"
         pen += kerning(face, prev, g->cp);
         prev = g->cp;
         // Each glyph lands on whole pixels: its bitmap was rasterised on the pixel grid, and

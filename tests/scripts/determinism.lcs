@@ -1,4 +1,4 @@
-# Actors, the resident, weather and events running from one seed: the same script must give
+# Actors, the resident, weather, events and city life's crowds running from one seed: the same script must give
 # byte-identical screenshots and saves (compared by the determinism_check test).
 set unlock all
 set season spring
@@ -11,4 +11,11 @@ set camera 30 30 1
 fast 15
 wait 4
 shot determinism.png
+# The crowded Forum: city life from the same seed, drawn the same, to the pixel.
+set day 9
+set time 0.1667
+set world forum 1
+fast 10
+wait 4
+shot determinism_forum.png
 quit

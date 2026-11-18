@@ -99,14 +99,14 @@ void GroundCache::drawTile(Batch& batch, const World& world, TilePos p, const Xf
     // Cliff faces hang under rims that face open sky; tiles drawn later (further south) cover
     // them where the land continues.
     const bool water = world.isWater(p);
-    if (!world.hasGround({p.x + 1, p.y})) {
+    if (rims_ && !world.hasGround({p.x + 1, p.y})) {
         putSprite(batch, atlas_.sprite(tables_.cliffSE), a, x, kWhite, SDL_BLENDMODE_BLEND);
         // Water reaching the rim falls over it.
         if (water)
             putSprite(batch, atlas_.sprite(tables_.fallSE.at(now, waterFps_)), a, x, kWhite,
                       SDL_BLENDMODE_BLEND);
     }
-    if (!world.hasGround({p.x, p.y + 1})) {
+    if (rims_ && !world.hasGround({p.x, p.y + 1})) {
         putSprite(batch, atlas_.sprite(tables_.cliffSW), a, x, kWhite, SDL_BLENDMODE_BLEND);
         if (water)
             putSprite(batch, atlas_.sprite(tables_.fallSW.at(now, waterFps_)), a, x, kWhite,

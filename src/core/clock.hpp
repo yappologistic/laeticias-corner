@@ -43,6 +43,9 @@ public:
     // per day length, so pinning never holds the seasons (and what comes with them) back.
     [[nodiscard]] int day() const { return day_; }
     void setDay(int day);
+    // How often the time or the day was set outright (a jump), so followers can tell a jump
+    // from the clock running or gliding to a pin.
+    [[nodiscard]] std::uint32_t jumps() const { return jumps_; }
 
 private:
     void nextDay();
@@ -51,6 +54,7 @@ private:
     ClockPin pin_ = ClockPin::Auto;
     int day_ = 0;
     double pinnedDay_ = 0; // share of a calendar day played while pinned
+    std::uint32_t jumps_ = 0;
 };
 
 [[nodiscard]] Phase phaseAt(double t);

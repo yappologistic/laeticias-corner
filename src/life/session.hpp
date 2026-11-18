@@ -16,13 +16,16 @@ namespace lc::life {
 // The world, its life and one CityLife, loaded from an assets directory.
 struct LifeSession {
     std::unique_ptr<Catalog> catalog;
-    std::unique_ptr<LoadedWorld> world;
+    std::unique_ptr<LoadedWorld> ownWorld; // null when the session runs over someone's world
+    const LoadedWorld* world = nullptr;
     std::unique_ptr<LifeWorld> life;
     std::unique_ptr<CityLife> city;
     double loadMs = 0;
 };
 [[nodiscard]] std::optional<LifeSession> openLifeSession(const std::filesystem::path& assets,
                                                          std::uint64_t seed, std::string& error);
+// The life of a world already loaded (the game's): it must outlive the session.
+[[nodiscard]] LifeSession openLifeSession(const LoadedWorld& world, std::uint64_t seed);
 
 // The season a place is shown in by default: its region's own moment (Rome and Pārsa spring,
 // Athens summer), else the calendar's for `day`.
@@ -75,7 +78,8 @@ struct BenchOptions {
     int frames = 1800;     // steps per case
     double budgetMs = 0.6; // simulation average (CLAUDE.md)
 #ifdef NDEBUG
-    bool assert = true; // timing budgets hold in optimised builds (a sanitizer's pace is not the game's)
+    bool assert =
+        true; // timing budgets hold in optimised builds (a sanitizer's pace is not the game's)
 #else
     bool assert = false;
 #endif

@@ -196,6 +196,10 @@ public:
     [[nodiscard]] std::expected<void, std::string> applyHome(const HomeDelta& delta,
                                                              Diagnostics& diag);
     [[nodiscard]] TileRect homeRect() const { return home_.rect; }
+    // After the home was applied: its terrain and wild land follow the player's edits, writing
+    // only the bytes that changed (readers on other threads never look inside the home rect).
+    // False when the delta does not fit or names a terrain the first applyHome did not know.
+    bool updateHomeTerrain(const HomeDelta& delta);
 
     // Bytes held by the map's own storage (chunks, items, slots, tables).
     [[nodiscard]] std::size_t memoryBytes() const;
@@ -272,7 +276,7 @@ private:
     std::vector<District> districts_;
     std::vector<Placed> items_;
     std::uint32_t homeBegin_ = 0; // items_[homeBegin_..] are the player's
-    bool homeCleared_ = false;    // prebuilt items touching the home rect dropped
+    bool homeCleared_ = false;    // the home has been applied once
     std::vector<std::uint8_t> homeWild_;
     std::vector<WorldSlot> slots_; // prebuilt slots sorted by chunk, then the home's
     std::uint32_t homeSlotBegin_ = 0;

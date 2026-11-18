@@ -56,10 +56,15 @@ public:
     [[nodiscard]] const std::vector<std::string>& errors() const { return errors_; }
     [[nodiscard]] const Chain& chain() const { return *chain_; }
 
-    // One second at tick `t`. `on`: inside the chain's hours (and season and event, in the
-    // engine). Returns false when a counter left 0..3 (an error is recorded).
-    bool tick(long t, bool on);
+    // One second at tick `t`. `on`: inside the chain's hours (and season, month and event, in
+    // the engine); `pace` divides the period (the month's `by_month`). Returns false when a
+    // counter left 0..3 (an error is recorded).
+    bool tick(long t, bool on, double pace);
     [[nodiscard]] bool hoursOn(long t) const;
+    // Works at tick `t` on a day of that season and month (hours, seasons, months; the event
+    // aside), and its pace that month.
+    [[nodiscard]] bool on(long t, int season, int month) const;
+    [[nodiscard]] double pace(int month) const;
 
     // State.
     struct Counter {
@@ -115,10 +120,18 @@ public:
     Chains(const LifeData& data, const world::WorldMap& map, std::vector<RegionPaths>& paths,
            const std::vector<int>& pathsOfRegion);
 
-    // Brings every chain to tick floor(seconds since day 0 06:00). `running(region, event)`
-    // says whether an event runs (event-bound chains).
+    // Brings every chain to tick floor(seconds since day 0 06:00) on a day of that season and
+    // month. `running(region, event)` says whether an event runs (event-bound chains).
     template <typename Running>
-    void advanceTo(double seconds, int season, Running&& running);
+    void advanceTo(double seconds, int season, int month, Running&& running);
+    // Whether chain i works at tick t (as advanceTo decides it).
+    template <typename Running>
+    [[nodiscard]] bool working(std::size_t i, long t, int season, int month,
+                               Running&& running) const {
+        const ChainRun& r = runs_[i];
+        const int event = r.chain().event;
+        return r.ok() && r.on(t, season, month) && (event < 0 || running(region_[i], event));
+    }
 
     [[nodiscard]] std::size_t size() const { return runs_.size(); }
     [[nodiscard]] const ChainRun& run(std::size_t i) const { return runs_[i]; }
@@ -146,7 +159,7 @@ private:
 };
 
 template <typename Running>
-void Chains::advanceTo(double seconds, int season, Running&& running) {
+void Chains::advanceTo(double seconds, int season, int month, Running&& running) {
     constexpr long kDay = 720;
     const long target = static_cast<long>(seconds);
     done_.clear();
@@ -163,11 +176,7 @@ void Chains::advanceTo(double seconds, int season, Running&& running) {
         for (std::size_t i = 0; i < runs_.size(); ++i) {
             ChainRun& r = runs_[i];
             if (!r.ok()) continue;
-            const Chain& c = r.chain();
-            bool on = r.hoursOn(tick_);
-            if (c.seasons != 0 && (c.seasons & (1u << season)) == 0) on = false;
-            if (c.event >= 0 && !running(region_[i], c.event)) on = false;
-            r.tick(tick_, on);
+            r.tick(tick_, working(i, tick_, season, month, running), r.pace(month));
             for (std::size_t s = 0; s < r.doneNow().size(); ++s)
                 if (r.doneNow()[s] != 0 && done_.size() < 64)
                     done_.emplace_back(static_cast<int>(i), static_cast<int>(s));

@@ -81,6 +81,7 @@ The owner uses this computer while agents work, and disk space is limited.
 | `src/world/` | Pure logic, no SDL: the world data runtime (loaders, the composed world, graphs, `worldinfo`) | engine |
 | `src/life/` | Pure logic, no SDL: city life over the world (regions' populations, chains, events, figures, tokens; `lifeinfo`) | engine |
 | `src/render/`, `src/ui/`, `src/audio/`, `src/app/` | SDL-facing code | engine |
+| `src/world/`, `src/worldview/` | The world's data runtime (pure) and its renderer, soundscape, weather field, places | engine |
 | `tests/`, `CMakeLists.txt`, `CMakePresets.json`, `cmake/`, `third_party/`, `.clang-*` | Build, tests, tooling config | engine |
 | `tools/artgen/`, `assets/atlas.png`, `assets/atlas.json`, `assets/atlas/` | Sprite generator and its output: the home page, set pages, manifests, geometry | art |
 | `tools/worldgen/worldgen/`, `tools/worldgen/plan/`, `tools/worldgen/fixtures/`, `tools/worldgen/build.sh`, `assets/world/world.json`, `assets/world/layers/base.*`, `assets/world/overview.png` | World authoring tool, world plan, base layer, overview, test world | worldgen core |
@@ -93,7 +94,7 @@ The owner uses this computer while agents work, and disk space is limited.
 | `assets/catalog.json`, `CLAUDE.md` | Contracts | orchestrator, or the agent whose brief says so |
 
 `src/core`, `src/world` and `src/life` must not include SDL headers. Dependencies point one way:
-`app → ui/render/audio → life → world → core`.
+`app → worldview → ui/render/audio → life → world → core`.
 
 ## Code standards
 
@@ -150,7 +151,8 @@ profiler overlay (frame-time graph with the 120 and 60 FPS lines; whole frame av
 99th percentile and worst over the last 512 frames; CPU, GPU done, simulation, conditions,
 scene, interface, present, audio callback load; draw calls, sprites drawn and culled, actors,
 cached chunks, texture and process memory). `--gpu-sync` makes "GPU done" honest by reading one
-pixel back each frame. `--perf-log FILE` writes the same per frame as CSV. `--bench` and
+pixel back each frame. `--perf-log FILE` writes the same per frame as CSV (with city life:
+`city_ms`, `crowd_ms`, `city_live`, `city_drawn`). `--bench` and
 `--soak` are the gates; `--benchmark` is the 75-second windowed tour a person runs on their own
 machine, with a results card and a report beside the save. A change that makes a budget fail is not done. The built-in profiler overlay
 (frame-time graph, per-system times, draw calls, actors, chunks, texture memory) and `--perf-log`
@@ -334,13 +336,24 @@ describe them, compiled by `src/life/data.cpp`, which lists what it cannot resol
   no hour covers means indoors), `districts[]` with `populations` (`role` or a bare `actor`,
   which strolls the graph, herds graze together, birds linger; `density` × `max_per_chunk` per
   1 024 tiles of the district, or `per_item` × `count`, filtered by `when`), `densities`,
-  `groups` (`line`, `pairs`, `cluster`), `chains`, `festivals` (`day` from 1 within the season),
-  `events` (`window` with `chance`, `every` in game seconds; `calendar`, `after`,
-  `token_arrived`, `chain`, `weather` `rain`/`rain_stop`, `reactive`), `figures` (`present` and
-  `memory` with a day are actors, the rest are places and casts), `lanes_tokens`.
-- Day `n`: week day `n mod 4`, season day `n mod 3 + 1`; a game hour is 30 real seconds; events
+  `groups` (`line`, `pairs`, `cluster`), `chains` (`months`, `by_month` dividing the period),
+  `festivals` (`day` from 1 within the season, or `months`: on exactly those months),
+  `events` (`window` with `chance`, `every` in game seconds; `season_turn` on its season's first
+  day, or its month; `calendar`, `after`, `token_arrived`, `chain`, `weather` `rain`/`rain_stop`,
+  `reactive`), `figures` (`present` and `memory` with a day are actors, the rest are places and
+  casts), `lanes_tokens` (with `when`, `hours`: under way only then, their clock standing
+  still outside them; `rest`: where a waiting traveller stands, the last stop it passed;
+  `offsets`: each instance's share of the period; `by_month`: twelve shares or a row of the
+  region's climate, `travel` or its coast's `sea`). Every filter may name `months` (the
+  catalog's `calendar.months`). `lifeinfo problems` also names the walk data's faults with
+  their grid tiles (road edges walkers cannot use, slot spots no walker can stand at or beside);
+  the engine routes around them.
+- Day `n`: week day `n mod 4`, season day `n mod 3 + 1`, month `n mod 12` (with a season kept,
+  that season's month for the season day); a game hour is 30 real seconds; events
   start at their hour and run in real seconds (they may overrun it); the day plan's chance draw
   is worldgen's (`hash64("<region>:<event>:<day>")`); large events of a region never overlap.
+  City life takes a jump of the clock only from the game's count of clock jumps (time or day set
+  outright), so the clock gliding to a pin or a pinned day turning continues the day.
 - Chains run exactly as `tools/worldgen/worldgen/lifesim.py` (slots and hands of 3, one tick a
   second from 06:00; a slot reference named again takes the last stage's instance): the
   `life_chains` test compares all of them with the Python simulator.
@@ -349,6 +362,67 @@ describe them, compiled by `src/life/data.cpp`, which lists what it cannot resol
 ## Game rules
 
 The design is `docs/design/living-corner.md`; this is what the engine does today.
+
+- **One world.** When `assets/world/world.json` exists the game runs inside the world: it loads it
+  through `src/world` and draws it through `src/worldview` as its one scene (without it, the
+  floating island as before). The home region sits at `world.home` (grid (40, 1200), level 2):
+  the world renderer leaves its tiles and items to the game's scene (a hole in its cells and
+  gathering, one element for the home in its painter's order; prebuilt items touching the home
+  are dropped when the world is composed, and the home region keeps its own look: its region
+  file brings sound, weather and life, no tint or haze) and calls the scene at its turns
+  (ground, objects, light, glow, sky). No rim cliffs or waterfalls; the road, wall and gate meet
+  the world's road. Beyond the grid the sea runs on into haze. The world wears the season's looks.
+- **Roaming.** The camera roams the whole grid (`Home` returns to the corner); zooming out past
+  1/4 opens the map. Away from the home region the home's own panels (building dock and drawer,
+  wish tray, land chip) fold away and return with it; the place, map, journal and cards stay. A
+  tool used off the home's land is refused ("This land belongs to the world"). Building,
+  conditions, wishes, nooks and actors stay over the home's open land.
+- **Map and travel.** `M` or the dock's map button: the overview art with the home, the cities and
+  visited towns; a click fades through paper to the place within a second, with its arrival
+  motif. Mute is `Ctrl+M` or the dock's speaker button (lit while muted, saved at once).
+- **Places.** The region under the view (held a moment) names the place; arriving in a named
+  place (home, city, town) shows its caption once per visit (with its native form when the font
+  can draw it: Nunito with Noto Sans and Noto Sans Old Persian as fallbacks; scripts that need
+  shaping or right-to-left, such as Persian in Arabic script, are left out; the `coverage` test
+  fails on any region or catalog string with a missing glyph); crossing into another moment plays the seam chime (and, once, its line). The
+  title card names the place while away.
+- **The living world.** City life (`src/life/`) runs with the world: the camera's view (grown
+  by a ring, so people walk in) is its active area, stepped at 60 Hz with the game's clock; the
+  renderer merges every live actor into the region's painter's order each frame (after what is
+  behind, before what is in front, a walk-floor piece under the feet and a landmark piece over
+  the head; waiting for its own page, so a crowd costs a few draws), walk frames by distance at
+  the set catalog's `stride` (the body drives the drawing: a walk only while the body covers
+  ground, its standing form otherwise, never a walk played by the clock; a watchdog gives up a
+  step after 4 s going nowhere and lets the actor leave after 12 s; `expect city moving` and the
+  life soak hold it at zero), goods in hand, shadows in the shared layer, whole window pixels at
+  2x and 3x; at half and quarter scale people go over the impostors; nobody at the overview or
+  with the map open. The home's own actors keep the scene's path.
+- **Cards and journal.** With an empty hand, landmarks with cards and named figures (city life's
+  actors: clicked while they walk, a figure winning over the crowd round it) open a glass card
+  (what is clicked is what is drawn under the pointer, nearest first by the drawing's order;
+  where nothing is drawn, the footprint under it)
+  from the region file; ordinary people show their role on hover, animals their kind; `F` on a
+  living figure's card follows it (damped camera; Esc, a pan or drag, Home or a journey lets
+  go). What is in view on arrival is seen, what is clicked found, events running in view are
+  witnessed; the sketchbook has a tab per place.
+- **Sound.** Region beds by theme weight and hour, seams ducking the rest, zones by nearness,
+  item loops (fountains, lit braziers) by the nearest, a city's music fading in over 4 s from a
+  phrase start and out when left; the home's stems and beds play by its share of the view.
+  City sound (`worldview/city_sound.hpp`, from the region files' `theme.sound` and districts'
+  `sound`): the crowd family by people in view (handful, market, festival; equal-power between
+  neighbouring levels, hushed in rain), wind by strength, rain and the district's two largest
+  surfaces by intensity, the climate's dawn, dusk and night beds, cicadas in their hours, roles'
+  work loops at the nearest worker, events' ambience by nearness, the life's one-shots placed,
+  footsteps and hooves near the view at 2x and closer, animals' voices and birds now and then.
+  Away from home the corner's toasts wait for the return; the home's panels (building dock,
+  undo and redo, wish tray, land chip) fold away.
+- **Weather is world-wide.** Clouds and showers come from a deterministic field over the whole
+  grid (seed, weather period, the region's climate times the season's); the home's weather
+  follows it, and the renderer draws cloud shadows, wet ground and rain or snow wherever the
+  camera is; showers over the view fall as snow only where its climate's snow line (or its
+  lowland months) has snow that month. `N` acts where the camera is. Away from home the home's
+  editing keys rest.
+- Lights (glow) persist at every zoom level; the overview's are softer.
 
 - The home region is 40×40 tiles in five land stages. A new world opens on the front 20×20 corner
   (the catalog's starter scene); the rest is wild (dimmed brambles: no building, painting or
@@ -408,7 +482,7 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
 - Camera: drag or WASD/arrows to pan, wheel or `+`/`-` to zoom in steps toward the cursor, `Home`
   recentres on the open land; it stays within the open land plus a margin. Drawing interpolates
   the camera and actors between the 60 Hz steps. The world autosaves (atomic write, on a worker
-  thread) and reopens where it was left; a world that cannot be opened (damaged, or from a newer
+  thread; never while a piece is held with Move) and reopens where it was left; a world that cannot be opened (damaged, or from a newer
   version) is never renamed or written over: a fresh corner opens in a folder of its own.
 - Postcards (R12): `P` hides the interface and shows the photo bar (frames Plain and the unlocked
   nine-slice ones at the world's whole zoom, the caption with the world's name, in-game and real
@@ -467,8 +541,10 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   events, the population rule, the liveliness rule (`expect lively`) and image statistics. The
   first ten minutes of a new world run end to end in `first_ten.lcs`; behaviours
   each have a script; `determinism_check` compares two runs byte for byte.
-- Save format: version 3, documented at the top of `src/core/save.hpp` (versioned, tolerant;
-  versions 1 and 2 migrate on launch; damaged fields fall back one by one). A save directory
+- Save format: version 4, documented at the top of `src/core/save.hpp` (versioned, tolerant;
+  versions 1 and 2 migrate on launch, version 3 opens unchanged; damaged fields fall back one
+  by one). Its `world` block is the player's delta over the immutable world (view in grid tiles,
+  places visited, journal found and seen, one-time flags); the prebuilt world is never saved. A save directory
   holds `profile.json`, `window.json`, `worlds/<slug>/world.json` with `thumb.png`,
   `postcards/<slug>/`, and `corner.v1.json` after a migration.
 - Saves go to `--save-dir`, else `$LAETICIA_SAVE_DIR`, else SDL's pref path. Assets come from
@@ -485,6 +561,12 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   99th percentile is over 8.3 ms or its worst over 16.6 ms (a case missing only the worst frame
   is measured once more), the conditions take over 1 ms, simulation averages over 0.6 ms, or the
   process passes its memory ceiling at 1080p.
+- With the world, `--bench` adds each city's centre at 1x with the sketchbook and profiler open,
+  a pan across Rome at 1800 px/s and fast travel (no frame over 16.6 ms, each journey within
+  1 s), holds the world's textures to their measured budget (atlas page slots for the two largest
+  sets and the world set, the cell cache, targets) and prints the start-up time; the process
+  ceiling with the world is 832 MiB at 1080p (the soak's on the software renderer adds the
+  textures). The windowed `--benchmark` adds Rome, Athens and Pārsa by fast travel.
 - `--soak SECONDS` runs that much busy play fast (actors, events, weather, a calendar day every
   50 s so the default gate's 600 s cross four season turns, a frame drawn now and then) and
   exits 3 if memory grows after the first quarter, passes its
@@ -494,10 +576,17 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
 - City life without the world renderer: `--focus F` keeps an active area round F (`x,y`,
   `layer:node`, `forum`, `agora`, `terrace`, `district:<region>/<name>`); `--life-dump FILE
   --focus F --life-hours 5.5,10,15.5 --life-day N` writes life dumps and exits;
-  `tests/world_tools/life_picture.py DUMP.json` draws one. Scripts: `set city F|off`,
-  `set city_dump FILE`, `expect city live|ground|slots|event|district ...`. The same from the
+  `tests/world_tools/life_picture.py DUMP.json` draws one. Scripts: `set city F|off|camera`
+  (a fixed active area, nobody, or the camera's again), `set world PLACE ZOOM`, `set look KIND
+  ZOOM` (a living actor first), point `life:KIND`, `set city_dump FILE`, `expect city
+  live|ground|slots|event|district|drawn|people|sound ...`, `expect following`. The same from the
   tool: `build/release/lifeinfo [summary|problems|chains|dump|bench|soak]`.
-- `F3` shows the profiler; `--perf-log FILE` writes its counters per frame as CSV;
+- With the world, `--bench` adds crowd cases: Rome, Athens and Pārsa at the life's busiest view
+  and hour on an ordinary day and on their festival (live and drawn actors, the city's
+  simulation against 0.6 ms and the cap, crowd preparation, the world's draw calls against 40,
+  reported).
+- `F3` shows the profiler (with the world: page memory and its budget, placeholders in view and
+  ids without art, each placeholder named); `--perf-log FILE` writes its counters per frame as CSV;
   `--gpu-sync` waits for the GPU each frame (implied on the windowless GPU path);
   `--front-door` starts a headless run at the title (with the tour for a new profile).
 - Interactive play: `$B` with no flags. The window opens on a share of the display it is on and

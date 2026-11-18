@@ -189,6 +189,10 @@ WorldMap::WorldMap(const WorldFile& wf, const Content& content, std::span<const 
     for (const auto& [key, s] : dropped)
         diag.warn("layers/" + key.first + ".lcw drops " + std::to_string(s.count) + " item(s) of " +
                   key.second + " under its cells (first at " + at(s.first) + ")");
+    // Prebuilt items touching the home rect give way to the game's home now, not when the home
+    // is applied: item indices never change after load (city life keeps them; L-018).
+    for (std::size_t i = 0; i < items_.size(); ++i)
+        if (items_[i].rect().intersects(home_.rect)) dead[i] = 1;
     std::size_t keep = 0;
     for (std::size_t i = 0; i < items_.size(); ++i)
         if (!dead[i]) items_[keep++] = items_[i];
@@ -497,14 +501,15 @@ int WorldMap::edgeZ(TilePos p, int dir) const {
     const Placed& it = items_[c.occupancy[l] - 1];
     const ItemInfo& inf = info(it);
     const TilePos rel{p.x - it.x, p.y - it.y};
+    // A stair meets its foot and head at their levels: `walk_z` is a tread's middle, and a first
+    // tread drawn 10-14 px up must still be stepped onto from the ground.
+    const bool stair = inf.rise > 0 && it.head >= 0;
+    if (stair && dir == it.head) return (it.level + inf.rise) * levelPx_;
+    if (stair && dir == (it.head + 2) % 4) return it.level * levelPx_;
     if (const GeomVariant* g = geometry(it))
         for (const auto& [t, z] : g->walkZ)
             if (t == rel) return it.level * levelPx_ + z;
-    if (inf.rise > 0 && it.head >= 0) {
-        if (dir == it.head) return (it.level + inf.rise) * levelPx_;
-        if (dir == (it.head + 2) % 4) return it.level * levelPx_;
-        return INT_MIN; // the sides of a stair are parapets
-    }
+    if (stair) return INT_MIN; // the sides of a stair are parapets
     return it.level * levelPx_;
 }
 
@@ -599,6 +604,33 @@ int WorldMap::themeWeights(Vec2 centre, std::span<RegionWeight> out) const {
     return n;
 }
 
+bool WorldMap::updateHomeTerrain(const HomeDelta& delta) {
+    const TileRect hr = home_.rect;
+    const int hw = hr.x1 - hr.x0;
+    const int hh = hr.y1 - hr.y0;
+    const auto cells = static_cast<std::size_t>(hw * hh);
+    if (delta.w != hw || delta.h != hh || delta.terrain.size() != cells ||
+        (!delta.wild.empty() && delta.wild.size() != cells) || !homeCleared_)
+        return false;
+    std::vector<int> palette;
+    for (const std::string& id : delta.palette) {
+        const auto it = std::ranges::find(terrains_, id, &TerrainInfo::id);
+        if (it == terrains_.end()) return false;
+        palette.push_back(static_cast<int>(it - terrains_.begin()));
+    }
+    for (int y = 0; y < hh; ++y)
+        for (int x = 0; x < hw; ++x) {
+            const std::uint8_t v = delta.terrain[static_cast<std::size_t>(y * hw + x)];
+            if (v != kNone && v >= palette.size()) return false;
+            const auto t = static_cast<std::uint8_t>(v == kNone ? kNone : palette[v]);
+            const TilePos p{hr.x0 + x, hr.y0 + y};
+            std::uint8_t& cell = chunk(p).terrain[local(p)];
+            if (cell != t) cell = t;
+        }
+    if (homeWild_ != delta.wild) homeWild_ = delta.wild;
+    return true;
+}
+
 std::expected<void, std::string> WorldMap::applyHome(const HomeDelta& delta, Diagnostics& diag) {
     const TileRect hr = home_.rect;
     const int hw = hr.x1 - hr.x0;
@@ -624,14 +656,7 @@ std::expected<void, std::string> WorldMap::applyHome(const HomeDelta& delta, Dia
     if (homeDistrict < 0) return std::unexpected("the world would hold more than 255 districts");
 
     const bool full = !homeCleared_;
-    if (full) {
-        std::size_t keep = 0;
-        for (std::size_t i = 0; i < homeBegin_; ++i)
-            if (!items_[i].rect().intersects(hr)) items_[keep++] = items_[i];
-        items_.resize(keep);
-        homeBegin_ = static_cast<std::uint32_t>(keep);
-        homeCleared_ = true;
-    }
+    homeCleared_ = true;
     items_.resize(homeBegin_);
     for (int y = 0; y < hh; ++y)
         for (int x = 0; x < hw; ++x) {

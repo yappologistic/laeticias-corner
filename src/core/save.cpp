@@ -258,6 +258,9 @@ void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
     if (root.contains("base") &&
         (!root["base"].is_string() || root["base"].get<std::string>() != kSaveBaseBlank))
         throw std::runtime_error("unknown base");
+    // Items are listed under the chunk of their origin, so every chunk's terrain is read before
+    // any item: a water piece across a chunk line must find the water of the later chunk.
+    std::vector<const json*> items;
     for (const auto& c : listField(root, "chunks", in.warn)) {
         if (!c.is_object() || !c.contains("x") || !c.contains("y") || !c["x"].is_number_integer() ||
             !c["y"].is_number_integer()) {
@@ -266,12 +269,13 @@ void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
         }
         const long long cx = c["x"].get<long long>();
         const long long cy = c["y"].get<long long>();
-        const long long x0 = cx * chunk;
-        const long long y0 = cy * chunk;
-        if (cx < 0 || cy < 0 || x0 >= fileW || y0 >= fileH) {
+        if (cx < 0 || cy < 0 || cx >= fileW || cy >= fileH || cx * chunk >= fileW ||
+            cy * chunk >= fileH) {
             in.warn.add("chunk outside the map skipped");
             continue;
         }
+        const long long x0 = cx * chunk;
+        const long long y0 = cy * chunk;
         const int cw = static_cast<int>(std::min<long long>(chunk, fileW - x0));
         const int chH = static_cast<int>(std::min<long long>(chunk, fileH - y0));
         if (c.contains("terrain")) {
@@ -291,8 +295,9 @@ void readVersion2(const json& root, Loader& in, int fileW, int fileH) {
             if (filled != total) in.warn.add("chunk terrain of the wrong length");
         }
         if (c.contains("items") && c["items"].is_array())
-            for (const auto& j : c["items"]) in.item(j);
+            for (const auto& j : c["items"]) items.push_back(&j);
     }
+    for (const json* j : items) in.item(*j);
 }
 
 void readVersion3(const json& root, Loader& in) {
@@ -477,8 +482,20 @@ std::string serialize(const SaveData& data, const Catalog& cat) {
     for (std::size_t i = 0; i < p.wishes.size(); ++i)
         if (p.wishes[i].snoozedUntil >= 0) snoozed[cat.wishes[i].id] = p.wishes[i].snoozedUntil;
     json world = json::object();
+    const WorldProgress& ws = data.worldState;
+    if (ws.camera) world["camera"] = {{"at", {ws.camera->x, ws.camera->y}}, {"zoom", ws.zoom}};
     if (data.camera)
-        world["camera"] = {{"at", {data.camera->x, data.camera->y}}, {"zoom", data.zoom}};
+        world["home_view"] = {{"at", {data.camera->x, data.camera->y}}, {"zoom", data.zoom}};
+    world["visited"] = ws.visited;
+    const auto byRegion = [](const auto& lists) {
+        json o = json::object();
+        for (const auto& [region, entries] : lists)
+            if (!entries.empty()) o[region] = entries;
+        return o;
+    };
+    world["journal"] = byRegion(ws.found);
+    world["seen"] = byRegion(ws.seen);
+    world["flags"] = ws.flags;
     const json root = {
         {"version", kSaveVersion},
         {"name", data.name},
@@ -528,7 +545,7 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
         SaveData data(World{cat}, cat);
         data.fromVersion = static_cast<int>(version);
         Loader in{cat, data, {}, {}, {}};
-        if (version == 3) {
+        if (version >= 3) {
             in.readPalette(root.at("home").at("palette"));
             readVersion3(root, in);
             if (root.contains("progress") && root["progress"].is_object())
@@ -554,14 +571,42 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
             static const json kNone = json::object();
             const json& worldPart =
                 root.contains("world") && root["world"].is_object() ? root["world"] : kNone;
-            const json& cam = worldPart.contains("camera") && worldPart["camera"].is_object()
-                                  ? worldPart["camera"]
-                                  : kNone;
-            if (cam.contains("at") && cam["at"].is_array() && cam["at"].size() == 2 &&
-                cam["at"][0].is_number() && cam["at"][1].is_number()) {
-                const Vec2 at{cam["at"][0].get<float>(), cam["at"][1].get<float>()};
-                if (std::isfinite(at.x) && std::isfinite(at.y)) data.camera = at;
-                data.zoom = static_cast<float>(numField(cam, "zoom", 1.0, 0.1, 8.0, in.warn));
+            // A view: {"at": [x, y], "zoom"}; version 3 kept the home view under "camera".
+            const auto readView = [&](const char* key, std::optional<Vec2>& at, float& zoom) {
+                const json& cam =
+                    worldPart.contains(key) && worldPart[key].is_object() ? worldPart[key] : kNone;
+                if (cam.contains("at") && cam["at"].is_array() && cam["at"].size() == 2 &&
+                    cam["at"][0].is_number() && cam["at"][1].is_number()) {
+                    const Vec2 v{cam["at"][0].get<float>(), cam["at"][1].get<float>()};
+                    if (std::isfinite(v.x) && std::isfinite(v.y)) at = v;
+                    zoom = static_cast<float>(numField(cam, "zoom", 1.0, 0.1, 8.0, in.warn));
+                }
+            };
+            WorldProgress& ws = data.worldState;
+            if (version == 3) {
+                readView("camera", data.camera, data.zoom);
+            } else {
+                readView("home_view", data.camera, data.zoom);
+                readView("camera", ws.camera, ws.zoom);
+                const auto strings = [&](const json& j, std::vector<std::string>& out) {
+                    if (!j.is_array()) return;
+                    for (const json& e : j)
+                        if (e.is_string() &&
+                            std::ranges::find(out, e.get<std::string>()) == out.end())
+                            out.push_back(e.get<std::string>());
+                };
+                const auto lists = [&](const char* key, auto& out) {
+                    if (!worldPart.contains(key) || !worldPart[key].is_object()) return;
+                    for (const auto& [region, entries] : worldPart[key].items()) {
+                        std::vector<std::string> v;
+                        strings(entries, v);
+                        if (!v.empty()) out.emplace_back(region, std::move(v));
+                    }
+                };
+                if (worldPart.contains("visited")) strings(worldPart["visited"], ws.visited);
+                if (worldPart.contains("flags")) strings(worldPart["flags"], ws.flags);
+                lists("journal", ws.found);
+                lists("seen", ws.seen);
             }
         } else {
             const auto size = mapSize(root);
@@ -693,6 +738,17 @@ std::string worldSlug(std::string_view name, std::span<const std::string> taken)
 std::string utcNow() {
     const auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
     return std::format("{:%Y-%m-%dT%H:%M:%SZ}", now);
+}
+
+std::string postcardStem(std::string_view slug, std::time_t when) {
+    std::tm t{};
+#if defined(_WIN32)
+    (void)localtime_s(&t, &when);
+#else
+    (void)localtime_r(&when, &t);
+#endif
+    return std::format("{}-{:04}{:02}{:02}-{:02}{:02}{:02}", slug, t.tm_year + 1900, t.tm_mon + 1,
+                       t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
 }
 
 Profile parseProfile(std::string_view text) {

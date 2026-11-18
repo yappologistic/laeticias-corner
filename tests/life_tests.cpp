@@ -11,6 +11,7 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <bit>
 #include <climits>
 #include <cstdlib>
 #include <map>
@@ -34,9 +35,13 @@ TilePos centreOf(std::string_view district) {
     return *f;
 }
 
+// The season of a city's famous month (world-seasons.md: the regions' pins are gone; at the
+// famous month every city shows the crowds it showed before): Rome and Pārsa in spring, Athens in
+// summer.
 int seasonOf(std::string_view region) {
-    const LifeWorld& w = lifeWorld();
-    return w.data.regions[static_cast<std::size_t>(w.data.findRegion(region))].season;
+    const auto& s = lifeWorld().data.seasons;
+    const auto at = std::ranges::find(s, region == "athens" ? "summer" : "spring");
+    return static_cast<int>(at - s.begin());
 }
 
 // The problems the data has today, reported to their owners (out/reports/engine-city-life.md);
@@ -86,6 +91,27 @@ void checkSlots(const CityLife& c) {
         CAPTURE(group);
         CHECK(count <= cap);
     });
+    // Everyone stands at a spot of the group reserved, and nobody shares a spot while the group
+    // has a free one (L-116).
+    const LifeWorld& w = c.lifeWorld();
+    std::map<int, std::vector<int>> spots;
+    c.forEachInfo([&](const CityLife::Info& in) {
+        if (in.slot < 0) return;
+        CAPTURE(in.slot);
+        REQUIRE(in.spot >= 0);
+        CHECK(w.slotGroup[static_cast<std::size_t>(in.spot)] ==
+              static_cast<std::uint32_t>(in.slot));
+        spots[in.slot].push_back(in.spot);
+    });
+    for (auto& [group, taken] : spots) {
+        const auto g = static_cast<std::size_t>(group);
+        const std::size_t own = w.groupSpotsAt[g + 1] - w.groupSpotsAt[g];
+        std::ranges::sort(taken);
+        const auto distinct = static_cast<std::size_t>(
+            std::ranges::distance(taken.begin(), std::ranges::unique(taken).begin()));
+        CAPTURE(group);
+        CHECK(distinct == std::min(taken.size(), own));
+    }
 }
 
 struct Snapshot {
@@ -141,6 +167,33 @@ TEST_CASE("life: every region's life compiles, and what does not resolve is know
     for (const std::string& p : w.data.problems) {
         const bool known = knownProblem(p);
         CHECK_MESSAGE(known, p);
+    }
+}
+
+TEST_CASE("life: the walk data's faults are named with their tiles, and nobody is sent there") {
+    // Road edges walkers cannot use and slot spots off the walkable ground or out of reach: each
+    // named with its grid tile (for worldgen), each routed around (edges left out of walking,
+    // such spots never chosen: resolve() stands only where the region's walkers reach).
+    const std::vector<std::string> faults = walkProblems(lifeWorld());
+    for (const std::string& f : faults) {
+        CAPTURE(f);
+        CHECK(f.find("at grid (") != std::string::npos);
+    }
+    MESSAGE(faults.size() << " walk-data faults");
+    CityLife city(lifeWorld(), 3);
+    for (const char* place : {"forum", "agora", "terrace"}) {
+        city.setFocus(centreOf(place));
+        LifeClock clock = LifeClock::at(1, 10.0, -1);
+        city.settle(clock);
+        step(city, clock, 600);
+        city.forEachInfo([&](const CityLife::Info& in) {
+            if (in.spot < 0) return;
+            const world::WorldSlot& s =
+                lifeWorld().map().slots()[static_cast<std::size_t>(in.spot)];
+            CAPTURE(s.tile.x);
+            CAPTURE(s.tile.y);
+            CHECK(lifeWorld().map().walkable(in.tile));
+        });
     }
 }
 
@@ -217,6 +270,91 @@ TEST_CASE("life: the day plan draws as worldgen's day reports do") {
     CHECK_FALSE(std::ranges::any_of(p1, [&](const auto& e) {
         return reg.events[static_cast<std::size_t>(std::get<0>(e))].id == "parilia_procession";
     }));
+}
+
+TEST_CASE("life: the calendar's months: festivals, populations, events and season turns") {
+    const LifeData& d = lifeWorld().data;
+    REQUIRE(d.months.size() == 12);
+    CHECK(d.months.front() == "mar");
+    CHECK(d.monthOf(13) == 1);
+    CityLife city(lifeWorld(), 1);
+    // Month-only festivals are on in their months and no other day (they once ran every day).
+    const auto festivalDays = [&](const char* region, const char* festival) {
+        const int r = d.findRegion(region);
+        const int f = d.regions[static_cast<std::size_t>(r)].findFestival(festival);
+        REQUIRE(f >= 0);
+        std::vector<int> days;
+        for (int day = 0; day < 24; ++day)
+            if (city.festivalOn(r, f, day, -1)) days.push_back(day);
+        return days;
+    };
+    CHECK(festivalDays("babylon", "king_in_babylon") == std::vector<int>{9, 10, 11, 21, 22, 23});
+    CHECK(festivalDays("athens", "olive_harvest") == std::vector<int>{8, 9, 10, 20, 21, 22});
+    CHECK(festivalDays("ostia", "grain_fleet") == std::vector<int>{2, 14});
+    // Every event is planned only in its months, and a season's turn once a year, at its first
+    // dawn (L-101: it once came every morning of the season).
+    std::vector<std::tuple<int, double, double>> plan;
+    for (std::size_t r = 0; r < d.regions.size(); ++r) {
+        const LifeRegion& reg = d.regions[r];
+        std::vector<int> planned(reg.events.size(), 0);
+        for (int day = 0; day < 12; ++day) {
+            city.dayPlan(static_cast<int>(r), day, -1, plan);
+            for (const auto& entry : plan) {
+                const int e = std::get<0>(entry);
+                const Event& ev = reg.events[static_cast<std::size_t>(e)];
+                CAPTURE(reg.id);
+                CAPTURE(ev.id);
+                CHECK(monthIn(ev.when.months, d.monthOf(day)));
+                if (ev.seasonTurn && ev.when.months == 0) CHECK(day % d.seasonDays == 0);
+                planned[static_cast<std::size_t>(e)] |= 1 << day; // days, not occurrences
+            }
+        }
+        for (std::size_t e = 0; e < reg.events.size(); ++e)
+            if (reg.events[e].seasonTurn) {
+                CAPTURE(reg.id);
+                CAPTURE(reg.events[e].id);
+                CHECK(std::popcount(static_cast<unsigned>(planned[e])) <= 1);
+            }
+    }
+    // The planned events of the whole world at once leave room for those no plan holds (rain,
+    // arrivals, chains, `after`): once the world's 24 slots were full by mid-morning.
+    std::vector<std::pair<double, int>> edges;
+    for (std::size_t r = 0; r < d.regions.size(); ++r)
+        for (int day = 0; day < 12; ++day) {
+            city.dayPlan(static_cast<int>(r), day, -1, plan);
+            for (const auto& [e, start, stop] : plan) {
+                edges.emplace_back(start, 1);
+                edges.emplace_back(stop, -1);
+            }
+        }
+    std::ranges::sort(edges);
+    int at = 0;
+    int most = 0;
+    for (const auto& [t, k] : edges) most = std::max(most, at += k);
+    MESSAGE("planned events running at once, at most " << most);
+    CHECK(most + 16 <= tuning::life::kMaxRunningEvents);
+    // Populations follow their months: the whole world's crowd at 10:00 is the month's, as
+    // the data means it: about 5 000 to 5 400 with the towns and the land between alive
+    // (world-alive.md); before months were read, every month's variant at once was far more.
+    const TileRect all = lifeWorld().map().bounds();
+    for (int day = 0; day < 12; ++day) {
+        const float n = city.expectedFor(all, LifeClock::at(day, 10.0, -1));
+        CAPTURE(day);
+        CHECK(n > 4600.0f);
+        CHECK(n < 6000.0f);
+    }
+}
+
+TEST_CASE("life: carts are what is drawn as one, not a name holding \"cart\" (L-109)") {
+    const LifeData& d = lifeWorld().data;
+    const auto cart = [&](std::string_view id) {
+        const int k = d.findKind(id);
+        REQUIRE(k >= 0);
+        return d.kinds[static_cast<std::size_t>(k)].cart;
+    };
+    CHECK_FALSE(cart("rome.carter"));
+    CHECK(cart("rome.cart"));
+    CHECK(cart("athens.sledge"));
 }
 
 TEST_CASE("life: next hops follow shortest ways, and every planned walk is legal") {
@@ -297,20 +435,27 @@ TEST_CASE("life: chains keep their rules over a simulated fortnight, and the cyc
     // Tick by tick for 14 days, every counter 0..3 always.
     Chains a(w.data, w.map(), w.paths, w.pathsOf);
     for (long t = 0; t < 14 * 720; t += 60) {
-        a.advanceTo(static_cast<double>(t), 0, [](int, int) { return true; });
+        a.advanceTo(static_cast<double>(t), 0, 0, [](int, int) { return true; });
         for (std::size_t i = 0; i < a.size(); ++i)
             for (const ChainRun::Counter& c : a.run(i).counters()) {
                 CHECK(c.count >= 0);
                 CHECK(c.count <= tuning::life::kChainCap);
             }
     }
-    // A jump to day 40 equals walking there tick by tick from day 30's 06:00.
+    // A jump to day 40 equals walking there tick by tick from day 30's 06:00, each day in its
+    // own season and month (the month-limited and month-paced chains among them).
+    const auto seasonOf = [&](long t) {
+        return static_cast<int>((t / 720 / w.data.seasonDays) %
+                                static_cast<long>(w.data.seasons.size()));
+    };
+    const auto monthOf = [&](long t) { return w.data.monthOf(static_cast<int>(t / 720)); };
+    const auto none = [](int, int) { return false; };
     Chains jump(w.data, w.map(), w.paths, w.pathsOf);
-    jump.advanceTo(40 * 720 + 300, 0, [](int, int) { return false; });
+    jump.advanceTo(40 * 720 + 300, seasonOf(40 * 720), monthOf(40 * 720), none);
     Chains walk(w.data, w.map(), w.paths, w.pathsOf);
-    walk.advanceTo(30 * 720, 0, [](int, int) { return false; });
+    walk.advanceTo(30 * 720, seasonOf(30 * 720), monthOf(30 * 720), none);
     for (long t = 30 * 720; t <= 40 * 720 + 300; t += 1)
-        walk.advanceTo(static_cast<double>(t), 0, [](int, int) { return false; });
+        walk.advanceTo(static_cast<double>(t), seasonOf(t - 1), monthOf(t - 1), none); // tick t-1
     for (std::size_t i = 0; i < jump.size(); ++i) {
         CAPTURE(jump.run(i).chain().id);
         if (jump.run(i).chain().event >= 0) continue;
@@ -362,7 +507,7 @@ TEST_CASE("city: the three centres live their day as the data says") {
     };
     for (const Case cs :
          {Case{"forum", "rome", 9}, Case{"forum", "rome", 1}, Case{"agora", "athens", 5},
-          Case{"agora", "athens", 1}, Case{"terrace", "parsa", 2}, Case{"terrace", "parsa", 3}}) {
+          Case{"agora", "athens", 4}, Case{"terrace", "parsa", 2}, Case{"terrace", "parsa", 3}}) {
         for (const double hour : {5.5, 10.0, 15.5, 19.5, 1.5}) {
             const std::string where = std::string(cs.focus) + " day " + std::to_string(cs.day);
             CAPTURE(where);
@@ -384,9 +529,12 @@ TEST_CASE("city: the three centres live their day as the data says") {
                 CAPTURE(d.expected);
                 // Fractional people are rounded by hash, one draw per population entry and
                 // chunk: the spread is about a square root.
-                CHECK(std::abs(static_cast<float>(d.live + d.inside) - d.expected) <=
-                      3.0f + 1.5f * std::sqrt(d.expected));
+                const float want = d.expected * city.stats().scale; // the cap's share
+                CHECK(std::abs(static_cast<float>(d.live + d.inside) - want) <=
+                      3.0f + 1.5f * std::sqrt(want));
             }
+            // Over the cap (the Panathenaia's Agora) populations are scaled down in proportion.
+            expected *= city.stats().scale;
             CHECK(std::abs(static_cast<float>(live) - expected) <=
                   4.0f + 2.0f * std::sqrt(expected));
             checkGround(city);
@@ -456,6 +604,103 @@ TEST_CASE("city: the same clock gives the same people however often the area com
     }
 }
 
+TEST_CASE("city: travellers keep their hours, wait at rest stops, leave at their offsets") {
+    // The corner's walkers to Rome's western gate (latium_italy.2): two instances, 05:00 to
+    // 19:30, offsets 0.988 and 0.441, the climate's road row (all of spring).
+    const LifeData& d = lifeWorld().data;
+    const auto t = static_cast<std::size_t>(
+        std::ranges::find(d.tokens, worldgenHash("latium_italy.2"), &Token::seed) -
+        d.tokens.begin());
+    REQUIRE(t < d.tokens.size());
+    const Token& tk = d.tokens[t];
+    CHECK(tk.hours);
+    CHECK(tk.rest.size() == 2);
+    REQUIRE(tk.offsets.size() == 2);
+    REQUIRE(tk.share.size() == 12);
+    CityLife city(lifeWorld(), 1);
+    city.setFocus(centreOf("forum"));
+    city.settle(LifeClock::at(1, 2.0, -1));
+    CHECK_FALSE(city.tokenPhase(t, 0).underway); // 02:00: waiting
+    CHECK_FALSE(city.tokenPhase(t, 1).underway);
+    const double night = city.tokenPhase(t, 0).phase;
+    city.settle(LifeClock::at(1, 4.5, -1));
+    CHECK(city.tokenPhase(t, 0).phase == doctest::Approx(night)); // its clock stood still
+    city.settle(LifeClock::at(1, 10.0, -1));
+    CHECK(city.tokenPhase(t, 0).underway);
+    CHECK(city.tokenPhase(t, 1).underway);
+    // Spaced by their offsets, not evenly.
+    const double a = city.tokenPhase(t, 0).phase;
+    const double b = city.tokenPhase(t, 1).phase;
+    const double gap = a - b;
+    CHECK(gap != doctest::Approx(0));
+    // Bad token data is named: an unknown rest stop or climate row would be a problem line.
+    for (const std::string& p : d.problems) CHECK(p.find("token") == std::string::npos);
+}
+
+TEST_CASE("city: nobody walks in place, in the cities, towns, roads and seas, at four hours") {
+    // Each place at four hours: after a settling minute, 20 s watched; every second each live
+    // actor's window says whether it was drawn walking without getting anywhere (marching) or
+    // walked to and fro. The causes are tallied by source, state and step for the report.
+    // Before the body drove the drawing: 5 054 actor-seconds marching over these 32 views.
+    const char* places[] = {"forum",
+                            "agora",
+                            "terrace",
+                            "district:ostia/forum",
+                            "district:delphi/sanctuary",
+                            "district:latium_italy/road",
+                            "district:greece/road",
+                            "district:tyrrhenian/sea",
+                            "district:saronic/sea",
+                            "district:corinth/town"};
+    long marching = 0;
+    long oscillating = 0;
+    long stuckLong = 0;
+    std::map<std::string, long> causes;
+    for (const char* place : places)
+        for (const double hour : {7.0, 10.5, 15.0, 21.0}) {
+            CityLife city(lifeWorld(), 11);
+            city.setFocus(centreOf(place), 24, 16);
+            LifeClock clock = LifeClock::at(1, hour, -1);
+            city.settle(clock);
+            step(city, clock, 60 * 60);
+            long here = 0;
+            for (int k = 0; k < 20; ++k) {
+                step(city, clock, 60);
+                city.forEachInfo([&](const CityLife::Info& in) {
+                    if ((in.body & body_flag::kMarching) == 0 &&
+                        (in.body & body_flag::kOscillating) == 0)
+                        return;
+                    ++here;
+                    marching += (in.body & body_flag::kMarching) != 0 ? 1 : 0;
+                    oscillating += (in.body & body_flag::kOscillating) != 0 ? 1 : 0;
+                    const LifeData& d = lifeWorld().data;
+                    const std::string verb =
+                        in.step >= 0 ? std::to_string(static_cast<int>(
+                                           d.steps[static_cast<std::size_t>(in.step)].verb))
+                                     : "-";
+                    ++causes["source " + std::to_string(static_cast<int>(in.source)) + " state " +
+                             std::to_string(static_cast<int>(in.state)) + " verb " + verb +
+                             ((in.body & body_flag::kStuck) != 0 ? " stuck" : "") +
+                             ((in.body & body_flag::kOscillating) != 0 ? " to-and-fro" : "")];
+                });
+                city.forEachInfo([&](const CityLife::Info& in) {
+                    if (in.stall > tuning::life::kStallGiveUp + tuning::life::kProgressWindow)
+                        ++stuckLong;
+                });
+            }
+            MESSAGE(std::string(place)
+                    << " " << hour << "h: " << here << " actor-seconds walking in place, live "
+                    << city.liveCount() << ", stuck now " << city.stats().stuck);
+        }
+    for (const auto& [c, n] : causes) MESSAGE(c << ": " << n);
+    MESSAGE("marching " << marching << ", to and fro (two windows) " << oscillating
+                        << ", going nowhere past the watchdog " << stuckLong);
+    // Nobody is drawn walking on the spot; nobody goes nowhere (stuck, to and fro) past the
+    // watchdog's bound, after which the step is given up or the actor leaves.
+    CHECK(marching == 0);
+    CHECK(stuckLong == 0);
+}
+
 TEST_CASE("city: the same seed and script give byte-identical dumps") {
     std::string dumps[2];
     for (std::string& out : dumps) {
@@ -470,6 +715,44 @@ TEST_CASE("city: the same seed and script give byte-identical dumps") {
     }
     CHECK(dumps[0].size() > 10000);
     CHECK(dumps[0] == dumps[1]);
+}
+
+TEST_CASE("city: the clock gliding to a pin is no jump; chains never run backwards (L-002)") {
+    CityLife city(lifeWorld(), 5);
+    const int rome = lifeWorld().data.findRegion("rome");
+    const LifeRegion& reg = lifeWorld().data.regions[static_cast<std::size_t>(rome)];
+    const auto showerRuns = [&] {
+        return std::ranges::any_of(city.running(), [&](const RunningEvent& e) {
+            return e.region == rome && e.event >= 0 &&
+                   reg.events[static_cast<std::size_t>(e.event)].id == "spring_shower";
+        });
+    };
+    city.setFocus(centreOf("forum"));
+    LifeClock clock = LifeClock::at(0, 10.0, -1); // March: Rome's spring shower may come
+    clock.epoch = 0;
+    city.settle(clock);
+    step(city, clock, 10);
+    clock.rain = true; // the shower's weather event starts (it is in no day plan)
+    step(city, clock, 2);
+    REQUIRE(showerRuns());
+    // The pin's glide: 3.75 life seconds a step, forward then back, with no jump counted.
+    const double glide = 0.5 * tuning::kStepSeconds / tuning::kPinEaseSeconds;
+    for (int k = 0; k < 16; ++k) {
+        clock.t += glide;
+        city.update(clock, static_cast<float>(tuning::kStepSeconds));
+        CHECK(showerRuns());
+    }
+    const long tick = city.chains().tick();
+    for (int k = 0; k < 16; ++k) {
+        clock.t -= glide;
+        city.update(clock, static_cast<float>(tuning::kStepSeconds));
+        CHECK(city.chains().tick() >= tick);
+    }
+    CHECK(showerRuns());
+    // A jump the caller counts still rebuilds from the plan, dropping what no plan holds.
+    clock.epoch = 1;
+    city.update(clock, static_cast<float>(tuning::kStepSeconds));
+    CHECK_FALSE(showerRuns());
 }
 
 TEST_CASE("city: an event runs to completion and the day goes on around it") {
@@ -559,6 +842,26 @@ TEST_CASE("city: the cap scales populations down in proportion") {
         if (n >= 30)
             CHECK(std::abs(static_cast<float>(scaled[role]) / static_cast<float>(n) -
                            city.stats().scale) < 0.25f);
+}
+
+TEST_CASE("city: never more live than the cap, panning fast and jumping between cities") {
+    // QA5 Q5-E-20: a step's spawns were not counted against the cap while they happened.
+    CityLife city(lifeWorld(), 6);
+    LifeClock clock = LifeClock::at(1, 8.0, seasonOf("rome"));
+    const TilePos forum = centreOf("forum");
+    int worst = 0;
+    for (int k = 0; k < 1500; ++k) {
+        const char* far[] = {"agora", "terrace", "forum"};
+        TilePos at = k % 500 == 499 ? centreOf(far[(k / 500) % 3])
+                                    : TilePos{forum.x + (k % 500) / 4 - 60, forum.y};
+        city.setFocus(at);
+        step(city, clock, 1);
+        int live = 0;
+        city.forEachInfo([&](const CityLife::Info&) { ++live; });
+        worst = std::max(worst, live);
+    }
+    MESSAGE("most live " << worst);
+    CHECK(worst <= tuning::life::kLiveCap);
 }
 
 TEST_CASE("city: ships and barges on their lanes, carts on the road, live where the camera is") {

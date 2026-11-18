@@ -23,7 +23,7 @@ public:
                          bool pass);
 
 private:
-    static constexpr std::size_t kLines = 10;
+    static constexpr std::size_t kLines = 11;
     static constexpr std::size_t kLineMax = 96;
     std::array<std::array<char, kLineMax>, kLines> text_{};
     std::array<std::string_view, kLines> lines_{};

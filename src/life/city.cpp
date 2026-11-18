@@ -153,22 +153,29 @@ std::unique_ptr<LifeWorld> buildLifeWorld(const LoadedWorld& w) {
         lw->pathsOf[r] = static_cast<int>(lw->paths.size());
         lw->paths.emplace_back(map, w.graphs[static_cast<std::size_t>(reg.layer)], reg.worldRegion);
     }
-    // Slot groups: the spots of one slot of one placed item.
+    // Slot groups: the spots of one slot of one placed item. The map keeps slots by chunk, so a
+    // group's spots need not be neighbours there: each group lists its own (L-116).
     const auto& slots = map.slots();
     lw->slotGroup.resize(slots.size());
     std::unordered_map<std::uint64_t, std::uint32_t> groups;
+    std::vector<std::uint32_t> spots;
     for (std::size_t s = 0; s < slots.size(); ++s) {
         const std::uint64_t k = (static_cast<std::uint64_t>(slots[s].item) << 16) | slots[s].name;
         const auto [it, fresh] = groups.emplace(k, static_cast<std::uint32_t>(lw->groupCap.size()));
         if (fresh) {
             lw->groupCap.push_back(slots[s].cap);
-            lw->groupFirst.push_back(static_cast<std::uint32_t>(s));
-            lw->groupSpots.push_back(0);
+            spots.push_back(0);
         }
         lw->slotGroup[s] = it->second;
-        lw->groupSpots[it->second] =
-            static_cast<std::uint8_t>(std::min(255, lw->groupSpots[it->second] + 1));
+        ++spots[it->second];
     }
+    lw->groupSpotsAt.assign(spots.size() + 1, 0);
+    for (std::size_t g = 0; g < spots.size(); ++g)
+        lw->groupSpotsAt[g + 1] = lw->groupSpotsAt[g] + spots[g];
+    lw->groupSlots.resize(slots.size());
+    std::vector<std::uint32_t> next(lw->groupSpotsAt.begin(), lw->groupSpotsAt.end() - 1);
+    for (std::size_t s = 0; s < slots.size(); ++s)
+        lw->groupSlots[next[lw->slotGroup[s]]++] = static_cast<std::uint32_t>(s);
     lw->chunkDistricts.resize(static_cast<std::size_t>(map.chunksX() * map.chunksY()));
     lw->regionItems.resize(lw->data.regions.size());
     for (std::size_t r = 0; r < lw->data.regions.size(); ++r) {
@@ -192,7 +199,7 @@ std::unique_ptr<LifeWorld> buildLifeWorld(const LoadedWorld& w) {
 
 std::size_t LifeWorld::memoryBytes() const {
     std::size_t n = data.memoryBytes() + slotGroup.capacity() * 4 + groupCap.capacity() +
-                    groupFirst.capacity() * 4 + groupSpots.capacity();
+                    groupSpotsAt.capacity() * 4 + groupSlots.capacity() * 4;
     for (const RegionPaths& p : paths) n += p.memoryBytes();
     for (const auto& c : chunkDistricts) n += c.capacity() * sizeof(ChunkDistrict);
     for (const auto& v : regionItems) n += v.capacity() * 8;
@@ -219,6 +226,22 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
     queue_.reserve(4096);
     activeChunks_.reserve(256);
     groupCount_.assign(w.groupCap.size(), 0);
+    spotUse_.assign(w.slotGroup.size(), 0);
+    // Walks and what each becomes standing still: a walk with goods stands with them.
+    const auto& names = w.data.animNames;
+    const auto named = [&](std::string_view n) {
+        const auto it = std::ranges::find(names, n);
+        return it == names.end() ? -1 : static_cast<int>(it - names.begin());
+    };
+    idleOf_.assign(names.size(), -1);
+    for (const char* walk : {"move", "haul", "run", "march", "row"})
+        if (const int k = named(walk); k >= 0) idleOf_[static_cast<std::size_t>(k)] = kAnimIdle;
+    carryWalk_ = named("carry");
+    if (const int k = named("carry"); k >= 0) {
+        const int idle = named("carry_idle");
+        idleOf_[static_cast<std::size_t>(k)] =
+            static_cast<std::int16_t>(idle >= 0 ? idle : kAnimIdle);
+    }
     itemState_.assign(map_->items().size(), 0);
     itemStateUntil_.assign(map_->items().size(), 0);
     running_.reserve(tl::kMaxRunningEvents);
@@ -266,6 +289,27 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
             ts.farStay = ts.fishing ? tl::kFishingStay : tl::kPortStay;
             ts.period = 2.0f * ts.length / speed + tl::kPortStay + ts.farStay;
             ts.ok = ts.length > 1.0f;
+            // Its rest stops as lengths along the line: a lane's ports by their points, a
+            // route's nodes by the nearest point of the line.
+            const auto lane = std::ranges::find(roads.lanes(), t.lane, &world::RoadLane::id);
+            for (const std::string& r : t.rest) {
+                std::size_t at = 0;
+                if (lane != roads.lanes().end()) {
+                    const auto port = std::ranges::find(lane->ports, r, &world::LanePort::id);
+                    at = static_cast<std::size_t>(port->at);
+                } else {
+                    const Vec2 n =
+                        centre(roads.nodes()[static_cast<std::size_t>(roads.findNode(r))].at);
+                    float best = 1e30f;
+                    for (std::size_t i = 0; i < ts.line.size(); ++i)
+                        if (const float d = dist2(ts.line[i], n); d < best) {
+                            best = d;
+                            at = i;
+                        }
+                }
+                ts.rest.push_back(ts.cum[std::min(at, ts.cum.size() - 1)]);
+            }
+            std::ranges::sort(ts.rest);
         }
         tokenPaths_.push_back(std::move(ts));
         for (int k = 0; k < t.count; ++k) tokenLast_.push_back({-1.0, 0.0});
@@ -298,10 +342,27 @@ bool CityLife::inView(Vec2 p) const {
 
 // -- the calendar --------------------------------------------------------------------------------
 
+int CityLife::seasonFor(int day, int season) const {
+    // No season given (-1: the regions' own pins are gone): the world calendar's for the day.
+    if (season >= 0) return season;
+    const int n = std::max(1, static_cast<int>(w_->data.seasons.size()));
+    return (day / std::max(1, w_->data.seasonDays)) % n;
+}
+
+int CityLife::monthFor(int day, int season) const {
+    // The month of the season's day: day n's own (n mod 12) while the seasons follow the days;
+    // with a season kept, the month of that season on the same day of it.
+    const int days = std::max(1, w_->data.seasonDays);
+    const int m = seasonFor(day, season) * days + day % days;
+    return m < static_cast<int>(w_->data.months.size()) ? m : w_->data.monthOf(day);
+}
+
 bool CityLife::festivalOn(int region, int festival, int day, int season) const {
     if (festival < 0) return false;
+    season = seasonFor(day, season);
     const Festival& f = w_->data.regions[static_cast<std::size_t>(region)]
                             .festivals[static_cast<std::size_t>(festival)];
+    if (f.months != 0) return monthIn(f.months, monthFor(day, season));
     if (f.seasons != 0 && (f.seasons & (1u << season)) == 0) return false;
     const int seasonDay = day % std::max(1, w_->data.seasonDays);
     return f.day == 0 || f.day == seasonDay + 1;
@@ -317,11 +378,53 @@ bool CityLife::filterPasses(const LifeRegion& r, const Filter& f) const {
     if (f.hours && !inHours(f.from, f.to, hour_)) return false;
     if (f.every > 0 && clock_.day % f.every != f.offset) return false;
     if (f.seasons != 0 && (f.seasons & (1u << clock_.season)) == 0) return false;
+    if (!dayPasses(f, clock_.day, clock_.season)) return false;
     if (f.festival >= 0 && !festivalToday(region, f.festival)) return false;
     if (f.notFestival >= 0 && festivalToday(region, f.notFestival)) return false;
     if (f.weather == 1 && !clock_.rain) return false;
     if (f.weather == 0 && clock_.rain) return false;
     return true;
+}
+
+CityLife::TokenPhase CityLife::tokenPhase(std::size_t t, int k) const {
+    const Token& tk = w_->data.tokens[t];
+    const TokenState& ts = tokenPaths_[t];
+    // Its clock runs only in its hours: the seconds under way since day 0 06:00, so it stops
+    // where its hours end and goes on from there when they begin again.
+    double active = now_;
+    bool underway = tokenOn(tk);
+    if (tk.hours) {
+        const double a = std::fmod((tk.hourFrom - 6.0) * 30.0 + 7200.0, kDaySeconds);
+        double len = std::fmod((tk.hourTo - tk.hourFrom) * 30.0 + 7200.0, kDaySeconds);
+        if (len <= 0) len = kDaySeconds;
+        const double u = now_ - a;
+        const double into = u - std::floor(u / kDaySeconds) * kDaySeconds;
+        active = std::floor(u / kDaySeconds) * len + std::min(into, len);
+        underway = underway && into < len;
+    }
+    // by_month: the month's share of its instances is under way, a fresh draw each day.
+    if (underway && !tk.share.empty()) {
+        const int month = monthFor(clock_.day, clock_.season);
+        const float share = static_cast<std::size_t>(month) < tk.share.size()
+                                ? tk.share[static_cast<std::size_t>(month)]
+                                : 1.0f;
+        underway = unit(hashOf({tk.seed, static_cast<std::uint64_t>(k),
+                                static_cast<std::uint64_t>(clock_.day)})) < share;
+    }
+    const double offset = static_cast<std::size_t>(k) < tk.offsets.size()
+                              ? static_cast<double>(tk.offsets[static_cast<std::size_t>(k)])
+                              : static_cast<double>(k) / tk.count;
+    const double period = ts.period;
+    return {std::fmod(active + offset * period + 1e7 * period, period), underway};
+}
+
+bool CityLife::tokenOn(const Token& tk) const {
+    return filterPasses(w_->data.regions[static_cast<std::size_t>(tk.region)], tk.when);
+}
+
+bool CityLife::dayPasses(const Filter& f, int day, int season) const {
+    if (!monthIn(f.months, monthFor(day, season))) return false;
+    return f.seasonDay == 0 || day % std::max(1, w_->data.seasonDays) + 1 == f.seasonDay;
 }
 
 int CityLife::blockAt(int region, const Role& role) const {
@@ -336,16 +439,20 @@ int CityLife::blockAt(int region, const Role& role) const {
 void CityLife::advanceAbstract(const LifeClock& clock) {
     const bool rainChanged = clock.rain != clock_.rain;
     clock_ = clock;
+    clock_.season = seasonFor(clock.day, clock.season);
     now_ = clock.seconds();
     hour_ = static_cast<float>(clock.hour());
     sounds_.clear();
     stats_.spawnedThisStep = 0;
     builds_ = tl::kTableBuildsPerStep;
-    // A jump of the clock (a script, a fast travel, the day set by hand) rebuilds the events
-    // from the plan; a new day continues them.
+    // A jump of the clock (a script, the time or day set by hand) rebuilds the events from the
+    // plan; a new day continues them, and so does the clock gliding to a pin (L-002: its steps
+    // are larger than any step of a running clock, so they are told apart by the jump count).
     const bool first = lastNow_ <= -1e17;
-    const bool jumped = first || std::abs(now_ - lastNow_) > 2.0;
+    const bool jumped =
+        first || (clock.epoch >= 0 ? clock.epoch != lastEpoch_ : std::abs(now_ - lastNow_) > 2.0);
     lastNow_ = now_;
+    lastEpoch_ = clock.epoch;
     if (jumped || clock.day != day_) {
         day_ = clock.day;
         if (jumped) {
@@ -358,8 +465,10 @@ void CityLife::advanceAbstract(const LifeClock& clock) {
         }
         for (std::size_t r = 0; r < plans_.size(); ++r) planDay(static_cast<int>(r), day_, !jumped);
     }
-    chains_.advanceTo(now_, clock.season,
-                      [this](int region, int event) { return eventRunning(region, event); });
+    // Chains never run backwards: gliding back to a pin, they wait for the clock to catch up.
+    if (jumped || static_cast<long>(now_) >= chains_.tick())
+        chains_.advanceTo(now_, clock_.season, monthFor(clock_.day, clock_.season),
+                          [this](int region, int event) { return eventRunning(region, event); });
     updateEvents();
     updateTokens();
     if (rainChanged) {
@@ -417,7 +526,10 @@ void CityLife::update(const LifeClock& clock, float dt) {
         if ((pool_[i].flags & live_flag::kAlive) != 0) afterStep(k, dt);
     }
     ++frame_;
-    if (frame_ % 30 == 0) countDistricts();
+    if (frame_ % 30 == 0) {
+        countDistricts();
+        countBodies();
+    }
     stats_.running = static_cast<int>(running_.size());
     stats_.chains = static_cast<int>(chains_.size());
 }
@@ -426,10 +538,15 @@ void CityLife::settle(const LifeClock& clock) {
     // Everything placed where the clock has it, no step of anyone's day taken.
     advanceAbstract(clock);
     reconcile();
-    // A jump is not watched: whoever was leaving is gone.
-    for (std::size_t k = 0; k < pool_.size(); ++k)
+    // A jump is not watched: whoever was leaving is gone, and no longer holds the cap against
+    // those arriving (a full area left behind would otherwise keep the new one empty).
+    int live = 0;
+    for (std::size_t k = 0; k < pool_.size(); ++k) {
         if ((pool_[k].flags & live_flag::kAlive) != 0 && pool_[k].state == ActState::Leave)
             release(static_cast<int>(k));
+        live += (pool_[k].flags & live_flag::kAlive) != 0 ? 1 : 0;
+    }
+    stats_.live = live;
     builds_ = 1 << 20;
     spawnQueued(true);
     builds_ = tl::kTableBuildsPerStep;
@@ -524,10 +641,13 @@ void CityLife::reconcile() {
         if (!run.ok()) continue;
         const int region = chains_.regionOf(c);
         const LifeRegion& reg = w_->data.regions[static_cast<std::size_t>(region)];
+        // As the simulation decides it (season, month, event), so nobody works a closed chain.
+        const bool on = chains_.working(
+            c, static_cast<long>(now_), clock_.season, monthFor(clock_.day, clock_.season),
+            [this](int rg, int event) { return eventRunning(rg, event); });
         for (std::size_t k = 0; k < run.workers().size(); ++k) {
             const ChainStage& s = run.chain().stages[static_cast<std::size_t>(run.stageOf(k))];
             const ChainWorker& wk = run.workers()[k];
-            const bool on = run.hoursOn(static_cast<long>(now_));
             if (!on && wk.phase != WorkerPhase::Out && wk.phase != WorkerPhase::Back) continue;
             const TilePos at = run.place(s.kind == ChainStage::Kind::Carry ? s.from : s.slot).tile;
             const TilePos to = s.kind == ChainStage::Kind::Carry ? run.place(s.to).tile : at;
@@ -549,6 +669,10 @@ void CityLife::reconcile() {
         std::size_t inst = 0;
         for (std::size_t t = 0; t < w_->data.tokens.size(); ++t) {
             const Token& tk = w_->data.tokens[t];
+            if (!tokenOn(tk)) {
+                inst += static_cast<std::size_t>(tk.count);
+                continue;
+            }
             int members = 1;
             if (tk.group >= 0) {
                 const Group& g = w_->data.regions[static_cast<std::size_t>(tk.region)]
@@ -781,6 +905,7 @@ float CityLife::expectedFor(TileRect view, const LifeClock& c) {
     desires_.clear();
     counts_.clear();
     clock_ = c;
+    clock_.season = seasonFor(c.day, c.season);
     hour_ = static_cast<float>(c.hour());
     hourIndex_ = c.day * 48 + static_cast<int>(hour_ * 2.0f);
     scale_ = 1;
@@ -868,6 +993,7 @@ void CityLife::spawnQueued(bool unbounded) {
             continue;
         }
         ++done;
+        ++stats_.live; // the cap is checked against everyone, those spawned this call too
     }
     stats_.spawnedThisStep = done;
     stats_.queued = static_cast<int>(queue_.size() - queueHead_);
@@ -1042,16 +1168,20 @@ void CityLife::unreserve(int i) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     if (a.group >= 0 && groupCount_[static_cast<std::size_t>(a.group)] > 0)
         --groupCount_[static_cast<std::size_t>(a.group)];
+    if (a.slot >= 0 && spotUse_[static_cast<std::size_t>(a.slot)] > 0)
+        --spotUse_[static_cast<std::size_t>(a.slot)];
     a.group = -1;
     a.slot = -1;
 }
 
-void CityLife::reserve(int i, int group) {
+void CityLife::reserve(int i, int group, int spot) {
     unreserve(i);
     if (group < 0) return;
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     a.group = group;
     ++groupCount_[static_cast<std::size_t>(group)];
+    a.slot = spot;
+    if (spot >= 0) ++spotUse_[static_cast<std::size_t>(spot)];
 }
 
 int CityLife::nearestDoor(Vec2 p, float reach, TilePos& goal) const {
@@ -1085,10 +1215,11 @@ bool CityLife::planTo(int i, TilePos goal, Vec2 end, int& builds) {
     return true;
 }
 
-bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& at, float& z,
-                       std::uint8_t& face) {
+bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, int& spot, Vec2& at,
+                       float& z, std::uint8_t& face) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     group = -1;
+    spot = -1;
     face = 0xFF;
     const int pi = w_->pathsOf[a.region];
     if (pi < 0) return false;
@@ -1112,16 +1243,19 @@ bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& 
         const WorldSlot& s = map_->slots()[static_cast<std::size_t>(slotIndex)];
         if (!standOn(s.tile)) return false;
         group = static_cast<int>(w_->slotGroup[static_cast<std::size_t>(slotIndex)]);
+        spot = slotIndex;
         at = goal == s.tile ? s.at : centre(goal);
         z = goal == s.tile ? static_cast<float>(s.z) : 0.0f;
         face = s.face;
         return true;
     };
     const auto freeGroup = [&](std::uint32_t g) { return groupCount_[g] < w_->groupCap[g]; };
-    // The spot of a group to stand at: one per reservation, round the group's spots.
+    // The spot of a group to stand at: its least used (a free one while there is one).
     const auto spotOf = [&](std::uint32_t g) {
-        const std::uint32_t n = std::max<std::uint32_t>(1, w_->groupSpots[g]);
-        return static_cast<int>(w_->groupFirst[g]) + static_cast<int>(groupCount_[g] % n);
+        std::uint32_t best = w_->groupSlots[w_->groupSpotsAt[g]];
+        for (std::uint32_t k = w_->groupSpotsAt[g]; k < w_->groupSpotsAt[g + 1]; ++k)
+            if (spotUse_[w_->groupSlots[k]] < spotUse_[best]) best = w_->groupSlots[k];
+        return static_cast<int>(best);
     };
     at = {};
     z = 0;
@@ -1393,10 +1527,11 @@ CityLife::Begin CityLife::beginStep(int i, std::uint32_t s, float& estimate) {
         }
         TilePos goal;
         int group = -1;
+        int spot = -1;
         Vec2 at;
         float z = 0;
         std::uint8_t face = 0xFF;
-        if (!resolve(i, st.target, goal, group, at, z, face)) return Begin::Failed;
+        if (!resolve(i, st.target, goal, group, spot, at, z, face)) return Begin::Failed;
         if (goal == a.tile.pos()) {
             a.route = Route{};
             a.route.leg = Leg::Done;
@@ -1405,9 +1540,7 @@ CityLife::Begin CityLife::beginStep(int i, std::uint32_t s, float& estimate) {
             waited_ = false;
             if (!planTo(i, goal, at, builds_)) return waited_ ? Begin::Wait : Begin::Failed;
         }
-        reserve(i, group);
-        a.slot =
-            group >= 0 ? static_cast<int>(w_->groupFirst[static_cast<std::size_t>(group)]) : -1;
+        reserve(i, group, spot);
         a.face = face;
         a.anchor = tile16(goal);
         a.state = ActState::Travel;
@@ -1461,6 +1594,7 @@ CityLife::Begin CityLife::beginStep(int i, std::uint32_t s, float& estimate) {
         }
         if (best < 0) return Begin::Failed;
         a.follow = best;
+        a.followGen = pool_[static_cast<std::size_t>(best)].gen;
         a.state = ActState::Follow;
         a.anim = kAnimMove;
         a.timer = st.dur1 > 0 ? range(a, st.dur0, st.dur1) : 1e9f;
@@ -1822,8 +1956,9 @@ void CityLife::motion(int i, float dt) {
     const Track& tr = tracks_[static_cast<std::size_t>(i)];
     const float pace = a.speed * (a.state == ActState::Wander ? tl::kWanderPace : 1.0f);
     const float left = tr.ended ? static_cast<float>(tr.base + tr.n - 1) - a.s : 1e9f;
-    const float target =
-        left < tl::kBrakeTiles ? std::max(0.2f * pace, pace * left / tl::kBrakeTiles) : pace;
+    const float target = left < tl::kBrakeTiles
+                             ? std::max(tl::kBrakeFloor * pace, pace * left / tl::kBrakeTiles)
+                             : pace;
     const float ease = pace * dt / tl::kEaseSeconds;
     a.speedNow = std::clamp(target, a.speedNow - ease, a.speedNow + ease);
     // Constant speed over the ground: the step along the track that moves it exactly this far
@@ -1839,7 +1974,7 @@ void CityLife::motion(int i, float dt) {
     }
     a.s += ds;
     if (tr.ended) a.s = std::min(a.s, static_cast<float>(tr.base + tr.n - 1));
-    placeOnTrack(i, tl::kCatchUp * std::max(a.speedNow, 0.2f * pace) * dt);
+    placeOnTrack(i, tl::kCatchUp * std::max(a.speedNow, tl::kBrakeFloor * pace) * dt);
 }
 
 void CityLife::advanceBy(int i, float tiles) {
@@ -1862,13 +1997,80 @@ void CityLife::advanceBy(int i, float tiles) {
     placeOnTrack(i, 0);
 }
 
+std::uint16_t CityLife::shownAnim(const LiveActor& a) const {
+    // The body decides: a walk only while it moves over the ground, its standing form (idle, or
+    // standing with its load) while it does not; moving with a standing animation is walking.
+    // Intent never shows: a step begun but not yet moving, a puppet held at its place, a walker
+    // braking to its spot, all stand.
+    const KindDef& k = w_->data.kinds[a.kind];
+    const auto has = [&](int anim) { return anim >= 0 && k.has(static_cast<std::uint16_t>(anim)); };
+    const std::uint16_t want = has(a.anim) ? a.anim : kAnimIdle;
+    const std::int16_t standing = want < idleOf_.size() ? idleOf_[want] : std::int16_t{-1};
+    if ((a.body & body_flag::kWalking) != 0) {
+        if (standing >= 0) return want; // a walk, and walking
+        return has(carryWalk_) && a.goods >= 0 ? static_cast<std::uint16_t>(carryWalk_) : kAnimMove;
+    }
+    if (standing < 0) return want;
+    return has(standing) ? static_cast<std::uint16_t>(standing) : kAnimIdle;
+}
+
+void CityLife::judgeWindow(int i) {
+    LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    const float net = std::sqrt(dist2(a.pos, a.mark));
+    const float walked = a.stride - a.markStride;
+    const bool puppet = a.state == ActState::Puppet;
+    std::uint8_t b = static_cast<std::uint8_t>(a.body & body_flag::kWalking);
+    // Marching: drawn walking for half the window while the body covered less ground than the
+    // slowest walk is ever drawn at (its feet would step on the spot).
+    if (a.walkTime >= 0.5f * a.markAge && a.walkDist < tl::kShownStop * a.walkTime)
+        b |= body_flag::kMarching;
+    // To and fro: walking and back where it began, two windows running (one is a U-turn: a
+    // walk to a spot and back the way it came).
+    if (walked > 4.0f * tl::kStillTiles && net < tl::kStillTiles)
+        b |= (a.body & (body_flag::kTurned | body_flag::kOscillating)) != 0
+                 ? body_flag::kOscillating
+                 : body_flag::kTurned;
+    // Stuck: under way at a walking pace (not braking to its spot) and getting nowhere.
+    if (!puppet && moving(i) && a.speedNow > 2.0f * tl::kShownWalk && net < tl::kStillTiles)
+        b |= body_flag::kStuck;
+    // Going nowhere (stuck, or to and fro) counts towards the watchdog alike.
+    const bool nowhere = (b & (body_flag::kStuck | body_flag::kOscillating)) != 0;
+    a.stall = nowhere ? a.stall + a.markAge : 0.0f;
+    if (nowhere) b |= static_cast<std::uint8_t>(a.body & body_flag::kGaveUp);
+    a.body = b;
+    a.mark = a.pos;
+    a.markStride = a.stride;
+    a.markAge = 0;
+    a.walkTime = 0;
+    a.walkDist = 0;
+}
+
 void CityLife::afterStep(int i, float dt) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     const float dx = a.pos.x - a.prev.x;
     const float dy = a.pos.y - a.prev.y;
     const float d = std::sqrt(dx * dx + dy * dy);
     a.animTime += dt * a.rate;
-    if (d > 1.5f) return; // placed, not walked
+    // What is drawn follows the body: its speed over the ground, smoothed, with hysteresis.
+    const float v = d > 1.5f || dt <= 0.0f ? 0.0f : d / dt;
+    a.shown += (v - a.shown) * std::min(1.0f, dt / tl::kShownSmooth);
+    // It starts being drawn walking once it has picked up speed, and stops the step its body
+    // stops (the feet never step on a standing body).
+    const bool walking = (a.body & body_flag::kWalking) != 0;
+    if (walking ? v < tl::kShownStop : a.shown > tl::kShownWalk)
+        a.body = static_cast<std::uint8_t>(a.body ^ body_flag::kWalking);
+    a.markAge += dt;
+    if ((a.body & body_flag::kWalking) != 0 && d <= 1.5f) {
+        a.walkTime += dt;
+        a.walkDist += d;
+    }
+    if (d > 1.5f) { // placed, not walked: a new window from here
+        a.mark = a.pos;
+        a.markStride = a.stride;
+        a.markAge = a.walkTime = a.walkDist = 0;
+        return;
+    }
+    if (a.markAge >= tl::kProgressWindow) judgeWindow(i);
     a.stride += d;
     if (a.source != Source::Population && a.source != Source::Figure) a.speedNow = d / dt;
     if (d > 1e-4f) {
@@ -1939,6 +2141,22 @@ void CityLife::think(int i, float dt) {
         }
     }
     double none = 0;
+    // The watchdog: wanting to move and getting nowhere is bounded. First the step is given up
+    // (the day goes on with its next step, which plans afresh from where it stands); still
+    // stuck, it leaves by the population rule (fades where it stands).
+    if (a.stall >= tl::kStallLeave) {
+        ++stats_.unstuck;
+        beginLeave(i);
+        return;
+    }
+    if (a.stall >= tl::kStallGiveUp && (a.body & body_flag::kGaveUp) == 0) {
+        ++stats_.unstuck;
+        a.body |= body_flag::kGaveUp; // once; still stuck after that, it leaves
+        tracks_[static_cast<std::size_t>(i)].n = 0;
+        endStep(i);
+        runSteps(i, false, none);
+        return;
+    }
     switch (a.state) {
     case ActState::Idle:
         a.timer -= dt;
@@ -1983,13 +2201,16 @@ void CityLife::think(int i, float dt) {
             if (!map_->inBounds(t) || t == a.tile.pos() || !map_->walkable(t)) continue;
             if (a.zone >= 0 && map_->districtAt(t) != a.zone) continue;
             if (!paths.lineClear(a.tile.pos(), t, 2 * radius + 2)) continue;
+            // Somewhere on the tile, not its exact centre; never a shuffle of a few steps (a
+            // walk too short to cross the ground reads as walking in place).
+            const Vec2 end{static_cast<float>(t.x) + range(a, 0.25f, 0.75f),
+                           static_cast<float>(t.y) + range(a, 0.25f, 0.75f)};
+            if (dist2(end, a.pos) < tl::kWanderHop * tl::kWanderHop) continue;
             a.route = Route{};
             a.route.leg = Leg::Line;
             a.route.start = a.tile;
             a.route.goal = tile16(t);
-            // Somewhere on the tile, not its exact centre.
-            startTrack(i, {static_cast<float>(t.x) + range(a, 0.25f, 0.75f),
-                           static_cast<float>(t.y) + range(a, 0.25f, 0.75f)});
+            startTrack(i, end);
             a.anim = kAnimMove;
             break;
         }
@@ -1997,8 +2218,11 @@ void CityLife::think(int i, float dt) {
     }
     case ActState::Follow: {
         a.timer -= dt;
-        const bool lost = a.follow < 0 || (pool_[static_cast<std::size_t>(a.follow)].flags &
-                                           live_flag::kAlive) == 0;
+        // Lost when it is gone, or when its slot holds someone else now (L-115).
+        const bool lost =
+            a.follow < 0 ||
+            (pool_[static_cast<std::size_t>(a.follow)].flags & live_flag::kAlive) == 0 ||
+            pool_[static_cast<std::size_t>(a.follow)].gen != a.followGen;
         if (lost || a.timer <= 0) {
             a.follow = -1;
             endStep(i);
@@ -2007,7 +2231,10 @@ void CityLife::think(int i, float dt) {
         }
         const LiveActor& o = pool_[static_cast<std::size_t>(a.follow)];
         const Step& st = w_->data.steps[a.step];
-        if (dist2(o.pos, a.pos) > (st.spacing + 0.6f) * (st.spacing + 0.6f)) {
+        // Hysteresis: it sets off once it has fallen a tile behind and stops when close, so it
+        // never dithers to and fro behind a leader who lingers.
+        const float reach = st.spacing + (moving(i) ? 0.6f : 1.6f);
+        if (dist2(o.pos, a.pos) > reach * reach) {
             if (!moving(i) || frame_ % 30 < static_cast<std::uint32_t>(tl::kBuckets))
                 if (!planTo(i, o.tile.pos(), centre(o.tile.pos()), builds_))
                     tracks_[static_cast<std::size_t>(i)].n = 0;
@@ -2032,9 +2259,8 @@ bool CityLife::tokenAt(std::size_t t, int k, int member, TokenAt& out) const {
     const KindDef& kd = w_->data.kinds[static_cast<std::size_t>(tk.kind)];
     const float speed =
         !tk.lane.empty() ? tl::kShipSpeed : (kd.cart ? tl::kCartSpeed : tl::kWalkSpeed);
-    const double period = ts.period;
-    const double phase =
-        std::fmod(now_ + static_cast<double>(k) * period / tk.count + 1e7 * period, period);
+    const TokenPhase cycle = tokenPhase(t, k);
+    const double phase = cycle.phase;
     const double run = ts.length / speed;
     const double stay = tl::kPortStay;
     const double far = ts.farStay;
@@ -2059,6 +2285,19 @@ bool CityLife::tokenAt(std::size_t t, int k, int member, TokenAt& out) const {
         flock = w_->data.regions[static_cast<std::size_t>(tk.region)]
                     .groups[static_cast<std::size_t>(tk.group)]
                     .formation == Formation::Cluster;
+    if (!cycle.underway) {
+        // Waiting (out of its hours, or not travelling today): at the last rest stop it passed,
+        // or where it stopped when it has none.
+        out.moving = false;
+        working = false;
+        if (back) {
+            const auto it = std::ranges::lower_bound(ts.rest, static_cast<float>(s));
+            if (it != ts.rest.end()) s = *it;
+        } else {
+            const auto it = std::ranges::upper_bound(ts.rest, static_cast<float>(s));
+            if (it != ts.rest.begin()) s = *std::prev(it);
+        }
+    }
     if (member > 0)
         s += (back ? 1.0 : -1.0) * static_cast<double>(tl::kTrainSpacing) *
              (flock ? 1.0 : static_cast<double>(member));
@@ -2171,7 +2410,6 @@ float CityLife::atLength(std::span<const float> cum, float d) {
 const std::vector<Tile16>& CityLife::carrierPath(std::size_t key, TilePos from, TilePos to) {
     std::vector<Tile16>& path = carrierPaths_[key];
     if (!path.empty()) return path;
-    const ChainRun& run = chains_.run(key / 16);
     const int pi = w_->pathsOf[static_cast<std::size_t>(chains_.regionOf(key / 16))];
     path.push_back(tile16(from));
     if (pi >= 0) {
@@ -2188,7 +2426,6 @@ const std::vector<Tile16>& CityLife::carrierPath(std::size_t key, TilePos from, 
             }
         }
     }
-    (void)run;
     std::vector<float>& cum = carrierCum_[key];
     cum.assign(1, 0.0f);
     for (std::size_t k = 1; k < path.size(); ++k)
@@ -2412,6 +2649,7 @@ void CityLife::puppet(int i) {
 void CityLife::dayPlan(int region, int day, int season,
                        std::vector<std::tuple<int, double, double>>& out) const {
     out.clear();
+    season = seasonFor(day, season);
     const LifeRegion& reg = w_->data.regions[static_cast<std::size_t>(region)];
     const auto secondsAt = [&](double hour) {
         // Hours before 06:00 belong to the calendar day's early morning.
@@ -2426,6 +2664,9 @@ void CityLife::dayPlan(int region, int day, int season,
         const Filter& f = ev.when;
         if (f.every > 0 && day % f.every != f.offset) continue;
         if (f.seasons != 0 && (f.seasons & (1u << season)) == 0) continue;
+        if (!dayPasses(f, day, season)) continue;
+        // A season's turn comes once, at its first dawn (a month's turn by its month).
+        if (ev.seasonTurn && f.months == 0 && day % std::max(1, w_->data.seasonDays) != 0) continue;
         if (f.festival >= 0 && !festivalOnDay(f.festival)) continue;
         if (f.notFestival >= 0 && festivalOnDay(f.notFestival)) continue;
         if (ev.trigger == Trigger::Calendar && ev.festival < 0) continue;
@@ -2767,15 +3008,23 @@ void CityLife::updateTokens() {
     for (std::size_t t = 0; t < w_->data.tokens.size(); ++t) {
         const Token& tk = w_->data.tokens[t];
         const TokenState& ts = tokenPaths_[t];
+        const bool on = tokenOn(tk);
         for (int k = 0; k < tk.count; ++k, ++inst) {
-            if (!ts.ok) continue;
+            if (!ts.ok || !on) {
+                tokenLast_[inst] = {-1.0, 0.0}; // a day off: no arrival on its first step back
+                continue;
+            }
             ++stats_.tokens;
+            const TokenPhase tp = tokenPhase(t, k);
+            if (!tp.underway) {
+                tokenLast_[inst] = {-1.0, 0.0}; // waiting: no arrival on its first step again
+                continue;
+            }
             const KindDef& kd = w_->data.kinds[static_cast<std::size_t>(tk.kind)];
             const float speed =
                 !tk.lane.empty() ? tl::kShipSpeed : (kd.cart ? tl::kCartSpeed : tl::kWalkSpeed);
             const double run = ts.length / speed;
-            const double phase = std::fmod(
-                now_ + static_cast<double>(k) * ts.period / tk.count + 1e7 * ts.period, ts.period);
+            const double phase = tp.phase;
             auto& last = tokenLast_[inst];
             const double before = last[0];
             last[0] = phase;
@@ -2824,14 +3073,16 @@ std::size_t CityLife::gather(TileRect rect, float alpha, std::span<DrawActor> ou
                 d.pos = {a.prev.x + (a.pos.x - a.prev.x) * f, a.prev.y + (a.pos.y - a.prev.y) * f};
                 d.z = a.prevZ + (a.z - a.prevZ) * f;
                 d.stride = a.prevStride + (a.stride - a.prevStride) * f;
-                d.speed = a.speedNow;
+                // Its speed over the ground while drawn walking (never under the renderer's
+                // threshold, so a walk is always phased by the distance covered), else none.
+                d.speed =
+                    (a.body & body_flag::kWalking) != 0 ? std::max(a.shown, tl::kShownStop) : 0.0f;
                 d.heading = a.heading;
                 d.level = static_cast<std::uint8_t>(map_->level(a.tile.pos()));
                 d.facing = a.facing;
                 d.kind = a.kind;
                 d.variant = a.variant;
-                const KindDef& k = w_->data.kinds[a.kind];
-                d.anim = k.has(a.anim) ? a.anim : (a.anim == kAnimMove ? kAnimMove : kAnimIdle);
+                d.anim = shownAnim(a);
                 d.animTime = a.animTime;
                 d.alpha = a.alpha;
                 d.goods = a.goods;
@@ -2844,6 +3095,19 @@ std::size_t CityLife::gather(TileRect rect, float alpha, std::span<DrawActor> ou
             }
         }
     return n;
+}
+
+void CityLife::countBodies() {
+    stats_.marching = stats_.oscillating = stats_.stuck = stats_.waiting = stats_.lost = 0;
+    for (const LiveActor& a : pool_) {
+        if ((a.flags & live_flag::kAlive) == 0 || a.alpha <= 0.0f) continue;
+        stats_.marching += (a.body & body_flag::kMarching) != 0 ? 1 : 0;
+        stats_.oscillating += (a.body & body_flag::kOscillating) != 0 ? 1 : 0;
+        stats_.stuck += (a.body & body_flag::kStuck) != 0 ? 1 : 0;
+        stats_.waiting +=
+            (a.body & body_flag::kWalking) == 0 && a.state != ActState::Inside ? 1 : 0;
+        stats_.lost += a.stall > tl::kStallGiveUp + tl::kProgressWindow ? 1 : 0;
+    }
 }
 
 void CityLife::countDistricts() {
@@ -2884,7 +3148,8 @@ std::size_t CityLife::memoryBytes() const {
            (chunkHead_.capacity() + chunkNext_.capacity() + chunkOf_.capacity()) * sizeof(int) +
            keys_->keys.capacity() * 12 +
            (desires_.capacity() + queue_.capacity()) * sizeof(Desire) + groupCount_.capacity() +
-           itemState_.capacity() * 5 + trails_.capacity() * sizeof(Tile16) + chains_.memoryBytes();
+           spotUse_.capacity() + itemState_.capacity() * 5 + trails_.capacity() * sizeof(Tile16) +
+           chains_.memoryBytes();
 }
 
 } // namespace lc::life

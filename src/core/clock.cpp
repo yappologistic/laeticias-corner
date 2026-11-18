@@ -63,6 +63,7 @@ Phase Clock::phase() const {
 
 void Clock::setDay(int day) {
     day_ = std::clamp(day, 0, tuning::kMaxCalendarDay);
+    ++jumps_;
 }
 
 void Clock::nextDay() {
@@ -71,12 +72,15 @@ void Clock::nextDay() {
 
 void Clock::setTime(double t) {
     t_ = wrap(t);
+    ++jumps_;
 }
 
 void Clock::setPin(ClockPin pin, bool instant) {
     pin_ = pin;
-    if (instant && pin != ClockPin::Auto)
+    if (instant && pin != ClockPin::Auto) {
         t_ = phaseCentre(static_cast<Phase>(static_cast<int>(pin) - 1));
+        ++jumps_;
+    }
 }
 
 void Clock::update(double dt) {

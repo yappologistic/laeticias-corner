@@ -34,6 +34,12 @@ public:
     // Loads every effect, ambience bed and music stem the catalog lists; missing or unreadable
     // ones become silence.
     void load(const std::filesystem::path& audioDir, const AudioList& list);
+    // More effects and loops (the world's regions), before open(); files already loaded are
+    // skipped.
+    void loadMore(const std::filesystem::path& audioDir, std::span<const std::string> sfx,
+                  std::span<const std::string> loops);
+    // A loop that is not a stem starts from `sample` the next time it is mixed (a phrase start).
+    void seekLoop(int loop, std::uint64_t sample);
     // Opens the default playback device. Without one the game simply stays silent.
     bool open();
     // No device: render() is called by the owner instead, from one thread.
@@ -115,13 +121,15 @@ private:
     static void SDLCALL callback(void* self, SDL_AudioStream* stream, int additional, int total);
     void mix(float* out, int frames);
     void decodeLoop(LoopTrack& t, float* dst, int frames);
+    void addLoop(const std::filesystem::path& dir, const std::string& file, bool stem);
 
     std::vector<std::string> sfxNames_;
     std::vector<std::vector<float>> sfx_;
-    static constexpr std::size_t kMaxLoops = 32;
+    static constexpr std::size_t kMaxLoops = 256;
     std::vector<LoopTrack> loops_; // fixed once loaded
     std::array<std::atomic<float>, kMaxLoops> loopTargets_{};
     std::array<std::atomic<float>, kMaxLoops> loopPans_{};
+    std::array<std::atomic<std::int64_t>, kMaxLoops> seekTo_{}; // -1: none (set in the ctor)
     std::array<float, kMaxLoops> pan_{}; // audio thread: each loop's pan, gliding to its target
     std::array<std::atomic<int>, kMaxLoops> unlocked_{}; // 0 locked, 1 fade in, 2 instant
     std::array<Command, kRing> ring_{};

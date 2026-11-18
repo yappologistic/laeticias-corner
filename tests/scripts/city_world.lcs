@@ -1,0 +1,38 @@
+# City life on screen and in the ears (src/life/ through the world renderer): the Forum at 07:00
+# on an April morning is full of people the crowd hears at its loudest; with nobody about the
+# crowd falls silent; at night the climate's night bed plays; in rain the rain family does, and
+# the crowd hushes. Every live person stands on walkable ground at its level.
+set season spring
+set day 9
+set time 0.0417
+set world forum 1
+wait 240
+expect city ground ok
+expect city slots ok
+expect city moving
+expect city drawn 100 900
+expect city people 60 900
+expect city sound amb/world/crowd_latin_3.ogg 40 100
+expect city sound amb/world/crowd_latin_1.ogg 0 0
+shot shots/city_forum_morning.png
+set world forum 2
+wait 60
+expect city drawn 20 400
+shot shots/city_forum_2x.png
+set city off
+waitfor 900 city drawn 0 0
+wait 10
+expect city drawn 0 0
+expect city people 0 0
+expect city sound amb/world/crowd_latin_3.ogg 0 0
+set city camera
+set time 0.75
+wait 240
+expect city sound amb/world/night_scrub.ogg 40 100
+shot shots/city_forum_night.png
+set time 0.1
+set rain on
+wait 240
+expect city sound amb/world/rain_3.ogg 80 100
+shot shots/city_forum_rain.png
+quit

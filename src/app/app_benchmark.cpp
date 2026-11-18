@@ -1,5 +1,6 @@
 // The windowed benchmark (--benchmark): the one mode meant for a person to launch. It plays a
-// fixed, seeded 75-second tour of the corner's busiest views in a real window with vsync off,
+// fixed, seeded tour of the corner's busiest views (and, with the world, a flight out to its
+// cities by fast travel, 105 seconds in all) in a real window with vsync off,
 // waiting for the GPU every frame so the times are whole, then shows a results card and writes
 // benchmark-<date>.txt beside the save. Headless (tests) it runs one step per frame and exits
 // after writing the report.
@@ -25,6 +26,7 @@ struct Leg {
     bool rain;
     float panSpeed; // window px per second along a slow circle (fast legs pan quicker)
     bool panels;    // the drawer and sketchbook open
+    const char* region = nullptr; // with the world: travelled to when the leg begins
 };
 constexpr Leg kTour[] = {
     {10, "day, 1x", 2, ClockPin::Day, false, 60, false},
@@ -33,8 +35,12 @@ constexpr Leg kTour[] = {
     {45, "night with lights and rain", 2, ClockPin::Night, true, 80, false},
     {60, "fast panning", 2, ClockPin::Day, false, 900, false},
     {75, "panels open, busy corner", 2, ClockPin::Dusk, false, 140, true},
+    {85, "Rome by fast travel, day", 2, ClockPin::Day, false, 200, false, "rome"},
+    {95, "Athens at dusk", 2, ClockPin::Dusk, false, 200, false, "athens"},
+    {105, "Parsa at night", 2, ClockPin::Night, false, 200, false, "parsa"},
 };
-constexpr float kTourSeconds = 75.0f;
+// The corner alone runs the first six legs; the world adds the last three.
+constexpr std::size_t kCornerLegs = 6;
 
 PerfStats statsOf(const std::vector<FrameSample>& frames, float FrameSample::* field) {
     std::vector<float> v;
@@ -62,13 +68,15 @@ int App::runBenchmark() {
     for (int i = 0; i < static_cast<int>(1.0 / tuning::kStepSeconds); ++i) (void)benchFrame();
 
     std::vector<FrameSample> frames;
-    std::vector<std::vector<float>> legFrames(std::size(kTour));
-    frames.reserve(static_cast<std::size_t>(kTourSeconds * 400));
+    const std::size_t legs = worldView_ ? std::size(kTour) : kCornerLegs;
+    const float tourSeconds = kTour[legs - 1].until;
+    std::vector<std::vector<float>> legFrames(legs);
+    frames.reserve(static_cast<std::size_t>(tourSeconds * 400));
     const bool fixed = opts_.headless;
     double t = 0; // tour time
     Uint64 last = SDL_GetTicksNS();
     int leg = -1;
-    while (running_ && t < kTourSeconds) {
+    while (running_ && t < tourSeconds) {
         const Uint64 t0 = SDL_GetPerformanceCounter();
         for (SDL_Event e; SDL_PollEvent(&e);) {
             if (e.type == SDL_EVENT_QUIT ||
@@ -82,7 +90,7 @@ int App::runBenchmark() {
         t += real;
         // The leg this moment belongs to, and its setting.
         int l = 0;
-        while (l + 1 < static_cast<int>(std::size(kTour)) &&
+        while (l + 1 < static_cast<int>(legs) &&
                t >= static_cast<double>(kTour[static_cast<std::size_t>(l)].until))
             ++l;
         const Leg& g = kTour[static_cast<std::size_t>(l)];
@@ -92,6 +100,7 @@ int App::runBenchmark() {
             weather_.setMode(g.rain ? WeatherMode::Rain : WeatherMode::Clear);
             drawerOpen_ = journalOpen_ = g.panels;
             camera_.zoomTo(g.zoomLevel, {screen().x * 0.5f, screen().y * 0.5f}, screen());
+            if (g.region != nullptr) travelTo(loaded_->file.findRegion(g.region));
         }
         // Legs that show two zoom levels switch halfway.
         const float legStart = l == 0 ? 0.0f : kTour[static_cast<std::size_t>(l) - 1].until;
@@ -143,7 +152,7 @@ int App::runBenchmark() {
                                 mode ? mode->w : 0, mode ? mode->h : 0,
                                 mode ? static_cast<double>(mode->refresh_rate) : 0.0));
     lines.push_back(std::format("Frames: {} in {:.0f} s · average {:.0f} FPS", frames.size(),
-                                kTourSeconds,
+                                tourSeconds,
                                 whole.avg > 0 ? 1000.0 / static_cast<double>(whole.avg) : 0.0));
     const auto row = [&](const char* what, const PerfStats& s) {
         lines.push_back(std::format("{}\tavg {:.2f} · p95 {:.2f} · p99 {:.2f} · worst {:.2f} ms",
@@ -154,7 +163,7 @@ int App::runBenchmark() {
     row("GPU done", gpu);
     lines.push_back(std::format("Frames over 8.3 ms: {:.2f}% · over 16.6 ms: {:.2f}%",
                                 over(tuning::kFrameP99Ms), over(tuning::kFrameWorstMs)));
-    for (std::size_t i = 0; i < std::size(kTour); ++i) {
+    for (std::size_t i = 0; i < legs; ++i) {
         const PerfStats s = perfStats(legFrames[i]);
         lines.push_back(
             std::format("  {}\tp99 {:.2f} · worst {:.2f} ms", kTour[i].name, s.p99, s.worst));

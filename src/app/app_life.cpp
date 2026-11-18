@@ -29,11 +29,18 @@ Vec2 App::viewTile() const {
 }
 
 float App::rainHere() const {
+    // Off the home's land the world's weather is the one where the camera looks.
+    if (viewWeather_ && away() && weather_.mode() == WeatherMode::Natural) {
+        const TileRect h = loaded_->file.home.rect;
+        const Vec2 t = viewTile();
+        return viewWeather_->rainAt(
+            {t.x + static_cast<float>(h.x0), t.y + static_cast<float>(h.y0)});
+    }
     return weather_.rainAt(viewTile());
 }
 
 bool App::raining() const {
-    return weather_.raining(viewTile());
+    return rainHere() >= tuning::kRainThreshold; // where the camera looks, home or away (L-107)
 }
 
 void App::cycleWeather() {
@@ -93,6 +100,7 @@ void App::updateLife(float dt) {
         return static_cast<double>(SDL_GetPerformanceCounter() - t) * 1000.0 /
                static_cast<double>(SDL_GetPerformanceFrequency());
     };
+    followWorldWeather();
     weather_.update(dt, season(), openBounds(cat_, progress_.stage, world_));
     refreshNooks();
     if (world_.revision() != fallRevision_) {
@@ -147,7 +155,7 @@ void App::updateLife(float dt) {
                     seasonOf(clock_.day(), cat_.seasonDays).day == 0;
     ev.now = simTime_;
     lastPhase_ = phase;
-    events_.update(ev, dt);
+    events_.update(ev);
     handleWorldEvents();
     const bool rain = raining(); // the view: rain reaching or leaving it is a happening
     if (rain != rainWas_) lively_.happening(simTime_);
@@ -195,7 +203,7 @@ void App::handleActorEvents() {
                 cat_.visitors[static_cast<std::size_t>(e.arg >= 0 ? e.arg : k.visitor)];
             lively_.happening(simTime_);
             if (!e.first) break;
-            hud_.toast(std::string(strings::kToastNewVisitor) + def.name);
+            cornerToast(std::string(strings::kToastNewVisitor) + def.name);
             play(kDiscoverSound);
             if (!k.voice.empty()) playAt(k.voice, tuning::kVoiceLevel, e.pos, true);
             markDirty();
@@ -323,7 +331,7 @@ void App::handleWorldEvents() {
             if (seasonPin_ >= 0) break;
             if (sound) play(d.sfx, tuning::kSfxLevel * d.gain);
             const SeasonDef& s = cat_.seasons[static_cast<std::size_t>(season())];
-            if (!speakText(s.line, SpeechWeight::Important)) hud_.toast(signedLine(s.line, -1));
+            if (!speakText(s.line, SpeechWeight::Important)) cornerToast(signedLine(s.line, -1));
             break;
         }
         case EventShow::Chorus:

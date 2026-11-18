@@ -72,6 +72,7 @@ struct Actor {
     float timer = 0;       // time left in the current step
     float call = 0;        // time to the next call animation; a wander's remaining time
     float animTime = 0;
+    float stride = 0; // tiles walked, swum or flown: moving animations advance by it
     float alpha = 0;
     float lift = 0;        // pixels above the ground (a seat, a perch, flight)
     float overlay = 0;     // pet or startle reaction time left
@@ -284,7 +285,7 @@ private:
     [[nodiscard]] int waterBody(const World& world, Vec2 p) const;
     void chooseRoutine(const ActorEnv& env, int i);
     [[nodiscard]] float hour(const ActorEnv& env) const;
-    bool interrupts(const ActorEnv& env, int i, float dt);
+    bool interrupts(const ActorEnv& env, int i);
     void beginInterrupt(int i, const Interrupt& in);
     void finishStep(const ActorEnv& env, int i);
     void travel(const ActorEnv& env, int i, float dt);

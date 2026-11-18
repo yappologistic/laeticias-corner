@@ -88,17 +88,22 @@ void Weather::update(float dt, int season, TileRect region) {
     wind_.speed = tuning::kCellMinSpeed + tuning::kCellWindSpeed * wind_.strength;
 
     const auto p = static_cast<std::int64_t>(time_ / tuning::kWeatherPeriod);
-    if (p != period_) {
+    if (p != period_ && !external_) {
         period_ = p;
         spawnPeriod(season, region);
     }
-    for (WeatherCell& c : cells_) {
+    std::vector<WeatherCell>& own = external_ ? local_ : cells_;
+    for (WeatherCell& c : own) {
         c.age += dt;
         if (c.age < 0) continue;
         const float v = std::max(tuning::kCellMinSpeed, wind_.speed * c.factor) * dt;
         c.centre = {c.centre.x + wind_.dir.x * v, c.centre.y + wind_.dir.y * v};
     }
-    std::erase_if(cells_, [](const WeatherCell& c) { return c.age >= c.life; });
+    std::erase_if(own, [](const WeatherCell& c) { return c.age >= c.life; });
+    if (external_) {
+        cells_ = field_;
+        cells_.insert(cells_.end(), local_.begin(), local_.end());
+    }
 
     if (gustFront_ >= 0) {
         gustFront_ += tuning::kGustSpeed * dt;
@@ -156,7 +161,8 @@ bool Weather::raining(Vec2 p) const {
 }
 
 void Weather::shower() {
-    if (cells_.size() >= tuning::kMaxWeatherCells) cells_.erase(cells_.begin());
+    std::vector<WeatherCell>& own = external_ ? local_ : cells_;
+    if (own.size() >= tuning::kMaxWeatherCells) own.erase(own.begin());
     const float w = static_cast<float>(region_.x1 - region_.x0);
     const float h = static_cast<float>(region_.y1 - region_.y0);
     const Vec2 mid{static_cast<float>(region_.x0) + w * 0.5f,
@@ -170,7 +176,8 @@ void Weather::shower() {
     c.life = 2 * start / std::max(tuning::kCellMinSpeed, wind_.speed);
     c.age = c.life * 0.2f;
     c.id = nextId_++;
-    cells_.push_back(c);
+    own.push_back(c);
+    if (external_) cells_.push_back(c);
 }
 
 void Weather::gust() {

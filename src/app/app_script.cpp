@@ -45,6 +45,26 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
             return std::nullopt;
         }
         if (p.widget.starts_with("menu:")) return menus_.widgetCentre(p.widget.substr(5));
+        if (loaded_ && p.widget.starts_with("map:")) {
+            const int region = loaded_->file.findRegion(p.widget.substr(4));
+            for (std::size_t i = 0; i < mapShown_.size(); ++i)
+                if (mapShown_[i] == region) return map_.markerAt(mapModel_, static_cast<int>(i));
+            return std::nullopt;
+        }
+        if (loaded_ && (p.widget.starts_with("grid:") || p.widget.starts_with("landmark:") ||
+                        p.widget.starts_with("figure:")))
+            return gridPoint(p.widget);
+        if (worldView_ && city_ && p.widget.starts_with("life:")) {
+            // The first living actor of that kind drawn now, at its body.
+            const int k = city_->life->data.findKind(p.widget.substr(5));
+            for (const life::DrawActor& d : worldView_->actorsDrawn())
+                if (static_cast<int>(d.kind) == k) {
+                    Vec2 w = gridToHome(d.pos);
+                    w.y -= tuning::kFigurePointLift;
+                    return camera_.worldToScreen(w, screen());
+                }
+            return std::nullopt;
+        }
         return hud_.widgetCentre(p.widget, ui_);
     }
     return std::nullopt;
@@ -112,6 +132,12 @@ void App::pushKey(std::string_view combo, bool down) {
     else if (!SDL_PushEvent(&e))
         SDL_Log("script: %s", SDL_GetError());
 }
+
+namespace {
+// Lamplight in a night shot: bright and warm (the night grade turns everything else blue-grey).
+constexpr Uint8 kLitRed = 150;
+constexpr int kLitWarmth = 40;
+} // namespace
 
 std::optional<std::string> App::check(const ScriptCommand& c) {
     const auto& a = c.args;
@@ -259,6 +285,59 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                                                   : std::optional(std::string("another line"));
     }
     if (what == "raining") return yesNo(raining());
+    if (loaded_ && a.size() >= 2) {
+        const worldview::PlaceTracker& pl = worldView_->places();
+        const auto regionId = [&](int r) {
+            return r < 0 ? std::string("none")
+                         : loaded_->file.regions[static_cast<std::size_t>(r)].id;
+        };
+        const auto words = [&] {
+            std::string w;
+            for (std::size_t i = 1; i < a.size(); ++i) w += (i > 1 ? " " : "") + a[i];
+            return w;
+        };
+        const auto contains = [&](std::string_view have) -> std::optional<std::string> {
+            if (have.find(words()) != std::string_view::npos) return std::nullopt;
+            return std::format("expected {} '{}' but found '{}'", what, words(), have);
+        };
+        if (what == "region") return equal(regionId(pl.region()), a[1]);
+        if (what == "place") return equal(regionId(pl.place()), a[1]);
+        if (what == "away") return yesNo(away());
+        if (what == "map") {
+            return yesNo(map_.isOpen());
+        }
+        if (what == "travelling") return yesNo(travel_.region >= 0);
+        if (what == "following") return yesNo(follow_.has_value());
+        if (what == "era" || what == "info" || what == "tip") {
+            const HudModel m = model();
+            const std::string_view have = what == "era"    ? m.caption
+                                          : what == "info" ? m.cardTitle
+                                                           : m.worldTip;
+            if (a[1] == "yes" || a[1] == "no") return yesNo(!have.empty());
+            return contains(have);
+        }
+        if (what == "figures" && a.size() == 2) {
+            const std::size_t want = std::stoul(a[1]);
+            return figures_.size() >= want
+                       ? std::nullopt
+                       : std::optional(mismatch(std::to_string(figures_.size())));
+        }
+        if ((what == "visited" || what == "journal" || what == "found") && a.size() == 3) {
+            const int r = loaded_->file.findRegion(a[1]);
+            if (r < 0) return std::format("no region {}", a[1]);
+            const auto& list = journal_[static_cast<std::size_t>(r)];
+            if (what == "visited") {
+                const bool v = visited_[static_cast<std::size_t>(r)] != 0;
+                return (a[2] == "yes") == v ? std::nullopt
+                                            : std::optional(mismatch(v ? "yes" : "no"));
+            }
+            const auto n =
+                what == "journal"
+                    ? list.size()
+                    : static_cast<std::size_t>(std::ranges::count_if(list, &JournalItem::found));
+            return equal(std::to_string(n), a[2]);
+        }
+    }
     if (what == "weather") {
         static constexpr std::string_view kModes[] = {"natural", "rain", "clear"};
         return equal(std::string(kModes[static_cast<std::size_t>(weather_.mode())]), a[1]);
@@ -466,6 +545,29 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
             n += it->path().extension() == ".png" ? 1 : 0;
         return equal(std::to_string(n), a[1]);
     }
+    if (what == "lit" && a.size() == 3) {
+        // The share of a region's pixels bright and warm enough to be lamplight (night shots).
+        const auto r = parseScriptRect(a[1]);
+        if (!r) return "bad rectangle " + a[1];
+        const SDL_Rect rect{r->x, r->y, r->w, r->h};
+        const SurfacePtr px{SDL_RenderReadPixels(renderer_.get(), &rect)};
+        if (!px) return std::string("cannot read pixels: ") + SDL_GetError();
+        int lit = 0;
+        for (int y = 0; y < px->h; ++y)
+            for (int x = 0; x < px->w; ++x) {
+                Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+                if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca))
+                    return std::string("cannot read pixels: ") + SDL_GetError();
+                lit += cr >= kLitRed && cr >= cb + kLitWarmth ? 1 : 0;
+            }
+        const double share = static_cast<double>(lit) / (static_cast<double>(px->w) * px->h);
+        std::printf("expect lit %s: %.5f\n", a[1].c_str(), share);
+        return share >= std::stod(a[2])
+                   ? std::nullopt
+                   : std::optional(std::format("expected a lit share of {} of at least {} but "
+                                               "found {:.5f}",
+                                               a[1], a[2], share));
+    }
     if (what == "luma" || what == "color") {
         const auto r = parseScriptRect(a[1]);
         if (!r) return "bad rectangle " + a[1];
@@ -629,6 +731,8 @@ bool App::scriptStep() {
                 // "+S" moves it on by S; a plain number sets it (never backwards).
                 const double v = std::stod(c.args[1]);
                 played_ = c.args[1].starts_with('+') ? played_ + v : std::max(played_, v);
+            } else if (c.args[0] == "session") {
+                simTime_ = std::stod(c.args[1]);
             } else if (c.args[0] == "season") {
                 seasonPin_ = c.args[1] == "auto" ? -1 : cat_.findSeason(c.args[1]).value_or(-2);
                 if (seasonPin_ < -1) return fail("unknown season " + c.args[1]);
@@ -664,6 +768,26 @@ bool App::scriptStep() {
                 if (c.args.size() != 4) return fail("set camera TX TY ZOOM");
                 camera_.place(cat_.iso().toWorld(std::stof(c.args[1]), std::stof(c.args[2])),
                               std::stof(c.args[3]), screen());
+            } else if (c.args[0] == "world") {
+                // set world TX TY ZOOM | PLACE ZOOM: look at a world grid tile or a named place
+                // (city life's foci: forum, agora, terrace, layer:node, district:<region>/<id>);
+                // themes and places snap.
+                if ((c.args.size() != 4 && c.args.size() != 3) || !loaded_)
+                    return fail("set world TX TY ZOOM | PLACE ZOOM");
+                Vec2 spot;
+                if (c.args.size() == 4) {
+                    spot = {std::stof(c.args[1]), std::stof(c.args[2])};
+                } else {
+                    const auto f =
+                        openCity() ? life::parseFocus(*city_->life, c.args[1]) : std::nullopt;
+                    if (!f) return fail("no place " + c.args[1]);
+                    spot = {static_cast<float>(f->x) + 0.5f, static_cast<float>(f->y) + 0.5f};
+                }
+                camera_.place(gridToHome(spot), std::stof(c.args.back()), screen());
+                camera_.beginStep();
+                view_ = camera_;
+                worldView_->jumped(
+                    {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
             } else if (c.args[0] == "look") {
                 // set look KIND ZOOM: the camera on the first actor of that kind.
                 if (c.args.size() != 3) return fail("set look KIND ZOOM");
@@ -675,15 +799,51 @@ bool App::scriptStep() {
                         found = true;
                         break;
                     }
+                // Or a named figure or a landmark out in the world (a jump: themes and places
+                // snap).
+                std::optional<Vec2> spot;
+                if (city_) {
+                    // A living actor of that kind (city life), wherever its day has it.
+                    const int k = city_->life->data.findKind(c.args[1]);
+                    city_->city->forEachInfo([&](const life::CityLife::Info& in) {
+                        if (!spot && in.kind == k && in.visible) spot = in.pos;
+                    });
+                }
+                for (const world::FigurePlace& f : figures_)
+                    if (!spot && f.actor == c.args[1]) spot = f.at;
+                if (loaded_ && !spot && c.args[1].starts_with("landmark:")) {
+                    const int info =
+                        loaded_->content->findItem(std::string_view(c.args[1]).substr(9));
+                    for (const world::Placed& it : loaded_->map->items())
+                        if (!spot && static_cast<int>(it.info) == info) {
+                            const TileRect r = it.rect();
+                            spot = Vec2{static_cast<float>(r.x0 + r.x1) * 0.5f,
+                                        static_cast<float>(r.y0 + r.y1) * 0.5f};
+                        }
+                }
+                if (!found && spot) {
+                    camera_.place(gridToHome(*spot), std::stof(c.args[2]), screen());
+                    camera_.beginStep();
+                    view_ = camera_;
+                    worldView_->jumped({camera_.position().x + homeOffset_.x,
+                                        camera_.position().y + homeOffset_.y});
+                    found = true;
+                }
                 if (!found) return fail("no " + c.args[1] + " to look at");
             } else if (c.args[0] == "city") {
                 if (c.args[1] == "off") {
-                    city_.reset();
+                    cityOff_ = true;
+                    cityFocus_.reset();
+                } else if (c.args[1] == "camera") {
+                    cityOff_ = false;
+                    cityFocus_.reset();
                 } else {
                     if (!openCity()) return fail("city life: no world");
                     const auto f = life::parseFocus(*city_->life, c.args[1]);
                     if (!f) return fail("city life: unknown place " + c.args[1]);
-                    city_->city->setFocus(*f);
+                    cityOff_ = false;
+                    cityFocus_ = *f;
+                    city_->city->setView(cityView());
                     city_->city->settle(cityClock());
                 }
             } else if (c.args[0] == "city_dump") {

@@ -112,8 +112,33 @@ public:
         reduceMotion_ = on;
         thin_ = on ? tuning::kReduceMotionParticles : 1.0f;
     }
+    // The floating island (cliffs, waterfalls and sky around the land), or land that meets the
+    // world around it (no rims: the world renderer draws what lies beyond).
+    void setFloating(bool on);
+    [[nodiscard]] bool floating() const { return floating_; }
     // Renders the frame's layers and composites them onto `out` (the window when null).
     void draw(const FrameParams& p, SDL_Texture* out = nullptr);
+
+    // Inside the world's frame (world mode): the scene draws into the world renderer's target
+    // with its transform, moved from world px to this map's px by `offset` (world = map + offset),
+    // one phase at each of the renderer's turns. embedBegin first, every frame.
+    struct Embed {
+        SDL_Texture* target = nullptr;
+        Xform xf; // world px -> target px
+        int w = 0;
+        int h = 0;
+        Vec2 offset;
+    };
+    void embedBegin(const FrameParams& p, const Embed& e);
+    // The ground, the shadow layer, markers, things on the ground and swimmers.
+    void embedGround(const FrameParams& p);
+    // Items, actors and ghosts in depth order, and the particles over them.
+    void embedObjects(const FrameParams& p);
+    // Multiplies the target by the light map: `ambient` with the light pools of lamps and fire.
+    void embedLight(const FrameParams& p, Rgb ambient);
+    void embedGlow(const FrameParams& p);
+    // The rainbow and shooting stars over the composited view (window px).
+    void embedSky(const FrameParams& p);
     // Composites the layers rendered by the last draw() onto the current render target, scaled
     // by `scale`; `smooth` filters the world linearly (for blurred copies).
     void composite(const FrameParams& p, Vec2 scale, bool smooth);
@@ -125,6 +150,8 @@ public:
     [[nodiscard]] float cliffDepth() const { return tables_.groundReach.bottom; }
     [[nodiscard]] int drawCalls() const { return batch_.drawCalls(); }
     [[nodiscard]] const SpriteTables& sprites() const { return tables_; }
+    // How far item sprites reach from their anchors, world px.
+    [[nodiscard]] const Reach& itemReach() const { return itemReach_; }
     [[nodiscard]] const Atlas& atlas() const { return atlas_; }
     [[nodiscard]] SceneStats stats() const;
 
@@ -174,8 +201,10 @@ private:
     };
 
     void rebuild(const World& world, TileRect region);
+    // Shared by draw() and embedBegin(): the region around the view and this frame's state.
+    void beginFrame(const FrameParams& p);
     [[nodiscard]] const FrameSet& baseFrames(const Item& item, int slot) const;
-    void ensureTargets(int w, int h);
+    void ensureTargets(int w, int h, bool own);
     [[nodiscard]] int slotFor(const World& world, const Item& item) const;
     [[nodiscard]] FRect spriteRect(const Item& item, int slot) const;
     [[nodiscard]] FRect actorRect(const Actor& a) const;
@@ -200,7 +229,7 @@ private:
     // Tiles of a nook's area (around its anchor, not under it), in the given colour.
     void drawArea(const World& world, const NearInstance& area, SDL_FColor color);
     void drawParticles(bool ground);
-    void drawLighting(const FrameParams& p);
+    void drawLighting(const FrameParams& p, Rgb ambient);
     void drawGlow(const FrameParams& p);
     void fullQuad(SDL_Texture* texture, SDL_BlendMode mode, SDL_FColor color);
     [[nodiscard]] SDL_FColor exposed(SpriteId id, SDL_FColor c) const;
@@ -216,6 +245,8 @@ private:
     Target light_;
     Target glow_;
     Target shadow_;
+    SDL_Texture* into_ = nullptr; // the target this frame draws into (world_ or the world's)
+    bool floating_ = true;
     TexturePtr white_; // one white texel, for flat multiplies
     int targetW_ = 0;
     int targetH_ = 0;
