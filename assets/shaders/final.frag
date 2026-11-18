@@ -25,6 +25,7 @@ layout(std140, set = 3, binding = 0) uniform U {
     vec4 night;  // the low light's tint (luma 1); how far night shifts toward it
     vec4 key;    // the hour's key (mean luma aimed at); least, most exposure; daylight 0..1
     vec4 pool;   // the pools' scale (stored with headroom); the lamps' colour
+    vec4 guard;  // most a pixel's saturation may grow by day (times the art's); unused
 };
 
 const mat4 kBayer = mat4(0.0, 12.0, 3.0, 15.0, 8.0, 4.0, 11.0, 7.0, 2.0, 14.0, 1.0, 13.0, 10.0,
@@ -70,6 +71,16 @@ void main() {
     float adapt = clamp(key.x / max(mean, 1e-3), key.y, key.z);
     float pivot = mix(0.5, clamp(mean * adapt, 0.3, 0.62), key.w);
     vec3 c = grade(albedo, adapt, pivot);
+    // Richer, never garish: by day no pixel's saturation grows past a share over the art's own.
+    float hiIn = max(albedo.r, max(albedo.g, albedo.b));
+    float satIn = hiIn > 0.0 ? (hiIn - min(albedo.r, min(albedo.g, albedo.b))) / hiIn : 0.0;
+    float hiOut = max(c.r, max(c.g, c.b));
+    float satOut = hiOut > 0.0 ? (hiOut - min(c.r, min(c.g, c.b))) / hiOut : 0.0;
+    float cap = min(satIn * guard.x + 0.02, 1.0);
+    if (satOut > cap) {
+        float l = luma(c);
+        c = mix(c, l + (c - l) * cap / satOut, key.w);
+    }
     // Lamp light in a few bands with a dithered edge, the cell anchored to world art pixels so
     // nothing crawls while the camera pans.
     vec4 g = texture(u_glow, uv);
