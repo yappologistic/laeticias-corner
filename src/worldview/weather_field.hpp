@@ -59,32 +59,11 @@ public:
     [[nodiscard]] std::span<const WeatherTrail> trails() const { return trails_; }
 
 private:
-    // What a block decides for a period: the cells that start over it, as they are born.
-    struct Seed {
-        Vec2 at; // tiles: where it starts
-        double born = 0;
-        float radius = 0;
-        float life = 0;
-        float factor = 1;
-        float wind = 1; // its region's climate
-        std::uint32_t id = 0;
-        bool rain = false;
-    };
-    // What the seeds kept were worked out for.
-    struct SeedKey {
-        int bx0 = 0, by0 = 0, bx1 = -1, by1 = -1;
-        std::int64_t period = -1;
-        float showers = -1;
-        float clouds = -1;
-        friend bool operator==(const SeedKey&, const SeedKey&) = default;
-    };
-    void blockSeeds(int bx, int by, std::int64_t period, SeasonClimate season);
+    void blockCells(int bx, int by, std::int64_t period, const Wind& wind, SeasonClimate season);
 
     const world::LoadedWorld& world_;
     std::uint64_t seed_;
     std::vector<Climate> climates_; // per region
-    std::vector<Seed> seeds_;       // by period, then block, in the order they are asked
-    SeedKey seedKey_;
     std::vector<WeatherCell> cells_;
     std::vector<Vec2> drift_; // per cell: tiles per second it travels
     std::vector<WeatherTrail> trails_;
