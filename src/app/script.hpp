@@ -95,6 +95,8 @@
 //       figures N (named figures standing in the world, at least) | tip WORDS... (the world tip)
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
+//       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,
+//                               warm: the night's lit windows, lamps and fires)
 //       actor KIND ANIM|moving|inside|hat|any [ITEM]  one actor of that kind (a visitor id or
 //                               the resident's) is doing that now, at that item's slot if given
 //       bubble yes|no (the resident is speaking) | bubble CONTEXT (a line of that context) |

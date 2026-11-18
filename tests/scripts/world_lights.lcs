@@ -1,0 +1,19 @@
+# At night the city's lights stay lit at every zoom: lit windows, lamps and fires are drawn over
+# the half- and quarter-scale impostors too (they used to go out below 1x).
+set clock night
+set look landmark:rome.forum_square 1
+wait 40
+expect lit 0,0,1280,800 0.00003
+key minus
+wait 50
+expect zoom 0.5
+expect lit 0,0,1280,800 0.0005
+key minus
+wait 50
+expect zoom 0.25
+expect lit 0,0,1280,800 0.0005
+shot shots/world_lights_quarter.png
+set clock dusk
+wait 40
+expect lit 0,0,1280,800 0.0002
+quit

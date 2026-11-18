@@ -215,8 +215,18 @@ private:
     PlaceTracker places_;
     bool themed_ = false;
     int season_ = -1;
-    int sea_ = -1;                        // the terrain beyond the grid (the deep sea), -1: none
-    FRect lastView_;                      // world px the last frame showed
+    int sea_ = -1;   // the terrain beyond the grid (the deep sea), -1: none
+    FRect lastView_; // world px the last frame showed
+    // What glows, by map chunk (CSR), for the coarser levels: their impostors hold no glow, so
+    // lit windows, lamps and fires are drawn live over them (the native level draws its own).
+    struct GlowSource {
+        const SpriteRef* sprite = nullptr;
+        Vec2 anchor; // world px, raised by the level
+    };
+    std::vector<GlowSource> glow_;
+    std::vector<std::uint32_t> glowStart_; // per chunk, then one past the end
+    void buildGlow();
+    void drawCoarseGlow(const FRect& view, const Xform& x, float strength);
     std::vector<FigureLook> figures_;     // resolved once, before the gatherer's worker starts
     std::vector<std::uint32_t> figureOf_; // figures_ entry -> index into the figures given
     int figuresMissing_ = 0;

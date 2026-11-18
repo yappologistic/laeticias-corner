@@ -106,6 +106,7 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
         figureOf_.push_back(static_cast<std::uint32_t>(f));
     }
     prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
+    buildGlow();
     if (async) warmUp();
     for (std::size_t t = 0; t < map_.terrainCount(); ++t) {
         const world::TerrainInfo& info = map_.terrainInfo(static_cast<int>(t));
@@ -720,6 +721,47 @@ std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
     return std::nullopt;
 }
 
+void WorldView::buildGlow() {
+    const auto chunks = static_cast<std::size_t>(map_.chunksX() * map_.chunksY());
+    std::vector<std::uint32_t> count(chunks + 1, 0);
+    const auto chunkOf = [&](const world::Placed& it) {
+        return static_cast<std::size_t>((it.y >> kChunkShift) * map_.chunksX() +
+                                        (it.x >> kChunkShift));
+    };
+    const auto glows = [&](const world::Placed& it) {
+        return !hole_.tiles.contains(TilePos{it.x, it.y}) && sprites_->item(it).glow.has_value();
+    };
+    for (const world::Placed& it : map_.items())
+        if (glows(it)) ++count[chunkOf(it) + 1];
+    for (std::size_t c = 0; c < chunks; ++c) count[c + 1] += count[c];
+    glowStart_ = count;
+    glow_.resize(count[chunks]);
+    for (const world::Placed& it : map_.items()) {
+        if (!glows(it)) continue;
+        const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
+        glow_[count[chunkOf(it)]++] = {&*sprites_->item(it).glow,
+                                       {w.x, w.y - static_cast<float>(it.level * lvl_)}};
+    }
+}
+
+void WorldView::drawCoarseGlow(const FRect& view, const Xform& x, float strength) {
+    const SDL_FColor g{strength, strength, strength, 1};
+    const TileRect tiles = gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds());
+    if (tiles.empty()) return;
+    for (int cy = tiles.y0 >> kChunkShift; cy <= (tiles.y1 - 1) >> kChunkShift; ++cy)
+        for (int cx = tiles.x0 >> kChunkShift; cx <= (tiles.x1 - 1) >> kChunkShift; ++cx) {
+            const auto c = static_cast<std::size_t>(cy * map_.chunksX() + cx);
+            for (std::uint32_t i = glowStart_[c]; i < glowStart_[c + 1]; ++i) {
+                const GlowSource& s = glow_[i];
+                const SpriteRef& r = *s.sprite;
+                const FRect box{s.anchor.x - r.ox, s.anchor.y - r.oy, s.anchor.x - r.ox + r.w,
+                                s.anchor.y - r.oy + r.h};
+                if (box.overlaps(view)) (void)put(r, s.anchor, x, g, SDL_BLENDMODE_ADD);
+            }
+        }
+    batch_.flush();
+}
+
 std::size_t WorldView::textureBudget() const {
     return pages_->stats().budget + cells_.budget() + targetBytes() +
            (overview_ ? overview_->bytes() : 0);
@@ -916,6 +958,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         hooks.light(frame);
     else
         fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
+    if (lod != Lod::Native && light.glow > 0.01f)
+        drawCoarseGlow(view, xf,
+                       light.glow * (lod == Lod::Overview ? tuning::kOverviewGlow : 1.0f));
     if (lod == Lod::Native && light.glow > 0.01f) {
         const SDL_FColor g{light.glow, light.glow, light.glow, 1};
         for (const std::uint32_t i : region_.order) {

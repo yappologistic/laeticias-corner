@@ -120,6 +120,12 @@ void App::pushKey(std::string_view combo, bool down) {
         SDL_Log("script: %s", SDL_GetError());
 }
 
+namespace {
+// Lamplight in a night shot: bright and warm (the night grade turns everything else blue-grey).
+constexpr Uint8 kLitRed = 150;
+constexpr int kLitWarmth = 40;
+} // namespace
+
 std::optional<std::string> App::check(const ScriptCommand& c) {
     const auto& a = c.args;
     const std::string& what = a[0];
@@ -523,6 +529,29 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
              !ec && it != fs::directory_iterator(); ++it)
             n += it->path().extension() == ".png" ? 1 : 0;
         return equal(std::to_string(n), a[1]);
+    }
+    if (what == "lit" && a.size() == 3) {
+        // The share of a region's pixels bright and warm enough to be lamplight (night shots).
+        const auto r = parseScriptRect(a[1]);
+        if (!r) return "bad rectangle " + a[1];
+        const SDL_Rect rect{r->x, r->y, r->w, r->h};
+        const SurfacePtr px{SDL_RenderReadPixels(renderer_.get(), &rect)};
+        if (!px) return std::string("cannot read pixels: ") + SDL_GetError();
+        int lit = 0;
+        for (int y = 0; y < px->h; ++y)
+            for (int x = 0; x < px->w; ++x) {
+                Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+                if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca))
+                    return std::string("cannot read pixels: ") + SDL_GetError();
+                lit += cr >= kLitRed && cr >= cb + kLitWarmth ? 1 : 0;
+            }
+        const double share = static_cast<double>(lit) / (static_cast<double>(px->w) * px->h);
+        std::printf("expect lit %s: %.5f\n", a[1].c_str(), share);
+        return share >= std::stod(a[2])
+                   ? std::nullopt
+                   : std::optional(std::format("expected a lit share of {} of at least {} but "
+                                               "found {:.5f}",
+                                               a[1], a[2], share));
     }
     if (what == "luma" || what == "color") {
         const auto r = parseScriptRect(a[1]);

@@ -51,9 +51,10 @@ inline constexpr float kThemeSeconds = 1.0f;
 inline constexpr float kCaptionHysteresis = 0.1f;
 inline constexpr float kCaptionSeconds = 3.0f;
 inline constexpr float kCaptionFade = 0.5f;
-inline constexpr float kPlaceDwell = 0.4f; // the region under the view counts after this long
-inline constexpr float kVisitGap = 20.0f;  // away from a place this long: coming back is a visit
-inline constexpr float kHazeShare = 0.5f;  // how much of a region's haze strength tints the view
+inline constexpr float kPlaceDwell = 0.4f;   // the region under the view counts after this long
+inline constexpr float kVisitGap = 20.0f;    // away from a place this long: coming back is a visit
+inline constexpr float kOverviewGlow = 0.6f; // lights at the overview: fewer pixels, softer
+inline constexpr float kHazeShare = 0.5f;    // how much of a region's haze strength tints the view
 
 // The soundscape (world-tech §4.6, §4.12). Levels are mixer gains before the player's buses.
 inline constexpr float kBedLevel = 0.5f;      // a region's bed at its full weight
