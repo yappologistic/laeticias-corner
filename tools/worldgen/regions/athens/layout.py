@@ -356,7 +356,7 @@ def _meet_edges(L: Layout, lv: np.ndarray) -> None:
 # =============================================================================================
 
 def _ground(L: Layout, lv, rock, ashlar, cc, rr, noise) -> None:
-    L.fill(GRASS, level=0, district="attica")
+    L.fill(GRASS, level=0, district="countryside")
     lo, hi = int(lv.min()), int(lv.max())
     for k in range(lo, hi + 1):
         if k == 0:
@@ -442,6 +442,7 @@ def _ways(L: Layout, lv) -> dict:
     st("agora", [(22, 29), (53, 29)], 1, GRAVEL)
     st("agora", [(26, 56), (51, 56)], 1, GRAVEL)
     st("kolonos", [(21, 36), (24, 36)], 2, GRAVEL)
+    st("kolonos", [(15, 36), (15, 40), (9, 40), (9, 47), (19, 47)], 1, EARTH)  # round the temple
     # The Peripatos along the north ledge, from the cave shrines to the east stair.
     st("peripatos", _ledge_path(L, lv), 1, ROCK)
     # Piraeus: Hippodamos' grid north of the harbours, the isthmus street between Kantharos
@@ -611,7 +612,6 @@ def _districts(L: Layout) -> np.ndarray:
     """Every tile gets a district (the actor system's populations follow them); later calls win.
     Returns the mask of tiles inside the city wall."""
     inside = _m(Poly(CITY_WALL[0][:-1] + [(3, 13), (7, 12)]))
-    L.district("countryside", Rect(0, 0, N - 1, N - 1))
     L.district("north_fields", Rect(15, 0, 135, 5))
     L.district("cemetery", Rect(0, 0, 14, 13) | Rect(0, 14, 1, 20) | Rect(15, 0, 34, 5))
     L.district("long_walls", Poly([(0, 107), (17, 107), (13, 130), (0, 130)]))
@@ -767,19 +767,19 @@ def _quarters(L: Layout, W, inside, noise) -> None:
     quarters = [
         # name, area, kit for the frontage, kit for the fill, gap, lane spacing
         ("melite", Rect(4, 59, 47, 106) - PLOT - Rect(4, 70, 31, 104),
-         {A + "g_house": 3, A + "g_house_two": 1.5}, {A + "g_house_small": 3, A + "g_workshop": 0.4},
+         {A + "g_house": 3, A + "g_house_two": 1.5}, {A + "g_house_small": 3},
          0.1, (5, 8)),
         ("koile", Rect(30, 100, 62, 137), {A + "g_house": 2, A + "g_house_two": 1},
          {A + "g_house_small": 3}, 0.2, (6, 9)),
         ("kydathenaion_w", Rect(47, 22, 95, 66), {A + "g_house": 3, A + "g_house_two": 2},
-         {A + "g_house_small": 3, A + "g_workshop": 0.3}, 0.1, (5, 8)),
+         {A + "g_house_small": 3}, 0.1, (5, 8)),
         ("kydathenaion_e", Rect(96, 22, 134, 66), {A + "g_house": 3, A + "g_house_two": 1},
          {A + "g_house_small": 3}, 0.15, (6, 9)),
         ("skambonidai", Rect(32, 8, 144, 21), {A + "g_house": 2, A + "g_house_two": 0.5},
          {A + "g_house_small": 2}, 0.3, (7, 11)),
         ("east", Rect(135, 22, 144, 110), {A + "g_house": 2}, {A + "g_house_small": 2}, 0.35, (7, 11)),
         ("kollytos", Rect(56, 108, 126, 136) - Rect(100, 102, 133, 126),
-         {A + "g_house": 3, A + "g_house_two": 1.5}, {A + "g_house_small": 3, A + "g_workshop": 0.2},
+         {A + "g_house": 3, A + "g_house_two": 1.5}, {A + "g_house_small": 3},
          0.12, (5, 8)),
     ]
     for name, area, front_kit, fill_kit, gap, every in quarters:
@@ -831,6 +831,39 @@ def _fountain(L: Layout) -> None:
     put(L, A + "g_shrine", (86, 48), face="east")
     put(L, A + "t_plane", (92, 48))
     put(L, A + "t_plane", (86, 52))
+
+
+def _beside_street(L: Layout, area: np.ndarray, items: dict, density: float, seed: str) -> None:
+    """Workshop kit that opens on a way (potters' yards, kilns, wheels, forges): tried on free
+    tiles in hash order, each turned to face the street it stands by, and kept only where every
+    work spot off its own footprint is a street tile, so nothing ends up boxed in a backyard."""
+    names = list(items)
+    total = sum(items.values())
+    js, is_ = np.nonzero(area & (L.OCC < 0) & ~L.STREET)
+    cand = sorted(zip(is_.tolist(), js.tolist()), key=lambda t: rng.hash64("athens", seed, *t))
+    for c, r in cand:
+        h = rng.hash64("athens", seed, "pick", c, r)
+        if (h % 1000) / 1000 >= density:
+            continue
+        u = ((h >> 12) % 1000) / 1000 * total
+        item = names[-1]
+        for n in names:
+            u -= items[n]
+            if u < 0:
+                item = n
+                break
+        for dc, dr in ((-1, 0), (0, -1), (1, 0), (0, 1)):
+            if not (0 <= c + dc < N and 0 <= r + dr < N and L.STREET[r + dr, c + dc]):
+                continue
+            p = put(L, item, (c, r), face=_facing(-dc, -dr))
+            if p is None:
+                continue
+            own = set(p.tiles())
+            spots = [(sc, sr) for lst in p.slots.values() for sc, sr, _f in lst
+                     if (sc, sr) not in own]
+            if all(L._local(sc, sr) is not None and L.STREET[L._local(sc, sr)] for sc, sr in spots):
+                break
+            L.remove(p)
 
 
 def _facing(dc, dr) -> str:
@@ -937,10 +970,11 @@ def _kerameikos(L: Layout, noise) -> None:
     am = _m(inner) & (L.LV == 0) & (L.OCC < 0)
     main = [s for s in L.streets if s.paving in (GRAVEL,)]
     lanes = _lanes(L, am, _starts(L, main, (4, 7), "kerameikos"), "kerameikos", run=(3, 6))
-    L.houses(Mask(0, 0, am), {A + "g_workshop": 3, A + "g_house_small": 1.5, A + "g_house": 1},
+    _beside_street(L, am, {A + "g_workshop": 3, A + "g_kiln": 4, A + "g_wheel": 1.5,
+                           A + "g_pots": 1.5}, 0.5, "potters")
+    L.houses(Mask(0, 0, am), {A + "g_house_small": 2, A + "g_house": 1, A + "g_house_two": 1},
              front=main + lanes, gap=0.15, seed="kerameikos")
-    L.scatter(Mask(0, 0, am), {A + "g_kiln": 3, A + "g_pots": 4, A + "g_wheel": 2}, 0.09,
-              min_gap=1, seed="kilns")
+    L.scatter(Mask(0, 0, am), {A + "g_pots": 3}, 0.04, seed="kilns")
     # The cemetery: graves face the roads.
     cem = Rect(0, 0, 14, 13) | Rect(15, 0, 34, 5)
     cemm = _m(cem)
@@ -977,9 +1011,8 @@ def _piraeus(L: Layout, noise) -> None:
     for c in range(24, 29, 2):
         for r in (135, 136):
             put(L, A + "g_stall", (c, r), variant=(c + r) % 6)
-    for at in ((31, 134), (33, 134), (31, 136)):
-        put(L, A + "g_forge", at, face="west")
-    put(L, A + "g_workshop", (33, 136), face="west")
+    _beside_street(L, _m(Rect(30, 134, 35, 137)), {A + "g_forge": 2, A + "g_workshop": 1}, 0.9,
+                   "kephalos")
     L.houses(Mask(0, 0, grid), {A + "g_house": 2, A + "g_house_two": 2}, front=streets, gap=0.08,
              seed="piraeus")
     L.houses(Mask(0, 0, grid), {A + "g_house_small": 3}, front=streets, gap=0.1,
@@ -1148,8 +1181,8 @@ def _country(L: Layout, inside, noise) -> None:
     L.scatter(KOLONOS, {A + "t_olive": 2, A + "t_cypress": 1, A + "t_myrtle": 1,
                         A + "t_laurel": 1, A + "p_thyme": 2, A + "p_acanthus": 1}, 0.2,
               seed="kolonos_green", clump=0.5)
-    for at in ((16, 50), (8, 40), (9, 51)):
-        put(L, A + "g_forge", at)                                         # bronze casters by the temple
+    _beside_street(L, _m(KOLONOS) & (L.LV == 2), {A + "g_forge": 2, A + "g_pots": 1}, 0.25,
+                   "bronze")                                              # casters by the temple
     # Dry grass with asphodel everywhere else that is still bare outside the walls.
     L.scatter(Mask(0, 0, out), {A + "p_asphodel": 2, A + "p_thyme": 1, A + "t_olive": 0.3},
               0.05, seed="dry_country")
