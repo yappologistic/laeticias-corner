@@ -291,10 +291,11 @@ def crossings(L: Layout, inside: np.ndarray | None = None, gap: int = 6) -> list
 
 
 def night_posts(L: Layout, item: str, anchors, *, ring: int = 2, gap: int = 5,
-                cap: int = 36) -> list:
+                cap: int = 36, kin: tuple[str, ...] = ()) -> list:
     """Light-giving detail (a lamp in a niche, a brazier, a wall torch) beside each anchor tile
     (local), where a light is wanted after dark: on a free tile within `ring`, never within `gap`
-    of another light of its kind, and never filling a chunk past `cap` glowing items (V10)."""
+    of another light of its kind (the item or any of `kin`), and never filling a chunk past `cap`
+    glowing items (V10)."""
     from .validate import MAX_GLOW_CHUNK
     cap = min(cap, MAX_GLOW_CHUNK - 2)
     glow: dict = {}
@@ -304,7 +305,7 @@ def night_posts(L: Layout, item: str, anchors, *, ring: int = 2, gap: int = 5,
             continue
         k = (p.r // 32, (COLS - 1 - (p.c + p.pw - 1)) // 32)
         glow[k] = glow.get(k, 0) + 1
-        if p.id == item:
+        if p.id == item or p.id in kin:
             mine.append((p.c - L.origin[0], p.r - L.origin[1]))
     keep = set()        # door steps and slot spots stay free (clear_doors would drop the house)
     for p in L.items:
@@ -313,6 +314,18 @@ def night_posts(L: Layout, item: str, anchors, *, ring: int = 2, gap: int = 5,
         if p.door is not None:
             keep.add(p.door)
         keep |= {(c, r) for lst in p.slots.values() for c, r, _f in lst}
+    keep |= {(c + dc, r + dr) for c, r in list(keep) for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))}
+    w, h = L.size
+
+    def open_(c, r):
+        return 0 <= c < w and 0 <= r < h and L.OCC[r, c] < 0 and L.T[r, c] >= 0 and \
+            not L.cat.is_water(L.terrains[L.T[r, c]])
+
+    def corridor(c, r):
+        """A tile walkers may need to pass: open on two opposite sides only, or a dead end."""
+        n, s_, e, w_ = open_(c, r - 1), open_(c, r + 1), open_(c + 1, r), open_(c - 1, r)
+        return (n and s_ and not e and not w_) or (e and w_ and not n and not s_) or \
+            (n + s_ + e + w_) <= 1
     placed = []
     for ac, ar in anchors:
         if any(max(abs(ac - a), abs(ar - b)) < gap for a, b in mine):
@@ -325,7 +338,8 @@ def night_posts(L: Layout, item: str, anchors, *, ring: int = 2, gap: int = 5,
             at = (ac + dc, ar + dr)
             wc, wr = at[0] + L.origin[0], at[1] + L.origin[1]
             k = (wr // 32, (COLS - 1 - wc) // 32)
-            if glow.get(k, 0) >= cap or (wc, wr) in keep or not L.fits(item, at):
+            if glow.get(k, 0) >= cap or (wc, wr) in keep or not L.fits(item, at) or \
+                    corridor(*at):
                 continue
             p = L.place(item, at=at)
             if p is not None:

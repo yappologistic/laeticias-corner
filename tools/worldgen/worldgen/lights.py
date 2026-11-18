@@ -165,7 +165,7 @@ RULES: list[tuple[str, list[list[tuple]]]] = [
     # --- Rome ---------------------------------------------------------------------------------
     (r"^rome\.r_insula(_corner|_low)?$", [[("window_evening", 0.36), ("window_late", 0.12),
                                             ("window_predawn", 0.08)]]),
-    (r"^rome\.r_domus$", [HOUSE, [("door_lamp", 0.3)]]),
+    (r"^rome\.r_domus$", [HOUSE, [("door_lamp", 0.45)]]),
     (r"^rome\.r_taberna$", [[("shop_lamp", 0.45)]]),
     (r"^rome\.r_thermopolium$", [[("tavern_lamp", 0.8)]]),
     (r"^rome\.r_bakery$", [[("oven_predawn", 1.0)]]),

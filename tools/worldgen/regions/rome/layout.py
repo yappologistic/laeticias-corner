@@ -18,7 +18,8 @@ import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.finish import clear_doors, fit_faces, free, glow_cap, orth, put, seam, stairstep
+from worldgen.finish import (clear_doors, crossings, fit_faces, free, glow_cap, night_posts, orth,
+                             put, seam, stairstep)
 from worldgen.shapes import Ellipse, Line, Mask, Rect
 
 _spec = importlib.util.spec_from_file_location("worldgen_region_rome_common",
@@ -158,6 +159,7 @@ def build(L: Layout) -> None:
         L.paint(Mask(0, 0, area & (L.OCC < 0) & ~L.STREET & (L.T == L.terrains.index(GRASS))),
                 ground)
     URBAN.clear()
+    _night(L)
     glow_cap(L, {R + "r_insula_low": 0, R + "r_insula": 1, R + "r_insula_corner": 2,
                  R + "r_domus": 3, R + "r_taberna": 4, R + "r_thermopolium": 5,
                  R + "r_bath_small": 6, R + "r_lamp": 7, R + "r_compitum": 8, R + "r_brazier": 9})
@@ -975,6 +977,41 @@ NODES = {
     "aventine": (100, 126), "emporium": (66, 139), "horrea_galbana": (75, 157),
     "testaccio": (85, 150), "vicus_tuscus": (95, 92), "velabrum": (89, 80),
 }
+
+
+# Lit nights (W1): Rome had no street lighting. Light came from the lamps at the crossroads
+# shrines of the Lares, the counters of popinae and thermopolia open late, insula windows, the
+# Vestals' fire, torches at the Palatine's and the camp's gates, the bridges' ends, and the
+# wharves where the night gangs unloaded what the carts could bring in only after dark.
+NIGHT_BRAZIERS = ("porta_capena", "castra", "palatine_court", "palatine_west", "emporium",
+                  "horrea_galbana", "ludus", "capitolium", "arx", "venus_roma_site")
+NIGHT_LAMPS = ("subura", "subura_baker", "carinae", "velabrum", "vicus_tuscus", "forum_holitorium",
+               "octavia", "marcellus", "via_sacra_velia", "arch_titus", "meta_sudans",
+               "trajan_forum", "markets", "basilica_julia", "esquiline", "oppian", "caelian",
+               "aventine", "quirinal", "transtiberim", "synagogue", "campus_south", "saepta",
+               "agrippa_baths", "forum_boarium", "ara_maxima", "tiber_island_east", "player_domus", "testaccio",
+               "clivus_foot", "colossus")
+OPEN_COUNTRY = {"campagna", "janiculum", "vatican", "castra", "appia", "river", "decorate", "markets"}
+BRIDGES = ("pons_fabricius", "pons_cestius", "pons_aemilius", "pons_sublicius")
+
+
+def _night(L: Layout) -> None:
+    ends = []
+    for lid in BRIDGES:
+        c0, r0, c1, r1 = LM[lid]
+        if c1 - c0 >= r1 - r0:
+            ends += [(c0 - 1, (r0 + r1) // 2), (c1 + 1, (r0 + r1) // 2)]
+        else:
+            ends += [((c0 + c1) // 2, r0 - 1), ((c0 + c1) // 2, r1 + 1)]
+    night_posts(L, R + "r_brazier", [NODES[n] for n in NIGHT_BRAZIERS], ring=3, gap=6)
+    night_posts(L, R + "r_lamp", ends, ring=2, gap=3)
+    night_posts(L, R + "r_lamp", [(62, r) for r in range(112, 160, 6)], ring=2, gap=4)  # wharf
+    night_posts(L, R + "r_lamp", [NODES[n] for n in NIGHT_LAMPS], ring=3, gap=5,
+                kin=(R + "r_compitum",))
+    town = np.isin(L.DIST, [i for i, d in enumerate(L.districts)
+                            if d.split("/")[-1] not in OPEN_COUNTRY])
+    night_posts(L, R + "r_lamp", crossings(L, town, gap=8), ring=2, gap=7,
+                kin=(R + "r_compitum",))
 
 
 def _nodes(L: Layout) -> None:

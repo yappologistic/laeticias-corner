@@ -24,7 +24,8 @@ import numpy as np
 
 from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.finish import clear_doors, fit_faces, free, glow_cap, landings, put, seam
+from worldgen.finish import (clear_doors, crossings, fit_faces, free, glow_cap, landings,
+                             night_posts, put, seam)
 from worldgen.shapes import Line, Mask, Poly, Rect
 
 _spec = importlib.util.spec_from_file_location(
@@ -106,6 +107,7 @@ def build(L: Layout) -> None:
         L.paint(Mask(0, 0, area & (L.OCC < 0) & ~L.STREET & (L.T == L.terrains.index(GRASS))),
                 ground)
     URBAN.clear()
+    _night(L)
     glow_cap(L, {R + "r_insula_low": 0, R + "r_insula": 1, R + "r_taberna": 2,
                  R + "r_thermopolium": 3, R + "r_compitum": 4, R + "r_bakery": 5})
     seam(L, GRASS, R + "packed_earth")
@@ -298,6 +300,22 @@ NODES = {
     "decumanus": (60, 38),
     "salt_pans": (56, 46), "ostiensis_tombs": (63, 5),
 }
+
+
+def _night(L: Layout) -> None:
+    """Lit nights (W1): the lighthouse, braziers where the customs men and the granaries' guards
+    kept watch, lamps along the moles and round Trajan's basin where ships lay overnight, the
+    Porta Romana's torches, and in the town the counters, shrines and crossings."""
+    night_posts(L, R + "r_brazier", [NODES[n] for n in ("portus", "hexagon_quay", "portus_mole",
+                                                        "porta_romana", "river_quay")], ring=3, gap=6)
+    quays = [(c, 10) for c in range(3, 12, 4)] + [(c, 20) for c in range(18, 37, 6)] + \
+        [(37, r) for r in range(3, 20, 6)] + [(c, 1) for c in range(19, 37, 6)]
+    night_posts(L, R + "r_lamp", quays, ring=1, gap=4)
+    night_posts(L, R + "r_lamp", [NODES[n] for n in ("ostia_forum", "ostia_theatre", "ostia_guilds",
+                                                     "tiber_bridge", "decumanus", "ostia_capitolium")],
+                ring=3, gap=5, kin=(R + "r_compitum",))
+    town = np.isin(L.DIST, [i for i, d in enumerate(L.districts) if d.endswith(("town", "forum"))])
+    night_posts(L, R + "r_lamp", crossings(L, town, gap=8), ring=2, gap=7, kin=(R + "r_compitum",))
 
 
 def _nodes(L: Layout) -> None:
