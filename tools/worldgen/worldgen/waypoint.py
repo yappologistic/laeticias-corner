@@ -116,12 +116,15 @@ def harbour_lane(L: Layout, lane_id: str, points, *, port: str, home: str | None
 
 
 def base_port_tile(L: Layout, port: str):
-    """The local tile of the committed base graph's lane port named `port` (None if absent)."""
+    """The local tile of the base graph's lane port named `port` (the build's base, else the
+    committed file; None if absent)."""
     from pathlib import Path
-    f = Path(L.cat.root) / "assets/world/layers/base.graph.json"
-    if not f.exists():
-        return None
-    g = read_graph(f.read_text())
+    g = L.graphs.get("base")
+    if g is None:
+        f = Path(L.cat.root) / "assets/world/layers/base.graph.json"
+        if not f.exists():
+            return None
+        g = read_graph(f.read_text())
     from .coords import to_plan
     for ln in g.lanes:
         for p in ln.ports:

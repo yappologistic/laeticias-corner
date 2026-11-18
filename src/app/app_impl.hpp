@@ -114,6 +114,8 @@ private:
     void startNewWorld(std::vector<std::string> taken, std::string name = {});
     // "{resident}'s Corner" (data, never a name in code), or a plain one with nobody there.
     [[nodiscard]] std::string defaultWorldName() const;
+    // A line in quotes, signed by a visitor (giver >= 0), else the resident, else nobody.
+    [[nodiscard]] std::string signedLine(std::string_view line, int giver) const;
     void adopt(SaveData& data);
     bool loadWorld(const fs::path& file);
     // Saves the world (and the profile when it changed). Written in the background unless
@@ -215,6 +217,8 @@ private:
     // Something was placed, moved or removed over `rect` (type -1: water painted, -2: removed).
     void disturbed(TileRect rect, int type, bool fresh);
     [[nodiscard]] std::optional<int> actorUnder(Vec2 px) const;
+    // The name shown beside the pointer now: a hover tip, or the actor under an empty hand.
+    [[nodiscard]] std::string_view worldTip() const;
     [[nodiscard]] int moversInView() const;
     // Chunk-aligned area around the view where critters live.
     [[nodiscard]] TileRect activeArea() const;
@@ -368,6 +372,8 @@ private:
     int fallCount_ = 0;     // water tiles at the rims (the waterfall's bed)
     Vec2 fallCentre_;       // their middle, in tiles
     std::uint64_t fallRevision_ = ~0ULL;
+    std::vector<TilePos> rimTiles_; // ground tiles at the map's south rims (found once per map)
+    TileRect rimOf_;
     bool muted_ = false;
     Progress progress_;
     Progression progression_;

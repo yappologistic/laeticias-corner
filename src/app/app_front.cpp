@@ -51,6 +51,7 @@ void App::resetWorld() {
     rainWas_ = false;
     fallCount_ = 0;
     fallRevision_ = ~0ULL;
+    rimTiles_.clear();
     progress_ = Progress(cat_);
     progression_ = Progression(cat_);
     evalRevision_ = ~0ULL;

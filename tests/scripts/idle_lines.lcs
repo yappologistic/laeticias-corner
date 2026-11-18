@@ -1,0 +1,11 @@
+# Her idle remarks fit the moment (Q3-16): evening lines at dusk, rain lines in a shower (no
+# cottage, so she stays out in it).
+set unlock all
+set season summer
+set chatter chatty
+set clock dusk
+fast 300 bubble idle_night
+set clock day
+set weather rain
+fast 300 bubble idle_rain
+quit

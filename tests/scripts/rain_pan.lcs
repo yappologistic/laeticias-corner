@@ -1,0 +1,19 @@
+# Rain and its events are about the land, not the camera (Q3-03): looking away from a shower
+# that still falls on the corner brings neither the rainbow nor the after-rain birdsong.
+set season summer
+set clock day
+set weather natural
+set shower now
+set camera 30 30 1
+fast 400 raining yes
+fast 70
+expect raining yes
+set camera 0 0 1
+wait 3
+expect raining no
+expect event rainbow no
+expect event chorus no
+set camera 30 30 1
+wait 3
+expect raining yes
+quit

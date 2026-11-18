@@ -219,8 +219,10 @@ void App::buildThumbs() {
     for (std::size_t i = 0; i < cat_.visitors.size(); ++i)
         thumbs_.visitors.push_back(spriteOf(Thumb::Visitor, static_cast<int>(i)));
     thumbs_.placeholder = atlas_->sprite(t.placeholder);
-    thumbs_.portrait =
-        atlas_->sprite(atlas_->resolve("ui/portrait/" + cat_.resident.id, t.placeholder));
+    // With nobody living here, her wishes come from the tray and carry no face (Q3-08).
+    if (cat_.residentKind >= 0)
+        thumbs_.portrait =
+            atlas_->sprite(atlas_->resolve("ui/portrait/" + cat_.resident.id, t.placeholder));
     thumbs_.tileW = cat_.iso().tileW();
 }
 
@@ -269,6 +271,29 @@ void App::startNewWorld(std::vector<std::string> taken, std::string name) {
     worldName_ = name.empty() ? defaultWorldName() : std::move(name);
     created_ = utcNow();
     slug_ = worldSlug(worldName_, taken);
+}
+
+std::string App::signedLine(std::string_view line, int giver) const {
+    if (giver >= 0) {
+        const std::string& who = cat_.visitors[static_cast<std::size_t>(giver)].name;
+        return std::vformat(strings::kThanks, std::make_format_args(line, who));
+    }
+    if (cat_.residentKind >= 0)
+        return std::vformat(strings::kThanks, std::make_format_args(line, cat_.resident.name));
+    return std::vformat(strings::kThanksAlone, std::make_format_args(line));
+}
+
+std::string_view App::worldTip() const {
+    if (!hoverTip_.empty()) return hoverTip_;
+    // An empty hand over an actor names it (she answers to her name; visitors to theirs).
+    // Only over the map: a panel under the pointer clears hover_ (worldInput).
+    if (tool_ != Tool::None || photo_ || !hover_) return {};
+    const auto who = actorUnder(mouse_);
+    if (!who) return {};
+    const ActorKind& k = cat_.kinds[actors_.all()[static_cast<std::size_t>(*who)].kind];
+    return k.visitor >= 0
+               ? std::string_view(cat_.visitors[static_cast<std::size_t>(k.visitor)].name)
+               : std::string_view(cat_.resident.name);
 }
 
 std::string App::defaultWorldName() const {
@@ -449,7 +474,8 @@ CondFacts App::facts() const {
     CondFacts f;
     f.phase = clock_.phase();
     f.season = season();
-    f.raining = raining();
+    // Rain on the land, not where the camera happens to look (Q3-03).
+    f.raining = weather_.rainingOnLand();
     f.present = actors_.presence();
     f.seen = actors_.seenFlags();
     f.harvestedToday = progress_.harvests > 0 && progress_.lastHarvestDay == clock_.day();
@@ -654,9 +680,12 @@ void App::onWishGranted(int wish) {
             strings::kNewFrame,
             std::make_format_args(cat_.frames[static_cast<std::size_t>(rw.frame)].name));
     } else if (rw.clue >= 0) {
-        r.text = std::vformat(strings::kNoteAdded, std::make_format_args(cat_.resident.name));
+        r.text = cat_.residentKind >= 0
+                     ? std::vformat(strings::kNoteAdded, std::make_format_args(cat_.resident.name))
+                     : std::string(strings::kNoteAddedAlone);
     }
-    r.quote = std::vformat(strings::kThanks, std::make_format_args(def.thanks, cat_.resident.name));
+    // Signed by whoever made the wish: a visitor, the resident, or nobody when nobody lives here.
+    r.quote = signedLine(def.thanks, def.giver);
     hud_.ribbon(std::move(r));
 }
 
@@ -1194,17 +1223,7 @@ HudModel App::model() const {
         cards_.push_back(c);
     }
     m.wishes = cards_;
-    m.worldTip = hoverTip_;
-    // An empty hand over an actor names it (she answers to her name; visitors to theirs).
-    if (m.worldTip.empty() && tool_ == Tool::None && !photo_ && hover_) {
-        if (const auto who = actorUnder(mouse_)) {
-            const ActorKind& k = cat_.kinds[actors_.all()[static_cast<std::size_t>(*who)].kind];
-            m.worldTip =
-                k.visitor >= 0
-                    ? std::string_view(cat_.visitors[static_cast<std::size_t>(k.visitor)].name)
-                    : std::string_view(cat_.resident.name);
-        }
-    }
+    m.worldTip = worldTip();
     floatLabels_.clear();
     for (const NookLabel& l : nookLabels_) {
         const float k = (simTime_ - l.start) / tuning::kNookLabelSeconds;
@@ -1815,7 +1834,11 @@ int App::run() {
         if (welcomePending_) {
             welcomePending_ = false;
             const int pages = actors_.seenCount() + progress_.nooksFound();
-            hud_.toast(std::vformat(strings::kToastWelcome, std::make_format_args(pages)));
+            hud_.toast(
+                cat_.residentKind >= 0
+                    ? std::vformat(strings::kToastWelcome,
+                                   std::make_format_args(cat_.resident.name, pages))
+                    : std::vformat(strings::kToastWelcomeAlone, std::make_format_args(pages)));
         }
         if (thumbTimer_ >= tuning::kThumbnailInterval) {
             thumbTimer_ = 0;

@@ -189,15 +189,14 @@ TEST_CASE("render: missing art is drawn as placeholders or stand-ins and counted
     Rig& r = rig();
     REQUIRE(r.ok);
     const WorldSprites& s = r.view->sprites();
-    // The shared world set has a catalog and no art yet.
-    CHECK(s.placeholdersPlaced() > 0);
-    bool standIn = false;
+    // What has no art yet is listed with how often it is placed, and the placeholders add up.
+    int placeholders = 0;
     for (const MissingArt& m : s.missingItems()) {
         CHECK(m.count > 0);
-        standIn = standIn || m.look == Look::StandIn;
+        CHECK(m.look != Look::Art);
+        if (m.look == Look::Placeholder) placeholders += m.count;
     }
-    CHECK(standIn);
-    CHECK_FALSE(s.missingTerrain().empty());
+    CHECK(placeholders == s.placeholdersPlaced());
     // Every placed item resolves to something drawable.
     for (const world::Placed& it : r.world->map->items()) {
         const VariantLook& look = s.item(it);

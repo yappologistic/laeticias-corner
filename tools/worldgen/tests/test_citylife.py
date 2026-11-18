@@ -137,6 +137,22 @@ class Checks(unittest.TestCase):
         for word in ("Baradkama", "Apadāna", "colour"):
             self.assertIn(word, msgs)
 
+    def test_l7_rome_fact_check_wording(self):
+        d = doc()
+        d["id"] = "rome"
+        d["cards"]["shop"]["text"] += " Hadrian renamed by Hadrian the Romaea; Marcus, aged five."
+        msgs = " ".join(p.message for p in errors(d, code="L7"))
+        for word in ("renamed by Hadrian", "aged five", "Romaia"):
+            self.assertIn(word, msgs)
+
+    def test_l2_mooring_spot_is_worked_from_beside_its_post(self):
+        # The boat's spot is water; only the tile beside the post is on the graph's labels.
+        post = Instance("t.quay", "square", 10, 10, 1, 1,
+                        {"mooring": [(9, 10)], "beside": [(11, 10), (10, 11)]})
+        lab = {(11, 10): "b"}
+        self.assertIsNone(CL._node_for(post.spots["mooring"], lab, None, post))
+        self.assertEqual(CL._node_for(post.spots["mooring"], lab, None, post, post=True), "b")
+
     def test_l8_events_share_a_route(self):
         d = doc()
         e = copy.deepcopy(d["events"][0])

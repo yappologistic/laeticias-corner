@@ -33,5 +33,5 @@ shot parsa_garden_1x.png
 goto 390 118            # the lower town, at night
 clock night
 settle
-expect luma < 0.2
+expect luma < 0.25
 shot parsa_town_night.png

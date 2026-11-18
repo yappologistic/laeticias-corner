@@ -202,13 +202,7 @@
  "groups": [],
  "chains": [],
  "events": [],
- "lanes_tokens": [
-  {
-   "actor": "world.fishing_boat",
-   "lane": "base:ionian_crossing",
-   "count": 2
-  }
- ],
+ "lanes_tokens": [],
  "zones": [],
  "cards": {},
  "strings": {},

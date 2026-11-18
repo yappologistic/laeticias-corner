@@ -76,6 +76,12 @@ RETIRED = {
     "parsa": {"Baradkama": (), "Baratkama": (), "New Year audience": (), "griffin capital": (),
               "griffin capitals": (), "Nowruz": ("new_year",), "nōg rōz": ("new_year",)},
     "athens": {"captured shields": (), "Iktinos's Telesterion": ()},
+    # rome.md §1 and §7.2 as corrected (fact-check.md §3): the Parilia was "now called" the Romaia
+    # by Athenaeus's time, not renamed by decree; Marcus is four on the day; Ovid's flocks are
+    # smoked at twilight, not sprinkled at dawn; earlier emperors had beards too.
+    "rome": {"renamed the Romaia": (), "renamed by Hadrian": (), "aged five": (),
+             "first emperor to wear a beard": (), "sprinkled the flock": (),
+             "sprinkled the sheep": ()},
 }
 # One transliteration per name (the corrected bibles' forms): wrong form -> right form.
 SPELLING = {
@@ -92,6 +98,11 @@ SPELLING = {
                "Peiraieus": "Piraeus", "Peiraeus": "Piraeus", "Akropolis": "Acropolis",
                "Hephaestus": "Hephaistos", "Hephaesteion": "Hephaisteion",
                "Theseion": "Hephaisteion", "Areopagos": "Areopagus", "Dipylon gate": "Dipylon"},
+    # Latin forms in card titles, English in running text (rome.md, "Names"); one form each.
+    "rome": {"Romaea": "Romaia", "Iuvenal": "Juvenal", "Juvenalis": "Iuvenalis",
+             "Apollodoros": "Apollodorus", "Antinoos": "Antinous", "Trajanus": "Traianus",
+             "Colosseo": "Colosseum", "Aesculapios": "Aesculapius", "Asklepios": "Aesculapius",
+             "Ianiculum": "Janiculum", "Velabro": "Velabrum"},
 }
 # British spelling (living-world: user-facing text is British).
 AMERICAN = {"color": "colour", "center": "centre", "honor": "honour", "harbor": "harbour",
@@ -286,7 +297,8 @@ def region_view(world: World, cat, graphs: dict[str, Graph], root: Path, rid: st
         inst.spots["beside"] = [(c, r) for c, r in _ring(it)
                                 if 0 <= c < COLS and 0 <= r < ROWS and walk[r, c]]
         for sid, tiles in inst.spots.items():
-            inst.nodes[sid] = _node_for(tiles, lab, walk, inst)
+            post = cat.slot_kind(it.id, sid) == "mooring" and it.pw * it.ph <= 4
+            inst.nodes[sid] = _node_for(tiles, lab, walk, inst, post)
         instances.append(inst)
         if d is not None and d.landmark and d.rise == 0:
             landmarks.append(it.id)
@@ -342,7 +354,7 @@ def _district_at(world: World, it, rid: str) -> str:
     return ""
 
 
-def _node_for(tiles, lab, walk, inst) -> str | None:
+def _node_for(tiles, lab, walk, inst, post: bool = False) -> str | None:
     for c, r in tiles:
         if (c, r) in lab:
             return lab[(c, r)]
@@ -350,6 +362,12 @@ def _node_for(tiles, lab, walk, inst) -> str | None:
         for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             if (c + dc, r + dr) in lab:
                 return lab[(c + dc, r + dr)]
+    if post:
+        # A boat moored off a quay post is worked from the quay beside the post (V7's rule for
+        # `mooring` slots): the spot itself is water, the post's own tile is not walkable.
+        for t in inst.spots.get("beside", []):
+            if t in lab:
+                return lab[t]
     return None
 
 
@@ -375,6 +393,8 @@ def filters_pass(f: dict, h: float, day: int, season: str, festivals: set[str]) 
     if "season" in f and season not in f["season"]:
         return False
     if "festival" in f and f["festival"] not in festivals:
+        return False
+    if "not_festival" in f and f["not_festival"] in festivals:
         return False
     if f.get("weather") not in (None, "clear"):
         return False

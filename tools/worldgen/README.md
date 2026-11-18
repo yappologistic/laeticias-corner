@@ -103,7 +103,9 @@ def build(L: Layout) -> None:
 | `walk_tiles(placed)` | a landmark's walk tiles (plan) from the geometry file; `place` may put furniture on them |
 | `remove(placed)` | take back an item a filler placed (thinning, door clearing) |
 | `expect(landmark, rect=, level=)` | V4 check of your own placement |
+| `moved(landmark, rect=, why=)` | declare a landmark a deliberate step off its city-file rect: V4 reports the move, with the reason, as a warning |
 | `view(name, rect)` | a close-up preview |
+| `sightline(name, shape)` | mark a monumental approach: only the region's own set and home pieces with art may stand in it (V15) |
 | `below_terrain(c, r)`, `below_level(c, r)`, `land_below()`, `sea_below()`, `coast_below()`, `below_where(pred)` | read the committed layers underneath (the base's coast, rivers, levels) |
 | `terrain_at(C, R)` | what this layer has painted so far (world coordinates) |
 
@@ -178,17 +180,19 @@ Between two portals of a town without a layout the base carries the road through
 |---|---|---|
 | V1 | ids exist (terrain, items, districts `<region>/<name>` of the layer's regions, face materials); draft/provisional ids warn | error / warning |
 | V2 | no overlaps in a layer; items of lower layers dropped by this one | error / warning |
-| V3 | footprints on ground of their `on` kind, flat; stairs: foot at the stair's level, head `rise` higher | error |
+| V3 | footprints on ground of their `on` kind, flat; a landmark's declared walk tiles may lie one level off its (flat) solid tiles, a step its art's floor carries; stairs: foot at the stair's level, head `rise` higher | error |
 | V4 | `expect()` rects and levels; city-file §2.3 landmark rects and levels (a set footprint that holds the bible's rect, e.g. a hall modelled with its portico, warns; rows without a footprint are not landmarks) | error (missing: warning) |
 | V5 | every graph edge walkable along its course; levels change only on stairs, ramps, or decks on water (jetties, bridges, fords, and a landmark's walk tiles over water or on an `on: water` landmark: a bridge's deck, the island's quay); entering a landmark whose set has no geometry yet warns | error / warning |
-| V6 | graph connected; portals declared in the plan with the same tile, present in the other layer when it is built (a base route still planned warns); dest nodes ≤ 64 | error / warning |
+| V6 | graph connected; portals declared in the plan, every layer carrying one on the plan's tile (one node, world-tech §2.5: a street ending a step short of it is joined across the edge by the compiler), with a walkable tile of the other layer beside it across the boundary at its level; present in the other layer when it is built (a base route still planned warns); dest nodes ≤ 64; the journey's `NETWORK` chain (plan) in one network once its layers exist | error / warning |
 | V7 | slot spots (geometry files) and doors of buildings walkable and within 24 walking tiles of the graph; a kit slot on its own footprint (a seat, a shed's yard) counts from the walkable tile beside it; a `mooring` slot on water is a boat's spot: it must touch a walkable tile (beside the spot or beside its post) within reach of the graph; spots inside a landmark that only its geometry can open warn ("art geometry") | error / warning |
 | V8 | two base terrains never touch; seas at level 0; rivers never flow uphill | error |
-| V9 | layer rect inside its regions; every tile with ground has a district | error |
+| V9 | layer rect inside its regions; every tile with ground has a district; a stretch's sea district has no piece farther than 24 tiles from its body that no sea path joins to it (plan `INLETS` excepted) | error |
 | V10 | ≤ 1 200 items and ≤ 40 glowing items per chunk, ≤ 254 districts | error |
 | V11 | ≤ 25 % of walkable tiles hidden behind raised ground | warning |
 | V12 | item cards exist in the region file | error |
 | V13 | determinism: two compiles give the same bytes (test suite) | test |
+| V14 | the base's relief: no isolated single-tile level change on open country, at most 2 % of it on one-tile benches, no river reach under 6 tiles between two falls of under 3 levels | error (base) |
+| V15 | a marked `sightline` holds no world kit (fords, plank ramps, timber bridges, …) and no placeholder | error |
 
 Additions: V1 also checks that every placed variant is a valid look or rotation of its catalog
 entry, retired stand-ins, and the region-set rule (a region of set S carries home, world and S ids
@@ -199,9 +203,14 @@ flows between two layers as the base's errors (warnings elsewhere). V10 holds a 
 budgets it adds to.
 
 `--check` also checks that `assets/world/world.json` lists exactly the layer files present, in
-composition order; a build rewrites `world.json` only when that list changes and says so, so
+composition order, and that `assets/world/placeholders.json` lists every placed id no set catalog
+defines (provisional or draft stand-ins: id, set, layer, grid origin, variant, footprint, height),
+which the engine draws as labelled placeholders and the art lane reads as its backlog; a build rewrites `world.json` only when that list changes and says so, so
 commit it with the layer that changed it. A region README is complete when it has the line
 `Status: complete` on its own.
+
+`build.sh --city <region>…` runs the life checks of a city's region file (`worldgen/citylife.py`,
+`lifesim.py`, `lifereport.py`); `--check` runs them on the committed city files too.
 
 `--check` validates committed files without their layouts, so checks that need the layout source
 (V4 expectations, V7 slots, source lines) only run when the layer is built.
@@ -211,8 +220,16 @@ commit it with the layer that changed it. A region README is complete when it ha
 `plan/world_plan.py` holds the coarse authored world: regions and stretches, district ownership
 rules, layers, portals, land/sea/island polygons, relief per stretch, mountain bands, rivers,
 routes and lanes, stretch looks, overview labels. `worldgen/base.py` turns it into the base layer
-(coasts roughened by bounded noise, relief with domain-warped stretch settings, carved rivers,
-routes by A*, fields and forests by stretch look, districts). City rects are reserved flat at the
+(coasts roughened by bounded noise, islets beside the open-sea lanes, relief with domain-warped
+stretch settings, rivers, routes by A*, fields and forests by stretch look, districts).
+
+Relief reads as landforms at the game's camera (plan `LANDFORM`, `RIVER_FORM`): the continuous
+height is grouped into benches two levels tall whose risers take a third of the run (looser in
+mountain bands, plain rounding next to authored edges), every level's outline is opened and
+closed by two tiles, a bench too narrow to stand on joins the scarp above it, pimples go, and no
+scarp is taller than three levels. Rivers run level for at least a reach (24 tiles), the drops of
+the next reach gathered into one fall; their valleys have a flat floor a third of `valley` wide
+and rise in a scarp; deltas lie flat at the shore's level. V14 holds the result. City rects are reserved flat at the
 city's base level; town rects keep natural ground but no country items. Each table entry affects
 only its own area, and all noise is a function of world position and a string key.
 

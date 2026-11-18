@@ -26,6 +26,7 @@ from .compose import NONE16
 from .preview import font
 
 HERE = Path(__file__).resolve().parent.parent
+# A life module may set its own PANELS (name, hour) for its maps.
 PANELS = [("dawn", 5.0), ("noon", 12.0), ("dusk", 19.5), ("night", 23.5)]
 
 
@@ -199,7 +200,7 @@ def _shade(v: float) -> tuple[int, int, int]:
 
 
 def activity_map(doc: dict, view, world, root: Path, day: int, label: str,
-                 fest: tuple = ()) -> Image.Image:
+                 fest: tuple = (), panels=PANELS) -> Image.Image:
     roles = CL.roles_by_id(doc)
     season = doc.get("season", "spring")
     area = {d["id"]: d.get("area", "town") for d in doc.get("districts", [])}
@@ -211,12 +212,14 @@ def activity_map(doc: dict, view, world, root: Path, day: int, label: str,
     names = {i: n.split("/", 1)[1] for i, n in enumerate(world.districts) if n.startswith(rid + "/")}
     fT, fS = font(root, 16, True), font(root, 11)
     pw, ph = w * px, h * px
-    img = Image.new("RGB", (pw * 2 + 30, (ph + 40) * 2 + 50), (22, 24, 30))
+    cols = 2 if len(panels) <= 4 else 3
+    rows = -(-len(panels) // cols)
+    img = Image.new("RGB", (pw * cols + 10 * cols + 10, (ph + 40) * rows + 50), (22, 24, 30))
     dr = ImageDraw.Draw(img)
     dr.text((10, 8), f"{doc.get('name')} · {label}", font=fT, fill=(240, 236, 226))
     fests = set(fest) | CL.festivals_on(doc, season, day % 3)
-    for k, (pname, hh) in enumerate(PANELS):
-        ox, oy = 10 + (k % 2) * (pw + 10), 40 + (k // 2) * (ph + 40)
+    for k, (pname, hh) in enumerate(panels):
+        ox, oy = 10 + (k % cols) * (pw + 10), 40 + (k // cols) * (ph + 40)
         pop = CL.population(doc, view, hh, day, season, fests)
         val = {}
         total = 0.0
@@ -280,7 +283,8 @@ def run(b, rids: list[str], preview: bool, write: bool) -> bool:
         if preview:
             for day, (label, fest) in _days(doc):
                 f = out_dir / f"{rid}_day{day}.png"
-                activity_map(doc, view, world, b.root, day, label, fest).save(f)
+                activity_map(doc, view, world, b.root, day, label, fest,
+                             getattr(mod, "PANELS", PANELS)).save(f)
                 print(f"   preview {f}")
     return ok
 

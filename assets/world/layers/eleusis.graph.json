@@ -2,7 +2,7 @@
   "version": 1,
   "layer": "eleusis",
   "nodes": [
-    {"id": "sacred_way_w", "at": [236, 704], "kind": "portal"},
+    {"id": "n0", "at": [236, 704]},
     {"id": "n1", "at": [236, 705]},
     {"id": "gate_stair.foot", "at": [233, 705]},
     {"id": "eleusis_w", "at": [240, 723], "kind": "portal"},
@@ -17,10 +17,11 @@
     {"id": "eleusis_town", "at": [241, 714], "kind": "dest"},
     {"id": "eleusis_shore", "at": [245, 714], "kind": "dest"},
     {"id": "athens.stair_marble@572,232.foot", "at": [232, 705]},
-    {"id": "athens.stair_marble@572,232.head", "at": [232, 708]}
+    {"id": "athens.stair_marble@572,232.head", "at": [232, 708]},
+    {"id": "sacred_way_w", "at": [236, 703], "kind": "portal"}
   ],
   "edges": [
-    {"a": "sacred_way_w", "b": "n1", "kind": "road"},
+    {"a": "n0", "b": "n1", "kind": "road"},
     {"a": "n1", "b": "gate_stair.foot", "kind": "road"},
     {"a": "eleusis_w", "b": "n4", "kind": "road"},
     {"a": "n4", "b": "n5", "kind": "road"},
@@ -35,7 +36,8 @@
     {"a": "athens.stair_marble@572,232.foot", "b": "athens.stair_marble@572,232.head", "kind": "stair"},
     {"a": "gate_stair.foot", "b": "gate_stair.head", "kind": "stair"},
     {"a": "athens.stair_marble@572,232.foot", "b": "gate_stair.foot", "kind": "track"},
-    {"a": "athens.stair_marble@572,232.head", "b": "gate_stair.head", "kind": "street"}
+    {"a": "athens.stair_marble@572,232.head", "b": "gate_stair.head", "kind": "street"},
+    {"a": "n0", "b": "sacred_way_w", "kind": "road"}
   ],
   "lanes": [
     {"id": "eleusis_fishing", "kind": "sea", "points": [[249, 714], [249, 709]], "ports": [{"id": "home", "at": 0}, {"id": "start", "at": 0}, {"id": "end", "at": 1}, {"id": "grounds", "at": 1}]}

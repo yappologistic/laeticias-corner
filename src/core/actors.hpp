@@ -18,6 +18,7 @@
 #include <array>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <vector>
 
 namespace lc {
@@ -47,6 +48,8 @@ inline constexpr std::uint16_t kGone = 1u << 7;       // left for good once fade
 inline constexpr std::uint16_t kPause = 1u << 8;      // a short rest that is no step of a routine
 inline constexpr std::uint16_t kSheltered = 1u << 9;  // went for shelter in this spell of rain
 inline constexpr std::uint16_t kStepAside = 1u << 10; // displaced: stepping to open ground
+inline constexpr std::uint16_t kHomeRetry = 1u << 11; // a leaver already set out home twice
+inline constexpr std::uint16_t kCrowd = 1u << 12;     // the bench's crowd: outside the counts
 } // namespace actor_flag
 inline constexpr std::uint8_t kPathPending = 0xFF; // waiting for a path search this step
 
@@ -95,6 +98,13 @@ struct Actor {
     bool reserved = false;
 };
 static_assert(sizeof(Actor) <= 96, "the actor record is 96 bytes");
+
+// In the air (or on her hat): drawn over everything. A flyer resting on its slot (a flower, a
+// perch, the hive) is depth-sorted like a walker, behind what stands in front of it (Q3-13).
+[[nodiscard]] inline bool inAir(const Actor& a, const ActorKind& k) {
+    if ((a.flags & actor_flag::kOnHat) != 0) return true;
+    return k.move == Locomotion::Fly && (a.state != ActorState::Act || !a.reserved);
+}
 
 struct ActorEvent {
     enum class Kind : std::uint8_t {
@@ -212,6 +222,10 @@ public:
     int crowd(const ActorEnv& env, int count);
     // The resident's schedule block for the time `env` gives (her own clock while it is pinned).
     [[nodiscard]] int scheduleBlock(const ActorEnv& env) const;
+    // The population rule (Q3-02): never more of a visitor present than its max (plus what nooks
+    // allow), and no leaver lingering past kLeaveLimitSeconds on its way out. Empty when it holds,
+    // else what breaks it.
+    [[nodiscard]] std::string populationError(std::span<const VisitorGate> gates) const;
     // Path-finding budget used this step (searches), for the bench.
     [[nodiscard]] int searches() const { return searches_; }
 
@@ -243,6 +257,8 @@ private:
     // Presence (who comes and goes), from the visitor rules.
     void presence(const ActorEnv& env, float dt);
     int spawn(const ActorEnv& env, int kind, float alpha, bool fromHome);
+    // Puts `a` in pool slot `slot` (a free one, or the end), resetting its per-actor arrays.
+    void claim(std::size_t slot, const Actor& a);
     void countPresence();
     void leave(const ActorEnv& env, int i);
     // Where an actor comes out of an item: its door, else its first slot, else beside it.
@@ -262,6 +278,8 @@ private:
     void beginErrand(const ActorEnv& env, int i);
     void flee(const ActorEnv& env, int i);
     [[nodiscard]] int lineAhead(int i) const;
+    void updateLines(const ActorEnv& env);
+    [[nodiscard]] int waterBody(const World& world, Vec2 p) const;
     void chooseRoutine(const ActorEnv& env, int i);
     [[nodiscard]] float hour(const ActorEnv& env) const;
     bool interrupts(const ActorEnv& env, int i, float dt);
@@ -321,6 +339,33 @@ private:
     std::size_t pathNext_ = 0;
     std::vector<Errand> errands_;
     std::vector<Pick> dests_; // where each is going (or the element of its each)
+    // The elements an `each` has visited this time (items by origin), per actor.
+    struct Visited {
+        std::array<TilePos, 16> at{};
+        std::uint8_t count = 0;
+    };
+    std::vector<Visited> visited_;
+    bool eachNext_ = false; // the next start() of an each continues it (else it starts afresh)
+    // Lines: who follows whom (per kind and body of water), and followers that gave up.
+    std::vector<int> lineAhead_;
+    std::vector<float> stuck_;   // seconds a follower has been unable to move
+    std::vector<float> lineBan_; // seconds before it may join a line again
+    struct Inside {
+        TilePos at{-1, -1};
+        int type = -1; // -1: nothing recorded
+    };
+    std::vector<Inside> inside_;  // the item each actor went into
+    std::vector<float> leaveAge_; // seconds since each leaver set out
+    struct LineTail {
+        std::uint16_t kind;
+        int body;
+        int actor;
+    };
+    std::vector<LineTail> lineTail_;
+    std::vector<int> bodies_; // body of water per tile of bodyArea_, -1: land
+    TileRect bodyArea_;
+    std::uint64_t bodyRevision_ = ~0ULL;
+    std::vector<TilePos> bodyOpen_;
     std::vector<Reservation> reservations_;
     std::vector<ActorEvent> events_;
     PathFinder finder_;
@@ -335,7 +380,6 @@ private:
     std::vector<std::uint8_t> seen_;
     std::vector<int> presence_;
     std::vector<float> cooldown_;
-    std::vector<int> leaders_; // per visitor: the actor leading its line, -1: none
 
     // The resident's world.
     std::optional<TilePos> home_;

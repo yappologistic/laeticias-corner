@@ -140,14 +140,27 @@ ASHLAR = [INK, *LIMESTONE[:6]]
 
 def _face_columns(k, side):
     """Screen columns of one level of face under a tile edge: x relative to the anchor (the
-    tile's top vertex) and the first row of face below the ground diamond's lower edge."""
+    tile's top vertex) and the first row of face below the ground diamond's lower edge.
+
+    A face covers exactly the 16k columns its tile steps along the edge (x 0..16k-1 under
+    the south-east edge, -16k..-1 under the south-west one), so faces of a run of tiles meet
+    with no gap or overlap. The diamond itself is two columns narrower than that step; the
+    face's outermost column lies under the next tile of the run, and its first row follows
+    that tile's lower edge (the same edge line, half a tile up)."""
     want = diamond(32 * k)
     h, w = want.shape
     rows = np.arange(h)[:, None]
     bottom = np.where(want, rows, -1).max(axis=0)            # per diamond column
-    xs = np.arange(w) - (16 * k - 1)                         # x of each diamond column
-    keep = xs >= 0 if side == "se" else xs < 0
-    return xs[keep], bottom[keep] + 1
+    left = -(16 * k - 1)                                     # x of the diamond's first column
+
+    def bottom_at(x):
+        i = x - left
+        if 0 <= i < w:
+            return int(bottom[i])
+        step = 16 * k if side == "se" else -16 * k           # the next tile along the edge
+        return int(bottom[x - step - left]) - 8 * k
+    xs = np.arange(0, 16 * k) if side == "se" else np.arange(-16 * k, 0)
+    return xs, np.array([bottom_at(int(x)) + 1 for x in xs])
 
 
 def ashlar_face(side, v, k, top=False):

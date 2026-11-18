@@ -29,9 +29,9 @@ Layout layoutOf(const std::string& s, const std::string& ctx) {
 Surface surfaceOf(const std::string& s, const std::string& ctx) {
     if (s == "land") return Surface::Land;
     if (s == "water") return Surface::Water;
-    // "any" as the home catalog writes it; "either" as world-tech §1.12 did.
-    if (s == "any" || s == "either") return Surface::Any;
-    fail(ctx + ": on '" + s + "' is not land, water or any");
+    // Set catalogs say "either"; the home schema's "any" is accepted too (world.t_reeds uses it).
+    if (s == "either" || s == "any") return Surface::Any;
+    fail(ctx + ": on '" + s + "' is not land, water or either");
 }
 
 void unique(std::unordered_set<std::string>& seen, const std::string& id, const std::string& ctx) {
@@ -187,9 +187,10 @@ std::expected<SetCatalog, std::string> parseSetCatalog(std::string_view text, st
         cat.file = f;
         cat.set = asString(field(doc, "set", f), f + ": set");
         if (cat.set != set) fail(f + ": set '" + cat.set + "' differs from '" + s + "'");
+        // Actors live in their own namespace: their sprites (figure/, walker/) and every reference
+        // to them (roles, figures, events) never meet item ids. rome.castor is both a temple and
+        // its apparition.
         std::unordered_set<std::string> ids;
-        // Actor kinds draw from their own key families (critter/, walker/, figure/, ...), so an
-        // actor may share its id with an item (rome.castor: the statue and the apparition).
         std::unordered_set<std::string> actorIds;
         const auto each = [&](const char* key, auto&& parse) {
             if (!has(doc, key)) return;

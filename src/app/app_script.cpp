@@ -25,8 +25,10 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
         return camera_.worldToScreen(cat_.iso().toWorld(p.x + 0.5f, p.y + 0.5f), screen());
     case ScriptPoint::Kind::Widget:
         if (p.widget.starts_with("actor:")) {
-            // The middle of the first actor of that kind (a visitor id, or the resident's).
+            // The middle of the first actor of that kind in the window (a visitor id, or the
+            // resident's); none in view is an error, never a point outside the window (Q3-15).
             const std::string id = p.widget.substr(6);
+            const Vec2 sc = screen();
             for (const Actor& a : actors_.all()) {
                 if ((a.flags & actor_flag::kAlive) == 0 || cat_.kinds[a.kind].id != id ||
                     a.alpha < 0.5f)
@@ -34,8 +36,9 @@ std::optional<Vec2> App::resolve(const ScriptPoint& p) {
                 const Vec2 head = scene_->headOf(a);
                 Vec2 foot = cat_.iso().toWorld(a.pos.x, a.pos.y);
                 foot.y -= a.lift;
-                return camera_.worldToScreen({(head.x + foot.x) * 0.5f, (head.y + foot.y) * 0.5f},
-                                             screen());
+                const Vec2 at =
+                    camera_.worldToScreen({(head.x + foot.x) * 0.5f, (head.y + foot.y) * 0.5f}, sc);
+                if (at.x >= 0 && at.y >= 0 && at.x < sc.x && at.y < sc.y) return at;
             }
             return std::nullopt;
         }
@@ -192,8 +195,10 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         const auto kind = std::ranges::find(cat_.kinds, a[1], &ActorKind::id);
         if (kind == cat_.kinds.end()) return "unknown actor kind " + a[1];
         const auto ki = static_cast<std::uint16_t>(kind - cat_.kinds.begin());
-        const auto item = a.size() > 3 ? cat_.findItem(a[3]) : std::nullopt;
-        if (a.size() > 3 && !item) return "unknown item " + a[3];
+        // ITEM "seat" means any item's slot (asleep on the bench or the stump alike).
+        const bool anySeat = a.size() > 3 && a[3] == "seat";
+        const auto item = a.size() > 3 && !anySeat ? cat_.findItem(a[3]) : std::nullopt;
+        if (a.size() > 3 && !anySeat && !item) return "unknown item " + a[3];
         for (const Actor& ac : actors_.all()) {
             if ((ac.flags & actor_flag::kAlive) == 0 || ac.kind != ki) continue;
             const std::string& anim = kind->anims[ac.overlay > 0 ? ac.overlayAnim : ac.anim];
@@ -202,14 +207,62 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                                (a[2] == "inside" && ac.state == ActorState::Inside) ||
                                (ac.state == ActorState::Act && anim == a[2]) ||
                                ((ac.flags & actor_flag::kOnHat) != 0 && a[2] == "hat");
-            const bool at = !item || (ac.reserved && ac.resType == *item);
+            const bool at = anySeat ? ac.reserved && ac.resType != 0xFFFF
+                                    : !item || (ac.reserved && ac.resType == *item);
             if (doing && at) return std::nullopt;
         }
         return std::format("no {} is {}{}", a[1], a[2], a.size() > 3 ? " at a " + a[3] : "");
     }
+    if (what == "visible" || what == "bank" || what == "together") {
+        // visible KIND N: that many of the kind can be seen (not inside, not faded);
+        // bank KIND: every one seen stands on land beside water (ducks asleep at night);
+        // together KIND D: every one seen is within D tiles of another of its kind.
+        const auto kind = std::ranges::find(cat_.kinds, a[1], &ActorKind::id);
+        if (kind == cat_.kinds.end()) return "unknown actor kind " + a[1];
+        const auto ki = static_cast<std::uint16_t>(kind - cat_.kinds.begin());
+        std::vector<Vec2> seen;
+        for (const Actor& ac : actors_.all())
+            if ((ac.flags & actor_flag::kAlive) != 0 && ac.kind == ki && ac.alpha > 0.5f &&
+                ac.state != ActorState::Inside)
+                seen.push_back(ac.pos);
+        if (what == "visible") return equal(std::to_string(seen.size()), a[2]);
+        if (seen.empty()) return "no " + a[1] + " in sight";
+        for (const Vec2 p : seen) {
+            const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+            if (what == "bank") {
+                bool shore = false;
+                for (int dy = -1; dy <= 1; ++dy)
+                    for (int dx = -1; dx <= 1; ++dx)
+                        shore = shore || (world_.inBounds({t.x + dx, t.y + dy}) &&
+                                          world_.isWater({t.x + dx, t.y + dy}));
+                if (!world_.inBounds(t) || world_.isWater(t) || !shore) {
+                    std::string all;
+                    for (const Vec2 q : seen) all += std::format(" {:.1f},{:.1f}", q.x, q.y);
+                    return std::format("a {} at {:.1f},{:.1f} is not on the bank (all:{})", a[1],
+                                       p.x, p.y, all);
+                }
+            } else {
+                const float d = std::stof(a[2]);
+                const bool near = std::ranges::any_of(seen, [&](Vec2 q) {
+                    const float k = std::hypot(q.x - p.x, q.y - p.y);
+                    return k > 0 && k <= d;
+                });
+                if (seen.size() > 1 && !near)
+                    return std::format("a {} at {:.1f},{:.1f} is alone", a[1], p.x, p.y);
+            }
+        }
+        return std::nullopt;
+    }
+    if (what == "falls") return equal(std::to_string(fallCount_), a[1]);
+    if (what == "population") return yesNo(actors_.populationError(gates_).empty());
     if (what == "bubble") {
-        const bool showing = speech_.showing(simTime_) != nullptr;
-        return yesNo(showing);
+        const Bubble* b = speech_.showing(simTime_);
+        if (a[1] == "yes" || a[1] == "no") return yesNo(b != nullptr);
+        // expect bubble CONTEXT: the line showing is one of that context's.
+        const int want = cat_.resident.context(a[1]);
+        if (want < 0) return std::format("no line context '{}'", a[1]);
+        return b != nullptr && b->context == want ? std::nullopt
+                                                  : std::optional(std::string("another line"));
     }
     if (what == "raining") return yesNo(raining());
     if (loaded_ && a.size() >= 2) {
@@ -430,15 +483,28 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                    ? std::nullopt
                    : std::optional(std::format("stem {} at {:.2f}", a[1], level));
     }
-    if (what == "toast") {
-        if (a.size() == 2 && (a[1] == "yes" || a[1] == "no")) return yesNo(hud_.toastShowing());
-        // expect toast WORDS...: the toast showing now contains them.
+    // expect WHAT yes|no, WHAT WORDS... (the text showing contains them) or WHAT not WORDS...
+    const auto shows = [&](bool showing, std::string_view text) -> std::optional<std::string> {
+        if (a.size() == 2 && (a[1] == "yes" || a[1] == "no")) return yesNo(showing);
+        const bool lacks = a[1] == "not";
         std::string want;
-        for (std::size_t i = 1; i < a.size(); ++i) want += (i > 1 ? " " : "") + a[i];
-        return hud_.toastText().find(want) != std::string_view::npos
-                   ? std::nullopt
-                   : std::optional(
-                         std::format("toast is \"{}\", not \"{}\"", hud_.toastText(), want));
+        for (std::size_t i = lacks ? 2 : 1; i < a.size(); ++i)
+            want += (want.empty() ? "" : " ") + a[i];
+        const bool has = showing && text.find(want) != std::string_view::npos;
+        return has != lacks ? std::nullopt : std::optional(std::format("{} is \"{}\"", what, text));
+    };
+    if (what == "toast") return shows(hud_.toastShowing(), hud_.toastText());
+    if (what == "tip") return shows(!worldTip().empty(), worldTip());
+    if (what == "thanks") return shows(hud_.ribbonShowing(), hud_.ribbonQuote());
+    if (what == "portrait") {
+        // expect portrait N yes|no: the N-th open wish card shows a portrait.
+        int n = 0;
+        if (a.size() != 3 ||
+            std::from_chars(a[1].data(), a[1].data() + a[1].size(), n).ec != std::errc{} || n < 0 ||
+            n >= static_cast<int>(cards_.size()))
+            return std::format("expect portrait N yes|no ({} cards)", cards_.size());
+        const bool has = cards_[static_cast<std::size_t>(n)].portrait.texture != nullptr;
+        return has == (a[2] == "yes") ? std::nullopt : std::optional(mismatch(has ? "yes" : "no"));
     }
     if (what == "panning") return yesNo(std::ranges::any_of(keyPan_, [](bool k) { return k; }));
     if (what == "phase") return equal(std::string(phaseId(clock_.phase())), a[1]);

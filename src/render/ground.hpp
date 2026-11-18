@@ -91,6 +91,7 @@ private:
     // filtered copy, so tile edges never pick up filtering seams.
     TexturePtr scratch_;
     std::vector<Slot> slots_;
+    std::vector<int> free_; // slots holding nothing (after an invalidation), reused first
     std::unordered_map<std::uint64_t, int> byKey_;
     std::uint64_t frame_ = 0;
     int rendered_ = 0;

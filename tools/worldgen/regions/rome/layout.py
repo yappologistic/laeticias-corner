@@ -36,7 +36,7 @@ F_TUFA, F_BRICK, F_TRAV, F_EARTH = R + "tufa", R + "brick", R + "travertine", R 
 # --- landmarks (bible §2.3; set footprints where the art differs, see the region README) ------
 LM = {
     "capitolium": (70, 51, 78, 60), "arx": (70, 44, 78, 49), "tabularium": (81, 53, 85, 64),
-    "concord": (86, 54, 89, 60), "vespasian": (86, 61, 89, 64), "saturn": (87, 65, 93, 68),
+    "concord": (86, 54, 89, 60), "vespasian": (86, 61, 89, 64), "saturn": (86, 65, 92, 68),
     "rostra": (91, 59, 94, 61), "curia": (93, 53, 96, 56), "lapis_niger": (95, 57, 95, 57),
     "aemilia": (97, 53, 112, 58), "forum_square": (95, 59, 107, 68), "julia": (94, 69, 109, 76),
     "castor": (110, 69, 114, 76), "lacus_iuturnae": (115, 72, 115, 73),
@@ -48,7 +48,7 @@ LM = {
     "trajan_forum": (72, 29, 96, 41), "basilica_ulpia": (74, 24, 94, 28),
     "trajan_column": (80, 20, 88, 23), "trajan_temple": (80, 13, 88, 18),
     "trajan_markets": (97, 16, 109, 33), "augustus_forum": (98, 34, 110, 46),
-    "caesar_forum": (85, 43, 96, 52), "nerva_forum": (111, 41, 114, 52), "pacis": (115, 40, 128, 54),
+    "caesar_forum": (85, 43, 96, 52), "nerva_forum": (111, 41, 114, 52), "pacis": (116, 40, 129, 54),
     "palatine_tiberiana": (100, 78, 112, 84), "domus_flavia": (110, 85, 123, 95),
     "domus_augustana": (113, 96, 126, 104), "palatine_stadium": (127, 86, 132, 104),
     "apollo_palatinus": (101, 91, 106, 96), "house_augustus": (101, 97, 105, 101),
@@ -63,6 +63,15 @@ LM = {
     "agrippa_baths": (34, 23, 46, 31), "castra_praetoria": (158, 0, 175, 14),
     "horrea_galbana": (67, 151, 84, 156), "suburban_villa": (150, 140, 166, 154),
     "synagogue": (24, 104, 28, 107),
+}
+# Landmarks a tile off the bible's rect, so that two ways its touching footprints closed open
+# (V4 reports each move with its reason; the region README lists them).
+MOVED = {
+    "saturn": ((86, 65, 92, 68), "one tile west: the Vicus Iugarius enters the Forum between the "
+               "Temple of Saturn and the Basilica Iulia, whose footprints touched at a corner"),
+    "pacis": ((116, 40, 129, 54), "one tile east: the Argiletum runs from the Forum past the "
+              "Forum of Nerva's east side into the Subura (the bible's c 96..97 line crosses "
+              "Caesar's and Trajan's fora and the Markets; Nerva's forum has no walk tiles yet)"),
 }
 LEVEL = {"capitolium": 6, "arx": 7, "tabularium": 1, "arch_titus": 1, "venus_roma": 1,
          "trajan_markets": 1, "castra_praetoria": 2, "suburban_villa": 1, "lupercal": 1,
@@ -104,20 +113,24 @@ RUNS = [
     ([(132, 30), (138, 30)], 0, 2, "clivus_suburanus"),
     ([(150, 58), (150, 52)], 0, 2, "oppian_steps"),
     ([(140, 51), (146, 51)], 0, 2, "carinae_steps"),
-    ([(25, 96), (16, 96)], 0, 3, "aurelia_east"),
-    ([(0, 96), (9, 96)], 0, 3, "aurelia_west"),
     ([(99, 106), (108, 106), (108, 97)], 0, 6, "scalae_caci"),   # the Circus -> the Palatine
 ]
+# The Via Aurelia is a cart road: it crosses the Janiculum in a cutting at street level, three
+# tiles wide between tufa faces, so no ramp (a world piece without art) stands on its sightline.
+AURELIA_CUT = Rect(0, 95, 25, 97)
 
 
 def build(L: Layout) -> None:
     URBAN.clear()
+    for lid, (rect, why) in MOVED.items():
+        L.moved(lid, rect=rect, why=why)
 
     lv, rock, brick = _levels(L)
     _ground(L, lv, rock, brick)
     _river(L)
     ways = _ways(L)
     placed = _landmarks(L)
+    _island_way(L)
     for path, lvl0, rise, name in RUNS:
         C.build_run(L, path, lvl0, rise, name, TRAV)
     _districts(L)
@@ -215,12 +228,13 @@ def _levels(L: Layout):
     lv[m(Rect(3, 60, 10, 159))] = 3
     lv[m(Rect(11, 60, 12, 159))] = 2
     lv[m(Rect(13, 60, 14, 159))] = 1
-    lv[96, 9:17] = 3
+    lv[m(AURELIA_CUT)] = 0                                # the Aurelia's cutting
+    rock |= m(Rect(0, 94, 25, 98))
 
     keep = np.zeros((H, W), dtype=bool)
     for lid, rect in list(LM.items()) + list(RESERVED.items()):
         keep |= m(Rect(*rect))
-    keep[96, 0:3] = True
+    keep |= m(AURELIA_CUT)
     keep |= m(Rect(166, 134, 175, 152))                   # the Via Appia leaving east
     keep |= m(Rect(10, 0, 70, 6))                         # the Campus's roads leaving north
     C.meet_edges(L, lv, keep=keep)
@@ -235,6 +249,9 @@ def _levels(L: Layout):
         d = _dist(~mound, 6)
         lv[mound] = np.clip(d[mound], 1, 4)
         brick |= mound
+    else:
+        lv[m(Rect(*RESERVED["testaccio"]))] = 1           # the mound's sprite rises from 1
+        brick |= m(Rect(*RESERVED["testaccio"]))
     return lv, rock, brick
 
 
@@ -274,12 +291,26 @@ def _testaccio_fits(L: Layout) -> bool:
 
 def _emporium_fits(L: Layout) -> bool:
     """The Emporium item (quay and Porticus Aemilia) can stand only where it leaves the Horrea
-    Galbana's rect free; the set's footprint (25 x 20) covers it, so a kit quay stands in."""
+    Galbana's rect free (the set's first footprint, 25 x 20, covered it: a kit quay stood in)."""
     fp = _fp(L, "emporium")
     if fp is None:
         return False
     rect = Rect(61, 140, 61 + fp[0] - 1, 140 + fp[1] - 1)
     return not (m(rect) & m(GALBANA)).any() and rect.c1 < W and rect.r1 < H
+
+
+WHARF = [(63, r) for r in range(140, 151)]
+
+
+def _emporium_open(L: Layout) -> bool:
+    """Placed only when it fits and its wharf is walkable along c 63: the Porticus reaches the
+    foot of Testaccio, so the Via Ostiensis runs along the wharf to the portal."""
+    if not _emporium_fits(L):
+        return False
+    fp = _fp(L, "emporium")
+    ne_c = 61 + L.origin[0] + fp[0] - 1
+    walk = {(ne_c - dy - L.origin[0], 140 + dx) for dx, dy in L.cat.walk_tiles(R + "emporium", 0)}
+    return all(t in walk for t in WHARF)
 
 
 # =============================================================================================
@@ -302,6 +333,42 @@ def _ground(L: Layout, lv, rock, brick) -> None:
 # 3. The Tiber
 # =============================================================================================
 
+def _quays(L: Layout, rows) -> None:
+    """Mooring posts on the east bank's edge, their boats' spots on the water beside them."""
+    wet = _water_mask(L)
+    for r in rows:
+        cols = np.nonzero(wet[r, 40:70])[0]
+        if cols.size:
+            c = 40 + int(cols.max()) + 1
+            put(L, R + "quay", (c, r), face="west")
+
+
+def _island_way(L: Layout) -> None:
+    """Across the Pons Fabricius, the island and the Pons Cestius, from the street on the east
+    bank to Transtiberim's, over the decks' walk tiles (no paint: the river stays under them),
+    once the art's walk tiles join the two bridges through the island."""
+    walk = set()
+    for p in L.items:
+        if p.name in ("tiber_island", "pons_fabricius", "pons_cestius") and not p.removed:
+            walk |= {(c - L.origin[0], r - L.origin[1]) for c, r in L.walk_tiles(p)}
+    a, b = (65, 88), (45, 90)
+    prev, todo = {a: None}, [a]
+    for t in todo:
+        if t == b:
+            break
+        for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            n = (t[0] + dc, t[1] + dr)
+            if n not in prev and (n in walk or n == b):
+                prev[n] = t
+                todo.append(n)
+    if b not in prev:
+        return
+    path = [b]
+    while prev[path[-1]] is not None:
+        path.append(prev[path[-1]])
+    L.street(C.corners(path[::-1]), width=1, paving=None)
+
+
 def _river(L: Layout) -> None:
     """The Tiber, six tiles wide down the Campus Martius, dividing round the island, then in its
     eight-tile channel to Ostia (bible §2.5); the Stagnum of Agrippa. The island and the bridges
@@ -319,19 +386,14 @@ def _river(L: Layout) -> None:
     water = _water_mask(L)
     L.level(Mask(0, 0, water & (np.arange(H)[:, None] >= DROP_ROW)), -1)
     for lid in ("tiber_island", "pons_fabricius", "pons_cestius", "pons_aemilius", "pons_sublicius"):
-        if L.cat.items[R + lid].on != "water":
-            L.paint(Rect(*LM[lid]), MUD)
+        L.paint(Rect(*LM[lid]), TIBER if L.cat.items[R + lid].on == "water" else MUD)
     banks = m(Line(TIBER_UP, 8)) & ~m(Line(TIBER_UP, 6))
     banks |= m(Line(TIBER_DOWN, 10)) & ~m(Line(TIBER_DOWN, 8))
     L.paint(Mask(0, 0, banks & (L.T == L.terrains.index(GRASS))), MUD)
 
 
 def _water_mask(L: Layout) -> np.ndarray:
-    out = np.zeros((H, W), dtype=bool)
-    for t, name in enumerate(L.terrains):
-        if L.cat.is_water(name):
-            out |= L.T == t
-    return out
+    return C.water_mask(L)
 
 
 # =============================================================================================
@@ -363,6 +425,7 @@ def _ways(L: Layout) -> dict:
     st("forum", [(95, 60), (95, 66)])
     st("forum", [(93, 70), (87, 70)])
     st("forum", [(90, 64), (90, 58), (96, 58), (96, 60)])
+    st("forum", [(95, 66), (93, 66), (93, 70)])        # between Saturn and the Iulia (MOVED)
     st("iugarius", [(89, 70), (89, 85), (66, 85), (66, 97), (62, 97)], 2)
     st("nova", [(93, 77), (119, 77)])
     st("nova", [(122, 77), (122, 74), (124, 74)])
@@ -371,6 +434,7 @@ def _ways(L: Layout) -> dict:
     # The Carinae and the Subura behind the imperial fora (the Argiletum's line between the
     # Curia and the Basilica Aemilia is closed by their footprints; see the README).
     st("carinae", [(115, 59), (115, 55), (130, 55), (130, 37)], 1)
+    st("argiletum", [(115, 55), (115, 37)], 1)         # past the Forum of Nerva (MOVED)
     st("subura", [(130, 37), (111, 37), (111, 16)], 2)
     st("subura", [(111, 25), (136, 25)])
     st("subura", [(130, 25), (130, 30), (132, 30)])
@@ -429,17 +493,24 @@ def _ways(L: Layout) -> dict:
     st("boarium", [(62, 107), (66, 107)], 2)
     st("river_road", [(63, 108), (63, 139)], 2, kind="road")
     st("ostiensis", [(67, 159), (67, 157), (85, 157)], 2, kind="road")
-    st("ostiensis", [(85, 157), (85, 139)], 1, kind="road")
+    if _emporium_open(L):
+        # The Porticus Aemilia reaches Testaccio: the road runs along the Emporium's wharf.
+        st("ostiensis", [(63, 139), (63, 157), (67, 157)], 1, TRAV, kind="road")
+    else:
+        st("ostiensis", [(85, 157), (85, 139)], 1, kind="road")
     st("ostiensis", [(67, 159), (67, 159)], 1, kind="road", portal="ostiensis")
     # Transtiberim: the Via Aurelia from the Pons Aemilius over the Janiculum (portal at (0, 96)),
     # the Via Portuensis from the Pons Sublicius along the river, the Cestius road, lanes.
-    st("aurelia", [(51, 97), (26, 97), (26, 96), (25, 96)], 2, kind="road")
-    st("aurelia", [(9, 96), (16, 96)], 1, kind="road")
+    st("aurelia", [(50, 97), (26, 97), (26, 96), (25, 96)], 2, kind="road")
+    st("aurelia", [(1, 96), (25, 96)], 1, kind="road")
     st("aurelia", [(0, 96), (0, 96)], 1, kind="road", portal="aurelia_w")
-    st("portuensis", [(51, 107), (44, 107), (44, 159)], 2, kind="road")
-    # Over the decks of the Pons Aemilius and the Pons Sublicius (their middle rows).
-    st("bridges", [(51, 97), (62, 97)], 1, kind="road")
-    st("bridges", [(51, 107), (62, 107)], 1, kind="road")
+    st("portuensis", [(50, 107), (44, 107), (44, 159)], 2, kind="road")
+    st("portuensis", [(44, 159), (44, 159)], 1, kind="road", portal="portuensis")
+    # Over the decks of the Pons Aemilius and the Pons Sublicius (their middle rows). On the
+    # river (as the art draws them) the way keeps the water under the deck.
+    deck = None if L.cat.items[R + "pons_aemilius"].on == "water" else BASALT
+    st("bridges", [(51, 97), (62, 97)], 1, paving=deck, kind="road")
+    st("bridges", [(51, 107), (62, 107)], 1, paving=deck, kind="road")
     st("transtiberim", [(45, 90), (36, 90), (36, 97)])
     st("transtiberim", [(36, 90), (36, 76), (30, 76), (30, 140)])
     st("transtiberim", [(18, 120), (44, 120)])
@@ -468,7 +539,9 @@ def _reserved(L: Layout) -> None:
     for lid, rect in RESERVED.items():
         if lid == "emporium":
             continue
-        if _fits_bible(L, lid):
+        # A provisional entry draws nothing in the engine yet (QA4 V-B-001: the Baths of
+        # Trajan read as an empty lawn), so only real art is placed; the rest is dressed.
+        if _fits_bible(L, lid) and L.cat.items[R + lid].source != "provisional":
             L.place(R + lid, rect=rect, name=lid)
             continue
         r = Rect(*rect)
@@ -497,24 +570,31 @@ def _reserved(L: Layout) -> None:
             L.paint(Mask(0, 0, m(Ellipse(31, 41, 6, 6)) & m(r)) & free(L, r), TRAV)
             L.scatter(r, {R + "t_plane": 2, R + "r_statue": 1}, 0.08, seed="pompey_portico")
         elif lid == "trajan_baths":
-            # The Baths of Trajan's precinct until the art returns: its gardens in a ring of
-            # plane trees, bath halls along the axis, exercise yards of trampled earth.
-            L.street([(r.c0 + 1, r.r0 + 15), (r.c1 - 1, r.r0 + 15)], width=1, paving=TRAV)
+            # The Baths of Trajan's precinct until the art returns (bible §3.2: a huge symmetrical
+            # complex of great halls round a central block, exercise yards, gardens in an
+            # enclosure): a paved platform packed with vaulted bath halls either side of the
+            # axis, a palaestra of trampled earth on each flank, gardens to the south, a ring of
+            # plane trees, and through streets on the axis and along the gardens.
+            core = Rect(r.c0 + 4, r.r0 + 3, r.c1 - 4, r.r0 + 20)
+            L.paint(core & free(L, r), TRAV)
             L.street([(r.c0 + 15, 17), (r.c0 + 15, 51)], width=1, paving=TRAV)
-            for k, c in enumerate(range(r.c0 + 3, r.c1 - 3, 6)):
-                put(L, R + "r_bath_small", (c, r.r0 + 12), face="south")
-                put(L, R + "r_bath_small", (c, r.r0 + 16), face="north")
-            L.paint(Rect(r.c0 + 3, r.r0 + 3, r.c0 + 11, r.r0 + 9) & free(L, r), EARTH)
-            L.paint(Rect(r.c1 - 11, r.r0 + 3, r.c1 - 3, r.r0 + 9) & free(L, r), EARTH)
+            L.street([(r.c0 + 1, r.r0 + 22), (r.c1 - 1, r.r0 + 22)], width=1, paving=TRAV)
+            for rr in (r.r0 + 4, r.r0 + 8, r.r0 + 12):
+                for c in (r.c0 + 6, r.c0 + 10, r.c0 + 17, r.c0 + 21):
+                    put(L, R + "r_bath_small", (c, rr), face="south" if rr < r.r0 + 12 else "north")
+            L.paint(Rect(r.c0 + 5, r.r0 + 16, r.c0 + 13, r.r0 + 19) & free(L, r), EARTH)
+            L.paint(Rect(r.c1 - 13, r.r0 + 16, r.c1 - 5, r.r0 + 19) & free(L, r), EARTH)
+            for c in (r.c0 + 4, r.c1 - 4):
+                put(L, R + "r_lacus", (c, r.r0 + 16), face="south")
             for c in range(r.c0, r.c1 + 1, 2):
                 put(L, R + "t_plane", (c, r.r0))
                 put(L, R + "t_plane", (c, r.r1))
             for rr in range(r.r0 + 2, r.r1, 2):
                 put(L, R + "t_plane", (r.c0, rr))
                 put(L, R + "t_plane", (r.c1, rr))
-            L.scatter(Rect(r.c0 + 1, r.r0 + 19, r.c1 - 1, r.r1 - 1),
+            L.scatter(Rect(r.c0 + 1, r.r0 + 24, r.c1 - 1, r.r1 - 1),
                       {R + "t_box": 3, R + "t_rose": 2, R + "t_cypress": 1, R + "r_statue": 0.5,
-                       R + "r_lacus": 0.3}, 0.25, seed="baths_gardens")
+                       R + "r_lacus": 0.3}, 0.22, seed="baths_gardens")
         elif lid == "testaccio":
             # The mound of broken oil amphorae, built as terraced ground (see _levels).
             L.scatter(Mask(0, 0, m(Ellipse(91, 154, 5.5, 6.5)) & m(r)), {R + "r_amphorae": 1},
@@ -651,66 +731,12 @@ def _palatine(L: Layout) -> None:
 # 8. Quarters: lanes, insulae and domus, shops on the streets, yards and gardens
 # =============================================================================================
 
-# (frontage kit, fill kit); shops, counters and corner blocks open on the streets afterwards.
-DENSE = ({R + "r_insula": 3, R + "r_insula_low": 1.2, R + "r_bath_small": 0.12},
-         {R + "r_insula_low": 2, R + "r_insula": 0.5})
-MIXED = ({R + "r_insula": 2, R + "r_domus": 1.5, R + "r_insula_low": 1},
-         {R + "r_insula_low": 2})
-RICH = ({R + "r_domus": 3, R + "r_insula_low": 0.7}, {R + "r_insula_low": 1})
 URBAN: list = []      # (mask, ground) of the crowded quarters, painted once the clean-up is done
-FRONT_SHOPS = {R + "r_taberna": 5, R + "r_thermopolium": 1, R + "r_insula_corner": 2,
-               R + "r_lacus": 0.6, R + "r_compitum": 0.6}
-SHOPS = {R + "r_thermopolium": 1.5, R + "r_taberna": 4, R + "r_bakery": 1.2, R + "r_fullonica": 0.8,
-         R + "r_smithy": 0.6, R + "r_glass": 0.4, R + "r_dyeworks": 0.4, R + "r_compitum": 1.2,
-         R + "r_lacus": 1.5, R + "r_latrine": 0.3, R + "r_vigiles": 0.2}
-GREEN = {R + "t_fig": 2, R + "r_vine": 2, R + "t_laurel": 1, R + "t_cypress": 1, R + "t_plane": 1,
-         R + "t_box": 1, R + "t_rose": 1}
+DENSE, MIXED, RICH = C.DENSE, C.MIXED, C.RICH
 
 
-def _streets_near(L: Layout, area: np.ndarray) -> list:
-    out = []
-    grown = area.copy()
-    grown[1:, :] |= area[:-1, :]
-    grown[:-1, :] |= area[1:, :]
-    grown[:, 1:] |= area[:, :-1]
-    grown[:, :-1] |= area[:, 1:]
-    for s in L.streets:
-        for c, r in Line(s.points, s.width).tiles():
-            lc, lr = c - L.origin[0], r - L.origin[1]
-            if 0 <= lc < W and 0 <= lr < H and grown[lr, lc]:
-                out.append(s)
-                break
-    return out
-
-
-def quarter(L: Layout, name: str, shape, kits, gap: float, spacing: int, shops: float,
-            green: float, level: int = 0, lane_paving: str = EARTH, ground: str | None = None,
-            fill_front: float = 0.0) -> None:
-    """One neighbourhood: lanes grown off its streets, frontage houses then the smaller pieces,
-    shops, shrines and fountains on the streets, yards and gardens in what is left (on `ground`
-    in the crowded quarters, where little grass was left)."""
-    area = m(shape) & (L.LV == level) & (L.OCC < 0)
-    area &= ~_water_mask(L)
-    if not area.any():
-        return
-    C.lanes(L, area & ~L.STREET, name, spacing=spacing, paving=lane_paving, reach=24)
-    area &= ~L.STREET
-    C.beside_street(L, area, SHOPS, shops, name + "_shops")
-    front = _streets_near(L, area)
-    # The filler favours small pieces in a mixed kit, so the big blocks go first, one by one.
-    for item in sorted(kits[0], key=lambda k: -L.cat.items[k].footprint[0] * L.cat.items[k].footprint[1]):
-        if kits[0][item] >= 1:
-            L.houses(Mask(0, 0, area), {item: 1}, front=front, gap=gap + 0.1 / kits[0][item],
-                     seed=f"{name}_{item}")
-    L.houses(Mask(0, 0, area), kits[0], front=front, gap=gap, seed=name)
-    L.houses(Mask(0, 0, area), kits[1], front=front, gap=gap + 0.05, seed=name + "_fill")
-    if fill_front:
-        C.beside_street(L, area, FRONT_SHOPS, fill_front, name + "_front")
-    if ground:
-        URBAN.append((area.copy(), ground))
-    L.scatter(Mask(0, 0, area), {R + "r_well": 1, R + "r_amphorae": 1.5, R + "r_altar": 0.3}, 0.015,
-              min_gap=2, seed=name + "_yards")
-    L.scatter(Mask(0, 0, area), GREEN, green, seed=name + "_green", clump=0.6)
+def quarter(L: Layout, *args, **kw) -> None:
+    C.quarter(L, *args, urban=URBAN, **kw)
 
 
 def _quarters(L: Layout, Wd: dict) -> None:
@@ -812,18 +838,22 @@ def _transtiberim(L: Layout) -> None:
 # =============================================================================================
 
 def _port(L: Layout) -> None:
-    if _emporium_fits(L):
+    if _emporium_open(L):
         fp = _fp(L, "emporium")
         L.place(R + "emporium", rect=(61, 140, 61 + fp[0] - 1, 140 + fp[1] - 1), name="emporium")
+        quay = Rect(61, 151, 66, 159)              # the wharf below the Porticus
     else:
-        # The wharf: a travertine quay on its embankment with cranes and stacks of amphorae and
-        # sacks; the Porticus Aemilia's vaulted bays as rows of warehouses. (No `rome.quay`
-        # posts: their mooring spot is the water tile, which V7 counts as a walker's spot.)
         quay = Rect(61, 140, 66, 159)
-        _paint_free(L, quay, TRAV, 0)
-        for at in ((63, 143), (63, 152)):
-            put(L, R + "r_crane", at)
-        L.scatter(quay, {R + "r_amphorae": 1}, 0.25, seed="quay_goods")
+    # The wharf: a travertine quay on its embankment with mooring posts along the water,
+    # cranes and stacks of amphorae and sacks; the Porticus Aemilia's vaulted bays as rows of
+    # warehouses while its art cannot stand.
+    _paint_free(L, quay, TRAV, 0)
+    _quays(L, range(quay.r0, quay.r1 + 1, 3))
+    _quays(L, range(110, 139, 4))                   # the embankment along the river road
+    for r in range(quay.r0 + 2, quay.r1 - 1, 9):
+        put(L, R + "r_crane", (65, r))
+    L.scatter(quay, {R + "r_amphorae": 1}, 0.25, seed="quay_goods")
+    if not _emporium_open(L):
         for c in range(67, 84, 4):
             put(L, R + "r_horrea", (c, 142), face="north")
             put(L, R + "r_horrea", (c, 146), face="south")
@@ -955,3 +985,5 @@ def _views(L: Layout) -> None:
     L.view("appia", Rect(128, 115, 175, 159))
     L.view("transtiberim", Rect(0, 60, 54, 159))
     L.view("capitol", Rect(56, 36, 96, 74))
+    L.view("oppian", Rect(136, 8, 175, 58))
+    L.view("aurelia_cutting", Rect(0, 82, 36, 110))

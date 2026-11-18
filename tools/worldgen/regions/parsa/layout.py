@@ -40,8 +40,8 @@ S1_BAND = Rect(21, 0, 24, 21) | Rect(0, 18, 24, 21)
 CAMP = Rect(58, 122, 112, 134)
 
 # Paradise channels: the inlet along r 22 from the canal, north to the pavilion and beyond, the
-# pavilion's arms, the south axis, and the two branches that leave as the town and terrace-foot
-# outlets.
+# pavilion's arms, the south axis, the branch that leaves as the town canal, and the south-east
+# arm that ends at its sluice by the wall.
 GARDEN_WATER = [
     [(54, 21), (54, 22), (36, 22)],
     [(35, 22), (35, 18)],
@@ -80,11 +80,18 @@ def build(L: Layout) -> None:
     L.fill(GRASS, level=0, district="plain")
 
     # Kuh-e Raḥmat: the slope foot (level 7) carries the wall; above it bare limestone climbs to
-    # the east edge (11 = world 15), where the backdrop takes over. North and south of the
-    # terrace the plain rises over foothills to meet it.
-    n = noise(14.0, "mountain")
-    mount = np.clip(np.round(8 + (cc - 125) * 3.2 / 18 + (n - 0.5) * 2.2), 8, 11)
-    foot = np.clip(np.round((cc - 106) * 0.5 + (noise(9.0, "foothills") - 0.5) * 3.0), 0, 6)
+    # the east edge (11 = world 15), where the backdrop takes over. The mountain rises in ridges
+    # (contours every four or five columns, bent by noise, each a one-level scarp) cut by gullies
+    # that come down westward every dozen rows, with scree in the gullies and fanning out at
+    # their feet. North and south of the terrace the plain climbs the foothills in three
+    # benches (2, 4, 6) to meet it.
+    x = (cc - 125) / 18.0
+    ridge = 8 + x * 3.8 + (noise(22.0, "mountain") - 0.5) * 1.4 + (noise(7.0, "crags") - 0.5) * 0.5
+    wob = (noise(16.0, "gully_wobble") - 0.5) * 7
+    gully = np.clip(1 - np.abs(np.sin(np.pi * (rr + wob) / 13.0)) / 0.3, 0, 1)
+    mount = np.clip(np.floor(ridge - np.minimum(gully * 2, 1) * (1.5 + 2.0 * x)), 8, 11)
+    foot = np.clip(2 * np.floor(((cc - 104) * 0.45 + (noise(11.0, "foothills") - 0.5) * 2.0) / 2),
+                   0, 6)
     outside_terrace = (rr < 22) | (rr > 118)
     lv = np.zeros((N, N), dtype=int)
     lv = np.where(outside_terrace & (cc >= 108) & (cc < 120), foot, lv)
@@ -94,7 +101,12 @@ def build(L: Layout) -> None:
         L.level(mask(lv == k), k, face=P + "rock")
     slope = mask((cc >= 125) | ((lv > 0) & (cc >= 100)))
     L.paint(slope, ROCK)
-    L.paint(mask((cc >= 100) & (cc < 125) & (lv > 0) & (noise(5.0, "scree") > 0.55)), SCREE)
+    fan = (cc >= 118) & (cc < 132) & \
+        (np.clip(1 - np.abs(np.sin(np.pi * (rr + wob) / 13.0)) / (0.15 + 0.03 * np.clip(132 - cc, 0, None)),
+                 0, 1) > 0.3)
+    L.paint(mask((cc >= 125) & (gully > 0.25) & (noise(4.0, "gully_scree") > 0.2)), SCREE)
+    L.paint(mask(fan & (noise(3.0, "fan_scree") > 0.35)), SCREE)
+    L.paint(mask((cc >= 100) & (cc < 125) & (lv > 0) & (noise(5.0, "scree") > 0.6)), SCREE)
     L.paint(mask((cc >= 100) & (cc < 120) & (lv > 0) & (lv < 4) & (noise(6.0, "grassy") > 0.5)),
             ROUGH)
     L.paint(BAND, ROUGH)
@@ -117,6 +129,9 @@ def build(L: Layout) -> None:
                     (Rect(63, 82, 70, 91), 8),      # Tačara
                     (Rect(76, 88, 85, 101), 9)):    # Hadiš, the highest platform
         L.level(rect, k, face=P + "ashlar")
+    # The corridor down the residential wing's east side to the Treasury's west door stays at the
+    # terrace's level (the harem's walk tiles, one below its platform).
+    L.level(Rect(99, 86, 99, 103), 6)
     # Painted red plaster under the porticoes and passages walkers use (walk tiles' floors).
     for rect in (Rect(65, 54, 78, 58), Rect(60, 59, 64, 72), Rect(64, 44, 69, 45),
                  Rect(66, 46, 67, 47), Rect(64, 89, 69, 91), Rect(76, 88, 85, 91),
@@ -182,6 +197,7 @@ def build(L: Layout) -> None:
     street([(85, 68), (89, 68)], width=1, paving=STONE)
     court = street([(57, 80), (99, 80)], width=2, paving=STONE)          # courts r 80..81
     street([(71, 82), (71, 96)], width=1, paving=STONE)                   # Tačara / Hadiš lane
+    street([(99, 81), (99, 103)], width=1, paving=STONE)                  # to the Treasury's west door
     street([(57, 96), (75, 96)], width=2, paving=STONE)                   # Tačara's south court
     street([(91, 36), (118, 36)], width=1, paving=STONE)                  # below the garrison
     street([(100, 36), (100, 44)], width=1, paving=STONE)                 # forecourt cross-path
@@ -244,11 +260,11 @@ def build(L: Layout) -> None:
     # Paradise: four quarters round the pavilion over the channel crossing.
     for pts in GARDEN_WATER:
         L.channel(pts, terrain=WATER)
-    # Outlets: through the south wall to the town canal; through the south-east wall round
-    # the stairway's west side to the channel along the terrace foot (c 50..51).
+    # The outlet through the south wall to the town canal. The channel along the terrace foot
+    # (c 50..51) starts below the stairway, gathers the terrace's drains and runs south and west
+    # to the town canal, so no water crosses the approach to the Great Stair.
     L.channel([(32, 34), (32, 35), (24, 35), (24, 48), (24, 52), (24, 70), (25, 82), (24, 96),
                (24, 111), (17, 112), (15, 112)], terrain=WATER)
-    L.channel([(52, 34), (52, 36), (47, 36), (47, 55), (50, 55), (50, 112)], terrain=WATER)
     L.channel([(50, 56), (50, 112)], terrain=WATER, width=2)
     L.channel([(49, 112), (25, 112)], terrain=WATER)
     # The field canal in the south-west, fed by the town canal and the qanat's outflow.
@@ -353,6 +369,15 @@ def build(L: Layout) -> None:
     _plain(L, noise)
     _naqsh(L)
 
+    # Juniper and thorn cling to the ridges, boulders and crags lie below the scarps (the slope
+    # is impassable, so they are placed one by one rather than scattered on walkable ground).
+    roll = rng.hash01(cc + L.origin[0], rr + L.origin[1], rng.hash64("parsa", "mountain_kit"))
+    kind = rng.hash01(cc + L.origin[0], rr + L.origin[1], rng.hash64("parsa", "mountain_pick"))
+    kit = ["world.boulder", "world.boulder", "world.p_thistle", "world.t_juniper"]
+    for r, c in zip(*np.nonzero((cc >= 126) & (gully < 0.2) & ~cut & (roll < 0.05))):
+        if L.OCC[r, c] < 0:
+            L.place(kit[int(kind[r, c] * len(kit))], at=(int(c), int(r)))
+
     clear_doors(L)
     glow_cap(L, {P + "p_house_small": 0, P + "p_house": 1, P + "p_workshop": 2, P + "p_oven": 3})
     seam(L, GRASS, ROUGH)
@@ -364,6 +389,8 @@ def build(L: Layout) -> None:
     L.expect("great_stair", rect=(49, 37, 55, 54), level=0)
     L.expect("apadana", rect=(60, 54, 83, 77), level=7)
     L.expect("hadish", rect=(76, 88, 85, 101), level=9)
+    # The arrival: the forecourt, the Great Stair and the landing before the Gate (V15).
+    L.sightline("great_stair", PLAZA | Rect(47, 35, 70, 60))
     L.view("whole_terrace", Rect(46, 18, 124, 122))
     L.view("terrace_front", Rect(44, 32, 92, 82))
     L.view("palaces", Rect(56, 76, 120, 124))

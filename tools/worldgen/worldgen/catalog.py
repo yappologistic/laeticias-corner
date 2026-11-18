@@ -197,6 +197,10 @@ class Catalog:
     def walk_tiles(self, item_id: str, k: int) -> list[tuple[int, int]]:
         return [tuple(t) for t in self.geom.get(item_id, {}).get(f"r{k}", {}).get("walk", [])]
 
+    def water_tiles(self, item_id: str, k: int) -> list[tuple[int, int]]:
+        """Open-water tiles of a landmark (a harbour basin): not walkable, a boat's."""
+        return [tuple(t) for t in self.geom.get(item_id, {}).get(f"r{k}", {}).get("water", [])]
+
     def slot_kind(self, item_id: str, slot_id: str) -> str | None:
         """The catalog `kind` of an item's slot (`mooring` spots are a boat's, on water)."""
         d = self.items.get(item_id)

@@ -12,6 +12,8 @@ import math
 
 import numpy as np
 
+from plan import world_plan as P
+
 from .coords import to_grid
 from .dsl import NO_GROUND, TRANSPARENT, Issue, Layout
 from .graph import Edge, Graph, Lane, Node, Port
@@ -257,7 +259,18 @@ def derive_graph(L: Layout) -> tuple[Graph, list[Issue]]:
                                 f"portal {s.portal!r}: neither end of its street is on the layer "
                                 "edge", s.src, ends[0]))
             continue
-        portal_tiles[on_edge[0]] = s.portal
+        end = on_edge[0]
+        decl = P.PORTALS.get(s.portal)
+        plan_tile = tuple(decl[1]) if decl else end
+        outside = not (c0 <= plan_tile[0] <= c1 and r0 <= plan_tile[1] <= r1)
+        if outside and abs(plan_tile[0] - end[0]) + abs(plan_tile[1] - end[1]) == 1:
+            # The plan's tile is the neighbouring layer's edge tile: the portal is one node of
+            # both layers (world-tech §2.5), so this layer's node stands there too, a step
+            # across its edge from its street's end.
+            portal_tiles[plan_tile] = s.portal
+            extra.append((end, plan_tile, s.kind))
+        else:
+            portal_tiles[end] = s.portal
 
     ids: dict[tuple[int, int], str] = {}
     kinds: dict[tuple[int, int], str | None] = {}

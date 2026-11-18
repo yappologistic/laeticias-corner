@@ -1,0 +1,111 @@
+{
+ "version": 1,
+ "id": "alban_mount",
+ "name": "Mons Albanus",
+ "native": "Mons Albanus",
+ "caption": "The Alban Mount · April AD 126",
+ "era": "The Rome of Hadrian · AD 126",
+ "season": "spring",
+ "theme": {"grading": {"dawn": [1.03, 0.97, 0.93], "day": [1.02, 1.0, 0.96], "dusk": [1.03, 0.95, 0.87], "night": [0.96, 0.97, 1.04]}, "haze": {"colour": [0.93, 0.91, 0.85], "strength": 0.1}, "climate": "rome", "weather": {"spring": {"showers": 2, "clouds": 2, "wind": 0.4, "wind_from": "west", "note": "April showers; mist on the crater lake at dawn"}, "summer": {"showers": 0, "clouds": 1, "wind": 0.35}, "autumn": {"showers": 3, "clouds": 3, "wind": 0.45}, "winter": {"showers": 3, "clouds": 4, "wind": 0.5}}, "ambience": {"beds": [{"file": "amb/world/fields.ogg", "hours": ["05:00", "19:30"]}, {"file": "amb/world/desert_night.ogg", "hours": ["19:30", "05:00"]}], "zones": [{"rect": [132, 970, 159, 998], "file": "amb/world/mountain.ogg", "gain": 0.5}, {"rect": [169, 968, 175, 1001], "file": "amb/world/road.ogg", "gain": 0.5, "hours": ["05:30", "19:00"]}], "loops": []}, "music": {"day": "music/rome/day.ogg", "night": "music/rome/night.ogg"}, "arrive": "sfx/rome/arrive.wav"},
+ "densities": {
+  "always": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  "day": [0, 0, 0, 0, 0, 0.2, 0.7, 1, 1, 1, 1, 1, 0.75, 0.75, 0.9, 0.9, 1, 1, 0.6, 0.35, 0.15, 0.05, 0, 0],
+  "forum": [0, 0, 0, 0, 0, 0.15, 0.6, 1, 1, 1, 1, 1, 0.75, 0.75, 0.85, 0.85, 1, 1, 0.55, 0.3, 0.1, 0, 0, 0],
+  "market": [0, 0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 1, 1, 0.7, 0.7, 0.85, 0.85, 0.85, 0.7, 0.4, 0.1, 0, 0, 0, 0],
+  "work": [0, 0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 1, 0.6, 0.6, 1, 1, 1, 0.7, 0.3, 0, 0, 0, 0, 0],
+  "morning": [0, 0, 0, 0, 0, 0, 0.6, 1, 1, 1, 1, 1, 0.3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "dawn_work": [0, 0, 0.7, 1, 1, 1, 1, 1, 1, 1, 1, 0.7, 0.7, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.1, 0, 0, 0, 0],
+  "houses": [0, 0, 0, 0, 0.2, 0.6, 1, 1, 1, 1, 1, 1, 0.75, 0.75, 0.85, 0.85, 0.85, 1, 1, 0.6, 0.35, 0.15, 0, 0],
+  "salutatio": [0, 0, 0, 0, 0.5, 1, 1, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "baths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.15, 0.15, 0.15, 0.4, 0.8, 1, 1, 1, 0.7, 0.3, 0, 0, 0, 0, 0],
+  "evening": [0.15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 0.5, 0.2],
+  "night": [1, 1, 1, 1, 0.6, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0.8, 1, 1, 1],
+  "watch": [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.8, 0.8, 0.6, 0.6],
+  "children": [0, 0, 0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 0.6, 0.6, 1, 1, 1, 1, 0.6, 0.3, 0, 0, 0, 0],
+  "graze": [0.2, 0.2, 0.2, 0.2, 0.2, 0.7, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.6, 0.2, 0.2, 0.2, 0.2],
+  "fields": [0, 0, 0, 0, 0, 0.5, 1, 1, 1, 1, 1, 0.8, 0.5, 0.5, 0.8, 1, 1, 1, 0.5, 0.1, 0, 0, 0, 0],
+  "harbour": [0.05, 0.05, 0.05, 0.05, 0.3, 0.8, 1, 1, 1, 1, 1, 1, 0.7, 0.7, 1, 1, 1, 1, 0.6, 0.3, 0.1, 0.1, 0.1, 0.1],
+  "afternoon": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3, 0.8, 1, 1, 1, 0.8, 0.3, 0, 0, 0, 0, 0],
+  "festival": [0.05, 0.05, 0.05, 0.05, 0.2, 0.5, 0.8, 0.8, 1, 1, 1, 1, 0.8, 0.8, 1, 1, 1, 1, 1, 1, 0.9, 0.6, 0.3, 0.05],
+  "birds": [0, 0, 0, 0, 0.3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.4, 0, 0, 0],
+  "parilia_night": [0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0.8, 1, 1, 1, 0.6, 0.1],
+  "evening_shop": [0, 0, 0, 0, 0, 0.4, 0.9, 1, 1, 1, 1, 1, 1, 0.8, 0.8, 0.8, 1, 1, 1, 1, 1, 0.6, 0.2, 0],
+  "road": [0, 0, 0, 0, 0, 0.3, 0.8, 0.8, 1, 1, 1, 1, 0.7, 0.7, 0.9, 0.9, 0.9, 1, 0.6, 0.2, 0, 0, 0, 0]
+ },
+ "districts": [
+  {"id": "summit", "area": "country", "populations": [{"role": "priest", "per_item": "rome.latiaris", "count": 1, "density": "morning"}, {"role": "attendant", "density": "work", "max_per_chunk": 4}, {"role": "pilgrim", "density": "day", "max_per_chunk": 18}, {"role": "magistrate", "density": "day", "max_per_chunk": 8, "when": {"festival": "feriae_latinae"}}, {"role": "pilgrim", "density": "festival", "max_per_chunk": 12, "when": {"festival": "feriae_latinae"}}]},
+  {"id": "slopes", "area": "country", "populations": [{"role": "shepherd", "density": "graze", "max_per_chunk": 3}, {"role": "sheep", "density": "graze", "max_per_chunk": 10}, {"role": "goat", "density": "graze", "max_per_chunk": 4}, {"role": "dog", "density": "always", "max_per_chunk": 1}, {"role": "farmer", "per_item": "rome.r_villa_farm", "count": 3, "density": "fields"}, {"role": "vinedresser", "density": "fields", "max_per_chunk": 6}, {"role": "pilgrim", "density": "day", "max_per_chunk": 4}, {"role": "wine_mule", "density": "work", "max_per_chunk": 2}, {"role": "swallow", "density": "birds", "max_per_chunk": 2}]},
+  {"id": "woods", "area": "wild", "populations": [{"role": "logger", "density": "work", "max_per_chunk": 4}, {"role": "goat", "density": "graze", "max_per_chunk": 3}, {"role": "swallow", "density": "birds", "max_per_chunk": 2}]},
+  {"id": "lake", "area": "wild", "populations": [{"role": "lake_fisher", "density": "harbour", "max_per_chunk": 6}, {"role": "swallow", "density": "birds", "max_per_chunk": 4}]},
+  {"id": "road", "area": "road", "populations": [{"role": "traveller", "density": "road", "max_per_chunk": 12}, {"role": "wine_cart", "density": "day", "max_per_chunk": 2}, {"role": "mourner", "per_item": "rome.r_tomb", "count": 1, "density": "day"}, {"role": "dog", "density": "always", "max_per_chunk": 1}]}
+ ],
+ "roles": [
+  {"id": "shepherd", "actor": "rome.shepherd", "name": "Shepherd", "schedule": [{"hours": ["05:00", "19:00"], "routine": "herd"}], "routines": {"herd": {"loop": true, "steps": [{"wander": {"radius": 10}, "dur": [40, 70]}, {"use": {"here": true}, "anim": "idle", "dur": [10, 20]}, {"use": {"here": true}, "anim": "run", "dur": [4, 8]}]}}, "card": "shepherd"},
+  {"id": "sheep", "actor": "rome.sheep", "name": "Sheep", "schedule": [{"hours": ["05:00", "19:30"], "routine": "graze"}], "routines": {"graze": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "graze", "dur": [10, 25]}]}}},
+  {"id": "goat", "actor": "rome.goat", "name": "Goat", "schedule": [{"hours": ["05:00", "19:30"], "routine": "graze"}], "routines": {"graze": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "graze", "dur": [10, 25]}]}}},
+  {"id": "dog", "actor": "rome.dog", "name": "Dog", "schedule": [{"hours": ["00:00", "24:00"], "routine": "roam"}], "routines": {"roam": {"loop": true, "steps": [{"wander": {"radius": 8}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "sleep", "dur": [30, 60]}]}}, "card": "dogs"},
+  {"id": "farmer", "actor": "rome.farmer", "name": "Farmer", "schedule": [{"hours": ["05:00", "11:30"], "routine": "field"}, {"hours": ["15:00", "19:00"], "routine": "field"}], "routines": {"field": {"loop": true, "steps": [{"pick": [{"weight": 4, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "work_low", "dur": [30, 50]}]}, {"weight": 1, "steps": [{"go": {"item": "rome.r_villa_farm", "slot": "door", "within": 20}}, {"use": {"here": true}, "anim": "idle", "dur": [10, 15]}]}]}]}}, "card": "farmer"},
+  {"id": "vinedresser", "actor": "rome.farmer", "name": "Vine-dresser", "schedule": [{"hours": ["05:30", "11:30"], "routine": "vines"}, {"hours": ["15:00", "18:30"], "routine": "vines"}], "routines": {"vines": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "work_high", "dur": [30, 50]}, {"use": {"here": true}, "anim": "work_low", "dur": [15, 25]}]}}, "card": "vinedresser"},
+  {"id": "mourner", "actor": "rome.matron", "name": "Mourner at a tomb", "schedule": [{"hours": ["06:00", "11:00"], "routine": "tomb"}, {"hours": ["15:00", "18:30"], "routine": "tomb"}], "routines": {"tomb": {"loop": true, "steps": [{"go": {"home": "mourn"}}, {"use": {"home": "mourn"}, "anim": "idle", "dur": [40, 70]}, {"wander": {"radius": 4}, "dur": [15, 25]}]}}, "home": {"item": "rome.r_tomb", "slot": "mourn"}, "card": "tombs"},
+  {"id": "swallow", "actor": "rome.swallow", "name": "Swallow", "schedule": [{"hours": ["05:00", "19:30"], "routine": "fly"}], "routines": {"fly": {"loop": true, "steps": [{"wander": {"radius": 16}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "idle", "dur": [4, 8]}]}}, "card": "swallows"},
+  {"id": "priest", "actor": "rome.flamen", "name": "Priest of Jupiter Latiaris", "schedule": [{"hours": ["05:30", "11:30"], "routine": "offer"}, {"hours": ["15:00", "18:00"], "routine": "offer"}], "routines": {"offer": {"loop": true, "steps": [{"go": {"home": "sacrifice"}}, {"use": {"home": "sacrifice"}, "anim": "pour", "dur": [30, 50]}, {"use": {"here": true}, "anim": "pray", "dur": [20, 30]}]}}, "home": {"item": "rome.latiaris", "slot": "sacrifice"}, "card": "flamen"},
+  {"id": "attendant", "actor": "rome.enslaved", "name": "Temple servant", "schedule": [{"hours": ["05:00", "12:00"], "routine": "tend"}, {"hours": ["14:00", "18:30"], "routine": "tend"}], "routines": {"tend": {"loop": true, "steps": [{"go": {"node": "latiaris"}}, {"use": {"here": true}, "anim": "work_low", "dur": [30, 50]}, {"take": "world.goods_firewood"}, {"wander": {"radius": 4}, "dur": [15, 25]}, {"put": "world.goods_firewood"}]}}, "card": "enslaved"},
+  {"id": "pilgrim", "actor": "rome.citizen", "name": "Pilgrim on the summit", "schedule": [{"hours": ["06:30", "12:00"], "routine": "climb"}, {"hours": ["14:00", "18:00"], "routine": "climb"}], "routines": {"climb": {"loop": true, "steps": [{"go": {"node": "latiaris"}}, {"use": {"here": true}, "anim": "idle", "dur": [30, 50]}, {"use": {"here": true}, "anim": "talk", "dur": [15, 25]}, {"wander": {"radius": 5}, "dur": [20, 30]}, {"go": {"node": "villas"}}, {"wait": {"dur": [15, 25]}}]}, "shelter": {"steps": [{"go": {"slot_kind": "door", "within": 30}}, {"enter": {"here": true}, "until": {"weather": "clear"}}]}}, "interrupts": [{"when": {"weather": "rain"}, "routine": "shelter", "priority": 2}], "card": "pilgrim"},
+  {"id": "logger", "actor": "world.logger", "name": "Woodcutter", "schedule": [{"hours": ["06:00", "11:30"], "routine": "cut"}, {"hours": ["14:00", "18:00"], "routine": "cut"}], "routines": {"cut": {"loop": true, "steps": [{"wander": {"radius": 6}, "dur": [20, 40]}, {"use": {"here": true}, "anim": "work_high", "dur": [40, 60]}, {"use": {"here": true}, "anim": "haul", "dur": [20, 30]}]}}, "card": "woodcutter"},
+  {"id": "lake_fisher", "actor": "world.fisher", "name": "Fisherman on the lake", "schedule": [{"hours": ["05:00", "11:00"], "routine": "fish"}, {"hours": ["15:00", "19:00"], "routine": "fish"}], "routines": {"fish": {"loop": true, "steps": [{"wander": {"radius": 4}, "dur": [20, 30]}, {"use": {"here": true}, "anim": "work_low", "dur": [40, 60]}, {"use": {"here": true}, "anim": "sit", "dur": [30, 50]}]}}, "card": "lake"},
+  {"id": "traveller", "actor": "world.traveller", "name": "Traveller on the Via Appia", "schedule": [{"hours": ["05:30", "18:30"], "routine": "travel"}], "routines": {"travel": {"loop": true, "steps": [{"go": {"node": "appia_foot"}}, {"use": {"here": true}, "anim": "sit", "dur": [15, 25]}, {"wander": {"radius": 8}, "dur": [30, 50]}]}}, "card": "cursus_role"},
+  {"id": "wine_mule", "actor": "rome.mule", "name": "Mule with wine", "schedule": [{"hours": ["06:00", "17:30"], "routine": "carry"}], "routines": {"carry": {"loop": true, "steps": [{"go": {"item": "rome.r_villa_farm", "slot": "door"}}, {"use": {"here": true}, "anim": "idle", "dur": [15, 25]}, {"go": {"node": "appia_foot"}}, {"use": {"here": true}, "anim": "graze", "dur": [15, 25]}]}}, "card": "mules"},
+  {"id": "wine_cart", "actor": "rome.cart", "name": "Cart for Rome", "schedule": [{"hours": ["06:00", "18:00"], "routine": "haul"}], "routines": {"haul": {"loop": true, "steps": [{"go": {"node": "appia_foot"}}, {"wait": {"dur": [60, 100]}}, {"wander": {"radius": 10}, "dur": [40, 60]}]}}, "locomotion": {"mode": "walk", "speed": 0.6, "network": "roads", "turn_radius": 2}, "card": "site_cart"},
+  {"id": "magistrate", "actor": "rome.togatus", "name": "Magistrate of a Latin town", "schedule": [{"hours": ["07:00", "14:00"], "routine": "festival"}], "routines": {"festival": {"loop": true, "steps": [{"go": {"node": "latiaris"}}, {"use": {"here": true}, "anim": "gesture", "dur": [30, 50]}, {"use": {"here": true}, "anim": "talk", "dur": [20, 30]}]}}, "card": "feriae_latinae"}
+ ],
+ "groups": [],
+ "chains": [
+  {"id": "alban_wine", "name": "Alban wine for the road", "period": 200, "hours": ["06:00", "17:30"], "stages": [{"slot": "rome.r_villa_farm.door", "makes": "rome.goods_wine_amphora", "by": "farmer", "label": "an amphora of the hill's wine from the villa's cellar"}, {"carry": "rome.goods_wine_amphora", "from": "rome.r_villa_farm.door", "to": "node:appia_foot", "by": "wine_mule", "units": 2}, {"slot": "node:appia_foot", "sink": "rome.goods_wine_amphora", "by": "wine_cart", "label": "loaded on a cart for Rome"}]}
+ ],
+ "festivals": [
+  {"id": "feriae_latinae", "season": "spring", "day": 3, "hours": ["07:00", "14:00"]}
+ ],
+ "events": [
+  {"id": "feriae_latinae", "rarity": "festival", "size": "large", "trigger": {"on": "calendar", "festival": "feriae_latinae", "hours": ["08:00", "08:30"]}, "duration": [100, 120], "steps": [{"go": {"node": "latiaris"}}, {"use": {"item": "rome.latiaris", "slot": "sacrifice"}, "anim": "idle", "dur": [40, 60]}, {"emit": {"sfx": "sfx/rome/tibia.wav"}}], "route": ["appia_foot", "villas", "latiaris"], "cast": [{"role": "magistrate", "count": 6}, {"role": "priest", "count": 1}, {"actor": "rome.lictor", "count": 4}, {"actor": "rome.musician", "count": 2}, {"actor": "rome.ox", "count": 1}, {"role": "pilgrim", "count": 12, "from": "district"}], "ambience": {"file": "amb/rome/procession.ogg", "gain": 0.7}, "card": "feriae_latinae", "string": "feriae"},
+  {"id": "summit_sacrifice", "rarity": "common", "size": "small", "trigger": {"on": "window", "hours": ["07:30", "08:00"], "chance": 0.6, "not_festival": "feriae_latinae"}, "duration": [70, 90], "steps": [{"use": {"item": "rome.latiaris", "slot": "sacrifice"}, "anim": "pour", "dur": [50, 70]}, {"emit": {"sfx": "sfx/rome/tibia.wav"}}], "zone": "summit", "cast": [{"role": "priest", "count": 1}, {"role": "pilgrim", "count": 4}], "card": "latiaris"},
+  {"id": "flock_out", "rarity": "daily", "size": "small", "trigger": {"on": "window", "hours": ["05:30", "06:00"], "chance": 1.0}, "duration": [80, 100], "steps": [{"wander": {"zone": "slopes"}, "dur": [70, 90]}], "zone": "slopes", "cast": [{"role": "shepherd", "count": 1}, {"actor": "rome.sheep", "count": 8}, {"actor": "rome.dog_molossian", "count": 1}], "sfx": "sfx/world/sheep_bells.wav", "card": "shepherd"},
+  {"id": "lake_mist", "rarity": "common", "size": "small", "trigger": {"on": "window", "hours": ["04:00", "06:30"], "chance": 0.5, "season": ["spring", "autumn"]}, "duration": [120, 150], "steps": [{"emit": {"fx": "mist"}}], "zone": "lake", "card": "lake"},
+  {"id": "woodcutting", "rarity": "common", "size": "small", "trigger": {"on": "window", "hours": ["09:00", "16:00"], "chance": 1.0, "every": 2400}, "duration": [40, 60], "steps": [{"use": {"here": true}, "anim": "work_high", "dur": [30, 50]}, {"emit": {"sfx": "sfx/world/hammer.wav"}}], "zone": "woods", "cast": [{"role": "logger", "count": 2}], "card": "woodcutter"},
+  {"id": "swifts", "rarity": "daily", "size": "small", "trigger": {"on": "window", "hours": ["18:00", "18:30"], "chance": 1.0, "season": ["spring", "summer"]}, "duration": [60, 80], "steps": [{"wander": {"radius": 12}, "dur": [50, 70]}], "zone": "summit", "cast": [{"actor": "world.swift", "count": 6}], "sfx": "sfx/world/swifts.wav"}
+ ],
+ "days_shown": [
+  {"day": 0, "label": "An April day on the mount"},
+  {"day": 2, "label": "The Latin Festival (spring, day 3)"}
+ ],
+ "figures": [],
+ "lanes_tokens": [],
+ "cards": {
+  "latiaris": {"kind": "landmark", "title": "Iuppiter Latiaris", "text": "Jupiter's sanctuary on the summit of the Alban Mount, the old meeting place of the Latin peoples, where the consuls lead the Latin Festival each year. Below it lies the round crater lake; the Via Appia passes at the mount's foot.", "epithet": "On the Alban Mount"},
+  "feriae_latinae": {"kind": "idea", "title": "Feriae Latinae", "text": "Each year, on a day the new consuls set, usually in spring, Rome's magistrates climb the Alban Mount with delegates of the old Latin towns. A white bull is sacrificed to Jupiter Latiaris and its meat shared among the towns, a memory of the league that Rome once led and then swallowed. The game shows it on the third day of spring.", "epithet": "The Latin Festival"},
+  "lake": {"kind": "idea", "title": "Lacus Albanus", "text": "The lake fills the crater of an old volcano. In the war against Veii, Livy says, the Romans cut a tunnel to drain its rising water, and the outlet is still there. Fishermen work its shores, and mist lies on it on spring mornings.", "epithet": "The crater lake"},
+  "alban_wine": {"kind": "idea", "title": "Vinum Albanum", "text": "The volcanic slopes of the Alban hills made a wine Romans praised; Horace and Pliny both name it. Villas on the slopes send it down by mule to the Via Appia, where carts take it on to Rome's tables and taverns.", "epithet": "Alban wine"},
+  "pilgrim": {"kind": "role", "title": "Peregrinator", "text": "Pilgrims climb the paved way to Jupiter's sanctuary to pray and make an offering."},
+  "woodcutter": {"kind": "role", "title": "Lignator", "text": "Woodcutters fell oak and chestnut in the woods of the mount for firewood and charcoal."},
+  "shepherd": {"kind": "role", "title": "Pastor", "text": "Shepherds bring their flocks to graze on the hills and the Campagna; the Parilia is their festival."},
+  "dogs": {"kind": "role", "title": "Canes", "text": "Dogs guard doors (cave canem, says the mosaic) and roam the streets for scraps."},
+  "farmer": {"kind": "role", "title": "Agricola", "text": "Farmers and tenants work the market gardens, fields and olive yards round the city."},
+  "vinedresser": {"kind": "role", "title": "Vinitor", "text": "Vine-dressers prune, tie and hoe the vines on the hills outside the city."},
+  "tombs": {"kind": "role", "title": "Sepulcra", "text": "Burial is forbidden inside the city, so tombs line the roads leading out of it; families visit with offerings."},
+  "swallows": {"kind": "role", "title": "Hirundines", "text": "The swallows are back with the spring, swooping over the river and the rooftops."},
+  "flamen": {"kind": "role", "title": "Flamen", "text": "A priest of one god, in a heavy cloak and the apex, a cap topped with a spike of olive wood."},
+  "enslaved": {"kind": "role", "title": "Servus", "text": "Perhaps a fifth to a third of Rome's people are enslaved. They wear no special dress; you know them only by the work they are made to do."},
+  "cursus_role": {"kind": "role", "title": "Viator", "text": "A traveller on the Via Appia, resting at the relay stations between Rome and the south."},
+  "mules": {"kind": "role", "title": "Muli", "text": "Pack mules carry loads by day, when carts are banned from the streets."},
+  "site_cart": {"kind": "role", "title": "Plaustrum", "text": "Ox carts for public building may run by day; most other heavy carts must wait for dusk."}
+ },
+ "strings": {
+  "first_visit": "The Alban Mount. The paved way climbs to Jupiter's sanctuary above the crater lake.",
+  "feriae": "The Latin Festival: the magistrates climb to Jupiter's altar with a white bull."
+ },
+ "journal": [
+  "landmark:*",
+  "chain:*",
+  "idea:*",
+  "event:feriae_latinae"
+ ]
+}

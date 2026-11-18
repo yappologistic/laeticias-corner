@@ -95,12 +95,15 @@ OWNERSHIP = [
     ("greece", "land", (436, 0, 851, 447)),
     ("latium_italy", "land", (0, 0, 435, 447)),
     ("adriatic", "sea", (300, 0, 447, 230)),
+    ("adriatic", "sea", (380, 231, 407, 262)),   # down to Brundisium's waters
     ("ionian_sea", "sea", (408, 180, 471, 447)),
+    ("saronic", "sea", (556, 240, 575, 296)),  # the bay of Eleusis, the gulf's north-west arm
     ("saronic", "sea", (560, 296, 735, 447)),
     ("aegean", "sea", (736, 0, 860, 447)),
-    ("persian_gulf", "sea", (1040, 390, 1279, 447)),
+    ("aegean", "sea", (861, 0, 880, 110)),       # the Bosporus to the edge of the map
+    ("persian_gulf", "sea", (1030, 390, 1279, 447)),
     ("east_med", "sea", (861, 0, 1279, 447)),
-    ("greece", "sea", (436, 0, 559, 447)),  # the Gulf of Corinth
+    ("greece", "sea", (456, 240, 559, 300)),  # the Gulf of Corinth
     ("tyrrhenian", "sea", (0, 0, 435, 447)),
 ]
 
@@ -305,10 +308,20 @@ RELIEF = {
     "zagros": (6, 6, 1.5), "iran_plateau": (6, 8, 1.4),
 }
 
-# Plateau edges break into terraces and gullies: contour offsets by patchy noise (terraces) and
-# ridged-noise valleys cut where the ground slopes (gullies). Depth in levels.
-TERRACES = {"scale": 13.0, "amp": 0.45, "warp": 5.0, "warp_scale": 18.0}
-GULLIES = {"scale": 9.0, "depth": 1.9, "sharp": 5.0}
+# Landforms at the game's camera: the continuous height is grouped into benches `bench` levels
+# tall whose risers take only `riser` of each bench's horizontal run, so a slope reads as a few
+# broad terraces and clear scarps instead of a step every few tiles. The bench grid's phase
+# drifts (`phase_scale`) so scarps never line up across a whole stretch. Every level's outline
+# is then opened and closed by `open` tiles (no spur, notch or island narrower than 2 * open + 1),
+# a bench narrower than `min_bench` joins the scarp above it, and no scarp is taller than
+# `max_step` levels from one tile to the next. Gullies: wide ridged-noise valleys on slopes.
+LANDFORM = {"bench": 2, "riser": 0.3, "phase_scale": 90.0, "open": 2, "min_bench": 3,
+            "max_step": 3, "hills_scale": 30.0}
+GULLIES = {"scale": 18.0, "depth": 1.4, "sharp": 3.0}
+# Rivers run level for at least `reach` tiles; where the ground falls faster, the drops within
+# the next reach are gathered into one fall. Each river's valley floor is flat for a third of
+# its `valley` either side, then rises in a scarp to the land.
+RIVER_FORM = {"reach": 24}
 
 # Mountain bands: polygon, level range, noise scale, impassable from level, passes (tile, radius,
 # saddle level): the band falls to the saddle level there, so a road crosses on ramps.
@@ -503,10 +516,11 @@ LANES = {
                       "kind": "sea", "ports": {"corner_jetty": 0, "portus": 4}},
     "grain_fleet": {"points": [(200, 447), (180, 330), (130, 250), (106, 222)], "kind": "sea",
                     "ports": {"south_edge": 0, "portus": 3}},
+    # Both meet Brundisium's harbour lane at the harbour mouth (its local c 24, r 8).
     "ostia_brundisium": {"points": [(106, 222), (240, 280), (300, 372), (380, 336),
-                                    (412, 300), (406, 272)], "kind": "sea",
+                                    (412, 300), (404, 256)], "kind": "sea",
                          "ports": {"portus": 0, "brundisium": 5}},
-    "ionian_crossing": {"points": [(406, 270), (436, 270)], "kind": "sea",
+    "ionian_crossing": {"points": [(404, 256), (436, 270)], "kind": "sea",
                         "ports": {"brundisium": 0, "mist_w": 1}},
     "ionian_greek": {"points": [(442, 250), (448, 216), (460, 256), (470, 272), (520, 274),
                                 (553, 284)], "kind": "sea",
@@ -528,6 +542,32 @@ LANES = {
     "euphrates_boats": {"points": [(1015, 187), (1020, 220), (1032, 258), (1048, 284)],
                         "kind": "river", "ports": {"crossing": 0, "babylon": 3}},
 }
+
+# Rocks and islets beside the open-sea lanes, so no stretch of a crossing runs for screens with
+# nothing in sight: one every `every` tiles of a lane's plan line, `offset` tiles to a side,
+# `radius` tiles across, only where the sea is clear of land for `clear` tiles.
+ISLETS = {"every": 26, "offset": (6, 10), "radius": (1.0, 2.6), "clear": 14}
+
+# Where the seams of time join two lanes by design: a ship sails into the mist on one side and
+# out of it on the other (world.md §8).
+SEAM_CROSSINGS = {"seam_ionian": ("mist_w", "mist_e")}
+
+# The journey as one network (validated by name, in order): home gate, Rome, the Appia to
+# Brundisium, the Ionian crossing through the mist to Corinth, Athens and Piraeus, the Aegean
+# to Ephesus, the Royal Road to Pārsa. `layer:node` names graph nodes; the network joins
+# layers at portals, lanes at their shared ports (or ports within a tile), a lane to the node
+# within 4 tiles of each of its ports, and the seam crossings above.
+NETWORK = [
+    "corner:corner_road_s", "rome:aurelia_w", "rome:forum", "rome:pons_aemilius",
+    "rome:ostiensis", "ostia:portus", "rome:appia_se", "alban_mount:appia_alban_w",
+    "alban_mount:latiaris", "alban_mount:appia_alban_e", "base:appia_capua_w",
+    "base:appia_benev_e", "brundisium:appia_brund_w", "brundisium:column",
+    "brundisium:brundisium_quay", "corinth:lechaion", "corinth:corinth_n", "eleusis:eleusis_w",
+    "eleusis:sacred_way_w", "athens:market", "ephesus:ephesus_harbour", "ephesus:ephesus_e",
+    "sardis:sardis_w", "sardis:sardis_e", "halys:halys_w", "euphrates_crossing:euph_w",
+    "babylon:babylon_n", "susa:susa_w", "persian_gates:gates_w", "parsa:royal_road_w",
+    "parsa:hall_forecourt",
+]
 
 # --- country by stretch (docs/design/sets/world.md §9.3) ------------------------------------
 # base: base terrain; plants: item -> weight; open: plants per land tile outside woods; forest:
@@ -662,6 +702,16 @@ HAMLETS = {
     "charcoal": {"world.charcoal_kiln": 3, "world.field_hut": 1},
 }
 HAMLET_EVERY = 40   # tiles of road between farms (§9.5: a beat every 30-40 tiles)
+HAMLET_NEAR, HAMLET_NEAR_EVERY = 40, 24   # within 40 tiles of a town, a farm every 24
+# The crop beside a farm, away from the road, by family: (soil overlay, plant in rows, (column
+# step, row step)); "pasture" puts the flock's fold there and marks its grazing.
+FARM_PLOTS = {
+    "roman": [("rome.vineyard_soil", "rome.r_vine", (1, 2)), (None, "rome.t_olive", (3, 2)),
+              ("rome.field_spring", None, None)],
+    "greek": [("athens.olive_soil", "athens.t_olive", (3, 2)), ("pasture", "world.sheepfold", None)],
+    "anatolian": [("pasture", "world.sheepfold", None), ("parsa.field_barley", None, None)],
+    "marsh": [("world.field", None, None)],
+}
 
 # Base terrains meeting another base get this overlay on their side (V8; §1.2 margins).
 MARGIN = {"world.steppe": "world.scrub", "world.alluvium": "world.field",

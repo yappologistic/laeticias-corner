@@ -164,3 +164,73 @@ class Files(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Network(unittest.TestCase):
+    """The journey's chain across layers: portals, lanes and seam crossings join it."""
+
+    def graphs(self):
+        from worldgen.coords import to_grid
+        from worldgen.graph import Edge, Graph, Lane, Node, Port
+
+        def g(name, nodes, edges=(), lanes=()):
+            gr = Graph(name)
+            gr.nodes = [Node(i, to_grid(*at), k) for i, at, k in nodes]
+            gr.edges = [Edge(a, b, "road") for a, b in edges]
+            gr.lanes = [Lane(i, "sea", [to_grid(*p) for p in pts], [Port(pid, k) for pid, k in pp])
+                        for i, pts, pp in lanes]
+            return gr
+        return {
+            "a": g("a", [("gate", (0, 0), None), ("quay", (10, 0), None)], [("gate", "quay")],
+                   [("out", [(11, 1), (30, 1)], [("quay", 0), ("mist_w", 1)])]),
+            "b": g("b", [("pier", (61, 2), None), ("town", (70, 2), "dest")],
+                   [("pier", "town")], [("in", [(60, 1), (50, 1)], [("pier", 0), ("mist_e", 1)])]),
+        }
+
+    def test_lanes_and_the_mist_join_the_chain(self):
+        from worldgen.validate import network
+        self.assertEqual(network(self.graphs(), ["a:gate", "b:town"]), [])
+
+    def test_a_break_is_named(self):
+        from worldgen.validate import network
+        gs = self.graphs()
+        gs["b"].edges = []
+        issues = network(gs, ["a:gate", "b:pier", "b:town"])
+        self.assertTrue(issues and "breaks after b:pier" in issues[0].message, issues)
+        self.assertTrue(network(gs, ["a:gate", "c:nowhere"]))
+
+
+class SunkenFloor(unittest.TestCase):
+    """V3 lets a landmark's walk tiles lie a level off its flat footprint (the Pārsa Treasury's
+    corridor stepping down to its door), and V5 lets walkers take that step."""
+
+    def setUp(self):
+        self.d = catalog().items["rome.pons_fabricius"]
+        self.on = self.d.on
+        self.d.on = "land"
+
+    def tearDown(self):
+        self.d.on = self.on
+
+    def layout(self, drop):
+        L = meadow()
+        L.street([(0, 12), (13, 12)], width=1, paving="path")
+        L.street([(13, 12), (18, 12)], width=1, paving=None)
+        L.street([(18, 12), (31, 12)], width=1, paving="path")
+        L.level(Rect(14, 12, 17, 12), -drop)          # the deck row: the bridge's walk tiles
+        L.place("rome.pons_fabricius", at=(14, 11))
+        return L
+
+    def test_walk_tiles_one_level_down_pass(self):
+        issues = check(self.layout(1))
+        bad = [i for i in issues if i.code in ("V3", "V5") and i.level == "error"]
+        self.assertEqual(bad, [], [i.text() for i in bad])
+
+    def test_two_levels_down_is_refused(self):
+        self.assertTrue(any("more than a level off" in i.message for i in check(self.layout(2))
+                            if i.code == "V3"))
+
+    def test_solid_part_must_stay_flat(self):
+        L = self.layout(1)
+        L.level(Rect(14, 11, 14, 11), 1)              # a solid tile of the footprint raised
+        self.assertTrue(any("not flat" in i.message for i in check(L) if i.code == "V3"))

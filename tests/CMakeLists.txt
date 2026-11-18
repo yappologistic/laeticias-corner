@@ -47,6 +47,8 @@ set(LC_SCRIPTS
   "drawer_tabs|drawer_tabs|640x400|"
   "drawer_unlocks|drawer_unlocks|960x600|"
   "wish_first|wish_first|640x400|"
+  "hover_panel|hover_panel|960x600|"
+  "idle_lines|idle_lines|640x400|"
   "sketchbook|sketchbook|960x600|"
   "nook|nook|640x400|"
   "land|land|640x400|"
@@ -83,6 +85,9 @@ set(LC_SCRIPTS
   "world_save_b|world_save_b|960x600|"
   "world_travel|world_travel|1280x800|"
   "world_roam|world_roam|1280x800|"
+  "rain_pan|rain_pan|640x400|"
+  "walk_home|walk_home|640x400|"
+  "home_gone|home_gone|640x400|"
   "postcards|postcards|960x600|"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
@@ -135,7 +140,8 @@ foreach(entry IN LISTS LC_SCRIPTS)
 endforeach()
 
 # Every run starts from a clean save directory; the reload pair runs in order.
-list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art"
+list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no_resident"
+     "${LC_SCRATCH}/save_offscreen_actor"
      "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench" "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
@@ -202,18 +208,31 @@ if(UNIX)
     FIXTURES_REQUIRED "clean_saves;read_only")
 endif()
 
-# Missing cliff art shows a visible placeholder.
-set(missing "${LC_SCRATCH}/assets_missing")
-add_test(NAME prepare_missing_art COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR}/assets
-  -DOUT=${missing} -P ${CMAKE_CURRENT_SOURCE_DIR}/make_missing_assets.cmake)
-set_tests_properties(prepare_missing_art PROPERTIES FIXTURES_SETUP missing_art)
-add_test(NAME script_missing_art
-  COMMAND laeticias-corner --headless --size 640x400 --seed 1 --assets "${missing}"
-          --save-dir "${LC_SCRATCH}/save_missing_art"
-          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/missing_art.lcs"
+# Assets with one change: missing cliff art shows a visible placeholder; with the resident turned
+# off, nothing shows or signs her (Q3-08).
+foreach(variant missing_art no_resident)
+  set(dir "${LC_SCRATCH}/assets_${variant}")
+  add_test(NAME prepare_${variant} COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR}/assets
+    -DOUT=${dir} -DVARIANT=${variant} -P ${CMAKE_CURRENT_SOURCE_DIR}/make_assets_variant.cmake)
+  set_tests_properties(prepare_${variant} PROPERTIES FIXTURES_SETUP ${variant})
+  add_test(NAME script_${variant}
+    COMMAND laeticias-corner --headless --size 640x400 --seed 1 --assets "${dir}"
+            --save-dir "${LC_SCRATCH}/save_${variant}"
+            --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${variant}.lcs"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+  set_tests_properties(script_${variant} PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+    FIXTURES_REQUIRED "clean_saves;${variant}")
+endforeach()
+
+# Pointing at an actor out of view fails the run instead of pointing outside the window, where the
+# pointer would name things it is not over (Q3-15).
+add_test(NAME script_offscreen_actor
+  COMMAND laeticias-corner --headless --size 640x400 --seed 1
+          --save-dir "${LC_SCRATCH}/save_offscreen_actor"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/offscreen_actor.lcs"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
-set_tests_properties(script_missing_art PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
-  FIXTURES_REQUIRED "clean_saves;missing_art")
+set_tests_properties(script_offscreen_actor PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_REQUIRED clean_saves PASS_REGULAR_EXPRESSION "script line 13: cannot resolve point")
 
 # The mix of a drag-paint, a mute toggle and a day/night crossfade, captured headless and checked
 # for clipping and clicks.
@@ -272,7 +291,13 @@ endif()
 add_test(NAME soak
   COMMAND laeticias-corner --soak 600 --size 640x400 --seed 1 --save-dir "${LC_SCRATCH}/save_soak"
           ${LC_BUDGET})
-set_tests_properties(soak PROPERTIES ENVIRONMENT "${LC_RUN_ENV}" FIXTURES_REQUIRED clean_saves)
+set(LC_SOAK_ENV "${LC_RUN_ENV}")
+if(LC_SANITIZE)
+  # A small quarantine fills in the first quarter, so the flat-memory check measures the game,
+  # not freed memory the sanitizer holds back (256 MiB by default, filling all run long).
+  list(APPEND LC_SOAK_ENV "ASAN_OPTIONS=quarantine_size_mb=8")
+endif()
+set_tests_properties(soak PROPERTIES ENVIRONMENT "${LC_SOAK_ENV}" FIXTURES_REQUIRED clean_saves)
 
 add_test(NAME bench
   COMMAND laeticias-corner --bench --renderer opengl --size 1920x1080 --seed 1 --frames 240

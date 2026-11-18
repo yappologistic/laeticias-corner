@@ -90,7 +90,7 @@ FRect Scene::spriteRect(const Item& item, int slot) const {
 }
 
 bool Scene::flying(const Actor& a) const {
-    return cat_.kinds[a.kind].move == Locomotion::Fly || (a.flags & actor_flag::kOnHat) != 0;
+    return inAir(a, cat_.kinds[a.kind]);
 }
 
 bool Scene::glows(const Actor& a) const {

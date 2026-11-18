@@ -328,7 +328,10 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   into the coop at night, ducks swim in a line and sleep on the bank, bees go between the hive
   and its flowers, butterflies settle on flowers and on her hat, rare visitors as their
   activities say) with slots reserved so nobody shares a seat; they step off ground that changes
-  under them. With an empty hand, hovering names an actor and clicking pets it (heart, voice,
+  under them. There are never more of a kind than its number: a leaver whose way home is gone
+  or blocked fades out, and someone indoors whose house is removed steps out (the resident) or
+  leaves (a visitor). Ducks line up per body of water. With an empty hand, hovering names an
+  actor and clicking pets it (heart, voice,
   4 s cooldown; she answers with a line, 8 s); placements nearby startle the timid. Laeticia
   lives her day from the catalog (waters the beds once a day, feeds the hens, sits and reads,
   strolls and sketches, warms at the fire, goes home or to her bedroll), shelters from rain or
@@ -337,7 +340,8 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   time, paced, idle chatter only when the profile's `chatter` is chatty.
 - Weather and wind: one wind drifts slowly; gusts sway trees and grass as they pass; clouds and
   showers drift across as cells (cloud shadows, rain only under a shower, wet ground darkening).
-  `N` cycles the weather: as it comes, rain here, clear skies here. The corner's delights run as
+  `N` cycles the weather: as it comes, rain here, clear skies here. Rain in conditions and event
+  triggers means rain over the open land, wherever the camera looks. The corner's delights run as
   events: rainbow after a long shower by day, shooting stars, the owl's distant call, rustling
   trees, fish jumping, the frog's chorus in rain, dawn and after-rain birdsong, fireflies in step,
   cooking smoke, the season's turn; petals float on water, moths circle lamps at night, sleepers
@@ -409,8 +413,9 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   keys and buttons (`press`, `keydown` ...), set state (clock and time, season, day, land stage,
   unlocks, weather, a shower, the camera, play time and growth stepped forward), place and paint
   directly, point at actors (`actor:KIND`), simulate without drawing (`fast`), wait for a state
-  (`waitfor`) and assert state, actors, events, the liveliness rule (`expect lively`) and image
-  statistics. The first ten minutes of a new world run end to end in `first_ten.lcs`; behaviours
+  (`waitfor`) and assert state, actors (where they are: `seat`, `bank`, `together`, `visible`),
+  events, the population rule, the liveliness rule (`expect lively`) and image statistics. The
+  first ten minutes of a new world run end to end in `first_ten.lcs`; behaviours
   each have a script; `determinism_check` compares two runs byte for byte.
 - Save format: version 3, documented at the top of `src/core/save.hpp` (versioned, tolerant;
   versions 1 and 2 migrate on launch; damaged fields fall back one by one). A save directory
@@ -430,8 +435,9 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   99th percentile is over 8.3 ms or its worst over 16.6 ms (a case missing only the worst frame
   is measured once more), the conditions take over 1 ms, simulation averages over 0.6 ms, or the
   process passes its memory ceiling at 1080p.
-- `--soak SECONDS` runs that much busy play fast (actors, events, weather, the calendar turning,
-  a frame drawn now and then) and exits 3 if memory grows after the first quarter, passes its
+- `--soak SECONDS` runs that much busy play fast (actors, events, weather, a calendar day every
+  50 s so the default gate's 600 s cross four season turns, a frame drawn now and then) and
+  exits 3 if memory grows after the first quarter, passes its
   ceiling, or the simulation averages over its budget.
 - `F3` shows the profiler; `--perf-log FILE` writes its counters per frame as CSV;
   `--gpu-sync` waits for the GPU each frame (implied on the windowless GPU path);

@@ -25,7 +25,7 @@ from .compose import NONE16, World
 from .coords import COLS, to_grid, to_plan
 from .graph import Graph
 
-TOWNS = ["eleusis", "academy", "delphi", "corinth", "delos", "ephesus", "sardis", "halys",
+TOWNS = ["alban_mount", "brundisium", "eleusis", "academy", "delphi", "corinth", "delos", "ephesus", "sardis", "halys",
          "euphrates_crossing", "babylon", "susa", "persian_gates", "pasargadae"]
 
 GRADING = {
@@ -76,6 +76,27 @@ DENSITIES = {
 
 # The towns: who lives there, their landmarks' cards, the line on arrival.
 TOWN = {
+    "alban_mount": {"name": "Mons Albanus", "native": "Mons Albanus",
+                    "caption": "The Alban Mount · April AD 126",
+                    "people": ["rome.farmer", "rome.citizen", "rome.shepherd", "rome.carter"],
+                    "cards": {"latiaris": ("Iuppiter Latiaris", "On the Alban Mount",
+                                           "Jupiter's sanctuary on the summit, where the consuls "
+                                           "held the Latin Festival each year. Below it lies the "
+                                           "round crater lake; the Via Appia passes at the "
+                                           "mount's foot.")},
+                    "first": "The Alban Mount. The paved way climbs to Jupiter's sanctuary above "
+                             "the crater lake."},
+    "brundisium": {"name": "Brundisium", "native": "Brundisium",
+                   "caption": "Brundisium · April AD 126",
+                   "people": ["rome.docker", "rome.citizen", "rome.egyptian_sailor",
+                              "rome.syrian_merchant", "rome.working_woman"],
+                   "cards": {"brundisium_harbour": ("Portus Brundisinus", "The harbour for Greece",
+                                                    "A branching natural harbour with quays and "
+                                                    "warehouses. Here the Via Appia ends, and "
+                                                    "ships sail for Greece across the Ionian "
+                                                    "Sea.")},
+                   "first": "Brundisium: the Via Appia ends at the harbour, and ships leave for "
+                            "Greece."},
     "eleusis": {"name": "Eleusis", "native": "Ἐλευσίς", "caption": "Eleusis · summer, 432 BC",
                 "people": ["athens.citizen", "athens.woman", "athens.priest", "athens.farmer"],
                 "cards": {"telesterion": ("Telesterion", "Hall of the Mysteries",
@@ -449,8 +470,10 @@ def write(world: World, graphs: dict[str, Graph], out_dir: Path) -> list[Path]:
         if v[0] in ("stretch", "seam"):
             docs[rid] = stretch_file(rid, world, graphs)
     road_life(docs, graphs)
+    regions = Path(__file__).resolve().parent.parent / "regions"
     for rid in TOWNS:
-        if rid in graphs:
+        # A town with its own life module is a city file (`build.sh --city`), never written here.
+        if rid in graphs and not (regions / rid / "life.py").exists():
             docs[rid] = town_file(rid, world, graphs)
     problems = check_refs(docs, graphs)
     if problems:

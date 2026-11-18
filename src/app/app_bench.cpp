@@ -274,7 +274,17 @@ int App::runSoak() {
     std::vector<float> sim;
     std::vector<float> frames;
     sim.reserve(static_cast<std::size_t>(steps));
+    // The calendar turns a day every kSoakDaySeconds of soak, so even the gate's short soak
+    // crosses several season turns (and every cache keyed by season: Q3-04).
+    const auto dayEvery = static_cast<long long>(tuning::kSoakDaySeconds / tuning::kStepSeconds);
+    const int startSeason = season();
+    int seasonTurns = 0;
     for (long long st = 0; st < steps; ++st) {
+        if (st > 0 && st % dayEvery == 0) {
+            const int before = season();
+            clock_.setDay(clock_.day() + 1);
+            seasonTurns += season() != before ? 1 : 0;
+        }
         if (st % tuning::kSoakDrawEvery == 0) {
             frames.push_back(benchFrame().frameMs);
         } else {
@@ -288,8 +298,14 @@ int App::runSoak() {
         actors_.all(), [](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0; });
     const PerfStats s = perfStats(sim);
     const PerfStats f = perfStats(frames);
-    std::printf("soak: %.0f s of play, day %d, %td actors at the end\n", opts_.soak, clock_.day(),
-                alive);
+    std::printf("soak: %.0f s of play, day %d, %d season turns from %s, %td actors at the end\n",
+                opts_.soak, clock_.day(), seasonTurns,
+                cat_.seasons[static_cast<std::size_t>(startSeason)].id.c_str(), alive);
+    const SceneStats st = scene_->stats();
+    std::printf("soak: caches: ground %.1f MiB (%d chunks), textures %.1f MiB\n",
+                static_cast<double>(st.groundBytes) / 1048576.0, st.groundChunksCached,
+                static_cast<double>(atlas_->textureBytes() + st.targetBytes + st.groundBytes) /
+                    1048576.0);
     std::printf(
         "soak: simulation step avg %.3f p95 %.3f p99 %.3f worst %.3f ms (budget avg %.2f)\n",
         static_cast<double>(s.avg), static_cast<double>(s.p95), static_cast<double>(s.p99),

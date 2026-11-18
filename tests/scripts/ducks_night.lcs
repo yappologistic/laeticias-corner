@@ -8,6 +8,8 @@ expect habitat ok
 shot shots/ducks_day.png
 set clock night
 fast 150 actor duck sleep
-fast 5
+# Asleep on the bank, side by side (the last of the line comes ashore behind the others).
+fast 90 bank duck
+expect together duck 2
 shot shots/ducks_night.png
 quit

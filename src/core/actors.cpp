@@ -6,6 +6,7 @@
 #include "core/weather.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 
 namespace lc {
@@ -115,12 +116,19 @@ int Actors::range(Actor& a, int lo, int hi) {
 
 Actors::Actors(const Catalog& cat, std::uint64_t seed)
     : cat_(&cat), seed_(seed), finder_(cat), seen_(cat.visitors.size(), 0),
-      presence_(cat.visitors.size(), 0), cooldown_(cat.visitors.size(), 0.0f),
-      leaders_(cat.visitors.size(), -1) {
+      presence_(cat.visitors.size(), 0), cooldown_(cat.visitors.size(), 0.0f) {
     pool_.reserve(tuning::kActorPool);
     paths_.reserve(tuning::kActorPool);
     errands_.reserve(tuning::kActorPool);
     dests_.reserve(tuning::kActorPool);
+    visited_.reserve(tuning::kActorPool);
+    stuck_.reserve(tuning::kActorPool);
+    inside_.reserve(tuning::kActorPool);
+    leaveAge_.reserve(tuning::kActorPool);
+    lineBan_.reserve(tuning::kActorPool);
+    lineAhead_.reserve(tuning::kActorPool);
+    lineTail_.reserve(16);
+    bodyOpen_.reserve(256);
     reservations_.reserve(tuning::kActorPool);
     events_.reserve(tuning::kActorPool);
     recent_.reserve(64);
@@ -153,7 +161,7 @@ bool Actors::residentAvailable() const {
 void Actors::countPresence() {
     std::ranges::fill(presence_, 0);
     for (const Actor& a : pool_) {
-        if ((a.flags & kAlive) == 0 || (a.flags & kLeaving) != 0) continue;
+        if ((a.flags & kAlive) == 0 || (a.flags & (kLeaving | kCrowd)) != 0) continue;
         const int v = cat_->kinds[a.kind].visitor;
         if (v >= 0) ++presence_[static_cast<std::size_t>(v)];
     }
@@ -347,21 +355,37 @@ int Actors::spawn(const ActorEnv& env, int kind, float alpha, bool fromHome) {
     if (!placed) return -1;
     a.goal = a.pos;
     ++spawned_;
+    claim(slot, a);
+    return static_cast<int>(slot);
+}
+
+void Actors::claim(std::size_t slot, const Actor& a) {
+    // Every array kept per actor grows or is reset with its record.
     if (slot == pool_.size()) {
         pool_.push_back(a);
         paths_.emplace_back();
         errands_.emplace_back();
         dests_.emplace_back();
-    } else {
-        pool_[slot] = a;
-        errands_[slot] = {};
-        dests_[slot] = {};
+        visited_.emplace_back();
+        stuck_.push_back(0);
+        lineBan_.push_back(0);
+        inside_.emplace_back();
+        leaveAge_.push_back(0);
+        return;
     }
-    return static_cast<int>(slot);
+    pool_[slot] = a;
+    errands_[slot] = {};
+    dests_[slot] = {};
+    visited_[slot] = {};
+    stuck_[slot] = 0;
+    lineBan_[slot] = 0;
+    inside_[slot] = {};
+    leaveAge_[slot] = 0;
 }
 
 void Actors::leave(const ActorEnv& env, int i) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
+    if ((a.flags & kLeaving) == 0) leaveAge_[static_cast<std::size_t>(i)] = 0;
     a.flags |= kLeaving;
     const ActorKind& k = cat_->kinds[a.kind];
     const int r = k.findRoutine("leave", cat_->program);
@@ -411,7 +435,7 @@ void Actors::presence(const ActorEnv& env, float dt) {
                 markSeen(vi);
                 events_.push_back({ActorEvent::Kind::Arrived,
                                    i,
-                                   vi,
+                                   pool_[static_cast<std::size_t>(i)].kind,
                                    pool_[static_cast<std::size_t>(i)].pos,
                                    -1,
                                    {},
@@ -422,7 +446,8 @@ void Actors::presence(const ActorEnv& env, float dt) {
         } else if (have > want && cooldown_[v] <= 0.0f) {
             for (std::size_t i = pool_.size(); i-- > 0;) {
                 const Actor& a = pool_[i];
-                if ((a.flags & kAlive) != 0 && (a.flags & kLeaving) == 0 && a.kind == v) {
+                if ((a.flags & kAlive) != 0 && (a.flags & (kLeaving | kCrowd)) == 0 &&
+                    cat_->kinds[a.kind].visitor == vi) {
                     leave(env, static_cast<int>(i));
                     break;
                 }
@@ -873,6 +898,9 @@ bool Actors::resolve(const ActorEnv& env, int i, const Target& t, int activity, 
 // --- Routines ---------------------------------------------------------------------------------
 
 void Actors::push(Actor& a, int block, std::uint8_t n) {
+    // The catalog loader refuses routines nested deeper than the stack (compileActors), so this
+    // always has room.
+    assert(a.depth < kActorStack);
     if (a.depth >= kActorStack) return;
     a.stack[a.depth++] = {static_cast<std::uint16_t>(block), 0, n};
 }
@@ -934,6 +962,19 @@ void Actors::run(const ActorEnv& env, int i) {
         // The resident follows her schedule between activities.
         if (k.visitor < 0 && a.prio == 0 && a.depth > 0 && scheduleBlock(env) != a.sched)
             restart(i);
+        if (a.depth == 0 && (a.flags & kLeaving) != 0) {
+            // A leaver whose walk home ended without going in (its door gone, startled, fenced
+            // off: Q3-02) tries the way home once more, then fades where it is. It never takes
+            // up its day again, so it is never left out of the count while it lingers.
+            if ((a.flags & kHomeRetry) == 0) {
+                a.flags |= kHomeRetry;
+                leave(env, i);
+                if (a.depth > 0) continue;
+            }
+            a.flags |= kFadeOut | kGone;
+            a.state = ActorState::Act;
+            return;
+        }
         if (a.depth == 0) {
             chooseRoutine(env, i);
             if (a.depth == 0) return;
@@ -953,14 +994,18 @@ void Actors::run(const ActorEnv& env, int i) {
                     p.steps[static_cast<std::size_t>(p.blockSteps[static_cast<std::size_t>(
                         p.blocks[parent.block].first + parent.pc)])];
                 if (ps.verb == Verb::Each && f.n + 1 < ps.b) {
-                    if (start(env, i, ps) == Start::Running) {
-                        // start() pushed a fresh frame for the next element; drop the old one.
-                        a.stack[a.depth - 2] = a.stack[a.depth - 1];
-                        a.stack[a.depth - 2].n = static_cast<std::uint8_t>(f.n + 1);
-                        --a.depth;
+                    // The finished element's frame goes first, so the next one takes its place
+                    // (no extra depth), and its count is read before that frame is reused (Q3-05).
+                    const auto done = static_cast<std::uint8_t>(f.n + 1);
+                    --a.depth;
+                    eachNext_ = true;
+                    if (start(env, i, ps) == Start::Running && a.depth > 0) {
+                        a.stack[a.depth - 1].n = done;
                         a.state = ActorState::Choose;
                         continue;
                     }
+                    ++a.stack[a.depth - 1].pc; // no more elements: the each is done
+                    continue;
                 }
             }
             --a.depth;
@@ -1262,11 +1307,17 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
                                     .effect == Effect::WaterBed;
         Pick pk;
         bool got = false;
+        // Every element visited by this each is left out, not only the last (Q3-05).
+        Visited& seenHere = visited_[static_cast<std::size_t>(i)];
+        if (!std::exchange(eachNext_, false)) seenHere.count = 0;
+        const auto visitedBefore = [&](TilePos q) {
+            return std::find(seenHere.at.begin(), seenHere.at.begin() + seenHere.count, q) !=
+                   seenHere.at.begin() + seenHere.count;
+        };
+        TilePos chosen{-1, -1};
         if (t.kind == Target::Kind::Poi) {
             got = poiPick(env, i, t.poi, s.activity, pk);
         } else {
-            const TilePos last{a.resX, a.resY};
-            const bool hadLast = a.reserved;
             release(i);
             float best = 1e9f;
             const float seasonGrowth = cat_->seasons[static_cast<std::size_t>(env.season)].growth;
@@ -1278,7 +1329,7 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
                                    : t.kind == Target::Kind::Tag
                                        ? std::ranges::find(def.tags, t.id) != def.tags.end()
                                        : false;
-                if (!match || (hadLast && it.pos == last)) return;
+                if (!match || visitedBefore(it.pos)) return;
                 if (watering) {
                     if (def.growth.stages == 0 || it.stage + 1 >= def.growth.stages ||
                         rainAt(env, centre(it.pos)) ||
@@ -1296,11 +1347,14 @@ Actors::Start Actors::start(const ActorEnv& env, int i, const Step& s) {
                 if (d < best) {
                     best = d;
                     pk = c;
+                    chosen = it.pos;
                     got = true;
                 }
             });
         }
         if (!got) return Start::Done;
+        if (chosen.x >= 0 && seenHere.count < seenHere.at.size())
+            seenHere.at[seenHere.count++] = chosen;
         if (pk.reserve) reserve(i, pk.res, pk.point);
         dests_[static_cast<std::size_t>(i)] = pk;
         push(a, s.a, 0);
@@ -1315,6 +1369,14 @@ void Actors::arrive(const ActorEnv& env, int i, const Step& s) {
     Actor& a = pool_[static_cast<std::size_t>(i)];
     const Pick& d = dests_[static_cast<std::size_t>(i)];
     if (s.verb == Verb::Enter) {
+        // What it went into, so its removal brings the actor out (validate).
+        Inside& in = inside_[static_cast<std::size_t>(i)];
+        in = {};
+        if (a.reserved && a.resType != kTileRes) {
+            in = {{a.resX, a.resY}, a.resType};
+        } else if (const Item* home = homeItem(env, a)) {
+            in = {home->pos, home->type};
+        }
         a.flags |= kFadeOut;
         a.state = ActorState::Inside;
         a.anim = 1;
@@ -1575,24 +1637,61 @@ void Actors::follow(const ActorEnv& env, int i, float dt) {
                         : l.facing == Facing::BackMirrored  ? 2
                                                             : 3;
         want = {l.pos.x + kBack[dir].x * spacing, l.pos.y + kBack[dir].y * spacing};
+        // Behind a leader that went ashore, a swimmer finds its own spot on the bank beside it
+        // (ducks sleep side by side on land, not on the water behind the one ahead).
+        if (k.move == Locomotion::Swim && ashore && env.world->inBounds(tileOf(want)) &&
+            env.world->isWater(tileOf(want))) {
+            for (const Vec2 o : kBack) {
+                const Vec2 c{l.pos.x + o.x * spacing, l.pos.y + o.y * spacing};
+                if (env.world->inBounds(tileOf(c)) && !env.world->isWater(tileOf(c)) &&
+                    passable(*env.world, *cat_, k.move, tileOf(c), true)) {
+                    want = c;
+                    break;
+                }
+            }
+        }
         if (k.move != Locomotion::Fly && !passable(*env.world, *cat_, k.move, tileOf(want), ashore))
             want = l.pos;
         if (k.move == Locomotion::Swim && !ashore) want = offShore(*env.world, want);
     }
     // A line member does what its leader does: acting together, sleeping side by side.
     const bool leaderActs = line && l.state == ActorState::Act;
+    // A swimmer still on the water behind a leader that went ashore keeps coming until it is
+    // ashore too, however close it already is, to a spot well inside its tile (not on the edge
+    // where the water begins).
+    const bool wading = k.move == Locomotion::Swim && ashore &&
+                        env.world->inBounds(tileOf(a.pos)) && env.world->isWater(tileOf(a.pos));
+    if (wading) {
+        const TilePos wt = tileOf(want);
+        want = {
+            std::clamp(want.x, static_cast<float>(wt.x) + 0.25f, static_cast<float>(wt.x) + 0.75f),
+            std::clamp(want.y, static_cast<float>(wt.y) + 0.25f, static_cast<float>(wt.y) + 0.75f)};
+    }
     const Vec2 dlt{want.x - a.pos.x, want.y - a.pos.y};
     const float len = std::hypot(dlt.x, dlt.y);
     const float gap = hat ? 0.02f : spacing * 0.3f;
-    if (len > gap && (!leaderActs || len >= spacing * 1.5f)) {
-        const float step = std::min(len - gap * 0.5f, k.speed * 1.2f * dt);
+    const float close = wading ? 0.02f : gap;
+    if (len > close && (!leaderActs || wading || len >= spacing * 1.5f)) {
+        const float step = std::min(len - close * 0.5f, k.speed * 1.2f * dt);
         const Vec2 np{a.pos.x + dlt.x / len * step, a.pos.y + dlt.y / len * step};
-        if (k.move == Locomotion::Fly || tileOf(np) == tileOf(a.pos) ||
-            passable(*env.world, *cat_, k.move, tileOf(np), ashore))
-            a.pos = np;
+        const bool moves = k.move == Locomotion::Fly || tileOf(np) == tileOf(a.pos) ||
+                           passable(*env.world, *cat_, k.move, tileOf(np), ashore);
+        if (moves) a.pos = np;
         a.facing = facingFor(dlt);
         a.anim = 0;
+        // A follower that cannot close the gap gives up the line for a while and chooses on
+        // its own, instead of paddling on the spot (Q3-01).
+        float& stuck = stuck_[static_cast<std::size_t>(i)];
+        stuck = moves ? 0.0f : stuck + dt;
+        if (line && stuck > tuning::kFollowStuckSeconds) {
+            stuck = 0;
+            lineBan_[static_cast<std::size_t>(i)] = tuning::kLineBanSeconds;
+            a.flags &= static_cast<std::uint16_t>(~kFollower);
+            restart(i);
+            return;
+        }
     } else {
+        stuck_[static_cast<std::size_t>(i)] = 0;
         a.anim = leaderActs ? l.anim : 1;
         if (leaderActs) a.facing = l.facing;
     }
@@ -1610,14 +1709,79 @@ void Actors::follow(const ActorEnv& env, int i, float dt) {
 }
 
 int Actors::lineAhead(int i) const {
-    const Actor& a = pool_[static_cast<std::size_t>(i)];
-    int ahead = -1;
-    for (std::size_t j = 0; j < static_cast<std::size_t>(i); ++j) {
-        const Actor& o = pool_[j];
-        if ((o.flags & kAlive) != 0 && (o.flags & kLeaving) == 0 && o.kind == a.kind)
-            ahead = static_cast<int>(j);
+    return std::cmp_less(i, lineAhead_.size()) ? lineAhead_[static_cast<std::size_t>(i)] : -1;
+}
+
+int Actors::waterBody(const World& world, Vec2 p) const {
+    // The connected body of water a swimmer is on, or beside (ducks asleep on the bank).
+    const TilePos t = tileOf(p);
+    const auto at = [&](TilePos q) -> int {
+        if (!bodyArea_.contains(q) || !world.isWater(q)) return -1;
+        return bodies_[static_cast<std::size_t>((q.y - bodyArea_.y0) * bodyArea_.width() +
+                                                (q.x - bodyArea_.x0))];
+    };
+    if (const int b = at(t); b >= 0) return b;
+    for (int dy = -1; dy <= 1; ++dy)
+        for (int dx = -1; dx <= 1; ++dx)
+            if (const int b = at({t.x + dx, t.y + dy}); b >= 0) return b;
+    return -1;
+}
+
+void Actors::updateLines(const ActorEnv& env) {
+    // Lines form per kind and per connected body of water (Q3-01): a duck on another pond is
+    // never asked to follow one it cannot reach. Bodies are labelled within the active area,
+    // again only when the world or the area changes.
+    const World& world = *env.world;
+    if (bodyRevision_ != world.revision() || bodyArea_ != area_) {
+        bodyRevision_ = world.revision();
+        bodyArea_ = area_;
+        bodies_.assign(static_cast<std::size_t>(std::max(0, area_.width() * area_.height())), -1);
+        int next = 0;
+        std::vector<TilePos>& open = bodyOpen_;
+        for (int y = area_.y0; y < area_.y1; ++y)
+            for (int x = area_.x0; x < area_.x1; ++x) {
+                const auto idx = [&](TilePos q) {
+                    return static_cast<std::size_t>((q.y - area_.y0) * area_.width() +
+                                                    (q.x - area_.x0));
+                };
+                if (!world.isWater({x, y}) || bodies_[idx({x, y})] >= 0) continue;
+                open.clear();
+                open.push_back({x, y});
+                bodies_[idx({x, y})] = next;
+                while (!open.empty()) {
+                    const TilePos q = open.back();
+                    open.pop_back();
+                    for (const TilePos d :
+                         {TilePos{1, 0}, TilePos{-1, 0}, TilePos{0, 1}, TilePos{0, -1}}) {
+                        const TilePos n{q.x + d.x, q.y + d.y};
+                        if (area_.contains(n) && world.isWater(n) && bodies_[idx(n)] < 0) {
+                            bodies_[idx(n)] = next;
+                            open.push_back(n);
+                        }
+                    }
+                }
+                ++next;
+            }
     }
-    return ahead;
+    // The one ahead: the previous member of the same kind on the same water, in pool order.
+    lineAhead_.assign(pool_.size(), -1);
+    lineTail_.clear();
+    for (std::size_t j = 0; j < pool_.size(); ++j) {
+        const Actor& a = pool_[j];
+        const ActorKind& k = cat_->kinds[a.kind];
+        if ((a.flags & kAlive) == 0 || !k.line || (a.flags & kLeaving) != 0 || lineBan_[j] > 0.0f)
+            continue;
+        const int body = k.move == Locomotion::Swim ? waterBody(world, a.pos) : 0;
+        if (body < 0) continue;
+        const auto tail = std::ranges::find_if(
+            lineTail_, [&](const LineTail& t) { return t.kind == a.kind && t.body == body; });
+        if (tail == lineTail_.end()) {
+            lineTail_.push_back({a.kind, body, static_cast<int>(j)});
+        } else {
+            lineAhead_[j] = tail->actor;
+            tail->actor = static_cast<int>(j);
+        }
+    }
 }
 
 // --- Interrupts, errands and reactions -----------------------------------------------------------
@@ -1876,10 +2040,27 @@ void Actors::validate(const ActorEnv& env, int i) {
             }
         }
     }
-    // On the item it sits on (or is just getting up from): that is where it belongs.
+    // On the item it sits on: that is where it belongs. Only a seat it still holds counts (a
+    // released one left stale fields behind: Q3-07).
     const Item* under = world.itemAt(tileOf(a.pos));
-    const bool seated = under != nullptr && under->pos.x == a.resX && under->pos.y == a.resY &&
-                        under->type == a.resType;
+    const bool seated = a.reserved && under != nullptr && under->pos.x == a.resX &&
+                        under->pos.y == a.resY && under->type == a.resType;
+    if (a.state == ActorState::Inside) {
+        // The home it is inside was removed (Q3-06): she comes out at once and goes on with her
+        // day (to the bedroll when no cottage is left); a visitor simply leaves.
+        const Inside& in = inside_[static_cast<std::size_t>(i)];
+        const Item* home = in.type >= 0 ? world.itemAt(in.at) : nullptr;
+        if (in.type >= 0 && (home == nullptr || home->type != in.type || home->pos != in.at)) {
+            inside_[static_cast<std::size_t>(i)] = {};
+            if (k.visitor >= 0) {
+                a.flags |= kLeaving | kFadeOut | kGone;
+            } else {
+                restart(i);
+                a.alpha = std::max(a.alpha, 0.01f);
+            }
+            return;
+        }
+    }
     if (a.state == ActorState::Inside || k.move == Locomotion::Fly) {
         if (!world.hasGround(tileOf(a.pos))) a.flags |= kFadeOut | kGone;
         return;
@@ -1947,6 +2128,9 @@ void Actors::tick(const ActorEnv& env, int i, float dt) {
     if ((a.flags & kAlive) == 0 || (a.flags & kGone) != 0) return;
     if (a.overlay > 0) {
         a.overlay -= dt;
+        // A pet or a call is a moment over the activity, not a pause of it (R2.4): its timer
+        // keeps running, so petting again and again never holds a critter on one activity.
+        if (a.state == ActorState::Act) a.timer -= dt;
         // A woken sleeper stretches first, then is petted.
         if ((a.flags & kFleeing) == 0 && a.overlay <= tuning::kPetSeconds && k.petAnim != 0xFF)
             a.overlayAnim = a.overlayAnim == k.startleAnim && asleep(a) ? k.petAnim : a.overlayAnim;
@@ -1970,8 +2154,21 @@ void Actors::tick(const ActorEnv& env, int i, float dt) {
             // A wander has a time limit when it was given one.
             if (a.call > 0) a.call -= dt;
         }
-        travel(env, i, dt);
-        break;
+        {
+            const Vec2 before = a.pos;
+            travel(env, i, dt);
+            // A walk that has stopped getting anywhere (its way blocked again and again) is given
+            // up, so nobody walks on the spot, a leaver included.
+            float& stalled = stuck_[static_cast<std::size_t>(i)];
+            stalled =
+                a.state == ActorState::Travel && dist(before, a.pos) < 1e-4f ? stalled + dt : 0;
+            if (stalled > tuning::kTravelStuckSeconds) {
+                stalled = 0;
+                a.state = ActorState::Choose;
+                finishFailed(i);
+            }
+            break;
+        }
     case ActorState::Act: {
         a.timer -= dt;
         bool done = a.timer <= 0;
@@ -2042,7 +2239,9 @@ void Actors::update(const ActorEnv& env, float dt) {
     if (resident_ < 0 && cat_->residentKind >= 0) {
         resident_ = spawn(env, cat_->residentKind, 0.0f, false);
     }
-    // Lines: everyone but the first of a kind follows the one ahead.
+    // Lines: everyone but the first of a kind on a body of water follows the one ahead.
+    for (float& b : lineBan_) b = std::max(0.0f, b - dt);
+    updateLines(env);
     for (std::size_t j = 0; j < pool_.size(); ++j) {
         Actor& a = pool_[j];
         if ((a.flags & kAlive) == 0 || !cat_->kinds[a.kind].line || (a.flags & kLeaving) != 0)
@@ -2067,6 +2266,8 @@ void Actors::update(const ActorEnv& env, float dt) {
     bucketTenths_ += dt * 10.0f * static_cast<float>(tuning::kThinkBuckets);
     bucketTicks_ = static_cast<int>(bucketTenths_);
     bucketTenths_ -= static_cast<float>(bucketTicks_);
+    for (std::size_t j = 0; j < pool_.size(); ++j)
+        if ((pool_[j].flags & kLeaving) != 0) leaveAge_[j] += dt;
     for (Actor& a : pool_) {
         a.petCool = static_cast<std::uint8_t>(std::max(0, a.petCool - ticks_));
         a.startleCool = static_cast<std::uint8_t>(std::max(0, a.startleCool - ticks_));
@@ -2086,6 +2287,30 @@ void Actors::update(const ActorEnv& env, float dt) {
     countPresence();
 }
 
+std::string Actors::populationError(std::span<const VisitorGate> gates) const {
+    std::vector<int> present(cat_->visitors.size(), 0);
+    for (std::size_t j = 0; j < pool_.size(); ++j) {
+        const Actor& a = pool_[j];
+        if ((a.flags & kAlive) == 0 || (a.flags & kCrowd) != 0) continue;
+        const int v = cat_->kinds[a.kind].visitor;
+        if (v < 0) continue;
+        if ((a.flags & kLeaving) != 0) {
+            if (leaveAge_[j] > tuning::kLeaveLimitSeconds)
+                return cat_->visitors[static_cast<std::size_t>(v)].id + " #" + std::to_string(j) +
+                       " has been leaving for " + std::to_string(leaveAge_[j]) + " s";
+            continue;
+        }
+        ++present[static_cast<std::size_t>(v)];
+    }
+    for (std::size_t v = 0; v < present.size(); ++v) {
+        const int extra = v < gates.size() ? gates[v].extra : 0;
+        if (present[v] > cat_->visitors[v].max + extra)
+            return std::to_string(present[v]) + " " + cat_->visitors[v].id + " present, max " +
+                   std::to_string(cat_->visitors[v].max + extra);
+    }
+    return {};
+}
+
 int Actors::crowd(const ActorEnv& env, int count) {
     map_ = env.world;
     area_ = env.area;
@@ -2103,16 +2328,15 @@ int Actors::crowd(const ActorEnv& env, int count) {
         Actor a;
         a.rng = seed_ ^ (0xC0FFEEULL + spawned_++);
         a.kind = static_cast<std::uint16_t>(kind);
-        a.flags = kAlive;
+        // A crowd member stays whatever the visitor rules want (Q3-10: the bench measures the
+        // number it asked for).
+        a.flags = kAlive | kCrowd;
         a.alpha = 1;
         a.pos = a.goal = centre(t);
         if (cat_->kinds[static_cast<std::size_t>(kind)].move == Locomotion::Fly)
             a.lift = tuning::kHoverMin * cat_->iso().tileH();
         if (pool_.size() >= tuning::kActorPool) break;
-        pool_.push_back(a);
-        paths_.emplace_back();
-        errands_.emplace_back();
-        dests_.emplace_back();
+        claim(pool_.size(), a);
         ++placed;
     }
     return placed;

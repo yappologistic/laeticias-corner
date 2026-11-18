@@ -3,7 +3,7 @@
  "image": "athens.1.png",
  "sprites": {
   "item/athens.academy_grove/base/r0/p0/f0": {
-   "x": 1862,
+   "x": 2277,
    "y": 1,
    "w": 403,
    "h": 228,
@@ -26,21 +26,29 @@
    "ox": 444,
    "oy": -83
   },
-  "item/athens.brauronion/shadow/r0/f0": {
-   "x": 2916,
-   "y": 1438,
-   "w": 410,
-   "h": 157,
-   "ox": 221,
-   "oy": -71
+  "item/athens.chalkotheke/shadow/r0/f0": {
+   "x": 1,
+   "y": 1484,
+   "w": 358,
+   "h": 137,
+   "ox": 205,
+   "oy": -41
   },
   "item/athens.dionysos_temple/shadow/r0/f0": {
    "x": 2916,
-   "y": 1596,
+   "y": 1585,
    "w": 312,
    "h": 114,
    "ox": 192,
    "oy": -47
+  },
+  "item/athens.dipylon/glow/r0/f0": {
+   "x": 1669,
+   "y": 1436,
+   "w": 315,
+   "h": 147,
+   "ox": 180,
+   "oy": 2
   },
   "item/athens.dipylon/shadow/r0/f0": {
    "x": 2014,
@@ -51,96 +59,64 @@
    "oy": -44
   },
   "item/athens.eleusinion/shadow/r0/f0": {
-   "x": 1,
-   "y": 1484,
+   "x": 360,
+   "y": 1526,
    "w": 336,
    "h": 128,
    "ox": 165,
    "oy": -34
   },
-  "item/athens.g_crane/shadow/r0/f0": {
-   "x": 2165,
-   "y": 1811,
-   "w": 87,
-   "h": 26,
-   "ox": 9,
-   "oy": -10
-  },
   "item/athens.g_crane/shadow/r0/f1": {
-   "x": 809,
-   "y": 1787,
+   "x": 1271,
+   "y": 1768,
    "w": 91,
    "h": 28,
    "ox": 9,
    "oy": -10
   },
-  "item/athens.g_crane/shadow/r1/f0": {
-   "x": 2838,
-   "y": 1813,
-   "w": 69,
-   "h": 25,
-   "ox": 19,
-   "oy": -11
-  },
-  "item/athens.g_crane/shadow/r1/f1": {
-   "x": 1824,
-   "y": 1811,
-   "w": 65,
-   "h": 27,
-   "ox": 19,
-   "oy": -11
-  },
   "item/athens.g_farmstead/shadow/r0/f0": {
    "x": 3229,
-   "y": 1596,
+   "y": 1438,
    "w": 220,
    "h": 101,
    "ox": 101,
    "oy": 3
   },
   "item/athens.g_farmstead/shadow/r1/f0": {
-   "x": 2656,
-   "y": 1610,
+   "x": 3863,
+   "y": 1531,
    "w": 228,
    "h": 95,
    "ox": 100,
    "oy": 2
   },
   "item/athens.g_farmstead/shadow/r3/f0": {
-   "x": 3842,
-   "y": 1640,
+   "x": 1286,
+   "y": 1611,
    "w": 207,
    "h": 87,
    "ox": 102,
    "oy": -12
   },
-  "item/athens.g_forge/glow/r0/f0": {
-   "x": 4061,
-   "y": 1640,
-   "w": 33,
-   "h": 21,
-   "ox": 20,
-   "oy": 8
-  },
-  "item/athens.g_forge/glow/r1/f0": {
-   "x": 4061,
-   "y": 1662,
-   "w": 33,
-   "h": 21,
-   "ox": 12,
-   "oy": 8
-  },
   "item/athens.g_forge/shadow/r0/f0": {
-   "x": 1890,
-   "y": 1811,
+   "x": 80,
+   "y": 1767,
    "w": 57,
    "h": 27,
    "ox": 26,
    "oy": -3
   },
+  "item/athens.g_forge/shadow/r1/f0": {
+   "x": 3745,
+   "y": 1758,
+   "w": 55,
+   "h": 28,
+   "ox": 28,
+   "oy": -3
+  },
   "item/athens.g_fountain/shadow/r0/f0": {
-   "x": 529,
-   "y": 1649,
+   "x": 3843,
+   "y": 1627,
    "w": 162,
    "h": 73,
    "ox": 69,
@@ -148,639 +124,687 @@
   },
   "item/athens.g_fountain/shadow/r0/f1": {
    "x": 3229,
-   "y": 1698,
+   "y": 1635,
    "w": 162,
    "h": 73,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_fountain/shadow/r0/f2": {
-   "x": 1663,
-   "y": 1699,
+   "x": 697,
+   "y": 1649,
    "w": 162,
    "h": 73,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_fountain/shadow/r1/f0": {
-   "x": 1,
-   "y": 1704,
+   "x": 860,
+   "y": 1649,
    "w": 149,
    "h": 72,
    "ox": 48,
    "oy": 2
   },
   "item/athens.g_fountain/shadow/r1/f1": {
-   "x": 3646,
-   "y": 1704,
+   "x": 315,
+   "y": 1655,
    "w": 149,
    "h": 72,
    "ox": 48,
    "oy": 2
   },
   "item/athens.g_fountain/shadow/r1/f2": {
-   "x": 1482,
-   "y": 1705,
+   "x": 465,
+   "y": 1655,
    "w": 149,
    "h": 72,
    "ox": 48,
    "oy": 2
   },
   "item/athens.g_fountain/shadow/r2/f0": {
-   "x": 1115,
-   "y": 1707,
+   "x": 156,
+   "y": 1697,
    "w": 149,
    "h": 68,
    "ox": 48,
    "oy": -6
   },
   "item/athens.g_fountain/shadow/r2/f1": {
-   "x": 3392,
-   "y": 1707,
+   "x": 3019,
+   "y": 1700,
    "w": 149,
    "h": 68,
    "ox": 48,
    "oy": -6
   },
   "item/athens.g_fountain/shadow/r2/f2": {
-   "x": 2910,
-   "y": 1711,
+   "x": 3808,
+   "y": 1701,
    "w": 149,
    "h": 68,
    "ox": 48,
    "oy": -6
   },
   "item/athens.g_fountain/shadow/r3/f0": {
-   "x": 1981,
-   "y": 1707,
+   "x": 1286,
+   "y": 1699,
    "w": 163,
    "h": 68,
    "ox": 70,
    "oy": -6
   },
   "item/athens.g_fountain/shadow/r3/f1": {
-   "x": 2300,
-   "y": 1707,
+   "x": 3392,
+   "y": 1699,
    "w": 163,
    "h": 68,
    "ox": 70,
    "oy": -6
   },
   "item/athens.g_fountain/shadow/r3/f2": {
-   "x": 2464,
-   "y": 1707,
+   "x": 2855,
+   "y": 1700,
    "w": 163,
    "h": 68,
    "ox": 70,
    "oy": -6
   },
-  "item/athens.g_grave_stele/shadow/r0/f0": {
-   "x": 3779,
-   "y": 1813,
-   "w": 51,
-   "h": 22,
-   "ox": 21,
-   "oy": -6
+  "item/athens.g_house/glow/r0/f0": {
+   "x": 3538,
+   "y": 1776,
+   "w": 27,
+   "h": 15,
+   "ox": 52,
+   "oy": -54
   },
-  "item/athens.g_house/shadow/r0/f0": {
-   "x": 3863,
-   "y": 1532,
-   "w": 230,
-   "h": 107,
-   "ox": 101,
-   "oy": 3
+  "item/athens.g_house/glow/r1/f0": {
+   "x": 725,
+   "y": 1775,
+   "w": 27,
+   "h": 16,
+   "ox": 72,
+   "oy": -5
+  },
+  "item/athens.g_house/glow/r2/f0": {
+   "x": 821,
+   "y": 1775,
+   "w": 25,
+   "h": 15,
+   "ox": -26,
+   "oy": 4
+  },
+  "item/athens.g_house/glow/r3/f0": {
+   "x": 3566,
+   "y": 1776,
+   "w": 25,
+   "h": 15,
+   "ox": -46,
+   "oy": -44
   },
   "item/athens.g_house/shadow/r1/f0": {
-   "x": 2170,
-   "y": 1599,
+   "x": 3863,
+   "y": 1424,
    "w": 230,
    "h": 106,
    "ox": 100,
    "oy": 2
   },
-  "item/athens.g_house/shadow/r2/f0": {
-   "x": 3863,
-   "y": 1424,
-   "w": 231,
-   "h": 107,
-   "ox": 101,
-   "oy": 2
-  },
-  "item/athens.g_house/shadow/r3/f0": {
-   "x": 1941,
-   "y": 1599,
-   "w": 228,
-   "h": 107,
-   "ox": 102,
-   "oy": 2
+  "item/athens.g_house_small/glow/r0/f0": {
+   "x": 3260,
+   "y": 1776,
+   "w": 21,
+   "h": 13,
+   "ox": 44,
+   "oy": -14
   },
   "item/athens.g_house_small/glow/r1/f0": {
-   "x": 4061,
-   "y": 1706,
+   "x": 340,
+   "y": 1780,
    "w": 21,
    "h": 13,
    "ox": 46,
    "oy": 20
   },
+  "item/athens.g_house_small/glow/r2/f0": {
+   "x": 3260,
+   "y": 1761,
+   "w": 22,
+   "h": 14,
+   "ox": -23,
+   "oy": 22
+  },
+  "item/athens.g_house_small/glow/r3/f0": {
+   "x": 954,
+   "y": 1774,
+   "w": 21,
+   "h": 14,
+   "ox": -24,
+   "oy": -13
+  },
   "item/athens.g_house_small/shadow/r0/f0": {
-   "x": 1267,
-   "y": 1706,
+   "x": 3661,
+   "y": 1687,
    "w": 146,
    "h": 70,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_house_small/shadow/r1/f0": {
-   "x": 949,
-   "y": 1707,
+   "x": 1955,
+   "y": 1696,
    "w": 165,
    "h": 69,
    "ox": 68,
    "oy": 2
   },
   "item/athens.g_house_small/shadow/r2/f0": {
-   "x": 215,
-   "y": 1649,
+   "x": 1,
+   "y": 1622,
    "w": 165,
    "h": 74,
    "ox": 69,
    "oy": 2
   },
   "item/athens.g_house_small/shadow/r3/f0": {
-   "x": 381,
-   "y": 1649,
+   "x": 167,
+   "y": 1622,
    "w": 147,
    "h": 74,
    "ox": 70,
    "oy": 2
   },
+  "item/athens.g_house_two/glow/r0/f0": {
+   "x": 646,
+   "y": 1775,
+   "w": 26,
+   "h": 17,
+   "ox": 53,
+   "oy": -20
+  },
+  "item/athens.g_house_two/glow/r1/f0": {
+   "x": 753,
+   "y": 1775,
+   "w": 26,
+   "h": 16,
+   "ox": 37,
+   "oy": 12
+  },
+  "item/athens.g_house_two/glow/r2/f0": {
+   "x": 673,
+   "y": 1775,
+   "w": 25,
+   "h": 17,
+   "ox": -60,
+   "oy": -12
+  },
+  "item/athens.g_house_two/glow/r3/f0": {
+   "x": 699,
+   "y": 1775,
+   "w": 25,
+   "h": 17,
+   "ox": 20,
+   "oy": -44
+  },
   "item/athens.g_house_two/shadow/r0/f0": {
-   "x": 3646,
-   "y": 1612,
+   "x": 2659,
+   "y": 1610,
    "w": 195,
    "h": 91,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_house_two/shadow/r1/f0": {
-   "x": 1,
-   "y": 1613,
+   "x": 1072,
+   "y": 1611,
    "w": 213,
    "h": 90,
    "ox": 100,
    "oy": 2
   },
-  "item/athens.g_house_two/shadow/r2/f0": {
-   "x": 1267,
-   "y": 1611,
-   "w": 214,
-   "h": 94,
-   "ox": 69,
-   "oy": 2
-  },
   "item/athens.g_house_two/shadow/r3/f0": {
-   "x": 3450,
-   "y": 1612,
+   "x": 3229,
+   "y": 1540,
    "w": 195,
    "h": 94,
    "ox": 102,
    "oy": 2
   },
   "item/athens.g_kiln/shadow/r0/f0": {
-   "x": 3649,
-   "y": 1811,
+   "x": 3096,
+   "y": 1769,
    "w": 56,
    "h": 26,
    "ox": 25,
    "oy": -3
   },
   "item/athens.g_long_wall/shadow/m0/f0": {
-   "x": 2908,
-   "y": 1813,
+   "x": 3801,
+   "y": 1770,
    "w": 67,
    "h": 23,
    "ox": 20,
    "oy": -6
   },
-  "item/athens.g_long_wall/shadow/m1/f0": {
-   "x": 1748,
-   "y": 1811,
-   "w": 75,
-   "h": 27,
-   "ox": 20,
-   "oy": -2
-  },
   "item/athens.g_long_wall/shadow/m10/f0": {
-   "x": 2594,
-   "y": 1778,
+   "x": 2121,
+   "y": 1731,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m11/f0": {
-   "x": 2681,
-   "y": 1778,
+   "x": 2768,
+   "y": 1754,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m12/f0": {
-   "x": 3984,
-   "y": 1780,
+   "x": 2039,
+   "y": 1766,
    "w": 76,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m13/f0": {
-   "x": 3736,
-   "y": 1780,
+   "x": 522,
+   "y": 1766,
    "w": 84,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m14/f0": {
-   "x": 2768,
-   "y": 1778,
+   "x": 1066,
+   "y": 1763,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m15/f0": {
-   "x": 2855,
-   "y": 1780,
+   "x": 2121,
+   "y": 1764,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m2/f0": {
-   "x": 1314,
-   "y": 1811,
+   "x": 3383,
+   "y": 1768,
    "w": 77,
    "h": 28,
    "ox": 20,
    "oy": -6
   },
   "item/athens.g_long_wall/shadow/m3/f0": {
-   "x": 3906,
-   "y": 1780,
+   "x": 1541,
+   "y": 1760,
    "w": 77,
    "h": 32,
    "ox": 20,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m4/f0": {
-   "x": 1392,
-   "y": 1811,
+   "x": 3461,
+   "y": 1768,
    "w": 76,
    "h": 28,
    "ox": 29,
    "oy": -6
   },
   "item/athens.g_long_wall/shadow/m5/f0": {
-   "x": 3821,
-   "y": 1780,
+   "x": 1954,
+   "y": 1766,
    "w": 84,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m6/f0": {
-   "x": 3504,
-   "y": 1792,
+   "x": 1363,
+   "y": 1768,
    "w": 86,
    "h": 28,
    "ox": 29,
    "oy": -6
   },
   "item/athens.g_long_wall/shadow/m7/f0": {
-   "x": 2942,
-   "y": 1780,
+   "x": 3958,
+   "y": 1765,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
-  "item/athens.g_long_wall/shadow/m8/f0": {
-   "x": 1554,
-   "y": 1811,
-   "w": 76,
-   "h": 27,
-   "ox": 29,
-   "oy": -2
-  },
-  "item/athens.g_long_wall/shadow/m9/f0": {
-   "x": 1469,
-   "y": 1811,
-   "w": 84,
-   "h": 27,
-   "ox": 29,
-   "oy": -2
-  },
-  "item/athens.g_press/shadow/r0/f0": {
-   "x": 3542,
-   "y": 1707,
-   "w": 90,
-   "h": 42,
-   "ox": 32,
-   "oy": 0
-  },
   "item/athens.g_scaffold/shadow/r0/f0": {
-   "x": 475,
-   "y": 1784,
+   "x": 1,
+   "y": 1767,
    "w": 78,
    "h": 31,
    "ox": 7,
    "oy": -7
   },
-  "item/athens.g_shrine/shadow/r0/f0": {
-   "x": 3831,
-   "y": 1813,
-   "w": 48,
-   "h": 22,
-   "ox": 22,
-   "oy": -5
+  "item/athens.g_shrine/glow/r0/f0": {
+   "x": 3592,
+   "y": 1776,
+   "w": 25,
+   "h": 15,
+   "ox": 12,
+   "oy": 12
   },
-  "item/athens.g_shrine/shadow/r1/f0": {
-   "x": 3880,
-   "y": 1813,
-   "w": 48,
-   "h": 22,
-   "ox": 22,
-   "oy": -5
-  },
-  "item/athens.g_stall/shadow/r1/f0": {
-   "x": 151,
-   "y": 1724,
-   "w": 115,
-   "h": 51,
-   "ox": 28,
-   "oy": -1
-  },
-  "item/athens.g_stall/shadow/r1/f1": {
-   "x": 267,
-   "y": 1724,
-   "w": 115,
-   "h": 51,
-   "ox": 28,
-   "oy": -1
+  "item/athens.g_shrine/glow/r1/f0": {
+   "x": 3618,
+   "y": 1776,
+   "w": 25,
+   "h": 15,
+   "ox": 12,
+   "oy": 12
   },
   "item/athens.g_stall/shadow/r2/f0": {
-   "x": 383,
-   "y": 1724,
+   "x": 2659,
+   "y": 1702,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r2/f1": {
-   "x": 3796,
-   "y": 1728,
+   "x": 2464,
+   "y": 1704,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r3/f0": {
-   "x": 3912,
-   "y": 1728,
+   "x": 1624,
+   "y": 1706,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r3/f1": {
-   "x": 693,
-   "y": 1735,
+   "x": 1740,
+   "y": 1706,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r4/f0": {
-   "x": 809,
-   "y": 1735,
+   "x": 3169,
+   "y": 1709,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r4/f1": {
-   "x": 3192,
-   "y": 1772,
+   "x": 860,
+   "y": 1722,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r5/f0": {
-   "x": 1632,
-   "y": 1773,
+   "x": 615,
+   "y": 1723,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r5/f1": {
-   "x": 3060,
-   "y": 1775,
+   "x": 731,
+   "y": 1723,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
-  "item/athens.g_statue_base/shadow/r0/f0": {
-   "x": 2594,
-   "y": 1811,
-   "w": 60,
-   "h": 26,
-   "ox": 26,
-   "oy": -3
-  },
   "item/athens.g_statue_base/shadow/r1/f0": {
-   "x": 2655,
-   "y": 1811,
+   "x": 2855,
+   "y": 1769,
    "w": 60,
    "h": 26,
    "ox": 26,
    "oy": -3
   },
   "item/athens.g_statue_base/shadow/r2/f0": {
-   "x": 2716,
-   "y": 1811,
+   "x": 2916,
+   "y": 1769,
    "w": 60,
    "h": 26,
    "ox": 26,
    "oy": -3
   },
   "item/athens.g_statue_base/shadow/r3/f0": {
-   "x": 2777,
-   "y": 1811,
+   "x": 2977,
+   "y": 1769,
    "w": 60,
    "h": 26,
    "ox": 26,
    "oy": -3
   },
   "item/athens.g_wall/shadow/m0/f0": {
-   "x": 632,
-   "y": 1787,
+   "x": 2286,
+   "y": 1767,
    "w": 83,
    "h": 29,
    "ox": 24,
    "oy": -4
   },
   "item/athens.g_wall/shadow/m1/f0": {
-   "x": 1748,
-   "y": 1777,
+   "x": 3654,
+   "y": 1758,
    "w": 90,
    "h": 33,
    "ox": 24,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m10/f0": {
-   "x": 1,
-   "y": 1777,
+   "x": 1174,
+   "y": 1754,
    "w": 96,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m11/f0": {
-   "x": 2300,
-   "y": 1776,
+   "x": 1856,
+   "y": 1706,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m12/f0": {
-   "x": 1022,
-   "y": 1777,
+   "x": 522,
+   "y": 1728,
    "w": 90,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m13/f0": {
-   "x": 2398,
-   "y": 1776,
+   "x": 3285,
+   "y": 1709,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m14/f0": {
-   "x": 925,
-   "y": 1777,
+   "x": 2580,
+   "y": 1754,
    "w": 96,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m15/f0": {
-   "x": 2496,
-   "y": 1776,
+   "x": 3556,
+   "y": 1738,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m2/f0": {
-   "x": 3646,
-   "y": 1777,
+   "x": 976,
+   "y": 1763,
    "w": 89,
    "h": 33,
    "ox": 24,
    "oy": -4
   },
   "item/athens.g_wall/shadow/m3/f0": {
-   "x": 1223,
-   "y": 1777,
+   "x": 2677,
+   "y": 1754,
    "w": 90,
    "h": 37,
    "ox": 24,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m4/f0": {
-   "x": 1839,
-   "y": 1777,
+   "x": 1450,
+   "y": 1760,
    "w": 90,
    "h": 33,
    "ox": 31,
    "oy": -4
   },
   "item/athens.g_wall/shadow/m5/f0": {
-   "x": 3308,
-   "y": 1776,
+   "x": 1856,
+   "y": 1744,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m6/f0": {
-   "x": 1314,
-   "y": 1777,
+   "x": 1751,
+   "y": 1758,
    "w": 96,
    "h": 33,
    "ox": 31,
    "oy": -4
   },
   "item/athens.g_wall/shadow/m7/f0": {
-   "x": 3406,
-   "y": 1776,
+   "x": 3285,
+   "y": 1747,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m8/f0": {
-   "x": 2165,
-   "y": 1777,
+   "x": 3169,
+   "y": 1761,
    "w": 90,
    "h": 33,
    "ox": 31,
    "oy": 0
   },
-  "item/athens.g_wall_tower/glow/r0/f0": {
-   "x": 4061,
-   "y": 1684,
-   "w": 33,
-   "h": 21,
-   "ox": 34,
-   "oy": 10
+  "item/athens.g_wall/shadow/m9/f0": {
+   "x": 2464,
+   "y": 1756,
+   "w": 97,
+   "h": 33,
+   "ox": 31,
+   "oy": 0
+  },
+  "item/athens.g_wall_gate/shadow/r1/f0": {
+   "x": 3556,
+   "y": 1699,
+   "w": 102,
+   "h": 38,
+   "ox": 32,
+   "oy": 0
+  },
+  "item/athens.g_wall_tower/shadow/r0/f0": {
+   "x": 3661,
+   "y": 1612,
+   "w": 181,
+   "h": 74,
+   "ox": 62,
+   "oy": -1
+  },
+  "item/athens.g_workshop/glow/r1/f0": {
+   "x": 3919,
+   "y": 1770,
+   "w": 29,
+   "h": 18,
+   "ox": 58,
+   "oy": -11
+  },
+  "item/athens.g_workshop/glow/r2/f0": {
+   "x": 894,
+   "y": 1774,
+   "w": 29,
+   "h": 18,
+   "ox": 2,
+   "oy": 5
+  },
+  "item/athens.g_workshop/glow/r3/f0": {
+   "x": 924,
+   "y": 1774,
+   "w": 29,
+   "h": 18,
+   "ox": -30,
+   "oy": -23
   },
   "item/athens.g_workshop/shadow/r0/f0": {
-   "x": 3060,
-   "y": 1711,
+   "x": 3958,
+   "y": 1701,
    "w": 131,
    "h": 63,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_workshop/shadow/r2/f0": {
-   "x": 1826,
-   "y": 1707,
+   "x": 1,
+   "y": 1697,
    "w": 154,
    "h": 69,
    "ox": 60,
    "oy": -4
   },
   "item/athens.g_workshop/shadow/r3/f0": {
-   "x": 2170,
-   "y": 1706,
+   "x": 1494,
+   "y": 1689,
    "w": 129,
    "h": 70,
    "ox": 70,
    "oy": -2
   },
+  "item/athens.great_altar/glow/r0/f0": {
+   "x": 2775,
+   "y": 1702,
+   "w": 53,
+   "h": 33,
+   "ox": 26,
+   "oy": -10
+  },
+  "item/athens.great_altar/shadow/r0/f0": {
+   "x": 1494,
+   "y": 1611,
+   "w": 161,
+   "h": 77,
+   "ox": 76,
+   "oy": -10
+  },
   "item/athens.harbour/glow/r0/f0": {
-   "x": 3565,
-   "y": 1,
+   "x": 3509,
+   "y": 516,
    "w": 340,
    "h": 303,
    "ox": 342,
@@ -819,8 +843,8 @@
    "oy": -20
   },
   "item/athens.nike_bastion/shadow/r0/f0": {
-   "x": 1669,
-   "y": 1436,
+   "x": 2916,
+   "y": 1438,
    "w": 301,
    "h": 146,
    "ox": 132,
@@ -835,7 +859,7 @@
    "oy": -184
   },
   "item/athens.old_bouleuterion/shadow/r0/f0": {
-   "x": 338,
+   "x": 697,
    "y": 1526,
    "w": 374,
    "h": 122,
@@ -857,14 +881,6 @@
    "h": 298,
    "ox": 588,
    "oy": -172
-  },
-  "item/athens.pandroseion/shadow/r0/f0": {
-   "x": 1669,
-   "y": 1583,
-   "w": 271,
-   "h": 115,
-   "ox": 133,
-   "oy": -17
   },
   "item/athens.parthenon/glow/r0/f0": {
    "x": 1,
@@ -898,6 +914,14 @@
    "ox": -1,
    "oy": -11
   },
+  "item/athens.pentelikon_quarry/base/r0/p13/f0": {
+   "x": 1375,
+   "y": 1,
+   "w": 414,
+   "h": 279,
+   "ox": 415,
+   "oy": -49
+  },
   "item/athens.pentelikon_quarry/base/r0/p16/f0": {
    "x": 1023,
    "y": 1,
@@ -915,24 +939,16 @@
    "oy": -248
   },
   "item/athens.pnyx/shadow/r0/f0": {
-   "x": 2518,
+   "x": 2933,
    "y": 1,
    "w": 1046,
    "h": 514,
    "ox": 548,
    "oy": -2
   },
-  "item/athens.promachos/glow/r0/f0": {
-   "x": 4061,
-   "y": 1734,
-   "w": 17,
-   "h": 11,
-   "ox": 6,
-   "oy": 130
-  },
   "item/athens.promachos/shadow/r0/f0": {
-   "x": 1411,
-   "y": 1778,
+   "x": 156,
+   "y": 1766,
    "w": 148,
    "h": 32,
    "ox": 50,
@@ -947,16 +963,16 @@
    "oy": -123
   },
   "item/athens.royal_stoa/shadow/r0/f0": {
-   "x": 999,
-   "y": 1611,
+   "x": 2210,
+   "y": 1599,
    "w": 267,
    "h": 95,
    "ox": 65,
    "oy": -28
   },
   "item/athens.sacred_gate/shadow/r0/f0": {
-   "x": 713,
-   "y": 1526,
+   "x": 1669,
+   "y": 1584,
    "w": 285,
    "h": 121,
    "ox": 118,
@@ -971,8 +987,8 @@
    "oy": -13
   },
   "item/athens.se_fountain/shadow/r0/f0": {
-   "x": 713,
-   "y": 1648,
+   "x": 3425,
+   "y": 1612,
    "w": 235,
    "h": 86,
    "ox": 80,
@@ -987,56 +1003,48 @@
    "oy": -73
   },
   "item/athens.simon_shop/glow/r0/f0": {
-   "x": 4061,
-   "y": 1720,
+   "x": 362,
+   "y": 1780,
    "w": 21,
    "h": 13,
    "ox": 10,
    "oy": -23
   },
   "item/athens.simon_shop/shadow/r0/f0": {
-   "x": 529,
-   "y": 1723,
+   "x": 1010,
+   "y": 1702,
    "w": 163,
    "h": 60,
    "ox": 85,
    "oy": -21
   },
-  "item/athens.stair_marble/shadow/r0/f0": {
-   "x": 151,
-   "y": 1776,
-   "w": 107,
-   "h": 51,
-   "ox": 67,
-   "oy": 2
-  },
   "item/athens.stair_marble/shadow/r1/f0": {
-   "x": 259,
-   "y": 1776,
+   "x": 1174,
+   "y": 1702,
    "w": 107,
    "h": 51,
    "ox": 35,
    "oy": 2
   },
   "item/athens.stair_marble/shadow/r2/f0": {
-   "x": 367,
-   "y": 1776,
+   "x": 306,
+   "y": 1728,
    "w": 107,
    "h": 51,
    "ox": 67,
    "oy": 2
   },
   "item/athens.stair_marble/shadow/r3/f0": {
-   "x": 1115,
-   "y": 1776,
+   "x": 414,
+   "y": 1728,
    "w": 107,
    "h": 51,
    "ox": 35,
    "oy": 2
   },
   "item/athens.stoa_poikile/glow/r0/f0": {
-   "x": 1482,
-   "y": 1611,
+   "x": 2478,
+   "y": 1610,
    "w": 180,
    "h": 93,
    "ox": 238,
@@ -1051,95 +1059,87 @@
    "oy": -7
   },
   "item/athens.stoa_zeus/shadow/r0/f0": {
-   "x": 2656,
-   "y": 1706,
+   "x": 2210,
+   "y": 1695,
    "w": 253,
    "h": 71,
    "ox": 132,
    "oy": -59
   },
-  "item/athens.t_cypress/shadow/r0/f0": {
-   "x": 3706,
-   "y": 1813,
-   "w": 72,
-   "h": 22,
-   "ox": 17,
-   "oy": -8
-  },
-  "item/athens.t_cypress/shadow/r1/f0": {
-   "x": 2976,
-   "y": 1813,
-   "w": 74,
-   "h": 22,
-   "ox": 15,
-   "oy": -8
-  },
   "item/athens.t_fig/shadow/r0/f0": {
-   "x": 98,
-   "y": 1804,
+   "x": 847,
+   "y": 1774,
    "w": 46,
    "h": 23,
    "ox": 9,
    "oy": -7
   },
-  "item/athens.t_laurel/shadow/r0/f0": {
-   "x": 2256,
-   "y": 1777,
-   "w": 42,
-   "h": 21,
-   "ox": 6,
-   "oy": -9
+  "item/athens.t_fig/shadow/r1/f0": {
+   "x": 3869,
+   "y": 1770,
+   "w": 49,
+   "h": 23,
+   "ox": 12,
+   "oy": -7
+  },
+  "item/athens.t_myrtle/shadow/r0/f0": {
+   "x": 305,
+   "y": 1780,
+   "w": 34,
+   "h": 14,
+   "ox": 5,
+   "oy": -11
+  },
+  "item/athens.t_oleander/shadow/r0/f0": {
+   "x": 607,
+   "y": 1775,
+   "w": 38,
+   "h": 17,
+   "ox": 7,
+   "oy": -10
   },
   "item/athens.t_olive/shadow/r0/f0": {
-   "x": 98,
-   "y": 1777,
+   "x": 4045,
+   "y": 1765,
    "w": 47,
    "h": 26,
    "ox": 9,
    "oy": -4
   },
   "item/athens.t_olive/shadow/r1/f0": {
-   "x": 3591,
-   "y": 1811,
+   "x": 3038,
+   "y": 1769,
    "w": 57,
    "h": 26,
    "ox": 14,
    "oy": -9
   },
+  "item/athens.t_olive/shadow/r2/f0": {
+   "x": 2121,
+   "y": 1696,
+   "w": 67,
+   "h": 34,
+   "ox": 11,
+   "oy": -5
+  },
   "item/athens.t_pine/shadow/r1/f0": {
-   "x": 554,
-   "y": 1784,
+   "x": 2208,
+   "y": 1767,
    "w": 77,
    "h": 31,
    "ox": 9,
    "oy": -11
   },
-  "item/athens.t_plane/shadow/r0/f0": {
-   "x": 3542,
-   "y": 1750,
-   "w": 103,
-   "h": 41,
-   "ox": 11,
-   "oy": -5
-  },
-  "item/athens.t_plane/shadow/r1/f0": {
-   "x": 1981,
-   "y": 1776,
-   "w": 97,
-   "h": 40,
-   "ox": 11,
-   "oy": -4
-  },
-  "item/athens.t_vine/shadow/r1/f0": {
-   "x": 2079,
-   "y": 1776,
-   "w": 85,
-   "h": 38,
-   "ox": 32,
-   "oy": 2
+  "item/athens.t_vine/shadow/r0/f0": {
+   "x": 780,
+   "y": 1775,
+   "w": 40,
+   "h": 15,
+   "ox": 9,
+   "oy": -10
   },
   "item/athens.telesterion/base/r0/p0/f0": {
-   "x": 1375,
+   "x": 1790,
    "y": 1,
    "w": 486,
    "h": 288,
@@ -1147,7 +1147,7 @@
    "oy": 48
   },
   "item/athens.telesterion/base/r0/p2/f0": {
-   "x": 2266,
+   "x": 2681,
    "y": 1,
    "w": 251,
    "h": 208,
@@ -1171,16 +1171,24 @@
    "oy": -196
   },
   "item/athens.tholos/shadow/r0/f0": {
-   "x": 2401,
-   "y": 1610,
+   "x": 1955,
+   "y": 1599,
    "w": 254,
    "h": 96,
    "ox": 113,
    "oy": -45
   },
+  "item/athens.twelve_gods/shadow/r0/f0": {
+   "x": 1624,
+   "y": 1758,
+   "w": 126,
+   "h": 34,
+   "ox": 60,
+   "oy": -28
+  },
   "item/athens.tyrannicides/shadow/r0/f0": {
-   "x": 716,
-   "y": 1787,
+   "x": 2370,
+   "y": 1767,
    "w": 92,
    "h": 28,
    "ox": 44,

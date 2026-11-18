@@ -130,7 +130,7 @@ def _harbour_landmark():
     walk = [t for t in tiles(5, 9, 0, 14) if t not in blocked]
     floor = {t: (0.0 if t[0] == 5 else 2.4 if t[0] == 9 else 1.6) for t in walk}
     return Landmark((10, 18), (0, 56), ref("harbour"), walk=walk, floor=floor,
-                    slots={"moor": [{"t": [9, y], "face": "+x"} for y in (2, 8, 11, 14)],
+                    slots={"moor": [{"t": [10, y], "face": "-x"} for y in (2, 8, 11, 14)],
                            "trade": [{"t": [5, y], "face": "-x"} for y in (2, 6, 10)],
                            "load": [{"t": [8, 2], "face": "+x"}, {"t": [8, 9], "face": "+x"}]},
                     emitters={"beacon": (130.0, 265.0, 37.0)}, district=7)

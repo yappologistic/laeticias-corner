@@ -13,7 +13,7 @@ shot shots/world_map_hover.png
 click map:rome
 waitfor 70 travelling no
 expect place rome
-expect era Roma
+expect era Rome
 expect away yes
 expect visited rome yes
 shot shots/world_rome.png

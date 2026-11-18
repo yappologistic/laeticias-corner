@@ -71,6 +71,7 @@ inline constexpr double kSoakGrowthMiB = 4.0; // memory a long session may add a
 // budget and the code and drivers around them; see out/reports/engine-frontdoor.md for the sums.
 inline constexpr double kBenchMemoryMiB = 512.0;
 inline constexpr long long kSoakDrawEvery = 120; // steps between frames drawn during a soak
+inline constexpr double kSoakDaySeconds = 50.0;  // a soak's calendar day: 600 s cross 4 seasons
 inline constexpr int kBenchCrowd = 400;
 // Rare visitors: the recipe holds this long before one comes; a visit lasts, then it stays away.
 inline constexpr float kRareDelayMin = 20.0f;
@@ -138,9 +139,13 @@ inline constexpr int kHandsMax = 3;          // goods units carried at once
 inline constexpr float kHatReach = 4.0f;     // a butterfly finds her hat within this
 inline constexpr float kCallRadius = 6.0f;   // hens come to feed from this far
 inline constexpr float kHenPeckSeconds = 6.0f;
-inline constexpr float kLineSpacing = 0.7f;   // ducks in a line, tiles apart
-inline constexpr float kFollowSpacing = 1.0f; // following her, a tile behind
-inline constexpr float kReactRadius = 8.0f;   // she turns to placements this close
+inline constexpr float kLineSpacing = 0.7f;         // ducks in a line, tiles apart
+inline constexpr float kFollowSpacing = 1.0f;       // following her, a tile behind
+inline constexpr float kFollowStuckSeconds = 3.0f;  // a follower blocked this long leaves the line
+inline constexpr float kLeaveLimitSeconds = 150.0f; // a leaver is gone (in, or faded) within this
+inline constexpr float kTravelStuckSeconds = 4.0f;  // a walk that makes no headway this long fails
+inline constexpr float kLineBanSeconds = 30.0f;     // and keeps to itself this long
+inline constexpr float kReactRadius = 8.0f;         // she turns to placements this close
 inline constexpr float kStartleSeconds = 0.6f;
 inline constexpr float kStartleCooldown = 5.0f;
 inline constexpr float kStartleSpeed = 2.5f;

@@ -47,6 +47,9 @@ public:
     // How hard it rains at a point, 0..1 (snow in a snowy season is the same rain).
     [[nodiscard]] float rainAt(Vec2 tile) const;
     [[nodiscard]] bool raining(Vec2 tile) const;
+    // It rains somewhere on the land the weather crosses: what conditions and events mean by
+    // rain, wherever the camera looks (Q3-03).
+    [[nodiscard]] bool rainingOnLand() const;
     [[nodiscard]] Wind wind() const { return wind_; }
     // A gust wave now crossing the region: how strongly it is at a point, 0..1.
     [[nodiscard]] float gustAt(Vec2 tile) const;

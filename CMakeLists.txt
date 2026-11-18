@@ -119,7 +119,16 @@ if(LC_TESTS)
   lc_project_target(lc_world_tests)
   # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
   target_compile_options(lc_world_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
-  add_test(NAME world_unit COMMAND lc_world_tests --test-case-exclude=perf:*)
+  add_test(NAME world_unit COMMAND lc_world_tests "--test-case-exclude=perf:*,real world: the digest*")
+  # The digest against tools/worldgen's own reader, made at test time from today's data (skipped
+  # without worldgen's virtualenv).
+  add_test(NAME world_digest COMMAND ${CMAKE_COMMAND}
+    -DPY=${CMAKE_SOURCE_DIR}/tools/worldgen/.venv/bin/python
+    -DSCRIPT=${CMAKE_SOURCE_DIR}/tests/world_tools/world_digest.py
+    -DOUT=${CMAKE_CURRENT_BINARY_DIR}/world_digest.json
+    -DTESTS=$<TARGET_FILE:lc_world_tests>
+    -P ${CMAKE_SOURCE_DIR}/tests/world_tools/digest_check.cmake)
+  set_tests_properties(world_digest PROPERTIES SKIP_RETURN_CODE 77)
   # Load time, memory and query throughput on the committed world; budgets assert in optimised
   # builds only (sanitizer builds report the figures).
   add_test(NAME world_perf COMMAND lc_world_tests --test-case=perf:*)

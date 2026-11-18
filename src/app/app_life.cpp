@@ -96,17 +96,26 @@ void App::updateLife(float dt) {
     weather_.update(dt, season(), openBounds(cat_, progress_.stage, world_));
     refreshNooks();
     if (world_.revision() != fallRevision_) {
-        // Water at the rims falls over them: the waterfall's bed comes from there.
+        // Water at the rims falls over them: the waterfall's bed comes from there. The rim tiles
+        // (ground with no ground beyond it to the south-east or south-west) never change, so
+        // they are found once per map and each edit looks at them alone (Q3-09).
         fallRevision_ = world_.revision();
+        if (rimTiles_.empty() || rimOf_ != world_.bounds()) {
+            rimOf_ = world_.bounds();
+            rimTiles_.clear();
+            for (int y = 0; y < world_.height(); ++y)
+                for (int x = 0; x < world_.width(); ++x)
+                    if (world_.hasGround({x, y}) &&
+                        (!world_.hasGround({x + 1, y}) || !world_.hasGround({x, y + 1})))
+                        rimTiles_.push_back({x, y});
+        }
         fallCount_ = 0;
         Vec2 sum;
-        for (int y = 0; y < world_.height(); ++y)
-            for (int x = 0; x < world_.width(); ++x) {
-                if (!world_.isWater({x, y}) || world_.isWild({x, y})) continue;
-                if (world_.hasGround({x + 1, y}) && world_.hasGround({x, y + 1})) continue;
-                ++fallCount_;
-                sum = {sum.x + static_cast<float>(x) + 0.5f, sum.y + static_cast<float>(y) + 0.5f};
-            }
+        for (const TilePos t : rimTiles_) {
+            if (!world_.isWater(t) || world_.isWild(t)) continue;
+            ++fallCount_;
+            sum = {sum.x + static_cast<float>(t.x) + 0.5f, sum.y + static_cast<float>(t.y) + 0.5f};
+        }
         if (fallCount_ > 0)
             fallCentre_ = {sum.x / static_cast<float>(fallCount_),
                            sum.y / static_cast<float>(fallCount_)};
@@ -140,7 +149,7 @@ void App::updateLife(float dt) {
     lastPhase_ = phase;
     events_.update(ev, dt);
     handleWorldEvents();
-    const bool rain = ev.facts.raining;
+    const bool rain = raining(); // the view: rain reaching or leaving it is a happening
     if (rain != rainWas_) lively_.happening(simTime_);
     rainWas_ = rain;
     scene_->cooking(events_.active(EventShow::Smoke) ? actors_.residentHome() : std::nullopt);
@@ -150,8 +159,16 @@ void App::updateLife(float dt) {
         idleLineAt_ = simTime_ + rng_.range(tuning::kIdleLineMin, tuning::kIdleLineMax);
         const Actor& r = actors_.all()[static_cast<std::size_t>(actors_.resident())];
         const auto& names = cat_.kinds[r.kind].anims;
-        if (r.state != ActorState::Act || names[r.anim] != "read")
-            (void)speak(cat_.resident.context("idle"), SpeechWeight::Idle);
+        // Her remark fits the moment: rain where she is, the evening, or an ordinary day
+        // (Q3-16); a moment without lines of its own passes quietly.
+        const bool wet = weather_.raining(r.pos);
+        const Phase ph = clock_.phase();
+        const int context = wet ? cat_.resident.context("idle_rain")
+                            : ph == Phase::Night || ph == Phase::Dusk
+                                ? cat_.resident.context("idle_night")
+                                : cat_.resident.context("idle");
+        if (context >= 0 && (r.state != ActorState::Act || names[r.anim] != "read"))
+            (void)speak(context, SpeechWeight::Idle);
     }
     if (anyRipe_ && ripeDay_ != clock_.day()) {
         ripeDay_ = clock_.day();
@@ -306,9 +323,7 @@ void App::handleWorldEvents() {
             if (seasonPin_ >= 0) break;
             if (sound) play(d.sfx, tuning::kSfxLevel * d.gain);
             const SeasonDef& s = cat_.seasons[static_cast<std::size_t>(season())];
-            if (!speakText(s.line, SpeechWeight::Important))
-                hud_.toast(std::vformat(strings::kThanks,
-                                        std::make_format_args(s.line, cat_.resident.name)));
+            if (!speakText(s.line, SpeechWeight::Important)) hud_.toast(signedLine(s.line, -1));
             break;
         }
         case EventShow::Chorus:

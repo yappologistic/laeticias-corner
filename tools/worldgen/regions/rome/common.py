@@ -13,7 +13,7 @@ import numpy as np
 from worldgen import rng
 from worldgen.dsl import Layout
 from worldgen.finish import put, use_tiles
-from worldgen.shapes import Mask, Rect
+from worldgen.shapes import Line, Mask, Rect
 
 STEP = {"west": (-1, 0), "north": (0, -1), "east": (1, 0), "south": (0, 1)}
 STAIR = "rome.stair_travertine"
@@ -54,30 +54,34 @@ def expand(points) -> list:
 
 
 # --- stair runs ---------------------------------------------------------------------------------
-# A run climbs along a path of tiles from its foot (a street tile at `lvl0`): two tiles of flight,
-# one tile of landing a level up, and so on. Flights are straight; a run turns only on a landing.
+# A run climbs along a path of tiles from its foot (a street tile at `lvl0`): `flight` tiles of
+# flight (two for a stair, four for a ramp), one tile of landing a level up, and so on. Flights
+# are straight; a run turns only on a landing.
 
-def run_plan(points, lvl0: int, rise: int):
+RAMP = "world.ramp"
+
+
+def run_plan(points, lvl0: int, rise: int, flight: int = 2):
     """[(flight tiles, face, level)], [(landing tile, level)] of a run; raises if it bends in a
     flight or the path is too short."""
     path = expand(points)
-    if len(path) < 3 * rise + 1:
-        raise ValueError(f"stair run from {path[0]} needs {3 * rise + 1} tiles, has {len(path)}")
+    step = flight + 1
+    if len(path) < step * rise + 1:
+        raise ValueError(f"run from {path[0]} needs {step * rise + 1} tiles, has {len(path)}")
     flights, landings = [], []
     for k in range(rise):
-        a, b, land = path[3 * k + 1], path[3 * k + 2], path[3 * k + 3]
-        prev = path[3 * k]
-        d = (a[0] - prev[0], a[1] - prev[1])
-        if (b[0] - a[0], b[1] - a[1]) != d:
-            raise ValueError(f"stair run bends inside a flight at {a}")
-        face = facing(-d[0], -d[1])
-        flights.append(([a, b], face, lvl0 + k))
+        tiles = path[step * k + 1:step * k + 1 + flight]
+        land, prev = path[step * k + step], path[step * k]
+        d = (tiles[0][0] - prev[0], tiles[0][1] - prev[1])
+        if any((b[0] - a[0], b[1] - a[1]) != d for a, b in zip(tiles, tiles[1:])):
+            raise ValueError(f"run bends inside a flight at {tiles[0]}")
+        flights.append((tiles, facing(-d[0], -d[1]), lvl0 + k))
         landings.append((land, lvl0 + k + 1))
     return flights, landings
 
 
-def carve_run(lv: np.ndarray, points, lvl0: int, rise: int) -> None:
-    flights, landings = run_plan(points, lvl0, rise)
+def carve_run(lv: np.ndarray, points, lvl0: int, rise: int, flight: int = 2) -> None:
+    flights, landings = run_plan(points, lvl0, rise, flight)
     for tiles, _f, k in flights:
         for c, r in tiles:
             lv[r, c] = k
@@ -85,11 +89,12 @@ def carve_run(lv: np.ndarray, points, lvl0: int, rise: int) -> None:
         lv[r, c] = k
 
 
-def build_run(L: Layout, points, lvl0: int, rise: int, name: str, paving: str) -> None:
-    flights, landings = run_plan(points, lvl0, rise)
+def build_run(L: Layout, points, lvl0: int, rise: int, name: str, paving: str,
+              flight: int = 2, item: str = STAIR) -> None:
+    flights, landings = run_plan(points, lvl0, rise, flight)
     for i, (tiles, face, _k) in enumerate(flights):
         cs, rs = [t[0] for t in tiles], [t[1] for t in tiles]
-        L.stair(STAIR, rect=(min(cs), min(rs), max(cs), max(rs)), face=face,
+        L.stair(item, rect=(min(cs), min(rs), max(cs), max(rs)), face=face,
                 name=name if i == 0 else f"{name}_{i}")
     for (c, r), _k in landings:
         L.paint(Rect(c, r, c, r), paving)
@@ -375,3 +380,78 @@ def grove(L: Layout, area: np.ndarray, seed: str, item: str, step=(3, 2), soil: 
             at = (c + int(hv >> 8) % 3 - 1, r) if step[0] > 1 else (c, r)
             if 0 <= at[0] < w and m[r, at[0]]:
                 put(L, item, at, variant=int(hv >> 16) % variants)
+
+
+# --- quarters -----------------------------------------------------------------------------------
+# (frontage kit, fill kit); shops, counters and corner blocks open on the streets afterwards.
+R = "rome."
+DENSE = ({R + "r_insula": 3, R + "r_insula_low": 1.2, R + "r_bath_small": 0.12},
+         {R + "r_insula_low": 2, R + "r_insula": 0.5})
+MIXED = ({R + "r_insula": 2, R + "r_domus": 1.5, R + "r_insula_low": 1},
+         {R + "r_insula_low": 2})
+RICH = ({R + "r_domus": 3, R + "r_insula_low": 0.7}, {R + "r_insula_low": 1})
+FRONT_SHOPS = {R + "r_taberna": 5, R + "r_thermopolium": 1, R + "r_insula_corner": 2,
+               R + "r_lacus": 0.6, R + "r_compitum": 0.6}
+SHOPS = {R + "r_thermopolium": 1.5, R + "r_taberna": 4, R + "r_bakery": 1.2, R + "r_fullonica": 0.8,
+         R + "r_smithy": 0.6, R + "r_glass": 0.4, R + "r_dyeworks": 0.4, R + "r_compitum": 1.2,
+         R + "r_lacus": 1.5, R + "r_latrine": 0.3, R + "r_vigiles": 0.2}
+GREEN = {R + "t_fig": 2, R + "r_vine": 2, R + "t_laurel": 1, R + "t_cypress": 1, R + "t_plane": 1,
+         R + "t_box": 1, R + "t_rose": 1}
+
+
+def water_mask(L: Layout) -> np.ndarray:
+    out = np.zeros(L.T.shape, dtype=bool)
+    for t, name in enumerate(L.terrains):
+        if L.cat.is_water(name):
+            out |= L.T == t
+    return out
+
+
+def streets_near(L: Layout, area: np.ndarray) -> list:
+    """The streets that touch (or run beside) an area: the frontage its houses face."""
+    h, w = area.shape
+    out = []
+    grown = area.copy()
+    grown[1:, :] |= area[:-1, :]
+    grown[:-1, :] |= area[1:, :]
+    grown[:, 1:] |= area[:, :-1]
+    grown[:, :-1] |= area[:, 1:]
+    for s in L.streets:
+        for c, r in Line(s.points, s.width).tiles():
+            lc, lr = c - L.origin[0], r - L.origin[1]
+            if 0 <= lc < w and 0 <= lr < h and grown[lr, lc]:
+                out.append(s)
+                break
+    return out
+
+
+def quarter(L: Layout, name: str, shape, kits, gap: float, spacing: int, shops: float,
+            green: float, level: int = 0, lane_paving: str = R + "packed_earth",
+            ground: str | None = None, fill_front: float = 0.0, urban: list | None = None,
+            shop_kit: dict | None = None) -> None:
+    """One neighbourhood: lanes grown off its streets, frontage houses then the smaller pieces,
+    shops, shrines and fountains on the streets, yards and gardens in what is left (on `ground`
+    in the crowded quarters, where little grass was left: appended to `urban` for the layout
+    to paint once its clean-up is done)."""
+    area = mask(L, shape) & (L.LV == level) & (L.OCC < 0)
+    area &= ~water_mask(L)
+    if not area.any():
+        return
+    lanes(L, area & ~L.STREET, name, spacing=spacing, paving=lane_paving, reach=24)
+    area &= ~L.STREET
+    beside_street(L, area, shop_kit or SHOPS, shops, name + "_shops")
+    front = streets_near(L, area)
+    # The filler favours small pieces in a mixed kit, so the big blocks go first, one by one.
+    for item in sorted(kits[0], key=lambda k: -L.cat.items[k].footprint[0] * L.cat.items[k].footprint[1]):
+        if kits[0][item] >= 1:
+            L.houses(Mask(0, 0, area), {item: 1}, front=front, gap=gap + 0.1 / kits[0][item],
+                     seed=f"{name}_{item}")
+    L.houses(Mask(0, 0, area), kits[0], front=front, gap=gap, seed=name)
+    L.houses(Mask(0, 0, area), kits[1], front=front, gap=gap + 0.05, seed=name + "_fill")
+    if fill_front:
+        beside_street(L, area, FRONT_SHOPS, fill_front, name + "_front")
+    if ground and urban is not None:
+        urban.append((area.copy(), ground))
+    L.scatter(Mask(0, 0, area), {R + "r_well": 1, R + "r_amphorae": 1.5, R + "r_altar": 0.3}, 0.015,
+              min_gap=2, seed=name + "_yards")
+    L.scatter(Mask(0, 0, area), GREEN, green, seed=name + "_green", clump=0.6)

@@ -7,12 +7,8 @@ reader (worldgen.layer.read_lcw), composes them with worldgen's own composition
 engine's rule for ids: an item resolves only from assets/catalog.json and the set catalogs
 (drafts and plan/provisional.py stand-ins are worldgen's, not the engine's); others are counted as
 unresolved and left out before composing. The C++ test (tests/world_real.cpp) compares its own
-digest of the same files with the committed output, so both readers must agree byte for byte.
-
-Regenerate the fixture after any change to assets/world/ or the catalogs (repository root):
-
-    tools/worldgen/.venv/bin/python tests/world_tools/world_digest.py \
-        > tests/fixtures/world/digest.json
+digest of the same files with this script's output, so both readers must agree byte for byte.
+The `world_digest` test runs it at test time on today's data (tests/world_tools/digest_check.cmake).
 
 (`tools/worldgen/build.sh --test` creates that virtualenv on first use.)
 """
