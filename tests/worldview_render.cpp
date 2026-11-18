@@ -1,0 +1,206 @@
+// The world renderer on the committed world, headless with the software renderer: gathering finds
+// every piece and orders them, cached cells leave no seams, impostors match the full-detail view
+// at their scale, and missing art is drawn and counted.
+
+#include "core/catalog.hpp"
+#include "render/atlas.hpp"
+#include "ui/font.hpp"
+#include "world/loader.hpp"
+#include "worldview/gather.hpp"
+#include "worldview/renderer.hpp"
+
+#include <doctest.h>
+
+#include <cmath>
+#include <memory>
+#include <optional>
+#include <set>
+
+using namespace lc;
+using namespace lc::worldview;
+
+namespace {
+
+constexpr int kW = 640;
+constexpr int kH = 400;
+
+// One SDL session, window and software renderer, the world and its renderer, for the whole run.
+struct Rig {
+    bool ok = false;
+    WindowPtr window;
+    RendererPtr renderer;
+    Catalog cat;
+    std::optional<world::LoadedWorld> world;
+    std::unique_ptr<Atlas> atlas;
+    Font font;
+    std::unique_ptr<WorldView> view;
+    TexturePtr target;
+
+    Rig() {
+        if (!SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "dummy", SDL_HINT_OVERRIDE) ||
+            !SDL_Init(SDL_INIT_VIDEO))
+            return;
+        window.reset(SDL_CreateWindow("worldview test", kW, kH, 0));
+        if (window) renderer.reset(SDL_CreateRenderer(window.get(), "software"));
+        auto c = loadCatalog(std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "catalog.json");
+        if (!renderer || !c) return;
+        cat = std::move(*c);
+        auto w = world::loadWorld(LC_WORLDVIEW_ASSETS_DIR, cat);
+        if (!w) return;
+        world.emplace(std::move(*w));
+        atlas = std::make_unique<Atlas>(renderer.get(), LC_WORLDVIEW_ASSETS_DIR, cat.iso());
+        if (!font.load(std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "fonts") ||
+            !font.build(renderer.get(), 1.0f))
+            return;
+        view = std::make_unique<WorldView>(renderer.get(), *world, LC_WORLDVIEW_ASSETS_DIR, *atlas,
+                                           font, false);
+        target.reset(
+            SDL_CreateTexture(renderer.get(), kTextureFormat, SDL_TEXTUREACCESS_TARGET, kW, kH));
+        ok = target != nullptr;
+    }
+    ~Rig() {
+        view.reset();
+        target.reset();
+        atlas.reset();
+        renderer.reset();
+        window.reset();
+        SDL_Quit();
+    }
+    Rig(const Rig&) = delete;
+    Rig& operator=(const Rig&) = delete;
+
+    [[nodiscard]] WorldCamera camera(Vec2 tile, int level) const {
+        WorldCamera cam(cat.iso(), world->map->width(), world->map->height(), 240);
+        cam.setScreen({kW, kH});
+        cam.setLevel(level);
+        cam.lookAtTile(tile);
+        return cam;
+    }
+
+    // The frame for `cam`, RGBA.
+    SurfacePtr frame(const WorldCamera& cam) {
+        if (!SDL_SetRenderTarget(renderer.get(), target.get())) return {};
+        view->draw(cam, phaseCentre(Phase::Day), 0, 0);
+        SurfacePtr px{SDL_RenderReadPixels(renderer.get(), nullptr)};
+        (void)SDL_SetRenderTarget(renderer.get(), nullptr);
+        return px ? SurfacePtr{SDL_ConvertSurface(px.get(), SDL_PIXELFORMAT_RGBA32)} : SurfacePtr{};
+    }
+};
+
+Rig& rig() {
+    static Rig r;
+    return r;
+}
+
+const std::uint8_t* pixel(const SDL_Surface* s, int x, int y) {
+    return static_cast<const std::uint8_t*>(s->pixels) + static_cast<std::ptrdiff_t>(y) * s->pitch +
+           static_cast<std::ptrdiff_t>(x) * 4;
+}
+
+} // namespace
+
+TEST_CASE("render: the gathered elements of the Parsa terrace are complete and in order") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::WorldMap& m = *r.world->map;
+    const Iso iso = r.cat.iso();
+    Gatherer g(m, r.view->sprites());
+    const Vec2 c = iso.toWorld(374, 58);
+    const FRect clip{c.x - 900, c.y - 600, c.x + 900, c.y + 600};
+    Gathered tight;
+    g.run(gatherTiles(clip, r.view->sprites().itemSpan(), iso), clip, tight);
+    Gathered wide;
+    const TileRect around = tilesUnder(clip, iso);
+    g.run({around.x0 - 60, around.y0 - 60, around.x1 + 60, around.y1 + 60}, clip, wide);
+    // The tight span finds everything a much wider search does.
+    REQUIRE(tight.elems.size() > 200);
+    CHECK(tight.elems.size() == wide.elems.size());
+    // Every split landmark found has all its pieces that meet the clip, once each.
+    std::set<std::pair<std::uint32_t, int>> seen;
+    int pieces = 0;
+    for (const Elem& e : tight.elems)
+        if (!e.ground) {
+            CHECK(seen.emplace(e.item, e.piece).second);
+            pieces += e.piece >= 0 ? 1 : 0;
+        }
+    CHECK(pieces > 50);
+    // Painter's order holds for every overlapping pair.
+    std::vector<std::size_t> at(tight.elems.size());
+    for (std::size_t k = 0; k < tight.order.size(); ++k) at[tight.order[k]] = k;
+    int bad = 0;
+    for (std::size_t i = 0; i < tight.items.size(); ++i)
+        for (std::size_t j = i + 1; j < tight.items.size(); ++j)
+            if (tight.items[i].screen.overlaps(tight.items[j].screen) &&
+                drawnBefore(tight.items[i], tight.items[j]) != (at[i] < at[j]))
+                ++bad;
+    CHECK(bad == 0);
+}
+
+TEST_CASE("render: cached cells and the live layer leave no seams as the view moves") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    // The same place drawn twice, the second time moved by a whole number of pixels: cell
+    // boundaries cross the frame elsewhere, the overlap must match exactly.
+    for (const Vec2 tile : {Vec2{374, 58}, Vec2{313, 615}}) {
+        WorldCamera a = r.camera(tile, 3);
+        WorldCamera b = a;
+        b.panBy({173, 91});
+        const SurfacePtr pa = r.frame(a);
+        const SurfacePtr pb = r.frame(b);
+        REQUIRE(pa);
+        REQUIRE(pb);
+        long differ = 0;
+        for (int y = 0; y < kH - 91; ++y)
+            for (int x = 0; x < kW - 173; ++x)
+                if (std::memcmp(pixel(pa.get(), x + 173, y + 91), pixel(pb.get(), x, y), 4) != 0)
+                    ++differ;
+        CHECK(differ == 0);
+    }
+}
+
+TEST_CASE("render: impostors match the full-detail view at their scale") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const Vec2 tile{262, 672}; // the Athenian Agora
+    const SurfacePtr full = r.frame(r.camera(tile, 3));
+    const SurfacePtr half = r.frame(r.camera(tile, 2));
+    REQUIRE(full);
+    REQUIRE(half);
+    // The middle of the half-scale frame against the full frame averaged 2 x 2.
+    double diff = 0;
+    long n = 0;
+    for (int y = kH / 4 + 8; y < kH * 3 / 4 - 8; ++y)
+        for (int x = kW / 4 + 8; x < kW * 3 / 4 - 8; ++x) {
+            const int fx = (x - kW / 4) * 2;
+            const int fy = (y - kH / 4) * 2;
+            for (int ch = 0; ch < 3; ++ch) {
+                double avg = 0;
+                for (int dy = 0; dy < 2; ++dy)
+                    for (int dx = 0; dx < 2; ++dx) avg += pixel(full.get(), fx + dx, fy + dy)[ch];
+                diff += std::abs(avg / 4 - pixel(half.get(), x, y)[ch]);
+                ++n;
+            }
+        }
+    MESSAGE("mean difference " << diff / static_cast<double>(n));
+    CHECK(diff / static_cast<double>(n) < 2.0);
+}
+
+TEST_CASE("render: missing art is drawn as placeholders or stand-ins and counted") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const WorldSprites& s = r.view->sprites();
+    // The shared world set has a catalog and no art yet.
+    CHECK(s.placeholdersPlaced() > 0);
+    bool standIn = false;
+    for (const MissingArt& m : s.missingItems()) {
+        CHECK(m.count > 0);
+        standIn = standIn || m.look == Look::StandIn;
+    }
+    CHECK(standIn);
+    CHECK_FALSE(s.missingTerrain().empty());
+    // Every placed item resolves to something drawable.
+    for (const world::Placed& it : r.world->map->items()) {
+        const VariantLook& look = s.item(it);
+        CHECK((!look.base.empty() || !look.pieces.empty()));
+    }
+}

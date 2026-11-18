@@ -45,6 +45,7 @@ struct ViewerOptions {
     std::string renderer;                       // SDL render driver; empty: software (headless)
     bool bench = false;
     std::string benchCase; // empty: every case
+    bool budget = true;    // the bench fails over budget (sanitizer builds only report)
     bool interactive = false;
     bool report = false;
     bool help = false;

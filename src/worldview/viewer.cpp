@@ -2,6 +2,7 @@
 
 #include "app/app_impl.hpp" // processMemory
 #include "core/perf.hpp"
+#include "core/starter.hpp"
 #include "world/loader.hpp"
 #include "worldview/renderer.hpp"
 #include "worldview/tuning.hpp"
@@ -139,6 +140,11 @@ bool Viewer::load() {
         return false;
     }
     world_.emplace(std::move(*w));
+    // The player's region shows the starter scene, as a new world opens (world-tech §4.1).
+    world::Diagnostics diag;
+    if (auto r = world_->map->applyHome(world::homeDeltaFrom(makeStarterWorld(cat_), cat_), diag);
+        !r)
+        SDL_Log("home: %s", r.error().c_str());
     SDL_Log(
         "world: loaded in %.1f ms, %zu errors and %zu warnings in the data (worldinfo validate)",
         world_->timings.total, world_->diagnostics.errors.size(),
@@ -551,7 +557,7 @@ int Viewer::runBench() {
     std::printf(
         "budgets: frame p99 <= %.1f ms, worst <= %.1f ms, cpu avg <= %.1f ms, city draws <= %d\n",
         tuning::kFrameP99Ms, tuning::kFrameWorstMs, tuning::kCpuAvgMs, tuning::kDrawCallsMax);
-    return over ? 3 : 0;
+    return over && o_.budget ? 3 : 0;
 }
 
 int Viewer::runInteractive() {

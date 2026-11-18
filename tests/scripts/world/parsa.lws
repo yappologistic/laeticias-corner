@@ -1,0 +1,37 @@
+# Parsa: the terrace, the great stairway and the town at every scale, by day and by night.
+goto 374 58             # the terrace (worldgen view whole_terrace)
+zoom 1
+settle
+expect region parsa
+expect page_resident parsa
+expect lod native
+expect cells_pending == 0
+expect draw_calls <= 40
+expect luma > 0.4
+expect contrast > 0.1
+shot parsa_terrace_1x.png
+goto 351 101            # the great stairway and the forecourt
+zoom 2
+settle
+expect contrast > 0.05
+shot parsa_stairway_2x.png
+goto 374 58
+zoom 0.5
+settle
+expect lod half
+expect contrast > 0.1
+shot parsa_terrace_half.png
+zoom 0.25
+settle
+expect lod quarter
+expect contrast > 0.1
+shot parsa_quarter.png
+goto 325 102            # the paradise garden
+zoom 1
+settle
+shot parsa_garden_1x.png
+goto 390 118            # the lower town, at night
+clock night
+settle
+expect luma < 0.2
+shot parsa_town_night.png

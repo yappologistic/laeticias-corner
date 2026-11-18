@@ -61,6 +61,7 @@ std::string_view viewerUsage() {
            "  --renderer NAME     SDL render driver; opengl uses the windowless offscreen driver\n"
            "  --bench [CASE]      run the bench cases (opengl), exit 3 over budget, 77 without "
            "GPU\n"
+           "  --no-budget         the bench reports without failing (sanitizer builds)\n"
            "  --report            print what draws without art\n"
            "  --interactive       open a window to fly around (for a person, never automation)\n";
 }
@@ -120,6 +121,8 @@ parseViewerOptions(std::span<const std::string_view> args) {
             o.bench = true;
             if (i + 1 < args.size() && !args[i + 1].starts_with("--"))
                 o.benchCase = std::string(args[++i]);
+        } else if (a == "--no-budget") {
+            o.budget = false;
         } else if (a == "--report") {
             o.report = true;
         } else if (a == "--interactive") {

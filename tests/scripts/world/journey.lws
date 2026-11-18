@@ -1,0 +1,23 @@
+# The whole world: the overview, a flight from Parsa to Athens through every zoom level, and the
+# home corner with the starter scene inside the world.
+zoom overview
+settle
+expect lod overview
+expect contrast > 0.05
+shot world_overview.png
+zoom 1
+goto parsa
+settle
+expect region parsa
+fly athens 1 3
+frames 90
+expect lod overview
+settle
+expect region athens
+expect lod native
+shot journey_arrival.png
+goto corner
+settle
+expect region corner
+expect contrast > 0.03
+shot corner_home_1x.png

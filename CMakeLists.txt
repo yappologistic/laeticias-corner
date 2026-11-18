@@ -160,3 +160,48 @@ lc_project_target(lc_worldview)
 add_executable(laeticias-world src/worldview/viewer_main.cpp)
 target_link_libraries(laeticias-world PRIVATE lc_worldview)
 lc_project_target(laeticias-world)
+
+if(LC_TESTS)
+  add_executable(lc_worldview_tests
+    tests/worldview_main.cpp
+    tests/worldview_depth.cpp
+    tests/worldview_logic.cpp
+    tests/worldview_render.cpp
+  )
+  target_link_libraries(lc_worldview_tests PRIVATE lc_worldview lc_doctest)
+  target_compile_definitions(lc_worldview_tests PRIVATE
+    LC_WORLDVIEW_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+  lc_project_target(lc_worldview_tests)
+  # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
+  target_compile_options(lc_worldview_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
+  set(LC_WORLDVIEW_ENV "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+  add_test(NAME worldview_unit COMMAND lc_worldview_tests)
+  set_tests_properties(worldview_unit PROPERTIES ENVIRONMENT "${LC_WORLDVIEW_ENV}")
+
+  # Scripted viewer runs (tests/scripts/world/*.lws): shots land in <build>/shots/world/, and an
+  # `expect` that does not hold fails the run.
+  file(GLOB LC_WORLD_SCRIPTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/scripts/world/*.lws")
+  foreach(script ${LC_WORLD_SCRIPTS})
+    get_filename_component(name ${script} NAME_WE)
+    add_test(NAME world_script_${name}
+      COMMAND laeticias-world --script ${script} --shots "${CMAKE_BINARY_DIR}/shots/world")
+    set_tests_properties(world_script_${name} PROPERTIES ENVIRONMENT "${LC_WORLDVIEW_ENV}")
+  endforeach()
+
+  # The bench cases at 1080p on the GPU path, windowless; budgets assert in optimised builds
+  # (sanitizer builds report). Skipped (exit 77) where no GPU renderer can be created.
+  if(LC_SANITIZE)
+    set(LC_WORLD_BUDGET --no-budget)
+  else()
+    set(LC_WORLD_BUDGET "")
+  endif()
+  add_test(NAME world_bench
+    COMMAND laeticias-world --bench --renderer opengl --size 1920x1080 ${LC_WORLD_BUDGET})
+  set(LC_WORLD_BENCH_ENV "")
+  if(LC_SANITIZE)
+    # The GPU driver behind the offscreen EGL path leaks allocations of its own.
+    set(LC_WORLD_BENCH_ENV "ASAN_OPTIONS=detect_leaks=0")
+  endif()
+  set_tests_properties(world_bench PROPERTIES SKIP_RETURN_CODE 77 RUN_SERIAL TRUE
+    ENVIRONMENT "${LC_WORLD_BENCH_ENV}")
+endif()
