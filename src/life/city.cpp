@@ -287,8 +287,24 @@ void CityLife::setView(TileRect view) {
             : TileRect{view.x0 - m, view.y0 - m, view.x1 + m, view.y1 + m}.clipped(map_->bounds());
     if (a.x0 == active_.x0 && a.y0 == active_.y0 && a.x1 == active_.x1 && a.y1 == active_.y1)
         return;
+    // Who should be live is decided by chunk: an area that only slid within the chunks it
+    // already touched changes nothing for the populations, so it is looked at again soon
+    // (tokens and chains at its edge), not this very step. A pan costs a few reconciliations
+    // a second instead of sixty.
+    const auto chunks = [](const TileRect& r) {
+        return r.empty() ? TileRect{}
+                         : TileRect{r.x0 >> kChunkShift, r.y0 >> kChunkShift,
+                                    (r.x1 - 1) >> kChunkShift, (r.y1 - 1) >> kChunkShift};
+    };
+    const TileRect before = chunks(active_);
+    const TileRect now = chunks(a);
+    const bool same = !a.empty() && !active_.empty() && before.x0 == now.x0 &&
+                      before.y0 == now.y0 && before.x1 == now.x1 && before.y1 == now.y1;
     active_ = a;
-    dirty_ = true;
+    if (same)
+        moved_ = true;
+    else
+        dirty_ = true;
 }
 
 bool CityLife::inView(Vec2 p) const {
@@ -401,7 +417,7 @@ void CityLife::advanceAbstract(const LifeClock& clock) {
 
 void CityLife::update(const LifeClock& clock, float dt) {
     advanceAbstract(clock);
-    if (dirty_ || now_ - lastReconcile_ > 2.0) reconcile();
+    if (dirty_ || now_ - lastReconcile_ > (moved_ ? tl::kReconcileMoving : 2.0)) reconcile();
     spawnQueued(false);
     // Everyone's last position, for drawing between steps.
     for (LiveActor& a : pool_)
@@ -459,6 +475,7 @@ void CityLife::settle(const LifeClock& clock) {
 
 void CityLife::reconcile() {
     dirty_ = false;
+    moved_ = false;
     lastReconcile_ = now_;
     // Active chunks (the area grown by the margin), and those left less than two seconds ago.
     activeChunks_.clear();
