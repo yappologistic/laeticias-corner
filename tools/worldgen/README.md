@@ -166,7 +166,9 @@ tile at the plan's level (across the edge where two authored layers touch); `WP.
 a mound or acropolis in benches; `WP.climb` lays a path up a slope with a flight per level;
 `WP.river_level` gives a town's river a level no higher than where the base's river flows in;
 `WP.harbour_lane` ends the town's lane on the base lane's port tile; `WP.finish` clears door steps,
-caps glow and fits faces. Landmarks a city set has not drawn yet are provisional ids at their final
+lights the town for the night (`WP.night`: a fire where each road comes in, lamps at its named
+places, crossings and along its streets, from the set's kit), caps glow and fits faces; `WP.pier`
+lays a jetty or mole from the strand out over the water. Landmarks a city set has not drawn yet are provisional ids at their final
 footprints (`plan/provisional.py`).
 
 ## Routes and lanes (`worldgen/routes.py`)

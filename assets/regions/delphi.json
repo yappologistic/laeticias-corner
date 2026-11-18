@@ -617,6 +617,18 @@
       ],
       "depth": 0.15
      }
+    },
+    "athens.g_lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
+     }
     }
    }
   }
@@ -1450,5 +1462,132 @@
     "24:00"
    ]
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "temple_hearth": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.4,
+    "strength": 0.6,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.6,
+      1.4
+     ],
+     "depth": 0.06
+    },
+    "hours": [
+     [
+      "00:00",
+      "24:00"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.5
+    }
+   }
+  }
+ },
+ "light_points": [
+  [
+   254,
+   760,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   256,
+   760,
+   "athens.g_brazier",
+   "brazier_watch"
+  ],
+  [
+   258,
+   760,
+   "athens.g_brazier",
+   "brazier_watch"
+  ],
+  [
+   254,
+   762,
+   "athens.delphi_apollo",
+   "temple_hearth"
+  ],
+  [
+   261,
+   763,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   261,
+   769,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   261,
+   773,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   264,
+   776,
+   "athens.g_brazier",
+   "brazier_watch"
+  ]
  ]
 }

@@ -1189,7 +1189,7 @@
    "count": 1,
    "route": {
     "start": "base:cilician_road_station_980_254",
-    "end": "base:levant_road_station_982_281"
+    "end": "base:cilician_road_station_983_279"
    },
    "when": {
     "months": [
@@ -1390,5 +1390,82 @@
     "oneshot": "sfx/world/sickle.wav"
    }
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "watch_fire": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   }
+  }
+ },
+ "light_points": [
+  [
+   257,
+   296,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ],
+  [
+   278,
+   298,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   253,
+   301,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   266,
+   301,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ]
  ]
 }

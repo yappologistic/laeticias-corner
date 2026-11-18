@@ -53,7 +53,18 @@
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "parsa.p_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
+     "item": "parsa.p_torch",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -579,6 +590,18 @@
     "sea_state": 0
    },
    "lights": {
+    "parsa.p_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
     "parsa.p_house_small": {
      "kind": "window",
      "colour": "#ffd08a",
@@ -589,6 +612,18 @@
        "20:00"
       ],
       "depth": 0.03
+     }
+    },
+    "parsa.p_torch": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
      }
     }
    }
@@ -874,13 +909,13 @@
    "name": "The town",
    "sound": {
     "surfaces": {
-     "roof": 0.24,
+     "roof": 0.26,
      "water": 0.19
     },
     "wind": "wind.open",
-    "exposure": 0.81,
+    "exposure": 0.79,
     "water": {
-     "family": "sea.coast"
+     "family": "sea.harbour"
     },
     "steps": {
      "surface": "earth",
@@ -892,6 +927,11 @@
      "hooves": [
       "sfx/world/hoof_earth_1.wav",
       "sfx/world/hoof_earth_2.wav"
+     ],
+     "decks": [
+      "sfx/world/step_timber_1.wav",
+      "sfx/world/step_timber_2.wav",
+      "sfx/world/step_timber_3.wav"
      ]
     },
     "cart": "amb/world/cart_earth.ogg",
@@ -901,7 +941,11 @@
     }
    },
    "look": {
-    "reflect": true
+    "reflect": true,
+    "haze": {
+     "toward": "sea",
+     "strength_add": 0.03
+    }
    }
   }
  ],
@@ -1263,5 +1307,205 @@
    "winter": "c. 470/469 BC"
   }
  },
- "festivals": []
+ "festivals": [],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "door_lamp": {
+    "kind": "door",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "23:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "22:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
+   },
+   "window_late": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.5,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "01:30"
+     ]
+    ],
+    "rain": "sheltered"
+   }
+  }
+ },
+ "light_points": [
+  [
+   302,
+   274,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   306,
+   274,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   309,
+   276,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   313,
+   276,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   315,
+   276,
+   "parsa.p_house_small",
+   "window_late"
+  ],
+  [
+   319,
+   276,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   321,
+   276,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   326,
+   276,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   301,
+   279,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   303,
+   279,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
+  ],
+  [
+   306,
+   279,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   315,
+   280,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ]
+ ]
 }

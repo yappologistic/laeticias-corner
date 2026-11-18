@@ -2642,5 +2642,501 @@
     "oneshot": "sfx/world/sickle.wav"
    }
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "door_lamp": {
+    "kind": "door",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "23:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "signal_watch": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.2,
+    "strength": 0.6,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   },
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "watch_fire": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "22:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
+   },
+   "window_late": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.5,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "01:30"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "window_predawn": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.4,
+    "strength": 0.45,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "04:00",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   }
+  }
+ },
+ "light_points": [
+  [
+   275,
+   212,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   267,
+   219,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   247,
+   221,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   252,
+   223,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   206,
+   229,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   211,
+   234,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   232,
+   234,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   252,
+   236,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   228,
+   244,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   192,
+   246,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   184,
+   248,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   208,
+   248,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   198,
+   254,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   160,
+   271,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   170,
+   277,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   152,
+   283,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   200,
+   284,
+   "parsa.p_house_small",
+   "window_late"
+  ],
+  [
+   150,
+   289,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   162,
+   290,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   282,
+   290,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ],
+  [
+   239,
+   291,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   134,
+   292,
+   "parsa.p_house_small",
+   "window_predawn"
+  ],
+  [
+   200,
+   292,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   211,
+   292,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   230,
+   293,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ],
+  [
+   200,
+   295,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   145,
+   296,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   164,
+   296,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ],
+  [
+   175,
+   296,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   224,
+   297,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   142,
+   303,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   139,
+   310,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   155,
+   333,
+   "parsa.p_house_small",
+   "window_predawn"
+  ],
+  [
+   135,
+   337,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   155,
+   340,
+   "parsa.p_house_small",
+   "window_evening"
+  ],
+  [
+   143,
+   345,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   151,
+   345,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   133,
+   351,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   133,
+   351,
+   "parsa.p_house_small",
+   "window_predawn"
+  ],
+  [
+   155,
+   354,
+   "world.watchtower",
+   "watch_fire",
+   "fire"
+  ],
+  [
+   165,
+   355,
+   "parsa.p_house_small",
+   "door_lamp"
+  ],
+  [
+   165,
+   355,
+   "parsa.p_house_small",
+   "window_late"
+  ],
+  [
+   162,
+   357,
+   "parsa.p_house_small",
+   "window_late"
+  ],
+  [
+   156,
+   358,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   177,
+   364,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   153,
+   366,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ],
+  [
+   168,
+   368,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   180,
+   372,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   192,
+   372,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   225,
+   374,
+   "parsa.p_house_small",
+   "window_late"
+  ],
+  [
+   186,
+   378,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   204,
+   378,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   215,
+   381,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   185,
+   389,
+   "parsa.p_house_small",
+   "window_evening"
+  ]
  ]
 }

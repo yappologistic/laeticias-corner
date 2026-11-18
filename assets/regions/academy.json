@@ -588,6 +588,20 @@
     "body": "#1f5e8c",
     "reflect": true,
     "sea_state": 1
+   },
+   "lights": {
+    "athens.g_lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
+     }
+    }
    }
   }
  },
@@ -1076,5 +1090,40 @@
   },
   "note": "still at peace: the war begins in the spring of 431, which the calendar never reaches, because spring returns to 432"
  },
- "festivals": []
+ "festivals": [],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   }
+  }
+ },
+ "light_points": [
+  [
+   218,
+   712,
+   "athens.g_lamp",
+   "niche_lamp"
+  ]
+ ]
 }

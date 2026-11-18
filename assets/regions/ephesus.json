@@ -53,7 +53,13 @@
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "athens.g_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -578,6 +584,18 @@
     "sea_state": 1
    },
    "lights": {
+    "athens.g_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
     "athens.g_house_small": {
      "kind": "window",
      "colour": "#ffd08a",
@@ -588,6 +606,18 @@
        "20:00"
       ],
       "depth": 0.03
+     }
+    },
+    "athens.g_lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
      }
     }
    }
@@ -1422,5 +1452,126 @@
     "world.hull_ashore"
    ]
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "22:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
+   }
+  }
+ },
+ "light_points": [
+  [
+   239,
+   428,
+   "athens.g_brazier",
+   "brazier_watch"
+  ],
+  [
+   238,
+   430,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   236,
+   434,
+   "athens.g_house_small",
+   "window_evening"
+  ],
+  [
+   242,
+   435,
+   "athens.g_house_small",
+   "window_evening"
+  ],
+  [
+   236,
+   437,
+   "athens.g_house_small",
+   "window_evening"
+  ],
+  [
+   240,
+   437,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   244,
+   440,
+   "athens.g_lamp",
+   "niche_lamp"
+  ]
  ]
 }

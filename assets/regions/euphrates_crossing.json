@@ -53,7 +53,18 @@
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "parsa.p_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    },
+    {
+     "item": "parsa.p_torch",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -597,7 +608,31 @@
     "sea_state": 0
    },
    "lights": {
+    "parsa.p_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
     "parsa.p_tent": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    },
+    "parsa.p_torch": {
      "kind": "torch",
      "colour": "#ff9a4a",
      "radius": 3.0,
@@ -785,12 +820,12 @@
    "name": "The crossing",
    "sound": {
     "surfaces": {
-     "roof": 0.1,
+     "roof": 0.11,
      "leaves": 0.09,
      "canvas": 0.05
     },
     "wind": "wind.open",
-    "exposure": 0.92,
+    "exposure": 0.91,
     "steps": {
      "surface": "earth",
      "files": [
@@ -988,7 +1023,7 @@
      "water": 0.67
     },
     "wind": "wind.open",
-    "exposure": 1.0,
+    "exposure": 0.99,
     "water": {
      "family": "sea.harbour"
     },
@@ -1404,5 +1439,144 @@
    }
   }
  ],
- "festivals": []
+ "festivals": [],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "station_lamp": {
+    "kind": "lamp",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 2.6,
+    "strength": 0.75,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "wall_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   }
+  }
+ },
+ "light_points": [
+  [
+   173,
+   257,
+   "world.royal_station",
+   "station_lamp"
+  ],
+  [
+   179,
+   257,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
+  ],
+  [
+   180,
+   261,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   182,
+   267,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   177,
+   269,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
+  ],
+  [
+   179,
+   269,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ]
+ ]
 }

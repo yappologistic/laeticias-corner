@@ -53,7 +53,13 @@
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "athens.g_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -592,6 +598,18 @@
     "sea_state": 1
    },
    "lights": {
+    "athens.g_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
     "athens.g_house": {
      "kind": "window",
      "colour": "#ffd08a",
@@ -614,6 +632,18 @@
        "20:00"
       ],
       "depth": 0.03
+     }
+    },
+    "athens.g_lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
      }
     },
     "athens.g_shrine": {
@@ -1187,5 +1217,265 @@
     "20:00"
    ]
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
+   "door_lamp": {
+    "kind": "door",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "23:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "shrine_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 1.8,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      3,
+      6
+     ],
+     "depth": 0.04
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 1.4
+    }
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "22:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
+   },
+   "window_late": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.5,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "01:30"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "window_predawn": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.4,
+    "strength": 0.45,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "04:00",
+      "dawn"
+     ]
+    ],
+    "rain": "sheltered"
+   }
+  }
+ },
+ "light_points": [
+  [
+   373,
+   745,
+   "athens.g_brazier",
+   "brazier_watch"
+  ],
+  [
+   377,
+   749,
+   "athens.g_house_small",
+   "window_predawn"
+  ],
+  [
+   365,
+   750,
+   "athens.g_house",
+   "door_lamp"
+  ],
+  [
+   375,
+   751,
+   "athens.g_house_small",
+   "door_lamp"
+  ],
+  [
+   380,
+   751,
+   "athens.g_house_small",
+   "window_evening"
+  ],
+  [
+   371,
+   752,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   369,
+   753,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   375,
+   753,
+   "athens.g_house_small",
+   "window_evening"
+  ],
+  [
+   377,
+   753,
+   "athens.g_house_small",
+   "window_evening"
+  ],
+  [
+   375,
+   755,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   369,
+   757,
+   "athens.g_house_small",
+   "window_late"
+  ],
+  [
+   371,
+   757,
+   "athens.g_house_small",
+   "window_evening"
+  ],
+  [
+   376,
+   757,
+   "athens.g_house_small",
+   "window_predawn"
+  ],
+  [
+   378,
+   757,
+   "athens.g_house_small",
+   "door_lamp"
+  ],
+  [
+   378,
+   757,
+   "athens.g_house_small",
+   "window_evening"
+  ]
  ]
 }

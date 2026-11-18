@@ -1150,10 +1150,10 @@
   {
    "kind": "fishing",
    "rect": [
-    306,
-    294,
-    310,
-    298
+    287,
+    279,
+    291,
+    283
    ],
    "lane": "base:cilician_road_harbour_fishing"
   }
@@ -1210,5 +1210,41 @@
     ]
    }
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "signal_watch": {
+    "kind": "fire",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.2,
+    "strength": 0.6,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out"
+   }
+  }
+ },
+ "light_points": [
+  [
+   288,
+   279,
+   "world.beacon",
+   "signal_watch",
+   "fire"
+  ]
  ]
 }

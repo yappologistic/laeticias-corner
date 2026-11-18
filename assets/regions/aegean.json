@@ -922,20 +922,20 @@
   {
    "kind": "fishing",
    "rect": [
-    257,
-    517,
-    261,
-    521
+    263,
+    519,
+    267,
+    523
    ],
    "lane": "base:mesogeia_road_harbour_fishing"
   },
   {
    "kind": "fishing",
    "rect": [
-    121,
-    477,
-    125,
-    481
+    127,
+    487,
+    131,
+    491
    ],
    "lane": "base:hellespont_fishing"
   }

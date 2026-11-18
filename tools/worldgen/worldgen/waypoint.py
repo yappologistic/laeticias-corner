@@ -150,8 +150,45 @@ def river_level(L: Layout, points, cap: int) -> int:
     return best
 
 
+# Lit nights (W1): the lamp and the fire of each civilization's kit.
+NIGHT_KIT = {"rome": ("rome.r_lamp", "rome.r_brazier"), "athens": ("athens.g_lamp", "athens.g_brazier"),
+             "parsa": ("parsa.p_torch", "parsa.p_brazier")}
+
+
+def night(L: Layout) -> None:
+    """A town's lights after dark: a fire where each road comes in (the gate's or the inn's),
+    lamps at its named places and crossings; the houses' own lamps come from the region file."""
+    kit = NIGHT_KIT.get(L.set)
+    if kit is None:
+        return
+    lamp, fire = kit
+    w, h = L.size
+    ends = []
+    for s in L.streets:
+        if s.portal:
+            for c, r in (s.points[0], s.points[-1]):
+                lc, lr = c - L.origin[0], r - L.origin[1]
+                if min(lc, lr, w - 1 - lc, h - 1 - lr) <= 1:
+                    ends.append((min(max(lc, 2), w - 3), min(max(lr, 2), h - 3)))
+    F.night_posts(L, fire, ends, ring=3, gap=6)
+    dests = [(c - L.origin[0], r - L.origin[1]) for (c, r), kind, _ in L.nodes.values()
+             if kind == "dest"]
+    F.night_posts(L, lamp, dests + F.crossings(L, gap=6), ring=2, gap=5)
+    # doorway lamps along the town's own streets (not the open road), every few houses
+    town = np.isin(L.DIST, [i for i, d in enumerate(L.districts)
+                            if d.split("/")[-1] in ("town", "harbour", "village", "sanctuary",
+                                                    "citadel", "acropolis", "shore", "crossing",
+                                                    "east_bank", "west_bank", "island")])
+    from .raster import path_tiles
+    along = [(c - L.origin[0], r - L.origin[1]) for s in L.streets
+             for i, (c, r) in enumerate(path_tiles(s.points)) if i % 4 == 2]
+    along = [(c, r) for c, r in along if 0 <= c < w and 0 <= r < h and town[r, c]]
+    F.night_posts(L, lamp, along, ring=2, gap=3 if L.set != "parsa" else 4)
+
+
 def finish(L: Layout, prefer_face: str, glow_rank: dict | None = None) -> None:
     F.clear_doors(L, all_slots=True)
+    night(L)
     F.glow_cap(L, glow_rank or {}, cap=36)
     F.fit_faces(L, prefer_face)
     # Ground left at or below the layer's base level keeps no face its terrain does not list.

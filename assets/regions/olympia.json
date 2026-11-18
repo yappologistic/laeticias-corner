@@ -53,7 +53,13 @@
      ]
     }
    ],
-   "loops": []
+   "loops": [
+    {
+     "item": "athens.g_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ]
   },
   "weather": {
    "spring": {
@@ -577,6 +583,30 @@
     "sea_state": 1
    },
    "lights": {
+    "athens.g_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
+    "athens.g_lamp": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
+     }
+    },
     "athens.g_shrine": {
      "kind": "lamp",
      "colour": "#ffc27a",
@@ -1300,5 +1330,108 @@
     "20:00"
    ]
   }
+ ],
+ "lights": {
+  "version": 1,
+  "profiles": {
+   "brazier": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "02:00"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.3
+    }
+   },
+   "niche_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 2.2,
+    "strength": 0.7,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      4,
+      7
+     ],
+     "depth": 0.05
+    },
+    "hours": [
+     [
+      "dusk",
+      "00:00"
+     ]
+    ],
+    "rain": "dim"
+   },
+   "shrine_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 1.8,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      3,
+      6
+     ],
+     "depth": 0.04
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 1.4
+    }
+   }
+  }
+ },
+ "light_points": [
+  [
+   326,
+   798,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ],
+  [
+   320,
+   799,
+   "athens.g_brazier",
+   "brazier"
+  ],
+  [
+   325,
+   802,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   328,
+   803,
+   "athens.g_shrine",
+   "shrine_lamp"
+  ]
  ]
 }

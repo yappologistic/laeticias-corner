@@ -108,3 +108,23 @@ class Lights(unittest.TestCase):
         self.assertTrue(lights.lit_at(p, 1.0))
         self.assertFalse(lights.lit_at(p, 3.0))
         self.assertFalse(lights.lit_at(p, 12.0))
+
+
+class NightPosts(unittest.TestCase):
+    """Layouts add lamps beside streets: never on a door step or in a one-tile passage, never
+    two of a kind within the gap."""
+
+    def test_lamps_keep_their_gap_and_leave_passages_free(self):
+        from worldgen.finish import night_posts
+        L = layout()
+        L.fill("grass", district="meadows")
+        L.street([(0, 12), (31, 12)], width=1, paving="path")
+        L.place("stone_wall", at=(10, 9))
+        L.place("stone_wall", at=(12, 9))     # (11, 9): a one-tile passage between two walls
+        placed = night_posts(L, "lamp", [(11, 10), (13, 10), (20, 10)], ring=1, gap=4)
+        tiles = [(p.c - L.origin[0], p.r - L.origin[1]) for p in placed]
+        self.assertNotIn((11, 9), tiles)
+        for i, a in enumerate(tiles):
+            for b in tiles[i + 1:]:
+                self.assertGreaterEqual(max(abs(a[0] - b[0]), abs(a[1] - b[1])), 4)
+        self.assertTrue(all(not L.STREET[r, c] for c, r in tiles))
