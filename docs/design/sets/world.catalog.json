@@ -1,0 +1,3242 @@
+{
+ "version": 1,
+ "set": "world",
+ "terrain": [
+  {
+   "id": "world.sand",
+   "name": "Sand",
+   "base": true,
+   "variants": 4,
+   "faces": [
+    "world.coast",
+    "world.earth"
+   ],
+   "colour": [
+    222,
+    204,
+    160
+   ]
+  },
+  {
+   "id": "world.steppe",
+   "name": "Dry steppe",
+   "base": true,
+   "variants": 4,
+   "faces": [
+    "world.earth",
+    "world.rock",
+    "world.coast"
+   ],
+   "colour": [
+    184,
+    172,
+    112
+   ]
+  },
+  {
+   "id": "world.alluvium",
+   "name": "River silt",
+   "base": true,
+   "variants": 4,
+   "faces": [
+    "world.earth",
+    "world.coast"
+   ],
+   "colour": [
+    150,
+    156,
+    96
+   ]
+  },
+  {
+   "id": "world.sea",
+   "name": "Sea",
+   "under": "world.sand",
+   "edges": 16,
+   "fps": 4,
+   "water": true,
+   "colour": [
+    44,
+    96,
+    146
+   ]
+  },
+  {
+   "id": "world.shallows",
+   "name": "Shallows",
+   "under": "world.sand",
+   "edges": 16,
+   "fps": 4,
+   "water": true,
+   "colour": [
+    70,
+    138,
+    164
+   ]
+  },
+  {
+   "id": "world.river",
+   "name": "River",
+   "under": "world.sand",
+   "edges": 16,
+   "fps": 4,
+   "water": true,
+   "colour": [
+    66,
+    124,
+    160
+   ]
+  },
+  {
+   "id": "world.rock",
+   "name": "Bare rock",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.rock",
+    "world.coast",
+    "world.snow"
+   ],
+   "colour": [
+    132,
+    124,
+    114
+   ]
+  },
+  {
+   "id": "world.snow",
+   "name": "Snow",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.snow",
+    "world.rock"
+   ],
+   "colour": [
+    234,
+    238,
+    244
+   ]
+  },
+  {
+   "id": "world.scree",
+   "name": "Scree",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.rock"
+   ],
+   "colour": [
+    158,
+    148,
+    128
+   ]
+  },
+  {
+   "id": "world.marsh",
+   "name": "Marsh",
+   "under": "world.alluvium",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    104,
+    136,
+    92
+   ]
+  },
+  {
+   "id": "world.road_earth",
+   "name": "Earth road",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    170,
+    142,
+    102
+   ]
+  },
+  {
+   "id": "world.road_royal",
+   "name": "Royal road",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    186,
+    160,
+    122
+   ]
+  },
+  {
+   "id": "world.field",
+   "name": "Ploughland",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    150,
+    118,
+    82
+   ]
+  },
+  {
+   "id": "world.scrub",
+   "name": "Scrubland",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.earth",
+    "world.rock"
+   ],
+   "colour": [
+    140,
+    146,
+    96
+   ]
+  },
+  {
+   "id": "world.forest_floor",
+   "name": "Forest floor",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.earth",
+    "world.rock"
+   ],
+   "colour": [
+    96,
+    100,
+    64
+   ]
+  },
+  {
+   "id": "world.dune",
+   "name": "Dunes",
+   "under": "world.sand",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    230,
+    206,
+    150
+   ]
+  },
+  {
+   "id": "world.gravel_desert",
+   "name": "Desert gravel",
+   "under": "world.sand",
+   "edges": 16,
+   "faces": [
+    "world.earth",
+    "world.rock"
+   ],
+   "colour": [
+    176,
+    150,
+    116
+   ]
+  },
+  {
+   "id": "world.salt_flat",
+   "name": "Salt flat",
+   "under": "world.sand",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    232,
+    228,
+    214
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.fallow",
+   "name": "Fallow",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    168,
+    160,
+    104
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.pasture",
+   "name": "Green pasture",
+   "under": "world.steppe",
+   "edges": 16,
+   "faces": [
+    "world.earth"
+   ],
+   "colour": [
+    118,
+    150,
+    80
+   ],
+   "nice": true
+  }
+ ],
+ "items": [
+  {
+   "id": "world.t_oak",
+   "name": "Deciduous oak",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 85,
+   "stand_in": "oak"
+  },
+  {
+   "id": "world.t_oak_zagros",
+   "name": "Zagros oak",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 60,
+   "stand_in": "oak"
+  },
+  {
+   "id": "world.t_beech",
+   "name": "Beech",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 95,
+   "stand_in": "oak"
+  },
+  {
+   "id": "world.t_fir",
+   "name": "Fir",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 105,
+   "stand_in": "pine"
+  },
+  {
+   "id": "world.t_cedar",
+   "name": "Cedar",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 115,
+   "stand_in": "pine"
+  },
+  {
+   "id": "world.t_pistachio",
+   "name": "Wild pistachio",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 55,
+   "stand_in": "bush"
+  },
+  {
+   "id": "world.t_tamarisk",
+   "name": "Tamarisk",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 45,
+   "stand_in": "bush"
+  },
+  {
+   "id": "world.t_palm",
+   "name": "Palm clump",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 100,
+   "stand_in": "pine"
+  },
+  {
+   "id": "world.t_reeds",
+   "name": "Reed bed",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 4,
+   "on": "any",
+   "layers": [
+    "base"
+   ],
+   "height": 44,
+   "stand_in": "reeds",
+   "fps": 2,
+   "walkable": true
+  },
+  {
+   "id": "world.p_maquis",
+   "name": "Evergreen scrub",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 26,
+   "stand_in": "bush"
+  },
+  {
+   "id": "world.p_thistle",
+   "name": "Thistles and camelthorn",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 14,
+   "stand_in": "tall_grass"
+  },
+  {
+   "id": "world.p_wildflowers",
+   "name": "Wildflowers",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 6,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 8,
+   "stand_in": "flowers_red",
+   "walkable": true
+  },
+  {
+   "id": "world.t_juniper",
+   "name": "Juniper",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 50,
+   "stand_in": "pine",
+   "nice": true
+  },
+  {
+   "id": "world.t_cork_oak",
+   "name": "Cork oak",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 75,
+   "stand_in": "oak",
+   "nice": true
+  },
+  {
+   "id": "world.t_oleaster",
+   "name": "Wild olive",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 50,
+   "stand_in": "bush",
+   "nice": true
+  },
+  {
+   "id": "world.boulder",
+   "name": "Boulders",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 18,
+   "stand_in": "rock"
+  },
+  {
+   "id": "world.crag",
+   "name": "Crag",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 48,
+   "stand_in": "rock"
+  },
+  {
+   "id": "world.peak",
+   "name": "Mountain peak",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "variant",
+   "count": 3,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 130,
+   "stand_in": "rock"
+  },
+  {
+   "id": "world.driftwood",
+   "name": "Driftwood",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 6,
+   "stand_in": "stump",
+   "nice": true
+  },
+  {
+   "id": "world.ford",
+   "name": "Ford",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "water",
+   "layers": [
+    "base"
+   ],
+   "height": 6,
+   "walkable": true,
+   "tags": [
+    "crossing"
+   ]
+  },
+  {
+   "id": "world.bridge_arch",
+   "name": "Stone arch bridge",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 16,
+   "on": "water",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 34,
+   "walkable": true,
+   "tags": [
+    "crossing"
+   ]
+  },
+  {
+   "id": "world.bridge_timber",
+   "name": "Timber bridge",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 16,
+   "on": "water",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 24,
+   "walkable": true,
+   "tags": [
+    "crossing"
+   ]
+  },
+  {
+   "id": "world.pontoon",
+   "name": "Bridge of boats",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 16,
+   "on": "water",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 12,
+   "walkable": true,
+   "tags": [
+    "crossing"
+   ],
+   "fps": 2
+  },
+  {
+   "id": "world.jetty",
+   "name": "Timber jetty",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 16,
+   "on": "water",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 10,
+   "walkable": true,
+   "slots": [
+    {
+     "id": "mooring",
+     "kind": "mooring",
+     "cap": 1
+    },
+    {
+     "id": "load",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "world.mole",
+   "name": "Harbour mole",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 16,
+   "on": "water",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 14,
+   "walkable": true,
+   "slots": [
+    {
+     "id": "mooring",
+     "kind": "mooring",
+     "cap": 1
+    },
+    {
+     "id": "perch",
+     "kind": "perch",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "world.stair_stone",
+   "name": "Rock-cut steps",
+   "footprint": [
+    1,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 22,
+   "rise": 1,
+   "axis": "y"
+  },
+  {
+   "id": "world.stair_earth",
+   "name": "Earth steps",
+   "footprint": [
+    1,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 20,
+   "rise": 1,
+   "axis": "y"
+  },
+  {
+   "id": "world.ramp",
+   "name": "Graded ramp",
+   "footprint": [
+    1,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 18,
+   "rise": 1,
+   "axis": "y"
+  },
+  {
+   "id": "world.stile",
+   "name": "Dry-stone stile",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 18,
+   "walkable": true
+  },
+  {
+   "id": "world.milestone",
+   "name": "Uninscribed milestone",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 26,
+   "tags": [
+    "roadside"
+   ],
+   "slots": [
+    {
+     "id": "rest",
+     "kind": "sit",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "world.wayside_shrine",
+   "name": "Wayside shrine",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 44,
+   "tags": [
+    "roadside"
+   ],
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "world.royal_station",
+   "name": "Royal Road station",
+   "footprint": [
+    4,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 52,
+   "tags": [
+    "roadside"
+   ],
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    },
+    {
+     "id": "change",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "horse",
+     "kind": "stand",
+     "cap": 2
+    },
+    {
+     "id": "trough",
+     "kind": "feed",
+     "cap": 2
+    },
+    {
+     "id": "rest",
+     "kind": "sit",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "world.watchtower",
+   "name": "Watchtower",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 92,
+   "slots": [
+    {
+     "id": "guard",
+     "kind": "stand",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "fire": "world.fire"
+   }
+  },
+  {
+   "id": "world.beacon",
+   "name": "Beacon",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 1,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 40,
+   "slots": [
+    {
+     "id": "tend",
+     "kind": "tend",
+     "cap": 1,
+     "states": [
+      "lit"
+     ]
+    }
+   ],
+   "emitters": {
+    "fire": "world.fire"
+   }
+  },
+  {
+   "id": "world.sheepfold",
+   "name": "Sheepfold",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 34,
+   "slots": [
+    {
+     "id": "pen",
+     "kind": "graze",
+     "cap": 3
+    },
+    {
+     "id": "gate",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "world.field_hut",
+   "name": "Field hut",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 34,
+   "slots": [
+    {
+     "id": "shelter",
+     "kind": "shelter",
+     "cap": 2
+    }
+   ]
+  },
+  {
+   "id": "world.terrace_wall",
+   "name": "Dry-stone terrace wall",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "connect",
+   "count": 16,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 14
+  },
+  {
+   "id": "world.charcoal_kiln",
+   "name": "Charcoal kiln",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 30,
+   "slots": [
+    {
+     "id": "tend",
+     "kind": "tend",
+     "cap": 1
+    }
+   ],
+   "emitters": {
+    "smoke": "smoke"
+   }
+  },
+  {
+   "id": "world.fish_hut",
+   "name": "Fisher's hut",
+   "footprint": [
+    1,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 40,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "world.drying_rack",
+   "name": "Net and fish rack",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 26,
+   "slots": [
+    {
+     "id": "mend",
+     "kind": "work",
+     "cap": 1,
+     "holds": {
+      "world.goods_fish": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "world.shaduf",
+   "name": "Shaduf",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 52,
+   "fps": 2,
+   "slots": [
+    {
+     "id": "lift",
+     "kind": "work",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "world.reed_hut",
+   "name": "Reed house",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 46,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ]
+  },
+  {
+   "id": "world.tumulus",
+   "name": "Burial mound",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 40
+  },
+  {
+   "id": "world.inn",
+   "name": "Roadside inn",
+   "footprint": [
+    4,
+    4
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 60,
+   "tags": [
+    "roadside"
+   ],
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    },
+    {
+     "id": "rest",
+     "kind": "sit",
+     "cap": 3
+    },
+    {
+     "id": "trough",
+     "kind": "feed",
+     "cap": 2
+    }
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.cairn",
+   "name": "Cairn",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 14,
+   "nice": true
+  },
+  {
+   "id": "world.matar_shrine",
+   "name": "Rock shrine of Matar",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 70,
+   "slots": [
+    {
+     "id": "pray",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.cistern",
+   "name": "Roadside cistern",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 14,
+   "slots": [
+    {
+     "id": "draw",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.haystack",
+   "name": "Straw stack",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 26,
+   "nice": true
+  },
+  {
+   "id": "world.treading_vat",
+   "name": "Treading floor and vat",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 18,
+   "slots": [
+    {
+     "id": "work",
+     "kind": "work",
+     "cap": 2
+    }
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.boundary_stone",
+   "name": "Boundary stone",
+   "footprint": [
+    1,
+    1
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base"
+   ],
+   "height": 16,
+   "nice": true
+  },
+  {
+   "id": "world.quarry",
+   "name": "Small quarry",
+   "footprint": [
+    3,
+    3
+   ],
+   "layout": "rotate",
+   "count": 4,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 50,
+   "slots": [
+    {
+     "id": "cut",
+     "kind": "work",
+     "cap": 2
+    }
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.log_stack",
+   "name": "Log stack",
+   "footprint": [
+    1,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 18,
+   "slots": [
+    {
+     "id": "stack",
+     "kind": "work",
+     "cap": 1,
+     "holds": {
+      "world.goods_logs": 3
+     }
+    }
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.salt_pans",
+   "name": "Salt pans",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "variant",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow"
+   ],
+   "height": 8,
+   "slots": [
+    {
+     "id": "rake",
+     "kind": "work",
+     "cap": 1
+    }
+   ],
+   "nice": true
+  },
+  {
+   "id": "world.tent_black",
+   "name": "Black goat-hair tent",
+   "footprint": [
+    2,
+    2
+   ],
+   "layout": "rotate",
+   "count": 2,
+   "on": "land",
+   "layers": [
+    "base",
+    "shadow",
+    "glow"
+   ],
+   "height": 32,
+   "slots": [
+    {
+     "id": "door",
+     "kind": "door",
+     "cap": 1
+    }
+   ],
+   "nice": true
+  }
+ ],
+ "actors": [
+  {
+   "id": "world.traveller",
+   "name": "Traveller",
+   "sprite": "walker/world.traveller",
+   "variants": 3,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "sit": {
+     "fps": 2
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.85,
+    "network": "roads"
+   },
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "19:00"
+     ],
+     "routine": "journey"
+    },
+    {
+     "hours": [
+      "19:00",
+      "06:00"
+     ],
+     "routine": "lodge"
+    }
+   ],
+   "interrupts": [
+    {
+     "when": {
+      "weather": "storm"
+     },
+     "routine": "shelter",
+     "priority": 2
+    }
+   ],
+   "routines": {
+    "journey": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "sit",
+        "tag": "roadside",
+        "within": 48
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "dur": [
+        20,
+        50
+       ]
+      },
+      {
+       "pick": [
+        {
+         "weight": 2,
+         "steps": [
+          {
+           "go": {
+            "item": "world.wayside_shrine",
+            "slot": "pray",
+            "within": 24
+           }
+          },
+          {
+           "use": {
+            "here": true
+           },
+           "anim": "idle",
+           "dur": [
+            6,
+            10
+           ]
+          }
+         ]
+        },
+        {
+         "weight": 3,
+         "steps": [
+          {
+           "wander": {
+            "radius": 12
+           },
+           "dur": [
+            30,
+            60
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "lodge": {
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "door",
+        "tag": "roadside",
+        "within": 64
+       }
+      },
+      {
+       "enter": {
+        "here": true
+       },
+       "until": {
+        "hour": "06:00"
+       }
+      }
+     ]
+    },
+    "shelter": {
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "shelter",
+        "within": 8,
+        "else": {
+         "slot_kind": "sit",
+         "tag": "roadside",
+         "within": 16
+        }
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "weather": "clear"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.merchant",
+   "name": "Travelling merchant",
+   "sprite": "walker/world.merchant",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "talk": {
+     "fps": 4
+    },
+    "serve": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.85,
+    "network": "roads"
+   },
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "trade"
+    },
+    {
+     "hours": [
+      "18:00",
+      "06:00"
+     ],
+     "routine": "lodge"
+    }
+   ],
+   "routines": {
+    "trade": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "port": "start"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "talk",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "go": {
+        "port": "end"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    },
+    "lodge": {
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "door",
+        "tag": "roadside",
+        "within": 64
+       }
+      },
+      {
+       "enter": {
+        "here": true
+       },
+       "until": {
+        "hour": "06:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.muleteer",
+   "name": "Muleteer",
+   "sprite": "walker/world.muleteer",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "gesture": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.85,
+    "network": "roads"
+   },
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "18:30"
+     ],
+     "routine": "haul"
+    },
+    {
+     "hours": [
+      "18:30",
+      "05:30"
+     ],
+     "routine": "camp"
+    }
+   ],
+   "routines": {
+    "haul": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "port": "start"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "gesture",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "go": {
+        "item": "world.royal_station",
+        "slot": "trough",
+        "within": 24,
+        "else": {
+         "port": "end"
+        }
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "go": {
+        "port": "end"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "gesture",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "camp": {
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "door",
+        "tag": "roadside",
+        "within": 64
+       }
+      },
+      {
+       "enter": {
+        "here": true
+       },
+       "until": {
+        "hour": "05:30"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.fisher",
+   "name": "Fisher",
+   "sprite": "walker/world.fisher",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "work_low": {
+     "fps": 4
+    },
+    "haul": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    },
+    "sit": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.8,
+    "network": "roads"
+   },
+   "home": {
+    "item": "world.fish_hut",
+    "slot": "door"
+   },
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "07:00"
+     ],
+     "routine": "launch"
+    },
+    {
+     "hours": [
+      "07:00",
+      "11:00"
+     ],
+     "routine": "mend"
+    },
+    {
+     "hours": [
+      "11:00",
+      "13:00"
+     ],
+     "routine": "landing"
+    },
+    {
+     "hours": [
+      "13:00",
+      "18:00"
+     ],
+     "routine": "mend"
+    },
+    {
+     "hours": [
+      "18:00",
+      "05:00"
+     ],
+     "routine": "home"
+    }
+   ],
+   "interrupts": [
+    {
+     "when": {
+      "weather": "rain"
+     },
+     "routine": "home",
+     "priority": 1
+    }
+   ],
+   "routines": {
+    "launch": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.jetty",
+        "slot": "load",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        10,
+        20
+       ]
+      }
+     ]
+    },
+    "mend": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "world.drying_rack",
+        "slot": "mend",
+        "within": 10
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "work_low",
+       "dur": [
+        40,
+        80
+       ]
+      },
+      {
+       "go": {
+        "slot_kind": "sit",
+        "within": 6
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "sit",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "landing": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.jetty",
+        "slot": "load",
+        "within": 12
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        10,
+        20
+       ],
+       "need": "world.goods_fish"
+      },
+      {
+       "take": "world.goods_fish"
+      },
+      {
+       "go": {
+        "item": "world.drying_rack",
+        "slot": "mend",
+        "within": 10
+       }
+      },
+      {
+       "put": "world.goods_fish"
+      }
+     ]
+    },
+    "home": {
+     "steps": [
+      {
+       "go": {
+        "home": "door"
+       }
+      },
+      {
+       "enter": {
+        "home": "door"
+       },
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.sailor",
+   "name": "Sailor and boatman",
+   "sprite": "walker/world.sailor",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "haul": {
+     "fps": 4
+    },
+    "carry": {
+     "fps": 8
+    },
+    "carry_idle": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.9,
+    "network": "roads"
+   },
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "19:00"
+     ],
+     "routine": "dock"
+    },
+    {
+     "hours": [
+      "19:00",
+      "06:00"
+     ],
+     "routine": "ashore"
+    }
+   ],
+   "routines": {
+    "dock": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "mooring",
+        "within": 16
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "haul",
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "wander": {
+        "radius": 4
+       },
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "ashore": {
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "door",
+        "within": 32
+       }
+      },
+      {
+       "enter": {
+        "here": true
+       },
+       "until": {
+        "hour": "06:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.logger",
+   "name": "Logger",
+   "sprite": "walker/world.logger",
+   "variants": 2,
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "haul": {
+     "fps": 4
+    },
+    "work_high": {
+     "fps": 4
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.7,
+    "network": "roads"
+   },
+   "nice": true
+  },
+  {
+   "id": "world.donkey",
+   "name": "Donkey",
+   "sprite": "critter/world.donkey",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.7,
+    "network": "roads"
+   },
+   "variants": 2
+  },
+  {
+   "id": "world.mule",
+   "name": "Mule",
+   "sprite": "critter/world.mule",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.8,
+    "network": "roads"
+   },
+   "variants": 2
+  },
+  {
+   "id": "world.sheep",
+   "name": "Sheep",
+   "sprite": "critter/world.sheep",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.6,
+    "network": "roads"
+   },
+   "variants": 2,
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:30"
+     ],
+     "routine": "graze"
+    },
+    {
+     "hours": [
+      "18:30",
+      "06:00"
+     ],
+     "routine": "fold"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        10,
+        25
+       ]
+      }
+     ]
+    },
+    "fold": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.sheepfold",
+        "slot": "pen",
+        "within": 24,
+        "else": {
+         "here": true
+        }
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "06:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.goat",
+   "name": "Goat",
+   "sprite": "critter/world.goat",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.7,
+    "network": "roads"
+   },
+   "variants": 2,
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:30"
+     ],
+     "routine": "graze"
+    },
+    {
+     "hours": [
+      "18:30",
+      "06:00"
+     ],
+     "routine": "fold"
+    }
+   ],
+   "routines": {
+    "graze": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 6
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "graze",
+       "dur": [
+        10,
+        25
+       ]
+      }
+     ]
+    },
+    "fold": {
+     "steps": [
+      {
+       "go": {
+        "item": "world.sheepfold",
+        "slot": "pen",
+        "within": 24,
+        "else": {
+         "here": true
+        }
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "06:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.ox",
+   "name": "Ox",
+   "sprite": "critter/world.ox",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 0.5,
+    "network": "roads"
+   }
+  },
+  {
+   "id": "world.dog",
+   "name": "Herding dog",
+   "sprite": "critter/world.dog",
+   "anims": {
+    "move": {
+     "fps": 10
+    },
+    "idle": {
+     "fps": 3
+    },
+    "run": {
+     "fps": 12
+    },
+    "sleep": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 1.2,
+    "network": "roads"
+   }
+  },
+  {
+   "id": "world.gazelle",
+   "name": "Gazelle",
+   "sprite": "critter/world.gazelle",
+   "anims": {
+    "move": {
+     "fps": 8
+    },
+    "idle": {
+     "fps": 3
+    },
+    "graze": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "walk",
+    "speed": 1.4,
+    "network": "roads"
+   },
+   "nice": true
+  },
+  {
+   "id": "world.gull",
+   "name": "Gull",
+   "sprite": "critter/world.gull",
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 1.6
+   },
+   "schedule": [
+    {
+     "hours": [
+      "05:00",
+      "20:00"
+     ],
+     "routine": "coast"
+    },
+    {
+     "hours": [
+      "20:00",
+      "05:00"
+     ],
+     "routine": "roost"
+    }
+   ],
+   "routines": {
+    "coast": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 14
+       },
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "go": {
+        "slot_kind": "perch",
+        "within": 16,
+        "else": {
+         "shore": true
+        }
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        10,
+        30
+       ]
+      }
+     ]
+    },
+    "roost": {
+     "steps": [
+      {
+       "go": {
+        "slot_kind": "perch",
+        "within": 24,
+        "else": {
+         "shore": true
+        }
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.stork",
+   "name": "White stork",
+   "sprite": "critter/world.stork",
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    },
+    "peck": {
+     "fps": 3
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 1.6
+   },
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "19:00"
+     ],
+     "season": [
+      "spring",
+      "summer"
+     ],
+     "routine": "forage"
+    }
+   ],
+   "routines": {
+    "forage": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 10
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "peck",
+       "dur": [
+        8,
+        16
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.crane",
+   "name": "Common crane",
+   "sprite": "critter/world.crane",
+   "anims": {
+    "move": {
+     "fps": 6
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 2.2
+   }
+  },
+  {
+   "id": "world.eagle",
+   "name": "Eagle",
+   "sprite": "critter/world.eagle",
+   "anims": {
+    "move": {
+     "fps": 4
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 1.2
+   },
+   "schedule": [
+    {
+     "hours": [
+      "09:00",
+      "17:00"
+     ],
+     "routine": "soar"
+    }
+   ],
+   "routines": {
+    "soar": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 20
+       },
+       "dur": [
+        60,
+        120
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.swift",
+   "name": "Swift",
+   "sprite": "critter/world.swift",
+   "anims": {
+    "move": {
+     "fps": 10
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 2.6
+   }
+  },
+  {
+   "id": "world.raven",
+   "name": "Raven",
+   "sprite": "critter/world.raven",
+   "anims": {
+    "move": {
+     "fps": 6
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "fly",
+    "speed": 1.6
+   },
+   "nice": true
+  },
+  {
+   "id": "world.fishing_boat",
+   "name": "Fishing boat",
+   "sprite": "ship/world.fishing_boat",
+   "size": [
+    2,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "slack": {
+     "fps": 4
+    },
+    "row": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 4
+    }
+   },
+   "locomotion": {
+    "mode": "sail",
+    "speed": 0.6
+   },
+   "schedule": [
+    {
+     "hours": [
+      "05:30",
+      "11:30"
+     ],
+     "routine": "fish"
+    },
+    {
+     "hours": [
+      "11:30",
+      "05:30"
+     ],
+     "routine": "moored"
+    }
+   ],
+   "interrupts": [
+    {
+     "when": {
+      "weather": "storm"
+     },
+     "routine": "moored",
+     "priority": 3
+    }
+   ],
+   "routines": {
+    "fish": {
+     "steps": [
+      {
+       "go": {
+        "port": "grounds"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "slack",
+       "dur": [
+        600,
+        1200
+       ]
+      },
+      {
+       "go": {
+        "port": "home",
+        "slot": "mooring"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        30,
+        60
+       ],
+       "make": "world.goods_fish"
+      }
+     ]
+    },
+    "moored": {
+     "steps": [
+      {
+       "go": {
+        "port": "home",
+        "slot": "mooring"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "05:30"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.quffa",
+   "name": "Round hide boat",
+   "sprite": "ship/world.quffa",
+   "size": [
+    1,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "sail",
+    "speed": 0.4
+   },
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "19:00"
+     ],
+     "routine": "ferry"
+    },
+    {
+     "hours": [
+      "19:00",
+      "06:00"
+     ],
+     "routine": "moored"
+    }
+   ],
+   "routines": {
+    "ferry": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "port": "start",
+        "slot": "mooring"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      },
+      {
+       "go": {
+        "port": "end",
+        "slot": "mooring"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        20,
+        40
+       ]
+      }
+     ]
+    },
+    "moored": {
+     "steps": [
+      {
+       "go": {
+        "port": "start",
+        "slot": "mooring"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "06:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.reed_boat",
+   "name": "Reed boat",
+   "sprite": "ship/world.reed_boat",
+   "size": [
+    2,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "sail",
+    "speed": 0.5
+   },
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "18:00"
+     ],
+     "routine": "pole"
+    },
+    {
+     "hours": [
+      "18:00",
+      "06:00"
+     ],
+     "routine": "moored"
+    }
+   ],
+   "routines": {
+    "pole": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "port": "start"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        30,
+        90
+       ]
+      },
+      {
+       "go": {
+        "port": "end"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        30,
+        90
+       ]
+      }
+     ]
+    },
+    "moored": {
+     "steps": [
+      {
+       "go": {
+        "port": "start"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "until": {
+        "hour": "06:00"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "world.kelek",
+   "name": "Skin raft",
+   "sprite": "ship/world.kelek",
+   "size": [
+    2,
+    1
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 2
+    }
+   },
+   "locomotion": {
+    "mode": "sail",
+    "speed": 0.4
+   },
+   "nice": true
+  },
+  {
+   "id": "world.phoenician",
+   "name": "Phoenician merchant ship",
+   "sprite": "ship/world.phoenician",
+   "size": [
+    4,
+    2
+   ],
+   "anims": {
+    "move": {
+     "fps": 4
+    },
+    "slack": {
+     "fps": 4
+    },
+    "row": {
+     "fps": 4
+    },
+    "idle": {
+     "fps": 4
+    }
+   },
+   "locomotion": {
+    "mode": "sail",
+    "speed": 0.7
+   },
+   "routines": {
+    "default": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "port": "start",
+        "slot": "mooring"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        90,
+        120
+       ],
+       "effect": "unload",
+       "make": "world.goods_amphorae"
+      },
+      {
+       "go": {
+        "port": "end",
+        "slot": "mooring"
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        90,
+        120
+       ],
+       "effect": "unload",
+       "make": "world.goods_logs"
+      }
+     ]
+    }
+   },
+   "nice": true
+  }
+ ],
+ "goods": [
+  {
+   "id": "world.goods_sacks",
+   "name": "Sacks of grain",
+   "sprite": "goods/world.goods_sacks",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_amphorae",
+   "name": "Transport amphorae",
+   "sprite": "goods/world.goods_amphorae",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_bale",
+   "name": "Wrapped bale",
+   "sprite": "goods/world.goods_bale",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_fish",
+   "name": "Basket of fish",
+   "sprite": "goods/world.goods_fish",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_dates",
+   "name": "Basket of dates",
+   "sprite": "goods/world.goods_dates",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_fleece",
+   "name": "Fleeces",
+   "sprite": "goods/world.goods_fleece",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_letter",
+   "name": "Sealed letter",
+   "sprite": "goods/world.goods_letter",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_waterskin",
+   "name": "Waterskin",
+   "sprite": "goods/world.goods_waterskin",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_firewood",
+   "name": "Firewood bundle",
+   "sprite": "goods/world.goods_firewood",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_charcoal",
+   "name": "Charcoal sacks",
+   "sprite": "goods/world.goods_charcoal",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_reeds",
+   "name": "Reed bundle",
+   "sprite": "goods/world.goods_reeds",
+   "stack": 3
+  },
+  {
+   "id": "world.goods_salt",
+   "name": "Salt baskets",
+   "sprite": "goods/world.goods_salt",
+   "stack": 3,
+   "nice": true
+  },
+  {
+   "id": "world.goods_logs",
+   "name": "Cedar logs",
+   "sprite": "goods/world.goods_logs",
+   "stack": 3,
+   "nice": true
+  }
+ ],
+ "audio": {
+  "music": [],
+  "ambience": [
+   "amb/world/sea.ogg",
+   "amb/world/ship.ogg",
+   "amb/world/mountain.ogg",
+   "amb/world/road.ogg",
+   "amb/world/river.ogg",
+   "amb/world/fields.ogg",
+   "amb/world/desert_night.ogg",
+   "amb/world/storm.ogg",
+   "amb/world/seam.ogg",
+   "amb/world/cart.ogg",
+   "amb/world/smith.ogg",
+   "amb/world/loom.ogg",
+   "amb/world/brazier.ogg"
+  ],
+  "sfx": [
+   "sfx/world/step.wav",
+   "sfx/world/hoof.wav",
+   "sfx/world/gallop.wav",
+   "sfx/world/chisel.wav",
+   "sfx/world/hammer.wav",
+   "sfx/world/pour.wav",
+   "sfx/world/dog_far.wav",
+   "sfx/world/sheep_bells.wav",
+   "sfx/world/rope.wav",
+   "sfx/world/thunder_far.wav",
+   "sfx/world/swifts.wav",
+   "sfx/world/cranes.wav",
+   "sfx/world/gull.wav",
+   "sfx/world/pigeons_up.wav",
+   "sfx/world/lamp.wav",
+   "sfx/world/vendor.wav",
+   "sfx/world/seam.wav",
+   "sfx/world/arrive_home.wav"
+  ]
+ },
+ "art": {
+  "edges": [
+   "world.rock",
+   "world.earth",
+   "world.snow",
+   "world.coast"
+  ],
+  "edges_nice": [
+   "world.basalt"
+  ],
+  "backdrops": [
+   "world.bd_far_hills"
+  ],
+  "backdrops_nice": [
+   "world.bd_alps",
+   "world.bd_pindos",
+   "world.bd_pontic",
+   "world.bd_plateau"
+  ],
+  "fx": [
+   "world.whitecap",
+   "world.wake",
+   "world.dolphin",
+   "world.dust_puff",
+   "world.chaff",
+   "world.lightning",
+   "world.puddle",
+   "world.fire",
+   "world.shimmer",
+   "world.spray"
+  ],
+  "fx_nice": [
+   "world.fish_shoal"
+  ],
+  "weather": {
+   "cloud_shadow": 4,
+   "fog": 4,
+   "dust": 4,
+   "seam_mist": 4,
+   "seam_haze": 2
+  },
+  "weather_nice": {
+   "squall": 2,
+   "heat_shimmer": 2
+  },
+  "markers": [
+   "home",
+   "rome",
+   "athens",
+   "parsa",
+   "town",
+   "town_unseen"
+  ],
+  "markers_nice": [
+   "port",
+   "pass",
+   "shrine"
+  ]
+ }
+}
