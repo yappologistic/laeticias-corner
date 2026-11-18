@@ -55,6 +55,7 @@ class Way:
     nodes: dict = field(default_factory=dict)     # path index -> (node id, kind)
     skip: set = field(default_factory=set)        # path indices inside a town (no kit)
     near_town: list = field(default_factory=list)  # tiles to the nearest town along the path
+    chain: list = field(default_factory=list)      # distance along the road's line per tile
     spec: dict = field(default_factory=dict)
 
 
@@ -84,7 +85,9 @@ def cost_grid(W: World) -> np.ndarray:
         sh[max(dr, 0):h + min(dr, 0), max(dc, 0):w + min(dc, 0)] = \
             lv[max(-dr, 0):h + min(-dr, 0), max(-dc, 0):w + min(-dc, 0)]
         dl = np.maximum(dl, np.abs(lv - sh))
-    cost = 1.0 + 0.35 * (noise(5.0, "roadjitter") + 1) + 2.2 * dl + 0.15 * (lv >= 8) * (lv - 7)
+    # A little jitter keeps long reaches from ruling straight across the plain; more made the
+    # roads zigzag on flat ground, where only the terrain should bend them.
+    cost = 1.0 + 0.12 * (noise(5.0, "roadjitter") + 1) + 2.2 * dl + 0.15 * (lv >= 8) * (lv - 7)
     cost = np.where(W.river, cost + 12.0, cost)
     cost = np.where(W.marsh, cost + 2.0, cost)
     cost = np.where(W.land & ~W.L.IMP, cost, np.inf)
@@ -92,7 +95,7 @@ def cost_grid(W: World) -> np.ndarray:
     return cost
 
 
-def astar4(cost: np.ndarray, a, b, allow: np.ndarray | None = None, turn: float = 3.0,
+def astar4(cost: np.ndarray, a, b, allow: np.ndarray | None = None, turn: float = 6.0,
            pull: float = 0.15, margin: int = 40) -> list[tuple[int, int]]:
     """Cheapest 4-connected path from tile a to b with a penalty per turn and per tile of
     distance from the straight line a-b. `allow` opens tiles the cost grid closes (a town's own
@@ -441,6 +444,42 @@ def way_split(W, g, way: Way, path, marks, levels, taken) -> None:
         if t in taken and i not in way.nodes:
             way.nodes[i] = (taken[t][0], None)
     way.near_town = near_town_distance(path)
+    way.chain = chainage(path)
+
+
+def chainage(path, tol: float = 2.5) -> list[float]:
+    """Distance travelled along the road's line at each path tile: the axis-parallel path
+    simplified to the line a traveller follows (jogs and staircases cut), so a zigzag across a
+    terrace does not count as extra road. Kit spaced by it keeps a steady rhythm."""
+    if len(path) < 2:
+        return [0.0] * len(path)
+    keep = simplify(list(path), tol)
+    index = {t: i for i, t in enumerate(path)}
+    knots = sorted({index[t] for t in keep})
+    out = [0.0] * len(path)
+    done = 0.0
+    for a, b in zip(knots, knots[1:]):
+        seg = math.hypot(path[b][0] - path[a][0], path[b][1] - path[a][1])
+        for i in range(a, b + 1):
+            out[i] = done + seg * (i - a) / max(b - a, 1)
+        done += seg
+    return out
+
+
+def chain_points(way: "Way", every: float, offset: float, ok=None) -> list[int]:
+    """Path indices where the chainage first passes offset, offset + every, ... (each the
+    first allowed index at or after its mark; ends and towns skipped by `ok`)."""
+    out = []
+    mark = offset
+    n = len(way.path)
+    for i in range(3, n - 2):
+        if way.chain[i] >= mark:
+            if ok is None or ok(i):
+                out.append(i)
+                mark = way.chain[i] + every
+            elif way.chain[i] >= mark + every / 2:
+                mark += every
+    return out
 
 
 def crossing_item(W: World, way: Way, c: int, r: int, river_of: dict) -> str | None:
@@ -596,14 +635,10 @@ def kit(W: World, g: Graph, ways: list[Way]) -> None:
         occupied_at = set()
 
         def spaced(every, offset=0, near=None):
-            """Path indices every `every` tiles (offset), skipping the ends and towns."""
-            out = []
-            i = offset
-            while i < n - 2:
-                if ok[i] and i >= 3 and (near is None or near(i)):
-                    out.append(i)
-                i += every
-            return out
+            """Path indices every `every` tiles of chainage (offset), skipping the ends and
+            towns."""
+            return chain_points(way, every, offset,
+                                lambda i: ok[i] and (near is None or near(i)))
 
         side = 1
         # Stations (Persian relay stations, Roman mutationes, Greek shrines).
@@ -659,7 +694,11 @@ def kit(W: World, g: Graph, ways: list[Way]) -> None:
             items, near_every, far_every, near_within = st["tombs"]
             i = 4
             k = 0
+            mark = 0.0
             while i < n - 3:
+                if way.chain[i] < mark:
+                    i += 1
+                    continue
                 if i not in way.skip and way.near_town[i] >= 2:
                     item = items[k % len(items)]
                     s = 1 if k % 2 == 0 else -1
@@ -671,7 +710,9 @@ def kit(W: World, g: Graph, ways: list[Way]) -> None:
                             j = min(max(i + di, 0), n - 1)
                             place_beside(W, way, j, s, t, variant=k)
                     k += 1
-                i += near_every if way.near_town[i] <= near_within else far_every
+                mark = way.chain[i] + (near_every if way.near_town[i] <= near_within
+                                       else far_every)
+                i += 1
         # Greek graves in the last tiles before a town.
         if st.get("graves"):
             items, within = st["graves"]
@@ -758,38 +799,58 @@ def family_at(W: World, c: int, r: int) -> str | None:
 
 
 def farms(W: World, g: Graph, way: Way) -> None:
+    """Farms along the road: one by the road every HAMLET_EVERY tiles of chainage
+    (HAMLET_NEAR_EVERY within HAMLET_NEAR of a town), and back-country farms between them up a
+    longer track, twice as far apart; each at the first place past its mark where it fits."""
     n = len(way.path)
-    side = 1 if rng.hash64(SEED, "farmside", way.id) % 2 else -1
-    i = P.HAMLET_EVERY // 2
-    while i < n - 6:
-        if i in way.skip or way.near_town[i] < 8:
-            i += 4
-            continue
-        c, r = way.path[i]
-        fam = family_at(W, c, r)
-        if fam and hamlet(W, g, way, i, side, fam):
-            side = -side
-            i += P.HAMLET_EVERY
-        else:
-            i += 5
+    for k, (start, lengths, far, near_every) in enumerate((
+            (P.HAMLET_EVERY / 2, None, P.HAMLET_EVERY, P.HAMLET_NEAR_EVERY),
+            (P.HAMLET_EVERY, (12, 15, 9), 2 * P.HAMLET_EVERY, P.HAMLET_EVERY))):
+        side = (1 if rng.hash64(SEED, "farmside", way.id) % 2 else -1) * (-1 if k else 1)
+        mark = start
+        i = 3
+        while i < n - 6:
+            if way.chain[i] < mark or i in way.skip or way.near_town[i] < 8:
+                i += 1
+                continue
+            c, r = way.path[i]
+            fam = family_at(W, c, r)
+            if fam and hamlet(W, g, way, i, side, fam, lengths):
+                side = -side
+                near = way.near_town[i] <= P.HAMLET_NEAR
+                mark = way.chain[i] + (near_every if near else far)
+            i += 2
+
+
+# Where the farm's pieces stand round its yard: (dc, dr, facing toward the yard), for the full
+# yard (11 x 11 of level ground) and the small one (7 x 7) of a farm on a narrow bench.
+YARD_SPOTS = {5: [(0, -3, "south"), (0, 3, "north"), (-3, 0, "east"), (3, 0, "west"),
+                  (-3, -3, "east"), (3, 3, "west"), (3, -3, "west"), (-3, 3, "east")],
+              3: [(0, -2, "south"), (0, 2, "north"), (-2, 0, "east"), (2, 0, "west")]}
 
 
 def hamlet(W: World, g: Graph, way: Way, i: int, side: int, fam: str,
-           length: int | None = None) -> bool:
-    """A yard off the road with farm kit around it and a track to the road."""
+           lengths: tuple | None = None) -> bool:
+    """A yard off the road with farm kit around it, a track (of the first of `lengths` that
+    fits) to the road and its crop beyond."""
     L = W.L
     st = rng.stream(SEED, "hamlet", way.id, i)
-    for s in (side, -side):
-        length_ = max(length or st.randint(5, 8), 6)
+    lengths = lengths or (st.randint(5, 8), 4, 10, 13)
+    for radius, (lo, hi), s, ln in [(rad, span, s, ln) for rad, span in ((5, (3, 6)), (3, (2, 3)))
+                                    for s in (side, -side) for ln in dict.fromkeys(lengths)]:
+        length_ = max(ln, radius + 1)
         x0, y0, face, (dc, dr), (nx, ny) = side_tiles(way, i, s, 1)
         yard_c, yard_r = x0 + nx * length_, y0 + ny * length_
-        area = [(yard_c + a, yard_r + b) for a in range(-5, 6) for b in range(-5, 6)]
+        area = [(yard_c + a, yard_r + b) for a in range(-radius, radius + 1)
+                for b in range(-radius, radius + 1)]
         track = [(x0 + nx * k, y0 + ny * k) for k in range(0, length_)]
         if not all(free_tile(W, x, y) for x, y in track + area):
             continue
+        if any(abs(int(L.LV[y, x]) - way.z[i]) > 2 for x, y in track):
+            continue   # a long track stays on the bench the road runs on
         # The farm stands at the road's level: only where the ground is near it already.
         zr = way.z[i]
-        if abs(int(np.median([L.LV[y, x] for x, y in area])) - zr) > 2:
+        if abs(int(np.median([L.LV[y, x] for x, y in area])) - zr) > (2 if radius > 3 else 3):
             continue
         lv = zr
         for x, y in area + track:
@@ -800,14 +861,12 @@ def hamlet(W: World, g: Graph, way: Way, i: int, side: int, fam: str,
             L.T[y, x] = tt
             L.STREET[y, x] = True
         kitd = dict(P.HAMLETS[fam])
-        spots = [(0, -3, "south"), (0, 3, "north"), (-3, 0, "east"), (3, 0, "west"),
-                 (-3, -3, "east"), (3, 3, "west"), (3, -3, "west"), (-3, 3, "east")]
-        k = st.randint(3, 6)
-        placed = 0
-        for (a, b, f) in spots:
-            if placed >= k:
+        k = st.randint(lo, hi)
+        placed = []
+        for (a, b, f) in YARD_SPOTS[radius]:
+            if len(placed) >= k:
                 break
-            if (a, b) == (-nx * 3, -ny * 3):
+            if (a, b) == (-nx * abs(a or b), -ny * abs(a or b)):
                 continue  # the track's side of the yard stays open
             item = st.weighted(kitd)
             d = W.cat.items.get(item)
@@ -820,15 +879,18 @@ def hamlet(W: World, g: Graph, way: Way, i: int, side: int, fam: str,
             fc, fr = {"south": (0, 1), "north": (0, -1), "east": (1, 0), "west": (-1, 0)}[f]
             c0 = cx - (pw - 1) // 2 if fc == 0 else (cx - pw + 1 if fc > 0 else cx)
             r0 = cy - (ph - 1) // 2 if fr == 0 else (cy - ph + 1 if fr > 0 else cy)
-            if put(W, item, c0, r0, f, st.randint(0, 5), level=lv):
-                placed += 1
-        if placed < 2:
+            p = put(W, item, c0, r0, f, st.randint(0, 5), level=lv)
+            if p:
+                placed.append(p)
+        if len(placed) < 2:
             continue
         W.farm = W.farm if W.farm is not None else np.zeros((ROWS, COLS), dtype=bool)
         for x, y in area:
             W.farm[y, x] = True
-        if "world.sheepfold" in [p.id for p in L.items[-placed:]]:
+        if any(p.id == "world.sheepfold" for p in placed):
             mark_pasture(W, yard_c, yard_r)
+            W.stats["pastures"] = W.stats.get("pastures", 0) + 1
+        crop(W, fam, (yard_c, yard_r), radius, (nx, ny), lv, st)
         # Graph: a junction on the road and a track to the yard.
         jc, jr = way.path[i]
         jid = way.nodes.get(i, (f"{way.id}_farm_{jc}_{jr}", None))[0]
@@ -837,8 +899,51 @@ def hamlet(W: World, g: Graph, way: Way, i: int, side: int, fam: str,
         g.nodes.append(Node(yid, grid(yard_c, yard_r), None))
         W.stats.setdefault("_tracks", []).append((jid, yid, [grid(*way.path[i])]))
         W.stats["farms"] = W.stats.get("farms", 0) + 1
+        W.stats.setdefault("farm_forms", {}).setdefault(radius, 0)
+        W.stats["farm_forms"][radius] += 1
         return True
     return False
+
+
+def crop(W: World, fam: str, yard, radius: int, n, lv: int, st) -> None:
+    """The farm's vineyard, olive grove, field or flock's fold beyond its yard, on free ground
+    within a level of the yard (the plot follows the ground; nothing is levelled for it)."""
+    plots = P.FARM_PLOTS.get(fam)
+    if not plots:
+        return
+    soil, plant, step = plots[st.randint(0, len(plots) - 1)]
+    L = W.L
+    nx, ny = n
+    tx, ty = (ny, nx) if nx else (1, 0)   # across the normal
+    if soil == "pasture":
+        for d in range(radius + 2, radius + 7):
+            for a in (0, -3, 3):
+                c = yard[0] + nx * d + tx * a
+                r = yard[1] + ny * d + ty * a
+                if put(W, plant, c - 1, r - 1, level=int(L.LV[r, c])):
+                    mark_pasture(W, c, r)
+                    W.stats["pastures"] = W.stats.get("pastures", 0) + 1
+                    return
+        return
+    tiles = []
+    for d in range(radius + 2, radius + 8):
+        for a in range(-3, 4):
+            x = yard[0] + nx * d + tx * a
+            y = yard[1] + ny * d + ty * a
+            if free_tile(W, x, y) and abs(int(L.LV[y, x]) - lv) <= 1:
+                tiles.append((x, y, d, a))
+    if len(tiles) < 12:
+        return
+    if soil:
+        t = W.tidx(soil)
+        for x, y, _d, _a in tiles:
+            L.T[y, x] = t
+    if plant:
+        for x, y, d, a in tiles:
+            if (d - radius) % step[1] == 0 and (a + 3) % step[0] == 0 and L.OCC[y, x] < 0:
+                put(W, plant, x, y, variant=st.randint(0, 3))
+    W.stats.setdefault("crops", {}).setdefault(plant or soil, 0)
+    W.stats["crops"][plant or soil] += 1
 
 
 def mark_pasture(W: World, c: int, r: int, radius: int = 8) -> None:
@@ -855,7 +960,7 @@ def end_place(W: World, g: Graph, way: Way, what: str) -> None:
         j = i - di
         if j < 2:
             break
-        if hamlet(W, g, way, j, 1, fam, length=3) or hamlet(W, g, way, j, -1, fam, length=3):
+        if hamlet(W, g, way, j, 1, fam, (3,)) or hamlet(W, g, way, j, -1, fam, (3,)):
             break
     if what in ("fishing", "harbour"):
         c, r = way.path[-1]

@@ -95,12 +95,15 @@ OWNERSHIP = [
     ("greece", "land", (436, 0, 851, 447)),
     ("latium_italy", "land", (0, 0, 435, 447)),
     ("adriatic", "sea", (300, 0, 447, 230)),
+    ("adriatic", "sea", (380, 231, 407, 262)),   # down to Brundisium's waters
     ("ionian_sea", "sea", (408, 180, 471, 447)),
+    ("saronic", "sea", (556, 240, 575, 296)),  # the bay of Eleusis, the gulf's north-west arm
     ("saronic", "sea", (560, 296, 735, 447)),
     ("aegean", "sea", (736, 0, 860, 447)),
-    ("persian_gulf", "sea", (1040, 390, 1279, 447)),
+    ("aegean", "sea", (861, 0, 880, 110)),       # the Bosporus to the edge of the map
+    ("persian_gulf", "sea", (1030, 390, 1279, 447)),
     ("east_med", "sea", (861, 0, 1279, 447)),
-    ("greece", "sea", (436, 0, 559, 447)),  # the Gulf of Corinth
+    ("greece", "sea", (456, 240, 559, 300)),  # the Gulf of Corinth
     ("tyrrhenian", "sea", (0, 0, 435, 447)),
 ]
 
@@ -503,10 +506,11 @@ LANES = {
                       "kind": "sea", "ports": {"corner_jetty": 0, "portus": 4}},
     "grain_fleet": {"points": [(200, 447), (180, 330), (130, 250), (106, 222)], "kind": "sea",
                     "ports": {"south_edge": 0, "portus": 3}},
+    # Both meet Brundisium's harbour lane at the harbour mouth (its local c 24, r 8).
     "ostia_brundisium": {"points": [(106, 222), (240, 280), (300, 372), (380, 336),
-                                    (412, 300), (406, 272)], "kind": "sea",
+                                    (412, 300), (404, 256)], "kind": "sea",
                          "ports": {"portus": 0, "brundisium": 5}},
-    "ionian_crossing": {"points": [(406, 270), (436, 270)], "kind": "sea",
+    "ionian_crossing": {"points": [(404, 256), (436, 270)], "kind": "sea",
                         "ports": {"brundisium": 0, "mist_w": 1}},
     "ionian_greek": {"points": [(442, 250), (448, 216), (460, 256), (470, 272), (520, 274),
                                 (553, 284)], "kind": "sea",
@@ -683,6 +687,16 @@ HAMLETS = {
     "charcoal": {"world.charcoal_kiln": 3, "world.field_hut": 1},
 }
 HAMLET_EVERY = 40   # tiles of road between farms (§9.5: a beat every 30-40 tiles)
+HAMLET_NEAR, HAMLET_NEAR_EVERY = 40, 24   # within 40 tiles of a town, a farm every 24
+# The crop beside a farm, away from the road, by family: (soil overlay, plant in rows, (column
+# step, row step)); "pasture" puts the flock's fold there and marks its grazing.
+FARM_PLOTS = {
+    "roman": [("rome.vineyard_soil", "rome.r_vine", (1, 2)), (None, "rome.t_olive", (3, 2)),
+              ("rome.field_spring", None, None)],
+    "greek": [("athens.olive_soil", "athens.t_olive", (3, 2)), ("pasture", "world.sheepfold", None)],
+    "anatolian": [("pasture", "world.sheepfold", None), ("parsa.field_barley", None, None)],
+    "marsh": [("world.field", None, None)],
+}
 
 # Base terrains meeting another base get this overlay on their side (V8; §1.2 margins).
 MARGIN = {"world.steppe": "world.scrub", "world.alluvium": "world.field",

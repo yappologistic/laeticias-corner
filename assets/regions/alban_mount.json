@@ -1,0 +1,331 @@
+{
+ "version": 1,
+ "id": "alban_mount",
+ "name": "Mons Albanus",
+ "native": "Mons Albanus",
+ "caption": "The Alban Mount · April AD 126",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.96,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.66
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.68
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.9,
+    0.88,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "rome",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "lake",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "reserved",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.carter",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "rome.shepherd",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.carter",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.farmer",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "slopes",
+   "populations": [
+    {
+     "actor": "rome.carter",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.farmer",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "summit",
+   "populations": [
+    {
+     "actor": "rome.farmer",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "woods",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.shepherd",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.carter",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [],
+ "zones": [],
+ "cards": {
+  "latiaris": {
+   "title": "Iuppiter Latiaris",
+   "epithet": "On the Alban Mount",
+   "text": "Jupiter's sanctuary on the summit, where the consuls held the Latin Festival each year. Below it lies the round crater lake; the Via Appia passes at the mount's foot."
+  }
+ },
+ "strings": {
+  "first_visit": "The Alban Mount. The paved way climbs to Jupiter's sanctuary above the crater lake."
+ },
+ "journal": [
+  "landmark:*"
+ ]
+}

@@ -16,7 +16,12 @@ world (C − 100, R − 184); local level 0 = world level 1; sea, river and cana
 - `assets/regions/ostia.json`: theme, populations, lane tokens, cards.
 - Lanes: `portus` (its first two points are the plan's sea-lane ends), `portus_canal`,
   `tiber_ostia` (meets Rome's `tiber` lane across the edge).
-- Not built: the theatre (no item in the set); the bridges over the canals and the Tiber are
-  `world.bridge_arch` (no art yet).
+- Second pass: the town grown north along the river and the road to the Porta Romana (r 12),
+  warehouses along the river, insulae, shops, bakeries and fulleries round the forum in lanes
+  (the shared `quarter()` filler); the Capitolium at the forum's head across the decumanus, the
+  theatre (`ostia_theatre`, once the set catalog carries it) on the decumanus with the guilds'
+  square behind its stage; mooring posts on both moles of Claudius's harbour and along the river
+  quay; the Via Portuensis from Rome over the north edge (portal `portuensis`, local (40, 0)).
+- The bridges over the canals and the Tiber are `world.bridge_arch`.
 
 Build: `tools/worldgen/build.sh ostia [--preview]`.

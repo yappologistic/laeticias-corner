@@ -1,0 +1,322 @@
+{
+ "version": 1,
+ "id": "brundisium",
+ "name": "Brundisium",
+ "native": "Brundisium",
+ "caption": "Brundisium · April AD 126",
+ "theme": {
+  "grading": {
+   "dawn": [
+    0.96,
+    0.86,
+    0.8
+   ],
+   "day": [
+    1.0,
+    0.98,
+    0.94
+   ],
+   "dusk": [
+    0.98,
+    0.8,
+    0.66
+   ],
+   "night": [
+    0.44,
+    0.5,
+    0.68
+   ]
+  },
+  "haze": {
+   "colour": [
+    0.9,
+    0.88,
+    0.8
+   ],
+   "strength": 0.12
+  },
+  "climate": "rome",
+  "ambience": {
+   "beds": [
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "06:00",
+      "19:00"
+     ]
+    },
+    {
+     "file": "amb/world/sea.ogg",
+     "hours": [
+      "19:00",
+      "06:00"
+     ]
+    }
+   ]
+  }
+ },
+ "districts": [
+  {
+   "id": "harbour",
+   "populations": [
+    {
+     "actor": "rome.docker",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.egyptian_sailor",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "reserved",
+   "populations": [
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.egyptian_sailor",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.syrian_merchant",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "road",
+   "populations": [
+    {
+     "actor": "rome.egyptian_sailor",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.syrian_merchant",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "sea",
+   "populations": [
+    {
+     "actor": "rome.syrian_merchant",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.working_woman",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.docker",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  },
+  {
+   "id": "town",
+   "populations": [
+    {
+     "actor": "rome.working_woman",
+     "density": "daytime",
+     "max_per_chunk": 4
+    },
+    {
+     "actor": "rome.docker",
+     "density": "daytime",
+     "max_per_chunk": 3
+    },
+    {
+     "actor": "rome.citizen",
+     "density": "daytime",
+     "max_per_chunk": 2
+    }
+   ]
+  }
+ ],
+ "densities": {
+  "road_day": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.1,
+   0.4,
+   0.8,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.4,
+   0.6,
+   1,
+   1,
+   0.9,
+   0.5,
+   0.2,
+   0,
+   0,
+   0,
+   0
+  ],
+  "daytime": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.15,
+   0.5,
+   0.85,
+   1,
+   1,
+   1,
+   1,
+   0.85,
+   0.6,
+   0.7,
+   0.9,
+   1,
+   0.95,
+   0.7,
+   0.4,
+   0.15,
+   0.05,
+   0,
+   0
+  ],
+  "fields": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0.2,
+   0.7,
+   1,
+   1,
+   1,
+   0.8,
+   0.5,
+   0.3,
+   0.5,
+   0.9,
+   1,
+   1,
+   0.8,
+   0.4,
+   0.1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "always": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "watch": [
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.7,
+   0.5,
+   0.5,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ "figures": [],
+ "groups": [],
+ "chains": [],
+ "events": [],
+ "lanes_tokens": [
+  {
+   "actor": "rome.merchantman",
+   "lane": "brundisium:brundisium",
+   "count": 2
+  },
+  {
+   "actor": "world.fishing_boat",
+   "lane": "brundisium:brundisium",
+   "count": 1
+  }
+ ],
+ "zones": [],
+ "cards": {
+  "brundisium_harbour": {
+   "title": "Portus Brundisinus",
+   "epithet": "The harbour for Greece",
+   "text": "A branching natural harbour with quays and warehouses. Here the Via Appia ends, and ships sail for Greece across the Ionian Sea."
+  }
+ },
+ "strings": {
+  "first_visit": "Brundisium: the Via Appia ends at the harbour, and ships leave for Greece."
+ },
+ "journal": [
+  "landmark:*"
+ ]
+}

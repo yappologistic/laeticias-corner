@@ -125,14 +125,43 @@ class Builder:
         lines.append("}")
         return "\n".join(lines) + "\n"
 
+    def placeholders(self) -> list[dict]:
+        """Every placed item no set catalog defines (a provisional or draft stand-in awaiting
+        art): the engine draws a labelled placeholder at its footprint, and the list is the art
+        backlog. Positions are grid, the footprint's origin tile (smallest tx, ty)."""
+        out = []
+        for name in self.order:
+            pl = self.layers.get(name)
+            if pl is None:
+                continue
+            for it in pl.items:
+                d = self.cat.items.get(it.id)
+                if d is None or d.source == "catalog":
+                    continue
+                out.append({"id": it.id, "set": it.id.split(".", 1)[0] if "." in it.id else "home",
+                            "source": d.source, "layer": name,
+                            "at": [it.r, COLS - 1 - (it.c + it.pw - 1)], "variant": it.variant,
+                            "footprint": list(d.footprint), "size": [it.ph, it.pw],
+                            "height": d.height, "landmark": d.landmark})
+        # Canonical order (a fresh compile and a file read list items differently).
+        return sorted(out, key=lambda e: (self.order.index(e["layer"]), e["at"], e["id"]))
+
+    def placeholders_json(self) -> str:
+        items = self.placeholders()
+        ids = sorted({e["id"] for e in items})
+        return ("{\n  \"version\": 1,\n  \"ids\": " + json.dumps(ids) + ",\n  \"items\": [\n" +
+                ",\n".join("    " + json.dumps(e, ensure_ascii=False) for e in items) +
+                "\n  ]\n}\n")
+
     def write_world_json(self) -> None:
         """Rewritten only when its text changes (a layer file appeared or went), and said so,
         so the builder commits it with the layer that changed it."""
         self.out.mkdir(parents=True, exist_ok=True)
-        f, text = self.out / "world.json", self.world_json()
-        if not f.exists() or f.read_text() != text:
-            f.write_text(text)
-            print(f"   {f} updated: commit it with the layer files it lists")
+        for f, text in ((self.out / "world.json", self.world_json()),
+                        (self.out / "placeholders.json", self.placeholders_json())):
+            if not f.exists() or f.read_text() != text:
+                f.write_text(text)
+                print(f"   {f} updated: commit it with the layer files it lists")
 
     # -- building ---------------------------------------------------------------------------
 
@@ -180,6 +209,7 @@ class Builder:
                    catalog=self.cat, regions=regions,
                    source=str(src.relative_to(HERE)))
         L.below = self.composed(upto=name)
+        L.graphs = self.graphs
         mod_spec = importlib.util.spec_from_file_location(f"worldgen_region_{name}", src)
         mod = importlib.util.module_from_spec(mod_spec)
         mod_spec.loader.exec_module(mod)
@@ -373,6 +403,13 @@ def main(argv=None) -> int:
             checked.append(i.text() + "\n")
             failed = True
     if a.check:
+        pf = b.out / "placeholders.json"
+        if not pf.exists() or pf.read_text() != b.placeholders_json():
+            i = Issue("V1", "error", "world", f"{pf} does not list the placed stand-ins of the "
+                      "committed layers (rebuild a layer to rewrite it)")
+            print("   " + i.text())
+            checked.append(i.text() + "\n")
+            failed = True
         for i in validate.world_file(b.out, b.order):
             print("   " + i.text())
             checked.append(i.text() + "\n")

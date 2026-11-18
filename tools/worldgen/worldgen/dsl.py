@@ -159,9 +159,11 @@ class Layout:
         self.stair_edges: list[tuple[Placed, tuple[int, int], tuple[int, int]]] = []
         self.lanes: list[LaneSpec] = []
         self.expects: list[Expect] = []
+        self.moves: dict[str, tuple[Rect, str, str]] = {}  # landmark -> (rect, why, src)
         self.views: dict[str, Rect] = {}
         self.issues: list[Issue] = []
         self.below = None  # the composed committed layers under this one (compose.World)
+        self.graphs: dict = {}  # the graphs of the layers known to the build (fresh or committed)
 
     # -- helpers ------------------------------------------------------------------------------
 
@@ -692,6 +694,11 @@ class Layout:
 
     def expect(self, landmark: str, *, rect, level: int | None = None) -> None:
         self.expects.append(Expect(landmark, self._world(rect), level, _src()))
+
+    def moved(self, landmark: str, *, rect, why: str) -> None:
+        """Declare that a landmark stands off its city-file rect on purpose (V4 then reports the
+        move as a warning with the reason, instead of an error)."""
+        self.moves[landmark] = (self._world(rect), why, _src())
 
     def view(self, name: str, rect) -> None:
         self.views[name] = self._world(rect)

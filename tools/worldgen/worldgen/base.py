@@ -279,8 +279,20 @@ def region_map(land: np.ndarray) -> tuple[np.ndarray, list[str], np.ndarray]:
             target[m] = idx[rid]
         apply(target, rest)
     corner = idx["corner"]
-    stretch[stretch < 0] = idx["tyrrhenian"]
-    reg[reg < 0] = idx["tyrrhenian"]
+    # Tiles no rule names take the region of the nearest named tile of their kind (sea or land),
+    # so a stray bay never carries a far sea's id (and its theme and art pages).
+    for target in (reg, stretch):
+        for kind in (land, ~land):
+            for _ in range(256):
+                todo = (target < 0) & kind
+                if not todo.any():
+                    break
+                for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    src = np.roll(np.roll(target, dr, axis=0), dc, axis=1)
+                    srck = np.roll(np.roll(kind, dr, axis=0), dc, axis=1)
+                    take = todo & (src >= 0) & srck & (target < 0)
+                    target[take] = src[take]
+        target[target < 0] = idx["tyrrhenian"]
     stretch[rect_mask(P.REGIONS["corner"][3]) & land] = corner
     return reg, names, stretch
 

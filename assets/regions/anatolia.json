@@ -335,27 +335,27 @@
    "route": [
     "base:royal_road_station_887_212",
     "base:royal_road_station_889_196",
-    "base:royal_road_station_896_189",
-    "base:royal_road_station_906_183",
-    "base:royal_road_station_906_167",
-    "base:royal_road_station_916_161",
-    "base:royal_road_station_923_152",
-    "base:royal_road_station_930_141",
-    "base:royal_road_station_944_141",
-    "base:royal_road_station_969_133",
+    "base:royal_road_station_896_187",
+    "base:royal_road_station_906_179",
+    "base:royal_road_station_909_166",
+    "base:royal_road_station_916_157",
+    "base:royal_road_station_929_152",
+    "base:royal_road_station_932_141",
+    "base:royal_road_station_944_135",
+    "base:royal_road_station_970_132",
     "base:royal_road_station_977_141",
-    "base:royal_road_station_984_150",
-    "base:royal_road_station_990_160",
+    "base:royal_road_station_986_150",
+    "base:royal_road_station_992_158",
     "base:royal_road_station_998_168",
-    "base:royal_road_station_1004_178",
+    "base:royal_road_station_1005_177",
     "base:royal_road_station_1026_183",
     "base:royal_road_station_1026_199",
     "base:royal_road_station_1032_209",
     "base:royal_road_station_1032_225",
     "base:royal_road_station_1040_233",
     "base:royal_road_station_1040_249",
-    "base:royal_road_station_1050_253",
-    "base:royal_road_station_1057_262",
+    "base:royal_road_station_1046_257",
+    "base:royal_road_station_1057_266",
     "base:royal_road_station_1065_272",
     "base:royal_road_station_1080_310",
     "base:royal_road_station_1130_339"
@@ -626,7 +626,7 @@
    "rect": [
     119,
     294,
-    125,
+    135,
     306
    ],
    "group": "flock"
@@ -635,8 +635,8 @@
    "kind": "pasture",
    "rect": [
     119,
-    290,
-    125,
+    283,
+    135,
     293
    ],
    "group": "flock"
@@ -644,10 +644,60 @@
   {
    "kind": "pasture",
    "rect": [
-    150,
+    136,
+    294,
+    140,
+    299
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    136,
+    283,
+    142,
+    293
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    143,
+    345,
+    152,
+    345
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    143,
     328,
     152,
-    334
+    344
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    147,
+    379,
+    152,
+    379
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    147,
+    363,
+    152,
+    378
    ],
    "group": "flock"
   },
@@ -665,9 +715,9 @@
    "kind": "pasture",
    "rect": [
     153,
-    328,
-    166,
-    334
+    379,
+    169,
+    390
    ],
    "group": "flock"
   },
@@ -675,8 +725,38 @@
    "kind": "pasture",
    "rect": [
     153,
-    318,
+    364,
+    169,
+    378
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    153,
+    345,
+    154,
+    345
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    153,
+    328,
     166,
+    344
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    153,
+    311,
+    169,
     327
    ],
    "group": "flock"
@@ -684,40 +764,70 @@
   {
    "kind": "pasture",
    "rect": [
-    176,
-    362,
-    186,
-    371
+    162,
+    298,
+    169,
+    310
    ],
    "group": "flock"
   },
   {
    "kind": "pasture",
    "rect": [
-    176,
-    357,
-    186,
-    361
+    170,
+    379,
+    178,
+    390
    ],
    "group": "flock"
   },
   {
    "kind": "pasture",
    "rect": [
-    187,
-    362,
-    192,
-    373
+    170,
+    374,
+    178,
+    378
    ],
    "group": "flock"
   },
   {
    "kind": "pasture",
    "rect": [
-    187,
-    357,
-    192,
-    361
+    170,
+    311,
+    178,
+    314
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    170,
+    298,
+    178,
+    310
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    201,
+    311,
+    203,
+    317
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    201,
+    301,
+    203,
+    310
    ],
    "group": "flock"
   },
@@ -738,6 +848,26 @@
     269,
     203,
     276
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    204,
+    311,
+    217,
+    317
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    204,
+    301,
+    217,
+    310
    ],
    "group": "flock"
   },
@@ -798,26 +928,6 @@
     347,
     227,
     361
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    228,
-    226,
-    237,
-    237
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    228,
-    221,
-    237,
-    225
    ],
    "group": "flock"
   },
@@ -894,19 +1004,39 @@
   {
    "kind": "pasture",
    "rect": [
-    238,
+    239,
     226,
-    244,
-    237
+    254,
+    235
    ],
    "group": "flock"
   },
   {
    "kind": "pasture",
    "rect": [
-    238,
-    221,
-    244,
+    245,
+    413,
+    254,
+    419
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    245,
+    405,
+    254,
+    412
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    245,
+    219,
+    254,
     225
    ],
    "group": "flock"
@@ -914,26 +1044,6 @@
   {
    "kind": "pasture",
    "rect": [
-    245,
-    413,
-    254,
-    419
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
-    245,
-    405,
-    254,
-    412
-   ],
-   "group": "flock"
-  },
-  {
-   "kind": "pasture",
-   "rect": [
     255,
     413,
     261,
@@ -948,6 +1058,46 @@
     405,
     261,
     412
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    255,
+    226,
+    271,
+    235
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    255,
+    219,
+    271,
+    225
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    272,
+    226,
+    274,
+    234
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    272,
+    219,
+    274,
+    225
    ],
    "group": "flock"
   }

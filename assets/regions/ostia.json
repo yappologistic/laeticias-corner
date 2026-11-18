@@ -555,6 +555,11 @@
    "title": "Quintus Mulvius",
    "epithet": "Barge master",
    "text": "Mulvius steers a barge up the Tiber from Portus, towed by men and oxen on the bank path: a few days against the current for some thirty-five kilometres, much quicker back down with the stream."
+  },
+  "ostia_theatre": {
+   "title": "Theatrum Ostiense",
+   "epithet": "Ostia's theatre",
+   "text": "The theatre Agrippa built under Augustus, on the decumanus near the river. Behind its stage lies the porticoed square of the shipping offices. It was enlarged later in the century."
   }
  },
  "strings": {

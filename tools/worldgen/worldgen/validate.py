@@ -93,9 +93,14 @@ def walk_map(world: World, cat: Catalog) -> tuple[np.ndarray, np.ndarray]:
                 stair[sl] = True
         else:
             walk[sl] = False
-            for dx, dy in cat.walk_tiles(it.id, it.k):
-                c, r = it.c + it.pw - 1 - dy, it.r + dx
+            tiles = {(it.c + it.pw - 1 - dy, it.r + dx) for dx, dy in cat.walk_tiles(it.id, it.k)}
+            solid = [int(world.L[r, c] & 0x0F) for c, r in it.tiles()
+                     if (c, r) not in tiles] if tiles else []
+            for c, r in sorted(tiles):
                 walk[r, c] = True
+                # A walk tile a level off the solid footprint is a step of the landmark's floor.
+                if solid and int(world.L[r, c] & 0x0F) != min(solid):
+                    stair[r, c] = True
                 # A landmark's floor over water (a bridge's deck, the island's quay) is a deck:
                 # its art rises from the water to the banks, so walkers change level on it.
                 if d.on == "water" or water[r, c]:
@@ -231,6 +236,8 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         if d is None:
             continue
         levels = set()
+        floor = item_walk_tiles(cat, it) if d.landmark else set()
+        floor_lv = {}
         for c, r in it.tiles():
             t = int(world.T[r, c])
             if t == NONE16:
@@ -241,10 +248,22 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                 issue("V3", f"{it.id} needs {d.on}, stands on {world.terrains[t]}", (c, r),
                       isrc(it))
                 break
-            levels.add(int(lv[r, c]))
-        if len(levels) > 1:
-            issue("V3", f"{it.id}: footprint not flat (levels {sorted(levels)})", (it.c, it.r),
+            if (c, r) in floor:
+                floor_lv[(c, r)] = int(lv[r, c])
+            else:
+                levels.add(int(lv[r, c]))
+        # A landmark's own walk tiles may lie a level off its footprint (a corridor stepping
+        # down to a door): the art's floor carries the step, as V5 lets walkers take it. The
+        # solid part stays flat.
+        base = levels or set(floor_lv.values())
+        if len(levels) > 1 or (not levels and max(base, default=0) - min(base, default=0) > 1):
+            issue("V3", f"{it.id}: footprint not flat (levels {sorted(base)})", (it.c, it.r),
                   isrc(it))
+        elif levels:
+            off = [(t, v) for t, v in floor_lv.items() if abs(v - min(levels)) > 1]
+            if off:
+                issue("V3", f"{it.id}: walk tile at level {off[0][1]}, more than a level off its "
+                      f"footprint's {min(levels)}", off[0][0], isrc(it))
     if tg.layout is not None:
         for p, foot, head in tg.layout.stair_edges:
             d = cat.items[p.id]
@@ -297,6 +316,12 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                               f"from {mfile}:{m.line} ({bw} x {bh}); placed at local "
                               f"{_local(p.rect.bounds(), origin)}, which holds {m.rect}",
                               (p.c, p.r), p.src, level="warning")
+                    elif lid in tg.layout.moves and \
+                            tg.layout.moves[lid][0].bounds() == p.rect.bounds():
+                        rect_, why, src_ = tg.layout.moves[lid]
+                        issue("V4", f"{lid}: moved to local {_local(p.rect.bounds(), origin)} from "
+                              f"{mfile}:{m.line}'s {m.rect}: {why}", (p.c, p.r), src_,
+                              level="warning")
                     else:
                         issue("V4", f"{lid}: placed at local {_local(p.rect.bounds(), origin)}, "
                               f"{mfile}:{m.line} says {m.rect}", (p.c, p.r), p.src)
@@ -380,11 +405,26 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                   "other side meets it there", at)
         if name not in layers:
             issue("V6", f"portal {n.id!r} belongs to layers {layers}, not {name}", at)
-        across = (abs(tile[0] - at[0]) + abs(tile[1] - at[1]) == 1 and
-                  not (c0 <= tile[0] <= c1 and r0 <= tile[1] <= r1))
-        if tuple(tile) != at and not across:
-            # (Where two authored layers touch, the second carries the node across the edge.)
+        if tuple(tile) != at:
+            # One node of both layers (world-tech §2.5): every layer carries it on this tile.
             issue("V6", f"portal {n.id!r} at {at}, the plan says {tuple(tile)}", at)
+        else:
+            # The way crosses there: a walkable tile of another of its layers beside it, across
+            # the boundary, at the portal's level.
+            own = world.owner[at[1], at[0]]
+            ok = False
+            for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                qc, qr = at[0] + dc, at[1] + dr
+                if not (0 <= qc < COLS and 0 <= qr < ROWS) or world.owner[qr, qc] == own:
+                    continue
+                o = int(world.owner[qr, qc])
+                if 0 <= o < len(world.layers) and world.layers[o] in layers and \
+                        walk[qr, qc] and lv[qr, qc] == lv[at[1], at[0]]:
+                    ok = True
+            if not ok and any(o in graphs and graphs[o].node(n.id) is not None
+                              for o in layers if o != name):
+                issue("V6", f"portal {n.id!r}: no walkable tile of {layers} across the layer "
+                      f"boundary beside it at its level", at)
         for other in layers:
             if other == name:
                 continue
@@ -437,13 +477,19 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         d = cat.items.get(it.id)
         if d is not None and d.landmark and d.rise == 0:
             marks[it.r:it.r + it.ph, it.c:it.c + it.pw] = i
+    basins = {(it.c + it.pw - 1 - dy, it.r + dx) for _, it in live_items(world)
+              for dx, dy in cat.water_tiles(it.id, it.k)}
     for p, sid, c, r in spots:
         inside = 0 <= c < COLS and 0 <= r < ROWS
-        if (inside and int(world.T[r, c]) in water_ids and not walk[r, c]
+        if (inside and (int(world.T[r, c]) in water_ids or (c, r) in basins) and not walk[r, c]
                 and cat.slot_kind(p.id, sid) == "mooring"):
             # A boat's spot: on water, worked from the quay beside it (or beside the post).
             start = mooring_access(p, (c, r), walk)
-            if not start:
+            if not start and marks[r, c] >= 0:
+                issue("V7", f"{p.name or p.id}: mooring slot {sid!r} lies beside quays of "
+                      f"{world.items[marks[r, c]].id} its geometry does not make walkable (art "
+                      "geometry)", (c, r), p.src, level="warning")
+            elif not start:
                 issue("V7", f"{p.name or p.id}: mooring slot {sid!r} touches no walkable tile",
                       (c, r), p.src)
             elif not any(_near_graph(t, graph_tiles, walk, lv, stair) for t in start):
@@ -551,6 +597,9 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             if c0 < ec0 or r0 < er0 or c1 > ec1 or r1 > er1:
                 issue("V9", f"layer rect {rect} leaves its regions' extent "
                       f"{(ec0, er0, ec1, er1)}", (c0, r0))
+    for dname, at in stray_seas(world, mine, sl, water_ids):
+        issue("V9", f"sea district {dname!r} has water no sea path joins to its own body (a "
+              "stray piece of another sea's region)", at)
     nod = mine & (world.T[sl] != NONE16) & (world.D[sl] == NONE16)
     if nod.any():
         j, i = np.argwhere(nod)[0]
@@ -716,6 +765,67 @@ def variant_problem(d, k: int) -> str | None:
     return None
 
 
+def stray_seas(world: World, mine: np.ndarray, sl, water_ids) -> list:
+    """(district, tile) for each stretch's `<region>/sea` district of the layer with water no
+    path joins to its largest piece, through its own tiles or the water of an authored layer
+    (a city's harbour, a town's bay): a stray piece of one sea inside another."""
+    from .base import poly
+    inlets = np.zeros(world.D.shape, dtype=bool)
+    for pts in P.INLETS.values():
+        inlets |= poly(pts)
+    D, own = world.D[sl], world.owner[sl]
+    base = world.layers.index("base") if "base" in world.layers else -1
+    wet = np.isin(world.T[sl], list(water_ids))
+    out = []
+    for d in np.unique(D[mine]).tolist():
+        name = world.districts[d] if d != NONE16 else ""
+        if not name.endswith("/sea") or \
+                P.REGIONS.get(name.split("/", 1)[0], ("",))[0] != "stretch":
+            continue
+        m = mine & (D == d)
+        ok = m | (wet & (own != base))
+        lab = np.full(m.shape, -1, dtype=np.int32)
+        sizes = []
+        for j, i in np.argwhere(m):
+            if lab[j, i] >= 0:
+                continue
+            k = len(sizes)
+            q = deque([(j, i)])
+            lab[j, i] = k
+            n = 0
+            while q:
+                y, x = q.popleft()
+                n += int(m[y, x])
+                for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    a, b = y + dy, x + dx
+                    if 0 <= a < m.shape[0] and 0 <= b < m.shape[1] and ok[a, b] and lab[a, b] < 0:
+                        lab[a, b] = k
+                        q.append((a, b))
+            sizes.append(n)
+        if len(sizes) < 2:
+            continue
+        main = lab == int(np.argmax(sizes))
+        near = main.copy()
+        for _ in range(STRAY_GAP):
+            g = near.copy()
+            g[1:, :] |= near[:-1, :]
+            g[:-1, :] |= near[1:, :]
+            g[:, 1:] |= near[:, :-1]
+            g[:, :-1] |= near[:, 1:]
+            near = g
+        for k in range(len(sizes)):
+            piece = m & (lab == k)
+            if not piece.any() or (piece & near).any() or (piece & inlets[sl]).any():
+                continue
+            j, i = np.argwhere(piece)[0]
+            out.append((name, (int(i) + sl[1].start, int(j) + sl[0].start)))
+            break
+    return out
+
+
+STRAY_GAP = 24  # tiles: farther than this from its body, with no sea path, a piece is a stray
+
+
 def mooring_access(p, spot, walk) -> list[tuple[int, int]]:
     """Walkable land tiles a boat moored at `spot` (a water tile) is worked from: beside the
     spot, or beside the item whose slot it is when the spot lies against its footprint (a quay
@@ -727,7 +837,7 @@ def mooring_access(p, spot, walk) -> list[tuple[int, int]]:
     cand = beside(spot)
     cand += [n for t in cand if t in own for n in beside(t)]
     return [(c, r) for c, r in dict.fromkeys(cand)
-            if 0 <= c < COLS and 0 <= r < ROWS and (c, r) not in own and walk[r, c]]
+            if 0 <= c < COLS and 0 <= r < ROWS and walk[r, c]]
 
 
 def _local(b, origin):

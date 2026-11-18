@@ -1,8 +1,20 @@
 # Rome layer
 
-Status: built. Every landmark with usable art stands at its bible rect and level; the six
-listed under "Waiting on art" keep their footprints with stand-ins. Mark the layer complete
-here once they are placed (V4 then makes a missing landmark an error).
+Status: built. Every landmark with usable art stands at its bible rect and level (Saturn and the
+Templum Pacis a tile off it, below); the five without art stand as provisional placeholders
+(`plan/provisional.py`); the island, bridges, Emporium and Testaccio switch to their corrected
+art by themselves once the set catalog carries it. Mark the layer complete here once they are
+placed (V4 then makes a missing landmark an error).
+
+Second pass (world-rome-connect): the Argiletum runs from the Forum past the Forum of Nerva's
+east side into the Subura (the Templum Pacis moved a tile east); the Vicus Iugarius enters the
+Forum between Saturn (moved a tile west) and the Basilica Iulia; mooring posts (`rome.quay`)
+along the Emporium's wharf and the river road's embankment; the Via Portuensis to portal
+`portuensis` (44, 159); the Via Aurelia crosses the Janiculum in a cutting at +2 on ramps (four
+tiles a level); ways over the decks of the bridges and across the island once the art joins
+them, the water left under them; the Via Ostiensis along the Emporium's wharf once the Porticus
+reaches Testaccio. `quarter()` (the neighbourhood filler) lives in `common.py`, shared with
+Ostia and Brundisium.
 
 Rome on the Parilia, 21 April AD 126 (`docs/design/cities/rome.md`). World rect C 96..271,
 R 24..183; local (c, r) = world (C − 96, R − 24); local level 0 = world level 1.
