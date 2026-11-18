@@ -893,6 +893,7 @@ void App::zoomBy(int steps, Vec2 px) {
 }
 
 void App::frameCamera() {
+    follow_.reset(); // the camera goes elsewhere: it no longer follows anyone
     const Box s = hud_.safeArea();
     camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen(),
                   openBounds(cat_, progress_.stage, world_));
@@ -1054,6 +1055,11 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
     default: break;
     }
     if (photo_) return; // editing keys do nothing while framing a photo
+    // Away from home the home's tools rest: no unseen undo, no armed eyedropper (L-108).
+    static constexpr SDL_Keycode kEditing[] = {SDLK_Z, SDLK_Y,           SDLK_R,
+                                               SDLK_B, SDLK_X,           SDLK_V,
+                                               SDLK_I, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};
+    if (away() && std::ranges::find(kEditing, key) != std::end(kEditing)) return;
 
     switch (key) {
     case SDLK_Z:
@@ -1137,9 +1143,10 @@ void App::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_MOUSE_MOTION: {
         const Vec2 p{e.motion.x * density_, e.motion.y * density_};
         mouseInside_ = true;
-        if (drag_ == Drag::Pan) {
+        if (drag_ == Drag::Pan && (p.x != lastPan_.x || p.y != lastPan_.y)) {
             camera_.dragBy({p.x - lastPan_.x, p.y - lastPan_.y}, screen());
             tourMoved_ = true;
+            follow_.reset(); // a pan takes the camera back
         }
         lastPan_ = p;
         mouse_ = p;

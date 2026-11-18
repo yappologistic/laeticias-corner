@@ -40,7 +40,7 @@ float App::rainHere() const {
 }
 
 bool App::raining() const {
-    return weather_.raining(viewTile());
+    return rainHere() >= tuning::kRainThreshold; // where the camera looks, home or away (L-107)
 }
 
 void App::cycleWeather() {

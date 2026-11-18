@@ -1,0 +1,21 @@
+# Away from home: the home's editing keys rest (L-108: Ctrl+Z once removed a piece unseen, and
+# I armed the eyedropper for the way home), and natural rain over the Forum is rain where the
+# camera looks (L-107: the title card never said so away).
+set unlock all
+place lamp @30,30
+expect count lamp 1
+expect undo yes
+set season spring
+set weather natural
+set world forum 1
+wait 30
+expect away yes
+key ctrl+z
+wait 3
+expect count lamp 1
+expect undo yes
+key i
+wait 2
+expect pipette no
+fast 3600 raining yes
+quit

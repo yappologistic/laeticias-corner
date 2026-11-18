@@ -265,6 +265,7 @@ bool App::away() const {
 
 void App::travelTo(int region) {
     if (!loaded_ || travel_.region >= 0) return;
+    follow_.reset(); // the journey takes the camera away from whoever it followed
     travel_ = {region, 0, false};
     map_.open(false);
 }
@@ -336,6 +337,7 @@ void App::updateWorld(float dt) {
     if (away()) {
         if (tool_ != Tool::None) setTool(Tool::None, -1);
         drawerOpen_ = false;
+        pipette_ = false;
     }
 }
 
