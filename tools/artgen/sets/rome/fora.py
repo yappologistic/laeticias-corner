@@ -94,8 +94,10 @@ def trajan_forum(m):
     RM.statue(m, cx, cy, zb, 12.5, TRAJAN_RIDER, material="gilt", keep=())
 
 
-TRAJ_SOLID = {(6, 12), (6, 13), (7, 12), (7, 13)}
-TRAJ_WALK = [(x, y) for x in range(0, 10) for y in range(4, 21) if (x, y) not in TRAJ_SOLID]
+# The square (dx 0..11) opens north onto the Basilica Ulpia and south through the triumphal
+# gate (its passage at dy 12 through the front wall at dx 12) toward the Forum of Augustus.
+TRAJ_SOLID = {(6, 12), (6, 13), (7, 12), (7, 13), (10, 11), (10, 13), (11, 11), (11, 13)}
+TRAJ_WALK = [(x, y) for x in range(0, 12) for y in range(4, 21) if (x, y) not in TRAJ_SOLID] + [(12, 12)]
 
 
 def basilica_ulpia(m):

@@ -269,7 +269,7 @@ def town(pieces):
     for key, x, y in (("walker/parsa.woman_worker/v1/move_front", 3.5, 7.5), ("walker/parsa.woman_worker/v0/throw_front", 6.5, 6.7),
                       ("walker/parsa.woman_worker/v2/stir_front", 4.5, 6.6), ("walker/parsa.child/v0/run_front", 9.5, 9.5),
                       ("walker/parsa.child/v2/kneel_front", 10.6, 10.2), ("walker/parsa.scribe/v0/write_front", 14.5, 10.4),
-                      ("figure/parsa.baradkama/serve_front", 13.5, 10.5), ("walker/parsa.labourer/v0/carry_front", 12.5, 7.5),
+                      ("figure/parsa.maus/serve_front", 13.5, 10.5), ("walker/parsa.labourer/v0/carry_front", 12.5, 7.5),
                       ("figure/parsa.bel_iddin/stir_front", 7.5, 11.6), ("walker/parsa.magus/v0/pour_front", 18.4, 9.4),
                       ("walker/parsa.overseer_woman/v0/gesture_front", 7.4, 7.6), ("walker/parsa.craftsman/v1/work_high_front", 2.5, 6.8),
                       ("walker/parsa.farmer/v1/move_back", 16.5, 7.5), ("critter/parsa.zebu/move_front", 17.5, 7.7),

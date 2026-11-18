@@ -14,8 +14,8 @@ def landmark_items():
     out = []
     for iid, lm in landmarks.LANDMARKS.items():
         name, scale, height, layers, card = landmarks.INFO[iid]
-        it = {"id": iid, "name": name, "footprint": list(lm.footprint), "layout": "rotate", "count": 4, "on": "land",
-              "rotations": [0], "landmark": True, "scale": scale, "height": height,
+        it = {"id": iid, "name": name, "footprint": list(lm.footprint), "layout": "rotate", "count": 4,
+              "on": landmarks.ON.get(iid, "land"), "rotations": [0], "landmark": True, "scale": scale, "height": height,
               "layers": [LAYERS[c] for c in layers], "occluder": max(lm.footprint) > 2 or height > 80, "card": card}
         if lm.slots:
             it["slots"] = slots_entry(lm.slots)

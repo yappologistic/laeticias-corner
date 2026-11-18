@@ -138,10 +138,10 @@ def tholos(m):
 def stoa_poikile(m):
     """The Painted Stoa on the north side of the square, facing south: a long Doric colonnade
     with an inner row of Ionic columns, and on the back wall the great painted wooden panels
-    (Marathon, the Amazons, the fall of Troy, Oinoe) with captured shields hung above; its
-    ends open, so walkers stroll the aisle between the colonnade and the inner row."""
+    (Marathon, the Amazons, the fall of Troy, Oinoe); no captured shields yet in 432 (those of
+    Pylos and Skione came in 425 and 421). Its ends open, so walkers stroll the aisle between the colonnade and the inner row."""
     st = Stoa(order=STOA_DORIC, front="+x", inner=STOA_IONIC, n_inner=6, inner_at=0.27,
-              panels=("oinoe", "amazons", "troy", "marathon"), shields=7, roof="terracotta", open_ends=True,
+              panels=("oinoe", "amazons", "troy", "marathon"), shields=0, roof="terracotta", open_ends=True,
               seed=271)
     stoa(m, st, S, 0.0, 3 * T, 0.0, 10 * T, col_tiles=range(10))
     lamp_niche(m, 6.0, 40.0, 14.0, 0.4)

@@ -84,9 +84,17 @@ def raindrop(frame, frames, k):
     px, py, rgba = _canvas(9 * k, 7 * k)
     x0 = 4 * k
     if frame == 0:
-        _set(rgba, (px == x0) & (py >= k) & (py < 5 * k), WATER[5], 170)
-        _set(rgba, (px == x0) & (py >= 5 * k) & (py < 6 * k), PLASTER[4], 210)
-        return Sprite(rgba, x0, 6 * k)
+        # A long bright streak that fades toward its tail and ends in a white head, so a
+        # shower reads at 1x; on fine grids a fainter second line thickens the lower half.
+        px, py, rgba = _canvas(3 * k, 10 * k)
+        x0 = k
+        for y in range(k, 9 * k):
+            t = (y - k) / (8 * k)
+            _set(rgba, (px == x0) & (py == y), SNOW[1] if t > 0.55 else WATER[5], int(110 + 130 * t))
+            if k > 1 and t > 0.45:
+                _set(rgba, (px == x0 + 1) & (py == y), WATER[5], int(60 + 80 * t))
+        _set(rgba, (px == x0) & (py >= 9 * k) & (py < 10 * k), PLASTER[4], 245)
+        return Sprite(rgba, x0, 10 * k)
     r = frame * 1.4 * k
     d = np.hypot(px + 0.5 - 4.5 * k, (py + 0.5 - 5.5 * k) * 2)
     _set(rgba, np.abs(d - r) < 0.7, WATER[5], int(220 - 50 * frame))
@@ -274,6 +282,32 @@ def mist(frame, frames, k):
     return Sprite(rgba, w // 2, h - 2 * sc)
 
 
+def puddle(frame, frames, k):
+    """A rain puddle lying on the ground, growing from a wet patch (f0) to its full size (last
+    frame); the engine plays it forward as rain gathers and backward as the ground dries. Dark
+    wet rim, water holding the sky's colour, a pale glint toward the upper left."""
+    t = (frame + 1) / frames
+    w, h = 26 * k, 13 * k
+    px, py, rgba = _canvas(w, h)
+    cx, cy = w / 2, h / 2
+    inside = np.full(px.shape, -1.0, np.float32)
+    # Overlapping flat lobes so the outline is irregular, the same shape at every size.
+    for dx, dy, r in ((0.0, 0.0, 0.85), (-0.55, 0.22, 0.5), (0.5, -0.18, 0.55), (0.22, 0.42, 0.4), (-0.25, -0.4, 0.38)):
+        rr = r * t * 11.0 * k
+        d = np.hypot(px + 0.5 - cx - dx * 11.0 * k * t, (py + 0.5 - cy - dy * 5.5 * k * t) * 2) / max(rr, 0.5)
+        inside = np.maximum(inside, 1 - d)
+    rim = (inside > -0.18) & (inside <= 0.0)
+    _set(rgba, rim, EARTH[0], 90)
+    body = inside > 0
+    _set(rgba, body, WATER[2], 150)
+    _set(rgba, body & (inside > 0.35), WATER[3], 165)
+    lit = body & (((px + 0.5 - cx) * 0.5 + (py + 0.5 - cy)) < -0.25 * h * t) & (inside > 0.2)
+    _set(rgba, lit, WATER[4], 175)
+    glint = body & (np.abs((px + 0.5 - cx) + 2 * (py + 0.5 - cy) + 3.0 * k * t) < 0.6) & (inside > 0.45)
+    _set(rgba, glint, SNOW[2], 200)
+    return Sprite(rgba, w // 2, h // 2)
+
+
 ZEDS = (("WWW", "..W", ".W.", "WWW"), ("WWWW", "..W.", ".W..", "WWWW"), ("WWWW", "..W.", ".W..", "WWWW"))
 
 
@@ -325,7 +359,7 @@ def produce(frame, frames, k):
 
 EFFECTS = {"smoke": smoke, "ripple": ripple, "sparkle": sparkle, "raindrop": raindrop, "leaf": leaf,
            "heart": heart, "petal": petal, "snowflake": snowflake, "moth": moth, "fish_jump": fish_jump,
-           "star_streak": star_streak, "apple": apple, "clear": clear, "mist": mist, "zzz": zzz,
+           "star_streak": star_streak, "apple": apple, "clear": clear, "mist": mist, "puddle": puddle, "zzz": zzz,
            "produce": produce, "footprint": footprint, "egg": egg}
 
 

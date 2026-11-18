@@ -108,7 +108,9 @@ def pons_sublicius(m):
 def tiber_island(m):
     """Tiber Island faced with travertine as a ship: a prow at the downstream end with a carved
     head of Aesculapius's serpent-staff, the Temple of Aesculapius (the sick sleep in its
-    porticoes), an obelisk standing as the mast, houses and trees, steps to the water."""
+    porticoes), an obelisk standing as the mast, houses and trees, steps to the water. A paved
+    way runs from the Fabricius' landing at the east end round the temple and along the
+    portico to the Cestius' landing at the west end (ISLAND_WALK)."""
     W, D = 11 * T, 7 * T            # y along the river (east-west), x across
     cx, cy = D / 2, W / 2
     a, b = D / 2 - 6.0, W / 2 - 4.0
@@ -122,11 +124,15 @@ def tiber_island(m):
     fill(m, (0.0, D, 0.0, W, zt - 1.0, zt), "grass", lambda X, Y, Z: hull(X + 0 * Z, Y, Z) &
          (np.abs(X - cx) < a * 0.8 * np.sqrt(np.clip(1 - np.abs((Y - cy) / b) ** 2.4, 0, 1))),
          tone=lambda X, Y, Z: (value_noise(X, Y, Z, 3.0, 612) - 0.5) * 0.8)
+    for (tx, ty) in ISLAND_WALK:        # the paved way between the bridges
+        fill(m, (tx * T, (tx + 1) * T, ty * T, (ty + 1) * T, zt - 1.0, zt), "travertine", hull,
+             tone=lambda X, Y, Z: (hash01(np.floor(X / 3.0).astype(np.int64), np.floor(Y / 2.5).astype(np.int64), 618)
+                                   - 0.5) * 0.7 - 0.6 * ((Y % 2.5) < 0.3))
     # The prow (downstream, west +y): a raised travertine ship's bow with the serpent-staff.
-    fill(m, (cx - 12, cx + 12, W - 30.0, W, -4.0, zt + 6.0), "travertine",
+    fill(m, (cx - 7, cx + 6, W - 30.0, W, -4.0, zt + 6.0), "travertine",
          lambda X, Y, Z: hull(X, Y, Z) & (Y > W - 30.0) & (Z < zt + 6.0 * (Y - (W - 30.0)) / 26.0),
          tone=RM.travertine(2.0, 5.0, 613))
-    fill(m, (cx + 6.0, cx + 9.0, W - 22.0, W - 12.0, 0.0, 6.0), "travertine",
+    fill(m, (cx + 2.0, cx + 5.0, W - 22.0, W - 12.0, 0.0, 6.0), "travertine",
          lambda X, Y, Z: np.hypot(Y - (W - 17.0), Z - 3.0) < 2.4, tone=0.4)
     RM.temple(m, RM.RTemple(order=RM.ROrder("ionic", D=0.8, H=8.0), front="-x", cols=6, deep=2, podium=2.0,
                             pediment="gods", seed=614), S, (cx - 20.0, cx + 18.0, cy - 30.0, cy + 6.0), zt)
@@ -134,7 +140,7 @@ def tiber_island(m):
                  RM.ROrder("tuscan", D=0.6, H=5.0, shaft="travertine", trim="travertine", fluted=False), S, 5.0, "+x",
                  seed=615)
     RM.obelisk(m, cx, cy + 26.0, zt, S.v(13.0), 3.4, base_h=4.0)
-    for i, (x, y) in enumerate(((cx - 14.0, 24.0), (cx + 10.0, 30.0), (cx - 10.0, W - 44.0))):
+    for i, (x, y) in enumerate(((cx - 18.0, 104.0), (cx + 18.0, 14.0), (cx - 10.0, W - 44.0))):
         cypress(m, x, y, zt, h=24.0, seed=i)
     RM.wall(m, (cx - 4.0, cx + 14.0, 14.0, 28.0), zt, zt + 12.0, "stucco", 616, "ochre")
     RM.hip(m, (cx - 5.0, cx + 15.0, 13.0, 29.0), zt + 12.0, 5.0, seed=617)
@@ -169,7 +175,7 @@ def emporium(m):
     the cargo of the barges stacked on it, a treadwheel crane, and behind it the Porticus
     Aemilia, a giant warehouse of brick and concrete vaults in many bays stepping up the
     slope, its roofs in rows (s = 0.25 for the warehouse, rome.md). The quay is walkable."""
-    W, D = 25 * T, 20 * T          # quay along x (r 140..159), warehouse east of it
+    W, D = 25 * T, 11 * T          # quay along x (r 140..150), warehouse east of it
     qx0, qy0, qy1 = 0.0, W - 6 * T, W
     slab(m, 0.0, D, qy0, qy1, -4.0, 2.0, "travertine", tone=RM.travertine(2.4, 8.0, 651))
     paving(m, (0.0, D, qy0, qy1), 1.5, 2.0, "travertine", 7.0, 4.0, 652)
@@ -186,7 +192,7 @@ def emporium(m):
     for tx, ty in EMP_SACKS:
         for j in range(6):
             ellipsoid(m, (tx * T + 4.0 + (j % 3) * 4.0, ty * T + 5.0 + (j // 3) * 5.0, 4.0), (2.2, 2.0, 2.0), "wool", 0.1)
-    slab(m, 18 * T + 3.0, 18 * T + 12.0, qy0 + 4.0, qy0 + 12.0, 2.0, 6.0, "marble", tone=0.2)
+    slab(m, 9 * T + 3.0, 9 * T + 12.0, qy0 + 4.0, qy0 + 12.0, 2.0, 6.0, "marble", tone=0.2)
     treadwheel_crane(m, tc(EMP_CRANE[0]), tc(EMP_CRANE[1]), 2.0, 46.0, along="y", load="marble")
     # The Porticus Aemilia: 50 bays of barrel vaults stepping up toward the east.
     ws = 0.25 / 0.65                # the warehouse drawn at s = 0.25 inside a 0.65 landmark
@@ -203,18 +209,24 @@ def emporium(m):
     lamp(m, wx1 + 2.0, wy1 - 10.0, 8.0, 0.5)
 
 
-# The sick sleep under the island's portico: the strip before it is walkable (floor on the island).
-ISLAND_WALK = [(x, y) for x in (5, 6) for y in (4, 5, 6)]
+# The way across the island (floor on the island): from the Pons Fabricius' landing at the east
+# end (2, 0) round the temple's east side, along the portico where the sick sleep (dx 5 and 6)
+# and up to the Pons Cestius' landing at the west end (4, 10).
+ISLAND_WALK = sorted({(2, 0), (2, 1), (2, 2), (3, 2), (4, 2), *((5, y) for y in range(2, 10)), (4, 9), (4, 10),
+                      (6, 4), (6, 5), (6, 6)})
+ON = {"rome.tiber_island": "water", "rome.pons_fabricius": "water", "rome.pons_cestius": "water",
+      "rome.pons_aemilius": "water", "rome.pons_sublicius": "water"}
 
-# Quay furniture by tile (x across r 140..159, y from c 85 west to c 61): bollards on the edge,
+# Quay furniture by tile (x across r 140..150, y from c 85 west to c 61): bollards on the edge,
 # stacks of amphorae and sacks, the crane, the marble blocks; every other quay tile is walkable.
-EMP_BOLLARDS = (1, 6, 11, 16)
-EMP_AMPHORAE = ((1, 20), (4, 21), (9, 20), (14, 22), (17, 20))
-EMP_SACKS = ((7, 21), (12, 21))
-EMP_CRANE = (13, 23)
-EMP_SOLID = {(x, 24) for x in EMP_BOLLARDS} | set(EMP_AMPHORAE) | set(EMP_SACKS) | {EMP_CRANE, (12, 23), (13, 22), (13, 24),
-                                                                                    (12, 22), (18, 19)}
-EMP_WALK = [(x, y) for x in range(20) for y in range(19, 25) if (x, y) not in EMP_SOLID]
+# The wharf goes on south of r 150 (c 61..66, r 151..159) as kit quay beside the Horrea Galbana.
+EMP_BOLLARDS = (1, 4, 7, 10)
+EMP_AMPHORAE = ((1, 20), (3, 22), (9, 20))
+EMP_SACKS = ((5, 21), (10, 22))
+EMP_CRANE = (8, 22)
+EMP_SOLID = {(x, 24) for x in EMP_BOLLARDS} | set(EMP_AMPHORAE) | set(EMP_SACKS) | {EMP_CRANE, (7, 22), (8, 21), (8, 23),
+                                                                                    (7, 21), (9, 19)}
+EMP_WALK = [(x, y) for x in range(11) for y in range(19, 25) if (x, y) not in EMP_SOLID]
 
 
 def horrea_galbana(m):
@@ -249,7 +261,7 @@ def testaccio(m):
     """Monte Testaccio as it stood in 126 (about half its later height): a hill of broken Baetican
     oil amphorae (Dressel 20) thrown in terraces, the fresh dumps reddish, the older ones
     whitened with lime against the smell, carts and porters on the ramp."""
-    W, D = 12 * T, 11 * T
+    W, D = 11 * T, 12 * T          # 11 east-west (c 86..96), 12 north-south (r 148..159)
     cx, cy = D / 2, W / 2
 
     def top(X, Y):
@@ -289,14 +301,14 @@ LANDMARKS = {
     "rome.hercules_victor": Landmark((3, 3), (0, 72), ref("hercules_victor"), district=7),
     "rome.ara_maxima": Landmark((2, 2), (0, 16), ref("ara_maxima"), district=7,
                                 slots={"sacrifice": [{"t": [2, 1], "face": "-x"}]}),
-    "rome.emporium": Landmark((20, 25), (-4, 48), ref("emporium"), district=7, walk=EMP_WALK,
+    "rome.emporium": Landmark((11, 25), (-4, 48), ref("emporium"), district=7, walk=EMP_WALK,
                               floor={t: 2.0 for t in EMP_WALK},
-                              slots={"mooring": [{"t": [x, 24], "face": "+y"} for x in (2, 7, 12, 17)],
-                                     "unload": [{"t": [4, 22]}, {"t": [9, 21]}, {"t": [15, 22]}]}),
+                              slots={"mooring": [{"t": [x, 25], "face": "-y"} for x in (0, 3, 6, 9)],
+                                     "unload": [{"t": [4, 22]}, {"t": [9, 21]}, {"t": [6, 21]}]}),
     "rome.horrea_galbana": Landmark((6, 18), (0, 48), ref("horrea_galbana"), district=7,
                                     slots={"door": [{"t": [6, 9], "face": "+x"}]}),
-    "rome.testaccio": Landmark((11, 12), (0, 40), ref("testaccio"), district=7,
-                               slots={"dump": [{"t": [11, 6], "face": "-x"}]}),
+    "rome.testaccio": Landmark((12, 11), (0, 40), ref("testaccio"), district=7,
+                               slots={"dump": [{"t": [6, 11], "face": "-y"}]}),
 }
 
 INFO = {

@@ -253,7 +253,8 @@ class Column:
     paint: bool = True
 
 
-CAP_FRACTION = {"bull": 0.31, "lion": 0.31, "griffin": 0.31, "protome": 0.15, "wood": 0.06, "none": 0.0}
+CAP_FRACTION = {"bull": 0.31, "lion": 0.31, "griffin": 0.31, "hhbull": 0.31, "protome": 0.15,
+                "bull_protome": 0.15, "lion_protome": 0.15, "wood": 0.06, "none": 0.0}
 
 
 def column(m: Model, cx: float, cy: float, z0: float, c: Column):
@@ -305,7 +306,7 @@ def column(m: Model, cx: float, cy: float, z0: float, c: Column):
              "cedar", tone=0.2)
         return
     z = shaft1
-    if c.capital in ("bull", "lion", "griffin"):
+    if c.capital in ("bull", "lion", "griffin", "hhbull"):
         # The palm element: a crown of leaves drooping over the shaft, then an upright calyx.
         ph = 0.075 * H
         za, zb = z, z + ph * 0.45
@@ -402,7 +403,24 @@ def _protomes(m, cx, cy, z0, z1, r, c: Column, mat):
         hx, hy = P(1.02)
         hz = z0 + h * 0.66
         rod(m, (nx_, ny_, z0 + h * 0.5), (hx, hy, hz), r * 0.62, mat, tone=0.1)
-        if c.capital in ("bull", "protome"):
+        if c.capital == "hhbull":
+            # A bearded human head under a tall horned crown, as on the lamassu of the gates.
+            ellipsoid(m, (hx, hy, hz), (r * 0.55, r * 0.55, h * 0.24), mat, tone=0.3)
+            bx_, by_ = P(1.08)
+            fill(m, (bx_ - r * 0.5, bx_ + r * 0.5, by_ - r * 0.5, by_ + r * 0.5, hz - h * 0.3, hz - h * 0.04),
+                 "hair_black" if paint else mat,
+                 lambda X, Y, Z, bx_=bx_, by_=by_: np.hypot(X - bx_, Y - by_) < r * 0.42 - (hz - Z) * 0.25,
+                 tone=lambda X, Y, Z: 0.35 * ((Z * 2.0) % 1.0 < 0.35) - 0.1)
+            crown_r = r * 0.5
+            cylinder(m, hx, hy, crown_r, hz + h * 0.16, hz + h * 0.46, mat, tone=0.15)
+            if paint:
+                fill(m, (hx - crown_r - 0.5, hx + crown_r + 0.5, hy - crown_r - 0.5, hy + crown_r + 0.5,
+                         hz + h * 0.42, hz + h * 0.46), "gold", tone=0.3, only_solid=True)
+            for lat in (-1, 1):
+                bxx, byy = hx + sy * lat * crown_r, hy + sx * lat * crown_r
+                rod(m, (bxx, byy, hz + h * 0.2), (bxx - ox * r * 0.3, byy - oy * r * 0.3, hz + h * 0.36),
+                    max(r * 0.1, 0.3), "gold" if paint else mat, tone=0.2)
+        elif c.capital in ("bull", "protome", "bull_protome"):
             ellipsoid(m, (hx, hy, hz), (r * 0.62 if ox else r * 0.55, r * 0.62 if oy else r * 0.55, h * 0.26), mat,
                       tone=0.3)
             mx, my = P(1.14)
@@ -417,7 +435,7 @@ def _protomes(m, cx, cy, z0, z1, r, c: Column, mat):
                 rod(m, (bxx - ox * r * 0.35, byy - oy * r * 0.35, hz + h * 0.08),
                     (bxx + sy * lat * r * 0.45 - ox * r * 0.45, byy + sx * lat * r * 0.45 - oy * r * 0.45, hz + h * 0.1),
                     max(r * 0.12, 0.3), mat, tone=0.1)
-        elif c.capital == "lion":
+        elif c.capital in ("lion", "lion_protome"):
             ellipsoid(m, (hx - ox * r * 0.25, hy - oy * r * 0.25, hz - h * 0.02), (r * 0.85, r * 0.85, h * 0.32), mat,
                       tone=-0.25)
             ellipsoid(m, (hx, hy, hz), (r * 0.62, r * 0.62, h * 0.26), mat, tone=0.25)

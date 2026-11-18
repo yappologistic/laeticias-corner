@@ -40,7 +40,8 @@ def portus_hexagon(m):
     """Trajan's hexagonal basin at Portus (opened c. 112, about 358 m a side), drawn symbolic in
     plan: the hexagon of water lined with travertine quays and mooring stones, ranges of
     warehouses round it, the canal mouth to the Tiber on the south-east, a small temple and
-    the harbour office. Moored ships are the region's life, drawn over the basin."""
+    the harbour office. Moored ships are the region's life: the basin's open-water tiles are
+    pieces of their own (`water`), drawn before the boats at the mooring spots on them."""
     W, D = 20 * T, 18 * T
     cx, cy = D / 2, W / 2
     R = 7.2 * T
@@ -58,8 +59,8 @@ def portus_hexagon(m):
     for i in range(6):          # mooring stones round the edge
         a = i * math.pi / 3 + math.pi / 6
         for f in np.linspace(-0.4, 0.4, 5):
-            x = cx + math.cos(a) * R * 0.98 - math.sin(a) * f * R
-            y = cy + math.sin(a) * R * 0.98 + math.cos(a) * f * R
+            x = cx + math.cos(a) * (R + 3.0) - math.sin(a) * f * R
+            y = cy + math.sin(a) * (R + 3.0) + math.cos(a) * f * R
             revolve(m, x, y, 1.5, 4.0, lambda t: 1.0, "travertine", tone=0.3)
     # Warehouse ranges round the hexagon.
     for i in range(6):
@@ -176,23 +177,100 @@ def brundisium_harbour(m):
                                                            fluted=False), S)
 
 
+def ostia_theatre(m):
+    """The theatre of Ostia as it stood in 126 (Agrippa's, before the late 2nd-century
+    enlargement): a half-round cavea of brick-faced concrete in two arcaded storeys curving to
+    the south, the seats inside rising from a small marble orchestra, the stage and its
+    columned front on the north with the square of the guilds behind it."""
+    S = S45
+    W = 10 * T
+    R = 4.6 * T
+    cx, cy = 20.0, W / 2
+    el = RM.Ellipse(cx, cy, R, R)
+    arc = (-math.pi / 2, math.pi / 2)
+    thick = S.h(2.6)
+    storeys = [RM.Storey(S.v(7.5), "arcade", "tuscan", (0.6, 0.62), material="brick"),
+               RM.Storey(S.v(6.5), "arcade", "tuscan", (0.58, 0.6), material="brick")]
+    top = RM.ring_facade(m, el, 0.0, storeys, 40, thick, S, arc=arc, seed=851, phase=0.5)
+    orch = RM.Ellipse(cx, cy, R * 0.3, R * 0.3)
+    upper = RM.Ellipse(cx, cy, R - thick - 3.0, R - thick - 3.0)
+    p_ = lambda X, Y: X - cx
+    q_ = lambda X, Y: Y - cy
+    fill(m, (cx - R, cx + R, cy - R, cy + R, 0.0, top - 4.0), "tufa",
+         lambda X, Y, Z: (np.hypot(X - cx, Y - cy) < R - thick - 2.0) & (np.hypot(X - cx, Y - cy) > R * 0.3) &
+         (p_(X, Y) > 0) & (Z < 2.0 + (top - 6.0) * np.clip((np.hypot(X - cx, Y - cy) - R * 0.3) / (R * 0.62), 0, 1)),
+         tone=-0.2)
+    RM.cavea(m, orch, upper, 2.0, top - 4.0, arc=arc, material="marble", upper_mat="travertine", bands=2, aisles=12,
+             seed=852)
+    fill(m, (cx - R * 0.3, cx + R * 0.3, cy - R * 0.3, cy + R * 0.3, 0.0, 1.0), "marble",
+         lambda X, Y, Z: (np.hypot(X - cx, Y - cy) < R * 0.3) & (p_(X, Y) > 0),
+         tone=lambda X, Y, Z: -0.3 * ((np.floor((X + Y) / 4.0) % 2) == 0))
+    L = R * 0.95
+    fill(m, (0.0, cx + 1.0, cy - L, cy + L, 0.0, S.v(1.4)), "travertine",
+         lambda X, Y, Z: (p_(X, Y) <= 0) & (p_(X, Y) > -S.h(4.0)), tone=0.1)
+    fill(m, (0.0, cx + 1.0, cy - L * 1.04, cy + L * 1.04, 0.0, top + 2.0), "brick",
+         lambda X, Y, Z: (p_(X, Y) <= -S.h(4.0)) & (p_(X, Y) > -S.h(5.4)), tone=M.ashlar(1.2, 4.0, 853, spread=0.3))
+    for i in range(-5, 6):
+        RM.column(m, cx - S.h(3.6), cy + i * L / 5.6, S.v(1.4), RM.ROrder("corinthian", D=0.6, H=6.0,
+                  shaft=("cipollino", "giallo")[i % 2], fluted=False), S, seed=i)
+    for d in (-1, 0, 1):        # the three doors in the stage wall
+        fill(m, (cx - S.h(4.0) - 1.0, cx - S.h(4.0) + 0.1, cy + d * L * 0.4 - 3.0, cy + d * L * 0.4 + 3.0,
+                 S.v(1.4), S.v(1.4) + 10.0), "ink", tone=0.0)
+    fill(m, (0.0, cx + 1.0, cy - L * 1.04, cy + L * 1.04, top - 1.0, top + 5.0), "terracotta",
+         lambda X, Y, Z: (p_(X, Y) <= -S.h(2.0)) & (p_(X, Y) > -S.h(5.4)) & (Z < top + 5.0 - (p_(X, Y) + S.h(5.4)) * 0.4),
+         tone=lambda X, Y, Z: 0.3 * ((q_(X, Y) % 2.4) < 0.8) - 0.2)
+
+
+def _basin_tiles(D, W, inside):
+    """Footprint tiles wholly inside a basin (all four corners in `inside(x, y)`): open water
+    with nothing above it, drawn as their own pieces under the boats moored there."""
+    return [(x, y) for x in range(D // T) for y in range(W // T)
+            if all(inside(x * T + a, y * T + b) for a in (0.0, T) for b in (0.0, T))]
+
+
+def _hex_inside(x, y):
+    D, W, R = 18 * T, 20 * T, 7.2 * T
+    u, v = abs(x - D / 2), abs(y - W / 2)
+    return max(u * 0.866 + v * 0.5, v) <= R
+
+
+PORTUS_WATER = _basin_tiles(18 * T, 20 * T, _hex_inside)
+
+
+def _portus_moorings():
+    """One mooring on the water tile in the middle of each side of the hexagon, facing the quay."""
+    out = []
+    for i in range(6):
+        a = i * math.pi / 3 + math.pi / 6
+        ux, uy = math.cos(a), math.sin(a)
+        best = max(PORTUS_WATER, key=lambda t: ((t[0] + 0.5) * T - 9 * T) * ux + ((t[1] + 0.5) * T - 10 * T) * uy
+                   - 0.3 * abs(((t[0] + 0.5) * T - 9 * T) * -uy + ((t[1] + 0.5) * T - 10 * T) * ux))
+        face = ("+x" if ux > 0 else "-x") if abs(ux) >= abs(uy) else ("+y" if uy > 0 else "-y")
+        out.append({"t": list(best), "face": face})
+    return out
+
+
 # Brundisium quay furniture by tile (x 3..4 is the quay, y along it); the rest of the quay walks.
 BR_BOLLARDS = (1, 5, 9, 13)
 BR_AMPHORAE = ((3, 3), (3, 7), (3, 11))
 BR_SOLID = {(4, y) for y in BR_BOLLARDS} | set(BR_AMPHORAE) | {(3, 15)}
 BR_WALK = [(x, y) for x in (3, 4) for y in range(16) if (x, y) not in BR_SOLID]
+BR_WATER = [(x, y) for x in range(5, 12) for y in range(16)]
 
 LANDMARKS = {
-    "rome.portus_hexagon": Landmark((18, 20), (-3, 40), ref("portus_hexagon"), district=9),
+    "rome.portus_hexagon": Landmark((18, 20), (-3, 40), ref("portus_hexagon"), district=9, water=PORTUS_WATER,
+                                    slots={"mooring": _portus_moorings()}),
     "rome.portus_lighthouse": Landmark((3, 3), (-3, 112), ref("portus_lighthouse"), district=9),
     "rome.ostia_guilds": Landmark((6, 12), (0, 40), ref("ostia_guilds"), district=9),
     "rome.ostia_capitolium": Landmark((6, 4), (0, 96), ref("ostia_capitolium"), district=9),
     "rome.latiaris": Landmark((6, 6), (0, 64), ref("latiaris"), district=9,
                               slots={"sacrifice": [{"t": [6, 3], "face": "-x"}]}),
     "rome.brundisium_harbour": Landmark((12, 16), (-3, 64), ref("brundisium_harbour"), district=9,
-                                        walk=BR_WALK, floor={t: 1.5 for t in BR_WALK},
-                                        slots={"mooring": [{"t": [4, 2], "face": "+x"}, {"t": [4, 10], "face": "+x"},
-                                                           {"t": [4, 14], "face": "+x"}]}),
+                                        walk=BR_WALK, floor={t: 1.5 for t in BR_WALK}, water=BR_WATER,
+                                        slots={"mooring": [{"t": [5, 2], "face": "-x"}, {"t": [5, 10], "face": "-x"},
+                                                           {"t": [5, 14], "face": "-x"}]}),
+    "rome.ostia_theatre": Landmark((6, 10), (0, 72), ref("ostia_theatre"), district=9,
+                                   slots={"visit": [{"t": [6, 3], "face": "-x"}, {"t": [6, 6], "face": "-x"}]}),
 }
 
 INFO = {
@@ -202,4 +280,5 @@ INFO = {
     "rome.ostia_capitolium": ("Capitolium of Ostia", 0.45, 110, "BS", "ostia_capitolium"),
     "rome.latiaris": ("Sanctuary of Jupiter Latiaris", 0.45, 70, "BSG", "latiaris"),
     "rome.brundisium_harbour": ("Harbour of Brundisium", 0.45, 70, "BS", "brundisium_harbour"),
+    "rome.ostia_theatre": ("Theatre of Ostia", 0.45, 70, "BS", "ostia_theatre"),
 }

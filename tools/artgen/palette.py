@@ -166,6 +166,17 @@ REGION_COLOURS = {
 }
 # Rome shares every Pārsa and Athens colour (painted stone, dyes, marble, terracotta, skins).
 REGION_COLOURS["rome"] = list(dict.fromkeys([*REGION_COLOURS["parsa"], *REGION_COLOURS["athens"], *_ROME_NEW]))
+# The world between the cities shares every city colour (its kit stands beside theirs) and adds
+# the open sea in depth, turquoise shallows over sand, the pale sand of beaches and deserts, the
+# gold-grey steppe, Anatolian basalt, the blue haze of far ranges and the sepia ink of the map.
+SEA = ["#15213f", "#1b2d55", "#22406f", "#2b5588", "#376c9f", "#4d86b4"]
+SHALLOW = ["#2d7385", "#3a8f9c", "#4fabaf", "#74c6bd", "#a4dccd"]
+SAND = ["#8e7656", "#ae946b", "#c9b083", "#dec99d", "#ede0bc", "#f7efd6"]
+STEPPE = ["#6e6a45", "#8a8455", "#a69e66", "#bfb47c", "#d4c995"]
+HAZE = ["#5d6a86", "#76839c", "#929db1", "#adb6c5", "#c8cfd8"]
+SEPIA = ["#4a3524", "#6e5136", "#94724e"]
+_WORLD_NEW = [*SEA, *SHALLOW, *SAND, *STEPPE, *HAZE, *SEPIA]
+REGION_COLOURS["world"] = list(dict.fromkeys([*REGION_COLOURS["rome"], *_WORLD_NEW]))
 for _cols in REGION_COLOURS.values():
     assert len(set(_cols)) == len(_cols) and not set(_cols) & set(PALETTE)
 
@@ -237,6 +248,13 @@ MATERIALS += [
     _m("tiber", TIBER, texture=0.2),
     # Gilded bronze roof tiles: the gold ramp kept low so a whole roof glows without glaring.
     _m("gilt", [CEDAR[1], GOLD[0], GOLD[1], GOLD[2], GOLD[3], GOLD[4]], bias=-0.2, texture=0.2),
+]
+# The world set (appended after Rome).
+MATERIALS += [
+    _m("sand", SAND, texture=0.4),
+    _m("steppe", [EARTH[1], *STEPPE], bias=-0.3, texture=0.5),
+    _m("sea", SEA, texture=0.15),
+    _m("hide", [INK, EARTH[0], EARTH[1], SAND[0], SAND[1], SAND[2]], texture=0.25),
 ]
 MAT = {m.name: i + 1 for i, m in enumerate(MATERIALS)}
 _ALL = set(PALETTE).union(*REGION_COLOURS.values())

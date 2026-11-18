@@ -245,7 +245,7 @@ def _approach_landmark():
     L = 14 * T
     floor = {(x, y): float(np.clip((L - y * T) / L, 0, 1) * RAMP_RISE) for x, y in walk}
     return Landmark((7, 14), (0, int(RAMP_RISE) + 10), ref("approach"), walk=walk, floor=floor,
-                    slots={"stand": [{"t": [3, 12]}, {"t": [2, 6]}, {"t": [4, 2]}]}, district=1)
+                    slots={"stand": [{"t": [3, 12]}, {"t": [2, 6]}, {"t": [4, 2]}]}, district=1, climb="-y")
 
 
 # ---------------------------------------------------------------- the Old Temple
@@ -452,7 +452,7 @@ LANDMARKS = {
                                     slots={"pray": [{"t": [2, -1], "face": "+y"}]}, district=1),
     "athens.approach": _approach_landmark(),
     "athens.old_temple": Landmark((6, 11), (0, 48), ref("old_temple"),
-                                  slots={"priestess": [{"t": [3, 11], "face": "-y"}]}, district=1),
+                                  slots={"priestess": [{"t": [-1, 9], "face": "+x"}]}, district=1),
     "athens.pandroseion": Landmark((4, 4), (0, 48), ref("pandroseion"),
                                    slots={"tend": [{"t": [4, 2], "face": "-x"}]}, district=1),
     "athens.promachos": Landmark((2, 2), (0, 100), ref("promachos"), district=1),

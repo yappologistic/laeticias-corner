@@ -505,15 +505,16 @@ def g_wall_tower(v, frame, frames, k):
 
 
 def g_wall_gate(v, frame, frames, k):
-    """A small gate in the city wall: a passage under a timber lintel between two short towers,
-    wooden leaves standing open."""
-    m = _m(2, 2, 46, k)
-    for y0, y1 in ((0.0, 10.0), (22.0, 32.0)):
-        city_wall(m, 6.0, 26.0, y0, y1, 0.0, 38.0, seed=830, merlons=True)
-    slab(m, 11.0, 21.0, 10.0, 22.0, 26.0, 38.0, "whitewash", tone=M.mud_plaster(831, 0.4, 26.0, 0.0))
-    slab(m, 10.5, 21.5, 9.5, 22.5, 25.0, 26.5, "wood", tone=M.timber("y", 832))
-    for y in (10.5, 20.5):
-        slab(m, 9.0, 11.0, y, y + 1.0, 0.0, 24.0, "wood", tone=M.timber("x", 833))
+    """A small gate in the city wall, one wall tile wide (the wall runs along y): the curtain
+    raised a little over a passage under a timber lintel, wooden leaves standing open against
+    the jambs. It goes between wall towers or wall tiles; the passage stays clear for 1.5 tile
+    heights, so walkers pass through (the item is walkable)."""
+    m = _m(1, 1, 44, k)
+    city_wall(m, 3.0, 13.0, -0.01, 16.01, 0.0, 36.0, seed=830, merlons=True)
+    carve(m, (2.0, 14.0, 1.4, 14.6, 0.0, 25.0))
+    slab(m, 2.4, 13.6, 1.0, 15.0, 25.0, 26.6, "wood", tone=M.timber("y", 832))
+    for y0 in (1.4, 14.0):
+        slab(m, 3.0, 9.5, y0, y0 + 0.6, 0.0, 24.0, "wood", tone=M.timber("x", 833))
     return m
 
 

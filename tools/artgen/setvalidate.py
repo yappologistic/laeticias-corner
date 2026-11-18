@@ -114,13 +114,23 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
             if not (cover == 1).all():
                 errors.append(f"{iid}: pieces do not partition the footprint")
         walk = {tuple(t) for t in g.get("walk", [])}
+        water = {tuple(t) for t in g.get("water", [])}
         floor = {tuple(map(int, kk.split(","))): v for kk, v in g.get("walk_z", {}).items()}
-        if it.get("landmark"):       # a spot inside a landmark must stand on one of its walk tiles
+        kinds = {s["id"]: s.get("kind") for s in it.get("slots", [])}
+        if it.get("landmark"):       # a spot inside a landmark: walkers on walk tiles, boats on its water
             for sid, spots in g.get("slots", {}).items():
                 for sp in spots:
                     t = tuple(sp["t"])
-                    if 0 <= t[0] < fw and 0 <= t[1] < fh and t not in walk:
-                        errors.append(f"{iid}: slot {sid} spot {list(t)} is inside the footprint on a non-walk tile")
+                    ok = water if kinds.get(sid) == "mooring" else walk
+                    if 0 <= t[0] < fw and 0 <= t[1] < fh and t not in ok:
+                        errors.append(f"{iid}: slot {sid} spot {list(t)} is inside the footprint on a "
+                                      f"{'non-water' if ok is water else 'non-walk'} tile")
+        if walk & water:
+            errors.append(f"{iid}: tiles both walk and water {sorted(walk & water)[:4]}")
+        if it.get("rise"):           # every stair says which way it climbs, in each rendered rotation
+            for v, gv in entry.items():
+                if gv.get("climb") not in ("+x", "-x", "+y", "-y"):
+                    errors.append(f"{iid} {v}: stair without a climb direction")
         info = (lm_info or {}).get(iid)
         if walk and info is not None:
             col = info["column"]

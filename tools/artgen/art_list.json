@@ -10,7 +10,7 @@
     {"rank": "must", "requires": ["version:2"], "keys": [
       "fx/heart/f{0-3}", "fx/petal/f{0-3}", "fx/snowflake/f{0-3}", "fx/moth/f{0-1}",
       "fx/fish_jump/f{0-5}", "fx/star_streak/f0", "fx/apple/f{0-1}", "fx/clear/f{0-5}",
-      "fx/mist/f{0-3}", "fx/zzz/f{0-2}",
+      "fx/mist/f{0-3}", "fx/puddle/f{0-3}", "fx/zzz/f{0-2}",
       "edge/fall_se/f{0-3}", "edge/fall_sw/f{0-3}", "wild/thicket/v{0-5}", "sky/rainbow",
       "ui/tile_grid", "ui/tile_area", "title/logo"]},
     {"rank": "must", "requires": ["version:2", "item:planter"], "keys": ["fx/produce/f{0-3}"]},

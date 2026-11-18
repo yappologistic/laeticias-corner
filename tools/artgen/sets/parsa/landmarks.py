@@ -244,14 +244,16 @@ def apadana(m):
         _hall_wall_face(m, face, w, L, 11)
     zt = crown(m, hx0, hx1, hy0, hy1, APA_HALL, ("+x", "-x", "+y", "-y"), 13, parapet=5.0)
     roof_furniture(m, hx0 + 1, hx1 - 1, hy0 + 1, hy1 - 1, zt - 5.0 - 1.4, 14, hatches=4, rollers=2, fields=(6, 6))
-    # Porticoes: two rows of six columns each; bulls north, griffins west, lions east.
+    # Porticoes: two rows of six columns each. The north portico has the full composite bull
+    # capitals; the west portico (seen) double bulls and the east double lions, both set
+    # directly on the fluted shaft without the palm and volute stage (Iranica, "Apadana").
     hang = ("white_paint", "malachite", "lapis")
     north_cols = [(x, tc(d)) for x in (tc(1), tc(3)) for d in PORTICO_ROWS]
     _portico(m, tc(1) - 7.0, 5 * T, 5 * T, 19 * T, ("-x", "+y", "-y"), north_cols, "bull", "y", 21)
     west_cols = [(tc(d), y) for d in PORTICO_ROWS for y in (tc(20), tc(22))]
-    _portico(m, 5 * T, 19 * T, 19 * T, tc(22) + 7.0, ("+y", "+x", "-x"), west_cols, "griffin", "x", 23)
+    _portico(m, 5 * T, 19 * T, 19 * T, tc(22) + 7.0, ("+y", "+x", "-x"), west_cols, "bull_protome", "x", 23)
     east_cols = [(tc(d), y) for d in PORTICO_ROWS for y in (tc(1), tc(3))]
-    _portico(m, 5 * T, 19 * T, tc(1) - 7.0, 5 * T, ("-y", "+x", "-x"), east_cols, "lion", "x", 25)
+    _portico(m, 5 * T, 19 * T, tc(1) - 7.0, 5 * T, ("-y", "+x", "-x"), east_cols, "lion_protome", "x", 25)
     # South service rooms: a lower closed range with plain doors, beam ends and spouts.
     sx0 = 19 * T + 1.5
     sh = 52.0
@@ -471,7 +473,9 @@ def _stair_landmark(fn, fw, fh, rise, axis, low, flights, district, **kw):
                 walk.append(t)
                 frac = (i + 1) / n if low == "lo" else (n - i) / n
                 floor[t] = rise * frac + 1.2
-    return Landmark((fw, fh), (0, int(rise) + 12), ref(fn, **kw), walk=walk, floor=floor, district=district)
+    up = ("+" if low == "lo" else "-") + axis
+    return Landmark((fw, fh), (0, int(rise) + 12), ref(fn, **kw), walk=walk, floor=floor, district=district,
+                    climb=up)
 
 
 APA_N = (3, 14, 8.0, "x", "lo", [(1, 2), (11, 12)])
@@ -507,7 +511,11 @@ def stair_relief_kit(m):
 
 # ---------------------------------------------------------------- the great stairway
 
-GS_STEP = 1.4
+# Each side climbs 63 steps to its landing and 48 more to the top, on long shallow treads
+# (persepolis.md §3.2): the two flights keep that ratio (21 : 16 drawn steps) and about the
+# same tread, the lower flight being the longer one.
+GS_LOW = 24.0 / 21
+GS_UP = 24.0 / 16
 
 
 def great_stair(m):
@@ -521,10 +529,10 @@ def great_stair(m):
                 (176, 240, 16, 64, 0, L1), (112, 176, 0, 64, 0, L2), (0, 112, 0, 16, 0, L2), (176, 288, 0, 16, 0, L2)):
         slab(m, *box, "ashlar", tone=big)
     # Flights.
-    steps(m, 48, 128, 64, 112, 0, L1, "-x", step=GS_STEP)
-    steps(m, 160, 240, 64, 112, 0, L1, "+x", step=GS_STEP)
-    steps(m, 48, 112, 16, 64, L1, L2, "+x", step=GS_STEP)
-    steps(m, 176, 240, 16, 64, L1, L2, "-x", step=GS_STEP)
+    steps(m, 48, 128, 64, 112, 0, L1, "-x", step=GS_LOW)
+    steps(m, 160, 240, 64, 112, 0, L1, "+x", step=GS_LOW)
+    steps(m, 48, 112, 16, 64, L1, L2, "+x", step=GS_UP)
+    steps(m, 176, 240, 16, 64, L1, L2, "-x", step=GS_UP)
     # Paving of the landings.
     for x0, x1, y0, y1, z in ((0, 48, 16, 112, L1), (240, 288, 16, 112, L1), (112, 176, 0, 64, L2)):
         slab(m, x0, x1, y0, y1, z - 0.6, z, "limestone", tone=M.paving(10.0, 8.0, 43))
@@ -532,17 +540,17 @@ def great_stair(m):
     # landings, along the inner edge of the upper flights and the top landing.
     P = 2.6
 
-    def parapet_run(x0, x1, y0, y1, z0, z1, up):
-        stair(m, x0, x1, y0, y1, z0 + P, z1 + P, up, step=GS_STEP, material="limestone")
+    def parapet_run(x0, x1, y0, y1, z0, z1, up, step):
+        stair(m, x0, x1, y0, y1, z0 + P, z1 + P, up, step=step, material="limestone")
         M.stain(m, (x0, x1, y0, y1, z0, z1 + P + 2), lambda X, Y, Z: True, 0.2)
-    parapet_run(48, 128, 108, 112, 0, L1, "-x")
-    parapet_run(160, 240, 108, 112, 0, L1, "+x")
+    parapet_run(48, 128, 108, 112, 0, L1, "-x", GS_LOW)
+    parapet_run(160, 240, 108, 112, 0, L1, "+x", GS_LOW)
     for x0, x1 in ((0, 48), (240, 288)):
         slab(m, x0, x1, 108, 112, 0, L1 + P + 0.6, "limestone", tone=M.ashlar(3.0, 12.0, 45, spread=0.4))
     slab(m, 0, 4, 16, 112, 0, L1 + P + 0.6, "limestone", tone=M.ashlar(3.0, 12.0, 46, spread=0.4))
     slab(m, 284, 288, 16, 112, 0, L1 + P + 0.6, "limestone", tone=M.ashlar(3.0, 12.0, 47, spread=0.4))
-    parapet_run(48, 112, 60, 64, L1, L2, "+x")
-    parapet_run(176, 240, 60, 64, L1, L2, "-x")
+    parapet_run(48, 112, 60, 64, L1, L2, "+x", GS_UP)
+    parapet_run(176, 240, 60, 64, L1, L2, "-x", GS_UP)
     slab(m, 112, 176, 60, 64, 0, L2 + P + 0.6, "limestone", tone=M.ashlar(3.0, 12.0, 48, spread=0.4))
     # A worn, warm coping along every parapet top.
     for box in ((0, 48, 108, 112), (240, 288, 108, 112), (0, 4, 16, 112), (284, 288, 16, 112), (112, 176, 60, 64)):
@@ -560,11 +568,11 @@ def _great_stair_landmark():
     for d in range(3, 8):                               # lower flight north, rising to -x
         for y in (4, 5):
             walk.append((d, y))
-            floor[(d, y)] = L1 * (128 - 16 * d) / 80 + GS_STEP
+            floor[(d, y)] = L1 * (128 - 16 * d) / 80 + GS_LOW
     for d in range(10, 15):                             # lower flight south
         for y in (4, 5):
             walk.append((d, y))
-            floor[(d, y)] = L1 * (16 * (d + 1) - 160) / 80 + GS_STEP
+            floor[(d, y)] = L1 * (16 * (d + 1) - 160) / 80 + GS_LOW
     for x in (1, 2, 15, 16):                            # landings
         for y in range(1, 6):
             walk.append((x, y))
@@ -572,11 +580,11 @@ def _great_stair_landmark():
     for d in range(3, 7):                               # upper flight north, rising to +x
         for y in (1, 2):
             walk.append((d, y))
-            floor[(d, y)] = L1 + (L2 - L1) * (16 * (d + 1) - 48) / 64 + GS_STEP
+            floor[(d, y)] = L1 + (L2 - L1) * (16 * (d + 1) - 48) / 64 + GS_UP
     for d in range(11, 15):                             # upper flight south, rising to -x
         for y in (1, 2):
             walk.append((d, y))
-            floor[(d, y)] = L1 + (L2 - L1) * (240 - 16 * d) / 64 + GS_STEP
+            floor[(d, y)] = L1 + (L2 - L1) * (240 - 16 * d) / 64 + GS_UP
     for x in range(7, 11):                              # the top landing
         for y in (0, 1, 2):
             walk.append((x, y))
@@ -584,7 +592,7 @@ def _great_stair_landmark():
     return Landmark((18, 7), (0, 60), ref("great_stair"), walk=walk, floor=floor,
                     slots={"guard": [{"t": [7, 0], "face": "+y"}, {"t": [10, 0], "face": "+y"}],
                            "storyteller": [{"t": [8, 7], "face": "+y"}]},
-                    district=0)
+                    district=0, climb="-y")
 
 
 # ---------------------------------------------------------------- the Gate of All Lands
@@ -872,11 +880,13 @@ def hall_100(m):
     for yy in (181.0, 187.0, 193.0):
         rod(m, (238, yy, 1.0), (254, yy, 1.0), 1.0, "wood_light")
     # The north portico: two rows of eight columns, some still rising, colossal bulls roughed out.
+    # Its finished capitals are human-headed bulls (fact-check §1.2).
+    col_portico = Column(S.h(0.7), H100_COL, base="square", capital="hhbull", beam="y")
     for x in (tc(1), tc(3)):
         for d in range(1, 16, 2):
             h = float(np.sin(x * 3.1 + d * 7.7) * 9131.7 % 1.0)
             if h < 0.5:
-                column(m, x, tc(d), 0.0, col_full)
+                column(m, x, tc(d), 0.0, col_portico)
             else:
                 hh = H100_COL * (0.35 + 0.4 * h)
                 column(m, x, tc(d), 0.0, Column(S.h(0.7), hh, base="square", capital="none"))

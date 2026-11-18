@@ -6,6 +6,8 @@ from sets.rome import campus, fora, forum, ostia, outer, palatine, river, velia
 DISTRICTS = (campus, fora, forum, ostia, outer, palatine, river, velia)
 LANDMARKS = {k: v for d in DISTRICTS for k, v in d.LANDMARKS.items()}
 INFO = {k: v for d in DISTRICTS for k, v in d.INFO.items()}
+# Landmarks drawn standing in water (the island, the bridges); every other one stands on land.
+ON = {k: v for d in DISTRICTS for k, v in getattr(d, "ON", {}).items()}
 
 
 def emitter_fx(name):

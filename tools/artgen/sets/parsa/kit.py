@@ -593,13 +593,16 @@ def fort_wall(v, frame, frames, k):
 
 
 def p_wall_gate(v, frame, frames, k):
-    """A wall piece with a wooden gate under a timber lintel; the wall runs along y."""
-    m = Model.empty(-1, 17, -1, 17, 0, 30, k=k)
-    mudbrick_wall(m, 5.8, 10.2, -0.5, 16.5, 0, 24.0, plinth=1.6, seed=450)
-    carve(m, (5.0, 11.0, 3.0, 13.0, 0.5, 15.0))
-    rod(m, (5.5, 2.5, 15.5), (5.5, 13.5, 15.5), 0.9, "cedar")
-    fill(m, (7.4, 8.6, 3.0, 13.0, 0.5, 15.0), "cedar", tone=lambda X, Y, Z: -0.5 * ((Y % 2.5) < 0.4) + 0.1)
-    merlons(m, 5.8, 10.2, -0.5, 16.5, 24.0, 3.5, "mudbrick", pitch=4.0, sides=("+x", "-x"), thick=1.2)
+    """A gate in the wall (the wall runs along y): a passage under a cedar lintel, the wooden
+    leaves standing open against the jambs, the wall raised a little over the gate. The
+    passage stays clear for 1.5 tile heights so walkers pass through (the item is walkable)."""
+    m = Model.empty(-1, 17, -1, 17, 0, 36, k=k)
+    mudbrick_wall(m, 5.8, 10.2, -0.5, 16.5, 0, 30.0, plinth=1.6, seed=450)
+    carve(m, (5.0, 11.0, 1.2, 14.8, 0.5, 24.6))
+    slab(m, 5.0, 11.0, 0.6, 15.4, 24.6, 26.0, "cedar", tone=M.timber("y", 451))
+    for y0 in (1.2, 14.2):
+        fill(m, (5.4, 10.6, y0, y0 + 0.6, 0.5, 23.5), "cedar", tone=lambda X, Y, Z: -0.5 * ((X % 2.0) < 0.35) + 0.1)
+    merlons(m, 5.8, 10.2, -0.5, 16.5, 30.0, 3.5, "mudbrick", pitch=4.0, sides=("+x", "-x"), thick=1.2)
     return m
 
 
@@ -620,9 +623,11 @@ def fort_tower(v, frame, frames, k):
 
 
 def stair_relief(v, frame, frames, k):
+    """A short stone flight two tiles wide rising one level over one tile. Like every kit
+    stair it climbs away from its front: toward -y at r0 (the geometry's `climb`)."""
     m = Model.empty(-1, 33, -1, 17, 0, 16, k=k)
     from sets.parsa.landmarks import relief_stair
-    relief_stair(m, 2, 1, 8.0, "x", "lo", [(0, 0)], seed=13)
+    relief_stair(m, 2, 1, 8.0, "y", "hi", [(0, 1)], seed=13)
     return m
 
 

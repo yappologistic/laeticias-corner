@@ -38,7 +38,10 @@ FACINGS = ("front", "back")
 class Landmark:
     """A big item: its builder, footprint (tiles along x, y), height range in design units and
     the geometry it declares. Walk tiles must stay clear below the headroom except, on stairs,
-    for the floor itself (`floor`: walk tile -> floor height in design units)."""
+    for the floor itself (`floor`: walk tile -> floor height in design units). `water`: open
+    water inside the footprint (a harbour basin), cut into pieces of its own and drawn before
+    the boats on it. `climb`: for a stair, the direction one walks to go up ('+x', '-x',
+    '+y', '-y')."""
     footprint: tuple
     z: tuple
     build: tuple                        # (module, function, kwargs as a sorted tuple)
@@ -47,14 +50,19 @@ class Landmark:
     slots: dict = field(default_factory=dict)     # slot id -> [spot dicts, 't' in tiles]
     emitters: dict = field(default_factory=dict)  # name -> (x, y, z) design units
     district: int = 0                   # packing group: neighbours share a page
+    water: list = field(default_factory=list)
+    climb: str = ""
 
 
 @dataclass
 class Item:
-    """A kit item: `build(variant, frame, frames, k) -> Model` in canonical orientation."""
+    """A kit item: `build(variant, frame, frames, k) -> Model` in canonical orientation.
+    `walk`: footprint tiles at r0 that walkers may enter (a fold's pen, a gate's passage).
+    `slots` may be a function of the look (`m<mask>` of a connect piece) giving its spots."""
     build: object
     slots: dict = field(default_factory=dict)
     emitters: dict = field(default_factory=dict)  # name -> (x, y, z) design units at r0
+    walk: list = field(default_factory=list)
 
 
 # ---------- catalog -> keys ----------
@@ -132,38 +140,44 @@ def required_keys(cat: dict, mod, pieces: dict) -> list[str]:
     for e in art.get("edges", ()):
         keys += [f"edge/{e}_{side}/v{n}" for side in ("se", "sw") for n in range(4)]
         keys += [f"edge/{e}_{side}/top" for side in ("se", "sw")]
+    looks = getattr(mod, "BACKDROP_LOOKS", {})
     for b in art.get("backdrops", ()):
-        keys += [f"backdrop/{b}/{t}/v{n}" for t in ("day", "night") for n in range(4)]
+        times, count = looks.get(b, (("day", "night"), 4))
+        keys += [f"backdrop/{b}/{t}/v{n}" for t in times for n in range(count)]
     for fxid in art.get("fx", ()):
         keys += [f"fx/{fxid}/f{f}" for f in range(mod.FRAMES.get(fxid, 6))]
     for g in cat.get("goods", []):        # living-world.md §3.2: the carried unit and 1..stack at a slot
         keys += [g["sprite"]] + [f"{g['sprite']}/s{n}" for n in range(1, g.get("stack", 3) + 1)]
+    if hasattr(mod, "extra_keys"):      # keys a set's art implies beyond the shared scheme
+        keys += mod.extra_keys(cat)
     seen = set()
     return [k for k in keys if not (k in seen or seen.add(k))]
 
 
 # ---------- pieces (world-tech.md §1.3) ----------
 
-def make_pieces(fw: int, fh: int, walk: set) -> list[list[int]]:
-    """Walk tiles in straight runs of up to 8 (the longer axis first); the other tiles in
-    rectangles of at most 8 x 8, largest first, then row-major. Returns [dx, dy, w, h]."""
+def make_pieces(fw: int, fh: int, walk: set, water: set = frozenset()) -> list[list[int]]:
+    """Walk tiles in straight runs of up to 8 (the longer axis first), then open-water tiles
+    the same way; the other tiles in rectangles of at most 8 x 8, largest first, then
+    row-major. Returns [dx, dy, w, h]."""
     owner = np.full((fw, fh), -1, np.int64)
     pieces = []
-    for x in range(fw):
-        for y in range(fh):
-            if (x, y) not in walk or owner[x, y] >= 0:
-                continue
-            nx = 1
-            while nx < MAX_PIECE and x + nx < fw and (x + nx, y) in walk and owner[x + nx, y] < 0:
-                nx += 1
-            ny = 1
-            while ny < MAX_PIECE and y + ny < fh and (x, y + ny) in walk and owner[x, y + ny] < 0:
-                ny += 1
-            w, h = (nx, 1) if nx >= ny else (1, ny)
-            owner[x:x + w, y:y + h] = len(pieces)
-            pieces.append([x, y, w, h])
-    solid = np.array([[(x, y) not in walk for y in range(fh)] for x in range(fw)])
-    if fw <= MAX_PIECE and fh <= MAX_PIECE and not walk:
+    for open_ in (walk, water):
+        for x in range(fw):
+            for y in range(fh):
+                if (x, y) not in open_ or owner[x, y] >= 0:
+                    continue
+                nx = 1
+                while nx < MAX_PIECE and x + nx < fw and (x + nx, y) in open_ and owner[x + nx, y] < 0:
+                    nx += 1
+                ny = 1
+                while ny < MAX_PIECE and y + ny < fh and (x, y + ny) in open_ and owner[x, y + ny] < 0:
+                    ny += 1
+                w, h = (nx, 1) if nx >= ny else (1, ny)
+                owner[x:x + w, y:y + h] = len(pieces)
+                pieces.append([x, y, w, h])
+    solid = np.array([[(x, y) not in walk and (x, y) not in water for y in range(fh)] for x in range(fw)])
+    if fw <= MAX_PIECE and fh <= MAX_PIECE and not walk and not water:
         return [[0, 0, fw, fh]]
     while True:
         free = solid & (owner < 0)
@@ -258,8 +272,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
     pieces = {}
     for i, lm in landmarks.items():
         fw, fh = lm.footprint
-        if fw > MAX_PIECE or fh > MAX_PIECE or lm.walk:
-            pieces[i] = make_pieces(fw, fh, set(map(tuple, lm.walk)))
+        if fw > MAX_PIECE or fh > MAX_PIECE or lm.walk or lm.water:
+            pieces[i] = make_pieces(fw, fh, set(map(tuple, lm.walk)), set(map(tuple, lm.water)))
     keys = required_keys(cat, mod, pieces)
     if only:
         keys = [k_ for k_ in keys if any(o in k_ for o in only)]
@@ -394,11 +408,18 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                 g["pieces"] = pieces[iid]
             if lm.walk:
                 g["walk"] = [list(t) for t in lm.walk]
+            if lm.water:
+                g["water"] = [list(t) for t in lm.water]
             if lm.floor:
                 g["walk_z"] = {f"{x},{y}": int(round(z * k)) for (x, y), z in sorted(lm.floor.items())}
-                if iid in pieces:   # walk pieces that are stair floors: drawn before actors on them
-                    g["floor_pieces"] = [i for i, (x, y, w, h) in enumerate(pieces[iid])
-                                         if all((xx, yy) in lm.floor for xx in range(x, x + w) for yy in range(y, y + h))]
+            if (lm.floor or lm.water) and iid in pieces:
+                # Pieces that are floors (stair treads, decks) or open water: drawn before the
+                # actors standing or floating on them.
+                under = set(lm.floor) | set(map(tuple, lm.water))
+                g["floor_pieces"] = [i for i, (x, y, w, h) in enumerate(pieces[iid])
+                                     if all((xx, yy) in under for xx in range(x, x + w) for yy in range(y, y + h))]
+            if lm.climb:
+                g["climb"] = lm.climb
             if lm.slots:
                 g["slots"] = lm.slots
             if lm.emitters:
@@ -414,11 +435,17 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                 g = {"h": info["h"]}
                 n = int(v[1:]) if v.startswith("r") and it["layout"] == "rotate" else 0
                 if item and item.slots:
+                    # A connect piece may place its spots by its look (a jetty along x or y).
+                    slots = item.slots(v) if callable(item.slots) else item.slots
                     g["slots"] = {sid: [dict(s, t=_rot_tile(s["t"], n, fw, fh),
                                              **({"face": _rot_face(s["face"], n)} if "face" in s else {}))
-                                        for s in spots] for sid, spots in item.slots.items()}
+                                        for s in spots] for sid, spots in slots.items()}
                 if item and item.emitters:
                     g["emitters"] = {name: _emitter(pt, n, fw, fh, k) for name, pt in item.emitters.items()}
+                if item and item.walk:
+                    g["walk"] = sorted(_rot_tile(t, n, fw, fh) for t in item.walk)
+                if it.get("rise"):      # kit stairs climb away from their front: r0 toward -y
+                    g["climb"] = _rot_face("-y", n)
                 entry[v] = g
         if entry:
             out["items"][iid] = entry
@@ -549,7 +576,7 @@ def main(build: spec.Build, args) -> int:
     pages = pack_pages(sprites, groups)
     # Shadows and glows on their own page when that costs no extra page.
     alone = pack_pages(sprites, groups, fresh={len(groups) - 1})
-    if len(alone) <= max(len(pages), 2):
+    if len(alone) <= max(len(pages), getattr(mod, "ALONE_PAGES", 2)):
         pages = alone
     for old in out_dir.glob(f"{set_id}.*.png"):
         old.unlink()

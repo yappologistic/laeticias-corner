@@ -25,8 +25,8 @@ def _cat():
 def _pieces(iid):
     lm = setbuild.load_set("rome").LANDMARKS[iid]
     fw, fh = lm.footprint
-    if fw > setbuild.MAX_PIECE or fh > setbuild.MAX_PIECE or lm.walk:
-        return setbuild.make_pieces(fw, fh, set(map(tuple, lm.walk)))
+    if fw > setbuild.MAX_PIECE or fh > setbuild.MAX_PIECE or lm.walk or lm.water:
+        return setbuild.make_pieces(fw, fh, set(map(tuple, lm.walk)), set(map(tuple, lm.water)))
     return None
 
 
