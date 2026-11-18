@@ -32,6 +32,10 @@ public:
     bool build(SDL_Renderer* renderer, float scale);
 
     [[nodiscard]] float measure(Face face, std::string_view text) const;
+    // The characters every text face draws (after load(), before or without build()): what
+    // build() bakes, so a test can check every string the game shows.
+    [[nodiscard]] bool covers(char32_t cp) const;
+    [[nodiscard]] bool coversAll(std::string_view utf8) const;
     // Whether every text face can draw this character (after build()).
     [[nodiscard]] bool has(char32_t cp) const;
     // Whether every text face can draw all of this UTF-8 text (after build()).
@@ -49,6 +53,10 @@ public:
 private:
     struct FaceData {
         std::vector<unsigned char> ttf;
+        // Fallbacks for what the main face lacks (Greek, Latin extended, Old Persian), in order.
+        std::vector<std::vector<unsigned char>> fallbacks;
+        // Codepoints to bake, per file (the main face, then each fallback).
+        std::vector<std::vector<int>> plan;
         std::vector<Glyph> glyphs; // sorted by codepoint
         float ascent = 0;
         float descent = 0; // negative: below the baseline
@@ -58,6 +66,7 @@ private:
     static std::size_t idx(Face f) { return static_cast<std::size_t>(f); }
     [[nodiscard]] const Glyph* find(Face face, char32_t cp) const;
     [[nodiscard]] float kerning(Face face, char32_t a, char32_t b) const;
+    void planFaces();
 
     std::array<FaceData, static_cast<std::size_t>(Face::Count)> faces_;
     TexturePtr texture_;

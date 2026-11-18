@@ -6,14 +6,18 @@
 #include "render/atlas.hpp"
 #include "render/sprites.hpp"
 #include "test_support.hpp"
+#include "ui/font.hpp"
 
 #include <SDL3/SDL.h>
 
 #include <doctest.h>
+#include <nlohmann/json.hpp>
 
 #include <charconv>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
+#include <functional>
 
 using namespace lc;
 
@@ -111,4 +115,52 @@ TEST_CASE("coverage: catalog vs audio") {
         }
     }
     reportMissing("audio", missing);
+}
+
+TEST_CASE("coverage: the interface's fonts draw every string the world shows") {
+    // No card, caption, map label or journal line may show a missing glyph. A `native` form in a
+    // script that needs shaping or right-to-left layout (Arabic script) is left out by the game,
+    // which shows the transliteration instead; everything else must be covered.
+    const std::filesystem::path assets = LC_TEST_ASSETS_DIR;
+    Font font;
+    REQUIRE(font.load(assets / "fonts"));
+    const auto arabic = [](std::string_view s) {
+        for (std::size_t i = 0; i < s.size();) {
+            const char32_t c = nextCodepoint(s, i);
+            if (c == ' ' || c == 0x200C || c == 0x200D) continue;
+            if (!((c >= 0x600 && c <= 0x6FF) || (c >= 0x750 && c <= 0x77F) ||
+                  (c >= 0xFB50 && c <= 0xFDFF) || (c >= 0xFE70 && c <= 0xFEFF)))
+                return false;
+        }
+        return true;
+    };
+    std::vector<std::string> missing;
+    std::function<void(const nlohmann::json&, const std::string&, const std::string&)> scan =
+        [&](const nlohmann::json& j, const std::string& key, const std::string& where) {
+            if (j.is_string()) {
+                const auto& s = j.get_ref<const std::string&>();
+                if (font.coversAll(s)) return;
+                if (key == "native" && arabic(s)) return;
+                missing.push_back(where + " " + key + ": " + s);
+            } else if (j.is_object()) {
+                for (const auto& [k, v] : j.items()) scan(v, k, where);
+            } else if (j.is_array()) {
+                for (const auto& v : j) scan(v, key, where);
+            }
+        };
+    std::vector<std::filesystem::path> files{assets / "catalog.json"};
+    for (const auto& e : std::filesystem::directory_iterator(assets / "regions"))
+        if (e.path().extension() == ".json") files.push_back(e.path());
+    for (const auto& e : std::filesystem::directory_iterator(assets / "sets"))
+        if (std::filesystem::exists(e.path() / "catalog.json"))
+            files.push_back(e.path() / "catalog.json");
+    for (const auto& f : files) {
+        std::ifstream in(f);
+        const nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+        REQUIRE_FALSE(j.is_discarded());
+        scan(j, "", f.filename().string());
+    }
+    for (const std::string& m : missing) MESSAGE("not drawable: " << m);
+    CHECK(missing.empty());
+    CHECK(files.size() > 40);
 }
