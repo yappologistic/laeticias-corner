@@ -1423,7 +1423,7 @@ void App::step(float dt) {
         playNote();
     }
     // Never saved with a piece in hand (it is out of the world until it is put down).
-    if (autosave_.due(dt, drag_ == Drag::Tool || carry_)) (void)save();
+    if (autosave_.due(dt, drag_ == Drag::Tool, carry_.has_value())) (void)save();
     (void)pollSaves();
 }
 
