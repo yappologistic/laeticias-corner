@@ -324,6 +324,2225 @@
       "gain": 1.0,
       "when": "event",
       "for": "Arriving home: the corner's motif on the music box."
+    },
+    {
+      "file": "amb/world/wind_open_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breath, open country: grass and leaves rustling in the gusts.",
+      "where": "wind strength 1/4 where open dominates the view",
+      "family": "wind.open",
+      "level": 1,
+      "level_name": "breath",
+      "tags": [
+        "weather",
+        "wind",
+        "open"
+      ]
+    },
+    {
+      "file": "amb/world/wind_open_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breeze, open country: grass and leaves rustling in the gusts.",
+      "where": "wind strength 2/4 where open dominates the view",
+      "family": "wind.open",
+      "level": 2,
+      "level_name": "breeze",
+      "tags": [
+        "weather",
+        "wind",
+        "open"
+      ]
+    },
+    {
+      "file": "amb/world/wind_open_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, strong, open country: grass and leaves rustling in the gusts.",
+      "where": "wind strength 3/4 where open dominates the view",
+      "family": "wind.open",
+      "level": 3,
+      "level_name": "strong",
+      "tags": [
+        "weather",
+        "wind",
+        "open"
+      ]
+    },
+    {
+      "file": "amb/world/wind_open_4.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, gale, open country: grass and leaves rustling in the gusts.",
+      "where": "wind strength 4/4 where open dominates the view",
+      "family": "wind.open",
+      "level": 4,
+      "level_name": "gale",
+      "tags": [
+        "weather",
+        "wind",
+        "open"
+      ]
+    },
+    {
+      "file": "amb/world/wind_street_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breath, city streets: whistling through colonnades, awnings flapping.",
+      "where": "wind strength 1/4 where street dominates the view",
+      "family": "wind.street",
+      "level": 1,
+      "level_name": "breath",
+      "tags": [
+        "weather",
+        "wind",
+        "street"
+      ]
+    },
+    {
+      "file": "amb/world/wind_street_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breeze, city streets: whistling through colonnades, awnings flapping.",
+      "where": "wind strength 2/4 where street dominates the view",
+      "family": "wind.street",
+      "level": 2,
+      "level_name": "breeze",
+      "tags": [
+        "weather",
+        "wind",
+        "street"
+      ]
+    },
+    {
+      "file": "amb/world/wind_street_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, strong, city streets: whistling through colonnades, awnings flapping.",
+      "where": "wind strength 3/4 where street dominates the view",
+      "family": "wind.street",
+      "level": 3,
+      "level_name": "strong",
+      "tags": [
+        "weather",
+        "wind",
+        "street"
+      ]
+    },
+    {
+      "file": "amb/world/wind_street_4.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, gale, city streets: whistling through colonnades, awnings flapping.",
+      "where": "wind strength 4/4 where street dominates the view",
+      "family": "wind.street",
+      "level": 4,
+      "level_name": "gale",
+      "tags": [
+        "weather",
+        "wind",
+        "street"
+      ]
+    },
+    {
+      "file": "amb/world/wind_sea_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breath, over open water: smooth, with spray in strong wind.",
+      "where": "wind strength 1/4 where sea dominates the view",
+      "family": "wind.sea",
+      "level": 1,
+      "level_name": "breath",
+      "tags": [
+        "weather",
+        "wind",
+        "sea"
+      ]
+    },
+    {
+      "file": "amb/world/wind_sea_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breeze, over open water: smooth, with spray in strong wind.",
+      "where": "wind strength 2/4 where sea dominates the view",
+      "family": "wind.sea",
+      "level": 2,
+      "level_name": "breeze",
+      "tags": [
+        "weather",
+        "wind",
+        "sea"
+      ]
+    },
+    {
+      "file": "amb/world/wind_sea_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, strong, over open water: smooth, with spray in strong wind.",
+      "where": "wind strength 3/4 where sea dominates the view",
+      "family": "wind.sea",
+      "level": 3,
+      "level_name": "strong",
+      "tags": [
+        "weather",
+        "wind",
+        "sea"
+      ]
+    },
+    {
+      "file": "amb/world/wind_sea_4.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, gale, over open water: smooth, with spray in strong wind.",
+      "where": "wind strength 4/4 where sea dominates the view",
+      "family": "wind.sea",
+      "level": 4,
+      "level_name": "gale",
+      "tags": [
+        "weather",
+        "wind",
+        "sea"
+      ]
+    },
+    {
+      "file": "amb/world/wind_mountain_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breath, high mountains: whistling over rock, roaring down the crags.",
+      "where": "wind strength 1/4 where mountain dominates the view",
+      "family": "wind.mountain",
+      "level": 1,
+      "level_name": "breath",
+      "tags": [
+        "weather",
+        "wind",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/wind_mountain_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, breeze, high mountains: whistling over rock, roaring down the crags.",
+      "where": "wind strength 2/4 where mountain dominates the view",
+      "family": "wind.mountain",
+      "level": 2,
+      "level_name": "breeze",
+      "tags": [
+        "weather",
+        "wind",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/wind_mountain_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, strong, high mountains: whistling over rock, roaring down the crags.",
+      "where": "wind strength 3/4 where mountain dominates the view",
+      "family": "wind.mountain",
+      "level": 3,
+      "level_name": "strong",
+      "tags": [
+        "weather",
+        "wind",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/wind_mountain_4.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind, gale, high mountains: whistling over rock, roaring down the crags.",
+      "where": "wind strength 4/4 where mountain dominates the view",
+      "family": "wind.mountain",
+      "level": 4,
+      "level_name": "gale",
+      "tags": [
+        "weather",
+        "wind",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/rain_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain, light: drops on open ground and in the air, no particular surface.",
+      "where": "under a rain cell of intensity 1/3; snow replaces it in winter",
+      "family": "rain",
+      "level": 1,
+      "level_name": "light",
+      "tags": [
+        "weather",
+        "rain"
+      ]
+    },
+    {
+      "file": "amb/world/rain_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain, moderate: drops on open ground and in the air, no particular surface.",
+      "where": "under a rain cell of intensity 2/3; snow replaces it in winter",
+      "family": "rain",
+      "level": 2,
+      "level_name": "moderate",
+      "tags": [
+        "weather",
+        "rain"
+      ]
+    },
+    {
+      "file": "amb/world/rain_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain, heavy: drops on open ground and in the air, no particular surface.",
+      "where": "under a rain cell of intensity 3/3; snow replaces it in winter",
+      "family": "rain",
+      "level": 3,
+      "level_name": "heavy",
+      "tags": [
+        "weather",
+        "rain"
+      ]
+    },
+    {
+      "file": "amb/world/rain_leaves_1.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on leaves, sparse (light rain).",
+      "where": "added over the rain bed by the share of leaves on screen",
+      "family": "rain.leaves",
+      "level": 1,
+      "level_name": "sparse",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "leaves"
+      ]
+    },
+    {
+      "file": "amb/world/rain_leaves_2.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on leaves, dense (moderate and heavy rain).",
+      "where": "added over the rain bed by the share of leaves on screen",
+      "family": "rain.leaves",
+      "level": 2,
+      "level_name": "dense",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "leaves"
+      ]
+    },
+    {
+      "file": "amb/world/rain_roof_1.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on roof, sparse (light rain).",
+      "where": "added over the rain bed by the share of roof on screen",
+      "family": "rain.roof",
+      "level": 1,
+      "level_name": "sparse",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "roof"
+      ]
+    },
+    {
+      "file": "amb/world/rain_roof_2.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on roof, dense (moderate and heavy rain).",
+      "where": "added over the rain bed by the share of roof on screen",
+      "family": "rain.roof",
+      "level": 2,
+      "level_name": "dense",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "roof"
+      ]
+    },
+    {
+      "file": "amb/world/rain_stone_1.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on stone, sparse (light rain).",
+      "where": "added over the rain bed by the share of stone on screen",
+      "family": "rain.stone",
+      "level": 1,
+      "level_name": "sparse",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "stone"
+      ]
+    },
+    {
+      "file": "amb/world/rain_stone_2.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on stone, dense (moderate and heavy rain).",
+      "where": "added over the rain bed by the share of stone on screen",
+      "family": "rain.stone",
+      "level": 2,
+      "level_name": "dense",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "stone"
+      ]
+    },
+    {
+      "file": "amb/world/rain_water_1.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on water, sparse (light rain).",
+      "where": "added over the rain bed by the share of water on screen",
+      "family": "rain.water",
+      "level": 1,
+      "level_name": "sparse",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "water"
+      ]
+    },
+    {
+      "file": "amb/world/rain_water_2.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on water, dense (moderate and heavy rain).",
+      "where": "added over the rain bed by the share of water on screen",
+      "family": "rain.water",
+      "level": 2,
+      "level_name": "dense",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "water"
+      ]
+    },
+    {
+      "file": "amb/world/rain_canvas_1.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on canvas, sparse (light rain).",
+      "where": "added over the rain bed by the share of canvas on screen",
+      "family": "rain.canvas",
+      "level": 1,
+      "level_name": "sparse",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "canvas"
+      ]
+    },
+    {
+      "file": "amb/world/rain_canvas_2.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "Rain on canvas, dense (moderate and heavy rain).",
+      "where": "added over the rain bed by the share of canvas on screen",
+      "family": "rain.canvas",
+      "level": 2,
+      "level_name": "dense",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "canvas"
+      ]
+    },
+    {
+      "file": "amb/world/rain_dust.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "rain",
+      "for": "The first heavy drops on dry dust, sparse.",
+      "where": "the first minute of rain on dry ground, then fade to the surface layers",
+      "tags": [
+        "weather",
+        "rain",
+        "surface",
+        "dust",
+        "onset"
+      ]
+    },
+    {
+      "file": "amb/world/after_rain.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Dripping from eaves and leaves, a gutter emptying.",
+      "where": "for a minute or two after rain stops, fading as the ground dries",
+      "tags": [
+        "weather",
+        "after_rain"
+      ]
+    },
+    {
+      "file": "amb/world/snow.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Snow falling: near silence, a bough shedding, a far crow.",
+      "where": "under a snow cell; duck other beds 3 dB (snow muffles)",
+      "family": "snow",
+      "level": 1,
+      "level_name": "snowfall",
+      "tags": [
+        "weather",
+        "snow"
+      ]
+    },
+    {
+      "file": "amb/world/snow_walk.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 1.0,
+      "when": "moving",
+      "for": "Footfalls of two walkers in fresh snow.",
+      "where": "positional: walkers on snow-covered ground",
+      "tags": [
+        "weather",
+        "snow",
+        "steps"
+      ]
+    },
+    {
+      "file": "amb/world/fog.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Still fog: drops falling from leaves, a muffled bell.",
+      "where": "under fog (dawn valleys, the Tiber mist); duck other beds 3 dB",
+      "family": "fog",
+      "level": 1,
+      "level_name": "fog",
+      "tags": [
+        "weather",
+        "fog"
+      ]
+    },
+    {
+      "file": "amb/world/heat.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "afternoon",
+      "for": "Afternoon heat on the plain: grasshoppers, flies, a far cicada.",
+      "where": "clear summer afternoons in Pārsa, Mesopotamia, the Syrian steppe",
+      "family": "heat",
+      "level": 1,
+      "level_name": "still heat",
+      "tags": [
+        "weather",
+        "heat",
+        "east"
+      ]
+    },
+    {
+      "file": "amb/world/dust_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind with sand in it: dust breeze.",
+      "where": "dust cells: the Syrian steppe, Mesopotamia, Pārsa in summer",
+      "family": "dust",
+      "level": 1,
+      "level_name": "dust breeze",
+      "tags": [
+        "weather",
+        "dust",
+        "east"
+      ]
+    },
+    {
+      "file": "amb/world/dust_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "weather",
+      "for": "Wind with sand in it: dust storm.",
+      "where": "dust cells: the Syrian steppe, Mesopotamia, Pārsa in summer",
+      "family": "dust",
+      "level": 2,
+      "level_name": "dust storm",
+      "tags": [
+        "weather",
+        "dust",
+        "east"
+      ]
+    },
+    {
+      "file": "amb/world/coast_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Waves on an open shore, calm.",
+      "where": "sea state 1/3 (0-1 calm, 2 moderate, 3 storm) where the view holds coast",
+      "family": "sea.coast",
+      "level": 1,
+      "level_name": "calm",
+      "tags": [
+        "sea",
+        "coast"
+      ]
+    },
+    {
+      "file": "amb/world/coast_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Waves on an open shore, moderate.",
+      "where": "sea state 2/3 (0-1 calm, 2 moderate, 3 storm) where the view holds coast",
+      "family": "sea.coast",
+      "level": 2,
+      "level_name": "moderate",
+      "tags": [
+        "sea",
+        "coast"
+      ]
+    },
+    {
+      "file": "amb/world/coast_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Waves on an open shore, storm.",
+      "where": "sea state 3/3 (0-1 calm, 2 moderate, 3 storm) where the view holds coast",
+      "family": "sea.coast",
+      "level": 3,
+      "level_name": "storm",
+      "tags": [
+        "sea",
+        "coast"
+      ]
+    },
+    {
+      "file": "amb/world/harbour_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Inside a harbour, calm: lapping at quays and hulls, boats knocking.",
+      "where": "sea state 1/3 in harbour zones (Piraeus, Ostia, the Emporium, Brundisium)",
+      "family": "sea.harbour",
+      "level": 1,
+      "level_name": "calm",
+      "tags": [
+        "sea",
+        "harbour"
+      ]
+    },
+    {
+      "file": "amb/world/harbour_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Inside a harbour, moderate: lapping at quays and hulls, boats knocking.",
+      "where": "sea state 2/3 in harbour zones (Piraeus, Ostia, the Emporium, Brundisium)",
+      "family": "sea.harbour",
+      "level": 2,
+      "level_name": "moderate",
+      "tags": [
+        "sea",
+        "harbour"
+      ]
+    },
+    {
+      "file": "amb/world/harbour_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "Inside a harbour, storm: lapping at quays and hulls, boats knocking.",
+      "where": "sea state 3/3 in harbour zones (Piraeus, Ostia, the Emporium, Brundisium)",
+      "family": "sea.harbour",
+      "level": 3,
+      "level_name": "storm",
+      "tags": [
+        "sea",
+        "harbour"
+      ]
+    },
+    {
+      "file": "amb/world/river_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A river, slow.",
+      "where": "river tiles in view: slow on the plains (Tiber, Euphrates), fast in the mountains",
+      "family": "river",
+      "level": 1,
+      "level_name": "slow",
+      "tags": [
+        "water",
+        "river"
+      ]
+    },
+    {
+      "file": "amb/world/river_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A river, fast.",
+      "where": "river tiles in view: slow on the plains (Tiber, Euphrates), fast in the mountains",
+      "family": "river",
+      "level": 2,
+      "level_name": "fast",
+      "tags": [
+        "water",
+        "river"
+      ]
+    },
+    {
+      "file": "amb/world/waterfall_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A waterfall, far.",
+      "where": "by distance to a waterfall: far beyond 12 tiles, close within 6",
+      "family": "waterfall",
+      "level": 1,
+      "level_name": "far",
+      "tags": [
+        "water",
+        "waterfall"
+      ]
+    },
+    {
+      "file": "amb/world/waterfall_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A waterfall, close.",
+      "where": "by distance to a waterfall: far beyond 12 tiles, close within 6",
+      "family": "waterfall",
+      "level": 2,
+      "level_name": "close",
+      "tags": [
+        "water",
+        "waterfall"
+      ]
+    },
+    {
+      "file": "amb/world/hearth.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "lit",
+      "for": "A small hearth fire: soft flame, gentle crackles, a log settling.",
+      "where": "positional: hearths and ovens in houses, inns, the home cottage",
+      "tags": [
+        "fire",
+        "hearth"
+      ]
+    },
+    {
+      "file": "amb/world/bonfire.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "lit",
+      "for": "A big bonfire: surging roar, thick crackling, wood cracking.",
+      "where": "positional: festival bonfires (the Parilia), camp fires of caravans",
+      "tags": [
+        "fire",
+        "bonfire",
+        "festival"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_roll_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.4058,
+      "samples": 238396,
+      "gain": 0.9,
+      "when": "always",
+      "for": "Rolling thunder, 15 to 40 tiles away.",
+      "tags": [
+        "weather",
+        "thunder",
+        "far"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_roll_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.0929,
+      "samples": 224599,
+      "gain": 0.9,
+      "when": "always",
+      "for": "Rolling thunder, a second roll.",
+      "tags": [
+        "weather",
+        "thunder",
+        "far"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_roll_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.3629,
+      "samples": 236504,
+      "gain": 0.9,
+      "when": "always",
+      "for": "Rolling thunder, a long low roll.",
+      "tags": [
+        "weather",
+        "thunder",
+        "far"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_far_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.6296,
+      "samples": 204166,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A far rumble of thunder beyond the hills (with thunder_far).",
+      "tags": [
+        "weather",
+        "thunder",
+        "far"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_far_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.3196,
+      "samples": 190494,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A far rumble, very low (with thunder_far).",
+      "tags": [
+        "weather",
+        "thunder",
+        "far"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_near_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.975,
+      "samples": 219396,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A near strike: a crack, a boom, a long roll (rare).",
+      "tags": [
+        "weather",
+        "thunder",
+        "near"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_near_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 5.0086,
+      "samples": 220881,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A near strike, a second crack (rare).",
+      "tags": [
+        "weather",
+        "thunder",
+        "near"
+      ]
+    },
+    {
+      "file": "sfx/world/thunder_near_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.618,
+      "samples": 203655,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A near strike, a third crack, softer (rare).",
+      "tags": [
+        "weather",
+        "thunder",
+        "near"
+      ]
+    },
+    {
+      "file": "sfx/world/gust_front.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.6864,
+      "samples": 206669,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A gust front arriving: stillness rising into a rush.",
+      "tags": [
+        "weather",
+        "wind",
+        "turn"
+      ]
+    },
+    {
+      "file": "sfx/world/calm_before.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.5946,
+      "samples": 202622,
+      "gain": 1.0,
+      "when": "always",
+      "for": "The hush before rain: wind dying, a far roll.",
+      "tags": [
+        "weather",
+        "rain",
+        "turn"
+      ]
+    },
+    {
+      "file": "sfx/world/first_drops.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.9879,
+      "samples": 219965,
+      "gain": 1.0,
+      "when": "always",
+      "for": "The first heavy drops quickening into light rain.",
+      "tags": [
+        "weather",
+        "rain",
+        "turn"
+      ]
+    },
+    {
+      "file": "sfx/world/step_snow.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.3831,
+      "samples": 16896,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footfall in fresh snow.",
+      "tags": [
+        "steps",
+        "snow"
+      ]
+    },
+    {
+      "file": "amb/world/dawn_scrub.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dawn",
+      "for": "Dawn chorus in scrub and olive country.",
+      "where": "dawn in Latium, the Greek countryside, Ionia, the corner's borderland",
+      "tags": [
+        "nature",
+        "dawn",
+        "mediterranean"
+      ]
+    },
+    {
+      "file": "amb/world/dawn_river.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dawn",
+      "for": "Dawn on a river plain: reed warblers, bee-eaters, doves, the last frogs.",
+      "where": "dawn on the Tiber banks, Mesopotamia, Susiana, river tiles",
+      "tags": [
+        "nature",
+        "dawn",
+        "river_plain"
+      ]
+    },
+    {
+      "file": "amb/world/dawn_mountain.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dawn",
+      "for": "Dawn in the mountains: a wren, choughs, a far cuckoo, partridges.",
+      "where": "dawn in the Apennines, Arcadia, the Taurus, the Zagros",
+      "tags": [
+        "nature",
+        "dawn",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/dusk_town.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dusk",
+      "for": "Dusk: swallows, swifts, a last thrush, the first crickets, bats.",
+      "where": "dusk over towns and cities and the open country around them",
+      "tags": [
+        "nature",
+        "dusk",
+        "mediterranean"
+      ]
+    },
+    {
+      "file": "amb/world/dusk_water.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "dusk",
+      "for": "Dusk by water: frogs starting, a last reed warbler, ducks settling.",
+      "where": "dusk by rivers, marshes, harbours with reed beds",
+      "tags": [
+        "nature",
+        "dusk",
+        "river_plain"
+      ]
+    },
+    {
+      "file": "amb/world/night_scrub.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "A warm night: crickets, a scops owl, a nightjar, a tawny owl, a far dog.",
+      "where": "night in Mediterranean country (Italy, Greece, Ionia); towns at their edges",
+      "tags": [
+        "nature",
+        "night",
+        "mediterranean"
+      ]
+    },
+    {
+      "file": "amb/world/night_water.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Night by water: a frog chorus, toads trilling, reeds, lapping.",
+      "where": "night by rivers and marshes (Tiber, Euphrates, Tigris, the Gulf's reeds)",
+      "tags": [
+        "nature",
+        "night",
+        "river_plain"
+      ]
+    },
+    {
+      "file": "amb/world/night_east.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Night in the east: jackals far off, crickets, a little owl, dry air.",
+      "where": "night on the steppe and plateaus of the east (Syria, Mesopotamia, Persia)",
+      "tags": [
+        "nature",
+        "night",
+        "east"
+      ]
+    },
+    {
+      "file": "amb/world/night_mountain.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 32.0,
+      "samples": 1411200,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Night in the mountains: owls across the valley, a stream, a far fox.",
+      "where": "night in the mountains (Apennines, Taurus, Zagros)",
+      "tags": [
+        "nature",
+        "night",
+        "mountain"
+      ]
+    },
+    {
+      "file": "amb/world/cicadas_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Midday cicadas, warm.",
+      "where": "layer over the day bed in Mediterranean summer from mid-morning to late afternoon in clear weather, level by heat (Athens' theme `cicadas`)",
+      "family": "cicadas",
+      "level": 1,
+      "level_name": "warm",
+      "tags": [
+        "nature",
+        "insects",
+        "summer",
+        "mediterranean"
+      ]
+    },
+    {
+      "file": "amb/world/cicadas_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Midday cicadas, hot.",
+      "where": "layer over the day bed in Mediterranean summer from mid-morning to late afternoon in clear weather, level by heat (Athens' theme `cicadas`)",
+      "family": "cicadas",
+      "level": 2,
+      "level_name": "hot",
+      "tags": [
+        "nature",
+        "insects",
+        "summer",
+        "mediterranean"
+      ]
+    },
+    {
+      "file": "amb/world/cicadas_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Midday cicadas, blazing.",
+      "where": "layer over the day bed in Mediterranean summer from mid-morning to late afternoon in clear weather, level by heat (Athens' theme `cicadas`)",
+      "family": "cicadas",
+      "level": 3,
+      "level_name": "blazing",
+      "tags": [
+        "nature",
+        "insects",
+        "summer",
+        "mediterranean"
+      ]
+    },
+    {
+      "file": "sfx/world/sheep_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.0455,
+      "samples": 46107,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A ewe's quavering bleat.",
+      "tags": [
+        "animal",
+        "sheep"
+      ]
+    },
+    {
+      "file": "sfx/world/sheep_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.7673,
+      "samples": 33837,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A lamb's bleat.",
+      "tags": [
+        "animal",
+        "sheep"
+      ]
+    },
+    {
+      "file": "sfx/world/goat_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.9264,
+      "samples": 40854,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A goat's nasal, quavering bleat.",
+      "tags": [
+        "animal",
+        "goat"
+      ]
+    },
+    {
+      "file": "sfx/world/goat_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.9063,
+      "samples": 39967,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A kid's higher bleat.",
+      "tags": [
+        "animal",
+        "goat"
+      ]
+    },
+    {
+      "file": "sfx/world/donkey.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.4777,
+      "samples": 109265,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A donkey braying: wheeze in, honk out, three times.",
+      "tags": [
+        "animal",
+        "donkey"
+      ]
+    },
+    {
+      "file": "sfx/world/horse_whinny.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.7478,
+      "samples": 77079,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A horse's whinny shaking down into a nicker.",
+      "tags": [
+        "animal",
+        "horse"
+      ]
+    },
+    {
+      "file": "sfx/world/horse_blow.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.1158,
+      "samples": 49208,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A horse blowing a fluttering snort.",
+      "tags": [
+        "animal",
+        "horse"
+      ]
+    },
+    {
+      "file": "sfx/world/camel_grumble.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.6152,
+      "samples": 71229,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A camel's gargled grumble with throat bubbles.",
+      "tags": [
+        "animal",
+        "camel"
+      ]
+    },
+    {
+      "file": "sfx/world/dog_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.7083,
+      "samples": 31238,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A dog barking twice.",
+      "tags": [
+        "animal",
+        "dog"
+      ]
+    },
+    {
+      "file": "sfx/world/dog_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.7224,
+      "samples": 31858,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A small dog's three yaps.",
+      "tags": [
+        "animal",
+        "dog"
+      ]
+    },
+    {
+      "file": "sfx/world/gull_call.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.5444,
+      "samples": 68109,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A gull's long call and laughing run.",
+      "tags": [
+        "animal",
+        "gull"
+      ]
+    },
+    {
+      "file": "sfx/world/pigeon_coo.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.2508,
+      "samples": 55159,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A pigeon's throaty 'oo-ROO-oo'.",
+      "tags": [
+        "animal",
+        "pigeon"
+      ]
+    },
+    {
+      "file": "sfx/world/crow_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.3078,
+      "samples": 57673,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A crow cawing three times.",
+      "tags": [
+        "animal",
+        "crow"
+      ]
+    },
+    {
+      "file": "sfx/world/crow_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.855,
+      "samples": 37705,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A crow cawing twice, higher.",
+      "tags": [
+        "animal",
+        "crow"
+      ]
+    },
+    {
+      "file": "sfx/world/cuckoo.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.7437,
+      "samples": 76895,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A cuckoo far across the valley, twice.",
+      "tags": [
+        "animal",
+        "cuckoo"
+      ]
+    },
+    {
+      "file": "sfx/world/stork_clatter.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.329,
+      "samples": 102708,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A stork clattering its bill on the nest.",
+      "tags": [
+        "animal",
+        "stork"
+      ]
+    },
+    {
+      "file": "sfx/world/step_stone_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2108,
+      "samples": 9295,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on stone, variation 1.",
+      "tags": [
+        "steps",
+        "stone"
+      ]
+    },
+    {
+      "file": "sfx/world/step_stone_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.218,
+      "samples": 9613,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on stone, variation 2.",
+      "tags": [
+        "steps",
+        "stone"
+      ]
+    },
+    {
+      "file": "sfx/world/step_stone_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2232,
+      "samples": 9842,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on stone, variation 3.",
+      "tags": [
+        "steps",
+        "stone"
+      ]
+    },
+    {
+      "file": "sfx/world/step_earth_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2399,
+      "samples": 10578,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on earth, variation 1.",
+      "tags": [
+        "steps",
+        "earth"
+      ]
+    },
+    {
+      "file": "sfx/world/step_earth_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2325,
+      "samples": 10253,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on earth, variation 2.",
+      "tags": [
+        "steps",
+        "earth"
+      ]
+    },
+    {
+      "file": "sfx/world/step_earth_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2515,
+      "samples": 11090,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on earth, variation 3.",
+      "tags": [
+        "steps",
+        "earth"
+      ]
+    },
+    {
+      "file": "sfx/world/step_timber_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2903,
+      "samples": 12804,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on timber, variation 1.",
+      "tags": [
+        "steps",
+        "timber"
+      ]
+    },
+    {
+      "file": "sfx/world/step_timber_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2829,
+      "samples": 12475,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on timber, variation 2.",
+      "tags": [
+        "steps",
+        "timber"
+      ]
+    },
+    {
+      "file": "sfx/world/step_timber_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2888,
+      "samples": 12737,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on timber, variation 3.",
+      "tags": [
+        "steps",
+        "timber"
+      ]
+    },
+    {
+      "file": "sfx/world/step_stair_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2324,
+      "samples": 10249,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on stair, variation 1.",
+      "tags": [
+        "steps",
+        "stair"
+      ]
+    },
+    {
+      "file": "sfx/world/step_stair_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.252,
+      "samples": 11111,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on stair, variation 2.",
+      "tags": [
+        "steps",
+        "stair"
+      ]
+    },
+    {
+      "file": "sfx/world/step_stair_3.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2352,
+      "samples": 10372,
+      "gain": 0.6,
+      "when": "always",
+      "for": "One footstep on stair, variation 3.",
+      "tags": [
+        "steps",
+        "stair"
+      ]
+    },
+    {
+      "file": "amb/world/walk_group.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 1.0,
+      "when": "moving",
+      "for": "A few people walking past on paving.",
+      "where": "positional: groups of walkers on stone",
+      "tags": [
+        "steps",
+        "stone",
+        "group"
+      ]
+    },
+    {
+      "file": "amb/world/march.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 1.0,
+      "when": "moving",
+      "for": "A file of guards marching in step, gear clinking.",
+      "where": "positional: guard changes, soldiers, the march (P8)",
+      "tags": [
+        "steps",
+        "stone",
+        "march"
+      ]
+    },
+    {
+      "file": "sfx/world/hoof_earth_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2878,
+      "samples": 12693,
+      "gain": 0.7,
+      "when": "always",
+      "for": "One hoof on a dirt road.",
+      "tags": [
+        "hooves",
+        "earth"
+      ]
+    },
+    {
+      "file": "sfx/world/hoof_earth_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.2739,
+      "samples": 12078,
+      "gain": 0.7,
+      "when": "always",
+      "for": "One hoof on a dirt road, variation 2.",
+      "tags": [
+        "hooves",
+        "earth"
+      ]
+    },
+    {
+      "file": "amb/world/hooves_walk.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 1.0,
+      "when": "moving",
+      "for": "A horse or mule walking on paving, harness jingling.",
+      "where": "positional: ridden or led horses and mules",
+      "tags": [
+        "hooves",
+        "stone"
+      ]
+    },
+    {
+      "file": "amb/world/cart_earth.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 10.0,
+      "samples": 441000,
+      "gain": 1.0,
+      "when": "moving",
+      "for": "An ox-cart on a dirt road: rumble, axle squeal, slow hooves.",
+      "where": "positional: carts on unpaved roads and tracks",
+      "tags": [
+        "cart",
+        "earth"
+      ]
+    },
+    {
+      "file": "amb/world/mill.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 10.0,
+      "samples": 441000,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "A donkey mill grinding grain.",
+      "where": "positional: rome_bread, parsa_bread: the mill slot while worked",
+      "tags": [
+        "work",
+        "mill"
+      ]
+    },
+    {
+      "file": "amb/world/bakery.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 10.0,
+      "samples": 441000,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Kneading, the peel in the oven, the fire.",
+      "where": "positional: bread chains: the bakery slot while worked",
+      "tags": [
+        "work",
+        "bakery"
+      ]
+    },
+    {
+      "file": "amb/world/press.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "An olive press: the beam groaning, oil trickling.",
+      "where": "positional: rome_oil, athens_oil: the press while worked",
+      "tags": [
+        "work",
+        "press"
+      ]
+    },
+    {
+      "file": "amb/world/saw.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Two sawyers working a long saw through cedar.",
+      "where": "positional: parsa_cedar, building sites: a saw slot while worked",
+      "tags": [
+        "work",
+        "saw"
+      ]
+    },
+    {
+      "file": "amb/world/threshing.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 12.0,
+      "samples": 529200,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "A threshing floor: sledge, straw, oxen.",
+      "where": "positional: threshing events (Pārsa L3) and grain chains",
+      "tags": [
+        "work",
+        "threshing"
+      ]
+    },
+    {
+      "file": "amb/world/fullers.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 8.0,
+      "samples": 352800,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "Fullers treading cloth in their vats.",
+      "where": "positional: rome_cloth, parsa_wool: the fullery while worked",
+      "tags": [
+        "work",
+        "fullers"
+      ]
+    },
+    {
+      "file": "sfx/world/chop.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.3275,
+      "samples": 14444,
+      "gain": 0.7,
+      "when": "always",
+      "for": "An adze or axe biting into cedar (carpenters, parsa_cedar).",
+      "tags": [
+        "work",
+        "chop"
+      ]
+    },
+    {
+      "file": "sfx/world/brick.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.3956,
+      "samples": 17444,
+      "gain": 0.7,
+      "when": "always",
+      "for": "Clay slapped into a brick mould (brick chains).",
+      "tags": [
+        "work",
+        "brick"
+      ]
+    },
+    {
+      "file": "sfx/world/stylus.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.3422,
+      "samples": 15091,
+      "gain": 0.7,
+      "when": "always",
+      "for": "A stylus pressing a clay tablet (parsa_tablets).",
+      "tags": [
+        "work",
+        "stylus"
+      ]
+    },
+    {
+      "file": "sfx/world/sickle.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.5095,
+      "samples": 22469,
+      "gain": 0.7,
+      "when": "always",
+      "for": "A sickle through barley (reapers L2).",
+      "tags": [
+        "work",
+        "sickle"
+      ]
+    },
+    {
+      "file": "sfx/world/amphora.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.3698,
+      "samples": 16308,
+      "gain": 0.7,
+      "when": "always",
+      "for": "An amphora set down on stone (oil, wine, grain chains).",
+      "tags": [
+        "work",
+        "amphora"
+      ]
+    },
+    {
+      "file": "sfx/world/smash.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.833,
+      "samples": 36737,
+      "gain": 0.7,
+      "when": "always",
+      "for": "An amphora broken for the sherd mound (rome_testaccio).",
+      "tags": [
+        "work",
+        "smash"
+      ]
+    },
+    {
+      "file": "sfx/world/fish.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.477,
+      "samples": 21035,
+      "gain": 0.7,
+      "when": "always",
+      "for": "A fish slapped on the counter (fish chains).",
+      "tags": [
+        "work",
+        "fish"
+      ]
+    },
+    {
+      "file": "sfx/world/bronze.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.8968,
+      "samples": 39551,
+      "gain": 0.7,
+      "when": "always",
+      "for": "A hammer tapping a bronze shield blank (athens_shields).",
+      "tags": [
+        "work",
+        "bronze"
+      ]
+    },
+    {
+      "file": "sfx/world/applause.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.4507,
+      "samples": 152177,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A crowd applauding (theatre, recitations, a verdict).",
+      "tags": [
+        "event",
+        "crowd"
+      ]
+    },
+    {
+      "file": "sfx/world/cheer.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.3814,
+      "samples": 149119,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A crowd cheering (races, a victor, a festival peak).",
+      "tags": [
+        "event",
+        "crowd"
+      ]
+    },
+    {
+      "file": "sfx/world/hush.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.3632,
+      "samples": 104218,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A crowd falling quiet (a sacrifice, an orator rising).",
+      "tags": [
+        "event",
+        "crowd"
+      ]
+    },
+    {
+      "file": "sfx/world/chorus_far.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.0,
+      "samples": 176400,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A chorus singing far off (A5, A7 hymns, festivals).",
+      "tags": [
+        "event",
+        "song"
+      ]
+    },
+    {
+      "file": "sfx/world/wedding_song.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 4.0,
+      "samples": 176400,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A wedding procession singing and clapping (A7, R10).",
+      "tags": [
+        "event",
+        "song"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_latin_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless latin crowd, a handful.",
+      "where": "count-driven by visible people (rome and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.latin",
+      "level": 1,
+      "level_name": "a handful",
+      "tags": [
+        "crowd",
+        "latin",
+        "rome"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_latin_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless latin crowd, a market.",
+      "where": "count-driven by visible people (rome and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.latin",
+      "level": 2,
+      "level_name": "a market",
+      "tags": [
+        "crowd",
+        "latin",
+        "rome"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_latin_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless latin crowd, a festival.",
+      "where": "count-driven by visible people (rome and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.latin",
+      "level": 3,
+      "level_name": "a festival",
+      "tags": [
+        "crowd",
+        "latin",
+        "rome"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_greek_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless greek crowd, a handful.",
+      "where": "count-driven by visible people (athens and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.greek",
+      "level": 1,
+      "level_name": "a handful",
+      "tags": [
+        "crowd",
+        "greek",
+        "athens"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_greek_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless greek crowd, a market.",
+      "where": "count-driven by visible people (athens and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.greek",
+      "level": 2,
+      "level_name": "a market",
+      "tags": [
+        "crowd",
+        "greek",
+        "athens"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_greek_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless greek crowd, a festival.",
+      "where": "count-driven by visible people (athens and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.greek",
+      "level": 3,
+      "level_name": "a festival",
+      "tags": [
+        "crowd",
+        "greek",
+        "athens"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_persian_1.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless persian crowd, a handful.",
+      "where": "count-driven by visible people (parsa and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.persian",
+      "level": 1,
+      "level_name": "a handful",
+      "tags": [
+        "crowd",
+        "persian",
+        "parsa"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_persian_2.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless persian crowd, a market.",
+      "where": "count-driven by visible people (parsa and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.persian",
+      "level": 2,
+      "level_name": "a market",
+      "tags": [
+        "crowd",
+        "persian",
+        "parsa"
+      ]
+    },
+    {
+      "file": "amb/world/crowd_persian_3.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 30.0,
+      "samples": 1323000,
+      "gain": 1.0,
+      "when": "day",
+      "for": "Wordless persian crowd, a festival.",
+      "where": "count-driven by visible people (parsa and its region): 1 up to ~5, 2 up to ~20, 3 beyond; gain = min(1, sqrt(count / full))",
+      "family": "crowd.persian",
+      "level": 3,
+      "level_name": "a festival",
+      "tags": [
+        "crowd",
+        "persian",
+        "parsa"
+      ]
     }
   ]
 }

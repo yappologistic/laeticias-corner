@@ -10,8 +10,10 @@
 #include "core/actor_data.hpp"
 #include "core/catalog.hpp"
 #include "core/condition.hpp"
+#include "core/flat_count.hpp"
 #include "core/iso.hpp"
 #include "core/path.hpp"
+#include "core/tuning.hpp"
 #include "core/visitors.hpp"
 #include "core/world.hpp"
 
@@ -367,7 +369,14 @@ private:
     TileRect bodyArea_;
     std::uint64_t bodyRevision_ = ~0ULL;
     std::vector<TilePos> bodyOpen_;
-    std::vector<Reservation> reservations_;
+    // Each actor holds at most one reservation (held_, valid while Actor::reserved); counts by
+    // slot, spot and ground tile answer "taken?" without scanning (Q3 scaling list).
+    std::vector<Reservation> held_;
+    FlatCount reserved_{tuning::kActorPool * 4};
+    // Records freed (lowest first): spawning takes one without scanning the pool.
+    std::vector<int> freed_; // a min-heap
+    void pushFreed(int i);
+    void popFreed();
     std::vector<ActorEvent> events_;
     PathFinder finder_;
     const World* map_ = nullptr; // the world of this update

@@ -1389,6 +1389,7 @@ void App::step(float dt) {
     if (wheelIdle_ > tuning::kWheelIdleReset) wheelAcc_ = 0;
 
     updateLife(dt);
+    stepCity(dt);
     const Uint64 p0 = SDL_GetPerformanceCounter();
     updateProgress();
     progressMs_ = static_cast<double>(SDL_GetPerformanceCounter() - p0) * 1000.0 /
@@ -1675,6 +1676,11 @@ int App::run() {
     }
     if (opts_.benchmark) return runBenchmark();
     if (opts_.soak > 0) return runSoak();
+    if (opts_.focus && openCity()) {
+        const auto f = life::parseFocus(*city_->life, *opts_.focus);
+        if (f) city_->city->setFocus(*f);
+        if (!f) SDL_Log("city life: unknown focus %s", opts_.focus->c_str());
+    }
     actors_.populate(actorEnv());
     refreshNooks();
     applyVolumes();
@@ -1884,6 +1890,7 @@ int runApp(const Options& options) {
                          !options.renderer.empty() && options.renderer != "software");
     if (!sdl.ok) return 1;
     fs::path assets = findAssets(options);
+    if (options.lifeDump) return runLifeDumps(options, assets);
     auto cat = loadCatalog(assets / "catalog.json");
     if (!cat) {
         SDL_Log("cannot start: %s", cat.error().c_str());

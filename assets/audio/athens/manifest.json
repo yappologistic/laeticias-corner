@@ -248,6 +248,80 @@
       "gain": 1.0,
       "when": "event",
       "for": "Arrival motif (fast travel, era caption): kithara E A B E."
+    },
+    {
+      "file": "sfx/athens/ololyge.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.1751,
+      "samples": 140020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "The women's ritual cry at a sacrifice (A1, the feast).",
+      "tags": [
+        "event",
+        "ritual"
+      ]
+    },
+    {
+      "file": "sfx/athens/sting_sunrise.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for the sun rising (dawn begins), in Athens' Dorian on E.",
+      "tags": [
+        "sting",
+        "sunrise",
+        "athens"
+      ]
+    },
+    {
+      "file": "sfx/athens/sting_nightfall.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for night falling (dusk ends), in Athens' Dorian on E.",
+      "tags": [
+        "sting",
+        "nightfall",
+        "athens"
+      ]
+    },
+    {
+      "file": "sfx/athens/sting_storm_clear.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for a storm clearing (rain stops after a storm cell), in Athens' Dorian on E.",
+      "tags": [
+        "sting",
+        "storm_clear",
+        "athens"
+      ]
+    },
+    {
+      "file": "sfx/athens/sting_rainbow.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for a rainbow (the rainbow event), in Athens' Dorian on E.",
+      "tags": [
+        "sting",
+        "rainbow",
+        "athens"
+      ]
     }
   ]
 }

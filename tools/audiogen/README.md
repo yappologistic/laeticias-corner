@@ -32,7 +32,23 @@ pinned `requirements.txt`. Nothing is ever played back.
 | `score.py` | note notation with exact fractions (dyads, graces, slurs, percussion strokes), rubato, piece renderer, loop facts for manifests |
 | `sounds.py` | bed assembly (`Bed`), wordless crowds and songs, birds and animals, struck stone and metal, feet, hooves, wheels, water, fire, insects, workshops |
 | `parsa.py`, `athens.py`, `rome.py`, `world.py` | each region set: music, beds, positional loops, effects and its `FILES` table |
+| `atmos.py` | atmosphere helpers: seamless event trains by circular convolution, phase-closed oscillators, slow curves and gusts, the 8th-order `tame` low-pass, the `entry` table format |
+| `weather.py` | wind (4 strengths × open, street, sea, mountain), rain (3 intensities) and surface layers, thunder, snow, fog, heat, dust, sea state (coast, harbour), rivers, waterfalls, fires, turns of weather |
+| `wildlife.py` | dawn, dusk and night beds by climate, cicadas in three heats, animal voices (syllable model) with variations, the home duck/hen/cat |
+| `people.py` | wordless crowds (3 sizes × Latin, Greek, Persian), footsteps, hooves and carts, work loops and effects, crowd responses, a far chorus, a wedding song, Laeticia's steps and watering can |
+| `stings.py` | sunrise, nightfall, storm clearing, rainbow and first-snow stings in the home key and each city's mode |
 | `generate.py` | catalog ↔ renderer table, loudness targets, region sets and their manifests, parallel build |
+
+## Intensity families
+
+Weather, sea, rivers, cicadas and crowds come in families (`family`, `level`, `level_name` in
+the manifest): one recipe sampled at each level from independent noise, mastered in steps of
+3.5 LU, so the engine cross-fades neighbours at unity gain and two neighbours played together
+add in power. The validator checks each family's steps, that neighbour sums stay within 1 LU
+of the power sum (no phasing), that neighbours are uncorrelated and keep their colour. Files
+of the atmosphere sets also carry `tags` (surface, climate, what they are) and must keep their
+energy above 8 kHz at least 25 dB under the whole. `assets/audio/home/manifest.json` lists the
+home additions the catalog does not (variations, Laeticia's steps, stings).
 
 ## Loops
 

@@ -7,6 +7,30 @@ who visits (ducks find ponds, a cat moves into the cottage, fireflies come out a
 
 Everything in this game is original: its own art, palette, UI, names, sounds and music.
 
+## Where this is going
+
+The owner's direction, which outranks any older wording in this file or in the design documents:
+
+- The game is **one connected, living world**: the player's buildable home corner, the prebuilt
+  ancient cities with their whole civilizations, and the land and sea between. No part of the map
+  may be a still picture: people work and travel, goods move, weather crosses, light changes.
+  **Every system is world-wide**: clock, weather, wind, seasons, ambient effects, events, actors
+  and sound run over the whole map by each region's own character. A feature that works only in
+  the home region is not finished.
+- **It must look and move beautifully.** Nothing pale, flat or stale. Motion is fluid: no visible
+  frame steps in walks, water or reflections; water behaves like water; light behaves like light
+  (a moving sun, shadows that turn, lamps that light what is near them, lights that persist at
+  every zoom level). Use the tricks good 2D games use (generator-made normal and height maps,
+  shader lighting, reflections, bloom, grading, wind-driven ambient motion) before settling for less.
+- **Four seasons everywhere**: spring, summer, autumn and winter must show correctly in every
+  region of the world, not only at home.
+- **Smooth always**: the budgets in "Performance" are part of "done" for every change.
+- Connections must be right: every bridge, stair, gate and road meets what it joins, in the data
+  and on screen.
+- Long term the owner wants to grow this toward running a whole society (in the spirit of grand
+  civilization-building games): keep simulation data-driven and scalable; do not hard-wire
+  anything that would block player-run cities later.
+
 ## Non-negotiables
 
 - **Small, fast, correct.** Prefer the simplest design that is right. No speculative abstractions,
@@ -54,6 +78,8 @@ The owner uses this computer while agents work, and disk space is limited.
 | Path | Contents | Owner |
 |---|---|---|
 | `src/core/` | Pure game logic, no SDL: world grid, catalog, placement, undo/redo, save, visitors, clock | engine |
+| `src/world/` | Pure logic, no SDL: the world data runtime (loaders, the composed world, graphs, `worldinfo`) | engine |
+| `src/life/` | Pure logic, no SDL: city life over the world (regions' populations, chains, events, figures, tokens; `lifeinfo`) | engine |
 | `src/render/`, `src/ui/`, `src/audio/`, `src/app/` | SDL-facing code | engine |
 | `src/world/`, `src/worldview/` | The world's data runtime (pure) and its renderer, soundscape, weather field, places | engine |
 | `tests/`, `CMakeLists.txt`, `CMakePresets.json`, `cmake/`, `third_party/`, `.clang-*` | Build, tests, tooling config | engine |
@@ -68,7 +94,7 @@ The owner uses this computer while agents work, and disk space is limited.
 | `assets/catalog.json`, `CLAUDE.md` | Contracts | orchestrator, or the agent whose brief says so |
 
 `src/core`, `src/world` and `src/life` must not include SDL headers. Dependencies point one way:
-`app → worldview → ui/render/audio → core`, `worldview → world → core`.
+`app → worldview → ui/render/audio → life → world → core`.
 
 ## Code standards
 
@@ -115,7 +141,10 @@ frame pacing through vsync with adaptive sync left to the driver.
 
 Every engine round keeps the gates green: `--bench` cases for the home region, a dense city view
 and the overview assert the budgets (average, 95th and 99th percentile, worst), and a soak run
-asserts flat memory.
+asserts flat memory. City life (`src/life/`) has its own cases in `--bench` and `lifeinfo bench`
+(each city at its busiest view and festival, a fast pan, jumps between cities: simulation and
+enumeration average, 95th, 99th percentile and worst, live counts, memory) and its own roam in
+`--soak` and `lifeinfo soak`; at most `tuning::life::kLiveCap` (800) live actors.
 
 The tools (`src/core/perf.hpp`, `src/app/app_perf.cpp`, `src/ui/profiler.cpp`): `F3` shows the
 profiler overlay (frame-time graph with the 120 and 60 FPS lines; whole frame average, 95th,
@@ -298,6 +327,26 @@ Design and formats: `docs/design/world-tech.md`. In short:
   order) and graphs (`layers/<id>.graph.json`); region life, theme and text are
   `assets/regions/<region>.json`. All are generated or validated by `tools/worldgen`.
 
+Regions' life (`src/life/`; shapes as `out/reports/world-life.md` and `world-life-rome.md`
+describe them, compiled by `src/life/data.cpp`, which lists what it cannot resolve:
+`lifeinfo problems`):
+
+- `roles[]` (an actor kind with a schedule and routines in the life contract's steps; a block
+  no hour covers means indoors), `districts[]` with `populations` (`role` or a bare `actor`,
+  which strolls the graph, herds graze together, birds linger; `density` × `max_per_chunk` per
+  1 024 tiles of the district, or `per_item` × `count`, filtered by `when`), `densities`,
+  `groups` (`line`, `pairs`, `cluster`), `chains`, `festivals` (`day` from 1 within the season),
+  `events` (`window` with `chance`, `every` in game seconds; `calendar`, `after`,
+  `token_arrived`, `chain`, `weather` `rain`/`rain_stop`, `reactive`), `figures` (`present` and
+  `memory` with a day are actors, the rest are places and casts), `lanes_tokens`.
+- Day `n`: week day `n mod 4`, season day `n mod 3 + 1`; a game hour is 30 real seconds; events
+  start at their hour and run in real seconds (they may overrun it); the day plan's chance draw
+  is worldgen's (`hash64("<region>:<event>:<day>")`); large events of a region never overlap.
+- Chains run exactly as `tools/worldgen/worldgen/lifesim.py` (slots and hands of 3, one tick a
+  second from 06:00; a slot reference named again takes the last stage's instance): the
+  `life_chains` test compares all of them with the Python simulator.
+- Region layer: the layer named like the region, else the base graph (stretches).
+
 ## Game rules
 
 The design is `docs/design/living-corner.md`; this is what the engine does today.
@@ -478,7 +527,15 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
 - `--soak SECONDS` runs that much busy play fast (actors, events, weather, a calendar day every
   50 s so the default gate's 600 s cross four season turns, a frame drawn now and then) and
   exits 3 if memory grows after the first quarter, passes its
-  ceiling, or the simulation averages over its budget.
+  ceiling, or the simulation averages over its budget; then the city roam (the active area
+  jumping between cities and wandering, the calendar turning) with the same rules.
+- `--bench` ends with the city cases (no GPU needed; `bench_city` runs them from `lifeinfo`).
+- City life without the world renderer: `--focus F` keeps an active area round F (`x,y`,
+  `layer:node`, `forum`, `agora`, `terrace`, `district:<region>/<name>`); `--life-dump FILE
+  --focus F --life-hours 5.5,10,15.5 --life-day N` writes life dumps and exits;
+  `tests/world_tools/life_picture.py DUMP.json` draws one. Scripts: `set city F|off`,
+  `set city_dump FILE`, `expect city live|ground|slots|event|district ...`. The same from the
+  tool: `build/release/lifeinfo [summary|problems|chains|dump|bench|soak]`.
 - `F3` shows the profiler (with the world: page memory and its budget, placeholders in view and
   ids without art, each placeholder named); `--perf-log FILE` writes its counters per frame as CSV;
   `--gpu-sync` waits for the GPU each frame (implied on the windowless GPU path);

@@ -84,6 +84,10 @@ RegionPaths::RegionPaths(const world::WorldMap& map, const world::GraphFile& gra
     for (std::size_t n = 0; n < graph.nodes.size(); ++n) {
         nodes_.push_back(tile16(graph.nodes[n].at));
         ids_.push_back(graph.nodes[n].id);
+        stations_.push_back(graph.nodes[n].kind == world::NodeKind::Station ||
+                                    graph.nodes[n].id.find("station") != std::string::npos
+                                ? 1
+                                : 0);
         index_.emplace(graph.nodes[n].id, static_cast<int>(n));
     }
     std::vector<TilePos> pts;

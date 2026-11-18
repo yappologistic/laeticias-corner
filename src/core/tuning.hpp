@@ -124,6 +124,10 @@ inline constexpr float kHoverMax = 1.1f;
 
 // Actors (docs/design/living-world.md §2, living-corner.md R2 and R6)
 inline constexpr std::size_t kActorPool = 512;    // records; the home region needs a few dozen
+inline constexpr float kFeedScatter = 1.5f;       // tiles: hens called to feed peck about her
+inline constexpr float kHarvestScatter = 1.2f;    // tiles: peckers about a picked bed
+inline constexpr int kFleeAttempts = 8;           // directions a startled critter tries
+inline constexpr float kFleeAngle = 0.8f;         // radians either side of straight away
 inline constexpr std::uint32_t kThinkBuckets = 4; // actors check the world in turn, one in four
 inline constexpr float kPathCostPaved = 1.0f;     // paths, cobbles and crossings
 inline constexpr float kPathCostOther = 1.6f;
@@ -371,10 +375,10 @@ inline constexpr float kFigurePointLift = 14.0f;
 // City life (docs/design/living-world.md §7, src/life/): the simulation of the prebuilt regions.
 namespace life {
 // Live actors at most (population, chains, casts, tokens and figures together); populations are
-// scaled down proportionally only when the active area would need more. Measured by the bench:
-// out/reports/engine-city-life.md.
-inline constexpr int kLiveCap = 720;
-inline constexpr double kSimBudgetMs = 0.6;   // simulation average per step (CLAUDE.md)
+// scaled down proportionally only when the active area would need more. The bench's crowd study
+// (out/reports/engine-city-life.md): 0.11 ms a step at 400, 0.14 at 600, 0.18 at 800, 0.25 at 900+;
+// 800 holds Rome's Parilia afternoon (about 750 with its casts) with two thirds of the 0.6 ms left.
+inline constexpr int kLiveCap = 800;
 inline constexpr std::size_t kPool = 1024;    // actor records, preallocated
 inline constexpr int kBuckets = 3;            // round-robin update buckets (20 Hz each)
 inline constexpr int kSpawnsPerStep = 40;     // materialisations per simulation step
@@ -388,15 +392,35 @@ inline constexpr float kCartSpeed = 0.6f;      // tiles/s: carts and sledges (li
 inline constexpr float kFormationSpeed = 0.8f; // processions and groups
 inline constexpr float kFadeSeconds = 0.5f;    // fading in from a doorway or out into one
 inline constexpr int kLiveMargin = 12;         // tiles around the view whose chunks are live
-inline constexpr float kDoorReach = 12.0f;     // tiles searched for a door to come out of or enter
-inline constexpr float kSlotReach = 24.0f;     // tiles searched for a slot target without `within`
-inline constexpr float kFailPause0 = 1.0f;     // seconds of standing after a step that failed
+inline constexpr float kEaseSeconds = 0.35f;   // a walker reaches its pace (or stops) over this
+inline constexpr float kWanderPace = 0.7f;     // share of its pace a lingering walker strolls at
+inline constexpr float kBrakeTiles = 0.6f;     // it slows over the last of its way
+inline constexpr float kLateral = 0.3f;        // tiles either side of the way's middle it keeps to
+inline constexpr float kLateralRamp = 1.5f;    // tiles over which it moves off the middle and back
+inline constexpr float kSmoothReach = 1.0f;    // tiles of route averaged either side (no zigzags)
+inline constexpr float kCatchUp =
+    1.25f; // a walker's drawn point moves at most this much over its pace
+inline constexpr float kTurnRate = 7.0f;  // radians/s the heading turns at most
+inline constexpr float kTurnHold = 0.17f; // radians past a sector's edge before a sprite turns
+inline constexpr float kRate0 = 0.85f;    // animation pace range, per actor
+inline constexpr float kRate1 = 1.15f;
+inline constexpr float kStationDwell = 6.0f;  // seconds a courier stops at a relay station
+inline constexpr float kFishingStay = 150.0f; // seconds a fishing boat works its ground
+inline constexpr float kFishingRadius = 2.5f; // tiles it circles there
+inline constexpr float kTrainSpacing = 1.1f;  // tiles between a caravan's or mule train's beasts
+inline constexpr float kPairsOffset = 0.35f;  // tiles either side for a procession in pairs
+inline constexpr int kNodeSpread = 2;         // tiles about a named node its visitors stand on
+inline constexpr float kDoorReach = 12.0f;    // tiles searched for a door to come out of or enter
+inline constexpr float kSlotReach = 24.0f;    // tiles searched for a slot target without `within`
+inline constexpr float kFailPause0 = 1.0f;    // seconds of standing after a step that failed
 inline constexpr float kFailPause1 = 2.5f;
 inline constexpr float kIdle0 = 6.0f; // a routine that ran out: idle, then a short wander
 inline constexpr float kIdle1 = 14.0f;
-inline constexpr float kIdleWander = 3.0f;   // tiles
-inline constexpr int kWanderTries = 6;       // straight walkable lines tried per wander move
-inline constexpr float kFollowReach = 16.0f; // tiles: whom a `follow` step may follow
+inline constexpr float kIdleWander = 3.0f; // tiles
+inline constexpr int kWanderTries = 6;
+inline constexpr float kWanderPause = 0.25f; // chance a lingering walker stands a moment instead //
+                                             // straight walkable lines tried per wander move
+inline constexpr float kFollowReach = 16.0f;         // tiles: whom a `follow` step may follow
 inline constexpr double kGameSecondsPerReal = 120.0; // a game hour is 30 real seconds
 inline constexpr float kDefaultEventSeconds = 60.0f;
 inline constexpr int kMaxRunningEvents = 24;      // world-wide

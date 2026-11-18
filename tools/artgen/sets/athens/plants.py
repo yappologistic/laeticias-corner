@@ -8,7 +8,7 @@ import math
 
 import numpy as np
 
-from arch import ellipsoid, rod
+from arch import ellipsoid, fill, rod
 from models.nature import leaf_mass
 from setbuild import Item
 from sets.athens.common import cypress, olive_tree
@@ -201,18 +201,33 @@ def p_reeds(v, frame, frames, k):
 
 
 def p_asphodel(v, frame, frames, k):
-    """Summer-dry grass and the dead stalks of asphodel with their seed heads."""
+    """Summer-dry grass in low tufts and the dead asphodel: a clump of withered strap leaves
+    lying on the ground, from it two or three pale branching stalks with small seed capsules
+    scattered along their upper branches (QA4 V-A-008: no heads that read as figures)."""
     m = Model.empty(0, 16, 0, 16, 0, 8, k=k)
     rng = Rng(1100, v)
-    for i in range(22):
+    for i in range(30):
         x, y = rng.uniform(1, 15), rng.uniform(1, 15)
-        rod(m, (x, y, 0.0), (x + rng.uniform(-0.6, 0.6), y + rng.uniform(-0.6, 0.6), rng.uniform(1.5, 3.0)), 0.25,
-            "straw", tone=rng.uniform(-0.3, 0.3))
-    for i in range(3):
-        x, y = rng.uniform(3, 13), rng.uniform(3, 13)
-        rod(m, (x, y, 0.0), (x, y, 7.0), 0.3, "wood_light", tone=0.1)
-        for j in range(4):
-            ellipsoid(m, (x + 0.4 * (j % 2), y, 4.5 + j * 0.6), (0.5, 0.5, 0.4), "wood", tone=0.2)
+        rod(m, (x, y, 0.0), (x + rng.uniform(-0.9, 0.9), y + rng.uniform(-0.9, 0.9), rng.uniform(1.0, 2.2)), 0.22,
+            "straw", tone=rng.uniform(-0.35, 0.3))
+    cx, cy = rng.uniform(5, 11), rng.uniform(5, 11)
+    for i in range(9):
+        a = i * 0.7 + rng.uniform(0, 0.5)
+        rod(m, (cx, cy, 0.2), (cx + 3.2 * np.cos(a), cy + 3.2 * np.sin(a), 0.5), 0.35, "summer", tone=-0.25)
+    for i in range(2 + v % 2):
+        x, y = cx + rng.uniform(-1.2, 1.2), cy + rng.uniform(-1.2, 1.2)
+        h = rng.uniform(4.5, 6.0)
+        lean = (rng.uniform(-0.8, 0.8), rng.uniform(-0.8, 0.8))
+        top = (x + lean[0], y + lean[1], h)
+        rod(m, (x, y, 0.0), top, 0.18, "straw", tone=0.35)
+        for j in range(3):
+            t = 0.55 + 0.15 * j
+            bx, by, bz = x + lean[0] * t, y + lean[1] * t, h * t
+            d = (1 if j % 2 else -1) * 1.2
+            rod(m, (bx, by, bz), (bx + d, by + d * 0.4, bz + 1.1), 0.15, "straw", tone=0.3)
+            for q in range(3):
+                fill(m, (bx + d * q / 3 - 0.2, bx + d * q / 3 + 0.25, by - 0.25, by + 0.25, bz + 0.2 + q * 0.35,
+                         bz + 0.6 + q * 0.35), "wood_light", tone=0.1)
     return m
 
 

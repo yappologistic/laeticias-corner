@@ -400,6 +400,8 @@ Chains::Chains(const LifeData& data, const world::WorldMap& map, std::vector<Reg
     days_.resize(runs_.size());
     cycleStart_.assign(runs_.size(), -1);
     cycleLen_.assign(runs_.size(), 0);
+    // Every chain's daily cycle found now (a few days each), so nothing grows in play.
+    for (std::size_t i = 0; i < runs_.size(); ++i) dayStart(i, tl::kPeriodicSearchDays);
 }
 
 bool Chains::gated(std::size_t i) const {

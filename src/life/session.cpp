@@ -456,7 +456,7 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
         seconds, c.day, sim.avg(), sim.pct(0.99), worst, city.stats().live, quarterRss, endRss,
         static_cast<double>(quarterBytes) / 1e6, static_cast<double>(endBytes) / 1e6);
     int rc = 0;
-    if (endRss > quarterRss + 4.0 || endBytes > quarterBytes) {
+    if (endRss > quarterRss + tuning::kSoakGrowthMiB || endBytes > quarterBytes) {
         std::printf("life soak: FAIL memory grew\n");
         rc = 3;
     }

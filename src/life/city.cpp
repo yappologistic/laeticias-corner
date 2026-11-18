@@ -204,6 +204,7 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
     : w_(&w), map_(&w.map()), seed_(seed), chains_(w.data, w.map(), w.paths, w.pathsOf) {
     pool_.resize(tl::kPool);
     desc_.resize(tl::kPool);
+    tracks_.resize(tl::kPool);
     chunkNext_.assign(tl::kPool, -1);
     chunkOf_.assign(tl::kPool, -1);
     free_.reserve(tl::kPool);
@@ -221,6 +222,10 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
     itemStateUntil_.assign(map_->items().size(), 0);
     running_.reserve(tl::kMaxRunningEvents);
     trails_.resize(static_cast<std::size_t>(tl::kMaxRunningEvents) * tl::kEventTrail);
+    trailCum_.resize(trails_.size());
+    trailStops_.resize(static_cast<std::size_t>(tl::kMaxRunningEvents));
+    carrierPaths_.resize(chains_.size() * 16);
+    carrierCum_.resize(chains_.size() * 16);
     plans_.resize(w.data.regions.size());
     planNext_.assign(w.data.regions.size(), 0);
     reactiveCool_.assign(w.data.regions.size(), -1e9);
@@ -255,7 +260,10 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
             const KindDef& k = w.data.kinds[static_cast<std::size_t>(t.kind)];
             const float speed =
                 !t.lane.empty() ? tl::kShipSpeed : (k.cart ? tl::kCartSpeed : tl::kWalkSpeed);
-            ts.period = 2.0f * (ts.length / speed + tl::kPortStay);
+            // A fishing boat works its ground at the lane's far end; a ship stays in port.
+            ts.fishing = !t.lane.empty() && k.id.find("fishing") != std::string::npos;
+            ts.farStay = ts.fishing ? tl::kFishingStay : tl::kPortStay;
+            ts.period = 2.0f * ts.length / speed + tl::kPortStay + ts.farStay;
             ts.ok = ts.length > 1.0f;
         }
         tokenPaths_.push_back(std::move(ts));
@@ -385,15 +393,27 @@ void CityLife::update(const LifeClock& clock, float dt) {
     advanceAbstract(clock);
     if (dirty_ || now_ - lastReconcile_ > 2.0) reconcile();
     spawnQueued(false);
-    const auto bucket = static_cast<int>(frame_ % static_cast<std::uint32_t>(tl::kBuckets));
-    const float step = dt * static_cast<float>(tl::kBuckets);
-    for (std::size_t i = static_cast<std::size_t>(bucket); i < pool_.size();
-         i += static_cast<std::size_t>(tl::kBuckets)) {
-        if ((pool_[i].flags & live_flag::kAlive) == 0) continue;
-        if (pool_[i].state == ActState::Puppet)
-            puppet(static_cast<int>(i));
-        else
-            think(static_cast<int>(i), step);
+    // Everyone's last position, for drawing between steps.
+    for (LiveActor& a : pool_)
+        if ((a.flags & live_flag::kAlive) != 0) {
+            a.prev = a.pos;
+            a.prevZ = a.z;
+            a.prevStride = a.stride;
+        }
+    // Decisions in round-robin buckets; motion, puppets and fades every step so drawing is smooth.
+    const auto bucket = static_cast<std::size_t>(frame_ % static_cast<std::uint32_t>(tl::kBuckets));
+    const float slice = dt * static_cast<float>(tl::kBuckets);
+    for (std::size_t i = 0; i < pool_.size(); ++i) {
+        LiveActor& a = pool_[i];
+        if ((a.flags & live_flag::kAlive) == 0) continue;
+        const int k = static_cast<int>(i);
+        if (a.state == ActState::Puppet) {
+            puppet(k);
+        } else {
+            motion(k, dt);
+            if (i % static_cast<std::size_t>(tl::kBuckets) == bucket) think(k, slice);
+        }
+        if ((pool_[i].flags & live_flag::kAlive) != 0) afterStep(k, dt);
     }
     ++frame_;
     if (frame_ % 30 == 0) countDistricts();
@@ -639,8 +659,7 @@ void CityLife::reconcile() {
                 a.flags = static_cast<std::uint8_t>((a.flags & ~live_flag::kFadeOut) |
                                                     live_flag::kFadeIn);
                 a.route = Route{};
-                a.next = a.tile;
-                a.progress = 0;
+                tracks_[i].n = 0;
                 if (a.source == Source::Population || a.source == Source::Figure) {
                     chooseRoutine(static_cast<int>(i));
                 } else {
@@ -862,7 +881,11 @@ void CityLife::materialise(int i, const Desire& d) {
     const KindDef& kind = data.kinds[a.kind];
     a.variant = static_cast<std::uint8_t>(next(a.rng) % static_cast<std::uint64_t>(kind.variants));
     a.speed = (kind.cart ? tl::kCartSpeed : tl::kWalkSpeed) * range(a, 0.9f, 1.1f);
+    // Out of step with everyone else: its own animation pace and phase, its own side of the way.
     a.animTime = range(a, 0.0f, 4.0f);
+    a.rate = range(a, tl::kRate0, tl::kRate1);
+    a.lateral = range(a, -tl::kLateral, tl::kLateral);
+    tracks_[static_cast<std::size_t>(i)].n = 0;
     if (d.role >= 0 && d.source != Source::Cast && d.source != Source::Token) {
         const Role& role = reg.roles[static_cast<std::size_t>(d.role)];
         if (role.speed > 0) a.speed = role.speed * range(a, 0.95f, 1.05f);
@@ -915,8 +938,8 @@ void CityLife::materialise(int i, const Desire& d) {
         }
     }
     if (start.x < 0) return; // no ground to stand on in this chunk
-    a.tile = a.next = a.anchor = tile16(start);
-    a.pos = a.prev = centre(start);
+    a.tile = a.anchor = tile16(start);
+    a.pos = a.prev = a.endPoint = centre(start);
     a.z = a.prevZ = static_cast<float>(map_->floorZ(start));
     a.flags = live_flag::kAlive;
     if (d.source == Source::Figure && reg.figures.size() > 0) {
@@ -960,7 +983,7 @@ void CityLife::beginLeave(int i) {
     a.depth = 0;
     TilePos door;
     if (a.source != Source::Chain && a.source != Source::Cast &&
-        nearestDoor(a.pos, tl::kDoorReach, door) >= 0 && planTo(i, door, builds_))
+        nearestDoor(a.pos, tl::kDoorReach, door) >= 0 && planTo(i, door, centre(door), builds_))
         return;
     a.route = Route{};
     a.flags |= live_flag::kFadeOut;
@@ -1032,7 +1055,7 @@ int CityLife::nearestDoor(Vec2 p, float reach, TilePos& goal) const {
     return found;
 }
 
-bool CityLife::planTo(int i, TilePos goal, int& builds) {
+bool CityLife::planTo(int i, TilePos goal, Vec2 end, int& builds) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     const int pi = w_->pathsOf[a.region];
     if (pi < 0) return false;
@@ -1041,8 +1064,7 @@ bool CityLife::planTo(int i, TilePos goal, int& builds) {
     const PlanResult r = paths.plan(a.tile.pos(), goal, a.route, desc, builds);
     if (r == PlanResult::Wait) waited_ = true;
     if (r != PlanResult::Ok) return false;
-    a.next = a.tile;
-    a.progress = 0;
+    startTrack(i, end);
     return true;
 }
 
@@ -1093,10 +1115,67 @@ bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& 
         goal = a.tile.pos();
         at = a.pos;
         return true;
-    case TargetKind::Node:
-        if (!standOn(paths.nodeAt(t.node))) return false;
+    case TargetKind::Node: {
+        // Somewhere about the node, not all on its one tile: a free tile a few steps off it
+        // that walkers reach on the node's level.
+        const TilePos n = paths.nodeAt(t.node);
+        const int lv = map_->inBounds(n) ? map_->level(n) : 0;
+        for (int k = 0; k < 6; ++k) {
+            const int r = tl::kNodeSpread;
+            const TilePos c{
+                n.x + static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(2 * r + 1)) - r,
+                n.y + static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(2 * r + 1)) - r};
+            if (map_->inBounds(c) && map_->walkable(c) && paths.reachable(c) &&
+                map_->level(c) == lv && paths.lineClear(n, c, 2 * r)) {
+                goal = c;
+                at = centre(c);
+                return true;
+            }
+        }
+        if (!standOn(n)) return false;
         at = centre(goal);
         return true;
+    }
+    case TargetKind::Flock: {
+        // The node the herd of this chunk heads for this period: the same for every member.
+        const auto cx = static_cast<int>(a.tile.x) >> kChunkShift;
+        const auto cy = static_cast<int>(a.tile.y) >> kChunkShift;
+        const Vec2 c{static_cast<float>(cx * kChunk + kChunk / 2),
+                     static_cast<float>(cy * kChunk + kChunk / 2)};
+        const float r2 = t.within * t.within;
+        int count = 0;
+        for (int n = 0; n < paths.nodeCount(); ++n)
+            if (dist2(centre(paths.nodeAt(n)), c) <= r2 && paths.reachable(paths.nodeAt(n)))
+                ++count;
+        if (count == 0) return false;
+        const auto pick = static_cast<int>(
+            hashOf({seed_, 0xF10C, static_cast<std::uint64_t>(cx), static_cast<std::uint64_t>(cy),
+                    static_cast<std::uint64_t>(hourIndex_ / 4)}) %
+            static_cast<std::uint64_t>(count));
+        int seen = 0;
+        for (int n = 0; n < paths.nodeCount(); ++n) {
+            if (dist2(centre(paths.nodeAt(n)), c) > r2 || !paths.reachable(paths.nodeAt(n)))
+                continue;
+            if (seen++ != pick) continue;
+            // Each sheep a little apart from the next about the shared place.
+            const TilePos np = paths.nodeAt(n);
+            for (int k = 0; k < 6; ++k) {
+                const TilePos q{np.x + static_cast<int>(next(a.rng) % 5) - 2,
+                                np.y + static_cast<int>(next(a.rng) % 5) - 2};
+                if (map_->inBounds(q) && map_->walkable(q) && paths.reachable(q) &&
+                    paths.lineClear(np, q, 4)) {
+                    goal = q;
+                    at = {static_cast<float>(q.x) + range(a, 0.2f, 0.8f),
+                          static_cast<float>(q.y) + range(a, 0.2f, 0.8f)};
+                    return true;
+                }
+            }
+            if (!standOn(np)) return false;
+            at = centre(goal);
+            return true;
+        }
+        return false;
+    }
     case TargetKind::Roam: {
         // A random node within reach (reservoir choice over the nodes in the circle).
         const float r2 = t.within * t.within;
@@ -1304,9 +1383,10 @@ CityLife::Begin CityLife::beginStep(int i, std::uint32_t s, float& estimate) {
         if (goal == a.tile.pos()) {
             a.route = Route{};
             a.route.leg = Leg::Done;
+            startTrack(i, at);
         } else {
             waited_ = false;
-            if (!planTo(i, goal, builds_)) return waited_ ? Begin::Wait : Begin::Failed;
+            if (!planTo(i, goal, at, builds_)) return waited_ ? Begin::Wait : Begin::Failed;
         }
         reserve(i, group);
         a.slot =
@@ -1492,13 +1572,11 @@ bool CityLife::runSteps(int i, bool fastForward, double& budget) {
                 if (r == Begin::Travel) {
                     // Arrived at once: where the walk ends.
                     const TilePos g = a.route.leg == Leg::None ? a.tile.pos() : a.route.goal.pos();
-                    a.tile = a.next = tile16(g);
-                    a.pos = centre(g);
+                    a.tile = tile16(g);
+                    a.pos = a.endPoint;
                     a.z = static_cast<float>(map_->floorZ(g));
                     a.route = Route{};
-                    a.progress = 0;
-                    if (a.slot >= 0 && map_->slots()[static_cast<std::size_t>(a.slot)].tile == g)
-                        a.pos = map_->slots()[static_cast<std::size_t>(a.slot)].at;
+                    tracks_[static_cast<std::size_t>(i)].n = 0;
                     endStep(i);
                     if (a.state == ActState::Act) {
                         endStep(i);
@@ -1515,10 +1593,10 @@ bool CityLife::runSteps(int i, bool fastForward, double& budget) {
                 const double walk =
                     static_cast<double>(est) - (st.verb == Verb::Use ? a.timer : 0.0);
                 if (budget < walk) {
-                    advanceAlong(i, static_cast<float>(budget) * a.speed);
+                    advanceBy(i, static_cast<float>(budget) * a.speed);
                 } else {
                     // At the place, part way through the use.
-                    advanceAlong(i, 1e6f);
+                    advanceBy(i, 1e6f);
                     if (a.state == ActState::Travel) endStep(i);
                     a.timer -= static_cast<float>(budget - walk);
                 }
@@ -1532,55 +1610,279 @@ bool CityLife::runSteps(int i, bool fastForward, double& budget) {
     return true;
 }
 
-void CityLife::advanceAlong(int i, float tiles) {
+// -- motion: smooth, continuous, eased --------------------------------------------------------
+//
+// A walker's route is a staircase of tiles; it is walked as a continuous path: the track holds
+// the route's next tiles, a position is the average of the staircase over a tile either side
+// (diagonals instead of zigzags, corners rounded), kept only where the ground allows it, and a
+// walker eases into its pace and out of it, keeps a little to one side of the way, and is moved
+// every step (decisions are what the buckets slice).
+
+void CityLife::startTrack(int i, Vec2 end) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
-    const int pi = w_->pathsOf[a.region];
-    if (pi < 0) return;
-    RegionPaths& paths = w_->paths[static_cast<std::size_t>(pi)];
-    const auto& desc = desc_[static_cast<std::size_t>(i)];
-    float left = tiles;
-    for (int guard = 0; guard < 4096; ++guard) {
-        if (a.next == a.tile) {
-            TilePos nx;
-            if (!paths.next(a.route, a.tile.pos(), desc, nx)) {
-                // Arrived.
-                a.progress = 0;
-                a.pos = centre(a.tile.pos());
-                if (a.slot >= 0 &&
-                    map_->slots()[static_cast<std::size_t>(a.slot)].tile == a.tile.pos())
-                    a.pos = map_->slots()[static_cast<std::size_t>(a.slot)].at;
-                a.z = static_cast<float>(map_->floorZ(a.tile.pos()));
-                if (a.face != 0xFF && a.route.leg == Leg::Done) a.facing = a.face % 4;
-                a.route.leg = Leg::Done;
-                link(i);
-                return;
-            }
-            a.next = tile16(nx);
-            a.facing = facingOf(nx.x - a.tile.x, nx.y - a.tile.y);
-        }
-        const float need = 1.0f - a.progress;
-        if (left < need) {
-            a.progress += left;
-            break;
-        }
-        left -= need;
-        a.tile = a.next;
-        a.progress = 0;
+    Track& tr = tracks_[static_cast<std::size_t>(i)];
+    tr.t[0] = a.tile;
+    tr.base = 0;
+    tr.n = 1;
+    tr.ended = false;
+    a.s = 0;
+    a.startOffset = {a.pos.x - (static_cast<float>(a.tile.x) + 0.5f),
+                     a.pos.y - (static_cast<float>(a.tile.y) + 0.5f)};
+    a.endPoint = end;
+    fillTrack(i);
+    if (tr.n == 1) {
+        // Already on the goal's tile: a glide from where it stands to the spot.
+        tr.t[1] = tr.t[0];
+        tr.n = 2;
     }
-    const Vec2 c0 = centre(a.tile.pos());
-    const Vec2 c1 = centre(a.next.pos());
-    a.pos = {c0.x + (c1.x - c0.x) * a.progress, c0.y + (c1.y - c0.y) * a.progress};
-    const auto z0 = static_cast<float>(map_->floorZ(a.tile.pos()));
-    const auto z1 = static_cast<float>(map_->floorZ(a.next.pos()));
-    a.z = z0 + (z1 - z0) * a.progress;
+}
+
+void CityLife::fillTrack(int i) {
+    LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    Track& tr = tracks_[static_cast<std::size_t>(i)];
+    const int pi = w_->pathsOf[a.region];
+    if (pi < 0) {
+        tr.ended = true;
+        return;
+    }
+    RegionPaths& paths = w_->paths[static_cast<std::size_t>(pi)];
+    while (tr.n < tr.t.size() && !tr.ended) {
+        TilePos nx;
+        if (paths.next(a.route, tr.t[tr.n - 1u].pos(), desc_[static_cast<std::size_t>(i)], nx))
+            tr.t[tr.n++] = tile16(nx);
+        else
+            tr.ended = true;
+    }
+}
+
+bool CityLife::moving(int i) const {
+    const Track& tr = tracks_[static_cast<std::size_t>(i)];
+    if (tr.n == 0) return false;
+    return !tr.ended ||
+           pool_[static_cast<std::size_t>(i)].s < static_cast<float>(tr.base + tr.n - 1) - 1e-4f;
+}
+
+Vec2 CityLife::trackRaw(int i, float s) const {
+    const LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    const Track& tr = tracks_[static_cast<std::size_t>(i)];
+    const auto last = static_cast<float>(tr.n - 1);
+    const float u = std::clamp(s - static_cast<float>(tr.base), 0.0f, last);
+    const auto k = static_cast<std::size_t>(std::min(u, std::max(0.0f, last - 1.0f)));
+    const float f = u - static_cast<float>(k);
+    const auto point = [&](std::size_t j) {
+        if (tr.ended && j + 1 == tr.n) return a.endPoint;
+        return centre(tr.t[j].pos());
+    };
+    const Vec2 p0 = point(k);
+    const Vec2 p1 = point(std::min<std::size_t>(k + 1, tr.n - 1u));
+    return {p0.x + (p1.x - p0.x) * f, p0.y + (p1.y - p0.y) * f};
+}
+
+Vec2 CityLife::trackPoint(int i, float s, bool lateral) const {
+    const LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    const Track& tr = tracks_[static_cast<std::size_t>(i)];
+    const Vec2 raw = trackRaw(i, s);
+    const float r = tl::kSmoothReach;
+    Vec2 p{};
+    for (const float o : {-r, -0.5f * r, 0.0f, 0.5f * r, r}) {
+        const Vec2 q = trackRaw(i, s + o);
+        p.x += q.x * 0.2f;
+        p.y += q.y * 0.2f;
+    }
+    // Ends stay exact: the average blends back to the route at a track's start and its goal.
+    const auto last = static_cast<float>(tr.base + tr.n - 1);
+    const float edge = std::clamp(std::min(s, tr.ended ? last - s : r) / r, 0.0f, 1.0f);
+    p = {raw.x + (p.x - raw.x) * edge, raw.y + (p.y - raw.y) * edge};
+    // Where it stood off the start tile's centre, eased away over the first tiles.
+    const float total = tr.ended ? last : tl::kLateralRamp;
+    const float w = std::max(0.0f, 1.0f - s / std::max(1e-3f, std::min(tl::kLateralRamp, total)));
+    p.x += a.startOffset.x * w;
+    p.y += a.startOffset.y * w;
+    if (lateral && a.lateral != 0.0f) {
+        const Vec2 ahead = trackRaw(i, s + 0.5f);
+        const Vec2 behind = trackRaw(i, s - 0.5f);
+        const float dx = ahead.x - behind.x;
+        const float dy = ahead.y - behind.y;
+        const float len = std::sqrt(dx * dx + dy * dy);
+        const float ramp = std::clamp(
+            std::min(s, tr.ended ? last - s : tl::kLateralRamp) / tl::kLateralRamp, 0.0f, 1.0f);
+        if (len > 1e-3f) {
+            p.x += -dy / len * a.lateral * ramp;
+            p.y += dx / len * a.lateral * ramp;
+        }
+    }
+    return settleOnGround(raw, p);
+}
+
+// The point nearest `want` on the way from `raw` (which is on the route, so allowed) that is
+// still on walkable ground at the route's level, without squeezing between two walls: a
+// continuous retreat towards the route rather than a jump back to it.
+Vec2 CityLife::settleOnGround(Vec2 raw, Vec2 want) const {
+    const TilePos rt{static_cast<int>(std::floor(raw.x)), static_cast<int>(std::floor(raw.y))};
+    if (!map_->inBounds(rt)) return raw;
+    const int level = map_->level(rt);
+    const auto ok = [&](Vec2 p) {
+        const TilePos pt{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+        if (pt == rt) return true;
+        if (!map_->inBounds(pt) || !map_->walkable(pt) || map_->level(pt) != level) return false;
+        if (std::abs(pt.x - rt.x) > 1 || std::abs(pt.y - rt.y) > 1) return false;
+        return pt.x == rt.x || pt.y == rt.y ||
+               (map_->walkable({pt.x, rt.y}) && map_->walkable({rt.x, pt.y}));
+    };
+    if (ok(want)) return want;
+    float lo = 0;
+    float hi = 1;
+    for (int k = 0; k < 6; ++k) {
+        const float mid = 0.5f * (lo + hi);
+        if (ok({raw.x + (want.x - raw.x) * mid, raw.y + (want.y - raw.y) * mid}))
+            lo = mid;
+        else
+            hi = mid;
+    }
+    return {raw.x + (want.x - raw.x) * lo, raw.y + (want.y - raw.y) * lo};
+}
+
+void CityLife::placeOnTrack(int i, float maxStep) {
+    LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    Track& tr = tracks_[static_cast<std::size_t>(i)];
+    // Tiles left behind leave the track (keeping one tile of the average behind).
+    while (a.s - static_cast<float>(tr.base) >= 2.0f + tl::kSmoothReach && tr.n > 4) {
+        std::copy(tr.t.begin() + 1, tr.t.begin() + tr.n, tr.t.begin());
+        --tr.n;
+        ++tr.base;
+        fillTrack(i);
+    }
+    Vec2 p = trackPoint(i, a.s, true);
+    if (maxStep > 0) {
+        // Never faster than its pace where it is drawn: when the ground it may stand on changes
+        // under the average, it catches up over a few steps instead of jumping.
+        const float d = std::sqrt(dist2(p, a.pos));
+        if (d > maxStep && d < 1.0f) {
+            const Vec2 q{a.pos.x + (p.x - a.pos.x) * maxStep / d,
+                         a.pos.y + (p.y - a.pos.y) * maxStep / d};
+            const TilePos tq{static_cast<int>(std::floor(q.x)), static_cast<int>(std::floor(q.y))};
+            if (map_->inBounds(tq) && map_->walkable(tq)) p = q;
+        }
+    }
+    a.pos = p;
+    const Vec2 raw = trackRaw(i, a.s);
+    const TilePos t{static_cast<int>(std::floor(a.pos.x)), static_cast<int>(std::floor(a.pos.y))};
+    a.tile = tile16(
+        map_->inBounds(t) && map_->walkable(t)
+            ? t
+            : TilePos{static_cast<int>(std::floor(raw.x)), static_cast<int>(std::floor(raw.y))});
+    // Height along stairs: between the floors of the route tiles it is between.
+    const float u =
+        std::clamp(a.s - static_cast<float>(tr.base), 0.0f, static_cast<float>(tr.n - 1));
+    const auto k =
+        static_cast<std::size_t>(std::min(u, std::max(0.0f, static_cast<float>(tr.n) - 2.0f)));
+    const float f = u - static_cast<float>(k);
+    const auto z0 = static_cast<float>(map_->floorZ(tr.t[k].pos()));
+    const auto z1 =
+        static_cast<float>(map_->floorZ(tr.t[std::min<std::size_t>(k + 1, tr.n - 1u)].pos()));
+    a.z = z0 + (z1 - z0) * f;
+    if (!moving(i)) {
+        a.route.leg = Leg::Done;
+        a.pos = a.endPoint;
+        if (a.face != 0xFF) {
+            // A slot's face (+x, +y, -x, -y) turns it as the slot says.
+            static constexpr std::array<std::uint8_t, 4> kFacing{0, 1, 3, 2};
+            static constexpr std::array<float, 4> kHeading{0.0f, 1.5707964f, 3.1415927f,
+                                                           -1.5707964f};
+            a.facing = kFacing[a.face % 4];
+            a.heading = kHeading[a.face % 4];
+        }
+    }
     link(i);
+}
+
+void CityLife::motion(int i, float dt) {
+    LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    if (!moving(i)) {
+        a.speedNow = std::max(0.0f, a.speedNow - a.speed * dt / tl::kEaseSeconds);
+        return;
+    }
+    const Track& tr = tracks_[static_cast<std::size_t>(i)];
+    const float pace = a.speed * (a.state == ActState::Wander ? tl::kWanderPace : 1.0f);
+    const float left = tr.ended ? static_cast<float>(tr.base + tr.n - 1) - a.s : 1e9f;
+    const float target =
+        left < tl::kBrakeTiles ? std::max(0.2f * pace, pace * left / tl::kBrakeTiles) : pace;
+    const float ease = pace * dt / tl::kEaseSeconds;
+    a.speedNow = std::clamp(target, a.speedNow - ease, a.speedNow + ease);
+    // Constant speed over the ground: the step along the track that moves it exactly this far
+    // where it is drawn (diagonals, the outside of a turn), found by two refinements.
+    const float want = a.speedNow * dt;
+    float ds = want;
+    const float end = tr.ended ? static_cast<float>(tr.base + tr.n - 1) : 1e9f;
+    for (int k = 0; k < 2 && want > 1e-6f; ++k) {
+        const Vec2 p = trackPoint(i, std::min(end, a.s + ds), true);
+        const float got = std::sqrt(dist2(p, a.pos));
+        if (got < 1e-6f) break;
+        ds = std::clamp(ds * want / got, 0.5f * want, 2.0f * want);
+    }
+    a.s += ds;
+    if (tr.ended) a.s = std::min(a.s, static_cast<float>(tr.base + tr.n - 1));
+    placeOnTrack(i, tl::kCatchUp * std::max(a.speedNow, 0.2f * pace) * dt);
+}
+
+void CityLife::advanceBy(int i, float tiles) {
+    LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    Track& tr = tracks_[static_cast<std::size_t>(i)];
+    float left = tiles;
+    for (int guard = 0; guard < 100000 && left > 0 && moving(i); ++guard) {
+        const float step = std::min(left, 1.0f);
+        a.s += step;
+        left -= step;
+        if (tr.ended) a.s = std::min(a.s, static_cast<float>(tr.base + tr.n - 1));
+        while (a.s - static_cast<float>(tr.base) >= 2.0f + tl::kSmoothReach && tr.n > 4) {
+            std::copy(tr.t.begin() + 1, tr.t.begin() + tr.n, tr.t.begin());
+            --tr.n;
+            ++tr.base;
+            fillTrack(i);
+        }
+    }
+    a.speedNow = moving(i) ? a.speed : 0.0f;
+    placeOnTrack(i, 0);
+}
+
+void CityLife::afterStep(int i, float dt) {
+    LiveActor& a = pool_[static_cast<std::size_t>(i)];
+    const float dx = a.pos.x - a.prev.x;
+    const float dy = a.pos.y - a.prev.y;
+    const float d = std::sqrt(dx * dx + dy * dy);
+    a.animTime += dt * a.rate;
+    if (d > 1.5f) return; // placed, not walked
+    a.stride += d;
+    if (a.source != Source::Population && a.source != Source::Figure) a.speedNow = d / dt;
+    if (d > 1e-4f) {
+        // The heading turns towards the way it moves at a bounded rate: no flips in one step.
+        float turn = std::atan2(dy, dx) - a.heading;
+        while (turn > 3.1415927f) turn -= 6.2831853f;
+        while (turn < -3.1415927f) turn += 6.2831853f;
+        const float most = tl::kTurnRate * dt;
+        a.heading += std::clamp(turn, -most, most);
+        if (a.heading > 3.1415927f) a.heading -= 6.2831853f;
+        if (a.heading < -3.1415927f) a.heading += 6.2831853f;
+    }
+    // The sprite's four directions from the heading, turning only well past a sector's edge so
+    // a walker on a diagonal does not flicker between two.
+    static constexpr std::array<float, 4> kAxis{0.0f, 1.5707964f, -1.5707964f, 3.1415927f};
+    const auto off = [&](std::uint8_t f) {
+        float x = a.heading - kAxis[f];
+        while (x > 3.1415927f) x -= 6.2831853f;
+        while (x < -3.1415927f) x += 6.2831853f;
+        return std::abs(x);
+    };
+    if (d > 1e-4f && off(a.facing) > 0.7853982f + tl::kTurnHold) {
+        std::uint8_t best = 0;
+        for (std::uint8_t f = 1; f < 4; ++f)
+            if (off(f) < off(best)) best = f;
+        a.facing = best;
+    }
 }
 
 void CityLife::think(int i, float dt) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
-    a.prev = a.pos;
-    a.prevZ = a.z;
-    a.animTime += dt;
     // Fades.
     if ((a.flags & live_flag::kFadeOut) != 0) {
         a.alpha = std::max(0.0f, a.alpha - dt / tl::kFadeSeconds);
@@ -1594,11 +1896,8 @@ void CityLife::think(int i, float dt) {
     }
     if (a.state == ActState::Leave) {
         a.timer -= dt;
-        if ((a.flags & live_flag::kFadeOut) == 0) {
-            advanceAlong(i, a.speed * dt);
-            if (a.route.leg == Leg::Done || a.route.leg == Leg::None || a.timer <= 0)
-                a.flags |= live_flag::kFadeOut;
-        }
+        if ((a.flags & live_flag::kFadeOut) == 0 && (!moving(i) || a.timer <= 0))
+            a.flags |= live_flag::kFadeOut;
         if (!inView(a.pos)) release(i);
         return;
     }
@@ -1618,8 +1917,7 @@ void CityLife::think(int i, float dt) {
             a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kFadeOut);
             if (a.state == ActState::Inside) a.flags |= live_flag::kFadeIn;
             a.route = Route{};
-            a.next = a.tile;
-            a.progress = 0;
+            tracks_[static_cast<std::size_t>(i)].n = 0;
             chooseRoutine(i);
         }
     }
@@ -1630,8 +1928,7 @@ void CityLife::think(int i, float dt) {
         if (a.timer <= 0) runSteps(i, false, none);
         break;
     case ActState::Travel:
-        advanceAlong(i, a.speed * dt);
-        if (a.route.leg == Leg::Done || a.route.leg == Leg::None) {
+        if (!moving(i)) {
             endStep(i);
             if (a.state == ActState::Idle) runSteps(i, false, none);
         }
@@ -1646,46 +1943,39 @@ void CityLife::think(int i, float dt) {
         break;
     case ActState::Wander: {
         a.timer -= dt;
-        if (a.route.leg == Leg::Done || a.route.leg == Leg::None) {
-            if (a.timer <= 0) {
-                endStep(i);
-                runSteps(i, false, none);
-                break;
-            }
-            // A short straight walk to a free tile near its centre (or in its zone).
-            const int pi = w_->pathsOf[a.region];
-            if (pi < 0) break;
-            const RegionPaths& paths = w_->paths[static_cast<std::size_t>(pi)];
-            const Step* st = a.step == kNoStep ? nullptr : &w_->data.steps[a.step];
-            const int radius =
-                std::max(1, static_cast<int>(st != nullptr && st->radius > 0 ? st->radius
-                                                                             : tl::kIdleWander));
-            for (int k = 0; k < tl::kWanderTries; ++k) {
-                const TilePos c = a.anchor.pos();
-                const TilePos t{
-                    c.x +
-                        static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(2 * radius + 1)) -
-                        radius,
-                    c.y +
-                        static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(2 * radius + 1)) -
-                        radius};
-                if (!map_->inBounds(t) || t == a.tile.pos() || !map_->walkable(t)) continue;
-                if (a.zone >= 0 && map_->districtAt(t) != a.zone) continue;
-                if (!paths.lineClear(a.tile.pos(), t, 2 * radius + 2)) continue;
-                a.route = Route{};
-                a.route.leg = Leg::Line;
-                a.route.start = a.tile;
-                a.route.goal = tile16(t);
-                a.next = a.tile;
-                a.progress = 0;
-                break;
-            }
-            if (a.route.leg != Leg::Line)
-                a.anim = kAnimIdle;
-            else
-                a.anim = kAnimMove;
+        if (moving(i)) break;
+        if (a.timer <= 0) {
+            endStep(i);
+            runSteps(i, false, none);
+            break;
         }
-        advanceAlong(i, a.speed * 0.7f * dt);
+        // A short walk to a free tile near its centre (or in its zone), now and then a pause.
+        const int pi = w_->pathsOf[a.region];
+        if (pi < 0) break;
+        const RegionPaths& paths = w_->paths[static_cast<std::size_t>(pi)];
+        const Step* st = a.step == kNoStep ? nullptr : &w_->data.steps[a.step];
+        const int radius = std::max(
+            1, static_cast<int>(st != nullptr && st->radius > 0 ? st->radius : tl::kIdleWander));
+        a.anim = kAnimIdle;
+        if (uniform(a) < tl::kWanderPause) break;
+        for (int k = 0; k < tl::kWanderTries; ++k) {
+            const TilePos c = a.anchor.pos();
+            const auto span = static_cast<std::uint64_t>(2 * radius + 1);
+            const TilePos t{c.x + static_cast<int>(next(a.rng) % span) - radius,
+                            c.y + static_cast<int>(next(a.rng) % span) - radius};
+            if (!map_->inBounds(t) || t == a.tile.pos() || !map_->walkable(t)) continue;
+            if (a.zone >= 0 && map_->districtAt(t) != a.zone) continue;
+            if (!paths.lineClear(a.tile.pos(), t, 2 * radius + 2)) continue;
+            a.route = Route{};
+            a.route.leg = Leg::Line;
+            a.route.start = a.tile;
+            a.route.goal = tile16(t);
+            // Somewhere on the tile, not its exact centre.
+            startTrack(i, {static_cast<float>(t.x) + range(a, 0.25f, 0.75f),
+                           static_cast<float>(t.y) + range(a, 0.25f, 0.75f)});
+            a.anim = kAnimMove;
+            break;
+        }
         break;
     }
     case ActState::Follow: {
@@ -1701,14 +1991,13 @@ void CityLife::think(int i, float dt) {
         const LiveActor& o = pool_[static_cast<std::size_t>(a.follow)];
         const Step& st = w_->data.steps[a.step];
         if (dist2(o.pos, a.pos) > (st.spacing + 0.6f) * (st.spacing + 0.6f)) {
-            if (a.route.leg == Leg::Done || a.route.leg == Leg::None || frame_ % 30 == 0) {
-                if (!planTo(i, o.tile.pos(), builds_)) a.route.leg = Leg::Done;
-            }
+            if (!moving(i) || frame_ % 30 < static_cast<std::uint32_t>(tl::kBuckets))
+                if (!planTo(i, o.tile.pos(), centre(o.tile.pos()), builds_))
+                    tracks_[static_cast<std::size_t>(i)].n = 0;
             a.anim = kAnimMove;
-            advanceAlong(i, a.speed * dt);
         } else {
             a.anim = kAnimIdle;
-            a.route.leg = Leg::Done;
+            tracks_[static_cast<std::size_t>(i)].n = 0;
         }
         break;
     }
@@ -1731,33 +2020,87 @@ bool CityLife::tokenAt(std::size_t t, int k, int member, TokenAt& out) const {
         std::fmod(now_ + static_cast<double>(k) * period / tk.count + 1e7 * period, period);
     const double run = ts.length / speed;
     const double stay = tl::kPortStay;
+    const double far = ts.farStay;
     double s = 0;
     bool back = false;
+    bool working = false;
     out.moving = true;
     if (phase < stay) {
         out.moving = false;
     } else if (phase < stay + run) {
         s = (phase - stay) * speed;
-    } else if (phase < 2 * stay + run) {
+    } else if (phase < stay + run + far) {
         s = ts.length;
-        out.moving = false;
+        out.moving = ts.fishing;
+        working = ts.fishing;
     } else {
-        s = ts.length - (phase - 2 * stay - run) * speed;
+        s = ts.length - (phase - stay - run - far) * speed;
         back = true;
     }
-    if (member > 0) s += (back ? 1.0 : -1.0) * 0.9 * member;
+    bool flock = false;
+    if (tk.group >= 0)
+        flock = w_->data.regions[static_cast<std::size_t>(tk.region)]
+                    .groups[static_cast<std::size_t>(tk.group)]
+                    .formation == Formation::Cluster;
+    if (member > 0)
+        s += (back ? 1.0 : -1.0) * static_cast<double>(tl::kTrainSpacing) *
+             (flock ? 1.0 : static_cast<double>(member));
     s = std::clamp(s, 0.0, static_cast<double>(ts.length));
-    const auto seg = static_cast<std::size_t>(
-        std::ranges::upper_bound(ts.cum, static_cast<float>(s)) - ts.cum.begin());
-    const std::size_t k1 = std::clamp<std::size_t>(seg, 1, ts.line.size() - 1);
-    const float l0 = ts.cum[k1 - 1];
-    const float l1 = ts.cum[k1];
-    const float f = l1 > l0 ? (static_cast<float>(s) - l0) / (l1 - l0) : 0.0f;
-    const Vec2 p0 = ts.line[k1 - 1];
-    const Vec2 p1 = ts.line[k1];
-    out.pos = {p0.x + (p1.x - p0.x) * f, p0.y + (p1.y - p0.y) * f};
-    const float dx = (p1.x - p0.x) * (back ? -1.0f : 1.0f);
-    const float dy = (p1.y - p0.y) * (back ? -1.0f : 1.0f);
+    const bool lane = !tk.lane.empty();
+    // The line's point at a length, and its corners rounded by an average over a tile or two
+    // either side, kept where the vessel or the walker may be.
+    const auto at = [&](double len) {
+        len = std::clamp(len, 0.0, static_cast<double>(ts.length));
+        const auto seg = static_cast<std::size_t>(
+            std::ranges::upper_bound(ts.cum, static_cast<float>(len)) - ts.cum.begin());
+        const std::size_t k1 = std::clamp<std::size_t>(seg, 1, ts.line.size() - 1);
+        const float l0 = ts.cum[k1 - 1];
+        const float l1 = ts.cum[k1];
+        const float f = l1 > l0 ? (static_cast<float>(len) - l0) / (l1 - l0) : 0.0f;
+        return Vec2{ts.line[k1 - 1].x + (ts.line[k1].x - ts.line[k1 - 1].x) * f,
+                    ts.line[k1 - 1].y + (ts.line[k1].y - ts.line[k1 - 1].y) * f};
+    };
+    const auto fits = [&](Vec2 p) {
+        const TilePos tp{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+        if (!map_->inBounds(tp)) return false;
+        if (!lane) return map_->walkable(tp);
+        const int ter = map_->terrainAt(tp);
+        return ter != world::kNone && map_->terrainInfo(ter).water;
+    };
+    const Vec2 raw = at(s);
+    Vec2 p{};
+    const double r = lane ? 1.5 : static_cast<double>(tl::kSmoothReach);
+    for (const double o : {-r, -0.5 * r, 0.0, 0.5 * r, r}) {
+        const Vec2 q = at(s + o);
+        p.x += q.x * 0.2f;
+        p.y += q.y * 0.2f;
+    }
+    if (!fits(p)) p = raw;
+    if (working) {
+        // A fishing boat works its ground: slow circles about the lane's end.
+        const double w = phase - stay - run;
+        const double ang = w * tl::kShipSpeed / tl::kFishingRadius + static_cast<double>(k);
+        const Vec2 q{p.x + static_cast<float>(std::cos(ang)) * tl::kFishingRadius,
+                     p.y + static_cast<float>(std::sin(ang)) * tl::kFishingRadius};
+        const double ramp = std::min({1.0, w / 20.0, (far - w) / 20.0}); // ease out and back
+        const Vec2 eased{p.x + (q.x - p.x) * static_cast<float>(ramp),
+                         p.y + (q.y - p.y) * static_cast<float>(ramp)};
+        if (fits(eased)) p = eased;
+    }
+    if (flock && member > 0) {
+        // A flock about its drover rather than in file.
+        const double ang = unit(hashOf({0xF7, t, static_cast<std::uint64_t>(k),
+                                        static_cast<std::uint64_t>(member)})) *
+                           6.2831853;
+        const double rad = 0.6 + unit(hashOf({0xF8, t, static_cast<std::uint64_t>(member)})) * 1.6;
+        const Vec2 q{p.x + static_cast<float>(std::cos(ang) * rad),
+                     p.y + static_cast<float>(std::sin(ang) * rad)};
+        if (fits(q)) p = q;
+    }
+    out.pos = p;
+    const Vec2 ahead = at(s + (back ? -0.5 : 0.5));
+    const float dx = ahead.x - raw.x;
+    const float dy = ahead.y - raw.y;
     out.facing =
         std::abs(dx) >= std::abs(dy) ? facingOf(dx > 0 ? 1 : -1, 0) : facingOf(0, dy > 0 ? 1 : -1);
     return true;
@@ -1774,41 +2117,91 @@ int CityLife::memberKind(const Token& tk, int member) const {
     return tk.kind;
 }
 
+Vec2 CityLife::smoothAlong(std::span<const Tile16> line, float s) const {
+    if (line.empty()) return {};
+    const auto last = static_cast<float>(line.size() - 1);
+    const auto raw = [&](float x) {
+        x = std::clamp(x, 0.0f, last);
+        const auto k = static_cast<std::size_t>(std::min(x, std::max(0.0f, last - 1.0f)));
+        const float f = x - static_cast<float>(k);
+        const Vec2 p0 = centre(line[k].pos());
+        const Vec2 p1 = centre(line[std::min<std::size_t>(k + 1, line.size() - 1)].pos());
+        return Vec2{p0.x + (p1.x - p0.x) * f, p0.y + (p1.y - p0.y) * f};
+    };
+    const Vec2 r0 = raw(s);
+    const float r = tl::kSmoothReach;
+    Vec2 p{};
+    for (const float o : {-r, -0.5f * r, 0.0f, 0.5f * r, r}) {
+        const Vec2 q = raw(s + o);
+        p.x += q.x * 0.2f;
+        p.y += q.y * 0.2f;
+    }
+    const float edge = std::clamp(std::min(s, last - s) / r, 0.0f, 1.0f);
+    p = {r0.x + (p.x - r0.x) * edge, r0.y + (p.y - r0.y) * edge};
+    return settleOnGround(r0, p);
+}
+
+float CityLife::atLength(std::span<const float> cum, float d) {
+    if (cum.size() < 2) return 0;
+    if (d <= 0) return 0;
+    if (d >= cum.back()) return static_cast<float>(cum.size() - 1);
+    const auto it = std::ranges::upper_bound(cum, d);
+    const auto k = static_cast<std::size_t>(it - cum.begin()) - 1;
+    const float span = cum[k + 1] - cum[k];
+    return static_cast<float>(k) + (span > 1e-6f ? (d - cum[k]) / span : 0.0f);
+}
+
+const std::vector<Tile16>& CityLife::carrierPath(std::size_t key, TilePos from, TilePos to) {
+    std::vector<Tile16>& path = carrierPaths_[key];
+    if (!path.empty()) return path;
+    const ChainRun& run = chains_.run(key / 16);
+    const int pi = w_->pathsOf[static_cast<std::size_t>(chains_.regionOf(key / 16))];
+    path.push_back(tile16(from));
+    if (pi >= 0) {
+        RegionPaths& paths = w_->paths[static_cast<std::size_t>(pi)];
+        Route r;
+        std::array<Tile16, tl::kMoveReach + 2> desc{};
+        int builds = 4;
+        if (paths.plan(from, to, r, desc, builds) == PlanResult::Ok) {
+            TilePos cur = from;
+            TilePos nx;
+            while (path.size() < 4096 && paths.next(r, cur, desc, nx)) {
+                path.push_back(tile16(nx));
+                cur = nx;
+            }
+        }
+    }
+    (void)run;
+    std::vector<float>& cum = carrierCum_[key];
+    cum.assign(1, 0.0f);
+    for (std::size_t k = 1; k < path.size(); ++k)
+        cum.push_back(cum.back() + std::sqrt(dist2(smoothAlong(path, static_cast<float>(k - 1)),
+                                                   smoothAlong(path, static_cast<float>(k)))));
+    return path;
+}
+
 void CityLife::puppet(int i) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
-    a.prev = a.pos;
-    a.prevZ = a.z;
-    a.animTime += static_cast<float>(tuning::kStepSeconds) * static_cast<float>(tl::kBuckets);
     if ((a.flags & live_flag::kFadeIn) != 0) {
         a.alpha =
-            std::min(1.0f, a.alpha + 0.05f * static_cast<float>(tl::kBuckets) / tl::kFadeSeconds);
+            std::min(1.0f, a.alpha + static_cast<float>(tuning::kStepSeconds) / tl::kFadeSeconds);
         if (a.alpha >= 1.0f) a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kFadeIn);
     }
     const auto place = [&](Vec2 p) {
         const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
         if (map_->inBounds(t)) {
-            if (!(t == a.tile.pos())) a.facing = facingOf(t.x - a.tile.x, t.y - a.tile.y);
-            a.tile = a.next = tile16(t);
+            a.tile = tile16(t);
             a.z = static_cast<float>(map_->floorZ(t));
         }
         a.pos = p;
         link(i);
     };
-    const auto along = [&](std::span<const Tile16> line, float s) {
-        if (line.empty()) return Vec2{};
-        if (s <= 0) return centre(line.front().pos());
-        const auto k = static_cast<std::size_t>(s);
-        if (k + 1 >= line.size()) return centre(line.back().pos());
-        const float f = s - static_cast<float>(k);
-        const Vec2 p0 = centre(line[k].pos());
-        const Vec2 p1 = centre(line[k + 1].pos());
-        return Vec2{p0.x + (p1.x - p0.x) * f, p0.y + (p1.y - p0.y) * f};
-    };
     switch (a.source) {
     case Source::Chain: {
         const ChainRun& run = chains_.run(static_cast<std::size_t>(a.a));
         const auto k = static_cast<std::size_t>(a.b);
-        const ChainStage& s = run.chain().stages[static_cast<std::size_t>(run.stageOf(k))];
+        const auto stage = static_cast<std::size_t>(run.stageOf(k));
+        const ChainStage& s = run.chain().stages[stage];
         const ChainWorker& wk = run.workers()[k];
         if (s.kind != ChainStage::Kind::Carry) {
             place(centre(run.place(s.slot).tile));
@@ -1829,56 +2222,21 @@ void CityLife::puppet(int i) {
             a.goodsCount = 0;
             break;
         }
-        // A carrier: where the formula has it between the two places.
+        // A carrier: where the formula has it on the way between the two places.
         const TilePos from = run.place(s.from).tile;
         const TilePos to = run.place(s.to).tile;
-        const double travel = std::max(1.0, run.travel(static_cast<std::size_t>(run.stageOf(k))));
+        const double travel = std::max(1.0, run.travel(stage));
         double f = 0;
         if (wk.phase == WorkerPhase::Out) f = 1.0 - std::clamp(wk.t / travel, 0.0, 1.0);
         if (wk.phase == WorkerPhase::Back) f = std::clamp(wk.t / travel, 0.0, 1.0);
-        // The walk between them, planned once into the actor's route buffers.
-        if (a.route.leg == Leg::None) {
-            const auto tmpTile = a.tile;
-            a.tile = tile16(from);
-            int builds = 2; // once per carrier: allowed past the step's budget
-            if (!planTo(i, to, builds)) a.route.leg = Leg::Done;
-            a.anchor = tile16(from);
-            a.tile = tmpTile;
-            a.timer = static_cast<float>(
-                w_->paths[static_cast<std::size_t>(w_->pathsOf[a.region])].length(
-                    a.route, from, desc_[static_cast<std::size_t>(i)]));
-        }
-        const float len = std::max(0.0f, a.timer);
-        if (a.route.leg == Leg::Done || len <= 0) {
-            place(centre(f > 0.5 ? to : from));
-        } else {
-            // Walk a copy of the route to the fraction.
-            Route r = a.route;
-            TilePos cur = from;
-            TilePos nx;
-            const float target = static_cast<float>(f) * len;
-            int steps = 0;
-            RegionPaths& paths = w_->paths[static_cast<std::size_t>(w_->pathsOf[a.region])];
-            while (static_cast<float>(steps) + 1.0f <= target &&
-                   paths.next(r, cur, desc_[static_cast<std::size_t>(i)], nx)) {
-                cur = nx;
-                ++steps;
-            }
-            Vec2 p = centre(cur);
-            Route r2 = r;
-            if (paths.next(r2, cur, desc_[static_cast<std::size_t>(i)], nx)) {
-                const float frac = target - static_cast<float>(steps);
-                const Vec2 q = centre(nx);
-                p = {p.x + (q.x - p.x) * frac, p.y + (q.y - p.y) * frac};
-                a.facing = wk.phase == WorkerPhase::Back ? facingOf(cur.x - nx.x, cur.y - nx.y)
-                                                         : facingOf(nx.x - cur.x, nx.y - cur.y);
-            }
-            const std::uint8_t keep = a.facing;
-            place(p);
-            a.facing = keep;
-        }
-        const bool moving = wk.phase == WorkerPhase::Out || wk.phase == WorkerPhase::Back;
-        a.anim = moving ? kAnimMove : kAnimIdle;
+        const std::size_t key =
+            static_cast<std::size_t>(a.a) * 16 + std::min<std::size_t>(stage, 15);
+        const std::vector<Tile16>& path = carrierPath(key, from, to);
+        const std::vector<float>& cum = carrierCum_[key];
+        const float idx = atLength(cum, static_cast<float>(f) * cum.back());
+        place(smoothAlong(path, idx));
+        const bool walking = wk.phase == WorkerPhase::Out || wk.phase == WorkerPhase::Back;
+        a.anim = walking ? kAnimMove : kAnimIdle;
         a.goods = static_cast<std::int16_t>(wk.phase == WorkerPhase::Out ? s.goods : -1);
         a.goodsCount = static_cast<std::uint8_t>(wk.phase == WorkerPhase::Out ? wk.hand : 0);
         break;
@@ -1900,7 +2258,6 @@ void CityLife::puppet(int i) {
             return;
         }
         place(at.pos);
-        a.facing = at.facing;
         a.anim = at.moving ? kAnimMove : kAnimIdle;
         if (tk.carry >= 0 && member > 0) {
             a.goods = static_cast<std::int16_t>(tk.carry);
@@ -1929,49 +2286,101 @@ void CityLife::puppet(int i) {
             }
             return;
         }
+        const auto slot = static_cast<std::size_t>(a.a);
         const auto line = trail(re);
-        const float elapsed = static_cast<float>(now_ - re.start);
-        const auto member = static_cast<float>(a.b);
+        const auto elapsed = static_cast<float>(now_ - re.start);
         const Event& ev = w_->data.regions[static_cast<std::size_t>(re.region)]
                               .events[static_cast<std::size_t>(re.event)];
         std::uint16_t perform = kAnimIdle;
-        for (std::uint32_t s = w_->data.blocks[ev.steps].first;
-             s < w_->data.blocks[ev.steps].first + w_->data.blocks[ev.steps].count; ++s)
-            if (w_->data.steps[s].verb == Verb::Use) perform = w_->data.steps[s].anim;
-        if (line.size() >= 2) {
-            const float s =
-                std::min(elapsed * tl::kFormationSpeed, static_cast<float>(line.size() - 1)) -
-                (member + 1.0f) * 0.9f;
-            const bool arrived =
-                elapsed * tl::kFormationSpeed >= static_cast<float>(line.size() - 1);
-            if (arrived) {
-                // Gathered at the end: a loose ring round it.
-                const double ang = unit(hashOf({a.key, 1})) * 2.0 * std::numbers::pi;
-                const double rad = 0.8 + unit(hashOf({a.key, 2})) * 2.2;
-                Vec2 p{re.place.x + static_cast<float>(std::cos(ang) * rad),
-                       re.place.y + static_cast<float>(std::sin(ang) * rad)};
-                const TilePos t{static_cast<int>(std::floor(p.x)),
-                                static_cast<int>(std::floor(p.y))};
-                if (!map_->inBounds(t) || !map_->walkable(t))
-                    p = along(line, static_cast<float>(line.size() - 1) - member * 0.3f);
-                place(p);
-                a.anim = perform;
-            } else {
-                const Vec2 p = along(line, std::max(0.0f, s));
-                place(p);
-                const auto k = static_cast<std::size_t>(
-                    std::clamp(s, 0.0f, static_cast<float>(line.size() - 2)));
-                a.facing = facingOf(line[k + 1].x - line[k].x, line[k + 1].y - line[k].y);
-                a.anim = s > 0 ? kAnimMove : kAnimIdle;
+        for (std::uint32_t st = w_->data.blocks[ev.steps].first;
+             st < w_->data.blocks[ev.steps].first + w_->data.blocks[ev.steps].count; ++st)
+            if (w_->data.steps[st].verb == Verb::Use) perform = w_->data.steps[st].anim;
+        // The formation of its first group.
+        Formation form = Formation::Line;
+        float spacing = 0.9f;
+        for (const CastEntry& c : ev.cast)
+            if (c.group >= 0) {
+                const Group& g = w_->data.regions[static_cast<std::size_t>(re.region)]
+                                     .groups[static_cast<std::size_t>(c.group)];
+                form = g.formation;
+                spacing = g.spacing;
+                break;
             }
-        } else {
+        const auto ring = [&]() {
+            // Gathered: a loose ring round the place.
             const double ang = unit(hashOf({a.key, 1})) * 2.0 * std::numbers::pi;
-            const double rad = 0.6 + unit(hashOf({a.key, 2})) * 2.6;
+            const double rad = 0.8 + unit(hashOf({a.key, 2})) * 2.2;
             Vec2 p{re.place.x + static_cast<float>(std::cos(ang) * rad),
                    re.place.y + static_cast<float>(std::sin(ang) * rad)};
             const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
-            if (!map_->inBounds(t) || !map_->walkable(t)) p = re.place;
-            place(p);
+            if (!map_->inBounds(t) || !map_->walkable(t))
+                p = line.size() >= 2 ? smoothAlong(line, static_cast<float>(line.size() - 1))
+                                     : re.place;
+            return p;
+        };
+        if (line.size() >= 2) {
+            const std::span<const float> cum{trailCum_.data() + slot * tl::kEventTrail, re.trail};
+            // The leader's way along the route, stopping at relay stations.
+            const Stops& stops = trailStops_[slot];
+            float t = elapsed;
+            float d = 0;
+            bool done = false;
+            for (std::uint8_t j = 0; j < stops.n && !done; ++j) {
+                const float dj = cum[stops.at[j]];
+                const float reach = (dj - d) / tl::kFormationSpeed;
+                if (t < reach) {
+                    d += t * tl::kFormationSpeed;
+                    done = true;
+                } else {
+                    t -= reach;
+                    d = dj;
+                    if (t < tl::kStationDwell)
+                        done = true;
+                    else
+                        t -= tl::kStationDwell;
+                }
+            }
+            if (!done) d = std::min(cum.back(), d + t * tl::kFormationSpeed);
+            const int member = a.b;
+            const int rank = form == Formation::Pairs ? member / 2 : member;
+            const float mine = d - static_cast<float>(rank + 1) * spacing;
+            if (d >= cum.back() - 1e-3f && mine >= cum.back() - 6.0f * spacing) {
+                place(ring());
+                a.anim = perform;
+            } else if (form == Formation::Cluster) {
+                const Vec2 c = smoothAlong(line, atLength(cum, d));
+                const double ang = unit(hashOf({a.key, 3})) * 2.0 * std::numbers::pi;
+                const double rad = unit(hashOf({a.key, 4})) * spacing;
+                Vec2 p{c.x + static_cast<float>(std::cos(ang) * rad),
+                       c.y + static_cast<float>(std::sin(ang) * rad)};
+                const TilePos tp{static_cast<int>(std::floor(p.x)),
+                                 static_cast<int>(std::floor(p.y))};
+                if (!map_->inBounds(tp) || !map_->walkable(tp)) p = c;
+                place(p);
+                a.anim = done && d < cum.back() ? kAnimIdle : kAnimMove;
+            } else {
+                const float idx = atLength(cum, std::max(0.0f, mine));
+                Vec2 p = smoothAlong(line, idx);
+                if (form == Formation::Pairs) {
+                    // Two abreast: either side of the way.
+                    const Vec2 ahead = smoothAlong(line, idx + 0.5f);
+                    const Vec2 behind = smoothAlong(line, idx - 0.5f);
+                    const float dx = ahead.x - behind.x;
+                    const float dy = ahead.y - behind.y;
+                    const float len = std::sqrt(dx * dx + dy * dy);
+                    const float side = (member % 2 == 0 ? 1.0f : -1.0f) * tl::kPairsOffset;
+                    if (len > 1e-3f) {
+                        const Vec2 q{p.x - dy / len * side, p.y + dx / len * side};
+                        const TilePos tq{static_cast<int>(std::floor(q.x)),
+                                         static_cast<int>(std::floor(q.y))};
+                        if (map_->inBounds(tq) && map_->walkable(tq)) p = q;
+                    }
+                }
+                place(p);
+                a.anim = mine > 0 && !done ? kAnimMove : kAnimIdle;
+            }
+        } else {
+            place(ring());
             a.anim = perform;
         }
         break;
@@ -2096,9 +2505,14 @@ void CityLife::buildTrail(RunningEvent& re) {
     if (pi < 0) return;
     RegionPaths& paths = w_->paths[static_cast<std::size_t>(pi)];
     std::array<Tile16, tl::kMoveReach + 2> desc{};
+    Stops& stops = trailStops_[slot];
+    stops.n = 0;
     for (std::size_t k = 0; k + 1 < ev.route.size(); ++k) {
         const TilePos a = paths.nodeAt(ev.route[k]);
         const TilePos b = paths.nodeAt(ev.route[k + 1]);
+        // A relay station on the way: the courier stops there for a fresh horse.
+        if (k > 0 && re.trail > 0 && stops.n < stops.at.size() && paths.isStation(ev.route[k]))
+            stops.at[stops.n++] = static_cast<std::uint16_t>(re.trail - 1);
         Route r;
         int builds = 4;
         if (paths.plan(a, b, r, desc, builds) != PlanResult::Ok) continue;
@@ -2110,6 +2524,13 @@ void CityLife::buildTrail(RunningEvent& re) {
             cur = nx;
         }
     }
+    // Lengths along the smoothed way, so a procession keeps an even pace on diagonals too.
+    float* cum = trailCum_.data() + slot * tl::kEventTrail;
+    if (re.trail > 0) cum[0] = 0;
+    const std::span<const Tile16> line{buf, re.trail};
+    for (std::uint32_t k = 1; k < re.trail; ++k)
+        cum[k] = cum[k - 1] + std::sqrt(dist2(smoothAlong(line, static_cast<float>(k - 1)),
+                                              smoothAlong(line, static_cast<float>(k))));
     re.length = static_cast<float>(re.trail);
     if (re.trail > 0) {
         re.place = centre(buf[re.trail - 1].pos());
@@ -2297,7 +2718,7 @@ void CityLife::updateEvents() {
                     a.state = ActState::Idle;
                     a.timer = 0;
                     a.route = Route{};
-                    a.next = a.tile;
+                    tracks_[k].n = 0;
                     const double len = ev.dur0 + (ev.dur1 - ev.dur0) * 0.5;
                     startEvent(static_cast<int>(r), static_cast<int>(e), now_, now_ + len, 0);
                     reactiveCool_[r] = now_;
@@ -2372,8 +2793,6 @@ std::size_t CityLife::gather(TileRect rect, float alpha, std::span<DrawActor> ou
     std::size_t n = 0;
     const TileRect r = rect.clipped(map_->bounds());
     if (r.empty()) return 0;
-    const int last = static_cast<int>((frame_ + static_cast<std::uint32_t>(tl::kBuckets) - 1) %
-                                      static_cast<std::uint32_t>(tl::kBuckets));
     for (int cy = r.y0 >> kChunkShift; cy <= (r.y1 - 1) >> kChunkShift; ++cy)
         for (int cx = r.x0 >> kChunkShift; cx <= (r.x1 - 1) >> kChunkShift; ++cx) {
             for (int i = chunkHead_[static_cast<std::size_t>(cy * map_->chunksX() + cx)]; i >= 0;
@@ -2381,14 +2800,15 @@ std::size_t CityLife::gather(TileRect rect, float alpha, std::span<DrawActor> ou
                 const LiveActor& a = pool_[static_cast<std::size_t>(i)];
                 if (a.alpha <= 0.0f || !r.contains(a.tile.pos())) continue;
                 if (n >= out.size()) return n;
-                // Steps since its bucket last ran, for the interpolation.
-                const int since = (last - i % tl::kBuckets + tl::kBuckets) % tl::kBuckets;
-                const float f = std::min(1.0f, (static_cast<float>(since) + alpha) /
-                                                   static_cast<float>(tl::kBuckets));
+                // Between its last two steps (everyone moves every step).
+                const float f = std::clamp(alpha, 0.0f, 1.0f);
                 DrawActor& d = out[n++];
                 d.handle = {static_cast<std::uint16_t>(i), a.gen};
                 d.pos = {a.prev.x + (a.pos.x - a.prev.x) * f, a.prev.y + (a.pos.y - a.prev.y) * f};
                 d.z = a.prevZ + (a.z - a.prevZ) * f;
+                d.stride = a.prevStride + (a.stride - a.prevStride) * f;
+                d.speed = a.speedNow;
+                d.heading = a.heading;
                 d.level = static_cast<std::uint8_t>(map_->level(a.tile.pos()));
                 d.facing = a.facing;
                 d.kind = a.kind;

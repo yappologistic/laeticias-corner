@@ -247,7 +247,8 @@ int App::runBench() {
     // Memory is held to its ceiling at the size the gate runs (1080p and below).
     if (judge && pixelW_ * pixelH_ <= 1920 * 1080 && processMemory().second > memoryCeiling())
         fail("memory");
-    return over ? kExitOverBudget : 0;
+    const int city = benchCity(judge);
+    return over || city == kExitOverBudget ? kExitOverBudget : 0;
 }
 
 bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
@@ -416,6 +417,8 @@ int App::runSoak() {
         std::printf("soak: simulation over its budget\n");
         over = true;
     }
+    // The cities: the active area roaming the world for as long (life.cpp's soak).
+    if (soakCity() == kExitOverBudget) over = true;
     return over ? kExitOverBudget : 0;
 }
 

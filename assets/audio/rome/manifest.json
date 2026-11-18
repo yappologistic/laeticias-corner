@@ -233,6 +233,81 @@
       "gain": 1.0,
       "when": "event",
       "for": "Arrival motif (fast travel, era caption): cithara F A C, cornu F."
+    },
+    {
+      "file": "sfx/rome/acclamation.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 3.2903,
+      "samples": 145102,
+      "gain": 0.9,
+      "when": "always",
+      "for": "A crowd's rhythmic acclamation (the emperor, a victor, the pompa).",
+      "tags": [
+        "event",
+        "crowd",
+        "ritual"
+      ]
+    },
+    {
+      "file": "sfx/rome/sting_sunrise.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for the sun rising (dawn begins), in Rome's F lydian-type mode.",
+      "tags": [
+        "sting",
+        "sunrise",
+        "rome"
+      ]
+    },
+    {
+      "file": "sfx/rome/sting_nightfall.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for night falling (dusk ends), in Rome's F lydian-type mode.",
+      "tags": [
+        "sting",
+        "nightfall",
+        "rome"
+      ]
+    },
+    {
+      "file": "sfx/rome/sting_storm_clear.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for a storm clearing (rain stops after a storm cell), in Rome's F lydian-type mode.",
+      "tags": [
+        "sting",
+        "storm_clear",
+        "rome"
+      ]
+    },
+    {
+      "file": "sfx/rome/sting_rainbow.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.2,
+      "samples": 97020,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A soft sting for a rainbow (the rainbow event), in Rome's F lydian-type mode.",
+      "tags": [
+        "sting",
+        "rainbow",
+        "rome"
+      ]
     }
   ]
 }

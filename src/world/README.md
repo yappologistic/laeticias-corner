@@ -64,9 +64,9 @@ Where the document and the files disagree, the files win; these are the differen
 
 1. **Layer order.** `world.json` lists 29 layers; 4 exist (`base`, `parsa`, `ostia`, `corner`),
    the rest are skipped with a warning. `corner` is composed last, not second as in §2.3.
-2. **Region files** do not exist yet (`assets/regions/` is absent): every region loads with the
-   default theme. The reader follows §2.6; life sections (`figures`, `groups`, `chains`,
-   `events`, `lanes_tokens`) and unknown sections are kept raw in `RegionFile::life`.
+2. **Region files** exist for every region; the reader follows §2.6 and keeps the life sections
+   (`roles`, `figures`, `groups`, `chains`, `events`, `lanes_tokens`, ...) raw in
+   `RegionFile::life`; `src/life/` compiles them.
 3. **Set catalogs for `world` and `rome` do not exist.** Worldgen resolves their ids from
    `tools/worldgen/plan/provisional.py` (V1 warnings only); the engine reads only contracts, so
    13 terrain ids draw as placeholders and 24 item ids (9 144 placed items, 8 000 of them base

@@ -42,6 +42,16 @@ SUBSET_MIN_LU = -6.0  # quietest unlockable subset relative to the full mix
 NOTE_SPREAD_DB = 1.0  # loudest 100 ms, max - min over the tuned notes
 NOTE_SECONDS = 1.2
 SFX_SHORT_LUFS = (-36.0, -17.0)  # loudest 100 ms: keeps effects mutually balanced
+# Intensity families (manifest `family` + `level`): the engine cross-fades neighbours at unity
+# gain, so each level must step up in loudness by about 3-4 LU, two neighbours played together
+# must add in power (no phasing: uncorrelated, sum within 1 LU of the power sum) and keep the
+# family's colour (spectral centroids within a factor of FAMILY_CENTROID).
+FAMILY_LUFS = (-32.0, -17.5)
+FAMILY_STEP_LU = (2.0, 5.0)
+FAMILY_SUM_LU = 1.0
+FAMILY_CORRELATION = 0.15
+FAMILY_CENTROID = 3.5
+HF_MAX_DB = -25.0  # tagged (atmosphere) files: energy above 8 kHz relative to the whole
 SFX_MAX_SECONDS = {"ui_hover": 0.08, "ui_click": 0.08, "paint": 0.12, "rotate": 0.25,
                    "place_soft": 0.35, "place_wood": 0.35, "place_stone": 0.35,
                    "pick": 0.25, "page": 0.35, "pet": 0.4, "deer": 0.5, "harvest": 0.5,
@@ -87,11 +97,12 @@ def seam_problems(x):
     return problems
 
 
-def check(group, name, samples=None):
+def check(group, name, samples=None, loud_win=None):
     path = AUDIO / name
     if not path.is_file():
         return None, ["missing"]
-    fmt, codec, channels, (dmin, dmax), loud_win, ceiling = RULES[group]
+    fmt, codec, channels, (dmin, dmax), kind_win, ceiling = RULES[group]
+    loud_win = loud_win or kind_win
     problems = []
     got = probe(path)
     want = (fmt, codec, mastering.SR, channels)
@@ -185,6 +196,51 @@ def check_notes(names):
     return lines, problems
 
 
+def hf_db(x):
+    """Energy above 8 kHz relative to the whole file, in dB."""
+    spec = np.abs(np.fft.rfft(x.mean(axis=1) if x.ndim == 2 else x)) ** 2
+    f = np.fft.rfftfreq(len(x), 1 / mastering.SR)
+    return db(spec[f > 8000].sum() / (spec.sum() + 1e-30))
+
+
+def centroid(x):
+    spec = np.abs(np.fft.rfft(x.mean(axis=1) if x.ndim == 2 else x)) ** 2
+    f = np.fft.rfftfreq(len(x), 1 / mastering.SR)
+    return float((f * spec).sum() / (spec.sum() + 1e-30))
+
+
+def check_family(family, members):
+    """members: [(level, name)] of one intensity family. Returns (lines, problems)."""
+    members = sorted(members)
+    levels = [lv for lv, _ in members]
+    lines, problems = [], []
+    if levels != list(range(1, len(levels) + 1)):
+        problems.append(f"levels {levels} are not 1..{len(levels)}")
+    sig = {name: mastering.decode(AUDIO / name) for _, name in members}
+    lufs = {name: mastering.integrated_lufs(x) for name, x in sig.items()}
+    for (la, a), (lb, b) in zip(members, members[1:]):
+        x, y = sig[a], sig[b]
+        n = max(len(x), len(y))
+        x, y = np.resize(x, (n, x.shape[1])), np.resize(y, (n, y.shape[1]))
+        step = lufs[b] - lufs[a]
+        power = 10 * np.log10(10 ** (lufs[a] / 10) + 10 ** (lufs[b] / 10))
+        summed = mastering.integrated_lufs(x + y) - power
+        r = float(np.corrcoef(x.mean(axis=1), y.mean(axis=1))[0, 1])
+        ca, cb = centroid(x), centroid(y)
+        ratio = max(ca, cb) / max(min(ca, cb), 1.0)
+        lines.append(f"{la}->{lb}: step {step:+.1f} LU, sum vs power {summed:+.2f} LU, r {r:+.3f}, "
+                     f"centroid {ca:.0f}->{cb:.0f} Hz")
+        if not FAMILY_STEP_LU[0] <= step <= FAMILY_STEP_LU[1]:
+            problems.append(f"{la}->{lb} steps {step:+.1f} LU")
+        if abs(summed) > FAMILY_SUM_LU:
+            problems.append(f"{la}+{lb} sum is {summed:+.2f} LU off the power sum (phasing)")
+        if abs(r) > FAMILY_CORRELATION:
+            problems.append(f"{la}, {lb} correlate ({r:+.3f})")
+        if ratio > FAMILY_CENTROID:
+            problems.append(f"{la}->{lb} centroid jumps x{ratio:.1f}")
+    return lines, problems
+
+
 def check_sets():
     """Every region set's manifest: each listed file passes its kind's rules and matches
     the manifest's length; every file in the set's folders is listed. Returns (listed
@@ -196,11 +252,19 @@ def check_sets():
         listed.add(manifest.relative_to(AUDIO).as_posix())
         print(f"set {set_name}:")
         names = set()
+        families = {}
         for e in doc["files"]:
             name = e["file"]
             names.add(name)
             group = KINDS[e["kind"]]
-            stats, problems = check(group, name, e["samples"] if e["loop"] else None)
+            stats, problems = check(group, name, e["samples"] if e["loop"] else None,
+                                    FAMILY_LUFS if "family" in e else None)
+            if stats and e.get("tags"):
+                hf = hf_db(mastering.decode(AUDIO / name))
+                if hf > HF_MAX_DB:
+                    problems.append(f"energy above 8 kHz {hf:.1f} dB > {HF_MAX_DB}")
+            if "family" in e:
+                families.setdefault(e["family"], []).append((e["level"], name))
             if stats and abs(stats[0] - e["seconds"]) > 1e-3:
                 problems.append(f"manifest says {e['seconds']} s")
             if e["loop"] != (group != "region_sfx"):
@@ -208,6 +272,14 @@ def check_sets():
             failures += bool(problems)
             cols = f"{stats[0]:8.2f} {stats[1]:7.1f} {stats[2]:8.2f}" if stats else " " * 25
             print(f"  {name:32s} {cols}  {'; '.join(problems) or 'ok'}")
+        for family, members in sorted(families.items()):
+            if len(members) < 2:
+                continue
+            lines, problems = check_family(family, members)
+            failures += len(problems)
+            print(f"  family {family}: {'; '.join(problems) or 'ok'}")
+            for line in lines:
+                print("     ", line)
         on_disk = {p.relative_to(AUDIO).as_posix() for sub in ("music", "amb", "sfx")
                    for p in (AUDIO / sub / set_name).glob("*") if p.is_file()}
         for name in sorted(on_disk - names):

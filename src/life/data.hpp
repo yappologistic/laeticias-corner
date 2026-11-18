@@ -50,7 +50,8 @@ enum class Verb : std::uint8_t {
 };
 
 // Roam: a random node of the region's graph within `within` tiles (synthesised strolls).
-enum class TargetKind : std::uint8_t { None, Here, Node, Item, Home, SlotKind, Each, Roam };
+// Flock: the node a herd shares (chosen per chunk and period, so flock-mates move together).
+enum class TargetKind : std::uint8_t { None, Here, Node, Item, Home, SlotKind, Each, Roam, Flock };
 
 struct Target {
     TargetKind kind = TargetKind::None;
