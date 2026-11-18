@@ -200,7 +200,8 @@ def forum_square(m):
         RM.statue(m, tc(tx), tc(ty), 0.0, 12.0, (TOGATE, ARMOURED, GODDESS)[i], material="bronze_cast", base=(5.0, 5.0))
 
 
-SQUARE_SOLID = {(7, 3), (7, 5), (6, 6), (7, 6), (1, 2), (1, 6), (1, 10), (5, 1), (5, 11), (9, 8)}
+SQUARE_SOLID = {(7, 3), (7, 5), (6, 6), (7, 6), (1, 2), (1, 6), (1, 10), (5, 1), (5, 11), (9, 8), (5, 6), (6, 5),
+                (6, 7), (8, 6), (8, 5), (7, 7), (7, 4), (6, 4), (8, 4)}
 SQUARE_WALK = [(x, y) for x in range(10) for y in range(13) if (x, y) not in SQUARE_SOLID]
 
 

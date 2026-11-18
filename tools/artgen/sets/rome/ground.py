@@ -153,21 +153,25 @@ def vineyard_soil(mask, k):
 
 
 def river_tiber(mask, frame, frames, k):
-    """The "flavus Tiberis": muddy yellow-green water, a darker channel in the middle, slow
-    swirls of silt and glints drifting with the frames."""
+    """The "flavus Tiberis": muddy yellow-green water, darker in the channel, shaded under its
+    banks, with ripple crests catching the sky and glints drifting with the frames, so the
+    silt colour still reads plainly as water."""
     g = home._grid(k)
-    f = home.shape_field(mask, g.u, g.v, 0.6, 3.0, 0.4, 1470, k)
+    field = lambda du: home.shape_field(mask, g.u - du, g.v - du, 0.8, 3.5, 0.5, 1470, k)
+    f = field(0)
     cover = g.inside & (f > 0)
-    t = frame / frames
-    depth = np.clip(f / 6, 0, 1)
-    swirl = home._pnoise(g.u - t * 4.0, g.v - t * 4.0, 4, 1471)
-    lvl = 3.6 - depth * 1.4 + (swirl - 0.5) * 1.1 + (home._pnoise(g.u, g.v, 8, 1472, t) - 0.5) * 0.4
-    dx, dy, h, ok = home._scatter(g, 4, 1473, 0.5, jitter=0.9)
-    phase = (h + t) % 1.0
-    glint = ok & (np.abs(dy) < 0.5) & (np.abs(dx) < (1 + 2 * (phase < 0.5)) * k * 0.5) & (f > 1.5)
-    lvl = lvl + glint * 2.0 - np.clip(0.8 - f, 0, 1) * 1.2
-    rgb = home._paint(TIBER, lvl, g.px, g.py, band=0.35, k=k)
+    wall1, wall2, shade = field(1) <= 0, field(2) <= 0, field(3) <= 0
+    level = home._ripples(g, f, shade, frame, frames)
+    swirl = home._pnoise(g.u - frame / frames * 4.0, g.v, 4, 1471) - 0.5
+    rgb = home._paint(RIVER, level * 1.25 - 0.4 + swirl * 0.8, g.px, g.py, band=0.2, k=k)
+    lip = f < 0.6
+    rgb = np.where((lip & ~wall2)[..., None], np.array(_rgb(TIBER[4]), np.uint8), rgb)
+    bank = home._paint([INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3]], np.where(wall1, 3.2, 2.0), g.px, g.py, k=k)
+    rgb = np.where((wall2 | lip & (f < 0.25))[..., None], bank, rgb)
     return home._sprite(g, rgb, cover * 255)
+
+
+RIVER = [WATER[1], TIBER[1], TIBER[2], TIBER[3], TIBER[4], WATER[4], WATER[5], PLASTER[4]]
 
 
 def mud_bank(mask, k):

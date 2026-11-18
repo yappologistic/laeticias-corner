@@ -10,7 +10,7 @@ import numpy as np
 import roman as RM
 from arch import carve, fill, halo, revolve, slab
 from setbuild import Landmark
-from sets.rome.common import PANTHEON_GREY, PANTHEON_PINK, PORTICO, S5, S65, T, TOGATE, GODDESS, lamp, paving, referrer
+from sets.rome.common import LAMP, PANTHEON_GREY, PANTHEON_PINK, PORTICO, S5, S65, T, TOGATE, GODDESS, lamp, paving, referrer
 from voxel import value_noise
 
 ref = referrer("sets.rome.campus")
@@ -56,7 +56,7 @@ def pantheon(m):
     RM.dome(m, cx, cy, zd - 4.0, R - 1.5, material="gilt", rise=S.v(43.3) - zd + 4.0, thick=6.0, steps=7,
             step_h=2.6, step_mat="whitewash", oculus=S.h(9.0) / 2, inner="whitewash", coffers=True, tiles=True,
             seed=72)
-    halo(m, cx, cy, zb + 6.0, 34.0, (255, 226, 160), 0.35)       # the oculus's light on the floor (card)
+    halo(m, cx, cy, zb + 6.0, 34.0, LAMP, 0.35)       # the oculus's light on the floor (card)
     # The intermediate block with its upper pediment, faced in brick with marble cornices.
     pw = S.h(33.1)
     y0, y1 = cy - pw / 2 - 1.0, cy + pw / 2 + 1.0

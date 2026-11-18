@@ -95,7 +95,7 @@ def trajan_forum(m):
 
 
 TRAJ_SOLID = {(6, 12), (6, 13), (7, 12), (7, 13)}
-TRAJ_WALK = [(x, y) for x in range(1, 10) for y in range(4, 21) if (x, y) not in TRAJ_SOLID]
+TRAJ_WALK = [(x, y) for x in range(0, 10) for y in range(4, 21) if (x, y) not in TRAJ_SOLID]
 
 
 def basilica_ulpia(m):
@@ -171,7 +171,8 @@ def trajan_markets(m):
         else:
             fill(m, (x - 3, x + 3, y - 3, y + 3, ztop, ztop + 2.4), "travertine",
                  lambda X, Y, Z, x=x, y=y: np.hypot(X - x, Y - y) < 2.8, tone=0.2)
-        lamp(m, x + 1.0 * math.cos(th) * 0, y, 3.0, 0.45, r=6.0)
+        if 7 <= i <= 14:          # lamps in the shops at the middle of the curve
+            lamp(m, x, y, 3.0, 0.45, r=6.0)
     RM.lean_to(m, (cx - R - 3 * T, cx + R + 3 * T, 0.0, cy - R - 10.0), z - 3.0, z + 4.0, "-y", "terracotta", 443)
     # The upper terraces and the Via Biberatica, then the great hall.
     for i, (x0, x1, y0, y1, h) in enumerate(((4.0, D - 4.0, 2.0, 3 * T, z + 14.0),

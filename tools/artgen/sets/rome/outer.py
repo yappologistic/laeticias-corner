@@ -1,79 +1,18 @@
-"""Rome beyond the old centre (rome.md §2.3 D7, D11, D15, D17-D18, §3.2): the Baths of Trajan
-on the Oppian at s = 0.35, the Castra Praetoria at s = 0.4, the suburban villa with its
+"""Rome beyond the old centre (rome.md §2.3 D11, D15, D17-D18, §3.2): the Castra Praetoria at
+s = 0.4, the suburban villa with its
 vineyard on the Via Appia and the synagogue of a Transtiberim community; and as kit (rotatable,
 placed along routes): the Aqua Claudia arcade as a joined item, the tombs of the Via Appia."""
 
-import math
 
 import numpy as np
 
 import roman as RM
-from arch import carve, fill, revolve, rod, slab
+from arch import carve, fill, rod, slab
 from setbuild import Landmark
-from sets.rome.common import S35, S4, S65, T, box_hedge, cypress, lamp, paving, plane_tree, referrer, stone_pine, torch
+from sets.rome.common import S4, S65, T, box_hedge, cypress, lamp, paving, referrer, stone_pine, torch
 from voxel import value_noise
 
 ref = referrer("sets.rome.outer")
-
-
-def trajan_baths(m):
-    """The Baths of Trajan (109) by Apollodorus at s = 0.35: the first of the great imperial
-    baths, a vast symmetrical block in an enclosure with exedrae, gardens between; on the
-    central axis the open swimming pool (natatio), the great cross-vaulted cold hall
-    (frigidarium), the tepidarium and the caldarium with its windows to the south-west sun,
-    palaestras with colonnades to each side; furnace flues smoking."""
-    S = S35
-    W, D = 30 * T, 30 * T
-    # The enclosure wall with its exedrae and the garden.
-    RM.wall(m, (2.0, 8.0, 2.0, W - 2.0), 0.0, S.v(14.0), "brick", 701)
-    RM.wall(m, (2.0, D - 2.0, 2.0, 8.0), 0.0, S.v(14.0), "brick", 702)
-    RM.wall(m, (2.0, D - 2.0, W - 8.0, W - 2.0), 0.0, S.v(14.0), "brick", 703)
-    for yc in (6 * T, W - 6 * T):
-        el = RM.Ellipse(D - 4 * T, yc, 3 * T, 3 * T)
-        RM.ring_facade(m, el, 0.0, [RM.Storey(S.v(14.0), "windows", "tuscan", material="brick")], 20, 6.0, S,
-                       arc=(-math.pi / 2, math.pi / 2), seed=704)
-    fill(m, (8.0, D - 2.0, 8.0, W - 8.0, 0.0, 0.8), "grass", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 4.0, 705) -
-                                                                                     0.5) * 0.8)
-    for i in range(8):
-        plane_tree(m, 26.0 + i * 50.0, 30.0, 0.8, 30.0, seed=i)
-        plane_tree(m, 26.0 + i * 50.0, W - 30.0, 0.8, 30.0, seed=i + 9)
-    # The bath block.
-    bx0, bx1, by0, by1 = 4 * T, 22 * T, 5 * T, W - 5 * T
-    RM.wall(m, (bx0, bx1, by0, by1), 0.0, S.v(20.0), "brick", 706)
-    cy = W / 2
-    # Natatio (north), open to the sky.
-    carve(m, (bx0 + 6.0, bx0 + 4 * T, cy - 6 * T, cy + 6 * T, 1.0, S.v(20.0) + 1.0))
-    fill(m, (bx0 + 6.0, bx0 + 4 * T, cy - 6 * T, cy + 6 * T, 0.0, 1.5), "water",
-         tone=lambda X, Y, Z: 0.3 * (np.sin((X + Y) * 1.2) > 0.85))
-    # Frigidarium: three groin-vaulted bays rising above the block.
-    for i in range(3):
-        y0 = cy - 5 * T + i * (10 * T / 3)
-        RM.wall(m, (bx0 + 4 * T + 4.0, bx0 + 9 * T, y0, y0 + 10 * T / 3), 0.0, S.v(30.0), "brick", 707 + i)
-        RM.groin_roof(m, (bx0 + 4 * T + 4.0, bx0 + 9 * T, y0, y0 + 10 * T / 3), S.v(30.0), "whitewash", seed=710 + i)
-        RM.window(m, "+y", (bx0 + 4 * T + 4.0, bx0 + 9 * T, y0, y0 + 10 * T / 3), 10.0, 30.0, S.v(22.0), S.v(5.0),
-                  arched=True, glass=True)
-    # Tepidarium and caldarium: a domed hall and a great apsed hall with big windows to the south.
-    tx = bx0 + 11 * T
-    revolve(m, tx, cy, 0.0, S.v(24.0), lambda t: 2.4 * T, "brick", tone=RM.brick(713))
-    RM.dome(m, tx, cy, S.v(24.0), 2.4 * T - 1.0, "whitewash", rise=2.0 * T, thick=4.0, oculus=6.0, tiles=False,
-            coffers=False, seed=714)
-    cb = (bx0 + 13.5 * T, bx1, cy - 5 * T, cy + 5 * T)
-    RM.wall(m, cb, 0.0, S.v(28.0), "brick", 715)
-    for s0 in np.arange(12.0, cb[3] - cb[2] - 30.0, 36.0):
-        RM.window(m, "+x", cb, s0, 24.0, S.v(8.0), S.v(14.0), arched=True, glass=True, lit=0.3)
-    RM.vault_roof(m, cb, S.v(28.0), "y", "whitewash", tiles=False, seed=716)
-    # Palaestras with colonnades in the wings.
-    for y0, y1, front in ((by0 + 8.0, by0 + 6 * T, "+y"), (by1 - 6 * T, by1 - 8.0, "-y")):
-        carve(m, (bx0 + 6 * T, bx0 + 13 * T, y0, y1, 1.0, S.v(20.0) + 1.0))
-        fill(m, (bx0 + 6 * T, bx0 + 13 * T, y0, y1, 0.0, 1.0), "poros", tone=0.0)
-        yy = y0 + 6.0 if front == "+y" else y1 - 6.0
-        RM.colonnade(m, (bx0 + 6 * T + 6.0, yy), (bx0 + 13 * T - 6.0, yy), 0.0, 12,
-                     RM.ROrder("corinthian", D=1.0, H=9.0, shaft="granite", fluted=False), S, 8.0,
-                     "-y" if front == "+y" else "+y", seed=int(y0))
-    RM.lean_to(m, (bx0 - 1, bx1 + 1, by0 - 1, by0 + 5 * T), S.v(20.0), S.v(22.0), "-y", "terracotta", 717)
-    RM.lean_to(m, (bx0 - 1, bx1 + 1, by1 - 5 * T, by1 + 1), S.v(20.0), S.v(22.0), "+y", "terracotta", 718)
-    for x, y in ((bx1 - 6.0, by0 + 10.0), (bx1 - 6.0, by1 - 10.0), (bx1 - 30.0, cy)):
-        slab(m, x - 2.0, x + 2.0, y - 2.0, y + 2.0, 0.0, S.v(32.0), "brick", tone=RM.brick(719))
 
 
 def castra_praetoria(m):
@@ -179,8 +118,6 @@ def synagogue(m):
 
 
 LANDMARKS = {
-    "rome.trajan_baths": Landmark((30, 30), (0, 104), ref("trajan_baths"), district=8,
-                                  emitters={"steam_n": (5 * T, 6 * T, 70.0), "steam_s": (21 * T, 24 * T, 70.0)}),
     "rome.castra_praetoria": Landmark((15, 18), (0, 48), ref("castra_praetoria"), district=8,
                                       slots={"guard": [{"t": [15, 8], "face": "+x"}, {"t": [15, 10], "face": "+x"}],
                                              "drill": [{"t": [16, 7]}, {"t": [16, 9]}, {"t": [17, 8]}]}),
@@ -191,7 +128,6 @@ LANDMARKS = {
 }
 
 INFO = {
-    "rome.trajan_baths": ("Baths of Trajan", 0.35, 110, "BSG", "trajan_baths"),
     "rome.castra_praetoria": ("Castra Praetoria", 0.4, 70, "BSG", "castra_praetoria"),
     "rome.suburban_villa": ("Suburban villa with vineyard", 0.65, 70, "BSG", "suburban_villa"),
     "rome.synagogue": ("Synagogue of Transtiberim", 0.65, 60, "BSG", "synagogue"),

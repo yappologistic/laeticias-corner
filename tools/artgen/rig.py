@@ -803,6 +803,8 @@ def _arms(b: Body, d: Dress, p: Pose, fr: Frame, up):
         b.blob(h, (0.5 * f, 0.48 * f, 0.55 * f), d.skin)
         if "bracelets" in d.jewels:
             b.points([wrist], "gold", 0.6)
+        if "ring" in d.jewels and side > 0:    # the gold ring of a senator or knight
+            b.points([h], "gold", 0.8)
 
 
 def _head(b: Body, d: Dress, p: Pose, fr: Frame, up):

@@ -11,7 +11,7 @@ import relief_roman as RR
 import roman as RM
 from arch import ellipsoid, fill, halo, revolve, rod, slab
 from setbuild import Landmark
-from sets.rome.common import S6, S65, SUN_GOD, T, drums, paving, referrer, scaffold, torch, treadwheel_crane
+from sets.rome.common import LAMP, S6, S65, SUN_GOD, T, drums, paving, referrer, scaffold, torch, treadwheel_crane
 from voxel import hash01, value_noise
 
 ref = referrer("sets.rome.velia")
@@ -142,7 +142,7 @@ def colosseum(m):
          tone=lambda X, Y, Z: 0.1 + 0.3 * (((np.arctan2((Y - cy) / b, (X - cx) / a) * 20 / np.pi) % 1.0) < 0.5)
          - 0.5 * (((np.arctan2((Y - cy) / b, (X - cx) / a) * 40 / np.pi) % 1.0) > 0.86))
     # Torches at the axial entrances for game nights.
-    for th in (0.0, math.pi / 2, math.pi, -math.pi / 2):
+    for th in (0.0, math.pi / 2):
         for dth in (-0.06, 0.06):
             x, y = el.point(th + dth, 1.5)
             torch(m, x, y, z0, h=7.0, strength=0.8)
@@ -163,7 +163,7 @@ def colossus(m):
     RM.cornice(m, (c - bw, c + bw, c - bw, c + bw), bh, 1.6, 1.0)
     RM.inscription(m, "+x", (c - bw, c + bw, c - bw, c + bw), 3.0, 2 * bw - 3.0, bh * 0.45, bh * 0.75, "gold", rows=2)
     RM.statue(m, c, c, bh + 1.6, S.v(32.0) - S.v(2.5), SUN_GOD, material="bronze_cast", keep=("gold",))
-    halo(m, c, c, bh + S.v(29.0), 22.0, (255, 220, 140), 0.45)
+    halo(m, c, c, bh + S.v(29.0), 22.0, LAMP, 0.45)
 
 
 def meta_sudans(m):
@@ -188,7 +188,7 @@ def meta_sudans(m):
     # Water sheeting down the cone.
     fill(m, (c - rc - 1, c + rc + 1, c - rc - 1, c + rc + 1, 2.0 + h * 0.3, 2.0 + h + 1.0), "water",
          lambda X, Y, Z: (np.abs(np.hypot(X - c, Y - c) - rc * (1.0 - 0.75 * (Z - 2.0 - h * 0.3) / (h * 0.7)) - 0.25) < 0.35) &
-         (np.sin(np.arctan2(Y - c, X - c) * 12) > 0.2), tone=0.4)
+         (np.sin(np.arctan2(Y - c, X - c) * 12) > 0.75), tone=0.4)
     ellipsoid(m, (c, c, 2.0 + h + 0.6), (1.4, 1.4, 1.0), "water", 0.5)
 
 
@@ -204,9 +204,10 @@ def arch_titus(m):
     S = Scale(0.75)
     pier = (S.h(13.5) - T) / 2
     box = (T - pier, 2 * T + pier, 2.0, T - 2.0)
-    img, cmap = RR.spoils_image(int(3 * T * 2), int(S.v(3.0) * 2))
+    size = (int(3 * T * 2), int(S.v(3.0) * 2))
     RM.triumphal_arch(m, box, "+y", S, z0=0.0, bays=1, order=RM.ROrder("composite", D=0.85, H=8.4),
-                      material="marble", relief=(img, cmap), seed=31, pier=pier)
+                      material="marble", relief=[RR.spoils_image(*size), RR.triumph_image(*size)], seed=31,
+                      pier=pier)
 
 
 # ---------------------------------------------------------------- the Temple of Venus and Roma

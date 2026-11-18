@@ -4,15 +4,14 @@ group of gods), the unrolled spiral band of Trajan's Column (legionaries marchin
 building, the emperor addressing the army, battles with Dacians in their caps, boats on the
 Danube, trees and camps), the two panels in the passage of the Arch of Titus (the spoils of
 Jerusalem with the menorah carried through an arch; Titus in the triumphal chariot crowned by
-Victory), a sacrifice procession for altars and friezes, and the women's crafts of the Forum of
-Nerva. Marble is shown carved with restrained paint and bronze attachments, so figures read by
+Victory) and the women's crafts of the Forum of Nerva. Marble is shown carved with restrained paint and bronze attachments, so figures read by
 their light and shade first."""
 
 from functools import lru_cache
 
 import numpy as np
 
-from relief_greek import Canvas, chariot, horse, person
+from relief_greek import Canvas, chariot, person
 
 MARBLE_COLS = {"flesh": "marble", "drape": "marble", "drape2": "marble", "hair2": "marble", "bronze": "bronze",
                "horse": "marble", "shield": "bronze", "trim": "gold", "tree": "marble", "gift": "gold", "cap": "marble"}
@@ -202,32 +201,6 @@ def triumph_image(width, height):
     while x < width - 3:
         person(cv, x, base, H, pose="walk", facing=1, dress="chiton", head="wreath", held=("staff",), colours=cols(3))
         x += H * 0.35
-    return cv.pair()
-
-
-@lru_cache(maxsize=None)
-def sacrifice_image(width, height):
-    """A sacrifice: a priest with covered head at an altar, a flute player, attendants leading
-    a bull, a pig and a sheep (suovetaurilia)."""
-    cv = Canvas(width, height)
-    base = height - 1
-    H = height * 0.9
-    x = 2.0
-    i = 0
-    while x < width - 4:
-        if i % 4 == 0:
-            cv.poly([(x, base), (x + H * 0.25, base), (x + H * 0.25, base - H * 0.35), (x, base - H * 0.35)], "U", cols(0))
-            x += H * 0.35
-            person(cv, x, base, H, pose="stand", facing=-1, dress="himation", head="veil", colours=cols(1))
-        elif i % 4 == 1:
-            person(cv, x, base, H, pose="stand", facing=-1, dress="long", held=("aulos",), colours=cols(2))
-        else:
-            person(cv, x, base, H, pose="walk", facing=-1, dress="chiton", head="wreath", colours=cols(i))
-            horse(cv, x + H * 0.35, base, H * (0.42 if i % 4 == 2 else 0.3), "walk", -1, "H", "h",
-                  cols(i, horse="marble"))
-            x += H * 0.4
-        x += H * 0.38
-        i += 1
     return cv.pair()
 
 

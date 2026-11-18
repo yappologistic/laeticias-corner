@@ -306,8 +306,8 @@ def circus_maximus(m):
     # The triple arch of Titus in the curved east end.
     RM.triumphal_arch(m, (cx - 22.0, cx + 22.0, 1.0, 9.0), "+y", Sc, z0=0.0, bays=3,
                       order=RM.ROrder("composite", D=1.0, H=13.0), seed=588)
-    for y in np.arange(cy, x_end, 64.0):
-        lamp(m, D - 2.0, y, 4.0, 0.4)
+    for y in (W * 0.45 - 20.0, W * 0.45, W * 0.45 + 20.0):     # lamps at the imperial box
+        lamp(m, 1.0 + thick + 3.0, y, Sc.v(14.0), 0.5)
 
 
 def porta_capena(m):

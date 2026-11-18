@@ -60,7 +60,9 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
         if w < 1 or h < 1 or x < 0 or y < 0 or x + w > W or y + h > H:
             errors.append(f"{key}: rect {x},{y} {w}x{h} outside {W}x{H}")
             continue
-        reach = setbuild.PAGE if "/p" in key or key.startswith("item/") and "/shadow/" in key else 160 * k
+        # Landmark shadows and glows are whole-building sprites whose pixels may lie far from the anchor.
+        reach = setbuild.PAGE if "/p" in key or key.startswith("item/") and ("/shadow/" in key or "/glow/" in key) \
+            else 160 * k
         if not (-reach <= ox <= w + reach and -reach <= oy <= h + reach):
             errors.append(f"{key}: anchor ({ox},{oy}) far outside {w}x{h}")
         px = rgba[y:y + h, x:x + w].reshape(-1, 4)

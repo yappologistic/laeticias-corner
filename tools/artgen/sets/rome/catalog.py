@@ -8,15 +8,7 @@ import sys
 
 import spec
 from sets.rome import landmarks
-
-LAYERS = {"B": "base", "S": "shadow", "G": "glow"}
-SLOT_KIND = {"door": "door", "sell": "work", "work": "work", "fill": "use", "pray": "use", "mooring": "mooring",
-             "seat": "seat"}
-
-
-def _slots(slots):
-    return [{"id": sid, "kind": SLOT_KIND.get(sid, "stand"), "cap": len(spots)} for sid, spots in slots.items()]
-
+from sets.rome.entries import LAYERS, slots_entry
 
 def landmark_items():
     out = []
@@ -26,7 +18,7 @@ def landmark_items():
               "rotations": [0], "landmark": True, "scale": scale, "height": height,
               "layers": [LAYERS[c] for c in layers], "occluder": max(lm.footprint) > 2 or height > 80, "card": card}
         if lm.slots:
-            it["slots"] = _slots(lm.slots)
+            it["slots"] = slots_entry(lm.slots)
         if lm.emitters:
             it["emitters"] = {n: landmarks.emitter_fx(n) for n in lm.emitters}
         out.append(it)

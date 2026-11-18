@@ -181,7 +181,7 @@ def emporium(m):
         revolve(m, tc(tx), qy1 - 4.0, 2.0, 5.0, lambda t: 1.3 - 0.4 * t, "travertine", tone=0.3)
     for i, (tx, ty) in enumerate(EMP_AMPHORAE):
         for j in range(8):
-            amphora(m, tx * T + 2.0 + (j % 4) * 3.6, ty * T + 3.0 + (j // 4) * 6.0, 2.0,
+            amphora(m, tx * T + 3.5 + (j % 4) * 3.0, ty * T + 3.5 + (j // 4) * 6.0, 2.0,
                     ("dressel20", "wine", "african")[i % 3])
     for tx, ty in EMP_SACKS:
         for j in range(6):
@@ -202,6 +202,9 @@ def emporium(m):
                    frame="travertine")
     lamp(m, wx1 + 2.0, wy1 - 10.0, 8.0, 0.5)
 
+
+# The sick sleep under the island's portico: the strip before it is walkable (floor on the island).
+ISLAND_WALK = [(x, y) for x in (5, 6) for y in (4, 5, 6)]
 
 # Quay furniture by tile (x across r 140..159, y from c 85 west to c 61): bollards on the edge,
 # stacks of amphorae and sacks, the crane, the marble blocks; every other quay tile is walkable.
@@ -269,7 +272,8 @@ def testaccio(m):
 
 
 LANDMARKS = {
-    "rome.tiber_island": Landmark((7, 11), (-4, 80), ref("tiber_island"), district=7,
+    "rome.tiber_island": Landmark((7, 11), (-4, 80), ref("tiber_island"), district=7, walk=ISLAND_WALK,
+                                  floor={t: 8.0 for t in ISLAND_WALK},
                                   slots={"sleep": [{"t": [5, 4]}, {"t": [5, 6]}]}),
     "rome.pons_fabricius": Landmark((3, 4), (-4, 24), ref("pons_fabricius"), district=7,
                                     walk=[(1, y) for y in range(4)],
@@ -288,7 +292,7 @@ LANDMARKS = {
     "rome.emporium": Landmark((20, 25), (-4, 48), ref("emporium"), district=7, walk=EMP_WALK,
                               floor={t: 2.0 for t in EMP_WALK},
                               slots={"mooring": [{"t": [x, 24], "face": "+y"} for x in (2, 7, 12, 17)],
-                                     "unload": [{"t": [4, 22]}, {"t": [9, 21]}, {"t": [14, 22]}]}),
+                                     "unload": [{"t": [4, 22]}, {"t": [9, 21]}, {"t": [15, 22]}]}),
     "rome.horrea_galbana": Landmark((6, 18), (0, 48), ref("horrea_galbana"), district=7,
                                     slots={"door": [{"t": [6, 9], "face": "+x"}]}),
     "rome.testaccio": Landmark((11, 12), (0, 40), ref("testaccio"), district=7,

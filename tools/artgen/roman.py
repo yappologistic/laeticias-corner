@@ -824,7 +824,7 @@ def spiral_column(m, cx, cy, z0, S: Scale, H_m=29.8, D_m=3.7, turns=23, image=No
     revolve(m, cx, cy, zt, zt + S.v(2.2), lambda t: r * 0.55 * (1 - 0.2 * t), material, tone=0.1)
     zt += S.v(2.2)
     if statue_dress is not None:
-        zt = statue(m, cx, cy, zt, S.v(4.5), statue_dress, material="gold", keep=())
+        zt = statue(m, cx, cy, zt, S.v(4.5), statue_dress, material="bronze_cast", keep=())
     return zt
 
 
@@ -1433,7 +1433,7 @@ def triumphal_arch(m, box, front, S: Scale, z0=0.0, bays=1, order=None, material
     """A triumphal arch across the box, its passage(s) running along `front` (front and back
     faces are the arch's two faces): piers with engaged Composite columns, Victories in the
     spandrels, a keystone figure, the passage vault with coffers and relief panels on its
-    walls (`relief` (img, cmap) or None), an attic with a gilded inscription, a chariot group
+    walls (`relief`: the left and right panels as [(img, cmap), (img, cmap)], or None), an attic with a gilded inscription, a chariot group
     on top; `pier` fixes the width of the outer piers (a passage that must be a whole walk
     tile). The passages are cut down to the ground. Returns the top."""
     o = order or ROrder(kind="composite", D=0.9, H=8.0)
@@ -1471,8 +1471,7 @@ def triumphal_arch(m, box, front, S: Scale, z0=0.0, bays=1, order=None, material
              lambda X, Y, Z, pb=pb, spring=spring, w=w: _vault_shell(front, pb, X, Y, Z, spring, w),
              tone=lambda X, Y, Z: -0.6 * ((((X + Y) * 0.7) % 1.0) < 0.35) + 0.1)
         if relief is not None and main:
-            img, cmap = relief
-            for f2, vv in (("l", v0), ("r", v1)):
+            for (img, cmap), (f2, vv) in zip(relief, (("l", v0), ("r", v1))):
                 wf = _inner_face(front, f2)
                 wb = local_box(front, box, Ld * 0.15, Ld * 0.85, vv - (1.0 if f2 == "l" else 0.0),
                                vv + (1.0 if f2 == "r" else 0.0))

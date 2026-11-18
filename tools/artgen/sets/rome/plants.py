@@ -211,3 +211,9 @@ PLANT_INFO = {
     "p_acanthus": ("Acanthus", 1, "B", 14, 0), "p_poppy": ("Poppies in grass", 2, "B", 8, 0),
     "p_reeds": ("Reeds", 2, "B", 30, 2), "p_cabbage": ("Market-garden beds", 2, "B", 8, 0),
 }
+
+
+def catalog_items():
+    from sets.rome.entries import kit_entry
+    return [kit_entry(f"rome.{n}", name, (1, 1), "variant", count, layers, height, fps, ITEMS[f"rome.{n}"])
+            for n, (name, count, layers, height, fps) in PLANT_INFO.items()]

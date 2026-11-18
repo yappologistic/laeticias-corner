@@ -2,19 +2,18 @@
 and the harbour basins symbolic in plan: Trajan's hexagonal basin at Portus, the lighthouse of
 Claudius's outer harbour, the Square of the Guilds and the Capitolium of Ostia (pieces of the
 Ostia town, the rest of which is kit), the sanctuary of Jupiter Latiaris on the Alban Mount,
-the harbour of Brundisium with the column at the end of the Via Appia, the amphitheatre of
-Capua, Trajan's arch at Beneventum and Hadrian's villa at Tibur under construction."""
+and the harbour of Brundisium with the column at the end of the Via Appia. (Tibur, Capua and
+Beneventum are cut from this version, world-tech.md §5.4.)"""
 
 import math
 
 import numpy as np
 
 import materials as M
-import relief_roman as RR
 import roman as RM
 from arch import carve, ellipsoid, fill, halo, revolve, slab
 from setbuild import Landmark
-from sets.rome.common import FIRE, S45, T, TOGATE, paving, referrer, scaffold, stone_pine, tc, treadwheel_crane
+from sets.rome.common import FIRE, S45, T, TOGATE, paving, referrer, stone_pine, tc
 from sets.rome.ground import amphora
 from voxel import hash01, value_noise
 
@@ -41,7 +40,7 @@ def portus_hexagon(m):
     """Trajan's hexagonal basin at Portus (opened c. 112, about 358 m a side), drawn symbolic in
     plan: the hexagon of water lined with travertine quays and mooring stones, ranges of
     warehouses round it, the canal mouth to the Tiber on the south-east, a small temple and
-    the harbour office. Ships moor at the quay spots."""
+    the harbour office. Moored ships are the region's life, drawn over the basin."""
     W, D = 20 * T, 18 * T
     cx, cy = D / 2, W / 2
     R = 7.2 * T
@@ -76,10 +75,6 @@ def portus_hexagon(m):
     RM.temple(m, RM.RTemple(order=RM.ROrder("corinthian", D=0.9, H=8.0), front="+x", cols=4, deep=2, podium=2.0,
                             pediment="gods", seed=821), S, (2.0, 3 * T, W / 2 - 1.2 * T, W / 2 + 1.2 * T), 1.5)
     RM.statue(m, cx, cy - R - 6.0, 1.5, 12.0, TOGATE, material="bronze_cast", base=(4.0, 5.0))
-
-
-HEX_MOORING = [{"t": [9 + dx, 10 + dy], "face": f} for dx, dy, f in ((-5, 0, "+x"), (5, 0, "-x"), (-2, -5, "+y"),
-                                                                     (2, 5, "-y"), (3, -4, "+y"), (-3, 4, "-y"))]
 
 
 def portus_lighthouse(m):
@@ -172,99 +167,21 @@ def brundisium_harbour(m):
         _horrea_row(m, 6.0, 3 * T - 4.0, 6.0 + i * 4 * T, 4 * T - 4.0 + i * 4 * T, 12.0, 873 + i)
     for i, (tx, ty) in enumerate(BR_AMPHORAE):
         for j in range(8):
-            amphora(m, tx * T + 2.0 + (j % 4) * 3.6, ty * T + 3.0 + (j // 4) * 6.0, 1.5,
+            amphora(m, tx * T + 3.5 + (j % 4) * 3.0, ty * T + 3.5 + (j // 4) * 6.0, 1.5,
                     ("wine", "dressel20", "african")[i])
-    treadwheel_crane(m, tc(BR_CRANE[0]), tc(BR_CRANE[1]), 1.5, 40.0, along="x", load="marble")
     slab(m, 3 * T + 4.0, 3 * T + 12.0, 15 * T + 4.0, 15 * T + 12.0, 1.5, 4.5, "marble", tone=0.25)
     RM.column(m, 3 * T + 8.0, 15 * T + 8.0, 4.5, RM.ROrder("corinthian", D=1.1, H=12.0, shaft="cipollino",
                                                            fluted=False), S)
 
 
-def capua_amphitheatre(m):
-    """The amphitheatre of Capua, the second largest in Italy: four storeys of arcades in
-    travertine with keystone busts of gods, its arena surrounded by marble seats."""
-    W, D = 10 * T, 8 * T
-    el = RM.Ellipse(D / 2, W / 2, D / 2 - 2.0, W / 2 - 2.0)
-    top = RM.ring_facade(m, el, 0.0, [RM.Storey(S.v(9.0), "arcade", "tuscan", (0.6, 0.62)),
-                                      RM.Storey(S.v(9.0), "arcade", "tuscan", (0.6, 0.6), statues=True),
-                                      RM.Storey(S.v(9.0), "arcade", "tuscan", (0.6, 0.6), statues=True),
-                                      RM.Storey(S.v(6.0), "attic", "tuscan", (0.2, 0.5), masts=1)],
-                         56, 5.0, S, gaps=(0, 14, 28, 42), phase=0.5, seed=881)
-    arena = RM.Ellipse(D / 2, W / 2, el.a * 0.42, el.b * 0.52)
-    upper = RM.Ellipse(D / 2, W / 2, el.a - 7.0, el.b - 7.0)
-    fill(m, (0.0, D, 0.0, W, 0.0, top - 4.0), "tufa",
-         lambda X, Y, Z: (np.hypot((X - D / 2) / upper.a, (Y - W / 2) / upper.b) <= 1) &
-         (np.hypot((X - D / 2) / arena.a, (Y - W / 2) / arena.b) > 1) & (Z < 2.0), tone=-0.2)
-    RM.cavea(m, arena, upper, 3.0, top - 4.0, material="marble", upper_mat="travertine", bands=3, aisles=28, seed=882)
-    fill(m, (0.0, D, 0.0, W, 0.0, 1.0), "poros", lambda X, Y, Z: np.hypot((X - D / 2) / arena.a, (Y - W / 2) / arena.b)
-         <= 1, tone=lambda X, Y, Z: (value_noise(X, Y, Z, 2.0, 883) - 0.5) * 0.6)
-
-
-def arch_beneventum(m):
-    """Trajan's arch at Beneventum (dedicated 114) where the Via Traiana leaves the Appia: a
-    single bay of marble covered in reliefs of the emperor's deeds, Victories in the spandrels,
-    the attic inscribed; the road passes under it (one walk tile)."""
-    from arch import Scale
-    Sb = Scale(0.75)
-    pier = (Sb.h(15.6) - T) / 2
-    img, cmap = RR.triumph_image(int(2 * T * 2), int(Sb.v(3.0) * 2))
-    RM.triumphal_arch(m, (2.0, T - 2.0, T - pier, 2 * T + pier), "+x", Sb, z0=0.0, bays=1,
-                      order=RM.ROrder("composite", D=0.85, H=8.5), relief=(img, cmap), seed=891, pier=pier)
-    for face, box in (("+x", (2.0, T - 2.0, T - pier, 2 * T + pier)),):
-        L = RM.face_length(face, *box)
-        for s0 in (1.0, L - pier + 1.0):
-            sp, sc = RR.sacrifice_image(int((pier - 2.0) * 2), 14)
-            from relief import emboss
-            emboss(m, face, box, s0, 14.0 + Sb.v(1.2) + 8.0, sp, cmap=sc)
-
-
-def hadrian_villa(m):
-    """Hadrian's villa at Tibur, rising since about 118: the round Maritime Theatre (a little
-    house on an island in a moat inside a ring colonnade), the long Pecile pool with its
-    portico, a domed hall in scaffolding, cranes and stacked materials."""
-    W, D = 24 * T, 22 * T
-    fill(m, (0.0, D, 0.0, W, 0.0, 0.6), "grass", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 4.0, 901) - 0.5) * 0.8)
-    cx, cy, R = 5 * T, 6 * T, 3.6 * T
-    revolve(m, cx, cy, 0.0, S.v(9.0), lambda t: R, "brick", tone=RM.brick(902))
-    carve(m, (cx - R, cx + R, cy - R, cy + R, 0.6, S.v(9.0) + 1.0), lambda X, Y, Z: np.hypot(X - cx, Y - cy) < R - 3.0)
-    _water(m, (cx - R, cx + R, cy - R, cy + R), 0.0, 1.0, lambda X, Y, Z: (np.hypot(X - cx, Y - cy) < R - 10.0) &
-           (np.hypot(X - cx, Y - cy) > R - 20.0))
-    for i in range(24):
-        a = i * math.pi / 12
-        RM.column(m, cx + math.cos(a) * (R - 6.0), cy + math.sin(a) * (R - 6.0), 0.6,
-                  RM.ROrder("ionic", D=0.6, H=5.5), S)
-    RM.wall(m, (cx - 16.0, cx + 16.0, cy - 16.0, cy + 16.0), 0.0, 14.0, "stucco", 903, "whitewash")
-    RM.hip(m, (cx - 17.0, cx + 17.0, cy - 17.0, cy + 17.0), 14.0, 5.0, seed=904)
-    # The Pecile: a long pool inside a great portico.
-    px0, px1, py0, py1 = 11 * T, 20 * T, 3 * T, W - 3 * T
-    RM.wall(m, (px0, px1, py0, py0 + 4.0), 0.0, S.v(9.0), "brick", 905)
-    RM.wall(m, (px0, px1, py1 - 4.0, py1), 0.0, S.v(9.0), "brick", 906)
-    _water(m, (px0 + 3 * T, px1 - 3 * T, py0 + 3 * T, py1 - 3 * T), 0.0, 1.0)
-    slab(m, px0 + 3 * T - 2.0, px1 - 3 * T + 2.0, py0 + 3 * T - 2.0, py1 - 3 * T + 2.0, 0.0, 0.8, "marble", tone=0.2)
-    RM.colonnade(m, (px0 + 8.0, py0 + 12.0), (px1 - 8.0, py0 + 12.0), 0.0, 10, RM.ROrder("corinthian", D=0.7, H=6.5),
-                 S, 8.0, "+y", back=False, seed=907)
-    # A domed hall in scaffolding, materials and cranes.
-    hx, hy = 6 * T, 17 * T
-    revolve(m, hx, hy, 0.0, S.v(14.0), lambda t: 2.2 * T, "brick", tone=RM.brick(908))
-    RM.dome(m, hx, hy, S.v(14.0), 2.2 * T - 1.0, "brick", rise=1.4 * T, thick=4.0, oculus=8.0, tiles=False,
-            coffers=False, seed=909)
-    carve(m, (hx - 2.2 * T, hx, hy - 2.2 * T, hy + 2.2 * T, S.v(14.0) + 8.0, S.v(14.0) + 2 * T))
-    scaffold(m, hx - 2.4 * T, hx - 2.0 * T, hy - 20.0, hy + 20.0, 0.0, S.v(14.0) + 12.0, decks=4)
-    treadwheel_crane(m, hx + 3 * T, hy, 0.0, 44.0, along="x", load="marble")
-    for i in range(5):
-        slab(m, 16 * T + i * 8.0, 16 * T + i * 8.0 + 6.0, 15 * T, 17 * T, 0.0, 3.0 + i % 2, "marble", tone=0.1)
-
-
 # Brundisium quay furniture by tile (x 3..4 is the quay, y along it); the rest of the quay walks.
 BR_BOLLARDS = (1, 5, 9, 13)
-BR_AMPHORAE = ((3, 4), (3, 9), (3, 12))
-BR_CRANE = (4, 7)
-BR_SOLID = {(4, y) for y in BR_BOLLARDS} | set(BR_AMPHORAE) | {BR_CRANE, (3, 7), (4, 6), (4, 8), (5, 7), (3, 15)}
+BR_AMPHORAE = ((3, 3), (3, 7), (3, 11))
+BR_SOLID = {(4, y) for y in BR_BOLLARDS} | set(BR_AMPHORAE) | {(3, 15)}
 BR_WALK = [(x, y) for x in (3, 4) for y in range(16) if (x, y) not in BR_SOLID]
 
 LANDMARKS = {
-    "rome.portus_hexagon": Landmark((18, 20), (-3, 40), ref("portus_hexagon"), district=9,
-                                    slots={"mooring": HEX_MOORING}),
+    "rome.portus_hexagon": Landmark((18, 20), (-3, 40), ref("portus_hexagon"), district=9),
     "rome.portus_lighthouse": Landmark((3, 3), (-3, 112), ref("portus_lighthouse"), district=9),
     "rome.ostia_guilds": Landmark((6, 12), (0, 40), ref("ostia_guilds"), district=9),
     "rome.ostia_capitolium": Landmark((6, 4), (0, 96), ref("ostia_capitolium"), district=9),
@@ -274,9 +191,6 @@ LANDMARKS = {
                                         walk=BR_WALK, floor={t: 1.5 for t in BR_WALK},
                                         slots={"mooring": [{"t": [4, 2], "face": "+x"}, {"t": [4, 10], "face": "+x"},
                                                            {"t": [4, 14], "face": "+x"}]}),
-    "rome.capua_amphitheatre": Landmark((8, 10), (0, 88), ref("capua_amphitheatre"), district=9),
-    "rome.arch_beneventum": Landmark((1, 3), (0, 80), ref("arch_beneventum"), district=9, walk=[(0, 1)]),
-    "rome.hadrian_villa": Landmark((22, 24), (0, 64), ref("hadrian_villa"), district=9),
 }
 
 INFO = {
@@ -286,7 +200,4 @@ INFO = {
     "rome.ostia_capitolium": ("Capitolium of Ostia", 0.45, 110, "BS", "ostia_capitolium"),
     "rome.latiaris": ("Sanctuary of Jupiter Latiaris", 0.45, 70, "BSG", "latiaris"),
     "rome.brundisium_harbour": ("Harbour of Brundisium", 0.45, 70, "BS", "brundisium_harbour"),
-    "rome.capua_amphitheatre": ("Amphitheatre of Capua", 0.45, 110, "BS", "capua_amphitheatre"),
-    "rome.arch_beneventum": ("Arch of Trajan at Beneventum", 0.75, 100, "BS", "arch_beneventum"),
-    "rome.hadrian_villa": ("Hadrian's Villa at Tibur", 0.45, 110, "BS", "hadrian_villa"),
 }

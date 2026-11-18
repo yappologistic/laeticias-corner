@@ -1000,3 +1000,14 @@ KIT_INFO = {
     "quay": ("Tiber quay", (1, 1), "rotate", 4, "B", 10, 0),
     "aqua_claudia": ("Aqua Claudia arcade", (1, 1), "connect", 1, "BS", 160, 0),
 }
+
+
+def catalog_items():
+    from sets.rome.entries import kit_entry
+    out = []
+    for n, (name, fp, layout, count, layers, height, fps) in KIT_INFO.items():
+        it = kit_entry(f"rome.{n}", name, fp, layout, count, layers, height, fps, ITEMS[f"rome.{n}"])
+        if n == "stair_travertine":
+            it.update(rise=1, axis="y")
+        out.append(it)
+    return out
