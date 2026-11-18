@@ -52,6 +52,10 @@
 //   set day N               the calendar day (the season follows unless pinned)
 //   set grow SECONDS        let the beds grow that much play time at once
 //   set wish ID open        offer that wish now (it joins the tray even past three)
+//   set city F|off          city life (src/life/): load the world and keep the active area
+//                           round F (x,y | layer:node | forum | agora | terrace |
+//                           district:<region>/<name>), stepped with the game's clock
+//   set city_dump FILE      write a life dump of the area (relative to the working directory)
 //   waitfor N WHAT ARGS...  wait up to N frames until `expect WHAT ARGS...` holds, else fail
 //   fast S [WHAT ARGS...]   simulate S seconds without drawing (or until `expect WHAT ARGS...`
 //                           holds, failing if it never does); state checks only; an audio
@@ -95,6 +99,9 @@
 //       least SHARE (0..1) of the
 //                               one-second samples had MIN..CAP purposeful movers in view and
 //                               HMIN..HCAP new happenings in the last minute
+//       city live MIN MAX | city ground ok (every live person on a walkable tile at its level)
+//       | city slots ok (no slot over capacity) | city event ID yes|no (running in the area)
+//       | city district NAME MIN MAX (live people of the district)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would

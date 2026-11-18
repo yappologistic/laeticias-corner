@@ -78,6 +78,7 @@ set(LC_SCRIPTS
   "sketch_lists|sketch_lists|960x600|"
   "newer_save|newer_save|640x400|"
   "profiler|profiler|960x600|"
+  "city_life|city_life|640x400|"
   "builder|builder|960x600|"
   "front_door|front_door|1280x800||--front-door"
   "rain_pan|rain_pan|640x400|"
@@ -309,3 +310,12 @@ endif()
 set_tests_properties(bench bench_world benchmark PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 set_tests_properties(bench_world PROPERTIES LABELS heavy)
+
+# City life without a renderer: the city bench asserts the simulation and enumeration budgets
+# (lifeinfo needs no GPU), the soak roams the world and asserts flat memory, and the game writes a
+# life dump from the command line.
+add_test(NAME bench_city COMMAND lifeinfo bench --frames 600)
+add_test(NAME soak_city COMMAND lifeinfo soak 120)
+add_test(NAME life_dump COMMAND laeticias-corner --life-dump ${LC_SCRATCH}/life_forum.json
+         --focus forum --life-hours 10 --life-day 9)
+set_tests_properties(life_dump PROPERTIES ENVIRONMENT "${LC_HEADLESS_ENV}")

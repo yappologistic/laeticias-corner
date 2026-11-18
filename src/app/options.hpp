@@ -35,6 +35,11 @@ struct Options {
     bool gpuSync = false;   // wait for the GPU each frame to time it (the profiler's GPU line)
     bool benchmark = false; // the windowed tour a person runs (never from automation)
     bool frontDoor = false; // headless runs start in the world unless this asks for the title
+    // City life (src/life/) without a renderer: where the active area is, and life dumps.
+    std::optional<std::string> focus;              // x,y | layer:node | forum | agora | terrace
+    std::optional<std::filesystem::path> lifeDump; // write dumps here and exit
+    std::string lifeHours = "10";                  // game hours of the dumps
+    int lifeDay = 1;                               // calendar day of the dumps
     bool help = false;
 };
 

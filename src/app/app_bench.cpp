@@ -255,7 +255,8 @@ int App::runBench() {
     if (judge && pixelW_ * pixelH_ <= 1920 * 1080 &&
         processMemory().second > tuning::kBenchMemoryMiB)
         fail("memory");
-    return over ? kExitOverBudget : 0;
+    const int city = benchCity(judge);
+    return over || city == kExitOverBudget ? kExitOverBudget : 0;
 }
 
 int App::runSoak() {
@@ -332,6 +333,8 @@ int App::runSoak() {
         std::printf("soak: simulation over its budget\n");
         over = true;
     }
+    // The cities: the active area roaming the world for as long (life.cpp's soak).
+    if (soakCity() == kExitOverBudget) over = true;
     return over ? kExitOverBudget : 0;
 }
 

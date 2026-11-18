@@ -1093,10 +1093,27 @@ bool CityLife::resolve(int i, const Target& t, TilePos& goal, int& group, Vec2& 
         goal = a.tile.pos();
         at = a.pos;
         return true;
-    case TargetKind::Node:
-        if (!standOn(paths.nodeAt(t.node))) return false;
+    case TargetKind::Node: {
+        // Somewhere about the node, not all on its one tile: a free tile a few steps off it
+        // that walkers reach on the node's level.
+        const TilePos n = paths.nodeAt(t.node);
+        const int lv = map_->inBounds(n) ? map_->level(n) : 0;
+        for (int k = 0; k < 6; ++k) {
+            const int r = tl::kNodeSpread;
+            const TilePos c{
+                n.x + static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(2 * r + 1)) - r,
+                n.y + static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(2 * r + 1)) - r};
+            if (map_->inBounds(c) && map_->walkable(c) && paths.reachable(c) &&
+                map_->level(c) == lv && paths.lineClear(n, c, 2 * r)) {
+                goal = c;
+                at = centre(c);
+                return true;
+            }
+        }
+        if (!standOn(n)) return false;
         at = centre(goal);
         return true;
+    }
     case TargetKind::Roam: {
         // A random node within reach (reservoir choice over the nodes in the circle).
         const float r2 = t.within * t.within;

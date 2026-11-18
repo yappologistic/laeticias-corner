@@ -358,7 +358,6 @@ namespace life {
 // scaled down proportionally only when the active area would need more. Measured by the bench:
 // out/reports/engine-city-life.md.
 inline constexpr int kLiveCap = 720;
-inline constexpr double kSimBudgetMs = 0.6;       // simulation average per step (CLAUDE.md)
 inline constexpr std::size_t kPool = 1024;        // actor records, preallocated
 inline constexpr int kBuckets = 3;                // round-robin update buckets (20 Hz each)
 inline constexpr int kSpawnsPerStep = 40;         // materialisations per simulation step
@@ -372,6 +371,7 @@ inline constexpr float kCartSpeed = 0.6f; // tiles/s: carts and sledges (lifesim
 inline constexpr float kFormationSpeed = 0.8f; // processions and groups
 inline constexpr float kFadeSeconds = 0.5f;    // fading in from a doorway or out into one
 inline constexpr int kLiveMargin = 12;  // tiles around the view whose chunks are live
+inline constexpr int kNodeSpread = 2;      // tiles about a named node its visitors stand on
 inline constexpr float kDoorReach = 12.0f;   // tiles searched for a door to come out of or enter
 inline constexpr float kSlotReach = 24.0f;   // tiles searched for a slot target without `within`
 inline constexpr float kFailPause0 = 1.0f;   // seconds of standing after a step that failed

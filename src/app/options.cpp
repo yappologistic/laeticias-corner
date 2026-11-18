@@ -38,6 +38,12 @@ std::string_view usage() {
            "  --benchmark         open a window and play a fixed 75 s tour, then show and save\n"
            "                      frame-time results beside the save (for a person to run)\n"
            "  --front-door        start at the title screen even when headless (tests)\n"
+           "  --focus F           city life: the active area around F (x,y | layer:node |\n"
+           "                      forum | agora | terrace | district:<region>/<name>)\n"
+           "  --life-dump FILE    write city-life dumps of the area round --focus and exit\n"
+           "                      (one hour: FILE; several: FILE_hhmm.json)\n"
+           "  --life-hours H,..   game hours of the dumps (default 10)\n"
+           "  --life-day N        calendar day of the dumps (default 1)\n"
            "  --help              show this text\n";
 }
 
@@ -125,6 +131,23 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             const auto v = value();
             if (!v || v->empty()) return std::unexpected("--renderer expects a driver name");
             o.renderer = std::string(*v);
+        } else if (a == "--focus") {
+            const auto v = value();
+            if (!v || v->empty()) return std::unexpected("--focus expects a place");
+            o.focus = std::string(*v);
+        } else if (a == "--life-dump") {
+            const auto v = value();
+            if (!v) return std::unexpected(v.error());
+            o.lifeDump = std::filesystem::path(*v);
+            o.headless = true;
+        } else if (a == "--life-hours") {
+            const auto v = value();
+            if (!v || v->empty()) return std::unexpected("--life-hours expects hours");
+            o.lifeHours = std::string(*v);
+        } else if (a == "--life-day") {
+            const auto v = value();
+            if (!v || !parseNumber(*v, o.lifeDay) || o.lifeDay < 0)
+                return std::unexpected("--life-day expects a day");
         } else if (a == "--frames") {
             const auto v = value();
             if (!v || !parseNumber(*v, o.frames) || o.frames < 0)

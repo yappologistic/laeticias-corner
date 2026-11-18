@@ -53,6 +53,7 @@ add_library(lc_engine STATIC
   src/app/app_script.cpp
   src/app/app_bench.cpp
   src/app/app_benchmark.cpp
+  src/app/app_city.cpp
   src/app/app_build.cpp
   src/app/app_front.cpp
   src/app/app_photo.cpp
@@ -78,7 +79,7 @@ add_library(lc_engine STATIC
   src/ui/painter.cpp
   src/ui/profiler.cpp
 )
-target_link_libraries(lc_engine PUBLIC lc_core SDL3::SDL3 PRIVATE lc_stb)
+target_link_libraries(lc_engine PUBLIC lc_core lc_life SDL3::SDL3 PRIVATE lc_stb)
 target_compile_definitions(lc_engine PUBLIC LC_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 lc_project_target(lc_engine)
 

@@ -1,10 +1,12 @@
 // Scripted runs: synthesised input and state checks (the language is documented in script.hpp).
 
 #include "app/app_impl.hpp"
+#include "life/report.hpp"
 
 #include <charconv>
 #include <cmath>
 #include <format>
+#include <fstream>
 
 namespace lc {
 namespace {
@@ -157,6 +159,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         if (!v) return "unknown visitor " + a[1];
         return equal(std::to_string(actors_.present(*v)), a[2]);
     }
+    if (what == "city") return checkCity(a);
     if (what == "habitat") {
         // Everyone stands where it may (on its reserved seat counts: she sits on the bench).
         int bad = 0;
@@ -673,6 +676,21 @@ bool App::scriptStep() {
                         break;
                     }
                 if (!found) return fail("no " + c.args[1] + " to look at");
+            } else if (c.args[0] == "city") {
+                if (c.args[1] == "off") {
+                    city_.reset();
+                } else {
+                    if (!openCity()) return fail("city life: no world");
+                    const auto f = life::parseFocus(*city_->life, c.args[1]);
+                    if (!f) return fail("city life: unknown place " + c.args[1]);
+                    city_->city->setFocus(*f);
+                    city_->city->settle(cityClock());
+                }
+            } else if (c.args[0] == "city_dump") {
+                if (!city_) return fail("city life: set city F first");
+                std::ofstream out(c.args[1], std::ios::binary);
+                out << life::lifeDump(*city_->city, c.args[1]);
+                if (!out) return fail("city life: cannot write " + c.args[1]);
             } else if (c.args[0] == "shower") {
                 weather_.shower();
             } else if (c.args[0] == "lively") {

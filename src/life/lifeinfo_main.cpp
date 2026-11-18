@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
     }
     if (cmd == "soak") {
         const double seconds = i < argc ? std::atof(argv[i]) : 120.0;
-        return runLifeSoak(*session, seconds, tuning::life::kSimBudgetMs);
+        return runLifeSoak(*session, seconds, tuning::kSimBudgetMs);
     }
     std::fputs(kUsage, stderr);
     return 2;

@@ -26,6 +26,7 @@
 #include "core/world.hpp"
 #include "core/worlds.hpp"
 #include "core/writer.hpp"
+#include "life/session.hpp"
 #include "platform/batch.hpp"
 #include "platform/sdl_ptr.hpp"
 #include "render/atlas.hpp"
@@ -96,6 +97,9 @@ inline constexpr std::string_view kThumbFile = "thumb.png";
 inline constexpr std::string_view kProfileFile = "profile.json";
 inline constexpr std::string_view kLegacyFile = "corner.json";
 inline constexpr std::string_view kLegacyKept = "corner.v1.json";
+
+// --life-dump: city-life dumps of the area round --focus, without a window (app_city.cpp).
+int runLifeDumps(const Options& o, const std::filesystem::path& assets);
 
 class App {
 public:
@@ -228,6 +232,11 @@ private:
     void pushButton(Vec2 px, bool down, const ScriptCommand& c);
     void pushKey(std::string_view combo, bool down);
     std::optional<std::string> check(const ScriptCommand& c);
+    // City life (src/life/): opened on demand by --focus or a script, stepped with the clock.
+    bool openCity();
+    [[nodiscard]] life::LifeClock cityClock() const;
+    void stepCity(float dt);
+    std::optional<std::string> checkCity(std::span<const std::string> a);
     bool shot(const fs::path& file);
 
     // The front door (app_front.cpp).
@@ -280,6 +289,8 @@ private:
     void fillBenchWorld();
     // The soak run: busy play for opts_.soak seconds, memory checked to stay flat.
     int runSoak();
+    int benchCity(bool judge); // the city cases of --bench (exit 3 over budget)
+    int soakCity();            // the city roam of --soak
 
     Options opts_;
     fs::path assets_;
@@ -288,6 +299,7 @@ private:
     World world_;
     Editor editor_{tuning::kUndoSteps};
     Clock clock_;
+    std::unique_ptr<life::LifeSession> city_;
     std::uint64_t seed_; // the game's one seed; every random stream derives from it
     Rng rng_;
     Actors actors_;
