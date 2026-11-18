@@ -873,6 +873,7 @@ void CityLife::spawnQueued(bool unbounded) {
             continue;
         }
         ++done;
+        ++stats_.live; // the cap is checked against everyone, those spawned this call too
     }
     stats_.spawnedThisStep = done;
     stats_.queued = static_cast<int>(queue_.size() - queueHead_);

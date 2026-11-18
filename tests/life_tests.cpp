@@ -568,6 +568,26 @@ TEST_CASE("city: the cap scales populations down in proportion") {
                            city.stats().scale) < 0.25f);
 }
 
+TEST_CASE("city: never more live than the cap, panning fast and jumping between cities") {
+    // QA5 Q5-E-20: a step's spawns were not counted against the cap while they happened.
+    CityLife city(lifeWorld(), 6);
+    LifeClock clock = LifeClock::at(1, 8.0, seasonOf("rome"));
+    const TilePos forum = centreOf("forum");
+    int worst = 0;
+    for (int k = 0; k < 1500; ++k) {
+        const char* far[] = {"agora", "terrace", "forum"};
+        TilePos at = k % 500 == 499 ? centreOf(far[(k / 500) % 3])
+                                    : TilePos{forum.x + (k % 500) / 4 - 60, forum.y};
+        city.setFocus(at);
+        step(city, clock, 1);
+        int live = 0;
+        city.forEachInfo([&](const CityLife::Info&) { ++live; });
+        worst = std::max(worst, live);
+    }
+    MESSAGE("most live " << worst);
+    CHECK(worst <= tuning::life::kLiveCap);
+}
+
 TEST_CASE("city: ships and barges on their lanes, carts on the road, live where the camera is") {
     CityLife city(lifeWorld(), 6);
     LifeClock clock = LifeClock::at(9, 9.0, seasonOf("rome"));
