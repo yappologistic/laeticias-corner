@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "set": "tst",
+  "terrain": [
+    {"id": "tst.grass", "name": "Grass", "base": true, "variants": 2, "faces": ["tst.rock"]},
+    {"id": "tst.paving", "name": "Paving", "under": "tst.grass", "edges": 16, "paved": true},
+    {"id": "tst.channel", "name": "Channel", "under": "tst.grass", "edges": 16, "fps": 4},
+    {"id": "tst.pool", "name": "Pool", "under": "tst.grass", "edges": 16, "water": true}
+  ],
+  "items": [
+    {"id": "tst.house", "name": "House", "footprint": [2, 2], "layout": "rotate", "count": 4,
+     "on": "land", "height": 60, "slots": [{"id": "door", "kind": "door", "cap": 1}]},
+    {"id": "tst.stair", "name": "Stair", "footprint": [1, 2], "layout": "rotate", "count": 4,
+     "on": "land", "rise": 1, "axis": "y"},
+    {"id": "tst.hall", "name": "Hall", "footprint": [10, 4], "layout": "rotate", "count": 4,
+     "on": "land", "rotations": [0], "landmark": true, "card": "hall", "height": 120,
+     "occluder": true, "layers": ["base", "shadow", "glow"],
+     "slots": [{"id": "throne", "kind": "seat", "cap": 1}, {"id": "guard", "kind": "stand", "cap": 2}],
+     "emitters": {"torch": "tst.flame"}},
+    {"id": "tst.grand_stair", "name": "Grand stair", "footprint": [3, 3], "layout": "rotate",
+     "count": 4, "rotations": [0], "landmark": true, "rise": 2, "axis": "x", "height": 50},
+    {"id": "tst.wall", "name": "Wall", "footprint": [1, 1], "layout": "connect", "count": 1},
+    {"id": "tst.stool", "name": "Stool", "footprint": [1, 1], "layout": "variant", "count": 2},
+    {"id": "tst.jetty", "name": "Jetty", "footprint": [1, 1], "layout": "rotate", "count": 2,
+     "on": "water", "walkable": true}
+  ],
+  "actors": [
+    {"id": "tst.walker", "name": "Walker", "sprite": "walker/tst.walker", "variants": 2,
+     "anims": {"move": {"fps": 8}, "idle": {"fps": 2}, "carry": {"fps": 8}}},
+    {"id": "tst.boat", "name": "Boat", "sprite": "ship/tst.boat", "size": [3, 1],
+     "anims": {"move": {"fps": 4}}}
+  ],
+  "goods": [{"id": "tst.bread", "name": "Bread", "sprite": "goods/tst.bread", "stack": 3}],
+  "art": {"edges": ["tst.rock"], "backdrops": ["tst.hills"], "fx": ["tst.flame"]}
+}

@@ -90,3 +90,122 @@ if(LC_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
+
+# --- World data runtime (src/world/) -------------------------------------------------------------
+# Loads, validates and serves the prebuilt world (layers, graphs, regions, set catalogs, atlas
+# manifests, geometry). Pure logic like lc_core: no SDL.
+add_library(lc_world STATIC
+  src/world/atlas_pages.cpp
+  src/world/content.cpp
+  src/world/digest.cpp
+  src/world/geometry.cpp
+  src/world/graph_file.cpp
+  src/world/json_util.cpp
+  src/world/layer_file.cpp
+  src/world/loader.cpp
+  src/world/region_file.cpp
+  src/world/road_graph.cpp
+  src/world/set_catalog.cpp
+  src/world/world_file.cpp
+  src/world/world_map.cpp
+)
+target_link_libraries(lc_world PUBLIC lc_core)
+lc_project_target(lc_world)
+
+# Debugging aid for world builders and QA: summary, validation, region and tile dumps, digest.
+add_executable(worldinfo src/world/worldinfo_main.cpp)
+target_link_libraries(worldinfo PRIVATE lc_world)
+target_compile_definitions(worldinfo PRIVATE LC_WORLDINFO_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+lc_project_target(worldinfo)
+
+if(LC_TESTS)
+  add_executable(lc_world_tests
+    tests/world_main.cpp
+    tests/world_support.cpp
+    tests/world_formats.cpp
+    tests/world_map.cpp
+    tests/world_real.cpp
+  )
+  target_link_libraries(lc_world_tests PRIVATE lc_world lc_doctest)
+  target_compile_definitions(lc_world_tests PRIVATE
+    LC_WORLD_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
+    LC_WORLD_FIXTURES_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures/world")
+  lc_project_target(lc_world_tests)
+  # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
+  target_compile_options(lc_world_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
+  add_test(NAME world_unit COMMAND lc_world_tests --test-case-exclude=perf:*)
+  # Load time, memory and query throughput on the committed world; budgets assert in optimised
+  # builds only (sanitizer builds report the figures).
+  add_test(NAME world_perf COMMAND lc_world_tests --test-case=perf:*)
+  add_test(NAME worldinfo_summary COMMAND worldinfo summary)
+endif()
+
+# --- World renderer and viewer (src/worldview/) --------------------------------------------------
+# Draws the prebuilt world: atlas pages streamed by set, cached ground cells and impostors,
+# depth-sorted landmark pieces, region themes and the overview; laeticias-world shows it headless.
+find_package(Threads REQUIRED)
+add_library(lc_worldview STATIC
+  src/worldview/camera.cpp
+  src/worldview/cell_cache.cpp
+  src/worldview/cells.cpp
+  src/worldview/gather.cpp
+  src/worldview/order.cpp
+  src/worldview/overview.cpp
+  src/worldview/page_atlas.cpp
+  src/worldview/renderer.cpp
+  src/worldview/script.cpp
+  src/worldview/theme.cpp
+  src/worldview/viewer.cpp
+  src/worldview/world_sprites.cpp
+)
+target_link_libraries(lc_worldview PUBLIC lc_engine lc_world Threads::Threads)
+lc_project_target(lc_worldview)
+
+add_executable(laeticias-world src/worldview/viewer_main.cpp)
+target_link_libraries(laeticias-world PRIVATE lc_worldview)
+lc_project_target(laeticias-world)
+
+if(LC_TESTS)
+  add_executable(lc_worldview_tests
+    tests/worldview_main.cpp
+    tests/worldview_depth.cpp
+    tests/worldview_logic.cpp
+    tests/worldview_render.cpp
+  )
+  target_link_libraries(lc_worldview_tests PRIVATE lc_worldview lc_doctest)
+  target_compile_definitions(lc_worldview_tests PRIVATE
+    LC_WORLDVIEW_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+  lc_project_target(lc_worldview_tests)
+  # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
+  target_compile_options(lc_worldview_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
+  set(LC_WORLDVIEW_ENV "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+  add_test(NAME worldview_unit COMMAND lc_worldview_tests)
+  set_tests_properties(worldview_unit PROPERTIES ENVIRONMENT "${LC_WORLDVIEW_ENV}")
+
+  # Scripted viewer runs (tests/scripts/world/*.lws): shots land in <build>/shots/world/, and an
+  # `expect` that does not hold fails the run.
+  file(GLOB LC_WORLD_SCRIPTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/scripts/world/*.lws")
+  foreach(script ${LC_WORLD_SCRIPTS})
+    get_filename_component(name ${script} NAME_WE)
+    add_test(NAME world_script_${name}
+      COMMAND laeticias-world --script ${script} --shots "${CMAKE_BINARY_DIR}/shots/world")
+    set_tests_properties(world_script_${name} PROPERTIES ENVIRONMENT "${LC_WORLDVIEW_ENV}")
+  endforeach()
+
+  # The bench cases at 1080p on the GPU path, windowless; budgets assert in optimised builds
+  # (sanitizer builds report). Skipped (exit 77) where no GPU renderer can be created.
+  if(LC_SANITIZE)
+    set(LC_WORLD_BUDGET --no-budget)
+  else()
+    set(LC_WORLD_BUDGET "")
+  endif()
+  add_test(NAME world_bench
+    COMMAND laeticias-world --bench --renderer opengl --size 1920x1080 ${LC_WORLD_BUDGET})
+  set(LC_WORLD_BENCH_ENV "")
+  if(LC_SANITIZE)
+    # The GPU driver behind the offscreen EGL path leaks allocations of its own.
+    set(LC_WORLD_BENCH_ENV "ASAN_OPTIONS=detect_leaks=0")
+  endif()
+  set_tests_properties(world_bench PROPERTIES SKIP_RETURN_CODE 77 RUN_SERIAL TRUE
+    ENVIRONMENT "${LC_WORLD_BENCH_ENV}")
+endif()

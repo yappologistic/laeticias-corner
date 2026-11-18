@@ -1,0 +1,3 @@
+{"version": 1, "image": "tst.1.png", "sprites": {
+  "item/tst.house/base/r0/f0": {"x": 0, "y": 0, "w": 128, "h": 96, "ox": 64, "oy": 30}
+}}

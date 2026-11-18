@@ -1,0 +1,129 @@
+{
+ "version": 1,
+ "layer": "town",
+ "nodes": [
+  {
+   "id": "gate",
+   "at": [
+    2,
+    2
+   ],
+   "kind": "portal"
+  },
+  {
+   "id": "a",
+   "at": [
+    10,
+    2
+   ]
+  },
+  {
+   "id": "market",
+   "at": [
+    10,
+    12
+   ],
+   "kind": "dest"
+  },
+  {
+   "id": "b",
+   "at": [
+    20,
+    12
+   ]
+  },
+  {
+   "id": "temple",
+   "at": [
+    20,
+    30
+   ],
+   "kind": "dest"
+  },
+  {
+   "id": "a",
+   "at": [
+    1,
+    1
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "a": "gate",
+   "b": "a",
+   "kind": "road"
+  },
+  {
+   "a": "a",
+   "b": "market",
+   "kind": "street"
+  },
+  {
+   "a": "market",
+   "b": "b",
+   "kind": "street"
+  },
+  {
+   "a": "b",
+   "b": "temple",
+   "kind": "stair",
+   "via": [
+    [
+     20,
+     20
+    ],
+    [
+     24,
+     24
+    ],
+    [
+     20,
+     28
+    ]
+   ]
+  },
+  {
+   "a": "a",
+   "b": "temple",
+   "kind": "track",
+   "via": [
+    [
+     2,
+     30
+    ]
+   ]
+  }
+ ],
+ "lanes": [
+  {
+   "id": "harbour",
+   "kind": "sea",
+   "points": [
+    [
+     40,
+     2
+    ],
+    [
+     50,
+     10
+    ],
+    [
+     60,
+     20
+    ]
+   ],
+   "ports": [
+    {
+     "id": "quay",
+     "at": 0,
+     "slot": "tst.house:door"
+    },
+    {
+     "id": "out",
+     "at": 2
+    }
+   ]
+  }
+ ]
+}
