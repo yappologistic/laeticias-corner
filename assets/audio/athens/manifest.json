@@ -403,6 +403,222 @@
         "season",
         "athens"
       ]
+    },
+    {
+      "file": "music/athens/town_polis_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 64.0,
+      "samples": 2822400,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (polis), day: kithara in dactyls, aulos in heterophony, krotala.",
+      "where": "towns: Corinth, Olympia, Ephesus",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          6
+        ],
+        "bars": 16,
+        "beats": 96,
+        "samples": 2822400,
+        "phrase_starts_s": [
+          0.0,
+          28.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/athens/town_polis_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 64.0,
+      "samples": 2822400,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (polis), night: barbitos, far aulos.",
+      "where": "towns: Corinth, Olympia, Ephesus",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          6
+        ],
+        "bars": 16,
+        "beats": 96,
+        "samples": 2822400,
+        "phrase_starts_s": [
+          0.0,
+          28.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/athens/town_march_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 64.0,
+      "samples": 2822400,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (march), day: aulos with its drone pipe, lyra, a frame drum's step.",
+      "where": "towns: the Academy, Sparta",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 2822400,
+        "phrase_starts_s": [
+          0.0,
+          18.6667,
+          32.0,
+          53.3333,
+          58.6667
+        ]
+      }
+    },
+    {
+      "file": "music/athens/town_march_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 64.0,
+      "samples": 2822400,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (march), night: far aulos, barbitos.",
+      "where": "towns: the Academy, Sparta",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 2822400,
+        "phrase_starts_s": [
+          0.0,
+          18.6667,
+          32.0,
+          53.3333,
+          58.6667
+        ]
+      }
+    },
+    {
+      "file": "music/athens/town_sanctuary_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 96.0,
+      "samples": 4233600,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (sanctuary), day: kithara hymn on the mese, a far aulos closing.",
+      "where": "towns: Delphi, Delos",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 4233600,
+        "phrase_starts_s": [
+          0.0,
+          20.2828,
+          40.0,
+          60.2828,
+          80.0
+        ]
+      }
+    },
+    {
+      "file": "music/athens/town_sanctuary_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 96.0,
+      "samples": 4233600,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (sanctuary), night: barbitos.",
+      "where": "towns: Delphi, Delos",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 4233600,
+        "phrase_starts_s": [
+          0.0,
+          20.2828,
+          40.0,
+          60.2828,
+          80.0
+        ]
+      }
+    },
+    {
+      "file": "music/athens/town_harbour_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 64.0,
+      "samples": 2822400,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (harbour), day: lyra in a lilting three, aulos answers.",
+      "where": "towns: Eleusis, Corcyra",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          3
+        ],
+        "bars": 32,
+        "beats": 96,
+        "samples": 2822400,
+        "phrase_starts_s": [
+          0.0,
+          16.0,
+          22.0,
+          40.0,
+          48.0,
+          58.0
+        ]
+      }
+    },
+    {
+      "file": "music/athens/town_harbour_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 64.0,
+      "samples": 2822400,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (harbour), night: barbitos, far aulos.",
+      "where": "towns: Eleusis, Corcyra",
+      "music": {
+        "bpm": 90,
+        "meter": [
+          3
+        ],
+        "bars": 32,
+        "beats": 96,
+        "samples": 2822400,
+        "phrase_starts_s": [
+          0.0,
+          16.0,
+          22.0,
+          40.0,
+          48.0,
+          58.0
+        ]
+      }
     }
   ]
 }

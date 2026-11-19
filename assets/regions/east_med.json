@@ -114,13 +114,12 @@
       "mar"
      ],
      "snow": [
-      "mar",
-      "apr"
+      "mar"
      ]
     },
     "snow_line": [
-     7,
      9,
+     12,
      null
     ]
    },
@@ -180,7 +179,7 @@
     "snow_line": [
      null,
      null,
-     null
+     13
     ]
    },
    "winter": {
@@ -200,15 +199,14 @@
       "feb"
      ],
      "snow": [
-      "dec",
       "jan",
       "feb"
      ]
     },
     "snow_line": [
-     7,
-     6,
-     6
+     10,
+     8,
+     8
     ]
    }
   },

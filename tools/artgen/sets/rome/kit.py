@@ -14,6 +14,8 @@ import math
 
 import numpy as np
 
+import waterworks
+
 import materials as M
 import roman as RM
 from arch import carve, ellipsoid, face_box, fill, flight, halo, revolve, rod, slab
@@ -458,10 +460,11 @@ def r_lacus(v, frame, frames, k):
     pillar with a spout carved as a head, water running; the kerb worn by jugs."""
     m = _m(1, 1, 18, k)
     slab(m, 3.0, 13.0, 2.0, 12.0, 0.0, 4.0, "travertine" if v == 0 else "tufa", tone=M.ashlar(4.0, 10.0, 2101, spread=0.4))
-    fill(m, (3.8, 12.2, 2.8, 11.2, 1.0, 4.1), "water", tone=lambda X, Y, Z: 0.4 * (((X + Y + frame) % 3.0) < 0.6))
+    carve(m, (3.8, 12.2, 2.8, 11.2, 3.3, 4.1))
     slab(m, 7.0, 9.0, 1.0, 3.0, 0.0, 9.0, "travertine", tone=0.2)
     ellipsoid(m, (8.0, 3.2, 7.4), (1.0, 0.7, 1.1), "travertine", 0.4)
-    fill(m, (7.7, 8.3, 3.3, 4.6, 4.0, 7.0), "water", tone=0.5)
+    land = waterworks.stream(m, (8.0, 3.9, 7.0), (0.0, 1.9), 3.3, frame, frames, r=0.4, seed=2103)
+    waterworks.surface(m, (3.8, 12.2, 2.8, 11.2), 3.3, frame, frames, sources=[land], seed=2104, depth_units=2.0)
     for x in (3.0, 13.0):
         rod(m, (x, 2.0, 4.0), (x, 12.0, 4.0), 0.2, "metal", 0.3)
     return m

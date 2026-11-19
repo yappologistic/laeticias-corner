@@ -113,15 +113,12 @@
      "muddy": [
       "mar",
       "apr"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     5,
      8,
-     null
+     11,
+     14
     ]
    },
    "summer": {
@@ -160,8 +157,8 @@
     },
     "snow_line": [
      null,
-     null,
-     7
+     13,
+     9
     ]
    },
    "winter": {
@@ -190,7 +187,7 @@
     "snow_line": [
      5,
      0,
-     0
+     4
     ]
    }
   },
@@ -2742,7 +2739,7 @@
     "hours": [
      [
       "dusk",
-      "23:00"
+      "23:30"
      ]
     ],
     "rain": "dim"
@@ -2786,7 +2783,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",

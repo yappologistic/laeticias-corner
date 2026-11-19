@@ -3,17 +3,20 @@
 World rect C 1112..1127, R 330..345; local (c, r) = world (C - 1112, R - 330); local level 0 =
 world level 6. A narrow defile: the road runs west to east along r 7..8, climbing two levels on
 ramps from the west mouth (portal `gates_w`, world 4) to the east mouth (portal `gates_e`); cliffs
-of limestone rise on both sides (+6..+9, impassable, snow on the tops, Persian oaks on ledges);
+of limestone rise on both sides (+6..+9, impassable, snow on the tops in its months, Persian
+oaks on ledges);
 the walled station of the guards stands beside the road at the west mouth where the gorge widens
 (north of the road rather than across it, so the road keeps its own line); a watchtower on a
 ledge and a beacon above. A guarded pass on the road to Pārsa in 470 (the battle of 330 BC is
 later; the site is debated).
 """
 
+from worldgen import climates as C
+from worldgen import seasons as SEAS
 from worldgen import waypoint as WP
 from worldgen.dsl import Layout
 from worldgen.finish import put
-from worldgen.shapes import Line, Rect
+from worldgen.shapes import Line, Mask, Rect
 
 ROYAL = "world.road_royal"
 
@@ -33,7 +36,12 @@ def build(L: Layout) -> None:
         WP.raise_levels(L, cl, top=9, base=6, face="world.rock", steps=1)
         L.paint(cl, "world.rock")
         L.impassable(cl)
-    L.paint(Rect(0, 0, W - 1, 0) | Rect(0, H - 1, W - 1, H - 1), "world.snow")
+    # Snow is ground on the cliff tops only as high as the mountains keep it all year (none:
+    # the Zagros is bare in high summer); otherwise it is the season's, drawn by the climate.
+    lasting = SEAS.lasting_snow(SEAS.tool_climates()[C.REGION_CLIMATE["persian_gates"]])
+    if lasting is not None:
+        L.paint(Mask(0, 0, L._mask(north | south) & (L.LV + L.base_level >= lasting)),
+                "world.snow")
     L.district("cliffs", north | south)
     L.district("road", floor | Rect(0, 1, 8, 5))
 

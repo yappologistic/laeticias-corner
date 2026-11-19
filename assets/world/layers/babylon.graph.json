@@ -20,11 +20,13 @@
     {"id": "n15", "at": [299, 218]},
     {"id": "n16", "at": [291, 209]},
     {"id": "n17", "at": [301, 209]},
-    {"id": "babylon_quay", "at": [307, 230], "kind": "dest"},
+    {"id": "n18", "at": [307, 230]},
     {"id": "n19", "at": [307, 239]},
     {"id": "west_bank", "at": [299, 239], "kind": "dest"},
     {"id": "n21", "at": [293, 239]},
-    {"id": "n22", "at": [293, 232]}
+    {"id": "n22", "at": [293, 232]},
+    {"id": "n23", "at": [299, 231]},
+    {"id": "babylon_quay", "at": [296, 231], "kind": "dest"}
   ],
   "edges": [
     {"a": "babylon_n", "b": "ishtar_gate", "kind": "road"},
@@ -40,18 +42,20 @@
     {"a": "n12", "b": "n13", "kind": "street"},
     {"a": "n14", "b": "n15", "kind": "street"},
     {"a": "n16", "b": "n17", "kind": "street"},
-    {"a": "babylon_quay", "b": "n19", "kind": "street"},
+    {"a": "n18", "b": "n19", "kind": "street"},
     {"a": "n19", "b": "west_bank", "kind": "street"},
     {"a": "west_bank", "b": "n21", "kind": "street"},
     {"a": "n21", "b": "n22", "kind": "street"},
-    {"a": "west_bank", "b": "n12", "kind": "street"},
+    {"a": "west_bank", "b": "n23", "kind": "street"},
+    {"a": "n23", "b": "n12", "kind": "street"},
     {"a": "etemenanki_court", "b": "n9", "kind": "road"},
     {"a": "n10", "b": "n3", "kind": "street"},
     {"a": "n14", "b": "n4", "kind": "street"},
     {"a": "n16", "b": "n2", "kind": "street"},
-    {"a": "n17", "b": "n5", "kind": "street"}
+    {"a": "n17", "b": "n5", "kind": "street"},
+    {"a": "babylon_quay", "b": "n23", "kind": "street"}
   ],
   "lanes": [
-    {"id": "babylon", "kind": "sea", "points": [[307, 228], [301, 228], [297, 229], [295, 230], [284, 231]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "babylon", "at": 4}, {"id": "end", "at": 4}]}
+    {"id": "babylon", "kind": "sea", "points": [[296, 229], [295, 229], [295, 230], [284, 231]], "ports": [{"id": "quay", "at": 0}, {"id": "start", "at": 0}, {"id": "babylon", "at": 3}, {"id": "end", "at": 3}]}
   ]
 }

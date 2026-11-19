@@ -175,6 +175,8 @@ def check_shadows(shadow_json: Path, pages: list[Path]) -> list[str]:
     doc = json.loads(shadow_json.read_text())
     errors = [] if doc.get("scale") == 0.5 else [f"{shadow_json.name}: scale is not 0.5"]
     half = doc["sprites"]
+    if not half:
+        errors.append(f"{shadow_json.name}: no shadows")
     for p in pages:
         for key, r in json.loads(p.read_text())["sprites"].items():
             if "/shadow/" not in key:
@@ -511,6 +513,70 @@ def check_walk_heights(cat: dict, geom: dict, packed, hw: int, hh: int) -> list[
     return errors
 
 
+def check_occlusion(name: str, atlas_dir: Path, cat: dict, packed) -> list[str]:
+    """The occlusion page (occlusion.py): well formed, a sprite for every item look the colour
+    pages draw, and its tops at or above every pixel the colour art draws over each texel
+    (a pixel at height h whose ground point falls in a texel needs that texel's top >= h; the
+    neighbouring texels are allowed for pixels on a texel's very edge)."""
+    import occlusion
+    f = atlas_dir / f"{name}.o.json"
+    if not f.exists():
+        return [f"no occlusion page {f.name}"]
+    doc = json.loads(f.read_text())
+    errors = []
+    if doc.get("version") != 1 or doc.get("image") != f"{name}.o.png" or doc.get("texel") != occlusion.TEXEL \
+            or doc.get("codes") != occlusion.CODES:
+        errors.append(f"{f.name}: version 1, image {name}.o.png, texel {occlusion.TEXEL} and the codes expected")
+    img = _rgba(f.with_name(doc["image"]))
+    man = doc["sprites"]
+    looks = set()
+    for m, _w in packed:
+        for key in m:
+            if (mm := re.fullmatch(r"item/([^/]+)/base/([^/]+)/(?:p\d+/)?f0", key)):
+                looks.add((mm[1], mm[2]))
+    for iid, look in sorted(looks):
+        if f"item/{iid}/{look}" not in man:
+            errors.append(f"item/{iid}/{look}: no occlusion tops on {f.name}")
+    for key in sorted(set(man) - {f"item/{i}/{v}" for i, v in looks}):
+        errors.append(f"{key}: occlusion tops for no item look")
+    for key, r in man.items():
+        sub = img[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
+        if not (sub[..., 3] > 0).any():
+            errors.append(f"{key}: occlusion tops cover nothing")
+        if (sub[..., 2] > max(occlusion.CODES.values())).any() or ((sub[..., 3] == 0) & sub[..., :3].any(-1)).any():
+            errors.append(f"{key}: occlusion tops with a bad material or data where nothing is covered")
+        if ((sub[..., 1] > 0) & (sub[..., 1] >= sub[..., 0])).any():
+            errors.append(f"{key}: an underside at or above its top")
+    # Tops against the colour art's heights.
+    for m, words in packed:
+        for key, r in m.items():
+            mm = re.fullmatch(r"item/([^/]+)/base/([^/]+)/(?:p\d+/)?f0", key)
+            if not mm or f"item/{mm[1]}/{mm[2]}" not in man:
+                continue
+            o = man[f"item/{mm[1]}/{mm[2]}"]
+            top = np.pad(img[o["y"]:o["y"] + o["h"], o["x"]:o["x"] + o["w"], 0].astype(np.int64) * 2, 1)
+            pad = np.pad(top, 1)
+            # A pixel on a silhouette's edge (its outline) may land a texel off its column.
+            around = np.max([pad[1 + dy:1 + dy + top.shape[0], 1 + dx:1 + dx + top.shape[1]]
+                             for dy in (-1, 0, 1) for dx in (-1, 0, 1)], axis=0)
+            w = words[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
+            ys, xs = np.nonzero(((w >> 3) & 255) > 0)
+            if not len(xs):
+                continue
+            h = ((w[ys, xs] >> 21) & 511).astype(np.int64)
+            sx, sy = xs - r["ox"] + 0.5, ys - r["oy"] + 0.5
+            X, Y = (sx + 2 * (sy + h)) / 2, (2 * (sy + h) - sx) / 2
+            c = np.floor(X / occlusion.TEXEL).astype(np.int64) + o["ox"] + 1
+            rr = np.floor(Y / occlusion.TEXEL).astype(np.int64) + o["oy"] + 1
+            inside = (c >= 0) & (c < top.shape[1]) & (rr >= 0) & (rr < top.shape[0])
+            low = np.zeros(len(h), bool)
+            low[inside] = around[rr[inside], c[inside]] + 2 < h[inside]
+            low |= ~inside & (h > 4)
+            if low.mean() > 0.02:
+                errors.append(f"{key}: {int(low.sum())} of {len(h)} pixels stand above their occlusion tops")
+    return errors
+
+
 def check(name: str, atlas_dir: Path | None = None) -> list[str]:
     """`name`: 'home' or a set id."""
     root = spec.ASSETS
@@ -536,6 +602,7 @@ def check(name: str, atlas_dir: Path | None = None) -> list[str]:
         packed = [(json.loads(p.with_suffix(".json").read_text())["sprites"],
                    _words(_rgba(p.with_name(p.stem + ".p.png")))) for p in pages]
         errors += check_depth(name, atlas_dir, packed)
+        errors += check_occlusion(name, atlas_dir, cat, packed)
         geom_file = atlas_dir / f"{name}.geom.json"
         if geom_file.exists():
             errors += loader_rules(json.loads(geom_file.read_text()), name)

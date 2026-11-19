@@ -72,6 +72,12 @@ class LandRenderer(IsoRenderer):
             self._got[key] = as_pil(sp) if sp is not None else self.atlas.get(key)
         return self._got[key]
 
+    def count_interior(self, tid):
+        n = 1
+        while self.sprite(f"terrain/{tid}/m15/v{n}/f0") is not None:
+            n += 1
+        return n
+
     def count(self, prefix):
         n = 0
         while self.sprite(f"{prefix}/v{n}") is not None:
@@ -110,7 +116,12 @@ class LandRenderer(IsoRenderer):
         if s is not None:
             out.append(s)
         if t is not None and not t.base:
-            o = self.sprite(f"terrain/{tid}/m{mask}/f0")
+            o = None
+            if mask == 15:          # the interior's looks, picked as the engine does
+                n = self.count_interior(tid)
+                pick = tile_hash(tx, ty, 1) % n if n > 1 else 0
+                o = self.sprite(f"terrain/{tid}/m15/v{pick}/f0") if pick else None
+            o = o or self.sprite(f"terrain/{tid}/m{mask}/f0")
             if o is not None:
                 out.append(o)
         return out or super().terrain_sprites(tid, tx, ty, mask, depth)
@@ -213,9 +224,12 @@ class LandRenderer(IsoRenderer):
         ground = self.terrain_sprites(tid, tx, ty, mask, aux)
         shape = self.slope.shape(c, r) if self.slope else None
         if shape:
-            key = (tuple(id(g[0]) for g in ground), shape)
+            base = self.cat.terrain.get(tid)
+            interior = base is not None and (base.base or mask == 15)
+            look = tile_hash(tx, ty, 1) % 2
+            key = (tuple(id(g[0]) for g in ground), shape, look if self.slope.live else 0)
             if key not in self._slopes:
-                self._slopes[key] = as_pil(self.slope.lay(ground, shape))
+                self._slopes[key] = as_pil(self.slope.lay(ground, shape, tid, look, interior))
             im, ox, oy = self._slopes[key]
             ops.append(("g", x - ox, y + self.lp - oy, im))
         else:
@@ -233,6 +247,9 @@ class LandRenderer(IsoRenderer):
                 ops.append(("g", x - pl[1], y - pl[2], pl[0]))
         return ops + tops
 
+MASONRY = ("basalt", "ashlar", "brick", "travertine")
+
+
 class Slopes:
     """Which tiles of the world become slopes, by the contract's rule (art-smooth-land.md §3): a
     corner of a tile that may slope is low when a tile touching it stands exactly one level
@@ -241,9 +258,16 @@ class Slopes:
 
     def __init__(self, w, cat, flat_ok, k, lvl, pal):
         self.w, self.cat, self.k, self.lvl, self.pal = w, cat, k, lvl, pal
+        self.live = False
         ids = np.array([flat_ok(t) for t in w.terrains] + [False])
         T = np.where(w.T == NONE16, len(w.terrains), w.T)
-        self.ok = ids[T] & ~blocked(w, cat)
+        # A tile whose face is masonry is a built edge and stays flat (world-qa6.md §3).
+        built = np.zeros((len(w.terrains) + 1, 4), bool)
+        for i, tid in enumerate(w.terrains):
+            for a, f in enumerate(cat.faces(tid)[:4]):
+                built[i, a] = f.split(".")[-1] in MASONRY
+        aux = ((w.L >> 4) & 3).astype(np.int64)
+        self.ok = ids[T] & ~blocked(w, cat) & ~built[T, aux]
         self._c: dict = {}
 
     def level(self, c, r):
@@ -299,12 +323,65 @@ class Slopes:
         _lv, low, lower = self._low_lower(c, r)
         return slopes.ridge_axis(low, lower) == axis
 
-    def lay(self, ground, shape):
-        """One flat diamond from the tile's ground sprites, laid on the shape."""
+    def lay(self, ground, shape, tid=None, look=0, interior=False):
+        """The slope look of a tile: with `live` and an interior tile (or a base), the set build's
+        own sprite (setbuild.slope_set, as the engine draws it); otherwise one flat diamond from
+        the tile's ground sprites laid on the shape (an overlay's edge over its base, which the
+        engine warps)."""
+        if self.live and tid and interior:
+            return _live_slope(tid, look, shape)
         im = Image.new("RGBA", (32 * self.k, 16 * self.k), (0, 0, 0, 0))
         for g, ox, oy in ground:
             im.alpha_composite(g, (16 * self.k - ox, -oy))
-        return slopes.slope_sprite(Sprite(np.asarray(im).copy(), 16 * self.k, 0), shape, self.k, self.lvl, self.pal)
+        flat = Sprite(np.asarray(im).copy(), 16 * self.k, 0)
+        if not self.live:
+            return slopes.slope_sprite(flat, shape, self.k, self.lvl, self.pal)
+        set_id = tid.split(".")[0]
+        import setbuild
+        return slopes.slope_sprite(flat, shape, self.k, self.lvl, self.pal, look, slopes.material_of(tid),
+                                   setbuild.slope_rock(set_id, _set_cat(set_id), tid))
+
+
+_CATS: dict = {}
+
+
+def _set_cat(set_id):
+    import json
+    if set_id not in _CATS:
+        _CATS[set_id] = json.loads((ROOT / f"assets/sets/{set_id}/catalog.json").read_text())
+    return _CATS[set_id]
+
+
+_LIVE: dict = {}
+_FLAT: dict = {}
+
+
+def _live_flat(key):
+    """A set's ground sprite (`terrain/<set>.<id>/…`) from the generator as it is now, or None
+    for every other key (those come from the committed pages)."""
+    import re
+    m = re.fullmatch(r"terrain/((world|parsa|athens|rome)\.\w+)/(v\d+|m\d+(/v\d+)?/f0)", key)
+    if not m:
+        return None
+    if key not in _FLAT:
+        import setbuild
+        set_id = m[2]
+        cat = _set_cat(set_id)
+        t = next((x for x in cat["terrain"] if x["id"] == m[1]), None)
+        mod = setbuild.load_set(set_id)
+        n = getattr(mod.ground, "INTERIOR", {}).get(m[1], 1)
+        ok = t is not None and ("fps" not in t) and not (m[4] and int(m[4][2:]) >= n)
+        _FLAT[key] = mod.flat([key], cat, 2)[key] if ok else None
+    return _FLAT[key]
+
+
+def _live_slope(tid, look, shape):
+    """The set build's slope sprite for (terrain, look, shape), all shapes made at once."""
+    import setbuild
+    if (tid, look) not in _LIVE:
+        set_id = tid.split(".")[0]
+        _LIVE[(tid, look)] = setbuild.slope_set(set_id, _set_cat(set_id), tid, look, tuple(slopes.SHAPES), 2)
+    return _LIVE[(tid, look)][f"terrain/{tid}/slope/{shape}/v{look}"]
 
 
 def rides(d) -> bool:
@@ -395,15 +472,107 @@ def side_by_side(a: Image.Image, b: Image.Image, gap=12, bg=(30, 34, 46)) -> Ima
     return out
 
 
+def slope_ok(cat, w):
+    """Slope eligibility of each terrain id (the catalogs' `art.slopes`) and, per tile, whether its
+    face is masonry (a built edge stays flat: world-qa6.md §3)."""
+    import json
+    ids = set()
+    for p in sorted((ROOT / "assets/sets").glob("*/catalog.json")):
+        ids |= set(json.loads(p.read_text()).get("art", {}).get("slopes", ()))
+    return lambda t: t in ids
+
+
+
+def _old_slopes(rev: str):
+    """slopes.py as it was at git revision `rev`, as a module (for before/after previews)."""
+    import importlib.util
+    import shutil
+    import subprocess
+    import tempfile
+    src = subprocess.run(["git", "-C", str(ROOT), "show", f"{rev}:tools/artgen/slopes.py"], check=True,
+                         capture_output=True, text=True).stdout
+    d = Path(tempfile.mkdtemp(prefix="lc-slopes-"))
+    f = d / f"slopes_{rev.replace('/', '_')}.py"
+    f.write_text(src)
+    spec_ = importlib.util.spec_from_file_location(f.stem, f)
+    mod = importlib.util.module_from_spec(spec_)
+    try:
+        spec_.loader.exec_module(mod)
+    finally:
+        shutil.rmtree(d)
+    return mod
+
+
+def render_slopes(rect, module=slopes, season=None) -> Image.Image:
+    """`rect` with every eligible one-level step drawn as a slope by `module`'s art."""
+    global slopes
+    w, cat, atlas = world()
+    from palette import REGION_COLOURS, palette_for
+    pal = slopes.palette_codes(sorted(set(palette_for(None)).union(*REGION_COLOURS.values())))
+    keep = slopes
+    slopes = module
+    try:
+        sl = Slopes(w, cat, slope_ok(cat, w), 2, cat.level_px, pal)
+        sl.live = module is keep
+        im = LandRenderer(w, cat, atlas, ROOT, _live_flat if sl.live else None, None, sl).render(rect, 1)
+    finally:
+        slopes = keep
+    im = crop(im)
+    return season_look(im, season) if season else im
+
+
+_SEASON = {}
+
+
+def season_look(im: Image.Image, season: str) -> Image.Image:
+    """The shader path's season by ramp states, by colour (autumn: leaves turn, grass dries;
+    winter: dormant): each pixel's palette-group ramp and step swapped for its state's."""
+    import json
+    if not _SEASON:
+        doc = json.loads((ROOT / "assets/atlas/ramps.json").read_text())
+        byid = {e["id"]: e for e in doc["ramps"]}
+        for st in ("dry", "turn", "dormant"):
+            m = {}
+            for e in doc["ramps"]:
+                if not e["name"].startswith("pal.") or st not in e.get("states", {}):
+                    continue
+                to = byid[e["states"][st]]["colours"]
+                for i, c in enumerate(e["colours"]):
+                    m[int(c[1:], 16)] = int(to[min(i, len(to) - 1)][1:], 16)
+            _SEASON[st] = m
+    a = np.asarray(im.convert("RGB")).astype(np.int64)
+    code = a[..., 0] << 16 | a[..., 1] << 8 | a[..., 2]
+    out = code.copy()
+    order = ("dry", "turn") if season == "autumn" else ("dormant",) if season == "winter" else ()
+    for st in order:
+        for c, to in _SEASON[st].items():
+            out[code == c] = to
+    rgb = np.stack([out >> 16 & 255, out >> 8 & 255, out & 255], -1).astype(np.uint8)
+    return Image.fromarray(rgb, "RGB")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("place", choices=sorted(PLACES))
     ap.add_argument("--season")
     ap.add_argument("--out", default=str(ROOT / "out/artgen/smooth"))
+    ap.add_argument("--compare", metavar="REV", help="slopes before (slopes.py at REV) | after (the working copy)")
+    ap.add_argument("--scales", default="1", help="comma list of 1, 0.5, 0.25 (box filtered)")
     a = ap.parse_args(argv)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    render(PLACES[a.place], season=a.season).save(out / f"{a.place}.png")
+    if not a.compare:
+        render(PLACES[a.place], season=a.season).save(out / f"{a.place}.png")
+        return 0
+    before = render_slopes(PLACES[a.place], _old_slopes(a.compare), a.season)
+    after = render_slopes(PLACES[a.place], slopes, a.season)
+    tag = f"_{a.season}" if a.season else ""
+    for sc in a.scales.split(","):
+        f = float(sc)
+        pair = [im if f == 1 else im.resize((max(1, round(im.width * f)), max(1, round(im.height * f))),
+                                            Image.BOX) for im in (before, after)]
+        name = f"{a.place}{tag}" + ("" if f == 1 else f"_{sc.replace('.', '')}")
+        side_by_side(*pair).save(out / f"{name}.png", optimize=True)
     return 0
 
 

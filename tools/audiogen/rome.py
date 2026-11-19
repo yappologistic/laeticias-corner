@@ -427,6 +427,6 @@ FILES = {
                                    purpose="Water-organ chords from the Colosseum on a game day."),
     "sfx/rome/sistrum.wav": dict(kind="sfx", render=sistrum, lufs=-24.0, gain=0.9,
                                  purpose="A sistrum shaken at the Iseum."),
-    "sfx/rome/arrive.wav": dict(kind="sfx", render=arrive, lufs=-20.0, gain=1.0,
+    "sfx/rome/arrive.wav": dict(kind="sfx", render=arrive, lufs=-22.0, gain=1.0,
                                 purpose="Arrival motif (fast travel, era caption): cithara F A C, cornu F."),
 }

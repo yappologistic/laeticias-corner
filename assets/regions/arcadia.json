@@ -134,14 +134,13 @@
       "apr"
      ],
      "snow": [
-      "mar",
-      "apr"
+      "mar"
      ]
     },
     "snow_line": [
-     8,
-     10,
-     12
+     9,
+     11,
+     13
     ]
    },
    "summer": {
@@ -162,7 +161,7 @@
      ]
     },
     "snow_line": [
-     null,
+     15,
      null,
      null
     ]
@@ -191,7 +190,7 @@
     },
     "snow_line": [
      null,
-     null,
+     14,
      11
     ]
    },

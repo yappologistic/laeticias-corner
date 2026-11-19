@@ -1,7 +1,8 @@
 """Voices for the three ancient cities: plucked strings by digital waveguide (angular harp,
 long-necked lute, kithara, lyra, barbitos, cithara), reed pipes played as continuous phrases
-(double pipe, aulos, tibia), frame drum, clappers, small cymbals, sistrum, hydraulis, natural
-horn and cornu, and a wordless hummed choir. Each returns a mono note or phrase."""
+(double pipe, aulos, tibia), the syrinx (Pan's pipes), frame drum, clappers, small cymbals,
+sistrum, hydraulis, natural horn and cornu, and a wordless hummed choir. Each returns a mono
+note or phrase."""
 
 import numpy as np
 from scipy import signal
@@ -174,14 +175,18 @@ def reed_phrase(kind, notes, n, rng, legato=0.03):
     amp *= wobble(n, rng, 0.03, 8.0)
     ph = phase_of(held)
     out = np.zeros(n)
-    for k in range(1, 30):
-        fk = k * held
-        if fk.min() > CEILING:
-            break
-        w = (1.0 if k % 2 else p["even"]) * k**-0.7
-        form = sum(g / (1 + ((fk - c) / (0.5 * bw)) ** 2) for c, bw, g in p["formants"])
-        w = w * (0.35 + form) / (1 + (fk / p["roll"]) ** 3) * (fk < CEILING)
-        out += w * np.sin(k * ph)
+    # Harmonics a block at a time (element by element the same sums), so a drone held for
+    # a minute does not hold a dozen minute-long temporaries.
+    for a in range(0, n, 1 << 18):
+        h, phb, o = held[a:a + (1 << 18)], ph[a:a + (1 << 18)], out[a:a + (1 << 18)]
+        for k in range(1, 30):
+            fk = k * h
+            if fk.min() > CEILING:
+                break
+            w = (1.0 if k % 2 else p["even"]) * k**-0.7
+            form = sum(g / (1 + ((fk - c) / (0.5 * bw)) ** 2) for c, bw, g in p["formants"])
+            w = w * (0.35 + form) / (1 + (fk / p["roll"]) ** 3) * (fk < CEILING)
+            o += w * np.sin(k * phb)
     # Breath: a slow flutter riding on the tone (narrow, so harmonics stay clean) plus a
     # little air in the bore's formant band, both following the player's dynamics.
     flutter = lowpass(rng.standard_normal(n), 300, 2)
@@ -336,3 +341,28 @@ def flute(freq, dur, vel, rng, release=0.15):
     puff = bandpass(rng.standard_normal(n), 800, 3000) * perc(n, 0.005, 0.04)
     env = np.minimum(1, t / 0.05) * np.exp(-np.clip(t - dur, 0, None) / (release / 3))
     return ((tone + 0.18 * breath) * env + 0.2 * puff) * ramp_in(n, secs(0.02))[::-1] * vel
+
+
+def syrinx(freq, dur, vel, rng, release=0.25):
+    """One pipe of a syrinx (Pan's pipes, the shepherd's fistula): a cane tube stopped at the
+    bottom, so its partials are odd (the third and fifth only), blown across the rim: much air
+    around the tone, a breathy chiff as the lip finds the edge, a slight rise into pitch, then
+    a note that eases as the breath does. Each note is its own pipe: no glide between them."""
+    n = secs(dur + release)
+    t = times(n)
+    f = freq * (1 - 0.018 * np.exp(-t / 0.025)) * wobble(n, rng, 0.0008, 3.0)
+    ph = phase_of(f)
+    tone = sum(a * np.sin(k * ph) for k, a in ((1, 1.0), (2, 0.02), (3, 0.16), (5, 0.045))
+               if k * freq < CEILING)
+    # The air rides close round the tone (the edge tone's band), not as a broad hiss.
+    air = bandpass(rng.standard_normal(n), freq * 0.85, min(freq * 1.6, 7000), 4)
+    air = air / (np.std(air) + 1e-12)
+    hiss = bandpass(rng.standard_normal(n), 2500, 6000, 4)
+    hiss = hiss / (np.std(hiss) + 1e-12)
+    chiff = bandpass(rng.standard_normal(n), min(freq * 3, 6000), min(freq * 5, 7000))
+    chiff = chiff / (np.std(chiff) + 1e-12) * perc(n, 0.002, 0.035)
+    swell = np.minimum(1, t / 0.045) * (0.85 + 0.15 * np.exp(-t / 0.4))
+    env = swell * np.exp(-np.clip(t - dur, 0, None) / (release / 3))
+    breath = wobble(n, rng, 0.06, 6.0)
+    out = (tone * 0.5 * breath + 0.05 * air + 0.004 * hiss) * env + 0.05 * chiff
+    return out * ramp_in(n, secs(0.03))[::-1] * vel

@@ -33,7 +33,8 @@ Rules (codes `W-<rule>` after draw-order.md §5.2; all errors):
 - `W-G2`  every graph node stands on a walkable tile; an edge never runs under an item that
           gives walkers no walk tile there (V17 refuses the step; this names the item).
 - `W-O2`  every ship and barge lane runs on water, and under an item only where the item's
-          geometry declares the clearance (`under`, px) its boats need.
+          geometry declares the clearance (`pass` per tile, else `under`, px) its tallest boat
+          needs in its lowest form (`BOAT_PX`); a sea-going ship's lane passes no bridge.
 """
 
 from __future__ import annotations
@@ -169,6 +170,16 @@ def _slot_def(cat: Catalog, iid: str, sid: str) -> dict:
     return {}
 
 
+# Boat heights over the water by kind, px, from the art's models (art-smooth-land.md §8), in
+# the lowest form a boat takes to pass a bridge (the barge with its mast lowered); sea-going
+# ships never pass a bridge at all.
+BOAT_PX = {"rome.barge": 27, "rome.merchantman": 105, "athens.trireme": 89,
+           "athens.merchant": 93, "athens.fishing": 47, "world.fishing_boat": 63,
+           "world.phoenician": 103, "world.reed_boat": 61, "world.kelek": 31, "world.quffa": 26}
+SEA_GOING = {"rome.merchantman", "athens.trireme", "athens.merchant", "world.phoenician"}
+NO_PASSAGE = 10 ** 6
+
+
 def boat_heights(root, cat: Catalog) -> dict[str, int]:
     """Lane (`<layer>:<id>`, as tokens name it) -> the tallest boat any region's tokens sail on
     it, in px above the water (an actor kind's `h`, else BOAT_H)."""
@@ -178,7 +189,8 @@ def boat_heights(root, cat: Catalog) -> dict[str, int]:
     for f in sorted((Path(root) / "assets/sets").glob("*/catalog.json")):
         for a in json.loads(f.read_text()).get("actors", []):
             if isinstance(a, dict) and "id" in a:
-                kinds[a["id"]] = int(a.get("h") or BOAT_H)
+                kinds[a["id"]] = NO_PASSAGE if a["id"] in SEA_GOING else \
+                    int(a.get("h") or BOAT_PX.get(a["id"], BOAT_H))
     out: dict[str, int] = {}
     for f in sorted((Path(root) / "assets/regions").glob("*.json")):
         for tok in json.loads(f.read_text()).get("lanes_tokens", []):
@@ -189,12 +201,16 @@ def boat_heights(root, cat: Catalog) -> dict[str, int]:
 
 
 def _clearance(it, geo: dict, t) -> int | None:
-    """The clearance (`under`, px above the item's base) of the piece over plan tile t: per
-    piece when the geometry lists pieces, else one number for the item; None when undeclared."""
+    """The clearance over plan tile t, px above the water: the geometry's per-tile `pass`
+    (rows by grid dy; 255 open sky, 0 nothing passes), else its `under` per piece or for the
+    whole item; None when undeclared."""
+    dx, dy = t[1] - it.r, it.c + it.pw - 1 - t[0]
+    passing = geo.get("pass")
+    if isinstance(passing, list) and 0 <= dy < len(passing) and 0 <= dx < len(passing[dy]):
+        return int(passing[dy][dx])
     under = geo.get("under")
     if not isinstance(under, list):
         return under
-    dx, dy = t[1] - it.r, it.c + it.pw - 1 - t[0]
     for (px, py, pw, ph), u in zip(geo.get("pieces", []), under):
         if px <= dx < px + pw and py <= dy < py + ph:
             return int(u)
@@ -243,7 +259,7 @@ def scan(world: World, cat: Catalog, graphs: dict[str, Graph], root=None,
         tiles = [t for t in it.tiles() if _inside(t) and world.T[t[1], t[0]] != NONE16]
         own = set(tiles)
         at = g((it.c + it.pw - 1, it.r))
-        geo = cat.geom.get(it.id, {}).get(f"r{it.k}", {})
+        geo = cat.geometry(it.id, it.k)
         walk_t = {_plan(it, dx, dy) for dx, dy in geo.get("walk", [])}
         basin = {_plan(it, dx, dy) for dx, dy in geo.get("water", [])}
         wet_item = any(water[r, c] for c, r in tiles)
@@ -389,7 +405,7 @@ def scan(world: World, cat: Catalog, graphs: dict[str, Graph], root=None,
                     continue
                 c, r = t
                 o = int(ew.occ[r, c])
-                geo = cat.geom.get(items[o].id, {}).get(f"r{items[o].k}", {}) if o >= 0 else {}
+                geo = cat.geometry(items[o].id, items[o].k) if o >= 0 else {}
                 if not water[r, c]:
                     if t not in {_plan(items[o], a, b) for a, b in geo.get("water", [])} \
                             and "dry" not in told:
@@ -409,8 +425,9 @@ def scan(world: World, cat: Catalog, graphs: dict[str, Graph], root=None,
                         "boats lie beside a pier or a reed bed, never over it", t, d.id)
                 elif under is None or int(under) < need:
                     told.add(o)
-                    clear = "declares no clearance (`under`)" if under is None else \
-                        f"clears {under} px, its boats need {need}"
+                    clear = "declares no clearance (`pass`)" if under is None else \
+                        f"clears {under} px, and a sea-going ship passes no bridge" \
+                        if need >= NO_PASSAGE else f"clears {under} px, its boats need {need}"
                     add("W-O2", name, f"lane {ln.id} ({ln.kind}) passes under {d.id} at {g(t)}, "
                         f"which {clear}", t, d.id)
     return out
@@ -481,7 +498,7 @@ def stats(world: World, cat: Catalog, graphs: dict[str, Graph],
         s.item_unreached = int((on_item & m & ~reached).sum())
         s.ground_off = int((ew.walk & ~on_item & m & ~reached).sum())
     for _, it in live_items(world):
-        geo = cat.geom.get(it.id, {}).get(f"r{it.k}", {})
+        geo = cat.geometry(it.id, it.k)
         for spots in geo.get("slots", {}).values():
             for sp in spots:
                 t = _plan(it, sp["t"][0], sp["t"][1])
