@@ -1,5 +1,6 @@
 #include "worldview/overview.hpp"
 
+#include "worldview/terrain.hpp"
 #include "worldview/tuning.hpp"
 
 #include <algorithm>
@@ -153,7 +154,12 @@ OverviewImage makeOverview(const world::WorldMap& map, const WorldSprites& sprit
             if (sprites.terrain(t).water)
                 c = scaled(c, 1.0f - tuning::kWaterDepthTint *
                                          static_cast<float>(world::auxOf(map.levelByte(p))));
-            int raise = level * lvl / D;
+            // A slope stands at its surface's middle and takes its art's light (the map's art
+            // reads hills as the same tilted ground the cells draw).
+            const world::Slope sl = map.slopeAt(p);
+            int raise = static_cast<int>(std::lround(map.surfaceZ(
+                            {static_cast<float>(p.x) + 0.5f, static_cast<float>(p.y) + 0.5f}))) /
+                        D;
             if (const int i = map.itemAt(p); i >= 0) {
                 const auto k = static_cast<std::size_t>(i);
                 if (itemReq[k] != SIZE_MAX && means.has(itemReq[k]))
@@ -163,10 +169,15 @@ OverviewImage makeOverview(const world::WorldMap& map, const WorldSprites& sprit
                 raise += itemRaise[k];
             }
             // Light from the upper left: brighter where the tile stands above its back neighbours.
-            const float lit =
+            float lit =
                 1.0f +
                 0.05f * static_cast<float>(std::clamp(level - levelAt(p.x - 1, p.y), -3, 3)) +
                 0.03f * static_cast<float>(std::clamp(level - levelAt(p.x, p.y - 1), -3, 3));
+            if (sl != world::Slope::Flat) {
+                const auto fan = slopeLight(sl, static_cast<float>(lvl) / iso.hw);
+                lit = 0;
+                for (const float l : fan) lit += l / static_cast<float>(fan.size());
+            }
             const std::uint32_t top = pack(scaled(c, lit));
             const std::uint32_t side = pack(scaled(c, lit * kFaceShade));
             const Vec2 w = iso.toWorld(p);
