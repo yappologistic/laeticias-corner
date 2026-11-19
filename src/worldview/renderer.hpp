@@ -542,6 +542,7 @@ private:
     };
     GpuFrame gpuFrame_;
     gpu::Clouds clouds_ = gpu::Clouds::On;
+    bool snapExposure_ = true; // the view jumped this frame: the exposure is taken at once
     std::vector<gpu::Cloud> cloudList_;
     // The packed pages' decode (SDL's gpu driver, every tier): the ramp table's seasons, the
     // climate of each region, and what the sprite being drawn stands in (put() hands it on).

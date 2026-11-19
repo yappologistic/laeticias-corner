@@ -21,7 +21,8 @@ struct RampSeasons {
     // turn (0: the ramp has no such state).
     std::array<std::int8_t, kRampIds> green{};
     std::array<std::array<std::uint8_t, 4>, kRampIds> states{};
-    std::uint8_t snow = 0; // the snow ramp (class `snow`, the widest)
+    std::uint8_t snow = 0;              // the snow ramp (class `snow`, the widest)
+    std::array<bool, kRampIds> water{}; // class `water`: such texels are water for the look
 };
 // From `assets/atlas/ramps.json`. Ramps of class `grass` are grass, `foliage_deciduous` leaves.
 [[nodiscard]] RampSeasons parseRamps(const nlohmann::json& ramps);

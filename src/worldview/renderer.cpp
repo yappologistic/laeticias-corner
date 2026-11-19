@@ -243,7 +243,10 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
     if (t == nullptr) return false;
     if (decoder_) {
         decoder_->use(batch_, s.packed);
-        if (s.packed) c = packedColour(c, s.page == PageAtlas::kHomePage);
+        if (s.packed) {
+            if (c.a >= 1.0f && mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
+            c = packedColour(c, s.page == PageAtlas::kHomePage);
+        }
     }
     putSprite(batch_, Sprite{t, s.uv, s.w, s.h, s.ox, s.oy}, anchor, x, c, mode, mirror);
     return true;
@@ -430,6 +433,7 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
 }
 
 void WorldView::markWater(const SpriteRef& s, Vec2 anchor, bool maybe) {
+    if (decoder_ && s.packed && !maybe) return; // its water texels mark themselves as they draw
     marks_.push_back({s, anchor, maybe});
 }
 
@@ -1303,7 +1307,7 @@ void WorldView::setCalendar(int month, float dayFraction) {
                 for (int i = 0; i < gpu::kRampIds; ++i)
                     row[static_cast<std::size_t>(i)] = static_cast<std::uint8_t>(i);
         }
-        decoder_->setRemap(remapRows_);
+        decoder_->setRemap(remapRows_, rampSeasons_.water);
         stale = true;
     }
     // Snow builds and thaws over a morning in steps: cells are drawn again at each step, only
@@ -1407,6 +1411,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const Vec2 topLeft{c.x - screen.x * 0.5f / s, c.y - screen.y * 0.5f / s};
     const FRect seen{topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
     // How fast the view moves, for building ahead of it; a jump is no motion.
+    snapExposure_ = jumped_ || !lastView_.overlaps(seen);
     velocity_ = jumped_ || !lastView_.overlaps(seen)
                     ? Vec2{}
                     : Vec2{(seen.x0 + seen.x1 - lastView_.x0 - lastView_.x1) * 0.5f,

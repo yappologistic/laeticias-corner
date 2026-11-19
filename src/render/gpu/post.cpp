@@ -155,6 +155,9 @@ bool Post::init() {
         if (!mean_.back()) return false;
         begin(mean_.back().get());
     }
+    adapted_ = target(1, 1);
+    if (!adapted_) return false;
+    begin(adapted_.get());
     // The falloff: (1 - r^2)^2 inside the unit disc, premultiplied white.
     constexpr int kSide = tuning::kPoolTexture;
     std::vector<std::uint32_t> px(static_cast<std::size_t>(kSide * kSide));
@@ -279,7 +282,7 @@ void Post::rebuildStates() {
     // SDL 3.4.20 takes at most five samplers beside the drawn texture (R&D round): all five.
     const SDL_GPUTextureSamplerBinding bind[5] = {{gpuOf(glow_.get()), linear_},
                                                   {gpuOf(bloom_[0].get()), linear_},
-                                                  {gpuOf(mean_.back().get()), linear_},
+                                                  {gpuOf(adapted_.get()), linear_},
                                                   {gpuOf(water_.get()), linear_},
                                                   {gpuOf(clouds_.get()), linear_}};
     SDL_GPURenderStateCreateInfo info{};
@@ -426,12 +429,13 @@ void Post::setWaterField(std::span<const std::uint32_t> texels, int w, int h) {
         SDL_Log("gpu: water: %s", SDL_GetError());
 }
 
-void Post::measure(Batch& b, SDL_Texture* scene, int w, int h) {
-    // The first frame fills the whole chain; then one level a frame, top to bottom, so the
-    // mean is at most a chain's length of frames old for one draw a frame.
+void Post::measure(Batch& b, SDL_Texture* scene, int w, int h, bool snap) {
+    // The first frame (and a jump's) fills the whole chain; then one level a frame, top to
+    // bottom, so the mean is at most a chain's length of frames old for one draw a frame.
     const std::size_t levels = mean_.size();
-    const std::size_t first = measured_ == 0 ? 0 : measured_ % levels;
-    const std::size_t last = measured_ == 0 ? levels : first + 1;
+    snap = snap || measured_ == 0;
+    const std::size_t first = snap ? 0 : measured_ % levels;
+    const std::size_t last = snap ? levels : first + 1;
     ++measured_;
     b.flush();
     use(b, nullptr);
@@ -452,6 +456,14 @@ void Post::measure(Batch& b, SDL_Texture* scene, int w, int h) {
         b.quad(SDL_FRect{0, 0, tw, th}, {0, 0, u, v}, {1, 1, 1, 1});
         b.flush();
     }
+    // The exposure's mean moves a share of the way to the newest each frame (premultiplied:
+    // k * mean + (1 - k) * adapted where the scene covers), all the way on a jump.
+    const float k = snap ? 1.0f : tuning::kExposureFollow;
+    if (!SDL_SetRenderTarget(renderer_, adapted_.get())) SDL_Log("gpu: %s", SDL_GetError());
+    b.use(mean_.back().get(), snap ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND_PREMULTIPLIED,
+          SDL_SCALEMODE_NEAREST);
+    b.quad(SDL_FRect{0, 0, 1, 1}, {0, 0, 1, 1}, {k, k, k, k});
+    b.flush();
 }
 
 void Post::final(Batch& b, SDL_Texture* scene, const FinalParams& f, SDL_FRect dst, UvRect uv,

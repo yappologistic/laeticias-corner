@@ -28,8 +28,14 @@ public:
     Decoder(const Decoder&) = delete;
     Decoder& operator=(const Decoder&) = delete;
 
-    // The remap: kClimates rows of kRampIds ramp ids (row per climate, for the month).
-    void setRemap(std::span<const std::uint8_t> rows);
+    // The remap: kClimates rows of kRampIds ramp ids (row per climate, for the month); `water`
+    // per ramp id: its texels are water (marked for the look's water, kItemWaterMark).
+    void setRemap(std::span<const std::uint8_t> rows, std::span<const bool, kRampIds> water);
+    // Packed sprites draw opaque (the contract: what is translucent is colour-only) and write
+    // their alpha as it is (1, or the water mark), empty texels discarded: a water texel stays
+    // marked whatever lies under it, and what is drawn over water restores alpha 1.
+    [[nodiscard]] SDL_BlendMode replace() const { return replace_; }
+    static constexpr float kItemWaterMark = 0.97f;
     // Draws from now on decode (on) or are plain (off). Off before anything else sets a render
     // state or another batch draws (the home's scene, the look's passes).
     void use(Batch& b, bool on);
@@ -43,6 +49,7 @@ private:
     TexturePtr ramps_;
     TexturePtr remap_;
     bool on_ = false;
+    SDL_BlendMode replace_ = SDL_BLENDMODE_INVALID;
 };
 
 } // namespace lc::gpu

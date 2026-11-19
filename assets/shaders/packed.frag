@@ -13,7 +13,7 @@ layout(set = 2, binding = 1) uniform sampler2D u_ramps; // step x ramp id: the r
 layout(set = 2, binding = 2) uniform sampler2D u_remap; // ramp id x climate: the month's ramp
 
 layout(std140, set = 3, binding = 0) uniform U {
-    vec4 snow; // the snow ramp's id; unused
+    vec4 snow; // the snow ramp's id; water texels' alpha (the look's water mark); unused
 };
 
 uint hashU(ivec2 p) {
@@ -29,12 +29,10 @@ void main() {
     uvec4 b = uvec4(texelFetch(u_page, tc, 0) * 255.0 + 0.5);
     uint w = b.r | (b.g << 8u) | (b.b << 16u) | (b.a << 24u);
     uint ramp = (w >> 3u) & 255u;
-    if (ramp == 0u) {
-        o_color = vec4(0.0);
-        return;
-    }
+    if (ramp == 0u) discard; // drawn with a replacing blend: nothing here leaves what is under it
     int climate = int(v_color.g * 255.0 + 0.5);
-    int now = int(texelFetch(u_remap, ivec2(int(ramp), climate), 0).r * 255.0 + 0.5);
+    vec4 remap = texelFetch(u_remap, ivec2(int(ramp), climate), 0);
+    int now = int(remap.r * 255.0 + 0.5);
     vec3 c = texelFetch(u_ramps, ivec2(int(w & 7u), now), 0).rgb;
     // Snow on what catches it, as much as lies there: a stable share of the sprite's own texels
     // (so it builds and thaws grain by grain, and a cached picture keeps its grains).
@@ -45,5 +43,8 @@ void main() {
         // A little of what is under it shows through (joints, tufts): snow, not paint.
         c = mix(texelFetch(u_ramps, ivec2(s, int(snow.x)), 0).rgb, c, 0.15);
     }
-    o_color = vec4(c * v_color.r, v_color.a);
+    // Water texels carry the look's water mark in their alpha (opaque sprites only: one fading
+    // is drawn blended and keeps its own alpha).
+    float a = v_color.a >= 1.0 && remap.g > 0.5 ? snow.y : v_color.a;
+    o_color = vec4(c * v_color.r, a);
 }

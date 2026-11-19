@@ -46,7 +46,10 @@ std::unique_ptr<Decoder> Decoder::make(SDL_Renderer* renderer, const SDL_Surface
     std::vector<std::uint8_t> identity(static_cast<std::size_t>(kRampIds * kClimates));
     for (std::size_t i = 0; i < identity.size(); ++i)
         identity[i] = static_cast<std::uint8_t>(i % kRampIds);
-    d->setRemap(identity);
+    d->setRemap(identity, std::array<bool, kRampIds>{});
+    d->replace_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ZERO,
+                                             SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
+                                             SDL_BLENDFACTOR_ZERO, SDL_BLENDOPERATION_ADD);
     SDL_GPURenderStateCreateInfo ci{};
     ci.fragment_shader = d->shader_;
     std::array<SDL_GPUTextureSamplerBinding, 2> bind{
@@ -65,7 +68,7 @@ std::unique_ptr<Decoder> Decoder::make(SDL_Renderer* renderer, const SDL_Surface
         SDL_Log("decoder: render state: %s", SDL_GetError());
         return nullptr;
     }
-    const float u[4] = {static_cast<float>(snowRamp), 0, 0, 0};
+    const float u[4] = {static_cast<float>(snowRamp), kItemWaterMark, 0, 0};
     if (!SDL_SetGPURenderStateFragmentUniforms(d->state_, 0, u, sizeof u)) {
         SDL_Log("decoder: %s", SDL_GetError());
         return nullptr;
@@ -85,10 +88,12 @@ Decoder::~Decoder() {
     }
 }
 
-void Decoder::setRemap(std::span<const std::uint8_t> rows) {
+void Decoder::setRemap(std::span<const std::uint8_t> rows, std::span<const bool, kRampIds> water) {
     if (rows.size() < static_cast<std::size_t>(kRampIds * kClimates)) return;
     std::vector<std::uint32_t> px(rows.size());
-    for (std::size_t i = 0; i < rows.size(); ++i) px[i] = rows[i] | 0xFF000000u; // red holds it
+    // Red: the ramp it becomes; green: 255 when the original ramp is water.
+    for (std::size_t i = 0; i < rows.size(); ++i)
+        px[i] = rows[i] | (water[i % kRampIds] ? 0xFF00u : 0u) | 0xFF000000u;
     if (!SDL_UpdateTexture(remap_.get(), nullptr, px.data(), kRampIds * 4))
         SDL_Log("decoder: %s", SDL_GetError());
 }

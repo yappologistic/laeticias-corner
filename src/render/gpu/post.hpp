@@ -123,7 +123,10 @@ public:
     void setWaterField(std::span<const std::uint32_t> texels, int w, int h);
     // Averages the scene's used `w` x `h` down to one texel for the exposure, one level a frame
     // (the exposure follows slowly; the chain refreshes every few frames for one draw each).
-    void measure(Batch& b, SDL_Texture* scene, int w, int h);
+    // The exposure the final pass reads follows the mean smoothly (a share of the way each
+    // frame); `snap`: the view jumped (a journey's arrival, a jump): the whole chain is measured
+    // at once and taken as it is, so the destination is exposed right from its first frame.
+    void measure(Batch& b, SDL_Texture* scene, int w, int h, bool snap);
     // Grades `scene` (premultiplied, the size prepare() was given) with the light and glow
     // targets onto the current target at `dst`, `uv` being the scene's used part. `aux` draws a
     // second copy in the same frame (the glass panels' blurred source) with its own uniforms.
@@ -171,6 +174,7 @@ private:
     TexturePtr clouds_; // the deck (r) and its shadows (g), a quarter of the scene
     bool cloudsClear_ = false;
     std::vector<TexturePtr> mean_; // kMeanSide wide, halved down to 1 x 1
+    TexturePtr adapted_;           // 1 x 1: the mean the exposure follows, smoothed
     std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
     SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode markBlend_ = SDL_BLENDMODE_INVALID;

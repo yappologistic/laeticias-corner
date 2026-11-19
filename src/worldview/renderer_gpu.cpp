@@ -312,7 +312,8 @@ void WorldView::homeTerrainChanged() {
 }
 
 void WorldView::markItemWater(const Elem& e, const Xform& x) {
-    if (e.ground || e.figure || e.home) return;
+    // With the packed pages every water texel marks itself as it draws.
+    if (decoder_ || e.ground || e.figure || e.home) return;
     const world::GeomVariant* g = map_.geometry(map_.items()[e.item]);
     if (g == nullptr || g->water.empty()) return;
     const bool piece = e.piece >= 0 && static_cast<std::size_t>(e.piece) < g->pieces.size();
@@ -342,6 +343,7 @@ void WorldView::markItemWater(const Elem& e, const Xform& x) {
 }
 
 void WorldView::markHomeWater(const FRect& view, const Xform& x) {
+    if (decoder_) return; // the home's water texels mark themselves (its page is packed too)
     if (homeWaterDirty_ && !waterKind_.empty()) {
         homeWaterDirty_ = false;
         homeWater_.clear();
@@ -609,7 +611,7 @@ void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow)
     }
     post_->bloom(batch_, viewW_, viewH_);
     cloudsGpu();
-    post_->measure(batch_, view_.texture.get(), viewW_, viewH_);
+    post_->measure(batch_, view_.texture.get(), viewW_, viewH_, snapExposure_);
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get())) SDL_Log("look: %s", SDL_GetError());
 }
 
@@ -664,7 +666,9 @@ void WorldView::compositeGpu(Vec2 scale, bool smooth) {
         // Little sky by day (the water keeps its colour), more as the light goes.
         const float day = std::clamp(1.0f - std::max(gpuFrame_.glow, gpuFrame_.night), 0.0f, 1.0f);
         f.skyShare = t::kSkyInWater[1] + (t::kSkyInWater[0] - t::kSkyInWater[1]) * day;
-        f.glints = t::kGlints * (1.0f - gpuFrame_.night) * (lod == Lod::Native ? 1.0f : 0.0f);
+        // Sun glints by day, fewer moon glints at night.
+        f.glints = (t::kGlints * (1.0f - gpuFrame_.night) + t::kMoonGlints * gpuFrame_.night) *
+                   (lod == Lod::Native ? 1.0f : 0.0f);
         if (weather_ != nullptr)
             f.rain = weather_->rainAt(iso_.toTile(
                 {(lastView_.x0 + lastView_.x1) * 0.5f, (lastView_.y0 + lastView_.y1) * 0.5f}));
@@ -738,7 +742,7 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
             for (const int q : {b, b + 1, b + 3, b, b + 3, b + 2}) idx.push_back(q);
         }
     }
-    batch_.use(t, SDL_BLENDMODE_BLEND, x.filter);
+    batch_.use(t, decoder_ && s.packed ? decoder_->replace() : SDL_BLENDMODE_BLEND, x.filter);
     batch_.triangles(verts.data(), static_cast<int>(verts.size()), idx.data(),
                      static_cast<int>(idx.size()));
 }
