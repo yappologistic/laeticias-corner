@@ -414,7 +414,7 @@ bool WorldView::putShadow(const SpriteRef& s, const Elem& e, const Xform& x) {
     const auto fh = static_cast<float>(r.y1 - r.y0);
     const Vec2 pivot{e.anchor.x + (fw - fh) * iso_.hw * 0.5f,
                      e.anchor.y + (fw + fh) * iso_.hh * 0.5f};
-    constexpr int kGrid = 4;
+    constexpr int kGrid = 2;
     std::vector<SDL_Vertex>& verts = batch_.scratch().verts;
     std::vector<int>& idx = batch_.scratch().indices;
     verts.clear();
