@@ -64,7 +64,10 @@ std::vector<std::filesystem::path> writeLifeDumps(LifeSession& s, const DumpOpti
 
 struct BenchCase {
     std::string name;
-    double simAvg = 0, simP95 = 0, simP99 = 0, simWorst = 0;     // ms per step
+    double simAvg = 0, simP95 = 0, simP99 = 0, simWorst = 0; // ms per step
+    // The longest step in the process's own CPU time: what the simulation did, without the
+    // time another program held its core (which the wall clock above includes).
+    double simWorkWorst = 0;
     double enumAvg = 0, enumP95 = 0, enumP99 = 0, enumWorst = 0; // ms per gather of the view
     double enumAllAvg = 0, enumAllWorst = 0;                     // of the whole active area
     int liveMin = 0, liveMax = 0, liveAvg = 0;
@@ -84,6 +87,9 @@ struct BenchOptions {
     bool assert = false;
 #endif
     std::vector<int> caps; // when set: the crowd-size study (live actors forced to each)
+    // CPU time the calling thread has used, in ms: the game gives its platform's (it has other
+    // threads running); null: the process's (`std::clock`), right for a tool with one thread.
+    double (*ownMs)() = nullptr;
 };
 // The city cases: every city core at its busiest hour and on its festival, a fast move across
 // a region and a jump between cities. Prints a table; returns 3 when a budget fails.

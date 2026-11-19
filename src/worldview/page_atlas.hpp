@@ -61,6 +61,12 @@ public:
     PageAtlas& operator=(const PageAtlas&) = delete;
 
     [[nodiscard]] std::optional<SpriteRef> find(std::string_view key) const;
+    // A shadow from its set's shadow page (half-size art: the sprite's size and anchor are
+    // given in world px, twice its texels); none when the set has no shadow page or not this
+    // key, and the colour pages' own shadow is used.
+    [[nodiscard]] std::optional<SpriteRef> findShadow(std::string_view key) const;
+    // A page of reduced art is drawn enlarged, so filtered (the others texel for texel).
+    [[nodiscard]] bool smooth(std::uint16_t page) const { return pages_[page].scale != 1.0f; }
     // The page the renderer generates (flat ground, faces, placeholders), `w` x `h` texels.
     void setGenerated(TexturePtr texture, int w, int h);
     [[nodiscard]] SpriteRef generated(int x, int y, int w, int h, float ox, float oy) const;
@@ -94,6 +100,11 @@ public:
     [[nodiscard]] std::size_t uploadedBytes() const { return uploadedBytes_; }
     [[nodiscard]] std::size_t pageCount() const { return pages_.size(); }
     [[nodiscard]] const std::string& pageSet(std::uint16_t page) const { return pages_[page].set; }
+    // What a report calls the page: its file without the extension ("athens.1"), else its set.
+    [[nodiscard]] std::string pageName(std::uint16_t page) const {
+        const Page& p = pages_[page];
+        return p.file.empty() ? p.set : p.file.stem().string();
+    }
     // Texels of a page (the home page includes the engine's strip below the art).
     [[nodiscard]] std::pair<int, int> pageSize(std::uint16_t page) const {
         return {pages_[page].w, pages_[page].h};
@@ -115,7 +126,12 @@ private:
         State state = State::Unloaded;
         SDL_Texture* texture = nullptr; // a slot's, or owned (the generated page)
         TexturePtr owned;
-        int slot = -1;     // the texture slot of a streamed page while it holds one
+        int slot = -1; // the texture slot of a streamed page while it holds one
+        // Its art at this share of its size (a shadow page: 0.5).
+        float scale = 1;
+        // In a texture of its own size (`owned`) that is never given up: every shadow page, and
+        // every page while the budget holds them all. Otherwise it streams through a slot.
+        bool own = false;
         SurfacePtr pixels; // decoded, waiting for upload
         int uploadedRows = 0;
         mutable double lastUsed = 0;
@@ -134,6 +150,14 @@ private:
     void evict(double now);
     [[nodiscard]] int freeSlot(double now);
     int makeSlot();
+    // What a page's texture coordinates are over: its own texture, or the slot it streams into.
+    [[nodiscard]] static std::pair<float, float> textureSize(const Page& p) {
+        return p.own ? std::pair{static_cast<float>(p.w), static_cast<float>(p.h)}
+                     : std::pair{static_cast<float>(world::kMaxPageSide),
+                                 static_cast<float>(world::kMaxPageSide)};
+    }
+    // A page texture of this size, touched so the driver has it before a frame needs it.
+    [[nodiscard]] TexturePtr makeTexture(int w, int h);
 
     SDL_Renderer* renderer_;
     const Atlas& home_;

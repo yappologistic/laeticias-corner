@@ -125,6 +125,20 @@
     },
     {
      "rect": [
+      44,
+      15,
+      60,
+      31
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
       65,
       122,
       81,
@@ -143,6 +157,20 @@
       0,
       96,
       12
+     ],
+     "file": "amb/world/flock.ogg",
+     "gain": 0.6,
+     "hours": [
+      "07:00",
+      "18:30"
+     ]
+    },
+    {
+     "rect": [
+      91,
+      73,
+      107,
+      89
      ],
      "file": "amb/world/flock.ogg",
      "gain": 0.6,
@@ -263,9 +291,9 @@
      ]
     },
     "snow_line": [
-     6,
      9,
-     11
+     12,
+     14
     ]
    },
    "summer": {
@@ -321,8 +349,8 @@
     },
     "snow_line": [
      null,
-     null,
-     7
+     15,
+     10
     ]
    },
    "winter": {
@@ -359,9 +387,9 @@
      ]
     },
     "snow_line": [
+     7,
      5,
-     4,
-     4
+     6
     ]
    }
   },
@@ -1003,7 +1031,7 @@
    "area": "road",
    "sound": {
     "surfaces": {
-     "stone": 0.69
+     "stone": 0.61
     },
     "wind": "wind.street",
     "exposure": 1.0,
@@ -2040,8 +2068,8 @@
    "group": "drove",
    "count": 1,
    "route": {
-    "start": "base:fold_1164_295",
-    "end": "base:ecbatana_road_station_1125_7"
+    "start": "base:fold_1254_52",
+    "end": "base:fold_1164_295"
    },
    "when": {
     "months": [
@@ -2056,47 +2084,33 @@
     "18:00"
    ],
    "rest": [
-    "base:pasargadae_road_station_1190_296",
-    "base:ecbatana_road_station_1183_289",
-    "base:ecbatana_road_farm_1173_286",
-    "base:ecbatana_road_station_1173_282",
-    "base:ecbatana_road_station_1173_266",
-    "base:ecbatana_road_farm_1173_258",
-    "base:ecbatana_road_station_1181_258",
-    "base:ecbatana_road_farm_1185_258",
-    "base:ecbatana_road_station_1193_258",
-    "base:ecbatana_road_farm_1198_243",
-    "base:ecbatana_road_station_1198_241",
-    "base:ecbatana_road_station_1198_227",
-    "base:ecbatana_road_station_1198_211",
-    "base:ecbatana_road_farm_1203_208",
-    "base:ecbatana_road_station_1205_202",
-    "base:ecbatana_road_farm_1205_195",
-    "base:ecbatana_road_station_1205_186",
-    "base:ecbatana_road_station_1199_180",
-    "base:ecbatana_road_farm_1199_173",
-    "base:ecbatana_road_station_1199_158",
-    "base:ecbatana_road_station_1199_146",
-    "base:ecbatana_road_farm_1193_137",
-    "base:ecbatana_road_station_1192_137",
-    "base:ecbatana_road_farm_1189_129",
-    "base:ecbatana_road_station_1189_122",
-    "base:ecbatana_road_farm_1182_107",
     "base:ecbatana_road_station_1180_107",
-    "base:ecbatana_road_station_1179_89",
-    "base:ecbatana_road_station_1177_78",
-    "base:ecbatana_road_station_1164_78",
-    "base:ecbatana_road_farm_1162_73",
-    "base:ecbatana_road_station_1162_66",
-    "base:ecbatana_road_station_1151_61",
-    "base:ecbatana_road_farm_1147_55",
-    "base:ecbatana_road_station_1137_55",
-    "base:ecbatana_road_station_1134_46",
-    "base:ecbatana_road_station_1125_39",
-    "base:ecbatana_road_farm_1125_35",
-    "base:ecbatana_road_farm_1125_29",
-    "base:ecbatana_road_station_1125_25",
-    "base:ecbatana_road_station_1125_7"
+    "base:ecbatana_road_farm_1182_107",
+    "base:ecbatana_road_station_1189_122",
+    "base:ecbatana_road_farm_1189_129",
+    "base:ecbatana_road_station_1192_137",
+    "base:ecbatana_road_farm_1193_137",
+    "base:ecbatana_road_station_1199_146",
+    "base:ecbatana_road_station_1199_158",
+    "base:ecbatana_road_farm_1199_173",
+    "base:ecbatana_road_station_1199_180",
+    "base:ecbatana_road_station_1205_186",
+    "base:ecbatana_road_farm_1205_195",
+    "base:ecbatana_road_station_1205_202",
+    "base:ecbatana_road_farm_1203_208",
+    "base:ecbatana_road_station_1198_211",
+    "base:ecbatana_road_station_1198_227",
+    "base:ecbatana_road_station_1198_241",
+    "base:ecbatana_road_farm_1198_243",
+    "base:ecbatana_road_station_1193_258",
+    "base:ecbatana_road_farm_1185_258",
+    "base:ecbatana_road_station_1181_258",
+    "base:ecbatana_road_farm_1173_258",
+    "base:ecbatana_road_station_1173_266",
+    "base:ecbatana_road_station_1173_282",
+    "base:ecbatana_road_farm_1173_286",
+    "base:ecbatana_road_station_1183_289",
+    "base:pasargadae_road_station_1190_296"
    ],
    "offsets": [
     0.169
@@ -2355,6 +2369,46 @@
   {
    "kind": "pasture",
    "rect": [
+    44,
+    22,
+    50,
+    31
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    44,
+    15,
+    50,
+    21
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    51,
+    22,
+    60,
+    31
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    51,
+    15,
+    60,
+    20
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
     65,
     124,
     67,
@@ -2429,6 +2483,26 @@
     0,
     96,
     4
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    91,
+    73,
+    101,
+    89
+   ],
+   "group": "flock"
+  },
+  {
+   "kind": "pasture",
+   "rect": [
+    102,
+    73,
+    107,
+    89
    ],
    "group": "flock"
   },
@@ -3660,7 +3734,7 @@
     "hours": [
      [
       "dusk",
-      "23:00"
+      "23:30"
      ]
     ],
     "rain": "dim"
@@ -3726,7 +3800,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",

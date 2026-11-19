@@ -629,7 +629,7 @@
    "name": "Mist",
    "sound": {
     "surfaces": {
-     "leaves": 0.04,
+     "leaves": 0.09,
      "water": 0.31
     },
     "wind": "wind.open",

@@ -9,8 +9,10 @@
 
 #include <array>
 #include <cstddef>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace lc {
 
@@ -109,5 +111,16 @@ private:
     std::size_t thumbCount_ = 0;
     static constexpr float kMaxTriangle = 384.0f; // px: larger fills are subdivided
 };
+
+// The fill of a closed outline about `centre` in triangles with no side over `maxEdge` px
+// (renderers rasterise huge triangles unreliably): rings of the outline drawn in towards the
+// centre, long sides cut into pieces. Watertight: a point two triangles share is one value in
+// both and no triangle's corner lies part-way along another's side, except along a straight
+// side of the outline itself, where the pieces' ends are on the side exactly. (Rows of
+// different counts used to meet in T-junctions, which showed as dotted lines across large
+// panels at window sizes that put their corners between pixels.) `points` and `indices` are
+// replaced; point 0 is the centre.
+void fanMesh(SDL_FPoint centre, std::span<const SDL_FPoint> outline, float maxEdge,
+             std::vector<SDL_FPoint>& points, std::vector<int>& indices);
 
 } // namespace lc

@@ -24,6 +24,15 @@ struct CellKey {
     friend constexpr bool operator==(CellKey, CellKey) = default;
 };
 
+// A coarse cell with water in it is kept in layers: its ground once per step of the water's
+// loop (frames 0, 1, ...) and everything that stands on it once, under this frame number, laid
+// over whichever step of the ground is shown. So the sea moves at half and quarter scale, and a
+// step costs a ground to draw, not the city on it.
+inline constexpr int kObjectsFrame = 15;
+[[nodiscard]] constexpr CellKey objectsKey(CellKey k) {
+    return {k.level, k.cx, k.cy, kObjectsFrame};
+}
+
 [[nodiscard]] constexpr int cellPx(int level) {
     return tuning::kCellTexels << level;
 }

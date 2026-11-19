@@ -42,6 +42,7 @@ import numpy as np
 
 from plan import world_plan as P
 
+from . import landform
 from . import seasons as SEAS
 from .compose import NONE16, World, live_items
 from .coords import COLS, ROWS, to_grid, to_plan
@@ -240,7 +241,7 @@ def content_facts(root: Path, sets: list[str]) -> tuple[dict, set, set]:
 
 
 def _graph_labels(g: Graph, walk: np.ndarray, lv: np.ndarray, stair: np.ndarray,
-                  rect: tuple[int, int, int, int]) -> dict[tuple[int, int], str]:
+                  rect: tuple[int, int, int, int], slope=None) -> dict[tuple[int, int], str]:
     """Each walkable tile within REACH steps of the graph -> the node a walker reaches first."""
     c0, r0, c1, r1 = rect
     lab: dict[tuple[int, int], str] = {}
@@ -270,7 +271,7 @@ def _graph_labels(g: Graph, walk: np.ndarray, lv: np.ndarray, stair: np.ndarray,
                 continue
             if not (0 <= n[0] < COLS and 0 <= n[1] < ROWS) or not walk[n[1], n[0]]:
                 continue
-            if lv[n[1], n[0]] != lv[r, c] and not (stair[n[1], n[0]] or stair[r, c]):
+            if not landform.step_ok(lv, stair, slope, (c, r), n):
                 continue
             lab[n] = lab[(c, r)]
             depth[n] = d + 1
@@ -286,9 +287,10 @@ def region_view(world: World, cat, graphs: dict[str, Graph], root: Path, rid: st
     kind_, set_, _t, rect, _b = P.REGIONS[rid]
     kinds, goods, audio = content_facts(root, cat.sets)
     walk, stair = walk_map(world, cat)
+    slope = landform.slope_tiles(world, cat, root)   # one-level steps by slopes (art §3.2)
     lv = world.L & 0x0F
     g = graphs.get(layer, Graph(layer))
-    lab = _graph_labels(g, walk, lv, stair, rect)
+    lab = _graph_labels(g, walk, lv, stair, rect, slope)
     c0, r0, c1, r1 = rect
     slots: dict[str, dict[str, dict]] = {}
     for iid, d in cat.items.items():

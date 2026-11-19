@@ -104,13 +104,10 @@
     "ground": {
      "muddy": [
       "mar"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     8,
+     12,
      null,
      null
     ],
@@ -215,7 +212,6 @@
       "feb"
      ],
      "snow": [
-      "dec",
       "jan",
       "feb"
      ],
@@ -226,9 +222,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ],
     "ambience": {
      "beds": [
@@ -2695,7 +2691,7 @@
  "lights": {
   "version": 1,
   "profiles": {
-   "brazier": {
+   "brazier_watch": {
     "kind": "brazier",
     "kelvin": 1800,
     "colour": "#ff8436",
@@ -2712,12 +2708,12 @@
     "hours": [
      [
       "dusk",
-      "02:00"
+      "dawn"
      ]
     ],
     "rain": "out",
     "festivals": {
-     "*": 1.3
+     "*": 1.5
     }
    },
    "carried_lamp": {
@@ -2815,28 +2811,52 @@
  },
  "light_points": [
   [
+   327,
+   794,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   330,
+   796,
+   "athens.g_brazier",
+   "brazier_watch"
+  ],
+  [
    326,
    798,
    "athens.g_shrine",
    "shrine_lamp"
   ],
   [
-   320,
-   799,
-   "athens.g_brazier",
-   "brazier"
+   328,
+   800,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   333,
+   801,
+   "athens.g_lamp",
+   "niche_lamp"
   ],
   [
    325,
    802,
-   "athens.g_lamp",
-   "niche_lamp"
+   "athens.g_brazier",
+   "brazier_watch"
   ],
   [
    328,
    803,
    "athens.g_shrine",
    "shrine_lamp"
+  ],
+  [
+   327,
+   806,
+   "athens.g_lamp",
+   "niche_lamp"
   ]
  ]
 }

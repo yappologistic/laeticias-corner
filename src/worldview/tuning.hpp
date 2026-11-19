@@ -23,10 +23,11 @@ inline constexpr int kCellTexels = 512;   // slot side; a level-L cell spans 512
 inline constexpr int kCellPageSlotsX = 8; // cache pages of 4096 x 2048: few pages, few draws
 inline constexpr int kCellPageSlotsY = 4;
 // What the cache holds (world-tech §4.14, restated by the smoothness round): the view at its own
-// level with a ring around it, and the two wider levels a zoom out would show, each cell once
-// per step of its water's loop where it has water; kCellSpare times that, so a pan or a turn of
-// the wheel finds its cells still there. In MiB (one per slot, in whole pages of 32): 128 at
-// 1080p, 160 at 1440p, 320 at 4K.
+// level with a ring around it, and the two wider levels a zoom out would show, kCellSpare times
+// that, so a pan or a turn of the wheel finds its cells still there; or, where that is more,
+// what a view of nothing but sea needs for its water to move at every level (the ground once
+// per step of the loop, WorldView::cellBudget). In MiB (one per slot, in whole pages of 32):
+// 192 at 1080p, 224 at 1440p, 384 at 4K.
 inline constexpr double kCellSpare = 1.5;
 inline constexpr std::size_t kCellBudgetMin = 96 * kMiB;
 inline constexpr std::size_t kCellBudgetMax = 384 * kMiB;
@@ -38,6 +39,13 @@ inline constexpr int kCellRing = 1;              // cells around the view kept b
 // for what is only built ahead (the ring, the wider levels). In milliseconds.
 inline constexpr double kBuildMsNeeded = 2.0;
 inline constexpr double kBuildMsAhead = 1.0;
+// Work ahead of need takes only the time a frame leaves: what the last frame cost the main
+// thread without the cache's own work (WorldView::setFrameCost), up to this much in all, of the
+// 2 ms a frame may cost on average; the rest is kept for the shader tiers and a busy machine.
+// Never less than the floor, so the cache always fills.
+inline constexpr double kFrameCpuRoomMs = 1.5;
+inline constexpr double kBuildMsAheadMin = 0.2;
+inline constexpr double kBuildMsArrivalMin = 1.0; // a destination on its way (a journey, a zoom)
 // The ring leans toward where the view is going: this many frames of its motion ahead, at most
 // kCellAheadMax cells.
 inline constexpr float kCellAheadFrames = 24.0f;
@@ -56,7 +64,10 @@ inline constexpr int kUploadRows = 64; // a slice: 1 MB of a 4096-wide page (abo
 // waiting for than for one loaded ahead of need.
 inline constexpr double kUploadMsWanted = 1.5;
 inline constexpr double kUploadMsAhead = 0.5;
-inline constexpr int kPagesInFlight = 2;         // decoded or decoding, not yet in their slot
+inline constexpr int kPagesInFlight = 2; // decoded or decoding, not yet in their slot
+// Pages nobody waits for come one at a time: each on its way holds its 64 MiB beside the
+// textures already filled, which is where the process's memory peaked.
+inline constexpr int kPagesInFlightAhead = 1;
 inline constexpr double kPageIdleSeconds = 10.0; // unused this long: may be evicted
 inline constexpr int kNeededSetGrow = 64;        // tiles around the view whose sets load
 inline constexpr int kNeededSetSpacing = 8;      // district sampling step, tiles
@@ -88,9 +99,17 @@ inline constexpr int kWetSamples = 3;
 inline constexpr float kCloudShadow = 0.16f; // darkness under a cloud, a shower more
 inline constexpr float kShowerShadow = 0.26f;
 inline constexpr float kWetDarken = 0.22f;    // wet ground darkens by up to this
-inline constexpr int kRainStreaksPerTile = 2; // drawn per rained-on tile in view
+inline constexpr int kRainStreaksPerTile = 2; // falling over a rained-on tile at full strength
 inline constexpr float kRainFall = 520.0f;    // px a streak falls per second
 inline constexpr float kSnowFall = 60.0f;
+inline constexpr float kRainFallTiles = 6.0f; // tile heights a streak falls to its ground
+inline constexpr float kRainAlpha = 0.55f;
+inline constexpr float kSnowAlpha = 0.9f;
+// The rain is a picture scrolled over a mesh (WorldView::drawRain).
+inline constexpr int kRainPane = 512;  // px: the picture's tile each way (a power of two)
+inline constexpr int kRainLayers = 4;  // its densities, side by side in one texture
+inline constexpr int kRainMeshW = 256; // px between the corners that ask the showers
+inline constexpr int kRainMeshH = 128; // (both divide the pane)
 // Climates the region files name, against the season's own (until the files carry numbers):
 // Rome's April showers, the Attic dry summer and its meltemi, dry bright Parsa, the open sea's
 // squalls.
@@ -222,6 +241,7 @@ inline constexpr float kPanTilesPerSecond = 24.0f; // keyboard pan in the intera
 inline constexpr double kFrameP99Ms = 8.3;
 inline constexpr double kFrameWorstMs = 16.6;
 inline constexpr double kCpuAvgMs = 2.0;
-inline constexpr int kDrawCallsMax = 40; // world-tech §4.4, a full city view at zoom 1
+inline constexpr int kDrawCallsMax = 40;      // world-tech §4.4, a full city view at zoom 1
+inline constexpr int kRunBreakersListed = 16; // lines the bench names a view's page costs in
 
 } // namespace lc::worldview::tuning

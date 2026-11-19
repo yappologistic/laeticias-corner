@@ -55,9 +55,23 @@
    ],
    "loops": [
     {
+     "item": "rome.r_bakery",
+     "file": "amb/world/bakery.ogg",
+     "when": "worked",
+     "hours": [
+      "03:00",
+      "10:00"
+     ]
+    },
+    {
      "item": "rome.r_brazier",
      "file": "amb/world/brazier.ogg",
      "when": "lit"
+    },
+    {
+     "item": "rome.r_lacus",
+     "file": "amb/rome/fountain.ogg",
+     "when": "always"
     }
    ],
    "zones": [
@@ -120,13 +134,10 @@
     "ground": {
      "muddy": [
       "mar"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     8,
+     12,
      null,
      null
     ]
@@ -196,9 +207,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ]
    }
   },
@@ -734,6 +745,30 @@
     "sea_state": 0
    },
    "lights": {
+    "rome.r_altar": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
+     }
+    },
+    "rome.r_bakery": {
+     "kind": "torch",
+     "colour": "#ff9a4a",
+     "radius": 3.0,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.12
+     }
+    },
     "rome.r_brazier": {
      "kind": "fire",
      "colour": "#ff8a3c",
@@ -746,7 +781,19 @@
       "depth": 0.15
      }
     },
-    "rome.r_domus": {
+    "rome.r_compitum": {
+     "kind": "lamp",
+     "colour": "#ffc27a",
+     "radius": 2.5,
+     "flicker": {
+      "hz": [
+       6,
+       9
+      ],
+      "depth": 0.08
+     }
+    },
+    "rome.r_insula_low": {
      "kind": "window",
      "colour": "#ffd08a",
      "radius": 1.5,
@@ -1084,7 +1131,7 @@
     {
      "role": "olive_grower",
      "density": "always",
-     "max_per_chunk": 12.0,
+     "max_per_chunk": 27.84,
      "when": {
       "months": [
        "mar",
@@ -1106,7 +1153,7 @@
     {
      "role": "olive_grower",
      "density": "always",
-     "max_per_chunk": 9.6,
+     "max_per_chunk": 22.27,
      "when": {
       "months": [
        "dec",
@@ -1122,7 +1169,7 @@
     {
      "role": "townsfolk",
      "density": "town_day",
-     "max_per_chunk": 26.52,
+     "max_per_chunk": 26.45,
      "when": {
       "months": [
        "mar",
@@ -1144,7 +1191,7 @@
     {
      "role": "townsfolk",
      "density": "town_day",
-     "max_per_chunk": 21.22,
+     "max_per_chunk": 21.16,
      "when": {
       "months": [
        "dec",
@@ -1155,155 +1202,17 @@
      "variants": {
       "cold": "climate",
       "hot": "climate"
-     }
-    },
-    {
-     "role": "water_carrier",
-     "density": "always",
-     "max_per_chunk": 4.0,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "role": "water_carrier",
-     "density": "always",
-     "max_per_chunk": 3.2,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "role": "child",
-     "density": "always",
-     "max_per_chunk": 4.0,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "role": "child",
-     "density": "always",
-     "max_per_chunk": 3.2,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "rome.working_woman",
-     "density": "daytime",
-     "max_per_chunk": 2.4,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "rome.working_woman",
-     "density": "daytime",
-     "max_per_chunk": 1.92,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "world.dog",
-     "density": "always",
-     "max_per_chunk": 2.0,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "actor": "world.dog",
-     "density": "always",
-     "max_per_chunk": 1.6,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
      }
     }
    ],
    "name": "The plain below Tibur",
    "sound": {
     "surfaces": {
-     "roof": 0.15,
-     "leaves": 0.1
+     "roof": 0.2,
+     "leaves": 0.12
     },
     "wind": "wind.open",
-    "exposure": 0.88,
+    "exposure": 0.84,
     "steps": {
      "surface": "earth",
      "files": [
@@ -1320,6 +1229,177 @@
     "crowd": {
      "family": "crowd.latin",
      "full": 8
+    }
+   }
+  },
+  {
+   "id": "town",
+   "area": "town",
+   "populations": [
+    {
+     "role": "shopkeeper",
+     "density": "always",
+     "max_per_chunk": 19.01,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "shopkeeper",
+     "density": "always",
+     "max_per_chunk": 15.21,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "baker",
+     "density": "always",
+     "max_per_chunk": 12.67,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "baker",
+     "density": "always",
+     "max_per_chunk": 10.14,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 52.99,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 42.39,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 12.8,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 10.24,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    }
+   ],
+   "name": "The town",
+   "sound": {
+    "surfaces": {
+     "roof": 0.19
+    },
+    "wind": "wind.open",
+    "exposure": 0.85,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.latin",
+     "full": 20
     }
    }
   }
@@ -1561,6 +1641,120 @@
   ]
  },
  "roles": [
+  {
+   "id": "shopkeeper",
+   "actor": "rome.freedman",
+   "name": "Shopkeeper",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        15,
+        30
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "serve",
+       "dur": [
+        30,
+        60
+       ]
+      }
+     ]
+    }
+   },
+   "sound": {
+    "oneshot": "sfx/world/vendor.wav"
+   }
+  },
+  {
+   "id": "baker",
+   "actor": "rome.working_woman",
+   "name": "Baker",
+   "schedule": [
+    {
+     "hours": [
+      "06:00",
+      "12:00"
+     ],
+     "routine": "work"
+    },
+    {
+     "hours": [
+      "14:00",
+      "18:30"
+     ],
+     "routine": "work"
+    }
+   ],
+   "routines": {
+    "work": {
+     "loop": true,
+     "steps": [
+      {
+       "go": {
+        "item": "rome.r_bakery",
+        "spot": "beside",
+        "within": 40
+       }
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "wander": {
+        "radius": 3
+       },
+       "dur": [
+        10,
+        20
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        15,
+        30
+       ]
+      }
+     ]
+    }
+   }
+  },
   {
    "id": "quarryman",
    "actor": "rome.builder",
@@ -2185,7 +2379,7 @@
    ],
    "sfx": "sfx/world/vendor.wav",
    "string": "market_day",
-   "zone": "hills",
+   "zone": "town",
    "ambience": {
     "file": "amb/world/crowd_latin_1.ogg",
     "gain": 0.5
@@ -2235,7 +2429,7 @@
     "gain": 0.6
    },
    "string": "market_rain",
-   "zone": "hills"
+   "zone": "town"
   },
   {
    "id": "lamps_lit",
@@ -2279,7 +2473,7 @@
    ],
    "sfx": "sfx/world/lamp.wav",
    "string": "lamps_lit",
-   "zone": "hills",
+   "zone": "town",
    "carries": {
     "light": "carried_lamp",
     "prop": "lamp"
@@ -2337,7 +2531,7 @@
    ],
    "sfx": "sfx/world/wedding_song.wav",
    "string": "wedding",
-   "zone": "hills",
+   "zone": "town",
    "ambience": {
     "file": "amb/world/crowd_latin_1.ogg",
     "gain": 0.8
@@ -2400,7 +2594,7 @@
    ],
    "sfx": "sfx/world/step_earth_1.wav",
    "string": "ploughing_out",
-   "zone": "hills"
+   "zone": "town"
   },
   {
    "id": "evening_cool",
@@ -2451,7 +2645,7 @@
    ],
    "sfx": "sfx/world/vendor.wav",
    "string": "evening_cool",
-   "zone": "hills"
+   "zone": "town"
   },
   {
    "id": "vintage",
@@ -2506,7 +2700,7 @@
    ],
    "sfx": "sfx/world/pour.wav",
    "string": "vintage",
-   "zone": "hills"
+   "zone": "town"
   },
   {
    "id": "saturnalia",
@@ -2560,7 +2754,7 @@
    ],
    "sfx": "sfx/rome/tibia.wav",
    "string": "saturnalia",
-   "zone": "hills",
+   "zone": "town",
    "ambience": {
     "file": "amb/rome/saturnalia.ogg",
     "gain": 0.85
@@ -2854,6 +3048,31 @@
  "lights": {
   "version": 1,
   "profiles": {
+   "altar_embers": {
+    "kind": "altar",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.0,
+    "strength": 0.5,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.3,
+      0.8
+     ],
+     "depth": 0.06
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 2.0
+    }
+   },
    "brazier_watch": {
     "kind": "brazier",
     "kelvin": 1800,
@@ -2944,21 +3163,163 @@
      ]
     ],
     "rain": "dim"
+   },
+   "oven_predawn": {
+    "kind": "oven",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 2.4,
+    "strength": 0.8,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      0.8,
+      1.6
+     ],
+     "depth": 0.06
+    },
+    "hours": [
+     [
+      "02:30",
+      "08:00"
+     ],
+     [
+      "dusk",
+      "20:00"
+     ]
+    ],
+    "rain": "sheltered"
+   },
+   "shrine_lamp": {
+    "kind": "lamp",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 1.8,
+    "strength": 0.6,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      3,
+      6
+     ],
+     "depth": 0.04
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim",
+    "festivals": {
+     "*": 1.4
+    }
+   },
+   "window_evening": {
+    "kind": "window",
+    "kelvin": 2000,
+    "colour": "#ff9446",
+    "radius": 1.6,
+    "strength": 0.55,
+    "flicker": {
+     "style": "steady",
+     "hz": [
+      0.4,
+      1.2
+     ],
+     "depth": 0.03
+    },
+    "hours": [
+     [
+      "dusk",
+      "23:30"
+     ]
+    ],
+    "rain": "sheltered",
+    "festivals": {
+     "*": 1.2
+    }
    }
   }
  },
  "light_points": [
   [
    69,
+   993,
+   "rome.r_insula_low",
+   "window_evening"
+  ],
+  [
+   66,
+   994,
+   "rome.r_altar",
+   "altar_embers"
+  ],
+  [
+   72,
+   994,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   66,
+   997,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   72,
+   997,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   77,
+   997,
+   "rome.r_brazier",
+   "brazier_watch"
+  ],
+  [
+   70,
    1000,
    "rome.r_lamp",
    "niche_lamp"
   ],
   [
-   78,
+   67,
+   1001,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   69,
+   1001,
+   "rome.r_bakery",
+   "oven_predawn"
+  ],
+  [
+   79,
    1002,
    "rome.r_brazier",
    "brazier_watch"
+  ],
+  [
+   67,
+   1004,
+   "rome.r_compitum",
+   "shrine_lamp"
+  ],
+  [
+   68,
+   1004,
+   "rome.r_insula_low",
+   "window_evening"
+  ],
+  [
+   70,
+   1006,
+   "rome.r_lamp",
+   "niche_lamp"
   ]
  ]
 }

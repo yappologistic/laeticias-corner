@@ -76,6 +76,10 @@ REGIONS = {
     "seam_ionia":   ("seam", "world", "none", (852, 150, 859, 300), 1),
 }
 
+# Seams of time may use the sets on both their sides (docs/design/sets/world.md §0.1).
+SEAM_SETS = {"seam_dell": ("rome",), "seam_ionian": ("rome", "athens"),
+             "seam_ionia": ("athens", "parsa")}
+
 # District ownership, first match wins: (region, kind, rect) with kind "land", "sea" or "any".
 # Rects are inclusive; the last rows catch everything. City and town rects are matched first.
 OWNERSHIP = [
@@ -611,7 +615,9 @@ NETWORK = [
 # base: base terrain; plants: item -> weight; open: plants per land tile outside woods; forest:
 # share of land that is wood (forest_density inside, with clearings); floor: overlay under woods;
 # field/fields: ploughland terrain and its share near water and roads; vines: a second crop near
-# roads; scrub: overlay share on hills; rock/snow: overlay from these levels; flowers: the
+# roads; scrub: overlay share on hills; rock: overlay from this level; bare: rock and scree above
+# the trees from this level (snow lies there only in the climate's snow months: snow is ground only
+# where the climate keeps it all year, seasons.md §2.4); flowers: the
 # world.p_wildflowers look of the stretch; river_tree: the riverside tree; props: scattered
 # natural props with their density; hamlet: kit family of the farms along its roads.
 
@@ -625,19 +631,19 @@ BIOMES = {
                                 "rome.t_stone_pine": 1, "rome.t_cypress": 1},
                      "open": 0.05, "forest": 0.22, "forest_density": 0.42,
                      "floor": "world.forest_floor", "field": "rome.field_spring",
-                     "fields": 0.18, "vines": "rome.vineyard_soil", "rock": 8, "snow": 12,
+                     "fields": 0.18, "vines": "rome.vineyard_soil", "rock": 8, "bare": 12,
                      "flowers": 0, "river_tree": "rome.t_poplar",
                      "props": {"world.boulder": 0.004}, "hamlet": "roman"},
     "tyrrhenian": {"base": "rome.grass_spring",
                    "plants": {"world.p_maquis": 3, "rome.t_oak": 2, "rome.t_stone_pine": 1},
                    "open": 0.05, "forest": 0.20, "forest_density": 0.38, "scrub": 0.4,
-                   "field": "rome.field_spring", "fields": 0.06, "rock": 7, "snow": 12,
+                   "field": "rome.field_spring", "fields": 0.06, "rock": 7, "bare": 12,
                    "flowers": 4, "river_tree": "rome.t_poplar",
                    "props": {"world.boulder": 0.006}, "hamlet": "roman"},
     "apennines": {"base": "rome.grass_spring",
                   "plants": {"world.t_beech": 3, "world.t_oak": 2, "world.t_fir": 2},
                   "open": 0.03, "forest": 0.45, "forest_density": 0.45,
-                  "floor": "world.forest_floor", "rock": 9, "snow": 11, "flowers": 0,
+                  "floor": "world.forest_floor", "rock": 9, "bare": 11, "flowers": 0,
                   "high": {"world.t_fir": 1}, "river_tree": "rome.t_poplar",
                   "props": {"world.boulder": 0.006, "world.crag": 0.004}, "peaks": True,
                   "hamlet": "roman"},
@@ -647,11 +653,11 @@ BIOMES = {
                           "world.p_thistle": 1},
                "open": 0.045, "forest": 0.16, "forest_density": 0.38, "scrub": 0.30,
                "field": "athens.field_stubble", "fields": 0.10, "vines": "athens.olive_soil",
-               "rock": 7, "snow": 12, "flowers": 1, "river_tree": "athens.t_plane",
+               "rock": 7, "bare": 12, "flowers": 1, "river_tree": "athens.t_plane",
                "props": {"world.boulder": 0.006}, "hamlet": "greek"},
     "arcadia": {"base": "athens.dry_grass",
                 "plants": {"world.t_fir": 3, "world.t_oak": 2}, "open": 0.03, "forest": 0.40,
-                "forest_density": 0.45, "floor": "world.forest_floor", "rock": 8, "snow": 11,
+                "forest_density": 0.45, "floor": "world.forest_floor", "rock": 8, "bare": 11,
                 "flowers": 1, "river_tree": "athens.t_plane",
                 "props": {"world.boulder": 0.006, "world.crag": 0.004}, "peaks": True,
                 "hamlet": "greek"},
@@ -680,19 +686,19 @@ BIOMES = {
     "anatolia": {"base": "world.steppe",
                  "plants": {"parsa.p_steppe": 3, "world.p_thistle": 2, "world.t_oak": 1},
                  "open": 0.025, "forest": 0.05, "forest_density": 0.3,
-                 "field": "world.field", "fields": 0.05, "rock": 8, "snow": 12, "flowers": 5,
+                 "field": "world.field", "fields": 0.05, "rock": 8, "bare": 12, "flowers": 5,
                  "river_tree": "parsa.t_poplar", "river_tree2": "parsa.t_willow",
                  "props": {"world.boulder": 0.004, "world.sheepfold": 0.0004,
                            "world.tumulus": 0.0003}, "peaks": True, "hamlet": "anatolian"},
     "taurus": {"base": "world.steppe", "plants": {"world.t_cedar": 2, "world.t_fir": 2},
                "open": 0.03, "forest": 0.32, "forest_density": 0.42,
-               "floor": "world.forest_floor", "rock": 9, "snow": 11, "flowers": 5,
+               "floor": "world.forest_floor", "rock": 9, "bare": 11, "flowers": 5,
                "river_tree": "parsa.t_poplar",
                "props": {"world.crag": 0.005, "world.boulder": 0.004}, "peaks": True},
     "east_med": {"base": "world.steppe",
                  "plants": {"world.p_maquis": 2, "parsa.t_date": 1, "world.t_cedar": 1},
                  "open": 0.04, "forest": 0.18, "forest_density": 0.4, "scrub": 0.4,
-                 "field": "world.field", "fields": 0.08, "rock": 7, "snow": 12, "flowers": 4,
+                 "field": "world.field", "fields": 0.08, "rock": 7, "bare": 12, "flowers": 4,
                  "river_tree": "parsa.t_poplar", "props": {"world.boulder": 0.004},
                  "hamlet": "anatolian"},
     "mesopotamia": {"base": "world.alluvium",
@@ -713,14 +719,14 @@ BIOMES = {
                       "river_tree": "world.t_tamarisk", "props": {"world.boulder": 0.002}},
     "zagros": {"base": "world.steppe",
                "plants": {"world.t_oak_zagros": 3, "world.t_pistachio": 1}, "open": 0.03,
-               "forest": 0.30, "forest_density": 0.25, "rock": 9, "snow": 11, "flowers": 2,
+               "forest": 0.30, "forest_density": 0.25, "rock": 9, "bare": 11, "flowers": 2,
                "river_tree": "parsa.t_poplar",
                "props": {"world.crag": 0.006, "world.boulder": 0.005}, "peaks": True},
     "iran_plateau": {"base": "parsa.plain_grass",
                      "plants": {"parsa.t_cypress": 1, "parsa.t_poplar": 1, "parsa.t_almond": 1,
                                 "world.t_pistachio": 1, "parsa.p_steppe": 2},
                      "open": 0.02, "forest": 0.05, "forest_density": 0.3,
-                     "field": "parsa.field_barley", "fields": 0.06, "rock": 8, "snow": 11,
+                     "field": "parsa.field_barley", "fields": 0.06, "rock": 8, "bare": 11,
                      "flowers": 2, "river_tree": "parsa.t_poplar",
                      "props": {"world.boulder": 0.003, "world.sheepfold": 0.0004},
                      "peaks": True, "hamlet": "anatolian"},
@@ -752,9 +758,10 @@ FARM_PLOTS = {
 }
 
 # Base terrains meeting another base get this overlay on their side (V8; §1.2 margins).
-MARGIN = {"world.steppe": "world.scrub", "world.alluvium": "world.field",
-          "world.sand": "world.gravel_desert", "rome.grass_spring": "rome.field_spring",
-          "athens.dry_grass": "athens.field_stubble", "parsa.plain_grass": "parsa.rough_ground",
+# Margins are wild ground (never fields: ploughland does not grow along a border).
+MARGIN = {"world.steppe": "world.scrub", "world.alluvium": "world.pasture",
+          "world.sand": "world.gravel_desert", "rome.grass_spring": "world.pasture",
+          "athens.dry_grass": "world.scrub", "parsa.plain_grass": "parsa.rough_ground",
           "grass": "meadow"}
 
 # City rects are reserved in the base: flat at the region's base level, no items, in the
@@ -764,10 +771,14 @@ RESERVED_BASE = {"rome": "rome.grass_spring", "athens": "athens.dry_grass",
 
 # --- overview -----------------------------------------------------------------------------------
 
+# A town's marker is where its houses stand (the map opens the view there, V20): the middle of
+# its rect unless the town is built off-centre.
+MARKER_AT = {"tibur": (279, 69), "ostia": (144, 220), "alban_mount": (298, 138),
+             "beneventum": (350, 213)}
 MARKERS = [
     ("corner", (60, 60), "home"), ("rome", (200, 104), "rome"),
     ("athens", (660, 300), "athens"), ("parsa", (1210, 376), "parsa"),
-    *[(rid, ((v[3][0] + v[3][2]) // 2, (v[3][1] + v[3][3]) // 2), "town")
+    *[(rid, MARKER_AT.get(rid, ((v[3][0] + v[3][2]) // 2, (v[3][1] + v[3][3]) // 2)), "town")
       for rid, v in REGIONS.items() if v[0] == "town"],
 ]
 

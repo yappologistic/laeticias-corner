@@ -9,7 +9,7 @@ the south edge (portal `pasargadae_s`, c 14) and runs north to the garden; paths
 
 from worldgen import waypoint as WP
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import night_posts, put
 from worldgen.shapes import Line, Rect
 
 ROYAL, GRAVEL = "world.road_royal", "parsa.gravel"
@@ -43,6 +43,10 @@ def build(L: Layout) -> None:
               seed="plain")
     L.node("pasargadae_garden", (14, 15))
     L.node("cyrus_tomb", (10, 23))
+    # The Magi who kept Cyrus' tomb lived beside it and watched it by night (Arrian 6.29);
+    # torches at the garden's gates.
+    night_posts(L, "parsa.p_brazier", [(11, 19), (7, 17)], ring=3, gap=4)
+    night_posts(L, "parsa.p_torch", [(12, 14), (18, 14), (14, 12)], ring=2, gap=3)
     WP.finish(L, "parsa.earth")
     L.expect("pasargadae_garden", rect=(12, 4, 23, 13), level=0)
     L.expect("cyrus_tomb", rect=(4, 18, 8, 22), level=0)

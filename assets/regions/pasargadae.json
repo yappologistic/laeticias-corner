@@ -120,9 +120,9 @@
      ]
     },
     "snow_line": [
-     6,
      9,
-     11
+     12,
+     14
     ],
     "ambience": {
      "beds": [
@@ -198,8 +198,8 @@
     },
     "snow_line": [
      null,
-     null,
-     7
+     15,
+     10
     ],
     "ambience": {
      "beds": [
@@ -259,15 +259,13 @@
       "feb"
      ],
      "snow": [
-      "dec",
-      "jan",
-      "feb"
+      "jan"
      ]
     },
     "snow_line": [
+     7,
      5,
-     4,
-     4
+     6
     ],
     "ambience": {
      "beds": [
@@ -1278,7 +1276,7 @@
      "leaves": 0.02
     },
     "wind": "wind.open",
-    "exposure": 1.0,
+    "exposure": 0.99,
     "steps": {
      "surface": "earth",
      "files": [
@@ -2956,6 +2954,31 @@
  "lights": {
   "version": 1,
   "profiles": {
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
    "carried_lamp": {
     "kind": "lantern",
     "kelvin": 2000,
@@ -3087,6 +3110,13 @@
    "flame"
   ],
   [
+   276,
+   84,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
    275,
    90,
    "parsa.p_torch",
@@ -3099,6 +3129,13 @@
    "parsa.p_torch",
    "niche_lamp",
    "flame"
+  ],
+  [
+   276,
+   95,
+   "parsa.p_brazier",
+   "brazier_watch",
+   "fire"
   ],
   [
    284,

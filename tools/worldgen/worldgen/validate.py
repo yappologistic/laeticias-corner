@@ -20,7 +20,7 @@ import numpy as np
 
 from plan import world_plan as P
 
-from . import bible, crossings, walkable
+from . import bible, crossings, landform, walkable
 from . import walk as engine_walk
 from .catalog import Catalog
 from .compose import NONE16, World, live_items
@@ -44,10 +44,7 @@ HIDDEN_SHARE = 0.25
 STAIR_SHARE = 0.02
 RIVER_REACH = 6
 WATERFALL = 3
-# Seams of time may use the sets on both their sides (docs/design/sets/world.md §0.1).
 PLAN_PORTS = {pid for ln in P.LANES.values() for pid in ln["ports"]}
-SEAM_SETS = {"seam_dell": ("rome",), "seam_ionian": ("rome", "athens"),
-             "seam_ionia": ("athens", "parsa")}
 
 
 @dataclass
@@ -197,7 +194,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         v = P.REGIONS.get(rid)
         if v is None:
             return None
-        return {"home", "world", v[1]} | set(SEAM_SETS.get(rid, ()))
+        return {"home", "world", v[1]} | set(P.SEAM_SETS.get(rid, ()))
 
     bad_sets: dict = {}
     for _, it in items:
@@ -294,7 +291,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
         got = int(lv[p.r, p.c]) - tg.layout.base_level
         d_ = cat.items.get(p.id)
         if d_ is not None and d_.on == "water":
-            z = cat.geom.get(p.id, {}).get(f"r{p.k}", {}).get("walk_z", {})
+            z = cat.geometry(p.id, p.k).get("walk_z", {})
             if z:
                 got += round(min(z.values()) / cat.level_px)
         return got
@@ -360,6 +357,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                                                   else ""), (p.c, p.r), p.src)
 
     walk, stair = walk_map(world, cat)
+    slope = landform.slope_tiles(world, cat, root)   # V7's reach steps onto slopes (art §3.2)
     unknown = no_geometry(world, cat)
     g = tg.graph
     # V5: every graph edge is walkable along its course, levels change only on stairs/ramps.
@@ -533,7 +531,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
             elif not start:
                 issue("V7", f"{p.name or p.id}: mooring slot {sid!r} touches no walkable tile",
                       (c, r), p.src)
-            elif not any(_near_graph(t, graph_tiles, walk, lv, stair) for t in start):
+            elif not any(_near_graph(t, graph_tiles, walk, lv, stair, slope) for t in start):
                 issue("V7", f"{p.name or p.id}: mooring slot {sid!r} is not within {SLOT_REACH} "
                       "walking tiles of the path graph", (c, r), p.src)
             continue
@@ -564,7 +562,7 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                 issue("V7", f"{p.name or p.id}: slot {sid!r} is on a tile walkers cannot enter",
                       (c, r), p.src)
             continue
-        if not any(_near_graph(t, graph_tiles, walk, lv, stair) for t in start):
+        if not any(_near_graph(t, graph_tiles, walk, lv, stair, slope) for t in start):
             if art:
                 issue("V7", f"{p.name or p.id}: slot {sid!r} is enclosed inside "
                       f"{world.items[marks[r, c]].id} (art geometry: no walk path out)",
@@ -721,9 +719,19 @@ def validate(world: World, cat: Catalog, root: Path, tg: Target, graphs: dict[st
                           "approach shows only its own set's pieces with art", (it.c, it.r),
                           isrc(it))
 
+    # V18, V19: faces with art, borders that follow the land.
+    for code, found in (("V18", landform.face_issues(world, cat, root, sl, mine)),
+                        ("V19", landform.straight_seams(world, sl, mine)),
+                        ("V20", landform.marker_issues(world, cat, tg.regions)),
+                        ("V21", landform.floor_issues(world, cat, sl, mine)),
+                        ("V22", landform.water_issues(world, cat, sl, mine)),
+                        ("V23", landform.slope_issues(world, cat, root, sl, mine))):
+        for msg, at in found:
+            issue(code, msg, at)
+
     # V14: relief quality of the procedural base.
     if name == "base":
-        for msg, at in relief_issues(world, cat, sl, mine):
+        for msg, at in relief_issues(world, cat, sl, mine, root):
             issue("V14", msg, at)
 
     # V12: cards and actor kinds named by the region files.
@@ -764,7 +772,7 @@ def _same_level_parts(mask: np.ndarray, lv: np.ndarray) -> list[list[tuple[int, 
     return out
 
 
-def relief_issues(world: World, cat: Catalog, sl, mine: np.ndarray) -> list[tuple[str, tuple]]:
+def relief_issues(world: World, cat: Catalog, sl, mine: np.ndarray, root: Path) -> list[tuple[str, tuple]]:
     """V14 on a layer's own tiles (see STAIR_SHARE): isolated level changes, one-tile benches
     and staircase rivers. Country next to another layer, a road, a river or anything placed is
     left out: those are graded on purpose."""
@@ -798,8 +806,15 @@ def relief_issues(world: World, cat: Catalog, sl, mine: np.ndarray) -> list[tupl
         j, i = np.argwhere(pimple)[0]
         out.append((f"{int(pimple.sum())} isolated single-tile level changes on open country "
                     "(a tile above or below four neighbours of one level)", (i + c0, j + r0)))
-    bench = open_ & (((n < lv) & (lv < s_)) | ((n > lv) & (lv > s_)) |
-                     ((e < lv) & (lv < w)) | ((e > lv) & (lv > w)))
+    # A graded hillside of one-level steps draws as one slope (landform.grade); a bench is a
+    # staircase only where a step of it is a cliff (two levels or more) or the ground has no
+    # slope art.
+    sloped = np.array([t in landform.slope_ground(str(root)) and t not in landform.CLIFF_GROUND
+                       for t in world.terrains] + [False])[Ti]
+    cliffy = (np.abs(n - lv) >= 2) | (np.abs(s_ - lv) >= 2) | (np.abs(e - lv) >= 2) | \
+        (np.abs(w - lv) >= 2) | ~sloped
+    bench = open_ & cliffy & (((n < lv) & (lv < s_)) | ((n > lv) & (lv > s_)) |
+                              ((e < lv) & (lv < w)) | ((e > lv) & (lv > w)))
     total = int(open_.sum())
     if total and bench.sum() / total > STAIR_SHARE:
         j, i = np.argwhere(bench)[0]
@@ -993,7 +1008,7 @@ def _local(b, origin):
     return (b[0] - origin[0], b[1] - origin[1], b[2] - origin[0], b[3] - origin[1])
 
 
-def _near_graph(start, graph_tiles, walk, lv, stair) -> bool:
+def _near_graph(start, graph_tiles, walk, lv, stair, slope=None) -> bool:
     if start in graph_tiles:
         return True
     seen = {start}
@@ -1008,7 +1023,7 @@ def _near_graph(start, graph_tiles, walk, lv, stair) -> bool:
                 continue
             if not walk[n[1], n[0]]:
                 continue
-            if lv[n[1], n[0]] != lv[r, c] and not (stair[n[1], n[0]] or stair[r, c]):
+            if not landform.step_ok(lv, stair, slope, (c, r), n):
                 continue
             if n in graph_tiles:
                 return True

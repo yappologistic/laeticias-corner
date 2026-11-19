@@ -6,41 +6,58 @@
 
 namespace lc {
 namespace {
-constexpr int kArcSegments = 10;
+constexpr int kArcSegments = 10; // a corner's arc at most
 constexpr int kOutline = 4 * (kArcSegments + 1);
 using Loop = std::array<SDL_FPoint, kOutline>;
 
-// Unit directions of the outline's vertices, computed once: outlines are rebuilt many times a
-// frame.
-const Loop& arcDirections() {
-    static const Loop table = [] {
-        Loop t{};
-        std::size_t k = 0;
-        for (int c = 0; c < 4; ++c) {
-            for (int s = 0; s <= kArcSegments; ++s) {
-                const float a =
-                    (static_cast<float>(c) - 1.0f + static_cast<float>(s) / kArcSegments) *
-                    std::numbers::pi_v<float> * 0.5f;
-                t[k++] = {std::cos(a), std::sin(a)};
+// Segments for a corner of radius `r` px: as many as keep its arc as close to the circle as
+// the largest corners drawn are with all ten (0.08 px at a radius of 25). A small button's
+// corner needs five, not ten, and every vertex of an outline is shaded here and copied again
+// by the renderer.
+int arcSegments(float r) {
+    return std::clamp(static_cast<int>(std::ceil(2.0f * std::sqrt(std::max(0.0f, r)))), 1,
+                      kArcSegments);
+}
+
+// Vertices of an outline whose corners have `segments` each.
+constexpr int outlineCount(int segments) {
+    return 4 * (segments + 1);
+}
+
+// Unit directions of the outline's vertices for each number of segments, computed once:
+// outlines are rebuilt many times a frame.
+const Loop& arcDirections(int segments) {
+    static const std::array<Loop, kArcSegments + 1> tables = [] {
+        std::array<Loop, kArcSegments + 1> all{};
+        for (int n = 1; n <= kArcSegments; ++n) {
+            std::size_t k = 0;
+            for (int c = 0; c < 4; ++c) {
+                for (int s = 0; s <= n; ++s) {
+                    const float a = (static_cast<float>(c) - 1.0f +
+                                     static_cast<float>(s) / static_cast<float>(n)) *
+                                    std::numbers::pi_v<float> * 0.5f;
+                    all[static_cast<std::size_t>(n)][k++] = {std::cos(a), std::sin(a)};
+                }
             }
         }
-        return t;
+        return all;
     }();
-    return table;
+    return tables[static_cast<std::size_t>(segments)];
 }
 
 // Outline of a rounded rectangle inset by `d` (negative grows it), clockwise from the top-right
-// arc. `r` is the radius before insetting.
-void outline(Box b, float r, float d, Loop& out) {
+// arc, `segments` to a corner. `r` is the radius before insetting.
+void outline(Box b, float r, float d, int segments, Loop& out) {
     const float ri = std::max(0.0f, r - d);
     const Box in{b.x + d, b.y + d, b.w - 2 * d, b.h - 2 * d};
     const SDL_FPoint centres[4] = {{in.x + in.w - ri, in.y + ri},
                                    {in.x + in.w - ri, in.y + in.h - ri},
                                    {in.x + ri, in.y + in.h - ri},
                                    {in.x + ri, in.y + ri}};
-    const Loop& dir = arcDirections();
-    for (std::size_t k = 0; k < out.size(); ++k) {
-        const SDL_FPoint c = centres[k / (kArcSegments + 1)];
+    const Loop& dir = arcDirections(segments);
+    const auto perCorner = static_cast<std::size_t>(segments + 1);
+    for (std::size_t k = 0; k < 4 * perCorner; ++k) {
+        const SDL_FPoint c = centres[k / perCorner];
         out[k] = {c.x + dir[k].x * ri, c.y + dir[k].y * ri};
     }
 }
@@ -74,11 +91,12 @@ struct Shade {
     }
 };
 
-// Index list joining loop `a` to loop `b` (vertex offsets) with one quad per outline segment.
+// Index list joining loop `a` to loop `b` (vertex offsets, `count` vertices each) with one quad
+// per outline segment.
 template <std::size_t N>
-std::size_t band(std::array<int, N>& idx, std::size_t n, int a, int b) {
-    for (int i = 0; i < kOutline; ++i) {
-        const int j = (i + 1) % kOutline;
+std::size_t band(std::array<int, N>& idx, std::size_t n, int a, int b, int count) {
+    for (int i = 0; i < count; ++i) {
+        const int j = (i + 1) % count;
         idx[n++] = a + i;
         idx[n++] = b + i;
         idx[n++] = b + j;
@@ -123,17 +141,20 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
     // The solid edge sits half the feather inside the box so the visible edge stays where the box
     // says; the transparent edge half outside.
     const float inset = std::min(feather * 0.5f, radius);
+    const int segments = arcSegments(radius + std::max(0.0f, feather - inset));
+    const int count = outlineCount(segments);
+    const auto uc = static_cast<std::size_t>(count);
     Loop solid;
     Loop clear;
-    outline(b, radius, inset, solid);
-    outline(b, radius, inset - feather, clear);
+    outline(b, radius, inset, segments, solid);
+    outline(b, radius, inset - feather, segments, clear);
 
     std::array<SDL_Vertex, 1 + 2 * kOutline> v;
     const SDL_FPoint centre{b.cx(), b.cy()};
     v[0] = {centre, shade.at(centre.y), uv(centre)};
-    for (std::size_t i = 0; i < kOutline; ++i) {
+    for (std::size_t i = 0; i < uc; ++i) {
         v[1 + i] = {solid[i], shade.at(solid[i].y), uv(solid[i])};
-        v[1 + kOutline + i] = {clear[i], shade.at(clear[i].y, 0.0f), uv(clear[i])};
+        v[1 + uc + i] = {clear[i], shade.at(clear[i].y, 0.0f), uv(clear[i])};
     }
     std::array<int, kOutline * 9> idx;
     std::size_t n = 0;
@@ -141,48 +162,80 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
     // Large panels (a full-window veil) are filled in small triangles: renderers rasterise
     // huge ones unreliably (the software one drops parts of them).
     const bool big = b.w > kMaxTriangle || b.h > kMaxTriangle;
-    for (int i = 0; i < kOutline && !big; ++i) {
+    for (int i = 0; i < count && !big; ++i) {
         idx[n++] = 0;
         idx[n++] = 1 + i;
-        idx[n++] = 1 + (i + 1) % kOutline;
+        idx[n++] = 1 + (i + 1) % count;
     }
     if (big) {
         // The batch's scratch storage: kept between frames, so nothing is allocated per frame.
+        auto& points = batch_.scratch().points;
         auto& bigV_ = batch_.scratch().verts;
         auto& bigI_ = batch_.scratch().indices;
+        fanMesh(centre, std::span(solid.data(), uc), kMaxTriangle, points, bigI_);
         bigV_.clear();
-        bigI_.clear();
-        for (int i = 0; i < kOutline; ++i) {
-            const SDL_FPoint a = centre;
-            const SDL_FPoint p = solid[static_cast<std::size_t>(i)];
-            const SDL_FPoint q = solid[static_cast<std::size_t>((i + 1) % kOutline)];
-            const float longest =
-                std::max({std::hypot(p.x - a.x, p.y - a.y), std::hypot(q.x - a.x, q.y - a.y),
-                          std::hypot(q.x - p.x, q.y - p.y)});
-            const int steps = std::max(1, static_cast<int>(std::ceil(longest / kMaxTriangle)));
-            // Rows of the triangle from the centre outwards, each split into equal pieces.
-            const int base = static_cast<int>(bigV_.size());
-            for (int r = 0; r <= steps; ++r)
-                for (int c = 0; c <= r; ++c) {
-                    const float t = static_cast<float>(r) / static_cast<float>(steps);
-                    const float u = r == 0 ? 0.0f : static_cast<float>(c) / static_cast<float>(r);
-                    const SDL_FPoint e{p.x + (q.x - p.x) * u, p.y + (q.y - p.y) * u};
-                    const SDL_FPoint pt{a.x + (e.x - a.x) * t, a.y + (e.y - a.y) * t};
-                    bigV_.push_back({pt, shade.at(pt.y), uv(pt)});
-                }
-            const auto at = [&](int r, int c) { return base + r * (r + 1) / 2 + c; };
-            for (int r = 0; r < steps; ++r)
-                for (int c = 0; c <= r; ++c) {
-                    bigI_.insert(bigI_.end(), {at(r, c), at(r + 1, c), at(r + 1, c + 1)});
-                    if (c < r)
-                        bigI_.insert(bigI_.end(), {at(r, c), at(r + 1, c + 1), at(r, c + 1)});
-                }
-        }
+        for (const SDL_FPoint pt : points) bigV_.push_back({pt, shade.at(pt.y), uv(pt)});
         batch_.triangles(bigV_.data(), static_cast<int>(bigV_.size()), bigI_.data(),
                          static_cast<int>(bigI_.size()));
     }
-    n = band(idx, n, 1, 1 + kOutline);
-    batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(), static_cast<int>(n));
+    n = band(idx, n, 1, 1 + count, count);
+    batch_.triangles(v.data(), 1 + 2 * count, idx.data(), static_cast<int>(n));
+}
+
+void fanMesh(SDL_FPoint centre, std::span<const SDL_FPoint> outline, float maxEdge,
+             std::vector<SDL_FPoint>& points, std::vector<int>& indices) {
+    points.clear();
+    indices.clear();
+    const std::size_t count = outline.size();
+    if (count < 3) return;
+    // Rings: the outline drawn in towards the centre, the same number of rings all round.
+    float spoke = 0;
+    for (const SDL_FPoint p : outline)
+        spoke = std::max(spoke, std::hypot(p.x - centre.x, p.y - centre.y));
+    // A ring's quads are halved along their diagonal, the longest side of the two triangles:
+    // rings and pieces are cut so that even it stays within the limit.
+    const float cut = maxEdge * 0.7071f;
+    const int rings = std::max(1, static_cast<int>(std::ceil(spoke / cut)));
+    // Outline vertex `i` on ring `r` (the outline itself on the last): one value whichever of
+    // the two sides that meet there asks.
+    const auto on = [&](std::size_t i, int r) {
+        const SDL_FPoint p = outline[i % count];
+        if (r == rings) return p;
+        const float t = static_cast<float>(r) / static_cast<float>(rings);
+        return SDL_FPoint{centre.x + (p.x - centre.x) * t, centre.y + (p.y - centre.y) * t};
+    };
+    points.push_back(centre);
+    for (std::size_t i = 0; i < count; ++i) {
+        // A long side (a panel's straight edge) is cut into pieces, the same on every ring.
+        const SDL_FPoint p = outline[i];
+        const SDL_FPoint q = outline[(i + 1) % count];
+        // A square corner is two outline points in one place: no side, no triangles (a
+        // renderer that pairs triangles into rectangles misreads empty ones).
+        if (p.x == q.x && p.y == q.y) continue;
+        const int pieces =
+            std::max(1, static_cast<int>(std::ceil(std::hypot(q.x - p.x, q.y - p.y) / cut)));
+        const int base = static_cast<int>(points.size());
+        for (int r = 1; r <= rings; ++r) {
+            const SDL_FPoint from = on(i, r);
+            const SDL_FPoint to = on(i + 1, r);
+            for (int j = 0; j <= pieces; ++j) {
+                if (j == 0 || j == pieces) {
+                    points.push_back(j == 0 ? from : to);
+                    continue;
+                }
+                const float u = static_cast<float>(j) / static_cast<float>(pieces);
+                points.push_back({from.x + (to.x - from.x) * u, from.y + (to.y - from.y) * u});
+            }
+        }
+        const auto at = [&](int r, int j) { return base + (r - 1) * (pieces + 1) + j; };
+        for (int j = 0; j < pieces; ++j) {
+            indices.insert(indices.end(), {0, at(1, j), at(1, j + 1)});
+            for (int r = 1; r < rings; ++r) {
+                indices.insert(indices.end(), {at(r, j), at(r + 1, j), at(r + 1, j + 1)});
+                indices.insert(indices.end(), {at(r, j), at(r + 1, j + 1), at(r, j + 1)});
+            }
+        }
+    }
 }
 
 void Painter::roundRect(Box b, float radius, SDL_FColor color, float feather) {
@@ -203,18 +256,21 @@ void Painter::rim(Box b, float radius, float width, SDL_FColor top, SDL_FColor b
     const UvRect white = font_.whiteUv();
     const SDL_FPoint t{(white.u0 + white.u1) * 0.5f, (white.v0 + white.v1) * 0.5f};
     const Shade shade{b, top, bottom};
+    const int segments = arcSegments(radius + 0.5f);
+    const int count = outlineCount(segments);
+    const auto uc = static_cast<std::size_t>(count);
     std::array<SDL_Vertex, 3 * kOutline> v;
     Loop loop;
     for (std::size_t l = 0; l < 3; ++l) {
-        outline(b, radius, d[l], loop);
-        for (std::size_t i = 0; i < kOutline; ++i)
-            v[l * kOutline + i] = {loop[i], shade.at(loop[i].y, a[l]), t};
+        outline(b, radius, d[l], segments, loop);
+        for (std::size_t i = 0; i < uc; ++i)
+            v[l * uc + i] = {loop[i], shade.at(loop[i].y, a[l]), t};
     }
     std::array<int, kOutline * 12> idx;
     std::size_t n = 0;
-    for (int l = 0; l < 2; ++l) n = band(idx, n, l * kOutline, (l + 1) * kOutline);
+    for (int l = 0; l < 2; ++l) n = band(idx, n, l * count, (l + 1) * count, count);
     batch_.use(font_.texture(), SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
-    batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(), static_cast<int>(n));
+    batch_.triangles(v.data(), 3 * count, idx.data(), static_cast<int>(n));
 }
 
 void Painter::glass(Box b, float radius, float alpha, const theme::Glass& style) {
@@ -272,10 +328,12 @@ int breakLines(const Font& font, Face face, std::string_view s, float width, int
     while (start < s.size() && lines < maxLines) {
         std::size_t end = start;
         std::size_t fit = start;
+        Font::Run run; // the line so far: each word is measured once
         while (end < s.size()) {
             std::size_t next = s.find(' ', end + 1);
             if (next == std::string_view::npos) next = s.size();
-            if (font.measure(face, s.substr(start, next - start)) > width && fit > start) break;
+            font.extend(face, s.substr(end, next - end), run);
+            if (run.width > width && fit > start) break;
             fit = next;
             end = next;
         }

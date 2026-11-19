@@ -181,6 +181,7 @@ struct LiveActor {
     std::uint64_t key = 0; // its identity: the same person every time it is materialised
     Vec2 pos;              // continuous tile coordinates
     Vec2 prev;             // at its previous update, for interpolation
+    float lag = 0; // seconds since its body last moved (someone out of sight moves in strides)
     float z = 0;
     float prevZ = 0;
     float timer = 0; // seconds left in the step
@@ -264,6 +265,17 @@ public:
     // The camera: the view in world tiles. Active chunks are those touching it grown by
     // tuning::life::kLiveMargin. An empty rect deactivates everything.
     void setView(TileRect view);
+    // The part of the view a window shows, as bounds on a tile's x - y and x + y (a screen is a
+    // diamond in the grid: `setView`'s rectangle holds twice its tiles and more). Who stands
+    // outside it moves a few steps' worth at a time instead of every step: the same walk, a
+    // quarter of the work for the three of four nobody sees. Unset: everyone every step.
+    struct Watched {
+        float d0 = -1e9f; // x - y
+        float d1 = 1e9f;
+        float s0 = -1e9f; // x + y
+        float s1 = 1e9f;
+    };
+    void setWatched(Watched w) { watched_ = w; }
     // A view of `halfW` x `halfH` tiles each side around `centre`.
     void setFocus(TilePos centre, int halfW = 16, int halfH = 16);
     [[nodiscard]] TileRect view() const { return view_; }
@@ -273,6 +285,9 @@ public:
     void update(const LifeClock& clock, float dt);
     // Brings the active area to its full population at once (arrival, tests, dumps).
     void settle(const LifeClock& clock);
+    // Whoever is live is there in full: nobody is still fading in (an arrival that was hidden
+    // while the area filled: when it is shown its people stand there, they do not appear).
+    void showAll();
 
     // Drawing.
     std::size_t gather(TileRect rect, float alpha, std::span<DrawActor> out) const;
@@ -455,6 +470,7 @@ private:
     int day_ = -1;
     std::uint32_t frame_ = 0;
     TileRect view_;
+    Watched watched_;
     TileRect active_;
     std::vector<std::uint8_t> chunkActive_;
     std::vector<double> chunkSeen_;

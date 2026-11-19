@@ -1028,13 +1028,15 @@ def _night(L: Layout) -> None:
 
 def _nodes(L: Layout) -> None:
     C.snap_nodes(L, NODES)
-    # Round the island by its east channel and never across it: straight up the river under
-    # the Sublicius and the Aemilius, east along the open water below the island's foot (r 95),
-    # up the channel under the Fabricius, out along the island's head (r 84) before turning
-    # upstream, so the keel never crosses the island or the bank's corner (W-O2).
-    L.lane("tiber", [(56, 159), (56, 110), (56, 95), (62, 95), (62, 84), (48, 84), (45, 76),
-                     (30, 65), (20, 58), (9, 38), (5, 0)], kind="river",
-           ports={"ostia": 0, "emporium": 1, "forum_boarium": 2, "island": 4, "north": 10})
+    # The Tiber's boats by the bridges' clearances (art-smooth-land.md §8, geometry `pass`): the
+    # barges from Ostia come up with the mast lowered through the one span column both the
+    # Sublicius (34 px) and the Aemilius (30 px) clear, c 54, and turn at the island's foot;
+    # the island's bridges (Fabricius 21, Cestius 26) pass no barge, so the river above the
+    # island has its own boats, upriver barges and fishermen, from the island's head north.
+    L.lane("tiber", [(56, 159), (56, 112), (54, 112), (54, 94), (56, 93)], kind="river",
+           ports={"ostia": 0, "emporium": 1, "forum_boarium": 3, "island": 4})
+    L.lane("tiber_upper", [(48, 84), (45, 76), (30, 65), (20, 58), (9, 38), (5, 0)],
+           kind="river", ports={"island_head": 0, "north": 5})
 
 
 def _views(L: Layout) -> None:

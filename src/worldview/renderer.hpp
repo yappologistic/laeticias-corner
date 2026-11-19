@@ -31,6 +31,7 @@
 #include "worldview/order.hpp"
 #include "worldview/overview.hpp"
 #include "worldview/page_atlas.hpp"
+#include "worldview/page_runs.hpp"
 #include "worldview/places.hpp"
 #include "worldview/terrain.hpp"
 #include "worldview/theme.hpp"
@@ -175,10 +176,21 @@ public:
     [[nodiscard]] bool settled() const;
     // And nothing is being built or loaded ahead of need either: the steady state.
     [[nodiscard]] bool idle() const {
-        return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0;
+        return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0 &&
+               !coverJob_.valid();
     }
 
     [[nodiscard]] const FrameStats& stats() const { return stats_; }
+    // What the page layout cost the last native frame: the sprites that stood in short runs
+    // between runs of another page (each such run is a draw call), most first. They are what
+    // would have to share a page with what they stand among; empty when nothing did.
+    struct RunBreaker {
+        std::string what; // an item's id, a terrain's (its raised tiles and faces), "people"
+        std::string page;
+        int inShortRuns = 0;
+        int inView = 0;
+    };
+    [[nodiscard]] std::vector<RunBreaker> runBreakers() const;
     [[nodiscard]] const ThemeMixer& theme() const { return theme_; }
     [[nodiscard]] const WorldSprites& sprites() const { return *sprites_; }
     [[nodiscard]] const PageAtlas& pages() const { return *pages_; }
@@ -216,8 +228,11 @@ public:
     void setWeather(const WeatherField* weather) { weather_ = weather; }
     // The season whose looks the world wears (the home catalog's index; -1: plain).
     void setSeason(int season);
-    // Nothing reads the map on a worker but the gatherer (which never looks inside the hole).
-    [[nodiscard]] bool overviewBuilt() const { return !overview_ || overview_->built(); }
+    // Nothing reads the map on a worker but the gatherer (which never looks inside the hole)
+    // and, at first, the overview and the cover map: edits of the home wait for those two.
+    [[nodiscard]] bool overviewBuilt() const {
+        return (!overview_ || overview_->built()) && !coverJob_.valid();
+    }
     // The hole's tiles changed in the map (its rim is drawn into the cells): redraw them.
     void holeChanged();
     // The home's terrain changed: its water is marked and the water field built again.
@@ -226,6 +241,10 @@ public:
     // resolved on the first call. `alpha` places actors between the last two simulation steps.
     void setLife(const life::CityLife* city);
     void setLifeAlpha(float alpha) { lifeAlpha_ = alpha; }
+    // What the last frame cost the main thread, in ms, without the cache's own work (cell
+    // builds, page uploads): cells built ahead of need take only what that leaves of a frame
+    // (tuning::kFrameCpuRoomMs). Unset, they take their whole budget.
+    void setFrameCost(double ms) { frameCost_ = ms; }
     [[nodiscard]] const ActorLooks* actorLooks() const { return looks_.get(); }
     // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
     void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
@@ -308,6 +327,30 @@ private:
     void warmUp();
     [[nodiscard]] bool put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
                            SDL_BlendMode mode, bool mirror = false);
+    // Between openRuns and closeRuns, put() keeps its sprites and closeRuns draws them run by
+    // run (page_runs.hpp): the same picture in fewer draws.
+    struct RunQuad {
+        SDL_Texture* texture = nullptr;
+        SDL_BlendMode mode = SDL_BLENDMODE_BLEND;
+        Vec2 p0; // target px: top-left and bottom-right corners
+        Vec2 p1;
+        UvRect uv;
+        SDL_FColor colour{};
+        std::uint16_t page = 0;
+        std::uint32_t what = 0; // for runBreakers: an item's catalog index, or one of kRun...
+        bool packed = false;    // drawn through the decode (a packed page's sprite)
+    };
+    static constexpr std::uint32_t kRunActor = 0xFFFFFFFFu;
+    static constexpr std::uint32_t kRunFigure = 0xFFFFFFFEu;
+    static constexpr std::uint32_t kRunTerrain = 0x80000000u; // + the tile's terrain
+    PageRuns runs_;
+    std::vector<RunQuad> runQuads_;     // by entry of runs_
+    std::uint32_t runWhat_ = kRunActor; // what put() is drawing for
+    bool runsOpen_ = false;
+    double frameCost_ = 0;
+    bool dry_ = false; // put() draws nothing: a pass over the tiles only to ask them something
+    void openRuns();
+    void closeRuns(SDL_ScaleMode filter);
     // One tile: faces down to its neighbours, the ground, foam, face caps. False when a sprite's
     // page was not resident.
     bool drawTile(TilePos p, const Xform& x, float now, bool* animated);
@@ -349,7 +392,7 @@ private:
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
     // Open sea beyond the grid, deep and fading into haze with the distance from its edge.
     // (`haze`: the haze over it, drawn after all of the water.)
-    bool drawBeyond(TilePos p, const Xform& x, bool haze);
+    bool drawBeyond(TilePos p, const Xform& x, bool haze, float now, bool* animated);
     bool drawElem(const Elem& e, const Xform& x, float now);
     // `actors`: with the live people's shadows (the frame, not a cached picture). `visible`:
     // the order's positions drawn this frame (empty: look at all of them).
@@ -385,7 +428,17 @@ private:
     void buildGround(CellKey key, int slot);
     // Impostors: their blocks are gathered on the worker, then drawn as time allows.
     void requestImpostor(CellKey key, int slot, int rank);
-    void drawBlock(CellKey key, int slot, int block, const Gathered& g);
+    struct Building;
+    void drawBlock(const Building& b, int block, const Gathered& g);
+    // One block of a coarse cell's ground alone, at a step of its water.
+    void drawGroundBlock(CellKey key, int slot, int block);
+    // The scratch target's block, halved down to its share of a slot.
+    void halveInto(int slot, int level, int block);
+    // Whether any tile that draws into `px` moves (the question drawTiles answers as it draws).
+    [[nodiscard]] bool tilesAnimated(const FRect& px);
+    // A cell (its key with frame 0) is there in full: its first ground and, where it has
+    // water, its objects layer (`over`: that layer's slot, -1 for a cell in one piece).
+    [[nodiscard]] bool cellWhole(CellKey k, int* over = nullptr);
     void progressImpostors();
     // The native level's objects: re-gathered on the worker before the view leaves them, and
     // gathered ahead for a destination the view is heading to.
@@ -419,6 +472,9 @@ private:
     std::unique_ptr<WorldSprites> sprites_;
     std::unique_ptr<Overview> overview_;
     std::unique_ptr<CoverMap> cover_; // what hides a ground point at the coarser levels
+    // It is rasterised from the whole map (a tenth of a second or two): on a worker while the
+    // first frames are drawn, nobody shown at the coarser levels until it is there.
+    std::future<std::unique_ptr<CoverMap>> coverJob_;
     Hole hole_;
     const Atlas& homeAtlas_;
     CellCache cells_;
@@ -443,13 +499,25 @@ private:
     std::vector<GlowSource> glow_;
     const WeatherField* weather_ = nullptr;
     Sprite blob_;
-    std::optional<SpriteId> raindrop_;
-    std::optional<SpriteId> snowflake_;
+    // Rain and snow as pictures: streaks at fixed places over a pane that tiles, their
+    // densities side by side (drawRain scrolls them).
+    Target rainPicture_;
+    Target snowPicture_;
+    void buildRainPicture(Target& t, const Sprite& s, std::uint32_t salt);
     void drawWeatherGround(const FRect& view, const Xform& x);
     void drawRain(const FRect& view, const Xform& x, double now);
     std::vector<std::uint32_t> glowStart_; // per chunk, then one past the end
     void buildGlow();
     void drawCoarseGlow(const FRect& view, const Xform& x, float strength);
+    // What glows in view this frame, drawn page by page (drawLit empties it).
+    struct Lit {
+        std::uint16_t page = 0;
+        std::uint32_t seq = 0; // any stable number: equal pages keep one order
+        const SpriteRef* sprite = nullptr;
+        Vec2 anchor;
+    };
+    std::vector<Lit> lit_;
+    void drawLit(const Xform& x, SDL_FColor strength);
     std::vector<FigureLook> figures_;     // resolved once, before the gatherer's worker starts
     std::vector<std::uint32_t> figureOf_; // figures_ entry -> index into the figures given
     int figuresMissing_ = 0;
@@ -481,6 +549,8 @@ private:
         int slot = 0;
         std::uint32_t done = 0; // blocks drawn
         int rank = 0;
+        int objects = -1;    // the slot of its objects layer (a cell with water: cells.hpp)
+        bool ground = false; // a later step of its water: only the ground, nothing to gather
     };
     std::vector<Building> building_;
     std::vector<CellWant> wants_;
@@ -490,6 +560,7 @@ private:
         CellKey key;
         CellKey from; // the cell drawn for it: itself, or a coarser one while it builds
         int slot = 0;
+        int over = -1; // the slot of its objects layer, drawn over it (a coarse cell with water)
     };
     std::vector<Composite> composite_;
     std::vector<bool> setSeen_;
@@ -535,6 +606,7 @@ private:
         float intensity = 0;
     };
     std::vector<Shower> showers_; // drawRain's scratch
+    std::vector<float> rainMesh_; // and how hard it rains at its mesh's corners
     ActorMerge merge_;
     bool mergeIndexed_ = false;
 

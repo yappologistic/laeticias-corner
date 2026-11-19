@@ -6,9 +6,10 @@ way the engine draws them:
 
 - **Decks** are the tiles a walker stands on above the ground: a landmark's walk tiles (at the
   item's level plus their `walk_z`) and walkable kit on water (bridges, fords, pontoons, jetties,
-  moles: their planks meet the bank at the water's level). Wherever a graph edge steps onto or
-  off a deck, the two walking heights may differ by at most half a level (`STEP_PX`): a landing a
-  level above or below the deck end is a bridge hanging in the air, whatever V5 allows.
+  moles: at their geometry's `walk_z` over the water, which their end pieces ramp up to from
+  the bank). Wherever a graph edge steps onto or off a deck, the two walking heights may differ
+  by at most half a level (`STEP_PX`), a level for a kit deck's ramped end (`KIT_STEP_PX`): more
+  is a bridge hanging in the air, whatever V5 allows.
 - **Crossings** (bridges, fords, pontoons, a landmark on water) must be joined to the graph at
   two ends or more, and a landmark deck must not end over open water.
 - **Stairs and ramps** (kit with `rise`, landmark stairs with `climb`): the tile before the foot
@@ -28,6 +29,9 @@ from .graph import Graph
 from .raster import path_tiles
 
 STEP_PX = 8                 # half a level at 16 px: what the art's ramps and kerbs absorb
+# A kit deck's end piece ramps from the bank to the deck's walk height, which the engine reaches
+# along it (art-smooth-land.md §10.1: arch 18 px, timber 12, pontoon 7): at most a level.
+KIT_STEP_PX = 16
 # A walker going up a stair moves this way in plan (dc, dr), by the geometry's `climb` (grid
 # axes: +x = plan south, +y = plan west).
 CLIMB = {"+x": (0, 1), "-x": (0, -1), "+y": (-1, 0), "-y": (1, 0)}
@@ -54,10 +58,14 @@ def decks(world: World, cat: Catalog) -> tuple[dict, dict]:
             continue
         base = world.level(it.c, it.r) * lp
         if d.walkable and d.on == "water":
+            # A kit deck stands at its walk height over the water (the art's `walk_z`: the
+            # arch's 18 px, the timber's 12, the pontoon's 7), as the engine reads it.
+            z = cat.geometry(it.id, it.k).get("walk_z", {})
             for t in it.tiles():
-                height[t], owner[t] = base, i
+                dx, dy = t[1] - it.r, it.c + it.pw - 1 - t[0]
+                height[t], owner[t] = base + int(z.get(f"{dx},{dy}", z.get("0,0", 0))), i
         elif not d.walkable:
-            g = cat.geom.get(it.id, {}).get(f"r{it.k}", {})
+            g = cat.geometry(it.id, it.k)
             z = g.get("walk_z", {})
             for dx, dy in g.get("walk", []):
                 c, r = _plan_tile(it, dx, dy)
@@ -137,7 +145,8 @@ def check(world: World, cat: Catalog, layer: str, graph: Graph, walk: np.ndarray
                 hd, hl = height[deck], ground_h(land)
                 d_i = cat.items.get(name(i))
                 wet = d_i is not None and (d_i.on == "water" or bool(water[deck[1], deck[0]]))
-                if abs(hd - hl) > STEP_PX:
+                kit = cat.items[items[i].id].walkable and cat.items[items[i].id].on == "water"
+                if abs(hd - hl) > (KIT_STEP_PX if kit else STEP_PX):
                     what = name(owner[land]) + "'s deck" if land in owner else \
                         f"the ground (level {int(lv[land[1], land[0]])})"
                     # On dry land a landmark's floor may carry its own steps (art geometry).
@@ -217,7 +226,7 @@ def check(world: World, cat: Catalog, layer: str, graph: Graph, walk: np.ndarray
         group = {j for j in _crossing_group(items, owner, i, cat)} | {i}
         groups_seen |= group
         tiles = {t for j in group for t in items[j].tiles()}
-        base = min(height.get(t, int(lv[t[1], t[0]]) * lp) for t in tiles)
+        base = min(int(lv[t[1], t[0]]) * lp for t in tiles)     # the water's level
         land = [(c + dc, r + dr) for c, r in tiles for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1))]
         land = [t for t in land if t not in tiles and 0 <= t[0] < COLS and 0 <= t[1] < ROWS
                 and walk[t[1], t[0]] and not water[t[1], t[0]]
@@ -254,7 +263,7 @@ def check(world: World, cat: Catalog, layer: str, graph: Graph, walk: np.ndarray
         d = cat.items.get(it.id)
         if d is None or d.rise <= 0:
             continue
-        g = cat.geom.get(it.id, {}).get(f"r{it.k}", {})
+        g = cat.geometry(it.id, it.k)
         climb = g.get("climb") or (KIT_CLIMB[it.k % 4] if not d.landmark else None)
         if climb not in CLIMB:
             continue

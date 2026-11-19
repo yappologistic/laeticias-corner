@@ -128,14 +128,13 @@
      ],
      "snow": [
       "mar",
-      "apr",
-      "may"
+      "apr"
      ]
     },
     "snow_line": [
      10,
-     11,
-     13
+     12,
+     14
     ]
    },
    "summer": {
@@ -151,9 +150,9 @@
     "haze": 0.15,
     "ground": {},
     "snow_line": [
-     14,
-     14,
-     14
+     15,
+     null,
+     null
     ]
    },
    "autumn": {
@@ -169,13 +168,12 @@
       "nov"
      ],
      "snow": [
-      "oct",
       "nov"
      ]
     },
     "snow_line": [
-     14,
-     13,
+     null,
+     15,
      12
     ]
    },
@@ -203,9 +201,9 @@
      ]
     },
     "snow_line": [
-     10,
      9,
-     9
+     7,
+     8
     ]
    }
   },
@@ -916,9 +914,7 @@
    "name": "Farms",
    "area": "country",
    "sound": {
-    "surfaces": {
-     "leaves": 0.14
-    },
+    "surfaces": {},
     "wind": "wind.mountain",
     "exposure": 1.0,
     "steps": {
@@ -937,20 +933,6 @@
     "crowd": {
      "family": "crowd.persian",
      "full": 8
-    }
-   },
-   "look": {
-    "air": {
-     "mist": {
-      "where": "plain",
-      "hours": [
-       "05:00",
-       "07:30"
-      ],
-      "seasons": [
-       "spring"
-      ]
-     }
     }
    }
   },
@@ -1054,6 +1036,44 @@
     {
      "role": "woodcutter",
      "per_item": "world.t_fir",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_oak",
      "count": 0.004,
      "density": "always",
      "when": {

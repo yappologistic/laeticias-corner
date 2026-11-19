@@ -112,7 +112,7 @@
      ]
     },
     "snow_line": [
-     8,
+     12,
      null,
      null
     ],
@@ -225,11 +225,6 @@
       "jan",
       "feb"
      ],
-     "snow": [
-      "dec",
-      "jan",
-      "feb"
-     ],
      "snow_dusted": [
       "dec",
       "jan",
@@ -237,9 +232,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ],
     "ambience": {
      "beds": [
@@ -1114,12 +1109,12 @@
    "sound": {
     "surfaces": {
      "stone": 0.42,
-     "roof": 0.09,
+     "roof": 0.11,
      "leaves": 0.1,
      "water": 0.06
     },
     "wind": "wind.street",
-    "exposure": 0.93,
+    "exposure": 0.91,
     "water": {
      "family": "river",
      "speed": "slow"
@@ -3132,6 +3127,13 @@
  },
  "light_points": [
   [
+   211,
+   400,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
    214,
    400,
    "parsa.royal_road_head",
@@ -3147,6 +3149,13 @@
   [
    214,
    404,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
+   211,
+   406,
    "parsa.p_torch",
    "wall_torch",
    "flame"

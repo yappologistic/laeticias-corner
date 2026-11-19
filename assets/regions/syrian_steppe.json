@@ -117,6 +117,11 @@
     },
     "haze": 0.12,
     "ground": {
+     "dusty": [
+      "jun",
+      "jul",
+      "aug"
+     ],
      "low_water": [
       "aug"
      ]
@@ -135,6 +140,9 @@
     ],
     "haze": 0.12,
     "ground": {
+     "dusty": [
+      "sep"
+     ],
      "low_water": [
       "sep",
       "oct"
@@ -698,8 +706,7 @@
    "area": "wild",
    "sound": {
     "surfaces": {
-     "stone": 0.05,
-     "water": 0.02
+     "stone": 0.12
     },
     "wind": "wind.open",
     "exposure": 1.0,
@@ -718,7 +725,6 @@
     "cart": "amb/world/cart_earth.ogg"
    },
    "look": {
-    "reflect": true,
     "air": {
      "mist": {
       "where": "plain",
@@ -1332,11 +1338,11 @@
   {
    "body": "euphrates",
    "kind": "river",
-   "tiles": 33,
+   "tiles": 31,
    "rect": [
     401,
-    206,
-    409,
+    207,
+    408,
     215
    ],
    "level": [

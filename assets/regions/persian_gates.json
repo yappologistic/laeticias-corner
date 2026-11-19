@@ -110,8 +110,8 @@
     },
     "snow_line": [
      10,
-     11,
-     13
+     12,
+     14
     ]
    },
    "summer": {
@@ -127,15 +127,13 @@
     "haze": 0.15,
     "ground": {
      "snow": [
-      "jun",
-      "jul",
-      "aug"
+      "jun"
      ]
     },
     "snow_line": [
-     14,
-     14,
-     14
+     15,
+     null,
+     null
     ]
    },
    "autumn": {
@@ -151,14 +149,13 @@
       "nov"
      ],
      "snow": [
-      "sep",
       "oct",
       "nov"
      ]
     },
     "snow_line": [
-     14,
-     13,
+     null,
+     15,
      12
     ]
    },
@@ -186,9 +183,9 @@
      ]
     },
     "snow_line": [
-     10,
      9,
-     9
+     7,
+     8
     ]
    }
   },
@@ -959,10 +956,10 @@
    "sound": {
     "surfaces": {
      "stone": 0.3,
-     "roof": 0.46
+     "roof": 0.47
     },
     "wind": "wind.street",
-    "exposure": 0.83,
+    "exposure": 0.82,
     "steps": {
      "surface": "earth",
      "files": [
@@ -2342,6 +2339,13 @@
   }
  },
  "light_points": [
+  [
+   336,
+   153,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
   [
    339,
    153,

@@ -90,7 +90,7 @@
      ]
     },
     "snow_line": [
-     8,
+     12,
      null,
      null
     ]
@@ -164,9 +164,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ]
    }
   },
@@ -675,7 +675,7 @@
    "name": "Mist",
    "sound": {
     "surfaces": {
-     "leaves": 0.04,
+     "leaves": 0.05,
      "water": 0.05
     },
     "wind": "wind.open",
