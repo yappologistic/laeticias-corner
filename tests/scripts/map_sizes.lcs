@@ -1,0 +1,25 @@
+# The map, its markers and the travel at any window size (QA5 Q5-E-22: on wide windows the art
+# was drawn at a whole scale and the markers at a fractional one): a marker's click lands on its
+# place, and the title card, a card and the tip are laid out away from home.
+key m
+wait 20
+expect map open
+shot shots/map_sizes.png
+move map:athens
+wait 3
+click map:athens
+waitfor 70 travelling no
+expect place athens
+click landmark:athens.parthenon
+wait 20
+expect info yes
+shot shots/map_sizes_card.png
+key escape
+wait 15
+expect info no
+key m
+wait 20
+click map:corner
+waitfor 70 travelling no
+expect away no
+quit

@@ -240,9 +240,11 @@ float Hud::pressOf(int id) const {
     return i < press_.size() ? smooth(press_[i]) : 0.0f;
 }
 
-void Hud::toast(std::string text) {
-    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ == 0 && !toastsHeld_) {
+void Hud::toast(std::string text, bool corner) {
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ == 0 && !toastsHeld_ &&
+        !(corner && away_)) {
         toast_ = std::move(text);
+        toastCorner_ = corner;
         toastTime_ = theme::kToastSeconds;
         toastShown_ = 0;
         return;
@@ -250,8 +252,10 @@ void Hud::toast(std::string text) {
     if (toastWaiting_ == theme::kToastQueue) {
         // Full: the oldest waiting one gives way.
         std::ranges::rotate(toastQueue_, toastQueue_.begin() + 1);
+        std::ranges::rotate(toastQueueCorner_, toastQueueCorner_.begin() + 1);
         --toastWaiting_;
     }
+    toastQueueCorner_[static_cast<std::size_t>(toastWaiting_)] = corner;
     toastQueue_[static_cast<std::size_t>(toastWaiting_++)] = std::move(text);
 }
 
@@ -535,12 +539,19 @@ void Hud::layout(const HudModel& m, const Font& font, Vec2 screen, float s) {
         const float pad = theme::kPanelPad * s;
         const float w = std::min(theme::kPlaceCardW * s, screen.x - 2 * margin);
         const float textW = w - 2 * pad;
-        const float lines =
-            static_cast<float>(wrapLines(font, Face::Body, m.cardText, textW, theme::kCardLines));
-        float h =
-            2 * pad + font.lineHeight(Face::Title) + lines * font.lineHeight(Face::Body) + gap;
+        cardTitle_ =
+            elide(font, Face::Title, m.cardTitle, textW - theme::kCloseSize * s, cardTitleCut_);
+        float h = 2 * pad + font.lineHeight(Face::Title) + gap;
         if (!m.cardNative.empty()) h += font.lineHeight(Face::Body);
         if (!m.cardEpithet.empty()) h += font.lineHeight(Face::Body);
+        // A long text takes the height there is above the docks (Q5-E-12: it was cut at nine
+        // lines, so the endings of the longest cards never showed).
+        const float room = bottomTop_ - gap - margin - h;
+        cardLines_ = std::max(theme::kCardLines,
+                              static_cast<int>(room / std::max(1.0f, font.lineHeight(Face::Body))));
+        const float lines =
+            static_cast<float>(wrapLines(font, Face::Body, m.cardText, textW, cardLines_));
+        h += lines * font.lineHeight(Face::Body);
         const float x = screen.x - margin - w;
         const float y = std::max(margin, (bottomTop_ - gap - h) * 0.5f);
         cardBox_ = {x + (1.0f - smooth(cardT_)) * slideBy(s), y, w, h};
@@ -659,13 +670,25 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
     hintT_ = approach(hintT_, !m.hint.empty() || !m.warning.empty(), dt);
     // While others wait, a toast steps aside once it has been up long enough to read.
     toastShown_ += dt;
-    if (toastWaiting_ > 0)
+    // News of the corner is for the corner: it folds away when the view leaves (QA5 Q5-E-02),
+    // and what waits behind it waits for the view to come home.
+    away_ = m.away;
+    if (m.away && toastCorner_) toastTime_ = 0;
+    // The next to show: the first in line, or away from home the first that is not the corner's.
+    int next = 0;
+    while (m.away && next < toastWaiting_ && toastQueueCorner_[static_cast<std::size_t>(next)])
+        ++next;
+    if (next < toastWaiting_)
         toastTime_ = std::min(toastTime_, std::max(0.0f, theme::kToastQueuedSeconds - toastShown_));
     toastTime_ = std::max(0.0f, toastTime_ - dt);
     toastT_ = approach(toastT_, toastTime_ > 0.0f, dt);
-    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && toastWaiting_ > 0 && !toastsHeld_) {
-        toast_ = std::move(toastQueue_[0]);
-        std::ranges::rotate(toastQueue_, toastQueue_.begin() + 1);
+    if (toastTime_ <= 0.0f && toastT_ <= 0.0f && next < toastWaiting_ && !toastsHeld_) {
+        const auto k = static_cast<std::size_t>(next);
+        toast_ = std::move(toastQueue_[k]);
+        toastCorner_ = toastQueueCorner_[k];
+        std::rotate(toastQueue_.begin() + next, toastQueue_.begin() + next + 1, toastQueue_.end());
+        std::rotate(toastQueueCorner_.begin() + next, toastQueueCorner_.begin() + next + 1,
+                    toastQueueCorner_.end());
         --toastWaiting_;
         toastTime_ = theme::kToastSeconds;
         toastShown_ = 0;
@@ -770,7 +793,8 @@ void Hud::update(const UiInput& in, const HudModel& m, const Font& font, Vec2 sc
             (toastT_ > 0.5f && !toast_.empty() && toastBox_.contains(in.x, in.y)) ||
             (trayT_ > 0.5f && trayBox_.contains(in.x, in.y)) ||
             (ribbonT_ > 0.5f && ribbonBox_.contains(in.x, in.y)) ||
-            (calendarT_ > 0.5f && calendarBox_.contains(in.x, in.y)))
+            (calendarT_ > 0.5f && calendarBox_.contains(in.x, in.y)) ||
+            (cardT_ > 0.5f && cardBox_.contains(in.x, in.y))) // a click on a card stays on it
             overUi_ = true;
         // A drawer on its way out no longer holds the pointer: the map is usable at once after
         // picking a piece.
@@ -996,6 +1020,9 @@ std::optional<Vec2> Hud::widgetCentre(std::string_view name, const HudModel& m) 
         return std::nullopt;
     }
     if (name == "hint" && hintT_ > 0.5f) return Vec2{hintBox_.cx(), hintBox_.cy()};
+    // "info": the middle of a landmark's or figure's card.
+    if (name == "info" && cardT_ > 0.5f && cardBox_.w > 0)
+        return Vec2{cardBox_.cx(), cardBox_.cy()};
     const Widget* w = find(name, m);
     if (w == nullptr) return std::nullopt;
     return Vec2{w->box.cx(), w->box.cy()};
@@ -1619,7 +1646,7 @@ void Hud::drawCard(Painter& p, const HudModel& m) const {
     p.glass(b, theme::kPanelRadius * s, a, theme::kGlass);
     p.endGlass();
     float y = b.y + pad;
-    p.text(Face::Title, m.cardTitle, b.x + pad, y + f.ascent(Face::Title),
+    p.text(Face::Title, cardTitle_, b.x + pad, y + f.ascent(Face::Title),
            withAlpha(theme::kInk, a));
     y += f.lineHeight(Face::Title);
     for (const std::string_view line : {m.cardNative, m.cardEpithet}) {
@@ -1629,7 +1656,7 @@ void Hud::drawCard(Painter& p, const HudModel& m) const {
         y += f.lineHeight(Face::Body);
     }
     y += theme::kGap * s;
-    p.wrapped(Face::Body, m.cardText, b.x + pad, y, b.w - 2 * pad, theme::kCardLines,
+    p.wrapped(Face::Body, m.cardText, b.x + pad, y, b.w - 2 * pad, cardLines_,
               withAlpha(theme::kInk, a));
     for (const Widget& w : widgets_)
         if (w.id == kCardClose) drawButton(p, w, a);
@@ -1796,22 +1823,36 @@ void Hud::drawCalendar(Painter& p, const HudModel& m) const {
     p.endLayer();
 }
 
+Box Hud::worldTipBox(const Font& f, std::string_view tip) const {
+    const float s = scale_;
+    const float pad = theme::kTipPad * s;
+    const float bw = f.measure(Face::Body, tip) + 2 * pad;
+    const float bh = theme::kTipH * s;
+    float x = std::clamp(pointer_.x + theme::kWorldTipOffset * s, theme::kMargin * s * 0.5f,
+                         screen_.x - bw - theme::kMargin * s * 0.5f);
+    float y = pointer_.y + theme::kWorldTipOffset * s;
+    if (y + bh > screen_.y - theme::kMargin * s) y = pointer_.y - bh - theme::kWorldTipOffset * s;
+    // Never under the title card, a card or a dock (Q5-E-14): below the title, beside the card,
+    // above the docks.
+    const auto over = [&](const Box& q) {
+        return x < q.x + q.w && q.x < x + bw && y < q.y + q.h && q.y < y + bh;
+    };
+    if (titleBox_.w > 0 && over(titleBox_)) y = titleBox_.y + titleBox_.h + theme::kGap * s;
+    if (cardT_ > 0 && cardBox_.w > 0 && over(cardBox_)) // the card is on the right: to its left
+        x = std::max(theme::kMargin * s * 0.5f, cardBox_.x - bw - theme::kGap * s);
+    for (const Panel& q : panels_)
+        if (over(q.box)) y = q.box.y - bh - theme::kGap * s;
+    return {x, y, bw, bh};
+}
+
 void Hud::drawWorldTip(Painter& p, const HudModel& m) const {
     const float a = smooth(worldTipT_);
     if (a <= 0 || m.worldTip.empty()) return;
-    const float s = scale_;
     const Font& f = p.font();
-    const float pad = theme::kTipPad * s;
-    const float bw = f.measure(Face::Body, m.worldTip) + 2 * pad;
-    const float bh = theme::kTipH * s;
-    const float x = std::clamp(pointer_.x + theme::kWorldTipOffset * s, theme::kMargin * s * 0.5f,
-                               screen_.x - bw - theme::kMargin * s * 0.5f);
-    float y = pointer_.y + theme::kWorldTipOffset * s;
-    if (y + bh > screen_.y - theme::kMargin * s) y = pointer_.y - bh - theme::kWorldTipOffset * s;
-    const Box b{x, y, bw, bh};
-    p.glass(b, theme::kTipRadius * s, a, theme::kGlassTip);
+    const Box b = worldTipBox(f, m.worldTip);
+    p.glass(b, theme::kTipRadius * scale_, a, theme::kGlassTip);
     p.endGlass();
-    p.text(Face::Body, m.worldTip, b.x + pad,
+    p.text(Face::Body, m.worldTip, b.x + theme::kTipPad * scale_,
            b.cy() + f.ascent(Face::Body) * theme::kBaselineCentre, withAlpha(theme::kInk, a));
 }
 

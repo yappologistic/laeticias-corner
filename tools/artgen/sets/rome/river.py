@@ -23,7 +23,7 @@ from voxel import hash01, value_noise
 ref = referrer("sets.rome.river")
 S = S65
 DECK = 9.0           # deck floor above the water at the abutments, design units (18 px)
-RAMP = 5.0           # the most a deck rises per tile along the bridge (it is one floor piece)
+RAMP = 4.0           # the most a deck rises per tile (half a level: walkers cross piece seams)
 VOUSSOIR = 1.6       # an arch ring's depth; the deck's paving sits a unit above the ring
 
 

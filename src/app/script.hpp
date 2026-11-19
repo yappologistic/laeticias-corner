@@ -10,7 +10,8 @@
 //                               nooks, sketch_not_now, calendar, season_auto|spring|summer|
 //                               autumn|winter, edge_chip,
 //                               scroll_up, scroll_down, tab:<category id>, tile:<item or terrain
-//                               id>, or of the toast and hint panels: toast, hint
+//                               id>, or of the toast and hint panels: toast, hint, and of an open
+//                               landmark's or figure's card: info
 //                  actor:KIND   the middle of the first actor of that kind in the window (a
 //                               visitor id or the resident's); none in view fails the run
 //                  grid:TX,TY   the middle of world grid tile (TX, TY), raised by its level
@@ -133,6 +134,8 @@
 //       MAX (that city loop's gain x 100 now) | city coarse MIN MAX (people drawn over the
 //       impostors at half or quarter scale) | city covered PX MIN MAX (of them, people with
 //       more than PX of something in front over their feet: nobody on the roofs)
+//       sound beds (every region plays a loaded bed in every month, by day and by night)
+//       | sound FILE|FAMILY MIN MAX (the world's gain x 100 for that loop, or family a.b, now)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would

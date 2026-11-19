@@ -1,0 +1,65 @@
+# World names (the front door's name field): an empty name is refused and the dialog stays; a
+# Greek, accented name is kept as typed while its folder is plain ASCII; a long name stops at
+# 28 letters; letters the interface cannot draw are refused with a note; renaming to nothing is
+# refused and Esc keeps the old name.
+wait 20
+expect page title
+click ui:menu:continue
+wait 8
+expect page newworld
+key backspace
+click ui:menu:create
+wait 4
+expect page newworld
+shot shots/names_empty.png
+type Ἀθῆναι Pārsa
+click ui:menu:create
+wait 8
+expect page none
+expect world Ἀθῆναι Pārsa
+shot shots/names_greek.png
+click ui:menu:skip_tour
+wait 4
+key escape
+wait 8
+click ui:menu:back_to_worlds
+wait 8
+expect worlds 1
+expect card 0 Ἀθῆναι Pārsa
+click ui:menu:new
+wait 6
+key backspace
+type Abcdefghij klmnopqrst uvwxyzBCD EFGHIJ
+shot shots/names_long.png
+click ui:menu:create
+wait 8
+expect page none
+expect world Abcdefghij klmnopqrst uvwxyz
+key escape
+wait 8
+click ui:menu:back_to_worlds
+wait 8
+expect worlds 2
+move ui:menu:card:0
+wait 4
+click ui:menu:rename:0
+wait 2
+key backspace
+type تخت
+shot shots/names_undrawable.png
+key return
+wait 2
+expect card 0 Abcdefghij klmnopqrst uvwxyz
+key escape
+wait 2
+expect card 0 Abcdefghij klmnopqrst uvwxyz
+move ui:menu:card:1
+wait 4
+click ui:menu:rename:1
+wait 2
+type Delos
+key return
+wait 4
+expect card 1 Delos
+shot shots/names_worlds.png
+quit

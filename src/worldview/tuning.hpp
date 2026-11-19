@@ -127,6 +127,9 @@ inline constexpr float kMusicThreshold = 0.5f;
 inline constexpr float kMusicHysteresis = 0.1f;
 inline constexpr float kMusicFadeSeconds = 4.0f;
 inline constexpr float kMusic = 0.55f; // a city's piece, as the home's stems (core kMusicLevel)
+inline constexpr float kBedFadeSeconds = 20.0f; // beds crossfade at an hour's or a month's turn
+inline constexpr float kSnowBedDuck = 0.29f;    // -3 dB on the beds while snow lies
+inline constexpr float kStretchLift = 1.41f;    // +3 dB on the beds of places without music
 
 // Look of things that have no art yet.
 inline constexpr float kFaceShadeSE = 0.78f; // flat faces: the south-east side is darker
@@ -185,6 +188,21 @@ inline constexpr float kCallMin = 25.0f; // s between birds' and animals' calls
 inline constexpr float kCallMax = 70.0f;
 inline constexpr float kCall = 0.6f;
 inline constexpr std::size_t kShotsPerUpdate = 8;
+// The year in sound (out/reports/audio-seasons.md §5).
+inline constexpr float kSting = 0.7f;      // sunrise, nightfall, a storm's end, a season
+inline constexpr float kStingDuck = 0.79f; // -2 dB on the music under a sting
+inline constexpr float kStingDuckSeconds = 3.0f;
+inline constexpr float kStormRain = 90.0f; // s of rain before its end has a sting
+inline constexpr float kTreesWind = 0.5f;  // wind in the crowns where trees cover the view
+inline constexpr float kTreesFull = 3.0f;  // a district a third trees is heard in full
+inline constexpr float kWater = 1.0f;      // sea, shore and river by their share of view
+inline constexpr int kWaterSamples = 8;    // per side of the view, at the slow tick
+inline constexpr int kShoreTiles = 4;      // water this far from land is open water
+inline constexpr float kDripAfter = 60.0f; // s drops keep falling after the rain
+inline constexpr float kDripMin = 0.4f;    // s between drops
+inline constexpr float kDripMax = 2.5f;
+inline constexpr float kDrip = 0.35f;
+inline constexpr float kLayerFull = 4.0f;        // a quarter of the view fresh water: full layer
 
 // Fallback shadow opacity when no resident page measured one.
 inline constexpr float kShadowOpacity = 0.4f;

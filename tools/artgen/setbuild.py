@@ -945,7 +945,10 @@ def main(build: spec.Build, args) -> int:
         (out_dir / f"{set_id}.geom.json").write_text(compact_json(geom))
     print(f"set {set_id}: {len(sprites)} sprites on {len(pages)} pages ({total / 1e6:.2f} MB) "
           f"in {time.time() - t0:.1f}s")
+    import gc
     import setvalidate
+    del sprites, trimmed, pages, meta        # the validator reads the pages back: free the images first
+    gc.collect()
     status = 0 if args.only else setvalidate.main(set_id, out_dir, build.k, lm_info)
     if args.preview:
         importlib.import_module(f"sets.{set_id}.preview").main(build, out_dir)
