@@ -475,7 +475,19 @@ void WorldMap::buildSlotIndex() {
 int WorldMap::floorZ(TilePos p) const {
     const Chunk& c = chunk(p);
     const std::size_t l = local(p);
-    if (!(c.walk[l] & kFloor)) return levelOf(c.level[l]) * levelPx_;
+    if (!(c.walk[l] & kFloor)) {
+        // A deck whose geometry gives no floor (`walk_z`) stands on its tile's highest point
+        // (`tops`: the rail's top, a few px over the planks) rather than in the water under it,
+        // until the art gives the floor. Steps onto it count from its level (edgeZ), so the
+        // walk graph is the same either way.
+        if ((c.walk[l] & kDeck) && c.occupancy[l] != 0) {
+            const Placed& it = items_[c.occupancy[l] - 1];
+            if (const GeomVariant* g = geometry(it); g != nullptr)
+                if (const int top = g->topAt({p.x - it.x, p.y - it.y}); top >= 0)
+                    return it.level * levelPx_ + top;
+        }
+        return levelOf(c.level[l]) * levelPx_;
+    }
     const Placed& it = items_[c.occupancy[l] - 1];
     const ItemInfo& inf = info(it);
     const TilePos rel{p.x - it.x, p.y - it.y};
@@ -515,6 +527,14 @@ int WorldMap::edgeZ(TilePos p, int dir) const {
 float WorldMap::floorAt(Vec2 p) const {
     const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
     if (!inBounds(t)) return 0.0f;
+    // Plain ground all round (no stair, walk floor or deck here or next door): steps between
+    // such tiles never change height, so the tile's level is the floor.
+    const auto raised = [&](TilePos q) {
+        return inBounds(q) && (chunk(q).walk[local(q)] & (kFloor | kDeck)) != 0;
+    };
+    if (!raised(t) &&
+        std::ranges::none_of(kSteps, [&](TilePos d) { return raised({t.x + d.x, t.y + d.y}); }))
+        return static_cast<float>(levelOf(chunk(t).level[local(t)]) * levelPx_);
     const auto z = static_cast<float>(floorZ(t));
     const float fx = p.x - static_cast<float>(t.x) - 0.5f;
     const float fy = p.y - static_cast<float>(t.y) - 0.5f;
