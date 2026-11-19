@@ -532,7 +532,8 @@ def water(mask: int, frame: int, frames: int, k: int) -> Sprite:
 def _ripples(g: Grid, f, shade, frame, frames):
     """Fine-grid water: clean depth bands, the bank's shadow, and ripples (a light crest over a
     darker trough) that swell and fade on their own phase and drift a pixel with the frames."""
-    level = 3.4 - np.clip(f / 4, 0, 1) * 1.6 - shade * 1.0 + (_pnoise(g.u, g.v, 2, 610) - 0.5) * 0.4
+    # Fine noise only: a coarse tile-periodic one printed a dark blob in every tile (QA6 V6-001).
+    level = 3.4 - np.clip(f / 4, 0, 1) * 1.6 - shade * 1.0 + (_pnoise(g.u, g.v, 8, 610) - 0.5) * 0.3
     t = frame / frames
     for seed, cell, density, reach in ((620, 2, 0.32, 3.5), (621, 4, 0.45, 6.0)):
         dx, dy, h, ok = _scatter(g, cell, seed, density, jitter=0.9)
