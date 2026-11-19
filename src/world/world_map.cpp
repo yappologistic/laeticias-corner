@@ -486,9 +486,6 @@ int WorldMap::floorZ(TilePos p) const {
                 if (const int top = g->topAt({p.x - it.x, p.y - it.y}); top >= 0)
                     return it.level * levelPx_ + top;
         }
-        if (c.slope[l] != 0)
-            return static_cast<int>(std::lround(
-                surfaceZ({static_cast<float>(p.x) + 0.5f, static_cast<float>(p.y) + 0.5f})));
         return levelOf(c.level[l]) * levelPx_;
     }
     const Placed& it = items_[c.occupancy[l] - 1];
@@ -537,7 +534,7 @@ float WorldMap::floorAt(Vec2 p) const {
     };
     if (!raised(t) &&
         std::ranges::none_of(kSteps, [&](TilePos d) { return raised({t.x + d.x, t.y + d.y}); }))
-        return surfaceZ(p);
+        return static_cast<float>(levelOf(chunk(t).level[local(t)]) * levelPx_);
     const auto z = static_cast<float>(floorZ(t));
     const float fx = p.x - static_cast<float>(t.x) - 0.5f;
     const float fy = p.y - static_cast<float>(t.y) - 0.5f;
@@ -550,6 +547,51 @@ float WorldMap::floorAt(Vec2 p) const {
         const int dy = s.to.y - t.y;
         const float toward = dx != 0 ? fx * static_cast<float>(dx) : fy * static_cast<float>(dy);
         if (toward > 0) out += static_cast<float>(s.dz) * toward;
+    }
+    return out;
+}
+
+float WorldMap::walkZ(Vec2 p) const {
+    const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+    if (!inBounds(t)) return 0.0f;
+    const auto raised = [&](TilePos q) {
+        return inBounds(q) && (chunk(q).walk[local(q)] & (kFloor | kDeck)) != 0;
+    };
+    const auto sloped = [&](TilePos q) { return inBounds(q) && chunk(q).slope[local(q)] != 0; };
+    const auto near = [&](auto&& f) {
+        return f(t) || std::ranges::any_of(
+                           kSteps, [&](TilePos d) { return f(TilePos{t.x + d.x, t.y + d.y}); });
+    };
+    // Flat plain ground all round (no stair, walk floor, deck or slope here or next door):
+    // steps between such tiles never change height, so the tile's level is the floor.
+    if (!near(raised) && !near(sloped))
+        return static_cast<float>(levelOf(chunk(t).level[local(t)]) * levelPx_);
+    // Each tile's own floor at a point: a raised floor's height, else its surface (carried on
+    // past its edges); toward each neighbour a walker may step to, the two meet half way at the
+    // shared edge, so a height carried along any course is continuous (on a slope, its surface).
+    const auto own = [&](TilePos q, Vec2 at) {
+        if (raised(q)) return static_cast<float>(floorZ(q));
+        const auto base = static_cast<float>(level(q) * levelPx_);
+        const Slope s = slopeAt(q);
+        return s == Slope::Flat ? base
+                                : base + slopeHeight(s, at.x - static_cast<float>(q.x),
+                                                     at.y - static_cast<float>(q.y)) *
+                                             static_cast<float>(levelPx_);
+    };
+    const float fx = p.x - static_cast<float>(t.x) - 0.5f;
+    const float fy = p.y - static_cast<float>(t.y) - 0.5f;
+    std::array<WalkStep, 4> steps{};
+    const int n = walkNeighbours(t, steps);
+    float out = own(t, p);
+    for (int i = 0; i < n; ++i) {
+        const WalkStep& s = steps[static_cast<std::size_t>(i)];
+        const int dx = s.to.x - t.x;
+        const int dy = s.to.y - t.y;
+        const float toward = dx != 0 ? fx * static_cast<float>(dx) : fy * static_cast<float>(dy);
+        if (toward <= 0) continue;
+        const Vec2 e = dx != 0 ? Vec2{static_cast<float>(t.x + (dx > 0 ? 1 : 0)), p.y}
+                               : Vec2{p.x, static_cast<float>(t.y + (dy > 0 ? 1 : 0))};
+        out += (own(s.to, e) - own(t, e)) * toward;
     }
     return out;
 }

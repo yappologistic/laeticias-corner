@@ -171,8 +171,7 @@ public:
     [[nodiscard]] bool walkable(TilePos p) const {
         return inBounds(p) && (chunk(p).walk[local(p)] & kWalk) != 0;
     }
-    // Height of the floor a walker stands on, px above level 0 (stairs and walk floors included;
-    // on a slope, its surface at the tile's centre).
+    // Height of the floor a walker stands on, px above level 0 (stairs and walk floors included).
     [[nodiscard]] int floorZ(TilePos p) const;
     // The floor under a continuous point (tile coordinates): its tile's floor, blended toward
     // each neighbour it can step to as the point nears their shared edge (the two sides meet
@@ -189,6 +188,11 @@ public:
     // Off the grid and on tiles without ground: 0 (the sea's level). Floors of items (stairs,
     // decks, walk floors) are floorAt's.
     [[nodiscard]] float surfaceZ(Vec2 p) const;
+    // The height a walker stands at on a continuous point: floorAt with the ground's surface in
+    // place of the tile's level (a stair's, deck's or walk floor's own height; elsewhere
+    // surfaceZ), meeting each neighbour it may step to half way at their shared edge, so it is
+    // continuous along any course. City life switches to it from floorAt (engine-terrain.md).
+    [[nodiscard]] float walkZ(Vec2 p) const;
     // Level of corner `c` (0 N, 1 E, 2 S, 3 W: the diamond's top, right, bottom, left vertex) of
     // the tile's surface; off the grid and without ground, 0.
     [[nodiscard]] int cornerLevel(TilePos p, int c) const;
