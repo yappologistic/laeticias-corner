@@ -32,6 +32,11 @@ struct KindDef {
     std::vector<float> strides;       // per entry: tiles a cycle walks, 0 when not stated
     bool cart = false;                // carts and sledges: lifesim's slower default speed
     bool ship = false;                // afloat: at the water's level, under every deck
+    int length = 1;                   // tiles its body runs along its heading (carts, ships)
+    // A ship's height standing (its moving look) and with its mast down, px above the water,
+    // from the geometry's actor `height`; 0: not given (never lowered).
+    int standing = 0;
+    int lowered = -1; // LifeData::animNames index of its `lowered` look, -1: none
     [[nodiscard]] bool has(int anim) const;
     [[nodiscard]] float fpsOf(int anim) const;
 };

@@ -1,8 +1,8 @@
 # Getting started
 
-From a clean clone to a tested build and a headless run. These are the commands the project's
-own publication check ran on a fresh clone (Linux, GCC 16.2, CMake 4.5, Ninja 1.13, SDL 3.4.20,
-nlohmann_json 3.12).
+From a clean clone to a tested build and a headless run. The build, test and headless commands
+below are the ones the project's publication check ran on a fresh clone (Linux, GCC 16.2,
+CMake 4.5, Ninja 1.13, SDL 3.4.20, nlohmann_json 3.12).
 
 ## What you need
 
@@ -31,7 +31,7 @@ the test binary `build/release/tests/lc_tests`.
 
 ```sh
 ctest --preset release -R unit       # the unit tests: under a minute
-ctest --preset release               # the whole default suite: a few minutes
+ctest --preset release               # the whole default suite: minutes on an idle machine
 ```
 
 Both must end with `100% tests passed`. The sanitizer build is separate:

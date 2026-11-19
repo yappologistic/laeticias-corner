@@ -139,6 +139,14 @@ Snapshot snapshot(const CityLife& c) {
 
 } // namespace
 
+TEST_CASE("life: hours are hh:mm within the day") {
+    CHECK(parseHour("06:30") == doctest::Approx(6.5));
+    CHECK(parseHour("24:00") == doctest::Approx(24.0));
+    CHECK(parseHour("24:30") < 0); // past the day's end
+    CHECK(parseHour("7:60") < 0);
+    CHECK(parseHour("noon") < 0);
+}
+
 TEST_CASE("life: every region's life compiles, and what does not resolve is known") {
     const LifeWorld& w = lifeWorld();
     for (const std::string city :
@@ -777,6 +785,127 @@ TEST_CASE("city: on bridges and stairs people stand on the floor and rise smooth
     }
 }
 
+TEST_CASE("city: a cart's animal walks on the ground its cart does, never over the water") {
+    // V6-024: a cart is drawn round its point and runs a tile each way along its facing; where
+    // the course turned at a bridge's end the ox stood out over the river. The front of every
+    // cart drawn walking stands on walkable ground (or a deck).
+    // Susiana's caravan carts cross the pontoon and the ford by (305, 201) on day 1 between
+    // 06:00 and 08:00 (V6-024's place); the cities' and roads' carts at their busy hour.
+    struct Place {
+        const char* focus;
+        int day;
+        double hour;
+        int seconds;
+    };
+    const std::array<Place, 5> places{{{"307,200", 1, 6.0, 120},
+                                       {"forum", 9, 10.0, 20},
+                                       {"terrace", 9, 10.0, 20},
+                                       {"district:latium_italy/road", 9, 10.0, 20},
+                                       {"district:anatolia/road", 9, 10.0, 20}}};
+    const world::WorldMap& m = lifeWorld().map();
+    const auto& kinds = lifeWorld().data.kinds;
+    constexpr std::array<Vec2, 4> kFacing{{{1, 0}, {0, 1}, {0, -1}, {-1, 0}}};
+    std::vector<DrawActor> buf(4096);
+    long fronts = 0;
+    long over = 0;
+    for (const Place& pl : places) {
+        const char* place = pl.focus;
+        CityLife city(lifeWorld(), 17);
+        city.setFocus(centreOf(place), 24, 16);
+        LifeClock clock = LifeClock::at(pl.day, pl.hour, seasonOf("rome"));
+        city.settle(clock);
+        long here = 0;
+        long bad = 0;
+        for (int k = 0; k < 60 * pl.seconds; ++k) {
+            step(city, clock, 1);
+            const std::size_t n = city.gather(city.activeRect(), 1.0f, buf);
+            for (std::size_t i = 0; i < n; ++i) {
+                const DrawActor& d = buf[i];
+                const KindDef& kd = kinds[d.kind];
+                if (!kd.cart || kd.length < 2 || d.speed <= 0 || d.alpha < 1.0f) continue;
+                const float half = 0.5f * static_cast<float>(kd.length);
+                const Vec2 f = kFacing[d.facing % 4];
+                const TilePos t{static_cast<int>(std::floor(d.pos.x + f.x * half)),
+                                static_cast<int>(std::floor(d.pos.y + f.y * half))};
+                ++here;
+                if (!m.walkable(t)) {
+                    ++bad;
+                    CAPTURE(place);
+                    CAPTURE(t.x);
+                    CAPTURE(t.y);
+                    CAPTURE(kd.id);
+                    CHECK(m.walkable(t));
+                }
+            }
+        }
+        MESSAGE(std::string(place) << ": " << here << " cart-steps, " << bad
+                                   << " with the front over unwalkable ground");
+        fronts += here;
+        over += bad;
+    }
+    CHECK(fronts > 0);
+    CHECK(over == 0);
+}
+
+TEST_CASE("city: a barge lowers its mast for a span too low for it, a little before and after") {
+    // The Tiber spans leave a barge 4-40 px (their `pass`); with its mast up it stands 59 px,
+    // lowered 27. Until the geometry gives the barge's `height` (art), the test gives the kind
+    // those measured heights.
+    LifeData& data = lifeWorld().data;
+    const auto bi = std::ranges::find(data.kinds, std::string("rome.barge"), &KindDef::id);
+    REQUIRE(bi != data.kinds.end());
+    const auto low = std::ranges::find(data.animNames, std::string("lowered"));
+    REQUIRE(low != data.animNames.end());
+    const KindDef saved = *bi;
+    if (bi->standing == 0) bi->standing = 59;
+    bi->lowered = static_cast<int>(low - data.animNames.begin());
+    const world::WorldMap& m = lifeWorld().map();
+    const int barge = static_cast<int>(bi - data.kinds.begin());
+    const float reach = 0.5f * static_cast<float>(bi->length) + tuning::life::kLowerReach;
+    // Under or by a span: the least room within reach of the barge's body, and whose it is.
+    std::string span;
+    const auto roomBy = [&](Vec2 p) {
+        int room = INT_MAX;
+        for (int y = static_cast<int>(std::floor(p.y - reach));
+             y <= static_cast<int>(std::floor(p.y + reach)); ++y)
+            for (int x = static_cast<int>(std::floor(p.x - reach));
+                 x <= static_cast<int>(std::floor(p.x + reach)); ++x)
+                if (const int r = m.boatRoomAt({x, y}); r < room) {
+                    room = r;
+                    span = m.info(m.items()[static_cast<std::size_t>(m.itemAt({x, y}))]).id;
+                }
+        return room;
+    };
+    std::map<std::string, long> bySpan;
+    CityLife city(lifeWorld(), 6);
+    city.setFocus({126, 1127}, 24, 16); // the Pons Aemilius (121, 1122) and Sublicius (131, 1122)
+    LifeClock clock = LifeClock::at(9, 9.0, seasonOf("rome"));
+    city.settle(clock);
+    std::vector<DrawActor> buf(4096);
+    long under = 0;
+    long open = 0;
+    for (int k = 0; k < 60 * 120; ++k) {
+        step(city, clock, 1);
+        const std::size_t n = city.gather(city.activeRect(), 1.0f, buf);
+        for (std::size_t i = 0; i < n; ++i) {
+            const DrawActor& d = buf[i];
+            if (d.kind != barge || d.alpha < 1.0f) continue;
+            const bool byLowSpan = roomBy(d.pos) < bi->standing;
+            CAPTURE(d.pos.x);
+            CAPTURE(d.pos.y);
+            CHECK((d.anim == bi->lowered) == byLowSpan);
+            (byLowSpan ? under : open) += 1;
+            if (byLowSpan) ++bySpan[span];
+        }
+    }
+    *bi = saved;
+    MESSAGE(under << " barge-steps by a low span (mast down), " << open << " in open water");
+    for (const auto& [id, n] : bySpan) MESSAGE("  by " << id << ": " << n);
+    CHECK(bySpan["rome.pons_aemilius"] > 0);
+    CHECK(bySpan["rome.pons_sublicius"] > 0);
+    CHECK(open > 0);
+}
+
 TEST_CASE("city: the same seed and script give byte-identical dumps") {
     std::string dumps[2];
     for (std::string& out : dumps) {
@@ -892,6 +1021,31 @@ TEST_CASE("city: arriving spreads the materialisation across steps") {
     CHECK(steps > 5);
     CHECK(steps < 600);
     CHECK(city.stats().live > 300);
+}
+
+TEST_CASE("city: under a journey's veil the new place is peopled at once, nobody fading in") {
+    // V6-021: people appeared a moment after arriving. Under the veil (the view not seen) the
+    // destination fills within the travel hold (0.4 s), and its people are there, not fading in.
+    CityLife city(lifeWorld(), 2);
+    LifeClock clock = LifeClock::at(9, 10.0, seasonOf("rome"));
+    city.setFocus(centreOf("agora"));
+    city.settle(clock);
+    const TilePos f = centreOf("forum");
+    const TileRect forum{f.x - 16, f.y - 16, f.x + 16, f.y + 16};
+    int steps = 0;
+    do {
+        city.setView(forum, false);
+        step(city, clock, 1);
+        ++steps;
+    } while (city.arriving() && steps < 600);
+    CHECK(steps <= static_cast<int>(tuning::kTravelHold / tuning::kStepSeconds));
+    city.setView(forum, true);
+    std::vector<DrawActor> buf(4096);
+    const std::size_t n = city.gather(forum, 1.0f, buf);
+    CHECK(n > 100);
+    int fading = 0;
+    for (std::size_t i = 0; i < n; ++i) fading += buf[i].alpha < 1.0f ? 1 : 0;
+    CHECK(fading == 0);
 }
 
 TEST_CASE("city: the cap scales populations down in proportion") {
