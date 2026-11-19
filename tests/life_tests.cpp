@@ -894,6 +894,31 @@ TEST_CASE("city: arriving spreads the materialisation across steps") {
     CHECK(city.stats().live > 300);
 }
 
+TEST_CASE("city: under a journey's veil the new place is peopled at once, nobody fading in") {
+    // V6-021: people appeared a moment after arriving. Under the veil (the view not seen) the
+    // destination fills within the travel hold (0.4 s), and its people are there, not fading in.
+    CityLife city(lifeWorld(), 2);
+    LifeClock clock = LifeClock::at(9, 10.0, seasonOf("rome"));
+    city.setFocus(centreOf("agora"));
+    city.settle(clock);
+    const TilePos f = centreOf("forum");
+    const TileRect forum{f.x - 16, f.y - 16, f.x + 16, f.y + 16};
+    int steps = 0;
+    do {
+        city.setView(forum, false);
+        step(city, clock, 1);
+        ++steps;
+    } while (city.arriving() && steps < 600);
+    CHECK(steps <= static_cast<int>(tuning::kTravelHold / tuning::kStepSeconds));
+    city.setView(forum, true);
+    std::vector<DrawActor> buf(4096);
+    const std::size_t n = city.gather(forum, 1.0f, buf);
+    CHECK(n > 100);
+    int fading = 0;
+    for (std::size_t i = 0; i < n; ++i) fading += buf[i].alpha < 1.0f ? 1 : 0;
+    CHECK(fading == 0);
+}
+
 TEST_CASE("city: the cap scales populations down in proportion") {
     CityLife city(lifeWorld(), 4);
     city.setFocus(centreOf("forum"));

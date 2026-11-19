@@ -323,8 +323,9 @@ void CityLife::setFocus(TilePos c, int halfW, int halfH) {
     setView({c.x - halfW, c.y - halfH, c.x + halfW, c.y + halfH});
 }
 
-void CityLife::setView(TileRect view) {
+void CityLife::setView(TileRect view, bool seen) {
     view_ = view;
+    seen_ = seen;
     const int m = tl::kLiveMargin;
     const TileRect a =
         view.empty()
@@ -1063,7 +1064,7 @@ void CityLife::materialise(int i, const Desire& d) {
         if ((a.flags & live_flag::kAlive) == 0) return;
         a.prev = a.pos;
         a.prevZ = a.z;
-        if (inView(a.pos) && d.source != Source::Token) {
+        if (seen_ && inView(a.pos) && d.source != Source::Token) {
             a.alpha = 0;
             a.flags |= live_flag::kFadeIn;
         }
@@ -1091,13 +1092,27 @@ void CityLife::materialise(int i, const Desire& d) {
         const int y0 = static_cast<int>(d.chunk / static_cast<std::uint32_t>(cx)) * kChunk;
         const int want =
             d.district >= 0 ? reg.districts[static_cast<std::size_t>(d.district)].map : -1;
-        for (int tries = 0; tries < 48 && start.x < 0; ++tries) {
+        const auto fits = [&](TilePos t, bool district) {
+            return map_->inBounds(t) && paths.reachable(t) && map_->walkable(t) &&
+                   (!district || want < 0 || map_->districtAt(t) == want);
+        };
+        for (int tries = 0; tries < 32 && start.x < 0; ++tries) {
             const TilePos t{x0 + static_cast<int>(next(a.rng) % kChunk),
                             y0 + static_cast<int>(next(a.rng) % kChunk)};
-            if (!map_->inBounds(t) || !paths.reachable(t) || !map_->walkable(t)) continue;
-            if (want >= 0 && tries < 32 && map_->districtAt(t) != want) continue;
-            start = t;
+            if (fits(t, true)) start = t;
         }
+        // A thin strip of ground (a shore, a road through hills) is seldom hit at random: walk
+        // the chunk from a random tile, its district first, then anywhere its walkers reach.
+        const auto from = static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(kChunkArea));
+        for (int pass = 0; pass < 2 && start.x < 0; ++pass)
+            for (int k = 0; k < kChunkArea; ++k) {
+                const int c = (from + k) % kChunkArea;
+                const TilePos t{x0 + c % kChunk, y0 + c / kChunk};
+                if (fits(t, pass == 0)) {
+                    start = t;
+                    break;
+                }
+            }
     }
     if (start.x < 0) return; // no ground to stand on in this chunk
     a.tile = a.anchor = tile16(start);
@@ -1125,7 +1140,7 @@ void CityLife::materialise(int i, const Desire& d) {
     a.prev = a.pos;
     a.prevZ = a.z;
     link(i);
-    if (inView(a.pos) && a.state != ActState::Inside) {
+    if (seen_ && inView(a.pos) && a.state != ActState::Inside) {
         a.alpha = 0;
         a.flags |= live_flag::kFadeIn;
     }
@@ -1135,7 +1150,7 @@ void CityLife::beginLeave(int i) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     unreserve(i);
     a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kUnwanted);
-    if (!inView(a.pos) || a.state == ActState::Inside || a.alpha <= 0.0f) {
+    if (!seen_ || !inView(a.pos) || a.state == ActState::Inside || a.alpha <= 0.0f) {
         release(i);
         return;
     }

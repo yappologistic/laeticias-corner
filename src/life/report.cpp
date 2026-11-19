@@ -310,6 +310,34 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
                                       reg.id, d.id, d.populations.size(), at.x, at.y));
         }
     }
+    // Regions whose walkable land mostly lies beyond their walkers' reach (cut off by a level's
+    // step with no stair, or too far from the graph): their country people can stand only on
+    // the rest, and chunks with none of it stay empty.
+    for (std::size_t r = 0; r < w.data.regions.size(); ++r) {
+        const int pi = w.pathsOf[r];
+        if (pi < 0) continue;
+        const RegionPaths& rp = w.paths[static_cast<std::size_t>(pi)];
+        const TileRect rr = rp.regionRect();
+        const int wr = w.data.regions[r].worldRegion;
+        long walk = 0;
+        long cut = 0;
+        TilePos first{-1, -1};
+        for (int y = rr.y0; y < rr.y1; ++y)
+            for (int x = rr.x0; x < rr.x1; ++x) {
+                const TilePos t{x, y};
+                if (m.regionAt(t) != wr || !m.walkable(t)) continue;
+                ++walk;
+                if (rp.reachable(t)) continue;
+                ++cut;
+                if (first.x < 0) first = t;
+            }
+        if (walk >= tl::kReachReportTiles && cut * 2 > walk)
+            out.push_back(std::format("{}: {}% of its {} walkable tiles out of its walkers' reach "
+                                      "(a level's step with no stair, or far from the graph), "
+                                      "first at grid ({}, {})",
+                                      w.data.regions[r].id, cut * 100 / walk, walk, first.x,
+                                      first.y));
+    }
     // Walkable decks over water with no floor height in their geometry (the art tool's
     // `walk_z`): walkers on them stand on the deck's highest point (`tops`: the rail), or at the
     // water's level, through the deck, where it has none.

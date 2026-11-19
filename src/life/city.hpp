@@ -262,8 +262,10 @@ public:
     CityLife& operator=(const CityLife&) = delete;
 
     // The camera: the view in world tiles. Active chunks are those touching it grown by
-    // tuning::life::kLiveMargin. An empty rect deactivates everything.
-    void setView(TileRect view);
+    // tuning::life::kLiveMargin. An empty rect deactivates everything. While the view is not
+    // `seen` (a journey's veil is down) newcomers are simply there and leavers simply gone,
+    // instead of fading in from doorways and walking off.
+    void setView(TileRect view, bool seen = true);
     // A view of `halfW` x `halfH` tiles each side around `centre`.
     void setFocus(TilePos centre, int halfW = 16, int halfH = 16);
     [[nodiscard]] TileRect view() const { return view_; }
@@ -326,6 +328,8 @@ public:
     void forEachReservation(F&& f) const;
     [[nodiscard]] std::size_t memoryBytes() const;
     [[nodiscard]] int liveCount() const { return stats_.live; }
+    // A new area's people still on their way in (its reconciliation or materialisation pending).
+    [[nodiscard]] bool arriving() const { return dirty_ || queueHead_ < queue_.size(); }
     // Tests and the bench: replace the population scale (0: automatic by the cap).
     void forceScale(float s) {
         forcedScale_ = s;
@@ -455,6 +459,7 @@ private:
     int day_ = -1;
     std::uint32_t frame_ = 0;
     TileRect view_;
+    bool seen_ = true;
     TileRect active_;
     std::vector<std::uint8_t> chunkActive_;
     std::vector<double> chunkSeen_;

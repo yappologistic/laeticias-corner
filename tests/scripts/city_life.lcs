@@ -38,7 +38,7 @@ wait 300
 expect city floor 3
 set city 306,575
 wait 300
-expect city floor 1
+waitfor 600 city floor 1
 set season spring
 set city 348,90
 wait 300
@@ -46,6 +46,6 @@ expect city floor 3
 expect city moving
 set city 357,66
 wait 300
-expect city floor 1
+waitfor 600 city floor 1
 set city off
 quit

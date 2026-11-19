@@ -367,8 +367,11 @@ void App::updateWorld(float dt) {
             travel_.t = tuning::kTravelFadeOut;
         }
         const float held = travel_.t - tuning::kTravelFadeOut;
-        // Whether the destination is whole is known once a frame of it has been drawn.
-        if (travel_.jumped && held > 0 && (worldView_->settled() || held >= tuning::kTravelHold) &&
+        // Whether the destination is whole is known once a frame of it has been drawn, and its
+        // people are all there (city life fills the new area under the veil).
+        const bool peopled = !city_ || !city_->city->arriving();
+        if (travel_.jumped && held > 0 &&
+            ((worldView_->settled() && peopled) || held >= tuning::kTravelHold) &&
             travelFadeIn_ < 0)
             travelFadeIn_ = travel_.t;
         if (travelFadeIn_ >= 0 && travel_.t - travelFadeIn_ >= tuning::kTravelFadeIn) {
