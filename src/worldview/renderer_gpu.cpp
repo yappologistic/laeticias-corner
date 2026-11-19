@@ -312,7 +312,8 @@ void WorldView::homeTerrainChanged() {
 }
 
 void WorldView::markItemWater(const Elem& e, const Xform& x) {
-    if (e.ground || e.figure || e.home) return;
+    // With the packed pages every water texel marks itself as it draws.
+    if (decoder_ || e.ground || e.figure || e.home) return;
     const world::GeomVariant* g = map_.geometry(map_.items()[e.item]);
     if (g == nullptr || g->water.empty()) return;
     const bool piece = e.piece >= 0 && static_cast<std::size_t>(e.piece) < g->pieces.size();
@@ -342,6 +343,7 @@ void WorldView::markItemWater(const Elem& e, const Xform& x) {
 }
 
 void WorldView::markHomeWater(const FRect& view, const Xform& x) {
+    if (decoder_) return; // the home's water texels mark themselves (its page is packed too)
     if (homeWaterDirty_ && !waterKind_.empty()) {
         homeWaterDirty_ = false;
         homeWater_.clear();
@@ -487,6 +489,7 @@ void WorldView::gradeGpu(double clock, double now, const Lighting& light, Lod lo
 
 void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow, const Hooks& hooks,
                          const FrameInfo& frame, bool home) {
+    plain(); // (what follows is not decoded)
     namespace t = gpu::tuning;
     batch_.flush();
     // The home's scene keeps its moths and its light map neutral: the world's light is ours.
@@ -587,6 +590,7 @@ void WorldView::refreshPools(const FRect& view, R&& rain) {
 }
 
 void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow) {
+    plain(); // (what follows is not decoded)
     namespace t = gpu::tuning;
     if (lod == Lod::Overview && glow > 0.01f) {
         // From afar every light is a warm point a few window px across, so towns sparkle.
@@ -607,7 +611,7 @@ void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow)
     }
     post_->bloom(batch_, viewW_, viewH_);
     cloudsGpu();
-    post_->measure(batch_, view_.texture.get(), viewW_, viewH_);
+    post_->measure(batch_, view_.texture.get(), viewW_, viewH_, snapExposure_);
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get())) SDL_Log("look: %s", SDL_GetError());
 }
 
@@ -662,7 +666,9 @@ void WorldView::compositeGpu(Vec2 scale, bool smooth) {
         // Little sky by day (the water keeps its colour), more as the light goes.
         const float day = std::clamp(1.0f - std::max(gpuFrame_.glow, gpuFrame_.night), 0.0f, 1.0f);
         f.skyShare = t::kSkyInWater[1] + (t::kSkyInWater[0] - t::kSkyInWater[1]) * day;
-        f.glints = t::kGlints * (1.0f - gpuFrame_.night) * (lod == Lod::Native ? 1.0f : 0.0f);
+        // Sun glints by day, fewer moon glints at night.
+        f.glints = (t::kGlints * (1.0f - gpuFrame_.night) + t::kMoonGlints * gpuFrame_.night) *
+                   (lod == Lod::Native ? 1.0f : 0.0f);
         if (weather_ != nullptr)
             f.rain = weather_->rainAt(iso_.toTile(
                 {(lastView_.x0 + lastView_.x1) * 0.5f, (lastView_.y0 + lastView_.y1) * 0.5f}));
@@ -712,6 +718,10 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
     const float dx = lean * side * (0.4f + 0.6f * std::abs(windDir_.x)) *
                      gpu::windLean(anchor, gpuFrame_.now, windDir_, windStrength_);
     constexpr int kStrips = gpu::tuning::kSwayStrips;
+    if (decoder_) decoder_->use(batch_, s.packed);
+    const SDL_FColor c = decoder_ && s.packed
+                             ? packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage)
+                             : SDL_FColor{1, 1, 1, 1};
     const float x0 = anchor.x - s.ox;
     const float y0 = anchor.y - s.oy;
     std::vector<SDL_Vertex>& verts = batch_.scratch().verts;
@@ -725,14 +735,14 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
         const float vv = s.uv.v0 + (s.uv.v1 - s.uv.v0) * f;
         for (int k = 0; k < 2; ++k) {
             const Vec2 p = x.apply({x0 + (k == 0 ? 0 : s.w) + dx * up * up, wy});
-            verts.push_back({{p.x, p.y}, {1, 1, 1, 1}, {k == 0 ? s.uv.u0 : s.uv.u1, vv}});
+            verts.push_back({{p.x, p.y}, c, {k == 0 ? s.uv.u0 : s.uv.u1, vv}});
         }
         if (i > 0) {
             const int b = 2 * (i - 1);
             for (const int q : {b, b + 1, b + 3, b, b + 3, b + 2}) idx.push_back(q);
         }
     }
-    batch_.use(t, SDL_BLENDMODE_BLEND, x.filter);
+    batch_.use(t, decoder_ && s.packed ? decoder_->replace() : SDL_BLENDMODE_BLEND, x.filter);
     batch_.triangles(verts.data(), static_cast<int>(verts.size()), idx.data(),
                      static_cast<int>(idx.size()));
 }
