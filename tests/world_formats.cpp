@@ -459,3 +459,34 @@ TEST_CASE("atlas pages: one key space across pages, duplicates refused") {
                           "p.json", "tst", 0))
               .find("k: the sprite leaves a 4096 x 4096 page") != std::string::npos);
 }
+
+TEST_CASE("atlas pages: a set's shadow page is a page and a key space of its own") {
+    AtlasPages pages;
+    REQUIRE(loadSetPages(pages, wtest::fixturesDir() / "atlas_ok", "tst").has_value());
+    // The colour pages of this set hold the shadow too: both are found, each on its page.
+    REQUIRE(pages
+                .addShadows(R"({"version": 1, "image": "tst.s.png", "scale": 0.5, "sprites": {
+        "item/tst.hall/shadow/r0/f0": {"x": 8, "y": 4, "w": 60, "h": 22, "ox": 30, "oy": -10}}})",
+                            "tst.s.json", "tst")
+                .has_value());
+    REQUIRE(pages.pages().size() == 3);
+    CHECK(pages.pages()[2].index == -1);
+    CHECK(pages.pages()[2].scale == doctest::Approx(0.5f));
+    CHECK(pages.pages()[2].sprites == 1);
+    CHECK(pages.size() == 4);
+    const PageSprite* s = pages.findShadow("item/tst.hall/shadow/r0/f0");
+    REQUIRE(s != nullptr);
+    CHECK(s->page == 2);
+    CHECK(s->w == 60);
+    CHECK(pages.find("item/tst.hall/shadow/r0/f0")->page == 1);
+    CHECK(pages.findShadow("item/tst.house/shadow/r0/f0") == nullptr);
+    AtlasPages bad;
+    CHECK(errorOf(bad.addShadows(R"({"version": 1, "image": "tst.0.png", "scale": 0.5,
+        "sprites": {}})",
+                                 "s.json", "tst"))
+              .find("image 'tst.0.png' should be 'tst.s.png'") != std::string::npos);
+    CHECK(errorOf(bad.addShadows(R"({"version": 1, "image": "tst.s.png", "scale": 2,
+        "sprites": {}})",
+                                 "s.json", "tst"))
+              .find("scale must be over 0 and at most 1") != std::string::npos);
+}
