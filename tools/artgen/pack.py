@@ -100,5 +100,5 @@ def write_atlas(sprites: dict[str, Sprite], png_path, json_path) -> tuple[int, i
     trimmed = {k: trim(s) for k, s in sprites.items()}
     datapages.write_packed(png_path, manifest, trimmed, atlas.shape, "atlas/ramps.json")
     datapages.write_shadow_page(png_path.with_name(png_path.stem + ".s.png"), sprites)
-    datapages.write_water_page(png_path.with_name(png_path.stem + ".w.png"), trimmed)
+    datapages.write_water_page(png_path.with_name(png_path.stem + ".w.png"), [(png_path, manifest)])
     return atlas.shape[1], atlas.shape[0]

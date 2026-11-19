@@ -954,8 +954,10 @@ def main(build: spec.Build, args) -> int:
     ramps.write(out_dir)
     trimmed = {k_: pack.trim(s) for k_, s in sprites.items()}
     total = 0
+    written = []
     for n, (atlas, manifest) in enumerate(pages):
         png = out_dir / f"{set_id}.{n}.png"
+        written.append((png, manifest))
         Image.fromarray(atlas, "RGBA").save(png, optimize=True)
         doc = {"version": 1, "image": png.name, "sprites": manifest}
         (out_dir / f"{set_id}.{n}.json").write_text(json.dumps(doc, indent=1) + "\n")
@@ -967,7 +969,7 @@ def main(build: spec.Build, args) -> int:
     sw, sh_, sn = datapages.write_shadow_page(out_dir / f"{set_id}.s.png", sprites)
     total += (out_dir / f"{set_id}.s.png").stat().st_size
     print(f"shadow page {set_id}.s.png: {sw}x{sh_}, {sn} sprites at half size")
-    ww, wh, wn = datapages.write_water_page(out_dir / f"{set_id}.w.png", trimmed)
+    ww, wh, wn = datapages.write_water_page(out_dir / f"{set_id}.w.png", written)
     total += (out_dir / f"{set_id}.w.png").stat().st_size
     print(f"water page {set_id}.w.png: {ww}x{wh}, {wn} sprites holding water")
     if not args.only:

@@ -1,6 +1,7 @@
 {
  "version": 1,
  "image": "atlas.w.png",
+ "anchor": "as the colour sprite's",
  "channels": {
   "r": "water (255)",
   "g": "depth px",
@@ -8,100 +9,100 @@
  },
  "sprites": {
   "item/fountain/base/r0/f0": {
-   "x": 56,
+   "x": 1,
    "y": 1,
-   "w": 76,
-   "h": 60,
-   "ox": 38,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
    "oy": 10
   },
   "item/fountain/base/r0/f1": {
-   "x": 56,
+   "x": 1,
    "y": 1,
-   "w": 76,
-   "h": 60,
-   "ox": 38,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
    "oy": 10
   },
   "item/fountain/base/r0/f2": {
-   "x": 56,
+   "x": 1,
    "y": 1,
-   "w": 76,
-   "h": 60,
-   "ox": 38,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
    "oy": 10
   },
   "item/fountain/base/r0/f3": {
-   "x": 56,
+   "x": 1,
    "y": 1,
-   "w": 76,
-   "h": 60,
-   "ox": 38,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
    "oy": 10
   },
   "item/rowboat/base/r0/f0": {
-   "x": 133,
+   "x": 62,
    "y": 1,
    "w": 66,
-   "h": 46,
+   "h": 33,
    "ox": 17,
-   "oy": 3
+   "oy": -7
   },
   "item/rowboat/base/r1/f0": {
-   "x": 1,
-   "y": 72,
-   "w": 72,
-   "h": 43,
-   "ox": 55,
-   "oy": 3
+   "x": 129,
+   "y": 1,
+   "w": 66,
+   "h": 33,
+   "ox": 49,
+   "oy": -7
   },
   "item/stepping_stones/base/r0/f0": {
-   "x": 177,
-   "y": 72,
+   "x": 55,
+   "y": 47,
    "w": 46,
-   "h": 10,
+   "h": 9,
    "ox": 22,
-   "oy": -11
+   "oy": -12
   },
   "item/stepping_stones/base/r1/f0": {
-   "x": 74,
-   "y": 72,
+   "x": 196,
+   "y": 1,
    "w": 48,
-   "h": 13,
+   "h": 11,
    "ox": 26,
-   "oy": -9
+   "oy": -11
   },
   "item/stepping_stones/base/r2/f0": {
-   "x": 1,
-   "y": 116,
+   "x": 102,
+   "y": 47,
    "w": 44,
-   "h": 10,
+   "h": 9,
    "ox": 23,
-   "oy": -11
+   "oy": -12
   },
   "item/stepping_stones/base/r3/f0": {
-   "x": 123,
-   "y": 72,
+   "x": 1,
+   "y": 47,
    "w": 53,
-   "h": 10,
+   "h": 9,
    "ox": 27,
-   "oy": -11
+   "oy": -12
   },
   "item/well/base/r0/f0": {
-   "x": 1,
-   "y": 1,
-   "w": 54,
-   "h": 70,
-   "ox": 27,
-   "oy": 45
+   "x": 147,
+   "y": 47,
+   "w": 14,
+   "h": 3,
+   "ox": 7,
+   "oy": -2
   },
   "item/well/base/r1/f0": {
-   "x": 1,
-   "y": 1,
-   "w": 54,
-   "h": 70,
-   "ox": 27,
-   "oy": 45
+   "x": 147,
+   "y": 47,
+   "w": 14,
+   "h": 3,
+   "ox": 7,
+   "oy": -2
   }
  }
 }
