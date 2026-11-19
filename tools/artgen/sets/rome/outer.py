@@ -9,7 +9,7 @@ import numpy as np
 import roman as RM
 from arch import carve, fill, rod, slab
 from setbuild import Landmark
-from sets.rome.common import S4, S65, T, box_hedge, cypress, lamp, paving, referrer, stone_pine, torch
+from sets.rome.common import S4, S65, T, box_hedge, cypress, lamp, lawn, paving, referrer, stone_pine, torch
 from voxel import value_noise
 
 ref = referrer("sets.rome.outer")
@@ -67,7 +67,7 @@ def suburban_villa(m):
     hb = (2.0, 6 * T, 2.0, 8 * T)
     RM.wall(m, hb, 0.0, S.v(7.0), "stucco", 731, "whitewash")
     carve(m, (2 * T, 4 * T, 2 * T, 6 * T, 1.0, S.v(7.0) + 1.0))
-    fill(m, (2 * T, 4 * T, 2 * T, 6 * T, 0.0, 1.0), "grass", tone=0.0)
+    fill(m, (2 * T, 4 * T, 2 * T, 6 * T, 0.0, 1.0), "grass", tone=lawn(732))
     fill(m, (2.6 * T, 3.4 * T, 3.4 * T, 4.6 * T, 0.0, 1.5), "water", tone=0.2)
     box_hedge(m, 2 * T + 3, 4 * T - 3, 2 * T + 3, 2 * T + 6, 1.0)
     for x in np.linspace(2 * T + 3, 4 * T - 3, 4):

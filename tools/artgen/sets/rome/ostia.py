@@ -13,7 +13,7 @@ import materials as M
 import roman as RM
 from arch import carve, ellipsoid, fill, halo, revolve, slab
 from setbuild import Landmark
-from sets.rome.common import FIRE, S45, T, TOGATE, paving, referrer, stone_pine, tc
+from sets.rome.common import FIRE, S45, T, TOGATE, lawn, paving, referrer, stone_pine, tc
 from sets.rome.ground import amphora
 from voxel import hash01, value_noise
 
@@ -107,7 +107,7 @@ def ostia_guilds(m):
     in the porticoes before plain floors; most of the emblem mosaics seen today were laid later
     in the 2nd century, so in 126 only a few offices have a black-and-white emblem."""
     W, D = 12 * T, 6 * T
-    fill(m, (0.0, D, 0.0, W, 0.0, 0.6), "grass", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 3.0, 841) - 0.5) * 0.7)
+    fill(m, (0.0, D, 0.0, W, 0.0, 0.6), "grass", tone=lawn(841))
     o = RM.ROrder("tuscan", D=0.6, H=5.0, shaft="brick", trim="travertine", fluted=False)
     for a, b, front in (((6.0, 6.0), (6.0, W - 6.0), "+x"), ((D - 6.0, 6.0), (D - 6.0, W - 6.0), "-x")):
         RM.colonnade(m, a, b, 0.0, 16, o, S, 10.0, front, seed=int(a[0]))
