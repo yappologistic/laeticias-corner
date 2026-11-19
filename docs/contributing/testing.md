@@ -59,11 +59,13 @@ shot shots/clock_night.png
 Run a script by hand:
 
 ```sh
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy build/release/laeticias-corner \
-    --script tests/scripts/clock_phases.lcs --size 640x400 --save-dir out/test-save
+mkdir -p out/run && cd out/run
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ../../build/release/laeticias-corner \
+    --script ../../tests/scripts/clock_phases.lcs --size 640x400 --save-dir save
 ```
 
-It exits non-zero when an `expect` fails and names the line. To make it part of the suite, add
+Screenshots land relative to the working directory (here `out/run/shots/`; `out/` is ignored by
+git). It exits non-zero when an `expect` fails and names the line. To make it part of the suite, add
 an entry `name|script|size|labels` to `LC_SCRIPTS` in `tests/CMakeLists.txt`; the test is then
 `script_<name>` and its screenshots go to `build/<preset>/shots/`. A bug fix's script must fail
 without the fix: check that before you commit it.
