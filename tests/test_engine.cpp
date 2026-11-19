@@ -82,6 +82,32 @@ TEST_CASE("options parse and reject bad input") {
     CHECK(parseOptions(audio)->headless);
     const std::array<std::string_view, 2> dir{"--script", "."};
     CHECK_FALSE(parseOptions(dir).has_value()); // a directory is not a script
+    // Numbers that are not finite, or a soak that would never end (H3-002).
+    for (const auto& bad :
+         std::initializer_list<std::array<std::string_view, 2>>{{"--soak", "inf"},
+                                                                {"--soak", "nan"},
+                                                                {"--soak", "1e300"},
+                                                                {"--soak", "-5"},
+                                                                {"--density", "nan"},
+                                                                {"--budget-ms", "nan"},
+                                                                {"--budget-ms", "inf"},
+                                                                {"--life-day", "2147483647"},
+                                                                {"--frames", "-1"},
+                                                                {"--frames", "99999999999"},
+                                                                {"--size", "0x0"},
+                                                                {"--size", "99999x99999"},
+                                                                {"--size", "1280x"},
+                                                                {"--size", "x800"},
+                                                                {"--seed", "-1"},
+                                                                {"--quality", "ultra"},
+                                                                {"--save-dir", ""},
+                                                                {"--assets", ""}}) {
+        CAPTURE(bad[0]);
+        CAPTURE(bad[1]);
+        CHECK_FALSE(parseOptions(bad).has_value());
+    }
+    const std::array<std::string_view, 2> soak{"--soak", "600"};
+    CHECK(parseOptions(soak)->soak == doctest::Approx(600.0));
 }
 
 TEST_CASE("script language parses every command") {
@@ -606,6 +632,16 @@ TEST_CASE("window placement: a share of the display, or the remembered spot if s
     CHECK(s->windowed == WindowRect{5, 6, 700, 500});
     CHECK(s->fullscreen);
     CHECK_FALSE(parseWindowState("{").has_value());
+    // A hand-edited or damaged window.json (H3-001): no float cast, no overflowing sum.
+    for (const char* bad :
+         {R"({"x":1e300,"y":0,"w":800,"h":600})", R"({"x":0,"y":0,"w":2.5,"h":600})",
+          R"({"x":2000000000,"y":0,"w":2000000000,"h":600})", R"({"x":0,"y":0,"w":-800,"h":600})",
+          R"({"x":0,"y":0,"w":18446744073709551615,"h":600})", "[]", "7"})
+        CHECK_FALSE(parseWindowState(bad).has_value());
+    // Even a rectangle at the edge of int never overflows while it is compared with displays.
+    CHECK_FALSE(
+        restoreWindow({2'000'000'000, 2'000'000'000, 2'000'000'000, 2'000'000'000}, displays)
+            .has_value());
 }
 
 TEST_CASE("depth order respects every overlapping pair and handles large footprints") {
@@ -1606,4 +1642,26 @@ TEST_CASE("capture: the mix across the world is balanced, unclipped and smooth")
         {"rome.market", "athens.market"},       {"athens.market", "parsa.market"}};
     for (const auto& [a, b] : kNeighbours)
         CHECK_MESSAGE(std::abs(loud(a) - loud(b)) <= tuning::kMixNeighbours, a << " / " << b);
+}
+
+TEST_CASE("a name field never holds malformed UTF-8, which the save could not write (H3-004)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Profile profile;
+    MenuModel m;
+    m.profile = &profile;
+    Menus menus;
+    menus.open(Page::NewWorld);
+    menus.editName("", -1);
+    // An overlong 'A', a lone surrogate, a cut sequence and a stray continuation byte.
+    CHECK(menus.text("F\xC1\x81"
+                     "e\xED\xA0\x80"
+                     "r\xE2\x82"
+                     "n\x80",
+                     ui.font));
+    CHECK(menus.key(MenuKey::Enter, m));
+    std::string typed = "?";
+    for (const MenuAction& a : menus.actions())
+        if (a.kind == MenuAction::Kind::Create) typed = a.text;
+    CHECK(typed == "Fern");
 }
