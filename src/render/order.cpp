@@ -13,8 +13,7 @@ float depthKey(const FRect& f) {
 } // namespace
 
 void PageOrder::sort(std::span<const OrderItem> items, float cell,
-                     std::vector<std::uint32_t>& order, OrderGraph& graph,
-                     std::span<const std::uint8_t> groups) {
+                     std::vector<std::uint32_t>& order, OrderGraph& graph) {
     const std::size_t n = items.size();
     order.clear();
     cycles_ = 0;
@@ -29,7 +28,6 @@ void PageOrder::sort(std::span<const OrderItem> items, float cell,
     edgeTo_.clear();
     grid_.pairs(screens_, [&](std::uint32_t i, std::uint32_t j) {
         if (!constrains(items[i].box, items[j].box)) return;
-        if (!groups.empty() && groups[i] != 0 && groups[i] == groups[j]) return;
         const bool ij = drawnBefore(items[i].box, items[j].box);
         edgeFrom_.push_back(ij ? i : j);
         edgeTo_.push_back(ij ? j : i);

@@ -740,100 +740,6 @@ bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FR
     return ok;
 }
 
-void WorldView::drawGlowOccluded(const Xform& x, float glow, float now) {
-    // draw-order.md §4.4: each light goes into a layer of its own, and whatever stands in front
-    // of it there (after it in the frame's order, overlapping it) is drawn again as a black
-    // silhouette, so a lamp behind a column or a passer-by is hidden where they are. Lights and
-    // silhouettes are ordered by the same comparator over their owners' boxes (a light a hair
-    // nearer than its owner), page by page, so the pass costs a draw per page, not per thing.
-    // The layer is the shadow layer's target, free again by now; it goes on additively once.
-    const auto seq = merge_.sequence();
-    glowAt_.clear();
-    glowBoxes_.clear();
-    glowItems_.clear();
-    glowWhat_.clear();
-    for (std::size_t p = 0; p < seq.size(); ++p) {
-        if (seq[p].actor) continue;
-        const Elem& e = region_.elems[seq[p].index];
-        if (!e.first || e.look == nullptr || !e.look->glow || !glowing(e.item)) continue;
-        const SpriteRef& gs = *e.look->glow;
-        const FRect box{e.anchor.x - gs.ox, e.anchor.y - gs.oy, e.anchor.x - gs.ox + gs.w,
-                        e.anchor.y - gs.oy + gs.h};
-        glowAt_.push_back(static_cast<std::uint32_t>(p));
-        glowBoxes_.push_back(box);
-        DepthBox light = region_.items[seq[p].index].box;
-        light.id |= 1ULL << 55;
-        light.near += 1e-3f;
-        // Sorted by page and blend mode together (a light adds, a silhouette covers): each
-        // change of either is a draw call.
-        glowItems_.push_back({light, box, static_cast<std::uint16_t>(gs.page * 2 + 1)});
-        glowWhat_.push_back({static_cast<std::uint32_t>(p), true});
-    }
-    if (glowAt_.empty()) return;
-    glowGrid_.build(glowBoxes_, tuning::kActorMergeCell);
-    for (std::size_t p = 0; p < seq.size(); ++p) {
-        const ActorMerge::Step& st = seq[p];
-        const OrderItem& it = st.actor ? mergeActors_[st.index] : region_.items[st.index];
-        bool covers = false;
-        glowGrid_.query(it.screen, [&](std::uint32_t k) {
-            covers = covers || (glowAt_[k] < p && glowBoxes_[k].overlaps(it.screen));
-        });
-        if (!covers ||
-            (!st.actor && (region_.elems[st.index].home || region_.elems[st.index].ground)))
-            continue;
-        glowItems_.push_back({it.box, it.screen, static_cast<std::uint16_t>(it.page * 2)});
-        glowWhat_.push_back({static_cast<std::uint32_t>(p), false});
-    }
-    glowGroups_.clear();
-    for (const auto& w : glowWhat_) glowGroups_.push_back(w.second ? 1 : 2);
-    glowSorter_.sort(glowItems_, tuning::kActorMergeCell, glowOrder_, glowGraph_, glowGroups_);
-    batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, shadow_.texture.get()) ||
-        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
-        SDL_Log("worldview: %s", SDL_GetError());
-    const SDL_FColor lit{glow, glow, glow, 1};
-    for (const std::uint32_t g : glowOrder_) {
-        const auto [p, light] = glowWhat_[g];
-        const ActorMerge::Step& st = seq[p];
-        if (light) {
-            const Elem& e = region_.elems[st.index];
-            (void)put(*e.look->glow, e.anchor, x, lit, SDL_BLENDMODE_ADD);
-        } else if (st.actor) {
-            const ActorDraw& a = actorDraw_[actorOf_[st.index]];
-            const SDL_FColor black{0, 0, 0, a.colour.a};
-            (void)putRows(*a.sprite, a.anchor, x, black, a.mirror, a.hidden);
-            if (a.goods != nullptr) (void)putRows(*a.goods, a.goodsAt, x, black, false, a.hidden);
-        } else {
-            drawSilhouette(region_.elems[st.index], x, now);
-        }
-    }
-    batch_.flush();
-    if (!SDL_SetRenderTarget(renderer_, view_.texture.get()))
-        SDL_Log("worldview: %s", SDL_GetError());
-    batch_.use(shadow_.texture.get(), SDL_BLENDMODE_ADD_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);
-    batch_.quad(SDL_FRect{0, 0, static_cast<float>(viewW_), static_cast<float>(viewH_)},
-                {0, 0, static_cast<float>(viewW_) / static_cast<float>(shadow_.w),
-                 static_cast<float>(viewH_) / static_cast<float>(shadow_.h)},
-                kWhite);
-}
-
-void WorldView::drawSilhouette(const Elem& e, const Xform& x, float now) {
-    constexpr SDL_FColor kBlack{0, 0, 0, 1};
-    if (e.home || e.ground) return; // the home's scene hides its own lights; ground is flat
-    if (e.figure) {
-        (void)put(figures_[e.item].sprite, e.anchor, x, kBlack, SDL_BLENDMODE_BLEND);
-        return;
-    }
-    seasonAt(e.tile);
-    const SpriteRef& s = elemSprite(e, now);
-    if (e.part < 0)
-        (void)put(s, e.anchor, x, kBlack, SDL_BLENDMODE_BLEND);
-    else if (e.part >= 2)
-        (void)putHalf(s, e, x, kBlack);
-    else
-        (void)putCut(s, e.anchor, x, elemFoot(e), e.cutZ, e.part == 1, kBlack);
-}
-
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
                             Target& onto, bool actors, std::span<const std::uint32_t> visible) {
     plain(); // (what follows is not decoded)
@@ -2289,9 +2195,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     if (lod != Lod::Native && light.glow > 0.01f)
         drawCoarseGlow(view, xf,
                        light.glow * (lod == Lod::Overview ? tuning::kOverviewGlow : 1.0f));
-    if (lod == Lod::Native && light.glow > 0.01f && !post_) {
-        drawGlowOccluded(xf, light.glow, static_cast<float>(now));
-    } else if (lod == Lod::Native && light.glow > 0.01f) {
+    if (lod == Lod::Native && light.glow > 0.01f) {
         const SDL_FColor g{light.glow, light.glow, light.glow, 1};
         for (const std::uint32_t k : merge_.visible()) {
             const std::uint32_t i = region_.order[k];

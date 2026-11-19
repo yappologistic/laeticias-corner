@@ -455,9 +455,6 @@ private:
                 bool upper, SDL_FColor c = {1, 1, 1, 1});
     // One half of a one-tile kit bridge (Elem::part 2 or 3), cut along its span.
     bool putHalf(const SpriteRef& s, const Elem& e, const Xform& x, SDL_FColor c);
-    // The native level's glow, hidden where something drawn after its light stands over it.
-    void drawGlowOccluded(const Xform& x, float glow, float now);
-    void drawSilhouette(const Elem& e, const Xform& x, float now);
     // `s` with the rows [hide.from, hide.to) of world px left out (two quads at most).
     bool putRows(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, bool mirror,
                  RowBand hide);
@@ -611,16 +608,7 @@ private:
     std::vector<float> rainMesh_; // and how hard it rains at its mesh's corners
     ActorMerge merge_;
     bool mergeIndexed_ = false;
-    Lod lastLod_ = Lod::Native;         // the level the last frame was drawn at
-    std::vector<std::uint32_t> glowAt_; // drawGlowOccluded's lights: place in the sequence
-    std::vector<FRect> glowBoxes_;      // and their glow sprites' boxes
-    ScreenGrid glowGrid_;
-    std::vector<OrderItem> glowItems_; // lights and silhouettes, sorted page by page
-    std::vector<std::pair<std::uint32_t, bool>> glowWhat_; // per item: place in the sequence, light
-    std::vector<std::uint32_t> glowOrder_;
-    std::vector<std::uint8_t> glowGroups_; // 1 a light, 2 a silhouette
-    OrderGraph glowGraph_;
-    PageOrder glowSorter_;
+    Lod lastLod_ = Lod::Native; // the level the last frame was drawn at
 
     // The shader path (null: Classic), the world's lights, the regions' looks, sway weights per
     // content item (art px at the top in a full wind) and the wind.

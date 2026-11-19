@@ -38,11 +38,9 @@ class PageOrder {
 public:
     // Orders `items` so that every pair of overlapping screen boxes is drawn back to front, and
     // keeps the edges in `graph`. Deterministic: ties go to the bound page, then the shallower
-    // footprint, then the id. With `groups` (one per item, 0: none), two items of the same
-    // non-zero group need no order between them (lights add up in any order; black silhouettes
-    // cover alike), which leaves more room to keep a page bound.
+    // footprint, then the id.
     void sort(std::span<const OrderItem> items, float cell, std::vector<std::uint32_t>& order,
-              OrderGraph& graph, std::span<const std::uint8_t> groups = {});
+              OrderGraph& graph);
     // Cycles the last sort had to break (each a data fault: never hidden, reported).
     [[nodiscard]] int cyclesBroken() const { return cycles_; }
     // The element the first cycle was broken at (its box), when there was one.
