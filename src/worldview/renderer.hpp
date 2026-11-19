@@ -192,6 +192,10 @@ public:
         std::uint32_t index = 0; // map item, or index into the figures given
     };
     [[nodiscard]] std::optional<Picked> pick(Vec2 worldPx) const;
+    // The share of the last frame's world target under `window` (window px) whose alpha is
+    // partial (0.05..0.97): a seam or hole, since ground, water and the haze beyond the grid
+    // are opaque (water marks sit at 0.98). For tests: it reads the target back.
+    [[nodiscard]] float partialAlpha(SDL_Rect window);
     // Everything with a card, and every figure, on screen in the last frame (once each).
     void visibleCards(std::vector<Picked>& out) const;
     // Figures without art (not drawn).

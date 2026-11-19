@@ -106,6 +106,8 @@
 // Points `life:KIND` (the first drawn city-life actor of that kind); `set look KIND ZOOM` finds
 // a living actor of that kind first.
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
+//       target_alpha X,Y,W,H MOST  at most MOST (0..1) of the world target under the region is
+//                               partly transparent (a seam between cached pieces, a hole)
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 //       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,
 //                               warm: the night's lit windows, lamps and fires)

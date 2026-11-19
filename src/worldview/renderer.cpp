@@ -1457,6 +1457,35 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     stats_.targetBytes = targetBytes();
 }
 
+float WorldView::partialAlpha(SDL_Rect window) {
+    if (!present_.valid || !view_.texture) return 0;
+    const Present& p = present_;
+    const auto at = [&](float w, float topLeft, float origin) {
+        return static_cast<int>(std::floor((w / p.scale + topLeft - origin) * p.res));
+    };
+    const int x0 = std::clamp(at(static_cast<float>(window.x), p.topLeft.x, p.origin.x), 0, viewW_);
+    const int y0 = std::clamp(at(static_cast<float>(window.y), p.topLeft.y, p.origin.y), 0, viewH_);
+    const int x1 =
+        std::clamp(at(static_cast<float>(window.x + window.w), p.topLeft.x, p.origin.x), 0, viewW_);
+    const int y1 =
+        std::clamp(at(static_cast<float>(window.y + window.h), p.topLeft.y, p.origin.y), 0, viewH_);
+    if (x1 <= x0 || y1 <= y0) return 0;
+    SDL_Texture* was = SDL_GetRenderTarget(renderer_);
+    if (!SDL_SetRenderTarget(renderer_, view_.texture.get())) return 0;
+    const SDL_Rect r{x0, y0, x1 - x0, y1 - y0};
+    const SurfacePtr px{SDL_RenderReadPixels(renderer_, &r)};
+    if (!SDL_SetRenderTarget(renderer_, was)) SDL_Log("worldview: %s", SDL_GetError());
+    if (!px) return 0;
+    int partial = 0;
+    for (int y = 0; y < px->h; ++y)
+        for (int x = 0; x < px->w; ++x) {
+            Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+            if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca)) return 0;
+            if (ca > 12 && ca < 247) ++partial;
+        }
+    return static_cast<float>(partial) / static_cast<float>(px->w * px->h);
+}
+
 void WorldView::composite(Vec2 scale, bool smooth) {
     if (!present_.valid) return;
     if (post_) {
