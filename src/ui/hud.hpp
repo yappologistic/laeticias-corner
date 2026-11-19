@@ -192,6 +192,10 @@ struct DrawerEntry {
     }
 };
 
+// Where a speech bubble wanted at `want` goes: kept clear of `avoid` (the title card), beside
+// it when there is room on the screen, else under it.
+[[nodiscard]] Box placeBubble(Box want, Box avoid, Vec2 screen, float gap);
+
 // Whether a drawer entry's piece is unlocked / still shows its "new" dot.
 [[nodiscard]] bool entryUnlocked(const Progress* p, DrawerEntry e);
 [[nodiscard]] bool entryNew(const Progress* p, DrawerEntry e);

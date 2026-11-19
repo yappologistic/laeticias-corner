@@ -1858,3 +1858,19 @@ TEST_CASE("a long world name is cut short on the Continue button, never past it 
         CHECK(label->first.find("WWWW") != std::string_view::npos); // still names it
     }
 }
+
+TEST_CASE("her speech bubble keeps clear of the title card (H3-018)") {
+    const Box card{16, 16, 200, 80};
+    const Vec2 screen{960, 600};
+    // Wanted over the card: beside it.
+    const Box b = placeBubble({100, 30, 300, 40}, card, screen, 8);
+    CHECK(b.x >= card.x + card.w);
+    CHECK(b.y == 30);
+    // No room beside it: under it.
+    const Box c = placeBubble({100, 30, 800, 40}, card, screen, 8);
+    CHECK(c.y >= card.y + card.h);
+    // Clear already: left alone.
+    const Box d = placeBubble({400, 200, 300, 40}, card, screen, 8);
+    CHECK(d.x == 400);
+    CHECK(d.y == 200);
+}
