@@ -192,7 +192,10 @@ void fanMesh(SDL_FPoint centre, std::span<const SDL_FPoint> outline, float maxEd
     float spoke = 0;
     for (const SDL_FPoint p : outline)
         spoke = std::max(spoke, std::hypot(p.x - centre.x, p.y - centre.y));
-    const int rings = std::max(1, static_cast<int>(std::ceil(spoke / maxEdge)));
+    // A ring's quads are halved along their diagonal, the longest side of the two triangles:
+    // rings and pieces are cut so that even it stays within the limit.
+    const float cut = maxEdge * 0.7071f;
+    const int rings = std::max(1, static_cast<int>(std::ceil(spoke / cut)));
     // Outline vertex `i` on ring `r` (the outline itself on the last): one value whichever of
     // the two sides that meet there asks.
     const auto on = [&](std::size_t i, int r) {
@@ -206,8 +209,11 @@ void fanMesh(SDL_FPoint centre, std::span<const SDL_FPoint> outline, float maxEd
         // A long side (a panel's straight edge) is cut into pieces, the same on every ring.
         const SDL_FPoint p = outline[i];
         const SDL_FPoint q = outline[(i + 1) % count];
+        // A square corner is two outline points in one place: no side, no triangles (a
+        // renderer that pairs triangles into rectangles misreads empty ones).
+        if (p.x == q.x && p.y == q.y) continue;
         const int pieces =
-            std::max(1, static_cast<int>(std::ceil(std::hypot(q.x - p.x, q.y - p.y) / maxEdge)));
+            std::max(1, static_cast<int>(std::ceil(std::hypot(q.x - p.x, q.y - p.y) / cut)));
         const int base = static_cast<int>(points.size());
         for (int r = 1; r <= rings; ++r) {
             const SDL_FPoint from = on(i, r);

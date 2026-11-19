@@ -649,6 +649,7 @@ private:
     };
     Travel travel_;
     float travelFadeIn_ = -1;
+    bool startVeil_ = false; // the veil is the first view's (it may hold longer than a journey's)
     std::vector<std::string> arriveFiles_; // each set's arrival motif
     std::vector<world::FigurePlace> figures_;
     std::unique_ptr<worldview::Soundscape> soundscape_;

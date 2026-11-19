@@ -365,6 +365,9 @@ inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 
 // destination's pages, fade in; within CLAUDE.md's 1 s.
 inline constexpr float kTravelFadeOut = 0.25f;
 inline constexpr float kTravelHold = 0.4f;
+// At start the first view streams in behind the same veil: it lifts when the view is whole, or
+// after this long whatever is still on its way.
+inline constexpr float kStartHold = 2.5f;
 inline constexpr float kTravelFadeIn = 0.3f;
 inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second

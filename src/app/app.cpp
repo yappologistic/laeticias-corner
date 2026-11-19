@@ -1764,6 +1764,14 @@ int App::run() {
         camera_.place(*savedCamera_, savedZoom_, screen());
     else
         frameCamera();
+    // The first view streams in over its first second or two (its pages decode on a worker,
+    // its cells are built a few a frame): it is shown when it is whole, behind the veil a
+    // journey arrives through, never filling in before the eyes. Runs that build everything at
+    // once (headless scripts) and those that measure have nothing to hide.
+    if (worldView_ && !measuring() && (!opts_.headless || opts_.streamed)) {
+        travel_ = {loaded_->file.home.region, tuning::kTravelFadeOut, true};
+        startVeil_ = true;
+    }
     if (opts_.bench) {
         // SDL started with the process: its clock is the start-up time.
         startupMs_ = static_cast<double>(SDL_GetTicks());

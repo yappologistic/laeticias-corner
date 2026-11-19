@@ -373,8 +373,8 @@ void App::updateWorld(float dt) {
         // standing, not one that fills in before the eyes.
         const bool peopled = !city_ || (held >= 2.0f * static_cast<float>(tuning::kStepSeconds) &&
                                         city_->city->stats().queued == 0);
-        if (travel_.jumped && held > 0 &&
-            ((worldView_->settled() && peopled) || held >= tuning::kTravelHold) &&
+        const float hold = startVeil_ ? tuning::kStartHold : tuning::kTravelHold;
+        if (travel_.jumped && held > 0 && ((worldView_->settled() && peopled) || held >= hold) &&
             travelFadeIn_ < 0) {
             travelFadeIn_ = travel_.t;
             if (city_) city_->city->showAll();
@@ -382,6 +382,7 @@ void App::updateWorld(float dt) {
         if (travelFadeIn_ >= 0 && travel_.t - travelFadeIn_ >= tuning::kTravelFadeIn) {
             travel_ = {};
             travelFadeIn_ = -1;
+            startVeil_ = false;
         }
     }
     const worldview::PlaceTracker& pl = worldView_->places();

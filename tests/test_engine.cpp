@@ -1274,7 +1274,7 @@ TEST_CASE("a large panel's fill is watertight: no seam between its triangles") {
         const float y0 = 31.25f + nudge;
         const float x1 = 927.25f + nudge;
         const float y1 = 568.5f + nudge;
-        const float rad = 18.0f;
+        const float rad = nudge == 0.37f ? 0.0f : 18.0f; // the last: square corners
         const SDL_FPoint corners[4] = {
             {x1 - rad, y0 + rad}, {x1 - rad, y1 - rad}, {x0 + rad, y1 - rad}, {x0 + rad, y0 + rad}};
         for (int c = 0; c < 4; ++c)
@@ -1288,7 +1288,7 @@ TEST_CASE("a large panel's fill is watertight: no seam between its triangles") {
         std::vector<int> indices;
         fanMesh({(x0 + x1) * 0.5f, (y0 + y1) * 0.5f}, outline, 384.0f, points, indices);
         REQUIRE(indices.size() % 3 == 0);
-        REQUIRE(indices.size() > outline.size() * 3); // it was cut into rows
+        REQUIRE(indices.size() > 4 * 3 * 2); // it was cut up: more than a fan of its four sides
         using Point = std::pair<float, float>;
         using Side = std::pair<Point, Point>;
         std::map<Side, int> sides;
@@ -1336,6 +1336,17 @@ TEST_CASE("a large panel's fill is watertight: no seam between its triangles") {
         }
         CHECK(open == 0);
         CHECK(crowded == 0);
+        // No triangle is empty (a square corner's two points in one place make none).
+        int empty = 0;
+        for (std::size_t t = 0; t < indices.size(); t += 3) {
+            const Point a = pt(indices[t]);
+            const Point b = pt(indices[t + 1]);
+            const Point c = pt(indices[t + 2]);
+            const float twice = (b.first - a.first) * (c.second - a.second) -
+                                (c.first - a.first) * (b.second - a.second);
+            empty += twice == 0 ? 1 : 0;
+        }
+        CHECK(empty == 0);
         // And no triangle is larger than asked.
         float longest = 0;
         for (const auto& [side, n] : sides)
