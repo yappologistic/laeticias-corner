@@ -11282,7 +11282,15 @@
    "ox": 49,
    "oy": 68
   },
-  "item/world.peak/base/r0/f0@summer": {
+  "item/world.peak/base/r0/f0@spring": {
+   "x": 478,
+   "y": 297,
+   "w": 118,
+   "h": 151,
+   "ox": 49,
+   "oy": 68
+  },
+  "item/world.peak/base/r0/f0@winter": {
    "x": 478,
    "y": 297,
    "w": 118,
@@ -11306,7 +11314,15 @@
    "ox": 80,
    "oy": 61
   },
-  "item/world.peak/base/r1/f0@summer": {
+  "item/world.peak/base/r1/f0@spring": {
+   "x": 2979,
+   "y": 112,
+   "w": 168,
+   "h": 150,
+   "ox": 80,
+   "oy": 61
+  },
+  "item/world.peak/base/r1/f0@winter": {
    "x": 2979,
    "y": 112,
    "w": 168,
