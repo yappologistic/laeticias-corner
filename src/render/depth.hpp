@@ -1,6 +1,6 @@
 #pragma once
-// Painter's order for footprints on the isometric grid, computed only for what is near the camera.
-// Pure logic (no SDL) so it is unit-tested directly.
+// The one depth model (docs/design/draw-order.md §1): boxes, their comparator and the painter's
+// order over what is near the camera. Pure logic (no SDL) so it is unit-tested directly.
 
 #include "core/iso.hpp"
 
@@ -11,10 +11,39 @@
 
 namespace lc {
 
-// True when footprint a must be drawn before footprint b (both in tile coordinates).
-// Non-overlapping footprints are separated along at least one axis; the one further along +x or
-// +y is nearer the viewer. When the separation is ambiguous the footprint centres decide.
-[[nodiscard]] bool behind(const FRect& a, const FRect& b);
+// Every depth-sorted drawable is a box (docs/design/draw-order.md §1.2): a footprint in tile
+// coordinates and a height range in px above level 0, with a stable id that breaks the last tie.
+struct DepthBox {
+    FRect foot;
+    float z0 = 0;
+    float z1 = 0;
+    std::uint64_t id = 0; // deterministic: what it is and which, never a page or a pointer
+    float near = 0;       // tie-break nearness, world px: makeBox sets it
+};
+
+// A box with its nearness (§1.3: the footprint's mean ground row plus its mean height), for the
+// tile half-height `hh`.
+[[nodiscard]] constexpr DepthBox makeBox(FRect foot, float z0, float z1, std::uint64_t id,
+                                         float hh) {
+    return {foot, z0, z1, id,
+            (foot.x0 + foot.x1 + foot.y0 + foot.y1) * hh * 0.5f + (z0 + z1) * 0.5f};
+}
+
+// What a box stands for, the top byte of its id (ties between equal boxes go in this order).
+enum class DepthKind : std::uint8_t { Ground = 1, Item, Figure, Home, Actor, Ghost, Fade };
+
+[[nodiscard]] constexpr std::uint64_t depthId(DepthKind kind, std::uint32_t index,
+                                              std::uint32_t part = 0) {
+    return (static_cast<std::uint64_t>(kind) << 56) |
+           (static_cast<std::uint64_t>(index & 0xFFFFFFu) << 32) | part;
+}
+
+// True when a is drawn before b, for two boxes whose screen rectangles overlap (§1.3): the first
+// separating axis of x, y, then height decides; boxes that meet in all three go by the higher
+// base, then the smaller nearness, then the id. Antisymmetric and total on a pair;
+// not transitive across pairs that do not overlap on screen, so it orders a topological sort,
+// never std::sort.
+[[nodiscard]] bool drawnBefore(const DepthBox& a, const DepthBox& b);
 
 // Buckets rectangles by a uniform grid over their screen boxes so overlap queries only look at
 // neighbours. Storage is reused between builds.
@@ -68,26 +97,6 @@ private:
     std::vector<std::uint32_t> start_; // CSR offsets per cell
     std::vector<std::uint32_t> items_;
     std::vector<std::uint32_t> fill_;
-};
-
-// Orders `footprints` so that whenever two `screens` overlap, the footprint behind comes first.
-// Ties go to the shallower footprint centre, then to the lower index, so results are stable.
-class DepthSorter {
-public:
-    void sort(std::span<const FRect> footprints, std::span<const FRect> screens, float cell,
-              std::vector<std::uint32_t>& order);
-    [[nodiscard]] const ScreenGrid& grid() const { return grid_; }
-
-private:
-    ScreenGrid grid_;
-    std::vector<std::uint32_t> edgeFrom_;
-    std::vector<std::uint32_t> edgeTo_;
-    std::vector<std::uint32_t> start_;
-    std::vector<std::uint32_t> next_;
-    std::vector<std::uint32_t> cursor_;
-    std::vector<int> indegree_;
-    std::vector<std::uint8_t> done_;
-    std::vector<std::pair<float, std::uint32_t>> heap_;
 };
 
 } // namespace lc

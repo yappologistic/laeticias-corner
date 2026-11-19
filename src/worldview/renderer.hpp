@@ -17,6 +17,7 @@
 #include "platform/batch.hpp"
 #include "render/atlas.hpp"
 #include "render/draw.hpp"
+#include "render/order.hpp"
 #include "ui/font.hpp"
 #include "world/figures.hpp"
 #include "world/loader.hpp"
@@ -25,7 +26,6 @@
 #include "worldview/cell_cache.hpp"
 #include "worldview/cover.hpp"
 #include "worldview/gather.hpp"
-#include "worldview/order.hpp"
 #include "worldview/overview.hpp"
 #include "worldview/page_atlas.hpp"
 #include "worldview/places.hpp"
@@ -205,10 +205,9 @@ public:
     // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
     void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
     // Of the people drawn over the impostors in the last frame (half and quarter scale), how
-    // many stand, their whole width, with more than `px` of something in front of them over
-    // their feet: worked out
-    // one by one from the map's items by the order's depth relation, not from the cover map
-    // that hid the others, so tests can hold the one against the other.
+    // many have more than `px` rows drawn inside something in front of them: worked out one by
+    // one from the map's items, their boxes and the comparator, not from the top field that cut
+    // them, so tests can hold the one against the other.
     [[nodiscard]] int coarseActorsCovered(float px) const;
     [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
     // The actors drawn in the last frame.
@@ -291,6 +290,9 @@ private:
     void prepareActors(const FRect& view, Lod lod);
     void prepareActorsTimed(const FRect& view, Lod lod);
     void drawActor(std::uint32_t i, const Xform& x);
+    // `s` with the rows [hide.from, hide.to) of world px left out (two quads at most).
+    bool putRows(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, bool mirror,
+                 RowBand hide);
     void drawActorShadows(const Xform& x);
     [[nodiscard]] float shadowOpacity() const;
 
@@ -303,7 +305,7 @@ private:
     std::unique_ptr<PageAtlas> pages_;
     std::unique_ptr<WorldSprites> sprites_;
     std::unique_ptr<Overview> overview_;
-    std::unique_ptr<CoverMap> cover_; // what hides a ground point at the coarser levels
+    std::unique_ptr<TopField> tops_; // what covers whom at the coarser levels
     Hole hole_;
     const Atlas& homeAtlas_;
     CellCache cells_;
@@ -403,12 +405,15 @@ private:
         SDL_FColor colour{1, 1, 1, 1};
         const SpriteRef* goods = nullptr;
         Vec2 goodsAt;
-        float depth = 0;
+        float drawn = -1; // its place in the frame's sequence (-1: not drawn)
+        RowBand hidden;   // world px rows covered by what stands in front (coarser levels)
+        DepthBox box;
     };
     std::vector<ActorDraw> actorDraw_;
-    std::vector<MergeActor> mergeActors_;
+    std::vector<OrderItem> mergeActors_;
     std::vector<std::uint32_t> actorOf_; // merge entry -> actorDraw_/actorBuf_ index
-    std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, back to front
+    std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, in draw order
+    ActorMerge coarseMerge_;             // their order among themselves (no static order)
     mutable std::vector<std::pair<float, life::Handle>> actorHits_; // actorsAt's scratch
     // How far an actor's art reaches from its feet, px: twice the largest in today's sets (112
     // sideways, 152 up with goods, 51 down), and widened by anything larger that is drawn.

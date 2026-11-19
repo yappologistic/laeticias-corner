@@ -133,11 +133,16 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
              fp.region});
         figureOf_.push_back(static_cast<std::uint32_t>(f));
     }
+    if (!hole_.empty()) {
+        // The home stands at its level; nothing outside it reaches over or under it.
+        hole_.z0 = static_cast<float>(map_.level({hole_.tiles.x0, hole_.tiles.y0}) * lvl_);
+        hole_.z1 = hole_.z0 + static_cast<float>(kMaxLevel * lvl_);
+    }
     prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
     {
         const Uint64 t0 = SDL_GetPerformanceCounter();
-        cover_ = std::make_unique<CoverMap>(map_, *sprites_, hole_);
-        SDL_Log("worldview: cover map in %.0f ms",
+        tops_ = std::make_unique<TopField>(map_, *sprites_, hole_);
+        SDL_Log("worldview: top field in %.0f ms",
                 static_cast<double>(SDL_GetPerformanceCounter() - t0) * 1000.0 /
                     static_cast<double>(SDL_GetPerformanceFrequency()));
     }
@@ -941,10 +946,10 @@ std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
         }
         if (ground != nullptr) continue;
         const float lift = iso_.toWorld(e.tile).y - e.anchor.y;
-        const Vec2 t = iso_.toWorld(o.foot.x0, o.foot.y0);
-        const Vec2 r = iso_.toWorld(o.foot.x1, o.foot.y0);
-        const Vec2 bt = iso_.toWorld(o.foot.x1, o.foot.y1);
-        const Vec2 l = iso_.toWorld(o.foot.x0, o.foot.y1);
+        const Vec2 t = iso_.toWorld(o.box.foot.x0, o.box.foot.y0);
+        const Vec2 r = iso_.toWorld(o.box.foot.x1, o.box.foot.y0);
+        const Vec2 bt = iso_.toWorld(o.box.foot.x1, o.box.foot.y1);
+        const Vec2 l = iso_.toWorld(o.box.foot.x0, o.box.foot.y1);
         const auto edge = [&](Vec2 a, Vec2 c) {
             return a.y + (c.y - a.y) * (px.x - a.x) / (c.x - a.x);
         };
@@ -1327,10 +1332,12 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         prepareActors(view, lod);
         (void)drawShadows(region_, view, xf, shadow_, view_, true, merge_.visible());
         stats_.spritesCulled = static_cast<int>(region_.order.size() - merge_.visible().size());
-        for (const std::uint32_t k : merge_.visible()) {
-            for (const std::uint32_t a : merge_.before(k)) drawActor(actorOf_[a], xf);
-            const std::uint32_t i = region_.order[k];
-            const Elem& e = region_.elems[i];
+        for (const ActorMerge::Step& st : merge_.sequence()) {
+            if (st.actor) {
+                drawActor(actorOf_[st.index], xf);
+                continue;
+            }
+            const Elem& e = region_.elems[st.index];
             if (e.home) {
                 batch_.flush();
                 if (hooks.objects && home) hooks.objects(frame);
@@ -1341,10 +1348,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
             ++stats_.spritesDrawn;
             if (e.look != nullptr && e.look->look == Look::Placeholder) ++stats_.placeholders;
         }
-        for (const std::uint32_t a : merge_.before(region_.order.size()))
-            drawActor(actorOf_[a], xf);
     } else if (lod != Lod::Overview) {
-        // Coarser levels have no live objects of their own: people go over the impostors.
+        // Coarser levels have no live objects of their own: people go over the impostors, cut
+        // where something in front of them covers them.
         prepareActors(view, lod);
         for (const std::uint32_t a : coarse_) drawActor(a, xf);
     } else {
@@ -1517,12 +1523,11 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
     coarse_.clear();
     actorCount_ = 0;
     if (lod == Lod::Native && !mergeIndexed_) {
-        merge_.index(region_.items, region_.order, tuning::kActorMergeCell);
+        merge_.index(region_.items, region_.order, region_.graph, tuning::kActorMergeCell);
         mergeIndexed_ = true;
     }
     if (life_ == nullptr || !looks_) {
-        if (lod == Lod::Native)
-            merge_.plan(region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; }, view);
+        if (lod == Lod::Native) merge_.plan(region_.items, {}, view);
         return;
     }
     TileRect tiles = tilesUnder(view, iso_);
@@ -1554,7 +1559,6 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
                 ad.goods = looks_->goods(d.goods, 0);
                 ad.goodsAt = {ad.anchor.x + look->carry.x, ad.anchor.y + look->carry.y};
             }
-            ad.depth = d.pos.x + d.pos.y;
         }
         actorDraw_.push_back(ad);
         if (ad.sprite == nullptr) continue;
@@ -1568,42 +1572,33 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
                        std::max(actorReach_.down, s.h - s.oy + 1)};
         if (!box.overlaps(view)) continue;
         if (ad.goods != nullptr) box.y0 = std::min(box.y0, ad.goodsAt.y - ad.goods->oy);
-        if (lod != Lod::Native) {
-            // The impostor holds everything static, so whoever stands behind something in front
-            // (by the same depth relation as the native order) is not drawn over it; under a roof
-            // or a colonnade there is nothing to see from this far either.
-            const float above = d.z - static_cast<float>(map_.level(t) * lvl_);
-            if ((d.item < 0 || d.floor) && cover_->at(d.pos) - above <= tuning::kCoverHidden)
-                coarse_.push_back(static_cast<std::uint32_t>(i));
-            continue;
-        }
+        // Its box (draw-order.md §1.2): a small square round the feet, from the floor it stands
+        // on to the top of what is drawn (goods and riders included: they go with it).
         const float f = tuning::kActorFoot;
-        mergeActors_.push_back(
-            {FRect{d.pos.x - f, d.pos.y - f, d.pos.x + f, d.pos.y + f}, box, s.page});
+        actorDraw_.back().box = makeBox({d.pos.x - f, d.pos.y - f, d.pos.x + f, d.pos.y + f}, d.z,
+                                        d.z + (ad.anchor.y - box.y0),
+                                        depthId(DepthKind::Actor, d.handle.index), iso_.hh);
+        if (lod != Lod::Native) {
+            // The impostor holds everything static: the rows of whoever stands behind something
+            // in front of them are left out, as the native order would paint over them.
+            ActorDraw& c = actorDraw_.back();
+            c.hidden = tops_->cut(c.box, c.anchor, box.y0);
+            if (c.hidden.from <= box.y0 && c.hidden.to >= c.anchor.y) continue; // all of it
+        }
+        mergeActors_.push_back({actorDraw_.back().box, box, s.page});
         actorOf_.push_back(static_cast<std::uint32_t>(i));
     }
-    if (lod != Lod::Native) {
-        std::ranges::sort(coarse_, {}, [&](std::uint32_t i) { return actorDraw_[i].depth; });
-        return;
-    }
-    merge_.plan(
-        region_.items, mergeActors_,
-        [&](std::uint32_t e, std::uint32_t a) {
-            const Elem& el = region_.elems[e];
-            const life::DrawActor& d = actorBuf_[actorOf_[a]];
-            const FRect& foot = region_.items[e].foot;
-            const bool on =
-                d.pos.x >= foot.x0 && d.pos.x < foot.x1 && d.pos.y >= foot.y0 && d.pos.y < foot.y1;
-            // The raised tile someone stands on is under them.
-            if (el.ground) return on ? -1 : 0;
-            if (el.home || el.figure || d.item < 0 || el.item != static_cast<std::uint32_t>(d.item))
-                return 0;
-            // On an item's walk tile: its floor (and an unsplit deck) is under the feet; a
-            // landmark piece over the tile (a roof, a lintel, a gateway) is over the head.
-            if (el.floor || el.piece < 0) return -1;
-            return on ? 1 : 0;
-        },
-        view);
+    ActorMerge& merge = lod == Lod::Native ? merge_ : coarseMerge_;
+    if (lod != Lod::Native) coarseMerge_.index({}, {}, {}, tuning::kActorMergeCell);
+    merge.plan(lod == Lod::Native ? std::span<const OrderItem>(region_.items)
+                                  : std::span<const OrderItem>{},
+               mergeActors_, view);
+    float rank = 0;
+    for (const ActorMerge::Step& st : merge.sequence())
+        if (st.actor) {
+            actorDraw_[actorOf_[st.index]].drawn = rank++;
+            if (lod != Lod::Native) coarse_.push_back(actorOf_[st.index]);
+        }
 }
 
 void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
@@ -1612,7 +1607,7 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
     hits.clear();
     for (std::size_t i = 0; i < actorDraw_.size(); ++i) {
         const ActorDraw& a = actorDraw_[i];
-        if (a.sprite == nullptr) continue;
+        if (a.sprite == nullptr || a.drawn < 0) continue;
         const SpriteRef& s = *a.sprite;
         const float x0 = a.anchor.x - (a.mirror ? s.w - s.ox : s.ox);
         // A little narrower than the sprite: what is clicked is the person, not the air beside.
@@ -1620,7 +1615,9 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
         if (px.x < x0 + inset || px.x >= x0 + s.w - inset || px.y < a.anchor.y - s.oy ||
             px.y >= a.anchor.y - s.oy + s.h)
             continue;
-        hits.emplace_back(-a.depth, actorBuf_[i].handle);
+        if (px.y >= a.hidden.from && px.y < a.hidden.to) continue; // covered there
+        // Frontmost first: the last drawn.
+        hits.emplace_back(-a.drawn, actorBuf_[i].handle);
     }
     std::ranges::sort(hits, [](const auto& a, const auto& b) {
         return a.first != b.first ? a.first < b.first : a.second.index < b.second.index;
@@ -1634,15 +1631,14 @@ int WorldView::coarseActorsCovered(float px) const {
     std::vector<world::DrawPiece> pieces; // a test's question, not a frame's: allocation is fine
     for (const std::uint32_t i : coarse_) {
         const life::DrawActor& d = actorBuf_[i];
+        const ActorDraw& ad = actorDraw_[i];
         const TilePos t{static_cast<int>(std::floor(d.pos.x)),
                         static_cast<int>(std::floor(d.pos.y))};
-        const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
-        const Vec2 feet{w.x, w.y - d.z};
+        const float top = ad.anchor.y - (ad.box.z1 - ad.box.z0);
         map_.piecesIn(TileRect{t.x - 2, t.y - 2, t.x + kRows, t.y + kRows}.clipped(map_.bounds()),
                       pieces);
         float most = 0;
         for (const world::DrawPiece& p : pieces) {
-            if (d.item >= 0 && p.item == static_cast<std::uint32_t>(d.item)) continue;
             const world::Placed& it = map_.items()[p.item];
             if (hole_.tiles.contains(TilePos{it.x, it.y})) continue;
             const VariantLook& look = sprites_->item(it);
@@ -1650,20 +1646,26 @@ int WorldView::coarseActorsCovered(float px) const {
             if (!split && look.base.empty()) continue;
             const SpriteRef& s =
                 split ? look.pieces[static_cast<std::size_t>(p.piece)] : look.base.f.front();
-            const Vec2 o = iso_.toWorld(TilePos{it.x, it.y});
-            const Vec2 a{o.x, o.y - static_cast<float>(it.level * lvl_)};
             const TileRect r = split ? p.rect : it.rect();
-            // Hidden means behind it with their whole width: the feet a few px either side
-            // (someone half past a pier's edge is as rightly drawn as not).
-            const FRect foot{static_cast<float>(r.x0), static_cast<float>(r.y0),
-                             static_cast<float>(r.x1), static_cast<float>(r.y1)};
-            const FRect box{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
-            const auto raise = static_cast<float>(it.level * lvl_);
-            const auto at = [&](float dx) {
-                return coverOf(iso_, {feet.x + dx, feet.y}, t, foot, raise, box);
+            const float base = static_cast<float>(it.level * lvl_);
+            const ZRange z =
+                heightsOf(map_.geometry(it), map_.info(it), split ? p.piece : -1, s.oy);
+            const DepthBox b =
+                makeBox({static_cast<float>(r.x0), static_cast<float>(r.y0),
+                         static_cast<float>(r.x1), static_cast<float>(r.y1)},
+                        base + z.z0, base + z.z1, depthId(DepthKind::Item, p.item), iso_.hh);
+            if (drawnBefore(b, ad.box)) continue;
+            // Rows of the person drawn inside its silhouette at the person's column.
+            const RowBand sil = silhouette(iso_, b.foot, b.z0, b.z1, ad.anchor.x);
+            if (sil.empty()) continue;
+            const auto overlap = [&](float from, float to) {
+                return std::max(0.0f, std::min(to, sil.to) - std::max(from, sil.from));
             };
-            most =
-                std::max(most, std::min(at(-tuning::kCoverHalfBody), at(tuning::kCoverHalfBody)));
+            const float shown = ad.hidden.empty()
+                                    ? overlap(top, ad.anchor.y)
+                                    : overlap(top, std::min(ad.anchor.y, ad.hidden.from)) +
+                                          overlap(std::max(top, ad.hidden.to), ad.anchor.y);
+            most = std::max(most, shown);
         }
         covered += most > px ? 1 : 0;
     }
@@ -1672,11 +1674,31 @@ int WorldView::coarseActorsCovered(float px) const {
 
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {
     const ActorDraw& a = actorDraw_[i];
-    if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror))
+    if (putRows(*a.sprite, a.anchor, x, a.colour, a.mirror, a.hidden))
         ++stats_.actorsDrawn;
     else
         ++stats_.spritesMissing;
-    if (a.goods != nullptr) (void)put(*a.goods, a.goodsAt, x, a.colour, SDL_BLENDMODE_BLEND);
+    if (a.goods != nullptr) (void)putRows(*a.goods, a.goodsAt, x, a.colour, false, a.hidden);
+}
+
+bool WorldView::putRows(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, bool mirror,
+                        RowBand hide) {
+    if (hide.empty()) return put(s, anchor, x, c, SDL_BLENDMODE_BLEND, mirror);
+    SDL_Texture* t = pages_->texture(s.page);
+    if (t == nullptr) return false;
+    // Whole art rows of the sprite above and below the covered band, each its own quad.
+    const float top = anchor.y - s.oy;
+    const auto row = [&](float y) { return std::clamp(std::round(y - top), 0.0f, s.h); };
+    const float r0 = row(hide.from);
+    const float r1 = row(hide.to);
+    const float v = (s.uv.v1 - s.uv.v0) / s.h;
+    for (const auto& [from, to] : {std::pair{0.0f, r0}, std::pair{r1, s.h}}) {
+        if (to <= from) continue;
+        const UvRect uv{s.uv.u0, s.uv.v0 + from * v, s.uv.u1, s.uv.v0 + to * v};
+        putSprite(batch_, Sprite{t, uv, s.w, to - from, s.ox, s.oy - from}, anchor, x, c,
+                  SDL_BLENDMODE_BLEND, mirror);
+    }
+    return true;
 }
 
 void WorldView::drawActorShadows(const Xform& x) {

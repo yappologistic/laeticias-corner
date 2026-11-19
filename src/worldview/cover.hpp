@@ -1,63 +1,57 @@
 #pragma once
-// What hides a ground point at the coarser levels, where the static world is a cached impostor
-// and moving things can only go over it: per tile, how many px of something in front (an item, a
-// landmark's piece, raised ground) stand above that tile's ground point on screen. Built once from
-// the same sprites the impostors are drawn from; an actor whose feet are covered is not drawn
-// there, so nobody walks on the roofs of the buildings they are behind.
+// The coarser levels' half of the one order (docs/design/draw-order.md §3.2 D, §3.4). At ½ and ¼
+// the static world is a cached picture and moving things can only be drawn over it, so each one
+// is cut where something nearer covers it instead: per tile the box of what stands there (the
+// base and top of its item, px above level 0, from the art's per-tile tops and the same heights
+// the native order sorts by) and the ground's own block; an actor's rows inside the silhouette of
+// any such box that the comparator puts in front of it are not drawn. Built once from the map.
 
+#include "render/depth.hpp"
 #include "world/world_map.hpp"
 #include "worldview/gather.hpp"
 #include "worldview/world_sprites.hpp"
 
-#include <cmath>
 #include <cstdint>
 #include <vector>
 
 namespace lc::worldview {
 
-class CoverMap {
-public:
-    CoverMap(const world::WorldMap& map, const WorldSprites& sprites, const Hole& hole);
-    // Px of something in front above the ground point of `t` (0 when none, 255 at most).
-    [[nodiscard]] int at(TilePos t) const {
-        return map_.inBounds(t) ? cover_[static_cast<std::size_t>(t.y * map_.width() + t.x)] : 0;
-    }
+// Rows of world px, [from, to): empty when from >= to.
+struct RowBand {
+    float from = 0;
+    float to = 0;
+    [[nodiscard]] bool empty() const { return from >= to; }
+};
 
-    // The same at a point between tile centres (continuous tile coordinates, x.5: a centre),
-    // blended from the four centres round it: someone in the back half of a tile behind a wall
-    // is as covered as where they stand, not as the middle of their tile.
-    [[nodiscard]] float at(Vec2 p) const {
-        const float fx = p.x - 0.5f;
-        const float fy = p.y - 0.5f;
-        const int x = static_cast<int>(std::floor(fx));
-        const int y = static_cast<int>(std::floor(fy));
-        const float u = fx - static_cast<float>(x);
-        const float v = fy - static_cast<float>(y);
-        const auto c = [&](int dx, int dy) {
-            return static_cast<float>(at(TilePos{x + dx, y + dy}));
-        };
-        return (c(0, 0) * (1 - u) + c(1, 0) * u) * (1 - v) + (c(0, 1) * (1 - u) + c(1, 1) * u) * v;
+// The rows a box covers at screen column `x` (world px): its footprint's diamond raised by z1
+// above, by z0 below; empty where the column misses the footprint.
+[[nodiscard]] RowBand silhouette(Iso iso, const FRect& foot, float z0, float z1, float x);
+
+class TopField {
+public:
+    TopField(const world::WorldMap& map, const WorldSprites& sprites, const Hole& hole);
+
+    struct TileBox {
+        std::uint16_t low = 0; // base of the item standing on the tile, px above level 0
+        std::uint16_t top = 0; // its top over this tile (0: no item)
+    };
+    [[nodiscard]] TileBox at(TilePos t) const {
+        return map_.inBounds(t) ? boxes_[static_cast<std::size_t>(t.y * map_.width() + t.x)]
+                                : TileBox{};
     }
+    // The rows of `actor` (its box; the feet at world px `feet`, raised by its height) that what
+    // stands in front of it covers: one band, the hull of every covering silhouette that meets
+    // the sprite's rows [spriteTop, feet.y].
+    [[nodiscard]] RowBand cut(const DepthBox& actor, Vec2 feet, float spriteTop) const;
+    [[nodiscard]] int maxTop() const { return maxTop_; }
 
 private:
-    // Marks the tiles behind `foot` whose ground point lies in `sprite` (world px) and above the
-    // footprint's bottom edge at `level`.
-    void occlude(FRect foot, int level, const FRect& sprite);
-    void raised(TilePos q);
-
     const world::WorldMap& map_;
     Iso iso_;
     int lvl_;
     Hole hole_;
-    std::vector<std::uint8_t> cover_;
+    std::vector<TileBox> boxes_;
+    int maxTop_ = 0;
 };
-
-// How many px of what stands on `foot` (its sprite `sprite`, raised by `raise` px) are drawn over
-// the ground point of tile `t` at `point`: the point must be in its silhouette (the footprint's
-// screen diamond extruded to the sprite's top, within the sprite) and the thing drawn after
-// someone on `t` by the order's one depth relation (0: not covered). The rule the cover map
-// rasterises, for tests to check against.
-[[nodiscard]] float coverOf(Iso iso, Vec2 point, TilePos t, FRect foot, float raise,
-                            const FRect& sprite);
 
 } // namespace lc::worldview

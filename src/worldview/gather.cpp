@@ -1,8 +1,11 @@
 #include "worldview/gather.hpp"
 
+#include "core/tuning.hpp"
 #include "worldview/cells.hpp"
+#include "worldview/tuning.hpp"
 
 #include <algorithm>
+#include <climits>
 
 namespace lc::worldview {
 namespace {
@@ -17,6 +20,56 @@ FRect rectOf(TileRect r) {
 
 } // namespace
 
+ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int piece,
+                 float spriteH) {
+    const auto f = [](int v) { return static_cast<float>(v); };
+    if (g == nullptr) return {0, info.height > 0 ? f(info.height) : spriteH};
+    const world::GeomPiece* gp = piece >= 0 && std::cmp_less(piece, g->pieces.size())
+                                     ? &g->pieces[static_cast<std::size_t>(piece)]
+                                     : nullptr;
+    const auto inside = [&](TilePos t) { return gp == nullptr || gp->rect.contains(t); };
+    bool walk = false;
+    int floorMax = 0;
+    int floorMin = INT_MAX;
+    for (const TilePos t : g->walk) {
+        if (!inside(t)) continue;
+        int z = 0;
+        for (const auto& [wt, wz] : g->walkZ)
+            if (wt == t) z = wz;
+        walk = true;
+        floorMax = std::max(floorMax, z);
+        floorMin = std::min(floorMin, z);
+    }
+    int roofMin = INT_MAX;
+    for (const auto& [t, z] : g->roof)
+        if (inside(t)) roofMin = std::min(roofMin, z);
+    int top = -1;
+    if (g->topsW > 0)
+        for (std::size_t i = 0; i < g->tops.size(); ++i) {
+            const TilePos t{static_cast<int>(i) % g->topsW, static_cast<int>(i) / g->topsW};
+            if (inside(t)) top = std::max(top, g->tops[i]);
+        }
+    const int under = gp != nullptr ? gp->under : g->under;
+    // A walkable kit piece (a timber bridge, a mole) lists no walk tiles: all of it is floor, at
+    // its top.
+    if (!walk && info.walkable && gp == nullptr) {
+        walk = true;
+        floorMax = floorMin = std::max(top, 0);
+    }
+    const float tread = lc::tuning::kFloorTread;
+    if (walk) {
+        // A deck: room under it below its floor (boats under, walkers over).
+        if (under > 0 && under <= floorMin) return {f(under), f(floorMax) + tread};
+        // A run under a roof (a gate's passage, an arch): from the overhead's underside up.
+        const int over = std::min(roofMin, under > 0 ? under : INT_MAX);
+        if (over != INT_MAX && (gp == nullptr || !gp->floor))
+            return {f(over), f(std::max(g->h, over))};
+        // A floor: stair treads, a walk run's paving, under whoever stands on it.
+        return {0, f(floorMax) + tread};
+    }
+    return {0, top >= 0 ? f(top) : f(g->h)};
+}
+
 TileRect gatherTiles(const FRect& clip, const Reach& span, Iso iso) {
     return tilesUnder(
         {clip.x0 - span.right, clip.y0 - span.down, clip.x1 + span.left, clip.y1 + span.up}, iso);
@@ -25,7 +78,7 @@ TileRect gatherTiles(const FRect& clip, const Reach& span, Iso iso) {
 Gatherer::Gatherer(const world::WorldMap& map, const WorldSprites& sprites, Hole hole,
                    std::span<const FigureLook> figures)
     : map_(map), sprites_(sprites), hole_(hole), figures_(figures),
-      iso_(map.content().home().iso()), lvl_(map.content().tileLevel()),
+      iso_(map.content().home().iso()), lvl_(map.content().tileLevel()), hh_(iso_.hh),
       stamp_(map.items().size(), 0) {}
 
 void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
@@ -61,15 +114,21 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                              static_cast<std::int16_t>(split ? d.piece : -1),
                              false,
                              first,
-                             split && d.floor,
                              false,
                              false,
                              {it.x, it.y},
                              a});
-        out.items.push_back({rectOf(split ? d.rect : it.rect()), box, s.page, false});
+        const float base = static_cast<float>(it.level * lvl_);
+        const ZRange z = heightsOf(map_.geometry(it), map_.info(it), split ? d.piece : -1, s.oy);
+        out.items.push_back({makeBox(rectOf(split ? d.rect : it.rect()), base + z.z0, base + z.z1,
+                                     depthId(DepthKind::Item, d.item,
+                                             static_cast<std::uint32_t>(split ? d.piece + 1 : 0)),
+                                     hh_),
+                             box, s.page});
     }
-    // Raised tiles that hide an item behind them join the sort (world-tech §4.3): Q hides P when
-    // P lies behind it, lower by dL > 0, within dL + 1 rows.
+    // Raised tiles that hide an item or walkable ground behind them join the sort (world-tech
+    // §4.3, draw-order.md §1.5 e): Q hides P when P lies behind it, lower by dL > 0, within
+    // dL + 1 rows.
     const Reach& gr = sprites_.groundReach();
     const float lift = gr.up - static_cast<float>(kMaxLevel * lvl_);
     for (int qy = tiles.y0; qy < tiles.y1; ++qy)
@@ -90,7 +149,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                 for (int b = 0; a + b <= lq + 1 && !hides; ++b) {
                     const TilePos p{qx - a, qy - b};
                     if ((a == 0 && b == 0) || !map_.inBounds(p) || hole_.tiles.contains(p) ||
-                        map_.itemAt(p) < 0)
+                        (map_.itemAt(p) < 0 && !map_.walkable(p)))
                         continue;
                     const int dl = lq - map_.level(p);
                     hides = dl > 0 && a + b <= dl + 1;
@@ -99,8 +158,13 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
             const TerrainLook& look = sprites_.terrain(t);
             const std::uint16_t page =
                 look.base.empty() ? PageAtlas::kGeneratedPage : look.base.front().page;
-            out.elems.push_back({nullptr, 0, -1, true, false, false, false, false, q, {}});
-            out.items.push_back({rectOf({qx, qy, qx + 1, qy + 1}), box, page, true});
+            out.elems.push_back({nullptr, 0, -1, true, false, false, false, q, {}});
+            out.items.push_back(
+                {makeBox(
+                     rectOf({qx, qy, qx + 1, qy + 1}), 0, static_cast<float>(lq * lvl_),
+                     depthId(DepthKind::Ground, static_cast<std::uint32_t>(qy * map_.width() + qx)),
+                     hh_),
+                 box, page});
         }
     for (std::size_t f = 0; f < figures_.size(); ++f) {
         const FigureLook& fg = figures_[f];
@@ -109,25 +173,27 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
         const FRect box{fg.anchor.x - s.ox, fg.anchor.y - s.oy, fg.anchor.x - s.ox + s.w,
                         fg.anchor.y - s.oy + s.h};
         if (!box.overlaps(clip)) continue;
-        out.elems.push_back({nullptr, static_cast<std::uint32_t>(f), -1, false, false, false, false,
-                             true, fg.tile, fg.anchor});
+        out.elems.push_back({nullptr, static_cast<std::uint32_t>(f), -1, false, false, false, true,
+                             fg.tile, fg.anchor});
+        // Where it stands, like an actor: a small square round its feet.
+        const Vec2 at = iso_.toTile(
+            {fg.anchor.x, fg.anchor.y + static_cast<float>(map_.level(fg.tile) * lvl_)});
+        const float k = tuning::kActorFoot;
+        const float z0 = static_cast<float>(map_.level(fg.tile) * lvl_);
         out.items.push_back(
-            {rectOf({fg.tile.x, fg.tile.y, fg.tile.x + 1, fg.tile.y + 1}), box, s.page, false});
+            {makeBox({at.x - k, at.y - k, at.x + k, at.y + k}, z0, z0 + s.oy,
+                     depthId(DepthKind::Figure, static_cast<std::uint32_t>(f)), hh_),
+             box, s.page});
     }
     if (!hole_.empty() && hole_.tiles.intersects(tiles) && hole_.screen.overlaps(clip)) {
-        out.elems.push_back({nullptr,
-                             0,
-                             -1,
-                             false,
-                             false,
-                             false,
-                             true,
-                             false,
-                             {hole_.tiles.x0, hole_.tiles.y0},
-                             {}});
-        out.items.push_back({rectOf(hole_.tiles), hole_.screen, PageAtlas::kGeneratedPage, false});
+        out.elems.push_back(
+            {nullptr, 0, -1, false, false, true, false, {hole_.tiles.x0, hole_.tiles.y0}, {}});
+        out.items.push_back(
+            {makeBox(rectOf(hole_.tiles), hole_.z0, hole_.z1, depthId(DepthKind::Home, 0), hh_),
+             hole_.screen, PageAtlas::kGeneratedPage});
     }
-    sorter_.sort(out.items, kSortCell, out.order);
+    sorter_.sort(out.items, kSortCell, out.order, out.graph);
+    out.cycles = sorter_.cyclesBroken();
 }
 
 Prep::Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async, Hole hole,

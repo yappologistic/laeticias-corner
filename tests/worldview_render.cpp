@@ -133,9 +133,10 @@ TEST_CASE("render: the gathered elements of the Parsa terrace are complete and i
     for (std::size_t i = 0; i < tight.items.size(); ++i)
         for (std::size_t j = i + 1; j < tight.items.size(); ++j)
             if (tight.items[i].screen.overlaps(tight.items[j].screen) &&
-                drawnBefore(tight.items[i], tight.items[j]) != (at[i] < at[j]))
+                drawnBefore(tight.items[i].box, tight.items[j].box) != (at[i] < at[j]))
                 ++bad;
     CHECK(bad == 0);
+    CHECK(tight.cycles == 0);
 }
 
 TEST_CASE("render: cached cells and the live layer leave no seams as the view moves") {
