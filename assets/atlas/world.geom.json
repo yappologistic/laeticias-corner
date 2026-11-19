@@ -4327,6 +4327,32 @@
     ]
    }
   },
+  "world.fishing_boat": {
+   "height": {
+    "*": 63
+   }
+  },
+  "world.quffa": {
+   "height": {
+    "*": 26
+   }
+  },
+  "world.reed_boat": {
+   "height": {
+    "*": 61
+   }
+  },
+  "world.kelek": {
+   "height": {
+    "*": 31
+   }
+  },
+  "world.phoenician": {
+   "height": {
+    "*": 103,
+    "slack": 73
+   }
+  },
   "world.farmer": {
    "carry_at": {
     "carry_front": [

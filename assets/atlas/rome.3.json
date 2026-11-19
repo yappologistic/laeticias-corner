@@ -946,14 +946,6 @@
    "ox": 5,
    "oy": 82
   },
-  "item/rome.aemilia/shadow/r0/f0": {
-   "x": 2584,
-   "y": 576,
-   "w": 766,
-   "h": 299,
-   "ox": 508,
-   "oy": -67
-  },
   "item/rome.agrippa_baths/glow/r0/f0": {
    "x": 3303,
    "y": 1742,
@@ -961,62 +953,6 @@
    "h": 204,
    "ox": 184,
    "oy": -54
-  },
-  "item/rome.agrippa_baths/shadow/r0/f0": {
-   "x": 3186,
-   "y": 1154,
-   "w": 666,
-   "h": 265,
-   "ox": 384,
-   "oy": -75
-  },
-  "item/rome.apollo_palatinus/shadow/r0/f0": {
-   "x": 2881,
-   "y": 1615,
-   "w": 421,
-   "h": 167,
-   "ox": 186,
-   "oy": -29
-  },
-  "item/rome.arx/shadow/r0/f0": {
-   "x": 1962,
-   "y": 1464,
-   "w": 477,
-   "h": 191,
-   "ox": 284,
-   "oy": -30
-  },
-  "item/rome.augustus_forum/shadow/r0/f0": {
-   "x": 981,
-   "y": 1,
-   "w": 925,
-   "h": 384,
-   "ox": 416,
-   "oy": -37
-  },
-  "item/rome.brundisium_harbour/shadow/r0/f0": {
-   "x": 1,
-   "y": 845,
-   "w": 681,
-   "h": 226,
-   "ox": 516,
-   "oy": -34
-  },
-  "item/rome.caesar_forum/shadow/r0/f0": {
-   "x": 2509,
-   "y": 876,
-   "w": 676,
-   "h": 331,
-   "ox": 378,
-   "oy": -30
-  },
-  "item/rome.capitolium/shadow/r0/f0": {
-   "x": 2145,
-   "y": 1208,
-   "w": 650,
-   "h": 255,
-   "ox": 282,
-   "oy": -46
   },
   "item/rome.castra_praetoria/glow/r0/f0": {
    "x": 981,
@@ -1042,14 +978,6 @@
    "ox": 2,
    "oy": 24
   },
-  "item/rome.curia/shadow/r0/f0": {
-   "x": 325,
-   "y": 1892,
-   "w": 291,
-   "h": 96,
-   "ox": 112,
-   "oy": -33
-  },
   "item/rome.domus_augustana/glow/r0/f0": {
    "x": 3393,
    "y": 1420,
@@ -1058,14 +986,6 @@
    "ox": 262,
    "oy": 52
   },
-  "item/rome.domus_augustana/shadow/r0/f0": {
-   "x": 2741,
-   "y": 312,
-   "w": 809,
-   "h": 263,
-   "ox": 444,
-   "oy": -121
-  },
   "item/rome.domus_flavia/glow/r0/f0": {
    "x": 1328,
    "y": 1339,
@@ -1073,22 +993,6 @@
    "h": 284,
    "ox": 434,
    "oy": 41
-  },
-  "item/rome.domus_flavia/shadow/r0/f0": {
-   "x": 1,
-   "y": 487,
-   "w": 775,
-   "h": 357,
-   "ox": 444,
-   "oy": -32
-  },
-  "item/rome.horrea_galbana/shadow/r0/f0": {
-   "x": 1785,
-   "y": 400,
-   "w": 798,
-   "h": 305,
-   "ox": 572,
-   "oy": -84
   },
   "item/rome.iseum/glow/r0/f0": {
    "x": 1618,
@@ -1106,30 +1010,6 @@
    "ox": -26,
    "oy": -80
   },
-  "item/rome.latiaris/shadow/r0/f0": {
-   "x": 1644,
-   "y": 1656,
-   "w": 416,
-   "h": 184,
-   "ox": 195,
-   "oy": -10
-  },
-  "item/rome.marcellus/shadow/r0/f0": {
-   "x": 677,
-   "y": 1220,
-   "w": 650,
-   "h": 193,
-   "ox": 354,
-   "oy": -142
-  },
-  "item/rome.matidia/shadow/r0/f0": {
-   "x": 2440,
-   "y": 1615,
-   "w": 440,
-   "h": 168,
-   "ox": 186,
-   "oy": -25
-  },
   "item/rome.mutatio/glow/r1/f0": {
    "x": 728,
    "y": 2319,
@@ -1137,126 +1017,6 @@
    "h": 32,
    "ox": 14,
    "oy": -33
-  },
-  "item/rome.mutatio/shadow/r0/f0": {
-   "x": 2881,
-   "y": 1783,
-   "w": 319,
-   "h": 159,
-   "ox": 124,
-   "oy": -2
-  },
-  "item/rome.mutatio/shadow/r1/f0": {
-   "x": 3640,
-   "y": 1742,
-   "w": 323,
-   "h": 156,
-   "ox": 188,
-   "oy": -2
-  },
-  "item/rome.mutatio/shadow/r2/f0": {
-   "x": 1,
-   "y": 1745,
-   "w": 323,
-   "h": 156,
-   "ox": 124,
-   "oy": -2
-  },
-  "item/rome.octavia/shadow/r0/f0": {
-   "x": 1,
-   "y": 1072,
-   "w": 675,
-   "h": 285,
-   "ox": 356,
-   "oy": -40
-  },
-  "item/rome.ostia_guilds/shadow/r0/f0": {
-   "x": 629,
-   "y": 1414,
-   "w": 596,
-   "h": 292,
-   "ox": 388,
-   "oy": 2
-  },
-  "item/rome.ostia_theatre/shadow/r0/f0": {
-   "x": 1226,
-   "y": 1624,
-   "w": 417,
-   "h": 164,
-   "ox": 288,
-   "oy": -49
-  },
-  "item/rome.pacis/shadow/r0/f0": {
-   "x": 1907,
-   "y": 1,
-   "w": 833,
-   "h": 398,
-   "ox": 382,
-   "oy": -39
-  },
-  "item/rome.palatine_stadium/shadow/r0/f0": {
-   "x": 2741,
-   "y": 1,
-   "w": 822,
-   "h": 310,
-   "ox": 188,
-   "oy": -93
-  },
-  "item/rome.palatine_tiberiana/shadow/r0/f0": {
-   "x": 3186,
-   "y": 927,
-   "w": 676,
-   "h": 226,
-   "ox": 412,
-   "oy": -101
-  },
-  "item/rome.pantheon/shadow/r0/f0": {
-   "x": 1469,
-   "y": 1078,
-   "w": 675,
-   "h": 260,
-   "ox": 198,
-   "oy": -90
-  },
-  "item/rome.pantheon_court/shadow/r0/f0": {
-   "x": 3351,
-   "y": 576,
-   "w": 727,
-   "h": 350,
-   "ox": 427,
-   "oy": 4
-  },
-  "item/rome.pompey_theatre/shadow/r0/f0": {
-   "x": 2796,
-   "y": 1420,
-   "w": 596,
-   "h": 194,
-   "ox": 234,
-   "oy": -132
-  },
-  "item/rome.pons_aemilius/shadow/r0/f0": {
-   "x": 2061,
-   "y": 1656,
-   "w": 378,
-   "h": 167,
-   "ox": 296,
-   "oy": -30
-  },
-  "item/rome.pons_sublicius/shadow/r0/f0": {
-   "x": 838,
-   "y": 1707,
-   "w": 362,
-   "h": 175,
-   "ox": 280,
-   "oy": -21
-  },
-  "item/rome.portus_hexagon/shadow/r0/f0": {
-   "x": 1,
-   "y": 1,
-   "w": 979,
-   "h": 485,
-   "ox": 530,
-   "oy": -70
   },
   "item/rome.r_altar/glow/r0/f0": {
    "x": 1594,
@@ -1274,78 +1034,6 @@
    "ox": 14,
    "oy": 15
   },
-  "item/rome.r_altar/shadow/r0/f0": {
-   "x": 361,
-   "y": 2361,
-   "w": 53,
-   "h": 24,
-   "ox": 24,
-   "oy": -4
-  },
-  "item/rome.r_altar/shadow/r1/f0": {
-   "x": 2305,
-   "y": 2361,
-   "w": 53,
-   "h": 24,
-   "ox": 24,
-   "oy": -4
-  },
-  "item/rome.r_amphorae/shadow/r1/f0": {
-   "x": 1520,
-   "y": 2323,
-   "w": 60,
-   "h": 25,
-   "ox": 29,
-   "oy": -4
-  },
-  "item/rome.r_amphorae/shadow/r2/f0": {
-   "x": 790,
-   "y": 2319,
-   "w": 61,
-   "h": 25,
-   "ox": 29,
-   "oy": -4
-  },
-  "item/rome.r_amphorae/shadow/r3/f0": {
-   "x": 557,
-   "y": 2325,
-   "w": 60,
-   "h": 25,
-   "ox": 29,
-   "oy": -4
-  },
-  "item/rome.r_bakery/shadow/r2/f0": {
-   "x": 2637,
-   "y": 2072,
-   "w": 171,
-   "h": 83,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_bakery/shadow/r2/f1": {
-   "x": 2637,
-   "y": 2072,
-   "w": 171,
-   "h": 83,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_bakery/shadow/r3/f0": {
-   "x": 2809,
-   "y": 2072,
-   "w": 171,
-   "h": 79,
-   "ox": 92,
-   "oy": -2
-  },
-  "item/rome.r_bakery/shadow/r3/f1": {
-   "x": 2809,
-   "y": 2072,
-   "w": 171,
-   "h": 79,
-   "ox": 92,
-   "oy": -2
-  },
   "item/rome.r_bath_small/glow/r1/f0": {
    "x": 586,
    "y": 2180,
@@ -1362,38 +1050,6 @@
    "ox": 28,
    "oy": -28
   },
-  "item/rome.r_bath_small/shadow/r0/f0": {
-   "x": 287,
-   "y": 1989,
-   "w": 233,
-   "h": 104,
-   "ox": 92,
-   "oy": -2
-  },
-  "item/rome.r_bath_small/shadow/r1/f0": {
-   "x": 1403,
-   "y": 1985,
-   "w": 234,
-   "h": 111,
-   "ox": 116,
-   "oy": -2
-  },
-  "item/rome.r_bath_small/shadow/r2/f0": {
-   "x": 2044,
-   "y": 1967,
-   "w": 242,
-   "h": 108,
-   "ox": 92,
-   "oy": -6
-  },
-  "item/rome.r_bath_small/shadow/r3/f0": {
-   "x": 617,
-   "y": 1892,
-   "w": 209,
-   "h": 112,
-   "ox": 124,
-   "oy": -2
-  },
   "item/rome.r_bonfire/glow/r0/f0": {
    "x": 2582,
    "y": 2343,
@@ -1402,14 +1058,6 @@
    "ox": 28,
    "oy": 18
   },
-  "item/rome.r_bonfire/shadow/r0/f0": {
-   "x": 3510,
-   "y": 2378,
-   "w": 45,
-   "h": 22,
-   "ox": 22,
-   "oy": -5
-  },
   "item/rome.r_brazier/glow/r0/f0": {
    "x": 3254,
    "y": 2353,
@@ -1417,166 +1065,6 @@
    "h": 25,
    "ox": 20,
    "oy": 20
-  },
-  "item/rome.r_compitum/shadow/r0/f0": {
-   "x": 3977,
-   "y": 2336,
-   "w": 57,
-   "h": 22,
-   "ox": 15,
-   "oy": -2
-  },
-  "item/rome.r_compitum/shadow/r1/f0": {
-   "x": 4035,
-   "y": 2336,
-   "w": 57,
-   "h": 24,
-   "ox": 15,
-   "oy": -8
-  },
-  "item/rome.r_crane/shadow/r0/f0": {
-   "x": 875,
-   "y": 2199,
-   "w": 78,
-   "h": 54,
-   "ox": 17,
-   "oy": -10
-  },
-  "item/rome.r_crane/shadow/r0/f1": {
-   "x": 2218,
-   "y": 2200,
-   "w": 78,
-   "h": 54,
-   "ox": 16,
-   "oy": -10
-  },
-  "item/rome.r_crane/shadow/r1/f0": {
-   "x": 2297,
-   "y": 2200,
-   "w": 78,
-   "h": 40,
-   "ox": 9,
-   "oy": -16
-  },
-  "item/rome.r_crane/shadow/r1/f1": {
-   "x": 3018,
-   "y": 2197,
-   "w": 80,
-   "h": 40,
-   "ox": 10,
-   "oy": -16
-  },
-  "item/rome.r_domus/shadow/r0/f0": {
-   "x": 2061,
-   "y": 1824,
-   "w": 298,
-   "h": 142,
-   "ox": 124,
-   "oy": -2
-  },
-  "item/rome.r_domus/shadow/r1/f0": {
-   "x": 2440,
-   "y": 1784,
-   "w": 299,
-   "h": 142,
-   "ox": 156,
-   "oy": -2
-  },
-  "item/rome.r_domus/shadow/r2/f0": {
-   "x": 1201,
-   "y": 1789,
-   "w": 299,
-   "h": 143,
-   "ox": 124,
-   "oy": -2
-  },
-  "item/rome.r_domus/shadow/r3/f0": {
-   "x": 1501,
-   "y": 1841,
-   "w": 298,
-   "h": 143,
-   "ox": 156,
-   "oy": -2
-  },
-  "item/rome.r_dyeworks/shadow/r0/f0": {
-   "x": 2150,
-   "y": 2137,
-   "w": 126,
-   "h": 58,
-   "ox": 52,
-   "oy": -2
-  },
-  "item/rome.r_dyeworks/shadow/r1/f0": {
-   "x": 2277,
-   "y": 2141,
-   "w": 126,
-   "h": 58,
-   "ox": 52,
-   "oy": -6
-  },
-  "item/rome.r_dyeworks/shadow/r2/f0": {
-   "x": 1142,
-   "y": 2147,
-   "w": 124,
-   "h": 58,
-   "ox": 60,
-   "oy": -6
-  },
-  "item/rome.r_dyeworks/shadow/r3/f0": {
-   "x": 2809,
-   "y": 2152,
-   "w": 124,
-   "h": 58,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_fullonica/shadow/r1/f0": {
-   "x": 364,
-   "y": 2094,
-   "w": 154,
-   "h": 70,
-   "ox": 76,
-   "oy": -10
-  },
-  "item/rome.r_fullonica/shadow/r1/f1": {
-   "x": 364,
-   "y": 2094,
-   "w": 154,
-   "h": 70,
-   "ox": 76,
-   "oy": -10
-  },
-  "item/rome.r_fullonica/shadow/r2/f0": {
-   "x": 725,
-   "y": 2102,
-   "w": 150,
-   "h": 70,
-   "ox": 60,
-   "oy": -10
-  },
-  "item/rome.r_fullonica/shadow/r2/f1": {
-   "x": 725,
-   "y": 2102,
-   "w": 150,
-   "h": 70,
-   "ox": 60,
-   "oy": -10
-  },
-  "item/rome.r_fullonica/shadow/r3/f0": {
-   "x": 519,
-   "y": 2109,
-   "w": 150,
-   "h": 70,
-   "ox": 92,
-   "oy": -2
-  },
-  "item/rome.r_fullonica/shadow/r3/f1": {
-   "x": 519,
-   "y": 2109,
-   "w": 150,
-   "h": 70,
-   "ox": 92,
-   "oy": -2
   },
   "item/rome.r_glass/glow/r0/f0": {
    "x": 1477,
@@ -1610,70 +1098,6 @@
    "ox": 8,
    "oy": -16
   },
-  "item/rome.r_glass/shadow/r0/f0": {
-   "x": 2603,
-   "y": 2156,
-   "w": 114,
-   "h": 48,
-   "ox": 32,
-   "oy": -2
-  },
-  "item/rome.r_glass/shadow/r1/f0": {
-   "x": 3602,
-   "y": 2165,
-   "w": 113,
-   "h": 50,
-   "ox": 31,
-   "oy": -16
-  },
-  "item/rome.r_glass/shadow/r2/f0": {
-   "x": 3966,
-   "y": 2178,
-   "w": 110,
-   "h": 51,
-   "ox": 60,
-   "oy": -16
-  },
-  "item/rome.r_glass/shadow/r3/f0": {
-   "x": 130,
-   "y": 2180,
-   "w": 110,
-   "h": 49,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_horrea/shadow/r0/f0": {
-   "x": 2360,
-   "y": 1927,
-   "w": 270,
-   "h": 128,
-   "ox": 124,
-   "oy": -2
-  },
-  "item/rome.r_horrea/shadow/r1/f0": {
-   "x": 1132,
-   "y": 1933,
-   "w": 270,
-   "h": 128,
-   "ox": 124,
-   "oy": -2
-  },
-  "item/rome.r_horrea/shadow/r2/f0": {
-   "x": 2631,
-   "y": 1943,
-   "w": 269,
-   "h": 128,
-   "ox": 124,
-   "oy": -2
-  },
-  "item/rome.r_horrea/shadow/r3/f0": {
-   "x": 2901,
-   "y": 1943,
-   "w": 269,
-   "h": 128,
-   "ox": 124,
-   "oy": -2
-  },
   "item/rome.r_insula/glow/r0/f0": {
    "x": 929,
    "y": 2007,
@@ -1683,9 +1107,9 @@
    "oy": 34
   },
   "item/rome.r_insula/glow/r1/f0": {
-   "x": 3415,
-   "y": 1947,
-   "w": 203,
+   "x": 1,
+   "y": 2561,
+   "w": 210,
    "h": 122,
    "ox": 124,
    "oy": 44
@@ -1705,30 +1129,6 @@
    "h": 137,
    "ox": 110,
    "oy": 44
-  },
-  "item/rome.r_insula/shadow/r0/f0": {
-   "x": 3640,
-   "y": 1899,
-   "w": 285,
-   "h": 127,
-   "ox": 92,
-   "oy": 2
-  },
-  "item/rome.r_insula/shadow/r2/f0": {
-   "x": 1,
-   "y": 1902,
-   "w": 285,
-   "h": 127,
-   "ox": 92,
-   "oy": -2
-  },
-  "item/rome.r_insula/shadow/r3/f0": {
-   "x": 838,
-   "y": 1883,
-   "w": 293,
-   "h": 123,
-   "ox": 132,
-   "oy": -2
   },
   "item/rome.r_insula_corner/glow/r0/f0": {
    "x": 1308,
@@ -1762,30 +1162,6 @@
    "ox": 78,
    "oy": 8
   },
-  "item/rome.r_insula_corner/shadow/r1/f0": {
-   "x": 1800,
-   "y": 1841,
-   "w": 243,
-   "h": 105,
-   "ox": 92,
-   "oy": -2
-  },
-  "item/rome.r_insula_corner/shadow/r2/f0": {
-   "x": 1800,
-   "y": 1947,
-   "w": 243,
-   "h": 105,
-   "ox": 92,
-   "oy": -2
-  },
-  "item/rome.r_insula_corner/shadow/r3/f0": {
-   "x": 3171,
-   "y": 1947,
-   "w": 243,
-   "h": 105,
-   "ox": 92,
-   "oy": -2
-  },
   "item/rome.r_insula_low/glow/r3/f0": {
    "x": 3016,
    "y": 2361,
@@ -1794,141 +1170,21 @@
    "ox": 40,
    "oy": -11
   },
-  "item/rome.r_insula_low/shadow/r2/f0": {
-   "x": 1638,
-   "y": 2053,
-   "w": 183,
-   "h": 82,
-   "ox": 60,
-   "oy": -4
-  },
-  "item/rome.r_insula_low/shadow/r3/f0": {
-   "x": 1822,
-   "y": 2053,
-   "w": 183,
-   "h": 82,
-   "ox": 92,
-   "oy": -2
-  },
   "item/rome.r_lamp/glow/r2/f0": {
    "x": 1039,
    "y": 2382,
    "w": 33,
    "h": 21,
-   "ox": 14,
-   "oy": 16
+   "ox": 24,
+   "oy": 14
   },
   "item/rome.r_lamp/glow/r3/f0": {
    "x": 3198,
    "y": 2382,
    "w": 33,
-   "h": 21,
-   "ox": 14,
-   "oy": 14
-  },
-  "item/rome.r_lamp/shadow/r0/f0": {
-   "x": 3070,
-   "y": 2364,
-   "w": 52,
-   "h": 21,
-   "ox": 32,
-   "oy": -13
-  },
-  "item/rome.r_lamp/shadow/r1/f0": {
-   "x": 3906,
-   "y": 2364,
-   "w": 52,
-   "h": 21,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_lamp/shadow/r2/f0": {
-   "x": 2824,
-   "y": 2365,
-   "w": 52,
-   "h": 21,
-   "ox": 6,
-   "oy": 0
-  },
-  "item/rome.r_lamp/shadow/r3/f0": {
-   "x": 177,
-   "y": 2366,
-   "w": 52,
-   "h": 21,
-   "ox": 6,
-   "oy": -13
-  },
-  "item/rome.r_latrine/shadow/r0/f0": {
-   "x": 2981,
-   "y": 2132,
-   "w": 139,
-   "h": 64,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_latrine/shadow/r1/f0": {
-   "x": 876,
-   "y": 2134,
-   "w": 139,
-   "h": 64,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_latrine/shadow/r2/f0": {
-   "x": 2463,
-   "y": 2135,
-   "w": 139,
-   "h": 64,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_latrine/shadow/r3/f0": {
-   "x": 1625,
-   "y": 2136,
-   "w": 139,
-   "h": 64,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_scaffold/shadow/r0/f0": {
-   "x": 3121,
-   "y": 2145,
-   "w": 125,
-   "h": 42,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_shed/shadow/r0/f0": {
-   "x": 3716,
-   "y": 2165,
-   "w": 102,
-   "h": 48,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_shed/shadow/r1/f0": {
-   "x": 241,
-   "y": 2180,
-   "w": 106,
-   "h": 48,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_shed/shadow/r2/f0": {
-   "x": 479,
-   "y": 2180,
-   "w": 106,
-   "h": 49,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_shed/shadow/r3/f0": {
-   "x": 3121,
-   "y": 2188,
-   "w": 102,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
+   "h": 20,
+   "ox": 24,
+   "oy": 21
   },
   "item/rome.r_smithy/glow/r0/f0": {
    "x": 3296,
@@ -1953,166 +1209,6 @@
    "h": 21,
    "ox": 30,
    "oy": -14
-  },
-  "item/rome.r_smithy/shadow/r0/f0": {
-   "x": 1016,
-   "y": 2147,
-   "w": 125,
-   "h": 54,
-   "ox": 42,
-   "oy": -2
-  },
-  "item/rome.r_smithy/shadow/r1/f0": {
-   "x": 1894,
-   "y": 2137,
-   "w": 127,
-   "h": 57,
-   "ox": 44,
-   "oy": -10
-  },
-  "item/rome.r_smithy/shadow/r2/f0": {
-   "x": 3247,
-   "y": 2155,
-   "w": 119,
-   "h": 57,
-   "ox": 60,
-   "oy": -10
-  },
-  "item/rome.r_smithy/shadow/r3/f0": {
-   "x": 3367,
-   "y": 2155,
-   "w": 118,
-   "h": 54,
-   "ox": 60,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r0/f0": {
-   "x": 3486,
-   "y": 2155,
-   "w": 115,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r0/f1": {
-   "x": 364,
-   "y": 2165,
-   "w": 114,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r1/f0": {
-   "x": 3486,
-   "y": 2155,
-   "w": 115,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r1/f1": {
-   "x": 364,
-   "y": 2165,
-   "w": 114,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r2/f0": {
-   "x": 3486,
-   "y": 2155,
-   "w": 115,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r2/f1": {
-   "x": 364,
-   "y": 2165,
-   "w": 114,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r3/f0": {
-   "x": 3486,
-   "y": 2155,
-   "w": 115,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r3/f1": {
-   "x": 364,
-   "y": 2165,
-   "w": 114,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r4/f0": {
-   "x": 3486,
-   "y": 2155,
-   "w": 115,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r4/f1": {
-   "x": 364,
-   "y": 2165,
-   "w": 114,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r5/f0": {
-   "x": 3486,
-   "y": 2155,
-   "w": 115,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_stall/shadow/r5/f1": {
-   "x": 364,
-   "y": 2165,
-   "w": 114,
-   "h": 49,
-   "ox": 28,
-   "oy": -2
-  },
-  "item/rome.r_statue/shadow/r0/f0": {
-   "x": 852,
-   "y": 2320,
-   "w": 61,
-   "h": 22,
-   "ox": 22,
-   "oy": -5
-  },
-  "item/rome.r_statue/shadow/r1/f0": {
-   "x": 1458,
-   "y": 2320,
-   "w": 61,
-   "h": 22,
-   "ox": 22,
-   "oy": -5
-  },
-  "item/rome.r_statue/shadow/r2/f0": {
-   "x": 2526,
-   "y": 2320,
-   "w": 61,
-   "h": 22,
-   "ox": 22,
-   "oy": -5
-  },
-  "item/rome.r_statue/shadow/r3/f0": {
-   "x": 2588,
-   "y": 2320,
-   "w": 61,
-   "h": 22,
-   "ox": 22,
-   "oy": -5
   },
   "item/rome.r_taberna/glow/r0/f0": {
    "x": 243,
@@ -2146,110 +1242,6 @@
    "ox": 35,
    "oy": 18
   },
-  "item/rome.r_taberna/shadow/r0/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_taberna/shadow/r1/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_taberna/shadow/r2/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_taberna/shadow/r3/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_taberna/shadow/r4/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_taberna/shadow/r5/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_taberna/shadow/r6/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_taberna/shadow/r7/f0": {
-   "x": 2022,
-   "y": 2192,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_thermopolium/shadow/r0/f0": {
-   "x": 1865,
-   "y": 2195,
-   "w": 97,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_thermopolium/shadow/r1/f0": {
-   "x": 2120,
-   "y": 2196,
-   "w": 97,
-   "h": 39,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_thermopolium/shadow/r3/f0": {
-   "x": 782,
-   "y": 2173,
-   "w": 92,
-   "h": 38,
-   "ox": 32,
-   "oy": 0
-  },
-  "item/rome.r_tomb/shadow/r0/f0": {
-   "x": 670,
-   "y": 2173,
-   "w": 111,
-   "h": 59,
-   "ox": 40,
-   "oy": -6
-  },
-  "item/rome.r_tomb/shadow/r2/f0": {
-   "x": 1471,
-   "y": 2175,
-   "w": 111,
-   "h": 63,
-   "ox": 48,
-   "oy": 0
-  },
   "item/rome.r_vigiles/glow/r0/f0": {
    "x": 2930,
    "y": 2366,
@@ -2266,38 +1258,6 @@
    "ox": 4,
    "oy": 2
   },
-  "item/rome.r_villa_farm/shadow/r0/f0": {
-   "x": 1,
-   "y": 2030,
-   "w": 198,
-   "h": 106,
-   "ox": 92,
-   "oy": -2
-  },
-  "item/rome.r_villa_farm/shadow/r1/f0": {
-   "x": 3821,
-   "y": 2027,
-   "w": 200,
-   "h": 95,
-   "ox": 89,
-   "oy": -2
-  },
-  "item/rome.r_villa_farm/shadow/r2/f0": {
-   "x": 725,
-   "y": 2007,
-   "w": 203,
-   "h": 94,
-   "ox": 92,
-   "oy": -4
-  },
-  "item/rome.regia/shadow/r0/f0": {
-   "x": 2006,
-   "y": 2076,
-   "w": 168,
-   "h": 60,
-   "ox": 84,
-   "oy": -20
-  },
   "item/rome.saepta/glow/r0/f0": {
    "x": 777,
    "y": 790,
@@ -2305,14 +1265,6 @@
    "h": 429,
    "ox": -20,
    "oy": -40
-  },
-  "item/rome.saturn/shadow/r0/f0": {
-   "x": 465,
-   "y": 1707,
-   "w": 372,
-   "h": 184,
-   "ox": 218,
-   "oy": -9
   },
   "item/rome.suburban_villa/glow/r0/f0": {
    "x": 1471,
@@ -2330,182 +1282,6 @@
    "ox": -26,
    "oy": -52
   },
-  "item/rome.t_box/shadow/r0/f0": {
-   "x": 4032,
-   "y": 2361,
-   "w": 53,
-   "h": 26,
-   "ox": 26,
-   "oy": -3
-  },
-  "item/rome.t_fig/shadow/r1/f0": {
-   "x": 2173,
-   "y": 2367,
-   "w": 49,
-   "h": 23,
-   "ox": 8,
-   "oy": -7
-  },
-  "item/rome.t_oak/shadow/r0/f0": {
-   "x": 2934,
-   "y": 2197,
-   "w": 83,
-   "h": 38,
-   "ox": 9,
-   "oy": -2
-  },
-  "item/rome.t_oak/shadow/r1/f0": {
-   "x": 3819,
-   "y": 2197,
-   "w": 80,
-   "h": 37,
-   "ox": 9,
-   "oy": -3
-  },
-  "item/rome.t_olive/shadow/r1/f0": {
-   "x": 2877,
-   "y": 2366,
-   "w": 52,
-   "h": 32,
-   "ox": 10,
-   "oy": -4
-  },
-  "item/rome.t_plane/shadow/r0/f0": {
-   "x": 1765,
-   "y": 2191,
-   "w": 99,
-   "h": 37,
-   "ox": 10,
-   "oy": -6
-  },
-  "item/rome.t_plane/shadow/r1/f0": {
-   "x": 1,
-   "y": 2192,
-   "w": 98,
-   "h": 41,
-   "ox": 10,
-   "oy": -5
-  },
-  "item/rome.t_rose/shadow/r0/f0": {
-   "x": 895,
-   "y": 2379,
-   "w": 44,
-   "h": 21,
-   "ox": 19,
-   "oy": -6
-  },
-  "item/rome.t_stone_pine/shadow/r1/f0": {
-   "x": 1267,
-   "y": 2188,
-   "w": 106,
-   "h": 50,
-   "ox": 9,
-   "oy": -1
-  },
-  "item/rome.tabularium/shadow/r0/f0": {
-   "x": 1,
-   "y": 1358,
-   "w": 627,
-   "h": 214,
-   "ox": 156,
-   "oy": -77
-  },
-  "item/rome.tomb_altar/shadow/r0/f0": {
-   "x": 2317,
-   "y": 2336,
-   "w": 58,
-   "h": 24,
-   "ox": 24,
-   "oy": -4
-  },
-  "item/rome.tomb_altar/shadow/r1/f0": {
-   "x": 3019,
-   "y": 2336,
-   "w": 58,
-   "h": 24,
-   "ox": 24,
-   "oy": -4
-  },
-  "item/rome.tomb_altar/shadow/r2/f0": {
-   "x": 2317,
-   "y": 2336,
-   "w": 58,
-   "h": 24,
-   "ox": 24,
-   "oy": -4
-  },
-  "item/rome.tomb_altar/shadow/r3/f0": {
-   "x": 3019,
-   "y": 2336,
-   "w": 58,
-   "h": 24,
-   "ox": 24,
-   "oy": -4
-  },
-  "item/rome.tomb_drum/shadow/r0/f0": {
-   "x": 2287,
-   "y": 2056,
-   "w": 175,
-   "h": 84,
-   "ox": 84,
-   "oy": -6
-  },
-  "item/rome.tomb_drum/shadow/r1/f0": {
-   "x": 2287,
-   "y": 2056,
-   "w": 175,
-   "h": 84,
-   "ox": 84,
-   "oy": -6
-  },
-  "item/rome.tomb_drum/shadow/r2/f0": {
-   "x": 1132,
-   "y": 2062,
-   "w": 175,
-   "h": 84,
-   "ox": 84,
-   "oy": -6
-  },
-  "item/rome.tomb_drum/shadow/r3/f0": {
-   "x": 3353,
-   "y": 2070,
-   "w": 175,
-   "h": 84,
-   "ox": 84,
-   "oy": -6
-  },
-  "item/rome.tomb_house/shadow/r0/f0": {
-   "x": 3966,
-   "y": 2123,
-   "w": 128,
-   "h": 54,
-   "ox": 49,
-   "oy": -8
-  },
-  "item/rome.tomb_house/shadow/r1/f0": {
-   "x": 1765,
-   "y": 2136,
-   "w": 128,
-   "h": 54,
-   "ox": 48,
-   "oy": -8
-  },
-  "item/rome.tomb_house/shadow/r2/f0": {
-   "x": 1,
-   "y": 2137,
-   "w": 128,
-   "h": 54,
-   "ox": 48,
-   "oy": -8
-  },
-  "item/rome.tomb_house/shadow/r3/f0": {
-   "x": 2022,
-   "y": 2137,
-   "w": 127,
-   "h": 54,
-   "ox": 48,
-   "oy": -8
-  },
   "item/rome.trajan_column/glow/r0/f0": {
    "x": 1374,
    "y": 2188,
@@ -2513,14 +1289,6 @@
    "h": 84,
    "ox": 94,
    "oy": -19
-  },
-  "item/rome.trajan_column/shadow/r0/f0": {
-   "x": 1,
-   "y": 1573,
-   "w": 463,
-   "h": 171,
-   "ox": 292,
-   "oy": -43
   },
   "item/rome.trajan_markets/glow/r0/f0": {
    "x": 1785,
@@ -2537,14 +1305,6 @@
    "h": 25,
    "ox": 2,
    "oy": 3
-  },
-  "item/rome.vesta/shadow/r0/f0": {
-   "x": 2463,
-   "y": 2072,
-   "w": 173,
-   "h": 62,
-   "ox": 71,
-   "oy": -23
   },
   "item/rome.vestals/glow/r0/f0": {
    "x": 3171,
@@ -3298,6 +2058,30 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.mud_bank/m15/v1/f0": {
+   "x": 1658,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.mud_bank/m15/v2/f0": {
+   "x": 1721,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.mud_bank/m15/v3/f0": {
+   "x": 1784,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/m2/f0": {
    "x": 1229,
    "y": 2338,
@@ -3362,9 +2146,41 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.mud_bank/slope/c1/v1": {
+   "x": 3848,
+   "y": 2561,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.mud_bank/slope/c10/v1": {
+   "x": 1847,
+   "y": 2561,
+   "w": 64,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.mud_bank/slope/c11/v1": {
+   "x": 3911,
+   "y": 2561,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/slope/c12/v0": {
    "x": 3716,
    "y": 2214,
+   "w": 63,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.mud_bank/slope/c12/v1": {
+   "x": 212,
+   "y": 2561,
    "w": 63,
    "h": 48,
    "ox": 32,
@@ -3378,9 +2194,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.mud_bank/slope/c13/v1": {
+   "x": 1912,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/slope/c14/v0": {
    "x": 1019,
    "y": 2202,
+   "w": 64,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.mud_bank/slope/c14/v1": {
+   "x": 276,
+   "y": 2561,
    "w": 64,
    "h": 48,
    "ox": 32,
@@ -3394,9 +2226,33 @@
    "ox": 31,
    "oy": 16
   },
+  "terrain/rome.mud_bank/slope/c2/v1": {
+   "x": 1975,
+   "y": 2561,
+   "w": 63,
+   "h": 32,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.mud_bank/slope/c3/v1": {
+   "x": 3974,
+   "y": 2561,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/slope/c4/v0": {
    "x": 1466,
    "y": 2272,
+   "w": 62,
+   "h": 47,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.mud_bank/slope/c4/v1": {
+   "x": 791,
+   "y": 2561,
    "w": 62,
    "h": 47,
    "ox": 31,
@@ -3410,9 +2266,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.mud_bank/slope/c5/v1": {
+   "x": 3659,
+   "y": 2561,
+   "w": 62,
+   "h": 31,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/slope/c6/v0": {
    "x": 412,
    "y": 2215,
+   "w": 63,
+   "h": 48,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.mud_bank/slope/c6/v1": {
+   "x": 341,
+   "y": 2561,
    "w": 63,
    "h": 48,
    "ox": 31,
@@ -3426,6 +2298,14 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.mud_bank/slope/c7/v1": {
+   "x": 2039,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/slope/c8/v0": {
    "x": 3602,
    "y": 2216,
@@ -3434,9 +2314,33 @@
    "ox": 32,
    "oy": 16
   },
+  "terrain/rome.mud_bank/slope/c8/v1": {
+   "x": 2102,
+   "y": 2561,
+   "w": 63,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.mud_bank/slope/c9/v1": {
+   "x": 1,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/slope/knoll/v0": {
    "x": 65,
    "y": 2274,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.mud_bank/slope/knoll/v1": {
+   "x": 2166,
+   "y": 2561,
    "w": 62,
    "h": 32,
    "ox": 31,
@@ -3450,9 +2354,25 @@
    "ox": 32,
    "oy": 8
   },
+  "terrain/rome.mud_bank/slope/ridge_x/v1": {
+   "x": 980,
+   "y": 2561,
+   "w": 48,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
   "terrain/rome.mud_bank/slope/ridge_x0/v0": {
    "x": 241,
    "y": 2229,
+   "w": 63,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/rome.mud_bank/slope/ridge_x0/v1": {
+   "x": 1029,
+   "y": 2561,
    "w": 63,
    "h": 40,
    "ox": 32,
@@ -3466,9 +2386,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.mud_bank/slope/ridge_x1/v1": {
+   "x": 2229,
+   "y": 2561,
+   "w": 47,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.mud_bank/slope/ridge_y/v0": {
    "x": 2693,
    "y": 2371,
+   "w": 48,
+   "h": 40,
+   "ox": 16,
+   "oy": 8
+  },
+  "terrain/rome.mud_bank/slope/ridge_y/v1": {
+   "x": 1093,
+   "y": 2561,
    "w": 48,
    "h": 40,
    "ox": 16,
@@ -3482,9 +2418,25 @@
    "ox": 31,
    "oy": 8
   },
+  "terrain/rome.mud_bank/slope/ridge_y0/v1": {
+   "x": 1142,
+   "y": 2561,
+   "w": 63,
+   "h": 40,
+   "ox": 31,
+   "oy": 8
+  },
   "terrain/rome.mud_bank/slope/ridge_y1/v0": {
    "x": 107,
    "y": 2377,
+   "w": 47,
+   "h": 32,
+   "ox": 16,
+   "oy": 0
+  },
+  "terrain/rome.mud_bank/slope/ridge_y1/v1": {
+   "x": 2277,
+   "y": 2561,
    "w": 47,
    "h": 32,
    "ox": 16,
@@ -3541,6 +2493,30 @@
   "terrain/rome.packed_earth/m15/f0": {
    "x": 3728,
    "y": 2276,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.packed_earth/m15/v1/f0": {
+   "x": 2325,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.packed_earth/m15/v2/f0": {
+   "x": 2388,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.packed_earth/m15/v3/f0": {
+   "x": 2451,
+   "y": 2561,
    "w": 62,
    "h": 32,
    "ox": 31,
@@ -3610,9 +2586,41 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.packed_earth/slope/c1/v1": {
+   "x": 64,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.packed_earth/slope/c10/v1": {
+   "x": 2514,
+   "y": 2561,
+   "w": 64,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.packed_earth/slope/c11/v1": {
+   "x": 127,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.packed_earth/slope/c12/v0": {
    "x": 130,
    "y": 2230,
+   "w": 63,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.packed_earth/slope/c12/v1": {
+   "x": 405,
+   "y": 2561,
    "w": 63,
    "h": 48,
    "ox": 32,
@@ -3626,9 +2634,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.packed_earth/slope/c13/v1": {
+   "x": 2579,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.packed_earth/slope/c14/v0": {
    "x": 2578,
    "y": 2205,
+   "w": 64,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.packed_earth/slope/c14/v1": {
+   "x": 469,
+   "y": 2561,
    "w": 64,
    "h": 48,
    "ox": 32,
@@ -3642,9 +2666,33 @@
    "ox": 31,
    "oy": 16
   },
+  "terrain/rome.packed_earth/slope/c2/v1": {
+   "x": 2642,
+   "y": 2561,
+   "w": 63,
+   "h": 32,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.packed_earth/slope/c3/v1": {
+   "x": 190,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.packed_earth/slope/c4/v0": {
    "x": 2400,
    "y": 2277,
+   "w": 62,
+   "h": 47,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.packed_earth/slope/c4/v1": {
+   "x": 854,
+   "y": 2561,
    "w": 62,
    "h": 47,
    "ox": 31,
@@ -3658,9 +2706,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.packed_earth/slope/c5/v1": {
+   "x": 3722,
+   "y": 2561,
+   "w": 62,
+   "h": 31,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.packed_earth/slope/c6/v0": {
    "x": 540,
    "y": 2230,
+   "w": 63,
+   "h": 48,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.packed_earth/slope/c6/v1": {
+   "x": 534,
+   "y": 2561,
    "w": 63,
    "h": 48,
    "ox": 31,
@@ -3674,6 +2738,14 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.packed_earth/slope/c7/v1": {
+   "x": 2706,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.packed_earth/slope/c8/v0": {
    "x": 604,
    "y": 2230,
@@ -3682,9 +2754,33 @@
    "ox": 32,
    "oy": 16
   },
+  "terrain/rome.packed_earth/slope/c8/v1": {
+   "x": 2769,
+   "y": 2561,
+   "w": 63,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.packed_earth/slope/c9/v1": {
+   "x": 253,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.packed_earth/slope/knoll/v0": {
    "x": 128,
    "y": 2279,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.packed_earth/slope/knoll/v1": {
+   "x": 2833,
+   "y": 2561,
    "w": 62,
    "h": 32,
    "ox": 31,
@@ -3698,9 +2794,25 @@
    "ox": 32,
    "oy": 8
   },
+  "terrain/rome.packed_earth/slope/ridge_x/v1": {
+   "x": 1206,
+   "y": 2561,
+   "w": 48,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
   "terrain/rome.packed_earth/slope/ridge_x0/v0": {
    "x": 3966,
    "y": 2230,
+   "w": 63,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/rome.packed_earth/slope/ridge_x0/v1": {
+   "x": 1255,
+   "y": 2561,
    "w": 63,
    "h": 40,
    "ox": 32,
@@ -3714,9 +2826,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.packed_earth/slope/ridge_x1/v1": {
+   "x": 2896,
+   "y": 2561,
+   "w": 47,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.packed_earth/slope/ridge_y/v0": {
    "x": 464,
    "y": 2375,
+   "w": 48,
+   "h": 40,
+   "ox": 16,
+   "oy": 8
+  },
+  "terrain/rome.packed_earth/slope/ridge_y/v1": {
+   "x": 1319,
+   "y": 2561,
    "w": 48,
    "h": 40,
    "ox": 16,
@@ -3730,9 +2858,25 @@
    "ox": 31,
    "oy": 8
   },
+  "terrain/rome.packed_earth/slope/ridge_y0/v1": {
+   "x": 1368,
+   "y": 2561,
+   "w": 63,
+   "h": 40,
+   "ox": 31,
+   "oy": 8
+  },
   "terrain/rome.packed_earth/slope/ridge_y1/v0": {
    "x": 790,
    "y": 2378,
+   "w": 47,
+   "h": 32,
+   "ox": 16,
+   "oy": 0
+  },
+  "terrain/rome.packed_earth/slope/ridge_y1/v1": {
+   "x": 2944,
+   "y": 2561,
    "w": 47,
    "h": 32,
    "ox": 16,
@@ -4442,6 +3586,30 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.tufa_rock/m15/v1/f0": {
+   "x": 2992,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.tufa_rock/m15/v2/f0": {
+   "x": 3055,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.tufa_rock/m15/v3/f0": {
+   "x": 3118,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/m2/f0": {
    "x": 551,
    "y": 2351,
@@ -4506,9 +3674,41 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.tufa_rock/slope/c1/v1": {
+   "x": 316,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.tufa_rock/slope/c10/v1": {
+   "x": 3181,
+   "y": 2561,
+   "w": 64,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.tufa_rock/slope/c11/v1": {
+   "x": 379,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/slope/c12/v0": {
    "x": 2021,
    "y": 2231,
+   "w": 63,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.tufa_rock/slope/c12/v1": {
+   "x": 598,
+   "y": 2561,
    "w": 63,
    "h": 48,
    "ox": 32,
@@ -4522,9 +3722,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.tufa_rock/slope/c13/v1": {
+   "x": 3246,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/slope/c14/v0": {
    "x": 2643,
    "y": 2205,
+   "w": 64,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.tufa_rock/slope/c14/v1": {
+   "x": 662,
+   "y": 2561,
    "w": 64,
    "h": 48,
    "ox": 32,
@@ -4538,9 +3754,33 @@
    "ox": 31,
    "oy": 16
   },
+  "terrain/rome.tufa_rock/slope/c2/v1": {
+   "x": 3309,
+   "y": 2561,
+   "w": 63,
+   "h": 32,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.tufa_rock/slope/c3/v1": {
+   "x": 442,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/slope/c4/v0": {
    "x": 1592,
    "y": 2311,
+   "w": 62,
+   "h": 47,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.tufa_rock/slope/c4/v1": {
+   "x": 917,
+   "y": 2561,
    "w": 62,
    "h": 47,
    "ox": 31,
@@ -4554,9 +3794,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.tufa_rock/slope/c5/v1": {
+   "x": 3785,
+   "y": 2561,
+   "w": 62,
+   "h": 31,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/slope/c6/v0": {
    "x": 1,
    "y": 2234,
+   "w": 63,
+   "h": 48,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/rome.tufa_rock/slope/c6/v1": {
+   "x": 727,
+   "y": 2561,
    "w": 63,
    "h": 48,
    "ox": 31,
@@ -4570,6 +3826,14 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.tufa_rock/slope/c7/v1": {
+   "x": 3373,
+   "y": 2561,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/slope/c8/v0": {
    "x": 1813,
    "y": 2234,
@@ -4578,9 +3842,33 @@
    "ox": 32,
    "oy": 16
   },
+  "terrain/rome.tufa_rock/slope/c8/v1": {
+   "x": 3436,
+   "y": 2561,
+   "w": 63,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/rome.tufa_rock/slope/c9/v1": {
+   "x": 505,
+   "y": 2684,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/slope/knoll/v0": {
    "x": 1996,
    "y": 2313,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/rome.tufa_rock/slope/knoll/v1": {
+   "x": 3500,
+   "y": 2561,
    "w": 62,
    "h": 32,
    "ox": 31,
@@ -4594,9 +3882,25 @@
    "ox": 32,
    "oy": 8
   },
+  "terrain/rome.tufa_rock/slope/ridge_x/v1": {
+   "x": 1432,
+   "y": 2561,
+   "w": 48,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
   "terrain/rome.tufa_rock/slope/ridge_x0/v0": {
    "x": 1877,
    "y": 2234,
+   "w": 63,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/rome.tufa_rock/slope/ridge_x0/v1": {
+   "x": 1481,
+   "y": 2561,
    "w": 63,
    "h": 40,
    "ox": 32,
@@ -4610,9 +3914,25 @@
    "ox": 31,
    "oy": 0
   },
+  "terrain/rome.tufa_rock/slope/ridge_x1/v1": {
+   "x": 3563,
+   "y": 2561,
+   "w": 47,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/rome.tufa_rock/slope/ridge_y/v0": {
    "x": 1625,
    "y": 2376,
+   "w": 48,
+   "h": 40,
+   "ox": 16,
+   "oy": 8
+  },
+  "terrain/rome.tufa_rock/slope/ridge_y/v1": {
+   "x": 1545,
+   "y": 2561,
    "w": 48,
    "h": 40,
    "ox": 16,
@@ -4626,9 +3946,25 @@
    "ox": 31,
    "oy": 8
   },
+  "terrain/rome.tufa_rock/slope/ridge_y0/v1": {
+   "x": 1594,
+   "y": 2561,
+   "w": 63,
+   "h": 40,
+   "ox": 31,
+   "oy": 8
+  },
   "terrain/rome.tufa_rock/slope/ridge_y1/v0": {
    "x": 3123,
    "y": 2378,
+   "w": 47,
+   "h": 32,
+   "ox": 16,
+   "oy": 0
+  },
+  "terrain/rome.tufa_rock/slope/ridge_y1/v1": {
+   "x": 3611,
+   "y": 2561,
    "w": 47,
    "h": 32,
    "ox": 16,
