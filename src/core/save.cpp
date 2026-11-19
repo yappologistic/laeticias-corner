@@ -7,10 +7,12 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cerrno>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <format>
@@ -707,23 +709,125 @@ void migrateLegacy(SaveData& data, const Catalog& cat) {
     data.fromVersion = kSaveVersion;
 }
 
+namespace {
+
+// One code point of UTF-8 at s[i] (advancing i past it); U+FFFD for a malformed sequence.
+char32_t nextCodePoint(std::string_view s, std::size_t& i) {
+    const auto c = static_cast<unsigned char>(s[i++]);
+    if (c < 0x80) return c;
+    const int extra = c >= 0xF0 ? 3 : c >= 0xE0 ? 2 : c >= 0xC0 ? 1 : -1;
+    if (extra < 0 || i + static_cast<std::size_t>(extra) > s.size()) return 0xFFFD;
+    char32_t cp = c & (0x3F >> extra);
+    for (int k = 0; k < extra; ++k) {
+        const auto d = static_cast<unsigned char>(s[i]);
+        if ((d & 0xC0) != 0x80) return 0xFFFD;
+        cp = (cp << 6) | (d & 0x3F);
+        ++i;
+    }
+    return cp;
+}
+
+struct Translit {
+    char32_t lo, hi;
+    std::string_view latin;
+};
+
+// Letters with a plain Latin spelling: accented Latin, Greek (monotonic and polytonic, breathings
+// and accents dropped), the dotted letters of transliterated names. "" separates words.
+constexpr std::array kTranslit{
+    Translit{0xC0, 0xC5, "a"},     Translit{0xC6, 0xC6, "ae"},    Translit{0xC7, 0xC7, "c"},
+    Translit{0xC8, 0xCB, "e"},     Translit{0xCC, 0xCF, "i"},     Translit{0xD0, 0xD0, "d"},
+    Translit{0xD1, 0xD1, "n"},     Translit{0xD2, 0xD6, "o"},     Translit{0xD7, 0xD7, ""},
+    Translit{0xD8, 0xD8, "o"},     Translit{0xD9, 0xDC, "u"},     Translit{0xDD, 0xDD, "y"},
+    Translit{0xDE, 0xDE, "th"},    Translit{0xDF, 0xDF, "ss"},    Translit{0xE0, 0xE5, "a"},
+    Translit{0xE6, 0xE6, "ae"},    Translit{0xE7, 0xE7, "c"},     Translit{0xE8, 0xEB, "e"},
+    Translit{0xEC, 0xEF, "i"},     Translit{0xF0, 0xF0, "d"},     Translit{0xF1, 0xF1, "n"},
+    Translit{0xF2, 0xF6, "o"},     Translit{0xF7, 0xF7, ""},      Translit{0xF8, 0xF8, "o"},
+    Translit{0xF9, 0xFC, "u"},     Translit{0xFD, 0xFD, "y"},     Translit{0xFE, 0xFE, "th"},
+    Translit{0xFF, 0xFF, "y"},     Translit{0x100, 0x105, "a"},   Translit{0x106, 0x10D, "c"},
+    Translit{0x10E, 0x111, "d"},   Translit{0x112, 0x11B, "e"},   Translit{0x11C, 0x123, "g"},
+    Translit{0x124, 0x127, "h"},   Translit{0x128, 0x131, "i"},   Translit{0x132, 0x133, "ij"},
+    Translit{0x134, 0x135, "j"},   Translit{0x136, 0x138, "k"},   Translit{0x139, 0x142, "l"},
+    Translit{0x143, 0x14B, "n"},   Translit{0x14C, 0x151, "o"},   Translit{0x152, 0x153, "oe"},
+    Translit{0x154, 0x159, "r"},   Translit{0x15A, 0x161, "s"},   Translit{0x162, 0x167, "t"},
+    Translit{0x168, 0x173, "u"},   Translit{0x174, 0x175, "w"},   Translit{0x176, 0x178, "y"},
+    Translit{0x179, 0x17E, "z"},   Translit{0x17F, 0x17F, "s"},   Translit{0x386, 0x386, "a"},
+    Translit{0x388, 0x389, "e"},   Translit{0x38A, 0x38A, "i"},   Translit{0x38C, 0x38C, "o"},
+    Translit{0x38E, 0x38E, "y"},   Translit{0x38F, 0x38F, "o"},   Translit{0x390, 0x390, "i"},
+    Translit{0x391, 0x391, "a"},   Translit{0x392, 0x392, "b"},   Translit{0x393, 0x393, "g"},
+    Translit{0x394, 0x394, "d"},   Translit{0x395, 0x395, "e"},   Translit{0x396, 0x396, "z"},
+    Translit{0x397, 0x397, "e"},   Translit{0x398, 0x398, "th"},  Translit{0x399, 0x399, "i"},
+    Translit{0x39A, 0x39A, "k"},   Translit{0x39B, 0x39B, "l"},   Translit{0x39C, 0x39C, "m"},
+    Translit{0x39D, 0x39D, "n"},   Translit{0x39E, 0x39E, "x"},   Translit{0x39F, 0x39F, "o"},
+    Translit{0x3A0, 0x3A0, "p"},   Translit{0x3A1, 0x3A1, "r"},   Translit{0x3A3, 0x3A3, "s"},
+    Translit{0x3A4, 0x3A4, "t"},   Translit{0x3A5, 0x3A5, "y"},   Translit{0x3A6, 0x3A6, "ph"},
+    Translit{0x3A7, 0x3A7, "ch"},  Translit{0x3A8, 0x3A8, "ps"},  Translit{0x3A9, 0x3A9, "o"},
+    Translit{0x3AA, 0x3AA, "i"},   Translit{0x3AB, 0x3AB, "y"},   Translit{0x3AC, 0x3AC, "a"},
+    Translit{0x3AD, 0x3AE, "e"},   Translit{0x3AF, 0x3AF, "i"},   Translit{0x3B0, 0x3B0, "y"},
+    Translit{0x3B1, 0x3B1, "a"},   Translit{0x3B2, 0x3B2, "b"},   Translit{0x3B3, 0x3B3, "g"},
+    Translit{0x3B4, 0x3B4, "d"},   Translit{0x3B5, 0x3B5, "e"},   Translit{0x3B6, 0x3B6, "z"},
+    Translit{0x3B7, 0x3B7, "e"},   Translit{0x3B8, 0x3B8, "th"},  Translit{0x3B9, 0x3B9, "i"},
+    Translit{0x3BA, 0x3BA, "k"},   Translit{0x3BB, 0x3BB, "l"},   Translit{0x3BC, 0x3BC, "m"},
+    Translit{0x3BD, 0x3BD, "n"},   Translit{0x3BE, 0x3BE, "x"},   Translit{0x3BF, 0x3BF, "o"},
+    Translit{0x3C0, 0x3C0, "p"},   Translit{0x3C1, 0x3C1, "r"},   Translit{0x3C2, 0x3C3, "s"},
+    Translit{0x3C4, 0x3C4, "t"},   Translit{0x3C5, 0x3C5, "y"},   Translit{0x3C6, 0x3C6, "ph"},
+    Translit{0x3C7, 0x3C7, "ch"},  Translit{0x3C8, 0x3C8, "ps"},  Translit{0x3C9, 0x3C9, "o"},
+    Translit{0x3CA, 0x3CA, "i"},   Translit{0x3CB, 0x3CB, "y"},   Translit{0x3CC, 0x3CC, "o"},
+    Translit{0x3CD, 0x3CD, "y"},   Translit{0x3CE, 0x3CE, "o"},   Translit{0x1E0C, 0x1E0D, "d"},
+    Translit{0x1E24, 0x1E25, "h"}, Translit{0x1E42, 0x1E43, "m"}, Translit{0x1E46, 0x1E47, "n"},
+    Translit{0x1E5A, 0x1E5B, "r"}, Translit{0x1E62, 0x1E63, "s"}, Translit{0x1E6C, 0x1E6D, "t"},
+    Translit{0x1E92, 0x1E93, "z"}, Translit{0x1F00, 0x1F0F, "a"}, Translit{0x1F10, 0x1F1D, "e"},
+    Translit{0x1F20, 0x1F2F, "e"}, Translit{0x1F30, 0x1F3F, "i"}, Translit{0x1F40, 0x1F4D, "o"},
+    Translit{0x1F50, 0x1F5F, "y"}, Translit{0x1F60, 0x1F6F, "o"}, Translit{0x1F70, 0x1F71, "a"},
+    Translit{0x1F72, 0x1F75, "e"}, Translit{0x1F76, 0x1F77, "i"}, Translit{0x1F78, 0x1F79, "o"},
+    Translit{0x1F7A, 0x1F7B, "y"}, Translit{0x1F7C, 0x1F7D, "o"}, Translit{0x1F80, 0x1F8F, "a"},
+    Translit{0x1F90, 0x1F9F, "e"}, Translit{0x1FA0, 0x1FAF, "o"}, Translit{0x1FB0, 0x1FBC, "a"},
+    Translit{0x1FC2, 0x1FC7, "e"}, Translit{0x1FC8, 0x1FC9, "e"}, Translit{0x1FCA, 0x1FCC, "e"},
+    Translit{0x1FD0, 0x1FDB, "i"}, Translit{0x1FE0, 0x1FE3, "y"}, Translit{0x1FE4, 0x1FE5, "r"},
+    Translit{0x1FE6, 0x1FEB, "y"}, Translit{0x1FEC, 0x1FEC, "r"}, Translit{0x1FF2, 0x1FF7, "o"},
+    Translit{0x1FF8, 0x1FF9, "o"}, Translit{0x1FFA, 0x1FFC, "o"},
+};
+
+// Punctuation, symbols and spaces of every script: they part words, as ASCII's do.
+bool separator(char32_t c) {
+    return (c >= 0x80 && c <= 0xBF) || (c >= 0x2000 && c <= 0x2BFF) ||
+           (c >= 0x3000 && c <= 0x303F) || (c >= 0xFE00 && c <= 0xFE0F) || c == 0xFEFF ||
+           c == 0xFFFD || c == 0x60C || c == 0x61B || c == 0x61F || c == 0x6D4;
+}
+
+} // namespace
+
 std::string worldSlug(std::string_view name, std::span<const std::string> taken) {
-    constexpr std::string_view kCurly = "\xE2\x80\x99"; // U+2019, the typographic apostrophe
     std::string base;
     bool dash = false;
-    for (std::size_t i = 0; i < name.size(); ++i) {
-        const auto c = static_cast<unsigned char>(name[i]);
-        if (c == '\'') continue;
-        if (name.substr(i).starts_with(kCurly)) {
-            i += kCurly.size() - 1;
+    const auto put = [&](std::string_view part) {
+        if (dash && !base.empty()) base += '-';
+        dash = false;
+        base += part;
+    };
+    for (std::size_t i = 0; i < name.size();) {
+        const char32_t c = nextCodePoint(name, i);
+        if (c == '\'' || c == 0x2019 || (c >= 0x300 && c <= 0x36F)) continue; // within a word
+        if (c < 0x80) {
+            if (std::isalnum(static_cast<int>(c)) != 0)
+                put(std::string(1, static_cast<char>(std::tolower(static_cast<int>(c)))));
+            else
+                dash = true;
             continue;
         }
-        if (c < 0x80 && std::isalnum(c) != 0) {
-            if (dash && !base.empty()) base += '-';
-            dash = false;
-            base += static_cast<char>(std::tolower(c));
-        } else {
+        const auto t = std::ranges::find_if(
+            kTranslit, [&](const Translit& e) { return c >= e.lo && c <= e.hi; });
+        if (t != kTranslit.end()) {
+            if (t->latin.empty())
+                dash = true;
+            else
+                put(t->latin);
+        } else if (separator(c)) {
             dash = true;
+        } else {
+            // A letter of a script with no Latin spelling here: its code point, so names in
+            // Persian or cuneiform stay apart and the folder name is still plain ASCII.
+            put(std::format("u{:x}", static_cast<std::uint32_t>(c)));
         }
     }
     if (base.size() > 32) base.resize(32);

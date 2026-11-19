@@ -12,6 +12,7 @@
 namespace lc::life {
 
 using ojson = nlohmann::ordered_json;
+namespace tl = tuning::life;
 
 namespace {
 
@@ -309,6 +310,23 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
                                       reg.id, d.id, d.populations.size(), at.x, at.y));
         }
     }
+    // Walkable decks over water with no floor height in their geometry (the art tool's
+    // `walk_z`): walkers on them stand on the deck's highest point (`tops`: the rail), or at the
+    // water's level, through the deck, where it has none.
+    std::map<std::string, std::pair<int, TilePos>> decks;
+    for (const world::Placed& it : m.items()) {
+        const world::ItemInfo& inf = m.info(it);
+        const int t = m.terrainAt({it.x, it.y});
+        if (!inf.walkable || t == world::kNone || !m.terrainInfo(t).water) continue;
+        const world::GeomVariant* g = m.geometry(it);
+        if (g != nullptr && !g->walkZ.empty()) continue;
+        ++decks.try_emplace(inf.id, 0, TilePos{it.x, it.y}).first->second.first;
+    }
+    for (const auto& [id, e] : decks)
+        out.push_back(std::format("{}: {} walkable decks over water with no floor height "
+                                  "(geometry walk_z): walkers stand on its top (tops) or the "
+                                  "water, first at grid ({}, {})",
+                                  id, e.first, e.second.x, e.second.y));
     // Slot spots: a walker stands on the spot or beside it (a seat on its item is used from
     // the tile next to it), as resolve() does; a spot with neither is never used.
     std::vector<std::tuple<std::uint32_t, std::uint16_t, int, int>> seen;
@@ -334,6 +352,56 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
                                   m.slotNames()[s.name], m.info(it).id, s.tile.x, s.tile.y,
                                   walkable ? "no walker of the region reaches it"
                                            : "nowhere to stand at or beside it"));
+    }
+    return out;
+}
+
+FloorCheck checkFloors(const CityLife& life, TileRect rect, std::vector<DrawActor>& scratch) {
+    FloorCheck out;
+    const world::WorldMap& m = life.lifeWorld().map();
+    const auto& kinds = life.lifeWorld().data.kinds;
+    scratch.resize(std::max<std::size_t>(scratch.size(), 4096));
+    // Each actor at the start and at the end of its last step, by drawing it at both ends.
+    const std::size_t half = scratch.size() / 2;
+    const std::span<DrawActor> before(scratch.data(), half);
+    const std::span<DrawActor> after(scratch.data() + half, half);
+    const std::size_t n0 = life.gather(rect, 0.0f, before);
+    const std::size_t n1 = life.gather(rect, 1.0f, after);
+    const auto bad = [&](TilePos t) {
+        if (out.firstBad.x < 0) out.firstBad = t;
+    };
+    for (std::size_t i = 0; i < n1; ++i) {
+        const DrawActor& d = after[i];
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        if (d.alpha < 1.0f || !m.inBounds(t)) continue;
+        if (i < n0 && before[i].handle == d.handle && before[i].alpha >= 1.0f) {
+            const float dz = std::abs(d.z - before[i].z);
+            const float dp = std::hypot(d.pos.x - before[i].pos.x, d.pos.y - before[i].pos.y);
+            out.worstStep = std::max(out.worstStep, dz);
+            out.worstMove = std::max(out.worstMove, dp);
+            if (dz > tl::kFloorStepPx) ++out.jumps, bad(t);
+            if (dp > tl::kFloorStepTiles) ++out.hops, bad(t);
+        }
+        if (kinds[d.kind].ship) {
+            ++out.afloat;
+            if (std::abs(d.z - static_cast<float>(m.level(t) * m.levelPx())) > tl::kFloorSlackPx)
+                ++out.offWater, bad(t);
+            continue;
+        }
+        if (d.speed <= 0 || !m.walkable(t)) continue;
+        std::array<world::WalkStep, 4> steps{};
+        const int ns = m.walkNeighbours(t, steps);
+        const int own = m.floorZ(t);
+        float lo = static_cast<float>(own);
+        float hi = lo;
+        for (int j = 0; j < ns; ++j) {
+            const auto z = static_cast<float>(m.floorZ(steps[static_cast<std::size_t>(j)].to));
+            lo = std::min(lo, z);
+            hi = std::max(hi, z);
+        }
+        out.raised += own != m.level(t) * m.levelPx() ? 1 : 0;
+        if (d.z < lo - tl::kFloorSlackPx || d.z > hi + tl::kFloorSlackPx) ++out.offFloor, bad(t);
     }
     return out;
 }

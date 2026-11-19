@@ -1,6 +1,7 @@
 # City life driven by the game without the world renderer (src/life/): the Roman Forum on an
 # ordinary April morning, a minute of its life, then the Athenian Agora on the same morning;
-# nobody is drawn walking on the spot.
+# nobody is drawn walking on the spot. Then a bridge and a stair in each city: people on the
+# deck and the treads, not through them, rising smoothly; boats under the bridges afloat.
 set season spring
 set day 9
 set time 0.1667
@@ -23,5 +24,28 @@ expect city ground ok
 wait 600
 expect city moving
 set city_dump city_agora.json
+set season spring
+set city 121,1127
+wait 300
+expect city floor 3
+expect city moving
+set city district:rome/capitol
+wait 300
+expect city floor 3
+set season summer
+set city 307,632
+wait 300
+expect city floor 3
+set city 306,575
+wait 300
+expect city floor 1
+set season spring
+set city 348,90
+wait 300
+expect city floor 3
+expect city moving
+set city 357,66
+wait 300
+expect city floor 1
 set city off
 quit

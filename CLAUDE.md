@@ -322,6 +322,9 @@ Design and formats: `docs/design/world-tech.md`. In short:
 - Footprints over 8 × 8, or with walk tiles, are split into rectangular **pieces** of at most
   8 × 8 tiles (`…/r<k>/p<i>/f<n>`), depth-sorted as items. Walk tiles carry nothing lower than
   `1.5 × tile.h` px above their floor. Landmarks are modelled in grid axes and use `r0`.
+  Walkable items over water (decks: bridges, jetties, moles) give their floor by `walk` and
+  `walk_z` like walk runs; without it walkers stand on the tile's `tops` (the rail's top), or
+  at the water without that (`lifeinfo problems` names each such deck).
 - Elevation: integer levels 0..15, `tile.level` px each; faces `edge/<material>_<se|sw>/v<n>`, one
   level tall, stacked. Stairs and ramps are items with `rise` and `axis`, footprint at the lower level.
 - The world is `assets/world/world.json` plus layer files (`layers/<id>.lcw`, binary, composed in
@@ -395,7 +398,10 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   the set catalog's `stride` (the body drives the drawing: a walk only while the body covers
   ground, its standing form otherwise, never a walk played by the clock; a watchdog gives up a
   step after 4 s going nowhere and lets the actor leave after 12 s; `expect city moving` and the
-  life soak hold it at zero), goods in hand, shadows in the shared layer, whole window pixels at
+  life soak hold it at zero), on the floor of their course (decks' and walk runs' `walk_z`,
+  stairs' treads, blended between tiles; chain carriers walk between the chains' one-second
+  ticks; ships at the water's level, under the bridges; `expect city floor` and the life test
+  hold it), goods in hand, shadows in the shared layer, whole window pixels at
   2x and 3x; at half and quarter scale people go over the impostors; nobody at the overview or
   with the map open. The home's own actors keep the scene's path.
 - **Cards and journal.** With an empty hand, landmarks with cards and named figures (city life's
@@ -607,7 +613,7 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
   `tests/world_tools/life_picture.py DUMP.json` draws one. Scripts: `set city F|off|camera`
   (a fixed active area, nobody, or the camera's again), `set world PLACE ZOOM`, `set look KIND
   ZOOM` (a living actor first), point `life:KIND`, `set city_dump FILE`, `expect city
-  live|ground|slots|event|district|drawn|people|sound ...`, `expect following`. The same from the
+  live|ground|slots|floor|event|district|drawn|people|sound ...`, `expect following`. The same from the
   tool: `build/release/lifeinfo [summary|problems|chains|dump|bench|soak]`.
 - With the world, `--bench` adds crowd cases: Rome, Athens and Pārsa at the life's busiest view
   and hour on an ordinary day and on their festival (live and drawn actors, the city's

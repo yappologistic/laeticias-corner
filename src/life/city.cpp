@@ -2476,11 +2476,14 @@ void CityLife::puppet(int i) {
             std::min(1.0f, a.alpha + static_cast<float>(tuning::kStepSeconds) / tl::kFadeSeconds);
         if (a.alpha >= 1.0f) a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kFadeIn);
     }
+    // On the floor, continuous along the way (over a deck, up a stair); a ship at the water's
+    // level, passing under the bridges.
+    const bool afloat = w_->data.kinds[a.kind].ship;
     const auto place = [&](Vec2 p) {
         const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
         if (map_->inBounds(t)) {
             a.tile = tile16(t);
-            a.z = static_cast<float>(map_->floorZ(t));
+            a.z = afloat ? static_cast<float>(map_->level(t) * map_->levelPx()) : map_->floorAt(p);
         }
         a.pos = p;
         link(i);
@@ -2515,9 +2518,13 @@ void CityLife::puppet(int i) {
         const TilePos from = run.place(s.from).tile;
         const TilePos to = run.place(s.to).tile;
         const double travel = std::max(1.0, run.travel(stage));
+        // The chain counts the way left in whole seconds, one tick a second; the carrier walks
+        // through the second since the last tick instead of hopping a second's way at each.
+        const double since = std::clamp(now_ - static_cast<double>(chains_.tick()), 0.0, 1.0);
+        const double left = std::clamp((wk.t - since) / travel, 0.0, 1.0);
         double f = 0;
-        if (wk.phase == WorkerPhase::Out) f = 1.0 - std::clamp(wk.t / travel, 0.0, 1.0);
-        if (wk.phase == WorkerPhase::Back) f = std::clamp(wk.t / travel, 0.0, 1.0);
+        if (wk.phase == WorkerPhase::Out) f = 1.0 - left;
+        if (wk.phase == WorkerPhase::Back) f = left;
         const std::size_t key =
             static_cast<std::size_t>(a.a) * 16 + std::min<std::size_t>(stage, 15);
         const std::vector<Tile16>& path = carrierPath(key, from, to);

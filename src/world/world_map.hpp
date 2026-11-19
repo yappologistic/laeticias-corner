@@ -130,6 +130,7 @@ public:
     [[nodiscard]] std::size_t terrainCount() const { return terrains_.size(); }
     [[nodiscard]] std::uint8_t levelByte(TilePos p) const { return chunk(p).level[local(p)]; }
     [[nodiscard]] int level(TilePos p) const { return levelOf(levelByte(p)); }
+    [[nodiscard]] int levelPx() const { return levelPx_; } // one level's height, px
     [[nodiscard]] int districtAt(TilePos p) const {
         return chunk(p).district[local(p)];
     } // or kNone
@@ -171,6 +172,10 @@ public:
     }
     // Height of the floor a walker stands on, px above level 0 (stairs and walk floors included).
     [[nodiscard]] int floorZ(TilePos p) const;
+    // The floor under a continuous point (tile coordinates): its tile's floor, blended toward
+    // each neighbour it can step to as the point nears their shared edge (the two sides meet
+    // half way), so a height carried along any course is continuous.
+    [[nodiscard]] float floorAt(Vec2 p) const;
     // The 4-neighbours a walker on p may step to, with their floor height change.
     [[nodiscard]] int walkNeighbours(TilePos p, std::array<WalkStep, 4>& out) const;
 

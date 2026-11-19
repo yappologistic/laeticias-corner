@@ -373,7 +373,9 @@ void WorldMap::index(TileRect area, std::uint32_t from, Diagnostics& diag) {
                     if (inf.rise > 0) {
                         if (!g || g->walk.empty() || walkTile) bits = kWalk | kFloor;
                     } else if (inf.walkable) {
-                        bits = static_cast<std::uint8_t>(kWalk | (water ? kDeck : 0));
+                        // A deck stands at its floor (`walk_z`), not at the water under it.
+                        bits = static_cast<std::uint8_t>(kWalk | (water ? kDeck : 0) |
+                                                         (walkZ ? kFloor : 0));
                     } else if (walkTile) {
                         bits = static_cast<std::uint8_t>(kWalk | (walkZ ? kFloor : 0));
                     }
@@ -473,7 +475,19 @@ void WorldMap::buildSlotIndex() {
 int WorldMap::floorZ(TilePos p) const {
     const Chunk& c = chunk(p);
     const std::size_t l = local(p);
-    if (!(c.walk[l] & kFloor)) return levelOf(c.level[l]) * levelPx_;
+    if (!(c.walk[l] & kFloor)) {
+        // A deck whose geometry gives no floor (`walk_z`) stands on its tile's highest point
+        // (`tops`: the rail's top, a few px over the planks) rather than in the water under it,
+        // until the art gives the floor. Steps onto it count from its level (edgeZ), so the
+        // walk graph is the same either way.
+        if ((c.walk[l] & kDeck) && c.occupancy[l] != 0) {
+            const Placed& it = items_[c.occupancy[l] - 1];
+            if (const GeomVariant* g = geometry(it); g != nullptr)
+                if (const int top = g->topAt({p.x - it.x, p.y - it.y}); top >= 0)
+                    return it.level * levelPx_ + top;
+        }
+        return levelOf(c.level[l]) * levelPx_;
+    }
     const Placed& it = items_[c.occupancy[l] - 1];
     const ItemInfo& inf = info(it);
     const TilePos rel{p.x - it.x, p.y - it.y};
@@ -508,6 +522,33 @@ int WorldMap::edgeZ(TilePos p, int dir) const {
             if (t == rel) return it.level * levelPx_ + z;
     if (stair) return INT_MIN; // the sides of a stair are parapets
     return it.level * levelPx_;
+}
+
+float WorldMap::floorAt(Vec2 p) const {
+    const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+    if (!inBounds(t)) return 0.0f;
+    // Plain ground all round (no stair, walk floor or deck here or next door): steps between
+    // such tiles never change height, so the tile's level is the floor.
+    const auto raised = [&](TilePos q) {
+        return inBounds(q) && (chunk(q).walk[local(q)] & (kFloor | kDeck)) != 0;
+    };
+    if (!raised(t) &&
+        std::ranges::none_of(kSteps, [&](TilePos d) { return raised({t.x + d.x, t.y + d.y}); }))
+        return static_cast<float>(levelOf(chunk(t).level[local(t)]) * levelPx_);
+    const auto z = static_cast<float>(floorZ(t));
+    const float fx = p.x - static_cast<float>(t.x) - 0.5f;
+    const float fy = p.y - static_cast<float>(t.y) - 0.5f;
+    std::array<WalkStep, 4> steps{};
+    const int n = walkNeighbours(t, steps);
+    float out = z;
+    for (int i = 0; i < n; ++i) {
+        const WalkStep& s = steps[static_cast<std::size_t>(i)];
+        const int dx = s.to.x - t.x;
+        const int dy = s.to.y - t.y;
+        const float toward = dx != 0 ? fx * static_cast<float>(dx) : fy * static_cast<float>(dy);
+        if (toward > 0) out += static_cast<float>(s.dz) * toward;
+    }
+    return out;
 }
 
 int WorldMap::walkNeighbours(TilePos p, std::array<WalkStep, 4>& out) const {
