@@ -272,6 +272,7 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
 void WorldView::openRuns() {
     runs_.begin({0, 0, static_cast<float>(viewW_), static_cast<float>(viewH_)});
     runQuads_.clear();
+    runMeshes_.clear();
     runsOpen_ = true;
 }
 
@@ -280,6 +281,12 @@ void WorldView::closeRuns(SDL_ScaleMode filter) {
         const RunQuad& q = runQuads_[e];
         if (decoder_) decoder_->use(batch_, q.packed);
         batch_.use(q.texture, q.mode, filter);
+        if (q.mesh >= 0) {
+            static constexpr std::array<int, 6> kQuad{0, 1, 2, 0, 2, 3};
+            batch_.triangles(runMeshes_[static_cast<std::size_t>(q.mesh)].data(), 4, kQuad.data(),
+                             6);
+            continue;
+        }
         const SDL_FPoint p[4] = {
             {q.p0.x, q.p0.y}, {q.p1.x, q.p0.y}, {q.p1.x, q.p1.y}, {q.p0.x, q.p1.y}};
         batch_.quad(p, q.uv, q.colour);

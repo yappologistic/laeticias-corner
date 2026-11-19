@@ -48,23 +48,60 @@ float WorldView::macroAt(Vec2 tile) const {
 
 bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<const int> idx,
                         const Xform& x, SDL_BlendMode mode) {
+    if (dry_) return true; // (a pass that only asks the tiles something)
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return false;
-    const bool packed = s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
-    if (decoder_) {
-        decoder_->use(batch_, packed);
-        if (packed) {
-            if (mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
-            for (SDL_Vertex& p : v) p.color = packedColour(p.color, s.page == PageAtlas::kHomePage);
-        }
+    const bool packed =
+        decoder_ && s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
+    if (packed) {
+        if (mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
+        for (SDL_Vertex& p : v) p.color = packedColour(p.color, s.page == PageAtlas::kHomePage);
     }
     for (SDL_Vertex& p : v) {
         const Vec2 w = x.apply({p.position.x, p.position.y});
         p.position = {w.x, w.y};
     }
-    batch_.use(t, mode, x.filter);
-    batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(),
-                     static_cast<int>(idx.size()));
+    if (!runsOpen_) {
+        if (decoder_) decoder_->use(batch_, packed);
+        batch_.use(t, mode, x.filter);
+        batch_.triangles(v.data(), static_cast<int>(v.size()), idx.data(),
+                         static_cast<int>(idx.size()));
+        return true;
+    }
+    // In the live layer, kept with its page's run as put() keeps a sprite: a quad (four corners,
+    // two triangles) as one entry, any other triangle as one whose last corner repeats.
+    const std::uint32_t key =
+        (s.page * 2U + (packed ? 1U : 0U)) ^ (static_cast<std::uint32_t>(mode) * 2654435761U);
+    const auto keep = [&](const std::array<SDL_Vertex, 4>& q) {
+        FRect box{q[0].position.x, q[0].position.y, q[0].position.x, q[0].position.y};
+        for (const SDL_Vertex& p : q) {
+            box.x0 = std::min(box.x0, p.position.x);
+            box.y0 = std::min(box.y0, p.position.y);
+            box.x1 = std::max(box.x1, p.position.x);
+            box.y1 = std::max(box.y1, p.position.y);
+        }
+        if (!runs_.add(key, box)) return;
+        runQuads_.push_back({t,
+                             mode,
+                             {box.x0, box.y0},
+                             {box.x1, box.y1},
+                             s.uv,
+                             q[0].color,
+                             s.page,
+                             runWhat_,
+                             packed,
+                             static_cast<std::int32_t>(runMeshes_.size())});
+        runMeshes_.push_back(q);
+    };
+    static constexpr std::array<int, 6> kQuad{0, 1, 2, 0, 2, 3};
+    if (v.size() == 4 && std::ranges::equal(idx, kQuad)) {
+        keep({v[0], v[1], v[2], v[3]});
+        return true;
+    }
+    for (std::size_t i = 0; i + 2 < idx.size(); i += 3) {
+        const SDL_Vertex& c = v[static_cast<std::size_t>(idx[i + 2])];
+        keep({v[static_cast<std::size_t>(idx[i])], v[static_cast<std::size_t>(idx[i + 1])], c, c});
+    }
     return true;
 }
 

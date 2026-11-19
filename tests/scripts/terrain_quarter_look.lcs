@@ -1,0 +1,14 @@
+# Sloped land at a quarter on the shader path (the round where a ground pass drew for real
+# during the renderer's dry passes and outside its page runs: 19 GB and a stalled machine).
+# The Forum and the hills round it at 1x, then at a quarter; the perf log of the run is held to
+# its memory and draw calls by check_quarter_look.cmake.
+set season spring
+set world forum 1
+set time 0.1667
+wait 20
+set world forum 0.25
+set time 0.7
+wait 60
+set world 276 238 0.25
+wait 40
+quit

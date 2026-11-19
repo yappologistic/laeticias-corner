@@ -339,12 +339,16 @@ private:
         std::uint16_t page = 0;
         std::uint32_t what = 0; // for runBreakers: an item's catalog index, or one of kRun...
         bool packed = false;    // drawn through the decode (a packed page's sprite)
+        // putTris' geometry: an entry of runMeshes_ (four corners, each with its uv and colour;
+        // a triangle repeats its last), -1 for the rectangle above.
+        std::int32_t mesh = -1;
     };
     static constexpr std::uint32_t kRunActor = 0xFFFFFFFFu;
     static constexpr std::uint32_t kRunFigure = 0xFFFFFFFEu;
     static constexpr std::uint32_t kRunTerrain = 0x80000000u; // + the tile's terrain
     PageRuns runs_;
-    std::vector<RunQuad> runQuads_;     // by entry of runs_
+    std::vector<RunQuad> runQuads_; // by entry of runs_
+    std::vector<std::array<SDL_Vertex, 4>> runMeshes_;
     std::uint32_t runWhat_ = kRunActor; // what put() is drawing for
     bool runsOpen_ = false;
     double frameCost_ = 0;
