@@ -1282,6 +1282,54 @@
    "ox": -26,
    "oy": -52
   },
+  "item/rome.t_fig/base/r0/f0@winter": {
+   "x": 256,
+   "y": 2817,
+   "w": 43,
+   "h": 43,
+   "ox": 22,
+   "oy": 26
+  },
+  "item/rome.t_fig/base/r1/f0@winter": {
+   "x": 210,
+   "y": 2817,
+   "w": 45,
+   "h": 49,
+   "ox": 24,
+   "oy": 32
+  },
+  "item/rome.t_oak/base/r0/f0@winter": {
+   "x": 62,
+   "y": 2817,
+   "w": 75,
+   "h": 87,
+   "ox": 36,
+   "oy": 69
+  },
+  "item/rome.t_oak/base/r1/f0@winter": {
+   "x": 138,
+   "y": 2817,
+   "w": 71,
+   "h": 87,
+   "ox": 35,
+   "oy": 69
+  },
+  "item/rome.t_poplar/base/r0/f0@winter": {
+   "x": 1,
+   "y": 2817,
+   "w": 27,
+   "h": 109,
+   "ox": 12,
+   "oy": 92
+  },
+  "item/rome.t_poplar/base/r1/f0@winter": {
+   "x": 29,
+   "y": 2817,
+   "w": 32,
+   "h": 107,
+   "ox": 17,
+   "oy": 90
+  },
   "item/rome.trajan_column/glow/r0/f0": {
    "x": 1374,
    "y": 2188,
