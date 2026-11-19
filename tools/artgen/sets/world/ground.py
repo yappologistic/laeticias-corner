@@ -11,13 +11,13 @@ import math
 
 import numpy as np
 
+import land
 import terrain as home
 from pack import Sprite
-from palette import (ATTIC_ROCK, BASALT, CLAY, EARTH, HAZE, INK, LEAF, LIMESTONE, MARBLE, OLIVE, PINE, PLASTER,
+from palette import (ATTIC_ROCK, BASALT, CLAY, EARTH, INK, LEAF, LIMESTONE, MARBLE, OLIVE, PINE, PLASTER,
                      POPPY, RUST, SAND, SEA, SHALLOW, SNOW, STEPPE, STONE, STRAW, SUMMER, TIBER, TUFA, VIOLET,
                      WATER, _rgb)
-from sets.parsa.ground import _face_grid, _periodic
-from voxel import hash01, value_noise
+from voxel import hash01
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
 FRAMES_WATER = 4
@@ -660,7 +660,7 @@ WATER_OVERLAYS = {"world.sea": sea, "world.shallows": shallows, "world.river": r
 # ---------------------------------------------------------------- edge faces
 
 def _face(side, k, above):
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
+    px, py, s, d, band, H, W, ox, oy = land.face_grid(side, k, above)
     shade = -0.9 if side == "se" else 0.0
     return px, py, s, d, band, H, W, ox, oy, shade
 
@@ -679,163 +679,20 @@ class _P:
         self.px, self.py, self.k = px, py, k
 
 
-def _strata(s, d, W, band, k, v, seed):
-    """Bedding of one level for soft faces (earth): beds of uneven thickness that bend a little.
-    Near the band's ends the pattern is common to every look, so any two looks stack."""
-    n = _periodic(s, d, W, band, 1.3, seed, v)
-    t = np.clip(d / band, 0, 1)
-    win = np.sin(np.pi * t) ** 2 * np.sin(np.pi * np.clip(s / W, 0, 1))
-    off = (hash01(v, seed, 1) - 0.5) * 3.0 * k + 1.2 * k * np.sin(2 * np.pi * t + 6.28 * hash01(v, seed, 2)) \
-        + s * (hash01(v, seed, 3) - 0.5) * 0.3
-    bed = ((d + (n - 0.5) * 2.5 * k + win * off) % (4 * k)) / (4 * k)
-    return n, bed
-
-
-def _cliff(s, d, W, band, k, v, seed, shade):
-    """Natural rock of one level: big facets lit or shaded by which way they turn to the light,
-    vertical ribs and joints, and one broken ledge a level (a lit lip over a dark undercut),
-    pushed up or down by the facets so ledges never line up into courses. Every term repeats
-    across the face width and the band, so faces join side by side and stack."""
-    big = _periodic(s, d, W, band, 0.55, seed, v)
-    dprof = _periodic(s + 2 * k, d, W, band, 0.55, seed, v) - big
-    lit = np.clip(dprof * (-16.0 if shade == 0.0 else 16.0), -1.0, 1.0)
-    rib = _periodic(s, d * 0.2, W, band, 1.2, seed + 1, v)
-    grain = _periodic(s, d, W, band, 3.0, seed + 2, v)
-    bed = (d + (big - 0.5) * 7.0 * k) % band
-    broken = _periodic(s, d * 0.3, W, band, 1.4, seed + 3, v) > 0.45
-    lip = (bed < 1.0 * k / 2 + 0.5) & broken
-    under = (bed >= 0.5 * k + 0.5) & (bed < 1.5 * k) & broken
-    joint = (np.abs(rib - 0.5) < 0.025) & (grain > 0.4)
-    lvl = 3.2 + shade + lit * 1.0 + (rib - 0.5) * 0.9 + (grain - 0.5) * 0.6 + lip * 1.1 - under * 0.6 - joint * 0.9
-    return lvl, lip, under, lit, big
-
-
-def rock_face(side, v, k, top=False):
-    """One level of grey limestone cliff: lit and shaded facets, ribs and joints, a broken ledge
-    with a shrub on it here and there; the rim band carries dry grass."""
-    above = 6 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy, shade = _face(side, k, above)
-    on = (d >= 0) & (d < band)
-    lvl, lip, under, lit, big = _cliff(s, d, W, band, k, v, 10101, shade)
-    pit = hash01(px, py, 10103 + v) < 0.03
-    P = _P(px, py, k)
-    rgb = _paint(LIME_ROCK, lvl - pit * 0.7, P)
-    stain = (_periodic(s, d * 0.25, W, band, 1.0, 10110, v) > 0.7) & ~lip
-    rgb = np.where(stain[..., None], _paint([STONE[1], ATTIC_ROCK[1], RUST[0], ATTIC_ROCK[2]], lvl - 0.8, P), rgb)
-    shrub = lip & (_periodic(s, d, W, band, 3.0, 10104, v) > 0.74) & on
-    grow = np.zeros_like(shrub)
-    for dy in range(1, 3 * k):
-        grow |= np.roll(shrub, -dy, axis=0) & (hash01(px, py - dy, 10105) < 0.7)
-    rgb = np.where(grow[..., None], _paint([PINE[0], OLIVE[0], OLIVE[1], LEAF[2]], 1.8 + shade + hash01(px, py, 10106), P), rgb)
-    alpha = on.copy()
-    if top:
-        rim = (d < 0) & (d >= -above)
-        tuft = rim & (np.abs(d) < 2 + 3 * (_periodic(s, d * 0, W, band, 4.0, 10107, v) > 0.6) * (hash01(px, 0, 10108) < 0.6))
-        alpha = (on & (d >= 0)) | tuft
-        rgb = np.where(tuft[..., None], _paint(STEPPE_GRASS, 2.6 + shade + (hash01(px, py, 10109) - 0.5), P), rgb)
-        rgb, alpha = _soften(rgb, alpha, px, py, s, d, W, band, k, v, shade, P, 10130, rock=True)
-    return _sprite(rgb, alpha | grow, H, W, ox, oy)
-
-
-def _soften(rgb, alpha, px, py, s, d, W, band, k, v, shade, P, seed, rock):
-    """The uppermost band of a face, which is the whole face where the ground steps one level:
-    a rounded, lit shoulder under the rim with grass hanging over it in uneven tufts, and at the
-    foot a fan of fallen stones and soil with grass coming through, so a low step reads as a
-    slope's broken edge rather than a cut."""
-    on = (d >= 0) & (d < band)
-    hang = (1.0 + 2.5 * _periodic(s, d * 0, W, band, 3.0, seed, v)) * k
-    shoulder = on & (d < hang + k) & ~(d < hang * (hash01(px, 0, seed + 1) < 0.55))
-    rgb = np.where(shoulder[..., None], _paint(PALE_ROCK if rock else [EARTH[1], EARTH[2], CLAY[1], EARTH[3], SAND[2]],
-                                                3.6 + shade * 0.6 + (hash01(px, py, seed + 2) - 0.5) * 0.6, P), rgb)
-    drape = on & (d < hang * (hash01(px, 0, seed + 1) < 0.55))
-    rgb = np.where(drape[..., None], _paint(STEPPE_GRASS, 2.4 + shade + (hash01(px, py, seed + 3) - 0.5), P), rgb)
-    fan = (2.0 + 2.5 * _periodic(s + 3 * k, d * 0, W, band, 2.0, seed + 4, v)) * k
-    foot = on & (d > band - fan)
-    stone = foot & (hash01(px // 2, py // 2, seed + 5 + v) < 0.35)
-    grass = foot & ~stone & (hash01(px, py, seed + 6) < 0.3)
-    rgb = np.where(foot[..., None], _paint([INK, EARTH[0], EARTH[1], EARTH[2], SAND[1]], 2.4 + shade * 0.5 +
-                                           (hash01(px, py, seed + 7) - 0.5) * 0.8, P), rgb)
-    rgb = np.where(stone[..., None], _paint(PALE_ROCK, 2.6 + shade * 0.6 + (hash01(px, py, seed + 8) - 0.5), P), rgb)
-    rgb = np.where(grass[..., None], _paint(STEPPE_GRASS, 2.2 + shade + (hash01(px, py, seed + 9) - 0.5), P), rgb)
-    return rgb, alpha
-
-
-def earth_face(side, v, k, top=False):
-    """One level of an earth bank (river terraces, tells, field steps): brown earth in faint
-    layers, pebbles and roots, a grassy lip on the rim band."""
-    above = 5 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy, shade = _face(side, k, above)
-    on = (d >= 0) & (d < band)
-    n, bed = _strata(s, d, W, band, k, v, 10111)
-    layer = bed < 0.2
-    pebble = hash01(px // 2, py // 2, 10112 + v) < 0.018
-    root = (np.abs(((s * 0.7 + d) % (W / 2)) - 3) < 0.5) & (d < band * 0.4) & (_periodic(s, d, W, band, 2.5, 10113, v) > 0.6)
-    lvl = 3.0 + shade + (n - 0.5) * 1.4 - layer * 0.5 + pebble * 1.2 - root * 1.2
-    P = _P(px, py, k)
-    rgb = _paint([INK, EARTH[0], EARTH[1], EARTH[2], CLAY[1], EARTH[3], SAND[2]], lvl, P)
-    rgb = np.where((pebble & on)[..., None], _paint([STONE[1], STONE[2], STONE[3]], 1.2 + shade, P), rgb)
-    alpha = on.copy()
-    if top:
-        tall = hash01(px, 0, 10114 + v) * above * (hash01(px // 3, 0, 10115 + v) < 0.6)
-        lip = (d < 2 * k) & (d >= -tall - 1)
-        alpha = alpha | lip
-        rgb = np.where(lip[..., None], _paint(STEPPE_GRASS, 2.8 + shade + (hash01(px, py, 10116) - 0.5), P), rgb)
-        rgb, alpha = _soften(rgb, alpha, px, py, s, d, W, band, k, v, shade, P, 10140, rock=False)
-    return _sprite(rgb, alpha, H, W, ox, oy)
-
-
-def snow_face(side, v, k, top=False):
-    """Rock of the high tops with snow lying where it can: on the ledges and the upward-turned
-    facets, thinning down the band; the rim band is a snow cornice curling over the edge."""
-    above = 5 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy, shade = _face(side, k, above)
-    on = (d >= 0) & (d < band)
-    lvl, lip, under, lit, big = _cliff(s, d, W, band, k, v, 10121, shade)
-    P = _P(px, py, k)
-    rgb = _paint(LIME_ROCK, lvl - 0.2, P)
-    drift = _periodic(s, d, W, band, 1.6, 10122, v)
-    lying = (lip | ((d < band * (0.25 + 0.5 * drift)) & (lit > -0.2) & ~under)) & on
-    lying &= hash01(px, py, 10125 + v) < 0.92
-    rgb = np.where(lying[..., None], _paint(SNOWS, 2.6 + shade * 0.7 + lit * 0.6 + lip * 0.6, P, band=0.3), rgb)
-    alpha = on.copy()
-    if top:
-        drop = (1.5 + 2.5 * _periodic(s, d * 0, W, band, 3.0, 10123, v)) * k
-        cornice = (d < drop) & (d >= -above * (0.4 + 0.6 * _periodic(s, d * 0, W, band, 2.0, 10124, v)))
-        alpha = alpha | cornice
-        rgb = np.where(cornice[..., None], _paint(SNOWS, 3.4 + shade * 0.6 - (d > drop - k) * 1.2, P), rgb)
-    return _sprite(rgb, alpha, H, W, ox, oy)
-
-
-def coast_face(side, v, k, top=False, frame=None):
-    """A sea cliff: weathered limestone with a pale salt-stained band; a static level (`frame`
-    None) is any upper level, the animated foot (frames 0-3) is the level that meets the sea,
-    with a wave-cut notch and surf breaking against it, running up and drawing back."""
-    above = 5 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy, shade = _face(side, k, above)
-    on = (d >= 0) & (d < band)
-    lvl, lip, under, lit, n = _cliff(s, d, W, band, k, v, 10131, shade)
-    salt = _periodic(s, d * 0.3, W, band, 1.6, 10132, v) > 0.6
-    lvl = lvl + salt * 0.5
-    P = _P(px, py, k)
-    rgb = _paint([INK, STONE[1], ATTIC_ROCK[2], ATTIC_ROCK[3], LIMESTONE[4], ATTIC_ROCK[5], SAND[4]], lvl, P)
-    alpha = on.copy()
-    if frame is not None:
-        t = frame / 4
-        notch = (d > band - 3.5 * k) & (d < band - 1.5 * k)
-        rgb = np.where(notch[..., None], _paint([INK, STONE[0], STONE[1], SEA[1]], 1.4 + shade + n, P), rgb)
-        wet = d > band - 4.5 * k
-        rgb = np.where((wet & ~notch)[..., None], _paint([INK, STONE[0], STONE[1], ATTIC_ROCK[2]], lvl - 1.2, P), rgb)
-        run = (2.0 + 2.2 * (0.5 + 0.5 * math.sin(2 * math.pi * t)) + (_periodic(s, d * 0, W, band, 2.0, 10133, v) - 0.5) * 2) * k
-        surf = (d > band - run) & on
-        spray = (d > band - run - 2 * k) & (d <= band - run) & (hash01(px, py, 10134 + frame) < 0.35) & on
-        rgb = np.where(surf[..., None], _paint([SHALLOW[3], SHALLOW[4], SNOW[1], PLASTER[4]],
-                                               2.2 + hash01(px, py, 10135 + frame) * 1.6, P), rgb)
-        rgb = np.where(spray[..., None], _rgb(PLASTER[4]), rgb)
-    if top:
-        tuft = (d < 0) & (d >= -above) & (np.abs(d) < 2 + 3 * (_periodic(s, d * 0, W, band, 4.0, 10136, v) > 0.55))
-        alpha = alpha | tuft
-        rgb = np.where(tuft[..., None], _paint(SCRUB, 2.6 + shade + (hash01(px, py, 10137) - 0.5), P), rgb)
-    return _sprite(rgb, alpha, H, W, ox, oy)
+# The natural faces (land.py): rock of the hills and mountains, earth banks (river terraces,
+# tells, field steps), the high tops' rock under snow, and the sea cliff with its surf.
+NATURAL = {
+    "world.rock": land.Stone("rock", tuple(LIME_ROCK), tuple(STEPPE_GRASS), 10101,
+                             stain=(STONE[1], STONE[2], ATTIC_ROCK[1], ATTIC_ROCK[2]),
+                             shrub=(PINE[0], OLIVE[0], OLIVE[1], LEAF[2])),
+    "world.earth": land.Stone("earth", (INK, EARTH[0], EARTH[1], SAND[0], SAND[1], SAND[2]), tuple(STEPPE_GRASS),
+                              10111, stones=(STONE[1], STONE[2], ATTIC_ROCK[2], ATTIC_ROCK[3], ATTIC_ROCK[4]),
+                              cell=3),
+    "world.snow": land.Stone("snow", tuple(LIME_ROCK), tuple(STEPPE_GRASS), 10121, snow=tuple(SNOWS)),
+    "world.coast": land.Stone("coast", (INK, STONE[1], ATTIC_ROCK[2], ATTIC_ROCK[3], LIMESTONE[4], ATTIC_ROCK[5], SAND[4]),
+                              tuple(SCRUB), 10131, stain=(ATTIC_ROCK[3], LIMESTONE[4], SAND[4]),
+                              surf=(SHALLOW[3], SHALLOW[4], SNOW[1], PLASTER[4]), jag=0.8),
+}
 
 
 def basalt_face(side, v, k, top=False):
@@ -852,7 +709,7 @@ def basalt_face(side, v, k, top=False):
     lvl = 2.4 + shade + facet + (hash01(col.astype(np.int64), 10143) - 0.5) * 0.8 - joint * 1.4
     P = _P(px, py, k)
     rgb = _paint([INK, *BASALT], lvl, P)
-    rust = (_periodic(s, d, W, band, 1.5, 10144, v) > 0.63) & ~joint
+    rust = (land.periodic(s, d, W, band, 1.5, 10144, v) > 0.63) & ~joint
     rgb = np.where(rust[..., None], _paint([BASALT[1], RUST[0], RUST[1]], 1.0 + facet, P), rgb)
     alpha = on.copy()
     if top:
@@ -862,5 +719,4 @@ def basalt_face(side, v, k, top=False):
     return _sprite(rgb, alpha, H, W, ox, oy)
 
 
-FACES = {"world.rock": rock_face, "world.earth": earth_face, "world.snow": snow_face, "world.coast": coast_face,
-         "world.basalt": basalt_face}
+FACES = {"world.basalt": basalt_face}

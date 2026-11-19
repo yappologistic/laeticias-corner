@@ -400,7 +400,7 @@
      "sfx/hen_3.wav"
     ],
     "athens.owl": [
-     "sfx/world/owl_tawny.wav"
+     "sfx/athens/owl.wav"
     ],
     "world.crane": [
      "sfx/world/cranes.wav"
@@ -2833,7 +2833,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -2885,7 +2885,8 @@
     "apr",
     "may",
     "jun"
-   ]
+   ],
+   "sound": "sfx/world/nightingale.wav"
   },
   {
    "kind": "swifts",

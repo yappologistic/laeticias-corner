@@ -234,7 +234,7 @@
   {"id": "rome.litter", "name": "Litter with bearers", "sprite": "cart/rome.litter", "variants": 1, "anims": {"move": {"fps": 6.4, "stride": 0.75}, "idle": {"fps": 2}}, "size": [2, 1]},
   {"id": "rome.racing_chariot", "name": "Racing quadriga", "sprite": "cart/rome.racing_chariot", "variants": 4, "anims": {"move": {"fps": 8.3, "stride": 0.575}, "idle": {"fps": 2}}, "size": [2, 1]},
   {"id": "rome.merchantman", "name": "Roman merchant ship", "sprite": "ship/rome.merchantman", "variants": 1, "anims": {"move": {"fps": 4}, "slack": {"fps": 2}, "row": {"fps": 4}, "idle": {"fps": 2}}, "size": [5, 2]},
-  {"id": "rome.barge", "name": "Tiber barge", "sprite": "ship/rome.barge", "variants": 1, "anims": {"move": {"fps": 4}, "slack": {"fps": 2}, "row": {"fps": 4}, "idle": {"fps": 2}}, "size": [4, 1]}
+  {"id": "rome.barge", "name": "Tiber barge", "sprite": "ship/rome.barge", "variants": 1, "anims": {"move": {"fps": 4}, "slack": {"fps": 2}, "row": {"fps": 4}, "idle": {"fps": 2}, "lowered": {"fps": 4}}, "size": [4, 1]}
  ],
  "goods": [
   {"id": "rome.goods_oil_amphora", "name": "Amphora of Baetican oil", "sprite": "goods/rome.goods_oil_amphora", "stack": 3},
@@ -252,5 +252,5 @@
   "ambience": ["amb/rome/day.ogg", "amb/rome/forum.ogg", "amb/rome/river.ogg", "amb/rome/circus.ogg", "amb/rome/night.ogg", "amb/rome/procession.ogg", "amb/rome/fountain.ogg", "amb/rome/baths.ogg", "amb/rome/treadwheel.ogg", "amb/rome/day_winter.ogg", "amb/rome/saturnalia.ogg"],
   "sfx": ["sfx/rome/tibia.wav", "sfx/rome/cornu.wav", "sfx/rome/hydraulis.wav", "sfx/rome/sistrum.wav", "sfx/rome/arrive.wav", "sfx/rome/acclamation.wav", "sfx/rome/sting_sunrise.wav", "sfx/rome/sting_nightfall.wav", "sfx/rome/sting_storm_clear.wav", "sfx/rome/sting_rainbow.wav", "sfx/rome/lituus.wav", "sfx/rome/sting_season.wav"]
  },
- "art": {"edges": ["rome.tufa", "rome.brick", "rome.travertine", "rome.earth"], "fx": ["rome.bonfire", "rome.dust", "rome.fire", "rome.glint", "rome.incense", "rome.smoke", "rome.sparks", "rome.spout", "rome.spray", "rome.steam", "rome.torch_flame"], "props": ["rome.lamp", "rome.torch", "rome.lantern"]}
+ "art": {"edges": ["rome.tufa", "rome.brick", "rome.travertine", "rome.earth"], "slopes": ["rome.grass_spring", "rome.tufa_rock", "rome.mud_bank", "rome.packed_earth"], "fx": ["rome.bonfire", "rome.dust", "rome.fire", "rome.glint", "rome.incense", "rome.smoke", "rome.sparks", "rome.spout", "rome.spray", "rome.steam", "rome.torch_flame"], "props": ["rome.lamp", "rome.torch", "rome.lantern"]}
 }

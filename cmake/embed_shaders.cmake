@@ -1,0 +1,18 @@
+# Writes OUT, a C++ source holding each SPIR-V blob in SHADERS (|-separated) as a byte array, and
+# lc::gpu::shader(name) to find one by file stem. Run in script mode (cmake -P).
+string(REPLACE "|" ";" SHADERS "${SHADERS}")
+set(body "#include \"render/gpu/shaders.hpp\"\n\n#include <array>\n\nnamespace lc::gpu {\nnamespace {\n")
+set(table "")
+foreach(file IN LISTS SHADERS)
+  get_filename_component(stem "${file}" NAME_WE)
+  file(READ "${file}" hex HEX)
+  string(LENGTH "${hex}" n)
+  math(EXPR bytes "${n} / 2")
+  string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," hex "${hex}")
+  string(APPEND body "constexpr std::array<std::uint8_t, ${bytes}> k_${stem}{${hex}};\n")
+  string(APPEND table "    if (name == \"${stem}\") return k_${stem};\n")
+endforeach()
+string(APPEND body "\n} // namespace\n\nstd::span<const std::uint8_t> shader(std::string_view name) {\n${table}    return {};\n}\n\n} // namespace lc::gpu\n")
+file(WRITE "${OUT}.tmp" "${body}")
+file(COPY_FILE "${OUT}.tmp" "${OUT}" ONLY_IF_DIFFERENT)
+file(REMOVE "${OUT}.tmp")

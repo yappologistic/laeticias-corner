@@ -24,6 +24,7 @@ struct Options {
     std::optional<std::filesystem::path> assetsDir;
     std::optional<std::uint64_t> seed;
     std::string renderer; // SDL render driver; empty = software when headless, else SDL's choice
+    std::string quality;  // the Look (classic | low | medium | high); empty: the profile's
     int frames = 0;       // 0 = run until quit
     std::optional<std::filesystem::path> audioOut; // capture the mix to a WAV file
     bool bench = false;

@@ -1,5 +1,7 @@
 #include "app/options.hpp"
 
+#include "render/gpu/look.hpp"
+
 #include <charconv>
 
 namespace lc {
@@ -25,6 +27,8 @@ std::string_view usage() {
            "  --seed N            random seed (default: time, or 1 when headless)\n"
            "  --frames N          quit after N frames\n"
            "  --renderer NAME     SDL render driver (headless default: software)\n"
+           "  --quality LOOK      classic | low | medium | high (default: the settings'; any\n"
+           "                      but classic asks for SDL's gpu driver, else falls back)\n"
            "  --audio-out FILE    write the mix to a 32-bit float WAV instead of a device "
            "(implies --headless)\n"
            "  --bench             fill the map and report frame timings (implies --headless)\n"
@@ -136,6 +140,11 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             const auto v = value();
             if (!v || v->empty()) return std::unexpected("--renderer expects a driver name");
             o.renderer = std::string(*v);
+        } else if (a == "--quality") {
+            const auto v = value();
+            if (!v || !gpu::parseQuality(*v))
+                return std::unexpected("--quality expects classic, low, medium or high");
+            o.quality = std::string(*v);
         } else if (a == "--focus") {
             const auto v = value();
             if (!v || v->empty()) return std::unexpected("--focus expects a place");
@@ -161,6 +170,8 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             return std::unexpected("unknown option " + std::string(a));
         }
     }
+    // A look above Classic is drawn by SDL's gpu driver.
+    if (!o.quality.empty() && o.quality != "classic" && o.renderer.empty()) o.renderer = "gpu";
     // The windowless GPU driver never really presents, so without a wait for the GPU its queue
     // of frames (and the process's memory) grows without bound.
     if (o.headless && !o.renderer.empty() && o.renderer != "software") o.gpuSync = true;

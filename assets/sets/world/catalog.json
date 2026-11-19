@@ -3883,6 +3883,28 @@
    "world.lamp",
    "world.torch",
    "world.lantern"
-  ]
+  ],
+  "slopes": [
+   "world.steppe",
+   "world.sand",
+   "world.alluvium",
+   "world.scrub",
+   "world.forest_floor",
+   "world.pasture",
+   "world.fallow",
+   "world.scree",
+   "world.rock",
+   "world.snow",
+   "world.dune",
+   "world.gravel_desert",
+   "world.road_earth"
+  ],
+  "falls": {
+   "frames": 4,
+   "fps": 4,
+   "levels_per_loop": 1,
+   "speed_px_s": 48,
+   "flow": "down the face (+d), tiles every level"
+  }
  }
 }

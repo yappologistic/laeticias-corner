@@ -23,34 +23,60 @@ from voxel import hash01, value_noise
 ref = referrer("sets.rome.river")
 S = S65
 DECK = 9.0           # deck floor above the water at the abutments, design units (18 px)
+RAMP = 4.0           # the most a deck rises per tile (half a level: walkers cross piece seams)
+VOUSSOIR = 1.6       # an arch ring's depth; the deck's paving sits a unit above the ring
 
 
-def _deck_z(n, hump=3.0):
-    """Floor height of each deck tile: rising gently to the middle of the bridge."""
-    return [DECK + hump * math.sin(math.pi * (i + 0.5) / n) for i in range(n)]
+def deck_top(Y, n, rise):
+    """The deck's floor along a bridge of `n` tiles: DECK at the abutments (meeting the banks
+    within half a level), rising at most RAMP a tile to DECK + rise, the corners rounded, so the
+    arches midstream can spring from tall piers and boats pass under them (art-smooth-land.md
+    §8: what passes which bridge)."""
+    L = n * T
+    up = np.minimum(np.asarray(Y, float), L - np.asarray(Y, float)) / T * RAMP
+    k = 1.5                                       # rounding of the ramp into the plateau
+    return DECK + 0.5 * (up + rise - np.sqrt((up - rise) ** 2 + k * k)) + 0.5 * (np.sqrt(rise ** 2 + k * k) - rise)
 
 
-def stone_bridge(m, n, arches, material="travertine", seed=0, voussoir="tufa"):
+def deck_floors(n, rise):
+    return [float(deck_top((i + 0.5) * T, n, rise)) for i in range(n)]
+
+
+def _arch(Y, Z, c, w, z0, spring, rise):
+    """Inside an arch of span w centred at c from z0, springing at `spring` with a crown `rise`
+    above it: semicircular when rise is half the span, a flatter segment of a circle below that."""
+    R = (w * w / 4 + rise * rise) / (2 * rise)
+    zc = spring + rise - R
+    return (np.abs(Y - c) < w / 2) & (Z >= z0) & ((Z < spring) | ((Y - c) ** 2 + (Z - zc) ** 2 < R * R))
+
+
+def stone_bridge(m, n, arches, rise, material="travertine", seed=0, voussoir="tufa"):
     """A stone bridge along y over `n` tiles: piers with pointed cutwaters on both sides, round
-    arches (`arches`: [(y0, y1)] spans), travertine and tufa facing, little relieving arches in
-    the piers, a paved deck in the middle row, parapets on the outer rows."""
+    arches (`arches`: [(y0, y1)] spans) springing as high as the deck above lets each be a full
+    semicircle (a segment where the deck is low near the banks), travertine and tufa facing,
+    little relieving arches in the piers, a humped paved deck in the middle row, parapets."""
     L = n * T
 
-    def deck_top(Y):
-        f = np.clip(Y / L, 0, 1)
-        return DECK + 3.0 * np.sin(np.pi * f)
+    def top(Y):
+        return deck_top(Y, n, rise)
+    zmax = DECK + rise + 3.0
     x0, x1 = T - 2.0, 2 * T + 2.0
-    fill(m, (x0, x1, 0.0, L, -4.0, DECK + 3.0), material, lambda X, Y, Z: Z < deck_top(Y) - 0.8,
+    fill(m, (x0, x1, 0.0, L, -4.0, zmax), material, lambda X, Y, Z: Z < top(Y) - 0.8,
          tone=M.ashlar(2.4, 6.0, seed, spread=0.4))
     for (a0, a1) in arches:
-        spring = 0.5
-        carve(m, (x0 - 1, x1 + 1, a0, a1, -4.0, DECK),
-              lambda X, Y, Z, a0=a0, a1=a1: RM.arch_mask(Y, Z, a0, a1 - a0, -4.0, spring))
-        fill(m, (x0, x1, a0 - 1.6, a1 + 1.6, spring, DECK + 2.0), voussoir,
-             lambda X, Y, Z, a0=a0, a1=a1: (Z >= spring) & (np.hypot(Y - (a0 + a1) / 2, Z - spring) >= (a1 - a0) / 2) &
-             (np.hypot(Y - (a0 + a1) / 2, Z - spring) < (a1 - a0) / 2 + 1.6) & ((X < x0 + 1.0) | (X > x1 - 1.0)),
-             tone=lambda X, Y, Z, a0=a0, a1=a1: 0.3 - 0.8 * (((np.arctan2(Z - spring, Y - (a0 + a1) / 2) * 6 / np.pi) %
-                                                               1.0) < 0.15), only_solid=True)
+        c, w = (a0 + a1) / 2, a1 - a0
+        crown = float(top(c)) - VOUSSOIR - 1.0
+        spring = max(0.5, crown - w / 2)
+        h = min(w / 2, crown - spring)
+        R = (w * w / 4 + h * h) / (2 * h)
+        zc = spring + h - R
+        carve(m, (x0 - 1, x1 + 1, a0, a1, -4.0, zmax),
+              lambda X, Y, Z, c=c, w=w, s_=spring, h=h: _arch(Y, Z, c, w, -4.0, s_, h))
+        fill(m, (x0, x1, a0 - 1.6, a1 + 1.6, spring, zmax), voussoir,
+             lambda X, Y, Z, c=c, R=R, zc=zc, s_=spring: (Z >= s_) & (np.hypot(Y - c, Z - zc) >= R) &
+             (np.hypot(Y - c, Z - zc) < R + VOUSSOIR) & ((X < x0 + 1.0) | (X > x1 - 1.0)),
+             tone=lambda X, Y, Z, c=c, zc=zc: 0.3 - 0.8 * (((np.arctan2(Z - zc, Y - c) * 6 / np.pi) % 1.0) < 0.15),
+             only_solid=True)
     piers = sorted({round(a, 2) for (a0, a1) in arches for a in (a0, a1)})
     for i in range(0, len(piers) - 1):
         if any(abs(piers[i] - a1) < 0.1 for (_a0, a1) in arches) and any(abs(piers[i + 1] - a0) < 0.1
@@ -63,46 +89,60 @@ def stone_bridge(m, n, arches, material="travertine", seed=0, voussoir="tufa"):
                      ((X - xs) * sgn < 6.0 * (1 - np.abs(Y - yc) / w)), tone=0.1)
             RM.opening(m, "+x", (x0, x1, yc - w, yc + w), 2.0 * w * 0.3, 2.0 * w * 0.4, 1.0, 4.0, 1.5)
     # Deck paving and parapets (just outside the walk row).
-    fill(m, (T, 2 * T, 0.0, L, DECK - 1.0, DECK + 3.2), "basalt",
-         lambda X, Y, Z: (Z < deck_top(Y)) & (Z >= deck_top(Y) - 1.0),
+    fill(m, (T, 2 * T, 0.0, L, DECK - 1.0, zmax + 0.2), "basalt",
+         lambda X, Y, Z: (Z < top(Y)) & (Z >= top(Y) - 1.0),
          tone=lambda X, Y, Z: (hash01(np.floor(X / 2.4).astype(np.int64), np.floor(Y / 2.4).astype(np.int64), seed)
                                - 0.5) * 0.8)
     for xp in (T - 2.0, 2 * T):
-        fill(m, (xp, xp + 2.0, 0.0, L, DECK - 1.0, DECK + 7.0), material,
-             lambda X, Y, Z: (Z < deck_top(Y) + 3.6) & (Z >= deck_top(Y) - 1.0),
-             tone=lambda X, Y, Z: 0.3 * (Z > deck_top(Y) + 3.0) - 0.05)
+        fill(m, (xp, xp + 2.0, 0.0, L, DECK - 1.0, zmax + 4.0), material,
+             lambda X, Y, Z: (Z < top(Y) + 3.6) & (Z >= top(Y) - 1.0),
+             tone=lambda X, Y, Z: 0.3 * (Z > top(Y) + 3.0) - 0.05)
+
+
+# The decks' rise over the banks (design units): the island bridges are short, so their
+# great arches clear a lighter, not a barge; the long bridges clear a barge with its mast down.
+RISE = {"rome.pons_fabricius": 7.0, "rome.pons_cestius": 7.0, "rome.pons_aemilius": 13.0, "rome.pons_sublicius": 12.0}
 
 
 def pons_fabricius(m):
     """The Pons Fabricius (62 BC) from the Campus to the island: two great arches of tufa faced
     in travertine and brick, a small arch through the central pier for floodwater."""
-    stone_bridge(m, 4, [(4.0, 30.0), (34.0, 60.0)], seed=601)
+    stone_bridge(m, 4, [(4.0, 30.0), (34.0, 60.0)], RISE["rome.pons_fabricius"], seed=601)
 
 
 def pons_cestius(m):
     """The Pons Cestius from the island to Transtiberim: one great arch and two small ones."""
-    stone_bridge(m, 4, [(2.0, 14.0), (17.0, 47.0), (50.0, 62.0)], seed=602)
+    stone_bridge(m, 4, [(2.0, 14.0), (17.0, 47.0), (50.0, 62.0)], RISE["rome.pons_cestius"], seed=602)
 
 
 def pons_aemilius(m):
     """The Pons Aemilius, the first stone bridge (rebuilt under Augustus): six arches."""
-    stone_bridge(m, 10, [(4.0 + i * 26.0, 24.0 + i * 26.0) for i in range(6)], seed=603)
+    stone_bridge(m, 10, [(4.0 + i * 26.0, 24.0 + i * 26.0) for i in range(6)], RISE["rome.pons_aemilius"], seed=603)
 
 
 def pons_sublicius(m):
-    """The Pons Sublicius, the sacred wooden bridge on timber piles: no iron allowed in it."""
-    L = 10 * T
+    """The Pons Sublicius, the sacred wooden bridge on timber piles: no iron allowed in it. Its
+    deck humps over the middle so the barges, masts lowered, pass between the midstream piles."""
+    n, rise = 10, RISE["rome.pons_sublicius"]
+    L = n * T
+
+    def top(Y):
+        return deck_top(Y, n, rise)
     for y in np.arange(6.0, L - 4.0, 12.0):
+        z = float(top(y)) - 1.5
         for x in (T - 1.0, T + 6.0, 2 * T - 6.0, 2 * T + 1.0):
-            rod(m, (x, y, -4.0), (x, y, DECK - 1.0), 0.9, "wood", tone=0.1)
-        rod(m, (T - 3.0, y, DECK - 1.5), (2 * T + 3.0, y, DECK - 1.5), 0.7, "wood", tone=0.2)
+            rod(m, (x, y, -4.0), (x, y, z + 0.5), 0.9, "wood", tone=0.1)
+        rod(m, (T - 3.0, y, z), (2 * T + 3.0, y, z), 0.7, "wood", tone=0.2)
         for x in (T - 2.0, 2 * T + 2.0):    # cutwater posts upstream
             rod(m, (x, y, -4.0), (x - 4.0 if x < T else x + 4.0, y, 2.0), 0.6, "wood", tone=0.0)
-    slab(m, T, 2 * T, 0.0, L, DECK - 1.0, DECK, "wood_light", tone=M.timber("x", 604))
+    fill(m, (T, 2 * T, 0.0, L, DECK - 1.0, DECK + rise + 0.5), "wood_light",
+         lambda X, Y, Z: (Z < top(Y)) & (Z >= top(Y) - 1.0), tone=M.timber("x", 604))
     for xp in (T - 1.6, 2 * T + 0.4):
-        rod(m, (xp + 0.6, 0.0, DECK + 3.0), (xp + 0.6, L, DECK + 3.0), 0.4, "wood", tone=0.2)
+        for y0 in np.arange(0.0, L, 4.0):
+            rod(m, (xp + 0.6, y0, float(top(y0)) + 3.0), (xp + 0.6, y0 + 4.0, float(top(y0 + 4.0)) + 3.0), 0.4,
+                "wood", tone=0.2)
         for y in np.arange(2.0, L, 8.0):
-            rod(m, (xp + 0.6, y, DECK - 1.0), (xp + 0.6, y, DECK + 3.0), 0.35, "wood")
+            rod(m, (xp + 0.6, y, float(top(y)) - 1.0), (xp + 0.6, y, float(top(y)) + 3.0), 0.35, "wood")
 
 
 def tiber_island(m):
@@ -294,16 +334,18 @@ LANDMARKS = {
     "rome.tiber_island": Landmark((7, 11), (-4, 80), ref("tiber_island"), district=7, walk=ISLAND_WALK,
                                   floor={t: 8.0 for t in ISLAND_WALK},
                                   slots={"sleep": [{"t": [5, 4]}, {"t": [5, 6]}]}),
-    "rome.pons_fabricius": Landmark((3, 4), (-4, 24), ref("pons_fabricius"), district=7,
+    "rome.pons_fabricius": Landmark((3, 4), (-4, 32), ref("pons_fabricius"), district=7,
                                     walk=[(1, y) for y in range(4)],
-                                    floor={(1, y): z for y, z in enumerate(_deck_z(4))}),
-    "rome.pons_cestius": Landmark((3, 4), (-4, 24), ref("pons_cestius"), district=7,
-                                  walk=[(1, y) for y in range(4)], floor={(1, y): z for y, z in enumerate(_deck_z(4))}),
-    "rome.pons_aemilius": Landmark((3, 10), (-4, 24), ref("pons_aemilius"), district=7,
+                                    floor=dict(zip([(1, y) for y in range(4)], deck_floors(4, RISE["rome.pons_fabricius"])))),
+    "rome.pons_cestius": Landmark((3, 4), (-4, 32), ref("pons_cestius"), district=7,
+                                  walk=[(1, y) for y in range(4)],
+                                  floor=dict(zip([(1, y) for y in range(4)], deck_floors(4, RISE["rome.pons_cestius"])))),
+    "rome.pons_aemilius": Landmark((3, 10), (-4, 38), ref("pons_aemilius"), district=7,
                                    walk=[(1, y) for y in range(10)],
-                                   floor={(1, y): z for y, z in enumerate(_deck_z(10))}),
-    "rome.pons_sublicius": Landmark((3, 10), (-4, 20), ref("pons_sublicius"), district=7,
-                                    walk=[(1, y) for y in range(10)], floor={(1, y): DECK for y in range(10)}),
+                                   floor=dict(zip([(1, y) for y in range(10)], deck_floors(10, RISE["rome.pons_aemilius"])))),
+    "rome.pons_sublicius": Landmark((3, 10), (-4, 36), ref("pons_sublicius"), district=7,
+                                    walk=[(1, y) for y in range(10)],
+                                    floor=dict(zip([(1, y) for y in range(10)], deck_floors(10, RISE["rome.pons_sublicius"])))),
     "rome.portunus": Landmark((3, 2), (0, 64), ref("portunus"), district=7),
     "rome.hercules_victor": Landmark((3, 3), (0, 72), ref("hercules_victor"), district=7),
     "rome.ara_maxima": Landmark((2, 2), (0, 16), ref("ara_maxima"), district=7,

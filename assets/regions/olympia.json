@@ -2571,7 +2571,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -2636,7 +2636,8 @@
     "apr",
     "may",
     "jun"
-   ]
+   ],
+   "sound": "sfx/world/nightingale.wav"
   },
   {
    "kind": "swifts",
@@ -2672,7 +2673,7 @@
     "jan",
     "feb"
    ],
-   "sound": "sfx/world/swifts.wav"
+   "sound": "sfx/world/starlings.wav"
   },
   {
    "kind": "cranes_overhead",

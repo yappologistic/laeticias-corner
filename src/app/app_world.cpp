@@ -39,8 +39,17 @@ bool App::loadWorldData(WorldLoad load) {
     hooks_.light = [this](const worldview::FrameInfo& fi) {
         scene_->embedLight(sceneFrame_, {fi.ambient.r, fi.ambient.g, fi.ambient.b});
     };
-    hooks_.glow = [this](const worldview::FrameInfo&) { scene_->embedGlow(sceneFrame_); };
+    hooks_.glow = [this](const worldview::FrameInfo& fi) {
+        scene_->embedGlow(sceneFrame_, fi.target);
+    };
     hooks_.overlay = [this](const worldview::FrameInfo&) { scene_->embedSky(sceneFrame_); };
+    hooks_.lamps = [this] {
+        lamps_.clear();
+        scene_->forEachLamp([this](Vec2 at, float reach) {
+            lamps_.push_back({{at.x + homeOffset_.x, at.y + homeOffset_.y}, reach});
+        });
+        return std::span<const worldview::HomeLamp>(lamps_);
+    };
     // Each set's arrival motif (audiogen's `sfx/<set>/arrive.wav`), loaded with the effects.
     for (const world::RegionRef& r : loaded_->file.regions) {
         const std::string f = "sfx/" + r.set + "/arrive.wav";
@@ -95,6 +104,8 @@ void App::createWorldView() {
         // Living figures walk with city life.
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
+    (void)worldView_->setQuality(wantedQuality());
+    worldView_->setClouds(gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On));
     if (city_) worldView_->setLife(city_->city.get());
     setupMap();
 }
@@ -104,6 +115,7 @@ void App::syncHome() {
     // The overview is built from the map on a worker at first; edits wait until it is done.
     if (!worldView_->overviewBuilt()) return;
     homeSynced_ = world_.revision();
+    worldView_->homeTerrainChanged(); // before the map's copy changes (a worker may read it)
     if (!loaded_->map->updateHomeTerrain(world::homeDeltaFrom(world_, cat_)))
         SDL_Log("world: the home's terrain does not fit the world's copy");
     // The world's cells draw the home's rim tiles under the scene's: redraw them when it changes.
@@ -123,6 +135,7 @@ void App::syncHome() {
 }
 
 void App::drawScene(const FrameParams& p, SDL_Texture* out) {
+    if (out == nullptr) out = screenTarget(); // the window, or what stands in for it
     if (!worldView_) {
         scene_->draw(p, out);
         return;
@@ -247,9 +260,17 @@ const MapModel& App::mapModel() {
     }
     const Vec2 t = cat_.iso().toTile(camera_.position());
     const TileRect h = loaded_->file.home.rect;
+    // After dark the towns' lights show on the map (the shader path's light data).
+    mapLights_.clear();
+    if (const float glow = lighting().glow; worldView_ && glow > 0.01f && map_.showing()) {
+        worldView_->mapLights(mapLightTiles_);
+        for (const auto& [tile, k] : mapLightTiles_)
+            mapLights_.push_back({mapPixel(tile, loaded_->file.gridH, mapScale_), k * glow});
+    }
     mapModel_ = {mapTexture_ ? &mapSprite_ : nullptr, mapPlaces_,
                  mapPixel({t.x + static_cast<float>(h.x0), t.y + static_cast<float>(h.y0)},
-                          loaded_->file.gridH, mapScale_)};
+                          loaded_->file.gridH, mapScale_),
+                 mapLights_};
     return mapModel_;
 }
 
@@ -265,7 +286,7 @@ void App::toggleMap() {
 
 void App::cornerToast(std::string text) {
     if (!away()) {
-        hud_.toast(std::move(text));
+        hud_.toast(std::move(text), true);
         return;
     }
     if (cornerToasts_.size() == tuning::kCornerToastsKept)
@@ -283,6 +304,7 @@ bool App::away() const {
 void App::travelTo(int region) {
     if (!loaded_ || travel_.region >= 0) return;
     follow_.reset(); // the journey takes the camera away from whoever it followed
+    closeCard();     // and the place's card stays behind
     travel_ = {region, 0, false};
     map_.open(false);
 }
@@ -307,7 +329,7 @@ std::optional<App::Destination> App::travelDestination() const {
 void App::updateWorld(float dt) {
     if (!worldView_) return;
     if (!away() && !cornerToasts_.empty()) {
-        for (std::string& t : cornerToasts_) hud_.toast(std::move(t));
+        for (std::string& t : cornerToasts_) hud_.toast(std::move(t), true);
         cornerToasts_.clear();
     }
     followActor(dt);
@@ -540,7 +562,8 @@ std::string_view App::entryName(const CardRef& c, std::string& storage) const {
 
 std::string_view App::nativeName(const CardRef& c) const {
     // A figure's own name in its set is the original-language form (Hadrianus); show it when
-    // the card calls them otherwise. Landmarks' catalog names are descriptions, not forms.
+    // the card calls them otherwise (Q5-E-13: not "Kūruš (a memory)" under "Kūruš", nor
+    // "Hermon, stonecutter" under "Hermon"). Landmarks' catalog names are descriptions.
     if (!c.entry.starts_with("figure:")) return {};
     const std::string_view id = std::string_view(c.entry).substr(7);
     const world::RegionFile* f = regionFile(c.region);
@@ -548,7 +571,7 @@ std::string_view App::nativeName(const CardRef& c) const {
     for (const world::SetCatalog& s : loaded_->content->sets())
         for (const world::SetActor& a : s.actors)
             if (a.id == id &&
-                (card == nullptr || (a.name != card->title && a.name != card->epithet)))
+                (card == nullptr || !namedAlready(a.name, card->title, card->epithet)))
                 return a.name;
     return {};
 }
@@ -824,6 +847,7 @@ void App::loadWorldAudio() {
     mixer_.loadMore(assets_ / "audio", arriveFiles_, soundscape_->files());
     soundLoops_.clear();
     for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
+    markDryLoops(soundscape_->files());
 }
 
 void App::loadCityAudio() {
@@ -835,6 +859,21 @@ void App::loadCityAudio() {
     cityFx_.clear();
     for (const std::string& f : citySound_->loops()) cityLoops_.push_back(mixer_.loopIndex(f));
     for (const std::string& f : citySound_->effects()) cityFx_.push_back(mixer_.sfxIndex(f));
+    markDryLoops(citySound_->loops());
+    for (const std::string& g : citySound_->guesses()) SDL_Log("sound: %s", g.c_str());
+}
+
+void App::markDryLoops(std::span<const std::string> files) {
+    // The snow beds are muffled already: snow's low-pass leaves them as they are.
+    for (const std::string& f : files)
+        if (f.contains("snow")) mixer_.setLoopDry(mixer_.loopIndex(f), true);
+}
+
+bool App::snowLiesHere() const {
+    // Snow lies where the view is: the climate there that month (the season's snow without a
+    // world).
+    return viewWeather_ ? viewWeather_->snow()
+                        : cat_.seasons[static_cast<std::size_t>(season())].snow;
 }
 
 void App::updateWorldAudio(float night) {
@@ -851,6 +890,13 @@ void App::updateWorldAudio(float night) {
     in.clock = clock_.time();
     in.night = night;
     in.dt = frameDt_;
+    // The year where the view is: the world calendar's season and month, rain and snow there.
+    in.season = season();
+    in.month = calendarMonth();
+    in.rain = rainHere();
+    const bool snowLies = snowLiesHere();
+    in.snowCover = snowLies ? 1.0f : 0.0f;
+    in.musicDuck = citySound_ ? citySound_->musicDuck() : 1.0f;
     soundscape_->update(in);
     const auto out = soundscape_->out();
     for (std::size_t i = 0; i < out.size(); ++i) {
@@ -869,8 +915,10 @@ void App::updateWorldAudio(float night) {
     ci.wind = weather_.wind().strength;
     ci.rain = rainHere();
     ci.snow = cat_.seasons[static_cast<std::size_t>(season())].snow;
+    ci.snowCover = snowLies;
     ci.clock = clock_.time();
     ci.season = season();
+    ci.month = in.month;
     ci.dt = frameDt_;
     ci.actors = worldView_->actorsDrawn();
     ci.city = city_->city.get();
@@ -884,6 +932,58 @@ void App::updateWorldAudio(float night) {
     for (const worldview::CitySound::Shot& sh : citySound_->shots())
         if (sh.effect >= 0 && cityFx_[static_cast<std::size_t>(sh.effect)] >= 0)
             mixer_.play(cityFx_[static_cast<std::size_t>(sh.effect)], sh.gain, sh.pitch, sh.pan);
+}
+
+std::optional<std::string> App::checkSound(std::span<const std::string> a) {
+    // expect sound beds: every region plays a bed, loaded in the mixer, in each month of each
+    // season by day (12:00) and by night (00:00). expect sound FILE|FAMILY MIN MAX: the gain
+    // (x100) the world's sound sets that loop (or that family's loops together) to now.
+    if (!soundscape_ || !loaded_) return std::string("no world sound");
+    if (a.size() == 2 && a[1] == "beds") {
+        int first = 0; // the season's first month
+        for (std::size_t k = 0; k < cat_.seasons.size(); ++k) {
+            for (int d = 0; d < cat_.seasonDays[k]; ++d)
+                for (const float hour : {12.0f, 0.0f})
+                    for (std::size_t r = 0; r < loaded_->file.regions.size(); ++r) {
+                        const int month =
+                            first + d < static_cast<int>(cat_.months.size()) ? first + d : -1;
+                        const auto beds = soundscape_->bedsOf(
+                            static_cast<int>(r), static_cast<int>(k), month, hour, false);
+                        if (std::ranges::none_of(beds, [&](const std::string& f) {
+                                return mixer_.loopIndex(f) >= 0;
+                            }))
+                            return std::format("{} plays no bed in {} (month {}) at {:02}:00",
+                                               loaded_->file.regions[r].id, cat_.seasons[k].id,
+                                               month, static_cast<int>(hour));
+                    }
+            first += cat_.seasonDays[k];
+        }
+        return std::nullopt;
+    }
+    if (a.size() != 4) return std::string("expect sound beds | expect sound FILE|FAMILY MIN MAX");
+    std::string family = a[1];
+    std::ranges::replace(family, '.', '_');
+    const bool isFamily = !a[1].contains('/');
+    const auto matches = [&](const std::string& f) {
+        return isFamily ? f.starts_with("amb/world/" + family + "_") : f == a[1];
+    };
+    float g = 0;
+    bool known = false;
+    for (std::size_t i = 0; i < soundscape_->files().size(); ++i)
+        if (matches(soundscape_->files()[i])) {
+            known = true;
+            g += soundscape_->out()[i].gain;
+        }
+    if (citySound_)
+        for (std::size_t i = 0; i < citySound_->loops().size(); ++i)
+            if (matches(citySound_->loops()[i])) {
+                known = true;
+                g += citySound_->out()[i].gain;
+            }
+    if (!known) return "the world plays no " + a[1];
+    const long v = std::lround(g * 100.0f);
+    if (v >= std::stol(a[2]) && v <= std::stol(a[3])) return std::nullopt;
+    return std::format("expected sound {} in {}..{} but found {}", a[1], a[2], a[3], v);
 }
 
 float App::homeMusic() const {
@@ -918,16 +1018,21 @@ void App::drawPlaceholderLabels(Painter& p) {
 
 namespace lc {
 
+int App::calendarMonth() const {
+    // The world calendar's month of the day (a kept season keeps its own months); -1 without one.
+    return calendarDay(clock_.day(), seasonPin_, cat_.seasonDays,
+                       static_cast<int>(cat_.months.size()))
+        .month;
+}
+
 void App::followWorldWeather() {
     if (!viewWeather_) return;
     // One weather for the whole map: the home takes the world field's cells over its land, and
     // the view's field is what the renderer draws everywhere else.
     const SeasonDef& sd = cat_.seasons[static_cast<std::size_t>(season())];
-    // The month of the season's day (a kept season keeps its own months), for each region's
-    // snow by its climate.
-    const CalendarDay cd = calendarDay(clock_.day(), seasonPin_, cat_.seasonDays,
-                                       static_cast<int>(cat_.months.size()));
-    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow, cd.month, clock_.day()};
+    // Each region's snow by its climate, that month.
+    const worldview::SeasonClimate sc{sd.showers, sd.clouds, sd.snow, calendarMonth(),
+                                      clock_.day()};
     const TileRect h = loaded_->file.home.rect;
     const int m = tuning::kWorldWeatherMargin;
     homeWeather_->update(played_, weather_.wind(), sc, {h.x0 - m, h.y0 - m, h.x1 + m, h.y1 + m},
@@ -939,6 +1044,8 @@ void App::followWorldWeather() {
     const TileRect v = cameraTiles();
     viewWeather_->update(played_, weather_.wind(), sc, {v.x0 - m, v.y0 - m, v.x1 + m, v.y1 + m},
                          weather_.mode());
+    if (worldView_)
+        worldView_->setWind(weather_.wind().dir, weather_.wind().strength, profile_.reduceMotion);
 }
 
 TileRect App::cameraTiles() const {

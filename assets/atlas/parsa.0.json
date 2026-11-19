@@ -9219,151 +9219,151 @@
    "oy": 42
   },
   "fx/parsa.chisel_dust/f0": {
-   "x": 4071,
-   "y": 4012,
+   "x": 4068,
+   "y": 4011,
    "w": 16,
    "h": 10,
    "ox": 6,
    "oy": 12
   },
   "fx/parsa.chisel_dust/f1": {
-   "x": 4071,
-   "y": 3946,
+   "x": 4068,
+   "y": 3945,
    "w": 17,
    "h": 12,
    "ox": 6,
    "oy": 14
   },
   "fx/parsa.chisel_dust/f2": {
-   "x": 4071,
-   "y": 3959,
+   "x": 4068,
+   "y": 3958,
    "w": 17,
    "h": 11,
    "ox": 6,
    "oy": 15
   },
   "fx/parsa.chisel_dust/f3": {
-   "x": 4071,
-   "y": 4046,
+   "x": 4068,
+   "y": 4045,
    "w": 15,
    "h": 10,
    "ox": 3,
    "oy": 18
   },
   "fx/parsa.chisel_dust/f4": {
-   "x": 4071,
-   "y": 3971,
+   "x": 4068,
+   "y": 3970,
    "w": 17,
    "h": 10,
    "ox": 5,
    "oy": 20
   },
   "fx/parsa.chisel_dust/f5": {
-   "x": 4071,
-   "y": 3891,
+   "x": 4068,
+   "y": 3890,
    "w": 18,
    "h": 9,
    "ox": 5,
    "oy": 21
   },
   "fx/parsa.dust/f0": {
-   "x": 4071,
-   "y": 3982,
+   "x": 4068,
+   "y": 3981,
    "w": 17,
    "h": 11,
    "ox": 7,
    "oy": 12
   },
   "fx/parsa.dust/f1": {
-   "x": 4071,
-   "y": 3834,
+   "x": 4068,
+   "y": 3833,
    "w": 19,
    "h": 11,
    "ox": 8,
    "oy": 14
   },
   "fx/parsa.dust/f2": {
-   "x": 4071,
-   "y": 3846,
+   "x": 4068,
+   "y": 3845,
    "w": 19,
    "h": 11,
    "ox": 8,
    "oy": 16
   },
   "fx/parsa.dust/f3": {
-   "x": 4071,
-   "y": 3746,
+   "x": 4068,
+   "y": 3766,
    "w": 21,
    "h": 11,
    "ox": 9,
    "oy": 18
   },
   "fx/parsa.dust/f4": {
-   "x": 4071,
-   "y": 3718,
+   "x": 4068,
+   "y": 3738,
    "w": 22,
    "h": 11,
    "ox": 9,
    "oy": 20
   },
   "fx/parsa.dust/f5": {
-   "x": 4071,
-   "y": 3592,
+   "x": 4068,
+   "y": 3612,
    "w": 24,
    "h": 11,
    "ox": 10,
    "oy": 22
   },
   "fx/parsa.fire/f0": {
-   "x": 4071,
-   "y": 3780,
+   "x": 4068,
+   "y": 3800,
    "w": 13,
    "h": 20,
    "ox": 6,
    "oy": 19
   },
   "fx/parsa.fire/f1": {
-   "x": 4071,
-   "y": 3801,
+   "x": 4082,
+   "y": 3800,
    "w": 12,
    "h": 20,
    "ox": 4,
    "oy": 19
   },
   "fx/parsa.fire/f2": {
-   "x": 4071,
-   "y": 3758,
+   "x": 4068,
+   "y": 3778,
    "w": 10,
    "h": 21,
    "ox": 3,
    "oy": 20
   },
   "fx/parsa.fire/f3": {
-   "x": 4071,
-   "y": 3901,
+   "x": 4068,
+   "y": 3900,
    "w": 9,
    "h": 18,
    "ox": 3,
    "oy": 18
   },
   "fx/parsa.fire/f4": {
-   "x": 4082,
-   "y": 3758,
+   "x": 4079,
+   "y": 3778,
    "w": 8,
    "h": 21,
    "ox": 2,
    "oy": 20
   },
   "fx/parsa.fire/f5": {
-   "x": 4071,
-   "y": 3858,
+   "x": 4068,
+   "y": 3857,
    "w": 13,
    "h": 19,
    "ox": 7,
    "oy": 18
   },
   "fx/parsa.incense/f0": {
-   "x": 4071,
+   "x": 4068,
    "y": 3246,
    "w": 19,
    "h": 52,
@@ -9371,7 +9371,7 @@
    "oy": 51
   },
   "fx/parsa.incense/f1": {
-   "x": 4071,
+   "x": 4068,
    "y": 3352,
    "w": 19,
    "h": 51,
@@ -9379,7 +9379,7 @@
    "oy": 52
   },
   "fx/parsa.incense/f2": {
-   "x": 4071,
+   "x": 4068,
    "y": 3404,
    "w": 19,
    "h": 51,
@@ -9387,7 +9387,7 @@
    "oy": 53
   },
   "fx/parsa.incense/f3": {
-   "x": 4071,
+   "x": 4068,
    "y": 3299,
    "w": 19,
    "h": 52,
@@ -9395,7 +9395,7 @@
    "oy": 51
   },
   "fx/parsa.incense/f4": {
-   "x": 4071,
+   "x": 4068,
    "y": 3456,
    "w": 19,
    "h": 51,
@@ -9403,7 +9403,7 @@
    "oy": 52
   },
   "fx/parsa.incense/f5": {
-   "x": 4071,
+   "x": 4068,
    "y": 3508,
    "w": 19,
    "h": 51,
@@ -9411,55 +9411,55 @@
    "oy": 53
   },
   "fx/parsa.petals/f0": {
-   "x": 583,
-   "y": 4078,
+   "x": 4068,
+   "y": 4069,
    "w": 13,
    "h": 11,
    "ox": 9,
    "oy": 24
   },
   "fx/parsa.petals/f1": {
-   "x": 4071,
-   "y": 4057,
+   "x": 4068,
+   "y": 4056,
    "w": 15,
    "h": 12,
    "ox": 6,
    "oy": 22
   },
   "fx/parsa.petals/f2": {
-   "x": 2430,
-   "y": 4083,
+   "x": 4082,
+   "y": 4069,
    "w": 13,
    "h": 7,
    "ox": 4,
    "oy": 18
   },
   "fx/parsa.petals/f3": {
-   "x": 4071,
-   "y": 3822,
+   "x": 4068,
+   "y": 3821,
    "w": 20,
    "h": 11,
    "ox": 8,
    "oy": 14
   },
   "fx/parsa.petals/f4": {
-   "x": 4071,
-   "y": 3604,
+   "x": 4068,
+   "y": 3624,
    "w": 24,
    "h": 8,
    "ox": 8,
    "oy": 12
   },
   "fx/parsa.petals/f5": {
-   "x": 4071,
-   "y": 4023,
+   "x": 4068,
+   "y": 4022,
    "w": 16,
    "h": 5,
    "ox": 0,
    "oy": 9
   },
   "fx/parsa.sparks/f0": {
-   "x": 2554,
+   "x": 2520,
    "y": 4083,
    "w": 5,
    "h": 2,
@@ -9467,7 +9467,7 @@
    "oy": 2
   },
   "fx/parsa.sparks/f1": {
-   "x": 2545,
+   "x": 2511,
    "y": 4083,
    "w": 8,
    "h": 3,
@@ -9475,7 +9475,7 @@
    "oy": 2
   },
   "fx/parsa.sparks/f2": {
-   "x": 2560,
+   "x": 2526,
    "y": 4083,
    "w": 5,
    "h": 1,
@@ -9483,7 +9483,7 @@
    "oy": 1
   },
   "fx/parsa.sparks/f3": {
-   "x": 2566,
+   "x": 2532,
    "y": 4083,
    "w": 5,
    "h": 2,
@@ -9491,47 +9491,47 @@
    "oy": 1
   },
   "fx/parsa.spray/f0": {
-   "x": 2444,
-   "y": 4083,
+   "x": 4082,
+   "y": 4077,
    "w": 10,
    "h": 12,
    "ox": 5,
    "oy": 16
   },
   "fx/parsa.spray/f1": {
-   "x": 4071,
-   "y": 4070,
+   "x": 4085,
+   "y": 3993,
    "w": 10,
    "h": 14,
    "ox": 3,
    "oy": 16
   },
   "fx/parsa.spray/f2": {
-   "x": 4071,
-   "y": 4029,
+   "x": 4068,
+   "y": 4028,
    "w": 15,
    "h": 16,
    "ox": 10,
    "oy": 16
   },
   "fx/parsa.spray/f3": {
-   "x": 4082,
-   "y": 4070,
+   "x": 4085,
+   "y": 4008,
    "w": 9,
    "h": 14,
    "ox": 6,
    "oy": 16
   },
   "fx/parsa.torch_flame/f0": {
-   "x": 2455,
-   "y": 4083,
+   "x": 4068,
+   "y": 4081,
    "w": 8,
    "h": 12,
    "ox": 5,
    "oy": 11
   },
   "fx/parsa.torch_flame/f1": {
-   "x": 2464,
+   "x": 2430,
    "y": 4083,
    "w": 7,
    "h": 12,
@@ -9539,7 +9539,7 @@
    "oy": 11
   },
   "fx/parsa.torch_flame/f2": {
-   "x": 2472,
+   "x": 2438,
    "y": 4083,
    "w": 5,
    "h": 12,
@@ -9547,7 +9547,7 @@
    "oy": 11
   },
   "fx/parsa.torch_flame/f3": {
-   "x": 2478,
+   "x": 2444,
    "y": 4083,
    "w": 8,
    "h": 12,
@@ -9555,7 +9555,7 @@
    "oy": 11
   },
   "fx/parsa.torch_flame/f4": {
-   "x": 2487,
+   "x": 2453,
    "y": 4083,
    "w": 8,
    "h": 12,
@@ -9563,7 +9563,7 @@
    "oy": 11
   },
   "fx/parsa.torch_flame/f5": {
-   "x": 2496,
+   "x": 2462,
    "y": 4083,
    "w": 9,
    "h": 12,
@@ -9571,44 +9571,60 @@
    "oy": 11
   },
   "item/parsa.apadana/base/r0/p1/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
-  "item/parsa.apadana/base/r0/p16/f0": {
-   "x": 3886,
-   "y": 4069,
-   "w": 36,
-   "h": 21,
-   "ox": 95,
-   "oy": 26
-  },
-  "item/parsa.apadana/base/r0/p38/f0": {
-   "x": 4094,
-   "y": 3718,
+  "item/parsa.apadana/base/r0/p42/f0": {
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
-  "item/parsa.apadana/base/r0/p39/f0": {
-   "x": 4071,
-   "y": 3560,
+  "item/parsa.apadana/base/r0/p54/f0": {
+   "x": 1126,
+   "y": 4060,
+   "w": 1,
+   "h": 1,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/parsa.apadana/base/r0/p55/f0": {
+   "x": 1126,
+   "y": 4060,
+   "w": 1,
+   "h": 1,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/parsa.apadana/base/r0/p56/f0": {
+   "x": 1126,
+   "y": 4060,
+   "w": 1,
+   "h": 1,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/parsa.apadana/base/r0/p57/f0": {
+   "x": 4088,
+   "y": 3246,
    "w": 7,
    "h": 31,
    "ox": 160,
    "oy": -455
   },
-  "item/parsa.apadana/base/r0/p41/f0": {
+  "item/parsa.apadana/base/r0/p58/f0": {
    "x": 3414,
    "y": 3800,
-   "w": 508,
-   "h": 268,
-   "ox": 349,
-   "oy": 8
+   "w": 505,
+   "h": 272,
+   "ox": 252,
+   "oy": 60
   },
   "item/parsa.apadana/glow/r0/f0": {
    "x": 1145,
@@ -10018,14 +10034,6 @@
    "ox": 26,
    "oy": 56
   },
-  "item/parsa.fort_wall/shadow/m0/f0": {
-   "x": 3487,
-   "y": 4069,
-   "w": 69,
-   "h": 24,
-   "ox": 20,
-   "oy": -6
-  },
   "item/parsa.fort_wall/shadow/m1/f0": {
    "x": 239,
    "y": 4066,
@@ -10123,56 +10131,56 @@
    "oy": -1
   },
   "item/parsa.garrison/base/r0/p0/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.garrison/base/r0/p1/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.garrison/base/r0/p21/f0": {
-   "x": 4071,
-   "y": 3994,
+   "x": 4068,
+   "y": 3993,
    "w": 14,
    "h": 17,
    "ox": 71,
    "oy": -128
   },
   "item/parsa.garrison/base/r0/p22/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.garrison/base/r0/p5/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.garrison/base/r0/p6/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.garrison/base/r0/p7/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -10203,7 +10211,7 @@
    "oy": 109
   },
   "item/parsa.gate_all_lands/base/r0/p8/f0": {
-   "x": 3923,
+   "x": 3920,
    "y": 3800,
    "w": 136,
    "h": 228,
@@ -10219,16 +10227,16 @@
    "oy": -64
   },
   "item/parsa.gates_station/base/r0/p0/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.gates_station/base/r0/p2/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -10243,8 +10251,8 @@
    "oy": -16
   },
   "item/parsa.great_stair/base/r0/p7/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -10259,16 +10267,16 @@
    "oy": -109
   },
   "item/parsa.hadish/base/r0/p0/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.hadish/base/r0/p1/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -10307,24 +10315,24 @@
    "oy": -34
   },
   "item/parsa.harem/base/r0/p0/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.harem/base/r0/p1/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.harem/base/r0/p2/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -10482,78 +10490,6 @@
    "ox": 16,
    "oy": 36
   },
-  "item/parsa.lion_wall/shadow/m1/f0": {
-   "x": 3821,
-   "y": 4069,
-   "w": 64,
-   "h": 26,
-   "ox": 20,
-   "oy": -2
-  },
-  "item/parsa.lion_wall/shadow/m11/f0": {
-   "x": 3821,
-   "y": 4069,
-   "w": 64,
-   "h": 26,
-   "ox": 20,
-   "oy": -2
-  },
-  "item/parsa.lion_wall/shadow/m12/f0": {
-   "x": 3557,
-   "y": 4069,
-   "w": 65,
-   "h": 26,
-   "ox": 29,
-   "oy": -6
-  },
-  "item/parsa.lion_wall/shadow/m14/f0": {
-   "x": 3557,
-   "y": 4069,
-   "w": 65,
-   "h": 26,
-   "ox": 29,
-   "oy": -6
-  },
-  "item/parsa.lion_wall/shadow/m3/f0": {
-   "x": 3821,
-   "y": 4069,
-   "w": 64,
-   "h": 26,
-   "ox": 20,
-   "oy": -2
-  },
-  "item/parsa.lion_wall/shadow/m4/f0": {
-   "x": 3557,
-   "y": 4069,
-   "w": 65,
-   "h": 26,
-   "ox": 29,
-   "oy": -6
-  },
-  "item/parsa.lion_wall/shadow/m6/f0": {
-   "x": 3557,
-   "y": 4069,
-   "w": 65,
-   "h": 26,
-   "ox": 29,
-   "oy": -6
-  },
-  "item/parsa.lion_wall/shadow/m8/f0": {
-   "x": 3623,
-   "y": 4069,
-   "w": 65,
-   "h": 25,
-   "ox": 29,
-   "oy": -2
-  },
-  "item/parsa.lion_wall/shadow/m9/f0": {
-   "x": 3821,
-   "y": 4069,
-   "w": 64,
-   "h": 26,
-   "ox": 20,
-   "oy": -2
-  },
   "item/parsa.naqsh_cliff/shadow/r0/f0": {
    "x": 2249,
    "y": 2959,
@@ -10625,22 +10561,6 @@
    "h": 79,
    "ox": 11,
    "oy": 62
-  },
-  "item/parsa.p_banner/shadow/r0/f1": {
-   "x": 467,
-   "y": 4078,
-   "w": 57,
-   "h": 16,
-   "ox": 4,
-   "oy": -14
-  },
-  "item/parsa.p_banner/shadow/r0/f2": {
-   "x": 525,
-   "y": 4078,
-   "w": 57,
-   "h": 16,
-   "ox": 4,
-   "oy": -14
   },
   "item/parsa.p_barley/base/r0/f0": {
    "x": 2867,
@@ -11402,21 +11322,37 @@
    "ox": 96,
    "oy": 53
   },
+  "item/parsa.p_house/glow/r0/f0": {
+   "x": 4068,
+   "y": 3578,
+   "w": 25,
+   "h": 16,
+   "ox": 90,
+   "oy": -25
+  },
   "item/parsa.p_house/glow/r1/f0": {
-   "x": 4094,
-   "y": 3720,
+   "x": 1126,
+   "y": 4062,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.p_house/glow/r2/f0": {
-   "x": 4094,
-   "y": 3720,
+   "x": 1126,
+   "y": 4062,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
+  },
+  "item/parsa.p_house/glow/r3/f0": {
+   "x": 4068,
+   "y": 3595,
+   "w": 25,
+   "h": 16,
+   "ox": -10,
+   "oy": -53
   },
   "item/parsa.p_house/shadow/r1/f0": {
    "x": 2665,
@@ -11459,39 +11395,39 @@
    "oy": 44
   },
   "item/parsa.p_house_small/glow/r0/f0": {
-   "x": 4071,
-   "y": 3920,
+   "x": 4068,
+   "y": 3919,
    "w": 18,
    "h": 12,
    "ox": 43,
    "oy": -9
   },
   "item/parsa.p_house_small/glow/r1/f0": {
-   "x": 4094,
-   "y": 3720,
+   "x": 1126,
+   "y": 4062,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.p_house_small/glow/r2/f0": {
-   "x": 4094,
-   "y": 3720,
+   "x": 1126,
+   "y": 4062,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.p_house_small/glow/r3/f0": {
-   "x": 4071,
-   "y": 3933,
+   "x": 4068,
+   "y": 3932,
    "w": 18,
    "h": 12,
    "ox": -17,
    "oy": -13
   },
   "item/parsa.p_house_small/shadow/r3/f0": {
-   "x": 3923,
+   "x": 3920,
    "y": 4029,
    "w": 147,
    "h": 65,
@@ -11507,7 +11443,7 @@
    "oy": 17
   },
   "item/parsa.p_incense/glow/r0/f0": {
-   "x": 2506,
+   "x": 2472,
    "y": 4083,
    "w": 12,
    "h": 8,
@@ -11579,32 +11515,32 @@
    "oy": 23
   },
   "item/parsa.p_lamp/glow/r0/f0": {
-   "x": 4071,
-   "y": 3613,
+   "x": 4068,
+   "y": 3633,
    "w": 23,
    "h": 14,
    "ox": 8,
    "oy": 14
   },
   "item/parsa.p_lamp/glow/r1/f0": {
-   "x": 4071,
-   "y": 3628,
+   "x": 4068,
+   "y": 3648,
    "w": 23,
    "h": 15,
    "ox": 10,
    "oy": 12
   },
   "item/parsa.p_lamp/glow/r2/f0": {
-   "x": 4071,
-   "y": 3644,
+   "x": 4068,
+   "y": 3664,
    "w": 23,
    "h": 13,
    "ox": 16,
    "oy": 12
   },
   "item/parsa.p_lamp/glow/r3/f0": {
-   "x": 4071,
-   "y": 3730,
+   "x": 4068,
+   "y": 3750,
    "w": 22,
    "h": 15,
    "ox": 13,
@@ -11707,8 +11643,8 @@
    "oy": 9
   },
   "item/parsa.p_oven/glow/r0/f0": {
-   "x": 4071,
-   "y": 3878,
+   "x": 4068,
+   "y": 3877,
    "w": 19,
    "h": 12,
    "ox": 10,
@@ -11954,22 +11890,6 @@
    "ox": 20,
    "oy": 25
   },
-  "item/parsa.p_throne/shadow/r1/f0": {
-   "x": 3689,
-   "y": 4069,
-   "w": 65,
-   "h": 23,
-   "ox": 22,
-   "oy": -5
-  },
-  "item/parsa.p_throne/shadow/r2/f0": {
-   "x": 3755,
-   "y": 4069,
-   "w": 65,
-   "h": 26,
-   "ox": 24,
-   "oy": -5
-  },
   "item/parsa.p_torch/base/r0/f0": {
    "x": 3301,
    "y": 1878,
@@ -12188,19 +12108,11 @@
   },
   "item/parsa.p_wall/shadow/m6/f0": {
    "x": 3344,
-   "y": 4069,
+   "y": 4073,
    "w": 71,
    "h": 22,
    "ox": 27,
    "oy": -9
-  },
-  "item/parsa.p_wall/shadow/m9/f0": {
-   "x": 3416,
-   "y": 4069,
-   "w": 70,
-   "h": 23,
-   "ox": 27,
-   "oy": -2
   },
   "item/parsa.p_wall_gate/base/r0/f0": {
    "x": 207,
@@ -12331,96 +12243,96 @@
    "oy": -67
   },
   "item/parsa.quarry/base/r0/p0/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p1/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p10/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p11/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p2/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p3/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p4/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p5/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p6/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p7/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p8/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.quarry/base/r0/p9/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -12435,16 +12347,16 @@
    "oy": -168
   },
   "item/parsa.road_station/base/r0/p2/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.road_station/base/r0/p3/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -12467,24 +12379,24 @@
    "oy": -25
   },
   "item/parsa.royal_road_head/base/r0/p0/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.royal_road_head/base/r0/p1/f0": {
-   "x": 4094,
-   "y": 3718,
+   "x": 1126,
+   "y": 4060,
    "w": 1,
    "h": 1,
    "ox": 0,
    "oy": 0
   },
   "item/parsa.royal_road_head/glow/r0/f0": {
-   "x": 4094,
-   "y": 3720,
+   "x": 1126,
+   "y": 4062,
    "w": 1,
    "h": 1,
    "ox": 0,
@@ -12529,6 +12441,14 @@
    "h": 71,
    "ox": 63,
    "oy": 24
+  },
+  "item/parsa.susa_palace/glow/r0/f0": {
+   "x": 4068,
+   "y": 3560,
+   "w": 27,
+   "h": 17,
+   "ox": 22,
+   "oy": -356
   },
   "item/parsa.susa_palace/shadow/r0/f0": {
    "x": 2012,
@@ -12827,7 +12747,7 @@
    "oy": 3
   },
   "prop/parsa.lamp/glow/f0": {
-   "x": 2519,
+   "x": 2485,
    "y": 4083,
    "w": 12,
    "h": 8,
@@ -12835,7 +12755,7 @@
    "oy": 6
   },
   "prop/parsa.lamp/glow/f1": {
-   "x": 2519,
+   "x": 2485,
    "y": 4083,
    "w": 12,
    "h": 8,
@@ -12843,7 +12763,7 @@
    "oy": 6
   },
   "prop/parsa.lamp/glow/f2": {
-   "x": 2519,
+   "x": 2485,
    "y": 4083,
    "w": 12,
    "h": 8,
@@ -12851,7 +12771,7 @@
    "oy": 6
   },
   "prop/parsa.lamp/glow/f3": {
-   "x": 2532,
+   "x": 2498,
    "y": 4083,
    "w": 12,
    "h": 8,
@@ -12891,36 +12811,116 @@
    "oy": 13
   },
   "prop/parsa.torch/glow/f0": {
-   "x": 4071,
-   "y": 3658,
+   "x": 4068,
+   "y": 3678,
    "w": 23,
    "h": 14,
    "ox": 11,
    "oy": 16
   },
   "prop/parsa.torch/glow/f1": {
-   "x": 4071,
-   "y": 3673,
+   "x": 4068,
+   "y": 3693,
    "w": 23,
    "h": 14,
    "ox": 11,
    "oy": 16
   },
   "prop/parsa.torch/glow/f2": {
-   "x": 4071,
-   "y": 3688,
+   "x": 4068,
+   "y": 3708,
    "w": 23,
    "h": 14,
    "ox": 11,
    "oy": 16
   },
   "prop/parsa.torch/glow/f3": {
-   "x": 4071,
-   "y": 3703,
+   "x": 4068,
+   "y": 3723,
    "w": 23,
    "h": 14,
    "ox": 11,
    "oy": 16
+  },
+  "terrain/parsa.packed_earth/slope/c1/v0": {
+   "x": 3416,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.packed_earth/slope/c11/v0": {
+   "x": 3479,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.packed_earth/slope/c3/v0": {
+   "x": 3542,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.packed_earth/slope/c9/v0": {
+   "x": 3605,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.plain_grass/slope/c1/v0": {
+   "x": 3668,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.plain_grass/slope/c1/v1": {
+   "x": 3731,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.plain_grass/slope/c11/v0": {
+   "x": 3794,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.plain_grass/slope/c11/v1": {
+   "x": 3857,
+   "y": 4073,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.plain_grass/slope/c3/v0": {
+   "x": 467,
+   "y": 4078,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/parsa.plain_grass/slope/c3/v1": {
+   "x": 530,
+   "y": 4078,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
+   "oy": 0
   },
   "walker/parsa.archer/v0/idle_back/f0": {
    "x": 2638,

@@ -17,6 +17,7 @@
 #include "platform/batch.hpp"
 #include "render/atlas.hpp"
 #include "render/draw.hpp"
+#include "render/gpu/look.hpp"
 #include "ui/font.hpp"
 #include "world/figures.hpp"
 #include "world/loader.hpp"
@@ -44,7 +45,13 @@
 #include <string>
 #include <vector>
 
+namespace lc::gpu {
+class Post;
+}
+
 namespace lc::worldview {
+
+class WorldLights;
 
 enum class Lod : std::uint8_t { Native, Half, Quarter, Overview };
 
@@ -119,6 +126,12 @@ struct FrameInfo {
     Vec2 topLeft;                   // world px at the window's top-left corner
 };
 
+// A lamp of the game's scene: world px of its flame and its reach (world px).
+struct HomeLamp {
+    Vec2 at;
+    float radius = 0;
+};
+
 // The game's scene (the home region, its actors and effects) drawn at its turns in the frame,
 // while the home is in view (else the world grades itself). Each draws into FrameInfo::target
 // and leaves it bound; any may be empty.
@@ -128,6 +141,8 @@ struct Hooks {
     std::function<void(const FrameInfo&)> light;   // grades the target (else: flat ambient)
     std::function<void(const FrameInfo&)> glow;    // after the world's glow
     std::function<void(const FrameInfo&)> overlay; // on the output, over the composited world
+    // The shader path lights the home's lamps with the world's (else its light map does).
+    std::function<std::span<const HomeLamp>()> lamps;
 };
 
 class WorldView {
@@ -189,6 +204,10 @@ public:
         std::uint32_t index = 0; // map item, or index into the figures given
     };
     [[nodiscard]] std::optional<Picked> pick(Vec2 worldPx) const;
+    // The share of the last frame's world target under `window` (window px) whose alpha is
+    // partial (0.05..0.97): a seam or hole, since ground, water and the haze beyond the grid
+    // are opaque (water marks sit at 0.98). For tests: it reads the target back.
+    [[nodiscard]] float partialAlpha(SDL_Rect window);
     // Everything with a card, and every figure, on screen in the last frame (once each).
     void visibleCards(std::vector<Picked>& out) const;
     // Figures without art (not drawn).
@@ -213,6 +232,8 @@ public:
     }
     // The hole's tiles changed in the map (its rim is drawn into the cells): redraw them.
     void holeChanged();
+    // The home's terrain changed: its water is marked and the water field built again.
+    void homeTerrainChanged();
     // City life drawn from now on, in the world's painter's order (null: none). Its looks are
     // resolved on the first call. `alpha` places actors between the last two simulation steps.
     void setLife(const life::CityLife* city);
@@ -235,6 +256,22 @@ public:
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);
     }
+    // The Look (graphics plan §3.2, src/render/gpu/README.md): Classic draws today's frame; the
+    // other tiers, on SDL's gpu driver, grade by the regions' `theme.look`, light the lamps of
+    // the world data, bloom what glows and sway what the wind moves. Returns the tier in effect:
+    // Classic where the shader path cannot be made (logged once).
+    gpu::Quality setQuality(gpu::Quality q);
+    [[nodiscard]] gpu::Quality quality() const;
+    // The world data's lights burning now, gathered by map chunk for the map screen: (grid tile
+    // of their middle, how bright 0..1); empty on the classic path.
+    void mapLights(std::vector<std::pair<Vec2, float>>& out) const;
+    // The world's wind (unit direction in grid tiles, strength 0..1) for sway; reduce motion
+    // halves it.
+    void setWind(Vec2 dir, float strength, bool reduceMotion);
+    // The clouds setting (the deck and shadows, shadows alone, none; the classic frame has no
+    // deck).
+    void setClouds(gpu::Clouds c) { clouds_ = c; }
+    [[nodiscard]] gpu::Clouds clouds() const { return clouds_; }
 
 private:
     struct Target {
@@ -242,6 +279,41 @@ private:
         int w = 0;
         int h = 0;
     };
+    // The shader path's half of a frame (renderer_gpu.cpp): this frame's grade, then the light
+    // and glow targets and bloom; composite() hands the final pass.
+    void gradeGpu(double clock, double now, const Lighting& light, Lod lod, Vec2 origin);
+    // Pools into the light target, then binds the glow target for the glow drawn next.
+    void lightGpu(const FRect& view, const Xform& x, Lod lod, float glow, const Hooks& hooks,
+                  const FrameInfo& frame, bool home);
+    // Lights seen from afar (the overview) into the glow target, bloom, back to the world.
+    void bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow);
+    void compositeGpu(Vec2 scale, bool smooth);
+    // The targets sized for the display when the path is made (no allocation on a resize).
+    void reserveGpuTargets();
+    // The shadow layer laid on in the sky's colour of the hour (the classic darkening's place).
+    void shadeGpu(SDL_Texture* layer, float w, float h);
+    // Marks a water sprite's pixels in a cell for the shader path (alpha lowered a step).
+    // `maybe`: water only where the art's colour is water's (the rim round an item's water).
+    void markWater(const SpriteRef& s, Vec2 anchor, bool maybe = false);
+    void flushMarks(const Xform& x);
+    // Water inside items (their geometry's water tiles), marked after the item is drawn.
+    void markItemWater(const Elem& e, const Xform& x);
+    // The home's water, marked after the game's scene draws its ground (the scene's ground is
+    // its own; its water tiles are known from the map's copy of the home's terrain).
+    void markHomeWater(const FRect& view, const Xform& x);
+    // The tile water field round the view, rebuilt when the view nears its edge.
+    void refreshWater(const FRect& view);
+    void buildWater(TileRect rect);
+    // The cloud pass for this frame (or none).
+    void cloudsGpu();
+    // A swaying item, bent in strips by the wind.
+    void putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean);
+    // Whether an item's glow layer burns now (the world data's lights on the shader path).
+    [[nodiscard]] bool glowing(std::uint32_t item) const;
+    // City life's actors drawn this frame that carry a burning light: `f(feet, hand, colour,
+    // radius tiles)`, world px; `rain(Vec2 tile)` as for the world's lights.
+    template <typename R, typename F>
+    void forEachCarried(R&& rain, F&& f);
 
     void warmUp();
     [[nodiscard]] bool put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
@@ -379,6 +451,7 @@ private:
     struct GlowSource {
         const SpriteRef* sprite = nullptr;
         Vec2 anchor; // world px, raised by the level
+        std::uint32_t item = 0;
     };
     std::vector<GlowSource> glow_;
     const WeatherField* weather_ = nullptr;
@@ -493,6 +566,75 @@ private:
     std::vector<float> rainMesh_; // and how hard it rains at its mesh's corners
     ActorMerge merge_;
     bool mergeIndexed_ = false;
+
+    // The shader path (null: Classic), the world's lights, the regions' looks, sway weights per
+    // content item (art px at the top in a full wind) and the wind.
+    std::unique_ptr<gpu::Post> post_;
+    std::unique_ptr<WorldLights> lights_;
+    std::vector<gpu::RegionLook> regionLooks_;
+    std::vector<std::vector<std::int16_t>> carried_; // per life region, per role: light profile
+    // The visible chunks' pools, their slow part kept between frames (refreshPools).
+    struct PoolLight {
+        Vec2 ground;      // world px
+        float height = 0; // of the flame above it, px
+        float radius = 0; // tiles
+        float base = 0;   // brightness without flicker, in the lamps' colour
+        std::uint32_t seed = 0;
+        std::uint16_t profile = 0;
+    };
+    std::vector<PoolLight> pools_;
+    TileRect poolTiles_;
+    int poolStep_ = -1;
+    int poolAge_ = 0;
+    template <typename R>
+    void refreshPools(const FRect& view, R&& rain);
+    mutable std::vector<std::pair<Vec2, float>> mapSums_; // mapLights() per chunk: weighted sum
+    struct Sway {
+        float lean = 0;      // art px at the top in a full wind, 0: still
+        bool frames = false; // cloth keeps its own flapping frames; plants bend instead
+    };
+    std::vector<Sway> swayOf_;
+    Vec2 windDir_{1, 0}; // world px, unit
+    float windStrength_ = 0;
+    int seasonLook_ = -1; // index into gpu::kSeasonIds
+    struct GpuFrame {
+        gpu::GradeAt grade;
+        float glow = 0;
+        float night = 0;
+        bool near = true;
+        Vec2 artOrigin;
+        float res = 1;
+        double now = 0;
+        int season = -1; // index into gpu::kSeasonIds
+    };
+    GpuFrame gpuFrame_;
+    gpu::Clouds clouds_ = gpu::Clouds::On;
+    std::vector<gpu::Cloud> cloudList_;
+    // Water marks waiting for the end of their diagonal (drawTiles).
+    struct Mark {
+        SpriteRef sprite;
+        Vec2 anchor;
+        bool maybe = false;
+    };
+    std::vector<Mark> marks_;
+    std::vector<TilePos> rimScratch_; // an item's rim round its water tiles (markItemWater)
+    // drawTiles: the level of each tile whose water mark waits (kNoWater: none).
+    static constexpr std::uint8_t kNoWater = 255;
+    std::vector<std::uint8_t> pendingWater_;
+    // The tile water field (refreshWater): the tiles it holds, its texels, the distances.
+    TileRect waterRect_;
+    std::vector<std::uint32_t> waterTexels_;
+    std::vector<float> waterDist_;
+    std::vector<std::uint8_t> waterKind_; // per terrain: 0 land, 1 water, 2 a channel
+    std::vector<TilePos> itemWater_;      // the items' water tiles, sorted (y, x)
+    bool itemWaterRead_ = false;
+    std::vector<TilePos> homeWater_; // the home's water tiles
+    bool homeWaterDirty_ = true;
+    bool waterStale_ = false; // the field must be built again (the home's terrain changed)
+    // The next field, built on a worker while the view pans (declared last of the field's
+    // members: it finishes before they go).
+    TileRect waterPending_;
+    std::future<void> waterJob_;
 
     // Backdrop sprites by region (day, night), resolved at load; empty when the set has none.
     std::vector<std::array<std::vector<SpriteRef>, 2>> backdrops_;

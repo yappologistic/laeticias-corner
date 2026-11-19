@@ -429,7 +429,7 @@
      "sfx/world/horse_blow.wav"
     ],
     "athens.owl": [
-     "sfx/world/owl_tawny.wav"
+     "sfx/athens/owl.wav"
     ],
     "world.crane": [
      "sfx/world/cranes.wav"
@@ -1173,6 +1173,21 @@
      "role": "owl",
      "density": "night",
      "max_per_chunk": 0.5
+    },
+    {
+     "actor": "world.heron",
+     "density": "daytime",
+     "max_per_chunk": 0.2
+    },
+    {
+     "actor": "world.deer",
+     "density": "fields",
+     "max_per_chunk": 0.15
+    },
+    {
+     "actor": "world.boar",
+     "density": "night",
+     "max_per_chunk": 0.1
     },
     {
      "role": "shrine_keeper",
@@ -2532,7 +2547,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",

@@ -7,12 +7,13 @@ import re
 
 import numpy as np
 
+import land
 import terrain as home
 from pack import Sprite
 from palette import (ATTIC_ROCK, CINNABAR, CLAY, EARTH, GLOSS, GLOW, INK, LEAF, MARBLE, OLIVE, PLASTER, POROS, RUST,
                      STONE, STRAW, SUMMER, WATER)
 from render import render_sprite
-from sets.parsa.ground import _face_grid, _fx, _overlay, _periodic
+from sets.parsa.ground import _fx, _overlay
 from voxel import Model, hash01
 
 FRAMES = {"athens.altar_fire": 6, "athens.fire": 6, "athens.torch_flame": 6, "athens.altar_smoke": 6,
@@ -133,37 +134,12 @@ def _face_sprite(rgb, alpha, H, W, ox, oy):
     return Sprite(rgba, ox, oy)
 
 
-def limestone_face(side, v, k, top=False):
-    """One level of the Acropolis rock: grey limestone in tilted beds with lit lips and shadowed
-    undercuts, rusty stains, vertical joints, a clump of dry grass or a caper on a ledge; the
-    rim band of the top edge carries dry grass."""
-    above = 5 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
-    shade = -0.9 if side == "se" else 0.0
-    on = (d >= 0) & (d < band)
-    n = _periodic(s, d, W, band, 1.4, 1301, v)
-    bed = (d + s * 0.18 + (n - 0.5) * 2.5 * k) % (4 * k)
-    lip, under = bed < 1.2, bed > 4 * k - 1.6
-    crack = (np.abs(((s + n * 4 * k) % (W / 2)) - W / 4) < 0.6) & (_periodic(s, d, W, band, 2.0, 1302, v) > 0.55)
-    lvl = 3.0 + shade + (n - 0.5) * 1.0 + lip * 1.2 - under * 1.3 - crack * 1.4 + (bed / (4 * k)) * 0.4
-    rgb = home._paint(ROCK, lvl, px, py, k=k)
-    stain = _periodic(s, d, W, band, 2.5, 1303, v) > 0.66
-    rgb = np.where((stain & ~under)[..., None], home._paint([RUST[0], RUST[1], CLAY[2]], lvl - 1.0, px, py, k=k), rgb)
-    alpha = on.copy()
-    if top:
-        tuft = (d < 0) & (d >= -above) & (np.abs(d) < 1 + 3 * (_periodic(s, d * 0, W, band, 4.0, 1304, v) > 0.55) *
-                                          (hash01(px, 0, 1305) < 0.6))
-        alpha = (on & (d >= 0)) | tuft
-        rgb = np.where(tuft[..., None], home._paint(DRY, 3.0 + shade + (hash01(px, py, 1306) - 0.5), px, py, k=k), rgb)
-    return _face_sprite(rgb, alpha, H, W, ox, oy)
-
-
 def ashlar_face(side, v, k, top=False):
     """One level of squared wall masonry (the Kimonian wall on the Acropolis, terrace walls):
     isodomic courses of poros and limestone blocks, each its own tone, a joint at every tile
     edge so variants meet; the top band is a plain coping course."""
     above = 3 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
+    px, py, s, d, band, H, W, ox, oy = land.face_grid(side, k, above)
     shade = -0.9 if side == "se" else 0.0
     on = (d >= (-above if top else 0)) & (d < band)
     course = np.floor(d / (4 * k)).astype(np.int64)
@@ -179,28 +155,14 @@ def ashlar_face(side, v, k, top=False):
     return _face_sprite(rgb, on, H, W, ox, oy)
 
 
-def earth_face(side, v, k, top=False):
-    """One level of an earth bank: red-brown Attic earth in faint layers, stones and roots, a
-    lip of dry grass on the rim band."""
-    above = 4 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
-    shade = -0.9 if side == "se" else 0.0
-    on = (d >= 0) & (d < band)
-    n = _periodic(s, d, W, band, 1.6, 1321, v)
-    layer = (d + n * 2 * k) % (3 * k) < 1
-    pebble = hash01(px // 2, py // 2, 1322 + v) < 0.02
-    lvl = 3.0 + shade + (n - 0.5) * 1.4 - layer * 0.5 + pebble * 1.2
-    rgb = home._paint([INK, EARTH[0], RUST[0], EARTH[2], RUST[1], CLAY[2], EARTH[4]], lvl, px, py, k=k)
-    alpha = on.copy()
-    if top:
-        tall = hash01(px, 0, 1323 + v) * above * (hash01(px // 3, 0, 1324 + v) < 0.6)
-        lip = (d < 2 * k) & (d >= -tall - 1)
-        alpha = alpha | lip
-        rgb = np.where(lip[..., None], home._paint(DRY, 3.0 + shade + (hash01(px, py, 1325) - 0.5), px, py, k=k), rgb)
-    return _face_sprite(rgb, alpha, H, W, ox, oy)
-
-
-FACES = {"limestone": limestone_face, "ashlar": ashlar_face, "earth": earth_face}
+FACES = {"ashlar": ashlar_face}
+# The natural faces (land.py): the Acropolis rock, the hills' limestone and earth banks.
+NATURAL = {
+    "limestone": land.Stone("rock", tuple(ROCK), tuple(DRY), 1301, stain=(RUST[0], ATTIC_ROCK[1], ATTIC_ROCK[2]),
+                            shrub=(OLIVE[0], OLIVE[1], LEAF[2], OLIVE[2]), cell=6),
+    "earth": land.Stone("earth", (INK, EARTH[0], EARTH[1], CLAY[0], EARTH[2], CLAY[1], EARTH[3]), tuple(DRY), 1321,
+                        stones=(ATTIC_ROCK[1], ATTIC_ROCK[2], ATTIC_ROCK[3], ATTIC_ROCK[4]), cell=3),
+}
 
 
 # ---------------------------------------------------------------- effects
@@ -304,8 +266,12 @@ def build(keys, cat, k):
         if m := TERRAIN_KEY.fullmatch(key):
             tid, var, mask, frame = m.groups()
             out[key] = dry_grass(int(var), k) if var is not None else TERRAIN[tid](int(mask), k)
-        elif m := re.fullmatch(r"edge/athens\.(limestone|ashlar|earth)_(se|sw)/(v(\d)|top)", key):
-            out[key] = FACES[m[1]](m[2], int(m[4] or 0), k, top=m[3] == "top")
+        elif m := re.fullmatch(r"edge/athens\.(limestone|ashlar|earth)_(se|sw)/(?:w(\d)/)?(v(\d)|top)", key):
+            if m[1] in NATURAL:
+                out[key] = land.face(NATURAL[m[1]], m[2], int(m[5] or 0), k, top=m[4] == "top",
+                                     wedge=None if m[3] is None else int(m[3]))
+            else:
+                out[key] = FACES[m[1]](m[2], int(m[5] or 0), k, top=m[4] == "top")
         elif m := re.fullmatch(r"fx/(athens\.\w+)/f(\d+)", key):
             out[key] = fx(m[1], int(m[2]), FRAMES[m[1]], k)
         elif key.startswith("goods/"):

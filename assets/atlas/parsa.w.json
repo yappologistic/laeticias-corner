@@ -1,0 +1,715 @@
+{
+ "version": 1,
+ "image": "parsa.w.png",
+ "channels": {
+  "r": "water (255)",
+  "g": "depth px",
+  "b": "bed (1 basin)"
+ },
+ "sprites": {
+  "item/parsa.cistern/base/r0/f0": {
+   "x": 1,
+   "y": 218,
+   "w": 320,
+   "h": 172,
+   "ox": 160,
+   "oy": 12
+  },
+  "item/parsa.drain_outfall/rain/r0/f0": {
+   "x": 320,
+   "y": 391,
+   "w": 34,
+   "h": 85,
+   "ox": 22,
+   "oy": 63
+  },
+  "item/parsa.drain_outfall/rain/r1/f0": {
+   "x": 355,
+   "y": 391,
+   "w": 34,
+   "h": 85,
+   "ox": 12,
+   "oy": 63
+  },
+  "item/parsa.p_basin/base/r0/f0": {
+   "x": 832,
+   "y": 391,
+   "w": 60,
+   "h": 37,
+   "ox": 30,
+   "oy": 6
+  },
+  "item/parsa.p_basin/base/r0/f1": {
+   "x": 832,
+   "y": 391,
+   "w": 60,
+   "h": 37,
+   "ox": 30,
+   "oy": 6
+  },
+  "item/parsa.p_basin/base/r0/f2": {
+   "x": 832,
+   "y": 391,
+   "w": 60,
+   "h": 37,
+   "ox": 30,
+   "oy": 6
+  },
+  "item/parsa.p_basin/base/r0/f3": {
+   "x": 832,
+   "y": 391,
+   "w": 60,
+   "h": 37,
+   "ox": 30,
+   "oy": 6
+  },
+  "item/parsa.p_channel/base/m0/f0": {
+   "x": 700,
+   "y": 489,
+   "w": 36,
+   "h": 23,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m0/f1": {
+   "x": 700,
+   "y": 489,
+   "w": 36,
+   "h": 23,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m0/f2": {
+   "x": 700,
+   "y": 489,
+   "w": 36,
+   "h": 23,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m0/f3": {
+   "x": 700,
+   "y": 489,
+   "w": 36,
+   "h": 23,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m1/f0": {
+   "x": 524,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m1/f1": {
+   "x": 524,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m1/f2": {
+   "x": 524,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m1/f3": {
+   "x": 524,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m10/f0": {
+   "x": 893,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m10/f1": {
+   "x": 893,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m10/f2": {
+   "x": 893,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m10/f3": {
+   "x": 893,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m11/f0": {
+   "x": 944,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m11/f1": {
+   "x": 944,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m11/f2": {
+   "x": 944,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m11/f3": {
+   "x": 944,
+   "y": 391,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m12/f0": {
+   "x": 256,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m12/f1": {
+   "x": 256,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m12/f2": {
+   "x": 256,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m12/f3": {
+   "x": 256,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m13/f0": {
+   "x": 1,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m13/f1": {
+   "x": 1,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m13/f2": {
+   "x": 1,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m13/f3": {
+   "x": 1,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m14/f0": {
+   "x": 52,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m14/f1": {
+   "x": 52,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m14/f2": {
+   "x": 52,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m14/f3": {
+   "x": 52,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m15/f0": {
+   "x": 103,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m15/f1": {
+   "x": 103,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m15/f2": {
+   "x": 103,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m15/f3": {
+   "x": 103,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m2/f0": {
+   "x": 568,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m2/f1": {
+   "x": 568,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m2/f2": {
+   "x": 568,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m2/f3": {
+   "x": 568,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 18,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m3/f0": {
+   "x": 300,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m3/f1": {
+   "x": 300,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m3/f2": {
+   "x": 300,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m3/f3": {
+   "x": 300,
+   "y": 489,
+   "w": 43,
+   "h": 29,
+   "ox": 18,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m4/f0": {
+   "x": 612,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m4/f1": {
+   "x": 612,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m4/f2": {
+   "x": 612,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m4/f3": {
+   "x": 612,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m5/f0": {
+   "x": 154,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m5/f1": {
+   "x": 154,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m5/f2": {
+   "x": 154,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m5/f3": {
+   "x": 154,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m6/f0": {
+   "x": 422,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m6/f1": {
+   "x": 422,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m6/f2": {
+   "x": 422,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m6/f3": {
+   "x": 422,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": -2
+  },
+  "item/parsa.p_channel/base/m7/f0": {
+   "x": 205,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m7/f1": {
+   "x": 205,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m7/f2": {
+   "x": 205,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m7/f3": {
+   "x": 205,
+   "y": 489,
+   "w": 50,
+   "h": 29,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m8/f0": {
+   "x": 656,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m8/f1": {
+   "x": 656,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m8/f2": {
+   "x": 656,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m8/f3": {
+   "x": 656,
+   "y": 489,
+   "w": 43,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m9/f0": {
+   "x": 473,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m9/f1": {
+   "x": 473,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m9/f2": {
+   "x": 473,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_channel/base/m9/f3": {
+   "x": 473,
+   "y": 489,
+   "w": 50,
+   "h": 26,
+   "ox": 25,
+   "oy": 1
+  },
+  "item/parsa.p_sluice/base/r0/f0": {
+   "x": 612,
+   "y": 391,
+   "w": 54,
+   "h": 40,
+   "ox": 27,
+   "oy": 11
+  },
+  "item/parsa.p_sluice/base/r1/f0": {
+   "x": 667,
+   "y": 391,
+   "w": 54,
+   "h": 40,
+   "ox": 27,
+   "oy": 11
+  },
+  "item/parsa.p_sluice/open/r0/f0": {
+   "x": 722,
+   "y": 391,
+   "w": 54,
+   "h": 40,
+   "ox": 27,
+   "oy": 11
+  },
+  "item/parsa.p_sluice/open/r1/f0": {
+   "x": 777,
+   "y": 391,
+   "w": 54,
+   "h": 40,
+   "ox": 27,
+   "oy": 11
+  },
+  "item/parsa.p_trough/base/r0/f0": {
+   "x": 344,
+   "y": 489,
+   "w": 38,
+   "h": 28,
+   "ox": 19,
+   "oy": 3
+  },
+  "item/parsa.p_trough/base/r1/f0": {
+   "x": 383,
+   "y": 489,
+   "w": 38,
+   "h": 28,
+   "ox": 19,
+   "oy": 3
+  },
+  "item/parsa.p_well/base/r0/f0": {
+   "x": 504,
+   "y": 391,
+   "w": 53,
+   "h": 46,
+   "ox": 40,
+   "oy": 24
+  },
+  "item/parsa.p_well/base/r0/f1": {
+   "x": 558,
+   "y": 391,
+   "w": 53,
+   "h": 41,
+   "ox": 40,
+   "oy": 19
+  },
+  "item/parsa.p_well/base/r1/f0": {
+   "x": 477,
+   "y": 391,
+   "w": 26,
+   "h": 56,
+   "ox": 13,
+   "oy": 34
+  },
+  "item/parsa.pasargadae_garden/base/r0/p1/f0": {
+   "x": 1,
+   "y": 391,
+   "w": 191,
+   "h": 97,
+   "ox": 31,
+   "oy": -159
+  },
+  "item/parsa.pasargadae_garden/base/r0/p10/f0": {
+   "x": 577,
+   "y": 218,
+   "w": 158,
+   "h": 114,
+   "ox": 95,
+   "oy": -157
+  },
+  "item/parsa.pasargadae_garden/base/r0/p11/f0": {
+   "x": 193,
+   "y": 391,
+   "w": 126,
+   "h": 94,
+   "ox": 95,
+   "oy": -225
+  },
+  "item/parsa.pasargadae_garden/base/r0/p2/f0": {
+   "x": 736,
+   "y": 218,
+   "w": 185,
+   "h": 98,
+   "ox": 57,
+   "oy": -174
+  },
+  "item/parsa.pasargadae_garden/base/r0/p6/f0": {
+   "x": 1,
+   "y": 1,
+   "w": 395,
+   "h": 216,
+   "ox": 236,
+   "oy": 9
+  },
+  "item/parsa.pasargadae_garden/base/r0/p7/f0": {
+   "x": 397,
+   "y": 1,
+   "w": 320,
+   "h": 208,
+   "ox": 321,
+   "oy": -95
+  },
+  "item/parsa.pasargadae_garden/base/r0/p8/f0": {
+   "x": 322,
+   "y": 218,
+   "w": 254,
+   "h": 144,
+   "ox": -1,
+   "oy": -79
+  },
+  "item/parsa.royal_road_head/base/r0/p3/f0": {
+   "x": 390,
+   "y": 391,
+   "w": 86,
+   "h": 60,
+   "ox": 28,
+   "oy": 32
+  }
+ }
+}

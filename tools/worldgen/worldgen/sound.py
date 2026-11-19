@@ -19,8 +19,8 @@ seas, seams and towns through `life.write`):
   it runs), `sounds` (more cues: `at` `start`, `end` or a route node).
 - `roles[]` that work: `sound` with `loop` (positional while the role works at its place) or
   `oneshot` (on its use frames).
-- `theme.ambience.loops`: positional loops on every placed workplace, hearth, fire and fountain
-  kind of the region's layer.
+- `theme.ambience.loops`, beds by season, zones, calls and the festivals' and turns' sounds:
+  `soundplan.apply`, called last.
 
 Every file or family named here exists in a manifest; `check` proves it, and that no event,
 working role or populated district is silent.
@@ -97,7 +97,7 @@ VOICES = {"sheep": ["sfx/world/sheep_1.wav", "sfx/world/sheep_2.wav"],
           "cat": ["sfx/cat_2.wav", "sfx/cat_3.wav"],
           "hen": ["sfx/hen_2.wav", "sfx/hen_3.wav"],
           "duck": ["sfx/duck_2.wav", "sfx/duck_3.wav"],
-          "owl": ["sfx/world/owl_tawny.wav"]}
+          "owl": ["sfx/world/owl_tawny.wav"], "athens.owl": ["sfx/athens/owl.wav"]}
 # Calls the engine sprinkles over a climate's land (one at a time, far, by season and hour).
 CALLS = {"mediterranean": [{"file": "sfx/world/cuckoo.wav", "seasons": ["spring"], "hours": ["06:00", "11:00"]},
                            {"file": "sfx/world/crow_2.wav", "hours": ["07:00", "18:00"]}],
@@ -474,45 +474,6 @@ def role_sound(role: dict, chained: set[str]) -> dict | None:
     return {"oneshot": "sfx/world/hammer.wav"}
 
 
-# -- positional loops on placed kinds -------------------------------------------------------------
-
-ITEM_LOOPS = [
-    (r"bakery|r_bakery", "amb/world/bakery.ogg", "worked"),
-    (r"mill", "amb/world/mill.ogg", "worked"),
-    (r"press", "amb/world/press.ogg", "worked"),
-    (r"threshing", "amb/world/threshing.ogg", "worked"),
-    (r"fullonica|dyeworks|dye", "amb/world/fullers.ogg", "worked"),
-    (r"loom", "amb/world/loom.ogg", "worked"),
-    (r"smithy|forge", "amb/world/smith.ogg", "worked"),
-    (r"oven|kiln|glass", "amb/world/hearth.ogg", "lit"),
-    (r"brazier|fire_altar|torch|beacon|watchtower", "amb/world/brazier.ogg", "lit"),
-    (r"lacus|fountain|nymphae|meta_sudans|iuturnae|krene|basin|spring", "amb/rome/fountain.ogg",
-     "always"),
-    (r"bath", "amb/rome/baths.ogg", "afternoon"),
-    (r"crane", "amb/rome/treadwheel.ogg", "worked"),
-    (r"inn|thermopolium|tavern", "amb/world/hearth.ogg", "lit"),
-]
-
-
-def placed_loops(world: World, rid: str, have: list[dict]) -> list[dict]:
-    """Loops for every placed kind of the region that has none yet."""
-    ids = set()
-    names = {n for n in world.districts if n.split("/", 1)[0] == rid}
-    idx = {i for i, n in enumerate(world.districts) if n in names}
-    for _, it in live_items(world):
-        if int(world.D[it.r, it.c]) in idx:
-            ids.add(it.id)
-    known = {x.get("item") for x in have} | {x.get("slot", "").rsplit(".", 1)[0] for x in have}
-    out = []
-    for iid in sorted(ids - known):
-        name = iid.split(".")[-1]
-        for pat, f, when in ITEM_LOOPS:
-            if re.search(pat, name):
-                out.append({"item": iid, "file": f, "when": when})
-                break
-    return out
-
-
 # -- applying ------------------------------------------------------------------------------------
 
 def apply(doc: dict, world: World, cat, root: Path) -> dict:
@@ -549,7 +510,8 @@ def apply(doc: dict, world: World, cat, root: Path) -> dict:
         kinds |= {p.get("actor", "") for p in d.get("populations", [])}
     for g in doc.get("groups", []):
         kinds |= {m.get("actor", "") for m in [g.get("leader", {})] + g.get("members", [])}
-    voices = {k: VOICES[k.split(".")[-1]] for k in sorted(kinds) if k and k.split(".")[-1] in VOICES}
+    voices = {k: VOICES.get(k) or VOICES[k.split(".")[-1]] for k in sorted(kinds)
+              if k and (k in VOICES or k.split(".")[-1] in VOICES)}
     if voices:
         snd.setdefault("voices", voices)
     if _falls(world, rid):
@@ -577,8 +539,6 @@ def apply(doc: dict, world: World, cat, root: Path) -> dict:
         s = role_sound(r, chained)
         if s and "sound" not in r:
             r["sound"] = s
-    amb = th.setdefault("ambience", {})
-    amb["loops"] = amb.get("loops", []) + placed_loops(world, rid, amb.get("loops", []))
     from . import soundplan
     return soundplan.apply(doc, world, cat, root)
 

@@ -43,6 +43,7 @@ bool Blur::begin(Vec2 screen, float radius) {
     const float w0 = static_cast<float>(baseW_ << (count_ - 1));
     const float h0 = static_cast<float>(baseH_ << (count_ - 1));
     scale_ = {w0 / screen.x, h0 / screen.y};
+    out_ = SDL_GetRenderTarget(renderer_); // the window, or what stands in for it
     if (!SDL_SetRenderTarget(renderer_, levels_[0].get())) {
         SDL_Log("blur: %s", SDL_GetError());
         return false;
@@ -99,7 +100,7 @@ void Blur::pass(int from, int to) {
 void Blur::end() {
     for (int i = 0; i + 1 < count_; ++i) pass(i, i + 1);
     for (int i = count_ - 1; i > 0; --i) pass(i, i - 1);
-    if (!SDL_SetRenderTarget(renderer_, nullptr)) SDL_Log("blur: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer_, out_)) SDL_Log("blur: %s", SDL_GetError());
     ready_ = count_ > 0;
 }
 

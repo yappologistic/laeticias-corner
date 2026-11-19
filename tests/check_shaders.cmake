@@ -1,0 +1,20 @@
+# The committed SPIR-V in assets/shaders/ is what its GLSL compiles to, with the pinned glslc
+# (shaderc VERSION). Another glslc may emit other bytes for the same source: skipped (exit 77).
+string(REPLACE "|" ";" NAMES "${NAMES}")
+execute_process(COMMAND ${GLSLC} --version OUTPUT_VARIABLE version RESULT_VARIABLE r)
+if(NOT r EQUAL 0 OR NOT version MATCHES "(^|v)${VERSION}")
+  message("glslc is not shaderc ${VERSION}: skipped")
+  cmake_language(EXIT 77)
+endif()
+foreach(name IN LISTS NAMES)
+  execute_process(COMMAND ${GLSLC} -O -fshader-stage=frag ${DIR}/${name}.frag -o ${OUT}/${name}.spv
+                  RESULT_VARIABLE r)
+  if(NOT r EQUAL 0)
+    message(FATAL_ERROR "${name}.frag does not compile")
+  endif()
+  file(SHA256 ${OUT}/${name}.spv fresh)
+  file(SHA256 ${DIR}/${name}.spv committed)
+  if(NOT fresh STREQUAL committed)
+    message(FATAL_ERROR "assets/shaders/${name}.spv is stale: cmake --build <dir> --target shaders")
+  endif()
+endforeach()

@@ -35,6 +35,11 @@ void dropLastCharacter(std::string_view& s);
 [[nodiscard]] std::string_view elide(const Font& font, Face face, std::string_view s, float width,
                                      std::string& out);
 
+// Whether a person's name is already said by a card's title or epithet: its name part (before
+// a comma or a parenthesis) appears in either. "Hermon, stonecutter" is said by "Hermon".
+[[nodiscard]] bool namedAlready(std::string_view name, std::string_view title,
+                                std::string_view epithet);
+
 // Lines `s` takes when word-wrapped to `width`, at most maxLines (the last one is cut short with
 // an ellipsis when drawn).
 [[nodiscard]] int wrapLines(const Font& font, Face face, std::string_view s, float width,

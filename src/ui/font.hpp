@@ -28,8 +28,11 @@ class Font {
 public:
     // Loads the font files; returns false (and logs) when one is missing.
     bool load(const std::filesystem::path& fontsDir);
-    // Rasterises every face for this UI scale; cheap to call when the scale is unchanged.
+    // Rasterises every face for this UI scale; cheap to call when the scale is unchanged. When
+    // a scale cannot be built (too large, or the texture is refused) the last atlas and scale
+    // stay and it is not tried again until the scale changes; false only with no atlas at all.
     bool build(SDL_Renderer* renderer, float scale);
+    [[nodiscard]] float scale() const { return scale_; }
 
     [[nodiscard]] float measure(Face face, std::string_view text) const;
     // A width being measured piece by piece: `more` appended to what `run` has measured gives
@@ -82,6 +85,7 @@ private:
     TexturePtr texture_;
     UvRect white_;
     float scale_ = 0;
+    float failedScale_ = 0; // the last scale that could not be built
 };
 
 } // namespace lc

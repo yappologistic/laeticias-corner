@@ -214,6 +214,20 @@ def grass(variant: int, k: int, season=None) -> Sprite:
     return _sprite(g, _season_ground(g, level, GRASS_LEVEL, season, 330 + variant), g.inside * 255)
 
 
+def _season_patch(g: Grid, seed: int):
+    """The autumn and winter patch field (0..1) of one look. Along the tile's edges every look
+    shares a fine tile-periodic field, so neighbours always meet; inside, each look has its own
+    broad patches of any shape and place. A field of random looks then reads as irregular
+    patches, never as a lattice tied to the tile's corners."""
+    common = 0.6 * _pnoise(g.u, g.v, 4, 337) + 0.4 * _pnoise(g.u, g.v, 8, 338)
+    own = 0.65 * value_noise(g.u, g.v, np.zeros_like(g.u), 5.0, seed) + \
+        0.35 * value_noise(g.u, g.v, np.zeros_like(g.u), 2.5, seed + 1)
+    edge = np.minimum(np.minimum(g.u, 16 - g.u), np.minimum(g.v, 16 - g.v))
+    inner = np.clip((edge - 0.5) / 2.5, 0, 1)
+    inner = inner * inner * (3 - 2 * inner)
+    return common * (1 - inner) + own * inner
+
+
 def _season_ground(g: Grid, level, base_level, season, seed, ramp=GRASS, flowers=True):
     """Paint a grass level field for one season. Spring is fresher with a few tiny flowers;
     autumn drifts into olive and straw patches with the odd fallen leaf; winter is a thin snow
@@ -226,10 +240,9 @@ def _season_ground(g: Grid, level, base_level, season, seed, ramp=GRASS, flowers
         if flowers:
             rgb = _blooms(g, rgb, g.inside, seed, 2, 0.12, (("W",), ("Y",), ("W", "g")))
         return rgb
-    # Shared by every variant (they must meet seamlessly), so kept gentle: it repeats per tile.
-    patch = _pnoise(g.u, g.v, 2, 337)
+    patch = _season_patch(g, seed)
     if season == "autumn":
-        rgb = _paint(GRASS_AUTUMN, level + 0.35 + (patch - 0.5) * 1.6, g.px, g.py, k=k)
+        rgb = _paint(GRASS_AUTUMN, level + 0.35 + (patch - 0.4) * 1.9, g.px, g.py, k=k)
         if flowers:
             rgb = _blooms(g, rgb, g.inside, seed + 3, 4, 0.1, (("a",), ("A",)))
         return rgb

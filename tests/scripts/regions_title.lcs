@@ -1,0 +1,360 @@
+# The title card in every region of the world: a jump into each region names the place (the
+# region, or its named place), the home's panels fold away, the map and journal stay; every name
+# is drawable (the coverage test checks each string against the fonts).
+set clock day
+set world district:academy/grove 1
+wait 2
+expect region academy
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:adriatic/sea 1
+wait 2
+expect region adriatic
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:aegean/sea 1
+wait 2
+expect region aegean
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:alban_mount/summit 1
+wait 2
+expect region alban_mount
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:anatolia/road 1
+wait 2
+expect region anatolia
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:apennines/road 1
+wait 2
+expect region apennines
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:arcadia/road 1
+wait 2
+expect region arcadia
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:athens/agora 1
+wait 2
+expect region athens
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:attica_north/road 1
+wait 2
+expect region attica_north
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:babylon/east_bank 1
+wait 2
+expect region babylon
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:beneventum/road 1
+wait 2
+expect region beneventum
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:brundisium/town 1
+wait 2
+expect region brundisium
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:capua/road 1
+wait 2
+expect region capua
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:corcyra/harbour 1
+wait 2
+expect region corcyra
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:corinth/acrocorinth 1
+wait 2
+expect region corinth
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:delos/island 1
+wait 2
+expect region delos
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:delphi/sanctuary 1
+wait 2
+expect region delphi
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:east_med/road 1
+wait 2
+expect region east_med
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:eleusis/acropolis 1
+wait 2
+expect region eleusis
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:ephesus/artemision 1
+wait 2
+expect region ephesus
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:euphrates_crossing/crossing 1
+wait 2
+expect region euphrates_crossing
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:gordion/citadel 1
+wait 2
+expect region gordion
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:greece/road 1
+wait 2
+expect region greece
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:halys/crossing 1
+wait 2
+expect region halys
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:ionia_lydia/road 1
+wait 2
+expect region ionia_lydia
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:iran_plateau/road 1
+wait 2
+expect region iran_plateau
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:latium_italy/road 1
+wait 2
+expect region latium_italy
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:mesopotamia/road 1
+wait 2
+expect region mesopotamia
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:olympia/altis 1
+wait 2
+expect region olympia
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:ostia/town 1
+wait 2
+expect region ostia
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:parsa/terrace 1
+wait 2
+expect region parsa
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:pasargadae/garden 1
+wait 2
+expect region pasargadae
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:persian_gates/cliffs 1
+wait 2
+expect region persian_gates
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:persian_gulf/land 1
+wait 2
+expect region persian_gulf
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:rome/forum 1
+wait 2
+expect region rome
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:sardis/acropolis 1
+wait 2
+expect region sardis
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:saronic/sea 1
+wait 2
+expect region saronic
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:seam_dell/dell 1
+wait 2
+expect region seam_dell
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:seam_ionia/mist 1
+wait 2
+expect region seam_ionia
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:seam_ionian/mist 1
+wait 2
+expect region seam_ionian
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:sidon/shore 1
+wait 2
+expect region sidon
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:sparta/valley 1
+wait 2
+expect region sparta
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:susa/plain 1
+wait 2
+expect region susa
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:susiana/road 1
+wait 2
+expect region susiana
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:syrian_steppe/land 1
+wait 2
+expect region syrian_steppe
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:taurus/road 1
+wait 2
+expect region taurus
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:thrace/road 1
+wait 2
+expect region thrace
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:tibur/hills 1
+wait 2
+expect region tibur
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:tyrrhenian/sea 1
+wait 2
+expect region tyrrhenian
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+set world district:zagros/road 1
+wait 2
+expect region zagros
+expect away yes
+expect widget build no
+expect widget map yes
+expect widget journal yes
+shot shots/regions_title_last.png
+key home
+wait 30
+expect away no
+expect widget build yes
+quit

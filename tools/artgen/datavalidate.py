@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+import datapages
 import setbuild
 import spec
 
@@ -352,6 +353,31 @@ def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str
     return errors
 
 
+def check_water(water_json: Path, pages: list[Path]) -> list[str]:
+    """The water page: its rectangles are the colour rectangles' size and anchor, and every item
+    sprite with a body of water on a water ramp has one (datapages.water_sprite)."""
+    if not water_json.exists():
+        return [f"{water_json.name}: missing"]
+    doc = json.loads(water_json.read_text())
+    errors = []
+    wclass = datapages.water_classes()
+    for p in pages:
+        man = json.loads(p.with_suffix(".json").read_text())["sprites"]
+        raw = set(json.loads(p.with_name(p.stem + ".p.json").read_text())["colour_only"])
+        words = _words(_rgba(p.with_name(p.stem + ".p.png")))
+        for key, r in man.items():
+            if not key.startswith("item/") or key in raw or "/shadow/" in key or "/glow/" in key:
+                continue
+            w = words[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
+            n = int(wclass[(w >> 3) & 0xFF][w != 0].sum())
+            e = doc["sprites"].get(key)
+            if n >= datapages.WATER_MIN and e is None:
+                errors.append(f"{key}: {n} water pixels and no water-page entry")
+            elif e is not None and (e["w"], e["h"], e["ox"], e["oy"]) != (r["w"], r["h"], r["ox"], r["oy"]):
+                errors.append(f"{key}: its water-page rectangle is not its colour rectangle")
+    return errors
+
+
 def check(name: str, atlas_dir: Path | None = None) -> list[str]:
     """`name`: 'home' or a set id."""
     root = spec.ASSETS
@@ -372,6 +398,7 @@ def check(name: str, atlas_dir: Path | None = None) -> list[str]:
     for p in pages:
         errors += check_page(p, table, feet, hh)
     errors += check_shadows(shadow, [p.with_suffix(".json") for p in pages])
+    errors += check_water(shadow.with_name(shadow.name.replace(".s.json", ".w.json")), pages)
     if name != "home":
         packed = [(json.loads(p.with_suffix(".json").read_text())["sprites"],
                    _words(_rgba(p.with_name(p.stem + ".p.png")))) for p in pages]

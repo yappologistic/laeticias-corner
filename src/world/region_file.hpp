@@ -23,6 +23,8 @@ struct AmbienceBed {
     std::string file;
     float from = 0; // game hours, 0..24; from > to wraps over midnight
     float to = 24;
+    std::string weather;             // "rain": only under rain; empty: any weather
+    std::vector<std::string> months; // calendar month ids it plays in; empty: every month
 };
 
 struct AmbienceZone {
@@ -31,12 +33,16 @@ struct AmbienceZone {
     float gain = 1;
     float from = 0; // game hours it plays; from > to wraps over midnight
     float to = 24;
+    std::vector<std::string> months; // calendar month ids it plays in; empty: every month
 };
 
 struct ItemLoop {
     std::string item; // set item id: every placed one is a source
     std::string file;
-    std::string when; // "always", "lit" (dusk and night), "afternoon", ...
+    std::string when; // "always", "lit" (dusk and night), "afternoon", "worked" (in its hours)
+    float from = 0;   // game hours (a worked loop's working hours)
+    float to = 24;
+    std::vector<std::string> months; // calendar month ids it plays in; empty: every month
 };
 
 struct Theme {
@@ -46,12 +52,17 @@ struct Theme {
     float hazeStrength = 0;
     std::string climate;
     std::vector<AmbienceBed> beds;
+    // A season's own beds (`seasons.<id>.ambience.beds`): in that season they replace `beds` for
+    // the hours (and months) they cover.
+    std::vector<std::pair<std::string, std::vector<AmbienceBed>>> seasonBeds;
     std::vector<AmbienceZone> zones;
     std::vector<ItemLoop> loops;
     std::string musicDay; // empty: none (stretches)
     std::string musicNight;
     bool seam = false;
-    nlohmann::json sound; // world-loose-ends.md §2: families, nature, stings, voices (as written)
+    nlohmann::json sound;   // world-loose-ends.md §2: families, nature, stings, voices (as written)
+    nlohmann::json look;    // the shader path's grade, sky, haze and lights (as written)
+    nlohmann::json seasons; // per season: grade, look shifts, ground states (as written)
 };
 
 struct RegionDistrict {

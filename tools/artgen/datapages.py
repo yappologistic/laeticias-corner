@@ -159,3 +159,75 @@ def write_shadow_page(png, sprites: dict) -> tuple[int, int, int]:
     doc = {"version": 1, "image": png.name, "scale": 0.5, "sprites": manifest}
     png.with_suffix(".json").write_text(json.dumps(doc, indent=1) + "\n")
     return atlas.shape[1], atlas.shape[0], len(manifest)
+
+
+# ---------------------------------------------------------------- water page
+
+WATER_DEPTH_CAP = 40        # art px: a harbour basin's depth; small basins stay shallower by size
+WATER_MIN = 8               # fewer water pixels than this in a sprite is a glint, not a body
+
+
+def water_classes() -> np.ndarray:
+    """True per ramp id whose class is water."""
+    ramps_, _ = ramps.table()
+    out = np.zeros(256, bool)
+    for r in ramps_:
+        out[r.id] = r.cls == "water"
+    return out
+
+
+def _depth(mask: np.ndarray) -> np.ndarray:
+    """Distance in ground px from each water pixel to the nearest pixel that is not water (a
+    screen row is two ground px deep in the 2:1 view), by a chamfer pass in both directions."""
+    big = 1 << 14
+    d = np.where(mask, big, 0).astype(np.int64)
+    d = np.pad(d, 1)
+    H, W = d.shape
+    for _ in range(2):
+        for y in range(1, H - 1):
+            row = np.minimum(d[y], d[y - 1] + 2)
+            row = np.minimum(row, np.minimum(np.roll(d[y - 1], 1), np.roll(d[y - 1], -1)) + 3)
+            for x in range(1, W - 1):
+                row[x] = min(row[x], row[x - 1] + 1)
+            d[y] = row
+        d = d[::-1, ::-1]
+    return d[1:-1, 1:-1]
+
+
+def water_sprite(key: str, t: Sprite, water: np.ndarray) -> Sprite | None:
+    """The water data of one trimmed sprite, the same size and anchor as its colour rectangle:
+    R 255 on open water (the pixels on a water ramp: rims, steps and anything standing in the
+    water are not), G its depth in art px below the surface (from the rim, capped), B the bed
+    (1: a built basin's floor), A 255 over the whole rectangle so it is never trimmed."""
+    w = words(key, t)
+    if w is None:
+        return None
+    mask = water[(w >> 3) & 0xFF] & (t.rgba[..., 3] == 255)
+    if mask.sum() < WATER_MIN:
+        return None
+    depth = np.clip(_depth(mask), 0, WATER_DEPTH_CAP)
+    rgba = np.zeros(t.rgba.shape, np.uint8)
+    rgba[..., 0] = mask * 255
+    rgba[..., 1] = np.where(mask, depth, 0)
+    rgba[..., 2] = mask * 1
+    rgba[..., 3] = 255
+    return Sprite(rgba, t.ox, t.oy)
+
+
+def write_water_page(png, trimmed: dict) -> tuple[int, int, int]:
+    """Every item sprite holding water (a basin, a harbour, a fountain's bowl, a cistern) on one
+    page `png` + manifest, rectangles the size of the colour ones, so the shader path marks
+    their water and gives it depth as it does for water tiles. Returns (width, height, count)."""
+    water = water_classes()
+    out = {}
+    for key in sorted(trimmed):
+        if key.startswith("item/") and "/shadow/" not in key and "/glow/" not in key:
+            s = water_sprite(key, trimmed[key], water)
+            if s is not None:
+                out[key] = s
+    atlas, manifest = pack.pack(out) if out else (np.zeros((1, 1, 4), np.uint8), {})
+    Image.fromarray(atlas, "RGBA").save(png, optimize=True)
+    doc = {"version": 1, "image": png.name, "channels": {"r": "water (255)", "g": "depth px", "b": "bed (1 basin)"},
+           "sprites": manifest}
+    png.with_suffix(".json").write_text(json.dumps(doc, indent=1) + "\n")
+    return atlas.shape[1], atlas.shape[0], len(manifest)

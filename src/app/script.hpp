@@ -10,7 +10,8 @@
 //                               nooks, sketch_not_now, calendar, season_auto|spring|summer|
 //                               autumn|winter, edge_chip,
 //                               scroll_up, scroll_down, tab:<category id>, tile:<item or terrain
-//                               id>, or of the toast and hint panels: toast, hint
+//                               id>, or of the toast and hint panels: toast, hint, and of an open
+//                               landmark's or figure's card: info
 //                  actor:KIND   the middle of the first actor of that kind in the window (a
 //                               visitor id or the resident's); none in view fails the run
 //                  grid:TX,TY   the middle of world grid tile (TX, TY), raised by its level
@@ -24,7 +25,7 @@
 //                               reduce_motion, grid, vsync, chatty, quiet, replay, done, resume,
 //                               pause_settings, postcards, back_to_worlds, pause_quit, skip_tour,
 //                               frame_prev, frame_next, caption, hide_bar, take, folder,
-//                               close_photo
+//                               close_photo, look, clouds
 //
 // Commands:
 //   move P                  pointer motion
@@ -42,6 +43,7 @@
 //   set clock PHASE|auto    pin the clock to day/dusk/night/dawn instantly, or unpin
 //   set rain on|off         rain here, or the weather as it comes
 //   set weather natural|rain|clear
+//   set clouds on|shadows|off   the clouds setting (the deck and shadows, shadows, none)
 //   set time T              the time of day, 0..1 (0.2 mid-morning, 0.55 dusk, 0.75 midnight)
 //   set chatter chatty|quiet   the resident's idle remarks
 //   set camera TX TY ZOOM   look at tile (TX, TY) at a zoom level (0.25, 0.5, 1, 2, 3)
@@ -79,6 +81,7 @@
 //       world NAME... (the open world's name) | fresh yes|no (an unbegun preview)
 //       card N NAME... (the N-th world on the worlds screen, newest first)
 //       volume music|effects|ambience N | reduce_motion yes|no | ui_scale N | vsync yes|no
+//       look classic|low|medium|high (the Look in effect) | clouds on|shadows|off (the setting)
 //       frame ID (the postcard frame) | caption yes|no | postcards N (files in its folder)
 //       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
@@ -104,6 +107,8 @@
 // Points `life:KIND` (the first drawn city-life actor of that kind); `set look KIND ZOOM` finds
 // a living actor of that kind first.
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
+//       target_alpha X,Y,W,H MOST  at most MOST (0..1) of the world target under the region is
+//                               partly transparent (a seam between cached pieces, a hole)
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 //       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,
 //                               warm: the night's lit windows, lamps and fires)
@@ -127,6 +132,8 @@
 //       MAX (that city loop's gain x 100 now) | city coarse MIN MAX (people drawn over the
 //       impostors at half or quarter scale) | city covered PX MIN MAX (of them, people with
 //       more than PX of something in front over their feet: nobody on the roofs)
+//       sound beds (every region plays a loaded bed in every month, by day and by night)
+//       | sound FILE|FAMILY MIN MAX (the world's gain x 100 for that loop, or family a.b, now)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would

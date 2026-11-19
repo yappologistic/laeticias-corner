@@ -516,6 +516,7 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
         }
     }
     if (!benchPlay(judgeCase)) over = true;
+    if (!benchLook(judgeCase, warm, frames)) over = true;
     profilerOn_ = false;
     return !over;
 }

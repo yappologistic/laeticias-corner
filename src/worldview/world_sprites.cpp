@@ -423,6 +423,7 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
     TexturePtr page{
         SDL_CreateTexture(renderer, kTextureFormat, SDL_TEXTUREACCESS_TARGET, pageW, pageH)};
     const TexturePtr pixels = uploadTexture(renderer, px.get());
+    SDL_Texture* out = SDL_GetRenderTarget(renderer); // the window, or what stands in for it
     if (!page || !pixels || !SDL_SetTextureBlendMode(page.get(), SDL_BLENDMODE_BLEND) ||
         !SDL_SetTextureBlendMode(pixels.get(), SDL_BLENDMODE_NONE) ||
         !SDL_SetRenderTarget(renderer, page.get()) ||
@@ -457,7 +458,7 @@ void WorldSprites::buildPage(SDL_Renderer* renderer, const world::WorldMap& map,
             line(batch, p, q, shade(base, 1.25f, alpha));
     }
     batch.flush();
-    if (!SDL_SetRenderTarget(renderer, nullptr)) SDL_Log("worldview: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer, out)) SDL_Log("worldview: %s", SDL_GetError());
     pages.setGenerated(std::move(page), pageW, pageH);
 
     white_ = pages.generated(1, 1, 2, 2, 1, 1);

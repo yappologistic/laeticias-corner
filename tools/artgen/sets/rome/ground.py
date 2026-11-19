@@ -15,12 +15,13 @@ import re
 
 import numpy as np
 
+import land
 import terrain as home
 from pack import Sprite
 from palette import (BASALT, BRICK, EARTH, GLOW, INK, LEAF, PLASTER, POPPY, STONE, STRAW, TIBER, TRAVERTINE, TUFA,
                      VIOLET, WATER, CINNABAR, OLIVE, MARBLE, _rgb)
 from render import render_sprite
-from sets.parsa.ground import _face_grid, _fx, _overlay, _periodic
+from sets.parsa.ground import _fx, _overlay
 from voxel import Model, hash01
 
 FRAMES = {"rome.river_tiber": 4, "rome.steam": 6, "rome.smoke": 6, "rome.fire": 6, "rome.torch_flame": 6,
@@ -206,35 +207,12 @@ def _face_sprite(rgb, alpha, H, W, ox, oy):
     return Sprite(rgba, ox, oy)
 
 
-def tufa_face(side, v, k, top=False):
-    """One level of the Capitol's tufa cliff (the Tarpeian rock): soft grey-brown beds with
-    lit lips and dark undercuts, pores, caper and grass on the ledges."""
-    above = 4 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
-    shade = -0.9 if side == "se" else 0.0
-    on = (d >= 0) & (d < band)
-    n = _periodic(s, d, W, band, 1.6, 1501, v)
-    bed = (d + (n - 0.5) * 3 * k) % (4 * k)
-    lip, under = bed < 1.2, bed > 4 * k - 1.4
-    pore = hash01(px, py, 1502 + v) < 0.07
-    lvl = 3.0 + shade + (n - 0.5) * 1.2 + lip * 1.0 - under * 1.3 - pore * 0.9
-    rgb = home._paint([INK, *TUFA], lvl, px, py, k=k)
-    plant = (_periodic(s, d, W, band, 3.0, 1503, v) > 0.7) & lip
-    rgb = np.where(plant[..., None], home._paint([LEAF[1], LEAF[2], LEAF[3]], 2.0 + shade, px, py, k=k), rgb)
-    alpha = on.copy()
-    if top:
-        tuft = (d < 0) & (d >= -above) & (hash01(px, 0, 1504 + v) < 0.5)
-        alpha = alpha | tuft
-        rgb = np.where(tuft[..., None], home._paint(home.GRASS, 2.6 + shade, px, py, k=k), rgb)
-    return _face_sprite(rgb, alpha, H, W, ox, oy)
-
-
 def brick_face(side, v, k, top=False):
     """One level of brick-faced concrete (the Palatine substructures, the Aventine retaining
     walls): thin red bricks in courses, a bonding course of pale tiles, putlog holes; a
     travertine coping on the top band."""
     above = 2 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
+    px, py, s, d, band, H, W, ox, oy = land.face_grid(side, k, above)
     shade = -0.9 if side == "se" else 0.0
     on = (d >= (-above if top else 0)) & (d < band)
     row = np.floor(d / 2).astype(np.int64)
@@ -255,7 +233,7 @@ def travertine_face(side, v, k, top=False):
     """One level of travertine embankment (the Tiber quays): big blocks with drafted edges, a
     bronze mooring ring on some, damp darkening; the top band a coping course."""
     above = 2 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
+    px, py, s, d, band, H, W, ox, oy = land.face_grid(side, k, above)
     shade = -0.9 if side == "se" else 0.0
     on = (d >= (-above if top else 0)) & (d < band)
     course = np.floor(d / (4 * k)).astype(np.int64)
@@ -270,28 +248,14 @@ def travertine_face(side, v, k, top=False):
     return _face_sprite(rgb, on, H, W, ox, oy)
 
 
-def earth_face(side, v, k, top=False):
-    """One level of an earth bank: brown earth with faint layers and stones, grass on the lip."""
-    above = 4 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
-    shade = -0.9 if side == "se" else 0.0
-    on = (d >= 0) & (d < band)
-    n = _periodic(s, d, W, band, 1.6, 1531, v)
-    layer = (d + n * 2 * k) % (3 * k) < 1
-    pebble = hash01(px // 2, py // 2, 1532 + v) < 0.02
-    lvl = 3.0 + shade + (n - 0.5) * 1.4 - layer * 0.5 + pebble * 1.2
-    rgb = home._paint([INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3], EARTH[4]], lvl, px, py, k=k)
-    alpha = on.copy()
-    if top:
-        tall = hash01(px, 0, 1533 + v) * above * (hash01(px // 3, 0, 1534 + v) < 0.6)
-        lip = (d < 2 * k) & (d >= -tall - 1)
-        alpha = alpha | lip
-        rgb = np.where(lip[..., None], home._paint(home.GRASS, 2.8 + shade + (hash01(px, py, 1535) - 0.5), px, py,
-                                                   k=k), rgb)
-    return _face_sprite(rgb, alpha, H, W, ox, oy)
-
-
-FACES = {"tufa": tufa_face, "brick": brick_face, "travertine": travertine_face, "earth": earth_face}
+FACES = {"brick": brick_face, "travertine": travertine_face}
+# The natural faces (land.py): the Capitol's tufa (the Tarpeian rock), the hills' banks.
+NATURAL = {
+    "tufa": land.Stone("rock", (INK, *TUFA), tuple(home.GRASS), 1501, stain=(TUFA[0], TUFA[1], BASALT[3]),
+                       shrub=(LEAF[1], LEAF[2], LEAF[3], LEAF[4]), cell=4, jag=0.8),
+    "earth": land.Stone("earth", (INK, EARTH[0], EARTH[1], EARTH[2], EARTH[3], EARTH[4]), tuple(home.GRASS), 1531,
+                        stones=(TUFA[1], TUFA[2], TUFA[3], TUFA[4]), cell=3),
+}
 
 
 # ---------------------------------------------------------------- effects
@@ -430,8 +394,12 @@ def build(keys, cat, k):
                 out[key] = river_tiber(int(mask), int(frame), FRAMES[tid], k)
             else:
                 out[key] = TERRAIN[tid](int(mask), k)
-        elif m := re.fullmatch(r"edge/rome\.(tufa|brick|travertine|earth)_(se|sw)/(v(\d)|top)", key):
-            out[key] = FACES[m[1]](m[2], int(m[4] or 0), k, top=m[3] == "top")
+        elif m := re.fullmatch(r"edge/rome\.(tufa|brick|travertine|earth)_(se|sw)/(?:w(\d)/)?(v(\d)|top)", key):
+            if m[1] in NATURAL:
+                out[key] = land.face(NATURAL[m[1]], m[2], int(m[5] or 0), k, top=m[4] == "top",
+                                     wedge=None if m[3] is None else int(m[3]))
+            else:
+                out[key] = FACES[m[1]](m[2], int(m[5] or 0), k, top=m[4] == "top")
         elif m := re.fullmatch(r"fx/(rome\.\w+)/f(\d+)", key):
             out[key] = fx(m[1], int(m[2]), FRAMES[m[1]], k)
         elif key.startswith("goods/"):
@@ -462,6 +430,7 @@ TERRAIN_CATALOG = [
     {"id": "rome.mud_bank", "name": "Mud bank", "under": "rome.grass_spring", "edges": 16, "faces": ["rome.earth"]},
 ]
 EDGES = ["rome.tufa", "rome.brick", "rome.travertine", "rome.earth"]
+SLOPES = ["rome.grass_spring", "rome.tufa_rock", "rome.mud_bank", "rome.packed_earth"]   # ground that slopes
 GOODS_CATALOG = [{"id": f"rome.{g}", "name": n, "sprite": f"goods/rome.{g}", "stack": 3} for g, n in zip(GOODS, (
     "Amphora of Baetican oil", "Amphora of wine", "Sack of grain", "Loaves of bread", "Marble block", "Bricks",
     "Bolt of cloth", "Basket of fish", "Water jug"))]

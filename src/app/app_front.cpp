@@ -6,6 +6,7 @@
 #include "app/app_impl.hpp"
 #include "core/land.hpp"
 #include "core/starter.hpp"
+#include "render/gpu/post.hpp"
 #include "ui/strings.hpp"
 
 #include <algorithm>
@@ -58,6 +59,8 @@ void App::resetWorld() {
     rimTerrain_.clear();
     cornerToasts_.clear(); // the last world's news is not this one's
     follow_.reset();
+    travel_ = {}; // a journey under way in the last world does not land in this one
+    travelFadeIn_ = -1;
     progress_ = Progress(cat_);
     progression_ = Progression(cat_);
     evalRevision_ = ~0ULL;
@@ -134,6 +137,14 @@ void App::startPlay() {
         speak(cat_.resident.context("greet"), SpeechWeight::Important))
         actors_.wave();
     if (!profile_.onboarded && frontDoor() && tourStep_ == kTourOff) startTour();
+    tellMuted();
+}
+
+void App::tellMuted() {
+    // A profile left muted is silent with no clue why (the owner pressed M, which opens the
+    // map): once a session, say how the sound comes back.
+    if (!muted_ || std::exchange(mutedTold_, true)) return;
+    hud_.toast(std::string(strings::kToastMuted));
 }
 
 void App::leaveWorld() {
@@ -245,6 +256,11 @@ const MenuModel& App::menuModel() {
     m.caption = profile_.caption;
     m.barBottom = profile_.caption && captionTop_ > 0 ? captionTop_ - theme::kGap * uiScale_ : 0.0f;
     m.frames = static_cast<int>(std::ranges::count(progress_.frames, std::uint8_t{1}));
+    const gpu::Quality look = gpu::parseQuality(profile_.look).value_or(gpu::Quality::High);
+    m.look = static_cast<int>(look);
+    m.lookAfterRestart = look != gpu::Quality::Classic && worldView_ &&
+                         worldView_->quality() == gpu::Quality::Classic;
+    m.clouds = static_cast<int>(gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On));
     return m;
 }
 
@@ -416,6 +432,21 @@ void App::applyMenuActions() {
                 SDL_Log("vsync: %s", SDL_GetError());
             profileChanged();
             break;
+        case K::Look: {
+            const auto q = static_cast<gpu::Quality>(std::clamp(a.arg, 0, gpu::kQualityCount - 1));
+            profile_.look = std::string(gpu::qualityId(q));
+            // Tiers switch live on SDL's gpu driver; another renderer shows them after a restart.
+            if (worldView_ && gpu::isGpu(renderer_.get())) (void)worldView_->setQuality(q);
+            profileChanged();
+            break;
+        }
+        case K::Clouds: {
+            const auto c = static_cast<gpu::Clouds>(std::clamp(a.arg, 0, gpu::kCloudModes - 1));
+            profile_.clouds = std::string(gpu::cloudsId(c));
+            if (worldView_) worldView_->setClouds(c);
+            profileChanged();
+            break;
+        }
         case K::Chatter:
             profile_.chatty = a.arg != 0;
             profileChanged();

@@ -191,6 +191,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::to_string(actors_.present(*v)), a[2]);
     }
     if (what == "city") return checkCity(a);
+    if (what == "sound") return checkSound(a);
     if (what == "habitat") {
         // Everyone stands where it may (on its reserved seat counts: she sits on the bench).
         int bad = 0;
@@ -423,6 +424,11 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "reduce_motion") return yesNo(profile_.reduceMotion);
     if (what == "vsync") return yesNo(profile_.vsync);
+    if (what == "look")
+        return equal(
+            std::string(gpu::qualityId(worldView_ ? worldView_->quality() : gpu::Quality::Classic)),
+            a[1]);
+    if (what == "clouds") return equal(profile_.clouds, a[1]);
     if (what == "ui_scale") return equal(std::to_string(profile_.uiScale), a[1]);
     if (what == "caption") return yesNo(profile_.caption);
     if (what == "frame") {
@@ -572,6 +578,18 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                    : std::optional(std::format("expected a lit share of {} of at least {} but "
                                                "found {:.5f}",
                                                a[1], a[2], share));
+    }
+    if (what == "target_alpha") {
+        const auto r = parseScriptRect(a[1]);
+        if (!r) return "bad rectangle " + a[1];
+        if (!worldView_) return std::string("no world");
+        const float f = worldView_->partialAlpha({r->x, r->y, r->w, r->h});
+        const double most = std::stod(a[2]);
+        return f <= most ? std::nullopt
+                         : std::optional(std::format(
+                               "expected at most {} of the world target under {} partly "
+                               "transparent but found {:.4f} (a seam or a hole)",
+                               a[2], a[1], f));
     }
     if (what == "luma" || what == "color") {
         const auto r = parseScriptRect(a[1]);
@@ -768,6 +786,11 @@ bool App::scriptStep() {
                         ok = true;
                     }
                 if (!ok) return fail("unknown weather " + c.args[1]);
+            } else if (c.args[0] == "clouds") {
+                const std::optional<gpu::Clouds> m = gpu::parseClouds(c.args[1]);
+                if (!m) return fail("unknown clouds " + c.args[1]);
+                profile_.clouds = c.args[1];
+                if (worldView_) worldView_->setClouds(*m);
             } else if (c.args[0] == "camera") {
                 // set camera TX TY ZOOM: look at a tile at one of the zoom levels.
                 if (c.args.size() != 4) return fail("set camera TX TY ZOOM");
