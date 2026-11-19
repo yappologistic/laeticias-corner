@@ -10,6 +10,7 @@
 #include "worldview/world_lights.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <future>
@@ -806,23 +807,21 @@ void WorldView::shadeGpu(SDL_Texture* layer, float w, float h) {
 void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean) {
     // Rows shift sideways by the wind, more toward the top (by the square of the height), the
     // base still: whole sprites sway with no extra frames. Downwind on screen, never against.
+    if (dry_) return;
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return;
     const float side = windDir_.x >= 0 ? 1.0f : -1.0f;
     const float dx = lean * side * (0.4f + 0.6f * std::abs(windDir_.x)) *
                      gpu::windLean(anchor, gpuFrame_.now, windDir_, windStrength_);
     constexpr int kStrips = gpu::tuning::kSwayStrips;
-    const bool packed = s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
-    if (decoder_) decoder_->use(batch_, packed);
-    const SDL_FColor c = decoder_ && packed
-                             ? packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage, false)
-                             : SDL_FColor{1, 1, 1, 1};
+    const bool packed =
+        decoder_ && s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
+    const SDL_FColor c = packed ? packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage, false)
+                                : SDL_FColor{1, 1, 1, 1};
+    const SDL_BlendMode mode = packed ? decoder_->replace() : SDL_BLENDMODE_BLEND;
     const float x0 = anchor.x - s.ox;
     const float y0 = anchor.y - s.oy;
-    std::vector<SDL_Vertex>& verts = batch_.scratch().verts;
-    std::vector<int>& idx = batch_.scratch().indices;
-    verts.clear();
-    idx.clear();
+    std::array<SDL_Vertex, 2 * (kStrips + 1)> verts{};
     for (int i = 0; i <= kStrips; ++i) {
         const float f = static_cast<float>(i) / static_cast<float>(kStrips);
         const float wy = y0 + s.h * f;
@@ -830,16 +829,48 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
         const float vv = s.uv.v0 + (s.uv.v1 - s.uv.v0) * f;
         for (int k = 0; k < 2; ++k) {
             const Vec2 p = x.apply({x0 + (k == 0 ? 0 : s.w) + dx * up * up, wy});
-            verts.push_back({{p.x, p.y}, c, {k == 0 ? s.uv.u0 : s.uv.u1, vv}});
-        }
-        if (i > 0) {
-            const int b = 2 * (i - 1);
-            for (const int q : {b, b + 1, b + 3, b, b + 3, b + 2}) idx.push_back(q);
+            verts[static_cast<std::size_t>(2 * i + k)] = {
+                {p.x, p.y}, c, {k == 0 ? s.uv.u0 : s.uv.u1, vv}};
         }
     }
-    batch_.use(t, decoder_ && packed ? decoder_->replace() : SDL_BLENDMODE_BLEND, x.filter);
-    batch_.triangles(verts.data(), static_cast<int>(verts.size()), idx.data(),
-                     static_cast<int>(idx.size()));
+    if (!runsOpen_) {
+        std::array<int, 6 * kStrips> idx{};
+        for (int i = 0; i < kStrips; ++i)
+            for (int j = 0; const int q : {0, 1, 3, 0, 3, 2})
+                idx[static_cast<std::size_t>(6 * i + j++)] = 2 * i + q;
+        if (decoder_) decoder_->use(batch_, packed);
+        batch_.use(t, mode, x.filter);
+        batch_.triangles(verts.data(), static_cast<int>(verts.size()), idx.data(),
+                         static_cast<int>(idx.size()));
+        return;
+    }
+    // In the painter's order with everything else (QA7 V7-015: drawn straight into the batch,
+    // a swaying tree went under every house and terrace drawn after it): a strip a polygon, kept
+    // for its page's run like put()'s quads.
+    const std::uint32_t key =
+        (s.page * 2U + (packed ? 1U : 0U)) ^ (static_cast<std::uint32_t>(mode) * 2654435761U);
+    for (int i = 0; i < kStrips; ++i) {
+        RunPoly poly;
+        FRect box{1e9f, 1e9f, -1e9f, -1e9f};
+        for (const int q : {0, 1, 3, 2}) {
+            const SDL_Vertex& v = verts[static_cast<std::size_t>(2 * i + q)];
+            poly.v[static_cast<std::size_t>(poly.n++)] = v;
+            box = {std::min(box.x0, v.position.x), std::min(box.y0, v.position.y),
+                   std::max(box.x1, v.position.x), std::max(box.y1, v.position.y)};
+        }
+        if (!runs_.add(key, box)) continue; // off the target
+        runQuads_.push_back({t,
+                             mode,
+                             {box.x0, box.y0},
+                             {box.x1, box.y1},
+                             s.uv,
+                             c,
+                             s.page,
+                             runWhat_,
+                             packed,
+                             static_cast<std::int32_t>(runPolys_.size())});
+        runPolys_.push_back(poly);
+    }
 }
 
 } // namespace lc::worldview
