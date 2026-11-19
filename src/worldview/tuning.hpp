@@ -45,6 +45,10 @@ inline constexpr double kBuildMsAhead = 1.0;
 // Never less than the floor, so the cache always fills.
 inline constexpr double kFrameCpuRoomMs = 1.5;
 inline constexpr double kBuildMsAheadMin = 0.2;
+// Cells and impostor blocks a frame builds on SDL's gpu driver, where a build's cost is the
+// passes it adds to the frame (WorldView::buildSpent).
+inline constexpr int kGpuBuildsNeeded = 8;
+inline constexpr int kGpuBuildsAhead = 4;
 inline constexpr double kBuildMsArrivalMin = 1.0; // a destination on its way (a journey, a zoom)
 // The ring leans toward where the view is going: this many frames of its motion ahead, at most
 // kCellAheadMax cells.
@@ -68,6 +72,8 @@ inline constexpr int kPagesInFlight = 2; // decoded or decoding, not yet in thei
 // Pages nobody waits for come one at a time: each on its way holds its 64 MiB beside the
 // textures already filled, which is where the process's memory peaked.
 inline constexpr int kPagesInFlightAhead = 1;
+inline constexpr int kViewTargetSpare = 8;  // px beyond the window the frame's target may need
+inline constexpr int kUploadBandRows = 512; // rows a band sent from the worker (8 MiB at 4096 wide)
 inline constexpr double kPageIdleSeconds = 10.0; // unused this long: may be evicted
 inline constexpr int kNeededSetGrow = 64;        // tiles around the view whose sets load
 inline constexpr int kNeededSetSpacing = 8;      // district sampling step, tiles

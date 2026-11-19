@@ -161,6 +161,9 @@ public:
     // A frame in which the scene only takes its sky turn (the home out of view) starts its
     // count here; else the sky's draws added up frame after frame while away.
     void beginFrameStats() { batch_.resetStats(); }
+    // The scene's targets for a frame of this size, made now rather than in the first frame
+    // the home is in view (each is a stall on SDL's gpu driver).
+    void reserveTargets(int w, int h) { ensureTargets(w, h, false); }
     [[nodiscard]] const SpriteTables& sprites() const { return tables_; }
     // How far item sprites reach from their anchors, world px.
     [[nodiscard]] const Reach& itemReach() const { return itemReach_; }

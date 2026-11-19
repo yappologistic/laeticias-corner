@@ -190,7 +190,13 @@ private:
         SurfacePtr pixels;
         float peak = -1;
         std::vector<std::uint64_t> opaque;
+        bool uploaded = false; // the worker put it in its texture itself (SDL's gpu driver)
     };
+    // On SDL's gpu driver a page's pixels go to its texture from the worker, through the
+    // device, in bands: there a slice sent from the main thread costs it several times what it
+    // does on OpenGL, and now and then a whole frame. Null on the other renderers.
+    SDL_GPUDevice* device_ = nullptr;
+    [[nodiscard]] bool uploadOnWorker(const Page& p, const SDL_Surface& px) const;
     std::vector<Decoded> done_;
     std::jthread worker_; // last: joined before the rest is destroyed
 };
