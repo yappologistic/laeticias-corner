@@ -320,6 +320,11 @@ def blocked(w, cat) -> np.ndarray:
     return keep[np.where(w.occ < 0, len(w.items), w.occ)]
 
 
+# Rock keeps its cliffs (art-smooth-land.md §3.6): it may slope where a step is one level, but
+# the grading never raises it.
+ROCK = {"world.rock", "world.scree", "world.snow", "athens.rock_limestone", "rome.tufa_rock", "parsa.rough_ground"}
+
+
 def regrade(w, cat, eligible, rect, passes=8):
     """A copy of the world with the natural ground in `rect` graded to one level per neighbour
     (the world builder's pass, art-smooth-land.md §3.6): an eligible tile is raised to one below
@@ -333,6 +338,7 @@ def regrade(w, cat, eligible, rect, passes=8):
     ok = np.zeros(T.shape, bool)
     ids = np.array([eligible(t) for t in w.terrains] + [False])
     sl = (slice(max(r0 - 2, 0), r1 + 3), slice(max(c0 - 2, 0), c1 + 3))
+    ids = ids & np.array([t not in ROCK for t in w.terrains] + [False])
     ok[sl] = ids[np.where(T[sl] == NONE16, len(w.terrains), T[sl])]
     ok &= ~blocked(w, cat)
     wet = np.array([cat.is_water(t) for t in w.terrains] + [False])[np.where(T == NONE16, len(w.terrains), T)]
