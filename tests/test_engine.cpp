@@ -27,6 +27,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <map>
 #include <set>
 #include <tuple>
 
@@ -1018,6 +1019,88 @@ TEST_CASE("glass keeps text contrast high over a white daytime sky") {
     const double contrast = (fg + 0.05) / (bg + 0.05);
     CAPTURE(contrast);
     CHECK(contrast >= 7.0);
+}
+
+TEST_CASE("a large panel's fill is watertight: no seam between its triangles") {
+    // The outline of a rounded panel whose corners fall between pixels (a 960 x 600 window
+    // put the worlds screen there, and dotted lines ran across its glass): every side of
+    // every triangle inside the fill is shared, value for value, with exactly one other
+    // triangle, and the sides nobody shares are the outline itself.
+    for (const float nudge : {0.0f, 0.25f, 0.37f}) {
+        std::vector<SDL_FPoint> outline;
+        const float x0 = 31.5f + nudge;
+        const float y0 = 31.25f + nudge;
+        const float x1 = 927.25f + nudge;
+        const float y1 = 568.5f + nudge;
+        const float rad = 18.0f;
+        const SDL_FPoint corners[4] = {
+            {x1 - rad, y0 + rad}, {x1 - rad, y1 - rad}, {x0 + rad, y1 - rad}, {x0 + rad, y0 + rad}};
+        for (int c = 0; c < 4; ++c)
+            for (int k = 0; k <= 8; ++k) {
+                const float a =
+                    (static_cast<float>(c) - 1.0f + static_cast<float>(k) / 8.0f) * 1.5707964f;
+                outline.push_back(
+                    {corners[c].x + std::cos(a) * rad, corners[c].y + std::sin(a) * rad});
+            }
+        std::vector<SDL_FPoint> points;
+        std::vector<int> indices;
+        fanMesh({(x0 + x1) * 0.5f, (y0 + y1) * 0.5f}, outline, 384.0f, points, indices);
+        REQUIRE(indices.size() % 3 == 0);
+        REQUIRE(indices.size() > outline.size() * 3); // it was cut into rows
+        using Point = std::pair<float, float>;
+        using Side = std::pair<Point, Point>;
+        std::map<Side, int> sides;
+        const auto pt = [&](int i) {
+            const SDL_FPoint p = points[static_cast<std::size_t>(i)];
+            return Point{p.x, p.y};
+        };
+        for (std::size_t t = 0; t < indices.size(); t += 3)
+            for (int e = 0; e < 3; ++e) {
+                Point a = pt(indices[t + static_cast<std::size_t>(e)]);
+                Point b = pt(indices[t + static_cast<std::size_t>((e + 1) % 3)]);
+                if (b < a) std::swap(a, b);
+                ++sides[{a, b}];
+            }
+        std::set<Side> rim;
+        for (std::size_t i = 0; i < outline.size(); ++i) {
+            Point a{outline[i].x, outline[i].y};
+            const SDL_FPoint q = outline[(i + 1) % outline.size()];
+            Point b{q.x, q.y};
+            if (b < a) std::swap(a, b);
+            rim.insert({a, b});
+        }
+        // A side nobody shares is on the outline: one of its sides, or a piece of a straight
+        // (level or upright) one, whose ends are on it exactly.
+        float left = outline[0].x;
+        float right = left;
+        float top = outline[0].y;
+        float bottom = top;
+        for (const SDL_FPoint p : outline) {
+            left = std::min(left, p.x);
+            right = std::max(right, p.x);
+            top = std::min(top, p.y);
+            bottom = std::max(bottom, p.y);
+        }
+        int open = 0;
+        int crowded = 0;
+        for (const auto& [side, n] : sides) {
+            if (n > 2) ++crowded;
+            if (n != 1 || rim.contains(side)) continue;
+            const bool level = side.first.second == side.second.second &&
+                               (side.first.second == top || side.first.second == bottom);
+            const bool upright = side.first.first == side.second.first &&
+                                 (side.first.first == left || side.first.first == right);
+            if (!level && !upright) ++open;
+        }
+        CHECK(open == 0);
+        CHECK(crowded == 0);
+        // And no triangle is larger than asked.
+        float longest = 0;
+        for (const auto& [side, n] : sides)
+            longest = std::max(longest, std::hypot(side.second.first - side.first.first,
+                                                   side.second.second - side.first.second));
+        CHECK(longest <= 384.0f);
+    }
 }
 
 TEST_CASE("text faces carry the minus sign and kerning") {

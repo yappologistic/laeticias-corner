@@ -169,41 +169,67 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
     }
     if (big) {
         // The batch's scratch storage: kept between frames, so nothing is allocated per frame.
+        auto& points = batch_.scratch().points;
         auto& bigV_ = batch_.scratch().verts;
         auto& bigI_ = batch_.scratch().indices;
+        fanMesh(centre, std::span(solid.data(), uc), kMaxTriangle, points, bigI_);
         bigV_.clear();
-        bigI_.clear();
-        for (int i = 0; i < count; ++i) {
-            const SDL_FPoint a = centre;
-            const SDL_FPoint p = solid[static_cast<std::size_t>(i)];
-            const SDL_FPoint q = solid[static_cast<std::size_t>((i + 1) % count)];
-            const float longest =
-                std::max({std::hypot(p.x - a.x, p.y - a.y), std::hypot(q.x - a.x, q.y - a.y),
-                          std::hypot(q.x - p.x, q.y - p.y)});
-            const int steps = std::max(1, static_cast<int>(std::ceil(longest / kMaxTriangle)));
-            // Rows of the triangle from the centre outwards, each split into equal pieces.
-            const int base = static_cast<int>(bigV_.size());
-            for (int r = 0; r <= steps; ++r)
-                for (int c = 0; c <= r; ++c) {
-                    const float t = static_cast<float>(r) / static_cast<float>(steps);
-                    const float u = r == 0 ? 0.0f : static_cast<float>(c) / static_cast<float>(r);
-                    const SDL_FPoint e{p.x + (q.x - p.x) * u, p.y + (q.y - p.y) * u};
-                    const SDL_FPoint pt{a.x + (e.x - a.x) * t, a.y + (e.y - a.y) * t};
-                    bigV_.push_back({pt, shade.at(pt.y), uv(pt)});
-                }
-            const auto at = [&](int r, int c) { return base + r * (r + 1) / 2 + c; };
-            for (int r = 0; r < steps; ++r)
-                for (int c = 0; c <= r; ++c) {
-                    bigI_.insert(bigI_.end(), {at(r, c), at(r + 1, c), at(r + 1, c + 1)});
-                    if (c < r)
-                        bigI_.insert(bigI_.end(), {at(r, c), at(r + 1, c + 1), at(r, c + 1)});
-                }
-        }
+        for (const SDL_FPoint pt : points) bigV_.push_back({pt, shade.at(pt.y), uv(pt)});
         batch_.triangles(bigV_.data(), static_cast<int>(bigV_.size()), bigI_.data(),
                          static_cast<int>(bigI_.size()));
     }
     n = band(idx, n, 1, 1 + count, count);
     batch_.triangles(v.data(), 1 + 2 * count, idx.data(), static_cast<int>(n));
+}
+
+void fanMesh(SDL_FPoint centre, std::span<const SDL_FPoint> outline, float maxEdge,
+             std::vector<SDL_FPoint>& points, std::vector<int>& indices) {
+    points.clear();
+    indices.clear();
+    const std::size_t count = outline.size();
+    if (count < 3) return;
+    // Rings: the outline drawn in towards the centre, the same number of rings all round.
+    float spoke = 0;
+    for (const SDL_FPoint p : outline)
+        spoke = std::max(spoke, std::hypot(p.x - centre.x, p.y - centre.y));
+    const int rings = std::max(1, static_cast<int>(std::ceil(spoke / maxEdge)));
+    // Outline vertex `i` on ring `r` (the outline itself on the last): one value whichever of
+    // the two sides that meet there asks.
+    const auto on = [&](std::size_t i, int r) {
+        const SDL_FPoint p = outline[i % count];
+        if (r == rings) return p;
+        const float t = static_cast<float>(r) / static_cast<float>(rings);
+        return SDL_FPoint{centre.x + (p.x - centre.x) * t, centre.y + (p.y - centre.y) * t};
+    };
+    points.push_back(centre);
+    for (std::size_t i = 0; i < count; ++i) {
+        // A long side (a panel's straight edge) is cut into pieces, the same on every ring.
+        const SDL_FPoint p = outline[i];
+        const SDL_FPoint q = outline[(i + 1) % count];
+        const int pieces =
+            std::max(1, static_cast<int>(std::ceil(std::hypot(q.x - p.x, q.y - p.y) / maxEdge)));
+        const int base = static_cast<int>(points.size());
+        for (int r = 1; r <= rings; ++r) {
+            const SDL_FPoint from = on(i, r);
+            const SDL_FPoint to = on(i + 1, r);
+            for (int j = 0; j <= pieces; ++j) {
+                if (j == 0 || j == pieces) {
+                    points.push_back(j == 0 ? from : to);
+                    continue;
+                }
+                const float u = static_cast<float>(j) / static_cast<float>(pieces);
+                points.push_back({from.x + (to.x - from.x) * u, from.y + (to.y - from.y) * u});
+            }
+        }
+        const auto at = [&](int r, int j) { return base + (r - 1) * (pieces + 1) + j; };
+        for (int j = 0; j < pieces; ++j) {
+            indices.insert(indices.end(), {0, at(1, j), at(1, j + 1)});
+            for (int r = 1; r < rings; ++r) {
+                indices.insert(indices.end(), {at(r, j), at(r + 1, j), at(r + 1, j + 1)});
+                indices.insert(indices.end(), {at(r, j), at(r + 1, j + 1), at(r, j + 1)});
+            }
+        }
+    }
 }
 
 void Painter::roundRect(Box b, float radius, SDL_FColor color, float feather) {

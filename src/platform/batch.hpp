@@ -34,6 +34,7 @@ public:
     struct Scratch {
         std::vector<SDL_Vertex> verts;
         std::vector<int> indices;
+        std::vector<SDL_FPoint> points;
     };
     [[nodiscard]] Scratch& scratch() { return scratch_; }
     void resetStats() { drawCalls_ = 0; }
