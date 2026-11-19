@@ -5,6 +5,7 @@
 #include "ui/strings.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -191,9 +192,11 @@ void App::drawPostcard(Painter& p) {
     const Font& font = p.font();
     const float s = uiScale_;
     const float pad = theme::kToastPad * s;
+    // A name from a hand-edited save may be any length: cut short to the window (H3-020).
+    const std::string_view name = elide(font, Face::Title, worldName_,
+                                        sc.x - 2 * (inset + theme::kMargin * s + pad), captionCut_);
     const float w =
-        std::max(font.measure(Face::Title, worldName_), font.measure(Face::Body, captionDate_)) +
-        2 * pad;
+        std::max(font.measure(Face::Title, name), font.measure(Face::Body, captionDate_)) + 2 * pad;
     const float h = font.lineHeight(Face::Title) + font.lineHeight(Face::Body) + pad;
     const Box b{inset + theme::kMargin * s, sc.y - inset - theme::kMargin * s - h, w, h};
     captionTop_ = b.y;
@@ -222,7 +225,7 @@ void App::drawPostcard(Painter& p) {
         p.endLayer();
     }
     const SDL_FColor ink = plain ? theme::kInk : SDL_FColor{0.18f, 0.14f, 0.10f, 1.0f};
-    p.text(Face::Title, worldName_, b.x + pad, b.y + pad * 0.5f + font.ascent(Face::Title), ink);
+    p.text(Face::Title, name, b.x + pad, b.y + pad * 0.5f + font.ascent(Face::Title), ink);
     p.text(Face::Body, captionDate_, b.x + pad,
            b.y + pad * 0.5f + font.lineHeight(Face::Title) + font.ascent(Face::Body),
            withAlphaOf(ink, plain ? 0.8f : 0.85f));
@@ -230,7 +233,14 @@ void App::drawPostcard(Painter& p) {
 
 void App::capturePhoto() {
     // At window resolution, with the frame and caption, never the bar; the world save is not
-    // touched.
+    // touched. The pixels are read here; the PNG is made on a worker (H3-019).
+    settlePhoto(true); // one at a time, so the last one's file is there for the name below
+    SurfacePtr pixels{SDL_RenderReadPixels(renderer_.get(), nullptr)};
+    if (!pixels) {
+        SDL_Log("postcard: %s", SDL_GetError());
+        hud_.toast(std::string(strings::kPostcardFailed));
+        return;
+    }
     const fs::path dir = postcardDir();
     std::error_code ec;
     fs::create_directories(dir, ec);
@@ -238,12 +248,23 @@ void App::capturePhoto() {
     fs::path file = dir / (base + ".png");
     for (int n = 2; fs::exists(file, ec) && n < 10000; ++n)
         file = dir / (base + "-" + std::to_string(n) + ".png");
-    if (shot(file)) {
-        play(sfx::kShutter);
-        hud_.flash();
+    play(sfx::kShutter);
+    hud_.flash();
+    photoFile_ = file;
+    // SDL's error text is the worker's own, so it comes back with the outcome.
+    photoJob_ = std::async(std::launch::async, [px = std::move(pixels), path = file.string()] {
+        return SDL_SavePNG(px.get(), path.c_str()) ? std::string() : std::string(SDL_GetError());
+    });
+}
+
+void App::settlePhoto(bool wait) {
+    if (!photoJob_.valid()) return;
+    if (!wait && photoJob_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+    if (const std::string why = photoJob_.get(); why.empty()) {
         hud_.toast(std::string(strings::kPostcardSaved));
-        SDL_Log("postcard: saved %s", file.string().c_str());
+        SDL_Log("postcard: saved %s", photoFile_.string().c_str());
     } else {
+        SDL_Log("postcard: %s: %s", photoFile_.string().c_str(), why.c_str());
         hud_.toast(std::string(strings::kPostcardFailed));
     }
 }

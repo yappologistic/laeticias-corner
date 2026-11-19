@@ -203,6 +203,8 @@ private:
     void setTool(Tool t, int selection);
     void togglePhoto();
     void capturePhoto();
+    // Reports a postcard whose file is written (or, with `wait`, waits for it first).
+    void settlePhoto(bool wait);
     void cycleClock();
     void markDirty() { autosave_.changed(); }
     // The progress loop: facts for conditions, re-evaluation when something changed, pacing.
@@ -740,6 +742,7 @@ private:
     int framePartsOf_ = -2;
     bool framePlain_ = true;
     std::string captionDate_;
+    std::string captionCut_; // the world's name cut short to fit the caption
     std::int64_t captionKey_ = -1;
     float captionTop_ = 0;      // where the postcard's caption begins (the bar keeps above it)
     bool greetPending_ = false; // she greets the player as they walk in from the title
@@ -799,6 +802,9 @@ private:
     bool journalOpen_ = false;
     bool photo_ = false;
     bool capturePending_ = false;
+    // A postcard being written on a worker: a large window's PNG takes far longer than a frame.
+    std::future<std::string> photoJob_; // its error, empty when written
+    fs::path photoFile_;
     std::string_view warning_;
     float warnTime_ = 0;
     double lastPaintSound_ = -1;

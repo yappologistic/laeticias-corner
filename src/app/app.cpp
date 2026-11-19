@@ -2028,6 +2028,7 @@ int App::run() {
                                    std::make_format_args(cat_.resident.name, pages))
                     : std::vformat(strings::kToastWelcomeAlone, std::make_format_args(pages)));
         }
+        settlePhoto(false);
         if (thumbTimer_ >= tuning::kThumbnailInterval) {
             thumbTimer_ = 0;
             (void)writeThumbnail();
@@ -2041,6 +2042,7 @@ int App::run() {
     }
     cancelMove();
     if (editor_.inGroup()) editor_.commit();
+    settlePhoto(true);
     profileDue_ = 0;
     writeProfileIfDue();
     if (!(freshWorld_ && frontDoor())) (void)writeThumbnail();

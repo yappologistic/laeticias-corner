@@ -440,6 +440,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "postcards") {
         writer_.flush();
+        settlePhoto(true);
         int n = 0;
         std::error_code ec;
         for (auto it = fs::directory_iterator(postcardDir(), ec);
