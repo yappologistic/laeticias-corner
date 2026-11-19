@@ -1744,3 +1744,97 @@ TEST_CASE("every sprite family draws its season's look where the atlas has one (
     for (const std::string& k : ignored) MESSAGE(k);
     CHECK(ignored.empty());
 }
+
+TEST_CASE("the title offers Worlds beside Begin whenever worlds exist (H3-009)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Profile profile;
+    std::vector<MenuWorld> worlds(2);
+    worlds[0].name = "Plum Hollow";
+    worlds[1].name = "Damaged";
+    worlds[1].readable = false;
+    MenuModel m;
+    m.profile = &profile;
+    m.firstLaunch = true; // the newest world could not be opened: a fresh corner behind
+    const auto worldsButton = [&](std::span<const MenuWorld> list) {
+        m.worlds = list;
+        Menus menus;
+        menus.open(Page::Title);
+        menus.update(UiInput{}, m, ui.font, {1280, 800}, 1.0f, 1.0f / 60.0f);
+        return menus.widgetCentre("worlds").has_value();
+    };
+    CHECK(worldsButton(worlds));
+    CHECK_FALSE(worldsButton({})); // a true first launch: Begin, Settings, Quit
+}
+
+TEST_CASE("a large glass panel covers every pixel inside it at every interface size (H3-010)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    SDL_Renderer* r = ui.renderer.get();
+    const auto solid = [&](int w, int h, float red, float green) {
+        TexturePtr t{
+            SDL_CreateTexture(r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h)};
+        REQUIRE(t);
+        REQUIRE(SDL_SetRenderTarget(r, t.get()));
+        REQUIRE(SDL_SetRenderDrawColorFloat(r, red, green, 0, 1));
+        REQUIRE(SDL_RenderClear(r));
+        return t;
+    };
+    for (const Vec2 screen : {Vec2{960, 600}, Vec2{1280, 800}, Vec2{1920, 1080}})
+        for (const float s : {1.0f, 1.25f, 1.5f, 2.0f, 2.5f, 3.0f}) {
+            CAPTURE(screen.x);
+            CAPTURE(s);
+            const int w = static_cast<int>(screen.x);
+            const int h = static_cast<int>(screen.y);
+            const TexturePtr backdrop = solid(w, h, 1, 0); // the blurred world: red
+            const TexturePtr target = solid(w, h, 0, 1);   // nothing drawn: green
+            Batch batch(r);
+            Painter p(batch, ui.font, {backdrop.get(), screen, 1.0f}, s);
+            // The worlds screen: the veil over the whole window, then its panel (Menus::draw).
+            p.glass({0, 0, screen.x, screen.y}, 0, 1.0f, theme::kGlassVeil);
+            p.endGlass();
+            p.endLayer();
+            const float m = theme::kMargin * s * 2;
+            const Box panel{m, m, screen.x - 2 * m, screen.y - 2 * m};
+            const float radius = theme::kPanelRadius * s * 1.25f;
+            p.glass(panel, radius, 1.0f, theme::kGlass);
+            p.endGlass();
+            batch.flush();
+            const SurfacePtr px{SDL_RenderReadPixels(r, nullptr)};
+            REQUIRE(px);
+            int bare = 0;
+            const int in = static_cast<int>(std::ceil(radius)) + 2;
+            for (int y = static_cast<int>(panel.y) + in;
+                 y < static_cast<int>(panel.y + panel.h) - in; y += 3)
+                for (int x = static_cast<int>(panel.x) + in;
+                     x < static_cast<int>(panel.x + panel.w) - in; x += 3) {
+                    Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+                    if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca) || cg > cr + 40)
+                        ++bare; // the green under the glass shows
+                }
+            CHECK(bare == 0);
+            REQUIRE(SDL_SetRenderTarget(r, nullptr));
+        }
+}
+
+TEST_CASE("a fill never puts two triangles sharing a side in a row (H3-010)") {
+    // SDL's software renderer redraws such a pair as one rectangle when it half looks like
+    // one, losing a triangle: a full-window veil at 960 x 600 lost two.
+    const float w = 960;
+    const float h = 600;
+    std::vector<SDL_FPoint> outline;
+    for (const SDL_FPoint c :
+         {SDL_FPoint{w, 0}, SDL_FPoint{w, h}, SDL_FPoint{0, h}, SDL_FPoint{0, 0}})
+        for (int k = 0; k < 3; ++k) outline.push_back(c); // square corners, as Painter makes them
+    std::vector<SDL_FPoint> points;
+    std::vector<int> indices;
+    fanMesh({w / 2, h / 2}, outline, 384.0f, points, indices);
+    REQUIRE(indices.size() > 6);
+    for (std::size_t t = 3; t < indices.size(); t += 3) {
+        int shared = 0;
+        for (std::size_t a = 0; a < 3; ++a)
+            for (std::size_t b = 0; b < 3; ++b) shared += indices[t + a] == indices[t - 3 + b];
+        CAPTURE(t / 3);
+        CHECK(shared < 2);
+    }
+}
