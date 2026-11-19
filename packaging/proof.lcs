@@ -1,0 +1,20 @@
+# The release package's proof, run by CI from the unpacked archive (software renderer, 960x600):
+# the home region on a summer morning and Rome's Forum, each checked for a drawn picture (not a
+# black or flat frame) and saved in the working directory for a person to look at.
+set weather clear
+set season summer
+set time 0.3
+set land 4
+key home
+wait 600
+expect away no
+expect contrast 0,80,960,440 12
+shot proof-home.png
+set time 0.4
+set world forum 1
+wait 600
+expect region rome
+expect away yes
+expect contrast 0,80,960,440 12
+shot proof-rome.png
+quit

@@ -1,0 +1,29 @@
+// The game executable's resources: its manifest and the version shown in its properties.
+#include <winver.h>
+
+1 24 "@CMAKE_SOURCE_DIR@/packaging/windows/laeticias-corner.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+PRODUCTVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "yappologistic"
+      VALUE "FileDescription", "Laeticia's Corner"
+      VALUE "FileVersion", "@LC_VERSION@"
+      VALUE "LegalCopyright", "Copyright (C) 2026 yappologistic"
+      VALUE "OriginalFilename", "laeticias-corner.exe"
+      VALUE "ProductName", "Laeticia's Corner"
+      VALUE "ProductVersion", "@LC_VERSION@"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1200
+  END
+END

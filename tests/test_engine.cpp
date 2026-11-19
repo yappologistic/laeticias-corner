@@ -58,6 +58,9 @@ TEST_CASE("options parse and reject bad input") {
     CHECK(o->frames == 30);
     const std::array<std::string_view, 1> bench{"--bench"};
     CHECK(parseOptions(bench)->headless);
+    const std::array<std::string_view, 1> version{"--version"};
+    CHECK(parseOptions(version)->version);
+    CHECK_FALSE(o->version);
     const std::array<std::string_view, 2> badSize{"--size", "10x10"};
     CHECK_FALSE(parseOptions(badSize).has_value());
     const std::array<std::string_view, 1> unknown{"--fly"};

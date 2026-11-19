@@ -1,6 +1,8 @@
 #include "app/app.hpp"
+#include "app/version.hpp"
 
 #include <cstdio>
+#include <print>
 #include <string_view>
 #include <vector>
 
@@ -15,6 +17,11 @@ int main(int argc, char** argv) {
     if (options->help) {
         const auto u = lc::usage();
         return std::fwrite(u.data(), 1, u.size(), stdout) == u.size() ? 0 : 1;
+    }
+    if (options->version) {
+        std::println("Laeticia's Corner {} (commit {}, {})", lc::build::kVersion,
+                     lc::build::kCommit, lc::build::kPlatform);
+        return 0;
     }
     return lc::runApp(*options);
 }

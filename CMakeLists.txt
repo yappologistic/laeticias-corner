@@ -1,5 +1,18 @@
 cmake_minimum_required(VERSION 3.28)
 project(laeticias_corner VERSION 0.1.0 LANGUAGES C CXX)
+# The pre-release suffix (empty for a final release): the one place it is written. The release
+# tag is "v" followed by LC_VERSION.
+set(LC_VERSION_SUFFIX "-prealpha.1")
+set(LC_VERSION "${PROJECT_VERSION}${LC_VERSION_SUFFIX}")
+# The system the build is for, as the release archives name it.
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" LC_PLATFORM)
+if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+  string(APPEND LC_PLATFORM "-x64")
+else()
+  string(APPEND LC_PLATFORM "-${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+# For the release workflow: the archive's name without reading this file.
+file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${LC_VERSION}\n")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,11 +21,39 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(LC_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(LC_TESTS "Build the test suite" ON)
+# Release packages carry no C++ runtime to install: libstdc++ and libgcc (and on Windows
+# winpthreads) go into each binary.
+option(LC_STATIC_RUNTIME "Link the C++ runtime statically (release packages)" OFF)
 
 include(cmake/ProjectOptions.cmake)
 
-find_package(SDL3 3.4 REQUIRED CONFIG)
-find_package(nlohmann_json 3.11 REQUIRED)
+if(LC_STATIC_RUNTIME)
+  # Before the dependencies, so a fetched SDL needs no runtime DLL of the compiler either.
+  if(MINGW)
+    add_link_options(-static)
+  else()
+    add_link_options(-static-libstdc++ -static-libgcc)
+  endif()
+endif()
+
+# System packages when they are installed (the developer's usual case); otherwise the pinned
+# releases below, checked against their SHA-256, are downloaded and built with the project. SDL
+# is then built as a shared library that the package carries beside the game.
+include(FetchContent)
+set(SDL_SHARED ON)
+set(SDL_STATIC OFF)
+set(SDL_TEST_LIBRARY OFF)
+set(SDL_EXAMPLES OFF)
+set(JSON_BuildTests OFF)
+FetchContent_Declare(SDL3
+  URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-3.4.20.tar.gz
+  URL_HASH SHA256=f3bb06f55bed9557227a700af2ea62e49497ebdf58037732a731a5fb3ef8581f
+  FIND_PACKAGE_ARGS 3.4 CONFIG)
+FetchContent_Declare(nlohmann_json
+  URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+  URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa
+  FIND_PACKAGE_ARGS 3.11)
+FetchContent_MakeAvailable(SDL3 nlohmann_json)
 
 add_subdirectory(third_party)
 
@@ -253,7 +294,17 @@ lc_project_target(lc_worldview)
 
 # The game: the app (main loop, input, scripts, bench, front door) over the engine and the world,
 # split from main() so tests can link it.
+set(LC_VERSION_CPP ${CMAKE_BINARY_DIR}/generated/version.cpp)
+# Run on every build so `--version` names the commit built; the source is rewritten only when its
+# text changes, so an unchanged commit recompiles nothing.
+add_custom_target(lc_version
+  COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -DOUT=${LC_VERSION_CPP}
+          -DVERSION=${LC_VERSION} -DPLATFORM=${LC_PLATFORM}
+          -P ${CMAKE_SOURCE_DIR}/cmake/version.cmake
+  BYPRODUCTS ${LC_VERSION_CPP}
+  COMMENT "Stamping the version" VERBATIM)
 add_library(lc_app STATIC
+  ${LC_VERSION_CPP}
   src/app/app.cpp
   src/app/options.cpp
   src/app/script.cpp
@@ -271,12 +322,55 @@ add_library(lc_app STATIC
   src/app/app_world.cpp
 )
 target_link_libraries(lc_app PUBLIC lc_worldview)
+add_dependencies(lc_app lc_version)
 lc_project_target(lc_app)
 
 add_executable(laeticias-corner src/app/main.cpp src/platform/alloc_count.cpp)
 target_link_libraries(laeticias-corner PRIVATE lc_app)
 lc_project_target(laeticias-corner)
 lc_runtime_dlls(laeticias-corner)
+if(WIN32)
+  # A window, no console; the manifest makes the process's narrow code page UTF-8, the encoding
+  # SDL and the game's paths and arguments are in.
+  enable_language(RC)
+  configure_file(packaging/windows/laeticias-corner.rc.in
+                 ${CMAKE_BINARY_DIR}/generated/laeticias-corner.rc @ONLY)
+  target_sources(laeticias-corner PRIVATE ${CMAKE_BINARY_DIR}/generated/laeticias-corner.rc)
+  set_target_properties(laeticias-corner PROPERTIES WIN32_EXECUTABLE TRUE)
+else()
+  # The installed game finds the SDL beside it.
+  set_target_properties(laeticias-corner PROPERTIES INSTALL_RPATH "$ORIGIN")
+endif()
+
+# The release package: `cmake --install <build> --prefix <dir>` lays out the game, its assets,
+# the licences and, when SDL was built here, SDL beside the game.
+install(TARGETS laeticias-corner RUNTIME DESTINATION .)
+install(DIRECTORY assets/ DESTINATION assets)
+install(FILES LICENSE LICENSE-ASSETS LICENSING.md THIRD-PARTY.md DESTINATION .)
+if(WIN32)
+  install(FILES packaging/windows/README.txt DESTINATION .)
+else()
+  install(FILES packaging/linux/README.txt DESTINATION .)
+endif()
+if(TARGET SDL3-shared)
+  install(TARGETS SDL3-shared
+    RUNTIME DESTINATION .
+    LIBRARY DESTINATION . NAMELINK_SKIP
+    ARCHIVE DESTINATION lib EXCLUDE_FROM_ALL)
+  install(FILES ${sdl3_SOURCE_DIR}/LICENSE.txt DESTINATION licenses RENAME SDL-LICENSE.txt)
+endif()
+# The licence texts of what is compiled into the game (THIRD-PARTY.md lists them); the fonts'
+# sit beside them in assets/fonts/. MinGW-w64's runtime and winpthreads, linked in statically on
+# Windows, ask for theirs in the binary's documentation.
+install(FILES third_party/stb/LICENSE DESTINATION licenses RENAME stb-LICENSE.txt)
+if(DEFINED nlohmann_json_SOURCE_DIR)
+  install(FILES ${nlohmann_json_SOURCE_DIR}/LICENSE.MIT DESTINATION licenses
+          RENAME nlohmann_json-LICENSE.txt)
+endif()
+if(MINGW)
+  install(FILES packaging/windows/licenses/mingw-w64-runtime-COPYING.txt
+                packaging/windows/licenses/winpthreads-COPYING.txt DESTINATION licenses)
+endif()
 
 if(LC_TESTS)
   add_subdirectory(tests)

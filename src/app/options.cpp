@@ -63,6 +63,7 @@ std::string_view usage() {
            "                      (one hour: FILE; several: FILE_hhmm.json)\n"
            "  --life-hours H,..   game hours of the dumps (default 10)\n"
            "  --life-day N        calendar day of the dumps (default 1)\n"
+           "  --version           print the version, the commit and the platform\n"
            "  --help              show this text\n";
 }
 
@@ -90,6 +91,8 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             o.perfLog = std::filesystem::path(*v);
         } else if (a == "--help" || a == "-h") {
             o.help = true;
+        } else if (a == "--version") {
+            o.version = true;
         } else if (a == "--size" || a == "--map") {
             const auto v = value();
             if (!v) return std::unexpected(v.error());

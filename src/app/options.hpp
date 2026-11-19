@@ -44,6 +44,7 @@ struct Options {
     std::string lifeHours = "10";                  // game hours of the dumps
     int lifeDay = 1;                               // calendar day of the dumps
     bool help = false;
+    bool version = false; // print the version, commit and platform, then exit
 };
 
 [[nodiscard]] std::expected<Options, std::string>

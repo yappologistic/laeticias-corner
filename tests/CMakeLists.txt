@@ -280,6 +280,11 @@ add_test(NAME script_bad_number
 set_tests_properties(script_bad_number PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
   PASS_REGULAR_EXPRESSION "script line 3: a bad number")
 
+# --version names the version, the commit and the platform, and starts nothing.
+add_test(NAME version COMMAND laeticias-corner --version)
+set_tests_properties(version PROPERTIES PASS_REGULAR_EXPRESSION
+  "^Laeticia's Corner ${LC_VERSION} \\(commit ([0-9a-f]+(-modified)?|unknown), ${LC_PLATFORM}\\)")
+
 # A save directory the game cannot write to.
 if(UNIX)
   set(ro "${LC_SCRATCH}/save_read_only")
