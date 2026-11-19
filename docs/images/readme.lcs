@@ -1,0 +1,24 @@
+# The README's screenshots (docs/images/home-corner.png, athens-agora.png). From the repository
+# root:
+#   mkdir -p out/shots && cd out/shots && SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy \
+#       ../../build/release/laeticias-corner --script ../../docs/images/readme.lcs \
+#       --renderer gpu --quality high --size 800x500 --seed 1 --save-dir save
+set weather clear
+set season summer
+set time 0.3
+set land 4
+key home
+wait 900
+key p
+key h
+wait 30
+shot home-corner.png
+key escape
+set time 0.4
+set world agora 1
+wait 600
+key p
+key h
+wait 30
+shot athens-agora.png
+quit

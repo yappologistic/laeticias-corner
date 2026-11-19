@@ -329,6 +329,12 @@ private:
     void buildWater(TileRect rect);
     // The cloud pass for this frame (or none).
     void cloudsGpu();
+    // The sun for this frame: the decode's relight (a stepped sun, cached pictures are drawn again
+    // at each step) and the turning shadows (the sun as it is), on Medium and High.
+    void sunGpu(double clock);
+    // A shadow sprite turned and stretched toward the sun from the caster's footprint centre,
+    // its far part softer.
+    bool putShadow(const SpriteRef& s, const Elem& e, const Xform& x);
     // A swaying item, bent in strips by the wind.
     void putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean);
     // Whether an item's glow layer burns now (the world data's lights on the shader path).
@@ -691,8 +697,12 @@ private:
     [[nodiscard]] int climateOf(TilePos p) const;
     SeasonCtx seasonCtx_;
     int lookSeason_ = -1; // the season looks the sprite being drawn takes (seasonAt)
+    int sunStep_ = -1;
+    std::optional<gpu::ShadowWarp> sunShadows_; // this frame's turning shadows (none: baked)
+    bool drawingBlock_ = false;                 // an impostor block (a cached picture) is drawn
+    gpu::ShadowWarp stepShadows_;               // the stepped sun's, for cached pictures
     void seasonAt(TilePos p);
-    [[nodiscard]] SDL_FColor packedColour(SDL_FColor c, bool homeArt) const;
+    [[nodiscard]] SDL_FColor packedColour(SDL_FColor c, bool homeArt, bool mirrored) const;
     void plain(); // later draws are not decoded (before any draw that is not put())
     void staleCells();
     // Water marks waiting for the end of their diagonal (drawTiles).

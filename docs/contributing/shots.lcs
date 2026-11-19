@@ -1,0 +1,11 @@
+# Example screenshots for a pull request's "Before and after" (docs/contributing/proof-of-work.md).
+# Fixed hour and weather, so before and after differ only by the change. From the repository root:
+#   mkdir -p out/shots && cd out/shots
+#   SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy ../../build/release/laeticias-corner \
+#       --script ../../docs/contributing/shots.lcs --size 1280x800 --seed 1 --save-dir save
+set clock day
+set weather clear
+set world forum 1
+wait 120
+shot forum.png
+quit
