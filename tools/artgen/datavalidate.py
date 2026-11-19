@@ -460,6 +460,9 @@ def loader_rules(geom: dict, set_id: str) -> list[str]:
         for anim, pts in a.get("carry_at", {}).items():
             if not all(pair(p) for p in pts):
                 errs.append(f"loader: {aid} carry_at {anim}: not pairs")
+        for anim, h in a.get("height", {}).items():     # asInt 0..1 << 14 (geometry.cpp)
+            if not (isinstance(h, int) and not isinstance(h, bool) and 0 <= h <= 1 << 14):
+                errs.append(f"loader: {aid} height {anim}: not an integer 0..16384")
     return errs
 
 
@@ -520,8 +523,9 @@ def check_occlusion(name: str, atlas_dir: Path, cat: dict, packed) -> list[str]:
     neighbouring texels are allowed for pixels on a texel's very edge)."""
     import occlusion
     f = atlas_dir / f"{name}.o.json"
-    if not f.exists():
-        return [f"no occlusion page {f.name}"]
+    if not f.exists():      # pages from before the occlusion page (nothing reads it yet)
+        print(f"{name}: warning: no occlusion page {f.name} (made by the next full build)", file=sys.stderr)
+        return []
     doc = json.loads(f.read_text())
     errors = []
     if doc.get("version") != 1 or doc.get("image") != f"{name}.o.png" or doc.get("texel") != occlusion.TEXEL \

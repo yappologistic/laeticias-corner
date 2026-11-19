@@ -99,11 +99,7 @@ void App::createWorldView() {
                     iso.toWorld(f(w), 0.0f).x + r.left + homeOffset_.x,
                     iso.toWorld(f(w), f(h)).y + r.top + homeOffset_.y};
     worldView_ = std::make_unique<worldview::WorldView>(
-        renderer_.get(), *loaded_, assets_, *atlas_,
-        // Frames stream as they do for a player wherever time is measured or a window is
-        // open; a headless script builds everything at once (the same shots every run) unless
-        // it asks to see what a player sees.
-        measuring() || !opts_.headless || opts_.streamed, worldview::Hole{home.rect, box},
+        renderer_.get(), *loaded_, assets_, *atlas_, streams(), worldview::Hole{home.rect, box},
         // Living figures walk with city life.
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());

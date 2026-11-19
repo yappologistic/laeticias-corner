@@ -11282,7 +11282,15 @@
    "ox": 49,
    "oy": 68
   },
-  "item/world.peak/base/r0/f0@summer": {
+  "item/world.peak/base/r0/f0@spring": {
+   "x": 478,
+   "y": 297,
+   "w": 118,
+   "h": 151,
+   "ox": 49,
+   "oy": 68
+  },
+  "item/world.peak/base/r0/f0@winter": {
    "x": 478,
    "y": 297,
    "w": 118,
@@ -11306,7 +11314,15 @@
    "ox": 80,
    "oy": 61
   },
-  "item/world.peak/base/r1/f0@summer": {
+  "item/world.peak/base/r1/f0@spring": {
+   "x": 2979,
+   "y": 112,
+   "w": 168,
+   "h": 150,
+   "ox": 80,
+   "oy": 61
+  },
+  "item/world.peak/base/r1/f0@winter": {
    "x": 2979,
    "y": 112,
    "w": 168,
@@ -12178,9 +12194,25 @@
    "ox": 38,
    "oy": 81
   },
+  "item/world.t_beech/base/r0/f0@winter": {
+   "x": 70,
+   "y": 3073,
+   "w": 67,
+   "h": 98,
+   "ox": 37,
+   "oy": 80
+  },
   "item/world.t_beech/base/r1/f0": {
    "x": 381,
    "y": 430,
+   "w": 69,
+   "h": 91,
+   "ox": 40,
+   "oy": 73
+  },
+  "item/world.t_beech/base/r1/f0@winter": {
+   "x": 216,
+   "y": 3073,
    "w": 69,
    "h": 91,
    "ox": 40,
@@ -12193,6 +12225,14 @@
    "h": 106,
    "ox": 34,
    "oy": 88
+  },
+  "item/world.t_beech/base/r2/f0@winter": {
+   "x": 1,
+   "y": 3073,
+   "w": 68,
+   "h": 105,
+   "ox": 34,
+   "oy": 87
   },
   "item/world.t_cedar/base/r0/f0": {
    "x": 2031,
@@ -12282,6 +12322,14 @@
    "ox": 39,
    "oy": 76
   },
+  "item/world.t_oak/base/r0/f0@winter": {
+   "x": 138,
+   "y": 3073,
+   "w": 77,
+   "h": 94,
+   "ox": 39,
+   "oy": 75
+  },
   "item/world.t_oak/base/r1/f0": {
    "x": 679,
    "y": 789,
@@ -12289,6 +12337,14 @@
    "h": 63,
    "ox": 28,
    "oy": 43
+  },
+  "item/world.t_oak/base/r1/f0@winter": {
+   "x": 343,
+   "y": 3073,
+   "w": 52,
+   "h": 61,
+   "ox": 28,
+   "oy": 41
   },
   "item/world.t_oak/base/r2/f0": {
    "x": 2557,
@@ -12298,6 +12354,14 @@
    "ox": 22,
    "oy": 45
   },
+  "item/world.t_oak/base/r2/f0@winter": {
+   "x": 396,
+   "y": 3073,
+   "w": 42,
+   "h": 61,
+   "ox": 19,
+   "oy": 44
+  },
   "item/world.t_oak/base/r3/f0": {
    "x": 1121,
    "y": 550,
@@ -12305,6 +12369,14 @@
    "h": 78,
    "ox": 9,
    "oy": 59
+  },
+  "item/world.t_oak/base/r3/f0@winter": {
+   "x": 286,
+   "y": 3073,
+   "w": 56,
+   "h": 77,
+   "ox": 9,
+   "oy": 58
   },
   "item/world.t_oak_zagros/base/r0/f0": {
    "x": 3126,

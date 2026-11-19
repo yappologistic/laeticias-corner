@@ -666,6 +666,38 @@
    "ox": 514,
    "oy": -80
   },
+  "item/athens.t_fig/base/r0/f0@winter": {
+   "x": 166,
+   "y": 1537,
+   "w": 44,
+   "h": 45,
+   "ox": 24,
+   "oy": 28
+  },
+  "item/athens.t_fig/base/r1/f0@winter": {
+   "x": 211,
+   "y": 1537,
+   "w": 43,
+   "h": 42,
+   "ox": 23,
+   "oy": 25
+  },
+  "item/athens.t_plane/base/r0/f0@winter": {
+   "x": 1,
+   "y": 1537,
+   "w": 86,
+   "h": 115,
+   "ox": 47,
+   "oy": 96
+  },
+  "item/athens.t_plane/base/r1/f0@winter": {
+   "x": 88,
+   "y": 1537,
+   "w": 77,
+   "h": 115,
+   "ox": 39,
+   "oy": 96
+  },
   "item/athens.telesterion/base/r0/p0/f0": {
    "x": 1590,
    "y": 553,

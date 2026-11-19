@@ -357,3 +357,56 @@ TEST_CASE("page runs: whatever is drawn over something else is still drawn after
     for (std::size_t k = 1; k < keys.size(); ++k) given += keys[k] != keys[k - 1] ? 1 : 0;
     CHECK(runs.runs() < given);
 }
+
+TEST_CASE("a world-wide picture is drawn by the whole texels under the view") {
+    // The overview: 16 world px a texel, its corner left of and above the world's origin.
+    const Vec2 origin{-28000.0f, -200.0f};
+    const TexelSpan all = texelsUnder(origin, 16.0f, 3500, 1750, {-1e6f, -1e6f, 1e6f, 1e6f});
+    CHECK(all.x0 == 0);
+    CHECK(all.y0 == 0);
+    CHECK(all.x1 == 3500);
+    CHECK(all.y1 == 1750);
+    // A view inside it: every texel it touches, none beyond, so the part drawn stays the
+    // size of the view whatever the world's.
+    const FRect view{-1000.5f, 3000.0f, 280.0f, 3800.25f};
+    const TexelSpan part = texelsUnder(origin, 16.0f, 3500, 1750, view);
+    CHECK(origin.x + static_cast<float>(part.x0) * 16.0f <= view.x0);
+    CHECK(origin.x + static_cast<float>(part.x0 + 1) * 16.0f > view.x0);
+    CHECK(origin.x + static_cast<float>(part.x1) * 16.0f >= view.x1);
+    CHECK(origin.x + static_cast<float>(part.x1 - 1) * 16.0f < view.x1);
+    CHECK(origin.y + static_cast<float>(part.y0) * 16.0f <= view.y0);
+    CHECK(origin.y + static_cast<float>(part.y1) * 16.0f >= view.y1);
+    CHECK(part.x1 - part.x0 <= 82);
+    CHECK(part.y1 - part.y0 <= 52);
+    // A view off the picture draws nothing.
+    CHECK(texelsUnder(origin, 16.0f, 3500, 1750, {40000.0f, 0.0f, 41000.0f, 500.0f}).empty());
+}
+
+TEST_CASE("the tile a point lies on counts the land's level") {
+    // 64 x 32 px tiles, 16 px a level: flat land at level 0 with a plateau at level 5 over
+    // tiles x 20..29, y 20..29.
+    const Iso iso{32.0f, 16.0f};
+    const auto levelOf = [](TilePos t) {
+        if (t.x < 0 || t.y < 0 || t.x >= 64 || t.y >= 64) return -1;
+        return t.x >= 20 && t.x < 30 && t.y >= 20 && t.y < 30 ? 5 : 0;
+    };
+    const auto on = [&](Vec2 px) { return tileTopAt(iso, 16, 15, px, levelOf); };
+    const auto centreOf = [&](TilePos t, int level) {
+        const Vec2 w = iso.toWorld(static_cast<float>(t.x) + 0.5f, static_cast<float>(t.y) + 0.5f);
+        return Vec2{w.x, w.y - static_cast<float>(level * 16)};
+    };
+    // On flat land the tile under the point is the plane's.
+    CHECK(on(centreOf({5, 7}, 0)) == TilePos{5, 7});
+    // A view centred on a plateau tile is on that tile, not on the one 2.5 tiles behind it on
+    // the plane (which is what named the wrong region).
+    CHECK(on(centreOf({25, 25}, 5)) == TilePos{25, 25});
+    CHECK(on(centreOf({20, 20}, 5)) == TilePos{20, 20});
+    CHECK(on(centreOf({29, 29}, 5)) == TilePos{29, 29});
+    // Low land before the plateau is itself: a view placed on a valley tile names the valley.
+    CHECK(on(centreOf({31, 31}, 0)) == TilePos{31, 31});
+    // Low land behind it lies under the plateau's top as it is drawn: the point is on the
+    // plateau.
+    CHECK(on(centreOf({19, 19}, 0)) == TilePos{22, 22});
+    // Off the grid: the plane's tile, whatever it is.
+    CHECK(on(centreOf({-4, -9}, 0)) == TilePos{-4, -9});
+}

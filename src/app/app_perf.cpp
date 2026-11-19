@@ -98,6 +98,20 @@ void App::closeParts(FrameSample& s) {
     stepMs_ = 0;
 }
 
+void App::noteFrame(const FrameSample& s) {
+    // Cells built ahead of need take what this frame left of the main thread's budget.
+    if (worldView_)
+        worldView_->setFrameCost(
+            static_cast<double>((s.threadMs >= 0 ? s.threadMs : s.cpuMs) - s.buildMs - s.uploadMs));
+    if (perfLog_) {
+        std::array<char, kPerfLineMax> line{};
+        const std::size_t n = perfLine(perfFrames_, s, line);
+        (void)std::fwrite(line.data(), 1, n, perfLog_.get());
+        (void)std::fputc('\n', perfLog_.get());
+    }
+    ++perfFrames_;
+}
+
 void App::recordFrame(FrameSample& s) {
     closeParts(s);
     s.sceneMs = static_cast<float>(sceneMs_);
@@ -122,17 +136,7 @@ void App::recordFrame(FrameSample& s) {
     s.totalMiB =
         perfFrames_ % kMemoryEvery == 0 ? static_cast<float>(processMemory().first) : prev.totalMiB;
     perf_.push(s);
-    // Cells built ahead of need take what this frame left of the main thread's budget.
-    if (worldView_)
-        worldView_->setFrameCost(
-            static_cast<double>((s.threadMs >= 0 ? s.threadMs : s.cpuMs) - s.buildMs - s.uploadMs));
-    if (perfLog_) {
-        std::array<char, kPerfLineMax> line{};
-        const std::size_t n = perfLine(perfFrames_, s, line);
-        (void)std::fwrite(line.data(), 1, n, perfLog_.get());
-        (void)std::fputc('\n', perfLog_.get());
-    }
-    ++perfFrames_;
+    noteFrame(s);
 }
 
 } // namespace lc

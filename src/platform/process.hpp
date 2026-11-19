@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 
 #include <cstdint>
+#include <string_view>
 #include <utility>
 
 namespace lc {
@@ -16,6 +17,18 @@ namespace lc {
 // Against the wall clock it tells running from waiting: a thread that was blocked on a file or a
 // lock, or taken off its core, used no CPU meanwhile.
 [[nodiscard]] double threadCpuMs();
+// How often a control group was frozen for having used its CPU quota, and for how long. A
+// program in such a group stands still for the rest of the period whoever used the quota up:
+// frames of tens of ms that are nobody's work, on a machine whose load average looks idle.
+struct CpuStalls {
+    long long count = 0;
+    double ms = 0;
+};
+// Read from the text of a group's `cpu.stat`.
+[[nodiscard]] CpuStalls cpuStallsFrom(std::string_view cpuStat);
+// Those of the nearest group above this process that has a quota (Linux, cgroup v2; none where
+// there is no quota or no such system). The bench says them beside each case's times.
+[[nodiscard]] CpuStalls cpuLimitStalls();
 // Instructions the calling thread has run in user mode since its first call here (Linux, where
 // the kernel lets a process count its own; 0 elsewhere). Unlike time it does not depend on how
 // busy the machine is: the measure to compare two builds by on a loaded machine.

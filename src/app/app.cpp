@@ -1808,11 +1808,25 @@ int App::run() {
         camera_.place(*savedCamera_, savedZoom_, screen());
     else
         frameCamera();
+    // What a renderer makes the first time it is asked (pipelines for every blending and target,
+    // the look's targets, the cache's pages: tens of milliseconds a frame on SDL's gpu driver) is
+    // made here, in frames nobody sees, so the first frame shown is an ordinary one.
+    if (worldView_ && streams()) {
+        worldView_->reserveFor(screen());
+        scene_->reserveTargets(static_cast<int>(std::ceil(screen().x)) + 8,
+                               static_cast<int>(std::ceil(screen().y)) + 8);
+        // (The glass's blur, whatever is open at first.)
+        if (blur_->begin(screen(), theme::kBlurRadius * uiScale_)) blur_->end();
+        for (int k = 0; k < tuning::kWarmFrames; ++k) {
+            render();
+            if (!SDL_FlushRenderer(renderer_.get())) SDL_Log("render: %s", SDL_GetError());
+        }
+    }
     // The first view streams in over its first second or two (its pages decode on a worker,
     // its cells are built a few a frame): it is shown when it is whole, behind the veil a
     // journey arrives through, never filling in before the eyes. Runs that build everything at
     // once (headless scripts) and those that measure have nothing to hide.
-    if (worldView_ && !measuring() && (!opts_.headless || opts_.streamed)) {
+    if (worldView_ && !measuring() && streams()) {
         travel_ = {loaded_->file.home.region, tuning::kTravelFadeOut, true};
         startVeil_ = true;
     }
