@@ -3113,6 +3113,8 @@ std::size_t CityLife::gather(TileRect rect, float alpha, std::span<DrawActor> ou
                 d.goods = a.goods;
                 d.goodsCount = a.goodsCount;
                 d.translucent = (a.flags & live_flag::kTranslucent) != 0;
+                d.role = a.role;
+                d.region = a.region;
                 const int item = map_->itemAt(a.tile.pos());
                 d.item = item;
                 d.floor =

@@ -67,6 +67,11 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
         for (std::size_t i = 0; i < ws.size(); ++i)
             v.walk.push_back(tileOffset(ws[i], c + ": walk[" + std::to_string(i) + "]"));
     }
+    if (has(g, "water")) {
+        const json& ws = asArray(g.at("water"), c + ": water");
+        for (std::size_t i = 0; i < ws.size(); ++i)
+            v.water.push_back(tileOffset(ws[i], c + ": water[" + std::to_string(i) + "]"));
+    }
     // "dx,dy" keys of walk tiles with a height each (walk_z, roof).
     const auto byTile = [&](const char* name, std::vector<std::pair<TilePos, int>>& out) {
         if (!has(g, name)) return;

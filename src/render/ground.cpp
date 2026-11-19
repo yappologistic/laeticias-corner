@@ -298,7 +298,10 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
 
     // Pass 2: composite the slots (and draw any overflow directly), in order.
     const float k = target.res / res;
-    const SDL_ScaleMode filter = k == 1.0f ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR;
+    // Whole scales (1x, 2x, 3x) sample nearest: filtered, a slot's edge texels blend with the
+    // transparent ones beside them and every chunk border becomes a seam of partial alpha.
+    const SDL_ScaleMode filter =
+        k >= 1.0f && k == std::floor(k) ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR;
     each([&](int cx, int cy) {
         const auto it = byKey_.find(keyOf(level, cx, cy));
         if (it == byKey_.end() || slots_[static_cast<std::size_t>(it->second)].used != frame_) {

@@ -6,6 +6,7 @@
 #include "app/app_impl.hpp"
 #include "core/land.hpp"
 #include "core/starter.hpp"
+#include "render/gpu/post.hpp"
 #include "ui/strings.hpp"
 
 #include <algorithm>
@@ -245,6 +246,11 @@ const MenuModel& App::menuModel() {
     m.caption = profile_.caption;
     m.barBottom = profile_.caption && captionTop_ > 0 ? captionTop_ - theme::kGap * uiScale_ : 0.0f;
     m.frames = static_cast<int>(std::ranges::count(progress_.frames, std::uint8_t{1}));
+    const gpu::Quality look = gpu::parseQuality(profile_.look).value_or(gpu::Quality::High);
+    m.look = static_cast<int>(look);
+    m.lookAfterRestart = look != gpu::Quality::Classic && worldView_ &&
+                         worldView_->quality() == gpu::Quality::Classic;
+    m.clouds = static_cast<int>(gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On));
     return m;
 }
 
@@ -416,6 +422,21 @@ void App::applyMenuActions() {
                 SDL_Log("vsync: %s", SDL_GetError());
             profileChanged();
             break;
+        case K::Look: {
+            const auto q = static_cast<gpu::Quality>(std::clamp(a.arg, 0, gpu::kQualityCount - 1));
+            profile_.look = std::string(gpu::qualityId(q));
+            // Tiers switch live on SDL's gpu driver; another renderer shows them after a restart.
+            if (worldView_ && gpu::isGpu(renderer_.get())) (void)worldView_->setQuality(q);
+            profileChanged();
+            break;
+        }
+        case K::Clouds: {
+            const auto c = static_cast<gpu::Clouds>(std::clamp(a.arg, 0, gpu::kCloudModes - 1));
+            profile_.clouds = std::string(gpu::cloudsId(c));
+            if (worldView_) worldView_->setClouds(c);
+            profileChanged();
+            break;
+        }
         case K::Chatter:
             profile_.chatty = a.arg != 0;
             profileChanged();

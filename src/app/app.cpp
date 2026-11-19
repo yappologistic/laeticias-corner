@@ -161,18 +161,19 @@ void App::rememberWindow() {
 
 bool App::init() {
     if (!createWindow()) return false;
-    // Headless runs default to the software renderer so screenshots are reproducible anywhere.
-    const std::string driver =
-        !opts_.renderer.empty() ? opts_.renderer : (opts_.headless ? "software" : "");
-    renderer_.reset(SDL_CreateRenderer(window_.get(), driver.empty() ? nullptr : driver.c_str()));
-    if (!renderer_) {
-        SDL_Log("cannot create renderer: %s", SDL_GetError());
-        return false;
-    }
+    if (!createRenderer()) return false;
     // The benchmark measures with vsync off: frame times then show what the machine can do.
     if (!opts_.headless && !SDL_SetRenderVSync(renderer_.get(), opts_.benchmark ? 0 : 1))
         SDL_Log("vsync unavailable: %s", SDL_GetError());
-    if (!SDL_GetRenderOutputSize(renderer_.get(), &pixelW_, &pixelH_)) return false;
+    if (screen_) {
+        float w = 0;
+        float h = 0;
+        if (!SDL_GetTextureSize(screen_.get(), &w, &h)) return false;
+        pixelW_ = static_cast<int>(w);
+        pixelH_ = static_cast<int>(h);
+    } else if (!SDL_GetRenderOutputSize(renderer_.get(), &pixelW_, &pixelH_)) {
+        return false;
+    }
     density_ = SDL_GetWindowPixelDensity(window_.get());
     if (density_ <= 0) density_ = 1;
 
@@ -469,7 +470,8 @@ bool App::writeThumbnail() {
     if (!SDL_SetRenderTarget(renderer_.get(), target.get()))
         SDL_Log("thumbnail: %s", SDL_GetError());
     const SurfacePtr pixels{SDL_RenderReadPixels(renderer_.get(), nullptr)};
-    if (!SDL_SetRenderTarget(renderer_.get(), nullptr)) SDL_Log("thumbnail: %s", SDL_GetError());
+    if (!SDL_SetRenderTarget(renderer_.get(), screenTarget()))
+        SDL_Log("thumbnail: %s", SDL_GetError());
     std::error_code ec;
     fs::create_directories(worldDir(), ec);
     const fs::path file = worldDir() / kThumbFile;
@@ -1130,7 +1132,8 @@ void App::handleEvent(const SDL_Event& e) {
     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
     case SDL_EVENT_WINDOW_RESIZED:
     case SDL_EVENT_WINDOW_MOVED:
-        if (!SDL_GetRenderOutputSize(renderer_.get(), &pixelW_, &pixelH_))
+        // (The offscreen frame keeps its size: it has no window to follow.)
+        if (!screen_ && !SDL_GetRenderOutputSize(renderer_.get(), &pixelW_, &pixelH_))
             SDL_Log("%s", SDL_GetError());
         density_ = std::max(1.0f, SDL_GetWindowPixelDensity(window_.get()));
         if ((SDL_GetWindowFlags(window_.get()) & SDL_WINDOW_FULLSCREEN) == 0) {
@@ -1612,6 +1615,9 @@ void App::render() {
     p.actors = drawActors_;
     p.resident = actors_.resident();
     p.weather = &weather_;
+    p.cloudShadows =
+        gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On) != gpu::Clouds::Off &&
+        (!worldView_ || worldView_->quality() == gpu::Quality::Classic);
     p.ghosts = buildGhosts();
     p.grid = grid_ ? tuning::kGridAlphaDay + (tuning::kGridAlphaNight - tuning::kGridAlphaDay) *
                                                  std::clamp(p.light.night, 0.0f, 1.0f)
@@ -1711,6 +1717,10 @@ void App::refreshScale() {
 
 int App::run() {
     if (!init()) return opts_.bench || opts_.benchmark ? kExitNoRenderer : 1;
+    // A scripted or bench run asking for a shader tier where none can be made is skipped.
+    if (!opts_.quality.empty() && wantedQuality() != gpu::Quality::Classic && worldView_ &&
+        worldView_->quality() == gpu::Quality::Classic && (opts_.script || opts_.bench))
+        return kExitNoRenderer;
     if (opts_.script) {
         auto text = readTextFile(*opts_.script);
         auto parsed = text ? parseScript(*text) : std::unexpected(text.error());

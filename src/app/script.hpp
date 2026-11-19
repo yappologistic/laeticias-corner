@@ -24,7 +24,7 @@
 //                               reduce_motion, grid, vsync, chatty, quiet, replay, done, resume,
 //                               pause_settings, postcards, back_to_worlds, pause_quit, skip_tour,
 //                               frame_prev, frame_next, caption, hide_bar, take, folder,
-//                               close_photo
+//                               close_photo, look, clouds
 //
 // Commands:
 //   move P                  pointer motion
@@ -42,6 +42,7 @@
 //   set clock PHASE|auto    pin the clock to day/dusk/night/dawn instantly, or unpin
 //   set rain on|off         rain here, or the weather as it comes
 //   set weather natural|rain|clear
+//   set clouds on|shadows|off   the clouds setting (the deck and shadows, shadows, none)
 //   set time T              the time of day, 0..1 (0.2 mid-morning, 0.55 dusk, 0.75 midnight)
 //   set chatter chatty|quiet   the resident's idle remarks
 //   set camera TX TY ZOOM   look at tile (TX, TY) at a zoom level (0.25, 0.5, 1, 2, 3)
@@ -79,6 +80,7 @@
 //       world NAME... (the open world's name) | fresh yes|no (an unbegun preview)
 //       card N NAME... (the N-th world on the worlds screen, newest first)
 //       volume music|effects|ambience N | reduce_motion yes|no | ui_scale N | vsync yes|no
+//       look classic|low|medium|high (the Look in effect) | clouds on|shadows|off (the setting)
 //       frame ID (the postcard frame) | caption yes|no | postcards N (files in its folder)
 //       seen VISITOR [yes|no] | undo yes|no | redo yes|no | photos N | muted yes|no | rain on|off
 //       present VISITOR N (how many are on the map now) | habitat ok (every critter stands
