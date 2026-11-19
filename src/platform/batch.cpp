@@ -10,7 +10,8 @@ constexpr std::size_t kMaxIndices = kMaxVerts * 3 / 2;
 } // namespace
 
 Batch::Batch(SDL_Renderer* renderer)
-    : renderer_(renderer), verts_(kMaxVerts), indices_(kMaxIndices) {}
+    : renderer_(renderer), verts_(std::make_unique_for_overwrite<SDL_Vertex[]>(kMaxVerts)),
+      indices_(std::make_unique_for_overwrite<int[]>(kMaxIndices)) {}
 
 void Batch::use(SDL_Texture* texture, SDL_BlendMode mode, SDL_ScaleMode scale) {
     if (texture == texture_ && mode == mode_ && (texture == nullptr || scale == scale_)) return;
@@ -36,7 +37,7 @@ void Batch::submit(const SDL_Vertex* verts, int vertCount, const int* indices, i
 
 void Batch::flush() {
     if (indexCount_ == 0) return;
-    submit(verts_.data(), static_cast<int>(vertCount_), indices_.data(),
+    submit(verts_.get(), static_cast<int>(vertCount_), indices_.get(),
            static_cast<int>(indexCount_));
     vertCount_ = 0;
     indexCount_ = 0;
@@ -52,8 +53,8 @@ void Batch::triangles(const SDL_Vertex* verts, int vertCount, const int* indices
         return;
     }
     const int base = static_cast<int>(vertCount_);
-    std::copy_n(verts, nv, verts_.data() + vertCount_);
-    int* out = indices_.data() + indexCount_;
+    std::copy_n(verts, nv, verts_.get() + vertCount_);
+    int* out = indices_.get() + indexCount_;
     for (std::size_t i = 0; i < ni; ++i) out[i] = base + indices[i];
     vertCount_ += nv;
     indexCount_ += ni;
@@ -63,12 +64,12 @@ void Batch::quad(const SDL_FPoint (&p)[4], UvRect uv, SDL_FColor color) {
     // The hot path of every frame: written straight into the arrays.
     if (vertCount_ + 4 > kMaxVerts || indexCount_ + 6 > kMaxIndices) flush();
     const int base = static_cast<int>(vertCount_);
-    SDL_Vertex* v = verts_.data() + vertCount_;
+    SDL_Vertex* v = verts_.get() + vertCount_;
     v[0] = {p[0], color, {uv.u0, uv.v0}};
     v[1] = {p[1], color, {uv.u1, uv.v0}};
     v[2] = {p[2], color, {uv.u1, uv.v1}};
     v[3] = {p[3], color, {uv.u0, uv.v1}};
-    int* i = indices_.data() + indexCount_;
+    int* i = indices_.get() + indexCount_;
     i[0] = base;
     i[1] = base + 1;
     i[2] = base + 2;

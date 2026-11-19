@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 
 #include <cstddef>
+#include <memory>
 #include <vector>
 
 namespace lc {
@@ -47,9 +48,10 @@ private:
     void submit(const SDL_Vertex* verts, int vertCount, const int* indices, int indexCount);
 
     // Whole arrays made once and written by position: every sprite of every frame goes
-    // through here, and a growing vector would test its capacity ten times a quad.
-    std::vector<SDL_Vertex> verts_;
-    std::vector<int> indices_;
+    // through here, and a growing vector would test its capacity ten times a quad. Made
+    // without being filled, so only what a frame writes is ever touched.
+    std::unique_ptr<SDL_Vertex[]> verts_;
+    std::unique_ptr<int[]> indices_;
     std::size_t vertCount_ = 0;
     std::size_t indexCount_ = 0;
     int drawCalls_ = 0;

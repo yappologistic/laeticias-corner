@@ -64,7 +64,10 @@ inline constexpr int kUploadRows = 64; // a slice: 1 MB of a 4096-wide page (abo
 // waiting for than for one loaded ahead of need.
 inline constexpr double kUploadMsWanted = 1.5;
 inline constexpr double kUploadMsAhead = 0.5;
-inline constexpr int kPagesInFlight = 2;         // decoded or decoding, not yet in their slot
+inline constexpr int kPagesInFlight = 2; // decoded or decoding, not yet in their slot
+// Pages nobody waits for come one at a time: each on its way holds its 64 MiB beside the
+// textures already filled, which is where the process's memory peaked.
+inline constexpr int kPagesInFlightAhead = 1;
 inline constexpr double kPageIdleSeconds = 10.0; // unused this long: may be evicted
 inline constexpr int kNeededSetGrow = 64;        // tiles around the view whose sets load
 inline constexpr int kNeededSetSpacing = 8;      // district sampling step, tiles

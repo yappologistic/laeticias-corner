@@ -246,10 +246,33 @@ void PageAtlas::want(std::string_view set) {
         if (p.state != State::Fixed && p.set == set) p.wanted = true;
 }
 
+namespace {
+
+// A decoded image with its pixels laid out as the textures' are. A PNG loads as R, G, B, A
+// bytes and the textures are ARGB words: the two differ by red and blue changing places, done
+// where the pixels are, so a 64 MiB page is never held twice while it is on its way (that
+// second copy was the peak of the process's memory). The surface still names the format it was
+// loaded in: only its pixels, pitch and size are read from here on.
+SurfacePtr inTextureLayout(SurfacePtr px) {
+    if (!px || px->format == kTextureFormat) return px;
+    static_assert(kTextureFormat == SDL_PIXELFORMAT_ARGB8888);
+    if (px->format != SDL_PIXELFORMAT_ABGR8888)
+        return SurfacePtr{SDL_ConvertSurface(px.get(), kTextureFormat)};
+    for (int y = 0; y < px->h; ++y) {
+        auto* row = reinterpret_cast<std::uint32_t*>(static_cast<std::uint8_t*>(px->pixels) +
+                                                     static_cast<std::ptrdiff_t>(y) * px->pitch);
+        for (int x = 0; x < px->w; ++x) {
+            const std::uint32_t v = row[x];
+            row[x] = (v & 0xFF00FF00u) | ((v & 0xFFu) << 16) | ((v >> 16) & 0xFFu);
+        }
+    }
+    return px;
+}
+
+} // namespace
+
 SurfacePtr PageAtlas::decode(const Page& p, float* peak, std::vector<std::uint64_t>& opaque) const {
-    SurfacePtr loaded{SDL_LoadPNG(p.file.string().c_str())};
-    SurfacePtr px;
-    if (loaded) px.reset(SDL_ConvertSurface(loaded.get(), kTextureFormat));
+    SurfacePtr px = inTextureLayout(SurfacePtr{SDL_LoadPNG(p.file.string().c_str())});
     if (!px) {
         SDL_Log("atlas: cannot decode %s: %s", p.file.string().c_str(), SDL_GetError());
         return px;
@@ -311,9 +334,7 @@ bool PageAtlas::drawsAt(const SpriteRef& s, float x, float y) const {
 }
 
 SurfacePtr PageAtlas::decodePage(std::uint16_t page) const {
-    SurfacePtr loaded{SDL_LoadPNG(pages_[page].file.string().c_str())};
-    if (!loaded) return {};
-    return SurfacePtr{SDL_ConvertSurface(loaded.get(), kTextureFormat)};
+    return inTextureLayout(SurfacePtr{SDL_LoadPNG(pages_[page].file.string().c_str())});
 }
 
 void PageAtlas::work(const std::stop_token& stop) {
@@ -414,7 +435,7 @@ void PageAtlas::update(double now) {
         for (std::size_t i = 0; i < pages_.size() && !waiting; ++i) {
             const Page& p = pages_[i];
             if (p.state != State::Unloaded || p.w <= 0) continue;
-            if (inFlight >= tuning::kPagesInFlight) break;
+            if (inFlight >= tuning::kPagesInFlightAhead) break;
             if (!p.own && held >= slotLimit_) continue; // no slot free for it
             held += p.own ? 0 : 1;
             start(i);
