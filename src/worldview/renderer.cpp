@@ -799,9 +799,13 @@ double WorldView::buildLimit(int rank) const {
     if (!async_) return 1e9;
     // A moving view needs its ring soon: it builds at the pace of what is needed.
     const bool moving = velocity_.x != 0 || velocity_.y != 0;
-    if (rank <= kRankArrival || (rank == kRankRing && moving)) return tuning::kBuildMsNeeded;
-    return std::clamp(tuning::kFrameCpuRoomMs - frameCost_, tuning::kBuildMsAheadMin,
-                      tuning::kBuildMsAhead);
+    if (rank == kRankView || (rank == kRankRing && moving)) return tuning::kBuildMsNeeded;
+    // A destination is not seen yet (a veil is over it, or the zoom is still on its way): it
+    // is built in the time the frame leaves, never slower than its floor.
+    const double room = tuning::kFrameCpuRoomMs - frameCost_;
+    if (rank == kRankArrival)
+        return std::clamp(room, tuning::kBuildMsArrivalMin, tuning::kBuildMsNeeded);
+    return std::clamp(room, tuning::kBuildMsAheadMin, tuning::kBuildMsAhead);
 }
 
 void WorldView::progressImpostors() {
@@ -876,7 +880,11 @@ void WorldView::wantCells(const FRect& rect, int level, int rank) {
         // there is room, so a loop that fits is built once.
         const int next = cellFrame(level, k.cx, k.cy, 1);
         if (next == k.frame) return;
-        wants_.push_back({{k.level, k.cx, k.cy, next}, kRankRing});
+        // While the view moves, a cell that has just come in is one that may soon be gone: the
+        // other steps of its water are built in the time frames leave (it shows the step it
+        // has meanwhile), not at the pace of what is needed.
+        const bool moving = velocity_.x != 0 || velocity_.y != 0;
+        wants_.push_back({{k.level, k.cx, k.cy, next}, moving ? kRankAhead : kRankRing});
         for (int f = 0; f < animPeriod_; ++f)
             if (f != k.frame && f != next) wants_.push_back({{k.level, k.cx, k.cy, f}, kRankAhead});
     });

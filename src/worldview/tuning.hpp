@@ -45,6 +45,7 @@ inline constexpr double kBuildMsAhead = 1.0;
 // Never less than the floor, so the cache always fills.
 inline constexpr double kFrameCpuRoomMs = 1.5;
 inline constexpr double kBuildMsAheadMin = 0.2;
+inline constexpr double kBuildMsArrivalMin = 1.0; // a destination on its way (a journey, a zoom)
 // The ring leans toward where the view is going: this many frames of its motion ahead, at most
 // kCellAheadMax cells.
 inline constexpr float kCellAheadFrames = 24.0f;
@@ -217,7 +218,7 @@ inline constexpr float kDripAfter = 60.0f; // s drops keep falling after the rai
 inline constexpr float kDripMin = 0.4f;    // s between drops
 inline constexpr float kDripMax = 2.5f;
 inline constexpr float kDrip = 0.35f;
-inline constexpr float kLayerFull = 4.0f;        // a quarter of the view fresh water: full layer
+inline constexpr float kLayerFull = 4.0f; // a quarter of the view fresh water: full layer
 
 // Fallback shadow opacity when no resident page measured one.
 inline constexpr float kShadowOpacity = 0.4f;
