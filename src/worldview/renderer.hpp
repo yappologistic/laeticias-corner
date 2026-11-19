@@ -349,7 +349,7 @@ private:
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
     // Open sea beyond the grid, deep and fading into haze with the distance from its edge.
     // (`haze`: the haze over it, drawn after all of the water.)
-    bool drawBeyond(TilePos p, const Xform& x, bool haze);
+    bool drawBeyond(TilePos p, const Xform& x, bool haze, float now, bool* animated);
     bool drawElem(const Elem& e, const Xform& x, float now);
     // `actors`: with the live people's shadows (the frame, not a cached picture). `visible`:
     // the order's positions drawn this frame (empty: look at all of them).

@@ -422,7 +422,7 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
                 const Vec2 w = iso_.toWorld(p);
                 if (w.x + r.right >= px.x0 && w.x - r.left <= px.x1 && w.y + r.down >= px.y0 &&
                     w.y - iso_.tileH() <= px.y1)
-                    ok &= drawBeyond(p, x, haze);
+                    ok &= drawBeyond(p, x, haze, now, animated);
             });
         flushMarks(x);
     }
@@ -485,12 +485,22 @@ void WorldView::flushMarks(const Xform& x) {
     marks_.clear();
 }
 
-bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze) {
+bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze, float now, bool* animated) {
     const Vec2 a = iso_.toWorld(p);
     if (!haze) {
+        // Beyond the grid the sea runs on: a tile there is the deep sea among sea, drawn as
+        // the grid's own deepest water is (its art with every neighbour the same, at the
+        // step its loop is in), so the edge of the grid is nowhere to be seen. (The sea's
+        // art lies over another terrain's: its `base` is that terrain, sand, and was all
+        // that was drawn here.)
         if (sea_ < 0) return true;
         const float tint = 1.0f - tuning::kWaterDepthTint * 3.0f;
         const TerrainLook& look = sprites_->terrain(sea_);
+        if (look.hasOverlay()) {
+            if (look.animated() && animated != nullptr) *animated = true;
+            return put(look.overlayIn(kMaskN | kMaskE | kMaskS | kMaskW, season_).at(now, look.fps),
+                       a, x, {tint, tint, tint, 1}, SDL_BLENDMODE_BLEND);
+        }
         const std::vector<SpriteRef>& base = look.baseIn(season_);
         return base.empty()
                    ? put(sprites_->diamond(), a, x, times(look.flat, tint), SDL_BLENDMODE_BLEND)
