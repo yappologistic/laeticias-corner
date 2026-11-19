@@ -12,6 +12,7 @@
 #include "worldview/gather.hpp"
 #include "worldview/renderer.hpp"
 #include "worldview/soundscape.hpp"
+#include "worldview/terrain.hpp"
 #include "worldview/weather_field.hpp"
 
 #include <doctest.h>
@@ -763,4 +764,48 @@ TEST_CASE("render: no water face is a flat colour: every drop draws the falls' a
     CHECK(f.fps > 0);
     // Every slope shape of every terrain that slopes has its art (nothing warped as a stand-in).
     CHECK(r.view->sprites().flatSlopes().empty());
+}
+
+TEST_CASE("render: every place water steps down falls (QA V7-003's 74 front edges and more)") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::WorldMap& m = *r.world->map;
+    WaterKinds kinds;
+    for (std::size_t t = 0; t < m.terrainCount(); ++t) {
+        const world::TerrainInfo& info = m.terrainInfo(static_cast<int>(t));
+        kinds.channel.push_back(info.water && flowingWater(info.id));
+        kinds.bank.push_back(r.view->sprites().terrain(static_cast<int>(t)).faces[0] >= 0);
+    }
+    const auto water = [&](TilePos q) {
+        return m.inBounds(q) && m.terrainAt(q) != world::kNone &&
+               m.terrainInfo(m.terrainAt(q)).water;
+    };
+    int front = 0;
+    int all = 0;
+    int flat = 0;
+    for (int y = 0; y < m.height(); ++y)
+        for (int x = 0; x < m.width(); ++x) {
+            const TilePos p{x, y};
+            if (!water(p)) continue;
+            for (int d = 0; d < 4; ++d) {
+                const TilePos q{x + world::kSteps[std::size_t(d)].x,
+                                y + world::kSteps[std::size_t(d)].y};
+                if (!water(q) || m.level(q) >= m.level(p)) continue;
+                ++all;
+                front += d < 2 ? 1 : 0;
+                if (fallDrop(m, kinds, p, d) != m.level(p) - m.level(q)) ++flat;
+            }
+        }
+    MESSAGE(all << " water steps, " << front << " on front edges");
+    CHECK(front >= 74);
+    CHECK(flat == 0);
+    // The places the sweep named: the Zagros, the Iranian plateau, the Greek river mouth, the
+    // corner's stream mouth, the dell above the Tiber, the Syrian coast.
+    for (const TilePos p : {TilePos{294, 170}, TilePos{280, 167}, TilePos{254, 34},
+                            TilePos{296, 39}, TilePos{296, 40}, TilePos{341, 812},
+                            TilePos{52, 1255}, TilePos{23, 1177}, TilePos{295, 279}}) {
+        CAPTURE(p.x);
+        CAPTURE(p.y);
+        CHECK((fallDrop(m, kinds, p, 0) > 0 || fallDrop(m, kinds, p, 1) > 0));
+    }
 }

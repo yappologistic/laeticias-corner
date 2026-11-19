@@ -716,15 +716,21 @@ void WorldMap::shapeSlopesIn(TileRect area) {
                 continue;
             const int lv = levelOf(c.level[l]);
             if (lv == 0) continue;
-            int low = 0;
-            constexpr std::array<TilePos, 4> kCorner{{{-1, -1}, {1, -1}, {1, 1}, {-1, 1}}};
-            for (int k = 0; k < 4; ++k) {
-                const TilePos s = kCorner[static_cast<std::size_t>(k)];
-                for (const TilePos d : {TilePos{s.x, 0}, TilePos{0, s.y}, s}) {
-                    const TilePos q{x + d.x, y + d.y};
-                    if (levelAt(q) == lv - 1 && (heldAt(q) & kNoPull) == 0) low |= 1 << k;
-                }
+            // The eight neighbours once each (row by row from (-1, -1)): which pull a corner
+            // down. Corner k is touched by the cells listed for it.
+            unsigned pulls = 0;
+            for (int j = 0; j < 9; ++j) {
+                if (j == 4) continue;
+                const TilePos q{x + j % 3 - 1, y + j / 3 - 1};
+                if (levelAt(q) == lv - 1 && (heldAt(q) & kNoPull) == 0) pulls |= 1u << j;
             }
+            if (pulls == 0) continue;
+            static constexpr std::array<unsigned, 4> kTouch{
+                (1u << 0) | (1u << 1) | (1u << 3), (1u << 1) | (1u << 2) | (1u << 5),
+                (1u << 5) | (1u << 7) | (1u << 8), (1u << 3) | (1u << 6) | (1u << 7)};
+            int low = 0;
+            for (int k = 0; k < 4; ++k)
+                if ((pulls & kTouch[static_cast<std::size_t>(k)]) != 0) low |= 1 << k;
             c.slope[l] = static_cast<std::uint8_t>(low);
         }
     // Pass 2: tiles with every corner low become knolls or ridges (a ridge runs on through a

@@ -9,6 +9,7 @@
 
 #include <array>
 #include <string_view>
+#include <vector>
 
 namespace lc::worldview {
 
@@ -43,8 +44,23 @@ enum class FallPart : std::uint8_t { Rapid, Top, Mid, Foot };
 // The overlay mask of tile p of terrain t: its same-terrain neighbours (N 1, E 2, S 4, W 8);
 // waters count as one water for each other's edges, and the sea runs on beyond the grid.
 [[nodiscard]] int overlayMask(const world::WorldMap& m, TilePos p, int t);
+// The same with the neighbours of terrain `except` (and the grid's outside when `except` is the
+// sea's) not counting as the same: shallows round off against the deep sea drawn under them.
+[[nodiscard]] int overlayMaskExcept(const world::WorldMap& m, TilePos p, int t, int except);
 // Water that flows (rivers, canals, channels, streams): its level byte's aux is its direction.
 [[nodiscard]] bool flowingWater(std::string_view terrainId);
+
+// What decides how water steps down (art §4), per terrain: water that flows (its level byte's
+// aux is its direction), and water whose base has a face material of its own (its bank).
+struct WaterKinds {
+    std::vector<bool> channel;
+    std::vector<bool> bank;
+};
+// The drop in levels of the fall from water tile p over its side toward kSteps[dir], 0 for none:
+// a lower water neighbour (beyond the grid, the sea at level 0), or lower land where the water
+// leaves by that side (its flow) or its bank has no face to show. A fall is drawn as falling
+// water; every other drop of a water tile shows its bank's face.
+[[nodiscard]] int fallDrop(const world::WorldMap& m, const WaterKinds& w, TilePos p, int dir);
 
 // A slow, smooth field over the grid in [0, 1] (two octaves of value noise, about 7 and 17
 // tiles across): the ground's lightness leans with it so that no stretch of ground repeats its

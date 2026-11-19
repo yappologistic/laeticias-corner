@@ -89,11 +89,47 @@ int overlayMask(const world::WorldMap& m, TilePos p, int t) {
     return mask;
 }
 
+int overlayMaskExcept(const world::WorldMap& m, TilePos p, int t, int except) {
+    int mask = 0;
+    const bool water = m.terrainInfo(t).water;
+    const auto same = [&](int dx, int dy) {
+        const TilePos n{p.x + dx, p.y + dy};
+        if (!m.inBounds(n)) return false; // the deep sea beyond the grid
+        const int nt = m.terrainAt(n);
+        return nt == t ||
+               (water && nt != world::kNone && nt != except && m.terrainInfo(nt).water);
+    };
+    if (same(0, -1)) mask |= kMaskN;
+    if (same(1, 0)) mask |= kMaskE;
+    if (same(0, 1)) mask |= kMaskS;
+    if (same(-1, 0)) mask |= kMaskW;
+    return mask;
+}
+
 bool flowingWater(std::string_view id) {
     return id.find("river") != std::string_view::npos ||
            id.find("channel") != std::string_view::npos ||
            id.find("stream") != std::string_view::npos ||
            id.find("canal") != std::string_view::npos;
+}
+
+int fallDrop(const world::WorldMap& m, const WaterKinds& w, TilePos p, int dir) {
+    const int level = m.level(p);
+    if (level == 0) return 0;
+    const TilePos q{p.x + world::kSteps[static_cast<std::size_t>(dir)].x,
+                    p.y + world::kSteps[static_cast<std::size_t>(dir)].y};
+    if (!m.inBounds(q)) return level; // the sea beyond the grid
+    const int qt = m.terrainAt(q);
+    if (qt == world::kNone) return 0;
+    if (m.terrainInfo(qt).water) return std::max(0, level - m.level(q));
+    // Onto land: the neighbour's corners on the shared edge (+x, +y, -x, -y).
+    static constexpr std::array<std::array<int, 2>, 4> kFar{{{0, 3}, {0, 1}, {1, 2}, {3, 2}}};
+    const auto& fc = kFar[static_cast<std::size_t>(dir)];
+    const int drop = level - std::min(m.cornerLevel(q, fc[0]), m.cornerLevel(q, fc[1]));
+    if (drop <= 0) return 0;
+    const auto t = static_cast<std::size_t>(m.terrainAt(p));
+    const bool flows = w.channel[t] && world::auxOf(m.levelByte(p)) == ((dir + 1) & 3);
+    return flows || !w.bank[t] ? drop : 0;
 }
 
 float groundMacro(Vec2 tile) {

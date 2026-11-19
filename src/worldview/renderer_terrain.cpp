@@ -30,8 +30,6 @@ SDL_FColor times(SDL_FColor c, float k) {
 // neighbour's corners at the same two points.
 constexpr std::array<std::array<int, 4>, 2> kEdgeCorners{{{2, 1, 3, 0}, {2, 3, 1, 0}}};
 
-// The neighbour's corners on the edge shared with tile p toward kSteps[dir].
-constexpr std::array<std::array<int, 2>, 4> kFarCorners{{{0, 3}, {0, 1}, {1, 2}, {3, 2}}};
 
 } // namespace
 
@@ -111,9 +109,30 @@ bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<c
     return true;
 }
 
+float WorldView::depthAt(Vec2 tile) const {
+    const float fx = tile.x - 0.5f;
+    const float fy = tile.y - 0.5f;
+    const int x0 = static_cast<int>(std::floor(fx));
+    const int y0 = static_cast<int>(std::floor(fy));
+    const float tx = fx - static_cast<float>(x0);
+    const float ty = fy - static_cast<float>(y0);
+    const auto at = [&](int x, int y) {
+        const TilePos q{x, y};
+        if (!map_.inBounds(q)) return 3.0f;
+        const int t = map_.terrainAt(q);
+        if (t == world::kNone || !map_.terrainInfo(t).water ||
+            waterKinds_.channel[static_cast<std::size_t>(t)])
+            return 0.0f;
+        return static_cast<float>(world::auxOf(map_.levelByte(q)));
+    };
+    const float top = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * tx;
+    const float bottom = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * tx;
+    return top + (bottom - top) * ty;
+}
+
 bool WorldView::drawGround(const TileCtx& c, const SpriteRef& s, Vec2 anchor, const Xform& x,
                            float k) {
-    if (!c.macro) return put(s, anchor, x, grey(k), SDL_BLENDMODE_BLEND);
+    if (!c.macro && !c.depth) return put(s, anchor, x, grey(k), SDL_BLENDMODE_BLEND);
     // The sprite's quad with the slow field at its corners (sampled on the tile's ground plane).
     const float x0 = anchor.x - s.ox;
     const float y0 = anchor.y - s.oy;
@@ -124,7 +143,9 @@ bool WorldView::drawGround(const TileCtx& c, const SpriteRef& s, Vec2 anchor, co
         {{s.uv.u0, s.uv.v0}, {s.uv.u1, s.uv.v0}, {s.uv.u1, s.uv.v1}, {s.uv.u0, s.uv.v1}}};
     std::array<SDL_Vertex, 4> v{};
     for (std::size_t i = 0; i < 4; ++i) {
-        const float m = k * macroAt(iso_.toTile({corner[i].x, corner[i].y + raise}));
+        const Vec2 at = iso_.toTile({corner[i].x, corner[i].y + raise});
+        const float m =
+            c.depth ? 1.0f - tuning::kWaterDepthTint * depthAt(at) : k * macroAt(at);
         v[i] = {{corner[i].x, corner[i].y}, {m, m, m, 1}, uv[i]};
     }
     static constexpr std::array<int, 6> kQuad{0, 1, 2, 0, 2, 3};
@@ -306,23 +327,7 @@ bool WorldView::drawFaces(const TileCtx& c, const MaterialLook* mat, const Xform
 }
 
 int WorldView::fallDrop(TilePos p, int dir) const {
-    const int level = map_.level(p);
-    if (level == 0) return 0;
-    const TilePos q{p.x + world::kSteps[static_cast<std::size_t>(dir)].x,
-                    p.y + world::kSteps[static_cast<std::size_t>(dir)].y};
-    if (!map_.inBounds(q)) return level; // the sea beyond the grid
-    const int qt = map_.terrainAt(q);
-    if (qt == world::kNone) return 0;
-    if (sprites_->terrain(qt).water) return std::max(0, level - map_.level(q));
-    // Onto land: only where the water leaves by that side (its flow), or where its bank has no
-    // face of its own to show.
-    const auto& fc = kFarCorners[static_cast<std::size_t>(dir)];
-    const int drop = level - std::min(map_.cornerLevel(q, fc[0]), map_.cornerLevel(q, fc[1]));
-    if (drop <= 0) return 0;
-    const int t = map_.terrainAt(p);
-    const bool flows =
-        channel_[static_cast<std::size_t>(t)] && world::auxOf(map_.levelByte(p)) == ((dir + 1) & 3);
-    return flows || sprites_->terrain(t).faces[0] < 0 ? drop : 0;
+    return worldview::fallDrop(map_, waterKinds_, p, dir);
 }
 
 bool WorldView::drawFallFaces(const TileCtx& c, const Xform& x, float now, bool* animated,

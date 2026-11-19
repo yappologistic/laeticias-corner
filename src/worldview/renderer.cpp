@@ -129,10 +129,13 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
                                          tuning::kPageCeiling, decoder_ != nullptr);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_);
-    channel_.resize(map_.terrainCount());
-    for (std::size_t t = 0; t < map_.terrainCount(); ++t)
-        channel_[t] = map_.terrainInfo(static_cast<int>(t)).water &&
-                      flowingWater(map_.terrainInfo(static_cast<int>(t)).id);
+    waterKinds_.channel.resize(map_.terrainCount());
+    waterKinds_.bank.resize(map_.terrainCount());
+    for (std::size_t t = 0; t < map_.terrainCount(); ++t) {
+        const world::TerrainInfo& info = map_.terrainInfo(static_cast<int>(t));
+        waterKinds_.channel[t] = info.water && flowingWater(info.id);
+        waterKinds_.bank[t] = sprites_->terrain(static_cast<int>(t)).faces[0] >= 0;
+    }
     // Asynchronous runs build the overview on a worker from the start; synchronous ones only
     // when a frame needs it (it stands in for cells not built yet, which they never have).
     if (async) overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async);
@@ -414,8 +417,12 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
         const Vec2 w = iso_.toWorld(p);
         return Vec2{w.x, w.y - static_cast<float>(c.level * lvl_)};
     }();
-    c.tint = look.water ? 1.0f - tuning::kWaterDepthTint * static_cast<float>(c.aux) : 1.0f;
+    // Depth tints still water by its aux (a river's aux is its flow: no tint); on Classic it
+    // is blended between tiles (the shader path draws depth in its water pass).
+    const bool still = look.water && !waterKinds_.channel[static_cast<std::size_t>(t)];
+    c.tint = still ? 1.0f - tuning::kWaterDepthTint * static_cast<float>(c.aux) : 1.0f;
     c.macro = !look.water && !hole_.tiles.contains(p);
+    c.depth = still && !post_;
     // Land hangs its own face material; water its bank's (the base under it) where it stands
     // over land it does not flow onto, and falls everywhere else it steps down.
     const int face = look.faces[static_cast<std::size_t>(look.water ? 0 : c.aux)];
@@ -453,10 +460,23 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
             if (look.hasOverlay()) {
                 const int mask = overlayMask(map_, p, t);
                 // The interior's looks are picked per tile (V6-004); seasonal looks keep theirs.
-                const Frames& f = mask == 15 && !look.interior.empty() &&
+                // Classic: shallows meeting the deep sea round off over the sea's own water
+                // instead of stepping in whole diamonds (QA V7-017).
+                const int own = c.depth && sea_ >= 0 && t != sea_
+                                    ? overlayMaskExcept(map_, p, t, sea_)
+                                    : mask;
+                if (own != mask) {
+                    const TerrainLook& sea = sprites_->terrain(sea_);
+                    if (sea.hasOverlay()) {
+                        ok &= drawGround(c, sea.overlayIn(mask, lookSeason_).at(now, sea.fps),
+                                         c.a, x, c.tint);
+                        if (sea.animated() && animated != nullptr) *animated = true;
+                    }
+                }
+                const Frames& f = own == 15 && !look.interior.empty() &&
                                           &look.overlayIn(15, lookSeason_) == &look.overlay[15]
                                       ? look.interior[tileHash(p.x, p.y, 11) % look.interior.size()]
-                                      : look.overlayIn(mask, lookSeason_);
+                                      : look.overlayIn(own, lookSeason_);
                 ok &= drawGround(c, f.at(now, look.fps), c.a, x, c.tint);
                 if (post_ && look.water) markWater(f.at(now, look.fps), c.a);
                 if (look.animated() && animated != nullptr) *animated = true;

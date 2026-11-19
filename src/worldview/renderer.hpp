@@ -391,6 +391,7 @@ private:
         world::Slope slope = world::Slope::Flat;
         float tint = 1;     // the water's depth tint, the land's slow lightness field
         bool macro = false; // the slow field applies (land, away from the home's own ground)
+        bool depth = false; // Classic, still water: its depth tint blended between tiles
     };
     // `skip`: sides (bit 0 +x, bit 1 +y) drawn otherwise (falling water). `cap`: per side, the
     // band the cap replaces, -1 for none.
@@ -411,6 +412,9 @@ private:
     // none: a lower water neighbour, or lower land where the water leaves by that side.
     [[nodiscard]] int fallDrop(TilePos p, int dir) const;
     [[nodiscard]] float macroAt(Vec2 tile) const;
+    // Still water's depth (the sea's bands in its aux, 0..3) at a point, blended between the
+    // centres of the tiles round it: shore and flowing water count as 0, beyond the grid as 3.
+    [[nodiscard]] float depthAt(Vec2 tile) const;
     // The sun the decode relights by (strength 0: as baked): flat sprites carried onto a slope
     // take the light its slope art takes under it.
     void setSlopeSun(const float dir[3], float strength);
@@ -750,7 +754,7 @@ private:
     std::vector<std::uint32_t> waterTexels_;
     std::vector<float> waterDist_;
     std::vector<std::uint8_t> waterKind_; // per terrain: 0 land, 1 water, 2 a channel
-    std::vector<bool> channel_;           // per terrain: water that flows (its aux: direction)
+    WaterKinds waterKinds_; // per terrain: water that flows, water with a bank of its own
     std::vector<std::array<float, 8>> slopeLights_; // per shape, its fan's light over flat's
     std::array<float, 4> slopeSun_{0, 0, 1, 0};     // the relight's sun (xyz) and strength (w)
     std::vector<SDL_Vertex> triVerts_;              // putWarped's mesh
