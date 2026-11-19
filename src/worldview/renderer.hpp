@@ -368,7 +368,7 @@ private:
     static constexpr std::uint32_t kRunFigure = 0xFFFFFFFEu;
     static constexpr std::uint32_t kRunTerrain = 0x80000000u; // + the tile's terrain
     PageRuns runs_;
-    std::vector<RunQuad> runQuads_; // by entry of runs_
+    std::vector<RunQuad> runQuads_;     // by entry of runs_
     std::uint32_t runWhat_ = kRunActor; // what put() is drawing for
     bool runsOpen_ = false;
     double frameCost_ = 0;
@@ -411,6 +411,9 @@ private:
     // none: a lower water neighbour, or lower land where the water leaves by that side.
     [[nodiscard]] int fallDrop(TilePos p, int dir) const;
     [[nodiscard]] float macroAt(Vec2 tile) const;
+    // The sun the decode relights by (strength 0: as baked): flat sprites carried onto a slope
+    // take the light its slope art takes under it.
+    void setSlopeSun(const float dir[3], float strength);
     // The overview image, built on first need in synchronous runs.
     Overview& overview();
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
@@ -749,6 +752,7 @@ private:
     std::vector<std::uint8_t> waterKind_; // per terrain: 0 land, 1 water, 2 a channel
     std::vector<bool> channel_;           // per terrain: water that flows (its aux: direction)
     std::vector<std::array<float, 8>> slopeLights_; // per shape, its fan's light over flat's
+    std::array<float, 4> slopeSun_{0, 0, 1, 0};     // the relight's sun (xyz) and strength (w)
     std::vector<SDL_Vertex> triVerts_;              // putWarped's mesh
     std::vector<int> triIdx_;
     std::vector<TilePos> itemWater_; // the items' water tiles, sorted (y, x)

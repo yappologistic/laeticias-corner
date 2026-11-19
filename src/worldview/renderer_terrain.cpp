@@ -35,6 +35,11 @@ constexpr std::array<std::array<int, 2>, 4> kFarCorners{{{0, 3}, {0, 1}, {1, 2},
 
 } // namespace
 
+void WorldView::setSlopeSun(const float dir[3], float strength) {
+    slopeSun_ = {dir[0], dir[1], dir[2], strength};
+    slopeLights_.clear(); // worked out again by the next mesh drawn
+}
+
 float WorldView::macroAt(Vec2 tile) const {
     // Fades out toward the home, whose own scene draws its ground without the field: no step at
     // the border.
@@ -56,7 +61,8 @@ bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<c
         decoder_ && s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
     if (packed) {
         if (mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
-        for (SDL_Vertex& p : v) p.color = packedColour(p.color, s.page == PageAtlas::kHomePage);
+        for (SDL_Vertex& p : v)
+            p.color = packedColour(p.color, s.page == PageAtlas::kHomePage, false);
     }
     for (SDL_Vertex& p : v) {
         const Vec2 w = x.apply({p.position.x, p.position.y});
@@ -131,7 +137,8 @@ bool WorldView::putWarped(const TileCtx& c, const SpriteRef& s, const Xform& x, 
         slopeLights_.resize(world::kSlopeCount);
         for (int sh = 0; sh < world::kSlopeCount; ++sh)
             slopeLights_[static_cast<std::size_t>(sh)] =
-                slopeLight(world::Slope(sh), static_cast<float>(lvl_) / iso_.hw);
+                slopeLight(world::Slope(sh), static_cast<float>(lvl_) / iso_.hw, slopeSun_.data(),
+                           slopeSun_[3]);
     }
     const world::SlopeGrid& h = world::slopeGrid(c.slope);
     const std::array<float, 8>& light = slopeLights_[static_cast<std::size_t>(c.slope)];

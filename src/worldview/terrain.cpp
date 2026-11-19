@@ -1,6 +1,8 @@
 #include "worldview/terrain.hpp"
 
 #include "core/rng.hpp"
+#include "render/gpu/look.hpp"
+#include "render/gpu/tuning.hpp"
 #include "worldview/tuning.hpp"
 
 #include <algorithm>
@@ -19,14 +21,16 @@ EdgeFace edgeFace(int level, int aS, int aFar, int bS, int bFar) {
     return f;
 }
 
-std::array<float, 8> slopeLight(world::Slope s, float levelUnits) {
+std::array<float, 8> slopeLight(world::Slope s, float levelUnits, const float* sun,
+                                float strength) {
     const world::SlopeGrid& h = world::slopeGrid(s);
-    const float sun[3] = {-0.45f, 0.28f, 0.85f};
-    const float sl = std::sqrt(sun[0] * sun[0] + sun[1] * sun[1] + sun[2] * sun[2]);
-    const auto light = [&](float nx, float ny, float nz) {
-        return 0.42f + 0.58f * std::max(0.0f, (nx * sun[0] + ny * sun[1] + nz * sun[2]) / sl);
+    const float* baked = gpu::kBakedSun;
+    const auto light = [](const float* d, float nx, float ny, float nz) {
+        const float dl = std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+        return 0.42f + 0.58f * std::max(0.0f, (nx * d[0] + ny * d[1] + nz * d[2]) / dl);
     };
-    const float flat = light(0, 0, 1);
+    const float flat = light(baked, 0, 0, 1);
+    const float flatNow = sun != nullptr ? light(sun, 0, 0, 1) : flat;
     std::array<float, 8> out{};
     for (std::size_t t = 0; t < 8; ++t) {
         float p[3][3];
@@ -46,7 +50,17 @@ std::array<float, 8> slopeLight(world::Slope s, float levelUnits) {
             continue;
         }
         const float up = n[2] < 0 ? -1.0f : 1.0f;
-        out[t] = light(n[0] * up / len, n[1] * up / len, n[2] * up / len) / flat;
+        const float nx = n[0] * up / len;
+        const float ny = n[1] * up / len;
+        const float nz = n[2] * up / len;
+        const float bakedRatio = light(baked, nx, ny, nz) / flat;
+        out[t] = bakedRatio;
+        if (sun != nullptr && strength > 0) {
+            const float now = light(sun, nx, ny, nz) / flatNow;
+            const float k = std::clamp(1.0f + (now / bakedRatio - 1.0f) * strength,
+                                       1.0f / gpu::tuning::kRelightMax, gpu::tuning::kRelightLift);
+            out[t] = bakedRatio * k;
+        }
     }
     return out;
 }

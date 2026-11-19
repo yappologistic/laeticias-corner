@@ -29,7 +29,11 @@ struct EdgeFace {
 // The light of each fan triangle of a slope over the light of flat ground (the art's baked sun,
 // `0.42 + 0.58 max(0, n.S)` with S from the upper left), for warping flat sprites onto it so
 // they match the baked slope art. `levelUnits`: a level's height in units where a tile edge is 1.
-[[nodiscard]] std::array<float, 8> slopeLight(world::Slope s, float levelUnits);
+// With a sun (grid axes, toward it; `strength` 0..1), the same light as the shader path's relight
+// gives the slope art under that sun (render/gpu/tuning.hpp: the ratio to the baked light, mixed
+// by strength, kept between 1 / kRelightMax and kRelightLift).
+[[nodiscard]] std::array<float, 8> slopeLight(world::Slope s, float levelUnits,
+                                              const float* sun = nullptr, float strength = 0);
 
 // Water stepping down across one front edge (art §4): what each band of the drop draws.
 enum class FallPart : std::uint8_t { Rapid, Top, Mid, Foot };

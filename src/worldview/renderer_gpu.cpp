@@ -376,6 +376,7 @@ void WorldView::sunGpu(double clock) {
             const float up[3] = {0, 0, 1};
             decoder_->setSun(up, 0, 0);
             sunStep_ = -1;
+            setSlopeSun(up, 0);
             staleCells();
         }
         return;
@@ -397,6 +398,7 @@ void WorldView::sunGpu(double clock) {
     for (int i = 0; i < 4; ++i)
         stepShadows_.m[i] = id[i] + (stepShadows_.m[i] - id[i]) * sun.strength;
     if (decoder_) decoder_->setSun(sun.dir, sun.strength, t::kContact);
+    setSlopeSun(sun.dir, sun.strength);
     staleCells();
 }
 
