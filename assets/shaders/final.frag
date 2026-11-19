@@ -117,6 +117,9 @@ void main() {
     ivec2 bc = ivec2(mod(floor(w), 4.0));
     float dither = kBayer[bc.x][bc.y];
     float t = tiles.w;
+    // Ripples, foam, rain rings and glints are whole art pixels: zoomed out (an art pixel under a
+    // target pixel) they would be smaller than a pixel, so they are not worked out at all.
+    bool fine = world.z >= 1.0;
     bool wet = shallow.w > 0.0 && isWater(s.a, albedo);
     float band = 0.0;
     float rip = 0.5;
@@ -156,12 +159,14 @@ void main() {
         vec2 fq = flow.x * vec2(tiles.x, 2.0 * tiles.y) + flow.y * vec2(-tiles.x, 2.0 * tiles.y);
         // A ripple advected along the flow in two phases half a cycle apart, cross-faded: it
         // moves forever and never stretches; still water stirs slowly.
-        float ph0 = fract(t * 0.25);
-        float ph1 = fract(t * 0.25 + 0.5);
-        vec2 stir = vec2(t * 3.0, t * 1.7);
-        float r0 = fbm2((q - fq * ph0 * 4.0 + stir) * vec2(0.045, 0.11));
-        float r1 = fbm2((q - fq * ph1 * 4.0 + stir + 31.7) * vec2(0.045, 0.11));
-        rip = mix(r0, r1, abs(ph0 * 2.0 - 1.0));
+        if (fine) {
+            float ph0 = fract(t * 0.25);
+            float ph1 = fract(t * 0.25 + 0.5);
+            vec2 stir = vec2(t * 3.0, t * 1.7);
+            float r0 = fbm2((q - fq * ph0 * 4.0 + stir) * vec2(0.045, 0.11));
+            float r1 = fbm2((q - fq * ph1 * 4.0 + stir + 31.7) * vec2(0.045, 0.11));
+            rip = mix(r0, r1, abs(ph0 * 2.0 - 1.0));
+        }
         // A few hard depth bands from the shore, their edges wobbling slowly; channels are clear
         // and dark (a narrow channel all shallow and foamy read milky).
         float wob = (noise(q * 0.018 + vec2(t * 0.05, -t * 0.03)) - 0.5) * 0.7;
@@ -172,7 +177,7 @@ void main() {
         body = mix(body, albedo, 0.12);
         body *= 0.93 + 0.14 * step(0.64, rip); // crests: faint lighter dashes in whole pixels
         // Rain rings, growing and fading.
-        if (cloud.z > 0.01) {
+        if (fine && cloud.z > 0.01) {
             vec2 rc = floor(q / 18.0);
             float rp = fract(t * 0.8 + hash(rc) * 5.0);
             vec2 centre = (rc + 0.25 + 0.5 * vec2(hash(rc + 1.3), hash(rc + 2.9))) * 18.0;
@@ -216,10 +221,11 @@ void main() {
             if (solid(texture(u_scene, (px + o * max(world.z, 1.0)) / texel.xy)))
                 shoreLine = 1.0;
         }
-        float breathe = 0.18 + 0.12 * sin(t * 0.9 + q.x * 0.03 + q.y * 0.02);
-        foam = channel ? 0.0
-                       : step(shore + wob * 0.3, breathe) *
-                             step(0.45, noise(q * 0.09 + vec2(t * 0.6, t * 0.2)));
+        if (fine && !channel) {
+            float breathe = 0.18 + 0.12 * sin(t * 0.9 + q.x * 0.03 + q.y * 0.02);
+            foam = step(shore + wob * 0.3, breathe) *
+                   step(0.45, noise(q * 0.09 + vec2(t * 0.6, t * 0.2)));
+        }
     }
     // The exposure follows the scene toward the hour's key: pale stone held down by day, dark
     // gardens lifted at night, each place keeping its own value structure.
@@ -228,7 +234,8 @@ void main() {
     float adapt = clamp(key.x / max(mean, 1e-3), key.y, key.z);
     float pivot = mix(0.5, clamp(mean * adapt, 0.3, 0.62), key.w);
     // Cloud shadows: the sun's share taken, cooler (a cloud's shadow lowers only the sun).
-    vec4 cl = texture(u_cloud, v_uv);
+    bool clouds = cloud.x > 0.0 || cloud.y > 0.0; // (none, or the setting is Off)
+    vec4 cl = clouds ? texture(u_cloud, v_uv) : vec4(0.0);
     // A hard edge dithered over a pixel or two, as the art draws a shadow (no airbrushed smudge).
     float shadowLevel = step(0.5 + (dither - 0.5) * 0.9, cl.a);
     albedo *= 1.0 - shadowLevel * cloud.y * vec3(1.0, 0.94, 0.82);
@@ -251,6 +258,8 @@ void main() {
         float lum = max(luma(c) * 1.6, 0.25);
         c = mix(c, white * lum, shoreLine * 0.5);
         c = mix(c, white * lum, foam * 0.5);
+    }
+    if (wet && fine && cloud.w > 0.0) {
         vec2 cq = q - vec2(t * 4.0, t * 2.0);
         vec2 cellq = floor(cq / vec2(22.0, 14.0));
         float hc = hash(cellq);
@@ -276,13 +285,16 @@ void main() {
     // The clouds over everything, drawn like the art: read on a grid of two art pixels, a hard
     // edge dithered over a pixel, three tones from the sunlit top to the shaded base, rain
     // clouds darker.
-    vec2 wS = (floor(w * 0.5) + 0.5) * 2.0;
-    vec4 cs = texture(u_cloud, (wS - world.xy) * world.z / texel.xy);
-    float seen = step(0.5 + (dither - 0.5) * 0.9, cs.r); // (a growing cloud fades in by dither)
-    float tone = floor(cs.g * 2.0 + dither * 0.999) * 0.5;
-    vec3 cloudColour = mix(deckBase.rgb, deck.rgb, tone) * (1.0 - 0.38 * cs.b);
-    c = mix(c, cloudColour, seen * cloud.x);
-    vec3 glow = g.rgb * texel.w + texture(u_bloom, v_uv).rgb * mixes.w;
+    if (cloud.x > 0.0) {
+        vec2 wS = (floor(w * 0.5) + 0.5) * 2.0;
+        vec4 cs = texture(u_cloud, (wS - world.xy) * world.z / texel.xy);
+        float seen = step(0.5 + (dither - 0.5) * 0.9, cs.r); // (a growing cloud fades in by dither)
+        float tone = floor(cs.g * 2.0 + dither * 0.999) * 0.5;
+        vec3 cloudColour = mix(deckBase.rgb, deck.rgb, tone) * (1.0 - 0.38 * cs.b);
+        c = mix(c, cloudColour, seen * cloud.x);
+    }
+    vec3 glow = g.rgb * texel.w;
+    if (mixes.w > 0.0) glow += texture(u_bloom, v_uv).rgb * mixes.w; // (Low has no bloom)
     float alpha = wet ? 1.0 : s.a;
     o_color = vec4(min(c, 1.0) * alpha + glow, alpha);
 }

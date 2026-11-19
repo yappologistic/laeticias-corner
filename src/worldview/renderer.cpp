@@ -349,15 +349,26 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
             });
         flushMarks(x);
     }
-    // Tiles on one diagonal never overlap, so water marks wait for the end of theirs (one blend
-    // switch a diagonal, not one a tile).
-    int diagonal = tiles.x0 + tiles.y0;
+    // Water marks wait until something drawn later could cover them: only a tile standing
+    // higher than marked water behind it reaches over it (tiles at its level or lower meet it
+    // edge to edge, and faces hang forward). On flat land a cell's marks go on in one draw.
+    const int tw = tiles.x1 - tiles.x0;
+    pendingWater_.assign(static_cast<std::size_t>(tw * (tiles.y1 - tiles.y0)), kNoWater);
+    int lowest = kNoWater;
+    const auto covers = [&](TilePos p, int level) {
+        const int reach = std::min(2 * (level - lowest) + 1, 8);
+        for (int b = 0; b <= reach; ++b)
+            for (int a = 0; a + b <= reach; ++a) {
+                const TilePos q{p.x - a, p.y - b};
+                if ((a == 0 && b == 0) || std::abs(a - b) > 2 || !tiles.contains(q)) continue;
+                const int lq = pendingWater_[static_cast<std::size_t>((q.y - tiles.y0) * tw +
+                                                                      (q.x - tiles.x0))];
+                if (lq != kNoWater && a + b <= 2 * (level - lq) + 1) return true;
+            }
+        return false;
+    };
     diagonals(tiles, iso_.hw, x0, x1, [&](TilePos p) {
         if (!map_.inBounds(p)) return;
-        if (p.x + p.y != diagonal) {
-            flushMarks(x);
-            diagonal = p.x + p.y;
-        }
         const Vec2 w = iso_.toWorld(p);
         // The game's scene draws the hole; its rim tiles are drawn here too, under the scene's,
         // so the soft edges of its tile art meet the world's ground, not the sky.
@@ -366,7 +377,19 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
         const float top = w.y - static_cast<float>(map_.level(p) * lvl_) - lift;
         if (w.x + r.right < px.x0 || w.x - r.left > px.x1 || w.y + r.down < px.y0 || top > px.y1)
             return;
+        const int level = map_.level(p);
+        if (!marks_.empty() && level > lowest && covers(p, level)) {
+            flushMarks(x);
+            std::ranges::fill(pendingWater_, kNoWater);
+            lowest = kNoWater;
+        }
+        const std::size_t before = marks_.size();
         ok &= drawTile(p, x, now, animated);
+        if (marks_.size() > before) {
+            pendingWater_[static_cast<std::size_t>((p.y - tiles.y0) * tw + (p.x - tiles.x0))] =
+                static_cast<std::uint8_t>(level);
+            lowest = std::min(lowest, level);
+        }
     });
     flushMarks(x);
     return ok;
@@ -1455,6 +1478,35 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     stats_.overviewBytes = overview_ && overview_->texture() != nullptr ? overview_->bytes() : 0;
     stats_.pages = pages_->stats();
     stats_.targetBytes = targetBytes();
+}
+
+float WorldView::partialAlpha(SDL_Rect window) {
+    if (!present_.valid || !view_.texture) return 0;
+    const Present& p = present_;
+    const auto at = [&](float w, float topLeft, float origin) {
+        return static_cast<int>(std::floor((w / p.scale + topLeft - origin) * p.res));
+    };
+    const int x0 = std::clamp(at(static_cast<float>(window.x), p.topLeft.x, p.origin.x), 0, viewW_);
+    const int y0 = std::clamp(at(static_cast<float>(window.y), p.topLeft.y, p.origin.y), 0, viewH_);
+    const int x1 =
+        std::clamp(at(static_cast<float>(window.x + window.w), p.topLeft.x, p.origin.x), 0, viewW_);
+    const int y1 =
+        std::clamp(at(static_cast<float>(window.y + window.h), p.topLeft.y, p.origin.y), 0, viewH_);
+    if (x1 <= x0 || y1 <= y0) return 0;
+    SDL_Texture* was = SDL_GetRenderTarget(renderer_);
+    if (!SDL_SetRenderTarget(renderer_, view_.texture.get())) return 0;
+    const SDL_Rect r{x0, y0, x1 - x0, y1 - y0};
+    const SurfacePtr px{SDL_RenderReadPixels(renderer_, &r)};
+    if (!SDL_SetRenderTarget(renderer_, was)) SDL_Log("worldview: %s", SDL_GetError());
+    if (!px) return 0;
+    int partial = 0;
+    for (int y = 0; y < px->h; ++y)
+        for (int x = 0; x < px->w; ++x) {
+            Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+            if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca)) return 0;
+            if (ca > 12 && ca < 247) ++partial;
+        }
+    return static_cast<float>(partial) / static_cast<float>(px->w * px->h);
 }
 
 void WorldView::composite(Vec2 scale, bool smooth) {
