@@ -8,7 +8,9 @@ expect phase dusk
 expect seen duck
 expect undo no
 expect present duck 3
-expect toast no
+# No news of the ducks again; the muted world says how to unmute, once.
+expect toast not New visitor
+expect toast sound is off
 wait 30
 shot shots/reloaded.png
 quit

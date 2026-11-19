@@ -26,6 +26,12 @@ Mixer::Mixer() {
     for (auto& u : unlocked_) u.store(0);
     for (auto& b : busTargets_) b.store(1.0f);
     for (auto& s : seekTo_) s.store(-1);
+    for (auto& d : dry_) d.store(false);
+}
+
+void Mixer::setLoopDry(int loop, bool dry) {
+    if (loop < 0 || static_cast<std::size_t>(loop) >= kMaxLoops) return;
+    dry_[static_cast<std::size_t>(loop)].store(dry, std::memory_order_relaxed);
 }
 
 void Mixer::VorbisCloser::operator()(stb_vorbis* v) const {
@@ -234,6 +240,32 @@ void Mixer::decodeLoop(LoopTrack& t, float* dst, int frames) {
     for (int i = done * 2; i < frames * 2; ++i) dst[i] = 0.0f;
 }
 
+void Mixer::muffleBeds(float* out, int frames, float chunkSeconds) {
+    // One second-order Butterworth low-pass per channel, always running (so fading it in never
+    // starts from a stale state), blended with the open beds by the muffle's gliding amount.
+    constexpr float kPi = 3.14159265f;
+    const float w = std::tan(kPi * tuning::kMuffleHz / static_cast<float>(kMixRate));
+    const float q = 1.0f / (1.0f + std::sqrt(2.0f) * w + w * w);
+    const float b0 = w * w * q;
+    const float b1 = 2.0f * b0;
+    const float a1 = 2.0f * (w * w - 1.0f) * q;
+    const float a2 = (1.0f - std::sqrt(2.0f) * w + w * w) * q;
+    const float m0 = muffle_;
+    muffle_ = rampTowards(m0, std::clamp(muffleTarget_.load(std::memory_order_relaxed), 0.0f, 1.0f),
+                          chunkSeconds / tuning::kMuffleGlideSeconds);
+    for (int i = 0; i < frames; ++i) {
+        const float m = m0 + (muffle_ - m0) * static_cast<float>(i) / static_cast<float>(frames);
+        for (std::size_t c = 0; c < 2; ++c) {
+            std::array<float, 4>& z = lowpass_[c];
+            const float x = bedBuf_[static_cast<std::size_t>(i) * 2 + c];
+            float y = b0 * x + b1 * z[0] + b0 * z[1] - a1 * z[2] - a2 * z[3];
+            if (std::abs(y) < 1e-20f) y = 0; // no denormals when the beds fall silent
+            z = {x, z[0], y, z[2]};
+            out[static_cast<std::size_t>(i) * 2 + c] += x + (y - x) * m;
+        }
+    }
+}
+
 void Mixer::mix(float* out, int frames) {
     std::fill(out, out + frames * 2, 0.0f);
     const float chunkSeconds = static_cast<float>(frames) / kMixRate;
@@ -310,6 +342,7 @@ void Mixer::mix(float* out, int frames) {
         }
     }
     const bool hushed = master_ <= 0.0f && muted_.load();
+    std::fill(bedBuf_.begin(), bedBuf_.begin() + frames * 2, 0.0f);
     for (std::size_t li = 0; li < loops_.size(); ++li) {
         LoopTrack& t = loops_[li];
         if (!t.vorbis) continue;
@@ -354,18 +387,21 @@ void Mixer::mix(float* out, int frames) {
         const float p1 = rampTowards(p0, loopPans_[li].load(std::memory_order_relaxed),
                                      chunkSeconds / tuning::kLoopFadeSeconds);
         pan_[li] = p1;
+        // Beds go through snow's muffle; music and the dry beds straight to the mix.
+        float* dst = !t.stem && !dry_[li].load(std::memory_order_relaxed) ? bedBuf_.data() : out;
         for (int i = 0; i < frames; ++i) {
             const float k = static_cast<float>(i) / static_cast<float>(frames);
             const float g = (g0 + (g1 - g0) * k) * (l0 + (l1 - l0) * k) *
                             busRamp(t.stem ? Bus::Music : Bus::Ambience, i);
             const float pan = p0 + (p1 - p0) * k;
-            out[i * 2] +=
+            dst[i * 2] +=
                 loopBuf_[static_cast<std::size_t>(i * 2)] * g * std::min(1.0f, 1.0f - pan);
-            out[i * 2 + 1] +=
+            dst[i * 2 + 1] +=
                 loopBuf_[static_cast<std::size_t>(i * 2 + 1)] * g * std::min(1.0f, 1.0f + pan);
         }
     }
     musicPos_ = pos1;
+    muffleBeds(out, frames, chunkSeconds);
 
     const float masterTarget = (muted_.load() || closing_.load()) ? 0.0f : 1.0f;
     const float m0 = master_;

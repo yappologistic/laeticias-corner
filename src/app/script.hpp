@@ -10,7 +10,8 @@
 //                               nooks, sketch_not_now, calendar, season_auto|spring|summer|
 //                               autumn|winter, edge_chip,
 //                               scroll_up, scroll_down, tab:<category id>, tile:<item or terrain
-//                               id>, or of the toast and hint panels: toast, hint
+//                               id>, or of the toast and hint panels: toast, hint, and of an open
+//                               landmark's or figure's card: info
 //                  actor:KIND   the middle of the first actor of that kind in the window (a
 //                               visitor id or the resident's); none in view fails the run
 //                  grid:TX,TY   the middle of world grid tile (TX, TY), raised by its level
@@ -106,6 +107,8 @@
 // Points `life:KIND` (the first drawn city-life actor of that kind); `set look KIND ZOOM` finds
 // a living actor of that kind first.
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
+//       target_alpha X,Y,W,H MOST  at most MOST (0..1) of the world target under the region is
+//                               partly transparent (a seam between cached pieces, a hole)
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 //       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,
 //                               warm: the night's lit windows, lamps and fires)
@@ -133,6 +136,8 @@
 //       more than PX rows drawn inside something in front of them: nobody on the roofs)
 //       | city order MIN MAX (pairs drawn against the depth comparator, plus cycles broken)
 //       | city sunk MIN MAX (people drawn below the floor or deck they stand on)
+//       sound beds (every region plays a loaded bed in every month, by day and by night)
+//       | sound FILE|FAMILY MIN MAX (the world's gain x 100 for that loop, or family a.b, now)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would

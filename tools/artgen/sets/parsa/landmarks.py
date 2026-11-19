@@ -281,6 +281,10 @@ def _apadana_landmark():
     walk = [t for t in tiles(0, 4, 5, 18) if t not in columns]
     wcols = {(d, 20) for d in PORTICO_ROWS} | {(d, 22) for d in PORTICO_ROWS}
     walk += [t for t in tiles(5, 18, 19, 23) if t not in wcols]
+    # The east portico, where the east stair's flights land (its head at y 0, x 7-8 and
+    # 15-16), before the hall's east doors.
+    ecols = {(d, 1) for d in PORTICO_ROWS} | {(d, 3) for d in PORTICO_ROWS}
+    walk += [t for t in tiles(5, 18, 0, 4) if t not in ecols]
     return Landmark(
         (24, 24), (0, 122), ref("apadana"), walk=walk,
         slots={"audience": [{"t": [0, 11], "face": "+x"}, {"t": [0, 12], "face": "+x"},

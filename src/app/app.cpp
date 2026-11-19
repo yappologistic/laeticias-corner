@@ -958,7 +958,13 @@ void App::handleKey(const SDL_KeyboardEvent& k) {
         if (key == SDLK_M && ctrl) toggleMute();
         return;
     }
-    if (!k.down && (menus_.blocking() || menus_.editing())) return;
+    if (!k.down && (menus_.blocking() || menus_.editing())) {
+        // A key let go under the menus still lets go: a pan held into the pause menu used to
+        // carry the camera away by itself after Resume.
+        std::ranges::fill(keyPan_, false);
+        footprintsHeld_ = false;
+        return;
+    }
     // Held Tab shows every footprint and nook; it lets go when released.
     if (key == SDLK_TAB) {
         footprintsHeld_ = k.down && !photo_;
@@ -1554,6 +1560,8 @@ void App::unlockStems(const CondFacts& f, bool instant) {
 
 void App::updateAudio() {
     mixer_.setMuted(muted_);
+    // Snow falling or lying where the view is muffles the beds (audio-seasons.md §5.10).
+    mixer_.setMuffle(snowing() || snowLiesHere() ? 1.0f : 0.0f);
     applyVolumes(); // the music ducks while paused
     const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);
@@ -1762,10 +1770,11 @@ int App::run() {
         refreshWorlds();
         menus_.open(Page::Title);
         greetPending_ = true;
-    } else if (residentOnScreen() &&
-               speak(cat_.resident.context("greet"), SpeechWeight::Important)) {
+    } else {
         // She greets the player when the corner opens and she can be seen.
-        actors_.wave();
+        if (residentOnScreen() && speak(cat_.resident.context("greet"), SpeechWeight::Important))
+            actors_.wave();
+        tellMuted();
     }
 
     // Headless runs advance exactly one fixed step per frame so scripts are reproducible.

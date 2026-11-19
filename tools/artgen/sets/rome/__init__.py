@@ -5,6 +5,10 @@ toolkit (`roman`, `relief_roman`) over the Greek one; people wear Roman dress on
 
 from sets.rome import animals, ground, kit, landmarks, people, plants
 
+# Looks per face material (setbuild: 4 unless named): the natural faces have eight, since every
+# level of a cliff draws one at random and they must not repeat.
+EDGE_VARIANTS = {f"rome.{e}": 8 for e in ground.NATURAL}
+
 LANDMARKS = landmarks.LANDMARKS
 ITEMS = {**kit.ITEMS, **plants.ITEMS}
 STATES = {}
@@ -19,7 +23,7 @@ CATALOG = {
     "items": kit.catalog_items() + plants.catalog_items(),
     "actors": people.actors_catalog() + animals.actors_catalog(),
     "goods": ground.GOODS_CATALOG,
-    "art": {"edges": ground.EDGES, "fx": sorted(ground.FRAMES.keys() - {"rome.river_tiber"})},
+    "art": {"edges": ground.EDGES, "slopes": ground.SLOPES, "fx": sorted(ground.FRAMES.keys() - {"rome.river_tiber"})},
 }
 
 

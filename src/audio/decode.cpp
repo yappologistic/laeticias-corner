@@ -11,6 +11,7 @@
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <memory>
 
 namespace lc {
 namespace {
@@ -70,16 +71,15 @@ std::expected<WavInfo, std::string> probeWav(const std::filesystem::path& file) 
 
 std::expected<OggInfo, std::string> probeOgg(const std::vector<unsigned char>& bytes) {
     int err = 0;
-    stb_vorbis* v =
-        stb_vorbis_open_memory(bytes.data(), static_cast<int>(bytes.size()), &err, nullptr);
-    if (v == nullptr)
+    const std::unique_ptr<stb_vorbis, decltype(&stb_vorbis_close)> v(
+        stb_vorbis_open_memory(bytes.data(), static_cast<int>(bytes.size()), &err, nullptr),
+        &stb_vorbis_close);
+    if (!v)
         return std::unexpected("not a readable Ogg Vorbis stream (error " + std::to_string(err) +
                                ")");
-    const stb_vorbis_info i = stb_vorbis_get_info(v);
-    OggInfo info{static_cast<int>(i.sample_rate), i.channels,
-                 stb_vorbis_stream_length_in_seconds(v)};
-    stb_vorbis_close(v);
-    return info;
+    const stb_vorbis_info i = stb_vorbis_get_info(v.get());
+    return OggInfo{static_cast<int>(i.sample_rate), i.channels,
+                   stb_vorbis_stream_length_in_seconds(v.get())};
 }
 
 } // namespace lc

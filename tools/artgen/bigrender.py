@@ -80,6 +80,7 @@ class BigRender:
     column: np.ndarray              # (fw, fh, nz) bool: solid at that height (px) on that tile
     top: int                        # highest solid voxel above the ground, px
     clear: np.ndarray               # (fw, fh): the most room under anything on that tile, px
+    passage: np.ndarray             # (fw, fh): the room a boat surely has through that tile, px
 
 
 def _grid_bounds(extent, k):
@@ -101,6 +102,28 @@ def clearance(solid: np.ndarray, x0: int, y0: int, fw: int, fh: int, t: int) -> 
             sub_has = has[max(a, 0):max(a + t, 0), max(b, 0):max(b + t, 0)]
             if sub_has.any():
                 out[i, j] = int(low[max(a, 0):max(a + t, 0), max(b, 0):max(b + t, 0)][sub_has].max())
+    return out
+
+
+OPEN = 255         # `passage` where nothing stands above the tile's middle: open sky
+
+
+def passage(solid: np.ndarray, x0: int, y0: int, fw: int, fh: int, t: int) -> np.ndarray:
+    """(fw, fh): per footprint tile, the lowest underside over the tile's middle half (a boat's
+    beam, whichever way it crosses): the height in px under which anything passing through the
+    tile surely fits (an arch's opening at its lowest across the hull, a deck's beams); 0 where
+    something stands on the water there; OPEN where nothing is above it."""
+    out = np.full((fw, fh), OPEN, np.int64)
+    has = solid.any(axis=2)
+    low = np.argmax(solid, axis=2)
+    q = t // 4
+    for i in range(fw):
+        for j in range(fh):
+            a, b = i * t - x0 + q, j * t - y0 + q
+            sa, sb = slice(max(a, 0), max(a + 2 * q, 0)), slice(max(b, 0), max(b + 2 * q, 0))
+            sub_has = has[sa, sb]
+            if sub_has.any():
+                out[i, j] = min(OPEN, int(low[sa, sb][sub_has].min()))
     return out
 
 
@@ -180,7 +203,8 @@ def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRe
     solid_z = np.nonzero(occ[:, :, zero:].any(axis=(0, 1)))[0]
     top = int(solid_z.max() + 1) if solid_z.size else 0
     clear = clearance(occ[:, :, zero:], gx0, gy0, fw, fh, t)
-    return BigRender(base, glow_sprite, _shadow(ground, gz1, k), tiles, column, top, clear)
+    gap = passage(occ[:, :, zero:], gx0, gy0, fw, fh, t)
+    return BigRender(base, glow_sprite, _shadow(ground, gz1, k), tiles, column, top, clear, gap)
 
 
 def _shadow(occ: Occupancy, zmax: int, k: int) -> Sprite:

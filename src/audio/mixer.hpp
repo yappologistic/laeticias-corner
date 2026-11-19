@@ -2,8 +2,9 @@
 // Small software mixer on one SDL audio stream: one-shot effects with pitch, looping Ogg
 // ambience with smooth gain ramps, music stems that play in step from one master sample position
 // and fade in on a bar line when unlocked, a faded master mute and a peak limiter that only acts
-// above its ceiling. The audio thread only reads immutable sample data, atomics and a
-// single-producer/single-consumer command ring. In capture mode there is no device: the game
+// above its ceiling, and snow's muffle: the ambience beds (all but those marked dry) pass a
+// low-pass the game fades in and out. The audio thread only reads immutable sample data, atomics
+// and a single-producer/single-consumer command ring. In capture mode there is no device: the game
 // pulls samples itself (for headless analysis of what the player would hear).
 
 #include "platform/sdl_ptr.hpp"
@@ -56,6 +57,10 @@ public:
     [[nodiscard]] int loopIndex(std::string_view file) const;
     void setLoopGain(int loop, float gain);
     void setLoopPan(int loop, float pan);
+    // Snow's muffle on the ambience beds, 0 (open) .. 1 (the full low-pass), glided to; a `dry`
+    // loop (the snow beds, already muffled) never passes it.
+    void setMuffle(float amount) { muffleTarget_.store(amount, std::memory_order_relaxed); }
+    void setLoopDry(int loop, bool dry);
     // A music stem joins: at once (`instant`, e.g. when a world opens), or from silence over a
     // few bars starting on the next bar line. Stems not unlocked stay silent and undecoded.
     void unlockStem(int loop, bool instant);
@@ -121,6 +126,7 @@ private:
     static void SDLCALL callback(void* self, SDL_AudioStream* stream, int additional, int total);
     void mix(float* out, int frames);
     void decodeLoop(LoopTrack& t, float* dst, int frames);
+    void muffleBeds(float* out, int frames, float chunkSeconds);
     void addLoop(const std::filesystem::path& dir, const std::string& file, bool stem);
 
     std::vector<std::string> sfxNames_;
@@ -132,6 +138,8 @@ private:
     std::array<std::atomic<std::int64_t>, kMaxLoops> seekTo_{}; // -1: none (set in the ctor)
     std::array<float, kMaxLoops> pan_{}; // audio thread: each loop's pan, gliding to its target
     std::array<std::atomic<int>, kMaxLoops> unlocked_{}; // 0 locked, 1 fade in, 2 instant
+    std::array<std::atomic<bool>, kMaxLoops> dry_{};     // past the muffle
+    std::atomic<float> muffleTarget_{0};
     std::array<Command, kRing> ring_{};
     std::atomic<std::uint32_t> head_{0}; // written by the game thread
     std::atomic<std::uint32_t> tail_{0}; // written by the audio thread
@@ -150,8 +158,11 @@ private:
     std::uint64_t musicPos_ = 0;               // master sample position of the music
     std::array<float, kMaxLoops> stemLevel_{}; // fade-in level of each stem
     std::array<float, kChunk * 2> mixBuf_{};
-    std::array<float, kChunk * 2> decodeBuf_{}; // raw decoder output
-    std::array<float, kChunk * 2> loopBuf_{};   // one loop's stereo chunk
+    std::array<float, kChunk * 2> decodeBuf_{};     // raw decoder output
+    std::array<float, kChunk * 2> loopBuf_{};       // one loop's stereo chunk
+    std::array<float, kChunk * 2> bedBuf_{};        // the beds that pass the muffle, summed
+    float muffle_ = 0;                              // audio thread: the muffle's mix, gliding
+    std::array<std::array<float, 4>, 2> lowpass_{}; // per channel: x1, x2, y1, y2
     AudioStreamPtr stream_;
 };
 

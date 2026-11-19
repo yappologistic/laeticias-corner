@@ -441,6 +441,58 @@ TEST_CASE("mixer buses: the player's volumes glide, never click, and stems reset
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
+TEST_CASE("mixer: snow's muffle low-passes the beds, glides in without a click, spares the dry") {
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
+    REQUIRE(SDL_Init(SDL_INIT_AUDIO));
+    {
+        // Three mixers play the same rain bed in step: open, muffled, and muffled but dry.
+        const AudioList& list = test::catalog().audio;
+        const auto rain = std::ranges::find_if(
+            list.ambience, [](const std::string& f) { return f.contains("rain"); });
+        REQUIRE(rain != list.ambience.end());
+        std::array<Mixer, 3> mixers;
+        for (Mixer& m : mixers) {
+            m.load(test::assetsDir() / "audio", list);
+            m.startCapture();
+            m.setLoopGain(m.loopIndex(*rain), 0.5f);
+        }
+        mixers[1].setMuffle(1.0f);
+        mixers[2].setMuffle(1.0f);
+        mixers[2].setLoopDry(mixers[2].loopIndex(*rain), true);
+        constexpr int kFrames = 4096;
+        std::vector<float> out(kFrames * 2);
+        struct Sum {
+            double e = 0; // energy
+            double d = 0; // energy of the sample-to-sample differences: brightness
+            float prev = 0;
+            float jump = 0;
+        };
+        std::array<Sum, 3> sums;
+        for (int k = 0; k < 120; ++k)
+            for (std::size_t m = 0; m < 3; ++m) {
+                mixers[m].render(out.data(), kFrames);
+                Sum& s = sums[m];
+                for (std::size_t i = 0; i < out.size(); i += 2) {
+                    const float diff = out[i] - s.prev;
+                    s.prev = out[i];
+                    s.jump = std::max(s.jump, std::abs(diff));
+                    if (k < 80) continue; // the gains and the muffle glide in first
+                    s.e += static_cast<double>(out[i]) * out[i];
+                    s.d += static_cast<double>(diff) * diff;
+                }
+            }
+        const auto bright = [](const Sum& s) { return s.e > 0 ? s.d / s.e : 0.0; };
+        REQUIRE(sums[0].e > 0);
+        MESSAGE("open " << sums[0].e << " / " << bright(sums[0]) << ", muffled " << sums[1].e
+                        << " / " << bright(sums[1]));
+        CHECK(bright(sums[1]) < bright(sums[0]) * 0.7);    // the highs are gone
+        CHECK(sums[1].e > sums[0].e * 0.2);                // the bed is still there
+        CHECK(sums[1].jump < sums[0].jump * 1.5f + 0.01f); // gliding in made no click
+        CHECK(sums[2].e == doctest::Approx(sums[0].e));    // the dry bed untouched
+    }
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
 TEST_CASE("music stems: bar lines, fades and a stem joining in step with the others") {
     constexpr std::uint64_t kBar = tuning::kMusicBarSamples;
     CHECK(nextBar(0, kBar) == 0);
@@ -867,6 +919,110 @@ TEST_CASE("the toast and the hint line stop the pointer; small windows keep dock
     }
 }
 
+TEST_CASE("the name beside the pointer stays clear of the title card and the docks (Q5-E-14)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Actors vis(c, 1);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Progress progress(c);
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.progress = &progress;
+    m.worldTip = "Basilica Aemilia";
+    Hud hud;
+    const Vec2 screen{1280, 800};
+    UiInput in;
+    in.inside = true;
+    const auto clear = [&](float x, float y) {
+        in.x = x;
+        in.y = y;
+        hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+        const Box tip = hud.worldTipBox(ui.font, m.worldTip);
+        CHECK_FALSE(overlap(tip, hud.titleBox()));
+        for (const char* name : {"build", "journal", "zoom_in", "clock"}) {
+            const auto at = hud.widgetCentre(name, m);
+            REQUIRE(at);
+            CHECK_FALSE(overlap(tip, {at->x - 1, at->y - 1, 2, 2}));
+        }
+        CHECK(tip.y >= 0);
+        CHECK(tip.y + tip.h <= screen.y);
+    };
+    clear(0, 0); // where a scripted pointer rests: the tip used to cover the title
+    const Box title = hud.titleBox();
+    clear(title.x + title.w + 2, title.y + 4);
+    clear(640, 790);
+    clear(1270, 790);
+}
+
+TEST_CASE("a long card shows its whole text above the docks; a long title is cut short (Q5-E-12)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Actors vis(c, 1);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Progress progress(c);
+    std::string text;
+    for (int i = 0; i < 14; ++i)
+        text += "Nowruz: the king receives the gifts of every land on the terrace at Pārsa. ";
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.progress = &progress;
+    m.cardTitle = "A title far too long for any card the world would ever open at all";
+    m.cardText = text;
+    m.cardEpithet = "The new year";
+    Hud hud;
+    const Vec2 screen{1280, 800};
+    UiInput in;
+    in.inside = true;
+    in.x = in.y = -100;
+    for (int i = 0; i < 60; ++i) hud.update(in, m, ui.font, screen, 1.0f, 1.0f / 60.0f);
+    const Box card = hud.cardBox();
+    REQUIRE(card.w > 0);
+    const float textW = card.w - 2 * theme::kPanelPad;
+    const int lines = wrapLines(ui.font, Face::Body, text, textW, 100);
+    REQUIRE(lines > theme::kCardLines);
+    CHECK(card.h >= static_cast<float>(lines) * ui.font.lineHeight(Face::Body));
+    CHECK(card.y >= 0);
+    // ... and clear of the docks.
+    const auto build = hud.widgetCentre("build", m);
+    REQUIRE(build);
+    CHECK(card.y + card.h < build->y);
+}
+
+TEST_CASE("the corner's news folds away when the view leaves home and waits for it (Q5-E-02)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    Actors vis(c, 1);
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Progress progress(c);
+    HudModel m;
+    m.cat = &c;
+    m.visitors = &vis;
+    m.progress = &progress;
+    Hud hud;
+    UiInput in;
+    const auto run = [&](int frames) {
+        for (int i = 0; i < frames; ++i)
+            hud.update(in, m, ui.font, {1280, 800}, 1.0f, 1.0f / 60.0f);
+    };
+    hud.toast("New visitor: Ducks", true);
+    run(10);
+    CHECK(hud.toastText() == "New visitor: Ducks");
+    m.away = true; // a journey to Athens with the toast still up
+    run(2);
+    CHECK(hud.toastText().empty());
+    hud.toast("New land: the meadow", true);
+    hud.toast("Postcard saved"); // not the corner's: shown wherever the view is
+    run(60);
+    CHECK(hud.toastText() == "Postcard saved"); // the corner's waits; others go on by
+    run(600);
+    CHECK(hud.toastText().empty());
+    m.away = false;
+    run(60);
+    CHECK(hud.toastText() == "New land: the meadow");
+}
+
 TEST_CASE("sketchbook widgets have ids of their own: many places, no nook, a wish's Not now") {
     UiFixture ui;
     const Catalog& c = test::catalog();
@@ -912,6 +1068,14 @@ TEST_CASE("sketchbook widgets have ids of their own: many places, no nook, a wis
     CHECK(snooze->arg == 5);
 }
 
+TEST_CASE("a figure's own name is shown only when the card does not already say it (Q5-E-13)") {
+    CHECK(namedAlready("Kūruš (a memory)", "Kūruš", "Cyrus, founder (a memory)"));
+    CHECK(namedAlready("Hermon, stonecutter", "Hermon", "Stonecutter from Ionia"));
+    CHECK(namedAlready("Aspasia", "Ἀσπασία", "Aspasia of Miletus"));
+    CHECK_FALSE(namedAlready("Hadrianus", "Hadrian", "Emperor"));
+    CHECK_FALSE(namedAlready("Xšayāršā", "Xerxes", "King of kings"));
+}
+
 TEST_CASE("cutting text drops whole characters, never half of one (L-017)") {
     // "Pārsa": the ā is two bytes; every cut leaves valid UTF-8.
     std::string_view s = "P\xC4\x81rsa";
@@ -921,6 +1085,75 @@ TEST_CASE("cutting text drops whole characters, never half of one (L-017)") {
         cuts.push_back(s);
     }
     CHECK(cuts == std::vector<std::string_view>{"P\xC4\x81rs", "P\xC4\x81r", "P\xC4\x81", "P", ""});
+}
+
+TEST_CASE("settings fit every window and interface size, every row reachable, room for more") {
+    UiFixture ui;
+    const Profile profile;
+    MenuModel m;
+    m.profile = &profile;
+    m.residentName = "Laeticia";
+    UiInput in;
+    in.inside = true;
+    in.x = in.y = -100;
+    const Vec2 screens[] = {{960, 600},   {1280, 800},  {1580, 845},
+                            {1920, 1080}, {2560, 1440}, {3840, 2160}};
+    for (const Vec2 base : screens)
+        for (const float factor : kUiScales)
+            // The window as it is, and with two rows' height less: the look and clouds rows the
+            // other branches add must fit too.
+            for (const int fewer : {0, 2}) {
+                const float fit =
+                    std::min(base.x / theme::kReferenceW, base.y / theme::kReferenceH);
+                const float f = factor > 0 ? factor : 1.0f;
+                const float s = std::clamp(std::round(std::max(1.0f, fit) * f * 4.0f) / 4.0f,
+                                           f < 1.0f ? 0.75f : 1.0f, theme::kMaxScale);
+                REQUIRE(ui.font.build(ui.renderer.get(), s));
+                const Vec2 screen{base.x, base.y - static_cast<float>(fewer) * theme::kRowH * s};
+                Menus menus;
+                menus.open(Page::Settings);
+                const auto layout = [&](float wheel) {
+                    in.wheel = wheel;
+                    menus.update(in, m, ui.font, screen, s, 1.0f / 60.0f);
+                    in.wheel = 0;
+                };
+                layout(0);
+                const auto check = [&] {
+                    const std::vector<Box> boxes = menus.widgetBoxes();
+                    INFO(screen.x << "x" << screen.y << " at " << s);
+                    for (const Box& b : boxes) {
+                        CHECK(b.x >= -0.5f);
+                        CHECK(b.y >= -0.5f);
+                        CHECK(b.x + b.w <= screen.x + 0.5f);
+                        CHECK(b.y + b.h <= screen.y + 0.5f);
+                    }
+                    for (std::size_t i = 0; i < boxes.size(); ++i)
+                        for (std::size_t j = i + 1; j < boxes.size(); ++j) {
+                            const Box& a = boxes[i];
+                            const Box& b = boxes[j];
+                            const bool over = a.x + 0.5f < b.x + b.w && b.x + 0.5f < a.x + a.w &&
+                                              a.y + 0.5f < b.y + b.h && b.y + 0.5f < a.y + a.h;
+                            CHECK_FALSE(over);
+                        }
+                    CHECK(menus.widgetCentre("done"));
+                };
+                check();
+                // Every row of both sides (the look tier and clouds too) can be reached: seen
+                // at some scroll position on the way to the end.
+                static constexpr const char* kRows[] = {
+                    "music",    "effects",       "ambience", "mute",  "fullscreen",
+                    "ui_scale", "reduce_motion", "grid",     "vsync", "look",
+                    "clouds",   "chatty",        "quiet",    "replay"};
+                std::set<std::string> seen;
+                for (int k = 0; k < 30; ++k) {
+                    for (const char* row : kRows)
+                        if (menus.widgetCentre(row)) seen.insert(row);
+                    if (menus.widgetCentre("replay")) break;
+                    layout(-1);
+                    check();
+                }
+                for (const char* row : kRows) CHECK_MESSAGE(seen.contains(row), row);
+            }
 }
 
 TEST_CASE("world cards keep their own ids past a hundred worlds (L-111)") {
@@ -1037,6 +1270,49 @@ TEST_CASE("text faces carry the minus sign and kerning") {
     CHECK(ui.font.measure(Face::Body, "look") > ui.font.measure(Face::Body, "loo"));
 }
 
+TEST_CASE("a scale the glyphs cannot be built at keeps the last atlas (L-014)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const float word = ui.font.measure(Face::Body, "Laeticia");
+    SDL_Texture* const before = ui.font.texture();
+    // At this size the glyphs fit no texture: the game used to quit on the spot, unsaved.
+    CHECK(ui.font.build(ui.renderer.get(), 60.0f));
+    CHECK(ui.font.texture() == before);
+    CHECK(ui.font.scale() == doctest::Approx(1.0f));
+    CHECK(ui.font.measure(Face::Body, "Laeticia") == doctest::Approx(word));
+    // Asked again it is not retried every frame, and a good scale builds at once.
+    CHECK(ui.font.build(ui.renderer.get(), 60.0f));
+    REQUIRE(ui.font.build(ui.renderer.get(), 2.0f));
+    CHECK(ui.font.scale() == doctest::Approx(2.0f));
+    CHECK(ui.font.measure(Face::Body, "Laeticia") > word * 1.5f);
+}
+
+namespace {
+
+// A click is a jump between neighbouring samples far beyond the local motion of the signal.
+int clicksIn(const std::vector<float>& s) {
+    constexpr std::size_t kWindow = 512;
+    const std::size_t frames = s.size() / 2;
+    int clicks = 0;
+    for (int ch = 0; ch < 2; ++ch) {
+        std::vector<float> d(frames, 0);
+        for (std::size_t i = 1; i < frames; ++i)
+            d[i] = std::abs(s[i * 2 + static_cast<std::size_t>(ch)] -
+                            s[(i - 1) * 2 + static_cast<std::size_t>(ch)]);
+        double sum = 0;
+        for (std::size_t i = 0; i < std::min(frames, 2 * kWindow); ++i) sum += d[i] * d[i];
+        for (std::size_t i = kWindow; i + kWindow < frames; ++i) {
+            const double local = std::sqrt((sum - d[i] * d[i]) / (2.0 * kWindow - 1));
+            if (d[i] > 0.05f && d[i] > 8.0 * local + 0.01) ++clicks;
+            sum += static_cast<double>(d[i + kWindow]) * d[i + kWindow] -
+                   static_cast<double>(d[i - kWindow]) * d[i - kWindow];
+        }
+    }
+    return clicks;
+}
+
+} // namespace
+
 // Analyses the mix captured by the audio_capture run (path in LC_AUDIO_CAPTURE): a drag-paint,
 // a mute toggle and a day/night crossfade must neither clip nor click.
 TEST_CASE("capture: the mix has no clipping and no clicks") {
@@ -1064,23 +1340,44 @@ TEST_CASE("capture: the mix has no clipping and no clicks") {
         right += static_cast<double>((*s)[i + 1]) * (*s)[i + 1];
     }
     CHECK(std::abs(left - right) > 0.01 * (left + right));
-    // A click is a jump between neighbouring samples far beyond the local motion of the signal.
-    constexpr std::size_t kWindow = 512;
-    const std::size_t frames = s->size() / 2;
-    int clicks = 0;
-    for (int ch = 0; ch < 2; ++ch) {
-        std::vector<float> d(frames, 0);
-        for (std::size_t i = 1; i < frames; ++i)
-            d[i] = std::abs((*s)[i * 2 + static_cast<std::size_t>(ch)] -
-                            (*s)[(i - 1) * 2 + static_cast<std::size_t>(ch)]);
-        double sum = 0;
-        for (std::size_t i = 0; i < std::min(frames, 2 * kWindow); ++i) sum += d[i] * d[i];
-        for (std::size_t i = kWindow; i + kWindow < frames; ++i) {
-            const double local = std::sqrt((sum - d[i] * d[i]) / (2.0 * kWindow - 1));
-            if (d[i] > 0.05f && d[i] > 8.0 * local + 0.01) ++clicks;
-            sum += static_cast<double>(d[i + kWindow]) * d[i + kWindow] -
-                   static_cast<double>(d[i - kWindow]) * d[i - kWindow];
-        }
+    CHECK(clicksIn(*s) == 0);
+}
+
+// Analyses the mix of the world_year run (path in LC_AUDIO_YEAR): Rome's and Pārsa's seasons
+// and nights, the open sea and the snow, crossfaded as the year turns.
+TEST_CASE("capture: the year away from home is never silent, balanced, unclipped and smooth") {
+    const char* file = std::getenv("LC_AUDIO_YEAR");
+    if (file == nullptr) {
+        MESSAGE("LC_AUDIO_YEAR not set; run through ctest");
+        return;
     }
-    CHECK(clicks == 0);
+    const auto s = readWavFloat(file);
+    REQUIRE_MESSAGE(s.has_value(), s.error());
+    const auto second = static_cast<std::size_t>(kMixRate) * 2;
+    REQUIRE(s->size() > second * 60);
+    float peak = 0;
+    for (const float v : *s) peak = std::max(peak, std::abs(v));
+    CHECK(peak <= tuning::kLimiterCeiling + 1e-4f);
+    // Every second is heard (above -60 dBFS) and none is loud (under -10 dBFS); the beds sit in
+    // the middle of the field, not to one side (L-113: within 3 dB over the whole run).
+    double left = 0;
+    double right = 0;
+    int quiet = 0;
+    int loud = 0;
+    for (std::size_t at = 0; at + second <= s->size(); at += second) {
+        double e = 0;
+        for (std::size_t i = at; i + 1 < at + second; i += 2) {
+            left += static_cast<double>((*s)[i]) * (*s)[i];
+            right += static_cast<double>((*s)[i + 1]) * (*s)[i + 1];
+            e += static_cast<double>((*s)[i]) * (*s)[i] +
+                 static_cast<double>((*s)[i + 1]) * (*s)[i + 1];
+        }
+        const double db = 10.0 * std::log10(e / static_cast<double>(second) + 1e-20);
+        if (db < -60.0) ++quiet;
+        if (db > -10.0) ++loud;
+    }
+    CHECK(quiet == 0);
+    CHECK(loud == 0);
+    CHECK(std::abs(10.0 * std::log10(left / right)) < 3.0);
+    CHECK(clicksIn(*s) == 0);
 }

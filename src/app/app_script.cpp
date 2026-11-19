@@ -191,6 +191,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::to_string(actors_.present(*v)), a[2]);
     }
     if (what == "city") return checkCity(a);
+    if (what == "sound") return checkSound(a);
     if (what == "habitat") {
         // Everyone stands where it may (on its reserved seat counts: she sits on the bench).
         int bad = 0;
@@ -577,6 +578,18 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                    : std::optional(std::format("expected a lit share of {} of at least {} but "
                                                "found {:.5f}",
                                                a[1], a[2], share));
+    }
+    if (what == "target_alpha") {
+        const auto r = parseScriptRect(a[1]);
+        if (!r) return "bad rectangle " + a[1];
+        if (!worldView_) return std::string("no world");
+        const float f = worldView_->partialAlpha({r->x, r->y, r->w, r->h});
+        const double most = std::stod(a[2]);
+        return f <= most ? std::nullopt
+                         : std::optional(std::format(
+                               "expected at most {} of the world target under {} partly "
+                               "transparent but found {:.4f} (a seam or a hole)",
+                               a[2], a[1], f));
     }
     if (what == "luma" || what == "color") {
         const auto r = parseScriptRect(a[1]);
