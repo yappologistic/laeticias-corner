@@ -148,7 +148,7 @@
      ]
     },
     "snow_line": [
-     7,
+     13,
      null,
      null
     ],
@@ -269,9 +269,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     5
+     11,
+     9,
+     10
     ],
     "ambience": {
      "beds": [
@@ -868,7 +868,7 @@
    "name": "The acropolis",
    "sound": {
     "surfaces": {
-     "stone": 0.91,
+     "stone": 0.78,
      "leaves": 0.09
     },
     "wind": "wind.street",
@@ -3294,7 +3294,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",

@@ -118,15 +118,12 @@
      "muddy": [
       "mar",
       "apr"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     5,
      8,
-     null
+     11,
+     14
     ]
    },
    "summer": {
@@ -172,8 +169,8 @@
     },
     "snow_line": [
      null,
-     null,
-     7
+     13,
+     9
     ]
    },
    "winter": {
@@ -207,7 +204,7 @@
     "snow_line": [
      5,
      0,
-     0
+     4
     ]
    }
   },
@@ -1115,12 +1112,12 @@
    "sound": {
     "surfaces": {
      "stone": 0.27,
-     "roof": 0.3,
+     "roof": 0.31,
      "leaves": 0.06,
      "water": 0.19
     },
     "wind": "wind.street",
-    "exposure": 0.76,
+    "exposure": 0.75,
     "water": {
      "family": "river",
      "speed": "slow"
@@ -2580,6 +2577,28 @@
     ],
     "rain": "sheltered"
    },
+   "wall_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   },
    "watch_fire": {
     "kind": "fire",
     "kelvin": 1800,
@@ -2630,6 +2649,13 @@
    320,
    "parsa.p_torch",
    "niche_lamp",
+   "flame"
+  ],
+  [
+   131,
+   320,
+   "parsa.p_torch",
+   "wall_torch",
    "flame"
   ],
   [

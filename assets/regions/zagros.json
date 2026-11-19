@@ -156,8 +156,8 @@
     },
     "snow_line": [
      10,
-     11,
-     13
+     12,
+     14
     ]
    },
    "summer": {
@@ -176,15 +176,13 @@
       "aug"
      ],
      "snow": [
-      "jun",
-      "jul",
-      "aug"
+      "jun"
      ]
     },
     "snow_line": [
-     14,
-     14,
-     14
+     15,
+     null,
+     null
     ]
    },
    "autumn": {
@@ -203,14 +201,13 @@
       "sep"
      ],
      "snow": [
-      "sep",
       "oct",
       "nov"
      ]
     },
     "snow_line": [
-     14,
-     13,
+     null,
+     15,
      12
     ]
    },
@@ -243,9 +240,9 @@
      ]
     },
     "snow_line": [
-     10,
      9,
-     9
+     7,
+     8
     ]
    }
   },
@@ -842,44 +839,6 @@
      "per_item": "world.watchtower",
      "count": 1,
      "density": "always"
-    },
-    {
-     "role": "woodcutter",
-     "per_item": "world.t_oak_zagros",
-     "count": 0.012,
-     "density": "always",
-     "when": {
-      "months": [
-       "oct",
-       "nov",
-       "dec",
-       "jan",
-       "feb",
-       "mar"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "role": "woodcutter",
-     "per_item": "world.t_oak_zagros",
-     "count": 0.004,
-     "density": "always",
-     "when": {
-      "months": [
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
     },
     {
      "role": "gazelle",
@@ -1726,66 +1685,6 @@
    "carries": {
     "light": "carried_torch",
     "prop": "torch"
-   }
-  },
-  {
-   "id": "woodcutter",
-   "actor": "world.logger",
-   "name": "Woodcutter",
-   "schedule": [
-    {
-     "hours": [
-      "06:30",
-      "12:00"
-     ],
-     "routine": "cut"
-    },
-    {
-     "hours": [
-      "14:00",
-      "17:30"
-     ],
-     "routine": "cut"
-    }
-   ],
-   "routines": {
-    "cut": {
-     "loop": true,
-     "steps": [
-      {
-       "wander": {
-        "radius": 4
-       },
-       "dur": [
-        10,
-        20
-       ]
-      },
-      {
-       "use": {
-        "here": true
-       },
-       "anim": "work_high",
-       "dur": [
-        40,
-        70
-       ]
-      },
-      {
-       "use": {
-        "here": true
-       },
-       "anim": "haul",
-       "dur": [
-        15,
-        25
-       ]
-      }
-     ]
-    }
-   },
-   "sound": {
-    "oneshot": "sfx/world/chop.wav"
    }
   },
   {

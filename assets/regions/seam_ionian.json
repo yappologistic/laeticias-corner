@@ -85,7 +85,7 @@
     "haze": 0.12,
     "ground": {},
     "snow_line": [
-     8,
+     12,
      null,
      null
     ]
@@ -135,9 +135,9 @@
     "haze": 0.144,
     "ground": {},
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ]
    }
   },

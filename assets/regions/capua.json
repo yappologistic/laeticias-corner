@@ -107,7 +107,7 @@
      ]
     },
     "snow_line": [
-     8,
+     12,
      null,
      null
     ]
@@ -172,9 +172,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ],
     "ambience": {
      "beds": [
@@ -2801,7 +2801,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",
@@ -2842,6 +2842,12 @@
   ],
   [
    209,
+   947,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   209,
    948,
    "rome.r_brazier",
    "brazier_watch"
@@ -2851,6 +2857,12 @@
    949,
    "rome.r_insula_low",
    "window_evening"
+  ],
+  [
+   209,
+   950,
+   "rome.r_lamp",
+   "niche_lamp"
   ],
   [
    199,
@@ -2865,8 +2877,20 @@
    "window_late"
   ],
   [
+   213,
+   952,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
    199,
    954,
+   "rome.r_lamp",
+   "niche_lamp"
+  ],
+  [
+   201,
+   955,
    "rome.r_lamp",
    "niche_lamp"
   ],
@@ -2883,16 +2907,16 @@
    "niche_lamp"
   ],
   [
-   201,
-   956,
-   "rome.r_lamp",
-   "niche_lamp"
-  ],
-  [
    209,
    958,
    "rome.r_brazier",
    "brazier_watch"
+  ],
+  [
+   209,
+   960,
+   "rome.r_lamp",
+   "niche_lamp"
   ]
  ]
 }

@@ -1876,11 +1876,11 @@
   {
    "body": "corner_brook",
    "kind": "stream",
-   "tiles": 34,
+   "tiles": 33,
    "rect": [
     52,
     1213,
-    102,
+    101,
     1244
    ],
    "level": [
@@ -1912,12 +1912,12 @@
   {
    "body": "corner_river",
    "kind": "river",
-   "tiles": 34,
+   "tiles": 33,
    "rect": [
     44,
     1240,
     53,
-    1259
+    1258
    ],
    "level": [
     "normal",
