@@ -144,7 +144,7 @@
     "haze": 0.12,
     "ground": {},
     "snow_line": [
-     13,
+     14,
      null,
      null
     ],
@@ -257,9 +257,9 @@
      ]
     },
     "snow_line": [
-     11,
-     9,
-     10
+     13,
+     12,
+     13
     ],
     "ambience": {
      "beds": [
