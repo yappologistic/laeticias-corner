@@ -603,6 +603,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/world/travel_iran_day.ogg",
+   "night": "music/world/travel_iran_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

@@ -479,6 +479,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/athens/town_harbour_day.ogg",
+   "night": "music/athens/town_harbour_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

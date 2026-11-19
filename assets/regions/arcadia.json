@@ -394,6 +394,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/world/travel_greece_day.ogg",
+   "night": "music/world/travel_greece_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {
