@@ -277,7 +277,8 @@ void Scene::rebuild(const World& world, TileRect region) {
         // Things behind the light cannot cover it.
         grid_.query(glowBox, [&](std::uint32_t j) {
             if (placed_[j].screen.overlaps(glowBox) &&
-                (j == i || drawnBefore(boxes_[i].box, boxes_[j].box)))
+                (j == i || (constrains(boxes_[i].box, boxes_[j].box) &&
+                            drawnBefore(boxes_[i].box, boxes_[j].box))))
                 placed_[j].occludesGlow = true;
         });
         // The pool lies on the ground: under a small light, or in front of a building, below
@@ -760,9 +761,9 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
 OrderItem Scene::itemBox(const Placed& p, std::uint32_t id) const {
     const ItemDef& def = cat_.items[p.item.type];
     // Height over the footprint's top vertex; what one walks on (a footbridge, stepping stones)
-    // is a floor under whoever stands on it.
+    // is a floor under whoever stands on it: no height above the ground they stand at.
     const Vec2 a = iso_.toWorld(p.item.pos);
-    const float top = def.walkable ? tuning::kFloorTread : std::max(1.0f, a.y - p.screen.y0);
+    const float top = def.walkable ? 0.0f : std::max(1.0f, a.y - p.screen.y0);
     return {makeBox(tileRect(p.item), 0, top, depthId(DepthKind::Item, id), iso_.hh), p.screen, 0};
 }
 

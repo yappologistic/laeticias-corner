@@ -40,6 +40,7 @@ struct Gathered {
     std::vector<std::uint32_t> order;
     OrderGraph graph; // the sort's edges, for merging actors into the order
     int cycles = 0;   // cycles the sort broke (data faults)
+    DepthBox cycleAt; // the element the first was broken at
     void clear() {
         elems.clear();
         items.clear();

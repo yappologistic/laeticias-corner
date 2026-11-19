@@ -27,6 +27,7 @@ void PageOrder::sort(std::span<const OrderItem> items, float cell,
     edgeFrom_.clear();
     edgeTo_.clear();
     grid_.pairs(screens_, [&](std::uint32_t i, std::uint32_t j) {
+        if (!constrains(items[i].box, items[j].box)) return;
         const bool ij = drawnBefore(items[i].box, items[j].box);
         edgeFrom_.push_back(ij ? i : j);
         edgeTo_.push_back(ij ? j : i);
@@ -79,7 +80,7 @@ void PageOrder::sort(std::span<const OrderItem> items, float cell,
                 }
             indegree_[c] = 0;
             push(c);
-            ++cycles_;
+            if (cycles_++ == 0) firstCycle_ = items[c].box;
             continue;
         }
         bound = static_cast<std::uint16_t>(pick);
@@ -154,6 +155,7 @@ void ActorMerge::plan(std::span<const OrderItem> items, std::span<const OrderIte
             if (drawnAt_[k] == 0 || seen_[k] == mark || !placed_[k].overlaps(actors[a].screen))
                 return;
             seen_[k] = mark;
+            if (!constrains(items[order_[k]].box, actors[a].box)) return;
             pairEl_.push_back(k);
             pairAc_.push_back(a);
             pairAfter_.push_back(drawnBefore(items[order_[k]].box, actors[a].box) ? 1 : 0);
@@ -196,6 +198,7 @@ void ActorMerge::plan(std::span<const OrderItem> items, std::span<const OrderIte
     pairEl_.clear(); // reused: (before, after) actor pairs
     pairAc_.clear();
     actorGrid_.pairs(actorScreens_, [&](std::uint32_t i, std::uint32_t j) {
+        if (!constrains(actors[i].box, actors[j].box)) return;
         const bool ij = drawnBefore(actors[i].box, actors[j].box);
         pairEl_.push_back(ij ? i : j);
         pairAc_.push_back(ij ? j : i);
@@ -370,7 +373,8 @@ void ActorMerge::flushPending(bool all) {
 }
 
 int orderViolations(std::span<const OrderItem> items, std::span<const OrderItem> actors,
-                    std::span<const ActorMerge::Step> seq, bool actorPairs) {
+                    std::span<const ActorMerge::Step> seq, bool actorPairs,
+                    std::pair<DepthBox, DepthBox>* first) {
     std::vector<const OrderItem*> drawn;
     std::vector<bool> actor;
     std::vector<FRect> screens;
@@ -386,10 +390,72 @@ int orderViolations(std::span<const OrderItem> items, std::span<const OrderItem>
     int bad = 0;
     grid.pairs(screens, [&](std::uint32_t i, std::uint32_t j) {
         // i < j: i was drawn first, so it must be the one behind.
-        if ((actorPairs || !actor[i] || !actor[j]) && !drawnBefore(drawn[i]->box, drawn[j]->box))
+        if ((actorPairs || !actor[i] || !actor[j]) && constrains(drawn[i]->box, drawn[j]->box) &&
+            !drawnBefore(drawn[i]->box, drawn[j]->box)) {
+            if (bad == 0 && first != nullptr) *first = {drawn[i]->box, drawn[j]->box};
             ++bad;
+        }
     });
     return bad;
+}
+
+std::vector<std::vector<std::uint32_t>> orderCycles(std::span<const OrderItem> items, float cell,
+                                                    std::size_t limit) {
+    const std::size_t n = items.size();
+    std::vector<FRect> screens(n);
+    for (std::size_t i = 0; i < n; ++i) screens[i] = items[i].screen;
+    ScreenGrid grid;
+    grid.build(screens, cell);
+    std::vector<std::vector<std::uint32_t>> next(n);
+    std::vector<std::vector<std::uint32_t>> prev(n);
+    std::vector<int> indegree(n, 0);
+    grid.pairs(screens, [&](std::uint32_t i, std::uint32_t j) {
+        if (!constrains(items[i].box, items[j].box)) return;
+        const bool ij = drawnBefore(items[i].box, items[j].box);
+        next[ij ? i : j].push_back(ij ? j : i);
+        prev[ij ? j : i].push_back(ij ? i : j);
+        ++indegree[ij ? j : i];
+    });
+    // Peel off everything Kahn's sort can draw; every element left waits for another one left,
+    // so walking back through those always comes round to a cycle.
+    std::vector<std::uint32_t> ready;
+    for (std::uint32_t i = 0; i < n; ++i)
+        if (indegree[i] == 0) ready.push_back(i);
+    while (!ready.empty()) {
+        const std::uint32_t i = ready.back();
+        ready.pop_back();
+        for (const std::uint32_t j : next[i])
+            if (--indegree[j] == 0) ready.push_back(j);
+    }
+    std::vector<std::vector<std::uint32_t>> out;
+    std::vector<int> seenAt(n, -1);
+    for (std::uint32_t s0 = 0; s0 < n && out.size() < limit; ++s0) {
+        if (indegree[s0] <= 0) continue;
+        std::vector<std::uint32_t> path;
+        std::uint32_t v = s0;
+        bool stuck = false;
+        while (seenAt[v] < 0) {
+            seenAt[v] = static_cast<int>(path.size());
+            path.push_back(v);
+            const auto it =
+                std::ranges::find_if(prev[v], [&](std::uint32_t u) { return indegree[u] > 0; });
+            if (it == prev[v].end()) {
+                stuck = true; // its waiting was on a cycle already taken out
+                break;
+            }
+            v = *it;
+        }
+        if (!stuck) {
+            std::vector<std::uint32_t> cycle(path.begin() + seenAt[v], path.end());
+            std::ranges::reverse(cycle); // walked backwards: put it in drawing order
+            out.push_back(std::move(cycle));
+        }
+        for (const std::uint32_t p : path) {
+            indegree[p] = 0;
+            seenAt[p] = -1;
+        }
+    }
+    return out;
 }
 
 int pageSwitches(std::span<const OrderItem> items, std::span<const std::uint32_t> order) {

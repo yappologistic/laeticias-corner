@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace lc {
@@ -42,6 +43,8 @@ public:
               OrderGraph& graph);
     // Cycles the last sort had to break (each a data fault: never hidden, reported).
     [[nodiscard]] int cyclesBroken() const { return cycles_; }
+    // The element the first cycle was broken at (its box), when there was one.
+    [[nodiscard]] const DepthBox& firstCycle() const { return firstCycle_; }
 
 private:
     ScreenGrid grid_;
@@ -53,6 +56,7 @@ private:
     std::vector<std::uint8_t> done_;
     std::vector<std::vector<std::pair<float, std::uint32_t>>> ready_; // per page, min-heaps
     int cycles_ = 0;
+    DepthBox firstCycle_;
 };
 
 // Moving things merged into a static order each frame (draw-order.md §1.4): one exact order of
@@ -132,7 +136,14 @@ private:
 // that is the edge the merge gives up). Zero is right. For tests and the debug view (allocates).
 [[nodiscard]] int orderViolations(std::span<const OrderItem> items,
                                   std::span<const OrderItem> actors,
-                                  std::span<const ActorMerge::Step> seq, bool actorPairs = true);
+                                  std::span<const ActorMerge::Step> seq, bool actorPairs = true,
+                                  std::pair<DepthBox, DepthBox>* first = nullptr);
+
+// The cycles among `items` whose screens overlap (draw-order.md §6.3): each as the elements it
+// runs through, in order, one list per cycle found (at most `limit`). Empty when the order has
+// none. For the whole-world scan and tests (allocates).
+[[nodiscard]] std::vector<std::vector<std::uint32_t>> orderCycles(std::span<const OrderItem> items,
+                                                                  float cell, std::size_t limit);
 
 // Page switches along an order (what each one costs is a draw call).
 [[nodiscard]] int pageSwitches(std::span<const OrderItem> items,

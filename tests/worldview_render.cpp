@@ -15,6 +15,7 @@
 #include <doctest.h>
 
 #include <cmath>
+#include <format>
 #include <memory>
 #include <optional>
 #include <set>
@@ -134,10 +135,48 @@ TEST_CASE("render: the gathered elements of the Parsa terrace are complete and i
     for (std::size_t i = 0; i < tight.items.size(); ++i)
         for (std::size_t j = i + 1; j < tight.items.size(); ++j)
             if (tight.items[i].screen.overlaps(tight.items[j].screen) &&
+                constrains(tight.items[i].box, tight.items[j].box) &&
                 drawnBefore(tight.items[i].box, tight.items[j].box) != (at[i] < at[j]))
                 ++bad;
     CHECK(bad == 0);
     CHECK(tight.cycles == 0);
+}
+
+TEST_CASE("render: the whole world's static order has no cycle (draw-order.md 6.3)") {
+    // Every placed item, piece and raised tile, gathered window by window as the renderer
+    // gathers them, sorted by the comparator: a cycle is a fault in the data (or the model) and
+    // is listed with its members.
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::WorldMap& m = *r.world->map;
+    Gatherer g(m, r.view->sprites());
+    constexpr int kWindow = 48;
+    std::set<std::vector<std::uint64_t>> seen;
+    std::string list;
+    for (int y = 0; y < m.height(); y += kWindow)
+        for (int x = 0; x < m.width(); x += kWindow) {
+            Gathered out;
+            g.run({x, y, x + kWindow, y + kWindow}, {-1e9f, -1e9f, 1e9f, 1e9f}, out);
+            for (const std::vector<std::uint32_t>& c : orderCycles(out.items, 128.0f, 16)) {
+                std::vector<std::uint64_t> ids;
+                for (const std::uint32_t e : c) ids.push_back(out.items[e].box.id);
+                std::ranges::sort(ids);
+                if (!seen.insert(ids).second) continue;
+                list += "\n  cycle:";
+                for (const std::uint32_t e : c) {
+                    const Elem& el = out.elems[e];
+                    const DepthBox& b = out.items[e].box;
+                    list += std::format(
+                        " {} p{} [{},{}..{},{}] z{}..{} ->",
+                        el.ground ? std::string("ground")
+                                  : (el.look != nullptr ? m.info(m.items()[el.item]).id
+                                                        : std::string("other")),
+                        el.piece, b.foot.x0, b.foot.y0, b.foot.x1, b.foot.y1, b.z0, b.z1);
+                }
+            }
+        }
+    MESSAGE(seen.size() << " cycles" << list);
+    CHECK(seen.empty());
 }
 
 TEST_CASE("render: every draw names its band, at every level") {

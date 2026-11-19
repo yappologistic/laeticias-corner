@@ -1853,7 +1853,7 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
     for (const auto& h : hits) out.push_back(h.second);
 }
 
-int WorldView::coarseActorsCovered(float px) const {
+int WorldView::coarseActorsCovered(float px, std::string* first) const {
     constexpr int kRows = 40; // tiles in front whose art can reach back over someone
     int covered = 0;
     std::vector<world::DrawPiece> pieces; // a test's question, not a frame's: allocation is fine
@@ -1883,27 +1883,67 @@ int WorldView::coarseActorsCovered(float px) const {
                          static_cast<float>(r.x1), static_cast<float>(r.y1)},
                         base + z.z0, base + z.z1, depthId(DepthKind::Item, p.item), iso_.hh);
             if (drawnBefore(b, ad.box)) continue;
-            // Rows of the person drawn inside its silhouette at the person's column.
-            const RowBand sil = silhouette(iso_, b.foot, b.z0, b.z1, ad.anchor.x);
-            if (sil.empty()) continue;
-            const auto overlap = [&](float from, float to) {
-                return std::max(0.0f, std::min(to, sil.to) - std::max(from, sil.from));
-            };
-            const float shown = ad.hidden.empty()
-                                    ? overlap(top, ad.anchor.y)
-                                    : overlap(top, std::min(ad.anchor.y, ad.hidden.from)) +
-                                          overlap(std::max(top, ad.hidden.to), ad.anchor.y);
-            most = std::max(most, shown);
+            // Rows of the person drawn inside its silhouette at the person's column: the piece
+            // tile by tile, each as tall as the art says it is there (a solid piece's tops).
+            const world::GeomVariant* g = map_.geometry(it);
+            const bool perTile = z.kind == ZRange::Kind::Solid && g != nullptr && g->topsW > 0;
+            for (int ty = r.y0; ty < r.y1; ++ty)
+                for (int tx = r.x0; tx < r.x1; ++tx) {
+                    float z1 = b.z1;
+                    if (perTile && tx - it.x < g->topsW) {
+                        const auto at =
+                            static_cast<std::size_t>((ty - it.y) * g->topsW + (tx - it.x));
+                        if (at < g->tops.size()) z1 = base + static_cast<float>(g->tops[at]);
+                    }
+                    const RowBand sil =
+                        silhouette(iso_,
+                                   {static_cast<float>(tx), static_cast<float>(ty),
+                                    static_cast<float>(tx + 1), static_cast<float>(ty + 1)},
+                                   b.z0, std::max(z1, b.z0), ad.anchor.x);
+                    if (sil.empty()) continue;
+                    const auto overlap = [&](float from, float to) {
+                        return std::max(0.0f, std::min(to, sil.to) - std::max(from, sil.from));
+                    };
+                    const float shown = ad.hidden.empty()
+                                            ? overlap(top, ad.anchor.y)
+                                            : overlap(top, std::min(ad.anchor.y, ad.hidden.from)) +
+                                                  overlap(std::max(top, ad.hidden.to), ad.anchor.y);
+                    if (shown > most && shown > px && first != nullptr && covered == 0)
+                        *first = std::format(
+                            "{} at ({:.2f}, {:.2f}) z {:.0f}: {:.0f} rows inside {} piece {} at "
+                            "({}, {})",
+                            life_->lifeWorld().data.kinds[d.kind].id, d.pos.x, d.pos.y, d.z, shown,
+                            map_.info(it).id, p.piece, tx, ty);
+                    most = std::max(most, shown);
+                }
         }
         covered += most > px ? 1 : 0;
     }
     return covered;
 }
 
-int WorldView::orderViolations() const {
-    if (lastLod_ == Lod::Native)
-        return lc::orderViolations(region_.items, mergeActors_, merge_.sequence(), false);
-    return lc::orderViolations({}, mergeActors_, coarseMerge_.sequence(), false);
+int WorldView::orderViolations(std::string* first) const {
+    std::pair<DepthBox, DepthBox> pair;
+    const int n =
+        lastLod_ == Lod::Native
+            ? lc::orderViolations(region_.items, mergeActors_, merge_.sequence(), false, &pair)
+            : lc::orderViolations({}, mergeActors_, coarseMerge_.sequence(), false, &pair);
+    const auto name = [&](const DepthBox& b) {
+        const auto kind = static_cast<DepthKind>(b.id >> 56);
+        const auto index = static_cast<std::uint32_t>((b.id >> 32) & 0xFFFFFFu);
+        std::string what = kind == DepthKind::Item && index < map_.items().size()
+                               ? map_.info(map_.items()[index]).id
+                               : (kind == DepthKind::Actor ? "actor" : "element");
+        return std::format("{} part {} [{:.1f},{:.1f}..{:.1f},{:.1f}] z {:.0f}..{:.0f}", what,
+                           b.id & 0xFFFFFFFFu, b.foot.x0, b.foot.y0, b.foot.x1, b.foot.y1, b.z0,
+                           b.z1);
+    };
+    if (n > 0 && first != nullptr)
+        *first = "drawn first " + name(pair.first) + ", then " + name(pair.second);
+    else if (region_.cycles > 0 && lastLod_ == Lod::Native && first != nullptr)
+        *first = std::format("{} cycle(s) in the static order, the first broken at {}",
+                             region_.cycles, name(region_.cycleAt));
+    return n;
 }
 
 int WorldView::orderCycles() const {
@@ -1912,7 +1952,7 @@ int WorldView::orderCycles() const {
     return region_.cycles;
 }
 
-int WorldView::sunkActors() const {
+int WorldView::sunkActors(std::string* first) const {
     if (lastLod_ != Lod::Native || life_ == nullptr) return 0;
     const auto& kinds = life_->lifeWorld().data.kinds;
     int sunk = 0;
@@ -1937,8 +1977,23 @@ int WorldView::sunkActors() const {
         const ZRange z = heightsOf(g, info, piece, 0);
         // A floor or a deck (who walks under an overhead run stands on the ground).
         const bool stoodOn = z.kind == ZRange::Kind::Floor || z.kind == ZRange::Kind::Deck;
-        const float surface = static_cast<float>(it.level * lvl_) + z.z1 - lc::tuning::kFloorTread;
-        if (stoodOn && d.z + tuning::kSunkTolerance < surface) ++sunk;
+        // The tile's own floor: its walk_z, else (a kit deck) its tops.
+        int floor = 0;
+        bool known = false;
+        if (g != nullptr)
+            for (const auto& [wt, wz] : g->walkZ)
+                if (wt == rel) {
+                    floor = wz;
+                    known = true;
+                }
+        if (!known && g != nullptr && g->topsW > 0 && rel.x < g->topsW &&
+            static_cast<std::size_t>(rel.y * g->topsW + rel.x) < g->tops.size())
+            floor = g->tops[static_cast<std::size_t>(rel.y * g->topsW + rel.x)];
+        const auto surface = static_cast<float>(it.level * lvl_ + floor);
+        if (!stoodOn || d.z + tuning::kSunkTolerance >= surface) continue;
+        if (sunk++ == 0 && first != nullptr)
+            *first = std::format("{} at ({:.2f}, {:.2f}) z {:.0f} on {} whose floor is at {:.0f}",
+                                 kinds[d.kind].id, d.pos.x, d.pos.y, d.z, info.id, surface);
     }
     return sunk;
 }

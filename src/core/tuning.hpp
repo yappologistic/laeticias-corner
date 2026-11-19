@@ -161,8 +161,6 @@ inline constexpr float kStartleMax = 3.0f;
 inline constexpr float kPetSeconds = 1.5f;
 inline constexpr float kPetCooldown = 4.0f;
 inline constexpr float kPetHitInflate = 4.0f; // px at 1x around a critter's frame
-inline constexpr float kFloorTread =
-    2.0f; // a floor's box reaches this far over its highest tread, px
 inline constexpr float kClickCooldown = 8.0f; // between her answers to a click
 inline constexpr float kHarvestReach = 12.0f; // she takes the harvest home from this far
 inline constexpr float kHarvestPeckReach = 5.0f;

@@ -39,11 +39,18 @@ enum class DepthKind : std::uint8_t { Ground = 1, Item, Figure, Home, Actor, Gho
 }
 
 // True when a is drawn before b, for two boxes whose screen rectangles overlap (§1.3): the first
-// separating axis of x, y, then height decides; boxes that meet in all three go by the higher
-// base, then the smaller nearness, then the id. Antisymmetric and total on a pair;
-// not transitive across pairs that do not overlap on screen, so it orders a topological sort,
-// never std::sort.
+// separating axis of x, y (apart the opposite ways round on both: by nearness), then height
+// decides; boxes that meet in all three go by the higher base, then the axis of least
+// penetration, then nearness, then the id. Antisymmetric and total on a pair; not transitive
+// across pairs that do not overlap on screen, so it orders a topological sort, never std::sort.
 [[nodiscard]] bool drawnBefore(const DepthBox& a, const DepthBox& b);
+
+// Whether two boxes whose screen rectangles overlap must be ordered at all. Footprints apart on
+// both axes the opposite ways round stand side by side on screen: their extruded footprints
+// cannot meet, only their sprites' bounding rectangles do (a diagonal run's rectangle is mostly
+// empty), so the pair orders nothing, unless one is a mover (an actor or a figure: sprites wider
+// than their feet), which goes by nearness. Sorts make edges only for such pairs.
+[[nodiscard]] bool constrains(const DepthBox& a, const DepthBox& b);
 
 // Buckets rectangles by a uniform grid over their screen boxes so overlap queries only look at
 // neighbours. Storage is reused between builds.

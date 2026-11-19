@@ -226,12 +226,12 @@ public:
     // many have more than `px` rows drawn inside something in front of them: worked out one by
     // one from the map's items, their boxes and the comparator, not from the top field that cut
     // them, so tests can hold the one against the other.
-    [[nodiscard]] int coarseActorsCovered(float px) const;
+    [[nodiscard]] int coarseActorsCovered(float px, std::string* first = nullptr) const;
     [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
     // Pairs drawn in the last frame that overlap on screen yet go against the comparator, two
     // actors' pairs aside (the order oracle, draw-order.md §6.1), and cycles the static sort had
     // to break (data faults): both zero when right.
-    [[nodiscard]] int orderViolations() const;
+    [[nodiscard]] int orderViolations(std::string* first = nullptr) const; // names the first
     [[nodiscard]] int orderCycles() const;
     // Draw calls of the last frame per band (render/bands.hpp); the last slot counts those made
     // with no band named, which must stay zero.
@@ -240,7 +240,7 @@ public:
     }
     // People drawn in the last frame (native level) standing on a floor or deck lower than its
     // surface, by the art's geometry: walking through a bridge rather than on it. Boats excluded.
-    [[nodiscard]] int sunkActors() const;
+    [[nodiscard]] int sunkActors(std::string* first = nullptr) const; // and names the first
     // The actors drawn in the last frame.
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);

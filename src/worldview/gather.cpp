@@ -1,6 +1,5 @@
 #include "worldview/gather.hpp"
 
-#include "core/tuning.hpp"
 #include "worldview/cells.hpp"
 #include "worldview/tuning.hpp"
 
@@ -59,18 +58,16 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
     // A crossing's deck stands over the water even where the art gives no clearance (some
     // connect variants of the kit bridges): whatever floats under it is below it.
     if (walk && info.crossing && under == 0 && floorMin > 0) under = 1;
-    const float tread = lc::tuning::kFloorTread;
     if (walk) {
         // A deck: room under it below its floor (boats under, walkers over).
-        if (under > 0 && under <= floorMin)
-            return {f(under), f(floorMax) + tread, ZRange::Kind::Deck};
+        if (under > 0 && under <= floorMin) return {f(under), f(floorMax), ZRange::Kind::Deck};
         // A run under a roof (a gate's passage, an arch): from the overhead's underside up.
         const int over = std::min(roofMin, under > 0 ? under : INT_MAX);
         if (over != INT_MAX && (gp == nullptr || !gp->floor))
             return {f(over), f(std::max(g->h, over)), ZRange::Kind::Overhead};
         // A floor: stair treads, a walk run's paving, under whoever stands on it; with a roof
         // over it in the same piece, both (drawn in two parts).
-        ZRange z{0, f(floorMax) + tread, ZRange::Kind::Floor};
+        ZRange z{0, f(floorMax), ZRange::Kind::Floor};
         if (over != INT_MAX) {
             z.over = f(over);
             z.top = f(std::max(g->h, over));
@@ -211,6 +208,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
     }
     sorter_.sort(out.items, kSortCell, out.order, out.graph);
     out.cycles = sorter_.cyclesBroken();
+    out.cycleAt = sorter_.firstCycle();
 }
 
 Prep::Prep(const world::WorldMap& map, const WorldSprites& sprites, bool async, Hole hole,

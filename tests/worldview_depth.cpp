@@ -53,7 +53,9 @@ bool valid(const std::vector<OrderItem>& items, const std::vector<std::uint32_t>
     for (std::size_t k = 0; k < order.size(); ++k) at[order[k]] = k;
     for (std::size_t i = 0; i < items.size(); ++i)
         for (std::size_t j = i + 1; j < items.size(); ++j) {
-            if (!items[i].screen.overlaps(items[j].screen)) continue;
+            if (!items[i].screen.overlaps(items[j].screen) ||
+                !constrains(items[i].box, items[j].box))
+                continue;
             if (drawnBefore(items[i].box, items[j].box) != (at[i] < at[j])) return false;
         }
     return true;
@@ -191,16 +193,18 @@ TEST_CASE("depth: a bridge carries walkers between its parapets and boats pass u
     const ZRange farSide = heightsOf(&g, info, 1, 100);
     const ZRange nearSide = heightsOf(&g, info, 2, 100);
     CHECK(deck.z0 == 18);
-    CHECK(deck.z1 == 24 + lc::tuning::kFloorTread);
+    CHECK(deck.z1 == 24);
     CHECK(farSide.z0 == 0);
     CHECK(farSide.z1 == 31);
     const OrderItem d = item({1, 0, 2, 4}, deck.z0, deck.z1);
     const OrderItem pFar = item({0, 0, 1, 4}, farSide.z0, farSide.z1);
     const OrderItem pNear = item({2, 0, 3, 4}, nearSide.z0, nearSide.z1);
     const OrderItem walker = actor(1.5f, 1.7f, 24, 44);
-    const OrderItem barge = actor(1.5f, 2.0f, 0, 74); // taller than the clearance: its mast shows
+    const OrderItem onRise = actor(1.5f, 0.5f, 20, 44); // on its lower end (walk_z 20)
+    const OrderItem barge = actor(1.5f, 2.0f, 0, 74);   // taller than the clearance: its mast shows
     // The walker on the deck: after the deck and the far parapet, before the near one.
     CHECK(drawnBefore(d.box, walker.box));
+    CHECK(drawnBefore(d.box, onRise.box));
     CHECK(drawnBefore(pFar.box, walker.box));
     CHECK(drawnBefore(walker.box, pNear.box));
     // The barge under it: before the deck (the deck hides it), after the far parapet.
@@ -248,7 +252,7 @@ TEST_CASE("depth: a gate's roof goes over who walks through it, a colonnade's co
     }
     const ZRange floor = heightsOf(&stoa, info, 0, 200);
     CHECK(floor.z0 == 0);
-    CHECK(floor.z1 == 5 + lc::tuning::kFloorTread);
+    CHECK(floor.z1 == 5);
     const OrderItem walk = item({1, 0, 2, 8}, floor.z0, floor.z1);
     const OrderItem backColumns = item({0, 0, 1, 8}, 0, 104);
     const OrderItem frontColumns = item({2, 0, 3, 8}, 0, 104);
@@ -258,13 +262,25 @@ TEST_CASE("depth: a gate's roof goes over who walks through it, a colonnade's co
     CHECK(drawnBefore(inside.box, frontColumns.box));
 }
 
+TEST_CASE("depth: on a flat floor and at the edge of a piece at the same level") {
+    // The Forum square: a walk run's paving at the ground (walk_z 0) is under whoever stands on
+    // it, wherever on it they stand; a citizen whose feet reach over the front edge of a long
+    // low piece behind them is in front of it.
+    const OrderItem paving = item({83, 1078, 84, 1086}, 16, 16);
+    for (const float x : {83.25f, 83.5f, 83.75f})
+        for (const float y : {1078.25f, 1079.0f, 1085.75f})
+            CHECK(drawnBefore(paving.box, actor(x, y, 16, 44).box));
+    const OrderItem wall = item({80, 1070, 90, 1079}, 16, 40);
+    CHECK(drawnBefore(wall.box, actor(83.43f, 1079.0f, 16, 44).box));
+    CHECK(drawnBefore(actor(83.43f, 1069.95f, 16, 44).box, wall.box));
+}
+
 TEST_CASE("depth: a walker on a stair is over the treads behind and under the ones in front") {
     // A flight of four tread rows climbing -y (rows at smaller y are higher), parapets beside.
     std::vector<OrderItem> statics;
     for (int r = 0; r < 4; ++r) {
         const float z = static_cast<float>((4 - r) * 8);
-        statics.push_back(item({1, static_cast<float>(r), 5, static_cast<float>(r + 1)}, 0,
-                               z + lc::tuning::kFloorTread));
+        statics.push_back(item({1, static_cast<float>(r), 5, static_cast<float>(r + 1)}, 0, z));
     }
     statics.push_back(item({0, 0, 1, 4}, 0, 48)); // the far parapet
     statics.push_back(item({5, 0, 6, 4}, 0, 48)); // the near parapet
@@ -303,13 +319,17 @@ TEST_CASE("depth: actors merge exactly, crossings included, at a few page switch
         int wrong = 0;
         for (std::size_t a = 0; a < actors.size(); ++a) {
             for (std::size_t e = 0; e < items.size(); ++e) {
-                if (!items[e].screen.overlaps(actors[a].screen)) continue;
+                if (!items[e].screen.overlaps(actors[a].screen) ||
+                    !constrains(items[e].box, actors[a].box))
+                    continue;
                 ++pairs;
                 if (drawnBefore(items[e].box, actors[a].box) != (p.statics[e] < p.actors[a]))
                     ++wrong;
             }
             for (std::size_t b = a + 1; b < actors.size(); ++b) {
-                if (!actors[a].screen.overlaps(actors[b].screen)) continue;
+                if (!actors[a].screen.overlaps(actors[b].screen) ||
+                    !constrains(actors[a].box, actors[b].box))
+                    continue;
                 ++pairs;
                 if (drawnBefore(actors[a].box, actors[b].box) != (p.actors[a] < p.actors[b]))
                     ++wrong;
@@ -319,6 +339,7 @@ TEST_CASE("depth: actors merge exactly, crossings included, at a few page switch
         for (std::size_t i = 0; i < items.size(); ++i)
             for (std::size_t j = i + 1; j < items.size(); ++j)
                 if (items[i].screen.overlaps(items[j].screen) &&
+                    constrains(items[i].box, items[j].box) &&
                     drawnBefore(items[i].box, items[j].box) != (p.statics[i] < p.statics[j]))
                     ++wrong;
         CAPTURE(seed);

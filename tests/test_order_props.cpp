@@ -113,6 +113,10 @@ TEST_CASE("order props: no 3-cycle among ground-standing boxes that overlap on s
                 for (std::size_t k = j + 1; k < boxes.size(); ++k) {
                     if (!screens[i].overlaps(screens[k]) || !screens[j].overlaps(screens[k]))
                         continue;
+                    // A cycle needs every pair to be an edge of the sort.
+                    if (!constrains(boxes[i], boxes[j]) || !constrains(boxes[j], boxes[k]) ||
+                        !constrains(boxes[i], boxes[k]))
+                        continue;
                     ++triples;
                     const bool ij = drawnBefore(boxes[i], boxes[j]);
                     const bool jk = drawnBefore(boxes[j], boxes[k]);
@@ -214,6 +218,7 @@ TEST_CASE("order props: the sort's result does not depend on the order of its in
         for (std::size_t i = 0; i < shuffled.size(); ++i)
             for (std::size_t j = i + 1; j < shuffled.size(); ++j)
                 if (shuffled[i].screen.overlaps(shuffled[j].screen) &&
+                    constrains(shuffled[i].box, shuffled[j].box) &&
                     drawnBefore(shuffled[i].box, shuffled[j].box) != (at[i] < at[j]))
                     ++wrong;
         CHECK(wrong == 0);

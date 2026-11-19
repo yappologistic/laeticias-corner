@@ -586,7 +586,7 @@ TEST_CASE("depth order respects every overlapping pair and handles large footpri
     int pairs = 0;
     for (std::size_t i = 0; i < foot.size(); ++i)
         for (std::size_t j = i + 1; j < foot.size(); ++j) {
-            if (!screen[i].overlaps(screen[j])) continue;
+            if (!screen[i].overlaps(screen[j]) || !constrains(items[i].box, items[j].box)) continue;
             ++pairs;
             const bool ij = drawnBefore(items[i].box, items[j].box);
             CHECK((ij ? rank[i] < rank[j] : rank[j] < rank[i]));
