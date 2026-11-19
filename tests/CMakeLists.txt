@@ -83,6 +83,7 @@ set(LC_SCRIPTS
   "profiler|profiler|960x600|"
   "city_life|city_life|640x400|"
   "builder|builder|960x600|"
+  "shape_edge|shape_edge|1280x800|"
   "front_door|front_door|1280x800||--front-door"
   "tour_full_tray|tour_full_tray|1280x800||--front-door"
   "world_old_save|world_old_save|960x600|"

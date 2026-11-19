@@ -776,6 +776,7 @@ private:
     enum class Shape : std::uint8_t { None, Line, Rect };
     Shape shape_ = Shape::None;       // a Shift-drag in progress
     TilePos anchor_;                  // where it started
+    TilePos shapeEnd_;                // the last tile the pointer was over while it was drawn
     std::optional<Item> carry_;       // the piece being moved, as it was picked up
     bool pipette_ = false;            // the eyedropper is armed (I): the next click copies
     bool middleClick_ = false;        // a middle click to handle as an eyedropper
