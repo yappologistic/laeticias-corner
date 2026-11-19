@@ -833,6 +833,12 @@ std::string worldSlug(std::string_view name, std::span<const std::string> taken)
     if (base.size() > 32) base.resize(32);
     while (!base.empty() && base.back() == '-') base.pop_back();
     if (base.empty()) base = "world";
+    // Names Windows keeps for devices cannot be folders there, whatever follows a dot.
+    static constexpr std::array<std::string_view, 4> kDevices{"con", "prn", "aux", "nul"};
+    const bool device = std::ranges::find(kDevices, base) != kDevices.end() ||
+                        (base.size() == 4 && (base.starts_with("com") || base.starts_with("lpt")) &&
+                         base[3] >= '0' && base[3] <= '9');
+    if (device) base += "-world";
     std::string slug = base;
     for (int n = 2; std::ranges::find(taken, slug) != taken.end(); ++n)
         slug = base + "-" + std::to_string(n);

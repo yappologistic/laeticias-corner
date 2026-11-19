@@ -735,6 +735,18 @@ TEST_CASE("fuzz: any one value of a profile replaced by anything falls back fiel
     }
 }
 
+TEST_CASE("a world named like a Windows device gets a folder Windows can make (H3-014)") {
+    const std::vector<std::string> none;
+    CHECK(worldSlug("Con", none) == "con-world");
+    CHECK(worldSlug("NUL", none) == "nul-world");
+    CHECK(worldSlug("com1", none) == "com1-world");
+    CHECK(worldSlug("LPT9", none) == "lpt9-world");
+    CHECK(worldSlug("Aux.", none) == "aux-world");
+    CHECK(worldSlug("Console", none) == "console");
+    CHECK(worldSlug("com", none) == "com");
+    CHECK(worldSlug("com10", none) == "com10");
+}
+
 TEST_CASE("a profile's last world opens only a folder directly under worlds/ (H3-005)") {
     CHECK(plainFolderName("plum-hollow"));
     CHECK(plainFolderName(worldSlug("Laeticia's Corner", {})));
