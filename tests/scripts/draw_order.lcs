@@ -1,0 +1,194 @@
+# The draw order at the hard places (docs/design/draw-order.md §6.4), at 1x, 1/2 and 1/4:
+# every pair drawn that overlaps on screen goes the comparator's way and no cycle is broken
+# (city order), nobody is drawn below the floor or deck they stand on (city sunk), and zoomed
+# out nobody shows more than 2 rows inside something in front of them (city covered). The
+# shots/order_* frames are the golden set for each place and zoom.
+set season spring
+set day 9
+set time 0.17
+set clock day
+set weather clear
+# the Pons Fabricius and the Tiber island: walkers on the deck between its parapets, barges under it
+set city 112,1121
+set city camera
+set world 112 1121 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_tiber_1x.png
+set world 112 1121 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+expect city on_items 1 400
+shot shots/order_tiber_half.png
+set world 112 1121 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_tiber_quarter.png
+# the timber Pons Sublicius with carts
+set city 131,1126
+set city camera
+set world 131 1126 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_sublicius_1x.png
+set world 131 1126 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_sublicius_half.png
+set world 131 1126 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_sublicius_quarter.png
+# Ostia's arch bridge between a ramp and a stone stair (where the owner looked)
+set city 203,1141
+set city camera
+set world 203 1141 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_ostia_1x.png
+set world 203 1141 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_ostia_half.png
+set world 203 1141 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_ostia_quarter.png
+# a timber bridge on the road
+set city 294,278
+set city camera
+set world 294 278 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_timber_1x.png
+set world 294 278 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_timber_half.png
+set world 294 278 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_timber_quarter.png
+# Parsa's Great Stair with horses on its flights
+set city 346,89
+set city camera
+set world 346 89 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_great_stair_1x.png
+set world 346 89 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_great_stair_half.png
+set world 346 89 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_great_stair_quarter.png
+# the Gate of All Lands: walkers through its passage under the roof
+set city 348,76
+set city camera
+set world 348 76 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_gate_1x.png
+set world 348 76 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_gate_half.png
+set world 348 76 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_gate_quarter.png
+# the Propylaia: the passage's floor under the procession, its roof over it
+set city 307,632
+set city camera
+set world 307 632 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_propylaia_1x.png
+set world 307 632 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_propylaia_half.png
+set world 307 632 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_propylaia_quarter.png
+# the Stoa Poikile: walkers between its columns, under its roof
+set city 247,668
+set city camera
+set world 247 668 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_stoa_1x.png
+set world 247 668 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_stoa_half.png
+set world 247 668 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_stoa_quarter.png
+# the Capitol's travertine stair
+set city 76,1040
+set city camera
+set world 76 1040 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_capitol_1x.png
+set world 76 1040 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_capitol_half.png
+set world 76 1040 0.25
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_capitol_quarter.png
+# Ramps at Olympia and Sardis (QA V6-006: people on ramps, stairs and decks were dropped zoomed
+# out; the Tiber's bridges above check that they are drawn).
+set city 322,790
+set city camera
+set world 322 790 1
+wait 90
+expect city order 0 0
+expect city sunk 0 0
+shot shots/order_olympia_1x.png
+set world 322 790 0.5
+wait 60
+expect city order 0 0
+expect city covered 2 0 0
+shot shots/order_olympia_half.png
+set city 213,405
+set city camera
+set world 213 405 0.5
+wait 90
+expect city covered 2 0 0
+shot shots/order_sardis_half.png
+quit

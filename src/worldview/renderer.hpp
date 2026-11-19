@@ -20,6 +20,7 @@
 #include "render/gpu/decoder.hpp"
 #include "render/gpu/look.hpp"
 #include "render/ground.hpp"
+#include "render/order.hpp"
 #include "ui/font.hpp"
 #include "world/figures.hpp"
 #include "world/loader.hpp"
@@ -28,7 +29,6 @@
 #include "worldview/cell_cache.hpp"
 #include "worldview/cover.hpp"
 #include "worldview/gather.hpp"
-#include "worldview/order.hpp"
 #include "worldview/overview.hpp"
 #include "worldview/page_atlas.hpp"
 #include "worldview/page_runs.hpp"
@@ -175,8 +175,7 @@ public:
     [[nodiscard]] bool settled() const;
     // And nothing is being built or loaded ahead of need either: the steady state.
     [[nodiscard]] bool idle() const {
-        return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0 &&
-               !coverJob_.valid();
+        return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0;
     }
 
     [[nodiscard]] const FrameStats& stats() const { return stats_; }
@@ -228,10 +227,8 @@ public:
     // The season whose looks the world wears (the home catalog's index; -1: plain).
     void setSeason(int season);
     // Nothing reads the map on a worker but the gatherer (which never looks inside the hole)
-    // and, at first, the overview and the cover map: edits of the home wait for those two.
-    [[nodiscard]] bool overviewBuilt() const {
-        return (!overview_ || overview_->built()) && !coverJob_.valid();
-    }
+    // and, at first, the overview: edits of the home wait for it.
+    [[nodiscard]] bool overviewBuilt() const { return !overview_ || overview_->built(); }
     // The hole's tiles changed in the map (its rim is drawn into the cells): redraw them.
     void holeChanged();
     // The home's terrain changed: its water is marked and the water field built again.
@@ -251,12 +248,27 @@ public:
     // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
     void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
     // Of the people drawn over the impostors in the last frame (half and quarter scale), how
-    // many stand, their whole width, with more than `px` of something in front of them over
-    // their feet: worked out
-    // one by one from the map's items by the order's depth relation, not from the cover map
-    // that hid the others, so tests can hold the one against the other.
-    [[nodiscard]] int coarseActorsCovered(float px) const;
+    // many have more than `px` rows drawn inside something in front of them: worked out one by
+    // one from the map's items, their boxes and the comparator, not from the top field that cut
+    // them, so tests can hold the one against the other.
+    [[nodiscard]] int coarseActorsCovered(float px, std::string* first = nullptr) const;
     [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
+    // Of them, people standing on an item's tile (a ramp, a stair, a deck): zoomed out they are
+    // drawn like anyone, cut only where something stands in front of them.
+    [[nodiscard]] int coarseActorsOnItems() const;
+    // Pairs drawn in the last frame that overlap on screen yet go against the comparator, two
+    // actors' pairs aside (the order oracle, draw-order.md §6.1), and cycles the static sort had
+    // to break (data faults): both zero when right.
+    [[nodiscard]] int orderViolations(std::string* first = nullptr) const; // names the first
+    [[nodiscard]] int orderCycles() const;
+    // Draw calls of the last frame per band (render/bands.hpp); the last slot counts those made
+    // with no band named, which must stay zero.
+    [[nodiscard]] const std::array<int, Batch::kTags>& bandDrawCalls() const {
+        return batch_.bandDrawCalls();
+    }
+    // People drawn in the last frame (native level) standing on a floor or deck lower than its
+    // surface, by the art's geometry: walking through a bridge rather than on it. Boats excluded.
+    [[nodiscard]] int sunkActors(std::string* first = nullptr) const; // and names the first
     // The actors drawn in the last frame.
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);
@@ -346,7 +358,13 @@ private:
         std::uint16_t page = 0;
         std::uint32_t what = 0; // for runBreakers: an item's catalog index, or one of kRun...
         bool packed = false;    // drawn through the decode (a packed page's sprite)
+        std::int32_t poly = -1; // part of a sprite (a polygon in runPolys_) instead of the quad
     };
+    struct RunPoly {
+        std::array<SDL_Vertex, 5> v{};
+        int n = 0;
+    };
+    std::vector<RunPoly> runPolys_;
     static constexpr std::uint32_t kRunActor = 0xFFFFFFFFu;
     static constexpr std::uint32_t kRunFigure = 0xFFFFFFFEu;
     static constexpr std::uint32_t kRunTerrain = 0x80000000u; // + the tile's terrain
@@ -368,6 +386,8 @@ private:
     // (`haze`: the haze over it, drawn after all of the water.)
     bool drawBeyond(TilePos p, const Xform& x, bool haze, float now, bool* animated);
     bool drawElem(const Elem& e, const Xform& x, float now);
+    [[nodiscard]] const SpriteRef& elemSprite(const Elem& e, float now) const;
+    [[nodiscard]] FRect elemFoot(const Elem& e) const; // its piece's footprint, tiles
     // `actors`: with the live people's shadows (the frame, not a cached picture). `visible`:
     // the order's positions drawn this frame (empty: look at all of them).
     bool drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
@@ -433,6 +453,19 @@ private:
     void prepareActors(const FRect& view, Lod lod);
     void prepareActorsTimed(const FRect& view, Lod lod);
     void drawActor(std::uint32_t i, const Xform& x);
+    // Part of `s` (anchored at `anchor`, mirrored or not): the convex polygon `pts` (world px,
+    // at most five corners) of its picture, drawn as put draws the whole (the decode of a
+    // packed page, a page's run when runs are open).
+    bool putPoly(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, SDL_BlendMode mode,
+                 bool mirror, std::span<const Vec2> pts);
+    // `s` above (or below) the line where the roof over `foot` has its underside at `z` px.
+    bool putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
+                bool upper, SDL_FColor c = {1, 1, 1, 1});
+    // One half of a one-tile kit bridge (Elem::part 2 or 3), cut along its span.
+    bool putHalf(const SpriteRef& s, const Elem& e, const Xform& x, SDL_FColor c);
+    // `s` with the rows [hide.from, hide.to) of world px left out (two quads at most).
+    bool putRows(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, bool mirror,
+                 RowBand hide);
     void drawActorShadows(const Xform& x);
     [[nodiscard]] float shadowOpacity() const;
 
@@ -445,10 +478,7 @@ private:
     std::unique_ptr<PageAtlas> pages_;
     std::unique_ptr<WorldSprites> sprites_;
     std::unique_ptr<Overview> overview_;
-    std::unique_ptr<CoverMap> cover_; // what hides a ground point at the coarser levels
-    // It is rasterised from the whole map (a tenth of a second or two): on a worker while the
-    // first frames are drawn, nobody shown at the coarser levels until it is there.
-    std::future<std::unique_ptr<CoverMap>> coverJob_;
+    std::unique_ptr<TopField> tops_; // what covers whom at the coarser levels (built at load)
     Hole hole_;
     const Atlas& homeAtlas_;
     CellCache cells_;
@@ -564,12 +594,15 @@ private:
         SDL_FColor colour{1, 1, 1, 1};
         const SpriteRef* goods = nullptr;
         Vec2 goodsAt;
-        float depth = 0;
+        float drawn = -1; // its place in the frame's sequence (-1: not drawn)
+        RowBand hidden;   // world px rows covered by what stands in front (coarser levels)
+        DepthBox box;
     };
     std::vector<ActorDraw> actorDraw_;
-    std::vector<MergeActor> mergeActors_;
+    std::vector<OrderItem> mergeActors_;
     std::vector<std::uint32_t> actorOf_; // merge entry -> actorDraw_/actorBuf_ index
-    std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, back to front
+    std::vector<std::uint32_t> coarse_;  // actors drawn over impostors, in draw order
+    ActorMerge coarseMerge_;             // their order among themselves (no static order)
     mutable std::vector<std::pair<float, life::Handle>> actorHits_; // actorsAt's scratch
     // How far an actor's art reaches from its feet, px: twice the largest in today's sets (112
     // sideways, 152 up with goods, 51 down), and widened by anything larger that is drawn.
@@ -583,6 +616,7 @@ private:
     std::vector<float> rainMesh_; // and how hard it rains at its mesh's corners
     ActorMerge merge_;
     bool mergeIndexed_ = false;
+    Lod lastLod_ = Lod::Native; // the level the last frame was drawn at
 
     // The shader path (null: Classic), the world's lights, the regions' looks, sway weights per
     // content item (art px at the top in a full wind) and the wind.

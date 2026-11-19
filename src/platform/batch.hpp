@@ -3,7 +3,9 @@
 
 #include <SDL3/SDL.h>
 
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -30,6 +32,12 @@ public:
     void flush();
 
     [[nodiscard]] int drawCalls() const { return drawCalls_; }
+    // The layer what follows is drawn in (render/bands.hpp's tag; 0xFF: none named). Draw calls
+    // are counted per tag, the last slot for those made with none.
+    static constexpr std::size_t kTags = 17;
+    void setBand(std::uint8_t tag) { band_ = tag; }
+    [[nodiscard]] std::uint8_t band() const { return band_; }
+    [[nodiscard]] const std::array<int, kTags>& bandDrawCalls() const { return bandDraws_; }
     // Storage a caller may build geometry in before handing it to triangles(); it keeps its
     // capacity from frame to frame.
     struct Scratch {
@@ -38,7 +46,10 @@ public:
         std::vector<SDL_FPoint> points;
     };
     [[nodiscard]] Scratch& scratch() { return scratch_; }
-    void resetStats() { drawCalls_ = 0; }
+    void resetStats() {
+        drawCalls_ = 0;
+        bandDraws_ = {};
+    }
 
 private:
     SDL_Renderer* renderer_;
@@ -55,6 +66,8 @@ private:
     std::size_t vertCount_ = 0;
     std::size_t indexCount_ = 0;
     int drawCalls_ = 0;
+    std::uint8_t band_ = 0xFF;
+    std::array<int, kTags> bandDraws_{};
     Scratch scratch_;
 };
 

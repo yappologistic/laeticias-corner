@@ -24,6 +24,7 @@
 #include "render/draw.hpp"
 #include "render/fx.hpp"
 #include "render/ground.hpp"
+#include "render/order.hpp"
 #include "render/sprites.hpp"
 
 #include <memory>
@@ -177,13 +178,14 @@ private:
         FRect screen; // world-px box of the base sprite
         bool tree = false;
         bool occludesGlow = false; // overlaps a glowing item, so the glow pass must draw it
+        // A footbridge is drawn in two halves cut along its span, its far rail before whoever
+        // walks on its deck, its near rail after: 0 the far half, 1 the near, -1 whole.
+        std::int8_t part = -1;
     };
     enum class EntryKind : std::uint8_t { Actor, Ghost, Fade };
     struct Entry {
         EntryKind kind;
         std::uint32_t index;
-        std::uint32_t after;       // drawn after this many region items
-        float depth;               // tie-break among dynamic entries at the same slot
         bool occludesGlow = false; // overlaps a glowing item
     };
     struct Fade {
@@ -230,11 +232,16 @@ private:
     // A world px point on the nearest pixel of this frame's target.
     [[nodiscard]] Vec2 snapped(Vec2 world) const;
     [[nodiscard]] float popOf(TilePos origin) const;
+    [[nodiscard]] OrderItem itemBox(const Placed& p, std::uint32_t id) const;
     void buildDynamic(const FrameParams& p);
     void sprite(SpriteId id, Vec2 anchor, SDL_FColor color, bool mirror = false, Vec2 pivot = {},
                 Vec2 scale = {1, 1});
     void drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, bool silhouette,
-                  float scaleY = 1.0f);
+                  float scaleY = 1.0f, int part = -1);
+    // The deck under a walker at `pos` (a footbridge's, stepping stones'), px above the ground,
+    // blended toward its neighbours' near a tile's edge so it rises smoothly.
+    [[nodiscard]] float deckAt(Vec2 pos) const;
+    [[nodiscard]] bool onDecks(const Actor& a) const; // walks on decks (not swimming, flying)
     void drawEntry(const FrameParams& p, const Entry& e, bool silhouette);
     void drawEntries(const FrameParams& p, bool silhouette);
     [[nodiscard]] bool nearGlow(const FRect& r) const;
@@ -279,13 +286,18 @@ private:
     // The region: objects near the camera in draw order, and what derives from them.
     TileRect region_;
     std::uint64_t regionRevision_ = ~0ULL;
-    std::vector<Placed> placed_;
-    std::vector<FRect> footprints_;
-    std::vector<FRect> screens_;
+    std::vector<Placed> placed_;     // in draw order
+    std::vector<OrderItem> boxes_;   // per placed item: its box (draw-order.md §1.2)
+    std::vector<OrderItem> sorting_; // per gathered item, while sorting
     std::vector<std::uint32_t> order_;
+    std::vector<std::uint32_t> identity_; // the placed items' own order: 0, 1, 2 ...
+    OrderGraph graph_;                    // by gathered item, then by place in the order
     std::vector<Placed> gathered_;
-    DepthSorter sorter_;
-    ScreenGrid grid_; // region items' screen boxes, in draw order
+    PageOrder sorter_;
+    ScreenGrid grid_;                     // region items' screen boxes, in draw order
+    ActorMerge merge_;                    // this frame's actors, ghosts and fades among them
+    std::vector<OrderItem> dynamicBoxes_; // per dynamic_ entry
+    std::vector<float> actorRank_;        // per actor: its place in the frame's order, -1: none
     std::vector<Light> lights_;
     std::vector<FRect> glowRects_;
     struct Chimney {
