@@ -285,6 +285,9 @@ public:
     void update(const LifeClock& clock, float dt);
     // Brings the active area to its full population at once (arrival, tests, dumps).
     void settle(const LifeClock& clock);
+    // Whoever is live is there in full: nobody is still fading in (an arrival that was hidden
+    // while the area filled: when it is shown its people stand there, they do not appear).
+    void showAll();
 
     // Drawing.
     std::size_t gather(TileRect rect, float alpha, std::span<DrawActor> out) const;

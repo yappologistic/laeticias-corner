@@ -36,6 +36,9 @@ std::string_view usage() {
            "  --density D         bench: share of tiles filled near the camera, 0..1 (0.5)\n"
            "  --budget-ms MS      bench: exit 3 when update + draw averages more than MS\n"
            "  --bench-case TEXT   bench: only the cases whose name contains TEXT\n"
+           "  --streamed          headless: build the world's cells and pages over frames as the\n"
+           "                      windowed game does (a headless run builds them at once, so its\n"
+           "                      screenshots are the same every time)\n"
            "  --soak SECONDS      run that much busy play fast and exit 3 if memory grows "
            "(implies --headless)\n"
            "  --perf-log FILE     write per-frame timings and counters to FILE as CSV\n"
@@ -97,6 +100,8 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             const auto v = value();
             if (!v || !parseNumber(*v, o.density) || o.density < 0 || o.density > 1)
                 return std::unexpected("--density expects a number from 0 to 1");
+        } else if (a == "--streamed") {
+            o.streamed = true;
         } else if (a == "--bench-case") {
             const auto v = value();
             if (!v) return std::unexpected("--bench-case expects a case name");

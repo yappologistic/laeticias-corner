@@ -99,8 +99,11 @@ void App::createWorldView() {
                     iso.toWorld(f(w), 0.0f).x + r.left + homeOffset_.x,
                     iso.toWorld(f(w), f(h)).y + r.top + homeOffset_.y};
     worldView_ = std::make_unique<worldview::WorldView>(
-        renderer_.get(), *loaded_, assets_, *atlas_, measuring() || !opts_.headless,
-        worldview::Hole{home.rect, box},
+        renderer_.get(), *loaded_, assets_, *atlas_,
+        // Frames stream as they do for a player wherever time is measured or a window is
+        // open; a headless script builds everything at once (the same shots every run) unless
+        // it asks to see what a player sees.
+        measuring() || !opts_.headless || opts_.streamed, worldview::Hole{home.rect, box},
         // Living figures walk with city life.
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
@@ -363,10 +366,18 @@ void App::updateWorld(float dt) {
             travel_.t = tuning::kTravelFadeOut;
         }
         const float held = travel_.t - tuning::kTravelFadeOut;
-        // Whether the destination is whole is known once a frame of it has been drawn.
-        if (travel_.jumped && held > 0 && (worldView_->settled() || held >= tuning::kTravelHold) &&
-            travelFadeIn_ < 0)
+        // Whether the destination is whole is known once a frame of it has been drawn, and
+        // whether its people are all there once the cities' life has taken a step or two at it
+        // (it fills an area a few dozen people a step): the veil lifts on a place that is
+        // standing, not one that fills in before the eyes.
+        const bool peopled = !city_ || (held >= 2.0f * static_cast<float>(tuning::kStepSeconds) &&
+                                        city_->city->stats().queued == 0);
+        if (travel_.jumped && held > 0 &&
+            ((worldView_->settled() && peopled) || held >= tuning::kTravelHold) &&
+            travelFadeIn_ < 0) {
             travelFadeIn_ = travel_.t;
+            if (city_) city_->city->showAll();
+        }
         if (travelFadeIn_ >= 0 && travel_.t - travelFadeIn_ >= tuning::kTravelFadeIn) {
             travel_ = {};
             travelFadeIn_ = -1;

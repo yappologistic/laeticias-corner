@@ -62,6 +62,15 @@ TEST_CASE("options parse and reject bad input") {
     CHECK(b->map->w == 1024);
     CHECK(b->density == doctest::Approx(0.4f));
     CHECK(b->budgetMs == doctest::Approx(2.0));
+    const std::array<std::string_view, 4> one{"--bench", "--bench-case", "rome crowd",
+                                              "--streamed"};
+    const auto c = parseOptions(one);
+    REQUIRE(c.has_value());
+    CHECK(c->benchCase == "rome crowd");
+    CHECK(c->streamed);
+    CHECK_FALSE(b->streamed);
+    const std::array<std::string_view, 1> noCase{"--bench-case"};
+    CHECK_FALSE(parseOptions(noCase).has_value());
     const std::array<std::string_view, 2> tooBig{"--map", "4096x4096"};
     CHECK_FALSE(parseOptions(tooBig).has_value());
     const std::array<std::string_view, 2> audio{"--audio-out", "a.wav"};

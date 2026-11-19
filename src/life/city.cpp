@@ -580,12 +580,16 @@ void CityLife::settle(const LifeClock& clock) {
     builds_ = 1 << 20;
     spawnQueued(true);
     builds_ = tl::kTableBuildsPerStep;
+    showAll();
+    countDistricts();
+}
+
+void CityLife::showAll() {
     for (LiveActor& a : pool_)
         if ((a.flags & live_flag::kAlive) != 0 && (a.flags & live_flag::kFadeIn) != 0) {
             a.alpha = 1;
             a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kFadeIn);
         }
-    countDistricts();
 }
 
 // -- population: who should be live --------------------------------------------------------------
