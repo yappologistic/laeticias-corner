@@ -1010,6 +1010,54 @@
    "ox": 22,
    "oy": -356
   },
+  "item/parsa.t_almond/base/r0/f0@winter": {
+   "x": 292,
+   "y": 2817,
+   "w": 63,
+   "h": 66,
+   "ox": 31,
+   "oy": 47
+  },
+  "item/parsa.t_almond/base/r1/f0@winter": {
+   "x": 233,
+   "y": 2817,
+   "w": 58,
+   "h": 67,
+   "ox": 29,
+   "oy": 48
+  },
+  "item/parsa.t_poplar/base/r0/f0@winter": {
+   "x": 42,
+   "y": 2817,
+   "w": 38,
+   "h": 101,
+   "ox": 18,
+   "oy": 82
+  },
+  "item/parsa.t_poplar/base/r1/f0@winter": {
+   "x": 1,
+   "y": 2817,
+   "w": 40,
+   "h": 109,
+   "ox": 20,
+   "oy": 90
+  },
+  "item/parsa.t_willow/base/r0/f0@winter": {
+   "x": 157,
+   "y": 2817,
+   "w": 75,
+   "h": 89,
+   "ox": 38,
+   "oy": 69
+  },
+  "item/parsa.t_willow/base/r1/f0@winter": {
+   "x": 81,
+   "y": 2817,
+   "w": 75,
+   "h": 90,
+   "ox": 36,
+   "oy": 70
+  },
   "item/parsa.tacara/glow/r0/f0": {
    "x": 3964,
    "y": 1339,
