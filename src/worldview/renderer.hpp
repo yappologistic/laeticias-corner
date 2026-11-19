@@ -232,6 +232,11 @@ public:
     // order oracle, draw-order.md §6.1), and cycles its sorts had to break: both zero when right.
     [[nodiscard]] int orderViolations() const;
     [[nodiscard]] int orderCycles() const;
+    // Draw calls of the last frame per band (render/bands.hpp); the last slot counts those made
+    // with no band named, which must stay zero.
+    [[nodiscard]] const std::array<int, Batch::kTags>& bandDrawCalls() const {
+        return batch_.bandDrawCalls();
+    }
     // People drawn in the last frame (native level) standing on a floor or deck lower than its
     // surface, by the art's geometry: walking through a bridge rather than on it. Boats excluded.
     [[nodiscard]] int sunkActors() const;

@@ -4,6 +4,7 @@
 
 #include "core/catalog.hpp"
 #include "render/atlas.hpp"
+#include "render/bands.hpp"
 #include "ui/font.hpp"
 #include "world/loader.hpp"
 #include "worldview/gather.hpp"
@@ -137,6 +138,22 @@ TEST_CASE("render: the gathered elements of the Parsa terrace are complete and i
                 ++bad;
     CHECK(bad == 0);
     CHECK(tight.cycles == 0);
+}
+
+TEST_CASE("render: every draw names its band, at every level") {
+    // draw-order.md §2: no draw call without a band, and the depth band is where the world's
+    // objects go at the native level.
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    for (const int level : {3, 2, 1, 0}) {
+        const SurfacePtr px = r.frame(r.camera({313, 615}, level));
+        REQUIRE(px);
+        const auto& calls = r.view->bandDrawCalls();
+        CAPTURE(level);
+        CHECK(calls.back() == 0);
+    }
+    (void)r.frame(r.camera({313, 615}, 3));
+    CHECK(r.view->bandDrawCalls()[bandTag(Band::Depth)] > 0);
 }
 
 TEST_CASE("render: cached cells and the live layer leave no seams as the view moves") {

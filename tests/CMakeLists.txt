@@ -95,6 +95,7 @@ set(LC_SCRIPTS
   "city_world|city_world|1280x800|"
   "city_meet|city_meet|1280x800|"
   "city_coarse|city_coarse|1280x800|"
+  "draw_order|draw_order|960x600|"
   "rain_pan|rain_pan|640x400|"
   "walk_home|walk_home|640x400|"
   "home_gone|home_gone|640x400|"

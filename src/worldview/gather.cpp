@@ -49,13 +49,16 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
             const TilePos t{static_cast<int>(i) % g->topsW, static_cast<int>(i) / g->topsW};
             if (inside(t)) top = std::max(top, g->tops[i]);
         }
-    const int under = gp != nullptr ? gp->under : g->under;
+    int under = gp != nullptr ? gp->under : g->under;
     // A walkable kit piece (a timber bridge, a mole) lists no walk tiles: all of it is floor, at
     // its top.
     if (!walk && info.walkable && gp == nullptr) {
         walk = true;
         floorMax = floorMin = std::max(top, 0);
     }
+    // A crossing's deck stands over the water even where the art gives no clearance (some
+    // connect variants of the kit bridges): whatever floats under it is below it.
+    if (walk && info.crossing && under == 0 && floorMin > 0) under = 1;
     const float tread = lc::tuning::kFloorTread;
     if (walk) {
         // A deck: room under it below its floor (boats under, walkers over).
