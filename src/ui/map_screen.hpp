@@ -25,10 +25,17 @@ struct MapPlace {
     MapMarker marker = MapMarker::Town;
 };
 
+// A town's lights after dark: overview image px, and how bright (0..1, more for many lights).
+struct MapLight {
+    Vec2 at;
+    float strength = 0;
+};
+
 struct MapModel {
     const Sprite* image = nullptr; // the overview art, null while it is missing
     std::span<const MapPlace> places;
     Vec2 view; // where the view is now, overview image px
+    std::span<const MapLight> lights;
 };
 
 // Grid tile <-> overview image px: plan column C = cols - 1 - y, row R = x, `scale` px per tile.

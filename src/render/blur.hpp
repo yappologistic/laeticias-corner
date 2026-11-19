@@ -36,6 +36,7 @@ private:
     void pass(int from, int to);
 
     SDL_Renderer* renderer_;
+    SDL_Texture* out_ = nullptr;                // the target begin() found bound, restored by end()
     std::array<TexturePtr, kMaxLevels> levels_; // level i holds the frame at 1 / 2^(i+1)
     int count_ = 0;
     int baseW_ = 0; // size of the smallest level; level i is base * 2^(count-1-i)

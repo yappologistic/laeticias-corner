@@ -33,6 +33,7 @@
 #include "render/atlas.hpp"
 #include "render/blur.hpp"
 #include "render/camera.hpp"
+#include "render/gpu/look.hpp"
 #include "render/scene.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
@@ -141,6 +142,13 @@ public:
 private:
     bool init();
     bool createWindow();
+    // The renderer (app_gpu.cpp): SDL's gpu driver when the Look asks for more than Classic (an
+    // offscreen one drawing into screen_ when headless), else as before; falls back with a line.
+    bool createRenderer();
+    // The Look this run asks for: --quality, else the profile's (headless runs: Classic).
+    [[nodiscard]] gpu::Quality wantedQuality() const;
+    // The target standing in for the window (screen_ on the offscreen renderer, else null).
+    [[nodiscard]] SDL_Texture* screenTarget() const { return screen_.get(); }
     void loadOrStart();
     void startNewWorld(std::vector<std::string> taken, std::string name = {});
     // "{resident}'s Corner" (data, never a name in code), or a plain one with nobody there.
@@ -433,6 +441,10 @@ private:
                     const std::function<void()>& warm, int frames);
     // The player's cases: zoom sweeps, fast pans, travel between places, the map.
     bool benchPlay(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase);
+    // The Look's tiers on SDL's gpu driver (app_gpu.cpp): one dense city view by day and the
+    // Agora at night, each tier switched live and measured; nothing on other renderers.
+    bool benchLook(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
+                   const std::function<void()>& warm, int frames);
     // One frame of the bench, timed whole (with the GPU waited for).
     FrameSample benchFrame();
     void fillBenchWorld();
@@ -579,6 +591,8 @@ private:
 
     WindowPtr window_;
     RendererPtr renderer_;
+    TexturePtr screen_; // headless on SDL's gpu driver: the frame (it has no window)
+    std::vector<worldview::HomeLamp> lamps_; // the home's lamps, for the shader path's pools
     std::unique_ptr<Atlas> atlas_;
     std::unique_ptr<Scene> scene_;
     // The world around the home (null: the floating island). World px = home px + homeOffset_.
@@ -600,6 +614,8 @@ private:
     std::vector<MapPlace> mapPlaces_; // those shown now
     std::vector<int> mapShown_;       // their regions
     MapModel mapModel_;
+    std::vector<MapLight> mapLights_;                   // the map's town lights this frame
+    std::vector<std::pair<Vec2, float>> mapLightTiles_; // the same in grid tiles
     MapScreen map_;
     TexturePtr mapTexture_;
     Sprite mapSprite_;

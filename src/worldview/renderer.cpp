@@ -4,7 +4,9 @@
 #include "core/tuning.hpp"
 #include "platform/process.hpp"
 #include "render/draw.hpp"
+#include "render/gpu/post.hpp"
 #include "worldview/tuning.hpp"
+#include "worldview/world_lights.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -218,6 +220,12 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     const int t = map_.terrainAt(p);
     if (t == world::kNone) return true;
     const TerrainLook& look = sprites_->terrain(t);
+    // On the shader path water moves in the final pass: its tiles stay still in the cells (no
+    // rebuilds at the art's frame rate) and are marked for it.
+    if (post_ && look.water) {
+        now = 0;
+        animated = nullptr;
+    }
     const std::uint8_t lb = map_.levelByte(p);
     const int level = world::levelOf(lb);
     const int aux = world::auxOf(lb);
@@ -279,18 +287,20 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
                     times(overlay ? look.flatBase : look.flat, jitter * tint), SDL_BLENDMODE_BLEND);
         else
             ok &= put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, shade, SDL_BLENDMODE_BLEND);
+        if (post_ && look.water && !overlay) markWater(sprites_->diamond(), a);
     }
     if (overlay) {
         if (look.hasOverlay()) {
             const Frames& f = look.overlayIn(sameMask(map_, p, t), season_);
             ok &= put(f.at(now, look.fps), a, x, shade, SDL_BLENDMODE_BLEND);
+            if (post_ && look.water) markWater(f.at(now, look.fps), a);
             if (look.animated() && animated != nullptr) *animated = true;
         } else {
             ok &= put(sprites_->diamond(), a, x, times(look.flat, jitter * tint),
                       SDL_BLENDMODE_BLEND);
         }
     }
-    if (look.water && !look.foam[0].empty()) {
+    if (look.water && !look.foam[0].empty() && !post_) { // (the shader path draws its own)
         // Foam where the water meets land: the mask is of land neighbours.
         int land = 0;
         const auto dry = [&](int dx, int dy) {
@@ -324,10 +334,11 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
     const float lift = r.up - static_cast<float>(kMaxLevel * lvl_);
     bool ok = true;
     // The sea beyond the grid first, in two passes (the water, then its haze): flat and under
-    // everything, and each pass one texture instead of two draws per tile.
+    // everything, and each pass one texture instead of two draws per tile. (Its water marks,
+    // flat too, go on after the haze in one draw.)
     const float x0 = px.x0 - r.right;
     const float x1 = px.x1 + r.left;
-    if (!map_.bounds().contains(tiles))
+    if (!map_.bounds().contains(tiles)) {
         for (const bool haze : {false, true})
             diagonals(tiles, iso_.hw, x0, x1, [&](TilePos p) {
                 if (map_.inBounds(p)) return;
@@ -336,8 +347,17 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
                     w.y - iso_.tileH() <= px.y1)
                     ok &= drawBeyond(p, x, haze);
             });
+        flushMarks(x);
+    }
+    // Tiles on one diagonal never overlap, so water marks wait for the end of theirs (one blend
+    // switch a diagonal, not one a tile).
+    int diagonal = tiles.x0 + tiles.y0;
     diagonals(tiles, iso_.hw, x0, x1, [&](TilePos p) {
         if (!map_.inBounds(p)) return;
+        if (p.x + p.y != diagonal) {
+            flushMarks(x);
+            diagonal = p.x + p.y;
+        }
         const Vec2 w = iso_.toWorld(p);
         // The game's scene draws the hole; its rim tiles are drawn here too, under the scene's,
         // so the soft edges of its tile art meet the world's ground, not the sky.
@@ -348,7 +368,21 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
             return;
         ok &= drawTile(p, x, now, animated);
     });
+    flushMarks(x);
     return ok;
+}
+
+void WorldView::markWater(const SpriteRef& s, Vec2 anchor, bool maybe) {
+    marks_.push_back({s, anchor, maybe});
+}
+
+void WorldView::flushMarks(const Xform& x) {
+    if (marks_.empty()) return;
+    for (const Mark& m : marks_)
+        (void)put(m.sprite, m.anchor, x,
+                  {1, 1, 1, m.maybe ? gpu::Post::kMaybeWaterMark : gpu::Post::kWaterMark},
+                  post_->markBlend());
+    marks_.clear();
 }
 
 bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze) {
@@ -369,6 +403,8 @@ bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze) {
     const float k = std::min(1.0f, static_cast<float>(std::max(dx, dy)) / tuning::kHorizonTiles);
     const auto& h = tuning::kHorizonHaze;
     const float alpha = sea_ >= 0 ? k * tuning::kHorizonHazeMax : 1.0f;
+    // (Marked over the haze: the final pass hands the hazed art back with distance.)
+    if (post_ && sea_ >= 0) markWater(sprites_->diamond(), a);
     return alpha <= 0.0f ||
            put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
 }
@@ -381,7 +417,14 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     const SpriteRef& s =
         e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
                      : look.baseIn(season_).at(now, sprites_->itemFps(map_.items()[e.item]));
-    return put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    if (post_ && e.piece < 0)
+        if (const Sway& w = swayOf_[map_.items()[e.item].info]; w.lean > 0) {
+            putSwaying(w.frames ? s : look.baseIn(season_).f.front(), e.anchor, x, w.lean);
+            return true;
+        }
+    const bool ok = put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    if (post_) markItemWater(e, x); // over the item's own pixels
+    return ok;
 }
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
@@ -422,6 +465,10 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, onto.texture.get()))
         SDL_Log("worldview: %s", SDL_GetError());
+    if (post_) {
+        shadeGpu(layer.texture.get(), static_cast<float>(layer.w), static_cast<float>(layer.h));
+        return ok;
+    }
     const float w = static_cast<float>(layer.w);
     const float h = static_cast<float>(layer.h);
     batch_.use(layer.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);
@@ -893,8 +940,11 @@ void WorldView::ensure(Target& t, int w, int h) {
     if (!t.texture || t.w < w || t.h < h) {
         t.w = std::max(w, t.w);
         t.h = std::max(h, t.h);
-        t.texture.reset(
-            SDL_CreateTexture(renderer_, kTextureFormat, SDL_TEXTUREACCESS_TARGET, t.w, t.h));
+        // The shader path samples the world target: in the format its shaders read.
+        t.texture.reset(SDL_CreateTexture(
+            renderer_,
+            post_ && (&t == &view_ || &t == &shadow_) ? gpu::Post::kFormat : kTextureFormat,
+            SDL_TEXTUREACCESS_TARGET, t.w, t.h));
         if (!t.texture ||
             !SDL_SetTextureBlendMode(t.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED))
             SDL_Log("worldview: cannot create a target: %s", SDL_GetError());
@@ -905,7 +955,7 @@ std::size_t WorldView::targetBytes() const {
     std::size_t n = 0;
     for (const Target* t : {&view_, &shadow_, &scratch_, &scratchShadow_, &half_})
         if (t->texture) n += static_cast<std::size_t>(t->w) * static_cast<std::size_t>(t->h) * 4;
-    return n;
+    return n + (post_ ? post_->bytes() : 0);
 }
 
 void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
@@ -961,7 +1011,9 @@ void WorldView::drawWeatherGround(const FRect& view, const Xform& x) {
     // Cloud shadows: soft dark blobs drifting with the cells (showers darker); then the wet ground
     // where showers passed, darkened tile by tile. The home's own scene shades its land.
     const float blobR = blob_.w * 0.5f;
-    for (const WeatherCell& c : weather_->cells()) {
+    // (The shader path draws the clouds' shadows from the same cells itself.)
+    const bool none = post_ || clouds_ == gpu::Clouds::Off;
+    for (const WeatherCell& c : none ? std::span<const WeatherCell>{} : weather_->cells()) {
         const Vec2 w = iso_.toWorld(c.centre.x, c.centre.y);
         const float rpx = c.radius * iso_.tileW() * 0.5f;
         if (w.x + rpx < view.x0 || w.x - rpx > view.x1 || w.y + rpx < view.y0 ||
@@ -1078,7 +1130,9 @@ void WorldView::buildGlow() {
         const std::optional<SpriteRef>& gl = sprites_->item(it).glow;
         if (!gl) continue; // glows() said it has one
         const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
-        glow_[count[chunkOf(it)]++] = {&*gl, {w.x, w.y - static_cast<float>(it.level * lvl_)}};
+        glow_[count[chunkOf(it)]++] = {&*gl,
+                                       {w.x, w.y - static_cast<float>(it.level * lvl_)},
+                                       static_cast<std::uint32_t>(&it - map_.items().data())};
     }
 }
 
@@ -1094,7 +1148,8 @@ void WorldView::drawCoarseGlow(const FRect& view, const Xform& x, float strength
                 const SpriteRef& r = *s.sprite;
                 const FRect box{s.anchor.x - r.ox, s.anchor.y - r.oy, s.anchor.x - r.ox + r.w,
                                 s.anchor.y - r.oy + r.h};
-                if (box.overlaps(view)) (void)put(r, s.anchor, x, g, SDL_BLENDMODE_ADD);
+                if (box.overlaps(view) && glowing(s.item))
+                    (void)put(r, s.anchor, x, g, SDL_BLENDMODE_ADD);
             }
         }
     batch_.flush();
@@ -1249,6 +1304,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     viewW_ = static_cast<int>(std::ceil(screen.x / s * res)) + 3;
     viewH_ = static_cast<int>(std::ceil(screen.y / s * res)) + 3;
     ensure(view_, viewW_, viewH_);
+    if (post_) post_->prepare(view_.w, view_.h);
     if (lod == Lod::Native) ensure(shadow_, viewW_, viewH_);
     const Xform xf{origin, res, res < 1.0f ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST};
     const FRect view{origin.x, origin.y, origin.x + static_cast<float>(viewW_) * px,
@@ -1271,6 +1327,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const SDL_FColor ambient{light.ambient.r * grade.mul.r, light.ambient.g * grade.mul.g,
                              light.ambient.b * grade.mul.b, 1};
     const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
+    if (post_) {
+        gradeGpu(clock, now, light, lod, origin);
+        if (lod != Lod::Overview) refreshWater(view);
+    }
     lastView_ = seen;
 
     // Streaming: the sets of the view, and of where it is heading.
@@ -1316,6 +1376,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The world's cloud shadows go under the home's ground: the home's scene shades its own land.
     if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
     if (hooks.ground && home) hooks.ground(frame);
+    if (post_ && home) markHomeWater(view, xf);
     // A zoom or a journey down to the native level gathers its destination on the way.
     if (arriving && lodFor(camera.arrivalScale) == Lod::Native) gatherAhead(arrival);
     if (want == Lod::Native) updateRegion(lod == want ? view : seen);
@@ -1355,8 +1416,11 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The home's objects go over the impostors at the coarser levels.
     if (!homeDrawn && hooks.objects && home) hooks.objects(frame);
     if (weather_ != nullptr && (lod == Lod::Native || lod == Lod::Half)) drawRain(view, xf, now);
-    // Grading, then what glows (drawn after it, additively).
-    if (hooks.light && home)
+    // Grading, then what glows (drawn after it, additively). The shader path grades in its
+    // final pass and lights and glows in targets of its own.
+    if (post_)
+        lightGpu(view, xf, lod, light.glow, hooks, frame, home);
+    else if (hooks.light && home)
         hooks.light(frame);
     else
         fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
@@ -1368,12 +1432,16 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         for (const std::uint32_t k : merge_.visible()) {
             const std::uint32_t i = region_.order[k];
             const Elem& e = region_.elems[i];
-            if (e.first && e.look != nullptr && e.look->glow)
+            if (e.first && e.look != nullptr && e.look->glow && glowing(e.item))
                 (void)put(*e.look->glow, e.anchor, xf, g, SDL_BLENDMODE_ADD);
         }
     }
     batch_.flush();
-    if (hooks.glow && home) hooks.glow(frame);
+    if (hooks.glow && home)
+        hooks.glow(
+            post_ ? FrameInfo{post_->glow(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft}
+                  : frame);
+    if (post_) bloomGpu(view, xf, lod, light.glow);
 
     // Onto the window: sky, the world, the haze.
     if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("worldview: %s", SDL_GetError());
@@ -1391,6 +1459,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
 
 void WorldView::composite(Vec2 scale, bool smooth) {
     if (!present_.valid) return;
+    if (post_) {
+        compositeGpu(scale, smooth);
+        return;
+    }
     const Present& p = present_;
     const float w = p.screen.x * scale.x;
     const float h = p.screen.y * scale.y;
