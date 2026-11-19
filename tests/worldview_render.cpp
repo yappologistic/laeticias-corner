@@ -18,7 +18,6 @@
 #include <doctest.h>
 
 #include <cmath>
-#include <format>
 #include <memory>
 #include <optional>
 #include <set>
@@ -206,6 +205,8 @@ TEST_CASE("render: cached cells and the live layer leave no seams as the view mo
     // (Pārsa's terrace, the Acropolis, a graded hillside with a river falling three levels in
     // Anatolia, the Apennines' slopes.)
     for (const Vec2 tile : {Vec2{374, 58}, Vec2{313, 615}, Vec2{276, 238}, Vec2{110, 969}}) {
+        CAPTURE(tile.x);
+        CAPTURE(tile.y);
         WorldCamera a = r.camera(tile, 3);
         WorldCamera b = a;
         b.panBy({173, 91});
