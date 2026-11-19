@@ -217,6 +217,10 @@ public:
     // resolved on the first call. `alpha` places actors between the last two simulation steps.
     void setLife(const life::CityLife* city);
     void setLifeAlpha(float alpha) { lifeAlpha_ = alpha; }
+    // What the last frame cost the main thread, in ms, without the cache's own work (cell
+    // builds, page uploads): cells built ahead of need take only what that leaves of a frame
+    // (tuning::kFrameCpuRoomMs). Unset, they take their whole budget.
+    void setFrameCost(double ms) { frameCost_ = ms; }
     [[nodiscard]] const ActorLooks* actorLooks() const { return looks_.get(); }
     // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
     void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
@@ -261,6 +265,8 @@ private:
     std::vector<RunQuad> runQuads_;     // by entry of runs_
     std::uint32_t runWhat_ = kRunActor; // what put() is drawing for
     bool runsOpen_ = false;
+    double frameCost_ = 0;
+    bool dry_ = false; // put() draws nothing: a pass over the tiles only to ask them something
     void openRuns();
     void closeRuns(SDL_ScaleMode filter);
     // One tile: faces down to its neighbours, the ground, foam, face caps. False when a sprite's
@@ -307,7 +313,17 @@ private:
     void buildGround(CellKey key, int slot);
     // Impostors: their blocks are gathered on the worker, then drawn as time allows.
     void requestImpostor(CellKey key, int slot, int rank);
-    void drawBlock(CellKey key, int slot, int block, const Gathered& g);
+    struct Building;
+    void drawBlock(const Building& b, int block, const Gathered& g);
+    // One block of a coarse cell's ground alone, at a step of its water.
+    void drawGroundBlock(CellKey key, int slot, int block);
+    // The scratch target's block, halved down to its share of a slot.
+    void halveInto(int slot, int level, int block);
+    // Whether any tile that draws into `px` moves (the question drawTiles answers as it draws).
+    [[nodiscard]] bool tilesAnimated(const FRect& px);
+    // A cell (its key with frame 0) is there in full: its first ground and, where it has
+    // water, its objects layer (`over`: that layer's slot, -1 for a cell in one piece).
+    [[nodiscard]] bool cellWhole(CellKey k, int* over = nullptr);
     void progressImpostors();
     // The native level's objects: re-gathered on the worker before the view leaves them, and
     // gathered ahead for a destination the view is heading to.
@@ -417,6 +433,8 @@ private:
         int slot = 0;
         std::uint32_t done = 0; // blocks drawn
         int rank = 0;
+        int objects = -1;    // the slot of its objects layer (a cell with water: cells.hpp)
+        bool ground = false; // a later step of its water: only the ground, nothing to gather
     };
     std::vector<Building> building_;
     std::vector<CellWant> wants_;
@@ -426,6 +444,7 @@ private:
         CellKey key;
         CellKey from; // the cell drawn for it: itself, or a coarser one while it builds
         int slot = 0;
+        int over = -1; // the slot of its objects layer, drawn over it (a coarse cell with water)
     };
     std::vector<Composite> composite_;
     std::vector<bool> setSeen_;

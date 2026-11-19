@@ -282,7 +282,7 @@ SurfacePtr PageAtlas::decode(const Page& p, float* peak, std::vector<std::uint64
     *peak = count > 0 ? sum / static_cast<float>(count) : -1.0f;
     // What is drawn where, a bit per pixel: picking asks it (draw-order.md 4.5). Nobody picks
     // a shadow.
-    if (p.own) return px;
+    if (p.scale != 1.0f) return px;
     const auto words = static_cast<std::size_t>((px->w + 63) / 64);
     opaque.assign(words * static_cast<std::size_t>(px->h), 0);
     for (int y = 0; y < px->h; ++y) {
