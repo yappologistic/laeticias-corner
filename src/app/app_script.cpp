@@ -816,6 +816,12 @@ bool App::scriptStep() {
                 view_ = camera_;
                 worldView_->jumped(
                     {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
+                // A jump is not watched: the place's people are there on its first frame, as a
+                // journey's veil leaves them (V6-021).
+                if (city_) {
+                    city_->city->setView(cityView());
+                    city_->city->settle(cityClock());
+                }
             } else if (c.args[0] == "look") {
                 // set look KIND ZOOM: the camera on the first actor of that kind.
                 if (c.args.size() != 3) return fail("set look KIND ZOOM");

@@ -139,6 +139,14 @@ Snapshot snapshot(const CityLife& c) {
 
 } // namespace
 
+TEST_CASE("life: hours are hh:mm within the day") {
+    CHECK(parseHour("06:30") == doctest::Approx(6.5));
+    CHECK(parseHour("24:00") == doctest::Approx(24.0));
+    CHECK(parseHour("24:30") < 0); // past the day's end
+    CHECK(parseHour("7:60") < 0);
+    CHECK(parseHour("noon") < 0);
+}
+
 TEST_CASE("life: every region's life compiles, and what does not resolve is known") {
     const LifeWorld& w = lifeWorld();
     for (const std::string city :
