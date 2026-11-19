@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <charconv>
 #include <chrono>
+#include <climits>
 #include <cmath>
 #include <cstdio>
 #include <ctime>
@@ -116,19 +117,28 @@ std::optional<TilePos> parseFocus(const LifeWorld& w, std::string_view text) {
                     ++n;
                 }
         if (n == 0) return std::nullopt;
+        // The district's tile nearest its centre: walkable if it has any, else any of its own
+        // (a shore, or a district in pieces, can have its centre outside itself).
         const TilePos c{static_cast<int>(sx / n), static_cast<int>(sy / n)};
         TilePos best = c;
-        int bd = INT32_MAX;
-        for (int y = c.y - 24; y <= c.y + 24; ++y)
-            for (int x = c.x - 24; x <= c.x + 24; ++x)
-                if (map.inBounds({x, y}) && map.districtAt({x, y}) == d && map.walkable({x, y})) {
-                    const int dd = (x - c.x) * (x - c.x) + (y - c.y) * (y - c.y);
-                    if (dd < bd) {
-                        bd = dd;
-                        best = {x, y};
-                    }
+        TilePos anyBest = c;
+        long long bd = LLONG_MAX;
+        long long ad = LLONG_MAX;
+        for (int y = 0; y < map.height(); ++y)
+            for (int x = 0; x < map.width(); ++x) {
+                if (map.districtAt({x, y}) != d) continue;
+                const long long dd = static_cast<long long>(x - c.x) * (x - c.x) +
+                                     static_cast<long long>(y - c.y) * (y - c.y);
+                if (dd < ad) {
+                    ad = dd;
+                    anyBest = {x, y};
                 }
-        return best;
+                if (dd < bd && map.walkable({x, y})) {
+                    bd = dd;
+                    best = {x, y};
+                }
+            }
+        return bd < LLONG_MAX ? best : anyBest;
     }
     if (const auto colon = text.find(':'); colon != std::string_view::npos) {
         const int n = w.world->roads.findNode(text);
