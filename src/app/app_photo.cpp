@@ -49,7 +49,8 @@ Sprite slice(const Sprite& s, float x0, float x1) {
 fs::path App::postcardDir() const {
     // Beside the save when a save directory was named (always so in tests), else the player's
     // Pictures folder, else the preference folder (R12.4).
-    if (opts_.saveDir || std::getenv("LAETICIA_SAVE_DIR") != nullptr)
+    const char* env = std::getenv("LAETICIA_SAVE_DIR");
+    if (opts_.saveDir || (env != nullptr && *env != '\0')) // set but empty is unset, as for saves
         return saveDir_ / kPostcardsDir / slug_;
     if (const char* pictures = SDL_GetUserFolder(SDL_FOLDER_PICTURES))
         return fs::path(pictures) / kPicturesSub / slug_;
