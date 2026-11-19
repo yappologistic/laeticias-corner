@@ -2025,8 +2025,8 @@ std::optional<GroundDecode> WorldView::homeGroundDecode() {
     d.row = c.g;
     d.snow = c.b;
     if (post_) {
-        d.cut = [this](Batch& b, bool on) { post_->cut(b, on); };
-        d.cutBlend = post_->cutBlend();
+        d.stamp = [this](Batch& b, bool on) { post_->stamp(b, on); };
+        d.stampBlend = post_->stampBlend();
     }
     return d;
 }

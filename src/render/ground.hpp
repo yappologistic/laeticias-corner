@@ -35,10 +35,11 @@ struct GroundDecode {
     SDL_BlendMode replace = SDL_BLENDMODE_BLEND;
     float row = 0;  // the remap row (the vertex colour's green)
     float snow = 0; // the snow cover (its blue)
-    // On the looks that draw water: the cut on or off (gpu::Post::cut) and its blend, so the
-    // ground keeps its water marks where it lies over the world's rim tiles. Empty: no cut.
-    std::function<void(Batch&, bool)> cut;
-    SDL_BlendMode cutBlend = SDL_BLENDMODE_INVALID;
+    // On the looks that draw water: the stamp on or off (gpu::Post::stamp) and its blend, so
+    // the ground keeps its water marks where it lies over the world's rim tiles or a chunk's
+    // border lies over its neighbour. Empty: no stamp.
+    std::function<void(Batch&, bool)> stamp;
+    SDL_BlendMode stampBlend = SDL_BLENDMODE_INVALID;
 };
 
 class GroundCache {

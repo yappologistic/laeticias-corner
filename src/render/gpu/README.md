@@ -32,10 +32,11 @@ renderer and the fallback wherever this path cannot be made; headless runs stay 
    (to 0.98) under them by a blend that keeps colour (`Post::markBlend`), one blend switch per
    diagonal; anything drawn over water later restores alpha 1 (the home's pieces through
    `Post::coverBlend`, so one drawn faintly, a ghost or a fade, does too). The home's ground
-   goes over the world's rim tiles under it once `Post::cut` (`cut.frag`) has taken their alpha
-   away where it covers them, so its water keeps its marks up to the home's last row. The tile
-   **water field** round the view (shore distance, river flow, flags and level; at most 512², rebuilt on
-   a worker as the view pans) feeds the final pass.
+   goes over the world's rim tiles under it and then stamps its own alpha where it covers
+   (`Post::stamp`, `stamp.frag`), so its water keeps its marks up to the home's last row and
+   across its coarse chunks' overlapping borders. The tile **water field** round the view
+   (shore distance, river flow, flags and level; at most 512², rebuilt on a worker as the view
+   pans) feeds the final pass.
 2. **Lights**: one pool per burning light of the visible chunks (the list cached and rebuilt on
    a chunk crossing, an hour step or every 30 frames; flicker per frame), the home's lamps and
    city life's actors who carry a light, into the glow target's alpha (stored at 0.4 so

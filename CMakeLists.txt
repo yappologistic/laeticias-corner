@@ -96,7 +96,7 @@ lc_project_target(lc_core)
 # needed to build or run. `cmake --build --preset release --target shaders` recompiles the blobs
 # with glslc (pinned: shaderc 2026.4); the `shaders_fresh` test checks them against the sources.
 set(LC_SHADER_DIR ${CMAKE_SOURCE_DIR}/assets/shaders)
-set(LC_SHADER_NAMES final bloom_down bloom_up shade clouds packed cut)
+set(LC_SHADER_NAMES final bloom_down bloom_up shade clouds packed stamp)
 set(LC_SHADER_BLOBS "")
 foreach(name ${LC_SHADER_NAMES})
   list(APPEND LC_SHADER_BLOBS ${LC_SHADER_DIR}/${name}.spv)

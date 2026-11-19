@@ -114,12 +114,13 @@ public:
     // drawn: colour blended as SDL_BLENDMODE_BLEND, alpha added (a ghost or a fading piece
     // drawn at half strength over water stays on top of it instead of under the water pass).
     [[nodiscard]] SDL_BlendMode coverBlend() const { return coverBlend_; }
-    // A layer of ground laid over other ground (the home's over the world's rim tiles) is first
-    // cut, then drawn over as usual, so the target holds the layer's own alpha (its water mark
-    // among it) wherever the layer covers: while on, draws with cutBlend() take the target's
-    // alpha away under the texels a picture covers (alpha 0.9 and over, cut.frag), colour kept.
-    void cut(Batch& b, bool on);
-    [[nodiscard]] SDL_BlendMode cutBlend() const { return cutBlend_; }
+    // A layer of ground laid over other ground (the home's over the world's rim tiles, and its
+    // chunks' borders over each other) goes on over as usual and then is stamped, so the target
+    // holds the layer's own alpha (its water mark among it) wherever the layer covers: while on,
+    // draws with stampBlend() set the target's alpha to a picture's own under the texels it
+    // covers (alpha 0.9 and over, stamp.frag), colour kept.
+    void stamp(Batch& b, bool on);
+    [[nodiscard]] SDL_BlendMode stampBlend() const { return stampBlend_; }
     // A soft round falloff (white, premultiplied: (1 - r^2)^2), for pools and far lights.
     [[nodiscard]] SDL_Texture* falloff() const { return falloff_.get(); }
     // Halves the glow target's used `w` x `h` down the tier's levels and back up.
@@ -165,8 +166,8 @@ private:
     SDL_GPUShader* upShader_ = nullptr;
     SDL_GPUShader* shadeShader_ = nullptr;
     SDL_GPURenderState* shadeState_ = nullptr;
-    SDL_GPUShader* cutShader_ = nullptr;
-    SDL_GPURenderState* cutState_ = nullptr;
+    SDL_GPUShader* stampShader_ = nullptr;
+    SDL_GPURenderState* stampState_ = nullptr;
     SDL_GPUShader* cloudShader_ = nullptr;
     SDL_GPURenderState* cloudState_ = nullptr;
     SDL_GPUSampler* linear_ = nullptr;
@@ -191,7 +192,7 @@ private:
     SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode markBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode coverBlend_ = SDL_BLENDMODE_INVALID;
-    SDL_BlendMode cutBlend_ = SDL_BLENDMODE_INVALID;
+    SDL_BlendMode stampBlend_ = SDL_BLENDMODE_INVALID;
 };
 
 } // namespace lc::gpu

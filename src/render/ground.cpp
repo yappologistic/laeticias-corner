@@ -342,16 +342,6 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
             return nullptr;
         return &slots_[static_cast<std::size_t>(it->second)];
     };
-    // Where the ground covers the world's under it, its own alpha (water marks among it) must
-    // be what the target holds: laid over, a mark would merge with the world's alpha into
-    // opaque (a chunk drawn directly replaces it as it draws).
-    if (decode_ && decode_->cut) {
-        decode_->cut(batch, true);
-        each([&](int cx, int cy) {
-            if (const Slot* s = cached(cx, cy)) slotQuad(*s, cx, cy, decode_->cutBlend);
-        });
-        decode_->cut(batch, false);
-    }
     each([&](int cx, int cy) {
         const Slot* s = cached(cx, cy);
         if (s == nullptr) {
@@ -364,6 +354,17 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
         slotQuad(*s, cx, cy, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
     });
     if (decode_) decode_->use(batch, false);
+    // Where the ground covers what lay under it (the world's rim tiles, a neighbour chunk under
+    // a coarse chunk's border), its own alpha, water marks among it, must be what the target
+    // holds: laid over, a mark merges with the alpha under it into opaque. (A chunk drawn
+    // directly replaces it as it draws.)
+    if (decode_ && decode_->stamp) {
+        decode_->stamp(batch, true);
+        each([&](int cx, int cy) {
+            if (const Slot* s = cached(cx, cy)) slotQuad(*s, cx, cy, decode_->stampBlend);
+        });
+        decode_->stamp(batch, false);
+    }
 }
 
 } // namespace lc
