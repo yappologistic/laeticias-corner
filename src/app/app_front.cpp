@@ -376,6 +376,8 @@ void App::applyMenuActions() {
                     freshWorld_ = true;
                     enterWorld();
                 }
+                // A save of it still waiting on the writer would make its folder again.
+                writer_.flush();
                 if (auto r = deleteWorld(saveDir_ / kWorldsDir / slug); !r)
                     SDL_Log("delete: %s", r.error().c_str());
                 deleteIndex_ = -1;

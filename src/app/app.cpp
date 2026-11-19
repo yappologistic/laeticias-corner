@@ -62,7 +62,9 @@ struct SdlSession {
 
 fs::path findAssets(const Options& o) {
     if (o.assetsDir) return *o.assetsDir;
-    if (const char* env = std::getenv("LAETICIA_ASSETS_DIR")) return env;
+    // Set but empty is unset: an empty path would mean the current directory.
+    if (const char* env = std::getenv("LAETICIA_ASSETS_DIR"); env != nullptr && *env != '\0')
+        return env;
     if (const char* base = SDL_GetBasePath()) {
         const fs::path p = fs::path(base) / "assets";
         if (fs::exists(p / "catalog.json")) return p;
@@ -72,7 +74,8 @@ fs::path findAssets(const Options& o) {
 
 fs::path findSaveDir(const Options& o) {
     if (o.saveDir) return *o.saveDir;
-    if (const char* env = std::getenv("LAETICIA_SAVE_DIR")) return env;
+    if (const char* env = std::getenv("LAETICIA_SAVE_DIR"); env != nullptr && *env != '\0')
+        return env;
     if (char* pref = SDL_GetPrefPath("Laeticia", "laeticias-corner")) {
         const fs::path p = pref;
         SDL_free(pref);
@@ -391,7 +394,8 @@ void App::loadOrStart() {
     }
     // The world played last, else the most recently saved one, else a new one.
     fs::path dir = newest;
-    if (!profile_.lastWorld.empty() && fs::exists(worlds / profile_.lastWorld / kWorldFile, ec))
+    if (plainFolderName(profile_.lastWorld) &&
+        fs::exists(worlds / profile_.lastWorld / kWorldFile, ec))
         dir = worlds / profile_.lastWorld;
     if (!dir.empty()) {
         slug_ = dir.filename().string();
