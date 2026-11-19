@@ -53,7 +53,15 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
     kit_pieces = {iid: {v: g["pieces"] for v, g in e.items() if "pieces" in g}
                   for iid, e in geom["items"].items() if iid not in mod.LANDMARKS and any("pieces" in g for g in e.values())}
     required = setbuild.required_keys(cat, mod, pieces, kit_pieces)
-    errors += [f"missing sprite {k_}" for k_ in required if k_ not in sprites]
+    # Shadows live only on the half-size shadow page (the engine draws them from it, one draw
+    # per set: src/world/atlas_pages.cpp `addShadows`); the colour pages hold none.
+    spath = out_dir / f"{set_id}.s.json"
+    shadows = json.loads(spath.read_text())["sprites"] if spath.exists() else {}
+    errors += [f"{k_}: a shadow on a colour page ({owner[k_]})" for k_ in sprites if "/shadow/" in k_]
+    errors += [f"missing sprite {k_}" for k_ in required
+               if k_ not in (shadows if "/shadow/" in k_ else sprites)]
+    errors += [f"unexpected shadow {k_} on {spath.name}" for k_ in sorted(set(shadows) - set(required))]
+    required = [k_ for k_ in required if "/shadow/" not in k_]
     # An actor frame with something alight on it carries its glow frame beside it.
     glows = {k_ for k_ in sprites if "/glow/" in k_ and setbuild.ACTOR_KEY.fullmatch(k_.replace("/glow/", "/"))
              and k_.replace("/glow/", "/") in sprites}
@@ -195,9 +203,44 @@ def lattice(tiles: list[np.ndarray]) -> float:
     return float(np.nanstd(low[inside])) if inside.any() else 0.0
 
 
+REGULAR = 0.4      # tile-period autocorrelation of a random field of looks above which it reads as wallpaper
+
+
+def regularity(tiles: list[np.ndarray], n: int = 12, seed: int = 1) -> float:
+    """How regular a field of a terrain's looks reads: the looks laid as an n x n field in a
+    fixed random order (as the engine shuffles them), lightly blurred, and the highest normalised
+    autocorrelation of its luma at any offset from 12 to 140 px (a screen row counting two). A
+    field that repeats one arrangement per tile, or any grid of marks, peaks near 1; ground whose
+    looks own their detail stays near 0.3 (sand, steppe). Unlike `lattice` it does not mistake
+    looks that differ for a mark they share."""
+    h, w = tiles[0].shape[:2]
+    hw, hh = w // 2, h // 2
+    field = np.zeros((2 * n * hh + h, 2 * n * hw + w))
+    lum = [t[..., :3].astype(np.float64) @ [0.299, 0.587, 0.114] for t in tiles]
+    on = [t[..., 3] == 255 for t in tiles]
+    rng = np.random.default_rng(seed)
+    for ty in range(n):
+        for tx in range(n):
+            i = int(rng.integers(len(tiles)))
+            sx, sy = (tx - ty) * hw + n * hw, (tx + ty) * hh
+            field[sy:sy + h, sx:sx + w][on[i]] = lum[i][on[i]]
+    H, W = field.shape
+    c = field[H // 4:3 * H // 4, W // 3:2 * W // 3]
+    c = (c + np.roll(c, 1, 0) + np.roll(c, 1, 1) + np.roll(np.roll(c, 1, 0), 1, 1)) / 4
+    c = c - c.mean()
+    f = np.fft.fft2(c)
+    ac = np.fft.fftshift(np.real(np.fft.ifft2(f * np.conj(f))))
+    ac /= max(ac.max(), 1e-9)
+    cy, cx = np.array(ac.shape) // 2
+    yy, xx = np.mgrid[:ac.shape[0], :ac.shape[1]]
+    r = np.hypot((yy - cy) * 2, xx - cx)
+    return float(ac[(r > 12) & (r < 140)].max())
+
+
 def lattice_warnings(cat: dict, sprite) -> list[str]:
-    """A warning per ground terrain whose looks print a lattice (`lattice` over LATTICE): bases
-    by their `v<n>`, overlays by their interior looks (`m15/f0`, `m15/v<n>/f0`)."""
+    """A warning per ground terrain whose looks print a lattice (`lattice` over LATTICE and the
+    field over REGULAR in `regularity`): bases by their `v<n>`, overlays by their interior looks
+    (`m15/f0`, `m15/v<n>/f0`)."""
     out = []
     for t in cat.get("terrain", []):
         tid = t["id"]
@@ -211,8 +254,9 @@ def lattice_warnings(cat: dict, sprite) -> list[str]:
                 n += 1
         looks = [s for s in looks if s is not None]
         looks = [s for s in looks if s.shape == looks[0].shape] if looks else looks
-        if looks and (score := lattice(looks)) > LATTICE:
-            out.append(f"{tid}: its {len(looks)} look(s) repeat one pattern per tile (lattice {score:.1f} > {LATTICE})")
+        if looks and (score := lattice(looks)) > LATTICE and (reg := regularity(looks)) > REGULAR:
+            out.append(f"{tid}: its {len(looks)} look(s) repeat one pattern per tile (lattice {score:.1f} > {LATTICE}, "
+                       f"regularity {reg:.2f} > {REGULAR})")
     return out
 
 

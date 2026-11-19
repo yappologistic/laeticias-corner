@@ -3590,7 +3590,20 @@
   }
  ],
  "audio": {
-  "music": [],
+  "music": [
+   "music/world/travel_greece_day.ogg",
+   "music/world/travel_greece_night.ogg",
+   "music/world/travel_iran_day.ogg",
+   "music/world/travel_iran_night.ogg",
+   "music/world/travel_italy_day.ogg",
+   "music/world/travel_italy_night.ogg",
+   "music/world/travel_levant_day.ogg",
+   "music/world/travel_levant_night.ogg",
+   "music/world/travel_mesopotamia_day.ogg",
+   "music/world/travel_mesopotamia_night.ogg",
+   "music/world/travel_sea_day.ogg",
+   "music/world/travel_sea_night.ogg"
+  ],
   "ambience": [
    "amb/world/sea.ogg",
    "amb/world/ship.ogg",
@@ -3714,10 +3727,16 @@
    "amb/world/sea_open_3.ogg",
    "amb/world/stream.ogg",
    "amb/world/flock.ogg",
-   "amb/world/oars.ogg"
+   "amb/world/oars.ogg",
+   "amb/world/night_country.ogg",
+   "amb/world/town_latin.ogg",
+   "amb/world/town_greek.ogg",
+   "amb/world/town_persian.ogg",
+   "amb/world/harbour_levant.ogg",
+   "amb/world/harbour_winter.ogg",
+   "amb/world/quarry.ogg"
   ],
   "sfx": [
-   "sfx/world/step.wav",
    "sfx/world/hoof.wav",
    "sfx/world/gallop.wav",
    "sfx/world/chisel.wav",
@@ -3807,7 +3826,15 @@
    "sfx/world/gull_3.wav",
    "sfx/world/drip_1.wav",
    "sfx/world/drip_2.wav",
-   "sfx/world/drip_3.wav"
+   "sfx/world/drip_3.wav",
+   "sfx/world/heron_1.wav",
+   "sfx/world/heron_2.wav",
+   "sfx/world/deer_1.wav",
+   "sfx/world/deer_2.wav",
+   "sfx/world/boar_1.wav",
+   "sfx/world/boar_2.wav",
+   "sfx/world/dolphin_1.wav",
+   "sfx/world/dolphin_2.wav"
   ]
  },
  "art": {

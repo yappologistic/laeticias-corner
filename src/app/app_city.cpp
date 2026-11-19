@@ -189,9 +189,30 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
     // expect city covered PX MIN MAX: people drawn at half or quarter scale with more than PX
     // of something in front of them over their feet (nobody on the roofs); expect city coarse
     // MIN MAX: people drawn at those scales at all.
-    if (what == "covered" && a.size() >= 5)
-        return range(worldView_ ? worldView_->coarseActorsCovered(std::stof(a[2])) : 0, 3);
+    if (what == "covered" && a.size() >= 5) {
+        std::string first;
+        const int n = worldView_ ? worldView_->coarseActorsCovered(std::stof(a[2]), &first) : 0;
+        const auto r = range(n, 3);
+        return r ? std::optional(*r + ": " + first) : r;
+    }
     if (what == "coarse") return range(worldView_ ? worldView_->coarseActorsDrawn() : 0, 2);
+    if (what == "on_items") return range(worldView_ ? worldView_->coarseActorsOnItems() : 0, 2);
+    // expect city order MIN MAX: pairs drawn last frame that overlap yet go against the depth
+    // comparator, plus cycles broken (draw-order.md §6.1); expect city sunk MIN MAX: people
+    // standing on a floor or deck drawn below its surface (through a bridge, not on it).
+    if (what == "order") {
+        std::string first;
+        const int n =
+            worldView_ ? worldView_->orderViolations(&first) + worldView_->orderCycles() : 0;
+        const auto r = range(n, 2);
+        return r ? std::optional(*r + ": " + first) : r;
+    }
+    if (what == "sunk") {
+        std::string first;
+        const int n = worldView_ ? worldView_->sunkActors(&first) : 0;
+        const auto r = range(n, 2);
+        return r ? std::optional(*r + ": " + first) : r;
+    }
     return "unknown city expectation " + what;
 }
 

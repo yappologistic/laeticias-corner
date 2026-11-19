@@ -28,7 +28,7 @@ FRAMES = {"rome.river_tiber": 4, "rome.steam": 6, "rome.smoke": 6, "rome.fire": 
           "rome.spray": 4, "rome.incense": 6, "rome.dust": 6, "rome.glint": 4, "rome.spout": 4, "rome.sparks": 4,
           "rome.bonfire": 6}
 
-TERRAIN_KEY = re.compile(r"terrain/(rome\.\w+)/(?:v(\d+)|m(\d+)/f(\d+))")
+TERRAIN_KEY = re.compile(r"terrain/(rome\.\w+)/(?:v(\d+)|m(\d+)(?:/v(\d+))?/f(\d+))")
 BASE_VARIANTS = 8
 BAS = [INK, *BASALT]
 TRAV = TRAVERTINE[1:]
@@ -106,11 +106,11 @@ def brick_ground(mask, k):
     return _overlay(mask, k, 0.5, 2.0, 0.2, 1430, paint)
 
 
-def packed_earth(mask, k):
-    return home.path(mask, k)
+def packed_earth(mask, k, look=0):
+    return home.path(mask, k, look=look)
 
 
-def tufa_rock(mask, k):
+def tufa_rock(mask, k, look=0):
     """The Capitol's tufa: grey-brown volcanic stone in soft lumps with dark pores, grass and
     caper in the cracks."""
     def paint(g, f):
@@ -124,7 +124,7 @@ def tufa_rock(mask, k):
         rgb = home._paint([INK, *TUFA], lvl, g.px, g.py, k=k)
         crack = gap < 0.35
         return np.where(crack[..., None], home._paint([LEAF[1], LEAF[2], LEAF[3]], 1.4 + h, g.px, g.py, k=k), rgb)
-    return _overlay(mask, k, 0.9, 3.5, 0.8, 1440, paint)
+    return _overlay(mask, k, 0.9, 3.5, 0.8, 1440, paint, look)
 
 
 def field_spring(mask, k):
@@ -180,7 +180,7 @@ RIVER = [WATER[0], WATER[1], WATER[2], WATER[3], WATER[4], WATER[5], PLASTER[4]]
 SILT = [WATER[1], TIBER[0], TIBER[1], TIBER[2], TIBER[3]]
 
 
-def mud_bank(mask, k):
+def mud_bank(mask, k, look=0):
     """The Tiber's mud banks: wet brown-grey mud, drying paler higher up, reeds and bird feet."""
     def paint(g, f):
         n = home._pnoise(g.u, g.v, 6, 1481)
@@ -190,9 +190,11 @@ def mud_bank(mask, k):
         reed = ok & (np.abs(dx) < 0.5 * k) & (dy < 0) & (dy > -(2 + h * 3) * k)
         return np.where(reed[..., None], home._paint([OLIVE[1], OLIVE[2], STRAW[1], OLIVE[3]], 2.0 + h * 2 - dy * 0.1,
                                                      g.px, g.py, k=k), rgb)
-    return _overlay(mask, k, 1.0, 4.0, 0.8, 1480, paint)
+    return _overlay(mask, k, 1.0, 4.0, 0.8, 1480, paint, look)
 
 
+# Natural overlays with interior looks (terrain.SHIFTS): a field of them has no one-tile rhythm.
+INTERIOR = {"rome.packed_earth": 4, "rome.tufa_rock": 4, "rome.mud_bank": 4}
 TERRAIN = {"rome.basalt_paving": basalt_paving, "rome.travertine_paving": travertine_paving,
            "rome.brick_ground": brick_ground, "rome.packed_earth": packed_earth, "rome.tufa_rock": tufa_rock,
            "rome.field_spring": field_spring, "rome.vineyard_soil": vineyard_soil, "rome.mud_bank": mud_bank}
@@ -387,9 +389,11 @@ def build(keys, cat, k):
     out = {}
     for key in keys:
         if m := TERRAIN_KEY.fullmatch(key):
-            tid, var, mask, frame = m.groups()
+            tid, var, mask, look, frame = m.groups()
             if var is not None:
                 out[key] = grass_spring(int(var), k)
+            elif look is not None:
+                out[key] = TERRAIN[tid](int(mask), k, int(look))
             elif tid == "rome.river_tiber":
                 out[key] = river_tiber(int(mask), int(frame), FRAMES[tid], k)
             else:

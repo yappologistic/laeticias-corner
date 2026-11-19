@@ -33,6 +33,7 @@ struct GeomSlot {
 struct GeomPiece {
     TileRect rect;      // footprint tiles, relative to the origin tile
     bool floor = false; // a stair floor: drawn before the actors standing on it
+    int under = 0;      // room under it above the item's level, px (a deck's underside), 0: none
 };
 
 struct GeomVariant {
@@ -42,6 +43,18 @@ struct GeomVariant {
     std::vector<TilePos> walk;
     std::vector<TilePos> water; // tiles of open water inside the item (a basin, a harbour)
     std::vector<std::pair<TilePos, int>> walkZ; // floor height above the item's level, px
+    // Overhead above walk tiles: the lowest voxel over the headroom, px above the item's level.
+    std::vector<std::pair<TilePos, int>> roof;
+    int under = 0; // an unsplit crossing's room under it, px (pieces carry their own)
+    // The highest point over each footprint tile, px above the item's level, rows by dy
+    // (`tops`, draw-order.md §3.4; a walk tile's is its floor); empty when not given.
+    std::vector<std::uint16_t> tops;
+    int topsW = 0;
+    [[nodiscard]] int topAt(TilePos t) const {
+        if (t.x < 0 || t.y < 0 || t.x >= topsW || topsW == 0) return -1;
+        const auto i = static_cast<std::size_t>(t.y * topsW + t.x);
+        return i < tops.size() ? tops[i] : -1;
+    }
     std::vector<GeomSlot> slots;
     std::vector<std::pair<std::string, Offset>> emitters; // from the anchor, px
 };

@@ -17,7 +17,7 @@ from pack import Sprite
 from palette import (ATTIC_ROCK, BASALT, CLAY, EARTH, INK, LEAF, LIMESTONE, MARBLE, OLIVE, PINE, PLASTER,
                      POPPY, RUST, SAND, SEA, SHALLOW, SNOW, STEPPE, STONE, STRAW, SUMMER, TIBER, TUFA, VIOLET,
                      WATER, _rgb)
-from voxel import hash01
+from voxel import hash01, value_noise
 
 N_BIT, E_BIT, S_BIT, W_BIT = 1, 2, 4, 8
 FRAMES_WATER = 4
@@ -91,6 +91,49 @@ def _voronoi(g, cell, seed, jitter=0.85):
     return d1, d2, hh, ou, ov
 
 
+def _cells(g, cell, seed, look, jitter=0.85, shared_edge=True):
+    """Tile-periodic cells (Voronoi) whose interior cells belong to the look: the cells touching
+    the tile's edge are the same in every look (neighbours meet), the others are placed and
+    coloured by `look`, so a field of looks keeps no arrangement per tile. Returns the distance
+    to the nearest and second centre (units), their hashes and the offset to the nearest."""
+    n = int(round(16 / cell))
+    cu, cv = np.floor(g.u / cell).astype(np.int64), np.floor(g.v / cell).astype(np.int64)
+    d1 = np.full(g.u.shape, 1e9, np.float32)
+    d2 = np.full(g.u.shape, 1e9, np.float32)
+    h1 = np.zeros(g.u.shape, np.float32)
+    h2 = np.zeros(g.u.shape, np.float32)
+    ou = np.zeros(g.u.shape, np.float32)
+    ov = np.zeros(g.u.shape, np.float32)
+    for du in (-1, 0, 1):
+        for dv in (-1, 0, 1):
+            iu, iv = cu + du, cv + dv
+            ku, kv = iu % n, iv % n
+            inner = (ku > 0) & (ku < n - 1) & (kv > 0) & (kv < n - 1) if shared_edge else np.ones(ku.shape, bool)
+            sd = np.where(inner, seed + 977 * look, seed)
+            jit = np.where(inner, jitter * 0.7, jitter)
+            pu = (iu + 0.5 + (hash01(ku, kv, sd, 2) - 0.5) * jit) * cell
+            pv = (iv + 0.5 + (hash01(ku, kv, sd, 3) - 0.5) * jit) * cell
+            hh = hash01(ku, kv, sd, 4)
+            d = np.hypot(g.u - pu, g.v - pv)
+            closer = d < d1
+            second = ~closer & (d < d2)
+            d2 = np.where(closer, d1, np.where(second, d, d2))
+            h2 = np.where(closer, h1, np.where(second, hh, h2))
+            h1 = np.where(closer, hh, h1)
+            ou = np.where(closer, g.u - pu, ou)
+            ov = np.where(closer, g.v - pv, ov)
+            d1 = np.where(closer, d, d1)
+    return d1, d2, h1, h2, ou, ov
+
+
+def _own(g, seed, look, scale=5.0):
+    """A broad field (0..1) that is the look's own inside the tile and a flat 0.5 along its
+    edges: for thresholds (where marks gather), which must not follow a field shared by every
+    look, or the shared edge band would print a network of lines one tile apart."""
+    own = value_noise(g.u, g.v, np.zeros_like(g.u), scale, seed + 7919 * look)
+    return 0.5 + (own - 0.5) * _window(g, 3.5)
+
+
 def _marks(g, level, seed, density, rows_list, cell=4, interior=None):
     return home._stamps(g, level, seed, density, rows_list, cell=cell, interior=interior)
 
@@ -104,7 +147,7 @@ def _marks(g, level, seed, density, rows_list, cell=4, interior=None):
 # deserts and rivers do not print one drawing per tile.
 INTERIOR = {"world.sea": 6, "world.scrub": 4, "world.pasture": 4, "world.rock": 4, "world.forest_floor": 3,
             "world.snow": 6, "world.scree": 4, "world.dune": 4, "world.gravel_desert": 4, "world.salt_flat": 3,
-            "world.river": 4, "world.shallows": 4}
+            "world.river": 4, "world.shallows": 4, "world.marsh": 4, "world.fallow": 4}
 SHIFTS = ((0.0, 0.0), (5.3, 9.1), (10.7, 3.9), (3.1, 12.6), (12.2, 6.8), (7.7, 14.3))
 
 
@@ -114,7 +157,7 @@ def _interior(g, rgb, paint_shifted, var, seed):
     if not var:
         return rgb
     alt = paint_shifted(_G(g, *SHIFTS[var]))
-    pick = _window(g, 4.5) > hash01(g.px, g.py, seed + 31 * var)
+    pick = _window(g, 2.5) > hash01(g.px, g.py, seed + 31 * var)
     return np.where(pick[..., None], alt, rgb)
 
 
@@ -408,31 +451,40 @@ def flow(direction, frame, k):
 # ---------------------------------------------------------------- land overlays
 
 def rock(mask, k, var=0):
-    """Grey limestone outcrop: a few big weathered slabs, each tilted to the light (lit from the
-    upper left), thin dark joints between them, a tuft of grass in the joints, and a dark lower
-    lip where the rock stands proud of the ground."""
-    g0 = home._grid(k)
-    f = home.shape_field(mask, g0.u, g0.v, 1.4, 5.0, 1.2, 9901, k)
-    f_lo = home.shape_field(mask, g0.u - 1.2, g0.v - 1.2, 1.4, 5.0, 1.2, 9901, k)
-    cover = g0.inside & (f > 0.6 * hash01(g0.px, g0.py, 9902))
-
-    def paint(g):
-        n = home._pnoise(g.u, g.v, 4, 9903)
-        fine = home._pnoise(g.u, g.v, 16, 9909)
-        d1, d2, hh, ou, ov = _voronoi(g, 8, 9904, jitter=0.9)
-        joint = (d2 - d1) < 0.32
-        tilt = (hh - 0.5) * 0.6 - (ou + ov) * 0.04           # each slab leans its own way; upper-left lit
-        lvl = 3.4 + tilt + (n - 0.5) * 1.0 + (fine - 0.5) * 0.6 - joint * 1.2 + ((d2 - d1) < 0.7) * (~joint) * 0.4 \
-            + (hash01(g.px, g.py, 9905) - 0.5) * 0.5
-        lvl = lvl - (f_lo <= 0) * 1.3             # the shadowed lower rim
-        rgb = _paint(LIME_ROCK, lvl, g)
-        tuft = joint & (hash01(np.floor(g.u).astype(np.int64) % 16, np.floor(g.v).astype(np.int64) % 16, 9906) < 0.25) \
-            & (f > 1.5)
-        rgb = np.where(tuft[..., None], _paint(STEPPE_GRASS, 2.0 + hash01(g.px, g.py, 9907) * 2, g), rgb)
-        lichen = (n > 0.62) & (hash01(g.px, g.py, 9908) < 0.3) & ~joint
-        return np.where(lichen[..., None], _paint([OLIVE[1], OLIVE[2], SAND[2]], 1.0 + fine * 2, g), rgb)
-    rgb = _interior(g0, paint(g0), paint, var, 9901)
-    return home._sprite(g0, rgb, cover * 255)
+    """Grey limestone outcrop: weathered slabs of every size (some joints fused, so slabs run
+    long or stay small), each leaning to the light its own way, thin dark joints with a lit
+    upper lip, pits and hairline cracks, lichen in broad patches, a tuft of grass in the odd
+    joint, and a dark lower lip where the rock stands proud of the ground. The slabs touching
+    the tile's edge are common to every look; the interior is each look's own (`_cells`)."""
+    g = home._grid(k)
+    f = home.shape_field(mask, g.u, g.v, 1.4, 5.0, 1.2, 9901, k)
+    f_lo = home.shape_field(mask, g.u - 1.2, g.v - 1.2, 1.4, 5.0, 1.2, 9901, k)
+    cover = g.inside & (f > 0.6 * hash01(g.px, g.py, 9902))
+    n = home.broad(g, 9903, var)
+    patch = _own(g, 9913, var)
+    fine = home._pnoise(g.u, g.v, 16, 9909)
+    d1, d2, h1, h2, ou, ov = _cells(g, 4, 9904, var, jitter=0.95, shared_edge=False)
+    gap = d2 - d1
+    fused = hash01(np.minimum(h1, h2) * 4096, np.maximum(h1, h2) * 4096, 9910) < 0.3
+    joint = (gap < 0.32) & ~fused
+    # Each slab is a low dome lit from the upper left: its upper-left rim catches the light, its
+    # lower-right rim falls into the joint's shadow.
+    rim = (gap < 1.0) & ~joint & ~fused
+    toward = ou * 0.8 + ov * 0.6
+    tilt = (h1 - 0.5) * 0.6
+    w = _window(g, 3.0)
+    crack = (np.abs(value_noise(g.u, g.v, np.full_like(g.u, var * 5.0), 3.0, 9911) - 0.5) < 0.018) & (w > 0.4)
+    pit = hash01(g.px, g.py, 9912) < 0.035
+    lvl = 3.3 + tilt + (n - 0.5) * 0.9 + (fine - 0.5) * 0.5 - joint * 1.8 + rim * np.where(toward < 0, 0.9, -0.7) \
+        - crack * 0.9 - pit * 0.8 + (hash01(g.px, g.py, 9905) - 0.5) * 0.4
+    lvl = lvl - (f_lo <= 0) * 1.3             # the shadowed lower rim
+    rgb = _paint(LIME_ROCK, lvl, g)
+    tuft = joint & (hash01(np.floor(g.u).astype(np.int64) % 16, np.floor(g.v).astype(np.int64) % 16, 9906 + var) < 0.2) \
+        & (f > 1.5)
+    rgb = np.where(tuft[..., None], _paint(STEPPE_GRASS, 2.0 + hash01(g.px, g.py, 9907) * 2, g), rgb)
+    lichen = (patch > 0.66) & (hash01(g.px, g.py, 9908) < 0.22) & ~joint
+    rgb = np.where(lichen[..., None], _paint([OLIVE[1], OLIVE[2], SAND[2]], 1.0 + fine * 2, g), rgb)
+    return home._sprite(g, rgb, cover * 255)
 
 
 def snow(mask, k, var=0):
@@ -461,7 +513,7 @@ def scree(mask, k, var=0):
     return _overlay(mask, k, 1.4, 4.0, 1.2, 9920, paint, fray=1.4, var=var)
 
 
-def marsh(mask, k):
+def marsh(mask, k, var=0):
     """Wet green-black mud with standing pools that hold the sky, sedge tufts between."""
     def paint(g, f):
         n = home._pnoise(g.u, g.v, 4, 9931)
@@ -469,12 +521,12 @@ def marsh(mask, k):
         lvl = 2.4 + (n - 0.5) * 1.2 + (fine - 0.5) * 0.6 + (hash01(g.px, g.py, 9933) - 0.5) * 0.8
         lvl = _marks(g, lvl, 9934, 0.6, _tufts(g), cell=2 if g.fine else 4, interior=None)
         rgb = _paint(MUD, lvl, g)
-        pool = (n > 0.6) & (f > 1.2)
+        pool = (n > 0.66) & (f > 1.2)
         pool_lvl = 2.0 + (fine - 0.5) * 1.0 + ((np.abs(fine - 0.55) < 0.03) * 1.6)
         rgb = np.where(pool[..., None], _paint([SEA[1], SEA[2], RIVER[2], SHALLOW[1], SHALLOW[3]], pool_lvl, g), rgb)
-        rim = (n > 0.55) & (n <= 0.6) & (f > 1.0)
+        rim = (n > 0.61) & (n <= 0.66) & (f > 1.0)
         return np.where(rim[..., None], _paint(MUD, 4.2, g), rgb)
-    return _overlay(mask, k, 1.0, 4.0, 1.0, 9930, paint)
+    return _overlay(mask, k, 1.0, 4.0, 1.0, 9930, paint, var=var)
 
 
 def _spines(mask, g):
@@ -551,26 +603,42 @@ def field(mask, k):
 
 
 def scrub(mask, k, var=0):
-    """Grey-green garrigue: low rounded cushions of kermes oak, thyme and sage, lit on top and
-    shadowed beneath, bare stony ground between."""
+    """Grey-green garrigue: low rounded cushions of kermes oak, thyme and sage of every size,
+    lit on top and shadowed beneath, bare stony ground between, thinning and thickening in broad
+    patches. The cushions touching the tile's edge are common to every look, the rest are each
+    look's own (`_cells`), so the garrigue has no one-tile rhythm."""
     def paint(g, f):
         fine = home._pnoise(g.u, g.v, 8, 9971)
-        base = 3.0 + (fine - 0.5) * 0.8 + (hash01(g.px, g.py, 9972) - 0.5) * 0.7
+        broad = home.broad(g, 9977, var)
+        base = 3.0 + (fine - 0.5) * 0.8 + (broad - 0.5) * 0.6 + (hash01(g.px, g.py, 9972) - 0.5) * 0.7
         rgb = _paint(STEPPE_EARTH, base, g)
-        d1, d2, hh, ou, ov = _voronoi(g, 4, 9973, jitter=0.9)
-        r = 1.0 + hh * 1.1
-        bush = (d1 < r) & (hh > 0.4)
-        lit = (ou + ov) < -0.2 * r
-        lvl = 2.8 + lit * 1.1 - (d1 > r * 0.75) * 0.7 + (hash01(g.px, g.py, 9974) - 0.5) * 0.9
-        shadow = ~bush & (np.hypot(ou - 0.5, ov - 0.5) < r) & (hh > 0.4)
-        rgb = np.where(shadow[..., None], _paint(STEPPE_EARTH, base - 1.2, g), rgb)
+        own = _own(g, 9978, var)
+        bush = np.zeros(g.u.shape, bool)
+        lvl = np.zeros(g.u.shape)
+        # Two lattices of cushions (cells of 4 and 16/3 units) so no row or grid shows.
+        for cell, seed, take in ((4, 9973, 0.45), (16 / 3, 9979, 0.35)):
+            d1, d2, hh, _h2, ou, ov = _cells(g, cell, seed, var, jitter=0.95, shared_edge=False)
+            # Each look grows its own cushions; one near the tile's edge stays small enough not
+            # to be cut by it (its centre's distance to the edge bounds its radius).
+            cu_, cv_ = g.u - ou, g.v - ov
+            room = np.minimum(np.minimum(cu_, 16 - cu_), np.minimum(cv_, 16 - cv_)) - 0.2
+            r = np.minimum(0.7 + hh * 1.5, room)
+            want = hh > 1 - take - 0.35 * (own - 0.5)
+            b = (d1 < r) & want & ~bush
+            lit = (ou + ov) < -0.2 * r
+            lv = 2.8 + lit * 1.1 - (d1 > r * 0.75) * 0.7 + (hash01(g.px, g.py, 9974) - 0.5) * 0.9
+            shadow = ~bush & ~b & (np.hypot(ou - 0.5, ov - 0.5) < r) & want
+            rgb = np.where(shadow[..., None], _paint(STEPPE_EARTH, base - 1.2, g), rgb)
+            lvl = np.where(b, lv, lvl)
+            bush |= b
         rgb = np.where(bush[..., None], _paint(SCRUB, lvl, g), rgb)
-        flower = bush & lit & (hh > 0.85) & (hash01(g.px, g.py, 9975) < 0.25)
+        lit = lvl > 3.4
+        flower = bush & lit & (hash01(g.px, g.py, 9975) < 0.06)
         rgb = np.where(flower[..., None], _rgb(VIOLET[3]), rgb)
         slvl = _marks(g, np.full_like(base, 2.0), 9976, 0.2, STONES, cell=2 if g.fine else 4)
         stone = (slvl != 2.0) & ~bush
         return np.where(stone[..., None], _paint(PALE_ROCK, slvl + 0.5, g), rgb)
-    return _overlay(mask, k, 1.6, 5.0, 1.4, 9970, paint, fray=1.3, var=var)
+    return _overlay(mask, k, 1.6, 5.0, 1.4, 9970, paint, fray=1.3)
 
 
 def forest_floor(mask, k, var=0):
@@ -604,19 +672,32 @@ def dune(mask, k, var=0):
 
 
 def gravel_desert(mask, k, var=0):
-    """Hamada: a pavement of dark desert-varnished pebbles on buff ground."""
+    """Hamada: a pavement of desert-varnished pebbles on buff ground, thinning to drifts of bare
+    sand in broad patches that are each look's own (the pebbles near the tile's edge are common
+    to every look), the varnish brown rather than black so the ground reads as one surface."""
+    def drift(pu, pv):
+        a = np.clip(np.minimum(pu, 16 - pu) / 3.0, 0, 1) * np.clip(np.minimum(pv, 16 - pv) / 3.0, 0, 1)
+        own = value_noise(pu, pv, np.zeros_like(pu), 5.0, 10005 + 7919 * var)
+        return a * np.clip((own - 0.45) * 2.5, 0, 1)
+
     def paint(g, f):
-        base = 3.4 + (home._pnoise(g.u, g.v, 4, 10001) - 0.5) * 0.8 + (hash01(g.px, g.py, 10002) - 0.5) * 0.6
+        broad = home.broad(g, 10006, var)
+        base = 3.4 + (broad - 0.5) * 0.9 + (hash01(g.px, g.py, 10002) - 0.5) * 0.6
         rgb = _paint(SANDS, base - np.clip(1.2 - f, 0, 1.2), g)
-        for seed, cell, dens, (r0, r1) in ((10003, 2, 0.75, (0.7, 1.3)), (10004, 1, 0.3, (0.4, 0.7))):
-            dx, dy, h, ok = home._scatter(g, cell, seed, dens, jitter=0.95)
+        # Pebbles on three lattices of different cells, so they fall in no rows.
+        for seed, cell, dens, (r0, r1) in ((10003, 2, 0.30, (0.7, 1.3)), (10007, 16 / 6, 0.28, (0.6, 1.2)),
+                                           (10004, 1, 0.18, (0.4, 0.7))):
+            # Every look scatters its own pebbles (small enough that one cut by the tile's edge
+            # never shows), so no band of pebbles is common to all looks.
+            dx, dy, h, ok = home._scatter(g, cell, seed + 101 * var,
+                                          lambda pu, pv, d=dens: d * (1 - 0.85 * drift(pu, pv)), jitter=0.95)
             r = (r0 + (r1 - r0) * h) * k
             e = (dx / r) ** 2 + ((dy + 0.2 * r) / (0.6 * r)) ** 2
             body = ok & (e < 1) & (f > 0.6)
             lit = dy + 0.2 * r < -0.2 * r
-            rgb = np.where(body[..., None], _paint(VARNISH, 2.2 + lit * 1.8 + (h * 7 % 1 - 0.5), g), rgb)
+            rgb = np.where(body[..., None], _paint(VARNISH, 2.9 + lit * 1.5 + (h * 7 % 1 - 0.5) * 0.8, g), rgb)
         return rgb
-    return _overlay(mask, k, 1.2, 4.0, 1.0, 10000, paint, fray=1.0, var=var)
+    return _overlay(mask, k, 1.2, 4.0, 1.0, 10000, paint, fray=1.0)
 
 
 def salt_flat(mask, k, var=0):
@@ -630,8 +711,8 @@ def salt_flat(mask, k, var=0):
     return _overlay(mask, k, 1.4, 5.0, 1.2, 10010, paint, fray=1.2, var=var)
 
 
-def fallow(mask, k):
-    """Fields at rest: weedy stubble, a trodden grazing path across, droppings of the flock."""
+def fallow(mask, k, var=0):
+    """Fields at rest: weedy stubble in the old rows, broad patches of weeds and bare earth."""
     def paint(g, f):
         n = home._pnoise(g.u, g.v, 4, 10021)
         lvl = 2.6 + (n - 0.5) * 1.0 + (hash01(g.px, g.py, 10022) - 0.5) * 0.9
@@ -639,9 +720,9 @@ def fallow(mask, k):
         lvl = lvl + row * 0.5
         lvl = _marks(g, lvl, 10023, 0.4, _tufts(g), cell=2 if g.fine else 4)
         rgb = _paint(FALLOW, lvl - np.clip(1.2 - f, 0, 1.2), g)
-        path = np.abs(((g.u - g.v) % 16.0) - 8.0) < 0.7 + 0.4 * n
-        return np.where((path & (f > 1.2))[..., None], _paint(STEPPE_EARTH, 3.0 + n, g), rgb)
-    return _overlay(mask, k, 1.4, 4.0, 1.0, 10020, paint)
+        bare = (n < 0.3) & (f > 1.2) & (hash01(g.px, g.py, 10024) < 0.8)
+        return np.where(bare[..., None], _paint(STEPPE_EARTH, 2.6 + n * 2, g), rgb)
+    return _overlay(mask, k, 1.4, 4.0, 1.0, 10020, paint, var=var)
 
 
 def pasture(mask, k, var=0):

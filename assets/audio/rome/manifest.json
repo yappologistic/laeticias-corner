@@ -370,6 +370,164 @@
         "season",
         "rome"
       ]
+    },
+    {
+      "file": "music/rome/town_forum_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 60.0,
+      "samples": 2646000,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (forum), day: cithara theme with tibia answers and a frame drum.",
+      "where": "towns: Ostia, Capua",
+      "music": {
+        "bpm": 84,
+        "meter": [
+          3,
+          4
+        ],
+        "bars": 24,
+        "beats": 84,
+        "samples": 2646000,
+        "phrase_starts_s": [
+          0.0,
+          10.0,
+          20.0,
+          30.0,
+          40.0,
+          50.0
+        ]
+      }
+    },
+    {
+      "file": "music/rome/town_forum_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 60.0,
+      "samples": 2646000,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (forum), night: lyre, far tibia.",
+      "where": "towns: Ostia, Capua",
+      "music": {
+        "bpm": 84,
+        "meter": [
+          3,
+          4
+        ],
+        "bars": 24,
+        "beats": 84,
+        "samples": 2646000,
+        "phrase_starts_s": [
+          0.0,
+          10.0,
+          20.0,
+          30.0,
+          40.0,
+          50.0
+        ]
+      }
+    },
+    {
+      "file": "music/rome/town_hills_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 85.7143,
+      "samples": 3780000,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (hills), day: syrinx with a lyre answering.",
+      "where": "towns: Tibur, Beneventum",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 20,
+        "beats": 80,
+        "samples": 3780000,
+        "phrase_starts_s": [
+          0.0,
+          42.8571
+        ]
+      }
+    },
+    {
+      "file": "music/rome/town_hills_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 85.7143,
+      "samples": 3780000,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (hills), night: far syrinx, barbitos.",
+      "where": "towns: Tibur, Beneventum",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 20,
+        "beats": 80,
+        "samples": 3780000,
+        "phrase_starts_s": [
+          0.0,
+          42.8571
+        ]
+      }
+    },
+    {
+      "file": "music/rome/town_shrine_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 102.8571,
+      "samples": 4536000,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (shrine), day: sacrificial tibia hymn with the cithara.",
+      "where": "towns: Alban Mount, Brundisium",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 4536000,
+        "phrase_starts_s": [
+          0.0,
+          34.2857,
+          56.0173,
+          94.2857
+        ]
+      }
+    },
+    {
+      "file": "music/rome/town_shrine_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 102.8571,
+      "samples": 4536000,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (shrine), night: far tibia, lyre.",
+      "where": "towns: Alban Mount, Brundisium",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 4536000,
+        "phrase_starts_s": [
+          0.0,
+          34.2857,
+          56.0173,
+          94.2857
+        ]
+      }
     }
   ]
 }

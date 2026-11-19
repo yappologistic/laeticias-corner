@@ -165,6 +165,22 @@ def write_shadow_page(png, sprites: dict) -> tuple[int, int, int]:
     return atlas.shape[1], atlas.shape[0], len(manifest)
 
 
+# ---------------------------------------------------------------- occlusion page
+
+def write_occlusion_page(png, tops: dict) -> tuple[int, int, int]:
+    """Every item look's occlusion tops (occlusion.py; keys `item/<id>/<look>`) on one page
+    `png` + manifest. Returns (width, height, count)."""
+    import occlusion
+    atlas, man = pack.pack(tops) if tops else (np.zeros((1, 1, 4), np.uint8), {})
+    Image.fromarray(atlas, "RGBA").save(png, optimize=True)
+    doc = {"version": 1, "image": png.name, "texel": occlusion.TEXEL, "anchor": "texel of the footprint origin",
+           "channels": {"r": "top px / 2", "g": "underside px / 2 (0: solid from the floor)",
+                        "b": "material of the top", "a": "coverage"},
+           "codes": occlusion.CODES, "sprites": man}
+    png.with_suffix(".json").write_text(json.dumps(doc, indent=1) + "\n")
+    return atlas.shape[1], atlas.shape[0], len(man)
+
+
 # ---------------------------------------------------------------- water page
 
 WATER_DEPTH_CAP = 40        # art px: a harbour basin's depth; small basins stay shallower by size

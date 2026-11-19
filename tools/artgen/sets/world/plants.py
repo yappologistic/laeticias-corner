@@ -395,10 +395,18 @@ def crag(v, frame, frames, k):
     return m
 
 
-def peak(v, frame, frames, k):
+# Snow on the peaks by season (`item/world.peak/base/r<k>/f0@<season>`): the plain look is the
+# winter and spring summit; in summer the rock stands bare, in autumn only the first snow lies
+# on the very top. The volcanic cone (r2) carries no snow in any look.
+PEAK_SEASONS = {"summer": None, "autumn": 0.8}
+
+
+def peak(v, frame, frames, k, season=None):
     """A 3 x 3 summit standing on the highest level: r0 a limestone horn with snow streaks in
     its gullies, r1 a broad snow dome with rock ribs, r2 a volcanic cone with a crater lip and
-    dark ash slopes (Vesuvius after AD 79, Etna, Argaios)."""
+    dark ash slopes (Vesuvius after AD 79, Etna, Argaios). `season` (PEAK_SEASONS): summer
+    bare, autumn a dusting on the summit only."""
+    dust = PEAK_SEASONS.get(season, 0.0) if season else 0.0
     m = Model.empty(-2, 50, -2, 50, 0, 70, k=k)
     c = 24.0
     if v == 0:
@@ -416,7 +424,12 @@ def peak(v, frame, frames, k):
         from palette import MAT
         rock = m.mat == MAT["attic_rock"]
         gully = value_noise(X, Y, Z * 0.3, 4.0, 5323) > 0.6
-        m.put(rock & (gully | (m.nrm[..., 2] > 0.75)) & (Z > 22) & (m.nrm[..., 2] > 0.25), "snow", tone=0.2)
+        if season is None:
+            m.put(rock & (gully | (m.nrm[..., 2] > 0.75)) & (Z > 22) & (m.nrm[..., 2] > 0.25), "snow", tone=0.2)
+        elif dust:              # first snow: only what faces up near the summit
+            top_z = float(np.nonzero(rock.any(axis=(0, 1)))[0].max() + m.z0) / k
+            m.put(rock & (gully | (m.nrm[..., 2] > 0.6)) & (m.nrm[..., 2] > 0.2) & (Z > top_z * (dust - 0.18)),
+                  "snow", tone=0.3)
     elif v == 1:
         def top(X, Y):
             r = np.hypot(X - c, Y - c) / 23.5
@@ -425,7 +438,11 @@ def peak(v, frame, frames, k):
         X, Y, Z = m.coords()
         from palette import MAT
         rib = np.abs(value_noise(X, Y, Z * 0, 7.0, 5333) - 0.5) < 0.06
-        m.put((m.mat == MAT["stone"]) & ~rib & (Z > 12 + 6 * value_noise(X, Y, Z * 0, 5.0, 5334)), "snow", tone=0.3)
+        if season is None:
+            m.put((m.mat == MAT["stone"]) & ~rib & (Z > 12 + 6 * value_noise(X, Y, Z * 0, 5.0, 5334)), "snow", tone=0.3)
+        elif dust:
+            m.put((m.mat == MAT["stone"]) & ~rib & (m.nrm[..., 2] > 0.6)
+                  & (Z > 52.0 * dust + 4 * value_noise(X, Y, Z * 0, 5.0, 5334)), "snow", tone=0.3)
     else:
         def top(X, Y):
             r = np.hypot(X - c, Y - c) / 23.5

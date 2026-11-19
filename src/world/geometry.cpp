@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <utility>
 
 namespace lc::world {
 
@@ -58,7 +59,7 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
             const int y = asInt(ps[i][1], pc, 0, kMaxOffset);
             const int w = asInt(ps[i][2], pc + ": w", 1, kMaxPieceSide);
             const int h = asInt(ps[i][3], pc + ": h", 1, kMaxPieceSide);
-            v.pieces.push_back({{x, y, x + w, y + h}, false});
+            v.pieces.push_back({{x, y, x + w, y + h}, false, 0});
         }
     }
     if (has(g, "walk")) {
@@ -71,9 +72,11 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
         for (std::size_t i = 0; i < ws.size(); ++i)
             v.water.push_back(tileOffset(ws[i], c + ": water[" + std::to_string(i) + "]"));
     }
-    if (has(g, "walk_z")) {
-        for (const auto& [k, z] : asObject(g.at("walk_z"), c + ": walk_z").items()) {
-            const std::string zc = c + ": walk_z: " + k;
+    // "dx,dy" keys of walk tiles with a height each (walk_z, roof).
+    const auto byTile = [&](const char* name, std::vector<std::pair<TilePos, int>>& out) {
+        if (!has(g, name)) return;
+        for (const auto& [k, z] : asObject(g.at(name), c + ": " + name).items()) {
+            const std::string zc = c + ": " + name + ": " + k;
             const auto comma = k.find(',');
             TilePos t;
             if (comma == std::string::npos ||
@@ -84,7 +87,20 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
             // its tiles; with a walk list a floor belongs to one of its tiles.
             if (!v.walk.empty() && std::ranges::find(v.walk, t) == v.walk.end())
                 fail(zc + ": not a walk tile");
-            v.walkZ.emplace_back(t, asInt(z, zc, 0, kMaxOffset));
+            out.emplace_back(t, asInt(z, zc, 0, kMaxOffset));
+        }
+    };
+    byTile("walk_z", v.walkZ);
+    byTile("roof", v.roof);
+    if (has(g, "tops")) {
+        const json& rows = asArray(g.at("tops"), c + ": tops");
+        for (std::size_t y = 0; y < rows.size(); ++y) {
+            const std::string rc = c + ": tops[" + std::to_string(y) + "]";
+            const json& row = asArray(rows[y], rc);
+            if (y == 0) v.topsW = static_cast<int>(row.size());
+            if (std::cmp_not_equal(row.size(), v.topsW)) fail(rc + ": rows differ in length");
+            for (const json& z : row)
+                v.tops.push_back(static_cast<std::uint16_t>(asInt(z, rc, 0, kMaxOffset)));
         }
     }
     if (has(g, "floor_pieces")) {
@@ -93,6 +109,16 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
             const int p =
                 asInt(fs[i], c + ": floor_pieces", 0, static_cast<long long>(v.pieces.size()) - 1);
             v.pieces[static_cast<std::size_t>(p)].floor = true;
+        }
+    }
+    if (has(g, "under")) {
+        const json& us = asArray(g.at("under"), c + ": under");
+        const std::size_t want = v.pieces.empty() ? 1 : v.pieces.size();
+        if (us.size() != want)
+            fail(c + ": under: " + std::to_string(want) + " entries expected (one per piece)");
+        for (std::size_t i = 0; i < us.size(); ++i) {
+            const int u = asInt(us[i], c + ": under", 0, kMaxOffset);
+            (v.pieces.empty() ? v.under : v.pieces[i].under) = u;
         }
     }
     if (has(g, "slots")) {

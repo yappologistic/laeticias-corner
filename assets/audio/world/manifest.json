@@ -146,16 +146,6 @@
       "where": "positional: braziers, fire altars, hearths, bonfires (R12)"
     },
     {
-      "file": "sfx/world/step.wav",
-      "kind": "sfx",
-      "loop": false,
-      "seconds": 0.2862,
-      "samples": 12622,
-      "gain": 0.6,
-      "when": "event",
-      "for": "One footstep on stone (step frames of walkers)."
-    },
-    {
       "file": "sfx/world/hoof.wav",
       "kind": "sfx",
       "loop": false,
@@ -3368,6 +3358,548 @@
         "rain",
         "drip"
       ]
+    },
+    {
+      "file": "amb/world/night_country.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 37.0,
+      "samples": 1631700,
+      "gain": 1.0,
+      "when": "night",
+      "for": "Night in green country: air in the grass, a far dog, a sheep's bell, a gate knocking; no insects.",
+      "where": "night bed of farmland and pasture (Latium, Greece, Thrace, the corner's country) and of every region's winter nights",
+      "tags": [
+        "night",
+        "country"
+      ]
+    },
+    {
+      "file": "amb/world/town_latin.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 41.0,
+      "samples": 1808100,
+      "gain": 1.0,
+      "when": "day",
+      "for": "A small Latin town by day: a handful of people, work down the lane, its animals, a dog, a cart, swallows.",
+      "where": "day bed of the Latin towns besides the capitals and royal seats",
+      "tags": [
+        "town",
+        "day",
+        "latin"
+      ]
+    },
+    {
+      "file": "amb/world/town_greek.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 41.0,
+      "samples": 1808100,
+      "gain": 1.0,
+      "when": "day",
+      "for": "A small Greek town by day: a handful of people, work down the lane, its animals, a dog, a cart, swallows.",
+      "where": "day bed of the Greek towns besides the capitals and royal seats",
+      "tags": [
+        "town",
+        "day",
+        "greek"
+      ]
+    },
+    {
+      "file": "amb/world/town_persian.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 41.0,
+      "samples": 1808100,
+      "gain": 1.0,
+      "when": "day",
+      "for": "A small Persian town by day: a handful of people, work down the lane, its animals, a dog, a cart, swallows.",
+      "where": "day bed of the Persian towns besides the capitals and royal seats",
+      "tags": [
+        "town",
+        "day",
+        "persian"
+      ]
+    },
+    {
+      "file": "amb/world/harbour_levant.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 43.0,
+      "samples": 1896300,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A Phoenician harbour: waves on the moles, hulls on their ropes, shipwrights' mallets, sailors calling, gulls.",
+      "where": "zone: Sidon's harbours (and any Levantine port)",
+      "tags": [
+        "harbour",
+        "sea",
+        "levant"
+      ]
+    },
+    {
+      "file": "amb/world/harbour_winter.ogg",
+      "kind": "bed",
+      "loop": true,
+      "seconds": 47.0,
+      "samples": 2072700,
+      "gain": 1.0,
+      "when": "always",
+      "for": "A harbour in winter: ships laid up, hulls groaning, blocks knocking in the wind, cold small waves, a gull; no oars.",
+      "where": "harbour zones from November to February (in place of the busy harbour and the oars)",
+      "tags": [
+        "harbour",
+        "sea",
+        "winter"
+      ]
+    },
+    {
+      "file": "amb/world/quarry.ogg",
+      "kind": "loop",
+      "loop": true,
+      "seconds": 23.0,
+      "samples": 1014300,
+      "gain": 1.0,
+      "when": "worked",
+      "for": "A quarry at work: picks and chisels, wedges driven in turn, a block splitting free, grit, a call.",
+      "where": "positional: quarries (Tibur's travertine, Pentelikon) in their working hours",
+      "tags": [
+        "work",
+        "quarry",
+        "stone"
+      ]
+    },
+    {
+      "file": "sfx/world/heron_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 0.6422,
+      "samples": 28320,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A grey heron's croak as it lifts off the reeds.",
+      "tags": [
+        "animal",
+        "bird",
+        "heron",
+        "water"
+      ]
+    },
+    {
+      "file": "sfx/world/heron_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.1474,
+      "samples": 50599,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A heron croaking twice as it flies off downriver.",
+      "tags": [
+        "animal",
+        "bird",
+        "heron",
+        "water"
+      ]
+    },
+    {
+      "file": "sfx/world/deer_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.9471,
+      "samples": 129966,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A deer's alarm bark, three times, from the woods' edge (all year).",
+      "tags": [
+        "animal",
+        "deer"
+      ]
+    },
+    {
+      "file": "sfx/world/deer_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.4405,
+      "samples": 107625,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A deer barking twice and snorting as it bounds away.",
+      "tags": [
+        "animal",
+        "deer"
+      ]
+    },
+    {
+      "file": "sfx/world/boar_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.5684,
+      "samples": 113268,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A wild boar rooting at night: soft grunts, sniffing in the leaves.",
+      "tags": [
+        "animal",
+        "boar",
+        "night"
+      ]
+    },
+    {
+      "file": "sfx/world/boar_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.2979,
+      "samples": 57236,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A boar startled: a hard snort and quick grunts.",
+      "tags": [
+        "animal",
+        "boar"
+      ]
+    },
+    {
+      "file": "sfx/world/dolphin_1.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 1.2911,
+      "samples": 56936,
+      "gain": 0.8,
+      "when": "always",
+      "for": "A dolphin breaking the surface: a splash, its blow, the back rolling under.",
+      "tags": [
+        "animal",
+        "dolphin",
+        "sea"
+      ]
+    },
+    {
+      "file": "sfx/world/dolphin_2.wav",
+      "kind": "sfx",
+      "loop": false,
+      "seconds": 2.3375,
+      "samples": 103084,
+      "gain": 0.8,
+      "when": "always",
+      "for": "Two dolphins surfacing and blowing one after the other.",
+      "tags": [
+        "animal",
+        "dolphin",
+        "sea"
+      ]
+    },
+    {
+      "file": "music/world/travel_italy_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 171.4286,
+      "samples": 7560000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: a syrinx with a lyre answering; sparse, the land's beds carry the rests.",
+      "where": "the Italian countryside and hills: Latium, the Apennines",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7560000,
+        "phrase_starts_s": [
+          0.0,
+          42.8571,
+          85.7143,
+          128.5714
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_italy_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 171.4286,
+      "samples": 7560000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the tune on a far tibia, the lyre ringing; sparse, the land's beds carry the rests.",
+      "where": "the Italian countryside and hills: Latium, the Apennines",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7560000,
+        "phrase_starts_s": [
+          0.0,
+          42.8571,
+          85.7143,
+          128.5714
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_greece_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 192.0,
+      "samples": 8467200,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: a lyra in dactyls, Pan's pipes from the hills; sparse, the land's beds carry the rests.",
+      "where": "Greece and the Aegean's shores: Greece, Arcadia, northern Attica, Thrace, Ionia",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          6
+        ],
+        "bars": 32,
+        "beats": 192,
+        "samples": 8467200,
+        "phrase_starts_s": [
+          0.0,
+          48.0,
+          96.0,
+          144.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_greece_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 192.0,
+      "samples": 8467200,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: a barbitos, a far aulos; sparse, the land's beds carry the rests.",
+      "where": "Greece and the Aegean's shores: Greece, Arcadia, northern Attica, Thrace, Ionia",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          6
+        ],
+        "bars": 32,
+        "beats": 192,
+        "samples": 8467200,
+        "phrase_starts_s": [
+          0.0,
+          48.0,
+          96.0,
+          144.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_sea_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 180.0,
+      "samples": 7938000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: the ship's piper on the aulos over a held drone; sparse, the land's beds carry the rests.",
+      "where": "the sea lanes: the Tyrrhenian, Adriatic, Ionian, Saronic and Aegean seas, the Gulf",
+      "music": {
+        "bpm": 48,
+        "meter": [
+          4
+        ],
+        "bars": 36,
+        "beats": 144,
+        "samples": 7938000,
+        "phrase_starts_s": [
+          0.0,
+          45.0,
+          90.0,
+          135.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_sea_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 180.0,
+      "samples": 7938000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the rowers humming the tune; sparse, the land's beds carry the rests.",
+      "where": "the sea lanes: the Tyrrhenian, Adriatic, Ionian, Saronic and Aegean seas, the Gulf",
+      "music": {
+        "bpm": 48,
+        "meter": [
+          4
+        ],
+        "bars": 36,
+        "beats": 144,
+        "samples": 7938000,
+        "phrase_starts_s": [
+          0.0,
+          45.0,
+          90.0,
+          135.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_levant_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: a lyre, the double pipe and a frame drum's walk; sparse, the land's beds carry the rests.",
+      "where": "Anatolia and the Levant: Anatolia, the Taurus, the coast of Syria, the steppe",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_levant_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: a long-necked lute, far pipes; sparse, the land's beds carry the rests.",
+      "where": "Anatolia and the Levant: Anatolia, the Taurus, the coast of Syria, the steppe",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_mesopotamia_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 168.0,
+      "samples": 7408800,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: harp dyads over a long-necked lute; sparse, the land's beds carry the rests.",
+      "where": "between the rivers: Mesopotamia and Susiana",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          3
+        ],
+        "bars": 56,
+        "beats": 168,
+        "samples": 7408800,
+        "phrase_starts_s": [
+          0.0,
+          42.0,
+          84.0,
+          126.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_mesopotamia_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 168.0,
+      "samples": 7408800,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the harp over a hummed drone; sparse, the land's beds carry the rests.",
+      "where": "between the rivers: Mesopotamia and Susiana",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          3
+        ],
+        "bars": 56,
+        "beats": 168,
+        "samples": 7408800,
+        "phrase_starts_s": [
+          0.0,
+          42.0,
+          84.0,
+          126.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_iran_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: an angular harp, a far double pipe; sparse, the land's beds carry the rests.",
+      "where": "the Iranian plateau and the Zagros",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_iran_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the harp over hummed women's voices; sparse, the land's beds carry the rests.",
+      "where": "the Iranian plateau and the Zagros",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
     }
   ]
 }

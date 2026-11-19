@@ -18,6 +18,7 @@ from multiprocessing import Pool
 
 import numpy as np
 
+import occlusion
 import pack
 import props
 import rig
@@ -33,7 +34,7 @@ PAGE = 4096
 WALK_HEADROOM = 48          # px at 64x32: 1.5 tile.h above a walk tile's floor
 MAX_PIECE = 8
 # Pages a set may fill (graphics-plan §2.5: every set keeps its page count).
-MAX_PAGES = {"parsa": 2, "athens": 2, "rome": 4, "world": 1}
+MAX_PAGES = {"parsa": 2, "athens": 2, "rome": 3, "world": 1}
 FACINGS = ("front", "back")
 
 
@@ -134,9 +135,9 @@ SLOPE_KEY = re.compile(r"terrain/([^/]+)/slope/(\w+)/v(\d+)")
 
 
 def slope_looks(t: dict) -> int:
-    """Looks per slope shape (art-smooth-land.md §3.3): two for a base ground, which covers most
-    hillsides, one for an overlay (its tile's interior look)."""
-    return 2 if t.get("base") else 1
+    """Looks per slope shape (art-smooth-land.md §3.3): two for every slope terrain, so that no
+    hillside repeats one tile's marks (the engine counts them)."""
+    return 2
 
 
 def required_keys(cat: dict, mod, pieces: dict, kit_pieces: dict | None = None) -> list[str]:
@@ -367,6 +368,7 @@ def _item_job(args):
     walk = kit_walk(item, {"layout": layout, "footprint": footprint}, variant)
     if frame:                       # every frame of a look shares its geometry: frame 0 gives it
         return res, {}
+    res[f"{OCC_PREFIX}item/{item_id}/{variant}"] = occlusion.of_model(model)
     order = order_geometry(*columns(model, rfw, rfh), walk, {}, pieces, k, crossing=crossing)
     if deck and not walk:           # a deck walked over whole (bridges, jetties, pontoons, moles):
         # its floor by walk tiles and their heights, as the engine's loader wants (walk_z only
@@ -413,20 +415,35 @@ def _facing(model, h) -> list[int] | None:
     nx, ny, nz = model.mat.shape
     if not (0 <= pz < nz):
         return None
-    reach = 3 * k
+    reach = 5 * k
+    # Over a few layers round the point, so a window's own opening (open on both sides at its
+    # height) still finds the wall above and below it.
+    zs = [z for z in range(pz - k, pz + k + 1) if 0 <= z < nz]
 
     def solid(dx, dy):
         n = 0
         for i in range(1, reach + 1):
             x, y = px + dx * i, py + dy * i
-            if 0 <= x < nx and 0 <= y < ny and model.mat[x, y, pz]:
-                n += 1
+            if 0 <= x < nx and 0 <= y < ny:
+                n += sum(1 for z in zs if model.mat[x, y, z])
         return n
     best, score = None, 0
     for d in ((1, 0), (-1, 0), (0, 1), (0, -1)):
         sc = solid(-d[0], -d[1]) - solid(*d)
         if sc > score:
             best, score = list(d), sc
+    if best is None and 0 <= px < nx and 0 <= py < ny and model.mat[px, py, pz]:
+        # A point set into thick masonry (a window deep in its wall, on a court): its light goes
+        # out by the shortest way to open air.
+        def to_air(dx, dy):
+            for i in range(1, 12 * k + 1):
+                x, y = px + dx * i, py + dy * i
+                if not (0 <= x < nx and 0 <= y < ny) or not model.mat[x, y, pz]:
+                    return i
+            return None
+        near = [(i, d) for d in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (i := to_air(*d)) is not None]
+        if near:
+            best = list(min(near)[1])
     return best
 
 
@@ -483,15 +500,33 @@ def _flat_job(args):
     return _set_mod(set_id).flat(keys, cat, k), {}
 
 
-def _slope_job(args):
-    """Every shape of one slope look: the terrain's flat interior (an overlay over its base)
-    laid on each shape and lit (slopes.py)."""
-    set_id, tid, v, shapes, cat, k = args
+def slope_rock(set_id: str, cat: dict, tid: str) -> tuple:
+    """The rock ramp (dark to light) a slope of `tid` breaks into where it is steep: the first
+    natural rock face its terrain (or its base) names, else none."""
+    import importlib
+    terrain = {t["id"]: t for t in cat["terrain"]}
+    t = terrain[tid]
+    faces = list(t.get("faces", ())) + list(terrain.get(t.get("under"), {}).get("faces", ()))
+    natural = getattr(importlib.import_module(f"sets.{set_id}.ground"), "NATURAL", {})
+    for f in faces:
+        stone = natural.get(f) or natural.get(f.split(".", 1)[-1])
+        if stone is not None and stone.kind == "rock":
+            return tuple(stone.rock)
+    return ()
+
+
+def slope_set(set_id: str, cat: dict, tid: str, v: int, shapes, k: int) -> dict:
+    """Look `v` of every shape in `shapes` of slope terrain `tid` (slopes.py): its flat interior
+    (an overlay's look `m15/v<v>` where it has interior looks, over base look `v`) laid on each
+    shape, lit, and marked as its material wears a slope."""
     mod = _set_mod(set_id)
     t = next(t for t in cat["terrain"] if t["id"] == tid)
     base = tid if t.get("base") else t["under"]
     nbase = next(b for b in cat["terrain"] if b["id"] == base)["variants"]
-    want = [f"terrain/{base}/v{v % nbase}"] + ([] if t.get("base") else [f"terrain/{tid}/m15/f0"])
+    want = [f"terrain/{base}/v{v % nbase}"]
+    if not t.get("base"):
+        inner = getattr(getattr(mod, "ground", None), "INTERIOR", {}).get(tid, 1)
+        want.append(f"terrain/{tid}/m15/f0" if v % inner == 0 else f"terrain/{tid}/m15/v{v % inner}/f0")
     flats = mod.flat(want, cat, k)
     flat = flats[want[0]]
     rgba = flat.rgba.copy()
@@ -501,8 +536,14 @@ def _slope_job(args):
         rgba[..., :3] = np.where(a > 0.5, over[..., :3], rgba[..., :3])
     pal = slopes.palette_codes(palette_for(set_id))
     lay = Sprite(rgba, flat.ox, flat.oy)
-    return {f"terrain/{tid}/slope/{shape}/v{v}": slopes.slope_sprite(lay, shape, k, 8 * k, pal)
-            for shape in shapes}, {}
+    material, rock = slopes.material_of(tid), slope_rock(set_id, cat, tid)
+    return {f"terrain/{tid}/slope/{shape}/v{v}": slopes.slope_sprite(lay, shape, k, 8 * k, pal, v, material, rock)
+            for shape in shapes}
+
+
+def _slope_job(args):
+    set_id, tid, v, shapes, cat, k = args
+    return slope_set(set_id, cat, tid, v, shapes, k), {}
 
 
 def _run(job):
@@ -597,6 +638,7 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
                 sprites[f"item/{iid}/base/r0/p{i}/f0"] = Sprite(part, r.base.ox, r.base.oy, data)
         else:
             sprites[f"item/{iid}/base/r0/f0"] = r.base
+        sprites[f"{OCC_PREFIX}item/{iid}/r0"] = r.occlusion
         if "shadow" in layers:
             sprites[f"item/{iid}/shadow/r0/f0"] = _clip_hidden(r.shadow, r.base)
         if "glow" in layers:
@@ -611,9 +653,10 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
     if missing:
         raise SystemExit(f"setbuild: builders did not make {len(missing)} keys, e.g. {missing[:5]}")
     glows = sorted(k_ for k_ in sprites if k_ not in keyset and "/glow/" in k_)
+    occ = sorted(k_ for k_ in sprites if k_.startswith(OCC_PREFIX))
     meta["glow_at"] = _glow_at({k_: sprites[k_] for k_ in glows})
     meta["kit_pieces"] = kit_pieces
-    return {key: sprites[key] for key in keys + glows}, pieces, meta, lm_info
+    return {key: sprites[key] for key in keys + glows + occ}, pieces, meta, lm_info
 
 
 def _glow_at(glows: dict) -> dict:
@@ -821,12 +864,13 @@ def pack_pages(sprites: dict, groups: list[tuple[list[str], bool]], page=PAGE):
     has), so a district or a city's people never straddle two pages; a non-atomic group fills
     gaps sprite by sprite from the first page on. Identical sprites of one group (same pixels,
     anchor and data: a two-pose loop stored as four frames, a still cart's idle) share one
-    rectangle; the manifest lists every key. Returns [(atlas RGBA, manifest)]."""
-    trimmed = {k: pack.trim(s) for k, s in sprites.items()}
+    rectangle; the manifest lists every key; sprites in no group are left off the pages.
+    Returns [(atlas RGBA, manifest)]."""
     # Sharing stays inside a group: a sprite pointing at a twin on another page would make the
     # engine switch pages for it in the middle of a district's draw order (an empty landmark
     # piece shared across districts cost the Acropolis some fifty draws a frame).
     group_of = {k_: i for i, (keys, _atomic) in enumerate(groups) for k_ in keys}
+    trimmed = {k: pack.trim(s) for k, s in sprites.items() if k in group_of}
     first: dict[tuple, str] = {}
     same: dict[str, str] = {}          # key -> the earlier key (in sorted order) it shares pixels with
     for k_ in sorted(trimmed):
@@ -897,32 +941,39 @@ def pack_pages(sprites: dict, groups: list[tuple[list[str], bool]], page=PAGE):
 
 
 FILLER_PREFIX = ("terrain/", "edge/", "backdrop/", "fx/", "weather/", "ui/")
+OCC_PREFIX = "occ:"             # an item look's occlusion tops in the build (occlusion.py), never on a colour page
+GROUND_PREFIX = ("terrain/", "edge/")
 
 
-def page_groups(keys, cat, mod) -> list[tuple[list[str], bool]]:
+def page_groups(keys, cat, mod, set_id: str = "") -> list[tuple[list[str], bool]]:
     """Packing groups by what one view draws together (out/reports/perf-notes-for-art.md): the
     city's people with the kit and plants they move among (seasonal looks beside their plain
-    sprites), then each landmark district whole (a set's `DISTRICT_ORDER` first: its busiest
-    views share the people's page when they fit), then glows, shadows, ground, faces, backdrops
-    and effects filling the gaps: the engine draws glows and shadows in passes of their own
-    sorted by page and caches ground in cells, so where they sit costs a draw at most."""
+    sprites) and the set's own ground and faces they stand on (a raised tile is drawn among the
+    objects, so the ground must share their page: "Step 2"); then each landmark district whole
+    (a set's `DISTRICT_ORDER` first: its busiest views share the people's page when they fit);
+    then every glow of the set together (the glow pass draws a page at a time: one page, one
+    draw); then backdrops and effects filling the gaps. Shadows are on no colour page: they
+    are drawn from the half-size shadow page (`<set>.s.png`), one draw per set."""
     lm_ids = {it["id"]: mod.LANDMARKS[it["id"]].district for it in cat["items"] if it["id"] in mod.LANDMARKS}
-    people, glow, shadow, filler, landmark = [], [], [], [], defaultdict(list)
+    own_ground = tuple(f"{p}{set_id}." for p in GROUND_PREFIX) if set_id else GROUND_PREFIX
+    people, glow, filler, landmark = [], [], [], defaultdict(list)
     for key in keys:
         parts = key.split("/")
         if "/shadow/" in key:
-            shadow.append(key)
-        elif "/glow/" in key:
+            continue
+        if "/glow/" in key:
             glow.append(key)
         elif parts[0] == "item" and parts[1] in lm_ids:
             landmark[lm_ids[parts[1]]].append(key)
+        elif key.startswith(own_ground):
+            people.append(key)
         elif key.startswith(FILLER_PREFIX):
             filler.append(key)
         else:
             people.append(key)
     first = [d for d in getattr(mod, "DISTRICT_ORDER", ()) if d in landmark]
     order = first + sorted(d for d in landmark if d not in first)
-    return [(people, True), *[(landmark[d], True) for d in order], (glow + shadow + filler, False)]
+    return [(people, True), *[(landmark[d], True) for d in order], (glow, True), (filler, False)]
 
 
 # ---------- main ----------
@@ -937,16 +988,19 @@ def main(build: spec.Build, args) -> int:
         sprites, pieces, meta, lm_info = build_set(set_id, cat, build.k, pool, args.only)
     out_dir = build.out
     out_dir.mkdir(parents=True, exist_ok=True)
-    groups = page_groups(list(sprites), cat, mod)
+    occ = {k_[len(OCC_PREFIX):]: sprites.pop(k_) for k_ in [k_ for k_ in sprites if k_.startswith(OCC_PREFIX)]}
+    groups = page_groups(list(sprites), cat, mod, set_id)
     budget = MAX_PAGES.get(set_id, 2)
     pages = pack_pages(sprites, groups)
-    if len(pages) > budget:     # districts may straddle pages; the people stay whole
+    if len(pages) > budget:     # districts may straddle pages; the people and their ground stay whole
         print(f"  {len(pages)} pages: districts packed loosely to keep {budget}")
         pages = pack_pages(sprites, [groups[0], ([k_ for g, _a in groups[1:] for k_ in g], False)])
     for old in out_dir.glob(f"{set_id}.*.png"):
-        old.unlink()
+        if not (args.only and old.name == f"{set_id}.o.png"):
+            old.unlink()
+    keep = {f"{set_id}.geom.json"} | ({f"{set_id}.o.json"} if args.only else set())
     for old in out_dir.glob(f"{set_id}.*.json"):
-        if old.name != f"{set_id}.geom.json":
+        if old.name not in keep:
             old.unlink()
     import gc
     from PIL import Image
@@ -970,6 +1024,11 @@ def main(build: spec.Build, args) -> int:
     sw, sh_, sn = datapages.write_shadow_page(out_dir / f"{set_id}.s.png", sprites)
     total += (out_dir / f"{set_id}.s.png").stat().st_size
     print(f"shadow page {set_id}.s.png: {sw}x{sh_}, {sn} sprites at half size")
+    if not args.only:
+        ow, oh, on = datapages.write_occlusion_page(out_dir / f"{set_id}.o.png", occ)
+        total += (out_dir / f"{set_id}.o.png").stat().st_size
+        print(f"occlusion page {set_id}.o.png: {ow}x{oh}, {on} item looks")
+    n_sprites, n_pages = len(sprites), len(pages)
     del sprites, trimmed, pages              # the water page and the validator read the pages back
     gc.collect()
     ww, wh, wn = datapages.write_water_page(out_dir / f"{set_id}.w.png", written)
@@ -978,7 +1037,7 @@ def main(build: spec.Build, args) -> int:
     if not args.only:
         geom = geometry(set_id, cat, mod, pieces, meta, lm_info, build.k)
         (out_dir / f"{set_id}.geom.json").write_text(compact_json(geom))
-    print(f"set {set_id}: {len(sprites)} sprites on {len(pages)} pages ({total / 1e6:.2f} MB) "
+    print(f"set {set_id}: {n_sprites} sprites on {n_pages} pages ({total / 1e6:.2f} MB) "
           f"in {time.time() - t0:.1f}s")
     import setvalidate
     del meta

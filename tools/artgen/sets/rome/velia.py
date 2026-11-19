@@ -6,10 +6,12 @@ import math
 
 import numpy as np
 
+import waterworks
+
 import materials as M
 import relief_roman as RR
 import roman as RM
-from arch import ellipsoid, fill, halo, revolve, rod, slab
+from arch import carve, ellipsoid, fill, halo, revolve, rod, slab
 from setbuild import Landmark
 from sets.rome.common import LAMP, S6, S65, SUN_GOD, T, drums, paving, referrer, scaffold, torch, treadwheel_crane
 from voxel import hash01, value_noise
@@ -173,8 +175,9 @@ def meta_sudans(m):
     c = T
     rb = S.h(16.0) / 2
     revolve(m, c, c, 0.0, 2.0, lambda t: rb, "marble", tone=0.2)
-    fill(m, (c - rb, c + rb, c - rb, c + rb, 1.0, 2.2), "water",
-         lambda X, Y, Z: np.hypot(X - c, Y - c) < rb - 1.0, tone=lambda X, Y, Z: 0.3 * (np.sin((X + Y) * 2) > 0.8))
+    carve(m, (c - rb, c + rb, c - rb, c + rb, 1.6, 2.2), lambda X, Y, Z: np.hypot(X - c, Y - c) < rb - 1.0)
+    waterworks.surface(m, (c - rb, c + rb, c - rb, c + rb), 1.6, 0, 1, shape=lambda X, Y: np.hypot(X - c, Y - c) < rb - 1.0,
+                       seed=1691, depth_units=3.0)
     h = S.v(17.0)
     rc = S.h(5.0) / 2
     revolve(m, c, c, 2.0, 2.0 + h * 0.3, lambda t: rc * (1.25 - 0.1 * t), "marble", tone=RM.marble_veneer(5, 4.0, 4.0))

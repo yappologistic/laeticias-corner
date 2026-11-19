@@ -4182,7 +4182,15 @@
  "audio": {
   "music": [
    "music/athens/day.ogg",
-   "music/athens/night.ogg"
+   "music/athens/night.ogg",
+   "music/athens/town_polis_day.ogg",
+   "music/athens/town_polis_night.ogg",
+   "music/athens/town_march_day.ogg",
+   "music/athens/town_march_night.ogg",
+   "music/athens/town_sanctuary_day.ogg",
+   "music/athens/town_sanctuary_night.ogg",
+   "music/athens/town_harbour_day.ogg",
+   "music/athens/town_harbour_night.ogg"
   ],
   "ambience": [
    "amb/athens/day.ogg",

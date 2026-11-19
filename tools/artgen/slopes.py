@@ -18,7 +18,7 @@ from functools import lru_cache
 import numpy as np
 
 from pack import Sprite
-from render import dither
+from voxel import hash01
 
 N_C, E_C, S_C, W_C = 1, 2, 4, 8            # corner bits: N (0,0), E (16,0), S (16,16), W (0,16)
 SUN = np.array([-0.45, 0.28, 0.85]) / np.linalg.norm([-0.45, 0.28, 0.85])
@@ -168,9 +168,35 @@ def raster(shape: str, k: int, lvl: int):
         Z = np.where(front, z0 + gu * u + gv * v, Z); T = np.where(front, t, T)
         DU = np.where(front, inv[0, 1], DU); DV = np.where(front, inv[1, 1], DV)
     inside = T >= 0
-    N = np.array(normals)[np.clip(T, 0, 7)]
+    vn = _vertex_normals(normals)
+    Ns = np.zeros((H, W, 3))
+    for t, tri in enumerate(FAN):
+        sel = T == t
+        if not sel.any():
+            continue
+        a, b, c = [np.array([8.0 * i, 8.0 * j, 0.0]) for i, j in tri]
+        w0, w1, w2 = _bary(U[sel], V[sel], a, b, c)
+        Ns[sel] = w0[:, None] * vn[tri[0]] + w1[:, None] * vn[tri[1]] + w2[:, None] * vn[tri[2]]
+    Ns[~inside] = (0.0, 0.0, 1.0)
+    Ns /= np.linalg.norm(Ns, axis=-1, keepdims=True)
     hpx = np.clip(np.round((1 + Z) * lvl), 0, lvl).astype(np.int64)
-    return inside, U, V, hpx, N, (DU, DV), (W, H, ox, oy)
+    return inside, U, V, hpx, Ns, (DU, DV), (W, H, ox, oy), Z
+
+
+def _vertex_normals(normals) -> dict:
+    """The normal at each of the nine grid points: the mean of the tile's facets meeting there.
+    Interpolated across each triangle it rounds the fan's folds into one curved surface; on a
+    plane every point keeps the plane's normal, so a hillside of planes stays one even field and
+    meets its neighbours with the same light."""
+    acc: dict = {}
+    for n, tri in zip(normals, FAN):
+        for p in tri:
+            acc.setdefault(p, []).append(n)
+    out = {}
+    for p, ns in acc.items():
+        m = np.mean(ns, axis=0)
+        out[p] = m / np.linalg.norm(m)
+    return out
 
 
 def light(n) -> np.ndarray:
@@ -180,27 +206,28 @@ def light(n) -> np.ndarray:
 
 FLAT = float(light(np.array([0.0, 0.0, 1.0])))
 
+# Ground is lit by the whole sky as well as the sun, so its turn to the sun moves its light far
+# less than a wall's: a slope facing away is about one palette step darker than flat ground, a
+# slope facing the sun a little lighter (terrain notes §1). `ground_light` is the ratio over flat
+# ground the art bakes; the engine tints anything it warps onto a slope by the same function of
+# the same per-vertex normal (src/worldview/terrain.hpp `slopeLight`).
+GROUND_GAIN = 0.35
+GROUND_RANGE = (0.85, 1.12)
+STEP_RATIO = 0.12               # light ratio per palette step on ground
 
-@lru_cache(maxsize=4)
-def _oklab_palette(pal: tuple):
-    """Oklab of every palette colour (sorted codes) for shading by neighbours in the palette."""
-    rgb = np.array([[(c >> 16) & 255, (c >> 8) & 255, c & 255] for c in pal], float) / 255
-    lin = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
-    m1 = np.array([[0.4122214708, 0.5363325363, 0.0514459929], [0.2119034982, 0.6806995451, 0.1073969566],
-                   [0.0883024619, 0.2817188376, 0.6299787005]])
-    lms = np.cbrt(lin @ m1.T)
-    m2 = np.array([[0.2104542553, 0.7936177850, -0.0040720468], [1.9779984951, -2.4285922050, 0.4505937099],
-                   [0.0259040371, 0.7827717662, -0.8086757660]])
-    return lms @ m2.T
+
+def ground_light(n) -> np.ndarray:
+    """Light of ground with unit normal `n` over flat ground's: 1 + 0.35 (n.S - up.S), clamped
+    to 0.85..1.12."""
+    return np.clip(1.0 + GROUND_GAIN * (np.asarray(n) @ SUN - SUN[2]), *GROUND_RANGE)
 
 
 @lru_cache(maxsize=4)
 def steps(pal: tuple) -> tuple[np.ndarray, np.ndarray]:
     """For each palette colour (sorted codes) the index of the colour one step darker and one
-    step lighter: its neighbour in its own palette group when the set has it, else the nearest
-    in hue about one ramp step away in lightness, else itself, so shading keeps the family."""
+    step lighter in its own palette group; a colour at the end of its group stays itself, so
+    shading never leaves the material's family (a green-brown floor never turns red-brown)."""
     from palette import GROUPS, _rgb
-    lab = _oklab_palette(pal)
     codes = list(pal)
     where = {c: i for i, c in enumerate(codes)}
     n = len(pal)
@@ -211,20 +238,10 @@ def steps(pal: tuple) -> tuple[np.ndarray, np.ndarray]:
         for j, c in enumerate(cs):
             if c not in where:
                 continue
-            if j > 0 and cs[j - 1] in where:
+            if j > 0 and cs[j - 1] in where and down[where[c]] == where[c]:
                 down[where[c]] = where[cs[j - 1]]
-            if j + 1 < len(cs) and cs[j + 1] in where:
+            if j + 1 < len(cs) and cs[j + 1] in where and up[where[c]] == where[c]:
                 up[where[c]] = where[cs[j + 1]]
-    for i in range(n):
-        dl = lab[:, 0] - lab[i, 0]
-        hue = np.hypot(lab[:, 1] - lab[i, 1], lab[:, 2] - lab[i, 2])
-        for want, out in ((-1, down), (1, up)):
-            if out[i] != i:
-                continue
-            ok = (dl * want > 0.035) & (dl * want < 0.16) & (hue < 0.05)
-            if ok.any():
-                cost = (np.abs(dl) - 0.08) ** 2 + 2.5 * hue ** 2
-                out[i] = int(np.argmin(np.where(ok, cost, np.inf)))
     return down, up
 
 
@@ -262,29 +279,65 @@ def _extend(rgba: np.ndarray) -> np.ndarray:
     return out
 
 
-def _sample(rgba: np.ndarray, ox, oy, U, V, k):
-    fx = np.clip(np.floor((U - V) * k + ox), 0, rgba.shape[1] - 1).astype(np.int64)
-    fy = np.clip(np.floor((U + V) * k / 2 + oy), 0, rgba.shape[0] - 1).astype(np.int64)
-    return rgba[fy, fx]
+def _texel(flat: Sprite, U, V, k):
+    """Integer texel (column, row) of the flat art showing ground point (u, v)."""
+    fx = np.floor((U - V) * k + flat.ox).astype(np.int64)
+    fy = np.floor((U + V) * k / 2 + flat.oy).astype(np.int64)
+    return np.clip(fx, 0, flat.rgba.shape[1] - 1), np.clip(fy, 0, flat.rgba.shape[0] - 1)
 
 
-def slope_sprite(flat: Sprite, shape: str, k: int, lvl: int, pal: tuple, gain: float = 1.0) -> Sprite:
-    """The flat tile `flat` (a ground diamond, anchor (16k, 0)) laid on `shape` and lit. Where
-    a slope turns away and one screen row covers more than a row of the flat art, the pixel
-    takes the commonest of three samples down its footprint instead of one, so foreshortened
-    ground keeps its marks instead of breaking into noise."""
-    inside, U, V, hpx, N, (DU, DV), (W, H, ox, oy) = raster(shape, k, lvl)
+def _luma_rank(rgba: np.ndarray) -> np.ndarray:
+    """Each texel's lightness as its rank among the tile's texels, 0 (darkest) .. 1: shading
+    takes the dark texels first going darker and the light ones first going lighter, so a
+    slope's light grows out of the ground's own marks instead of a screen pattern."""
+    luma = rgba[..., 0] * 0.299 + rgba[..., 1] * 0.587 + rgba[..., 2] * 0.114
+    on = rgba[..., 3] > 0
+    order = np.argsort(np.where(on, luma, -1).ravel(), kind="stable")
+    rank = np.empty(order.size)
+    rank[order] = np.arange(order.size)
+    first = (~on).sum()
+    return np.clip((rank.reshape(luma.shape) - first) / max(on.sum() - 1, 1), 0, 1)
+
+
+def slope_sprite(flat: Sprite, shape: str, k: int, lvl: int, pal: tuple, seed: int = 0,
+                 material: str = "soil", rock: tuple = ()) -> Sprite:
+    """The flat tile `flat` (a ground diamond, anchor (16k, 0)) laid on `shape` and lit.
+
+    - Each pixel shows the flat art's texel at its ground point. Where a slope turns toward the
+      viewer one texel spans more than one screen row; those rows take a neighbouring texel of
+      the same ground instead of repeating it (a jitter along the row's own direction, as large
+      as the stretch), so the ground keeps its grain instead of being combed into streaks. Where
+      it turns away and a row spans several texels, the commonest of three samples is taken.
+    - Light: `ground_light` of the normal smoothed over the tile (`raster`), in whole palette
+      steps inside each colour's group; the fraction between steps goes to the texels by their
+      own lightness, so shade sits in the ground's hollows and light on its tops.
+    - The ground's own marks of a slope by `material` (`_details`), different for each `seed`
+      (look); steep ground breaks into the `rock` ramp (dark to light) where the material would.
+    """
+    inside, U, V, hpx, N, (DU, DV), (W, H, ox, oy), Z = raster(shape, k, lvl)
     art = _extend(flat.rgba)
-    mid = _sample(art, flat.ox, flat.oy, U, V, k)
-    lo = _sample(art, flat.ox, flat.oy, U - DU / 3, V - DV / 3, k)
-    hi = _sample(art, flat.ox, flat.oy, U + DU / 3, V + DV / 3, k)
-    same = (lo == hi).all(-1)
-    src = np.where(same[..., None], lo, mid)
     py, px = np.mgrid[0:H, 0:W]
-    lit = light(N.reshape(-1, 3)).reshape(H, W)
-    s = (lit / FLAT - 1.0) / 0.10 * gain
-    whole = dither(s, px, py, 0.3)
-    rgb = shade(src[..., :3], whole.astype(np.int64), pal, inside)
+    # Rows per texel: a flat diamond steps 1/k of a unit in u and v per screen row.
+    per_row = np.hypot(DU, DV) * k / np.sqrt(2)
+    stretch = np.where(per_row > 1e-6, 1 / np.maximum(per_row, 1e-6), 1)
+    j = (hash01(px, py, 7101 + seed) - 0.5) * np.clip(stretch - 1, 0, 2)
+    ju, jv = U + j * DU, V + j * DV
+    jx, jy = _texel(flat, ju, jv, k)
+    lx, ly = _texel(flat, U - DU / 3, V - DV / 3, k)
+    hx, hy = _texel(flat, U + DU / 3, V + DV / 3, k)
+    lo, hi = art[ly, lx], art[hy, hx]
+    squeeze = (stretch < 0.95) & (lo == hi).all(-1)
+    tx, ty = np.where(squeeze, lx, jx), np.where(squeeze, ly, jy)
+    src = art[ty, tx]
+    rank = _luma_rank(art)[ty, tx]
+    grain = hash01(tx, ty, 7103 + seed)
+    s = (ground_light(N.reshape(-1, 3)).reshape(H, W) - 1.0) / STEP_RATIO
+    whole = np.floor(s + 0.75 * rank + 0.25 * grain).astype(np.int64)
+    marks, stone = _details(material, seed, inside, U, V, Z, N, px, py)
+    rgb = shade(src[..., :3], whole + marks, pal, inside)
+    if rock and stone.any():
+        ramp = np.array([[int(c.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)] for c in rock], np.uint8)
+        rgb[stone > 0] = ramp[np.clip(stone[stone > 0] - 1, 0, len(ramp) - 1)]
     rgba = np.zeros((H, W, 4), np.uint8)
     rgba[..., :3] = np.where(inside[..., None], rgb, 0)
     rgba[..., 3] = inside * 255
@@ -316,3 +369,105 @@ def check_flat(k: int, lvl: int) -> bool:
     return bool((inside[:16 * k] == g.inside).all() and not inside[16 * k:].any())
 
 
+# ---------------------------------------------------------------- the marks of a slope
+
+def material_of(tid: str) -> str:
+    """How a terrain wears a slope: `grass` (sheep-worn terracettes along the contours, soil and
+    rock breaking through where it is steep), `soil` (rills washed down the fall line), `sand`
+    (wind ripples along the contours), `rock` (ledges along the contours, cracks and scree
+    streaks down the fall line), `forest` (litter washed into a few rills, roots and stones
+    where steep) or `snow` (smooth; rock where steep)."""
+    name = tid.split(".")[-1]
+    if "snow" in name:
+        return "snow"
+    if any(w in name for w in ("rock", "scree", "rough")):
+        return "rock"
+    if "sand" in name or "dune" in name:
+        return "sand"
+    if "forest" in name:
+        return "forest"
+    if any(w in name for w in ("grass", "steppe", "pasture", "scrub")):
+        return "grass"
+    return "soil"
+
+
+# Per material: contour spacing (levels, 0 = none), how much of each contour shows, rill
+# spacing (tile units, 0 = none), how much of each rill shows, the steepness (rise over run)
+# from which rock breaks through (0 = never).
+MARKS = {
+    "grass":  (0.30, 0.42, 0.0, 0.0, 0.70),
+    "soil":   (0.0, 0.0, 2.4, 0.45, 0.0),
+    "sand":   (0.20, 0.55, 0.0, 0.0, 0.0),
+    "rock":   (0.30, 0.45, 4.2, 0.22, 0.55),
+    "forest": (0.0, 0.0, 3.4, 0.30, 0.80),
+    "snow":   (0.0, 0.0, 0.0, 0.0, 0.80),
+}
+
+
+def _details(material, seed, inside, U, V, Z, N, px, py):
+    """Palette-step marks (a shift per pixel) and rock (0, or 1 + an index on the rock ramp) of
+    a slope. Everything stays off a margin along the tile's edges, so a mark never meets a
+    neighbour's edge cut short, and is placed by the ground point (u, v), not the screen.
+    Contours run on height, rills on the fall line of the smoothed surface; both break into
+    pieces by noise, so no line runs ruled across a tile."""
+    from voxel import value_noise
+    cs, cshow, rs, rshow, steep_at = MARKS.get(material, MARKS["soil"])
+    H, W = inside.shape
+    marks = np.zeros((H, W), np.int64)
+    stone = np.zeros((H, W), np.int64)
+    edge = np.minimum(np.minimum(U, 16 - U), np.minimum(V, 16 - V))
+    calm = inside & (edge > 1.6)
+    nz = np.maximum(N[..., 2], 1e-3)
+    tilt = np.hypot(N[..., 0], N[..., 1]) / nz            # rise over run
+    dx = np.where(tilt > 1e-6, N[..., 0] / np.maximum(np.hypot(N[..., 0], N[..., 1]), 1e-6), 0)
+    dy = np.where(tilt > 1e-6, N[..., 1] / np.maximum(np.hypot(N[..., 0], N[..., 1]), 1e-6), 0)
+    sloped = calm & (tilt > 0.2)
+
+    def below(a):               # the pixel one row down (the last row has none)
+        out = np.full_like(a, -10 ** 6)
+        out[:-1] = a[1:]
+        return out
+
+    if cs:
+        off = hash01(seed, 7201) * cs
+        gap = cs * (0.75 if material == "rock" else 1.0) / np.where(tilt > 0.8, 1.4, 1.0)
+        # Contours wander (a slow warp of the height) and break into pieces of uneven length.
+        wz = Z + 0.16 * (value_noise(U + 17 * seed, V, 1.0, 4.5, 7202 + seed) - 0.5) * cs / 0.3
+        band = np.floor((wz - off) / gap).astype(np.int64)
+        line = sloped & (band != below(band)) & np.roll(sloped, -1, 0)
+        keep = value_noise(U + 31 * seed, V, band * 3.0, 2.2, 7203 + seed) < cshow
+        line &= keep
+        lip = np.roll(line, -1, 0) & ~line & sloped        # the row above a contour: its lit tread
+        marks -= line
+        if material != "sand":
+            marks += lip
+        else:
+            marks += np.roll(line, -2, 0) & ~line & sloped
+    if rs:
+        a = U * -dy + V * dx                                 # across the fall line
+        b = U * dx + V * dy                                  # down it
+        a2 = a / rs + hash01(seed, 7205) * 7
+        cell = np.floor(a2).astype(np.int64)
+        on = np.abs(a2 - cell - 0.25 - 0.5 * hash01(cell, seed, 7207)) * rs < 0.32
+        run = value_noise(cell * 5.0, b, seed * 3.0, 2.2, 7209 + seed) < rshow
+        rill = sloped & on & run & (tilt > 0.3)
+        marks -= rill
+        lit = np.roll(rill, -1, 1) & ~rill & sloped          # the lip on the sun's side (left)
+        marks += lit
+    if steep_at:
+        bare = calm & (tilt > steep_at)
+        blob = value_noise(U, V, seed * 1.7, 2.3, 7211 + seed)
+        want = bare & (blob > 0.78 - 0.30 * np.clip(tilt - steep_at, 0, 1))
+        # Rock pieces: lit on the side toward the sun, dark at their foot, a mid body.
+        up_ = np.roll(want, 1, 0)
+        down_ = np.roll(want, -1, 0)
+        left = np.roll(want, 1, 1)
+        lightn = 2 + (N @ SUN > 0.8) + (N @ SUN > 0.6)
+        body = np.where(want, lightn, 0)
+        body = np.where(want & ~up_, lightn + 1, body)      # top edge catches light
+        body = np.where(want & ~left, np.maximum(body, lightn + 1), body)
+        body = np.where(want & ~down_, 1, body)             # foot in shade
+        stone = np.where(want, body + 1, 0)
+        foot = np.roll(want, 1, 0) & ~want & calm           # its shadow on the ground below
+        marks -= foot
+    return marks, stone
