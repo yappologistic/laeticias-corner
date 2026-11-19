@@ -5,6 +5,7 @@
 #include "world/digest.hpp"
 #include "world/loader.hpp"
 
+#include <array>
 #include <charconv>
 #include <cstdio>
 #include <filesystem>
@@ -21,13 +22,14 @@ namespace {
 
 constexpr const char* kUsage =
     "usage: worldinfo [--assets DIR] [summary | validate | digest | region ID | tile X Y |\n"
-    "                 slopes X Y R]\n"
+    "                 slopes X Y R | falls]\n"
     "  summary   sizes, layers, items, graphs, timings and memory (default)\n"
     "  validate  every diagnostic; exits 1 when the data has errors\n"
     "  digest    the digest tests/world_tools/world_digest.py also writes\n"
     "  region    a region's tiles, districts, items and graph nodes\n"
     "  tile      everything at one grid tile\n"
-    "  slopes    levels and slope shapes round a grid tile, R tiles each way (rows along x)\n";
+    "  slopes    levels and slope shapes round a grid tile, R tiles each way (rows along x)\n"
+    "  falls     every place water stands over lower water: tile, side, drop in levels\n";
 
 const char* kindName(RegionKind k) {
     switch (k) {
@@ -186,6 +188,30 @@ void slopes(const LoadedWorld& w, TilePos p, int r) {
     }
 }
 
+// Water over lower water toward each of the four sides, one line each, then the count by drop.
+void falls(const LoadedWorld& w) {
+    const WorldMap& m = *w.map;
+    std::map<int, int> byDrop;
+    const auto water = [&](TilePos q) {
+        return m.inBounds(q) && m.terrainAt(q) != kNone && m.terrainInfo(m.terrainAt(q)).water;
+    };
+    for (int y = 0; y < m.height(); ++y)
+        for (int x = 0; x < m.width(); ++x) {
+            const TilePos p{x, y};
+            if (!water(p)) continue;
+            for (int d = 0; d < 4; ++d) {
+                const TilePos q{x + kSteps[std::size_t(d)].x, y + kSteps[std::size_t(d)].y};
+                if (!water(q) || m.level(q) >= m.level(p)) continue;
+                const int drop = m.level(p) - m.level(q);
+                ++byDrop[drop];
+                std::printf("(%d, %d) %s toward %s, %d level(s)\n", x, y,
+                            m.terrainInfo(m.terrainAt(p)).id.c_str(),
+                            std::array{"+x", "+y", "-x", "-y"}[std::size_t(d)], drop);
+            }
+        }
+    for (const auto& [drop, n] : byDrop) std::printf("drop %d: %d edge(s)\n", drop, n);
+}
+
 bool toInt(const char* s, int& out) {
     const std::string_view v(s);
     const auto [p, ec] = std::from_chars(v.data(), v.data() + v.size(), out);
@@ -230,6 +256,8 @@ int main(int argc, char** argv) {
     } else if (int r = 0; cmd == "slopes" && args.size() == 4 && toInt(args[1].c_str(), p.x) &&
                           toInt(args[2].c_str(), p.y) && toInt(args[3].c_str(), r)) {
         slopes(*world, p, r);
+    } else if (cmd == "falls" && args.size() == 1) {
+        falls(*world);
     } else {
         (void)std::fputs(kUsage, stderr);
         return 2;

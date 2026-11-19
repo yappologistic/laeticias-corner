@@ -179,7 +179,12 @@ OverviewImage makeOverview(const world::WorldMap& map, const WorldSprites& sprit
                 for (const float l : fan) lit += l / static_cast<float>(fan.size());
             }
             const std::uint32_t top = pack(scaled(c, lit));
-            const std::uint32_t side = pack(scaled(c, lit * kFaceShade));
+            // Where water stands over lower ground it falls: its side is white water, as the
+            // cells draw the falls, never a column of the pool's own blue.
+            const Colour foam{(c[0] + 2 * 0.93f) / 3, (c[1] + 2 * 0.96f) / 3,
+                              (c[2] + 2 * 0.97f) / 3};
+            const std::uint32_t side =
+                pack(sprites.terrain(t).water ? foam : scaled(c, lit * kFaceShade));
             const Vec2 w = iso.toWorld(p);
             const int cx = static_cast<int>((w.x - img.origin.x) / static_cast<float>(D));
             const int cy = static_cast<int>((w.y - img.origin.y) / static_cast<float>(D)) - raise;
