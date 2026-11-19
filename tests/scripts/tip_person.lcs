@@ -1,0 +1,16 @@
+# Hovering someone who stands in front of a landmark names them, not the landmark behind (V7-022):
+# what is picked is what is drawn under the pointer, nearest first, for the hover as for the
+# click. The Forum's paving is itself a landmark with a card.
+set chatter quiet
+set season spring
+set day 1
+set time 0.2
+set weather clear
+set world forum 2
+wait 90
+move life:rome.citizen
+wait 6
+expect tip Citizen
+move life:rome.senator
+wait 6
+expect tip Senator

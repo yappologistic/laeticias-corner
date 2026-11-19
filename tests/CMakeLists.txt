@@ -84,6 +84,7 @@ set(LC_SCRIPTS
   "city_life|city_life|640x400|"
   "builder|builder|960x600|"
   "shape_edge|shape_edge|1280x800|"
+  "tip_person|tip_person|1280x800|"
   "front_door|front_door|1280x800||--front-door"
   "tour_full_tray|tour_full_tray|1280x800||--front-door"
   "tour_snooze|tour_snooze|1280x800||--front-door"
