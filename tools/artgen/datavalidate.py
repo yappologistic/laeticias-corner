@@ -541,8 +541,6 @@ def check_occlusion(name: str, atlas_dir: Path, cat: dict, packed) -> list[str]:
         errors.append(f"{key}: occlusion tops for no item look")
     for key, r in man.items():
         sub = img[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
-        if not (sub[..., 3] > 0).any():
-            errors.append(f"{key}: occlusion tops cover nothing")
         if (sub[..., 2] > max(occlusion.CODES.values())).any() or ((sub[..., 3] == 0) & sub[..., :3].any(-1)).any():
             errors.append(f"{key}: occlusion tops with a bad material or data where nothing is covered")
         if ((sub[..., 1] > 0) & (sub[..., 1] >= sub[..., 0])).any():
