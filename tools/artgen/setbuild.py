@@ -432,6 +432,18 @@ def _facing(model, h) -> list[int] | None:
         sc = solid(-d[0], -d[1]) - solid(*d)
         if sc > score:
             best, score = list(d), sc
+    if best is None and 0 <= px < nx and 0 <= py < ny and model.mat[px, py, pz]:
+        # A point set into thick masonry (a window deep in its wall, on a court): its light goes
+        # out by the shortest way to open air.
+        def to_air(dx, dy):
+            for i in range(1, 12 * k + 1):
+                x, y = px + dx * i, py + dy * i
+                if not (0 <= x < nx and 0 <= y < ny) or not model.mat[x, y, pz]:
+                    return i
+            return None
+        near = [(i, d) for d in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (i := to_air(*d)) is not None]
+        if near:
+            best = list(min(near)[1])
     return best
 
 
