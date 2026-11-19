@@ -354,6 +354,26 @@ void ActorMerge::flushPending(bool all) {
     }
 }
 
+int orderViolations(std::span<const OrderItem> items, std::span<const OrderItem> actors,
+                    std::span<const ActorMerge::Step> seq) {
+    std::vector<const OrderItem*> drawn;
+    std::vector<FRect> screens;
+    drawn.reserve(seq.size());
+    screens.reserve(seq.size());
+    for (const ActorMerge::Step& st : seq) {
+        drawn.push_back(st.actor ? &actors[st.index] : &items[st.index]);
+        screens.push_back(drawn.back()->screen);
+    }
+    ScreenGrid grid;
+    grid.build(screens, 128.0f);
+    int bad = 0;
+    grid.pairs(screens, [&](std::uint32_t i, std::uint32_t j) {
+        // i < j: i was drawn first, so it must be the one behind.
+        if (!drawnBefore(drawn[i]->box, drawn[j]->box)) ++bad;
+    });
+    return bad;
+}
+
 int pageSwitches(std::span<const OrderItem> items, std::span<const std::uint32_t> order) {
     int switches = 0;
     for (std::size_t k = 1; k < order.size(); ++k)

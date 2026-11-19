@@ -3,6 +3,7 @@
 #include "core/rng.hpp"
 #include "core/tuning.hpp"
 #include "platform/process.hpp"
+#include "render/bands.hpp"
 #include "render/draw.hpp"
 #include "worldview/tuning.hpp"
 
@@ -186,6 +187,7 @@ void WorldView::warmUp() {
     // Drivers prepare blend and filter state on first use, a stall of several milliseconds in
     // the middle of a run: use every combination once, into a scratch target, and wait.
     SDL_Texture* out = SDL_GetRenderTarget(renderer_);
+    batch_.setBand(bandTag(Band::Debug)); // into a scratch target, never seen
     ensure(half_, tuning::kImpostorBlock / 2, tuning::kImpostorBlock / 2);
     SDL_Texture* white = pages_->texture(sprites_->white().page);
     if (!SDL_SetRenderTarget(renderer_, half_.texture.get()))
@@ -386,7 +388,62 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     const SpriteRef& s =
         e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
                      : look.baseIn(season_).at(now, sprites_->itemFps(map_.items()[e.item]));
-    return put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    if (e.part < 0) return put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    // One part of a floor with a roof over it: the rows below or above the roof's underside.
+    const world::Placed& it = map_.items()[e.item];
+    TileRect r = it.rect();
+    if (const world::GeomVariant* g = map_.geometry(it);
+        g != nullptr && e.piece >= 0 && std::cmp_less(e.piece, g->pieces.size())) {
+        const TileRect& p = g->pieces[static_cast<std::size_t>(e.piece)].rect;
+        r = {it.x + p.x0, it.y + p.y0, it.x + p.x1, it.y + p.y1};
+    }
+    const auto f = [](int v) { return static_cast<float>(v); };
+    return putCut(s, e.anchor, x, {f(r.x0), f(r.y0), f(r.x1), f(r.y1)}, e.cutZ, e.part == 1);
+}
+
+bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
+                       bool upper) {
+    SDL_Texture* t = pages_->texture(s.page);
+    if (t == nullptr) return false;
+    // The cut follows the footprint's front edges raised to the underside: every voxel of the
+    // overhead lies above it, every voxel of the floor below (draw-order.md §1.5 f).
+    const Vec2 l = iso_.toWorld(foot.x0, foot.y1);
+    const Vec2 b = iso_.toWorld(foot.x1, foot.y1);
+    const Vec2 r = iso_.toWorld(foot.x1, foot.y0);
+    const float sx0 = anchor.x - s.ox;
+    const float sy0 = anchor.y - s.oy;
+    const float sx1 = sx0 + s.w;
+    const float sy1 = sy0 + s.h;
+    const auto cut = [&](float wx) {
+        const float cx = std::clamp(wx, l.x, r.x);
+        const float y = cx <= b.x ? l.y + (b.y - l.y) * (cx - l.x) / std::max(1.0f, b.x - l.x)
+                                  : b.y + (r.y - b.y) * (cx - b.x) / std::max(1.0f, r.x - b.x);
+        return std::clamp(y - z + 1, sy0, sy1);
+    };
+    std::array<float, 5> xs{sx0, std::clamp(l.x, sx0, sx1), std::clamp(b.x, sx0, sx1),
+                            std::clamp(r.x, sx0, sx1), sx1};
+    std::ranges::sort(xs);
+    batch_.use(t, SDL_BLENDMODE_BLEND, x.filter);
+    const auto vert = [&](float wx, float wy) {
+        const Vec2 p = x.apply({wx, wy});
+        return SDL_Vertex{{p.x, p.y},
+                          kWhite,
+                          {s.uv.u0 + (s.uv.u1 - s.uv.u0) * (wx - sx0) / s.w,
+                           s.uv.v0 + (s.uv.v1 - s.uv.v0) * (wy - sy0) / s.h}};
+    };
+    static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+    for (std::size_t i = 0; i + 1 < xs.size(); ++i) {
+        const float xa = xs[i];
+        const float xb = xs[i + 1];
+        if (xb <= xa) continue;
+        const float ca = cut(xa);
+        const float cb = cut(xb);
+        const std::array<SDL_Vertex, 4> v =
+            upper ? std::array{vert(xa, sy0), vert(xb, sy0), vert(xb, cb), vert(xa, ca)}
+                  : std::array{vert(xa, ca), vert(xb, cb), vert(xb, sy1), vert(xa, sy1)};
+        batch_.triangles(v.data(), 4, kQuad, 6);
+    }
+    return true;
 }
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
@@ -1298,7 +1355,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: %s", SDL_GetError());
+    batch_.setBand(bandTag(Band::FarBackdrop));
     if (lod != Lod::Overview) drawBackdrops(view, xf, light.night > 0.5f);
+    // Cached cells hold the bands from the ground to the depth band, baked in their order.
+    batch_.setBand(bandTag(Band::Ground));
     const auto levelOf = [](Lod l) { return l == Lod::Native ? 0 : (l == Lod::Half ? 1 : 2); };
     if (want != Lod::Overview) {
         // What to build is planned for the level the view wants, even while a coarser one
@@ -1319,18 +1379,22 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The game's scene works only while its home is in view.
     const bool home = lod != Lod::Overview && !hole_.empty() && hole_.screen.overlaps(view);
     // The world's cloud shadows go under the home's ground: the home's scene shades its own land.
+    batch_.setBand(bandTag(Band::Shadows));
     if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
     if (hooks.ground && home) hooks.ground(frame);
     // A zoom or a journey down to the native level gathers its destination on the way.
     if (arriving && lodFor(camera.arrivalScale) == Lod::Native) gatherAhead(arrival);
     if (want == Lod::Native) updateRegion(lod == want ? view : seen);
     bool homeDrawn = false;
+    lastLod_ = lod;
     if (lod == Lod::Native) {
         stats_.regionElements = static_cast<int>(region_.elems.size());
         stats_.regionShort = !regionRect_.contains(
             gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds()));
         prepareActors(view, lod);
+        batch_.setBand(bandTag(Band::Shadows));
         (void)drawShadows(region_, view, xf, shadow_, view_, true, merge_.visible());
+        batch_.setBand(bandTag(Band::Depth));
         stats_.spritesCulled = static_cast<int>(region_.order.size() - merge_.visible().size());
         for (const ActorMerge::Step& st : merge_.sequence()) {
             if (st.actor) {
@@ -1352,6 +1416,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         // Coarser levels have no live objects of their own: people go over the impostors, cut
         // where something in front of them covers them.
         prepareActors(view, lod);
+        batch_.setBand(bandTag(Band::Depth));
         for (const std::uint32_t a : coarse_) drawActor(a, xf);
     } else {
         actorCount_ = 0;
@@ -1360,12 +1425,15 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     batch_.flush();
     // The home's objects go over the impostors at the coarser levels.
     if (!homeDrawn && hooks.objects && home) hooks.objects(frame);
+    batch_.setBand(bandTag(Band::Weather));
     if (weather_ != nullptr && (lod == Lod::Native || lod == Lod::Half)) drawRain(view, xf, now);
     // Grading, then what glows (drawn after it, additively).
+    batch_.setBand(bandTag(Band::Grading));
     if (hooks.light && home)
         hooks.light(frame);
     else
         fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
+    batch_.setBand(bandTag(Band::Glow));
     if (lod != Lod::Native && light.glow > 0.01f)
         drawCoarseGlow(view, xf,
                        light.glow * (lod == Lod::Overview ? tuning::kOverviewGlow : 1.0f));
@@ -1407,6 +1475,7 @@ void WorldView::composite(Vec2 scale, bool smooth) {
                                {{w, h}, bottom, {0, 0}},
                                {{0, h}, bottom, {0, 0}}};
     static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+    batch_.setBand(bandTag(Band::Sky));
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
     const float k = p.scale / p.res; // window px per target px
@@ -1417,6 +1486,8 @@ void WorldView::composite(Vec2 scale, bool smooth) {
     const bool whole = std::abs(k - std::round(k)) < 1e-3f &&
                        std::abs(ox - std::round(ox)) < 1e-2f &&
                        std::abs(oy - std::round(oy)) < 1e-2f;
+    // The world's picture, everything from the backdrop to the glow, over the sky.
+    batch_.setBand(bandTag(Band::Ground));
     batch_.use(view_.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
                whole && !smooth ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
     batch_.quad(SDL_FRect{(p.origin.x - p.topLeft.x) * p.scale * scale.x,
@@ -1670,6 +1741,47 @@ int WorldView::coarseActorsCovered(float px) const {
         covered += most > px ? 1 : 0;
     }
     return covered;
+}
+
+int WorldView::orderViolations() const {
+    if (lastLod_ == Lod::Native)
+        return lc::orderViolations(region_.items, mergeActors_, merge_.sequence());
+    return lc::orderViolations({}, mergeActors_, coarseMerge_.sequence());
+}
+
+int WorldView::orderCycles() const {
+    return region_.cycles + merge_.cyclesBroken() + coarseMerge_.cyclesBroken();
+}
+
+int WorldView::sunkActors() const {
+    if (lastLod_ != Lod::Native || life_ == nullptr) return 0;
+    const auto& kinds = life_->lifeWorld().data.kinds;
+    int sunk = 0;
+    for (const std::uint32_t i : actorOf_) {
+        const life::DrawActor& d = actorBuf_[i];
+        if (kinds[d.kind].sprite.starts_with("ship/")) continue;
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        if (!map_.inBounds(t) || map_.itemAt(t) < 0) continue;
+        const world::Placed& it = map_.items()[static_cast<std::size_t>(map_.itemAt(t))];
+        const world::GeomVariant* g = map_.geometry(it);
+        const world::ItemInfo& info = map_.info(it);
+        const TilePos rel{t.x - it.x, t.y - it.y};
+        int piece = -1;
+        if (g != nullptr)
+            for (std::size_t q = 0; q < g->pieces.size(); ++q)
+                if (g->pieces[q].rect.contains(rel)) piece = static_cast<int>(q);
+        const bool walkTile = g != nullptr ? std::ranges::find(g->walk, rel) != g->walk.end() ||
+                                                 (g->walk.empty() && info.walkable)
+                                           : info.walkable;
+        if (!walkTile) continue;
+        const ZRange z = heightsOf(g, info, piece, 0);
+        // A floor or a deck (who walks under an overhead run stands on the ground).
+        const bool stoodOn = z.kind == ZRange::Kind::Floor || z.kind == ZRange::Kind::Deck;
+        const float surface = static_cast<float>(it.level * lvl_) + z.z1 - lc::tuning::kFloorTread;
+        if (stoodOn && d.z + tuning::kSunkTolerance < surface) ++sunk;
+    }
+    return sunk;
 }
 
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {

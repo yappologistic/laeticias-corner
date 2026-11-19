@@ -51,6 +51,10 @@ TopField::TopField(const world::WorldMap& map, const WorldSprites& sprites, cons
                 // A solid tile's own top where the art gives it; a walk tile's box (its floor,
                 // deck or overhead) as the order sorts it.
                 float top = z.z1;
+                ZRange box = z;
+                // A walk tile under a roof in a floor piece: the roof is what can cover anyone.
+                if (walk && z.over >= 0) box = {z.over, z.top, ZRange::Kind::Overhead};
+                top = box.z1;
                 if (!walk && g != nullptr && g->topsW > 0 && dx < g->topsW &&
                     static_cast<std::size_t>(dy * g->topsW + dx) < g->tops.size())
                     top = static_cast<float>(g->tops[static_cast<std::size_t>(dy * g->topsW + dx)]);
@@ -58,8 +62,8 @@ TopField::TopField(const world::WorldMap& map, const WorldSprites& sprites, cons
                     return static_cast<std::uint16_t>(std::clamp(std::lround(v), 0L, 65535L));
                 };
                 TileBox& b = boxes_[static_cast<std::size_t>(t.y * map.width() + t.x)];
-                b.low = px(static_cast<float>(base) + z.z0);
-                b.top = std::max(b.top, px(static_cast<float>(base) + std::max(top, z.z0 + 1)));
+                b.low = px(static_cast<float>(base) + box.z0);
+                b.top = std::max(b.top, px(static_cast<float>(base) + std::max(top, box.z0 + 1)));
                 maxTop_ = std::max<int>(maxTop_, b.top);
             }
     }

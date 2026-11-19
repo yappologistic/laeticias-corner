@@ -28,6 +28,10 @@ struct Elem {
     bool figure = false;     // a named figure standing still: `item` indexes the figures
     TilePos tile;            // the item's origin, or the ground tile
     Vec2 anchor;             // world px, raised by the level
+    // A floor piece with a roof over its walk tiles is drawn in two parts, cut at the roof's
+    // underside: 0 the floor (before who walks on it), 1 the overhead (after); -1 whole.
+    std::int8_t part = -1;
+    float cutZ = 0; // the roof's underside, px above level 0
 };
 
 struct Gathered {
@@ -54,8 +58,14 @@ struct Gathered {
 // from the ground to its highest tread, a run under a roof from the roof's underside to the top,
 // anything else from the ground to its highest voxel (`tops`, else the sprite's `h`).
 struct ZRange {
+    enum class Kind : std::uint8_t { Solid, Floor, Deck, Overhead };
     float z0 = 0;
     float z1 = 0;
+    Kind kind = Kind::Solid;
+    // A floor with a roof over its walk tiles in the same piece (a colonnade's walk, a passage):
+    // the roof's underside and top, px above the level (over < 0: none).
+    float over = -1;
+    float top = 0;
 };
 [[nodiscard]] ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int piece,
                                float spriteH);

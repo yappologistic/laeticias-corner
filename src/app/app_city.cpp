@@ -147,6 +147,12 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
     if (what == "covered" && a.size() >= 5)
         return range(worldView_ ? worldView_->coarseActorsCovered(std::stof(a[2])) : 0, 3);
     if (what == "coarse") return range(worldView_ ? worldView_->coarseActorsDrawn() : 0, 2);
+    // expect city order MIN MAX: pairs drawn last frame that overlap yet go against the depth
+    // comparator, plus cycles broken (draw-order.md §6.1); expect city sunk MIN MAX: people
+    // standing on a floor or deck drawn below its surface (through a bridge, not on it).
+    if (what == "order")
+        return range(worldView_ ? worldView_->orderViolations() + worldView_->orderCycles() : 0, 2);
+    if (what == "sunk") return range(worldView_ ? worldView_->sunkActors() : 0, 2);
     return "unknown city expectation " + what;
 }
 

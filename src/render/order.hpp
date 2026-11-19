@@ -125,6 +125,13 @@ private:
     int cycles_ = 0;
 };
 
+// The order oracle on boxes (draw-order.md §6.1): how many pairs of `items` and `actors` drawn in
+// `seq` overlap on screen yet are drawn the other way round from the comparator. Zero is right.
+// For tests and the debug view (allocates).
+[[nodiscard]] int orderViolations(std::span<const OrderItem> items,
+                                  std::span<const OrderItem> actors,
+                                  std::span<const ActorMerge::Step> seq);
+
 // Page switches along an order (what each one costs is a draw call).
 [[nodiscard]] int pageSwitches(std::span<const OrderItem> items,
                                std::span<const std::uint32_t> order);

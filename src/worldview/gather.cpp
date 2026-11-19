@@ -59,13 +59,20 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
     const float tread = lc::tuning::kFloorTread;
     if (walk) {
         // A deck: room under it below its floor (boats under, walkers over).
-        if (under > 0 && under <= floorMin) return {f(under), f(floorMax) + tread};
+        if (under > 0 && under <= floorMin)
+            return {f(under), f(floorMax) + tread, ZRange::Kind::Deck};
         // A run under a roof (a gate's passage, an arch): from the overhead's underside up.
         const int over = std::min(roofMin, under > 0 ? under : INT_MAX);
         if (over != INT_MAX && (gp == nullptr || !gp->floor))
-            return {f(over), f(std::max(g->h, over))};
-        // A floor: stair treads, a walk run's paving, under whoever stands on it.
-        return {0, f(floorMax) + tread};
+            return {f(over), f(std::max(g->h, over)), ZRange::Kind::Overhead};
+        // A floor: stair treads, a walk run's paving, under whoever stands on it; with a roof
+        // over it in the same piece, both (drawn in two parts).
+        ZRange z{0, f(floorMax) + tread, ZRange::Kind::Floor};
+        if (over != INT_MAX) {
+            z.over = f(over);
+            z.top = f(std::max(g->h, over));
+        }
+        return z;
     }
     return {0, top >= 0 ? f(top) : f(g->h)};
 }
@@ -109,22 +116,29 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                 .overlaps(clip);
         if (!box.overlaps(clip) && !shades) continue;
         stamp_[d.item] = pass_;
-        out.elems.push_back({&look,
-                             d.item,
-                             static_cast<std::int16_t>(split ? d.piece : -1),
-                             false,
-                             first,
-                             false,
-                             false,
-                             {it.x, it.y},
-                             a});
+        const Elem e{&look, d.item,       static_cast<std::int16_t>(split ? d.piece : -1),
+                     false, first,        false,
+                     false, {it.x, it.y}, a};
         const float base = static_cast<float>(it.level * lvl_);
         const ZRange z = heightsOf(map_.geometry(it), map_.info(it), split ? d.piece : -1, s.oy);
-        out.items.push_back({makeBox(rectOf(split ? d.rect : it.rect()), base + z.z0, base + z.z1,
-                                     depthId(DepthKind::Item, d.item,
-                                             static_cast<std::uint32_t>(split ? d.piece + 1 : 0)),
-                                     hh_),
-                             box, s.page});
+        const FRect foot = rectOf(split ? d.rect : it.rect());
+        const auto part = static_cast<std::uint32_t>(split ? d.piece + 1 : 0);
+        out.elems.push_back(e);
+        out.items.push_back(
+            {makeBox(foot, base + z.z0, base + z.z1, depthId(DepthKind::Item, d.item, part), hh_),
+             box, s.page});
+        if (z.over >= 0) {
+            // The floor before whoever walks on it, the roof over them after.
+            out.elems.back().part = 0;
+            out.elems.back().cutZ = base + z.over;
+            out.elems.push_back(e);
+            out.elems.back().first = false;
+            out.elems.back().part = 1;
+            out.elems.back().cutZ = base + z.over;
+            out.items.push_back({makeBox(foot, base + z.over, base + z.top,
+                                         depthId(DepthKind::Item, d.item, part | 0x8000u), hh_),
+                                 box, s.page});
+        }
     }
     // Raised tiles that hide an item or walkable ground behind them join the sort (world-tech
     // §4.3, draw-order.md §1.5 e): Q hides P when P lies behind it, lower by dL > 0, within

@@ -126,7 +126,9 @@
 //       drawn this frame) | city people MIN MAX (people the crowd hears) | city sound FILE MIN
 //       MAX (that city loop's gain x 100 now) | city coarse MIN MAX (people drawn over the
 //       impostors at half or quarter scale) | city covered PX MIN MAX (of them, people with
-//       more than PX of something in front over their feet: nobody on the roofs)
+//       more than PX rows drawn inside something in front of them: nobody on the roofs)
+//       | city order MIN MAX (pairs drawn against the depth comparator, plus cycles broken)
+//       | city sunk MIN MAX (people drawn below the floor or deck they stand on)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would

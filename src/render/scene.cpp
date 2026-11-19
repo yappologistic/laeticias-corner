@@ -2,6 +2,7 @@
 
 #include "core/land.hpp"
 #include "core/tuning.hpp"
+#include "render/bands.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -886,6 +887,7 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
         });
     };
     if (!silhouette) drawnItems_ = 0;
+    batch_.setBand(bandTag(silhouette ? Band::Glow : Band::Depth));
     // One order for everything standing in the home (draw-order.md §1.4): items, actors and
     // flyers, ghosts and fades.
     for (const ActorMerge::Step& st : merge_.sequence()) {
@@ -913,6 +915,7 @@ bool Scene::nearGlow(const FRect& r) const {
 }
 
 void Scene::drawShadows(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::Shadows));
     // Shadow sprites were normalised to a peak alpha of 1, so drawing them into their own layer
     // saturates where they overlap; the layer is then composited once at the art's opacity.
     batch_.flush();
@@ -965,6 +968,7 @@ void Scene::drawShadows(const FrameParams& p) {
 }
 
 void Scene::drawMarkers(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::GroundDecals));
     // Placement markers and nook areas sit on the ground under everything else.
     const World& world = *p.world;
     // Wet ground darkens, block by block, softly blending into its neighbours.
@@ -1033,6 +1037,8 @@ void Scene::drawMarkers(const FrameParams& p) {
 }
 
 void Scene::drawParticles(bool ground) {
+    // Petals and ripples lie on the water; the rest are effects among what stands.
+    batch_.setBand(bandTag(ground ? Band::WaterSurface : Band::Depth));
     const float m = iso_.tileW();
     const FRect near{view_.x0 - m, view_.y0 - m, view_.x1 + m, view_.y1 + m};
     for (const Particle& pt : particles_.all()) {
@@ -1075,6 +1081,7 @@ void Scene::drawParticles(bool ground) {
 }
 
 void Scene::drawLighting(const FrameParams& p, Rgb amb) {
+    batch_.setBand(bandTag(Band::Grading));
     const float glow = p.light.glow;
     const bool emissive = std::ranges::any_of(
         p.actors, [&](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0 && glows(a); });
@@ -1120,6 +1127,7 @@ void Scene::drawLighting(const FrameParams& p, Rgb amb) {
 }
 
 void Scene::drawGlow(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::Glow));
     const float glow = p.light.glow;
     const bool emissiveVisitors = std::ranges::any_of(
         p.actors, [&](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0 && glows(a); });
@@ -1219,6 +1227,7 @@ void Scene::embedBegin(const FrameParams& p, const Embed& e) {
 
 void Scene::embedGround(const FrameParams& p) {
     if (into_ == nullptr || !light_.texture || !glow_.texture || !shadow_.texture) return;
+    batch_.setBand(bandTag(Band::Ground));
     ground_->draw(batch_, *p.world, view_, xf_, into_, now_);
     buildDynamic(p);
     drawShadows(p);
@@ -1226,6 +1235,7 @@ void Scene::embedGround(const FrameParams& p) {
     drawMarkers(p);
     drawParticles(true);
     // Swimmers under the water go below everything that floats on it.
+    batch_.setBand(bandTag(Band::WaterSurface));
     for (const Actor& a : p.actors) {
         const int v = cat_.kinds[a.kind].visitor;
         if (v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].underwater) drawActor(a, false);
@@ -1273,9 +1283,12 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
         {{0, h}, {b.r, b.g, b.b, 1}, {0, 0}},
     };
     static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+    batch_.setBand(bandTag(Band::Sky));
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
     drawSky(p, scale);
+    // The world's picture, everything from the ground to the glow, over the sky.
+    batch_.setBand(bandTag(Band::Ground));
     // Whole-number magnification stays nearest-neighbour; anything else (mid-transition, or a
     // blurred copy) is filtered.
     const float ox = (xf_.origin.x - topLeft_.x) * s;
@@ -1296,6 +1309,7 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
 }
 
 void Scene::drawMoths(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::Glow));
     if (reduceMotion_) return;
     // Two moths circle each lamp head at night, lit by it (drawn after the night grade).
     if (p.light.night < 0.3f || moths_.empty()) return;
@@ -1320,6 +1334,7 @@ void Scene::drawMoths(const FrameParams& p) {
 }
 
 void Scene::drawSky(const FrameParams& p, Vec2 scale) {
+    batch_.setBand(bandTag(Band::SkyEffects));
     // Things in the sky behind the island, in window space: the rainbow and shooting stars.
     const float s = p.camera->scale();
     const Xform win{topLeft_, s * scale.x, SDL_SCALEMODE_NEAREST};

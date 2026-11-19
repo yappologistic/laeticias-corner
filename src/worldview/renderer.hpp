@@ -210,6 +210,13 @@ public:
     // them, so tests can hold the one against the other.
     [[nodiscard]] int coarseActorsCovered(float px) const;
     [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
+    // Pairs drawn in the last frame that overlap on screen yet go against the comparator (the
+    // order oracle, draw-order.md §6.1), and cycles its sorts had to break: both zero when right.
+    [[nodiscard]] int orderViolations() const;
+    [[nodiscard]] int orderCycles() const;
+    // People drawn in the last frame (native level) standing on a floor or deck lower than its
+    // surface, by the art's geometry: walking through a bridge rather than on it. Boats excluded.
+    [[nodiscard]] int sunkActors() const;
     // The actors drawn in the last frame.
     [[nodiscard]] std::span<const life::DrawActor> actorsDrawn() const {
         return std::span(actorBuf_).first(actorCount_);
@@ -290,6 +297,9 @@ private:
     void prepareActors(const FRect& view, Lod lod);
     void prepareActorsTimed(const FRect& view, Lod lod);
     void drawActor(std::uint32_t i, const Xform& x);
+    // `s` above (or below) the line where the roof over `foot` has its underside at `z` px.
+    bool putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
+                bool upper);
     // `s` with the rows [hide.from, hide.to) of world px left out (two quads at most).
     bool putRows(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, bool mirror,
                  RowBand hide);
@@ -426,6 +436,7 @@ private:
     std::vector<Shower> showers_; // drawRain's scratch
     ActorMerge merge_;
     bool mergeIndexed_ = false;
+    Lod lastLod_ = Lod::Native; // the level the last frame was drawn at
 
     // Backdrop sprites by region (day, night), resolved at load; empty when the set has none.
     std::vector<std::array<std::vector<SpriteRef>, 2>> backdrops_;

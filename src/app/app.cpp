@@ -7,6 +7,7 @@
 #include "core/land.hpp"
 #include "core/save.hpp"
 #include "core/starter.hpp"
+#include "render/bands.hpp"
 #include "render/sprites.hpp"
 #include "ui/painter.hpp"
 #include "ui/strings.hpp"
@@ -178,6 +179,7 @@ bool App::init() {
     atlas_ = std::make_unique<Atlas>(renderer_.get(), assets_, cat_.iso());
     scene_ = std::make_unique<Scene>(renderer_.get(), *atlas_, cat_);
     uiBatch_ = std::make_unique<Batch>(renderer_.get());
+    uiBatch_->setBand(bandTag(Band::Interface));
     blur_ = std::make_unique<Blur>(renderer_.get());
     buildThumbs();
     if (!font_.load(assets_ / "fonts")) return false;

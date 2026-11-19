@@ -34,6 +34,7 @@ void Batch::flush() {
         SDL_Log("render: geometry submission failed: %s", SDL_GetError());
     }
     ++drawCalls_;
+    ++bandDraws_[band_ < kTags - 1 ? band_ : kTags - 1];
     verts_.clear();
     indices_.clear();
 }
