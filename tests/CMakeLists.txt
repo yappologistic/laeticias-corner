@@ -232,6 +232,15 @@ add_test(NAME newer_save_untouched COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DC
 set_tests_properties(newer_save_untouched PROPERTIES DEPENDS script_newer_save
   FIXTURES_REQUIRED newer)
 
+# A word where a script expects a number fails the run with its line (exit 2), never a crash.
+add_test(NAME script_bad_number
+  COMMAND laeticias-corner --headless --size 640x400 --seed 1
+          --save-dir "${LC_SCRATCH}/save_bad_number"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bad_number.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_bad_number PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  PASS_REGULAR_EXPRESSION "script line 3: a bad number")
+
 # A save directory the game cannot write to.
 if(UNIX)
   set(ro "${LC_SCRATCH}/save_read_only")

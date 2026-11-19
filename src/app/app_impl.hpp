@@ -269,6 +269,7 @@ private:
 
     // Scripting (app_script.cpp)
     bool scriptStep();
+    bool runScriptCommands(); // scriptStep's commands, which may throw on a bad number
     std::optional<Vec2> resolve(const ScriptPoint& p);
     void pushMouseMotion(Vec2 px);
     void pushButton(Vec2 px, bool down, const ScriptCommand& c);

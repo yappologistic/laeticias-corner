@@ -7,6 +7,7 @@
 #include <cmath>
 #include <format>
 #include <fstream>
+#include <stdexcept>
 
 namespace lc {
 namespace {
@@ -679,6 +680,20 @@ bool App::scriptStep() {
         --scriptWait_;
         return true;
     }
+    // Arguments the parser leaves as words are read as numbers here (std::stoi and kin); one
+    // that is not a number, or too large, fails the run with its line instead of ending the
+    // process.
+    try {
+        return runScriptCommands();
+    } catch (const std::logic_error& e) {
+        SDL_Log("script line %d: a bad number (%s)",
+                scriptPos_ < script_.size() ? script_[scriptPos_].line : 0, e.what());
+        exitCode_ = kExitBadScript;
+        return false;
+    }
+}
+
+bool App::runScriptCommands() {
     while (scriptPos_ < script_.size()) {
         const ScriptCommand& c = script_[scriptPos_];
         const auto fail = [&](const std::string& why) {
