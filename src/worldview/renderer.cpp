@@ -129,6 +129,7 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
                                          tuning::kPageCeiling, decoder_ != nullptr);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_);
+    buildMacro();
     waterKinds_.channel.resize(map_.terrainCount());
     waterKinds_.bank.resize(map_.terrainCount());
     for (std::size_t t = 0; t < map_.terrainCount(); ++t) {

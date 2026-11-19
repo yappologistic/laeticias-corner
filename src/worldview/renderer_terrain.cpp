@@ -37,16 +37,45 @@ void WorldView::setSlopeSun(const float dir[3], float strength) {
     slopeLights_.clear(); // worked out again by the next mesh drawn
 }
 
+void WorldView::buildMacro() {
+    // The slow field at every tile corner, once: drawing reads four bytes instead of two
+    // octaves of noise per sprite corner. It fades out toward the home, whose own scene draws
+    // its ground without the field: no step at the border.
+    const int w = map_.width() + 1;
+    const int h = map_.height() + 1;
+    macro_.resize(static_cast<std::size_t>(w) * static_cast<std::size_t>(h));
+    const TileRect& r = hole_.tiles;
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x) {
+            const auto fx = static_cast<float>(x);
+            const auto fy = static_cast<float>(y);
+            const float dx =
+                std::max({static_cast<float>(r.x0) - fx, 0.0f, fx - static_cast<float>(r.x1)});
+            const float dy =
+                std::max({static_cast<float>(r.y0) - fy, 0.0f, fy - static_cast<float>(r.y1)});
+            const float fade = r.empty() ? 1.0f : std::clamp(std::max(dx, dy) / 6.0f, 0.0f, 1.0f);
+            macro_[static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
+                   static_cast<std::size_t>(x)] =
+                static_cast<std::uint8_t>(std::lround(255.0f * fade * groundMacro({fx, fy})));
+        }
+}
+
 float WorldView::macroAt(Vec2 tile) const {
-    // Fades out toward the home, whose own scene draws its ground without the field: no step at
-    // the border.
-    const TileRect& h = hole_.tiles;
-    const float dx =
-        std::max({static_cast<float>(h.x0) - tile.x, 0.0f, tile.x - static_cast<float>(h.x1)});
-    const float dy =
-        std::max({static_cast<float>(h.y0) - tile.y, 0.0f, tile.y - static_cast<float>(h.y1)});
-    const float fade = h.empty() ? 1.0f : std::clamp(std::max(dx, dy) / 6.0f, 0.0f, 1.0f);
-    return 1.0f - tuning::kGroundMacroDepth * fade * groundMacro(tile);
+    const int w = map_.width() + 1;
+    const int h = map_.height() + 1;
+    const float fx = std::clamp(tile.x, 0.0f, static_cast<float>(w - 1));
+    const float fy = std::clamp(tile.y, 0.0f, static_cast<float>(h - 1));
+    const int x0 = std::min(static_cast<int>(fx), w - 2);
+    const int y0 = std::min(static_cast<int>(fy), h - 2);
+    const float tx = fx - static_cast<float>(x0);
+    const float ty = fy - static_cast<float>(y0);
+    const auto at = [&](int x, int y) {
+        return static_cast<float>(macro_[static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
+                                         static_cast<std::size_t>(x)]);
+    };
+    const float top = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * tx;
+    const float bottom = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * tx;
+    return 1.0f - tuning::kGroundMacroDepth * (top + (bottom - top) * ty) / 255.0f;
 }
 
 bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<const int> idx,
@@ -58,8 +87,13 @@ bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<c
         decoder_ && s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
     if (packed) {
         if (mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
-        for (SDL_Vertex& p : v)
-            p.color = packedColour(p.color, s.page == PageAtlas::kHomePage, false);
+        // The decode's colour once for the sprite (climate, snow); only the lightness varies by
+        // vertex, and it is linear in red.
+        const SDL_FColor pc = packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage, false);
+        for (SDL_Vertex& p : v) {
+            const float lum = 0.299f * p.color.r + 0.587f * p.color.g + 0.114f * p.color.b;
+            p.color = {pc.r * lum, pc.g, pc.b, p.color.a};
+        }
     }
     for (SDL_Vertex& p : v) {
         const Vec2 w = x.apply({p.position.x, p.position.y});
@@ -132,6 +166,24 @@ float WorldView::depthAt(Vec2 tile) const {
 bool WorldView::drawGround(const TileCtx& c, const SpriteRef& s, Vec2 anchor, const Xform& x,
                            float k) {
     if (!c.macro && !c.depth) return put(s, anchor, x, grey(k), SDL_BLENDMODE_BLEND);
+    if (c.depth) {
+        // Open water whose neighbours share its depth band: one tint (most of the sea).
+        const int aux = c.aux;
+        bool even = true;
+        for (int dy = -1; dy <= 1 && even; ++dy)
+            for (int dx = -1; dx <= 1 && even; ++dx) {
+                const TilePos q{c.p.x + dx, c.p.y + dy};
+                if (!map_.inBounds(q)) {
+                    even = aux == 3;
+                    continue;
+                }
+                const int t = map_.terrainAt(q);
+                even = t != world::kNone && map_.terrainInfo(t).water &&
+                       !waterKinds_.channel[static_cast<std::size_t>(t)] &&
+                       world::auxOf(map_.levelByte(q)) == aux;
+            }
+        if (even) return put(s, anchor, x, grey(k), SDL_BLENDMODE_BLEND);
+    }
     // The sprite's quad with the slow field at its corners (sampled on the tile's ground plane).
     const float x0 = anchor.x - s.ox;
     const float y0 = anchor.y - s.oy;
@@ -272,9 +324,14 @@ bool WorldView::drawFaces(const TileCtx& c, const MaterialLook* mat, const Xform
         const auto s = static_cast<std::size_t>(side);
         const TilePos n = side == 0 ? TilePos{t.p.x + 1, t.p.y} : TilePos{t.p.x, t.p.y + 1};
         const auto& ec = kEdgeCorners[s];
+        // Flat beside flat (most of the world): the two levels are the corners.
+        const bool nFlat = !map_.inBounds(n) || map_.slopeAt(n) == world::Slope::Flat;
+        const int ln = map_.inBounds(n) && map_.terrainAt(n) != world::kNone ? map_.level(n) : 0;
         const EdgeFace f =
-            edgeFace(t.level, map_.cornerLevel(t.p, ec[0]), map_.cornerLevel(t.p, ec[1]),
-                     map_.cornerLevel(n, ec[2]), map_.cornerLevel(n, ec[3]));
+            t.slope == world::Slope::Flat && nFlat
+                ? edgeFace(t.level, t.level, t.level, ln, ln)
+                : edgeFace(t.level, map_.cornerLevel(t.p, ec[0]), map_.cornerLevel(t.p, ec[1]),
+                           map_.cornerLevel(n, ec[2]), map_.cornerLevel(n, ec[3]));
         if (f.empty()) continue;
         const bool art = mat != nullptr && !mat->band[s].empty();
         if (f.wedge >= 0) {

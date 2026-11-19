@@ -412,6 +412,8 @@ private:
     // none: a lower water neighbour, or lower land where the water leaves by that side.
     [[nodiscard]] int fallDrop(TilePos p, int dir) const;
     [[nodiscard]] float macroAt(Vec2 tile) const;
+    void buildMacro();
+    std::vector<std::uint8_t> macro_; // the slow field at each tile corner (buildMacro)
     // Still water's depth (the sea's bands in its aux, 0..3) at a point, blended between the
     // centres of the tiles round it: shore and flowing water count as 0, beyond the grid as 3.
     [[nodiscard]] float depthAt(Vec2 tile) const;
