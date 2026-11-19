@@ -57,6 +57,13 @@ public:
     // Loops are ambience beds and music stems, by file; -1 when the file is not loaded.
     [[nodiscard]] int loopIndex(std::string_view file) const;
     void setLoopGain(int loop, float gain);
+    // The gain a loop was last asked for (0 for no such loop): what the game wants heard.
+    [[nodiscard]] float loopTarget(int loop) const {
+        return loop >= 0 && static_cast<std::size_t>(loop) < kMaxLoops
+                   ? loopTargets_[static_cast<std::size_t>(loop)].load(std::memory_order_relaxed)
+                   : 0.0f;
+    }
+    [[nodiscard]] static constexpr std::size_t maxLoops() { return kMaxLoops; }
     void setLoopPan(int loop, float pan);
     // Snow's muffle on the ambience beds, 0 (open) .. 1 (the full low-pass), glided to; a `dry`
     // loop (the snow beds, already muffled) never passes it.

@@ -2,6 +2,7 @@
 #include "app/script.hpp"
 #include "app/window_state.hpp"
 #include "audio/decode.hpp"
+#include "audio/loop_wants.hpp"
 #include "audio/mixer.hpp"
 #include "audio/stems.hpp"
 #include "audio/wav.hpp"
@@ -505,6 +506,34 @@ TEST_CASE("mixer: snow's muffle low-passes the beds, glides in without a click, 
         CHECK(sums[2].e == doctest::Approx(sums[0].e));    // the dry bed untouched
     }
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
+TEST_CASE("one loop named by two sound systems: the louder want is heard, never silenced") {
+    // The country bed (a region's bed at 0.67) was also an event's ambience, which the city
+    // sound set to 0 while the event slept: the last writer silenced the bed everywhere.
+    LoopWants w;
+    w.begin(8);
+    w.want(3, 0.67f, 0.0f); // the soundscape's bed
+    w.want(3, 0.0f, 0.5f);  // the city sound's sleeping event
+    w.want(5, 0.0f, 0.0f);  // a loop only one system names, silent
+    int seen = 0;
+    w.forEach([&](int loop, const LoopWants::Want& want) {
+        ++seen;
+        if (loop == 3) {
+            CHECK(want.gain == doctest::Approx(0.67f));
+            CHECK(want.pan == doctest::Approx(0.0f));
+        }
+        if (loop == 5) CHECK(want.gain == 0.0f);
+    });
+    CHECK(seen == 2);
+    // The other way round, and the next update starts afresh.
+    w.begin(8);
+    w.want(3, 0.2f, -0.5f);
+    w.want(3, 0.9f, 0.3f);
+    w.forEach([&](int, const LoopWants::Want& want) {
+        CHECK(want.gain == doctest::Approx(0.9f));
+        CHECK(want.pan == doctest::Approx(0.3f));
+    });
 }
 
 TEST_CASE("music stems: bar lines, fades and a stem joining in step with the others") {

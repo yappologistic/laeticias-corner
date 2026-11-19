@@ -147,6 +147,7 @@
 //       ramp, a stair, a deck)
 //       sound beds (every region plays a loaded bed in every month, by day and by night)
 //       | sound FILE|FAMILY MIN MAX (the world's gain x 100 for that loop, or family a.b, now)
+//       | mixer FILE MIN MAX (the gain x 100 the mixer was last asked for that loop)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.
 //   place ITEM @TX,TY [V]   place an item (variant or rotation V) as the build tool would, undoable
 //   paint TERRAIN @TX,TY [@TX2,TY2]   paint a tile (or a rectangle) as the paint tool would

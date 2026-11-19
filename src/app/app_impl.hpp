@@ -5,6 +5,7 @@
 #include "app/options.hpp"
 #include "app/script.hpp"
 #include "app/window_state.hpp"
+#include "audio/loop_wants.hpp"
 #include "audio/mixer.hpp"
 #include "core/actors.hpp"
 #include "core/autosave.hpp"
@@ -658,6 +659,7 @@ private:
     std::vector<world::FigurePlace> figures_;
     std::unique_ptr<worldview::Soundscape> soundscape_;
     std::vector<int> soundLoops_; // the soundscape's files as mixer loops
+    LoopWants loopWants_;         // the world's sound systems' loop gains, combined per update
     std::unique_ptr<worldview::WeatherField> viewWeather_;
     std::unique_ptr<worldview::WeatherField> homeWeather_;
     std::vector<WeatherCell> homeCells_;

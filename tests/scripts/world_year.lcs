@@ -6,6 +6,11 @@
 # balance, clipping and clicks at the crossfades.
 expect sound beds
 set clock day
+# The country bed is heard on the Latium road (an event naming the same file once silenced it
+# in every region it was named in).
+set world district:latium_italy/road 1
+wait 30
+expect mixer amb/world/fields.ogg 30 100
 set season spring
 set world forum 1
 wait 30
