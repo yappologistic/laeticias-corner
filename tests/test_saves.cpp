@@ -344,7 +344,38 @@ TEST_CASE("world folder names and the profile") {
     CHECK(worldSlug("Plum Hollow", none) == "plum-hollow");
     CHECK(worldSlug("  --Fern bank!! ", none) == "fern-bank");
     CHECK(worldSlug("", none) == "world");
-    CHECK(worldSlug("\xE6\x97\xA5\xE6\x9C\xAC", none) == "world");
+    // Other scripts: accented Latin and Greek spelled in Latin, the rest by code point; plain
+    // ASCII, readable, and two names in a script without a spelling never meet.
+    CHECK(worldSlug("P\xC4\x81rsa", none) == "parsa");                              // Pārsa
+    CHECK(worldSlug("Caf\xC3\xA9 de la For\xC3\xAAt", none) == "cafe-de-la-foret"); // Café…
+    CHECK(worldSlug("Cafe\xCC\x81", none) == "cafe");                               // e + U+0301
+    CHECK(worldSlug("X\xC5\xA1"
+                    "ay\xC4\x81r\xC5\xA1\xC4\x81",
+                    none) == "xsayarsa");                                           // Xšayāršā
+    CHECK(worldSlug("\xCE\x91\xCE\xB8\xCE\xAE\xCE\xBD\xCE\xB1", none) == "athena"); // Αθήνα
+    CHECK(worldSlug("\xE1\xBC\x88\xCE\xB8\xE1\xBF\x86\xCE\xBD\xCE\xB1\xCE\xB9", none) ==
+          "athenai");                                                   // Ἀθῆναι
+    CHECK(worldSlug("\xE6\x97\xA5\xE6\x9C\xAC", none) == "u65e5u672c"); // 日本
+    const std::string persian =
+        worldSlug("\xD9\xBE\xD8\xA7\xD8\xB1\xD8\xB3\xD9\x87", none);                  // پارسه
+    const std::string persian2 = worldSlug("\xD9\xBE\xD8\xA7\xD8\xB1\xD8\xB3", none); // پارس
+    CHECK(persian == "u67eu627u631u633u647");
+    CHECK(persian2 == "u67eu627u631u633");
+    CHECK(persian != persian2);
+    CHECK(worldSlug("Rome \xE2\x80\x94 spring", none) == "rome-spring"); // an em dash parts
+    CHECK(worldSlug("bad \xFF byte", none) == "bad-byte");
+    for (const char* n : {"P\xC4\x81rsa", "\xCE\x91\xCE\xB8\xCE\xAE\xCE\xBD\xCE\xB1",
+                          "\xD9\xBE\xD8\xA7\xD8\xB1\xD8\xB3\xD9\x87"}) {
+        const std::string slug = worldSlug(n, none);
+        CAPTURE(slug);
+        CHECK(slug == worldSlug(n, none)); // stable
+        CHECK(std::ranges::all_of(slug, [](char ch) {
+            return (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '-';
+        }));
+    }
+    // A name spelled like a world already there gets a folder of its own.
+    const std::vector<std::string> parsa{"parsa"};
+    CHECK(worldSlug("P\xC4\x81rsa", parsa) == "parsa-2");
     const std::string longName =
         worldSlug("A very long name for a world that goes on and on", none);
     CHECK(longName.size() <= 32);
