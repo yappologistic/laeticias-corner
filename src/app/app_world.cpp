@@ -320,6 +320,7 @@ std::optional<App::Destination> App::travelDestination() const {
         const Box safe = hud_.safeArea();
         framed.frame({safe.x, safe.y, safe.x + safe.w, safe.y + safe.h}, screen(),
                      openBounds(cat_, progress_.stage, world_));
+        keepOnHome(framed);
         return Destination{framed.position(), framed.zoom()};
     }
     return Destination{
@@ -510,14 +511,19 @@ std::optional<life::Handle> App::actorAt(Vec2 px) const {
 std::optional<App::CardPick> App::pickCard(Vec2 px) const {
     // The corner's own things answer on its land; the world's everywhere else.
     if (!worldView_ || hover_) return std::nullopt;
-    // A living figure (city life) under the pointer: its card from its region's figures.
-    if (const auto h = actorAt(px))
+    // Someone drawn under the pointer (never one hidden there: actorsAt leaves those out) is
+    // nearer than anything behind them: a living figure opens its card from its region's
+    // figures, an ordinary person none, so a hover names their role as a click passes over the
+    // landmark behind them (V7-022; the Forum's paving is itself a landmark with a card).
+    if (const auto h = actorAt(px)) {
         if (const auto in = actorInfo(*h))
             if (const life::Figure* f = figureOf(*in)) {
                 const int region =
                     city_->life->data.regions[static_cast<std::size_t>(in->region)].worldRegion;
                 if (regionFile(region) != nullptr) return CardPick{region, f, nullptr, -1, *h};
             }
+        return std::nullopt;
+    }
     const Vec2 w = view_.screenToWorld(px, screen());
     const auto picked = worldView_->pick({w.x + homeOffset_.x, w.y + homeOffset_.y});
     if (!picked) return std::nullopt;

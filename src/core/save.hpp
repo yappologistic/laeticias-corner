@@ -118,8 +118,9 @@ void migrateLegacy(SaveData& data, const Catalog& cat);
 // Folder name for a world, made once when it is made (worlds open by their folder, so a change
 // here never moves a save): lowercase ASCII letters and digits; accented Latin and Greek letters
 // spelled in Latin, letters of other scripts as "u<hex code point>"; apostrophes and accents
-// dropped, other runs of characters as "-"; at most 32 characters, "world" when empty, "-2",
-// "-3"... when taken (no two worlds share a folder).
+// dropped, other runs of characters as "-"; at most 32 characters, "world" when empty, a
+// device name of Windows ("con", "com1"...) followed by "-world", "-2", "-3"... when taken (no
+// two worlds share a folder).
 [[nodiscard]] std::string worldSlug(std::string_view name, std::span<const std::string> taken);
 // Current UTC time as "YYYY-MM-DDTHH:MM:SSZ".
 [[nodiscard]] std::string utcNow();

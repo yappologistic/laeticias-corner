@@ -162,10 +162,12 @@ void Painter::shape(Box b, float radius, float feather, SDL_FColor top, SDL_FCol
     // Large panels (a full-window veil) are filled in small triangles: renderers rasterise
     // huge ones unreliably (the software one drops parts of them).
     const bool big = b.w > kMaxTriangle || b.h > kMaxTriangle;
-    for (int i = 0; i < count && !big; ++i) {
+    // Every other spoke, then the rest: no two triangles in a row share a side (see fanMesh).
+    for (int i = 0; i < 2 * count && !big; i += 2) {
+        const int k = i < count ? i : i - count + 1;
         idx[n++] = 0;
-        idx[n++] = 1 + i;
-        idx[n++] = 1 + (i + 1) % count;
+        idx[n++] = 1 + k;
+        idx[n++] = 1 + (k + 1) % count;
     }
     if (big) {
         // The batch's scratch storage: kept between frames, so nothing is allocated per frame.
@@ -230,11 +232,26 @@ void fanMesh(SDL_FPoint centre, std::span<const SDL_FPoint> outline, float maxEd
         const auto at = [&](int r, int j) { return base + (r - 1) * (pieces + 1) + j; };
         for (int j = 0; j < pieces; ++j) {
             indices.insert(indices.end(), {0, at(1, j), at(1, j + 1)});
-            for (int r = 1; r < rings; ++r) {
+            for (int r = 1; r < rings; ++r)
                 indices.insert(indices.end(), {at(r, j), at(r + 1, j), at(r + 1, j + 1)});
-                indices.insert(indices.end(), {at(r, j), at(r + 1, j + 1), at(r, j + 1)});
-            }
         }
+    }
+    // Each quad's second half comes in a pass of its own, so no two triangles in a row share a
+    // side: SDL's software renderer redraws such a pair as one rectangle when it looks like
+    // one, and where it only half does (a ring meeting a straight side at a corner) one
+    // triangle of the pair is lost and the window shows through the glass (H3-010).
+    int base = 1;
+    for (std::size_t i = 0; i < count; ++i) {
+        const SDL_FPoint p = outline[i];
+        const SDL_FPoint q = outline[(i + 1) % count];
+        if (p.x == q.x && p.y == q.y) continue;
+        const int pieces =
+            std::max(1, static_cast<int>(std::ceil(std::hypot(q.x - p.x, q.y - p.y) / cut)));
+        const auto at = [&](int r, int j) { return base + (r - 1) * (pieces + 1) + j; };
+        for (int j = 0; j < pieces; ++j)
+            for (int r = 1; r < rings; ++r)
+                indices.insert(indices.end(), {at(r, j), at(r + 1, j + 1), at(r, j + 1)});
+        base += rings * (pieces + 1);
     }
 }
 

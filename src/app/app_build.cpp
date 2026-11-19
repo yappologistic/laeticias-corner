@@ -65,7 +65,7 @@ Item App::ghostItem(TilePos hover) const {
 }
 
 TileRect App::shapeRect() const {
-    const TilePos b = hover_.value_or(anchor_);
+    const TilePos b = shapeEnd_;
     return TileRect{std::min(anchor_.x, b.x), std::min(anchor_.y, b.y),
                     std::max(anchor_.x, b.x) + 1, std::max(anchor_.y, b.y) + 1}
         .clipped(world_.bounds());
@@ -73,7 +73,7 @@ TileRect App::shapeRect() const {
 
 void App::shapeTiles(std::vector<TilePos>& out) const {
     out.clear();
-    const TilePos b = hover_.value_or(anchor_);
+    const TilePos b = shapeEnd_;
     if (shape_ == Shape::Line) {
         // Along x or along y, whichever the drag covers more.
         const bool alongX = std::abs(b.x - anchor_.x) >= std::abs(b.y - anchor_.y);
@@ -431,7 +431,7 @@ void App::worldInput() {
                 // Shift starts a straight line (one-tile pieces) or a rectangle (paint, remove).
                 drag_ = Drag::Tool;
                 shape_ = tool_ == Tool::Place ? Shape::Line : Shape::Rect;
-                anchor_ = *t;
+                anchor_ = shapeEnd_ = *t;
             } else {
                 drag_ = Drag::Tool;
                 editor_.begin();
@@ -440,6 +440,9 @@ void App::worldInput() {
             }
         }
     }
+    // A shape keeps the last tile the pointer was over: let go past the edge of the land, it
+    // is laid to the edge instead of shrinking to where it started.
+    if (shape_ != Shape::None && hover_) shapeEnd_ = *hover_;
     if (drag_ == Drag::Tool && shape_ == Shape::None && hover_ && *hover_ != lastTile_) {
         const bool repeat =
             tool_ != Tool::Place || oneTile(cat_.items[static_cast<std::size_t>(selection_)]);

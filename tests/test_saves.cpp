@@ -2,6 +2,7 @@
 
 #include "core/edit.hpp"
 #include "core/land.hpp"
+#include "core/rng.hpp"
 #include "core/save.hpp"
 #include "core/starter.hpp"
 #include "core/tuning.hpp"
@@ -10,11 +11,15 @@
 #include "test_support.hpp"
 
 #include <doctest.h>
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <expected>
+#include <optional>
 
 using namespace lc;
 
@@ -207,6 +212,30 @@ TEST_CASE("one mistyped field or an impossible number never costs the world (QA2
     CHECK(std::ranges::count_if(open.progress.wishes, [](const WishProgress& w) {
               return w.state == WishState::Open;
           }) == tuning::kMaxOpenWishes);
+}
+
+TEST_CASE("a view or a growth out of every range is dropped or clamped, never cast (H3-021)") {
+    const Catalog& c = test::catalog();
+    SaveData data(makeStarterWorld(c), c);
+    data.camera = Vec2{20, 20};
+    data.worldState.camera = Vec2{40, 1200};
+    data.world.addItem(makeItem(c, item("planter"), 0, {30, 31}));
+    std::string text = serialize(data, c);
+    const auto replace = [&](std::string_view from, std::string_view to) {
+        const auto pos = text.find(from);
+        REQUIRE(pos != std::string::npos);
+        text.replace(pos, from.size(), to);
+    };
+    replace("\"at\": [\n    40.0,\n    1200.0\n   ]", "\"at\": [1e300, -3e38]");
+    replace("\"at\": [\n    20.0,\n    20.0\n   ]", "\"at\": [3e38, 3e38]");
+    replace("\"g\": [\n     0,\n     0.0\n    ]", "\"g\": [0, 1e300]");
+    const auto loaded = deserialize(text, c);
+    REQUIRE(loaded.has_value());
+    CHECK_FALSE(loaded->camera.has_value());
+    CHECK_FALSE(loaded->worldState.camera.has_value());
+    const Item* bed = loaded->world.itemAt({30, 31});
+    REQUIRE(bed != nullptr);
+    CHECK(bed->growth == 1.0f);
 }
 
 TEST_CASE("a newer save is recognised as newer, a damaged one is not (QA2-03)") {
@@ -554,4 +583,227 @@ TEST_CASE("the world block keeps the player's delta over the world, and only tha
     auto tolerant = deserialize(bad, c);
     REQUIRE(tolerant.has_value());
     CHECK(tolerant->worldState.found == data.worldState.found);
+}
+
+namespace {
+
+// Hostile replacements for any one value of a save or profile: wrong types, numbers at and past
+// every limit, empty and malformed containers, text that is not UTF-8, deep nesting.
+constexpr std::string_view kInvalidUtf8 = "\"\xff\xfe\xc3\"";
+const std::vector<std::string>& hostileValues() {
+    static const std::vector<std::string> v = [] {
+        std::vector<std::string> out = {"null",
+                                        "true",
+                                        "-1",
+                                        "0",
+                                        "2147483648",
+                                        "-9223372036854775808",
+                                        "18446744073709551615",
+                                        "1e308",
+                                        "-1e308",
+                                        "3.4e39",
+                                        "0.5",
+                                        "\"\"",
+                                        "\"x\"",
+                                        std::string(kInvalidUtf8),
+                                        "[]",
+                                        "{}",
+                                        "[[1, 2], [3]]",
+                                        "{\"w\": -5, \"h\": 1e9}"};
+        out.push_back(std::string(200, '[') + std::string(200, ']'));
+        return out;
+    }();
+    return v;
+}
+
+// Every value's JSON pointer, arrays sampled at their first two and last entries so a long
+// terrain list stays cheap.
+void pointers(const nlohmann::json& j, const nlohmann::json::json_pointer& at,
+              std::vector<nlohmann::json::json_pointer>& out) {
+    out.push_back(at);
+    if (j.is_object()) {
+        for (const auto& [k, v] : j.items()) pointers(v, at / k, out);
+    } else if (j.is_array()) {
+        for (std::size_t i = 0; i < j.size(); ++i)
+            if (i < 2 || i + 1 == j.size()) pointers(j[i], at / i, out);
+    }
+}
+
+// `doc` with the value at `at` replaced by raw JSON text (which may be invalid UTF-8, so it is
+// spliced into the dumped text rather than parsed).
+std::string spliced(nlohmann::json doc, const nlohmann::json::json_pointer& at,
+                    std::string_view raw) {
+    constexpr std::string_view kMark = "@@HOSTILE@@";
+    doc[at] = std::string(kMark);
+    std::string text = doc.dump();
+    const auto pos = text.find(std::string("\"") + std::string(kMark) + "\"");
+    REQUIRE(pos != std::string::npos);
+    text.replace(pos, kMark.size() + 2, raw);
+    return text;
+}
+
+} // namespace
+
+TEST_CASE("fuzz: any one value of a save replaced by anything is refused or repaired (H3-003)") {
+    const Catalog& c = test::catalog();
+    // A version 4 world with something in every section, and the real older saves.
+    SaveData data(makeStarterWorld(c), c);
+    std::vector<Item> revealed;
+    openStage(data.world, c, 1, revealed);
+    data.progress.stage = 1;
+    data.world.addItem(makeItem(c, item("planter"), 1, {30, 31}));
+    data.world.setGrowth(data.world.items().size() - 1, 1, 0.5f);
+    data.progress.wishes[0].state = WishState::Done;
+    data.progress.granted = {0};
+    data.progress.wishes[1].state = WishState::Open;
+    data.progress.open = {1};
+    data.progress.wishes[2].snoozedUntil = 90;
+    data.progress.nooks[0] = 1;
+    data.played = 500;
+    data.seen = {"duck"};
+    data.camera = Vec2{20, 20};
+    data.worldState.camera = Vec2{40, 1200};
+    data.worldState.visited = {"home", "rome"};
+    data.worldState.found = {{"rome", {"landmark:forum"}}};
+    data.worldState.seen = {{"rome", {"figure:x"}}};
+    data.worldState.flags = {"seam_explained"};
+    const std::vector<std::string> sources = {serialize(data, c), fixture("save_v1.json"),
+                                              fixture("save_v2.json"), fixture("save_v3.json")};
+    Rng rng(0x5A7E);
+    int loaded = 0;
+    int refused = 0;
+    for (const std::string& source : sources) {
+        const auto doc = nlohmann::json::parse(source);
+        std::vector<nlohmann::json::json_pointer> at;
+        pointers(doc, nlohmann::json::json_pointer{}, at);
+        // Each value once with a random hostile replacement, removed once, and a random sample
+        // of the remaining pairs: bounded time, the same cases every run.
+        std::vector<std::string> cases;
+        for (const auto& p : at) {
+            if (p.empty()) continue;
+            const auto& values = hostileValues();
+            cases.push_back(spliced(doc, p, values[rng.next() % values.size()]));
+            nlohmann::json removed = doc;
+            removed[p.parent_pointer()].is_object()
+                ? (void)removed[p.parent_pointer()].erase(p.back())
+                : removed[p.parent_pointer()].erase(std::stoul(p.back()));
+            cases.push_back(removed.dump());
+        }
+        for (int k = 0; k < 150; ++k) {
+            const auto& p = at[1 + rng.next() % (at.size() - 1)];
+            const auto& values = hostileValues();
+            cases.push_back(spliced(doc, p, values[rng.next() % values.size()]));
+        }
+        for (const std::string& text : cases) {
+            CAPTURE(text.substr(0, 300));
+            std::optional<std::expected<SaveData, std::string>> first;
+            REQUIRE_NOTHROW(first.emplace(deserialize(text, c)));
+            if (!first->has_value()) {
+                ++refused;
+                continue;
+            }
+            ++loaded;
+            SaveData& d = **first;
+            if (d.fromVersion < 3) migrateLegacy(d, c);
+            // What was read is something play could have made, and it saves and reads back
+            // as itself.
+            CHECK(d.clockTime >= 0.0);
+            CHECK(d.clockTime < 1.0);
+            CHECK(d.day >= 0);
+            CHECK(d.day <= tuning::kMaxCalendarDay);
+            CHECK(std::isfinite(d.played));
+            CHECK(std::isfinite(d.zoom));
+            CHECK(std::isfinite(d.worldState.zoom));
+            CHECK(d.progress.stage >= 0);
+            CHECK(std::cmp_less(d.progress.stage, c.stages.size()));
+            CHECK(d.progress.open.size() <= tuning::kMaxOpenWishes);
+            CHECK(d.seasonPin < static_cast<int>(c.seasons.size()));
+            const std::string again = serialize(d, c);
+            const auto back = deserialize(again, c);
+            REQUIRE(back.has_value());
+            CHECK(back->warnings.empty());
+            CHECK(serialize(*back, c) == again);
+        }
+    }
+    CHECK(loaded > 0);
+    CHECK(refused > 0);
+}
+
+TEST_CASE("fuzz: any one value of a profile replaced by anything falls back field by field") {
+    Profile p;
+    p.music = 35;
+    p.uiScale = 3;
+    p.brush = 5;
+    p.lastWorld = "plum-hollow";
+    const auto doc = nlohmann::json::parse(serialize(p));
+    std::vector<nlohmann::json::json_pointer> at;
+    pointers(doc, nlohmann::json::json_pointer{}, at);
+    for (const auto& ptr : at) {
+        if (ptr.empty()) continue;
+        for (const std::string& v : hostileValues()) {
+            const std::string text = spliced(doc, ptr, v);
+            CAPTURE(text);
+            Profile q;
+            REQUIRE_NOTHROW(q = parseProfile(text));
+            CHECK(q.music >= 0);
+            CHECK(q.music <= 100);
+            CHECK(q.effects >= 0);
+            CHECK(q.effects <= 100);
+            CHECK(q.ambience >= 0);
+            CHECK(q.ambience <= 100);
+            CHECK(q.uiScale >= 0);
+            CHECK(q.uiScale < kUiScaleCount);
+            CHECK((q.brush == 1 || q.brush == 3 || q.brush == 5));
+            CHECK(parseProfile(serialize(q)).lastWorld == q.lastWorld);
+        }
+    }
+}
+
+TEST_CASE("a world named like a Windows device gets a folder Windows can make (H3-014)") {
+    const std::vector<std::string> none;
+    CHECK(worldSlug("Con", none) == "con-world");
+    CHECK(worldSlug("NUL", none) == "nul-world");
+    CHECK(worldSlug("com1", none) == "com1-world");
+    CHECK(worldSlug("LPT9", none) == "lpt9-world");
+    CHECK(worldSlug("Aux.", none) == "aux-world");
+    CHECK(worldSlug("Console", none) == "console");
+    CHECK(worldSlug("com", none) == "com");
+    CHECK(worldSlug("com10", none) == "com10");
+}
+
+TEST_CASE("a profile's last world opens only a folder directly under worlds/ (H3-005)") {
+    CHECK(plainFolderName("plum-hollow"));
+    CHECK(plainFolderName(worldSlug("Laeticia's Corner", {})));
+    for (const std::string_view bad :
+         {std::string_view(""), std::string_view("."), std::string_view(".."),
+          std::string_view("../plum"), std::string_view("a/b"), std::string_view("/etc"),
+          std::string_view("c:\\x"), std::string_view("a\0b", 3)})
+        CHECK_FALSE(plainFolderName(bad));
+}
+
+TEST_CASE("fuzz: a hand-edited catalog with any one value replaced is refused or usable") {
+    // Strangers edit assets/catalog.json: one hostile value anywhere is either refused with a
+    // message or gives a catalog a world can be made from (the same cases every run, bounded).
+    const auto doc = nlohmann::json::parse(test::catalogText());
+    std::vector<nlohmann::json::json_pointer> at;
+    pointers(doc, nlohmann::json::json_pointer{}, at);
+    Rng rng(0xCA7A);
+    int usable = 0;
+    for (int k = 0; k < 60; ++k) {
+        const auto& p = at[1 + rng.next() % (at.size() - 1)];
+        const auto& values = hostileValues();
+        const std::string text = spliced(doc, p, values[rng.next() % values.size()]);
+        CAPTURE(p.to_string());
+        std::optional<std::expected<Catalog, std::string>> cat;
+        REQUIRE_NOTHROW(cat.emplace(parseCatalog(text)));
+        if (!cat->has_value()) {
+            CHECK_FALSE(cat->error().empty());
+            continue;
+        }
+        ++usable;
+        const Catalog& c = **cat;
+        REQUIRE_NOTHROW((void)makeStarterWorld(c));
+        REQUIRE_NOTHROW((void)Progress(c));
+    }
+    CHECK(usable > 0);
 }

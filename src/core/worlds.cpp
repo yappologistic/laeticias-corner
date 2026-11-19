@@ -68,6 +68,11 @@ std::vector<WorldSummary> listWorlds(const std::filesystem::path& worldsDir) {
     return out;
 }
 
+bool plainFolderName(std::string_view slug) {
+    return !slug.empty() && slug != "." && slug != ".." &&
+           slug.find_first_of(std::string_view("/\\:\0", 4)) == std::string_view::npos;
+}
+
 std::string trimName(std::string_view name) {
     const auto first = name.find_first_not_of(" \t");
     if (first == std::string_view::npos) return {};

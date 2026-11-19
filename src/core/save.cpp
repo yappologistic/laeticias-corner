@@ -202,7 +202,8 @@ struct Loader {
                 g[0].get<long long>() >= 0 && g[0].get<long long>() < def.growth.stages &&
                 std::isfinite(g[1].get<double>())) {
                 it.stage = static_cast<std::uint8_t>(g[0].get<int>());
-                it.growth = std::clamp(g[1].get<float>(), 0.0f, 1.0f);
+                // Clamped as a double: a float cast of 1e300 is undefined behaviour.
+                it.growth = static_cast<float>(std::clamp(g[1].get<double>(), 0.0, 1.0));
             } else {
                 warn.add("item '" + id + "' with bad growth started over");
             }
@@ -579,8 +580,17 @@ std::expected<SaveData, std::string> deserialize(std::string_view text, const Ca
                     worldPart.contains(key) && worldPart[key].is_object() ? worldPart[key] : kNone;
                 if (cam.contains("at") && cam["at"].is_array() && cam["at"].size() == 2 &&
                     cam["at"][0].is_number() && cam["at"][1].is_number()) {
-                    const Vec2 v{cam["at"][0].get<float>(), cam["at"][1].get<float>()};
-                    if (std::isfinite(v.x) && std::isfinite(v.y)) at = v;
+                    // Read as doubles and kept only within reach of a map: no float cast of
+                    // 1e300, no view centre whose sums overflow to infinity later.
+                    const double x = cam["at"][0].get<double>();
+                    const double y = cam["at"][1].get<double>();
+                    const auto near = [](double d) {
+                        return std::isfinite(d) && std::abs(d) <= static_cast<double>(kCoordLimit);
+                    };
+                    if (near(x) && near(y))
+                        at = Vec2{static_cast<float>(x), static_cast<float>(y)};
+                    else
+                        in.warn.add("a view out of reach was dropped");
                     zoom = static_cast<float>(numField(cam, "zoom", 1.0, 0.1, 8.0, in.warn));
                 }
             };
@@ -833,6 +843,12 @@ std::string worldSlug(std::string_view name, std::span<const std::string> taken)
     if (base.size() > 32) base.resize(32);
     while (!base.empty() && base.back() == '-') base.pop_back();
     if (base.empty()) base = "world";
+    // Names Windows keeps for devices cannot be folders there, whatever follows a dot.
+    static constexpr std::array<std::string_view, 4> kDevices{"con", "prn", "aux", "nul"};
+    const bool device = std::ranges::find(kDevices, base) != kDevices.end() ||
+                        (base.size() == 4 && (base.starts_with("com") || base.starts_with("lpt")) &&
+                         base[3] >= '0' && base[3] <= '9');
+    if (device) base += "-world";
     std::string slug = base;
     for (int n = 2; std::ranges::find(taken, slug) != taken.end(); ++n)
         slug = base + "-" + std::to_string(n);

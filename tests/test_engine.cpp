@@ -27,6 +27,7 @@
 #include <SDL3/SDL.h>
 
 #include <doctest.h>
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <array>
@@ -85,6 +86,32 @@ TEST_CASE("options parse and reject bad input") {
     CHECK(parseOptions(audio)->headless);
     const std::array<std::string_view, 2> dir{"--script", "."};
     CHECK_FALSE(parseOptions(dir).has_value()); // a directory is not a script
+    // Numbers that are not finite, or a soak that would never end (H3-002).
+    for (const auto& bad :
+         std::initializer_list<std::array<std::string_view, 2>>{{"--soak", "inf"},
+                                                                {"--soak", "nan"},
+                                                                {"--soak", "1e300"},
+                                                                {"--soak", "-5"},
+                                                                {"--density", "nan"},
+                                                                {"--budget-ms", "nan"},
+                                                                {"--budget-ms", "inf"},
+                                                                {"--life-day", "2147483647"},
+                                                                {"--frames", "-1"},
+                                                                {"--frames", "99999999999"},
+                                                                {"--size", "0x0"},
+                                                                {"--size", "99999x99999"},
+                                                                {"--size", "1280x"},
+                                                                {"--size", "x800"},
+                                                                {"--seed", "-1"},
+                                                                {"--quality", "ultra"},
+                                                                {"--save-dir", ""},
+                                                                {"--assets", ""}}) {
+        CAPTURE(bad[0]);
+        CAPTURE(bad[1]);
+        CHECK_FALSE(parseOptions(bad).has_value());
+    }
+    const std::array<std::string_view, 2> soak{"--soak", "600"};
+    CHECK(parseOptions(soak)->soak == doctest::Approx(600.0));
 }
 
 TEST_CASE("script language parses every command") {
@@ -704,6 +731,16 @@ TEST_CASE("window placement: a share of the display, or the remembered spot if s
     CHECK(s->windowed == WindowRect{5, 6, 700, 500});
     CHECK(s->fullscreen);
     CHECK_FALSE(parseWindowState("{").has_value());
+    // A hand-edited or damaged window.json (H3-001): no float cast, no overflowing sum.
+    for (const char* bad :
+         {R"({"x":1e300,"y":0,"w":800,"h":600})", R"({"x":0,"y":0,"w":2.5,"h":600})",
+          R"({"x":2000000000,"y":0,"w":2000000000,"h":600})", R"({"x":0,"y":0,"w":-800,"h":600})",
+          R"({"x":0,"y":0,"w":18446744073709551615,"h":600})", "[]", "7"})
+        CHECK_FALSE(parseWindowState(bad).has_value());
+    // Even a rectangle at the edge of int never overflows while it is compared with displays.
+    CHECK_FALSE(
+        restoreWindow({2'000'000'000, 2'000'000'000, 2'000'000'000, 2'000'000'000}, displays)
+            .has_value());
 }
 
 TEST_CASE("depth order respects every overlapping pair and handles large footprints") {
@@ -1728,4 +1765,234 @@ TEST_CASE("capture: the mix across the world is balanced, unclipped and smooth")
         {"rome.market", "athens.market"},       {"athens.market", "parsa.market"}};
     for (const auto& [a, b] : kNeighbours)
         CHECK_MESSAGE(std::abs(loud(a) - loud(b)) <= tuning::kMixNeighbours, a << " / " << b);
+}
+
+TEST_CASE("a name field never holds malformed UTF-8, which the save could not write (H3-004)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Profile profile;
+    MenuModel m;
+    m.profile = &profile;
+    Menus menus;
+    menus.open(Page::NewWorld);
+    menus.editName("", -1);
+    // An overlong 'A', a lone surrogate, a cut sequence and a stray continuation byte.
+    CHECK(menus.text("F\xC1\x81"
+                     "e\xED\xA0\x80"
+                     "r\xE2\x82"
+                     "n\x80",
+                     ui.font));
+    CHECK(menus.key(MenuKey::Enter, m));
+    std::string typed = "?";
+    for (const MenuAction& a : menus.actions())
+        if (a.kind == MenuAction::Kind::Create) typed = a.text;
+    CHECK(typed == "Fern");
+}
+
+namespace {
+
+// Every sprite a table set draws.
+std::set<SpriteId> drawnIds(const SpriteTables& t) {
+    std::set<SpriteId> out;
+    const auto add = [&](const FrameSet& f) { out.insert(f.frames.begin(), f.frames.end()); };
+    for (const auto& base : t.terrainBase) out.insert(base.begin(), base.end());
+    for (const auto& overlay : t.terrainOverlay)
+        for (const FrameSet& f : overlay) add(f);
+    for (const ItemSprites& s : t.items) {
+        for (const auto* layer : {&s.base, &s.shadow, &s.glow})
+            for (const FrameSet& f : *layer) add(f);
+        for (const auto& stage : s.stages)
+            for (const FrameSet& f : stage) add(f);
+    }
+    for (const auto& kind : t.kinds)
+        for (const KindAnim& a : kind) {
+            add(a.front);
+            add(a.back);
+        }
+    for (const FrameSet& f : t.fx) add(f);
+    out.insert({t.cliffSE, t.cliffSW, t.tileOk, t.tileBad, t.tileArea, t.tileGrid});
+    out.insert(t.thickets.begin(), t.thickets.end());
+    add(t.fallSE);
+    add(t.fallSW);
+    if (t.rainbow) out.insert(*t.rainbow);
+    return out;
+}
+
+// For every "<key>@<season>" in the manifest whose plain key is drawn out of season: in that
+// season the look is drawn and the plain key is not. Returns the keys that failed.
+std::vector<std::string> seasonLooksIgnored(Atlas& atlas, const Catalog& c,
+                                            const nlohmann::json& sprites) {
+    std::vector<std::string> ignored;
+    const std::set<SpriteId> plain = drawnIds(buildSpriteTables(atlas, c, -1));
+    for (std::size_t s = 0; s < c.seasons.size(); ++s) {
+        const std::string suffix = "@" + c.seasons[s].id;
+        const std::set<SpriteId> drawn = drawnIds(buildSpriteTables(atlas, c, static_cast<int>(s)));
+        for (const auto& [key, rect] : sprites.items()) {
+            if (!key.ends_with(suffix)) continue;
+            const auto base = atlas.find(key.substr(0, key.size() - suffix.size()));
+            const auto look = atlas.find(key);
+            if (!base || !look || !plain.contains(*base)) continue;
+            if (!drawn.contains(*look) || drawn.contains(*base)) ignored.push_back(key);
+        }
+    }
+    return ignored;
+}
+
+} // namespace
+
+TEST_CASE("every sprite family draws its season's look where the atlas has one (H3-008)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    const auto text = readTextFile(test::assetsDir() / "atlas.json");
+    REQUIRE(text.has_value());
+    nlohmann::json manifest = nlohmann::json::parse(*text);
+    {
+        // The shipped atlas: its seasonal terrain, items and thickets.
+        Atlas atlas(ui.renderer.get(), test::assetsDir(), c.iso());
+        CHECK(seasonLooksIgnored(atlas, c, manifest["sprites"]).empty());
+    }
+    // Every plain sprite given a winter twin (the same pixels under its own name): terrain,
+    // items, critters, effects, edges, falls, the interface's tiles, the thicket and the sky
+    // must all draw the twin in winter.
+    const nlohmann::json plain = manifest["sprites"];
+    for (const auto& [key, rect] : plain.items())
+        if (key.find('@') == std::string::npos && !plain.contains(key + "@winter"))
+            manifest["sprites"][key + "@winter"] = rect;
+    manifest["image"] = (test::assetsDir() / "atlas.png").string();
+    const auto dir = test::tempDir("season_looks");
+    { std::ofstream(dir / "atlas.json") << manifest.dump(); }
+    Atlas twins(ui.renderer.get(), dir, c.iso());
+    const auto ignored = seasonLooksIgnored(twins, c, manifest["sprites"]);
+    for (const std::string& k : ignored) MESSAGE(k);
+    CHECK(ignored.empty());
+}
+
+TEST_CASE("the title offers Worlds beside Begin whenever worlds exist (H3-009)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    const Profile profile;
+    std::vector<MenuWorld> worlds(2);
+    worlds[0].name = "Plum Hollow";
+    worlds[1].name = "Damaged";
+    worlds[1].readable = false;
+    MenuModel m;
+    m.profile = &profile;
+    m.firstLaunch = true; // the newest world could not be opened: a fresh corner behind
+    const auto worldsButton = [&](std::span<const MenuWorld> list) {
+        m.worlds = list;
+        Menus menus;
+        menus.open(Page::Title);
+        menus.update(UiInput{}, m, ui.font, {1280, 800}, 1.0f, 1.0f / 60.0f);
+        return menus.widgetCentre("worlds").has_value();
+    };
+    CHECK(worldsButton(worlds));
+    CHECK_FALSE(worldsButton({})); // a true first launch: Begin, Settings, Quit
+}
+
+TEST_CASE("a large glass panel covers every pixel inside it at every interface size (H3-010)") {
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    SDL_Renderer* r = ui.renderer.get();
+    const auto solid = [&](int w, int h, float red, float green) {
+        TexturePtr t{
+            SDL_CreateTexture(r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h)};
+        REQUIRE(t);
+        REQUIRE(SDL_SetRenderTarget(r, t.get()));
+        REQUIRE(SDL_SetRenderDrawColorFloat(r, red, green, 0, 1));
+        REQUIRE(SDL_RenderClear(r));
+        return t;
+    };
+    for (const Vec2 screen : {Vec2{960, 600}, Vec2{1280, 800}, Vec2{1920, 1080}})
+        for (const float s : {1.0f, 1.25f, 1.5f, 2.0f, 2.5f, 3.0f}) {
+            CAPTURE(screen.x);
+            CAPTURE(s);
+            const int w = static_cast<int>(screen.x);
+            const int h = static_cast<int>(screen.y);
+            const TexturePtr backdrop = solid(w, h, 1, 0); // the blurred world: red
+            const TexturePtr target = solid(w, h, 0, 1);   // nothing drawn: green
+            Batch batch(r);
+            Painter p(batch, ui.font, {backdrop.get(), screen, 1.0f}, s);
+            // The worlds screen: the veil over the whole window, then its panel (Menus::draw).
+            p.glass({0, 0, screen.x, screen.y}, 0, 1.0f, theme::kGlassVeil);
+            p.endGlass();
+            p.endLayer();
+            const float m = theme::kMargin * s * 2;
+            const Box panel{m, m, screen.x - 2 * m, screen.y - 2 * m};
+            const float radius = theme::kPanelRadius * s * 1.25f;
+            p.glass(panel, radius, 1.0f, theme::kGlass);
+            p.endGlass();
+            batch.flush();
+            const SurfacePtr px{SDL_RenderReadPixels(r, nullptr)};
+            REQUIRE(px);
+            int bare = 0;
+            const int in = static_cast<int>(std::ceil(radius)) + 2;
+            for (int y = static_cast<int>(panel.y) + in;
+                 y < static_cast<int>(panel.y + panel.h) - in; y += 3)
+                for (int x = static_cast<int>(panel.x) + in;
+                     x < static_cast<int>(panel.x + panel.w) - in; x += 3) {
+                    Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+                    if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca) || cg > cr + 40)
+                        ++bare; // the green under the glass shows
+                }
+            CHECK(bare == 0);
+            REQUIRE(SDL_SetRenderTarget(r, nullptr));
+        }
+}
+
+TEST_CASE("a fill never puts two triangles sharing a side in a row (H3-010)") {
+    // SDL's software renderer redraws such a pair as one rectangle when it half looks like
+    // one, losing a triangle: a full-window veil at 960 x 600 lost two.
+    const float w = 960;
+    const float h = 600;
+    std::vector<SDL_FPoint> outline;
+    for (const SDL_FPoint c :
+         {SDL_FPoint{w, 0}, SDL_FPoint{w, h}, SDL_FPoint{0, h}, SDL_FPoint{0, 0}})
+        for (int k = 0; k < 3; ++k) outline.push_back(c); // square corners, as Painter makes them
+    std::vector<SDL_FPoint> points;
+    std::vector<int> indices;
+    fanMesh({w / 2, h / 2}, outline, 384.0f, points, indices);
+    REQUIRE(indices.size() > 6);
+    for (std::size_t t = 3; t < indices.size(); t += 3) {
+        int shared = 0;
+        for (std::size_t a = 0; a < 3; ++a)
+            for (std::size_t b = 0; b < 3; ++b) shared += indices[t + a] == indices[t - 3 + b];
+        CAPTURE(t / 3);
+        CHECK(shared < 2);
+    }
+}
+
+TEST_CASE("a long world name is cut short on the Continue button, never past it (H3-013)") {
+    UiFixture ui;
+    for (const float s : {1.0f, 2.0f}) {
+        CAPTURE(s);
+        REQUIRE(ui.font.build(ui.renderer.get(), s));
+        const Profile profile;
+        const std::string name(28, 'W'); // the longest name the field takes, at its widest
+        MenuModel m;
+        m.profile = &profile;
+        m.continueName = name;
+        Menus menus;
+        menus.open(Page::Title);
+        menus.update(UiInput{}, m, ui.font, {960, 600}, s, 1.0f / 60.0f);
+        const auto label = menus.widgetLabel("continue");
+        REQUIRE(label);
+        CHECK(ui.font.measure(Face::Body, label->first) <= label->second.w);
+        CHECK(label->first.find("WWWW") != std::string_view::npos); // still names it
+    }
+}
+
+TEST_CASE("her speech bubble keeps clear of the title card (H3-018)") {
+    const Box card{16, 16, 200, 80};
+    const Vec2 screen{960, 600};
+    // Wanted over the card: beside it.
+    const Box b = placeBubble({100, 30, 300, 40}, card, screen, 8);
+    CHECK(b.x >= card.x + card.w);
+    CHECK(b.y == 30);
+    // No room beside it: under it.
+    const Box c = placeBubble({100, 30, 800, 40}, card, screen, 8);
+    CHECK(c.y >= card.y + card.h);
+    // Clear already: left alone.
+    const Box d = placeBubble({400, 200, 300, 40}, card, screen, 8);
+    CHECK(d.x == 400);
+    CHECK(d.y == 200);
 }

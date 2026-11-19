@@ -66,7 +66,9 @@ struct SdlSession {
 
 fs::path findAssets(const Options& o) {
     if (o.assetsDir) return *o.assetsDir;
-    if (const char* env = std::getenv("LAETICIA_ASSETS_DIR")) return env;
+    // Set but empty is unset: an empty path would mean the current directory.
+    if (const char* env = std::getenv("LAETICIA_ASSETS_DIR"); env != nullptr && *env != '\0')
+        return env;
     if (const char* base = SDL_GetBasePath()) {
         const fs::path p = fs::path(base) / "assets";
         if (fs::exists(p / "catalog.json")) return p;
@@ -76,7 +78,8 @@ fs::path findAssets(const Options& o) {
 
 fs::path findSaveDir(const Options& o) {
     if (o.saveDir) return *o.saveDir;
-    if (const char* env = std::getenv("LAETICIA_SAVE_DIR")) return env;
+    if (const char* env = std::getenv("LAETICIA_SAVE_DIR"); env != nullptr && *env != '\0')
+        return env;
     if (char* pref = SDL_GetPrefPath("Laeticia", "laeticias-corner")) {
         const fs::path p = pref;
         SDL_free(pref);
@@ -395,7 +398,8 @@ void App::loadOrStart() {
     }
     // The world played last, else the most recently saved one, else a new one.
     fs::path dir = newest;
-    if (!profile_.lastWorld.empty() && fs::exists(worlds / profile_.lastWorld / kWorldFile, ec))
+    if (plainFolderName(profile_.lastWorld) &&
+        fs::exists(worlds / profile_.lastWorld / kWorldFile, ec))
         dir = worlds / profile_.lastWorld;
     if (!dir.empty()) {
         slug_ = dir.filename().string();
@@ -935,6 +939,20 @@ void App::frameCamera() {
     const Box s = hud_.safeArea();
     camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen(),
                   openBounds(cat_, progress_.stage, world_));
+    keepOnHome(camera_);
+}
+
+void App::keepOnHome(Camera& c) const {
+    // The land is framed in the room the interface leaves; with a large interface on a small
+    // window that can put the window's centre off the home's grid, and the home's own panels
+    // (the building dock among them) would fold away as if the player had left (H3-016). The
+    // view slides the least it must to stand on the home again.
+    if (!loaded_) return;
+    const Vec2 t = cat_.iso().toTile(c.position());
+    constexpr float kIn = 0.5f; // tiles inside the grid's edge
+    const Vec2 k{std::clamp(t.x, kIn, static_cast<float>(world_.width()) - kIn),
+                 std::clamp(t.y, kIn, static_cast<float>(world_.height()) - kIn)};
+    if (k.x != t.x || k.y != t.y) c.place(cat_.iso().toWorld(k.x, k.y), c.zoom(), screen());
 }
 
 void App::handleKey(const SDL_KeyboardEvent& k) {
@@ -2028,6 +2046,7 @@ int App::run() {
                                    std::make_format_args(cat_.resident.name, pages))
                     : std::vformat(strings::kToastWelcomeAlone, std::make_format_args(pages)));
         }
+        settlePhoto(false);
         if (thumbTimer_ >= tuning::kThumbnailInterval) {
             thumbTimer_ = 0;
             (void)writeThumbnail();
@@ -2041,6 +2060,7 @@ int App::run() {
     }
     cancelMove();
     if (editor_.inGroup()) editor_.commit();
+    settlePhoto(true);
     profileDue_ = 0;
     writeProfileIfDue();
     if (!(freshWorld_ && frontDoor())) (void)writeThumbnail();

@@ -1,0 +1,25 @@
+# A Shift-drawn line let go past the edge of the home's land is laid up to the edge, as its
+# preview showed while the pointer was on the land, not shrunk to its first tile (H3-011).
+set clock day
+set camera 30 32 1
+wait 2
+click ui:build
+wait 3
+click ui:tab:nature
+wait 3
+click ui:tile:flowers_white
+wait 3
+keydown shift
+press @22,36
+move @30,36
+move @39,36
+wait 2
+move @44,36
+wait 2
+release @44,36
+keyup shift
+wait 2
+expect count flowers_white 18
+key ctrl+z
+wait 2
+expect count flowers_white 1

@@ -33,6 +33,10 @@ std::uint32_t get32(const std::vector<char>& b, std::size_t at) {
 
 std::expected<void, std::string> writeWavFloat(const std::filesystem::path& file,
                                                std::span<const float> samples) {
+    // A RIFF file counts its bytes in 32 bits: a longer capture would be written cut short
+    // under a header that wrapped round.
+    if (samples.size() > (0xFFFFFFFFULL - 36) / sizeof(float))
+        return std::unexpected(file.string() + ": a capture over 4 GiB cannot be a WAV file");
     const auto bytes = static_cast<std::uint32_t>(samples.size() * sizeof(float));
     std::vector<char> h;
     h.reserve(kHeader);
