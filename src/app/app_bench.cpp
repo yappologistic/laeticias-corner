@@ -175,6 +175,7 @@ FrameSample App::benchFrame() {
     f.steps = 1;
     closeParts(f);
     worldSample(f);
+    noteFrame(f);
     return f;
 }
 
