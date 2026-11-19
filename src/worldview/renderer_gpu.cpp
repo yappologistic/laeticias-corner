@@ -368,6 +368,99 @@ void WorldView::markHomeWater(const FRect& view, const Xform& x) {
     flushMarks(x);
 }
 
+void WorldView::sunGpu(double clock) {
+    namespace t = gpu::tuning;
+    const gpu::Quality q = post_->quality();
+    const bool lit = q == gpu::Quality::Medium || q == gpu::Quality::High;
+    if (!lit) {
+        sunShadows_.reset();
+        if (decoder_ && sunStep_ != -1) {
+            const float up[3] = {0, 0, 1};
+            decoder_->setSun(up, 0, 0);
+            sunStep_ = -1;
+            staleCells();
+        }
+        return;
+    }
+    const int season = gpuFrame_.season;
+    // The shadows the sun throws now, drawn each frame at the native level.
+    // (As the sun goes down they ease back to the baked ones: no sun, no turning.)
+    const gpu::Sun live = gpu::sunAt(clock, season);
+    gpu::ShadowWarp warp = gpu::shadowWarp(live);
+    const float id[4] = {1, 0, 0, 1};
+    for (int i = 0; i < 4; ++i) warp.m[i] = id[i] + (warp.m[i] - id[i]) * live.strength;
+    sunShadows_ = warp;
+    // The relight and cached pictures (impostors' shadows too) by the sun of the step.
+    const int step = static_cast<int>(std::floor(std::fmod(clock + 1.0, 1.0) * t::kSunSteps));
+    if (step == sunStep_) return;
+    sunStep_ = step;
+    const gpu::Sun sun = gpu::sunAt((static_cast<double>(step) + 0.5) / t::kSunSteps, season);
+    stepShadows_ = gpu::shadowWarp(sun);
+    for (int i = 0; i < 4; ++i)
+        stepShadows_.m[i] = id[i] + (stepShadows_.m[i] - id[i]) * sun.strength;
+    if (decoder_) decoder_->setSun(sun.dir, sun.strength, t::kContact);
+    staleCells();
+}
+
+bool WorldView::putShadow(const SpriteRef& s, const Elem& e, const Xform& x) {
+    if (dry_) return true;
+    SDL_Texture* tex = pages_->texture(s.page);
+    if (tex == nullptr) return false;
+    // Cached pictures take the stepped sun's shadows; the live frame the sun as it is.
+    const gpu::ShadowWarp& w = drawingBlock_ ? stepShadows_ : *sunShadows_;
+    const world::Placed& it = map_.items()[e.item];
+    const TileRect r = it.rect();
+    const auto fw = static_cast<float>(r.x1 - r.x0);
+    const auto fh = static_cast<float>(r.y1 - r.y0);
+    const Vec2 pivot{e.anchor.x + (fw - fh) * iso_.hw * 0.5f,
+                     e.anchor.y + (fw + fh) * iso_.hh * 0.5f};
+    constexpr int kGrid = 2;
+    std::vector<SDL_Vertex>& verts = batch_.scratch().verts;
+    std::vector<int>& idx = batch_.scratch().indices;
+    verts.clear();
+    idx.clear();
+    const float x0 = e.anchor.x - s.ox;
+    const float y0 = e.anchor.y - s.oy;
+    // Offsets on the ground plane (x, 2y) from the pivot; only what lies the baked shadow's way
+    // turns and stretches (what lies behind the caster stays at its foot).
+    float farthest = 1e-3f;
+    std::array<std::pair<Vec2, float>, (kGrid + 1) * (kGrid + 1)> moved{};
+    for (int j = 0; j <= kGrid; ++j)
+        for (int i = 0; i <= kGrid; ++i) {
+            const Vec2 p{x0 + s.w * static_cast<float>(i) / kGrid,
+                         y0 + s.h * static_cast<float>(j) / kGrid};
+            const float ox = p.x - pivot.x;
+            const float oy = 2.0f * (p.y - pivot.y);
+            const float along = ox * w.along[0] + oy * w.along[1];
+            Vec2 o{ox, oy};
+            if (along > 0) o = {w.m[0] * ox + w.m[1] * oy, w.m[2] * ox + w.m[3] * oy};
+            farthest = std::max(farthest, along);
+            moved[static_cast<std::size_t>(j * (kGrid + 1) + i)] = {
+                {pivot.x + o.x, pivot.y + o.y * 0.5f}, along};
+        }
+    for (int j = 0; j <= kGrid; ++j)
+        for (int i = 0; i <= kGrid; ++i) {
+            const auto& [p, along] = moved[static_cast<std::size_t>(j * (kGrid + 1) + i)];
+            const float k = std::clamp((along / farthest - 0.4f) / 0.6f, 0.0f, 1.0f);
+            const float a = 1.0f - (1.0f - gpu::tuning::kShadowFarAlpha) * k * k * (3 - 2 * k);
+            const Vec2 sp = x.apply(p);
+            verts.push_back({{sp.x, sp.y},
+                             {1, 1, 1, a},
+                             {s.uv.u0 + (s.uv.u1 - s.uv.u0) * static_cast<float>(i) / kGrid,
+                              s.uv.v0 + (s.uv.v1 - s.uv.v0) * static_cast<float>(j) / kGrid}});
+            if (i > 0 && j > 0) {
+                const int b = j * (kGrid + 1) + i;
+                for (const int q : {b - kGrid - 2, b - kGrid - 1, b, b - kGrid - 2, b, b - 1})
+                    idx.push_back(q);
+            }
+        }
+    plain();
+    batch_.use(tex, SDL_BLENDMODE_BLEND, x.filter);
+    batch_.triangles(verts.data(), static_cast<int>(verts.size()), idx.data(),
+                     static_cast<int>(idx.size()));
+    return true;
+}
+
 void WorldView::cloudsGpu() {
     namespace t = gpu::tuning;
     // A few cumulus per weather cell, placed and shaped by its id: they ride the cell with the
@@ -722,7 +815,7 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
     const bool packed = s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
     if (decoder_) decoder_->use(batch_, packed);
     const SDL_FColor c = decoder_ && packed
-                             ? packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage)
+                             ? packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage, false)
                              : SDL_FColor{1, 1, 1, 1};
     const float x0 = anchor.x - s.ox;
     const float y0 = anchor.y - s.oy;

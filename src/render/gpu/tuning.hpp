@@ -17,6 +17,25 @@ inline constexpr float kSwayCrop = 3.0f;
 inline constexpr float kSwayBush = 2.0f;
 inline constexpr float kWindFloor = 0.35f; // the stillest air still stirs a little
 
+// The sun (look.hpp sunAt): half the daylight in hours and the noon height (radians) by season
+// (spring, summer, autumn, winter); the lowest sun light and shadows take; the height by which
+// its light has come in.
+inline constexpr float kSunHalfDay[4] = {6.0f, 7.0f, 6.0f, 5.0f};
+inline constexpr float kSunNoon[4] = {0.96f, 1.18f, 0.90f, 0.62f};
+inline constexpr float kSunLowest = 0.14f; // about 8 degrees
+inline constexpr float kSunFade = 0.10f;
+// Relight (packed.frag): the sun's steps through the day (cached cells are drawn again at
+// each), and how far a ramp may be stepped from its baked light either way.
+inline constexpr int kSunSteps = 48;
+inline constexpr float kRelightMax = 1.8f;      // shade: light down to 1 / this
+inline constexpr float kRelightLift = 1.3f;     // sun: light up to this
+inline constexpr float kRelightExponent = 0.8f; // light ratio to Oklab lightness (perceived)
+inline constexpr float kContact = 0.18f;        // the feet of walls this much darker
+// Turning shadows: a shadow's far share fades to this alpha (soft far edge); a shadow at most
+// this many times the baked one's length.
+inline constexpr float kShadowFarAlpha = 0.45f;
+inline constexpr float kShadowLongest = 3.0f;
+
 // Bloom: halvings of the glow layer by tier (Low has none: the glow layer alone), and its
 // strength.
 inline constexpr int kBloomLevelsMedium = 3;

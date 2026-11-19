@@ -1,0 +1,107 @@
+name: Bug report
+description: Something in the game or the tools does not work as it should.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting. Please search the open issues first. A report we can reproduce
+        gets fixed; the guide is docs/contributing/proof-of-work.md (bug reports).
+        Security problems: do not open an issue, see SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The commit (`git rev-parse --short HEAD`) or release you built.
+      placeholder: "3f2a9c1"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Operating system and version, compiler and version, SDL version (`pkg-config --modversion sdl3`).
+      placeholder: "Linux 6.x, GCC 16.2, SDL 3.4.20"
+    validations:
+      required: true
+  - type: dropdown
+    id: renderer
+    attributes:
+      label: Renderer
+      description: The "Look" in Settings, or the `--renderer` you passed.
+      options:
+        - GPU (shader path)
+        - OpenGL
+        - Software
+        - Headless run
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps from a fresh world, or better a `.lcs` script (docs/contributing/testing.md) and the command that runs it.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Required for anything visual. Drag the image in here. Write "not visual" otherwise.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The terminal output of the run (it is plain text; check it for anything private before pasting).
+      render: text
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## AI assistance
+        Required on every issue, also when no AI tool was used (then write "none").
+        Policy: docs/contributing/ai-policy.md
+  - type: input
+    id: ai-tool
+    attributes:
+      label: Tool or harness
+      description: The agent, editor integration or chat product used to write or research this issue, or "none".
+    validations:
+      required: true
+  - type: input
+    id: ai-model
+    attributes:
+      label: Model and version
+      description: The exact model identifier and version as the tool reports it, or "none".
+    validations:
+      required: true
+  - type: input
+    id: ai-parts
+    attributes:
+      label: What it produced
+      description: Which parts the tool produced (the text, the analysis, the script, the images), or "none".
+    validations:
+      required: true
+  - type: checkboxes
+    id: ai-statement
+    attributes:
+      label: Responsibility
+      options:
+        - label: I have read all of this issue, checked what it claims myself, and I answer for it.
+          required: true
