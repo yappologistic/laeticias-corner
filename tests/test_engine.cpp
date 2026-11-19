@@ -31,6 +31,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <map>
@@ -534,6 +535,54 @@ TEST_CASE("one loop named by two sound systems: the louder want is heard, never 
         CHECK(want.gain == doctest::Approx(0.9f));
         CHECK(want.pan == doctest::Approx(0.3f));
     });
+}
+
+TEST_CASE("no audio driver and damaged files: silence and a log line, never a crash") {
+    // A stranger's computer may have no sound at all, and a file may be cut short or garbage.
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "no_such_driver", SDL_HINT_OVERRIDE));
+    CHECK_FALSE(SDL_InitSubSystem(SDL_INIT_AUDIO));
+    const std::filesystem::path dir = std::filesystem::temp_directory_path() /
+                                      ("lc_damaged_audio_" + std::to_string(SDL_GetTicksNS()));
+    std::filesystem::create_directories(dir / "amb");
+    std::filesystem::create_directories(dir / "sfx");
+    const auto write = [&](const std::filesystem::path& to, const std::string& bytes) {
+        std::ofstream out(dir / to, std::ios::binary);
+        out << bytes;
+    };
+    const auto head = [&](const std::filesystem::path& from, std::size_t n) {
+        std::ifstream in(test::assetsDir() / "audio" / from, std::ios::binary);
+        std::string bytes(n, '\0');
+        in.read(bytes.data(), static_cast<std::streamsize>(n));
+        bytes.resize(static_cast<std::size_t>(in.gcount()));
+        return bytes;
+    };
+    write("amb/garbage.ogg", std::string(4096, 'x'));
+    write("amb/half.ogg", head("amb/birds.ogg", 60000)); // a stream cut off mid-page
+    write("sfx/garbage.wav", std::string(512, 'y'));
+    write("sfx/half.wav", head("sfx/ui_click.wav", 100)); // a header and nothing more
+    AudioList list;
+    list.ambience = {"amb/garbage.ogg", "amb/half.ogg", "amb/missing.ogg"};
+    list.sfx = {"sfx/garbage.wav", "sfx/half.wav", "sfx/missing.wav"};
+    {
+        Mixer mixer;
+        mixer.load(dir, list);
+        CHECK_FALSE(mixer.open()); // no device: the game goes on silently
+        mixer.startCapture();
+        for (const std::string& f : list.ambience) mixer.setLoopGain(mixer.loopIndex(f), 1.0f);
+        CHECK(mixer.sfxIndex("sfx/garbage.wav") == -1); // a cut-off one plays what it holds
+        CHECK(mixer.sfxIndex("sfx/missing.wav") == -1);
+        for (const std::string& f : list.sfx)
+            if (const int fx = mixer.sfxIndex(f); fx >= 0) mixer.play(fx, 1.0f, 1.0f);
+        std::vector<float> out(4096 * 2);
+        bool finite = true;
+        for (int k = 0; k < 40; ++k) {
+            mixer.render(out.data(), 4096);
+            for (const float v : out) finite = finite && std::isfinite(v) && std::abs(v) <= 1.0f;
+        }
+        CHECK(finite);
+    }
+    std::filesystem::remove_all(dir);
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
 }
 
 TEST_CASE("music stems: bar lines, fades and a stem joining in step with the others") {
@@ -1612,10 +1661,12 @@ TEST_CASE("capture: the mix across the world is balanced, unclipped and smooth")
             CHECK_MESSAGE(g.r.integrated <= tuning::kMixLoudest, g.name);
             CHECK_MESSAGE(g.r.jump <= tuning::kMixJump, g.name);
         }
-        // A city's piece is heard over its streets.
-        if (g.music > -100 && !g.name.starts_with("home") && !g.name.starts_with("title") &&
-            !g.name.starts_with("travel") && g.name != "map.open" && g.name != "pause" &&
-            g.name != "mute")
+        // A city's piece is heard over its streets (a town's or the land's piece is soft on
+        // purpose and rests half the time: the place's own sound leads there).
+        const bool city = g.name.starts_with("rome.") || g.name.starts_with("athens.") ||
+                          g.name.starts_with("parsa.") || g.name.starts_with("rain.rome") ||
+                          g.name.starts_with("rain.parsa");
+        if (city && g.music > -100)
             CHECK_MESSAGE(g.music - g.amb >= tuning::kMixMusicUnder, g.name);
         segs.push_back(g);
     }

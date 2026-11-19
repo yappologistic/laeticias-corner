@@ -949,7 +949,7 @@ void App::updateWorldAudio(float night) {
     ci.clock = clock_.time();
     ci.season = season();
     ci.month = in.month;
-    ci.music = soundscape_->musicLevel();
+    ci.music = soundscape_->cityMusicLevel();
     ci.dt = frameDt_;
     ci.actors = worldView_->actorsDrawn();
     ci.city = city_->city.get();

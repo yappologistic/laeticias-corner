@@ -305,9 +305,10 @@ TEST_CASE("sound: beds, zones and music follow the view; a city's piece starts o
     // Far from the forum its zone is silent.
     (void)at("rome", {140, 1130}, 0.2, 1);
     CHECK(s.out()[file("amb/rome/forum.ogg")].gain == doctest::Approx(0));
-    // Out into a stretch: no music after the fade, the stretch's bed.
-    CHECK_FALSE(at("latium_italy", {150, 1150}, 0.2, 5));
-    CHECK(s.musicRegion() == -1);
+    // Out into a stretch: Rome's piece fades out, the stretch's travelling theme starts on a
+    // phrase, the stretch's bed plays.
+    CHECK(at("latium_italy", {150, 1150}, 0.2, 5));
+    CHECK(s.musicRegion() == w.file.findRegion("latium_italy"));
     CHECK(s.out()[file("music/rome/day.ogg")].gain == doctest::Approx(0));
     CHECK(s.out()[file("amb/world/fields.ogg")].gain > 0.2f);
     // Back again: a phrase start again.
@@ -566,6 +567,53 @@ TEST_CASE("sound: nature beds of the season and of snow lying, on every land reg
             CHECK_MESSAGE(!cs.natureOf(static_cast<int>(g), static_cast<int>(k), 2, false).empty(),
                           w.file.regions[g].id << " " << cat.seasons[k].id);
     }
+}
+
+TEST_CASE("sound: towns and the land play their pieces; a shared piece goes on across regions") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::LoadedWorld& w = *r.world;
+    Soundscape s(w, std::filesystem::path(LC_WORLDVIEW_ASSETS_DIR) / "audio");
+    const auto file = [&](std::string_view f) {
+        const auto it = std::ranges::find(s.files(), f);
+        REQUIRE_MESSAGE(it != s.files().end(), f);
+        return static_cast<std::size_t>(it - s.files().begin());
+    };
+    std::vector<float> weights(w.file.regions.size(), 0.0f);
+    int seeks = 0;
+    float lowest = 1;
+    const auto at = [&](std::string_view region, float seconds, std::string_view watch) {
+        std::ranges::fill(weights, 0.0f);
+        weights[static_cast<std::size_t>(w.file.findRegion(region))] = 1.0f;
+        seeks = 0;
+        lowest = 1;
+        for (float t = 0; t < seconds; t += 0.1f) {
+            s.update({weights, {150, 1150}, 16, 0.2, 0, 0.1f});
+            seeks += static_cast<int>(s.seeks().size());
+            if (!watch.empty()) lowest = std::min(lowest, s.out()[file(watch)].gain);
+        }
+    };
+    const std::string_view italy = "music/world/travel_italy_day.ogg";
+    // The Latium road's travelling theme fades in from a phrase start; a stretch's piece is soft
+    // and leaves the crowd alone.
+    at("latium_italy", 6, {});
+    CHECK(s.out()[file(italy)].gain > 0.1f);
+    CHECK(s.cityMusicLevel() == doctest::Approx(0));
+    // Into the Apennines, which name the same theme: it goes on, no new phrase, no dip.
+    const float held = s.out()[file(italy)].gain;
+    at("apennines", 3, italy);
+    CHECK(seeks == 0);
+    CHECK(lowest >= held * 0.99f);
+    // Greece names its own theme: the Italian one fades out, the Greek one starts on a phrase.
+    at("greece", 6, {});
+    CHECK(s.out()[file(italy)].gain == doctest::Approx(0));
+    CHECK(s.out()[file("music/world/travel_greece_day.ogg")].gain > 0.1f);
+    // A town's piece; a city's piece steps the crowd back.
+    at("capua", 6, {});
+    CHECK(s.out()[file("music/rome/town_forum_day.ogg")].gain > 0.1f);
+    CHECK(s.cityMusicLevel() == doctest::Approx(0));
+    at("rome", 6, {});
+    CHECK(s.cityMusicLevel() == doctest::Approx(1));
 }
 
 TEST_CASE("sound: game hours wrap over midnight") {
