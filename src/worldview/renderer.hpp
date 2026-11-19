@@ -388,6 +388,8 @@ private:
     // `s` above (or below) the line where the roof over `foot` has its underside at `z` px.
     bool putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
                 bool upper, SDL_FColor c = {1, 1, 1, 1});
+    // One half of a one-tile kit bridge (Elem::part 2 or 3), cut along its span.
+    bool putHalf(const SpriteRef& s, const Elem& e, const Xform& x, SDL_FColor c);
     // The native level's glow, hidden where something drawn after its light stands over it.
     void drawGlowOccluded(const Xform& x, float glow, float now);
     void drawSilhouette(const Elem& e, const Xform& x, float now);

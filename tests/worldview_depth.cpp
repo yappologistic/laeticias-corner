@@ -192,7 +192,7 @@ TEST_CASE("depth: a bridge carries walkers between its parapets and boats pass u
     const ZRange deck = heightsOf(&g, info, 0, 100);
     const ZRange farSide = heightsOf(&g, info, 1, 100);
     const ZRange nearSide = heightsOf(&g, info, 2, 100);
-    CHECK(deck.z0 == 18);
+    CHECK(deck.z0 == 12); // half a level under its lowest floor (20), over the barges
     CHECK(deck.z1 == 24);
     CHECK(farSide.z0 == 0);
     CHECK(farSide.z1 == 31);

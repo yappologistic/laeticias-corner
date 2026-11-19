@@ -149,7 +149,8 @@ inline constexpr float kActorWalkPace = 0.9f; // tiles/s at which walk frames pl
 inline constexpr Vec2 kCarryAt{3, -31};       // px from the feet: goods in hand, no carry point
 inline constexpr float kActorFoot = 0.2f;     // half the square round the feet, tiles
 inline constexpr float kSunkTolerance = 3.0f; // px below a floor's surface still "on" it
-inline constexpr int kActorMargin = 3;        // tiles beyond the view gathered (sprites overhang)
+inline constexpr float kDeckReach = 8.0f; // px a deck's box reaches under its floor (half a level)
+inline constexpr int kActorMargin = 3;    // tiles beyond the view gathered (sprites overhang)
 inline constexpr std::size_t kActorBuffer = 2048; // actors gathered per frame at most
 inline constexpr float kActorShadowW = 0.42f;     // the soft shadow under the feet, tiles wide
 inline constexpr float kActorShadow = 0.75f;      // its strength in the shadow layer
@@ -201,7 +202,7 @@ inline constexpr float kDripAfter = 60.0f; // s drops keep falling after the rai
 inline constexpr float kDripMin = 0.4f;    // s between drops
 inline constexpr float kDripMax = 2.5f;
 inline constexpr float kDrip = 0.35f;
-inline constexpr float kLayerFull = 4.0f;        // a quarter of the view fresh water: full layer
+inline constexpr float kLayerFull = 4.0f; // a quarter of the view fresh water: full layer
 
 // Fallback shadow opacity when no resident page measured one.
 inline constexpr float kShadowOpacity = 0.4f;

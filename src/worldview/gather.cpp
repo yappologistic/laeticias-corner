@@ -60,7 +60,11 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
     if (walk && info.crossing && under == 0 && floorMin > 0) under = 1;
     if (walk) {
         // A deck: room under it below its floor (boats under, walkers over).
-        if (under > 0 && under <= floorMin) return {f(under), f(floorMax), ZRange::Kind::Deck};
+        // Its box reaches half a level under its lowest floor (a walker stepping off its end is
+        // blended that far down toward the bank), never below whatever floats under it.
+        if (under > 0 && under <= floorMin)
+            return {std::max(1.0f, std::min(f(under), f(floorMin) - tuning::kDeckReach)),
+                    f(floorMax), ZRange::Kind::Deck};
         // A run under a roof (a gate's passage, an arch): from the overhead's underside up.
         const int over = std::min(roofMin, under > 0 ? under : INT_MAX);
         if (over != INT_MAX && (gp == nullptr || !gp->floor))
@@ -127,6 +131,31 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
         out.items.push_back(
             {makeBox(foot, base + z.z0, base + z.z1, depthId(DepthKind::Item, d.item, part), hh_),
              box, s.page});
+        // A one-tile kit bridge (rails and deck one sprite) whose neighbours show its span: two
+        // halves cut along it, the far rail before whoever crosses, the near rail after.
+        const bool ns = (it.mask & 5) != 0;
+        const bool ew = (it.mask & 10) != 0;
+        if (!split && z.kind == ZRange::Kind::Deck && map_.info(it).crossing && it.w == 1 &&
+            it.h == 1 && ns != ew) {
+            const float top = base + std::max(z.z1 + 1, s.oy);
+            const float mid = ns ? foot.x0 + 0.5f : foot.y0 + 0.5f;
+            FRect far = foot;
+            FRect near = foot;
+            (ns ? far.x1 : far.y1) = mid;
+            (ns ? near.x0 : near.y0) = mid;
+            out.items.back().box =
+                makeBox(far, base + z.z0, top, depthId(DepthKind::Item, d.item, 2), hh_);
+            Elem& fe = out.elems.back();
+            fe.part = 2;
+            fe.alongX = ew;
+            fe.cutZ = base + z.z1;
+            out.elems.push_back(fe);
+            out.elems.back().first = false;
+            out.elems.back().part = 3;
+            out.items.push_back(
+                {makeBox(near, base + z.z1 + 1, top, depthId(DepthKind::Item, d.item, 3), hh_), box,
+                 s.page});
+        }
         if (z.over >= 0) {
             // The floor before whoever walks on it, the roof over them after.
             out.elems.back().part = 0;

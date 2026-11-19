@@ -512,8 +512,24 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
         if (post_) markItemWater(e, x); // over the item's own pixels
         return ok;
     }
+    if (e.part >= 2) return putHalf(s, e, x, kWhite);
     // One part of a floor with a roof over it: the rows below or above the roof's underside.
     return putCut(s, e.anchor, x, elemFoot(e), e.cutZ, e.part == 1);
+}
+
+bool WorldView::putHalf(const SpriteRef& s, const Elem& e, const Xform& x, SDL_FColor c) {
+    SDL_Texture* t = pages_->texture(s.page);
+    if (t == nullptr) return false;
+    // A kit bridge's half: cut along its span through the tile's centre at the deck's height
+    // (a ground point (gx, gy) at height z is drawn at y = (gx + gy)·hh − z); the near half lies
+    // below the line.
+    const float mid =
+        e.alongX ? static_cast<float>(e.tile.y) + 0.5f : static_cast<float>(e.tile.x) + 0.5f;
+    const float a = 2.0f * mid * iso_.hh - e.cutZ;
+    const float b = (e.alongX ? 1.0f : -1.0f) * iso_.hh / iso_.hw;
+    putSpriteCut(batch_, Sprite{t, s.uv, s.w, s.h, s.ox, s.oy}, e.anchor, x, c, SDL_BLENDMODE_BLEND,
+                 a, b, e.part == 3);
+    return true;
 }
 
 bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
@@ -649,6 +665,8 @@ void WorldView::drawSilhouette(const Elem& e, const Xform& x, float now) {
     const SpriteRef& s = elemSprite(e, now);
     if (e.part < 0)
         (void)put(s, e.anchor, x, kBlack, SDL_BLENDMODE_BLEND);
+    else if (e.part >= 2)
+        (void)putHalf(s, e, x, kBlack);
     else
         (void)putCut(s, e.anchor, x, elemFoot(e), e.cutZ, e.part == 1, kBlack);
 }

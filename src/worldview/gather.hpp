@@ -29,9 +29,12 @@ struct Elem {
     TilePos tile;            // the item's origin, or the ground tile
     Vec2 anchor;             // world px, raised by the level
     // A floor piece with a roof over its walk tiles is drawn in two parts, cut at the roof's
-    // underside: 0 the floor (before who walks on it), 1 the overhead (after); -1 whole.
+    // underside: 0 the floor (before who walks on it), 1 the overhead (after). A one-tile kit
+    // bridge is drawn in two halves cut along its span at its deck: 2 the far rail (before who
+    // crosses), 3 the near rail (after). -1 whole.
     std::int8_t part = -1;
-    float cutZ = 0; // the roof's underside, px above level 0
+    bool alongX = false; // the span of a kit bridge's halves (else along y)
+    float cutZ = 0;      // the roof's underside, or the deck, px above level 0
 };
 
 struct Gathered {
