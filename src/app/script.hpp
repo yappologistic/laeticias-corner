@@ -47,7 +47,8 @@
 //   set time T              the time of day, 0..1 (0.2 mid-morning, 0.55 dusk, 0.75 midnight)
 //   set chatter chatty|quiet   the resident's idle remarks
 //   set camera TX TY ZOOM   look at tile (TX, TY) at a zoom level (0.25, 0.5, 1, 2, 3)
-//   set world TX TY ZOOM    the same at a world grid tile (a jump: themes and places snap);
+//   set world TX TY ZOOM    the same at a world grid tile (a jump: themes and places snap;
+//                           city life fills in over steps, as no journey's veil hides it);
 //   set world PLACE ZOOM    or at a place: forum, agora, terrace, layer:node,
 //                           district:<region>/<id> (city life's foci)
 //   set look KIND ZOOM      look at the first actor of that kind, a named figure, or a
@@ -132,7 +133,9 @@
 //                               one-second samples had MIN..CAP purposeful movers in view and
 //                               HMIN..HCAP new happenings in the last minute
 //       city live MIN MAX | city ground ok (every live person on a walkable tile at its level)
-//       | city moving (nobody drawn walking on the spot, nobody stuck past the watchdog)
+//       | city moving (nobody drawn walking on the spot, nobody stuck past the watchdog; both
+//       fail when nobody is live)
+//       | city arriving yes|no (a new area's people still on their way in)
 //       | city floor MIN (over the last step everyone walking stands on their course's floor,
 //       ships at the water, no height jumps or hops; at least MIN walkers on raised floors)
 //       | city slots ok (no slot over capacity) | city event ID yes|no (running in the area)

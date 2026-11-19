@@ -84,7 +84,8 @@ void App::stepCity(float dt) {
     cityMs_ = 0;
     if (!city_) return;
     const Uint64 t0 = SDL_GetPerformanceCounter();
-    city_->city->setView(cityView());
+    // Nobody sees arrivals under a journey's veil: they are simply there when it lifts.
+    city_->city->setView(cityView(), travel_.region < 0 || travelFadeIn_ >= 0);
     city_->city->setWatched(cityWatched());
     city_->city->update(cityClock(), dt);
     cityMs_ = msBetween(t0, SDL_GetPerformanceCounter());
@@ -104,6 +105,9 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
     };
     const std::string& what = a[1];
     if (what == "live") return range(c.stats().live, 2);
+    // Judging nobody proves nothing: these fail on an empty area rather than pass.
+    if ((what == "ground" || what == "moving") && c.stats().live == 0)
+        return std::format("expect city {}: nobody live to judge", what);
     if (what == "ground") {
         int bad = 0;
         c.forEachInfo([&](const life::CityLife::Info& in) {
@@ -119,6 +123,12 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         if (st.marching == 0 && st.lost == 0) return std::nullopt;
         return std::format("{} walking in place, {} going nowhere past the watchdog", st.marching,
                            st.lost);
+    }
+    if (what == "arriving" && a.size() >= 3) {
+        // A new area's people still on their way in (a journey's veil waits for them).
+        const bool want = a[2] == "yes";
+        return c.arriving() == want ? std::nullopt
+                                    : std::optional(std::format("expected city arriving {}", a[2]));
     }
     if (what == "floor") {
         // Everyone on the floor of their course over the last step, ships at the water, no

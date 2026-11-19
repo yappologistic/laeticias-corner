@@ -475,19 +475,7 @@ void WorldMap::buildSlotIndex() {
 int WorldMap::floorZ(TilePos p) const {
     const Chunk& c = chunk(p);
     const std::size_t l = local(p);
-    if (!(c.walk[l] & kFloor)) {
-        // A deck whose geometry gives no floor (`walk_z`) stands on its tile's highest point
-        // (`tops`: the rail's top, a few px over the planks) rather than in the water under it,
-        // until the art gives the floor. Steps onto it count from its level (edgeZ), so the
-        // walk graph is the same either way.
-        if ((c.walk[l] & kDeck) && c.occupancy[l] != 0) {
-            const Placed& it = items_[c.occupancy[l] - 1];
-            if (const GeomVariant* g = geometry(it); g != nullptr)
-                if (const int top = g->topAt({p.x - it.x, p.y - it.y}); top >= 0)
-                    return it.level * levelPx_ + top;
-        }
-        return levelOf(c.level[l]) * levelPx_;
-    }
+    if (!(c.walk[l] & kFloor)) return levelOf(c.level[l]) * levelPx_;
     const Placed& it = items_[c.occupancy[l] - 1];
     const ItemInfo& inf = info(it);
     const TilePos rel{p.x - it.x, p.y - it.y};
@@ -522,6 +510,17 @@ int WorldMap::edgeZ(TilePos p, int dir) const {
             if (t == rel) return it.level * levelPx_ + z;
     if (stair) return INT_MIN; // the sides of a stair are parapets
     return it.level * levelPx_;
+}
+
+int WorldMap::boatRoomAt(TilePos p) const {
+    if (!inBounds(p)) return INT_MAX;
+    const int o = itemAt(p);
+    if (o < 0) return INT_MAX;
+    const Placed& it = items_[static_cast<std::size_t>(o)];
+    const GeomVariant* g = geometry(it);
+    const int room = g != nullptr ? g->passAt({p.x - it.x, p.y - it.y}) : -1;
+    // 255 is open water, 0 a pier or ground no boat passes: neither is a span over it.
+    return room <= 0 || room == 255 ? INT_MAX : room;
 }
 
 float WorldMap::floorAt(Vec2 p) const {

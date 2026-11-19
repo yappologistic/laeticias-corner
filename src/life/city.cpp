@@ -237,6 +237,9 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
     idleOf_.assign(names.size(), -1);
     for (const char* walk : {"move", "haul", "run", "march", "row"})
         if (const int k = named(walk); k >= 0) idleOf_[static_cast<std::size_t>(k)] = kAnimIdle;
+    // A ship under a low span keeps its mast down moving or waiting: its own standing form.
+    if (const int k = named("lowered"); k >= 0)
+        idleOf_[static_cast<std::size_t>(k)] = static_cast<std::int16_t>(k);
     carryWalk_ = named("carry");
     if (const int k = named("carry"); k >= 0) {
         const int idle = named("carry_idle");
@@ -323,8 +326,9 @@ void CityLife::setFocus(TilePos c, int halfW, int halfH) {
     setView({c.x - halfW, c.y - halfH, c.x + halfW, c.y + halfH});
 }
 
-void CityLife::setView(TileRect view) {
+void CityLife::setView(TileRect view, bool seen) {
     view_ = view;
+    seen_ = seen;
     const int m = tl::kLiveMargin;
     const TileRect a =
         view.empty()
@@ -580,16 +584,12 @@ void CityLife::settle(const LifeClock& clock) {
     builds_ = 1 << 20;
     spawnQueued(true);
     builds_ = tl::kTableBuildsPerStep;
-    showAll();
-    countDistricts();
-}
-
-void CityLife::showAll() {
     for (LiveActor& a : pool_)
         if ((a.flags & live_flag::kAlive) != 0 && (a.flags & live_flag::kFadeIn) != 0) {
             a.alpha = 1;
             a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kFadeIn);
         }
+    countDistricts();
 }
 
 // -- population: who should be live --------------------------------------------------------------
@@ -1079,7 +1079,7 @@ void CityLife::materialise(int i, const Desire& d) {
         if ((a.flags & live_flag::kAlive) == 0) return;
         a.prev = a.pos;
         a.prevZ = a.z;
-        if (inView(a.pos) && d.source != Source::Token) {
+        if (seen_ && inView(a.pos) && d.source != Source::Token) {
             a.alpha = 0;
             a.flags |= live_flag::kFadeIn;
         }
@@ -1107,13 +1107,27 @@ void CityLife::materialise(int i, const Desire& d) {
         const int y0 = static_cast<int>(d.chunk / static_cast<std::uint32_t>(cx)) * kChunk;
         const int want =
             d.district >= 0 ? reg.districts[static_cast<std::size_t>(d.district)].map : -1;
-        for (int tries = 0; tries < 48 && start.x < 0; ++tries) {
+        const auto fits = [&](TilePos t, bool district) {
+            return map_->inBounds(t) && paths.reachable(t) && map_->walkable(t) &&
+                   (!district || want < 0 || map_->districtAt(t) == want);
+        };
+        for (int tries = 0; tries < 32 && start.x < 0; ++tries) {
             const TilePos t{x0 + static_cast<int>(next(a.rng) % kChunk),
                             y0 + static_cast<int>(next(a.rng) % kChunk)};
-            if (!map_->inBounds(t) || !paths.reachable(t) || !map_->walkable(t)) continue;
-            if (want >= 0 && tries < 32 && map_->districtAt(t) != want) continue;
-            start = t;
+            if (fits(t, true)) start = t;
         }
+        // A thin strip of ground (a shore, a road through hills) is seldom hit at random: walk
+        // the chunk from a random tile, its district first, then anywhere its walkers reach.
+        const auto from = static_cast<int>(next(a.rng) % static_cast<std::uint64_t>(kChunkArea));
+        for (int pass = 0; pass < 2 && start.x < 0; ++pass)
+            for (int k = 0; k < kChunkArea; ++k) {
+                const int c = (from + k) % kChunkArea;
+                const TilePos t{x0 + c % kChunk, y0 + c / kChunk};
+                if (fits(t, pass == 0)) {
+                    start = t;
+                    break;
+                }
+            }
     }
     if (start.x < 0) return; // no ground to stand on in this chunk
     a.tile = a.anchor = tile16(start);
@@ -1141,7 +1155,7 @@ void CityLife::materialise(int i, const Desire& d) {
     a.prev = a.pos;
     a.prevZ = a.z;
     link(i);
-    if (inView(a.pos) && a.state != ActState::Inside) {
+    if (seen_ && inView(a.pos) && a.state != ActState::Inside) {
         a.alpha = 0;
         a.flags |= live_flag::kFadeIn;
     }
@@ -1151,7 +1165,7 @@ void CityLife::beginLeave(int i) {
     LiveActor& a = pool_[static_cast<std::size_t>(i)];
     unreserve(i);
     a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kUnwanted);
-    if (!inView(a.pos) || a.state == ActState::Inside || a.alpha <= 0.0f) {
+    if (!seen_ || !inView(a.pos) || a.state == ActState::Inside || a.alpha <= 0.0f) {
         release(i);
         return;
     }
@@ -2561,6 +2575,17 @@ void CityLife::puppet(int i) {
         }
         place(at.pos);
         a.anim = at.moving ? kAnimMove : kAnimIdle;
+        // Under a span lower than its mast, a little before and after: the mast down.
+        if (const KindDef& kd = w_->data.kinds[a.kind]; kd.lowered >= 0 && kd.standing > 0) {
+            const float r = 0.5f * static_cast<float>(kd.length) + tl::kLowerReach;
+            int room = INT_MAX;
+            for (int y = static_cast<int>(std::floor(a.pos.y - r));
+                 y <= static_cast<int>(std::floor(a.pos.y + r)); ++y)
+                for (int x = static_cast<int>(std::floor(a.pos.x - r));
+                     x <= static_cast<int>(std::floor(a.pos.x + r)); ++x)
+                    room = std::min(room, map_->boatRoomAt({x, y}));
+            if (room < kd.standing) a.anim = static_cast<std::uint16_t>(kd.lowered);
+        }
         if (tk.carry >= 0 && member > 0) {
             a.goods = static_cast<std::int16_t>(tk.carry);
             a.goodsCount = 1;

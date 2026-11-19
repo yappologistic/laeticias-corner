@@ -368,18 +368,13 @@ void App::updateWorld(float dt) {
             travel_.t = tuning::kTravelFadeOut;
         }
         const float held = travel_.t - tuning::kTravelFadeOut;
-        // Whether the destination is whole is known once a frame of it has been drawn, and
-        // whether its people are all there once the cities' life has taken a step or two at it
-        // (it fills an area a few dozen people a step): the veil lifts on a place that is
-        // standing, not one that fills in before the eyes.
-        const bool peopled = !city_ || (held >= 2.0f * static_cast<float>(tuning::kStepSeconds) &&
-                                        city_->city->stats().queued == 0);
+        // Whether the destination is whole is known once a frame of it has been drawn, and its
+        // people are all there (city life fills the new area under the veil).
+        const bool peopled = !city_ || !city_->city->arriving();
         const float hold = startVeil_ ? tuning::kStartHold : tuning::kTravelHold;
         if (travel_.jumped && held > 0 && ((worldView_->settled() && peopled) || held >= hold) &&
-            travelFadeIn_ < 0) {
+            travelFadeIn_ < 0)
             travelFadeIn_ = travel_.t;
-            if (city_) city_->city->showAll();
-        }
         if (travelFadeIn_ >= 0 && travel_.t - travelFadeIn_ >= tuning::kTravelFadeIn) {
             travel_ = {};
             travelFadeIn_ = -1;

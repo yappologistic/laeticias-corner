@@ -9,7 +9,7 @@ ones are there.
 
 - **Build and test**: the exact commands you ran and their result lines, copied from your
   terminal. At least the release build and `ctest --preset release`, ending in
-  `100% tests passed, 0 tests failed out of N`. **Engine changes** (`src/`, `tests/`, build
+  `100% tests passed out of N`. **Engine changes** (`src/`, `tests/`, build
   files): also the `asan` preset (`cmake --preset asan && cmake --build --preset asan &&
   ctest --preset asan`).
 - **Platform**: operating system and version, compiler and version, SDL version

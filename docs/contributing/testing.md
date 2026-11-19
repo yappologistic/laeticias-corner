@@ -12,7 +12,7 @@ for a test, set them too and give it a scratch `--save-dir` (never your real sav
 ## The suites
 
 ```sh
-ctest --preset release                 # everything except the "heavy" label (a few minutes)
+ctest --preset release                 # everything except the "heavy" label (minutes when idle)
 ctest --preset release -R unit         # only the unit tests (doctest, fast)
 ctest --preset release -R coverage     # every sprite, sound and glyph the data names exists
 ctest --preset release -R script_      # the scripted runs

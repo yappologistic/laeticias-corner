@@ -349,6 +349,8 @@ TEST_CASE("geometry: the fixture parses") {
     CHECK_FALSE(sv->pieces[0].floor);
     REQUIRE(g->actors.size() == 1);
     CHECK(g->actors[0].carryAt.size() == 2);
+    CHECK(g->actors[0].heightOf("carry") == 34);
+    CHECK(g->actors[0].heightOf("move") == 30); // "*": every look not named
 }
 
 TEST_CASE("geometry: failing fixtures") {

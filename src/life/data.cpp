@@ -29,7 +29,9 @@ float parseHour(std::string_view s) {
     const char* p = text.c_str();
     const auto a = std::from_chars(p, p + colon, h);
     const auto b = std::from_chars(p + colon + 1, p + text.size(), m);
-    if (a.ec != std::errc{} || b.ec != std::errc{} || h < 0 || h > 24 || m < 0 || m > 59) return -1;
+    if (a.ec != std::errc{} || b.ec != std::errc{} || h < 0 || h > 24 || m < 0 || m > 59 ||
+        (h == 24 && m > 0))
+        return -1;
     return static_cast<float>(h) + static_cast<float>(m) / 60.0f;
 }
 
@@ -141,6 +143,14 @@ void Compiler::kinds() {
             // the carter walks (L-109).
             k.cart = a.sprite.starts_with("cart/");
             k.ship = a.sprite.starts_with("ship/");
+            k.length = std::max(1, a.sizeW);
+            if (const world::GeomActor* g = map_.content().actorGeometry(a.id); g != nullptr) {
+                const auto low = std::ranges::find(a.anims, std::string("lowered"),
+                                                   &std::pair<std::string, float>::first);
+                k.standing = g->heightOf("move");
+                if (low != a.anims.end() && g->heightOf("lowered") < k.standing)
+                    k.lowered = intern(d_.animNames, "lowered");
+            }
             d_.kindIndex.emplace(k.id, static_cast<int>(d_.kinds.size()));
             d_.kinds.push_back(std::move(k));
         }
@@ -598,8 +608,13 @@ void Compiler::districts(const world::RegionFile& file) {
              {"road", Area::Road},
              {"sea", Area::Sea},
              {"wild", Area::Wild}}};
+        bool known = rd.area.empty();
         for (const auto& [name, v] : kAreas)
-            if (rd.area == name) dist.area = v;
+            if (rd.area == name) {
+                dist.area = v;
+                known = true;
+            }
+        if (!known) problem(where + ": area '" + rd.area + "' is none the engine knows");
         if (dist.map >= 0) {
             dist.tiles = districtTiles_[static_cast<std::size_t>(dist.map)];
             dist.chunks = districtChunks_[static_cast<std::size_t>(dist.map)];

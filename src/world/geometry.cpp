@@ -103,6 +103,17 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
                 v.tops.push_back(static_cast<std::uint16_t>(asInt(z, rc, 0, kMaxOffset)));
         }
     }
+    if (has(g, "pass")) {
+        const json& rows = asArray(g.at("pass"), c + ": pass");
+        for (std::size_t y = 0; y < rows.size(); ++y) {
+            const std::string rc = c + ": pass[" + std::to_string(y) + "]";
+            const json& row = asArray(rows[y], rc);
+            if (y == 0) v.passW = static_cast<int>(row.size());
+            if (std::cmp_not_equal(row.size(), v.passW)) fail(rc + ": rows differ in length");
+            for (const json& z : row)
+                v.pass.push_back(static_cast<std::uint8_t>(asInt(z, rc, 0, 255)));
+        }
+    }
     if (has(g, "floor_pieces")) {
         const json& fs = asArray(g.at("floor_pieces"), c + ": floor_pieces");
         for (std::size_t i = 0; i < fs.size(); ++i) {
@@ -194,6 +205,10 @@ std::expected<GeometryFile, std::string> parseGeometry(std::string_view text, st
                             pts.push_back(offset(list[i], ac + ": carry_at: " + anim));
                         actor.carryAt.emplace_back(anim, std::move(pts));
                     }
+                if (has(a, "height"))
+                    for (const auto& [anim, h] : asObject(a.at("height"), ac + ": height").items())
+                        actor.height.emplace_back(
+                            anim, asInt(h, ac + ": height: " + anim, 0, kMaxOffset));
                 g.actors.push_back(std::move(actor));
             }
         }

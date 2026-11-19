@@ -177,6 +177,9 @@ public:
     // each neighbour it can step to as the point nears their shared edge (the two sides meet
     // half way), so a height carried along any course is continuous.
     [[nodiscard]] float floorAt(Vec2 p) const;
+    // A boat's room under a span at p, px (the geometry's `pass` of the item over it), INT_MAX
+    // where nothing spans the water (open water, or a pier or ground no boat passes).
+    [[nodiscard]] int boatRoomAt(TilePos p) const;
     // The 4-neighbours a walker on p may step to, with their floor height change.
     [[nodiscard]] int walkNeighbours(TilePos p, std::array<WalkStep, 4>& out) const;
 
