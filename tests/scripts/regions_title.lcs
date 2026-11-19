@@ -282,7 +282,7 @@ expect away yes
 expect widget build no
 expect widget map yes
 expect widget journal yes
-set world district:sidon/shore 1
+set world district:sidon/town 1
 wait 2
 expect region sidon
 expect away yes
