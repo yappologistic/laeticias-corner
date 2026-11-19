@@ -310,3 +310,30 @@ TEST_CASE("gpu: seasons: a climate's month swaps green ramps; snow builds and th
     CHECK(gpu::snowCover(c, 0, 0.0f, 6) == 1.0f);  // March's dawn: still there
     CHECK(gpu::snowCover(c, 0, 0.5f, 6) == 0.0f);  // ... gone by midday
 }
+
+TEST_CASE("gpu: seasons over the land: built ground takes the land's level; climates blend") {
+    // A 12 x 1 strip: climate 0 on the left half, 1 on the right; a paved platform (levels 6)
+    // on natural ground at level 2.
+    constexpr int w = 12;
+    std::vector<std::uint8_t> climate(w, 0);
+    std::vector<std::uint8_t> level(w, 2);
+    std::vector<std::uint8_t> natural(w, 1);
+    for (int x = 6; x < w; ++x) climate[static_cast<std::size_t>(x)] = 1;
+    for (int x = 2; x < 5; ++x) {
+        level[static_cast<std::size_t>(x)] = 6;
+        natural[static_cast<std::size_t>(x)] = 0;
+    }
+    const std::vector<gpu::SeasonTile> f = gpu::seasonField(w, 1, climate, level, natural);
+    CHECK(f[3].landLevel == 2); // the platform's snow is the land's, not its top's
+    CHECK(f[0].landLevel == 2);
+    CHECK(f[5].other == 1); // beside the border: the other climate, at distance 0
+    CHECK(f[5].distance == 0);
+    CHECK(f[0].other == 1);
+    CHECK(f[0].distance == 5);
+    CHECK(f[6].other == 0);
+    // Half at the border, less further in, none past the band.
+    CHECK(gpu::otherShare(0, 0) == doctest::Approx(0.5f));
+    CHECK(gpu::otherShare(5, 0) < 0.5f);
+    CHECK(gpu::otherShare(5, 0) > 0.0f);
+    CHECK(gpu::otherShare(gpu::kSeasonBand, 0) == 0.0f);
+}

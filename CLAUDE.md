@@ -375,6 +375,16 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   file brings sound, weather and life, no tint or haze) and calls the scene at its turns
   (ground, objects, light, glow, sky). No rim cliffs or waterfalls; the road, wall and gate meet
   the world's road. Beyond the grid the sea runs on into haze. The world wears the season's looks.
+- **Seasons by climate (SDL's gpu driver, every look tier).** The sets' pages and the home page
+  load as their packed twins and world sprites draw through one decode shader
+  (`render/gpu/decoder.*`, `assets/shaders/packed.frag`): each region's climate and the calendar's
+  month (`lc::calendarDay`) pick its grass and leaf states from the ramp table, and snow lies on
+  snow-catching texels above the climate's snow line, measured against the land's level (built
+  platforms take the level of the natural ground round them), building and thawing over a
+  morning. Where climates meet the season blends over a band of about 20 tiles broken by noise;
+  the home climate keeps its own drawn looks and its neighbours carry the blend; the home scene's
+  ground draws through the same decode. **Stated limit:** on the OpenGL and software renderers
+  the world outside the home has one look all year (only its `@season` sprites change).
 - **Roaming.** The camera roams the whole grid (`Home` returns to the corner); zooming out past
   1/4 opens the map. Away from the home region the home's own panels (building dock and drawer,
   wish tray, land chip) fold away and return with it; the place, map, journal and cards stay. A

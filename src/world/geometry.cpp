@@ -80,7 +80,10 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
                 !parseInt(std::string_view(k).substr(0, comma), t.x) ||
                 !parseInt(std::string_view(k).substr(comma + 1), t.y))
                 fail(zc + ": the key is not \"dx,dy\"");
-            if (std::ranges::find(v.walk, t) == v.walk.end()) fail(zc + ": not a walk tile");
+            // A kit deck's floor (a crossing, with no walk list: it walks by its tag) may name
+            // its tiles; with a walk list a floor belongs to one of its tiles.
+            if (!v.walk.empty() && std::ranges::find(v.walk, t) == v.walk.end())
+                fail(zc + ": not a walk tile");
             v.walkZ.emplace_back(t, asInt(z, zc, 0, kMaxOffset));
         }
     }

@@ -948,6 +948,7 @@ def main(build: spec.Build, args) -> int:
     for old in out_dir.glob(f"{set_id}.*.json"):
         if old.name != f"{set_id}.geom.json":
             old.unlink()
+    import gc
     from PIL import Image
     import datapages
     import ramps
@@ -969,6 +970,8 @@ def main(build: spec.Build, args) -> int:
     sw, sh_, sn = datapages.write_shadow_page(out_dir / f"{set_id}.s.png", sprites)
     total += (out_dir / f"{set_id}.s.png").stat().st_size
     print(f"shadow page {set_id}.s.png: {sw}x{sh_}, {sn} sprites at half size")
+    del sprites, trimmed, pages              # the water page and the validator read the pages back
+    gc.collect()
     ww, wh, wn = datapages.write_water_page(out_dir / f"{set_id}.w.png", written)
     total += (out_dir / f"{set_id}.w.png").stat().st_size
     print(f"water page {set_id}.w.png: {ww}x{wh}, {wn} sprites holding water")
@@ -977,9 +980,8 @@ def main(build: spec.Build, args) -> int:
         (out_dir / f"{set_id}.geom.json").write_text(compact_json(geom))
     print(f"set {set_id}: {len(sprites)} sprites on {len(pages)} pages ({total / 1e6:.2f} MB) "
           f"in {time.time() - t0:.1f}s")
-    import gc
     import setvalidate
-    del sprites, trimmed, pages, meta        # the validator reads the pages back: free the images first
+    del meta
     gc.collect()
     status = 0 if args.only else setvalidate.main(set_id, out_dir, build.k, lm_info)
     if args.preview:

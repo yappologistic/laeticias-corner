@@ -141,6 +141,8 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
         regionClimate_.push_back(c < 0 ? std::uint8_t{255} : static_cast<std::uint8_t>(c));
     }
     fallbackClimate_ = std::max(0, climateRow("med_green"));
+    homeClimate_ = climateRow("home");
+    if (decoder_) startSeasonField();
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
                                          tuning::kPageCeiling, decoder_ != nullptr);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_);
@@ -251,7 +253,9 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return false;
     // A sprite of a packed page is drawn through the decode, with its own blending and colour.
-    const bool packed = decoder_ && s.packed;
+    // (The home page's twin may still be on its way: its sprites draw plain until then.)
+    const bool packed =
+        decoder_ && s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
     if (packed) {
         if (c.a >= 1.0f && mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
         c = packedColour(c, s.page == PageAtlas::kHomePage);
@@ -399,7 +403,7 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     const SDL_FColor shade{tint, tint, tint, 1};
     const bool overlay = !map_.terrainInfo(t).base;
     if (!overlay || look.hasOverlay()) {
-        const std::vector<SpriteRef>& base = look.baseIn(season_);
+        const std::vector<SpriteRef>& base = look.baseIn(lookSeason_);
         if (base.empty())
             ok &=
                 put(sprites_->diamond(), a, x,
@@ -410,7 +414,7 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     }
     if (overlay) {
         if (look.hasOverlay()) {
-            const Frames& f = look.overlayIn(sameMask(map_, p, t), season_);
+            const Frames& f = look.overlayIn(sameMask(map_, p, t), lookSeason_);
             ok &= put(f.at(now, look.fps), a, x, shade, SDL_BLENDMODE_BLEND);
             if (post_ && look.water) markWater(f.at(now, look.fps), a);
             if (look.animated() && animated != nullptr) *animated = true;
@@ -515,7 +519,10 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
 }
 
 void WorldView::markWater(const SpriteRef& s, Vec2 anchor, bool maybe) {
-    if (decoder_ && s.packed && !maybe) return; // its water texels mark themselves as they draw
+    // Its water texels mark themselves as they draw (packed, and its page ready).
+    if (decoder_ && s.packed && !maybe &&
+        (s.page != PageAtlas::kHomePage || pages_->homePackedReady()))
+        return;
     marks_.push_back({s, anchor, maybe});
 }
 
@@ -530,7 +537,8 @@ void WorldView::flushMarks(const Xform& x) {
 
 bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze, float now, bool* animated) {
     const Vec2 a = iso_.toWorld(p);
-    seasonCtx_ = {fallbackClimate_, 0};
+    seasonCtx_ = {fallbackClimate_, fallbackClimate_, -1, 0, 0};
+    lookSeason_ = season_;
     if (!haze) {
         // Beyond the grid the sea runs on: a tile there is the deep sea among sea, drawn as
         // the grid's own deepest water is (its art with every neighbour the same, at the
@@ -571,10 +579,10 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     const VariantLook& look = *e.look;
     const SpriteRef& s =
         e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
-                     : look.baseIn(season_).at(now, sprites_->itemFps(map_.items()[e.item]));
+                     : look.baseIn(lookSeason_).at(now, sprites_->itemFps(map_.items()[e.item]));
     if (post_ && e.piece < 0)
         if (const Sway& w = swayOf_[map_.items()[e.item].info]; w.lean > 0) {
-            putSwaying(w.frames ? s : look.baseIn(season_).f.front(), e.anchor, x, w.lean);
+            putSwaying(w.frames ? s : look.baseIn(lookSeason_).f.front(), e.anchor, x, w.lean);
             return true;
         }
     const bool ok = put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
@@ -1606,6 +1614,11 @@ void WorldView::staleCells() {
 void WorldView::setCalendar(int month, float dayFraction) {
     dayFraction_ = std::clamp(dayFraction, 0.0f, 1.0f);
     if (!decoder_) return;
+    adoptSeasonField();
+    if (pages_->homePackedReady() != homeReadySeen_) {
+        homeReadySeen_ = pages_->homePackedReady();
+        staleCells(); // the corner's art from its packed twin from now on
+    }
     const std::vector<ClimateDef>& climates = map_.content().home().climates;
     bool stale = false;
     if (month != month_) {
@@ -1640,14 +1653,120 @@ void WorldView::setCalendar(int month, float dayFraction) {
     if (stale) staleCells();
 }
 
-void WorldView::seasonAt(TilePos p) {
-    if (!decoder_) return;
+int WorldView::climateOf(TilePos p) const {
     const int r = map_.inBounds(p) ? map_.regionAt(p) : -1;
-    const int c = r >= 0 && static_cast<std::size_t>(r) < regionClimate_.size() &&
-                          regionClimate_[static_cast<std::size_t>(r)] != 255
-                      ? regionClimate_[static_cast<std::size_t>(r)]
-                      : fallbackClimate_;
-    seasonCtx_ = {c, map_.inBounds(p) ? map_.level(p) : 0};
+    return r >= 0 && static_cast<std::size_t>(r) < regionClimate_.size() &&
+                   regionClimate_[static_cast<std::size_t>(r)] != gpu::kNoClimate
+               ? regionClimate_[static_cast<std::size_t>(r)]
+               : fallbackClimate_;
+}
+
+void WorldView::startSeasonField() {
+    // The land's levels and the climates' borders, once, on a worker: it reads the map's
+    // immutable layers (the home's tiles wait for it: homeTerrainChanged).
+    seasonJob_ = std::async(std::launch::async, [this] {
+        const int w = map_.width();
+        const int h = map_.height();
+        const auto n = static_cast<std::size_t>(w) * static_cast<std::size_t>(h);
+        std::vector<std::uint8_t> climate(n);
+        std::vector<std::uint8_t> level(n);
+        std::vector<std::uint8_t> natural(n);
+        // Built ground is paved, or raised on masonry faces (ashlar, brick, dressed travertine):
+        // a terrace, a podium, a platform; earth, rock and tufa faces are the land's own.
+        const auto built = [](std::string_view face) {
+            return face.ends_with(".ashlar") || face.ends_with(".brick") ||
+                   face.ends_with(".travertine");
+        };
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x) {
+                const TilePos p{x, y};
+                const auto i = static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
+                               static_cast<std::size_t>(x);
+                climate[i] = static_cast<std::uint8_t>(climateOf(p));
+                level[i] = static_cast<std::uint8_t>(map_.level(p));
+                const int t = map_.terrainAt(p);
+                if (t == world::kNone) continue;
+                const world::TerrainInfo& info = map_.terrainInfo(t);
+                const auto aux = static_cast<std::size_t>(world::auxOf(map_.levelByte(p)));
+                const bool masonry = aux < info.faces.size() && built(info.faces[aux]);
+                natural[i] = !info.paved && !masonry ? 1 : 0;
+            }
+        return gpu::seasonField(w, h, climate, level, natural);
+    });
+}
+
+void WorldView::adoptSeasonField() {
+    if (!seasonJob_.valid() ||
+        seasonJob_.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+        return;
+    seasonField_ = seasonJob_.get();
+    staleCells(); // the borders blend and platforms lose their own snow line from now on
+}
+
+std::optional<GroundDecode> WorldView::homeGroundDecode() {
+    SDL_Texture* page = pages_->texture(PageAtlas::kHomePage);
+    if (!decoder_ || page == nullptr || !pages_->homePackedReady()) return std::nullopt;
+    if (homePacked_.empty()) homePacked_ = pages_->homePackedSprites();
+    // The home's ground is the home's art (its own looks: the identity row) under the home
+    // climate's snow at the land's level, as the world draws the corner's land round it.
+    const TilePos centre{(hole_.tiles.x0 + hole_.tiles.x1) / 2,
+                         (hole_.tiles.y0 + hole_.tiles.y1) / 2};
+    seasonAt(centre);
+    seasonCtx_.share = 0;
+    seasonCtx_.other = -1;
+    const SDL_FColor c = packedColour({1, 1, 1, 1}, true);
+    return GroundDecode{page,
+                        &homePacked_,
+                        [this](Batch& b, bool on) { decoder_->use(b, on); },
+                        decoder_->replace(),
+                        c.g,
+                        c.b};
+}
+
+void WorldView::seasonAt(TilePos p) {
+    lookSeason_ = season_;
+    if (!decoder_) return;
+    const int own = climateOf(p);
+    SeasonCtx ctx{own, own, -1, 0, map_.inBounds(p) ? map_.level(p) : 0};
+    if (map_.inBounds(p) && !seasonField_.empty()) {
+        const gpu::SeasonTile& st =
+            seasonField_[static_cast<std::size_t>(p.y) * static_cast<std::size_t>(map_.width()) +
+                         static_cast<std::size_t>(p.x)];
+        ctx.level = st.landLevel;
+        // The home climate's land keeps its own drawn looks (as the home's scene draws it, so
+        // the corner and the land round it agree): its neighbours carry the whole blend on
+        // their side, the home's season full at the border and fading out.
+        const bool home = own == homeClimate_;
+        const bool beside = st.other == homeClimate_;
+        if (st.other != gpu::kNoClimate && !home) {
+            // A smooth noise a few tiles across breaks the band's edge; each tile then takes
+            // the neighbour's grass and leaves by its share (a speckled band, never a line).
+            // Two octaves (11 and 4 tiles): the band meanders instead of following the line.
+            const auto octave = [&](int cell, std::uint32_t salt) {
+                const auto lattice = [&](int x, int y) {
+                    return static_cast<float>(tileHash(x, y, salt) % 1024u) / 1023.0f;
+                };
+                const int cx = p.x >= 0 ? p.x / cell : (p.x - cell + 1) / cell;
+                const int cy = p.y >= 0 ? p.y / cell : (p.y - cell + 1) / cell;
+                const float fx = static_cast<float>(p.x - cx * cell) / static_cast<float>(cell);
+                const float fy = static_cast<float>(p.y - cy * cell) / static_cast<float>(cell);
+                const float sx = fx * fx * (3 - 2 * fx);
+                const float sy = fy * fy * (3 - 2 * fy);
+                return (lattice(cx, cy) * (1 - sx) + lattice(cx + 1, cy) * sx) * (1 - sy) +
+                       (lattice(cx, cy + 1) * (1 - sx) + lattice(cx + 1, cy + 1) * sx) * sy;
+            };
+            const float noise = octave(11, 11) * 0.7f + octave(4, 17) * 0.3f - 0.5f;
+            ctx.other = st.other;
+            ctx.share = gpu::otherShare(st.distance, noise) * (beside ? 2.0f : 1.0f);
+            if (static_cast<float>(tileHash(p.x, p.y, 13) % 1024u) / 1024.0f < ctx.share)
+                ctx.climate = st.other;
+        }
+    }
+    seasonCtx_ = ctx;
+    // In a border's band every tile draws the plain looks, its snow the blended cover grain by
+    // grain (the drawn season looks are one climate's: the home's snowy winter grass would end
+    // in a line, or in a patchwork of whole tiles, at the border).
+    lookSeason_ = ctx.other >= 0 && ctx.share > 0.0f ? -1 : season_;
 }
 
 SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt) const {
@@ -1655,11 +1774,20 @@ SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt) const {
     // home's art carries its seasons in its own looks (as the home's scene draws it): its row
     // leaves every ramp as it is, and only the snow is the climate's.
     const std::vector<ClimateDef>& climates = map_.content().home().climates;
+    // Snow blends across a border by the share (snowy hills fade into a green plain).
     float snow = 0;
-    if (month_ >= 0 && static_cast<std::size_t>(seasonCtx_.climate) < climates.size())
-        snow = gpu::snowCover(climates[static_cast<std::size_t>(seasonCtx_.climate)], month_,
-                              static_cast<float>(snowStep_) * gpu::kSnowStep, seasonCtx_.level);
-    const int row = homeArt ? gpu::Decoder::kClimates - 1 : seasonCtx_.climate;
+    const float day = static_cast<float>(snowStep_) * gpu::kSnowStep;
+    const auto cover = [&](int k) {
+        return month_ >= 0 && k >= 0 && static_cast<std::size_t>(k) < climates.size()
+                   ? gpu::snowCover(climates[static_cast<std::size_t>(k)], month_, day,
+                                    seasonCtx_.level)
+                   : 0.0f;
+    };
+    snow = cover(seasonCtx_.own) * (1 - seasonCtx_.share) +
+           (seasonCtx_.other >= 0 ? cover(seasonCtx_.other) * seasonCtx_.share : 0.0f);
+    // (Home art taking a neighbour's season is drawn plain: it takes that climate's row.)
+    const int row =
+        homeArt && lookSeason_ == season_ ? gpu::Decoder::kClimates - 1 : seasonCtx_.climate;
     return {0.299f * c.r + 0.587f * c.g + 0.114f * c.b, static_cast<float>(row) / 255.0f, snow,
             c.a};
 }
@@ -2261,7 +2389,8 @@ int WorldView::coarseActorsCovered(float px) const {
 }
 
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {
-    seasonCtx_ = {fallbackClimate_, 0}; // people carry no grass or snow
+    seasonCtx_ = {fallbackClimate_, fallbackClimate_, -1, 0, 0};
+    lookSeason_ = season_; // people carry no grass or snow
     const ActorDraw& a = actorDraw_[i];
     if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror))
         ++stats_.actorsDrawn;

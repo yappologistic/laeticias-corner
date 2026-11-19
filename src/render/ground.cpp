@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 
 namespace lc {
 namespace {
@@ -92,6 +93,29 @@ bool GroundCache::hasAnimated(const World& world, int level, int cx, int cy) con
     return any;
 }
 
+void GroundCache::put(Batch& batch, SpriteId id, Vec2 a, const Xform& x, SDL_FColor c) const {
+    const bool packed = decode_ && decode_->packed != nullptr && id < decode_->packed->size() &&
+                        (*decode_->packed)[id];
+    if (decode_) decode_->use(batch, packed);
+    if (!packed) {
+        putSprite(batch, atlas_.sprite(id), a, x, c, SDL_BLENDMODE_BLEND);
+        return;
+    }
+    Sprite s = atlas_.sprite(id);
+    s.texture = decode_->page;
+    putSprite(batch, s, a, x,
+              {0.299f * c.r + 0.587f * c.g + 0.114f * c.b, decode_->row, decode_->snow, c.a},
+              c.a >= 1.0f ? decode_->replace : SDL_BLENDMODE_BLEND);
+}
+
+void GroundCache::setDecode(std::optional<GroundDecode> d) {
+    const auto key = [](const std::optional<GroundDecode>& g) {
+        return g ? std::tuple{g->page, g->row, g->snow} : std::tuple{nullptr, -1.0f, -1.0f};
+    };
+    if (key(d) != key(decode_)) invalidate();
+    decode_ = std::move(d);
+}
+
 void GroundCache::drawTile(Batch& batch, const World& world, TilePos p, const Xform& x,
                            float now) const {
     if (!world.hasGround(p)) return;
@@ -100,17 +124,13 @@ void GroundCache::drawTile(Batch& batch, const World& world, TilePos p, const Xf
     // them where the land continues.
     const bool water = world.isWater(p);
     if (rims_ && !world.hasGround({p.x + 1, p.y})) {
-        putSprite(batch, atlas_.sprite(tables_.cliffSE), a, x, kWhite, SDL_BLENDMODE_BLEND);
+        put(batch, tables_.cliffSE, a, x, kWhite);
         // Water reaching the rim falls over it.
-        if (water)
-            putSprite(batch, atlas_.sprite(tables_.fallSE.at(now, waterFps_)), a, x, kWhite,
-                      SDL_BLENDMODE_BLEND);
+        if (water) put(batch, tables_.fallSE.at(now, waterFps_), a, x, kWhite);
     }
     if (rims_ && !world.hasGround({p.x, p.y + 1})) {
-        putSprite(batch, atlas_.sprite(tables_.cliffSW), a, x, kWhite, SDL_BLENDMODE_BLEND);
-        if (water)
-            putSprite(batch, atlas_.sprite(tables_.fallSW.at(now, waterFps_)), a, x, kWhite,
-                      SDL_BLENDMODE_BLEND);
+        put(batch, tables_.cliffSW, a, x, kWhite);
+        if (water) put(batch, tables_.fallSW.at(now, waterFps_), a, x, kWhite);
     }
     const auto& base = tables_.terrainBase[static_cast<std::size_t>(cat_.baseTerrain)];
     if (world.isWild(p)) {
@@ -118,20 +138,17 @@ void GroundCache::drawTile(Batch& batch, const World& world, TilePos p, const Xf
         static constexpr SDL_FColor kWild{tuning::kWildDim * tuning::kWildCool[0],
                                           tuning::kWildDim * tuning::kWildCool[1],
                                           tuning::kWildDim * tuning::kWildCool[2], 1.0f};
-        putSprite(batch, atlas_.sprite(base[tileHash(p.x, p.y, 1) % base.size()]), a, x, kWild,
-                  SDL_BLENDMODE_BLEND);
-        if (const auto t = thicketAt(tables_, p))
-            putSprite(batch, atlas_.sprite(*t), a, x, kWhite, SDL_BLENDMODE_BLEND);
+        put(batch, base[tileHash(p.x, p.y, 1) % base.size()], a, x, kWild);
+        if (const auto t = thicketAt(tables_, p)) put(batch, *t, a, x, kWhite);
         return;
     }
-    putSprite(batch, atlas_.sprite(base[tileHash(p.x, p.y, 1) % base.size()]), a, x, kWhite,
-              SDL_BLENDMODE_BLEND);
+    put(batch, base[tileHash(p.x, p.y, 1) % base.size()], a, x, kWhite);
     const int t = world.terrainAt(p);
     if (t == cat_.baseTerrain) return;
     const auto& def = cat_.terrain[static_cast<std::size_t>(t)];
     const FrameSet& set = tables_.terrainOverlay[static_cast<std::size_t>(t)]
                                                 [static_cast<std::size_t>(world.terrainMask(p))];
-    putSprite(batch, atlas_.sprite(set.at(now, def.fps)), a, x, kWhite, SDL_BLENDMODE_BLEND);
+    put(batch, set.at(now, def.fps), a, x, kWhite);
 }
 
 void GroundCache::drawChunk(Batch& batch, const World& world, int level, int cx, int cy,
@@ -272,6 +289,7 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
                     !SDL_RenderClear(renderer_))
                     SDL_Log("ground: %s", SDL_GetError());
                 drawChunk(batch, world, level, cx, cy, {{box.x0, box.y0}, 1.0f}, now);
+                if (decode_) decode_->use(batch, false); // the copy below is a picture
                 batch.flush();
                 if (!SDL_SetRenderTarget(renderer_, page)) SDL_Log("ground: %s", SDL_GetError());
                 batch.use(scratch_.get(), SDL_BLENDMODE_NONE, SDL_SCALEMODE_LINEAR);
@@ -294,6 +312,7 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
         batch.flush();
         if (!SDL_SetRenderClipRect(renderer_, nullptr)) SDL_Log("ground: %s", SDL_GetError());
     });
+    if (decode_) decode_->use(batch, false);
     if (!SDL_SetRenderTarget(renderer_, targetTexture)) SDL_Log("ground: %s", SDL_GetError());
 
     // Pass 2: composite the slots (and draw any overflow directly), in order.
@@ -308,6 +327,7 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
             drawChunk(batch, world, level, cx, cy, target, now);
             return;
         }
+        if (decode_) decode_->use(batch, false); // (after an overflow chunk drawn directly)
         const Slot& s = slots_[static_cast<std::size_t>(it->second)];
         const FRect box = chunkBox(level, cx, cy);
         const Vec2 p = target.apply({box.x0, box.y0});
@@ -323,6 +343,7 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
              static_cast<float>(s.x + slotW_) / pw, static_cast<float>(s.y + slotH_) / ph},
             kWhite);
     });
+    if (decode_) decode_->use(batch, false);
 }
 
 } // namespace lc

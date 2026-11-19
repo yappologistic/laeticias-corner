@@ -19,6 +19,7 @@
 #include "render/draw.hpp"
 #include "render/gpu/decoder.hpp"
 #include "render/gpu/look.hpp"
+#include "render/ground.hpp"
 #include "ui/font.hpp"
 #include "world/figures.hpp"
 #include "world/loader.hpp"
@@ -275,6 +276,9 @@ public:
     // The calendar's month (lc::calendarDay) and the time of day (0..1 from midnight): on SDL's
     // gpu driver each region's grass, leaves and snow follow its own climate's month.
     void setCalendar(int month, float dayFraction);
+    // The home scene's ground through the same decode, with the home's climate and snow; nullopt
+    // without the packed pages.
+    [[nodiscard]] std::optional<GroundDecode> homeGroundDecode();
     [[nodiscard]] gpu::Clouds clouds() const { return clouds_; }
 
 private:
@@ -622,15 +626,29 @@ private:
     gpu::RampSeasons rampSeasons_;
     std::vector<std::uint8_t> regionClimate_; // per region: its climate's row (kNoClimate: none)
     int fallbackClimate_ = 0;                 // tiles no region claims, and the view's
+    int homeClimate_ = -1;                    // the corner's climate (its art's own looks)
+    bool homeReadySeen_ = false;
     int month_ = -1;
     float dayFraction_ = 0;
     int snowStep_ = -1; // the snow's progress through a morning it builds or thaws, in steps
     std::vector<std::uint8_t> remapRows_;
+    std::vector<bool> homePacked_; // per home atlas sprite: packed on the home page's twin
     struct SeasonCtx {
-        int climate = 0;
-        int level = 0;
+        int climate = 0; // the remap row the sprite takes (its own, or the neighbour's)
+        int own = 0;     // the climate of its tile
+        int other = -1;  // a neighbouring climate within the band, -1: none
+        float share = 0; // how much of the neighbour's season this tile shows
+        int level = 0;   // the land's level (for the snow line)
     };
+    // The seasons over the land (gpu::seasonField), built on a worker at start and taken when
+    // ready; empty until then (each tile its own climate and level).
+    std::vector<gpu::SeasonTile> seasonField_;
+    std::future<std::vector<gpu::SeasonTile>> seasonJob_;
+    void startSeasonField();
+    void adoptSeasonField();
+    [[nodiscard]] int climateOf(TilePos p) const;
     SeasonCtx seasonCtx_;
+    int lookSeason_ = -1; // the season looks the sprite being drawn takes (seasonAt)
     void seasonAt(TilePos p);
     [[nodiscard]] SDL_FColor packedColour(SDL_FColor c, bool homeArt) const;
     void plain(); // later draws are not decoded (before any draw that is not put())

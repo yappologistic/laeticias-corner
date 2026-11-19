@@ -226,13 +226,12 @@ def write_water_page(png, pages: list) -> tuple[int, int, int]:
     for colour, manifest in pages:
         side = json.loads(packed_side(colour).read_text())
         raw = set(side["colour_only"])
-        packed = np.asarray(Image.open(packed_path(colour)).convert("RGBA")).astype(np.uint32)
-        words_ = packed[..., 0] | packed[..., 1] << 8 | packed[..., 2] << 16 | packed[..., 3] << 24
+        packed = np.asarray(Image.open(packed_path(colour)).convert("RGBA"))     # words built per sprite
         for key in sorted(manifest):
             if not key.startswith("item/") or key in raw or "/shadow/" in key or "/glow/" in key:
                 continue
             r = manifest[key]
-            sub = words_[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
+            sub = rgba_word(packed[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]])
             if (s := water_sprite(sub, r["ox"], r["oy"], water)) is not None:
                 out[key] = s
     atlas, man = pack.pack(out) if out else (np.zeros((1, 1, 4), np.uint8), {})
