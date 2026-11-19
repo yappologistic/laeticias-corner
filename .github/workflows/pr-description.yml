@@ -1,0 +1,41 @@
+# Checks every pull request's description against the template: the required sections, the AI
+# disclosure, the contribution terms and images for visual changes. It builds nothing, uses no
+# third-party actions and runs no code from the pull request: the checker is fetched from the
+# base branch, the description and the changed files come from the API, and the token can only
+# read. Rules: docs/contributing/proof-of-work.md.
+name: PR description
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: pr-description-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Fetch the checker, the description and the changed files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          gh api -H "Accept: application/vnd.github.raw" \
+            "repos/$REPO/contents/.github/scripts/check_pr.py?ref=$BASE" > "$RUNNER_TEMP/check_pr.py"
+          jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/body.md"
+          gh api --paginate "repos/$REPO/pulls/$NUMBER/files" --jq '.[].filename' \
+            > "$RUNNER_TEMP/files.txt"
+
+      - name: Check the description
+        run: |
+          python3 "$RUNNER_TEMP/check_pr.py" \
+            --body-file "$RUNNER_TEMP/body.md" --files-file "$RUNNER_TEMP/files.txt"

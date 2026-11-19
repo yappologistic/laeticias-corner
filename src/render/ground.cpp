@@ -103,9 +103,10 @@ void GroundCache::put(Batch& batch, SpriteId id, Vec2 a, const Xform& x, SDL_FCo
     }
     Sprite s = atlas_.sprite(id);
     s.texture = decode_->page;
-    putSprite(batch, s, a, x,
-              {0.299f * c.r + 0.587f * c.g + 0.114f * c.b, decode_->row, decode_->snow, c.a},
-              c.a >= 1.0f ? decode_->replace : SDL_BLENDMODE_BLEND);
+    putSprite(
+        batch, s, a, x,
+        {(0.299f * c.r + 0.587f * c.g + 0.114f * c.b) * 0.49f, decode_->row, decode_->snow, c.a},
+        c.a >= 1.0f ? decode_->replace : SDL_BLENDMODE_BLEND);
 }
 
 void GroundCache::setDecode(std::optional<GroundDecode> d) {
@@ -265,6 +266,8 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
             if (si < 0) return; // drawn directly in pass 2
             byKey_[key] = si;
         }
+        // The slot's clear and fill below are no sprite draws: nothing may be decoded then.
+        if (decode_) decode_->use(batch, false);
         Slot& s = slots_[static_cast<std::size_t>(si)];
         s.key = key;
         s.revision = rev;
