@@ -404,7 +404,6 @@ void WorldView::sunGpu(double clock) {
 }
 
 bool WorldView::putShadow(const SpriteRef& s, const Elem& e, const Xform& x) {
-    if (dry_) return true;
     SDL_Texture* tex = pages_->texture(s.page);
     if (tex == nullptr) return false;
     // Cached pictures take the stepped sun's shadows; the live frame the sun as it is.

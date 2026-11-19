@@ -10,6 +10,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <fstream>
 
 namespace lc::worldview {
@@ -66,7 +67,8 @@ void PageAtlas::readSide(Page& p) const {
 }
 
 PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::AtlasPages& pages,
-                     std::filesystem::path atlasDir, bool async, std::size_t budget, bool packed)
+                     const std::filesystem::path& atlasDir, bool async, std::size_t budget,
+                     bool packed)
     : renderer_(renderer), home_(home), index_(pages), async_(async), packed_(packed),
       slotFormat_(packed ? SDL_PIXELFORMAT_ABGR8888 : kTextureFormat), budget_(budget) {
 
@@ -147,6 +149,8 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
             if (p.own && p.w > 0) p.owned = makeTexture(p.w, p.h);
         for (std::size_t i = 0; i < slotLimit_; ++i)
             if (makeSlot() < 0) break;
+        device_ = static_cast<SDL_GPUDevice*>(SDL_GetPointerProperty(
+            SDL_GetRendererProperties(renderer_), SDL_PROP_RENDERER_GPU_DEVICE_POINTER, nullptr));
         worker_ = std::jthread([this](const std::stop_token& st) { work(st); });
     }
 }
@@ -417,9 +421,73 @@ void PageAtlas::work(const std::stop_token& stop) {
         float peak = -1;
         std::vector<std::uint64_t> opaque;
         SurfacePtr px = decode(pages_[page], &peak, opaque);
+        // (A page with a texture of its own has had it since the atlas was made.)
+        const Page& p = pages_[page];
+        const bool uploaded =
+            px && device_ != nullptr && p.own && p.owned && uploadOnWorker(p, *px);
+        if (uploaded) px.reset();
         const std::scoped_lock lock(mutex_);
-        done_.push_back({page, std::move(px), peak, std::move(opaque)});
+        done_.push_back({page, std::move(px), peak, std::move(opaque), uploaded});
     }
+}
+
+bool PageAtlas::uploadOnWorker(const Page& p, const SDL_Surface& px) const {
+    auto* texture = static_cast<SDL_GPUTexture*>(SDL_GetPointerProperty(
+        SDL_GetTextureProperties(p.owned.get()), SDL_PROP_TEXTURE_GPU_TEXTURE_POINTER, nullptr));
+    if (texture == nullptr || px.w != p.w || px.h != p.h) return false;
+    // Bands of a few MiB through one staging buffer, each waited for before the next: the
+    // staging memory stays small and the GPU is never handed a whole page at once.
+    const int band = std::min(p.h, tuning::kUploadBandRows);
+    const auto rowBytes = static_cast<std::size_t>(p.w) * 4;
+    const SDL_GPUTransferBufferCreateInfo info{
+        SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+        static_cast<Uint32>(rowBytes) * static_cast<Uint32>(band), 0};
+    SDL_GPUTransferBuffer* staging = SDL_CreateGPUTransferBuffer(device_, &info);
+    if (staging == nullptr) return false;
+    bool ok = true;
+    for (int y = 0; y < p.h && ok; y += band) {
+        const int rows = std::min(band, p.h - y);
+        auto* to = static_cast<std::uint8_t*>(SDL_MapGPUTransferBuffer(device_, staging, true));
+        if (to == nullptr) {
+            ok = false;
+            break;
+        }
+        for (int r = 0; r < rows; ++r)
+            std::memcpy(to + static_cast<std::size_t>(r) * rowBytes,
+                        static_cast<const std::uint8_t*>(px.pixels) +
+                            static_cast<std::ptrdiff_t>(y + r) * px.pitch,
+                        rowBytes);
+        SDL_UnmapGPUTransferBuffer(device_, staging);
+        SDL_GPUCommandBuffer* commands = SDL_AcquireGPUCommandBuffer(device_);
+        if (commands == nullptr) {
+            ok = false;
+            break;
+        }
+        SDL_GPUCopyPass* pass = SDL_BeginGPUCopyPass(commands);
+        const SDL_GPUTextureTransferInfo from{staging, 0, static_cast<Uint32>(p.w),
+                                              static_cast<Uint32>(rows)};
+        const SDL_GPUTextureRegion region{texture,
+                                          0,
+                                          0,
+                                          0,
+                                          static_cast<Uint32>(y),
+                                          0,
+                                          static_cast<Uint32>(p.w),
+                                          static_cast<Uint32>(rows),
+                                          1};
+        SDL_UploadToGPUTexture(pass, &from, &region, false);
+        SDL_EndGPUCopyPass(pass);
+        SDL_GPUFence* fence = SDL_SubmitGPUCommandBufferAndAcquireFence(commands);
+        if (fence == nullptr) {
+            ok = false;
+            break;
+        }
+        ok = SDL_WaitForGPUFences(device_, true, &fence, 1);
+        SDL_ReleaseGPUFence(device_, fence);
+    }
+    SDL_ReleaseGPUTransferBuffer(device_, staging);
+    if (!ok) SDL_Log("atlas: upload of %s: %s", p.file.string().c_str(), SDL_GetError());
+    return ok;
 }
 
 void PageAtlas::upload(Page& p, int rows) {
@@ -566,6 +634,12 @@ void PageAtlas::update(double now) {
                 p.opaque = std::move(d.opaque);
                 p.uploadedRows = 0;
                 p.state = p.pixels ? State::Decoded : State::Unloaded;
+                if (!d.uploaded) continue;
+                // Its texture was filled where it was decoded: it is there.
+                p.texture = p.owned.get();
+                p.state = State::Resident;
+                p.lastUsed = now_;
+                ++generation_;
             }
             done_.clear();
         }
@@ -666,6 +740,8 @@ PageStats PageAtlas::stats() const {
             ++s.resident;
         else if (p.state != State::Unloaded)
             ++s.streaming;
+        else if (p.own && p.w > 0)
+            ++s.waiting;
     }
     return s;
 }

@@ -74,7 +74,10 @@ inline constexpr double kBenchMemoryMiB = 512.0;
 // cache, the overview and the decoding of a page (two 64 MiB surfaces at once) come on top.
 inline constexpr double kBenchWorldMemoryMiB = 832.0;
 inline constexpr long long kSoakDrawEvery = 120; // steps between frames drawn during a soak
-inline constexpr double kSoakDaySeconds = 50.0;  // a soak's calendar day: 600 s cross 4 seasons
+// Before a soak's measured run the world's art is let in (it loads ahead a page at a time, in
+// real time, while a soak plays many times faster than a person does): at most this long.
+inline constexpr double kSoakLoadSeconds = 120.0;
+inline constexpr double kSoakDaySeconds = 50.0; // a soak's calendar day: 600 s cross 4 seasons
 inline constexpr int kBenchCrowd = 400;
 // Rare visitors: the recipe holds this long before one comes; a visit lasts, then it stays away.
 inline constexpr float kRareDelayMin = 20.0f;
@@ -380,6 +383,7 @@ inline constexpr float kTravelHold = 0.4f;
 // At start the first view streams in behind the same veil: it lifts when the view is whole, or
 // after this long whatever is still on its way.
 inline constexpr float kStartHold = 2.5f;
+inline constexpr int kWarmFrames = 3; // drawn unseen at load, for the renderer's first-use work
 inline constexpr float kTravelFadeIn = 0.3f;
 inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
