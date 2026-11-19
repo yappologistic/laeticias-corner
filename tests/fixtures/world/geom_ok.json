@@ -23,10 +23,11 @@
              "floor_pieces": [1]}
     },
     "tst.stool": {"r0": {"h": 10}, "r1": {"h": 12}},
-    "tst.jetty": {"r0": {"h": 22, "walk": [[0, 0]], "walk_z": {"0,0": 14}}},
+    "tst.jetty": {"r0": {"h": 22, "walk": [[0, 0]], "walk_z": {"0,0": 14}, "pass": [[6]]}},
     "tst.wall": {"m0": {"h": 20}, "m5": {"h": 20}}
   },
   "actors": {
-    "tst.walker": {"carry_at": {"carry_front": [[3, -27], [3, -28]], "carry_back": [[-3, -27], [-3, -28]]}}
+    "tst.walker": {"carry_at": {"carry_front": [[3, -27], [3, -28]], "carry_back": [[-3, -27], [-3, -28]]},
+                   "height": {"*": 30, "carry": 34}}
   }
 }

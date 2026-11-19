@@ -512,6 +512,17 @@ int WorldMap::edgeZ(TilePos p, int dir) const {
     return it.level * levelPx_;
 }
 
+int WorldMap::boatRoomAt(TilePos p) const {
+    if (!inBounds(p)) return INT_MAX;
+    const int o = itemAt(p);
+    if (o < 0) return INT_MAX;
+    const Placed& it = items_[static_cast<std::size_t>(o)];
+    const GeomVariant* g = geometry(it);
+    const int room = g != nullptr ? g->passAt({p.x - it.x, p.y - it.y}) : -1;
+    // 255 is open water, 0 a pier or ground no boat passes: neither is a span over it.
+    return room <= 0 || room == 255 ? INT_MAX : room;
+}
+
 float WorldMap::floorAt(Vec2 p) const {
     const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
     if (!inBounds(t)) return 0.0f;

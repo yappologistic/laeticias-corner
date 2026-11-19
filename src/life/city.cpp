@@ -237,6 +237,9 @@ CityLife::CityLife(LifeWorld& w, std::uint64_t seed)
     idleOf_.assign(names.size(), -1);
     for (const char* walk : {"move", "haul", "run", "march", "row"})
         if (const int k = named(walk); k >= 0) idleOf_[static_cast<std::size_t>(k)] = kAnimIdle;
+    // A ship under a low span keeps its mast down moving or waiting: its own standing form.
+    if (const int k = named("lowered"); k >= 0)
+        idleOf_[static_cast<std::size_t>(k)] = static_cast<std::int16_t>(k);
     carryWalk_ = named("carry");
     if (const int k = named("carry"); k >= 0) {
         const int idle = named("carry_idle");
@@ -2572,6 +2575,17 @@ void CityLife::puppet(int i) {
         }
         place(at.pos);
         a.anim = at.moving ? kAnimMove : kAnimIdle;
+        // Under a span lower than its mast, a little before and after: the mast down.
+        if (const KindDef& kd = w_->data.kinds[a.kind]; kd.lowered >= 0 && kd.standing > 0) {
+            const float r = 0.5f * static_cast<float>(kd.length) + tl::kLowerReach;
+            int room = INT_MAX;
+            for (int y = static_cast<int>(std::floor(a.pos.y - r));
+                 y <= static_cast<int>(std::floor(a.pos.y + r)); ++y)
+                for (int x = static_cast<int>(std::floor(a.pos.x - r));
+                     x <= static_cast<int>(std::floor(a.pos.x + r)); ++x)
+                    room = std::min(room, map_->boatRoomAt({x, y}));
+            if (room < kd.standing) a.anim = static_cast<std::uint16_t>(kd.lowered);
+        }
         if (tk.carry >= 0 && member > 0) {
             a.goods = static_cast<std::int16_t>(tk.carry);
             a.goodsCount = 1;

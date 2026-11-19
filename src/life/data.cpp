@@ -144,6 +144,13 @@ void Compiler::kinds() {
             k.cart = a.sprite.starts_with("cart/");
             k.ship = a.sprite.starts_with("ship/");
             k.length = std::max(1, a.sizeW);
+            if (const world::GeomActor* g = map_.content().actorGeometry(a.id); g != nullptr) {
+                const auto low = std::ranges::find(a.anims, std::string("lowered"),
+                                                   &std::pair<std::string, float>::first);
+                k.standing = g->heightOf("move");
+                if (low != a.anims.end() && g->heightOf("lowered") < k.standing)
+                    k.lowered = intern(d_.animNames, "lowered");
+            }
             d_.kindIndex.emplace(k.id, static_cast<int>(d_.kinds.size()));
             d_.kinds.push_back(std::move(k));
         }

@@ -847,6 +847,65 @@ TEST_CASE("city: a cart's animal walks on the ground its cart does, never over t
     CHECK(over == 0);
 }
 
+TEST_CASE("city: a barge lowers its mast for a span too low for it, a little before and after") {
+    // The Tiber spans leave a barge 4-40 px (their `pass`); with its mast up it stands 59 px,
+    // lowered 27. Until the geometry gives the barge's `height` (art), the test gives the kind
+    // those measured heights.
+    LifeData& data = lifeWorld().data;
+    const auto bi = std::ranges::find(data.kinds, std::string("rome.barge"), &KindDef::id);
+    REQUIRE(bi != data.kinds.end());
+    const auto low = std::ranges::find(data.animNames, std::string("lowered"));
+    REQUIRE(low != data.animNames.end());
+    const KindDef saved = *bi;
+    if (bi->standing == 0) bi->standing = 59;
+    bi->lowered = static_cast<int>(low - data.animNames.begin());
+    const world::WorldMap& m = lifeWorld().map();
+    const int barge = static_cast<int>(bi - data.kinds.begin());
+    const float reach = 0.5f * static_cast<float>(bi->length) + tuning::life::kLowerReach;
+    // Under or by a span: the least room within reach of the barge's body, and whose it is.
+    std::string span;
+    const auto roomBy = [&](Vec2 p) {
+        int room = INT_MAX;
+        for (int y = static_cast<int>(std::floor(p.y - reach));
+             y <= static_cast<int>(std::floor(p.y + reach)); ++y)
+            for (int x = static_cast<int>(std::floor(p.x - reach));
+                 x <= static_cast<int>(std::floor(p.x + reach)); ++x)
+                if (const int r = m.boatRoomAt({x, y}); r < room) {
+                    room = r;
+                    span = m.info(m.items()[static_cast<std::size_t>(m.itemAt({x, y}))]).id;
+                }
+        return room;
+    };
+    std::map<std::string, long> bySpan;
+    CityLife city(lifeWorld(), 6);
+    city.setFocus({126, 1127}, 24, 16); // the Pons Aemilius (121, 1122) and Sublicius (131, 1122)
+    LifeClock clock = LifeClock::at(9, 9.0, seasonOf("rome"));
+    city.settle(clock);
+    std::vector<DrawActor> buf(4096);
+    long under = 0;
+    long open = 0;
+    for (int k = 0; k < 60 * 120; ++k) {
+        step(city, clock, 1);
+        const std::size_t n = city.gather(city.activeRect(), 1.0f, buf);
+        for (std::size_t i = 0; i < n; ++i) {
+            const DrawActor& d = buf[i];
+            if (d.kind != barge || d.alpha < 1.0f) continue;
+            const bool byLowSpan = roomBy(d.pos) < bi->standing;
+            CAPTURE(d.pos.x);
+            CAPTURE(d.pos.y);
+            CHECK((d.anim == bi->lowered) == byLowSpan);
+            (byLowSpan ? under : open) += 1;
+            if (byLowSpan) ++bySpan[span];
+        }
+    }
+    *bi = saved;
+    MESSAGE(under << " barge-steps by a low span (mast down), " << open << " in open water");
+    for (const auto& [id, n] : bySpan) MESSAGE("  by " << id << ": " << n);
+    CHECK(bySpan["rome.pons_aemilius"] > 0);
+    CHECK(bySpan["rome.pons_sublicius"] > 0);
+    CHECK(open > 0);
+}
+
 TEST_CASE("city: the same seed and script give byte-identical dumps") {
     std::string dumps[2];
     for (std::string& out : dumps) {

@@ -11,6 +11,7 @@
 #include <doctest.h>
 
 #include <algorithm>
+#include <climits>
 #include <set>
 
 using namespace lc;
@@ -275,6 +276,9 @@ TEST_CASE("map: walking changes level only on stairs, walk floors and decks") {
     // A deck on water stands at its floor from the geometry (not at the water) and steps one
     // level to its bank.
     CHECK(m.floorZ({20, 41}) == 14);
+    // Its boat room (the geometry's `pass`); open water elsewhere.
+    CHECK(m.boatRoomAt({20, 41}) == 6);
+    CHECK(m.boatRoomAt({21, 41}) == INT_MAX);
     CHECK(has({19, 41}, {20, 41}));
     CHECK(has({20, 41}, {19, 41}));
     CHECK_FALSE(has({20, 41}, {21, 41}));
