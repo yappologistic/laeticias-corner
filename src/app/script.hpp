@@ -125,7 +125,8 @@
 //                               one-second samples had MIN..CAP purposeful movers in view and
 //                               HMIN..HCAP new happenings in the last minute
 //       city live MIN MAX | city ground ok (every live person on a walkable tile at its level)
-//       | city moving (nobody drawn walking on the spot, nobody stuck past the watchdog)
+//       | city moving (nobody drawn walking on the spot, nobody stuck past the watchdog; both
+//       fail when nobody is live)
 //       | city arriving yes|no (a new area's people still on their way in)
 //       | city floor MIN (over the last step everyone walking stands on their course's floor,
 //       ships at the water, no height jumps or hops; at least MIN walkers on raised floors)

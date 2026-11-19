@@ -85,6 +85,9 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
     };
     const std::string& what = a[1];
     if (what == "live") return range(c.stats().live, 2);
+    // Judging nobody proves nothing: these fail on an empty area rather than pass.
+    if ((what == "ground" || what == "moving") && c.stats().live == 0)
+        return std::format("expect city {}: nobody live to judge", what);
     if (what == "ground") {
         int bad = 0;
         c.forEachInfo([&](const life::CityLife::Info& in) {
