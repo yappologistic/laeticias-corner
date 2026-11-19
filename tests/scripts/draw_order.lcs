@@ -20,6 +20,7 @@ set world 112 1121 0.5
 wait 60
 expect city order 0 0
 expect city covered 2 0 0
+expect city on_items 1 400
 shot shots/order_tiber_half.png
 set world 112 1121 0.25
 wait 60
@@ -170,7 +171,8 @@ wait 60
 expect city order 0 0
 expect city covered 2 0 0
 shot shots/order_capitol_quarter.png
-# Ramps at Olympia and Sardis: the people on them are drawn zoomed out (QA V6-006).
+# Ramps at Olympia and Sardis (QA V6-006: people on ramps, stairs and decks were dropped zoomed
+# out; the Tiber's bridges above check that they are drawn).
 set city 322,790
 set city camera
 set world 322 790 1
@@ -182,13 +184,11 @@ set world 322 790 0.5
 wait 60
 expect city order 0 0
 expect city covered 2 0 0
-expect city on_items 1 400
 shot shots/order_olympia_half.png
 set city 213,405
 set city camera
 set world 213 405 0.5
 wait 90
 expect city covered 2 0 0
-expect city on_items 1 400
 shot shots/order_sardis_half.png
 quit

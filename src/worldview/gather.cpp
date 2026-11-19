@@ -140,9 +140,9 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                                  box, s.page});
         }
     }
-    // Raised tiles that hide an item or walkable ground behind them join the sort (world-tech
-    // §4.3, draw-order.md §1.5 e): Q hides P when P lies behind it, lower by dL > 0, within
-    // dL + 1 rows.
+    // Raised tiles that hide an item behind them join the sort (world-tech §4.3): Q hides P when
+    // P lies behind it, lower by dL > 0, within dL + 1 rows. Whoever walks behind a raised edge is
+    // cut by the top field's ground instead (draw-order.md §1.5 e, at no cost in draw calls).
     const Reach& gr = sprites_.groundReach();
     const float lift = gr.up - static_cast<float>(kMaxLevel * lvl_);
     for (int qy = tiles.y0; qy < tiles.y1; ++qy)
@@ -163,7 +163,7 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
                 for (int b = 0; a + b <= lq + 1 && !hides; ++b) {
                     const TilePos p{qx - a, qy - b};
                     if ((a == 0 && b == 0) || !map_.inBounds(p) || hole_.tiles.contains(p) ||
-                        (map_.itemAt(p) < 0 && !map_.walkable(p)))
+                        (map_.itemAt(p) < 0))
                         continue;
                     const int dl = lq - map_.level(p);
                     hides = dl > 0 && a + b <= dl + 1;

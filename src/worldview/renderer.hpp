@@ -531,6 +531,7 @@ private:
     std::vector<OrderItem> glowItems_; // lights and silhouettes, sorted page by page
     std::vector<std::pair<std::uint32_t, bool>> glowWhat_; // per item: place in the sequence, light
     std::vector<std::uint32_t> glowOrder_;
+    std::vector<std::uint8_t> glowGroups_; // 1 a light, 2 a silhouette
     OrderGraph glowGraph_;
     PageOrder glowSorter_;
 

@@ -31,9 +31,11 @@ class TopField {
 public:
     TopField(const world::WorldMap& map, const WorldSprites& sprites, const Hole& hole);
 
+    // In steps of kStep px (one byte each, draw-order.md §3.4): the base rounded down, the top up.
+    static constexpr int kStep = 4;
     struct TileBox {
-        std::uint16_t low = 0; // base of the item standing on the tile, px above level 0
-        std::uint16_t top = 0; // its top over this tile (0: no item)
+        std::uint8_t low = 0; // base of the item standing on the tile, above level 0
+        std::uint8_t top = 0; // its top over this tile (0: no item)
     };
     [[nodiscard]] TileBox at(TilePos t) const {
         return map_.inBounds(t) ? boxes_[static_cast<std::size_t>(t.y * map_.width() + t.x)]
@@ -41,8 +43,10 @@ public:
     }
     // The rows of `actor` (its box; the feet at world px `feet`, raised by its height) that what
     // stands in front of it covers: one band, the hull of every covering silhouette that meets
-    // the sprite's rows [spriteTop, feet.y].
-    [[nodiscard]] RowBand cut(const DepthBox& actor, Vec2 feet, float spriteTop) const;
+    // the sprite's rows [spriteTop, feet.y]. With `groundOnly`, raised ground alone (the native
+    // level, whose items are in the painter's order already).
+    [[nodiscard]] RowBand cut(const DepthBox& actor, Vec2 feet, float spriteTop,
+                              bool groundOnly = false) const;
     [[nodiscard]] int maxTop() const { return maxTop_; }
 
 private:

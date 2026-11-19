@@ -58,20 +58,23 @@ TopField::TopField(const world::WorldMap& map, const WorldSprites& sprites, cons
                 if (!walk && g != nullptr && g->topsW > 0 && dx < g->topsW &&
                     static_cast<std::size_t>(dy * g->topsW + dx) < g->tops.size())
                     top = static_cast<float>(g->tops[static_cast<std::size_t>(dy * g->topsW + dx)]);
-                const auto px = [](float v) {
-                    return static_cast<std::uint16_t>(std::clamp(std::lround(v), 0L, 65535L));
+                const auto step = [](float v, bool up) {
+                    const float s = v / static_cast<float>(kStep);
+                    return static_cast<std::uint8_t>(
+                        std::clamp(up ? std::ceil(s) : std::floor(s), 0.0f, 255.0f));
                 };
                 TileBox& b = boxes_[static_cast<std::size_t>(t.y * map.width() + t.x)];
-                b.low = px(static_cast<float>(base) + box.z0);
-                b.top = std::max(b.top, px(static_cast<float>(base) + std::max(top, box.z0 + 1)));
-                maxTop_ = std::max<int>(maxTop_, b.top);
+                b.low = step(static_cast<float>(base) + box.z0, false);
+                b.top = std::max(b.top,
+                                 step(static_cast<float>(base) + std::max(top, box.z0 + 1), true));
+                maxTop_ = std::max(maxTop_, b.top * kStep);
             }
     }
     for (int y = 0; y < map.height(); ++y)
         for (int x = 0; x < map.width(); ++x) maxTop_ = std::max(maxTop_, map.level({x, y}) * lvl_);
 }
 
-RowBand TopField::cut(const DepthBox& actor, Vec2 feet, float spriteTop) const {
+RowBand TopField::cut(const DepthBox& actor, Vec2 feet, float spriteTop, bool groundOnly) const {
     const float fx = (actor.foot.x0 + actor.foot.x1) * 0.5f;
     const float fy = (actor.foot.y0 + actor.foot.y1) * 0.5f;
     const int a = static_cast<int>(std::floor(fx));
@@ -95,7 +98,10 @@ RowBand TopField::cut(const DepthBox& actor, Vec2 feet, float spriteTop) const {
             consider(makeBox(r, 0, static_cast<float>(l * lvl_), depthId(DepthKind::Ground, id),
                              iso_.hh));
         const TileBox& tb = boxes_[id];
-        if (tb.top > 0) consider(makeBox(r, tb.low, tb.top, depthId(DepthKind::Item, id), iso_.hh));
+        if (!groundOnly && tb.top > 0)
+            consider(makeBox(r, static_cast<float>(tb.low * kStep),
+                             static_cast<float>(tb.top * kStep), depthId(DepthKind::Item, id),
+                             iso_.hh));
     };
     // The tiles round the feet (a roof or a deck over them), then the two diagonals down the
     // screen through the actor's column.

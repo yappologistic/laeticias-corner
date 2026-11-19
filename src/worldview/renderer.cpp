@@ -545,7 +545,9 @@ void WorldView::drawGlowOccluded(const Xform& x, float glow, float now) {
         DepthBox light = region_.items[seq[p].index].box;
         light.id |= 1ULL << 55;
         light.near += 1e-3f;
-        glowItems_.push_back({light, box, gs.page});
+        // Sorted by page and blend mode together (a light adds, a silhouette covers): each
+        // change of either is a draw call.
+        glowItems_.push_back({light, box, static_cast<std::uint16_t>(gs.page * 2 + 1)});
         glowWhat_.push_back({static_cast<std::uint32_t>(p), true});
     }
     if (glowAt_.empty()) return;
@@ -560,10 +562,12 @@ void WorldView::drawGlowOccluded(const Xform& x, float glow, float now) {
         if (!covers ||
             (!st.actor && (region_.elems[st.index].home || region_.elems[st.index].ground)))
             continue;
-        glowItems_.push_back(it);
+        glowItems_.push_back({it.box, it.screen, static_cast<std::uint16_t>(it.page * 2)});
         glowWhat_.push_back({static_cast<std::uint32_t>(p), false});
     }
-    glowSorter_.sort(glowItems_, tuning::kActorMergeCell, glowOrder_, glowGraph_);
+    glowGroups_.clear();
+    for (const auto& w : glowWhat_) glowGroups_.push_back(w.second ? 1 : 2);
+    glowSorter_.sort(glowItems_, tuning::kActorMergeCell, glowOrder_, glowGraph_, glowGroups_);
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, shadow_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
@@ -1871,11 +1875,13 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
         actorDraw_.back().box = makeBox({d.pos.x - f, d.pos.y - f, d.pos.x + f, d.pos.y + f}, d.z,
                                         d.z + (ad.anchor.y - box.y0),
                                         depthId(DepthKind::Actor, d.handle.index), iso_.hh);
-        if (lod != Lod::Native) {
-            // The impostor holds everything static: the rows of whoever stands behind something
-            // in front of them are left out, as the native order would paint over them.
+        {
+            // Zoomed out the impostor holds everything static: the rows of whoever stands behind
+            // something in front of them are left out, as the native order would paint over
+            // them. At the native level items are in the painter's order and only raised ground
+            // (a terrace's edge, a hill) cuts.
             ActorDraw& c = actorDraw_.back();
-            c.hidden = tops_->cut(c.box, c.anchor, box.y0);
+            c.hidden = tops_->cut(c.box, c.anchor, box.y0, lod == Lod::Native);
             if (c.hidden.from <= box.y0 && c.hidden.to >= c.anchor.y) continue; // all of it
         }
         mergeActors_.push_back({actorDraw_.back().box, box, s.page});
