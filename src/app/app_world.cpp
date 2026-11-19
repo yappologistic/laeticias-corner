@@ -42,8 +42,17 @@ bool App::loadWorldData() {
     hooks_.light = [this](const worldview::FrameInfo& fi) {
         scene_->embedLight(sceneFrame_, {fi.ambient.r, fi.ambient.g, fi.ambient.b});
     };
-    hooks_.glow = [this](const worldview::FrameInfo&) { scene_->embedGlow(sceneFrame_); };
+    hooks_.glow = [this](const worldview::FrameInfo& fi) {
+        scene_->embedGlow(sceneFrame_, fi.target);
+    };
     hooks_.overlay = [this](const worldview::FrameInfo&) { scene_->embedSky(sceneFrame_); };
+    hooks_.lamps = [this] {
+        lamps_.clear();
+        scene_->forEachLamp([this](Vec2 at, float reach) {
+            lamps_.push_back({{at.x + homeOffset_.x, at.y + homeOffset_.y}, reach});
+        });
+        return std::span<const worldview::HomeLamp>(lamps_);
+    };
     // Each set's arrival motif (audiogen's `sfx/<set>/arrive.wav`), loaded with the effects.
     for (const world::RegionRef& r : loaded_->file.regions) {
         const std::string f = "sfx/" + r.set + "/arrive.wav";
@@ -99,6 +108,8 @@ void App::createWorldView() {
         // Living figures walk with city life.
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
+    (void)worldView_->setQuality(wantedQuality());
+    worldView_->setClouds(gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On));
     if (city_) worldView_->setLife(city_->city.get());
     setupMap();
 }
@@ -108,6 +119,7 @@ void App::syncHome() {
     // The overview is built from the map on a worker at first; edits wait until it is done.
     if (!worldView_->overviewBuilt()) return;
     homeSynced_ = world_.revision();
+    worldView_->homeTerrainChanged(); // before the map's copy changes (a worker may read it)
     if (!loaded_->map->updateHomeTerrain(world::homeDeltaFrom(world_, cat_)))
         SDL_Log("world: the home's terrain does not fit the world's copy");
     // The world's cells draw the home's rim tiles under the scene's: redraw them when it changes.
@@ -127,6 +139,7 @@ void App::syncHome() {
 }
 
 void App::drawScene(const FrameParams& p, SDL_Texture* out) {
+    if (out == nullptr) out = screenTarget(); // the window, or what stands in for it
     if (!worldView_) {
         scene_->draw(p, out);
         return;
@@ -251,9 +264,17 @@ const MapModel& App::mapModel() {
     }
     const Vec2 t = cat_.iso().toTile(camera_.position());
     const TileRect h = loaded_->file.home.rect;
+    // After dark the towns' lights show on the map (the shader path's light data).
+    mapLights_.clear();
+    if (const float glow = lighting().glow; worldView_ && glow > 0.01f && map_.showing()) {
+        worldView_->mapLights(mapLightTiles_);
+        for (const auto& [tile, k] : mapLightTiles_)
+            mapLights_.push_back({mapPixel(tile, loaded_->file.gridH, mapScale_), k * glow});
+    }
     mapModel_ = {mapTexture_ ? &mapSprite_ : nullptr, mapPlaces_,
                  mapPixel({t.x + static_cast<float>(h.x0), t.y + static_cast<float>(h.y0)},
-                          loaded_->file.gridH, mapScale_)};
+                          loaded_->file.gridH, mapScale_),
+                 mapLights_};
     return mapModel_;
 }
 
@@ -1024,6 +1045,8 @@ void App::followWorldWeather() {
     const TileRect v = cameraTiles();
     viewWeather_->update(played_, weather_.wind(), sc, {v.x0 - m, v.y0 - m, v.x1 + m, v.y1 + m},
                          weather_.mode());
+    if (worldView_)
+        worldView_->setWind(weather_.wind().dir, weather_.wind().strength, profile_.reduceMotion);
 }
 
 TileRect App::cameraTiles() const {

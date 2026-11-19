@@ -946,12 +946,31 @@
     90,
     150
    ],
-   "cast": [],
+   "cast": [
+    {
+     "actor": "world.dolphin",
+     "count": 3
+    }
+   ],
    "steps": [
     {
-     "emit": {
-      "fx": "fx/world.dolphin"
-     }
+     "wander": {
+      "radius": 8
+     },
+     "dur": [
+      30,
+      50
+     ]
+    },
+    {
+     "use": {
+      "here": true
+     },
+     "anim": "move",
+     "dur": [
+      60,
+      90
+     ]
     }
    ],
    "zone": "sea",
@@ -1105,7 +1124,7 @@
     "19:00"
    ],
    "per_screen": 0.4,
-   "sprite": "fx/world.dolphin",
+   "sprite": "world.dolphin",
    "months": [
     "apr",
     "may",

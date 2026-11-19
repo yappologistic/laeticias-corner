@@ -358,7 +358,7 @@
      "sfx/hen_3.wav"
     ],
     "athens.owl": [
-     "sfx/world/owl_tawny.wav"
+     "sfx/athens/owl.wav"
     ],
     "world.crane": [
      "sfx/world/cranes.wav"
@@ -1024,6 +1024,11 @@
      "role": "owl",
      "density": "night",
      "max_per_chunk": 0.5
+    },
+    {
+     "actor": "world.heron",
+     "density": "daytime",
+     "max_per_chunk": 0.2
     },
     {
      "role": "shrine_keeper",
@@ -2472,7 +2477,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -2537,7 +2542,8 @@
     "apr",
     "may",
     "jun"
-   ]
+   ],
+   "sound": "sfx/world/nightingale.wav"
   },
   {
    "kind": "swifts",
@@ -2573,7 +2579,7 @@
     "jan",
     "feb"
    ],
-   "sound": "sfx/world/swifts.wav"
+   "sound": "sfx/world/starlings.wav"
   },
   {
    "kind": "cranes_overhead",

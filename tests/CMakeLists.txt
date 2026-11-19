@@ -170,6 +170,7 @@ list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no
      "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
+list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -380,3 +381,21 @@ add_test(NAME soak_city COMMAND lifeinfo soak 120)
 add_test(NAME life_dump COMMAND laeticias-corner --life-dump ${LC_SCRATCH}/life_forum.json
          --focus forum --life-hours 10 --life-day 9)
 set_tests_properties(life_dump PROPERTIES ENVIRONMENT "${LC_HEADLESS_ENV}")
+
+# The shader path (graphics plan task E1) on SDL's gpu driver, windowless: the Look's frame
+# checked in three places (skipped, exit 77, where no gpu device can be made); and the committed
+# SPIR-V checked against its GLSL with the pinned glslc (skipped with any other).
+add_test(NAME script_gpu_look
+  COMMAND laeticias-corner --headless --quality high --size 2560x1440 --seed 1
+          --save-dir "${LC_SCRATCH}/save_gpu_look" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/gpu_look.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_gpu_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
+  FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+if(LC_GLSLC)
+  string(JOIN "|" LC_SHADER_NAME_ARG ${LC_SHADER_NAMES})
+  file(MAKE_DIRECTORY "${LC_SCRATCH}/shaders")
+  add_test(NAME shaders_fresh COMMAND ${CMAKE_COMMAND} -DGLSLC=${LC_GLSLC} -DVERSION=2026.4
+    -DDIR=${LC_SHADER_DIR} -DOUT=${LC_SCRATCH}/shaders "-DNAMES=${LC_SHADER_NAME_ARG}"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/check_shaders.cmake)
+  set_tests_properties(shaders_fresh PROPERTIES SKIP_RETURN_CODE 77)
+endif()

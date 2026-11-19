@@ -77,19 +77,18 @@ class SpotUnderAnotherItem(unittest.TestCase):
                             for m in found(check(self.fold(True)), "W-L1")))
 
 
-class SpotInsideItsOwnKit(unittest.TestCase):
-    """W-L1 (art): parsa.p_workshop's work spots inside its footprint; known to the art lane, so
-    a named warning (plan/art_pending.py) until its geometry changes."""
+class WorkshopSpotsOutside(unittest.TestCase):
+    """W-L1: parsa.p_workshop's work spots now lie on the step outside its footprint (the art's
+    fix), so a workshop placed in the open raises no slot fault at all."""
 
-    def test_is_reported_as_art_pending(self):
+    def test_its_spots_are_reachable(self):
         L = meadow()
         L.street([(0, 20), (31, 20)], width=1, paving="path")
         L.node("road", (0, 20))
         L.place("parsa.p_workshop", at=(10, 12), face="south")
         issues = check(L)
         self.assertEqual([m for m in found(issues, "W-L1") if "p_workshop" in m], [])
-        self.assertTrue(any("[art:" in m and "p_workshop.work" in m
-                            for m in found(issues, "W-L1", "warning")))
+        self.assertEqual([m for m in found(issues, "W-L1", "warning") if "p_workshop" in m], [])
 
 
 class ReedsOnWater(unittest.TestCase):

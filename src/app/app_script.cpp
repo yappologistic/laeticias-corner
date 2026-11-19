@@ -424,6 +424,11 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "reduce_motion") return yesNo(profile_.reduceMotion);
     if (what == "vsync") return yesNo(profile_.vsync);
+    if (what == "look")
+        return equal(
+            std::string(gpu::qualityId(worldView_ ? worldView_->quality() : gpu::Quality::Classic)),
+            a[1]);
+    if (what == "clouds") return equal(profile_.clouds, a[1]);
     if (what == "ui_scale") return equal(std::to_string(profile_.uiScale), a[1]);
     if (what == "caption") return yesNo(profile_.caption);
     if (what == "frame") {
@@ -769,6 +774,11 @@ bool App::scriptStep() {
                         ok = true;
                     }
                 if (!ok) return fail("unknown weather " + c.args[1]);
+            } else if (c.args[0] == "clouds") {
+                const std::optional<gpu::Clouds> m = gpu::parseClouds(c.args[1]);
+                if (!m) return fail("unknown clouds " + c.args[1]);
+                profile_.clouds = c.args[1];
+                if (worldView_) worldView_->setClouds(*m);
             } else if (c.args[0] == "camera") {
                 // set camera TX TY ZOOM: look at a tile at one of the zoom levels.
                 if (c.args.size() != 4) return fail("set camera TX TY ZOOM");

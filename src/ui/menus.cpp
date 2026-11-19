@@ -51,6 +51,8 @@ enum Id : int {
     kTake,
     kFolder,
     kClosePhoto,
+    kLook = 80,
+    kClouds,
     kWorld0 = 100, // per world i, four ids from kWorld0 + 4 i: its card, play, rename, delete
 };
 enum WorldPart : int { kCardPart, kPlayPart, kRenamePart, kDeletePart, kParts };
@@ -92,6 +94,8 @@ constexpr Named kNames[] = {
     {"reduce_motion", kReduceMotion},
     {"grid", kGrid},
     {"vsync", kVsync},
+    {"look", kLook},
+    {"clouds", kClouds},
     {"chatty", kChatty},
     {"quiet", kQuiet},
     {"replay", kReplay},
@@ -299,6 +303,10 @@ bool Menus::key(MenuKey k, const MenuModel& m) {
         } else if (w->id == kUiScale && m.profile != nullptr) {
             emit(MenuAction::Kind::UiScale,
                  std::clamp(m.profile->uiScale + d, 0, kUiScaleCount - 1));
+        } else if (w->id == kLook) {
+            emit(MenuAction::Kind::Look, std::clamp(m.look + d, 0, 3));
+        } else if (w->id == kClouds) {
+            emit(MenuAction::Kind::Clouds, std::clamp(m.clouds + d, 0, 2));
         }
         return true;
     }
@@ -360,6 +368,8 @@ void Menus::activate(const Widget& w, const MenuModel& m, float px) {
     case kReduceMotion: emit(K::ReduceMotion); break;
     case kGrid: emit(K::Grid); break;
     case kVsync: emit(K::Vsync); break;
+    case kLook: emit(K::Look, (m.look + 1) % 4); break;
+    case kClouds: emit(K::Clouds, (m.clouds + 1) % 3); break;
     case kChatty: emit(K::Chatter, 1); break;
     case kQuiet: emit(K::Chatter, 0); break;
     case kReplay: emit(K::ReplayTour); break;
@@ -641,6 +651,8 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
         ReduceMotion,
         Grid,
         Vsync,
+        Look,
+        Clouds,
         Chatter,
         Tour
     };
@@ -663,6 +675,8 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
     put(Row::ReduceMotion);
     put(Row::Grid);
     put(Row::Vsync);
+    put(Row::Look);
+    put(Row::Clouds);
     if (!m.residentName.empty()) {
         put(Row::Section, 0, m.residentName);
         put(Row::Chatter);
@@ -840,6 +854,20 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
             break;
         case Row::Grid: toggle(kGrid, strings::kShowGrid, pr.grid, strings::kKeyGrid); break;
         case Row::Vsync: toggle(kVsync, strings::kVsync, pr.vsync, {}); break;
+        case Row::Look: {
+            const std::string_view lookName = strings::kLookNames[std::clamp(m.look, 0, 3)];
+            lookText_ = m.lookAfterRestart
+                            ? std::vformat(strings::kLookRestart, std::make_format_args(lookName))
+                            : std::string(lookName);
+            Widget& lk = add(kLook, Kind::Choice, {x, y, cw, r}, strings::kLook);
+            lk.value = lookText_;
+            break;
+        }
+        case Row::Clouds: {
+            Widget& cl = add(kClouds, Kind::Choice, {x, y, cw, r}, strings::kClouds);
+            cl.value = strings::kCloudNames[std::clamp(m.clouds, 0, 2)];
+            break;
+        }
         case Row::Chatter: {
             label(strings::kChatter, 0.4f);
             const float chip = (cw * 0.6f - theme::kGap * s) * 0.5f;

@@ -44,8 +44,9 @@ struct Ghost {
 struct FrameParams {
     const World* world = nullptr;
     std::span<const Actor> actors;
-    int resident = -1;                      // her actor, for butterflies on her hat
-    const Weather* weather = nullptr;       // cloud shadows, wet ground, rain on her umbrella
+    int resident = -1;                // her actor, for butterflies on her hat
+    const Weather* weather = nullptr; // cloud shadows, wet ground, rain on her umbrella
+    bool cloudShadows = true; // false: none (the setting, or the world's shader path shades all)
     std::span<const Ghost> ghosts;          // what the tool would do: one, or a line, brush or area
     std::span<const NearInstance> outlines; // nook areas to outline (the hovered nook, or all)
     float grid = 0;                         // opacity of the tile grid over open land (0: off)
@@ -136,7 +137,13 @@ public:
     void embedObjects(const FrameParams& p);
     // Multiplies the target by the light map: `ambient` with the light pools of lamps and fire.
     void embedLight(const FrameParams& p, Rgb ambient);
-    void embedGlow(const FrameParams& p);
+    // `into`: the glow goes there instead (the shader path's glow target).
+    void embedGlow(const FrameParams& p, SDL_Texture* into = nullptr);
+    // The lamps and fires of the region in view: `f(Vec2 centre, float reach)`, world px.
+    template <typename F>
+    void forEachLamp(F&& f) const {
+        for (const Light& l : lights_) f(l.pos, l.radius);
+    }
     // The rainbow and shooting stars over the composited view (window px).
     void embedSky(const FrameParams& p);
     // Composites the layers rendered by the last draw() onto the current render target, scaled

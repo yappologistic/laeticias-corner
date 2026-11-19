@@ -146,6 +146,8 @@ Theme theme(const json& t, const std::string& ctx, int gridW, int gridH) {
     }
     out.seam = boolOr(t, "seam", false, ctx);
     if (has(t, "sound")) out.sound = asObject(t.at("sound"), ctx + ": sound");
+    if (has(t, "look")) out.look = asObject(t.at("look"), ctx + ": look");
+    if (has(t, "seasons")) out.seasons = asObject(t.at("seasons"), ctx + ": seasons");
     if (has(t, "seasons") && t.at("seasons").is_object())
         for (const auto& [id, season] : t.at("seasons").items()) {
             if (!season.is_object() || !has(season, "ambience")) continue;

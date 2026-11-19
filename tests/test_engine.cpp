@@ -1078,7 +1078,7 @@ TEST_CASE("cutting text drops whole characters, never half of one (L-017)") {
     CHECK(cuts == std::vector<std::string_view>{"P\xC4\x81rs", "P\xC4\x81r", "P\xC4\x81", "P", ""});
 }
 
-TEST_CASE("settings fit every window and interface size, with room for more rows") {
+TEST_CASE("settings fit every window and interface size, every row reachable, room for more") {
     UiFixture ui;
     const Profile profile;
     MenuModel m;
@@ -1129,10 +1129,21 @@ TEST_CASE("settings fit every window and interface size, with room for more rows
                     CHECK(menus.widgetCentre("done"));
                 };
                 check();
-                // Every row can be reached: scrolled to the end, the last one shows.
-                for (int k = 0; k < 30 && !menus.widgetCentre("replay"); ++k) layout(-1);
-                CHECK(menus.widgetCentre("replay"));
-                check();
+                // Every row of both sides (the look tier and clouds too) can be reached: seen
+                // at some scroll position on the way to the end.
+                static constexpr const char* kRows[] = {
+                    "music",    "effects",       "ambience", "mute",  "fullscreen",
+                    "ui_scale", "reduce_motion", "grid",     "vsync", "look",
+                    "clouds",   "chatty",        "quiet",    "replay"};
+                std::set<std::string> seen;
+                for (int k = 0; k < 30; ++k) {
+                    for (const char* row : kRows)
+                        if (menus.widgetCentre(row)) seen.insert(row);
+                    if (menus.widgetCentre("replay")) break;
+                    layout(-1);
+                    check();
+                }
+                for (const char* row : kRows) CHECK_MESSAGE(seen.contains(row), row);
             }
 }
 

@@ -221,6 +221,9 @@
     "world.gull": [
      "sfx/world/gull_call.wav"
     ],
+    "world.owl": [
+     "sfx/world/owl_tawny.wav"
+    ],
     "world.raven": [
      "sfx/world/crow_1.wav",
      "sfx/world/crow_2.wav"
@@ -611,6 +614,11 @@
        "oct"
       ]
      }
+    },
+    {
+     "role": "owl",
+     "density": "night",
+     "max_per_chunk": 0.5
     },
     {
      "actor": "world.raven",
@@ -1299,7 +1307,48 @@
    "winter": "c. 470/469 BC"
   }
  },
- "roles": [],
+ "roles": [
+  {
+   "id": "owl",
+   "actor": "world.owl",
+   "name": "Owl",
+   "schedule": [
+    {
+     "hours": [
+      "19:30",
+      "05:30"
+     ],
+     "routine": "hunt"
+    }
+   ],
+   "routines": {
+    "hunt": {
+     "loop": true,
+     "steps": [
+      {
+       "wander": {
+        "radius": 5
+       },
+       "dur": [
+        30,
+        60
+       ]
+      },
+      {
+       "use": {
+        "here": true
+       },
+       "anim": "idle",
+       "dur": [
+        40,
+        90
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ],
  "ambient": [
   {
    "kind": "bats",
@@ -1309,7 +1358,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -1345,7 +1394,8 @@
     "05:00"
    ],
    "per_screen": 0.3,
-   "sprite": null
+   "sprite": "world.owl",
+   "sound": "sfx/world/owl_tawny.wav"
   },
   {
    "kind": "gulls",
@@ -1366,7 +1416,7 @@
     "19:00"
    ],
    "per_screen": 0.4,
-   "sprite": "fx/world.dolphin",
+   "sprite": "world.dolphin",
    "months": [
     "apr",
     "may",

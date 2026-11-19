@@ -637,8 +637,13 @@ def _town(L: Layout, spur, noise) -> None:
     town = Rect(0, 62, 48, 111)
     L.scatter(town, {P + "p_oven": 2, P + "p_jars": 2, P + "p_sacks": 1, P + "p_well": 0.6,
                      P + "p_dovecote": 0.5}, 0.035, min_gap=2, seed="yards")
-    L.scatter(town, {P + "t_pomegranate": 2, P + "t_fig": 2, P + "t_almond": 1, P + "t_vine": 2,
-                     P + "t_poplar": 1}, 0.06, seed="town_trees", clump=0.7)
+    trees = L.scatter(town, {P + "t_pomegranate": 2, P + "t_fig": 2, P + "t_almond": 1,
+                             P + "t_vine": 2, P + "t_poplar": 1}, 0.06, seed="town_trees", clump=0.7)
+    # A tree never stands where someone works: the workshops' spots lie on the step outside.
+    spots = {(c, r) for q in L.items if not q.removed for v in q.slots.values() for c, r, _f in v}
+    for t in trees:
+        if any(x in spots for x in t.tiles()):
+            L.remove(t)
     # Kitchen gardens on the town's open ground toward the fields.
     L.paint(Rect(1, 105, 13, 111) & free(L, Rect(1, 105, 13, 111)), BED)
     # Poplars along the town canal, willows where it leaves the town.
