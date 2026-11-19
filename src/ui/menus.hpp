@@ -124,6 +124,9 @@ public:
     void open(Page p);
     void back();
     void closeAll();
+    // The front door is open (the title, the worlds and their dialogs, settings from the title):
+    // no world is being played under it.
+    [[nodiscard]] bool frontDoorOpen() const { return depth_ > 0 && pages_[1] != Page::Pause; }
     // A page that stops play: everything but the coach card and the photo bar.
     [[nodiscard]] bool blocking() const { return page() != Page::None; }
     // Keys while a page is open; true when the menus used it.

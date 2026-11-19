@@ -166,7 +166,7 @@ endforeach()
 # Every run starts from a clean save directory; the reload pair runs in order.
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no_resident"
      "${LC_SCRATCH}/save_offscreen_actor"
-     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_audio_year" "${LC_SCRATCH}/save_bench"
+     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_audio_year" "${LC_SCRATCH}/save_audio_mix" "${LC_SCRATCH}/save_bench"
      "${LC_SCRATCH}/save_bench_1440"
      "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
@@ -291,6 +291,23 @@ set_tests_properties(audio_year PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
 add_test(NAME audio_year_check COMMAND lc_tests "--test-case=capture: the year*")
 set_tests_properties(audio_year_check PROPERTIES ENVIRONMENT "LC_AUDIO_YEAR=${year_capture}"
   FIXTURES_REQUIRED audio_year)
+
+# The mix across the world: every kind of place, the weather, travel and the menus, captured and
+# measured (loudness, peaks, balance, the buses' shares); the capture is deleted afterwards.
+set(mix_capture "${LC_SCRATCH}/capture_mix.wav")
+add_test(NAME audio_mix_world
+  COMMAND laeticias-corner --headless --size 960x600 --seed 1 --front-door
+          --audio-out "${mix_capture}" --save-dir "${LC_SCRATCH}/save_audio_mix"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/audio_mix_world.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(audio_mix_world PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves)
+add_test(NAME audio_mix_world_check COMMAND lc_tests "--test-case=capture: the mix across*")
+set_tests_properties(audio_mix_world_check PROPERTIES ENVIRONMENT "LC_AUDIO_MIX=${mix_capture}"
+  FIXTURES_REQUIRED audio_mix)
+add_test(NAME audio_mix_world_clean
+  COMMAND ${CMAKE_COMMAND} -E rm -f "${mix_capture}" "${mix_capture}.marks")
+set_tests_properties(audio_mix_world_clean PROPERTIES FIXTURES_CLEANUP audio_mix)
 
 # The same script and seed give byte-identical screenshots and saves with actors, the resident,
 # weather and events running: two runs in their own directories, compared file by file.
