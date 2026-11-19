@@ -57,6 +57,7 @@ TEST_CASE("coverage: catalog vs atlas") {
     }
     const auto manifest = parseAtlasManifest(*text);
     REQUIRE_MESSAGE(manifest.has_value(), manifest.error());
+    for (const std::string& why : manifest->refused) FAIL_CHECK("atlas.json: " << why);
     const SurfacePtr image{SDL_LoadPNG((dir / manifest->image).string().c_str())};
     REQUIRE_MESSAGE(image != nullptr, "atlas image unreadable: " << SDL_GetError());
     for (const auto& [key, r] : manifest->sprites) {

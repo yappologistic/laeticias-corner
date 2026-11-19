@@ -238,10 +238,25 @@ TEST_CASE("atlas manifest parsing") {
     REQUIRE(m.has_value());
     CHECK(m->sprites.at("a").ox == -1);
     CHECK_FALSE(parseAtlasManifest(R"({"version":2,"sprites":{}})").has_value());
-    CHECK_FALSE(parseAtlasManifest(
-                    R"({"version":1,"sprites":{"a":{"x":0,"y":0,"w":0,"h":4,"ox":0,"oy":0}}})")
-                    .has_value());
     CHECK_FALSE(parseAtlasManifest("[").has_value());
+    CHECK_FALSE(parseAtlasManifest(R"({"version":1,"sprites":[]})").has_value());
+    // A bad entry is left out and named; the rest of the manifest stands (H3-022).
+    const auto bad = parseAtlasManifest(R"({"version":1,"sprites":{
+        "ok":{"x":0,"y":0,"w":2,"h":2,"ox":0,"oy":0},
+        "zero":{"x":0,"y":0,"w":0,"h":4,"ox":0,"oy":0},
+        "negative":{"x":-1,"y":0,"w":2,"h":2,"ox":0,"oy":0},
+        "wrap":{"x":2000000000,"y":0,"w":2000000000,"h":2,"ox":0,"oy":0},
+        "huge":{"x":0,"y":0,"w":18446744073709551615,"h":2,"ox":0,"oy":0},
+        "float":{"x":1e300,"y":0,"w":2,"h":2,"ox":0,"oy":0},
+        "half":{"x":0.5,"y":0,"w":2,"h":2,"ox":0,"oy":0},
+        "offset":{"x":0,"y":0,"w":2,"h":2,"ox":99999,"oy":0},
+        "text":{"x":"0","y":0,"w":2,"h":2,"ox":0,"oy":0},
+        "missing":{"x":0,"y":0,"w":2,"ox":0,"oy":0},
+        "array":[1,2,3]}})");
+    REQUIRE(bad.has_value());
+    CHECK(bad->sprites.size() == 1);
+    CHECK(bad->sprites.contains("ok"));
+    CHECK(bad->refused.size() == 10);
 }
 
 TEST_CASE("required sprite keys follow the contract") {
@@ -1995,4 +2010,31 @@ TEST_CASE("her speech bubble keeps clear of the title card (H3-018)") {
     const Box d = placeBubble({400, 200, 300, 40}, card, screen, 8);
     CHECK(d.x == 400);
     CHECK(d.y == 200);
+}
+
+TEST_CASE("an atlas never reads outside its image, whatever its manifest says (H3-022)") {
+    UiFixture ui;
+    SurfacePtr image{SDL_LoadPNG((test::assetsDir() / "atlas.png").string().c_str())};
+    REQUIRE(image);
+    const int w = image->w;
+    const int h = image->h;
+    nlohmann::json m = {{"version", 1}, {"image", (test::assetsDir() / "atlas.png").string()}};
+    m["sprites"]["inside"] = {{"x", w - 4}, {"y", h - 4}, {"w", 4}, {"h", 4}, {"ox", 2}, {"oy", 2}};
+    m["sprites"]["one_right"] = {{"x", w - 4}, {"y", 0}, {"w", 5}, {"h", 4}, {"ox", 0}, {"oy", 0}};
+    m["sprites"]["one_below"] = {{"x", 0}, {"y", h - 4}, {"w", 4}, {"h", 5}, {"ox", 0}, {"oy", 0}};
+    m["sprites"]["wrap"] = {{"x", 2000000000}, {"y", 0},  {"w", 2000000000},
+                            {"h", 4},          {"ox", 0}, {"oy", 0}};
+    m["sprites"]["far"] = {{"x", 16000}, {"y", 0}, {"w", 300}, {"h", 4}, {"ox", 0}, {"oy", 0}};
+    const auto dir = test::tempDir("hostile_atlas");
+    { std::ofstream(dir / "atlas.json") << m.dump(); }
+    Atlas atlas(ui.renderer.get(), dir, test::catalog().iso());
+    const auto inside = atlas.find("inside");
+    REQUIRE(inside.has_value());
+    (void)atlas.normalizeAlpha(*inside); // reads its pixels: inside the buffer (ASan watches)
+    (void)atlas.alphaCentroid(*inside);
+    for (const char* key : {"one_right", "one_below", "wrap", "far"}) {
+        CAPTURE(key);
+        CHECK_FALSE(atlas.find(key).has_value());
+        CHECK(atlas.resolve(key, atlas.placeholderBox()) == atlas.placeholderBox());
+    }
 }
