@@ -31,6 +31,7 @@ std::string_view usage() {
            "  --map WxH           bench: map size (default: the catalog's)\n"
            "  --density D         bench: share of tiles filled near the camera, 0..1 (0.5)\n"
            "  --budget-ms MS      bench: exit 3 when update + draw averages more than MS\n"
+           "  --bench-case TEXT   bench: only the cases whose name contains TEXT\n"
            "  --soak SECONDS      run that much busy play fast and exit 3 if memory grows "
            "(implies --headless)\n"
            "  --perf-log FILE     write per-frame timings and counters to FILE as CSV\n"
@@ -92,6 +93,10 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             const auto v = value();
             if (!v || !parseNumber(*v, o.density) || o.density < 0 || o.density > 1)
                 return std::unexpected("--density expects a number from 0 to 1");
+        } else if (a == "--bench-case") {
+            const auto v = value();
+            if (!v) return std::unexpected("--bench-case expects a case name");
+            o.benchCase = *v;
         } else if (a == "--budget-ms") {
             const auto v = value();
             if (!v || !parseNumber(*v, o.budgetMs) || o.budgetMs <= 0)

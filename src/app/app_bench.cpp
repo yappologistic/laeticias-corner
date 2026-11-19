@@ -291,6 +291,7 @@ int App::runBench() {
     }
     for (const int level : {kDefaultZoomLevel, kDefaultZoomLevel - 1})
         for (int attempt = 0; attempt < 2; ++attempt) {
+            if (!benchWants(level == kDefaultZoomLevel ? "zoom 1" : "zoom 0.5")) break;
             // Centre the camera on the built-up middle at this level.
             const Vec2 mid = cat_.iso().toWorld(static_cast<float>(world_.width()) * 0.5f,
                                                 static_cast<float>(world_.height()) * 0.5f);
@@ -339,6 +340,7 @@ int App::runBench() {
     weather_.setMode(WeatherMode::Natural);
     for (const int crowd : {0, tuning::kBenchCrowd})
         for (int attempt = 0; attempt < 2; ++attempt) {
+            if (!benchWants(crowd > 0 ? "crowd" : "busy corner")) break;
             actors_.populate(actorEnv());
             if (crowd > 0)
                 actors_.crowd(actorEnv(),
@@ -368,7 +370,7 @@ int App::runBench() {
     // Memory is held to its ceiling at the size the gate runs (1080p and below).
     if (judge && pixelW_ * pixelH_ <= 1920 * 1080 && processMemory().second > memoryCeiling())
         fail("memory");
-    const int city = benchCity(judge);
+    const int city = benchWants("city life") ? benchCity(judge) : 0;
     return over || city == kExitOverBudget ? kExitOverBudget : 0;
 }
 
@@ -406,6 +408,7 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
          {BenchSpot{"forum", {80, 1077}}, BenchSpot{"agora", {262, 672}},
           BenchSpot{"acropolis", {305, 618}}, BenchSpot{"parsa terrace", {376, 69}}})
         for (int attempt = 0; attempt < 2; ++attempt) {
+            if (!benchWants(spot.name)) break;
             look(spot.grid);
             warm();
             BenchFrames fr;
@@ -441,6 +444,7 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
               Crowd{"athens panathenaia", "athens", "summer", 4},
               Crowd{"parsa crowd", "parsa", "spring", 0},
               Crowd{"parsa audience", "parsa", "spring", 1}}) {
+            if (!benchWants(c.name)) continue;
             const int season = cat_.findSeason(c.season).value_or(0);
             const life::Busiest b = life::busiestView(*city_, c.region, c.day, season);
             seasonPin_ = season;
@@ -484,7 +488,7 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
         clock_.setPin(ClockPin::Day, true);
     }
     // A pan across Rome at 1800 px a second (30 px a step).
-    for (int attempt = 0; attempt < 2; ++attempt) {
+    for (int attempt = 0; attempt < 2 && benchWants("pan rome"); ++attempt) {
         look({60, 1050});
         BenchFrames fr;
         for (int f = 0; f < frames; ++f) {
@@ -496,6 +500,7 @@ bool App::benchWorld(const std::function<bool(const char*, const BenchFrames&, b
     // Fast travel from Parsa to Rome and home: no frame frozen, each journey within a second.
     look({376, 69});
     for (const char* to : {"rome", "corner"}) {
+        if (!benchWants("travel to")) break;
         travelTo(loaded_->file.findRegion(to));
         BenchFrames fr;
         const Uint64 t0 = SDL_GetPerformanceCounter();
@@ -566,7 +571,7 @@ bool App::benchPlay(const std::function<bool(const char*, const BenchFrames&, bo
     mouse_ = pointer;
     mouseInside_ = true;
     // Zoom sweeps: out to the widest level and in to the closest, a short rest at each.
-    for (int attempt = 0; attempt < 2; ++attempt) {
+    for (int attempt = 0; attempt < 2 && benchWants("zoom sweep"); ++attempt) {
         look(kForum.grid, kDefaultZoomLevel);
         BenchFrames fr;
         for (int sweep = 0; sweep < tuning::kBenchZoomSweeps; ++sweep)
@@ -587,7 +592,7 @@ bool App::benchPlay(const std::function<bool(const char*, const BenchFrames&, bo
             char name[48];
             (void)std::snprintf(name, sizeof name, "pan %s %gx", spot.name,
                                 static_cast<double>(kZoomLevels[static_cast<std::size_t>(level)]));
-            for (int attempt = 0; attempt < 2; ++attempt) {
+            for (int attempt = 0; attempt < 2 && benchWants(name); ++attempt) {
                 look(spot.grid, level);
                 BenchFrames fr;
                 for (int f = 0; f < tuning::kBenchPanFrames; ++f) {
@@ -603,7 +608,7 @@ bool App::benchPlay(const std::function<bool(const char*, const BenchFrames&, bo
             }
         }
     // Travel between every pair of the places a player goes to.
-    {
+    if (benchWants("travel between")) {
         const world::WorldFile& wf = loaded_->file;
         std::vector<int> places;
         for (const char* id : {"corner", "rome", "athens", "parsa"})
@@ -646,7 +651,7 @@ bool App::benchPlay(const std::function<bool(const char*, const BenchFrames&, bo
         (void)judgeCase("travel", all, true);
     }
     // The map opened and closed over a city.
-    for (int attempt = 0; attempt < 2; ++attempt) {
+    for (int attempt = 0; attempt < 2 && benchWants("map"); ++attempt) {
         look(kForum.grid, kDefaultZoomLevel);
         BenchFrames fr;
         for (int k = 0; k < 4; ++k) {

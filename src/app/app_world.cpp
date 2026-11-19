@@ -12,15 +12,12 @@
 
 namespace lc {
 
-bool App::loadWorldData() {
-    if (!fs::exists(assets_ / "world" / "world.json")) return true; // the floating island
-    const Uint64 t0 = SDL_GetPerformanceCounter();
-    auto loaded = world::loadWorld(assets_, cat_);
-    if (!loaded) {
-        SDL_Log("world: %s", loaded.error().c_str());
+bool App::loadWorldData(WorldLoad load) {
+    if (!load.world) {
+        SDL_Log("world: %s", load.world.error().c_str());
         return false;
     }
-    loaded_ = std::make_unique<world::LoadedWorld>(std::move(*loaded));
+    loaded_ = std::make_unique<world::LoadedWorld>(std::move(*load.world));
     for (const std::string& e : loaded_->diagnostics.errors) SDL_Log("world: %s", e.c_str());
     if (!loaded_->diagnostics.warnings.empty())
         SDL_Log("world: %zu warnings (worldinfo validate lists them)",
@@ -57,8 +54,7 @@ bool App::loadWorldData() {
     viewWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
     homeWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
     themeWeights_.assign(loaded_->file.regions.size(), 0.0f);
-    SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)",
-            msBetween(t0, SDL_GetPerformanceCounter()), loaded_->layers.size(),
+    SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)", load.ms, loaded_->layers.size(),
             loaded_->file.regions.size());
     return true;
 }
@@ -828,7 +824,10 @@ void App::loadWorldAudio() {
     mixer_.loadMore(assets_ / "audio", arriveFiles_, soundscape_->files());
     soundLoops_.clear();
     for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
-    if (!city_) return;
+}
+
+void App::loadCityAudio() {
+    if (!soundscape_ || !city_) return;
     citySound_ = std::make_unique<worldview::CitySound>(*loaded_, city_->life->data,
                                                         assets_ / "audio", seed_);
     mixer_.loadMore(assets_ / "audio", citySound_->effects(), citySound_->loops());

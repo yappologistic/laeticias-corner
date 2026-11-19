@@ -47,8 +47,10 @@
 
 #include <array>
 #include <cstdio>
+#include <expected>
 #include <filesystem>
 #include <functional>
+#include <future>
 #include <memory>
 #include <optional>
 #include <span>
@@ -305,7 +307,12 @@ private:
     void drawPostcard(Painter& p);
 
     // The world (app_world.cpp): loaded when assets/world/world.json exists, else the island.
-    bool loadWorldData();
+    // The world as its loader gave it, and how long that took (start-up reads it on a worker).
+    struct WorldLoad {
+        std::expected<world::LoadedWorld, std::string> world;
+        double ms = 0;
+    };
+    bool loadWorldData(WorldLoad load);
     // The world renderer, once the home is known (after the save is read).
     void createWorldView();
     // The home's terrain into the world's map (and, the first time, the world's own things off
@@ -389,7 +396,8 @@ private:
     // The world's sound (world-tech §4.6): its loops into the mixer before it opens; each
     // frame, the regions' beds, zones, item loops and music by where the view is. The home's
     // own music and beds play by its share of the view.
-    void loadWorldAudio();
+    void loadWorldAudio(); // the regions' beds and zones
+    void loadCityAudio();  // the cities' own sounds: after their life is there
     void updateWorldAudio(float night);
     [[nodiscard]] float homeMusic() const;
     [[nodiscard]] float homeAmbience() const;
@@ -431,6 +439,10 @@ private:
     // The bench's world cases (cities, a pan, fast travel); false when one is over budget.
     bool benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
                     const std::function<void()>& warm, int frames);
+    // --bench-case: whether a case of this name runs (all do without it).
+    [[nodiscard]] bool benchWants(std::string_view name) const {
+        return opts_.benchCase.empty() || name.find(opts_.benchCase) != std::string_view::npos;
+    }
     // The player's cases: zoom sweeps, fast pans, travel between places, the map.
     bool benchPlay(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase);
     // One frame of the bench, timed whole (with the GPU waited for).
