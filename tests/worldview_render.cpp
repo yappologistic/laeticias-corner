@@ -371,6 +371,9 @@ TEST_CASE("sound: a bed the view stands in surrounds it; loops sound from all th
                                    << "," << at[b].y);
                     CHECK(s.out()[f].gain > 0);
                     CHECK(std::abs(s.out()[f].pan) < 0.05f);
+                    // When the view leaves its sources, the loop stops.
+                    s.update({weights, {-60, -60}, 15, 0.2, 0, 0.5f});
+                    CHECK(s.out()[f].gain == 0.0f);
                     tested = true;
                 }
         }

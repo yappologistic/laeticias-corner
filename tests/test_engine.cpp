@@ -457,7 +457,8 @@ TEST_CASE("mixer buses: the player's volumes glide, never click, and stems reset
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
-TEST_CASE("mixer: snow's muffle low-passes the beds, glides in without a click, spares the dry") {
+TEST_CASE(
+    "mixer: snow's muffle low-passes the beds, glides in and out without a click, spares the dry") {
     REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
     REQUIRE(SDL_Init(SDL_INIT_AUDIO));
     {
@@ -505,6 +506,24 @@ TEST_CASE("mixer: snow's muffle low-passes the beds, glides in without a click, 
         CHECK(sums[1].e > sums[0].e * 0.2);                // the bed is still there
         CHECK(sums[1].jump < sums[0].jump * 1.5f + 0.01f); // gliding in made no click
         CHECK(sums[2].e == doctest::Approx(sums[0].e));    // the dry bed untouched
+        // The snow melts: the muffle glides out and the bed is as bright as the open one again.
+        mixers[1].setMuffle(0.0f);
+        std::array<Sum, 2> after;
+        for (int k = 0; k < 120; ++k)
+            for (std::size_t m = 0; m < 2; ++m) {
+                mixers[m].render(out.data(), kFrames);
+                Sum& s = after[m];
+                for (std::size_t i = 0; i < out.size(); i += 2) {
+                    const float diff = out[i] - s.prev;
+                    s.prev = out[i];
+                    s.jump = std::max(s.jump, std::abs(diff));
+                    if (k < 80) continue;
+                    s.e += static_cast<double>(out[i]) * out[i];
+                    s.d += static_cast<double>(diff) * diff;
+                }
+            }
+        CHECK(bright(after[1]) == doctest::Approx(bright(after[0])).epsilon(0.02));
+        CHECK(after[1].jump < after[0].jump * 1.5f + 0.01f); // no click on the way out
     }
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
