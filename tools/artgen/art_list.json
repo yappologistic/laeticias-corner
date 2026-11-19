@@ -45,6 +45,8 @@
 
     {"rank": "nice", "requires": ["version:2", "seasons", "terrain:meadow"], "keys": [
       "terrain/meadow/m{0-15}/f0@{autumn,winter}"]},
+    {"rank": "nice", "requires": ["version:2", "seasons"], "keys": [
+      "wild/thicket/v{0-5}@{autumn,winter}"]},
     {"rank": "nice", "requires": ["version:2", "seasons", "item:bush", "item:berry_bush", "item:hedge"], "keys": [
       "item/{bush,berry_bush}/base/r{0-3}/f0@winter", "item/hedge/base/m{0-15}/f0@winter"]},
     {"rank": "nice", "requires": ["version:2", "seasons", "item:oak", "item:blossom", "item:apple_tree"], "keys": [

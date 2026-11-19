@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace lc {
 
@@ -57,6 +58,14 @@ public:
     [[nodiscard]] bool wantsMouse() const { return open_; }
     // Window px of a place's marker (scripts point at it), as of the last update.
     [[nodiscard]] Vec2 markerAt(const MapModel& m, int place) const;
+    // The towns' names as laid out at the last update: plates beside their markers that never
+    // overlap each other, another marker or the edge (V6-018: names baked small into the art
+    // could not be read). A town with no room keeps its name for the hover tip.
+    struct Label {
+        Box box;
+        int place = -1;
+    };
+    [[nodiscard]] std::span<const Label> labels() const { return labels_; }
 
 private:
     [[nodiscard]] Vec2 toScreen(Vec2 pixel) const;
@@ -71,6 +80,8 @@ private:
     int hovered_ = -1;
     int pressed_ = -1;
     std::optional<int> clicked_;
+    std::vector<Label> labels_;
+    void placeLabels(const MapModel& m, const Font& font);
 };
 
 } // namespace lc

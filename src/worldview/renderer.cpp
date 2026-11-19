@@ -8,10 +8,13 @@
 #include "worldview/tuning.hpp"
 #include "worldview/world_lights.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <format>
+#include <fstream>
 
 namespace lc::worldview {
 namespace {
@@ -112,8 +115,34 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
               for (const world::RegionRef& r : world.file.regions) times.push_back(r.time);
               return times;
           }()) {
+    // On SDL's gpu driver the sets' pages are their packed twins, decoded as they draw (the
+    // seasons by climate and month); elsewhere the colour pages.
+    if (gpu::isGpu(renderer)) {
+        std::ifstream in(assets / "atlas" / "ramps.json");
+        const SurfacePtr table{SDL_LoadPNG((assets / "atlas" / "ramps.png").string().c_str())};
+        try {
+            if (in && table) {
+                rampSeasons_ = gpu::parseRamps(nlohmann::json::parse(in));
+                decoder_ = gpu::Decoder::make(renderer, table.get(), rampSeasons_.snow);
+            }
+        } catch (const nlohmann::json::exception& e) {
+            SDL_Log("worldview: ramps.json: %s", e.what());
+        }
+        if (!decoder_) SDL_Log("worldview: no packed decode: the colour pages, no seasons by data");
+    }
+    const Catalog& cat = map_.content().home();
+    const auto climateRow = [&](std::string_view id) {
+        for (std::size_t i = 0; i < cat.climates.size() && i + 1 < gpu::Decoder::kClimates; ++i)
+            if (cat.climates[i].id == id) return static_cast<int>(i);
+        return -1;
+    };
+    for (const world::RegionFile& r : world.regions) {
+        const int c = climateRow(r.theme.climate);
+        regionClimate_.push_back(c < 0 ? std::uint8_t{255} : static_cast<std::uint8_t>(c));
+    }
+    fallbackClimate_ = std::max(0, climateRow("med_green"));
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
-                                         tuning::kPageCeiling);
+                                         tuning::kPageCeiling, decoder_ != nullptr);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_);
     // Asynchronous runs build the overview on a worker from the start; synchronous ones only
     // when a frame needs it (it stands in for cells not built yet, which they never have).
@@ -221,21 +250,32 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
     if (dry_) return true;
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return false;
+    // A sprite of a packed page is drawn through the decode, with its own blending and colour.
+    const bool packed = decoder_ && s.packed;
+    if (packed) {
+        if (c.a >= 1.0f && mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
+        c = packedColour(c, s.page == PageAtlas::kHomePage);
+    }
     if (!runsOpen_) {
+        if (decoder_) decoder_->use(batch_, packed);
         putSprite(batch_, Sprite{t, s.uv, s.w, s.h, s.ox, s.oy}, anchor, x, c, mode, mirror);
         return true;
     }
-    // Kept for flushRuns, which draws it with its page's run: the corners as putSprite makes
-    // them, to the last bit.
+    // Kept for closeRuns, which draws it with its page's run: the corners as putSprite makes
+    // them, to the last bit. What it is drawn with (page, blending, decoded or not) is its
+    // run's key: mixed into one number, and should two ever share it they are still drawn
+    // each with its own state, only without a run to themselves.
     const float lx = mirror ? -(s.w - s.ox) : -s.ox;
     const float ly = -s.oy;
     const Vec2 p0 = x.apply({anchor.x + lx, anchor.y + ly});
     const Vec2 p1 = x.apply({anchor.x + (lx + s.w), anchor.y + (ly + s.h)});
-    if (!runs_.add(s.page | (static_cast<std::uint32_t>(mode) << 16), {p0.x, p0.y, p1.x, p1.y}))
+    const std::uint32_t key =
+        (s.page * 2U + (packed ? 1U : 0U)) ^ (static_cast<std::uint32_t>(mode) * 2654435761U);
+    if (!runs_.add(key, {p0.x, p0.y, p1.x, p1.y}))
         return true; // off the target: nothing of it would be drawn
     UvRect uv = s.uv;
     if (mirror) std::swap(uv.u0, uv.u1);
-    runQuads_.push_back({t, mode, p0, p1, uv, c, s.page, runWhat_});
+    runQuads_.push_back({t, mode, p0, p1, uv, c, s.page, runWhat_, packed});
     return true;
 }
 
@@ -248,6 +288,7 @@ void WorldView::openRuns() {
 void WorldView::closeRuns(SDL_ScaleMode filter) {
     for (const std::uint32_t e : runs_.order()) {
         const RunQuad& q = runQuads_[e];
+        if (decoder_) decoder_->use(batch_, q.packed);
         batch_.use(q.texture, q.mode, filter);
         const SDL_FPoint p[4] = {
             {q.p0.x, q.p0.y}, {q.p1.x, q.p0.y}, {q.p1.x, q.p1.y}, {q.p0.x, q.p1.y}};
@@ -296,6 +337,7 @@ std::vector<WorldView::RunBreaker> WorldView::runBreakers() const {
 bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     const int t = map_.terrainAt(p);
     if (t == world::kNone) return true;
+    seasonAt(p);
     const TerrainLook& look = sprites_->terrain(t);
     // On the shader path water moves in the final pass: its tiles stay still in the cells (no
     // rebuilds at the art's frame rate) and are marked for it.
@@ -473,6 +515,7 @@ bool WorldView::drawTiles(const FRect& px, const Xform& x, float now, bool* anim
 }
 
 void WorldView::markWater(const SpriteRef& s, Vec2 anchor, bool maybe) {
+    if (decoder_ && s.packed && !maybe) return; // its water texels mark themselves as they draw
     marks_.push_back({s, anchor, maybe});
 }
 
@@ -487,6 +530,7 @@ void WorldView::flushMarks(const Xform& x) {
 
 bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze, float now, bool* animated) {
     const Vec2 a = iso_.toWorld(p);
+    seasonCtx_ = {fallbackClimate_, 0};
     if (!haze) {
         // Beyond the grid the sea runs on: a tile there is the deep sea among sea, drawn as
         // the grid's own deepest water is (its art with every neighbour the same, at the
@@ -523,6 +567,7 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     if (e.home) return true; // the game's scene draws it
     if (e.figure) return put(figures_[e.item].sprite, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
     if (e.ground) return drawTile(e.tile, x, now, nullptr);
+    seasonAt(e.tile);
     const VariantLook& look = *e.look;
     const SpriteRef& s =
         e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
@@ -539,6 +584,7 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
                             Target& onto, bool actors, std::span<const std::uint32_t> visible) {
+    plain(); // (what follows is not decoded)
     // Shadow sprites saturate in their own layer (their alpha was scaled to a peak of 1), which
     // is then laid over the ground once at the art's opacity: overlaps never double-darken.
     // The layer's coverage does not depend on order: drawn page by page, one draw each.
@@ -604,6 +650,7 @@ void WorldView::buildGround(CellKey key, int si) {
     CellSlot& slot = cells_.slot(si);
     const FRect cell = cellRect(key);
     bool animated = false;
+    plain(); // the clear below is a fill: no page bound for the decode
     batch_.flush();
     const auto fx = static_cast<float>(slot.x);
     const auto fy = static_cast<float>(slot.y);
@@ -703,6 +750,7 @@ void WorldView::requestImpostor(CellKey key, int si, int rank) {
 
 void WorldView::halveInto(int si, int level, int block) {
     // Each halving averages 2 x 2 texels: 1024 -> 512 for level 1, and -> 512 -> 256 for level 2.
+    plain(); // (targets are copied as they are, not decoded)
     const CellSlot& slot = cells_.slot(si);
     const int n = blocksPerSide(level);
     const int dst = tuning::kCellTexels / n;
@@ -1033,6 +1081,7 @@ bool WorldView::cellsReady(int level, const FRect& view) {
 }
 
 void WorldView::drawCells(int level, const FRect& view, const Xform& x) {
+    plain(); // (what follows is not decoded)
     keys_.clear();
     forEachCell(view, level, [&](CellKey k) {
         k.frame = cellFrame(level, k.cx, k.cy, 0);
@@ -1102,6 +1151,7 @@ void WorldView::drawCells(int level, const FRect& view, const Xform& x) {
 }
 
 void WorldView::drawOverview(const Xform& x) {
+    plain(); // (what follows is not decoded)
     Overview& ov = overview();
     while (!ov.upload(renderer_) && !async_) {}
     SDL_Texture* t = ov.texture();
@@ -1182,6 +1232,7 @@ std::size_t WorldView::targetBytes() const {
 }
 
 void WorldView::fullQuad(int w, int h, SDL_FColor c, SDL_BlendMode mode) {
+    plain(); // (what follows is not decoded)
     const SpriteRef& white = sprites_->white();
     SDL_Texture* t = pages_->texture(white.page);
     if (t == nullptr) return;
@@ -1231,6 +1282,7 @@ std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
 }
 
 void WorldView::drawWeatherGround(const FRect& view, const Xform& x) {
+    plain(); // (what follows is not decoded)
     // Cloud shadows: soft dark blobs drifting with the cells (showers darker); then the wet ground
     // where showers passed, darkened tile by tile. The home's own scene shades its land.
     const float blobR = blob_.w * 0.5f;
@@ -1261,6 +1313,7 @@ void WorldView::drawWeatherGround(const FRect& view, const Xform& x) {
 }
 
 void WorldView::buildRainPicture(Target& t, const Sprite& s, std::uint32_t salt) {
+    plain(); // (the home atlas's sprite as it is)
     const int pane = tuning::kRainPane;
     ensure(t, pane * tuning::kRainLayers, pane);
     if (!t.texture || !SDL_SetRenderTarget(renderer_, t.texture.get()) ||
@@ -1293,6 +1346,7 @@ void WorldView::buildRainPicture(Target& t, const Sprite& s, std::uint32_t salt)
 }
 
 void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
+    plain(); // (what follows is not decoded)
     // Rain (or snow) falls where a shower is. It is one picture of streaks at fixed places over
     // a pane that tiles the world, falling by being scrolled, drawn as a coarse mesh whose
     // corners ask the showers how hard it rains there: a few hundred quads for a whole view in
@@ -1451,6 +1505,7 @@ void WorldView::buildGlow() {
 }
 
 void WorldView::drawCoarseGlow(const FRect& view, const Xform& x, float strength) {
+    plain(); // (what follows is not decoded)
     const SDL_FColor g{strength, strength, strength, 1};
     const TileRect tiles = gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds());
     if (tiles.empty()) return;
@@ -1540,8 +1595,77 @@ void WorldView::setSeason(int season) {
     season = season >= 0 && season < kSeasonLooks ? season : -1;
     if (season == season_) return;
     season_ = season;
-    // Ground and impostors hold the season's looks: draw them again.
-    cells_.clear(); // impostors in flight finish into slots no longer theirs and are dropped
+    // Ground and impostors hold the season's looks: drawn again, the old shown until then.
+    staleCells();
+}
+
+void WorldView::staleCells() {
+    cells_.staleAll();
+}
+
+void WorldView::setCalendar(int month, float dayFraction) {
+    dayFraction_ = std::clamp(dayFraction, 0.0f, 1.0f);
+    if (!decoder_) return;
+    const std::vector<ClimateDef>& climates = map_.content().home().climates;
+    bool stale = false;
+    if (month != month_) {
+        month_ = month;
+        remapRows_.assign(static_cast<std::size_t>(gpu::kRampIds * gpu::Decoder::kClimates), 0);
+        for (int c = 0; c < gpu::Decoder::kClimates; ++c) {
+            const auto row = std::span<std::uint8_t, gpu::kRampIds>(
+                remapRows_.data() + static_cast<std::size_t>(c * gpu::kRampIds), gpu::kRampIds);
+            // (The last row stays as it is: the home's art.)
+            if (static_cast<std::size_t>(c) < climates.size() && c < gpu::Decoder::kClimates - 1)
+                gpu::remapRow(rampSeasons_, climates[static_cast<std::size_t>(c)], month, row);
+            else
+                for (int i = 0; i < gpu::kRampIds; ++i)
+                    row[static_cast<std::size_t>(i)] = static_cast<std::uint8_t>(i);
+        }
+        decoder_->setRemap(remapRows_, rampSeasons_.water);
+        stale = true;
+    }
+    // Snow builds and thaws over a morning in steps: cells are drawn again at each step, only
+    // in a month where some climate's snow line moves.
+    const int step = static_cast<int>(std::min(dayFraction_, gpu::kSnowMorning) / gpu::kSnowStep);
+    if (step != snowStep_) {
+        snowStep_ = step;
+        for (const ClimateDef& c : climates) {
+            const auto n = static_cast<int>(c.snowLine.size());
+            if (n > 0 && month_ >= 0 &&
+                c.snowLine[static_cast<std::size_t>(month_ % n)] !=
+                    c.snowLine[static_cast<std::size_t>((month_ + n - 1) % n)])
+                stale = true;
+        }
+    }
+    if (stale) staleCells();
+}
+
+void WorldView::seasonAt(TilePos p) {
+    if (!decoder_) return;
+    const int r = map_.inBounds(p) ? map_.regionAt(p) : -1;
+    const int c = r >= 0 && static_cast<std::size_t>(r) < regionClimate_.size() &&
+                          regionClimate_[static_cast<std::size_t>(r)] != 255
+                      ? regionClimate_[static_cast<std::size_t>(r)]
+                      : fallbackClimate_;
+    seasonCtx_ = {c, map_.inBounds(p) ? map_.level(p) : 0};
+}
+
+SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt) const {
+    // The decode reads the tint's lightness, the climate's row and the snow lying there. The
+    // home's art carries its seasons in its own looks (as the home's scene draws it): its row
+    // leaves every ramp as it is, and only the snow is the climate's.
+    const std::vector<ClimateDef>& climates = map_.content().home().climates;
+    float snow = 0;
+    if (month_ >= 0 && static_cast<std::size_t>(seasonCtx_.climate) < climates.size())
+        snow = gpu::snowCover(climates[static_cast<std::size_t>(seasonCtx_.climate)], month_,
+                              static_cast<float>(snowStep_) * gpu::kSnowStep, seasonCtx_.level);
+    const int row = homeArt ? gpu::Decoder::kClimates - 1 : seasonCtx_.climate;
+    return {0.299f * c.r + 0.587f * c.g + 0.114f * c.b, static_cast<float>(row) / 255.0f, snow,
+            c.a};
+}
+
+void WorldView::plain() {
+    if (decoder_) decoder_->use(batch_, false);
 }
 
 void WorldView::holeChanged() {
@@ -1605,6 +1729,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const Vec2 topLeft{c.x - screen.x * 0.5f / s, c.y - screen.y * 0.5f / s};
     const FRect seen{topLeft.x, topLeft.y, topLeft.x + screen.x / s, topLeft.y + screen.y / s};
     // How fast the view moves, for building ahead of it; a jump is no motion.
+    snapExposure_ = jumped_ || !lastView_.overlaps(seen);
     velocity_ = jumped_ || !lastView_.overlaps(seen)
                     ? Vec2{}
                     : Vec2{(seen.x0 + seen.x1 - lastView_.x0 - lastView_.x1) * 0.5f,
@@ -1678,6 +1803,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     cells_.reserve(cellBudget(screen));
     {
         const Timed timed(stats_.uploadMs);
+        plain(); // (a synchronous run may make and touch a page slot here)
         pages_->update(now);
         stats_.uploadBytes = pages_->uploadedBytes();
     }
@@ -1710,7 +1836,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const bool home = lod != Lod::Overview && !hole_.empty() && hole_.screen.overlaps(view);
     // The world's cloud shadows go under the home's ground: the home's scene shades its own land.
     if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
-    if (hooks.ground && home) hooks.ground(frame);
+    if (hooks.ground && home) {
+        plain();
+        hooks.ground(frame);
+    }
     if (post_ && home) markHomeWater(view, xf);
     // A zoom or a journey down to the native level gathers its destination on the way.
     if (arriving && lodFor(camera.arrivalScale) == Lod::Native) gatherAhead(arrival);
@@ -1734,7 +1863,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
             if (e.home) {
                 // The home's scene takes its turn between what is behind it and in front.
                 closeRuns(xf.filter);
-                if (hooks.objects && home) hooks.objects(frame);
+                if (hooks.objects && home) {
+                    plain();
+                    hooks.objects(frame);
+                }
                 homeDrawn = true;
                 openRuns();
                 continue;
@@ -1760,10 +1892,14 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     }
     batch_.flush();
     // The home's objects go over the impostors at the coarser levels.
-    if (!homeDrawn && hooks.objects && home) hooks.objects(frame);
+    if (!homeDrawn && hooks.objects && home) {
+        plain();
+        hooks.objects(frame);
+    }
     if (weather_ != nullptr && (lod == Lod::Native || lod == Lod::Half)) drawRain(view, xf, now);
     // Grading, then what glows (drawn after it, additively). The shader path grades in its
     // final pass and lights and glows in targets of its own.
+    plain();
     if (post_)
         lightGpu(view, xf, lod, light.glow, hooks, frame, home);
     else if (hooks.light && home)
@@ -1783,6 +1919,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         }
         drawLit(xf, g);
     }
+    plain();
     batch_.flush();
     if (hooks.glow && home)
         hooks.glow(
@@ -1794,7 +1931,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     if (!SDL_SetRenderTarget(renderer_, out)) SDL_Log("worldview: %s", SDL_GetError());
     present_ = {origin, topLeft, s, res, light.skyTop, light.skyBottom, grade, screen, true};
     composite({1, 1}, false);
-    if (hooks.overlay) hooks.overlay(frame);
+    if (hooks.overlay) {
+        plain();
+        hooks.overlay(frame);
+    }
 
     stats_.drawCalls = batch_.drawCalls() - stats_.buildDrawCalls;
     stats_.cellsCached = cells_.cached();
@@ -1834,6 +1974,7 @@ float WorldView::partialAlpha(SDL_Rect window) {
 }
 
 void WorldView::composite(Vec2 scale, bool smooth) {
+    plain(); // (what follows is not decoded)
     if (!present_.valid) return;
     if (post_) {
         compositeGpu(scale, smooth);
@@ -2120,6 +2261,7 @@ int WorldView::coarseActorsCovered(float px) const {
 }
 
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {
+    seasonCtx_ = {fallbackClimate_, 0}; // people carry no grass or snow
     const ActorDraw& a = actorDraw_[i];
     if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror))
         ++stats_.actorsDrawn;
@@ -2129,6 +2271,7 @@ void WorldView::drawActor(std::uint32_t i, const Xform& x) {
 }
 
 void WorldView::drawActorShadows(const Xform& x) {
+    plain(); // (what follows is not decoded)
     // Soft ovals under the feet in the shared shadow layer: they merge with the buildings'.
     const float rx = tuning::kActorShadowW * iso_.tileW() * 0.5f / (blob_.w * 0.5f);
     for (const std::uint32_t i : actorOf_) {

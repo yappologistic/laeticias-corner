@@ -338,7 +338,7 @@ def _set_mod(set_id):
 
 
 def _item_job(args):
-    set_id, item_id, layout, variant, frame, frames, footprint, layers, k, pieces, crossing = args
+    set_id, item_id, layout, variant, frame, frames, footprint, layers, k, pieces, crossing, deck = args
     mod = _set_mod(set_id)
     item: Item = mod.ITEMS[item_id]
     n = int(variant[1:])
@@ -368,7 +368,36 @@ def _item_job(args):
     if frame:                       # every frame of a look shares its geometry: frame 0 gives it
         return res, {}
     order = order_geometry(*columns(model, rfw, rfh), walk, {}, pieces, k, crossing=crossing)
+    if deck and not walk:           # a deck walked over whole (bridges, jetties, pontoons, moles):
+        # its floor by walk tiles and their heights, as the engine's loader wants (walk_z only
+        # on listed walk tiles, src/world/geometry.cpp)
+        order["walk"] = [[x, y] for x in range(rfw) for y in range(rfh)]
+        order["walk_z"] = deck_heights(model, rfw, rfh)
     return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax, "lights": _lights(model, k), **order}}
+
+
+def is_deck(it: dict) -> bool:
+    """A kit piece walked on as a floor of its own (bridges, jetties, pontoons, moles, fords):
+    a crossing, or walkable over water; not a plant one walks through."""
+    return not it.get("landmark") and ("crossing" in it.get("tags", ()) or
+                                       (bool(it.get("walkable")) and it.get("on") in ("water", "either")))
+
+
+def deck_heights(model, fw: int, fh: int) -> dict:
+    """The floor a walker stands on over each footprint tile of a walkable kit piece: the top of
+    what is solid over the tile's middle quarter (the deck between the rails), px above the ground,
+    `{"dx,dy": px}` like a landmark's `walk_z`; 0 where nothing stands there (a ford's bed)."""
+    t = spec.DESIGN_TILE * model.k
+    q = 3 * t // 8                  # the middle quarter of the tile: inside any rails or bollards
+    solid = model.mat > 0
+    out = {}
+    for x in range(fw):
+        for y in range(fh):
+            a, b = x * t - model.x0 + q, y * t - model.y0 + q
+            sub = solid[max(a, 0):max(a + t // 4, 0), max(b, 0):max(b + t // 4, 0)]
+            has = sub.any(axis=(0, 1))
+            out[f"{x},{y}"] = int(max(0, np.nonzero(has)[0].max() + 1 + model.z0)) if has.any() else 0
+    return out
 
 
 # The spread of light out of a doorway and a window, degrees (realism.md §5.3, R1's cone).
@@ -530,7 +559,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
         it = items[iid]
         jobs.append((_item_job, (set_id, iid, it["layout"], variant, frame, item_frames(it, mod),
                                  tuple(it["footprint"]), tuple(sorted(layers)), k,
-                                 kit_pieces.get(iid, {}).get(variant), bool(it.get("crossing") or it.get("walkable")))))
+                                 kit_pieces.get(iid, {}).get(variant), bool(it.get("crossing") or it.get("walkable")),
+                                 is_deck(it))))
     for (tid, v), shapes in slope_groups.items():
         jobs.append((_slope_job, (set_id, tid, v, tuple(shapes), cat, k)))
     jobs.sort(key=lambda j: 0 if j[0] is _item_job else 1)
@@ -704,7 +734,7 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                     g["lights"] = info["lights"]
                 if v in meta.get("kit_pieces", {}).get(iid, {}):
                     g["pieces"] = meta["kit_pieces"][iid][v]
-                for key in ("tops", "roof", "under", "pass"):
+                for key in ("tops", "roof", "under", "pass", "walk", "walk_z"):
                     if key in info:
                         g[key] = info[key]
                 entry[v] = g
@@ -924,8 +954,10 @@ def main(build: spec.Build, args) -> int:
     ramps.write(out_dir)
     trimmed = {k_: pack.trim(s) for k_, s in sprites.items()}
     total = 0
+    written = []
     for n, (atlas, manifest) in enumerate(pages):
         png = out_dir / f"{set_id}.{n}.png"
+        written.append((png, manifest))
         Image.fromarray(atlas, "RGBA").save(png, optimize=True)
         doc = {"version": 1, "image": png.name, "sprites": manifest}
         (out_dir / f"{set_id}.{n}.json").write_text(json.dumps(doc, indent=1) + "\n")
@@ -937,7 +969,7 @@ def main(build: spec.Build, args) -> int:
     sw, sh_, sn = datapages.write_shadow_page(out_dir / f"{set_id}.s.png", sprites)
     total += (out_dir / f"{set_id}.s.png").stat().st_size
     print(f"shadow page {set_id}.s.png: {sw}x{sh_}, {sn} sprites at half size")
-    ww, wh, wn = datapages.write_water_page(out_dir / f"{set_id}.w.png", trimmed)
+    ww, wh, wn = datapages.write_water_page(out_dir / f"{set_id}.w.png", written)
     total += (out_dir / f"{set_id}.w.png").stat().st_size
     print(f"water page {set_id}.w.png: {ww}x{wh}, {wn} sprites holding water")
     if not args.only:

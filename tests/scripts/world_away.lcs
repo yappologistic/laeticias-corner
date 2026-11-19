@@ -1,6 +1,6 @@
 # Away from home: the home's editing keys rest (L-108: Ctrl+Z once removed a piece unseen, and
 # I armed the eyedropper for the way home), and natural rain over the Forum is rain where the
-# camera looks (L-107: the title card never said so away).
+# camera looks (L-107: the title card never said so away), and snow only where it snows.
 set unlock all
 place lamp @30,30
 expect count lamp 1
@@ -18,4 +18,16 @@ key i
 wait 2
 expect pipette no
 fast 3600 raining yes
+# What falls is what the interface says (V6-014): winter rain over Babylon is rain, over the
+# Zagros snow.
+set season winter
+set weather rain
+set world district:babylon/east_bank 1
+wait 20
+expect raining yes
+expect snowing no
+set world district:zagros/land 1
+wait 20
+expect raining yes
+expect snowing yes
 quit

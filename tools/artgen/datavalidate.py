@@ -292,7 +292,7 @@ def check_depth(name: str, atlas_dir: Path, pages) -> list[str]:
 def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str]:
     """The art-side rules of draw-order.md §5.1 for one item: `item` its catalog entry, `entry`
     its geometry ({variant: ...}), `keys` the sprite keys on the set's pages, `level` tile.level
-    px. P1 pieces where there are walk tiles or a footprint over 8 x 8, walk tiles in runs of
+    px. P1 pieces where there are walk tiles (but a one-tile deck walked on top) or a footprint over 8 x 8, walk tiles in runs of
     their own; P2 art for every piece; P3 `tops` for every look and `roof` only over walk tiles;
     W2 every walk tile reached from the footprint's edge by steps of at most half a level; W3 neighbouring walk floors within half a level unless one floor piece holds both; W4 a walk
     floor not above the item and more than three levels up only on a stair or a terrace; S1 a
@@ -304,7 +304,10 @@ def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str
         fw, fh = (fh0, fw0) if turned else (fw0, fh0)
         walk = {tuple(t) for t in g.get("walk", [])}
         pieces = g.get("pieces", [])
-        if (walk or fw > 8 or fh > 8) and not pieces:
+        # A one-tile deck walked on top (its floor above the ground, nothing over it: a bridge's
+        # or a jetty's piece) is its own single piece; under an arch it still needs pieces.
+        on_top = (fw, fh) == (1, 1) and not g.get("roof") and all(z > 0 for z in g.get("walk_z", {"": 0}).values())
+        if (walk or fw > 8 or fh > 8) and not pieces and not on_top:
             errors.append(f"{iid} {v}: P1 walk tiles or a footprint over 8 x 8 but no pieces")
         for i, (x, y, w, h) in enumerate(pieces):
             tiles_ = {(x + a, y + b) for a in range(w) for b in range(h)}
@@ -354,8 +357,9 @@ def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str
 
 
 def check_water(water_json: Path, pages: list[Path]) -> list[str]:
-    """The water page: its rectangles are the colour rectangles' size and anchor, and every item
-    sprite with a body of water on a water ramp has one (datapages.water_sprite)."""
+    """The water page: every item sprite with a body of water on a water ramp has an entry, and
+    each entry, placed by its anchor like the colour sprite, lies inside that sprite's rectangle
+    (datapages.water_sprite)."""
     if not water_json.exists():
         return [f"{water_json.name}: missing"]
     doc = json.loads(water_json.read_text())
@@ -369,12 +373,141 @@ def check_water(water_json: Path, pages: list[Path]) -> list[str]:
             if not key.startswith("item/") or key in raw or "/shadow/" in key or "/glow/" in key:
                 continue
             w = words[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
-            n = int(wclass[(w >> 3) & 0xFF][w != 0].sum())
+            n = int((wclass[(w >> 3) & 0xFF] & (w != 0)).sum())
             e = doc["sprites"].get(key)
             if n >= datapages.WATER_MIN and e is None:
                 errors.append(f"{key}: {n} water pixels and no water-page entry")
-            elif e is not None and (e["w"], e["h"], e["ox"], e["oy"]) != (r["w"], r["h"], r["ox"], r["oy"]):
-                errors.append(f"{key}: its water-page rectangle is not its colour rectangle")
+            elif e is not None and not (e["ox"] <= r["ox"] and e["oy"] <= r["oy"] and
+                                        e["w"] - e["ox"] <= r["w"] - r["ox"] and e["h"] - e["oy"] <= r["h"] - r["oy"]):
+                errors.append(f"{key}: its water-page rectangle reaches outside its colour sprite")
+    return errors
+
+
+LOADER_MAX = 1 << 14       # src/world/geometry.cpp kMaxOffset
+LOADER_PIECE = 8          # src/world/geometry.hpp kMaxPieceSide
+LOADER_FACES = ("+x", "+y", "-x", "-y")
+
+
+def loader_rules(geom: dict, set_id: str) -> list[str]:
+    """The engine's own geometry loader (src/world/geometry.cpp parseGeometry), rule for rule,
+    so a build refuses what the game would refuse at load: version 1, `set`, `tile`; item and
+    actor ids `<set>.<name>` with a name of [a-z0-9_]; variant keys `r<k>` (k < 256) or
+    `m<mask>` (mask < 16); `h` required, 0..max; `pieces` [dx, dy, w, h] with w and h 1..8;
+    `walk` and `water` integer pairs; `walk_z` keys "dx,dy" **on listed walk tiles only**,
+    values 0..max; `tops` rows of one length, values 0..max; `floor_pieces` indices into
+    `pieces`; `slots` non-empty lists of spots with `t`, optional `off`, `z`, `face` in
+    +x/+y/-x/-y; `emitters` integer pairs; actors' `carry_at` lists of pairs."""
+    errs = []
+    ident = re.compile(rf"{re.escape(set_id)}\.[a-z0-9_]+")
+
+    def pair(v, lo=-LOADER_MAX, hi=LOADER_MAX):
+        return isinstance(v, list) and len(v) == 2 and all(isinstance(a, int) and lo <= a <= hi for a in v)
+
+    def num(v, lo=0, hi=LOADER_MAX):
+        return isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi
+    if geom.get("version") != 1:
+        errs.append("loader: version is not 1")
+    if geom.get("set") != set_id:
+        errs.append(f"loader: set {geom.get('set')!r} is not {set_id!r}")
+    if not pair(geom.get("tile"), 1, 4096):
+        errs.append("loader: tile is not a pair 1..4096")
+    for iid, vars_ in geom.get("items", {}).items():
+        if not ident.fullmatch(iid):
+            errs.append(f"loader: item id {iid!r} is not {set_id}.<name>")
+        for key, g in vars_.items():
+            c = f"loader: {iid} {key}"
+            m = re.fullmatch(r"([rm])(\d+)", key)
+            if not m or int(m[2]) >= (16 if m[1] == "m" else 256):
+                errs.append(f"{c}: not a variant key r<k> or m<mask>")
+            if not num(g.get("h")):
+                errs.append(f"{c}: h missing or out of range")
+            pieces = g.get("pieces", [])
+            for pc in pieces:
+                if not (isinstance(pc, list) and len(pc) == 4 and num(pc[0]) and num(pc[1])
+                        and num(pc[2], 1, LOADER_PIECE) and num(pc[3], 1, LOADER_PIECE)):
+                    errs.append(f"{c}: piece {pc} is not [dx, dy, w, h] with sides 1..{LOADER_PIECE}")
+            walk = [tuple(t) for t in g.get("walk", []) if pair(t)]
+            if len(walk) != len(g.get("walk", [])) or not all(pair(t) for t in g.get("water", [])):
+                errs.append(f"{c}: walk or water holds something that is not a tile pair")
+            for t, z in g.get("walk_z", {}).items():
+                mt = re.fullmatch(r"(-?\d+),(-?\d+)", t)
+                if not mt:
+                    errs.append(f"{c}: walk_z key {t!r} is not \"dx,dy\"")
+                elif (int(mt[1]), int(mt[2])) not in walk:
+                    errs.append(f"{c}: walk_z {t}: not a walk tile")
+                if not num(z):
+                    errs.append(f"{c}: walk_z {t}: {z!r} out of range")
+            tops = g.get("tops")
+            if tops is not None and (len({len(r) for r in tops}) > 1 or not all(num(z) for r in tops for z in r)):
+                errs.append(f"{c}: tops rows differ in length or hold values out of range")
+            if any(not num(i, 0, len(pieces) - 1) for i in g.get("floor_pieces", [])):
+                errs.append(f"{c}: floor_pieces index outside pieces")
+            for sid, spots in g.get("slots", {}).items():
+                if not spots:
+                    errs.append(f"{c}: slot {sid} has no spot")
+                for sp in spots:
+                    if not pair(sp.get("t")) or ("off" in sp and not pair(sp["off"])) or \
+                            ("z" in sp and not num(sp["z"], -LOADER_MAX)) or sp.get("face", "+x") not in LOADER_FACES:
+                        errs.append(f"{c}: slot {sid} spot {sp} is malformed")
+            for name, at in g.get("emitters", {}).items():
+                if not pair(at):
+                    errs.append(f"{c}: emitter {name} is not a pair")
+    for aid, a in geom.get("actors", {}).items():
+        if not ident.fullmatch(aid):
+            errs.append(f"loader: actor id {aid!r} is not {set_id}.<name>")
+        for anim, pts in a.get("carry_at", {}).items():
+            if not all(pair(p) for p in pts):
+                errs.append(f"loader: {aid} carry_at {anim}: not pairs")
+    return errs
+
+
+def check_walk_heights(cat: dict, geom: dict, packed, hw: int, hh: int) -> list[str]:
+    """Walk floors against the art: every kit deck (setbuild.is_deck: bridges, jetties,
+    pontoons, moles, fords) declares `walk_z` on its tiles, and every declared floor is where the packed heights say:
+    at the tile's middle, a pixel `walk_z` px up stands within 2 px of `walk_z` (a few rows
+    of slack for a rail in front of it). Tiles under a `roof`, floors on the ground and stairs
+    (S1 checks their treads) are skipped. A landmark's mismatches come back as warnings."""
+    errors = []
+    items = {it["id"]: it for it in cat["items"]}
+    where = {key: (r, words) for man, words in packed for key, r in man.items()}
+    for iid, entry in geom.get("items", {}).items():
+        it = items.get(iid)
+        if it is None:
+            continue
+        walkable_kit = setbuild.is_deck(it)
+        tag = "warning: " if it.get("landmark") else ""
+        for v, g in entry.items():
+            if not isinstance(g, dict):
+                continue
+            wz = g.get("walk_z")
+            if walkable_kit and wz is None and not g.get("walk"):
+                errors.append(f"{iid} {v}: a walkable piece without walk_z")
+                continue
+            if not wz or "climb" in g:        # stairs: their treads are checked by S1
+                continue
+            pieces = g.get("pieces")
+            for t, z in wz.items():
+                if t in g.get("roof", {}) or z <= 2:    # a floor on the ground needs no art there
+                    continue
+                dx, dy = map(int, t.split(","))
+                key = f"item/{iid}/base/{v}/f0"
+                if pieces:
+                    i = next((i for i, (x, y, w, h) in enumerate(pieces) if x <= dx < x + w and y <= dy < y + h), None)
+                    key = f"item/{iid}/base/{v}/p{i}/f0"
+                if key not in where:
+                    continue
+                r, words = where[key]
+                col = r["ox"] + (dx - dy) * hw
+                row = r["oy"] + (dx + dy) * hh + hh - z
+                ok = False
+                for cx in (col - 1, col, col + 1):
+                    for cy in range(row - 3, row + 4):
+                        if 0 <= cx < r["w"] and 0 <= cy < r["h"]:
+                            w = int(words[r["y"] + cy, r["x"] + cx])
+                            if w and abs(((w >> 21) & 511) - z) <= 2:
+                                ok = True
+                if not ok:
+                    errors.append(f"{tag}{iid} {v}: walk_z {z} px at tile {t} is not where the art's floor is")
     return errors
 
 
@@ -405,6 +538,13 @@ def check(name: str, atlas_dir: Path | None = None) -> list[str]:
         errors += check_depth(name, atlas_dir, packed)
         geom_file = atlas_dir / f"{name}.geom.json"
         if geom_file.exists():
+            errors += loader_rules(json.loads(geom_file.read_text()), name)
+            tile = json.loads(spec.CATALOG.read_text())["tile"]
+            for e in check_walk_heights(cat, json.loads(geom_file.read_text()), packed, tile["w"] // 2, tile["h"] // 2):
+                if e.startswith("warning: "):     # landmarks' floors: reported, fixed with their models
+                    print(f"{name}: {e}", file=sys.stderr)
+                else:
+                    errors.append(e)
             keys = {k for man, _w in packed for k in man}
             level = json.loads(spec.CATALOG.read_text())["tile"]["level"]
             items = {it["id"]: it for it in cat["items"]}

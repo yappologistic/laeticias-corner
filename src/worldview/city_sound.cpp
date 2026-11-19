@@ -531,7 +531,10 @@ void CitySound::update(const Input& in) {
                        ? (n - tuning::kCrowdHandful) /
                              (tuning::kCrowdMarket - tuning::kCrowdHandful)
                        : 1.0f + std::min(1.0f, (n - tuning::kCrowdMarket) / tuning::kCrowdMarket));
-        const float g = std::min(1.0f, std::sqrt(n / std::max(1.0f, full))) *
+        // Under a city's music the crowd steps back so the music leads; where none plays (towns,
+        // roads) the crowd is the place's voice at full.
+        const float duck = 1.0f + (tuning::kCrowdLevel - 1.0f) * std::clamp(in.music, 0.0f, 1.0f);
+        const float g = std::min(1.0f, std::sqrt(n / std::max(1.0f, full))) * duck *
                         (raining ? tuning::kCrowdRain : 1.0f) * away;
         if (people > 0) playFamily(crowd, crowdLevel_, g);
         // Wind by strength, the district's place (street, sea, mountain) over the region's.
@@ -542,7 +545,7 @@ void CitySound::update(const Input& in) {
             if (in.snow && rs->snow >= 0) {
                 out_[static_cast<std::size_t>(rs->snow)] = {in.rain * away, 0};
             } else {
-                playFamily(rs->rain, in.rain * 2.0f, away);
+                playFamily(rs->rain, in.rain * 2.0f, tuning::kCityRain * away);
                 if (ds != nullptr) {
                     const float sum = ds->surfaces[0].share + ds->surfaces[1].share;
                     const float dense = std::clamp((in.rain - 0.33f) / 0.33f, 0.0f, 1.0f);

@@ -861,6 +861,8 @@ void App::loadWorldAudio() {
     soundLoops_.clear();
     for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
     markDryLoops(soundscape_->files());
+    for (std::size_t i = 0; i < soundLoops_.size(); ++i)
+        if (soundscape_->isMusic(static_cast<int>(i))) mixer_.setLoopMusic(soundLoops_[i]);
 }
 
 void App::loadCityAudio() {
@@ -892,8 +894,12 @@ bool App::snowLiesHere() const {
 void App::updateWorldAudio(float night) {
     if (!soundscape_ || !worldView_) return;
     const worldview::ThemeMixer& theme = worldView_->theme();
+    // Behind the front door the title drifts over the corner: its sound is the home's.
+    const bool door = menus_.frontDoorOpen();
+    const int homeRegion = loaded_->file.home.region;
     for (std::size_t r = 0; r < themeWeights_.size(); ++r)
-        themeWeights_[r] = theme.weight(static_cast<int>(r));
+        themeWeights_[r] = door ? (static_cast<int>(r) == homeRegion ? 1.0f : 0.0f)
+                                : theme.weight(static_cast<int>(r));
     const Vec2 t = cat_.iso().toTile(camera_.position());
     const TileRect h = loaded_->file.home.rect;
     worldview::Soundscape::Input in;
@@ -932,6 +938,7 @@ void App::updateWorldAudio(float night) {
     ci.clock = clock_.time();
     ci.season = season();
     ci.month = in.month;
+    ci.music = soundscape_->musicLevel();
     ci.dt = frameDt_;
     ci.actors = worldView_->actorsDrawn();
     ci.city = city_->city.get();
@@ -1057,8 +1064,12 @@ void App::followWorldWeather() {
     const TileRect v = cameraTiles();
     viewWeather_->update(played_, weather_.wind(), sc, {v.x0 - m, v.y0 - m, v.x1 + m, v.y1 + m},
                          weather_.mode());
-    if (worldView_)
+    if (worldView_) {
         worldView_->setWind(weather_.wind().dir, weather_.wind().strength, profile_.reduceMotion);
+        // The clock's 0 is 06:00: the time of day from midnight for the snow's morning.
+        worldView_->setCalendar(calendarMonth(),
+                                static_cast<float>(std::fmod(clock_.time() + 0.25, 1.0)));
+    }
 }
 
 TileRect App::cameraTiles() const {

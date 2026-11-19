@@ -130,9 +130,9 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             c.args = {tok[1]};
         } else if (cmd == "set") {
             static constexpr std::string_view kKeys[] = {
-                "clock",  "rain", "unlock",    "played",  "land",  "season",
-                "day",    "grow", "weather",   "chatter", "time",  "lively",
-                "shower", "city", "city_dump", "session", "clouds"};
+                "clock",  "rain", "unlock",    "played",  "land",   "season",
+                "day",    "grow", "weather",   "chatter", "time",   "lively",
+                "shower", "city", "city_dump", "session", "clouds", "mark"};
             static constexpr std::string_view kNumeric[] = {"played", "grow", "day", "time",
                                                             "session"};
             if (tok.size() == 3 && std::ranges::find(kNumeric, tok[1]) != std::end(kNumeric)) {
@@ -155,7 +155,8 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             } else if (tok.size() != 3 || std::ranges::find(kKeys, tok[1]) == std::end(kKeys)) {
                 return err(
                     "set clock|rain|weather|clouds|unlock|played|land|season|day|grow|chatter|"
-                    "time|lively|city|city_dump|session VALUE, set camera|world TX TY ZOOM, set "
+                    "time|lively|city|city_dump|session|mark VALUE, set camera|world TX TY ZOOM, "
+                    "set "
                     "world PLACE ZOOM, set look KIND ZOOM or set wish ID open");
             }
             c.kind = ScriptCommand::Kind::Set;
@@ -176,6 +177,17 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             if (c.args[0] == "tile" || c.args[0] == "item" || c.args[0] == "growth") {
                 if (c.args.size() != 3) return err("expect " + c.args[0] + " P VALUE");
                 if (auto r = pointAt(wait ? 3 : 2, c.a); !r) return err(r.error());
+            } else if (c.args[0] == "contrast") {
+                float v = 0;
+                if (c.args.size() != 3 || !parseScriptRect(c.args[1]) || !number(c.args[2], v))
+                    return err("expect contrast X,Y,W,H MIN");
+            } else if (c.args[0] == "luma_mark") {
+                if (c.args.size() != 3 || !parseScriptRect(c.args[2]))
+                    return err("expect luma_mark NAME X,Y,W,H");
+            } else if (c.args[0] == "luma_like") {
+                float v = 0;
+                if (c.args.size() != 4 || !parseScriptRect(c.args[2]) || !number(c.args[3], v))
+                    return err("expect luma_like NAME X,Y,W,H TOLERANCE");
             } else if (c.args[0] == "target_alpha") {
                 float v = 0;
                 if (c.args.size() != 3 || !parseScriptRect(c.args[1]) || !number(c.args[2], v))

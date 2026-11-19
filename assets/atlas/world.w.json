@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "image": "world.w.png",
+ "anchor": "as the colour sprite's",
+ "channels": {
+  "r": "water (255)",
+  "g": "depth px",
+  "b": "bed (1 basin)"
+ },
+ "sprites": {
+  "item/world.cistern/base/r1/f0": {
+   "x": 77,
+   "y": 1,
+   "w": 6,
+   "h": 3,
+   "ox": -11,
+   "oy": -26
+  },
+  "item/world.inn/base/r0/f0": {
+   "x": 1,
+   "y": 1,
+   "w": 24,
+   "h": 11,
+   "ox": 79,
+   "oy": -86
+  },
+  "item/world.inn/base/r1/f0": {
+   "x": 51,
+   "y": 1,
+   "w": 12,
+   "h": 6,
+   "ox": 67,
+   "oy": -19
+  },
+  "item/world.inn/base/r2/f0": {
+   "x": 64,
+   "y": 1,
+   "w": 12,
+   "h": 6,
+   "ox": -55,
+   "oy": -19
+  },
+  "item/world.inn/base/r3/f0": {
+   "x": 26,
+   "y": 1,
+   "w": 24,
+   "h": 11,
+   "ox": -55,
+   "oy": -86
+  }
+ }
+}

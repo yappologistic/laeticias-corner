@@ -63,6 +63,9 @@
 //   set day N               the calendar day (the season follows unless pinned)
 //   set grow SECONDS        let the beds grow that much play time at once
 //   set wish ID open        offer that wish now (it joins the tray even past three)
+//   set mark NAME           in an --audio-out capture: a segment named NAME starts here (its
+//                           start sample and the bus energies of the segment before go to
+//                           FILE.marks beside the capture)
 //   set city F|off          city life (src/life/): load the world and keep the active area
 //                           round F (x,y | layer:node | forum | agora | terrace |
 //                           district:<region>/<name>), stepped with the game's clock
@@ -107,6 +110,10 @@
 // Points `life:KIND` (the first drawn city-life actor of that kind); `set look KIND ZOOM` finds
 // a living actor of that kind first.
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
+//       contrast X,Y,W,H MIN    the spread (standard deviation, 0..255) of the region's
+//                               lightness is at least MIN (not one flat colour)
+//       luma_mark NAME X,Y,W,H  keeps the region's mean lightness as NAME (always passes)
+//       luma_like NAME X,Y,W,H TOL  the region's mean lightness is within TOL (a share) of NAME's
 //       target_alpha X,Y,W,H MOST  at most MOST (0..1) of the world target under the region is
 //                               partly transparent (a seam between cached pieces, a hole)
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
@@ -115,7 +122,7 @@
 //       actor KIND ANIM|moving|inside|hat|any [ITEM]  one actor of that kind (a visitor id or
 //                               the resident's) is doing that now, at that item's slot if given
 //       bubble yes|no (the resident is speaking) | bubble CONTEXT (a line of that context) |
-//       raining yes|no (where the camera looks) visible KIND N (that many seen, not inside) | bank
+//       raining yes|no (where the camera looks) | snowing yes|no (as the title card says) visible KIND N (that many seen, not inside) | bank
 //       KIND (every one seen on land beside water) | together KIND D (every one seen within D tiles
 //       of another) | population yes (no visitor over its max, no leaver lingering) falls N (open
 //       water tiles on the rims, falling over) | weather natural|rain|clear | event SHOW yes|no

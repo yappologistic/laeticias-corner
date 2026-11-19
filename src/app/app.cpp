@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <format>
+#include <fstream>
 #include <iterator>
 #include <utility>
 
@@ -1298,7 +1299,8 @@ HudModel App::model() const {
     m.season = season();
     m.seasonDay = seasonOf(clock_.day(), cat_.seasonDays).day;
     m.seasonPin = seasonPin_;
-    m.snow = cat_.seasons[static_cast<std::size_t>(m.season)].snow;
+    // What falls where the camera is (V6-014: Babylon's winter rain was shown as snow).
+    m.snow = snowLiesHere();
     m.pages = actors_.seenCount() + progress_.nooksFound();
     m.pagesTotal = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
     m.nextStagePages = nextStagePages(cat_, progress_.stage);
@@ -1557,6 +1559,17 @@ void App::setupMusic() {
     };
     mixer_.setMakeup(dayStems_, lead(cat_.audio.dayStems, dayStems_), tuning::kDayMakeup);
     mixer_.setMakeup(nightStems_, lead(cat_.audio.nightStems, nightStems_), tuning::kNightMakeup);
+    // The full mixes are the front door's (the catalog's music that is no stem): loaded, and on
+    // the music bus.
+    std::vector<std::string> full;
+    for (const std::string& f : cat_.audio.music)
+        if (mixer_.loopIndex(f) < 0) full.push_back(f);
+    mixer_.loadMore(assets_ / "audio", {}, full);
+    for (const std::string& f : full) {
+        const int loop = mixer_.loopIndex(f);
+        mixer_.setLoopMusic(loop);
+        (f.contains("night") ? titleNight_ : titleDay_) = loop;
+    }
 }
 
 void App::unlockStems(const CondFacts& f, bool instant) {
@@ -1581,8 +1594,12 @@ void App::updateAudio() {
     applyVolumes(); // the music ducks while paused
     const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);
-    // In the world the home's stems play while the home holds the music (its share of the view).
-    const float home = homeMusic();
+    // At the front door its own full mix plays (day or night by the clock); in the world the
+    // home's stems play while the home holds the music (its share of the view).
+    const bool door = menus_.frontDoorOpen();
+    mixer_.setLoopGain(titleDay_, door ? tuning::kMusicLevel * (1 - n) : 0.0f);
+    mixer_.setLoopGain(titleNight_, door ? tuning::kMusicLevel * n : 0.0f);
+    const float home = door ? 0.0f : homeMusic();
     for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n) * home);
     for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n * home);
     updateWorldAudio(n);
@@ -1721,9 +1738,16 @@ void App::render() {
 }
 
 void App::captureAudio(int steps) {
+    const auto frames = static_cast<std::size_t>(steps * kAudioFramesPerStep);
+    if (captureSkip_) {
+        // A settling stretch between measured segments: mixed (time moves on) but not kept.
+        skipBuffer_.resize(frames * 2);
+        mixer_.render(skipBuffer_.data(), static_cast<int>(frames));
+        return;
+    }
     const std::size_t n = capture_.size();
-    capture_.resize(n + static_cast<std::size_t>(steps * kAudioFramesPerStep * 2));
-    mixer_.render(capture_.data() + n, steps * kAudioFramesPerStep);
+    capture_.resize(n + frames * 2);
+    mixer_.render(capture_.data() + n, static_cast<int>(frames));
 }
 
 void App::refreshScale() {
@@ -1924,7 +1948,9 @@ int App::run() {
         writeProfileIfDue();
         const double uiMs = msBetween(tUi, SDL_GetPerformanceCounter());
         updateAudio();
-        if (opts_.audioOut) captureAudio(steps);
+        // A capture keeps time with the frames (one fixed step each when headless), so the
+        // front door, the pause menu and the map, where nothing steps, are heard too.
+        if (opts_.audioOut) captureAudio(1);
         render();
 
         // The script runs after the frame is drawn: shots capture it, and the input it queues is
@@ -2007,6 +2033,11 @@ int App::run() {
             return 1;
         }
         SDL_Log("audio: wrote %s", opts_.audioOut->string().c_str());
+        endSegment();
+        if (!marks_.empty()) {
+            std::ofstream out(opts_.audioOut->string() + ".marks", std::ios::binary);
+            out << marks_;
+        }
     }
     return exitCode_;
 }

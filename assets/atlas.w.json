@@ -1,0 +1,108 @@
+{
+ "version": 1,
+ "image": "atlas.w.png",
+ "anchor": "as the colour sprite's",
+ "channels": {
+  "r": "water (255)",
+  "g": "depth px",
+  "b": "bed (1 basin)"
+ },
+ "sprites": {
+  "item/fountain/base/r0/f0": {
+   "x": 1,
+   "y": 1,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
+   "oy": 10
+  },
+  "item/fountain/base/r0/f1": {
+   "x": 1,
+   "y": 1,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
+   "oy": 10
+  },
+  "item/fountain/base/r0/f2": {
+   "x": 1,
+   "y": 1,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
+   "oy": 10
+  },
+  "item/fountain/base/r0/f3": {
+   "x": 1,
+   "y": 1,
+   "w": 60,
+   "h": 45,
+   "ox": 30,
+   "oy": 10
+  },
+  "item/rowboat/base/r0/f0": {
+   "x": 62,
+   "y": 1,
+   "w": 66,
+   "h": 33,
+   "ox": 17,
+   "oy": -7
+  },
+  "item/rowboat/base/r1/f0": {
+   "x": 129,
+   "y": 1,
+   "w": 66,
+   "h": 33,
+   "ox": 49,
+   "oy": -7
+  },
+  "item/stepping_stones/base/r0/f0": {
+   "x": 55,
+   "y": 47,
+   "w": 46,
+   "h": 9,
+   "ox": 22,
+   "oy": -12
+  },
+  "item/stepping_stones/base/r1/f0": {
+   "x": 196,
+   "y": 1,
+   "w": 48,
+   "h": 11,
+   "ox": 26,
+   "oy": -11
+  },
+  "item/stepping_stones/base/r2/f0": {
+   "x": 102,
+   "y": 47,
+   "w": 44,
+   "h": 9,
+   "ox": 23,
+   "oy": -12
+  },
+  "item/stepping_stones/base/r3/f0": {
+   "x": 1,
+   "y": 47,
+   "w": 53,
+   "h": 9,
+   "ox": 27,
+   "oy": -12
+  },
+  "item/well/base/r0/f0": {
+   "x": 147,
+   "y": 47,
+   "w": 14,
+   "h": 3,
+   "ox": 7,
+   "oy": -2
+  },
+  "item/well/base/r1/f0": {
+   "x": 147,
+   "y": 47,
+   "w": 14,
+   "h": 3,
+   "ox": 7,
+   "oy": -2
+  }
+ }
+}

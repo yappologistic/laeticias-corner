@@ -3,780 +3,708 @@
  "image": "athens.1.png",
  "sprites": {
   "edge/athens.ashlar_se/top": {
-   "x": 781,
-   "y": 2815,
+   "x": 840,
+   "y": 2823,
    "w": 32,
    "h": 38,
    "ox": 0,
    "oy": -10
   },
   "edge/athens.ashlar_se/v0": {
-   "x": 2522,
-   "y": 2822,
+   "x": 633,
+   "y": 2831,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.ashlar_se/v1": {
-   "x": 2555,
-   "y": 2822,
+   "x": 2140,
+   "y": 2831,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.ashlar_se/v2": {
-   "x": 2750,
-   "y": 2822,
+   "x": 2173,
+   "y": 2831,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.ashlar_se/v3": {
-   "x": 2783,
-   "y": 2823,
+   "x": 240,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.ashlar_sw/top": {
-   "x": 2367,
-   "y": 2817,
+   "x": 3802,
+   "y": 2824,
    "w": 32,
    "h": 38,
    "ox": 32,
    "oy": -10
   },
   "edge/athens.ashlar_sw/v0": {
-   "x": 2816,
-   "y": 2823,
+   "x": 273,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.ashlar_sw/v1": {
-   "x": 113,
-   "y": 2824,
+   "x": 1527,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.ashlar_sw/v2": {
-   "x": 146,
-   "y": 2824,
+   "x": 2589,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.ashlar_sw/v3": {
-   "x": 410,
-   "y": 2826,
+   "x": 2622,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_se/v0": {
-   "x": 443,
-   "y": 2826,
+   "x": 2950,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/v1": {
-   "x": 540,
-   "y": 2826,
+   "x": 2983,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/v2": {
-   "x": 573,
-   "y": 2826,
+   "x": 3899,
+   "y": 2832,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/v3": {
-   "x": 2913,
-   "y": 2826,
+   "x": 120,
+   "y": 2833,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/v4": {
-   "x": 2946,
-   "y": 2826,
+   "x": 153,
+   "y": 2833,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/v5": {
-   "x": 4036,
-   "y": 2826,
+   "x": 873,
+   "y": 2833,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/v6": {
-   "x": 179,
-   "y": 2827,
+   "x": 1946,
+   "y": 2833,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/v7": {
-   "x": 212,
-   "y": 2827,
+   "x": 1979,
+   "y": 2833,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/w0/v0": {
-   "x": 3406,
-   "y": 2827,
+   "x": 2012,
+   "y": 2833,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.earth_se/w0/v1": {
-   "x": 3439,
-   "y": 2827,
+   "x": 2045,
+   "y": 2833,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.earth_se/w0/v2": {
-   "x": 3904,
-   "y": 2828,
+   "x": 50,
+   "y": 2834,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.earth_se/w0/v3": {
-   "x": 3937,
-   "y": 2828,
+   "x": 83,
+   "y": 2834,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.earth_se/w1/v0": {
-   "x": 57,
-   "y": 2829,
+   "x": 1141,
+   "y": 2834,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/w1/v1": {
-   "x": 476,
-   "y": 2829,
+   "x": 1174,
+   "y": 2834,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/w1/v2": {
-   "x": 3516,
-   "y": 2829,
+   "x": 2206,
+   "y": 2835,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_se/w1/v3": {
-   "x": 1,
-   "y": 2830,
+   "x": 2537,
+   "y": 2835,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.earth_sw/top": {
-   "x": 2717,
-   "y": 2792,
+   "x": 4063,
+   "y": 2798,
    "w": 32,
    "h": 39,
    "ox": 32,
    "oy": -9
   },
   "edge/athens.earth_sw/v0": {
-   "x": 1282,
-   "y": 2830,
+   "x": 306,
+   "y": 2836,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/v1": {
-   "x": 1315,
-   "y": 2830,
+   "x": 339,
+   "y": 2836,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/v2": {
-   "x": 2455,
-   "y": 2830,
+   "x": 372,
+   "y": 2836,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/v3": {
-   "x": 2488,
-   "y": 2830,
+   "x": 906,
+   "y": 2836,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/v4": {
-   "x": 1205,
-   "y": 2832,
+   "x": 939,
+   "y": 2836,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/v5": {
-   "x": 1238,
-   "y": 2832,
+   "x": 2078,
+   "y": 2836,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/v6": {
-   "x": 1555,
-   "y": 2832,
+   "x": 1453,
+   "y": 2838,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/v7": {
-   "x": 1655,
-   "y": 2832,
+   "x": 1486,
+   "y": 2838,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/w0/v0": {
-   "x": 1688,
-   "y": 2832,
+   "x": 1828,
+   "y": 2838,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.earth_sw/w0/v1": {
-   "x": 1994,
-   "y": 2832,
+   "x": 1861,
+   "y": 2838,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.earth_sw/w0/v2": {
-   "x": 2400,
-   "y": 2832,
+   "x": 1894,
+   "y": 2838,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.earth_sw/w0/v3": {
-   "x": 2715,
-   "y": 2832,
+   "x": 2655,
+   "y": 2838,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.earth_sw/w1/v0": {
-   "x": 606,
-   "y": 2833,
+   "x": 2688,
+   "y": 2838,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/w1/v1": {
-   "x": 639,
-   "y": 2833,
+   "x": 4050,
+   "y": 2838,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/w1/v2": {
-   "x": 868,
-   "y": 2833,
+   "x": 1031,
+   "y": 2839,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.earth_sw/w1/v3": {
-   "x": 1405,
-   "y": 2833,
+   "x": 1404,
+   "y": 2839,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_se/top": {
-   "x": 2979,
-   "y": 2821,
+   "x": 3413,
+   "y": 2825,
    "w": 32,
    "h": 35,
    "ox": 0,
    "oy": -13
   },
   "edge/athens.limestone_se/v0": {
-   "x": 3289,
-   "y": 2833,
+   "x": 2239,
+   "y": 2839,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/v1": {
-   "x": 3322,
-   "y": 2833,
+   "x": 2272,
+   "y": 2839,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/v2": {
-   "x": 3786,
-   "y": 2833,
+   "x": 2721,
+   "y": 2839,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/v3": {
-   "x": 3819,
-   "y": 2833,
+   "x": 3129,
+   "y": 2839,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/v4": {
-   "x": 245,
-   "y": 2834,
+   "x": 3238,
+   "y": 2840,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/v5": {
-   "x": 901,
-   "y": 2834,
+   "x": 3271,
+   "y": 2840,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/v6": {
-   "x": 934,
-   "y": 2834,
+   "x": 186,
+   "y": 2841,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/v7": {
-   "x": 3012,
-   "y": 2834,
+   "x": 742,
+   "y": 2841,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/w0/v0": {
-   "x": 3045,
-   "y": 2834,
+   "x": 1354,
+   "y": 2842,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.limestone_se/w0/v1": {
-   "x": 967,
-   "y": 2835,
+   "x": 3835,
+   "y": 2842,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.limestone_se/w0/v2": {
-   "x": 1000,
-   "y": 2835,
+   "x": 2830,
+   "y": 2844,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.limestone_se/w0/v3": {
-   "x": 1348,
-   "y": 2835,
+   "x": 2863,
+   "y": 2844,
    "w": 32,
    "h": 18,
    "ox": 0,
    "oy": -30
   },
   "edge/athens.limestone_se/w1/v0": {
-   "x": 672,
-   "y": 2836,
+   "x": 2466,
+   "y": 2845,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/w1/v1": {
-   "x": 2097,
-   "y": 2838,
+   "x": 2499,
+   "y": 2845,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/w1/v2": {
-   "x": 2130,
-   "y": 2838,
+   "x": 3694,
+   "y": 2845,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_se/w1/v3": {
-   "x": 3078,
-   "y": 2838,
+   "x": 594,
+   "y": 2846,
    "w": 32,
    "h": 32,
    "ox": 0,
    "oy": -16
   },
   "edge/athens.limestone_sw/top": {
-   "x": 343,
-   "y": 2822,
+   "x": 1640,
+   "y": 2829,
    "w": 32,
    "h": 34,
    "ox": 32,
    "oy": -14
   },
   "edge/athens.limestone_sw/v0": {
-   "x": 3722,
-   "y": 2838,
+   "x": 1,
+   "y": 2847,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/v1": {
-   "x": 3970,
-   "y": 2838,
+   "x": 972,
+   "y": 2848,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/v2": {
-   "x": 4003,
-   "y": 2838,
+   "x": 1312,
+   "y": 2848,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/v3": {
-   "x": 2677,
-   "y": 2840,
+   "x": 405,
+   "y": 2849,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/v4": {
-   "x": 3355,
-   "y": 2840,
+   "x": 438,
+   "y": 2849,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/v5": {
-   "x": 3622,
-   "y": 2840,
+   "x": 2754,
+   "y": 2849,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/v6": {
-   "x": 2638,
-   "y": 2841,
+   "x": 2787,
+   "y": 2849,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/v7": {
-   "x": 705,
-   "y": 2842,
+   "x": 1673,
+   "y": 2851,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/w0/v0": {
-   "x": 738,
-   "y": 2842,
+   "x": 2305,
+   "y": 2851,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.limestone_sw/w0/v1": {
-   "x": 1033,
-   "y": 2842,
+   "x": 3446,
+   "y": 2851,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.limestone_sw/w0/v2": {
-   "x": 1903,
-   "y": 2843,
+   "x": 2012,
+   "y": 2852,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.limestone_sw/w0/v3": {
-   "x": 376,
-   "y": 2844,
+   "x": 2045,
+   "y": 2852,
    "w": 32,
    "h": 18,
    "ox": 32,
    "oy": -30
   },
   "edge/athens.limestone_sw/w1/v0": {
-   "x": 1066,
-   "y": 2844,
+   "x": 3555,
+   "y": 2852,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/w1/v1": {
-   "x": 1099,
-   "y": 2844,
+   "x": 3932,
+   "y": 2852,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/w1/v2": {
-   "x": 1721,
-   "y": 2845,
+   "x": 3965,
+   "y": 2852,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
   "edge/athens.limestone_sw/w1/v3": {
-   "x": 1754,
-   "y": 2845,
+   "x": 34,
+   "y": 2853,
    "w": 32,
    "h": 32,
    "ox": 32,
    "oy": -16
   },
-  "fx/athens.altar_fire/f1": {
-   "x": 1141,
-   "y": 2822,
-   "w": 12,
-   "h": 29,
-   "ox": 3,
-   "oy": 28
-  },
-  "fx/athens.altar_fire/f3": {
-   "x": 90,
-   "y": 2829,
-   "w": 18,
-   "h": 27,
-   "ox": 9,
-   "oy": 26
-  },
-  "fx/athens.altar_fire/f4": {
-   "x": 2849,
-   "y": 2823,
-   "w": 16,
-   "h": 29,
-   "ox": 8,
-   "oy": 28
-  },
-  "fx/athens.altar_fire/f5": {
-   "x": 4069,
-   "y": 2826,
-   "w": 13,
-   "h": 29,
-   "ox": 6,
-   "oy": 28
-  },
-  "fx/athens.altar_smoke/f3": {
-   "x": 3460,
-   "y": 2674,
-   "w": 23,
-   "h": 70,
-   "ox": 2,
-   "oy": 69
-  },
-  "fx/athens.altar_smoke/f4": {
-   "x": 4060,
-   "y": 2652,
-   "w": 26,
-   "h": 72,
-   "ox": 2,
-   "oy": 73
-  },
-  "fx/athens.altar_smoke/f5": {
-   "x": 3434,
-   "y": 2674,
-   "w": 25,
-   "h": 72,
-   "ox": 2,
-   "oy": 72
-  },
-  "fx/athens.fire/f0": {
-   "x": 34,
-   "y": 2830,
-   "w": 14,
-   "h": 21,
-   "ox": 8,
-   "oy": 20
-  },
-  "fx/athens.fire/f1": {
-   "x": 1588,
-   "y": 2832,
-   "w": 14,
-   "h": 19,
-   "ox": 7,
-   "oy": 18
-  },
   "fx/athens.fire/f2": {
-   "x": 4083,
-   "y": 2826,
+   "x": 1760,
+   "y": 2828,
    "w": 12,
    "h": 19,
    "ox": 6,
    "oy": 18
   },
   "fx/athens.fire/f3": {
-   "x": 1438,
-   "y": 2833,
+   "x": 3016,
+   "y": 2832,
    "w": 14,
    "h": 19,
    "ox": 6,
    "oy": 18
   },
   "fx/athens.fire/f4": {
-   "x": 1787,
-   "y": 2820,
+   "x": 2570,
+   "y": 2835,
    "w": 11,
    "h": 19,
    "ox": 4,
    "oy": 20
   },
+  "fx/athens.marble_dust/f0": {
+   "x": 1387,
+   "y": 2842,
+   "w": 16,
+   "h": 12,
+   "ox": 9,
+   "oy": 12
+  },
   "fx/athens.marble_dust/f1": {
-   "x": 2433,
-   "y": 2847,
+   "x": 219,
+   "y": 2841,
    "w": 20,
    "h": 12,
    "ox": 14,
    "oy": 14
   },
   "fx/athens.marble_dust/f2": {
-   "x": 2892,
-   "y": 2847,
+   "x": 2111,
+   "y": 2852,
    "w": 20,
    "h": 12,
    "ox": 15,
    "oy": 17
   },
+  "fx/athens.marble_dust/f3": {
+   "x": 474,
+   "y": 2844,
+   "w": 21,
+   "h": 12,
+   "ox": 16,
+   "oy": 19
+  },
   "fx/athens.sea_glint/f0": {
-   "x": 1271,
-   "y": 2832,
+   "x": 4083,
+   "y": 2838,
    "w": 9,
    "h": 12,
    "ox": 0,
    "oy": 11
   },
   "fx/athens.sea_glint/f3": {
-   "x": 4083,
-   "y": 2846,
+   "x": 1437,
+   "y": 2839,
    "w": 12,
    "h": 12,
    "ox": 3,
    "oy": 11
   },
   "fx/athens.torch_flame/f2": {
-   "x": 2163,
-   "y": 2838,
+   "x": 3304,
+   "y": 2840,
    "w": 8,
    "h": 12,
    "ox": 4,
    "oy": 11
   },
   "fx/athens.torch_flame/f3": {
-   "x": 1787,
-   "y": 2840,
+   "x": 775,
+   "y": 2841,
    "w": 8,
    "h": 11,
    "ox": 3,
    "oy": 10
-  },
-  "fx/athens.torch_flame/f4": {
-   "x": 1847,
-   "y": 2819,
-   "w": 6,
-   "h": 11,
-   "ox": 2,
-   "oy": 12
-  },
-  "fx/athens.torch_flame/f5": {
-   "x": 814,
-   "y": 2815,
-   "w": 4,
-   "h": 12,
-   "ox": 1,
-   "oy": 12
   },
   "item/athens.academy_grove/base/r0/p0/f0": {
    "x": 2132,
@@ -827,15 +755,15 @@
    "oy": 23
   },
   "item/athens.acrocorinth_summit/shadow/r0/f0": {
-   "x": 1828,
-   "y": 2574,
+   "x": 2766,
+   "y": 2572,
    "w": 201,
    "h": 70,
    "ox": 100,
    "oy": -28
   },
   "item/athens.approach/shadow/r0/f0": {
-   "x": 3330,
+   "x": 3329,
    "y": 1441,
    "w": 751,
    "h": 251,
@@ -866,17 +794,9 @@
    "ox": 508,
    "oy": -76
   },
-  "item/athens.athenian_treasury/shadow/r0/f0": {
-   "x": 2030,
-   "y": 2595,
-   "w": 178,
-   "h": 70,
-   "ox": 100,
-   "oy": -12
-  },
   "item/athens.chalkotheke/shadow/r0/f0": {
-   "x": 2765,
-   "y": 2433,
+   "x": 3555,
+   "y": 2414,
    "w": 358,
    "h": 137,
    "ox": 205,
@@ -907,7 +827,7 @@
    "oy": -38
   },
   "item/athens.delos_sanctuary/glow/r0/f0": {
-   "x": 3982,
+   "x": 2675,
    "y": 2803,
    "w": 53,
    "h": 34,
@@ -923,8 +843,8 @@
    "oy": 2
   },
   "item/athens.delphi_apollo/glow/r0/f0": {
-   "x": 1950,
-   "y": 2819,
+   "x": 4006,
+   "y": 2828,
    "w": 43,
    "h": 27,
    "ox": 226,
@@ -987,279 +907,319 @@
    "oy": 2
   },
   "item/athens.dionysos_temple/shadow/r0/f0": {
-   "x": 1297,
-   "y": 2449,
+   "x": 2765,
+   "y": 2457,
    "w": 312,
    "h": 114,
    "ox": 192,
    "oy": -47
   },
   "item/athens.dipylon/glow/r0/f0": {
-   "x": 1610,
-   "y": 2559,
+   "x": 788,
+   "y": 2561,
    "w": 217,
    "h": 147,
    "ox": 180,
    "oy": 2
   },
   "item/athens.dipylon/shadow/r0/f0": {
-   "x": 3077,
-   "y": 2242,
+   "x": 587,
+   "y": 2235,
    "w": 477,
    "h": 190,
    "ox": 218,
    "oy": -44
   },
+  "item/athens.eleusinion/shadow/r0/f0": {
+   "x": 587,
+   "y": 2426,
+   "w": 336,
+   "h": 128,
+   "ox": 165,
+   "oy": -34
+  },
   "item/athens.g_brazier/glow/r0/f0": {
-   "x": 3474,
-   "y": 2820,
+   "x": 1312,
+   "y": 2822,
    "w": 41,
    "h": 25,
    "ox": 20,
    "oy": 20
   },
-  "item/athens.g_crane/shadow/r1/f0": {
-   "x": 2963,
-   "y": 2699,
-   "w": 69,
-   "h": 25,
-   "ox": 19,
-   "oy": -11
-  },
   "item/athens.g_crane/shadow/r1/f1": {
-   "x": 2565,
-   "y": 2700,
+   "x": 3525,
+   "y": 2699,
    "w": 65,
    "h": 27,
    "ox": 19,
    "oy": -11
   },
   "item/athens.g_farmstead/shadow/r0/f0": {
-   "x": 273,
-   "y": 2555,
+   "x": 1836,
+   "y": 2559,
    "w": 220,
    "h": 101,
    "ox": 101,
    "oy": 3
   },
   "item/athens.g_farmstead/shadow/r1/f0": {
-   "x": 772,
-   "y": 2545,
+   "x": 3842,
+   "y": 2552,
    "w": 228,
    "h": 95,
    "ox": 100,
    "oy": 2
   },
   "item/athens.g_farmstead/shadow/r2/f0": {
-   "x": 3167,
-   "y": 2586,
+   "x": 1,
+   "y": 2581,
    "w": 179,
    "h": 107,
    "ox": 73,
    "oy": 2
   },
   "item/athens.g_farmstead/shadow/r3/f0": {
-   "x": 2777,
-   "y": 2571,
+   "x": 2558,
+   "y": 2572,
    "w": 207,
    "h": 87,
    "ox": 102,
    "oy": -12
   },
   "item/athens.g_forge/glow/r0/f0": {
-   "x": 376,
-   "y": 2822,
+   "x": 1673,
+   "y": 2829,
    "w": 33,
    "h": 21,
    "ox": 20,
    "oy": 8
   },
   "item/athens.g_forge/glow/r1/f0": {
-   "x": 1073,
-   "y": 2822,
+   "x": 3446,
+   "y": 2829,
    "w": 33,
    "h": 21,
    "ox": 12,
    "oy": 8
   },
   "item/athens.g_forge/shadow/r0/f0": {
-   "x": 761,
-   "y": 2787,
+   "x": 1787,
+   "y": 2795,
    "w": 57,
    "h": 27,
    "ox": 26,
    "oy": -3
   },
   "item/athens.g_forge/shadow/r1/f0": {
-   "x": 1799,
-   "y": 2790,
+   "x": 565,
+   "y": 2799,
    "w": 55,
    "h": 28,
    "ox": 28,
    "oy": -3
   },
   "item/athens.g_fountain/shadow/r0/f0": {
-   "x": 1445,
-   "y": 2564,
+   "x": 2968,
+   "y": 2604,
    "w": 162,
    "h": 73,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_fountain/shadow/r0/f1": {
-   "x": 1445,
-   "y": 2564,
+   "x": 2968,
+   "y": 2604,
    "w": 162,
    "h": 73,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_fountain/shadow/r0/f2": {
-   "x": 1445,
-   "y": 2564,
+   "x": 2968,
+   "y": 2604,
    "w": 162,
    "h": 73,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_fountain/shadow/r1/f0": {
-   "x": 3944,
-   "y": 2579,
+   "x": 1549,
+   "y": 2654,
    "w": 149,
    "h": 72,
    "ox": 48,
    "oy": 2
   },
   "item/athens.g_fountain/shadow/r1/f1": {
-   "x": 3944,
-   "y": 2579,
+   "x": 1549,
+   "y": 2654,
    "w": 149,
    "h": 72,
    "ox": 48,
    "oy": 2
   },
   "item/athens.g_fountain/shadow/r1/f2": {
-   "x": 3944,
-   "y": 2579,
+   "x": 1549,
+   "y": 2654,
    "w": 149,
    "h": 72,
    "ox": 48,
    "oy": 2
   },
   "item/athens.g_fountain/shadow/r2/f0": {
-   "x": 1445,
-   "y": 2638,
+   "x": 1006,
+   "y": 2656,
    "w": 149,
    "h": 68,
    "ox": 48,
    "oy": -6
   },
   "item/athens.g_fountain/shadow/r2/f1": {
-   "x": 1445,
-   "y": 2638,
+   "x": 1006,
+   "y": 2656,
    "w": 149,
    "h": 68,
    "ox": 48,
    "oy": -6
   },
   "item/athens.g_fountain/shadow/r2/f2": {
-   "x": 1445,
-   "y": 2638,
+   "x": 1006,
+   "y": 2656,
    "w": 149,
    "h": 68,
    "ox": 48,
    "oy": -6
   },
+  "item/athens.g_fountain/shadow/r3/f0": {
+   "x": 1221,
+   "y": 2602,
+   "w": 163,
+   "h": 68,
+   "ox": 70,
+   "oy": -6
+  },
+  "item/athens.g_fountain/shadow/r3/f1": {
+   "x": 1221,
+   "y": 2602,
+   "w": 163,
+   "h": 68,
+   "ox": 70,
+   "oy": -6
+  },
+  "item/athens.g_fountain/shadow/r3/f2": {
+   "x": 1221,
+   "y": 2602,
+   "w": 163,
+   "h": 68,
+   "ox": 70,
+   "oy": -6
+  },
   "item/athens.g_grave_stele/shadow/r0/f0": {
-   "x": 488,
-   "y": 2806,
+   "x": 2537,
+   "y": 2812,
    "w": 51,
    "h": 22,
    "ox": 21,
    "oy": -6
   },
   "item/athens.g_grave_stele/shadow/r1/f0": {
-   "x": 4036,
-   "y": 2803,
+   "x": 2140,
+   "y": 2808,
    "w": 53,
    "h": 22,
    "ox": 23,
    "oy": -4
   },
   "item/athens.g_house/glow/r0/f0": {
-   "x": 1936,
-   "y": 2847,
+   "x": 2111,
+   "y": 2836,
    "w": 27,
    "h": 15,
    "ox": 52,
    "oy": -54
   },
   "item/athens.g_house/glow/r3/f0": {
-   "x": 2866,
-   "y": 2847,
+   "x": 3480,
+   "y": 2829,
    "w": 25,
    "h": 15,
    "ox": -46,
    "oy": -44
   },
   "item/athens.g_house/shadow/r0/f0": {
-   "x": 2332,
-   "y": 2489,
+   "x": 3380,
+   "y": 2552,
    "w": 230,
    "h": 107,
    "ox": 101,
    "oy": 3
   },
   "item/athens.g_house/shadow/r1/f0": {
-   "x": 541,
-   "y": 2533,
+   "x": 3611,
+   "y": 2552,
    "w": 230,
    "h": 106,
    "ox": 100,
    "oy": 2
   },
   "item/athens.g_house/shadow/r2/f0": {
-   "x": 2100,
-   "y": 2487,
+   "x": 2326,
+   "y": 2489,
    "w": 231,
    "h": 107,
    "ox": 101,
    "oy": 2
   },
   "item/athens.g_house/shadow/r3/f0": {
-   "x": 1001,
-   "y": 2545,
+   "x": 559,
+   "y": 2555,
    "w": 228,
    "h": 107,
    "ox": 102,
    "oy": 2
   },
+  "item/athens.g_house_small/glow/r0/f0": {
+   "x": 3480,
+   "y": 2845,
+   "w": 21,
+   "h": 13,
+   "ox": 44,
+   "oy": -14
+  },
   "item/athens.g_house_small/glow/r1/f0": {
-   "x": 2027,
-   "y": 2832,
+   "x": 3727,
+   "y": 2845,
    "w": 21,
    "h": 13,
    "ox": 46,
    "oy": 20
   },
   "item/athens.g_house_small/glow/r3/f0": {
-   "x": 2433,
-   "y": 2832,
+   "x": 1005,
+   "y": 2848,
    "w": 21,
    "h": 14,
    "ox": -24,
    "oy": -13
   },
   "item/athens.g_house_small/shadow/r0/f0": {
-   "x": 642,
-   "y": 2641,
+   "x": 2419,
+   "y": 2660,
    "w": 146,
    "h": 70,
    "ox": 69,
    "oy": 3
   },
+  "item/athens.g_house_small/shadow/r1/f0": {
+   "x": 1581,
+   "y": 2584,
+   "w": 165,
+   "h": 69,
+   "ox": 68,
+   "oy": 2
+  },
   "item/athens.g_house_small/shadow/r2/f0": {
-   "x": 2209,
+   "x": 2253,
    "y": 2597,
    "w": 165,
    "h": 74,
@@ -1267,464 +1227,400 @@
    "oy": 2
   },
   "item/athens.g_house_small/shadow/r3/f0": {
-   "x": 494,
-   "y": 2640,
+   "x": 3611,
+   "y": 2659,
    "w": 147,
    "h": 74,
    "ox": 70,
    "oy": 2
   },
   "item/athens.g_house_two/glow/r0/f0": {
-   "x": 1964,
-   "y": 2847,
+   "x": 666,
+   "y": 2831,
    "w": 26,
    "h": 17,
    "ox": 53,
    "oy": -20
   },
   "item/athens.g_house_two/glow/r3/f0": {
-   "x": 3904,
-   "y": 2847,
+   "x": 1064,
+   "y": 2839,
    "w": 25,
    "h": 17,
    "ox": 20,
    "oy": -44
   },
   "item/athens.g_house_two/shadow/r0/f0": {
-   "x": 1,
-   "y": 2575,
+   "x": 2057,
+   "y": 2574,
    "w": 195,
    "h": 91,
    "ox": 69,
    "oy": 3
   },
-  "item/athens.g_house_two/shadow/r1/f0": {
-   "x": 2563,
-   "y": 2571,
-   "w": 213,
-   "h": 90,
-   "ox": 100,
-   "oy": 2
-  },
   "item/athens.g_house_two/shadow/r2/f0": {
-   "x": 1230,
-   "y": 2564,
+   "x": 1006,
+   "y": 2561,
    "w": 214,
    "h": 94,
    "ox": 69,
    "oy": 2
   },
   "item/athens.g_house_two/shadow/r3/f0": {
-   "x": 3748,
-   "y": 2579,
+   "x": 287,
+   "y": 2575,
    "w": 195,
    "h": 94,
    "ox": 102,
    "oy": 2
   },
   "item/athens.g_kiln/shadow/r0/f0": {
-   "x": 2212,
-   "y": 2787,
+   "x": 1416,
+   "y": 2789,
    "w": 56,
    "h": 26,
    "ox": 25,
    "oy": -3
   },
   "item/athens.g_lamp/glow/r0/f0": {
-   "x": 509,
-   "y": 2829,
+   "x": 1560,
+   "y": 2832,
    "w": 29,
    "h": 19,
    "ox": 26,
    "oy": 4
   },
   "item/athens.g_lamp/glow/r1/f0": {
-   "x": 3111,
-   "y": 2838,
+   "x": 3868,
+   "y": 2842,
    "w": 29,
    "h": 18,
    "ox": 26,
    "oy": 14
   },
   "item/athens.g_lamp/glow/r2/f0": {
-   "x": 3755,
-   "y": 2838,
+   "x": 2338,
+   "y": 2851,
    "w": 29,
    "h": 18,
    "ox": 4,
    "oy": 14
   },
   "item/athens.g_lamp/glow/r3/f0": {
-   "x": 3388,
-   "y": 2846,
+   "x": 1560,
+   "y": 2852,
    "w": 29,
    "h": 19,
    "ox": 4,
    "oy": 4
   },
-  "item/athens.g_long_wall/shadow/m0/f0": {
-   "x": 3677,
-   "y": 2681,
-   "w": 67,
-   "h": 23,
-   "ox": 20,
-   "oy": -6
-  },
   "item/athens.g_long_wall/shadow/m1/f0": {
-   "x": 2887,
-   "y": 2697,
+   "x": 3759,
+   "y": 2688,
    "w": 75,
    "h": 27,
    "ox": 20,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m10/f0": {
-   "x": 2152,
-   "y": 2672,
+   "x": 693,
+   "y": 2701,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m11/f0": {
-   "x": 2239,
-   "y": 2672,
+   "x": 480,
+   "y": 2702,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
-  "item/athens.g_long_wall/shadow/m12/f0": {
-   "x": 1346,
-   "y": 2697,
-   "w": 76,
-   "h": 32,
-   "ox": 29,
-   "oy": -2
-  },
-  "item/athens.g_long_wall/shadow/m13/f0": {
-   "x": 2412,
-   "y": 2675,
-   "w": 84,
-   "h": 32,
-   "ox": 29,
-   "oy": -2
-  },
   "item/athens.g_long_wall/shadow/m14/f0": {
-   "x": 3347,
-   "y": 2674,
+   "x": 2153,
+   "y": 2704,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m15/f0": {
-   "x": 3746,
-   "y": 2674,
+   "x": 1254,
+   "y": 2705,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
-  "item/athens.g_long_wall/shadow/m2/f0": {
-   "x": 403,
-   "y": 2695,
-   "w": 77,
-   "h": 28,
-   "ox": 20,
-   "oy": -6
-  },
-  "item/athens.g_long_wall/shadow/m3/f0": {
-   "x": 1037,
-   "y": 2695,
-   "w": 77,
-   "h": 32,
-   "ox": 20,
-   "oy": -2
-  },
   "item/athens.g_long_wall/shadow/m4/f0": {
-   "x": 2733,
-   "y": 2697,
+   "x": 3759,
+   "y": 2659,
    "w": 76,
    "h": 28,
    "ox": 29,
    "oy": -6
   },
-  "item/athens.g_long_wall/shadow/m5/f0": {
-   "x": 3592,
-   "y": 2681,
-   "w": 84,
-   "h": 32,
+  "item/athens.g_long_wall/shadow/m6/f0": {
+   "x": 273,
+   "y": 2708,
+   "w": 86,
+   "h": 28,
    "ox": 29,
-   "oy": -2
+   "oy": -6
   },
   "item/athens.g_long_wall/shadow/m7/f0": {
-   "x": 3833,
-   "y": 2674,
+   "x": 360,
+   "y": 2708,
    "w": 86,
    "h": 32,
    "ox": 29,
    "oy": -2
   },
   "item/athens.g_long_wall/shadow/m8/f0": {
-   "x": 2810,
-   "y": 2697,
+   "x": 3212,
+   "y": 2682,
    "w": 76,
    "h": 27,
    "ox": 29,
    "oy": -2
   },
-  "item/athens.g_press/shadow/r0/f0": {
-   "x": 3655,
-   "y": 2604,
-   "w": 90,
-   "h": 42,
-   "ox": 32,
-   "oy": 0
-  },
   "item/athens.g_press/shadow/r1/f0": {
-   "x": 1244,
-   "y": 2659,
+   "x": 2051,
+   "y": 2666,
    "w": 101,
    "h": 42,
    "ox": 52,
    "oy": 0
   },
+  "item/athens.g_scaffold/shadow/r0/f0": {
+   "x": 483,
+   "y": 2663,
+   "w": 106,
+   "h": 38,
+   "ox": 28,
+   "oy": -2
+  },
   "item/athens.g_shrine/glow/r0/f0": {
-   "x": 3930,
-   "y": 2847,
+   "x": 3162,
+   "y": 2839,
    "w": 25,
    "h": 15,
    "ox": 12,
    "oy": 12
   },
   "item/athens.g_shrine/glow/r1/f0": {
-   "x": 3930,
-   "y": 2847,
+   "x": 3162,
+   "y": 2839,
    "w": 25,
    "h": 15,
    "ox": 12,
    "oy": 12
   },
   "item/athens.g_shrine/shadow/r0/f0": {
-   "x": 1233,
-   "y": 2809,
+   "x": 1404,
+   "y": 2816,
    "w": 48,
    "h": 22,
    "ox": 22,
    "oy": -5
   },
   "item/athens.g_shrine/shadow/r1/f0": {
-   "x": 635,
-   "y": 2810,
+   "x": 3140,
+   "y": 2816,
    "w": 48,
    "h": 22,
    "ox": 22,
    "oy": -5
   },
   "item/athens.g_stall/shadow/r0/f0": {
-   "x": 3944,
-   "y": 2652,
+   "x": 3293,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r0/f1": {
-   "x": 921,
-   "y": 2653,
+   "x": 3409,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r1/f0": {
-   "x": 3944,
-   "y": 2652,
+   "x": 3293,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r1/f1": {
-   "x": 921,
-   "y": 2653,
+   "x": 3409,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r2/f0": {
-   "x": 3944,
-   "y": 2652,
+   "x": 3293,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r2/f1": {
-   "x": 921,
-   "y": 2653,
+   "x": 3409,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r3/f0": {
-   "x": 3944,
-   "y": 2652,
+   "x": 3293,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r3/f1": {
-   "x": 921,
-   "y": 2653,
+   "x": 3409,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r4/f0": {
-   "x": 3944,
-   "y": 2652,
+   "x": 3293,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r4/f1": {
-   "x": 921,
-   "y": 2653,
+   "x": 3409,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r5/f0": {
-   "x": 3944,
-   "y": 2652,
+   "x": 3293,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_stall/shadow/r5/f1": {
-   "x": 921,
-   "y": 2653,
+   "x": 3409,
+   "y": 2660,
    "w": 115,
    "h": 51,
    "ox": 28,
    "oy": -1
   },
   "item/athens.g_statue_base/shadow/r0/f0": {
-   "x": 1233,
-   "y": 2782,
+   "x": 1536,
+   "y": 2776,
    "w": 60,
    "h": 26,
    "ox": 26,
    "oy": -3
   },
   "item/athens.g_statue_base/shadow/r1/f0": {
-   "x": 3188,
-   "y": 2783,
+   "x": 3202,
+   "y": 2790,
    "w": 60,
    "h": 26,
    "ox": 26,
    "oy": -3
   },
   "item/athens.g_statue_base/shadow/r2/f0": {
-   "x": 3673,
-   "y": 2783,
+   "x": 699,
+   "y": 2791,
    "w": 60,
    "h": 26,
    "ox": 26,
    "oy": -3
   },
   "item/athens.g_statue_base/shadow/r3/f0": {
-   "x": 253,
-   "y": 2784,
+   "x": 760,
+   "y": 2791,
    "w": 60,
    "h": 26,
    "ox": 26,
    "oy": -3
   },
-  "item/athens.g_wall/shadow/m0/f0": {
-   "x": 3162,
-   "y": 2694,
-   "w": 83,
-   "h": 29,
-   "ox": 24,
-   "oy": -4
-  },
-  "item/athens.g_wall/shadow/m1/f0": {
-   "x": 3655,
-   "y": 2647,
-   "w": 90,
-   "h": 33,
-   "ox": 24,
-   "oy": 0
-  },
   "item/athens.g_wall/shadow/m10/f0": {
-   "x": 1958,
-   "y": 2666,
+   "x": 2921,
+   "y": 2678,
    "w": 96,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m11/f0": {
-   "x": 1346,
-   "y": 2659,
+   "x": 3995,
+   "y": 2648,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m12/f0": {
-   "x": 403,
-   "y": 2657,
+   "x": 693,
+   "y": 2663,
    "w": 90,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m13/f0": {
-   "x": 2777,
-   "y": 2659,
+   "x": 2153,
+   "y": 2666,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m14/f0": {
-   "x": 2055,
-   "y": 2666,
+   "x": 3018,
+   "y": 2678,
    "w": 96,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m15/f0": {
-   "x": 2875,
-   "y": 2659,
+   "x": 284,
+   "y": 2670,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
   "item/athens.g_wall/shadow/m2/f0": {
-   "x": 3502,
-   "y": 2669,
+   "x": 183,
+   "y": 2701,
    "w": 89,
    "h": 33,
    "ox": 24,
    "oy": -4
   },
   "item/athens.g_wall/shadow/m3/f0": {
-   "x": 3071,
-   "y": 2661,
+   "x": 3995,
+   "y": 2686,
    "w": 90,
    "h": 37,
    "ox": 24,
@@ -1732,23 +1628,31 @@
   },
   "item/athens.g_wall/shadow/m4/f0": {
    "x": 1,
-   "y": 2667,
+   "y": 2689,
    "w": 90,
    "h": 33,
    "ox": 31,
    "oy": -4
   },
   "item/athens.g_wall/shadow/m5/f0": {
-   "x": 2973,
-   "y": 2661,
+   "x": 382,
+   "y": 2670,
    "w": 97,
    "h": 37,
    "ox": 31,
    "oy": 0
   },
+  "item/athens.g_wall/shadow/m6/f0": {
+   "x": 3115,
+   "y": 2682,
+   "w": 96,
+   "h": 33,
+   "ox": 31,
+   "oy": -4
+  },
   "item/athens.g_wall/shadow/m7/f0": {
-   "x": 2537,
-   "y": 2662,
+   "x": 1156,
+   "y": 2671,
    "w": 97,
    "h": 37,
    "ox": 31,
@@ -1756,103 +1660,111 @@
   },
   "item/athens.g_wall/shadow/m8/f0": {
    "x": 92,
-   "y": 2667,
+   "y": 2701,
    "w": 90,
    "h": 33,
    "ox": 31,
    "oy": 0
   },
+  "item/athens.g_wall/shadow/m9/f0": {
+   "x": 1254,
+   "y": 2671,
+   "w": 97,
+   "h": 33,
+   "ox": 31,
+   "oy": 0
+  },
+  "item/athens.g_wall_gate/shadow/r0/f0": {
+   "x": 181,
+   "y": 2581,
+   "w": 104,
+   "h": 38,
+   "ox": 32,
+   "oy": 0
+  },
   "item/athens.g_wall_gate/shadow/r1/f0": {
-   "x": 197,
-   "y": 2657,
+   "x": 181,
+   "y": 2662,
    "w": 102,
    "h": 38,
    "ox": 32,
    "oy": 0
   },
   "item/athens.g_wall_tower/glow/r0/f0": {
-   "x": 1107,
-   "y": 2822,
+   "x": 3949,
+   "y": 2830,
    "w": 33,
    "h": 21,
    "ox": 34,
    "oy": 10
   },
-  "item/athens.g_wall_tower/shadow/r0/f0": {
-   "x": 2985,
-   "y": 2586,
-   "w": 181,
-   "h": 74,
-   "ox": 62,
-   "oy": -1
-  },
   "item/athens.g_workshop/glow/r0/f0": {
-   "x": 3418,
-   "y": 2846,
+   "x": 67,
+   "y": 2853,
    "w": 29,
    "h": 18,
    "ox": 26,
    "oy": -39
   },
   "item/athens.g_workshop/glow/r1/f0": {
-   "x": 3448,
-   "y": 2846,
+   "x": 3648,
+   "y": 2853,
    "w": 29,
    "h": 18,
    "ox": 58,
    "oy": -11
   },
   "item/athens.g_workshop/glow/r3/f0": {
-   "x": 3478,
-   "y": 2846,
+   "x": 3588,
+   "y": 2856,
    "w": 29,
    "h": 18,
    "ox": -30,
    "oy": -23
   },
   "item/athens.g_workshop/shadow/r0/f0": {
-   "x": 789,
-   "y": 2641,
+   "x": 1699,
+   "y": 2654,
    "w": 131,
    "h": 63,
    "ox": 69,
    "oy": 3
   },
   "item/athens.g_workshop/shadow/r1/f0": {
-   "x": 3502,
-   "y": 2604,
+   "x": 3842,
+   "y": 2648,
    "w": 152,
    "h": 64,
    "ox": 56,
    "oy": 2
   },
   "item/athens.g_workshop/shadow/r2/f0": {
-   "x": 3347,
-   "y": 2604,
+   "x": 2766,
+   "y": 2643,
    "w": 154,
    "h": 69,
    "ox": 60,
    "oy": -4
   },
   "item/athens.g_workshop/shadow/r3/f0": {
-   "x": 1828,
-   "y": 2645,
+   "x": 2566,
+   "y": 2660,
    "w": 129,
    "h": 70,
    "ox": 70,
    "oy": -2
   },
   "item/athens.great_altar/glow/r0/f0": {
-   "x": 2120,
-   "y": 2804,
+   "x": 3845,
+   "y": 2808,
    "w": 53,
    "h": 33,
    "ox": 26,
    "oy": -10
   },
   "item/athens.great_altar/shadow/r0/f0": {
-   "x": 2375,
-   "y": 2597,
+   "x": 3131,
+   "y": 2604,
    "w": 161,
    "h": 77,
    "ox": 76,
@@ -2123,20 +2035,28 @@
    "oy": -317
   },
   "item/athens.harbour/glow/r0/f0": {
-   "x": 3033,
-   "y": 2699,
+   "x": 2696,
+   "y": 2660,
    "w": 69,
    "h": 43,
    "ox": 304,
    "oy": -302
   },
   "item/athens.harbour/shadow/r0/f0": {
-   "x": 1548,
+   "x": 1547,
    "y": 1269,
    "w": 898,
    "h": 392,
    "ox": 573,
    "oy": -58
+  },
+  "item/athens.hephaisteion/shadow/r0/f0": {
+   "x": 3555,
+   "y": 2242,
+   "w": 423,
+   "h": 171,
+   "ox": 256,
+   "oy": -24
   },
   "item/athens.kallirrhoe/base/r0/f0": {
    "x": 3691,
@@ -2443,15 +2363,15 @@
    "oy": -20
   },
   "item/athens.naxian_lions/shadow/r0/f0": {
-   "x": 3124,
-   "y": 2433,
+   "x": 1259,
+   "y": 2449,
    "w": 321,
    "h": 152,
    "ox": 256,
    "oy": -8
   },
   "item/athens.nike_bastion/shadow/r0/f0": {
-   "x": 3446,
+   "x": 3078,
    "y": 2457,
    "w": 301,
    "h": 146,
@@ -2465,22 +2385,6 @@
    "h": 242,
    "ox": 388,
    "oy": -184
-  },
-  "item/athens.old_bouleuterion/shadow/r0/f0": {
-   "x": 587,
-   "y": 2410,
-   "w": 374,
-   "h": 122,
-   "ox": 165,
-   "oy": -67
-  },
-  "item/athens.old_temple/shadow/r0/f0": {
-   "x": 587,
-   "y": 2235,
-   "w": 521,
-   "h": 174,
-   "ox": 340,
-   "oy": -92
   },
   "item/athens.olympieion/base/r0/p0/f0": {
    "x": 500,
@@ -2539,7 +2443,7 @@
    "oy": -172
   },
   "item/athens.pandroseion/shadow/r0/f0": {
-   "x": 1,
+   "x": 287,
    "y": 2459,
    "w": 271,
    "h": 115,
@@ -2547,15 +2451,15 @@
    "oy": -17
   },
   "item/athens.parthenon/glow/r0/f0": {
-   "x": 2867,
-   "y": 2819,
+   "x": 3602,
+   "y": 2828,
    "w": 45,
    "h": 27,
    "ox": 352,
    "oy": -220
   },
   "item/athens.parthenon/shadow/r0/f0": {
-   "x": 2447,
+   "x": 2446,
    "y": 1441,
    "w": 882,
    "h": 362,
@@ -2725,14 +2629,14 @@
   "item/athens.pnyx/shadow/r0/f0": {
    "x": 501,
    "y": 1096,
-   "w": 1046,
+   "w": 1045,
    "h": 514,
    "ox": 548,
    "oy": -2
   },
   "item/athens.promachos/glow/r0/f0": {
-   "x": 3655,
-   "y": 2840,
+   "x": 1927,
+   "y": 2838,
    "w": 17,
    "h": 11,
    "ox": 6,
@@ -2746,17 +2650,9 @@
    "ox": 316,
    "oy": -123
   },
-  "item/athens.royal_stoa/shadow/r0/f0": {
-   "x": 273,
-   "y": 2459,
-   "w": 267,
-   "h": 95,
-   "ox": 65,
-   "oy": -28
-  },
   "item/athens.sacred_gate/shadow/r0/f0": {
-   "x": 3748,
-   "y": 2457,
+   "x": 1,
+   "y": 2459,
    "w": 285,
    "h": 121,
    "ox": 118,
@@ -2771,7 +2667,7 @@
    "oy": -13
   },
   "item/athens.se_fountain/shadow/r0/f0": {
-   "x": 1864,
+   "x": 2090,
    "y": 2487,
    "w": 235,
    "h": 86,
@@ -2795,7 +2691,7 @@
    "oy": -80
   },
   "item/athens.shipsheds/shadow/r0/f0": {
-   "x": 3330,
+   "x": 3329,
    "y": 1693,
    "w": 741,
    "h": 286,
@@ -2803,31 +2699,55 @@
    "oy": -73
   },
   "item/athens.simon_shop/glow/r0/f0": {
-   "x": 2027,
-   "y": 2846,
+   "x": 666,
+   "y": 2849,
    "w": 21,
    "h": 13,
    "ox": 10,
    "oy": -23
   },
+  "item/athens.simon_shop/shadow/r0/f0": {
+   "x": 1385,
+   "y": 2602,
+   "w": 163,
+   "h": 60,
+   "ox": 85,
+   "oy": -21
+  },
+  "item/athens.stair_marble/shadow/r0/f0": {
+   "x": 1831,
+   "y": 2661,
+   "w": 109,
+   "h": 51,
+   "ox": 67,
+   "oy": 2
+  },
+  "item/athens.stair_marble/shadow/r1/f0": {
+   "x": 1941,
+   "y": 2661,
+   "w": 109,
+   "h": 52,
+   "ox": 35,
+   "oy": 2
+  },
   "item/athens.stair_marble/shadow/r2/f0": {
-   "x": 300,
-   "y": 2657,
+   "x": 590,
+   "y": 2663,
    "w": 102,
    "h": 52,
    "ox": 67,
    "oy": 2
   },
   "item/athens.stair_marble/shadow/r3/f0": {
-   "x": 1141,
-   "y": 2659,
+   "x": 1385,
+   "y": 2663,
    "w": 102,
    "h": 51,
    "ox": 35,
    "oy": 2
   },
   "item/athens.stoa_poikile/shadow/r0/f0": {
-   "x": 3555,
+   "x": 3077,
    "y": 2242,
    "w": 477,
    "h": 214,
@@ -2835,31 +2755,23 @@
    "oy": -7
   },
   "item/athens.stoa_zeus/shadow/r0/f0": {
-   "x": 1610,
+   "x": 1836,
    "y": 2487,
    "w": 253,
    "h": 71,
    "ox": 132,
    "oy": -59
   },
-  "item/athens.t_agnus/shadow/r0/f0": {
-   "x": 1033,
-   "y": 2821,
-   "w": 39,
-   "h": 20,
-   "ox": 6,
-   "oy": -9
-  },
   "item/athens.t_fig/shadow/r0/f0": {
-   "x": 1903,
-   "y": 2819,
+   "x": 3555,
+   "y": 2828,
    "w": 46,
    "h": 23,
    "ox": 9,
    "oy": -7
   },
   "item/athens.t_fig/shadow/r1/f0": {
-   "x": 1556,
+   "x": 3899,
    "y": 2808,
    "w": 49,
    "h": 23,
@@ -2867,80 +2779,72 @@
    "oy": -7
   },
   "item/athens.t_laurel/shadow/r0/f0": {
-   "x": 3474,
-   "y": 2798,
+   "x": 993,
+   "y": 2807,
    "w": 42,
    "h": 21,
    "ox": 6,
    "oy": -9
   },
+  "item/athens.t_oleander/shadow/r0/f0": {
+   "x": 594,
+   "y": 2828,
+   "w": 38,
+   "h": 17,
+   "ox": 7,
+   "oy": -10
+  },
   "item/athens.t_oleander/shadow/r1/f0": {
-   "x": 2677,
-   "y": 2821,
+   "x": 993,
+   "y": 2829,
    "w": 37,
    "h": 18,
    "ox": 9,
    "oy": -9
   },
   "item/athens.t_olive/shadow/r0/f0": {
-   "x": 733,
-   "y": 2815,
+   "x": 2322,
+   "y": 2824,
    "w": 47,
    "h": 26,
    "ox": 9,
    "oy": -4
   },
   "item/athens.t_olive/shadow/r1/f0": {
-   "x": 819,
-   "y": 2787,
+   "x": 2792,
+   "y": 2795,
    "w": 57,
    "h": 26,
    "ox": 14,
    "oy": -9
   },
   "item/athens.t_olive/shadow/r2/f0": {
-   "x": 2497,
-   "y": 2700,
+   "x": 2349,
+   "y": 2672,
    "w": 67,
    "h": 34,
    "ox": 11,
    "oy": -5
   },
-  "item/athens.t_pine/shadow/r1/f0": {
-   "x": 183,
-   "y": 2696,
-   "w": 77,
-   "h": 31,
-   "ox": 9,
-   "oy": -11
-  },
   "item/athens.t_plane/shadow/r0/f0": {
-   "x": 1037,
-   "y": 2653,
+   "x": 181,
+   "y": 2620,
    "w": 103,
    "h": 41,
    "ox": 11,
    "oy": -5
   },
   "item/athens.t_plane/shadow/r1/f0": {
-   "x": 2635,
-   "y": 2662,
+   "x": 2251,
+   "y": 2672,
    "w": 97,
    "h": 40,
    "ox": 11,
    "oy": -4
   },
-  "item/athens.t_poplar/shadow/r0/f0": {
-   "x": 3246,
-   "y": 2694,
-   "w": 80,
-   "h": 24,
-   "ox": 8,
-   "oy": -12
-  },
   "item/athens.t_vine/shadow/r1/f0": {
-   "x": 2326,
-   "y": 2675,
+   "x": 3525,
+   "y": 2660,
    "w": 85,
    "h": 38,
    "ox": 32,
@@ -2994,1713 +2898,1681 @@
    "ox": 484,
    "oy": -196
   },
+  "item/athens.tholos/shadow/r0/f0": {
+   "x": 1581,
+   "y": 2487,
+   "w": 254,
+   "h": 96,
+   "ox": 113,
+   "oy": -45
+  },
   "item/athens.zeus_polieus/shadow/r0/f0": {
-   "x": 962,
-   "y": 2410,
+   "x": 924,
+   "y": 2426,
    "w": 334,
    "h": 134,
    "ox": 165,
    "oy": -28
   },
-  "prop/athens.torch/glow/f0": {
-   "x": 3549,
+  "prop/athens.torch/glow/f3": {
+   "x": 474,
    "y": 2829,
    "w": 23,
    "h": 14,
    "ox": 11,
    "oy": 16
   },
-  "prop/athens.torch/glow/f1": {
-   "x": 1381,
-   "y": 2835,
-   "w": 23,
-   "h": 14,
-   "ox": 11,
-   "oy": 16
-  },
-  "prop/athens.torch/glow/f2": {
-   "x": 3549,
-   "y": 2844,
-   "w": 23,
-   "h": 14,
-   "ox": 11,
-   "oy": 16
-  },
-  "prop/athens.torch/glow/f3": {
-   "x": 278,
-   "y": 2849,
-   "w": 23,
-   "h": 14,
-   "ox": 11,
-   "oy": 16
-  },
   "terrain/athens.dry_grass/slope/c10/v0": {
-   "x": 1,
-   "y": 2701,
+   "x": 2696,
+   "y": 2704,
    "w": 64,
    "h": 32,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c10/v1": {
-   "x": 66,
-   "y": 2701,
+   "x": 2349,
+   "y": 2707,
    "w": 64,
    "h": 32,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c12/v0": {
-   "x": 2088,
-   "y": 2704,
+   "x": 3407,
+   "y": 2712,
    "w": 63,
    "h": 48,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c12/v1": {
-   "x": 854,
-   "y": 2705,
+   "x": 1831,
+   "y": 2713,
    "w": 63,
    "h": 48,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c13/v0": {
-   "x": 3246,
-   "y": 2719,
+   "x": 2414,
+   "y": 2731,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.dry_grass/slope/c13/v1": {
-   "x": 389,
-   "y": 2724,
+   "x": 2477,
+   "y": 2731,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.dry_grass/slope/c14/v0": {
-   "x": 1244,
-   "y": 2702,
+   "x": 780,
+   "y": 2709,
    "w": 64,
    "h": 48,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c14/v1": {
-   "x": 2631,
-   "y": 2703,
+   "x": 845,
+   "y": 2709,
    "w": 64,
    "h": 48,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c2/v0": {
-   "x": 918,
-   "y": 2705,
+   "x": 2240,
+   "y": 2713,
    "w": 63,
    "h": 32,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c2/v1": {
-   "x": 2152,
-   "y": 2705,
+   "x": 2761,
+   "y": 2713,
    "w": 63,
    "h": 32,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c4/v0": {
-   "x": 3103,
-   "y": 2724,
+   "x": 2540,
+   "y": 2731,
    "w": 62,
    "h": 47,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c4/v1": {
-   "x": 3166,
-   "y": 2724,
+   "x": 2603,
+   "y": 2731,
    "w": 62,
    "h": 47,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c5/v0": {
-   "x": 2810,
-   "y": 2725,
+   "x": 631,
+   "y": 2734,
    "w": 62,
    "h": 31,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.dry_grass/slope/c5/v1": {
-   "x": 2873,
-   "y": 2725,
+   "x": 694,
+   "y": 2734,
    "w": 62,
    "h": 31,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.dry_grass/slope/c6/v0": {
-   "x": 2216,
-   "y": 2705,
+   "x": 2825,
+   "y": 2713,
    "w": 63,
    "h": 48,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c6/v1": {
-   "x": 3677,
-   "y": 2705,
+   "x": 3835,
+   "y": 2713,
    "w": 63,
    "h": 48,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c7/v0": {
-   "x": 2936,
-   "y": 2725,
+   "x": 3599,
+   "y": 2734,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.dry_grass/slope/c7/v1": {
-   "x": 2696,
-   "y": 2726,
+   "x": 3662,
+   "y": 2734,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.dry_grass/slope/c8/v0": {
-   "x": 1423,
-   "y": 2707,
+   "x": 3899,
+   "y": 2713,
    "w": 63,
    "h": 32,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/c8/v1": {
-   "x": 1487,
-   "y": 2707,
+   "x": 1895,
+   "y": 2714,
    "w": 63,
    "h": 32,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.dry_grass/slope/knoll/v0": {
-   "x": 131,
-   "y": 2728,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/slope/knoll/v1": {
-   "x": 194,
-   "y": 2728,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/slope/ridge_x/v0": {
-   "x": 1156,
-   "y": 2810,
-   "w": 48,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_x/v1": {
-   "x": 3143,
-   "y": 2810,
-   "w": 48,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_x0/v0": {
-   "x": 1551,
-   "y": 2707,
-   "w": 63,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_x0/v1": {
-   "x": 1615,
-   "y": 2707,
-   "w": 63,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_x1/v0": {
-   "x": 295,
-   "y": 2816,
-   "w": 47,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/slope/ridge_x1/v1": {
-   "x": 2590,
-   "y": 2816,
-   "w": 47,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/slope/ridge_y/v0": {
-   "x": 3192,
-   "y": 2810,
-   "w": 48,
-   "h": 40,
-   "ox": 16,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_y/v1": {
-   "x": 3673,
-   "y": 2810,
-   "w": 48,
-   "h": 40,
-   "ox": 16,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_y0/v0": {
-   "x": 1679,
-   "y": 2707,
-   "w": 63,
-   "h": 40,
-   "ox": 31,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_y0/v1": {
-   "x": 1743,
-   "y": 2707,
-   "w": 63,
-   "h": 40,
-   "ox": 31,
-   "oy": 8
-  },
-  "terrain/athens.dry_grass/slope/ridge_y1/v0": {
-   "x": 1855,
-   "y": 2817,
-   "w": 47,
-   "h": 32,
-   "ox": 16,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/slope/ridge_y1/v1": {
-   "x": 2049,
-   "y": 2817,
-   "w": 47,
-   "h": 32,
-   "ox": 16,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/v0": {
-   "x": 982,
-   "y": 2728,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/v1": {
-   "x": 1045,
-   "y": 2728,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/v2": {
-   "x": 2565,
-   "y": 2728,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.dry_grass/v3": {
-   "x": 1309,
-   "y": 2730,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m0/f0": {
-   "x": 3306,
-   "y": 2808,
-   "w": 49,
-   "h": 24,
-   "ox": 25,
-   "oy": -4
-  },
-  "terrain/athens.field_stubble/m1/f0": {
-   "x": 1876,
-   "y": 2788,
-   "w": 56,
-   "h": 28,
-   "ox": 25,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m10/f0": {
-   "x": 1,
-   "y": 2734,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m11/f0": {
-   "x": 64,
-   "y": 2734,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m12/f0": {
-   "x": 2811,
-   "y": 2790,
-   "w": 55,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m13/f0": {
-   "x": 2476,
+   "x": 65,
    "y": 2735,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.field_stubble/m14/f0": {
-   "x": 3484,
-   "y": 2736,
+  "terrain/athens.dry_grass/slope/knoll/v1": {
+   "x": 128,
+   "y": 2735,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.field_stubble/m15/f0": {
-   "x": 2023,
-   "y": 2737,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m2/f0": {
-   "x": 2269,
-   "y": 2788,
-   "w": 56,
-   "h": 28,
-   "ox": 25,
-   "oy": -4
-  },
-  "terrain/athens.field_stubble/m3/f0": {
-   "x": 375,
-   "y": 2789,
-   "w": 56,
-   "h": 32,
-   "ox": 25,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m4/f0": {
-   "x": 2867,
-   "y": 2790,
-   "w": 55,
-   "h": 28,
-   "ox": 31,
-   "oy": -4
-  },
-  "terrain/athens.field_stubble/m5/f0": {
-   "x": 3985,
-   "y": 2737,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m6/f0": {
-   "x": 918,
-   "y": 2738,
-   "w": 62,
-   "h": 28,
-   "ox": 31,
-   "oy": -4
-  },
-  "terrain/athens.field_stubble/m7/f0": {
-   "x": 2152,
-   "y": 2738,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m8/f0": {
-   "x": 2661,
-   "y": 2792,
-   "w": 55,
-   "h": 28,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.field_stubble/m9/f0": {
-   "x": 1372,
-   "y": 2740,
-   "w": 62,
-   "h": 28,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.gravel/m0/f0": {
-   "x": 246,
-   "y": 2811,
+  "terrain/athens.dry_grass/slope/ridge_x/v0": {
+   "x": 1214,
+   "y": 2817,
    "w": 48,
-   "h": 22,
-   "ox": 24,
-   "oy": -5
+   "h": 40,
+   "ox": 32,
+   "oy": 8
   },
-  "terrain/athens.gravel/m1/f0": {
-   "x": 1044,
-   "y": 2793,
-   "w": 55,
-   "h": 27,
-   "ox": 24,
+  "terrain/athens.dry_grass/slope/ridge_x/v1": {
+   "x": 3189,
+   "y": 2817,
+   "w": 48,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/athens.dry_grass/slope/ridge_x0/v0": {
+   "x": 1959,
+   "y": 2714,
+   "w": 63,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/athens.dry_grass/slope/ridge_x0/v1": {
+   "x": 1341,
+   "y": 2715,
+   "w": 63,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/athens.dry_grass/slope/ridge_x1/v0": {
+   "x": 2370,
+   "y": 2824,
+   "w": 47,
+   "h": 32,
+   "ox": 31,
    "oy": 0
   },
-  "terrain/athens.gravel/m10/f0": {
-   "x": 1435,
+  "terrain/athens.dry_grass/slope/ridge_x1/v1": {
+   "x": 3754,
+   "y": 2824,
+   "w": 47,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.dry_grass/slope/ridge_y/v0": {
+   "x": 3506,
+   "y": 2817,
+   "w": 48,
+   "h": 40,
+   "ox": 16,
+   "oy": 8
+  },
+  "terrain/athens.dry_grass/slope/ridge_y/v1": {
+   "x": 693,
+   "y": 2818,
+   "w": 48,
+   "h": 40,
+   "ox": 16,
+   "oy": 8
+  },
+  "terrain/athens.dry_grass/slope/ridge_y0/v0": {
+   "x": 1405,
+   "y": 2715,
+   "w": 63,
+   "h": 40,
+   "ox": 31,
+   "oy": 8
+  },
+  "terrain/athens.dry_grass/slope/ridge_y0/v1": {
+   "x": 1469,
+   "y": 2715,
+   "w": 63,
+   "h": 40,
+   "ox": 31,
+   "oy": 8
+  },
+  "terrain/athens.dry_grass/slope/ridge_y1/v0": {
+   "x": 3317,
+   "y": 2825,
+   "w": 47,
+   "h": 32,
+   "ox": 16,
+   "oy": 0
+  },
+  "terrain/athens.dry_grass/slope/ridge_y1/v1": {
+   "x": 3365,
+   "y": 2825,
+   "w": 47,
+   "h": 32,
+   "ox": 16,
+   "oy": 0
+  },
+  "terrain/athens.dry_grass/v0": {
+   "x": 191,
+   "y": 2735,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.dry_grass/v1": {
+   "x": 447,
+   "y": 2735,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.dry_grass/v2": {
+   "x": 254,
+   "y": 2737,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.dry_grass/v3": {
+   "x": 2116,
+   "y": 2737,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.field_stubble/m0/f0": {
+   "x": 1896,
+   "y": 2813,
+   "w": 49,
+   "h": 24,
+   "ox": 25,
+   "oy": -4
+  },
+  "terrain/athens.field_stubble/m1/f0": {
+   "x": 3788,
+   "y": 2795,
+   "w": 56,
+   "h": 28,
+   "ox": 25,
+   "oy": 0
+  },
+  "terrain/athens.field_stubble/m10/f0": {
+   "x": 2666,
+   "y": 2737,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.field_stubble/m11/f0": {
+   "x": 1221,
+   "y": 2738,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.field_stubble/m12/f0": {
+   "x": 2975,
+   "y": 2799,
+   "w": 55,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.field_stubble/m13/f0": {
+   "x": 2304,
    "y": 2740,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.gravel/m11/f0": {
-   "x": 3741,
-   "y": 2740,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.gravel/m12/f0": {
-   "x": 2923,
-   "y": 2793,
-   "w": 55,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.gravel/m13/f0": {
-   "x": 2408,
+  "terrain/athens.field_stubble/m14/f0": {
+   "x": 317,
    "y": 2741,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.gravel/m14/f0": {
-   "x": 2999,
-   "y": 2743,
+  "terrain/athens.field_stubble/m15/f0": {
+   "x": 380,
+   "y": 2741,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.gravel/m15/f0": {
-   "x": 1179,
-   "y": 2744,
+  "terrain/athens.field_stubble/m2/f0": {
+   "x": 2426,
+   "y": 2797,
+   "w": 56,
+   "h": 28,
+   "ox": 25,
+   "oy": -4
+  },
+  "terrain/athens.field_stubble/m3/f0": {
+   "x": 3949,
+   "y": 2797,
+   "w": 56,
+   "h": 32,
+   "ox": 25,
+   "oy": 0
+  },
+  "terrain/athens.field_stubble/m4/f0": {
+   "x": 3592,
+   "y": 2799,
+   "w": 55,
+   "h": 28,
+   "ox": 31,
+   "oy": -4
+  },
+  "terrain/athens.field_stubble/m5/f0": {
+   "x": 910,
+   "y": 2742,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.gravel/m2/f0": {
-   "x": 2979,
-   "y": 2793,
-   "w": 55,
-   "h": 27,
-   "ox": 24,
-   "oy": -5
-  },
-  "terrain/athens.gravel/m3/f0": {
-   "x": 190,
-   "y": 2794,
-   "w": 55,
-   "h": 32,
-   "ox": 24,
-   "oy": 0
-  },
-  "terrain/athens.gravel/m4/f0": {
-   "x": 1100,
-   "y": 2794,
-   "w": 55,
-   "h": 27,
+  "terrain/athens.field_stubble/m6/f0": {
+   "x": 2023,
+   "y": 2742,
+   "w": 62,
+   "h": 28,
    "ox": 31,
-   "oy": -5
+   "oy": -4
   },
-  "terrain/athens.gravel/m5/f0": {
-   "x": 706,
+  "terrain/athens.field_stubble/m7/f0": {
+   "x": 3277,
    "y": 2745,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.gravel/m6/f0": {
-   "x": 3391,
+  "terrain/athens.field_stubble/m8/f0": {
+   "x": 442,
+   "y": 2800,
+   "w": 55,
+   "h": 28,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.field_stubble/m9/f0": {
+   "x": 2179,
+   "y": 2746,
+   "w": 62,
+   "h": 28,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m0/f0": {
+   "x": 742,
+   "y": 2818,
+   "w": 48,
+   "h": 22,
+   "ox": 24,
+   "oy": -5
+  },
+  "terrain/athens.gravel/m1/f0": {
+   "x": 1723,
+   "y": 2800,
+   "w": 55,
+   "h": 27,
+   "ox": 24,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m10/f0": {
+   "x": 2729,
+   "y": 2746,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m11/f0": {
+   "x": 3899,
+   "y": 2746,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m12/f0": {
+   "x": 1953,
+   "y": 2800,
+   "w": 55,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m13/f0": {
+   "x": 1895,
    "y": 2747,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m14/f0": {
+   "x": 2889,
+   "y": 2749,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m15/f0": {
+   "x": 3017,
+   "y": 2749,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m2/f0": {
+   "x": 3648,
+   "y": 2800,
+   "w": 55,
+   "h": 27,
+   "ox": 24,
+   "oy": -5
+  },
+  "terrain/athens.gravel/m3/f0": {
+   "x": 64,
+   "y": 2801,
+   "w": 55,
+   "h": 32,
+   "ox": 24,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m4/f0": {
+   "x": 1656,
+   "y": 2801,
+   "w": 55,
+   "h": 27,
+   "ox": 31,
+   "oy": -5
+  },
+  "terrain/athens.gravel/m5/f0": {
+   "x": 1661,
+   "y": 2751,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.gravel/m6/f0": {
+   "x": 1958,
+   "y": 2755,
    "w": 62,
    "h": 27,
    "ox": 31,
    "oy": -5
   },
   "terrain/athens.gravel/m7/f0": {
-   "x": 3613,
-   "y": 2747,
+   "x": 1,
+   "y": 2756,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.gravel/m8/f0": {
-   "x": 2534,
-   "y": 2794,
+   "x": 3450,
+   "y": 2801,
    "w": 55,
    "h": 27,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.gravel/m9/f0": {
-   "x": 545,
-   "y": 2748,
+   "x": 1284,
+   "y": 2756,
    "w": 62,
    "h": 27,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m0/f0": {
-   "x": 2467,
-   "y": 2801,
+   "x": 2212,
+   "y": 2806,
    "w": 54,
    "h": 28,
    "ox": 27,
    "oy": -2
   },
   "terrain/athens.marble_paving/m1/f0": {
-   "x": 1876,
-   "y": 2757,
+   "x": 1099,
+   "y": 2791,
    "w": 58,
    "h": 30,
    "ox": 27,
    "oy": 0
   },
   "terrain/athens.marble_paving/m10/f0": {
-   "x": 1498,
-   "y": 2748,
+   "x": 1347,
+   "y": 2756,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m11/f0": {
-   "x": 1561,
-   "y": 2748,
+   "x": 1410,
+   "y": 2756,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m12/f0": {
-   "x": 2341,
-   "y": 2784,
+   "x": 1597,
+   "y": 2793,
    "w": 58,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m13/f0": {
-   "x": 1624,
-   "y": 2748,
+   "x": 3080,
+   "y": 2757,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m14/f0": {
-   "x": 1687,
-   "y": 2748,
+   "x": 3143,
+   "y": 2757,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m15/f0": {
-   "x": 257,
-   "y": 2751,
+   "x": 757,
+   "y": 2758,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m2/f0": {
-   "x": 2602,
-   "y": 2785,
+   "x": 2367,
+   "y": 2793,
    "w": 58,
    "h": 30,
    "ox": 27,
    "oy": -2
   },
   "terrain/athens.marble_paving/m3/f0": {
-   "x": 1935,
-   "y": 2786,
+   "x": 506,
+   "y": 2794,
    "w": 58,
    "h": 32,
    "ox": 27,
    "oy": 0
   },
   "terrain/athens.marble_paving/m4/f0": {
-   "x": 2061,
-   "y": 2786,
+   "x": 3332,
+   "y": 2794,
    "w": 58,
    "h": 30,
    "ox": 31,
    "oy": -2
   },
   "terrain/athens.marble_paving/m5/f0": {
-   "x": 320,
-   "y": 2751,
+   "x": 820,
+   "y": 2758,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m6/f0": {
-   "x": 1242,
-   "y": 2751,
+   "x": 1039,
+   "y": 2758,
    "w": 62,
    "h": 30,
    "ox": 31,
    "oy": -2
   },
   "terrain/athens.marble_paving/m7/f0": {
-   "x": 2628,
-   "y": 2752,
+   "x": 1102,
+   "y": 2758,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m8/f0": {
-   "x": 3867,
-   "y": 2786,
+   "x": 3391,
+   "y": 2794,
    "w": 58,
    "h": 30,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.marble_paving/m9/f0": {
-   "x": 3229,
-   "y": 2752,
+   "x": 3206,
+   "y": 2759,
    "w": 62,
    "h": 30,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m0/f0": {
-   "x": 684,
-   "y": 2811,
+   "x": 1,
+   "y": 2822,
    "w": 48,
    "h": 24,
    "ox": 24,
    "oy": -4
   },
   "terrain/athens.olive_soil/m1/f0": {
-   "x": 127,
-   "y": 2795,
+   "x": 253,
+   "y": 2803,
    "w": 55,
    "h": 28,
    "ox": 24,
    "oy": 0
   },
   "terrain/athens.olive_soil/m10/f0": {
-   "x": 1935,
-   "y": 2753,
+   "x": 1597,
+   "y": 2760,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m11/f0": {
-   "x": 2086,
-   "y": 2753,
+   "x": 3340,
+   "y": 2761,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m12/f0": {
-   "x": 3517,
-   "y": 2796,
+   "x": 379,
+   "y": 2803,
    "w": 55,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m13/f0": {
-   "x": 3869,
-   "y": 2753,
+   "x": 3403,
+   "y": 2761,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m14/f0": {
-   "x": 769,
-   "y": 2754,
+   "x": 1827,
+   "y": 2762,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m15/f0": {
-   "x": 832,
-   "y": 2754,
+   "x": 2792,
+   "y": 2762,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m2/f0": {
-   "x": 432,
-   "y": 2797,
+   "x": 1536,
+   "y": 2803,
    "w": 55,
    "h": 28,
    "ox": 24,
    "oy": -4
   },
   "terrain/athens.olive_soil/m3/f0": {
-   "x": 1294,
-   "y": 2797,
+   "x": 2084,
+   "y": 2803,
    "w": 55,
    "h": 32,
    "ox": 24,
    "oy": 0
   },
   "terrain/athens.olive_soil/m4/f0": {
-   "x": 3418,
-   "y": 2798,
+   "x": 2619,
+   "y": 2803,
    "w": 55,
    "h": 28,
    "ox": 31,
    "oy": -4
   },
   "terrain/athens.olive_soil/m5/f0": {
-   "x": 2215,
-   "y": 2754,
+   "x": 3823,
+   "y": 2762,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.olive_soil/m6/f0": {
-   "x": 3676,
-   "y": 2754,
+   "x": 2367,
+   "y": 2764,
    "w": 62,
    "h": 28,
    "ox": 31,
    "oy": -4
   },
   "terrain/athens.olive_soil/m7/f0": {
-   "x": 2278,
-   "y": 2755,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/m8/f0": {
-   "x": 3926,
-   "y": 2799,
-   "w": 55,
-   "h": 28,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/m9/f0": {
-   "x": 2341,
-   "y": 2755,
-   "w": 62,
-   "h": 28,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/slope/c10/v0": {
-   "x": 3484,
-   "y": 2703,
-   "w": 64,
-   "h": 32,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.olive_soil/slope/c12/v0": {
-   "x": 3327,
-   "y": 2707,
-   "w": 63,
-   "h": 48,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.olive_soil/slope/c13/v0": {
-   "x": 3292,
-   "y": 2756,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/slope/c14/v0": {
-   "x": 1958,
-   "y": 2704,
-   "w": 64,
-   "h": 48,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.olive_soil/slope/c2/v0": {
-   "x": 3741,
-   "y": 2707,
-   "w": 63,
-   "h": 32,
-   "ox": 31,
-   "oy": 16
-  },
-  "terrain/athens.olive_soil/slope/c4/v0": {
-   "x": 3804,
-   "y": 2756,
-   "w": 62,
-   "h": 47,
-   "ox": 31,
-   "oy": 16
-  },
-  "terrain/athens.olive_soil/slope/c5/v0": {
-   "x": 383,
-   "y": 2757,
-   "w": 62,
-   "h": 31,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/slope/c6/v0": {
-   "x": 3805,
-   "y": 2707,
-   "w": 63,
-   "h": 48,
-   "ox": 31,
-   "oy": 16
-  },
-  "terrain/athens.olive_soil/slope/c7/v0": {
-   "x": 1750,
-   "y": 2757,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/slope/c8/v0": {
-   "x": 2412,
-   "y": 2708,
-   "w": 63,
-   "h": 32,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.olive_soil/slope/knoll/v0": {
-   "x": 1813,
-   "y": 2757,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/slope/ridge_x/v0": {
-   "x": 1606,
-   "y": 2813,
-   "w": 48,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.olive_soil/slope/ridge_x0/v0": {
-   "x": 261,
-   "y": 2710,
-   "w": 63,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.olive_soil/slope/ridge_x1/v0": {
-   "x": 2223,
-   "y": 2817,
-   "w": 47,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.olive_soil/slope/ridge_y/v0": {
-   "x": 3573,
-   "y": 2813,
-   "w": 48,
-   "h": 40,
-   "ox": 16,
-   "oy": 8
-  },
-  "terrain/athens.olive_soil/slope/ridge_y0/v0": {
-   "x": 325,
-   "y": 2710,
-   "w": 63,
-   "h": 40,
-   "ox": 31,
-   "oy": 8
-  },
-  "terrain/athens.olive_soil/slope/ridge_y1/v0": {
-   "x": 2271,
-   "y": 2817,
-   "w": 47,
-   "h": 32,
-   "ox": 16,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/m0/f0": {
-   "x": 2638,
-   "y": 2821,
-   "w": 38,
-   "h": 19,
-   "ox": 20,
-   "oy": -6
-  },
-  "terrain/athens.packed_earth/m1/f0": {
-   "x": 1680,
-   "y": 2807,
-   "w": 50,
-   "h": 24,
-   "ox": 20,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m10/f0": {
-   "x": 2759,
-   "y": 2757,
-   "w": 62,
-   "h": 31,
-   "ox": 31,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m11/f0": {
-   "x": 2822,
-   "y": 2757,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/m12/f0": {
-   "x": 3356,
-   "y": 2808,
-   "w": 49,
-   "h": 31,
-   "ox": 31,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m13/f0": {
-   "x": 1494,
-   "y": 2781,
-   "w": 61,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/m14/f0": {
-   "x": 2885,
-   "y": 2758,
-   "w": 62,
-   "h": 31,
-   "ox": 31,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m15/f0": {
-   "x": 2691,
-   "y": 2759,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/m2/f0": {
-   "x": 1405,
-   "y": 2806,
-   "w": 51,
-   "h": 26,
-   "ox": 20,
-   "oy": -6
-  },
-  "terrain/athens.packed_earth/m3/f0": {
-   "x": 3734,
-   "y": 2806,
-   "w": 51,
-   "h": 31,
-   "ox": 20,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m4/f0": {
-   "x": 3622,
-   "y": 2813,
-   "w": 48,
-   "h": 26,
-   "ox": 30,
-   "oy": -6
-  },
-  "terrain/athens.packed_earth/m5/f0": {
-   "x": 314,
-   "y": 2784,
-   "w": 60,
-   "h": 31,
-   "ox": 30,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m6/f0": {
-   "x": 1556,
-   "y": 2781,
-   "w": 61,
-   "h": 26,
-   "ox": 30,
-   "oy": -6
-  },
-  "terrain/athens.packed_earth/m7/f0": {
-   "x": 1618,
-   "y": 2781,
-   "w": 61,
-   "h": 31,
-   "ox": 30,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m8/f0": {
-   "x": 933,
-   "y": 2809,
-   "w": 49,
-   "h": 24,
-   "ox": 31,
-   "oy": -1
-  },
-  "terrain/athens.packed_earth/m9/f0": {
-   "x": 1680,
-   "y": 2781,
-   "w": 61,
-   "h": 25,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/c1/v0": {
-   "x": 1108,
-   "y": 2760,
-   "w": 62,
-   "h": 16,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/c10/v0": {
-   "x": 2023,
-   "y": 2704,
-   "w": 64,
-   "h": 32,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.packed_earth/slope/c11/v0": {
-   "x": 127,
-   "y": 2761,
-   "w": 62,
-   "h": 16,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/c12/v0": {
-   "x": 1115,
-   "y": 2711,
-   "w": 63,
-   "h": 48,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.packed_earth/slope/c13/v0": {
-   "x": 190,
-   "y": 2761,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/c14/v0": {
-   "x": 3920,
-   "y": 2704,
-   "w": 64,
-   "h": 48,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.packed_earth/slope/c2/v0": {
-   "x": 1179,
-   "y": 2711,
-   "w": 63,
-   "h": 32,
-   "ox": 31,
-   "oy": 16
-  },
-  "terrain/athens.packed_earth/slope/c3/v0": {
-   "x": 608,
-   "y": 2761,
-   "w": 62,
-   "h": 16,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/c4/v0": {
-   "x": 981,
-   "y": 2761,
-   "w": 62,
-   "h": 47,
-   "ox": 31,
-   "oy": 16
-  },
-  "terrain/athens.packed_earth/slope/c5/v0": {
-   "x": 1044,
-   "y": 2761,
-   "w": 62,
-   "h": 31,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/c6/v0": {
-   "x": 642,
-   "y": 2712,
-   "w": 63,
-   "h": 48,
-   "ox": 31,
-   "oy": 16
-  },
-  "terrain/athens.packed_earth/slope/c7/v0": {
-   "x": 2539,
-   "y": 2761,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/c8/v0": {
-   "x": 706,
-   "y": 2712,
-   "w": 63,
-   "h": 32,
-   "ox": 32,
-   "oy": 16
-  },
-  "terrain/athens.packed_earth/slope/c9/v0": {
-   "x": 1305,
-   "y": 2763,
-   "w": 62,
-   "h": 16,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/knoll/v0": {
-   "x": 3547,
-   "y": 2763,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/ridge_x/v0": {
-   "x": 819,
-   "y": 2814,
-   "w": 48,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.packed_earth/slope/ridge_x0/v0": {
-   "x": 2280,
-   "y": 2714,
-   "w": 63,
-   "h": 40,
-   "ox": 32,
-   "oy": 8
-  },
-  "terrain/athens.packed_earth/slope/ridge_x1/v0": {
-   "x": 2319,
-   "y": 2817,
-   "w": 47,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.packed_earth/slope/ridge_y/v0": {
-   "x": 1457,
-   "y": 2814,
-   "w": 48,
-   "h": 40,
-   "ox": 16,
-   "oy": 8
-  },
-  "terrain/athens.packed_earth/slope/ridge_y0/v0": {
-   "x": 2344,
-   "y": 2714,
-   "w": 63,
-   "h": 40,
-   "ox": 31,
-   "oy": 8
-  },
-  "terrain/athens.packed_earth/slope/ridge_y1/v0": {
-   "x": 3856,
-   "y": 2817,
-   "w": 47,
-   "h": 32,
-   "ox": 16,
-   "oy": 0
-  },
-  "terrain/athens.riverbed/m0/f0": {
-   "x": 1731,
-   "y": 2820,
-   "w": 45,
-   "h": 24,
-   "ox": 22,
-   "oy": -4
-  },
-  "terrain/athens.riverbed/m1/f0": {
-   "x": 3802,
-   "y": 2804,
-   "w": 53,
-   "h": 28,
-   "ox": 22,
-   "oy": 0
-  },
-  "terrain/athens.riverbed/m10/f0": {
-   "x": 446,
+   "x": 2430,
    "y": 2764,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.riverbed/m11/f0": {
-   "x": 1,
+  "terrain/athens.olive_soil/m8/f0": {
+   "x": 882,
+   "y": 2804,
+   "w": 55,
+   "h": 28,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.olive_soil/m9/f0": {
+   "x": 510,
+   "y": 2765,
+   "w": 62,
+   "h": 28,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.olive_soil/slope/c10/v0": {
+   "x": 910,
+   "y": 2709,
+   "w": 64,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/athens.olive_soil/slope/c12/v0": {
+   "x": 567,
+   "y": 2716,
+   "w": 63,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/athens.olive_soil/slope/c13/v0": {
+   "x": 2952,
+   "y": 2765,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.olive_soil/slope/c14/v0": {
+   "x": 1156,
+   "y": 2709,
+   "w": 64,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/athens.olive_soil/slope/c2/v0": {
+   "x": 2889,
+   "y": 2716,
+   "w": 63,
+   "h": 32,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/athens.olive_soil/slope/c4/v0": {
+   "x": 3725,
+   "y": 2765,
+   "w": 62,
+   "h": 47,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/athens.olive_soil/slope/c5/v0": {
+   "x": 3962,
+   "y": 2765,
+   "w": 62,
+   "h": 31,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.olive_soil/slope/c6/v0": {
+   "x": 2953,
+   "y": 2716,
+   "w": 63,
+   "h": 48,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/athens.olive_soil/slope/c7/v0": {
+   "x": 4025,
+   "y": 2765,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.olive_soil/slope/c8/v0": {
+   "x": 3017,
+   "y": 2716,
+   "w": 63,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/athens.olive_soil/slope/knoll/v0": {
+   "x": 573,
+   "y": 2766,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.olive_soil/slope/ridge_x/v0": {
+   "x": 1092,
+   "y": 2822,
+   "w": 48,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/athens.olive_soil/slope/ridge_x0/v0": {
+   "x": 3081,
+   "y": 2716,
+   "w": 63,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/athens.olive_soil/slope/ridge_x1/v0": {
+   "x": 1592,
+   "y": 2826,
+   "w": 47,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.olive_soil/slope/ridge_y/v0": {
+   "x": 1263,
+   "y": 2822,
+   "w": 48,
+   "h": 40,
+   "ox": 16,
+   "oy": 8
+  },
+  "terrain/athens.olive_soil/slope/ridge_y0/v0": {
+   "x": 3145,
+   "y": 2716,
+   "w": 63,
+   "h": 40,
+   "ox": 31,
+   "oy": 8
+  },
+  "terrain/athens.olive_soil/slope/ridge_y1/v0": {
+   "x": 2418,
+   "y": 2826,
+   "w": 47,
+   "h": 32,
+   "ox": 16,
+   "oy": 0
+  },
+  "terrain/athens.packed_earth/m0/f0": {
+   "x": 435,
+   "y": 2829,
+   "w": 38,
+   "h": 19,
+   "ox": 20,
+   "oy": -6
+  },
+  "terrain/athens.packed_earth/m1/f0": {
+   "x": 1845,
+   "y": 2813,
+   "w": 50,
+   "h": 24,
+   "ox": 20,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m10/f0": {
+   "x": 636,
+   "y": 2766,
+   "w": 62,
+   "h": 31,
+   "ox": 31,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m11/f0": {
+   "x": 1724,
    "y": 2767,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.riverbed/m12/f0": {
-   "x": 1350,
-   "y": 2802,
-   "w": 54,
+  "terrain/athens.packed_earth/m12/f0": {
+   "x": 3704,
+   "y": 2813,
+   "w": 49,
+   "h": 31,
+   "ox": 31,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m13/f0": {
+   "x": 2305,
+   "y": 2773,
+   "w": 61,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.riverbed/m13/f0": {
+  "terrain/athens.packed_earth/m14/f0": {
+   "x": 3599,
+   "y": 2767,
+   "w": 62,
+   "h": 31,
+   "ox": 31,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m15/f0": {
+   "x": 3662,
+   "y": 2767,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.packed_earth/m2/f0": {
+   "x": 2729,
+   "y": 2812,
+   "w": 51,
+   "h": 26,
+   "ox": 20,
+   "oy": -6
+  },
+  "terrain/athens.packed_earth/m3/f0": {
+   "x": 2850,
+   "y": 2812,
+   "w": 51,
+   "h": 31,
+   "ox": 20,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m4/f0": {
+   "x": 2781,
+   "y": 2822,
+   "w": 48,
+   "h": 26,
+   "ox": 30,
+   "oy": -6
+  },
+  "terrain/athens.packed_earth/m5/f0": {
+   "x": 821,
+   "y": 2791,
+   "w": 60,
+   "h": 31,
+   "ox": 30,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m6/f0": {
+   "x": 1354,
+   "y": 2789,
+   "w": 61,
+   "h": 26,
+   "ox": 30,
+   "oy": -6
+  },
+  "terrain/athens.packed_earth/m7/f0": {
+   "x": 3078,
+   "y": 2790,
+   "w": 61,
+   "h": 31,
+   "ox": 30,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m8/f0": {
+   "x": 190,
+   "y": 2816,
+   "w": 49,
+   "h": 24,
+   "ox": 31,
+   "oy": -1
+  },
+  "terrain/athens.packed_earth/m9/f0": {
+   "x": 3140,
+   "y": 2790,
+   "w": 61,
+   "h": 25,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.packed_earth/slope/c10/v0": {
+   "x": 2051,
+   "y": 2709,
+   "w": 64,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/athens.packed_earth/slope/c12/v0": {
+   "x": 3759,
+   "y": 2716,
+   "w": 63,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/athens.packed_earth/slope/c13/v0": {
    "x": 64,
-   "y": 2767,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.riverbed/m14/f0": {
-   "x": 895,
-   "y": 2767,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.riverbed/m15/f0": {
-   "x": 2471,
    "y": 2768,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.riverbed/m2/f0": {
-   "x": 3035,
-   "y": 2805,
-   "w": 53,
-   "h": 28,
-   "ox": 22,
-   "oy": -4
+  "terrain/athens.packed_earth/slope/c14/v0": {
+   "x": 3212,
+   "y": 2710,
+   "w": 64,
+   "h": 48,
+   "ox": 32,
+   "oy": 16
   },
-  "terrain/athens.riverbed/m3/f0": {
-   "x": 3089,
-   "y": 2805,
-   "w": 53,
-   "h": 32,
-   "ox": 22,
-   "oy": 0
-  },
-  "terrain/athens.riverbed/m4/f0": {
-   "x": 1994,
-   "y": 2803,
-   "w": 54,
-   "h": 28,
-   "ox": 31,
-   "oy": -4
-  },
-  "terrain/athens.riverbed/m5/f0": {
-   "x": 1368,
-   "y": 2769,
-   "w": 62,
+  "terrain/athens.packed_earth/slope/c2/v0": {
+   "x": 1699,
+   "y": 2718,
+   "w": 63,
    "h": 32,
    "ox": 31,
+   "oy": 16
+  },
+  "terrain/athens.packed_earth/slope/c3/v0": {
+   "x": 127,
+   "y": 2768,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
    "oy": 0
   },
-  "terrain/athens.riverbed/m6/f0": {
-   "x": 3454,
-   "y": 2769,
+  "terrain/athens.packed_earth/slope/c4/v0": {
+   "x": 190,
+   "y": 2768,
    "w": 62,
-   "h": 28,
+   "h": 47,
    "ox": 31,
-   "oy": -4
+   "oy": 16
   },
-  "terrain/athens.riverbed/m7/f0": {
-   "x": 1998,
-   "y": 2770,
+  "terrain/athens.packed_earth/slope/c5/v0": {
+   "x": 443,
+   "y": 2768,
+   "w": 62,
+   "h": 31,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.packed_earth/slope/c6/v0": {
+   "x": 1763,
+   "y": 2718,
+   "w": 63,
+   "h": 48,
+   "ox": 31,
+   "oy": 16
+  },
+  "terrain/athens.packed_earth/slope/c7/v0": {
+   "x": 3466,
+   "y": 2768,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.riverbed/m8/f0": {
-   "x": 2400,
-   "y": 2803,
-   "w": 54,
-   "h": 28,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.riverbed/m9/f0": {
-   "x": 3932,
-   "y": 2770,
-   "w": 62,
-   "h": 28,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.rock_limestone/m0/f0": {
-   "x": 983,
-   "y": 2809,
-   "w": 49,
-   "h": 25,
-   "ox": 24,
-   "oy": -4
-  },
-  "terrain/athens.rock_limestone/m1/f0": {
+  "terrain/athens.packed_earth/slope/c8/v0": {
    "x": 1,
-   "y": 2800,
-   "w": 55,
-   "h": 29,
-   "ox": 24,
+   "y": 2723,
+   "w": 63,
+   "h": 32,
+   "ox": 32,
+   "oy": 16
+  },
+  "terrain/athens.packed_earth/slope/c9/v0": {
+   "x": 3529,
+   "y": 2768,
+   "w": 62,
+   "h": 16,
+   "ox": 31,
    "oy": 0
   },
-  "terrain/athens.rock_limestone/m10/f0": {
-   "x": 3995,
+  "terrain/athens.packed_earth/slope/knoll/v0": {
+   "x": 253,
    "y": 2770,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.rock_limestone/m11/f0": {
-   "x": 2149,
+  "terrain/athens.packed_earth/slope/ridge_x/v0": {
+   "x": 3031,
+   "y": 2822,
+   "w": 48,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/athens.packed_earth/slope/ridge_x0/v0": {
+   "x": 3963,
+   "y": 2724,
+   "w": 63,
+   "h": 40,
+   "ox": 32,
+   "oy": 8
+  },
+  "terrain/athens.packed_earth/slope/ridge_x1/v0": {
+   "x": 498,
+   "y": 2827,
+   "w": 47,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.packed_earth/slope/ridge_y/v0": {
+   "x": 3080,
+   "y": 2822,
+   "w": 48,
+   "h": 40,
+   "ox": 16,
+   "oy": 8
+  },
+  "terrain/athens.packed_earth/slope/ridge_y0/v0": {
+   "x": 4027,
+   "y": 2724,
+   "w": 63,
+   "h": 40,
+   "ox": 31,
+   "oy": 8
+  },
+  "terrain/athens.packed_earth/slope/ridge_y1/v0": {
+   "x": 2902,
+   "y": 2827,
+   "w": 47,
+   "h": 32,
+   "ox": 16,
+   "oy": 0
+  },
+  "terrain/athens.riverbed/m0/f0": {
+   "x": 3648,
+   "y": 2828,
+   "w": 45,
+   "h": 24,
+   "ox": 22,
+   "oy": -4
+  },
+  "terrain/athens.riverbed/m1/f0": {
+   "x": 1473,
+   "y": 2809,
+   "w": 53,
+   "h": 28,
+   "ox": 22,
+   "oy": 0
+  },
+  "terrain/athens.riverbed/m10/f0": {
+   "x": 2086,
+   "y": 2770,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.riverbed/m11/f0": {
+   "x": 2666,
+   "y": 2770,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.riverbed/m12/f0": {
+   "x": 2267,
+   "y": 2806,
+   "w": 54,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.riverbed/m13/f0": {
+   "x": 1165,
    "y": 2771,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.rock_limestone/m12/f0": {
-   "x": 2754,
-   "y": 2789,
-   "w": 56,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.rock_limestone/m13/f0": {
-   "x": 3062,
-   "y": 2772,
+  "terrain/athens.riverbed/m14/f0": {
+   "x": 2021,
+   "y": 2771,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.rock_limestone/m14/f0": {
-   "x": 3125,
-   "y": 2772,
-   "w": 62,
-   "h": 32,
-   "ox": 31,
-   "oy": 0
-  },
-  "terrain/athens.rock_limestone/m15/f0": {
-   "x": 1431,
+  "terrain/athens.riverbed/m15/f0": {
+   "x": 2242,
    "y": 2773,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.rock_limestone/m2/f0": {
-   "x": 57,
-   "y": 2800,
-   "w": 55,
+  "terrain/athens.riverbed/m2/f0": {
+   "x": 3263,
+   "y": 2811,
+   "w": 53,
    "h": 28,
-   "ox": 24,
+   "ox": 22,
    "oy": -4
   },
-  "terrain/athens.rock_limestone/m3/f0": {
-   "x": 877,
-   "y": 2800,
-   "w": 55,
+  "terrain/athens.riverbed/m3/f0": {
+   "x": 2483,
+   "y": 2812,
+   "w": 53,
    "h": 32,
-   "ox": 24,
+   "ox": 22,
    "oy": 0
   },
-  "terrain/athens.rock_limestone/m4/f0": {
-   "x": 3249,
-   "y": 2789,
-   "w": 56,
+  "terrain/athens.riverbed/m4/f0": {
+   "x": 309,
+   "y": 2807,
+   "w": 54,
    "h": 28,
    "ox": 31,
    "oy": -4
   },
-  "terrain/athens.rock_limestone/m5/f0": {
-   "x": 3739,
-   "y": 2773,
+  "terrain/athens.riverbed/m5/f0": {
+   "x": 316,
+   "y": 2774,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
-  "terrain/athens.rock_limestone/m6/f0": {
-   "x": 2404,
+  "terrain/athens.riverbed/m6/f0": {
+   "x": 379,
    "y": 2774,
    "w": 62,
    "h": 28,
    "ox": 31,
    "oy": -4
   },
-  "terrain/athens.rock_limestone/m7/f0": {
-   "x": 3355,
+  "terrain/athens.riverbed/m7/f0": {
+   "x": 973,
+   "y": 2774,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.riverbed/m8/f0": {
+   "x": 938,
+   "y": 2807,
+   "w": 54,
+   "h": 28,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.riverbed/m9/f0": {
+   "x": 883,
+   "y": 2775,
+   "w": 62,
+   "h": 28,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m0/f0": {
+   "x": 1354,
+   "y": 2816,
+   "w": 49,
+   "h": 25,
+   "ox": 24,
+   "oy": -4
+  },
+  "terrain/athens.rock_limestone/m1/f0": {
+   "x": 1158,
+   "y": 2804,
+   "w": 55,
+   "h": 29,
+   "ox": 24,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m10/f0": {
+   "x": 2149,
    "y": 2775,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
+  "terrain/athens.rock_limestone/m11/f0": {
+   "x": 1473,
+   "y": 2776,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m12/f0": {
+   "x": 636,
+   "y": 2798,
+   "w": 56,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m13/f0": {
+   "x": 3269,
+   "y": 2778,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m14/f0": {
+   "x": 2493,
+   "y": 2779,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m15/f0": {
+   "x": 2556,
+   "y": 2779,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m2/f0": {
+   "x": 2009,
+   "y": 2804,
+   "w": 55,
+   "h": 28,
+   "ox": 24,
+   "oy": -4
+  },
+  "terrain/athens.rock_limestone/m3/f0": {
+   "x": 1036,
+   "y": 2806,
+   "w": 55,
+   "h": 32,
+   "ox": 24,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m4/f0": {
+   "x": 2918,
+   "y": 2798,
+   "w": 56,
+   "h": 28,
+   "ox": 31,
+   "oy": -4
+  },
+  "terrain/athens.rock_limestone/m5/f0": {
+   "x": 2729,
+   "y": 2779,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
+  "terrain/athens.rock_limestone/m6/f0": {
+   "x": 3886,
+   "y": 2779,
+   "w": 62,
+   "h": 28,
+   "ox": 31,
+   "oy": -4
+  },
+  "terrain/athens.rock_limestone/m7/f0": {
+   "x": 1890,
+   "y": 2780,
+   "w": 62,
+   "h": 32,
+   "ox": 31,
+   "oy": 0
+  },
   "terrain/athens.rock_limestone/m8/f0": {
-   "x": 1742,
-   "y": 2790,
+   "x": 4006,
+   "y": 2798,
    "w": 56,
    "h": 29,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/m9/f0": {
-   "x": 509,
-   "y": 2776,
+   "x": 2855,
+   "y": 2782,
    "w": 62,
    "h": 29,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/c1/v0": {
-   "x": 2948,
-   "y": 2776,
+   "x": 3015,
+   "y": 2782,
    "w": 62,
    "h": 16,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/c10/v0": {
-   "x": 3985,
-   "y": 2704,
+   "x": 3277,
+   "y": 2712,
    "w": 64,
    "h": 32,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.rock_limestone/slope/c11/v0": {
-   "x": 1107,
-   "y": 2777,
+   "x": 1953,
+   "y": 2783,
    "w": 62,
    "h": 16,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/c12/v0": {
-   "x": 3549,
-   "y": 2714,
+   "x": 975,
+   "y": 2725,
    "w": 63,
    "h": 48,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.rock_limestone/slope/c13/v0": {
-   "x": 1170,
-   "y": 2777,
+   "x": 1228,
+   "y": 2784,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/c14/v0": {
-   "x": 789,
-   "y": 2705,
+   "x": 3342,
+   "y": 2712,
    "w": 64,
    "h": 48,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.rock_limestone/slope/c2/v0": {
-   "x": 3613,
-   "y": 2714,
+   "x": 1039,
+   "y": 2725,
    "w": 63,
    "h": 32,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.rock_limestone/slope/c3/v0": {
-   "x": 127,
-   "y": 2778,
+   "x": 1660,
+   "y": 2784,
    "w": 62,
    "h": 16,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/c4/v0": {
-   "x": 572,
-   "y": 2778,
+   "x": 127,
+   "y": 2785,
    "w": 62,
    "h": 47,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.rock_limestone/slope/c5/v0": {
-   "x": 635,
-   "y": 2778,
+   "x": 3529,
+   "y": 2785,
    "w": 62,
    "h": 31,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/c6/v0": {
-   "x": 481,
-   "y": 2715,
+   "x": 1533,
+   "y": 2727,
    "w": 63,
    "h": 48,
    "ox": 31,
    "oy": 16
   },
   "terrain/athens.rock_limestone/slope/c7/v0": {
-   "x": 698,
-   "y": 2778,
+   "x": 1,
+   "y": 2789,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/c8/v0": {
-   "x": 545,
-   "y": 2715,
+   "x": 1597,
+   "y": 2727,
    "w": 63,
    "h": 32,
    "ox": 32,
    "oy": 16
   },
   "terrain/athens.rock_limestone/slope/c9/v0": {
-   "x": 1305,
-   "y": 2780,
+   "x": 1036,
+   "y": 2789,
    "w": 62,
    "h": 16,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/knoll/v0": {
-   "x": 3610,
-   "y": 2780,
+   "x": 1291,
+   "y": 2789,
    "w": 62,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/ridge_x/v0": {
-   "x": 1506,
-   "y": 2814,
+   "x": 791,
+   "y": 2823,
    "w": 48,
    "h": 40,
    "ox": 32,
    "oy": 8
   },
   "terrain/athens.rock_limestone/slope/ridge_x0/v0": {
-   "x": 1807,
-   "y": 2716,
+   "x": 3471,
+   "y": 2727,
    "w": 63,
    "h": 40,
    "ox": 32,
    "oy": 8
   },
   "terrain/athens.rock_limestone/slope/ridge_x1/v0": {
-   "x": 3241,
-   "y": 2818,
+   "x": 546,
+   "y": 2828,
    "w": 47,
    "h": 32,
    "ox": 31,
    "oy": 0
   },
   "terrain/athens.rock_limestone/slope/ridge_y/v0": {
-   "x": 2174,
-   "y": 2814,
+   "x": 1779,
+   "y": 2823,
    "w": 48,
    "h": 40,
    "ox": 16,
    "oy": 8
   },
   "terrain/athens.rock_limestone/slope/ridge_y0/v0": {
-   "x": 1871,
-   "y": 2716,
+   "x": 3535,
+   "y": 2727,
    "w": 63,
    "h": 40,
    "ox": 31,
    "oy": 8
   },
   "terrain/athens.rock_limestone/slope/ridge_y1/v0": {
-   "x": 1799,
-   "y": 2819,
+   "x": 1712,
+   "y": 2828,
    "w": 47,
    "h": 32,
    "ox": 16,

@@ -111,7 +111,7 @@ struct HudModel {
     int season = 0;       // effective season
     int seasonDay = 0;    // day within the calendar's season, from 0
     int seasonPin = -1;   // -1: follow the days
-    bool snow = false;    // this season's rain falls as snow
+    bool snow = false;    // rain falls as snow where the camera is
     float brightness = 0; // of the scene behind the glass, 0 dark .. 1 bright
     // The world around the home (docs/design/world-tech.md §4): a map button when it exists; away
     // from the home region the building tools rest and the title names the place in view.

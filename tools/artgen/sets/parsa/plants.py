@@ -53,15 +53,16 @@ def t_plane(v, frame, frames, k):
 
 
 def t_poplar(v, frame, frames, k):
-    """A tall white poplar along a channel, its silvery leaves catching the light."""
+    """A tall white poplar along a channel, its leaves' paler undersides catching the light
+    (green, never white: white leaves read as snow on the branches in summer)."""
     rng = Rng(520, v)
     h = 50.0 + 4 * v
     m = _tree_model(k, int(h) + 4, 7)
     trunk(m, 8, 8, 1.1, h * 0.5, material="wood_grey")
     clumps = [(8 + rng.uniform(-1, 1), 8 + rng.uniform(-1, 1), 14 + t * (h - 20), 4.6 * (1 - abs(t - 0.4)) + 1.6)
               for t in np.linspace(0, 1, 8)]
-    leaf_mass(m, clumps, 521 + v, materials=(("leaf", 0.5), ("snow", 0.2), ("grass", 0.3)), under="leaf_dark",
-              cluster=(2.0, 3.0), squash=1.2, level=-0.4)
+    leaf_mass(m, clumps, 521 + v, materials=(("leaf", 0.45), ("grass", 0.55)), under="leaf_dark",
+              cluster=(2.0, 3.0), squash=1.2, level=-0.2)
     return m
 
 

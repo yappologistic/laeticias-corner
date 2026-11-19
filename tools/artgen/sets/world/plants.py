@@ -104,7 +104,8 @@ def t_beech(v, frame, frames, k):
 
 
 def t_fir(v, frame, frames, k):
-    """Silver (Greek) fir: a dark narrow cone of level branch tiers; r2 holds late snow."""
+    """Silver (Greek) fir: a dark narrow cone of level branch tiers, three heights. Snow on it
+    is the season's (the shader path's snow bit on its up-facing needles), never a look."""
     rng = Rng(5130, v)
     h = (50.0, 44.0, 48.0)[v]
     m = _tree(k, int(h) + 4, 9)
@@ -118,12 +119,6 @@ def t_fir(v, frame, frames, k):
                   for a in np.linspace(0, 2 * math.pi, 5, endpoint=False) + rng.uniform(0, 1)]
         leaf_mass(m, clumps, 5131 + v * 17 + i, materials=(("leaf_dark", 1.0),), under="leaf_dark",
                   cluster=(1.8, 2.4), squash=0.45, level=-1.0)
-    if v == 2:
-        X, Y, Z = m.coords()
-        from palette import MAT
-        top = (m.mat == MAT["leaf_dark"]) & (m.nrm[..., 2] > 0.55)
-        m.put(top & (hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64), np.floor(Z).astype(np.int64), 5139)
-                     < 0.6), "snow", tone=0.3)
     return m
 
 

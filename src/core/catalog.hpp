@@ -7,6 +7,7 @@
 #include "core/condition.hpp"
 #include "core/iso.hpp"
 
+#include <array>
 #include <cstdint>
 #include <expected>
 #include <filesystem>
@@ -303,10 +304,18 @@ struct AudioList {
 inline constexpr int kMaxMapSide = 4096;
 inline constexpr long long kMaxMapTiles = 1LL << 22;
 
+// What a green material shows in a month (a climate's `set_classes`, else `classes`): its plain
+// look, or one of the ramp table's season states; `bare` (leafless) has no ramp state of its own.
+enum class GreenState : std::uint8_t { Green, Fresh, Dry, Dormant, Turn, Bare };
+enum class GreenClass : std::uint8_t { Grass, Deciduous };
+inline constexpr int kGreenClasses = 2;
+
 // A climate of the world (the catalog's `climates`, parents resolved): what the engine reads of
-// it so far, its snow.
+// it so far, its snow and its greens by month.
 struct ClimateDef {
     std::string id;
+    // Per green class, per month (empty: green all year).
+    std::array<std::vector<GreenState>, kGreenClasses> greens;
     std::vector<int> snowLine;       // per month: the lowest level snow falls and lies on; -1: none
     std::uint16_t lowlandMonths = 0; // months snow may fall below the line too (bit per month)
     float lowlandChance = 0;         // on how many of those days

@@ -99,38 +99,79 @@ def _pnyx_ground(x):
     return np.clip((x - 16.0) / (15 * T - 16.0), 0, 1) * PNYX_RISE
 
 
-def pnyx(m):
-    """The assembly place in its first phase (as reconstructed): the natural rocky slope of the
-    hill falling north to a low retaining wall and the speakers' platform (bema), cut in the
-    rock with steps up to it; bare rock showing through thin dry earth, worn paths, thyme."""
-    seed = 421
-    W, Lh = 15 * T, 17 * T
+PNYX_SEED = 421
+PNYX_BX, PNYX_BY = 18.0, 8.5 * T         # the bema's middle: the seating ledges centre on it
+PNYX_STEP = 11.0                         # a ledge's depth (design units)
+PNYX_FRONT = 2.9                         # the front rows' floor: one walker's step below the bema
 
-    def top(X, Y):
-        n = (value_noise(X, Y, X * 0, 9.0, seed) - 0.5) * 1.0
-        return np.maximum(_pnyx_ground(X) + n, 0.3)
+
+def _pnyx_arcs(X, Y):
+    return np.hypot(X - PNYX_BX, (Y - PNYX_BY) * 0.85)
+
+
+def _pnyx_top(X, Y):
+    """The worked rock surface: the hill's slope less the ledges' fall toward each riser."""
+    r = _pnyx_arcs(X, Y)
+    ledge = (r % PNYX_STEP) / PNYX_STEP       # 0 at a riser's foot, 1 at the next riser
+    seated = np.clip((r - 34.0) / 8.0, 0, 1)  # the ledges start behind the front rows
+    n = (value_noise(X, Y, X * 0, 9.0, PNYX_SEED) - 0.5) * 0.6
+    z = np.maximum(_pnyx_ground(X) + n - seated * 0.9 * ledge, 0.3)
+    # The front rows stand on a levelled terrace one walker's step below the bema.
+    front = (X >= 2 * T) & (X < 3 * T)
+    return np.where(front, PNYX_FRONT - 0.2, z)
+
+
+def pnyx(m):
+    """The assembly place in its first phase (as reconstructed): the hill's rock falling north
+    to the retaining wall of big polygonal blocks and the speakers' platform (bema), cut in the
+    rock with steps up to it. The slope is worked into shallow rock-cut ledges arcing round the
+    bema where the citizens sat, bedrock showing along every riser, thin dry earth and thyme in
+    the ledges' backs, paths worn straight up between them."""
+    seed = PNYX_SEED
+    W, Lh = 15 * T, 17 * T
+    by, step, arcs, top = PNYX_BY, PNYX_STEP, _pnyx_arcs, _pnyx_top
     rock_field(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), top, seed=seed, stains=False)
-    # Thin dry earth over most of the slope in broad soft patches (QA4 V-A-006: no mottle):
-    # bare grey bedrock shows in long ledges along the contours, thyme in the earth.
+
+    def riser(X, Y):
+        r = arcs(X, Y)
+        return (r > 34.0) & ((r % step) > step - 2.2)
+    path = lambda X, Y: np.abs(((Y - by) % 46.0) - 23.0) < 2.2       # worn ways up between the ledges
+    # Thin dry earth only in the backs of the ledges, broken by rock and paths (no broad slab).
     def earth(X, Y, Z):
-        n = value_noise(X * 0.35, Y * 0.35, Z * 0, 12.0, seed + 2) + 0.18 * np.sin(X * 0.09 + Y * 0.01)
-        return (Z > top(X, Y) - 0.8) & (n > 0.36)
+        n = value_noise(X * 0.6, Y * 0.6, Z * 0, 5.0, seed + 2)
+        r = arcs(X, Y)
+        back = (r % step) < step * 0.55
+        return (Z > top(X, Y) - 0.8) & (n > 0.5) & back & ~riser(X, Y) & ~path(X, Y)
     fill(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), "summer", earth,
-         tone=lambda X, Y, Z: (value_noise(X, Y, Z * 0, 6.0, seed + 3) - 0.5) * 0.5 - 0.25, only_solid=True)
+         tone=lambda X, Y, Z: (value_noise(X, Y, Z * 0, 3.0, seed + 3) - 0.5) * 0.7 - 0.45, only_solid=True)
     fill(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), "olive",
-         lambda X, Y, Z: earth(X, Y, Z) & (value_noise(X * 2.0, Y * 2.0, Z * 0, 1.0, seed + 4) > 0.8),
+         lambda X, Y, Z: earth(X, Y, Z) & (value_noise(X * 2.0, Y * 2.0, Z * 0, 1.0, seed + 4) > 0.72),
          tone=-0.2, only_solid=True)
-    # The retaining wall along the north edge and the rock-cut bema with its steps.
-    poros_wall(m, 0.0, 6.0, 0.0, Lh, 0.0, 4.0, seed + 4, course=2.0)
+    # The risers: bare bedrock, lit along their top edge, dark at the foot.
+    fill(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), "attic_rock",
+         lambda X, Y, Z: riser(X, Y) & (Z > top(X, Y) - 1.2),
+         tone=lambda X, Y, Z: 0.5 * ((arcs(X, Y) % step) > step - 0.9) - 0.4, only_solid=True)
+    fill(m, (0.0, W, 0.0, Lh, 0.0, PNYX_RISE + 2.0), "gravel",
+         lambda X, Y, Z: path(X, Y) & (Z > top(X, Y) - 0.8) & (arcs(X, Y) > 30.0),
+         tone=lambda X, Y, Z: (value_noise(X, Y, Z * 0, 2.0, seed + 6) - 0.5) * 0.6, only_solid=True)
+    # The retaining wall of big polygonal blocks along the north edge, and the rock-cut bema
+    # with its steps.
+    poros_wall(m, 0.0, 6.0, 0.0, Lh, 0.0, 6.5, seed + 4, course=3.2, material="attic_rock")
     fill(m, (6.0, 30.0, 7 * T, 10 * T, 0.0, BEMA), "attic_rock", tone=M.ashlar(2.5, 8.0, seed + 5, spread=0.5))
+    fill(m, (6.0, 30.0, 7 * T, 10 * T, BEMA - 0.6, BEMA), "poros", tone=M.ashlar(3.0, 6.0, seed + 7, spread=0.3))
     for i in range(3):
         slab(m, 0.0, 6.0 + i * 2.0, 7 * T + 8.0, 7 * T + 16.0, 0.0, BEMA * (i + 1) / 3, "attic_rock", tone=0.2)
+    # A boundary stone (horos) at the way in.
+    slab(m, 8.0, 10.0, 2 * T, 2 * T + 2.0, _pnyx_ground(9.0), _pnyx_ground(9.0) + 6.0, "marble", tone=0.1)
 
 
 def _pnyx_landmark():
     # The bema's ends drop a cliff to the rock beside them: those two tiles are not walk tiles.
     walk = [t for t in tiles(1, 14, 0, 16) if t not in ((1, 6), (1, 10))]
-    floor = {(x, y): (BEMA if x == 1 and 7 <= y <= 9 else float(_pnyx_ground((x + 1) * T) + 0.6)) for x, y in walk}
+    # The front rows (before the ledges begin) keep one walker's step below the bema.
+    floor = {(x, y): (BEMA if x == 1 and 7 <= y <= 9 else float(_pnyx_ground((x + 1) * T) + 0.6) if x < 2 else
+                      PNYX_FRONT if x == 2 else
+                      float(_pnyx_top(np.array((x + 0.5) * T), np.array((y + 0.5) * T))) + 0.2) for x, y in walk}
     spots = [{"t": [x, y], "face": "-x"} for x in (4, 6, 8, 10) for y in (3, 6, 9, 12)]
     return Landmark((15, 17), (0, 24), ref("pnyx"), walk=walk, floor=floor,
                     slots={"bema": [{"t": [1, 8], "face": "+x", "z": int(BEMA * 2)}], "assembly": spots,

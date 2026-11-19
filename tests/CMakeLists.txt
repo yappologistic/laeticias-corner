@@ -103,6 +103,9 @@ set(LC_SCRIPTS
   "settings_a|settings_a|960x600||--front-door"
   "settings_b|settings_b|960x600||--front-door"
   "names|names|960x600||--front-door"
+  "greek_a|greek_a|960x600||--front-door"
+  "greek_b|greek_b|960x600||--front-door"
+  "photo_away|photo_away|960x600|"
   "map_960|map_sizes|960x600|"
   "map_1580|map_sizes|1580x845|"
   "map_1440|map_sizes|2560x1440|heavy"
@@ -146,6 +149,8 @@ foreach(entry IN LISTS LC_SCRIPTS)
     set(save "${LC_SCRATCH}/save_world_reload")
   elseif(name MATCHES "^settings_")
     set(save "${LC_SCRATCH}/save_settings")
+  elseif(name MATCHES "^greek_")
+    set(save "${LC_SCRATCH}/save_greek")
   endif()
   set(file "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${script}.lcs")
   if(script MATCHES "^(launch|front_sizes)_")
@@ -166,13 +171,13 @@ endforeach()
 # Every run starts from a clean save directory; the reload pair runs in order.
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no_resident"
      "${LC_SCRATCH}/save_offscreen_actor"
-     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_audio_year" "${LC_SCRATCH}/save_bench"
+     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_audio_year" "${LC_SCRATCH}/save_audio_mix" "${LC_SCRATCH}/save_bench"
      "${LC_SCRATCH}/save_bench_1440"
      "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look"
-     "${LC_SCRATCH}/save_bench_startup_look")
+     "${LC_SCRATCH}/save_look_night" "${LC_SCRATCH}/save_bench_startup_look")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -183,6 +188,8 @@ set_tests_properties(script_world_save_b PROPERTIES FIXTURES_REQUIRED "clean_sav
 # Settings changed in one run are there in the next, a muted profile among them.
 set_tests_properties(script_settings_a PROPERTIES FIXTURES_SETUP settings)
 set_tests_properties(script_settings_b PROPERTIES FIXTURES_REQUIRED "clean_saves;settings")
+set_tests_properties(script_greek_a PROPERTIES FIXTURES_SETUP greek)
+set_tests_properties(script_greek_b PROPERTIES FIXTURES_REQUIRED "clean_saves;greek")
 # A world saved by the previous version (3) opens in the world.
 add_test(NAME prepare_world_old_save COMMAND ${CMAKE_COMMAND} -E copy
   ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v3.json
@@ -293,6 +300,23 @@ add_test(NAME audio_year_check COMMAND lc_tests "--test-case=capture: the year*"
 set_tests_properties(audio_year_check PROPERTIES ENVIRONMENT "LC_AUDIO_YEAR=${year_capture}"
   FIXTURES_REQUIRED audio_year)
 
+# The mix across the world: every kind of place, the weather, travel and the menus, captured and
+# measured (loudness, peaks, balance, the buses' shares); the capture is deleted afterwards.
+set(mix_capture "${LC_SCRATCH}/capture_mix.wav")
+add_test(NAME audio_mix_world
+  COMMAND laeticias-corner --headless --size 960x600 --seed 1 --front-door
+          --audio-out "${mix_capture}" --save-dir "${LC_SCRATCH}/save_audio_mix"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/audio_mix_world.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(audio_mix_world PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves)
+add_test(NAME audio_mix_world_check COMMAND lc_tests "--test-case=capture: the mix across*")
+set_tests_properties(audio_mix_world_check PROPERTIES ENVIRONMENT "LC_AUDIO_MIX=${mix_capture}"
+  FIXTURES_REQUIRED audio_mix)
+add_test(NAME audio_mix_world_clean
+  COMMAND ${CMAKE_COMMAND} -E rm -f "${mix_capture}" "${mix_capture}.marks")
+set_tests_properties(audio_mix_world_clean PROPERTIES FIXTURES_CLEANUP audio_mix)
+
 # The same script and seed give byte-identical screenshots and saves with actors, the resident,
 # weather and events running: two runs in their own directories, compared file by file.
 foreach(run a b)
@@ -392,6 +416,13 @@ add_test(NAME script_gpu_look
           --save-dir "${LC_SCRATCH}/save_gpu_look" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/gpu_look.lcs"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(script_gpu_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
+  FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+# The shader path at night and on arrival (QA V6-011, V6-012, V6-020).
+add_test(NAME script_look_night
+  COMMAND laeticias-corner --headless --quality high --size 1600x900 --seed 1
+          --save-dir "${LC_SCRATCH}/save_look_night" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/look_night.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_look_night PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 # No seams on the shader path either (script_seams runs the classic frame): at a small window
 # size, the home and the Forum at 1x, 2x and 3x.

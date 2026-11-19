@@ -53,8 +53,12 @@ inline constexpr float kDaySaturation = 0.06f;
 inline constexpr float kDaySaturationGrowth = 1.08f;
 inline constexpr float kDayWarm[3] = {0.10f, 0.04f, -0.06f};
 inline constexpr float kTwilightWarm = 0.08f; // dawn and dusk: red up, blue down by this
-inline constexpr float kNightAdapt[2] = {0.45f, 2.0f};
+inline constexpr float kNightAdapt[2] = {
+    0.8f, 1.3f};                     // narrow: the place and hour set night, not the frame
 inline constexpr int kMeanSide = 64; // the scene is first sampled to this many texels across
+// The exposure follows the scene's mean this share of the way a frame (about half a second to
+// settle at 60 frames a second; a jump takes it at once).
+inline constexpr float kExposureFollow = 0.06f;
 
 // Water: the tile water field's side (tiles round the view, one texel each); the colours come
 // from the region's body colour: deeper and richer offshore, turquoise in the shallows, rivers
@@ -72,6 +76,7 @@ inline constexpr float kWaterBandsLow = 3;
 inline constexpr float kWaterBandsHigh = 4;
 inline constexpr float kSkyInWater[2] = {0.12f, 0.6f}; // by day, at dawn, dusk and night
 inline constexpr float kGlints = 0.9f;
+inline constexpr float kMoonGlints = 0.6f;
 inline constexpr float kRiverSpeed = 0.55f; // tiles per second along a river's flow
 
 // Clouds: cumulus over the world's weather cells (a few per cell, a few sizes), drawn at a

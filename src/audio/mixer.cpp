@@ -29,6 +29,11 @@ Mixer::Mixer() {
     for (auto& d : dry_) d.store(false);
 }
 
+void Mixer::setLoopMusic(int loop) {
+    if (loop >= 0 && static_cast<std::size_t>(loop) < loops_.size())
+        loops_[static_cast<std::size_t>(loop)].music = true;
+}
+
 void Mixer::setLoopDry(int loop, bool dry) {
     if (loop < 0 || static_cast<std::size_t>(loop) >= kMaxLoops) return;
     dry_[static_cast<std::size_t>(loop)].store(dry, std::memory_order_relaxed);
@@ -261,7 +266,9 @@ void Mixer::muffleBeds(float* out, int frames, float chunkSeconds) {
             float y = b0 * x + b1 * z[0] + b0 * z[1] - a1 * z[2] - a2 * z[3];
             if (std::abs(y) < 1e-20f) y = 0; // no denormals when the beds fall silent
             z = {x, z[0], y, z[2]};
-            out[static_cast<std::size_t>(i) * 2 + c] += x + (y - x) * m;
+            const float a = x + (y - x) * m + dryBuf_[static_cast<std::size_t>(i) * 2 + c];
+            out[static_cast<std::size_t>(i) * 2 + c] += a;
+            if (capture_) busEnergy_[2] += static_cast<double>(a) * a;
         }
     }
 }
@@ -317,6 +324,9 @@ void Mixer::mix(float* out, int frames) {
         }
     }
 
+    if (capture_)
+        for (int i = 0; i < frames * 2; ++i)
+            busEnergy_[1] += static_cast<double>(out[i]) * out[i]; // only effects so far
     // Stem fades first: makeup gains read the lead stems' levels.
     const std::uint64_t pos0 = musicPos_;
     const std::uint64_t pos1 = pos0 + static_cast<std::uint64_t>(frames);
@@ -343,6 +353,8 @@ void Mixer::mix(float* out, int frames) {
     }
     const bool hushed = master_ <= 0.0f && muted_.load();
     std::fill(bedBuf_.begin(), bedBuf_.begin() + frames * 2, 0.0f);
+    std::fill(dryBuf_.begin(), dryBuf_.begin() + frames * 2, 0.0f);
+    std::fill(musicBuf_.begin(), musicBuf_.begin() + frames * 2, 0.0f);
     for (std::size_t li = 0; li < loops_.size(); ++li) {
         LoopTrack& t = loops_[li];
         if (!t.vorbis) continue;
@@ -388,11 +400,13 @@ void Mixer::mix(float* out, int frames) {
                                      chunkSeconds / tuning::kLoopFadeSeconds);
         pan_[li] = p1;
         // Beds go through snow's muffle; music and the dry beds straight to the mix.
-        float* dst = !t.stem && !dry_[li].load(std::memory_order_relaxed) ? bedBuf_.data() : out;
+        float* dst = t.stem || t.music                           ? musicBuf_.data()
+                     : !dry_[li].load(std::memory_order_relaxed) ? bedBuf_.data()
+                                                                 : dryBuf_.data();
         for (int i = 0; i < frames; ++i) {
             const float k = static_cast<float>(i) / static_cast<float>(frames);
             const float g = (g0 + (g1 - g0) * k) * (l0 + (l1 - l0) * k) *
-                            busRamp(t.stem ? Bus::Music : Bus::Ambience, i);
+                            busRamp(t.stem || t.music ? Bus::Music : Bus::Ambience, i);
             const float pan = p0 + (p1 - p0) * k;
             dst[i * 2] +=
                 loopBuf_[static_cast<std::size_t>(i * 2)] * g * std::min(1.0f, 1.0f - pan);
@@ -402,6 +416,11 @@ void Mixer::mix(float* out, int frames) {
     }
     musicPos_ = pos1;
     muffleBeds(out, frames, chunkSeconds);
+    for (int i = 0; i < frames * 2; ++i) out[i] += musicBuf_[static_cast<std::size_t>(i)];
+    if (capture_)
+        for (int i = 0; i < frames * 2; ++i)
+            busEnergy_[0] += static_cast<double>(musicBuf_[static_cast<std::size_t>(i)]) *
+                             musicBuf_[static_cast<std::size_t>(i)];
 
     const float masterTarget = (muted_.load() || closing_.load()) ? 0.0f : 1.0f;
     const float m0 = master_;

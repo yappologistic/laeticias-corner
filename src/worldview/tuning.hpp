@@ -145,7 +145,7 @@ inline constexpr float kSeamDuck = 0.5f;      // -6 dB under a seam's drone
 inline constexpr float kMusicThreshold = 0.5f;
 inline constexpr float kMusicHysteresis = 0.1f;
 inline constexpr float kMusicFadeSeconds = 4.0f;
-inline constexpr float kMusic = 0.55f; // a city's piece, as the home's stems (core kMusicLevel)
+inline constexpr float kMusic = 0.7f; // a city's piece: one file against the home's five stems
 inline constexpr float kBedFadeSeconds = 20.0f; // beds crossfade at an hour's or a month's turn
 inline constexpr float kSnowBedDuck = 0.29f;    // -3 dB on the beds while snow lies
 inline constexpr float kStretchLift = 1.41f;    // +3 dB on the beds of places without music
@@ -178,9 +178,11 @@ inline constexpr float kActorMergeCell = 128.0f;  // the merge's screen grid, wo
 
 // City life's sound (city_sound.hpp; out/reports/audio-atmosphere.md "How the engine should mix").
 inline constexpr float kCityRainOn = 0.05f;  // rain intensity at which rain is heard
+inline constexpr float kCityRain = 0.7f;     // the rain family: under a city's music (the mix test)
 inline constexpr float kCrowdHandful = 5.0f; // people in view: level 1 up to here
 inline constexpr float kCrowdMarket = 20.0f; // level 2 up to here, festival beyond
 inline constexpr float kCrowdRain = 0.4f;    // crowds hush in the rain (look.md §3.6)
+inline constexpr float kCrowdLevel = 0.5f;   // a full crowd, under the city's music (the mix test)
 inline constexpr float kCityWind = 0.6f;
 inline constexpr float kRainSurface = 0.8f;
 inline constexpr float kDawnFrom = 5.0f; // game hours of the climate's beds

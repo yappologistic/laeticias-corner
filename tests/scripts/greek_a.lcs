@@ -1,0 +1,17 @@
+# A world named in Greek opens, saves and reopens (one of two; greek_b reopens it): its folder
+# name is whatever the name allows, its name and its pieces come back as they were.
+wait 20
+click ui:menu:continue
+wait 8
+expect page newworld
+key backspace
+type Ἀθῆναι
+click ui:menu:create
+wait 10
+expect world Ἀθῆναι
+click ui:menu:skip_tour
+wait 4
+set unlock all
+place lamp @30,30
+expect count lamp 1
+quit
