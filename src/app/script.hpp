@@ -108,6 +108,10 @@
 // Points `life:KIND` (the first drawn city-life actor of that kind); `set look KIND ZOOM` finds
 // a living actor of that kind first.
 //       luma X,Y,W,H MIN MAX    mean luminance (0..255) of a window region of this frame
+//       contrast X,Y,W,H MIN    the spread (standard deviation, 0..255) of the region's
+//                               lightness is at least MIN (not one flat colour)
+//       luma_mark NAME X,Y,W,H  keeps the region's mean lightness as NAME (always passes)
+//       luma_like NAME X,Y,W,H TOL  the region's mean lightness is within TOL (a share) of NAME's
 //       target_alpha X,Y,W,H MOST  at most MOST (0..1) of the world target under the region is
 //                               partly transparent (a seam between cached pieces, a hole)
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL

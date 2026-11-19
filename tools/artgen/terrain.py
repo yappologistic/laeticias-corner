@@ -214,18 +214,23 @@ def grass(variant: int, k: int, season=None) -> Sprite:
     return _sprite(g, _season_ground(g, level, GRASS_LEVEL, season, 330 + variant), g.inside * 255)
 
 
-def _season_patch(g: Grid, seed: int):
-    """The autumn and winter patch field (0..1) of one look. Along the tile's edges every look
+def broad(g: Grid, seed: int, look: int, scale: float = 5.0) -> np.ndarray:
+    """A broad field (0..1) for one look of a ground tile: along the tile's edges every look
     shares a fine tile-periodic field, so neighbours always meet; inside, each look has its own
     broad patches of any shape and place. A field of random looks then reads as irregular
-    patches, never as a lattice tied to the tile's corners."""
+    patches, never as one mark per tile (the lattice a coarse tile-periodic noise prints)."""
     common = 0.6 * _pnoise(g.u, g.v, 4, 337) + 0.4 * _pnoise(g.u, g.v, 8, 338)
-    own = 0.65 * value_noise(g.u, g.v, np.zeros_like(g.u), 5.0, seed) + \
-        0.35 * value_noise(g.u, g.v, np.zeros_like(g.u), 2.5, seed + 1)
+    own = 0.65 * value_noise(g.u, g.v, np.zeros_like(g.u), scale, seed + 7919 * look) + \
+        0.35 * value_noise(g.u, g.v, np.zeros_like(g.u), scale / 2, seed + 7919 * look + 1)
     edge = np.minimum(np.minimum(g.u, 16 - g.u), np.minimum(g.v, 16 - g.v))
     inner = np.clip((edge - 0.5) / 2.5, 0, 1)
     inner = inner * inner * (3 - 2 * inner)
     return common * (1 - inner) + own * inner
+
+
+def _season_patch(g: Grid, seed: int):
+    """The autumn and winter patch field of one look (broad: no lattice at the corners)."""
+    return broad(g, seed, 0)
 
 
 def _season_ground(g: Grid, level, base_level, season, seed, ramp=GRASS, flowers=True):
@@ -689,9 +694,11 @@ def fall(face: str, frame: int, frames: int, k: int) -> Sprite:
 
 # ---------- wild land ----------
 
-def thicket(variant: int, k: int) -> Sprite:
+def thicket(variant: int, k: int, season: str | None = None) -> Sprite:
     """Brambles, nettles and briar over a wild tile: dense, low contrast, cool and dim so the
-    wild land reads as background behind what you build. Anchored like terrain."""
+    wild land reads as background behind what you build. Anchored like terrain. Autumn turns
+    the bramble leaves red-brown among the green; winter leaves the canes half bare with snow
+    lying on the tops of the tangle."""
     from models.nature import leaf_mass
     from render import render_sprite
     from voxel import Model, Rng, curve
@@ -703,7 +710,10 @@ def thicket(variant: int, k: int) -> Sprite:
         r = rng.uniform(3.0, 4.6)
         clumps.append((x, y, r * 0.75 + rng.uniform(0, 3.5), r))
     clumps.sort(key=lambda c: c[2])
-    leaf_mass(m, clumps, 771 + variant, (("leaf_dark", 1.0),), "leaf_dark", cluster=(2.0, 3.0), level=-2.6)
+    if season == "winter":            # half bare: a thinner, lower tangle of dark leaves
+        clumps = [(x, y, z * 0.8, r * 0.75) for x, y, z, r in clumps]
+    leaves = {"autumn": (("rust_leaf", 0.55), ("autumn", 0.15), ("leaf_dark", 0.3))}.get(season, (("leaf_dark", 1.0),))
+    leaf_mass(m, clumps, 771 + variant, leaves, "leaf_dark", cluster=(2.0, 3.0), level=-2.6)
     m.tone[m.mat > 0] -= 0.9          # kept dim: lit tufts stop short of the bright greens
     # Arching briar canes with thorns, and a few nettle spikes poking up.
     for _n in range(rng.integers(4, 7)):
@@ -722,6 +732,14 @@ def thicket(variant: int, k: int) -> Sprite:
     if variant % 2:   # a few dark berries
         for _n in range(6):
             m.put_points([(rng.uniform(3, 13), rng.uniform(3, 13), rng.uniform(5, 10))], "violet", tone=-0.8)
+    if season == "winter":            # snow lying on what faces up
+        from palette import MAT
+        top = (m.mat > 0) & (m.nrm[..., 2] > 0.5)
+        X, Y, Z = m.coords()
+        lying = top & (hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64),
+                              np.floor(Z).astype(np.int64), 779) < 0.75)
+        m.mat[lying] = MAT["snow"]
+        m.tone[lying] = -0.6           # dim like the rest of the wild land
     m.carve(~np.broadcast_to(_inside_tile(m), m.mat.shape))
     return render_sprite(m)
 
@@ -789,8 +807,8 @@ def build(keys: list[str], cat: dict, k: int) -> dict[str, Sprite]:
         elif m := re.fullmatch(r"edge/fall_(se|sw)/f(\d+)", key):
             frames = sum(1 for x in keys if x.startswith(f"edge/fall_{m[1]}/"))
             out[key] = fall(m[1], int(m[2]), frames, k)
-        elif m := re.fullmatch(r"wild/thicket/v(\d+)", key):
-            out[key] = thicket(int(m[1]), k)
+        elif m := re.fullmatch(r"wild/thicket/v(\d+)(?:@(\w+))?", key):
+            out[key] = thicket(int(m[1]), k, m[2])
         elif key.startswith("ui/tile_"):
             out[key] = UI_TILES[key[8:]](k)
         else:

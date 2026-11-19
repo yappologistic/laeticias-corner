@@ -5,6 +5,7 @@
 #include "core/catalog.hpp"
 #include "render/atlas.hpp"
 #include "render/gpu/look.hpp"
+#include "render/gpu/seasons.hpp"
 #include "render/gpu/tuning.hpp"
 #include "world/loader.hpp"
 #include "worldview/renderer.hpp"
@@ -265,4 +266,47 @@ TEST_CASE(
     CHECK(chroma(winter.shallow) < chroma(summer.shallow));
     const gpu::WaterColours none = gpu::waterColours(body, -1);
     CHECK(near(none.deep.b, summer.deep.b)); // summer adds no grey
+}
+
+TEST_CASE("gpu: seasons: a climate's month swaps green ramps; snow builds and thaws by its line") {
+    const nlohmann::json ramps = nlohmann::json::parse(R"({"ramps": [
+        {"id": 1, "class": "foliage_deciduous", "steps": 7,
+         "states": {"fresh": 159, "dry": 160, "turn": 162}},
+        {"id": 28, "class": "grass", "steps": 6,
+         "states": {"fresh": 163, "dry": 164, "dormant": 165, "turn": 186}},
+        {"id": 7, "class": "stone", "steps": 6},
+        {"id": 40, "class": "snow", "steps": 5}, {"id": 115, "class": "snow", "steps": 3}]})");
+    const gpu::RampSeasons r = gpu::parseRamps(ramps);
+    CHECK(r.snow == 40); // the widest snow ramp
+    ClimateDef c;
+    c.snowLine = {-1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 4, 4}; // snow from December, level 4
+    using G = GreenState;
+    c.greens[0] = {G::Fresh, G::Fresh, G::Fresh, G::Green,   G::Dry,     G::Dry,
+                   G::Dry,   G::Green, G::Green, G::Dormant, G::Dormant, G::Dormant};
+    c.greens[1] = {G::Bare,  G::Fresh, G::Green, G::Green, G::Green, G::Green,
+                   G::Green, G::Turn,  G::Turn,  G::Bare,  G::Bare,  G::Bare};
+    std::array<std::uint8_t, gpu::kRampIds> row{};
+    gpu::remapRow(r, c, 0, row); // March: fresh grass, leafless trees
+    CHECK(row[28] == 163);
+    CHECK(row[1] == 160);        // no dormant leaves: the dry state
+    CHECK(row[7] == 7);          // stone is stone all year
+    gpu::remapRow(r, c, 3, row); // June: plain green
+    CHECK(row[28] == 28);
+    CHECK(row[1] == 1);
+    gpu::remapRow(r, c, 7, row); // October: the trees turn
+    CHECK(row[1] == 162);
+    gpu::remapRow(r, c, 9, row); // December: dormant grass
+    CHECK(row[28] == 165);
+    // Snow: none below the line, half on it, all above; it builds over December's first morning
+    // and thaws over March's.
+    CHECK(gpu::snowCover(c, 9, 0.5f, 3) == 0.0f);
+    CHECK(gpu::snowCover(c, 9, 0.5f, 4) == 0.5f);
+    CHECK(gpu::snowCover(c, 9, 0.5f, 6) == 1.0f);
+    CHECK(gpu::snowCover(c, 9, 0.0f, 6) == 0.0f); // December's dawn: none yet
+    const float building = gpu::snowCover(c, 9, 0.2f, 6);
+    CHECK(building > 0.0f);
+    CHECK(building < 1.0f);
+    CHECK(gpu::snowCover(c, 10, 0.0f, 6) == 1.0f); // January: lying all day
+    CHECK(gpu::snowCover(c, 0, 0.0f, 6) == 1.0f);  // March's dawn: still there
+    CHECK(gpu::snowCover(c, 0, 0.5f, 6) == 0.0f);  // ... gone by midday
 }

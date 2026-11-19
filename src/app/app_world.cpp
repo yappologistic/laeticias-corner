@@ -1048,8 +1048,11 @@ void App::followWorldWeather() {
     const TileRect v = cameraTiles();
     viewWeather_->update(played_, weather_.wind(), sc, {v.x0 - m, v.y0 - m, v.x1 + m, v.y1 + m},
                          weather_.mode());
-    if (worldView_)
+    if (worldView_) {
         worldView_->setWind(weather_.wind().dir, weather_.wind().strength, profile_.reduceMotion);
+        // The clock's 0 is 06:00: the time of day from midnight for the snow's morning.
+        worldView_->setCalendar(cd.month, static_cast<float>(std::fmod(clock_.time() + 0.25, 1.0)));
+    }
 }
 
 TileRect App::cameraTiles() const {

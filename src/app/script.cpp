@@ -176,6 +176,17 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
             if (c.args[0] == "tile" || c.args[0] == "item" || c.args[0] == "growth") {
                 if (c.args.size() != 3) return err("expect " + c.args[0] + " P VALUE");
                 if (auto r = pointAt(wait ? 3 : 2, c.a); !r) return err(r.error());
+            } else if (c.args[0] == "contrast") {
+                float v = 0;
+                if (c.args.size() != 3 || !parseScriptRect(c.args[1]) || !number(c.args[2], v))
+                    return err("expect contrast X,Y,W,H MIN");
+            } else if (c.args[0] == "luma_mark") {
+                if (c.args.size() != 3 || !parseScriptRect(c.args[2]))
+                    return err("expect luma_mark NAME X,Y,W,H");
+            } else if (c.args[0] == "luma_like") {
+                float v = 0;
+                if (c.args.size() != 4 || !parseScriptRect(c.args[2]) || !number(c.args[3], v))
+                    return err("expect luma_like NAME X,Y,W,H TOLERANCE");
             } else if (c.args[0] == "target_alpha") {
                 float v = 0;
                 if (c.args.size() != 3 || !parseScriptRect(c.args[1]) || !number(c.args[2], v))

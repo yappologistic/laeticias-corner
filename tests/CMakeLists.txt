@@ -171,7 +171,7 @@ list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no
      "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
-list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look")
+list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look" "${LC_SCRATCH}/save_look_night")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -391,6 +391,13 @@ add_test(NAME script_gpu_look
           --save-dir "${LC_SCRATCH}/save_gpu_look" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/gpu_look.lcs"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(script_gpu_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
+  FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+# The shader path at night and on arrival (QA V6-011, V6-012, V6-020).
+add_test(NAME script_look_night
+  COMMAND laeticias-corner --headless --quality high --size 1600x900 --seed 1
+          --save-dir "${LC_SCRATCH}/save_look_night" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/look_night.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_look_night PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 # No seams on the shader path either (script_seams runs the classic frame): at a small window
 # size, the home and the Forum at 1x, 2x and 3x.

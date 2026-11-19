@@ -175,9 +175,52 @@ def validate(set_id: str, out_dir: Path, k: int, lm_info=None) -> tuple[list[str
     return errors, warnings
 
 
+LATTICE = 6.0       # luma std of a terrain's looks' low-passed mean above which a field prints a lattice
+
+
+def lattice(tiles: list[np.ndarray]) -> float:
+    """How strongly a field of a terrain's looks repeats at the tile's period, whatever the
+    engine's shuffle: what every look shares (their mean) seen at a few pixels' blur, as the
+    standard deviation of its luma inside the diamond. Marks that sit at the same place in every
+    look (one blob, crescent or dot per tile) raise it; looks that differ inside keep it low."""
+    from numpy.lib.stride_tricks import sliding_window_view
+    lum = [t[..., :3].astype(np.float64) @ [0.299, 0.587, 0.114] for t in tiles]
+    inside = np.all([t[..., 3] == 255 for t in tiles], axis=0)
+    m = np.where(inside, np.mean(lum, axis=0), np.nan)
+    p = np.pad(m, ((2, 2), (4, 4)), constant_values=np.nan)
+    import warnings
+    with warnings.catch_warnings():          # windows wholly outside the diamond are all-NaN
+        warnings.simplefilter("ignore", RuntimeWarning)
+        low = np.nanmean(sliding_window_view(p, (5, 9)), axis=(2, 3))
+    return float(np.nanstd(low[inside])) if inside.any() else 0.0
+
+
+def lattice_warnings(cat: dict, sprite) -> list[str]:
+    """A warning per ground terrain whose looks print a lattice (`lattice` over LATTICE): bases
+    by their `v<n>`, overlays by their interior looks (`m15/f0`, `m15/v<n>/f0`)."""
+    out = []
+    for t in cat.get("terrain", []):
+        tid = t["id"]
+        if t.get("base"):
+            looks = [sprite(f"terrain/{tid}/v{n}") for n in range(t["variants"])]
+        else:
+            looks = [sprite(f"terrain/{tid}/m15/f0")]
+            n = 1
+            while (s := sprite(f"terrain/{tid}/m15/v{n}/f0")) is not None:
+                looks.append(s)
+                n += 1
+        looks = [s for s in looks if s is not None]
+        looks = [s for s in looks if s.shape == looks[0].shape] if looks else looks
+        if looks and (score := lattice(looks)) > LATTICE:
+            out.append(f"{tid}: its {len(looks)} look(s) repeat one pattern per tile (lattice {score:.1f} > {LATTICE})")
+    return out
+
+
 def main(set_id, out_dir, k, lm_info=None) -> int:
     import datavalidate
     errors, warnings = validate(set_id, Path(out_dir), k, lm_info)
+    warnings += lattice_warnings(json.loads((setbuild.SETS / set_id / "catalog.json").read_text()),
+                                 _page_sprites(Path(out_dir), set_id))
     errors += datavalidate.check(set_id, Path(out_dir))
     for w in warnings:
         print(f"{set_id}: warning: {w}", file=sys.stderr)
@@ -185,6 +228,25 @@ def main(set_id, out_dir, k, lm_info=None) -> int:
         print(f"{set_id}: {e}", file=sys.stderr)
     print(f"setvalidate {set_id}: {len(errors)} problems, {len(warnings)} warnings")
     return 1 if errors else 0
+
+
+def _page_sprites(out_dir: Path, set_id: str):
+    """A lookup of a set's sprites as RGBA arrays (pages decoded on first use)."""
+    where, pages = {}, {}
+    for man in sorted(out_dir.glob(f"{set_id}.*.json")):
+        doc = json.loads(man.read_text())
+        if "image" in doc and doc.get("scale") is None and "channels" not in doc and ".p." not in man.name:
+            for key, r in doc["sprites"].items():
+                where.setdefault(key, (man.with_name(doc["image"]), r))
+
+    def get(key):
+        if key not in where:
+            return None
+        png, r = where[key]
+        if png not in pages:
+            pages[png] = np.asarray(Image.open(png).convert("RGBA"))
+        return pages[png][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
+    return get
 
 
 if __name__ == "__main__":

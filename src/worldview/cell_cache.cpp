@@ -162,6 +162,13 @@ void CellCache::clear() {
     rehash();
 }
 
+void CellCache::staleAll() {
+    for (CellSlot& s : slots_) {
+        s.complete = false;
+        s.generation = ~0u;
+    }
+}
+
 std::size_t CellCache::bytes() const {
     return pages_.size() * kSlotBytes * kPerPage;
 }

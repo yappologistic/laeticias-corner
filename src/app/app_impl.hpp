@@ -50,6 +50,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <span>
@@ -790,6 +791,7 @@ private:
     std::size_t scriptPos_ = 0;
     int scriptPhase_ = 0; // sub-step within the current command
     int scriptWait_ = 0;
+    std::map<std::string, double, std::less<>> lumaMarks_; // expect luma_mark: kept lightness
     int scriptRetries_ = 0; // frames spent waiting for a widget to scroll into view
 };
 

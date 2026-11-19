@@ -43,6 +43,9 @@ public:
     }
     [[nodiscard]] static Vec2 pageSize(); // texels of a cache page
     void clear();
+    // Every cached cell is drawn again when next wanted, still shown until then (the season's
+    // looks changed under it).
+    void staleAll();
     // Raises the memory budget (never lowers it).
     void reserve(std::size_t budget);
     [[nodiscard]] std::size_t budget() const;
