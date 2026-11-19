@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <cstddef>
 #include <vector>
 
 namespace lc {
@@ -42,8 +43,14 @@ private:
     SDL_Texture* texture_ = nullptr;
     SDL_BlendMode mode_ = SDL_BLENDMODE_BLEND;
     SDL_ScaleMode scale_ = SDL_SCALEMODE_NEAREST;
+    void submit(const SDL_Vertex* verts, int vertCount, const int* indices, int indexCount);
+
+    // Whole arrays made once and written by position: every sprite of every frame goes
+    // through here, and a growing vector would test its capacity ten times a quad.
     std::vector<SDL_Vertex> verts_;
     std::vector<int> indices_;
+    std::size_t vertCount_ = 0;
+    std::size_t indexCount_ = 0;
     int drawCalls_ = 0;
     Scratch scratch_;
 };

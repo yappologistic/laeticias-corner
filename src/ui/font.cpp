@@ -223,6 +223,9 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
                          c.xadvance});
                 }
             std::ranges::sort(face.glyphs, {}, &Glyph::cp);
+            face.ascii.fill(0);
+            for (std::size_t g = 0; g < face.glyphs.size() && face.glyphs[g].cp < 128; ++g)
+                face.ascii[face.glyphs[g].cp] = static_cast<std::uint16_t>(g + 1);
         }
         for (int y = dim; y < dim + 4; ++y)
             for (int x = 0; x < 4; ++x) bitmap[static_cast<std::size_t>(y * dim + x)] = 255;
@@ -264,6 +267,10 @@ bool Font::hasAll(std::string_view utf8) const {
 
 const Glyph* Font::find(Face face, char32_t cp) const {
     const auto& g = faces_[idx(face)].glyphs;
+    if (cp < 128) {
+        const std::uint16_t at = faces_[idx(face)].ascii[cp];
+        return at != 0 ? &g[at - 1] : nullptr;
+    }
     const auto it = std::ranges::lower_bound(g, cp, {}, &Glyph::cp);
     return it != g.end() && it->cp == cp ? &*it : nullptr;
 }
@@ -274,17 +281,20 @@ float Font::kerning(Face face, char32_t a, char32_t b) const {
     return k[(a - kKernFirst) * kKernSpan + (b - kKernFirst)];
 }
 
-float Font::measure(Face face, std::string_view text) const {
-    float w = 0;
-    char32_t prev = 0;
-    for (std::size_t i = 0; i < text.size();) {
-        const char32_t cp = nextCodepoint(text, i);
+void Font::extend(Face face, std::string_view more, Run& run) const {
+    for (std::size_t i = 0; i < more.size();) {
+        const char32_t cp = nextCodepoint(more, i);
         const Glyph* g = find(face, cp);
         if (g == nullptr) continue; // callers keep to what covers() allows
-        w += kerning(face, prev, g->cp) + g->advance;
-        prev = g->cp;
+        run.width += kerning(face, run.prev, g->cp) + g->advance;
+        run.prev = g->cp;
     }
-    return w;
+}
+
+float Font::measure(Face face, std::string_view text) const {
+    Run run;
+    extend(face, text, run);
+    return run.width;
 }
 
 float Font::draw(Batch& batch, Face face, std::string_view text, float x, float y,

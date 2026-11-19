@@ -32,6 +32,13 @@ public:
     bool build(SDL_Renderer* renderer, float scale);
 
     [[nodiscard]] float measure(Face face, std::string_view text) const;
+    // A width being measured piece by piece: `more` appended to what `run` has measured gives
+    // the same width as measuring the whole text at once, without going over it again.
+    struct Run {
+        float width = 0;
+        char32_t prev = 0;
+    };
+    void extend(Face face, std::string_view more, Run& run) const;
     // The characters every text face draws (after load(), before or without build()): what
     // build() bakes, so a test can check every string the game shows.
     [[nodiscard]] bool covers(char32_t cp) const;
@@ -58,6 +65,9 @@ private:
         // Codepoints to bake, per file (the main face, then each fallback).
         std::vector<std::vector<int>> plan;
         std::vector<Glyph> glyphs; // sorted by codepoint
+        // Where the first 128 codepoints are in `glyphs`, plus one (0: not baked): most text
+        // is ASCII, and it is measured and drawn every frame.
+        std::array<std::uint16_t, 128> ascii{};
         float ascent = 0;
         float descent = 0; // negative: below the baseline
         float lineHeight = 0;
