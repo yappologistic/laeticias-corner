@@ -1,0 +1,17 @@
+# Photo mode away from home: in the Forum the photo bar opens, the caption names the world and
+# a postcard is saved to its folder; Esc closes the bar and the place's interface returns.
+set world forum 1
+wait 30
+expect away yes
+key p
+wait 10
+expect photo on
+key space
+wait 10
+expect postcards 1
+shot shots/photo_away.png
+key escape
+wait 10
+expect photo off
+expect widget map yes
+quit

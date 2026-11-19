@@ -11,6 +11,7 @@
 
 #include "world/loader.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <span>
@@ -53,6 +54,16 @@ public:
     // How much the home's own music and ambience sound (0..1): its share of the view.
     [[nodiscard]] float homeMusic() const { return homeMusic_; }
     [[nodiscard]] float homeWeight() const { return homeWeight_; }
+    // Whether a file is a region's music (it belongs on the music bus).
+    [[nodiscard]] bool isMusic(int file) const {
+        return std::ranges::any_of(music_, [&](const Music& m) {
+            return file >= 0 && (m.day == file || m.night == file);
+        });
+    }
+    // How much of a region's music (a city's) plays now, 0..1.
+    [[nodiscard]] float musicLevel() const {
+        return musicRegion_ >= 0 ? music_[static_cast<std::size_t>(musicRegion_)].level : 0.0f;
+    }
     // The region whose music plays (a city or the home), -1 for none.
     [[nodiscard]] int musicRegion() const { return musicRegion_; }
     // The beds a region plays at that season, month, hour and weather (files), as update()

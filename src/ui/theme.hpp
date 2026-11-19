@@ -28,6 +28,8 @@ inline constexpr SDL_FColor kCaptionInk{1.0f, 0.98f, 0.93f, 1.0f}; // the era ca
 inline constexpr SDL_FColor kCaptionShadow{0.05f, 0.05f, 0.08f, 1.0f};
 inline constexpr SDL_FColor kMapDot{0.62f, 0.16f, 0.12f, 1.0f}; // the overview art's ink red
 inline constexpr SDL_FColor kMapDotRim{0.98f, 0.95f, 0.86f, 0.9f};
+inline constexpr SDL_FColor kMapLabelPlate{0.08f, 0.08f, 0.10f, 0.72f}; // a town's name plate
+inline constexpr SDL_FColor kMapLabelInk{0.98f, 0.96f, 0.90f, 1.0f};
 inline constexpr SDL_FColor kMapLight{1.0f, 0.72f, 0.36f, 1.0f}; // a town's lamps after dark
 inline constexpr SDL_FColor kMapView{1.0f, 1.0f, 1.0f, 0.55f};
 inline constexpr SDL_FColor kTravelVeil{0.93f, 0.89f, 0.80f,
