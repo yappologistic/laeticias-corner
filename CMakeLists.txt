@@ -11,6 +11,10 @@ if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
 else()
   string(APPEND LC_PLATFORM "-${CMAKE_SYSTEM_PROCESSOR}")
 endif()
+# The reverse-domain application id: SDL's app metadata (Wayland's app_id, X11's WM_CLASS) and
+# the Linux package's desktop file and icon are named by it, so desktops match the running
+# window to its launcher. Underscore, not hyphen: desktop file ids follow D-Bus name rules.
+set(LC_APP_ID "io.github.yappologistic.laeticias_corner")
 # For the release workflow: the archive's name without reading this file.
 file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${LC_VERSION}\n")
 
@@ -320,7 +324,9 @@ add_library(lc_app STATIC
   src/app/app_perf.cpp
   src/app/window_state.cpp
   src/app/app_world.cpp
+  src/app/identity.cpp
 )
+target_compile_definitions(lc_app PRIVATE LC_APP_ID="${LC_APP_ID}")
 target_link_libraries(lc_app PUBLIC lc_worldview)
 add_dependencies(lc_app lc_version)
 lc_project_target(lc_app)
