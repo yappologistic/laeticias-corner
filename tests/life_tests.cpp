@@ -734,6 +734,49 @@ TEST_CASE("city: nobody walks in place, in the cities, towns, roads and seas, at
     CHECK(stuckLong == 0);
 }
 
+TEST_CASE("city: on bridges and stairs people stand on the floor and rise smoothly") {
+    // Everyone drawn walking stands on the floor of the course they walk: between the floor of
+    // their tile and the floors they can step to (a deck's or a walk run's `walk_z`, a stair's
+    // treads), never at the water under a deck nor inside the treads. The height changes by at
+    // most a small step a step (no jump at a tile's edge), nobody hops (chain carriers once
+    // moved a second's way at each of the chain's ticks: 3-6 px and 0.85 tiles in one step),
+    // and a ship passing under a bridge stays at the water's level. The Tiber's bridges, the
+    // Capitol's stairs, the Propylaia, the Great Stair, a town's steps and the kit's arch,
+    // timber and boat bridges and a mole.
+    const char* places[] = {"121,1127", "113,1121", "district:rome/capitol",
+                            "307,632",  "348,90",   "221,1140",
+                            "220,1144", "294,277",  "305,202",
+                            "294,305"};
+    std::vector<DrawActor> scratch;
+    for (const char* place : places) {
+        CityLife city(lifeWorld(), 13);
+        city.setFocus(centreOf(place), 24, 16);
+        LifeClock clock = LifeClock::at(9, 10.0, seasonOf("rome"));
+        city.settle(clock);
+        step(city, clock, 30 * 60);
+        FloorCheck all;
+        for (int k = 0; k < 20 * 60; ++k) {
+            step(city, clock, 1);
+            const FloorCheck f = checkFloors(city, city.activeRect(), scratch);
+            CAPTURE(place);
+            CAPTURE(f.firstBad.x);
+            CAPTURE(f.firstBad.y);
+            CHECK(f.offFloor == 0);
+            CHECK(f.offWater == 0);
+            CHECK(f.jumps == 0);
+            CHECK(f.hops == 0);
+            all.raised += f.raised;
+            all.afloat += f.afloat;
+            all.worstStep = std::max(all.worstStep, f.worstStep);
+            all.worstMove = std::max(all.worstMove, f.worstMove);
+        }
+        MESSAGE(std::string(place)
+                << ": " << all.raised << " walker-steps on raised floors, " << all.afloat
+                << " ship-steps, largest height change in a step " << all.worstStep
+                << " px, largest move " << all.worstMove << " tiles");
+    }
+}
+
 TEST_CASE("city: the same seed and script give byte-identical dumps") {
     std::string dumps[2];
     for (std::string& out : dumps) {

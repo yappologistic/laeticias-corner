@@ -100,6 +100,21 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         return std::format("{} walking in place, {} going nowhere past the watchdog", st.marching,
                            st.lost);
     }
+    if (what == "floor") {
+        // Everyone on the floor of their course over the last step, ships at the water, no
+        // jumps or hops; at least MIN walkers on raised floors (it saw a bridge or a stair).
+        if (a.size() < 3) return std::string("expect city floor MIN");
+        std::vector<life::DrawActor> scratch;
+        const life::FloorCheck f = life::checkFloors(c, c.activeRect(), scratch);
+        if (f.offFloor + f.offWater + f.jumps + f.hops > 0)
+            return std::format("{} off their floor, {} ships off the water, {} height jumps, {} "
+                               "hops (first at grid ({}, {}))",
+                               f.offFloor, f.offWater, f.jumps, f.hops, f.firstBad.x, f.firstBad.y);
+        if (f.raised < std::stoi(a[2]))
+            return std::format("expected at least {} walkers on raised floors but found {}", a[2],
+                               f.raised);
+        return std::nullopt;
+    }
     if (what == "slots") {
         int over = 0;
         c.forEachReservation([&](int, int count, int cap) { over += count > cap ? 1 : 0; });

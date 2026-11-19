@@ -31,6 +31,7 @@ struct KindDef {
     std::vector<float> fps;           // per entry of `anims`
     std::vector<float> strides;       // per entry: tiles a cycle walks, 0 when not stated
     bool cart = false;                // carts and sledges: lifesim's slower default speed
+    bool ship = false;                // afloat: at the water's level, under every deck
     [[nodiscard]] bool has(int anim) const;
     [[nodiscard]] float fpsOf(int anim) const;
 };
