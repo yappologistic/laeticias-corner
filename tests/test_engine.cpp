@@ -8,6 +8,7 @@
 #include "audio_meter.hpp"
 #include "core/rng.hpp"
 #include "core/tuning.hpp"
+#include "platform/process.hpp"
 #include "render/atlas.hpp"
 #include "render/blur.hpp"
 #include "render/camera.hpp"
@@ -1466,6 +1467,28 @@ int clicksIn(const std::vector<float>& s) {
 
 // Analyses the mix captured by the audio_capture run (path in LC_AUDIO_CAPTURE): a drag-paint,
 // a mute toggle and a day/night crossfade must neither clip nor click.
+TEST_CASE("process: a group's CPU stalls are read from its cpu.stat") {
+    // What Linux writes for a group with a quota; the fields the bench reports are the count of
+    // periods in which the group was frozen and the time it stood still.
+    const lc::CpuStalls s = lc::cpuStallsFrom("usage_usec 9120011\nuser_usec 8000000\n"
+                                              "system_usec 1120011\nnr_periods 5120\n"
+                                              "nr_throttled 410583\nthrottled_usec 125292781\n"
+                                              "nr_bursts 0\nburst_usec 0\n");
+    CHECK(s.count == 410583);
+    CHECK(s.ms == doctest::Approx(125292.781));
+    // A group without a quota writes neither: nothing stalled.
+    const lc::CpuStalls none = lc::cpuStallsFrom("usage_usec 12\nuser_usec 8\nsystem_usec 4\n");
+    CHECK(none.count == 0);
+    CHECK(none.ms == 0.0);
+    // A name that ends like a field's is not that field.
+    CHECK(lc::cpuStallsFrom("core.nr_throttled 7\nnr_throttled 3\n").count == 3);
+    // Whatever this process runs in: a count that never goes down.
+    const lc::CpuStalls a = lc::cpuLimitStalls();
+    const lc::CpuStalls z = lc::cpuLimitStalls();
+    CHECK(z.count >= a.count);
+    CHECK(z.ms >= a.ms);
+}
+
 TEST_CASE("capture: the mix has no clipping and no clicks") {
     const char* file = std::getenv("LC_AUDIO_CAPTURE");
     if (file == nullptr) {

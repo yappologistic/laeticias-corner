@@ -55,7 +55,7 @@ public:
     // listed colour-only in `<page>.p.json` keeps its colour there), in ABGR slots so a shader
     // reads the words in order; the decoder (render/gpu/decoder.hpp) draws them.
     PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::AtlasPages& pages,
-              std::filesystem::path atlasDir, bool async, std::size_t budget, bool packed);
+              const std::filesystem::path& atlasDir, bool async, std::size_t budget, bool packed);
     ~PageAtlas();
     PageAtlas(const PageAtlas&) = delete;
     PageAtlas& operator=(const PageAtlas&) = delete;

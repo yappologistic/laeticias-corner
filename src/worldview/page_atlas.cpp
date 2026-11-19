@@ -67,7 +67,8 @@ void PageAtlas::readSide(Page& p) const {
 }
 
 PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::AtlasPages& pages,
-                     std::filesystem::path atlasDir, bool async, std::size_t budget, bool packed)
+                     const std::filesystem::path& atlasDir, bool async, std::size_t budget,
+                     bool packed)
     : renderer_(renderer), home_(home), index_(pages), async_(async), packed_(packed),
       slotFormat_(packed ? SDL_PIXELFORMAT_ABGR8888 : kTextureFormat), budget_(budget) {
 

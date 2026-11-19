@@ -619,7 +619,7 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     }
     // Open sea and bare land cast nothing: no layer is cleared, bound and laid over for them
     // (half the cost of an impostor block that has no shadow in it).
-    if (shadows_.empty() && !(actors && !actorOf_.empty())) return true;
+    if (shadows_.empty() && (!actors || actorOf_.empty())) return true;
     bool ok = true;
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, layer.texture.get()) ||

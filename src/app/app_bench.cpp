@@ -228,6 +228,7 @@ int App::runBench() {
     // 99th percentile and worst; the CPU's update and draw submission on average).
     // Returns false when only the worst frame was over: a lone frame on a busy machine can be
     // the scheduler's, so the caller measures that case once more before calling it a failure.
+    CpuStalls stalled = cpuLimitStalls();
     const auto judgeCase = [&](const char* name, const BenchFrames& fr, bool last) {
         const PerfStats whole = fr.of(&FrameSample::frameMs);
         const PerfStats cpu = fr.of(&FrameSample::cpuMs);
@@ -250,6 +251,15 @@ int App::runBench() {
         const auto [rss, peak] = processMemory();
         std::printf("bench: %s: memory rss %.0f MiB, peak %.0f MiB (ceiling %.0f at 1080p)\n", name,
                     rss, peak, memoryCeiling());
+        // Said beside the case, so that its whole-frame times are read for what they are (the
+        // budgets stay as they are: a case that fails this way is run again where nothing
+        // limits it).
+        if (const CpuStalls now = cpuLimitStalls(); now.count > stalled.count) {
+            std::printf("bench: %s: frozen %lld times (%.0f ms) by the CPU limit of the process's "
+                        "group since the case before: its whole-frame times include those\n",
+                        name, now.count - stalled.count, now.ms - stalled.ms);
+            stalled = now;
+        }
         if (!judge) return true;
         // The CPU budget is for the work the game does: where the system counts the main
         // thread's own CPU time that is what is judged, so a core taken away by another
