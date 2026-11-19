@@ -7515,6 +7515,22 @@
      [-4, -22, 0]
     ]
    }
+  },
+  "athens.trireme": {
+   "height": {
+    "*": 89,
+    "row": 23
+   }
+  },
+  "athens.merchant": {
+   "height": {
+    "*": 93
+   }
+  },
+  "athens.fishing": {
+   "height": {
+    "*": 47
+   }
   }
  }
 }

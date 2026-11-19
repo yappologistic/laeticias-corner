@@ -13885,66 +13885,66 @@
   "item/athens.g_lamp/base/r0/f0": {
    "x": 3562,
    "y": 2452,
-   "w": 30,
-   "h": 39,
-   "ox": 28,
-   "oy": 9
+   "w": 20,
+   "h": 29,
+   "ox": 10,
+   "oy": 8
   },
   "item/athens.g_lamp/base/r1/f0": {
    "x": 3593,
    "y": 2452,
-   "w": 30,
-   "h": 39,
-   "ox": 28,
-   "oy": 22
+   "w": 20,
+   "h": 29,
+   "ox": 10,
+   "oy": 8
   },
   "item/athens.g_lamp/base/r2/f0": {
    "x": 1274,
    "y": 2453,
-   "w": 30,
-   "h": 39,
-   "ox": 2,
-   "oy": 22
+   "w": 20,
+   "h": 31,
+   "ox": 10,
+   "oy": 10
   },
   "item/athens.g_lamp/base/r3/f0": {
    "x": 2119,
    "y": 2453,
-   "w": 30,
-   "h": 39,
-   "ox": 2,
-   "oy": 9
+   "w": 20,
+   "h": 31,
+   "ox": 10,
+   "oy": 10
   },
   "item/athens.g_lamp/glow/r0/f0": {
    "x": 2232,
    "y": 3871,
    "w": 29,
-   "h": 19,
-   "ox": 26,
-   "oy": 4
+   "h": 17,
+   "ox": 12,
+   "oy": 14
   },
   "item/athens.g_lamp/glow/r1/f0": {
    "x": 3985,
    "y": 3873,
    "w": 29,
-   "h": 18,
-   "ox": 26,
+   "h": 17,
+   "ox": 16,
    "oy": 14
   },
   "item/athens.g_lamp/glow/r2/f0": {
    "x": 413,
    "y": 3874,
    "w": 29,
-   "h": 18,
-   "ox": 4,
-   "oy": 14
+   "h": 17,
+   "ox": 16,
+   "oy": 16
   },
   "item/athens.g_lamp/glow/r3/f0": {
    "x": 2262,
    "y": 3875,
    "w": 29,
-   "h": 19,
-   "ox": 4,
-   "oy": 4
+   "h": 17,
+   "ox": 12,
+   "oy": 16
   },
   "item/athens.g_long_wall/base/m0/f0": {
    "x": 3495,
