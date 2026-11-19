@@ -8,6 +8,7 @@
 #include "core/iso.hpp"
 #include "worldview/tuning.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -31,6 +32,29 @@ struct CellKey {
 inline constexpr int kObjectsFrame = 15;
 [[nodiscard]] constexpr CellKey objectsKey(CellKey k) {
     return {k.level, k.cx, k.cy, kObjectsFrame};
+}
+
+// The whole texels of a picture laid over the world (texel (0, 0) at `origin`, each `texel` world
+// px wide, `w` x `h` of them) that a view covers. A picture as large as the world is drawn by
+// this part only: handed over whole, SDL's software renderer first makes a scaled copy of all
+// of it (the overview at a quarter scale: 372 MiB a frame; at 2x: 24 GB).
+struct TexelSpan {
+    int x0 = 0;
+    int y0 = 0;
+    int x1 = 0;
+    int y1 = 0;
+    [[nodiscard]] constexpr bool empty() const { return x1 <= x0 || y1 <= y0; }
+};
+[[nodiscard]] inline TexelSpan texelsUnder(Vec2 origin, float texel, int w, int h,
+                                           const FRect& view) {
+    const auto low = [&](float v, float o, int n) {
+        return std::clamp(static_cast<int>(std::floor((v - o) / texel)), 0, n);
+    };
+    const auto high = [&](float v, float o, int n) {
+        return std::clamp(static_cast<int>(std::ceil((v - o) / texel)), 0, n);
+    };
+    return {low(view.x0, origin.x, w), low(view.y0, origin.y, h), high(view.x1, origin.x, w),
+            high(view.y1, origin.y, h)};
 }
 
 [[nodiscard]] constexpr int cellPx(int level) {

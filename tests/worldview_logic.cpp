@@ -357,3 +357,27 @@ TEST_CASE("page runs: whatever is drawn over something else is still drawn after
     for (std::size_t k = 1; k < keys.size(); ++k) given += keys[k] != keys[k - 1] ? 1 : 0;
     CHECK(runs.runs() < given);
 }
+
+TEST_CASE("a world-wide picture is drawn by the whole texels under the view") {
+    // The overview: 16 world px a texel, its corner left of and above the world's origin.
+    const Vec2 origin{-28000.0f, -200.0f};
+    const TexelSpan all = texelsUnder(origin, 16.0f, 3500, 1750, {-1e6f, -1e6f, 1e6f, 1e6f});
+    CHECK(all.x0 == 0);
+    CHECK(all.y0 == 0);
+    CHECK(all.x1 == 3500);
+    CHECK(all.y1 == 1750);
+    // A view inside it: every texel it touches, none beyond, so the part drawn stays the
+    // size of the view whatever the world's.
+    const FRect view{-1000.5f, 3000.0f, 280.0f, 3800.25f};
+    const TexelSpan part = texelsUnder(origin, 16.0f, 3500, 1750, view);
+    CHECK(origin.x + static_cast<float>(part.x0) * 16.0f <= view.x0);
+    CHECK(origin.x + static_cast<float>(part.x0 + 1) * 16.0f > view.x0);
+    CHECK(origin.x + static_cast<float>(part.x1) * 16.0f >= view.x1);
+    CHECK(origin.x + static_cast<float>(part.x1 - 1) * 16.0f < view.x1);
+    CHECK(origin.y + static_cast<float>(part.y0) * 16.0f <= view.y0);
+    CHECK(origin.y + static_cast<float>(part.y1) * 16.0f >= view.y1);
+    CHECK(part.x1 - part.x0 <= 82);
+    CHECK(part.y1 - part.y0 <= 52);
+    // A view off the picture draws nothing.
+    CHECK(texelsUnder(origin, 16.0f, 3500, 1750, {40000.0f, 0.0f, 41000.0f, 500.0f}).empty());
+}

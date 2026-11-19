@@ -1182,7 +1182,7 @@ void WorldView::drawCells(int level, const FRect& view, const Xform& x) {
     }
     stats_.pendingShare =
         pendingArea / ((lastView_.x1 - lastView_.x0) * (lastView_.y1 - lastView_.y0));
-    if (stats_.cellsBare > 0) drawOverview(x);
+    if (stats_.cellsBare > 0) drawOverview(view, x);
     std::ranges::sort(composite_, [&](const Composite& a, const Composite& b) {
         const int sa = a.from.level - a.key.level;
         const int sb = b.from.level - b.key.level;
@@ -1215,7 +1215,7 @@ void WorldView::drawCells(int level, const FRect& view, const Xform& x) {
         if (c.over >= 0) lay(c, c.over);
 }
 
-void WorldView::drawOverview(const Xform& x) {
+void WorldView::drawOverview(const FRect& view, const Xform& x) {
     plain(); // (what follows is not decoded)
     Overview& ov = overview();
     while (!ov.upload(renderer_) && !async_) {}
@@ -1223,11 +1223,22 @@ void WorldView::drawOverview(const Xform& x) {
     if (t == nullptr) return;
     const OverviewImage& img = ov.image();
     const float k = 1.0f / img.scale;
-    const Vec2 p0 = x.apply(img.origin);
-    const Vec2 p1 = x.apply({img.origin.x + static_cast<float>(img.w) * k,
-                             img.origin.y + static_cast<float>(img.h) * k});
+    // Only the texels under the view, whole ones so that the picture lies where it did.
+    const TexelSpan span = texelsUnder(img.origin, k, img.w, img.h, view);
+    if (span.empty()) return;
+    const auto at = [&](int tx, int ty) {
+        return x.apply(
+            {img.origin.x + static_cast<float>(tx) * k, img.origin.y + static_cast<float>(ty) * k});
+    };
+    const Vec2 p0 = at(span.x0, span.y0);
+    const Vec2 p1 = at(span.x1, span.y1);
+    const auto w = static_cast<float>(img.w);
+    const auto h = static_cast<float>(img.h);
     batch_.use(t, SDL_BLENDMODE_BLEND, SDL_SCALEMODE_LINEAR);
-    batch_.quad(SDL_FRect{p0.x, p0.y, p1.x - p0.x, p1.y - p0.y}, {0, 0, 1, 1}, kWhite);
+    batch_.quad(SDL_FRect{p0.x, p0.y, p1.x - p0.x, p1.y - p0.y},
+                {static_cast<float>(span.x0) / w, static_cast<float>(span.y0) / h,
+                 static_cast<float>(span.x1) / w, static_cast<float>(span.y1) / h},
+                kWhite);
 }
 
 void WorldView::drawBackdrops(const FRect& view, const Xform& x, bool night) {
@@ -2025,7 +2036,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         buildCells();
     }
     if (lod == Lod::Overview) {
-        drawOverview(xf);
+        drawOverview(view, xf);
     } else {
         drawCells(levelOf(lod), view, xf);
     }

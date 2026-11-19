@@ -422,7 +422,7 @@ private:
     void gatherAhead(const FRect& view);
     [[nodiscard]] static TileRect regionAround(const TileRect& need, float k);
     void drawCells(int level, const FRect& view, const Xform& x);
-    void drawOverview(const Xform& x);
+    void drawOverview(const FRect& view, const Xform& x);
     void drawBackdrops(const FRect& view, const Xform& x, bool night);
     void wantSets(const FRect& view, bool prefetch);
     void ensure(Target& t, int w, int h);
