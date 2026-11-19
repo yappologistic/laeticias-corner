@@ -8,12 +8,16 @@
 # and plays no sound. "Quiet" means: one-minute load under 1.0, no other build, test, bench or
 # game running (a second program on the GPU stalls frames for 20 to 40 ms), mains power, and
 # **no CPU limit on the shell it runs from**. A shell inside a control group with a CPU quota
-# (`cpu.max`; the agents' sessions on the owner's machine share one of four CPUs) is frozen for
-# the rest of each 100 ms period whenever the group has used its share, whoever used it: frames
+# (`cpu.max`; sessions started by a tool may share one) is frozen for the rest of each 100 ms
+# period whenever the group has used its share, whoever used it: frames
 # of 20 to 90 ms on a machine whose load average looks idle, since a frozen program is not
 # counted as running. The script records the load and the group's count of such stalls before
 # and after every gate and marks a gate that was busy or stalled; such a gate says nothing
 # either way and is to be run again (from a plain terminal, where there is no limit).
+#
+# One program at a time, each under a memory limit (`ulimit -v`: 6 GB of address space, 8 GB
+# for the 2560x1440 cases), a time limit and `nice -n 19`, so a fault in a gate cannot take the
+# machine with it.
 #
 # Gates (streamed runs, as a player's are; frame times with the GPU waited for):
 #   ctest            the release suite (its own benches and soak included)
@@ -69,14 +73,18 @@ stalls() {
 } > "$summary"
 
 failed=0
-# gate NAME LOGFILE COMMAND...   (exit 0 pass, 77 skipped, anything else fail)
+# gate NAME LOGFILE KIB SECONDS COMMAND...   (exit 0 pass, 77 skipped, anything else fail;
+# 124: the time limit)
 gate() {
-    local name="$1" log="$2"
-    shift 2
+    local name="$1" log="$2" kib="$3" seconds="$4"
+    shift 4
     local before after rc result detail stalled
     before="$(load)"
     stalled="$(stalls)"
-    "$@" > "$log" 2>&1
+    (
+        ulimit -v "$kib"
+        exec timeout "$seconds" nice -n 19 "$@"
+    ) > "$log" 2>&1
     rc=$?
     after="$(load)"
     stalled=$(($(stalls) - stalled))
@@ -86,31 +94,36 @@ gate() {
         *) result=FAIL; failed=1 ;;
     esac
     detail="$(grep -h 'over budget' "$log" | sed 's/^ *//; s/^bench: //' | sort -u | head -6 | paste -sd';' -)"
+    [ "$rc" = 124 ] && detail="(stopped at its time limit of $seconds s) $detail"
     [ -z "$detail" ] && [ "$result" = FAIL ] && detail="$(grep -h 'tests failed\|FAILED\|memory over\|memory grew' "$log" | head -3 | paste -sd';' -)"
     busy "$before" "$after" && detail="(busy machine: run again) $detail"
     [ "$stalled" -gt 0 ] && detail="(stalled $stalled times by the CPU limit: run again outside it) $detail"
     printf '%-34s %-6s %-12s %s\n' "$name" "$result" "$before-$after" "$detail" >> "$summary"
 }
 
-gate "ctest release" "$out/ctest.txt" ctest --preset release
+small=6000000
+large=8000000
+gate "ctest release" "$out/ctest.txt" "$large" 7200 ctest --preset release -j1
 for renderer in opengl gpu; do
     quality=classic
     [ "$renderer" = gpu ] && quality=high
     for size in 1580x845 1920x1080 2560x1440; do
-        gate "bench $renderer $size" "$out/bench-$renderer-$size.txt" \
+        kib="$small"
+        [ "$size" = 2560x1440 ] && kib="$large"
+        gate "bench $renderer $size" "$out/bench-$renderer-$size.txt" "$kib" 1800 \
             "$bin" --bench --renderer "$renderer" --quality "$quality" --gpu-sync --size "$size" \
             --seed 1 --frames 240 --budget-ms 2 --save-dir "$saves/bench-$renderer-$size"
     done
 done
-gate "startup-look 2560x1440" "$out/startup-look.txt" \
+gate "startup-look 2560x1440" "$out/startup-look.txt" "$large" 600 \
     "$bin" --bench --renderer gpu --quality high --gpu-sync --size 2560x1440 --seed 1 \
     --frames 240 --budget-ms 2 --bench-case start-up --save-dir "$saves/startup-look"
-gate "soak 600 s" "$out/soak.txt" \
+gate "soak 600 s" "$out/soak.txt" "$small" 1800 \
     env SDL_VIDEODRIVER=dummy "$bin" --soak 600 --size 640x400 --seed 1 --budget-ms 2 \
     --save-dir "$saves/soak"
-gate "world-bench" "$out/world-bench.txt" \
+gate "world-bench" "$out/world-bench.txt" "$small" 900 \
     build/release/laeticias-world --bench --renderer opengl --size 1920x1080
-gate "city-bench" "$out/city-bench.txt" build/release/lifeinfo bench --frames 1800
+gate "city-bench" "$out/city-bench.txt" "$small" 900 build/release/lifeinfo bench --frames 1800
 
 {
     echo
