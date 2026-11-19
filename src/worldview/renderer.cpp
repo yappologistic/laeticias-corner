@@ -296,7 +296,7 @@ bool WorldView::putPoly(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FCo
         decoder_ && s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
     if (packed) {
         if (c.a >= 1.0f && mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
-        c = packedColour(c, s.page == PageAtlas::kHomePage);
+        c = packedColour(c, s.page == PageAtlas::kHomePage, mirror);
     }
     // Texture coordinates by where each corner lies in the sprite's picture (mirrored: from the
     // other side).
