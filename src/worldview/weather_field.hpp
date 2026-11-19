@@ -10,9 +10,12 @@
 
 #include "core/catalog.hpp"
 #include "core/iso.hpp"
+#include "core/tuning.hpp"
 #include "core/weather.hpp"
 #include "world/loader.hpp"
+#include "worldview/tuning.hpp"
 
+#include <array>
 #include <cstdint>
 #include <span>
 #include <string_view>
@@ -64,8 +67,33 @@ public:
     [[nodiscard]] std::span<const WeatherTrail> trails() const { return trails_; }
 
 private:
-    void blockCells(int bx, int by, std::int64_t period, const Wind& wind, SeasonClimate season,
-                    TileRect view);
+    // The periods whose cells can still be alive, the present one first.
+    static constexpr int kPeriods =
+        static_cast<int>(tuning::kWeatherLifeMax / ::lc::tuning::kWeatherPeriod) + 2;
+    // What a block decides for a period: a cell that starts over it, as it is born.
+    struct Seed {
+        Vec2 at; // tiles: where it starts
+        double born = 0;
+        float radius = 0;
+        float life = 0;
+        float factor = 1;
+        float wind = 1; // its region's climate
+        std::uint32_t id = 0;
+        bool rain = false;
+    };
+    struct Blocks {
+        int x0 = 0, y0 = 0, x1 = -1, y1 = -1; // inclusive
+        friend bool operator==(const Blocks&, const Blocks&) = default;
+    };
+    // What the seeds kept were worked out for: each period's blocks, and the season.
+    struct SeedKey {
+        std::int64_t period = -1;
+        float showers = -1;
+        float clouds = -1;
+        std::array<Blocks, kPeriods> blocks{};
+        friend bool operator==(const SeedKey&, const SeedKey&) = default;
+    };
+    void blockSeeds(int bx, int by, std::int64_t period, SeasonClimate season);
 
     const world::LoadedWorld& world_;
     std::uint64_t seed_;
@@ -73,6 +101,8 @@ private:
 
     std::vector<Climate> climates_;         // per region
     std::vector<const ClimateDef*> snowOf_; // per region: its catalog climate, null: none
+    std::vector<Seed> seeds_; // by period (newest first), then block, in the order asked
+    SeedKey seedKey_;
     std::vector<WeatherCell> cells_;
     std::vector<Vec2> drift_; // per cell: tiles per second it travels
     std::vector<WeatherTrail> trails_;

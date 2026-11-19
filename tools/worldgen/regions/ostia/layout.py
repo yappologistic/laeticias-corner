@@ -161,7 +161,8 @@ def _ways(L: Layout) -> dict:
     # The road from Portus over the canal, across the Isola Sacra and the Tiber into Ostia.
     # It comes off the Tiber bridge down quay steps to the decumanus' end (the steps clear of
     # the decumanus, which may not meet them from the side).
-    W_["portus_road"] = L.street([(26, 20), (26, 36), (39, 36), (39, 39), (41, 39)], width=1,
+    # Off the Tiber's span onto the bank before it turns: a span is entered over its ends.
+    W_["portus_road"] = L.street([(26, 20), (26, 36), (40, 36), (40, 39), (41, 39)], width=1,
                                  paving=BASALT, kind="road")
     # Portus's service street round the north and east of the basin; the Via Portuensis from
     # Rome comes in over the north edge (portal `portuensis`).
@@ -225,7 +226,9 @@ def _portus(L: Layout) -> None:
     put(L, R + "r_altar", (2, 22), face="south")
     L.lane("portus", [(6, 38), (4, 32), (4, 26), (12, 27)], kind="sea",
            ports={"sea_s": 0, "sea_w": 1, "claudius": 3})
-    L.lane("portus_canal", [(42, 16), (38, 16)], kind="river", ports={"tiber": 0, "hexagon": 1})
+    # Up the canal from the Tiber to the foot of the Portus street's bridge (an arch that passes
+    # no barge: art-smooth-land.md §8), where the basin's goods are handed on.
+    L.lane("portus_canal", [(42, 16), (39, 16)], kind="river", ports={"tiber": 0, "hexagon": 1})
 
 
 def _ostia(L: Layout, W_: dict) -> None:

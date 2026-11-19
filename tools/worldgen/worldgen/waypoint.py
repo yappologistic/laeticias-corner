@@ -178,16 +178,43 @@ def night(L: Layout) -> None:
     town = np.isin(L.DIST, [i for i, d in enumerate(L.districts)
                             if d.split("/")[-1] in ("town", "harbour", "village", "sanctuary",
                                                     "citadel", "acropolis", "shore", "crossing",
-                                                    "east_bank", "west_bank", "island")])
+                                                    "east_bank", "west_bank", "island", "road",
+                                                    "summit", "altis")])
     from .raster import path_tiles
     along = [(c - L.origin[0], r - L.origin[1]) for s in L.streets
-             for i, (c, r) in enumerate(path_tiles(s.points)) if i % 4 == 2]
+             for i, (c, r) in enumerate(path_tiles(s.points)) if i % 3 == 1]
     along = [(c, r) for c, r in along if 0 <= c < w and 0 <= r < h and town[r, c]]
-    F.night_posts(L, lamp, along, ring=2, gap=3 if L.set != "parsa" else 4)
+    F.night_posts(L, lamp, along, ring=2, gap=3)
+
+
+def grade_country(L: Layout) -> None:
+    """The town's natural slope ground graded to a level per neighbour like the base's (the
+    art's slopes): never its streets, anything placed or the tiles round it, impassable or
+    reserved ground, nor a band of two tiles at the layer's edge, where it meets the world."""
+    from . import landform
+    slope = landform.slope_ground(str(L.cat.root))
+    ok_t = np.array([t in slope and t not in landform.CLIFF_GROUND for t in L.terrains] + [False])
+    T = np.where(L.T >= 0, L.T, len(L.terrains))
+    water = np.array([L.cat.is_water(t) for t in L.terrains] + [False])[T] | (L.T < 0)
+    busy = (L.OCC >= 0) | L.STREET
+    near = busy.copy()
+    for dr, dc in landform.N8:
+        near |= landform.shift(busy, dr, dc, False)
+    eligible = ok_t[T] & ~near & ~L.IMP & ~L.RESERVED
+    eligible[:2, :] = eligible[-2:, :] = False
+    eligible[:, :2] = eligible[:, -2:] = False
+    lv = L.LV + L.base_level
+    landform.grade(lv, eligible, water)
+    bank = water.copy()
+    for dr, dc in landform.N8:
+        bank |= landform.shift(water, dr, dc, False)
+    landform.lone_steps(lv, eligible & ~bank)
+    L.LV[:] = lv - L.base_level
 
 
 def finish(L: Layout, prefer_face: str, glow_rank: dict | None = None) -> None:
     F.clear_doors(L, all_slots=True)
+    grade_country(L)
     night(L)
     F.glow_cap(L, glow_rank or {}, cap=36)
     F.fit_faces(L, prefer_face)

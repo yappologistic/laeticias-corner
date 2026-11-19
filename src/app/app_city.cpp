@@ -61,11 +61,31 @@ TileRect App::cityView() const {
     return cameraTiles();
 }
 
+life::CityLife::Watched App::cityWatched() const {
+    // Without the camera (a fixed focus, no world drawn) everyone is watched.
+    if (cityOff_ || cityFocus_ || !worldView_) return {};
+    // The window in world px, grown by what a sprite reaches from its feet and by the height
+    // the highest ground lifts it (someone below the window's foot may stand in it), as
+    // bounds on a grid tile's x - y and x + y.
+    const TileRect h = loaded_->file.home.rect;
+    const Iso iso = cat_.iso();
+    const float s = view_.scale();
+    const Vec2 c = view_.position();
+    const Vec2 half{screen().x * 0.5f / s + tuning::kCityWatchMargin,
+                    screen().y * 0.5f / s + tuning::kCityWatchMargin};
+    const float lift = static_cast<float>(world::kLevelMask * loaded_->content->tileLevel());
+    const auto dx = static_cast<float>(h.x0 - h.y0);
+    const auto sx = static_cast<float>(h.x0 + h.y0);
+    return {(c.x - half.x) / iso.hw + dx, (c.x + half.x) / iso.hw + dx,
+            (c.y - half.y) / iso.hh + sx, (c.y + half.y + lift) / iso.hh + sx};
+}
+
 void App::stepCity(float dt) {
     cityMs_ = 0;
     if (!city_) return;
     const Uint64 t0 = SDL_GetPerformanceCounter();
     city_->city->setView(cityView());
+    city_->city->setWatched(cityWatched());
     city_->city->update(cityClock(), dt);
     cityMs_ = msBetween(t0, SDL_GetPerformanceCounter());
     if (citySound_) citySound_->addLifeSounds(city_->city->sounds());
@@ -191,6 +211,8 @@ int App::benchCity(bool judge) {
     life::BenchOptions o;
     o.frames = opts_.frames > 0 ? opts_.frames : 1200;
     o.assert = judge;
+    // This thread's own time where the system counts it (the workers run meanwhile).
+    if (threadCpuMs() >= 0) o.ownMs = &threadCpuMs;
     std::vector<life::BenchCase> out;
     std::printf("bench: city life (simulation and enumeration; drawing them is the world "
                 "renderer's)\n");

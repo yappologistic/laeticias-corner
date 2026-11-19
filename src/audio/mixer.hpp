@@ -17,6 +17,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 struct stb_vorbis;
@@ -61,6 +62,9 @@ public:
     // loop (the snow beds, already muffled) never passes it.
     void setMuffle(float amount) { muffleTarget_.store(amount, std::memory_order_relaxed); }
     void setLoopDry(int loop, bool dry);
+    // A loop that is music though not a stem (a city's piece, the title's full mix): on the music
+    // bus, never muffled. Set before open().
+    void setLoopMusic(int loop);
     // A music stem joins: at once (`instant`, e.g. when a world opens), or from silence over a
     // few bars starting on the next bar line. Stems not unlocked stay silent and undecoded.
     void unlockStem(int loop, bool instant);
@@ -85,6 +89,9 @@ public:
                    ? stemLevel_[static_cast<std::size_t>(loop)]
                    : 0.0f;
     }
+    // Capture mode: the energy (sum of squares, both channels, before the master and the
+    // limiter) each bus has put out since the last call, then zeroed: music, effects, ambience.
+    [[nodiscard]] std::array<double, 3> takeBusEnergy() { return std::exchange(busEnergy_, {}); }
     // Master sample position of the music (for tests of the arithmetic's wiring).
     [[nodiscard]] std::uint64_t musicPosition() const { return musicPos_; }
 
@@ -106,6 +113,7 @@ private:
         int channels = 0;
         float gain = 0;
         bool stem = false;           // plays in step with the music's master position
+        bool music = false;          // on the music bus (stems, and pieces that loop freely)
         std::uint64_t length = 0;    // samples, for stems
         std::uint64_t at = ~0ULL;    // decoder position the stem is at, ~0: not playing
         std::uint64_t fadeStart = 0; // stem: when its fade-in began (master samples)
@@ -161,6 +169,9 @@ private:
     std::array<float, kChunk * 2> decodeBuf_{};     // raw decoder output
     std::array<float, kChunk * 2> loopBuf_{};       // one loop's stereo chunk
     std::array<float, kChunk * 2> bedBuf_{};        // the beds that pass the muffle, summed
+    std::array<float, kChunk * 2> dryBuf_{};        // the beds that do not
+    std::array<float, kChunk * 2> musicBuf_{};      // the stems
+    std::array<double, 3> busEnergy_{};             // capture mode: music, effects, ambience
     float muffle_ = 0;                              // audio thread: the muffle's mix, gliding
     std::array<std::array<float, 4>, 2> lowpass_{}; // per channel: x1, x2, y1, y2
     AudioStreamPtr stream_;

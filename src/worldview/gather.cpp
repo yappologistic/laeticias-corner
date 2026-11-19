@@ -39,6 +39,14 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
         floorMax = std::max(floorMax, z);
         floorMin = std::min(floorMin, z);
     }
+    // A kit deck lists its floors without a walk list.
+    if (g->walk.empty())
+        for (const auto& [t, z] : g->walkZ) {
+            if (!inside(t)) continue;
+            walk = true;
+            floorMax = std::max(floorMax, z);
+            floorMin = std::min(floorMin, z);
+        }
     int roofMin = INT_MAX;
     for (const auto& [t, z] : g->roof)
         if (inside(t)) roofMin = std::min(roofMin, z);

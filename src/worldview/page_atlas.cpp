@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <fstream>
 
@@ -80,36 +81,19 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         h.w = static_cast<int>(tw);
         h.h = static_cast<int>(th);
     }
-    // The home page, packed: its art rows from the packed twin, the engine's strip below them
-    // copied from the colour page (drawn into a target of its own).
+    // The home page, packed: its twin is decoded on a worker and uploaded in slices into a
+    // target of its own that starts as a copy of the colour page (the engine's strip below the
+    // art stays); until the last slice the colour page serves (homePackedReady()).
     if (packed_ && h.texture != nullptr) {
         readSide(h);
-        SurfacePtr words;
         if (!h.packedFile.empty()) {
-            const SurfacePtr loaded{SDL_LoadPNG(h.packedFile.string().c_str())};
-            if (loaded) words.reset(SDL_ConvertSurface(loaded.get(), slotFormat_));
-        }
-        TexturePtr t;
-        if (words && words->w == h.w && words->h <= h.h)
-            t.reset(SDL_CreateTexture(renderer_, slotFormat_, SDL_TEXTUREACCESS_TARGET, h.w, h.h));
-        const SDL_FRect all{0, 0, static_cast<float>(h.w), static_cast<float>(h.h)};
-        const SDL_Rect art{0, 0, h.w, words ? words->h : 0};
-        SDL_Texture* was = SDL_GetRenderTarget(renderer_);
-        if (t && SDL_SetTextureBlendMode(h.texture, SDL_BLENDMODE_NONE) &&
-            SDL_SetRenderTarget(renderer_, t.get()) &&
-            SDL_RenderTexture(renderer_, h.texture, &all, &all) &&
-            SDL_SetRenderTarget(renderer_, was) &&
-            SDL_SetTextureBlendMode(h.texture, SDL_BLENDMODE_BLEND) &&
-            SDL_UpdateTexture(t.get(), &art, words->pixels, words->pitch) &&
-            SDL_SetTextureBlendMode(t.get(), SDL_BLENDMODE_BLEND)) {
-            h.homeArtRows = words->h;
-            h.owned = std::move(t);
-            h.texture = h.owned.get();
-        } else {
-            SDL_Log("atlas: the home's packed page could not be made (%s); its colour is used",
-                    SDL_GetError());
-            if (!SDL_SetRenderTarget(renderer_, was)) SDL_Log("atlas: %s", SDL_GetError());
-            h.packedFile.clear();
+            if (const auto size = pngSize(h.packedFile)) h.homeArtRowsPlanned = size->second;
+            const std::filesystem::path file = h.packedFile;
+            const SDL_PixelFormat format = slotFormat_;
+            homeJob_ = std::async(std::launch::async, [file, format] {
+                const SurfacePtr loaded{SDL_LoadPNG(file.string().c_str())};
+                return SurfacePtr{loaded ? SDL_ConvertSurface(loaded.get(), format) : nullptr};
+            });
         }
     }
     pages_.push_back(std::move(h));
@@ -121,6 +105,8 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         Page p;
         p.set = ap.set;
         p.file = atlasDir / ap.image;
+        p.own = ap.index < 0;
+        p.scale = ap.scale;
         if (packed_) readSide(p);
         if (const auto size = pngSize(p.file)) {
             p.w = size->first;
@@ -130,29 +116,46 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         }
         pages_.push_back(std::move(p));
     }
-    // A slot for every page on disk while the ceiling holds them all: then nothing is ever
-    // evicted, pages the view does not need yet load ahead in the background, and a journey to
-    // any city finds its art resident. Sets that outgrow the ceiling stream as before, least
-    // recently used out first; a view always gets what it needs (freeSlot).
-    const std::size_t need = pages_.size() - 2;
-    const std::size_t fixed = static_cast<std::size_t>(pages_[kHomePage].w) *
-                              static_cast<std::size_t>(pages_[kHomePage].h) * 4;
-    const std::size_t room = budget_ > fixed ? (budget_ - fixed) / kSlotBytes : 1;
-    slotLimit_ = std::clamp<std::size_t>(need, 1, std::max<std::size_t>(1, room));
-    budget_ = fixed + slotLimit_ * kSlotBytes;
+    // While the ceiling holds every page on disk, each has a texture of its own size (a page is
+    // seldom a full 4096 x 4096) and nothing is ever given up: pages the view does not need yet
+    // load ahead in the background, and a journey to any city finds its art resident. Sets that
+    // outgrow the ceiling stream through equal slots instead, least recently used out first; a
+    // view always gets what it needs (freeSlot). The shadow pages (a set's shadows at half
+    // size) are small and always kept.
+    const auto bytesOf = [](const Page& p) {
+        return static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
+    };
+    std::size_t fixed = bytesOf(pages_[kHomePage]);
+    std::size_t colour = 0;
+    std::size_t need = 0;
+    for (const Page& p : pages_) {
+        if (p.state == State::Fixed) continue;
+        (p.own ? fixed : colour) += bytesOf(p);
+        need += p.own ? 0 : 1;
+    }
+    if (fixed + colour <= budget_) {
+        for (Page& p : pages_) p.own = p.state != State::Fixed;
+        slotLimit_ = 0;
+        budget_ = fixed + colour;
+    } else {
+        const std::size_t room = budget_ > fixed ? (budget_ - fixed) / kSlotBytes : 1;
+        slotLimit_ = std::clamp<std::size_t>(need, 1, std::max<std::size_t>(1, room));
+        budget_ = fixed + slotLimit_ * kSlotBytes;
+    }
     if (async_) {
+        for (Page& p : pages_)
+            if (p.own && p.w > 0) p.owned = makeTexture(p.w, p.h);
         for (std::size_t i = 0; i < slotLimit_; ++i)
             if (makeSlot() < 0) break;
         worker_ = std::jthread([this](const std::stop_token& st) { work(st); });
     }
 }
 
-int PageAtlas::makeSlot() {
-    TexturePtr t{SDL_CreateTexture(renderer_, slotFormat_, uploadAccess(renderer_),
-                                   world::kMaxPageSide, world::kMaxPageSide)};
+TexturePtr PageAtlas::makeTexture(int w, int h) {
+    TexturePtr t{SDL_CreateTexture(renderer_, slotFormat_, uploadAccess(renderer_), w, h)};
     if (!t || !SDL_SetTextureBlendMode(t.get(), SDL_BLENDMODE_BLEND)) {
         SDL_Log("atlas: cannot create a page texture: %s", SDL_GetError());
-        return -1;
+        return {};
     }
     // Touch it: one texel written and drawn, read back so the driver allocates it now.
     const std::uint32_t texel = 0;
@@ -163,6 +166,12 @@ int PageAtlas::makeSlot() {
         SDL_Log("atlas: %s", SDL_GetError());
     if (const SurfacePtr px{SDL_RenderReadPixels(renderer_, &one)}; !px)
         SDL_Log("atlas: %s", SDL_GetError());
+    return t;
+}
+
+int PageAtlas::makeSlot() {
+    TexturePtr t = makeTexture(world::kMaxPageSide, world::kMaxPageSide);
+    if (!t) return -1;
     slots_.push_back(std::move(t));
     slotPage_.push_back(-1);
     return static_cast<int>(slots_.size() - 1);
@@ -214,10 +223,10 @@ std::optional<SpriteRef> PageAtlas::find(std::string_view key) const {
         const Sprite& s = home_.sprite(*id);
         const Page& hp = pages_[kHomePage];
         // Packed where the home page has its words: in its art rows and not colour-only.
-        const bool words =
-            !hp.packedFile.empty() && hp.h > 0 &&
-            s.uv.v1 * static_cast<float>(hp.h) <= static_cast<float>(hp.homeArtRows) + 0.5f &&
-            !std::ranges::binary_search(hp.colourOnly, key);
+        const bool words = !hp.packedFile.empty() && hp.h > 0 &&
+                           s.uv.v1 * static_cast<float>(hp.h) <=
+                               static_cast<float>(hp.homeArtRowsPlanned) + 0.5f &&
+                           !std::ranges::binary_search(hp.colourOnly, key);
         return SpriteRef{kHomePage, s.uv, s.w, s.h, s.ox, s.oy, words};
     }
     const world::PageSprite* ps = index_.find(key);
@@ -225,9 +234,7 @@ std::optional<SpriteRef> PageAtlas::find(std::string_view key) const {
     const auto page = static_cast<std::uint16_t>(ps->page + 2);
     const Page& pg = pages_[page];
     if (pg.w <= 0 || pg.h <= 0) return std::nullopt;
-    // Streamed pages live in square slots: texture coordinates are over the slot.
-    const auto fw = static_cast<float>(world::kMaxPageSide);
-    const auto fh = static_cast<float>(world::kMaxPageSide);
+    const auto [fw, fh] = textureSize(pg);
     return SpriteRef{page,
                      {ps->x / fw, ps->y / fh, (ps->x + ps->w) / fw, (ps->y + ps->h) / fh},
                      static_cast<float>(ps->w),
@@ -235,6 +242,35 @@ std::optional<SpriteRef> PageAtlas::find(std::string_view key) const {
                      static_cast<float>(ps->ox),
                      static_cast<float>(ps->oy),
                      !pg.packedFile.empty() && !std::ranges::binary_search(pg.colourOnly, key)};
+}
+
+std::optional<SpriteRef> PageAtlas::findShadow(std::string_view key) const {
+    const world::PageSprite* ps = index_.findShadow(key);
+    if (ps == nullptr) return std::nullopt;
+    const auto page = static_cast<std::uint16_t>(ps->page + 2);
+    const Page& p = pages_[page];
+    if (p.w <= 0 || p.h <= 0) return std::nullopt;
+    const auto fw = static_cast<float>(p.w);
+    const auto fh = static_cast<float>(p.h);
+    const float k = 1.0f / p.scale; // world px per texel of the page
+    return SpriteRef{page,
+                     {ps->x / fw, ps->y / fh, (ps->x + ps->w) / fw, (ps->y + ps->h) / fh},
+                     static_cast<float>(ps->w) * k,
+                     static_cast<float>(ps->h) * k,
+                     static_cast<float>(ps->ox) * k,
+                     static_cast<float>(ps->oy) * k};
+}
+
+std::vector<bool> PageAtlas::homePackedSprites() const {
+    const Page& hp = pages_[kHomePage];
+    std::vector<bool> out(home_.size(), false);
+    if (hp.packedFile.empty() || hp.h <= 0) return out;
+    for (std::size_t id = 0; id < out.size(); ++id)
+        out[id] = home_.sprite(static_cast<SpriteId>(id)).uv.v1 * static_cast<float>(hp.h) <=
+                  static_cast<float>(hp.homeArtRowsPlanned) + 0.5f;
+    for (const std::string& key : hp.colourOnly)
+        if (const auto id = home_.find(key); id && *id < out.size()) out[*id] = false;
+    return out;
 }
 
 void PageAtlas::setGenerated(TexturePtr texture, int w, int h) {
@@ -261,11 +297,11 @@ SpriteRef PageAtlas::generated(int x, int y, int w, int h, float ox, float oy) c
 void PageAtlas::markShadow(const SpriteRef& s) {
     Page& p = pages_[s.page];
     if (p.state == State::Fixed) return;
-    const auto fw = static_cast<float>(world::kMaxPageSide);
-    const auto fh = static_cast<float>(world::kMaxPageSide);
+    const auto [fw, fh] = textureSize(p);
     p.shadows.push_back({static_cast<int>(std::lround(s.uv.u0 * fw)),
-                         static_cast<int>(std::lround(s.uv.v0 * fh)), static_cast<int>(s.w),
-                         static_cast<int>(s.h)});
+                         static_cast<int>(std::lround(s.uv.v0 * fh)),
+                         static_cast<int>(std::lround(s.w * p.scale)),
+                         static_cast<int>(std::lround(s.h * p.scale))});
 }
 
 void PageAtlas::want(std::string_view set) {
@@ -273,11 +309,34 @@ void PageAtlas::want(std::string_view set) {
         if (p.state != State::Fixed && p.set == set) p.wanted = true;
 }
 
+namespace {
+
+// A decoded image with its pixels laid out as the textures' are (`want`: ARGB words for the
+// colour pages, the file's own R, G, B, A bytes for the packed ones). Where the two differ it
+// is by red and blue changing places, done where the pixels are, so a 64 MiB page is never
+// held twice while it is on its way (that second copy was the peak of the process's memory).
+// The surface still names the format it was loaded in: only its pixels, pitch and size are
+// read from here on.
+SurfacePtr inLayout(SurfacePtr px, SDL_PixelFormat want) {
+    if (!px || px->format == want) return px;
+    if (want != SDL_PIXELFORMAT_ARGB8888 || px->format != SDL_PIXELFORMAT_ABGR8888)
+        return SurfacePtr{SDL_ConvertSurface(px.get(), want)};
+    for (int y = 0; y < px->h; ++y) {
+        auto* row = reinterpret_cast<std::uint32_t*>(static_cast<std::uint8_t*>(px->pixels) +
+                                                     static_cast<std::ptrdiff_t>(y) * px->pitch);
+        for (int x = 0; x < px->w; ++x) {
+            const std::uint32_t v = row[x];
+            row[x] = (v & 0xFF00FF00u) | ((v & 0xFFu) << 16) | ((v >> 16) & 0xFFu);
+        }
+    }
+    return px;
+}
+
+} // namespace
+
 SurfacePtr PageAtlas::decode(const Page& p, float* peak, std::vector<std::uint64_t>& opaque) const {
     const std::filesystem::path& file = p.packedFile.empty() ? p.file : p.packedFile;
-    SurfacePtr loaded{SDL_LoadPNG(file.string().c_str())};
-    SurfacePtr px;
-    if (loaded) px.reset(SDL_ConvertSurface(loaded.get(), slotFormat_));
+    SurfacePtr px = inLayout(SurfacePtr{SDL_LoadPNG(file.string().c_str())}, slotFormat_);
     if (!px) {
         SDL_Log("atlas: cannot decode %s: %s", file.string().c_str(), SDL_GetError());
         return px;
@@ -310,7 +369,9 @@ SurfacePtr PageAtlas::decode(const Page& p, float* peak, std::vector<std::uint64
         }
     }
     *peak = count > 0 ? sum / static_cast<float>(count) : -1.0f;
-    // What is drawn where, a bit per pixel: picking asks it (draw-order.md 4.5).
+    // What is drawn where, a bit per pixel: picking asks it (draw-order.md 4.5). Nobody picks
+    // a shadow.
+    if (p.scale != 1.0f) return px;
     const auto words = static_cast<std::size_t>((px->w + 63) / 64);
     opaque.assign(words * static_cast<std::size_t>(px->h), 0);
     for (int y = 0; y < px->h; ++y) {
@@ -329,8 +390,9 @@ bool PageAtlas::drawsAt(const SpriteRef& s, float x, float y) const {
     if (s.page >= pages_.size()) return true;
     const Page& p = pages_[s.page];
     if (p.opaque.empty() || p.w <= 0 || p.h <= 0) return true;
-    const int px = static_cast<int>(std::floor(s.uv.u0 * static_cast<float>(p.w) + x));
-    const int py = static_cast<int>(std::floor(s.uv.v0 * static_cast<float>(p.h) + y));
+    const auto [fw, fh] = textureSize(p);
+    const int px = static_cast<int>(std::floor(s.uv.u0 * fw + x));
+    const int py = static_cast<int>(std::floor(s.uv.v0 * fh + y));
     if (px < 0 || py < 0 || px >= p.w || py >= p.h) return false;
     const auto words = static_cast<std::size_t>((p.w + 63) / 64);
     return ((p.opaque[static_cast<std::size_t>(py) * words + static_cast<std::size_t>(px >> 6)] >>
@@ -339,9 +401,7 @@ bool PageAtlas::drawsAt(const SpriteRef& s, float x, float y) const {
 }
 
 SurfacePtr PageAtlas::decodePage(std::uint16_t page) const {
-    SurfacePtr loaded{SDL_LoadPNG(pages_[page].file.string().c_str())};
-    if (!loaded) return {};
-    return SurfacePtr{SDL_ConvertSurface(loaded.get(), kTextureFormat)};
+    return inLayout(SurfacePtr{SDL_LoadPNG(pages_[page].file.string().c_str())}, kTextureFormat);
 }
 
 void PageAtlas::work(const std::stop_token& stop) {
@@ -363,7 +423,13 @@ void PageAtlas::work(const std::stop_token& stop) {
 }
 
 void PageAtlas::upload(Page& p, int rows) {
-    if (p.slot < 0) {
+    if (p.own && !p.owned) p.owned = makeTexture(p.w, p.h); // synchronous runs: when needed
+    if (p.own && !p.owned) {
+        p.pixels.reset();
+        p.state = State::Unloaded;
+        return;
+    }
+    if (!p.own && p.slot < 0) {
         p.slot = freeSlot(now_);
         if (p.slot < 0) {
             p.pixels.reset();
@@ -372,7 +438,7 @@ void PageAtlas::upload(Page& p, int rows) {
         }
         slotPage_[static_cast<std::size_t>(p.slot)] = static_cast<int>(&p - pages_.data());
     }
-    SDL_Texture* tex = slots_[static_cast<std::size_t>(p.slot)].get();
+    SDL_Texture* tex = p.own ? p.owned.get() : slots_[static_cast<std::size_t>(p.slot)].get();
     const int n = std::min(rows, p.h - p.uploadedRows);
     const SDL_Rect r{0, p.uploadedRows, p.w, n};
     const auto* src = static_cast<const std::uint8_t*>(p.pixels->pixels) +
@@ -390,10 +456,60 @@ void PageAtlas::upload(Page& p, int rows) {
     ++generation_;
 }
 
+void PageAtlas::updateHome() {
+    Page& h = pages_[kHomePage];
+    if (homeJob_.valid() &&
+        (!async_ || homeJob_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)) {
+        homeWords_ = homeJob_.get();
+        TexturePtr t;
+        if (homeWords_ && homeWords_->w == h.w && homeWords_->h <= h.h)
+            t.reset(SDL_CreateTexture(renderer_, slotFormat_, SDL_TEXTUREACCESS_TARGET, h.w, h.h));
+        const SDL_FRect all{0, 0, static_cast<float>(h.w), static_cast<float>(h.h)};
+        SDL_Texture* was = SDL_GetRenderTarget(renderer_);
+        if (t && SDL_SetTextureBlendMode(h.texture, SDL_BLENDMODE_NONE) &&
+            SDL_SetRenderTarget(renderer_, t.get()) &&
+            SDL_RenderTexture(renderer_, h.texture, &all, &all) &&
+            SDL_SetRenderTarget(renderer_, was) &&
+            SDL_SetTextureBlendMode(h.texture, SDL_BLENDMODE_BLEND) &&
+            SDL_SetTextureBlendMode(t.get(), SDL_BLENDMODE_BLEND)) {
+            homeTarget_ = std::move(t);
+            homeRows_ = 0;
+        } else {
+            SDL_Log("atlas: the home's packed page could not be made (%s); its colour is used",
+                    SDL_GetError());
+            if (!SDL_SetRenderTarget(renderer_, was)) SDL_Log("atlas: %s", SDL_GetError());
+            h.packedFile.clear();
+            homeWords_.reset();
+        }
+    }
+    if (!homeTarget_ || !homeWords_) return;
+    // Slices within the ahead budget (synchronous runs: all at once).
+    const Uint64 t0 = SDL_GetPerformanceCounter();
+    while (homeRows_ < homeWords_->h) {
+        const int n = std::min(tuning::kUploadRows, homeWords_->h - homeRows_);
+        const SDL_Rect r{0, homeRows_, h.w, n};
+        if (!SDL_UpdateTexture(homeTarget_.get(), &r,
+                               static_cast<const std::uint8_t*>(homeWords_->pixels) +
+                                   static_cast<std::ptrdiff_t>(homeRows_) * homeWords_->pitch,
+                               homeWords_->pitch))
+            SDL_Log("atlas: upload failed: %s", SDL_GetError());
+        homeRows_ += n;
+        uploadedBytes_ += static_cast<std::size_t>(h.w) * static_cast<std::size_t>(n) * 4;
+        if (async_ && msBetween(t0, SDL_GetPerformanceCounter()) >= tuning::kUploadMsAhead) break;
+    }
+    if (homeRows_ < homeWords_->h) return;
+    h.homeArtRows = homeWords_->h;
+    h.owned = std::move(homeTarget_);
+    h.texture = h.owned.get();
+    homeWords_.reset();
+    ++generation_;
+}
+
 void PageAtlas::update(double now) {
     now_ = now;
     uploads_ = 0;
     uploadedBytes_ = 0;
+    updateHome();
     // At most two pages between the disk and their slot (one uploading, one decoding): each
     // decoded page holds 64 MiB until it is uploaded.
     int inFlight = 0;
@@ -432,12 +548,13 @@ void PageAtlas::update(double now) {
                 waiting || (p.wanted && p.state != State::Resident && p.state != State::Fixed);
         std::size_t held = 0;
         for (const Page& p : pages_)
-            held += p.state != State::Fixed && p.state != State::Unloaded ? 1 : 0;
+            held += p.state != State::Fixed && p.state != State::Unloaded && !p.own ? 1 : 0;
         for (std::size_t i = 0; i < pages_.size() && !waiting; ++i) {
             const Page& p = pages_[i];
             if (p.state != State::Unloaded || p.w <= 0) continue;
-            if (inFlight >= tuning::kPagesInFlight || held >= slotLimit_) break;
-            ++held;
+            if (inFlight >= tuning::kPagesInFlightAhead) break;
+            if (!p.own && held >= slotLimit_) continue; // no slot free for it
+            held += p.own ? 0 : 1;
             start(i);
         }
         {
@@ -487,8 +604,9 @@ void PageAtlas::evict(double now) {
     std::size_t fixed = 0;
     for (const Page& p : pages_) {
         const auto bytes = static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
-        if (p.state == State::Fixed) fixed += bytes;
-        use.push_back({kSlotBytes, p.lastUsed, p.state == State::Resident, p.wanted});
+        if (p.state == State::Fixed || p.own) fixed += bytes;
+        // A page with a texture of its own is never given up: it is not among what may go.
+        use.push_back({kSlotBytes, p.lastUsed, p.state == State::Resident && !p.own, p.wanted});
     }
     const std::size_t budget = budget_ > fixed ? budget_ - fixed : 0;
     for (const int i : pagesToEvict(use, now, tuning::kPageIdleSeconds, budget)) {
@@ -536,12 +654,15 @@ PageStats PageAtlas::stats() const {
     s.budget = slotLimit_ * kSlotBytes;
     s.bytes = slots_.size() * kSlotBytes;
     for (const Page& p : pages_) {
-        if (p.state == State::Fixed) {
-            // The home page and the generated one are always there, in the budget too.
+        if (p.state == State::Fixed || p.own) {
+            // The home page, the generated one and pages with their own textures are there, in the
+            // budget too.
             const auto fixed = static_cast<std::size_t>(p.w) * static_cast<std::size_t>(p.h) * 4;
-            s.bytes += fixed;
+            s.bytes += p.state == State::Fixed || p.owned ? fixed : 0;
             s.budget += fixed;
-        } else if (p.state == State::Resident)
+        }
+        if (p.state == State::Fixed) continue;
+        if (p.state == State::Resident)
             ++s.resident;
         else if (p.state != State::Unloaded)
             ++s.streaming;

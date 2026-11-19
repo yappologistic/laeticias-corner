@@ -2008,8 +2008,11 @@ def _build(view) -> dict:
                        {"day": 0, "label": "Market day (week day 0)"},
                        {"day": 1, "label": "The Parilia, 21 April (spring, day 2)"}],
         "figures": figures(),
+        # Barges from Ostia below the island; upriver barges and a fisherman above it (the
+        # island's bridges pass no barge, and nothing with a mast passes any bridge).
         "lanes_tokens": [{"actor": R + "barge", "lane": "rome:tiber", "count": 3},
-                         {"actor": "world.fishing_boat", "lane": "rome:tiber", "count": 1}],
+                         {"actor": R + "barge", "lane": "rome:tiber_upper", "count": 2},
+                         {"actor": "world.fishing_boat", "lane": "rome:tiber_upper", "count": 1}],
         "cards": cards(),
         "strings": STRINGS,
         "decorate": {"rect": grid_rect(view, "decorate")},

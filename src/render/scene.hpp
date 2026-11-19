@@ -108,6 +108,8 @@ public:
     [[nodiscard]] std::optional<int> actorAt(std::span<const Actor> actors, Vec2 world) const;
     // The season's sprite looks, falling things and whether rain falls as snow (-1: plain).
     void setSeason(int season);
+    // The ground through the world's packed decode (the shader path), or not.
+    void setGroundDecode(std::optional<GroundDecode> d) { ground_->setDecode(std::move(d)); }
     // Reduce motion (living-corner R10.8): particles at 30 %, no streaks, moths, z's, pulse
     // ring or gust wave; land opens in a short fade.
     void setReduceMotion(bool on) {
@@ -157,6 +159,9 @@ public:
     // How far cliff faces reach below the south rims, in world px (for framing).
     [[nodiscard]] float cliffDepth() const { return tables_.groundReach.bottom; }
     [[nodiscard]] int drawCalls() const { return batch_.drawCalls(); }
+    // A frame in which the scene only takes its sky turn (the home out of view) starts its
+    // count here; else the sky's draws added up frame after frame while away.
+    void beginFrameStats() { batch_.resetStats(); }
     [[nodiscard]] const SpriteTables& sprites() const { return tables_; }
     // How far item sprites reach from their anchors, world px.
     [[nodiscard]] const Reach& itemReach() const { return itemReach_; }

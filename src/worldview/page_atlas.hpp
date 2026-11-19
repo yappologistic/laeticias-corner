@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <deque>
 #include <filesystem>
+#include <future>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -60,6 +61,12 @@ public:
     PageAtlas& operator=(const PageAtlas&) = delete;
 
     [[nodiscard]] std::optional<SpriteRef> find(std::string_view key) const;
+    // A shadow from its set's shadow page (half-size art: the sprite's size and anchor are
+    // given in world px, twice its texels); none when the set has no shadow page or not this
+    // key, and the colour pages' own shadow is used.
+    [[nodiscard]] std::optional<SpriteRef> findShadow(std::string_view key) const;
+    // A page of reduced art is drawn enlarged, so filtered (the others texel for texel).
+    [[nodiscard]] bool smooth(std::uint16_t page) const { return pages_[page].scale != 1.0f; }
     // The page the renderer generates (flat ground, faces, placeholders), `w` x `h` texels.
     void setGenerated(TexturePtr texture, int w, int h);
     [[nodiscard]] SpriteRef generated(int x, int y, int w, int h, float ox, float oy) const;
@@ -78,6 +85,12 @@ public:
     [[nodiscard]] bool drawsAt(const SpriteRef& s, float x, float y) const;
     // Null while the page is not resident (its sprites are skipped this frame).
     [[nodiscard]] SDL_Texture* texture(std::uint16_t page) const;
+    // The home page is its packed twin (packed mode, and it could be made).
+    [[nodiscard]] bool homePacked() const { return !pages_[kHomePage].packedFile.empty(); }
+    // ... and its packed twin is uploaded (until then the colour page serves, drawn plain).
+    [[nodiscard]] bool homePackedReady() const { return pages_[kHomePage].homeArtRows > 0; }
+    // Per home atlas sprite id: drawn from packed words (in the art rows, not colour-only).
+    [[nodiscard]] std::vector<bool> homePackedSprites() const;
     [[nodiscard]] bool setResident(std::string_view set) const;
     // Counts pages becoming resident: whatever skipped sprites redraws when it changes.
     [[nodiscard]] std::uint32_t generation() const { return generation_; }
@@ -87,6 +100,11 @@ public:
     [[nodiscard]] std::size_t uploadedBytes() const { return uploadedBytes_; }
     [[nodiscard]] std::size_t pageCount() const { return pages_.size(); }
     [[nodiscard]] const std::string& pageSet(std::uint16_t page) const { return pages_[page].set; }
+    // What a report calls the page: its file without the extension ("athens.1"), else its set.
+    [[nodiscard]] std::string pageName(std::uint16_t page) const {
+        const Page& p = pages_[page];
+        return p.file.empty() ? p.set : p.file.stem().string();
+    }
     // Texels of a page (the home page includes the engine's strip below the art).
     [[nodiscard]] std::pair<int, int> pageSize(std::uint16_t page) const {
         return {pages_[page].w, pages_[page].h};
@@ -101,13 +119,19 @@ private:
         std::filesystem::path file;
         std::filesystem::path packedFile;    // the packed twin, empty when the page has none
         std::vector<std::string> colourOnly; // its sprites kept as colour, sorted
-        int homeArtRows = 0; // the home page: rows of art (the engine's strip is below them)
+        int homeArtRows = 0;        // the home page: rows of packed art uploaded (0: not yet)
+        int homeArtRowsPlanned = 0; // ... rows of art its twin has (the strip is below them)
         int w = 0;
         int h = 0;
         State state = State::Unloaded;
         SDL_Texture* texture = nullptr; // a slot's, or owned (the generated page)
         TexturePtr owned;
-        int slot = -1;     // the texture slot of a streamed page while it holds one
+        int slot = -1; // the texture slot of a streamed page while it holds one
+        // Its art at this share of its size (a shadow page: 0.5).
+        float scale = 1;
+        // In a texture of its own size (`owned`) that is never given up: every shadow page, and
+        // every page while the budget holds them all. Otherwise it streams through a slot.
+        bool own = false;
         SurfacePtr pixels; // decoded, waiting for upload
         int uploadedRows = 0;
         mutable double lastUsed = 0;
@@ -118,6 +142,7 @@ private:
     };
 
     void readSide(Page& p) const;
+    void updateHome();
     [[nodiscard]] SurfacePtr decode(const Page& p, float* peak,
                                     std::vector<std::uint64_t>& opaque) const;
     void work(const std::stop_token& stop);
@@ -125,6 +150,14 @@ private:
     void evict(double now);
     [[nodiscard]] int freeSlot(double now);
     int makeSlot();
+    // What a page's texture coordinates are over: its own texture, or the slot it streams into.
+    [[nodiscard]] static std::pair<float, float> textureSize(const Page& p) {
+        return p.own ? std::pair{static_cast<float>(p.w), static_cast<float>(p.h)}
+                     : std::pair{static_cast<float>(world::kMaxPageSide),
+                                 static_cast<float>(world::kMaxPageSide)};
+    }
+    // A page texture of this size, touched so the driver has it before a frame needs it.
+    [[nodiscard]] TexturePtr makeTexture(int w, int h);
 
     SDL_Renderer* renderer_;
     const Atlas& home_;
@@ -144,6 +177,11 @@ private:
     std::size_t uploadedBytes_ = 0;
     int wantedPending_ = 0;
 
+    // The home page's packed twin: decoding on a worker, then uploading in slices.
+    std::future<SurfacePtr> homeJob_;
+    SurfacePtr homeWords_;
+    TexturePtr homeTarget_;
+    int homeRows_ = 0;
     std::mutex mutex_; // guards queue_, done_ and the pixels/peak of pages in flight
     std::condition_variable_any wake_;
     std::deque<std::uint16_t> queue_;

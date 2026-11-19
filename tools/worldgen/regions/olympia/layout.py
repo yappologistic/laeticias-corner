@@ -9,7 +9,7 @@ workshop and the stadium have no art: the card says so, and the stop uses common
 
 from worldgen import waypoint as WP
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import night_posts, put
 from worldgen.shapes import Line, Rect
 
 EARTH, GRAVEL = "athens.packed_earth", "athens.gravel"
@@ -40,5 +40,9 @@ def build(L: Layout) -> None:
     L.scatter(Rect(15, 0, W - 1, 13), {"athens.t_olive": 2, "world.p_maquis": 2}, 0.15,
               seed="hills", clump=0.5)
     L.node("altis", (8, 6))
+    # The Prytaneion's hearth of Hestia burned day and night (Pausanias 5.15.9), the great
+    # altar's embers beside the Altis' way.
+    night_posts(L, "athens.g_brazier", [(8, 6), (12, 10)], ring=3, gap=4)
+    night_posts(L, "athens.g_lamp", [(10, 10), (7, 12), (14, 7)], ring=2, gap=3)
     WP.finish(L, "athens.earth")
     L.view("whole", Rect(0, 0, W - 1, H - 1))

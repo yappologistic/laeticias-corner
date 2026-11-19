@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <format>
+#include <fstream>
 #include <iterator>
 #include <utility>
 
@@ -160,6 +161,16 @@ void App::rememberWindow() {
 }
 
 bool App::init() {
+    // The world's data is read and composed on a worker while the window, the renderer and the
+    // art come up here: start-up waits for the longer of the two, not their sum.
+    std::future<WorldLoad> worldJob;
+    if (!(opts_.bench && opts_.map) && fs::exists(assets_ / "world" / "world.json"))
+        worldJob = std::async(std::launch::async, [this] {
+            const Uint64 t0 = SDL_GetPerformanceCounter();
+            WorldLoad w{world::loadWorld(assets_, cat_), 0};
+            w.ms = msBetween(t0, SDL_GetPerformanceCounter());
+            return w;
+        });
     if (!createWindow()) return false;
     if (!createRenderer()) return false;
     // The benchmark measures with vsync off: frame times then show what the machine can do.
@@ -185,17 +196,25 @@ bool App::init() {
     buildThumbs();
     if (!font_.load(assets_ / "fonts")) return false;
 
-    if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
+    if (worldJob.valid() && !loadWorldData(worldJob.get())) return false;
     // The cities' life runs with the world (src/life/): the camera is its active area. It
     // keeps the map's item and slot numbers, so the home's land is cleared in the map first
     // (applying the home later renumbered them under it: an item index past the end as soon as
-    // the world's layers placed anything on the home's land).
+    // the world's layers placed anything on the home's land). It is worked out on a worker
+    // while the sounds load here; nothing changes the map meanwhile.
+    std::future<life::LifeSession> lifeJob;
     if (loaded_) {
         applyHomeToMap();
-        (void)openCity();
+        lifeJob = std::async(std::launch::async,
+                             [this] { return life::openLifeSession(*loaded_, seed_); });
     }
     mixer_.load(assets_ / "audio", cat_.audio);
     loadWorldAudio();
+    if (lifeJob.valid()) {
+        city_ = std::make_unique<life::LifeSession>(lifeJob.get());
+        SDL_Log("city life: %.0f ms", city_->loadMs);
+    }
+    loadCityAudio();
     setupMusic();
     if (opts_.audioOut)
         mixer_.startCapture();
@@ -1282,7 +1301,8 @@ HudModel App::model() const {
     m.season = season();
     m.seasonDay = seasonOf(clock_.day(), cat_.seasonDays).day;
     m.seasonPin = seasonPin_;
-    m.snow = cat_.seasons[static_cast<std::size_t>(m.season)].snow;
+    // What falls where the camera is (V6-014: Babylon's winter rain was shown as snow).
+    m.snow = snowLiesHere();
     m.pages = actors_.seenCount() + progress_.nooksFound();
     m.pagesTotal = static_cast<int>(cat_.visitors.size() + cat_.nooks.size());
     m.nextStagePages = nextStagePages(cat_, progress_.stage);
@@ -1541,6 +1561,17 @@ void App::setupMusic() {
     };
     mixer_.setMakeup(dayStems_, lead(cat_.audio.dayStems, dayStems_), tuning::kDayMakeup);
     mixer_.setMakeup(nightStems_, lead(cat_.audio.nightStems, nightStems_), tuning::kNightMakeup);
+    // The full mixes are the front door's (the catalog's music that is no stem): loaded, and on
+    // the music bus.
+    std::vector<std::string> full;
+    for (const std::string& f : cat_.audio.music)
+        if (mixer_.loopIndex(f) < 0) full.push_back(f);
+    mixer_.loadMore(assets_ / "audio", {}, full);
+    for (const std::string& f : full) {
+        const int loop = mixer_.loopIndex(f);
+        mixer_.setLoopMusic(loop);
+        (f.contains("night") ? titleNight_ : titleDay_) = loop;
+    }
 }
 
 void App::unlockStems(const CondFacts& f, bool instant) {
@@ -1565,8 +1596,12 @@ void App::updateAudio() {
     applyVolumes(); // the music ducks while paused
     const Lighting l = lighting();
     const float n = std::clamp(l.night, 0.0f, 1.0f);
-    // In the world the home's stems play while the home holds the music (its share of the view).
-    const float home = homeMusic();
+    // At the front door its own full mix plays (day or night by the clock); in the world the
+    // home's stems play while the home holds the music (its share of the view).
+    const bool door = menus_.frontDoorOpen();
+    mixer_.setLoopGain(titleDay_, door ? tuning::kMusicLevel * (1 - n) : 0.0f);
+    mixer_.setLoopGain(titleNight_, door ? tuning::kMusicLevel * n : 0.0f);
+    const float home = door ? 0.0f : homeMusic();
     for (const int s : dayStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * (1 - n) * home);
     for (const int s : nightStems_) mixer_.setLoopGain(s, tuning::kMusicLevel * n * home);
     updateWorldAudio(n);
@@ -1705,9 +1740,16 @@ void App::render() {
 }
 
 void App::captureAudio(int steps) {
+    const auto frames = static_cast<std::size_t>(steps * kAudioFramesPerStep);
+    if (captureSkip_) {
+        // A settling stretch between measured segments: mixed (time moves on) but not kept.
+        skipBuffer_.resize(frames * 2);
+        mixer_.render(skipBuffer_.data(), static_cast<int>(frames));
+        return;
+    }
     const std::size_t n = capture_.size();
-    capture_.resize(n + static_cast<std::size_t>(steps * kAudioFramesPerStep * 2));
-    mixer_.render(capture_.data() + n, steps * kAudioFramesPerStep);
+    capture_.resize(n + frames * 2);
+    mixer_.render(capture_.data() + n, static_cast<int>(frames));
 }
 
 void App::refreshScale() {
@@ -1748,6 +1790,14 @@ int App::run() {
         camera_.place(*savedCamera_, savedZoom_, screen());
     else
         frameCamera();
+    // The first view streams in over its first second or two (its pages decode on a worker,
+    // its cells are built a few a frame): it is shown when it is whole, behind the veil a
+    // journey arrives through, never filling in before the eyes. Runs that build everything at
+    // once (headless scripts) and those that measure have nothing to hide.
+    if (worldView_ && !measuring() && (!opts_.headless || opts_.streamed)) {
+        travel_ = {loaded_->file.home.region, tuning::kTravelFadeOut, true};
+        startVeil_ = true;
+    }
     if (opts_.bench) {
         // SDL started with the process: its clock is the start-up time.
         startupMs_ = static_cast<double>(SDL_GetTicks());
@@ -1900,7 +1950,9 @@ int App::run() {
         writeProfileIfDue();
         const double uiMs = msBetween(tUi, SDL_GetPerformanceCounter());
         updateAudio();
-        if (opts_.audioOut) captureAudio(steps);
+        // A capture keeps time with the frames (one fixed step each when headless), so the
+        // front door, the pause menu and the map, where nothing steps, are heard too.
+        if (opts_.audioOut) captureAudio(1);
         render();
 
         // The script runs after the frame is drawn: shots capture it, and the input it queues is
@@ -1983,6 +2035,11 @@ int App::run() {
             return 1;
         }
         SDL_Log("audio: wrote %s", opts_.audioOut->string().c_str());
+        endSegment();
+        if (!marks_.empty()) {
+            std::ofstream out(opts_.audioOut->string() + ".marks", std::ios::binary);
+            out << marks_;
+        }
     }
     return exitCode_;
 }

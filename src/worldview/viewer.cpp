@@ -558,6 +558,15 @@ int Viewer::runBench() {
         const bool bad = fs.p99 > tuning::kFrameP99Ms || fs.worst > tuning::kFrameWorstMs ||
                          cs.avg > tuning::kCpuAvgMs || (c.city && draws > tuning::kDrawCallsMax);
         if (bad) std::printf("  over budget: %s\n", c.what);
+        if (c.city && draws > tuning::kDrawCallsMax) {
+            // What the pages cost this view, for whoever lays them out: these stood between
+            // sprites of another page (in the last frame).
+            int listed = 0;
+            for (const WorldView::RunBreaker& r : view_->runBreakers())
+                if (listed++ < tuning::kRunBreakersListed)
+                    std::printf("    %3d of %3d on %-10s %s\n", r.inShortRuns, r.inView,
+                                r.page.c_str(), r.what.c_str());
+        }
         over = over || bad;
     }
     std::printf(

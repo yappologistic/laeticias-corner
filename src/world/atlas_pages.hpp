@@ -25,10 +25,13 @@ struct PageSprite {
 
 struct AtlasPage {
     std::string set;
-    int index = 0;     // n of <set>.<n>
+    int index = 0;     // n of <set>.<n>; -1: the set's shadow page
     std::string image; // file name beside the manifest
     std::string file;  // the manifest, for messages
     int sprites = 0;
+    // A shadow page (`<set>.s.json`) holds every shadow sprite of its set at this share of its
+    // size (0.5: half), to be drawn enlarged and filtered; 1 for the colour pages.
+    float scale = 1;
 };
 
 // Pages are limited to 4096 x 4096 (world-tech §1.2).
@@ -41,6 +44,13 @@ public:
     [[nodiscard]] std::expected<void, std::string> add(std::string_view text, std::string_view file,
                                                        std::string_view set, int index);
     [[nodiscard]] const PageSprite* find(std::string_view key) const;
+    // Parses a set's shadow page manifest (`{version, image, scale, sprites}`): its keys are
+    // the shadow keys of the colour pages (`item/<id>/shadow/...`) in a key space of their own,
+    // so a set may carry its shadows on both while its colour pages still hold them.
+    [[nodiscard]] std::expected<void, std::string>
+    addShadows(std::string_view text, std::string_view file, std::string_view set);
+    // A shadow on its set's shadow page (texels of that page), null when the set has none.
+    [[nodiscard]] const PageSprite* findShadow(std::string_view key) const;
     [[nodiscard]] const std::vector<AtlasPage>& pages() const { return pages_; }
     [[nodiscard]] std::size_t size() const { return sprites_.size(); }
     [[nodiscard]] std::size_t memoryBytes() const;
@@ -53,10 +63,13 @@ private:
         }
     };
     std::vector<AtlasPage> pages_;
-    std::unordered_map<std::string, PageSprite, Hash, std::equal_to<>> sprites_;
+    using Sprites = std::unordered_map<std::string, PageSprite, Hash, std::equal_to<>>;
+    Sprites sprites_;
+    Sprites shadows_;
 };
 
-// Loads `<dir>/<set>.0.json`, `<set>.1.json`, ... until the next index is missing.
+// Loads `<dir>/<set>.0.json`, `<set>.1.json`, ... until the next index is missing, then the
+// set's shadow page `<set>.s.json` when it has one.
 [[nodiscard]] std::expected<void, std::string>
 loadSetPages(AtlasPages& pages, const std::filesystem::path& dir, std::string_view set);
 

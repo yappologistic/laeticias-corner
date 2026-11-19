@@ -51,7 +51,7 @@ class EngineWalk:
                 continue
             ox, oy = it.c + it.pw - 1, it.r          # the grid origin (smallest tx, ty) in plan
             self.level[i] = world.level(ox, oy)
-            g = cat.geom.get(it.id, {}).get(f"r{it.k}", {})
+            g = cat.geometry(it.id, it.k)
             walk = {(it.c + it.pw - 1 - dy, it.r + dx) for dx, dy in g.get("walk", [])}
             zs = {(it.c + it.pw - 1 - int(k.split(",")[1]), it.r + int(k.split(",")[0])): z
                   for k, z in g.get("walk_z", {}).items()}

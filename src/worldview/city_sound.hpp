@@ -47,6 +47,7 @@ public:
         double clock = 0.2;     // time of day, 0..1
         int season = 0;         // the home catalog's index
         int month = -1;         // the calendar month (-1: every month's calls)
+        float music = 0;        // how much of a city's music plays (0..1): the crowd steps back
         float dt = 0;
         std::span<const life::DrawActor> actors; // drawn this frame
         const life::CityLife* city = nullptr;

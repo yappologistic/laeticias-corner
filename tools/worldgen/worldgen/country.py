@@ -59,10 +59,18 @@ def fields(W: World) -> None:
     open_ = land & ~W.reserved & ~W.bare & ~W.river & ~L.STREET & (L.OCC < 0) & ~W.marsh & \
         (W.anchors.dist > 1) & (level <= 5) & ~W.forest
     balks = ((CC % 6) == 0) | ((RR % 4) == 0)
+    # Ploughland gives out raggedly short of where another stretch's look begins, never in a
+    # straight line along the border (where two sets meet the looks cannot mix).
+    edge = np.zeros_like(land)
+    edge[:, 1:] |= W.look[:, 1:] != W.look[:, :-1]
+    edge[:, :-1] |= W.look[:, 1:] != W.look[:, :-1]
+    edge[1:, :] |= W.look[1:, :] != W.look[:-1, :]
+    edge[:-1, :] |= W.look[1:, :] != W.look[:-1, :]
+    open_ &= distance_to(edge & land, 8) >= 2 + np.rint((noise(5.0, "field_edge") + 1) * 2.5)
     total = 0
     for i, n in enumerate(W.names):
         b = W.biome(i)
-        m = (W.stretch == i) & open_
+        m = (W.look == i) & open_
         if not m.any():
             continue
         if b.get("field") and b.get("fields"):
@@ -80,8 +88,27 @@ def fields(W: World) -> None:
     W.stats["field_tiles"] = total
 
 
+PALMS = ("world.t_palm", "parsa.t_date")
+
+
+def snow_lies(W: World) -> np.ndarray:
+    """Tiles where snow lies in some month by their region's climate (no palm grows there)."""
+    from . import climates as C
+    from . import seasons as SEAS
+    clims = SEAS.tool_climates()
+    low = np.full(len(W.names), 99, dtype=np.int16)
+    for i, n in enumerate(W.names):
+        line = clims.get(C.REGION_CLIMATE.get(n, ""), {}).get("snow", {}).get("line") or []
+        vals = [v for v in line if v is not None]
+        if vals:
+            low[i] = min(vals)
+    reg = np.where(W.reg >= 0, W.reg, W.stretch)
+    return W.L.LV >= low[reg]
+
+
 def plants(W: World) -> None:
     L, land = W.L, W.land
+    cold = snow_lies(W)
     field_t = {i for i, t in enumerate(L.terrains) if "field" in t or t.endswith("soil")
                or t in ("world.scree", "world.dune", "world.gravel_desert")}
     is_field = np.isin(L.T, list(field_t)) if field_t else np.zeros_like(land)
@@ -101,7 +128,7 @@ def plants(W: World) -> None:
         b = W.biome(i)
         if not b.get("plants"):
             continue
-        m = (W.stretch == i) & free
+        m = (W.look == i) & free
         if not m.any():
             continue
         dens = np.where(W.forest, np.where(clearing < -0.25, 0.04, b.get("forest_density", 0.4)),
@@ -123,6 +150,8 @@ def plants(W: World) -> None:
             for j, i_ in zip(js.tolist(), is_.tolist()):
                 item = items[min(int(np.searchsorted(cum, pick[j, i_], side="right")),
                                  len(items) - 1)]
+                if item in PALMS and cold[j, i_]:
+                    continue
                 k = int(var[j, i_] % np.uint64(1 << 20))
                 if item == "world.p_wildflowers":
                     k = b.get("flowers", 0)
@@ -130,7 +159,7 @@ def plants(W: World) -> None:
                 counts[item] = counts.get(item, 0) + 1
         # Wildflowers in open land, the stretch's own look.
         if "world.p_wildflowers" in W.cat.items and "flowers" in b:
-            fl = (W.stretch == i) & free & (L.OCC < 0) & ~W.forest & ~is_field & \
+            fl = (W.look == i) & free & (L.OCC < 0) & ~W.forest & ~is_field & \
                 (rng.hash01(CC, RR, rng.hash64(SEED, "flowers")) < 0.012)
             for j, i_ in zip(*np.nonzero(fl)):
                 _add(W, "world.p_wildflowers", int(i_), int(j), b["flowers"])
@@ -148,10 +177,12 @@ def plants(W: World) -> None:
     ut = rng.hash01(CC, RR, rng.hash64(SEED, "rivertree"))
     for j, i_ in zip(*np.nonzero((bank2 | bank1) & (L.OCC < 0) & (ut < 0.4) & (dist_road >= 3)
                                  & ~W.bare & (L.LV <= 11))):
-        b = W.biome(int(W.stretch[j, i_]))
+        b = W.biome(int(W.look[j, i_]))
         item = b.get("river_tree")
         if b.get("river_tree2") and ut[j, i_] < 0.15:
             item = b["river_tree2"]
+        if item in PALMS and cold[j, i_]:
+            continue
         if item and item in W.cat.items:
             _add(W, item, int(i_), int(j), int(var[j, i_] % np.uint64(97)))
             counts[item] = counts.get(item, 0) + 1
@@ -179,7 +210,7 @@ def props(W: World) -> None:
         b = W.biome(i)
         if not b.get("props"):
             continue
-        m = (W.stretch == i) & land & ~W.reserved & ~W.river & (L.OCC < 0) & ~L.STREET & \
+        m = (W.look == i) & land & ~W.reserved & ~W.river & (L.OCC < 0) & ~L.STREET & \
             (W.anchors.dist > 1) & ~near_road & ~L.IMP & ~W.keep
         acc = 0.0
         for item, dens in b["props"].items():
@@ -243,7 +274,7 @@ def peaks(W: World) -> None:
         j, i_ = int(j), int(i_)
         if any(abs(j - a) < 10 and abs(i_ - b) < 10 for a, b in done):
             continue
-        b = W.biome(int(W.stretch[j, i_]))
+        b = W.biome(int(W.look[j, i_]))
         if not b.get("peaks"):
             continue
         tiles = [(i_ - 1 + x, j - 1 + y) for y in range(3) for x in range(3)]

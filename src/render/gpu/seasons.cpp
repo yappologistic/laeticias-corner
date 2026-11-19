@@ -73,4 +73,73 @@ float snowCover(const ClimateDef& climate, int month, float dayFraction, int lev
     return before + (now - before) * k;
 }
 
+std::vector<SeasonTile> seasonField(int w, int h, std::span<const std::uint8_t> climate,
+                                    std::span<const std::uint8_t> level,
+                                    std::span<const std::uint8_t> natural) {
+    const auto n = static_cast<std::size_t>(w) * static_cast<std::size_t>(h);
+    std::vector<SeasonTile> out(n);
+    if (climate.size() < n || level.size() < n || natural.size() < n) return out;
+    std::vector<std::uint32_t> queue;
+    queue.reserve(n);
+    const auto each = [&](std::uint32_t i, auto&& f) {
+        const int x = static_cast<int>(i % static_cast<std::uint32_t>(w));
+        const int y = static_cast<int>(i / static_cast<std::uint32_t>(w));
+        if (x > 0) f(i - 1);
+        if (x + 1 < w) f(i + 1);
+        if (y > 0) f(i - static_cast<std::uint32_t>(w));
+        if (y + 1 < h) f(i + static_cast<std::uint32_t>(w));
+    };
+    // The land's level: natural tiles their own, built ones the nearest natural tile's.
+    std::vector<std::uint8_t> done(n, 0);
+    for (std::uint32_t i = 0; i < n; ++i)
+        if (natural[i] != 0) {
+            out[i].landLevel = level[i];
+            done[i] = 1;
+            queue.push_back(i);
+        }
+    for (std::size_t q = 0; q < queue.size(); ++q) {
+        const std::uint32_t v = queue[q];
+        each(v, [&](std::uint32_t u) {
+            if (done[u] != 0) return;
+            done[u] = 1;
+            out[u].landLevel = out[v].landLevel;
+            queue.push_back(u);
+        });
+    }
+    for (std::uint32_t i = 0; i < n; ++i)
+        if (done[i] == 0) out[i].landLevel = level[i]; // no natural ground at all: its own
+    // The other climate: from every tile beside a different climate, inward up to the band.
+    queue.clear();
+    std::ranges::fill(done, 0);
+    for (std::uint32_t i = 0; i < n; ++i) {
+        if (climate[i] == kNoClimate) continue;
+        each(i, [&](std::uint32_t u) {
+            if (done[i] == 0 && climate[u] != kNoClimate && climate[u] != climate[i]) {
+                out[i].other = climate[u];
+                out[i].distance = 0;
+                done[i] = 1;
+                queue.push_back(i);
+            }
+        });
+    }
+    for (std::size_t q = 0; q < queue.size(); ++q) {
+        const std::uint32_t v = queue[q];
+        if (out[v].distance + 1 >= kSeasonBand) continue;
+        each(v, [&](std::uint32_t u) {
+            if (done[u] != 0 || climate[u] != climate[v]) return;
+            done[u] = 1;
+            out[u].other = out[v].other;
+            out[u].distance = static_cast<std::uint8_t>(out[v].distance + 1);
+            queue.push_back(u);
+        });
+    }
+    return out;
+}
+
+float otherShare(int distance, float noise) {
+    const float d = static_cast<float>(distance) + noise * static_cast<float>(kSeasonBand) * 1.1f;
+    const float t = std::clamp(d / static_cast<float>(kSeasonBand), 0.0f, 1.0f);
+    return 0.5f * (1.0f - t * t * (3.0f - 2.0f * t));
+}
+
 } // namespace lc::gpu

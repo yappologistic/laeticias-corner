@@ -59,8 +59,12 @@ def card(kind, title, epithet, text):
 # -- the towns -------------------------------------------------------------------------------
 TOWNS = {
     "tibur": {
-        "areas": {"hills": "country", "plain": "country"},
+        "areas": {"hills": "country", "plain": "country", "town": "town"},
         "trades": [
+            T("shopkeeper", "rome.freedman", "Shopkeeper", "town", {"item": "rome.r_taberna"},
+              "serve", 3),
+            T("baker", "rome.working_woman", "Baker", "town", {"item": "rome.r_bakery"},
+              "work_low", 2),
             T("quarryman", "rome.builder", "Quarryman at the travertine", "hills",
               {"item": "world.quarry"}, "work_high", 4, card="quarryman"),
             T("olive_grower", "rome.farmer", "Olive grower", "plain", {"item": "rome.r_villa_farm"},

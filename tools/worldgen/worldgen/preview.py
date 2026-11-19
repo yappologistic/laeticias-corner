@@ -224,18 +224,18 @@ def overview_image(world: World, cat: Catalog, atlas: Atlas, root: Path, px: int
             if n.kind == "station":
                 x, y = (COLS - 1 - n.at[1]) * px, n.at[0] * px
                 d.rectangle((x - px, y - px, x + px, y + px), fill=(150, 46, 36), outline=SEPIA)
-    # Lands, ranges and rivers named in small capitals.
-    f_land = font(root, 11 * px // 2, bold=True)
-    f_river = font(root, 8 * px // 2)
+    # Lands, ranges and rivers named in capitals large enough to read where the game shows the
+    # map at about 0.6 of this image's size (QA6 V6-018: nothing smaller is baked in).
+    f_land = font(root, 20 * px // 2, bold=True)
+    f_river = font(root, 16 * px // 2)
     for name, (c, r) in P.LAND_LABELS:
         _text(d, (c * px, r * px), name, f_land, fill=(132, 104, 76))
     for name, (c, r) in P.RIVER_LABELS:
         _text(d, (c * px, r * px), name, f_river, fill=(70, 104, 132), halo=False)
     # Region frames for the three cities and the home, labels and markers.
-    f_big = font(root, 15 * px // 2, bold=True)
-    f_mid = font(root, 10 * px // 2, bold=True)
-    f_small = font(root, 8 * px // 2)
-    f_sea = font(root, 13 * px // 2)
+    f_big = font(root, 22 * px // 2, bold=True)
+    f_mid = font(root, 16 * px // 2, bold=True)
+    f_sea = font(root, 22 * px // 2)
     for rid in ("rome", "athens", "parsa", "corner"):
         c0, r0, c1, r1 = P.REGIONS[rid][3]
         _dashed_rect(d, (c0 * px, r0 * px, (c1 + 1) * px, (r1 + 1) * px), SEPIA)
@@ -243,16 +243,17 @@ def overview_image(world: World, cat: Catalog, atlas: Atlas, root: Path, px: int
         x, y = c * px, r * px
         label = P.LABELS.get(rid, rid)
         if icon == "town":
+            # A town's name is the map's interface text (drawn at the screen's own resolution
+            # beside its marker), never baked in at a size nobody can read.
             d.ellipse((x - 2 * px, y - 2 * px, x + 2 * px, y + 2 * px), fill=(120, 40, 30),
                       outline=SEPIA)
-            _text(d, (x + 3 * px, y - 5 * px), label, f_small)
         else:
             d.ellipse((x - 4 * px, y - 4 * px, x + 4 * px, y + 4 * px), fill=(150, 46, 36),
                       outline=SEPIA, width=px)
-            _text(d, (x + 6 * px, y - 9 * px), label, f_big)
+            _text(d, (x + 6 * px, y - 13 * px), label, f_big)
             band = P.TIME_BANDS.get(rid)
             if band:
-                _text(d, (x + 6 * px, y + 3 * px), band, f_mid)
+                _text(d, (x + 6 * px, y + 5 * px), band, f_mid)
     for name, (c, r) in P.SEA_LABELS:
         _text(d, (c * px, r * px), name, f_sea, fill=(84, 110, 128), halo=False)
     return img
@@ -377,7 +378,7 @@ class IsoRenderer:
     def piece_sprites(self, item_id: str, k: int):
         """[(piece rect (dx, dy, w, h), sprite)] of a split landmark (world-tech §1.3, §1.11),
         or None when the item is not split or a piece has no sprite."""
-        rects = self.cat.geom.get(item_id, {}).get(f"r{k}", {}).get("pieces")
+        rects = self.cat.geometry(item_id, k).get("pieces")
         if not rects:
             return None
         out = []

@@ -42,6 +42,7 @@ bool App::createRenderer() {
         }
         if (renderer_) return true;
         SDL_Log("look: no gpu renderer (%s): the classic look", SDL_GetError());
+        lookFellBack_ = true; // the settings say so instead of promising the next start
         driver = opts_.headless ? "software" : "";
     }
     renderer_.reset(SDL_CreateRenderer(window_.get(), driver.empty() ? nullptr : driver.c_str()));

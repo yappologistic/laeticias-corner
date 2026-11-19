@@ -12,15 +12,12 @@
 
 namespace lc {
 
-bool App::loadWorldData() {
-    if (!fs::exists(assets_ / "world" / "world.json")) return true; // the floating island
-    const Uint64 t0 = SDL_GetPerformanceCounter();
-    auto loaded = world::loadWorld(assets_, cat_);
-    if (!loaded) {
-        SDL_Log("world: %s", loaded.error().c_str());
+bool App::loadWorldData(WorldLoad load) {
+    if (!load.world) {
+        SDL_Log("world: %s", load.world.error().c_str());
         return false;
     }
-    loaded_ = std::make_unique<world::LoadedWorld>(std::move(*loaded));
+    loaded_ = std::make_unique<world::LoadedWorld>(std::move(*load.world));
     for (const std::string& e : loaded_->diagnostics.errors) SDL_Log("world: %s", e.c_str());
     if (!loaded_->diagnostics.warnings.empty())
         SDL_Log("world: %zu warnings (worldinfo validate lists them)",
@@ -66,8 +63,7 @@ bool App::loadWorldData() {
     viewWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
     homeWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
     themeWeights_.assign(loaded_->file.regions.size(), 0.0f);
-    SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)",
-            msBetween(t0, SDL_GetPerformanceCounter()), loaded_->layers.size(),
+    SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)", load.ms, loaded_->layers.size(),
             loaded_->file.regions.size());
     return true;
 }
@@ -103,8 +99,11 @@ void App::createWorldView() {
                     iso.toWorld(f(w), 0.0f).x + r.left + homeOffset_.x,
                     iso.toWorld(f(w), f(h)).y + r.top + homeOffset_.y};
     worldView_ = std::make_unique<worldview::WorldView>(
-        renderer_.get(), *loaded_, assets_, *atlas_, measuring() || !opts_.headless,
-        worldview::Hole{home.rect, box},
+        renderer_.get(), *loaded_, assets_, *atlas_,
+        // Frames stream as they do for a player wherever time is measured or a window is
+        // open; a headless script builds everything at once (the same shots every run) unless
+        // it asks to see what a player sees.
+        measuring() || !opts_.headless || opts_.streamed, worldview::Hole{home.rect, box},
         // Living figures walk with city life.
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
@@ -166,6 +165,8 @@ void App::drawScene(const FrameParams& p, SDL_Texture* out) {
     v.pointer = {at.x + homeOffset_.x, at.y + homeOffset_.y};
     if (!SDL_SetRenderTarget(renderer_.get(), out)) SDL_Log("render: %s", SDL_GetError());
     worldView_->setLifeAlpha(alpha_);
+    scene_->beginFrameStats();
+    scene_->setGroundDecode(worldView_->homeGroundDecode());
     worldView_->draw(v, clock_.time(), p.light, frameDt_, static_cast<double>(simTime_), hooks_);
 }
 
@@ -367,13 +368,22 @@ void App::updateWorld(float dt) {
             travel_.t = tuning::kTravelFadeOut;
         }
         const float held = travel_.t - tuning::kTravelFadeOut;
-        // Whether the destination is whole is known once a frame of it has been drawn.
-        if (travel_.jumped && held > 0 && (worldView_->settled() || held >= tuning::kTravelHold) &&
-            travelFadeIn_ < 0)
+        // Whether the destination is whole is known once a frame of it has been drawn, and
+        // whether its people are all there once the cities' life has taken a step or two at it
+        // (it fills an area a few dozen people a step): the veil lifts on a place that is
+        // standing, not one that fills in before the eyes.
+        const bool peopled = !city_ || (held >= 2.0f * static_cast<float>(tuning::kStepSeconds) &&
+                                        city_->city->stats().queued == 0);
+        const float hold = startVeil_ ? tuning::kStartHold : tuning::kTravelHold;
+        if (travel_.jumped && held > 0 && ((worldView_->settled() && peopled) || held >= hold) &&
+            travelFadeIn_ < 0) {
             travelFadeIn_ = travel_.t;
+            if (city_) city_->city->showAll();
+        }
         if (travelFadeIn_ >= 0 && travel_.t - travelFadeIn_ >= tuning::kTravelFadeIn) {
             travel_ = {};
             travelFadeIn_ = -1;
+            startVeil_ = false;
         }
     }
     const worldview::PlaceTracker& pl = worldView_->places();
@@ -852,7 +862,12 @@ void App::loadWorldAudio() {
     soundLoops_.clear();
     for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
     markDryLoops(soundscape_->files());
-    if (!city_) return;
+    for (std::size_t i = 0; i < soundLoops_.size(); ++i)
+        if (soundscape_->isMusic(static_cast<int>(i))) mixer_.setLoopMusic(soundLoops_[i]);
+}
+
+void App::loadCityAudio() {
+    if (!soundscape_ || !city_) return;
     citySound_ = std::make_unique<worldview::CitySound>(*loaded_, city_->life->data,
                                                         assets_ / "audio", seed_);
     mixer_.loadMore(assets_ / "audio", citySound_->effects(), citySound_->loops());
@@ -880,8 +895,12 @@ bool App::snowLiesHere() const {
 void App::updateWorldAudio(float night) {
     if (!soundscape_ || !worldView_) return;
     const worldview::ThemeMixer& theme = worldView_->theme();
+    // Behind the front door the title drifts over the corner: its sound is the home's.
+    const bool door = menus_.frontDoorOpen();
+    const int homeRegion = loaded_->file.home.region;
     for (std::size_t r = 0; r < themeWeights_.size(); ++r)
-        themeWeights_[r] = theme.weight(static_cast<int>(r));
+        themeWeights_[r] = door ? (static_cast<int>(r) == homeRegion ? 1.0f : 0.0f)
+                                : theme.weight(static_cast<int>(r));
     const Vec2 t = cat_.iso().toTile(camera_.position());
     const TileRect h = loaded_->file.home.rect;
     worldview::Soundscape::Input in;
@@ -920,6 +939,7 @@ void App::updateWorldAudio(float night) {
     ci.clock = clock_.time();
     ci.season = season();
     ci.month = in.month;
+    ci.music = soundscape_->musicLevel();
     ci.dt = frameDt_;
     ci.actors = worldView_->actorsDrawn();
     ci.city = city_->city.get();
@@ -1048,7 +1068,8 @@ void App::followWorldWeather() {
     if (worldView_) {
         worldView_->setWind(weather_.wind().dir, weather_.wind().strength, profile_.reduceMotion);
         // The clock's 0 is 06:00: the time of day from midnight for the snow's morning.
-        worldView_->setCalendar(calendarMonth(), static_cast<float>(std::fmod(clock_.time() + 0.25, 1.0)));
+        worldView_->setCalendar(calendarMonth(),
+                                static_cast<float>(std::fmod(clock_.time() + 0.25, 1.0)));
     }
 }
 

@@ -291,6 +291,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                                                   : std::optional(std::string("another line"));
     }
     if (what == "raining") return yesNo(raining());
+    if (what == "snowing") return yesNo(raining() && ui_.snow); // as the title card says it
     if (loaded_ && a.size() >= 2) {
         const worldview::PlaceTracker& pl = worldView_->places();
         const auto regionId = [&](int r) {
@@ -922,6 +923,12 @@ bool App::scriptStep() {
                 std::ofstream out(c.args[1], std::ios::binary);
                 out << life::lifeDump(*city_->city, c.args[1]);
                 if (!out) return fail("city life: cannot write " + c.args[1]);
+            } else if (c.args[0] == "mark") {
+                // A segment of the capture starts here (audio_mix_world reads these).
+                endSegment();
+                mark_ = c.args[1];
+                markStart_ = capture_.size() / 2;
+                captureSkip_ = mark_.starts_with('~');
             } else if (c.args[0] == "shower") {
                 weather_.shower();
             } else if (c.args[0] == "lively") {
@@ -1025,6 +1032,15 @@ bool App::scriptStep() {
         }
     }
     return false; // the script ran out: done
+}
+
+void App::endSegment() {
+    // The capture segment that ends here: its name, first and last frame, and what each bus put
+    // out meanwhile. Settling stretches (~) are neither kept nor listed.
+    const std::array<double, 3> e = mixer_.takeBusEnergy();
+    if (mark_.empty() || captureSkip_) return;
+    marks_ += std::format("{} {} {} {} {} {}\n", mark_, markStart_, capture_.size() / 2, e[0], e[1],
+                          e[2]);
 }
 
 } // namespace lc

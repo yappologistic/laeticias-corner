@@ -299,7 +299,8 @@ void WorldView::buildWater(TileRect rect) {
 }
 
 void WorldView::homeTerrainChanged() {
-    // The worker reads the map's home tiles: it finishes before they change.
+    // The workers read the map's home tiles: they finish before they change.
+    if (seasonJob_.valid()) seasonJob_.wait();
     if (waterJob_.valid()) {
         waterJob_.get();
         waterRect_ = waterPending_;
@@ -343,7 +344,7 @@ void WorldView::markItemWater(const Elem& e, const Xform& x) {
 }
 
 void WorldView::markHomeWater(const FRect& view, const Xform& x) {
-    if (decoder_) return; // the home's water texels mark themselves (its page is packed too)
+    if (decoder_ && pages_->homePackedReady()) return; // its water texels mark themselves
     if (homeWaterDirty_ && !waterKind_.empty()) {
         homeWaterDirty_ = false;
         homeWater_.clear();
@@ -718,8 +719,9 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
     const float dx = lean * side * (0.4f + 0.6f * std::abs(windDir_.x)) *
                      gpu::windLean(anchor, gpuFrame_.now, windDir_, windStrength_);
     constexpr int kStrips = gpu::tuning::kSwayStrips;
-    if (decoder_) decoder_->use(batch_, s.packed);
-    const SDL_FColor c = decoder_ && s.packed
+    const bool packed = s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
+    if (decoder_) decoder_->use(batch_, packed);
+    const SDL_FColor c = decoder_ && packed
                              ? packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage)
                              : SDL_FColor{1, 1, 1, 1};
     const float x0 = anchor.x - s.ox;
@@ -742,7 +744,7 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
             for (const int q : {b, b + 1, b + 3, b, b + 3, b + 2}) idx.push_back(q);
         }
     }
-    batch_.use(t, decoder_ && s.packed ? decoder_->replace() : SDL_BLENDMODE_BLEND, x.filter);
+    batch_.use(t, decoder_ && packed ? decoder_->replace() : SDL_BLENDMODE_BLEND, x.filter);
     batch_.triangles(verts.data(), static_cast<int>(verts.size()), idx.data(),
                      static_cast<int>(idx.size()));
 }

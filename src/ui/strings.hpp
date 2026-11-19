@@ -219,7 +219,12 @@ inline constexpr std::string_view kVsync = "Wait for the display";
 inline constexpr std::string_view kLook = "Look";
 inline constexpr std::string_view kLookNames[] = {"Classic", "Low", "Medium", "High"};
 inline constexpr std::string_view kLookRestart = "{} (on next start)";
+inline constexpr std::string_view kLookUnavailable = "{} (this computer draws Classic)";
+inline constexpr std::string_view kLookNote =
+    "Light, water and shadows; higher costs more frame time.";
 inline constexpr std::string_view kClouds = "Clouds";
+inline constexpr std::string_view kCloudsNote =
+    "Clouds and their shadows; shadows only or off cost less.";
 inline constexpr std::string_view kCloudNames[] = {"On", "Shadows only", "Off"};
 inline constexpr std::string_view kChatter = "Chatter";
 inline constexpr std::string_view kChatty = "Chatty";

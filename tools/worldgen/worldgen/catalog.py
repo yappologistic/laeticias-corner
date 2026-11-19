@@ -190,16 +190,22 @@ class Catalog:
         b = self.terrain.get(t.under or "")
         return b.faces if b else []
 
+    def geometry(self, item_id: str, k: int) -> dict:
+        """An item's geometry for rotation or look k; a connect deck's entries are per neighbour
+        mask (`m<n>`) with the same walk tiles and heights, so its first mask stands for all."""
+        g = self.geom.get(item_id, {})
+        return g.get(f"r{k}") or g.get("m0") or {}
+
     def slots(self, item_id: str, k: int) -> dict:
         """Slot spots from the geometry file for rotation k ({} when there is no geometry)."""
-        return self.geom.get(item_id, {}).get(f"r{k}", {}).get("slots", {})
+        return self.geometry(item_id, k).get("slots", {})
 
     def walk_tiles(self, item_id: str, k: int) -> list[tuple[int, int]]:
-        return [tuple(t) for t in self.geom.get(item_id, {}).get(f"r{k}", {}).get("walk", [])]
+        return [tuple(t) for t in self.geometry(item_id, k).get("walk", [])]
 
     def water_tiles(self, item_id: str, k: int) -> list[tuple[int, int]]:
         """Open-water tiles of a landmark (a harbour basin): not walkable, a boat's."""
-        return [tuple(t) for t in self.geom.get(item_id, {}).get(f"r{k}", {}).get("water", [])]
+        return [tuple(t) for t in self.geometry(item_id, k).get("water", [])]
 
     def slot_kind(self, item_id: str, slot_id: str) -> str | None:
         """The catalog `kind` of an item's slot (`mooring` spots are a boat's, on water)."""

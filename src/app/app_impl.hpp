@@ -48,8 +48,10 @@
 
 #include <array>
 #include <cstdio>
+#include <expected>
 #include <filesystem>
 #include <functional>
+#include <future>
 #include <map>
 #include <memory>
 #include <optional>
@@ -277,6 +279,8 @@ private:
     bool openCity();
     [[nodiscard]] life::LifeClock cityClock() const;
     [[nodiscard]] TileRect cityView() const;
+    // What of it the window can show (people outside it move in strides: CityLife::setWatched).
+    [[nodiscard]] life::CityLife::Watched cityWatched() const;
     void stepCity(float dt);
     std::optional<std::string> checkCity(std::span<const std::string> a);
     std::optional<std::string> checkSound(std::span<const std::string> a); // expect sound ...
@@ -317,7 +321,12 @@ private:
     void drawPostcard(Painter& p);
 
     // The world (app_world.cpp): loaded when assets/world/world.json exists, else the island.
-    bool loadWorldData();
+    // The world as its loader gave it, and how long that took (start-up reads it on a worker).
+    struct WorldLoad {
+        std::expected<world::LoadedWorld, std::string> world;
+        double ms = 0;
+    };
+    bool loadWorldData(WorldLoad load);
     // The world renderer, once the home is known (after the save is read).
     void createWorldView();
     // The home's terrain into the world's map (and, the first time, the world's own things off
@@ -401,7 +410,8 @@ private:
     // The world's sound (world-tech §4.6): its loops into the mixer before it opens; each
     // frame, the regions' beds, zones, item loops and music by where the view is. The home's
     // own music and beds play by its share of the view.
-    void loadWorldAudio();
+    void loadWorldAudio(); // the regions' beds and zones
+    void loadCityAudio();  // the cities' own sounds: after their life is there
     void updateWorldAudio(float night);
     [[nodiscard]] float homeMusic() const;
     [[nodiscard]] float homeAmbience() const;
@@ -446,6 +456,10 @@ private:
     // The bench's world cases (cities, a pan, fast travel); false when one is over budget.
     bool benchWorld(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase,
                     const std::function<void()>& warm, int frames);
+    // --bench-case: whether a case of this name runs (all do without it).
+    [[nodiscard]] bool benchWants(std::string_view name) const {
+        return opts_.benchCase.empty() || name.find(opts_.benchCase) != std::string_view::npos;
+    }
     // The player's cases: zoom sweeps, fast pans, travel between places, the map.
     bool benchPlay(const std::function<bool(const char*, const BenchFrames&, bool)>& judgeCase);
     // The Look's tiers on SDL's gpu driver (app_gpu.cpp): one dense city view by day and the
@@ -580,6 +594,9 @@ private:
     Phase lastPhase_ = Phase::Day;
     int lastDay_ = 0;
     std::vector<int> dayStems_; // loops of each piece's stems
+    int titleDay_ = -1;         // the front door's full mixes
+    bool lookFellBack_ = false; // a shader tier was asked for and no gpu renderer could be made
+    int titleNight_ = -1;
     std::vector<int> nightStems_;
     std::vector<std::uint8_t> stemOn_; // per catalog stem (day, then night): unlocked
     Profile profile_;
@@ -636,6 +653,7 @@ private:
     };
     Travel travel_;
     float travelFadeIn_ = -1;
+    bool startVeil_ = false; // the veil is the first view's (it may hold longer than a journey's)
     std::vector<std::string> arriveFiles_; // each set's arrival motif
     std::vector<world::FigurePlace> figures_;
     std::unique_ptr<worldview::Soundscape> soundscape_;
@@ -676,6 +694,12 @@ private:
     Hud hud_;
     Mixer mixer_;
     std::vector<float> capture_; // the mix, when capturing audio
+    std::string marks_;          // segments ended: name, first and last frame, bus energies
+    std::string mark_;           // the segment under way (`set mark NAME`)
+    std::size_t markStart_ = 0;
+    void endSegment();
+    bool captureSkip_ = false;      // `set mark ~...`: mixed but not kept in the capture
+    std::vector<float> skipBuffer_; // where a skipped stretch is mixed
     int pixelW_ = 0;
     int pixelH_ = 0;
     float density_ = 1;

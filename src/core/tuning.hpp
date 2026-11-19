@@ -316,8 +316,8 @@ inline constexpr int kRegionMinGrow = 8;
 
 // Audio levels (linear gain)
 inline constexpr float kMusicLevel = 0.55f;
-inline constexpr float kBirdsLevel = 0.45f;
-inline constexpr float kCricketsLevel = 0.45f;
+inline constexpr float kBirdsLevel = 0.85f;
+inline constexpr float kCricketsLevel = 0.63f;
 inline constexpr float kRainLevel = 0.6f;
 inline constexpr float kWaterLevel = 0.4f;
 inline constexpr float kWaterTilesForFullLevel = 24.0f;
@@ -339,6 +339,18 @@ inline constexpr float kLoopFadeSeconds = 2.5f;
 inline constexpr float kMasterFadeSeconds = 0.05f;
 inline constexpr float kLimiterCeiling = 0.89f; // about -1 dBFS
 inline constexpr float kLimiterReleaseSeconds = 0.25f;
+// The mix's targets, as the audio_mix_world test measures them (BS.1770 loudness of 5 s in each
+// situation): every situation within these bounds, neighbouring places within kMixNeighbours of
+// each other, peaks under kMixTruePeak, the field centred within kMixBalance, no momentary step
+// over kMixJump inside a situation (one-shots heard, never startling), and a city's music not
+// masked: its energy at least kMixMusicUnder under the ambience's.
+inline constexpr double kMixLoudest = -18.0;   // LUFS
+inline constexpr double kMixQuietest = -33.0;  // LUFS
+inline constexpr double kMixNeighbours = 4.5;  // LU
+inline constexpr double kMixTruePeak = -1.0;   // dBTP
+inline constexpr double kMixBalance = 3.0;     // dB
+inline constexpr double kMixJump = 6.0;        // LU
+inline constexpr double kMixMusicUnder = -4.0; // dB, music against ambience in a city
 // Snow's low-pass on the ambience beds, and how long it takes to settle or melt into the sound.
 inline constexpr float kMuffleHz = 2500.0f;
 inline constexpr float kMuffleGlideSeconds = 4.0f;
@@ -365,6 +377,9 @@ inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 
 // destination's pages, fade in; within CLAUDE.md's 1 s.
 inline constexpr float kTravelFadeOut = 0.25f;
 inline constexpr float kTravelHold = 0.4f;
+// At start the first view streams in behind the same veil: it lifts when the view is whole, or
+// after this long whatever is still on its way.
+inline constexpr float kStartHold = 2.5f;
 inline constexpr float kTravelFadeIn = 0.3f;
 inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
@@ -473,6 +488,12 @@ inline constexpr float kLeaveTimeout = 30.0f;  // a folded-back actor still in v
 inline constexpr double kChunkLinger = 2.0;    // seconds a chunk stays live after the area left
 // Seconds between reconciliations while the area slides within the chunks it touches.
 inline constexpr double kReconcileMoving = 0.25;
+// Steps between the moves of a body no window can show (15 Hz at 60 steps a second).
+inline constexpr int kUnseenStride = 4;
 } // namespace life
+
+// World px around the window within which the cities' people move every step: more than any
+// sprite reaches from its feet, and what someone walks in the strides they take beyond it.
+inline constexpr float kCityWatchMargin = 384.0f;
 
 } // namespace lc::tuning
