@@ -378,6 +378,56 @@ def check_water(water_json: Path, pages: list[Path]) -> list[str]:
     return errors
 
 
+def check_walk_heights(cat: dict, geom: dict, packed, hw: int, hh: int) -> list[str]:
+    """Walk floors against the art: every kit deck (setbuild.is_deck: bridges, jetties,
+    pontoons, moles, fords) declares `walk_z` on its tiles, and every declared floor is where the packed heights say:
+    at the tile's middle, a pixel `walk_z` px up stands within 2 px of `walk_z` (a few rows
+    of slack for a rail in front of it). Tiles under a `roof`, floors on the ground and stairs
+    (S1 checks their treads) are skipped. A landmark's mismatches come back as warnings."""
+    errors = []
+    items = {it["id"]: it for it in cat["items"]}
+    where = {key: (r, words) for man, words in packed for key, r in man.items()}
+    for iid, entry in geom.get("items", {}).items():
+        it = items.get(iid)
+        if it is None:
+            continue
+        walkable_kit = setbuild.is_deck(it)
+        tag = "warning: " if it.get("landmark") else ""
+        for v, g in entry.items():
+            if not isinstance(g, dict):
+                continue
+            wz = g.get("walk_z")
+            if walkable_kit and wz is None and not g.get("walk"):
+                errors.append(f"{iid} {v}: a walkable piece without walk_z")
+                continue
+            if not wz or "climb" in g:        # stairs: their treads are checked by S1
+                continue
+            pieces = g.get("pieces")
+            for t, z in wz.items():
+                if t in g.get("roof", {}) or z <= 2:    # a floor on the ground needs no art there
+                    continue
+                dx, dy = map(int, t.split(","))
+                key = f"item/{iid}/base/{v}/f0"
+                if pieces:
+                    i = next((i for i, (x, y, w, h) in enumerate(pieces) if x <= dx < x + w and y <= dy < y + h), None)
+                    key = f"item/{iid}/base/{v}/p{i}/f0"
+                if key not in where:
+                    continue
+                r, words = where[key]
+                col = r["ox"] + (dx - dy) * hw
+                row = r["oy"] + (dx + dy) * hh + hh - z
+                ok = False
+                for cx in (col - 1, col, col + 1):
+                    for cy in range(row - 3, row + 4):
+                        if 0 <= cx < r["w"] and 0 <= cy < r["h"]:
+                            w = int(words[r["y"] + cy, r["x"] + cx])
+                            if w and abs(((w >> 21) & 511) - z) <= 2:
+                                ok = True
+                if not ok:
+                    errors.append(f"{tag}{iid} {v}: walk_z {z} px at tile {t} is not where the art's floor is")
+    return errors
+
+
 def check(name: str, atlas_dir: Path | None = None) -> list[str]:
     """`name`: 'home' or a set id."""
     root = spec.ASSETS
@@ -405,6 +455,12 @@ def check(name: str, atlas_dir: Path | None = None) -> list[str]:
         errors += check_depth(name, atlas_dir, packed)
         geom_file = atlas_dir / f"{name}.geom.json"
         if geom_file.exists():
+            tile = json.loads(spec.CATALOG.read_text())["tile"]
+            for e in check_walk_heights(cat, json.loads(geom_file.read_text()), packed, tile["w"] // 2, tile["h"] // 2):
+                if e.startswith("warning: "):     # landmarks' floors: reported, fixed with their models
+                    print(f"{name}: {e}", file=sys.stderr)
+                else:
+                    errors.append(e)
             keys = {k for man, _w in packed for k in man}
             level = json.loads(spec.CATALOG.read_text())["tile"]["level"]
             items = {it["id"]: it for it in cat["items"]}

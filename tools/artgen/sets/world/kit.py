@@ -61,8 +61,17 @@ def _seg_frame(d, X, Y):
     return t / 8.0, s, t >= -0.01
 
 
+def _wide(seg) -> bool:
+    """A piece inside a deck wider than one tile: neighbours on both axes. It is decked edge to
+    edge (not a cross of runs), with rails only where no neighbour joins it."""
+    arms = {d for d, kind in seg.items() if kind == "arm"}
+    return bool(arms & {"n", "s"}) and bool(arms & {"e", "w"})
+
+
 def _deck_height(seg, X, Y, width, z_deck, z_end):
     """Height of the deck top over the tile (-1 outside the deck)."""
+    if _wide(seg):
+        return np.full(np.broadcast(X, Y).shape, float(z_deck))
     out = np.full(np.broadcast(X, Y).shape, -1.0)
     for d, kind in seg.items():
         t, s, ok = _seg_frame(d, X, Y)
@@ -83,7 +92,17 @@ def _deck(m, mask, width, z_deck, z_end, material, top_mat, tone, top_tone=0.0, 
 
 
 def _rails(m, seg, width, z_deck, z_end, h, material, side=0, inset=1.0, r=None, tone=0.2):
-    """Parapets or hand-rails along both edges of every run (side=+1 or -1: one edge only)."""
+    """Parapets or hand-rails along both edges of every run (side=+1 or -1: one edge only); on
+    a wide deck's piece, along its open edges only."""
+    if _wide(seg):
+        rl = r or inset
+        for d in {"n", "s", "e", "w"} - set(seg):
+            def edge_mask(X, Y, Z, d=d):
+                t, s_, ok = _seg_frame(d, X, Y)
+                return ok & (t > 1.0 - rl / 8.0) & (t <= 1.0001) & (np.abs(s_) <= 8.0) & (Z >= z_deck - 0.5) & \
+                    (Z < z_deck + h)
+            fill(m, (-0.5, 16.5, -0.5, 16.5, z_deck - 1, z_deck + h + 1), material, edge_mask, tone=tone)
+        return
     for d, kind in seg.items():
         for sgn in ((-1, 1) if side == 0 else (side,)):
             def mask(X, Y, Z, d=d, kind=kind, sgn=sgn):
@@ -95,23 +114,23 @@ def _rails(m, seg, width, z_deck, z_end, h, material, side=0, inset=1.0, r=None,
 
 
 def ford(v, frame, frames, k):
-    """A ford: r0 flat stepping stones across the stream, r1 gravel shallows marked with poles
-    at the edges of the crossing. Walkable; stones laid so it can be crossed either way."""
+    """A ford: the stream running shallow and stony across the whole tile, so a track meets it
+    from any side: r0 a bed of rounded stones of every size breaking the surface, r1 a gravel
+    bar with a few larger stones. No pattern, nothing to say which way it is crossed."""
     m = _m(1, 1, 6, k, below=1)
     rng = Rng(6000, v)
-    if v == 0:
-        for (x, y) in ((8, 1.8), (8.6, 5.2), (7.6, 8.4), (8.4, 11.6), (8, 14.6), (2.0, 8.2), (4.9, 7.6), (11.2, 8.6), (14.2, 8)):
-            rx, ry = rng.uniform(1.4, 1.9), rng.uniform(1.2, 1.7)
-            fill(m, (x - 2.2, x + 2.2, y - 2.2, y + 2.2, -1.0, 1.6), "stone",
-                 lambda X, Y, Z, x=x, y=y, rx=rx, ry=ry: ((X - x) / rx) ** 2 + ((Y - y) / ry) ** 2 < 1 - (Z / 1.8) ** 2,
-                 tone=lambda X, Y, Z: (value_noise(X, Y, Z, 1.2, 6001) - 0.5) * 0.8 + 0.2)
-    else:
-        fill(m, (0.5, 15.5, 0.5, 15.5, -1.0, 0.5), "gravel",
-             lambda X, Y, Z: (np.abs(X - 8) < 5.5) | (np.abs(Y - 8) < 5.5),
-             tone=lambda X, Y, Z: (hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64), 6002) - 0.5) * 1.2)
-        for (x, y) in ((2.0, 2.0), (14.0, 2.0), (2.0, 14.0), (14.0, 14.0)):
-            rod(m, (x, y, -1.0), (x + 0.3, y, 6.0), 0.4, "wood", tone=0.1)
-            fill(m, (x - 0.6, x + 0.9, y - 0.5, y + 0.5, 4.6, 5.6), "cinnabar", tone=0.1)
+    fill(m, (0.5, 15.5, 0.5, 15.5, -1.0, 0.2 if v == 0 else 0.6), "gravel",
+         lambda X, Y, Z: (hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64), 6002 + v) <
+                          (0.55 if v == 0 else 0.9)),
+         tone=lambda X, Y, Z: (hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64), 6003) - 0.5) * 1.2)
+    n = 14 if v == 0 else 6
+    for _ in range(n):
+        x, y = rng.uniform(1.6, 14.4), rng.uniform(1.6, 14.4)
+        rx = rng.uniform(0.9, 2.0) if v == 0 else rng.uniform(1.0, 1.6)
+        ry, hz = rx * rng.uniform(0.7, 1.0), rng.uniform(0.8, 1.6)
+        fill(m, (x - 2.2, x + 2.2, y - 2.2, y + 2.2, -1.0, hz), "stone",
+             lambda X, Y, Z, x=x, y=y, rx=rx, ry=ry, hz=hz: ((X - x) / rx) ** 2 + ((Y - y) / ry) ** 2 < 1 - (Z / hz) ** 2,
+             tone=lambda X, Y, Z: (value_noise(X, Y, Z, 1.2, 6001) - 0.5) * 0.8 + 0.2)
     return m
 
 

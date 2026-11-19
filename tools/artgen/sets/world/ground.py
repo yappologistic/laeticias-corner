@@ -99,7 +99,12 @@ def _marks(g, level, seed, density, rows_list, cell=4, interior=None):
 # `m15` key): the same ground with its pattern shifted inside the tile and the edge band left
 # as it is, so any look meets any neighbour without a seam and a field of mixed looks loses the
 # one-tile rhythm (the engine picks a look by tile hash, as it does for base variants).
-INTERIOR = {"world.sea": 6, "world.scrub": 4, "world.pasture": 4, "world.rock": 4, "world.forest_floor": 3}
+# Interior looks (`terrain/<id>/m15/v<n>/f<k>`, v0 being `m15/f<k>`): a tile inside a field of one
+# overlay picks one by tile hash (the engine must: art-smooth-land.md §9), so mountains of snow,
+# deserts and rivers do not print one drawing per tile.
+INTERIOR = {"world.sea": 6, "world.scrub": 4, "world.pasture": 4, "world.rock": 4, "world.forest_floor": 3,
+            "world.snow": 6, "world.scree": 4, "world.dune": 4, "world.gravel_desert": 4, "world.salt_flat": 3,
+            "world.river": 4, "world.shallows": 4}
 SHIFTS = ((0.0, 0.0), (5.3, 9.1), (10.7, 3.9), (3.1, 12.6), (12.2, 6.8), (7.7, 14.3))
 
 
@@ -148,7 +153,7 @@ def steppe(v, k):
     their tussocks and stones fall; 5 is greener in the middle, 6 stonier, 7 has a bare patch."""
     g = home._grid(k)
     w = _window(g)
-    n = home._pnoise(g.u, g.v, 2, 9101)
+    n = home.broad(g, 9101, v)
     fine = home._pnoise(g.u, g.v, 8, 9102)
     lvl = 2.5 + (n - 0.5) * 0.7 + (fine - 0.5) * 0.6 + (hash01(g.px, g.py, 9103) - 0.5) * 0.7
     earth = (fine < 0.32) & (hash01(g.px // 2, g.py, 9104) < 0.7)
@@ -176,7 +181,7 @@ def sand(v, k):
     damp patch on 6, a strand line of drift on 7."""
     g = home._grid(k)
     w = _window(g)
-    n = home._pnoise(g.u, g.v, 2, 9201)
+    n = home.broad(g, 9201, v)
     fine = home._pnoise(g.u, g.v, 8, 9202)
     lvl = 3.2 + (n - 0.5) * 0.6 + (fine - 0.5) * 0.4 + (hash01(g.px, g.py, 9203) - 0.5) * 0.6
     if v in (1, 2, 5):
@@ -203,7 +208,7 @@ def alluvium(v, k):
     damp hollow on 6, sprouting weeds on 5 and 7."""
     g = home._grid(k)
     w = _window(g)
-    n = home._pnoise(g.u, g.v, 2, 9301)
+    n = home.broad(g, 9301, v)
     fine = home._pnoise(g.u, g.v, 8, 9302)
     lvl = 2.8 + (n - 0.5) * 0.8 + (fine - 0.5) * 0.6 + (hash01(g.px, g.py, 9303) - 0.5) * 0.7
     rgb = _paint(SILT, lvl, g)
@@ -273,55 +278,62 @@ def sea(mask, frame, k, var=0):
     return home._sprite(g0, rgb, cover * 255)
 
 
-def shallows(mask, frame, k):
+def shallows(mask, frame, k, var=0):
     """Turquoise water over sand ripples that show through, sparkles, frames timed with the
     sea's. The rim is soft, so laid over sea it fades into deep water and over sand it reads
     as the wet edge of the beach."""
-    g = home._grid(k)
-    f = home.shape_field(mask, g.u, g.v, 1.0, 5.0, 0.8, 9501, k)
+    g0 = home._grid(k)
+    f = home.shape_field(mask, g0.u, g0.v, 1.0, 5.0, 0.8, 9501, k)
     soft = np.clip(f / 2.2, 0, 1)
-    cover = g.inside & (soft > hash01(g.px, g.py, 9502) * 0.95)
+    cover = g0.inside & (soft > hash01(g0.px, g0.py, 9502) * 0.95)
     t = frame / FRAMES_WATER
-    fine = home._pnoise(g.u, g.v, 8, 9503)
-    rip = np.sin(2 * np.pi * (2 * g.u + 5 * g.v) / 16.0 + (fine - 0.5) * 3.0)
-    lvl = 2.4 + (home._pnoise(g.u, g.v, 2, 9504) - 0.5) * 0.8 + (rip > 0.6) * 0.8 - (rip < -0.5) * 0.5
-    # Caustic shimmer: a light net drifting with the frames.
-    c1 = home._pnoise(g.u - 4 * frame, g.v, 4, 9505)
-    c2 = home._pnoise(g.u, g.v - 4 * frame, 4, 9506)
-    net = np.abs(c1 - c2) < 0.05
-    lvl = lvl + net * 1.0
-    dx, dy, h, ok = home._scatter(g, 4, 9507, 0.4, jitter=0.9)
-    on = np.sin(2 * np.pi * (t + h)) > 0.5
-    sp = ok & on & (np.abs(dy) < 0.5) & (np.abs(dx) < 0.6 + k * 0.5 * (h > 0.5))
-    lvl = lvl + np.clip(1.5 - f, 0, 1.5) * 0.6
-    rgb = _paint(SHALLOWS, lvl, g, band=0.35)
-    rgb = np.where(sp[..., None], _rgb(PLASTER[4]), rgb)
-    return home._sprite(g, rgb, cover * 255)
+
+    def paint(g):
+        fine = home._pnoise(g.u, g.v, 8, 9503)
+        rip = np.sin(2 * np.pi * (2 * g.u + 5 * g.v) / 16.0 + (fine - 0.5) * 3.0)
+        lvl = 2.4 + (home._pnoise(g.u, g.v, 8, 9504) - 0.5) * 0.5 + (rip > 0.6) * 0.8 - (rip < -0.5) * 0.5
+        # Caustic shimmer: a light net drifting with the frames.
+        c1 = home._pnoise(g.u - 4 * frame, g.v, 4, 9505)
+        c2 = home._pnoise(g.u, g.v - 4 * frame, 4, 9506)
+        lvl = lvl + (np.abs(c1 - c2) < 0.05) * 1.0
+        dx, dy, h, ok = home._scatter(g, 4, 9507, 0.4, jitter=0.9)
+        on = np.sin(2 * np.pi * (t + h)) > 0.5
+        sp = ok & on & (np.abs(dy) < 0.5) & (np.abs(dx) < 0.6 + k * 0.5 * (h > 0.5))
+        rgb = _paint(SHALLOWS, lvl + np.clip(1.5 - f, 0, 1.5) * 0.6, g, band=0.35)
+        return np.where(sp[..., None], _rgb(PLASTER[4]), rgb)
+    rgb = _interior(g0, paint(g0), paint, var, 9501)
+    return home._sprite(g0, rgb, cover * 255)
 
 
-def river(mask, frame, k):
-    """Green-blue river water sunk a little below its banks: darker in the middle, silty and
-    lighter at the edges, an earth bank showing under the upper shore, a shimmer where it
-    meets the bank. Reads at one tile wide (canals)."""
-    g = home._grid(k)
-    f, wall1, wall2, shade = _bank(mask, g, 1.6, 5.0, 0.7, 9601)
-    cover = g.inside & (f > 0)
+def river(mask, frame, k, var=0):
+    """Green-blue river water sunk a little below its banks: deeper toward the middle of the
+    channel (measured from the banks themselves, so the deep line runs on along the river
+    instead of pooling in each tile), silty and lighter at the edges, an earth bank showing
+    under the upper shore, a shimmer where it meets the bank. Reads at one tile wide (canals)."""
+    g0 = home._grid(k)
+    f, wall1, wall2, shade = _bank(mask, g0, 1.6, 5.0, 0.7, 9601)
+    cover = g0.inside & (f > 0)
     t = frame / FRAMES_WATER
-    depth = np.clip(f / 5.0, 0, 1)
-    lvl = 3.3 - depth * 1.8 + (home._pnoise(g.u, g.v, 2, 9602) - 0.5) * 0.5 - shade * 0.9
-    dx, dy, h, ok = home._scatter(g, 4, 9603, 0.4, jitter=0.9)
-    half = 2.5 * (0.5 + 0.5 * np.sin(2 * np.pi * (t + h))) - 0.5
-    rx, ry = np.round(dx - 0.5), np.round(dy - 0.5)
-    glint = ok & (ry == 0) & (np.abs(rx + 0.5) < half) & (f > 1.2)
-    lvl = lvl + glint * 1.4
-    rgb = _paint(RIVER, lvl, g, band=0.35)
-    silt = (f < 1.4) & (f > 0.4) & (hash01(g.px, g.py, 9604) < 0.5)
-    rgb = np.where(silt[..., None], _paint([TIBER[2], TIBER[3], SHALLOW[2]], 1.0 + f, g), rgb)
+    big = np.full(g0.u.shape, 99.0)
+    bank = np.minimum(np.minimum(big if mask & N_BIT else g0.v, big if mask & S_BIT else 16 - g0.v),
+                      np.minimum(big if mask & W_BIT else g0.u, big if mask & E_BIT else 16 - g0.u))
+    depth = np.clip((bank - 1.6) / 4.5, 0, 1)
+
+    def paint(g):
+        lvl = 3.3 - depth * 1.8 + (home._pnoise(g.u, g.v, 8, 9602) - 0.5) * 0.35 - shade * 0.9
+        dx, dy, h, ok = home._scatter(g, 4, 9603, 0.4, jitter=0.9)
+        half = 2.5 * (0.5 + 0.5 * np.sin(2 * np.pi * (t + h))) - 0.5
+        rx, ry = np.round(dx - 0.5), np.round(dy - 0.5)
+        glint = ok & (ry == 0) & (np.abs(rx + 0.5) < half) & (f > 1.2)
+        return _paint(RIVER, lvl + glint * 1.4, g, band=0.35)
+    rgb = _interior(g0, paint(g0), paint, var, 9601)
+    silt = (f < 1.4) & (f > 0.4) & (hash01(g0.px, g0.py, 9604) < 0.5)
+    rgb = np.where(silt[..., None], _paint([TIBER[2], TIBER[3], SHALLOW[2]], 1.0 + f, g0), rgb)
     lip = f < 0.5
     rgb = np.where((lip & ~wall2)[..., None], _rgb(SHALLOW[3]), rgb)
-    wall_level = np.where(wall1, 3.0, 1.8) - (home._pnoise(g.u, g.v, 8, 9605) - 0.5) * 0.8
-    rgb = np.where((wall2 | lip & (f < 0.25))[..., None], _paint(BANK, wall_level, g), rgb)
-    return home._sprite(g, rgb, cover * 255)
+    wall_level = np.where(wall1, 3.0, 1.8) - (home._pnoise(g0.u, g0.v, 8, 9605) - 0.5) * 0.8
+    rgb = np.where((wall2 | lip & (f < 0.25))[..., None], _paint(BANK, wall_level, g0), rgb)
+    return home._sprite(g0, rgb, cover * 255)
 
 
 def foam(mask, frame, k):
@@ -423,21 +435,21 @@ def rock(mask, k, var=0):
     return home._sprite(g0, rgb, cover * 255)
 
 
-def snow(mask, k):
+def snow(mask, k, var=0):
     """Spring snow lying in patches: blue-white with a lit crust, rock showing through on the
     thin rims and in a few holes."""
     def paint(g, f):
-        n = home._pnoise(g.u, g.v, 4, 9911)
+        n = 0.5 * home._pnoise(g.u, g.v, 4, 9911) + 0.5 * home._pnoise(g.u, g.v, 8, 9914)
         fine = home._pnoise(g.u, g.v, 8, 9912)
-        lvl = 2.6 + (n - 0.5) * 1.0 + (fine - 0.5) * 0.6 - np.clip(1.6 - f, 0, 1.6) * 0.7
+        lvl = 2.6 + (n - 0.5) * 0.8 + (fine - 0.5) * 0.6 - np.clip(1.6 - f, 0, 1.6) * 0.7
         rgb = _paint(SNOWS, lvl, g, band=0.3)
         thin = (f < 1.3) | ((n < 0.25) & (fine > 0.5))
         rocky = thin & (hash01(g.px, g.py, 9913) < 0.55)
         return np.where(rocky[..., None], _paint(LIME_ROCK, 2.4 + fine * 2, g), rgb)
-    return _overlay(mask, k, 1.8, 5.0, 1.5, 9910, paint, fray=1.2)
+    return _overlay(mask, k, 1.8, 5.0, 1.5, 9910, paint, fray=1.2, var=var)
 
 
-def scree(mask, k):
+def scree(mask, k, var=0):
     """Pale angular rubble: broken stones each with a lit and a shaded face, finer grit
     between."""
     def paint(g, f):
@@ -446,7 +458,7 @@ def scree(mask, k):
         face = np.where((ou * 0.8 - ov * 0.3) < 0, 1.0, -0.6)
         lvl = 2.8 + (hh - 0.5) * 1.6 + face * 0.7 - edge * 1.6 - np.clip(1 - f, 0, 1)
         return _paint(PALE_ROCK, lvl, g)
-    return _overlay(mask, k, 1.4, 4.0, 1.2, 9920, paint, fray=1.4)
+    return _overlay(mask, k, 1.4, 4.0, 1.2, 9920, paint, fray=1.4, var=var)
 
 
 def marsh(mask, k):
@@ -578,20 +590,20 @@ def forest_floor(mask, k, var=0):
     return _overlay(mask, k, 1.8, 5.0, 1.6, 9980, paint, fray=1.4, var=var)
 
 
-def dune(mask, k):
+def dune(mask, k, var=0):
     """Wind-built sand: ripples running across, crests lit on the windward side and shadowed in
     the lee, a soft rim."""
     def paint(g, f):
-        n = home._pnoise(g.u, g.v, 2, 9991)
+        n = home._pnoise(g.u, g.v, 4, 9991)
         fine = home._pnoise(g.u, g.v, 8, 9992)
         crest = np.sin(2 * np.pi * (g.u + 3 * g.v) / 16.0 + (n - 0.5) * 6.0)
         lvl = 3.2 + crest * 0.8 + (fine - 0.5) * 0.4 + (np.sin(2 * np.pi * (3 * g.u + 9 * g.v) / 16.0 + n * 9) > 0.7) * 0.5
         lvl = lvl + (np.diff(np.pad(crest, ((0, 0), (1, 0)), mode="edge"), axis=1) > 0.05) * 0.5
         return _paint(SANDS, lvl - np.clip(1.4 - f, 0, 1.4) * 0.6, g)
-    return _overlay(mask, k, 2.0, 6.0, 1.6, 9990, paint, fray=1.6)
+    return _overlay(mask, k, 2.0, 6.0, 1.6, 9990, paint, fray=1.6, var=var)
 
 
-def gravel_desert(mask, k):
+def gravel_desert(mask, k, var=0):
     """Hamada: a pavement of dark desert-varnished pebbles on buff ground."""
     def paint(g, f):
         base = 3.4 + (home._pnoise(g.u, g.v, 4, 10001) - 0.5) * 0.8 + (hash01(g.px, g.py, 10002) - 0.5) * 0.6
@@ -604,10 +616,10 @@ def gravel_desert(mask, k):
             lit = dy + 0.2 * r < -0.2 * r
             rgb = np.where(body[..., None], _paint(VARNISH, 2.2 + lit * 1.8 + (h * 7 % 1 - 0.5), g), rgb)
         return rgb
-    return _overlay(mask, k, 1.2, 4.0, 1.0, 10000, paint, fray=1.0)
+    return _overlay(mask, k, 1.2, 4.0, 1.0, 10000, paint, fray=1.0, var=var)
 
 
-def salt_flat(mask, k):
+def salt_flat(mask, k, var=0):
     """A white salt crust in polygons, its cracks darker and rimmed with a raised lip."""
     def paint(g, f):
         d1, d2, hh, ou, ov = _voronoi(g, 4, 10011)
@@ -615,7 +627,7 @@ def salt_flat(mask, k):
         lvl = 3.4 + (hh - 0.5) * 0.6 - (e < 0.25) * 2.0 + ((e >= 0.25) & (e < 0.6)) * 0.8 \
             + (hash01(g.px, g.py, 10012) - 0.5) * 0.5 - np.clip(1.4 - f, 0, 1.4)
         return _paint(SALT, lvl, g, band=0.3)
-    return _overlay(mask, k, 1.4, 5.0, 1.2, 10010, paint, fray=1.2)
+    return _overlay(mask, k, 1.4, 5.0, 1.2, 10010, paint, fray=1.2, var=var)
 
 
 def fallow(mask, k):
