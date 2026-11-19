@@ -15,7 +15,7 @@ import numpy as np
 
 from arch import ellipsoid, fill, rod, slab
 from rig import CART_FRAMES, CRITTER_FRAMES, WALK_FRAMES, WALK_STRIDE, Body, Dress, Frame, draw, pose
-from sets.parsa.animals import SIZE, Beast, _merge, _render, _wheel, bird_feet, quadruped, stride
+from sets.parsa.animals import free_scale, SIZE, Beast, _merge, _render, _wheel, bird_feet, quadruped, stride
 from greek import paste
 from voxel import Model
 
@@ -307,7 +307,7 @@ def sprite(kind, variant, anim, facing, frame, k):
     frames = CRITTER_FRAMES[anim]
     if kind in BIRDS:
         return _render(BIRDS[kind](anim, frame, frames, k), facing)
-    return _render(quadruped(BEASTS[kind], anim, frame, frames, k), facing)
+    return _render(quadruped(BEASTS[kind], anim, frame, frames, k, free_scale(kind)), facing)
 
 
 def actors_catalog():

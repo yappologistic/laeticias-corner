@@ -136,7 +136,7 @@ WINTER_KEY = re.compile(r"item/([^/]+)/base/([^/]+)/f(\d+)@winter")
 # The commonest deciduous trees get a drawn bare look for winter (bare.py); the engine picks an
 # item's `@winter` look by the calendar's season.
 BARE_IN_WINTER = {"world.t_oak", "world.t_beech", "parsa.t_poplar", "parsa.t_willow", "parsa.t_almond",
-                  "rome.t_oak", "rome.t_poplar", "rome.t_fig", "athens.t_plane", "athens.t_fig"}
+                  "rome.t_plane", "rome.t_poplar", "rome.t_fig", "athens.t_plane", "athens.t_fig"}
 
 
 def slope_looks(t: dict) -> int:

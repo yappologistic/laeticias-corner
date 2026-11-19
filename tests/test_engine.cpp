@@ -2,6 +2,7 @@
 #include "app/script.hpp"
 #include "app/window_state.hpp"
 #include "audio/decode.hpp"
+#include "audio/loop_wants.hpp"
 #include "audio/mixer.hpp"
 #include "audio/stems.hpp"
 #include "audio/wav.hpp"
@@ -32,6 +33,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <map>
@@ -483,7 +485,8 @@ TEST_CASE("mixer buses: the player's volumes glide, never click, and stems reset
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
-TEST_CASE("mixer: snow's muffle low-passes the beds, glides in without a click, spares the dry") {
+TEST_CASE(
+    "mixer: snow's muffle low-passes the beds, glides in and out without a click, spares the dry") {
     REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
     REQUIRE(SDL_Init(SDL_INIT_AUDIO));
     {
@@ -531,8 +534,102 @@ TEST_CASE("mixer: snow's muffle low-passes the beds, glides in without a click, 
         CHECK(sums[1].e > sums[0].e * 0.2);                // the bed is still there
         CHECK(sums[1].jump < sums[0].jump * 1.5f + 0.01f); // gliding in made no click
         CHECK(sums[2].e == doctest::Approx(sums[0].e));    // the dry bed untouched
+        // The snow melts: the muffle glides out and the bed is as bright as the open one again.
+        mixers[1].setMuffle(0.0f);
+        std::array<Sum, 2> after;
+        for (int k = 0; k < 120; ++k)
+            for (std::size_t m = 0; m < 2; ++m) {
+                mixers[m].render(out.data(), kFrames);
+                Sum& s = after[m];
+                for (std::size_t i = 0; i < out.size(); i += 2) {
+                    const float diff = out[i] - s.prev;
+                    s.prev = out[i];
+                    s.jump = std::max(s.jump, std::abs(diff));
+                    if (k < 80) continue;
+                    s.e += static_cast<double>(out[i]) * out[i];
+                    s.d += static_cast<double>(diff) * diff;
+                }
+            }
+        CHECK(bright(after[1]) == doctest::Approx(bright(after[0])).epsilon(0.02));
+        CHECK(after[1].jump < after[0].jump * 1.5f + 0.01f); // no click on the way out
     }
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
+TEST_CASE("one loop named by two sound systems: the louder want is heard, never silenced") {
+    // The country bed (a region's bed at 0.67) was also an event's ambience, which the city
+    // sound set to 0 while the event slept: the last writer silenced the bed everywhere.
+    LoopWants w;
+    w.begin(8);
+    w.want(3, 0.67f, 0.0f); // the soundscape's bed
+    w.want(3, 0.0f, 0.5f);  // the city sound's sleeping event
+    w.want(5, 0.0f, 0.0f);  // a loop only one system names, silent
+    int seen = 0;
+    w.forEach([&](int loop, const LoopWants::Want& want) {
+        ++seen;
+        if (loop == 3) {
+            CHECK(want.gain == doctest::Approx(0.67f));
+            CHECK(want.pan == doctest::Approx(0.0f));
+        }
+        if (loop == 5) CHECK(want.gain == 0.0f);
+    });
+    CHECK(seen == 2);
+    // The other way round, and the next update starts afresh.
+    w.begin(8);
+    w.want(3, 0.2f, -0.5f);
+    w.want(3, 0.9f, 0.3f);
+    w.forEach([&](int, const LoopWants::Want& want) {
+        CHECK(want.gain == doctest::Approx(0.9f));
+        CHECK(want.pan == doctest::Approx(0.3f));
+    });
+}
+
+TEST_CASE("no audio driver and damaged files: silence and a log line, never a crash") {
+    // A stranger's computer may have no sound at all, and a file may be cut short or garbage.
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "no_such_driver", SDL_HINT_OVERRIDE));
+    CHECK_FALSE(SDL_InitSubSystem(SDL_INIT_AUDIO));
+    const std::filesystem::path dir = std::filesystem::temp_directory_path() /
+                                      ("lc_damaged_audio_" + std::to_string(SDL_GetTicksNS()));
+    std::filesystem::create_directories(dir / "amb");
+    std::filesystem::create_directories(dir / "sfx");
+    const auto write = [&](const std::filesystem::path& to, const std::string& bytes) {
+        std::ofstream out(dir / to, std::ios::binary);
+        out << bytes;
+    };
+    const auto head = [&](const std::filesystem::path& from, std::size_t n) {
+        std::ifstream in(test::assetsDir() / "audio" / from, std::ios::binary);
+        std::string bytes(n, '\0');
+        in.read(bytes.data(), static_cast<std::streamsize>(n));
+        bytes.resize(static_cast<std::size_t>(in.gcount()));
+        return bytes;
+    };
+    write("amb/garbage.ogg", std::string(4096, 'x'));
+    write("amb/half.ogg", head("amb/birds.ogg", 60000)); // a stream cut off mid-page
+    write("sfx/garbage.wav", std::string(512, 'y'));
+    write("sfx/half.wav", head("sfx/ui_click.wav", 100)); // a header and nothing more
+    AudioList list;
+    list.ambience = {"amb/garbage.ogg", "amb/half.ogg", "amb/missing.ogg"};
+    list.sfx = {"sfx/garbage.wav", "sfx/half.wav", "sfx/missing.wav"};
+    {
+        Mixer mixer;
+        mixer.load(dir, list);
+        CHECK_FALSE(mixer.open()); // no device: the game goes on silently
+        mixer.startCapture();
+        for (const std::string& f : list.ambience) mixer.setLoopGain(mixer.loopIndex(f), 1.0f);
+        CHECK(mixer.sfxIndex("sfx/garbage.wav") == -1); // a cut-off one plays what it holds
+        CHECK(mixer.sfxIndex("sfx/missing.wav") == -1);
+        for (const std::string& f : list.sfx)
+            if (const int fx = mixer.sfxIndex(f); fx >= 0) mixer.play(fx, 1.0f, 1.0f);
+        std::vector<float> out(4096 * 2);
+        bool finite = true;
+        for (int k = 0; k < 40; ++k) {
+            mixer.render(out.data(), 4096);
+            for (const float v : out) finite = finite && std::isfinite(v) && std::abs(v) <= 1.0f;
+        }
+        CHECK(finite);
+    }
+    std::filesystem::remove_all(dir);
+    REQUIRE(SDL_SetHintWithPriority(SDL_HINT_AUDIO_DRIVER, "dummy", SDL_HINT_OVERRIDE));
 }
 
 TEST_CASE("music stems: bar lines, fades and a stem joining in step with the others") {
@@ -1643,10 +1740,12 @@ TEST_CASE("capture: the mix across the world is balanced, unclipped and smooth")
             CHECK_MESSAGE(g.r.integrated <= tuning::kMixLoudest, g.name);
             CHECK_MESSAGE(g.r.jump <= tuning::kMixJump, g.name);
         }
-        // A city's piece is heard over its streets.
-        if (g.music > -100 && !g.name.starts_with("home") && !g.name.starts_with("title") &&
-            !g.name.starts_with("travel") && g.name != "map.open" && g.name != "pause" &&
-            g.name != "mute")
+        // A city's piece is heard over its streets (a town's or the land's piece is soft on
+        // purpose and rests half the time: the place's own sound leads there).
+        const bool city = g.name.starts_with("rome.") || g.name.starts_with("athens.") ||
+                          g.name.starts_with("parsa.") || g.name.starts_with("rain.rome") ||
+                          g.name.starts_with("rain.parsa");
+        if (city && g.music > -100)
             CHECK_MESSAGE(g.music - g.amb >= tuning::kMixMusicUnder, g.name);
         segs.push_back(g);
     }

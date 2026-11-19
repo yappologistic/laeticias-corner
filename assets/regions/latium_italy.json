@@ -442,6 +442,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/world/travel_italy_day.ogg",
+   "night": "music/world/travel_italy_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

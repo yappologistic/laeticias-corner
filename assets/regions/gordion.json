@@ -185,9 +185,9 @@
      ]
     },
     "snow_line": [
+     6,
      5,
-     0,
-     4
+     6
     ]
    }
   },
@@ -336,6 +336,10 @@
     "day": "amb/world/day_snow.ogg",
     "night": "amb/world/night_snow.ogg"
    }
+  },
+  "music": {
+   "day": "music/parsa/town_river_day.ogg",
+   "night": "music/parsa/town_river_night.ogg"
   },
   "look": {
    "phases": {

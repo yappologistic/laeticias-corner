@@ -112,16 +112,18 @@ std::expected<Content, std::string> Content::build(const Catalog& home,
                 return std::unexpected("terrain '" + t.id + "' is defined in both " +
                                        source.at(t.id) + " and " + sc.file);
             c.terrainIndex_.emplace(t.id, static_cast<int>(c.terrain_.size()));
-            c.terrain_.push_back({.id = t.id,
-                                  .set = sc.set,
-                                  .known = true,
-                                  .base = t.base,
-                                  .water = t.water,
-                                  .paved = t.paved,
-                                  .fps = t.fps,
-                                  .under = t.under,
-                                  .faces = t.faces,
-                                  .colour = t.colour});
+            c.terrain_.push_back(
+                {.id = t.id,
+                 .set = sc.set,
+                 .known = true,
+                 .base = t.base,
+                 .water = t.water,
+                 .paved = t.paved,
+                 .fps = t.fps,
+                 .under = t.under,
+                 .faces = t.faces,
+                 .colour = t.colour,
+                 .slopes = std::ranges::find(sc.art.slopes, t.id) != sc.art.slopes.end()});
         }
         for (const SetItem& d : sc.items) {
             if (!claim(d.id, sc.file))

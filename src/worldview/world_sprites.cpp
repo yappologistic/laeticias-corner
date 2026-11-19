@@ -7,6 +7,7 @@
 #include <cmath>
 #include <format>
 #include <map>
+#include <ranges>
 #include <set>
 
 namespace lc::worldview {
@@ -156,6 +157,7 @@ WorldSprites::WorldSprites(SDL_Renderer* renderer, Atlas& home, PageAtlas& pages
                            const world::WorldMap& map)
     : iso_(map.content().home().iso()), level_(map.content().tileLevel()) {
     resolveTerrain(map, pages);
+    resolveFalls(map, pages);
     resolveItems(map, home, pages);
     buildPage(renderer, map, pages);
     count(map);
@@ -178,6 +180,10 @@ int WorldSprites::internMaterial(const std::string& id, PageAtlas& pages) {
             m.foot[sd].push_back(std::move(f));
         }
     }
+    for (int side = 0; side < 2; ++side)
+        for (int w = 0; w < 2; ++w)
+            m.wedge[static_cast<std::size_t>(side)][static_cast<std::size_t>(w)] =
+                variants(pages, std::format("edge/{}_{}/w{}", id, side == 0 ? "se" : "sw", w));
     if (m.foot[0].size() != m.band[0].size() || m.foot[1].size() != m.band[1].size()) {
         m.foot[0].clear();
         m.foot[1].clear();
@@ -191,6 +197,8 @@ int WorldSprites::internMaterial(const std::string& id, PageAtlas& pages) {
     }
     for (int side = 0; side < 2; ++side) {
         for (const SpriteRef& s : m.band[static_cast<std::size_t>(side)]) reach(groundReach_, s);
+        for (const auto& w : m.wedge[static_cast<std::size_t>(side)])
+            for (const SpriteRef& s : w) reach(groundReach_, s);
         if (m.top[static_cast<std::size_t>(side)])
             reach(groundReach_, *m.top[static_cast<std::size_t>(side)]);
     }
@@ -222,6 +230,31 @@ void WorldSprites::resolveTerrain(const world::WorldMap& map, PageAtlas& pages) 
                     frames(pages, std::format("terrain/{}/m{}", info.id, m));
             if (std::ranges::any_of(look.overlay, &Frames::empty))
                 for (Frames& f : look.overlay) f.f.clear();
+            // The interior's further looks (`m15/v<n>`, V6-004); v0 is `m15` itself.
+            if (look.hasOverlay())
+                for (int v = 1;; ++v) {
+                    Frames f = frames(pages, std::format("terrain/{}/m15/v{}", info.id, v));
+                    if (f.empty()) break;
+                    if (look.interior.empty()) look.interior.push_back(look.overlay[15]);
+                    look.interior.push_back(std::move(f));
+                }
+        }
+        if (info.slopes) {
+            const std::string baseId = info.base || !info.known ? info.id : info.under;
+            for (int sh = 1; sh < world::kSlopeCount; ++sh) {
+                const auto key = world::slopeKey(world::Slope(sh));
+                const auto k = static_cast<std::size_t>(sh);
+                look.slope[k] = variants(pages, std::format("terrain/{}/slope/{}", info.id, key));
+                look.slopeBase[k] =
+                    baseId == info.id
+                        ? look.slope[k]
+                        : variants(pages, std::format("terrain/{}/slope/{}", baseId, key));
+                for (const SpriteRef& s : look.slope[k]) reach(groundReach_, s);
+                for (const SpriteRef& s : look.slopeBase[k]) reach(groundReach_, s);
+            }
+            if (std::ranges::any_of(look.slope | std::views::drop(1),
+                                    [](const auto& v) { return v.empty(); }))
+                flatSlopes_.push_back(info.id);
         }
         if (info.water) {
             for (int m = 0; m < 16; ++m)
@@ -253,6 +286,37 @@ void WorldSprites::resolveTerrain(const world::WorldMap& map, PageAtlas& pages) 
         for (const Frames& o : look.overlay)
             for (const SpriteRef& s : o.f) reach(groundReach_, s);
     }
+}
+
+void WorldSprites::resolveFalls(const world::WorldMap& map, PageAtlas& pages) {
+    for (const world::SetCatalog& set : map.content().sets())
+        if (set.art.fallFps > 0) {
+            falls_.fps = set.art.fallFps;
+            falls_.speed = set.art.fallSpeed;
+        }
+    static constexpr std::array<std::string_view, 4> kParts{"rapid", "top", "mid", "foot"};
+    for (int side = 0; side < 2; ++side)
+        for (std::size_t p = 0; p < kParts.size(); ++p)
+            for (int e = 0; e < 4; ++e) {
+                Frames f = frames(pages, std::format("edge/world.fall_{}/{}/e{}",
+                                                     side == 0 ? "se" : "sw", kParts[p], e));
+                for (const SpriteRef& s : f.f) reach(groundReach_, s);
+                falls_.part[static_cast<std::size_t>(side)][p][static_cast<std::size_t>(e)] =
+                    std::move(f);
+            }
+    for (int m = 1; m < 16; ++m)
+        falls_.plunge[static_cast<std::size_t>(m)] =
+            frames(pages, std::format("terrain/world.river/plunge/m{}", m));
+    falls_.rapids[0] = frames(pages, "terrain/world.river/rapids_n");
+    falls_.rapids[1] = frames(pages, "terrain/world.river/rapids_e");
+    // Every part on both sides, or none: half a fall would show a box of water again.
+    for (const auto& side : falls_.part)
+        for (const auto& part : side)
+            if (std::ranges::any_of(part, &Frames::empty)) falls_.part[0][0][0].f.clear();
+    for (const Frames& f : falls_.plunge)
+        for (const SpriteRef& s : f.f) reach(groundReach_, s);
+    for (const Frames& f : falls_.rapids)
+        for (const SpriteRef& s : f.f) reach(groundReach_, s);
 }
 
 void WorldSprites::resolveItems(const world::WorldMap& map, Atlas& home, PageAtlas& pages) {

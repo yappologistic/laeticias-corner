@@ -182,6 +182,7 @@ list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no
      "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
+list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_terrain_quarter")
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look"
      "${LC_SCRATCH}/save_look_night" "${LC_SCRATCH}/save_bench_startup_look")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
@@ -356,7 +357,7 @@ add_test(NAME audio_mix_world
           --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/audio_mix_world.lcs"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(audio_mix_world PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
-  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves)
+  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves TIMEOUT 1800)
 add_test(NAME audio_mix_world_check COMMAND lc_tests "--test-case=capture: the mix across*")
 set_tests_properties(audio_mix_world_check PROPERTIES ENVIRONMENT "LC_AUDIO_MIX=${mix_capture}"
   FIXTURES_REQUIRED audio_mix)
@@ -464,6 +465,21 @@ add_test(NAME script_gpu_look
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(script_gpu_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+# Sloped land at a quarter on the shader path: the run finishes within its time and its perf log
+# holds the process under 1000 MiB and every frame after the first under 200 draws (skipped,
+# exit 77, where no gpu device can be made).
+add_test(NAME script_terrain_quarter_look
+  COMMAND laeticias-corner --headless --quality high --size 1280x800 --seed 1
+          --save-dir "${LC_SCRATCH}/save_terrain_quarter" --perf-log "${LC_SCRATCH}/terrain_quarter.csv"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/terrain_quarter_look.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_terrain_quarter_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}"
+  SKIP_RETURN_CODE 77 TIMEOUT 240 FIXTURES_REQUIRED clean_saves FIXTURES_SETUP terrain_quarter
+  RUN_SERIAL TRUE)
+add_test(NAME terrain_quarter_look_check COMMAND ${CMAKE_COMMAND}
+  -DFILE=${LC_SCRATCH}/terrain_quarter.csv -DMIB=1000 -DCALLS=200
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/check_quarter_look.cmake)
+set_tests_properties(terrain_quarter_look_check PROPERTIES FIXTURES_REQUIRED terrain_quarter)
 # The shader path at night and on arrival (QA V6-011, V6-012, V6-020).
 add_test(NAME script_look_night
   COMMAND laeticias-corner --headless --quality high --size 1600x900 --seed 1

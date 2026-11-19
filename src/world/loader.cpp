@@ -131,6 +131,23 @@ std::expected<LoadedWorld, std::string> loadWorld(const std::filesystem::path& a
         inputs.push_back({layerIds[i], &layerFiles[i]});
     w.map = std::make_unique<WorldMap>(w.file, *w.content, inputs, diag);
     w.layers = w.map->layers();
+    {
+        // Natural face materials are the ones the art gives wedges (art-smooth-land.md §3.4):
+        // ground of those may slope; masonry (terraces, podiums, quays) keeps its walls.
+        std::vector<std::string> natural;
+        const auto consider = [&](const std::vector<std::string>& faces) {
+            for (const std::string& m : faces)
+                if (std::ranges::find(natural, m) == natural.end() &&
+                    w.atlas.find("edge/" + m + "_se/w0/v0") != nullptr)
+                    natural.push_back(m);
+        };
+        for (std::size_t k = 0; k < w.map->terrainCount(); ++k) {
+            const TerrainInfo& info = w.map->terrainInfo(static_cast<int>(k));
+            consider(info.faces);
+            if (!info.base) consider(w.content->terrain(info.under).faces);
+        }
+        w.map->shapeSlopes(natural);
+    }
     w.timings.compose = msSince(t);
 
     t = Clock::now();

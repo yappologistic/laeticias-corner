@@ -83,6 +83,11 @@ struct SetArt {
     std::vector<std::string> edges;
     std::vector<std::string> backdrops;
     std::vector<std::string> fx;
+    std::vector<std::string> slopes; // terrains with slope looks (art-smooth-land.md §3)
+    // Falling water (art §4, `art.falls`): the frames' rate and the sheet's speed down the face
+    // for a shader scroll (art px a second); 0 when the set does not state them.
+    float fallFps = 0;
+    float fallSpeed = 0;
 };
 
 struct SetCatalog {

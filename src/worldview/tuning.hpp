@@ -164,7 +164,12 @@ inline constexpr float kWaterDepthTint = 0.08f; // per sea depth band
 inline constexpr float kHorizonTiles = 40.0f;
 inline constexpr float kHorizonHazeMax = 0.85f;
 inline constexpr std::array<float, 3> kHorizonHaze{0.70f, 0.79f, 0.84f};
-inline constexpr float kFlatJitter = 0.04f;       // per-tile brightness variation of flat terrain
+inline constexpr float kFlatJitter = 0.04f; // per-tile brightness variation of flat terrain
+// The ground's slow lightness field (terrain.hpp groundMacro): two octaves this many tiles
+// across, and how far down it leans the lightness of land ground (vertex colours: at most 1, so
+// it only darkens; the art's own value is the field's top).
+inline constexpr std::array<float, 2> kGroundMacroCells{7.0f, 17.0f};
+inline constexpr float kGroundMacroDepth = 0.08f;
 inline constexpr float kPlaceholderHeight = 4;    // px: a low slab over the footprint
 inline constexpr float kPlaceholderAlpha = 0.55f; // the land shows through it
 

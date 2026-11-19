@@ -16,7 +16,7 @@ import materials as M
 import roman as RM
 from arch import carve, ellipsoid, fill, revolve, rod, slab
 from setbuild import Landmark
-from sets.rome.common import S65, T, cypress, lamp, paving, referrer, tc, treadwheel_crane
+from sets.rome.common import S65, T, cypress, lamp, lawn, paving, referrer, tc, treadwheel_crane
 from sets.rome.ground import amphora
 from voxel import hash01, value_noise
 
@@ -163,7 +163,7 @@ def tiber_island(m):
     fill(m, (0.0, D, 0.0, W, -4.0, zt), "travertine", hull, tone=RM.travertine(2.6, 7.0, 611))
     fill(m, (0.0, D, 0.0, W, zt - 1.0, zt), "grass", lambda X, Y, Z: hull(X + 0 * Z, Y, Z) &
          (np.abs(X - cx) < a * 0.8 * np.sqrt(np.clip(1 - np.abs((Y - cy) / b) ** 2.4, 0, 1))),
-         tone=lambda X, Y, Z: (value_noise(X, Y, Z, 3.0, 612) - 0.5) * 0.8)
+         tone=lawn(612))
     for (tx, ty) in ISLAND_WALK:        # the paved way between the bridges
         fill(m, (tx * T, (tx + 1) * T, ty * T, (ty + 1) * T, zt - 1.0, zt), "travertine", hull,
              tone=lambda X, Y, Z: (hash01(np.floor(X / 3.0).astype(np.int64), np.floor(Y / 2.5).astype(np.int64), 618)

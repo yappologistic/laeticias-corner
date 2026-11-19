@@ -1,6 +1,6 @@
 # No seams: the world target under the window holds no partly transparent pixels (a line
-# between cached ground pieces, a hole) at the home and in a city, at 1x, 2x and 3x. Run on
-# the classic frame and on the shader path (the owner saw such lines cross the home's view at
+# between cached ground pieces, a hole) at the home, in a city and on sloped land, at 1x, 2x and
+# 3x. Run on the classic frame and on the shader path (the owner saw such lines cross the home's view at
 # 2x: the ground cache filtered its slots at whole scales).
 set season spring
 set weather clear
@@ -21,6 +21,17 @@ set world forum 2
 wait 30
 expect target_alpha 0,0,1580,845 0.0005
 set world forum 3
+wait 30
+expect target_alpha 0,0,1580,845 0.0005
+# Slopes, wedges and falling water: a graded Anatolian hillside with its river falling three
+# levels, and the Apennines' slopes.
+set world 276 238 1
+wait 30
+expect target_alpha 0,0,1580,845 0.0005
+set world 276 238 2
+wait 30
+expect target_alpha 0,0,1580,845 0.0005
+set world 110 969 1
 wait 30
 expect target_alpha 0,0,1580,845 0.0005
 quit
