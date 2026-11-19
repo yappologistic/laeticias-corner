@@ -13,6 +13,15 @@
 namespace lc {
 namespace {
 
+// True when `bytes` are the one proper UTF-8 spelling of `cp`: overlong forms, surrogates and
+// broken sequences (read as U+FFFD) never reach a name, which the save writer could not write.
+bool wellFormed(std::string_view bytes, char32_t cp) {
+    if (cp == 0xFFFD) return bytes == "\xEF\xBF\xBD";
+    if ((cp >= 0xD800 && cp <= 0xDFFF) || cp > 0x10FFFF) return false;
+    const std::size_t need = cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+    return bytes.size() == need;
+}
+
 enum Id : int {
     kContinue = 1,
     kWorlds,
@@ -212,7 +221,7 @@ bool Menus::text(std::string_view utf8, const Font& font) {
     for (std::size_t i = 0; i < utf8.size();) {
         const std::size_t start = i;
         const char32_t cp = nextCodepoint(utf8, i);
-        if (cp < 32 || !font.has(cp)) {
+        if (cp < 32 || !wellFormed(utf8.substr(start, i - start), cp) || !font.has(cp)) {
             fieldNote_ = strings::kLetterMissing;
             continue;
         }
