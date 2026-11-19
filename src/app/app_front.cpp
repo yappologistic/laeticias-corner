@@ -333,6 +333,11 @@ void App::applyMenuActions() {
         case K::Play: {
             if (std::cmp_greater_equal(a.arg, worldList_.size())) break;
             const WorldSummary& w = worldList_[static_cast<std::size_t>(a.arg)];
+            // A world known not to open says so without closing the one behind the menus.
+            if (!w.readable) {
+                menus_.open(Page::LoadError);
+                break;
+            }
             // The world behind the menus plays at once; another one is opened first.
             if ((w.slug == slug_ && !freshWorld_) || openWorld(w.slug)) {
                 startPlay();

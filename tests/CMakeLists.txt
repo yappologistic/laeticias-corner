@@ -234,6 +234,23 @@ add_test(NAME newer_save_untouched COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DC
 set_tests_properties(newer_save_untouched PROPERTIES DEPENDS script_newer_save
   FIXTURES_REQUIRED newer)
 
+# Play on a damaged world keeps the world being played (H3-017).
+set(unreadable "${LC_SCRATCH}/save_play_unreadable")
+add_test(NAME prepare_play_unreadable COMMAND ${CMAKE_COMMAND} -E rm -rf ${unreadable})
+add_test(NAME prepare_play_unreadable_world COMMAND ${CMAKE_COMMAND}
+  -DFILE=${unreadable}/worlds/damaged/world.json "-DCONTENT={\"version\": 4, \"home\": ["
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/write_file.cmake)
+set_tests_properties(prepare_play_unreadable PROPERTIES FIXTURES_SETUP play_unreadable_clean)
+set_tests_properties(prepare_play_unreadable_world PROPERTIES FIXTURES_SETUP play_unreadable
+  FIXTURES_REQUIRED play_unreadable_clean)
+add_test(NAME script_play_unreadable
+  COMMAND laeticias-corner --headless --front-door --size 1280x800 --seed 1
+          --save-dir "${unreadable}"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/play_unreadable.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_play_unreadable PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_REQUIRED play_unreadable)
+
 # The largest interface size on the smallest window still opens on the home (H3-016).
 set(big_ui "${LC_SCRATCH}/save_big_interface")
 add_test(NAME prepare_big_interface COMMAND ${CMAKE_COMMAND} -E rm -rf ${big_ui})
