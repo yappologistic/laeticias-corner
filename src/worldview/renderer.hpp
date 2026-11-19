@@ -547,6 +547,9 @@ private:
     };
     std::vector<Mark> marks_;
     std::vector<TilePos> rimScratch_; // an item's rim round its water tiles (markItemWater)
+    // drawTiles: the level of each tile whose water mark waits (kNoWater: none).
+    static constexpr std::uint8_t kNoWater = 255;
+    std::vector<std::uint8_t> pendingWater_;
     // The tile water field (refreshWater): the tiles it holds, its texels, the distances.
     TileRect waterRect_;
     std::vector<std::uint32_t> waterTexels_;
