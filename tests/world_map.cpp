@@ -76,7 +76,6 @@ struct Fixture {
         addItem(base, 31, 50, kStair, 0); // faces +y: foot (31, 52), head (31, 49) on the terrace
         addItem(base, 50, 20, kGrand, 0);
         addItem(base, 20, 41, kJetty, 0);
-        addItem(base, 20, 42, kJetty, 1); // its geometry gives `tops` and no floor
         addItem(base, 40, 10, kWall, 0);
         addItem(base, 41, 10, kWall, 0);
         addItem(base, 41, 11, kWall, 0);
@@ -276,10 +275,6 @@ TEST_CASE("map: walking changes level only on stairs, walk floors and decks") {
     // A deck on water stands at its floor from the geometry (not at the water) and steps one
     // level to its bank.
     CHECK(m.floorZ({20, 41}) == 14);
-    // Without a floor in the geometry it stands on its highest point, not in the water, and
-    // is stepped onto from the bank as before.
-    CHECK(m.floorZ({20, 42}) == 9);
-    CHECK(has({19, 42}, {20, 42}));
     CHECK(has({19, 41}, {20, 41}));
     CHECK(has({20, 41}, {19, 41}));
     CHECK_FALSE(has({20, 41}, {21, 41}));

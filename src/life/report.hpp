@@ -25,8 +25,8 @@ namespace lc::life {
 // walkers cannot use (a course over unwalkable ground, or a step no walker can make: left out of
 // walking), and slot spots on unwalkable ground or where the region's walkers never reach (no one
 // is sent there), regions whose walkable land is mostly out of their walkers' reach, and
-// walkable decks over water with no floor height (walkers stand on the deck's highest point, or
-// at the water). For the worldgen and art agents; the engine routes around every one.
+// walkable decks over water with no floor height (walkers drawn at the water). For the worldgen and
+// art agents; the engine routes around every one.
 [[nodiscard]] std::vector<std::string> walkProblems(const LifeWorld& w);
 
 // How the live actors of a rect stand on the floor over their last step (tests and the
