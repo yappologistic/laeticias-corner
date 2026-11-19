@@ -79,10 +79,11 @@ half with the four worker processes the machine-courtesy rules allow.
   backdrops, effects), renders them with the set's package `sets/<set>/` (`LANDMARKS`,
   `ITEMS`, `STATES`, `FRAMES`, `actor_sprite`, `carry_at`, `flat`, `preview`), cuts large
   landmarks into pieces (walk tiles in runs of up to 8, the rest in rectangles of at most
-  8 x 8), packs pages by what one view draws together (the city's people with its kit and plants
-  on one page, each landmark district whole on one page, the busiest first; glows, shadows,
-  ground and effects fill the gaps, as the engine draws those apart) and writes the geometry
-  file. `setvalidate.py`
+  8 x 8), packs pages by what one view draws together (the city's people with its kit, plants
+  and its own ground and faces on one page, since raised ground is drawn among the objects; each
+  landmark district whole on one page, the busiest first; every glow of the set together; effects
+  and backdrops fill the gaps), keeps shadows off the colour pages (they are on the half-size
+  shadow page only) and writes the geometry file and the occlusion page. `setvalidate.py`
   checks keys, page limits, palette (`palette.palette_for(set)`: home colours plus the set's),
   diamonds, frame counts, piece partitions, walk-tile headroom and reachability, slot and
   emitter coverage, and warns when a measured height strays more than 15 % from the catalog's.
@@ -127,14 +128,27 @@ half with the four worker processes the machine-courtesy rules allow.
   under a slope's falling edge. It also holds the face geometry (`face_grid`, `periodic`).
 - `slopes.py` makes sloped ground: 21 shapes as nine heights on a 3 x 3 grid (corner masks,
   knoll, ridges), eight triangles fanned round the centre; a terrain's flat art is carried onto
-  the mesh pixel by pixel and lit in palette steps, with true normals and heights in its data.
-  A set lists the terrains that slope in `art.slopes`; keys `terrain/<id>/slope/<shape>/v<n>`.
+  the mesh pixel by pixel (stretched rows take a neighbouring texel, never a repeated one), lit
+  by the ground's soft response `ground_light` of a normal smoothed over the tile, in palette
+  steps inside each colour's group with the fraction given to texels by their own lightness,
+  and marked as its material wears a slope (`_details`: terracettes, rills, ledges, ripples,
+  rock breaking through where steep). A set lists the terrains that slope in `art.slopes`; keys
+  `terrain/<id>/slope/<shape>/v<n>`, two looks each.
+- Ground that must not repeat per tile: bases have several looks that share only a fine field
+  along the tile's edges (`terrain.broad`); overlays have interior looks (`m15/v<n>/f<k>`,
+  each set's `ground.INTERIOR`), either the same paint on a shifted plane inside the tile
+  (`terrain.interior_mix`) or detail each look owns entirely (the world's rock, scrub and
+  hamada, `ground._cells`); `setvalidate.regularity` measures a shuffled field of looks.
+- `waterworks.py` draws water inside items (basins and spouts) to the falls' standard: depth,
+  contact line, rings and boil where streams land, glassy streams with travelling streaks.
 - `falls.py` draws falling and stepping water (`edge/world.fall_<side>/<top|mid|foot|rapid>/e<n>/f<k>`),
   plunge foam and rapids, on the water's one 4-step loop; the world catalog's `art.falls` gives
   a shader the speed to scroll them.
 - `landpreview.py` renders real places from the composed world as the engine draws them, with the
-  slope rule, wedges, falls and an offline grading of natural ground (`regrade`), for before and
-  after comparisons; the contract is `out/reports/art-smooth-land.md` §3-§4.
+  slope rule (masonry faces stay flat), wedges, falls and interior looks; `--compare REV` draws
+  slopes.py at a git revision beside the working copy (its slopes and grounds live), `--scales`
+  and `--season` (by ramp states) as well; the contract is `out/reports/art-smooth-land.md`
+  §3-§4.
 - Every build writes a water page (`<set>.w.*`, home `atlas.w.*`): per item sprite holding
   water, a rectangle the size of its colour one with the water mask, depth from the rim and bed.
 
@@ -167,6 +181,7 @@ colour pages, their manifests and the key scheme are unchanged.
 | `<set>.s.png` + `.json` (home: `atlas.s.*`) | The **shadow page**: every `…/shadow/…` sprite at half size, `"scale": 0.5`; `w`, `h`, `ox`, `oy` in half-size texels, drawn ×2 with linear filtering |
 | `atlas/ramps.png` + `ramps.json` | The **ramp table**, shared by every set and the home atlas |
 | `<set>.w.png` + `.json` (home: `atlas.w.*`) | The **water page**: every item sprite holding water, its colour rectangle's size and anchor; R water, G depth px, B bed |
+| `<set>.o.png` + `.json` | The **occlusion page** (`occlusion.py`, realism.md §5.1): per item and look (`item/<id>/<look>`), a grid aligned with world X and Y at `texel` (4) art px; `ox`, `oy` the texel of the footprint origin; R top px / 2, G underside px / 2 (0: solid from the floor), B material code (`codes`), A coverage |
 
 `<page>` is `assets/atlas/<set>.<n>` for a set and `assets/atlas` for the home atlas.
 
@@ -232,7 +247,9 @@ size; no coloured pixel without data, no data outside a sprite or on a transpare
 and step inside the table, every decoded colour equal to the pixel's, normals on the unit sphere
 within half a code, the snow bit only on snow ramps with `nz > 0.55`, heights consistent with
 where each pixel sits on screen for its item's footprint (items, ground, people, carts); the
-shadow page holds every shadow sprite at half size; for the draw order, every pixel's height
+shadow page holds every shadow sprite at half size (and the colour pages none); the occlusion
+page has every item look and its tops stand at or above every pixel the colour art draws over
+them; for the draw order, every pixel's height
 and screen place put it on one of its own piece's tiles (heights right at seams), walk floors
 stand at `walk_z`, stair treads rise toward `climb`, and the rules P1–P3, W2–W4, S1 and O1 of
 draw-order.md §5.1 hold (fixtures from the audit: `tests/test_datavalidate.py`, run as

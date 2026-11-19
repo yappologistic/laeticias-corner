@@ -39,3 +39,10 @@ def carry_at(kind, k):
 
 def flat(keys, cat, k):
     return ground.build(keys, cat, k)
+
+
+def extra_keys(cat):
+    """Keys beyond the shared scheme: the interior looks of the natural overlays
+    (`ground.INTERIOR`, terrain.SHIFTS), which the engine picks per tile."""
+    ids = {t["id"] for t in cat.get("terrain", [])}
+    return [f"terrain/{tid}/m15/v{v}/f0" for tid, n in ground.INTERIOR.items() if tid in ids for v in range(1, n)]
