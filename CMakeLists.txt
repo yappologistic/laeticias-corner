@@ -84,6 +84,7 @@ add_library(lc_engine STATIC
   src/platform/process.cpp
   src/render/blur.cpp
   src/render/camera.cpp
+  src/render/decks.cpp
   src/render/depth.cpp
   src/render/order.cpp
   src/render/draw.cpp

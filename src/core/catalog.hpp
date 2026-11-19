@@ -95,6 +95,7 @@ struct ItemDef {
     int shelter = 0;        // beds within this many tiles grow even when the season rests them
     bool crossing = false;  // walkers may cross water on it (tag "crossing")
     std::vector<int> perch; // pixel height a percher sits at, per variant; empty: none
+    int deck = 0;           // a walkable item's floor, px above the ground (0: the ground)
     std::vector<SlotDef> slots;
 };
 

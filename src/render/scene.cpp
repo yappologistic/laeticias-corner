@@ -3,6 +3,7 @@
 #include "core/land.hpp"
 #include "core/tuning.hpp"
 #include "render/bands.hpp"
+#include "render/decks.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -126,7 +127,7 @@ Vec2 Scene::actorAnchor(const Actor& a) const {
         return {h.x, h.y + 2};
     }
     Vec2 w = iso_.toWorld(a.pos.x, a.pos.y);
-    w.y -= a.lift;
+    w.y -= a.lift + (onDecks(a) ? deckAt(a.pos) : 0.0f);
     if (cat_.kinds[a.kind].move == Locomotion::Fly && a.state != ActorState::Act)
         w.y -= std::sin(a.animTime * 3.1f) * 0.12f * iso_.tileH();
     return snapped(w);
@@ -209,7 +210,12 @@ void Scene::rebuild(const World& world, TileRect region) {
         const FRect r = spriteRect(it, slot);
         // Trees drop leaves (or petals), as the catalog says.
         const bool tree = def.sheds != Shed::None;
-        gathered_.push_back({it, slot, r, tree, false});
+        if (railed(def)) {
+            gathered_.push_back({it, slot, r, tree, false, 0});
+            gathered_.push_back({it, slot, r, tree, false, 1});
+        } else {
+            gathered_.push_back({it, slot, r, tree, false, -1});
+        }
     });
     sorting_.clear();
     for (std::size_t i = 0; i < gathered_.size(); ++i)
@@ -723,7 +729,7 @@ SDL_FColor Scene::exposed(SpriteId id, SDL_FColor c) const {
 }
 
 void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, bool silhouette,
-                     float scaleY) {
+                     float scaleY, int part) {
     const auto& def = cat_.items[item.type];
     const auto f = [](int v) { return static_cast<float>(v); };
     const Vec2 anchor = iso_.toWorld(item.pos);
@@ -755,16 +761,33 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
     const SpriteId base = baseFrames(item, slot).at(clock, fps, phase);
     const SDL_FColor c = silhouette ? SDL_FColor{0, 0, 0, alpha}
                                     : exposed(base, {tint.r, tint.g, tint.b, tint.a * alpha});
-    sprite(base, anchor, c, false, pivot, scale);
+    if (part < 0 || scale.x != 1.0f || scale.y != 1.0f) {
+        // Whole (a half drawn whole while it pops in is drawn once: by the far half).
+        if (part <= 0) sprite(base, anchor, c, false, pivot, scale);
+        return;
+    }
+    // One half of a footbridge: cut along its span; the near half lies below the line.
+    const CutLine cut = crossingCut(def, item, iso_);
+    putSpriteCut(batch_, atlas_.sprite(base), anchor, xf_, c, blend_, cut.a, cut.b, part == 1);
 }
 
 OrderItem Scene::itemBox(const Placed& p, std::uint32_t id) const {
     const ItemDef& def = cat_.items[p.item.type];
-    // Height over the footprint's top vertex; what one walks on (a footbridge, stepping stones)
-    // is a floor under whoever stands on it: no height above the ground they stand at.
     const Vec2 a = iso_.toWorld(p.item.pos);
-    const float top = def.walkable ? 0.0f : std::max(1.0f, a.y - p.screen.y0);
-    return {makeBox(tileRect(p.item), 0, top, depthId(DepthKind::Item, id), iso_.hh), p.screen, 0};
+    const float top = std::max(1.0f, a.y - p.screen.y0); // height over the top vertex
+    const std::uint64_t key = depthId(DepthKind::Item, id, static_cast<std::uint32_t>(p.part + 1));
+    if (!def.walkable) return {makeBox(tileRect(p.item), 0, top, key, iso_.hh), p.screen, 0};
+    // What one walks on is a deck under whoever stands on it, a railed one in two halves.
+    return {crossingBox(def, p.item, p.part, top, key, iso_.hh), p.screen, 0};
+}
+
+bool Scene::onDecks(const Actor& a) const {
+    const ActorKind& k = cat_.kinds[a.kind];
+    return k.move != Locomotion::Swim && !inAir(a, k);
+}
+
+float Scene::deckAt(Vec2 pos) const {
+    return map_ != nullptr ? lc::deckAt(*map_, cat_, pos) : 0.0f;
 }
 
 void Scene::buildDynamic(const FrameParams& p) {
@@ -789,8 +812,9 @@ void Scene::buildDynamic(const FrameParams& p) {
         // a perch, flight) to the top of its frame. Emissive visitors are always drawn in the
         // glow pass.
         const FRect r = actorRect(a);
-        const DepthBox box = makeBox(pointRect(a.pos), a.lift, a.lift + (r.y1 - r.y0),
-                                     depthId(DepthKind::Actor, i), iso_.hh);
+        const float z = a.lift + (onDecks(a) ? deckAt(a.pos) : 0.0f);
+        const DepthBox box =
+            makeBox(pointRect(a.pos), z, z + (r.y1 - r.y0), depthId(DepthKind::Actor, i), iso_.hh);
         if (std::cmp_equal(i, resident_)) resident = static_cast<int>(dynamic_.size());
         add(EntryKind::Actor, i, box, r, glows(a));
     }
@@ -809,13 +833,13 @@ void Scene::buildDynamic(const FrameParams& p) {
         const Ghost& g = p.ghosts[i];
         if (g.mode != Ghost::Mode::Item) continue;
         const int slot = slotFor(*p.world, g.item);
-        const Placed pl{g.item, slot, spriteRect(g.item, slot), false, false};
+        const Placed pl{g.item, slot, spriteRect(g.item, slot), false, false, -1};
         add(EntryKind::Ghost, i, itemBox(pl, i).box, pl.screen, false);
         dynamicBoxes_.back().box.id = depthId(DepthKind::Ghost, i);
     }
     for (std::uint32_t i = 0; i < fades_.size(); ++i) {
         const Placed pl{fades_[i].item, fades_[i].slot, spriteRect(fades_[i].item, fades_[i].slot),
-                        false, false};
+                        false,          false,          -1};
         if (!pl.screen.overlaps(view_)) continue;
         add(EntryKind::Fade, i, itemBox(pl, i).box, pl.screen, false);
         dynamicBoxes_.back().box.id = depthId(DepthKind::Fade, i);
@@ -901,7 +925,7 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
         if (silhouette && !pl.occludesGlow) continue;
         if (!silhouette) ++drawnItems_;
         const bool tinted = !silhouette && !p.ghosts.empty() && marked(pl.item);
-        drawItem(pl.item, pl.slot, 1.0f, tinted ? kInvalidTint : kWhite, silhouette);
+        drawItem(pl.item, pl.slot, 1.0f, tinted ? kInvalidTint : kWhite, silhouette, 1.0f, pl.part);
         const auto& glowSet = tables_.items[pl.item.type].glow[static_cast<std::size_t>(pl.slot)];
         if (silhouette && !glowSet.empty()) {
             const auto& def = cat_.items[pl.item.type];

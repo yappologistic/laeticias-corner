@@ -5,8 +5,10 @@
 // sort's result does not depend on the order its input came in.
 
 #include "core/rng.hpp"
+#include "render/decks.hpp"
 #include "render/depth.hpp"
 #include "render/order.hpp"
+#include "test_support.hpp"
 
 #include <doctest.h>
 
@@ -241,4 +243,74 @@ TEST_CASE("order props: a broken comparator is caught by the oracle") {
     CHECK(orderViolations(items, {}, seq) == 0);
     std::ranges::reverse(seq);
     CHECK(orderViolations(items, {}, seq) > 50);
+}
+
+TEST_CASE("order props: the home's footbridge carries walkers between its rails, swimmers under") {
+    // The catalog's footbridge (deck 8 px) over a strip of water, spanning +x (r0) and +y (r1).
+    const Catalog& c = test::catalog();
+    const auto type = [&](std::string_view id) {
+        for (std::size_t i = 0; i < c.items.size(); ++i)
+            if (c.items[i].id == id) return static_cast<int>(i);
+        FAIL("no item " << id);
+        return 0;
+    };
+    const ItemDef& bridge = c.items[static_cast<std::size_t>(type("bridge"))];
+    REQUIRE(bridge.deck > 0);
+    REQUIRE(railed(bridge));
+    World w(c);
+    int water = -1;
+    for (std::size_t i = 0; i < c.terrain.size(); ++i)
+        if (c.terrain[i].id == "water") water = static_cast<int>(i);
+    REQUIRE(water >= 0);
+    for (const int rot : {0, 1}) {
+        const Item it = makeItem(c, type("bridge"), rot, {10 + rot * 5, 10});
+        // A river under it, across its span: banks at either end of it.
+        for (int k = -2; k <= 2; ++k)
+            w.setTerrain(rot == 0 ? TilePos{it.pos.x, it.pos.y + k}
+                                  : TilePos{it.pos.x + k, it.pos.y},
+                         water);
+        w.addItem(it);
+        const Vec2 centre{static_cast<float>(it.pos.x) + 0.5f, static_cast<float>(it.pos.y) + 0.5f};
+        const DepthBox farHalf = crossingBox(bridge, it, 0, 19, 1, kIso.hh);
+        const DepthBox nearHalf = crossingBox(bridge, it, 1, 19, 2, kIso.hh);
+        CAPTURE(rot);
+        // On the deck, anywhere across it: between the rails.
+        for (const float off : {-0.3f, 0.0f, 0.3f}) {
+            const Vec2 at =
+                rot == 0 ? Vec2{centre.x, centre.y + off} : Vec2{centre.x + off, centre.y};
+            const float z = deckAt(w, c, at);
+            CHECK(z == doctest::Approx(static_cast<float>(bridge.deck)));
+            const DepthBox walker =
+                box(at.x - 0.01f, at.y - 0.01f, at.x + 0.01f, at.y + 0.01f, z, z + 40);
+            CHECK(drawnBefore(farHalf, walker));
+            CHECK(drawnBefore(walker, nearHalf));
+        }
+        // A duck swimming under it: under both halves.
+        const DepthBox duck =
+            box(centre.x - 0.01f, centre.y - 0.01f, centre.x + 0.01f, centre.y + 0.01f, 0, 14);
+        CHECK(drawnBefore(duck, farHalf));
+        CHECK(drawnBefore(duck, nearHalf));
+        // The cut: the deck's centre line, the near rail below it on screen.
+        const CutLine cut = crossingCut(bridge, it, kIso);
+        const Vec2 mid = kIso.toWorld(centre.x, centre.y);
+        CHECK(mid.y - static_cast<float>(bridge.deck) == doctest::Approx(cut.a + cut.b * mid.x));
+        const Vec2 rail = rot == 0 ? kIso.toWorld(centre.x, centre.y + 0.45f)
+                                   : kIso.toWorld(centre.x + 0.45f, centre.y);
+        CHECK(rail.y - static_cast<float>(bridge.deck) > cut.a + cut.b * rail.x);
+    }
+    // Stepping onto it from the bank rises smoothly: half way at the edge, from either side.
+    const Item it = makeItem(c, type("bridge"), 0, {10, 10});
+    const float edge = deckAt(w, c, {9.999f, 10.5f});
+    CHECK(edge == doctest::Approx(deckAt(w, c, {10.001f, 10.5f})).epsilon(0.01));
+    CHECK(edge == doctest::Approx(static_cast<float>(bridge.deck) / 2).epsilon(0.01));
+    CHECK(deckAt(w, c, {8.5f, 10.5f}) == 0);
+    (void)it;
+    // Stepping stones: a low deck, whole.
+    const ItemDef& stones = c.items[static_cast<std::size_t>(type("stepping_stones"))];
+    REQUIRE(stones.deck > 0);
+    CHECK_FALSE(railed(stones));
+    const Item st = makeItem(c, type("stepping_stones"), 0, {20, 20});
+    const DepthBox stoneBox = crossingBox(stones, st, -1, 10, 3, kIso.hh);
+    const auto sd = static_cast<float>(stones.deck);
+    CHECK(drawnBefore(stoneBox, box(20.49f, 20.49f, 20.51f, 20.51f, sd, sd + 40)));
 }

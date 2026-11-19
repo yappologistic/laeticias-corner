@@ -170,6 +170,9 @@ private:
         FRect screen; // world-px box of the base sprite
         bool tree = false;
         bool occludesGlow = false; // overlaps a glowing item, so the glow pass must draw it
+        // A footbridge is drawn in two halves cut along its span, its far rail before whoever
+        // walks on its deck, its near rail after: 0 the far half, 1 the near, -1 whole.
+        std::int8_t part = -1;
     };
     enum class EntryKind : std::uint8_t { Actor, Ghost, Fade };
     struct Entry {
@@ -226,7 +229,11 @@ private:
     void sprite(SpriteId id, Vec2 anchor, SDL_FColor color, bool mirror = false, Vec2 pivot = {},
                 Vec2 scale = {1, 1});
     void drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, bool silhouette,
-                  float scaleY = 1.0f);
+                  float scaleY = 1.0f, int part = -1);
+    // The deck under a walker at `pos` (a footbridge's, stepping stones'), px above the ground,
+    // blended toward its neighbours' near a tile's edge so it rises smoothly.
+    [[nodiscard]] float deckAt(Vec2 pos) const;
+    [[nodiscard]] bool onDecks(const Actor& a) const; // walks on decks (not swimming, flying)
     void drawEntry(const FrameParams& p, const Entry& e, bool silhouette);
     void drawEntries(const FrameParams& p, bool silhouette);
     [[nodiscard]] bool nearGlow(const FRect& r) const;

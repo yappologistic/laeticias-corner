@@ -26,6 +26,7 @@ struct Invalid : std::runtime_error {
 // Longest wish text and speech line the interface lays out (docs/design/living-corner.md §9).
 constexpr std::size_t kMaxWishText = 80;
 constexpr std::size_t kMaxLine = 52;
+constexpr int kMaxDeck = 64; // px: a deck over a tile is far below a level
 constexpr std::array<std::string_view, 4> kPhaseIds{"day", "dusk", "night", "dawn"};
 
 template <typename T>
@@ -414,6 +415,15 @@ public:
                     d.perch = p.get<std::vector<int>>();
                 else
                     d.perch.assign(static_cast<std::size_t>(d.count), p.get<int>());
+            }
+            if (it.contains("deck")) {
+                // Where whoever crosses it walks (a footbridge's planks), for the draw order
+                // and their height (draw-order.md §1.5 d).
+                const json& k = it["deck"];
+                if (!k.is_number_integer() || k.get<int>() < 0 || k.get<int>() > kMaxDeck)
+                    fail(ctx + ": deck is a pixel height from 0 to " + std::to_string(kMaxDeck));
+                if (!d.walkable) fail(ctx + ": deck is for walkable items");
+                d.deck = k.get<int>();
             }
             if (it.contains("season_looks"))
                 d.seasonLooks = seasonMask(it["season_looks"], ctx + " season_looks");
