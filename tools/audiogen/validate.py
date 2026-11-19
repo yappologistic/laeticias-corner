@@ -28,13 +28,15 @@ RULES = {
     "stem": ("ogg", "vorbis", 2, (90, 150), (-45.0, -17.0), -1.0),  # natural level in the mix
     "ambience": ("ogg", "vorbis", 2, (30, 90), (-25.0, -17.0), -1.0),
     "sfx": ("wav", "pcm_s16le", 1, (0.02, 3.2), None, -3.0),
-    # Region sets (assets/audio/<set>/manifest.json): music as above, beds at bed level,
-    # positional loops a little lower, effects up to 6 s (arrival motifs, horn calls).
+    # Region sets (assets/audio/<set>/manifest.json): music at the same level, from a town's
+    # minute-long piece to a travelling theme of three minutes; beds at bed level, positional
+    # loops a little lower, effects up to 6 s (arrival motifs, horn calls).
+    "region_music": ("ogg", "vorbis", 2, (45, 200), (-19.0, -17.0), -1.0),
     "bed": ("ogg", "vorbis", 2, (30, 90), (-23.5, -20.5), -1.0),
     "loop": ("ogg", "vorbis", 2, (4, 40), (-27.0, -20.0), -1.0),
     "region_sfx": ("wav", "pcm_s16le", 1, (0.02, 6.0), None, -3.0),
 }
-KINDS = {"music": "music", "bed": "bed", "loop": "loop", "sfx": "region_sfx"}
+KINDS = {"music": "region_music", "bed": "bed", "loop": "loop", "sfx": "region_sfx"}
 MUSIC_SAMPLES = 4_704_000  # 32 bars at 72 bpm: the shared loop length of mixes and stems
 STEM_RESIDUAL_DB = -20.0  # base stems summed vs the full mix, both decoded (codec noise only)
 STEM_SUM_LUFS = (-19.0, -16.5)  # all stems together: the mix plus the colour layer

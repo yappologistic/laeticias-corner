@@ -248,7 +248,7 @@
   {"id": "rome.goods_water_jug", "name": "Water jug", "sprite": "goods/rome.goods_water_jug", "stack": 3}
  ],
  "audio": {
-  "music": ["music/rome/day.ogg", "music/rome/night.ogg"],
+  "music": ["music/rome/day.ogg", "music/rome/night.ogg", "music/rome/town_forum_day.ogg", "music/rome/town_forum_night.ogg", "music/rome/town_hills_day.ogg", "music/rome/town_hills_night.ogg", "music/rome/town_shrine_day.ogg", "music/rome/town_shrine_night.ogg"],
   "ambience": ["amb/rome/day.ogg", "amb/rome/forum.ogg", "amb/rome/river.ogg", "amb/rome/circus.ogg", "amb/rome/night.ogg", "amb/rome/procession.ogg", "amb/rome/fountain.ogg", "amb/rome/baths.ogg", "amb/rome/treadwheel.ogg", "amb/rome/day_winter.ogg", "amb/rome/saturnalia.ogg"],
   "sfx": ["sfx/rome/tibia.wav", "sfx/rome/cornu.wav", "sfx/rome/hydraulis.wav", "sfx/rome/sistrum.wav", "sfx/rome/arrive.wav", "sfx/rome/acclamation.wav", "sfx/rome/sting_sunrise.wav", "sfx/rome/sting_nightfall.wav", "sfx/rome/sting_storm_clear.wav", "sfx/rome/sting_rainbow.wav", "sfx/rome/lituus.wav", "sfx/rome/sting_season.wav"]
  },

@@ -28,7 +28,10 @@ Measure (resumable: rows go to `OUT.rows.jsonl` as each file finishes; one file 
 Memory: every process stays under 1 GB. Long signals are processed a block or a channel at a
 time (true peak and the limiter's oversampled envelope in blocks, circular filters warmed up from
 the loop's last two seconds instead of a second copy, music stems in float32 and finished one at
-a time); mono files are flat arrays, never `(n, 1)` (they broadcast against windows).
+a time, the loudness meter and the pieces' final filters by channel, reed harmonics by block);
+mono files are flat arrays, never `(n, 1)` (they broadcast against windows). Pieces of minutes
+set `blocks` (reverb by overlap-add) and their reed parts `phrases` (rendered phrase by phrase):
+a three-minute travelling theme peaks near 740 MB.
 
 Needs Python 3, `ffmpeg`/`ffprobe` with libvorbis. The script creates `.venv` from the
 pinned `requirements.txt`. Nothing is ever played back.
@@ -53,6 +56,9 @@ pinned `requirements.txt`. Nothing is ever played back.
 | `stings.py` | sunrise, nightfall, storm clearing, rainbow and first-snow stings in the home key and each city's mode |
 | `seasons.py` | the year in sound: the cities' seasonal beds, autumn and winter nature beds and snow beds for the countryside, spring frogs, wind in bare branches, the winter marsh, floodwater, the seasons' work loops, each civilization's festival loops and instruments, the season-turn stings and turn cues |
 | `between.py` | the land and sea between the cities: wind in leafy trees, rocky shores and the open sea by state, streams, a grazing flock, oars; one-shots (cart passing, sail, owls, wolves, nightingale, stag, geese, starlings, lark, gulls, drips) |
+| `country.py` | what the land between still lacked: a cricket-free night floor, small towns' day beds (Latin, Greek, Persian), a Levantine harbour, a harbour in winter, a quarry; heron, deer, boar and dolphin voices |
+| `travel.py` | the travelling themes for the land and sea between (Italy, Greece, the sea, Anatolia and the Levant, Mesopotamia, Iran), each a day piece and its night arrangement of the same bars |
+| `towns.py` | the town pieces, built from each capital's mode and motif, several per family so neighbouring towns differ (Roman, Greek, Persian), day and night |
 | `measure.py` | the quality pass by instrument: per file loudness, true peak, loudness range, loudest 100 ms, spectral balance against a stated target, stereo width and mono fold, seam (jump, level and spectral step), period of repetition, DC, edges, noise floor; music stems, bars, sums, day/night match, notes against the key; before/after tables |
 | `generate.py` | catalog ↔ renderer table, loudness targets, region sets and their manifests, parallel build |
 
@@ -106,3 +112,10 @@ and that every file in the set's folders is listed.
 City music is note data in the set module, rendered by `score.render` with all tails folded,
 so every piece is an exact number of bars; beds and loops are seamless the same way (periodic
 noise, events wrapped, every filter run circularly).
+
+Town pieces and travelling themes are written bar by bar (`score.sparse`: a part names only the
+bars it plays) and their nights by `score.nocturne` (the day's bars, softer voices), because the
+engine plays a region's day and night files together, sample-aligned, and cross-fades them by
+the clock. Their phrase starts (`phrase` as a list of beats) sit in the breath before each
+phrase, so the engine's 4 s fade-in lands on its first note. Every piece in the world shares the
+white-note set (Rome's F, Athens's E, Pārsa's D modes), so neighbours never clash in a fade.

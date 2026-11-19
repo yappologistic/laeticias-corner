@@ -1,0 +1,1933 @@
+{
+ "version": 1,
+ "image": "world.o.png",
+ "texel": 4,
+ "anchor": "texel of the footprint origin",
+ "channels": {
+  "r": "top px / 2",
+  "g": "underside px / 2 (0: solid from the floor)",
+  "b": "material of the top",
+  "a": "coverage"
+ },
+ "codes": {
+  "solid": 1,
+  "foliage": 2,
+  "cloth": 3,
+  "water": 4,
+  "glass": 5
+ },
+ "sprites": {
+  "item/world.beacon/r0": {
+   "x": 238,
+   "y": 157,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.boulder/r0": {
+   "x": 247,
+   "y": 157,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.boulder/r1": {
+   "x": 1,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.boulder/r2": {
+   "x": 10,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.boulder/r3": {
+   "x": 19,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.boundary_stone/r0": {
+   "x": 69,
+   "y": 183,
+   "w": 2,
+   "h": 4,
+   "ox": -3,
+   "oy": -2
+  },
+  "item/world.boundary_stone/r1": {
+   "x": 141,
+   "y": 183,
+   "w": 2,
+   "h": 2,
+   "ox": -3,
+   "oy": -3
+  },
+  "item/world.bridge_arch/m0": {
+   "x": 127,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.bridge_arch/m1": {
+   "x": 134,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.bridge_arch/m10": {
+   "x": 28,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.bridge_arch/m11": {
+   "x": 25,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m12": {
+   "x": 36,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m13": {
+   "x": 47,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m14": {
+   "x": 58,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m15": {
+   "x": 69,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m2": {
+   "x": 116,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.bridge_arch/m3": {
+   "x": 80,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m4": {
+   "x": 141,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.bridge_arch/m5": {
+   "x": 37,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.bridge_arch/m6": {
+   "x": 91,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m7": {
+   "x": 102,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_arch/m8": {
+   "x": 125,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.bridge_arch/m9": {
+   "x": 113,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m0": {
+   "x": 230,
+   "y": 166,
+   "w": 4,
+   "h": 8,
+   "ox": -2,
+   "oy": 0
+  },
+  "item/world.bridge_timber/m1": {
+   "x": 148,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.bridge_timber/m10": {
+   "x": 134,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.bridge_timber/m11": {
+   "x": 124,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m12": {
+   "x": 135,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m13": {
+   "x": 146,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m14": {
+   "x": 157,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m15": {
+   "x": 168,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m2": {
+   "x": 143,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.bridge_timber/m3": {
+   "x": 179,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m4": {
+   "x": 155,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.bridge_timber/m5": {
+   "x": 162,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.bridge_timber/m6": {
+   "x": 190,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m7": {
+   "x": 201,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.bridge_timber/m8": {
+   "x": 152,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.bridge_timber/m9": {
+   "x": 212,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.cairn/r0": {
+   "x": 56,
+   "y": 183,
+   "w": 6,
+   "h": 4,
+   "ox": -1,
+   "oy": -2
+  },
+  "item/world.cairn/r1": {
+   "x": 245,
+   "y": 175,
+   "w": 5,
+   "h": 6,
+   "ox": -2,
+   "oy": -1
+  },
+  "item/world.charcoal_kiln/r0": {
+   "x": 122,
+   "y": 93,
+   "w": 14,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.charcoal_kiln/r1": {
+   "x": 1,
+   "y": 93,
+   "w": 14,
+   "h": 15,
+   "ox": -2,
+   "oy": 0
+  },
+  "item/world.cistern/r0": {
+   "x": 137,
+   "y": 93,
+   "w": 14,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.cistern/r1": {
+   "x": 152,
+   "y": 93,
+   "w": 14,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.crag/r0": {
+   "x": 97,
+   "y": 68,
+   "w": 16,
+   "h": 16,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.crag/r1": {
+   "x": 114,
+   "y": 68,
+   "w": 16,
+   "h": 16,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.crag/r2": {
+   "x": 131,
+   "y": 68,
+   "w": 16,
+   "h": 16,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.driftwood/r0": {
+   "x": 251,
+   "y": 175,
+   "w": 4,
+   "h": 6,
+   "ox": -1,
+   "oy": -2
+  },
+  "item/world.driftwood/r1": {
+   "x": 231,
+   "y": 175,
+   "w": 6,
+   "h": 6,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.drying_rack/r0": {
+   "x": 240,
+   "y": 166,
+   "w": 2,
+   "h": 8,
+   "ox": -3,
+   "oy": 0
+  },
+  "item/world.drying_rack/r1": {
+   "x": 103,
+   "y": 183,
+   "w": 8,
+   "h": 2,
+   "ox": 0,
+   "oy": -3
+  },
+  "item/world.field_hut/r0": {
+   "x": 85,
+   "y": 175,
+   "w": 6,
+   "h": 7,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.field_hut/r1": {
+   "x": 246,
+   "y": 166,
+   "w": 8,
+   "h": 7,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.fish_hut/r0": {
+   "x": 72,
+   "y": 93,
+   "w": 8,
+   "h": 15,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.fish_hut/r1": {
+   "x": 118,
+   "y": 157,
+   "w": 15,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.fish_hut/r2": {
+   "x": 81,
+   "y": 93,
+   "w": 8,
+   "h": 15,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.fish_hut/r3": {
+   "x": 134,
+   "y": 157,
+   "w": 15,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ford/r0": {
+   "x": 46,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ford/r1": {
+   "x": 55,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.haystack/r0": {
+   "x": 238,
+   "y": 175,
+   "w": 6,
+   "h": 6,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.haystack/r1": {
+   "x": 1,
+   "y": 183,
+   "w": 4,
+   "h": 6,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.inn/r0": {
+   "x": 1,
+   "y": 1,
+   "w": 32,
+   "h": 34,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.inn/r1": {
+   "x": 67,
+   "y": 1,
+   "w": 34,
+   "h": 32,
+   "ox": 2,
+   "oy": 0
+  },
+  "item/world.inn/r2": {
+   "x": 34,
+   "y": 1,
+   "w": 32,
+   "h": 34,
+   "ox": 0,
+   "oy": 2
+  },
+  "item/world.inn/r3": {
+   "x": 102,
+   "y": 1,
+   "w": 34,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.jetty/m0": {
+   "x": 169,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.jetty/m1": {
+   "x": 176,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.jetty/m10": {
+   "x": 161,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.jetty/m11": {
+   "x": 223,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m12": {
+   "x": 234,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m13": {
+   "x": 245,
+   "y": 124,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m14": {
+   "x": 1,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m15": {
+   "x": 12,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m2": {
+   "x": 170,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.jetty/m3": {
+   "x": 23,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m4": {
+   "x": 183,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.jetty/m5": {
+   "x": 190,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.jetty/m6": {
+   "x": 34,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m7": {
+   "x": 45,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.jetty/m8": {
+   "x": 179,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.jetty/m9": {
+   "x": 56,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.log_stack/r0": {
+   "x": 199,
+   "y": 68,
+   "w": 8,
+   "h": 16,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.log_stack/r1": {
+   "x": 67,
+   "y": 157,
+   "w": 16,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.matar_shrine/r0": {
+   "x": 87,
+   "y": 109,
+   "w": 16,
+   "h": 12,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.matar_shrine/r1": {
+   "x": 164,
+   "y": 68,
+   "w": 12,
+   "h": 16,
+   "ox": -4,
+   "oy": 0
+  },
+  "item/world.milestone/r0": {
+   "x": 72,
+   "y": 183,
+   "w": 2,
+   "h": 3,
+   "ox": -3,
+   "oy": -1
+  },
+  "item/world.milestone/r1": {
+   "x": 137,
+   "y": 183,
+   "w": 3,
+   "h": 2,
+   "ox": -4,
+   "oy": -3
+  },
+  "item/world.mole/m0": {
+   "x": 164,
+   "y": 157,
+   "w": 10,
+   "h": 8,
+   "ox": 1,
+   "oy": 0
+  },
+  "item/world.mole/m1": {
+   "x": 175,
+   "y": 157,
+   "w": 10,
+   "h": 8,
+   "ox": 1,
+   "oy": 0
+  },
+  "item/world.mole/m10": {
+   "x": 232,
+   "y": 135,
+   "w": 9,
+   "h": 10,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.mole/m11": {
+   "x": 67,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.mole/m12": {
+   "x": 102,
+   "y": 146,
+   "w": 9,
+   "h": 9,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.mole/m13": {
+   "x": 69,
+   "y": 146,
+   "w": 10,
+   "h": 9,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.mole/m14": {
+   "x": 242,
+   "y": 135,
+   "w": 9,
+   "h": 10,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.mole/m15": {
+   "x": 78,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.mole/m2": {
+   "x": 1,
+   "y": 146,
+   "w": 9,
+   "h": 10,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.mole/m3": {
+   "x": 89,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.mole/m4": {
+   "x": 186,
+   "y": 157,
+   "w": 10,
+   "h": 8,
+   "ox": 1,
+   "oy": 0
+  },
+  "item/world.mole/m5": {
+   "x": 197,
+   "y": 157,
+   "w": 10,
+   "h": 8,
+   "ox": 1,
+   "oy": 0
+  },
+  "item/world.mole/m6": {
+   "x": 11,
+   "y": 146,
+   "w": 9,
+   "h": 10,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.mole/m7": {
+   "x": 100,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.mole/m8": {
+   "x": 21,
+   "y": 146,
+   "w": 9,
+   "h": 10,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.mole/m9": {
+   "x": 80,
+   "y": 146,
+   "w": 10,
+   "h": 9,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.p_maquis/r0": {
+   "x": 64,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.p_maquis/r1": {
+   "x": 1,
+   "y": 175,
+   "w": 8,
+   "h": 7,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.p_maquis/r2": {
+   "x": 10,
+   "y": 175,
+   "w": 8,
+   "h": 7,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.p_maquis/r3": {
+   "x": 19,
+   "y": 175,
+   "w": 8,
+   "h": 7,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.p_thistle/r0": {
+   "x": 37,
+   "y": 175,
+   "w": 7,
+   "h": 7,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.p_thistle/r1": {
+   "x": 28,
+   "y": 175,
+   "w": 8,
+   "h": 7,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.p_thistle/r2": {
+   "x": 73,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.p_wildflowers/r0": {
+   "x": 82,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.p_wildflowers/r1": {
+   "x": 45,
+   "y": 175,
+   "w": 7,
+   "h": 7,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.p_wildflowers/r2": {
+   "x": 53,
+   "y": 175,
+   "w": 7,
+   "h": 7,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.p_wildflowers/r3": {
+   "x": 91,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.p_wildflowers/r4": {
+   "x": 215,
+   "y": 175,
+   "w": 7,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.p_wildflowers/r5": {
+   "x": 61,
+   "y": 175,
+   "w": 7,
+   "h": 7,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.peak/r0": {
+   "x": 51,
+   "y": 68,
+   "w": 22,
+   "h": 23,
+   "ox": -2,
+   "oy": 0
+  },
+  "item/world.peak/r1": {
+   "x": 67,
+   "y": 36,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.peak/r2": {
+   "x": 92,
+   "y": 36,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.pontoon/m0": {
+   "x": 235,
+   "y": 166,
+   "w": 4,
+   "h": 8,
+   "ox": -2,
+   "oy": 0
+  },
+  "item/world.pontoon/m1": {
+   "x": 197,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.pontoon/m10": {
+   "x": 188,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.pontoon/m11": {
+   "x": 111,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m12": {
+   "x": 122,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m13": {
+   "x": 133,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m14": {
+   "x": 144,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m15": {
+   "x": 155,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m2": {
+   "x": 197,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.pontoon/m3": {
+   "x": 166,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m4": {
+   "x": 204,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.pontoon/m5": {
+   "x": 211,
+   "y": 166,
+   "w": 6,
+   "h": 8,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.pontoon/m6": {
+   "x": 177,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m7": {
+   "x": 188,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.pontoon/m8": {
+   "x": 206,
+   "y": 175,
+   "w": 8,
+   "h": 6,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.pontoon/m9": {
+   "x": 199,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.quarry/r0": {
+   "x": 117,
+   "y": 36,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.quarry/r1": {
+   "x": 142,
+   "y": 36,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.quarry/r2": {
+   "x": 167,
+   "y": 36,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.quarry/r3": {
+   "x": 192,
+   "y": 36,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp/r0": {
+   "x": 201,
+   "y": 1,
+   "w": 8,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp/r1": {
+   "x": 120,
+   "y": 146,
+   "w": 32,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp/r2": {
+   "x": 210,
+   "y": 1,
+   "w": 8,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp/r3": {
+   "x": 153,
+   "y": 146,
+   "w": 32,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_basalt/r0": {
+   "x": 219,
+   "y": 1,
+   "w": 8,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_basalt/r1": {
+   "x": 186,
+   "y": 146,
+   "w": 32,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_basalt/r2": {
+   "x": 228,
+   "y": 1,
+   "w": 8,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_basalt/r3": {
+   "x": 219,
+   "y": 146,
+   "w": 32,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_royal/r0": {
+   "x": 237,
+   "y": 1,
+   "w": 8,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_royal/r1": {
+   "x": 1,
+   "y": 157,
+   "w": 32,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_royal/r2": {
+   "x": 246,
+   "y": 1,
+   "w": 8,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.ramp_royal/r3": {
+   "x": 34,
+   "y": 157,
+   "w": 32,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.reed_hut/r0": {
+   "x": 46,
+   "y": 93,
+   "w": 12,
+   "h": 15,
+   "ox": -2,
+   "oy": -1
+  },
+  "item/world.reed_hut/r1": {
+   "x": 104,
+   "y": 109,
+   "w": 15,
+   "h": 12,
+   "ox": 0,
+   "oy": -2
+  },
+  "item/world.reed_hut/r2": {
+   "x": 59,
+   "y": 93,
+   "w": 12,
+   "h": 15,
+   "ox": -2,
+   "oy": 0
+  },
+  "item/world.reed_hut/r3": {
+   "x": 120,
+   "y": 109,
+   "w": 15,
+   "h": 12,
+   "ox": -1,
+   "oy": -2
+  },
+  "item/world.royal_station/r0": {
+   "x": 1,
+   "y": 36,
+   "w": 32,
+   "h": 31,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.royal_station/r1": {
+   "x": 137,
+   "y": 1,
+   "w": 31,
+   "h": 32,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.royal_station/r2": {
+   "x": 34,
+   "y": 36,
+   "w": 32,
+   "h": 31,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.royal_station/r3": {
+   "x": 169,
+   "y": 1,
+   "w": 31,
+   "h": 32,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.salt_pans/r0": {
+   "x": 167,
+   "y": 93,
+   "w": 14,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.salt_pans/r1": {
+   "x": 182,
+   "y": 93,
+   "w": 14,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.shaduf/r0": {
+   "x": 81,
+   "y": 109,
+   "w": 2,
+   "h": 13,
+   "ox": -3,
+   "oy": 2
+  },
+  "item/world.shaduf/r1": {
+   "x": 75,
+   "y": 183,
+   "w": 13,
+   "h": 2,
+   "ox": 3,
+   "oy": -3
+  },
+  "item/world.shaduf/r2": {
+   "x": 84,
+   "y": 109,
+   "w": 2,
+   "h": 13,
+   "ox": -3,
+   "oy": 3
+  },
+  "item/world.shaduf/r3": {
+   "x": 89,
+   "y": 183,
+   "w": 13,
+   "h": 2,
+   "ox": 2,
+   "oy": -3
+  },
+  "item/world.sheepfold/r0": {
+   "x": 217,
+   "y": 36,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.sheepfold/r1": {
+   "x": 1,
+   "y": 68,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.stair_earth/r0": {
+   "x": 208,
+   "y": 68,
+   "w": 8,
+   "h": 16,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.stair_earth/r1": {
+   "x": 84,
+   "y": 157,
+   "w": 16,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.stair_earth/r2": {
+   "x": 217,
+   "y": 68,
+   "w": 8,
+   "h": 16,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.stair_earth/r3": {
+   "x": 101,
+   "y": 157,
+   "w": 16,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.stair_stone/r0": {
+   "x": 177,
+   "y": 68,
+   "w": 10,
+   "h": 16,
+   "ox": 1,
+   "oy": 0
+  },
+  "item/world.stair_stone/r1": {
+   "x": 211,
+   "y": 109,
+   "w": 16,
+   "h": 10,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.stair_stone/r2": {
+   "x": 188,
+   "y": 68,
+   "w": 10,
+   "h": 16,
+   "ox": 1,
+   "oy": 0
+  },
+  "item/world.stair_stone/r3": {
+   "x": 228,
+   "y": 109,
+   "w": 16,
+   "h": 10,
+   "ox": 0,
+   "oy": 1
+  },
+  "item/world.stile/r0": {
+   "x": 50,
+   "y": 146,
+   "w": 6,
+   "h": 10,
+   "ox": -1,
+   "oy": 1
+  },
+  "item/world.stile/r1": {
+   "x": 105,
+   "y": 175,
+   "w": 10,
+   "h": 6,
+   "ox": 1,
+   "oy": -1
+  },
+  "item/world.t_beech/r0": {
+   "x": 14,
+   "y": 109,
+   "w": 13,
+   "h": 13,
+   "ox": 3,
+   "oy": 2
+  },
+  "item/world.t_beech/r1": {
+   "x": 28,
+   "y": 109,
+   "w": 13,
+   "h": 13,
+   "ox": 2,
+   "oy": 2
+  },
+  "item/world.t_beech/r2": {
+   "x": 227,
+   "y": 93,
+   "w": 13,
+   "h": 14,
+   "ox": 2,
+   "oy": 3
+  },
+  "item/world.t_cedar/r0": {
+   "x": 56,
+   "y": 109,
+   "w": 12,
+   "h": 13,
+   "ox": 2,
+   "oy": 3
+  },
+  "item/world.t_cedar/r1": {
+   "x": 42,
+   "y": 109,
+   "w": 13,
+   "h": 13,
+   "ox": 2,
+   "oy": 2
+  },
+  "item/world.t_cork_oak/r0": {
+   "x": 164,
+   "y": 109,
+   "w": 12,
+   "h": 11,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.t_cork_oak/r1": {
+   "x": 69,
+   "y": 109,
+   "w": 11,
+   "h": 13,
+   "ox": 1,
+   "oy": 2
+  },
+  "item/world.t_fir/r0": {
+   "x": 1,
+   "y": 124,
+   "w": 11,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.t_fir/r1": {
+   "x": 189,
+   "y": 109,
+   "w": 10,
+   "h": 11,
+   "ox": 1,
+   "oy": 2
+  },
+  "item/world.t_fir/r2": {
+   "x": 210,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.t_juniper/r0": {
+   "x": 223,
+   "y": 175,
+   "w": 7,
+   "h": 6,
+   "ox": -2,
+   "oy": -1
+  },
+  "item/world.t_juniper/r1": {
+   "x": 69,
+   "y": 175,
+   "w": 7,
+   "h": 7,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.t_juniper/r2": {
+   "x": 92,
+   "y": 175,
+   "w": 6,
+   "h": 7,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.t_oak/r0": {
+   "x": 226,
+   "y": 68,
+   "w": 15,
+   "h": 15,
+   "ox": 3,
+   "oy": 3
+  },
+  "item/world.t_oak/r1": {
+   "x": 57,
+   "y": 146,
+   "w": 11,
+   "h": 9,
+   "ox": 1,
+   "oy": 0
+  },
+  "item/world.t_oak/r2": {
+   "x": 208,
+   "y": 157,
+   "w": 9,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.t_oak/r3": {
+   "x": 13,
+   "y": 124,
+   "w": 11,
+   "h": 10,
+   "ox": -2,
+   "oy": 3
+  },
+  "item/world.t_oak_zagros/r0": {
+   "x": 150,
+   "y": 157,
+   "w": 13,
+   "h": 8,
+   "ox": 3,
+   "oy": 0
+  },
+  "item/world.t_oak_zagros/r1": {
+   "x": 177,
+   "y": 109,
+   "w": 11,
+   "h": 11,
+   "ox": 1,
+   "oy": 2
+  },
+  "item/world.t_oak_zagros/r2": {
+   "x": 151,
+   "y": 109,
+   "w": 12,
+   "h": 12,
+   "ox": 2,
+   "oy": 2
+  },
+  "item/world.t_oleaster/r0": {
+   "x": 218,
+   "y": 157,
+   "w": 9,
+   "h": 8,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.t_oleaster/r1": {
+   "x": 41,
+   "y": 146,
+   "w": 8,
+   "h": 10,
+   "ox": -1,
+   "oy": 1
+  },
+  "item/world.t_palm/r0": {
+   "x": 148,
+   "y": 68,
+   "w": 15,
+   "h": 16,
+   "ox": 3,
+   "oy": 3
+  },
+  "item/world.t_palm/r1": {
+   "x": 241,
+   "y": 93,
+   "w": 13,
+   "h": 14,
+   "ox": 2,
+   "oy": 3
+  },
+  "item/world.t_pistachio/r0": {
+   "x": 200,
+   "y": 109,
+   "w": 10,
+   "h": 11,
+   "ox": 1,
+   "oy": 2
+  },
+  "item/world.t_pistachio/r1": {
+   "x": 221,
+   "y": 135,
+   "w": 10,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.t_reeds/r0": {
+   "x": 77,
+   "y": 175,
+   "w": 7,
+   "h": 7,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.t_reeds/r1": {
+   "x": 100,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.t_reeds/r2": {
+   "x": 109,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.t_reeds/r3": {
+   "x": 112,
+   "y": 146,
+   "w": 7,
+   "h": 9,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.t_tamarisk/r0": {
+   "x": 31,
+   "y": 146,
+   "w": 9,
+   "h": 10,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.t_tamarisk/r1": {
+   "x": 228,
+   "y": 157,
+   "w": 9,
+   "h": 8,
+   "ox": 1,
+   "oy": -1
+  },
+  "item/world.t_tamarisk/r2": {
+   "x": 91,
+   "y": 146,
+   "w": 10,
+   "h": 9,
+   "ox": 1,
+   "oy": 1
+  },
+  "item/world.tent_black/r0": {
+   "x": 136,
+   "y": 109,
+   "w": 14,
+   "h": 12,
+   "ox": -1,
+   "oy": -2
+  },
+  "item/world.tent_black/r1": {
+   "x": 1,
+   "y": 109,
+   "w": 12,
+   "h": 14,
+   "ox": -2,
+   "oy": -1
+  },
+  "item/world.terrace_wall/m0": {
+   "x": 6,
+   "y": 183,
+   "w": 2,
+   "h": 6,
+   "ox": -3,
+   "oy": -1
+  },
+  "item/world.terrace_wall/m1": {
+   "x": 99,
+   "y": 175,
+   "w": 2,
+   "h": 7,
+   "ox": -3,
+   "oy": 0
+  },
+  "item/world.terrace_wall/m10": {
+   "x": 112,
+   "y": 183,
+   "w": 8,
+   "h": 2,
+   "ox": 0,
+   "oy": -3
+  },
+  "item/world.terrace_wall/m11": {
+   "x": 9,
+   "y": 183,
+   "w": 8,
+   "h": 5,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.terrace_wall/m12": {
+   "x": 27,
+   "y": 183,
+   "w": 5,
+   "h": 5,
+   "ox": 0,
+   "oy": -3
+  },
+  "item/world.terrace_wall/m13": {
+   "x": 218,
+   "y": 166,
+   "w": 5,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.terrace_wall/m14": {
+   "x": 18,
+   "y": 183,
+   "w": 8,
+   "h": 5,
+   "ox": 0,
+   "oy": -3
+  },
+  "item/world.terrace_wall/m15": {
+   "x": 118,
+   "y": 166,
+   "w": 8,
+   "h": 8,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.terrace_wall/m2": {
+   "x": 121,
+   "y": 183,
+   "w": 7,
+   "h": 2,
+   "ox": -1,
+   "oy": -3
+  },
+  "item/world.terrace_wall/m3": {
+   "x": 33,
+   "y": 183,
+   "w": 5,
+   "h": 5,
+   "ox": -3,
+   "oy": 0
+  },
+  "item/world.terrace_wall/m4": {
+   "x": 102,
+   "y": 175,
+   "w": 2,
+   "h": 7,
+   "ox": -3,
+   "oy": -1
+  },
+  "item/world.terrace_wall/m5": {
+   "x": 243,
+   "y": 166,
+   "w": 2,
+   "h": 8,
+   "ox": -3,
+   "oy": 0
+  },
+  "item/world.terrace_wall/m6": {
+   "x": 39,
+   "y": 183,
+   "w": 5,
+   "h": 5,
+   "ox": -3,
+   "oy": -3
+  },
+  "item/world.terrace_wall/m7": {
+   "x": 224,
+   "y": 166,
+   "w": 5,
+   "h": 8,
+   "ox": -3,
+   "oy": 0
+  },
+  "item/world.terrace_wall/m8": {
+   "x": 129,
+   "y": 183,
+   "w": 7,
+   "h": 2,
+   "ox": 0,
+   "oy": -3
+  },
+  "item/world.terrace_wall/m9": {
+   "x": 45,
+   "y": 183,
+   "w": 5,
+   "h": 5,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.treading_vat/r0": {
+   "x": 197,
+   "y": 93,
+   "w": 14,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.treading_vat/r1": {
+   "x": 212,
+   "y": 93,
+   "w": 14,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.tumulus/r0": {
+   "x": 74,
+   "y": 68,
+   "w": 22,
+   "h": 22,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.tumulus/r1": {
+   "x": 26,
+   "y": 68,
+   "w": 24,
+   "h": 24,
+   "ox": 0,
+   "oy": 0
+  },
+  "item/world.watchtower/r0": {
+   "x": 90,
+   "y": 93,
+   "w": 15,
+   "h": 14,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.watchtower/r1": {
+   "x": 16,
+   "y": 93,
+   "w": 14,
+   "h": 15,
+   "ox": -1,
+   "oy": -1
+  },
+  "item/world.watchtower/r2": {
+   "x": 106,
+   "y": 93,
+   "w": 15,
+   "h": 14,
+   "ox": 0,
+   "oy": -1
+  },
+  "item/world.watchtower/r3": {
+   "x": 31,
+   "y": 93,
+   "w": 14,
+   "h": 15,
+   "ox": -1,
+   "oy": 0
+  },
+  "item/world.wayside_shrine/r0": {
+   "x": 51,
+   "y": 183,
+   "w": 4,
+   "h": 5,
+   "ox": -2,
+   "oy": -1
+  },
+  "item/world.wayside_shrine/r1": {
+   "x": 63,
+   "y": 183,
+   "w": 5,
+   "h": 4,
+   "ox": -2,
+   "oy": -2
+  }
+ }
+}

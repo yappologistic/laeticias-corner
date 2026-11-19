@@ -84,7 +84,9 @@ add_library(lc_engine STATIC
   src/platform/process.cpp
   src/render/blur.cpp
   src/render/camera.cpp
+  src/render/decks.cpp
   src/render/depth.cpp
+  src/render/order.cpp
   src/render/draw.cpp
   src/render/fx.cpp
   src/render/gpu/look.cpp
@@ -225,7 +227,6 @@ add_library(lc_worldview STATIC
   src/worldview/city_sound.cpp
   src/worldview/cover.cpp
   src/worldview/gather.cpp
-  src/worldview/order.cpp
   src/worldview/overview.cpp
   src/worldview/page_atlas.cpp
   src/worldview/page_runs.cpp

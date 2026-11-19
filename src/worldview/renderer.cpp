@@ -3,6 +3,7 @@
 #include "core/rng.hpp"
 #include "core/tuning.hpp"
 #include "platform/process.hpp"
+#include "render/bands.hpp"
 #include "render/draw.hpp"
 #include "render/gpu/post.hpp"
 #include "worldview/tuning.hpp"
@@ -153,19 +154,20 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
              fp.region});
         figureOf_.push_back(static_cast<std::uint32_t>(f));
     }
+    if (!hole_.empty()) {
+        // The home stands at its level; nothing outside it reaches over or under it.
+        hole_.z0 = static_cast<float>(map_.level({hole_.tiles.x0, hole_.tiles.y0}) * lvl_);
+        hole_.z1 = hole_.z0 + static_cast<float>(kMaxLevel * lvl_);
+    }
     prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
-    const auto cover = [this, hole = hole_] {
+    {
+        // The coarse levels' top field: one pass over the items, a few milliseconds.
         const Uint64 t0 = SDL_GetPerformanceCounter();
-        auto map = std::make_unique<CoverMap>(map_, *sprites_, hole);
-        SDL_Log("worldview: cover map in %.0f ms",
+        tops_ = std::make_unique<TopField>(map_, *sprites_, hole_);
+        SDL_Log("worldview: top field in %.0f ms",
                 static_cast<double>(SDL_GetPerformanceCounter() - t0) * 1000.0 /
                     static_cast<double>(SDL_GetPerformanceFrequency()));
-        return map;
-    };
-    if (async)
-        coverJob_ = std::async(std::launch::async, cover);
-    else
-        cover_ = cover();
+    }
     buildGlow();
     blob_ = home.sprite(home.lightBlob());
     if (const auto drop = home.find("fx/raindrop/f0"))
@@ -208,6 +210,7 @@ void WorldView::warmUp() {
     // Drivers prepare blend and filter state on first use, a stall of several milliseconds in
     // the middle of a run: use every combination once, into a scratch target, and wait.
     SDL_Texture* out = SDL_GetRenderTarget(renderer_);
+    batch_.setBand(bandTag(Band::Debug)); // into a scratch target, never seen
     ensure(half_, tuning::kImpostorBlock / 2, tuning::kImpostorBlock / 2);
     SDL_Texture* white = pages_->texture(sprites_->white().page);
     if (!SDL_SetRenderTarget(renderer_, half_.texture.get()))
@@ -269,10 +272,64 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
     return true;
 }
 
+bool WorldView::putPoly(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
+                        SDL_BlendMode mode, bool mirror, std::span<const Vec2> pts) {
+    if (dry_) return true;
+    SDL_Texture* t = pages_->texture(s.page);
+    if (t == nullptr) return false;
+    if (pts.size() < 3) return true;
+    const bool packed =
+        decoder_ && s.packed && (s.page != PageAtlas::kHomePage || pages_->homePackedReady());
+    if (packed) {
+        if (c.a >= 1.0f && mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
+        c = packedColour(c, s.page == PageAtlas::kHomePage);
+    }
+    // Texture coordinates by where each corner lies in the sprite's picture (mirrored: from the
+    // other side).
+    const float x0 = anchor.x - (mirror ? s.w - s.ox : s.ox);
+    const float y0 = anchor.y - s.oy;
+    RunPoly poly;
+    FRect box{1e9f, 1e9f, -1e9f, -1e9f};
+    for (const Vec2 w : pts) {
+        const Vec2 p = x.apply(w);
+        float u = (w.x - x0) / s.w;
+        if (mirror) u = 1.0f - u;
+        poly.v[static_cast<std::size_t>(poly.n++)] = {
+            {p.x, p.y},
+            c,
+            {s.uv.u0 + (s.uv.u1 - s.uv.u0) * u, s.uv.v0 + (s.uv.v1 - s.uv.v0) * (w.y - y0) / s.h}};
+        box = {std::min(box.x0, p.x), std::min(box.y0, p.y), std::max(box.x1, p.x),
+               std::max(box.y1, p.y)};
+        if (poly.n == static_cast<int>(poly.v.size())) break;
+    }
+    static constexpr std::array<int, 9> kFan{0, 1, 2, 0, 2, 3, 0, 3, 4};
+    if (!runsOpen_) {
+        if (decoder_) decoder_->use(batch_, packed);
+        batch_.use(t, mode, x.filter);
+        batch_.triangles(poly.v.data(), poly.n, kFan.data(), (poly.n - 2) * 3);
+        return true;
+    }
+    const std::uint32_t key =
+        (s.page * 2U + (packed ? 1U : 0U)) ^ (static_cast<std::uint32_t>(mode) * 2654435761U);
+    if (!runs_.add(key, box)) return true; // off the target
+    runQuads_.push_back({t,
+                         mode,
+                         {box.x0, box.y0},
+                         {box.x1, box.y1},
+                         s.uv,
+                         c,
+                         s.page,
+                         runWhat_,
+                         packed,
+                         static_cast<std::int32_t>(runPolys_.size())});
+    runPolys_.push_back(poly);
+    return true;
+}
+
 void WorldView::openRuns() {
     runs_.begin({0, 0, static_cast<float>(viewW_), static_cast<float>(viewH_)});
     runQuads_.clear();
-    runMeshes_.clear();
+    runPolys_.clear();
     runsOpen_ = true;
 }
 
@@ -281,10 +338,10 @@ void WorldView::closeRuns(SDL_ScaleMode filter) {
         const RunQuad& q = runQuads_[e];
         if (decoder_) decoder_->use(batch_, q.packed);
         batch_.use(q.texture, q.mode, filter);
-        if (q.mesh >= 0) {
-            static constexpr std::array<int, 6> kQuad{0, 1, 2, 0, 2, 3};
-            batch_.triangles(runMeshes_[static_cast<std::size_t>(q.mesh)].data(), 4, kQuad.data(),
-                             6);
+        if (q.poly >= 0) {
+            static constexpr std::array<int, 9> kFan{0, 1, 2, 0, 2, 3, 0, 3, 4};
+            const RunPoly& rp = runPolys_[static_cast<std::size_t>(q.poly)];
+            batch_.triangles(rp.v.data(), rp.n, kFan.data(), (rp.n - 2) * 3);
             continue;
         }
         const SDL_FPoint p[4] = {
@@ -562,22 +619,108 @@ bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze, float now, bool
            put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
 }
 
+const SpriteRef& WorldView::elemSprite(const Elem& e, float now) const {
+    const VariantLook& look = *e.look;
+    return e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
+                        : look.baseIn(lookSeason_).at(now, sprites_->itemFps(map_.items()[e.item]));
+}
+
+FRect WorldView::elemFoot(const Elem& e) const {
+    const world::Placed& it = map_.items()[e.item];
+    TileRect r = it.rect();
+    if (const world::GeomVariant* g = map_.geometry(it);
+        g != nullptr && e.piece >= 0 && std::cmp_less(e.piece, g->pieces.size())) {
+        const TileRect& p = g->pieces[static_cast<std::size_t>(e.piece)].rect;
+        r = {it.x + p.x0, it.y + p.y0, it.x + p.x1, it.y + p.y1};
+    }
+    const auto f = [](int v) { return static_cast<float>(v); };
+    return {f(r.x0), f(r.y0), f(r.x1), f(r.y1)};
+}
+
 bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     if (e.home) return true; // the game's scene draws it
     if (e.figure) return put(figures_[e.item].sprite, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
     if (e.ground) return drawTile(e.tile, x, now, nullptr);
     seasonAt(e.tile);
-    const VariantLook& look = *e.look;
-    const SpriteRef& s =
-        e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
-                     : look.baseIn(lookSeason_).at(now, sprites_->itemFps(map_.items()[e.item]));
+    const SpriteRef& s = elemSprite(e, now);
     if (post_ && e.piece < 0)
         if (const Sway& w = swayOf_[map_.items()[e.item].info]; w.lean > 0) {
-            putSwaying(w.frames ? s : look.baseIn(lookSeason_).f.front(), e.anchor, x, w.lean);
+            putSwaying(w.frames ? s : e.look->baseIn(lookSeason_).f.front(), e.anchor, x, w.lean);
             return true;
         }
-    const bool ok = put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
-    if (post_) markItemWater(e, x); // over the item's own pixels
+    if (e.part < 0) {
+        const bool ok = put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+        if (post_) markItemWater(e, x); // over the item's own pixels
+        return ok;
+    }
+    if (e.part >= 2) return putHalf(s, e, x, kWhite);
+    // One part of a floor with a roof over it: the rows below or above the roof's underside.
+    return putCut(s, e.anchor, x, elemFoot(e), e.cutZ, e.part == 1);
+}
+
+bool WorldView::putHalf(const SpriteRef& s, const Elem& e, const Xform& x, SDL_FColor c) {
+    // A kit bridge's half: the sprite's rectangle cut by its span through the tile's centre at
+    // the deck's height (a ground point (gx, gy) at height z is drawn at y = (gx + gy)·hh − z);
+    // the near half lies below the line.
+    const float mid =
+        e.alongX ? static_cast<float>(e.tile.y) + 0.5f : static_cast<float>(e.tile.x) + 0.5f;
+    const float a = 2.0f * mid * iso_.hh - e.cutZ;
+    const float b = (e.alongX ? 1.0f : -1.0f) * iso_.hh / iso_.hw;
+    const bool near = e.part == 3;
+    const float x0 = e.anchor.x - s.ox;
+    const float y0 = e.anchor.y - s.oy;
+    const std::array<Vec2, 4> rect{
+        {{x0, y0}, {x0 + s.w, y0}, {x0 + s.w, y0 + s.h}, {x0, y0 + s.h}}};
+    const auto side = [&](Vec2 p) { return near ? p.y - (a + b * p.x) : (a + b * p.x) - p.y; };
+    std::array<Vec2, 5> poly{};
+    std::size_t n = 0;
+    for (std::size_t i = 0; i < rect.size(); ++i) {
+        const Vec2 p = rect[i];
+        const Vec2 q = rect[(i + 1) % rect.size()];
+        const float sp = side(p);
+        const float sq = side(q);
+        if (sp >= 0 && n < poly.size()) poly[n++] = p;
+        if ((sp >= 0) != (sq >= 0) && n < poly.size()) {
+            const float t = sp / (sp - sq);
+            poly[n++] = {p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t};
+        }
+    }
+    return putPoly(s, e.anchor, x, c, SDL_BLENDMODE_BLEND, false, std::span(poly).first(n));
+}
+
+bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
+                       bool upper, SDL_FColor c) {
+    // The cut follows the footprint's front edges raised to the underside: every voxel of the
+    // overhead lies above it, every voxel of the floor below (draw-order.md §1.5 f). Strips
+    // between the edges' corners, each a trapezoid.
+    const Vec2 l = iso_.toWorld(foot.x0, foot.y1);
+    const Vec2 b = iso_.toWorld(foot.x1, foot.y1);
+    const Vec2 r = iso_.toWorld(foot.x1, foot.y0);
+    const float sx0 = anchor.x - s.ox;
+    const float sy0 = anchor.y - s.oy;
+    const float sx1 = sx0 + s.w;
+    const float sy1 = sy0 + s.h;
+    const auto cut = [&](float wx) {
+        const float cx = std::clamp(wx, l.x, r.x);
+        const float y = cx <= b.x ? l.y + (b.y - l.y) * (cx - l.x) / std::max(1.0f, b.x - l.x)
+                                  : b.y + (r.y - b.y) * (cx - b.x) / std::max(1.0f, r.x - b.x);
+        return std::clamp(y - z + 1, sy0, sy1);
+    };
+    std::array<float, 5> xs{sx0, std::clamp(l.x, sx0, sx1), std::clamp(b.x, sx0, sx1),
+                            std::clamp(r.x, sx0, sx1), sx1};
+    std::ranges::sort(xs);
+    bool ok = true;
+    for (std::size_t i = 0; i + 1 < xs.size(); ++i) {
+        const float xa = xs[i];
+        const float xb = xs[i + 1];
+        if (xb <= xa) continue;
+        const float ca = cut(xa);
+        const float cb = cut(xb);
+        const std::array<Vec2, 4> q =
+            upper ? std::array<Vec2, 4>{{{xa, sy0}, {xb, sy0}, {xb, cb}, {xa, ca}}}
+                  : std::array<Vec2, 4>{{{xa, ca}, {xb, cb}, {xb, sy1}, {xa, sy1}}};
+        ok &= putPoly(s, anchor, x, c, SDL_BLENDMODE_BLEND, false, q);
+    }
     return ok;
 }
 
@@ -1264,10 +1407,10 @@ std::optional<WorldView::Picked> WorldView::pick(Vec2 px) const {
         }
         if (ground != nullptr) continue;
         const float lift = iso_.toWorld(e.tile).y - e.anchor.y;
-        const Vec2 t = iso_.toWorld(o.foot.x0, o.foot.y0);
-        const Vec2 r = iso_.toWorld(o.foot.x1, o.foot.y0);
-        const Vec2 bt = iso_.toWorld(o.foot.x1, o.foot.y1);
-        const Vec2 l = iso_.toWorld(o.foot.x0, o.foot.y1);
+        const Vec2 t = iso_.toWorld(o.box.foot.x0, o.box.foot.y0);
+        const Vec2 r = iso_.toWorld(o.box.foot.x1, o.box.foot.y0);
+        const Vec2 bt = iso_.toWorld(o.box.foot.x1, o.box.foot.y1);
+        const Vec2 l = iso_.toWorld(o.box.foot.x0, o.box.foot.y1);
         const auto edge = [&](Vec2 a, Vec2 c) {
             return a.y + (c.y - a.y) * (px.x - a.x) / (c.x - a.x);
         };
@@ -1841,9 +1984,6 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     stats_ = {};
     batch_.resetStats();
     cells_.beginFrame();
-    if (coverJob_.valid() &&
-        coverJob_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-        cover_ = coverJob_.get();
     const float s = camera.scale;
     const Vec2 screen = camera.screen;
     const Vec2 c = camera.centre;
@@ -1935,7 +2075,10 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     if (!SDL_SetRenderTarget(renderer_, view_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: %s", SDL_GetError());
+    batch_.setBand(bandTag(Band::FarBackdrop));
     if (lod != Lod::Overview) drawBackdrops(view, xf, light.night > 0.5f);
+    // Cached cells hold the bands from the ground to the depth band, baked in their order.
+    batch_.setBand(bandTag(Band::Ground));
     const auto levelOf = [](Lod l) { return l == Lod::Native ? 0 : (l == Lod::Half ? 1 : 2); };
     if (want != Lod::Overview) {
         // What to build is planned for the level the view wants, even while a coarser one
@@ -1956,6 +2099,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     // The game's scene works only while its home is in view.
     const bool home = lod != Lod::Overview && !hole_.empty() && hole_.screen.overlaps(view);
     // The world's cloud shadows go under the home's ground: the home's scene shades its own land.
+    batch_.setBand(bandTag(Band::Shadows));
     if (weather_ != nullptr && lod != Lod::Overview) drawWeatherGround(view, xf);
     if (hooks.ground && home) {
         plain();
@@ -1966,21 +2110,26 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     if (arriving && lodFor(camera.arrivalScale) == Lod::Native) gatherAhead(arrival);
     if (want == Lod::Native) updateRegion(lod == want ? view : seen);
     bool homeDrawn = false;
+    lastLod_ = lod;
     if (lod == Lod::Native) {
         stats_.regionElements = static_cast<int>(region_.elems.size());
         stats_.regionShort = !regionRect_.contains(
             gatherTiles(view, sprites_->itemSpan(), iso_).clipped(map_.bounds()));
         prepareActors(view, lod);
+        batch_.setBand(bandTag(Band::Shadows));
         (void)drawShadows(region_, view, xf, shadow_, view_, true, merge_.visible());
+        batch_.setBand(bandTag(Band::Depth));
         stats_.spritesCulled = static_cast<int>(region_.order.size() - merge_.visible().size());
         // The painter's order, drawn page by page wherever the picture is the same for it
         // (page_runs.hpp): what does not meet on screen need not wait its turn.
         openRuns();
-        for (const std::uint32_t k : merge_.visible()) {
-            runWhat_ = kRunActor;
-            for (const std::uint32_t a : merge_.before(k)) drawActor(actorOf_[a], xf);
-            const std::uint32_t i = region_.order[k];
-            const Elem& e = region_.elems[i];
+        for (const ActorMerge::Step& st : merge_.sequence()) {
+            if (st.actor) {
+                runWhat_ = kRunActor;
+                drawActor(actorOf_[st.index], xf);
+                continue;
+            }
+            const Elem& e = region_.elems[st.index];
             if (e.home) {
                 // The home's scene takes its turn between what is behind it and in front.
                 closeRuns(xf.filter);
@@ -1999,13 +2148,12 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
             ++stats_.spritesDrawn;
             if (e.look != nullptr && e.look->look == Look::Placeholder) ++stats_.placeholders;
         }
-        runWhat_ = kRunActor;
-        for (const std::uint32_t a : merge_.before(region_.order.size()))
-            drawActor(actorOf_[a], xf);
         closeRuns(xf.filter);
     } else if (lod != Lod::Overview) {
-        // Coarser levels have no live objects of their own: people go over the impostors.
+        // Coarser levels have no live objects of their own: people go over the impostors, cut
+        // where something in front of them covers them.
         prepareActors(view, lod);
+        batch_.setBand(bandTag(Band::Depth));
         for (const std::uint32_t a : coarse_) drawActor(a, xf);
     } else {
         actorCount_ = 0;
@@ -2017,16 +2165,19 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         plain();
         hooks.objects(frame);
     }
+    batch_.setBand(bandTag(Band::Weather));
     if (weather_ != nullptr && (lod == Lod::Native || lod == Lod::Half)) drawRain(view, xf, now);
     // Grading, then what glows (drawn after it, additively). The shader path grades in its
     // final pass and lights and glows in targets of its own.
     plain();
+    batch_.setBand(bandTag(Band::Grading));
     if (post_)
         lightGpu(view, xf, lod, light.glow, hooks, frame, home);
     else if (hooks.light && home)
         hooks.light(frame);
     else
         fullQuad(viewW_, viewH_, ambient, SDL_BLENDMODE_MOD);
+    batch_.setBand(bandTag(Band::Glow));
     if (lod != Lod::Native && light.glow > 0.01f)
         drawCoarseGlow(view, xf,
                        light.glow * (lod == Lod::Overview ? tuning::kOverviewGlow : 1.0f));
@@ -2111,6 +2262,7 @@ void WorldView::composite(Vec2 scale, bool smooth) {
                                {{w, h}, bottom, {0, 0}},
                                {{0, h}, bottom, {0, 0}}};
     static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+    batch_.setBand(bandTag(Band::Sky));
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
     const float k = p.scale / p.res; // window px per target px
@@ -2121,6 +2273,8 @@ void WorldView::composite(Vec2 scale, bool smooth) {
     const bool whole = std::abs(k - std::round(k)) < 1e-3f &&
                        std::abs(ox - std::round(ox)) < 1e-2f &&
                        std::abs(oy - std::round(oy)) < 1e-2f;
+    // The world's picture, everything from the backdrop to the glow, over the sky.
+    batch_.setBand(bandTag(Band::Ground));
     batch_.use(view_.texture.get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
                whole && !smooth ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
     batch_.quad(SDL_FRect{(p.origin.x - p.topLeft.x) * p.scale * scale.x,
@@ -2227,12 +2381,11 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
     coarse_.clear();
     actorCount_ = 0;
     if (lod == Lod::Native && !mergeIndexed_) {
-        merge_.index(region_.items, region_.order, tuning::kActorMergeCell);
+        merge_.index(region_.items, region_.order, region_.graph, tuning::kActorMergeCell);
         mergeIndexed_ = true;
     }
     if (life_ == nullptr || !looks_) {
-        if (lod == Lod::Native)
-            merge_.plan(region_.items, {}, [](std::uint32_t, std::uint32_t) { return 0; }, view);
+        if (lod == Lod::Native) merge_.plan(region_.items, {}, view);
         return;
     }
     TileRect tiles = tilesUnder(view, iso_);
@@ -2264,7 +2417,6 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
                 ad.goods = looks_->goods(d.goods, 0);
                 ad.goodsAt = {ad.anchor.x + look->carry.x, ad.anchor.y + look->carry.y};
             }
-            ad.depth = d.pos.x + d.pos.y;
         }
         actorDraw_.push_back(ad);
         if (ad.sprite == nullptr) continue;
@@ -2278,43 +2430,35 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
                        std::max(actorReach_.down, s.h - s.oy + 1)};
         if (!box.overlaps(view)) continue;
         if (ad.goods != nullptr) box.y0 = std::min(box.y0, ad.goodsAt.y - ad.goods->oy);
-        if (lod != Lod::Native) {
-            // The impostor holds everything static, so whoever stands behind something in front
-            // (by the same depth relation as the native order) is not drawn over it; under a roof
-            // or a colonnade there is nothing to see from this far either.
-            const float above = d.z - static_cast<float>(map_.level(t) * lvl_);
-            if (cover_ && (d.item < 0 || d.floor) &&
-                cover_->at(d.pos) - above <= tuning::kCoverHidden)
-                coarse_.push_back(static_cast<std::uint32_t>(i));
-            continue;
-        }
+        // Its box (draw-order.md §1.2): a small square round the feet, from the floor it stands
+        // on to the top of what is drawn (goods and riders included: they go with it).
         const float f = tuning::kActorFoot;
-        mergeActors_.push_back(
-            {FRect{d.pos.x - f, d.pos.y - f, d.pos.x + f, d.pos.y + f}, box, s.page});
+        actorDraw_.back().box = makeBox({d.pos.x - f, d.pos.y - f, d.pos.x + f, d.pos.y + f}, d.z,
+                                        d.z + (ad.anchor.y - box.y0),
+                                        depthId(DepthKind::Actor, d.handle.index), iso_.hh);
+        {
+            // Zoomed out the impostor holds everything static: the rows of whoever stands behind
+            // something in front of them are left out, as the native order would paint over
+            // them. At the native level items are in the painter's order and only raised ground
+            // (a terrace's edge, a hill) cuts.
+            ActorDraw& c = actorDraw_.back();
+            c.hidden = tops_->cut(c.box, c.anchor, box.y0, lod == Lod::Native);
+            if (c.hidden.from <= box.y0 && c.hidden.to >= c.anchor.y) continue; // all of it
+        }
+        mergeActors_.push_back({actorDraw_.back().box, box, s.page});
         actorOf_.push_back(static_cast<std::uint32_t>(i));
     }
-    if (lod != Lod::Native) {
-        std::ranges::sort(coarse_, {}, [&](std::uint32_t i) { return actorDraw_[i].depth; });
-        return;
-    }
-    merge_.plan(
-        region_.items, mergeActors_,
-        [&](std::uint32_t e, std::uint32_t a) {
-            const Elem& el = region_.elems[e];
-            const life::DrawActor& d = actorBuf_[actorOf_[a]];
-            const FRect& foot = region_.items[e].foot;
-            const bool on =
-                d.pos.x >= foot.x0 && d.pos.x < foot.x1 && d.pos.y >= foot.y0 && d.pos.y < foot.y1;
-            // The raised tile someone stands on is under them.
-            if (el.ground) return on ? -1 : 0;
-            if (el.home || el.figure || d.item < 0 || el.item != static_cast<std::uint32_t>(d.item))
-                return 0;
-            // On an item's walk tile: its floor (and an unsplit deck) is under the feet; a
-            // landmark piece over the tile (a roof, a lintel, a gateway) is over the head.
-            if (el.floor || el.piece < 0) return -1;
-            return on ? 1 : 0;
-        },
-        view);
+    ActorMerge& merge = lod == Lod::Native ? merge_ : coarseMerge_;
+    if (lod != Lod::Native) coarseMerge_.index({}, {}, {}, tuning::kActorMergeCell);
+    merge.plan(lod == Lod::Native ? std::span<const OrderItem>(region_.items)
+                                  : std::span<const OrderItem>{},
+               mergeActors_, view);
+    float rank = 0;
+    for (const ActorMerge::Step& st : merge.sequence())
+        if (st.actor) {
+            actorDraw_[actorOf_[st.index]].drawn = rank++;
+            if (lod != Lod::Native) coarse_.push_back(actorOf_[st.index]);
+        }
 }
 
 void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
@@ -2323,7 +2467,7 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
     hits.clear();
     for (std::size_t i = 0; i < actorDraw_.size(); ++i) {
         const ActorDraw& a = actorDraw_[i];
-        if (a.sprite == nullptr) continue;
+        if (a.sprite == nullptr || a.drawn < 0) continue;
         const SpriteRef& s = *a.sprite;
         const float x0 = a.anchor.x - (a.mirror ? s.w - s.ox : s.ox);
         // A little narrower than the sprite: what is clicked is the person, not the air beside.
@@ -2331,7 +2475,9 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
         if (px.x < x0 + inset || px.x >= x0 + s.w - inset || px.y < a.anchor.y - s.oy ||
             px.y >= a.anchor.y - s.oy + s.h)
             continue;
-        hits.emplace_back(-a.depth, actorBuf_[i].handle);
+        if (px.y >= a.hidden.from && px.y < a.hidden.to) continue; // covered there
+        // Frontmost first: the last drawn.
+        hits.emplace_back(-a.drawn, actorBuf_[i].handle);
     }
     std::ranges::sort(hits, [](const auto& a, const auto& b) {
         return a.first != b.first ? a.first < b.first : a.second.index < b.second.index;
@@ -2339,21 +2485,20 @@ void WorldView::actorsAt(Vec2 px, std::vector<life::Handle>& out) const {
     for (const auto& h : hits) out.push_back(h.second);
 }
 
-int WorldView::coarseActorsCovered(float px) const {
+int WorldView::coarseActorsCovered(float px, std::string* first) const {
     constexpr int kRows = 40; // tiles in front whose art can reach back over someone
     int covered = 0;
     std::vector<world::DrawPiece> pieces; // a test's question, not a frame's: allocation is fine
     for (const std::uint32_t i : coarse_) {
         const life::DrawActor& d = actorBuf_[i];
+        const ActorDraw& ad = actorDraw_[i];
         const TilePos t{static_cast<int>(std::floor(d.pos.x)),
                         static_cast<int>(std::floor(d.pos.y))};
-        const Vec2 w = iso_.toWorld(d.pos.x, d.pos.y);
-        const Vec2 feet{w.x, w.y - d.z};
+        const float top = ad.anchor.y - (ad.box.z1 - ad.box.z0);
         map_.piecesIn(TileRect{t.x - 2, t.y - 2, t.x + kRows, t.y + kRows}.clipped(map_.bounds()),
                       pieces);
         float most = 0;
         for (const world::DrawPiece& p : pieces) {
-            if (d.item >= 0 && p.item == static_cast<std::uint32_t>(d.item)) continue;
             const world::Placed& it = map_.items()[p.item];
             if (hole_.tiles.contains(TilePos{it.x, it.y})) continue;
             const VariantLook& look = sprites_->item(it);
@@ -2361,35 +2506,169 @@ int WorldView::coarseActorsCovered(float px) const {
             if (!split && look.base.empty()) continue;
             const SpriteRef& s =
                 split ? look.pieces[static_cast<std::size_t>(p.piece)] : look.base.f.front();
-            const Vec2 o = iso_.toWorld(TilePos{it.x, it.y});
-            const Vec2 a{o.x, o.y - static_cast<float>(it.level * lvl_)};
             const TileRect r = split ? p.rect : it.rect();
-            // Hidden means behind it with their whole width: the feet a few px either side
-            // (someone half past a pier's edge is as rightly drawn as not).
-            const FRect foot{static_cast<float>(r.x0), static_cast<float>(r.y0),
-                             static_cast<float>(r.x1), static_cast<float>(r.y1)};
-            const FRect box{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
-            const auto raise = static_cast<float>(it.level * lvl_);
-            const auto at = [&](float dx) {
-                return coverOf(iso_, {feet.x + dx, feet.y}, t, foot, raise, box);
-            };
-            most =
-                std::max(most, std::min(at(-tuning::kCoverHalfBody), at(tuning::kCoverHalfBody)));
+            const float base = static_cast<float>(it.level * lvl_);
+            const ZRange z =
+                heightsOf(map_.geometry(it), map_.info(it), split ? p.piece : -1, s.oy);
+            const DepthBox b =
+                makeBox({static_cast<float>(r.x0), static_cast<float>(r.y0),
+                         static_cast<float>(r.x1), static_cast<float>(r.y1)},
+                        base + z.z0, base + z.z1, depthId(DepthKind::Item, p.item), iso_.hh);
+            if (drawnBefore(b, ad.box)) continue;
+            // Rows of the person drawn inside its silhouette at the person's column: the piece
+            // tile by tile, each as tall as the art says it is there (a solid piece's tops).
+            const world::GeomVariant* g = map_.geometry(it);
+            const bool perTile = z.kind == ZRange::Kind::Solid && g != nullptr && g->topsW > 0;
+            for (int ty = r.y0; ty < r.y1; ++ty)
+                for (int tx = r.x0; tx < r.x1; ++tx) {
+                    float z1 = b.z1;
+                    if (perTile && tx - it.x < g->topsW) {
+                        const auto at =
+                            static_cast<std::size_t>((ty - it.y) * g->topsW + (tx - it.x));
+                        if (at < g->tops.size()) z1 = base + static_cast<float>(g->tops[at]);
+                    }
+                    const RowBand sil =
+                        silhouette(iso_,
+                                   {static_cast<float>(tx), static_cast<float>(ty),
+                                    static_cast<float>(tx + 1), static_cast<float>(ty + 1)},
+                                   b.z0, std::max(z1, b.z0), ad.anchor.x);
+                    if (sil.empty()) continue;
+                    const auto overlap = [&](float from, float to) {
+                        return std::max(0.0f, std::min(to, sil.to) - std::max(from, sil.from));
+                    };
+                    const float shown = ad.hidden.empty()
+                                            ? overlap(top, ad.anchor.y)
+                                            : overlap(top, std::min(ad.anchor.y, ad.hidden.from)) +
+                                                  overlap(std::max(top, ad.hidden.to), ad.anchor.y);
+                    if (shown > most && shown > px && first != nullptr && covered == 0)
+                        *first = std::format(
+                            "{} at ({:.2f}, {:.2f}) z {:.0f}: {:.0f} rows inside {} piece {} at "
+                            "({}, {})",
+                            life_->lifeWorld().data.kinds[d.kind].id, d.pos.x, d.pos.y, d.z, shown,
+                            map_.info(it).id, p.piece, tx, ty);
+                    most = std::max(most, shown);
+                }
         }
         covered += most > px ? 1 : 0;
     }
     return covered;
 }
 
+int WorldView::coarseActorsOnItems() const {
+    int on = 0;
+    for (const std::uint32_t i : coarse_) {
+        const life::DrawActor& d = actorBuf_[i];
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        on += map_.inBounds(t) && map_.itemAt(t) >= 0 ? 1 : 0;
+    }
+    return on;
+}
+
+int WorldView::orderViolations(std::string* first) const {
+    std::pair<DepthBox, DepthBox> pair;
+    const int n =
+        lastLod_ == Lod::Native
+            ? lc::orderViolations(region_.items, mergeActors_, merge_.sequence(), false, &pair)
+            : lc::orderViolations({}, mergeActors_, coarseMerge_.sequence(), false, &pair);
+    const auto name = [&](const DepthBox& b) {
+        const auto kind = static_cast<DepthKind>(b.id >> 56);
+        const auto index = static_cast<std::uint32_t>((b.id >> 32) & 0xFFFFFFu);
+        std::string what = kind == DepthKind::Item && index < map_.items().size()
+                               ? map_.info(map_.items()[index]).id
+                               : (kind == DepthKind::Actor ? "actor" : "element");
+        return std::format("{} part {} [{:.1f},{:.1f}..{:.1f},{:.1f}] z {:.0f}..{:.0f}", what,
+                           b.id & 0xFFFFFFFFu, b.foot.x0, b.foot.y0, b.foot.x1, b.foot.y1, b.z0,
+                           b.z1);
+    };
+    if (n > 0 && first != nullptr)
+        *first = "drawn first " + name(pair.first) + ", then " + name(pair.second);
+    else if (region_.cycles > 0 && lastLod_ == Lod::Native && first != nullptr)
+        *first = std::format("{} cycle(s) in the static order, the first broken at {}",
+                             region_.cycles, name(region_.cycleAt));
+    return n;
+}
+
+int WorldView::orderCycles() const {
+    // The static sort's cycles are data faults; the merge's are stacked movers (a walker on a
+    // deck over a boat), broken between the two actors and not counted here.
+    return region_.cycles;
+}
+
+int WorldView::sunkActors(std::string* first) const {
+    if (lastLod_ != Lod::Native || life_ == nullptr) return 0;
+    const auto& kinds = life_->lifeWorld().data.kinds;
+    int sunk = 0;
+    for (const std::uint32_t i : actorOf_) {
+        const life::DrawActor& d = actorBuf_[i];
+        if (kinds[d.kind].sprite.starts_with("ship/")) continue;
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        if (!map_.inBounds(t) || map_.itemAt(t) < 0) continue;
+        const world::Placed& it = map_.items()[static_cast<std::size_t>(map_.itemAt(t))];
+        const world::GeomVariant* g = map_.geometry(it);
+        const world::ItemInfo& info = map_.info(it);
+        const TilePos rel{t.x - it.x, t.y - it.y};
+        int piece = -1;
+        if (g != nullptr)
+            for (std::size_t q = 0; q < g->pieces.size(); ++q)
+                if (g->pieces[q].rect.contains(rel)) piece = static_cast<int>(q);
+        const bool walkTile = g != nullptr ? std::ranges::find(g->walk, rel) != g->walk.end() ||
+                                                 (g->walk.empty() && info.walkable)
+                                           : info.walkable;
+        if (!walkTile) continue;
+        const ZRange z = heightsOf(g, info, piece, 0);
+        // A floor or a deck (who walks under an overhead run stands on the ground).
+        const bool stoodOn = z.kind == ZRange::Kind::Floor || z.kind == ZRange::Kind::Deck;
+        // The tile's own floor: its walk_z, else (a kit deck) its tops.
+        int floor = 0;
+        bool known = false;
+        if (g != nullptr)
+            for (const auto& [wt, wz] : g->walkZ)
+                if (wt == rel) {
+                    floor = wz;
+                    known = true;
+                }
+        if (!known && info.crossing && g != nullptr && g->topsW > 0 && rel.x < g->topsW &&
+            static_cast<std::size_t>(rel.y * g->topsW + rel.x) < g->tops.size())
+            floor = g->tops[static_cast<std::size_t>(rel.y * g->topsW + rel.x)];
+        const auto surface = static_cast<float>(it.level * lvl_ + floor);
+        if (!stoodOn || d.z + tuning::kDeckReach >= surface) continue;
+        if (sunk++ == 0 && first != nullptr)
+            *first = std::format("{} at ({:.2f}, {:.2f}) z {:.0f} on {} whose floor is at {:.0f}",
+                                 kinds[d.kind].id, d.pos.x, d.pos.y, d.z, info.id, surface);
+    }
+    return sunk;
+}
+
 void WorldView::drawActor(std::uint32_t i, const Xform& x) {
     seasonCtx_ = {fallbackClimate_, fallbackClimate_, -1, 0, 0};
     lookSeason_ = season_; // people carry no grass or snow
     const ActorDraw& a = actorDraw_[i];
-    if (put(*a.sprite, a.anchor, x, a.colour, SDL_BLENDMODE_BLEND, a.mirror))
+    if (putRows(*a.sprite, a.anchor, x, a.colour, a.mirror, a.hidden))
         ++stats_.actorsDrawn;
     else
         ++stats_.spritesMissing;
-    if (a.goods != nullptr) (void)put(*a.goods, a.goodsAt, x, a.colour, SDL_BLENDMODE_BLEND);
+    if (a.goods != nullptr) (void)putRows(*a.goods, a.goodsAt, x, a.colour, false, a.hidden);
+}
+
+bool WorldView::putRows(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, bool mirror,
+                        RowBand hide) {
+    if (hide.empty()) return put(s, anchor, x, c, SDL_BLENDMODE_BLEND, mirror);
+    // Whole art rows of the sprite above and below the covered band.
+    const float top = anchor.y - s.oy;
+    const auto row = [&](float y) { return std::clamp(std::round(y - top), 0.0f, s.h); };
+    const float r0 = row(hide.from);
+    const float r1 = row(hide.to);
+    const float x0 = anchor.x - (mirror ? s.w - s.ox : s.ox);
+    bool ok = true;
+    for (const auto& [from, to] : {std::pair{0.0f, r0}, std::pair{r1, s.h}}) {
+        if (to <= from) continue;
+        const std::array<Vec2, 4> q{
+            {{x0, top + from}, {x0 + s.w, top + from}, {x0 + s.w, top + to}, {x0, top + to}}};
+        ok &= putPoly(s, anchor, x, c, SDL_BLENDMODE_BLEND, mirror, q);
+    }
+    return ok;
 }
 
 void WorldView::drawActorShadows(const Xform& x) {

@@ -57,7 +57,19 @@ def _pass_solid(args):
     big, box, k = args
     m = big.build(box, k)
     own = [h for h in m.halos if box[0] <= h.x < box[1] and box[2] <= h.y < box[3]]
-    return box, np.packbits(m.mat > 0, axis=2), m.mat.shape[2], own
+    return box, np.packbits(m.mat > 0, axis=2), m.mat.shape[2], own, _top_codes(m)
+
+
+def _top_codes(m: Model) -> np.ndarray:
+    """(nx, ny): the occlusion material code of each column's highest voxel at or above ground."""
+    import occlusion
+    zero = max(-m.z0, 0)
+    mat = m.mat[:, :, zero:]
+    solid = mat > 0
+    if not solid.shape[2]:
+        return np.zeros(solid.shape[:2], np.uint8)
+    idx = np.where(solid.any(axis=2), solid.shape[2] - 1 - np.argmax(solid[:, :, ::-1], axis=2), 0)
+    return occlusion.material_codes()[np.take_along_axis(mat, idx[..., None], axis=2)[..., 0]]
 
 
 def _pass_shade(args):
@@ -81,6 +93,7 @@ class BigRender:
     top: int                        # highest solid voxel above the ground, px
     clear: np.ndarray               # (fw, fh): the most room under anything on that tile, px
     passage: np.ndarray             # (fw, fh): the room a boat surely has through that tile, px
+    occlusion: Sprite               # the occlusion tops (occlusion.py)
 
 
 def _grid_bounds(extent, k):
@@ -128,26 +141,30 @@ def passage(solid: np.ndarray, x0: int, y0: int, fw: int, fh: int, t: int) -> np
 
 
 def solid_grid(big: BigModel, k: int, pool):
-    """Pass one: the model's solid mask over its whole grid (ground rows below z 0 set) and the
-    halos its chunks hold; returns (Occupancy, halos)."""
+    """Pass one: the model's solid mask over its whole grid (ground rows below z 0 set), the
+    halos its chunks hold and each column's top material code (occlusion.py); returns
+    (Occupancy, halos, codes)."""
     gx0, gx1, gy0, gy1, gz0, gz1 = _grid_bounds(big.extent, k)
     occ = np.zeros((gx1 - gx0, gy1 - gy0, gz1 - gz0), bool)
     occ[:, :, :max(0, -gz0)] = True        # solid ground below z = 0
+    codes = np.zeros(occ.shape[:2], np.uint8)
     halos: list[Halo] = []
-    for box, packed, nz, own in pool.imap(_pass_solid, [(big, b, k) for b in _chunks(big.extent)]):
+    for box, packed, nz, own, top in pool.imap(_pass_solid, [(big, b, k) for b in _chunks(big.extent)]):
         solid = np.unpackbits(packed, axis=2, count=nz).astype(bool)
         i0, j0, l0 = box[0] * k - gx0, box[2] * k - gy0, box[4] * k - gz0
         sub = occ[i0:i0 + solid.shape[0], j0:j0 + solid.shape[1], l0:l0 + nz]
         sub |= solid
+        csub = codes[i0:i0 + solid.shape[0], j0:j0 + solid.shape[1]]
+        csub[...] = np.where(top > 0, top, csub)
         halos += own
     halos.sort(key=lambda h: (h.x, h.y, h.z))
-    return Occupancy(occ, gx0, gy0, gz0), halos
+    return Occupancy(occ, gx0, gy0, gz0), halos, codes
 
 
 def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRender:
     """Render a big model with the worker pool; see the module notes."""
     gx0, gx1, gy0, gy1, gz0, gz1 = _grid_bounds(big.extent, k)
-    ground, halos = solid_grid(big, k, pool)
+    ground, halos, codes = solid_grid(big, k, pool)
     occ = ground.grid
     chunks = list(_chunks(big.extent))
 
@@ -204,7 +221,9 @@ def render_big(big: BigModel, k: int, pool, footprint, want_glow=False) -> BigRe
     top = int(solid_z.max() + 1) if solid_z.size else 0
     clear = clearance(occ[:, :, zero:], gx0, gy0, fw, fh, t)
     gap = passage(occ[:, :, zero:], gx0, gy0, fw, fh, t)
-    return BigRender(base, glow_sprite, _shadow(ground, gz1, k), tiles, column, top, clear, gap)
+    import occlusion
+    occ_tops = occlusion.tops(occ[:, :, zero:], codes, gx0, gy0)
+    return BigRender(base, glow_sprite, _shadow(ground, gz1, k), tiles, column, top, clear, gap, occ_tops)
 
 
 def _shadow(occ: Occupancy, zmax: int, k: int) -> Sprite:

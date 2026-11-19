@@ -39,13 +39,19 @@ def _k_filter(x):
 
 def integrated_lufs(x):
     """Gated integrated loudness. Mono counts as a single channel, like ffmpeg ebur128."""
-    y = _k_filter(np.asarray(x, dtype=np.float64)) ** 2  # float64 sums over long files
+    x = np.asarray(x, dtype=np.float64)  # float64 sums over long files
+    x = x if x.ndim == 2 else x[:, None]
     block, step = int(0.4 * SR), int(0.1 * SR)
-    if len(y) < block:
-        y = np.concatenate([y, np.zeros((block - len(y), y.shape[1]))])
-    csum = np.concatenate([np.zeros((1, y.shape[1])), np.cumsum(y, axis=0)])
-    starts = np.arange(0, len(y) - block + 1, step)
-    z = ((csum[starts + block] - csum[starts]) / block).sum(axis=1)
+    starts = np.arange(0, max(len(x), block) - block + 1, step)
+    z = 0.0
+    for c in range(x.shape[1]):  # a channel at a time: the same sums, half the memory
+        y = _k_filter(x[:, c])[:, 0]
+        y *= y
+        if len(y) < block:
+            y = np.concatenate([y, np.zeros(block - len(y))])
+        csum = np.concatenate([[0.0], np.cumsum(y)])
+        del y
+        z = z + (csum[starts + block] - csum[starts]) / block
     lk = -0.691 + 10 * np.log10(z + 1e-20)
     z = z[lk > -70]
     if len(z) == 0:

@@ -8,6 +8,8 @@ import math
 
 import numpy as np
 
+import waterworks
+
 import materials as M
 from arch import (ashlar_tone, awning, carve, ellipsoid, face_box, fill, flight, halo, mark, merlons, mudbrick_wall,
                   plaster_tone, revolve, rod, slab, stair, stone_frame, tent)
@@ -268,9 +270,8 @@ def p_basin(v, frame, frames, k):
     m = Model.empty(0, 16, 0, 16, 0, 5, k=k)
     slab(m, 0.5, 15.5, 0.5, 15.5, 0, 3.4, "limestone", tone=ashlar_tone(3.4, 5.0, 390))
     carve(m, (2.5, 13.5, 2.5, 13.5, 0.8, 4.0))
-    r = 1.5 + frame * 1.4
-    fill(m, (2.5, 13.5, 2.5, 13.5, 0.6, 1.6), "water",
-         tone=lambda X, Y, Z: 1.8 * (np.abs(np.hypot(X - 8, Y - 8) - r) < 0.5) - 1.4)
+    waterworks.surface(m, (2.5, 13.5, 2.5, 13.5), 1.6, frame, frames, sources=[(8.0, 8.0)], seed=391,
+                       depth_units=2.5, boil=False)
     return m
 
 

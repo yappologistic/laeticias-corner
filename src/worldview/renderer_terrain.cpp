@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <initializer_list>
 
 namespace lc::worldview {
 namespace {
@@ -69,16 +70,16 @@ bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<c
         return true;
     }
     // In the live layer, kept with its page's run as put() keeps a sprite: a quad (four corners,
-    // two triangles) as one entry, any other triangle as one whose last corner repeats.
+    // two triangles) as one polygon, any other triangle as one of its own.
     const std::uint32_t key =
         (s.page * 2U + (packed ? 1U : 0U)) ^ (static_cast<std::uint32_t>(mode) * 2654435761U);
-    const auto keep = [&](const std::array<SDL_Vertex, 4>& q) {
-        FRect box{q[0].position.x, q[0].position.y, q[0].position.x, q[0].position.y};
-        for (const SDL_Vertex& p : q) {
-            box.x0 = std::min(box.x0, p.position.x);
-            box.y0 = std::min(box.y0, p.position.y);
-            box.x1 = std::max(box.x1, p.position.x);
-            box.y1 = std::max(box.y1, p.position.y);
+    const auto keep = [&](std::initializer_list<SDL_Vertex> corners) {
+        RunPoly poly;
+        FRect box{1e9f, 1e9f, -1e9f, -1e9f};
+        for (const SDL_Vertex& p : corners) {
+            poly.v[static_cast<std::size_t>(poly.n++)] = p;
+            box = {std::min(box.x0, p.position.x), std::min(box.y0, p.position.y),
+                   std::max(box.x1, p.position.x), std::max(box.y1, p.position.y)};
         }
         if (!runs_.add(key, box)) return;
         runQuads_.push_back({t,
@@ -86,22 +87,21 @@ bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<c
                              {box.x0, box.y0},
                              {box.x1, box.y1},
                              s.uv,
-                             q[0].color,
+                             poly.v[0].color,
                              s.page,
                              runWhat_,
                              packed,
-                             static_cast<std::int32_t>(runMeshes_.size())});
-        runMeshes_.push_back(q);
+                             static_cast<std::int32_t>(runPolys_.size())});
+        runPolys_.push_back(poly);
     };
     static constexpr std::array<int, 6> kQuad{0, 1, 2, 0, 2, 3};
     if (v.size() == 4 && std::ranges::equal(idx, kQuad)) {
         keep({v[0], v[1], v[2], v[3]});
         return true;
     }
-    for (std::size_t i = 0; i + 2 < idx.size(); i += 3) {
-        const SDL_Vertex& c = v[static_cast<std::size_t>(idx[i + 2])];
-        keep({v[static_cast<std::size_t>(idx[i])], v[static_cast<std::size_t>(idx[i + 1])], c, c});
-    }
+    for (std::size_t i = 0; i + 2 < idx.size(); i += 3)
+        keep({v[static_cast<std::size_t>(idx[i])], v[static_cast<std::size_t>(idx[i + 1])],
+              v[static_cast<std::size_t>(idx[i + 2])]});
     return true;
 }
 

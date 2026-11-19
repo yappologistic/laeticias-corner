@@ -67,9 +67,19 @@
    ]
   },
   {
+   "id": "parsa.terrace_stone",
+   "name": "Terrace stone",
+   "base": true,
+   "variants": 4,
+   "faces": [
+    "parsa.ashlar",
+    "parsa.rock"
+   ]
+  },
+  {
    "id": "parsa.paving_red",
    "name": "Red plaster floor",
-   "under": "parsa.plain_grass",
+   "under": "parsa.terrace_stone",
    "edges": 16,
    "faces": [
     "parsa.ashlar"
@@ -4163,7 +4173,15 @@
  "audio": {
   "music": [
    "music/parsa/day.ogg",
-   "music/parsa/night.ogg"
+   "music/parsa/night.ogg",
+   "music/parsa/town_court_day.ogg",
+   "music/parsa/town_court_night.ogg",
+   "music/parsa/town_caravan_day.ogg",
+   "music/parsa/town_caravan_night.ogg",
+   "music/parsa/town_west_day.ogg",
+   "music/parsa/town_west_night.ogg",
+   "music/parsa/town_river_day.ogg",
+   "music/parsa/town_river_night.ogg"
   ],
   "ambience": [
    "amb/parsa/plain_day.ogg",

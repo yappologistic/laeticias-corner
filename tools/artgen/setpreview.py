@@ -28,6 +28,19 @@ class Pages:
             for key, r in doc["sprites"].items():
                 self.rects[key] = r
                 self.images[key] = img
+        # Shadows are on each set's half-size shadow page only: drawn back at full size.
+        self.half = set()
+        for s in sets:
+            f = Path(out_dir) / f"{s}.s.json"
+            if not f.exists():
+                continue
+            doc = json.loads(f.read_text())
+            img = Image.open(f.parent / doc["image"]).convert("RGBA")
+            for key, r in doc["sprites"].items():
+                if key not in self.rects:
+                    self.rects[key] = r
+                    self.images[key] = img
+                    self.half.add(key)
 
     def get(self, key):
         if key not in self.cache:
@@ -37,7 +50,12 @@ class Pages:
                 self.cache[key] = (Image.new("RGBA", (6 * k, 6 * k), (255, 0, 255, 255)), 3 * k, 6 * k)
             else:
                 img = self.images[key]
-                self.cache[key] = (img.crop((r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"])), r["ox"], r["oy"])
+                im = img.crop((r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"]))
+                if key in self.half:
+                    im = im.resize((2 * r["w"], 2 * r["h"]), Image.BILINEAR)
+                    self.cache[key] = (im, 2 * r["ox"], 2 * r["oy"])
+                else:
+                    self.cache[key] = (im, r["ox"], r["oy"])
         return self.cache[key]
 
     def frames(self, prefix):

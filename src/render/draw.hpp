@@ -21,4 +21,9 @@ struct Xform {
 void putSprite(Batch& batch, const Sprite& s, Vec2 anchor, const Xform& x, SDL_FColor color,
                SDL_BlendMode blend, bool mirror = false, Vec2 pivot = {}, Vec2 scale = {1, 1});
 
+// Draws the part of `s` (anchored at `anchor`) below the world px line y = a + b·x, or above it:
+// one half of a sprite cut along a line, the other half drawn at another turn of the order.
+void putSpriteCut(Batch& batch, const Sprite& s, Vec2 anchor, const Xform& x, SDL_FColor color,
+                  SDL_BlendMode blend, float a, float b, bool below);
+
 } // namespace lc

@@ -9,6 +9,8 @@ import math
 
 import numpy as np
 
+import waterworks
+
 import materials as M
 from arch import carve, ellipsoid, face_box, fill, flight, halo, mark, revolve, rod, slab
 from greek import city_wall, herm, house_wall, stele, statue_base, tiled_roof, vase
@@ -554,9 +556,10 @@ def g_fountain(v, frame, frames, k):
     slab(m, 12.0, 29.0, 2.0, 30.0, 20.0, 24.0, "poros", tone=M.ashlar(4.0, 30.0, 841, spread=0.3))
     tiled_roof(m, -1.5, 30.0, -1.5, 33.5, 24.0, 6.0, axis="x", material="terracotta", seed=842)
     slab(m, 14.0, 22.0, 4.0, 28.0, 0.0, 3.0, "poros", tone=0.2)
-    fill(m, (15.0, 21.0, 5.0, 27.0, 2.0, 3.1), "water", tone=lambda X, Y, Z: 0.5 * (((X + Y + frame) % 3.0) < 0.6))
+    carve(m, (15.0, 21.0, 5.0, 27.0, 2.4, 3.1))
     ellipsoid(m, (14.6, 16.0, 10.0), (0.9, 1.2, 1.2), "bronze_cast", tone=0.3)
-    fill(m, (15.0, 16.0, 15.6, 16.4, 3.0, 9.4), "water", tone=0.5)
+    land = waterworks.stream(m, (15.4, 16.0, 9.4), (2.2, 0.0), 2.4, frame, frames, r=0.5, seed=845)
+    waterworks.surface(m, (15.0, 21.0, 5.0, 27.0), 2.4, frame, frames, sources=[land], seed=846)
     return m
 
 
