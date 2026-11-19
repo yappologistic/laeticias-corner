@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <memory>
 #include <span>
+#include <string_view>
 #include <vector>
 
 namespace lc::gpu {
@@ -26,6 +27,10 @@ namespace lc::gpu {
 [[nodiscard]] RendererPtr createRenderer(SDL_Window* window);
 // The renderer is SDL's `gpu` driver.
 [[nodiscard]] bool isGpu(SDL_Renderer* renderer);
+// One of the committed fragment shaders (assets/shaders, embedded) with one uniform buffer and
+// `samplers` samplers; null with the reason logged.
+[[nodiscard]] SDL_GPUShader* makeFragmentShader(SDL_GPUDevice* device, std::string_view name,
+                                                Uint32 samplers);
 
 // Everything the final pass needs for one frame.
 struct FinalParams {

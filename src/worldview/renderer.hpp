@@ -17,6 +17,7 @@
 #include "platform/batch.hpp"
 #include "render/atlas.hpp"
 #include "render/draw.hpp"
+#include "render/gpu/decoder.hpp"
 #include "render/gpu/look.hpp"
 #include "ui/font.hpp"
 #include "world/figures.hpp"
@@ -252,6 +253,9 @@ public:
     // The clouds setting (the deck and shadows, shadows alone, none; the classic frame has no
     // deck).
     void setClouds(gpu::Clouds c) { clouds_ = c; }
+    // The calendar's month (lc::calendarDay) and the time of day (0..1 from midnight): on SDL's
+    // gpu driver each region's grass, leaves and snow follow its own climate's month.
+    void setCalendar(int month, float dayFraction);
     [[nodiscard]] gpu::Clouds clouds() const { return clouds_; }
 
 private:
@@ -539,6 +543,25 @@ private:
     GpuFrame gpuFrame_;
     gpu::Clouds clouds_ = gpu::Clouds::On;
     std::vector<gpu::Cloud> cloudList_;
+    // The packed pages' decode (SDL's gpu driver, every tier): the ramp table's seasons, the
+    // climate of each region, and what the sprite being drawn stands in (put() hands it on).
+    std::unique_ptr<gpu::Decoder> decoder_;
+    gpu::RampSeasons rampSeasons_;
+    std::vector<std::uint8_t> regionClimate_; // per region: its climate's row (kNoClimate: none)
+    int fallbackClimate_ = 0;                 // tiles no region claims, and the view's
+    int month_ = -1;
+    float dayFraction_ = 0;
+    int snowStep_ = -1; // the snow's progress through a morning it builds or thaws, in steps
+    std::vector<std::uint8_t> remapRows_;
+    struct SeasonCtx {
+        int climate = 0;
+        int level = 0;
+    };
+    SeasonCtx seasonCtx_;
+    void seasonAt(TilePos p);
+    [[nodiscard]] SDL_FColor packedColour(SDL_FColor c, bool homeArt) const;
+    void plain(); // later draws are not decoded (before any draw that is not put())
+    void staleCells();
     // Water marks waiting for the end of their diagonal (drawTiles).
     struct Mark {
         SpriteRef sprite;

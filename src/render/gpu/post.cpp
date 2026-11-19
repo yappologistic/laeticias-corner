@@ -60,7 +60,13 @@ void set4(float (&d)[4], float a, float b, float c, float e) {
     d[3] = e;
 }
 
-SDL_GPUShader* makeShader(SDL_GPUDevice* device, std::string_view name, Uint32 samplers) {
+int halve(int v, int times) {
+    return std::max(1, v >> times);
+}
+
+} // namespace
+
+SDL_GPUShader* makeFragmentShader(SDL_GPUDevice* device, std::string_view name, Uint32 samplers) {
     const std::span<const std::uint8_t> code = shader(name);
     if (code.empty()) return nullptr;
     SDL_GPUShaderCreateInfo info{};
@@ -76,12 +82,6 @@ SDL_GPUShader* makeShader(SDL_GPUDevice* device, std::string_view name, Uint32 s
         SDL_Log("gpu: shader %.*s: %s", static_cast<int>(name.size()), name.data(), SDL_GetError());
     return s;
 }
-
-int halve(int v, int times) {
-    return std::max(1, v >> times);
-}
-
-} // namespace
 
 RendererPtr createRenderer(SDL_Window* window) {
     // Vulkan takes the committed SPIR-V on Linux and Windows; the environment may still choose.
@@ -118,11 +118,11 @@ Post::Post(SDL_Renderer* renderer) : renderer_(renderer) {}
 bool Post::init() {
     device_ = SDL_GetGPURendererDevice(renderer_);
     if (device_ == nullptr) return false;
-    finalShader_ = makeShader(device_, "final", 6);
-    cloudShader_ = makeShader(device_, "clouds", 1);
-    shadeShader_ = makeShader(device_, "shade", 1);
-    downShader_ = makeShader(device_, "bloom_down", 1);
-    upShader_ = makeShader(device_, "bloom_up", 1);
+    finalShader_ = makeFragmentShader(device_, "final", 6);
+    cloudShader_ = makeFragmentShader(device_, "clouds", 1);
+    shadeShader_ = makeFragmentShader(device_, "shade", 1);
+    downShader_ = makeFragmentShader(device_, "bloom_down", 1);
+    upShader_ = makeFragmentShader(device_, "bloom_up", 1);
     SDL_GPUSamplerCreateInfo si{};
     si.min_filter = SDL_GPU_FILTER_LINEAR;
     si.mag_filter = SDL_GPU_FILTER_LINEAR;

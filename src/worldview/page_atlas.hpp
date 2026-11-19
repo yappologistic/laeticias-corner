@@ -33,6 +33,7 @@ struct SpriteRef {
     float h = 0;
     float ox = 0; // anchor inside the sprite
     float oy = 0;
+    bool packed = false; // its page is a packed page and it is not colour-only: decode it
 };
 
 struct PageStats {
@@ -49,8 +50,11 @@ public:
     static constexpr std::uint16_t kHomePage = 0;
     static constexpr std::uint16_t kGeneratedPage = 1;
 
+    // `packed`: the sets' pages are their packed twins (`<page>.p.png`, raw words; a sprite
+    // listed colour-only in `<page>.p.json` keeps its colour there), in ABGR slots so a shader
+    // reads the words in order; the decoder (render/gpu/decoder.hpp) draws them.
     PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::AtlasPages& pages,
-              std::filesystem::path atlasDir, bool async, std::size_t budget);
+              std::filesystem::path atlasDir, bool async, std::size_t budget, bool packed);
     ~PageAtlas();
     PageAtlas(const PageAtlas&) = delete;
     PageAtlas& operator=(const PageAtlas&) = delete;
@@ -95,6 +99,9 @@ private:
     struct Page {
         std::string set;
         std::filesystem::path file;
+        std::filesystem::path packedFile;    // the packed twin, empty when the page has none
+        std::vector<std::string> colourOnly; // its sprites kept as colour, sorted
+        int homeArtRows = 0; // the home page: rows of art (the engine's strip is below them)
         int w = 0;
         int h = 0;
         State state = State::Unloaded;
@@ -110,6 +117,7 @@ private:
         std::vector<std::uint64_t> opaque; // 1 bit per pixel (drawn: alpha > 0), for picking
     };
 
+    void readSide(Page& p) const;
     [[nodiscard]] SurfacePtr decode(const Page& p, float* peak,
                                     std::vector<std::uint64_t>& opaque) const;
     void work(const std::stop_token& stop);
@@ -122,6 +130,8 @@ private:
     const Atlas& home_;
     const world::AtlasPages& index_;
     bool async_;
+    bool packed_;
+    SDL_PixelFormat slotFormat_;
     std::size_t budget_;
     std::size_t slotLimit_ = 1; // page slots the budget holds beside the fixed pages
     bool overLogged_ = false;

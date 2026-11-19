@@ -487,6 +487,7 @@ void WorldView::gradeGpu(double clock, double now, const Lighting& light, Lod lo
 
 void WorldView::lightGpu(const FRect& view, const Xform& x, Lod lod, float glow, const Hooks& hooks,
                          const FrameInfo& frame, bool home) {
+    plain(); // (what follows is not decoded)
     namespace t = gpu::tuning;
     batch_.flush();
     // The home's scene keeps its moths and its light map neutral: the world's light is ours.
@@ -587,6 +588,7 @@ void WorldView::refreshPools(const FRect& view, R&& rain) {
 }
 
 void WorldView::bloomGpu(const FRect& view, const Xform& x, Lod lod, float glow) {
+    plain(); // (what follows is not decoded)
     namespace t = gpu::tuning;
     if (lod == Lod::Overview && glow > 0.01f) {
         // From afar every light is a warm point a few window px across, so towns sparkle.
@@ -712,6 +714,10 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
     const float dx = lean * side * (0.4f + 0.6f * std::abs(windDir_.x)) *
                      gpu::windLean(anchor, gpuFrame_.now, windDir_, windStrength_);
     constexpr int kStrips = gpu::tuning::kSwayStrips;
+    if (decoder_) decoder_->use(batch_, s.packed);
+    const SDL_FColor c = decoder_ && s.packed
+                             ? packedColour({1, 1, 1, 1}, s.page == PageAtlas::kHomePage)
+                             : SDL_FColor{1, 1, 1, 1};
     const float x0 = anchor.x - s.ox;
     const float y0 = anchor.y - s.oy;
     std::vector<SDL_Vertex>& verts = batch_.scratch().verts;
@@ -725,7 +731,7 @@ void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, floa
         const float vv = s.uv.v0 + (s.uv.v1 - s.uv.v0) * f;
         for (int k = 0; k < 2; ++k) {
             const Vec2 p = x.apply({x0 + (k == 0 ? 0 : s.w) + dx * up * up, wy});
-            verts.push_back({{p.x, p.y}, {1, 1, 1, 1}, {k == 0 ? s.uv.u0 : s.uv.u1, vv}});
+            verts.push_back({{p.x, p.y}, c, {k == 0 ? s.uv.u0 : s.uv.u1, vv}});
         }
         if (i > 0) {
             const int b = 2 * (i - 1);
