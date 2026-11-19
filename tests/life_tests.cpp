@@ -785,6 +785,68 @@ TEST_CASE("city: on bridges and stairs people stand on the floor and rise smooth
     }
 }
 
+TEST_CASE("city: a cart's animal walks on the ground its cart does, never over the water") {
+    // V6-024: a cart is drawn round its point and runs a tile each way along its facing; where
+    // the course turned at a bridge's end the ox stood out over the river. The front of every
+    // cart drawn walking stands on walkable ground (or a deck).
+    // Susiana's caravan carts cross the pontoon and the ford by (305, 201) on day 1 between
+    // 06:00 and 08:00 (V6-024's place); the cities' and roads' carts at their busy hour.
+    struct Place {
+        const char* focus;
+        int day;
+        double hour;
+        int seconds;
+    };
+    const std::array<Place, 5> places{{{"307,200", 1, 6.0, 120},
+                                       {"forum", 9, 10.0, 20},
+                                       {"terrace", 9, 10.0, 20},
+                                       {"district:latium_italy/road", 9, 10.0, 20},
+                                       {"district:anatolia/road", 9, 10.0, 20}}};
+    const world::WorldMap& m = lifeWorld().map();
+    const auto& kinds = lifeWorld().data.kinds;
+    constexpr std::array<Vec2, 4> kFacing{{{1, 0}, {0, 1}, {0, -1}, {-1, 0}}};
+    std::vector<DrawActor> buf(4096);
+    long fronts = 0;
+    long over = 0;
+    for (const Place& pl : places) {
+        const char* place = pl.focus;
+        CityLife city(lifeWorld(), 17);
+        city.setFocus(centreOf(place), 24, 16);
+        LifeClock clock = LifeClock::at(pl.day, pl.hour, seasonOf("rome"));
+        city.settle(clock);
+        long here = 0;
+        long bad = 0;
+        for (int k = 0; k < 60 * pl.seconds; ++k) {
+            step(city, clock, 1);
+            const std::size_t n = city.gather(city.activeRect(), 1.0f, buf);
+            for (std::size_t i = 0; i < n; ++i) {
+                const DrawActor& d = buf[i];
+                const KindDef& kd = kinds[d.kind];
+                if (!kd.cart || kd.length < 2 || d.speed <= 0 || d.alpha < 1.0f) continue;
+                const float half = 0.5f * static_cast<float>(kd.length);
+                const Vec2 f = kFacing[d.facing % 4];
+                const TilePos t{static_cast<int>(std::floor(d.pos.x + f.x * half)),
+                                static_cast<int>(std::floor(d.pos.y + f.y * half))};
+                ++here;
+                if (!m.walkable(t)) {
+                    ++bad;
+                    CAPTURE(place);
+                    CAPTURE(t.x);
+                    CAPTURE(t.y);
+                    CAPTURE(kd.id);
+                    CHECK(m.walkable(t));
+                }
+            }
+        }
+        MESSAGE(std::string(place) << ": " << here << " cart-steps, " << bad
+                                   << " with the front over unwalkable ground");
+        fronts += here;
+        over += bad;
+    }
+    CHECK(fronts > 0);
+    CHECK(over == 0);
+}
+
 TEST_CASE("city: the same seed and script give byte-identical dumps") {
     std::string dumps[2];
     for (std::string& out : dumps) {

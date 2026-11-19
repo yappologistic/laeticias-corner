@@ -143,6 +143,7 @@ void Compiler::kinds() {
             // the carter walks (L-109).
             k.cart = a.sprite.starts_with("cart/");
             k.ship = a.sprite.starts_with("ship/");
+            k.length = std::max(1, a.sizeW);
             d_.kindIndex.emplace(k.id, static_cast<int>(d_.kinds.size()));
             d_.kinds.push_back(std::move(k));
         }
