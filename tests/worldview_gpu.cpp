@@ -312,6 +312,53 @@ TEST_CASE("gpu: seasons: a climate's month swaps green ramps; snow builds and th
     CHECK(gpu::snowCover(c, 0, 0.5f, 6) == 0.0f);  // ... gone by midday
 }
 
+TEST_CASE("gpu: seasons: ramps follow their class's words; missing states keep today's look") {
+    // The real table's shapes (QA7 V7-001): the leaf ramp with no dormant or bare state, the
+    // blossom ramp with no states, `pal.leaf` classed as grass; then the same once the art gives
+    // a bare state, blossom states that follow the early bloom, and `pal.leaf` the deciduous.
+    const auto parse = [](const char* text) {
+        return gpu::parseRamps(nlohmann::json::parse(text));
+    };
+    const gpu::RampSeasons today = parse(R"({"ramps": [
+        {"id": 1, "class": "foliage_deciduous", "states": {"fresh": 159, "dry": 160, "turn": 162}},
+        {"id": 3, "class": "foliage_deciduous"},
+        {"id": 103, "class": "grass", "states": {"fresh": 175, "dry": 176, "dormant": 177}}]})");
+    const gpu::RampSeasons art = parse(R"({"ramps": [
+        {"id": 1, "class": "foliage_deciduous",
+         "states": {"fresh": 159, "dry": 160, "turn": 162, "bare": 170}},
+        {"id": 3, "class": "foliage_deciduous", "follows": "early_bloom",
+         "states": {"fresh": 159, "green": 1, "turn": 162, "dormant": 160}},
+        {"id": 103, "class": "grass", "follows": "deciduous",
+         "states": {"fresh": 175, "dry": 176, "dormant": 177}}]})");
+    ClimateDef c; // med_green's grass, deciduous and early bloom, March to February
+    using G = GreenState;
+    const auto at = [](GreenClass k) { return static_cast<std::size_t>(k); };
+    c.greens[at(GreenClass::Grass)] = {G::Fresh, G::Fresh, G::Fresh, G::Green, G::Dry,   G::Dry,
+                                       G::Dry,   G::Green, G::Green, G::Green, G::Green, G::Green};
+    c.greens[at(GreenClass::Deciduous)] = {G::Bare,  G::Fresh, G::Green, G::Green,
+                                           G::Green, G::Green, G::Green, G::Green,
+                                           G::Turn,  G::Bare,  G::Bare,  G::Bare};
+    c.greens[at(GreenClass::EarlyBloom)] = {G::Bloom, G::Fresh, G::Green, G::Green,
+                                            G::Green, G::Green, G::Green, G::Green,
+                                            G::Turn,  G::Bare,  G::Bare,  G::Bloom};
+    std::array<std::uint8_t, gpu::kRampIds> row{};
+    constexpr int kDecember = 9;
+    constexpr int kJuly = 4;
+    constexpr int kFebruary = 11;
+    gpu::remapRow(today, c, kDecember, row);
+    CHECK(row[1] == 160);   // leafless falls to dry, as before
+    CHECK(row[3] == 3);     // blossom as drawn
+    CHECK(row[103] == 103); // green grass in December
+    gpu::remapRow(art, c, kDecember, row);
+    CHECK(row[1] == 170);   // bare
+    CHECK(row[3] == 160);   // the early bloom's bare: dormant, as it has no bare
+    CHECK(row[103] == 177); // leaves now follow the trees: dormant
+    gpu::remapRow(art, c, kJuly, row);
+    CHECK(row[3] == 1); // leaves, not blossom, in summer
+    gpu::remapRow(art, c, kFebruary, row);
+    CHECK(row[3] == 3); // in bloom: as drawn
+}
+
 TEST_CASE("gpu: seasons over the land: built ground takes the land's level; climates blend") {
     // A 12 x 1 strip: climate 0 on the left half, 1 on the right; a paved platform (levels 6)
     // on natural ground at level 2.

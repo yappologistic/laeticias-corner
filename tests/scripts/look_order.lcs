@@ -1,0 +1,18 @@
+# The look path's painter's order (QA7 V7-015): swaying trees are drawn in their turn with
+# everything else, so a tree standing in front of a house covers its wall. At the Kydathenaion
+# fountain in Athens an olive stands before a house: its crown, not the wall, is under the
+# region (the wall reads near (209, 182, 135); the crown is grey-green). The terraced quarter's
+# pines in front of higher terraces are the second shot.
+set chatter quiet
+set weather clear
+set time 0.2
+set season spring
+set day 1
+set world 272 611 2
+wait 40
+expect color 590,330,60,40 159 167 127 25
+shot shots/look_order_fountain_2x.png
+set world 231 575 1
+wait 40
+shot shots/look_order_terraces_1x.png
+quit

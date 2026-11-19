@@ -1422,19 +1422,62 @@ void WorldView::drawBackdrops(const FRect& view, const Xform& x, bool night) {
     const auto n = static_cast<std::size_t>(night ? 1 : 0);
     for (int edge = 0; edge < 2; ++edge) {
         const int len = edge == 0 ? map_.width() : map_.height();
-        for (int k = 0; k * kSegment < len; ++k) {
-            const TilePos first = edge == 0 ? TilePos{k * kSegment, 0} : TilePos{0, k * kSegment};
+        const auto firstOf = [&](int k) {
+            return edge == 0 ? TilePos{k * kSegment, 0} : TilePos{0, k * kSegment};
+        };
+        // A segment's strips, or none: where the edge is water the land behind is out of sight
+        // (a strip there stood in the sea).
+        const auto stripsOf = [&](int k) -> const std::vector<SpriteRef>* {
+            if (k < 0 || k * kSegment >= len) return nullptr;
+            const TilePos first = firstOf(k);
             const int region = map_.regionAt(first);
-            if (region < 0) continue;
+            if (region < 0) return nullptr;
             const auto& strips = backdrops_[static_cast<std::size_t>(region)][n];
-            if (strips.empty()) continue;
-            const SpriteRef& s = strips[tileHash(first.x, first.y, 11) % strips.size()];
+            if (strips.empty()) return nullptr;
+            for (int i = 0; i < kSegment && i + k * kSegment < len; ++i) {
+                const TilePos p = edge == 0 ? TilePos{first.x + i, 0} : TilePos{0, first.y + i};
+                if (sprites_->terrain(map_.terrainAt(p)).water) return nullptr;
+            }
+            return &strips;
+        };
+        for (int k = 0; k * kSegment < len; ++k) {
+            const std::vector<SpriteRef>* strips = stripsOf(k);
+            if (strips == nullptr) continue;
+            const TilePos first = firstOf(k);
+            const SpriteRef& s = (*strips)[tileHash(first.x, first.y, 11) % strips->size()];
             const Vec2 w = iso_.toWorld(first);
             const Vec2 a{w.x, w.y - static_cast<float>(map_.level(first) * lvl_)};
             const FRect box =
                 edge == 0 ? FRect{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h}
                           : FRect{a.x - (s.w - s.ox), a.y - s.oy, a.x + s.ox, a.y - s.oy + s.h};
-            if (box.overlaps(view)) (void)put(s, a, x, kWhite, SDL_BLENDMODE_BLEND, edge == 1);
+            if (!box.overlaps(view)) continue;
+            // The strips' ends are cut square: where a run of them ends, its end fades into the
+            // haze (QA7 V7-007), in slices across the strip (its left end is segment k's).
+            const bool fadeIn = stripsOf(k - 1) == nullptr;
+            const bool fadeOut = stripsOf(k + 1) == nullptr;
+            if (!fadeIn && !fadeOut) {
+                (void)put(s, a, x, kWhite, SDL_BLENDMODE_BLEND, edge == 1);
+                continue;
+            }
+            constexpr int kSlices = 16;
+            for (int i = 0; i < kSlices; ++i) {
+                const float f0 = static_cast<float>(i) / kSlices;
+                const float f1 = static_cast<float>(i + 1) / kSlices;
+                const float mid = (f0 + f1) * 0.5f;
+                const auto ramp = [](float t) {
+                    t = std::clamp(t / tuning::kBackdropFade, 0.0f, 1.0f);
+                    return t * t * (3.0f - 2.0f * t);
+                };
+                const float alpha =
+                    (fadeIn ? ramp(mid) : 1.0f) * (fadeOut ? ramp(1.0f - mid) : 1.0f);
+                if (alpha <= 0.0f) continue;
+                SpriteRef slice = s;
+                slice.w = s.w * (f1 - f0);
+                slice.ox = s.ox - s.w * f0;
+                slice.uv.u0 = s.uv.u0 + (s.uv.u1 - s.uv.u0) * f0;
+                slice.uv.u1 = s.uv.u0 + (s.uv.u1 - s.uv.u0) * f1;
+                (void)put(slice, a, x, {1, 1, 1, alpha}, SDL_BLENDMODE_BLEND, edge == 1);
+            }
         }
     }
 }
@@ -1999,8 +2042,9 @@ void WorldView::seasonAt(TilePos p) {
         const bool beside = st.other == homeClimate_;
         if (st.other != gpu::kNoClimate && !home) {
             // A smooth noise a few tiles across breaks the band's edge; each tile then takes
-            // the neighbour's grass and leaves by its share (a speckled band, never a line).
-            // Two octaves (11 and 4 tiles): the band meanders instead of following the line.
+            // the neighbour's grass and leaves by its share, in patches of a few tiles (a noise
+            // finer still: a tile by tile choice was a checkerboard, QA7 V7-005). Two octaves
+            // (11 and 4 tiles): the band meanders instead of following the line.
             const auto octave = [&](int cell, std::uint32_t salt) {
                 const auto lattice = [&](int x, int y) {
                     return static_cast<float>(tileHash(x, y, salt) % 1024u) / 1023.0f;
@@ -2017,15 +2061,19 @@ void WorldView::seasonAt(TilePos p) {
             const float noise = octave(11, 11) * 0.7f + octave(4, 17) * 0.3f - 0.5f;
             ctx.other = st.other;
             ctx.share = gpu::otherShare(st.distance, noise) * (beside ? 2.0f : 1.0f);
-            if (static_cast<float>(tileHash(p.x, p.y, 13) % 1024u) / 1024.0f < ctx.share)
-                ctx.climate = st.other;
+            const float patch = octave(3, 13) * 0.65f + octave(2, 19) * 0.35f;
+            if ((patch - 0.5f) * 2.0f + 0.5f < ctx.share) ctx.climate = st.other;
         }
     }
     seasonCtx_ = ctx;
-    // In a border's band every tile draws the plain looks, its snow the blended cover grain by
-    // grain (the drawn season looks are one climate's: the home's snowy winter grass would end
-    // in a line, or in a patchwork of whole tiles, at the border).
-    lookSeason_ = ctx.other >= 0 && ctx.share > 0.0f ? -1 : season_;
+    // In a border's band in the snowy season every tile draws the plain looks, its snow the
+    // blended cover grain by grain (drawn snow is one climate's: the home's snowy winter grass
+    // would end in a line, or in a patchwork of whole tiles, at the border). The other seasons
+    // keep their looks there (a plain look may be a winter one: QA7 V7-004's snowy peaks).
+    const std::vector<SeasonDef>& seasons = map_.content().home().seasons;
+    const bool snowy = season_ >= 0 && std::cmp_less(season_, seasons.size()) &&
+                       seasons[static_cast<std::size_t>(season_)].snow;
+    lookSeason_ = snowy && ctx.other >= 0 && ctx.share > 0.0f ? -1 : season_;
 }
 
 SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt, bool mirrored) const {
@@ -2042,8 +2090,16 @@ SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt, bool mirrored) co
                                     seasonCtx_.level)
                    : 0.0f;
     };
-    snow = cover(seasonCtx_.own) * (1 - seasonCtx_.share) +
-           (seasonCtx_.other >= 0 ? cover(seasonCtx_.other) * seasonCtx_.share : 0.0f);
+    const float own = cover(seasonCtx_.own);
+    const float other = seasonCtx_.other >= 0 ? cover(seasonCtx_.other) : 0.0f;
+    const float s = seasonCtx_.share;
+    // Where only one side has snow, it thins out to nothing at the border on its own side: a
+    // blend never carries snow onto land whose climate has none (QA7 V7-008). The home's drawn
+    // snow is the exception: the land round it takes it, so the corner is one snow with it.
+    if (seasonCtx_.other == homeClimate_ || (own > 0.0f && other > 0.0f))
+        snow = own * (1 - s) + other * s;
+    else
+        snow = own * std::max(0.0f, 1.0f - 2.0f * s);
     // (Home art taking a neighbour's season is drawn plain: it takes that climate's row.)
     const int row =
         homeArt && lookSeason_ == season_ ? gpu::Decoder::kClimates - 1 : seasonCtx_.climate;

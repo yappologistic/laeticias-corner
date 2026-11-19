@@ -107,8 +107,9 @@ inline constexpr float kCloudWidth[2] = {320, 820}; // px, the smallest and larg
 inline constexpr float kCloudAltitude = 520;        // px a cloud's base stands above its point
 inline constexpr float kCloudParallax = 0.12f;      // share of its offset from the view's centre
 inline constexpr float kCloudShadow = 0.26f;        // a cloud's shadow takes this of the sunlight
-inline constexpr float kDeckAlpha[4] = {0.35f, 0.72f, 0.85f,
-                                        0.9f}; // native, half, quarter, overview
+// Native, half, quarter, overview. None near: from street height the clouds are overhead and
+// only their shadows show (drawn over the street they were pale washes, QA7 V7-020).
+inline constexpr float kDeckAlpha[4] = {0.0f, 0.72f, 0.85f, 0.9f};
 // The night shift starts past dusk: from the clock's night at this value to full at 1.
 inline constexpr float kNightFrom = 0.5f;
 // Shade takes the sky's colour (the regions' `theme.look.shade`) by the shadow layer's coverage

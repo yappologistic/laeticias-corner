@@ -10,16 +10,18 @@ namespace lc::gpu {
 RampSeasons parseRamps(const nlohmann::json& ramps) {
     RampSeasons r;
     r.green.fill(-1);
-    static constexpr std::array<const char*, 4> kStates{"fresh", "dry", "dormant", "turn"};
     int snowSteps = 0;
     for (const nlohmann::json& x : ramps.value("ramps", nlohmann::json::array())) {
         const int id = x.value("id", 0);
         if (id <= 0 || id >= kRampIds) continue;
         const auto i = static_cast<std::size_t>(id);
         const std::string cls = x.value("class", "");
-        if (cls == "grass") r.green[i] = static_cast<std::int8_t>(GreenClass::Grass);
-        if (cls == "foliage_deciduous")
-            r.green[i] = static_cast<std::int8_t>(GreenClass::Deciduous);
+        const std::string follows = x.value("follows", cls == "grass"               ? "grass"
+                                                       : cls == "foliage_deciduous" ? "deciduous"
+                                                                                    : "");
+        if (const auto f = std::ranges::find(kGreenClassNames, follows);
+            f != kGreenClassNames.end())
+            r.green[i] = static_cast<std::int8_t>(f - kGreenClassNames.begin());
         r.water[i] = cls == "water";
         if (const auto l = x.find("L"); l != x.end() && l->is_array())
             for (std::size_t k = 0; k < l->size() && k < 8; ++k)
@@ -29,8 +31,8 @@ RampSeasons parseRamps(const nlohmann::json& ramps) {
             r.snow = static_cast<std::uint8_t>(id);
         }
         if (const auto s = x.find("states"); s != x.end() && s->is_object())
-            for (std::size_t k = 0; k < kStates.size(); ++k)
-                if (const auto v = s->find(kStates[k]); v != s->end() && v->is_number_integer())
+            for (std::size_t k = 0; k < kGreenWords.size(); ++k)
+                if (const auto v = s->find(kGreenWords[k]); v != s->end() && v->is_number_integer())
                     r.states[i][k] = static_cast<std::uint8_t>(std::clamp(v->get<int>(), 0, 255));
     }
     return r;
@@ -44,19 +46,12 @@ void remapRow(const RampSeasons& r, const ClimateDef& climate, int month,
         if (r.green[i] < 0) continue;
         const auto& row = climate.greens[static_cast<std::size_t>(r.green[i])];
         if (month < 0 || static_cast<std::size_t>(month) >= row.size()) continue;
-        // Fresh 0, dry 1, dormant 2, turn 3; leafless takes the duller of what the ramp has.
-        int k = -1;
-        switch (row[static_cast<std::size_t>(month)]) {
-        case GreenState::Green: break;
-        case GreenState::Fresh: k = 0; break;
-        case GreenState::Dry: k = 1; break;
-        case GreenState::Dormant: k = 2; break;
-        case GreenState::Turn: k = 3; break;
-        case GreenState::Bare: k = 2; break;
-        }
-        if (k == 2 && r.states[i][2] == 0) k = 1; // no dormant state: dry
-        if (k >= 0 && r.states[i][static_cast<std::size_t>(k)] != 0)
-            out[i] = r.states[i][static_cast<std::size_t>(k)];
+        const auto& states = r.states[i];
+        const auto has = [&](GreenState g) { return states[static_cast<std::size_t>(g)] != 0; };
+        GreenState g = row[static_cast<std::size_t>(month)];
+        if (g == GreenState::Bare && !has(g)) g = GreenState::Dormant;
+        if ((g == GreenState::Dormant || g == GreenState::Gone) && !has(g)) g = GreenState::Dry;
+        if (has(g)) out[i] = states[static_cast<std::size_t>(g)];
     }
 }
 

@@ -1,0 +1,39 @@
+# Seasons on the look path at climate borders (QA7 V7-004, V7-008, V7-005, V7-006): a border's
+# band keeps the season's own looks outside the snowy season (Naqsh-e Rostam's peak is bare rock
+# in July, not its plain snowy cone), and a blend never carries snow onto land whose climate has
+# none (Babylon in January). The ground keeps the grass's months while trees keep theirs: dry
+# on the Iranian plateau in July, green in Rome's December (a ground ramp following the trees
+# turned them green and brown). Shots of the Susiana coast's band in April and of snow at the line.
+set chatter quiet
+set weather clear
+set time 0.2
+set season summer
+set day 4
+set world 314 131 1
+wait 40
+expect luma 130,640,100,120 0 135
+shot shots/look_seasons_naqsh_july.png
+set world 79 35 1
+wait 40
+expect color 40,560,160,80 136 118 61 20
+shot shots/look_seasons_plateau_july.png
+set season spring
+set day 1
+set world 402 178 1
+wait 40
+shot shots/look_seasons_susiana_april.png
+set season winter
+set day 10
+set world 300 226 1
+wait 40
+expect luma 0,300,200,200 100 135
+shot shots/look_seasons_babylon_january.png
+set world 223 908 1
+wait 40
+shot shots/look_seasons_apennines_january.png
+set day 9
+set world 108 1000 2
+wait 40
+expect color 0,640,120,140 91 144 84 20
+shot shots/look_seasons_rome_december_2x.png
+quit

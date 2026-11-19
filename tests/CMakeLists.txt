@@ -184,7 +184,9 @@ list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_terrain_quarter")
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look"
-     "${LC_SCRATCH}/save_look_night" "${LC_SCRATCH}/save_bench_startup_look")
+     "${LC_SCRATCH}/save_look_night" "${LC_SCRATCH}/save_bench_startup_look"
+     "${LC_SCRATCH}/save_look_order" "${LC_SCRATCH}/save_look_seasons"
+     "${LC_SCRATCH}/save_draw_order_look" "${LC_SCRATCH}/save_look_light")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -494,6 +496,23 @@ add_test(NAME script_seams_look
           --save-dir "${LC_SCRATCH}/save_seams_look" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/seams.lcs"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(script_seams_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
+  FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+# The shader path's painter's order (QA7 V7-015: swaying trees in their turn), the draw-order
+# golden places on it, its seasons at climate borders (QA7 V7-004, V7-005, V7-006, V7-008), and
+# its light, rain and night water (QA7 V7-020, V7-014, V7-007).
+foreach(look look_order look_seasons look_light)
+  add_test(NAME script_${look}
+    COMMAND laeticias-corner --headless --quality high --size 1280x800 --seed 1
+            --save-dir "${LC_SCRATCH}/save_${look}" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${look}.lcs"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+  set_tests_properties(script_${look} PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
+    FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+endforeach()
+add_test(NAME script_draw_order_look
+  COMMAND laeticias-corner --headless --quality high --size 960x600 --seed 1
+          --save-dir "${LC_SCRATCH}/save_draw_order_look" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/draw_order.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_draw_order_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 # Start-up on the shader path, as a player's is (frames streamed): the first frame's setup within
 # 3 s and no frame over the frame budgets while the first view comes in. Only the start-up case

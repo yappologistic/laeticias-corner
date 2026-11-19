@@ -305,11 +305,40 @@ struct AudioList {
 inline constexpr int kMaxMapSide = 4096;
 inline constexpr long long kMaxMapTiles = 1LL << 22;
 
-// What a green material shows in a month (a climate's `set_classes`, else `classes`): its plain
-// look, or one of the ramp table's season states; `bare` (leafless) has no ramp state of its own.
-enum class GreenState : std::uint8_t { Green, Fresh, Dry, Dormant, Turn, Bare };
-enum class GreenClass : std::uint8_t { Grass, Deciduous };
-inline constexpr int kGreenClasses = 2;
+// What a living material shows in a month (a climate's `set_classes`, else `classes`): the
+// climate's own words, in this order (kGreenWords); the ramp table's states are named by them.
+enum class GreenState : std::uint8_t {
+    Green,
+    Fresh,
+    Dry,
+    Dormant,
+    Turn,
+    Bare,
+    Bloom,
+    Gone,
+    Ripe,
+    Stubble,
+    Ploughed,
+    Sprout,
+    Fruit
+};
+inline constexpr std::array<const char*, 13> kGreenWords{
+    "green", "fresh", "dry",     "dormant",  "turn",   "bare", "bloom",
+    "gone",  "ripe",  "stubble", "ploughed", "sprout", "fruit"};
+// The climate's classes, in this order (kGreenClassNames).
+enum class GreenClass : std::uint8_t {
+    Grass,
+    Deciduous,
+    EarlyBloom,
+    Wildflower,
+    Evergreen,
+    Crop,
+    Vine,
+    Reed
+};
+inline constexpr std::array<const char*, 8> kGreenClassNames{
+    "grass", "deciduous", "early_bloom", "wildflower", "evergreen", "crop", "vine", "reed"};
+inline constexpr int kGreenClasses = static_cast<int>(kGreenClassNames.size());
 
 // A climate of the world (the catalog's `climates`, parents resolved): what the engine reads of
 // it so far, its snow and its greens by month.

@@ -32,6 +32,28 @@ uint hashU(ivec2 p) {
     return h ^ (h >> 13u);
 }
 
+// Where snow settles first, 0..1 over the sprite's texels: clumps a few texels across (smooth
+// noise; larger ones repeat visibly from tile to tile) with a grain at their edges, so a partial cover (the line's
+// own level, a border's band, a morning's building and thawing) lies in patches, not as single
+// white texels (QA7 V7-006).
+float smoothNoise(ivec2 p, float cell, uint salt) {
+    vec2 q = vec2(p) / cell;
+    ivec2 c = ivec2(floor(q)) + ivec2(int(salt), 0);
+    vec2 f = fract(q);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = float(hashU(c) & 1023u) / 1023.0;
+    float b = float(hashU(c + ivec2(1, 0)) & 1023u) / 1023.0;
+    float d = float(hashU(c + ivec2(0, 1)) & 1023u) / 1023.0;
+    float e = float(hashU(c + ivec2(1, 1)) & 1023u) / 1023.0;
+    return mix(mix(a, b, f.x), mix(d, e, f.x), f.y);
+}
+
+float drift(ivec2 p) {
+    float v = smoothNoise(p, 4.0, 0u) * 0.75 + float(hashU(p) & 1023u) / 1023.0 * 0.25;
+    // Spread back toward 0..1 (averages gather round the middle).
+    return clamp((v - 0.5) * 1.9 + 0.5, 0.0, 0.999);
+}
+
 float light(vec3 n, vec3 s, bool lit) {
     return 0.42 + 0.58 * max(0.0, dot(n, s)) * (lit ? 1.0 : 0.25);
 }
@@ -92,8 +114,8 @@ void main() {
     }
     vec3 c = texelFetch(u_ramps, ivec2(st, now), 0).rgb;
     // Snow on what catches it, as much as lies there: a stable share of the sprite's own texels
-    // (so it builds and thaws grain by grain, and a cached picture keeps its grains).
-    if ((w >> 31u) != 0u && cover > 0.0 && float(hashU(tc) & 1023u) / 1024.0 < cover) {
+    // in drifts (so it builds and thaws drift by drift, and a cached picture keeps them).
+    if ((w >> 31u) != 0u && cover > 0.0 && drift(tc) < cover) {
         float l = dot(c, vec3(0.299, 0.587, 0.114));
         int s = clamp(int(l * 4.0) + 1, 1, 3); // the cool steps: the home art's snow is these
         // A little of what is under it shows through (joints, tufts): snow, not paint.
