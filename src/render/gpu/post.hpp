@@ -110,6 +110,12 @@ public:
     [[nodiscard]] SDL_BlendMode markBlend() const { return markBlend_; }
     static constexpr float kWaterMark = 0.02f;
     static constexpr float kMaybeWaterMark = 0.045f; // water if the colour is water's
+    // A layer of ground laid over other ground (the home's over the world's rim tiles) is first
+    // cut, then drawn over as usual, so the target holds the layer's own alpha (its water mark
+    // among it) wherever the layer covers: while on, draws with cutBlend() take the target's
+    // alpha away under the texels a picture covers (alpha 0.9 and over, cut.frag), colour kept.
+    void cut(Batch& b, bool on);
+    [[nodiscard]] SDL_BlendMode cutBlend() const { return cutBlend_; }
     // A soft round falloff (white, premultiplied: (1 - r^2)^2), for pools and far lights.
     [[nodiscard]] SDL_Texture* falloff() const { return falloff_.get(); }
     // Halves the glow target's used `w` x `h` down the tier's levels and back up.
@@ -155,6 +161,8 @@ private:
     SDL_GPUShader* upShader_ = nullptr;
     SDL_GPUShader* shadeShader_ = nullptr;
     SDL_GPURenderState* shadeState_ = nullptr;
+    SDL_GPUShader* cutShader_ = nullptr;
+    SDL_GPURenderState* cutState_ = nullptr;
     SDL_GPUShader* cloudShader_ = nullptr;
     SDL_GPURenderState* cloudState_ = nullptr;
     SDL_GPUSampler* linear_ = nullptr;
@@ -178,6 +186,7 @@ private:
     std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
     SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode markBlend_ = SDL_BLENDMODE_INVALID;
+    SDL_BlendMode cutBlend_ = SDL_BLENDMODE_INVALID;
 };
 
 } // namespace lc::gpu

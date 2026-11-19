@@ -2017,12 +2017,18 @@ std::optional<GroundDecode> WorldView::homeGroundDecode() {
     seasonCtx_.share = 0;
     seasonCtx_.other = -1;
     const SDL_FColor c = packedColour({1, 1, 1, 1}, true, false);
-    return GroundDecode{page,
-                        &homePacked_,
-                        [this](Batch& b, bool on) { decoder_->use(b, on); },
-                        decoder_->replace(),
-                        c.g,
-                        c.b};
+    GroundDecode d;
+    d.page = page;
+    d.packed = &homePacked_;
+    d.use = [this](Batch& b, bool on) { decoder_->use(b, on); };
+    d.replace = decoder_->replace();
+    d.row = c.g;
+    d.snow = c.b;
+    if (post_) {
+        d.cut = [this](Batch& b, bool on) { post_->cut(b, on); };
+        d.cutBlend = post_->cutBlend();
+    }
+    return d;
 }
 
 void WorldView::seasonAt(TilePos p) {

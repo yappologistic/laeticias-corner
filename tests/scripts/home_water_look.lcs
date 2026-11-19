@@ -1,0 +1,17 @@
+# The home's water on the shader path, run with --quality high (skipped, exit 77, where no gpu
+# device can be made). WATER marks: the share of the world target the final pass draws as water.
+set season summer
+set unlock all
+set weather clear
+set clock day
+# The stream the west meadow reveals runs into the home's last row, where the world's rim tiles
+# lie under the home's ground: the water there keeps its mark (no band of the art's own water
+# across the stream where the home meets the world).
+set land 2
+wait 400
+set camera 13 38 2
+wait 30
+expect water_mark 520,440,50,20 0.6 1
+expect water_mark 600,385,40,20 0.6 1
+shot shots/home_water_rim.png
+quit

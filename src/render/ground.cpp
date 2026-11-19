@@ -324,27 +324,44 @@ void GroundCache::draw(Batch& batch, const World& world, const FRect& view, cons
     // transparent ones beside them and every chunk border becomes a seam of partial alpha.
     const SDL_ScaleMode filter =
         k >= 1.0f && k == std::floor(k) ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR;
-    each([&](int cx, int cy) {
-        const auto it = byKey_.find(keyOf(level, cx, cy));
-        if (it == byKey_.end() || slots_[static_cast<std::size_t>(it->second)].used != frame_) {
-            drawChunk(batch, world, level, cx, cy, target, now);
-            return;
-        }
-        if (decode_) decode_->use(batch, false); // (after an overflow chunk drawn directly)
-        const Slot& s = slots_[static_cast<std::size_t>(it->second)];
+    const auto pw = static_cast<float>(slotW_ * slotsX_);
+    const auto ph = static_cast<float>(slotH_ * slotsY_);
+    const auto slotQuad = [&](const Slot& s, int cx, int cy, SDL_BlendMode blend) {
         const FRect box = chunkBox(level, cx, cy);
         const Vec2 p = target.apply({box.x0, box.y0});
-        const auto pw = static_cast<float>(slotW_ * slotsX_);
-        const auto ph = static_cast<float>(slotH_ * slotsY_);
-        // Slots were drawn over transparent black, so they hold premultiplied colour (which is
-        // also what keeps filtered edges from darkening).
-        batch.use(pages_[static_cast<std::size_t>(s.page)].get(), SDL_BLENDMODE_BLEND_PREMULTIPLIED,
-                  filter);
+        batch.use(pages_[static_cast<std::size_t>(s.page)].get(), blend, filter);
         batch.quad(
             SDL_FRect{p.x, p.y, static_cast<float>(slotW_) * k, static_cast<float>(slotH_) * k},
             {static_cast<float>(s.x) / pw, static_cast<float>(s.y) / ph,
              static_cast<float>(s.x + slotW_) / pw, static_cast<float>(s.y + slotH_) / ph},
             kWhite);
+    };
+    const auto cached = [&](int cx, int cy) -> const Slot* {
+        const auto it = byKey_.find(keyOf(level, cx, cy));
+        if (it == byKey_.end() || slots_[static_cast<std::size_t>(it->second)].used != frame_)
+            return nullptr;
+        return &slots_[static_cast<std::size_t>(it->second)];
+    };
+    // Where the ground covers the world's under it, its own alpha (water marks among it) must
+    // be what the target holds: laid over, a mark would merge with the world's alpha into
+    // opaque (a chunk drawn directly replaces it as it draws).
+    if (decode_ && decode_->cut) {
+        decode_->cut(batch, true);
+        each([&](int cx, int cy) {
+            if (const Slot* s = cached(cx, cy)) slotQuad(*s, cx, cy, decode_->cutBlend);
+        });
+        decode_->cut(batch, false);
+    }
+    each([&](int cx, int cy) {
+        const Slot* s = cached(cx, cy);
+        if (s == nullptr) {
+            drawChunk(batch, world, level, cx, cy, target, now);
+            return;
+        }
+        if (decode_) decode_->use(batch, false); // (after an overflow chunk drawn directly)
+        // Slots were drawn over transparent black, so they hold premultiplied colour (which is
+        // also what keeps filtered edges from darkening).
+        slotQuad(*s, cx, cy, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
     });
     if (decode_) decode_->use(batch, false);
 }
