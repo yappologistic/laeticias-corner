@@ -25,6 +25,8 @@ click ui:menu:reduce_motion
 click ui:menu:grid
 click ui:menu:vsync
 click ui:menu:ui_scale
+# The page lays itself out again at the new size before the next click is aimed.
+wait 4
 click ui:menu:mute
 wait 4
 shot shots/settings_changed.png
