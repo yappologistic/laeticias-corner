@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from datavalidate import order_rules  # noqa: E402
+from datavalidate import loader_rules, order_rules  # noqa: E402
 
 LEVEL = 16
 FLAT3 = [[0, 0, 0]] * 3
@@ -83,6 +83,28 @@ class OrderRules(unittest.TestCase):
         bridge = {"footprint": [1, 2], "layout": "rotate"}       # a deck split without clearances
         deck = {"r0": {"h": 40, "walk": [[0, 0], [0, 1]], "pieces": [[0, 0, 1, 2]], "tops": [[20], [20]]}}
         self.assertIn("O1", codes(rules("rome.pons_fabricius", bridge, deck, ["item/rome.pons_fabricius/base/r0/p0/f0"])))
+
+
+class LoaderRules(unittest.TestCase):
+    """The engine's geometry loader, mirrored (src/world/geometry.cpp)."""
+
+    def doc(self, look):
+        return {"version": 1, "set": "world", "tile": [64, 32], "items": {"world.bridge_arch": {"m10": look}}}
+
+    def test_walk_z_off_the_walk_tiles(self):           # 2892430: the world failed to load
+        self.assertIn("not a walk tile",
+                      " ".join(loader_rules(self.doc({"h": 42, "tops": [[24]], "walk_z": {"0,0": 18}}), "world")))
+
+    def test_deck_with_its_walk_tile(self):
+        self.assertEqual(loader_rules(self.doc({"h": 42, "tops": [[24]], "walk": [[0, 0]], "walk_z": {"0,0": 18}}),
+                                      "world"), [])
+
+    def test_pieces_and_keys(self):
+        bad = self.doc({"h": 42, "pieces": [[0, 0, 9, 1]], "floor_pieces": [2]})
+        bad["items"]["world.bridge_arch"]["q3"] = {"h": 1}
+        errors = " ".join(loader_rules(bad, "world"))
+        for what in ("sides 1..8", "floor_pieces", "not a variant key"):
+            self.assertIn(what, errors)
 
 
 if __name__ == "__main__":
