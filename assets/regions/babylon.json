@@ -1264,12 +1264,12 @@
    "sound": {
     "surfaces": {
      "stone": 0.02,
-     "roof": 0.51,
+     "roof": 0.52,
      "leaves": 0.02,
      "water": 0.05
     },
     "wind": "wind.street",
-    "exposure": 0.59,
+    "exposure": 0.58,
     "water": {
      "family": "river",
      "speed": "slow"
@@ -1934,12 +1934,12 @@
    "name": "The west bank",
    "sound": {
     "surfaces": {
-     "roof": 0.19,
+     "roof": 0.2,
      "leaves": 0.13,
      "water": 0.22
     },
     "wind": "wind.open",
-    "exposure": 0.85,
+    "exposure": 0.84,
     "water": {
      "family": "river",
      "speed": "slow"
@@ -1968,19 +1968,7 @@
     }
    },
    "look": {
-    "reflect": true,
-    "air": {
-     "mist": {
-      "where": "plain",
-      "hours": [
-       "05:00",
-       "07:30"
-      ],
-      "seasons": [
-       "spring"
-      ]
-     }
-    }
+    "reflect": true
    }
   }
  ],
@@ -4007,7 +3995,7 @@
     "hours": [
      [
       "dusk",
-      "23:00"
+      "23:30"
      ]
     ],
     "rain": "dim"
@@ -4073,7 +4061,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",
@@ -4107,6 +4095,27 @@
  },
  "light_points": [
   [
+   291,
+   208,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
+   294,
+   208,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
+   297,
+   208,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
    302,
    209,
    "parsa.p_torch",
@@ -4135,7 +4144,7 @@
    "flame"
   ],
   [
-   298,
+   297,
    212,
    "parsa.p_torch",
    "niche_lamp",
@@ -4198,10 +4207,10 @@
    "window_evening"
   ],
   [
-   292,
+   293,
    220,
    "parsa.p_torch",
-   "niche_lamp",
+   "wall_torch",
    "flame"
   ],
   [
@@ -4249,6 +4258,13 @@
    "flame"
   ],
   [
+   300,
+   231,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
    294,
    232,
    "parsa.p_house_small",
@@ -4259,20 +4275,6 @@
    232,
    "parsa.p_house_small",
    "door_lamp"
-  ],
-  [
-   300,
-   232,
-   "parsa.p_torch",
-   "wall_torch",
-   "flame"
-  ],
-  [
-   292,
-   233,
-   "parsa.p_torch",
-   "niche_lamp",
-   "flame"
   ],
   [
    300,
@@ -4287,14 +4289,21 @@
    "window_late"
   ],
   [
+   292,
+   235,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
+  ],
+  [
    296,
    236,
    "parsa.p_house",
    "window_evening"
   ],
   [
-   294,
-   238,
+   292,
+   237,
    "parsa.p_torch",
    "wall_torch",
    "flame"
@@ -4304,6 +4313,13 @@
    238,
    "parsa.p_torch",
    "wall_torch",
+   "flame"
+  ],
+  [
+   295,
+   241,
+   "parsa.p_torch",
+   "niche_lamp",
    "flame"
   ]
  ]

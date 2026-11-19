@@ -22,7 +22,7 @@ import numpy as np
 from plan import world_plan as P
 
 from .compose import NONE16, World
-from .coords import COLS, to_grid, to_plan
+from .coords import COLS, ROWS, to_grid, to_plan
 from .graph import Graph
 
 TOWNS = ["alban_mount", "brundisium", "tibur", "capua", "beneventum", "eleusis", "academy", "corcyra",
@@ -620,14 +620,18 @@ def town_facts(world: World) -> dict[str, tuple[dict[str, int], set[str]]]:
     return out
 
 
-def base_items(world: World) -> dict[str, dict[str, dict[str, int]]]:
+def base_items(world: World, reach: set | None = None) -> dict[str, dict[str, dict[str, int]]]:
     """region -> district -> item id -> placements, for the items of the base and corner layers
     (the layers the stretches and seams draw their life from), by the district under each
-    item's origin tile."""
+    item's origin tile; with `reach`, only items with a tile of it beside them (work there is
+    work a walker can get to)."""
+    from .citylife import _ring
     from .compose import live_items
     out: dict[str, dict[str, dict[str, int]]] = {}
     for _, it in live_items(world):
         if it.layer not in ("base", "corner"):
+            continue
+        if reach is not None and not any(t in reach for t in _ring(it)):
             continue
         d = int(world.D[it.r, it.c])
         if d == NONE16:
@@ -635,6 +639,23 @@ def base_items(world: World) -> dict[str, dict[str, dict[str, int]]]:
         rid, did = world.districts[d].split("/", 1)
         row = out.setdefault(rid, {}).setdefault(did, {})
         row[it.id] = row.get(it.id, 0) + 1
+    return out
+
+
+def country_reach(world: World, graphs: dict[str, Graph], cat, root: Path) -> set:
+    """Walkable tiles within the life's reach of the base's and the corner's graphs (the reach
+    the life checks give a worker, slopes walked as the art's contract has them)."""
+    from . import landform
+    from .citylife import _graph_labels
+    from .validate import walk_map
+    walk, stair = walk_map(world, cat)
+    slope = landform.slope_tiles(world, cat, root)
+    lv = world.L & 0x0F
+    out: set = set()
+    for name in ("base", "corner"):
+        if name in graphs:
+            out |= set(_graph_labels(graphs[name], walk, lv, stair, (0, 0, COLS - 1, ROWS - 1),
+                                     slope))
     return out
 
 
@@ -691,7 +712,7 @@ def write(world: World, graphs: dict[str, Graph], out_dir: Path, cat=None) -> li
     traffic.apply(docs, graphs)
     root = Path(__file__).resolve().parents[3]
     ctx = seasonlife.context(world, graphs, cat, root)
-    placed = base_items(world)
+    placed = base_items(world, country_reach(world, graphs, cat, root))
     for rid in list(docs):
         docs[rid] = seasonlife.apply(places.apply(docs[rid]), world, graphs, cat, root)
         if P.REGIONS[rid][0] in ("stretch", "seam"):

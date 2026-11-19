@@ -61,7 +61,8 @@
    "plain_state": "dry",
    "season_states": [
     "fresh",
-    "green"
+    "green",
+    "dormant"
    ]
   },
   {

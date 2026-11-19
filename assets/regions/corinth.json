@@ -3491,7 +3491,7 @@
     "hours": [
      [
       "dusk",
-      "23:00"
+      "23:30"
      ]
     ],
     "rain": "dim"
@@ -3557,7 +3557,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",
@@ -3603,6 +3603,12 @@
    714,
    "athens.g_house_small",
    "window_evening"
+  ],
+  [
+   298,
+   715,
+   "athens.g_lamp",
+   "niche_lamp"
   ],
   [
    304,

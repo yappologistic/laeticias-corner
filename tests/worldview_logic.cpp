@@ -4,6 +4,7 @@
 
 #include "worldview/camera.hpp"
 #include "worldview/cells.hpp"
+#include "worldview/page_runs.hpp"
 #include "worldview/places.hpp"
 #include "worldview/script.hpp"
 #include "worldview/theme.hpp"
@@ -286,4 +287,73 @@ TEST_CASE("viewer: options and scripts are checked before anything runs") {
     CHECK_FALSE(parseClock("1.5").has_value());
     CHECK(compare(2, "<=", 2) == true);
     CHECK_FALSE(compare(2, "~", 2).has_value());
+}
+
+TEST_CASE(
+    "page runs: sprites that do not meet draw page by page, those that meet keep their order") {
+    PageRuns runs;
+    runs.begin({0, 0, 640, 480});
+    // Two pages alternating across the window, nothing touching: two runs, not six.
+    for (int i = 0; i < 6; ++i) {
+        const auto x = static_cast<float>(i * 100);
+        CHECK(runs.add(static_cast<std::uint32_t>(i % 2), {x, 0, x + 40, 40}));
+    }
+    CHECK(runs.runs() == 2);
+    const std::vector<std::uint32_t> apart(runs.order().begin(), runs.order().end());
+    CHECK(apart == std::vector<std::uint32_t>{0, 2, 4, 1, 3, 5});
+
+    // The same pages stacked on one spot: every change of page is a run, in the order given.
+    runs.begin({0, 0, 640, 480});
+    for (int i = 0; i < 6; ++i)
+        CHECK(runs.add(static_cast<std::uint32_t>(i % 2), {300, 200, 340, 240}));
+    CHECK(runs.runs() == 6);
+    const std::vector<std::uint32_t> stacked(runs.order().begin(), runs.order().end());
+    CHECK(stacked == std::vector<std::uint32_t>{0, 1, 2, 3, 4, 5});
+
+    // Off the window: no entry.
+    CHECK_FALSE(runs.add(0, {700, 0, 740, 40}));
+    CHECK(runs.count() == 6);
+}
+
+TEST_CASE("page runs: whatever is drawn over something else is still drawn after it") {
+    // Random boxes on four pages: in the order given back, every pair that meets keeps the
+    // order it was given in, and each run holds one page.
+    PageRuns runs;
+    const FRect window{100, 50, 1380, 770};
+    runs.begin(window);
+    std::vector<FRect> boxes;
+    std::vector<std::uint32_t> keys;
+    std::uint32_t seed = 12345;
+    const auto next = [&](std::uint32_t n) {
+        seed = seed * 1664525u + 1013904223u;
+        return (seed >> 8) % n;
+    };
+    for (int i = 0; i < 600; ++i) {
+        const auto x = static_cast<float>(next(1500));
+        const auto y = static_cast<float>(next(900));
+        const FRect box{x, y, x + static_cast<float>(8 + next(200)),
+                        y + static_cast<float>(8 + next(160))};
+        const std::uint32_t key = next(4);
+        if (runs.add(key, box)) {
+            boxes.push_back(box);
+            keys.push_back(key);
+        }
+    }
+    const auto order = runs.order();
+    REQUIRE(order.size() == boxes.size());
+    std::vector<std::size_t> place(order.size());
+    for (std::size_t k = 0; k < order.size(); ++k) place[order[k]] = k;
+    int broken = 0;
+    for (std::size_t a = 0; a < boxes.size(); ++a)
+        for (std::size_t b = a + 1; b < boxes.size(); ++b)
+            if (boxes[a].overlaps(boxes[b]) && place[a] > place[b]) ++broken;
+    CHECK(broken == 0);
+    int changes = 1;
+    for (std::size_t k = 1; k < order.size(); ++k)
+        changes += keys[order[k]] != keys[order[k - 1]] ? 1 : 0;
+    CHECK(changes == runs.runs());
+    // And it is worth having: far fewer runs than the changes of page in the order given.
+    int given = 1;
+    for (std::size_t k = 1; k < keys.size(); ++k) given += keys[k] != keys[k - 1] ? 1 : 0;
+    CHECK(runs.runs() < given);
 }

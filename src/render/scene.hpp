@@ -158,6 +158,9 @@ public:
     // How far cliff faces reach below the south rims, in world px (for framing).
     [[nodiscard]] float cliffDepth() const { return tables_.groundReach.bottom; }
     [[nodiscard]] int drawCalls() const { return batch_.drawCalls(); }
+    // A frame in which the scene only takes its sky turn (the home out of view) starts its
+    // count here; else the sky's draws added up frame after frame while away.
+    void beginFrameStats() { batch_.resetStats(); }
     [[nodiscard]] const SpriteTables& sprites() const { return tables_; }
     // How far item sprites reach from their anchors, world px.
     [[nodiscard]] const Reach& itemReach() const { return itemReach_; }

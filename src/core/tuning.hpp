@@ -377,6 +377,9 @@ inline constexpr float kSnowAmbienceBoost = 1.41f; // winter bed under snow, +3 
 // destination's pages, fade in; within CLAUDE.md's 1 s.
 inline constexpr float kTravelFadeOut = 0.25f;
 inline constexpr float kTravelHold = 0.4f;
+// At start the first view streams in behind the same veil: it lifts when the view is whole, or
+// after this long whatever is still on its way.
+inline constexpr float kStartHold = 2.5f;
 inline constexpr float kTravelFadeIn = 0.3f;
 inline constexpr int kWorldWeatherMargin = 16;    // tiles around the view or home whose cells count
 inline constexpr double kTravelBudgetMs = 1000.0; // CLAUDE.md: fast travel within a second
@@ -487,6 +490,12 @@ inline constexpr float kLeaveTimeout = 30.0f;  // a folded-back actor still in v
 inline constexpr double kChunkLinger = 2.0;    // seconds a chunk stays live after the area left
 // Seconds between reconciliations while the area slides within the chunks it touches.
 inline constexpr double kReconcileMoving = 0.25;
+// Steps between the moves of a body no window can show (15 Hz at 60 steps a second).
+inline constexpr int kUnseenStride = 4;
 } // namespace life
+
+// World px around the window within which the cities' people move every step: more than any
+// sprite reaches from its feet, and what someone walks in the strides they take beyond it.
+inline constexpr float kCityWatchMargin = 384.0f;
 
 } // namespace lc::tuning

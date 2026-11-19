@@ -119,9 +119,9 @@
      ]
     },
     "snow_line": [
-     8,
-     10,
-     12
+     9,
+     11,
+     13
     ]
    },
    "summer": {
@@ -142,7 +142,7 @@
      ]
     },
     "snow_line": [
-     null,
+     15,
      null,
      null
     ]
@@ -174,7 +174,7 @@
     },
     "snow_line": [
      null,
-     null,
+     14,
      11
     ]
    },
@@ -916,7 +916,7 @@
    "sound": {
     "surfaces": {
      "roof": 0.07,
-     "leaves": 0.21
+     "leaves": 0.14
     },
     "wind": "wind.mountain",
     "exposure": 1.0,

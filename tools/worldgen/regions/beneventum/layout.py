@@ -2,13 +2,13 @@
 
 World rect C 344..355, R 208..219; local (c, r) = world (C - 344, R - 208); local level 0 = world
 level 2. The Appia runs east-west on r 5..6; where the Via Traiana branches south-east a lane
-leaves by the shops, an altar at the fork. Trajan's arch (dedicated 114) has no art: the card
+leaves between shops, an altar at the fork. Trajan's arch (dedicated 114) has no art: the card
 says so; the stop is common Roman pieces.
 """
 
 from worldgen import waypoint as WP
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import night_posts, put
 from worldgen.shapes import Rect
 
 R = "rome."
@@ -30,8 +30,11 @@ def build(L: Layout) -> None:
              gap=0.15, seed="north")
     L.houses(Rect(0, 8, 5, H - 1), {R + "r_domus": 1, R + "r_taberna": 2}, front=[road],
              gap=0.2, seed="west")
+    L.houses(Rect(8, 8, W - 1, 9), {R + "r_insula_low": 1, R + "r_taberna": 2,
+             R + "r_thermopolium": 1}, front=[traiana], gap=0.1, seed="fork")
     L.scatter(Rect(8, 11, W - 1, H - 1), {R + "t_olive": 2, R + "r_vine": 2}, 0.25, seed="fields",
               clump=0.5)
     L.node("beneventum_fork", (7, 7))
+    night_posts(L, R + "r_lamp", [(9, 7), (3, 7)], ring=2, gap=3)   # the inn and shops at the fork
     WP.finish(L, R + "earth")
     L.view("whole", Rect(0, 0, W - 1, H - 1))

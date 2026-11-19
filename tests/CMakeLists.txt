@@ -176,7 +176,8 @@ list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no
      "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
-list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look" "${LC_SCRATCH}/save_look_night")
+list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look"
+     "${LC_SCRATCH}/save_look_night" "${LC_SCRATCH}/save_bench_startup_look")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -431,6 +432,15 @@ add_test(NAME script_seams_look
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(script_seams_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+# Start-up on the shader path, as a player's is (frames streamed): the first frame's setup within
+# 3 s and no frame over the frame budgets while the first view comes in. Only the start-up case
+# (no case's name holds "start-up": the filter leaves the bench's own first case).
+add_test(NAME bench_startup_look
+  COMMAND laeticias-corner --bench --renderer gpu --quality high --size 2560x1440 --seed 1
+          --frames 240 --bench-case start-up ${LC_BUDGET}
+          --save-dir "${LC_SCRATCH}/save_bench_startup_look")
+set_tests_properties(bench_startup_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}"
+  SKIP_RETURN_CODE 77 FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 if(LC_GLSLC)
   string(JOIN "|" LC_SHADER_NAME_ARG ${LC_SHADER_NAMES})
   file(MAKE_DIRECTORY "${LC_SCRATCH}/shaders")

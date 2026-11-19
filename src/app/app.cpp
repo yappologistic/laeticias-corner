@@ -160,6 +160,16 @@ void App::rememberWindow() {
 }
 
 bool App::init() {
+    // The world's data is read and composed on a worker while the window, the renderer and the
+    // art come up here: start-up waits for the longer of the two, not their sum.
+    std::future<WorldLoad> worldJob;
+    if (!(opts_.bench && opts_.map) && fs::exists(assets_ / "world" / "world.json"))
+        worldJob = std::async(std::launch::async, [this] {
+            const Uint64 t0 = SDL_GetPerformanceCounter();
+            WorldLoad w{world::loadWorld(assets_, cat_), 0};
+            w.ms = msBetween(t0, SDL_GetPerformanceCounter());
+            return w;
+        });
     if (!createWindow()) return false;
     if (!createRenderer()) return false;
     // The benchmark measures with vsync off: frame times then show what the machine can do.
@@ -184,17 +194,25 @@ bool App::init() {
     buildThumbs();
     if (!font_.load(assets_ / "fonts")) return false;
 
-    if (!(opts_.bench && opts_.map) && !loadWorldData()) return false;
+    if (worldJob.valid() && !loadWorldData(worldJob.get())) return false;
     // The cities' life runs with the world (src/life/): the camera is its active area. It
     // keeps the map's item and slot numbers, so the home's land is cleared in the map first
     // (applying the home later renumbered them under it: an item index past the end as soon as
-    // the world's layers placed anything on the home's land).
+    // the world's layers placed anything on the home's land). It is worked out on a worker
+    // while the sounds load here; nothing changes the map meanwhile.
+    std::future<life::LifeSession> lifeJob;
     if (loaded_) {
         applyHomeToMap();
-        (void)openCity();
+        lifeJob = std::async(std::launch::async,
+                             [this] { return life::openLifeSession(*loaded_, seed_); });
     }
     mixer_.load(assets_ / "audio", cat_.audio);
     loadWorldAudio();
+    if (lifeJob.valid()) {
+        city_ = std::make_unique<life::LifeSession>(lifeJob.get());
+        SDL_Log("city life: %.0f ms", city_->loadMs);
+    }
+    loadCityAudio();
     setupMusic();
     if (opts_.audioOut)
         mixer_.startCapture();
@@ -1770,6 +1788,14 @@ int App::run() {
         camera_.place(*savedCamera_, savedZoom_, screen());
     else
         frameCamera();
+    // The first view streams in over its first second or two (its pages decode on a worker,
+    // its cells are built a few a frame): it is shown when it is whole, behind the veil a
+    // journey arrives through, never filling in before the eyes. Runs that build everything at
+    // once (headless scripts) and those that measure have nothing to hide.
+    if (worldView_ && !measuring() && (!opts_.headless || opts_.streamed)) {
+        travel_ = {loaded_->file.home.region, tuning::kTravelFadeOut, true};
+        startVeil_ = true;
+    }
     if (opts_.bench) {
         // SDL started with the process: its clock is the start-up time.
         startupMs_ = static_cast<double>(SDL_GetTicks());

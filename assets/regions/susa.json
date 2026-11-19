@@ -1223,7 +1223,7 @@
      "water": 0.46
     },
     "wind": "wind.open",
-    "exposure": 1.0,
+    "exposure": 0.99,
     "water": {
      "family": "river",
      "speed": "slow"
@@ -1676,12 +1676,12 @@
    "sound": {
     "surfaces": {
      "stone": 0.07,
-     "roof": 0.28,
+     "roof": 0.29,
      "leaves": 0.07,
      "water": 0.06
     },
     "wind": "wind.open",
-    "exposure": 0.78,
+    "exposure": 0.77,
     "water": {
      "family": "river",
      "speed": "slow"
@@ -3431,7 +3431,7 @@
     "hours": [
      [
       "dusk",
-      "23:00"
+      "23:30"
      ]
     ],
     "rain": "dim"
@@ -3522,7 +3522,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",
@@ -3575,13 +3575,6 @@
    "window_evening"
   ],
   [
-   330,
-   177,
-   "parsa.p_torch",
-   "niche_lamp",
-   "flame"
-  ],
-  [
    338,
    177,
    "parsa.p_house_small",
@@ -3620,10 +3613,24 @@
    "flame"
   ],
   [
-   330,
-   182,
+   328,
+   180,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
+   332,
+   180,
    "parsa.p_torch",
    "niche_lamp",
+   "flame"
+  ],
+  [
+   332,
+   185,
+   "parsa.p_torch",
+   "wall_torch",
    "flame"
   ],
   [
@@ -3644,6 +3651,13 @@
    189,
    "parsa.p_torch",
    "niche_lamp",
+   "flame"
+  ],
+  [
+   332,
+   190,
+   "parsa.p_torch",
+   "wall_torch",
    "flame"
   ],
   [
@@ -3684,6 +3698,13 @@
    "parsa.p_brazier",
    "brazier_watch",
    "fire"
+  ],
+  [
+   334,
+   196,
+   "parsa.p_torch",
+   "niche_lamp",
+   "flame"
   ],
   [
    339,

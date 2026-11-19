@@ -22,12 +22,13 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
 from PIL import ImageDraw
 
 from plan import world_plan as P
 
 from . import base as base_mod
-from . import compiler, compose, preview, validate
+from . import compiler, compose, landform, preview, validate
 from .catalog import Atlas, Catalog
 from .coords import COLS, ROWS
 from .dsl import Issue, Layout
@@ -36,6 +37,15 @@ from .shapes import Rect
 from .layer import grid_to_plan, plan_to_grid, read_lcw, write_lcw
 
 HERE = Path(__file__).resolve().parent.parent  # tools/worldgen
+
+
+def home_tiles(L: Layout) -> np.ndarray:
+    """The home region's square within a layout (the game's own ground: never reshaped)."""
+    (hc, hr), (hw, hh) = P.HOME["origin_plan"], P.HOME["size"]
+    m = np.zeros(L.T.shape, dtype=bool)
+    c0, r0 = L.origin
+    m[max(hr - r0, 0):max(hr + hh - r0, 0), max(hc - c0, 0):max(hc + hw - c0, 0)] = True
+    return m
 
 
 class Builder:
@@ -214,6 +224,8 @@ class Builder:
         mod = importlib.util.module_from_spec(mod_spec)
         mod_spec.loader.exec_module(mod)
         mod.build(L)
+        landform.wave_seams(L, L.below, keep=home_tiles(L))
+        landform.close_paving_holes(L, L.below)
         pl, issues = compiler.compile_layer(L)
         g, gissues = compiler.derive_graph(L)
         self.layers[name], self.graphs[name], self.layouts[name] = pl, g, L
@@ -408,6 +420,11 @@ def main(argv=None) -> int:
             for f in SEAS.write_world(b.root, world, b.cat, ctx.flood):
                 print(f"seasons: {f}")
             write_needs(b, world)
+        from . import seasoncheck
+        f = b.reports / "seasons" / "snow.md"
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(seasoncheck.snow_table(seasoncheck.snow_rows(world, SEAS.resolved(b.root))))
+        print(f"seasons: {f}")
         if not a.city and not a.life and not targets_named(a):
             return 0
     if a.sounds:

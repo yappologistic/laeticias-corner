@@ -72,6 +72,15 @@ RIVER_PTS = [(104, 0), (98, 2), (90, 3), (82, 2), (74, 3), (66, 2), (58, 2), (50
 HAREM_LEVEL = ("the engine draws the wing from its origin tile, in the corridor notch at the "
                "terrace's level; the platform is the art's plinth (W-V3: one level per footprint)")
 
+def hall_floor(L: Layout, p) -> Mask:
+    """A placed landmark's own walk tiles inside its footprint (local), as a shape."""
+    m = np.zeros((L.size[1], L.size[0]), dtype=bool)
+    for c, r in L.walk_tiles(p):
+        if p.c <= c < p.c + p.pw and p.r <= r < p.r + p.ph:
+            m[r - L.origin[1], c - L.origin[0]] = True
+    return Mask(0, 0, m)
+
+
 def build(L: Layout) -> None:
     cc, rr = np.meshgrid(np.arange(N), np.arange(N))
 
@@ -146,11 +155,6 @@ def build(L: Layout) -> None:
     # The residential wing stands at the terrace's level with the corridor down its east side to
     # the Treasury's west door (HAREM_LEVEL).
     L.moved("harem", rect=(86, 86, 99, 112), level=6, why=HAREM_LEVEL)
-    # Painted red plaster under the porticoes and passages walkers use (walk tiles' floors).
-    for rect in (Rect(65, 54, 78, 58), Rect(60, 59, 64, 72), Rect(64, 44, 69, 45),
-                 Rect(66, 46, 67, 47), Rect(64, 89, 69, 91), Rect(76, 88, 85, 91),
-                 Rect(88, 72, 92, 77)):
-        L.paint(rect, RED)
 
     # The quarry floor, the cistern and the mountain shrine's ledge are cut into the slope.
     L.level(QUARRY | Rect(124, 99, 125, 119), 7, face=P + "rock")
@@ -193,7 +197,7 @@ def build(L: Layout) -> None:
     L.district("forecourt", PLAZA | Rect(47, 35, 55, 59))
     proc = street([(26, 50), (34, 47), (46, 45), (48, 45)], width=2, paving=STONE)
     street([(36, 35), (36, 47)], width=1, paving=GRAVEL)                  # from the garden gate
-    street([(25, 26), (31, 26)], width=1, paving=RED)                     # through the glazed gate
+    street([(25, 26), (31, 26)], width=1, paving=None)                    # through the glazed gate
     L.node("royal_road_end", (27, 50))
     L.node("great_stair_foot", (48, 45))
     L.node("stair_plaza", (36, 52))
@@ -202,7 +206,7 @@ def build(L: Layout) -> None:
     # processional road to the Hall forecourt, the street east of the Apadāna (split round the
     # Tripylon), the courts north of the Hadiš and south of the Tačara.
     street([(56, 45), (63, 45)], width=2, paving=STONE)                   # landing → Gate (west door)
-    street([(63, 44), (70, 44)], width=1, paving=RED)                     # through the Gate
+    street([(63, 44), (70, 44)], width=1, paving=None)                    # through the Gate
     gate_road = street([(70, 44), (92, 44)], width=4, paving=STONE)       # bible r 43..46
     street([(57, 47), (58, 50), (71, 50)], width=1, paving=STONE)         # round the Gate's south
     street([(66, 48), (66, 50)], width=1, paving=STONE)                   # Gate south door
@@ -302,8 +306,9 @@ def build(L: Layout) -> None:
     # 4. Landmarks (bible §2.3; each rect is checked by V4)
     # =========================================================================================
     L.stair(P + "great_stair", rect=(49, 37, 55, 54), face="west", name="great_stair")
-    L.place(P + "gate_all_lands", rect=(64, 42, 69, 47), name="gate_all_lands")
+    halls = [L.place(P + "gate_all_lands", rect=(64, 42, 69, 47), name="gate_all_lands")]
     apadana = L.place(P + "apadana", rect=(60, 54, 83, 77), name="apadana")
+    halls.append(apadana)
     L.stair(P + "apadana_stair_n", rect=(65, 51, 78, 53), face="north", name="apadana_stair_n")
     # The east stair is hidden from the camera and leads to the closed east portico: no path.
     L.place(P + "apadana_stair_e", rect=(84, 60, 86, 71), name="apadana_stair_e")
@@ -312,11 +317,11 @@ def build(L: Layout) -> None:
         L.place(P + "p_throne", at=(72, 56), face="north", name="throne")  # walk tile (2, 11)
     # The west portico over the plain: a short relief stair from the terrace edge.
     L.stair(P + "stair_relief", rect=(59, 65, 59, 66), face="west", name="apadana_stair_w")
-    L.place(P + "tacara", rect=(63, 82, 70, 91), name="tacara")
+    halls.append(L.place(P + "tacara", rect=(63, 82, 70, 91), name="tacara"))
     L.stair(P + "tacara_stair_s", rect=(63, 92, 70, 94), face="south", name="tacara_stair_s")
-    L.place(P + "hadish", rect=(76, 88, 85, 101), name="hadish")
+    halls.append(L.place(P + "hadish", rect=(76, 88, 85, 101), name="hadish"))
     L.stair(P + "hadish_stair_w", rect=(72, 87, 75, 92), face="west", name="hadish_stair_w")
-    L.place(P + "tripylon", rect=(87, 71, 93, 78), name="tripylon")
+    halls.append(L.place(P + "tripylon", rect=(87, 71, 93, 78), name="tripylon"))
     L.stair(P + "tripylon_stair", rect=(88, 69, 92, 70), face="north", name="tripylon_stair")
     L.stair(P + "stair_relief", rect=(90, 79, 91, 79), face="south", name="tripylon_stair_s")
     L.stair(P + "stair_relief", rect=(94, 74, 94, 75), face="east", name="tripylon_stair_e")
@@ -329,8 +334,13 @@ def build(L: Layout) -> None:
     L.place(P + "south_stores", rect=(80, 113, 99, 118), name="south_stores")
     L.place(P + "cistern", rect=CISTERN, name="cistern")
     L.place(P + "quarry", rect=QUARRY, name="quarry")
-    L.place(P + "paradise_gate", rect=(26, 24, 30, 28), name="paradise_gate")
+    halls.append(L.place(P + "paradise_gate", rect=(26, 24, 30, 28), name="paradise_gate"))
     L.place(P + "pavilion", rect=(32, 12, 37, 17), name="pavilion")
+    # Painted red plaster is the floor of the halls' porticoes and passages: exactly their walk
+    # tiles inside their footprints, meeting the terrace's paving at each door (nothing past it).
+    for hall_ in halls:
+        if hall_ is not None:
+            L.paint(hall_floor(L, hall_), RED)
     station = L.place(P + "road_station", rect=(20, 114, 28, 121), name="road_station")
     L.place(P + "naqsh_cliff", rect=(0, 0, 20, 8), name="naqsh_cliff")
     L.place(P + "kaba", rect=(10, 13, 12, 15), name="kaba")

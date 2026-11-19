@@ -158,13 +158,10 @@
      "muddy": [
       "mar",
       "apr"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     5,
+     7,
      null,
      null
     ]
@@ -205,7 +202,7 @@
     "snow_line": [
      null,
      null,
-     6
+     9
     ]
    },
    "winter": {
@@ -237,9 +234,9 @@
      ]
     },
     "snow_line": [
-     3,
-     1,
-     2
+     4,
+     2,
+     3
     ]
    }
   },
@@ -1162,12 +1159,6 @@
      "actor": "world.raven",
      "density": "daytime",
      "max_per_chunk": 0.5
-    },
-    {
-     "role": "thracian_rider",
-     "per_item": "world.tumulus",
-     "count": 0.3,
-     "density": "daytime"
     },
     {
      "role": "owl",

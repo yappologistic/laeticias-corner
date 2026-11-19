@@ -10,26 +10,50 @@ Local plan coordinates = world plan coordinates (the corner's origin is (0, 0));
 world level 2.
 """
 
+import numpy as np
+
+from worldgen import rng
 from worldgen.dsl import Layout
-from worldgen.shapes import Ellipse, Line, Poly, Rect
+from worldgen.shapes import Ellipse, Line, Mask, Poly, Rect
 
 HOME = Rect(40, 40, 79, 79)
 DELL = Rect(88, 0, 95, 111)
 
 
+SEA = ("world.sea", "world.shallows")
+
+
 def coast_west(L: Layout, r: int, start: int) -> int:
-    """First column west of `start` on row r whose ground below is not land (the cliff edge)."""
+    """The last column west of `start` on row r that still has land beside it on both sides
+    and beyond it: a stream ending there falls straight over the cliff, never jutting past a
+    coast that runs aslant (V22)."""
     c = start
-    while c > 0 and L.below_terrain(c - 1, r) not in ("world.sea", "world.shallows"):
+    while c > 0 and all(L.below_terrain(c - 1, rr) not in SEA for rr in (r - 1, r, r + 1)):
         c -= 1
     return c
 
 
 def coast_south(L: Layout, c: int, start: int) -> int:
+    """The same going south down column c."""
     r = start
-    while r < 111 and L.below_terrain(c, r + 1) not in ("world.sea", "world.shallows"):
+    while r < 111 and all(L.below_terrain(cc, r + 1) not in SEA for cc in (c - 1, c, c + 1)):
         r += 1
     return r
+
+
+def dell_shape(L: Layout) -> Mask:
+    """DELL with its west edge wandering up to four tiles into it along the rows (never wider:
+    the farms and the wood keep their ground)."""
+    c0, r0, c1, r1 = DELL.bounds()
+    w, h = L.size
+    rows = np.arange(h, dtype=np.float64)
+    n = rng.fbm(np.full(h, 0.0), rows, 7.0, rng.hash64("corner", "dell_rim"), octaves=2) * 2 - 1
+    edge = c0 + np.clip(np.rint(n * 5.0 + 2.0).astype(int), 0, 4)
+    edge[92:97] = c0                 # where the old road ramps down into the dell
+    m = np.zeros((h, w), dtype=bool)
+    for r in range(r0, min(r1 + 1, h)):
+        m[r, edge[r]:min(c1 + 1, w)] = True
+    return Mask(0, 0, m)
 
 
 def build(L: Layout) -> None:
@@ -39,10 +63,12 @@ def build(L: Layout) -> None:
     L.transparent(sea)
     L.level(L.coast_below(), 0, face="world.coast")
 
-    # The misty dell: one level down, the seam with Rome.
-    L.district("seam_dell/dell", DELL)
-    L.paint(DELL - sea, "meadow")
-    L.level(DELL, -1)
+    # The misty dell: one level down, the seam with Rome; its western rim wanders with the land
+    # (V19: no ruled line), and the step, the meadow and the seam's border all follow it.
+    dell = dell_shape(L)
+    L.district("seam_dell/dell", dell)
+    L.paint(dell - sea, "meadow")
+    L.level(dell, -1)
 
     # The wood, the coast and the farms.
     L.district("wood", Poly([(14, 0), (78, 0), (78, 34), (60, 38), (40, 36), (22, 40), (14, 30)]))
@@ -144,13 +170,13 @@ def build(L: Layout) -> None:
     L.scatter(Rect(14, 0, 87, 39) - wood, {"blossom": 1, "bush": 2, "oak": 1}, 0.05,
               seed="wood_fringe")
     # The headland: scattered trees, bushes and rocks, flowers in the meadows.
-    open_land = land - HOME - DELL - wood
+    open_land = land - HOME - dell - wood
     L.scatter(open_land, {"oak": 2, "pine": 1, "bush": 3, "rock": 1, "berry_bush": 1}, 0.035,
               seed="headland", clump=0.6)
     L.scatter(open_land, {"flowers_red": 1, "flowers_white": 1, "flowers_violet": 1,
                           "tall_grass": 3, "mushrooms": 0.3}, 0.05, seed="flowers", clump=0.5)
     L.scatter(L.coast_below(), {"rock": 2, "tall_grass": 1}, 0.12, seed="cliff_top")
-    L.scatter(DELL - sea, {"tall_grass": 3, "reeds": 1, "bush": 1}, 0.12, seed="dell")
+    L.scatter(dell - sea, {"tall_grass": 3, "reeds": 1, "bush": 1}, 0.12, seed="dell")
 
     L.view("home_setting", Rect(20, 22, 103, 112))
     L.view("road_south", Rect(70, 78, 97, 112))

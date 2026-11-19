@@ -50,7 +50,9 @@ def build(L: Layout) -> None:
     L.river(RIVER, width=4, terrain="world.river", banks={"world.t_reeds": 0.3}, seed="euphrates")
     L.level(Line(RIVER, 4), 0)  # flush with its banks, as the kit decks are drawn (the base meets it)
     F.fords(L, west, item="world.bridge_timber")
-    L.place("world.jetty", at=(14, 22))     # the boats' landing stage off the quay's end
+    # The boats' landing stage on the west bank above the bridge: the river's boats come down
+    # from upstream and pass no bridge (art-smooth-land.md §8: the timber deck clears 6 px).
+    L.place("world.jetty", at=(13, 11))
     for c in range(18, 30):
         for r in (2, 3):
             if (c - 18) % 3 == 0 and r == 2:
@@ -66,12 +68,11 @@ def build(L: Layout) -> None:
     L.scatter(Rect(0, 4, 3, H - 1) | Rect(0, 0, 17, 1), {"parsa.t_date": 3, "world.t_palm": 2},
               0.4, seed="palms", clump=0.4)
     L.scatter(Rect(18, 0, 29, 1), {"parsa.t_date": 2, "parsa.t_pomegranate": 1}, 0.5, seed="grove")
-    # Off the landing stage's head and up the river's middle (the quay is the bank's).
-    WP.harbour_lane(L, "babylon", [(15, 22), (15, 16), (14, 12), (13, 10)], port="babylon",
-                    home="quay")
+    # Off the landing stage's head to the base's lane upstream.
+    WP.harbour_lane(L, "babylon", [(14, 11), (14, 10), (13, 10)], port="babylon", home="quay")
     L.node("ishtar_gate", (32, 5))
     L.node("etemenanki_court", (32, 20))
-    L.node("babylon_quay", (13, 22))
+    L.node("babylon_quay", (12, 11))
     L.node("west_bank", (4, 14))
     WP.finish(L, "world.earth", {"parsa.p_house_small": 0, "parsa.p_house": 1})
     for name, rect in (("ishtar_gate", (30, 1, 35, 4)), ("etemenanki", (20, 17, 31, 28))):

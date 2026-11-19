@@ -11,7 +11,7 @@ design's plan so the lake stays inside the island.
 
 from worldgen import waypoint as WP
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import night_posts, put
 from worldgen.shapes import Ellipse, Line, Poly, Rect
 
 EARTH, GRAVEL = "athens.packed_earth", "athens.gravel"
@@ -59,5 +59,9 @@ def build(L: Layout) -> None:
     L.node("lions", (8, 14))
     L.expect("delos_sanctuary", rect=(4, 2, 13, 9), level=0)
     L.expect("naxian_lions", rect=(4, 10, 11, 11), level=0)
+    # Pilgrims and the sanctuary's keepers by the harbour and the Prytaneion's hearth at night.
+    night_posts(L, "athens.g_brazier", [(3, 9), (13, 10), (8, 5), (14, 2), (2, 13)], ring=4, gap=3)
+    night_posts(L, "athens.g_lamp", [(8, 13), (5, 12), (14, 4), (14, 8), (3, 4), (10, 12),
+                                     (12, 6), (6, 7)], ring=2, gap=3)
     WP.finish(L, "athens.limestone")
     L.view("whole", Rect(0, 0, W - 1, H - 1))

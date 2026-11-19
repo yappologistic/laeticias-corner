@@ -12,15 +12,12 @@
 
 namespace lc {
 
-bool App::loadWorldData() {
-    if (!fs::exists(assets_ / "world" / "world.json")) return true; // the floating island
-    const Uint64 t0 = SDL_GetPerformanceCounter();
-    auto loaded = world::loadWorld(assets_, cat_);
-    if (!loaded) {
-        SDL_Log("world: %s", loaded.error().c_str());
+bool App::loadWorldData(WorldLoad load) {
+    if (!load.world) {
+        SDL_Log("world: %s", load.world.error().c_str());
         return false;
     }
-    loaded_ = std::make_unique<world::LoadedWorld>(std::move(*loaded));
+    loaded_ = std::make_unique<world::LoadedWorld>(std::move(*load.world));
     for (const std::string& e : loaded_->diagnostics.errors) SDL_Log("world: %s", e.c_str());
     if (!loaded_->diagnostics.warnings.empty())
         SDL_Log("world: %zu warnings (worldinfo validate lists them)",
@@ -66,8 +63,7 @@ bool App::loadWorldData() {
     viewWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
     homeWeather_ = std::make_unique<worldview::WeatherField>(*loaded_, seed_);
     themeWeights_.assign(loaded_->file.regions.size(), 0.0f);
-    SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)",
-            msBetween(t0, SDL_GetPerformanceCounter()), loaded_->layers.size(),
+    SDL_Log("world: loaded in %.0f ms (%zu layers, %zu regions)", load.ms, loaded_->layers.size(),
             loaded_->file.regions.size());
     return true;
 }
@@ -103,8 +99,11 @@ void App::createWorldView() {
                     iso.toWorld(f(w), 0.0f).x + r.left + homeOffset_.x,
                     iso.toWorld(f(w), f(h)).y + r.top + homeOffset_.y};
     worldView_ = std::make_unique<worldview::WorldView>(
-        renderer_.get(), *loaded_, assets_, *atlas_, measuring() || !opts_.headless,
-        worldview::Hole{home.rect, box},
+        renderer_.get(), *loaded_, assets_, *atlas_,
+        // Frames stream as they do for a player wherever time is measured or a window is
+        // open; a headless script builds everything at once (the same shots every run) unless
+        // it asks to see what a player sees.
+        measuring() || !opts_.headless || opts_.streamed, worldview::Hole{home.rect, box},
         // Living figures walk with city life.
         city_ ? std::vector<world::FigurePlace>{} : figures_);
     worldView_->setWeather(viewWeather_.get());
@@ -166,6 +165,7 @@ void App::drawScene(const FrameParams& p, SDL_Texture* out) {
     v.pointer = {at.x + homeOffset_.x, at.y + homeOffset_.y};
     if (!SDL_SetRenderTarget(renderer_.get(), out)) SDL_Log("render: %s", SDL_GetError());
     worldView_->setLifeAlpha(alpha_);
+    scene_->beginFrameStats();
     scene_->setGroundDecode(worldView_->homeGroundDecode());
     worldView_->draw(v, clock_.time(), p.light, frameDt_, static_cast<double>(simTime_), hooks_);
 }
@@ -371,13 +371,14 @@ void App::updateWorld(float dt) {
         // Whether the destination is whole is known once a frame of it has been drawn, and its
         // people are all there (city life fills the new area under the veil).
         const bool peopled = !city_ || !city_->city->arriving();
-        if (travel_.jumped && held > 0 &&
-            ((worldView_->settled() && peopled) || held >= tuning::kTravelHold) &&
+        const float hold = startVeil_ ? tuning::kStartHold : tuning::kTravelHold;
+        if (travel_.jumped && held > 0 && ((worldView_->settled() && peopled) || held >= hold) &&
             travelFadeIn_ < 0)
             travelFadeIn_ = travel_.t;
         if (travelFadeIn_ >= 0 && travel_.t - travelFadeIn_ >= tuning::kTravelFadeIn) {
             travel_ = {};
             travelFadeIn_ = -1;
+            startVeil_ = false;
         }
     }
     const worldview::PlaceTracker& pl = worldView_->places();
@@ -858,7 +859,10 @@ void App::loadWorldAudio() {
     markDryLoops(soundscape_->files());
     for (std::size_t i = 0; i < soundLoops_.size(); ++i)
         if (soundscape_->isMusic(static_cast<int>(i))) mixer_.setLoopMusic(soundLoops_[i]);
-    if (!city_) return;
+}
+
+void App::loadCityAudio() {
+    if (!soundscape_ || !city_) return;
     citySound_ = std::make_unique<worldview::CitySound>(*loaded_, city_->life->data,
                                                         assets_ / "audio", seed_);
     mixer_.loadMore(assets_ / "audio", citySound_->effects(), citySound_->loops());

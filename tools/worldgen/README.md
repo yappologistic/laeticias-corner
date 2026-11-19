@@ -223,11 +223,17 @@ on one tile, carriers' profiles present, and no populated quarter without light 
 | V11 | ≤ 25 % of walkable tiles hidden behind raised ground | warning |
 | V12 | item cards exist in the region file | error |
 | V13 | determinism: two compiles give the same bytes (test suite) | test |
-| V14 | the base's relief: no isolated single-tile level change on open country, at most 2 % of it on one-tile benches, no river reach under 6 tiles between two falls of under 3 levels | error (base) |
+| V14 | the base's relief: no isolated single-tile level change on open country, at most 2 % of it on one-tile benches with a cliff step or on ground without slope art (a graded hillside is one slope), no river reach under 6 tiles between two falls of under 3 levels | error (base) |
 | V15 | a marked `sightline` holds no world kit (fords, plank ramps, timber bridges, …) and no placeholder | error |
 | V17 | the engine's walk rules on every graph edge (`worldgen/walk.py`) | error (a step only a landmark's `walk_z` makes: warning) |
 | V16 | crossings (`worldgen/crossings.py`): every step the graph makes onto or off a deck (a landmark's walk tiles at its level plus `walk_z`, walkable kit on water at the water's level) stays within half a level of what it meets; bridges, fords, pontoons, landmarks on water and gates a road passes through are joined at two ends (a pier may end at a `dest` node on its planks); a landmark bridge's walkway never ends over water; a one-wide span is entered over its ends, never from its side (only a stair may join it there); jetties and moles touch walkable land within a level of the water; connect decks run along one axis (two wide draws a frame); a stair's foot and head landings are walkable, at its level and `rise` higher, and met by a path (wide flights share landings) | error (a landmark floor on dry land, landmark stairs: warning) |
 
+| V18 | faces (`worldgen/landform.py`): a raised land tile's face index names one of its terrain's materials (its own, else its base's, the engine's rule), and that material has face art on both sides | error |
+| V19 | straight seams: two natural grounds never meet along one row or column for more than 12 tiles (paving, roads and their verges, formal garden beds, water may run straight) | error |
+| V20 | map markers: every marker but the home's lies in its region and opens on its place: built pieces cover 6 % of the view round it, one within 2 tiles (plan `MARKER_AT` where a town stands off its rect's middle) | error |
+| V21 | floors: an interior floor (`parsa.paving_red`) lies only on walk tiles of the landmark whose footprint holds it; no base ground shows through paving | error |
+| V22 | water steps: running water steps down over the edge it flows to (a rapid at one level, a fall at more), never a single level into the sea, never above the land beside it; no stream tile juts out with lower ground on two sides | error |
+| V23 | slopes: slope ground (the catalogs' `art.slopes`) a level above a neighbour has art for all 21 slope shapes | error |
 | W-* | where walkers may be (`worldgen/walkable.py`, draw-order.md §5.2), by the engine walk model over the composed world: W-V3 one level under every footprint, walk tiles included; W-S3 a stair's head and foot meet the levels it joins; W-D1 decks reached and met by the land beside them; W-D2 only crossings and piers walkable on water; W-W5 every item's walk tiles reached by a graph; W-L1/L2/L3 slot spots on tiles their users can stand on, reached, moorings on water by a reached quay; W-G1 edge ends in one walk component; W-G2 nodes and edges never under an item without walk tiles; W-O2 lanes on water and under an item only through its geometry's `under` | error (art pending: warning) |
 
 Faults whose fix is a set's geometry (the art lane's) are listed in `plan/art_pending.py`: each
@@ -312,7 +318,9 @@ slowed chain is judged after two days of filling); a district may say `seasonal_
   by season, water by month, tokens by month, harbours, dress, birds, herds between summer and
   winter pastures, seasonal work on the farms, the turns of the seasons) and the helpers the
   cities' own `regions/<city>/seasons.py` use (`monthly`, `vary`, `factors`).
-- `worldgen/seasoncheck.py`: S1-S17 (`--check`, report `out/worldgen/seasons_check.txt`) and the
+- `worldgen/seasoncheck.py`: S1-S19 (`--check`, report `out/worldgen/seasons_check.txt`; S18 snow
+  painted as ground only where the climate keeps snow all year, S19 no lying snow on a lowland
+  above freezing, no summer snow below level 13, no palm under snow) and the
   needs file `assets/world/season-needs.json` (seasonal art and audio not made yet).
 - `worldgen/seasonreport.py`: a year in the life and the season maps (`out/worldgen/seasons/`).
 
@@ -338,12 +346,43 @@ and rise in a scarp; deltas lie flat at the shore's level. V14 holds the result.
 city's base level; town rects keep natural ground but no country items. Each table entry affects
 only its own area, and all noise is a function of world position and a string key.
 
+## The land's form (`worldgen/landform.py`)
+
+The art draws a one-level step of natural ground as a slope (out/reports/art-smooth-land.md §3),
+so the land is shaped for it:
+
+- **Grading.** The base raises slope ground (the catalogs' `art.slopes`, rock excepted) to one
+  level below its highest slope neighbour (eight around), never more than a level above water
+  beside it, after the roads are laid and before the country (`base.shape_for_slopes`); roads,
+  their verges, anything placed, cities, towns and a band round authored layers keep their
+  levels. Waypoint towns grade their own natural ground the same way (`waypoint.grade_country`,
+  off streets, items and a two-tile band at the layer's edge). Lone spikes and pits on open
+  ground are smoothed (`lone_steps`), never a bank beside water.
+- **Slopes and cliffs.** What slopes follows from the data: a step of one level between slope
+  ground is a slope; two levels or more, rock ground (`CLIFF_GROUND`) and ground with no slope art
+  keep their faces; a raised tile whose face material is masonry (`BUILT_FACES`: ashlar, brick,
+  travertine, basalt) is a built edge and should stay flat (the contract for the engine).
+- **Water steps.** `base.square_falls`: a river's mouth reach ends in three tiles at the sea's
+  level; water never stands above its banks; every step between water tiles runs square across
+  the flow, so the upper tile's flow (aux) names the edge the water falls over and the drop is
+  the two tiles' level difference (one: rapid, two or more: fall). V22 holds every layer to it.
+- **Borders.** The base's looks follow a noise-displaced stretch map (`base.look_map`, only where
+  the neighbouring biome's sets may stand), margins between two base grounds swing in width, and
+  every layer's straight natural seams are waved after its layout runs (`wave_seams`: free tiles
+  only, the level and face moving with the terrain where the step follows the border); free base
+  ground enclosed by paving is paved (`close_paving_holes`). V18-V23 above.
+- **Lights.** `--nights` also measures every town at its map marker (its arrival view, held to
+  the village bar) and the cities' day-busiest views (`nights.BUSIEST`, dark by history after
+  dark, held to the village bar too).
+- `--seasons` writes `out/worldgen/seasons/snow.md`: per region and month, snow lying on its
+  lowland, on its highest ground only, a dusting some days, or none.
+
 ## Files
 
 `worldgen/`: `dsl.py` layout API · `shapes.py`, `raster.py` shapes and exact rasterisation ·
 `catalog.py` catalogs, atlas pages, geometry · `layer.py`, `graph.py` file formats ·
 `compiler.py` layout → layer and graph · `compose.py` the engine's composition rule ·
-`validate.py` V1–V12 · `walk.py` the engine walk model (V17) · `walkable.py` W-* and the
+`validate.py` V1–V12 · `landform.py` V18–V23, grading, waved borders · `walk.py` the engine walk model (V17) · `walkable.py` W-* and the
 walkability report · `bible.py` city-file landmark tables · `base.py` the base layer ·
 `preview.py` maps, overview, isometric close-ups · `rng.py` SplitMix64 streams and noise ·
 `climates.py`, `seasons.py`, `seasonlife.py`, `seasoncheck.py`, `seasonreport.py` the seasons ·

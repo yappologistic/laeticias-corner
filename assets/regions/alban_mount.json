@@ -139,13 +139,22 @@
   "profiles": {"brazier_watch": {"kind": "brazier", "kelvin": 1800, "colour": "#ff8436", "radius": 3.2, "strength": 0.9, "flicker": {"style": "breathe", "hz": [1.0, 2.0], "depth": 0.07}, "hours": [["dusk", "dawn"]], "rain": "out", "festivals": {"*": 1.5}}, "niche_lamp": {"kind": "lamp", "kelvin": 1900, "colour": "#ff8c3c", "radius": 2.2, "strength": 0.7, "flicker": {"style": "steady", "hz": [4, 7], "depth": 0.05}, "hours": [["dusk", "00:00"]], "rain": "dim"}, "sanctuary_lamp": {"kind": "lamp", "kelvin": 2100, "colour": "#ff9b50", "radius": 2.6, "strength": 0.55, "flicker": {"style": "steady", "hz": [2, 4], "depth": 0.03}, "hours": [["dusk", "22:00"]], "rain": "sheltered", "festivals": {"*": 1.5}}}
  },
  "light_points": [
+  [171, 968, "rome.r_lamp", "niche_lamp"],
   [171, 970, "rome.r_brazier", "brazier_watch"],
+  [171, 973, "rome.r_lamp", "niche_lamp"],
+  [136, 977, "rome.r_lamp", "niche_lamp"],
   [134, 978, "rome.latiaris", "sanctuary_lamp"],
-  [142, 980, "rome.r_lamp", "niche_lamp"],
+  [142, 979, "rome.r_lamp", "niche_lamp"],
   [171, 980, "rome.r_lamp", "niche_lamp"],
+  [142, 982, "rome.r_brazier", "brazier_watch"],
   [164, 982, "rome.r_lamp", "niche_lamp"],
+  [142, 984, "rome.r_lamp", "niche_lamp"],
+  [137, 985, "rome.r_brazier", "brazier_watch"],
+  [171, 989, "rome.r_lamp", "niche_lamp"],
+  [171, 991, "rome.r_lamp", "niche_lamp"],
   [166, 994, "rome.r_lamp", "niche_lamp"],
   [174, 995, "rome.r_lamp", "niche_lamp"],
+  [174, 999, "rome.r_lamp", "niche_lamp"],
   [171, 1000, "rome.r_brazier", "brazier_watch"]
  ]
 }
