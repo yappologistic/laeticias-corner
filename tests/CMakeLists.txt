@@ -9,6 +9,7 @@ add_executable(lc_tests
   test_progress.cpp
   test_actors.cpp
   test_engine.cpp
+  test_order_props.cpp
   test_perf.cpp
   test_coverage.cpp
 )

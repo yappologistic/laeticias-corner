@@ -112,6 +112,7 @@ private:
     std::vector<std::uint32_t> aSuccStart_, aSucc_;   // per actor: positions after it
     std::vector<std::uint32_t> aaSuccStart_, aaSucc_; // per actor: actors after it
     std::vector<int> aIndeg_;                         // per actor: what must go first, left
+    std::vector<int> aStaticIndeg_;                   // of that, elements
     std::vector<std::uint8_t> aState_;                // 0 waiting, 1 ready, 2 drawn
     std::vector<std::uint32_t> pending_;              // ready actors
     std::vector<std::uint32_t> released_;             // held elements free to go
@@ -126,11 +127,12 @@ private:
 };
 
 // The order oracle on boxes (draw-order.md §6.1): how many pairs of `items` and `actors` drawn in
-// `seq` overlap on screen yet are drawn the other way round from the comparator. Zero is right.
-// For tests and the debug view (allocates).
+// `seq` overlap on screen yet are drawn the other way round from the comparator (without
+// `actorPairs`, pairs of two actors are not counted: where a stacked cycle had to be broken,
+// that is the edge the merge gives up). Zero is right. For tests and the debug view (allocates).
 [[nodiscard]] int orderViolations(std::span<const OrderItem> items,
                                   std::span<const OrderItem> actors,
-                                  std::span<const ActorMerge::Step> seq);
+                                  std::span<const ActorMerge::Step> seq, bool actorPairs = true);
 
 // Page switches along an order (what each one costs is a draw call).
 [[nodiscard]] int pageSwitches(std::span<const OrderItem> items,

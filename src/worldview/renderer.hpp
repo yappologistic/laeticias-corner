@@ -228,8 +228,9 @@ public:
     // them, so tests can hold the one against the other.
     [[nodiscard]] int coarseActorsCovered(float px) const;
     [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
-    // Pairs drawn in the last frame that overlap on screen yet go against the comparator (the
-    // order oracle, draw-order.md §6.1), and cycles its sorts had to break: both zero when right.
+    // Pairs drawn in the last frame that overlap on screen yet go against the comparator, two
+    // actors' pairs aside (the order oracle, draw-order.md §6.1), and cycles the static sort had
+    // to break (data faults): both zero when right.
     [[nodiscard]] int orderViolations() const;
     [[nodiscard]] int orderCycles() const;
     // Draw calls of the last frame per band (render/bands.hpp); the last slot counts those made

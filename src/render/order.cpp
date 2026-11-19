@@ -165,11 +165,13 @@ void ActorMerge::plan(std::span<const OrderItem> items, std::span<const OrderIte
     // kept by its source (CSR).
     blocked_.assign(n, 0);
     aIndeg_.assign(na, 0);
+    aStaticIndeg_.assign(na, 0);
     aSuccStart_.assign(na + 1, 0);
     eSuccStart_.assign(n + 1, 0);
     for (std::size_t p = 0; p < pairEl_.size(); ++p) {
         if (pairAfter_[p] != 0) {
             ++aIndeg_[pairAc_[p]];
+            ++aStaticIndeg_[pairAc_[p]];
             ++eSuccStart_[pairEl_[p] + 1];
         } else {
             ++blocked_[pairEl_[p]];
@@ -239,9 +241,22 @@ void ActorMerge::plan(std::span<const OrderItem> items, std::span<const OrderIte
         drain();
     }
     flushPending(true);
-    // Anything left closes a cycle (a fault the comparator's data rules exclude): break it at
-    // the first held element, else the first waiting actor, and count it.
+    // Anything left closes a cycle. Among boxes that stand on the ground the comparator has none
+    // (draw-order.md §1.3); stacked ones can: a walker on a long deck and a boat under it nearer
+    // the camera (deck, walker, boat, deck). It is broken where it shows least: first an actor
+    // that waits only for other actors goes (the boat's mast behind the walker, the deck still
+    // over the boat and under the walker), then a held element, then any actor; each is counted.
     for (;;) {
+        std::uint32_t a = 0;
+        for (; a < na && !(aState_[a] == 0 && aStaticIndeg_[a] == 0); ++a) {}
+        if (a < na) {
+            ++cycles_;
+            aIndeg_[a] = 0;
+            aState_[a] = 1;
+            pending_.push_back(a);
+            flushPending(true);
+            continue;
+        }
         std::uint32_t k = 0;
         bool found = false;
         for (const std::uint32_t v : visible_)
@@ -258,8 +273,7 @@ void ActorMerge::plan(std::span<const OrderItem> items, std::span<const OrderIte
             flushPending(true);
             continue;
         }
-        std::uint32_t a = 0;
-        for (; a < na && aState_[a] != 0; ++a) {}
+        for (a = 0; a < na && aState_[a] != 0; ++a) {}
         if (a == na) break;
         ++cycles_;
         aIndeg_[a] = 0;
@@ -278,6 +292,7 @@ void ActorMerge::emitElement(std::uint32_t k) {
     // Actors behind it may now go.
     for (std::uint32_t q = eSuccStart_[k]; q < eSuccStart_[k + 1]; ++q) {
         const std::uint32_t a = eSucc_[q];
+        --aStaticIndeg_[a];
         if (--aIndeg_[a] == 0 && aState_[a] == 0) {
             aState_[a] = 1;
             pending_.push_back(a);
@@ -355,13 +370,15 @@ void ActorMerge::flushPending(bool all) {
 }
 
 int orderViolations(std::span<const OrderItem> items, std::span<const OrderItem> actors,
-                    std::span<const ActorMerge::Step> seq) {
+                    std::span<const ActorMerge::Step> seq, bool actorPairs) {
     std::vector<const OrderItem*> drawn;
+    std::vector<bool> actor;
     std::vector<FRect> screens;
     drawn.reserve(seq.size());
     screens.reserve(seq.size());
     for (const ActorMerge::Step& st : seq) {
         drawn.push_back(st.actor ? &actors[st.index] : &items[st.index]);
+        actor.push_back(st.actor);
         screens.push_back(drawn.back()->screen);
     }
     ScreenGrid grid;
@@ -369,7 +386,8 @@ int orderViolations(std::span<const OrderItem> items, std::span<const OrderItem>
     int bad = 0;
     grid.pairs(screens, [&](std::uint32_t i, std::uint32_t j) {
         // i < j: i was drawn first, so it must be the one behind.
-        if (!drawnBefore(drawn[i]->box, drawn[j]->box)) ++bad;
+        if ((actorPairs || !actor[i] || !actor[j]) && !drawnBefore(drawn[i]->box, drawn[j]->box))
+            ++bad;
     });
     return bad;
 }

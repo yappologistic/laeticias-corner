@@ -1902,12 +1902,14 @@ int WorldView::coarseActorsCovered(float px) const {
 
 int WorldView::orderViolations() const {
     if (lastLod_ == Lod::Native)
-        return lc::orderViolations(region_.items, mergeActors_, merge_.sequence());
-    return lc::orderViolations({}, mergeActors_, coarseMerge_.sequence());
+        return lc::orderViolations(region_.items, mergeActors_, merge_.sequence(), false);
+    return lc::orderViolations({}, mergeActors_, coarseMerge_.sequence(), false);
 }
 
 int WorldView::orderCycles() const {
-    return region_.cycles + merge_.cyclesBroken() + coarseMerge_.cyclesBroken();
+    // The static sort's cycles are data faults; the merge's are stacked movers (a walker on a
+    // deck over a boat), broken between the two actors and not counted here.
+    return region_.cycles;
 }
 
 int WorldView::sunkActors() const {
