@@ -132,6 +132,11 @@ def actor_keys(a: dict, mod) -> list[str]:
 CRITTER_FRAMES = rig.CRITTER_FRAMES
 WEDGE_LOOKS = 4
 SLOPE_KEY = re.compile(r"terrain/([^/]+)/slope/(\w+)/v(\d+)")
+WINTER_KEY = re.compile(r"item/([^/]+)/base/([^/]+)/f(\d+)@winter")
+# The commonest deciduous trees get a drawn bare look for winter (bare.py); the engine picks an
+# item's `@winter` look by the calendar's season.
+BARE_IN_WINTER = {"world.t_oak", "world.t_beech", "parsa.t_poplar", "parsa.t_willow", "parsa.t_almond",
+                  "rome.t_plane", "rome.t_poplar", "rome.t_fig", "athens.t_plane", "athens.t_fig"}
 
 
 def slope_looks(t: dict) -> int:
@@ -152,6 +157,8 @@ def required_keys(cat: dict, mod, pieces: dict, kit_pieces: dict | None = None) 
             keys += [f"terrain/{t['id']}/m{m}/f{f}" for m in range(16) for f in range(frames)]
     for it in cat["items"]:
         n = item_frames(it, mod)
+        if it["id"] in BARE_IN_WINTER:
+            keys += [f"item/{it['id']}/base/{v}/f{f}@winter" for v in item_variants(it) for f in range(n)]
         for layer in item_layers(it):
             for v in item_variants(it):
                 if layer == "base" and it["id"] in pieces:
@@ -465,6 +472,18 @@ def _lights(model, k) -> dict:
     return out
 
 
+def _winter_job(args):
+    """An item's bare winter look (bare.py), from its own model."""
+    import bare
+    set_id, item_id, layout, variant, frame, frames, footprint, k = args
+    item: Item = _set_mod(set_id).ITEMS[item_id]
+    n = int(variant[1:])
+    model = item.build(0, frame, frames, k).rotated(n, *footprint) if layout == "rotate" \
+        else item.build(n, frame, frames, k)
+    model = bare.winter(model, 9100 + n)
+    return {f"item/{item_id}/base/{variant}/f{frame}@winter": render(model, False, cull=True).base}, {}
+
+
 def _state_job(args):
     set_id, item_id, layout, state, variant, frame, frames, footprint, k = args
     mod = _set_mod(set_id)
@@ -581,6 +600,10 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
                 it = items[iid]
                 jobs.append((_state_job, (set_id, iid, it["layout"], layer, variant, int(frame), item_frames(it, mod),
                                           tuple(it["footprint"]), k)))
+        elif m := WINTER_KEY.fullmatch(key):
+            it = items[m[1]]
+            jobs.append((_winter_job, (set_id, m[1], it["layout"], m[2], int(m[3]), item_frames(it, mod),
+                                       tuple(it["footprint"]), k)))
         elif key.startswith("item/") and "/p" in key:
             if key.split("/")[1] in landmarks:    # a kit item's pieces come with its look's frame 0
                 lm_wanted.add(key.split("/")[1])

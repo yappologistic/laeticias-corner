@@ -116,6 +116,18 @@ def box_hedge(m, x0, x1, y0, y1, z, h=2.5):
 
 # ---------------------------------------------------------------- ground, lamps, site gear
 
+def lawn(seed):
+    """The tone of a landmark's lawn: broad patches of lusher and drier grass, tufts with lit
+    tops and dark hollows, and a blade-fine speckle, so a lawn of many tiles is never one flat
+    colour (V7-010: a broad noise alone quantised to a single step)."""
+    def tone(X, Y, Z):
+        broad = (value_noise(X, Y, Z * 0, 9.0, seed) - 0.5) * 0.9
+        tuft = value_noise(X, Y, Z * 0, 1.1, seed + 1)
+        blade = hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64), seed + 2) - 0.5
+        return broad + 0.7 * (tuft > 0.68) - 0.6 * (tuft < 0.22) + 0.8 * blade
+    return tone
+
+
 def paving(m, box, z0, z1, material="travertine", slab_x=6.0, slab_y=4.5, seed=11):
     fill(m, (*box, z0, z1), material, tone=M.paving(slab_x, slab_y, seed))
 

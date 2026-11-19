@@ -227,6 +227,16 @@ std::expected<SetCatalog, std::string> parseSetCatalog(std::string_view text, st
             if (has(art, "backdrops"))
                 cat.art.backdrops = asStrings(art.at("backdrops"), f + ": art: backdrops");
             if (has(art, "fx")) cat.art.fx = asStrings(art.at("fx"), f + ": art: fx");
+            if (has(art, "slopes"))
+                cat.art.slopes = asStrings(art.at("slopes"), f + ": art: slopes");
+            if (has(art, "falls")) {
+                const json& falls = asObject(art.at("falls"), f + ": art: falls");
+                if (has(falls, "fps"))
+                    cat.art.fallFps = asFloat(falls.at("fps"), f + ": art: falls: fps");
+                if (has(falls, "speed_px_s"))
+                    cat.art.fallSpeed =
+                        asFloat(falls.at("speed_px_s"), f + ": art: falls: speed_px_s");
+            }
         }
         return cat;
     } catch (const Invalid& e) {

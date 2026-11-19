@@ -495,3 +495,124 @@ TEST_CASE("real world: a stair is stepped onto at its foot and off at its head")
     CHECK(edges > 100);
     CHECK(refused.empty());
 }
+
+TEST_CASE("slopes: every shape is the contract's mesh, continuous inside the tile") {
+    for (int k = 1; k < kSlopeCount; ++k) {
+        const auto s = Slope(k);
+        CAPTURE(std::string(slopeKey(s)));
+        const SlopeGrid& g = slopeGrid(s);
+        for (int j = 0; j < 3; ++j)
+            for (int i = 0; i < 3; ++i)
+                CHECK(slopeHeight(s, static_cast<float>(i) * 0.5f, static_cast<float>(j) * 0.5f) ==
+                      doctest::Approx(g[static_cast<std::size_t>(j * 3 + i)]));
+        // Fine steps never jump: the fan's triangles meet along their shared edges.
+        float worst = 0;
+        for (int j = 0; j <= 64; ++j)
+            for (int i = 0; i < 64; ++i) {
+                const float u = static_cast<float>(i) / 64.0f;
+                const float v = static_cast<float>(j) / 64.0f;
+                const float h = slopeHeight(s, u, v);
+                CHECK(h <= 0.0f);
+                CHECK(h >= -1.0f);
+                worst = std::max(worst, std::abs(slopeHeight(s, u + 1.0f / 64.0f, v) - h));
+            }
+        CHECK(worst <= 2.0f / 64.0f + 1e-5f);
+    }
+    // Corner shapes: the mask of low corners; peaks: every corner low.
+    CHECK(slopeCorner(Slope(5), 0) == -1);
+    CHECK(slopeCorner(Slope(5), 1) == 0);
+    CHECK(slopeCorner(Slope(5), 2) == -1);
+    CHECK(slopeCorner(Slope::RidgeX, 3) == -1);
+    CHECK(slopeOf(15, kCornerN | kCornerS, true, false) == Slope::RidgeX0);
+    CHECK(slopeOf(15, kCornerE | kCornerW, true, true) == Slope::RidgeY);
+    CHECK(slopeOf(15, kCornerE | kCornerN, true, true) == Slope::Knoll);
+    CHECK(slopeOf(6, 0, false, false) == Slope(6));
+}
+
+TEST_CASE("real world: the ground's surface is continuous where slopes meet, and hills slope") {
+    const LoadedWorld& w = realWorld();
+    const WorldMap& m = *w.map;
+    const float lvl = static_cast<float>(m.levelPx());
+    long slopes = 0;
+    long joins = 0;
+    long gaps = 0;
+    long steps = 0;
+    for (int y = 0; y + 1 < m.height(); ++y)
+        for (int x = 0; x + 1 < m.width(); ++x) {
+            const TilePos p{x, y};
+            if (m.terrainAt(p) == kNone) continue;
+            slopes += m.slopeAt(p) != Slope::Flat ? 1 : 0;
+            for (int dir = 0; dir < 2; ++dir) {
+                const TilePos q{x + kSteps[std::size_t(dir)].x, y + kSteps[std::size_t(dir)].y};
+                if (m.terrainAt(q) == kNone) continue;
+                if (m.surfacesMeet(p, dir)) {
+                    if (m.level(p) != m.level(q)) ++joins;
+                    // Along the shared edge both sides give one height.
+                    for (int k = 0; k < 8; ++k) {
+                        const float t = (static_cast<float>(k) + 0.5f) / 8.0f;
+                        const Vec2 e =
+                            dir == 0 ? Vec2{static_cast<float>(x + 1), static_cast<float>(y) + t}
+                                     : Vec2{static_cast<float>(x) + t, static_cast<float>(y + 1)};
+                        const Vec2 in = dir == 0 ? Vec2{e.x - 1e-4f, e.y} : Vec2{e.x, e.y - 1e-4f};
+                        if (std::abs(m.surfaceZ(in) - m.surfaceZ(e)) > 0.01f * lvl) ++gaps;
+                    }
+                } else if (std::abs(m.level(p) - m.level(q)) == 1 && m.slopeAt(p) == Slope::Flat &&
+                           m.slopeAt(q) == Slope::Flat) {
+                    ++steps;
+                }
+            }
+        }
+    MESSAGE("slope tiles " << slopes << ", one-level joins across slopes " << joins
+                           << ", one-level steps left as faces " << steps);
+    CHECK(gaps == 0);
+    // The graded world (9e49283): most one-level steps are slopes.
+    CHECK(slopes > 10000);
+    CHECK(joins > steps);
+    // A plant on a slope stands at the surface of its tile's centre; a flat tile at its level.
+    for (int y = 0; y < m.height(); y += 7)
+        for (int x = 0; x < m.width(); x += 7) {
+            const TilePos p{x, y};
+            if (m.terrainAt(p) == kNone || m.slopeAt(p) != Slope::Flat) continue;
+            CHECK(m.surfaceZ({static_cast<float>(x) + 0.3f, static_cast<float>(y) + 0.8f}) ==
+                  doctest::Approx(static_cast<float>(m.level(p)) * lvl));
+        }
+}
+
+TEST_CASE("real world: a walker's height is continuous over slopes, stairs and decks") {
+    const LoadedWorld& w = realWorld();
+    const WorldMap& m = *w.map;
+    // From every walkable tile near a slope or a raised floor to each tile it may step to, in
+    // small steps: never more than a small change a step, and on plain ground the surface.
+    long courses = 0;
+    float worst = 0;
+    long offSurface = 0;
+    for (int y = 1; y + 1 < m.height(); ++y)
+        for (int x = 1; x + 1 < m.width(); ++x) {
+            const TilePos p{x, y};
+            if (!m.walkable(p) || m.slopeAt(p) == Slope::Flat) continue;
+            std::array<WalkStep, 4> steps{};
+            const int n = m.walkNeighbours(p, steps);
+            for (int i = 0; i < n; ++i) {
+                const TilePos q = steps[static_cast<std::size_t>(i)].to;
+                const Vec2 a{static_cast<float>(x) + 0.5f, static_cast<float>(y) + 0.5f};
+                const Vec2 d{static_cast<float>(q.x - x), static_cast<float>(q.y - y)};
+                float prev = m.walkZ(a);
+                for (int k = 1; k <= 64; ++k) {
+                    const float f = static_cast<float>(k) / 64.0f;
+                    const float z = m.walkZ({a.x + d.x * f, a.y + d.y * f});
+                    worst = std::max(worst, std::abs(z - prev));
+                    prev = z;
+                }
+                ++courses;
+            }
+            // On a slope tile with nothing raised round it, the walker stands on the surface.
+            const Vec2 c{static_cast<float>(x) + 0.3f, static_cast<float>(y) + 0.6f};
+            if (n > 0 && std::abs(m.walkZ(c) - m.surfaceZ(c)) > 0.5f &&
+                m.floorZ(p) == m.level(p) * m.levelPx())
+                ++offSurface;
+        }
+    MESSAGE(courses << " courses from slope tiles, largest change in 1/64 tile " << worst << " px, "
+                    << offSurface << " off their surface");
+    CHECK(courses > 1000);
+    CHECK(worst <= 2.0f);
+}

@@ -9,6 +9,7 @@
 #include "world/content.hpp"
 #include "world/diagnostics.hpp"
 #include "world/layer_file.hpp"
+#include "world/slopes.hpp"
 #include "world/world_file.hpp"
 
 #include <algorithm>
@@ -182,6 +183,34 @@ public:
     // The 4-neighbours a walker on p may step to, with their floor height change.
     [[nodiscard]] int walkNeighbours(TilePos p, std::array<WalkStep, 4>& out) const;
 
+    // The ground's surface (art-smooth-land.md §3): one answer to "how high is the ground here".
+    // Shape of a tile's surface (Flat until shapeSlopes ran). Precondition: inBounds(p).
+    [[nodiscard]] Slope slopeAt(TilePos p) const { return Slope(chunk(p).slope[local(p)]); }
+    // Height of the ground at a continuous point (tile coordinates), px above level 0: the tile's
+    // level less what its slope falls there, continuous across tiles wherever surfaces meet.
+    // Off the grid and on tiles without ground: 0 (the sea's level). Floors of items (stairs,
+    // decks, walk floors) are floorAt's.
+    [[nodiscard]] float surfaceZ(Vec2 p) const;
+    // The height a walker stands at on a continuous point: floorAt with the ground's surface in
+    // place of the tile's level (a stair's, deck's or walk floor's own height; elsewhere
+    // surfaceZ), meeting each neighbour it may step to half way at their shared edge, so it is
+    // continuous along any course. City life switches to it from floorAt (engine-terrain.md).
+    [[nodiscard]] float walkZ(Vec2 p) const;
+    // Level of corner `c` (0 N, 1 E, 2 S, 3 W: the diamond's top, right, bottom, left vertex) of
+    // the tile's surface; off the grid and without ground, 0.
+    [[nodiscard]] int cornerLevel(TilePos p, int c) const;
+    // Whether p's surface and its neighbour's toward kSteps[dir] meet along their shared edge
+    // (both corners at one height on both sides): a one-level step there is ground a walker
+    // may cross (the contract's walk rule for slopes, §3.2).
+    [[nodiscard]] bool surfacesMeet(TilePos p, int dir) const;
+    // Shapes every tile by the corner rule (§3.1): a tile may slope when its terrain is listed in
+    // its set's `art.slopes`, it is not water, its face material is one of `natural` (masonry
+    // stays a wall) and nothing on it needs flat ground (anything but a one-tile plant, rock or
+    // prop nobody uses); a corner of such a tile is one level low when a tile touching it stands
+    // exactly one level lower (a stair, ramp, deck or walked-on item there never pulls it down:
+    // its floor meets the tile at the tile's level).
+    void shapeSlopes(std::span<const std::string> natural);
+
     // Slots.
     [[nodiscard]] std::span<const WorldSlot> slots() const { return slots_; }
     [[nodiscard]] const std::vector<std::string>& slotNames() const { return slotNames_; }
@@ -222,6 +251,7 @@ private:
         std::array<std::uint8_t, kChunkArea> level{};
         std::array<std::uint8_t, kChunkArea> district{};
         std::array<std::uint8_t, kChunkArea> walk{};
+        std::array<std::uint8_t, kChunkArea> slope{};      // Slope
         std::array<std::uint32_t, kChunkArea> occupancy{}; // item index + 1, 0 = free
         std::vector<std::uint32_t> items; // items whose origin lies here (footprints <= 8 x 8)
         std::vector<std::uint32_t> big;   // larger items overlapping this chunk
@@ -255,6 +285,7 @@ private:
     int internDistrict(const std::string& name);
     [[nodiscard]] bool walkTileOf(const Placed& it, TilePos p) const;
     [[nodiscard]] int edgeZ(TilePos p, int dir) const; // INT_MIN: no way out on that side
+    void shapeSlopesIn(TileRect area);
     void stairHead(Placed& it, Diagnostics& diag) const;
     // Rebuilds chunk item lists, occupancy, connect masks and walk bits over `area`: list
     // entries from `from` on are dropped from the chunks over `area`, then items_[from..] added.
@@ -292,7 +323,8 @@ private:
         return homeCleared_ && i < homeBegin_ && items_[i].rect().intersects(home_.rect);
     }
     std::vector<std::uint8_t> homeWild_;
-    std::vector<WorldSlot> slots_; // prebuilt slots sorted by chunk, then the home's
+    std::vector<std::array<bool, 4>> slopeFaces_; // per terrain, per aux: a natural face
+    std::vector<WorldSlot> slots_;                // prebuilt slots sorted by chunk, then the home's
     std::uint32_t homeSlotBegin_ = 0;
     std::vector<std::uint32_t> slotChunkStart_;    // CSR over chunks of prebuilt slots
     std::vector<std::uint32_t> slotByDistrict_;    // prebuilt slot indices by (district, kind)

@@ -195,10 +195,8 @@ void WorldView::refreshWater(const FRect& view) {
             const int tt = static_cast<int>(k);
             const std::string_view id = map_.terrainInfo(tt).id;
             waterKind_[k] = !sprites_->terrain(tt).water ? std::uint8_t{0}
-                            : contains(id, "river") || contains(id, "channel") ||
-                                    contains(id, "stream") || contains(id, "canal")
-                                ? std::uint8_t{2}
-                                : std::uint8_t{1};
+                            : flowingWater(id)           ? std::uint8_t{2}
+                                                         : std::uint8_t{1};
         }
     }
     const auto side = [&](int a0, int a1) {
@@ -379,6 +377,7 @@ void WorldView::sunGpu(double clock) {
             const float up[3] = {0, 0, 1};
             decoder_->setSun(up, 0, 0);
             sunStep_ = -1;
+            setSlopeSun(up, 0);
             staleCells();
         }
         return;
@@ -400,6 +399,7 @@ void WorldView::sunGpu(double clock) {
     for (int i = 0; i < 4; ++i)
         stepShadows_.m[i] = id[i] + (stepShadows_.m[i] - id[i]) * sun.strength;
     if (decoder_) decoder_->setSun(sun.dir, sun.strength, t::kContact);
+    setSlopeSun(sun.dir, sun.strength);
     staleCells();
 }
 

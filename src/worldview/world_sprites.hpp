@@ -7,6 +7,7 @@
 
 #include "render/atlas.hpp"
 #include "ui/font.hpp"
+#include "world/slopes.hpp"
 #include "world/world_map.hpp"
 #include "worldview/cells.hpp"
 #include "worldview/page_atlas.hpp"
@@ -49,6 +50,14 @@ struct TerrainLook {
                    : overlay[m];
     }
     std::array<Frames, 16> foam; // water: by land-neighbour mask, where the art has foam
+    // Overlays: the interior's looks (`m15` and `m15/v<n>`), picked per tile; empty when the art
+    // has only the one.
+    std::vector<Frames> interior;
+    // Slope looks by shape (`terrain/<id>/slope/<shape>/v<n>`, art-smooth-land.md §3.3): the
+    // terrain's own (an overlay's is its interior over its base, opaque) and, for an overlay at
+    // other masks, its base's. Empty: no art for that shape (the flat look is warped instead).
+    std::array<std::vector<SpriteRef>, world::kSlopeCount> slope;
+    std::array<std::vector<SpriteRef>, world::kSlopeCount> slopeBase;
     float fps = 0;
     SDL_FColor flat{1, 1, 1, 1};     // the whole tile when there is no art
     SDL_FColor flatBase{1, 1, 1, 1}; // under an overlay that has art, when the base has none
@@ -67,7 +76,24 @@ struct MaterialLook {
     std::array<std::vector<Frames>, 2> foot;
     float fps = 0;
     std::array<std::optional<SpriteRef>, 2> top;
+    // Wedges (`…/w<0|1>/v<n>`, art §3.4): a band whose top falls a level along the edge, high at
+    // the bottom vertex (w0) or at the far end (w1). Empty for masonry.
+    std::array<std::array<std::vector<SpriteRef>, 2>, 2> wedge;
     SDL_FColor flat{1, 1, 1, 1};
+};
+
+// Falling and stepping water (art-smooth-land.md §4), one set on the world page for every
+// set's water: per side (south-east, south-west) the parts of a drop by how the falling water
+// goes on past the tile along the edge (`e<bits>`); on the lower tile the plunge by the mask of
+// higher water beyond its edges; on the upper tile the rapids toward the edge (`n` toward -y,
+// `e` toward +x, mirrored for -x and +y).
+struct FallLook {
+    std::array<std::array<std::array<Frames, 4>, 4>, 2> part; // [side][FallPart][ends]
+    std::array<Frames, 16> plunge;
+    std::array<Frames, 2> rapids; // n, e
+    float fps = 0;                // the frames' rate (the world catalog's `art.falls`)
+    float speed = 0;              // the sheet's fall, art px a second, for a shader scroll of `mid`
+    [[nodiscard]] bool empty() const { return part[0][0][0].empty(); }
 };
 
 enum class Look : std::uint8_t { Art, StandIn, Placeholder };
@@ -116,6 +142,9 @@ public:
     }
     [[nodiscard]] const SpriteRef& white() const { return white_; }
     [[nodiscard]] const MaterialLook& waterFace() const { return waterFace_; }
+    [[nodiscard]] const FallLook& falls() const { return falls_; }
+    // Slope shapes drawn without their art (the flat look warped onto the mesh), by terrain id.
+    [[nodiscard]] const std::vector<std::string>& flatSlopes() const { return flatSlopes_; }
 
     // How far ground sprites reach from their tile's top vertex, and item sprites beyond the
     // screen diamond of their footprint (both with the raise of the highest level).
@@ -145,6 +174,7 @@ private:
     };
 
     void resolveTerrain(const world::WorldMap& map, PageAtlas& pages);
+    void resolveFalls(const world::WorldMap& map, PageAtlas& pages);
     void resolveItems(const world::WorldMap& map, Atlas& home, PageAtlas& pages);
     int internMaterial(const std::string& id, PageAtlas& pages);
     void buildPage(SDL_Renderer* renderer, const world::WorldMap& map, PageAtlas& pages);
@@ -156,6 +186,8 @@ private:
     TerrainLook noGround_;
     std::vector<MaterialLook> materials_;
     MaterialLook waterFace_;
+    FallLook falls_;
+    std::vector<std::string> flatSlopes_;
     std::vector<std::vector<VariantLook>> items_; // per Content item, per variant or mask
     std::vector<float> fps_;
     VariantLook unknown_; // a variant the catalog does not have
