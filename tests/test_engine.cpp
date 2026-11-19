@@ -25,6 +25,7 @@
 #include <SDL3/SDL.h>
 
 #include <doctest.h>
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <array>
@@ -1664,4 +1665,82 @@ TEST_CASE("a name field never holds malformed UTF-8, which the save could not wr
     for (const MenuAction& a : menus.actions())
         if (a.kind == MenuAction::Kind::Create) typed = a.text;
     CHECK(typed == "Fern");
+}
+
+namespace {
+
+// Every sprite a table set draws.
+std::set<SpriteId> drawnIds(const SpriteTables& t) {
+    std::set<SpriteId> out;
+    const auto add = [&](const FrameSet& f) { out.insert(f.frames.begin(), f.frames.end()); };
+    for (const auto& base : t.terrainBase) out.insert(base.begin(), base.end());
+    for (const auto& overlay : t.terrainOverlay)
+        for (const FrameSet& f : overlay) add(f);
+    for (const ItemSprites& s : t.items) {
+        for (const auto* layer : {&s.base, &s.shadow, &s.glow})
+            for (const FrameSet& f : *layer) add(f);
+        for (const auto& stage : s.stages)
+            for (const FrameSet& f : stage) add(f);
+    }
+    for (const auto& kind : t.kinds)
+        for (const KindAnim& a : kind) {
+            add(a.front);
+            add(a.back);
+        }
+    for (const FrameSet& f : t.fx) add(f);
+    out.insert({t.cliffSE, t.cliffSW, t.tileOk, t.tileBad, t.tileArea, t.tileGrid});
+    out.insert(t.thickets.begin(), t.thickets.end());
+    add(t.fallSE);
+    add(t.fallSW);
+    if (t.rainbow) out.insert(*t.rainbow);
+    return out;
+}
+
+// For every "<key>@<season>" in the manifest whose plain key is drawn out of season: in that
+// season the look is drawn and the plain key is not. Returns the keys that failed.
+std::vector<std::string> seasonLooksIgnored(Atlas& atlas, const Catalog& c,
+                                            const nlohmann::json& sprites) {
+    std::vector<std::string> ignored;
+    const std::set<SpriteId> plain = drawnIds(buildSpriteTables(atlas, c, -1));
+    for (std::size_t s = 0; s < c.seasons.size(); ++s) {
+        const std::string suffix = "@" + c.seasons[s].id;
+        const std::set<SpriteId> drawn = drawnIds(buildSpriteTables(atlas, c, static_cast<int>(s)));
+        for (const auto& [key, rect] : sprites.items()) {
+            if (!key.ends_with(suffix)) continue;
+            const auto base = atlas.find(key.substr(0, key.size() - suffix.size()));
+            const auto look = atlas.find(key);
+            if (!base || !look || !plain.contains(*base)) continue;
+            if (!drawn.contains(*look) || drawn.contains(*base)) ignored.push_back(key);
+        }
+    }
+    return ignored;
+}
+
+} // namespace
+
+TEST_CASE("every sprite family draws its season's look where the atlas has one (H3-008)") {
+    UiFixture ui;
+    const Catalog& c = test::catalog();
+    const auto text = readTextFile(test::assetsDir() / "atlas.json");
+    REQUIRE(text.has_value());
+    nlohmann::json manifest = nlohmann::json::parse(*text);
+    {
+        // The shipped atlas: its seasonal terrain, items and thickets.
+        Atlas atlas(ui.renderer.get(), test::assetsDir(), c.iso());
+        CHECK(seasonLooksIgnored(atlas, c, manifest["sprites"]).empty());
+    }
+    // Every plain sprite given a winter twin (the same pixels under its own name): terrain,
+    // items, critters, effects, edges, falls, the interface's tiles, the thicket and the sky
+    // must all draw the twin in winter.
+    const nlohmann::json plain = manifest["sprites"];
+    for (const auto& [key, rect] : plain.items())
+        if (key.find('@') == std::string::npos && !plain.contains(key + "@winter"))
+            manifest["sprites"][key + "@winter"] = rect;
+    manifest["image"] = (test::assetsDir() / "atlas.png").string();
+    const auto dir = test::tempDir("season_looks");
+    { std::ofstream(dir / "atlas.json") << manifest.dump(); }
+    Atlas twins(ui.renderer.get(), dir, c.iso());
+    const auto ignored = seasonLooksIgnored(twins, c, manifest["sprites"]);
+    for (const std::string& k : ignored) MESSAGE(k);
+    CHECK(ignored.empty());
 }
