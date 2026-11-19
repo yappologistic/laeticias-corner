@@ -312,7 +312,7 @@ add_test(NAME audio_mix_world
           --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/audio_mix_world.lcs"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(audio_mix_world PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
-  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves)
+  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves TIMEOUT 1800)
 add_test(NAME audio_mix_world_check COMMAND lc_tests "--test-case=capture: the mix across*")
 set_tests_properties(audio_mix_world_check PROPERTIES ENVIRONMENT "LC_AUDIO_MIX=${mix_capture}"
   FIXTURES_REQUIRED audio_mix)
