@@ -806,7 +806,6 @@ void WorldView::shadeGpu(SDL_Texture* layer, float w, float h) {
 void WorldView::putSwaying(const SpriteRef& s, Vec2 anchor, const Xform& x, float lean) {
     // Rows shift sideways by the wind, more toward the top (by the square of the height), the
     // base still: whole sprites sway with no extra frames. Downwind on screen, never against.
-    if (dry_) return;
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return;
     const float side = windDir_.x >= 0 ? 1.0f : -1.0f;
