@@ -89,6 +89,17 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
     };
     byTile("walk_z", v.walkZ);
     byTile("roof", v.roof);
+    if (has(g, "tops")) {
+        const json& rows = asArray(g.at("tops"), c + ": tops");
+        for (std::size_t y = 0; y < rows.size(); ++y) {
+            const std::string rc = c + ": tops[" + std::to_string(y) + "]";
+            const json& row = asArray(rows[y], rc);
+            if (y == 0) v.topsW = static_cast<int>(row.size());
+            if (std::cmp_not_equal(row.size(), v.topsW)) fail(rc + ": rows differ in length");
+            for (const json& z : row)
+                v.tops.push_back(static_cast<std::uint16_t>(asInt(z, rc, 0, kMaxOffset)));
+        }
+    }
     if (has(g, "floor_pieces")) {
         const json& fs = asArray(g.at("floor_pieces"), c + ": floor_pieces");
         for (std::size_t i = 0; i < fs.size(); ++i) {
@@ -105,17 +116,6 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
         for (std::size_t i = 0; i < us.size(); ++i) {
             const int u = asInt(us[i], c + ": under", 0, kMaxOffset);
             (v.pieces.empty() ? v.under : v.pieces[i].under) = u;
-        }
-    }
-    if (has(g, "tops")) {
-        const json& rows = asArray(g.at("tops"), c + ": tops");
-        for (std::size_t r = 0; r < rows.size(); ++r) {
-            const std::string tc = c + ": tops[" + std::to_string(r) + "]";
-            const json& row = asArray(rows[r], tc);
-            if (r == 0) v.topsW = static_cast<int>(row.size());
-            if (row.empty() || std::cmp_not_equal(row.size(), v.topsW))
-                fail(tc + ": every row needs the same number of tiles");
-            for (const json& t : row) v.tops.push_back(asInt(t, tc, 0, kMaxOffset));
         }
     }
     if (has(g, "slots")) {

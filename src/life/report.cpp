@@ -310,8 +310,9 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
                                       reg.id, d.id, d.populations.size(), at.x, at.y));
         }
     }
-    // Walkable decks over water with no floor height in their geometry: walkers on them are
-    // drawn at the water's level, through the deck (the art tool's `walk_z`).
+    // Walkable decks over water with no floor height in their geometry (the art tool's
+    // `walk_z`): walkers on them stand on the deck's highest point (`tops`: the rail), or at the
+    // water's level, through the deck, where it has none.
     std::map<std::string, std::pair<int, TilePos>> decks;
     for (const world::Placed& it : m.items()) {
         const world::ItemInfo& inf = m.info(it);
@@ -323,8 +324,8 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
     }
     for (const auto& [id, e] : decks)
         out.push_back(std::format("{}: {} walkable decks over water with no floor height "
-                                  "(geometry walk_z): walkers drawn at the water, first at grid "
-                                  "({}, {})",
+                                  "(geometry walk_z): walkers stand on its top (tops) or the "
+                                  "water, first at grid ({}, {})",
                                   id, e.first, e.second.x, e.second.y));
     // Slot spots: a walker stands on the spot or beside it (a seat on its item is used from
     // the tile next to it), as resolve() does; a spot with neither is never used.

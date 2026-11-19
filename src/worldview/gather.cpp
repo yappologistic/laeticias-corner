@@ -46,7 +46,7 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
     if (g->topsW > 0)
         for (std::size_t i = 0; i < g->tops.size(); ++i) {
             const TilePos t{static_cast<int>(i) % g->topsW, static_cast<int>(i) / g->topsW};
-            if (inside(t)) top = std::max(top, g->tops[i]);
+            if (inside(t)) top = std::max<int>(top, g->tops[i]);
         }
     int under = gp != nullptr ? gp->under : g->under;
     // A walkable kit piece (a timber bridge, a mole) lists no walk tiles: all of it is floor, at
