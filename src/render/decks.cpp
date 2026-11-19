@@ -53,9 +53,13 @@ DepthBox crossingBox(const ItemDef& def, const Item& item, int part, float top, 
     const auto deck = static_cast<float>(def.deck);
     const float under = deck > 0 ? 1.0f : 0.0f; // whatever swims under it stays under it
     if (part < 0) return makeBox(foot, under, deck, id, hh);
-    const bool x = alongX(item);
-    const float mid = x ? f(item.pos.y) + 0.5f : f(item.pos.x) + 0.5f;
-    (x ? (part == 0 ? foot.y1 : foot.y0) : (part == 0 ? foot.x1 : foot.x0)) = mid;
+    // The far half holds the deck, which spans the whole crossing: a swimmer anywhere under it
+    // is under it, on the near side of the span too. The near half is only its rails, over the
+    // deck on the near side.
+    if (part == 1) {
+        const bool x = alongX(item);
+        (x ? foot.y0 : foot.x0) = x ? f(item.pos.y) + 0.5f : f(item.pos.x) + 0.5f;
+    }
     return makeBox(foot, part == 0 ? under : deck + 1, std::max(top, deck + 2), id, hh);
 }
 
