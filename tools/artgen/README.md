@@ -118,6 +118,26 @@ half with the four worker processes the machine-courtesy rules allow.
   rasterises them into `relief` stencils at any height, so pediments, metopes, the Ionic
   frieze, painted panels and grave stelae compose from figures instead of hand-drawn text.
 
+## Land, slopes and falling water
+
+- `land.py` draws every natural face (rock, earth, snow, sea cliff) for all sets from a `Stone`
+  material: one level of face with nothing tied to the level's top or foot, facets on a warped
+  staggered lattice repeating every level and tile edge (the seam row common to every look), so
+  stacked levels of random looks read as one cliff; `/top` rounds the lip; `wedge` is the level
+  under a slope's falling edge. It also holds the face geometry (`face_grid`, `periodic`).
+- `slopes.py` makes sloped ground: 21 shapes as nine heights on a 3 x 3 grid (corner masks,
+  knoll, ridges), eight triangles fanned round the centre; a terrain's flat art is carried onto
+  the mesh pixel by pixel and lit in palette steps, with true normals and heights in its data.
+  A set lists the terrains that slope in `art.slopes`; keys `terrain/<id>/slope/<shape>/v<n>`.
+- `falls.py` draws falling and stepping water (`edge/world.fall_<side>/<top|mid|foot|rapid>/e<n>/f<k>`),
+  plunge foam and rapids, on the water's one 4-step loop; the world catalog's `art.falls` gives
+  a shader the speed to scroll them.
+- `landpreview.py` renders real places from the composed world as the engine draws them, with the
+  slope rule, wedges, falls and an offline grading of natural ground (`regrade`), for before and
+  after comparisons; the contract is `out/reports/art-smooth-land.md` §3-§4.
+- Every build writes a water page (`<set>.w.*`, home `atlas.w.*`): per item sprite holding
+  water, a rectangle the size of its colour one with the water mask, depth from the rim and bed.
+
 ## Conventions worth knowing
 
 - Overlay masks only ever depend on each edge's own bit: an open edge is fully covered and every
@@ -146,6 +166,7 @@ colour pages, their manifests and the key scheme are unchanged.
 | `<page>.p.json` | `{"version": 1, "packed": "<page>.p.png", "colour": "<page>.png", "ramps": "<path to ramps.json>", "colour_only": [keys]}` |
 | `<set>.s.png` + `.json` (home: `atlas.s.*`) | The **shadow page**: every `…/shadow/…` sprite at half size, `"scale": 0.5`; `w`, `h`, `ox`, `oy` in half-size texels, drawn ×2 with linear filtering |
 | `atlas/ramps.png` + `ramps.json` | The **ramp table**, shared by every set and the home atlas |
+| `<set>.w.png` + `.json` (home: `atlas.w.*`) | The **water page**: every item sprite holding water, its colour rectangle's size and anchor; R water, G depth px, B bed |
 
 `<page>` is `assets/atlas/<set>.<n>` for a set and `assets/atlas` for the home atlas.
 
@@ -177,12 +198,16 @@ renders quantise to) or `group` (a `palette.GROUPS` ramp, what flat sprites reso
 `state_of` + `state`, `steps`, `colours`, Oklab `L` per step, `class` (one of `classes`),
 `shell` (px of thin-shell depth for the shadow march: foliage, grass and crops 6, cloth 2, skin
 8, else 255), `porous` (wet darkening), `snow` (snow lies on it), `specular`, `sway` (foliage,
-grass, crops, cloth: bends in the wind on static items) and, on the green ramps, `states`
+grass, crops, cloth: bends in the wind on static items), the realism study's responses
+(`translucency` and `trans`, `wet_steps`, `gloss`, `sparkle`; on water ramps `bed` and
+`absorb`, rgb per 70 px) and, on the green ramps, `states`
 (`fresh`, `dry`, `dormant`, `turn` → the ramp id that state draws with: the same number of steps,
 picked from one hue family by Oklab L, outlines kept). Ids are stable: a name keeps the id it has
 in the committed `ramps.json`; new names take the next id; a retired id is never reused.
 
-**Geometry additions** (`<set>.geom.json`, fields the engine's parser may ignore): per item
+**Geometry additions** (`<set>.geom.json`, fields the engine's parser may ignore): `pass` per
+crossing and water landmark (rows by dy: px a boat must stay under to pass the tile, 255 open,
+0 nothing passes); `dir` and `cone` on door and window `lights`; per item
 variant `lights` (`{"door_0": {"at": [x, y], "z": h}, "window_0": …}`: pixel offset from the
 anchor and height in px of each door lamp and window, from the halos and marks the models give
 a kind); per actor `hand_at` (`{"<anim>_<facing>": [[x, y, front], …]}` for `move`, `idle`,

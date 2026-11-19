@@ -21,9 +21,11 @@ import numpy as np
 import pack
 import props
 import rig
+import slopes
 import spec
-from bigrender import BigModel, clearance, render_big
+from bigrender import BigModel, clearance, passage, render_big
 from pack import Sprite
+from palette import palette_for
 from render import render
 
 SETS = spec.ROOT / "assets" / "sets"
@@ -127,6 +129,14 @@ def actor_keys(a: dict, mod) -> list[str]:
 
 
 CRITTER_FRAMES = rig.CRITTER_FRAMES
+WEDGE_LOOKS = 4
+SLOPE_KEY = re.compile(r"terrain/([^/]+)/slope/(\w+)/v(\d+)")
+
+
+def slope_looks(t: dict) -> int:
+    """Looks per slope shape (art-smooth-land.md §3.3): two for a base ground, which covers most
+    hillsides, one for an overlay (its tile's interior look)."""
+    return 2 if t.get("base") else 1
 
 
 def required_keys(cat: dict, mod, pieces: dict, kit_pieces: dict | None = None) -> list[str]:
@@ -155,12 +165,19 @@ def required_keys(cat: dict, mod, pieces: dict, kit_pieces: dict | None = None) 
     for a in cat.get("actors", []):
         keys += actor_keys(a, mod)
     art = cat.get("art", {})
+    looks = getattr(mod, "EDGE_VARIANTS", {})
     for e in art.get("edges", ()):
-        keys += [f"edge/{e}_{side}/v{n}" for side in ("se", "sw") for n in range(4)]
+        keys += [f"edge/{e}_{side}/v{n}" for side in ("se", "sw") for n in range(looks.get(e, 4))]
         keys += [f"edge/{e}_{side}/top" for side in ("se", "sw")]
-    looks = getattr(mod, "BACKDROP_LOOKS", {})
+        if e in looks:              # natural faces: the wedge under a slope's falling edge
+            keys += [f"edge/{e}_{side}/w{w}/v{n}" for side in ("se", "sw") for w in (0, 1) for n in range(WEDGE_LOOKS)]
+    terrain = {t["id"]: t for t in cat.get("terrain", [])}
+    for tid in art.get("slopes", ()):
+        keys += [f"terrain/{tid}/slope/{shape}/v{n}" for shape in slopes.SHAPES
+                 for n in range(slope_looks(terrain[tid]))]
+    bd_looks = getattr(mod, "BACKDROP_LOOKS", {})
     for b in art.get("backdrops", ()):
-        times, count = looks.get(b, (("day", "night"), 4))
+        times, count = bd_looks.get(b, (("day", "night"), 4))
         keys += [f"backdrop/{b}/{t}/v{n}" for t in times for n in range(count)]
     for fxid in art.get("fx", ()):
         keys += [f"fx/{fxid}/f{f}" for f in range(mod.FRAMES.get(fxid, 6))]
@@ -249,8 +266,8 @@ def kit_piece_map(cat: dict, mod) -> dict:
 
 def columns(model, fw: int, fh: int):
     """((fw, fh, top) bool: solid at that height (px above the anchor's ground) on that footprint
-    tile, (fw, fh) clearance (bigrender.clearance)), from the model's own voxels (context
-    excluded)."""
+    tile, (fw, fh) clearance (bigrender.clearance), (fw, fh) a boat's passage (bigrender.passage)),
+    from the model's own voxels (context excluded)."""
     vis = model.visible() > 0
     t = spec.DESIGN_TILE * model.k
     nz = max(0, model.z0 + vis.shape[2])
@@ -265,11 +282,11 @@ def columns(model, fw: int, fh: int):
                 c = sub.any(axis=(0, 1))
                 col[x, y, z[(z >= 0) & c]] = True
     above = vis[:, :, max(0, -model.z0):]
-    return col, clearance(above, model.x0, model.y0, fw, fh, t)
+    return col, clearance(above, model.x0, model.y0, fw, fh, t), passage(above, model.x0, model.y0, fw, fh, t)
 
 
-def order_geometry(col: np.ndarray, clear: np.ndarray, walk, walk_z: dict, pieces, k: int, water=(),
-                   crossing=False) -> dict:
+def order_geometry(col: np.ndarray, clear: np.ndarray, gap: np.ndarray, walk, walk_z: dict, pieces, k: int,
+                   water=(), crossing=False) -> dict:
     """What the global draw order needs of an item in one look (draw-order.md §3.4, §5 O1):
     `tops`, the highest point in px above the anchor's ground of what stands on each footprint
     tile, rows by dy (a walk tile gives its floor); `roof`, over each walk tile with something
@@ -296,6 +313,10 @@ def order_geometry(col: np.ndarray, clear: np.ndarray, walk, walk_z: dict, piece
                              if (a, b) in passable], default=0) for x, y, w, h in pieces]
     elif crossing and clear.max() > 0:
         out["under"] = [int(clear.max())]
+    if water or crossing:
+        # What may pass through each tile (art-smooth-land.md §8): px a boat's whole height must
+        # stay under, rows by dy like `tops`; 255 open sky, 0 nothing passes.
+        out["pass"] = [[int(gap[x, y]) for x in range(fw)] for y in range(fh)]
     return out
 
 
@@ -350,15 +371,51 @@ def _item_job(args):
     return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax, "lights": _lights(model, k), **order}}
 
 
+# The spread of light out of a doorway and a window, degrees (realism.md §5.3, R1's cone).
+LIGHT_CONE = {"door": 120, "window": 90}
+
+
+def _facing(model, h) -> list[int] | None:
+    """The outward normal (grid axes) of the wall a light point sits in: of the four ways along
+    the ground, the one that is open in front of the point while the opposite side is solid
+    (the wall behind it); None for a light standing free."""
+    k = model.k
+    px, py, pz = (int(round(c * k)) - o for c, o in ((h.x, model.x0), (h.y, model.y0), (h.z, model.z0)))
+    nx, ny, nz = model.mat.shape
+    if not (0 <= pz < nz):
+        return None
+    reach = 3 * k
+
+    def solid(dx, dy):
+        n = 0
+        for i in range(1, reach + 1):
+            x, y = px + dx * i, py + dy * i
+            if 0 <= x < nx and 0 <= y < ny and model.mat[x, y, pz]:
+                n += 1
+        return n
+    best, score = None, 0
+    for d in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        sc = solid(-d[0], -d[1]) - solid(*d)
+        if sc > score:
+            best, score = list(d), sc
+    return best
+
+
 def _lights(model, k) -> dict:
     """The model's door and window light points (halos and marks with a kind), as pixel offsets
-    from the anchor with their height: `{"door_0": {"at": [x, y], "z": z}, ...}`."""
+    from the anchor with their height and the way their light goes out (`dir`, the wall's
+    outward normal in grid axes, and `cone` in degrees):
+    `{"door_0": {"at": [x, y], "z": z, "dir": [1, 0], "cone": 120}, ...}`."""
     out, seen = {}, defaultdict(int)
     for h in sorted((h for h in model.halos + model.marks if h.kind), key=lambda h: (h.kind, h.x, h.y, h.z)):
         name = f"{h.kind}_{seen[h.kind]}"
         seen[h.kind] += 1
         out[name] = {"at": [int(round((h.x - h.y) * k)), int(round(((h.x + h.y) / 2 - h.z) * k))],
                      "z": int(round(h.z * k))}
+        face = _facing(model, h)
+        if face is not None:
+            out[name]["dir"] = face
+            out[name]["cone"] = LIGHT_CONE.get(h.kind, 90)
     return out
 
 
@@ -397,6 +454,28 @@ def _flat_job(args):
     return _set_mod(set_id).flat(keys, cat, k), {}
 
 
+def _slope_job(args):
+    """Every shape of one slope look: the terrain's flat interior (an overlay over its base)
+    laid on each shape and lit (slopes.py)."""
+    set_id, tid, v, shapes, cat, k = args
+    mod = _set_mod(set_id)
+    t = next(t for t in cat["terrain"] if t["id"] == tid)
+    base = tid if t.get("base") else t["under"]
+    nbase = next(b for b in cat["terrain"] if b["id"] == base)["variants"]
+    want = [f"terrain/{base}/v{v % nbase}"] + ([] if t.get("base") else [f"terrain/{tid}/m15/f0"])
+    flats = mod.flat(want, cat, k)
+    flat = flats[want[0]]
+    rgba = flat.rgba.copy()
+    for key in want[1:]:
+        over = flats[key].rgba
+        a = over[..., 3:4].astype(np.float32) / 255
+        rgba[..., :3] = np.where(a > 0.5, over[..., :3], rgba[..., :3])
+    pal = slopes.palette_codes(palette_for(set_id))
+    lay = Sprite(rgba, flat.ox, flat.oy)
+    return {f"terrain/{tid}/slope/{shape}/v{v}": slopes.slope_sprite(lay, shape, k, 8 * k, pal)
+            for shape in shapes}, {}
+
+
 def _run(job):
     fn, args = job
     return fn(args)
@@ -418,6 +497,7 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
     keyset = set(keys)
     jobs, flat = [], defaultdict(list)
     item_groups = defaultdict(list)
+    slope_groups = defaultdict(list)
     lm_wanted = set()
     for key in keys:
         if m := ITEM_KEY.fullmatch(key):
@@ -438,6 +518,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
             pid, rest = key[5:].split("/", 1)
             if not rest.startswith("glow/"):
                 jobs.append((_prop_job, (pid, int(rest[1:]), k)))
+        elif m := SLOPE_KEY.fullmatch(key):
+            slope_groups[(m[1], int(m[3]))].append(m[2])
         elif m := ACTOR_KEY.fullmatch(key):
             kind_type, kid, v, anim, facing, frame = m.groups()
             prefix = f"{kind_type}/{kid}"
@@ -449,6 +531,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
         jobs.append((_item_job, (set_id, iid, it["layout"], variant, frame, item_frames(it, mod),
                                  tuple(it["footprint"]), tuple(sorted(layers)), k,
                                  kit_pieces.get(iid, {}).get(variant), bool(it.get("crossing") or it.get("walkable")))))
+    for (tid, v), shapes in slope_groups.items():
+        jobs.append((_slope_job, (set_id, tid, v, tuple(shapes), cat, k)))
     jobs.sort(key=lambda j: 0 if j[0] is _item_job else 1)
     for group, ks in flat.items():
         for i in range(0, len(ks), 24):
@@ -489,8 +573,8 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
             sprites[f"item/{iid}/glow/r0/f0"] = r.glow
         floor = {t: int(round(z * k)) for t, z in lm.floor.items()}
         lm_info[iid] = {"h": int(r.base.oy), "top": r.top, "column": r.column,
-                        "order": order_geometry(r.column, r.clear, lm.walk, floor, pieces.get(iid), k,
-                                                lm.water)}
+                        "order": order_geometry(r.column, r.clear, r.passage, lm.walk, floor, pieces.get(iid), k,
+                                                lm.water, crossing=it.get("on") == "water")}
         print(f"  {iid}: {r.base.rgba.shape[1]}x{r.base.rgba.shape[0]} px, "
               f"{len(pieces.get(iid, [1]))} pieces, {time.time() - t1:.1f}s")
     missing = sorted(keyset - set(sprites))
@@ -620,7 +704,7 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                     g["lights"] = info["lights"]
                 if v in meta.get("kit_pieces", {}).get(iid, {}):
                     g["pieces"] = meta["kit_pieces"][iid][v]
-                for key in ("tops", "roof", "under"):
+                for key in ("tops", "roof", "under", "pass"):
                     if key in info:
                         g[key] = info[key]
                 entry[v] = g
@@ -705,14 +789,18 @@ def pack_pages(sprites: dict, groups: list[tuple[list[str], bool]], page=PAGE):
     """Pack groups of keys into pages of at most page x page (skyline, longest side first). An
     atomic group lands whole on the first page with room for all of it (a new page when none
     has), so a district or a city's people never straddle two pages; a non-atomic group fills
-    gaps sprite by sprite from the first page on. Identical sprites (same pixels, anchor and
-    data: a two-pose loop stored as four frames, a still cart's idle) share one rectangle; the
-    manifest lists every key. Returns [(atlas RGBA, manifest)]."""
+    gaps sprite by sprite from the first page on. Identical sprites of one group (same pixels,
+    anchor and data: a two-pose loop stored as four frames, a still cart's idle) share one
+    rectangle; the manifest lists every key. Returns [(atlas RGBA, manifest)]."""
     trimmed = {k: pack.trim(s) for k, s in sprites.items()}
-    first: dict[bytes, str] = {}
+    # Sharing stays inside a group: a sprite pointing at a twin on another page would make the
+    # engine switch pages for it in the middle of a district's draw order (an empty landmark
+    # piece shared across districts cost the Acropolis some fifty draws a frame).
+    group_of = {k_: i for i, (keys, _atomic) in enumerate(groups) for k_ in keys}
+    first: dict[tuple, str] = {}
     same: dict[str, str] = {}          # key -> the earlier key (in sorted order) it shares pixels with
     for k_ in sorted(trimmed):
-        sig = pack.signature(trimmed[k_])
+        sig = (group_of.get(k_, -1), pack.signature(trimmed[k_]))
         if sig in first:
             same[k_] = first[sig]
         else:
@@ -849,6 +937,9 @@ def main(build: spec.Build, args) -> int:
     sw, sh_, sn = datapages.write_shadow_page(out_dir / f"{set_id}.s.png", sprites)
     total += (out_dir / f"{set_id}.s.png").stat().st_size
     print(f"shadow page {set_id}.s.png: {sw}x{sh_}, {sn} sprites at half size")
+    ww, wh, wn = datapages.write_water_page(out_dir / f"{set_id}.w.png", trimmed)
+    total += (out_dir / f"{set_id}.w.png").stat().st_size
+    print(f"water page {set_id}.w.png: {ww}x{wh}, {wn} sprites holding water")
     if not args.only:
         geom = geometry(set_id, cat, mod, pieces, meta, lm_info, build.k)
         (out_dir / f"{set_id}.geom.json").write_text(compact_json(geom))

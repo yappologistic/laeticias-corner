@@ -6,6 +6,8 @@ carried goods in `goods`. No landmarks: everything is kit, so every piece rotate
 
 import re
 
+import falls
+import land
 from sets.world import animals, goods, ground, kit, people, plants, sky
 
 LANDMARKS = {}
@@ -16,6 +18,9 @@ FRAMES = {"world.sea": ground.FRAMES_WATER, "world.shallows": ground.FRAMES_WATE
 # Day-only strips of two looks (world.md §6.1, decision 4: the engine grades them for night).
 BACKDROP_LOOKS = {"world.bd_far_hills": (("day",), 2)}
 COAST_FRAMES = 4
+# Looks per face material (setbuild: 4 unless named): the natural faces have eight, since every
+# level of a cliff draws one at random and they must not repeat.
+EDGE_VARIANTS = {e: 8 for e in ground.NATURAL}
 
 
 def extra_keys(cat):
@@ -28,7 +33,13 @@ def extra_keys(cat):
         frames = ground.FRAMES_WATER if tid in ground.WATER_OVERLAYS else 1
         keys += [f"terrain/{tid}/m15/v{v}/f{f}" for v in range(1, n) for f in range(frames)]
     keys += [f"terrain/world.river/flow_{d}/f{f}" for d in ("n", "e") for f in range(ground.FLOW_FRAMES)]
-    keys += [f"edge/world.coast_{s}/v{n}/f{f}" for s in ("se", "sw") for n in range(4) for f in range(COAST_FRAMES)]
+    if "falls" in art:          # falling and stepping water, used by every set's water (falls.py)
+        keys += [f"edge/world.fall_{s}/{p}/e{e}/f{f}" for s in ("se", "sw") for p in ("top", "mid", "foot", "rapid")
+                 for e in range(4) for f in range(falls.FRAMES)]
+        keys += [f"terrain/world.river/plunge/m{m}/f{f}" for m in range(1, 16) for f in range(falls.FRAMES)]
+        keys += [f"terrain/world.river/rapids_{d}/f{f}" for d in ("n", "e") for f in range(falls.FRAMES)]
+    keys += [f"edge/world.coast_{s}/v{n}/f{f}" for s in ("se", "sw") for n in range(EDGE_VARIANTS["world.coast"])
+             for f in range(COAST_FRAMES)]
     for e in art.get("edges_nice", ()):
         keys += [f"edge/{e}_{side}/v{n}" for side in ("se", "sw") for n in range(4)]
         keys += [f"edge/{e}_{side}/top" for side in ("se", "sw")]
@@ -74,10 +85,18 @@ def _flat(key, k):
         return ground.foam(int(m[1]), int(m[2]), k)
     if m := re.fullmatch(r"terrain/world\.river/flow_([ne])/f(\d+)", key):
         return ground.flow(m[1], int(m[2]), k)
-    if m := re.fullmatch(r"edge/(world\.\w+)_(se|sw)/(?:v(\d)(?:/f(\d))?|(top))", key):
-        face, side, v, f, top = m.groups()
-        if face == "world.coast":
-            return ground.coast_face(side, int(v or 0), k, top=bool(top), frame=None if f is None else int(f))
+    if m := re.fullmatch(r"edge/world\.fall_(se|sw)/(top|mid|foot|rapid)/e(\d)/f(\d+)", key):
+        return falls.face(m[2], m[1], int(m[4]), k, ends=int(m[3]))
+    if m := re.fullmatch(r"terrain/world\.river/plunge/m(\d+)/f(\d+)", key):
+        return falls.plunge(int(m[1]), int(m[2]), k)
+    if m := re.fullmatch(r"terrain/world\.river/rapids_([ne])/f(\d+)", key):
+        return falls.rapids(m[1], int(m[2]), k)
+    if m := re.fullmatch(r"edge/(world\.\w+)_(se|sw)/(?:w(\d)/)?(?:v(\d)(?:/f(\d))?|(top))", key):
+        face, side, w, v, f, top = m.groups()
+        if face in ground.NATURAL:
+            return land.face(ground.NATURAL[face], side, int(v or 0), k, top=bool(top),
+                             frame=None if f is None else int(f), frames=COAST_FRAMES,
+                             wedge=None if w is None else int(w))
         return ground.FACES[face](side, int(v or 0), k, top=bool(top))
     if m := re.fullmatch(r"backdrop/(world\.\w+)/day/v(\d)", key):
         return sky.backdrop(m[1], int(m[2]), k)

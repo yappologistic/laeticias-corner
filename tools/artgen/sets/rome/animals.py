@@ -131,7 +131,8 @@ def _hull(m, L, beam, depth, mat="wood", stern_post=True):
 
 def ship_model(kind, anim, frame, k):
     """The round-hulled merchant ship of the grain fleet (rome.md §3.3) and the towed Tiber
-    barge: `move` under sail (or towed), `slack` sail hanging, `row` sweeps out, `idle` moored."""
+    barge: `move` under sail (or towed), `slack` sail hanging, `row` sweeps out, `idle` moored; the
+    barge's `lowered`: towed under a bridge with its mast down (art-smooth-land.md §8)."""
     m = Model.empty(-44, 44, -18, 18, 0, 64, k=k)
     t = frame / 4
     if kind == "rome.merchantman":
@@ -173,16 +174,23 @@ def ship_model(kind, anim, frame, k):
             else:
                 from sets.rome.ground import amphora
                 amphora(m, x, y, depth, "dressel20")
-        rod(m, (L / 2 - 12, 0.0, depth), (L / 2 - 12, 0.0, depth + 24.0), 0.5, "wood")
+        if anim == "lowered":
+            # Passing under a bridge: the mast unstepped and laid aft on a crutch over the
+            # cargo, the tow rope made fast low at the bow, the steersman down in the stern well.
+            rod(m, (L / 2 - 10, 0.0, depth + 4.2), (-L / 2 + 6, 0.0, depth + 4.2), 0.5, "wood")
+            rod(m, (-L / 2 + 8, 0.0, depth), (-L / 2 + 8, 0.0, depth + 4.0), 0.4, "wood")
+            rod(m, (L / 2 - 4, 0.0, depth + 1.0), (L / 2 + 14, 16.0, depth + 1.0), 0.15, "straw", 0.2)
+        else:
+            rod(m, (L / 2 - 12, 0.0, depth), (L / 2 - 12, 0.0, depth + 24.0), 0.5, "wood")
         if anim == "move":       # the tow rope running forward to the haulers on the bank
             rod(m, (L / 2 - 12, 0.0, depth + 24.0), (L / 2 + 14, 16.0, depth + 6.0), 0.15, "straw", 0.2)
         rod(m, (-L / 2 + 2, 2.0, depth + 2.0), (-L / 2 - 8, 4.0, 0.0), 0.6, "wood")
         d = Dress(garment="tunic", colour="felt", beard="full", beard_mat="cedar", hair_style="short", head="pilos",
                   head_mat="felt", feet="bare", skin="skin_olive")
         fr = Frame(d)
-        p = pose("haul" if anim == "row" else "idle", frame % (4 if anim == "row" else 2), 4 if anim == "row" else 2,
-                 fr, d)
-        draw(Body(m, shift=(-L / 2 + 6.0, 0.0, depth)), d, p, fr)
+        name = {"row": "haul", "lowered": "kneel"}.get(anim, "idle")
+        p = pose(name, frame % (4 if anim == "row" else 2), 4 if anim == "row" else 2, fr, d)
+        draw(Body(m, shift=(-L / 2 + 6.0, 0.0, depth - (3.0 if anim == "lowered" else 0.0))), d, p, fr)
     return m
 
 
@@ -311,9 +319,10 @@ def actors_catalog():
         out.append({"id": kid, "name": name, "sprite": f"cart/{kid}", "variants": variants,
                     "anims": {"move": {"fps": 6}, "idle": {"fps": 2}}, "size": [2, 1]})
     for kid, name, size in (("rome.merchantman", "Roman merchant ship", [5, 2]), ("rome.barge", "Tiber barge", [4, 1])):
-        out.append({"id": kid, "name": name, "sprite": f"ship/{kid}", "variants": 1,
-                    "anims": {"move": {"fps": 4}, "slack": {"fps": 2}, "row": {"fps": 4}, "idle": {"fps": 2}},
-                    "size": size})
+        anims = {"move": {"fps": 4}, "slack": {"fps": 2}, "row": {"fps": 4}, "idle": {"fps": 2}}
+        if kid == "rome.barge":
+            anims["lowered"] = {"fps": 4}
+        out.append({"id": kid, "name": name, "sprite": f"ship/{kid}", "variants": 1, "anims": anims, "size": size})
     return out
 
 

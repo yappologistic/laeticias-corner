@@ -5,6 +5,10 @@ sheds and the waypoints 0.5) with the shared Greek toolkit (`greek`, `relief_gre
 
 from sets.athens import animals, ground, kit, landmarks, people, plants
 
+# Looks per face material (setbuild: 4 unless named): the natural faces have eight, since every
+# level of a cliff draws one at random and they must not repeat.
+EDGE_VARIANTS = {f"athens.{e}": 8 for e in ground.NATURAL}
+
 LANDMARKS = landmarks.LANDMARKS
 ITEMS = {**kit.ITEMS, **plants.ITEMS}
 STATES = kit.STATES

@@ -23,8 +23,8 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import spec  # noqa: E402
-from palette import (AUTUMN, EARTH, GROUPS, LEAF, MATERIALS, ROOF, STEPPE, STRAW, SUMMER,  # noqa: E402
-                     _rgb)
+from palette import (AUTUMN, EARTH, GROUPS, LEAF, MATERIALS, ROOF, SAND, STEPPE, STRAW, SUMMER,  # noqa: E402
+                     TIBER, _rgb)
 
 STEPS = 8
 COMMITTED = spec.ASSETS / "atlas" / "ramps.json"
@@ -84,6 +84,24 @@ SNOW_ON = {"ground", "grass", "crop", "stone", "marble", "plaster", "roof", "woo
 SPECULAR_CLASSES = {"metal", "glass", "water", "ice", "marble"}
 SPECULAR_MATERIALS = {"polished", "glaze_blue", "glaze_yellow", "gloss", "pitch", "basalt"}
 SWAY = {"foliage_deciduous", "foliage_evergreen", "grass", "crop", "cloth"}
+
+# Response fields of docs/design/realism.md §5.2, by class (a ramp's own colours where named).
+# Light through leaves, grass and cloth: `translucency` 0..1 and the transmitted colour `trans`.
+TRANSLUCENCY = {"foliage_deciduous": 0.6, "foliage_evergreen": 0.35, "grass": 0.4, "crop": 0.4, "cloth": 0.25}
+TRANS = {"foliage_deciduous": LEAF[6], "foliage_evergreen": LEAF[5], "grass": SUMMER[3], "crop": STRAW[3]}
+# Wet ground: steps a porous pixel drops on its ramp at full wetness, and the sheen of flat wet
+# pixels (0.06 porous, 0.12 stone and marble).
+WET_STEPS = {"ground": 2, "grass": 1, "crop": 1, "stone": 1, "marble": 1, "plaster": 2, "roof": 1, "wood": 2,
+             "cloth": 2}
+GLOSS = {"stone": 0.12, "marble": 0.12}
+# Glints: the share of sunlit pixels at the top step that sparkle (snow 0.6 %, metal and glaze).
+SPARKLE = {"snow": 0.006, "ice": 0.006, "metal": 0.004}
+SPARKLE_MATERIALS = {"glaze_blue": 0.003, "glaze_yellow": 0.003, "gloss": 0.003, "gold": 0.004}
+# Water ramps: the bed seen through shallow water and how fast depth hides it (rgb per 70 px).
+BED = {"water": (SAND[1], (2.4, 1.0, 0.65)), "pal.water": (SAND[1], (2.4, 1.0, 0.65)),
+       "sea": (SAND[2], (2.4, 1.0, 0.65)), "pal.sea": (SAND[2], (2.4, 1.0, 0.65)),
+       "pal.shallow": (SAND[3], (2.4, 1.0, 0.65)),
+       "tiber": (TIBER[2], (3.4, 2.2, 1.8)), "pal.tiber": (TIBER[2], (3.4, 2.2, 1.8))}
 
 # Colour states of the seasons (seasons.md §4.3) the shader makes by swapping ramps; the other
 # states (bare, bloom, fruit, crops' stages, snow looks) change shapes and stay drawn.
@@ -148,7 +166,17 @@ class Ramp:
             "snow": self.cls in SNOW_ON,
             "specular": self.specular,
             "sway": self.cls in SWAY,
+            "translucency": TRANSLUCENCY.get(self.cls, 0.0),
+            "wet_steps": WET_STEPS.get(self.cls, 0),
+            "gloss": GLOSS.get(self.cls, 0.06 if self.cls in POROUS else 0.0),
+            "sparkle": SPARKLE_MATERIALS.get(self.material or "", SPARKLE.get(self.cls, 0.0)),
         })
+        if d["translucency"]:
+            d["trans"] = TRANS.get(self.cls) or "#%02x%02x%02x" % self.colours[-1]
+        base = self.state_of or self.name
+        if self.cls == "water" and base in BED:
+            bed, absorb = BED[base]
+            d["bed"], d["absorb"] = bed, list(absorb)
         return d
 
 
