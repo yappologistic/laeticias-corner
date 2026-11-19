@@ -67,15 +67,31 @@ The `PR description` check must be green. Then:
   the body keeps the issue link and any `Co-Authored-By` lines.
 - Merge only when the check is green and the review is done. Close the issue with the merge.
 
-## Releases
+## Making a release
 
-1. On an up-to-date `main`: `ctest --preset release-full` and `ctest --preset asan` pass, and
-   `--bench` passes on the reference machine.
-2. Bump `VERSION` in `CMakeLists.txt` (`project(laeticias_corner VERSION x.y.z)`) in a pull
-   request of its own.
-3. Tag the merge commit: `git tag -a vX.Y.Z -m "Laeticia's Corner X.Y.Z"` and push the tag.
-4. Create a GitHub release from the tag with short notes (what changed for players, then for
-   contributors). Builds attached to a release are made from the tag on a clean checkout.
+Releases are built by GitHub Actions, never on a personal machine: the `Release` workflow
+(`.github/workflows/release.yml`) runs the `Build` workflow on the tag (build, tests, packages,
+the proof that each unpacked package runs on a clean machine) and then creates a **draft**
+pre-release with the archives and `SHA256SUMS.txt`. Nothing is published until you publish the
+draft.
+
+1. On an up-to-date `main` whose `Build` run is green: `ctest --preset release-full` and
+   `ctest --preset asan` pass on your machine, and `--bench` passes on the reference machine
+   (the CI runners skip the timing gates).
+2. Set the version in a pull request of its own: `project(laeticias_corner VERSION x.y.z)` and
+   `LC_VERSION_SUFFIX` (for example `-prealpha.2`, empty for a final release) in
+   `CMakeLists.txt`, and add the release notes as `docs/releases/<version>.md` (`<version>` is
+   `x.y.z` plus the suffix). The notes say what the game is, what works, what is known not to
+   work, how to start it on each system and how to report a bug.
+3. Tag the merge commit with `v<version>` and push the tag:
+   `git tag -a v0.1.0-prealpha.1 -m "Laeticia's Corner 0.1.0-prealpha.1"` then
+   `git push origin v0.1.0-prealpha.1`. A tag that does not match the version in
+   `CMakeLists.txt` finds no archives and stops the workflow.
+4. When the `Release` run is green, open the draft on the Releases page: download each archive,
+   check it against `SHA256SUMS.txt`, look at the proof screenshots of the run (artifacts
+   `proof-windows`, `proof-linux-*`), then publish it.
+5. If the run fails: delete the draft (if any) and the tag (`git push --delete origin <tag>`,
+   `git tag -d <tag>`), fix the cause on `main`, and tag again. A published tag is never moved.
 
 ## Repository settings (once, by hand, after creating the repository)
 

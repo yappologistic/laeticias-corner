@@ -18,8 +18,22 @@ traffic on the roads and the sea. The sun moves, shadows turn, weather crosses t
 four seasons come to every region in their own way. Every sprite, sound and piece of music is
 made by the project's own generators.
 
-**State: in development.** It runs and is playable, and it changes every week. Saves are kept
-compatible, but expect rough edges.
+**State: pre-alpha.** It runs and is playable, and it changes every week. Saves are meant to
+stay compatible, but expect rough edges.
+
+## Download
+
+Pre-alpha builds are on the [Releases](https://github.com/yappologistic/laeticias-corner/releases)
+page. Windows and Linux. There is no macOS build yet. Nothing needs to be installed; each archive
+carries a `README.txt` (where saves go, how to report a bug) and `SHA256SUMS.txt` on the release
+page lists the checksums.
+
+- **Windows** (64-bit, Windows 10 version 1903 or newer): unpack the `.zip` and run
+  `laeticias-corner.exe` from the unpacked folder. The build is not signed: if SmartScreen says
+  "Windows protected your PC", choose **More info**, then **Run anyway**.
+- **Linux** (x86_64, glibc 2.35 or newer, or RHEL 9: Ubuntu 22.04, Debian 12, Fedora 36 and later):
+  `tar xzf laeticias-corner-*-linux-x86_64.tar.gz`, then run `./laeticias-corner` in the
+  unpacked folder. X11 or Wayland; PipeWire, PulseAudio or ALSA for sound.
 
 ## Screenshots
 
@@ -32,10 +46,13 @@ the top was taken in the game.
 
 ## Requirements
 
-- Linux (the only platform built and tested so far)
-- A C++23 compiler: GCC (default presets) or Clang (`clang-*` presets)
+- Linux or Windows (both built and tested on every change by the `Build` workflow)
+- A C++23 compiler: GCC 14 or newer (default presets) or Clang (`clang-*` presets); on Windows
+  GCC for MinGW-w64 (UCRT)
 - CMake 3.28 or newer, Ninja
-- SDL 3.4 or newer and nlohmann_json 3.11 or newer, with development files
+- SDL 3.4 or newer and nlohmann_json 3.11 or newer: the system packages with their development
+  files when installed, otherwise CMake downloads pinned releases (checked by SHA-256) and builds
+  them with the game
 - For regenerating assets only: Python 3 with `venv`, and `ffmpeg` for the audio validator
 
 ## Build and run
@@ -87,7 +104,8 @@ More in [Getting started](docs/contributing/getting-started.md) and
 
 The game saves on its own and reopens where you left off. Saves, settings and postcards go to
 `--save-dir DIR` if given, else `$LAETICIA_SAVE_DIR`, else SDL's preference folder (on Linux
-`~/.local/share/Laeticia/laeticias-corner/`). Postcards go to a `postcards/` folder beside a
+`~/.local/share/Laeticia/laeticias-corner/`, on Windows
+`%APPDATA%\Laeticia\laeticias-corner\`). Postcards go to a `postcards/` folder beside a
 named save folder, otherwise to your Pictures folder.
 
 ## Regenerating the assets

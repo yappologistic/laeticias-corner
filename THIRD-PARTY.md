@@ -22,13 +22,20 @@ upstream sources in more detail.
 The world generator's previews draw labels with Nunito (`tools/worldgen/worldgen/preview.py`);
 the Open Font License allows images made with a font to be used freely.
 
-## Needed to build, not included
+## Needed to build, and shipped in the release packages
 
-| Part | Version | Licence |
-|---|---|---|
-| [SDL](https://libsdl.org) 3 | ≥ 3.4 | zlib |
-| [nlohmann/json](https://github.com/nlohmann/json) | ≥ 3.11 | MIT |
-| CMake, Ninja, GCC or Clang | see `README.md` | their own (build tools only) |
+These are not in the repository: the system packages are used when installed, otherwise CMake
+downloads the pinned release (checked by SHA-256, `CMakeLists.txt`) and builds it with the game.
+The release archives carry them; their licence texts are in the archive's `licenses/` folder.
+
+| Part | Version in the release | Licence | In the release archives |
+|---|---|---|---|
+| [SDL](https://libsdl.org) 3 | 3.4.20 (≥ 3.4 to build) | zlib | beside the game: `libSDL3.so.0` (Linux), `SDL3.dll` (Windows); `licenses/SDL-LICENSE.txt` |
+| [nlohmann/json](https://github.com/nlohmann/json) | 3.12.0 (≥ 3.11 to build) | MIT | compiled into the game; `licenses/nlohmann_json-LICENSE.txt` |
+| stb_truetype, stb_vorbis | see above | MIT or public domain | compiled into the game; `licenses/stb-LICENSE.txt` |
+| GCC's runtime libraries (libstdc++, libgcc) | GCC 14 (Linux), GCC 16 (Windows) | GPL-3.0 with the GCC Runtime Library Exception | linked statically into the game; the exception asks for no notice |
+| MinGW-w64 runtime and winpthreads (Windows only) | MinGW-w64 14.0 | MinGW-w64 runtime licence (mostly public domain); winpthreads: MIT and BSD-3-Clause | linked statically into the game; `licenses/mingw-w64-runtime-COPYING.txt`, `licenses/winpthreads-COPYING.txt` (from MinGW-w64 14.0.0, kept in `packaging/windows/licenses/`) |
+| CMake, Ninja, GCC or Clang | see `README.md` | their own | build tools only, not shipped |
 
 ## Needed to regenerate assets, not included
 

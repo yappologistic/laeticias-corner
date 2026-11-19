@@ -23,6 +23,25 @@ ctest --preset asan                    # Debug + AddressSanitizer + UndefinedBeh
 The sanitizer preset is built separately: `cmake --preset asan && cmake --build --preset asan`.
 Engine changes must pass it.
 
+## Continuous integration
+
+`.github/workflows/build.yml` runs on every pull request and every push to `main`: it builds
+the `release` preset on Linux (AlmaLinux 9, GCC 14) and Windows (GCC 16 for MinGW-w64), runs
+`ctest --preset release` headless on both, packages each system's release archive, and proves
+the archive runs by unpacking it on a clean machine (and, for Linux, in AlmaLinux 9, Ubuntu
+22.04 and Debian 12 containers) and running `--version`, 300 headless frames and
+`packaging/proof.lcs`, whose two screenshots are kept as the run's `proof-*` artifacts.
+
+Two groups of tests are left out there, by name in the workflow's `TIMING_GATES` and
+`KNOWN_FAILURES`:
+
+- the timing gates (`bench*`, `benchmark*`, `soak*`, `world_perf`, `world_bench`): shared
+  runners' speed varies from run to run, so the budgets are held on the reference machine;
+- known failures of `main`, each tracked, until they are fixed.
+
+The runners have no GPU: the tests that need SDL's GPU driver skip themselves (exit 77) there,
+as they do on any machine without one.
+
 ## Unit tests
 
 Unit tests use doctest and live in `tests/*.cpp`, built into one `lc_tests` binary. Pure logic

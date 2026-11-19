@@ -8,7 +8,8 @@ Laeticia's Corner has three kinds of content, and each has its own licence.
 
 These paths are under the Mozilla Public License, v. 2.0 (full text in [`LICENSE`](LICENSE)):
 
-- `src/`, `tests/`, `tools/`, `cmake/`, `.github/`
+- `src/`, `tests/`, `tools/`, `cmake/`, `.github/`, `packaging/` (except the `README.txt` texts
+  in it, which are documents, and the MinGW-w64 licence texts in `packaging/windows/licenses/`)
 - the build files: `CMakeLists.txt`, `CMakePresets.json`, `.gitignore` and the other top-level
   configuration files
 - the shaders: `assets/shaders/` (GLSL sources and their compiled SPIR-V)
@@ -32,7 +33,8 @@ International licence (full legal code in [`LICENSE-ASSETS`](LICENSE-ASSETS)):
 - `assets/`, except `assets/fonts/` and `assets/shaders/`: the sprite atlases and their manifests,
   the audio, the world and region data, the catalogs
 - `docs/`: the design documents, the contributor guide and the images
-- the text of `README.md`, `CONTRIBUTING.md` and the other top-level documents
+- the text of `README.md`, `CONTRIBUTING.md` and the other top-level documents, and the
+  `README.txt` texts under `packaging/` that the release archives carry
 
 In short: you may share and adapt them, not for commercial purposes, giving credit to
 "yappologistic, Laeticia's Corner", and sharing what you make from them under the same licence.
