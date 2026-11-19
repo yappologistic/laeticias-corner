@@ -795,9 +795,22 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
             entry["hand_at"] = rig.hand_table(lambda an, aid=a["id"]: people._posed(aid, 0, an), hands, k)
         if a["id"] in meta.get("glow_at", {}):
             entry["glow_at"] = meta["glow_at"][a["id"]]
+        if a["id"] in SHIP_HEIGHTS:
+            entry["height"] = {an: round(h * k / 2) for an, h in SHIP_HEIGHTS[a["id"]].items()}
         if entry:
             out["actors"][a["id"]] = entry
     return out
+
+
+# How high each ship stands above the water, px at 1x, per look ("*": every look not named),
+# measured from the models (the mast or stern post's top): the life engine lowers a mast where a
+# span is lower than "*" and the kind has a lower look (the barge's `lowered`).
+SHIP_HEIGHTS = {
+    "rome.barge": {"*": 59, "lowered": 27}, "rome.merchantman": {"*": 105, "slack": 81},
+    "athens.trireme": {"*": 89, "row": 23}, "athens.merchant": {"*": 93}, "athens.fishing": {"*": 47},
+    "world.phoenician": {"*": 103, "slack": 73}, "world.fishing_boat": {"*": 63}, "world.reed_boat": {"*": 61},
+    "world.kelek": {"*": 31}, "world.quffa": {"*": 26},
+}
 
 
 HAND_ANIMS = ("move", "idle", "march", "run")

@@ -221,7 +221,9 @@ MATERIALS += [
     _m("clay", [TERRACOTTA[0], *CLAY, TERRACOTTA[5]], bias=0.1, texture=0.1),
     _m("gloss", [INK, *GLOSS, STONE[1]], texture=0.05),
     _m("olive", OLIVE, texture=0.35),
-    _m("olive_silver", [OLIVE[1], OLIVE[2], OLIVE[3], OLIVE[4], SNOW[1]], texture=0.4),
+    # The silvery undersides of olive leaves: grey-green, never lighter than the leaf ramps'
+    # middle (a near-white top step read as blossom at 1x, V7-001).
+    _m("olive_silver", [OLIVE[0], OLIVE[1], OLIVE[2], STONE[3], OLIVE[3]], texture=0.4),
     _m("summer", [EARTH[1], *SUMMER, STRAW[3]], bias=-0.7, texture=0.5),
     _m("pitch", [INK, *PITCH, STONE[1]], texture=0.1),
     _m("triglyph", [INK, PITCH[1], LAPIS[0], LAPIS[1], LAPIS[2]], bias=0.1, texture=0.05),
