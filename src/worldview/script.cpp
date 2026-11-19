@@ -16,13 +16,18 @@ std::optional<double> number(std::string_view s) {
     return v;
 }
 
+// Carriage returns count as blanks: a script checked out on Windows ends its lines with them.
+bool blank(char c) {
+    return c == ' ' || c == '\t' || c == '\r';
+}
+
 std::vector<std::string> words(std::string_view line) {
     std::vector<std::string> out;
     std::size_t i = 0;
     while (i < line.size()) {
-        while (i < line.size() && (line[i] == ' ' || line[i] == '\t')) ++i;
+        while (i < line.size() && blank(line[i])) ++i;
         std::size_t j = i;
-        while (j < line.size() && line[j] != ' ' && line[j] != '\t') ++j;
+        while (j < line.size() && !blank(line[j])) ++j;
         if (j > i) out.emplace_back(line.substr(i, j - i));
         i = j;
     }

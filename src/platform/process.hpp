@@ -1,18 +1,17 @@
 #pragma once
 // Process-wide measurements shared by the game and the world viewer.
 
+#include "platform/memory.hpp"
+
 #include <SDL3/SDL.h>
 
 #include <cstdint>
 #include <string_view>
-#include <utility>
 
 namespace lc {
 
 // Milliseconds between two performance-counter readings.
 [[nodiscard]] double msBetween(Uint64 a, Uint64 b);
-// This process's resident memory in MiB (Linux; 0 elsewhere), and its peak.
-[[nodiscard]] std::pair<double, double> processMemory();
 // CPU time the calling thread has used, in milliseconds (-1 where the system does not say).
 // Against the wall clock it tells running from waiting: a thread that was blocked on a file or a
 // lock, or taken off its core, used no CPU meanwhile.

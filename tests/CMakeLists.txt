@@ -19,6 +19,7 @@ target_compile_definitions(lc_tests PRIVATE
   LC_TEST_SCRATCH_DIR="${LC_SCRATCH}"
   LC_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 lc_project_target(lc_tests)
+lc_runtime_dlls(lc_tests)
 # doctest 2.4.12 includes <ciso646> under Clang, which libstdc++ 16 flags with a #warning that
 # cannot be silenced per header; it is harmless, so only that diagnostic is relaxed for tests.
 target_compile_options(lc_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)

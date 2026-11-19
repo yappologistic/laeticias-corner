@@ -339,16 +339,22 @@ TEST_CASE("a chunked save keeps a water piece across a chunk line (L-011)") {
 
 TEST_CASE("a postcard is named by the local date its caption shows (L-012)") {
     // 22:30 on 18 November 2026 at six hours west of Greenwich is 04:30 the next day in UTC.
+    // Windows' C runtime has neither setenv nor unsetenv; an empty value unsets there.
+    const auto setTz = [](const char* value) {
+#if defined(_WIN32)
+        const bool ok = _putenv_s("TZ", value != nullptr ? value : "") == 0;
+        _tzset();
+#else
+        const bool ok = (value != nullptr ? setenv("TZ", value, 1) : unsetenv("TZ")) == 0;
+        tzset();
+#endif
+        return ok;
+    };
     const char* old = std::getenv("TZ");
     const std::string keep = old != nullptr ? old : "";
-    REQUIRE(setenv("TZ", "UTC+6", 1) == 0);
-    tzset();
+    REQUIRE(setTz("UTC+6"));
     CHECK(postcardStem("plum-hollow", 1795062600) == "plum-hollow-20261118-223000");
-    if (old != nullptr)
-        (void)setenv("TZ", keep.c_str(), 1);
-    else
-        (void)unsetenv("TZ");
-    tzset();
+    (void)setTz(old != nullptr ? keep.c_str() : nullptr);
 }
 
 TEST_CASE("a save cut short or corrupted anywhere is refused or read, never a crash") {

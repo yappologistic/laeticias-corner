@@ -1,6 +1,7 @@
 #include "life/session.hpp"
 
 #include "life/report.hpp"
+#include "platform/memory.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -20,13 +21,6 @@ using Clock = std::chrono::steady_clock;
 
 double msSince(Clock::time_point t) {
     return std::chrono::duration<double, std::milli>(Clock::now() - t).count();
-}
-
-double rssMb() {
-    std::ifstream in("/proc/self/status");
-    for (std::string line; std::getline(in, line);)
-        if (line.starts_with("VmRSS:")) return std::stod(line.substr(6)) / 1024.0;
-    return 0;
 }
 
 struct Series {
@@ -324,7 +318,7 @@ BenchCase runCase(LifeSession& s, const CaseSpec& spec, int frames, double (*own
     out.abstractTokens = city.stats().tokens;
     out.chains = city.stats().chains;
     out.events = city.stats().running;
-    out.memoryMb = rssMb();
+    out.memoryMb = processMemory().first;
     city.setLiveCap(tuning::life::kLiveCap);
     city.forceScale(0);
     return out;
@@ -509,11 +503,11 @@ int runLifeSoak(LifeSession& s, double seconds, double budgetMs) {
         if (k % 60 == 30) inPlace += city.stats().marching + city.stats().lost;
         mostLive = std::max(mostLive, city.stats().live);
         if (k == steps / 4) {
-            quarterRss = rssMb();
+            quarterRss = processMemory().first;
             quarterBytes = city.memoryBytes();
         }
     }
-    const double endRss = rssMb();
+    const double endRss = processMemory().first;
     const std::size_t endBytes = city.memoryBytes();
     (void)std::printf(
         "life soak: %.0f s, day %d; simulation avg %.3f ms, p99 %.3f, worst %.2f; live at end %d; "

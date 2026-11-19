@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
             (void)std::fputs(kUsage, stderr);
             return 2;
         }
-        for (const auto& f : writeLifeDumps(*session, o)) std::printf("%s\n", f.c_str());
+        for (const auto& f : writeLifeDumps(*session, o)) std::printf("%s\n", f.string().c_str());
         return 0;
     }
     if (cmd == "bench") {

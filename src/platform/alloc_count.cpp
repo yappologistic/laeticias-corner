@@ -7,6 +7,9 @@
 
 #include <cstdlib>
 #include <new>
+#if defined(_WIN32)
+#include <malloc.h>
+#endif
 
 // GCC names the sanitizer with a macro, Clang with a feature test.
 #if defined(__SANITIZE_ADDRESS__)
@@ -21,6 +24,23 @@
 
 namespace {
 
+// Windows' C runtime has no aligned_alloc; its own pair is released by _aligned_free, never free.
+#if defined(_WIN32)
+void* alignedAlloc(std::size_t align, std::size_t size) {
+    return _aligned_malloc(size, align);
+}
+void alignedFree(void* p) {
+    _aligned_free(p);
+}
+#else
+void* alignedAlloc(std::size_t align, std::size_t size) {
+    return std::aligned_alloc(align, size);
+}
+void alignedFree(void* p) {
+    std::free(p);
+}
+#endif
+
 void* counted(std::size_t size) {
     lc::noteAlloc();
     // malloc(0) may return null; operator new may not.
@@ -33,7 +53,7 @@ void* counted(std::size_t size, std::align_val_t align) {
     const auto a = static_cast<std::size_t>(align);
     // aligned_alloc wants a size that is a multiple of the alignment.
     const std::size_t n = (size + a - 1) / a * a;
-    if (void* p = std::aligned_alloc(a, n != 0 ? n : a)) return p;
+    if (void* p = alignedAlloc(a, n != 0 ? n : a)) return p;
     throw std::bad_alloc();
 }
 
@@ -64,7 +84,7 @@ void* operator new[](std::size_t size, const std::nothrow_t&) noexcept {
     lc::noteAlloc();
     return std::malloc(size != 0 ? size : 1);
 }
-// Everything above comes from malloc or aligned_alloc: free releases both.
+// The plain forms come from malloc, the aligned ones from alignedAlloc.
 void operator delete(void* p) noexcept {
     std::free(p);
 }
@@ -78,16 +98,16 @@ void operator delete[](void* p, std::size_t) noexcept {
     std::free(p);
 }
 void operator delete(void* p, std::align_val_t) noexcept {
-    std::free(p);
+    alignedFree(p);
 }
 void operator delete[](void* p, std::align_val_t) noexcept {
-    std::free(p);
+    alignedFree(p);
 }
 void operator delete(void* p, std::size_t, std::align_val_t) noexcept {
-    std::free(p);
+    alignedFree(p);
 }
 void operator delete[](void* p, std::size_t, std::align_val_t) noexcept {
-    std::free(p);
+    alignedFree(p);
 }
 void operator delete(void* p, const std::nothrow_t&) noexcept {
     std::free(p);

@@ -2,6 +2,7 @@
 // digest. A debugging aid for world builders and QA; built with the project, not installed.
 
 #include "core/catalog.hpp"
+#include "platform/memory.hpp"
 #include "world/digest.hpp"
 #include "world/loader.hpp"
 
@@ -12,7 +13,6 @@
 #include <map>
 #include <string>
 #include <string_view>
-#include <sys/resource.h>
 #include <vector>
 
 using namespace lc;
@@ -69,12 +69,9 @@ void summary(const LoadedWorld& w) {
                 "%.1f)\n",
                 w.timings.total, w.timings.contracts, w.timings.layers, w.timings.compose,
                 w.timings.graphs, w.timings.regions);
-    rusage usage{};
-    getrusage(RUSAGE_SELF, &usage);
     std::printf("memory %.2f MB (map %.2f MB); this process peaked at %.1f MB resident\n",
                 static_cast<double>(w.memoryBytes()) / 1e6,
-                static_cast<double>(m.memoryBytes()) / 1e6,
-                static_cast<double>(usage.ru_maxrss) / 1024.0);
+                static_cast<double>(m.memoryBytes()) / 1e6, processMemory().second);
     std::printf("diagnostics: %zu error(s), %zu warning(s) (worldinfo validate lists them)\n",
                 w.diagnostics.errors.size(), w.diagnostics.warnings.size());
 }

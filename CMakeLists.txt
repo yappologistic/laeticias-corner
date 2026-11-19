@@ -16,6 +16,11 @@ find_package(nlohmann_json 3.11 REQUIRED)
 
 add_subdirectory(third_party)
 
+# What the pure libraries may ask the system (no SDL).
+add_library(lc_platform STATIC src/platform/memory.cpp)
+target_include_directories(lc_platform PUBLIC src)
+lc_project_target(lc_platform)
+
 # Pure game logic: no SDL allowed (enforced by not linking it).
 add_library(lc_core STATIC
   src/core/actor_data.cpp
@@ -103,7 +108,7 @@ add_library(lc_engine STATIC
   src/ui/painter.cpp
   src/ui/profiler.cpp
 )
-target_link_libraries(lc_engine PUBLIC lc_core lc_life SDL3::SDL3 PRIVATE lc_stb)
+target_link_libraries(lc_engine PUBLIC lc_core lc_life lc_platform SDL3::SDL3 PRIVATE lc_stb)
 target_compile_definitions(lc_engine PUBLIC LC_SOURCE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 lc_project_target(lc_engine)
 
@@ -144,7 +149,7 @@ add_library(lc_life STATIC
   src/life/report.cpp
   src/life/session.cpp
 )
-target_link_libraries(lc_life PUBLIC lc_world)
+target_link_libraries(lc_life PUBLIC lc_world PRIVATE lc_platform)
 lc_project_target(lc_life)
 
 # Debugging aid for city life: summary, problems, chains (the worldgen cross-check), dumps, the
@@ -156,7 +161,7 @@ lc_project_target(lifeinfo)
 
 # Debugging aid for world builders and QA: summary, validation, region and tile dumps, digest.
 add_executable(worldinfo src/world/worldinfo_main.cpp)
-target_link_libraries(worldinfo PRIVATE lc_world)
+target_link_libraries(worldinfo PRIVATE lc_world lc_platform)
 target_compile_definitions(worldinfo PRIVATE LC_WORLDINFO_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 lc_project_target(worldinfo)
 
@@ -271,6 +276,7 @@ lc_project_target(lc_app)
 add_executable(laeticias-corner src/app/main.cpp src/platform/alloc_count.cpp)
 target_link_libraries(laeticias-corner PRIVATE lc_app)
 lc_project_target(laeticias-corner)
+lc_runtime_dlls(laeticias-corner)
 
 if(LC_TESTS)
   add_subdirectory(tests)
@@ -279,6 +285,7 @@ endif()
 add_executable(laeticias-world src/worldview/viewer_main.cpp)
 target_link_libraries(laeticias-world PRIVATE lc_worldview)
 lc_project_target(laeticias-world)
+lc_runtime_dlls(laeticias-world)
 
 if(LC_TESTS)
   add_executable(lc_worldview_tests
@@ -292,6 +299,7 @@ if(LC_TESTS)
   target_compile_definitions(lc_worldview_tests PRIVATE
     LC_WORLDVIEW_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
   lc_project_target(lc_worldview_tests)
+  lc_runtime_dlls(lc_worldview_tests)
   # Same doctest/libstdc++ <ciso646> warning as lc_tests (see tests/CMakeLists.txt).
   target_compile_options(lc_worldview_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-\#warnings>)
   set(LC_WORLDVIEW_ENV "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")

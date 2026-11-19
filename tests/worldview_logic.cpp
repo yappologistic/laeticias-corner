@@ -281,6 +281,10 @@ TEST_CASE("viewer: options and scripts are checked before anything runs") {
     CHECK(s->size() == 7);
     CHECK(s->front().op == Op::Goto);
     CHECK(s->front().line == 2);
+    // Lines ending in CR LF (a Windows checkout) read the same.
+    const auto crlf = parseScript("goto 374 58\r\nzoom 0.5\r\nsettle\r\n");
+    REQUIRE(crlf.has_value());
+    CHECK(crlf->size() == 3);
     CHECK_FALSE(parseScript("zoom 9\n").has_value());
     CHECK_FALSE(parseScript("frames 0\n").has_value());
     CHECK_FALSE(parseScript("teleport here\n").has_value());
