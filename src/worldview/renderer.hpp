@@ -216,6 +216,9 @@ public:
     // partial (0.05..0.97): a seam or hole, since ground, water and the haze beyond the grid
     // are opaque (water marks sit at 0.98). For tests: it reads the target back.
     [[nodiscard]] float partialAlpha(SDL_Rect window);
+    // The share of it the shader path's final pass takes for water whatever its colour (alpha
+    // 0.962..0.995, final.frag's isWater): 0 on the other looks. For tests: it reads back too.
+    [[nodiscard]] float waterMarked(SDL_Rect window);
     // Everything with a card, and every figure, on screen in the last frame (once each).
     void visibleCards(std::vector<Picked>& out) const;
     // Figures without art (not drawn).
@@ -325,6 +328,8 @@ private:
     // Marks a water sprite's pixels in a cell for the shader path (alpha lowered a step).
     // `maybe`: water only where the art's colour is water's (the rim round an item's water).
     void markWater(const SpriteRef& s, Vec2 anchor, bool maybe = false);
+    // The share of the last frame's world target under `window` whose alpha is in [lo, hi].
+    [[nodiscard]] float alphaShare(SDL_Rect window, Uint8 lo, Uint8 hi);
     void flushMarks(const Xform& x);
     // Water inside items (their geometry's water tiles), marked after the item is drawn.
     void markItemWater(const Elem& e, const Xform& x);

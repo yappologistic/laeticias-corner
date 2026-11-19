@@ -117,6 +117,8 @@
 //       luma_like NAME X,Y,W,H TOL  the region's mean lightness is within TOL (a share) of NAME's
 //       target_alpha X,Y,W,H MOST  at most MOST (0..1) of the world target under the region is
 //                               partly transparent (a seam between cached pieces, a hole)
+//       water_mark X,Y,W,H MIN MAX  MIN..MAX (0..1) of the world target under the region carries
+//                               a water mark (the shader path's final pass draws water there)
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 //       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,
 //                               warm: the night's lit windows, lamps and fires)

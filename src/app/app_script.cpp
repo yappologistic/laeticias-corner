@@ -594,6 +594,18 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                                "transparent but found {:.4f} (a seam or a hole)",
                                a[2], a[1], f));
     }
+    if (what == "water_mark") {
+        const auto r = parseScriptRect(a[1]);
+        if (!r) return "bad rectangle " + a[1];
+        if (!worldView_) return std::string("no world");
+        const float f = worldView_->waterMarked({r->x, r->y, r->w, r->h});
+        std::printf("expect water_mark %s: %.4f\n", a[1].c_str(), f);
+        return f >= std::stof(a[2]) && f <= std::stof(a[3])
+                   ? std::nullopt
+                   : std::optional(std::format("expected {} to {} of the world target under {} "
+                                               "marked as water but found {:.4f}",
+                                               a[2], a[3], a[1], f));
+    }
     if (what == "contrast" || what == "luma_mark" || what == "luma_like") {
         // Lightness statistics of a window region: its spread (contrast), or its mean kept under
         // a name and compared later (another zoom, a later frame).
