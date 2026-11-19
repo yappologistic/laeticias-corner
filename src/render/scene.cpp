@@ -2,6 +2,8 @@
 
 #include "core/land.hpp"
 #include "core/tuning.hpp"
+#include "render/bands.hpp"
+#include "render/decks.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -75,6 +77,7 @@ Scene::Scene(SDL_Renderer* renderer, Atlas& atlas, const Catalog& cat)
     pops_.reserve(kMaxPops);
     pulses_.reserve(16);
     dynamic_.reserve(256);
+    dynamicBoxes_.reserve(256);
 }
 
 int Scene::slotFor(const World& world, const Item& item) const {
@@ -124,7 +127,7 @@ Vec2 Scene::actorAnchor(const Actor& a) const {
         return {h.x, h.y + 2};
     }
     Vec2 w = iso_.toWorld(a.pos.x, a.pos.y);
-    w.y -= a.lift;
+    w.y -= a.lift + (onDecks(a) ? deckAt(a.pos) : 0.0f);
     if (cat_.kinds[a.kind].move == Locomotion::Fly && a.state != ActorState::Act)
         w.y -= std::sin(a.animTime * 3.1f) * 0.12f * iso_.tileH();
     return snapped(w);
@@ -153,7 +156,7 @@ Vec2 Scene::headOf(const Actor& a) const {
 }
 
 std::optional<int> Scene::actorAt(std::span<const Actor> actors, Vec2 world) const {
-    // The topmost by depth first: nearer (larger x + y), then flyers above everything.
+    // The topmost as drawn: the last in the frame's order.
     std::optional<int> best;
     float bestDepth = -1e9f;
     const float inflate = tuning::kPetHitInflate * iso_.tileW() / 64.0f;
@@ -164,7 +167,9 @@ std::optional<int> Scene::actorAt(std::span<const Actor> actors, Vec2 world) con
         if (world.x < r.x0 - inflate || world.x > r.x1 + inflate || world.y < r.y0 - inflate ||
             world.y > r.y1 + inflate)
             continue;
-        const float depth = a.pos.x + a.pos.y + (flying(a) ? 1000.0f : 0.0f);
+        const float depth = i < actorRank_.size() && actorRank_[i] >= 0
+                                ? actorRank_[i]
+                                : a.pos.x + a.pos.y + (flying(a) ? 1000.0f : 0.0f);
         if (depth > bestDepth) {
             bestDepth = depth;
             best = static_cast<int>(i);
@@ -205,24 +210,49 @@ void Scene::rebuild(const World& world, TileRect region) {
         const FRect r = spriteRect(it, slot);
         // Trees drop leaves (or petals), as the catalog says.
         const bool tree = def.sheds != Shed::None;
-        gathered_.push_back({it, slot, r, tree, false});
+        if (railed(def)) {
+            gathered_.push_back({it, slot, r, tree, false, 0});
+            gathered_.push_back({it, slot, r, tree, false, 1});
+        } else {
+            gathered_.push_back({it, slot, r, tree, false, -1});
+        }
     });
-    footprints_.clear();
-    screens_.clear();
-    for (const Placed& p : gathered_) {
-        footprints_.push_back(tileRect(p.item));
-        screens_.push_back(p.screen);
-    }
-    sorter_.sort(footprints_, screens_, 2 * iso_.tileW(), order_);
+    sorting_.clear();
+    for (std::size_t i = 0; i < gathered_.size(); ++i)
+        sorting_.push_back(itemBox(gathered_[i], static_cast<std::uint32_t>(i)));
+    sorter_.sort(sorting_, 2 * iso_.tileW(), order_, graph_);
     placed_.clear();
-    footprints_.clear();
-    screens_.clear();
-    for (const std::uint32_t i : order_) {
-        placed_.push_back(gathered_[i]);
-        footprints_.push_back(tileRect(gathered_[i].item));
-        screens_.push_back(gathered_[i].screen);
+    boxes_.clear();
+    identity_.clear();
+    std::vector<std::uint32_t>& rank = identity_; // borrowed: gathered item -> place
+    rank.assign(order_.size(), 0);
+    for (std::size_t k = 0; k < order_.size(); ++k) rank[order_[k]] = static_cast<std::uint32_t>(k);
+    // The graph by place in the order, as the merge reads it with the placed items.
+    {
+        const OrderGraph byItem = graph_;
+        graph_.start.assign(order_.size() + 1, 0);
+        graph_.next.clear();
+        for (std::size_t k = 0; k < order_.size(); ++k) {
+            const std::uint32_t i = order_[k];
+            for (std::uint32_t q = byItem.start[i]; q < byItem.start[i + 1]; ++q)
+                graph_.next.push_back(rank[byItem.next[q]]);
+            graph_.start[k + 1] = static_cast<std::uint32_t>(graph_.next.size());
+        }
     }
-    grid_.build(screens_, 2 * iso_.tileW());
+    for (std::size_t k = 0; k < order_.size(); ++k) {
+        placed_.push_back(gathered_[order_[k]]);
+        boxes_.push_back(sorting_[order_[k]]);
+        boxes_.back().box.id = depthId(DepthKind::Item, static_cast<std::uint32_t>(k));
+    }
+    identity_.resize(placed_.size());
+    for (std::size_t k = 0; k < identity_.size(); ++k) identity_[k] = static_cast<std::uint32_t>(k);
+    {
+        std::vector<FRect> screens;
+        screens.reserve(placed_.size());
+        for (const Placed& pl : placed_) screens.push_back(pl.screen);
+        grid_.build(screens, 2 * iso_.tileW());
+    }
+    merge_.index(boxes_, identity_, graph_, 2 * iso_.tileW());
 
     glowRects_.clear();
     lights_.clear();
@@ -253,7 +283,8 @@ void Scene::rebuild(const World& world, TileRect region) {
         // Things behind the light cannot cover it.
         grid_.query(glowBox, [&](std::uint32_t j) {
             if (placed_[j].screen.overlaps(glowBox) &&
-                (j == i || behind(footprints_[i], footprints_[j])))
+                (j == i || (constrains(boxes_[i].box, boxes_[j].box) &&
+                            drawnBefore(boxes_[i].box, boxes_[j].box))))
                 placed_[j].occludesGlow = true;
         });
         // The pool lies on the ground: under a small light, or in front of a building, below
@@ -698,7 +729,7 @@ SDL_FColor Scene::exposed(SpriteId id, SDL_FColor c) const {
 }
 
 void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, bool silhouette,
-                     float scaleY) {
+                     float scaleY, int part) {
     const auto& def = cat_.items[item.type];
     const auto f = [](int v) { return static_cast<float>(v); };
     const Vec2 anchor = iso_.toWorld(item.pos);
@@ -730,42 +761,94 @@ void Scene::drawItem(const Item& item, int slot, float alpha, SDL_FColor tint, b
     const SpriteId base = baseFrames(item, slot).at(clock, fps, phase);
     const SDL_FColor c = silhouette ? SDL_FColor{0, 0, 0, alpha}
                                     : exposed(base, {tint.r, tint.g, tint.b, tint.a * alpha});
-    sprite(base, anchor, c, false, pivot, scale);
+    if (part < 0 || scale.x != 1.0f || scale.y != 1.0f) {
+        // Whole (a half drawn whole while it pops in is drawn once: by the far half).
+        if (part <= 0) sprite(base, anchor, c, false, pivot, scale);
+        return;
+    }
+    // One half of a footbridge: cut along its span; the near half lies below the line.
+    const CutLine cut = crossingCut(def, item, iso_);
+    putSpriteCut(batch_, atlas_.sprite(base), anchor, xf_, c, blend_, cut.a, cut.b, part == 1);
+}
+
+OrderItem Scene::itemBox(const Placed& p, std::uint32_t id) const {
+    const ItemDef& def = cat_.items[p.item.type];
+    const Vec2 a = iso_.toWorld(p.item.pos);
+    const float top = std::max(1.0f, a.y - p.screen.y0); // height over the top vertex
+    const std::uint64_t key = depthId(DepthKind::Item, id, static_cast<std::uint32_t>(p.part + 1));
+    if (!def.walkable) return {makeBox(tileRect(p.item), 0, top, key, iso_.hh), p.screen, 0};
+    // What one walks on is a deck under whoever stands on it, a railed one in two halves.
+    return {crossingBox(def, p.item, p.part, top, key, iso_.hh), p.screen, 0};
+}
+
+bool Scene::onDecks(const Actor& a) const {
+    const ActorKind& k = cat_.kinds[a.kind];
+    return k.move != Locomotion::Swim && !inAir(a, k);
+}
+
+float Scene::deckAt(Vec2 pos) const {
+    return map_ != nullptr ? lc::deckAt(*map_, cat_, pos) : 0.0f;
 }
 
 void Scene::buildDynamic(const FrameParams& p) {
     dynamic_.clear();
-    const auto insert = [&](EntryKind kind, std::uint32_t index, const FRect& tr, const FRect& sr,
-                            bool glowing) {
+    dynamicBoxes_.clear();
+    actorRank_.assign(p.actors.size(), -1.0f);
+    const auto add = [&](EntryKind kind, std::uint32_t index, const DepthBox& box, const FRect& sr,
+                         bool glowing) {
         if (!sr.overlaps(view_)) return;
-        std::uint32_t after = 0;
-        grid_.query(sr, [&](std::uint32_t i) {
-            if (i + 1 > after && placed_[i].screen.overlaps(sr) && behind(footprints_[i], tr))
-                after = i + 1;
-        });
-        dynamic_.push_back(
-            {kind, index, after, tr.x0 + tr.x1 + tr.y0 + tr.y1, glowing || nearGlow(sr)});
+        dynamic_.push_back({kind, index, glowing || nearGlow(sr)});
+        dynamicBoxes_.push_back({box, sr, 0});
     };
+    int resident = -1; // her entry, for what rides on her hat
     for (std::uint32_t i = 0; i < p.actors.size(); ++i) {
         const Actor& a = p.actors[i];
-        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f || flying(a)) continue;
+        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f ||
+            (a.flags & actor_flag::kOnHat) != 0)
+            continue;
         const int v = cat_.kinds[a.kind].visitor;
         if (v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].underwater) continue;
-        // Emissive visitors are always drawn in the glow pass.
-        insert(EntryKind::Actor, i, pointRect(a.pos), actorRect(a), glows(a));
+        // Its box: a point round the feet (or the ground under a flyer), from its height (a seat,
+        // a perch, flight) to the top of its frame. Emissive visitors are always drawn in the
+        // glow pass.
+        const FRect r = actorRect(a);
+        const float z = a.lift + (onDecks(a) ? deckAt(a.pos) : 0.0f);
+        const DepthBox box =
+            makeBox(pointRect(a.pos), z, z + (r.y1 - r.y0), depthId(DepthKind::Actor, i), iso_.hh);
+        if (std::cmp_equal(i, resident_)) resident = static_cast<int>(dynamic_.size());
+        add(EntryKind::Actor, i, box, r, glows(a));
+    }
+    // Riders on her hat go right after her: her box, a hair nearer.
+    for (std::uint32_t i = 0; i < p.actors.size(); ++i) {
+        const Actor& a = p.actors[i];
+        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f ||
+            (a.flags & actor_flag::kOnHat) == 0 || resident < 0)
+            continue;
+        DepthBox box = dynamicBoxes_[static_cast<std::size_t>(resident)].box;
+        box.id = depthId(DepthKind::Actor, i, 1);
+        box.near += 1e-3f;
+        add(EntryKind::Actor, i, box, actorRect(a), glows(a));
     }
     for (std::uint32_t i = 0; i < p.ghosts.size(); ++i) {
         const Ghost& g = p.ghosts[i];
         if (g.mode != Ghost::Mode::Item) continue;
         const int slot = slotFor(*p.world, g.item);
-        insert(EntryKind::Ghost, i, tileRect(g.item), spriteRect(g.item, slot), false);
+        const Placed pl{g.item, slot, spriteRect(g.item, slot), false, false, -1};
+        add(EntryKind::Ghost, i, itemBox(pl, i).box, pl.screen, false);
+        dynamicBoxes_.back().box.id = depthId(DepthKind::Ghost, i);
     }
-    for (std::uint32_t i = 0; i < fades_.size(); ++i)
-        insert(EntryKind::Fade, i, tileRect(fades_[i].item),
-               spriteRect(fades_[i].item, fades_[i].slot), false);
-    std::ranges::sort(dynamic_, [](const Entry& a, const Entry& b) {
-        return a.after != b.after ? a.after < b.after : a.depth < b.depth;
-    });
+    for (std::uint32_t i = 0; i < fades_.size(); ++i) {
+        const Placed pl{fades_[i].item, fades_[i].slot, spriteRect(fades_[i].item, fades_[i].slot),
+                        false,          false,          -1};
+        if (!pl.screen.overlaps(view_)) continue;
+        add(EntryKind::Fade, i, itemBox(pl, i).box, pl.screen, false);
+        dynamicBoxes_.back().box.id = depthId(DepthKind::Fade, i);
+    }
+    merge_.plan(boxes_, dynamicBoxes_, view_);
+    float rank = 0;
+    for (const ActorMerge::Step& st : merge_.sequence())
+        if (st.actor && dynamic_[st.index].kind == EntryKind::Actor)
+            actorRank_[dynamic_[st.index].index] = rank++;
 }
 
 void Scene::drawActor(const Actor& a, bool silhouette) {
@@ -828,32 +911,27 @@ void Scene::drawEntries(const FrameParams& p, bool silhouette) {
             return t != nullptr && *t == it;
         });
     };
-    std::size_t d = 0;
     if (!silhouette) drawnItems_ = 0;
-    for (std::uint32_t i = 0; i < placed_.size(); ++i) {
-        for (; d < dynamic_.size() && dynamic_[d].after <= i; ++d)
-            drawEntry(p, dynamic_[d], silhouette);
-        const Placed& pl = placed_[i];
-        if (!pl.screen.overlaps(view_)) continue;
+    batch_.setBand(bandTag(silhouette ? Band::Glow : Band::Depth));
+    // One order for everything standing in the home (draw-order.md §1.4): items, actors and
+    // flyers, ghosts and fades.
+    for (const ActorMerge::Step& st : merge_.sequence()) {
+        if (st.actor) {
+            drawEntry(p, dynamic_[st.index], silhouette);
+            continue;
+        }
+        const Placed& pl = placed_[st.index];
         // The glow pass only needs what can hide an emissive pixel.
         if (silhouette && !pl.occludesGlow) continue;
         if (!silhouette) ++drawnItems_;
         const bool tinted = !silhouette && !p.ghosts.empty() && marked(pl.item);
-        drawItem(pl.item, pl.slot, 1.0f, tinted ? kInvalidTint : kWhite, silhouette);
+        drawItem(pl.item, pl.slot, 1.0f, tinted ? kInvalidTint : kWhite, silhouette, 1.0f, pl.part);
         const auto& glowSet = tables_.items[pl.item.type].glow[static_cast<std::size_t>(pl.slot)];
         if (silhouette && !glowSet.empty()) {
             const auto& def = cat_.items[pl.item.type];
             sprite(glowSet.at(now_, def.fps, tileHash(pl.item.pos.x, pl.item.pos.y) % 7),
                    iso_.toWorld(pl.item.pos), {glow, glow, glow, 1.0f});
         }
-    }
-    for (; d < dynamic_.size(); ++d) drawEntry(p, dynamic_[d], silhouette);
-    // Flyers are always above the ground clutter (and a butterfly on her hat above her).
-    for (const Actor& a : p.actors) {
-        if ((a.flags & actor_flag::kAlive) == 0 || a.alpha <= 0.0f || !flying(a)) continue;
-        const FRect r = actorRect(a);
-        if (!r.overlaps(view_) || (silhouette && !glows(a) && !nearGlow(r))) continue;
-        drawActor(a, silhouette);
     }
 }
 
@@ -862,6 +940,7 @@ bool Scene::nearGlow(const FRect& r) const {
 }
 
 void Scene::drawShadows(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::Shadows));
     // Shadow sprites were normalised to a peak alpha of 1, so drawing them into their own layer
     // saturates where they overlap; the layer is then composited once at the art's opacity.
     batch_.flush();
@@ -914,6 +993,7 @@ void Scene::drawShadows(const FrameParams& p) {
 }
 
 void Scene::drawMarkers(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::GroundDecals));
     // Placement markers and nook areas sit on the ground under everything else.
     const World& world = *p.world;
     // Wet ground darkens, block by block, softly blending into its neighbours.
@@ -982,6 +1062,8 @@ void Scene::drawMarkers(const FrameParams& p) {
 }
 
 void Scene::drawParticles(bool ground) {
+    // Petals and ripples lie on the water; the rest are effects among what stands.
+    batch_.setBand(bandTag(ground ? Band::WaterSurface : Band::Depth));
     const float m = iso_.tileW();
     const FRect near{view_.x0 - m, view_.y0 - m, view_.x1 + m, view_.y1 + m};
     for (const Particle& pt : particles_.all()) {
@@ -1024,6 +1106,7 @@ void Scene::drawParticles(bool ground) {
 }
 
 void Scene::drawLighting(const FrameParams& p, Rgb amb) {
+    batch_.setBand(bandTag(Band::Grading));
     const float glow = p.light.glow;
     const bool emissive = std::ranges::any_of(
         p.actors, [&](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0 && glows(a); });
@@ -1069,6 +1152,7 @@ void Scene::drawLighting(const FrameParams& p, Rgb amb) {
 }
 
 void Scene::drawGlow(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::Glow));
     const float glow = p.light.glow;
     const bool emissiveVisitors = std::ranges::any_of(
         p.actors, [&](const Actor& a) { return (a.flags & actor_flag::kAlive) != 0 && glows(a); });
@@ -1168,6 +1252,7 @@ void Scene::embedBegin(const FrameParams& p, const Embed& e) {
 
 void Scene::embedGround(const FrameParams& p) {
     if (into_ == nullptr || !light_.texture || !glow_.texture || !shadow_.texture) return;
+    batch_.setBand(bandTag(Band::Ground));
     ground_->draw(batch_, *p.world, view_, xf_, into_, now_);
     buildDynamic(p);
     drawShadows(p);
@@ -1175,6 +1260,7 @@ void Scene::embedGround(const FrameParams& p) {
     drawMarkers(p);
     drawParticles(true);
     // Swimmers under the water go below everything that floats on it.
+    batch_.setBand(bandTag(Band::WaterSurface));
     for (const Actor& a : p.actors) {
         const int v = cat_.kinds[a.kind].visitor;
         if (v >= 0 && cat_.visitors[static_cast<std::size_t>(v)].underwater) drawActor(a, false);
@@ -1223,9 +1309,12 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
         {{0, h}, {b.r, b.g, b.b, 1}, {0, 0}},
     };
     static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+    batch_.setBand(bandTag(Band::Sky));
     batch_.use(nullptr, SDL_BLENDMODE_NONE);
     batch_.triangles(sky, 4, kQuad, 6);
     drawSky(p, scale);
+    // The world's picture, everything from the ground to the glow, over the sky.
+    batch_.setBand(bandTag(Band::Ground));
     // Whole-number magnification stays nearest-neighbour; anything else (mid-transition, or a
     // blurred copy) is filtered.
     const float ox = (xf_.origin.x - topLeft_.x) * s;
@@ -1246,6 +1335,7 @@ void Scene::composite(const FrameParams& p, Vec2 scale, bool smooth) {
 }
 
 void Scene::drawMoths(const FrameParams& p) {
+    batch_.setBand(bandTag(Band::Glow));
     if (reduceMotion_) return;
     // Two moths circle each lamp head at night, lit by it (drawn after the night grade).
     if (p.light.night < 0.3f || moths_.empty()) return;
@@ -1270,6 +1360,7 @@ void Scene::drawMoths(const FrameParams& p) {
 }
 
 void Scene::drawSky(const FrameParams& p, Vec2 scale) {
+    batch_.setBand(bandTag(Band::SkyEffects));
     // Things in the sky behind the island, in window space: the rainbow and shooting stars.
     const float s = p.camera->scale();
     const Xform win{topLeft_, s * scale.x, SDL_SCALEMODE_NEAREST};
