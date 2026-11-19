@@ -20,12 +20,14 @@ using namespace lc::world;
 namespace {
 
 constexpr const char* kUsage =
-    "usage: worldinfo [--assets DIR] [summary | validate | digest | region ID | tile X Y]\n"
+    "usage: worldinfo [--assets DIR] [summary | validate | digest | region ID | tile X Y |\n"
+    "                 slopes X Y R]\n"
     "  summary   sizes, layers, items, graphs, timings and memory (default)\n"
     "  validate  every diagnostic; exits 1 when the data has errors\n"
     "  digest    the digest tests/world_tools/world_digest.py also writes\n"
     "  region    a region's tiles, districts, items and graph nodes\n"
-    "  tile      everything at one grid tile\n";
+    "  tile      everything at one grid tile\n"
+    "  slopes    levels and slope shapes round a grid tile, R tiles each way (rows along x)\n";
 
 const char* kindName(RegionKind k) {
     switch (k) {
@@ -134,6 +136,10 @@ void tile(const LoadedWorld& w, TilePos p) {
     std::printf("  district %s, region %s\n", d == kNone ? "-" : m.districtName(d).c_str(),
                 r < 0 ? "-" : w.file.regions[static_cast<std::size_t>(r)].id.c_str());
     std::printf("  walkable %s, floor %d px\n", m.walkable(p) ? "yes" : "no", m.floorZ(p));
+    if (const Slope s = m.slopeAt(p); s != Slope::Flat)
+        std::printf("  slope %s (corners N %d, E %d, S %d, W %d)\n",
+                    std::string(slopeKey(s)).c_str(), m.cornerLevel(p, 0), m.cornerLevel(p, 1),
+                    m.cornerLevel(p, 2), m.cornerLevel(p, 3));
     std::array<WalkStep, 4> steps{};
     const int n = m.walkNeighbours(p, steps);
     for (int i = 0; i < n; ++i)
@@ -154,6 +160,29 @@ void tile(const LoadedWorld& w, TilePos p) {
         const RoadNode& rn = w.roads.nodes()[static_cast<std::size_t>(node)];
         std::printf("  nearest graph node %s (%s) at (%d, %d)\n", rn.id.c_str(),
                     nodeKindName(rn.kind), rn.at.x, rn.at.y);
+    }
+}
+
+// Levels round p (hex digit) with the slope's key beside each sloped tile, and `~` for water.
+void slopes(const LoadedWorld& w, TilePos p, int r) {
+    const WorldMap& m = *w.map;
+    std::printf("      ");
+    for (int x = p.x - r; x <= p.x + r; ++x) std::printf("%-9d", x);
+    std::printf("\n");
+    for (int y = p.y - r; y <= p.y + r; ++y) {
+        std::printf("%5d ", y);
+        for (int x = p.x - r; x <= p.x + r; ++x) {
+            const TilePos q{x, y};
+            if (!m.inBounds(q) || m.terrainAt(q) == kNone) {
+                std::printf("%-9s", ".");
+                continue;
+            }
+            const bool water = m.terrainInfo(m.terrainAt(q)).water;
+            const std::string key(slopeKey(m.slopeAt(q)));
+            std::printf("%X%c%-7s", m.level(q), water ? '~' : (m.itemAt(q) >= 0 ? '*' : ' '),
+                        key.c_str());
+        }
+        std::printf("\n");
     }
 }
 
@@ -198,6 +227,9 @@ int main(int argc, char** argv) {
     } else if (TilePos p; cmd == "tile" && args.size() == 3 && toInt(args[1].c_str(), p.x) &&
                           toInt(args[2].c_str(), p.y)) {
         tile(*world, p);
+    } else if (int r = 0; cmd == "slopes" && args.size() == 4 && toInt(args[1].c_str(), p.x) &&
+                          toInt(args[2].c_str(), p.y) && toInt(args[3].c_str(), r)) {
+        slopes(*world, p, r);
     } else {
         (void)std::fputs(kUsage, stderr);
         return 2;

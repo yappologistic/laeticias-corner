@@ -47,6 +47,7 @@ struct TerrainInfo {
     std::string under;
     std::vector<std::string> faces;
     std::optional<std::array<std::uint8_t, 3>> colour; // set catalogs' flat look, when stated
+    bool slopes = false; // its set's `art.slopes` lists it: one-level steps slope (art §3)
 };
 
 struct ItemInfo {

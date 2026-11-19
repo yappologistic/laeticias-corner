@@ -486,6 +486,9 @@ int WorldMap::floorZ(TilePos p) const {
                 if (const int top = g->topAt({p.x - it.x, p.y - it.y}); top >= 0)
                     return it.level * levelPx_ + top;
         }
+        if (c.slope[l] != 0)
+            return static_cast<int>(std::lround(
+                surfaceZ({static_cast<float>(p.x) + 0.5f, static_cast<float>(p.y) + 0.5f})));
         return levelOf(c.level[l]) * levelPx_;
     }
     const Placed& it = items_[c.occupancy[l] - 1];
@@ -534,7 +537,7 @@ float WorldMap::floorAt(Vec2 p) const {
     };
     if (!raised(t) &&
         std::ranges::none_of(kSteps, [&](TilePos d) { return raised({t.x + d.x, t.y + d.y}); }))
-        return static_cast<float>(levelOf(chunk(t).level[local(t)]) * levelPx_);
+        return surfaceZ(p);
     const auto z = static_cast<float>(floorZ(t));
     const float fx = p.x - static_cast<float>(t.x) - 0.5f;
     const float fy = p.y - static_cast<float>(t.y) - 0.5f;
@@ -572,6 +575,136 @@ int WorldMap::walkNeighbours(TilePos p, std::array<WalkStep, 4>& out) const {
         out[std::size_t(n++)] = {q, floorZ(q) - zA};
     }
     return n;
+}
+
+float WorldMap::surfaceZ(Vec2 p) const {
+    const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+    if (!inBounds(t) || terrainAt(t) == kNone) return 0.0f;
+    const Chunk& c = chunk(t);
+    const std::size_t l = local(t);
+    const auto base = static_cast<float>(levelOf(c.level[l]) * levelPx_);
+    if (c.slope[l] == 0) return base;
+    return base + slopeHeight(Slope(c.slope[l]), p.x - static_cast<float>(t.x),
+                              p.y - static_cast<float>(t.y)) *
+                      static_cast<float>(levelPx_);
+}
+
+int WorldMap::cornerLevel(TilePos p, int c) const {
+    if (!inBounds(p) || terrainAt(p) == kNone) return 0;
+    return level(p) + slopeCorner(slopeAt(p), c);
+}
+
+bool WorldMap::surfacesMeet(TilePos p, int dir) const {
+    // The shared edge's corners, as (p's corner, the neighbour's): +x, +y, -x, -y.
+    static constexpr std::array<std::array<std::pair<int, int>, 2>, 4> kEdge{
+        {{{{1, 0}, {2, 3}}}, {{{3, 0}, {2, 1}}}, {{{0, 1}, {3, 2}}}, {{{0, 3}, {1, 2}}}}};
+    const TilePos q{p.x + kSteps[static_cast<std::size_t>(dir & 3)].x,
+                    p.y + kSteps[static_cast<std::size_t>(dir & 3)].y};
+    if (!inBounds(p) || !inBounds(q)) return false;
+    return std::ranges::all_of(kEdge[static_cast<std::size_t>(dir & 3)], [&](const auto& e) {
+        return cornerLevel(p, e.first) == cornerLevel(q, e.second);
+    });
+}
+
+void WorldMap::shapeSlopes(std::span<const std::string> natural) {
+    slopeFaces_.assign(terrains_.size(), {});
+    for (std::size_t t = 0; t < terrains_.size(); ++t) {
+        const TerrainInfo& info = terrains_[t];
+        std::vector<std::string> faces = info.faces;
+        if (faces.empty() && !info.base) faces = content_->terrain(info.under).faces;
+        for (std::size_t a = 0; a < 4; ++a)
+            slopeFaces_[t][a] =
+                a >= faces.size() || std::ranges::find(natural, faces[a]) != natural.end();
+    }
+    shapeSlopesIn(bounds());
+}
+
+void WorldMap::shapeSlopesIn(TileRect area) {
+    area = area.clipped(bounds());
+    if (area.empty() || slopeFaces_.empty()) return;
+    // What keeps a tile flat (an item that does not ride a slope: anything but a one-tile plant,
+    // rock or small prop with no one using it), and what never pulls a neighbour's corner down
+    // (stairs, ramps, decks, walkable items: their floor meets the ground at its level).
+    const TileRect around{area.x0 - 1, area.y0 - 1, area.x1 + 1, area.y1 + 1};
+    const int aw = around.x1 - around.x0;
+    std::vector<std::uint8_t> held(static_cast<std::size_t>(aw * (around.y1 - around.y0)), 0);
+    constexpr std::uint8_t kKeep = 1;
+    constexpr std::uint8_t kNoPull = 2;
+    forEachItemIn(around, [&](std::uint32_t i, const Placed& it) {
+        if (underHome(i)) return;
+        const ItemInfo& d = info(it);
+        // (Walkable plants, wildflowers and reeds, are ground: they ride like any plant.)
+        const bool rides = it.w == 1 && it.h == 1 && d.homeType < 0 && !d.landmark && !d.crossing &&
+                           d.rise == 0 && d.on != Surface::Water && d.slots.empty();
+        if (rides) return;
+        const std::uint8_t bits = static_cast<std::uint8_t>(
+            kKeep | (d.rise > 0 || d.walkable || d.crossing ? kNoPull : 0));
+        const TileRect r = it.rect().clipped(around);
+        for (int y = r.y0; y < r.y1; ++y)
+            for (int x = r.x0; x < r.x1; ++x)
+                held[static_cast<std::size_t>((y - around.y0) * aw + (x - around.x0))] |= bits;
+    });
+    const auto heldAt = [&](TilePos q) -> std::uint8_t {
+        return around.contains(q)
+                   ? held[static_cast<std::size_t>((q.y - around.y0) * aw + (q.x - around.x0))]
+                   : std::uint8_t{0};
+    };
+    const auto levelAt = [&](TilePos q) {
+        return inBounds(q) && terrainAt(q) != kNone ? level(q) : 0;
+    };
+    const auto lowerEdges = [&](TilePos p, int lv) {
+        int bits = 0;
+        constexpr std::array<std::pair<TilePos, int>, 4> kEdges{
+            {{{0, -1}, kCornerN}, {{1, 0}, kCornerE}, {{0, 1}, kCornerS}, {{-1, 0}, kCornerW}}};
+        for (const auto& [d, bit] : kEdges)
+            if (levelAt({p.x + d.x, p.y + d.y}) < lv) bits |= bit;
+        return bits;
+    };
+    // Pass 1: the low corners of every tile that may slope.
+    for (int y = area.y0; y < area.y1; ++y)
+        for (int x = area.x0; x < area.x1; ++x) {
+            const TilePos p{x, y};
+            Chunk& c = chunk(p);
+            const std::size_t l = local(p);
+            c.slope[l] = 0;
+            const std::uint8_t t = c.terrain[l];
+            if (t == kNone || !terrains_[t].slopes || terrains_[t].water ||
+                !slopeFaces_[t][static_cast<std::size_t>(auxOf(c.level[l]))] ||
+                (heldAt(p) & kKeep) != 0)
+                continue;
+            const int lv = levelOf(c.level[l]);
+            if (lv == 0) continue;
+            int low = 0;
+            constexpr std::array<TilePos, 4> kCorner{{{-1, -1}, {1, -1}, {1, 1}, {-1, 1}}};
+            for (int k = 0; k < 4; ++k) {
+                const TilePos s = kCorner[static_cast<std::size_t>(k)];
+                for (const TilePos d : {TilePos{s.x, 0}, TilePos{0, s.y}, s}) {
+                    const TilePos q{x + d.x, y + d.y};
+                    if (levelAt(q) == lv - 1 && (heldAt(q) & kNoPull) == 0) low |= 1 << k;
+                }
+            }
+            c.slope[l] = static_cast<std::uint8_t>(low);
+        }
+    // Pass 2: tiles with every corner low become knolls or ridges (a ridge runs on through a
+    // neighbour along its axis that ridges the same way at the same level).
+    const auto lowOf = [&](TilePos q) {
+        return inBounds(q) ? std::min<int>(chunk(q).slope[local(q)], 15) : 0;
+    };
+    for (int y = area.y0; y < area.y1; ++y)
+        for (int x = area.x0; x < area.x1; ++x) {
+            const TilePos p{x, y};
+            if (lowOf(p) != 15) continue;
+            const int lv = level(p);
+            const int axis = slopeRidgeAxis(15, lowerEdges(p, lv));
+            const auto ridges = [&](TilePos q) {
+                return inBounds(q) && terrainAt(q) != kNone && level(q) == lv && lowOf(q) == 15 &&
+                       slopeRidgeAxis(15, lowerEdges(q, lv)) == axis;
+            };
+            const TilePos before = axis == 1 ? TilePos{x - 1, y} : TilePos{x, y - 1};
+            const TilePos after = axis == 1 ? TilePos{x + 1, y} : TilePos{x, y + 1};
+            chunk(p).slope[local(p)] = static_cast<std::uint8_t>(slopeOf(
+                15, lowerEdges(p, lv), axis != 0 && ridges(before), axis != 0 && ridges(after)));
+        }
 }
 
 void WorldMap::piecesIn(TileRect r, std::vector<DrawPiece>& out) const {
@@ -756,6 +889,8 @@ std::expected<void, std::string> WorldMap::applyHome(const HomeDelta& delta, Dia
     }
     if (full) {
         rebuildAll(diag);
+        // The home stands at its own level: the land round it slopes toward that.
+        shapeSlopesIn({hr.x0 - 2, hr.y0 - 2, hr.x1 + 2, hr.y1 + 2});
     } else {
         index(hr, homeBegin_, diag);
         slots_.resize(homeSlotBegin_);

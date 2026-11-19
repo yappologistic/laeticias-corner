@@ -125,6 +125,7 @@ add_library(lc_world STATIC
   src/world/region_file.cpp
   src/world/road_graph.cpp
   src/world/set_catalog.cpp
+  src/world/slopes.cpp
   src/world/world_file.cpp
   src/world/world_map.cpp
 )
@@ -230,8 +231,10 @@ add_library(lc_worldview STATIC
   src/worldview/places.cpp
   src/worldview/renderer.cpp
   src/worldview/renderer_gpu.cpp
+  src/worldview/renderer_terrain.cpp
   src/worldview/script.cpp
   src/worldview/soundscape.cpp
+  src/worldview/terrain.cpp
   src/worldview/theme.cpp
   src/worldview/weather_field.cpp
   src/worldview/viewer.cpp
