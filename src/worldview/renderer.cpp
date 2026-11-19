@@ -76,10 +76,10 @@ void diagonals(TileRect r, float halfW, float x0, float x1, F&& f) {
     }
 }
 
-// The region of the tile under a world px point (on the ground plane), -1 off the grid.
-int regionUnder(const world::WorldMap& m, Iso iso, Vec2 px) {
-    const Vec2 t = iso.toTile(px);
-    const TilePos p{static_cast<int>(std::floor(t.x)), static_cast<int>(std::floor(t.y))};
+// The region of the tile a world px point lies on (the land's level counted), -1 off the grid.
+int regionUnder(const world::WorldMap& m, Iso iso, int lift, Vec2 px) {
+    const TilePos p = tileTopAt(iso, lift, kMaxLevel, px,
+                                [&](TilePos t) { return m.inBounds(t) ? m.level(t) : -1; });
     return m.inBounds(p) ? m.regionAt(p) : -1;
 }
 
@@ -2070,7 +2070,7 @@ void WorldView::jumped(Vec2 centre) {
     std::array<world::RegionWeight, 16> w{};
     const int n = map_.themeWeights(iso_.toTile(centre), w);
     theme_.reset(std::span(w).first(static_cast<std::size_t>(n)));
-    places_.reset(regionUnder(map_, iso_, centre));
+    places_.reset(regionUnder(map_, iso_, lvl_, centre));
     themed_ = true;
     jumped_ = true;
 }
@@ -2144,7 +2144,7 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     std::array<world::RegionWeight, 16> weights{};
     const int nw = map_.themeWeights(iso_.toTile(c), weights);
     const auto ws = std::span(weights).first(static_cast<std::size_t>(nw));
-    const int here = regionUnder(map_, iso_, c);
+    const int here = regionUnder(map_, iso_, lvl_, c);
     if (!themed_) {
         theme_.reset(ws);
         places_.reset(here);
