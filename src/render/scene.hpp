@@ -110,6 +110,9 @@ public:
     void setSeason(int season);
     // The ground through the world's packed decode (the shader path), or not.
     void setGroundDecode(std::optional<GroundDecode> d) { ground_->setDecode(std::move(d)); }
+    // The blend of what stands in the home (items, actors, ghosts and fades) when embedded: the
+    // world's coverBlend, so nothing drawn faintly over water ends up under it.
+    void setCoverBlend(SDL_BlendMode b) { cover_ = b; }
     // Reduce motion (living-corner R10.8): particles at 30 %, no streaks, moths, z's, pulse
     // ring or gust wave; land opens in a short fade.
     void setReduceMotion(bool on) {
@@ -276,6 +279,8 @@ private:
     int targetH_ = 0;
     Xform xf_; // world -> target for this frame
     SDL_BlendMode blend_ = SDL_BLENDMODE_BLEND;
+    // Embedded objects' blend (setCoverBlend).
+    SDL_BlendMode cover_ = SDL_BLENDMODE_BLEND;
     Vec2 topLeft_; // world px at the window's top-left corner
     FRect view_;   // world px the target covers
     float now_ = 0;

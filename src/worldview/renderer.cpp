@@ -2031,6 +2031,10 @@ std::optional<GroundDecode> WorldView::homeGroundDecode() {
     return d;
 }
 
+SDL_BlendMode WorldView::coverBlend() const {
+    return post_ ? post_->coverBlend() : SDL_BLENDMODE_BLEND;
+}
+
 void WorldView::seasonAt(TilePos p) {
     lookSeason_ = season_;
     if (!decoder_) return;

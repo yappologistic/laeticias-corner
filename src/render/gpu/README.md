@@ -30,10 +30,11 @@ renderer and the fallback wherever this path cannot be made; headless runs stay 
    fragment shaders only, so the bend is in the vertices (ten per swaying sprite, on the CPU).
    Water tiles stay still in the cells and are **marked**: the cell's alpha is lowered a step
    (to 0.98) under them by a blend that keeps colour (`Post::markBlend`), one blend switch per
-   diagonal; anything drawn over water later restores alpha 1. The home's ground goes over the
-   world's rim tiles under it once `Post::cut` (`cut.frag`) has taken their alpha away where it
-   covers them, so its water keeps its marks up to the home's last row. The tile **water
-   field** round the view (shore distance, river flow, flags and level; at most 512², rebuilt on
+   diagonal; anything drawn over water later restores alpha 1 (the home's pieces through
+   `Post::coverBlend`, so one drawn faintly, a ghost or a fade, does too). The home's ground
+   goes over the world's rim tiles under it once `Post::cut` (`cut.frag`) has taken their alpha
+   away where it covers them, so its water keeps its marks up to the home's last row. The tile
+   **water field** round the view (shore distance, river flow, flags and level; at most 512², rebuilt on
    a worker as the view pans) feeds the final pass.
 2. **Lights**: one pool per burning light of the visible chunks (the list cached and rebuilt on
    a chunk crossing, an hour step or every 30 frames; flicker per frame), the home's lamps and

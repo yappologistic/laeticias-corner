@@ -304,6 +304,9 @@ public:
     // The home scene's ground through the same decode, with the home's climate and snow; nullopt
     // without the packed pages.
     [[nodiscard]] std::optional<GroundDecode> homeGroundDecode();
+    // How the home scene draws what stands in the world (band B6): over the shader path's water
+    // it must restore alpha 1 however faintly it is drawn (gpu::Post::coverBlend).
+    [[nodiscard]] SDL_BlendMode coverBlend() const;
     [[nodiscard]] gpu::Clouds clouds() const { return clouds_; }
 
 private:

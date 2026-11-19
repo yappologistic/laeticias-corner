@@ -110,6 +110,10 @@ public:
     [[nodiscard]] SDL_BlendMode markBlend() const { return markBlend_; }
     static constexpr float kWaterMark = 0.02f;
     static constexpr float kMaybeWaterMark = 0.045f; // water if the colour is water's
+    // What stands over water (draw-order.md band B6) restores alpha 1 however faintly it is
+    // drawn: colour blended as SDL_BLENDMODE_BLEND, alpha added (a ghost or a fading piece
+    // drawn at half strength over water stays on top of it instead of under the water pass).
+    [[nodiscard]] SDL_BlendMode coverBlend() const { return coverBlend_; }
     // A layer of ground laid over other ground (the home's over the world's rim tiles) is first
     // cut, then drawn over as usual, so the target holds the layer's own alpha (its water mark
     // among it) wherever the layer covers: while on, draws with cutBlend() take the target's
@@ -186,6 +190,7 @@ private:
     std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
     SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode markBlend_ = SDL_BLENDMODE_INVALID;
+    SDL_BlendMode coverBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode cutBlend_ = SDL_BLENDMODE_INVALID;
 };
 
