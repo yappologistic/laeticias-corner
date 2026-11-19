@@ -102,6 +102,7 @@ def _pnyx_ground(x):
 PNYX_SEED = 421
 PNYX_BX, PNYX_BY = 18.0, 8.5 * T         # the bema's middle: the seating ledges centre on it
 PNYX_STEP = 11.0                         # a ledge's depth (design units)
+PNYX_FRONT = 2.9                         # the front rows' floor: one walker's step below the bema
 
 
 def _pnyx_arcs(X, Y):
@@ -114,7 +115,10 @@ def _pnyx_top(X, Y):
     ledge = (r % PNYX_STEP) / PNYX_STEP       # 0 at a riser's foot, 1 at the next riser
     seated = np.clip((r - 34.0) / 8.0, 0, 1)  # the ledges start behind the front rows
     n = (value_noise(X, Y, X * 0, 9.0, PNYX_SEED) - 0.5) * 0.6
-    return np.maximum(_pnyx_ground(X) + n - seated * 0.9 * ledge, 0.3)
+    z = np.maximum(_pnyx_ground(X) + n - seated * 0.9 * ledge, 0.3)
+    # The front rows stand on a levelled terrace one walker's step below the bema.
+    front = (X >= 2 * T) & (X < 3 * T)
+    return np.where(front, PNYX_FRONT - 0.2, z)
 
 
 def pnyx(m):
@@ -165,7 +169,8 @@ def _pnyx_landmark():
     # The bema's ends drop a cliff to the rock beside them: those two tiles are not walk tiles.
     walk = [t for t in tiles(1, 14, 0, 16) if t not in ((1, 6), (1, 10))]
     # The front rows (before the ledges begin) keep one walker's step below the bema.
-    floor = {(x, y): (BEMA if x == 1 and 7 <= y <= 9 else float(_pnyx_ground((x + 1) * T) + 0.6) if x <= 2 else
+    floor = {(x, y): (BEMA if x == 1 and 7 <= y <= 9 else float(_pnyx_ground((x + 1) * T) + 0.6) if x < 2 else
+                      PNYX_FRONT if x == 2 else
                       float(_pnyx_top(np.array((x + 0.5) * T), np.array((y + 0.5) * T))) + 0.2) for x, y in walk}
     spots = [{"t": [x, y], "face": "-x"} for x in (4, 6, 8, 10) for y in (3, 6, 9, 12)]
     return Landmark((15, 17), (0, 24), ref("pnyx"), walk=walk, floor=floor,

@@ -5,6 +5,7 @@
 #include "audio/mixer.hpp"
 #include "audio/stems.hpp"
 #include "audio/wav.hpp"
+#include "audio_meter.hpp"
 #include "core/rng.hpp"
 #include "core/tuning.hpp"
 #include "render/atlas.hpp"
@@ -16,6 +17,7 @@
 #include "test_support.hpp"
 #include "ui/font.hpp"
 #include "ui/hud.hpp"
+#include "ui/map_screen.hpp"
 #include "ui/menus.hpp"
 #include "ui/painter.hpp"
 
@@ -27,6 +29,8 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <format>
+#include <fstream>
 #include <set>
 #include <tuple>
 
@@ -1014,6 +1018,55 @@ TEST_CASE("the corner's news folds away when the view leaves home and waits for 
     CHECK(hud.toastText() == "New land: the meadow");
 }
 
+TEST_CASE("towns on the map carry readable names that never overlap (V6-018)") {
+    UiFixture ui;
+    // The overview's size, the three cities and a cluster of towns as close as Ostia and Portus.
+    Sprite art;
+    art.w = 2560;
+    art.h = 896;
+    const std::vector<MapPlace> places{{"Roma", "", "", {300, 420}, MapMarker::City},
+                                       {"Ostia", "", "", {262, 452}, MapMarker::Town},
+                                       {"Portus", "", "", {258, 446}, MapMarker::Town},
+                                       {"Tibur", "", "", {330, 405}, MapMarker::Town},
+                                       {"Mons Albanus", "", "", {322, 440}, MapMarker::Town},
+                                       {"Capua", "", "", {420, 520}, MapMarker::Town},
+                                       {"Beneventum", "", "", {470, 515}, MapMarker::Town},
+                                       {"Brundisium", "", "", {700, 560}, MapMarker::Town},
+                                       {"Delphi", "", "", {1200, 520}, MapMarker::Town},
+                                       {"Corinth", "", "", {1240, 560}, MapMarker::Town},
+                                       {"Athenai", "", "", {1300, 580}, MapMarker::City},
+                                       {"Parsa", "", "", {2400, 700}, MapMarker::City}};
+    MapModel m;
+    m.image = &art;
+    m.places = places;
+    for (const Vec2 screen : {Vec2{1580, 845}, Vec2{960, 600}, Vec2{2560, 1440}})
+        for (const float s : {1.0f, 1.5f, 2.0f}) {
+            REQUIRE(ui.font.build(ui.renderer.get(), s));
+            MapScreen map;
+            map.open(true);
+            for (int i = 0; i < 30; ++i)
+                map.update(-1, -1, false, false, false, m, ui.font, screen, s, 1.0f / 60.0f);
+            const auto labels = map.labels();
+            INFO(screen.x << "x" << screen.y << " at " << s);
+            // Most towns named (at a small window all but the crowded pair); with large
+            // text in a small window the crowded ones keep their names for the hover tip.
+            MESSAGE(labels.size() << " of 9 towns named");
+            CHECK(labels.size() >= (screen.x >= 1580 && s <= 1.0f ? 7u : 3u));
+            for (std::size_t i = 0; i < labels.size(); ++i) {
+                const Box& a = labels[i].box;
+                CHECK(a.h >= ui.font.lineHeight(Face::Body)); // the interface's own text size
+                CHECK(a.x >= 0);
+                CHECK(a.x + a.w <= screen.x);
+                for (std::size_t j = i + 1; j < labels.size(); ++j)
+                    CHECK_FALSE(overlap(a, labels[j].box));
+                for (std::size_t k = 0; k < places.size(); ++k) {
+                    const Vec2 c = map.markerAt(m, static_cast<int>(k));
+                    CHECK_FALSE(a.contains(c.x, c.y));
+                }
+            }
+        }
+}
+
 TEST_CASE("sketchbook widgets have ids of their own: many places, no nook, a wish's Not now") {
     UiFixture ui;
     const Catalog& c = test::catalog();
@@ -1280,7 +1333,9 @@ TEST_CASE("a scale the glyphs cannot be built at keeps the last atlas (L-014)") 
 
 namespace {
 
-// A click is a jump between neighbouring samples far beyond the local motion of the signal.
+// A click is a jump between neighbouring samples far beyond the local motion of the signal,
+// and a corner (the signal turns at once, as a step or an impulse does; a loud high tone, a
+// bird's chirp, is a jump between samples too but bends smoothly).
 int clicksIn(const std::vector<float>& s) {
     constexpr std::size_t kWindow = 512;
     const std::size_t frames = s.size() / 2;
@@ -1294,7 +1349,9 @@ int clicksIn(const std::vector<float>& s) {
         for (std::size_t i = 0; i < std::min(frames, 2 * kWindow); ++i) sum += d[i] * d[i];
         for (std::size_t i = kWindow; i + kWindow < frames; ++i) {
             const double local = std::sqrt((sum - d[i] * d[i]) / (2.0 * kWindow - 1));
-            if (d[i] > 0.05f && d[i] > 8.0 * local + 0.01) ++clicks;
+            const auto at = [&](std::size_t k) { return s[k * 2 + static_cast<std::size_t>(ch)]; };
+            const float bend = i + 1 < frames ? std::abs(at(i + 1) - 2 * at(i) + at(i - 1)) : 0;
+            if (d[i] > 0.05f && d[i] > 8.0 * local + 0.01 && bend > 0.9f * d[i]) ++clicks;
             sum += static_cast<double>(d[i + kWindow]) * d[i + kWindow] -
                    static_cast<double>(d[i - kWindow]) * d[i - kWindow];
         }
@@ -1371,4 +1428,70 @@ TEST_CASE("capture: the year away from home is never silent, balanced, unclipped
     CHECK(loud == 0);
     CHECK(std::abs(10.0 * std::log10(left / right)) < 3.0);
     CHECK(clicksIn(*s) == 0);
+}
+
+// Analyses the world's mix (path in LC_AUDIO_MIX, segments in its .marks): loudness, peaks,
+// balance and the buses' shares of each situation, against the targets in core/tuning.hpp.
+TEST_CASE("capture: the mix across the world is balanced, unclipped and smooth") {
+    const char* file = std::getenv("LC_AUDIO_MIX");
+    if (file == nullptr) {
+        MESSAGE("LC_AUDIO_MIX not set; run through ctest");
+        return;
+    }
+    const auto s = readWavFloat(file);
+    REQUIRE_MESSAGE(s.has_value(), s.error());
+    std::ifstream marks(std::string(file) + ".marks");
+    REQUIRE(marks);
+    struct Segment {
+        std::string name;
+        meter::Reading r;
+        double music = 0, fx = 0, amb = 0; // dB of the buses' sum
+    };
+    std::vector<Segment> segs;
+    std::string name;
+    std::size_t from = 0, to = 0;
+    double em = 0, ef = 0, ea = 0;
+    while (marks >> name >> from >> to >> em >> ef >> ea) {
+        REQUIRE(to * 2 <= s->size());
+        const std::span<const float> part(s->data() + from * 2, (to - from) * 2);
+        const double sum = em + ef + ea + 1e-20;
+        Segment g{name, meter::measure(part), 10 * std::log10(em / sum + 1e-12),
+                  10 * std::log10(ef / sum + 1e-12), 10 * std::log10(ea / sum + 1e-12)};
+        MESSAGE(
+            std::format("{:<26} {:6.1f} LUFS  st {:6.1f}  tp {:6.1f}  bal {:5.1f}  low {:5.1f}  "
+                        "high {:6.1f}  jump {:4.1f}  music {:6.1f}  fx {:6.1f}  amb {:6.1f}",
+                        g.name, g.r.integrated, g.r.shortMax, g.r.truePeak, g.r.balance, g.r.low,
+                        g.r.high, g.r.jump, g.music, g.fx, g.amb));
+        const std::vector<float> copy(part.begin(), part.end());
+        CHECK_MESSAGE(clicksIn(copy) == 0, g.name);
+        CHECK_MESSAGE(g.r.truePeak <= tuning::kMixTruePeak, g.name);
+        CHECK_MESSAGE(std::abs(g.r.balance) <= tuning::kMixBalance, g.name);
+        if (g.name != "mute") { // the mute fades to silence and back on purpose
+            CHECK_MESSAGE(g.r.integrated >= tuning::kMixQuietest, g.name);
+            CHECK_MESSAGE(g.r.integrated <= tuning::kMixLoudest, g.name);
+            CHECK_MESSAGE(g.r.jump <= tuning::kMixJump, g.name);
+        }
+        // A city's piece is heard over its streets.
+        if (g.music > -100 && !g.name.starts_with("home") && !g.name.starts_with("title") &&
+            !g.name.starts_with("travel") && g.name != "map.open" && g.name != "pause" &&
+            g.name != "mute")
+            CHECK_MESSAGE(g.music - g.amb >= tuning::kMixMusicUnder, g.name);
+        segs.push_back(g);
+    }
+    REQUIRE(segs.size() > 30);
+    // Neighbouring places are within a few LU of each other (QA5 Q5-S-01: the stretches were
+    // dropouts beside the cities).
+    const auto loud = [&](std::string_view n) {
+        const auto it = std::ranges::find(segs, n, &Segment::name);
+        REQUIRE_MESSAGE(it != segs.end(), n);
+        return it->r.integrated;
+    };
+    static constexpr std::pair<std::string_view, std::string_view> kNeighbours[] = {
+        {"home.summer.day", "latium.road"},     {"latium.road", "rome.market"},
+        {"rome.market", "ostia.harbour"},       {"ostia.harbour", "tyrrhenian.sea"},
+        {"athens.market", "corinth.town"},      {"corinth.town", "sparta.villages"},
+        {"parsa.market", "persian_gates.road"}, {"persian_gates.road", "zagros.land"},
+        {"rome.market", "athens.market"},       {"athens.market", "parsa.market"}};
+    for (const auto& [a, b] : kNeighbours)
+        CHECK_MESSAGE(std::abs(loud(a) - loud(b)) <= tuning::kMixNeighbours, a << " / " << b);
 }

@@ -127,13 +127,17 @@ def packed_path(png):
     return png.with_name(png.stem + ".p.png")
 
 
+def packed_side(png):
+    return png.with_name(png.stem + ".p.json")
+
+
 def write_packed(png, manifest: dict, trimmed: dict, shape, ramps_rel: str) -> None:
     """`<page>.p.png` and `<page>.p.json` beside the colour page `png`."""
     img, raw = packed_page(shape, manifest, trimmed)
     out = packed_path(png)
     Image.fromarray(img, "RGBA").save(out, optimize=True)
     doc = {"version": 1, "packed": out.name, "colour": png.name, "ramps": ramps_rel, "colour_only": raw}
-    png.with_name(png.stem + ".p.json").write_text(json.dumps(doc, indent=1) + "\n")
+    packed_side(png).write_text(json.dumps(doc, indent=1) + "\n")
 
 
 def half(t: Sprite) -> Sprite:
@@ -194,40 +198,45 @@ def _depth(mask: np.ndarray) -> np.ndarray:
     return d[1:-1, 1:-1]
 
 
-def water_sprite(key: str, t: Sprite, water: np.ndarray) -> Sprite | None:
-    """The water data of one trimmed sprite, the same size and anchor as its colour rectangle:
-    R 255 on open water (the pixels on a water ramp: rims, steps and anything standing in the
-    water are not), G its depth in art px below the surface (from the rim, capped), B the bed
-    (1: a built basin's floor), A 255 over the whole rectangle so it is never trimmed."""
-    w = words(key, t)
-    if w is None:
-        return None
-    mask = water[(w >> 3) & 0xFF] & (t.rgba[..., 3] == 255)
+def water_sprite(words_: np.ndarray, ox: int, oy: int, water: np.ndarray) -> Sprite | None:
+    """The water data of one sprite from its packed words, anchored like its colour sprite and
+    covering only its water: R 255 on open water (the pixels on a water ramp: rims, steps and
+    anything standing in the water are not), G its depth in art px below the surface (from the
+    rim, capped), B the bed (1: a built basin's floor), A 255 on water (the rectangle is the
+    water's bounds; the anchor puts it over the colour sprite)."""
+    mask = water[(words_ >> 3) & 0xFF] & (words_ != 0)
     if mask.sum() < WATER_MIN:
         return None
     depth = np.clip(_depth(mask), 0, WATER_DEPTH_CAP)
-    rgba = np.zeros(t.rgba.shape, np.uint8)
+    rgba = np.zeros(words_.shape + (4,), np.uint8)
     rgba[..., 0] = mask * 255
     rgba[..., 1] = np.where(mask, depth, 0)
     rgba[..., 2] = mask * 1
-    rgba[..., 3] = 255
-    return Sprite(rgba, t.ox, t.oy)
+    rgba[..., 3] = mask * 255
+    return Sprite(rgba, ox, oy)
 
 
-def write_water_page(png, trimmed: dict) -> tuple[int, int, int]:
+def write_water_page(png, pages: list) -> tuple[int, int, int]:
     """Every item sprite holding water (a basin, a harbour, a fountain's bowl, a cistern) on one
-    page `png` + manifest, rectangles the size of the colour ones, so the shader path marks
-    their water and gives it depth as it does for water tiles. Returns (width, height, count)."""
+    page `png` + manifest, from the written pages ([(colour png, manifest)]: the packed twins
+    give each pixel's ramp), so the shader path marks their water and gives it depth as it does
+    for water tiles. Returns (width, height, count)."""
     water = water_classes()
     out = {}
-    for key in sorted(trimmed):
-        if key.startswith("item/") and "/shadow/" not in key and "/glow/" not in key:
-            s = water_sprite(key, trimmed[key], water)
-            if s is not None:
+    for colour, manifest in pages:
+        side = json.loads(packed_side(colour).read_text())
+        raw = set(side["colour_only"])
+        packed = np.asarray(Image.open(packed_path(colour)).convert("RGBA"))     # words built per sprite
+        for key in sorted(manifest):
+            if not key.startswith("item/") or key in raw or "/shadow/" in key or "/glow/" in key:
+                continue
+            r = manifest[key]
+            sub = rgba_word(packed[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]])
+            if (s := water_sprite(sub, r["ox"], r["oy"], water)) is not None:
                 out[key] = s
-    atlas, manifest = pack.pack(out) if out else (np.zeros((1, 1, 4), np.uint8), {})
+    atlas, man = pack.pack(out) if out else (np.zeros((1, 1, 4), np.uint8), {})
     Image.fromarray(atlas, "RGBA").save(png, optimize=True)
-    doc = {"version": 1, "image": png.name, "channels": {"r": "water (255)", "g": "depth px", "b": "bed (1 basin)"},
-           "sprites": manifest}
+    doc = {"version": 1, "image": png.name, "anchor": "as the colour sprite's",
+           "channels": {"r": "water (255)", "g": "depth px", "b": "bed (1 basin)"}, "sprites": man}
     png.with_suffix(".json").write_text(json.dumps(doc, indent=1) + "\n")
-    return atlas.shape[1], atlas.shape[0], len(manifest)
+    return atlas.shape[1], atlas.shape[0], len(man)

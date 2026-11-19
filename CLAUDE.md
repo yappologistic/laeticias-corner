@@ -375,6 +375,16 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   file brings sound, weather and life, no tint or haze) and calls the scene at its turns
   (ground, objects, light, glow, sky). No rim cliffs or waterfalls; the road, wall and gate meet
   the world's road. Beyond the grid the sea runs on into haze. The world wears the season's looks.
+- **Seasons by climate (SDL's gpu driver, every look tier).** The sets' pages and the home page
+  load as their packed twins and world sprites draw through one decode shader
+  (`render/gpu/decoder.*`, `assets/shaders/packed.frag`): each region's climate and the calendar's
+  month (`lc::calendarDay`) pick its grass and leaf states from the ramp table, and snow lies on
+  snow-catching texels above the climate's snow line, measured against the land's level (built
+  platforms take the level of the natural ground round them), building and thawing over a
+  morning. Where climates meet the season blends over a band of about 20 tiles broken by noise;
+  the home climate keeps its own drawn looks and its neighbours carry the blend; the home scene's
+  ground draws through the same decode. **Stated limit:** on the OpenGL and software renderers
+  the world outside the home has one look all year (only its `@season` sprites change).
 - **Roaming.** The camera roams the whole grid (`Home` returns to the corner); zooming out past
   1/4 opens the map. Away from the home region the home's own panels (building dock and drawer,
   wish tray, land chip) fold away and return with it; the place, map, journal and cards stay. A
@@ -382,8 +392,10 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   conditions, wishes, nooks and actors stay over the home's open land.
 - **Map and travel.** `M` or the dock's map button: the overview art with the home, the cities and
   visited towns; a click fades through paper to the place within a second, with its arrival
-  motif. Mute is `Ctrl+M` or the dock's speaker button (lit while muted, saved at once); a game
-  that starts muted says so once in a toast.
+  motif; visited towns carry their names on plates beside their markers (never overlapping).
+  Mute is `Ctrl+M` or the dock's speaker button (lit while muted, saved at once); a game
+  that starts muted says so once in a toast. The title card and the weather button show what
+  falls where the camera is (snow only where the climate has it that month).
 - **Places.** The region under the view (held a moment) names the place; arriving in a named
   place (home, city, town) shows its caption once per visit (with its native form when the font
   can draw it: Nunito with Noto Sans and Noto Sans Old Persian as fallbacks; scripts that need
@@ -421,12 +433,13 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   seams ducking the rest, zones by nearness and their `months` (panned from their nearest point,
   centred inside), item loops (fountains, lit braziers; `worked` ones in their `hours`; any in its
   `months`) as loud as the nearest and panned from all in reach, a
-  city's music fading in over 4 s from a phrase start and out when left (ducked 2 dB under a
-  sting); the home's stems and beds play by its share of the view. Season and month are the
+  city's music (on the music bus, never muffled) fading in over 4 s from a phrase start and out
+  when left (ducked 2 dB under a sting); the home's stems and beds play by its share of the view;
+  the front door plays its own full mix (`music/day.ogg`, `night.ogg`) over the home's beds. Season and month are the
   world calendar's (`calendarDay`), snow lying is the view's climate that month.
   City sound (`worldview/city_sound.hpp`, from the region files' `theme.sound` and districts'
   `sound`): the crowd family by people in view (handful, market, festival; equal-power between
-  neighbouring levels, hushed in rain), wind by strength, wind in leafy crowns (`wind.trees`,
+  neighbouring levels, hushed in rain, stepped back 6 dB under a city's music so the music leads), wind by strength, wind in leafy crowns (`wind.trees`,
   bare in winter: `wind.bare`) by the district's `leaves` share, rain and the district's two
   largest surfaces by intensity, the nature beds of dawn, dusk and night of the season (the
   region's `nature_seasons.<season>` and `nature_snow` {day, night} when written, else the world
@@ -444,6 +457,10 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   90 s of rain, and a new season's first dawn: `stings.season`, else `sfx/<set>/sting_season.wav`).
   `expect sound beds` holds every region to a loaded bed in every month by day and night;
   whatever the engine had to guess from the manifest's tags is logged once per region.
+  The mix is measured by `audio_mix_world` (46 situations captured with `set mark` segments:
+  BS.1770 loudness, true peak, balance, momentary steps, bus shares) against `kMix*` in
+  `core/tuning.hpp`: every situation −33 to −18 LUFS, neighbours within 4.5 LU, peaks under
+  −1 dBTP, a city's music not masked by its streets.
   Away from home the corner's toasts fold away and wait for the return; the home's panels
   (building dock, undo and redo, wish tray, land chip) fold away.
 - **Weather is world-wide.** Clouds and showers come from a deterministic field over the whole
@@ -525,7 +542,9 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   visible panel (a landmark's card too) holds the pointer, the name beside it keeps clear of
   the title card, a card and the docks; a card's text takes the height above the docks and a
   long title is cut short; a key let go under the menus lets go. The settings flow into as many
-  columns as fit, tighten their rows, and scroll as one column when even that is too tall. A glyph atlas that cannot be
+  columns as fit, tighten their rows, and scroll as one column when even that is too tall; the
+  Look and Clouds rows carry a line saying what they do, and a Look this computer cannot draw
+  says so. A glyph atlas that cannot be
   built at a new interface scale keeps the last one. The window is at least 960×600.
 - The front door (R10): the title over the last world (Continue or Begin, Worlds, Settings,
   Quit), "Your worlds" (cards with thumbnails; play, rename, delete with confirmation, new world

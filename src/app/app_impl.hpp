@@ -580,6 +580,9 @@ private:
     Phase lastPhase_ = Phase::Day;
     int lastDay_ = 0;
     std::vector<int> dayStems_; // loops of each piece's stems
+    int titleDay_ = -1;         // the front door's full mixes
+    bool lookFellBack_ = false; // a shader tier was asked for and no gpu renderer could be made
+    int titleNight_ = -1;
     std::vector<int> nightStems_;
     std::vector<std::uint8_t> stemOn_; // per catalog stem (day, then night): unlocked
     Profile profile_;
@@ -676,6 +679,12 @@ private:
     Hud hud_;
     Mixer mixer_;
     std::vector<float> capture_; // the mix, when capturing audio
+    std::string marks_;          // segments ended: name, first and last frame, bus energies
+    std::string mark_;           // the segment under way (`set mark NAME`)
+    std::size_t markStart_ = 0;
+    void endSegment();
+    bool captureSkip_ = false;      // `set mark ~...`: mixed but not kept in the capture
+    std::vector<float> skipBuffer_; // where a skipped stretch is mixed
     int pixelW_ = 0;
     int pixelH_ = 0;
     float density_ = 1;

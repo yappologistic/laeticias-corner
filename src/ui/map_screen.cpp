@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 namespace lc {
 namespace {
@@ -46,7 +47,6 @@ Vec2 MapScreen::markerAt(const MapModel& m, int place) const {
 
 void MapScreen::update(float x, float y, bool inside, bool pressed, bool released,
                        const MapModel& m, const Font& font, Vec2 screen, float s, float dt) {
-    (void)font;
     clicked_.reset();
     scale_ = s;
     screen_ = screen;
@@ -67,6 +67,7 @@ void MapScreen::update(float x, float y, bool inside, bool pressed, bool release
     const float fh = ih * k_ + 2 * pad + header;
     frame_ = {std::round((screen.x - fw) * 0.5f), std::round((screen.y - fh) * 0.5f), fw, fh};
     image_ = {frame_.x + pad, frame_.y + header + pad, iw * k_, ih * k_};
+    placeLabels(m, font);
     hovered_ = -1;
     if (!open_ || !inside) {
         if (released) pressed_ = -1;
@@ -86,6 +87,46 @@ void MapScreen::update(float x, float y, bool inside, bool pressed, bool release
     if (released) {
         if (pressed_ >= 0 && pressed_ == hovered_) clicked_ = hovered_;
         pressed_ = -1;
+    }
+}
+
+void MapScreen::placeLabels(const MapModel& m, const Font& font) {
+    // Each town's name to the right of its marker, else left, above or below: the first place
+    // clear of the names already set, of every marker and of the art's edge.
+    labels_.clear();
+    if (!open_ && t_ <= 0) return;
+    const float s = scale_;
+    const float tp = theme::kTipPad * s * 0.5f;
+    const float h = font.lineHeight(Face::Body) + tp;
+    const auto overlaps = [](const Box& a, const Box& b) {
+        return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    };
+    for (std::size_t i = 0; i < m.places.size(); ++i) {
+        const MapPlace& pl = m.places[i];
+        if (pl.marker != MapMarker::Town || pl.name.empty()) continue;
+        const Vec2 c = toScreen(pl.at);
+        const float w = font.measure(Face::Body, pl.name) + 2 * tp;
+        const float gap = (radiusOf(pl.marker) + 3.0f) * s;
+        const Box tries[] = {{c.x + gap, c.y - h * 0.5f, w, h},
+                             {c.x - gap - w, c.y - h * 0.5f, w, h},
+                             {c.x - w * 0.5f, c.y - gap - h, w, h},
+                             {c.x - w * 0.5f, c.y + gap, w, h}};
+        for (const Box& b : tries) {
+            const bool inside = b.x >= image_.x && b.y >= image_.y &&
+                                b.x + b.w <= image_.x + image_.w &&
+                                b.y + b.h <= image_.y + image_.h;
+            bool clear = inside;
+            for (const Label& l : labels_) clear = clear && !overlaps(b, l.box);
+            for (std::size_t j = 0; j < m.places.size() && clear; ++j) {
+                const Vec2 d = toScreen(m.places[j].at);
+                const float r = (radiusOf(m.places[j].marker) + 1.0f) * s;
+                clear = !overlaps(b, {d.x - r, d.y - r, 2 * r, 2 * r});
+            }
+            if (clear) {
+                labels_.push_back({b, static_cast<int>(i)});
+                break;
+            }
+        }
     }
 }
 
@@ -125,6 +166,13 @@ void MapScreen::draw(Painter& p, const MapModel& m) const {
                     withAlpha(theme::kMapDotRim, a));
         p.roundRect({c.x - r, c.y - r, 2 * r, 2 * r}, r,
                     withAlpha(pl.marker == MapMarker::Home ? theme::kAccent : theme::kMapDot, a));
+    }
+    // The towns' names on dark plates, readable over any art.
+    const float lp = theme::kTipPad * s * 0.5f;
+    for (const Label& l : labels_) {
+        p.roundRect(l.box, theme::kTipRadius * s * 0.5f, withAlpha(theme::kMapLabelPlate, a), 0);
+        p.text(Face::Body, m.places[static_cast<std::size_t>(l.place)].name, l.box.x + lp,
+               l.box.y + lp * 0.5f + f.ascent(Face::Body), withAlpha(theme::kMapLabelInk, a));
     }
     if (hovered_ < 0) return;
     // The hovered place's name, its native form and its moment, in a tip above the marker.

@@ -57,6 +57,7 @@ struct MenuModel {
     int frames = 1;                // postcard frames unlocked (the arrows show when there are more)
     int look = 3;                  // the Look: 0 Classic .. 3 High (graphics plan §3.2)
     bool lookAfterRestart = false; // this renderer cannot show it: it applies on the next start
+    bool lookUnavailable = false;  // no shader renderer on this computer: Classic is drawn
     int clouds = 0;                // the clouds: 0 on, 1 shadows only, 2 off
 };
 
@@ -124,6 +125,9 @@ public:
     void open(Page p);
     void back();
     void closeAll();
+    // The front door is open (the title, the worlds and their dialogs, settings from the title):
+    // no world is being played under it.
+    [[nodiscard]] bool frontDoorOpen() const { return depth_ > 0 && pages_[1] != Page::Pause; }
     // A page that stops play: everything but the coach card and the photo bar.
     [[nodiscard]] bool blocking() const { return page() != Page::None; }
     // Keys while a page is open; true when the menus used it.
@@ -181,6 +185,7 @@ private:
         float rowX = 0;   // sliders: where their row (and label) begins
         bool on = false;
         bool enabled = true;
+        bool note = false; // a settings row's explanation: small, muted, under its row
     };
     Widget& add(int id, Kind kind, Box box, std::string_view label = {});
     void emit(MenuAction::Kind k, int arg = 0, int value = 0, std::string text = {});

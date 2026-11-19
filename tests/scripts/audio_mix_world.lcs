@@ -1,0 +1,345 @@
+# The mix across the world, captured (--audio-out) and measured by audio_mix_world_check:
+# segments named by `set mark` (a name starting with ~ is settling, not measured): the title,
+# the home by day and night in each season, the three cities at market hours, evening and the
+# small hours and on a festival, a harbour, two towns, a road, a mountain pass, the open sea,
+# rain and snow in three climates, the Saturnalia in the rain (everything at once), fast travel
+# between each pair of cities, the map, the pause menu and a mute and unmute.
+wait 20
+set mark title
+wait 240
+set mark ~
+click ui:menu:continue
+wait 8
+type Ear
+click ui:menu:create
+wait 10
+click ui:menu:skip_tour
+wait 10
+key home
+set season spring
+set clock day
+set mark ~
+wait 20
+fast 22
+set mark home.spring.day
+fast 5
+set clock night
+set mark ~
+wait 20
+fast 22
+set mark home.spring.night
+fast 5
+key home
+set season summer
+set clock day
+set mark ~
+wait 20
+fast 22
+set mark home.summer.day
+fast 5
+set clock night
+set mark ~
+wait 20
+fast 22
+set mark home.summer.night
+fast 5
+key home
+set season autumn
+set clock day
+set mark ~
+wait 20
+fast 22
+set mark home.autumn.day
+fast 5
+set clock night
+set mark ~
+wait 20
+fast 22
+set mark home.autumn.night
+fast 5
+key home
+set season winter
+set clock day
+set mark ~
+wait 20
+fast 22
+set mark home.winter.day
+fast 5
+set clock night
+set mark ~
+wait 20
+fast 22
+set mark home.winter.night
+fast 5
+set season auto
+set clock auto
+set day 0
+set time 0.1667
+set world forum 1
+set mark ~
+wait 20
+fast 22
+set mark rome.market
+fast 5
+set day 0
+set time 0.5417
+set world forum 1
+set mark ~
+wait 20
+fast 22
+set mark rome.evening
+fast 5
+set day 0
+set time 0.875
+set world forum 1
+set mark ~
+wait 20
+fast 22
+set mark rome.night
+fast 5
+set day 9
+set time 0.5104
+set world forum 1
+set mark ~
+wait 20
+fast 22
+set mark rome.festival
+fast 5
+set day 0
+set time 0.1667
+set world agora 1
+set mark ~
+wait 20
+fast 22
+set mark athens.market
+fast 5
+set day 0
+set time 0.5417
+set world agora 1
+set mark ~
+wait 20
+fast 22
+set mark athens.evening
+fast 5
+set day 0
+set time 0.875
+set world agora 1
+set mark ~
+wait 20
+fast 22
+set mark athens.night
+fast 5
+set day 1
+set time 0.0625
+set world agora 1
+set mark ~
+wait 20
+fast 22
+set mark athens.festival
+fast 5
+set day 5
+set time 0.1667
+set world terrace 1
+set mark ~
+wait 20
+fast 22
+set mark parsa.market
+fast 5
+set day 5
+set time 0.5417
+set world terrace 1
+set mark ~
+wait 20
+fast 22
+set mark parsa.evening
+fast 5
+set day 5
+set time 0.875
+set world terrace 1
+set mark ~
+wait 20
+fast 22
+set mark parsa.night
+fast 5
+set day 3
+set time 0.0625
+set world terrace 1
+set mark ~
+wait 20
+fast 22
+set mark parsa.festival
+fast 5
+set day 0
+set time 0.2083
+set world district:ostia/harbour 1
+set mark ~
+wait 20
+fast 22
+set mark ostia.harbour
+fast 5
+set world district:corinth/town 1
+set mark ~
+wait 20
+fast 22
+set mark corinth.town
+fast 5
+set world district:sparta/villages 1
+set mark ~
+wait 20
+fast 22
+set mark sparta.villages
+fast 5
+set world district:latium_italy/road 1
+set mark ~
+wait 20
+fast 22
+set mark latium.road
+fast 5
+set world district:attica_north/road 1
+set mark ~
+wait 20
+fast 22
+set mark attica.road
+fast 5
+set world district:persian_gates/road 1
+set mark ~
+wait 20
+fast 22
+set mark persian_gates.road
+fast 5
+set world district:zagros/land 1
+set mark ~
+wait 20
+fast 22
+set mark zagros.land
+fast 5
+set world district:tyrrhenian/sea 1
+set mark ~
+wait 20
+fast 22
+set mark tyrrhenian.sea
+fast 5
+set season spring
+set world forum 1
+set weather rain
+set mark ~
+wait 20
+fast 22
+set mark rain.rome
+fast 5
+set season spring
+set world district:ostia/town 1
+set weather rain
+set mark ~
+wait 20
+fast 22
+set mark rain.ostia
+fast 5
+set season spring
+set world terrace 1
+set weather rain
+set mark ~
+wait 20
+fast 22
+set mark rain.parsa
+fast 5
+set season winter
+set world district:zagros/land 1
+set weather rain
+set mark ~
+wait 20
+fast 22
+set mark snow.zagros
+fast 5
+set season winter
+set world district:iran_plateau/land 1
+set weather rain
+set mark ~
+wait 20
+fast 22
+set mark snow.iran
+fast 5
+set season winter
+set world district:anatolia/land 1
+set weather rain
+set mark ~
+wait 20
+fast 22
+set mark snow.anatolia
+fast 5
+set season auto
+set day 9
+set time 0.5104
+set world district:rome/subura 1
+set weather rain
+set mark ~
+wait 20
+fast 22
+set mark rome.festival.rain
+fast 5
+set weather natural
+set season spring
+set clock day
+set world forum 1
+wait 20
+fast 5
+set mark ~
+key m
+wait 20
+set mark travel.rome.athens
+click map:athens
+waitfor 90 travelling no
+wait 90
+set mark ~
+key m
+wait 20
+set mark travel.athens.parsa
+click map:parsa
+waitfor 90 travelling no
+wait 90
+set mark ~
+key m
+wait 20
+set mark travel.parsa.rome
+click map:rome
+waitfor 90 travelling no
+wait 90
+set mark ~
+key m
+wait 20
+set mark travel.rome.parsa
+click map:parsa
+waitfor 90 travelling no
+wait 90
+set mark ~
+key m
+wait 20
+set mark travel.parsa.athens
+click map:athens
+waitfor 90 travelling no
+wait 90
+set mark ~
+key m
+wait 20
+set mark travel.athens.rome
+click map:rome
+waitfor 90 travelling no
+wait 90
+set mark ~
+wait 30
+set mark map.open
+key m
+wait 120
+key escape
+wait 30
+set mark pause
+key escape
+wait 150
+click ui:menu:resume
+wait 60
+set mark mute
+key ctrl+m
+wait 60
+key ctrl+m
+wait 120
+quit

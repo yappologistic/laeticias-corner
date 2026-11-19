@@ -64,6 +64,9 @@
 //   set day N               the calendar day (the season follows unless pinned)
 //   set grow SECONDS        let the beds grow that much play time at once
 //   set wish ID open        offer that wish now (it joins the tray even past three)
+//   set mark NAME           in an --audio-out capture: a segment named NAME starts here (its
+//                           start sample and the bus energies of the segment before go to
+//                           FILE.marks beside the capture)
 //   set city F|off          city life (src/life/): load the world and keep the active area
 //                           round F (x,y | layer:node | forum | agora | terrace |
 //                           district:<region>/<name>), stepped with the game's clock
@@ -120,7 +123,7 @@
 //       actor KIND ANIM|moving|inside|hat|any [ITEM]  one actor of that kind (a visitor id or
 //                               the resident's) is doing that now, at that item's slot if given
 //       bubble yes|no (the resident is speaking) | bubble CONTEXT (a line of that context) |
-//       raining yes|no (where the camera looks) visible KIND N (that many seen, not inside) | bank
+//       raining yes|no (where the camera looks) | snowing yes|no (as the title card says) visible KIND N (that many seen, not inside) | bank
 //       KIND (every one seen on land beside water) | together KIND D (every one seen within D tiles
 //       of another) | population yes (no visitor over its max, no leaver lingering) falls N (open
 //       water tiles on the rims, falling over) | weather natural|rain|clear | event SHOW yes|no

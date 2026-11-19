@@ -163,7 +163,7 @@ def river_tiber(mask, frame, frames, k):
     cover = g.inside & (f > 0)
     wall1, wall2, shade = field(1) <= 0, field(2) <= 0, field(3) <= 0
     level = home._ripples(g, f, shade, frame, frames)
-    swirl = home._pnoise(g.u - frame / frames * 4.0, g.v, 4, 1471) - 0.5
+    swirl = home._pnoise(g.u - frame / frames * 4.0, g.v, 8, 1471) - 0.5     # fine: no mark per tile
     rgb = home._paint(RIVER, level * 1.15 - 0.2 + swirl * 0.6, g.px, g.py, band=0.2, k=k)
     # The silt: green-brown along the banks only, over clear blue depth, so the Tiber reads as
     # water (drifts in mid-channel repeated tile by tile as an olive motif, QA5 Q5-A-03).

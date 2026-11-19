@@ -292,7 +292,7 @@ def check_depth(name: str, atlas_dir: Path, pages) -> list[str]:
 def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str]:
     """The art-side rules of draw-order.md §5.1 for one item: `item` its catalog entry, `entry`
     its geometry ({variant: ...}), `keys` the sprite keys on the set's pages, `level` tile.level
-    px. P1 pieces where there are walk tiles or a footprint over 8 x 8, walk tiles in runs of
+    px. P1 pieces where there are walk tiles (but a one-tile deck walked on top) or a footprint over 8 x 8, walk tiles in runs of
     their own; P2 art for every piece; P3 `tops` for every look and `roof` only over walk tiles;
     W2 every walk tile reached from the footprint's edge by steps of at most half a level; W3 neighbouring walk floors within half a level unless one floor piece holds both; W4 a walk
     floor not above the item and more than three levels up only on a stair or a terrace; S1 a
@@ -304,7 +304,10 @@ def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str
         fw, fh = (fh0, fw0) if turned else (fw0, fh0)
         walk = {tuple(t) for t in g.get("walk", [])}
         pieces = g.get("pieces", [])
-        if (walk or fw > 8 or fh > 8) and not pieces:
+        # A one-tile deck walked on top (its floor above the ground, nothing over it: a bridge's
+        # or a jetty's piece) is its own single piece; under an arch it still needs pieces.
+        on_top = (fw, fh) == (1, 1) and not g.get("roof") and all(z > 0 for z in g.get("walk_z", {"": 0}).values())
+        if (walk or fw > 8 or fh > 8) and not pieces and not on_top:
             errors.append(f"{iid} {v}: P1 walk tiles or a footprint over 8 x 8 but no pieces")
         for i, (x, y, w, h) in enumerate(pieces):
             tiles_ = {(x + a, y + b) for a in range(w) for b in range(h)}
@@ -354,8 +357,9 @@ def order_rules(iid: str, item: dict, entry: dict, keys, level: int) -> list[str
 
 
 def check_water(water_json: Path, pages: list[Path]) -> list[str]:
-    """The water page: its rectangles are the colour rectangles' size and anchor, and every item
-    sprite with a body of water on a water ramp has one (datapages.water_sprite)."""
+    """The water page: every item sprite with a body of water on a water ramp has an entry, and
+    each entry, placed by its anchor like the colour sprite, lies inside that sprite's rectangle
+    (datapages.water_sprite)."""
     if not water_json.exists():
         return [f"{water_json.name}: missing"]
     doc = json.loads(water_json.read_text())
@@ -369,12 +373,13 @@ def check_water(water_json: Path, pages: list[Path]) -> list[str]:
             if not key.startswith("item/") or key in raw or "/shadow/" in key or "/glow/" in key:
                 continue
             w = words[r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]]
-            n = int(wclass[(w >> 3) & 0xFF][w != 0].sum())
+            n = int((wclass[(w >> 3) & 0xFF] & (w != 0)).sum())
             e = doc["sprites"].get(key)
             if n >= datapages.WATER_MIN and e is None:
                 errors.append(f"{key}: {n} water pixels and no water-page entry")
-            elif e is not None and (e["w"], e["h"], e["ox"], e["oy"]) != (r["w"], r["h"], r["ox"], r["oy"]):
-                errors.append(f"{key}: its water-page rectangle is not its colour rectangle")
+            elif e is not None and not (e["ox"] <= r["ox"] and e["oy"] <= r["oy"] and
+                                        e["w"] - e["ox"] <= r["w"] - r["ox"] and e["h"] - e["oy"] <= r["h"] - r["oy"]):
+                errors.append(f"{key}: its water-page rectangle reaches outside its colour sprite")
     return errors
 
 

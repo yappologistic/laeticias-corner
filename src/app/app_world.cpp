@@ -166,6 +166,7 @@ void App::drawScene(const FrameParams& p, SDL_Texture* out) {
     v.pointer = {at.x + homeOffset_.x, at.y + homeOffset_.y};
     if (!SDL_SetRenderTarget(renderer_.get(), out)) SDL_Log("render: %s", SDL_GetError());
     worldView_->setLifeAlpha(alpha_);
+    scene_->setGroundDecode(worldView_->homeGroundDecode());
     worldView_->draw(v, clock_.time(), p.light, frameDt_, static_cast<double>(simTime_), hooks_);
 }
 
@@ -855,6 +856,8 @@ void App::loadWorldAudio() {
     soundLoops_.clear();
     for (const std::string& f : soundscape_->files()) soundLoops_.push_back(mixer_.loopIndex(f));
     markDryLoops(soundscape_->files());
+    for (std::size_t i = 0; i < soundLoops_.size(); ++i)
+        if (soundscape_->isMusic(static_cast<int>(i))) mixer_.setLoopMusic(soundLoops_[i]);
     if (!city_) return;
     citySound_ = std::make_unique<worldview::CitySound>(*loaded_, city_->life->data,
                                                         assets_ / "audio", seed_);
@@ -883,8 +886,12 @@ bool App::snowLiesHere() const {
 void App::updateWorldAudio(float night) {
     if (!soundscape_ || !worldView_) return;
     const worldview::ThemeMixer& theme = worldView_->theme();
+    // Behind the front door the title drifts over the corner: its sound is the home's.
+    const bool door = menus_.frontDoorOpen();
+    const int homeRegion = loaded_->file.home.region;
     for (std::size_t r = 0; r < themeWeights_.size(); ++r)
-        themeWeights_[r] = theme.weight(static_cast<int>(r));
+        themeWeights_[r] = door ? (static_cast<int>(r) == homeRegion ? 1.0f : 0.0f)
+                                : theme.weight(static_cast<int>(r));
     const Vec2 t = cat_.iso().toTile(camera_.position());
     const TileRect h = loaded_->file.home.rect;
     worldview::Soundscape::Input in;
@@ -923,6 +930,7 @@ void App::updateWorldAudio(float night) {
     ci.clock = clock_.time();
     ci.season = season();
     ci.month = in.month;
+    ci.music = soundscape_->musicLevel();
     ci.dt = frameDt_;
     ci.actors = worldView_->actorsDrawn();
     ci.city = city_->city.get();

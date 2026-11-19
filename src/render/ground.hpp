@@ -15,6 +15,7 @@
 #include "render/sprites.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -23,6 +24,18 @@ namespace lc {
 
 // The bramble sprite on a wild tile (a stable choice per tile), or none on one tile in five.
 [[nodiscard]] std::optional<SpriteId> thicketAt(const SpriteTables& tables, TilePos p);
+
+// The home's ground drawn as the world's is on the shader path (render/gpu/decoder.hpp): from
+// the home page's packed twin, through the same decode, with the same climate row and snow, so
+// the corner and the land round it wear one snow.
+struct GroundDecode {
+    SDL_Texture* page = nullptr;               // the home page's packed twin
+    const std::vector<bool>* packed = nullptr; // per home sprite: its texels are packed words
+    std::function<void(Batch&, bool)> use;     // the decode on (packed sprites) or off
+    SDL_BlendMode replace = SDL_BLENDMODE_BLEND;
+    float row = 0;  // the remap row (the vertex colour's green)
+    float snow = 0; // the snow cover (its blue)
+};
 
 class GroundCache {
 public:
@@ -36,6 +49,9 @@ public:
 
     // Every cached chunk is drawn afresh (the sprites changed, say for a new season).
     void invalidate();
+    // Draw through the packed decode (or not: nullopt); cached chunks are drawn again when what
+    // it changes changes.
+    void setDecode(std::optional<GroundDecode> d);
     // Cliffs and waterfalls under rims that face open sky (the floating island); none when the
     // land around is the world's.
     void setRims(bool on) {
@@ -52,6 +68,8 @@ public:
     static constexpr int kBaseChunk = 16;
 
 private:
+    void put(Batch& batch, SpriteId id, Vec2 a, const Xform& x, SDL_FColor c) const;
+    std::optional<GroundDecode> decode_;
     struct Slot {
         std::uint64_t key = ~0ULL; // level and chunk coordinates
         std::uint32_t revision = 0;
