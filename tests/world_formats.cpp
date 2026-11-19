@@ -322,7 +322,7 @@ TEST_CASE("geometry: the fixture parses") {
     const auto g = parseGeometry(fixture("geom_ok.json"), "geom_ok.json", "tst");
     REQUIRE_MESSAGE(g.has_value(), errorOf(g));
     CHECK(g->tileW == 64);
-    REQUIRE(g->items.size() == 5);
+    REQUIRE(g->items.size() == 6);
     const GeomItem* hall = nullptr;
     const GeomItem* stair = nullptr;
     for (const GeomItem& i : g->items) {

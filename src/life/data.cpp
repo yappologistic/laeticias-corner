@@ -140,6 +140,7 @@ void Compiler::kinds() {
             // A cart is what is drawn as one (its animal and load), not a name holding "cart":
             // the carter walks (L-109).
             k.cart = a.sprite.starts_with("cart/");
+            k.ship = a.sprite.starts_with("ship/");
             d_.kindIndex.emplace(k.id, static_cast<int>(d_.kinds.size()));
             d_.kinds.push_back(std::move(k));
         }

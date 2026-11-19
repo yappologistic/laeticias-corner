@@ -373,7 +373,9 @@ void WorldMap::index(TileRect area, std::uint32_t from, Diagnostics& diag) {
                     if (inf.rise > 0) {
                         if (!g || g->walk.empty() || walkTile) bits = kWalk | kFloor;
                     } else if (inf.walkable) {
-                        bits = static_cast<std::uint8_t>(kWalk | (water ? kDeck : 0));
+                        // A deck stands at its floor (`walk_z`), not at the water under it.
+                        bits = static_cast<std::uint8_t>(kWalk | (water ? kDeck : 0) |
+                                                         (walkZ ? kFloor : 0));
                     } else if (walkTile) {
                         bits = static_cast<std::uint8_t>(kWalk | (walkZ ? kFloor : 0));
                     }
@@ -508,6 +510,25 @@ int WorldMap::edgeZ(TilePos p, int dir) const {
             if (t == rel) return it.level * levelPx_ + z;
     if (stair) return INT_MIN; // the sides of a stair are parapets
     return it.level * levelPx_;
+}
+
+float WorldMap::floorAt(Vec2 p) const {
+    const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+    if (!inBounds(t)) return 0.0f;
+    const auto z = static_cast<float>(floorZ(t));
+    const float fx = p.x - static_cast<float>(t.x) - 0.5f;
+    const float fy = p.y - static_cast<float>(t.y) - 0.5f;
+    std::array<WalkStep, 4> steps{};
+    const int n = walkNeighbours(t, steps);
+    float out = z;
+    for (int i = 0; i < n; ++i) {
+        const WalkStep& s = steps[static_cast<std::size_t>(i)];
+        const int dx = s.to.x - t.x;
+        const int dy = s.to.y - t.y;
+        const float toward = dx != 0 ? fx * static_cast<float>(dx) : fy * static_cast<float>(dy);
+        if (toward > 0) out += static_cast<float>(s.dz) * toward;
+    }
+    return out;
 }
 
 int WorldMap::walkNeighbours(TilePos p, std::array<WalkStep, 4>& out) const {

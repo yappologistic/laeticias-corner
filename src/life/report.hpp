@@ -24,7 +24,28 @@ namespace lc::life {
 // Where the walk data and the life disagree, one line each with its grid tile: road edges
 // walkers cannot use (a course over unwalkable ground, or a step no walker can make: left out of
 // walking), and slot spots on unwalkable ground or where the region's walkers never reach (no one
-// is sent there). For the worldgen and art agents; the engine routes around every one.
+// is sent there), and walkable decks over water with no floor height (walkers drawn at the
+// water). For the worldgen and art agents; the engine routes around every one.
 [[nodiscard]] std::vector<std::string> walkProblems(const LifeWorld& w);
+
+// How the live actors of a rect stand on the floor over their last step (tests and the
+// scripts' `expect city floor`): walkers drawn walking off their course's floor band (below the
+// lowest or above the highest floor of their tile and the tiles they can step to, by more than
+// the slack), ships off their water's level, steps that changed a height or a place by more than
+// the gates' bounds, and walkers on raised floors (decks, stairs, walk runs: the check had
+// something to see). `scratch` is reused (two gathers of the rect).
+struct FloorCheck {
+    int offFloor = 0;
+    int offWater = 0;
+    int jumps = 0; // height
+    int hops = 0;  // place
+    int raised = 0;
+    int afloat = 0;
+    float worstStep = 0; // px
+    float worstMove = 0; // tiles
+    TilePos firstBad{-1, -1};
+};
+[[nodiscard]] FloorCheck checkFloors(const CityLife& life, TileRect rect,
+                                     std::vector<DrawActor>& scratch);
 
 } // namespace lc::life

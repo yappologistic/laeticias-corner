@@ -272,7 +272,9 @@ TEST_CASE("map: walking changes level only on stairs, walk floors and decks") {
     CHECK(has({50, 21}, {51, 21}));
     CHECK(has({52, 21}, {53, 21}));
     CHECK_FALSE(m.walkable({51, 20}));
-    // A deck on water steps one level to its bank.
+    // A deck on water stands at its floor from the geometry (not at the water) and steps one
+    // level to its bank.
+    CHECK(m.floorZ({20, 41}) == 14);
     CHECK(has({19, 41}, {20, 41}));
     CHECK(has({20, 41}, {19, 41}));
     CHECK_FALSE(has({20, 41}, {21, 41}));
