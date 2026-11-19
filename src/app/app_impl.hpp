@@ -270,6 +270,8 @@ private:
     bool openCity();
     [[nodiscard]] life::LifeClock cityClock() const;
     [[nodiscard]] TileRect cityView() const;
+    // What of it the window can show (people outside it move in strides: CityLife::setWatched).
+    [[nodiscard]] life::CityLife::Watched cityWatched() const;
     void stepCity(float dt);
     std::optional<std::string> checkCity(std::span<const std::string> a);
     bool shot(const fs::path& file);

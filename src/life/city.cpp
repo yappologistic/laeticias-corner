@@ -521,27 +521,39 @@ void CityLife::update(const LifeClock& clock, float dt) {
     advanceAbstract(clock);
     if (dirty_ || now_ - lastReconcile_ > (moved_ ? tl::kReconcileMoving : 2.0)) reconcile();
     spawnQueued(false);
-    // Everyone's last position, for drawing between steps.
-    for (LiveActor& a : pool_)
-        if ((a.flags & live_flag::kAlive) != 0) {
-            a.prev = a.pos;
-            a.prevZ = a.z;
-            a.prevStride = a.stride;
-        }
-    // Decisions in round-robin buckets; motion, puppets and fades every step so drawing is smooth.
+    // Decisions in round-robin buckets; motion, puppets and fades every step so drawing is
+    // smooth. Those a window cannot show move in strides of a few steps (setWatched): their
+    // bodies cover the same ground in the same time, worked out a quarter as often.
     const auto bucket = static_cast<std::size_t>(frame_ % static_cast<std::uint32_t>(tl::kBuckets));
     const float slice = dt * static_cast<float>(tl::kBuckets);
+    const auto seen = [&](Vec2 p) {
+        const float d = p.x - p.y;
+        const float s = p.x + p.y;
+        return d >= watched_.d0 && d <= watched_.d1 && s >= watched_.s0 && s <= watched_.s1;
+    };
     for (std::size_t i = 0; i < pool_.size(); ++i) {
         LiveActor& a = pool_[i];
         if ((a.flags & live_flag::kAlive) == 0) continue;
         const int k = static_cast<int>(i);
+        a.lag += dt;
+        const bool due = a.state == ActState::Puppet || seen(a.pos) ||
+                         (frame_ + i) % static_cast<std::size_t>(tl::kUnseenStride) == 0;
+        if (due) {
+            // Its last position, for drawing between steps.
+            a.prev = a.pos;
+            a.prevZ = a.z;
+            a.prevStride = a.stride;
+        }
         if (a.state == ActState::Puppet) {
             puppet(k);
         } else {
-            motion(k, dt);
+            if (due) motion(k, a.lag);
             if (i % static_cast<std::size_t>(tl::kBuckets) == bucket) think(k, slice);
         }
-        if ((pool_[i].flags & live_flag::kAlive) != 0) afterStep(k, dt);
+        if (due && (pool_[i].flags & live_flag::kAlive) != 0) {
+            afterStep(k, pool_[i].lag);
+            pool_[i].lag = 0;
+        }
     }
     ++frame_;
     if (frame_ % 30 == 0) {

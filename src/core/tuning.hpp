@@ -465,6 +465,12 @@ inline constexpr float kLeaveTimeout = 30.0f;  // a folded-back actor still in v
 inline constexpr double kChunkLinger = 2.0;    // seconds a chunk stays live after the area left
 // Seconds between reconciliations while the area slides within the chunks it touches.
 inline constexpr double kReconcileMoving = 0.25;
+// Steps between the moves of a body no window can show (15 Hz at 60 steps a second).
+inline constexpr int kUnseenStride = 4;
 } // namespace life
+
+// World px around the window within which the cities' people move every step: more than any
+// sprite reaches from its feet, and what someone walks in the strides they take beyond it.
+inline constexpr float kCityWatchMargin = 384.0f;
 
 } // namespace lc::tuning
