@@ -122,7 +122,7 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
         try {
             if (in && table) {
                 rampSeasons_ = gpu::parseRamps(nlohmann::json::parse(in));
-                decoder_ = gpu::Decoder::make(renderer, table.get(), rampSeasons_.snow);
+                decoder_ = gpu::Decoder::make(renderer, table.get(), rampSeasons_);
             }
         } catch (const nlohmann::json::exception& e) {
             SDL_Log("worldview: ramps.json: %s", e.what());
@@ -249,7 +249,7 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
         decoder_->use(batch_, packed);
         if (packed) {
             if (c.a >= 1.0f && mode == SDL_BLENDMODE_BLEND) mode = decoder_->replace();
-            c = packedColour(c, s.page == PageAtlas::kHomePage);
+            c = packedColour(c, s.page == PageAtlas::kHomePage, mirror);
         }
     }
     putSprite(batch_, Sprite{t, s.uv, s.w, s.h, s.ox, s.oy}, anchor, x, c, mode, mirror);
@@ -530,7 +530,8 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     for (const auto& [page, j] : shadows_) {
         const Elem& e = g.elems[at(j)];
         if (const std::optional<SpriteRef>& sh = e.look->shadow)
-            ok &= put(*sh, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+            ok &= sunShadows_ ? putShadow(*sh, e, x)
+                              : put(*sh, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
     }
     // People's shadows belong to the frame they are drawn in, never to a cached picture.
     if (actors) drawActorShadows(x);
@@ -630,6 +631,7 @@ void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
     const Timed timed(stats_.buildMs);
     const int before = batch_.drawCalls();
     batch_.flush();
+    drawingBlock_ = true;
     const int size0 = tuning::kImpostorBlock;
     ensure(scratch_, size0, size0);
     ensure(scratchShadow_, size0, size0);
@@ -643,6 +645,7 @@ void WorldView::drawBlock(CellKey key, int si, int block, const Gathered& g) {
     bool complete = drawTiles(r, x, 0, nullptr);
     complete &= drawShadows(g, r, x, scratchShadow_, scratch_, false);
     for (const std::uint32_t i : g.order) complete &= drawElem(g.elems[i], x, 0);
+    drawingBlock_ = false;
     plain();
     batch_.flush();
     const int n = blocksPerSide(key.level);
@@ -814,37 +817,44 @@ void WorldView::buildCells() {
         wants_.resize(room);
     }
     for (const CellWant& w : wants_) (void)cells_.find(packCell(w.key));
-    for (const CellWant& w : wants_) {
-        const std::uint64_t key = packCell(w.key);
-        int si = cells_.peek(key);
-        const auto inFlight = std::ranges::find(building_, w.key, &Building::key);
-        if (inFlight != building_.end()) {
-            inFlight->rank = std::min(inFlight->rank, w.rank);
+    // What is missing first, then what is shown but stale (a new season, month, snow or sun
+    // step): a stale cell stays on screen while it waits, a missing one is a hole.
+    for (const bool redraw : {false, true})
+        for (const CellWant& w : wants_) {
+            const std::uint64_t key = packCell(w.key);
+            int si = cells_.peek(key);
+            const auto inFlight = std::ranges::find(building_, w.key, &Building::key);
+            if (inFlight != building_.end()) {
+                if (redraw) continue;
+                inFlight->rank = std::min(inFlight->rank, w.rank);
+                if (w.rank != kRankView) ++stats_.prefetchPending;
+                continue;
+            }
+            const bool shown = si >= 0 && cells_.slot(si).ready;
+            if (shown && (!redraw || !stale(si))) continue;
+            if (!shown && redraw) continue;
+            if (redraw && stats_.buildMs >= tuning::kBuildMsAhead) continue; // at the ahead pace
             if (w.rank != kRankView) ++stats_.prefetchPending;
-            continue;
+            // What is built ahead leaves alone what the last frame showed (a stand-in, a step of
+            // the water's loop).
+            const std::uint64_t spare = w.rank == kRankView ? 0 : 1;
+            if (w.key.level == 0) {
+                if (stats_.buildMs >= buildLimit(w.rank)) continue;
+                if (si < 0) si = cells_.acquire(key, spare);
+                if (si < 0) continue;
+                buildGround(w.key, si);
+                if (w.rank != kRankView) --stats_.prefetchPending;
+                continue;
+            }
+            if (async_ && static_cast<int>(building_.size()) >= tuning::kImpostorCellsInFlight)
+                continue;
+            if (si < 0) {
+                si = cells_.acquire(key, spare);
+                if (si < 0) continue;
+                cells_.slot(si).ready = false;
+            }
+            requestImpostor(w.key, si, w.rank);
         }
-        if (si >= 0 && cells_.slot(si).ready && !stale(si)) continue;
-        if (w.rank != kRankView) ++stats_.prefetchPending;
-        // What is built ahead leaves alone what the last frame showed (a stand-in, a step of
-        // the water's loop).
-        const std::uint64_t spare = w.rank == kRankView ? 0 : 1;
-        if (w.key.level == 0) {
-            if (stats_.buildMs >= buildLimit(w.rank)) continue;
-            if (si < 0) si = cells_.acquire(key, spare);
-            if (si < 0) continue;
-            buildGround(w.key, si);
-            if (w.rank != kRankView) --stats_.prefetchPending;
-            continue;
-        }
-        if (async_ && static_cast<int>(building_.size()) >= tuning::kImpostorCellsInFlight)
-            continue;
-        if (si < 0) {
-            si = cells_.acquire(key, spare);
-            if (si < 0) continue;
-            cells_.slot(si).ready = false;
-        }
-        requestImpostor(w.key, si, w.rank);
-    }
     // Synchronous gathers are back at once: draw them now.
     if (!async_) progressImpostors();
 }
@@ -1400,7 +1410,7 @@ std::optional<GroundDecode> WorldView::homeGroundDecode() {
     seasonAt(centre);
     seasonCtx_.share = 0;
     seasonCtx_.other = -1;
-    const SDL_FColor c = packedColour({1, 1, 1, 1}, true);
+    const SDL_FColor c = packedColour({1, 1, 1, 1}, true, false);
     return GroundDecode{page,
                         &homePacked_,
                         [this](Batch& b, bool on) { decoder_->use(b, on); },
@@ -1455,7 +1465,7 @@ void WorldView::seasonAt(TilePos p) {
     lookSeason_ = ctx.other >= 0 && ctx.share > 0.0f ? -1 : season_;
 }
 
-SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt) const {
+SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt, bool mirrored) const {
     // The decode reads the tint's lightness, the climate's row and the snow lying there. The
     // home's art carries its seasons in its own looks (as the home's scene draws it): its row
     // leaves every ramp as it is, and only the snow is the climate's.
@@ -1474,8 +1484,10 @@ SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt) const {
     // (Home art taking a neighbour's season is drawn plain: it takes that climate's row.)
     const int row =
         homeArt && lookSeason_ == season_ ? gpu::Decoder::kClimates - 1 : seasonCtx_.climate;
-    return {0.299f * c.r + 0.587f * c.g + 0.114f * c.b, static_cast<float>(row) / 255.0f, snow,
-            c.a};
+    // Red: the tint's lightness in its lower half, 0.5 more when drawn mirrored (the decode swaps
+    // the normal's axes then).
+    return {(0.299f * c.r + 0.587f * c.g + 0.114f * c.b) * 0.49f + (mirrored ? 0.5f : 0.0f),
+            static_cast<float>(row) / 255.0f, snow, c.a};
 }
 
 void WorldView::plain() {
@@ -1597,8 +1609,16 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     const SDL_FColor ambient{light.ambient.r * grade.mul.r, light.ambient.g * grade.mul.g,
                              light.ambient.b * grade.mul.b, 1};
     const FrameInfo frame{view_.texture.get(), xf, view, viewW_, viewH_, lod, ambient, s, topLeft};
+    if (!post_ && decoder_ && sunStep_ != -1) {
+        // Classic on this driver decodes the art as baked.
+        const float up[3] = {0, 0, 1};
+        decoder_->setSun(up, 0, 0);
+        sunStep_ = -1;
+        staleCells();
+    }
     if (post_) {
         gradeGpu(clock, now, light, lod, origin);
+        sunGpu(clock);
         if (lod != Lod::Overview) refreshWater(view);
     }
     lastView_ = seen;

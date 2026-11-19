@@ -192,6 +192,63 @@ WaterColours waterColours(Rgb body, int season) {
     return w;
 }
 
+Sun sunAt(double clock, int season) {
+    namespace t = tuning;
+    const double hour = std::fmod(6.0 + 24.0 * clock + 48.0, 24.0);
+    // Half the daylight by season (spring, summer, autumn, winter), and the noon height.
+    const float half = season >= 0 && season < kSeasons
+                           ? t::kSunHalfDay[static_cast<std::size_t>(season)]
+                           : t::kSunHalfDay[0];
+    const float high = season >= 0 && season < kSeasons
+                           ? t::kSunNoon[static_cast<std::size_t>(season)]
+                           : t::kSunNoon[0];
+    const float u = static_cast<float>((hour - 12.0) / static_cast<double>(half));
+    const float noonAz = std::atan2(kBakedSun[1], kBakedSun[0]);
+    const float az = noonAz + std::clamp(u, -1.0f, 1.0f) * std::numbers::pi_v<float> * 0.5f;
+    Sun s;
+    s.elevation =
+        std::abs(u) >= 1.0f ? 0.0f : high * std::cos(u * std::numbers::pi_v<float> * 0.5f);
+    // Never quite flat: shadows and walls take at least the lowest sun's light.
+    const float e = std::max(s.elevation, t::kSunLowest);
+    s.dir[0] = std::cos(e) * std::cos(az);
+    s.dir[1] = std::cos(e) * std::sin(az);
+    s.dir[2] = std::sin(e);
+    const float k = std::clamp(s.elevation / t::kSunFade, 0.0f, 1.0f);
+    s.strength = k * k * (3.0f - 2.0f * k);
+    return s;
+}
+
+ShadowWarp shadowWarp(const Sun& sun) {
+    // A point h above its foot casts its shadow -h * (S.xy / S.z) away on the ground; on the
+    // ground plane (screen x, 2 * screen y) a grid offset (gx, gy) is (gx - gy, gx + gy).
+    const auto ground = [](const float* s) {
+        const float gx = -s[0] / s[2];
+        const float gy = -s[1] / s[2];
+        return std::array<float, 2>{gx - gy, gx + gy};
+    };
+    const float n0 = std::hypot(kBakedShadowSun[0], kBakedShadowSun[1], kBakedShadowSun[2]);
+    const float s0[3] = {kBakedShadowSun[0] / n0, kBakedShadowSun[1] / n0, kBakedShadowSun[2] / n0};
+    const auto d0 = ground(s0);
+    auto d = ground(sun.dir);
+    // Never longer than a few baked shadows (a sun near the horizon would throw it off-screen).
+    const float far = std::hypot(d[0], d[1]) / std::hypot(d0[0], d0[1]);
+    if (far > tuning::kShadowLongest) {
+        d[0] *= tuning::kShadowLongest / far;
+        d[1] *= tuning::kShadowLongest / far;
+    }
+    const float len2 = d0[0] * d0[0] + d0[1] * d0[1];
+    ShadowWarp w;
+    // M = I + (d - d0) d0^T / |d0|^2: d0 goes to d, what is across d0 stays.
+    w.m[0] = 1.0f + (d[0] - d0[0]) * d0[0] / len2;
+    w.m[1] = (d[0] - d0[0]) * d0[1] / len2;
+    w.m[2] = (d[1] - d0[1]) * d0[0] / len2;
+    w.m[3] = 1.0f + (d[1] - d0[1]) * d0[1] / len2;
+    const float len = std::sqrt(len2);
+    w.along[0] = d0[0] / len;
+    w.along[1] = d0[1] / len;
+    return w;
+}
+
 constexpr std::array<std::string_view, kCloudModes> kCloudIds{"on", "shadows", "off"};
 
 std::optional<Clouds> parseClouds(std::string_view id) {
