@@ -45,8 +45,37 @@ target_include_directories(lc_core PUBLIC src)
 target_link_libraries(lc_core PUBLIC nlohmann_json::nlohmann_json)
 lc_project_target(lc_core)
 
+# The shader path's fragment shaders (src/render/gpu/README.md): GLSL sources and their SPIR-V both
+# committed in assets/shaders/, the blobs embedded here, so neither glslc nor a runtime file is
+# needed to build or run. `cmake --build --preset release --target shaders` recompiles the blobs
+# with glslc (pinned: shaderc 2026.4); the `shaders_fresh` test checks them against the sources.
+set(LC_SHADER_DIR ${CMAKE_SOURCE_DIR}/assets/shaders)
+set(LC_SHADER_NAMES final bloom_down bloom_up shade clouds)
+set(LC_SHADER_BLOBS "")
+foreach(name ${LC_SHADER_NAMES})
+  list(APPEND LC_SHADER_BLOBS ${LC_SHADER_DIR}/${name}.spv)
+endforeach()
+set(LC_SHADER_CPP ${CMAKE_BINARY_DIR}/generated/gpu_shaders.cpp)
+string(JOIN "|" LC_SHADER_ARG ${LC_SHADER_BLOBS})
+add_custom_command(OUTPUT ${LC_SHADER_CPP}
+  COMMAND ${CMAKE_COMMAND} "-DSHADERS=${LC_SHADER_ARG}" -DOUT=${LC_SHADER_CPP}
+          -P ${CMAKE_SOURCE_DIR}/cmake/embed_shaders.cmake
+  DEPENDS ${LC_SHADER_BLOBS} ${CMAKE_SOURCE_DIR}/cmake/embed_shaders.cmake
+  COMMENT "Embedding the shader path's shaders" VERBATIM)
+find_program(LC_GLSLC glslc)
+if(LC_GLSLC)
+  set(LC_SHADER_COMMANDS "")
+  foreach(name ${LC_SHADER_NAMES})
+    list(APPEND LC_SHADER_COMMANDS COMMAND ${LC_GLSLC} -O -fshader-stage=frag
+         ${LC_SHADER_DIR}/${name}.frag -o ${LC_SHADER_DIR}/${name}.spv)
+  endforeach()
+  add_custom_target(shaders ${LC_SHADER_COMMANDS}
+    COMMENT "Compiling assets/shaders/*.frag to SPIR-V" VERBATIM)
+endif()
+
 # SDL-facing engine pieces (render, interface, audio), linked by the world renderer and the app.
 add_library(lc_engine STATIC
+  ${LC_SHADER_CPP}
   src/audio/mixer.cpp
   src/audio/decode.cpp
   src/audio/wav.cpp
@@ -58,6 +87,8 @@ add_library(lc_engine STATIC
   src/render/depth.cpp
   src/render/draw.cpp
   src/render/fx.cpp
+  src/render/gpu/look.cpp
+  src/render/gpu/post.cpp
   src/render/ground.cpp
   src/render/scene.cpp
   src/render/sprites.cpp
@@ -196,11 +227,13 @@ add_library(lc_worldview STATIC
   src/worldview/page_atlas.cpp
   src/worldview/places.cpp
   src/worldview/renderer.cpp
+  src/worldview/renderer_gpu.cpp
   src/worldview/script.cpp
   src/worldview/soundscape.cpp
   src/worldview/theme.cpp
   src/worldview/weather_field.cpp
   src/worldview/viewer.cpp
+  src/worldview/world_lights.cpp
   src/worldview/world_sprites.cpp
 )
 target_link_libraries(lc_worldview PUBLIC lc_engine lc_world Threads::Threads)
@@ -218,6 +251,7 @@ add_library(lc_app STATIC
   src/app/app_city.cpp
   src/app/app_build.cpp
   src/app/app_front.cpp
+  src/app/app_gpu.cpp
   src/app/app_photo.cpp
   src/app/app_life.cpp
   src/app/app_perf.cpp
@@ -243,6 +277,7 @@ if(LC_TESTS)
   add_executable(lc_worldview_tests
     tests/worldview_main.cpp
     tests/worldview_depth.cpp
+    tests/worldview_gpu.cpp
     tests/worldview_logic.cpp
     tests/worldview_render.cpp
   )

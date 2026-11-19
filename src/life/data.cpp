@@ -466,6 +466,8 @@ int Compiler::role(const json& r, const std::string& id, int kind) {
     role.name = str(r, "name");
     role.kind = kind;
     role.card = str(r, "card");
+    if (const auto c = r.find("carries"); c != r.end() && c->is_object())
+        role.carries = str(*c, "light");
     const std::string where = "role " + id;
     if (const auto h = r.find("home"); h != r.end() && h->is_object()) {
         role.homeItem = item(str(*h, "item"), where);

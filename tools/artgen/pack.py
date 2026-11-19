@@ -88,8 +88,8 @@ def pack(sprites: dict[str, Sprite], max_side: int = 4096):
 
 
 def write_atlas(sprites: dict[str, Sprite], png_path, json_path) -> tuple[int, int]:
-    """The colour page and manifest, its packed twin, the half-size shadow page and the ramp
-    table (`atlas/ramps.*` beside the page) for the shader path (datapages.py)."""
+    """The colour page and manifest, its packed twin, the half-size shadow page, the water page
+    and the ramp table (`atlas/ramps.*` beside the page) for the shader path (datapages.py)."""
     import datapages
     import ramps
     atlas, manifest = pack(sprites)
@@ -97,7 +97,8 @@ def write_atlas(sprites: dict[str, Sprite], png_path, json_path) -> tuple[int, i
     doc = {"version": 1, "image": png_path.name, "sprites": manifest}
     json_path.write_text(json.dumps(doc, indent=1, sort_keys=False) + "\n")
     ramps.write(png_path.parent / "atlas")
-    datapages.write_packed(png_path, manifest, {k: trim(s) for k, s in sprites.items()}, atlas.shape,
-                           "atlas/ramps.json")
+    trimmed = {k: trim(s) for k, s in sprites.items()}
+    datapages.write_packed(png_path, manifest, trimmed, atlas.shape, "atlas/ramps.json")
     datapages.write_shadow_page(png_path.with_name(png_path.stem + ".s.png"), sprites)
+    datapages.write_water_page(png_path.with_name(png_path.stem + ".w.png"), trimmed)
     return atlas.shape[1], atlas.shape[0]

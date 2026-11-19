@@ -4,6 +4,10 @@ landmark scale s = 0.85 for the terrace (arch.Scale)."""
 
 from sets.parsa import animals, babylon, ground, kit, landmarks, people, plants, waypoints
 
+# Looks per face material (setbuild: 4 unless named): the natural faces have eight, since every
+# level of a cliff draws one at random and they must not repeat.
+EDGE_VARIANTS = {f"parsa.{e}": 8 for e in ground.NATURAL}
+
 LANDMARKS = {**landmarks.LANDMARKS, **babylon.LANDMARKS, **waypoints.LANDMARKS}
 ITEMS = {**kit.ITEMS, **plants.ITEMS, **babylon.ITEMS}
 STATES = kit.STATES

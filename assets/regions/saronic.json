@@ -1251,7 +1251,7 @@
     "19:00"
    ],
    "per_screen": 0.4,
-   "sprite": "fx/world.dolphin",
+   "sprite": "world.dolphin",
    "months": [
     "apr",
     "may",

@@ -37,7 +37,8 @@ std::size_t LoadedWorld::memoryBytes() const {
         n += g.nodes.capacity() * sizeof(GraphNode) + g.edges.capacity() * sizeof(GraphEdge) +
              g.lanes.capacity() * sizeof(Lane);
     for (const RegionFile& r : regions)
-        n += sizeof(RegionFile) + r.cards.capacity() * sizeof(Card) + r.life.dump().size();
+        n += sizeof(RegionFile) + r.cards.capacity() * sizeof(Card) + r.life.dump().size() +
+             r.theme.look.dump().size() + r.theme.seasons.dump().size();
     return n;
 }
 

@@ -24,7 +24,7 @@ KINDS = {
     "rome": {"farmer": "rome.farmer", "shepherd": "rome.shepherd", "keeper": "rome.freedman",
              "guard": "rome.vigil", "hen": "rome.hen", "donkey": "rome.donkey",
              "mule": "rome.mule", "horse": "rome.horse", "woman": "rome.working_woman",
-             "herder": "rome.shepherd", "owl": None},
+             "herder": "rome.shepherd", "owl": "world.owl"},
     "athens": {"farmer": "athens.farmer", "shepherd": "athens.herder", "keeper": "athens.metic",
                "guard": "athens.citizen", "hen": "athens.hen", "donkey": "athens.donkey",
                "mule": "athens.mule", "horse": "athens.horse", "woman": "athens.woman",
@@ -32,9 +32,11 @@ KINDS = {
     "parsa": {"farmer": "parsa.farmer", "shepherd": "parsa.shepherd", "keeper": "parsa.groom",
               "guard": "parsa.guard_spear", "hen": None, "donkey": "world.donkey",
               "mule": "world.mule", "horse": "parsa.nisaean_horse", "woman": "parsa.woman_worker",
-              "herder": "parsa.shepherd", "owl": None},
+              "herder": "parsa.shepherd", "owl": "world.owl"},
 }
 
+HERONS = {"latium_italy", "ionia_lydia", "thrace", "anatolia", "mesopotamia", "susiana"}
+WOODS = {"thrace", "latium_italy", "apennines", "greece", "arcadia"}
 FOREST = {"world.t_oak", "world.t_beech", "world.t_fir", "world.t_cedar", "rome.t_oak",
           "athens.t_pine", "world.t_oak_zagros"}
 STATIONS = {"world.royal_station": "parsa", "rome.mutatio": "rome"}
@@ -309,7 +311,7 @@ def apply(doc: dict, clim: dict, items: dict[str, dict[str, int]], kinds: dict) 
             _district(doc, "land")["populations"].append(
                 {"role": "gazelle", "density": "daytime", "max_per_chunk": 0.3})
         if K["owl"]:
-            role(_role("owl", K["owl"], "Little owl",
+            role(_role("owl", K["owl"], "Little owl" if K["owl"] == "athens.owl" else "Owl",
                        [{"hours": ["19:30", "05:30"], "routine": "hunt"}],
                        {"hunt": {"loop": True, "steps": [{"wander": {"radius": 5}, "dur": [30, 60]},
                                                          {"use": {"here": True},
@@ -320,6 +322,14 @@ def apply(doc: dict, clim: dict, items: dict[str, dict[str, int]], kinds: dict) 
         if set_ in ("rome", "parsa"):
             _district(doc, "land")["populations"].append(
                 {"actor": "world.raven", "density": "daytime", "max_per_chunk": 0.25})
+        # Herons in the reed beds and by the rivers; red deer and wild boar in the woods.
+        if rid in HERONS:
+            _district(doc, "land")["populations"].append(
+                {"actor": "world.heron", "density": "daytime", "max_per_chunk": 0.2})
+        if rid in WOODS:
+            _district(doc, "land")["populations"] += [
+                {"actor": "world.deer", "density": "fields", "max_per_chunk": 0.15},
+                {"actor": "world.boar", "density": "night", "max_per_chunk": 0.1}]
         if set_ == "athens" and items.get("land", {}).get("athens.g_shrine"):
             role(_role("shrine_keeper", "athens.priest", "Keeper of a country shrine",
                        [{"hours": ["06:30", "11:00"], "routine": "offer"},
@@ -543,8 +553,8 @@ EVENTS = {
     "tyrrhenian": [
         E("grain_fleet_sighted", ["may", "jun"], "09:00", [], "idle", "sfx/world/gull_call.wav",
           "Sails on the horizon: the grain fleet from Alexandria.", "sea", fx="fx/world.wake"),
-        E("dolphins", SUMMER, "10:00", [], "idle", "sfx/world/gull.wav",
-          "Dolphins play in a ship's wake.", "sea", fx="fx/world.dolphin"),
+        E("dolphins", SUMMER, "10:00", [("world.dolphin", 3)], "move",
+          "sfx/world/gull.wav", "Dolphins play in a ship's wake.", "sea"),
         E("autumn_storm", ["oct", "nov"], "14:00", [], "idle", "sfx/world/thunder_far.wav",
           "An autumn storm rolls in from the sea.", "sea", fx="fx/world.whitecap"),
         E("winter_gale", WINTER, "11:00", [], "idle", "sfx/world/gust_front.wav",
@@ -552,15 +562,15 @@ EVENTS = {
     "adriatic": [
         E("fishing_fleet", ["apr", "may"], "05:00", [], "idle", "sfx/world/gull_call.wav",
           "The fishing boats are out at first light.", "sea", fx="fx/world.wake"),
-        E("dolphins", SUMMER, "10:00", [], "idle", "sfx/world/gull.wav",
-          "Dolphins in the calm summer sea.", "sea", fx="fx/world.dolphin"),
+        E("dolphins", SUMMER, "10:00", [("world.dolphin", 3)], "move",
+          "sfx/world/gull.wav", "Dolphins in the calm summer sea.", "sea"),
         E("bora_squall", ["oct", "nov"], "13:00", [], "idle", "sfx/world/gust_front.wav",
           "A squall of the north wind tears across the sea.", "sea", fx="fx/world.whitecap"),
         E("winter_bora", WINTER, "10:00", [], "idle", "sfx/world/gust_front.wav",
           "The cold north wind blows for days.", "sea", fx="fx/world.whitecap")],
     "ionian_sea": [
-        E("dolphins", ["apr", "may"], "10:00", [], "idle", "sfx/world/gull.wav",
-          "Dolphins run beside the sea lane.", "sea", fx="fx/world.dolphin"),
+        E("dolphins", ["apr", "may"], "10:00", [("world.dolphin", 3)], "move",
+          "sfx/world/gull.wav", "Dolphins run beside the sea lane.", "sea"),
         E("summer_glitter", SUMMER, "12:00", [], "idle", "sfx/world/gull_call.wav",
           "The summer sea glitters under the noon sun.", "sea", fx="fx/athens.sea_glint"),
         E("autumn_storm", ["oct", "nov"], "14:00", [], "idle", "sfx/world/thunder_far.wav",
@@ -578,8 +588,8 @@ EVENTS = {
           "The ships are in their sheds; only fishing boats go out.", "sea",
           fx="fx/world.whitecap")],
     "aegean": [
-        E("dolphins", ["apr", "may"], "10:00", [], "idle", "sfx/world/gull.wav",
-          "Dolphins among the Cyclades.", "sea", fx="fx/world.dolphin"),
+        E("dolphins", ["apr", "may"], "10:00", [("world.dolphin", 3)], "move",
+          "sfx/world/gull.wav", "Dolphins among the Cyclades.", "sea"),
         E("meltemi_afternoon", ["jul", "aug"], "14:00", [], "idle", "sfx/world/gust_front.wav",
           "The north wind whitens the crests in the afternoon.", "sea", fx="fx/world.whitecap"),
         E("tunny_run", ["sep", "oct"], "07:00", [], "idle", "sfx/world/fish.wav",
@@ -657,15 +667,15 @@ def events(doc: dict, kinds: dict, table: list | None = None) -> None:
 # -- the corner's surroundings ------------------------------------------------------------------
 # The home plot is the player's; around it the corner layer holds a borderland (cities/world.md
 # §7): meadows with sheep, a beech and oak wood, a strip of coast with the jetty, two farmsteads
-# and the old road. Its people are of no time (world kinds only; `world.traveller` stands in for
-# the farm folk and the shepherd until a country kind is drawn).
+# and the old road. Its people are of no time (world kinds only: the country farmer works the
+# farms, keeps the bees and herds the sheep).
 
 CORNER_EVENTS = [
-    E("lambing", ["mar", "apr"], "06:30", [("world.sheep", 6), ("world.traveller", 1)], "idle",
+    E("lambing", ["mar", "apr"], "06:30", [("world.sheep", 6), ("world.farmer", 1)], "idle",
       "sfx/world/sheep_1.wav", "Lambs in the meadows.", "meadows"),
-    E("haymaking", ["jun", "jul"], "08:00", [("world.traveller", 4)], "carry",
+    E("haymaking", ["jun", "jul"], "08:00", [("world.farmer", 4)], "carry",
       "sfx/world/sickle.wav", "Haymaking: the grass is cut and raked into rows.", "farms"),
-    E("berry_picking", ["sep", "oct"], "09:00", [("world.traveller", 3)], "carry",
+    E("berry_picking", ["sep", "oct"], "09:00", [("world.farmer", 3)], "carry",
       "amb/world/fields.ogg", "Blackberries and apples are picked along the hedges.", "meadows"),
     E("woodcutting", ["dec", "jan", "feb"], "09:00", [("world.logger", 2)], "work_high",
       "sfx/world/chop.wav", "Woodcutters in the winter wood.", "wood"),
@@ -680,15 +690,15 @@ def corner_file(placed: dict[str, dict[str, int]], kinds: dict) -> dict:
     """The corner region's life file (the borderland around the home plot)."""
     farm_items = placed.get("farms", {})
     roles = [
-        _role("farmhand", "world.traveller", "Farm folk",
+        _role("farmhand", "world.farmer", "Farm folk",
               [{"hours": ["05:30", "12:00"], "routine": "work"},
                {"hours": ["14:00", "18:30"], "routine": "work"},
                {"hours": ["18:30", "21:00"], "routine": "evening"}],
               {"work": _at("barn" if farm_items.get("barn") else "cottage", "carry"),
-               "evening": _rest("cottage", "sit", "21:00")}),
-        _role("shepherd", "world.traveller", "Shepherd on the hills",
+               "evening": _rest("cottage", _anim(kinds, "world.farmer", "sit"), "21:00")}),
+        _role("shepherd", "world.farmer", "Shepherd on the hills",
               [{"hours": ["05:30", "19:30"], "routine": "graze"}],
-              {"graze": _wander("sit", 8)}),
+              {"graze": _wander(_anim(kinds, "world.farmer", "sit"), 8)}),
         _role("fisher", "world.fisher", "Fisher on the shore",
               [{"hours": ["04:30", "11:00"], "routine": "fish"},
                {"hours": ["16:00", "20:00"], "routine": "fish"}],
@@ -697,7 +707,7 @@ def corner_file(placed: dict[str, dict[str, int]], kinds: dict) -> dict:
               [{"hours": ["07:00", "12:00"], "routine": "cut"},
                {"hours": ["13:30", "17:00"], "routine": "cut"}],
               {"cut": _at("oak", "work_high", (40, 70))}),
-        _role("beekeeper", "world.traveller", "Beekeeper",
+        _role("beekeeper", "world.farmer", "Beekeeper",
               [{"hours": ["08:00", "11:00"], "routine": "hives"}],
               {"hives": _at("beehive", "idle", (40, 60), 2)}),
     ]
@@ -804,29 +814,30 @@ def ambient(doc: dict, clim: dict) -> None:
 
     if land:
         add("bats", "land", ["19:30", "05:00"], ["apr", "may", "jun", "jul", "aug", "sep", "oct"],
-            2, None)
+            2, "world.bat")
         add("moths", "town" if kind_ == "town" else "land", ["20:00", "04:00"],
             ["may", "jun", "jul", "aug", "sep"], 3, "fx/moth")
-        owl = KINDS.get(set_, {}).get("owl")
+        owl = KINDS.get(set_, {}).get("owl") or "world.owl"
         add("owl", "land", ["20:00", "05:00"], None, 0.3, owl,
-            "sfx/athens/owl.wav" if set_ == "athens" else None)
+            "sfx/athens/owl.wav" if owl == "athens.owl" else "sfx/world/owl_tawny.wav")
         if fa.get("fireflies"):
             add("fireflies", "land", ["21:00", "01:00"], fa["fireflies"], 6, "fx/sparkle")
         if fa.get("nightingales"):
-            add("nightingale", "wood", ["22:00", "04:00"], fa["nightingales"], 0, None)
+            add("nightingale", "wood", ["22:00", "04:00"], fa["nightingales"], 0, None,
+                "sfx/world/nightingale.wav")
         if fa.get("swifts"):
             add("swifts", "town" if kind_ == "town" else "land", ["18:30", "20:30"], fa["swifts"],
                 8, "world.swift", "sfx/world/swifts.wav")
         if fa.get("starlings"):
             add("starlings", "land", ["17:00", "18:30"], fa["starlings"], 40, None,
-                "sfx/world/swifts.wav")
+                "sfx/world/starlings.wav")
         if fa.get("cranes_pass"):
             add("cranes_overhead", "land", ["07:00", "17:00"], fa["cranes_pass"], 12, "world.crane",
                 "sfx/world/cranes.wav")
     if sea:
         add("gulls", "coast", ["05:00", "20:00"], None, 4, "world.gull", "sfx/world/gull_call.wav")
         add("dolphins", "sea", ["06:00", "19:00"], ["apr", "may", "jun", "jul", "aug", "sep"], 0.4,
-            "fx/world.dolphin")
+            "world.dolphin")
         add("fish_shoal", "sea", ["05:00", "09:00"], None, 0.5, "fx/world.fish_shoal",
             "sfx/world/fish.wav")
         add("shearwaters", "sea", ["21:00", "04:00"], ["mar", "apr", "may", "jun", "jul", "aug",

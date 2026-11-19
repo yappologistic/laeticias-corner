@@ -1,0 +1,55 @@
+# The shader path (graphics plan task E1), on SDL's gpu driver: run with --quality high (skipped,
+# exit 77, where no gpu device can be made). The Agora at 22:00 is dark and moonlit with warm
+# lamplight where the world data puts lights (quality bar §4.3: 2-8 % warm-lit in a city view);
+# the Forum at 10:00 keeps the art's daylight (never darker than classic, which reads greyer);
+# lights stay lit at quarter scale; the water is layered and the clouds setting switches live.
+set season summer
+set world agora 2
+set time 0.6667
+wait 40
+expect look high
+expect lit 0,180,2560,1080 0.006
+expect luma 0,180,2560,1080 18 60
+shot shots/gpu_agora_2200.png
+set season spring
+set world forum 1
+set time 0.1667
+wait 40
+expect luma 0,180,2560,1080 120 165
+shot shots/gpu_forum_1000.png
+set world forum 0.25
+set time 0.7
+wait 60
+expect lit 0,180,2560,1080 0.003
+shot shots/gpu_rome_quarter_night.png
+# Layered water at Ostia (E2): the sea and the Tiber at half scale by day, under the clouds.
+set weather natural
+set world 215 1150 0.5
+set time 0.1667
+wait 40
+expect clouds on
+shot shots/gpu_ostia_water_half.png
+# The Look in the settings switches live on this renderer: High, then Classic, then Low.
+click ui:menu
+wait 8
+expect page pause
+click ui:menu:pause_settings
+wait 8
+expect page settings
+click ui:menu:look
+wait 4
+expect look classic
+click ui:menu:look
+wait 4
+expect look low
+# The clouds: on, shadows only, off, and on again.
+click ui:menu:clouds
+wait 4
+expect clouds shadows
+click ui:menu:clouds
+wait 4
+expect clouds off
+click ui:menu:clouds
+wait 4
+expect clouds on
+quit

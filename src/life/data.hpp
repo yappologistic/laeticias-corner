@@ -133,6 +133,7 @@ struct Role {
     std::vector<std::pair<std::string, int>> routines; // name -> block
     int rainRoutine = kNoIndex;                        // the rain interrupt's block
     std::string card;
+    std::string carries; // `carries.light`: the light profile it holds after dark (renderer)
 };
 
 struct Population {

@@ -51,7 +51,9 @@ struct Theme {
     std::string musicDay; // empty: none (stretches)
     std::string musicNight;
     bool seam = false;
-    nlohmann::json sound; // world-loose-ends.md §2: families, nature, stings, voices (as written)
+    nlohmann::json sound;   // world-loose-ends.md §2: families, nature, stings, voices (as written)
+    nlohmann::json look;    // the shader path's grade, sky, haze and lights (as written)
+    nlohmann::json seasons; // per season: grade, look shifts, ground states (as written)
 };
 
 struct RegionDistrict {

@@ -104,6 +104,13 @@ void MapScreen::draw(Painter& p, const MapModel& m) const {
            frame_.y + pad + f.ascent(Face::Title), withAlpha(theme::kInkMuted, a));
     if (m.image != nullptr) p.thumbnail(*m.image, image_, k_, a);
     p.endLayer();
+    // Towns' lights after dark, warm points under the markers.
+    for (const MapLight& l : m.lights) {
+        const Vec2 c = toScreen(l.at);
+        const float r = (1.5f + 2.0f * l.strength) * s;
+        p.roundRect({c.x - r, c.y - r, 2 * r, 2 * r}, r,
+                    withAlpha(theme::kMapLight, a * std::min(1.0f, 0.35f + 0.65f * l.strength)));
+    }
     // Where the view is now, then the places.
     const Vec2 v = toScreen(m.view);
     p.roundRect({v.x - theme::kMapViewRing * s, v.y - theme::kMapViewRing * s,

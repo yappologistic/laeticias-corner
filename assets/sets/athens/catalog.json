@@ -4171,6 +4171,12 @@
   "props": [
    "athens.lamp",
    "athens.torch"
+  ],
+  "slopes": [
+   "athens.dry_grass",
+   "athens.rock_limestone",
+   "athens.olive_soil",
+   "athens.packed_earth"
   ]
  },
  "audio": {

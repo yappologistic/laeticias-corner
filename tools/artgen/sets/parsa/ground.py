@@ -7,6 +7,7 @@ import re
 
 import numpy as np
 
+import land
 import terrain as home
 from pack import Sprite
 from palette import (CINNABAR, EARTH, GLOW, HEMATITE, INK, LAPIS, LEAF, LIMESTONE, MUDBRICK, NAQSH, PINE,
@@ -138,37 +139,12 @@ TERRAIN = {"parsa.field_barley": field_barley, "parsa.garden_bed": garden_bed, "
 ASHLAR = [INK, *LIMESTONE[:6]]
 
 
-def _face_columns(k, side):
-    """Screen columns of one level of face under a tile edge: x relative to the anchor (the
-    tile's top vertex) and the first row of face below the ground diamond's lower edge.
-
-    A face covers exactly the 16k columns its tile steps along the edge (x 0..16k-1 under
-    the south-east edge, -16k..-1 under the south-west one), so faces of a run of tiles meet
-    with no gap or overlap. The diamond itself is two columns narrower than that step; the
-    face's outermost column lies under the next tile of the run, and its first row follows
-    that tile's lower edge (the same edge line, half a tile up)."""
-    want = diamond(32 * k)
-    h, w = want.shape
-    rows = np.arange(h)[:, None]
-    bottom = np.where(want, rows, -1).max(axis=0)            # per diamond column
-    left = -(16 * k - 1)                                     # x of the diamond's first column
-
-    def bottom_at(x):
-        i = x - left
-        if 0 <= i < w:
-            return int(bottom[i])
-        step = 16 * k if side == "se" else -16 * k           # the next tile along the edge
-        return int(bottom[x - step - left]) - 8 * k
-    xs = np.arange(0, 16 * k) if side == "se" else np.arange(-16 * k, 0)
-    return xs, np.array([bottom_at(int(x)) + 1 for x in xs])
-
-
 def ashlar_face(side, v, k, top=False):
     """One level (16 px at 64x32) of the terrace face: fitted grey limestone in two courses of
     big blocks, joints skewed as in the polygonal-to-rectangular masonry of the terrace, a
     vertical joint at each tile edge so neighbouring variants always meet. `top` adds the kerb
     and the stepped-merlon parapet standing above the rim."""
-    xs, first = _face_columns(k, side)
+    xs, first = land.face_columns(k, side)
     band = 8 * k                                            # 16 px at 64x32
     above = 7 * k if top else 0
     H = 16 * k + above
@@ -227,99 +203,6 @@ def ashlar_face(side, v, k, top=False):
 ROCK = [INK, LIMESTONE[1], LIMESTONE[2], NAQSH[1], LIMESTONE[3], LIMESTONE[4], LIMESTONE[5]]
 EARTH_FACE = [INK, EARTH[0], EARTH[1], EARTH[2], MUDBRICK[1], MUDBRICK[2], MUDBRICK[3]]
 SHRUB = [LEAF[0], LEAF[1], LEAF[2], LEAF[3]]
-
-
-def _face_grid(side, k, above):
-    """Pixel grid of one level of face: for each pixel its distance along the face from the
-    bottom vertex `s` (px), its row inside the band `d` (0 at the rim) and whether it is on
-    the face; plus the sprite size and anchor."""
-    xs, first = _face_columns(k, side)
-    band = 8 * k
-    H, W = 16 * k + above, 16 * k
-    x0 = 0 if side == "se" else -16 * k
-    py, px = np.mgrid[0:H, 0:W]
-    s = np.zeros((H, W)); d = np.full((H, W), -999.0)
-    for x, f in zip(xs, first):
-        col = x - x0
-        if 0 <= col < W:
-            s[:, col] = x if side == "se" else -x
-            d[:, col] = py[:, col] - (f + above - 8 * k)
-    return px, py, s, d, band, H, W, -x0, above - 8 * k
-
-
-def _periodic(s, d, W, band, scale, seed, v=0):
-    """Smooth noise repeating every face width along s and every band down d, so faces stack
-    and join; variants differ only away from the tile edges."""
-    a = np.sin(2 * np.pi * s / W)
-    b = np.cos(2 * np.pi * s / W)
-    c = np.sin(2 * np.pi * d / band)
-    e = np.cos(2 * np.pi * d / band)
-    n = value_noise(a * scale + 7, b * scale + 3, (c + 2 * e) * scale * 0.7, 1.0, seed)
-    if v:
-        win = np.sin(np.pi * np.clip(s / W, 0, 1))
-        n = n * (1 - win) + value_noise(s / 3.0 + v * 31, d / 3.0, e * 3, 1.0, seed + v) * win
-    return n
-
-
-def rock_face(side, v, k, top=False):
-    """One level of the mountain's own rock (Kuh-e Raḥmat, the quarry, the slope): warm grey
-    limestone in strata, each bed with a lit lip and a shadowed undercut, vertical joints and
-    cracks, weathered pits, a tuft of shrub on a ledge here and there. `top` is the rim band:
-    broken rock with grass and wormwood tufts above."""
-    above = 6 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
-    shade = -0.9 if side == "se" else 0.0
-    on = d >= (-above if top else 0)
-    on &= d < band
-    n = _periodic(s, d, W, band, 1.3, 831, v)
-    bed = (d + (n - 0.5) * 2.5 * k) % (4 * k)
-    lip = bed < 1.2
-    under = (bed > 4 * k - 1.6)
-    crack = (np.abs(((s + n * 4 * k) % (W / 2)) - W / 4) < 0.6) & (_periodic(s, d, W, band, 2.0, 833, v) > 0.55)
-    pit = hash01(px, py, 835 + v) < 0.04
-    lvl = 3.0 + shade + (n - 0.5) * 1.0 + lip * 1.3 - under * 1.4 - crack * 1.4 - pit * 0.7 + (bed / (4 * k)) * 0.5
-    rgb = home._paint(ROCK, lvl, px, py, k=k)
-    shrub = lip & (_periodic(s, d, W, band, 3.0, 837, v) > 0.8) & (hash01(s.astype(np.int64) // 3, d.astype(np.int64) // 8, 838 + v) < 0.25) & on
-    shrub_px = np.zeros_like(shrub)
-    for dy in range(1, 3 * k):
-        shrub_px |= np.roll(shrub, -dy, axis=0) & (hash01(px, py - dy, 839) < 0.7)
-    rgb = np.where(shrub_px[..., None], home._paint(SHRUB, 2.0 + shade + (hash01(px, py, 841) - 0.3), px, py, k=k), rgb)
-    alpha = on.copy()
-    if top:
-        rim = (d < 0) & (d >= -above)
-        tuft = rim & (np.abs(d) < 2 + 3 * (_periodic(s, d * 0, W, band, 4.0, 843, v) > 0.6) * (hash01(px, 0, 845) < 0.6))
-        alpha = (on & (d >= 0)) | tuft
-        rgb = np.where(tuft[..., None], home._paint(SPRING, 2.4 + shade + (hash01(px, py, 847) - 0.5), px, py, k=k), rgb)
-    rgba = np.zeros((H, W, 4), np.uint8)
-    rgba[..., :3] = rgb
-    rgba[..., 3] = alpha * 255
-    return Sprite(rgba, ox, oy)
-
-
-def earth_face(side, v, k, top=False):
-    """One level of an earth bank (field and garden terraces, road cuttings): packed brown
-    earth in faint layers, pebbles and roots, a grassy lip on the rim band."""
-    above = 5 * k if top else 0
-    px, py, s, d, band, H, W, ox, oy = _face_grid(side, k, above)
-    shade = -0.9 if side == "se" else 0.0
-    on = (d >= 0) & (d < band)
-    n = _periodic(s, d, W, band, 1.6, 851, v)
-    layer = (d + n * 2 * k) % (3 * k) < 1
-    pebble = (hash01(px // 2, py // 2, 853 + v) < 0.015)
-    root = (np.abs(((s * 0.7 + d) % (W / 2)) - 3) < 0.5) & (d < band * 0.4) & (_periodic(s, d, W, band, 2.5, 855, v) > 0.6)
-    lvl = 3.0 + shade + (n - 0.5) * 1.4 - layer * 0.5 + pebble * 1.2 - root * 1.2
-    rgb = home._paint(EARTH_FACE, lvl, px, py, k=k)
-    rgb = np.where(pebble[..., None] & on[..., None], home._paint([STONE[1], STONE[2], STONE[3]], 1.2 + shade, px, py, k=k), rgb)
-    alpha = on.copy()
-    if top:
-        tall = hash01(px, 0, 857 + v) * above * (hash01(px // 3, 0, 861 + v) < 0.6)
-        lip = (d < 2 * k) & (d >= -tall - 1)
-        alpha = alpha | lip
-        rgb = np.where(lip[..., None], home._paint(SPRING, 2.6 + shade + (hash01(px, py, 859) - 0.5), px, py, k=k), rgb)
-    rgba = np.zeros((H, W, 4), np.uint8)
-    rgba[..., :3] = rgb
-    rgba[..., 3] = alpha * 255
-    return Sprite(rgba, ox, oy)
 
 
 # ---------------------------------------------------------------- backdrop
@@ -467,6 +350,15 @@ def fx(fid, f, n, k):
 
 # ---------------------------------------------------------------- dispatch
 
+# The natural faces (land.py): the mountain's own rock (Kuh-e Rahmat, the quarry) and earth banks.
+NATURAL = {
+    "rock": land.Stone("rock", tuple(ROCK), tuple(SPRING), 831, stain=(NAQSH[0], NAQSH[1], LIMESTONE[2]),
+                       shrub=tuple(SHRUB)),
+    "earth": land.Stone("earth", tuple(EARTH_FACE), tuple(SPRING), 851,
+                        stones=(LIMESTONE[1], LIMESTONE[2], LIMESTONE[3], LIMESTONE[4]), cell=3),
+}
+
+
 def build(keys, cat, k):
     out = {}
     for key in keys:
@@ -478,9 +370,12 @@ def build(keys, cat, k):
                 out[key] = water_channel(int(mask), int(frame), FRAMES[tid], k)
             else:
                 out[key] = TERRAIN[tid](int(mask), k)
-        elif m := re.fullmatch(r"edge/parsa\.(ashlar|rock|earth)_(se|sw)/(v(\d)|top)", key):
-            face = {"ashlar": ashlar_face, "rock": rock_face, "earth": earth_face}[m[1]]
-            out[key] = face(m[2], int(m[4] or 0), k, top=m[3] == "top")
+        elif m := re.fullmatch(r"edge/parsa\.(ashlar|rock|earth)_(se|sw)/(?:w(\d)/)?(v(\d)|top)", key):
+            if m[1] in NATURAL:
+                out[key] = land.face(NATURAL[m[1]], m[2], int(m[5] or 0), k, top=m[4] == "top",
+                                     wedge=None if m[3] is None else int(m[3]))
+            else:
+                out[key] = ashlar_face(m[2], int(m[5] or 0), k, top=m[4] == "top")
         elif m := re.fullmatch(r"backdrop/parsa\.kuh_rahmat/(day|night)/v(\d)", key):
             out[key] = kuh_rahmat(int(m[2]), m[1] == "night", k)
         elif m := re.fullmatch(r"fx/(parsa\.\w+)/f(\d+)", key):

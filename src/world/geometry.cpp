@@ -66,6 +66,11 @@ GeomVariant variant(const std::string& key, const json& g, const std::string& c)
         for (std::size_t i = 0; i < ws.size(); ++i)
             v.walk.push_back(tileOffset(ws[i], c + ": walk[" + std::to_string(i) + "]"));
     }
+    if (has(g, "water")) {
+        const json& ws = asArray(g.at("water"), c + ": water");
+        for (std::size_t i = 0; i < ws.size(); ++i)
+            v.water.push_back(tileOffset(ws[i], c + ": water[" + std::to_string(i) + "]"));
+    }
     if (has(g, "walk_z")) {
         for (const auto& [k, z] : asObject(g.at("walk_z"), c + ": walk_z").items()) {
             const std::string zc = c + ": walk_z: " + k;

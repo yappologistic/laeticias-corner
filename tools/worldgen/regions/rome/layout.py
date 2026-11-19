@@ -1028,9 +1028,11 @@ def _night(L: Layout) -> None:
 
 def _nodes(L: Layout) -> None:
     C.snap_nodes(L, NODES)
-    # Out of the island's east channel along its head (r 84) before turning upstream, so the
-    # keel never crosses the bank's corner (W-O2).
-    L.lane("tiber", [(56, 159), (56, 110), (56, 96), (62, 90), (62, 84), (48, 84), (45, 76),
+    # Round the island by its east channel and never across it: straight up the river under
+    # the Sublicius and the Aemilius, east along the open water below the island's foot (r 95),
+    # up the channel under the Fabricius, out along the island's head (r 84) before turning
+    # upstream, so the keel never crosses the island or the bank's corner (W-O2).
+    L.lane("tiber", [(56, 159), (56, 110), (56, 95), (62, 95), (62, 84), (48, 84), (45, 76),
                      (30, 65), (20, 58), (9, 38), (5, 0)], kind="river",
            ports={"ostia": 0, "emporium": 1, "forum_boarium": 2, "island": 4, "north": 10})
 

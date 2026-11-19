@@ -1088,7 +1088,7 @@
     "05:00"
    ],
    "per_screen": 2,
-   "sprite": null,
+   "sprite": "world.bat",
    "months": [
     "apr",
     "may",
@@ -1124,7 +1124,8 @@
     "05:00"
    ],
    "per_screen": 0.3,
-   "sprite": null
+   "sprite": "world.owl",
+   "sound": "sfx/world/owl_tawny.wav"
   },
   {
    "kind": "fireflies",
@@ -1161,7 +1162,7 @@
     "19:00"
    ],
    "per_screen": 0.4,
-   "sprite": "fx/world.dolphin",
+   "sprite": "world.dolphin",
    "months": [
     "apr",
     "may",

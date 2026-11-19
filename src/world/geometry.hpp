@@ -40,6 +40,7 @@ struct GeomVariant {
     int h = 0;                     // sprite height above the anchor, px
     std::vector<GeomPiece> pieces; // empty: not split
     std::vector<TilePos> walk;
+    std::vector<TilePos> water; // tiles of open water inside the item (a basin, a harbour)
     std::vector<std::pair<TilePos, int>> walkZ; // floor height above the item's level, px
     // The highest point over each footprint tile, px above the item's level, rows by dy
     // (`tops`, draw-order.md §3.4; a walk tile's is its floor); empty when not given.
