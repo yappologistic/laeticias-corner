@@ -634,8 +634,10 @@ def _districts(L: Layout) -> None:
     D("campus", Rect(10, 0, 70, 72))
     D("fora", Rect(72, 13, 128, 54))
     D("quirinal", Rect(96, 0, 137, 15))
-    D("markets", Rect(97, 16, 110, 33))
     D("subura", Rect(110, 16, 137, 38) | Rect(129, 39, 143, 55))
+    # The markets' halls have no floor walkers reach: their sellers stand on the street before
+    # the facade (c 110..111), which belongs to the markets' district.
+    D("markets", Rect(97, 16, 111, 33))
     D("esquiline", Rect(138, 0, 175, 19) | Rect(138, 20, 143, 38))
     D("oppian", Rect(144, 20, 175, 52))
     D("castra", Rect(*LM["castra_praetoria"]) | Rect(158, 15, 175, 16))
