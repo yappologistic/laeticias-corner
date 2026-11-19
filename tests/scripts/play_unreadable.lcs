@@ -1,0 +1,25 @@
+# Play on a world that cannot be opened says so and keeps the world behind the menus as it was
+# (H3-017): it is not saved, closed and swapped for a fresh corner first.
+wait 20
+click ui:menu:continue
+wait 8
+type Plum Hollow
+click ui:menu:create
+wait 8
+click ui:menu:skip_tour
+wait 4
+expect world Plum Hollow
+key escape
+wait 8
+click ui:menu:back_to_worlds
+wait 8
+expect worlds 2
+click ui:menu:card:1
+wait 4
+click ui:menu:play:1
+wait 8
+expect page loaderror
+click ui:menu:error_back
+wait 8
+expect world Plum Hollow
+expect fresh no

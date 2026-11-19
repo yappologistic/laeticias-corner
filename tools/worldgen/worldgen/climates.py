@@ -228,7 +228,9 @@ CLIMATES: list[dict] = [
                  "vine": row("X F G G G W W T T X X X"), "reed": row("D G G G G G G G D D D D"),
                  "wildflower": row("B B D D D D D D G G G B"), "evergreen": ["green"] * 12},
      **_temps(13, 16, 21, 26, 28, 28, 24, 19, 15, 12, 10, 11),
-     "snow": {"line": [13, None, None, None, None, None, None, None, None, 11, 9, 10], "perma": None,
+     # Snow never lies on Attica's hills, the Acropolis (level 11) and the upper city included: a
+     # winter morning's flurry is the lowland rule's, settling two hours on the bare rock.
+     "snow": {"line": [14, None, None, None, None, None, None, None, None, 13, 12, 13], "perma": None,
               "settle": 0.02, "melt": 0.012,
               "lowland": {"months": months("dec-feb"), "chance": 0.15, "settle": False,
                           "settle_on": ["athens.rock_limestone"], "hours": 2,
@@ -372,7 +374,9 @@ CLIMATES: list[dict] = [
                  "vine": row("X X F G G G W T X X X X"), "reed": row("D D G G G G G D D D D D"),
                  "wildflower": row("N B B D N N N N N N N N")},
      **_temps(4, 10, 15, 19, 23, 23, 18, 12, 6, 1, -1, 1),
-     "snow": {"line": [8, 11, 14, None, None, None, None, 13, 9, 5, 0, 4], "perma": None,
+     # The plateau (level 5) lies white in January; below it the Syrian bend and the edge of the
+     # Mesopotamian plain (levels 1-4, inside this stretch's rect) stay clear of lying snow.
+     "snow": {"line": [8, 11, 14, None, None, None, None, 13, 9, 6, 5, 6], "perma": None,
               "settle": 0.03, "melt": 0.002, "on": ["ground", "evergreen", "roofs", "backdrop"]},
      "frost": months("oct-apr"), "frost_hours": ["03:00", "09:00"],
      "wet_floor": {"months": months("mar-apr", "oct-nov"), "value": 0.3,

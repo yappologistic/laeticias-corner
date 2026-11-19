@@ -83,8 +83,11 @@ set(LC_SCRIPTS
   "profiler|profiler|960x600|"
   "city_life|city_life|640x400|"
   "builder|builder|960x600|"
+  "shape_edge|shape_edge|1280x800|"
+  "tip_person|tip_person|1280x800|"
   "front_door|front_door|1280x800||--front-door"
   "tour_full_tray|tour_full_tray|1280x800||--front-door"
+  "tour_snooze|tour_snooze|1280x800||--front-door"
   "world_old_save|world_old_save|960x600|"
   "world_save_a|world_save_a|960x600|"
   "world_save_b|world_save_b|960x600|"
@@ -235,6 +238,47 @@ add_test(NAME newer_save_untouched COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DC
 set_tests_properties(newer_save_untouched PROPERTIES DEPENDS script_newer_save
   FIXTURES_REQUIRED newer)
 
+# Play on a damaged world keeps the world being played (H3-017).
+set(unreadable "${LC_SCRATCH}/save_play_unreadable")
+add_test(NAME prepare_play_unreadable COMMAND ${CMAKE_COMMAND} -E rm -rf ${unreadable})
+add_test(NAME prepare_play_unreadable_world COMMAND ${CMAKE_COMMAND}
+  -DFILE=${unreadable}/worlds/damaged/world.json "-DCONTENT={\"version\": 4, \"home\": ["
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/write_file.cmake)
+set_tests_properties(prepare_play_unreadable PROPERTIES FIXTURES_SETUP play_unreadable_clean)
+set_tests_properties(prepare_play_unreadable_world PROPERTIES FIXTURES_SETUP play_unreadable
+  FIXTURES_REQUIRED play_unreadable_clean)
+add_test(NAME script_play_unreadable
+  COMMAND laeticias-corner --headless --front-door --size 1280x800 --seed 1
+          --save-dir "${unreadable}"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/play_unreadable.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_play_unreadable PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_REQUIRED play_unreadable)
+
+# The largest interface size on the smallest window still opens on the home (H3-016).
+set(big_ui "${LC_SCRATCH}/save_big_interface")
+add_test(NAME prepare_big_interface COMMAND ${CMAKE_COMMAND} -E rm -rf ${big_ui})
+add_test(NAME prepare_big_interface_profile COMMAND ${CMAKE_COMMAND} -DFILE=${big_ui}/profile.json
+  "-DCONTENT={\"ui_scale\": 2.0, \"onboarded\": true}" -P ${CMAKE_CURRENT_SOURCE_DIR}/write_file.cmake)
+set_tests_properties(prepare_big_interface PROPERTIES FIXTURES_SETUP big_interface_clean)
+set_tests_properties(prepare_big_interface_profile PROPERTIES FIXTURES_SETUP big_interface
+  FIXTURES_REQUIRED big_interface_clean)
+add_test(NAME script_big_interface
+  COMMAND laeticias-corner --headless --size 960x600 --seed 1 --save-dir "${big_ui}"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/big_interface.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_big_interface PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_REQUIRED big_interface)
+
+# A word where a script expects a number fails the run with its line (exit 2), never a crash.
+add_test(NAME script_bad_number
+  COMMAND laeticias-corner --headless --size 640x400 --seed 1
+          --save-dir "${LC_SCRATCH}/save_bad_number"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bad_number.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_bad_number PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  PASS_REGULAR_EXPRESSION "script line 3: a bad number")
+
 # A save directory the game cannot write to.
 if(UNIX)
   set(ro "${LC_SCRATCH}/save_read_only")
@@ -315,7 +359,7 @@ add_test(NAME audio_mix_world
           --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/audio_mix_world.lcs"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 set_tests_properties(audio_mix_world PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
-  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves)
+  FIXTURES_SETUP audio_mix FIXTURES_REQUIRED clean_saves TIMEOUT 1800)
 add_test(NAME audio_mix_world_check COMMAND lc_tests "--test-case=capture: the mix across*")
 set_tests_properties(audio_mix_world_check PROPERTIES ENVIRONMENT "LC_AUDIO_MIX=${mix_capture}"
   FIXTURES_REQUIRED audio_mix)

@@ -112,7 +112,7 @@
      ]
     },
     "snow_line": [
-     13,
+     14,
      null,
      null
     ],
@@ -215,9 +215,9 @@
      ]
     },
     "snow_line": [
-     11,
-     9,
-     10
+     13,
+     12,
+     13
     ],
     "ambience": {
      "beds": [
@@ -399,6 +399,10 @@
     "day": "amb/world/day_snow.ogg",
     "night": "amb/world/night_snow.ogg"
    }
+  },
+  "music": {
+   "day": "music/athens/town_march_day.ogg",
+   "night": "music/athens/town_march_night.ogg"
   },
   "look": {
    "phases": {

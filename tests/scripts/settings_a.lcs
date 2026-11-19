@@ -1,7 +1,10 @@
 # Settings survive a restart (one of two, settings_b reads them back): a first launch, a world,
-# the tour skipped, then every setting changed through the pause menu, the sound muted last.
+# the tour skipped, then every setting changed through the pause menu, the sound muted last; the
+# title's music stays at the title.
 wait 20
 expect page title
+# The front door plays its own full mix; once in the world it is gone (it never leaks into play).
+expect mixer music/day.ogg 10 100
 click ui:menu:continue
 wait 8
 expect page newworld
@@ -9,6 +12,7 @@ type Settle
 click ui:menu:create
 wait 8
 expect page none
+expect mixer music/day.ogg 0 0
 click ui:menu:skip_tour
 wait 4
 expect tour 0

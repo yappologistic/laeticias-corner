@@ -2,14 +2,16 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cmath>
 #include <sstream>
 
 namespace lc {
 namespace {
 
+// Finite only: from_chars reads "nan" and "inf", which no clock, camera or wait can take.
 bool number(std::string_view s, float& out) {
     const auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), out);
-    return ec == std::errc{} && p == s.data() + s.size();
+    return ec == std::errc{} && p == s.data() + s.size() && std::isfinite(out);
 }
 
 std::expected<ScriptPoint, std::string> point(std::string_view tok) {

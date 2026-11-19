@@ -1,0 +1,3 @@
+# A word where a number belongs fails the run with its line instead of ending the process (H3-006).
+wait 2
+expect lively a b c d e

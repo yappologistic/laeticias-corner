@@ -13,7 +13,7 @@ import numpy as np
 
 from arch import ellipsoid, fill, revolve, rod, slab
 from rig import CRITTER_FRAMES, Body, Dress, Frame, draw, pose
-from sets.parsa.animals import SIZE, Beast, _render, quadruped
+from sets.parsa.animals import SIZE, Beast, _render, free_scale, quadruped
 from voxel import Model
 
 BEASTS = {
@@ -44,7 +44,8 @@ def _beast(kind, variant):
 def _load(m, kind, variant, anim, frame, frames):
     """Panniers, pack saddles and the fat tail, on the beast's barrel (body centre at x 0)."""
     b = _beast(kind, variant)
-    L, H, g = b.length * SIZE, b.height * SIZE, b.girth * SIZE * 1.15
+    s = SIZE * free_scale(kind)
+    L, H, g = b.length * s, b.height * s, b.girth * s * 1.15
     bob = 0.125 * (1 - math.cos(4 * math.pi * frame / frames)) if anim == "move" else 0.0
     bz = H - g * 0.4 + bob
     if kind == "world.donkey":
@@ -365,7 +366,7 @@ def sprite(kind, variant, anim, facing, frame, k):
     if kind == "world.dog" and anim == "sleep":
         return _render(dog_sleep(frame, k), facing)
     if anim == "run":       # the dog's run: a trot, diagonal pairs together
-        return _render(quadruped(BEASTS[kind], "run", frame, n, k), facing)
-    m = quadruped(_beast(kind, variant), anim, frame, n, k)
+        return _render(quadruped(BEASTS[kind], "run", frame, n, k, free_scale(kind)), facing)
+    m = quadruped(_beast(kind, variant), anim, frame, n, k, free_scale(kind))
     _load(m, kind, variant, anim, frame, n)
     return _render(m, facing)

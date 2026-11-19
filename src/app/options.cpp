@@ -1,16 +1,26 @@
 #include "app/options.hpp"
 
+#include "core/tuning.hpp"
 #include "render/gpu/look.hpp"
 
 #include <charconv>
+#include <cmath>
+#include <type_traits>
 
 namespace lc {
 namespace {
 
+// The longest soak a run may ask for: a day of play (an endless one would never end the run).
+constexpr double kMaxSoakSeconds = 86'400;
+
+// A whole value and nothing else; for floating point also finite (from_chars reads "nan" and
+// "inf", which would slip past every range check after it).
 template <typename T>
 bool parseNumber(std::string_view s, T& out) {
     const auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), out);
-    return ec == std::errc{} && p == s.data() + s.size();
+    if (ec != std::errc{} || p != s.data() + s.size()) return false;
+    if constexpr (std::is_floating_point_v<T>) return std::isfinite(out);
+    return true;
 }
 
 } // namespace
@@ -113,8 +123,8 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
                 return std::unexpected("--budget-ms expects a positive number");
         } else if (a == "--soak") {
             const auto v = value();
-            if (!v || !parseNumber(*v, o.soak) || o.soak <= 0)
-                return std::unexpected("--soak expects a positive number of seconds");
+            if (!v || !parseNumber(*v, o.soak) || o.soak <= 0 || o.soak > kMaxSoakSeconds)
+                return std::unexpected("--soak expects seconds, more than 0 and at most 86400");
             o.headless = true;
         } else if (a == "--audio-out") {
             const auto v = value();
@@ -131,11 +141,11 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
                 return std::unexpected("--script expects a file, not a directory");
         } else if (a == "--save-dir") {
             const auto v = value();
-            if (!v) return std::unexpected(v.error());
+            if (!v || v->empty()) return std::unexpected("--save-dir expects a directory");
             o.saveDir = std::filesystem::path(*v);
         } else if (a == "--assets") {
             const auto v = value();
-            if (!v) return std::unexpected(v.error());
+            if (!v || v->empty()) return std::unexpected("--assets expects a directory");
             o.assetsDir = std::filesystem::path(*v);
         } else if (a == "--seed") {
             const auto v = value();
@@ -166,8 +176,9 @@ std::expected<Options, std::string> parseOptions(std::span<const std::string_vie
             o.lifeHours = std::string(*v);
         } else if (a == "--life-day") {
             const auto v = value();
-            if (!v || !parseNumber(*v, o.lifeDay) || o.lifeDay < 0)
-                return std::unexpected("--life-day expects a day");
+            if (!v || !parseNumber(*v, o.lifeDay) || o.lifeDay < 0 ||
+                o.lifeDay > tuning::kMaxCalendarDay)
+                return std::unexpected("--life-day expects a day from 0 to 1000000");
         } else if (a == "--frames") {
             const auto v = value();
             if (!v || !parseNumber(*v, o.frames) || o.frames < 0)

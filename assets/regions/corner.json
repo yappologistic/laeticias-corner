@@ -1397,10 +1397,7 @@
    ],
    "zone": "meadows",
    "string": "berry_picking",
-   "ambience": {
-    "file": "amb/world/fields.ogg",
-    "gain": 0.6
-   }
+   "sfx": "sfx/world/starlings.wav"
   },
   {
    "id": "woodcutting",

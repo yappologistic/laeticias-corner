@@ -7,6 +7,7 @@
 #include <cmath>
 #include <format>
 #include <fstream>
+#include <stdexcept>
 
 namespace lc {
 namespace {
@@ -191,7 +192,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::to_string(actors_.present(*v)), a[2]);
     }
     if (what == "city") return checkCity(a);
-    if (what == "sound") return checkSound(a);
+    if (what == "sound" || what == "mixer") return checkSound(a);
     if (what == "habitat") {
         // Everyone stands where it may (on its reserved seat counts: she sits on the bench).
         int bad = 0;
@@ -439,6 +440,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     }
     if (what == "postcards") {
         writer_.flush();
+        settlePhoto(true);
         int n = 0;
         std::error_code ec;
         for (auto it = fs::directory_iterator(postcardDir(), ec);
@@ -679,6 +681,20 @@ bool App::scriptStep() {
         --scriptWait_;
         return true;
     }
+    // Arguments the parser leaves as words are read as numbers here (std::stoi and kin); one
+    // that is not a number, or too large, fails the run with its line instead of ending the
+    // process.
+    try {
+        return runScriptCommands();
+    } catch (const std::logic_error& e) {
+        SDL_Log("script line %d: a bad number (%s)",
+                scriptPos_ < script_.size() ? script_[scriptPos_].line : 0, e.what());
+        exitCode_ = kExitBadScript;
+        return false;
+    }
+}
+
+bool App::runScriptCommands() {
     while (scriptPos_ < script_.size()) {
         const ScriptCommand& c = script_[scriptPos_];
         const auto fail = [&](const std::string& why) {

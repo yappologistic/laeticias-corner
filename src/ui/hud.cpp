@@ -1876,6 +1876,17 @@ void Hud::drawLabels(Painter& p, const HudModel& m) const {
     }
 }
 
+Box placeBubble(Box want, Box avoid, Vec2 screen, float gap) {
+    const bool over = want.x < avoid.x + avoid.w && avoid.x < want.x + want.w &&
+                      want.y < avoid.y + avoid.h && avoid.y < want.y + want.h;
+    if (!over) return want;
+    if (const float right = avoid.x + avoid.w + gap; right + want.w <= screen.x - gap)
+        want.x = right;
+    else
+        want.y = avoid.y + avoid.h + gap;
+    return want;
+}
+
 void Hud::drawBubble(Painter& p, const HudModel& m) const {
     if (m.bubble.empty() || m.bubbleAlpha <= 0) return;
     const float s = scale_;
@@ -1893,7 +1904,8 @@ void Hud::drawBubble(Painter& p, const HudModel& m) const {
                                screen_.x - w - theme::kMargin * s * 0.5f);
     const float y = std::max(theme::kMargin * s * 0.5f,
                              std::round(m.bubbleAt.y - theme::kBubbleLift * s - h - 1.6f * dot));
-    const Box b{x, y, w, h};
+    // Clear of the title card: she can walk right under it (H3-018).
+    const Box b = placeBubble({x, y, w, h}, titleBox_, screen_, theme::kGap * s);
     const float a = m.bubbleAlpha;
     p.glass(b, theme::kBubbleRadius * s, a, theme::kGlassTip);
     p.endGlass();

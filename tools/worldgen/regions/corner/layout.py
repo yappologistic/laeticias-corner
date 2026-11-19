@@ -56,6 +56,23 @@ def dell_shape(L: Layout) -> Mask:
     return Mask(0, 0, m)
 
 
+def rome_edge(L: Layout, dell: Mask, sea) -> None:
+    """Where Rome's layer begins (c 96, from r 24) its ground reaches into the dell by one to
+    three tiles, drawn row by row, each row taking the ground of Rome's tile it meets: the two
+    layers then meet in a broken line inside the seam, never along the layers' edge (V19)."""
+    w, h = L.size
+    depth = 1 + (rng.hash01(np.arange(h), np.zeros(h, dtype=np.int64),
+                            rng.hash64("corner", "rome_edge")) * 3).astype(int)
+    seam = dell.array & ~L._mask(sea)
+    for r in range(24, h):
+        tid = L.below_terrain(L.origin[0] + w, L.origin[1] + r)
+        if tid not in ("rome.grass_spring", "world.scrub", "world.forest_floor", "world.pasture"):
+            continue
+        m = np.zeros((h, w), dtype=bool)
+        m[r, w - depth[r]:w] = True
+        L.paint(Mask(0, 0, m & seam), tid)
+
+
 def build(L: Layout) -> None:
     land = L.land_below()
     sea = L.sea_below()
@@ -69,6 +86,8 @@ def build(L: Layout) -> None:
     L.district("seam_dell/dell", dell)
     L.paint(dell - sea, "meadow")
     L.level(dell, -1)
+    # Where Rome's layer begins its ground reaches into the dell (rome_edge).
+    rome_edge(L, dell, sea)
 
     # The wood, the coast and the farms.
     L.district("wood", Poly([(14, 0), (78, 0), (78, 34), (60, 38), (40, 36), (22, 40), (14, 30)]))

@@ -25,6 +25,10 @@ struct WorldSummary {
 // Every folder under `worldsDir` holding a world.json, the one saved last first.
 [[nodiscard]] std::vector<WorldSummary> listWorlds(const std::filesystem::path& worldsDir);
 
+// True when `slug` can only name a folder directly under the worlds folder: not empty, not "."
+// or "..", no separators (a hand-edited profile's "last_world" never reaches outside it).
+[[nodiscard]] bool plainFolderName(std::string_view slug);
+
 inline constexpr int kWorldNameMax = 28; // characters, after trimming
 
 // The name without leading and trailing spaces.
