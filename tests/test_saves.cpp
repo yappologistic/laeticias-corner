@@ -780,3 +780,30 @@ TEST_CASE("a profile's last world opens only a folder directly under worlds/ (H3
           std::string_view("c:\\x"), std::string_view("a\0b", 3)})
         CHECK_FALSE(plainFolderName(bad));
 }
+
+TEST_CASE("fuzz: a hand-edited catalog with any one value replaced is refused or usable") {
+    // Strangers edit assets/catalog.json: one hostile value anywhere is either refused with a
+    // message or gives a catalog a world can be made from (the same cases every run, bounded).
+    const auto doc = nlohmann::json::parse(test::catalogText());
+    std::vector<nlohmann::json::json_pointer> at;
+    pointers(doc, nlohmann::json::json_pointer{}, at);
+    Rng rng(0xCA7A);
+    int usable = 0;
+    for (int k = 0; k < 60; ++k) {
+        const auto& p = at[1 + rng.next() % (at.size() - 1)];
+        const auto& values = hostileValues();
+        const std::string text = spliced(doc, p, values[rng.next() % values.size()]);
+        CAPTURE(p.to_string());
+        std::optional<std::expected<Catalog, std::string>> cat;
+        REQUIRE_NOTHROW(cat.emplace(parseCatalog(text)));
+        if (!cat->has_value()) {
+            CHECK_FALSE(cat->error().empty());
+            continue;
+        }
+        ++usable;
+        const Catalog& c = **cat;
+        REQUIRE_NOTHROW((void)makeStarterWorld(c));
+        REQUIRE_NOTHROW((void)Progress(c));
+    }
+    CHECK(usable > 0);
+}
