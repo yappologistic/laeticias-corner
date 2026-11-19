@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <deque>
 #include <filesystem>
+#include <future>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -78,6 +79,12 @@ public:
     [[nodiscard]] bool drawsAt(const SpriteRef& s, float x, float y) const;
     // Null while the page is not resident (its sprites are skipped this frame).
     [[nodiscard]] SDL_Texture* texture(std::uint16_t page) const;
+    // The home page is its packed twin (packed mode, and it could be made).
+    [[nodiscard]] bool homePacked() const { return !pages_[kHomePage].packedFile.empty(); }
+    // ... and its packed twin is uploaded (until then the colour page serves, drawn plain).
+    [[nodiscard]] bool homePackedReady() const { return pages_[kHomePage].homeArtRows > 0; }
+    // Per home atlas sprite id: drawn from packed words (in the art rows, not colour-only).
+    [[nodiscard]] std::vector<bool> homePackedSprites() const;
     [[nodiscard]] bool setResident(std::string_view set) const;
     // Counts pages becoming resident: whatever skipped sprites redraws when it changes.
     [[nodiscard]] std::uint32_t generation() const { return generation_; }
@@ -101,7 +108,8 @@ private:
         std::filesystem::path file;
         std::filesystem::path packedFile;    // the packed twin, empty when the page has none
         std::vector<std::string> colourOnly; // its sprites kept as colour, sorted
-        int homeArtRows = 0; // the home page: rows of art (the engine's strip is below them)
+        int homeArtRows = 0;        // the home page: rows of packed art uploaded (0: not yet)
+        int homeArtRowsPlanned = 0; // ... rows of art its twin has (the strip is below them)
         int w = 0;
         int h = 0;
         State state = State::Unloaded;
@@ -118,6 +126,7 @@ private:
     };
 
     void readSide(Page& p) const;
+    void updateHome();
     [[nodiscard]] SurfacePtr decode(const Page& p, float* peak,
                                     std::vector<std::uint64_t>& opaque) const;
     void work(const std::stop_token& stop);
@@ -144,6 +153,11 @@ private:
     std::size_t uploadedBytes_ = 0;
     int wantedPending_ = 0;
 
+    // The home page's packed twin: decoding on a worker, then uploading in slices.
+    std::future<SurfacePtr> homeJob_;
+    SurfacePtr homeWords_;
+    TexturePtr homeTarget_;
+    int homeRows_ = 0;
     std::mutex mutex_; // guards queue_, done_ and the pixels/peak of pages in flight
     std::condition_variable_any wake_;
     std::deque<std::uint16_t> queue_;

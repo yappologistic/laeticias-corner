@@ -107,6 +107,8 @@ public:
     [[nodiscard]] std::optional<int> actorAt(std::span<const Actor> actors, Vec2 world) const;
     // The season's sprite looks, falling things and whether rain falls as snow (-1: plain).
     void setSeason(int season);
+    // The ground through the world's packed decode (the shader path), or not.
+    void setGroundDecode(std::optional<GroundDecode> d) { ground_->setDecode(std::move(d)); }
     // Reduce motion (living-corner R10.8): particles at 30 %, no streaks, moths, z's, pulse
     // ring or gust wave; land opens in a short fade.
     void setReduceMotion(bool on) {
