@@ -2222,11 +2222,11 @@ int WorldView::sunkActors(std::string* first) const {
                     floor = wz;
                     known = true;
                 }
-        if (!known && g != nullptr && g->topsW > 0 && rel.x < g->topsW &&
+        if (!known && info.crossing && g != nullptr && g->topsW > 0 && rel.x < g->topsW &&
             static_cast<std::size_t>(rel.y * g->topsW + rel.x) < g->tops.size())
             floor = g->tops[static_cast<std::size_t>(rel.y * g->topsW + rel.x)];
         const auto surface = static_cast<float>(it.level * lvl_ + floor);
-        if (!stoodOn || d.z + tuning::kSunkTolerance >= surface) continue;
+        if (!stoodOn || d.z + tuning::kDeckReach >= surface) continue;
         if (sunk++ == 0 && first != nullptr)
             *first = std::format("{} at ({:.2f}, {:.2f}) z {:.0f} on {} whose floor is at {:.0f}",
                                  kinds[d.kind].id, d.pos.x, d.pos.y, d.z, info.id, surface);

@@ -49,11 +49,11 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
             if (inside(t)) top = std::max<int>(top, g->tops[i]);
         }
     int under = gp != nullptr ? gp->under : g->under;
-    // A walkable kit piece (a timber bridge, a mole) lists no walk tiles: all of it is floor, at
-    // its top.
+    // A walkable kit piece that lists no walk tiles is all floor: a crossing (a timber bridge, a
+    // mole) at its top, anything else (wildflowers, grass one walks through) at the ground.
     if (!walk && info.walkable && gp == nullptr) {
         walk = true;
-        floorMax = floorMin = std::max(top, 0);
+        floorMax = floorMin = info.crossing ? std::max(top, 0) : 0;
     }
     // A crossing's deck stands over the water even where the art gives no clearance (some
     // connect variants of the kit bridges): whatever floats under it is below it.
@@ -65,8 +65,10 @@ ZRange heightsOf(const world::GeomVariant* g, const world::ItemInfo& info, int p
         if (under > 0 && under <= floorMin)
             return {std::max(1.0f, std::min(f(under), f(floorMin) - tuning::kDeckReach)),
                     f(floorMax), ZRange::Kind::Deck};
-        // A run under a roof (a gate's passage, an arch): from the overhead's underside up.
-        const int over = std::min(roofMin, under > 0 ? under : INT_MAX);
+        // A run under a roof (a gate's passage, an arch): from the overhead's underside up. A
+        // roof is what the art lists as one, or room under the piece of a person's headroom.
+        const int over =
+            std::min(roofMin, under >= static_cast<int>(tuning::kHeadroom) ? under : INT_MAX);
         if (over != INT_MAX && (gp == nullptr || !gp->floor))
             return {f(over), f(std::max(g->h, over)), ZRange::Kind::Overhead};
         // A floor: stair treads, a walk run's paving, under whoever stands on it; with a roof
