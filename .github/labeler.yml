@@ -1,0 +1,29 @@
+# Path-based labels for pull requests, in the format of the labeller action (v5). Not wired to a
+# workflow yet: docs/contributing/maintainers.md says how to switch it on.
+area/engine:
+  - changed-files:
+      - any-glob-to-any-file: ["src/**", "CMakeLists.txt", "CMakePresets.json", "cmake/**", "third_party/**"]
+area/tests:
+  - changed-files:
+      - any-glob-to-any-file: ["tests/**"]
+area/art:
+  - changed-files:
+      - any-glob-to-any-file: ["tools/artgen/**", "assets/atlas.*", "assets/atlas/**"]
+area/audio:
+  - changed-files:
+      - any-glob-to-any-file: ["tools/audiogen/**", "assets/audio/**"]
+area/world:
+  - changed-files:
+      - any-glob-to-any-file: ["tools/worldgen/**", "assets/world/**", "assets/regions/**"]
+area/content:
+  - changed-files:
+      - any-glob-to-any-file: ["assets/catalog.json", "assets/sets/**"]
+area/interface:
+  - changed-files:
+      - any-glob-to-any-file: ["src/ui/**", "assets/fonts/**"]
+area/docs:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "*.md"]
+area/ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**"]

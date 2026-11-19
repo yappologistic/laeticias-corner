@@ -31,6 +31,28 @@ struct WaterColours {
 };
 [[nodiscard]] WaterColours waterColours(Rgb body, int season);
 
+// The sun over the day (grid axes: +x down-right, +y down-left, z up; the art's normals use them):
+// it rises at the noon direction less a quarter turn and sets at it plus a quarter turn, the
+// noon direction being the art's baked sun's, highest at noon by the season.
+struct Sun {
+    float dir[3] = {0, 0, 1}; // unit, toward the sun
+    float elevation = 0;      // radians above the horizon
+    float strength = 0;       // 0 below the horizon .. 1 once a few degrees up
+};
+[[nodiscard]] Sun sunAt(double clock, int season);
+// The art's baked sun (tools/artgen render.py SUN) and the one its cast shadows used.
+inline constexpr float kBakedSun[3] = {-0.45f, 0.28f, 0.85f};
+inline constexpr float kBakedShadowSun[3] = {-0.38f, 0.16f, 0.91f};
+// The ground-plane map (screen x, 2 * screen y, so distances are round) that turns a baked
+// shadow's offset from its caster toward `sun`'s shadow: offsets along the baked shadow's way
+// are stretched and turned onto the sun's, those behind the caster stay. `out` is a 2 x 2
+// matrix (row major) and the baked shadow's unit direction.
+struct ShadowWarp {
+    float m[4] = {1, 0, 0, 1};
+    float along[2] = {0, 1}; // the baked shadow's direction (unit, ground plane)
+};
+[[nodiscard]] ShadowWarp shadowWarp(const Sun& sun);
+
 // A cumulus for the cloud pass (post.hpp CloudParams).
 struct Cloud {
     Vec2 ground;      // world px of the point it stands over
