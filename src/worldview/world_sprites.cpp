@@ -269,7 +269,9 @@ void WorldSprites::resolveItems(const world::WorldMap& map, Atlas& home, PageAtl
             peakSum += home.normalizeAlpha(*id);
             ++peaks;
         }
-        auto s = pages.find(key);
+        // The set's half-size shadow page when it has one, else the shadow on a colour page.
+        auto s = pages.findShadow(key);
+        if (!s) s = pages.find(key);
         if (s) pages.markShadow(*s);
         return s;
     };

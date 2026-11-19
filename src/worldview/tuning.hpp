@@ -88,9 +88,17 @@ inline constexpr int kWetSamples = 3;
 inline constexpr float kCloudShadow = 0.16f; // darkness under a cloud, a shower more
 inline constexpr float kShowerShadow = 0.26f;
 inline constexpr float kWetDarken = 0.22f;    // wet ground darkens by up to this
-inline constexpr int kRainStreaksPerTile = 2; // drawn per rained-on tile in view
+inline constexpr int kRainStreaksPerTile = 2; // falling over a rained-on tile at full strength
 inline constexpr float kRainFall = 520.0f;    // px a streak falls per second
 inline constexpr float kSnowFall = 60.0f;
+inline constexpr float kRainFallTiles = 6.0f; // tile heights a streak falls to its ground
+inline constexpr float kRainAlpha = 0.55f;
+inline constexpr float kSnowAlpha = 0.9f;
+// The rain is a picture scrolled over a mesh (WorldView::drawRain).
+inline constexpr int kRainPane = 512;  // px: the picture's tile each way (a power of two)
+inline constexpr int kRainLayers = 4;  // its densities, side by side in one texture
+inline constexpr int kRainMeshW = 256; // px between the corners that ask the showers
+inline constexpr int kRainMeshH = 128; // (both divide the pane)
 // Climates the region files name, against the season's own (until the files carry numbers):
 // Rome's April showers, the Attic dry summer and its meltemi, dry bright Parsa, the open sea's
 // squalls.
@@ -197,6 +205,7 @@ inline constexpr float kPanTilesPerSecond = 24.0f; // keyboard pan in the intera
 inline constexpr double kFrameP99Ms = 8.3;
 inline constexpr double kFrameWorstMs = 16.6;
 inline constexpr double kCpuAvgMs = 2.0;
-inline constexpr int kDrawCallsMax = 40; // world-tech §4.4, a full city view at zoom 1
+inline constexpr int kDrawCallsMax = 40;      // world-tech §4.4, a full city view at zoom 1
+inline constexpr int kRunBreakersListed = 16; // lines the bench names a view's page costs in
 
 } // namespace lc::worldview::tuning

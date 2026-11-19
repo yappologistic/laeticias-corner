@@ -7,6 +7,7 @@
 #include "worldview/tuning.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <format>
 
@@ -134,17 +135,24 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
         figureOf_.push_back(static_cast<std::uint32_t>(f));
     }
     prep_ = std::make_unique<Prep>(map_, *sprites_, async, hole_, figures_);
-    {
+    const auto cover = [this, hole = hole_] {
         const Uint64 t0 = SDL_GetPerformanceCounter();
-        cover_ = std::make_unique<CoverMap>(map_, *sprites_, hole_);
+        auto map = std::make_unique<CoverMap>(map_, *sprites_, hole);
         SDL_Log("worldview: cover map in %.0f ms",
                 static_cast<double>(SDL_GetPerformanceCounter() - t0) * 1000.0 /
                     static_cast<double>(SDL_GetPerformanceFrequency()));
-    }
+        return map;
+    };
+    if (async)
+        coverJob_ = std::async(std::launch::async, cover);
+    else
+        cover_ = cover();
     buildGlow();
     blob_ = home.sprite(home.lightBlob());
-    raindrop_ = home.find("fx/raindrop/f0");
-    snowflake_ = home.find("fx/snowflake/f0");
+    if (const auto drop = home.find("fx/raindrop/f0"))
+        buildRainPicture(rainPicture_, home.sprite(*drop), 31u);
+    if (const auto flake = home.find("fx/snowflake/f0"))
+        buildRainPicture(snowPicture_, home.sprite(*flake), 37u);
     if (async) warmUp();
     for (std::size_t t = 0; t < map_.terrainCount(); ++t) {
         const world::TerrainInfo& info = map_.terrainInfo(static_cast<int>(t));
@@ -210,8 +218,76 @@ bool WorldView::put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor 
                     SDL_BlendMode mode, bool mirror) {
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return false;
-    putSprite(batch_, Sprite{t, s.uv, s.w, s.h, s.ox, s.oy}, anchor, x, c, mode, mirror);
+    if (!runsOpen_) {
+        putSprite(batch_, Sprite{t, s.uv, s.w, s.h, s.ox, s.oy}, anchor, x, c, mode, mirror);
+        return true;
+    }
+    // Kept for flushRuns, which draws it with its page's run: the corners as putSprite makes
+    // them, to the last bit.
+    const float lx = mirror ? -(s.w - s.ox) : -s.ox;
+    const float ly = -s.oy;
+    const Vec2 p0 = x.apply({anchor.x + lx, anchor.y + ly});
+    const Vec2 p1 = x.apply({anchor.x + (lx + s.w), anchor.y + (ly + s.h)});
+    if (!runs_.add(s.page | (static_cast<std::uint32_t>(mode) << 16), {p0.x, p0.y, p1.x, p1.y}))
+        return true; // off the target: nothing of it would be drawn
+    UvRect uv = s.uv;
+    if (mirror) std::swap(uv.u0, uv.u1);
+    runQuads_.push_back({t, mode, p0, p1, uv, c, s.page, runWhat_});
     return true;
+}
+
+void WorldView::openRuns() {
+    runs_.begin({0, 0, static_cast<float>(viewW_), static_cast<float>(viewH_)});
+    runQuads_.clear();
+    runsOpen_ = true;
+}
+
+void WorldView::closeRuns(SDL_ScaleMode filter) {
+    for (const std::uint32_t e : runs_.order()) {
+        const RunQuad& q = runQuads_[e];
+        batch_.use(q.texture, q.mode, filter);
+        const SDL_FPoint p[4] = {
+            {q.p0.x, q.p0.y}, {q.p1.x, q.p0.y}, {q.p1.x, q.p1.y}, {q.p0.x, q.p1.y}};
+        batch_.quad(p, q.uv, q.colour);
+    }
+    batch_.flush();
+    runsOpen_ = false;
+}
+
+std::vector<WorldView::RunBreaker> WorldView::runBreakers() const {
+    // A run of a dozen sprites or fewer is one that something of another page was drawn
+    // through; longer ones are a page's own share of the view.
+    constexpr std::size_t kShort = 12;
+    std::vector<RunBreaker> out;
+    const auto order = runs_.drawn();
+    const auto name = [&](std::uint32_t what) -> std::string {
+        if (what == kRunActor) return "people";
+        if (what == kRunFigure) return "figures";
+        if ((what & kRunTerrain) != 0)
+            return "terrain " + map_.terrainInfo(static_cast<int>(what & ~kRunTerrain)).id;
+        return world_.content->item(static_cast<int>(what)).id;
+    };
+    for (std::size_t a = 0; a < order.size();) {
+        std::size_t b = a;
+        while (b < order.size() && runQuads_[order[b]].page == runQuads_[order[a]].page) ++b;
+        for (std::size_t k = a; k < b; ++k) {
+            const RunQuad& q = runQuads_[order[k]];
+            std::string what = name(q.what);
+            std::string page = pages_->pageName(q.page);
+            auto it = std::ranges::find_if(
+                out, [&](const RunBreaker& r) { return r.what == what && r.page == page; });
+            if (it == out.end())
+                it = out.insert(out.end(), {std::move(what), std::move(page), 0, 0});
+            ++it->inView;
+            it->inShortRuns += b - a <= kShort ? 1 : 0;
+        }
+        a = b;
+    }
+    std::erase_if(out, [](const RunBreaker& r) { return r.inShortRuns == 0; });
+    std::ranges::sort(out, [](const RunBreaker& x, const RunBreaker& y) {
+        return x.inShortRuns != y.inShortRuns ? x.inShortRuns > y.inShortRuns : x.what < y.what;
+    });
+    return out;
 }
 
 bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
@@ -412,10 +488,13 @@ bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x
     // By page, then in the order's sequence: a total order, so the plain sort (which, unlike
     // the stable one, allocates nothing) gives the same result every time.
     std::ranges::sort(shadows_);
+    // A shadow page holds its art at half size: enlarged, so filtered.
+    Xform soft = x;
+    soft.filter = SDL_SCALEMODE_LINEAR;
     for (const auto& [page, j] : shadows_) {
         const Elem& e = g.elems[at(j)];
         if (const std::optional<SpriteRef>& sh = e.look->shadow)
-            ok &= put(*sh, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+            ok &= put(*sh, e.anchor, pages_->smooth(page) ? soft : x, kWhite, SDL_BLENDMODE_BLEND);
     }
     // People's shadows belong to the frame they are drawn in, never to a cached picture.
     if (actors) drawActorShadows(x);
@@ -903,7 +982,8 @@ void WorldView::ensure(Target& t, int w, int h) {
 
 std::size_t WorldView::targetBytes() const {
     std::size_t n = 0;
-    for (const Target* t : {&view_, &shadow_, &scratch_, &scratchShadow_, &half_})
+    for (const Target* t :
+         {&view_, &shadow_, &scratch_, &scratchShadow_, &half_, &rainPicture_, &snowPicture_})
         if (t->texture) n += static_cast<std::size_t>(t->w) * static_cast<std::size_t>(t->h) * 4;
     return n;
 }
@@ -985,13 +1065,47 @@ void WorldView::drawWeatherGround(const FRect& view, const Xform& x) {
     batch_.flush();
 }
 
+void WorldView::buildRainPicture(Target& t, const Sprite& s, std::uint32_t salt) {
+    const int pane = tuning::kRainPane;
+    ensure(t, pane * tuning::kRainLayers, pane);
+    if (!t.texture || !SDL_SetRenderTarget(renderer_, t.texture.get()) ||
+        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_)) {
+        SDL_Log("worldview: rain picture: %s", SDL_GetError());
+        t.texture.reset();
+        return;
+    }
+    // As many streaks over a tile's worth of the pane as fall on a tile, shared out among the
+    // densities.
+    const float perTile = static_cast<float>(tuning::kRainStreaksPerTile);
+    const int count = static_cast<int>(perTile * static_cast<float>(pane * pane) /
+                                       (iso_.tileW() * iso_.tileH() * 0.5f)) /
+                      tuning::kRainLayers;
+    const auto room = static_cast<std::uint32_t>(pane - static_cast<int>(s.w) + 1);
+    // Copied, not blended: the picture keeps the art's own colour and alpha, and is drawn like
+    // it (blending its mesh, whose corners differ, needs that on the software renderer).
+    batch_.use(s.texture, SDL_BLENDMODE_NONE, SDL_SCALEMODE_NEAREST);
+    for (int layer = 0; layer < tuning::kRainLayers; ++layer)
+        for (int k = 0; k < count; ++k) {
+            const std::uint32_t h = tileHash(layer, k, salt);
+            const float px = static_cast<float>(layer * pane) + static_cast<float>(h % room);
+            const float py = static_cast<float>((h >> 12) % static_cast<std::uint32_t>(pane));
+            // A streak over the pane's lower edge goes on at its top: the pane tiles.
+            for (const float y : {py, py - static_cast<float>(pane)})
+                if (y + s.h > 0) batch_.quad(SDL_FRect{px, y, s.w, s.h}, s.uv, kWhite);
+        }
+    batch_.flush();
+    if (!SDL_SetRenderTarget(renderer_, nullptr)) SDL_Log("worldview: %s", SDL_GetError());
+}
+
 void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
-    // Rain (or snow) falls where a shower is: streaks at stable places per tile, falling through
-    // a tile's height over and over; nothing is stored, so any view of the world has its rain.
+    // Rain (or snow) falls where a shower is. It is one picture of streaks at fixed places over
+    // a pane that tiles the world, falling by being scrolled, drawn as a coarse mesh whose
+    // corners ask the showers how hard it rains there: a few hundred quads for a whole view in
+    // the rain, where a quad per streak was five thousand and a fifth of the frame's work.
+    // Nothing is stored, so any view of the world has its rain.
     const bool snow = weather_->snow();
-    const std::optional<SpriteId>& id = snow ? snowflake_ : raindrop_;
-    if (!id) return;
-    const Sprite& s = homeAtlas_.sprite(*id);
+    const Target& picture = snow ? snowPicture_ : rainPicture_;
+    if (!picture.texture) return;
     // Only the tiles under a shower are looked at: none in view (most frames) costs nothing.
     const TileRect inView = tilesUnder(view, iso_).clipped(map_.bounds());
     TileRect tiles{inView.x1, inView.y1, inView.x0, inView.y0};
@@ -1007,8 +1121,8 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
                  std::max(tiles.y1, r.y1)};
     }
     if (tiles.x0 >= tiles.x1 || tiles.y0 >= tiles.y1) return;
-    // The showers that reach the tiles looked at, once: each tile then asks only them, and
-    // without a square root (intensity x (1 - d^2 / r^2), as WeatherField::rainAt gives).
+    // The showers that reach those tiles, once: each corner then asks only them, and without a
+    // square root (intensity x (1 - d^2 / r^2), as WeatherField::rainAt gives).
     showers_.clear();
     for (const WeatherCell& c : weather_->cells()) {
         if (!c.rain || c.centre.x + c.radius < static_cast<float>(tiles.x0) ||
@@ -1018,7 +1132,11 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
             continue;
         showers_.push_back({c.centre, 1.0f / (c.radius * c.radius), c.intensity()});
     }
+    // How hard it rains at a grid point: nothing below the strength that counts as rain, off
+    // the grid, or over the home (its scene has its own rain).
     const auto rainAt = [&](Vec2 t) {
+        const TilePos tile{static_cast<int>(std::floor(t.x)), static_cast<int>(std::floor(t.y))};
+        if (!map_.inBounds(tile) || hole_.tiles.contains(tile)) return 0.0f;
         float r = 0;
         for (const Shower& sh : showers_) {
             const float dx = t.x - sh.centre.x;
@@ -1026,33 +1144,86 @@ void WorldView::drawRain(const FRect& view, const Xform& x, double now) {
             const float d2 = (dx * dx + dy * dy) * sh.invR2;
             if (d2 < 1) r = std::max(r, sh.intensity * (1.0f - d2));
         }
-        return std::min(1.0f, r);
+        return r < ::lc::tuning::kRainThreshold ? 0.0f : std::min(1.0f, r);
     };
-    const float fall = snow ? tuning::kSnowFall : tuning::kRainFall;
-    const float drop = iso_.tileH() * 6.0f; // px a streak falls before it starts again
-    // Farther out, every other tile each way: as many streaks on screen at any zoom.
-    const int step = res_ < 1.0f ? 2 : 1;
-    const float margin = drop + iso_.tileW();
-    for (int y = tiles.y0 - tiles.y0 % step; y < tiles.y1; y += step)
-        for (int tx = tiles.x0 - tiles.x0 % step; tx < tiles.x1; tx += step) {
-            const Vec2 c{static_cast<float>(tx) + 0.5f, static_cast<float>(y) + 0.5f};
-            const Vec2 w = iso_.toWorld(c.x, c.y);
-            // The box of tiles under a screen is twice the screen: skip what lies off it.
-            if (w.x < view.x0 - margin || w.x > view.x1 + margin || w.y < view.y0 ||
-                w.y > view.y1 + margin)
-                continue;
-            if (hole_.tiles.contains(TilePos{tx, y})) continue;
-            const float r = rainAt(c);
-            if (r < ::lc::tuning::kRainThreshold) continue;
-            for (int k = 0; k < tuning::kRainStreaksPerTile; ++k) {
-                const std::uint32_t h = tileHash(tx, y, 31u + static_cast<std::uint32_t>(k));
-                if (static_cast<float>(h % 1000) / 1000.0f > r) continue;
-                const float ox = (static_cast<float>(h % 61) / 60.0f - 0.5f) * iso_.tileW();
-                const float phase = static_cast<float>((h >> 8) % 1000) / 1000.0f;
-                const float t = std::fmod(static_cast<float>(now) * fall / drop + phase, 1.0f);
-                const Vec2 at{std::round(w.x + ox), std::round(w.y - drop * (1.0f - t))};
-                if (at.y < view.y0 - 16 || at.y > view.y1 + 16) continue;
-                putSprite(batch_, s, at, x, {1, 1, 1, snow ? 0.9f : 0.55f}, SDL_BLENDMODE_BLEND);
+    const int pane = tuning::kRainPane;
+    const int mw = tuning::kRainMeshW;
+    const int mh = tuning::kRainMeshH;
+    // How far the picture has fallen, in whole px, and how many panes have gone by: a pane
+    // keeps its look all the way down.
+    const double fallen = now * static_cast<double>(snow ? tuning::kSnowFall : tuning::kRainFall);
+    const auto passed = static_cast<std::int64_t>(std::floor(fallen / pane));
+    const auto scroll = static_cast<int>(fallen - static_cast<double>(passed) * pane);
+    // The mesh: columns at whole multiples of its width, rows riding down with the picture.
+    const int i0 = static_cast<int>(std::floor(view.x0 / static_cast<float>(mw)));
+    const int i1 = static_cast<int>(std::ceil(view.x1 / static_cast<float>(mw)));
+    const int j0 = static_cast<int>(
+        std::floor((view.y0 - static_cast<float>(scroll)) / static_cast<float>(mh)));
+    const int j1 = static_cast<int>(
+        std::ceil((view.y1 - static_cast<float>(scroll)) / static_cast<float>(mh)));
+    const int cols = i1 - i0;
+    const int rows = j1 - j0;
+    if (cols <= 0 || rows <= 0) return;
+    // A streak is drawn somewhere along its fall above the ground it lands on: what is seen at
+    // a point rains on the ground half a fall below it.
+    const float below = iso_.tileH() * tuning::kRainFallTiles * 0.5f;
+    const auto stride = static_cast<std::size_t>(cols + 1);
+    rainMesh_.resize(stride * static_cast<std::size_t>(rows + 1));
+    for (int j = 0; j <= rows; ++j)
+        for (int i = 0; i <= cols; ++i) {
+            const Vec2 w{static_cast<float>((i0 + i) * mw),
+                         static_cast<float>((j0 + j) * mh + scroll)};
+            rainMesh_[static_cast<std::size_t>(j) * stride + static_cast<std::size_t>(i)] =
+                rainAt(iso_.toTile({w.x, w.y + below}));
+        }
+    // Farther out a quarter of the streaks: as many on screen at any zoom.
+    const int layers = res_ < 1.0f ? 1 : tuning::kRainLayers;
+    const float strength = snow ? tuning::kSnowAlpha : tuning::kRainAlpha;
+    const auto wrap = [](int v, int n) { return ((v % n) + n) % n; };
+    const float texW = static_cast<float>(pane * tuning::kRainLayers);
+    static constexpr int kQuad[6] = {0, 1, 2, 0, 2, 3};
+    batch_.use(picture.texture.get(), SDL_BLENDMODE_BLEND, x.filter);
+    for (int j = 0; j < rows; ++j)
+        for (int i = 0; i < cols; ++i) {
+            const std::size_t at =
+                static_cast<std::size_t>(j) * stride + static_cast<std::size_t>(i);
+            const float r[4] = {rainMesh_[at], rainMesh_[at + 1], rainMesh_[at + stride + 1],
+                                rainMesh_[at + stride]};
+            if (std::max({r[0], r[1], r[2], r[3]}) <= 0) continue;
+            const int wx = (i0 + i) * mw;
+            const int py = (j0 + j) * mh; // in the picture as it falls
+            const int inX = wrap(wx, pane);
+            const int inY = wrap(py, pane);
+            // Which of the pictures each pane shows first differs from pane to pane, so the
+            // eye finds no repeat.
+            const auto turn =
+                tileHash((wx - inX) / pane, static_cast<int>((py - inY) / pane - passed), 41u);
+            const Vec2 p0 = x.apply({static_cast<float>(wx), static_cast<float>(py + scroll)});
+            const Vec2 p1 =
+                x.apply({static_cast<float>(wx + mw), static_cast<float>(py + scroll + mh)});
+            const float v0 = static_cast<float>(inY) / static_cast<float>(pane);
+            const float v1 = static_cast<float>(inY + mh) / static_cast<float>(pane);
+            for (int layer = 0; layer < layers; ++layer) {
+                // Each density comes in over its own share of the strength: a shower's edge
+                // thins out and fades instead of ending.
+                float a[4];
+                float most = 0;
+                for (int c = 0; c < 4; ++c) {
+                    a[c] = std::clamp(r[c] * static_cast<float>(layers) - static_cast<float>(layer),
+                                      0.0f, 1.0f) *
+                           strength;
+                    most = std::max(most, a[c]);
+                }
+                if (most <= 0) break;
+                const int which = static_cast<int>((turn + static_cast<std::uint32_t>(layer)) %
+                                                   static_cast<std::uint32_t>(tuning::kRainLayers));
+                const float u0 = static_cast<float>(which * pane + inX) / texW;
+                const float u1 = static_cast<float>(which * pane + inX + mw) / texW;
+                const SDL_Vertex v[4] = {{{p0.x, p0.y}, {1, 1, 1, a[0]}, {u0, v0}},
+                                         {{p1.x, p0.y}, {1, 1, 1, a[1]}, {u1, v0}},
+                                         {{p1.x, p1.y}, {1, 1, 1, a[2]}, {u1, v1}},
+                                         {{p0.x, p1.y}, {1, 1, 1, a[3]}, {u0, v1}}};
+                batch_.triangles(v, 4, kQuad, 6);
             }
         }
     batch_.flush();
@@ -1094,9 +1265,19 @@ void WorldView::drawCoarseGlow(const FRect& view, const Xform& x, float strength
                 const SpriteRef& r = *s.sprite;
                 const FRect box{s.anchor.x - r.ox, s.anchor.y - r.oy, s.anchor.x - r.ox + r.w,
                                 s.anchor.y - r.oy + r.h};
-                if (box.overlaps(view)) (void)put(r, s.anchor, x, g, SDL_BLENDMODE_ADD);
+                if (box.overlaps(view)) lit_.push_back({r.page, i, &r, s.anchor});
             }
         }
+    drawLit(x, g);
+}
+
+void WorldView::drawLit(const Xform& x, SDL_FColor strength) {
+    // Light adds up the same in any order: page by page, so a view with lamps on four pages
+    // makes four draws for them, where the painter's order made one wherever the page changed
+    // (most of the draw calls of a city at night).
+    std::ranges::sort(lit_, {}, [](const Lit& l) { return std::pair{l.page, l.seq}; });
+    for (const Lit& l : lit_) (void)put(*l.sprite, l.anchor, x, strength, SDL_BLENDMODE_ADD);
+    lit_.clear();
     batch_.flush();
 }
 
@@ -1209,6 +1390,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     stats_ = {};
     batch_.resetStats();
     cells_.beginFrame();
+    if (coverJob_.valid() &&
+        coverJob_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        cover_ = coverJob_.get();
     const float s = camera.scale;
     const Vec2 screen = camera.screen;
     const Vec2 c = camera.centre;
@@ -1327,22 +1511,33 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
         prepareActors(view, lod);
         (void)drawShadows(region_, view, xf, shadow_, view_, true, merge_.visible());
         stats_.spritesCulled = static_cast<int>(region_.order.size() - merge_.visible().size());
+        // The painter's order, drawn page by page wherever the picture is the same for it
+        // (page_runs.hpp): what does not meet on screen need not wait its turn.
+        openRuns();
         for (const std::uint32_t k : merge_.visible()) {
+            runWhat_ = kRunActor;
             for (const std::uint32_t a : merge_.before(k)) drawActor(actorOf_[a], xf);
             const std::uint32_t i = region_.order[k];
             const Elem& e = region_.elems[i];
             if (e.home) {
-                batch_.flush();
+                // The home's scene takes its turn between what is behind it and in front.
+                closeRuns(xf.filter);
                 if (hooks.objects && home) hooks.objects(frame);
                 homeDrawn = true;
+                openRuns();
                 continue;
             }
+            runWhat_ = e.figure   ? kRunFigure
+                       : e.ground ? kRunTerrain | static_cast<std::uint32_t>(map_.terrainAt(e.tile))
+                                  : map_.items()[e.item].info;
             if (!drawElem(e, xf, static_cast<float>(now))) ++stats_.spritesMissing;
             ++stats_.spritesDrawn;
             if (e.look != nullptr && e.look->look == Look::Placeholder) ++stats_.placeholders;
         }
+        runWhat_ = kRunActor;
         for (const std::uint32_t a : merge_.before(region_.order.size()))
             drawActor(actorOf_[a], xf);
+        closeRuns(xf.filter);
     } else if (lod != Lod::Overview) {
         // Coarser levels have no live objects of their own: people go over the impostors.
         prepareActors(view, lod);
@@ -1369,8 +1564,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
             const std::uint32_t i = region_.order[k];
             const Elem& e = region_.elems[i];
             if (e.first && e.look != nullptr && e.look->glow)
-                (void)put(*e.look->glow, e.anchor, xf, g, SDL_BLENDMODE_ADD);
+                lit_.push_back({e.look->glow->page, k, &*e.look->glow, e.anchor});
         }
+        drawLit(xf, g);
     }
     batch_.flush();
     if (hooks.glow && home) hooks.glow(frame);
@@ -1573,7 +1769,8 @@ void WorldView::prepareActorsTimed(const FRect& view, Lod lod) {
             // (by the same depth relation as the native order) is not drawn over it; under a roof
             // or a colonnade there is nothing to see from this far either.
             const float above = d.z - static_cast<float>(map_.level(t) * lvl_);
-            if ((d.item < 0 || d.floor) && cover_->at(d.pos) - above <= tuning::kCoverHidden)
+            if (cover_ && (d.item < 0 || d.floor) &&
+                cover_->at(d.pos) - above <= tuning::kCoverHidden)
                 coarse_.push_back(static_cast<std::uint32_t>(i));
             continue;
         }

@@ -194,6 +194,7 @@ add_library(lc_worldview STATIC
   src/worldview/order.cpp
   src/worldview/overview.cpp
   src/worldview/page_atlas.cpp
+  src/worldview/page_runs.cpp
   src/worldview/places.cpp
   src/worldview/renderer.cpp
   src/worldview/script.cpp
