@@ -3590,7 +3590,20 @@
   }
  ],
  "audio": {
-  "music": [],
+  "music": [
+   "music/world/travel_greece_day.ogg",
+   "music/world/travel_greece_night.ogg",
+   "music/world/travel_iran_day.ogg",
+   "music/world/travel_iran_night.ogg",
+   "music/world/travel_italy_day.ogg",
+   "music/world/travel_italy_night.ogg",
+   "music/world/travel_levant_day.ogg",
+   "music/world/travel_levant_night.ogg",
+   "music/world/travel_mesopotamia_day.ogg",
+   "music/world/travel_mesopotamia_night.ogg",
+   "music/world/travel_sea_day.ogg",
+   "music/world/travel_sea_night.ogg"
+  ],
   "ambience": [
    "amb/world/sea.ogg",
    "amb/world/ship.ogg",

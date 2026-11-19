@@ -399,6 +399,234 @@
         "season",
         "parsa"
       ]
+    },
+    {
+      "file": "music/parsa/town_court_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 72.0,
+      "samples": 3175200,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (court), day: angular harp over a lute's drone.",
+      "where": "towns: Susa, Pasargadae",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 3175200,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/town_court_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 72.0,
+      "samples": 3175200,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (court), night: harp, hummed drone.",
+      "where": "towns: Susa, Pasargadae",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 3175200,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/town_caravan_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 72.0,
+      "samples": 3175200,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (caravan), day: double pipe with drone over a frame drum's walk.",
+      "where": "towns: the Persian Gates, Halys",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 3175200,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/town_caravan_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 72.0,
+      "samples": 3175200,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (caravan), night: lute, hummed drone.",
+      "where": "towns: the Persian Gates, Halys",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 3175200,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/town_west_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 72.0,
+      "samples": 3175200,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (west), day: lyre in a triplet lilt, double pipe answers.",
+      "where": "towns: Sardis, Sidon",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 3175200,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/town_west_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 72.0,
+      "samples": 3175200,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (west), night: barbitos, far pipe.",
+      "where": "towns: Sardis, Sidon",
+      "music": {
+        "bpm": 80,
+        "meter": [
+          4
+        ],
+        "bars": 24,
+        "beats": 96,
+        "samples": 3175200,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/town_river_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 96.0,
+      "samples": 4233600,
+      "gain": 0.6,
+      "when": "day",
+      "for": "Town piece (river), day: long-necked lute, harp dyads.",
+      "where": "towns: Babylon, the Euphrates crossing, Gordion",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          3
+        ],
+        "bars": 32,
+        "beats": 96,
+        "samples": 4233600,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0,
+          72.0,
+          84.0
+        ]
+      }
+    },
+    {
+      "file": "music/parsa/town_river_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 96.0,
+      "samples": 4233600,
+      "gain": 0.6,
+      "when": "night",
+      "for": "Town piece (river), night: harp, hummed drone.",
+      "where": "towns: Babylon, the Euphrates crossing, Gordion",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          3
+        ],
+        "bars": 32,
+        "beats": 96,
+        "samples": 4233600,
+        "phrase_starts_s": [
+          0.0,
+          12.0,
+          24.0,
+          36.0,
+          48.0,
+          60.0,
+          72.0,
+          84.0
+        ]
+      }
     }
   ]
 }

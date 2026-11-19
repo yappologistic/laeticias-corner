@@ -3358,6 +3358,318 @@
         "rain",
         "drip"
       ]
+    },
+    {
+      "file": "music/world/travel_italy_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 171.4286,
+      "samples": 7560000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: a syrinx with a lyre answering; sparse, the land's beds carry the rests.",
+      "where": "the Italian countryside and hills: Latium, the Apennines",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7560000,
+        "phrase_starts_s": [
+          0.0,
+          42.8571,
+          85.7143,
+          128.5714
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_italy_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 171.4286,
+      "samples": 7560000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the tune on a far tibia, the lyre ringing; sparse, the land's beds carry the rests.",
+      "where": "the Italian countryside and hills: Latium, the Apennines",
+      "music": {
+        "bpm": 56,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7560000,
+        "phrase_starts_s": [
+          0.0,
+          42.8571,
+          85.7143,
+          128.5714
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_greece_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 192.0,
+      "samples": 8467200,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: a lyra in dactyls, Pan's pipes from the hills; sparse, the land's beds carry the rests.",
+      "where": "Greece and the Aegean's shores: Greece, Arcadia, northern Attica, Thrace, Ionia",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          6
+        ],
+        "bars": 32,
+        "beats": 192,
+        "samples": 8467200,
+        "phrase_starts_s": [
+          0.0,
+          48.0,
+          96.0,
+          144.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_greece_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 192.0,
+      "samples": 8467200,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: a barbitos, a far aulos; sparse, the land's beds carry the rests.",
+      "where": "Greece and the Aegean's shores: Greece, Arcadia, northern Attica, Thrace, Ionia",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          6
+        ],
+        "bars": 32,
+        "beats": 192,
+        "samples": 8467200,
+        "phrase_starts_s": [
+          0.0,
+          48.0,
+          96.0,
+          144.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_sea_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 180.0,
+      "samples": 7938000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: the ship's piper on the aulos over a held drone; sparse, the land's beds carry the rests.",
+      "where": "the sea lanes: the Tyrrhenian, Adriatic, Ionian, Saronic and Aegean seas, the Gulf",
+      "music": {
+        "bpm": 48,
+        "meter": [
+          4
+        ],
+        "bars": 36,
+        "beats": 144,
+        "samples": 7938000,
+        "phrase_starts_s": [
+          0.0,
+          45.0,
+          90.0,
+          135.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_sea_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 180.0,
+      "samples": 7938000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the rowers humming the tune; sparse, the land's beds carry the rests.",
+      "where": "the sea lanes: the Tyrrhenian, Adriatic, Ionian, Saronic and Aegean seas, the Gulf",
+      "music": {
+        "bpm": 48,
+        "meter": [
+          4
+        ],
+        "bars": 36,
+        "beats": 144,
+        "samples": 7938000,
+        "phrase_starts_s": [
+          0.0,
+          45.0,
+          90.0,
+          135.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_levant_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: a lyre, the double pipe and a frame drum's walk; sparse, the land's beds carry the rests.",
+      "where": "Anatolia and the Levant: Anatolia, the Taurus, the coast of Syria, the steppe",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_levant_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: a long-necked lute, far pipes; sparse, the land's beds carry the rests.",
+      "where": "Anatolia and the Levant: Anatolia, the Taurus, the coast of Syria, the steppe",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_mesopotamia_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 168.0,
+      "samples": 7408800,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: harp dyads over a long-necked lute; sparse, the land's beds carry the rests.",
+      "where": "between the rivers: Mesopotamia and Susiana",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          3
+        ],
+        "bars": 56,
+        "beats": 168,
+        "samples": 7408800,
+        "phrase_starts_s": [
+          0.0,
+          42.0,
+          84.0,
+          126.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_mesopotamia_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 168.0,
+      "samples": 7408800,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the harp over a hummed drone; sparse, the land's beds carry the rests.",
+      "where": "between the rivers: Mesopotamia and Susiana",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          3
+        ],
+        "bars": 56,
+        "beats": 168,
+        "samples": 7408800,
+        "phrase_starts_s": [
+          0.0,
+          42.0,
+          84.0,
+          126.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_iran_day.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "day",
+      "for": "Travelling theme, day: an angular harp, a far double pipe; sparse, the land's beds carry the rests.",
+      "where": "the Iranian plateau and the Zagros",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
+    },
+    {
+      "file": "music/world/travel_iran_night.ogg",
+      "kind": "music",
+      "loop": true,
+      "seconds": 160.0,
+      "samples": 7056000,
+      "gain": 0.5,
+      "when": "night",
+      "for": "Travelling theme, night: the harp over hummed women's voices; sparse, the land's beds carry the rests.",
+      "where": "the Iranian plateau and the Zagros",
+      "music": {
+        "bpm": 60,
+        "meter": [
+          4
+        ],
+        "bars": 40,
+        "beats": 160,
+        "samples": 7056000,
+        "phrase_starts_s": [
+          0.0,
+          40.0,
+          80.0,
+          120.0
+        ]
+      }
     }
   ]
 }

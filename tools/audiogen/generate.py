@@ -32,6 +32,8 @@ import score  # noqa: E402
 import seasons  # noqa: E402
 import sfx  # noqa: E402
 import stings  # noqa: E402
+import towns  # noqa: E402
+import travel  # noqa: E402
 import validate  # noqa: E402
 import weather  # noqa: E402
 import wildlife  # noqa: E402
@@ -116,11 +118,12 @@ EFFECTS = {
 
 # Region sets (world-tech §2.2: assets/audio/<music|amb|sfx>/<set>/…), each with a manifest
 # at assets/audio/<set>/manifest.json for the engine and the region theme files.
-SETS = {"parsa": {**parsa.FILES, **people.PARSA, **stings.PARSA, **seasons.PARSA},
-        "athens": {**athens.FILES, **people.ATHENS, **stings.ATHENS, **seasons.ATHENS},
-        "rome": {**rome.FILES, **people.ROME, **stings.ROME, **seasons.ROME},
+SETS = {"parsa": {**parsa.FILES, **people.PARSA, **stings.PARSA, **seasons.PARSA, **towns.PARSA},
+        "athens": {**athens.FILES, **people.ATHENS, **stings.ATHENS, **seasons.ATHENS,
+                   **towns.ATHENS},
+        "rome": {**rome.FILES, **people.ROME, **stings.ROME, **seasons.ROME, **towns.ROME},
         "world": {**world.FILES, **weather.FILES, **wildlife.FILES, **people.FILES,
-                  **seasons.FILES, **between.FILES},
+                  **seasons.FILES, **between.FILES, **travel.FILES},
         # Home-only additions not in the catalog (variations, steps, stings) live in the home
         # folders and are listed in assets/audio/home/manifest.json.
         "home": {**wildlife.HOME, **people.HOME, **stings.HOME}}
@@ -129,8 +132,14 @@ REGION = {name: entry for files in SETS.values() for name, entry in files.items(
 
 def alignment_lag(a, b, span=5 * mastering.SR):
     """Lag (samples) at which b best matches a: proves the encoder kept sample alignment.
-    Waveform error is no use here, since Vorbis legitimately rebuilds noise differently."""
-    a, b = a[:span].sum(axis=1), b[:span].sum(axis=1)
+    Waveform error is no use here, since Vorbis legitimately rebuilds noise differently.
+    Compared over the loudest `span` of the file: a piece that opens in a rest would leave
+    only codec noise to correlate."""
+    e = np.square(a.sum(axis=1))
+    step = mastering.SR
+    starts = range(0, max(1, len(e) - span + 1), step)
+    s0 = max(starts, key=lambda s: float(e[s:s + span].sum()))
+    a, b = a[s0:s0 + span].sum(axis=1), b[s0:s0 + span].sum(axis=1)
     corr = np.fft.irfft(np.fft.rfft(b, 2 * span) * np.conj(np.fft.rfft(a, 2 * span)))
     lag = int(np.argmax(corr))
     return lag if lag < span else lag - 2 * span
@@ -191,7 +200,8 @@ def build_region(name, entry, rng):
         x = quiet_start(x)
     # Low-bitrate Vorbis overshoots more on transients, so the lower the quality, the more
     # headroom (q0 is used only by the atmosphere sets).
-    ceiling = -1.5 if entry["quality"] >= 2 else -2.5 if entry["quality"] == 1 else -3.0
+    ceiling = entry.get("ceiling", -1.5 if entry["quality"] >= 2 else -2.5 if entry["quality"] == 1
+                        else -3.0)
     x = mastering.master_loop(x, entry["lufs"], ceiling)[0]
     return write_loop(name, x, entry["quality"])
 

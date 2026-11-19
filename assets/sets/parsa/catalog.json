@@ -4163,7 +4163,15 @@
  "audio": {
   "music": [
    "music/parsa/day.ogg",
-   "music/parsa/night.ogg"
+   "music/parsa/night.ogg",
+   "music/parsa/town_court_day.ogg",
+   "music/parsa/town_court_night.ogg",
+   "music/parsa/town_caravan_day.ogg",
+   "music/parsa/town_caravan_night.ogg",
+   "music/parsa/town_west_day.ogg",
+   "music/parsa/town_west_night.ogg",
+   "music/parsa/town_river_day.ogg",
+   "music/parsa/town_river_night.ogg"
   ],
   "ambience": [
    "amb/parsa/plain_day.ogg",
