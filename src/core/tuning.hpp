@@ -74,7 +74,10 @@ inline constexpr double kBenchMemoryMiB = 512.0;
 // cache, the overview and the decoding of a page (two 64 MiB surfaces at once) come on top.
 inline constexpr double kBenchWorldMemoryMiB = 832.0;
 inline constexpr long long kSoakDrawEvery = 120; // steps between frames drawn during a soak
-inline constexpr double kSoakDaySeconds = 50.0;  // a soak's calendar day: 600 s cross 4 seasons
+// Before a soak's measured run the world's art is let in (it loads ahead a page at a time, in
+// real time, while a soak plays many times faster than a person does): at most this long.
+inline constexpr double kSoakLoadSeconds = 120.0;
+inline constexpr double kSoakDaySeconds = 50.0; // a soak's calendar day: 600 s cross 4 seasons
 inline constexpr int kBenchCrowd = 400;
 // Rare visitors: the recipe holds this long before one comes; a visit lasts, then it stays away.
 inline constexpr float kRareDelayMin = 20.0f;

@@ -740,6 +740,8 @@ PageStats PageAtlas::stats() const {
             ++s.resident;
         else if (p.state != State::Unloaded)
             ++s.streaming;
+        else if (p.own && p.w > 0)
+            ++s.waiting;
     }
     return s;
 }

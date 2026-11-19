@@ -700,6 +700,16 @@ int App::runSoak() {
     weather_.setMode(WeatherMode::Natural);
     camera_.setLand(world_.landBounds(), scene_->cliffDepth());
     actors_.populate(actorEnv());
+    // The world's art first: it loads ahead in the background whatever the view, in real time,
+    // and a soak runs many times faster than play. Unless it is in before the measured run, how
+    // much of it "the first quarter" holds depends on the machine's speed, and a fast machine
+    // reads the rest of the loading as growth.
+    if (worldView_) {
+        const Uint64 t0 = SDL_GetPerformanceCounter();
+        do (void)benchFrame();
+        while (!worldView_->artLoaded() &&
+               msBetween(t0, SDL_GetPerformanceCounter()) < tuning::kSoakLoadSeconds * 1000.0);
+    }
     const auto steps = static_cast<long long>(opts_.soak / tuning::kStepSeconds);
     double warm = 0;
     std::vector<float> sim;

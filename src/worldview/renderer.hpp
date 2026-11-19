@@ -178,6 +178,12 @@ public:
         return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0;
     }
 
+    // Every page that loads ahead of need is in (those with a texture of their own: all of them
+    // while the art fits its ceiling). Until then memory still rises by design.
+    [[nodiscard]] bool artLoaded() const {
+        return stats_.pages.streaming == 0 && stats_.pages.waiting == 0;
+    }
+
     [[nodiscard]] const FrameStats& stats() const { return stats_; }
     // What the page layout cost the last native frame: the sprites that stood in short runs
     // between runs of another page (each such run is a draw call), most first. They are what

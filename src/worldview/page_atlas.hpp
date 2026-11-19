@@ -40,6 +40,7 @@ struct SpriteRef {
 struct PageStats {
     int resident = 0;       // set pages resident
     int streaming = 0;      // queued, decoding or uploading
+    int waiting = 0;        // not started yet, of the pages that load ahead whatever the view
     int wanted = 0;         // of them (or not started yet), pages the view needs
     int uploads = 0;        // slices uploaded this frame
     std::size_t bytes = 0;  // texture memory of every resident page
