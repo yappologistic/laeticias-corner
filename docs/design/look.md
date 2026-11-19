@@ -14,7 +14,7 @@ Contents: 1 diagnosis · 2 visual direction · 3 rendering plan · 4 art plan ·
 ## 0. What SDL 3.4 gives us (measured here, not assumed)
 
 Installed: SDL **3.4.20** (`pkg-config --modversion sdl3`). Render drivers built in: `opengl`,
-`opengles2`, `vulkan`, `gpu`, `software`. Machine: development machine's GPU, NVIDIA Vulkan ICD. Probes were
+`opengles2`, `vulkan`, `gpu`, `software`. Machine: the development machine's GPU, NVIDIA Vulkan ICD. Probes were
 small C++ programs run headless (`offscreen` or `dummy` video driver, no window shown, no audio),
 then deleted.
 
