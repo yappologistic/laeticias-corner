@@ -136,6 +136,8 @@
 //       more than PX rows drawn inside something in front of them: nobody on the roofs)
 //       | city order MIN MAX (pairs drawn against the depth comparator, plus cycles broken)
 //       | city sunk MIN MAX (people drawn below the floor or deck they stand on)
+//       | city on_items MIN MAX (people drawn at half or quarter scale on an item's tile: a
+//       ramp, a stair, a deck)
 //       sound beds (every region plays a loaded bed in every month, by day and by night)
 //       | sound FILE|FAMILY MIN MAX (the world's gain x 100 for that loop, or family a.b, now)
 // Widget points for drawer tiles scroll the drawer to the tile when it is off the page.

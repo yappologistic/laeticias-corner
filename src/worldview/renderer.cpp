@@ -522,53 +522,66 @@ bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FR
 }
 
 void WorldView::drawGlowOccluded(const Xform& x, float glow, float now) {
-    // draw-order.md §4.4: each light is drawn at its owner's turn in the frame's order into a
-    // layer of its own, and whatever comes after it there and overlaps it is drawn again as a
-    // black silhouette, so a lamp behind a column or a passer-by is hidden where they are. The
-    // layer is the shadow layer's target, free again by now; it goes on additively once.
+    // draw-order.md §4.4: each light goes into a layer of its own, and whatever stands in front
+    // of it there (after it in the frame's order, overlapping it) is drawn again as a black
+    // silhouette, so a lamp behind a column or a passer-by is hidden where they are. Lights and
+    // silhouettes are ordered by the same comparator over their owners' boxes (a light a hair
+    // nearer than its owner), page by page, so the pass costs a draw per page, not per thing.
+    // The layer is the shadow layer's target, free again by now; it goes on additively once.
     const auto seq = merge_.sequence();
     glowAt_.clear();
     glowBoxes_.clear();
+    glowItems_.clear();
+    glowWhat_.clear();
     for (std::size_t p = 0; p < seq.size(); ++p) {
         if (seq[p].actor) continue;
         const Elem& e = region_.elems[seq[p].index];
         if (!e.first || e.look == nullptr || !e.look->glow || !glowing(e.item)) continue;
         const SpriteRef& gs = *e.look->glow;
+        const FRect box{e.anchor.x - gs.ox, e.anchor.y - gs.oy, e.anchor.x - gs.ox + gs.w,
+                        e.anchor.y - gs.oy + gs.h};
         glowAt_.push_back(static_cast<std::uint32_t>(p));
-        glowBoxes_.push_back({e.anchor.x - gs.ox, e.anchor.y - gs.oy, e.anchor.x - gs.ox + gs.w,
-                              e.anchor.y - gs.oy + gs.h});
+        glowBoxes_.push_back(box);
+        DepthBox light = region_.items[seq[p].index].box;
+        light.id |= 1ULL << 55;
+        light.near += 1e-3f;
+        glowItems_.push_back({light, box, gs.page});
+        glowWhat_.push_back({static_cast<std::uint32_t>(p), true});
     }
     if (glowAt_.empty()) return;
     glowGrid_.build(glowBoxes_, tuning::kActorMergeCell);
+    for (std::size_t p = 0; p < seq.size(); ++p) {
+        const ActorMerge::Step& st = seq[p];
+        const OrderItem& it = st.actor ? mergeActors_[st.index] : region_.items[st.index];
+        bool covers = false;
+        glowGrid_.query(it.screen, [&](std::uint32_t k) {
+            covers = covers || (glowAt_[k] < p && glowBoxes_[k].overlaps(it.screen));
+        });
+        if (!covers ||
+            (!st.actor && (region_.elems[st.index].home || region_.elems[st.index].ground)))
+            continue;
+        glowItems_.push_back(it);
+        glowWhat_.push_back({static_cast<std::uint32_t>(p), false});
+    }
+    glowSorter_.sort(glowItems_, tuning::kActorMergeCell, glowOrder_, glowGraph_);
     batch_.flush();
     if (!SDL_SetRenderTarget(renderer_, shadow_.texture.get()) ||
         !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
         SDL_Log("worldview: %s", SDL_GetError());
     const SDL_FColor lit{glow, glow, glow, 1};
-    std::size_t next = 0;
-    for (std::size_t p = 0; p < seq.size(); ++p) {
+    for (const std::uint32_t g : glowOrder_) {
+        const auto [p, light] = glowWhat_[g];
         const ActorMerge::Step& st = seq[p];
-        const FRect& screen =
-            st.actor ? mergeActors_[st.index].screen : region_.items[st.index].screen;
-        bool covers = false;
-        glowGrid_.query(screen, [&](std::uint32_t k) {
-            covers = covers || (glowAt_[k] < p && glowBoxes_[k].overlaps(screen));
-        });
-        if (covers) {
-            if (st.actor) {
-                const ActorDraw& a = actorDraw_[actorOf_[st.index]];
-                const SDL_FColor black{0, 0, 0, a.colour.a};
-                (void)putRows(*a.sprite, a.anchor, x, black, a.mirror, a.hidden);
-                if (a.goods != nullptr)
-                    (void)putRows(*a.goods, a.goodsAt, x, black, false, a.hidden);
-            } else {
-                drawSilhouette(region_.elems[st.index], x, now);
-            }
-        }
-        if (next < glowAt_.size() && glowAt_[next] == p) {
+        if (light) {
             const Elem& e = region_.elems[st.index];
             (void)put(*e.look->glow, e.anchor, x, lit, SDL_BLENDMODE_ADD);
-            ++next;
+        } else if (st.actor) {
+            const ActorDraw& a = actorDraw_[actorOf_[st.index]];
+            const SDL_FColor black{0, 0, 0, a.colour.a};
+            (void)putRows(*a.sprite, a.anchor, x, black, a.mirror, a.hidden);
+            if (a.goods != nullptr) (void)putRows(*a.goods, a.goodsAt, x, black, false, a.hidden);
+        } else {
+            drawSilhouette(region_.elems[st.index], x, now);
         }
     }
     batch_.flush();
@@ -1972,6 +1985,17 @@ int WorldView::coarseActorsCovered(float px, std::string* first) const {
         covered += most > px ? 1 : 0;
     }
     return covered;
+}
+
+int WorldView::coarseActorsOnItems() const {
+    int on = 0;
+    for (const std::uint32_t i : coarse_) {
+        const life::DrawActor& d = actorBuf_[i];
+        const TilePos t{static_cast<int>(std::floor(d.pos.x)),
+                        static_cast<int>(std::floor(d.pos.y))};
+        on += map_.inBounds(t) && map_.itemAt(t) >= 0 ? 1 : 0;
+    }
+    return on;
 }
 
 int WorldView::orderViolations(std::string* first) const {

@@ -166,6 +166,7 @@ std::optional<std::string> App::checkCity(std::span<const std::string> a) {
         return r ? std::optional(*r + ": " + first) : r;
     }
     if (what == "coarse") return range(worldView_ ? worldView_->coarseActorsDrawn() : 0, 2);
+    if (what == "on_items") return range(worldView_ ? worldView_->coarseActorsOnItems() : 0, 2);
     // expect city order MIN MAX: pairs drawn last frame that overlap yet go against the depth
     // comparator, plus cycles broken (draw-order.md §6.1); expect city sunk MIN MAX: people
     // standing on a floor or deck drawn below its surface (through a bridge, not on it).

@@ -1,0 +1,1126 @@
+# The draw order at every bridge, stair and gate the visual QA sweep visited (out/qa6, its
+# 93 crossing, stair and gate places): at 1x nobody is drawn against the depth comparator or
+# below the floor they stand on; at 1/2 nobody shows inside something in front of them. Slow:
+# labelled heavy. Each place's 1x frame lands in shots/crossing_*.
+set season spring
+set day 9
+set time 0.17
+set clock day
+set weather clear
+# bridge: bridge (95, 1215)
+set city 95,1215
+set city camera
+set world 95 1215 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_bridge_95_1215.png
+set world 95 1215 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: rome-pons_aemilius (121, 1127)
+set city 121,1127
+set city camera
+set world 121 1127 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-pons_aemilius_121_1127.png
+set world 121 1127 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: rome-pons_cestius (114, 1136)
+set city 114,1136
+set city camera
+set world 114 1136 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-pons_cestius_114_1136.png
+set world 114 1136 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: rome-pons_fabricius (112, 1121)
+set city 112,1121
+set city camera
+set world 112 1121 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-pons_fabricius_112_1121.png
+set world 112 1121 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: rome-pons_sublicius (131, 1127)
+set city 131,1127
+set city camera
+set world 131 1127 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-pons_sublicius_131_1127.png
+set world 131 1127 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_arch (200, 1141)
+set city 200,1141
+set city camera
+set world 200 1141 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_arch_200_1141.png
+set world 200 1141 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_arch (211, 1153)
+set city 211,1153
+set city camera
+set world 211 1153 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_arch_211_1153.png
+set world 211 1153 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_arch (220, 1140)
+set city 220,1140
+set city camera
+set world 220 1140 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_arch_220_1140.png
+set world 220 1140 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_arch (220, 1146)
+set city 220,1146
+set city camera
+set world 220 1146 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_arch_220_1146.png
+set world 220 1146 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (129, 322)
+set city 129,322
+set city camera
+set world 129 322 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_129_322.png
+set world 129 322 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (129, 324)
+set city 129,324
+set city camera
+set world 129 324 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_129_324.png
+set world 129 324 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (152, 351)
+set city 152,351
+set city camera
+set world 152 351 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_152_351.png
+set world 152 351 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (167, 294)
+set city 167,294
+set city camera
+set world 167 294 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_167_294.png
+set world 167 294 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (168, 294)
+set city 168,294
+set city camera
+set world 168 294 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_168_294.png
+set world 168 294 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (210, 433)
+set city 210,433
+set city camera
+set world 210 433 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_210_433.png
+set world 210 433 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (245, 439)
+set city 245,439
+set city camera
+set world 245 439 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_245_439.png
+set world 245 439 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (246, 439)
+set city 246,439
+set city camera
+set world 246 439 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_246_439.png
+set world 246 439 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (292, 277)
+set city 292,277
+set city camera
+set world 292 277 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_292_277.png
+set world 292 277 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (294, 277)
+set city 294,277
+set city camera
+set world 294 277 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_294_277.png
+set world 294 277 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (299, 227)
+set city 299,227
+set city camera
+set world 299 227 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_299_227.png
+set world 299 227 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (299, 228)
+set city 299,228
+set city camera
+set world 299 228 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_299_228.png
+set world 299 228 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-bridge_timber (331, 183)
+set city 331,183
+set city camera
+set world 331 183 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-bridge_timber_331_183.png
+set world 331 183 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (212, 415)
+set city 212,415
+set city camera
+set world 212 415 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_212_415.png
+set world 212 415 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (305, 89)
+set city 305,89
+set city camera
+set world 305 89 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_305_89.png
+set world 305 89 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (306, 89)
+set city 306,89
+set city camera
+set world 306 89 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_306_89.png
+set world 306 89 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (307, 200)
+set city 307,200
+set city camera
+set world 307 200 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_307_200.png
+set world 307 200 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (315, 108)
+set city 315,108
+set city camera
+set world 315 108 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_315_108.png
+set world 315 108 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (319, 105)
+set city 319,105
+set city camera
+set world 319 105 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_319_105.png
+set world 319 105 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (322, 108)
+set city 322,108
+set city camera
+set world 322 108 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_322_108.png
+set world 322 108 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (322, 205)
+set city 322,205
+set city camera
+set world 322 205 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_322_205.png
+set world 322 205 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (326, 107)
+set city 326,107
+set city camera
+set world 326 107 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_326_107.png
+set world 326 107 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (330, 108)
+set city 330,108
+set city camera
+set world 330 108 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_330_108.png
+set world 330 108 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (330, 91)
+set city 330,91
+set city camera
+set world 330 91 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_330_91.png
+set world 330 91 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (339, 118)
+set city 339,118
+set city camera
+set world 339 118 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_339_118.png
+set world 339 118 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (354, 119)
+set city 354,119
+set city camera
+set world 354 119 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_354_119.png
+set world 354 119 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (361, 122)
+set city 361,122
+set city camera
+set world 361 122 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_361_122.png
+set world 361 122 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (416, 124)
+set city 416,124
+set city camera
+set world 416 124 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_416_124.png
+set world 416 124 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (416, 96)
+set city 416,96
+set city camera
+set world 416 96 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_416_96.png
+set world 416 96 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-ford (417, 92)
+set city 417,92
+set city camera
+set world 417 92 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ford_417_92.png
+set world 417 92 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-pontoon (181, 262)
+set city 181,262
+set city camera
+set world 181 262 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-pontoon_181_262.png
+set world 181 262 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-pontoon (181, 264)
+set city 181,264
+set city camera
+set world 181 264 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-pontoon_181_264.png
+set world 181 264 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-pontoon (305, 201)
+set city 305,201
+set city camera
+set world 305 201 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-pontoon_305_201.png
+set world 305 201 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-pontoon (312, 201)
+set city 312,201
+set city camera
+set world 312 201 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-pontoon_312_201.png
+set world 312 201 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-pontoon (312, 204)
+set city 312,204
+set city camera
+set world 312 204 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-pontoon_312_204.png
+set world 312 204 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-pontoon (331, 202)
+set city 331,202
+set city camera
+set world 331 202 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-pontoon_331_202.png
+set world 331 202 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# bridge: world-pontoon (331, 204)
+set city 331,204
+set city camera
+set world 331 204 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-pontoon_331_204.png
+set world 331 204 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# gate: athens-dipylon (229, 692)
+set city 229,692
+set city camera
+set world 229 692 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-dipylon_229_692.png
+set world 229 692 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# gate: athens-sacred_gate (236, 699)
+set city 236,699
+set city camera
+set world 236 699 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-sacred_gate_236_699.png
+set world 236 699 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# gate: parsa-gate_all_lands (349, 77)
+set city 349,77
+set city camera
+set world 349 77 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-gate_all_lands_349_77.png
+set world 349 77 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# gate: parsa-gates_station (334, 164)
+set city 334,164
+set city camera
+set world 334 164 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-gates_station_334_164.png
+set world 334 164 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# gate: parsa-ishtar_gate (288, 211)
+set city 288,211
+set city camera
+set world 288 211 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-ishtar_gate_288_211.png
+set world 288 211 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# gate: parsa-paradise_gate (330, 115)
+set city 330,115
+set city camera
+set world 330 115 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-paradise_gate_330_115.png
+set world 330 115 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# gate: rome-porta_capena (144, 1049)
+set city 144,1049
+set city camera
+set world 144 1049 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-porta_capena_144_1049.png
+set world 144 1049 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: athens-approach (309, 649)
+set city 309,649
+set city camera
+set world 309 649 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-approach_309_649.png
+set world 309 649 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: athens-stair_marble (256, 687)
+set city 256,687
+set city camera
+set world 256 687 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-stair_marble_256_687.png
+set world 256 687 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: athens-stair_marble (294, 652)
+set city 294,652
+set city camera
+set world 294 652 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-stair_marble_294_652.png
+set world 294 652 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: athens-stair_marble (302, 672)
+set city 302,672
+set city camera
+set world 302 672 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-stair_marble_302_672.png
+set world 302 672 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: athens-stair_marble (307, 575)
+set city 307,575
+set city camera
+set world 307 575 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-stair_marble_307_575.png
+set world 307 575 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: athens-stair_marble (310, 661)
+set city 310,661
+set city camera
+set world 310 661 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-stair_marble_310_661.png
+set world 310 661 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: athens-stair_marble (313, 633)
+set city 313,633
+set city camera
+set world 313 633 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_athens-stair_marble_313_633.png
+set world 313 633 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-apadana_stair_e (370, 58)
+set city 370,58
+set city camera
+set world 370 58 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-apadana_stair_e_370_58.png
+set world 370 58 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-apadana_stair_n (356, 72)
+set city 356,72
+set city camera
+set world 356 72 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-apadana_stair_n_356_72.png
+set world 356 72 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-great_stair (350, 91)
+set city 350,91
+set city camera
+set world 350 91 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-great_stair_350_91.png
+set world 350 91 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-hadish_stair_w (394, 70)
+set city 394,70
+set city camera
+set world 394 70 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-hadish_stair_w_394_70.png
+set world 394 70 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-stair_relief (370, 84)
+set city 370,84
+set city camera
+set world 370 84 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-stair_relief_370_84.png
+set world 370 84 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-stair_relief (379, 49)
+set city 379,49
+set city camera
+set world 379 49 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-stair_relief_379_49.png
+set world 379 49 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-stair_relief (424, 53)
+set city 424,53
+set city camera
+set world 424 53 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-stair_relief_424_53.png
+set world 424 53 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-stair_relief (424, 55)
+set city 424,55
+set city camera
+set world 424 55 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-stair_relief_424_55.png
+set world 424 55 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-stair_relief (424, 61)
+set city 424,61
+set city camera
+set world 424 61 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-stair_relief_424_61.png
+set world 424 61 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-tacara_stair_s (397, 77)
+set city 397,77
+set city camera
+set world 397 77 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-tacara_stair_s_397_77.png
+set world 397 77 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: parsa-tripylon_stair (374, 53)
+set city 374,53
+set city camera
+set world 374 53 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_parsa-tripylon_stair_374_53.png
+set world 374 53 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: rome-stair_travertine (107, 1061)
+set city 107,1061
+set city camera
+set world 107 1061 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-stair_travertine_107_1061.png
+set world 107 1061 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: rome-stair_travertine (107, 1067)
+set city 107,1067
+set city camera
+set world 107 1067 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-stair_travertine_107_1067.png
+set world 107 1067 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: rome-stair_travertine (119, 1040)
+set city 119,1040
+set city camera
+set world 119 1040 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-stair_travertine_119_1040.png
+set world 119 1040 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: rome-stair_travertine (144, 1083)
+set city 144,1083
+set city camera
+set world 144 1083 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-stair_travertine_144_1083.png
+set world 144 1083 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: rome-stair_travertine (78, 1033)
+set city 78,1033
+set city camera
+set world 78 1033 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-stair_travertine_78_1033.png
+set world 78 1033 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: rome-stair_travertine (84, 1116)
+set city 84,1116
+set city camera
+set world 84 1116 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-stair_travertine_84_1116.png
+set world 84 1116 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: rome-stair_travertine (87, 1105)
+set city 87,1105
+set city camera
+set world 87 1105 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_rome-stair_travertine_87_1105.png
+set world 87 1105 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-ramp (120, 13)
+set city 120,13
+set city camera
+set world 120 13 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ramp_120_13.png
+set world 120 13 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-ramp (127, 247)
+set city 127,247
+set city camera
+set world 127 247 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ramp_127_247.png
+set world 127 247 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-ramp (200, 655)
+set city 200,655
+set city camera
+set world 200 655 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ramp_200_655.png
+set world 200 655 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-ramp (338, 162)
+set city 338,162
+set city camera
+set world 338 162 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ramp_338_162.png
+set world 338 162 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-ramp (350, 145)
+set city 350,145
+set city camera
+set world 350 145 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ramp_350_145.png
+set world 350 145 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-ramp (91, 1004)
+set city 91,1004
+set city camera
+set world 91 1004 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ramp_91_1004.png
+set world 91 1004 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-ramp (91, 305)
+set city 91,305
+set city camera
+set world 91 305 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-ramp_91_305.png
+set world 91 305 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_earth (345, 19)
+set city 345,19
+set city camera
+set world 345 19 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_earth_345_19.png
+set world 345 19 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_earth (98, 1246)
+set city 98,1246
+set city camera
+set world 98 1246 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_earth_98_1246.png
+set world 98 1246 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_stone (146, 981)
+set city 146,981
+set city camera
+set world 146 981 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_stone_146_981.png
+set world 146 981 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_stone (158, 981)
+set city 158,981
+set city camera
+set world 158 981 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_stone_158_981.png
+set world 158 981 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_stone (222, 1140)
+set city 222,1140
+set city camera
+set world 222 1140 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_stone_222_1140.png
+set world 222 1140 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_stone (264, 774)
+set city 264,774
+set city camera
+set world 264 774 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_stone_264_774.png
+set world 264 774 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_stone (305, 721)
+set city 305,721
+set city camera
+set world 305 721 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_stone_305_721.png
+set world 305 721 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+# stair: world-stair_stone (329, 197)
+set city 329,197
+set city camera
+set world 329 197 1
+wait 45
+expect city order 0 0
+expect city sunk 0 0
+shot shots/crossing_world-stair_stone_329_197.png
+set world 329 197 0.5
+wait 30
+expect city order 0 0
+expect city covered 2 0 0
+quit

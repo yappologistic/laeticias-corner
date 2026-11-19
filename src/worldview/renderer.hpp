@@ -232,6 +232,9 @@ public:
     // them, so tests can hold the one against the other.
     [[nodiscard]] int coarseActorsCovered(float px, std::string* first = nullptr) const;
     [[nodiscard]] int coarseActorsDrawn() const { return static_cast<int>(coarse_.size()); }
+    // Of them, people standing on an item's tile (a ramp, a stair, a deck): zoomed out they are
+    // drawn like anyone, cut only where something stands in front of them.
+    [[nodiscard]] int coarseActorsOnItems() const;
     // Pairs drawn in the last frame that overlap on screen yet go against the comparator, two
     // actors' pairs aside (the order oracle, draw-order.md §6.1), and cycles the static sort had
     // to break (data faults): both zero when right.
@@ -525,6 +528,11 @@ private:
     std::vector<std::uint32_t> glowAt_; // drawGlowOccluded's lights: place in the sequence
     std::vector<FRect> glowBoxes_;      // and their glow sprites' boxes
     ScreenGrid glowGrid_;
+    std::vector<OrderItem> glowItems_; // lights and silhouettes, sorted page by page
+    std::vector<std::pair<std::uint32_t, bool>> glowWhat_; // per item: place in the sequence, light
+    std::vector<std::uint32_t> glowOrder_;
+    OrderGraph glowGraph_;
+    PageOrder glowSorter_;
 
     // The shader path (null: Classic), the world's lights, the regions' looks, sway weights per
     // content item (art px at the top in a full wind) and the wind.
