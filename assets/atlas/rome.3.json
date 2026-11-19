@@ -1298,21 +1298,21 @@
    "ox": 24,
    "oy": 32
   },
-  "item/rome.t_oak/base/r0/f0@winter": {
-   "x": 62,
-   "y": 2817,
-   "w": 75,
-   "h": 87,
-   "ox": 36,
-   "oy": 69
+  "item/rome.t_plane/base/r0/f0@winter": {
+   "x": 79,
+   "y": 3073,
+   "w": 74,
+   "h": 113,
+   "ox": 37,
+   "oy": 94
   },
-  "item/rome.t_oak/base/r1/f0@winter": {
-   "x": 138,
-   "y": 2817,
-   "w": 71,
-   "h": 87,
-   "ox": 35,
-   "oy": 69
+  "item/rome.t_plane/base/r1/f0@winter": {
+   "x": 1,
+   "y": 3073,
+   "w": 77,
+   "h": 122,
+   "ox": 39,
+   "oy": 103
   },
   "item/rome.t_poplar/base/r0/f0@winter": {
    "x": 1,
