@@ -1,0 +1,78 @@
+name: Proposal
+description: A new feature or a change to how the game, the engine or the tools work. Accepted before any work starts.
+labels: ["proposal", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Anything beyond a small fix starts here. Please wait for the maintainer to mark the
+        proposal `accepted` before opening a pull request; work on an unaccepted proposal may be
+        closed. Read the direction in CLAUDE.md ("Where this is going" and "Non-negotiables").
+  - type: textarea
+    id: problem
+    attributes:
+      label: What and why
+      description: What you want to change and the problem it solves for the player or the project.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: How
+      description: "The design in a few paragraphs: which paths change (docs/contributing/repository-map.md), what data or rules, what the player sees."
+    validations:
+      required: true
+  - type: textarea
+    id: proof
+    attributes:
+      label: How it will be proven
+      description: The tests, scripted runs, screenshots or benchmarks that will show it works (docs/contributing/proof-of-work.md).
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: How it splits into small pull requests, one logical change each, and what is left out.
+    validations:
+      required: true
+  - type: checkboxes
+    id: work
+    attributes:
+      label: Who does the work
+      options:
+        - label: I would like to implement this myself once it is accepted.
+  - type: markdown
+    attributes:
+      value: |
+        ## AI assistance
+        Required on every issue, also when no AI tool was used (then write "none").
+        Policy: docs/contributing/ai-policy.md
+  - type: input
+    id: ai-tool
+    attributes:
+      label: Tool or harness
+      description: The agent, editor integration or chat product used to write or research this issue, or "none".
+    validations:
+      required: true
+  - type: input
+    id: ai-model
+    attributes:
+      label: Model and version
+      description: The exact model identifier and version as the tool reports it, or "none".
+    validations:
+      required: true
+  - type: input
+    id: ai-parts
+    attributes:
+      label: What it produced
+      description: Which parts the tool produced (the text, the analysis, the script, the images), or "none".
+    validations:
+      required: true
+  - type: checkboxes
+    id: ai-statement
+    attributes:
+      label: Responsibility
+      options:
+        - label: I have read all of this issue, checked what it claims myself, and I answer for it.
+          required: true
