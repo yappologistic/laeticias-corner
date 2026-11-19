@@ -67,9 +67,19 @@
    ]
   },
   {
+   "id": "parsa.terrace_stone",
+   "name": "Terrace stone",
+   "base": true,
+   "variants": 4,
+   "faces": [
+    "parsa.ashlar",
+    "parsa.rock"
+   ]
+  },
+  {
    "id": "parsa.paving_red",
    "name": "Red plaster floor",
-   "under": "parsa.plain_grass",
+   "under": "parsa.terrace_stone",
    "edges": 16,
    "faces": [
     "parsa.ashlar"
