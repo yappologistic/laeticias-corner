@@ -33,6 +33,7 @@ void Batch::submit(const SDL_Vertex* verts, int vertCount, const int* indices, i
         SDL_Log("render: geometry submission failed: %s", SDL_GetError());
     }
     ++drawCalls_;
+    ++bandDraws_[band_ < kTags - 1 ? band_ : kTags - 1];
 }
 
 void Batch::flush() {

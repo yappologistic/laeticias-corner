@@ -1805,6 +1805,7 @@ Everything in v1 keeps its meaning. New and changed fields:
 |---|---|
 | `tags` | list of tag names for conditions and reaction lines; the first tag picks Laeticia's `place_<tag>` line |
 | `perch` | pixel height a critter sitting or perching `on` the item is lifted to |
+| `deck` | a walkable item's floor in pixels above the ground (a footbridge's planks, stepping stones' tops; 0 to 64): whoever stands on it is drawn at that height and in the draw order over it, between a bridge's rails (`draw-order.md` §1.5 d) |
 | `season_looks` | seasons for which the art supplies `@season` base sprites (R4.3) |
 | `growth` | `{stages, seconds, harvest}`: number of growth stages, play seconds per stage, whether a ripe item can be picked |
 | `click_sound` | sfx name played when the item is clicked with no tool |

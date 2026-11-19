@@ -13,6 +13,7 @@
 #include "render/camera.hpp"
 #include "render/depth.hpp"
 #include "render/fx.hpp"
+#include "render/order.hpp"
 #include "render/sprites.hpp"
 #include "test_support.hpp"
 #include "ui/font.hpp"
@@ -634,18 +635,26 @@ TEST_CASE("depth order respects every overlapping pair and handles large footpri
         const float tall = iso.tileH() * rng.range(1.0f, 4.0f) * f(std::max(w, h));
         screen.push_back({left - 8, iso.toWorld(f(x), f(y)).y - tall, right + 8, bottom});
     }
-    DepthSorter sorter;
+    // Ground-standing boxes: the comparator orders them with no cycle (draw-order.md §1.3).
+    std::vector<OrderItem> items;
+    for (std::size_t i = 0; i < foot.size(); ++i)
+        items.push_back({makeBox(foot[i], 0, screen[i].y1 - screen[i].y0,
+                                 depthId(DepthKind::Item, static_cast<std::uint32_t>(i)), iso.hh),
+                         screen[i], 0});
+    PageOrder sorter;
+    OrderGraph graph;
     std::vector<std::uint32_t> order;
-    sorter.sort(foot, screen, 2 * iso.tileW(), order);
+    sorter.sort(items, 2 * iso.tileW(), order, graph);
     REQUIRE(order.size() == foot.size());
+    CHECK(sorter.cyclesBroken() == 0);
     std::vector<std::size_t> rank(foot.size());
     for (std::size_t k = 0; k < order.size(); ++k) rank[order[k]] = k;
     int pairs = 0;
     for (std::size_t i = 0; i < foot.size(); ++i)
         for (std::size_t j = i + 1; j < foot.size(); ++j) {
-            if (!screen[i].overlaps(screen[j])) continue;
+            if (!screen[i].overlaps(screen[j]) || !constrains(items[i].box, items[j].box)) continue;
             ++pairs;
-            const bool ij = behind(foot[i], foot[j]);
+            const bool ij = drawnBefore(items[i].box, items[j].box);
             CHECK((ij ? rank[i] < rank[j] : rank[j] < rank[i]));
         }
     CHECK(pairs > 1000);
