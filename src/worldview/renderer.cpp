@@ -416,25 +416,13 @@ bool WorldView::drawBeyond(TilePos p, const Xform& x, bool haze) {
            put(sprites_->diamond(), a, x, {h[0], h[1], h[2], alpha}, SDL_BLENDMODE_BLEND);
 }
 
-bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
-    if (e.home) return true; // the game's scene draws it
-    if (e.figure) return put(figures_[e.item].sprite, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
-    if (e.ground) return drawTile(e.tile, x, now, nullptr);
+const SpriteRef& WorldView::elemSprite(const Elem& e, float now) const {
     const VariantLook& look = *e.look;
-    const SpriteRef& s =
-        e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
-                     : look.baseIn(season_).at(now, sprites_->itemFps(map_.items()[e.item]));
-    if (post_ && e.piece < 0)
-        if (const Sway& w = swayOf_[map_.items()[e.item].info]; w.lean > 0) {
-            putSwaying(w.frames ? s : look.baseIn(season_).f.front(), e.anchor, x, w.lean);
-            return true;
-        }
-    if (e.part < 0) {
-        const bool ok = put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
-        if (post_) markItemWater(e, x); // over the item's own pixels
-        return ok;
-    }
-    // One part of a floor with a roof over it: the rows below or above the roof's underside.
+    return e.piece >= 0 ? look.pieces[static_cast<std::size_t>(e.piece)]
+                        : look.baseIn(season_).at(now, sprites_->itemFps(map_.items()[e.item]));
+}
+
+FRect WorldView::elemFoot(const Elem& e) const {
     const world::Placed& it = map_.items()[e.item];
     TileRect r = it.rect();
     if (const world::GeomVariant* g = map_.geometry(it);
@@ -443,11 +431,30 @@ bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
         r = {it.x + p.x0, it.y + p.y0, it.x + p.x1, it.y + p.y1};
     }
     const auto f = [](int v) { return static_cast<float>(v); };
-    return putCut(s, e.anchor, x, {f(r.x0), f(r.y0), f(r.x1), f(r.y1)}, e.cutZ, e.part == 1);
+    return {f(r.x0), f(r.y0), f(r.x1), f(r.y1)};
+}
+
+bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
+    if (e.home) return true; // the game's scene draws it
+    if (e.figure) return put(figures_[e.item].sprite, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+    if (e.ground) return drawTile(e.tile, x, now, nullptr);
+    const SpriteRef& s = elemSprite(e, now);
+    if (post_ && e.piece < 0)
+        if (const Sway& w = swayOf_[map_.items()[e.item].info]; w.lean > 0) {
+            putSwaying(w.frames ? s : e.look->baseIn(season_).f.front(), e.anchor, x, w.lean);
+            return true;
+        }
+    if (e.part < 0) {
+        const bool ok = put(s, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
+        if (post_) markItemWater(e, x); // over the item's own pixels
+        return ok;
+    }
+    // One part of a floor with a roof over it: the rows below or above the roof's underside.
+    return putCut(s, e.anchor, x, elemFoot(e), e.cutZ, e.part == 1);
 }
 
 bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
-                       bool upper) {
+                       bool upper, SDL_FColor c) {
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return false;
     // The cut follows the footprint's front edges raised to the underside: every voxel of the
@@ -472,7 +479,7 @@ bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FR
     const auto vert = [&](float wx, float wy) {
         const Vec2 p = x.apply({wx, wy});
         return SDL_Vertex{{p.x, p.y},
-                          kWhite,
+                          c,
                           {s.uv.u0 + (s.uv.u1 - s.uv.u0) * (wx - sx0) / s.w,
                            s.uv.v0 + (s.uv.v1 - s.uv.v0) * (wy - sy0) / s.h}};
     };
@@ -489,6 +496,80 @@ bool WorldView::putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FR
         batch_.triangles(v.data(), 4, kQuad, 6);
     }
     return true;
+}
+
+void WorldView::drawGlowOccluded(const Xform& x, float glow, float now) {
+    // draw-order.md §4.4: each light is drawn at its owner's turn in the frame's order into a
+    // layer of its own, and whatever comes after it there and overlaps it is drawn again as a
+    // black silhouette, so a lamp behind a column or a passer-by is hidden where they are. The
+    // layer is the shadow layer's target, free again by now; it goes on additively once.
+    const auto seq = merge_.sequence();
+    glowAt_.clear();
+    glowBoxes_.clear();
+    for (std::size_t p = 0; p < seq.size(); ++p) {
+        if (seq[p].actor) continue;
+        const Elem& e = region_.elems[seq[p].index];
+        if (!e.first || e.look == nullptr || !e.look->glow || !glowing(e.item)) continue;
+        const SpriteRef& gs = *e.look->glow;
+        glowAt_.push_back(static_cast<std::uint32_t>(p));
+        glowBoxes_.push_back({e.anchor.x - gs.ox, e.anchor.y - gs.oy, e.anchor.x - gs.ox + gs.w,
+                              e.anchor.y - gs.oy + gs.h});
+    }
+    if (glowAt_.empty()) return;
+    glowGrid_.build(glowBoxes_, tuning::kActorMergeCell);
+    batch_.flush();
+    if (!SDL_SetRenderTarget(renderer_, shadow_.texture.get()) ||
+        !SDL_SetRenderDrawColorFloat(renderer_, 0, 0, 0, 0) || !SDL_RenderClear(renderer_))
+        SDL_Log("worldview: %s", SDL_GetError());
+    const SDL_FColor lit{glow, glow, glow, 1};
+    std::size_t next = 0;
+    for (std::size_t p = 0; p < seq.size(); ++p) {
+        const ActorMerge::Step& st = seq[p];
+        const FRect& screen =
+            st.actor ? mergeActors_[st.index].screen : region_.items[st.index].screen;
+        bool covers = false;
+        glowGrid_.query(screen, [&](std::uint32_t k) {
+            covers = covers || (glowAt_[k] < p && glowBoxes_[k].overlaps(screen));
+        });
+        if (covers) {
+            if (st.actor) {
+                const ActorDraw& a = actorDraw_[actorOf_[st.index]];
+                const SDL_FColor black{0, 0, 0, a.colour.a};
+                (void)putRows(*a.sprite, a.anchor, x, black, a.mirror, a.hidden);
+                if (a.goods != nullptr)
+                    (void)putRows(*a.goods, a.goodsAt, x, black, false, a.hidden);
+            } else {
+                drawSilhouette(region_.elems[st.index], x, now);
+            }
+        }
+        if (next < glowAt_.size() && glowAt_[next] == p) {
+            const Elem& e = region_.elems[st.index];
+            (void)put(*e.look->glow, e.anchor, x, lit, SDL_BLENDMODE_ADD);
+            ++next;
+        }
+    }
+    batch_.flush();
+    if (!SDL_SetRenderTarget(renderer_, view_.texture.get()))
+        SDL_Log("worldview: %s", SDL_GetError());
+    batch_.use(shadow_.texture.get(), SDL_BLENDMODE_ADD_PREMULTIPLIED, SDL_SCALEMODE_NEAREST);
+    batch_.quad(SDL_FRect{0, 0, static_cast<float>(viewW_), static_cast<float>(viewH_)},
+                {0, 0, static_cast<float>(viewW_) / static_cast<float>(shadow_.w),
+                 static_cast<float>(viewH_) / static_cast<float>(shadow_.h)},
+                kWhite);
+}
+
+void WorldView::drawSilhouette(const Elem& e, const Xform& x, float now) {
+    constexpr SDL_FColor kBlack{0, 0, 0, 1};
+    if (e.home || e.ground) return; // the home's scene hides its own lights; ground is flat
+    if (e.figure) {
+        (void)put(figures_[e.item].sprite, e.anchor, x, kBlack, SDL_BLENDMODE_BLEND);
+        return;
+    }
+    const SpriteRef& s = elemSprite(e, now);
+    if (e.part < 0)
+        (void)put(s, e.anchor, x, kBlack, SDL_BLENDMODE_BLEND);
+    else
+        (void)putCut(s, e.anchor, x, elemFoot(e), e.cutZ, e.part == 1, kBlack);
 }
 
 bool WorldView::drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
@@ -1503,7 +1584,9 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
     if (lod != Lod::Native && light.glow > 0.01f)
         drawCoarseGlow(view, xf,
                        light.glow * (lod == Lod::Overview ? tuning::kOverviewGlow : 1.0f));
-    if (lod == Lod::Native && light.glow > 0.01f) {
+    if (lod == Lod::Native && light.glow > 0.01f && !post_) {
+        drawGlowOccluded(xf, light.glow, static_cast<float>(now));
+    } else if (lod == Lod::Native && light.glow > 0.01f) {
         const SDL_FColor g{light.glow, light.glow, light.glow, 1};
         for (const std::uint32_t k : merge_.visible()) {
             const std::uint32_t i = region_.order[k];

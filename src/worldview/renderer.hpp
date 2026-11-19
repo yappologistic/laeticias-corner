@@ -316,6 +316,8 @@ private:
     // (`haze`: the haze over it, drawn after all of the water.)
     bool drawBeyond(TilePos p, const Xform& x, bool haze);
     bool drawElem(const Elem& e, const Xform& x, float now);
+    [[nodiscard]] const SpriteRef& elemSprite(const Elem& e, float now) const;
+    [[nodiscard]] FRect elemFoot(const Elem& e) const; // its piece's footprint, tiles
     // `actors`: with the live people's shadows (the frame, not a cached picture). `visible`:
     // the order's positions drawn this frame (empty: look at all of them).
     bool drawShadows(const Gathered& g, const FRect& clip, const Xform& x, Target& layer,
@@ -373,7 +375,10 @@ private:
     void drawActor(std::uint32_t i, const Xform& x);
     // `s` above (or below) the line where the roof over `foot` has its underside at `z` px.
     bool putCut(const SpriteRef& s, Vec2 anchor, const Xform& x, const FRect& foot, float z,
-                bool upper);
+                bool upper, SDL_FColor c = {1, 1, 1, 1});
+    // The native level's glow, hidden where something drawn after its light stands over it.
+    void drawGlowOccluded(const Xform& x, float glow, float now);
+    void drawSilhouette(const Elem& e, const Xform& x, float now);
     // `s` with the rows [hide.from, hide.to) of world px left out (two quads at most).
     bool putRows(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c, bool mirror,
                  RowBand hide);
@@ -511,7 +516,10 @@ private:
     std::vector<Shower> showers_; // drawRain's scratch
     ActorMerge merge_;
     bool mergeIndexed_ = false;
-    Lod lastLod_ = Lod::Native; // the level the last frame was drawn at
+    Lod lastLod_ = Lod::Native;         // the level the last frame was drawn at
+    std::vector<std::uint32_t> glowAt_; // drawGlowOccluded's lights: place in the sequence
+    std::vector<FRect> glowBoxes_;      // and their glow sprites' boxes
+    ScreenGrid glowGrid_;
 
     // The shader path (null: Classic), the world's lights, the regions' looks, sway weights per
     // content item (art px at the top in a full wind) and the wind.
