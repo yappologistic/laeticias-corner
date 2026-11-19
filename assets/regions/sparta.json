@@ -400,6 +400,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/athens/town_march_day.ogg",
+   "night": "music/athens/town_march_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

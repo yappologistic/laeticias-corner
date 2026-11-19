@@ -386,6 +386,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/athens/town_sanctuary_day.ogg",
+   "night": "music/athens/town_sanctuary_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

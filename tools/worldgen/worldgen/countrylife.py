@@ -428,7 +428,7 @@ EVENTS = {
           "land", on="rain")],
     "attica_north": [
         E("bees_swarm", ["apr", "may"], "09:00", [("athens.farmer", 2)], "work_low",
-          "amb/world/fields.ogg", "Beekeepers smoke the hives on the thyme slopes.", "land"),
+          "sfx/world/lark.wav", "Beekeepers smoke the hives on the thyme slopes.", "land"),
         E("harvest_home", ["jun"], "17:00", [("athens.farmer", 4), ("athens.woman", 2)], "idle",
           "sfx/athens/aulos.wav", "The last sheaf is in: a harvest meal on the threshing floor.",
           "farm"),
@@ -542,7 +542,7 @@ EVENTS = {
           "amb/world/snow.ogg", "Snow closes the high passes.", "road")],
     "iran_plateau": [
         E("almond_blossom", ["mar"], "08:00", [("parsa.gardener", 2)], "work_low",
-          "amb/world/fields.ogg", "The almond trees are in blossom.", "land"),
+          "sfx/world/cuckoo.wav", "The almond trees are in blossom.", "land"),
         E("plateau_harvest", ["jul"], "07:00", [("parsa.farmer", 4)], "work_low",
           "sfx/world/sickle.wav", "Harvest on the high plain.", "land"),
         E("pistachio_harvest", ["sep", "oct"], "08:00", [("parsa.farmer", 3)], "work_low",
@@ -656,6 +656,8 @@ def events(doc: dict, kinds: dict, table: list | None = None) -> None:
              "trigger": trig, "duration": [90, 150], "cast": [{"actor": a, "count": n} for a, n in cast],
              "steps": steps, "zone": zone, "string": id_}
         if sfx.endswith(".ogg"):
+            # Never a bed the land itself plays: one file is one loop in the engine.
+            assert sfx not in COUNTRY_BEDS, f"{id_}: {sfx} is the land's own bed"
             e["ambience"] = {"file": sfx, "gain": 0.6}
         else:
             e["sfx"] = sfx
@@ -670,13 +672,18 @@ def events(doc: dict, kinds: dict, table: list | None = None) -> None:
 # and the old road. Its people are of no time (world kinds only: the country farmer works the
 # farms, keeps the bees and herds the sheep).
 
+# The country's own beds (`theme.ambience.beds`): an event that named one as its ambience made the
+# same loop answer to two systems.
+COUNTRY_BEDS = {"amb/world/fields.ogg", "amb/world/road.ogg", "amb/world/mountain.ogg",
+                "amb/world/desert_night.ogg", "amb/world/sea.ogg", "amb/world/river.ogg"}
+
 CORNER_EVENTS = [
     E("lambing", ["mar", "apr"], "06:30", [("world.sheep", 6), ("world.farmer", 1)], "idle",
       "sfx/world/sheep_1.wav", "Lambs in the meadows.", "meadows"),
     E("haymaking", ["jun", "jul"], "08:00", [("world.farmer", 4)], "carry",
       "sfx/world/sickle.wav", "Haymaking: the grass is cut and raked into rows.", "farms"),
     E("berry_picking", ["sep", "oct"], "09:00", [("world.farmer", 3)], "carry",
-      "amb/world/fields.ogg", "Blackberries and apples are picked along the hedges.", "meadows"),
+      "sfx/world/starlings.wav", "Blackberries and apples are picked along the hedges.", "meadows"),
     E("woodcutting", ["dec", "jan", "feb"], "09:00", [("world.logger", 2)], "work_high",
       "sfx/world/chop.wav", "Woodcutters in the winter wood.", "wood"),
     E("nets_hauled", None, "06:00", [("world.fisher", 2)], "haul", "sfx/world/rope.wav",

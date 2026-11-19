@@ -909,14 +909,24 @@ void App::updateWorldAudio(float night) {
     in.snowCover = snowLies ? 1.0f : 0.0f;
     in.musicDuck = citySound_ ? citySound_->musicDuck() : 1.0f;
     soundscape_->update(in);
+    // The soundscape and the city sound may name the same file: their wants combine (the
+    // louder wins) before the mixer, so one never silences the other.
+    loopWants_.begin(Mixer::maxLoops());
     const auto out = soundscape_->out();
-    for (std::size_t i = 0; i < out.size(); ++i) {
-        mixer_.setLoopGain(soundLoops_[i], out[i].gain);
-        mixer_.setLoopPan(soundLoops_[i], out[i].pan);
-    }
+    for (std::size_t i = 0; i < out.size(); ++i)
+        loopWants_.want(soundLoops_[i], out[i].gain, out[i].pan);
+    const auto apply = [&] {
+        loopWants_.forEach([&](int loop, const LoopWants::Want& w) {
+            mixer_.setLoopGain(loop, w.gain);
+            mixer_.setLoopPan(loop, w.pan);
+        });
+    };
     for (const auto& [file, sample] : soundscape_->seeks())
         mixer_.seekLoop(soundLoops_[static_cast<std::size_t>(file)], sample);
-    if (!citySound_ || !city_) return;
+    if (!citySound_ || !city_) {
+        apply();
+        return;
+    }
     // The living city: crowds, wind, rain, work and events as the simulation shows them.
     worldview::CitySound::Input ci;
     ci.centre = in.centre;
@@ -930,17 +940,15 @@ void App::updateWorldAudio(float night) {
     ci.clock = clock_.time();
     ci.season = season();
     ci.month = in.month;
-    ci.music = soundscape_->musicLevel();
+    ci.music = soundscape_->cityMusicLevel();
     ci.dt = frameDt_;
     ci.actors = worldView_->actorsDrawn();
     ci.city = city_->city.get();
     citySound_->update(ci);
     const auto co = citySound_->out();
-    for (std::size_t i = 0; i < co.size(); ++i) {
-        if (cityLoops_[i] < 0) continue;
-        mixer_.setLoopGain(cityLoops_[i], co[i].gain);
-        mixer_.setLoopPan(cityLoops_[i], co[i].pan);
-    }
+    for (std::size_t i = 0; i < co.size(); ++i)
+        loopWants_.want(cityLoops_[i], co[i].gain, co[i].pan);
+    apply();
     for (const worldview::CitySound::Shot& sh : citySound_->shots())
         if (sh.effect >= 0 && cityFx_[static_cast<std::size_t>(sh.effect)] >= 0)
             mixer_.play(cityFx_[static_cast<std::size_t>(sh.effect)], sh.gain, sh.pitch, sh.pan);
@@ -950,6 +958,15 @@ std::optional<std::string> App::checkSound(std::span<const std::string> a) {
     // expect sound beds: every region plays a bed, loaded in the mixer, in each month of each
     // season by day (12:00) and by night (00:00). expect sound FILE|FAMILY MIN MAX: the gain
     // (x100) the world's sound sets that loop (or that family's loops together) to now.
+    if (a.size() == 4 && a[0] == "mixer") {
+        // expect mixer FILE MIN MAX: the gain (x100) the mixer was last asked for that loop,
+        // whatever system asked.
+        const int loop = mixer_.loopIndex(a[1]);
+        if (loop < 0) return "the mixer has no " + a[1];
+        const long v = std::lround(mixer_.loopTarget(loop) * 100.0f);
+        if (v >= std::stol(a[2]) && v <= std::stol(a[3])) return std::nullopt;
+        return std::format("expected mixer {} in {}..{} but found {}", a[1], a[2], a[3], v);
+    }
     if (!soundscape_ || !loaded_) return std::string("no world sound");
     if (a.size() == 2 && a[1] == "beds") {
         int first = 0; // the season's first month

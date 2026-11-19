@@ -52,8 +52,12 @@ struct SdlSession {
                 return;
             }
         }
-        ok = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+        ok = SDL_Init(SDL_INIT_VIDEO);
         if (!ok) SDL_Log("SDL_Init failed: %s", SDL_GetError());
+        // A computer with no sound (no audio driver at all, or one that cannot start) still
+        // plays, silently: the mixer finds no device and says so once.
+        if (ok && !SDL_InitSubSystem(SDL_INIT_AUDIO))
+            SDL_Log("audio: no audio driver (%s); continuing silently", SDL_GetError());
     }
     ~SdlSession() { SDL_Quit(); }
     SdlSession(const SdlSession&) = delete;

@@ -444,6 +444,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/world/travel_greece_day.ogg",
+   "night": "music/world/travel_greece_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {
@@ -1667,10 +1671,7 @@
    ],
    "zone": "land",
    "string": "bees_swarm",
-   "ambience": {
-    "file": "amb/world/fields.ogg",
-    "gain": 0.6
-   }
+   "sfx": "sfx/world/lark.wav"
   },
   {
    "id": "harvest_home",
