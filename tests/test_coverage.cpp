@@ -90,6 +90,64 @@ TEST_CASE("coverage: catalog vs atlas") {
     reportMissing("atlas", missing);
 }
 
+TEST_CASE("coverage: the world's sea and rivers keep their beach's width round a bend") {
+    // They lie over a whole diamond of sand, cut back from land: the sand between the tile's
+    // edge and the water is a beach. At a corner both of whose edges face land the beach must be
+    // as wide as along those edges; rounded off, it widened into a point at every bend (issue
+    // #2). Measured along the rows through the left and right vertices (the run of empty texels
+    // from the diamond's edge to the water) against the same run half way along each edge. The
+    // edges' own wobble moves a run by up to about a tenth of the half-width.
+    const Iso iso = test::catalog().iso();
+    const int hw = static_cast<int>(iso.hw);
+    const int hh = static_cast<int>(iso.hh);
+    const auto dir = test::assetsDir() / "atlas";
+    const auto text = readTextFile(dir / "world.0.json");
+    REQUIRE_MESSAGE(text.has_value(), "world.0.json unreadable");
+    const auto manifest = parseAtlasManifest(*text);
+    REQUIRE_MESSAGE(manifest.has_value(), manifest.error());
+    const SurfacePtr image{SDL_LoadPNG((dir / manifest->image).string().c_str())};
+    REQUIRE_MESSAGE(image != nullptr, "world.0.png unreadable: " << SDL_GetError());
+    const auto half = [&](int y) { // the raster's half-width on row y (2:1, rows 2, 6, ... wide)
+        const int yy = y < hh ? y : 2 * hh - 1 - y;
+        return (2 * yy + 1) * hw / (2 * hh);
+    };
+    int checked = 0;
+    for (const std::string terrain : {"world.river", "world.sea"})
+        for (int mask = 0; mask < 16; ++mask) {
+            const std::string key = std::format("terrain/{}/m{}/f0", terrain, mask);
+            const auto it = manifest->sprites.find(key);
+            REQUIRE_MESSAGE(it != manifest->sprites.end(), key << " missing");
+            const SpriteRect& r = it->second;
+            const auto empty = [&](int x, int y) { // (x, y) from the top vertex
+                const int px = r.ox + x;
+                const int py = r.oy + y;
+                if (px < 0 || py < 0 || px >= r.w || py >= r.h) return true;
+                Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+                return SDL_ReadSurfacePixel(image.get(), r.x + px, r.y + py, &cr, &cg, &cb, &ca) &&
+                       ca == 0;
+            };
+            // From the diamond's left (dx 1) or right (dx -1) edge on row y, inward to the water.
+            const auto beach = [&](int y, int dx) {
+                int x = dx > 0 ? -half(y) : half(y) - 1;
+                int n = 0;
+                for (; -half(y) <= x && x < half(y) && empty(x, y); x += dx) ++n;
+                return n;
+            };
+            for (const int dx : {1, -1}) {
+                // The left vertex joins the W (8) and S (4) edges, the right the N (1) and E (2).
+                const int edges = dx > 0 ? 8 | 4 : 1 | 2;
+                if ((mask & edges) != 0) continue;
+                const int corner = std::max(beach(hh - 1, dx), beach(hh, dx));
+                const int along = std::max(beach(hh / 2 - 1, dx), beach(hh + hh / 2, dx));
+                CHECK_MESSAGE(corner <= along + hw / 10,
+                              std::format("{} {} corner: a beach of {} px against {}", key,
+                                          dx > 0 ? "left" : "right", corner, along));
+                ++checked;
+            }
+        }
+    CHECK(checked > 0);
+}
+
 TEST_CASE("coverage: catalog vs audio") {
     const auto& cat = test::catalog();
     const auto dir = test::assetsDir() / "audio";

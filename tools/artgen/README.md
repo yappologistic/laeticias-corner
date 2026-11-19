@@ -156,6 +156,9 @@ half with the four worker processes the machine-courtesy rules allow.
 
 - Overlay masks only ever depend on each edge's own bit: an open edge is fully covered and every
   inset tapers to zero at a corner beside an open edge, so neighbours agree on shared edges.
+  The world's sea and rivers lie over a whole diamond of sand: their corners between two closed
+  edges are mitred, not rounded (`ground.BEACH_CORNER`), so the beach keeps its width round a
+  bend (a test in `tests/test_coverage.cpp` holds the pages to it).
 - Joined items (`hedge`, `fence`) are modelled with the neighbours' arms as unseen context, so
   light, leaves and outlines continue across the tile edge without a seam.
 - Rotatable pieces are modelled facing +y (the windmill faces +x so both rotations show sails).

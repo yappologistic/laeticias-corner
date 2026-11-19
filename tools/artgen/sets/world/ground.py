@@ -282,6 +282,14 @@ BASES = {"world.sand": sand, "world.steppe": steppe, "world.alluvium": alluvium}
 
 # ---------------------------------------------------------------- water
 
+# The sea and rivers lie over their `under` (sand), a whole diamond: where they are cut back
+# from land the sand shows as a beach between the tile's edge and the water's. A closed corner
+# rounded off (radius > the inset) would widen that beach into a point at every bend of a
+# coast or a river (issue #2: riverbanks form sharp points at bends), so their closed corners are
+# mitred and the beach keeps its width round the bend.
+BEACH_CORNER = 0.0
+
+
 def _bank(mask, g, inset, radius, wobble, seed):
     field = lambda du: home.shape_field(mask, g.u - du, g.v - du, inset, radius, wobble, seed, g.k)
     return field(0), field(1) <= 0, field(2) <= 0, field(3) <= 0
@@ -294,7 +302,7 @@ def sea(mask, frame, k, var=0):
     except the long crest lines, which run on across tiles; breaking crests and sparkles sit
     on finer lattices, and the interior looks shift them (INTERIOR)."""
     g0 = home._grid(k)
-    f = home.shape_field(mask, g0.u, g0.v, 1.2, 5.0, 0.8, 9401, k)
+    f = home.shape_field(mask, g0.u, g0.v, 1.2, BEACH_CORNER, 0.8, 9401, k)
     cover = g0.inside & (f > 0.7 * hash01(g0.px, g0.py, 9402)) if g0.fine else g0.inside & (f > 0)
     t = frame / FRAMES_WATER
 
@@ -354,7 +362,7 @@ def river(mask, frame, k, var=0):
     instead of pooling in each tile), silty and lighter at the edges, an earth bank showing
     under the upper shore, a shimmer where it meets the bank. Reads at one tile wide (canals)."""
     g0 = home._grid(k)
-    f, wall1, wall2, shade = _bank(mask, g0, 1.6, 5.0, 0.7, 9601)
+    f, wall1, wall2, shade = _bank(mask, g0, 1.6, BEACH_CORNER, 0.7, 9601)
     cover = g0.inside & (f > 0)
     t = frame / FRAMES_WATER
     big = np.full(g0.u.shape, 99.0)
