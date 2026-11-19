@@ -117,7 +117,10 @@ def rostra(m):
             ellipsoid(m, (x, -0.8, zz - 0.7), (0.9, 1.0, 0.7), "bronze_cast", 0.4)
     fill(m, (2.0, D - 2.0, 2.0, W - 8.0, zh, zh + 2.6), "bronze",
          lambda X, Y, Z: (((X + Y) % 2.0) < 0.5) | (Z > zh + 2.2), tone=0.2, only_empty=True)
-    carve(m, (4.0, D - 4.0, 4.0, W - 10.0, zh, zh + 2.2))
+    # The rail is a ring of posts and a top bar round the edge; inside it the marble deck is
+    # open to the sky (the carve once stopped under the bar's height and left a bronze lid
+    # over the whole platform, V7-013).
+    carve(m, (4.0, D - 4.0, 4.0, W - 10.0, zh, zh + 2.7))
     for x, y in ((8.0, 18.0), (D - 8.0, 18.0)):
         RM.column(m, x, y, zh, RM.ROrder("corinthian", D=0.8, H=8.0), S)
         RM.statue(m, x, y, zh + S.v(8.0) + 0.5, 10.0, TOGATE, material="gold", keep=())

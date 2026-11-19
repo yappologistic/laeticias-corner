@@ -23,7 +23,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import spec  # noqa: E402
-from palette import (AUTUMN, EARTH, GROUPS, LEAF, MATERIALS, ROOF, SAND, STEPPE, STRAW, SUMMER,  # noqa: E402
+from palette import (AUTUMN, EARTH, GROUPS, LEAF, MATERIALS, ROOF, SAND, STEPPE, STONE, STRAW, SUMMER,  # noqa: E402
                      TIBER, _rgb)
 
 STEPS = 8
@@ -105,13 +105,27 @@ BED = {"water": (SAND[1], (2.4, 1.0, 0.65)), "pal.water": (SAND[1], (2.4, 1.0, 0
 
 # Colour states of the seasons (seasons.md §4.3) the shader makes by swapping ramps; the other
 # states (bare, bloom, fruit, crops' stages, snow looks) change shapes and stay drawn.
-STATES = ("fresh", "dry", "dormant", "turn")
+STATES = ("fresh", "dry", "dormant", "turn", "green", "bare", "gone")
 # The states each green ramp has, by what it is (seasons.md §4.3: grass greens, dries and goes
 # dormant, and a woodland floor turns under fallen leaves; deciduous leaves come fresh, dry in
 # drought and turn in autumn). The engine picks the state by the item's or terrain's season class.
-GRASS_STATES, LEAF_STATES = ("fresh", "dry", "dormant", "turn"), ("fresh", "dry", "turn")
+# The engine reads a ramp's states by the climate's month words (look-notes-for-art.md §1): with no
+# state for a month's word a ramp keeps its plain colours (`bare` falls back to `dormant`, then
+# `dry`; `gone` to `dry`). Leaves wither (`dormant`) and fall to twigs (`bare`); blossom shows only
+# in its bloom months (leaf colours `fresh`/`green` otherwise); meadow flowers fade into the grass.
+GRASS_STATES = ("fresh", "dry", "dormant", "turn")
+LEAF_STATES = ("fresh", "dry", "dormant", "turn", "bare")
+BLOOM_STATES = ("fresh", "green", "turn", "dormant", "bare")
+FLOWER_STATES = ("green", "dry", "gone")
 STATE_RAMPS = {"leaf": LEAF_STATES, "grass": GRASS_STATES, "summer": GRASS_STATES, "steppe": GRASS_STATES,
-               "pal.leaf": GRASS_STATES, "pal.summer": GRASS_STATES, "pal.steppe": GRASS_STATES}
+               "pal.leaf": GRASS_STATES, "pal.summer": GRASS_STATES, "pal.steppe": GRASS_STATES,
+               "autumn": LEAF_STATES, "gold_leaf": LEAF_STATES, "rust_leaf": LEAF_STATES,
+               "pal.autumn": LEAF_STATES, "blossom": BLOOM_STATES, "pal.blossom": BLOOM_STATES,
+               "pal.violet": FLOWER_STATES, "pal.poppy": FLOWER_STATES}
+# Which climate class a ramp's states follow, where its ramp class alone does not say (the
+# engine's rule otherwise: class grass follows grass, foliage_deciduous follows deciduous).
+FOLLOWS = {"pal.leaf": "deciduous", "blossom": "early_bloom", "pal.blossom": "early_bloom",
+           "pal.violet": "wildflower", "pal.poppy": "wildflower"}
 # Each state: one hue family it is drawn from (palette colours) and a lightness shift (Oklab L). Steps darker than
 # KEEP_L (outlines, deep crevices) keep their colour, so silhouettes do not change.
 STATE_FAMILIES = {
@@ -119,6 +133,9 @@ STATE_FAMILIES = {
     "dry": (lambda: [EARTH[0], EARTH[1], *SUMMER, STRAW[3]], 0.0),
     "dormant": (lambda: [EARTH[0], EARTH[1], *STEPPE], -0.02),
     "turn": (lambda: [ROOF[0], ROOF[1], ROOF[2], *AUTUMN, STRAW[2], STRAW[3]], 0.0),
+    "green": (lambda: LEAF, 0.0),
+    "bare": (lambda: [EARTH[0], EARTH[1], EARTH[2], STONE[1], STONE[2], STONE[3]], -0.06),
+    "gone": (lambda: [EARTH[0], EARTH[1], *SUMMER, STRAW[3]], 0.0),
 }
 KEEP_L = 0.33
 
@@ -173,6 +190,8 @@ class Ramp:
         })
         if d["translucency"]:
             d["trans"] = TRANS.get(self.cls) or "#%02x%02x%02x" % self.colours[-1]
+        if self.name in FOLLOWS:
+            d["follows"] = FOLLOWS[self.name]
         base = self.state_of or self.name
         if self.cls == "water" and base in BED:
             bed, absorb = BED[base]

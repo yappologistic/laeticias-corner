@@ -179,9 +179,14 @@ def r_insula(v, frame, frames, k):
     _string(m, box, GROUND + 6.0)
     balcony(m, "+y", box, GROUND + 6.0, 3.0, 57.0, seed=1030)
     _string(m, box, GROUND + 6.0 + STOREY * 2)
-    # The north side: a projecting stair tower plastered and painted in ochre.
-    RM.wall(m, (2.0, 14.0, -2.0, 2.0), 0.0, zt + 4.0, "stucco", 1031, "ochre")
-    RM.hip(m, (1.0, 15.0, -3.0, 3.0), zt + 4.0, 3.0, seed=1032)
+    # The north side: a stair tower of the same brick-faced concrete, set into the block and
+    # rising a little over it, lit by slit windows (a thin plastered slab standing proud of the
+    # face read as a flat yellow post in every turned look, V7-011).
+    box_t = (2.0, 14.0, -1.0, 3.0)
+    _block(m, box_t, 0.0, zt + 4.0, 1031)
+    for j in range(4):
+        windows(m, "-y", box_t, GROUND + 2.0 + j * STOREY, 1, w=1.0, h=2.4, seed=1034 + j)
+    RM.hip(m, (1.0, 15.0, -2.0, 4.0), zt + 4.0, 3.0, seed=1032)
     # The back: a latrine chute and soot over a cook-shop's vent.
     slab(m, 46.0, 50.0, 46.0, 48.0, 0.0, zt, "terracotta", tone=0.1)
     RM.hip(m, (0.5, 63.5, 0.5, 47.5), zt, 7.0, seed=1033)
@@ -667,14 +672,20 @@ def r_column_honor(v, frame, frames, k):
 
 
 def r_lamp(v, frame, frames, k):
-    """A lantern on a bracket by a door: a bronze lantern with horn panes, lit."""
+    """A street lantern on its own post (it stands free in streets and squares, so it reads
+    from every side, V7-002): a travertine footing, a wooden post, an iron bracket with a bronze
+    lantern of horn panes hanging from it, lit."""
     m = _m(1, 1, 20, k)
-    slab(m, 2.0, 14.0, 13.0, 16.0, 0.0, 16.0, "brick", tone=RM.brick(2701))
-    rod(m, (8.0, 13.0, 13.0), (8.0, 9.0, 13.0), 0.3, "bronze", 0.2)
-    rod(m, (8.0, 9.0, 13.0), (8.0, 9.0, 11.6), 0.15, "bronze")
-    ellipsoid(m, (8.0, 9.0, 10.2), (0.9, 0.9, 1.3), "lamp", 0.2)
-    ellipsoid(m, (8.0, 9.0, 11.4), (0.8, 0.8, 0.3), "bronze", 0.3)
-    halo(m, 8.0, 9.0, 10.2, 10.0, LAMP, 0.9)
+    slab(m, 6.0, 10.0, 6.0, 10.0, 0.0, 1.6, "travertine", tone=0.2)
+    slab(m, 7.3, 8.7, 7.3, 8.7, 1.6, 15.0, "wood", tone=lambda X, Y, Z: 0.15 - 0.3 * ((Z % 3.0) < 0.3))
+    slab(m, 7.0, 9.0, 7.0, 9.0, 15.0, 15.6, "bronze", tone=0.2)
+    rod(m, (8.0, 8.0, 14.4), (8.0, 4.4, 14.4), 0.3, "metal", 0.1)
+    rod(m, (8.0, 6.0, 12.6), (8.0, 4.6, 14.2), 0.2, "metal", 0.1)
+    rod(m, (8.0, 4.4, 14.4), (8.0, 4.4, 13.0), 0.15, "bronze")
+    ellipsoid(m, (8.0, 4.4, 11.6), (0.9, 0.9, 1.3), "lamp", 0.2)
+    ellipsoid(m, (8.0, 4.4, 12.8), (0.8, 0.8, 0.3), "bronze", 0.3)
+    ellipsoid(m, (8.0, 4.4, 10.2), (0.7, 0.7, 0.25), "bronze", 0.2)
+    halo(m, 8.0, 4.4, 11.6, 10.0, LAMP, 0.9)
     return m
 
 

@@ -179,6 +179,12 @@ public:
         return settled() && stats_.prefetchPending == 0 && stats_.pages.streaming == 0;
     }
 
+    // Every page that loads ahead of need is in (those with a texture of their own: all of them
+    // while the art fits its ceiling). Until then memory still rises by design.
+    [[nodiscard]] bool artLoaded() const {
+        return stats_.pages.streaming == 0 && stats_.pages.waiting == 0;
+    }
+
     [[nodiscard]] const FrameStats& stats() const { return stats_; }
     // What the page layout cost the last native frame: the sprites that stood in short runs
     // between runs of another page (each such run is a draw call), most first. They are what
@@ -242,6 +248,9 @@ public:
     // builds, page uploads): cells built ahead of need take only what that leaves of a frame
     // (tuning::kFrameCpuRoomMs). Unset, they take their whole budget.
     void setFrameCost(double ms) { frameCost_ = ms; }
+    // The cell cache's pages and the frame's own targets for a window of this size, made now
+    // (each is a target a driver takes milliseconds to make): at load, not in the first frames.
+    void reserveFor(Vec2 screen);
     [[nodiscard]] const ActorLooks* actorLooks() const { return looks_.get(); }
     // The actors drawn under a world px point in the last frame, frontmost first (into `out`).
     void actorsAt(Vec2 worldPx, std::vector<life::Handle>& out) const;
@@ -343,6 +352,11 @@ private:
     void forEachCarried(R&& rain, F&& f);
 
     void warmUp();
+    void warmTarget(SDL_Texture* target);
+    void flushBuild();
+    // This frame has built what it may at this rank (its time, or on the gpu driver its count).
+    [[nodiscard]] bool buildSpent(int rank) const;
+    bool gpuDriver_ = false; // SDL's gpu driver draws this (it has its own costs: flushBuild)
     [[nodiscard]] bool put(const SpriteRef& s, Vec2 anchor, const Xform& x, SDL_FColor c,
                            SDL_BlendMode mode, bool mirror = false);
     // Between openRuns and closeRuns, put() keeps its sprites and closeRuns draws them run by
@@ -372,7 +386,7 @@ private:
     std::uint32_t runWhat_ = kRunActor; // what put() is drawing for
     bool runsOpen_ = false;
     double frameCost_ = 0;
-    bool dry_ = false; // put() draws nothing: a pass over the tiles only to ask them something
+    std::vector<bool> chunkMoves_; // per map chunk: some terrain in it is animated
     void openRuns();
     void closeRuns(SDL_ScaleMode filter);
     // One tile: faces down to its neighbours, the ground, foam, face caps. False when a sprite's
@@ -483,7 +497,7 @@ private:
     void gatherAhead(const FRect& view);
     [[nodiscard]] static TileRect regionAround(const TileRect& need, float k);
     void drawCells(int level, const FRect& view, const Xform& x);
-    void drawOverview(const Xform& x);
+    void drawOverview(const FRect& view, const Xform& x);
     void drawBackdrops(const FRect& view, const Xform& x, bool night);
     void wantSets(const FRect& view, bool prefetch);
     void ensure(Target& t, int w, int h);

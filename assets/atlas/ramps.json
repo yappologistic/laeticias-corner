@@ -27,7 +27,10 @@
   "fresh",
   "dry",
   "dormant",
-  "turn"
+  "turn",
+  "green",
+  "bare",
+  "gone"
  ],
  "ramps": [
   {
@@ -67,7 +70,9 @@
    "states": {
     "fresh": 159,
     "dry": 160,
-    "turn": 162
+    "dormant": 192,
+    "turn": 162,
+    "bare": 193
    }
   },
   {
@@ -134,7 +139,15 @@
    "wet_steps": 0,
    "gloss": 0.0,
    "sparkle": 0.0,
-   "trans": "#c6d872"
+   "trans": "#c6d872",
+   "follows": "early_bloom",
+   "states": {
+    "fresh": 214,
+    "green": 215,
+    "turn": 216,
+    "dormant": 217,
+    "bare": 218
+   }
   },
   {
    "id": 4,
@@ -1318,7 +1331,14 @@
    "wet_steps": 0,
    "gloss": 0.0,
    "sparkle": 0.0,
-   "trans": "#c6d872"
+   "trans": "#c6d872",
+   "states": {
+    "fresh": 194,
+    "dry": 195,
+    "dormant": 196,
+    "turn": 197,
+    "bare": 198
+   }
   },
   {
    "id": 42,
@@ -1353,7 +1373,14 @@
    "wet_steps": 0,
    "gloss": 0.0,
    "sparkle": 0.0,
-   "trans": "#c6d872"
+   "trans": "#c6d872",
+   "states": {
+    "fresh": 199,
+    "dry": 200,
+    "dormant": 201,
+    "turn": 202,
+    "bare": 203
+   }
   },
   {
    "id": 43,
@@ -1386,7 +1413,14 @@
    "wet_steps": 0,
    "gloss": 0.0,
    "sparkle": 0.0,
-   "trans": "#c6d872"
+   "trans": "#c6d872",
+   "states": {
+    "fresh": 204,
+    "dry": 205,
+    "dormant": 206,
+    "turn": 207,
+    "bare": 208
+   }
   },
   {
    "id": 44,
@@ -2358,18 +2392,18 @@
    "material": "olive_silver",
    "steps": 5,
    "colours": [
+    "#3a4638",
     "#53634a",
     "#72825d",
-    "#93a27a",
-    "#b8c39d",
-    "#cbd9e0"
+    "#8f939c",
+    "#93a27a"
    ],
    "L": [
+    0.3789,
     0.4788,
     0.5835,
-    0.6897,
-    0.7986,
-    0.8768
+    0.6628,
+    0.6897
    ],
    "class": "foliage_evergreen",
    "shell": 6,
@@ -3286,6 +3320,7 @@
    "gloss": 0.06,
    "sparkle": 0.0,
    "trans": "#d3c07a",
+   "follows": "deciduous",
    "states": {
     "fresh": 175,
     "dry": 176,
@@ -3349,7 +3384,15 @@
    "wet_steps": 0,
    "gloss": 0.0,
    "sparkle": 0.0,
-   "trans": "#c6d872"
+   "trans": "#c6d872",
+   "follows": "early_bloom",
+   "states": {
+    "fresh": 219,
+    "green": 220,
+    "turn": 221,
+    "dormant": 222,
+    "bare": 223
+   }
   },
   {
    "id": 106,
@@ -3537,7 +3580,13 @@
    "wet_steps": 2,
    "gloss": 0.06,
    "sparkle": 0.0,
-   "trans": "#b49de0"
+   "trans": "#b49de0",
+   "follows": "wildflower",
+   "states": {
+    "green": 224,
+    "dry": 225,
+    "gone": 226
+   }
   },
   {
    "id": 112,
@@ -3562,7 +3611,13 @@
    "wet_steps": 2,
    "gloss": 0.06,
    "sparkle": 0.0,
-   "trans": "#ec6550"
+   "trans": "#ec6550",
+   "follows": "wildflower",
+   "states": {
+    "green": 227,
+    "dry": 228,
+    "gone": 229
+   }
   },
   {
    "id": 113,
@@ -3665,7 +3720,14 @@
    "wet_steps": 0,
    "gloss": 0.0,
    "sparkle": 0.0,
-   "trans": "#c6d872"
+   "trans": "#c6d872",
+   "states": {
+    "fresh": 209,
+    "dry": 210,
+    "dormant": 211,
+    "turn": 212,
+    "bare": 213
+   }
   },
   {
    "id": 117,
@@ -5824,6 +5886,1236 @@
    "gloss": 0.06,
    "sparkle": 0.0,
    "trans": "#d3c07a"
+  },
+  {
+   "id": 192,
+   "name": "leaf@dormant",
+   "state_of": "leaf",
+   "state": "dormant",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#4a3034",
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#d4c995"
+   ],
+   "L": [
+    0.3125,
+    0.3415,
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.8323
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 193,
+   "name": "leaf@bare",
+   "state_of": "leaf",
+   "state": "bare",
+   "steps": 7,
+   "colours": [
+    "#22343b",
+    "#4a3034",
+    "#6b4539",
+    "#4d4f63",
+    "#6c6f7e",
+    "#8f939c",
+    "#8f939c"
+   ],
+   "L": [
+    0.3125,
+    0.3415,
+    0.4306,
+    0.4336,
+    0.5444,
+    0.6628,
+    0.6628
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 194,
+   "name": "autumn@fresh",
+   "state_of": "autumn",
+   "state": "fresh",
+   "steps": 7,
+   "colours": [
+    "#4c2333",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.3184,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 195,
+   "name": "autumn@dry",
+   "state_of": "autumn",
+   "state": "dry",
+   "steps": 7,
+   "colours": [
+    "#4c2333",
+    "#6b4539",
+    "#7a6f3c",
+    "#7a6f3c",
+    "#bba95c",
+    "#d3c07a",
+    "#f0dd91"
+   ],
+   "L": [
+    0.3184,
+    0.4306,
+    0.5399,
+    0.5399,
+    0.7338,
+    0.808,
+    0.8961
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 196,
+   "name": "autumn@dormant",
+   "state_of": "autumn",
+   "state": "dormant",
+   "steps": 7,
+   "colours": [
+    "#4c2333",
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#bfb47c",
+    "#d4c995"
+   ],
+   "L": [
+    0.3184,
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.7658,
+    0.8323
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 197,
+   "name": "autumn@turn",
+   "state_of": "autumn",
+   "state": "turn",
+   "steps": 7,
+   "colours": [
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f",
+    "#f0dd91"
+   ],
+   "L": [
+    0.3184,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986,
+    0.8961
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 198,
+   "name": "autumn@bare",
+   "state_of": "autumn",
+   "state": "bare",
+   "steps": 7,
+   "colours": [
+    "#4c2333",
+    "#4a3034",
+    "#4d4f63",
+    "#8f6343",
+    "#8f939c",
+    "#8f939c",
+    "#8f939c"
+   ],
+   "L": [
+    0.3184,
+    0.3415,
+    0.4336,
+    0.5385,
+    0.6628,
+    0.6628,
+    0.6628
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 199,
+   "name": "gold_leaf@fresh",
+   "state_of": "gold_leaf",
+   "state": "fresh",
+   "steps": 7,
+   "colours": [
+    "#376247",
+    "#679a48",
+    "#679a48",
+    "#91b752",
+    "#c6d872",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.631,
+    0.631,
+    0.7299,
+    0.8469,
+    0.8469,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 200,
+   "name": "gold_leaf@dry",
+   "state_of": "gold_leaf",
+   "state": "dry",
+   "steps": 7,
+   "colours": [
+    "#6b4539",
+    "#7a6f3c",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#d3c07a",
+    "#f0dd91",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4306,
+    0.5399,
+    0.5399,
+    0.642,
+    0.808,
+    0.8961,
+    0.8961
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 201,
+   "name": "gold_leaf@dormant",
+   "state_of": "gold_leaf",
+   "state": "dormant",
+   "steps": 7,
+   "colours": [
+    "#6b4539",
+    "#6e6a45",
+    "#6e6a45",
+    "#a69e66",
+    "#bfb47c",
+    "#d4c995",
+    "#d4c995"
+   ],
+   "L": [
+    0.4306,
+    0.5183,
+    0.5183,
+    0.6927,
+    0.7658,
+    0.8323,
+    0.8323
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 202,
+   "name": "gold_leaf@turn",
+   "state_of": "gold_leaf",
+   "state": "turn",
+   "steps": 7,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#a3463f",
+    "#dd8f37",
+    "#d8bb5f",
+    "#f0dd91",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.5149,
+    0.715,
+    0.7986,
+    0.8961,
+    0.8961
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 203,
+   "name": "gold_leaf@bare",
+   "state_of": "gold_leaf",
+   "state": "bare",
+   "steps": 7,
+   "colours": [
+    "#4a3034",
+    "#4d4f63",
+    "#8f6343",
+    "#8f939c",
+    "#8f939c",
+    "#8f939c",
+    "#8f939c"
+   ],
+   "L": [
+    0.3415,
+    0.4336,
+    0.5385,
+    0.6628,
+    0.6628,
+    0.6628,
+    0.6628
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 204,
+   "name": "rust_leaf@fresh",
+   "state_of": "rust_leaf",
+   "state": "fresh",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 205,
+   "name": "rust_leaf@dry",
+   "state_of": "rust_leaf",
+   "state": "dry",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#6b4539",
+    "#7a6f3c",
+    "#7a6f3c",
+    "#bba95c"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.4306,
+    0.5399,
+    0.5399,
+    0.7338
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 206,
+   "name": "rust_leaf@dormant",
+   "state_of": "rust_leaf",
+   "state": "dormant",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 207,
+   "name": "rust_leaf@turn",
+   "state_of": "rust_leaf",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 208,
+   "name": "rust_leaf@bare",
+   "state_of": "rust_leaf",
+   "state": "bare",
+   "steps": 6,
+   "colours": [
+    "#2a2136",
+    "#4c2333",
+    "#4a3034",
+    "#4d4f63",
+    "#8f6343",
+    "#8f939c"
+   ],
+   "L": [
+    0.2681,
+    0.3184,
+    0.3415,
+    0.4336,
+    0.5385,
+    0.6628
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 209,
+   "name": "pal.autumn@fresh",
+   "state_of": "pal.autumn",
+   "state": "fresh",
+   "steps": 2,
+   "colours": [
+    "#679a48",
+    "#91b752"
+   ],
+   "L": [
+    0.631,
+    0.7299
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 210,
+   "name": "pal.autumn@dry",
+   "state_of": "pal.autumn",
+   "state": "dry",
+   "steps": 2,
+   "colours": [
+    "#7a6f3c",
+    "#bba95c"
+   ],
+   "L": [
+    0.5399,
+    0.7338
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 211,
+   "name": "pal.autumn@dormant",
+   "state_of": "pal.autumn",
+   "state": "dormant",
+   "steps": 2,
+   "colours": [
+    "#8a8455",
+    "#a69e66"
+   ],
+   "L": [
+    0.607,
+    0.6927
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 212,
+   "name": "pal.autumn@turn",
+   "state_of": "pal.autumn",
+   "state": "turn",
+   "steps": 2,
+   "colours": [
+    "#b9612c",
+    "#dd8f37"
+   ],
+   "L": [
+    0.5871,
+    0.715
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 213,
+   "name": "pal.autumn@bare",
+   "state_of": "pal.autumn",
+   "state": "bare",
+   "steps": 2,
+   "colours": [
+    "#8f6343",
+    "#8f939c"
+   ],
+   "L": [
+    0.5385,
+    0.6628
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 214,
+   "name": "blossom@fresh",
+   "state_of": "blossom",
+   "state": "fresh",
+   "steps": 6,
+   "colours": [
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#c6d872",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.5394,
+    0.631,
+    0.8469,
+    0.8469,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 215,
+   "name": "blossom@green",
+   "state_of": "blossom",
+   "state": "green",
+   "steps": 6,
+   "colours": [
+    "#376247",
+    "#376247",
+    "#679a48",
+    "#91b752",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.4565,
+    0.631,
+    0.7299,
+    0.8469,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 216,
+   "name": "blossom@turn",
+   "state_of": "blossom",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#d8bb5f",
+    "#f0dd91",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.5871,
+    0.7986,
+    0.8961,
+    0.8961
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 217,
+   "name": "blossom@dormant",
+   "state_of": "blossom",
+   "state": "dormant",
+   "steps": 6,
+   "colours": [
+    "#6b4539",
+    "#6b4539",
+    "#8a8455",
+    "#bfb47c",
+    "#d4c995",
+    "#d4c995"
+   ],
+   "L": [
+    0.4306,
+    0.4306,
+    0.607,
+    0.7658,
+    0.8323,
+    0.8323
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 218,
+   "name": "blossom@bare",
+   "state_of": "blossom",
+   "state": "bare",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#6c6f7e",
+    "#8f939c",
+    "#8f939c",
+    "#8f939c"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5444,
+    0.6628,
+    0.6628,
+    0.6628
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 219,
+   "name": "pal.blossom@fresh",
+   "state_of": "pal.blossom",
+   "state": "fresh",
+   "steps": 5,
+   "colours": [
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#c6d872",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.5394,
+    0.631,
+    0.8469,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 220,
+   "name": "pal.blossom@green",
+   "state_of": "pal.blossom",
+   "state": "green",
+   "steps": 5,
+   "colours": [
+    "#376247",
+    "#376247",
+    "#679a48",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.4565,
+    0.631,
+    0.7299,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 221,
+   "name": "pal.blossom@turn",
+   "state_of": "pal.blossom",
+   "state": "turn",
+   "steps": 5,
+   "colours": [
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#d8bb5f",
+    "#f0dd91"
+   ],
+   "L": [
+    0.4131,
+    0.5149,
+    0.5871,
+    0.7986,
+    0.8961
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 222,
+   "name": "pal.blossom@dormant",
+   "state_of": "pal.blossom",
+   "state": "dormant",
+   "steps": 5,
+   "colours": [
+    "#6b4539",
+    "#6b4539",
+    "#8a8455",
+    "#bfb47c",
+    "#d4c995"
+   ],
+   "L": [
+    0.4306,
+    0.4306,
+    0.607,
+    0.7658,
+    0.8323
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 223,
+   "name": "pal.blossom@bare",
+   "state_of": "pal.blossom",
+   "state": "bare",
+   "steps": 5,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#6c6f7e",
+    "#8f939c",
+    "#8f939c"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5444,
+    0.6628,
+    0.6628
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 224,
+   "name": "pal.violet@green",
+   "state_of": "pal.violet",
+   "state": "green",
+   "steps": 4,
+   "colours": [
+    "#2b4a41",
+    "#376247",
+    "#679a48",
+    "#91b752"
+   ],
+   "L": [
+    0.3818,
+    0.4565,
+    0.631,
+    0.7299
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.25,
+   "wet_steps": 2,
+   "gloss": 0.06,
+   "sparkle": 0.0,
+   "trans": "#91b752"
+  },
+  {
+   "id": 225,
+   "name": "pal.violet@dry",
+   "state_of": "pal.violet",
+   "state": "dry",
+   "steps": 4,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#7a6f3c",
+    "#bba95c"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5399,
+    0.7338
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.25,
+   "wet_steps": 2,
+   "gloss": 0.06,
+   "sparkle": 0.0,
+   "trans": "#bba95c"
+  },
+  {
+   "id": 226,
+   "name": "pal.violet@gone",
+   "state_of": "pal.violet",
+   "state": "gone",
+   "steps": 4,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#7a6f3c",
+    "#bba95c"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5399,
+    0.7338
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.25,
+   "wet_steps": 2,
+   "gloss": 0.06,
+   "sparkle": 0.0,
+   "trans": "#bba95c"
+  },
+  {
+   "id": 227,
+   "name": "pal.poppy@green",
+   "state_of": "pal.poppy",
+   "state": "green",
+   "steps": 2,
+   "colours": [
+    "#4a7d47",
+    "#679a48"
+   ],
+   "L": [
+    0.5394,
+    0.631
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.25,
+   "wet_steps": 2,
+   "gloss": 0.06,
+   "sparkle": 0.0,
+   "trans": "#679a48"
+  },
+  {
+   "id": 228,
+   "name": "pal.poppy@dry",
+   "state_of": "pal.poppy",
+   "state": "dry",
+   "steps": 2,
+   "colours": [
+    "#7a6f3c",
+    "#9c8d4a"
+   ],
+   "L": [
+    0.5399,
+    0.642
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.25,
+   "wet_steps": 2,
+   "gloss": 0.06,
+   "sparkle": 0.0,
+   "trans": "#9c8d4a"
+  },
+  {
+   "id": 229,
+   "name": "pal.poppy@gone",
+   "state_of": "pal.poppy",
+   "state": "gone",
+   "steps": 2,
+   "colours": [
+    "#7a6f3c",
+    "#9c8d4a"
+   ],
+   "L": [
+    0.5399,
+    0.642
+   ],
+   "class": "cloth",
+   "shell": 2,
+   "porous": true,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.25,
+   "wet_steps": 2,
+   "gloss": 0.06,
+   "sparkle": 0.0,
+   "trans": "#9c8d4a"
   }
  ]
 }

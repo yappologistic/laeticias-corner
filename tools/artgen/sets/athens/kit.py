@@ -449,13 +449,17 @@ def g_brazier(v, frame, frames, k):
 
 
 def g_lamp(v, frame, frames, k):
-    """An oil lamp in a wall niche: a little lit flame on a clay lamp in a whitewashed recess."""
+    """A lampstand in the street (it stands free in streets and squares, so it reads from every
+    side, V7-002): a stepped stone base, a slender stone shaft and a dish on top holding a clay
+    oil lamp with its little flame."""
     m = _m(1, 1, 14, k)
-    slab(m, 2.0, 14.0, 13.0, 16.0, 0.0, 12.0, "whitewash", tone=M.mud_plaster(760, 0.4, 0.0, 1.0))
-    carve(m, (5.5, 10.5, 12.9, 15.0, 6.0, 10.0))
-    ellipsoid(m, (8.0, 14.0, 6.6), (1.6, 0.9, 0.6), "clay", tone=0.2)
-    fill(m, (7.2, 8.8, 13.6, 14.4, 7.0, 8.4), "lamp")
-    halo(m, 8.0, 13.5, 7.8, 9.0, LAMP, 0.8)
+    slab(m, 5.5, 10.5, 5.5, 10.5, 0.0, 1.0, "poros", tone=0.2)
+    slab(m, 6.5, 9.5, 6.5, 9.5, 1.0, 1.8, "poros", tone=0.3)
+    revolve(m, 8.0, 8.0, 1.8, 9.0, lambda t: 0.75 - 0.15 * t, "poros", tone=0.25)
+    revolve(m, 8.0, 8.0, 9.0, 9.8, lambda t: 0.8 + 1.0 * t, "poros", tone=0.35)
+    ellipsoid(m, (8.0, 8.0, 10.2), (1.4, 0.9, 0.5), "clay", tone=0.2)
+    fill(m, (8.6, 9.6, 7.6, 8.4, 10.4, 11.8), "lamp")
+    halo(m, 9.1, 8.0, 11.2, 9.0, LAMP, 0.8)
     return m
 
 

@@ -80,7 +80,6 @@ float WorldView::macroAt(Vec2 tile) const {
 
 bool WorldView::putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<const int> idx,
                         const Xform& x, SDL_BlendMode mode) {
-    if (dry_) return true; // (a pass that only asks the tiles something)
     SDL_Texture* t = pages_->texture(s.page);
     if (t == nullptr) return false;
     const bool packed =

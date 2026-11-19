@@ -426,6 +426,9 @@ private:
     // Measurement (app_perf.cpp): the interpolated view for this frame, a frame's sample into
     // the profiler's ring and the CSV log, and a wait for the GPU to finish what was submitted.
     void prepareView();
+    // What every measured frame leaves behind, a played one or a bench's: its cost for the
+    // world's work ahead of need, and its line in the perf log.
+    void noteFrame(const FrameSample& s);
     void recordFrame(FrameSample& s);
     // This frame's times by part into the sample.
     void closeParts(FrameSample& s);
@@ -445,6 +448,14 @@ private:
     // Benchmark (app_bench.cpp)
     [[nodiscard]] bool measuring() const {
         return opts_.bench || opts_.benchmark || opts_.soak > 0;
+    }
+    // The world comes in over frames, as it does for a player: its pages decode on a worker
+    // and its cells are built a few a frame. Every run does this (a window, the gates, a
+    // headless run that only plays frames) except a headless script, whose screenshots must
+    // be the same every run and so has everything built before each frame is drawn, unless it
+    // asks to be streamed too (--streamed).
+    [[nodiscard]] bool streams() const {
+        return measuring() || !opts_.headless || opts_.streamed || !opts_.script;
     }
     // The windowed tour (--benchmark): a fixed, seeded walk through the corner's busiest views,
     // then a results card and a report beside the save.

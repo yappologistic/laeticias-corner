@@ -8,6 +8,7 @@
 #include "core/iso.hpp"
 #include "worldview/tuning.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -31,6 +32,48 @@ struct CellKey {
 inline constexpr int kObjectsFrame = 15;
 [[nodiscard]] constexpr CellKey objectsKey(CellKey k) {
     return {k.level, k.cx, k.cy, kObjectsFrame};
+}
+
+// The whole texels of a picture laid over the world (texel (0, 0) at `origin`, each `texel` world
+// px wide, `w` x `h` of them) that a view covers. A picture as large as the world is drawn by
+// this part only: handed over whole, SDL's software renderer first makes a scaled copy of all
+// of it (the overview at a quarter scale: 372 MiB a frame; at 2x: 24 GB).
+struct TexelSpan {
+    int x0 = 0;
+    int y0 = 0;
+    int x1 = 0;
+    int y1 = 0;
+    [[nodiscard]] constexpr bool empty() const { return x1 <= x0 || y1 <= y0; }
+};
+[[nodiscard]] inline TexelSpan texelsUnder(Vec2 origin, float texel, int w, int h,
+                                           const FRect& view) {
+    const auto low = [&](float v, float o, int n) {
+        return std::clamp(static_cast<int>(std::floor((v - o) / texel)), 0, n);
+    };
+    const auto high = [&](float v, float o, int n) {
+        return std::clamp(static_cast<int>(std::ceil((v - o) / texel)), 0, n);
+    };
+    return {low(view.x0, origin.x, w), low(view.y0, origin.y, h), high(view.x1, origin.x, w),
+            high(view.y1, origin.y, h)};
+}
+
+// The tile a world px point lies on. Land at level L is drawn L * `lift` px above the ground
+// plane, so the plane's tile under the point is the wrong one wherever the land is raised (a
+// level is half a tile each way: a view centred on a hill named the region behind it). From
+// the top level down: the first level at which the tile under the point, lowered by that many
+// levels, stands exactly that high, so the point is on its top. This is the inverse of placing
+// a view on a tile at its level; a cliff's face in front of the point is not looked for (it
+// would name the mountain before a valley, not the valley looked at). `levelOf` gives a tile's
+// level, below zero off the grid; with no top at the point the plane's tile is returned.
+template <typename LevelOf>
+[[nodiscard]] TilePos tileTopAt(Iso iso, int lift, int topLevel, Vec2 px, LevelOf&& levelOf) {
+    const auto under = [&](int level) {
+        const Vec2 t = iso.toTile({px.x, px.y + static_cast<float>(level * lift)});
+        return TilePos{static_cast<int>(std::floor(t.x)), static_cast<int>(std::floor(t.y))};
+    };
+    for (int level = topLevel; level > 0; --level)
+        if (const TilePos t = under(level); levelOf(t) == level) return t;
+    return under(0);
 }
 
 [[nodiscard]] constexpr int cellPx(int level) {

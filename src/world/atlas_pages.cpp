@@ -76,6 +76,8 @@ AtlasPages::addShadows(std::string_view text, std::string_view file, std::string
         if (page.image != expect)
             fail(f + ": image '" + page.image + "' should be '" + expect + "'");
         page.scale = asFloat(field(doc, "scale", f), f + ": scale");
+        // (Written as "not inside" so that a scale that is not a number fails too.)
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         if (!(page.scale > 0 && page.scale <= 1)) fail(f + ": scale must be over 0 and at most 1");
         pages_.push_back(page);
         const json& sprites = asObject(field(doc, "sprites", f), f + ": sprites");

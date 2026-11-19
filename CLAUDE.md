@@ -605,6 +605,15 @@ $B --bench --renderer opengl --map 1024x512 --density 0.5 --budget-ms 2 --save-d
 - Headless uses the `dummy` video driver with the software renderer (reproducible screenshots);
   `--renderer opengl` switches to the `offscreen` driver (EGL, still windowless) for GPU timings.
   Without `--size` a headless window is 1280x800.
+- **Two ways the world comes in, and which runs use which.** *Streamed* (what a player gets):
+  atlas pages decode on a worker, cells are built a few a frame, the first view and a journey's
+  destination arrive behind the veil. Every window, `--bench`, `--soak`, `--benchmark` and any
+  headless run without a script (`--headless --frames N`) is streamed: **start-up, pop-in,
+  travel and frame times are measured only on streamed runs.** *Built at once*: a headless
+  `--script` has every page and cell its view needs made before each frame is drawn, so its
+  screenshots are the same every run; its first frame takes seconds and it shows no pop-in: it
+  measures nothing about what a player waits for. `--streamed` makes a script stream too (for
+  looking at arrival and pop-in; its screenshots then depend on timing).
 - `--bench` fills the map (dense around the centre, sparse elsewhere), times every condition of
   the progress loop at once, runs at night in the rain with the drawer and sketchbook open at 1x
   and at the half-scale overview, then a busy corner (every visitor kind at its number) and a
