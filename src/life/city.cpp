@@ -1132,7 +1132,7 @@ void CityLife::materialise(int i, const Desire& d) {
     if (start.x < 0) return; // no ground to stand on in this chunk
     a.tile = a.anchor = tile16(start);
     a.pos = a.prev = a.endPoint = centre(start);
-    a.z = a.prevZ = static_cast<float>(map_->floorZ(start));
+    a.z = a.prevZ = map_->walkZ(centre(start));
     a.flags = live_flag::kAlive;
     if (d.source == Source::Figure && !reg.figures.empty()) {
         for (const Figure& f : reg.figures)
@@ -1774,7 +1774,7 @@ bool CityLife::runSteps(int i, bool fastForward, double& budget) {
                     const TilePos g = a.route.leg == Leg::None ? a.tile.pos() : a.route.goal.pos();
                     a.tile = tile16(g);
                     a.pos = a.endPoint;
-                    a.z = static_cast<float>(map_->floorZ(g));
+                    a.z = map_->walkZ(centre(g));
                     a.route = Route{};
                     tracks_[static_cast<std::size_t>(i)].n = 0;
                     endStep(i);
@@ -1971,16 +1971,9 @@ void CityLife::placeOnTrack(int i, float maxStep) {
         map_->inBounds(t) && map_->walkable(t)
             ? t
             : TilePos{static_cast<int>(std::floor(raw.x)), static_cast<int>(std::floor(raw.y))});
-    // Height along stairs: between the floors of the route tiles it is between.
-    const float u =
-        std::clamp(a.s - static_cast<float>(tr.base), 0.0f, static_cast<float>(tr.n - 1));
-    const auto k =
-        static_cast<std::size_t>(std::min(u, std::max(0.0f, static_cast<float>(tr.n) - 2.0f)));
-    const float f = u - static_cast<float>(k);
-    const auto z0 = static_cast<float>(map_->floorZ(tr.t[k].pos()));
-    const auto z1 =
-        static_cast<float>(map_->floorZ(tr.t[std::min<std::size_t>(k + 1, tr.n - 1u)].pos()));
-    a.z = z0 + (z1 - z0) * f;
+    // The height it stands at, where it stands (a stair's tread, a deck, a slope's surface);
+    // off its course's tiles (a lateral step beside a stair) it is at its course's point.
+    a.z = map_->walkZ(map_->inBounds(t) && map_->walkable(t) ? a.pos : raw);
     if (!moving(i)) {
         a.route.leg = Leg::Done;
         a.pos = a.endPoint;
@@ -2497,7 +2490,7 @@ void CityLife::puppet(int i) {
         const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
         if (map_->inBounds(t)) {
             a.tile = tile16(t);
-            a.z = afloat ? static_cast<float>(map_->level(t) * map_->levelPx()) : map_->floorAt(p);
+            a.z = afloat ? static_cast<float>(map_->level(t) * map_->levelPx()) : map_->walkZ(p);
         }
         a.pos = p;
         link(i);

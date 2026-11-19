@@ -417,18 +417,9 @@ FloorCheck checkFloors(const CityLife& life, TileRect rect, std::vector<DrawActo
             continue;
         }
         if (d.speed <= 0 || !m.walkable(t)) continue;
-        std::array<world::WalkStep, 4> steps{};
-        const int ns = m.walkNeighbours(t, steps);
-        const int own = m.floorZ(t);
-        float lo = static_cast<float>(own);
-        float hi = lo;
-        for (int j = 0; j < ns; ++j) {
-            const auto z = static_cast<float>(m.floorZ(steps[static_cast<std::size_t>(j)].to));
-            lo = std::min(lo, z);
-            hi = std::max(hi, z);
-        }
-        out.raised += own != m.level(t) * m.levelPx() ? 1 : 0;
-        if (d.z < lo - tl::kFloorSlackPx || d.z > hi + tl::kFloorSlackPx) ++out.offFloor, bad(t);
+        // A slope is ground, not a raised floor.
+        out.raised += m.floorZ(t) != m.level(t) * m.levelPx() ? 1 : 0;
+        if (std::abs(d.z - m.walkZ(d.pos)) > tl::kFloorSlackPx) ++out.offFloor, bad(t);
     }
     return out;
 }

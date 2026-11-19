@@ -523,33 +523,6 @@ int WorldMap::boatRoomAt(TilePos p) const {
     return room <= 0 || room == 255 ? INT_MAX : room;
 }
 
-float WorldMap::floorAt(Vec2 p) const {
-    const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
-    if (!inBounds(t)) return 0.0f;
-    // Plain ground all round (no stair, walk floor or deck here or next door): steps between
-    // such tiles never change height, so the tile's level is the floor.
-    const auto raised = [&](TilePos q) {
-        return inBounds(q) && (chunk(q).walk[local(q)] & (kFloor | kDeck)) != 0;
-    };
-    if (!raised(t) &&
-        std::ranges::none_of(kSteps, [&](TilePos d) { return raised({t.x + d.x, t.y + d.y}); }))
-        return static_cast<float>(levelOf(chunk(t).level[local(t)]) * levelPx_);
-    const auto z = static_cast<float>(floorZ(t));
-    const float fx = p.x - static_cast<float>(t.x) - 0.5f;
-    const float fy = p.y - static_cast<float>(t.y) - 0.5f;
-    std::array<WalkStep, 4> steps{};
-    const int n = walkNeighbours(t, steps);
-    float out = z;
-    for (int i = 0; i < n; ++i) {
-        const WalkStep& s = steps[static_cast<std::size_t>(i)];
-        const int dx = s.to.x - t.x;
-        const int dy = s.to.y - t.y;
-        const float toward = dx != 0 ? fx * static_cast<float>(dx) : fy * static_cast<float>(dy);
-        if (toward > 0) out += static_cast<float>(s.dz) * toward;
-    }
-    return out;
-}
-
 float WorldMap::walkZ(Vec2 p) const {
     const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
     if (!inBounds(t)) return 0.0f;

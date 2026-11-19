@@ -173,10 +173,6 @@ public:
     }
     // Height of the floor a walker stands on, px above level 0 (stairs and walk floors included).
     [[nodiscard]] int floorZ(TilePos p) const;
-    // The floor under a continuous point (tile coordinates): its tile's floor, blended toward
-    // each neighbour it can step to as the point nears their shared edge (the two sides meet
-    // half way), so a height carried along any course is continuous.
-    [[nodiscard]] float floorAt(Vec2 p) const;
     // A boat's room under a span at p, px (the geometry's `pass` of the item over it), INT_MAX
     // where nothing spans the water (open water, or a pier or ground no boat passes).
     [[nodiscard]] int boatRoomAt(TilePos p) const;
@@ -189,12 +185,12 @@ public:
     // Height of the ground at a continuous point (tile coordinates), px above level 0: the tile's
     // level less what its slope falls there, continuous across tiles wherever surfaces meet.
     // Off the grid and on tiles without ground: 0 (the sea's level). Floors of items (stairs,
-    // decks, walk floors) are floorAt's.
+    // decks, walk floors) are floorZ's.
     [[nodiscard]] float surfaceZ(Vec2 p) const;
-    // The height a walker stands at on a continuous point: floorAt with the ground's surface in
-    // place of the tile's level (a stair's, deck's or walk floor's own height; elsewhere
-    // surfaceZ), meeting each neighbour it may step to half way at their shared edge, so it is
-    // continuous along any course. City life switches to it from floorAt (engine-terrain.md).
+    // The height a walker stands at on a continuous point (tile coordinates): a stair's, deck's
+    // or walk floor's own height (floorZ), elsewhere the ground's surface (surfaceZ), meeting
+    // each neighbour it may step to half way at their shared edge, so it is continuous along
+    // any course. Every city-life walker's and carrier's height.
     [[nodiscard]] float walkZ(Vec2 p) const;
     // Level of corner `c` (0 N, 1 E, 2 S, 3 W: the diamond's top, right, bottom, left vertex) of
     // the tile's surface; off the grid and without ground, 0.

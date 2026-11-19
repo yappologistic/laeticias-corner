@@ -452,7 +452,8 @@ inline constexpr float kStallGiveUp = 4.0f; // seconds stuck before the step is 
 inline constexpr float kStallLeave = 12.0f; // seconds stuck (steps given up) before it leaves
 // The gates' bounds on being drawn on the floor: the most a height may change in one step, the
 // most anyone may move in one (6 tiles/s: nobody hops), the slack round the floor's band.
-inline constexpr float kFloorStepPx = 2.0f;
+inline constexpr float kFloorStepPx = 3.0f; // walkZ climbs up to 2 px per 1/64 tile on the steepest
+                                            // ground; the jumps it catches were 3.4-16 px
 inline constexpr float kFloorStepTiles = 0.1f;
 inline constexpr float kFloorSlackPx = 1.0f;
 // A ship lowers its mast this many tiles before a span too low for it, and raises it as far after.

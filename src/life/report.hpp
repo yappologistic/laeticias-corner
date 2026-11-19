@@ -30,8 +30,8 @@ namespace lc::life {
 [[nodiscard]] std::vector<std::string> walkProblems(const LifeWorld& w);
 
 // How the live actors of a rect stand on the floor over their last step (tests and the
-// scripts' `expect city floor`): walkers drawn walking off their course's floor band (below the
-// lowest or above the highest floor of their tile and the tiles they can step to, by more than
+// scripts' `expect city floor`): walkers drawn walking off the height they stand at (WorldMap::
+// walkZ: a stair's, deck's or walk floor's height, elsewhere the ground's surface; by more than
 // the slack), ships off their water's level, steps that changed a height or a place by more than
 // the gates' bounds, and walkers on raised floors (decks, stairs, walk runs: the check had
 // something to see). `scratch` is reused (two gathers of the rect).
