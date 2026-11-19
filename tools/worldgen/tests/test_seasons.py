@@ -1,5 +1,5 @@
 """The seasons (worldgen.seasons, seasonlife, seasoncheck; docs/design/seasons.md): the calendar,
-the catalog writer, the region helpers, and every check S1-S17 with a case that passes and a
+the catalog writer, the region helpers, and every check S1-S19 with a case that passes and a
 deliberate fault that is reported by name. Fixtures are small and built here, never committed
 data (the climates are the tool's own table)."""
 
@@ -56,7 +56,7 @@ class Climates(unittest.TestCase):
     def test_inheritance_fills_what_a_climate_leaves_out(self):
         lev = CLIMS["levant"]
         self.assertEqual(lev["classes"]["grass"], CLIMS["med_dry"]["classes"]["grass"])
-        self.assertEqual(lev["snow"]["line"][9], 7)            # its own
+        self.assertEqual(lev["snow"]["line"][9], 10)           # its own
         self.assertIn("sea", CLIMS["sea_aegean"])
         self.assertEqual(CLIMS["plateau"]["fauna"]["storks"][0], "apr")
 
@@ -333,6 +333,63 @@ class Map(unittest.TestCase):
             rep = SC.Report()
             SC.check_flood(root, w, bodies, CLIMS, regions, rep)
             self.assertEqual(codes(rep).count("S7"), 2)
+
+
+class SnowGround(unittest.TestCase):
+    """S18, S19 and the base rule they hold: snow as terrain only where the climate keeps it all
+    year, and snow rows that agree with the climates' own months."""
+
+    YEAR_ROUND = {"snow": {"line": [12, 13, 14, 14, 14, 14, 14, 14, 13, 12, 11, 11]}}
+
+    def test_lasting_snow_is_the_highest_line_of_a_year_without_a_gap(self):
+        self.assertEqual(S.lasting_snow(self.YEAR_ROUND), 14)
+        self.assertIsNone(S.lasting_snow(CLIMS["high_mountain"]))   # bare in high summer
+        self.assertIsNone(S.lasting_snow(CLIMS["mesopotamian"]))
+
+    def test_s18_snow_below_the_lasting_line_or_in_a_summer_climate(self):
+        clims = dict(CLIMS, high_mountain=self.YEAR_ROUND)
+        w = tiny_world(("zagros", "apennines"), terrains=("world.steppe", "world.snow"))
+        w.T[10, 0:20] = 0
+        w.T[3, 2:6] = 1
+        w.L[3, 2:6] = 14                                  # a lasting cap at 14
+        rep = SC.Report()
+        SC.check_snow_ground(w, clims, rep)
+        self.assertEqual(rep.errors, [])
+        w.L[3, 5] = 12                                    # a snowfield in July at 12
+        w.T[4, 30:33] = 1
+        w.L[4, 30:33] = 15                                # the Apennines lose all snow by June
+        rep = SC.Report()
+        SC.check_snow_ground(w, clims, rep)
+        self.assertEqual(codes(rep).count("S18"), 2)
+        self.assertIn("first at grid (3, 1274) level 12", " ".join(m for *_x, m in rep.errors))
+
+    def test_s19_the_tools_rows_make_sense(self):
+        w = tiny_world(("parsa", "susa"), terrains=("parsa.plain_grass", "world.river"))
+        w.L[:, :] = 4
+        rep = SC.Report()
+        SC.check_snow_sense(w, CLIMS, rep)
+        self.assertEqual(rep.errors, [])
+
+    def test_s19_lowland_snow_in_a_mild_month_and_summer_snow(self):
+        clims = copy.deepcopy(CLIMS)
+        clims["fars"]["snow"]["line"][0] = 4        # Pārsa's plain white in March (10 C)
+        clims["fars"]["snow"]["line"][4] = 9        # and in July at level 9
+        w = tiny_world(("parsa", "susa"), terrains=("parsa.plain_grass", "world.river"))
+        rep = SC.Report()
+        SC.check_snow_sense(w, clims, rep)
+        text = " ".join(m for *_x, m in rep.errors)
+        self.assertIn("snow lies on its lowland (level 4) in mar", text)
+        self.assertIn("snow down to level 9 in jul", text)
+
+    def test_s19_a_palm_under_snow(self):
+        from worldgen.compose import WItem
+        w = tiny_world(("parsa", "susa"), terrains=("parsa.plain_grass", "world.river"))
+        w.L[5, 3] = 12                                  # Kuh-e Rahmat's flank, white in January
+        w.items.append(WItem("parsa.t_date", 3, 5, 1, 1, 0, "parsa"))
+        w.occ[5, 3] = 0
+        rep = SC.Report()
+        SC.check_snow_sense(w, CLIMS, rep)
+        self.assertIn("parsa.t_date", " ".join(m for *_x, m in rep.errors))
 
 
 class CityLifeByMonth(unittest.TestCase):

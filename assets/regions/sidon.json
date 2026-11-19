@@ -58,30 +58,6 @@
     {
      "rect": [
       300,
-      272,
-      340,
-      289
-     ],
-     "file": "amb/world/oars.ogg",
-     "gain": 0.5,
-     "hours": [
-      "06:30",
-      "17:30"
-     ],
-     "months": [
-      "mar",
-      "apr",
-      "may",
-      "jun",
-      "jul",
-      "aug",
-      "sep",
-      "oct"
-     ]
-    },
-    {
-     "rect": [
-      300,
       274,
       330,
       280
@@ -149,8 +125,8 @@
      ]
     },
     "snow_line": [
-     7,
      9,
+     12,
      null
     ]
    },
@@ -198,7 +174,7 @@
     "snow_line": [
      null,
      null,
-     null
+     13
     ]
    },
    "winter": {
@@ -216,16 +192,12 @@
       "dec",
       "jan",
       "feb"
-     ],
-     "snow": [
-      "jan",
-      "feb"
      ]
     },
     "snow_line": [
-     7,
-     6,
-     6
+     10,
+     8,
+     8
     ]
    }
   },
@@ -1051,7 +1023,7 @@
     "wind": "wind.sea",
     "exposure": 1.0,
     "water": {
-     "family": "sea.harbour"
+     "family": "sea.coast"
     },
     "steps": {
      "surface": "earth",
@@ -1063,11 +1035,6 @@
      "hooves": [
       "sfx/world/hoof_earth_1.wav",
       "sfx/world/hoof_earth_2.wav"
-     ],
-     "decks": [
-      "sfx/world/step_timber_1.wav",
-      "sfx/world/step_timber_2.wav",
-      "sfx/world/step_timber_3.wav"
      ]
     },
     "cart": "amb/world/cart_earth.ogg",
@@ -1077,11 +1044,7 @@
     }
    },
    "look": {
-    "reflect": true,
-    "haze": {
-     "toward": "sea",
-     "strength_add": 0.03
-    }
+    "reflect": true
    }
   },
   {
@@ -1332,11 +1295,11 @@
    "name": "The town",
    "sound": {
     "surfaces": {
-     "roof": 0.26,
+     "roof": 0.27,
      "water": 0.19
     },
     "wind": "wind.open",
-    "exposure": 0.79,
+    "exposure": 0.78,
     "water": {
      "family": "sea.harbour"
     },
@@ -3238,7 +3201,7 @@
     "hours": [
      [
       "dusk",
-      "23:00"
+      "23:30"
      ]
     ],
     "rain": "dim"
@@ -3265,6 +3228,28 @@
     ],
     "rain": "dim"
    },
+   "wall_torch": {
+    "kind": "torch",
+    "kelvin": 1900,
+    "colour": "#ff8c3c",
+    "radius": 3.0,
+    "strength": 0.85,
+    "flicker": {
+     "style": "gutter",
+     "hz": [
+      6,
+      10
+     ],
+     "depth": 0.08
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "dim"
+   },
    "window_evening": {
     "kind": "window",
     "kelvin": 2000,
@@ -3282,7 +3267,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",
@@ -3386,10 +3371,24 @@
    "flame"
   ],
   [
-   315,
-   280,
+   308,
+   279,
    "parsa.p_torch",
    "niche_lamp",
+   "flame"
+  ],
+  [
+   316,
+   279,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
+  ],
+  [
+   310,
+   280,
+   "parsa.p_torch",
+   "wall_torch",
    "flame"
   ]
  ]

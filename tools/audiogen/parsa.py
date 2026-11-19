@@ -427,6 +427,6 @@ FILES = {
                                 purpose="The magus intoning at the fire altar at dawn (P2), wordless."),
     "sfx/parsa/audience.wav": dict(kind="sfx", render=audience, lufs=-21.0, gain=1.0,
                                    purpose="Soft harp and drum phrase as a delegation is presented (P1)."),
-    "sfx/parsa/arrive.wav": dict(kind="sfx", render=arrive, lufs=-20.0, gain=1.0,
+    "sfx/parsa/arrive.wav": dict(kind="sfx", render=arrive, lufs=-22.0, gain=1.0,
                                  purpose="Arrival motif (fast travel, era caption): harp D E F A."),
 }

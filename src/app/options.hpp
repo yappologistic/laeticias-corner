@@ -31,6 +31,8 @@ struct Options {
     std::optional<Size> map; // bench: map size instead of the catalog's
     float density = 0.5f;    // bench: share of tiles filled around the camera
     double budgetMs = 0;     // bench: fail when update + draw averages more than this
+    bool streamed = false;   // a headless run builds the world as the windowed game does
+    std::string benchCase;   // bench: only the cases whose name contains this (all when empty)
     double soak = 0;         // seconds of play to run checking that memory stays flat (0: no)
     std::optional<std::filesystem::path> perfLog; // per-frame timings and counters as CSV
     bool gpuSync = false;   // wait for the GPU each frame to time it (the profiler's GPU line)

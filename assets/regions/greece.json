@@ -162,13 +162,10 @@
      ],
      "muddy": [
       "mar"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     7,
+     13,
      null,
      null
     ]
@@ -260,9 +257,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     5
+     11,
+     9,
+     10
     ]
    }
   },
@@ -2367,11 +2364,11 @@
   {
    "body": "achelous",
    "kind": "stream",
-   "tiles": 276,
+   "tiles": 274,
    "rect": [
     160,
     790,
-    264,
+    263,
     817
    ],
    "level": [
@@ -2399,12 +2396,12 @@
   {
    "body": "alpheios",
    "kind": "stream",
-   "tiles": 9,
+   "tiles": 8,
    "rect": [
     339,
     810,
     341,
-    813
+    812
    ],
    "level": [
     "high",

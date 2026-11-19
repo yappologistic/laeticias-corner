@@ -269,12 +269,29 @@ def impulse_response(rng, length, t60_low, t60_high, predelay=0.012, crossover=2
 def reverb(x, ir):
     """Convolve (mono or stereo) x with a stereo IR; output is longer by len(ir) - 1."""
     x = stereo(x)
-    return np.stack([signal.oaconvolve(x[:, c], ir[:, c]) for c in range(2)], axis=1)
+    out = np.empty((len(x) + len(ir) - 1, 2))
+    for c in range(2):  # one channel at a time: a long piece holds one convolution, not two
+        out[:, c] = signal.oaconvolve(x[:, c], ir[:, c])
+    return out
 
 
-def with_reverb(dry, send, ir, wet=1.0):
+def reverb_blocks(x, ir, block=1 << 19):
+    """reverb() a block at a time (overlap-add), for minutes-long signals: the same result to
+    rounding, with memory bounded by the block instead of the whole signal."""
+    x = stereo(x)
+    out = np.zeros((len(x) + len(ir) - 1, 2))
+    for a in range(0, len(x), block):
+        seg = x[a:a + block]
+        for c in range(2):
+            y = signal.fftconvolve(seg[:, c], ir[:, c])
+            out[a:a + len(y), c] += y
+    return out
+
+
+def with_reverb(dry, send, ir, wet=1.0, blocks=False):
     """dry + wet * (send convolved with ir), keeping the whole tail for wrap()."""
-    out = reverb(send, ir) * wet
+    out = reverb_blocks(send, ir) if blocks else reverb(send, ir)
+    out *= wet
     out[: len(dry)] += stereo(dry)
     return out
 

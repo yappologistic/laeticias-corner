@@ -7,6 +7,8 @@ import math
 
 import numpy as np
 
+import waterworks
+
 import materials as M
 from arch import Scale, carve, ellipsoid, fill, halo, rod, slab
 from greek import (Order, Stoa, Temple, city_wall, column, doric_entablature, hip_roof, house_wall, poros_wall, stoa,
@@ -354,8 +356,8 @@ def kallirrhoe(m):
     fill(m, (0.0, 48.0, 0.0, 22.0, 0.0, 14.0), "slate",
          lambda X, Y, Z: (Y > 17.0) & (Z < 3.0) & (value_noise(X, Y, Z, 2.0, seed + 2) > 0.4), tone=-0.2,
          only_solid=True)
-    fill(m, (8.0, 40.0, 20.0, 40.0, 0.0, 1.0), "water", lambda X, Y, Z: np.hypot((X - 24) / 15.0, (Y - 30) / 9.0) < 1,
-         tone=lambda X, Y, Z: 0.5 * ((X + Y * 0.5) % 4.0 < 0.6))
+    waterworks.surface(m, (8.0, 40.0, 20.0, 40.0), 1.0, 0, 1, sources=[(24.0, 23.0)],
+                       shape=lambda X, Y: np.hypot((X - 24) / 15.0, (Y - 30) / 9.0) < 1, seed=4711, boil=False)
     fill(m, (6.0, 42.0, 18.0, 42.0, 0.0, 2.0), "poros",
          lambda X, Y, Z: np.abs(np.hypot((X - 24) / 16.5, (Y - 30) / 10.5) - 1.0) < 0.08, tone=0.2)
     for i in range(6):

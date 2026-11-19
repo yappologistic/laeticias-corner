@@ -310,9 +310,9 @@
      ]
     },
     "snow_line": [
-     5,
      8,
-     null
+     11,
+     14
     ]
    },
    "summer": {
@@ -358,13 +358,14 @@
       "nov"
      ],
      "snow": [
+      "oct",
       "nov"
      ]
     },
     "snow_line": [
      null,
-     null,
-     7
+     13,
+     9
     ]
    },
    "winter": {
@@ -398,7 +399,7 @@
     "snow_line": [
      5,
      0,
-     0
+     4
     ]
    }
   },
@@ -1295,6 +1296,82 @@
      "per_item": "world.beacon",
      "count": 1,
      "density": "always"
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_cedar",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_cedar",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
     },
     {
      "role": "woodcutter",
@@ -2891,7 +2968,6 @@
     "base:royal_road_station_1050_253",
     "base:royal_road_station_1058_265",
     "babylon:ishtar_gate",
-    "babylon:west_bank",
     "babylon:babylon_quay"
    ],
    "offsets": [
@@ -5229,7 +5305,7 @@
     "hours": [
      [
       "dusk",
-      "23:00"
+      "23:30"
      ]
     ],
     "rain": "dim"
@@ -5317,7 +5393,7 @@
     "hours": [
      [
       "dusk",
-      "22:30"
+      "23:30"
      ]
     ],
     "rain": "sheltered",

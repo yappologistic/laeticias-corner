@@ -34,7 +34,10 @@ the font and the clock's lighting, and `lc_world`). The game draws through it (`
   loop (four), so water moves at no cost per frame; the steps of cells in view are kept while
   there is room. Levels 1 and 2 are impostors of everything static: 1024-px blocks drawn at full
   resolution (ground, the shadow layer where something casts one, sorted items) and halved with
-  filtering (2 x 2 box per halving).
+  filtering (2 x 2 box per halving). An impostor cell with water in it is kept in layers
+  (`cells.hpp`): its ground once per step of the water's loop and what stands on it once, laid
+  over whichever step is shown, so the sea moves at half and quarter scale too and a step costs
+  a ground to draw, not the city on it.
 - **Nothing arrives late.** Each frame lists the cells it wants in order of need: the view's
   own; those of a destination the view is heading for (the level a zoom under way ends at, a
   journey's place while the veil comes down); a ring around the view leaning the way it moves;
@@ -44,8 +47,9 @@ the font and the clock's lighting, and `lc_world`). The game draws through it (`
   (2 ms for what is needed, 1 ms for what is built ahead; `tuning.hpp`), impostor blocks after
   their gather comes back from the worker. Drawing only composites: a cell not built yet shows
   its coarser level, or the overview under it. The cache holds, at a window's size, its own
-  level with the ring and the two wider levels, half as much again (128 MiB at 1080p, 160 at
-  1440p, 320 at 4K).
+  level with the ring and the two wider levels, half as much again, or what a view of nothing
+  but sea needs for its water to move at every level, whichever is more (192 MiB at 1080p, 224
+  at 1440p, 384 at 4K).
 - **The native level waits whole.** Its objects are gathered on the worker, never on the main
   thread when frames are streamed: for the view as it moves, and ahead for a destination. While
   its ground cells or objects are still on their way the half-scale impostors stay up,
@@ -57,18 +61,28 @@ the font and the clock's lighting, and `lc_world`). The game draws through it (`
   allocation. Raised tiles that hide an item (world-tech §4.3's rule) join the sort and are drawn
   again over it; the ground goes under anything whose footprint covers it.
 - **Shadows** are one layer (alpha normalised to a peak of 1, page by page, composited once at
-  the measured opacity); **grading** multiplies the clock's ambient by the themes' keyframes;
-  **glow** is added after it; **haze** leans the frame toward the themes' colour.
+  the measured opacity). A set with a shadow page (`<set>.s.json`: every shadow at half size)
+  has its shadows drawn from it, twice their texels and filtered: one draw per set in view.
+  **Grading** multiplies the clock's ambient by the themes' keyframes; **glow** is added after
+  it, page by page; **haze** leans the frame toward the themes' colour.
+- **Rain and snow** are one picture each (streaks at fixed places over a 512-px pane that tiles
+  the world, four densities side by side), scrolled as it falls and drawn as a mesh of
+  256 x 128 px cells whose corners ask the showers how hard it rains there: a few hundred quads
+  for a whole view in the rain.
 - **Pages**: the sets of the regions sampled every 8 tiles over the view grown by 64 (and over
   a destination) are wanted; PNGs decode on a worker and upload in 1 MB slices within a time
   budget per frame (1.5 ms for a page the view waits for, 0.5 ms for one loaded ahead) into
-  pre-made, pre-touched 4096² slots, static on GPU renderers, streaming on the software one.
-  Every page on disk has a slot while the ceiling (640 MiB) holds them all: then nothing is ever
-  evicted and the pages the view does not need yet load ahead in the background, so a journey to
-  any city finds its art resident. Sets that outgrow the ceiling stream as before (idle pages
-  out least recently used first; only a view needing more pages than the budget adds a slot).
-- **Draw calls** stay in the tens: cells and shadows are drawn page by page, items in the
-  page-aware order (22 at the Agora, 10–17 on the Parsa terrace and the Acropolis).
+  pre-made, pre-touched textures, static on GPU renderers, streaming on the software one. While
+  the ceiling (640 MiB) holds every page on disk, each has a texture of its own size and nothing
+  is ever given up: the pages the view does not need yet load ahead in the background, so a
+  journey to any city finds its art resident. Sets that outgrow the ceiling stream through equal
+  4096² slots instead (idle pages out least recently used first; only a view needing more pages
+  than the budget adds a slot); the shadow pages are always kept.
+- **Draw calls**: cells, shadows and glow are drawn page by page. The objects are given in the
+  painter's order and drawn in runs of one page (`page_runs.hpp`): a sprite joins the last run
+  of its page unless something it is drawn over came after that run, so what does not meet on
+  screen need not wait its turn. What is left is where sprites of two pages really are stacked
+  on one spot; `laeticias-world --bench` names them under any city view over its draw calls.
 
 ## Missing art
 

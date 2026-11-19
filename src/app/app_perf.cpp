@@ -122,6 +122,10 @@ void App::recordFrame(FrameSample& s) {
     s.totalMiB =
         perfFrames_ % kMemoryEvery == 0 ? static_cast<float>(processMemory().first) : prev.totalMiB;
     perf_.push(s);
+    // Cells built ahead of need take what this frame left of the main thread's budget.
+    if (worldView_)
+        worldView_->setFrameCost(
+            static_cast<double>((s.threadMs >= 0 ? s.threadMs : s.cpuMs) - s.buildMs - s.uploadMs));
     if (perfLog_) {
         std::array<char, kPerfLineMax> line{};
         const std::size_t n = perfLine(perfFrames_, s, line);

@@ -476,6 +476,6 @@ FILES = {
                                    purpose="A trireme's timbers creaking, an oar knocking (ships)."),
     "sfx/athens/oars.wav": dict(kind="sfx", render=oars, lufs=-23.0, gain=0.9,
                                 purpose="A bank of oars in time with the piper's call (S4)."),
-    "sfx/athens/arrive.wav": dict(kind="sfx", render=arrive, lufs=-20.0, gain=1.0,
+    "sfx/athens/arrive.wav": dict(kind="sfx", render=arrive, lufs=-22.0, gain=1.0,
                                   purpose="Arrival motif (fast travel, era caption): kithara E A B E."),
 }

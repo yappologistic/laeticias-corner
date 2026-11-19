@@ -18,7 +18,7 @@ import numpy as np
 
 from worldgen import waypoint as WP
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import night_posts, put
 from worldgen.shapes import Ellipse, Line, Mask, Rect
 
 _spec = importlib.util.spec_from_file_location(
@@ -93,6 +93,9 @@ def build(L: Layout) -> None:
     L.node("latiaris", (SACRA, SUMMIT.r1))
     L.node("villas", (8, 37))
     L.node("appia_foot", (SACRA, ROAD_ROW))
+    # The sanctuary's keepers watch the precinct through the night; lamps at its gate.
+    night_posts(L, R + "r_brazier", [(20, 11), (17, 8)], ring=3, gap=4)
+    night_posts(L, R + "r_lamp", [(21, 12), (24, 7)], ring=2, gap=3)
     WP.finish(L, "world.earth", {R + "r_villa_farm": 0})
     L.expect("latiaris", rect=TEMPLE, level=8)
     L.view("whole", Rect(0, 0, W - 1, H - 1))

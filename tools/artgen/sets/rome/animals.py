@@ -176,7 +176,7 @@ def ship_model(kind, anim, frame, k):
                 amphora(m, x, y, depth, "dressel20")
         if anim == "lowered":
             # Passing under a bridge: the mast unstepped and laid aft on a crutch over the
-            # cargo, the tow rope made fast low at the bow, the steersman down in the stern well.
+            # cargo, the tow rope made fast low at the bow, the steersman seated down in the stern well.
             rod(m, (L / 2 - 10, 0.0, depth + 4.2), (-L / 2 + 6, 0.0, depth + 4.2), 0.5, "wood")
             rod(m, (-L / 2 + 8, 0.0, depth), (-L / 2 + 8, 0.0, depth + 4.0), 0.4, "wood")
             rod(m, (L / 2 - 4, 0.0, depth + 1.0), (L / 2 + 14, 16.0, depth + 1.0), 0.15, "straw", 0.2)
@@ -188,7 +188,7 @@ def ship_model(kind, anim, frame, k):
         d = Dress(garment="tunic", colour="felt", beard="full", beard_mat="cedar", hair_style="short", head="pilos",
                   head_mat="felt", feet="bare", skin="skin_olive")
         fr = Frame(d)
-        name = {"row": "haul", "lowered": "kneel"}.get(anim, "idle")
+        name = {"row": "haul", "lowered": "sit"}.get(anim, "idle")      # lowered: seated, 27 px in all
         p = pose(name, frame % (4 if anim == "row" else 2), 4 if anim == "row" else 2, fr, d)
         draw(Body(m, shift=(-L / 2 + 6.0, 0.0, depth - (3.0 if anim == "lowered" else 0.0))), d, p, fr)
     return m

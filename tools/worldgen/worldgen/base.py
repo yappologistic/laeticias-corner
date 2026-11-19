@@ -10,7 +10,7 @@ Order (every step seeded and a pure function of position and the plan entry it s
  3. rivers: meandering, widening downstream, splitting into deltas; level in reaches with the
     drops gathered into falls, flat valley floors rising in scarps (plan RIVER_FORM), flow
     written to aux;
- 4. terrain by stretch (docs/design/sets/world.md §9.3): rock, snow, scree, scrub, forest floor,
+ 4. terrain by stretch (docs/design/sets/world.md §9.3): rock, lasting snow, bare tops, scree, scrub, forest floor,
     desert, marsh, canals, beaches, margins where two bases meet;
  5. routes and lanes (worldgen.routes): roads graded with ramps, bridges, roadside kit, stations,
     farms, harbours, the graph;
@@ -31,7 +31,9 @@ import numpy as np
 
 from plan import world_plan as P
 
-from . import raster, rng
+from . import climates as C
+from . import compose, landform, raster, rng
+from . import seasons as SEAS
 from .catalog import Catalog
 from .coords import COLS, ROWS
 from .dsl import PIERS, Layout
@@ -352,6 +354,42 @@ def region_map(land: np.ndarray) -> tuple[np.ndarray, list[str], np.ndarray]:
         target[target < 0] = idx["tyrrhenian"]
     stretch[rect_mask(P.REGIONS["corner"][3]) & land] = corner
     return reg, names, stretch
+
+
+def biome_sets(b) -> set[str]:
+    """The sets of every id a biome entry names (home ids have no dot)."""
+    if isinstance(b, dict):
+        return set().union(*(biome_sets(k) | biome_sets(v) for k, v in b.items())) if b else set()
+    if isinstance(b, (list, tuple)):
+        return set().union(*(biome_sets(v) for v in b)) if b else set()
+    if isinstance(b, str) and b and b[0].isalpha() and "_" not in b.split(".")[0]:
+        return {b.split(".", 1)[0] if "." in b else "home"}
+    return set()
+
+
+LOOK_WARP = 7.0   # tiles a stretch's look reaches over its border, so borders follow no grid line
+
+
+def look_map(land: np.ndarray, reg: np.ndarray, names: list, stretch: np.ndarray) -> np.ndarray:
+    """Which stretch's look (ground, fields, plants) each tile wears: the stretch map displaced
+    by noise, so the plan's straight ownership borders become ragged where two looks meet (QA6
+    V6-005). A tile takes a neighbouring look only from land of a stretch with a biome whose set
+    its own region may carry (docs/design/sets/world.md §0.1); elsewhere it keeps its own."""
+    dx = np.rint(noise(13.0, "look_x") * LOOK_WARP).astype(np.int32)
+    dy = np.rint(noise(13.0, "look_y") * LOOK_WARP).astype(np.int32)
+    sc = np.clip(CC + dx, 0, COLS - 1)
+    sr = np.clip(RR + dy, 0, ROWS - 1)
+    cand = stretch[sr, sc]
+    sets = np.array([P.REGIONS[n][1] for n in names])
+    biome = np.array([n in P.BIOMES for n in names])
+    uses = [biome_sets(P.BIOMES.get(n, {})) for n in names]
+    ok_set = np.zeros((len(names), len(names)), dtype=bool)   # [region, look] allowed
+    for i, n in enumerate(names):
+        allowed = {"home", "world", sets[i], *P.SEAM_SETS.get(n, ())}
+        ok_set[i] = [uses[j] <= allowed for j in range(len(names))]
+    rr = np.where(reg >= 0, reg, stretch)
+    take = land & land[sr, sc] & biome[cand] & ok_set[rr, cand] & (cand != stretch)
+    return np.where(take, cand, stretch).astype(np.int16)
 
 
 def town_rects_mask() -> np.ndarray:
@@ -797,6 +835,131 @@ def fix_flow(level, river, flow) -> None:
 
 
 
+FLOW_STEP = {0: (0, 1), 1: (1, 0), 2: (0, -1), 3: (-1, 0)}  # aux -> (dr, dc)
+
+
+ESTUARY = 3   # tiles of a river's mouth that lie at the sea's level
+
+
+def square_falls(level, river, flow, sea, keep, band) -> dict:
+    """Where water steps down (out/reports/art-smooth-land.md §4: a drop of one level is a
+    rapid, two or more a fall), the data must say it plainly: every reach that meets the sea
+    ends in ESTUARY tiles at the sea's level (a river never falls into the sea at its mouth),
+    and water never stands above its banks, outside the band round authored layers (`band`:
+    their crossings and portals stand on the levels they were built for); every step
+    between two water tiles runs square across the flow, so the water leaves the upper tile by
+    the edge it falls over (a tile beside a lower one it does not flow into takes that level, and
+    the water below it follows: the fall moves upstream until its line crosses the river).
+    Returns counts for the base's stats."""
+    out = {"mouth_tiles": 0, "side_steps": 0}
+    H, W = level.shape
+    near_sea = np.zeros_like(river)
+    for dr, dc in N4:
+        near_sea |= _shift(sea, dr, dc, False)
+    mouth = river & near_sea & (level > 0) & ~band
+    if mouth.any():
+        # The last ESTUARY tiles of the reach come down to the sea; the step a reach used to make
+        # into the sea is made a little inland, as a rapid, where crossings stand flush.
+        zone = np.zeros_like(mouth)
+        for lvl in sorted({int(v) for v in level[mouth]}):
+            z, same = mouth & (level == lvl), river & (level == lvl) & ~band
+            for _ in range(ESTUARY - 1):
+                g = z.copy()
+                for dr, dc in N4:
+                    g |= _shift(z, dr, dc, False)
+                z = g & same
+            zone |= z
+        out["mouth_tiles"] = int(zone.sum())
+        level[zone] = 0
+        fix_flow(level, river, flow)
+    # Water never stands above the land beside it (a stream perched over its banks reads as a
+    # box of water): it comes down to its lowest bank, and the water below it follows.
+    for _ in range(16):
+        bank = np.full(level.shape, 99, dtype=level.dtype)
+        for dr, dc in N4:
+            bank = np.minimum(bank, _shift(np.where(~river & ~sea, level, 99), dr, dc, 99))
+        perched = river & (bank < level)
+        if not perched.any():
+            break
+        # In the band round an authored layer the water keeps its level (crossings and portals
+        # stand on it) and the low bank rises to it instead.
+        lift = np.zeros_like(river)
+        for dr, dc in N4:
+            lift |= _shift(perched & band, dr, dc, False)
+        lift &= ~river & ~sea
+        top = np.zeros_like(level)
+        for dr, dc in N4:
+            top = np.maximum(top, _shift(np.where(perched & band, level, 0), dr, dc, 0))
+        level[:] = np.where(lift & (level < top), top, level)
+        perched &= ~band
+        level[perched] = bank[perched]
+        out["perched"] = out.get("perched", 0) + int(perched.sum())
+        fix_flow(level, river, flow)
+    out["gathered"] = gather_reaches(level, river, flow, sea, keep)
+    for _ in range(64):
+        moved = 0
+        for f, (dr, dc) in FLOW_STEP.items():
+            for ndr, ndc in N4:
+                if (ndr, ndc) == (dr, dc):
+                    continue
+                nb = _shift(np.where(river, level, 99), -ndr, -ndc, 99)
+                side = river & (flow == f) & (nb < level) & ~keep
+                if side.any():
+                    level[side] = nb[side]
+                    moved += int(side.sum())
+        if not moved:
+            break
+        out["side_steps"] += moved
+        fix_flow(level, river, flow)
+    out["gathered"] += gather_reaches(level, river, flow, sea, keep)
+    return out
+
+
+def gather_reaches(level, river, flow, sea, keep) -> int:
+    """A reach shorter than validate.RIVER_REACH tiles between two falls of under WATERFALL
+    levels (a staircase) comes down to the water below it, so its two falls become one cascade
+    (V14). Returns the tiles lowered."""
+    from .validate import RIVER_REACH, WATERFALL
+    total = 0
+    for _ in range(12):
+        seen = np.zeros_like(river)
+        moved = 0
+        for r0, c0 in zip(*np.nonzero(river & ~keep)):
+            if seen[r0, c0]:
+                continue
+            v = level[r0, c0]
+            part, todo = [], [(int(r0), int(c0))]
+            seen[r0, c0] = True
+            up = down = 0
+            low = 99
+            while todo:
+                r, c = todo.pop()
+                part.append((r, c))
+                for dr, dc in N4:
+                    y, x = r + dr, c + dc
+                    if not (0 <= y < level.shape[0] and 0 <= x < level.shape[1]) or not river[y, x]:
+                        continue
+                    if level[y, x] == v:
+                        if not seen[y, x]:
+                            seen[y, x] = True
+                            todo.append((y, x))
+                    elif level[y, x] > v:
+                        up = max(up, int(level[y, x] - v))
+                    else:
+                        down = max(down, int(v - level[y, x]))
+                        low = min(low, int(level[y, x]))
+            if len(part) < RIVER_REACH and 0 < up < WATERFALL and 0 < down < WATERFALL and \
+                    not any(keep[r, c] or sea[r, c] for r, c in part):
+                for r, c in part:
+                    level[r, c] = low
+                moved += len(part)
+        if not moved:
+            break
+        total += moved
+        fix_flow(level, river, flow)
+    return total
+
+
 # --- 4. terrain ------------------------------------------------------------------------------
 
 @dataclass
@@ -809,6 +972,7 @@ class World:
     reg: np.ndarray
     names: list
     stretch: np.ndarray
+    look: np.ndarray            # the stretch whose biome a tile wears (look_map)
     reserved: np.ndarray
     river: np.ndarray
     level: np.ndarray
@@ -841,6 +1005,7 @@ def terrain(W: World) -> None:
     W.forest = np.zeros((ROWS, COLS), dtype=bool)
     rock = np.zeros_like(land)
     snow = np.zeros_like(land)
+    tops = np.zeros_like(land)
     scree = np.zeros_like(land)
     scrub = np.zeros_like(land)
     floor = np.zeros((ROWS, COLS), dtype=np.int16) - 1
@@ -849,8 +1014,9 @@ def terrain(W: World) -> None:
     dune = np.zeros_like(land)
     dist_sea = distance_to(~land, 8)
     hillness = level - box_blur(level, 6)
+    clims = SEAS.tool_climates()
     for i, n in enumerate(W.names):
-        m = (W.stretch == i) & land
+        m = (W.look == i) & land
         if not m.any():
             continue
         b = W.biome(i)
@@ -859,8 +1025,16 @@ def terrain(W: World) -> None:
         if b.get("rock"):
             rock |= free & (((level >= b["rock"] + 1) & (rocky > -0.3)) |
                             ((level >= b["rock"]) & (rocky > 0.25)))
-        if b.get("snow"):
-            snow |= free & (level >= b["snow"]) & (rocky > -0.4)
+        # Snow is ground only where the climate keeps it all year; below that the tops are bare
+        # rock and scree, which the season whitens (seasons.md §2.4).
+        lasting = SEAS.lasting_snow(clims.get(C.REGION_CLIMATE.get(n, ""), {}))
+        if lasting is not None:
+            snow |= free & (level >= lasting) & (rocky > -0.4)
+        if b.get("bare"):
+            top = free & (level >= b["bare"]) & (rocky > -0.4)
+            tops |= top
+            rock |= top & (rocky > -0.1)
+            scree |= top & (rocky <= -0.1)
         scree |= free & (W.bandsoft > 0.25) & (W.bandsoft < 0.7) & (rocky > 0.18)
         if b.get("scrub"):
             hills = free & ((hillness > 0.3) | (level >= 3))
@@ -890,7 +1064,7 @@ def terrain(W: World) -> None:
     terr[scree & ~rock] = W.tidx("world.scree")
     terr[rock] = W.tidx("world.rock")
     terr[snow] = W.tidx("world.snow")
-    W.bare = rock | snow
+    W.bare = rock | snow | tops
     # Marsh: deltas, sinks, the low river banks of the south, the Pontine shore.
     dist_river = distance_to(W.river, 8)
     marsh = np.zeros_like(land)
@@ -903,7 +1077,7 @@ def terrain(W: World) -> None:
             marsh |= (np.hypot(CC - end[0], RR - end[1]) < 4.5) & land & ~W.river
     for i, n in enumerate(W.names):
         if W.biome(i).get("marsh"):
-            m = (W.stretch == i) & land & ~reserved & ~W.river
+            m = (W.look == i) & land & ~reserved & ~W.river
             marsh |= m & (dist_river <= 3) & (level <= 1) & (marsh_n > 0.15) & (RR > 330)
     marsh |= rect_mask((256, 226, 300, 252)) & land & (dist_sea <= 3) & (marsh_n > -0.1)
     marsh &= ~reserved & ~W.bare
@@ -917,6 +1091,35 @@ def terrain(W: World) -> None:
     L.T[:] = terr
     canals(W)
     margins(W)
+
+
+def shape_for_slopes(W: World) -> None:
+    """Natural ground graded to one level per neighbour, so its steps draw as slopes (the art
+    contract, out/reports/art-smooth-land.md §3.6): grass, steppe, scrub, woods, sand and snow
+    of the open country rise toward their higher neighbours; rock keeps its cliffs, rivers and
+    the sea their banks (a level at most), roads, what stands by them, cities, towns and the
+    band round authored layers their levels. Then lone spikes, pits and one-tile ledges on open ground are smoothed away."""
+    L = W.L
+    slope = landform.slope_ground(str(W.cat.root))
+    ok_t = np.array([t in slope and t not in landform.CLIFF_GROUND for t in L.terrains] + [False])
+    T = np.where(L.T >= 0, L.T, len(L.terrains))
+    water = ~W.land | W.river
+    # Authored layers keep their levels and the base a band round them (towns grade their own
+    # natural ground, waypoint.finish).
+    # Roads keep the profile they were laid on, and their verges with them.
+    busy = L.STREET | (L.OCC >= 0)
+    near = busy.copy()
+    for dr, dc in N8:
+        near |= _shift(busy, dr, dc, False)
+    open_ = W.land & ~W.river & ~W.reserved & (W.anchors.dist > 2) & ~town_rects_mask() & ~near
+    eligible = open_ & ok_t[T]
+    W.stats["graded_tiles"] = landform.grade(L.LV, eligible, water)
+    # Banks keep their levels: water never stands above the land beside it.
+    bank = water.copy()
+    for dr, dc in N8:
+        bank |= _shift(water, dr, dc, False)
+    W.stats["lone_steps"] = landform.lone_steps(L.LV, eligible & ~bank)
+    L.IMP |= W.land & (L.LV >= 13) & ~W.reserved
 
 
 def W_courses(W: World):
@@ -970,12 +1173,17 @@ def margins(W: World) -> None:
         t = cat.terrain.get(tid)
         if t and t.base and b[r, c] and L.terrains[T[r, c]] != tid:
             conflict[r, c] = True
-    # Grow the band a little where noise says so, then give each tile its own margin.
-    wide = conflict | ((distance_to(conflict, 3) <= 1) & (noise(4.0, "margin") > 0.2) & b)
+    # The meeting itself wears scrub on both sides (world ground, which every region carries),
+    # in a core whose width swings along the border; beyond it each side's own margin, again of
+    # swinging width, so no edge of the band follows the conflict line (QA6 V6-005).
+    d = distance_to(conflict, 8)
+    core = conflict | ((d <= np.rint((noise(6.0, "margin_core") + 1) * 1.2)) & b)
+    wide = core | ((d <= 2 + np.rint((noise(7.0, "margin") + 1) * 2.0)) & b)
+    scrub = W.tidx("world.scrub")
     js, is_ = np.nonzero(wide & b)
     for j, i in zip(js.tolist(), is_.tolist()):
         tid = L.terrains[T[j, i]]
-        L.T[j, i] = W.tidx(P.MARGIN.get(tid, "world.scrub"))
+        L.T[j, i] = scrub if core[j, i] else W.tidx(P.MARGIN.get(tid, "world.scrub"))
 
 
 def water_and_faces(W: World, flow: np.ndarray) -> None:
@@ -996,6 +1204,25 @@ def water_and_faces(W: World, flow: np.ndarray) -> None:
     L.AUX[shallows] = 0
     # Canals join the rivers at the rivers' level: no water runs up into them.
     fix_flow(L.LV, river, L.AUX)
+    # A stream never juts past a coast that runs aslant: a river tile with the sea below it on
+    # two sides becomes its bank, and the stream falls straight over the cliff beside it.
+    for _ in range(4):
+        n = np.zeros(river.shape, dtype=np.int8)
+        for dr, dc in N4:
+            n += _shift(sea, dr, dc, False)
+        jut = river & (n >= 2) & (L.LV > 0) & (W.anchors.dist > 1)
+        if not jut.any():
+            break
+        for j, i in zip(*np.nonzero(jut)):
+            near = [int(L.T[j + dr, i + dc]) for dr, dc in N4
+                    if 0 <= j + dr < ROWS and 0 <= i + dc < COLS and land[j + dr, i + dc]
+                    and not river[j + dr, i + dc]]
+            if near:
+                L.T[j, i] = max(set(near), key=near.count)
+                L.AUX[j, i] = -1
+                river[j, i] = False
+    W.stats["falls"] = square_falls(L.LV, river, L.AUX, sea, W.anchors.dist <= 1,
+                                    W.anchors.dist <= ANCHOR_BAND)
     # Faces: raised land at the sea uses its terrain's coast material, high ground rock.
     coast = land & (distance_to(sea, 2) <= 1) & (W.level >= 2)
     high = land & ~coast & (W.level >= 7)
@@ -1056,8 +1283,8 @@ def build_base(cat: Catalog, layers: dict[str, PlanLayer] | None = None) -> tupl
                base_level=0, catalog=cat, regions=list(P.REGIONS), source="plan/world_plan.py")
     L.LV[:] = level
     L.IMP[:] = imp
-    W = World(L, cat, land, reg, names, stretch, reserved, river, L.LV, bandsoft,
-              anchors=anchors)
+    W = World(L, cat, land, reg, names, stretch, look_map(land, reg, names, stretch), reserved,
+              river, L.LV, bandsoft, anchors=anchors)
     W.stats["_courses"] = courses
     W.keep = np.zeros((ROWS, COLS), dtype=bool)
     terrain(W)
@@ -1066,9 +1293,20 @@ def build_base(cat: Catalog, layers: dict[str, PlanLayer] | None = None) -> tupl
     g = Graph("base")
     routes.build(W, g)
     routes.lanes(W, g)
+    shape_for_slopes(W)
     country.place(W, g)
     districts(W)
+    authored = [(n, layers[n]) for n, _r, _g in P.LAYERS if n in (layers or {}) and n != "base"]
+    ctx = compose.compose(authored) if authored else None
+    W.stats["waved_tiles"] = landform.wave_seams(L, ctx)
+    # A waved border may leave a lone tile a level off its four neighbours: smooth it (V14).
+    busy = L.STREET | (L.OCC >= 0) | W.river | ~W.land | W.reserved
+    near = busy.copy()
+    for dr, dc in N8:
+        near |= _shift(busy, dr, dc, False)
+    W.stats["lone_steps"] += landform.lone_steps(L.LV, ~near & (W.anchors.dist > 2) & ~L.IMP)
     drop_unreached_kit(W, g, layers or {})
+    W.stats["paving_holes"] = landform.close_paving_holes(L, ctx)
     W.stats.pop("_courses")
     W.stats["land_tiles"] = int(land.sum())
     W.stats["items"] = sum(1 for p in L.items if not p.removed)

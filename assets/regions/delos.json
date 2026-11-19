@@ -53,7 +53,13 @@
      ]
     }
    ],
-   "loops": [],
+   "loops": [
+    {
+     "item": "athens.g_brazier",
+     "file": "amb/world/brazier.ogg",
+     "when": "lit"
+    }
+   ],
    "zones": [
     {
      "rect": [
@@ -138,7 +144,7 @@
     "haze": 0.12,
     "ground": {},
     "snow_line": [
-     7,
+     13,
      null,
      null
     ],
@@ -251,9 +257,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     5
+     11,
+     9,
+     10
     ],
     "ambience": {
      "beds": [
@@ -767,6 +773,18 @@
        9
       ],
       "depth": 0.12
+     }
+    },
+    "athens.g_brazier": {
+     "kind": "fire",
+     "colour": "#ff8a3c",
+     "radius": 3.5,
+     "flicker": {
+      "breathe": [
+       1.0,
+       2.0
+      ],
+      "depth": 0.15
      }
     },
     "athens.g_lamp": {
@@ -2128,6 +2146,14 @@
      },
      "state": "lit",
      "every": 4
+    },
+    {
+     "each": {
+      "item": "athens.g_brazier",
+      "within": 64
+     },
+     "state": "lit",
+     "every": 4
     }
    ],
    "sfx": "sfx/world/lamp.wav",
@@ -2906,6 +2932,56 @@
  "lights": {
   "version": 1,
   "profiles": {
+   "brazier": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "02:00"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.3
+    }
+   },
+   "brazier_watch": {
+    "kind": "brazier",
+    "kelvin": 1800,
+    "colour": "#ff8436",
+    "radius": 3.2,
+    "strength": 0.9,
+    "flicker": {
+     "style": "breathe",
+     "hz": [
+      1.0,
+      2.0
+     ],
+     "depth": 0.07
+    },
+    "hours": [
+     [
+      "dusk",
+      "dawn"
+     ]
+    ],
+    "rain": "out",
+    "festivals": {
+     "*": 1.5
+    }
+   },
    "carried_lamp": {
     "kind": "lantern",
     "kelvin": 2000,
@@ -3001,10 +3077,16 @@
  },
  "light_points": [
   [
-   341,
+   337,
    490,
    "athens.g_lamp",
    "niche_lamp"
+  ],
+  [
+   341,
+   490,
+   "athens.g_brazier",
+   "brazier"
   ],
   [
    332,
@@ -3014,24 +3096,30 @@
   ],
   [
    345,
-   497,
+   496,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   345,
+   498,
    "athens.g_lamp",
    "niche_lamp"
   ],
   [
    343,
    500,
+   "athens.g_brazier",
+   "brazier_watch"
+  ],
+  [
+   345,
+   500,
    "athens.g_lamp",
    "niche_lamp"
   ],
   [
-   335,
-   502,
-   "athens.g_lamp",
-   "niche_lamp"
-  ],
-  [
-   339,
+   334,
    502,
    "athens.g_lamp",
    "niche_lamp"

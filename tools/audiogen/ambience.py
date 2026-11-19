@@ -115,7 +115,10 @@ BIRDS = [  # (song, weight, pitch range Hz, distance range)
 
 def birds(rng, length=48.0):
     """Five resident birds, each with its own voice, place and distance, calling at
-    irregular intervals; no two calls are rendered alike."""
+    irregular intervals (no two calls rendered alike), over a floor that never drops out: a
+    chorus of many birds far off in the hedges and trees, and leaves stirring in a light breeze
+    (the bed used to fall to near silence between calls, a 10 LU range, and read as the quiet
+    spot of the home's day)."""
     loop_n = secs(length)
     singers = []
     for song, weight, (lo, hi), (dlo, dhi) in BIRDS:
@@ -137,13 +140,26 @@ def birds(rng, length=48.0):
         at = secs(t)
         place(dry, x, at)
         place(send, x * (0.2 + 0.8 * dist), at)
-        t += len(call) / SR + rng.uniform(1.5, 5.0)
+        t += len(call) / SR + rng.uniform(1.0, 3.5)
         last = pick
+    # The far chorus: many small voices from every side, dull with distance, mostly reverb.
+    t = 0.0
+    while t < length:
+        song, _, (lo, hi), _ = BIRDS[int(rng.integers(4))]
+        call = song(rng, rng.uniform(lo, hi))
+        call = lowpass(call, 3200, 2) * rng.uniform(0.2, 0.35)
+        x = pan(call, rng.uniform(-1, 1))
+        place(dry, 0.3 * x, secs(t))
+        place(send, x, secs(t))
+        t += rng.exponential(0.3)
     ir = impulse_response(rng, 2.0, 1.2, 0.6, predelay=0.02)
     out = wrap(with_reverb(dry, send, ir, 0.5), loop_n)
     breeze = shaped_noise(loop_n, rng, lambda f: 1 / (1 + (f / 350) ** 2) / np.sqrt(f), 2)
-    sway = 1 + 0.5 * smooth_random(loop_n, rng, 0.15)
-    return out + 0.004 * breeze * np.clip(sway, 0.2, None)[:, None]
+    sway = gust_curve(loop_n, rng, 0.12, 0.5)
+    leaves = shaped_noise(loop_n, rng, lambda f: (f / 900) / (1 + (f / 900) ** 2.5), 2)
+    stir = gust_curve(loop_n, rng, 0.2, 0.8) ** 1.5
+    return (out + 0.03 * breeze * sway[:, None]
+            + 0.016 * leaves * (stir / stir.mean())[:, None])
 
 
 # --- crickets --------------------------------------------------------------------------

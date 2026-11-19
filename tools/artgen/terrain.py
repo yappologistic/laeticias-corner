@@ -70,6 +70,29 @@ def _pnoise(u, v, cells, seed, t=0.0):
     return value_noise(u, v, np.full_like(u, t), scale, seed, period=cells)
 
 
+# Interior looks of an overlay (`terrain/<id>/m15/v<n>/f<k>`, v0 being `m15/f<k>`): the same
+# ground painted on the plane shifted by SHIFTS[n] inside the tile, fading to look 0 in a band
+# along every edge, so any look meets any neighbour and a field of looks has no one-tile rhythm.
+SHIFTS = ((0.0, 0.0), (5.3, 9.1), (10.7, 3.9), (3.1, 12.6), (12.2, 6.8), (7.7, 14.3))
+
+
+def shifted(g: Grid, du: float, dv: float) -> Grid:
+    """The grid with its plane coordinates moved (screen pixels stay)."""
+    return Grid(g.k, g.px, g.py, g.u + du, g.v + dv, g.inside)
+
+
+def interior_mix(g: Grid, plain, paint_at, look: int, seed: int, lo: float = 2.5):
+    """Look `look` of an interior: `paint_at(shifted grid)` inside the tile, `plain` along its
+    edges, the change dithered over a band `lo` units wide (no line)."""
+    if not look:
+        return plain
+    alt = paint_at(shifted(g, *SHIFTS[look % len(SHIFTS)]))
+    a = np.clip(np.minimum(g.u, 16 - g.u) / lo, 0, 1)
+    b = np.clip(np.minimum(g.v, 16 - g.v) / lo, 0, 1)
+    pick = (a * b) ** 0.8 > hash01(g.px, g.py, seed + 31 * look)
+    return np.where(pick[..., None], alt, plain)
+
+
 def _sprite(g: Grid, rgb, alpha) -> Sprite:
     rgba = np.zeros(g.u.shape + (4,), np.uint8)
     rgba[..., :3] = rgb
@@ -383,17 +406,23 @@ def _blooms(g: Grid, rgb, allowed, seed, cell, density, designs, colors=FLOWER_C
 PATH = [EARTH[1], EARTH[2], EARTH[3], EARTH[4], EARTH[5]]
 
 
-def path(mask: int, k: int, season=None) -> Sprite:
-    g = _grid(k)
-    px, py, u, v, inside = g.px, g.py, g.u, g.v, g.inside
-    f = shape_field(mask, u, v, 1.6, 5.5, 0.7, 400, k)
-    cover = inside & (f > 0)
+def path(mask: int, k: int, season=None, look: int = 0) -> Sprite:
+    """Packed earth; `look` > 0: an interior look (the home draws look 0 only)."""
+    g0 = _grid(k)
+    f = shape_field(mask, g0.u, g0.v, 1.6, 5.5, 0.7, 400, k)
+    cover = g0.inside & (f > 0)
+    if g0.fine:
+        # Soft worn edge: the earth frays into the grass over the last pixel or two.
+        cover = g0.inside & (f > 0.9 * hash01(g0.px, g0.py, 402))
+    rgb = interior_mix(g0, _path_paint(g0, f, k), lambda gs: _path_paint(gs, f, k), look, 400)
+    return _sprite(g0, rgb, cover * 255)
+
+
+def _path_paint(g: Grid, f, k):
+    px, py, u, v = g.px, g.py, g.u, g.v
     level = 2.3 + (_pnoise(u, v, 4, 410) - 0.5) * 1.0 + (_pnoise(u, v, 8, 411) - 0.5) * 0.5
     if g.fine:
         level = _pebbles(g, level, f)
-        # Soft worn edge: the earth frays into the grass over the last pixel or two.
-        fray = hash01(px, py, 402)
-        cover = inside & (f > 0.9 * fray)
     else:
         # Pebbles: light top, dark underside.
         dx, dy, h, ok = _scatter(g, 2, 420, 0.2)
@@ -404,8 +433,7 @@ def path(mask: int, k: int, season=None) -> Sprite:
         level = level + top * 1.3 - bottom * 1.2
     # Worn rim: darker earth just inside the border, with a lighter crest before it.
     level = level - np.clip(1.4 - f, 0, 1) * 1.6 + ((f > 1.4) & (f < 2.2)) * 0.5
-    rgb = _paint(PATH, level, px, py, k=k)
-    return _sprite(g, rgb, cover * 255)
+    return _paint(PATH, level, px, py, k=k)
 
 
 def _pebbles(g: Grid, level, f):
@@ -532,7 +560,8 @@ def water(mask: int, frame: int, frames: int, k: int) -> Sprite:
 def _ripples(g: Grid, f, shade, frame, frames):
     """Fine-grid water: clean depth bands, the bank's shadow, and ripples (a light crest over a
     darker trough) that swell and fade on their own phase and drift a pixel with the frames."""
-    level = 3.4 - np.clip(f / 4, 0, 1) * 1.6 - shade * 1.0 + (_pnoise(g.u, g.v, 2, 610) - 0.5) * 0.4
+    # Fine noise only: a coarse tile-periodic one printed a dark blob in every tile (QA6 V6-001).
+    level = 3.4 - np.clip(f / 4, 0, 1) * 1.6 - shade * 1.0 + (_pnoise(g.u, g.v, 8, 610) - 0.5) * 0.3
     t = frame / frames
     for seed, cell, density, reach in ((620, 2, 0.32, 3.5), (621, 4, 0.45, 6.0)):
         dx, dy, h, ok = _scatter(g, cell, seed, density, jitter=0.9)
@@ -710,9 +739,10 @@ def thicket(variant: int, k: int, season: str | None = None) -> Sprite:
         r = rng.uniform(3.0, 4.6)
         clumps.append((x, y, r * 0.75 + rng.uniform(0, 3.5), r))
     clumps.sort(key=lambda c: c[2])
-    if season == "winter":            # half bare: a thinner, lower tangle of dark leaves
-        clumps = [(x, y, z * 0.8, r * 0.75) for x, y, z, r in clumps]
-    leaves = {"autumn": (("rust_leaf", 0.55), ("autumn", 0.15), ("leaf_dark", 0.3))}.get(season, (("leaf_dark", 1.0),))
+    if season == "winter":            # mostly bare: a few low cushions of dead and dark leaves
+        clumps = [(x, y, z * 0.6, r * 0.55) for x, y, z, r in clumps[: max(2, len(clumps) * 3 // 5)]]
+    leaves = {"autumn": (("rust_leaf", 0.55), ("autumn", 0.15), ("leaf_dark", 0.3)),
+              "winter": (("rust_leaf", 0.5), ("leaf_dark", 0.5))}.get(season, (("leaf_dark", 1.0),))
     leaf_mass(m, clumps, 771 + variant, leaves, "leaf_dark", cluster=(2.0, 3.0), level=-2.6)
     m.tone[m.mat > 0] -= 0.9          # kept dim: lit tufts stop short of the bright greens
     # Arching briar canes with thorns, and a few nettle spikes poking up.
@@ -728,16 +758,17 @@ def thicket(variant: int, k: int, season: str | None = None) -> Sprite:
     for _n in range(rng.integers(3, 6)):
         x, y = rng.uniform(1, 15), rng.uniform(1, 15)
         h = rng.uniform(9, 14)
-        m.put_points(curve((x, y, 0.2), (x + rng.uniform(-1, 1), y, h), bend=(0.5, 0)), "leaf_dark", tone=-1.0)
+        stem = ("straw", -1.2) if season == "winter" else ("leaf_dark", -1.0)     # dead stalks in winter
+        m.put_points(curve((x, y, 0.2), (x + rng.uniform(-1, 1), y, h), bend=(0.5, 0)), stem[0], tone=stem[1])
     if variant % 2:   # a few dark berries
         for _n in range(6):
             m.put_points([(rng.uniform(3, 13), rng.uniform(3, 13), rng.uniform(5, 10))], "violet", tone=-0.8)
     if season == "winter":            # snow lying on what faces up
         from palette import MAT
-        top = (m.mat > 0) & (m.nrm[..., 2] > 0.5)
+        top = (m.mat > 0) & (m.nrm[..., 2] > 0.25)
         X, Y, Z = m.coords()
         lying = top & (hash01(np.floor(X * 2).astype(np.int64), np.floor(Y * 2).astype(np.int64),
-                              np.floor(Z).astype(np.int64), 779) < 0.75)
+                              np.floor(Z).astype(np.int64), 779) < 0.9)
         m.mat[lying] = MAT["snow"]
         m.tone[lying] = -0.6           # dim like the rest of the wild land
     m.carve(~np.broadcast_to(_inside_tile(m), m.mat.shape))

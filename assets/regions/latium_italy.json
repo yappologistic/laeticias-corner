@@ -97,13 +97,10 @@
     "ground": {
      "muddy": [
       "mar"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     8,
+     12,
      null,
      null
     ]
@@ -176,7 +173,6 @@
       "feb"
      ],
      "snow": [
-      "dec",
       "jan",
       "feb"
      ],
@@ -187,9 +183,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ]
    }
   },
@@ -1092,6 +1088,82 @@
     {
      "role": "woodcutter",
      "per_item": "rome.t_oak",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_beech",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_beech",
+     "count": 0.004,
+     "density": "always",
+     "when": {
+      "months": [
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
+     "count": 0.012,
+     "density": "always",
+     "when": {
+      "months": [
+       "oct",
+       "nov",
+       "dec",
+       "jan",
+       "feb",
+       "mar"
+      ]
+     },
+     "variants": {
+      "cold": "climate"
+     }
+    },
+    {
+     "role": "woodcutter",
+     "per_item": "world.t_fir",
      "count": 0.004,
      "density": "always",
      "when": {
@@ -2302,10 +2374,10 @@
   {
    "body": "aufidus",
    "kind": "stream",
-   "tiles": 21,
+   "tiles": 20,
    "rect": [
     216,
-    896,
+    897,
     222,
     902
    ],
@@ -2344,7 +2416,7 @@
   {
    "body": "liris",
    "kind": "stream",
-   "tiles": 232,
+   "tiles": 231,
    "rect": [
     140,
     962,

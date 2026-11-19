@@ -28,6 +28,10 @@ season needs file (`assets/world/season-needs.json`) the art and audio lanes wor
   S16 seasonal roles: a role that exists only in some months targets what is placed in its region
       with animations its kind has (the cities' L1-L4 run every month as well)
   S17 seasons kept: nothing appears out of its season (swallows in January, a harvest in winter)
+  S18 snow ground: snow painted as terrain only where the region's climate keeps snow in every
+      month at that level (the highest of its snow lines); elsewhere snow is the season's
+  S19 snow sense: no lying snow on a lowland whose month is above freezing (+2 C mean), no
+      summer snow below level 13, no palm under lying snow
 """
 
 from __future__ import annotations
@@ -41,6 +45,7 @@ from plan import world_plan as P
 
 from . import climates as C
 from . import seasons as S
+from .coords import COLS
 
 LEVELS = set(C.WATER_LEVELS) | {"full"}
 RANGES = {"wind": (0, 1), "fog": (0, 1), "dust": (0, 3), "storm": (0, 3), "showers": (0, 5),
@@ -550,6 +555,109 @@ def check_snow(raw: dict, clims: dict, root: Path, rep: Report) -> None:
             rep.bad("S8", f"backdrop {bd}", "gets a snow cap but is not a backdrop of the world set")
 
 
+def check_snow_ground(world, clims: dict, rep: Report) -> None:
+    """S18: snow painted as ground lies only where its region's climate keeps snow in every
+    month (at or above the highest of its twelve snow lines); everywhere else snow is a season
+    the climate's line brings, never a terrain."""
+    snow_t = [i for i, t in enumerate(world.terrains) if S.GROUND_OF.get(t) == "snow"]
+    if not snow_t:
+        return
+    reg, names = S.region_grid(world)
+    snow = np.isin(world.T, snow_t)
+    lv = world.L & 0x0F
+    for i, rid in enumerate(names):
+        m = snow & (reg == i)
+        if not m.any():
+            continue
+        cid = C.REGION_CLIMATE.get(rid, "")
+        lasting = S.lasting_snow(clims.get(cid, {}))
+        bad = m if lasting is None else m & (lv < lasting)
+        if bad.any():
+            r, c = (int(v[0]) for v in np.nonzero(bad))
+            where = "it never keeps snow all year" if lasting is None else \
+                f"it keeps snow all year only from level {lasting}"
+            rep.bad("S18", rid, f"{int(bad.sum())} tile(s) of snow ground where its climate {cid} "
+                    f"has none in some month ({where}); first at grid ({r}, {COLS - 1 - c}) "
+                    f"level {int(lv[r, c])}")
+
+
+PALMS = {"world.t_palm", "parsa.t_date"}
+LYING_MAX_T = 2.0       # deg C: the mean of a month whose lowland holds lying snow, at most
+SUMMER = ("jun", "jul", "aug")
+SUMMER_SNOW_MIN = 13    # summer snow only on the highest ground
+
+
+def snow_rows(world, clims: dict) -> list[dict]:
+    """Per region with land: its climate, base level, highest ground, and per month whether snow
+    lies on its lowland (the plan's base level), on its highest ground, and may fall on the
+    lowland on some days (`lowland` months)."""
+    reg, names = S.region_grid(world)
+    lv = (world.L & 0x0F)
+    sea = np.isin(world.T, [i for i, t in enumerate(world.terrains)
+                            if t in ("world.sea", "world.shallows")]) | (world.T == 0xFFFF)
+    out = []
+    for i, rid in enumerate(names):
+        cid = C.REGION_CLIMATE.get(rid, "")
+        m = (reg == i) & ~sea
+        if rid not in P.REGIONS or not m.any() or cid not in clims:
+            continue
+        sn = clims[cid].get("snow", {})
+        line = sn.get("line") or [None] * 12
+        low = set(sn.get("lowland", {}).get("months", []))
+        base, top = P.REGIONS[rid][4], int(lv[m].max())
+        out.append({"region": rid, "climate": cid, "base": base, "top": top,
+                    "lowland": [v is not None and base >= v for v in line],
+                    "heights": [v is not None and top >= v for v in line],
+                    "dusting": [mo in low for mo in C.MONTHS], "line": line})
+    return out
+
+
+def snow_table(rows: list[dict]) -> str:
+    head = "| Region | Climate | Base | Top | " + " | ".join(m.title() for m in C.MONTHS) + " |"
+    lines = ["# Snow by region and month (`build.sh --seasons`)", "",
+             "Each month: **L** snow lies on the lowland (the region's base level), **H** only on "
+             "its highest ground, *d* a dusting some days, - none. Lines are the climate's "
+             "lowest level of lying snow.", "", head,
+             "|---|---|---|---|" + "---|" * 12]
+    for r in rows:
+        cells = []
+        for k in range(12):
+            cells.append("L" if r["lowland"][k] else "H" if r["heights"][k] else
+                         "d" if r["dusting"][k] else "-")
+        lines.append(f"| {r['region']} | {r['climate']} | {r['base']} | {r['top']} | " +
+                     " | ".join(cells) + " |")
+    return "\n".join(lines) + "\n"
+
+
+def check_snow_sense(world, clims: dict, rep: Report) -> None:
+    """S19: no obvious contradiction in the snow rows: lying snow on a region's lowland in a
+    month whose mean there is above LYING_MAX_T; summer snow below SUMMER_SNOW_MIN; a palm or
+    date palm standing where snow lies in some month."""
+    for r in snow_rows(world, clims):
+        temp = clims[r["climate"]].get("temp") or [None] * 12
+        for k, mo in enumerate(C.MONTHS):
+            if r["lowland"][k] and temp[k] is not None and temp[k] > LYING_MAX_T:
+                rep.bad("S19", r["region"], f"snow lies on its lowland (level {r['base']}) in "
+                        f"{mo}, whose mean is {temp[k]} C")
+            v = r["line"][k]
+            if mo in SUMMER and v is not None and v < SUMMER_SNOW_MIN:
+                rep.bad("S19", f"climate {r['climate']}", f"snow down to level {v} in {mo}")
+    reg, names = S.region_grid(world)
+    seen = set()
+    from .compose import live_items
+    for _, it in live_items(world):
+        if it.id not in PALMS or not (0 <= it.r < reg.shape[0]):
+            continue
+        rid = names[reg[it.r, it.c]] if reg[it.r, it.c] >= 0 else None
+        line = clims.get(C.REGION_CLIMATE.get(rid, ""), {}).get("snow", {}).get("line") or []
+        lvl = world.level(it.c, it.r)
+        bad = [C.MONTHS[k] for k, v in enumerate(line) if v is not None and lvl >= v]
+        if bad and (rid, it.id) not in seen:
+            seen.add((rid, it.id))
+            rep.bad("S19", rid, f"{it.id} at grid ({it.r}, {COLS - 1 - it.c}) level {lvl} stands "
+                    f"under lying snow in {bad}")
+
+
 # -- the needs file ------------------------------------------------------------------------------
 
 def atlas_keys(root: Path) -> set[str]:
@@ -725,6 +833,8 @@ def run(b, world) -> Report:
     clims = check_climates(raw, used, rep)
     check_states(root, world, clims, rep)
     check_snow(raw, clims, root, rep)
+    check_snow_ground(world, clims, rep)
+    check_snow_sense(world, clims, rep)
     stats = check_map(world, rep)
     regions = {f.stem: json.loads(f.read_text()) for f in sorted((root / "assets/regions").glob("*.json"))}
     files, _fam = sound.manifests(root)

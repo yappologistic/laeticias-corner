@@ -116,9 +116,9 @@
      ]
     },
     "snow_line": [
-     5,
      8,
-     null
+     11,
+     14
     ]
    },
    "summer": {
@@ -164,8 +164,8 @@
     },
     "snow_line": [
      null,
-     null,
-     7
+     13,
+     9
     ]
    },
    "winter": {
@@ -198,7 +198,7 @@
     "snow_line": [
      5,
      0,
-     0
+     4
     ]
    }
   },
@@ -943,12 +943,12 @@
    "name": "The crossing",
    "sound": {
     "surfaces": {
-     "roof": 0.11,
+     "roof": 0.12,
      "leaves": 0.09,
      "canvas": 0.05
     },
     "wind": "wind.open",
-    "exposure": 0.91,
+    "exposure": 0.9,
     "steps": {
      "surface": "earth",
      "files": [
@@ -2622,6 +2622,13 @@
    "parsa.p_brazier",
    "brazier_watch",
    "fire"
+  ],
+  [
+   179,
+   258,
+   "parsa.p_torch",
+   "wall_torch",
+   "flame"
   ],
   [
    180,

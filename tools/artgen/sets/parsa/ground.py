@@ -19,16 +19,16 @@ from voxel import hash01, value_noise
 FRAMES = {"parsa.water_channel": 4, "parsa.incense": 6, "parsa.fire": 6, "parsa.torch_flame": 6,
           "parsa.chisel_dust": 6, "parsa.petals": 6, "parsa.spray": 4, "parsa.dust": 6, "parsa.sparks": 4}
 
-TERRAIN_KEY = re.compile(r"terrain/(parsa\.\w+)/(?:v(\d+)|m(\d+)/f(\d+))")
+TERRAIN_KEY = re.compile(r"terrain/(parsa\.\w+)/(?:v(\d+)|m(\d+)(?:/v(\d+))?/f(\d+))")
 SPRING = [LEAF[2], LEAF[3], LEAF[4], LEAF[5], LEAF[6]]
 LIME = LIMESTONE[1:6]
 
 
-def _overlay(mask, k, inset, radius, wobble, seed, paint):
+def _overlay(mask, k, inset, radius, wobble, seed, paint, look=0):
     g = home._grid(k)
     f = home.shape_field(mask, g.u, g.v, inset, radius, wobble, seed, k)
     cover = g.inside & (f > 0)
-    rgb = paint(g, f)
+    rgb = home.interior_mix(g, paint(g, f), lambda gs: paint(gs, f), look, seed)
     return home._sprite(g, rgb, cover * 255)
 
 
@@ -69,14 +69,13 @@ def garden_bed(mask, k):
     return _overlay(mask, k, 1.4, 4.0, 0.5, 710, paint)
 
 
-def packed_earth(mask, k):
-    return home.path(mask, k)
+def packed_earth(mask, k, look=0):
+    return home.path(mask, k, look=look)
 
 
-def paving_stone(mask, k):
-    """The terrace courts: big fitted slabs of warm grey limestone in courses two to a tile
-    edge, lengths alternating, each slab its own tone, hairline joints with a lit edge, the
-    odd cracked or stained slab, and soft lighter patches where feet have polished them."""
+def _slabs(look=0):
+    """The terrace's slab paint (look > 0: its wear and cracks placed by the look inside the
+    tile; the slabs and their tones are the same in every look, so they run on across tiles)."""
     def paint(g, f):
         u, v = g.u, g.v
         row = np.floor(v / 8.0)
@@ -90,10 +89,29 @@ def paving_stone(mask, k):
         h = hash01(row.astype(np.int64) % 2, col, 721)
         crack = (h > 0.82) & (np.abs((su - (v % 8.0) * 0.9) - 2.5) < 0.25)
         worn = home._pnoise(u, v, 2, 723)
+        if look:
+            inner = np.clip(np.minimum(np.minimum(u, 16 - u), np.minimum(v, 16 - v)) / 2.5, 0, 1)
+            own = home.value_noise(u, v, np.zeros_like(u), 5.0, 724 + 31 * look)
+            worn = worn * (1 - inner) + own * inner
         lvl = (3.0 + (h - 0.5) * 1.1 + (home._pnoise(u, v, 8, 722) - 0.5) * 0.45 + (worn > 0.62) * 0.35
                - joint * 1.3 + lip * 0.3 - crack * 0.9 - np.clip(1.0 - f, 0, 1))
-        return home._paint(LIME, lvl, g.px, g.py, band=0.4, k=k)
-    return _overlay(mask, k, 0.6, 2.0, 0.2, 720, paint)
+        return home._paint(LIME, lvl, g.px, g.py, band=0.4, k=g.k)
+    return paint
+
+
+def paving_stone(mask, k):
+    """The terrace courts: big fitted slabs of warm grey limestone in courses two to a tile
+    edge, lengths alternating, each slab its own tone, hairline joints with a lit edge, the
+    odd cracked or stained slab, and soft lighter patches where feet have polished them."""
+    return _overlay(mask, k, 0.6, 2.0, 0.2, 720, _slabs())
+
+
+def terrace_stone(v, k):
+    """The terrace's paving as a base ground (under the halls' red plaster floors, so their
+    rounded edges show the same slabs where they meet the courts, not the plain's grass)."""
+    g = home._grid(k)
+    rgb = _slabs(v)(g, np.full(g.u.shape, 10.0))
+    return home._sprite(g, rgb, g.inside * 255)
 
 
 def paving_red(mask, k):
@@ -106,18 +124,18 @@ def paving_red(mask, k):
     return _overlay(mask, k, 0.5, 2.0, 0.2, 730, paint)
 
 
-def gravel(mask, k):
+def gravel(mask, k, look=0):
     def paint(g, f):
         lvl = 2.6 + (hash01(g.px, g.py, 741) - 0.5) * 1.6 + (home._pnoise(g.u, g.v, 6, 742) - 0.5) * 0.6
         return home._paint([STONE[2], *MUDBRICK[1:5]], lvl - np.clip(1.0 - f, 0, 1), g.px, g.py, k=k)
-    return _overlay(mask, k, 1.2, 4.0, 0.6, 740, paint)
+    return _overlay(mask, k, 1.2, 4.0, 0.6, 740, paint, look)
 
 
 def water_channel(mask, frame, frames, k):
     return home.water(mask, frame, frames, k)
 
 
-def rough_ground(mask, k):
+def rough_ground(mask, k, look=0):
     """Stony rough ground with grey tufts: the bands separating satellites from the city."""
     def paint(g, f):
         lvl = 2.2 + (home._pnoise(g.u, g.v, 8, 751) - 0.5) * 1.4
@@ -126,9 +144,11 @@ def rough_ground(mask, k):
         rgb = home._paint([EARTH[1], EARTH[2], MUDBRICK[1], MUDBRICK[2], MUDBRICK[3]], lvl, g.px, g.py, k=k)
         srgb = home._paint([STONE[1], STONE[2], STONE[3], STONE[4]], 2.0 - dy / max(k, 1) * 0.8, g.px, g.py, k=k)
         return np.where(stone[..., None], srgb, rgb)
-    return _overlay(mask, k, 1.0, 4.0, 0.8, 750, paint)
+    return _overlay(mask, k, 1.0, 4.0, 0.8, 750, paint, look)
 
 
+# Natural overlays with interior looks (terrain.SHIFTS): a field of them has no one-tile rhythm.
+INTERIOR = {"parsa.packed_earth": 4, "parsa.rough_ground": 4, "parsa.gravel": 4}
 TERRAIN = {"parsa.field_barley": field_barley, "parsa.garden_bed": garden_bed, "parsa.packed_earth": packed_earth,
            "parsa.paving_stone": paving_stone, "parsa.paving_red": paving_red, "parsa.gravel": gravel,
            "parsa.rough_ground": rough_ground}
@@ -363,9 +383,11 @@ def build(keys, cat, k):
     out = {}
     for key in keys:
         if m := TERRAIN_KEY.fullmatch(key):
-            tid, var, mask, frame = m.groups()
+            tid, var, mask, look, frame = m.groups()
             if var is not None:
-                out[key] = plain_grass(int(var), k)
+                out[key] = (terrace_stone if tid == "parsa.terrace_stone" else plain_grass)(int(var), k)
+            elif look is not None:
+                out[key] = TERRAIN[tid](int(mask), k, int(look))
             elif tid == "parsa.water_channel":
                 out[key] = water_channel(int(mask), int(frame), FRAMES[tid], k)
             else:

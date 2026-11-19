@@ -97,6 +97,21 @@ def resolved(root: Path) -> dict[str, dict]:
     return {cid: resolve(raw, cid) for cid in raw}
 
 
+def lasting_snow(clim: dict) -> int | None:
+    """The lowest level snow lies on in every month of the climate (the highest of its twelve
+    snow lines), or None where some month has no snow at all: only there may snow be ground."""
+    line = clim.get("snow", {}).get("line") or []
+    if len(line) != 12 or any(v is None for v in line):
+        return None
+    return max(line)
+
+
+def tool_climates() -> dict[str, dict]:
+    """The tool's climate table resolved (what `--seasons` writes into the catalog)."""
+    raw = {c["id"]: c for c in C.CLIMATES}
+    return {cid: resolve(raw, cid) for cid in raw}
+
+
 def class_row(clim: dict, cls: str, set_item: bool) -> list[str]:
     """The twelve states of a class in a climate. The home climate's classes are its season names
     for the home catalog's own pieces; set pieces placed in the corner's surroundings turn by its

@@ -9,6 +9,8 @@ Piperataria. Monuments at s = 0.65 (one tile about 6.2 m)."""
 
 import numpy as np
 
+import waterworks
+
 import materials as M
 import roman as RM
 from arch import Scale, carve, ellipsoid, fill, halo, revolve, rod, slab
@@ -236,7 +238,9 @@ def lacus_iuturnae(m):
     """The spring of Juturna: a square marble basin with a pier in the middle carrying the
     statues of the Dioscuri and their horses."""
     slab(m, 2.0, 2 * T - 2.0, 2.0, T - 2.0, 0.0, 2.6, "marble", tone=0.25)
-    fill(m, (3.0, 2 * T - 3.0, 3.0, T - 3.0, 1.0, 2.2), "water", tone=lambda X, Y, Z: 0.3 * (np.sin(X + Y) > 0.7))
+    # The basin is sunk in the marble (its water was buried in the slab before: no pixel of it showed).
+    carve(m, (3.0, 2 * T - 3.0, 3.0, T - 3.0, 1.8, 2.7))
+    waterworks.surface(m, (3.0, 2 * T - 3.0, 3.0, T - 3.0), 1.8, 0, 1, seed=2351, depth_units=2.5)
     slab(m, T - 3.0, T + 3.0, 5.0, 11.0, 0.0, 4.0, "marble", tone=0.2)
     from rig import Dress
     twin = Dress(body="man", garment="none", hair_style="curly", beard="none", head="pilleus", head_mat="marble",

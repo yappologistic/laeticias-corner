@@ -63,16 +63,17 @@ def _p(kind, kelvin, radius, strength, style, hz, depth, hours, rain="sheltered"
 # One table for the whole world; a region writes only the profiles its points and carriers use.
 PROFILES = {
     # houses: an oil lamp seen through a door or a high window, most out by the second watch
+    # (in summer dusk falls near 20:40, and the evening's lamps burn a good three hours after it)
     "window_evening": _p("window", 2000, 1.6, 0.55, "steady", (0.4, 1.2), 0.03,
-                         [("dusk", "22:30")], festivals={"*": 1.2}),
+                         [("dusk", "23:30")], festivals={"*": 1.2}),
     "window_late": _p("window", 2000, 1.6, 0.5, "steady", (0.4, 1.2), 0.03, [("dusk", "01:30")]),
     "window_predawn": _p("window", 2000, 1.4, 0.45, "steady", (0.4, 1.2), 0.03,
                          [("04:00", "dawn")]),
-    "door_lamp": _p("door", 1900, 2.2, 0.7, "steady", (4, 7), 0.05, [("dusk", "23:00")], "dim"),
+    "door_lamp": _p("door", 1900, 2.2, 0.7, "steady", (4, 7), 0.05, [("dusk", "23:30")], "dim"),
     "symposium": _p("lamp", 2000, 2.4, 0.75, "steady", (3, 6), 0.05, [("20:00", "01:30")],
                     only="event:symposium"),
     # trade: lamps at shop counters, taverns open late, workshops lit at the bench
-    "shop_lamp": _p("lamp", 2000, 2.4, 0.75, "steady", (4, 7), 0.05, [("dusk", "21:30")], "dim"),
+    "shop_lamp": _p("lamp", 2000, 2.4, 0.75, "steady", (4, 7), 0.05, [("dusk", "22:30")], "dim"),
     "tavern_lamp": _p("lamp", 1900, 2.6, 0.8, "steady", (4, 7), 0.06, [("dusk", "00:30")], "dim",
                       festivals={"*": 1.3}),
     "bench_lamp": _p("lamp", 2000, 2.0, 0.6, "steady", (4, 7), 0.04, [("dusk", "21:00")]),
@@ -226,7 +227,7 @@ TOWN_RULES = {"world.beacon": [[("harbour_beacon", 1.0, "fire")]]}
 DARK = {"athens.promachos", "rome.colossus", "rome.colosseum", "rome.circus_maximus",
         "rome.trajan_column", "rome.tiber_island", "rome.emporium"}
 # District factors: busy centres keep more lamps burning, the countryside goes to bed early.
-AREA_FACTOR = {"centre": 1.15, "town": 1.0, "road": 0.8, "country": 0.6, "wild": 0.5, "sea": 0.8}
+AREA_FACTOR = {"centre": 1.35, "town": 1.0, "road": 0.8, "country": 0.6, "wild": 0.5, "sea": 0.8}
 # Who carries light (roles by id in any city; event casts by event id).
 CARRIED_ROLES = {
     "night_walker": ("carried_lamp", "lamp"), "reveller": ("carried_lamp", "lamp"),

@@ -52,6 +52,8 @@ def extra_keys(cat):
             keys += [f"weather/{kind}_v{v}" for v in range(n)]
     for group in ("markers", "markers_nice"):
         keys += [f"ui/marker_{icon}" for icon in art.get(group, ())]
+    # The peaks' snow by season (plants.PEAK_SEASONS); the volcanic cone (r2) has none to lose.
+    keys += [f"item/world.peak/base/r{v}/f0@{season}" for v in (0, 1) for season in plants.PEAK_SEASONS]
     return keys
 
 
@@ -108,6 +110,9 @@ def _flat(key, k):
         return sky.fx(m[1], int(m[2]), FRAMES[m[1]], k)
     if key.startswith("goods/"):
         return goods.sprite(key, k)
+    if m := re.fullmatch(r"item/world\.peak/base/r(\d)/f0@(\w+)", key):
+        from render import render
+        return render(plants.peak(int(m[1]), 0, 1, k, season=m[2]), False, cull=True).base
     raise KeyError(key)
 
 

@@ -10,7 +10,7 @@ r 13..20, entrance west) in the wet plain, marsh and reeds round it.
 from worldgen import waypoint as WP
 from worldgen import finish as F
 from worldgen.dsl import Layout
-from worldgen.finish import put
+from worldgen.finish import night_posts, put
 from worldgen.shapes import Line, Poly, Rect
 
 EARTH, GRAVEL = "athens.packed_earth", "athens.gravel"
@@ -68,6 +68,9 @@ def build(L: Layout) -> None:
     L.node("artemision", (1, 13))
     L.node("ephesus_harbour", (6, 8))
     L.node("ephesus_town", (10, 4))
+    # The Artemision's keepers and the harbour's watch by night; lamps in the town's lanes.
+    night_posts(L, "athens.g_brazier", [(9, 12), (16, 12), (6, 8)], ring=3, gap=4)
+    night_posts(L, "athens.g_lamp", [(10, 6), (12, 9), (4, 11)], ring=2, gap=3)
     WP.finish(L, "athens.earth", {"athens.g_house_small": 0})
     L.expect("artemision", rect=(2, 13, 17, 20), level=0)
     L.view("whole", Rect(0, 0, W - 1, H - 1))

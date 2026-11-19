@@ -20,7 +20,7 @@ FRAMES = {"athens.altar_fire": 6, "athens.fire": 6, "athens.torch_flame": 6, "at
           "athens.marble_dust": 6, "athens.spout": 4, "athens.ripple": 4, "athens.sea_glint": 4, "athens.cicada": 4,
           "athens.sparks": 4}
 
-TERRAIN_KEY = re.compile(r"terrain/(athens\.\w+)/(?:v(\d+)|m(\d+)/f(\d+))")
+TERRAIN_KEY = re.compile(r"terrain/(athens\.\w+)/(?:v(\d+)|m(\d+)(?:/v(\d+))?/f(\d+))")
 DRY = [LEAF[1], OLIVE[1], SUMMER[0], SUMMER[1], SUMMER[2], SUMMER[3]]
 ROCK = [INK, *ATTIC_ROCK]
 
@@ -46,7 +46,7 @@ def dry_grass(v, k):
     return home._sprite(g, rgb, g.inside * 255)
 
 
-def rock_limestone(mask, k):
+def rock_limestone(mask, k, look=0):
     """The Acropolis and hill limestone: blue-grey bedrock with rusty stains, cracks and pits,
     tufts of dry grass in the joints."""
     def paint(g, f):
@@ -56,7 +56,7 @@ def rock_limestone(mask, k):
         rgb = home._paint(ROCK, lvl, g.px, g.py, k=k)
         stain = (home._pnoise(g.u, g.v, 3, 1214) > 0.8) & (hash01(g.px, g.py, 1215) < 0.5)
         return np.where(stain[..., None], home._paint([RUST[0], RUST[1], CLAY[2]], 1.4 + n, g.px, g.py, k=k), rgb)
-    return _overlay(mask, k, 0.8, 3.0, 0.7, 1210, paint)
+    return _overlay(mask, k, 0.8, 3.0, 0.7, 1210, paint, look)
 
 
 def marble_paving(mask, k):
@@ -73,17 +73,17 @@ def marble_paving(mask, k):
     return _overlay(mask, k, 0.6, 2.0, 0.2, 1220, paint)
 
 
-def gravel(mask, k):
+def gravel(mask, k, look=0):
     """The Panathenaic Way and the Agora: trodden gravel, grey and buff pebbles, dust."""
     def paint(g, f):
         lvl = 2.8 + (hash01(g.px, g.py, 1231) - 0.5) * 1.8 + (home._pnoise(g.u, g.v, 6, 1232) - 0.5) * 0.7
         return home._paint([STONE[2], POROS[1], POROS[2], STONE[3], POROS[3], MARBLE[4]], lvl - np.clip(1 - f, 0, 1),
                            g.px, g.py, k=k)
-    return _overlay(mask, k, 1.0, 4.0, 0.6, 1230, paint)
+    return _overlay(mask, k, 1.0, 4.0, 0.6, 1230, paint, look)
 
 
-def packed_earth(mask, k):
-    return home.path(mask, k)
+def packed_earth(mask, k, look=0):
+    return home.path(mask, k, look=look)
 
 
 def field_stubble(mask, k):
@@ -98,7 +98,7 @@ def field_stubble(mask, k):
     return _overlay(mask, k, 1.0, 3.0, 0.5, 1240, paint)
 
 
-def olive_soil(mask, k):
+def olive_soil(mask, k, look=0):
     """The red-brown ploughed earth under the olive groves, clods and fallen leaves."""
     def paint(g, f):
         n = home._pnoise(g.u, g.v, 8, 1251)
@@ -106,10 +106,10 @@ def olive_soil(mask, k):
         rgb = home._paint([EARTH[0], RUST[0], EARTH[2], RUST[1], CLAY[2]], lvl, g.px, g.py, k=k)
         leaf = hash01(g.px, g.py, 1253) < 0.02
         return np.where(leaf[..., None], home._paint(OLIVE, np.full_like(lvl, 3.0), g.px, g.py, k=k), rgb)
-    return _overlay(mask, k, 1.0, 4.0, 0.7, 1250, paint)
+    return _overlay(mask, k, 1.0, 4.0, 0.7, 1250, paint, look)
 
 
-def riverbed(mask, k):
+def riverbed(mask, k, look=0):
     """The Ilissos in summer: a bed of pale stones and sand with a thin stream of water."""
     def paint(g, f):
         lvl = 3.0 + (hash01(g.px // 2, g.py // 2, 1261) - 0.5) * 1.6
@@ -117,9 +117,12 @@ def riverbed(mask, k):
         stream = f > 2.4
         water = home._paint(WATER[1:5], 2.0 + (home._pnoise(g.u, g.v, 8, 1262) - 0.5) * 1.6, g.px, g.py, k=k)
         return np.where(stream[..., None], water, rgb)
-    return _overlay(mask, k, 1.0, 4.0, 0.8, 1260, paint)
+    return _overlay(mask, k, 1.0, 4.0, 0.8, 1260, paint, look)
 
 
+# Natural overlays with interior looks (terrain.SHIFTS): a field of them has no one-tile rhythm.
+INTERIOR = {"athens.rock_limestone": 4, "athens.packed_earth": 4, "athens.gravel": 4, "athens.olive_soil": 4,
+            "athens.riverbed": 4}
 TERRAIN = {"athens.rock_limestone": rock_limestone, "athens.marble_paving": marble_paving, "athens.gravel": gravel,
            "athens.packed_earth": packed_earth, "athens.field_stubble": field_stubble, "athens.olive_soil": olive_soil,
            "athens.riverbed": riverbed}
@@ -264,8 +267,11 @@ def build(keys, cat, k):
     out = {}
     for key in keys:
         if m := TERRAIN_KEY.fullmatch(key):
-            tid, var, mask, frame = m.groups()
-            out[key] = dry_grass(int(var), k) if var is not None else TERRAIN[tid](int(mask), k)
+            tid, var, mask, look, frame = m.groups()
+            if var is not None:
+                out[key] = dry_grass(int(var), k)
+            else:
+                out[key] = TERRAIN[tid](int(mask), k, *(() if look is None else (int(look),)))
         elif m := re.fullmatch(r"edge/athens\.(limestone|ashlar|earth)_(se|sw)/(?:w(\d)/)?(v(\d)|top)", key):
             if m[1] in NATURAL:
                 out[key] = land.face(NATURAL[m[1]], m[2], int(m[5] or 0), k, top=m[4] == "top",
