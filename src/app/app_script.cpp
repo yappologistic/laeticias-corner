@@ -191,7 +191,7 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
         return equal(std::to_string(actors_.present(*v)), a[2]);
     }
     if (what == "city") return checkCity(a);
-    if (what == "sound") return checkSound(a);
+    if (what == "sound" || what == "mixer") return checkSound(a);
     if (what == "habitat") {
         // Everyone stands where it may (on its reserved seat counts: she sits on the bench).
         int bad = 0;

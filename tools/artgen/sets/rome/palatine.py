@@ -13,7 +13,7 @@ import materials as M
 import roman as RM
 from arch import carve, ellipsoid, fill, revolve, rod, slab
 from setbuild import Landmark
-from sets.rome.common import S33, S65, T, box_hedge, lamp, laurel, paving, plane_tree, referrer, torch
+from sets.rome.common import S33, S65, T, box_hedge, lamp, laurel, lawn, paving, plane_tree, referrer, torch
 from voxel import hash01, value_noise
 
 ref = referrer("sets.rome.palatine")
@@ -126,7 +126,7 @@ def palatine_tiberiana(m):
     RM.arcade_front(m, "+x", (2.0, D - 2.0, 2.0, W - 2.0), 0.0, [(S.v(12.0), "tuscan", "brick")], 12, depth=2.0)
     # The roof garden (QA4 V-A-009: it read as flat brown): lawns between gravel walks.
     fill(m, (6.0, D - 6.0, 6.0, W - 6.0, S.v(12.0), S.v(12.0) + 1.0), "grass",
-         tone=lambda X, Y, Z: (value_noise(X, Y, Z * 0, 3.0, 524) - 0.5) * 0.9)
+         tone=lawn(524))
     fill(m, (6.0, D - 6.0, 6.0, W - 6.0, S.v(12.0), S.v(12.0) + 1.0), "travertine",
          lambda X, Y, Z: (np.abs(X - D / 2) < 2.0) | ((Y - 6.0) % 36.0 < 3.0) | (np.abs(X - 8.0) < 2.0) |
          (np.abs(X - (D - 8.0)) < 2.0), tone=lambda X, Y, Z: (value_noise(X * 3, Y * 3, Z, 1.0, 525) - 0.5) * 0.6)
@@ -143,7 +143,7 @@ def palatine_stadium(m):
     W, D = 6 * T, 19 * T
     RM.wall(m, (2.0, D - 2.0, 2.0, W - 2.0), 0.0, S.v(9.0), "brick", 531)
     carve(m, (8.0, D - 8.0, 8.0, W - 8.0, 0.0, S.v(9.0)))
-    fill(m, (8.0, D - 8.0, 8.0, W - 8.0, 0.0, 1.0), "grass", tone=lambda X, Y, Z: (value_noise(X, Y, Z, 3.0, 532) - 0.5))
+    fill(m, (8.0, D - 8.0, 8.0, W - 8.0, 0.0, 1.0), "grass", tone=lawn(532))
     box_hedge(m, 20.0, D - 20.0, W / 2 - 2.0, W / 2 + 2.0, 1.0)
     for x in np.arange(24.0, D - 20.0, 26.0):
         plane_tree(m, x, 20.0, 1.0, 34.0, seed=int(x))

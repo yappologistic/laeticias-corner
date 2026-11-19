@@ -124,7 +124,8 @@ STATE_RAMPS = {"leaf": LEAF_STATES, "grass": GRASS_STATES, "summer": GRASS_STATE
                "pal.violet": FLOWER_STATES, "pal.poppy": FLOWER_STATES}
 # Which climate class a ramp's states follow, where its ramp class alone does not say (the
 # engine's rule otherwise: class grass follows grass, foliage_deciduous follows deciduous).
-FOLLOWS = {"pal.leaf": "deciduous", "blossom": "early_bloom", "pal.blossom": "early_bloom",
+# `pal.leaf` keeps the grass's months: the ground tiles are drawn with it.
+FOLLOWS = {"blossom": "early_bloom", "pal.blossom": "early_bloom",
            "pal.violet": "wildflower", "pal.poppy": "wildflower"}
 # Each state: one hue family it is drawn from (palette colours) and a lightness shift (Oklab L). Steps darker than
 # KEEP_L (outlines, deep crevices) keep their colour, so silhouettes do not change.
@@ -134,7 +135,8 @@ STATE_FAMILIES = {
     "dormant": (lambda: [EARTH[0], EARTH[1], *STEPPE], -0.02),
     "turn": (lambda: [ROOF[0], ROOF[1], ROOF[2], *AUTUMN, STRAW[2], STRAW[3]], 0.0),
     "green": (lambda: LEAF, 0.0),
-    "bare": (lambda: [EARTH[0], EARTH[1], EARTH[2], STONE[1], STONE[2], STONE[3]], -0.06),
+    # Twigs: warm grey-browns (the cool greys read lavender on blossom's light steps).
+    "bare": (lambda: [EARTH[0], EARTH[1], EARTH[2], EARTH[3], SAND[1], SAND[2]], -0.06),
     "gone": (lambda: [EARTH[0], EARTH[1], *SUMMER, STRAW[3]], 0.0),
 }
 KEEP_L = 0.33

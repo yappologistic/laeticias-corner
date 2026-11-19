@@ -12,7 +12,7 @@ import materials as M
 import roman as RM
 from arch import carve, face_box, face_length, fill, halo, slab
 from setbuild import Landmark
-from sets.rome.common import LAMP, PORTICO, S35, T, GODDESS, paving, plane_tree, referrer
+from sets.rome.common import LAMP, PORTICO, S35, T, GODDESS, lawn, paving, plane_tree, referrer
 from voxel import value_noise
 
 ref = referrer("sets.rome.oppian")
@@ -65,7 +65,7 @@ def trajan_baths(m):
     great south exedra with its tiers of seats."""
     seed = 361
     # The precinct: gardens on lawns, gravel walks, the enclosure wall with gates west and east.
-    fill(m, (0.0, N, 0.0, N, 0.0, 0.8), "grass", tone=lambda X, Y, Z: (value_noise(X, Y, Z * 0, 4.0, seed) - 0.5) * 0.9)
+    fill(m, (0.0, N, 0.0, N, 0.0, 0.8), "grass", tone=lawn(seed))
     paving(m, (300.0, 440.0, AX - 8.0, AX + 8.0), 0.0, 0.9, "travertine", 5.0, 4.0, seed + 1)
     paving(m, (322.0, 334.0, 14.0, N - 14.0), 0.0, 0.9, "travertine", 5.0, 4.0, seed + 2)
     for (box) in ((6.0, 470.0, 12.0, 18.0), (6.0, 470.0, N - 18.0, N - 12.0), (6.0, 12.0, 12.0, N - 12.0),

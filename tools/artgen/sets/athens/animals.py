@@ -12,7 +12,7 @@ import numpy as np
 from arch import ellipsoid, fill, rod, slab
 from rig import Body, Dress, Frame, draw, pose
 from rig import CART_FRAMES, CRITTER_FRAMES, WALK_FRAMES, WALK_STRIDE
-from sets.parsa.animals import Beast, SIZE, _merge, _render, _rollers, _wheel, bird_feet, quadruped, stride
+from sets.parsa.animals import free_scale, Beast, SIZE, _merge, _render, _rollers, _wheel, bird_feet, quadruped, stride
 from sets.athens.piraeus import hull
 from greek import paste
 from voxel import Model
@@ -264,4 +264,4 @@ def sprite(kind, variant, anim, facing, frame, k):
     frames = CRITTER_FRAMES[anim]
     if kind in BIRDS:
         return _render(BIRDS[kind](anim, frame, frames, k), facing)
-    return _render(quadruped(BEASTS[kind], anim, frame, frames, k), facing)
+    return _render(quadruped(BEASTS[kind], anim, frame, frames, k, free_scale(kind)), facing)

@@ -146,6 +146,14 @@ def main(argv=None) -> int:
     import ramps
     ramps.write(d)          # the shared table the new sprites' words index
     pages = _pages(d, set_id)
+    # Keys of the named ids that the build no longer makes (a look an item has lost) leave.
+    for pg in pages:
+        for key in [x for x in pg["man"] if "/shadow/" not in x and x not in trimmed and any(o in x for o in only)]:
+            r = pg["man"].pop(key)
+            if not any(o["x"] == r["x"] and o["y"] == r["y"] for o in pg["man"].values()):
+                pg["colour"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = 0
+                pg["packed"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = 0
+            pg["raw"].discard(key)
     # Pages from before shadows left the colour pages: their shadows are on the shadow page
     # already (which the engine draws), so they leave the colour pages here.
     on_s = set(json.loads((d / f"{set_id}.s.json").read_text())["sprites"])

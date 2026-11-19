@@ -384,6 +384,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/rome/town_forum_day.ogg",
+   "night": "music/rome/town_forum_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

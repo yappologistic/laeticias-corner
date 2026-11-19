@@ -219,6 +219,10 @@
     ]
    }
   },
+  "music": {
+   "day": "music/world/travel_sea_day.ogg",
+   "night": "music/world/travel_sea_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

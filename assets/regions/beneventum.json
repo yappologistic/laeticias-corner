@@ -379,6 +379,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/rome/town_hills_day.ogg",
+   "night": "music/rome/town_hills_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {
