@@ -323,8 +323,8 @@ Design and formats: `docs/design/world-tech.md`. In short:
   8 × 8 tiles (`…/r<k>/p<i>/f<n>`), depth-sorted as items. Walk tiles carry nothing lower than
   `1.5 × tile.h` px above their floor. Landmarks are modelled in grid axes and use `r0`.
   Walkable items over water (decks: bridges, jetties, moles) give their floor by `walk` and
-  `walk_z` like walk runs; without it walkers stand on the tile's `tops` (the rail's top), or
-  at the water without that (`lifeinfo problems` names each such deck).
+  `walk_z` like walk runs; without it walkers stand at the water (`lifeinfo problems` names
+  each such deck).
 - Elevation: integer levels 0..15, `tile.level` px each; faces `edge/<material>_<se|sw>/v<n>`, one
   level tall, stacked. Stairs and ramps are items with `rise` and `axis`, footprint at the lower level.
 - The world is `assets/world/world.json` plus layer files (`layers/<id>.lcw`, binary, composed in

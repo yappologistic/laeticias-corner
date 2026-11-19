@@ -16,9 +16,9 @@ TEMPLATE = (pathlib.Path(__file__).resolve().parents[1] / "pull_request_template
 BUILD_OK = """```
 $ cmake --preset release && cmake --build --preset release -j4
 $ ctest --preset release
-100% tests passed, 0 tests failed out of 412
+100% tests passed out of 412
 $ cmake --preset asan && cmake --build --preset asan -j4 && ctest --preset asan
-100% tests passed, 0 tests failed out of 412
+100% tests passed out of 412
 ```"""
 SHOT = ("![before](https://github.com/user-attachments/assets/0b1c2d3e-before)\n"
         "![after](https://github.com/user-attachments/assets/0b1c2d3e-after)\n"

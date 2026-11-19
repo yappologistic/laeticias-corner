@@ -55,6 +55,15 @@ struct GeomVariant {
         const auto i = static_cast<std::size_t>(t.y * topsW + t.x);
         return i < tops.size() ? tops[i] : -1;
     }
+    // A boat's room over each footprint tile, px above the water, rows by dy (`pass`): 255 open
+    // water, 0 no passage; empty when not given.
+    std::vector<std::uint8_t> pass;
+    int passW = 0;
+    [[nodiscard]] int passAt(TilePos t) const {
+        if (t.x < 0 || t.y < 0 || t.x >= passW || passW == 0) return -1;
+        const auto i = static_cast<std::size_t>(t.y * passW + t.x);
+        return i < pass.size() ? pass[i] : -1;
+    }
     std::vector<GeomSlot> slots;
     std::vector<std::pair<std::string, Offset>> emitters; // from the anchor, px
 };
@@ -68,6 +77,17 @@ struct GeomItem {
 struct GeomActor {
     std::string id;
     std::vector<std::pair<std::string, std::vector<Offset>>> carryAt; // per animation, per frame
+    // How high it stands per look, px above its ground or water ("*": every look not named;
+    // a ship's mast, a load): what must pass under a deck.
+    std::vector<std::pair<std::string, int>> height;
+    [[nodiscard]] int heightOf(std::string_view anim) const {
+        int any = 0;
+        for (const auto& [a, h] : height) {
+            if (a == anim) return h;
+            if (a == "*") any = h;
+        }
+        return any;
+    }
 };
 
 struct GeometryFile {

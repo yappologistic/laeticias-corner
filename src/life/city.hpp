@@ -263,8 +263,10 @@ public:
     CityLife& operator=(const CityLife&) = delete;
 
     // The camera: the view in world tiles. Active chunks are those touching it grown by
-    // tuning::life::kLiveMargin. An empty rect deactivates everything.
-    void setView(TileRect view);
+    // tuning::life::kLiveMargin. An empty rect deactivates everything. While the view is not
+    // `seen` (a journey's veil is down) newcomers are simply there and leavers simply gone,
+    // instead of fading in from doorways and walking off.
+    void setView(TileRect view, bool seen = true);
     // The part of the view a window shows, as bounds on a tile's x - y and x + y (a screen is a
     // diamond in the grid: `setView`'s rectangle holds twice its tiles and more). Who stands
     // outside it moves a few steps' worth at a time instead of every step: the same walk, a
@@ -285,9 +287,6 @@ public:
     void update(const LifeClock& clock, float dt);
     // Brings the active area to its full population at once (arrival, tests, dumps).
     void settle(const LifeClock& clock);
-    // Whoever is live is there in full: nobody is still fading in (an arrival that was hidden
-    // while the area filled: when it is shown its people stand there, they do not appear).
-    void showAll();
 
     // Drawing.
     std::size_t gather(TileRect rect, float alpha, std::span<DrawActor> out) const;
@@ -341,6 +340,8 @@ public:
     void forEachReservation(F&& f) const;
     [[nodiscard]] std::size_t memoryBytes() const;
     [[nodiscard]] int liveCount() const { return stats_.live; }
+    // A new area's people still on their way in (its reconciliation or materialisation pending).
+    [[nodiscard]] bool arriving() const { return dirty_ || queueHead_ < queue_.size(); }
     // Tests and the bench: replace the population scale (0: automatic by the cap).
     void forceScale(float s) {
         forcedScale_ = s;
@@ -470,6 +471,7 @@ private:
     int day_ = -1;
     std::uint32_t frame_ = 0;
     TileRect view_;
+    bool seen_ = true;
     Watched watched_;
     TileRect active_;
     std::vector<std::uint8_t> chunkActive_;

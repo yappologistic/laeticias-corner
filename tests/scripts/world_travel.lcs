@@ -1,6 +1,6 @@
 # The map and fast travel: open the map, travel to each city and home again; the era caption
 # shows once per visit; a landmark's and a figure's card (closed by Esc, and by a journey); the
-# journal fills.
+# journal fills. The veil lifts on a place already peopled: nobody arrives or fades in after it.
 expect away no
 expect region corner
 expect widget map yes
@@ -13,6 +13,8 @@ wait 3
 shot shots/world_map_hover.png
 click map:rome
 waitfor 70 travelling no
+expect city arriving no
+expect city drawn 20 900
 expect place rome
 expect era Rome
 expect away yes
@@ -25,6 +27,8 @@ key m
 wait 20
 click map:athens
 waitfor 70 travelling no
+expect city arriving no
+expect city drawn 20 900
 expect place athens
 expect era Athens
 shot shots/world_athens.png

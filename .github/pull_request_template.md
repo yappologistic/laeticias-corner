@@ -36,7 +36,7 @@ reformatting. -->
 ### Build and test
 
 <!-- The exact commands you ran and their result lines, copied from your terminal, e.g. the
-cmake build and "100% tests passed, 0 tests failed out of N" from `ctest --preset release`.
+cmake build and "100% tests passed out of N" from `ctest --preset release`.
 Engine changes: the `asan` preset too. -->
 
 

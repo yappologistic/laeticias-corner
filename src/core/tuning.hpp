@@ -451,6 +451,10 @@ inline constexpr float kStallLeave = 12.0f; // seconds stuck (steps given up) be
 inline constexpr float kFloorStepPx = 2.0f;
 inline constexpr float kFloorStepTiles = 0.1f;
 inline constexpr float kFloorSlackPx = 1.0f;
+// A ship lowers its mast this many tiles before a span too low for it, and raises it as far after.
+inline constexpr float kLowerReach = 1.5f;
+// lifeinfo problems names a region whose walkable land is mostly out of reach from this size up.
+inline constexpr long kReachReportTiles = 3000;
 inline constexpr float kTurnHold = 0.17f; // radians past a sector's edge before a sprite turns
 inline constexpr float kRate0 = 0.85f;    // animation pace range, per actor
 inline constexpr float kRate1 = 1.15f;
