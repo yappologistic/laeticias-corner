@@ -96,8 +96,7 @@ int overlayMaskExcept(const world::WorldMap& m, TilePos p, int t, int except) {
         const TilePos n{p.x + dx, p.y + dy};
         if (!m.inBounds(n)) return false; // the deep sea beyond the grid
         const int nt = m.terrainAt(n);
-        return nt == t ||
-               (water && nt != world::kNone && nt != except && m.terrainInfo(nt).water);
+        return nt == t || (water && nt != world::kNone && nt != except && m.terrainInfo(nt).water);
     };
     if (same(0, -1)) mask |= kMaskN;
     if (same(1, 0)) mask |= kMaskE;

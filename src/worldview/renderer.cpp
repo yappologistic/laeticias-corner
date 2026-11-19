@@ -462,14 +462,13 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
                 // The interior's looks are picked per tile (V6-004); seasonal looks keep theirs.
                 // Classic: shallows meeting the deep sea round off over the sea's own water
                 // instead of stepping in whole diamonds (QA V7-017).
-                const int own = c.depth && sea_ >= 0 && t != sea_
-                                    ? overlayMaskExcept(map_, p, t, sea_)
-                                    : mask;
+                const int own =
+                    c.depth && sea_ >= 0 && t != sea_ ? overlayMaskExcept(map_, p, t, sea_) : mask;
                 if (own != mask) {
                     const TerrainLook& sea = sprites_->terrain(sea_);
                     if (sea.hasOverlay()) {
-                        ok &= drawGround(c, sea.overlayIn(mask, lookSeason_).at(now, sea.fps),
-                                         c.a, x, c.tint);
+                        ok &= drawGround(c, sea.overlayIn(mask, lookSeason_).at(now, sea.fps), c.a,
+                                         x, c.tint);
                         if (sea.animated() && animated != nullptr) *animated = true;
                     }
                 }

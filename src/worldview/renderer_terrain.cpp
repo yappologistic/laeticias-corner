@@ -30,7 +30,6 @@ SDL_FColor times(SDL_FColor c, float k) {
 // neighbour's corners at the same two points.
 constexpr std::array<std::array<int, 4>, 2> kEdgeCorners{{{2, 1, 3, 0}, {2, 3, 1, 0}}};
 
-
 } // namespace
 
 void WorldView::setSlopeSun(const float dir[3], float strength) {
@@ -144,8 +143,7 @@ bool WorldView::drawGround(const TileCtx& c, const SpriteRef& s, Vec2 anchor, co
     std::array<SDL_Vertex, 4> v{};
     for (std::size_t i = 0; i < 4; ++i) {
         const Vec2 at = iso_.toTile({corner[i].x, corner[i].y + raise});
-        const float m =
-            c.depth ? 1.0f - tuning::kWaterDepthTint * depthAt(at) : k * macroAt(at);
+        const float m = c.depth ? 1.0f - tuning::kWaterDepthTint * depthAt(at) : k * macroAt(at);
         v[i] = {{corner[i].x, corner[i].y}, {m, m, m, 1}, uv[i]};
     }
     static constexpr std::array<int, 6> kQuad{0, 1, 2, 0, 2, 3};
