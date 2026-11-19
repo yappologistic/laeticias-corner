@@ -612,7 +612,8 @@ void App::updateTour(float dt) {
         if (placements_ > tourPlacements_) next();
         break;
     case kWish:
-        if (wish < 0 || progress_.wishes[static_cast<std::size_t>(wish)].state == WishState::Done)
+        // Granted, or put off with "Not now": either way the tray no longer holds it.
+        if (wish < 0 || progress_.wishes[static_cast<std::size_t>(wish)].state != WishState::Open)
             next();
         break;
     case kKeys:

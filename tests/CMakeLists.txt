@@ -86,6 +86,7 @@ set(LC_SCRIPTS
   "shape_edge|shape_edge|1280x800|"
   "front_door|front_door|1280x800||--front-door"
   "tour_full_tray|tour_full_tray|1280x800||--front-door"
+  "tour_snooze|tour_snooze|1280x800||--front-door"
   "world_old_save|world_old_save|960x600|"
   "world_save_a|world_save_a|960x600|"
   "world_save_b|world_save_b|960x600|"
