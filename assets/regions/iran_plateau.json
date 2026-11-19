@@ -1899,10 +1899,7 @@
    ],
    "zone": "land",
    "string": "almond_blossom",
-   "ambience": {
-    "file": "amb/world/fields.ogg",
-    "gain": 0.6
-   }
+   "sfx": "sfx/world/cuckoo.wav"
   },
   {
    "id": "plateau_harvest",
