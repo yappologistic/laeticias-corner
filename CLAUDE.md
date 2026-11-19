@@ -160,7 +160,7 @@ are the tools for finding where time goes; guesses are not.
 
 ## Git
 
-- Branch `main`, local only. Small logical commits in Conventional Commits style
+- Branch `main`. Automation never pushes and never creates or changes a remote. Small logical commits in Conventional Commits style
   (`feat(render): …`, `fix(core): …`, `test: …`, `chore: …`, `assets: …`).
 - Several agents share this checkout. Stage and commit **only your own paths**
   (`git add <paths>` then `git commit -m … -- <paths>`); if `index.lock` is busy, wait and retry.
@@ -327,6 +327,12 @@ Design and formats: `docs/design/world-tech.md`. In short:
   each such deck).
 - Elevation: integer levels 0..15, `tile.level` px each; faces `edge/<material>_<se|sw>/v<n>`, one
   level tall, stacked. Stairs and ramps are items with `rise` and `axis`, footprint at the lower level.
+  Natural ground that steps by one level is drawn as a slope (`src/world/slopes.hpp`: 21 shapes
+  by the corner rule; terrain listed in its set's `art.slopes`; water, masonry and tiles under
+  anything needing flat ground stay flat; a drop of two levels or more stays a cliff).
+  `WorldMap::surfaceZ` is the ground's height at any point and `WorldMap::walkZ` the height a
+  walker stands at. Water standing over lower water falls as art (`top`, `mid`, `foot`, `rapid`,
+  `plunge`), never as a flat face.
 - The world is `assets/world/world.json` plus layer files (`layers/<id>.lcw`, binary, composed in
   order) and graphs (`layers/<id>.graph.json`); region life, theme and text are
   `assets/regions/<region>.json`. All are generated or validated by `tools/worldgen`.
@@ -410,8 +416,10 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   the set catalog's `stride` (the body drives the drawing: a walk only while the body covers
   ground, its standing form otherwise, never a walk played by the clock; a watchdog gives up a
   step after 4 s going nowhere and lets the actor leave after 12 s; `expect city moving` and the
-  life soak hold it at zero), on the floor of their course (decks' and walk runs' `walk_z`,
-  stairs' treads, blended between tiles; chain carriers walk between the chains' one-second
+  life soak hold it at zero), on the floor of their course (`walkZ`: decks' and walk runs'
+  `walk_z`, stairs' treads, the surface of sloped ground, blended between tiles; a slope is not
+  yet a way between levels for walkers: that rule changes together with worldgen's walk model;
+  chain carriers walk between the chains' one-second
   ticks; ships at the water's level, under the bridges; `expect city floor` and the life test
   hold it), goods in hand, shadows in the shared layer, whole window pixels at
   2x and 3x; at half and quarter scale people go over the impostors; nobody at the overview or
@@ -433,8 +441,10 @@ The design is `docs/design/living-corner.md`; this is what the engine does today
   seams ducking the rest, zones by nearness and their `months` (panned from their nearest point,
   centred inside), item loops (fountains, lit braziers; `worked` ones in their `hours`; any in its
   `months`) as loud as the nearest and panned from all in reach, a
-  city's music (on the music bus, never muffled) fading in over 4 s from a phrase start and out
-  when left (ducked 2 dB under a sting); the home's stems and beds play by its share of the view;
+  region's music (a city's, a town's piece or a stretch's travelling theme: any region whose
+  theme names one; on the music bus, never muffled) fading in over 4 s from a phrase start and
+  out when left, kept playing when the next region names the same piece (ducked 2 dB under a
+  sting); a loop named by two systems takes the louder want; the home's stems and beds play by its share of the view;
   the front door plays its own full mix (`music/day.ogg`, `night.ogg`) over the home's beds. Season and month are the
   world calendar's (`calendarDay`), snow lying is the view's climate that month.
   City sound (`worldview/city_sound.hpp`, from the region files' `theme.sound` and districts'
