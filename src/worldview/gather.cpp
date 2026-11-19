@@ -46,7 +46,10 @@ void Gatherer::run(TileRect tiles, const FRect& clip, Gathered& out) {
         const SpriteRef& s =
             split ? look.pieces[static_cast<std::size_t>(d.piece)] : look.base.f.front();
         const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
-        const Vec2 a{w.x, w.y - static_cast<float>(it.level * lvl_)};
+        // A plant or prop on a slope stands on its surface at the tile's centre (the tiles of
+        // everything else stay flat, where this is the level).
+        const Vec2 a{w.x, w.y - map_.surfaceZ({static_cast<float>(it.x) + 0.5f,
+                                               static_cast<float>(it.y) + 0.5f})};
         const FRect box{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h};
         // An item off the clip whose shadow falls on it still belongs (for its shadow).
         const bool shades =

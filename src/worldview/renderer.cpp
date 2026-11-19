@@ -40,24 +40,6 @@ SDL_FColor times(SDL_FColor c, float k) {
     return {c.r * k, c.g * k, c.b * k, c.a};
 }
 
-int sameMask(const world::WorldMap& m, TilePos p, int t) {
-    int mask = 0;
-    // Waters are one water for each other's edges (sea, shallows and rivers meet without a rim of
-    // sand between them: art-world.md); beyond the grid the sea runs on.
-    const bool water = m.terrainInfo(t).water;
-    const auto same = [&](int dx, int dy) {
-        const TilePos n{p.x + dx, p.y + dy};
-        if (!m.inBounds(n)) return water;
-        const int nt = m.terrainAt(n);
-        return nt == t || (water && nt != world::kNone && m.terrainInfo(nt).water);
-    };
-    if (same(0, -1)) mask |= kMaskN;
-    if (same(1, 0)) mask |= kMaskE;
-    if (same(0, 1)) mask |= kMaskS;
-    if (same(-1, 0)) mask |= kMaskW;
-    return mask;
-}
-
 // Calls f for the tiles of `r` in painter's order (diagonal by diagonal) whose top vertex lies
 // between world x `x0` and `x1`: a screen rectangle is a diamond in the grid, and its bounding
 // tile rectangle holds twice the tiles that can draw into it.
@@ -145,6 +127,10 @@ WorldView::WorldView(SDL_Renderer* renderer, const world::LoadedWorld& world,
     pages_ = std::make_unique<PageAtlas>(renderer, home, world.atlas, assets / "atlas", async,
                                          tuning::kPageCeiling, decoder_ != nullptr);
     sprites_ = std::make_unique<WorldSprites>(renderer, home, *pages_, map_);
+    channel_.resize(map_.terrainCount());
+    for (std::size_t t = 0; t < map_.terrainCount(); ++t)
+        channel_[t] = map_.terrainInfo(static_cast<int>(t)).water &&
+                      flowingWater(map_.terrainInfo(static_cast<int>(t)).id);
     // Asynchronous runs build the overview on a worker from the start; synchronous ones only
     // when a frame needs it (it stands in for cells not built yet, which they never have).
     if (async) overview_ = std::make_unique<Overview>(map_, *sprites_, *pages_, async);
@@ -261,6 +247,9 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
     if (t == world::kNone) return true;
     seasonAt(p);
     const TerrainLook& look = sprites_->terrain(t);
+    // Falling water keeps its frames on both paths (the shader path has no sheet of its own yet).
+    const float fallNow = now;
+    bool* const fallAnimated = animated;
     // On the shader path water moves in the final pass: its tiles stay still in the cells (no
     // rebuilds at the art's frame rate) and are marked for it.
     if (post_ && look.water) {
@@ -268,77 +257,67 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
         animated = nullptr;
     }
     const std::uint8_t lb = map_.levelByte(p);
-    const int level = world::levelOf(lb);
-    const int aux = world::auxOf(lb);
-    const Vec2 a = [&] {
+    TileCtx c;
+    c.p = p;
+    c.t = t;
+    c.look = &look;
+    c.level = world::levelOf(lb);
+    c.aux = world::auxOf(lb);
+    c.slope = map_.slopeAt(p);
+    c.a = [&] {
         const Vec2 w = iso_.toWorld(p);
-        return Vec2{w.x, w.y - static_cast<float>(level * lvl_)};
+        return Vec2{w.x, w.y - static_cast<float>(c.level * lvl_)};
     }();
-    const MaterialLook* mat =
-        look.water ? &sprites_->waterFace()
-                   : (look.faces[static_cast<std::size_t>(aux)] >= 0
-                          ? &sprites_->material(look.faces[static_cast<std::size_t>(aux)])
-                          : nullptr);
+    c.tint = look.water ? 1.0f - tuning::kWaterDepthTint * static_cast<float>(c.aux) : 1.0f;
+    c.macro = !look.water && !hole_.tiles.contains(p);
+    // Land hangs its own face material; water its bank's (the base under it) where it stands
+    // over land it does not flow onto, and falls everywhere else it steps down.
+    const int face = look.faces[static_cast<std::size_t>(look.water ? 0 : c.aux)];
+    const MaterialLook* mat = face >= 0    ? &sprites_->material(face)
+                              : look.water ? &sprites_->waterFace()
+                                           : nullptr;
     bool ok = true;
-    std::array<int, 2> drop{};
-    // Faces hang under the +x and +y edges, one band per level down to the neighbour (or to
-    // level 0 at the world's rim); the uppermost band's cap goes on after the ground.
-    for (int side = 0; side < 2; ++side) {
-        const TilePos n = side == 0 ? TilePos{p.x + 1, p.y} : TilePos{p.x, p.y + 1};
-        const int ln = map_.inBounds(n) && map_.terrainAt(n) != world::kNone ? map_.level(n) : 0;
-        drop[static_cast<std::size_t>(side)] = level - ln;
-        const auto s = static_cast<std::size_t>(side);
-        for (int b = 0; b < level - ln; ++b) {
-            const Vec2 at{a.x, a.y + static_cast<float>(b * lvl_)};
-            if (mat != nullptr && !mat->band[s].empty()) {
-                if (b == 0 && mat->top[s]) continue;
-                const auto& v = mat->band[s];
-                const std::size_t k =
-                    tileHash(p.x, p.y, 3u + static_cast<std::uint32_t>(b)) % v.size();
-                // Faces are one tile edge wide and abut exactly (art-corrections.md). The lowest
-                // level of a cliff standing in water carries the surf.
-                const bool surf = b == level - ln - 1 && !mat->foot[s].empty() &&
-                                  map_.inBounds(n) && map_.terrainAt(n) != world::kNone &&
-                                  sprites_->terrain(map_.terrainAt(n)).water;
-                if (surf) {
-                    ok &=
-                        put(mat->foot[s][k].at(now, mat->fps), at, x, kWhite, SDL_BLENDMODE_BLEND);
-                    if (animated != nullptr) *animated = true;
-                } else {
-                    ok &= put(v[k], at, x, kWhite, SDL_BLENDMODE_BLEND);
-                }
-            } else {
-                const SDL_FColor c = times(mat != nullptr ? mat->flat : look.flat,
-                                           side == 0 ? tuning::kFaceShadeSE : tuning::kFaceShadeSW);
-                ok &= put(sprites_->face(side), at, x, c, SDL_BLENDMODE_BLEND);
-            }
-        }
+    std::array<int, 2> cap{-1, -1};
+    int skip = 0;
+    if (look.water && !sprites_->falls().empty()) {
+        for (int side = 0; side < 2; ++side)
+            if (fallDrop(p, side) > 0) skip |= 1 << side;
+        ok &= drawFallFaces(c, x, fallNow, fallAnimated, false);
     }
-    const float tint = look.water ? 1.0f - tuning::kWaterDepthTint * static_cast<float>(aux) : 1.0f;
+    ok &= drawFaces(c, mat, x, now, animated, cap, skip);
+    if (look.water) cap = {-1, -1}; // (no turf over water)
     const float jitter =
         1.0f +
         tuning::kFlatJitter * (static_cast<float>(tileHash(p.x, p.y, 7) % 100) / 50.0f - 1.0f);
-    const SDL_FColor shade{tint, tint, tint, 1};
     const bool overlay = !map_.terrainInfo(t).base;
-    if (!overlay || look.hasOverlay()) {
-        const std::vector<SpriteRef>& base = look.baseIn(lookSeason_);
-        if (base.empty())
-            ok &=
-                put(sprites_->diamond(), a, x,
-                    times(overlay ? look.flatBase : look.flat, jitter * tint), SDL_BLENDMODE_BLEND);
-        else
-            ok &= put(base[tileHash(p.x, p.y, 1) % base.size()], a, x, shade, SDL_BLENDMODE_BLEND);
-        if (post_ && look.water && !overlay) markWater(sprites_->diamond(), a);
-    }
-    if (overlay) {
-        if (look.hasOverlay()) {
-            const Frames& f = look.overlayIn(sameMask(map_, p, t), lookSeason_);
-            ok &= put(f.at(now, look.fps), a, x, shade, SDL_BLENDMODE_BLEND);
-            if (post_ && look.water) markWater(f.at(now, look.fps), a);
-            if (look.animated() && animated != nullptr) *animated = true;
-        } else {
-            ok &= put(sprites_->diamond(), a, x, times(look.flat, jitter * tint),
-                      SDL_BLENDMODE_BLEND);
+    if (c.slope != world::Slope::Flat) {
+        ok &= drawSlope(c, x, now, animated);
+    } else {
+        if (!overlay || look.hasOverlay()) {
+            const std::vector<SpriteRef>& base = look.baseIn(lookSeason_);
+            if (base.empty())
+                ok &= put(sprites_->diamond(), c.a, x,
+                          times(overlay ? look.flatBase : look.flat, jitter * c.tint),
+                          SDL_BLENDMODE_BLEND);
+            else
+                ok &= drawGround(c, base[tileHash(p.x, p.y, 1) % base.size()], c.a, x, c.tint);
+            if (post_ && look.water && !overlay) markWater(sprites_->diamond(), c.a);
+        }
+        if (overlay) {
+            if (look.hasOverlay()) {
+                const int mask = overlayMask(map_, p, t);
+                // The interior's looks are picked per tile (V6-004); seasonal looks keep theirs.
+                const Frames& f = mask == 15 && !look.interior.empty() &&
+                                          &look.overlayIn(15, lookSeason_) == &look.overlay[15]
+                                      ? look.interior[tileHash(p.x, p.y, 11) % look.interior.size()]
+                                      : look.overlayIn(mask, lookSeason_);
+                ok &= drawGround(c, f.at(now, look.fps), c.a, x, c.tint);
+                if (post_ && look.water) markWater(f.at(now, look.fps), c.a);
+                if (look.animated() && animated != nullptr) *animated = true;
+            } else {
+                ok &= put(sprites_->diamond(), c.a, x, times(look.flat, jitter * c.tint),
+                          SDL_BLENDMODE_BLEND);
+            }
         }
     }
     if (look.water && !look.foam[0].empty() && !post_) { // (the shader path draws its own)
@@ -355,15 +334,20 @@ bool WorldView::drawTile(TilePos p, const Xform& x, float now, bool* animated) {
         if (dry(0, 1)) land |= kMaskS;
         if (dry(-1, 0)) land |= kMaskW;
         if (land != 0) {
-            ok &= put(look.foam[static_cast<std::size_t>(land)].at(now, look.fps), a, x, kWhite,
+            ok &= put(look.foam[static_cast<std::size_t>(land)].at(now, look.fps), c.a, x, kWhite,
                       SDL_BLENDMODE_BLEND);
             if (animated != nullptr && look.fps > 0) *animated = true;
         }
     }
+    if (look.water && !sprites_->falls().empty()) {
+        ok &= drawPlunge(c, x, fallNow, fallAnimated);
+        ok &= drawFallFaces(c, x, fallNow, fallAnimated, true);
+    }
     for (int side = 0; side < 2; ++side) {
         const auto s = static_cast<std::size_t>(side);
-        if (mat != nullptr && mat->top[s] && drop[s] > 0)
-            ok &= put(*mat->top[s], a, x, kWhite, SDL_BLENDMODE_BLEND);
+        if (mat != nullptr && mat->top[s] && cap[s] >= 0)
+            ok &= put(*mat->top[s], {c.a.x, c.a.y + static_cast<float>(cap[s] * lvl_)}, x, kWhite,
+                      SDL_BLENDMODE_BLEND);
     }
     return ok;
 }
@@ -1209,9 +1193,11 @@ void WorldView::buildGlow() {
         const std::optional<SpriteRef>& gl = sprites_->item(it).glow;
         if (!gl) continue; // glows() said it has one
         const Vec2 w = iso_.toWorld(TilePos{it.x, it.y});
-        glow_[count[chunkOf(it)]++] = {&*gl,
-                                       {w.x, w.y - static_cast<float>(it.level * lvl_)},
-                                       static_cast<std::uint32_t>(&it - map_.items().data())};
+        glow_[count[chunkOf(it)]++] = {
+            &*gl,
+            {w.x, w.y - map_.surfaceZ(
+                            {static_cast<float>(it.x) + 0.5f, static_cast<float>(it.y) + 0.5f})},
+            static_cast<std::uint32_t>(&it - map_.items().data())};
     }
 }
 

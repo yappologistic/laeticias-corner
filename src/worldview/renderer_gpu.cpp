@@ -194,10 +194,8 @@ void WorldView::refreshWater(const FRect& view) {
             const int tt = static_cast<int>(k);
             const std::string_view id = map_.terrainInfo(tt).id;
             waterKind_[k] = !sprites_->terrain(tt).water ? std::uint8_t{0}
-                            : contains(id, "river") || contains(id, "channel") ||
-                                    contains(id, "stream") || contains(id, "canal")
-                                ? std::uint8_t{2}
-                                : std::uint8_t{1};
+                            : flowingWater(id)           ? std::uint8_t{2}
+                                                         : std::uint8_t{1};
         }
     }
     const auto side = [&](int a0, int a1) {

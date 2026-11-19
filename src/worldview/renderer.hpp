@@ -32,6 +32,7 @@
 #include "worldview/overview.hpp"
 #include "worldview/page_atlas.hpp"
 #include "worldview/places.hpp"
+#include "worldview/terrain.hpp"
 #include "worldview/theme.hpp"
 #include "worldview/weather_field.hpp"
 #include "worldview/world_sprites.hpp"
@@ -310,6 +311,39 @@ private:
     // One tile: faces down to its neighbours, the ground, foam, face caps. False when a sprite's
     // page was not resident.
     bool drawTile(TilePos p, const Xform& x, float now, bool* animated);
+    // The ground of a tile (renderer_terrain.cpp, art-smooth-land.md §3–§4): its faces by the
+    // corners of the two tiles at each front edge (wedges where a slope stands over a cliff),
+    // water's falls and rapids instead of faces, its ground flat or on its slope's mesh.
+    struct TileCtx {
+        TilePos p;
+        int t = 0;
+        const TerrainLook* look = nullptr;
+        Vec2 a; // world px of its top vertex at its level
+        int level = 0;
+        int aux = 0;
+        world::Slope slope = world::Slope::Flat;
+        float tint = 1;     // the water's depth tint, the land's slow lightness field
+        bool macro = false; // the slow field applies (land, away from the home's own ground)
+    };
+    // `skip`: sides (bit 0 +x, bit 1 +y) drawn otherwise (falling water). `cap`: per side, the
+    // band the cap replaces, -1 for none.
+    bool drawFaces(const TileCtx& c, const MaterialLook* mat, const Xform& x, float now,
+                   bool* animated, std::array<int, 2>& cap, int skip);
+    bool drawFallFaces(const TileCtx& c, const Xform& x, float now, bool* animated, bool after);
+    bool drawPlunge(const TileCtx& c, const Xform& x, float now, bool* animated);
+    bool drawGround(const TileCtx& c, const SpriteRef& s, Vec2 anchor, const Xform& x, float k);
+    bool drawSlope(const TileCtx& c, const Xform& x, float now, bool* animated);
+    // The flat sprite `s` (anchored at the tile's top vertex) carried onto the tile's slope mesh,
+    // each fan triangle lit as the slope art is.
+    bool putWarped(const TileCtx& c, const SpriteRef& s, const Xform& x, float k,
+                   SDL_BlendMode mode);
+    // Textured triangles in world px with a lightness per vertex, through the decode like put().
+    bool putTris(const SpriteRef& s, std::span<SDL_Vertex> v, std::span<const int> idx,
+                 const Xform& x, SDL_BlendMode mode);
+    // The drop of the fall from water tile p over its front or back side `dir` (kSteps), 0 when
+    // none: a lower water neighbour, or lower land where the water leaves by that side.
+    [[nodiscard]] int fallDrop(TilePos p, int dir) const;
+    [[nodiscard]] float macroAt(Vec2 tile) const;
     // The overview image, built on first need in synchronous runs.
     Overview& overview();
     bool drawTiles(const FRect& px, const Xform& x, float now, bool* animated);
@@ -597,7 +631,11 @@ private:
     std::vector<std::uint32_t> waterTexels_;
     std::vector<float> waterDist_;
     std::vector<std::uint8_t> waterKind_; // per terrain: 0 land, 1 water, 2 a channel
-    std::vector<TilePos> itemWater_;      // the items' water tiles, sorted (y, x)
+    std::vector<bool> channel_;           // per terrain: water that flows (its aux: direction)
+    std::vector<std::array<float, 8>> slopeLights_; // per shape, its fan's light over flat's
+    std::vector<SDL_Vertex> triVerts_;              // putWarped's mesh
+    std::vector<int> triIdx_;
+    std::vector<TilePos> itemWater_; // the items' water tiles, sorted (y, x)
     bool itemWaterRead_ = false;
     std::vector<TilePos> homeWater_; // the home's water tiles
     bool homeWaterDirty_ = true;
