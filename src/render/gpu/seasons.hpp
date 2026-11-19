@@ -1,8 +1,8 @@
 #pragma once
-// The seasons on the data pages (out/reports/art-data-contract.md §1, §4): each green ramp of the
-// ramp table has season states (fresh, dry, dormant, turn); a climate says per month which one
-// its grass and deciduous leaves show, and where snow lies. Pure: the remap rows and the snow
-// cover the packed decode (decoder.hpp) reads.
+// The seasons on the data pages (out/reports/art-data-contract.md §1, §4): a living ramp of the
+// ramp table has season states named by the climates' words (fresh, dry, dormant, turn, bare,
+// bloom ...); a climate says per month which word each class shows, and where snow lies. Pure: the
+// remap rows and the snow cover the packed decode (decoder.hpp) reads.
 
 #include "core/catalog.hpp"
 
@@ -18,19 +18,22 @@ namespace lc::gpu {
 inline constexpr int kRampIds = 256;
 
 struct RampSeasons {
-    // Per ramp id: its green class (-1: none), and its state ramps for fresh, dry, dormant and
-    // turn (0: the ramp has no such state).
+    // Per ramp id: the climate class it follows (-1: none), and its state ramp for each of the
+    // climate's words (kGreenWords; 0: the ramp has no such state).
     std::array<std::int8_t, kRampIds> green{};
-    std::array<std::array<std::uint8_t, 4>, kRampIds> states{};
+    std::array<std::array<std::uint8_t, kGreenWords.size()>, kRampIds> states{};
     std::uint8_t snow = 0;              // the snow ramp (class `snow`, the widest)
     std::array<bool, kRampIds> water{}; // class `water`: such texels are water for the look
     // Per ramp id, its steps' Oklab lightness (0 past its last step): relight snaps to them.
     std::array<std::array<float, 8>, kRampIds> lightness{};
 };
-// From `assets/atlas/ramps.json`. Ramps of class `grass` are grass, `foliage_deciduous` leaves.
+// From `assets/atlas/ramps.json`. A ramp follows the class its `follows` names (one of
+// kGreenClassNames), else class `grass` the grass and `foliage_deciduous` the deciduous leaves.
 [[nodiscard]] RampSeasons parseRamps(const nlohmann::json& ramps);
 
-// The ramp each ramp id becomes in `climate`'s `month` (kRampIds entries).
+// The ramp each ramp id becomes in `climate`'s `month` (kRampIds entries): the state named by
+// the month's word for its class, else as drawn; `bare` falls to `dormant`, and `dormant` and
+// `gone` to `dry`, when the ramp has not got them.
 void remapRow(const RampSeasons& r, const ClimateDef& climate, int month,
               std::span<std::uint8_t, kRampIds> out);
 

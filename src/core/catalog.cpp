@@ -746,22 +746,17 @@ public:
                                                              : nullptr;
                 if (key == nullptr) continue;
                 const json& cl = (*k)[key];
-                static constexpr std::array<std::pair<const char*, GreenClass>, kGreenClasses>
-                    kClasses{{{"grass", GreenClass::Grass}, {"deciduous", GreenClass::Deciduous}}};
-                for (const auto& [name, cls] : kClasses) {
-                    const auto it = cl.find(name);
+                for (std::size_t cls = 0; cls < kGreenClassNames.size(); ++cls) {
+                    const auto it = cl.find(kGreenClassNames[cls]);
                     if (it == cl.end() || !it->is_array() || it->size() != cat_.months.size())
                         continue;
-                    auto& row = d.greens[static_cast<std::size_t>(cls)];
+                    auto& row = d.greens[cls];
                     for (const json& w : *it) {
                         const std::string s = w.is_string() ? w.get<std::string>() : "";
-                        row.push_back(s == "fresh"     ? GreenState::Fresh
-                                      : s == "dry"     ? GreenState::Dry
-                                      : s == "gone"    ? GreenState::Dry
-                                      : s == "dormant" ? GreenState::Dormant
-                                      : s == "turn"    ? GreenState::Turn
-                                      : s == "bare"    ? GreenState::Bare
-                                                       : GreenState::Green);
+                        const auto word = std::ranges::find(kGreenWords, s);
+                        row.push_back(word == kGreenWords.end()
+                                          ? GreenState::Green
+                                          : static_cast<GreenState>(word - kGreenWords.begin()));
                     }
                 }
                 break;

@@ -1901,8 +1901,9 @@ void WorldView::seasonAt(TilePos p) {
         const bool beside = st.other == homeClimate_;
         if (st.other != gpu::kNoClimate && !home) {
             // A smooth noise a few tiles across breaks the band's edge; each tile then takes
-            // the neighbour's grass and leaves by its share (a speckled band, never a line).
-            // Two octaves (11 and 4 tiles): the band meanders instead of following the line.
+            // the neighbour's grass and leaves by its share, in patches of a few tiles (a noise
+            // finer still: a tile by tile choice was a checkerboard, QA7 V7-005). Two octaves
+            // (11 and 4 tiles): the band meanders instead of following the line.
             const auto octave = [&](int cell, std::uint32_t salt) {
                 const auto lattice = [&](int x, int y) {
                     return static_cast<float>(tileHash(x, y, salt) % 1024u) / 1023.0f;
@@ -1919,15 +1920,19 @@ void WorldView::seasonAt(TilePos p) {
             const float noise = octave(11, 11) * 0.7f + octave(4, 17) * 0.3f - 0.5f;
             ctx.other = st.other;
             ctx.share = gpu::otherShare(st.distance, noise) * (beside ? 2.0f : 1.0f);
-            if (static_cast<float>(tileHash(p.x, p.y, 13) % 1024u) / 1024.0f < ctx.share)
-                ctx.climate = st.other;
+            const float patch = octave(3, 13) * 0.65f + octave(2, 19) * 0.35f;
+            if ((patch - 0.5f) * 2.0f + 0.5f < ctx.share) ctx.climate = st.other;
         }
     }
     seasonCtx_ = ctx;
-    // In a border's band every tile draws the plain looks, its snow the blended cover grain by
-    // grain (the drawn season looks are one climate's: the home's snowy winter grass would end
-    // in a line, or in a patchwork of whole tiles, at the border).
-    lookSeason_ = ctx.other >= 0 && ctx.share > 0.0f ? -1 : season_;
+    // In a border's band in the snowy season every tile draws the plain looks, its snow the
+    // blended cover grain by grain (drawn snow is one climate's: the home's snowy winter grass
+    // would end in a line, or in a patchwork of whole tiles, at the border). The other seasons
+    // keep their looks there (a plain look may be a winter one: QA7 V7-004's snowy peaks).
+    const std::vector<SeasonDef>& seasons = map_.content().home().seasons;
+    const bool snowy = season_ >= 0 && std::cmp_less(season_, seasons.size()) &&
+                       seasons[static_cast<std::size_t>(season_)].snow;
+    lookSeason_ = snowy && ctx.other >= 0 && ctx.share > 0.0f ? -1 : season_;
 }
 
 SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt, bool mirrored) const {
@@ -1944,8 +1949,16 @@ SDL_FColor WorldView::packedColour(SDL_FColor c, bool homeArt, bool mirrored) co
                                     seasonCtx_.level)
                    : 0.0f;
     };
-    snow = cover(seasonCtx_.own) * (1 - seasonCtx_.share) +
-           (seasonCtx_.other >= 0 ? cover(seasonCtx_.other) * seasonCtx_.share : 0.0f);
+    const float own = cover(seasonCtx_.own);
+    const float other = seasonCtx_.other >= 0 ? cover(seasonCtx_.other) : 0.0f;
+    const float s = seasonCtx_.share;
+    // Where only one side has snow, it thins out to nothing at the border on its own side: a
+    // blend never carries snow onto land whose climate has none (QA7 V7-008). The home's drawn
+    // snow is the exception: the land round it takes it, so the corner is one snow with it.
+    if (seasonCtx_.other == homeClimate_ || (own > 0.0f && other > 0.0f))
+        snow = own * (1 - s) + other * s;
+    else
+        snow = own * std::max(0.0f, 1.0f - 2.0f * s);
     // (Home art taking a neighbour's season is drawn plain: it takes that climate's row.)
     const int row =
         homeArt && lookSeason_ == season_ ? gpu::Decoder::kClimates - 1 : seasonCtx_.climate;
