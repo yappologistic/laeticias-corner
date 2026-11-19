@@ -80,6 +80,7 @@ bool App::benchLook(const std::function<bool(const char*, const BenchFrames&, bo
     // The tiers alternate in short rounds on the same view, so a busy machine's drift falls on
     // all of them alike; each tier's frames from every round are judged together.
     constexpr int kRounds = 6;
+    constexpr int kSwitchFrames = 30;
     const int per = std::max(1, frames / kRounds);
     for (const LookSpot& s : spots) {
         clock_.setTime((s.hour - 6.0) / 24.0 + (s.hour < 6.0 ? 1.0 : 0.0));
@@ -96,7 +97,9 @@ bool App::benchLook(const std::function<bool(const char*, const BenchFrames&, bo
             for (int t = 0; t < gpu::kQualityCount; ++t) {
                 const auto q = static_cast<gpu::Quality>(t);
                 if (worldView_->setQuality(q) != q) continue;
-                for (int f = 0; f < 8; ++f) (void)benchFrame(); // the switch's first frames
+                // The switch's frames (from Classic the whole path is made and the water cells,
+                // still on this path and stepped on Classic, are built again) are not the tier's.
+                for (int f = 0; f < kSwitchFrames; ++f) (void)benchFrame();
                 for (int f = 0; f < per; ++f)
                     fr[static_cast<std::size_t>(t)].all.push_back(benchFrame());
                 st[static_cast<std::size_t>(t)] = worldView_->stats();
@@ -112,6 +115,49 @@ bool App::benchLook(const std::function<bool(const char*, const BenchFrames&, bo
                 "bench: %s: world draw calls %d, targets %.1f MiB, world textures %.0f MiB\n", name,
                 st[ti].drawCalls, static_cast<double>(st[ti].targetBytes) / 1048576.0,
                 static_cast<double>(st[ti].textureBytes()) / 1048576.0);
+            (void)judgeCase(name, fr[ti], true);
+        }
+    }
+    // In motion: a fast pan over new land (out along one diagonal, back along the other), the
+    // tiers taking turns along it in short stretches, so each meets fresh cells and the same
+    // drift of the machine's load.
+    struct PanSpot {
+        const char* name;
+        Vec2 grid;
+        int level;
+    };
+    const PanSpot pans[] = {{"pan forum 1x", {80, 1077}, 2}, {"pan country 0.25x", {170, 880}, 0}};
+    clock_.setTime((11.0 - 6.0) / 24.0);
+    for (const PanSpot& p : pans) {
+        camera_.place(gridToHome(p.grid), kZoomLevels[static_cast<std::size_t>(p.level)], screen());
+        camera_.beginStep();
+        worldView_->jumped(
+            {camera_.position().x + homeOffset_.x, camera_.position().y + homeOffset_.y});
+        for (int i = 0; i < tuning::kBenchSettleFrames && !worldView_->settled(); ++i)
+            (void)benchFrame();
+        warm();
+        std::array<BenchFrames, gpu::kQualityCount> fr;
+        constexpr int kStretches = 4 * kRounds;
+        const int stretch = std::max(1, tuning::kBenchPanFrames / kRounds);
+        for (int k = 0; k < kStretches; ++k) {
+            const int t = (k + k / gpu::kQualityCount) % gpu::kQualityCount; // order rotates
+            const auto q = static_cast<gpu::Quality>(t);
+            if (worldView_->setQuality(q) != q) continue;
+            const float dir = k < kStretches / 2 ? 1.0f : -1.0f;
+            for (int f = 0; f < kSwitchFrames + stretch; ++f) {
+                camera_.dragBy({-tuning::kBenchWorldPanPx * dir, -tuning::kBenchWorldPanPx * 0.5f},
+                               screen());
+                const FrameSample b = benchFrame();
+                if (f >= kSwitchFrames) fr[static_cast<std::size_t>(t)].all.push_back(b);
+            }
+        }
+        for (int t = 0; t < gpu::kQualityCount; ++t) {
+            const auto ti = static_cast<std::size_t>(t);
+            if (fr[ti].all.empty()) continue;
+            char name[64];
+            (void)std::snprintf(name, sizeof name, "look %s: %s",
+                                std::string(gpu::qualityId(static_cast<gpu::Quality>(t))).c_str(),
+                                p.name);
             (void)judgeCase(name, fr[ti], true);
         }
     }
