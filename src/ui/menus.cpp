@@ -22,6 +22,17 @@ bool wellFormed(std::string_view bytes, char32_t cp) {
     return bytes.size() == need;
 }
 
+// `pattern` ("… {} …") holding `name`, the name cut short with an ellipsis so the whole fits in
+// `width`: a world's name from a hand-edited file can be any length.
+std::string fitName(const Font& font, Face face, std::string_view pattern, std::string_view name,
+                    float width, std::string& cut) {
+    std::string whole = std::vformat(pattern, std::make_format_args(name));
+    const float over = font.measure(face, whole) - width;
+    if (over <= 0) return whole;
+    const std::string_view shorter = elide(font, face, name, font.measure(face, name) - over, cut);
+    return std::vformat(pattern, std::make_format_args(shorter));
+}
+
 enum Id : int {
     kContinue = 1,
     kWorlds,
@@ -194,6 +205,13 @@ const Menus::Widget* Menus::find(int id) const {
 float Menus::hoverOf(int id) const {
     const auto i = static_cast<std::size_t>(id);
     return i < hover_.size() ? hover_[i] : 0.0f;
+}
+
+std::optional<std::pair<std::string_view, Box>> Menus::widgetLabel(std::string_view name) const {
+    for (const Named& n : kNames)
+        if (n.name == name)
+            if (const Widget* w = find(n.id); w != nullptr) return std::pair{w->label, w->box};
+    return std::nullopt;
 }
 
 std::optional<Vec2> Menus::widgetCentre(std::string_view name) const {
@@ -475,7 +493,7 @@ void Menus::layout(const MenuModel& m, const Font& font, float s) {
     headingBox_ = bodyBox_ = logoBox_ = coachBox_ = barBox_ = {};
     switch (page()) {
     case Page::None: break;
-    case Page::Title: layoutTitle(m, s); break;
+    case Page::Title: layoutTitle(m, font, s); break;
     case Page::Worlds: layoutWorlds(m, font, s); break;
     case Page::NewWorld:
     case Page::Delete:
@@ -487,7 +505,7 @@ void Menus::layout(const MenuModel& m, const Font& font, float s) {
     if (page() == Page::None && m.photo && barT_ > 0) layoutBar(m, font, s);
 }
 
-void Menus::layoutTitle(const MenuModel& m, float s) {
+void Menus::layoutTitle(const MenuModel& m, const Font& font, float s) {
     const float pad = theme::kPanelPad * s * 1.5f;
     const float bh = theme::kMenuButtonH * s;
     const float gap = theme::kGap * s * 1.25f;
@@ -512,7 +530,8 @@ void Menus::layoutTitle(const MenuModel& m, float s) {
         add(id, Kind::Button, {x + pad, by, w - 2 * pad, bh}, label);
         by += bh + gap;
     };
-    headingText_ = std::vformat(strings::kContinue, std::make_format_args(m.continueName));
+    headingText_ = fitName(font, Face::Body, strings::kContinue, m.continueName,
+                           w - 2 * pad - 2 * theme::kGap * s, fitCut_);
     button(kContinue, m.firstLaunch ? strings::kBegin : std::string_view(headingText_));
     if (worlds) button(kWorlds, strings::kWorldsButton);
     button(kSettings, strings::kSettings);
@@ -600,7 +619,8 @@ void Menus::layoutDialog(const MenuModel& m, const Font& font, float s) {
              static_cast<float>(wrapLines(font, Face::Body, body_, w - 2 * pad, 3)) * lh + gap;
         break;
     case Page::Delete:
-        headingText_ = std::vformat(strings::kDeleteTitle, std::make_format_args(m.deleteName));
+        headingText_ =
+            fitName(font, Face::Title, strings::kDeleteTitle, m.deleteName, w - 2 * pad, fitCut_);
         heading_ = headingText_;
         body_ = strings::kDeleteText;
         h += static_cast<float>(wrapLines(font, Face::Body, body_, w - 2 * pad, 4)) * lh + gap;

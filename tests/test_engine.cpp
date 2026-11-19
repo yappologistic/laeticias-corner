@@ -1838,3 +1838,23 @@ TEST_CASE("a fill never puts two triangles sharing a side in a row (H3-010)") {
         CHECK(shared < 2);
     }
 }
+
+TEST_CASE("a long world name is cut short on the Continue button, never past it (H3-013)") {
+    UiFixture ui;
+    for (const float s : {1.0f, 2.0f}) {
+        CAPTURE(s);
+        REQUIRE(ui.font.build(ui.renderer.get(), s));
+        const Profile profile;
+        const std::string name(28, 'W'); // the longest name the field takes, at its widest
+        MenuModel m;
+        m.profile = &profile;
+        m.continueName = name;
+        Menus menus;
+        menus.open(Page::Title);
+        menus.update(UiInput{}, m, ui.font, {960, 600}, s, 1.0f / 60.0f);
+        const auto label = menus.widgetLabel("continue");
+        REQUIRE(label);
+        CHECK(ui.font.measure(Face::Body, label->first) <= label->second.w);
+        CHECK(label->first.find("WWWW") != std::string_view::npos); // still names it
+    }
+}
