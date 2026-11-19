@@ -15,6 +15,7 @@
 #include <nlohmann/json.hpp>
 
 #include <cmath>
+#include <numbers>
 #include <optional>
 
 using namespace lc;
@@ -336,4 +337,30 @@ TEST_CASE("gpu: seasons over the land: built ground takes the land's level; clim
     CHECK(gpu::otherShare(5, 0) < 0.5f);
     CHECK(gpu::otherShare(5, 0) > 0.0f);
     CHECK(gpu::otherShare(gpu::kSeasonBand, 0) == 0.0f);
+}
+
+TEST_CASE("gpu: the sun rises, stands highest at noon in the baked sun's direction, sets") {
+    const auto deg = [](float r) { return r * 180.0f / std::numbers::pi_v<float>; };
+    const gpu::Sun noon = gpu::sunAt(0.25, 1); // 12:00, summer
+    CHECK(deg(noon.elevation) > 60.0f);
+    CHECK(noon.strength == doctest::Approx(1.0f));
+    // At noon it shines from the art's baked direction (its shadows are the baked ones).
+    const float az = std::atan2(noon.dir[1], noon.dir[0]);
+    CHECK(az == doctest::Approx(std::atan2(gpu::kBakedSun[1], gpu::kBakedSun[0])).epsilon(0.01));
+    const gpu::Sun morning = gpu::sunAt(0.0625, 1); // 07:30
+    const gpu::Sun evening = gpu::sunAt(0.4375, 1); // 16:30
+    CHECK(morning.elevation < noon.elevation);
+    CHECK(morning.elevation == doctest::Approx(evening.elevation).epsilon(0.01));
+    // Morning and evening light come from opposite sides of the noon direction.
+    CHECK(morning.dir[0] * evening.dir[1] - morning.dir[1] * evening.dir[0] != doctest::Approx(0));
+    CHECK(gpu::sunAt(0.75, 1).strength == 0.0f);           // midnight
+    CHECK(gpu::sunAt(0.25, 3).elevation < noon.elevation); // winter's noon is lower
+    // Shadows: near the baked ones at noon, longer when the sun is low, never past the limit.
+    const gpu::ShadowWarp wn = gpu::shadowWarp(noon);
+    CHECK(wn.m[0] == doctest::Approx(1.0f).epsilon(0.15));
+    const gpu::ShadowWarp we = gpu::shadowWarp(gpu::sunAt(0.47, 1));
+    const float stretch = std::hypot(we.m[0] * wn.along[0] + we.m[1] * wn.along[1],
+                                     we.m[2] * wn.along[0] + we.m[3] * wn.along[1]);
+    CHECK(stretch > 1.5f);
+    CHECK(stretch <= gpu::tuning::kShadowLongest + 1e-3f);
 }

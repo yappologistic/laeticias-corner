@@ -21,6 +21,9 @@ RampSeasons parseRamps(const nlohmann::json& ramps) {
         if (cls == "foliage_deciduous")
             r.green[i] = static_cast<std::int8_t>(GreenClass::Deciduous);
         r.water[i] = cls == "water";
+        if (const auto l = x.find("L"); l != x.end() && l->is_array())
+            for (std::size_t k = 0; k < l->size() && k < 8; ++k)
+                if ((*l)[k].is_number()) r.lightness[i][k] = (*l)[k].get<float>();
         if (cls == "snow" && x.value("steps", 0) > snowSteps) {
             snowSteps = x.value("steps", 0);
             r.snow = static_cast<std::uint8_t>(id);

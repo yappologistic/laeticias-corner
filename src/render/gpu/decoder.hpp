@@ -22,8 +22,8 @@ public:
     static constexpr int kClimates = 32;
     // Null unless `renderer` is SDL's `gpu` driver and the shader, samplers and state are made;
     // `ramps` is `assets/atlas/ramps.png` (a row per ramp id, a column per step).
-    [[nodiscard]] static std::unique_ptr<Decoder> make(SDL_Renderer* renderer,
-                                                       const SDL_Surface* ramps, int snowRamp);
+    [[nodiscard]] static std::unique_ptr<Decoder>
+    make(SDL_Renderer* renderer, const SDL_Surface* ramps, const RampSeasons& seasons);
     ~Decoder();
     Decoder(const Decoder&) = delete;
     Decoder& operator=(const Decoder&) = delete;
@@ -39,6 +39,9 @@ public:
     // Draws from now on decode (on) or are plain (off). Off before anything else sets a render
     // state or another batch draws (the home's scene, the look's passes).
     void use(Batch& b, bool on);
+    // The sun the decode relights by (strength 0: the art as baked), and how much the feet of
+    // walls darken. Call before anything is drawn this frame (it flushes nothing).
+    void setSun(const float dir[3], float strength, float contact);
 
 private:
     explicit Decoder(SDL_Renderer* renderer) : renderer_(renderer) {}
@@ -50,6 +53,7 @@ private:
     TexturePtr remap_;
     bool on_ = false;
     SDL_BlendMode replace_ = SDL_BLENDMODE_INVALID;
+    float uniforms_[12] = {}; // snow, sun, shape (packed.frag's block)
 };
 
 } // namespace lc::gpu
