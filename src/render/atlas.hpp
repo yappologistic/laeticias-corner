@@ -32,9 +32,17 @@ struct SpriteRect {
 struct AtlasManifest {
     std::string image;
     std::map<std::string, SpriteRect, std::less<>> sprites;
+    std::vector<std::string> refused; // "<key>: why" for entries left out (drawn as placeholders)
 };
 
-// Pure parse of atlas.json (no SDL), shared with the coverage test.
+// The largest atlas side and anchor offset a manifest may give, in pixels: every value is held
+// within them, so no sum of a position and a size can wrap.
+inline constexpr int kAtlasMaxSide = 16384;
+inline constexpr int kAtlasMaxOffset = 32767;
+
+// Pure parse of atlas.json (no SDL), shared with the coverage test. A broken document or another
+// version is refused whole; a sprite entry that is not whole numbers within those limits is left
+// out and named in `refused`.
 [[nodiscard]] std::expected<AtlasManifest, std::string> parseAtlasManifest(std::string_view json);
 
 using SpriteId = std::uint16_t;

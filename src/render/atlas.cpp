@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 namespace lc {
 namespace {
@@ -35,12 +36,33 @@ std::expected<AtlasManifest, std::string> parseAtlasManifest(std::string_view te
         if (root.value("version", 0) != 1) return std::unexpected("atlas: unsupported version");
         AtlasManifest m;
         m.image = root.value("image", std::string("atlas.png"));
-        for (const auto& [key, s] : root.at("sprites").items()) {
-            SpriteRect r{s.at("x").get<int>(), s.at("y").get<int>(),  s.at("w").get<int>(),
-                         s.at("h").get<int>(), s.at("ox").get<int>(), s.at("oy").get<int>()};
-            if (r.w <= 0 || r.h <= 0 || r.x < 0 || r.y < 0)
-                return std::unexpected("atlas: sprite '" + key + "' has an invalid rectangle");
-            m.sprites.emplace(key, r);
+        const auto& sprites = root.at("sprites");
+        if (!sprites.is_object()) return std::unexpected("atlas: 'sprites' is not an object");
+        for (const auto& [key, s] : sprites.items()) {
+            // Whole numbers only (a float cast to int past its range is undefined), each within
+            // its limit, so `x + w` and `y + h` can never wrap (a hand-edited manifest).
+            const auto value = [&](const char* name, long long lo,
+                                   long long hi) -> std::optional<int> {
+                if (!s.is_object() || !s.contains(name) || !s[name].is_number_integer())
+                    return std::nullopt;
+                const auto& v = s[name];
+                if (v.is_number_unsigned() && v.get<unsigned long long>() > 1ULL << 62)
+                    return std::nullopt;
+                const long long n = v.get<long long>();
+                if (n < lo || n > hi) return std::nullopt;
+                return static_cast<int>(n);
+            };
+            const auto x = value("x", 0, kAtlasMaxSide - 1);
+            const auto y = value("y", 0, kAtlasMaxSide - 1);
+            const auto w = value("w", 1, kAtlasMaxSide);
+            const auto h = value("h", 1, kAtlasMaxSide);
+            const auto ox = value("ox", -kAtlasMaxOffset, kAtlasMaxOffset);
+            const auto oy = value("oy", -kAtlasMaxOffset, kAtlasMaxOffset);
+            if (!x || !y || !w || !h || !ox || !oy) {
+                m.refused.push_back(key + ": not whole numbers within the atlas's limits");
+                continue;
+            }
+            m.sprites.emplace(key, SpriteRect{*x, *y, *w, *h, *ox, *oy});
         }
         return m;
     } catch (const nlohmann::json::exception& e) {
@@ -105,8 +127,12 @@ Atlas::Atlas(SDL_Renderer* renderer, const std::filesystem::path& assetsDir, Iso
             !SDL_BlitSurface(art.get(), nullptr, pixels_.get(), nullptr)) {
             SDL_Log("atlas: blit failed: %s", SDL_GetError());
         }
+        for (const std::string& why : manifest.refused)
+            SDL_Log("atlas: sprite %s; drawn as a placeholder", why.c_str());
         for (const auto& [key, r] : manifest.sprites) {
-            if (r.x + r.w > artW || r.y + r.h > artH) {
+            // In 64 bits: the parse bounds each value, and this stays right whatever it allows.
+            if (static_cast<long long>(r.x) + r.w > artW ||
+                static_cast<long long>(r.y) + r.h > artH) {
                 SDL_Log("atlas: sprite '%s' lies outside the image; ignored", key.c_str());
                 continue;
             }
