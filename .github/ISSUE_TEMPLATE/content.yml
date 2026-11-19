@@ -1,0 +1,82 @@
+name: Content (art, audio, world)
+description: New or changed art, audio or world data, made through the repository's own generators.
+labels: ["content", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        All art, audio and world data come from the deterministic generators under `tools/`.
+        Images, sounds or music from outside generative models or other sources are not accepted
+        (docs/contributing/ai-policy.md says why). Please wait for `accepted` before you start.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Art (tools/artgen)
+        - Audio (tools/audiogen)
+        - World data (tools/worldgen, regions)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What and where
+      description: The piece, sound or place, where it appears in the game (home, a city, a region) and why it belongs there.
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: How it is now
+      description: For a change, a screenshot of the current look (or the audio file and the moment it plays). For something new, "new".
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: How it will be made
+      description: Which generator files change, the catalog or region entries it needs, and the checks that will prove it (validation, coverage, a second run identical).
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Historical sources
+      description: For historical places and objects, the published sources the shapes, colours or sounds follow (author, title, year). Write "none needed" otherwise.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## AI assistance
+        Required on every issue, also when no AI tool was used (then write "none").
+        Policy: docs/contributing/ai-policy.md
+  - type: input
+    id: ai-tool
+    attributes:
+      label: Tool or harness
+      description: The agent, editor integration or chat product used to write or research this issue, or "none".
+    validations:
+      required: true
+  - type: input
+    id: ai-model
+    attributes:
+      label: Model and version
+      description: The exact model identifier and version as the tool reports it, or "none".
+    validations:
+      required: true
+  - type: input
+    id: ai-parts
+    attributes:
+      label: What it produced
+      description: Which parts the tool produced (the text, the analysis, the script, the images), or "none".
+    validations:
+      required: true
+  - type: checkboxes
+    id: ai-statement
+    attributes:
+      label: Responsibility
+      options:
+        - label: I have read all of this issue, checked what it claims myself, and I answer for it.
+          required: true
