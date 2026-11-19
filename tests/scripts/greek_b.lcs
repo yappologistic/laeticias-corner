@@ -1,0 +1,10 @@
+# A world named in Greek reopens (two of two, after greek_a): the title continues into it, with
+# its name and its lamp.
+wait 20
+expect page title
+click ui:menu:continue
+wait 10
+expect page none
+expect world Ἀθῆναι
+expect count lamp 1
+quit

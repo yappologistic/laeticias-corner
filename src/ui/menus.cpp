@@ -653,6 +653,7 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
         Vsync,
         Look,
         Clouds,
+        Note,
         Chatter,
         Tour
     };
@@ -676,7 +677,9 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
     put(Row::Grid);
     put(Row::Vsync);
     put(Row::Look);
+    put(Row::Note, 0, strings::kLookNote);
     put(Row::Clouds);
+    put(Row::Note, 0, strings::kCloudsNote);
     if (!m.residentName.empty()) {
         put(Row::Section, 0, m.residentName);
         put(Row::Chatter);
@@ -690,6 +693,7 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
     const float gap = theme::kGap * s * 2;
     const float colW = theme::kSettingsColW * s;
     const float sectionH = lh + theme::kGap * s;
+    const float noteH = lh; // a row's explanation, one line under it
     const float bh = theme::kMenuButtonH * s * 0.85f;
     const float chrome = 2 * pad + font.lineHeight(Face::Title) + gap + gap + bh;
     const float availH = std::max(lh, screen_.y - 2 * margin - chrome);
@@ -703,7 +707,8 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
         if (items[i].row == Row::Section && sections < starts.size()) starts[sections++] = i;
     const auto heightOf = [&](std::size_t from, std::size_t to, float r) {
         float h = 0;
-        for (std::size_t i = from; i < to; ++i) h += items[i].row == Row::Section ? sectionH : r;
+        for (std::size_t i = from; i < to; ++i)
+            h += items[i].row == Row::Section ? sectionH : items[i].row == Row::Note ? noteH : r;
         return h;
     };
     const auto sectionEnd = [&](std::size_t k) { return k + 1 < sections ? starts[k + 1] : count; };
@@ -770,7 +775,8 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
     if (settingsScrollable_) {
         std::size_t fit = 0;
         for (float used = sectionH; fit < count; ++fit) { // a line kept for "more below"
-            used += items[count - 1 - fit].row == Row::Section ? sectionH : r;
+            const Row row = items[count - 1 - fit].row;
+            used += row == Row::Section ? sectionH : row == Row::Note ? noteH : r;
             if (used > bodyH) break;
         }
         settingsScrollMax_ = static_cast<int>(count - fit);
@@ -796,7 +802,7 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
                 y = colTop;
             }
         }
-        const float ih = it.row == Row::Section ? sectionH : r;
+        const float ih = it.row == Row::Section ? sectionH : it.row == Row::Note ? noteH : r;
         if (settingsScrollable_ && y + ih > colBottom - sectionH && i + 1 < count) {
             Widget& more = add(0, Kind::Link, {x, y, cw, sectionH}, strings::kMoreSettings);
             more.enabled = false;
@@ -856,11 +862,20 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
         case Row::Vsync: toggle(kVsync, strings::kVsync, pr.vsync, {}); break;
         case Row::Look: {
             const std::string_view lookName = strings::kLookNames[std::clamp(m.look, 0, 3)];
-            lookText_ = m.lookAfterRestart
+            lookText_ = m.lookUnavailable ? std::vformat(strings::kLookUnavailable,
+                                                         std::make_format_args(lookName))
+                        : m.lookAfterRestart
                             ? std::vformat(strings::kLookRestart, std::make_format_args(lookName))
                             : std::string(lookName);
             Widget& lk = add(kLook, Kind::Choice, {x, y, cw, r}, strings::kLook);
             lk.value = lookText_;
+            break;
+        }
+        case Row::Note: {
+            Widget& n =
+                add(0, Kind::Link, {x + theme::kGap * s, y, cw - theme::kGap * s, noteH}, it.title);
+            n.enabled = false;
+            n.note = true;
             break;
         }
         case Row::Clouds: {
@@ -1070,6 +1085,11 @@ void Menus::drawWidget(Painter& p, const Widget& w, float a) const {
         break;
     }
     case Kind::Link: {
+        if (w.note) {
+            p.text(Face::Body, w.label, w.box.x, w.box.y + f.ascent(Face::Body),
+                   withAlpha(theme::kInkMuted, a));
+            break;
+        }
         if (!w.enabled) {
             // A section heading (gold) or a row's label.
             p.text(Face::Body, w.label, w.box.x, w.on ? base : w.box.y + f.ascent(Face::Body),

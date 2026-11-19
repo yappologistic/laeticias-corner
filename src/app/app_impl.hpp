@@ -580,6 +580,7 @@ private:
     int lastDay_ = 0;
     std::vector<int> dayStems_; // loops of each piece's stems
     int titleDay_ = -1;         // the front door's full mixes
+    bool lookFellBack_ = false; // a shader tier was asked for and no gpu renderer could be made
     int titleNight_ = -1;
     std::vector<int> nightStems_;
     std::vector<std::uint8_t> stemOn_; // per catalog stem (day, then night): unlocked

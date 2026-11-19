@@ -57,6 +57,7 @@ struct MenuModel {
     int frames = 1;                // postcard frames unlocked (the arrows show when there are more)
     int look = 3;                  // the Look: 0 Classic .. 3 High (graphics plan §3.2)
     bool lookAfterRestart = false; // this renderer cannot show it: it applies on the next start
+    bool lookUnavailable = false;  // no shader renderer on this computer: Classic is drawn
     int clouds = 0;                // the clouds: 0 on, 1 shadows only, 2 off
 };
 
@@ -184,6 +185,7 @@ private:
         float rowX = 0;   // sliders: where their row (and label) begins
         bool on = false;
         bool enabled = true;
+        bool note = false; // a settings row's explanation: small, muted, under its row
     };
     Widget& add(int id, Kind kind, Box box, std::string_view label = {});
     void emit(MenuAction::Kind k, int arg = 0, int value = 0, std::string text = {});

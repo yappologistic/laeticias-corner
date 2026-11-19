@@ -260,6 +260,7 @@ const MenuModel& App::menuModel() {
     m.look = static_cast<int>(look);
     m.lookAfterRestart = look != gpu::Quality::Classic && worldView_ &&
                          worldView_->quality() == gpu::Quality::Classic;
+    m.lookUnavailable = m.lookAfterRestart && lookFellBack_;
     m.clouds = static_cast<int>(gpu::parseClouds(profile_.clouds).value_or(gpu::Clouds::On));
     return m;
 }

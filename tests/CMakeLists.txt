@@ -103,6 +103,9 @@ set(LC_SCRIPTS
   "settings_a|settings_a|960x600||--front-door"
   "settings_b|settings_b|960x600||--front-door"
   "names|names|960x600||--front-door"
+  "greek_a|greek_a|960x600||--front-door"
+  "greek_b|greek_b|960x600||--front-door"
+  "photo_away|photo_away|960x600|"
   "map_960|map_sizes|960x600|"
   "map_1580|map_sizes|1580x845|"
   "map_1440|map_sizes|2560x1440|heavy"
@@ -146,6 +149,8 @@ foreach(entry IN LISTS LC_SCRIPTS)
     set(save "${LC_SCRATCH}/save_world_reload")
   elseif(name MATCHES "^settings_")
     set(save "${LC_SCRATCH}/save_settings")
+  elseif(name MATCHES "^greek_")
+    set(save "${LC_SCRATCH}/save_greek")
   endif()
   set(file "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${script}.lcs")
   if(script MATCHES "^(launch|front_sizes)_")
@@ -182,6 +187,8 @@ set_tests_properties(script_world_save_b PROPERTIES FIXTURES_REQUIRED "clean_sav
 # Settings changed in one run are there in the next, a muted profile among them.
 set_tests_properties(script_settings_a PROPERTIES FIXTURES_SETUP settings)
 set_tests_properties(script_settings_b PROPERTIES FIXTURES_REQUIRED "clean_saves;settings")
+set_tests_properties(script_greek_a PROPERTIES FIXTURES_SETUP greek)
+set_tests_properties(script_greek_b PROPERTIES FIXTURES_REQUIRED "clean_saves;greek")
 # A world saved by the previous version (3) opens in the world.
 add_test(NAME prepare_world_old_save COMMAND ${CMAKE_COMMAND} -E copy
   ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v3.json
