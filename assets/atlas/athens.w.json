@@ -1,0 +1,155 @@
+{
+ "version": 1,
+ "image": "athens.w.png",
+ "channels": {
+  "r": "water (255)",
+  "g": "depth px",
+  "b": "bed (1 basin)"
+ },
+ "sprites": {
+  "item/athens.g_fountain/base/r0/f0": {
+   "x": 1,
+   "y": 144,
+   "w": 135,
+   "h": 108,
+   "ox": 71,
+   "oy": 55
+  },
+  "item/athens.g_fountain/base/r0/f1": {
+   "x": 1,
+   "y": 144,
+   "w": 135,
+   "h": 108,
+   "ox": 71,
+   "oy": 55
+  },
+  "item/athens.g_fountain/base/r0/f2": {
+   "x": 1,
+   "y": 144,
+   "w": 135,
+   "h": 108,
+   "ox": 71,
+   "oy": 55
+  },
+  "item/athens.g_fountain/base/r1/f0": {
+   "x": 137,
+   "y": 144,
+   "w": 135,
+   "h": 108,
+   "ox": 64,
+   "oy": 55
+  },
+  "item/athens.g_fountain/base/r1/f1": {
+   "x": 137,
+   "y": 144,
+   "w": 135,
+   "h": 108,
+   "ox": 64,
+   "oy": 55
+  },
+  "item/athens.g_fountain/base/r1/f2": {
+   "x": 137,
+   "y": 144,
+   "w": 135,
+   "h": 108,
+   "ox": 64,
+   "oy": 55
+  },
+  "item/athens.g_fountain/base/r2/f0": {
+   "x": 191,
+   "y": 1,
+   "w": 135,
+   "h": 116,
+   "ox": 64,
+   "oy": 51
+  },
+  "item/athens.g_fountain/base/r2/f1": {
+   "x": 191,
+   "y": 1,
+   "w": 135,
+   "h": 116,
+   "ox": 64,
+   "oy": 51
+  },
+  "item/athens.g_fountain/base/r2/f2": {
+   "x": 191,
+   "y": 1,
+   "w": 135,
+   "h": 116,
+   "ox": 64,
+   "oy": 51
+  },
+  "item/athens.g_fountain/base/r3/f0": {
+   "x": 327,
+   "y": 1,
+   "w": 135,
+   "h": 115,
+   "ox": 71,
+   "oy": 51
+  },
+  "item/athens.g_fountain/base/r3/f1": {
+   "x": 327,
+   "y": 1,
+   "w": 135,
+   "h": 115,
+   "ox": 71,
+   "oy": 51
+  },
+  "item/athens.g_fountain/base/r3/f2": {
+   "x": 327,
+   "y": 1,
+   "w": 135,
+   "h": 115,
+   "ox": 71,
+   "oy": 51
+  },
+  "item/athens.g_stall/base/r1/f0": {
+   "x": 1,
+   "y": 253,
+   "w": 96,
+   "h": 85,
+   "ox": 32,
+   "oy": 40
+  },
+  "item/athens.g_stall/base/r1/f1": {
+   "x": 98,
+   "y": 253,
+   "w": 96,
+   "h": 84,
+   "ox": 32,
+   "oy": 39
+  },
+  "item/athens.g_stall/open/r1/f0": {
+   "x": 1,
+   "y": 253,
+   "w": 96,
+   "h": 85,
+   "ox": 32,
+   "oy": 40
+  },
+  "item/athens.g_stall/open/r1/f1": {
+   "x": 98,
+   "y": 253,
+   "w": 96,
+   "h": 84,
+   "ox": 32,
+   "oy": 39
+  },
+  "item/athens.kallirrhoe/base/r0/f0": {
+   "x": 273,
+   "y": 144,
+   "w": 168,
+   "h": 100,
+   "ox": 72,
+   "oy": 25
+  },
+  "item/athens.sacred_gate/base/r0/p2/f0": {
+   "x": 1,
+   "y": 1,
+   "w": 189,
+   "h": 142,
+   "ox": 62,
+   "oy": -1
+  }
+ }
+}
