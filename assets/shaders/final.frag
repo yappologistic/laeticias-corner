@@ -267,7 +267,10 @@ void main() {
     if (wet) {
         // The sky in the water, deeper water showing more of it; the shore line and foam; glints
         // on the sun's side, few and short.
-        c = mix(c, skyw.rgb,
+        // The sky keeps the water's bands and crests (at night it is most of the colour, and a
+        // flat sky made the open sea one flat field: QA7 V7-014), the shallows lighter.
+        vec3 skyHere = skyw.rgb * (0.9 + 0.5 * (1.0 - band) + 0.25 * step(0.64, rip));
+        c = mix(c, skyHere,
                 skyw.a * (0.3 + 0.45 * band) * (1.0 - shadowLevel * 0.5) * (1.0 - far) * (1.0 - reflected));
         // The shore line stays readable at night (a pale edge against dark water).
         float lum = max(luma(c) * 1.6, 0.25 + 0.1 * night.a);

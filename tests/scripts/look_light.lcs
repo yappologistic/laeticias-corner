@@ -1,0 +1,31 @@
+# Light, weather and water on the look path (QA7 V7-020, V7-014, V7-007): under rain at 1x no
+# pale cloud deck lies over the street (the Agora was lifted to a luma near 150 by it); the open
+# sea at night keeps its bands and crests (one flat field had a spread near 3.3 with the moon's
+# dashes); west of the dell the sea runs on where a backdrop strip stood cut square (its slate
+# blue read near 50, 74, 88). The last shot is a run of backdrop strips ending in the haze.
+set chatter quiet
+set season autumn
+set day 7
+set time 0.2
+set weather rain
+set world 264 664 1
+wait 60
+expect luma 100,150,600,300 100 140
+shot shots/look_light_agora_rain.png
+set weather clear
+set season summer
+set day 4
+set time 0.70
+set world 428 192 1
+wait 60
+expect contrast 100,150,600,500 3.6
+shot shots/look_light_gulf_night.png
+set time 0.2
+set world 13 1184 1
+wait 60
+expect color 20,60,180,180 58 118 130 25
+shot shots/look_light_west_dell.png
+set world 6 1110 0.5
+wait 60
+shot shots/look_light_backdrop_half.png
+quit

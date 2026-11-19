@@ -182,7 +182,7 @@ list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look"
      "${LC_SCRATCH}/save_look_night" "${LC_SCRATCH}/save_bench_startup_look"
      "${LC_SCRATCH}/save_look_order" "${LC_SCRATCH}/save_look_seasons"
-     "${LC_SCRATCH}/save_draw_order_look")
+     "${LC_SCRATCH}/save_draw_order_look" "${LC_SCRATCH}/save_look_light")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -438,8 +438,9 @@ add_test(NAME script_seams_look
 set_tests_properties(script_seams_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" SKIP_RETURN_CODE 77
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 # The shader path's painter's order (QA7 V7-015: swaying trees in their turn), the draw-order
-# golden places on it, and its seasons at climate borders (QA7 V7-004, V7-005, V7-006, V7-008).
-foreach(look look_order look_seasons)
+# golden places on it, its seasons at climate borders (QA7 V7-004, V7-005, V7-006, V7-008), and
+# its light, rain and night water (QA7 V7-020, V7-014, V7-007).
+foreach(look look_order look_seasons look_light)
   add_test(NAME script_${look}
     COMMAND laeticias-corner --headless --quality high --size 1280x800 --seed 1
             --save-dir "${LC_SCRATCH}/save_${look}" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${look}.lcs"

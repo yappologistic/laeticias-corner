@@ -162,6 +162,8 @@ inline constexpr float kFaceShadeSW = 0.92f;
 inline constexpr float kWaterDepthTint = 0.08f; // per sea depth band
 // Beyond the grid the sea runs on to the horizon, fading into haze over this many tiles.
 inline constexpr float kHorizonTiles = 40.0f;
+// Where a run of backdrop strips ends, the end strip fades out over this share of its length.
+inline constexpr float kBackdropFade = 0.6f;
 inline constexpr float kHorizonHazeMax = 0.85f;
 inline constexpr std::array<float, 3> kHorizonHaze{0.70f, 0.79f, 0.84f};
 inline constexpr float kFlatJitter = 0.04f;       // per-tile brightness variation of flat terrain

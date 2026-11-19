@@ -1408,19 +1408,62 @@ void WorldView::drawBackdrops(const FRect& view, const Xform& x, bool night) {
     const auto n = static_cast<std::size_t>(night ? 1 : 0);
     for (int edge = 0; edge < 2; ++edge) {
         const int len = edge == 0 ? map_.width() : map_.height();
-        for (int k = 0; k * kSegment < len; ++k) {
-            const TilePos first = edge == 0 ? TilePos{k * kSegment, 0} : TilePos{0, k * kSegment};
+        const auto firstOf = [&](int k) {
+            return edge == 0 ? TilePos{k * kSegment, 0} : TilePos{0, k * kSegment};
+        };
+        // A segment's strips, or none: where the edge is water the land behind is out of sight
+        // (a strip there stood in the sea).
+        const auto stripsOf = [&](int k) -> const std::vector<SpriteRef>* {
+            if (k < 0 || k * kSegment >= len) return nullptr;
+            const TilePos first = firstOf(k);
             const int region = map_.regionAt(first);
-            if (region < 0) continue;
+            if (region < 0) return nullptr;
             const auto& strips = backdrops_[static_cast<std::size_t>(region)][n];
-            if (strips.empty()) continue;
-            const SpriteRef& s = strips[tileHash(first.x, first.y, 11) % strips.size()];
+            if (strips.empty()) return nullptr;
+            for (int i = 0; i < kSegment && i + k * kSegment < len; ++i) {
+                const TilePos p = edge == 0 ? TilePos{first.x + i, 0} : TilePos{0, first.y + i};
+                if (sprites_->terrain(map_.terrainAt(p)).water) return nullptr;
+            }
+            return &strips;
+        };
+        for (int k = 0; k * kSegment < len; ++k) {
+            const std::vector<SpriteRef>* strips = stripsOf(k);
+            if (strips == nullptr) continue;
+            const TilePos first = firstOf(k);
+            const SpriteRef& s = (*strips)[tileHash(first.x, first.y, 11) % strips->size()];
             const Vec2 w = iso_.toWorld(first);
             const Vec2 a{w.x, w.y - static_cast<float>(map_.level(first) * lvl_)};
             const FRect box =
                 edge == 0 ? FRect{a.x - s.ox, a.y - s.oy, a.x - s.ox + s.w, a.y - s.oy + s.h}
                           : FRect{a.x - (s.w - s.ox), a.y - s.oy, a.x + s.ox, a.y - s.oy + s.h};
-            if (box.overlaps(view)) (void)put(s, a, x, kWhite, SDL_BLENDMODE_BLEND, edge == 1);
+            if (!box.overlaps(view)) continue;
+            // The strips' ends are cut square: where a run of them ends, its end fades into the
+            // haze (QA7 V7-007), in slices across the strip (its left end is segment k's).
+            const bool fadeIn = stripsOf(k - 1) == nullptr;
+            const bool fadeOut = stripsOf(k + 1) == nullptr;
+            if (!fadeIn && !fadeOut) {
+                (void)put(s, a, x, kWhite, SDL_BLENDMODE_BLEND, edge == 1);
+                continue;
+            }
+            constexpr int kSlices = 16;
+            for (int i = 0; i < kSlices; ++i) {
+                const float f0 = static_cast<float>(i) / kSlices;
+                const float f1 = static_cast<float>(i + 1) / kSlices;
+                const float mid = (f0 + f1) * 0.5f;
+                const auto ramp = [](float t) {
+                    t = std::clamp(t / tuning::kBackdropFade, 0.0f, 1.0f);
+                    return t * t * (3.0f - 2.0f * t);
+                };
+                const float alpha =
+                    (fadeIn ? ramp(mid) : 1.0f) * (fadeOut ? ramp(1.0f - mid) : 1.0f);
+                if (alpha <= 0.0f) continue;
+                SpriteRef slice = s;
+                slice.w = s.w * (f1 - f0);
+                slice.ox = s.ox - s.w * f0;
+                slice.uv.u0 = s.uv.u0 + (s.uv.u1 - s.uv.u0) * f0;
+                slice.uv.u1 = s.uv.u0 + (s.uv.u1 - s.uv.u0) * f1;
+                (void)put(slice, a, x, {1, 1, 1, alpha}, SDL_BLENDMODE_BLEND, edge == 1);
+            }
         }
     }
 }
