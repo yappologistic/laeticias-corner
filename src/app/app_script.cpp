@@ -591,6 +591,49 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                                "transparent but found {:.4f} (a seam or a hole)",
                                a[2], a[1], f));
     }
+    if (what == "contrast" || what == "luma_mark" || what == "luma_like") {
+        // Lightness statistics of a window region: its spread (contrast), or its mean kept under
+        // a name and compared later (another zoom, a later frame).
+        const std::string& rs = what == "contrast" ? a[1] : a[2];
+        const auto r = parseScriptRect(rs);
+        if (!r) return "bad rectangle " + rs;
+        const SDL_Rect rect{r->x, r->y, r->w, r->h};
+        const SurfacePtr px{SDL_RenderReadPixels(renderer_.get(), &rect)};
+        if (!px) return std::string("cannot read pixels: ") + SDL_GetError();
+        double sum = 0;
+        double sq = 0;
+        for (int y = 0; y < px->h; ++y)
+            for (int x = 0; x < px->w; ++x) {
+                Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
+                if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca))
+                    return std::string("cannot read pixels: ") + SDL_GetError();
+                const double l = 0.2126 * cr + 0.7152 * cg + 0.0722 * cb;
+                sum += l;
+                sq += l * l;
+            }
+        const double n = static_cast<double>(px->w) * px->h;
+        const double mean = sum / n;
+        if (what == "contrast") {
+            const double sd = std::sqrt(std::max(0.0, sq / n - mean * mean));
+            return sd >= std::stod(a[2]) ? std::nullopt
+                                         : std::optional(std::format(
+                                               "expected lightness spread of at least {} in {} but "
+                                               "found {:.2f} (one flat colour)",
+                                               a[2], a[1], sd));
+        }
+        if (what == "luma_mark") {
+            lumaMarks_[a[1]] = mean;
+            return std::nullopt;
+        }
+        const auto it = lumaMarks_.find(a[1]);
+        if (it == lumaMarks_.end()) return "no lightness kept as " + a[1];
+        const double d = std::abs(mean - it->second) / std::max(it->second, 1.0);
+        return d <= std::stod(a[3])
+                   ? std::nullopt
+                   : std::optional(std::format("expected the lightness of {} within {} of {}'s "
+                                               "{:.1f} but found {:.1f}",
+                                               a[2], a[3], a[1], it->second, mean));
+    }
     if (what == "luma" || what == "color") {
         const auto r = parseScriptRect(a[1]);
         if (!r) return "bad rectangle " + a[1];

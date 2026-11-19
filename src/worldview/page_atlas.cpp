@@ -4,6 +4,8 @@
 #include "worldview/cells.hpp"
 #include "worldview/tuning.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -39,9 +41,33 @@ SDL_TextureAccess uploadAccess(SDL_Renderer* renderer) {
                : SDL_TEXTUREACCESS_STATIC;
 }
 
+void PageAtlas::readSide(Page& p) const {
+    // `<page>.p.json`: the packed twin's name and the sprites kept as colour on it.
+    std::filesystem::path side = p.file.parent_path() / p.file.stem();
+    side += ".p.json";
+    std::ifstream in(side);
+    if (!in) return;
+    try {
+        const nlohmann::json j = nlohmann::json::parse(in);
+        p.packedFile = p.file.parent_path() / j.value("packed", std::string());
+        for (const nlohmann::json& k : j.value("colour_only", nlohmann::json::array()))
+            if (k.is_string()) p.colourOnly.push_back(k.get<std::string>());
+        std::ranges::sort(p.colourOnly);
+    } catch (const nlohmann::json::exception& e) {
+        SDL_Log("atlas: %s: %s; its colour page is used", side.string().c_str(), e.what());
+        p.packedFile.clear();
+    }
+    if (!p.packedFile.empty() && pngSize(p.packedFile) != pngSize(p.file)) {
+        SDL_Log("atlas: %s is not its colour page's size; the colour page is used",
+                p.packedFile.string().c_str());
+        p.packedFile.clear();
+    }
+}
+
 PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::AtlasPages& pages,
-                     std::filesystem::path atlasDir, bool async, std::size_t budget)
-    : renderer_(renderer), home_(home), index_(pages), async_(async), budget_(budget) {
+                     std::filesystem::path atlasDir, bool async, std::size_t budget, bool packed)
+    : renderer_(renderer), home_(home), index_(pages), async_(async), packed_(packed),
+      slotFormat_(packed ? SDL_PIXELFORMAT_ABGR8888 : kTextureFormat), budget_(budget) {
 
     Page h;
     h.set = "home";
@@ -54,6 +80,38 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         h.w = static_cast<int>(tw);
         h.h = static_cast<int>(th);
     }
+    // The home page, packed: its art rows from the packed twin, the engine's strip below them
+    // copied from the colour page (drawn into a target of its own).
+    if (packed_ && h.texture != nullptr) {
+        readSide(h);
+        SurfacePtr words;
+        if (!h.packedFile.empty()) {
+            const SurfacePtr loaded{SDL_LoadPNG(h.packedFile.string().c_str())};
+            if (loaded) words.reset(SDL_ConvertSurface(loaded.get(), slotFormat_));
+        }
+        TexturePtr t;
+        if (words && words->w == h.w && words->h <= h.h)
+            t.reset(SDL_CreateTexture(renderer_, slotFormat_, SDL_TEXTUREACCESS_TARGET, h.w, h.h));
+        const SDL_FRect all{0, 0, static_cast<float>(h.w), static_cast<float>(h.h)};
+        const SDL_Rect art{0, 0, h.w, words ? words->h : 0};
+        SDL_Texture* was = SDL_GetRenderTarget(renderer_);
+        if (t && SDL_SetTextureBlendMode(h.texture, SDL_BLENDMODE_NONE) &&
+            SDL_SetRenderTarget(renderer_, t.get()) &&
+            SDL_RenderTexture(renderer_, h.texture, &all, &all) &&
+            SDL_SetRenderTarget(renderer_, was) &&
+            SDL_SetTextureBlendMode(h.texture, SDL_BLENDMODE_BLEND) &&
+            SDL_UpdateTexture(t.get(), &art, words->pixels, words->pitch) &&
+            SDL_SetTextureBlendMode(t.get(), SDL_BLENDMODE_BLEND)) {
+            h.homeArtRows = words->h;
+            h.owned = std::move(t);
+            h.texture = h.owned.get();
+        } else {
+            SDL_Log("atlas: the home's packed page could not be made (%s); its colour is used",
+                    SDL_GetError());
+            if (!SDL_SetRenderTarget(renderer_, was)) SDL_Log("atlas: %s", SDL_GetError());
+            h.packedFile.clear();
+        }
+    }
     pages_.push_back(std::move(h));
     Page g;
     g.set = "generated";
@@ -63,6 +121,7 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
         Page p;
         p.set = ap.set;
         p.file = atlasDir / ap.image;
+        if (packed_) readSide(p);
         if (const auto size = pngSize(p.file)) {
             p.w = size->first;
             p.h = size->second;
@@ -89,7 +148,7 @@ PageAtlas::PageAtlas(SDL_Renderer* renderer, const Atlas& home, const world::Atl
 }
 
 int PageAtlas::makeSlot() {
-    TexturePtr t{SDL_CreateTexture(renderer_, kTextureFormat, uploadAccess(renderer_),
+    TexturePtr t{SDL_CreateTexture(renderer_, slotFormat_, uploadAccess(renderer_),
                                    world::kMaxPageSide, world::kMaxPageSide)};
     if (!t || !SDL_SetTextureBlendMode(t.get(), SDL_BLENDMODE_BLEND)) {
         SDL_Log("atlas: cannot create a page texture: %s", SDL_GetError());
@@ -153,12 +212,19 @@ PageAtlas::~PageAtlas() {
 std::optional<SpriteRef> PageAtlas::find(std::string_view key) const {
     if (const auto id = home_.find(key)) {
         const Sprite& s = home_.sprite(*id);
-        return SpriteRef{kHomePage, s.uv, s.w, s.h, s.ox, s.oy};
+        const Page& hp = pages_[kHomePage];
+        // Packed where the home page has its words: in its art rows and not colour-only.
+        const bool words =
+            !hp.packedFile.empty() && hp.h > 0 &&
+            s.uv.v1 * static_cast<float>(hp.h) <= static_cast<float>(hp.homeArtRows) + 0.5f &&
+            !std::ranges::binary_search(hp.colourOnly, key);
+        return SpriteRef{kHomePage, s.uv, s.w, s.h, s.ox, s.oy, words};
     }
     const world::PageSprite* ps = index_.find(key);
     if (ps == nullptr) return std::nullopt;
     const auto page = static_cast<std::uint16_t>(ps->page + 2);
-    if (pages_[page].w <= 0 || pages_[page].h <= 0) return std::nullopt;
+    const Page& pg = pages_[page];
+    if (pg.w <= 0 || pg.h <= 0) return std::nullopt;
     // Streamed pages live in square slots: texture coordinates are over the slot.
     const auto fw = static_cast<float>(world::kMaxPageSide);
     const auto fh = static_cast<float>(world::kMaxPageSide);
@@ -167,7 +233,8 @@ std::optional<SpriteRef> PageAtlas::find(std::string_view key) const {
                      static_cast<float>(ps->w),
                      static_cast<float>(ps->h),
                      static_cast<float>(ps->ox),
-                     static_cast<float>(ps->oy)};
+                     static_cast<float>(ps->oy),
+                     !pg.packedFile.empty() && !std::ranges::binary_search(pg.colourOnly, key)};
 }
 
 void PageAtlas::setGenerated(TexturePtr texture, int w, int h) {
@@ -207,14 +274,17 @@ void PageAtlas::want(std::string_view set) {
 }
 
 SurfacePtr PageAtlas::decode(const Page& p, float* peak, std::vector<std::uint64_t>& opaque) const {
-    SurfacePtr loaded{SDL_LoadPNG(p.file.string().c_str())};
+    const std::filesystem::path& file = p.packedFile.empty() ? p.file : p.packedFile;
+    SurfacePtr loaded{SDL_LoadPNG(file.string().c_str())};
     SurfacePtr px;
-    if (loaded) px.reset(SDL_ConvertSurface(loaded.get(), kTextureFormat));
+    if (loaded) px.reset(SDL_ConvertSurface(loaded.get(), slotFormat_));
     if (!px) {
-        SDL_Log("atlas: cannot decode %s: %s", p.file.string().c_str(), SDL_GetError());
+        SDL_Log("atlas: cannot decode %s: %s", file.string().c_str(), SDL_GetError());
         return px;
     }
-    // ARGB8888: alpha is the top byte of each 32-bit pixel.
+    // ARGB8888 and ABGR8888: alpha is the top byte of each 32-bit pixel (in a packed page's
+    // words it is data: a pixel there is drawn when its word is not zero).
+    const bool packedWords = !p.packedFile.empty();
     float sum = 0;
     int count = 0;
     for (const SDL_Rect& r : p.shadows) {
@@ -249,7 +319,8 @@ SurfacePtr PageAtlas::decode(const Page& p, float* peak, std::vector<std::uint64
                                                    static_cast<std::ptrdiff_t>(y) * px->pitch);
         std::uint64_t* bits = opaque.data() + static_cast<std::size_t>(y) * words;
         for (int x = 0; x < px->w; ++x)
-            if ((row[x] >> 24) != 0) bits[x >> 6] |= std::uint64_t{1} << (x & 63);
+            if (packedWords ? row[x] != 0 : (row[x] >> 24) != 0)
+                bits[x >> 6] |= std::uint64_t{1} << (x & 63);
     }
     return px;
 }
