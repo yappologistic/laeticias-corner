@@ -100,6 +100,17 @@ set(LC_SCRIPTS
   "walk_home|walk_home|640x400|"
   "home_gone|home_gone|640x400|"
   "postcards|postcards|960x600|"
+  "settings_a|settings_a|960x600||--front-door"
+  "settings_b|settings_b|960x600||--front-door"
+  "names|names|960x600||--front-door"
+  "map_960|map_sizes|960x600|"
+  "map_1580|map_sizes|1580x845|"
+  "map_1440|map_sizes|2560x1440|heavy"
+  "ui_1580|ui_sizes|1580x845|"
+  "ui_1440|ui_sizes|2560x1440|heavy"
+  "regions_title|regions_title|960x600|"
+  "map_ultrawide|map_sizes|3440x1440|heavy"
+  "map_4k|map_sizes|3840x2160|heavy"
   "launch_1280|launch_1280x800|1280x800|heavy"
   "launch_1080|launch_1920x1080|1920x1080|heavy"
   "launch_1440|launch_2560x1440|2560x1440|heavy"
@@ -133,6 +144,8 @@ foreach(entry IN LISTS LC_SCRIPTS)
     set(save "${LC_SCRATCH}/save_reload")
   elseif(name MATCHES "^world_save_")
     set(save "${LC_SCRATCH}/save_world_reload")
+  elseif(name MATCHES "^settings_")
+    set(save "${LC_SCRATCH}/save_settings")
   endif()
   set(file "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${script}.lcs")
   if(script MATCHES "^(launch|front_sizes)_")
@@ -153,7 +166,8 @@ endforeach()
 # Every run starts from a clean save directory; the reload pair runs in order.
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_missing_art" "${LC_SCRATCH}/save_no_resident"
      "${LC_SCRATCH}/save_offscreen_actor"
-     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_bench" "${LC_SCRATCH}/save_bench_1440"
+     "${LC_SCRATCH}/save_audio" "${LC_SCRATCH}/save_audio_year" "${LC_SCRATCH}/save_bench"
+     "${LC_SCRATCH}/save_bench_1440"
      "${LC_SCRATCH}/save_soak"
      "${LC_SCRATCH}/save_perf" "${LC_SCRATCH}/save_benchmark"
      "${LC_SCRATCH}/determinism_a" "${LC_SCRATCH}/determinism_b")
@@ -165,6 +179,9 @@ set_tests_properties(script_save_reload_a PROPERTIES FIXTURES_SETUP reload)
 set_tests_properties(script_save_reload_b PROPERTIES FIXTURES_REQUIRED "clean_saves;reload")
 set_tests_properties(script_world_save_a PROPERTIES FIXTURES_SETUP world_reload)
 set_tests_properties(script_world_save_b PROPERTIES FIXTURES_REQUIRED "clean_saves;world_reload")
+# Settings changed in one run are there in the next, a muted profile among them.
+set_tests_properties(script_settings_a PROPERTIES FIXTURES_SETUP settings)
+set_tests_properties(script_settings_b PROPERTIES FIXTURES_REQUIRED "clean_saves;settings")
 # A world saved by the previous version (3) opens in the world.
 add_test(NAME prepare_world_old_save COMMAND ${CMAKE_COMMAND} -E copy
   ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v3.json
@@ -260,6 +277,20 @@ set_tests_properties(audio_capture PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
 add_test(NAME audio_capture_check COMMAND lc_tests --test-case=capture:*)
 set_tests_properties(audio_capture_check PROPERTIES ENVIRONMENT "LC_AUDIO_CAPTURE=${capture}"
   FIXTURES_REQUIRED audio)
+
+# The year in sound away from home: the beds of each season and month, the night, the open sea and
+# snow, captured and checked for level, balance, clipping and clicks at the crossfades.
+set(year_capture "${LC_SCRATCH}/capture_year.wav")
+add_test(NAME audio_year
+  COMMAND laeticias-corner --headless --size 960x600 --seed 1 --audio-out "${year_capture}"
+          --save-dir "${LC_SCRATCH}/save_audio_year"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/world_year.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(audio_year PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_SETUP audio_year FIXTURES_REQUIRED clean_saves)
+add_test(NAME audio_year_check COMMAND lc_tests "--test-case=capture: the year*")
+set_tests_properties(audio_year_check PROPERTIES ENVIRONMENT "LC_AUDIO_YEAR=${year_capture}"
+  FIXTURES_REQUIRED audio_year)
 
 # The same script and seed give byte-identical screenshots and saves with actors, the resident,
 # weather and events running: two runs in their own directories, compared file by file.

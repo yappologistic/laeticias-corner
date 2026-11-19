@@ -148,6 +148,8 @@ inline constexpr std::string_view kTipWild = "Wild land · opens at {} pages ({}
 inline constexpr std::string_view kTipGate = "The road out";
 inline constexpr std::string_view kTipRipe = "Ripe · click to pick";
 inline constexpr std::string_view kHintRipe = "Ripe beds can be picked. Click one.";
+inline constexpr std::string_view kToastMuted =
+    "The sound is off. Ctrl+M or the speaker button turns it back on.";
 inline constexpr std::string_view kToastSaveFailed = "Couldn't save your corner; will keep trying";
 inline constexpr std::string_view kToastNotOpened =
     "Your world couldn't be opened, so it is left as it is. This is a fresh corner.";
@@ -223,6 +225,7 @@ inline constexpr std::string_view kChatter = "Chatter";
 inline constexpr std::string_view kChatty = "Chatty";
 inline constexpr std::string_view kQuiet = "Quiet";
 inline constexpr std::string_view kHelp = "Help";
+inline constexpr std::string_view kMoreSettings = "More below: scroll or use the arrow keys";
 inline constexpr std::string_view kTourSetting = "First-minute tour";
 inline constexpr std::string_view kReplay = "Replay";
 inline constexpr std::string_view kDone = "Done";

@@ -1,0 +1,69 @@
+# The year in sound away from home (out/reports/audio-seasons.md §5), captured with --audio-out:
+# every region plays a bed in every month by day and night; Rome's winter bed replaces its plain
+# one after a crossfade; Pārsa's season beds, and its rain bed only under rain; the night; the
+# open sea by its state; a mountain under snow; spring frogs by a lake at night; the Saturnalia's
+# music on its day only. audio_year_check reads the capture for level,
+# balance, clipping and clicks at the crossfades.
+expect sound beds
+set clock day
+set season spring
+set world forum 1
+wait 30
+expect place rome
+expect sound amb/rome/day.ogg 10 100
+expect sound amb/rome/day_winter.ogg 0 0
+expect sound amb/world/dawn_autumn.ogg 0 0
+set season winter
+fast 25
+expect sound amb/rome/day_winter.ogg 10 100
+expect sound amb/rome/day.ogg 0 0
+set world terrace 1
+wait 30
+fast 25
+expect place parsa
+expect sound amb/parsa/plain_day_winter.ogg 10 100
+expect sound amb/parsa/rain.ogg 0 0
+set season summer
+fast 25
+expect sound amb/parsa/plain_day_summer.ogg 10 100
+expect sound amb/parsa/plain_day_winter.ogg 0 0
+set clock night
+fast 25
+expect sound amb/parsa/plain_night.ogg 10 100
+expect sound amb/parsa/plain_day_summer.ogg 0 0
+set world district:tyrrhenian/sea 1
+wait 30
+fast 10
+expect region tyrrhenian
+expect sound sea.open 10 200
+set clock day
+set season winter
+set world district:zagros/land 1
+wait 30
+fast 25
+expect region zagros
+expect sound amb/world/day_snow.ogg 10 100
+set clock night
+set season spring
+set world district:alban_mount/lake 1
+wait 30
+fast 10
+expect region alban_mount
+expect sound amb/world/frogs_spring.ogg 1 100
+expect sound river 1 200
+# A festival's music on its day only: the Saturnalia (winter's first day, from 18:00) in the
+# Subura, and nothing of it the next evening.
+set season auto
+set clock auto
+set day 9
+set time 0.5
+set world district:rome/subura 1
+waitfor 1200 city event saturnalia yes
+wait 30
+expect sound amb/rome/saturnalia.ogg 1 100
+set day 10
+set time 0.5
+waitfor 600 city event saturnalia no
+wait 30
+expect sound amb/rome/saturnalia.ogg 0 0
+quit

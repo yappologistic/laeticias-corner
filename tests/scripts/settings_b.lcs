@@ -1,0 +1,73 @@
+# Settings survive a restart (two of two, after settings_a): every one is back, and a muted
+# profile says so once and is unmuted by Ctrl+M wherever the player is (the world, the map, the
+# pause menu, photo mode); plain M opens the map and leaves the sound alone; a pan key held into
+# the pause menu and let go there does not carry the camera off after Resume.
+wait 20
+expect page title
+expect volume music 50
+expect volume effects 50
+expect volume ambience 50
+expect reduce_motion yes
+expect grid yes
+expect vsync no
+expect ui_scale 1
+expect muted yes
+click ui:menu:continue
+wait 10
+expect page none
+expect world Settle
+expect toast sound is off
+shot shots/settings_muted_toast.png
+key m
+wait 20
+expect map open
+expect muted yes
+key ctrl+m
+wait 2
+expect muted no
+key escape
+wait 15
+expect map closed
+key ctrl+m
+wait 2
+expect muted yes
+key p
+wait 6
+expect photo on
+key ctrl+m
+wait 2
+expect muted no
+key escape
+wait 6
+expect photo off
+key escape
+wait 8
+expect page pause
+key ctrl+m
+wait 2
+expect muted yes
+click ui:menu:pause_settings
+wait 8
+click ui:menu:mute
+wait 2
+expect muted no
+click ui:menu:done
+wait 6
+click ui:menu:resume
+wait 6
+expect page none
+expect muted no
+# A pan key let go under the pause menu lets go: the camera does not wander off after Resume.
+keydown d
+wait 5
+expect panning yes
+key escape
+wait 8
+expect page pause
+keyup d
+wait 2
+click ui:menu:resume
+wait 6
+expect page none
+expect panning no
+quit

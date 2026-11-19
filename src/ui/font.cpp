@@ -145,10 +145,10 @@ bool Font::coversAll(std::string_view utf8) const {
 }
 
 bool Font::build(SDL_Renderer* renderer, float scale) {
-    if (texture_ && scale == scale_) return true;
+    // A scale that could not be built is not tried again every frame: the last atlas stays.
+    if (texture_ && (scale == scale_ || scale == failedScale_)) return true;
     for (const auto& f : faces_)
         if (f.ttf.empty()) return false;
-    scale_ = scale;
 
     const float sizes[] = {theme::kTextBody * scale, theme::kTextTitle * scale,
                            theme::kIcon * scale};
@@ -156,12 +156,25 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
     const auto file = [&](std::size_t f, std::size_t k) -> const std::vector<unsigned char>& {
         return k == 0 ? faces_[f].ttf : faces_[f].fallbacks[k - 1];
     };
+    // The texture is dim x (dim + 4): it must fit what the renderer accepts.
+    const auto maxSide = SDL_GetNumberProperty(SDL_GetRendererProperties(renderer),
+                                               SDL_PROP_RENDERER_MAX_TEXTURE_SIZE_NUMBER, 0);
+    const int limit = maxSide > 4 ? static_cast<int>(std::min<Sint64>(maxSide - 4, 4096)) : 4096;
 
-    for (int dim = 512; dim <= 4096; dim *= 2) {
+    // Everything is built aside and taken only once the texture exists (L-014: a failed rebuild
+    // used to leave the faces measured for a texture that was never made).
+    struct Built {
+        float ascent = 0;
+        float descent = 0;
+        float lineHeight = 0;
+        std::vector<float> kern;
+        std::vector<Glyph> glyphs;
+    };
+    for (int dim = 512; dim <= limit; dim *= 2) {
         // Four extra rows at the bottom hold the white texel block.
         std::vector<unsigned char> bitmap(static_cast<std::size_t>(dim * (dim + 4)), 0);
         stbtt_pack_context ctx;
-        if (!stbtt_PackBegin(&ctx, bitmap.data(), dim, dim, 0, 1, nullptr)) return false;
+        if (!stbtt_PackBegin(&ctx, bitmap.data(), dim, dim, 0, 1, nullptr)) break;
         bool packed = true;
         std::array<std::vector<std::vector<stbtt_packedchar>>, 3> chars;
         for (std::size_t f = 0; f < faces_.size() && packed; ++f) {
@@ -183,8 +196,10 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
 
         const auto fw = static_cast<float>(dim);
         const auto fh = static_cast<float>(dim + 4);
+        std::array<Built, static_cast<std::size_t>(Face::Count)> built;
         for (std::size_t f = 0; f < faces_.size(); ++f) {
-            FaceData& face = faces_[f];
+            const FaceData& face = faces_[f];
+            Built& out = built[f];
             stbtt_fontinfo info;
             if (!stbtt_InitFont(&info, face.ttf.data(),
                                 stbtt_GetFontOffsetForIndex(face.ttf.data(), 0)))
@@ -194,25 +209,23 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
             int gap = 0;
             stbtt_GetFontVMetrics(&info, &asc, &desc, &gap);
             const float px = stbtt_ScaleForPixelHeight(&info, sizes[f]);
-            face.ascent = static_cast<float>(asc) * px;
-            face.descent = static_cast<float>(desc) * px;
-            face.lineHeight = static_cast<float>(asc - desc + gap) * px;
-            face.kern.clear();
+            out.ascent = static_cast<float>(asc) * px;
+            out.descent = static_cast<float>(desc) * px;
+            out.lineHeight = static_cast<float>(asc - desc + gap) * px;
             if (f != idx(Face::Icon)) {
-                face.kern.resize(kKernSpan * kKernSpan);
+                out.kern.resize(kKernSpan * kKernSpan);
                 for (std::size_t a = 0; a < kKernSpan; ++a)
                     for (std::size_t b = 0; b < kKernSpan; ++b)
-                        face.kern[a * kKernSpan + b] =
+                        out.kern[a * kKernSpan + b] =
                             static_cast<float>(stbtt_GetCodepointKernAdvance(
                                 &info, static_cast<int>(kKernFirst + a),
                                 static_cast<int>(kKernFirst + b))) *
                             px;
             }
-            face.glyphs.clear();
             for (std::size_t k = 0; k < chars[f].size(); ++k)
                 for (std::size_t g = 0; g < chars[f][k].size(); ++g) {
                     const auto& c = chars[f][k][g];
-                    face.glyphs.push_back(
+                    out.glyphs.push_back(
                         {static_cast<char32_t>(face.plan[k][g]),
                          c.xoff,
                          c.yoff,
@@ -222,15 +235,13 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
                           static_cast<float>(c.x1) / fw, static_cast<float>(c.y1) / fh},
                          c.xadvance});
                 }
-            std::ranges::sort(face.glyphs, {}, &Glyph::cp);
+            std::ranges::sort(out.glyphs, {}, &Glyph::cp);
         }
         for (int y = dim; y < dim + 4; ++y)
             for (int x = 0; x < 4; ++x) bitmap[static_cast<std::size_t>(y * dim + x)] = 255;
-        white_ = {1.0f / fw, (static_cast<float>(dim) + 1.0f) / fh, 3.0f / fw,
-                  (static_cast<float>(dim) + 3.0f) / fh};
 
         SurfacePtr surface{SDL_CreateSurface(dim, dim + 4, SDL_PIXELFORMAT_RGBA32)};
-        if (!surface) return false;
+        if (!surface) break;
         for (int y = 0; y < dim + 4; ++y) {
             auto* row = static_cast<unsigned char*>(surface->pixels) +
                         static_cast<std::ptrdiff_t>(y) * surface->pitch;
@@ -240,14 +251,28 @@ bool Font::build(SDL_Renderer* renderer, float scale) {
                 p[3] = bitmap[static_cast<std::size_t>(y * dim + x)];
             }
         }
-        texture_ = uploadTexture(renderer, surface.get());
-        if (!texture_) return false;
-        if (!SDL_SetTextureScaleMode(texture_.get(), SDL_SCALEMODE_LINEAR))
+        TexturePtr texture = uploadTexture(renderer, surface.get());
+        if (!texture) break;
+        if (!SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_LINEAR))
             SDL_Log("font: %s", SDL_GetError());
+        texture_ = std::move(texture);
+        for (std::size_t f = 0; f < faces_.size(); ++f) {
+            faces_[f].ascent = built[f].ascent;
+            faces_[f].descent = built[f].descent;
+            faces_[f].lineHeight = built[f].lineHeight;
+            faces_[f].kern = std::move(built[f].kern);
+            faces_[f].glyphs = std::move(built[f].glyphs);
+        }
+        white_ = {1.0f / fw, (static_cast<float>(dim) + 1.0f) / fh, 3.0f / fw,
+                  (static_cast<float>(dim) + 3.0f) / fh};
+        scale_ = scale;
+        failedScale_ = 0;
         return true;
     }
-    SDL_Log("font: glyphs do not fit at scale %.2f", static_cast<double>(scale));
-    return false;
+    SDL_Log("font: the glyphs could not be built at scale %.2f; %s", static_cast<double>(scale),
+            texture_ ? "keeping the last ones" : "no text");
+    failedScale_ = scale;
+    return texture_ != nullptr;
 }
 
 bool Font::has(char32_t cp) const {

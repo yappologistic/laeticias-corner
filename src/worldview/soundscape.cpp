@@ -7,12 +7,18 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <numbers>
 #include <set>
 
 namespace lc::worldview {
 namespace {
 
 constexpr double kRate = 44100.0; // CLAUDE.md "Audio": every file is 44.1 kHz
+
+// A month mask holds `month` (an empty mask, or no month known, holds every month).
+bool inMonth(std::uint16_t mask, int month) {
+    return mask == 0 || month < 0 || ((mask >> month) & 1u) != 0;
+}
 
 float approachLinear(float v, float target, float step) {
     return v < target ? std::min(target, v + step) : std::max(target, v - step);
@@ -41,16 +47,49 @@ Soundscape::Soundscape(const world::LoadedWorld& world, const std::filesystem::p
     : world_(world) {
     const world::WorldFile& wf = world.file;
     music_.resize(wf.regions.size());
-    bedFile_.resize(world.regions.size());
+    beds_.resize(world.regions.size());
     zoneFile_.resize(world.regions.size());
+    zoneMonths_.resize(world.regions.size());
+    const Catalog& cat = world.content->home();
+    const auto monthMask = [&](const std::vector<std::string>& months) {
+        std::uint16_t mask = 0;
+        for (const std::string& m : months)
+            for (std::size_t k = 0; k < cat.months.size() && k < 16; ++k)
+                if (cat.months[k] == m) mask = static_cast<std::uint16_t>(mask | (1u << k));
+        return mask;
+    };
+    std::size_t mostBeds = 0;
     for (std::size_t r = 0; r < world.regions.size(); ++r) {
         const world::Theme& t = world.regions[r].theme;
-        for (const world::AmbienceBed& b : t.beds) bedFile_[r].push_back(fileIndex(b.file));
-        for (const world::AmbienceZone& z : t.zones) zoneFile_[r].push_back(fileIndex(z.file));
+        std::vector<Bed>& beds = beds_[r];
+        const auto add = [&](const world::AmbienceBed& b, int season) {
+            Bed bed{fileIndex(b.file),  b.from, b.to, season, monthMask(b.months),
+                    b.weather == "rain"};
+            bed.first = beds.size();
+            for (std::size_t i = 0; i < beds.size(); ++i)
+                if (beds[i].file == bed.file) {
+                    bed.first = i;
+                    break;
+                }
+            beds.push_back(bed);
+        };
+        for (const world::AmbienceBed& b : t.beds) add(b, -1);
+        for (const auto& [id, list] : t.seasonBeds) {
+            const auto s = std::ranges::find(cat.seasons, id, &SeasonDef::id);
+            if (s == cat.seasons.end()) continue;
+            for (const world::AmbienceBed& b : list)
+                add(b, static_cast<int>(s - cat.seasons.begin()));
+        }
+        mostBeds = std::max(mostBeds, beds.size());
+        for (const world::AmbienceZone& z : t.zones) {
+            zoneFile_[r].push_back(fileIndex(z.file));
+            zoneMonths_[r].push_back(monthMask(z.months));
+        }
         for (const world::ItemLoop& l : t.loops) {
             const int item = world.content->findItem(l.item);
             if (item >= 0)
-                sources_.push_back({fileIndex(l.file), static_cast<int>(r), item, l.when});
+                sources_.push_back({fileIndex(l.file), static_cast<int>(r), item, l.when, l.from,
+                                    l.to, monthMask(l.months)});
         }
         if (!t.musicDay.empty()) music_[r].day = fileIndex(t.musicDay);
         if (!t.musicNight.empty()) music_[r].night = fileIndex(t.musicNight);
@@ -84,30 +123,74 @@ Soundscape::Soundscape(const world::LoadedWorld& world, const std::filesystem::p
     }
     out_.assign(files_.size(), {});
     panWeight_.assign(files_.size(), 0.0f);
+    bedGain_.assign(mostBeds, 0.0f);
+}
+
+bool Soundscape::plays(const std::vector<Bed>& beds, const Bed& b, int season, int month,
+                       float hour, bool rain) const {
+    const auto inMonth = [&](const Bed& x) {
+        return x.months == 0 || month < 0 || ((x.months >> month) & 1u) != 0;
+    };
+    if (!inHours(hour, b.from, b.to) || (b.rain && !rain)) return false;
+    if (b.season >= 0) return b.season == season && inMonth(b);
+    if (b.rain) return true;
+    // A plain bed gives way to the season's own bed for the hours (and months) it covers.
+    for (const Bed& x : beds)
+        if (x.season == season && !x.rain && inMonth(x) && inHours(hour, x.from, x.to))
+            return false;
+    return true;
+}
+
+std::vector<std::string> Soundscape::bedsOf(int region, int season, int month, float hour,
+                                            bool rain) const {
+    std::vector<std::string> out;
+    if (region < 0 || static_cast<std::size_t>(region) >= beds_.size()) return out;
+    const std::vector<Bed>& beds = beds_[static_cast<std::size_t>(region)];
+    for (const Bed& b : beds)
+        if (plays(beds, b, season, month, hour, rain))
+            out.push_back(files_[static_cast<std::size_t>(b.file)]);
+    return out;
 }
 
 void Soundscape::placeLoops(Vec2 c) {
-    // The nearest placed source of each loop around the view.
+    // Each loop sounds as loud as its nearest placed source around the view and from where its
+    // sources in reach are, weighted by how loud each is (L-113: two fountains either side of
+    // the view are heard from the middle, not from whichever is nearer). Distances are measured
+    // from a footprint's centre.
     const world::WorldMap& m = *world_.map;
     const int reach = static_cast<int>(tuning::kLoopReach);
     const TilePos ct{static_cast<int>(std::floor(c.x)), static_cast<int>(std::floor(c.y))};
     for (std::size_t s = 0; s < sources_.size(); ++s) {
-        float best = tuning::kLoopReach;
-        Vec2 at;
+        float loudest = 0;
+        float sum = 0;
+        float panSum = 0;
         m.forEachItemIn({ct.x - reach, ct.y - reach, ct.x + reach, ct.y + reach},
                         [&](std::uint32_t, const world::Placed& it) {
                             if (static_cast<int>(it.info) != sources_[s].item) return;
-                            const Vec2 p{static_cast<float>(it.x) + 0.5f,
-                                         static_cast<float>(it.y) + 0.5f};
+                            const Vec2 p{static_cast<float>(it.x) + static_cast<float>(it.w) * 0.5f,
+                                         static_cast<float>(it.y) +
+                                             static_cast<float>(it.h) * 0.5f};
                             const float d = std::hypot(p.x - c.x, p.y - c.y);
-                            if (d < best) {
-                                best = d;
-                                at = p;
-                            }
+                            if (d >= tuning::kLoopReach) return;
+                            const float k = 1.0f - d / tuning::kLoopReach;
+                            const float g = k * k;
+                            loudest = std::max(loudest, g);
+                            sum += g;
+                            panSum += g * ((p.x - c.x) - (p.y - c.y)) * 0.5f;
                         });
-        const float g = best < tuning::kLoopReach ? 1.0f - best / tuning::kLoopReach : 0.0f;
-        placed_[s] = {g * g, ((at.x - c.x) - (at.y - c.y)) * 0.5f};
+        placed_[s] = {loudest, sum > 0 ? panSum / sum : 0.0f};
     }
+}
+
+float zonePan(TileRect rect, Vec2 centre, float halfView) {
+    // From the zone's nearest point, fading to the middle as the listener goes in: a bed the
+    // listener stands in surrounds them (L-113).
+    const Vec2 near{std::clamp(centre.x, static_cast<float>(rect.x0), static_cast<float>(rect.x1)),
+                    std::clamp(centre.y, static_cast<float>(rect.y0), static_cast<float>(rect.y1))};
+    const float d = std::hypot(near.x - centre.x, near.y - centre.y);
+    if (d <= 0) return 0;
+    const float p = ((near.x - centre.x) - (near.y - centre.y)) * 0.5f / std::max(1.0f, halfView);
+    return std::clamp(p, -1.0f, 1.0f) * std::min(1.0f, d / tuning::kZoneReach);
 }
 
 void Soundscape::update(const Input& in) {
@@ -123,18 +206,37 @@ void Soundscape::update(const Input& in) {
         if (world_.regions[r].theme.seam) seam += weight(r);
     const float duck = 1.0f - tuning::kSeamDuck * std::min(1.0f, seam);
     const float pan = std::max(1.0f, in.halfView);
+    const bool rain = in.rain > tuning::kCityRainOn;
+    const float fade = in.dt / tuning::kBedFadeSeconds;
+    const float muffle = 1.0f - tuning::kSnowBedDuck * std::clamp(in.snowCover, 0.0f, 1.0f);
     for (std::size_t r = 0; r < world_.regions.size(); ++r) {
         const world::Theme& t = world_.regions[r].theme;
         const float w = weight(r);
+        // Every region's beds keep fading whether heard or not, so the view arriving finds them
+        // settled; a season's or an hour's change crossfades with equal power.
+        std::vector<Bed>& beds = beds_[r];
+        for (std::size_t b = 0; b < beds.size(); ++b) {
+            Bed& bed = beds[b];
+            const float target = plays(beds, bed, in.season, in.month, h, rain) ? 1.0f : 0.0f;
+            bed.level = bed.level < 0 ? target : approachLinear(bed.level, target, fade);
+            bedGain_[b] = 0;
+            const float g = std::sin(bed.level * std::numbers::pi_v<float> * 0.5f);
+            // One file heard through two beds (the plain night and a season's) is one sound.
+            bedGain_[bed.first] = std::max(bedGain_[bed.first], g);
+        }
+        // Where no music plays (the land and sea between) the beds carry the place alone, a
+        // little louder (QA5 Q5-S-01: the stretches read as dropouts beside the cities).
+        const bool stretch = music_[r].day < 0 && music_[r].night < 0 &&
+                             world_.file.regions[r].kind != world::RegionKind::Home;
+        const float level = tuning::kBedLevel * (stretch ? tuning::kStretchLift : 1.0f);
         if (w > 0)
-            for (std::size_t b = 0; b < t.beds.size(); ++b)
-                if (inHours(h, t.beds[b].from, t.beds[b].to)) {
-                    const auto f = static_cast<std::size_t>(bedFile_[r][b]);
-                    out_[f].gain += w * tuning::kBedLevel * (t.seam ? 1.0f : duck);
-                }
+            for (std::size_t b = 0; b < beds.size(); ++b)
+                if (bedGain_[b] > 0)
+                    out_[static_cast<std::size_t>(beds[b].file)].gain +=
+                        w * bedGain_[b] * level * (t.seam ? 1.0f : duck) * muffle;
         for (std::size_t zi = 0; zi < t.zones.size(); ++zi) {
             const world::AmbienceZone& z = t.zones[zi];
-            if (!inHours(h, z.from, z.to)) continue;
+            if (!inHours(h, z.from, z.to) || !inMonth(zoneMonths_[r][zi], in.month)) continue;
             // Full inside the zone, falling off over kZoneReach tiles outside it.
             const float dx = std::max({static_cast<float>(z.rect.x0) - in.centre.x, 0.0f,
                                        in.centre.x - static_cast<float>(z.rect.x1)});
@@ -144,10 +246,7 @@ void Soundscape::update(const Input& in) {
             if (d >= tuning::kZoneReach) continue;
             const float g = (1.0f - d / tuning::kZoneReach) * z.gain * tuning::kZoneLevel * duck;
             const auto f = static_cast<std::size_t>(zoneFile_[r][zi]);
-            const float zx = static_cast<float>(z.rect.x0 + z.rect.x1) * 0.5f;
-            const float zy = static_cast<float>(z.rect.y0 + z.rect.y1) * 0.5f;
-            const float p =
-                std::clamp(((zx - in.centre.x) - (zy - in.centre.y)) * 0.5f / pan, -1.0f, 1.0f);
+            const float p = zonePan(z.rect, in.centre, pan);
             out_[f].gain += g;
             out_[f].pan += p * g;
             panWeight[f] += g;
@@ -161,8 +260,11 @@ void Soundscape::update(const Input& in) {
     }
     for (std::size_t s = 0; s < sources_.size(); ++s) {
         const Source& src = sources_[s];
-        const bool on = src.when == "always" || (src.when == "lit" && in.night > 0.3f) ||
-                        (src.when == "afternoon" && inHours(h, 12.0f, 17.0f));
+        // A worked loop sounds in its working hours (world-sound.md §1); any loop in its months.
+        const bool on = inMonth(src.months, in.month) &&
+                        (src.when == "always" || (src.when == "lit" && in.night > 0.3f) ||
+                         (src.when == "afternoon" && inHours(h, 12.0f, 17.0f)) ||
+                         (src.when == "worked" && inHours(h, src.from, src.to)));
         if (!on || placed_[s].first <= 0) continue;
         const auto f = static_cast<std::size_t>(src.file);
         const float g = placed_[s].first * tuning::kItemLoopLevel * duck;
@@ -204,10 +306,9 @@ void Soundscape::update(const Input& in) {
         mu.level = approachLinear(mu.level, on ? 1.0f : 0.0f, step);
         if (mu.level <= 0) continue;
         const float n = std::clamp(in.night, 0.0f, 1.0f);
-        if (mu.day >= 0)
-            out_[static_cast<std::size_t>(mu.day)].gain += mu.level * (1 - n) * tuning::kMusic;
-        if (mu.night >= 0)
-            out_[static_cast<std::size_t>(mu.night)].gain += mu.level * n * tuning::kMusic;
+        const float music = mu.level * tuning::kMusic * in.musicDuck;
+        if (mu.day >= 0) out_[static_cast<std::size_t>(mu.day)].gain += music * (1 - n);
+        if (mu.night >= 0) out_[static_cast<std::size_t>(mu.night)].gain += music * n;
     }
     const int home = world_.file.home.region;
     homeWeight_ = home >= 0 ? weight(static_cast<std::size_t>(home)) : 1.0f;
