@@ -141,7 +141,7 @@ void App::startPlay() {
 }
 
 void App::tellMuted() {
-    // A profile left muted is silent with no clue why (the owner pressed M, which opens the
+    // A profile left muted is silent with no clue why (a player pressed M, which opens the
     // map): once a session, say how the sound comes back.
     if (!muted_ || std::exchange(mutedTold_, true)) return;
     hud_.toast(std::string(strings::kToastMuted));

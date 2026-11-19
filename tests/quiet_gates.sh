@@ -22,7 +22,7 @@
 # Gates (streamed runs, as a player's are; frame times with the GPU waited for):
 #   ctest            the release suite (its own benches and soak included)
 #   bench <renderer> <size>   --bench at a small window, 1080p and 1440p on OpenGL (the
-#                    classic look) and on SDL's gpu driver (the look the owner plays, high)
+#                    classic look) and on SDL's gpu driver (the settings' default look, high)
 #   startup-look     the look path's start-up frames (the bench's start-up case alone)
 #   soak             600 s of busy play: flat memory under its ceiling
 #   world-bench      the viewer's cases and the 40 draw calls a city view may make

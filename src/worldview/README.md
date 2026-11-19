@@ -92,7 +92,7 @@ is a flat diamond of the catalog `colour` (water darker by depth band); faces wi
 by material. `laeticias-world --report` lists all of it with counts; ids in no catalog are listed
 as not drawn.
 
-## Measured (release, development machine's GPU, opengl offscreen, vsync off, GPU synced)
+## Measured (release, a mid-range laptop GPU, opengl offscreen, vsync off, GPU synced)
 
 Whole frame in ms (average / 95th / 99th / worst), most draw calls in a frame, texture MiB:
 
