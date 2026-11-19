@@ -668,7 +668,17 @@ FRect WorldView::elemFoot(const Elem& e) const {
 bool WorldView::drawElem(const Elem& e, const Xform& x, float now) {
     if (e.home) return true; // the game's scene draws it
     if (e.figure) return put(figures_[e.item].sprite, e.anchor, x, kWhite, SDL_BLENDMODE_BLEND);
-    if (e.ground) return drawTile(e.tile, x, now, nullptr);
+    if (e.ground) {
+        // A raised tile drawn live shows its water and falls at the step the cells round it
+        // hold (their loop's middle), never at the frame's own time: the two must meet.
+        const float at =
+            animFps_ > 0 && animPeriod_ > 1
+                ? (static_cast<float>(animStep_ % static_cast<std::uint64_t>(animPeriod_)) + 0.5f) /
+                      animFps_
+                : 0.0f;
+        (void)now;
+        return drawTile(e.tile, x, at, nullptr);
+    }
     seasonAt(e.tile);
     const SpriteRef& s = elemSprite(e, now);
     if (post_ && e.piece < 0)
