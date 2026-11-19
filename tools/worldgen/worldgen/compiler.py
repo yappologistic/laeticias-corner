@@ -64,6 +64,13 @@ def compile_layer(L: Layout) -> tuple[PlanLayer, list[Issue]]:
                 issues.append(Issue("V1", lvl, L.layer,
                                     f"face material {face!r} on terrain {tid!r}, but {why}",
                                     L.source, (int(i) + L.origin[0], int(j) + L.origin[1])))
+    # A tile repainted after its face was chosen (a field or road over a bank, land over a
+    # river's flow) may hold an index its new terrain has no material for, which the engine
+    # draws as a flat fill (QA6 V6-003): it takes its terrain's first material.
+    for t in np.unique(L.T[ground]).tolist():
+        tid = L.terrains[t]
+        if not L.cat.is_water(tid):
+            aux[ground & (L.T == t) & (aux >= max(len(L.cat.faces(tid)), 1))] = 0
     Lb = (np.clip(level, 0, 15) | ((aux & 3) << AUX_SHIFT) | np.where(L.IMP, IMPASSABLE, 0))
     Lb = np.where(ground, Lb, 0).astype(np.uint8)
 

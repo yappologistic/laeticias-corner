@@ -308,10 +308,27 @@ class EngineModel(unittest.TestCase):
 
 class ArtList(unittest.TestCase):
     def test_an_entry_no_fault_matches_is_stale(self):
+        from unittest import mock
+        art = {("W-L1", "parsa.p_workshop", "work"): "a fixture's pending art",
+               ("W-O2", "rome.pons_fabricius", ""): "a fixture's landed art"}
         f = walkable.Finding("W-L1", "base", "m", (0, 0), item="parsa.p_workshop", slot="work")
-        stale = walkable.stale_art([f])
+        with mock.patch.object(walkable, "ART", art):
+            stale = walkable.stale_art([f])
         self.assertNotIn(("W-L1", "parsa.p_workshop", "work"), stale)
         self.assertIn(("W-O2", "rome.pons_fabricius", ""), stale)
+
+
+class Clearance(unittest.TestCase):
+    def test_pass_per_tile_and_sea_going_ships(self):
+        from worldgen.compose import WItem
+        it = WItem("rome.pons_sublicius", 10, 20, 10, 3, 0, "rome")   # plan c 10..19, r 20..22
+        geo = {"pass": [[0, 0, 0]] * 4 + [[255, 40, 255]] + [[0, 0, 0]] * 5, "under": [99]}
+        # grid dy = it.c + pw - 1 - c: the span at dy 4 is plan column 15; dx = r - it.r
+        self.assertEqual(walkable._clearance(it, geo, (15, 21)), 40)
+        self.assertEqual(walkable._clearance(it, geo, (14, 21)), 0)       # a pile row
+        self.assertGreaterEqual(walkable.BOAT_PX["rome.barge"], 1)
+        self.assertLessEqual(walkable.BOAT_PX["rome.barge"], 40)          # mast lowered
+        self.assertIn("rome.merchantman", walkable.SEA_GOING)
 
 
 class Report(unittest.TestCase):

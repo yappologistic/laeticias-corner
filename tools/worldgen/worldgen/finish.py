@@ -91,13 +91,19 @@ DECKS = ("world.bridge_arch", "world.bridge_timber", "world.pontoon", "world.for
 
 
 def landings(L: Layout) -> list[str]:
-    """Where a street meets a deck over water a level below it (a river sunk below its banks:
-    the kit's end pieces ramp down to the water's level), the street steps down to the deck: a
+    """Where a street meets a low deck over water a level below it (a river sunk below its
+    banks; a deck standing half a level or more over the water meets the bank itself), the
+    street steps down to the deck: a
     ramp on four straight street tiles, else a two-tile stone stair, the foot on the deck's end.
     Returns the ends it could not join, for the report."""
     left = []
     for p in list(L.items):
         if p.removed or p.id not in DECKS:
+            continue
+        # A deck whose walk stands half a level or more over the water (the arch's 18 px, the
+        # timber's 12) meets the bank a level up by itself: a flight there would drop from it.
+        zs = [int(z) for z in L.cat.geometry(p.id, p.k).get("walk_z", {}).values()]
+        if zs and max(zs) * 2 >= L.cat.level_px:
             continue
         for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             nxt = L._local(p.c + dc, p.r + dr)

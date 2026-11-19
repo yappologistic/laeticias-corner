@@ -39,6 +39,12 @@ NAMED = [("athens", "agora", 2, "agora_g7"), ("athens", "agora", 1, "agora"),
          ("rome", "forum", 1, "forum"), ("rome", "subura", 1, "subura"),
          ("parsa", "terrace", 1, "parsa_terrace"), ("parsa", "town", 1, "parsa_town"),
          ("ostia", "portus", 1, "portus")]
+# The cities' busiest views by day (QA6 V6-019 measured them at 22:00 on the engine's look path):
+# the Appia's tombs outside the Porta Capena, the Acropolis, the wall over Skambonidai and the
+# king's paradise at Pārsa. After dark they were as dark as the country (a sanctuary's lamp, the
+# gate's watch), so they are held to the village bar, never lit like streets.
+BUSIEST = [("rome", "rome_busiest", (243, 161)), ("athens", "athens_centre", (660, 300)),
+           ("athens", "athens_busiest", (704, 231)), ("parsa", "parsa_busiest", (1172, 326))]
 TARGET = (2.0, 8.0)        # % of a city view warm-lit at dusk and at night (quality bar §4.3)
 VILLAGE = (1.0, 4.0)       # ... of a village view: fewer than VILLAGE_BUILT buildings in it
 VILLAGE_BUILT = 40
@@ -193,6 +199,14 @@ def views(doc: dict, world: World) -> list[tuple[str, str, int, tuple[float, flo
     for reg, dist, zoom, name in NAMED:
         if reg == rid and dist in centres and not any(v[0] == name for v in out):
             out.append((name, dist, zoom, centres[dist], True))
+    # A town is seen first where the map's journey opens: its marker.
+    points = [(n, at) for reg, n, at in BUSIEST if reg == rid]
+    if P.REGIONS[rid][0] == "town":
+        points += [("arrival", at) for reg, at, _i in P.MARKERS if reg == rid]
+    for name, (c, r) in points:
+        d = world.D[r, c]
+        dist = world.districts[d].split("/", 1)[-1] if d != NONE16 else None
+        out.append((name, dist, 1, (c + 0.5, r + 0.5), True))
     return out
 
 
@@ -208,7 +222,8 @@ def measure(doc: dict, world: World, cat, atlas, items=None):
                "hamlet": P.REGIONS[doc["id"]][0] == "town" and cv.built < HAMLET_BUILT,
                "village": P.REGIONS[doc["id"]][0] == "town" or (
                    area != "centre" and cv.built < VILLAGE_BUILT / zoom ** 2 and cv.monuments < 3),
-               "empty": (doc["id"], dist) in NIGHT_EMPTY}
+               "empty": (doc["id"], dist) in NIGHT_EMPTY,
+               "busy": any(n == name for _r, n, _a in BUSIEST), "arrival": name == "arrival"}
         for label, h in HOURS.items():
             ls = light_list(doc, items, h, chance=chance)
             m = metrics(cv.light(ls), cv.inside)
@@ -234,7 +249,8 @@ def verdict(row: dict) -> str:
     if row.get("empty"):
         return "dark by design (worked by day only)"
     bad = []
-    lo, hi = (0.0, VILLAGE[1]) if row.get("hamlet") else VILLAGE if row.get("village") else TARGET
+    lo, hi = VILLAGE if row.get("busy") or row.get("arrival") else \
+        (0.0, VILLAGE[1]) if row.get("hamlet") else VILLAGE if row.get("village") else TARGET
     for label in ("dusk", "night"):
         v = round(row[label]["lit"], 1)
         if v < lo:

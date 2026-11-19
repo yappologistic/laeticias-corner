@@ -50,7 +50,7 @@ class LandmarkBridge(unittest.TestCase):
 
 
 class KitBridge(unittest.TestCase):
-    """World kit decks ramp down to their own tile: banks flush with the water."""
+    """World kit decks stand at their walk height over the water and ramp to the bank."""
 
     def bridge(self, sunk: int, wide: bool = False, east: bool = True):
         L = meadow()
@@ -72,7 +72,10 @@ class KitBridge(unittest.TestCase):
         self.assertEqual(v16(check(self.bridge(sunk=0))), [])
 
     def test_a_sunk_river_leaves_both_ends_unjoined(self):
-        bad = v16(check(self.bridge(sunk=1)))
+        # The timber deck stands 12 px over its water (art §10.1): a level down it still meets
+        # the bank within a level, two levels down it hangs 20 px below it.
+        self.assertEqual([m for m in v16(check(self.bridge(sunk=1))) if "not joined" in m], [])
+        bad = v16(check(self.bridge(sunk=2)))
         self.assertEqual(len([m for m in bad if "not joined" in m]), 2, bad)
 
     def test_two_wide_draws_a_frame(self):
