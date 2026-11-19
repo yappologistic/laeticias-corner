@@ -4,10 +4,11 @@
 // beds replace the plain ones, crossfaded with equal power), seams ducking the others under their
 // drone, zones (a forum, a harbour) by how near the view is, loops placed by items (fountains,
 // braziers) as loud as the nearest one and from where those in reach are, and the music region's
-// piece: the city (or the home) holding more
-// than half the weight, faded out over four seconds when the view leaves and started on a phrase
-// boundary (the audio manifests' phrase starts) when it comes back. Pure logic (no SDL): the game
-// turns the gains and seeks into mixer calls.
+// piece: the region holding more than half the weight whose theme names one (a city, a town, a
+// stretch's travelling theme) or the home, faded out over four seconds when the view leaves and
+// started on a phrase boundary (the audio manifests' phrase starts) when it comes back, kept
+// playing when the next region names the same piece. Pure logic (no SDL): the game turns the
+// gains and seeks into mixer calls.
 
 #include "world/loader.hpp"
 
@@ -56,14 +57,13 @@ public:
     [[nodiscard]] float homeWeight() const { return homeWeight_; }
     // Whether a file is a region's music (it belongs on the music bus).
     [[nodiscard]] bool isMusic(int file) const {
-        return std::ranges::any_of(music_, [&](const Music& m) {
+        return std::ranges::any_of(pieces_, [&](const Music& m) {
             return file >= 0 && (m.day == file || m.night == file);
         });
     }
-    // How much of a region's music (a city's) plays now, 0..1.
-    [[nodiscard]] float musicLevel() const {
-        return musicRegion_ >= 0 ? music_[static_cast<std::size_t>(musicRegion_)].level : 0.0f;
-    }
+    // How much of a city's piece plays now, 0..1 (a town's or the land's piece is soft: the
+    // crowd stays the place's voice there).
+    [[nodiscard]] float cityMusicLevel() const;
     // The region whose music plays (a city or the home), -1 for none.
     [[nodiscard]] int musicRegion() const { return musicRegion_; }
     // The beds a region plays at that season, month, hour and weather (files), as update()
@@ -102,7 +102,10 @@ private:
         std::vector<std::uint64_t> phrases; // samples
         float level = 0;                    // its envelope, 0..1
     };
-    std::vector<Music> music_;        // per region (cities and the home)
+    // Pieces by their files: regions naming the same piece (neighbouring stretches, a family's
+    // towns) share one, so passing from one to the other neither restarts nor doubles it.
+    std::vector<Music> pieces_;
+    std::vector<int> pieceOf_; // per region: its piece, -1 for none
     std::vector<float> manifestGain_; // per file
     struct Source {
         int file = -1;

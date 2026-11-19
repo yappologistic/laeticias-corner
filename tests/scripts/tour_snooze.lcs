@@ -1,0 +1,29 @@
+# "Not now" on the tour's own wish moves the tour on instead of leaving it waiting for a wish
+# that has gone back to wait (H3-012).
+wait 20
+click ui:menu:continue
+wait 8
+type Fern Hollow
+click ui:menu:create
+wait 8
+expect tour 1
+drag 640,320 560,340
+wait 4
+expect tour 2
+click ui:build
+wait 6
+expect tour 3
+click ui:tile:flowers_white
+wait 3
+click @24,34
+wait 4
+expect tour 4
+expect wish first_flowers open
+key escape
+wait 2
+click ui:card:0 right
+wait 4
+click ui:not_now
+wait 4
+expect wish first_flowers waiting
+waitfor 120 tour 5

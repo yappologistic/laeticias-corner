@@ -37,5 +37,7 @@ inline constexpr std::string_view kWindowFile = "window.json";
 inline constexpr float kWindowFill = 0.8f;
 inline constexpr int kWindowMinW = 640;
 inline constexpr int kWindowMinH = 400;
+// The largest position or size a remembered window may claim, in pixels.
+inline constexpr int kWindowCoordMax = 1 << 20;
 
 } // namespace lc

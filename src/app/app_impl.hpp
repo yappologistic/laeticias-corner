@@ -5,6 +5,7 @@
 #include "app/options.hpp"
 #include "app/script.hpp"
 #include "app/window_state.hpp"
+#include "audio/loop_wants.hpp"
 #include "audio/mixer.hpp"
 #include "core/actors.hpp"
 #include "core/autosave.hpp"
@@ -192,6 +193,7 @@ private:
     void render();
     void refreshScale();
     void frameCamera();
+    void keepOnHome(Camera& c) const; // a framed view's centre back on the home's grid
     void zoomBy(int steps, Vec2 px);
     void undoRedo(bool redo);
     void updateAudio();
@@ -202,6 +204,8 @@ private:
     void setTool(Tool t, int selection);
     void togglePhoto();
     void capturePhoto();
+    // Reports a postcard whose file is written (or, with `wait`, waits for it first).
+    void settlePhoto(bool wait);
     void cycleClock();
     void markDirty() { autosave_.changed(); }
     // The progress loop: facts for conditions, re-evaluation when something changed, pacing.
@@ -269,6 +273,7 @@ private:
 
     // Scripting (app_script.cpp)
     bool scriptStep();
+    bool runScriptCommands(); // scriptStep's commands, which may throw on a bad number
     std::optional<Vec2> resolve(const ScriptPoint& p);
     void pushMouseMotion(Vec2 px);
     void pushButton(Vec2 px, bool down, const ScriptCommand& c);
@@ -669,6 +674,7 @@ private:
     std::vector<world::FigurePlace> figures_;
     std::unique_ptr<worldview::Soundscape> soundscape_;
     std::vector<int> soundLoops_; // the soundscape's files as mixer loops
+    LoopWants loopWants_;         // the world's sound systems' loop gains, combined per update
     std::unique_ptr<worldview::WeatherField> viewWeather_;
     std::unique_ptr<worldview::WeatherField> homeWeather_;
     std::vector<WeatherCell> homeCells_;
@@ -749,6 +755,7 @@ private:
     int framePartsOf_ = -2;
     bool framePlain_ = true;
     std::string captionDate_;
+    std::string captionCut_; // the world's name cut short to fit the caption
     std::int64_t captionKey_ = -1;
     float captionTop_ = 0;      // where the postcard's caption begins (the bar keeps above it)
     bool greetPending_ = false; // she greets the player as they walk in from the title
@@ -786,6 +793,7 @@ private:
     enum class Shape : std::uint8_t { None, Line, Rect };
     Shape shape_ = Shape::None;       // a Shift-drag in progress
     TilePos anchor_;                  // where it started
+    TilePos shapeEnd_;                // the last tile the pointer was over while it was drawn
     std::optional<Item> carry_;       // the piece being moved, as it was picked up
     bool pipette_ = false;            // the eyedropper is armed (I): the next click copies
     bool middleClick_ = false;        // a middle click to handle as an eyedropper
@@ -807,6 +815,9 @@ private:
     bool journalOpen_ = false;
     bool photo_ = false;
     bool capturePending_ = false;
+    // A postcard being written on a worker: a large window's PNG takes far longer than a frame.
+    std::future<std::string> photoJob_; // its error, empty when written
+    fs::path photoFile_;
     std::string_view warning_;
     float warnTime_ = 0;
     double lastPaintSound_ = -1;

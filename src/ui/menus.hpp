@@ -41,7 +41,8 @@ struct MenuWorld {
 
 struct MenuModel {
     const Profile* profile = nullptr;
-    bool firstLaunch = false; // no worlds yet: the title offers Begin
+    bool firstLaunch = false; // a fresh corner nobody has begun: the title offers Begin (and
+                              // Worlds when there are any)
     std::string_view continueName;
     std::span<const MenuWorld> worlds;
     Sprite logo;
@@ -149,6 +150,9 @@ public:
     [[nodiscard]] bool wantsMouse() const { return overUi_; }
     // Centre of a named widget for scripts ("menu:continue", "menu:play:0"...).
     [[nodiscard]] std::optional<Vec2> widgetCentre(std::string_view name) const;
+    // A named widget's label and box as laid out now (tests: a label fits its button).
+    [[nodiscard]] std::optional<std::pair<std::string_view, Box>>
+    widgetLabel(std::string_view name) const;
     // Every widget laid out now (tests: nothing overlaps, nothing leaves the window).
     [[nodiscard]] std::vector<Box> widgetBoxes() const {
         std::vector<Box> out;
@@ -190,7 +194,7 @@ private:
     Widget& add(int id, Kind kind, Box box, std::string_view label = {});
     void emit(MenuAction::Kind k, int arg = 0, int value = 0, std::string text = {});
     void layout(const MenuModel& m, const Font& font, float s);
-    void layoutTitle(const MenuModel& m, float s);
+    void layoutTitle(const MenuModel& m, const Font& font, float s);
     void layoutWorlds(const MenuModel& m, const Font& font, float s);
     void layoutDialog(const MenuModel& m, const Font& font, float s);
     void layoutSettings(const MenuModel& m, const Font& font, float s);
@@ -211,6 +215,7 @@ private:
     Box fullGlass_;           // the blurred world behind the pause menu
     std::string_view heading_;
     std::string headingText_;
+    std::string fitCut_;    // a world's name cut short to fit a button or heading
     std::string_view body_; // a dialog's wrapped text
     Box headingBox_;
     Box bodyBox_;

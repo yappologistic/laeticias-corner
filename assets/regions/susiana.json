@@ -381,6 +381,10 @@
     }
    }
   },
+  "music": {
+   "day": "music/world/travel_mesopotamia_day.ogg",
+   "night": "music/world/travel_mesopotamia_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {

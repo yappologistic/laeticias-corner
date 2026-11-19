@@ -42,6 +42,18 @@ class Beast:
 
 SIZE = 2.5      # beasts are written in compact units; this brings a horse to about 44 px
 REACH = 0.13    # a hoof sweeps this share of the body length either side of its hip
+# Animals that walk on their own (herds, strays, pack and caravan beasts) are drawn smaller than
+# the cart teams and mounts, which are built round their loads and riders: at full size a loose
+# ox or horse towered over the people beside it (V7-021). Their hooves reach further in
+# proportion, so a cycle still covers the catalog's `stride` and nothing slides.
+FREE = 0.7
+LIVESTOCK = {"ox", "bull", "cow", "zebu", "buffalo", "horse", "racehorse", "mule", "donkey", "onager", "camel",
+             "dromedary", "sheep", "ram", "goat", "deer", "boar", "gazelle", "oryx"}
+
+
+def free_scale(kind: str) -> float:
+    """FREE for the hoofed beasts that walk loose; dogs, cats, lions and the like keep their size."""
+    return FREE if any(w in LIVESTOCK for w in kind.split(".", 1)[-1].split("_")) else 1.0
 RUN = (1.35, 0.4)  # the trot: reach x 1.35, each hoof down 40 % of the cycle (diagonal pairs)
 BIRD_REACH = 0.8   # walking birds: a foot swings this far either side (body units)
 
@@ -62,14 +74,16 @@ def bird_feet(t: float, walking: bool):
     return ((a * BIRD_REACH, la * 0.5), (b * BIRD_REACH, lb * 0.5))
 
 
-def _scaled(b: Beast) -> Beast:
+def _scaled(b: Beast, scale: float = 1.0) -> Beast:
     from dataclasses import replace
-    return replace(b, length=b.length * SIZE, height=b.height * SIZE, girth=b.girth * SIZE * 1.15,
-                   neck=b.neck * SIZE, head=b.head * SIZE, leg=b.leg * SIZE * 1.5)
+    s = SIZE * scale
+    return replace(b, length=b.length * s, height=b.height * s, girth=b.girth * s * 1.15,
+                   neck=b.neck * s, head=b.head * s, leg=b.leg * s * 1.5)
 
 
-def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
-    b = _scaled(b)
+def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int, scale: float = 1.0) -> Model:
+    """`scale` < 1 draws the beast smaller with its stride kept (FREE)."""
+    b = _scaled(b, scale)
     L, H, g = b.length, b.height, b.girth
     m = Model.empty(-int(L) - 4, int(L) + int(b.neck) + 6, -int(g * 2) - 6, int(g * 2) + 6, 0,
                     int(H + b.neck + b.head * 4) + 4, k=k)
@@ -99,7 +113,7 @@ def quadruped(b: Beast, anim: str, frame: int, frames: int, k: int) -> Model:
         ((0.36, 1, 0.25), (0.36, -1, 0.75), (-0.36, 1, 0.0), (-0.36, -1, 0.5))
     for lx, side, off in legs:
         a, up = foot_cycle(ph - off, RUN[1] if run else BEAST_DUTY) if gait else (0.0, 0.0)
-        sw = a * L * REACH * (RUN[0] if run else 1.0)
+        sw = a * L * REACH * (RUN[0] if run else 1.0) / scale
         lift = up * H * (0.18 if run else 0.12)
         y = side * g * 0.55
         if lx > 0:      # foreleg: elbow, knee, hoof
@@ -368,4 +382,4 @@ def sprite(kind, variant, anim, facing, frame, k, frames=None):
     frames = frames or CRITTER_FRAMES[anim]
     if kind == "parsa.hoopoe":
         return _render(hoopoe(anim, frame, frames, k), facing)
-    return _render(quadruped(BEASTS[kind], anim, frame, frames, k), facing)
+    return _render(quadruped(BEASTS[kind], anim, frame, frames, k, free_scale(kind)), facing)

@@ -603,6 +603,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/world/travel_iran_day.ogg",
+   "night": "music/world/travel_iran_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {
@@ -1899,10 +1903,7 @@
    ],
    "zone": "land",
    "string": "almond_blossom",
-   "ambience": {
-    "file": "amb/world/fields.ogg",
-    "gain": 0.6
-   }
+   "sfx": "sfx/world/cuckoo.wav"
   },
   {
    "id": "plateau_harvest",

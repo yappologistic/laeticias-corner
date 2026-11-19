@@ -31,6 +31,14 @@ float gameHour(double clock) {
     return static_cast<float>(h < 0 ? h + 24.0 : h);
 }
 
+float Soundscape::cityMusicLevel() const {
+    if (musicRegion_ < 0 || world_.file.regions[static_cast<std::size_t>(musicRegion_)].kind !=
+                                world::RegionKind::City)
+        return 0.0f;
+    const int p = pieceOf_[static_cast<std::size_t>(musicRegion_)];
+    return p >= 0 ? pieces_[static_cast<std::size_t>(p)].level : 0.0f;
+}
+
 bool inHours(float h, float from, float to) {
     return from <= to ? (h >= from && h < to) : (h >= from || h < to);
 }
@@ -46,7 +54,7 @@ int Soundscape::fileIndex(const std::string& file) {
 Soundscape::Soundscape(const world::LoadedWorld& world, const std::filesystem::path& audioDir)
     : world_(world) {
     const world::WorldFile& wf = world.file;
-    music_.resize(wf.regions.size());
+    pieceOf_.assign(wf.regions.size(), -1);
     beds_.resize(world.regions.size());
     zoneFile_.resize(world.regions.size());
     zoneMonths_.resize(world.regions.size());
@@ -91,8 +99,17 @@ Soundscape::Soundscape(const world::LoadedWorld& world, const std::filesystem::p
                 sources_.push_back({fileIndex(l.file), static_cast<int>(r), item, l.when, l.from,
                                     l.to, monthMask(l.months)});
         }
-        if (!t.musicDay.empty()) music_[r].day = fileIndex(t.musicDay);
-        if (!t.musicNight.empty()) music_[r].night = fileIndex(t.musicNight);
+        if (!t.musicDay.empty() || !t.musicNight.empty()) {
+            const int day = t.musicDay.empty() ? -1 : fileIndex(t.musicDay);
+            const int night = t.musicNight.empty() ? -1 : fileIndex(t.musicNight);
+            auto it = std::ranges::find_if(
+                pieces_, [&](const Music& m) { return m.day == day && m.night == night; });
+            if (it == pieces_.end()) {
+                pieces_.push_back({day, night, {}, 0});
+                it = pieces_.end() - 1;
+            }
+            pieceOf_[r] = static_cast<int>(it - pieces_.begin());
+        }
     }
     placed_.assign(sources_.size(), {0.0f, 0.0f});
     // Phrase starts and suggested gains from each set's manifest.
@@ -113,7 +130,7 @@ Soundscape::Soundscape(const world::LoadedWorld& world, const std::filesystem::p
             if (!f.contains("music") || !f["music"].is_object()) continue;
             const nlohmann::json& starts = f["music"].value("phrase_starts_s", nlohmann::json());
             if (!starts.is_array()) continue;
-            for (Music& mu : music_)
+            for (Music& mu : pieces_)
                 if (mu.day == static_cast<int>(idx) && mu.phrases.empty())
                     for (const nlohmann::json& s : starts)
                         if (s.is_number())
@@ -224,10 +241,11 @@ void Soundscape::update(const Input& in) {
             // One file heard through two beds (the plain night and a season's) is one sound.
             bedGain_[bed.first] = std::max(bedGain_[bed.first], g);
         }
-        // Where no music plays (the land and sea between) the beds carry the place alone, a
-        // little louder (QA5 Q5-S-01: the stretches read as dropouts beside the cities).
-        const bool stretch = music_[r].day < 0 && music_[r].night < 0 &&
-                             world_.file.regions[r].kind != world::RegionKind::Home;
+        // Away from the cities and the home (towns, the land and sea between) the beds carry
+        // the place, a little louder (QA5 Q5-S-01: the stretches read as dropouts beside the
+        // cities); a travelling theme rests more than half the time and does not replace them.
+        const world::RegionKind kind = world_.file.regions[r].kind;
+        const bool stretch = kind != world::RegionKind::City && kind != world::RegionKind::Home;
         const float level = tuning::kBedLevel * (stretch ? tuning::kStretchLift : 1.0f);
         if (w > 0)
             for (std::size_t b = 0; b < beds.size(); ++b)
@@ -272,12 +290,13 @@ void Soundscape::update(const Input& in) {
         out_[f].pan += std::clamp(placed_[s].second / pan, -1.0f, 1.0f) * g;
         panWeight[f] += g;
     }
-    // Music: a city, or the home, holding more than half the weight; held with a margin.
+    // Music: the region holding more than half the weight whose theme names a piece (a city, a
+    // town, a stretch) or the home; held with a margin. Its piece fades in from a phrase start
+    // unless it is still sounding (a neighbour shares it), and out when left.
     int best = -1;
     float bestW = 0;
     for (std::size_t r = 0; r < world_.file.regions.size(); ++r) {
-        const world::RegionKind k = world_.file.regions[r].kind;
-        if (k != world::RegionKind::City && k != world::RegionKind::Home) continue;
+        if (pieceOf_[r] < 0 && world_.file.regions[r].kind != world::RegionKind::Home) continue;
         if (weight(r) > bestW) {
             bestW = weight(r);
             best = static_cast<int>(r);
@@ -289,14 +308,14 @@ void Soundscape::update(const Input& in) {
     if (best >= 0 && bestW > tuning::kMusicThreshold + tuning::kMusicHysteresis)
         musicRegion_ = best;
     const float step = in.dt / tuning::kMusicFadeSeconds;
-    for (std::size_t r = 0; r < music_.size(); ++r) {
-        Music& mu = music_[r];
-        const bool on = static_cast<int>(r) == musicRegion_;
-        if (mu.day < 0 && mu.night < 0) {
-            if (world_.file.regions[r].kind == world::RegionKind::Home)
-                homeMusic_ = approachLinear(homeMusic_, on ? 1.0f : 0.0f, step);
-            continue;
-        }
+    const int home = world_.file.home.region;
+    homeMusic_ = approachLinear(homeMusic_, musicRegion_ >= 0 && musicRegion_ == home ? 1.0f : 0.0f,
+                                step);
+    const int playing = musicRegion_ >= 0 ? pieceOf_[static_cast<std::size_t>(musicRegion_)] : -1;
+    const float n = std::clamp(in.night, 0.0f, 1.0f);
+    for (std::size_t p = 0; p < pieces_.size(); ++p) {
+        Music& mu = pieces_[p];
+        const bool on = static_cast<int>(p) == playing;
         if (on && mu.level <= 0 && !mu.phrases.empty()) {
             // Coming back: from a phrase boundary, a different one each time.
             const std::uint64_t at = mu.phrases[phraseTurn_++ % mu.phrases.size()];
@@ -305,12 +324,10 @@ void Soundscape::update(const Input& in) {
         }
         mu.level = approachLinear(mu.level, on ? 1.0f : 0.0f, step);
         if (mu.level <= 0) continue;
-        const float n = std::clamp(in.night, 0.0f, 1.0f);
         const float music = mu.level * tuning::kMusic * in.musicDuck;
         if (mu.day >= 0) out_[static_cast<std::size_t>(mu.day)].gain += music * (1 - n);
         if (mu.night >= 0) out_[static_cast<std::size_t>(mu.night)].gain += music * n;
     }
-    const int home = world_.file.home.region;
     homeWeight_ = home >= 0 ? weight(static_cast<std::size_t>(home)) : 1.0f;
     for (std::size_t f = 0; f < out_.size(); ++f) {
         out_[f].gain = std::min(1.0f, out_[f].gain * manifestGain_[f]);

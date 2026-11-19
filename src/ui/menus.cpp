@@ -13,6 +13,26 @@
 namespace lc {
 namespace {
 
+// True when `bytes` are the one proper UTF-8 spelling of `cp`: overlong forms, surrogates and
+// broken sequences (read as U+FFFD) never reach a name, which the save writer could not write.
+bool wellFormed(std::string_view bytes, char32_t cp) {
+    if (cp == 0xFFFD) return bytes == "\xEF\xBF\xBD";
+    if ((cp >= 0xD800 && cp <= 0xDFFF) || cp > 0x10FFFF) return false;
+    const std::size_t need = cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+    return bytes.size() == need;
+}
+
+// `pattern` ("… {} …") holding `name`, the name cut short with an ellipsis so the whole fits in
+// `width`: a world's name from a hand-edited file can be any length.
+std::string fitName(const Font& font, Face face, std::string_view pattern, std::string_view name,
+                    float width, std::string& cut) {
+    std::string whole = std::vformat(pattern, std::make_format_args(name));
+    const float over = font.measure(face, whole) - width;
+    if (over <= 0) return whole;
+    const std::string_view shorter = elide(font, face, name, font.measure(face, name) - over, cut);
+    return std::vformat(pattern, std::make_format_args(shorter));
+}
+
 enum Id : int {
     kContinue = 1,
     kWorlds,
@@ -187,6 +207,13 @@ float Menus::hoverOf(int id) const {
     return i < hover_.size() ? hover_[i] : 0.0f;
 }
 
+std::optional<std::pair<std::string_view, Box>> Menus::widgetLabel(std::string_view name) const {
+    for (const Named& n : kNames)
+        if (n.name == name)
+            if (const Widget* w = find(n.id); w != nullptr) return std::pair{w->label, w->box};
+    return std::nullopt;
+}
+
 std::optional<Vec2> Menus::widgetCentre(std::string_view name) const {
     int id = 0;
     for (const Named& n : kNames)
@@ -212,7 +239,7 @@ bool Menus::text(std::string_view utf8, const Font& font) {
     for (std::size_t i = 0; i < utf8.size();) {
         const std::size_t start = i;
         const char32_t cp = nextCodepoint(utf8, i);
-        if (cp < 32 || !font.has(cp)) {
+        if (cp < 32 || !wellFormed(utf8.substr(start, i - start), cp) || !font.has(cp)) {
             fieldNote_ = strings::kLetterMissing;
             continue;
         }
@@ -466,7 +493,7 @@ void Menus::layout(const MenuModel& m, const Font& font, float s) {
     headingBox_ = bodyBox_ = logoBox_ = coachBox_ = barBox_ = {};
     switch (page()) {
     case Page::None: break;
-    case Page::Title: layoutTitle(m, s); break;
+    case Page::Title: layoutTitle(m, font, s); break;
     case Page::Worlds: layoutWorlds(m, font, s); break;
     case Page::NewWorld:
     case Page::Delete:
@@ -478,7 +505,7 @@ void Menus::layout(const MenuModel& m, const Font& font, float s) {
     if (page() == Page::None && m.photo && barT_ > 0) layoutBar(m, font, s);
 }
 
-void Menus::layoutTitle(const MenuModel& m, float s) {
+void Menus::layoutTitle(const MenuModel& m, const Font& font, float s) {
     const float pad = theme::kPanelPad * s * 1.5f;
     const float bh = theme::kMenuButtonH * s;
     const float gap = theme::kGap * s * 1.25f;
@@ -488,7 +515,10 @@ void Menus::layoutTitle(const MenuModel& m, float s) {
         1.0f,
         std::floor(std::min(theme::kLogoScale * s, (w - 2 * pad) / std::max(1.0f, m.logo.w))));
     const float logoH = m.logo.h * logoScale;
-    const int buttons = m.firstLaunch ? 3 : 4;
+    // Worlds whenever there are any: a fresh corner beside worlds that exist (one could not be
+    // opened, or the one played was deleted) must not hide them.
+    const bool worlds = !m.firstLaunch || !m.worlds.empty();
+    const int buttons = worlds ? 4 : 3;
     const float h = 2 * pad + logoH + gap * 2 + static_cast<float>(buttons) * (bh + gap) - gap;
     // Left of centre, so the corner shows beside it (§6.5).
     const float x = std::round(std::max(theme::kMargin * s, screen_.x * 0.22f - w * 0.5f));
@@ -500,9 +530,10 @@ void Menus::layoutTitle(const MenuModel& m, float s) {
         add(id, Kind::Button, {x + pad, by, w - 2 * pad, bh}, label);
         by += bh + gap;
     };
-    headingText_ = std::vformat(strings::kContinue, std::make_format_args(m.continueName));
+    headingText_ = fitName(font, Face::Body, strings::kContinue, m.continueName,
+                           w - 2 * pad - 2 * theme::kGap * s, fitCut_);
     button(kContinue, m.firstLaunch ? strings::kBegin : std::string_view(headingText_));
-    if (!m.firstLaunch) button(kWorlds, strings::kWorldsButton);
+    if (worlds) button(kWorlds, strings::kWorldsButton);
     button(kSettings, strings::kSettings);
     button(kQuit, strings::kQuit);
 }
@@ -588,7 +619,8 @@ void Menus::layoutDialog(const MenuModel& m, const Font& font, float s) {
              static_cast<float>(wrapLines(font, Face::Body, body_, w - 2 * pad, 3)) * lh + gap;
         break;
     case Page::Delete:
-        headingText_ = std::vformat(strings::kDeleteTitle, std::make_format_args(m.deleteName));
+        headingText_ =
+            fitName(font, Face::Title, strings::kDeleteTitle, m.deleteName, w - 2 * pad, fitCut_);
         heading_ = headingText_;
         body_ = strings::kDeleteText;
         h += static_cast<float>(wrapLines(font, Face::Body, body_, w - 2 * pad, 4)) * lh + gap;

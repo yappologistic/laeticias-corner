@@ -545,6 +545,31 @@ def _force(e: dict, fields: dict) -> None:
             e.setdefault("sounds", []).append({"file": old, "at": "end"})
 
 
+# Music where no city's piece plays (out/reports/audio-music-world.md §2.5): the travelling
+# themes of the land and sea between, and the towns' pieces, day and night. Regions sharing a
+# piece (neighbouring stretches, a family's towns) are heard as one: the engine keeps it playing
+# across them. The seams have none (their drone is their music).
+_TRAVEL = {"italy": ("latium_italy", "apennines"),
+           "greece": ("greece", "arcadia", "attica_north", "thrace", "ionia_lydia"),
+           "sea": ("tyrrhenian", "adriatic", "ionian_sea", "saronic", "aegean", "persian_gulf"),
+           "levant": ("anatolia", "taurus", "east_med", "syrian_steppe"),
+           "mesopotamia": ("mesopotamia", "susiana"),
+           "iran": ("iran_plateau", "zagros")}
+_TOWNS = {"rome/town_forum": ("ostia", "capua"), "rome/town_hills": ("tibur", "beneventum"),
+          "rome/town_shrine": ("alban_mount", "brundisium"),
+          "athens/town_polis": ("corinth", "olympia", "ephesus"),
+          "athens/town_march": ("academy", "sparta"),
+          "athens/town_sanctuary": ("delphi", "delos"),
+          "athens/town_harbour": ("eleusis", "corcyra"),
+          "parsa/town_court": ("susa", "pasargadae"), "parsa/town_caravan": ("persian_gates", "halys"),
+          "parsa/town_west": ("sardis", "sidon"),
+          "parsa/town_river": ("babylon", "euphrates_crossing", "gordion")}
+MUSIC = {rid: {"day": f"music/world/travel_{k}_day.ogg", "night": f"music/world/travel_{k}_night.ogg"}
+         for k, rids in _TRAVEL.items() for rid in rids}
+MUSIC.update({rid: {"day": f"music/{k}_day.ogg", "night": f"music/{k}_night.ogg"}
+              for k, rids in _TOWNS.items() for rid in rids})
+
+
 def apply(doc: dict, world: World, cat, root) -> dict:
     from . import sound
     from .places import side as side_of
@@ -556,6 +581,8 @@ def apply(doc: dict, world: World, cat, root) -> dict:
     amb = th.setdefault("ambience", {})
     amb.setdefault("loops", [])   # beds, loops, zones: the order the files have always had
     seasons = th.setdefault("seasons", {})
+    if rid in MUSIC:
+        th["music"] = dict(MUSIC[rid])
     f = facts(world, rid)
     # Beds: the place's own, by season and hour.
     if rid not in AUTHORED:

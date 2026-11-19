@@ -18,6 +18,20 @@ bool optionalAnim(const ActorKind& k, std::size_t a) {
     return i == k.carryAnim || i == k.rainAnim || i == k.waddleAnim || i == k.waveAnim;
 }
 
+// A sprite in its `suffix` look (a season, "@<id>") where the atlas has one, else the plain key:
+// CLAUDE.md's "<any key>@<season>" for every family, through this and frames().
+std::optional<SpriteId> find(Atlas& atlas, const std::string& key, std::string_view suffix) {
+    if (!suffix.empty())
+        if (const auto look = atlas.find(key + std::string(suffix))) return look;
+    return atlas.find(key);
+}
+
+SpriteId resolve(Atlas& atlas, const std::string& key, SpriteId placeholder,
+                 std::string_view suffix) {
+    const auto look = suffix.empty() ? std::nullopt : atlas.find(key + std::string(suffix));
+    return look ? *look : atlas.resolve(key, placeholder);
+}
+
 // Collects prefix/f0, f1, ... until the first gap, each frame in its `suffix` look (a season)
 // where there is one. With a placeholder, a missing f0 is logged and replaced; without one the
 // set stays empty (optional layers).
@@ -26,10 +40,9 @@ FrameSet frames(Atlas& atlas, const std::string& prefix, std::optional<SpriteId>
     FrameSet set;
     for (int f = 0;; ++f) {
         const std::string key = std::format("{}/f{}", prefix, f);
-        const auto id = atlas.find(key);
-        if (!id) break;
-        const auto look = suffix.empty() ? std::nullopt : atlas.find(key + std::string(suffix));
-        set.frames.push_back(look.value_or(*id));
+        // The plain frame decides how many there are; each is drawn in its season's look.
+        if (!atlas.find(key)) break;
+        set.frames.push_back(*find(atlas, key, suffix));
     }
     if (set.frames.empty() && placeholder)
         set.frames.push_back(atlas.resolve(prefix + "/f0", *placeholder));
@@ -70,8 +83,7 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
         if (terr.base) {
             for (int v = 0; v < terr.variants; ++v) {
                 const std::string key = std::format("terrain/{}/v{}", terr.id, v);
-                const auto look = suffix.empty() ? std::nullopt : atlas.find(key + suffix);
-                base.push_back(look ? *look : atlas.resolve(key, atlas.placeholderTile()));
+                base.push_back(resolve(atlas, key, atlas.placeholderTile(), suffix));
             }
         } else {
             for (int m = 0; m < 16; ++m)
@@ -118,11 +130,14 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
         for (std::size_t a = 0; a < k.anims.size(); ++a) {
             const std::string& name = k.anims[a];
             KindAnim ka;
-            ka.front = frames(atlas, std::format("{}/{}_front", k.sprite, name), std::nullopt);
+            ka.front =
+                frames(atlas, std::format("{}/{}_front", k.sprite, name), std::nullopt, suffix);
             if (!ka.front.empty()) {
-                ka.back = frames(atlas, std::format("{}/{}_back", k.sprite, name), std::nullopt);
+                ka.back =
+                    frames(atlas, std::format("{}/{}_back", k.sprite, name), std::nullopt, suffix);
             } else {
-                ka.front = frames(atlas, std::format("{}/{}", k.sprite, name), std::nullopt);
+                ka.front =
+                    frames(atlas, std::format("{}/{}", k.sprite, name), std::nullopt, suffix);
             }
             if (ka.front.empty() && !optionalAnim(k, a))
                 atlas.reportMissing(std::format("{}/{}_front/f0", k.sprite, name));
@@ -144,22 +159,22 @@ SpriteTables buildSpriteTables(Atlas& atlas, const Catalog& cat, int season) {
         t.kinds.push_back(std::move(anims));
     }
     for (std::size_t f = 0; f < t.fx.size(); ++f)
-        t.fx[f] = frames(atlas, std::format("fx/{}", kFxNames[f]), atlas.placeholderBox());
-    t.cliffSE = atlas.resolve("edge/cliff_se", atlas.placeholderEdgeSE());
-    t.cliffSW = atlas.resolve("edge/cliff_sw", atlas.placeholderEdgeSW());
-    t.tileOk = atlas.resolve("ui/tile_ok", atlas.placeholderTile());
-    t.tileBad = atlas.resolve("ui/tile_bad", atlas.placeholderTile());
-    t.tileArea = atlas.resolve("ui/tile_area", atlas.placeholderTile());
-    t.tileGrid = atlas.resolve("ui/tile_grid", atlas.placeholderTile());
+        t.fx[f] = frames(atlas, std::format("fx/{}", kFxNames[f]), atlas.placeholderBox(), suffix);
+    t.cliffSE = resolve(atlas, "edge/cliff_se", atlas.placeholderEdgeSE(), suffix);
+    t.cliffSW = resolve(atlas, "edge/cliff_sw", atlas.placeholderEdgeSW(), suffix);
+    t.tileOk = resolve(atlas, "ui/tile_ok", atlas.placeholderTile(), suffix);
+    t.tileBad = resolve(atlas, "ui/tile_bad", atlas.placeholderTile(), suffix);
+    t.tileArea = resolve(atlas, "ui/tile_area", atlas.placeholderTile(), suffix);
+    t.tileGrid = resolve(atlas, "ui/tile_grid", atlas.placeholderTile(), suffix);
     for (int v = 0;; ++v) {
-        const auto id = atlas.find(std::format("wild/thicket/v{}", v));
-        if (!id) break;
-        t.thickets.push_back(*id);
+        const std::string key = std::format("wild/thicket/v{}", v);
+        if (!atlas.find(key)) break;
+        t.thickets.push_back(*find(atlas, key, suffix));
     }
     if (t.thickets.empty()) atlas.reportMissing("wild/thicket/v0");
-    t.fallSE = frames(atlas, "edge/fall_se", atlas.placeholderEdgeSE());
-    t.fallSW = frames(atlas, "edge/fall_sw", atlas.placeholderEdgeSW());
-    t.rainbow = atlas.find("sky/rainbow");
+    t.fallSE = frames(atlas, "edge/fall_se", atlas.placeholderEdgeSE(), suffix);
+    t.fallSW = frames(atlas, "edge/fall_sw", atlas.placeholderEdgeSW(), suffix);
+    t.rainbow = find(atlas, "sky/rainbow", suffix);
     if (!t.rainbow) atlas.reportMissing("sky/rainbow");
     t.placeholder = atlas.placeholderBox();
     if (shadowPeak > 0.0f) t.shadowOpacity = shadowPeak;

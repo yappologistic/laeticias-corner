@@ -141,7 +141,7 @@ void App::startPlay() {
 }
 
 void App::tellMuted() {
-    // A profile left muted is silent with no clue why (the owner pressed M, which opens the
+    // A profile left muted is silent with no clue why (a player pressed M, which opens the
     // map): once a session, say how the sound comes back.
     if (!muted_ || std::exchange(mutedTold_, true)) return;
     hud_.toast(std::string(strings::kToastMuted));
@@ -333,6 +333,11 @@ void App::applyMenuActions() {
         case K::Play: {
             if (std::cmp_greater_equal(a.arg, worldList_.size())) break;
             const WorldSummary& w = worldList_[static_cast<std::size_t>(a.arg)];
+            // A world known not to open says so without closing the one behind the menus.
+            if (!w.readable) {
+                menus_.open(Page::LoadError);
+                break;
+            }
             // The world behind the menus plays at once; another one is opened first.
             if ((w.slug == slug_ && !freshWorld_) || openWorld(w.slug)) {
                 startPlay();
@@ -376,6 +381,8 @@ void App::applyMenuActions() {
                     freshWorld_ = true;
                     enterWorld();
                 }
+                // A save of it still waiting on the writer would make its folder again.
+                writer_.flush();
                 if (auto r = deleteWorld(saveDir_ / kWorldsDir / slug); !r)
                     SDL_Log("delete: %s", r.error().c_str());
                 deleteIndex_ = -1;
@@ -610,7 +617,8 @@ void App::updateTour(float dt) {
         if (placements_ > tourPlacements_) next();
         break;
     case kWish:
-        if (wish < 0 || progress_.wishes[static_cast<std::size_t>(wish)].state == WishState::Done)
+        // Granted, or put off with "Not now": either way the tray no longer holds it.
+        if (wish < 0 || progress_.wishes[static_cast<std::size_t>(wish)].state != WishState::Open)
             next();
         break;
     case kKeys:

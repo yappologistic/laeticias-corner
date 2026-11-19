@@ -390,6 +390,10 @@
     "night": "amb/world/night_snow.ogg"
    }
   },
+  "music": {
+   "day": "music/world/travel_levant_day.ogg",
+   "night": "music/world/travel_levant_night.ogg"
+  },
   "look": {
    "phases": {
     "dawn": {
