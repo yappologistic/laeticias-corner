@@ -145,7 +145,9 @@ TEST_CASE("render: cached cells and the live layer leave no seams as the view mo
     REQUIRE(r.ok);
     // The same place drawn twice, the second time moved by a whole number of pixels: cell
     // boundaries cross the frame elsewhere, the overlap must match exactly.
-    for (const Vec2 tile : {Vec2{374, 58}, Vec2{313, 615}}) {
+    // (Pārsa's terrace, the Acropolis, a graded hillside with a river falling three levels in
+    // Anatolia, the Apennines' slopes.)
+    for (const Vec2 tile : {Vec2{374, 58}, Vec2{313, 615}, Vec2{276, 238}, Vec2{110, 969}}) {
         WorldCamera a = r.camera(tile, 3);
         WorldCamera b = a;
         b.panBy({173, 91});
@@ -622,4 +624,86 @@ TEST_CASE("weather: young showers exist and fade in; snow falls only where the c
     const TileRect h = w.file.home.rect;
     s.update(5000.0, wind, winter, h, WeatherMode::Rain);
     CHECK(s.snow());
+}
+
+TEST_CASE("render: a wide flat ground does not repeat its tile like wallpaper") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    const world::WorldMap& m = *r.world->map;
+    // The largest square of bare flat ground of one terrain (no items, no water, one level).
+    const int side = 20;
+    Vec2 best{};
+    int bestN = 0;
+    for (int y = 0; y + side < m.height(); y += 4)
+        for (int x = 0; x + side < m.width(); x += 4) {
+            const int t = m.terrainAt({x, y});
+            if (t == world::kNone || m.terrainInfo(t).water) continue;
+            const int lv = m.level({x, y});
+            int n = 0;
+            for (int j = 0; j < side; j += 2)
+                for (int i = 0; i < side; i += 2) {
+                    const TilePos q{x + i, y + j};
+                    n += m.terrainAt(q) == t && m.level(q) == lv && m.itemAt(q) < 0 &&
+                                 m.slopeAt(q) == world::Slope::Flat
+                             ? 1
+                             : 0;
+                }
+            if (n > bestN) {
+                bestN = n;
+                best = {static_cast<float>(x + side / 2), static_cast<float>(y + side / 2)};
+            }
+        }
+    REQUIRE(bestN >= 95); // of 100 samples
+    const SurfacePtr f = r.frame(r.camera(best, 3));
+    REQUIRE(f);
+    // Correlation of the lightness with itself shifted by a lag, over the frame's middle.
+    const auto luma = [&](int x, int y) {
+        const std::uint8_t* p = pixel(f.get(), x, y);
+        return 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2];
+    };
+    const auto corr = [&](int dx, int dy) {
+        double sa = 0, sb = 0, saa = 0, sbb = 0, sab = 0;
+        long n = 0;
+        for (int y = 60; y < kH - 60 - dy; ++y)
+            for (int x = 60; x < kW - 60 - dx; ++x) {
+                const double a = luma(x, y);
+                const double b = luma(x + dx, y + dy);
+                sa += a, sb += b, saa += a * a, sbb += b * b, sab += a * b;
+                ++n;
+            }
+        const double dn = static_cast<double>(n);
+        const double cov = sab / dn - (sa / dn) * (sb / dn);
+        const double va = saa / dn - (sa / dn) * (sa / dn);
+        const double vb = sbb / dn - (sb / dn) * (sb / dn);
+        return cov / std::sqrt(std::max(va * vb, 1e-9));
+    };
+    // The tile's two periods on screen (64, 0) and (32, 16) against lags just off them: a
+    // pattern printed once per tile correlates at its period far more than beside it.
+    const double atX = corr(64, 0) - 0.5 * (corr(56, 0) + corr(72, 0));
+    const double atD = corr(32, 16) - 0.5 * (corr(28, 14) + corr(36, 18));
+    MESSAGE("flat ground at (" << best.x << ", " << best.y << "): excess correlation at the "
+                               << "tile period " << atX << " across, " << atD << " diagonal");
+    // (Today 0.13 and 0.36 on Parsa's plain grass, whose four looks share their tufts: the art's
+    // part, out/reports/terrain-notes-for-art.md; a mark printed per tile scores far higher.)
+    CHECK(atX < 0.45);
+    CHECK(atD < 0.45);
+}
+
+TEST_CASE("render: no water face is a flat colour: every drop draws the falls' art") {
+    Rig& r = rig();
+    REQUIRE(r.ok);
+    // Water stepping down draws the lip, sheet, foot or cascade by its drop and ends, the rapids
+    // and the plunge; the flat quads (`waterFace`) are drawn only when that art is missing, and
+    // the bank's own face where water stands over land it does not flow onto.
+    const FallLook& f = r.view->sprites().falls();
+    REQUIRE_FALSE(f.empty());
+    for (const auto& side : f.part)
+        for (const auto& part : side)
+            for (const Frames& e : part) CHECK(e.f.size() >= 2); // animated, never a still box
+    for (int m = 1; m < 16; ++m) CHECK_FALSE(f.plunge[static_cast<std::size_t>(m)].empty());
+    CHECK_FALSE(f.rapids[0].empty());
+    CHECK_FALSE(f.rapids[1].empty());
+    CHECK(f.fps > 0);
+    // Every slope shape of every terrain that slopes has its art (nothing warped as a stand-in).
+    CHECK(r.view->sprites().flatSlopes().empty());
 }

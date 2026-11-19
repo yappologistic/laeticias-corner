@@ -7,6 +7,7 @@
 #include "worldview/page_runs.hpp"
 #include "worldview/places.hpp"
 #include "worldview/script.hpp"
+#include "worldview/terrain.hpp"
 #include "worldview/theme.hpp"
 
 #include <doctest.h>
@@ -356,4 +357,61 @@ TEST_CASE("page runs: whatever is drawn over something else is still drawn after
     int given = 1;
     for (std::size_t k = 1; k < keys.size(); ++k) given += keys[k] != keys[k - 1] ? 1 : 0;
     CHECK(runs.runs() < given);
+}
+
+TEST_CASE("terrain: faces hang by the corners of both tiles, wedges under a falling edge") {
+    // A flat tile over a flat neighbour two levels down: two bands, capped.
+    EdgeFace f = edgeFace(5, 5, 5, 3, 3);
+    CHECK(f.first == 0);
+    CHECK(f.last == 2);
+    CHECK(f.wedge == -1);
+    CHECK(f.capped());
+    // A one-level slope meeting its lower neighbour: nothing.
+    CHECK(edgeFace(5, 4, 4, 4, 4).empty());
+    // A slope whose edge falls toward its far end over a cliff to level 2: a wedge high at S,
+    // then the bands below its lower corner; no cap under a wedge.
+    f = edgeFace(5, 5, 4, 2, 2);
+    CHECK(f.wedge == 0);
+    CHECK(f.first == 1);
+    CHECK(f.last == 3);
+    CHECK_FALSE(f.capped());
+    CHECK(edgeFace(5, 4, 5, 3, 3).wedge == 1);
+    // The neighbour higher or level at both ends: no face; lower at one end: one band.
+    CHECK(edgeFace(5, 5, 5, 5, 6).empty());
+    f = edgeFace(5, 5, 5, 4, 5);
+    CHECK(f.first == 0);
+    CHECK(f.last == 1);
+}
+
+TEST_CASE("terrain: falling water's parts by the drop, the slope light, the slow field") {
+    CHECK(fallPart(1, 0) == FallPart::Rapid);
+    CHECK(fallPart(2, 0) == FallPart::Top);
+    CHECK(fallPart(2, 1) == FallPart::Foot);
+    CHECK(fallPart(4, 1) == FallPart::Mid);
+    CHECK(fallPart(4, 2) == FallPart::Mid);
+    CHECK(fallPart(4, 3) == FallPart::Foot);
+    // Flat is 1; a slope falling toward +x (away from the upper-left sun) is darker, one
+    // falling toward -x lighter (the art's formula).
+    for (const float l : slopeLight(world::Slope::Flat, 0.5f)) CHECK(l == doctest::Approx(1.0f));
+    const auto away = slopeLight(world::Slope(world::kCornerE | world::kCornerS), 0.5f);
+    const auto toward = slopeLight(world::Slope(world::kCornerN | world::kCornerW), 0.5f);
+    CHECK(away[2] < 1.0f);
+    CHECK(toward[6] > 1.0f);
+    // The slow field stays in [0, 1], changes little from tile to tile and is not flat.
+    float lo = 1;
+    float hi = 0;
+    float worst = 0;
+    for (int y = 0; y < 200; ++y)
+        for (int x = 0; x < 200; ++x) {
+            const float v = groundMacro({static_cast<float>(x) * 0.5f, static_cast<float>(y)});
+            lo = std::min(lo, v);
+            hi = std::max(hi, v);
+            worst = std::max(worst, std::abs(groundMacro({static_cast<float>(x) * 0.5f + 0.5f,
+                                                          static_cast<float>(y)}) -
+                                             v));
+        }
+    CHECK(lo >= 0.0f);
+    CHECK(hi <= 1.0f);
+    CHECK(hi - lo > 0.5f);
+    CHECK(worst < 0.12f);
 }
