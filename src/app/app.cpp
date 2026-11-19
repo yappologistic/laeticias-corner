@@ -935,6 +935,20 @@ void App::frameCamera() {
     const Box s = hud_.safeArea();
     camera_.frame({s.x, s.y, s.x + s.w, s.y + s.h}, screen(),
                   openBounds(cat_, progress_.stage, world_));
+    keepOnHome(camera_);
+}
+
+void App::keepOnHome(Camera& c) const {
+    // The land is framed in the room the interface leaves; with a large interface on a small
+    // window that can put the window's centre off the home's grid, and the home's own panels
+    // (the building dock among them) would fold away as if the player had left (H3-016). The
+    // view slides the least it must to stand on the home again.
+    if (!loaded_) return;
+    const Vec2 t = cat_.iso().toTile(c.position());
+    constexpr float kIn = 0.5f; // tiles inside the grid's edge
+    const Vec2 k{std::clamp(t.x, kIn, static_cast<float>(world_.width()) - kIn),
+                 std::clamp(t.y, kIn, static_cast<float>(world_.height()) - kIn)};
+    if (k.x != t.x || k.y != t.y) c.place(cat_.iso().toWorld(k.x, k.y), c.zoom(), screen());
 }
 
 void App::handleKey(const SDL_KeyboardEvent& k) {

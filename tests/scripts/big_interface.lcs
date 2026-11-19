@@ -1,0 +1,9 @@
+# The largest interface size on the smallest window: a new corner opens on the home with its
+# building dock, not framed so far off that the home's panels fold away (H3-016).
+wait 2
+expect away no
+expect widget build yes
+key home
+wait 30
+expect away no
+expect widget build yes

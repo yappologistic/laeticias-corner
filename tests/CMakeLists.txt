@@ -234,6 +234,21 @@ add_test(NAME newer_save_untouched COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DC
 set_tests_properties(newer_save_untouched PROPERTIES DEPENDS script_newer_save
   FIXTURES_REQUIRED newer)
 
+# The largest interface size on the smallest window still opens on the home (H3-016).
+set(big_ui "${LC_SCRATCH}/save_big_interface")
+add_test(NAME prepare_big_interface COMMAND ${CMAKE_COMMAND} -E rm -rf ${big_ui})
+add_test(NAME prepare_big_interface_profile COMMAND ${CMAKE_COMMAND} -DFILE=${big_ui}/profile.json
+  "-DCONTENT={\"ui_scale\": 2.0, \"onboarded\": true}" -P ${CMAKE_CURRENT_SOURCE_DIR}/write_file.cmake)
+set_tests_properties(prepare_big_interface PROPERTIES FIXTURES_SETUP big_interface_clean)
+set_tests_properties(prepare_big_interface_profile PROPERTIES FIXTURES_SETUP big_interface
+  FIXTURES_REQUIRED big_interface_clean)
+add_test(NAME script_big_interface
+  COMMAND laeticias-corner --headless --size 960x600 --seed 1 --save-dir "${big_ui}"
+          --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/big_interface.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_big_interface PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_REQUIRED big_interface)
+
 # A word where a script expects a number fails the run with its line (exit 2), never a crash.
 add_test(NAME script_bad_number
   COMMAND laeticias-corner --headless --size 640x400 --seed 1

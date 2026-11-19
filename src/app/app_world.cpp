@@ -324,6 +324,7 @@ std::optional<App::Destination> App::travelDestination() const {
         const Box safe = hud_.safeArea();
         framed.frame({safe.x, safe.y, safe.x + safe.w, safe.y + safe.h}, screen(),
                      openBounds(cat_, progress_.stage, world_));
+        keepOnHome(framed);
         return Destination{framed.position(), framed.zoom()};
     }
     return Destination{

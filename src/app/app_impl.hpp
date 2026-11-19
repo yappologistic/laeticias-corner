@@ -192,6 +192,7 @@ private:
     void render();
     void refreshScale();
     void frameCamera();
+    void keepOnHome(Camera& c) const; // a framed view's centre back on the home's grid
     void zoomBy(int steps, Vec2 px);
     void undoRedo(bool redo);
     void updateAudio();
