@@ -540,12 +540,12 @@
    "oy": -15
   },
   "item/rome.pons_sublicius/shadow/r0/f0": {
-   "x": 1496,
+   "x": 1263,
    "y": 972,
    "w": 181,
-   "h": 86,
+   "h": 88,
    "ox": 140,
-   "oy": -12
+   "oy": -10
   },
   "item/rome.porta_capena/shadow/r0/f0": {
    "x": 432,
@@ -1924,7 +1924,7 @@
    "oy": -153
   },
   "item/rome.trajan_column/shadow/r0/f0": {
-   "x": 1263,
+   "x": 1445,
    "y": 972,
    "w": 232,
    "h": 86,
