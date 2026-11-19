@@ -23,6 +23,7 @@ from scipy.ndimage import uniform_filter1d  # noqa: E402
 import ambience  # noqa: E402
 import athens  # noqa: E402
 import between  # noqa: E402
+import country  # noqa: E402
 import mastering  # noqa: E402
 import music  # noqa: E402
 import parsa  # noqa: E402
@@ -123,7 +124,7 @@ SETS = {"parsa": {**parsa.FILES, **people.PARSA, **stings.PARSA, **seasons.PARSA
                    **towns.ATHENS},
         "rome": {**rome.FILES, **people.ROME, **stings.ROME, **seasons.ROME, **towns.ROME},
         "world": {**world.FILES, **weather.FILES, **wildlife.FILES, **people.FILES,
-                  **seasons.FILES, **between.FILES, **travel.FILES},
+                  **seasons.FILES, **between.FILES, **country.FILES, **travel.FILES},
         # Home-only additions not in the catalog (variations, steps, stings) live in the home
         # folders and are listed in assets/audio/home/manifest.json.
         "home": {**wildlife.HOME, **people.HOME, **stings.HOME}}

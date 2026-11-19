@@ -3727,7 +3727,14 @@
    "amb/world/sea_open_3.ogg",
    "amb/world/stream.ogg",
    "amb/world/flock.ogg",
-   "amb/world/oars.ogg"
+   "amb/world/oars.ogg",
+   "amb/world/night_country.ogg",
+   "amb/world/town_latin.ogg",
+   "amb/world/town_greek.ogg",
+   "amb/world/town_persian.ogg",
+   "amb/world/harbour_levant.ogg",
+   "amb/world/harbour_winter.ogg",
+   "amb/world/quarry.ogg"
   ],
   "sfx": [
    "sfx/world/hoof.wav",
@@ -3819,7 +3826,15 @@
    "sfx/world/gull_3.wav",
    "sfx/world/drip_1.wav",
    "sfx/world/drip_2.wav",
-   "sfx/world/drip_3.wav"
+   "sfx/world/drip_3.wav",
+   "sfx/world/heron_1.wav",
+   "sfx/world/heron_2.wav",
+   "sfx/world/deer_1.wav",
+   "sfx/world/deer_2.wav",
+   "sfx/world/boar_1.wav",
+   "sfx/world/boar_2.wav",
+   "sfx/world/dolphin_1.wav",
+   "sfx/world/dolphin_2.wav"
   ]
  },
  "art": {
