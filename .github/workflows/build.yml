@@ -1,0 +1,265 @@
+# Builds the game on Linux and Windows, runs the test suite headless, packages each system's
+# release archive and proves the archive runs on a clean machine. The release workflow calls this
+# one, so a release is made exactly the way every pull request is checked.
+#
+# Supply chain: first-party actions only, pinned to commits; every download is pinned to a
+# version and checked against its SHA-256 before use; the token can only read; no secrets.
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A newer push supersedes a running check of the same branch; a release (a tag) is never
+  # cancelled.
+  group: build-${{ github.workflow_ref }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Tests and proofs never open a window or a sound device.
+  SDL_VIDEODRIVER: dummy
+  SDL_AUDIODRIVER: dummy
+  # Timing gates do not belong on shared runners, whose speed varies from run to run: the
+  # benchmarks, soaks, start-up timing and the world's load-time budget run on the reference
+  # machine (docs/contributing/testing.md). Excluded here by name, never weakened.
+  TIMING_GATES: >-
+    bench|bench_1440|bench_world|bench_city|bench_startup_look|benchmark|benchmark_report|
+    soak|soak_city|world_perf|world_bench
+  # Known failures on main before this workflow existed, tracked and excluded by name until
+  # fixed: worldview_unit (one seam case), script_regions_title. And terrain_quarter_look_check,
+  # which reads the perf log of script_terrain_quarter_look: that run needs SDL's GPU driver and
+  # skips on the runners (no GPU), so there is no log to check.
+  KNOWN_FAILURES: >-
+    worldview_unit|script_regions_title|terrain_quarter_look_check
+
+jobs:
+  linux:
+    name: Linux x86_64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    # Built on AlmaLinux 9 so the package needs nothing newer than glibc 2.35 (RHEL 9 carries the
+    # one 2.35 symbol its 2.34 has backported) and runs on every current stable distribution;
+    # gcc-toolset brings a C++23 compiler to it.
+    container: almalinux:9@sha256:02df05719ef287ebd0df0a1eedb9172a00bd70703aed7b25660e426b8e0d6047
+    env:
+      CMAKE_VERSION: 4.4.5
+      CMAKE_SHA256: ed85135c5a5135b45e50423cb406dea04ca3338da0b8ef3c9ede963559680be0
+      NINJA_VERSION: 1.13.2
+      NINJA_SHA256: 5749cbc4e668273514150a80e387a957f933c6ed3f5f11e03fb30955e2bbead6
+    steps:
+      - name: Install the compiler and SDL's build dependencies
+        # SDL loads X11, Wayland (with libdecor), PipeWire, PulseAudio and ALSA at run time; only
+        # their headers are needed to build it.
+        run: |
+          dnf install -y dnf-plugins-core
+          dnf config-manager --set-enabled crb
+          dnf install -y gcc-toolset-14-gcc-c++ gcc-toolset-14-libstdc++-devel \
+            gcc-toolset-14-binutils git-core xz unzip findutils file \
+            alsa-lib-devel pulseaudio-libs-devel pipewire-devel \
+            libX11-devel libXext-devel libXrandr-devel libXcursor-devel libXfixes-devel \
+            libXi-devel libXScrnSaver-devel libXtst-devel libxkbcommon-devel \
+            wayland-devel wayland-protocols-devel libdecor-devel \
+            mesa-libGL-devel mesa-libEGL-devel mesa-libgbm-devel libdrm-devel \
+            dbus-devel systemd-devel
+
+      - name: Install CMake and Ninja (pinned, checksummed)
+        run: |
+          cd /tmp
+          curl -fsSLo cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz"
+          curl -fsSLo ninja.zip "https://github.com/ninja-build/ninja/releases/download/v$NINJA_VERSION/ninja-linux.zip"
+          echo "$CMAKE_SHA256  cmake.tar.gz" | sha256sum -c
+          echo "$NINJA_SHA256  ninja.zip" | sha256sum -c
+          mkdir -p /opt/tools/bin
+          tar -xzf cmake.tar.gz -C /opt/tools --strip-components=1
+          unzip -q ninja.zip -d /opt/tools/bin
+          rm cmake.tar.gz ninja.zip
+          echo /opt/tools/bin >> "$GITHUB_PATH"
+          echo /opt/rh/gcc-toolset-14/root/usr/bin >> "$GITHUB_PATH"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure
+        run: |
+          # The checkout belongs to another user inside the container; `--version` reads its
+          # commit with git.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          gcc --version | head -1
+          cmake --version | head -1
+          cmake --preset release -DLC_STATIC_RUNTIME=ON
+
+      - name: Build
+        run: cmake --build --preset release -j4
+
+      - name: Test
+        # As an ordinary user: the container's root may write into the read-only folder that
+        # script_read_only needs the game to fail on.
+        run: |
+          useradd --create-home tester
+          chown -R tester build/release
+          runuser -u tester -- ctest --preset release -j4 --timeout 1800 \
+            -E "^(${TIMING_GATES//[[:space:]]/}|${KNOWN_FAILURES//[[:space:]]/})\$"
+
+      - name: Package
+        run: |
+          version=$(cat build/release/version.txt)
+          name=laeticias-corner-$version-linux-x86_64
+          cmake --install build/release --prefix "dist/$name" --strip
+          .github/scripts/check_package.sh "dist/$name"
+          tar -C dist -czf "dist/$name.tar.gz" "$name"
+          mkdir -p kit
+          mv "dist/$name.tar.gz" kit/
+          cp packaging/proof.lcs .github/scripts/prove_package.sh kit/
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: package-linux
+          path: kit/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Keep the test logs of a failed run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-log-linux
+          path: build/release/Testing/Temporary/LastTest.log
+          retention-days: 7
+
+  linux-proof:
+    name: Linux package on ${{ matrix.image.name }}
+    needs: linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          # The oldest system the package claims, then two older stable distributions.
+          - name: almalinux-9
+            ref: almalinux:9@sha256:02df05719ef287ebd0df0a1eedb9172a00bd70703aed7b25660e426b8e0d6047
+          - name: ubuntu-22.04
+            ref: ubuntu:22.04@sha256:9abcaffc92a5279fff3a6a41635c0800ea33e528425fb389658806476e7defde
+          - name: debian-12
+            ref: debian:12@sha256:268fb24c39bca92d326dd83ea3abebe4a3f7751c804ffef23bb6d857dd343ff8
+    container: ${{ matrix.image.ref }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package-linux
+          path: kit
+
+      - name: Run the unpacked package
+        # No checkout: the source and its assets are not on this machine.
+        run: bash kit/prove_package.sh kit/laeticias-corner-*-linux-x86_64.tar.gz kit/proof.lcs proof
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: proof-linux-${{ matrix.image.name }}
+          path: proof/
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows x64
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      # GCC for MinGW-w64 on the UCRT runtime, one self-contained archive (WinLibs).
+      WINLIBS_URL: https://github.com/brechtsanders/winlibs_mingw/releases/download/16.2.0posix-14.0.0-ucrt-r2/winlibs-x86_64-posix-seh-gcc-16.2.0-mingw-w64ucrt-14.0.0-r2.zip
+      WINLIBS_SHA256: d5dbafc4a170e762ca6143151ec918fb9e2c72736fb14cd704abebc6bdd5276a
+      NINJA_VERSION: 1.13.2
+      NINJA_SHA256: 07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65
+    steps:
+      - name: Install GCC and Ninja (pinned, checksummed)
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -fsSLo winlibs.zip "$WINLIBS_URL"
+          curl -fsSLo ninja.zip "https://github.com/ninja-build/ninja/releases/download/v$NINJA_VERSION/ninja-win.zip"
+          echo "$WINLIBS_SHA256  winlibs.zip" | sha256sum -c
+          echo "$NINJA_SHA256  ninja.zip" | sha256sum -c
+          7z x -bd -y winlibs.zip > /dev/null
+          mkdir -p tools && 7z x -bd -y -otools ninja.zip > /dev/null
+          rm winlibs.zip ninja.zip
+          # WinLibs' own CMake has no TLS trust anchors and cannot download SDL: the runner's
+          # CMake is used instead.
+          rm mingw64/bin/cmake.exe mingw64/bin/ctest.exe mingw64/bin/cpack.exe
+          # Ahead of the runner's own compilers on PATH.
+          cygpath -w "$RUNNER_TEMP/mingw64/bin" >> "$GITHUB_PATH"
+          cygpath -w "$RUNNER_TEMP/tools" >> "$GITHUB_PATH"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure
+        run: |
+          which gcc ninja cmake
+          gcc --version | head -1
+          cmake --version | head -1
+          cmake --preset release -DLC_STATIC_RUNTIME=ON
+
+      - name: Build
+        run: cmake --build --preset release -j4
+
+      - name: Test
+        run: ctest --preset release -j4 --timeout 1800 -E "^(${TIMING_GATES//[[:space:]]/}|${KNOWN_FAILURES//[[:space:]]/})\$"
+
+      - name: Package
+        run: |
+          version=$(cat build/release/version.txt)
+          name=laeticias-corner-$version-windows-x64
+          cmake --install build/release --prefix "dist/$name" --strip
+          .github/scripts/check_package.sh "dist/$name"
+          (cd dist && 7z a -tzip -mx=9 -bd "$name.zip" "$name" > /dev/null)
+          mkdir -p kit
+          mv "dist/$name.zip" kit/
+          cp packaging/proof.lcs .github/scripts/prove_package.sh kit/
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: package-windows
+          path: kit/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Keep the test logs of a failed run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-log-windows
+          path: build/release/Testing/Temporary/LastTest.log
+          retention-days: 7
+
+  windows-proof:
+    name: Windows package on a clean runner
+    needs: windows
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package-windows
+          path: kit
+
+      - name: Run the unpacked package
+        # No checkout: the source and its assets are not on this machine.
+        run: bash kit/prove_package.sh kit/laeticias-corner-*-windows-x64.zip kit/proof.lcs proof
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: proof-windows
+          path: proof/
+          if-no-files-found: error
+          retention-days: 14
