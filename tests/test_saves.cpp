@@ -214,6 +214,30 @@ TEST_CASE("one mistyped field or an impossible number never costs the world (QA2
           }) == tuning::kMaxOpenWishes);
 }
 
+TEST_CASE("a view or a growth out of every range is dropped or clamped, never cast (H3-021)") {
+    const Catalog& c = test::catalog();
+    SaveData data(makeStarterWorld(c), c);
+    data.camera = Vec2{20, 20};
+    data.worldState.camera = Vec2{40, 1200};
+    data.world.addItem(makeItem(c, item("planter"), 0, {30, 31}));
+    std::string text = serialize(data, c);
+    const auto replace = [&](std::string_view from, std::string_view to) {
+        const auto pos = text.find(from);
+        REQUIRE(pos != std::string::npos);
+        text.replace(pos, from.size(), to);
+    };
+    replace("\"at\": [\n    40.0,\n    1200.0\n   ]", "\"at\": [1e300, -3e38]");
+    replace("\"at\": [\n    20.0,\n    20.0\n   ]", "\"at\": [3e38, 3e38]");
+    replace("\"g\": [\n     0,\n     0.0\n    ]", "\"g\": [0, 1e300]");
+    const auto loaded = deserialize(text, c);
+    REQUIRE(loaded.has_value());
+    CHECK_FALSE(loaded->camera.has_value());
+    CHECK_FALSE(loaded->worldState.camera.has_value());
+    const Item* bed = loaded->world.itemAt({30, 31});
+    REQUIRE(bed != nullptr);
+    CHECK(bed->growth == 1.0f);
+}
+
 TEST_CASE("a newer save is recognised as newer, a damaged one is not (QA2-03)") {
     CHECK(saveFileVersion("{\"version\": 4, \"home\": {}}") == 4);
     CHECK(saveFileVersion("{\"version\": 3}") == 3);
