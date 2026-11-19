@@ -224,11 +224,6 @@ def brazier(rng):
 # --- effects ---------------------------------------------------------------------------
 
 
-def step(rng):
-    x = sd.step(rng, "stone")
-    return sd.finish_sfx(x, rng, 0.1, 0.4, fade_out=0.02)
-
-
 def hoof(rng):
     return sd.finish_sfx(sd.hoof(rng, "stone"), rng, 0.1, 0.4, fade_out=0.02)
 
@@ -369,11 +364,13 @@ FILES = {
         where="positional: near a ship token under way (or count-driven by ships in view)",
         purpose="Timbers creaking as she rolls, the sail filling and luffing, water along the hull."),
     "amb/world/mountain.ogg": dict(
-        kind="bed", render=mountain, lufs=-23.0, quality=BED_Q, gain=1.0, when="always",
+        # -22, the loud end of the bed range: between the towns the land carries itself
+        kind="bed", render=mountain, lufs=-22.0, quality=BED_Q, gain=1.0, when="always",
         where="stretches: Apennines, Zagros",
         purpose="Cold gusting wind whistling on rock, a raven, far sheep bells."),
     "amb/world/road.ogg": dict(
-        kind="bed", render=road, lufs=-23.0, quality=BED_Q, gain=1.0, when="day",
+        # -22, the loud end of the bed range: between the towns the land carries itself
+        kind="bed", render=road, lufs=-22.0, quality=BED_Q, gain=1.0, when="day",
         where="stretches: Anatolian plateau, Syrian steppe, the Royal Road",
         purpose="Dry wind, larks, a caravan's and a horse's bells ahead, a cart far behind."),
     "amb/world/river.ogg": dict(
@@ -381,7 +378,8 @@ FILES = {
         where="stretches: Ionia-Lydia, Mesopotamia; river tiles anywhere",
         purpose="A broad river lapping, reeds rustling, frogs."),
     "amb/world/fields.ogg": dict(
-        kind="bed", render=fields, lufs=-23.0, quality=BED_Q, gain=1.0, when="day",
+        # -22, the loud end of the bed range: between the towns the land carries itself
+        kind="bed", render=fields, lufs=-22.0, quality=BED_Q, gain=1.0, when="day",
         where="stretches: Latium-Italy, mainland Greece countryside, Iranian plateau",
         purpose="Larks, wind in grass and pines, cowbells far off."),
     "amb/world/desert_night.ogg": dict(
@@ -412,8 +410,6 @@ FILES = {
         kind="loop", render=brazier, lufs=-26.0, quality=BED_Q, gain=0.7, when="lit",
         where="positional: braziers, fire altars, hearths, bonfires (R12)",
         purpose="A small fire crackling over a low breathy roar."),
-    "sfx/world/step.wav": dict(kind="sfx", render=step, lufs=-28.0, gain=0.6,
-                               purpose="One footstep on stone (step frames of walkers)."),
     "sfx/world/hoof.wav": dict(kind="sfx", render=hoof, lufs=-26.0, gain=0.7,
                                purpose="One hoof on paving (step frames of horses, mules, oxen)."),
     "sfx/world/gallop.wav": dict(kind="sfx", render=gallop, lufs=-24.0, gain=0.9,
@@ -446,6 +442,6 @@ FILES = {
                                  purpose="A vendor's sung-out cry with no words (W12, markets)."),
     "sfx/world/seam.wav": dict(kind="sfx", render=chime, lufs=-22.0, gain=1.0,
                                purpose="The soft chime when the era caption appears at a seam."),
-    "sfx/world/arrive_home.wav": dict(kind="sfx", render=arrive_home, lufs=-20.0, gain=1.0,
+    "sfx/world/arrive_home.wav": dict(kind="sfx", render=arrive_home, lufs=-22.0, gain=1.0,
                                       purpose="Arriving home: the corner's motif on the music box."),
 }

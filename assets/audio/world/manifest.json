@@ -146,16 +146,6 @@
       "where": "positional: braziers, fire altars, hearths, bonfires (R12)"
     },
     {
-      "file": "sfx/world/step.wav",
-      "kind": "sfx",
-      "loop": false,
-      "seconds": 0.2862,
-      "samples": 12622,
-      "gain": 0.6,
-      "when": "event",
-      "for": "One footstep on stone (step frames of walkers)."
-    },
-    {
       "file": "sfx/world/hoof.wav",
       "kind": "sfx",
       "loop": false,

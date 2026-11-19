@@ -3717,7 +3717,6 @@
    "amb/world/oars.ogg"
   ],
   "sfx": [
-   "sfx/world/step.wav",
    "sfx/world/hoof.wav",
    "sfx/world/gallop.wav",
    "sfx/world/chisel.wav",
