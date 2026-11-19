@@ -1,6 +1,8 @@
-// The game executable's resources: its manifest and the version shown in its properties.
+// The game executable's resources: its icon, its manifest and the version shown in its
+// properties. The icon has the lowest id, so Explorer and SDL's window class both take it.
 #include <winver.h>
 
+1 ICON "@CMAKE_SOURCE_DIR@/assets/icon/laeticias-corner.ico"
 1 24 "@CMAKE_SOURCE_DIR@/packaging/windows/laeticias-corner.manifest"
 
 VS_VERSION_INFO VERSIONINFO

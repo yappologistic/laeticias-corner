@@ -64,7 +64,7 @@ jobs:
           dnf install -y dnf-plugins-core
           dnf config-manager --set-enabled crb
           dnf install -y gcc-toolset-14-gcc-c++ gcc-toolset-14-libstdc++-devel \
-            gcc-toolset-14-binutils git-core xz unzip findutils file \
+            gcc-toolset-14-binutils git-core xz unzip findutils file desktop-file-utils \
             alsa-lib-devel pulseaudio-libs-devel pipewire-devel \
             libX11-devel libXext-devel libXrandr-devel libXcursor-devel libXfixes-devel \
             libXi-devel libXScrnSaver-devel libXtst-devel libxkbcommon-devel \
