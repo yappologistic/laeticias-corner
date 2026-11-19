@@ -41,7 +41,8 @@ struct MenuWorld {
 
 struct MenuModel {
     const Profile* profile = nullptr;
-    bool firstLaunch = false; // no worlds yet: the title offers Begin
+    bool firstLaunch = false; // a fresh corner nobody has begun: the title offers Begin (and
+                              // Worlds when there are any)
     std::string_view continueName;
     std::span<const MenuWorld> worlds;
     Sprite logo;

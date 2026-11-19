@@ -497,7 +497,10 @@ void Menus::layoutTitle(const MenuModel& m, float s) {
         1.0f,
         std::floor(std::min(theme::kLogoScale * s, (w - 2 * pad) / std::max(1.0f, m.logo.w))));
     const float logoH = m.logo.h * logoScale;
-    const int buttons = m.firstLaunch ? 3 : 4;
+    // Worlds whenever there are any: a fresh corner beside worlds that exist (one could not be
+    // opened, or the one played was deleted) must not hide them.
+    const bool worlds = !m.firstLaunch || !m.worlds.empty();
+    const int buttons = worlds ? 4 : 3;
     const float h = 2 * pad + logoH + gap * 2 + static_cast<float>(buttons) * (bh + gap) - gap;
     // Left of centre, so the corner shows beside it (§6.5).
     const float x = std::round(std::max(theme::kMargin * s, screen_.x * 0.22f - w * 0.5f));
@@ -511,7 +514,7 @@ void Menus::layoutTitle(const MenuModel& m, float s) {
     };
     headingText_ = std::vformat(strings::kContinue, std::make_format_args(m.continueName));
     button(kContinue, m.firstLaunch ? strings::kBegin : std::string_view(headingText_));
-    if (!m.firstLaunch) button(kWorlds, strings::kWorldsButton);
+    if (worlds) button(kWorlds, strings::kWorldsButton);
     button(kSettings, strings::kSettings);
     button(kQuit, strings::kQuit);
 }
