@@ -368,7 +368,10 @@ def _item_job(args):
     if frame:                       # every frame of a look shares its geometry: frame 0 gives it
         return res, {}
     order = order_geometry(*columns(model, rfw, rfh), walk, {}, pieces, k, crossing=crossing)
-    if deck and not walk:           # a deck walked over whole (bridges, jetties, pontoons, moles)
+    if deck and not walk:           # a deck walked over whole (bridges, jetties, pontoons, moles):
+        # its floor by walk tiles and their heights, as the engine's loader wants (walk_z only
+        # on listed walk tiles, src/world/geometry.cpp)
+        order["walk"] = [[x, y] for x in range(rfw) for y in range(rfh)]
         order["walk_z"] = deck_heights(model, rfw, rfh)
     return res, {(item_id, variant): {"h": int(out.base.oy), "top": zmax, "lights": _lights(model, k), **order}}
 
@@ -731,7 +734,7 @@ def geometry(set_id, cat, mod, pieces, meta, lm_info, k):
                     g["lights"] = info["lights"]
                 if v in meta.get("kit_pieces", {}).get(iid, {}):
                     g["pieces"] = meta["kit_pieces"][iid][v]
-                for key in ("tops", "roof", "under", "pass", "walk_z"):
+                for key in ("tops", "roof", "under", "pass", "walk", "walk_z"):
                     if key in info:
                         g[key] = info[key]
                 entry[v] = g
