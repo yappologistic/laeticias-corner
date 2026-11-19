@@ -100,7 +100,7 @@
      ]
     },
     "snow_line": [
-     8,
+     12,
      null,
      null
     ]
@@ -179,9 +179,9 @@
      ]
     },
     "snow_line": [
-     6,
-     5,
-     6
+     10,
+     9,
+     9
     ]
    }
   },
@@ -382,6 +382,7 @@
      "sfx/world/stork_clatter.wav"
     ]
    },
+   "waterfall": "waterfall",
    "nature_seasons": {
     "spring": {
      "dawn": "amb/world/dawn_scrub.ogg",

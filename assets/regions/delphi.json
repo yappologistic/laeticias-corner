@@ -115,9 +115,9 @@
      ]
     },
     "snow_line": [
-     8,
-     10,
-     12
+     9,
+     11,
+     13
     ],
     "ambience": {
      "beds": [
@@ -144,7 +144,7 @@
     "haze": 0.15,
     "ground": {},
     "snow_line": [
-     null,
+     15,
      null,
      null
     ]
@@ -173,7 +173,7 @@
     },
     "snow_line": [
      null,
-     null,
+     14,
      11
     ],
     "ambience": {
@@ -2788,7 +2788,13 @@
   ],
   [
    261,
-   769,
+   767,
+   "athens.g_lamp",
+   "niche_lamp"
+  ],
+  [
+   261,
+   771,
    "athens.g_lamp",
    "niche_lamp"
   ],

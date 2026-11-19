@@ -7,14 +7,18 @@
     {"id": "tibur_farm", "at": [68, 999], "kind": "dest"},
     {"id": "n3", "at": [68, 994]},
     {"id": "n4", "at": [73, 999]},
-    {"id": "n5", "at": [73, 994]}
+    {"id": "n5", "at": [73, 994]},
+    {"id": "n6", "at": [65, 1003]},
+    {"id": "n7", "at": [65, 995]}
   ],
   "edges": [
     {"a": "tiburtina", "b": "n1", "kind": "road"},
     {"a": "n1", "b": "tibur_farm", "kind": "road"},
     {"a": "tibur_farm", "b": "n3", "kind": "road"},
     {"a": "tibur_farm", "b": "n4", "kind": "street"},
-    {"a": "n4", "b": "n5", "kind": "street"}
+    {"a": "n4", "b": "n5", "kind": "street"},
+    {"a": "n1", "b": "n6", "kind": "street"},
+    {"a": "n6", "b": "n7", "kind": "street"}
   ],
   "lanes": [
   ]

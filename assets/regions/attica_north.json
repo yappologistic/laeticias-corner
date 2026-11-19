@@ -161,13 +161,10 @@
     "ground": {
      "muddy": [
       "mar"
-     ],
-     "snow": [
-      "mar"
      ]
     },
     "snow_line": [
-     7,
+     13,
      null,
      null
     ]
@@ -239,17 +236,12 @@
       "dec",
       "jan",
       "feb"
-     ],
-     "snow": [
-      "dec",
-      "jan",
-      "feb"
      ]
     },
     "snow_line": [
-     6,
-     5,
-     5
+     11,
+     9,
+     10
     ]
    }
   },

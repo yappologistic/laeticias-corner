@@ -1365,6 +1365,7 @@
     {"a": "n332", "b": "portuensis", "kind": "road"}
   ],
   "lanes": [
-    {"id": "tiber", "kind": "river", "points": [[183, 1127], [134, 1127], [119, 1127], [119, 1121], [108, 1121], [108, 1135], [100, 1138], [89, 1153], [82, 1163], [62, 1174], [24, 1178]], "ports": [{"id": "ostia", "at": 0}, {"id": "emporium", "at": 1}, {"id": "forum_boarium", "at": 2}, {"id": "island", "at": 4}, {"id": "north", "at": 10}]}
+    {"id": "tiber", "kind": "river", "points": [[183, 1127], [136, 1127], [136, 1129], [118, 1129], [117, 1127]], "ports": [{"id": "ostia", "at": 0}, {"id": "emporium", "at": 1}, {"id": "forum_boarium", "at": 3}, {"id": "island", "at": 4}]},
+    {"id": "tiber_upper", "kind": "river", "points": [[108, 1135], [100, 1138], [89, 1153], [82, 1163], [62, 1174], [24, 1178]], "ports": [{"id": "island_head", "at": 0}, {"id": "north", "at": 5}]}
   ]
 }
