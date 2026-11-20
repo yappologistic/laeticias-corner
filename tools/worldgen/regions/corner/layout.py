@@ -150,10 +150,12 @@ def build(L: Layout) -> None:
     L.node("jetty_foot", (jetty_c, shore), kind=None)
     L.edge("jetty_foot", "jetty", kind="quay")
 
-    # Streams from the home's west rim to the sea cliff, and the far pond's creek to the south.
-    for r, name in ((44, "high_wood"), (52, "west_meadow")):
-        mouth = coast_west(L, r, 39)
-        L.river([(39, r), (33, r + 1), (26, r), (mouth, r)], width=1, banks={"reeds": 0.25},
+    # Streams from the home's west rim to the sea cliff, as wide as the home's own (the
+    # catalog's land reveals: high wood's one tile, west meadow's two, which a width-2 line along
+    # row r gives as rows r and r + 1), and the far pond's creek to the south.
+    for r, width, name in ((44, 1, "high_wood"), (52, 2, "west_meadow")):
+        mouth = max(coast_west(L, rr, 39) for rr in range(r, r + width))
+        L.river([(39, r), (33, r + 1), (26, r), (mouth, r)], width=width, banks={"reeds": 0.25},
                 seed=name)
     creek_end = coast_south(L, 64, 96)
     L.river([(64, 80), (66, 88), (64, 95), (63, creek_end)], width=1, banks={"reeds": 0.2},
