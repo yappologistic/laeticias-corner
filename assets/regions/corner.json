@@ -1914,7 +1914,7 @@
   {
    "body": "corner_river",
    "kind": "river",
-   "tiles": 41,
+   "tiles": 42,
    "rect": [
     44,
     1240,
