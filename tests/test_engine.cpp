@@ -1369,6 +1369,10 @@ TEST_CASE("settings fit every window and interface size, every row reachable, ro
                                               a.y + 0.5f < b.y + b.h && b.y + 0.5f < a.y + a.h;
                             CHECK_FALSE(over);
                         }
+                    // Nothing is a bare line tall: a section heading under a row's note
+                    // (both drawn from the top of their boxes) once touched it.
+                    for (const Box& b : boxes)
+                        CHECK(b.h >= ui.font.lineHeight(Face::Body) + theme::kGap * s - 0.5f);
                     CHECK(menus.widgetCentre("done"));
                 };
                 check();
