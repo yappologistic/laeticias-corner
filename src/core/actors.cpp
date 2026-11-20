@@ -976,7 +976,7 @@ void Actors::restart(int i) {
     a.anim = 1;
     a.prio = (a.flags & kLeaving) != 0 ? a.prio : 0;
     a.pathLen = 0;
-    a.flags &= static_cast<std::uint16_t>(~(kErrand | kOnHat | kFadeOut));
+    a.flags &= static_cast<std::uint16_t>(~(kErrand | kOnHat | kFadeOut | kToMiddle | kStepAside));
     if (cat_->kinds[a.kind].move != Locomotion::Fly) a.lift = 0;
 }
 
@@ -1116,6 +1116,7 @@ bool Actors::goTo(const ActorEnv& env, int i, const Pick& p, bool bank) {
     dests_[static_cast<std::size_t>(i)] = p;
     a.goal = p.point;
     a.state = ActorState::Travel;
+    a.flags &= static_cast<std::uint16_t>(~(kToMiddle | kStepAside));
     if (cat_->kinds[a.kind].move == Locomotion::Fly || dist(a.pos, a.goal) < 0.05f) {
         a.pathLen = 0;
         return true;
@@ -1567,20 +1568,33 @@ void Actors::travel(const ActorEnv& env, int i, float dt) {
     } else {
         a.lift += (0.0f - a.lift) * std::min(1.0f, dt * 8.0f);
     }
+    if ((a.flags & kToMiddle) != 0) {
+        // Its way closed while it was off the middle of a tile: it walks to the middle (all the
+        // way, not a step back and a step forward each step) and plans again from there.
+        const Vec2 mid = centre(tileOf(a.pos));
+        const float off = dist(a.pos, mid);
+        if (off > step) {
+            a.facing = facingFor({mid.x - a.pos.x, mid.y - a.pos.y});
+            a.pos = {a.pos.x + (mid.x - a.pos.x) / off * step,
+                     a.pos.y + (mid.y - a.pos.y) / off * step};
+            return;
+        }
+        a.pos = mid;
+        a.flags &= static_cast<std::uint16_t>(~kToMiddle);
+        if (!plan(env, i, true)) finishFailed(i);
+        return;
+    }
     Vec2 np =
         len <= step ? next : Vec2{a.pos.x + delta.x / len * step, a.pos.y + delta.y / len * step};
     const TilePos nt = tileOf(np);
     // Never step onto a tile that is off-limits: from off the middle of a tile (getting up from
     // a seat) a straight line may clip a corner the plan went round, so it goes to the middle
-    // first; a tile that closed since the way was planned means planning again.
-    if (k.move != Locomotion::Fly && !(nt == tileOf(a.pos)) && !(nt == tileOf(a.goal)) &&
-        !passable(world, *cat_, k.move, nt, true)) {
-        const Vec2 mid = centre(tileOf(a.pos));
-        const float off = dist(a.pos, mid);
-        if (off > 0.02f) {
-            const float s2 = std::min(off, step);
-            a.pos = {a.pos.x + (mid.x - a.pos.x) / off * s2,
-                     a.pos.y + (mid.y - a.pos.y) / off * s2};
+    // first; a tile that closed since the way was planned means planning again. Stepping aside
+    // is the exception: it stands where it may not, and wades out by the shortest line.
+    if (k.move != Locomotion::Fly && (a.flags & kStepAside) == 0 && !(nt == tileOf(a.pos)) &&
+        !(nt == tileOf(a.goal)) && !passable(world, *cat_, k.move, nt, true)) {
+        if (dist(a.pos, centre(tileOf(a.pos))) > 0.02f) {
+            a.flags |= kToMiddle;
             return;
         }
         if (!plan(env, i, true)) finishFailed(i);
@@ -2144,7 +2158,7 @@ void Actors::validate(const ActorEnv& env, int i) {
         a.goal = to;
         a.pathLen = 0;
         a.state = ActorState::Travel;
-        a.flags |= kStepAside;
+        a.flags = static_cast<std::uint16_t>((a.flags | kStepAside) & ~kToMiddle);
         return;
     }
     restart(i);

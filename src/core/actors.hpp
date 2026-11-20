@@ -52,6 +52,7 @@ inline constexpr std::uint16_t kSheltered = 1u << 9;  // went for shelter in thi
 inline constexpr std::uint16_t kStepAside = 1u << 10; // displaced: stepping to open ground
 inline constexpr std::uint16_t kHomeRetry = 1u << 11; // a leaver already set out home twice
 inline constexpr std::uint16_t kCrowd = 1u << 12;     // the bench's crowd: outside the counts
+inline constexpr std::uint16_t kToMiddle = 1u << 13;  // its way closed: to the tile's middle first
 } // namespace actor_flag
 inline constexpr std::uint8_t kPathPending = 0xFF; // waiting for a path search this step
 
