@@ -554,7 +554,7 @@ def town_file(rid: str, layout_world: World, graphs: dict[str, Graph], facts: di
     kind, set_, time, rect, _b = P.REGIONS[rid]
     t = TOWN[rid]
     g = graphs.get(rid)
-    tiles, placed = facts.get(rid, ({}, set()))
+    tiles, placed, bare = facts.get(rid, ({}, set(), set()))
     nodes = {n.id for n in g.nodes} if g else set()
     rule = seasonlife.TOWN_SEASONS.get(rid, {}).get("factors", {})
     factors = rule.get(("*", "*"), [1.0] * 12)
@@ -563,7 +563,7 @@ def town_file(rid: str, layout_world: World, graphs: dict[str, Graph], facts: di
     root = Path(__file__).resolve().parents[3]
     work = S.resolve(S.raw_climates(root), C.REGION_CLIMATE[rid]).get("work", {})
     life = townlife.build(rid, set_, tiles, placed, nodes, factors, seasonlife.KIND_ANIMS,
-                          t["people"][-1], work)
+                          t["people"][-1], work, bare)
     tokens = []
     if g:
         for ln in g.lanes:
@@ -603,17 +603,23 @@ def town_file(rid: str, layout_world: World, graphs: dict[str, Graph], facts: di
         {"place": {"node": f"{rid}:{t['place'][0]}", "card": t["place"][1]}} if "place" in t else {})
 
 
-def town_facts(world: World) -> dict[str, tuple[dict[str, int], set[str]]]:
-    """Per town: its districts' tiles and the item ids its own layer places."""
+def town_facts(world: World) -> dict[str, tuple[dict[str, int], set[str], set[str]]]:
+    """Per town: its districts' tiles, the item ids its own layer places and the districts with
+    no tile anyone can stand on (all of it impassable)."""
     from .compose import live_items
-    out: dict[str, tuple[dict[str, int], set[str]]] = {rid: ({}, set()) for rid in TOWNS}
+    from .layer import IMPASSABLE
+    out: dict[str, tuple[dict[str, int], set[str], set[str]]] = \
+        {rid: ({}, set(), set()) for rid in TOWNS}
     u, c = np.unique(world.D, return_counts=True)
+    standing = set(np.unique(world.D[(world.L & IMPASSABLE) == 0]).tolist())
     for d, n in zip(u.tolist(), c.tolist()):
         if d == NONE16:
             continue
         rid, did = world.districts[d].split("/", 1)
         if rid in out:
             out[rid][0][did] = int(n)
+            if d not in standing:
+                out[rid][2].add(did)
     for _, it in live_items(world):
         if it.layer in out:
             out[it.layer][1].add(it.id)

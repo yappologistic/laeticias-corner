@@ -53,32 +53,6 @@
      "file": "amb/world/brazier.ogg",
      "when": "lit"
     }
-   ],
-   "zones": [
-    {
-     "rect": [
-      300,
-      274,
-      330,
-      280
-     ],
-     "file": "amb/world/oars.ogg",
-     "gain": 0.5,
-     "hours": [
-      "06:30",
-      "17:30"
-     ],
-     "months": [
-      "mar",
-      "apr",
-      "may",
-      "jun",
-      "jul",
-      "aug",
-      "sep",
-      "oct"
-     ]
-    }
    ]
   },
   "weather": {
@@ -315,9 +289,8 @@
     }
    ],
    "voices": {
-    "world.dog": [
-     "sfx/world/dog_1.wav",
-     "sfx/world/dog_2.wav"
+    "world.gull": [
+     "sfx/world/gull_call.wav"
     ]
    },
    "nature_seasons": {
@@ -728,263 +701,13 @@
  },
  "districts": [
   {
-   "id": "shore",
-   "area": "country",
+   "id": "sea",
+   "area": "sea",
    "populations": [
     {
-     "role": "shipwright",
-     "density": "always",
-     "max_per_chunk": 5.9,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "shipwright",
-     "density": "always",
-     "max_per_chunk": 4.72,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "dyer",
-     "density": "always",
-     "max_per_chunk": 3.93,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "dyer",
-     "density": "always",
-     "max_per_chunk": 3.14,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "fisher",
-     "density": "always",
-     "max_per_chunk": 3.93,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "fisher",
-     "density": "always",
-     "max_per_chunk": 3.14,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "townsfolk",
-     "density": "town_day",
-     "max_per_chunk": 26.49,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "townsfolk",
-     "density": "town_day",
-     "max_per_chunk": 21.19,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "night_watch",
-     "density": "night",
-     "max_per_chunk": 3.93,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "role": "night_watch",
-     "density": "night",
-     "max_per_chunk": 3.14,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     }
-    },
-    {
-     "role": "water_carrier",
-     "density": "always",
-     "max_per_chunk": 3.93,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "water_carrier",
-     "density": "always",
-     "max_per_chunk": 3.14,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "child",
-     "density": "always",
-     "max_per_chunk": 3.93,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "role": "child",
-     "density": "always",
-     "max_per_chunk": 3.14,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     }
-    },
-    {
-     "actor": "parsa.scribe",
+     "actor": "world.gull",
      "density": "daytime",
-     "max_per_chunk": 2.36,
+     "max_per_chunk": 1.4,
      "when": {
       "months": [
        "mar",
@@ -997,315 +720,30 @@
        "oct",
        "nov"
       ]
-     },
-     "variants": {
-      "cold": "climate"
      }
     },
     {
-     "actor": "parsa.scribe",
+     "actor": "world.gull",
      "density": "daytime",
-     "max_per_chunk": 1.89,
+     "max_per_chunk": 1.12,
      "when": {
       "months": [
        "dec",
        "jan",
        "feb"
       ]
-     },
-     "variants": {
-      "cold": "climate"
      }
     }
    ],
-   "name": "The shore",
+   "name": "The open sea",
    "sound": {
     "surfaces": {
-     "leaves": 0.02,
-     "water": 0.75
+     "water": 0.99
     },
     "wind": "wind.sea",
     "exposure": 1.0,
     "water": {
      "family": "sea.coast"
-    },
-    "steps": {
-     "surface": "earth",
-     "files": [
-      "sfx/world/step_earth_1.wav",
-      "sfx/world/step_earth_2.wav",
-      "sfx/world/step_earth_3.wav"
-     ],
-     "hooves": [
-      "sfx/world/hoof_earth_1.wav",
-      "sfx/world/hoof_earth_2.wav"
-     ]
-    },
-    "cart": "amb/world/cart_earth.ogg",
-    "crowd": {
-     "family": "crowd.persian",
-     "full": 8
-    }
-   },
-   "look": {
-    "reflect": true
-   }
-  },
-  {
-   "id": "town",
-   "area": "town",
-   "populations": [
-    {
-     "role": "merchant",
-     "density": "always",
-     "max_per_chunk": 9.44,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "merchant",
-     "density": "always",
-     "max_per_chunk": 7.55,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "townsfolk",
-     "density": "town_day",
-     "max_per_chunk": 52.99,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "townsfolk",
-     "density": "town_day",
-     "max_per_chunk": 42.39,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "night_watch",
-     "density": "night",
-     "max_per_chunk": 9.44,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "role": "night_watch",
-     "density": "night",
-     "max_per_chunk": 7.55,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     }
-    },
-    {
-     "role": "water_carrier",
-     "density": "always",
-     "max_per_chunk": 4.72,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "water_carrier",
-     "density": "always",
-     "max_per_chunk": 3.78,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate",
-      "hot": "climate"
-     }
-    },
-    {
-     "role": "child",
-     "density": "always",
-     "max_per_chunk": 4.72,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "role": "child",
-     "density": "always",
-     "max_per_chunk": 3.78,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     }
-    },
-    {
-     "actor": "parsa.scribe",
-     "density": "daytime",
-     "max_per_chunk": 2.83,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "parsa.scribe",
-     "density": "daytime",
-     "max_per_chunk": 2.26,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     },
-     "variants": {
-      "cold": "climate"
-     }
-    },
-    {
-     "actor": "world.dog",
-     "density": "always",
-     "max_per_chunk": 2.36,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "actor": "world.dog",
-     "density": "always",
-     "max_per_chunk": 1.89,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     }
-    }
-   ],
-   "name": "The town",
-   "sound": {
-    "surfaces": {
-     "roof": 0.27,
-     "water": 0.19
-    },
-    "wind": "wind.open",
-    "exposure": 0.78,
-    "water": {
-     "family": "sea.harbour"
     },
     "steps": {
      "surface": "earth",
@@ -1324,17 +762,440 @@
       "sfx/world/step_timber_3.wav"
      ]
     },
+    "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true,
+    "air": {
+     "mist": {
+      "where": "plain",
+      "hours": [
+       "05:00",
+       "07:30"
+      ],
+      "seasons": [
+       "spring"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "shore",
+   "area": "country",
+   "populations": [
+    {
+     "role": "shipwright",
+     "density": "always",
+     "max_per_chunk": 7.02,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "shipwright",
+     "density": "always",
+     "max_per_chunk": 5.62,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "dyer",
+     "density": "always",
+     "max_per_chunk": 4.64,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "dyer",
+     "density": "always",
+     "max_per_chunk": 3.71,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "fisher",
+     "density": "always",
+     "max_per_chunk": 4.64,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "fisher",
+     "density": "always",
+     "max_per_chunk": 3.71,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 26.53,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 21.22,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 12.88,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 10.3,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    }
+   ],
+   "name": "The shore",
+   "sound": {
+    "surfaces": {
+     "roof": 0.04,
+     "leaves": 0.08
+    },
+    "wind": "wind.open",
+    "exposure": 0.97,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
+    "cart": "amb/world/cart_earth.ogg",
+    "crowd": {
+     "family": "crowd.persian",
+     "full": 8
+    }
+   }
+  },
+  {
+   "id": "town",
+   "area": "town",
+   "populations": [
+    {
+     "role": "merchant",
+     "density": "always",
+     "max_per_chunk": 14.63,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "merchant",
+     "density": "always",
+     "max_per_chunk": 11.7,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 53.03,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "townsfolk",
+     "density": "town_day",
+     "max_per_chunk": 42.42,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 14.63,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "role": "night_watch",
+     "density": "night",
+     "max_per_chunk": 11.7,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 7.31,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "water_carrier",
+     "density": "always",
+     "max_per_chunk": 5.85,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     },
+     "variants": {
+      "cold": "climate",
+      "hot": "climate"
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 7.31,
+     "when": {
+      "months": [
+       "mar",
+       "apr",
+       "may",
+       "jun",
+       "jul",
+       "aug",
+       "sep",
+       "oct",
+       "nov"
+      ]
+     }
+    },
+    {
+     "role": "child",
+     "density": "always",
+     "max_per_chunk": 5.85,
+     "when": {
+      "months": [
+       "dec",
+       "jan",
+       "feb"
+      ]
+     }
+    }
+   ],
+   "name": "The town",
+   "sound": {
+    "surfaces": {
+     "roof": 0.37
+    },
+    "wind": "wind.open",
+    "exposure": 0.7,
+    "steps": {
+     "surface": "earth",
+     "files": [
+      "sfx/world/step_earth_1.wav",
+      "sfx/world/step_earth_2.wav",
+      "sfx/world/step_earth_3.wav"
+     ],
+     "hooves": [
+      "sfx/world/hoof_earth_1.wav",
+      "sfx/world/hoof_earth_2.wav"
+     ]
+    },
     "cart": "amb/world/cart_earth.ogg",
     "crowd": {
      "family": "crowd.persian",
      "full": 20
-    }
-   },
-   "look": {
-    "reflect": true,
-    "haze": {
-     "toward": "sea",
-     "strength_add": 0.03
     }
    }
   }
@@ -3345,13 +3206,6 @@
    276,
    "parsa.p_house_small",
    "door_lamp"
-  ],
-  [
-   326,
-   276,
-   "parsa.p_torch",
-   "niche_lamp",
-   "flame"
   ],
   [
    301,
