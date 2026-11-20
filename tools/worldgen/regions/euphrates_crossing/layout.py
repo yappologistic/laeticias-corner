@@ -26,11 +26,13 @@ def build(L: Layout) -> None:
     river = [(7, 0), (7, 15)]
     L.river(river, width=4, terrain="world.river", banks=None, seed="euphrates")
     L.level(Line(river, 4), 0)  # flush with its banks, as the kit decks are drawn (the base meets it)
-    # The bridge of boats on row 11, the ferry's landing stages on row 8.
+    # The bridge of boats on row 11; the ferry's landing stages run along each bank over rows
+    # 7..9, so each reads as a stage moored to its bank, never as a lone raft in the stream.
     for c in range(6, 10):
         L.place("world.pontoon", at=(c, 11))
-    L.place("world.jetty", at=(6, 8))
-    L.place("world.jetty", at=(9, 8))
+    for c in (6, 9):
+        for r in range(7, 10):
+            L.place("world.jetty", at=(c, r))
     L.lane("quffa_ferry", [(7, 8), (8, 8)], kind="river",   # between the stages' heads
            ports={"start": 0, "end": 1, "west_landing": 0, "east_landing": 1})
     WP.harbour_lane(L, "euphrates_boats", [(8, 13), (8, 15)], port="crossing", home="landing")
