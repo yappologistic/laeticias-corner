@@ -299,7 +299,14 @@ private:
     void leaveWorld();
     bool openWorld(const std::string& slug);
     void createWorld(std::string name, bool freeBuild);
+    // Lists the worlds and decodes their pictures on a worker ("Your worlds" with hundreds of
+    // saves would freeze the frame); settleWorlds takes the list when it is ready (with
+    // `wait`, waits for it: a name is checked against every world) and uploads a few pictures
+    // a frame.
     void refreshWorlds();
+    void settleWorlds(bool wait);
+    // Takes a deleted world's card off the screen before the new listing arrives.
+    void forgetWorldCard(const std::string& slug);
     [[nodiscard]] std::vector<std::string> takenSlugs() const;
     const MenuModel& menuModel();
     void profileChanged();
@@ -733,6 +740,13 @@ private:
     // The front door
     Menus menus_;
     MenuModel menuModel_;
+    struct WorldsFound {
+        std::vector<WorldSummary> list;
+        std::vector<SurfacePtr> thumbs; // decoded, not yet uploaded (null: none)
+    };
+    std::future<WorldsFound> worldsJob_;
+    bool worldsStale_ = false; // asked again while a listing was under way
+    std::vector<SurfacePtr> worldThumbsPending_;
     std::vector<WorldSummary> worldList_;
     std::vector<TexturePtr> worldThumbs_;
     std::vector<std::string> worldDetails_;

@@ -2047,6 +2047,7 @@ int App::run() {
                     : std::vformat(strings::kToastWelcomeAlone, std::make_format_args(pages)));
         }
         settlePhoto(false);
+        settleWorlds(false);
         if (thumbTimer_ >= tuning::kThumbnailInterval) {
             thumbTimer_ = 0;
             (void)writeThumbnail();

@@ -14,6 +14,7 @@ inline constexpr double kAutosaveDelay = 1.5;       // seconds after the last ch
 inline constexpr double kAutosaveMaxDelay = 20.0;   // longest unsaved stretch while editing
 inline constexpr double kSaveRetrySeconds = 10.0;   // after a failed save
 inline constexpr double kThumbnailInterval = 300.0; // play seconds between world thumbnails
+inline constexpr int kWorldThumbsPerFrame = 4;      // "Your worlds" cards' pictures uploaded
 
 // Clock: fractions of one full cycle.
 inline constexpr double kDayLengthSeconds = 12.0 * 60.0;

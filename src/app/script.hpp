@@ -83,7 +83,8 @@
 //       page none|title|worlds|newworld|delete|loaderror|settings|pause (the menus' top page)
 //       tour N (its step, 0: none) | onboarded yes|no | worlds N (on the worlds screen)
 //       world NAME... (the open world's name) | fresh yes|no (an unbegun preview)
-//       card N NAME... (the N-th world on the worlds screen, newest first)
+//       card N NAME... (the N-th world on the worlds screen, newest first) | cards N P (the
+//       worlds screen shows N cards, P of them with their picture)
 //       volume music|effects|ambience N | reduce_motion yes|no | ui_scale N | vsync yes|no
 //       look classic|low|medium|high (the Look in effect) | clouds on|shadows|off (the setting)
 //       frame ID (the postcard frame) | caption yes|no | postcards N (files in its folder)

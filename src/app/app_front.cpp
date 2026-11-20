@@ -198,38 +198,83 @@ std::vector<std::string> App::takenSlugs() const {
 }
 
 void App::refreshWorlds() {
-    worldList_ = listWorlds(saveDir_ / kWorldsDir);
-    worldThumbs_.clear();
-    worldDetails_.clear();
-    menuWorlds_.clear();
-    worldDetails_.reserve(worldList_.size());
-    for (const WorldSummary& w : worldList_) {
-        TexturePtr tex;
-        if (const SurfacePtr img{
-                SDL_LoadPNG((saveDir_ / kWorldsDir / w.slug / kThumbFile).string().c_str())})
-            tex = uploadTexture(renderer_.get(), img.get());
-        const SeasonDay sd = seasonOf(w.day, cat_.seasonDays);
-        const int day = sd.day + 1;
-        const int pages = w.pages;
-        worldDetails_.push_back(
-            w.readable ? std::vformat(pages == 1 ? strings::kWorldDetailOne : strings::kWorldDetail,
-                                      std::make_format_args(
-                                          cat_.seasons[static_cast<std::size_t>(sd.season)].name,
-                                          day, pages))
-                       : std::string(strings::kCannotOpen));
-        worldThumbs_.push_back(std::move(tex));
+    if (worldsJob_.valid()) {
+        worldsStale_ = true; // the one under way may have read the folder before this change
+        return;
     }
+    worldsJob_ = std::async(std::launch::async, [dir = saveDir_ / kWorldsDir] {
+        WorldsFound found{listWorlds(dir), {}};
+        found.thumbs.reserve(found.list.size());
+        for (const WorldSummary& w : found.list)
+            found.thumbs.emplace_back(SDL_LoadPNG((dir / w.slug / kThumbFile).string().c_str()));
+        return found;
+    });
+    // A script's frames must be the same every run: the list is there the frame it is asked.
+    if (!streams()) settleWorlds(true);
+}
+
+void App::forgetWorldCard(const std::string& slug) {
     for (std::size_t i = 0; i < worldList_.size(); ++i) {
-        MenuWorld mw;
-        mw.name = worldList_[i].name;
-        mw.detail = worldDetails_[i];
-        mw.readable = worldList_[i].readable;
-        if (SDL_Texture* t = worldThumbs_[i].get()) {
-            float w = 0;
-            float h = 0;
-            if (SDL_GetTextureSize(t, &w, &h)) mw.thumb = Sprite{t, {0, 0, 1, 1}, w, h, 0, 0};
+        if (worldList_[i].slug != slug) continue;
+        const auto at = [i](auto& v) {
+            if (i < v.size()) v.erase(v.begin() + static_cast<std::ptrdiff_t>(i));
+        };
+        at(worldList_);
+        at(worldThumbs_);
+        at(worldDetails_);
+        at(menuWorlds_);
+        at(worldThumbsPending_);
+        return;
+    }
+}
+
+void App::settleWorlds(bool wait) {
+    while (worldsJob_.valid() &&
+           (wait || worldsJob_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)) {
+        WorldsFound found = worldsJob_.get();
+        if (worldsStale_) {
+            worldsStale_ = false;
+            refreshWorlds();
+            continue;
         }
-        menuWorlds_.push_back(mw);
+        worldList_ = std::move(found.list);
+        worldThumbsPending_ = std::move(found.thumbs);
+        worldThumbs_.clear();
+        worldThumbs_.resize(worldList_.size());
+        worldDetails_.clear();
+        menuWorlds_.clear();
+        worldDetails_.reserve(worldList_.size());
+        for (const WorldSummary& w : worldList_) {
+            const SeasonDay sd = seasonOf(w.day, cat_.seasonDays);
+            const int day = sd.day + 1;
+            const int pages = w.pages;
+            worldDetails_.push_back(
+                w.readable
+                    ? std::vformat(
+                          pages == 1 ? strings::kWorldDetailOne : strings::kWorldDetail,
+                          std::make_format_args(
+                              cat_.seasons[static_cast<std::size_t>(sd.season)].name, day, pages))
+                    : std::string(strings::kCannotOpen));
+        }
+        for (std::size_t i = 0; i < worldList_.size(); ++i) {
+            MenuWorld mw;
+            mw.name = worldList_[i].name;
+            mw.detail = worldDetails_[i];
+            mw.readable = worldList_[i].readable;
+            menuWorlds_.push_back(mw);
+        }
+    }
+    // The cards' pictures, a few a frame (all at once for a script).
+    int budget = streams() ? tuning::kWorldThumbsPerFrame : static_cast<int>(menuWorlds_.size());
+    for (std::size_t i = 0; i < worldThumbsPending_.size() && budget > 0; ++i) {
+        const SurfacePtr img = std::move(worldThumbsPending_[i]);
+        if (!img) continue;
+        --budget;
+        worldThumbs_[i] = uploadTexture(renderer_.get(), img.get());
+        float w = 0;
+        float h = 0;
+        if (SDL_Texture* t = worldThumbs_[i].get(); t != nullptr && SDL_GetTextureSize(t, &w, &h))
+            menuWorlds_[i].thumb = Sprite{t, {0, 0, 1, 1}, w, h, 0, 0};
     }
 }
 
@@ -348,6 +393,7 @@ void App::applyMenuActions() {
             break;
         }
         case K::Rename: {
+            settleWorlds(true); // checked against every world (waits only while one is listed)
             if (std::cmp_greater_equal(a.arg, worldList_.size())) break;
             const WorldSummary& w = worldList_[static_cast<std::size_t>(a.arg)];
             const std::string name = trimName(a.text);
@@ -363,6 +409,9 @@ void App::applyMenuActions() {
                 SDL_Log("rename: %s", r.error().c_str());
             }
             menus_.closeField();
+            // The card says so at once; the new listing follows.
+            worldList_[static_cast<std::size_t>(a.arg)].name = name;
+            menuWorlds_[static_cast<std::size_t>(a.arg)].name = name;
             refreshWorlds();
             break;
         }
@@ -385,12 +434,14 @@ void App::applyMenuActions() {
                 writer_.flush();
                 if (auto r = deleteWorld(saveDir_ / kWorldsDir / slug); !r)
                     SDL_Log("delete: %s", r.error().c_str());
+                forgetWorldCard(slug);
                 deleteIndex_ = -1;
                 menus_.back();
                 refreshWorlds();
             }
             break;
         case K::Create: {
+            settleWorlds(true);
             const std::string name = trimName(a.text);
             if (const auto why = nameProblem(checkName(name, worldList_)); !why.empty()) {
                 menus_.fieldError(why);

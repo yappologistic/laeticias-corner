@@ -240,6 +240,21 @@ add_test(NAME newer_save_untouched COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DC
 set_tests_properties(newer_save_untouched PROPERTIES DEPENDS script_newer_save
   FIXTURES_REQUIRED newer)
 
+# "Your worlds" fills in over frames (H3-L01): six worlds with pictures, streamed as a player gets it.
+set(many "${LC_SCRATCH}/save_worlds_many")
+add_test(NAME prepare_worlds_many COMMAND ${CMAKE_COMMAND} -DDIR=${many} -DCOUNT=6
+  -DSAVE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v3.json
+  -DTHUMB=${CMAKE_SOURCE_DIR}/assets/atlas/ramps.png
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/make_worlds.cmake)
+set_tests_properties(prepare_worlds_many PROPERTIES FIXTURES_SETUP worlds_many
+  FIXTURES_REQUIRED clean_saves)
+add_test(NAME script_worlds_many
+  COMMAND laeticias-corner --headless --size 960x600 --seed 1 --save-dir "${many}" --front-door
+          --streamed --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/worlds_many.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_worlds_many PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_REQUIRED "clean_saves;worlds_many")
+
 # Play on a damaged world keeps the world being played (H3-017).
 set(unreadable "${LC_SCRATCH}/save_play_unreadable")
 add_test(NAME prepare_play_unreadable COMMAND ${CMAKE_COMMAND} -E rm -rf ${unreadable})

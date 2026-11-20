@@ -1,0 +1,10 @@
+# "Your worlds" with more worlds than a frame should wait for (run --front-door --streamed over a
+# fixture of six): the worlds are listed and their pictures decoded on a worker, and the cards'
+# pictures are uploaded four a frame, so the screen fills in over frames instead of freezing the
+# one it opens on (a listing done on the main thread puts all six up in the same frame).
+waitfor 300 cards 6 6
+click ui:menu:worlds
+waitfor 300 cards 6 4
+waitfor 30 cards 6 6
+expect page worlds
+quit

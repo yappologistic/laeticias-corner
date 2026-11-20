@@ -399,6 +399,13 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "onboarded") return yesNo(profile_.onboarded);
     if (what == "worlds")
         return equal(std::to_string(listWorlds(saveDir_ / kWorldsDir).size()), a[1]);
+    if (what == "cards") {
+        // expect cards N P: the worlds screen shows N cards, P of them with their picture.
+        if (a.size() < 3) return std::string("expect cards N P");
+        const auto pictured = std::ranges::count_if(
+            menuWorlds_, [](const MenuWorld& w) { return w.thumb.texture != nullptr; });
+        return equal(std::format("{} {}", menuWorlds_.size(), pictured), a[1] + " " + a[2]);
+    }
     if (what == "fresh") return yesNo(freshWorld_);
     if (what == "card") {
         // expect card N NAME...: the N-th world on the worlds screen (the newest first).
