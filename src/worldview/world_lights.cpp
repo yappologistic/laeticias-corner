@@ -48,8 +48,7 @@ Rgb hexColour(const json& v, Rgb fallback) {
 }
 
 float hoursSince(float from, float to) {
-    const float d = std::fmod(to - from + 48.0f, 24.0f);
-    return d;
+    return std::fmod(to - from + 48.0f, 24.0f);
 }
 
 // Where a light's pool lies: under the flame for a small item; on the ground line in front of a
@@ -119,6 +118,8 @@ float hoursOn(const LightProfile& p, float hour, std::uint32_t seed) {
     using gpu::tuning::kWindowFadeHours;
     float best = 0;
     for (const auto& [on0, off0] : p.hours) {
+        // Hours that come round to their own start (00:00 to 24:00) are the whole day.
+        if (hoursSince(on0, off0) == 0.0f) return 1.0f;
         float on = on0;
         float off = off0;
         if (p.staggered) {
