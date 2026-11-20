@@ -58,7 +58,7 @@ MATERIAL_CLASS = {
     "travertine": "stone", "brick": "stone", "tufa": "stone", "basalt": "stone", "giallo": "marble",
     "cipollino": "marble", "porphyry": "stone", "granite": "stone", "granite_pink": "stone",
     "stucco_red": "plaster", "tiber": "water", "gilt": "metal",
-    "sand": "ground", "steppe": "grass", "sea": "water", "hide": "cloth",
+    "sand": "ground", "steppe": "grass", "sea": "water", "hide": "cloth", "leaf_light": "foliage_deciduous",
 }
 GROUP_CLASS = {
     "ink": "ink", "earth": "ground", "leaf": "grass", "pine": "foliage_evergreen",
@@ -120,7 +120,7 @@ FLOWER_STATES = ("green", "dry", "gone")
 STATE_RAMPS = {"leaf": LEAF_STATES, "grass": GRASS_STATES, "summer": GRASS_STATES, "steppe": GRASS_STATES,
                "pal.leaf": GRASS_STATES, "pal.summer": GRASS_STATES, "pal.steppe": GRASS_STATES,
                "autumn": LEAF_STATES, "gold_leaf": LEAF_STATES, "rust_leaf": LEAF_STATES,
-               "pal.autumn": LEAF_STATES, "blossom": BLOOM_STATES, "pal.blossom": BLOOM_STATES,
+               "pal.autumn": LEAF_STATES, "leaf_light": LEAF_STATES, "blossom": BLOOM_STATES, "pal.blossom": BLOOM_STATES,
                "pal.violet": FLOWER_STATES, "pal.poppy": FLOWER_STATES}
 # Which climate class a ramp's states follow, where its ramp class alone does not say (the
 # engine's rule otherwise: class grass follows grass, foliage_deciduous follows deciduous).

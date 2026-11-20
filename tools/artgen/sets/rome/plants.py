@@ -79,7 +79,7 @@ def t_vine(v, frame, frames, k):
     rod(m, (8.0, 2.0, 13.0), (8.0, 14.0, 13.0), 0.3, "wood")
     rod(m, (8.0, 8.0, 0.0), (7.0, 7.0, 10.0), 0.6, "bark")
     leaf_mass(m, [(8.0, 5.0, 13.0, 2.6), (8.0, 11.0, 13.0, 2.6), (7.0, 8.0, 10.0, 2.4)], 1530 + v,
-              materials=(("leaf", 0.5), ("grass", 0.5)), under="leaf_dark", squash=0.7)
+              materials=(("leaf", 0.5), ("leaf_light", 0.5)), under="leaf_dark", squash=0.7)
     return m
 
 

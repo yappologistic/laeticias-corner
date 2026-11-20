@@ -600,7 +600,9 @@ def build_set(set_id: str, cat: dict, k: int, pool, only=None):
                 it = items[iid]
                 jobs.append((_state_job, (set_id, iid, it["layout"], layer, variant, int(frame), item_frames(it, mod),
                                           tuple(it["footprint"]), k)))
-        elif m := WINTER_KEY.fullmatch(key):
+        elif (m := WINTER_KEY.fullmatch(key)) and m[1] in BARE_IN_WINTER:
+            # Only the bare trees: other `@winter` looks (the snowy peaks) are the set's own
+            # flat keys and must not be stripped to their plain model here.
             it = items[m[1]]
             jobs.append((_winter_job, (set_id, m[1], it["layout"], m[2], int(m[3]), item_frames(it, mod),
                                        tuple(it["footprint"]), k)))

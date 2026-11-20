@@ -36,7 +36,7 @@ def t_plane(v, frame, frames, k):
     clumps = [(8 + 8.5 * math.cos(a) * rng.uniform(0.6, 1.0), 8 + 8.5 * math.sin(a) * rng.uniform(0.6, 1.0),
                38 + rng.uniform(-3, 4), rng.uniform(6.5, 8.5)) for a in np.linspace(0, 2 * math.pi, 6, endpoint=False)]
     clumps.append((8, 8, 46.0, 8.5))
-    leaf_mass(m, clumps, 1011 + v, materials=(("leaf", 0.7), ("grass", 0.3)), under="leaf_dark", level=-0.6)
+    leaf_mass(m, clumps, 1011 + v, materials=(("leaf", 0.7), ("leaf_light", 0.3)), under="leaf_dark", level=-0.6)
     X, Y, Z = m.coords()
     from palette import MAT
     bark = (m.mat == MAT["wood_grey"]) & (value_noise(X, Y, Z * 0.6, 1.2, 1013 + v) > 0.7)
@@ -84,7 +84,7 @@ def t_vine(v, frame, frames, k):
     if v == 0:
         rod(m, (8, 8, 0), (8, 8, 6.0), 0.8, "bark")
         leaf_mass(m, [(8 + rng.uniform(-2, 2), 8 + rng.uniform(-2, 2), 8.0, 4.0) for _ in range(3)], 1051,
-                  materials=(("leaf", 0.6), ("grass", 0.4)), under="leaf_dark", cluster=(1.8, 2.4), level=-0.4)
+                  materials=(("leaf", 0.6), ("leaf_light", 0.4)), under="leaf_dark", cluster=(1.8, 2.4), level=-0.4)
     else:
         for x, y in ((1.0, 1.0), (1.0, 15.0), (15.0, 1.0), (15.0, 15.0)):
             rod(m, (x, y, 0.0), (x, y, 20.0), 0.5, "wood")
@@ -92,7 +92,7 @@ def t_vine(v, frame, frames, k):
             rod(m, (t, 1.0, 20.0), (t, 15.0, 20.0), 0.4, "wood")
         rod(m, (1.0, 1.0, 0.0), (1.0, 1.0, 20.0), 0.9, "bark")
         leaf_mass(m, [(4.0 + 4 * i, 4.0 + 4 * j, 20.5, 3.2) for i in range(3) for j in range(3)], 1052,
-                  materials=(("leaf", 0.7), ("grass", 0.3)), under="leaf_dark", cluster=(1.8, 2.4), squash=0.5,
+                  materials=(("leaf", 0.7), ("leaf_light", 0.3)), under="leaf_dark", cluster=(1.8, 2.4), squash=0.5,
                   level=-0.3)
     for i in range(5):
         ellipsoid(m, (rng.uniform(4, 12), rng.uniform(4, 12), (6.0 if v == 0 else 18.0) - rng.uniform(0, 1.5)),
@@ -119,7 +119,7 @@ def t_poplar(v, frame, frames, k):
     rod(m, (8, 8, 0), (8, 8, 26.0), 1.1, "wood_grey")
     clumps = [(8 + rng.uniform(-1, 1), 8 + rng.uniform(-1, 1), 14 + t * 34, 4.6 * (1 - abs(t - 0.4)) + 1.6)
               for t in np.linspace(0, 1, 8)]
-    leaf_mass(m, clumps, 1071 + v, materials=(("leaf", 0.5), ("olive_silver", 0.3), ("grass", 0.2)), under="leaf_dark",
+    leaf_mass(m, clumps, 1071 + v, materials=(("leaf", 0.5), ("olive_silver", 0.3), ("leaf_light", 0.2)), under="leaf_dark",
               cluster=(2.0, 3.0), squash=1.2, level=-0.4)
     return m
 
