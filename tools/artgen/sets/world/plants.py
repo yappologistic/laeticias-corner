@@ -66,7 +66,7 @@ def t_oak(v, frame, frames, k):
         _trunk(m, (8, 8, 0), (8 + lean[0], 8 + lean[1], 15.0), 1.8, "wood_grey")
         clumps = [(8 + lean[0] * 1.6 + rng.uniform(-3, 3), 8 + lean[1] * 1.6 + rng.uniform(-3, 3), 24.0 + rng.uniform(-2, 4),
                    rng.uniform(5.5, 7.5)) for _ in range(5)] + [(8 + lean[0], 8 + lean[1], 30.0, 6.5)]
-    leaf_mass(m, clumps, 5101 + v, materials=(("leaf", 0.6), ("grass", 0.25), ("olive", 0.15)), under="leaf_dark",
+    leaf_mass(m, clumps, 5101 + v, materials=(("leaf", 0.6), ("leaf_light", 0.25), ("olive", 0.15)), under="leaf_dark",
               level=-0.6)
     return m
 
@@ -99,7 +99,7 @@ def t_beech(v, frame, frames, k):
     for a in (0.8, 2.9, 4.8):
         rod(m, (8, 8, h * 0.7), (8 + 5 * math.cos(a), 8 + 5 * math.sin(a), h + 6.0), 0.8, "wood_grey")
     clumps = _crown(m, 8, 8, h + 10.0, 6, 6.2, 6.5, rng, (-3, 4)) + [(8, 8, h + 18.0, 6.8), (8, 8, h + 8.0, 6.5)]
-    leaf_mass(m, clumps, 5122 + v, materials=(("grass", 0.55), ("leaf", 0.45)), under="leaf", level=-0.35)
+    leaf_mass(m, clumps, 5122 + v, materials=(("leaf_light", 0.55), ("leaf", 0.45)), under="leaf", level=-0.35)
     return m
 
 

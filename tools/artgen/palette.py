@@ -258,6 +258,11 @@ MATERIALS += [
     _m("sea", SEA, texture=0.15),
     _m("hide", [INK, EARTH[0], EARTH[1], SAND[0], SAND[1], SAND[2]], texture=0.25),
 ]
+# Light leaves in deciduous crowns: the grass's colours (so a crown's plain look is unchanged)
+# on a foliage ramp, so on the shader path they turn with the trees' months, not the meadows'.
+MATERIALS += [
+    _m("leaf_light", [LEAF[1], LEAF[2], LEAF[3], LEAF[4], LEAF[5], LEAF[6]], texture=0.5),
+]
 MAT = {m.name: i + 1 for i, m in enumerate(MATERIALS)}
 _ALL = set(PALETTE).union(*REGION_COLOURS.values())
 for _m_ in MATERIALS:

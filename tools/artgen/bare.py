@@ -12,7 +12,7 @@ from arch import rod
 from palette import MAT
 from voxel import Model, hash01
 
-LEAVES = ("leaf", "leaf_dark", "autumn", "gold_leaf", "rust_leaf", "blossom", "olive", "olive_silver", "grass")
+LEAVES = ("leaf", "leaf_dark", "autumn", "gold_leaf", "rust_leaf", "blossom", "olive", "olive_silver", "grass", "leaf_light")
 WOOD = ("bark", "wood", "wood_light", "wood_grey", "cedar")
 CELL = 3.0          # design units: one branch per cell of leaves
 
