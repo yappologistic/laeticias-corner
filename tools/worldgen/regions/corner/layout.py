@@ -160,7 +160,9 @@ def build(L: Layout) -> None:
     creek_end = coast_south(L, 64, 96)
     L.river([(64, 80), (66, 88), (64, 95), (63, creek_end)], width=1, banks={"reeds": 0.2},
             seed="creek")
-    L.place("bridge", at=(64, 95), face="west")
+    # The world's plank bridge (its deck gives walkers their floor; the garden footbridge is
+    # the home's own piece and stands walkers at the water).
+    L.place("world.bridge_timber", at=(64, 95))
 
     # Farmstead by the south road, between the road and the dell.
     L.place("cottage", at=(82, 80), face="west", name="south_farm")
