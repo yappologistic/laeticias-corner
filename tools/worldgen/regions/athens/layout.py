@@ -1273,6 +1273,10 @@ def _night(L: Layout, inside: np.ndarray) -> None:
     night_posts(L, A + "g_shrine", [(33, 31), (36, 33), (31, 37)], ring=3, gap=12)
     # the Scythian archers, the city's public slaves who kept order, camped in the Agora
     night_posts(L, A + "g_brazier", [(31, 47), (34, 50)], ring=3, gap=30)
+    # The Acropolis after dark (QA7 V7-018): a watch on Athena's treasure in the Parthenon's
+    # west room, lamps at the Pandroseion's olive and before the old temple of Athena Polias.
+    night_posts(L, A + "g_brazier", [(94, 93)], ring=3, gap=6)
+    night_posts(L, A + "g_lamp", [NODES["pandroseion"], (93, 85)], ring=3, gap=4)
     night_posts(L, A + "g_lamp", [NODES[n] for n in NIGHT_LAMPS], ring=3, gap=4)
     piraeus = np.zeros_like(inside)
     piraeus[128:, :60] = True
