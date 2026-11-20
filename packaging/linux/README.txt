@@ -16,6 +16,13 @@ PipeWire, PulseAudio or ALSA for sound, on distributions with glibc 2.35 or newe
 RHEL/AlmaLinux 9 (for example Ubuntu 22.04+, Debian 12+, Fedora 36+). Nothing else needs to be
 installed: the C++ runtime is built in and SDL comes in the archive.
 
+To add the game to your applications menu, run these three lines from the game's folder (the
+launcher is written with this folder's path in it: if you move the folder, run them again):
+
+  mkdir -p ~/.local/share/applications ~/.local/share/icons/hicolor/256x256/apps
+  sed "s|^Exec=.*|Exec=\"$PWD/laeticias-corner\"|" io.github.yappologistic.laeticias_corner.desktop > ~/.local/share/applications/io.github.yappologistic.laeticias_corner.desktop
+  cp io.github.yappologistic.laeticias_corner.png ~/.local/share/icons/hicolor/256x256/apps/
+
 The build is not signed. You can check the download against SHA256SUMS.txt from the release
 page:  sha256sum -c SHA256SUMS.txt --ignore-missing
 

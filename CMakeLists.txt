@@ -11,6 +11,10 @@ if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
 else()
   string(APPEND LC_PLATFORM "-${CMAKE_SYSTEM_PROCESSOR}")
 endif()
+# The reverse-domain application id: SDL's app metadata (Wayland's app_id, X11's WM_CLASS) and
+# the Linux package's desktop file and icon are named by it, so desktops match the running
+# window to its launcher. Underscore, not hyphen: desktop file ids follow D-Bus name rules.
+set(LC_APP_ID "io.github.yappologistic.laeticias_corner")
 # For the release workflow: the archive's name without reading this file.
 file(WRITE "${CMAKE_BINARY_DIR}/version.txt" "${LC_VERSION}\n")
 
@@ -320,7 +324,9 @@ add_library(lc_app STATIC
   src/app/app_perf.cpp
   src/app/window_state.cpp
   src/app/app_world.cpp
+  src/app/identity.cpp
 )
+target_compile_definitions(lc_app PRIVATE LC_APP_ID="${LC_APP_ID}")
 target_link_libraries(lc_app PUBLIC lc_worldview)
 add_dependencies(lc_app lc_version)
 lc_project_target(lc_app)
@@ -331,7 +337,8 @@ lc_project_target(laeticias-corner)
 lc_runtime_dlls(laeticias-corner)
 if(WIN32)
   # A window, no console; the manifest makes the process's narrow code page UTF-8, the encoding
-  # SDL and the game's paths and arguments are in.
+  # SDL and the game's paths and arguments are in; the icon shows in Explorer, the taskbar and
+  # Alt-Tab.
   enable_language(RC)
   configure_file(packaging/windows/laeticias-corner.rc.in
                  ${CMAKE_BINARY_DIR}/generated/laeticias-corner.rc @ONLY)
@@ -350,7 +357,13 @@ install(FILES LICENSE LICENSE-ASSETS LICENSING.md THIRD-PARTY.md DESTINATION .)
 if(WIN32)
   install(FILES packaging/windows/README.txt DESTINATION .)
 else()
-  install(FILES packaging/linux/README.txt DESTINATION .)
+  # A launcher and its icon, named by the application id, for the player to copy into their
+  # applications menu (README.txt says how); nothing is installed on its own.
+  configure_file(packaging/linux/laeticias-corner.desktop.in
+                 ${CMAKE_BINARY_DIR}/generated/${LC_APP_ID}.desktop @ONLY)
+  install(FILES packaging/linux/README.txt ${CMAKE_BINARY_DIR}/generated/${LC_APP_ID}.desktop
+          DESTINATION .)
+  install(FILES assets/icon/icon-256.png DESTINATION . RENAME ${LC_APP_ID}.png)
 endif()
 if(TARGET SDL3-shared)
   install(TARGETS SDL3-shared
