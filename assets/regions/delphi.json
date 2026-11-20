@@ -349,12 +349,6 @@
      ]
     }
    ],
-   "voices": {
-    "world.raven": [
-     "sfx/world/crow_1.wav",
-     "sfx/world/crow_2.wav"
-    ]
-   },
    "nature_seasons": {
     "spring": {
      "dawn": "amb/world/dawn_mountain.ogg",
@@ -752,38 +746,7 @@
   {
    "id": "cliffs",
    "area": "wild",
-   "populations": [
-    {
-     "actor": "world.raven",
-     "density": "daytime",
-     "max_per_chunk": 7.68,
-     "when": {
-      "months": [
-       "mar",
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct",
-       "nov"
-      ]
-     }
-    },
-    {
-     "actor": "world.raven",
-     "density": "daytime",
-     "max_per_chunk": 4.61,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     }
-    }
-   ],
+   "populations": [],
    "name": "The Phaedriades",
    "sound": {
     "surfaces": {},

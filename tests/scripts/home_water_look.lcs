@@ -1,0 +1,48 @@
+# The home's water on the shader path, run with --quality high (skipped, exit 77, where no gpu
+# device can be made). water_mark: the share of the world target the final pass draws as water.
+# At night, so nobody stands in the regions measured: she sleeps, the ducks sleep on the bank.
+set season summer
+set unlock all
+set weather clear
+set clock night
+# The stream the west meadow reveals runs into the home's last row, where the world's rim tiles
+# lie under the home's ground: the water there keeps its mark (no band of the art's own water
+# across the stream where the home meets the world).
+set land 2
+wait 400
+fast 150
+set camera 13 38 2
+wait 30
+expect water_mark 520,440,50,20 0.6 1
+expect water_mark 600,385,40,20 0.6 1
+shot shots/home_water_rim.png
+# At half scale the home's chunks are cached with a tile of their neighbours round them: where
+# one's border lies over the next, the water there keeps its mark too (row 31 of this channel).
+paint water @34,26 @35,33
+set camera 33 29 0.5
+wait 30
+expect water_mark 612,428,24,8 0.6 1
+shot shots/home_water_half.png
+# A piece drawn faintly over water, the build tool's footbridge, shows the moving water through
+# it (as much as it is faint: none of the art's still water), and a placed one is never under
+# the water.
+paint water @26,30 @29,31
+set camera 28 30 2
+wait 30
+click ui:build
+wait 10
+click ui:tab:garden
+wait 10
+click ui:tile:bridge
+wait 10
+move @27,30
+wait 20
+expect water_mark 560,380,40,20 0.6 1
+shot shots/home_water_ghost.png
+key escape
+wait 10
+expect water_mark 560,380,40,20 0.6 1
+place bridge @27,30 0
+wait 10
+expect water_mark 560,380,40,20 0 0.2
+quit

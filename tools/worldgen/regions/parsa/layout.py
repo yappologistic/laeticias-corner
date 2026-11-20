@@ -723,10 +723,13 @@ def _terrace_detail(L: Layout) -> None:
         put(L, P + "p_scribe_desk", at, "south")
     for at in ((75, 41), (76, 41)):
         put(L, P + "p_jars", at)
-    for at in ((70, 43), (70, 46)):
+    # Incense where the delegations enter the Gate from the stairway: its east door opens
+    # straight onto the walled road, with no ground beside it off the paving.
+    for at in ((63, 43), (63, 47)):
         put(L, P + "p_incense", at)
-    # The Tačara and Hadiš courts: incense before the porticoes, a throne-dais carpet.
-    for at in ((64, 96), (69, 96), (77, 86), (84, 86)):
+    # The Tačara and Hadiš courts: incense before the porticoes (the Tačara's on the step of
+    # ground between its front and the south court's paving), a throne-dais carpet.
+    for at in ((64, 95), (69, 95), (77, 86), (84, 86)):
         put(L, P + "p_incense", at)
     put(L, P + "p_carpet", (79, 86), "north")
     # The royal kitchens' service yard south of the Tačara court: a walled yard of sheds,

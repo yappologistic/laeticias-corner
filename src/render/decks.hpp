@@ -19,8 +19,10 @@ namespace lc {
 [[nodiscard]] float deckAt(const World& world, const Catalog& cat, Vec2 pos);
 
 // The box of a walkable item, whole (`part` -1) or one half of a railed one (0 the far half,
-// 1 the near half): from just over the water to the deck, the near half from over the deck to
-// the rails' top (`top`, px), so a walker on the deck is after the far half and before the near.
+// 1 the near half): the far half (the deck and its far rails) over the whole crossing from just
+// over the water, the near half over the near side from over the deck to the rails' top (`top`,
+// px), so a walker on the deck is after the far half and before the near, and a swimmer
+// anywhere under it before both.
 [[nodiscard]] DepthBox crossingBox(const ItemDef& def, const Item& item, int part, float top,
                                    std::uint64_t id, float hh);
 

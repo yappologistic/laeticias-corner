@@ -194,6 +194,12 @@ std::expected<std::vector<ScriptCommand>, std::string> parseScript(std::string_v
                 float v = 0;
                 if (c.args.size() != 3 || !parseScriptRect(c.args[1]) || !number(c.args[2], v))
                     return err("expect target_alpha X,Y,W,H MOST");
+            } else if (c.args[0] == "water_mark") {
+                float lo = 0;
+                float hi = 0;
+                if (c.args.size() != 4 || !parseScriptRect(c.args[1]) || !number(c.args[2], lo) ||
+                    !number(c.args[3], hi))
+                    return err("expect water_mark X,Y,W,H MIN MAX");
             } else if (c.args[0] == "luma" || c.args[0] == "color") {
                 const std::size_t want = c.args[0] == "luma" ? 4 : 6;
                 if (c.args.size() != want || !parseScriptRect(c.args[1]))

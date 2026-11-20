@@ -616,3 +616,42 @@ TEST_CASE("real world: a walker's height is continuous over slopes, stairs and d
     CHECK(courses > 1000);
     CHECK(worst <= 2.0f);
 }
+
+TEST_CASE("real world: a boat on a lane over falling water never drops in one step") {
+    // The Euphrates boats' lane crosses a river falling three levels (grid (273, 235..237)): a
+    // boat there was drawn at its tile's water level and dropped 48 px at the edge. Its height
+    // (WorldMap::waterZ) blends between the waters, so it changes by little along the way, and
+    // it floats at the water's own level in the middle of a tile on flat water.
+    const LoadedWorld& w = realWorld();
+    const WorldMap& m = *w.map;
+    const world::RoadGraph& roads = w.roads;
+    const auto lane =
+        std::ranges::find(roads.lanes(), std::string("base:euphrates_boats"), &world::RoadLane::id);
+    REQUIRE(lane != roads.lanes().end());
+    float worst = 0;
+    float span = 0;
+    for (std::size_t i = 1; i < lane->points.size(); ++i) {
+        const TilePos a = lane->points[i - 1];
+        const TilePos b = lane->points[i];
+        float prev = m.waterZ({static_cast<float>(a.x) + 0.5f, static_cast<float>(a.y) + 0.5f});
+        for (int k = 1; k <= 64; ++k) {
+            const float f = static_cast<float>(k) / 64.0f;
+            const float z =
+                m.waterZ({static_cast<float>(a.x) + 0.5f + static_cast<float>(b.x - a.x) * f,
+                          static_cast<float>(a.y) + 0.5f + static_cast<float>(b.y - a.y) * f});
+            worst = std::max(
+                worst, std::abs(z - prev) * 64.0f /
+                           static_cast<float>(std::max(std::abs(b.x - a.x), std::abs(b.y - a.y))));
+            span = std::max(span, std::abs(z - prev));
+            prev = z;
+        }
+    }
+    MESSAGE("largest change along the lane: " << span << " px in a step, " << worst
+                                              << " px per tile");
+    // At most the whole fall over one tile's way, never in one step.
+    CHECK(worst <= static_cast<float>(3 * m.levelPx()) + 0.5f);
+    CHECK(span < static_cast<float>(m.levelPx()));
+    const TilePos still = lane->points.front();
+    CHECK(m.waterZ({static_cast<float>(still.x) + 0.5f, static_cast<float>(still.y) + 0.5f}) ==
+          doctest::Approx(static_cast<float>(m.level(still) * m.levelPx())));
+}

@@ -104,12 +104,20 @@ public:
     // Pools add into the glow target's alpha only (draw with falloff() and colour (0, 0, 0, k)).
     [[nodiscard]] SDL_BlendMode poolBlend() const { return poolBlend_; }
     // Marks water in the ground cells: the target's alpha lowered by the sprite's coverage times
-    // the vertex alpha (kWaterMark), its colour kept. The final pass reads alpha in (0.5, 0.995)
+    // the vertex alpha (kWaterMark), its colour kept. The final pass reads alpha in (0.5, 0.998)
     // as water (under 0.97: only where the colour is water's); whatever is drawn over it later
-    // restores alpha 1.
+    // with the usual blend lifts alpha toward 1 by its strength, so the final pass shows that
+    // share of it over the water and the rest of the water, and all of an opaque piece.
     [[nodiscard]] SDL_BlendMode markBlend() const { return markBlend_; }
     static constexpr float kWaterMark = 0.02f;
     static constexpr float kMaybeWaterMark = 0.045f; // water if the colour is water's
+    // A layer of ground laid over other ground (the home's over the world's rim tiles, and its
+    // chunks' borders over each other) goes on over as usual and then is stamped, so the target
+    // holds the layer's own alpha (its water mark among it) wherever the layer covers: while on,
+    // draws with stampBlend() set the target's alpha to a picture's own under the texels it
+    // covers (alpha 0.9 and over, stamp.frag), colour kept.
+    void stamp(Batch& b, bool on);
+    [[nodiscard]] SDL_BlendMode stampBlend() const { return stampBlend_; }
     // A soft round falloff (white, premultiplied: (1 - r^2)^2), for pools and far lights.
     [[nodiscard]] SDL_Texture* falloff() const { return falloff_.get(); }
     // Halves the glow target's used `w` x `h` down the tier's levels and back up.
@@ -155,6 +163,8 @@ private:
     SDL_GPUShader* upShader_ = nullptr;
     SDL_GPUShader* shadeShader_ = nullptr;
     SDL_GPURenderState* shadeState_ = nullptr;
+    SDL_GPUShader* stampShader_ = nullptr;
+    SDL_GPURenderState* stampState_ = nullptr;
     SDL_GPUShader* cloudShader_ = nullptr;
     SDL_GPURenderState* cloudState_ = nullptr;
     SDL_GPUSampler* linear_ = nullptr;
@@ -178,6 +188,7 @@ private:
     std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
     SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode markBlend_ = SDL_BLENDMODE_INVALID;
+    SDL_BlendMode stampBlend_ = SDL_BLENDMODE_INVALID;
 };
 
 } // namespace lc::gpu

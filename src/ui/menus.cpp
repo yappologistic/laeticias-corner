@@ -725,7 +725,9 @@ void Menus::layoutSettings(const MenuModel& m, const Font& font, float s) {
     const float gap = theme::kGap * s * 2;
     const float colW = theme::kSettingsColW * s;
     const float sectionH = lh + theme::kGap * s;
-    const float noteH = lh; // a row's explanation, one line under it
+    // A row's explanation, one line under it, with a heading's room below: notes and headings
+    // are drawn from the top of their boxes, so a heading after a bare line would touch it.
+    const float noteH = sectionH;
     const float bh = theme::kMenuButtonH * s * 0.85f;
     const float chrome = 2 * pad + font.lineHeight(Face::Title) + gap + gap + bh;
     const float availH = std::max(lh, screen_.y - 2 * margin - chrome);

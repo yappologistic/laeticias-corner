@@ -1475,7 +1475,10 @@ def theme(view) -> dict:
 
 def build(view) -> dict:
     return SEASONS.apply({
-        "version": 1, "id": "parsa", "name": "Pārsa", "native": "تخت جمشید",
+        # The city's own name in Old Persian cuneiform (pa-a-ra-sa), which the interface draws;
+        # the modern Takht-e Jamshid in Arabic script it cannot, and it is not the period's name.
+        "version": 1, "id": "parsa", "name": "Pārsa",
+        "native": "\U000103b1\U000103a0\U000103bc\U000103bf",
         "caption": "Pārsa · c. 470 BC",
         "era": "The Persian empire of Xerxes · c. 470 BC",
         "theme": theme(view),

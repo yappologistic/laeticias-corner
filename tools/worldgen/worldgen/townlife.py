@@ -372,7 +372,7 @@ TOWNS = {
                                 "Euphrates.")},
     },
     "sidon": {
-        "areas": {"shore": "country", "town": "town"},
+        "areas": {"sea": "sea", "shore": "country", "town": "town"},
         "trades": [
             T("shipwright", "parsa.craftsman", "Shipwright", "shore", {"node": "sidon_quay"},
               "work_high", 3, card="sidon_ships"),
@@ -538,11 +538,13 @@ WORK_OF = {"shearing": "shearing", "threshing": "threshing", "ploughing_out": "p
 
 
 def build(rid: str, set_: str, tiles: dict[str, int], placed: set[str], nodes: set[str],
-          factors: list[float], kinds: dict, visitor: str, work: dict | None = None) -> dict:
+          factors: list[float], kinds: dict, visitor: str, work: dict | None = None,
+          bare: set[str] | None = None) -> dict:
     """Roles, districts, chains, events, cards and strings of one town. `tiles` is its districts'
     sizes, `placed` the item ids its layer holds, `nodes` its graph's named nodes, `factors` its
     twelve month factors (seasonlife.TOWN_SEASONS), `kinds` the actor kinds' animations,
-    `visitor` the walker kind that strolls its streets, `work` its climate's work months."""
+    `visitor` the walker kind that strolls its streets, `work` its climate's work months, `bare`
+    its districts with no tile to stand on."""
     spec = TOWNS[rid]
     H = HOUSEHOLD[set_]
     roles, pops = [], {d: [] for d in tiles}
@@ -635,7 +637,10 @@ def build(rid: str, set_: str, tiles: dict[str, int], placed: set[str], nodes: s
     for d, n in tiles.items():
         a = areas[d]
         if a in ("sea", "wild"):
-            # Cliffs, mounds, slivers of island and water: birds only.
+            # Cliffs, mounds, slivers of island and water: birds only, and none where every
+            # tile is impassable rock (a bird lingers on ground; the life has no perches).
+            if d in (bare or set()):
+                continue
             bird = "world.gull" if a == "sea" or d in ("sea", "harbour", "shore", "river") \
                 else "world.raven"
             pops[d].append({"actor": bird, "density": "daytime",

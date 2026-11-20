@@ -568,6 +568,26 @@ float WorldMap::walkZ(Vec2 p) const {
     return out;
 }
 
+float WorldMap::waterZ(Vec2 p) const {
+    const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
+    if (!inBounds(t)) return 0.0f;
+    const auto own = static_cast<float>(level(t) * levelPx_);
+    const auto at = [&](TilePos q) {
+        const int k = inBounds(q) ? terrainAt(q) : kNone;
+        return k != kNone && terrainInfo(k).water ? static_cast<float>(level(q) * levelPx_) : own;
+    };
+    // The four tile centres round p.
+    const float gx = p.x - 0.5f;
+    const float gy = p.y - 0.5f;
+    const int x0 = static_cast<int>(std::floor(gx));
+    const int y0 = static_cast<int>(std::floor(gy));
+    const float u = gx - static_cast<float>(x0);
+    const float v = gy - static_cast<float>(y0);
+    const float top = std::lerp(at({x0, y0}), at({x0 + 1, y0}), u);
+    const float bottom = std::lerp(at({x0, y0 + 1}), at({x0 + 1, y0 + 1}), u);
+    return std::lerp(top, bottom, v);
+}
+
 int WorldMap::walkNeighbours(TilePos p, std::array<WalkStep, 4>& out) const {
     if (!walkable(p)) return 0;
     const std::uint8_t bitsA = chunk(p).walk[local(p)];

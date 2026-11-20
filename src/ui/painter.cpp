@@ -335,6 +335,8 @@ void Painter::text(Face face, std::string_view s, float x, float baseline, SDL_F
 
 namespace {
 
+constexpr float kWrapSlack = 0.01f; // px
+
 // Splits `s` into lines no wider than `width` (a single long word gets a line of its own) and
 // calls line(text, isLastShown) for at most maxLines of them.
 template <typename F>
@@ -350,7 +352,9 @@ int breakLines(const Font& font, Face face, std::string_view s, float width, int
             std::size_t next = s.find(' ', end + 1);
             if (next == std::string_view::npos) next = s.size();
             font.extend(face, s.substr(end, next - end), run);
-            if (run.width > width && fit > start) break;
+            // (With a little slack: a box sized as chrome + text gives back width = box - chrome,
+            // a hair under the text's own measure in float, and a line that fits would wrap.)
+            if (run.width > width + kWrapSlack && fit > start) break;
             fit = next;
             end = next;
         }

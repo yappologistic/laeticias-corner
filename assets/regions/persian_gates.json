@@ -2,7 +2,7 @@
  "version": 1,
  "id": "persian_gates",
  "name": "The Persian Gates",
- "native": "Persian Gates",
+ "native": "The Persian Gates",
  "caption": "The Persian Gates · c. 470 BC",
  "climate": "high_mountain",
  "theme": {
@@ -299,12 +299,6 @@
      ]
     }
    ],
-   "voices": {
-    "world.raven": [
-     "sfx/world/crow_1.wav",
-     "sfx/world/crow_2.wav"
-    ]
-   },
    "nature_seasons": {
     "spring": {
      "dawn": "amb/world/dawn_mountain.ogg",
@@ -722,47 +716,7 @@
   {
    "id": "cliffs",
    "area": "wild",
-   "populations": [
-    {
-     "actor": "world.raven",
-     "density": "daytime",
-     "max_per_chunk": 3.34,
-     "when": {
-      "months": [
-       "mar",
-       "nov"
-      ]
-     }
-    },
-    {
-     "actor": "world.raven",
-     "density": "daytime",
-     "max_per_chunk": 4.18,
-     "when": {
-      "months": [
-       "apr",
-       "may",
-       "jun",
-       "jul",
-       "aug",
-       "sep",
-       "oct"
-      ]
-     }
-    },
-    {
-     "actor": "world.raven",
-     "density": "daytime",
-     "max_per_chunk": 2.51,
-     "when": {
-      "months": [
-       "dec",
-       "jan",
-       "feb"
-      ]
-     }
-    }
-   ],
+   "populations": [],
    "name": "The cliffs",
    "sound": {
     "surfaces": {},

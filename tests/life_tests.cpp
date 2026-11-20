@@ -188,6 +188,10 @@ TEST_CASE("life: the walk data's faults are named with their tiles, and nobody i
         CHECK(f.find("at grid (") != std::string::npos);
     }
     MESSAGE(faults.size() << " walk-data faults");
+    // A boat lane over a waterfall (the Euphrates falls three levels in Anatolia) is named.
+    CHECK(std::ranges::any_of(faults, [](const std::string& f) {
+        return f.starts_with("lane base:euphrates_boats: crosses a waterfall of 3 levels");
+    }));
     CityLife city(lifeWorld(), 3);
     for (const char* place : {"forum", "agora", "terrace"}) {
         city.setFocus(centreOf(place));

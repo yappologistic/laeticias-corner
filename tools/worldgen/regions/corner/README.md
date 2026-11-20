@@ -13,7 +13,9 @@ Built:
 - Graph edges through the home rect from (79, 39) to (79, 80) via the gate node (78, 60).
 - Track west to a cove (level 1) and the plank jetty at C 33 with a rowboat; the base sea lane
   `corner_portus` leaves from there.
-- The home's two west streams and the far pond's creek continue to the coast as `world.river`.
+- The home's two west streams and the far pond's creek continue to the coast as `world.river`,
+  each as wide as the home's own where it crosses the rim (west meadow two tiles, narrowing to
+  one at the cliff's lip); the track crosses the creek on `world.bridge_timber`.
 - Two farmsteads (by the south road; by the shrine with sunflowers and beehives), a windmill on
   a track in the beech wood (oaks and pines stand in for beech), meadows, scattered trees,
   flowers, cliff-top rocks; the dell in meadow with tall grass and reeds.

@@ -843,7 +843,9 @@
    ],
    "name": "The meadows",
    "sound": {
-    "surfaces": {},
+    "surfaces": {
+     "water": 0.02
+    },
     "wind": "wind.open",
     "exposure": 1.0,
     "steps": {
@@ -859,6 +861,9 @@
      ]
     },
     "cart": "amb/world/cart_earth.ogg"
+   },
+   "look": {
+    "reflect": true
    }
   },
   {
@@ -1873,12 +1878,12 @@
   {
    "body": "corner_brook",
    "kind": "stream",
-   "tiles": 33,
+   "tiles": 41,
    "rect": [
     52,
     1213,
     101,
-    1244
+    1245
    ],
    "level": [
     "normal",
@@ -1909,11 +1914,11 @@
   {
    "body": "corner_river",
    "kind": "river",
-   "tiles": 33,
+   "tiles": 42,
    "rect": [
     44,
     1240,
-    53,
+    54,
     1258
    ],
    "level": [

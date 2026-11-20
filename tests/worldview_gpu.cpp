@@ -17,6 +17,7 @@
 #include <cmath>
 #include <numbers>
 #include <optional>
+#include <string>
 
 using namespace lc;
 using namespace lc::worldview;
@@ -183,6 +184,14 @@ TEST_CASE("lights: profiles read the world data's shape; hours run past midnight
         if (hoursOn(p, gpu::tuning::kDuskHour + 0.6f, seed) > 0) ++lit;
     CHECK(lit > 10);
     CHECK(lit < 90);
+    // Hours that come round to their own start are the whole day: an altar's fire, a hearth.
+    for (const char* hours : {R"([["00:00", "24:00"]])", R"([["18:00", "18:00"]])"}) {
+        CAPTURE(hours);
+        const LightProfile fire = parseLightProfile(
+            "eternal",
+            nlohmann::json::parse(std::string(R"({"kind": "fire", "hours": )") + hours + "}"));
+        for (const float h : {0.0f, 3.0f, 12.0f, 18.0f, 23.9f}) CHECK(hoursOn(fire, h, 7) == 1.0f);
+    }
     const LightProfile only = parseLightProfile(
         "tapers", nlohmann::json::parse(R"({"kind": "window", "hours": [["dusk", "dawn"]],
                                             "only": "saturnalia"})"));

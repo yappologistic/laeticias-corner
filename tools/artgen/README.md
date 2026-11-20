@@ -22,6 +22,13 @@ tools/artgen/build.sh --set athens --only parthenon --out out/artgen/athens/q   
 tools/artgen/.venv/bin/python -m sets.athens.preview out/artgen/athens/q parthenon  # (from tools/artgen)
 ```
 
+The application icon builds on its own as well:
+
+```sh
+tools/artgen/build.sh --icon           # assets/icon/icon-<size>.png and laeticias-corner.ico
+tools/artgen/build.sh --icon --check   # fails if a committed icon file differs (ctest: icon_fresh)
+```
+
 `--catalog` picks the catalog the required keys are derived from (default `assets/catalog.json`).
 The standalone validator with `--allow-extra` checks that an atlas covers a catalog, so the
 batch-2 atlas can be checked against the live catalog.
@@ -71,6 +78,22 @@ half with the four worker processes the machine-courtesy rules allow.
 - `pack.py` trims each sprite, shelf-packs them with a 1 px gutter and writes the manifest.
 - `validate.py` checks keys, rects, anchors, frame counts and palette use.
 - `preview.py` composes test scenes from the packed atlas the way the engine draws them.
+
+## The application icon
+
+`icon.py` draws the game's icon: the home corner as a block of grassy land with Laeticia's
+red-roofed cottage (its gable window lit), its chimney and a round tree, in the 2:1 projection
+and the home palette only. Every size up to 128 is its own drawing on its own grid: 32, 48, 64
+and 128 from polygons in grid units (one unit 2 px across and 1 px down, heights in px) filled
+at pixel centres, so every edge is a clean two-pixel step, with detail added as the size grows
+(grass marks, then plinth, tile courses, flowers, path and shade, then tile joints); 16 and 24
+are placed pixel by pixel over the land block the code draws (`HAND`), the same picture with
+one window, one door and one crown. Each object lays a one-pixel ink ring round itself, so the
+picture holds on light, dark and coloured backgrounds. 256 and 512 are the 128 drawing enlarged
+2x and 4x by repeating pixels. The `.ico` holds 16, 24, 32, 48 and 64 as 32-bit bitmaps with
+their mask and 256 as PNG; it is written by the script itself, byte for byte the same on every
+run. The window takes the PNGs (`src/app/identity.cpp`), the Windows program embeds the `.ico`
+and the Linux package ships the 256 picture beside its desktop file.
 
 ## Sets, big landmarks and people
 
@@ -156,6 +179,9 @@ half with the four worker processes the machine-courtesy rules allow.
 
 - Overlay masks only ever depend on each edge's own bit: an open edge is fully covered and every
   inset tapers to zero at a corner beside an open edge, so neighbours agree on shared edges.
+  The world's sea and rivers lie over a whole diamond of sand: their corners between two closed
+  edges are mitred, not rounded (`ground.BEACH_CORNER`), so the beach keeps its width round a
+  bend (a test in `tests/test_coverage.cpp` holds the pages to it).
 - Joined items (`hedge`, `fence`) are modelled with the neighbours' arms as unseen context, so
   light, leaves and outlines continue across the tile edge without a seam.
 - Rotatable pieces are modelled facing +y (the windmill faces +x so both rotations show sails).

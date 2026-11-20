@@ -192,6 +192,11 @@ public:
     // each neighbour it may step to half way at their shared edge, so it is continuous along
     // any course. Every city-life walker's and carrier's height.
     [[nodiscard]] float walkZ(Vec2 p) const;
+    // The height a boat floats at on a continuous point (tile coordinates): each water tile's
+    // level at its centre, blended between neighbouring waters (bilinear; land counts as the
+    // water beside it), so a boat rides down a rapid with the water instead of dropping at the
+    // edge. Decks over the water are not its floor: boats pass under them.
+    [[nodiscard]] float waterZ(Vec2 p) const;
     // Level of corner `c` (0 N, 1 E, 2 S, 3 W: the diamond's top, right, bottom, left vertex) of
     // the tile's surface; off the grid and without ground, 0.
     [[nodiscard]] int cornerLevel(TilePos p, int c) const;

@@ -1,3 +1,4 @@
+#include "app/identity.hpp"
 #include "app/options.hpp"
 #include "app/script.hpp"
 #include "app/window_state.hpp"
@@ -23,6 +24,7 @@
 #include "ui/map_screen.hpp"
 #include "ui/menus.hpp"
 #include "ui/painter.hpp"
+#include "ui/strings.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -38,6 +40,7 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <string_view>
 #include <tuple>
 
 using namespace lc;
@@ -731,6 +734,47 @@ TEST_CASE("float WAV round trip") {
     CHECK_FALSE(readWavFloat(test::tempDir("wav2") / "missing.wav").has_value());
 }
 
+TEST_CASE("the application icon: every size square with alpha, the window icon carrying the rest") {
+    const std::filesystem::path dir = test::assetsDir() / "icon";
+    for (const int size : kIconSizes) {
+        CAPTURE(size);
+        const SurfacePtr png{
+            SDL_LoadPNG((dir / std::format("icon-{}.png", size)).string().c_str())};
+        REQUIRE(png);
+        CHECK(png->w == size);
+        CHECK(png->h == size);
+        REQUIRE(SDL_ISPIXELFORMAT_ALPHA(png->format));
+        // The picture stands on no background: its corners are see-through.
+        Uint8 r = 0;
+        Uint8 g = 0;
+        Uint8 b = 0;
+        Uint8 a = 255;
+        REQUIRE(SDL_ReadSurfacePixel(png.get(), 0, 0, &r, &g, &b, &a));
+        CHECK(a == 0);
+    }
+    CHECK(std::filesystem::file_size(dir / "laeticias-corner.ico") > 0);
+
+    const SurfacePtr icon = loadWindowIcon(dir);
+    REQUIRE(icon);
+    CHECK(icon->w == kIconBase);
+    int count = 0;
+    const SdlBuffer images{SDL_GetSurfaceImages(icon.get(), &count)};
+    REQUIRE(images);
+    // The base and every other size up to kIconLargest.
+    CHECK(count == static_cast<int>(
+                       std::ranges::count_if(kIconSizes, [](int s) { return s <= kIconLargest; })));
+    // No pictures: no icon and no crash, the window keeps the system's.
+    CHECK_FALSE(loadWindowIcon(dir / "missing"));
+
+    // The id SDL hands the desktop is the reverse-domain one the desktop file is named by.
+    setAppMetadata();
+    const char* id = SDL_GetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING);
+    REQUIRE(id != nullptr);
+    CHECK(std::string_view(id).starts_with("io.github.yappologistic."));
+    CHECK(std::string_view(SDL_GetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING)) ==
+          strings::kWindowTitle);
+}
+
 TEST_CASE("window placement: a share of the display, or the remembered spot if still visible") {
     const WindowRect d{0, 0, 1920, 1040};
     const WindowRect w = defaultWindow(d);
@@ -1122,6 +1166,24 @@ TEST_CASE("the name beside the pointer stays clear of the title card and the doc
     clear(1270, 790);
 }
 
+TEST_CASE("a toast as wide as its text keeps to one line") {
+    // The toast's box is its chrome plus the text's measure and the text wraps within the box
+    // less the chrome: in float that is a hair under the measure, and "New visitor: Bees" went
+    // onto two lines with room to spare.
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    int wrapped = 0;
+    for (const std::string_view text : {"New visitor: Bees", "New visitor: Butterflies",
+                                        "New visitor: Ducks", "A new nook: the reading corner"}) {
+        const float m = ui.font.measure(Face::Body, text);
+        for (int k = 0; k < 200; ++k) {
+            const float chrome = 40.0f + static_cast<float>(k) * 0.37f;
+            wrapped += wrapLines(ui.font, Face::Body, text, (chrome + m) - chrome, 3) > 1;
+        }
+    }
+    CHECK(wrapped == 0);
+}
+
 TEST_CASE("a long card shows its whole text above the docks; a long title is cut short (Q5-E-12)") {
     UiFixture ui;
     const Catalog& c = test::catalog();
@@ -1351,6 +1413,10 @@ TEST_CASE("settings fit every window and interface size, every row reachable, ro
                                               a.y + 0.5f < b.y + b.h && b.y + 0.5f < a.y + a.h;
                             CHECK_FALSE(over);
                         }
+                    // Nothing is a bare line tall: a section heading under a row's note
+                    // (both drawn from the top of their boxes) once touched it.
+                    for (const Box& b : boxes)
+                        CHECK(b.h >= ui.font.lineHeight(Face::Body) + theme::kGap * s - 0.5f);
                     CHECK(menus.widgetCentre("done"));
                 };
                 check();

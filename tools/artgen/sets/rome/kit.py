@@ -238,7 +238,7 @@ def r_insula_low(v, frame, frames, k):
     for x in (6.0, 18.0, 30.0):
         rod(m, (x, 30.0, 0.0), (x, 30.0, 10.0), 0.4, "wood")
     rod(m, (6.0, 30.0, 10.0), (30.0, 30.0, 10.0), 0.3, "wood")
-    leaf_mass(m, [(12.0, 30.0, 10.5, 3.0), (24.0, 30.0, 10.5, 3.0)], 1208, materials=(("leaf", 0.7), ("grass", 0.3)),
+    leaf_mass(m, [(12.0, 30.0, 10.5, 3.0), (24.0, 30.0, 10.5, 3.0)], 1208, materials=(("leaf", 0.7), ("leaf_light", 0.3)),
               under="leaf_dark", squash=0.6)
     return m
 
@@ -807,7 +807,7 @@ def r_vine(v, frame, frames, k):
     for y in (2.0, 8.0, 14.0):
         rod(m, (2.0, y, 14.0), (14.0, y, 14.0), 0.3, "wood")
     leaf_mass(m, [(5.0, 5.0, 15.0, 3.0), (11.0, 6.0, 15.0, 3.0), (6.0, 12.0, 15.0, 3.0), (12.0, 12.0, 14.5, 2.6)],
-              3201 + v, materials=(("leaf", 0.6), ("grass", 0.4)), under="leaf_dark", squash=0.5)
+              3201 + v, materials=(("leaf", 0.6), ("leaf_light", 0.4)), under="leaf_dark", squash=0.5)
     return m
 
 

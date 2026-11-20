@@ -345,7 +345,7 @@ expect away yes
 expect widget build no
 expect widget map yes
 expect widget journal yes
-set world district:zagros/road 1
+set world district:zagros/land 1
 wait 2
 expect region zagros
 expect away yes

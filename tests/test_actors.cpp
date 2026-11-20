@@ -463,6 +463,65 @@ TEST_CASE("water painted under her: she steps aside to dry land") {
     CHECK((passable(l.world, l.cat, Locomotion::Walk, tileOf(l.her().pos)) || onSeat));
 }
 
+TEST_CASE("a pond painted round her: she wades out to dry land instead of rocking in place") {
+    // The nearest dry tile is three tiles off across new water: her step aside crosses it (the
+    // walking guard once turned her back at every tile edge, so she rocked there for good).
+    Life l;
+    l.world = makeStarterWorld(l.cat);
+    l.run(1);
+    // She walks over to look at something away from the seats, and lingers there.
+    const Vec2 start = l.her().pos;
+    l.actors.visit(l.env(), {start.x - 6.0f, start.y + 1.0f}, -1, 20.0f);
+    for (int i = 0; i < 20 * 60 && l.her().state != ActorState::Act; ++i) l.step();
+    REQUIRE(l.her().state == ActorState::Act);
+    const TilePos t = tileOf(l.her().pos);
+    REQUIRE(l.world.itemAt(t) == nullptr);
+    for (int y = t.y - 2; y <= t.y + 2; ++y)
+        for (int x = t.x - 2; x <= t.x + 2; ++x)
+            if (l.world.hasGround({x, y}) && !l.world.isWild({x, y}))
+                l.world.setTerrain({x, y}, l.cat.waterTerrain);
+    l.run(4);
+    const Item* under = l.world.itemAt(tileOf(l.her().pos));
+    const bool onSeat = under != nullptr && l.her().reserved && under->type == l.her().resType;
+    CHECK((passable(l.world, l.cat, Locomotion::Walk, tileOf(l.her().pos)) || onSeat));
+}
+
+TEST_CASE("a piece put down in the tile she is walking into: she goes round, never rocks") {
+    Life l;
+    l.world = makeStarterWorld(l.cat);
+    l.run(1);
+    // She walks over to look at something a few tiles off; on her way, the tile just ahead of
+    // her is built on.
+    const Vec2 start = l.her().pos;
+    l.actors.visit(l.env(), {start.x - 6.0f, start.y + 1.0f}, -1, 20.0f);
+    Vec2 last = start;
+    bool blocked = false;
+    TilePos rockAt{};
+    for (int i = 0; i < 20 * 60 && !blocked; ++i) {
+        l.step();
+        const Actor& h = l.her();
+        const Vec2 d{h.pos.x - last.x, h.pos.y - last.y};
+        const float len = std::hypot(d.x, d.y);
+        last = h.pos;
+        if (h.state != ActorState::Travel || len < 1e-4f || (h.flags & actor_flag::kStepAside) != 0)
+            continue;
+        const TilePos here = tileOf(h.pos);
+        const TilePos ahead = tileOf({h.pos.x + d.x / len * 0.3f, h.pos.y + d.y / len * 0.3f});
+        if (ahead == here || ahead == tileOf(h.goal)) continue;
+        const Item rock = makeItem(l.cat, item("rock"), 0, ahead);
+        if (canPlace(l.world, l.cat, rock) != PlaceResult::Ok) continue;
+        l.world.addItem(rock);
+        rockAt = ahead;
+        blocked = true;
+    }
+    REQUIRE(blocked);
+    const Vec2 from = l.her().pos;
+    l.run(3);
+    const Vec2 to = l.her().pos;
+    CHECK((tileOf(to) != tileOf(from) || l.her().state != ActorState::Travel));
+    CHECK(tileOf(to) != rockAt);
+}
+
 TEST_CASE("a busy corner: no two actors ever hold one spot") {
     Life l;
     l.world = makeStarterWorld(l.cat);

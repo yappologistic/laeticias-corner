@@ -72,6 +72,11 @@ def splice(pages, sprites: dict) -> dict:
         if n is not None:
             r = pages[n]["man"][key]
             alone = users[(n, r["x"], r["y"])] <= set(sprites)
+            box = (slice(r["y"], r["y"] + r["h"]), slice(r["x"], r["x"] + r["w"]))
+            if not alone and (h, w) == (r["h"], r["w"]) and (t.ox, t.oy) == (r["ox"], r["oy"]) \
+                    and np.array_equal(pages[n]["colour"][box], t.rgba) \
+                    and np.array_equal(pages[n]["packed"][box], _words(key, t)[0]):
+                continue    # unchanged: it keeps the rectangle it shares (no band for nothing)
             if alone:   # clear the old rectangle (every key on it is being replaced)
                 pages[n]["colour"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = 0
                 pages[n]["packed"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = 0
@@ -80,6 +85,19 @@ def splice(pages, sprites: dict) -> dict:
                 continue
             del pages[n]["man"][key]
         homeless.append(key)
+    # Room left on the pages (rectangles emptied by earlier patches, gaps between shelves) before
+    # any new band: tallest first, each in the first free window in page and row order.
+    pad = pack.PAD
+    for key in sorted(homeless, key=lambda k_: (-sprites[k_].rgba.shape[0], k_)):
+        t = sprites[key]
+        for n, pg in enumerate(pages):
+            spot = _free_spot(pg, *t.rgba.shape[:2], pad)
+            if spot:
+                pg["man"][key] = {"x": spot[0], "y": spot[1], "w": t.rgba.shape[1], "h": t.rgba.shape[0],
+                                  "ox": t.ox, "oy": t.oy}
+                where[key] = n
+                homeless.remove(key)
+                break
     if homeless:
         # A band at the foot of the last page: shelves of the homeless sprites, tallest first.
         pg_i = len(pages) - 1
@@ -109,14 +127,36 @@ def splice(pages, sprites: dict) -> dict:
         n = where[key]
         r = pages[n]["man"][key]
         pages[n]["colour"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = t.rgba
-        w = datapages.words(key, t)
-        if w is None:
-            pages[n]["raw"].add(key)
-            w = datapages.rgba_word(t.rgba)
-        else:
-            pages[n]["raw"].discard(key)
-        pages[n]["packed"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = datapages.word_rgba(w)
+        words, raw = _words(key, t)
+        (pages[n]["raw"].add if raw else pages[n]["raw"].discard)(key)
+        pages[n]["packed"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = words
     return where
+
+
+def _free_spot(pg, h: int, w: int, pad: int):
+    """Top-left (x, y) of the first window on the page, row by row, where an h x w sprite and its
+    gutter touch no manifest rectangle and no pixel, or None."""
+    H, W = pg["colour"].shape[:2]
+    busy = (pg["colour"][..., 3] > 0) | pg["packed"].any(axis=-1)
+    for r in pg["man"].values():
+        busy[max(r["y"] - pad, 0):r["y"] + r["h"] + pad, max(r["x"] - pad, 0):r["x"] + r["w"] + pad] = True
+    wh, ww = h + 2 * pad, w + 2 * pad
+    if wh > H or ww > W:
+        return None
+    sat = np.zeros((H + 1, W + 1), np.int64)
+    sat[1:, 1:] = busy.cumsum(0).cumsum(1)
+    win = sat[wh:, ww:] - sat[:-wh, ww:] - sat[wh:, :-ww] + sat[:-wh, :-ww]
+    free = np.flatnonzero(win.ravel() == 0)
+    if not len(free):
+        return None
+    y, x = divmod(int(free[0]), win.shape[1])
+    return x + pad, y + pad
+
+
+def _words(key: str, t: Sprite):
+    """A sprite's packed-twin texels and whether they are its raw colour (no ramp words)."""
+    w = datapages.words(key, t)
+    return (datapages.word_rgba(datapages.rgba_word(t.rgba)), True) if w is None else (datapages.word_rgba(w), False)
 
 
 def _old_sprites(png: Path, man: dict, drop: set) -> dict:

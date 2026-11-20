@@ -399,6 +399,13 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
     if (what == "onboarded") return yesNo(profile_.onboarded);
     if (what == "worlds")
         return equal(std::to_string(listWorlds(saveDir_ / kWorldsDir).size()), a[1]);
+    if (what == "cards") {
+        // expect cards N P: the worlds screen shows N cards, P of them with their picture.
+        if (a.size() < 3) return std::string("expect cards N P");
+        const auto pictured = std::ranges::count_if(
+            menuWorlds_, [](const MenuWorld& w) { return w.thumb.texture != nullptr; });
+        return equal(std::format("{} {}", menuWorlds_.size(), pictured), a[1] + " " + a[2]);
+    }
     if (what == "fresh") return yesNo(freshWorld_);
     if (what == "card") {
         // expect card N NAME...: the N-th world on the worlds screen (the newest first).
@@ -593,6 +600,18 @@ std::optional<std::string> App::check(const ScriptCommand& c) {
                                "expected at most {} of the world target under {} partly "
                                "transparent but found {:.4f} (a seam or a hole)",
                                a[2], a[1], f));
+    }
+    if (what == "water_mark") {
+        const auto r = parseScriptRect(a[1]);
+        if (!r) return "bad rectangle " + a[1];
+        if (!worldView_) return std::string("no world");
+        const float f = worldView_->waterMarked({r->x, r->y, r->w, r->h});
+        std::printf("expect water_mark %s: %.4f\n", a[1].c_str(), f);
+        return f >= std::stof(a[2]) && f <= std::stof(a[3])
+                   ? std::nullopt
+                   : std::optional(std::format("expected {} to {} of the world target under {} "
+                                               "marked as water but found {:.4f}",
+                                               a[2], a[3], a[1], f));
     }
     if (what == "contrast" || what == "luma_mark" || what == "luma_like") {
         // Lightness statistics of a window region: its spread (contrast), or its mean kept under

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Laeticia's Corner
+Comment=A cosy isometric pixel-art world you decorate at your own pace
+Exec=laeticias-corner
+Icon=@LC_APP_ID@
+Terminal=false
+Categories=Game;Simulation;
+Keywords=diorama;isometric;pixel;cosy;
+StartupWMClass=@LC_APP_ID@

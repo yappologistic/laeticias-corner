@@ -83,7 +83,7 @@ The owner uses this computer while agents work, and disk space is limited.
 | `src/render/`, `src/ui/`, `src/audio/`, `src/app/` | SDL-facing code | engine |
 | `src/world/`, `src/worldview/` | The world's data runtime (pure) and its renderer, soundscape, weather field, places | engine |
 | `tests/`, `CMakeLists.txt`, `CMakePresets.json`, `cmake/`, `third_party/`, `.clang-*` | Build, tests, tooling config | engine |
-| `tools/artgen/`, `assets/atlas.png`, `assets/atlas.json`, `assets/atlas/` | Sprite generator and its output: the home page, set pages, manifests, geometry | art |
+| `tools/artgen/`, `assets/atlas.png`, `assets/atlas.json`, `assets/atlas/`, `assets/icon/` | Sprite generator and its output: the home page, set pages, manifests, geometry, the application icon | art |
 | `tools/worldgen/worldgen/`, `tools/worldgen/plan/`, `tools/worldgen/fixtures/`, `tools/worldgen/build.sh`, `assets/world/world.json`, `assets/world/layers/base.*`, `assets/world/overview.png` | World authoring tool, world plan, base layer, overview, test world | worldgen core |
 | `tools/worldgen/regions/<layer>/`, `assets/world/layers/<layer>.*`, `assets/regions/<region>.json` for the regions in that layer | One authored place: layout, graph, life and text | the builder of that layer (one agent per layer) |
 | `assets/sets/<set>/catalog.json` | Set content contracts | orchestrator, or the agent whose brief says so |
@@ -290,6 +290,15 @@ visitors and effects it is the ground contact point. Keys:
   sprites anchor at the rim tile's top vertex. `fx/raindrop`: `f0` is the falling streak, later
   frames are the splash.
 - A missing sprite must never crash: the engine draws an obvious placeholder and logs once.
+
+### Application icon (`assets/icon/`)
+
+`icon-<size>.png` (16, 24, 32, 48, 64, 128, 256, 512; RGBA, transparent background) and
+`laeticias-corner.ico` (16-64 as bitmaps, 256 as PNG), all drawn by `tools/artgen/icon.py`
+(`build.sh --icon`; `icon_fresh` holds the committed files to it). The window takes the PNGs
+(32 px with the rest as alternates), the Windows program embeds the `.ico`, and the Linux
+package ships `icon-256.png` and a desktop file, both named by the application id `LC_APP_ID`
+(`CMakeLists.txt`), which SDL's app metadata also carries.
 
 ### Audio (`assets/audio/`)
 
@@ -672,6 +681,7 @@ Asset regeneration (owned by the art, audio and world agents):
 ```sh
 tools/artgen/build.sh                    # the home atlas
 tools/artgen/build.sh --set parsa        # a set's pages and geometry
+tools/artgen/build.sh --icon             # the application icon
 tools/audiogen/generate.sh
 tools/worldgen/build.sh parsa            # compile and validate one layer (previews: --preview parsa)
 tools/worldgen/build.sh --check          # validate the composed world

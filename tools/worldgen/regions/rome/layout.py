@@ -678,7 +678,8 @@ def _capitol(L: Layout) -> None:
     _paint_free(L, Rect(69, 44, 79, 49), TRAV, 7)
     for at in ((69, 51), (69, 54), (69, 57), (80, 54), (80, 57), (70, 61), (76, 61)):
         put(L, R + "r_statue", at, face="south")
-    put(L, R + "r_altar", (73, 61), face="south")
+    # The altar before the temple: its front stands on the street, so beside its west corner.
+    put(L, R + "r_altar", (69, 60), face="south")
     put(L, R + "r_column_honor", (80, 60))
     L.scatter(Mask(0, 0, (L.LV > 0) & (L.LV < 6) & (L.T == L.terrains.index(TUFA))),
               {R + "t_laurel": 1, R + "t_cypress": 1, R + "p_acanthus": 2}, 0.1,
@@ -698,8 +699,7 @@ def _forum(L: Layout) -> None:
         put(L, R + "r_column_honor", at)
     put(L, R + "r_statue", (118, 64), face="west")             # Cloelia (presence uncertain)
     put(L, R + "r_lacus", (116, 72), face="south")
-    for at in ((96, 70), (110, 77), (118, 76)):
-        put(L, R + "r_lamp", at)
+    put(L, R + "r_lamp", (118, 76))
     put(L, R + "r_altar", (111, 68), face="south")
 
 
@@ -1005,6 +1005,12 @@ NIGHT_LAMPS = ("subura", "subura_baker", "carinae", "velabrum", "vicus_tuscus", 
                "aventine", "quirinal", "transtiberim", "synagogue", "campus_south", "saepta",
                "agrippa_baths", "forum_boarium", "ara_maxima", "tiber_island_east", "player_domus", "testaccio",
                "clivus_foot", "colossus")
+# The Forum after dark (QA7 V7-018): the watch's braziers by the Carcer beside the Curia and at
+# the Temple of Saturn, whose treasury was kept under guard, and lamps at the Forum's shrines (the
+# Lapis Niger, Venus Cloacina) by the Rostra and at the square's corners (its middle is kept
+# free for the crowds); Vesta's fire burns on its own.
+FORUM_BRAZIERS = ("curia", "clivus_foot")
+FORUM_LAMPS = ((95, 62), (106, 60), (97, 67))
 OPEN_COUNTRY = {"campagna", "janiculum", "vatican", "castra", "appia", "river", "decorate", "markets"}
 BRIDGES = ("pons_fabricius", "pons_cestius", "pons_aemilius", "pons_sublicius")
 
@@ -1017,7 +1023,10 @@ def _night(L: Layout) -> None:
             ends += [(c0 - 1, (r0 + r1) // 2), (c1 + 1, (r0 + r1) // 2)]
         else:
             ends += [((c0 + c1) // 2, r0 - 1), ((c0 + c1) // 2, r1 + 1)]
-    night_posts(L, R + "r_brazier", [NODES[n] for n in NIGHT_BRAZIERS], ring=3, gap=6)
+    night_posts(L, R + "r_brazier", [NODES[n] for n in NIGHT_BRAZIERS + FORUM_BRAZIERS], ring=3,
+                gap=6)
+    night_posts(L, R + "r_lamp", FORUM_LAMPS, ring=3, gap=4,
+                kin=(R + "r_compitum",))
     night_posts(L, R + "r_lamp", ends, ring=2, gap=3)
     night_posts(L, R + "r_lamp", [(62, r) for r in range(112, 160, 6)], ring=2, gap=4)  # wharf
     night_posts(L, R + "r_lamp", [NODES[n] for n in NIGHT_LAMPS], ring=3, gap=5,

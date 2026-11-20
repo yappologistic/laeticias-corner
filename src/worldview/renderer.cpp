@@ -2017,12 +2017,18 @@ std::optional<GroundDecode> WorldView::homeGroundDecode() {
     seasonCtx_.share = 0;
     seasonCtx_.other = -1;
     const SDL_FColor c = packedColour({1, 1, 1, 1}, true, false);
-    return GroundDecode{page,
-                        &homePacked_,
-                        [this](Batch& b, bool on) { decoder_->use(b, on); },
-                        decoder_->replace(),
-                        c.g,
-                        c.b};
+    GroundDecode d;
+    d.page = page;
+    d.packed = &homePacked_;
+    d.use = [this](Batch& b, bool on) { decoder_->use(b, on); };
+    d.replace = decoder_->replace();
+    d.row = c.g;
+    d.snow = c.b;
+    if (post_) {
+        d.stamp = [this](Batch& b, bool on) { post_->stamp(b, on); };
+        d.stampBlend = post_->stampBlend();
+    }
+    return d;
 }
 
 void WorldView::seasonAt(TilePos p) {
@@ -2406,6 +2412,14 @@ void WorldView::draw(const ViewSpec& camera, double clock, const Lighting& light
 }
 
 float WorldView::partialAlpha(SDL_Rect window) {
+    return alphaShare(window, 13, 246);
+}
+
+float WorldView::waterMarked(SDL_Rect window) {
+    return alphaShare(window, 246, 254);
+}
+
+float WorldView::alphaShare(SDL_Rect window, Uint8 lo, Uint8 hi) {
     if (!present_.valid || !view_.texture) return 0;
     const Present& p = present_;
     const auto at = [&](float w, float topLeft, float origin) {
@@ -2424,14 +2438,14 @@ float WorldView::partialAlpha(SDL_Rect window) {
     const SurfacePtr px{SDL_RenderReadPixels(renderer_, &r)};
     if (!SDL_SetRenderTarget(renderer_, was)) SDL_Log("worldview: %s", SDL_GetError());
     if (!px) return 0;
-    int partial = 0;
+    int in = 0;
     for (int y = 0; y < px->h; ++y)
         for (int x = 0; x < px->w; ++x) {
             Uint8 cr = 0, cg = 0, cb = 0, ca = 0;
             if (!SDL_ReadSurfacePixel(px.get(), x, y, &cr, &cg, &cb, &ca)) return 0;
-            if (ca > 12 && ca < 247) ++partial;
+            if (ca >= lo && ca <= hi) ++in;
         }
-    return static_cast<float>(partial) / static_cast<float>(px->w * px->h);
+    return static_cast<float>(in) / static_cast<float>(px->w * px->h);
 }
 
 void WorldView::composite(Vec2 scale, bool smooth) {

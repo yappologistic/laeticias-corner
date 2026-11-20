@@ -285,11 +285,23 @@ TEST_CASE("order props: the home's footbridge carries walkers between its rails,
             CHECK(drawnBefore(farHalf, walker));
             CHECK(drawnBefore(walker, nearHalf));
         }
-        // A duck swimming under it: under both halves.
-        const DepthBox duck =
-            box(centre.x - 0.01f, centre.y - 0.01f, centre.x + 0.01f, centre.y + 0.01f, 0, 14);
-        CHECK(drawnBefore(duck, farHalf));
-        CHECK(drawnBefore(duck, nearHalf));
+        // A duck swimming under it, anywhere across it (on the near side of the span too, issue
+        // #3): under both halves. One in the water just in front of it: over both.
+        for (const float off : {-0.3f, 0.0f, 0.3f}) {
+            const Vec2 at =
+                rot == 0 ? Vec2{centre.x, centre.y + off} : Vec2{centre.x + off, centre.y};
+            CAPTURE(off);
+            const DepthBox duck =
+                box(at.x - 0.01f, at.y - 0.01f, at.x + 0.01f, at.y + 0.01f, 0, 14);
+            CHECK(drawnBefore(duck, farHalf));
+            CHECK(drawnBefore(duck, nearHalf));
+        }
+        const Vec2 front =
+            rot == 0 ? Vec2{centre.x, centre.y + 0.8f} : Vec2{centre.x + 0.8f, centre.y};
+        const DepthBox ahead =
+            box(front.x - 0.01f, front.y - 0.01f, front.x + 0.01f, front.y + 0.01f, 0, 14);
+        CHECK(drawnBefore(farHalf, ahead));
+        CHECK(drawnBefore(nearHalf, ahead));
         // The cut: the deck's centre line, the near rail below it on screen.
         const CutLine cut = crossingCut(bridge, it, kIso);
         const Vec2 mid = kIso.toWorld(centre.x, centre.y);

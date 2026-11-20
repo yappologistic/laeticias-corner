@@ -36,11 +36,11 @@ env:
     bench|bench_1440|bench_world|bench_city|bench_startup_look|benchmark|benchmark_report|
     soak|soak_city|world_perf|world_bench
   # Known failures on main before this workflow existed, tracked and excluded by name until
-  # fixed: worldview_unit (one seam case), script_regions_title. And terrain_quarter_look_check,
+  # fixed: worldview_unit (its seam case, two checks). And terrain_quarter_look_check,
   # which reads the perf log of script_terrain_quarter_look: that run needs SDL's GPU driver and
   # skips on the runners (no GPU), so there is no log to check.
   KNOWN_FAILURES: >-
-    worldview_unit|script_regions_title|terrain_quarter_look_check
+    worldview_unit|terrain_quarter_look_check
 
 jobs:
   linux:
@@ -64,7 +64,7 @@ jobs:
           dnf install -y dnf-plugins-core
           dnf config-manager --set-enabled crb
           dnf install -y gcc-toolset-14-gcc-c++ gcc-toolset-14-libstdc++-devel \
-            gcc-toolset-14-binutils git-core xz unzip findutils file \
+            gcc-toolset-14-binutils git-core xz unzip findutils file desktop-file-utils \
             alsa-lib-devel pulseaudio-libs-devel pipewire-devel \
             libX11-devel libXext-devel libXrandr-devel libXcursor-devel libXfixes-devel \
             libXi-devel libXScrnSaver-devel libXtst-devel libxkbcommon-devel \

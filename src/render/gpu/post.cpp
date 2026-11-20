@@ -121,6 +121,7 @@ bool Post::init() {
     finalShader_ = makeFragmentShader(device_, "final", 6);
     cloudShader_ = makeFragmentShader(device_, "clouds", 1);
     shadeShader_ = makeFragmentShader(device_, "shade", 1);
+    stampShader_ = makeFragmentShader(device_, "stamp", 1);
     downShader_ = makeFragmentShader(device_, "bloom_down", 1);
     upShader_ = makeFragmentShader(device_, "bloom_up", 1);
     SDL_GPUSamplerCreateInfo si{};
@@ -133,17 +134,20 @@ bool Post::init() {
     linear_ = SDL_CreateGPUSampler(device_, &si);
     if (linear_ == nullptr) SDL_Log("gpu: sampler: %s", SDL_GetError());
     if (finalShader_ == nullptr || downShader_ == nullptr || upShader_ == nullptr ||
-        shadeShader_ == nullptr || cloudShader_ == nullptr || linear_ == nullptr)
+        shadeShader_ == nullptr || cloudShader_ == nullptr || stampShader_ == nullptr ||
+        linear_ == nullptr)
         return false;
     SDL_GPURenderStateCreateInfo si2{};
     si2.fragment_shader = shadeShader_;
     shadeState_ = SDL_CreateGPURenderState(renderer_, &si2);
     si2.fragment_shader = cloudShader_;
     cloudState_ = SDL_CreateGPURenderState(renderer_, &si2);
+    si2.fragment_shader = stampShader_;
+    stampState_ = SDL_CreateGPURenderState(renderer_, &si2);
     // The tile water field: made once, at its largest, updated in place.
     water_.reset(SDL_CreateTexture(renderer_, kFormat, SDL_TEXTUREACCESS_STATIC,
                                    tuning::kWaterField, tuning::kWaterField));
-    if (shadeState_ == nullptr || cloudState_ == nullptr || !water_ ||
+    if (shadeState_ == nullptr || cloudState_ == nullptr || stampState_ == nullptr || !water_ ||
         !SDL_SetTextureScaleMode(water_.get(), SDL_SCALEMODE_LINEAR)) {
         SDL_Log("gpu: render state: %s", SDL_GetError());
         return false;
@@ -178,6 +182,9 @@ bool Post::init() {
     markBlend_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_ONE,
                                             SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
                                             SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_REV_SUBTRACT);
+    stampBlend_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_ONE,
+                                             SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
+                                             SDL_BLENDFACTOR_ZERO, SDL_BLENDOPERATION_ADD);
     if (!falloff_ || !SDL_UpdateTexture(falloff_.get(), nullptr, px.data(), kSide * 4) ||
         !SDL_SetTextureBlendMode(falloff_.get(), poolBlend_) ||
         !SDL_SetTextureBlendMode(falloff_.get(), SDL_BLENDMODE_ADD_PREMULTIPLIED)) {
@@ -223,12 +230,14 @@ Post::~Post() {
         if (s != nullptr) SDL_DestroyGPURenderState(s);
     if (shadeState_ != nullptr) SDL_DestroyGPURenderState(shadeState_);
     if (cloudState_ != nullptr) SDL_DestroyGPURenderState(cloudState_);
+    if (stampState_ != nullptr) SDL_DestroyGPURenderState(stampState_);
     for (std::size_t i = 0; i < kLevels; ++i) {
         if (down_[i] != nullptr) SDL_DestroyGPURenderState(down_[i]);
         if (up_[i] != nullptr) SDL_DestroyGPURenderState(up_[i]);
     }
     if (device_ == nullptr) return;
-    for (SDL_GPUShader* s : {finalShader_, downShader_, upShader_, shadeShader_, cloudShader_})
+    for (SDL_GPUShader* s :
+         {finalShader_, downShader_, upShader_, shadeShader_, cloudShader_, stampShader_})
         if (s != nullptr) SDL_ReleaseGPUShader(device_, s);
     if (linear_ != nullptr) SDL_ReleaseGPUSampler(device_, linear_);
 }
@@ -311,6 +320,10 @@ void Post::shade(Batch& b, SDL_Texture* layer, SDL_FRect dst, UvRect uv, Rgb tin
     b.quad(dst, uv, {1, 1, 1, 1});
     b.flush();
     use(b, nullptr);
+}
+
+void Post::stamp(Batch& b, bool on) {
+    use(b, on ? stampState_ : nullptr);
 }
 
 void Post::use(Batch& b, SDL_GPURenderState* s) {

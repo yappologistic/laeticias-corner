@@ -7115,6 +7115,216 @@
    "gloss": 0.06,
    "sparkle": 0.0,
    "trans": "#9c8d4a"
+  },
+  {
+   "id": 230,
+   "name": "leaf_light",
+   "material": "leaf_light",
+   "steps": 6,
+   "colours": [
+    "#2b4a41",
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.3818,
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872",
+   "states": {
+    "fresh": 231,
+    "dry": 232,
+    "dormant": 233,
+    "turn": 234,
+    "bare": 235
+   }
+  },
+  {
+   "id": 231,
+   "name": "leaf_light@fresh",
+   "state_of": "leaf_light",
+   "state": "fresh",
+   "steps": 6,
+   "colours": [
+    "#376247",
+    "#4a7d47",
+    "#679a48",
+    "#91b752",
+    "#91b752",
+    "#c6d872"
+   ],
+   "L": [
+    0.4565,
+    0.5394,
+    0.631,
+    0.7299,
+    0.7299,
+    0.8469
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 232,
+   "name": "leaf_light@dry",
+   "state_of": "leaf_light",
+   "state": "dry",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#7a6f3c",
+    "#9c8d4a",
+    "#bba95c",
+    "#d3c07a"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5399,
+    0.642,
+    0.7338,
+    0.808
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 233,
+   "name": "leaf_light@dormant",
+   "state_of": "leaf_light",
+   "state": "dormant",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#6e6a45",
+    "#8a8455",
+    "#a69e66",
+    "#d4c995"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.5183,
+    0.607,
+    0.6927,
+    0.8323
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 234,
+   "name": "leaf_light@turn",
+   "state_of": "leaf_light",
+   "state": "turn",
+   "steps": 6,
+   "colours": [
+    "#78303b",
+    "#78303b",
+    "#a3463f",
+    "#b9612c",
+    "#dd8f37",
+    "#d8bb5f"
+   ],
+   "L": [
+    0.4131,
+    0.4131,
+    0.5149,
+    0.5871,
+    0.715,
+    0.7986
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
+  },
+  {
+   "id": 235,
+   "name": "leaf_light@bare",
+   "state_of": "leaf_light",
+   "state": "bare",
+   "steps": 6,
+   "colours": [
+    "#4a3034",
+    "#6b4539",
+    "#6b4539",
+    "#8f6343",
+    "#ae946b",
+    "#c9b083"
+   ],
+   "L": [
+    0.3415,
+    0.4306,
+    0.4306,
+    0.5385,
+    0.68,
+    0.7679
+   ],
+   "class": "foliage_deciduous",
+   "shell": 6,
+   "porous": false,
+   "snow": true,
+   "specular": false,
+   "sway": true,
+   "translucency": 0.6,
+   "wet_steps": 0,
+   "gloss": 0.0,
+   "sparkle": 0.0,
+   "trans": "#c6d872"
   }
  ]
 }

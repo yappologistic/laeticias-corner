@@ -83,7 +83,8 @@
 //       page none|title|worlds|newworld|delete|loaderror|settings|pause (the menus' top page)
 //       tour N (its step, 0: none) | onboarded yes|no | worlds N (on the worlds screen)
 //       world NAME... (the open world's name) | fresh yes|no (an unbegun preview)
-//       card N NAME... (the N-th world on the worlds screen, newest first)
+//       card N NAME... (the N-th world on the worlds screen, newest first) | cards N P (the
+//       worlds screen shows N cards, P of them with their picture)
 //       volume music|effects|ambience N | reduce_motion yes|no | ui_scale N | vsync yes|no
 //       look classic|low|medium|high (the Look in effect) | clouds on|shadows|off (the setting)
 //       frame ID (the postcard frame) | caption yes|no | postcards N (files in its folder)
@@ -117,6 +118,8 @@
 //       luma_like NAME X,Y,W,H TOL  the region's mean lightness is within TOL (a share) of NAME's
 //       target_alpha X,Y,W,H MOST  at most MOST (0..1) of the world target under the region is
 //                               partly transparent (a seam between cached pieces, a hole)
+//       water_mark X,Y,W,H MIN MAX  MIN..MAX (0..1) of the world target under the region carries
+//                               a water mark (the shader path's final pass draws water there)
 //       color X,Y,W,H R G B TOL mean colour of a region, each channel within TOL
 //       lit X,Y,W,H MIN         at least MIN (0..1) of the region's pixels are lamplight (bright,
 //                               warm: the night's lit windows, lamps and fires)

@@ -1,6 +1,7 @@
 #include "app/app.hpp"
 
 #include "app/app_impl.hpp"
+#include "app/identity.hpp"
 #include "audio/decode.hpp"
 #include "audio/wav.hpp"
 #include "core/growth.hpp"
@@ -52,6 +53,7 @@ struct SdlSession {
                 return;
             }
         }
+        setAppMetadata();
         ok = SDL_Init(SDL_INIT_VIDEO);
         if (!ok) SDL_Log("SDL_Init failed: %s", SDL_GetError());
         // A computer with no sound (no audio driver at all, or one that cannot start) still
@@ -152,6 +154,10 @@ bool App::createWindow() {
         // The interface is laid out for this size and up (QA2-11).
         if (!SDL_SetWindowMinimumSize(window_.get(), kMinWindowW, kMinWindowH))
             SDL_Log("window minimum size: %s", SDL_GetError());
+        // Only a real window takes an icon; without the pictures the system's default stays.
+        if (const SurfacePtr icon = loadWindowIcon(assets_ / "icon");
+            icon && !SDL_SetWindowIcon(window_.get(), icon.get()))
+            SDL_Log("window icon: %s", SDL_GetError());
         if (!opts_.size && !SDL_SetWindowPosition(window_.get(), place->x, place->y))
             SDL_Log("window position: %s", SDL_GetError());
         if (windowState_.fullscreen && !SDL_SetWindowFullscreen(window_.get(), true))
@@ -2047,6 +2053,7 @@ int App::run() {
                     : std::vformat(strings::kToastWelcomeAlone, std::make_format_args(pages)));
         }
         settlePhoto(false);
+        settleWorlds(false);
         if (thumbTimer_ >= tuning::kThumbnailInterval) {
             thumbTimer_ = 0;
             (void)writeThumbnail();

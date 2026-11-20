@@ -168,7 +168,7 @@ def dolphin(frame, frames, k):
     t = frame / frames
     pts = []
     for i in range(9):          # nose (i = 0) to tail, the arc travelling forward with t
-        u = t * 1.6 - 0.3 - i * 0.11
+        u = t * 2.1 - i * 0.11  # the whole leap, tail under again, within the loop: no pop at the wrap
         pts.append((9.0 - i * 2.2, 0.0, 6.5 * math.sin(math.pi * min(max(u, 0.0), 1.0)) - 2.5))
     for i, (a, b) in enumerate(zip(pts, pts[1:])):
         r = 1.5 - abs(i - 2.5) * 0.22

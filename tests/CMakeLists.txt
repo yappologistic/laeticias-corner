@@ -187,7 +187,8 @@ list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_terrain_quarter")
 list(APPEND LC_SAVE_DIRS "${LC_SCRATCH}/save_gpu_look" "${LC_SCRATCH}/save_seams_look"
      "${LC_SCRATCH}/save_look_night" "${LC_SCRATCH}/save_bench_startup_look"
      "${LC_SCRATCH}/save_look_order" "${LC_SCRATCH}/save_look_seasons"
-     "${LC_SCRATCH}/save_draw_order_look" "${LC_SCRATCH}/save_look_light")
+     "${LC_SCRATCH}/save_draw_order_look" "${LC_SCRATCH}/save_look_light"
+     "${LC_SCRATCH}/save_home_water_look")
 list(REMOVE_DUPLICATES LC_SAVE_DIRS)
 add_test(NAME prepare_saves COMMAND ${CMAKE_COMMAND} -E rm -rf ${LC_SAVE_DIRS})
 set_tests_properties(prepare_saves PROPERTIES FIXTURES_SETUP clean_saves)
@@ -238,6 +239,21 @@ add_test(NAME newer_save_untouched COMMAND ${CMAKE_COMMAND} -DFILE=${newer} "-DC
   -P ${CMAKE_CURRENT_SOURCE_DIR}/check_file.cmake)
 set_tests_properties(newer_save_untouched PROPERTIES DEPENDS script_newer_save
   FIXTURES_REQUIRED newer)
+
+# "Your worlds" fills in over frames (H3-L01): six worlds with pictures, streamed as a player gets it.
+set(many "${LC_SCRATCH}/save_worlds_many")
+add_test(NAME prepare_worlds_many COMMAND ${CMAKE_COMMAND} -DDIR=${many} -DCOUNT=6
+  -DSAVE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/save_v3.json
+  -DTHUMB=${CMAKE_SOURCE_DIR}/assets/atlas/ramps.png
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/make_worlds.cmake)
+set_tests_properties(prepare_worlds_many PROPERTIES FIXTURES_SETUP worlds_many
+  FIXTURES_REQUIRED clean_saves)
+add_test(NAME script_worlds_many
+  COMMAND laeticias-corner --headless --size 960x600 --seed 1 --save-dir "${many}" --front-door
+          --streamed --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/worlds_many.lcs"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+set_tests_properties(script_worlds_many PROPERTIES ENVIRONMENT "${LC_RUN_ENV}"
+  FIXTURES_REQUIRED "clean_saves;worlds_many")
 
 # Play on a damaged world keeps the world being played (H3-017).
 set(unreadable "${LC_SCRATCH}/save_play_unreadable")
@@ -505,8 +521,9 @@ set_tests_properties(script_seams_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}" 
   FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
 # The shader path's painter's order (QA7 V7-015: swaying trees in their turn), the draw-order
 # golden places on it, its seasons at climate borders (QA7 V7-004, V7-005, V7-006, V7-008), and
-# its light, rain and night water (QA7 V7-020, V7-014, V7-007).
-foreach(look look_order look_seasons look_light)
+# its light, rain and night water (QA7 V7-020, V7-014, V7-007), and the home's water where it
+# meets the world and under what stands over it.
+foreach(look look_order look_seasons look_light home_water_look)
   add_test(NAME script_${look}
     COMMAND laeticias-corner --headless --quality high --size 1280x800 --seed 1
             --save-dir "${LC_SCRATCH}/save_${look}" --script "${CMAKE_CURRENT_SOURCE_DIR}/scripts/${look}.lcs"
@@ -529,6 +546,12 @@ add_test(NAME bench_startup_look
           --save-dir "${LC_SCRATCH}/save_bench_startup_look")
 set_tests_properties(bench_startup_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}"
   SKIP_RETURN_CODE 77 FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+add_test(NAME icon_fresh COMMAND ${CMAKE_COMMAND}
+  -DPY=${CMAKE_SOURCE_DIR}/tools/artgen/.venv/bin/python
+  -DSCRIPT=${CMAKE_SOURCE_DIR}/tools/artgen/icon.py
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/check_icon.cmake)
+set_tests_properties(icon_fresh PROPERTIES SKIP_RETURN_CODE 77)
+
 if(LC_GLSLC)
   string(JOIN "|" LC_SHADER_NAME_ARG ${LC_SHADER_NAMES})
   file(MAKE_DIRECTORY "${LC_SCRATCH}/shaders")
