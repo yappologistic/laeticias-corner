@@ -1,3 +1,4 @@
+#include "app/identity.hpp"
 #include "app/options.hpp"
 #include "app/script.hpp"
 #include "app/window_state.hpp"
@@ -23,6 +24,7 @@
 #include "ui/map_screen.hpp"
 #include "ui/menus.hpp"
 #include "ui/painter.hpp"
+#include "ui/strings.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -38,6 +40,7 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <string_view>
 #include <tuple>
 
 using namespace lc;
@@ -729,6 +732,47 @@ TEST_CASE("float WAV round trip") {
     REQUIRE(back.has_value());
     CHECK(*back == s);
     CHECK_FALSE(readWavFloat(test::tempDir("wav2") / "missing.wav").has_value());
+}
+
+TEST_CASE("the application icon: every size square with alpha, the window icon carrying the rest") {
+    const std::filesystem::path dir = test::assetsDir() / "icon";
+    for (const int size : kIconSizes) {
+        CAPTURE(size);
+        const SurfacePtr png{
+            SDL_LoadPNG((dir / std::format("icon-{}.png", size)).string().c_str())};
+        REQUIRE(png);
+        CHECK(png->w == size);
+        CHECK(png->h == size);
+        REQUIRE(SDL_ISPIXELFORMAT_ALPHA(png->format));
+        // The picture stands on no background: its corners are see-through.
+        Uint8 r = 0;
+        Uint8 g = 0;
+        Uint8 b = 0;
+        Uint8 a = 255;
+        REQUIRE(SDL_ReadSurfacePixel(png.get(), 0, 0, &r, &g, &b, &a));
+        CHECK(a == 0);
+    }
+    CHECK(std::filesystem::file_size(dir / "laeticias-corner.ico") > 0);
+
+    const SurfacePtr icon = loadWindowIcon(dir);
+    REQUIRE(icon);
+    CHECK(icon->w == kIconBase);
+    int count = 0;
+    const SdlBuffer images{SDL_GetSurfaceImages(icon.get(), &count)};
+    REQUIRE(images);
+    // The base and every other size up to kIconLargest.
+    CHECK(count == static_cast<int>(
+                       std::ranges::count_if(kIconSizes, [](int s) { return s <= kIconLargest; })));
+    // No pictures: no icon and no crash, the window keeps the system's.
+    CHECK_FALSE(loadWindowIcon(dir / "missing"));
+
+    // The id SDL hands the desktop is the reverse-domain one the desktop file is named by.
+    setAppMetadata();
+    const char* id = SDL_GetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING);
+    REQUIRE(id != nullptr);
+    CHECK(std::string_view(id).starts_with("io.github.yappologistic."));
+    CHECK(std::string_view(SDL_GetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING)) ==
+          strings::kWindowTitle);
 }
 
 TEST_CASE("window placement: a share of the display, or the remembered spot if still visible") {

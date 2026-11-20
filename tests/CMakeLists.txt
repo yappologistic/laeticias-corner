@@ -546,6 +546,12 @@ add_test(NAME bench_startup_look
           --save-dir "${LC_SCRATCH}/save_bench_startup_look")
 set_tests_properties(bench_startup_look PROPERTIES ENVIRONMENT "${LC_BENCH_ENV}"
   SKIP_RETURN_CODE 77 FIXTURES_REQUIRED clean_saves RUN_SERIAL TRUE)
+add_test(NAME icon_fresh COMMAND ${CMAKE_COMMAND}
+  -DPY=${CMAKE_SOURCE_DIR}/tools/artgen/.venv/bin/python
+  -DSCRIPT=${CMAKE_SOURCE_DIR}/tools/artgen/icon.py
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/check_icon.cmake)
+set_tests_properties(icon_fresh PROPERTIES SKIP_RETURN_CODE 77)
+
 if(LC_GLSLC)
   string(JOIN "|" LC_SHADER_NAME_ARG ${LC_SHADER_NAMES})
   file(MAKE_DIRECTORY "${LC_SCRATCH}/shaders")

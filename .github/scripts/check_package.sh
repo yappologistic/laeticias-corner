@@ -2,9 +2,11 @@
 # Checks that an unpacked release package depends on nothing a player has to install.
 #   Linux:   the game and SDL need only glibc (no C++ runtime), the game finds SDL through
 #            $ORIGIN, SDL can load X11, Wayland, PipeWire, PulseAudio and ALSA, and the newest
-#            glibc symbol used is printed (the minimum glibc).
+#            glibc symbol used is printed (the minimum glibc); the launcher (a desktop file named
+#            by the application id) and the 256 px icon it names are there.
 #   Windows: every DLL the game and SDL import is shipped beside them or is part of Windows (in
-#            System32, or an API set), and the game is a windowed (GUI subsystem) program.
+#            System32, or an API set), and the game is a windowed (GUI subsystem) program that
+#            carries its icon and its manifest as resources.
 # Usage: check_package.sh DIR
 set -euo pipefail
 dir=$1
@@ -32,6 +34,16 @@ case $(uname -s) in
       libpulse.so.0 libasound.so.2; do
       grep -q "$lib" "$sdl" || fail "SDL was built without $lib"
     done
+    desktop=$(find "$dir" -maxdepth 1 -name '*.desktop' -print -quit)
+    [[ -n $desktop ]] || fail "the launcher (a .desktop file) is missing"
+    icon=$(sed -n 's/^Icon=//p' "$desktop")
+    [[ $(basename "$desktop" .desktop) == "$icon" ]] ||
+      fail "$(basename "$desktop") names the icon $icon, not its own id"
+    file "$dir/$icon.png" | grep -q 'PNG image data, 256 x 256, 8-bit/color RGBA' ||
+      fail "$icon.png is not a 256 x 256 RGBA picture"
+    if command -v desktop-file-validate > /dev/null; then
+      desktop-file-validate "$desktop" || fail "$(basename "$desktop") is not a valid desktop file"
+    fi
     glibc=$(objdump -T "$game" "$sdl" | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1)
     echo "newest glibc version needed: $glibc, by:"
     objdump -T "$game" "$sdl" | grep -F "($glibc)" | awk '{print "  " $NF}' | sort -u
@@ -51,8 +63,15 @@ case $(uname -s) in
           fail "$(basename "$f") imports $dll, which is neither shipped nor part of Windows"
       done < "$RUNNER_TEMP/imports"
     done
-    objdump -p "$dir"/laeticias-corner.exe | grep -q 'Subsystem.*(Windows GUI)' ||
+    objdump -p "$dir"/laeticias-corner.exe > "$RUNNER_TEMP/headers"
+    grep -q 'Subsystem.*(Windows GUI)' "$RUNNER_TEMP/headers" ||
       fail "the game is not a windowed (GUI subsystem) program"
+    # The resource directory's types: 3 RT_ICON (the pictures), 0xe RT_GROUP_ICON (the icon
+    # Explorer shows), 0x18 RT_MANIFEST.
+    for type in 000003 00000e 000018; do
+      grep -qE "^[0-9a-f]+   Entry: ID: 0x$type," "$RUNNER_TEMP/headers" ||
+        fail "the game carries no resource of type 0x$type (icon or manifest)"
+    done
     ;;
   *) fail "unknown system $(uname -s)" ;;
 esac
