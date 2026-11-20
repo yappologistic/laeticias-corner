@@ -1005,6 +1005,12 @@ NIGHT_LAMPS = ("subura", "subura_baker", "carinae", "velabrum", "vicus_tuscus", 
                "aventine", "quirinal", "transtiberim", "synagogue", "campus_south", "saepta",
                "agrippa_baths", "forum_boarium", "ara_maxima", "tiber_island_east", "player_domus", "testaccio",
                "clivus_foot", "colossus")
+# The Forum after dark (QA7 V7-018): the watch's braziers by the Carcer beside the Curia and at
+# the Temple of Saturn, whose treasury was kept under guard, and lamps at the Forum's shrines (the
+# Lapis Niger, Venus Cloacina) by the Rostra and at the square's corners (its middle is kept
+# free for the crowds); Vesta's fire burns on its own.
+FORUM_BRAZIERS = ("curia", "clivus_foot")
+FORUM_LAMPS = ((95, 62), (106, 60), (97, 67))
 OPEN_COUNTRY = {"campagna", "janiculum", "vatican", "castra", "appia", "river", "decorate", "markets"}
 BRIDGES = ("pons_fabricius", "pons_cestius", "pons_aemilius", "pons_sublicius")
 
@@ -1017,7 +1023,10 @@ def _night(L: Layout) -> None:
             ends += [(c0 - 1, (r0 + r1) // 2), (c1 + 1, (r0 + r1) // 2)]
         else:
             ends += [((c0 + c1) // 2, r0 - 1), ((c0 + c1) // 2, r1 + 1)]
-    night_posts(L, R + "r_brazier", [NODES[n] for n in NIGHT_BRAZIERS], ring=3, gap=6)
+    night_posts(L, R + "r_brazier", [NODES[n] for n in NIGHT_BRAZIERS + FORUM_BRAZIERS], ring=3,
+                gap=6)
+    night_posts(L, R + "r_lamp", FORUM_LAMPS, ring=3, gap=4,
+                kin=(R + "r_compitum",))
     night_posts(L, R + "r_lamp", ends, ring=2, gap=3)
     night_posts(L, R + "r_lamp", [(62, r) for r in range(112, 160, 6)], ring=2, gap=4)  # wharf
     night_posts(L, R + "r_lamp", [NODES[n] for n in NIGHT_LAMPS], ring=3, gap=5,
