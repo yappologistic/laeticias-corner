@@ -41,7 +41,10 @@ def build(L: Layout) -> None:
     strip = Rect(9, 0, 15, 30)
     dry = Mask(0, 0, np.isin(L.T, [i for i, t in enumerate(L.terrains) if not L.cat.is_water(t)]))
     L.level(dry & strip, 0, face="world.earth")
-    L.district("town", strip)
+    # The strand west of the road is the shore's, where the ships are built and the purple
+    # boiled; the road and the houses are the town; the open water is the sea's (gulls).
+    L.district("town", Rect(11, 0, 15, 30))
+    L.district("sea", Mask(0, 0, ~dry.array))
     road = WP.portal_street(L, "sidon_n", [(11, 0), (11, 26)], width=1, paving=EARTH)
     # The mole and the jetty run west from the strand into the water (the base's coast decides
     # where the strand ends), one tile wide, met by the road's edge.

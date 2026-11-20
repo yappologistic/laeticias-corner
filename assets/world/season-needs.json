@@ -112,7 +112,7 @@
   {"id": "parsa.groom", "set": "parsa", "kind": "walker dress cold", "season": "winter", "where": ["anatolia", "east_med", "euphrates_crossing", "halys", "iran_plateau", "mesopotamia", "parsa", "sardis", "susiana", "taurus", "zagros"], "count": 11},
   {"id": "parsa.guard_mede", "set": "parsa", "kind": "walker dress cold", "season": "winter", "where": ["parsa"], "count": 1},
   {"id": "parsa.labourer", "set": "parsa", "kind": "walker dress cold", "season": "winter", "where": ["babylon", "euphrates_crossing", "gordion", "halys", "parsa", "pasargadae", "persian_gates", "sardis", "sidon", "susa"], "count": 10},
-  {"id": "parsa.scribe", "set": "parsa", "kind": "walker dress cold", "season": "winter", "where": ["babylon", "parsa", "sardis", "sidon", "susa"], "count": 5},
+  {"id": "parsa.scribe", "set": "parsa", "kind": "walker dress cold", "season": "winter", "where": ["babylon", "parsa", "sardis", "susa"], "count": 4},
   {"id": "parsa.shepherd", "set": "parsa", "kind": "walker dress cold", "season": "winter", "where": ["anatolia", "gordion", "iran_plateau", "parsa", "pasargadae", "taurus"], "count": 6},
   {"id": "parsa.woman_worker", "set": "parsa", "kind": "walker dress cold", "season": "winter", "where": ["babylon", "euphrates_crossing", "gordion", "halys", "parsa", "pasargadae", "persian_gates", "sardis", "sidon", "susa"], "count": 10},
   {"id": "parsa.caravan_driver", "set": "parsa", "kind": "walker dress hot", "season": "summer", "where": ["halys", "parsa"], "count": 2},

@@ -372,7 +372,7 @@ TOWNS = {
                                 "Euphrates.")},
     },
     "sidon": {
-        "areas": {"shore": "country", "town": "town"},
+        "areas": {"sea": "sea", "shore": "country", "town": "town"},
         "trades": [
             T("shipwright", "parsa.craftsman", "Shipwright", "shore", {"node": "sidon_quay"},
               "work_high", 3, card="sidon_ships"),
