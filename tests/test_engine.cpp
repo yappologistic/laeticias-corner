@@ -1122,6 +1122,24 @@ TEST_CASE("the name beside the pointer stays clear of the title card and the doc
     clear(1270, 790);
 }
 
+TEST_CASE("a toast as wide as its text keeps to one line") {
+    // The toast's box is its chrome plus the text's measure and the text wraps within the box
+    // less the chrome: in float that is a hair under the measure, and "New visitor: Bees" went
+    // onto two lines with room to spare.
+    UiFixture ui;
+    REQUIRE(ui.font.build(ui.renderer.get(), 1.0f));
+    int wrapped = 0;
+    for (const std::string_view text : {"New visitor: Bees", "New visitor: Butterflies",
+                                        "New visitor: Ducks", "A new nook: the reading corner"}) {
+        const float m = ui.font.measure(Face::Body, text);
+        for (int k = 0; k < 200; ++k) {
+            const float chrome = 40.0f + static_cast<float>(k) * 0.37f;
+            wrapped += wrapLines(ui.font, Face::Body, text, (chrome + m) - chrome, 3) > 1;
+        }
+    }
+    CHECK(wrapped == 0);
+}
+
 TEST_CASE("a long card shows its whole text above the docks; a long title is cut short (Q5-E-12)") {
     UiFixture ui;
     const Catalog& c = test::catalog();
