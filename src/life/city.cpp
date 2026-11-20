@@ -2484,13 +2484,13 @@ void CityLife::puppet(int i) {
         if (a.alpha >= 1.0f) a.flags = static_cast<std::uint8_t>(a.flags & ~live_flag::kFadeIn);
     }
     // On the floor, continuous along the way (over a deck, up a stair); a ship at the water's
-    // level, passing under the bridges.
+    // level (riding down a rapid with it), passing under the bridges.
     const bool afloat = w_->data.kinds[a.kind].ship;
     const auto place = [&](Vec2 p) {
         const TilePos t{static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y))};
         if (map_->inBounds(t)) {
             a.tile = tile16(t);
-            a.z = afloat ? static_cast<float>(map_->level(t) * map_->levelPx()) : map_->walkZ(p);
+            a.z = afloat ? map_->waterZ(p) : map_->walkZ(p);
         }
         a.pos = p;
         link(i);

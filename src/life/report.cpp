@@ -354,6 +354,37 @@ std::vector<std::string> walkProblems(const LifeWorld& w) {
                                   "(geometry walk_z): walkers drawn at the water, first at grid "
                                   "({}, {})",
                                   id, e.first, e.second.x, e.second.y));
+    // Lanes over a waterfall: water stepping down two levels or more is drawn falling (top, mid,
+    // foot), and a ship would glide down its face (WorldMap::waterZ keeps it from dropping in
+    // one frame); the lane should end at the fall with a port on each side, or keep to one level.
+    const auto mid = [](TilePos p) {
+        return Vec2{static_cast<float>(p.x) + 0.5f, static_cast<float>(p.y) + 0.5f};
+    };
+    const auto water = [&](TilePos p) {
+        const int k = m.terrainAt(p);
+        return k != world::kNone && m.terrainInfo(k).water;
+    };
+    for (const world::RoadLane& lane : w.world->roads.lanes()) {
+        TilePos prev{-1, -1};
+        for (std::size_t i = 1; i < lane.points.size(); ++i) {
+            const Vec2 a = mid(lane.points[i - 1]);
+            const Vec2 b = mid(lane.points[i]);
+            const int n = 4 * std::max(std::abs(lane.points[i].x - lane.points[i - 1].x),
+                                       std::abs(lane.points[i].y - lane.points[i - 1].y));
+            for (int k = 0; k <= n; ++k) {
+                const float f = n > 0 ? static_cast<float>(k) / static_cast<float>(n) : 0.0f;
+                const TilePos t{static_cast<int>(std::floor(std::lerp(a.x, b.x, f))),
+                                static_cast<int>(std::floor(std::lerp(a.y, b.y, f)))};
+                if (t == prev || !m.inBounds(t) || !water(t)) continue;
+                const int drop = prev.x >= 0 ? std::abs(m.level(t) - m.level(prev)) : 0;
+                if (drop >= tl::kShipFallLevels)
+                    out.push_back(std::format("lane {}: crosses a waterfall of {} levels at grid "
+                                              "({}, {}) toward ({}, {}): ships glide down it",
+                                              lane.id, drop, prev.x, prev.y, t.x, t.y));
+                prev = t;
+            }
+        }
+    }
     // Slot spots: a walker stands on the spot or beside it (a seat on its item is used from
     // the tile next to it), as resolve() does; a spot with neither is never used.
     std::vector<std::tuple<std::uint32_t, std::uint16_t, int, int>> seen;
@@ -412,8 +443,7 @@ FloorCheck checkFloors(const CityLife& life, TileRect rect, std::vector<DrawActo
         }
         if (kinds[d.kind].ship) {
             ++out.afloat;
-            if (std::abs(d.z - static_cast<float>(m.level(t) * m.levelPx())) > tl::kFloorSlackPx)
-                ++out.offWater, bad(t);
+            if (std::abs(d.z - m.waterZ(d.pos)) > tl::kFloorSlackPx) ++out.offWater, bad(t);
             continue;
         }
         if (d.speed <= 0 || !m.walkable(t)) continue;

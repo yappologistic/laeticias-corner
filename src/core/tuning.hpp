@@ -461,6 +461,9 @@ inline constexpr float kFloorSlackPx = 1.0f;
 inline constexpr float kLowerReach = 1.5f;
 // lifeinfo problems names a region whose walkable land is mostly out of reach from this size up.
 inline constexpr long kReachReportTiles = 3000;
+// A boat rides down a one-level rapid; a lane over a drop of this many levels or more crosses a
+// waterfall no boat goes over (`lifeinfo problems` names it).
+inline constexpr int kShipFallLevels = 2;
 inline constexpr float kTurnHold = 0.17f; // radians past a sector's edge before a sprite turns
 inline constexpr float kRate0 = 0.85f;    // animation pace range, per actor
 inline constexpr float kRate1 = 1.15f;
