@@ -678,7 +678,8 @@ def _capitol(L: Layout) -> None:
     _paint_free(L, Rect(69, 44, 79, 49), TRAV, 7)
     for at in ((69, 51), (69, 54), (69, 57), (80, 54), (80, 57), (70, 61), (76, 61)):
         put(L, R + "r_statue", at, face="south")
-    put(L, R + "r_altar", (73, 61), face="south")
+    # The altar before the temple: its front stands on the street, so beside its west corner.
+    put(L, R + "r_altar", (69, 60), face="south")
     put(L, R + "r_column_honor", (80, 60))
     L.scatter(Mask(0, 0, (L.LV > 0) & (L.LV < 6) & (L.T == L.terrains.index(TUFA))),
               {R + "t_laurel": 1, R + "t_cypress": 1, R + "p_acanthus": 2}, 0.1,
@@ -698,8 +699,7 @@ def _forum(L: Layout) -> None:
         put(L, R + "r_column_honor", at)
     put(L, R + "r_statue", (118, 64), face="west")             # Cloelia (presence uncertain)
     put(L, R + "r_lacus", (116, 72), face="south")
-    for at in ((96, 70), (110, 77), (118, 76)):
-        put(L, R + "r_lamp", at)
+    put(L, R + "r_lamp", (118, 76))
     put(L, R + "r_altar", (111, 68), face="south")
 
 
