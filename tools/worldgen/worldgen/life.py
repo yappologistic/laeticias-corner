@@ -294,7 +294,7 @@ TOWN = {
                                        "made it, from Ionian stonecutters to Babylonian "
                                        "brickmakers.")},
              "first": "Susa: the palace of Darius on its mound above the Shaur."},
-    "persian_gates": {"name": "The Persian Gates", "native": "Persian Gates",
+    "persian_gates": {"name": "The Persian Gates", "native": "The Persian Gates",
                       "caption": "The Persian Gates · c. 470 BC",
                       "people": ["parsa.guard_spear", "parsa.archer"],
                       "cards": {"gates_station": ("Station at the Gates", "The road to Pārsa",
