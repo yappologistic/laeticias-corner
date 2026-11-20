@@ -104,16 +104,13 @@ public:
     // Pools add into the glow target's alpha only (draw with falloff() and colour (0, 0, 0, k)).
     [[nodiscard]] SDL_BlendMode poolBlend() const { return poolBlend_; }
     // Marks water in the ground cells: the target's alpha lowered by the sprite's coverage times
-    // the vertex alpha (kWaterMark), its colour kept. The final pass reads alpha in (0.5, 0.995)
+    // the vertex alpha (kWaterMark), its colour kept. The final pass reads alpha in (0.5, 0.998)
     // as water (under 0.97: only where the colour is water's); whatever is drawn over it later
-    // restores alpha 1.
+    // with the usual blend lifts alpha toward 1 by its strength, so the final pass shows that
+    // share of it over the water and the rest of the water, and all of an opaque piece.
     [[nodiscard]] SDL_BlendMode markBlend() const { return markBlend_; }
     static constexpr float kWaterMark = 0.02f;
     static constexpr float kMaybeWaterMark = 0.045f; // water if the colour is water's
-    // What stands over water (draw-order.md band B6) restores alpha 1 however faintly it is
-    // drawn: colour blended as SDL_BLENDMODE_BLEND, alpha added (a ghost or a fading piece
-    // drawn at half strength over water stays on top of it instead of under the water pass).
-    [[nodiscard]] SDL_BlendMode coverBlend() const { return coverBlend_; }
     // A layer of ground laid over other ground (the home's over the world's rim tiles, and its
     // chunks' borders over each other) goes on over as usual and then is stamped, so the target
     // holds the layer's own alpha (its water mark among it) wherever the layer covers: while on,
@@ -191,7 +188,6 @@ private:
     std::uint32_t measured_ = 0;   // frames since the path was made (the mean's cadence)
     SDL_BlendMode poolBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode markBlend_ = SDL_BLENDMODE_INVALID;
-    SDL_BlendMode coverBlend_ = SDL_BLENDMODE_INVALID;
     SDL_BlendMode stampBlend_ = SDL_BLENDMODE_INVALID;
 };
 

@@ -23,8 +23,9 @@ set camera 33 29 0.5
 wait 30
 expect water_mark 612,428,24,8 0.6 1
 shot shots/home_water_half.png
-# A piece drawn faintly over water, the build tool's footbridge, stays over it: the water is not
-# drawn over its deck, as it is not over a placed one's.
+# A piece drawn faintly over water, the build tool's footbridge, shows the moving water through
+# it (as much as it is faint: none of the art's still water), and a placed one is never under
+# the water.
 paint water @26,30 @29,31
 set camera 28 30 2
 wait 30
@@ -36,7 +37,7 @@ click ui:tile:bridge
 wait 10
 move @27,30
 wait 20
-expect water_mark 560,380,40,20 0 0.2
+expect water_mark 560,380,40,20 0.6 1
 shot shots/home_water_ghost.png
 key escape
 wait 10

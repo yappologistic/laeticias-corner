@@ -30,8 +30,9 @@ renderer and the fallback wherever this path cannot be made; headless runs stay 
    fragment shaders only, so the bend is in the vertices (ten per swaying sprite, on the CPU).
    Water tiles stay still in the cells and are **marked**: the cell's alpha is lowered a step
    (to 0.98) under them by a blend that keeps colour (`Post::markBlend`), one blend switch per
-   diagonal; anything drawn over water later restores alpha 1 (the home's pieces through
-   `Post::coverBlend`, so one drawn faintly, a ghost or a fade, does too). The home's ground
+   diagonal; anything drawn over water later lifts alpha toward 1 by its strength, and
+   the final pass shows that share of it over the moving water (a ghost or a fade lets the water
+   through; an opaque piece is never under it). The home's ground
    goes over the world's rim tiles under it and then stamps its own alpha where it covers
    (`Post::stamp`, `stamp.frag`), so its water keeps its marks up to the home's last row and
    across its coarse chunks' overlapping borders. The tile **water field** round the view

@@ -64,13 +64,15 @@ float fbm2(vec2 p) {
 bool isWater(float a, vec3 c) {
     // The marks: 0.98 a water tile's (checked against the water field below), 0.97 a water
     // texel's own (the packed pages' water ramps), under 0.962 a rim mark: water only where
-    // the art is water-coloured (a blue darker than stone, bluer than it is green).
-    return a > 0.5 && a < 0.995 &&
+    // the art is water-coloured (a blue darker than stone, bluer than it is green). Over a
+    // 0.98 mark, 251..254 of 255 are water under something drawn faintly (cover below); only
+    // 255 is solid.
+    return a > 0.5 && a < 0.998 &&
            (a >= 0.962 || (c.b > c.r * 1.3 && c.b > c.g * 0.95 && c.b - c.r > 0.08));
 }
 // Something standing (not water, not empty): what the shore line and reflections look for.
 bool solid(vec4 t) {
-    return t.a >= 0.995 || (t.a > 0.5 && !isWater(t.a, t.rgb / t.a));
+    return t.a >= 0.998 || (t.a > 0.5 && !isWater(t.a, t.rgb / t.a));
 }
 int flagsAt(vec2 tile) {
     ivec2 i = clamp(ivec2(floor(tile - water.xy)), ivec2(0), ivec2(textureSize(u_water, 0)) - 1);
@@ -113,6 +115,11 @@ void main() {
     vec2 uv = sharp(v_uv);
     vec4 s = texture(u_scene, uv);
     vec3 albedo = s.a > 0.0 ? s.rgb / s.a : vec3(0.0);
+    // Something drawn faintly over water (a ghost, a fade, a filtered edge) blends over the
+    // 0.98 mark as usual and lifts it toward 1 by its strength: that share of the pixel is what
+    // was drawn, the rest the water below it (in steps of a fifth: the target has 8-bit alpha).
+    float cover = clamp((s.a * 255.0 - 250.0) / 5.0, 0.0, 1.0);
+    vec3 seen = albedo;
     vec2 px = uv * texel.xy;            // scene target px
     vec2 w = world.xy + px / world.z;   // world px
     // The dither cell is anchored to the world (nothing crawls in a pan) on whichever is
@@ -226,7 +233,7 @@ void main() {
             }
         }
         // Beyond the grid the sea runs on and fades toward the sky at the horizon (no seam).
-        albedo = mix(body, mix(deep.rgb, skyw.rgb, 0.6), far * 0.7);
+        albedo = mix(mix(body, mix(deep.rgb, skyw.rgb, 0.6), far * 0.7), seen, cover);
         // The bright shore line where water meets what stands in it, and foam that breathes.
         // (Near only: zoomed out a pixel of shore is several art pixels wide and outlines
         // every boat like a selection.)
@@ -271,11 +278,12 @@ void main() {
         // flat sky made the open sea one flat field: QA7 V7-014), the shallows lighter.
         vec3 skyHere = skyw.rgb * (0.9 + 0.5 * (1.0 - band) + 0.25 * step(0.64, rip));
         c = mix(c, skyHere,
-                skyw.a * (0.3 + 0.45 * band) * (1.0 - shadowLevel * 0.5) * (1.0 - far) * (1.0 - reflected));
+                skyw.a * (0.3 + 0.45 * band) * (1.0 - shadowLevel * 0.5) * (1.0 - far) * (1.0 - reflected) *
+                    (1.0 - cover));
         // The shore line stays readable at night (a pale edge against dark water).
         float lum = max(luma(c) * 1.6, 0.25 + 0.1 * night.a);
-        c = mix(c, white * lum, shoreLine * (0.5 + 0.25 * night.a));
-        c = mix(c, white * lum, foam * 0.5);
+        c = mix(c, white * lum, shoreLine * (0.5 + 0.25 * night.a) * (1.0 - cover));
+        c = mix(c, white * lum, foam * 0.5 * (1.0 - cover));
     }
     if (wet && fine && cloud.w > 0.0) {
         vec2 cq = q - vec2(t * 4.0, t * 2.0);
@@ -289,7 +297,7 @@ void main() {
                       step(0.74, hc) * step(0.2, band);
         // Sun glints by day, the moon's (silver, fewer) at night.
         vec3 glintColour = mix(vec3(1.0, 0.98, 0.9), vec3(0.62, 0.70, 0.86), night.a / 0.55);
-        c = mix(c, glintColour, glint * cloud.w * (1.0 - shadowLevel));
+        c = mix(c, glintColour, glint * cloud.w * (1.0 - shadowLevel) * (1.0 - cover));
     }
     // Lamp light in a few bands with a dithered edge, the cell anchored to world art pixels so
     // nothing crawls while the camera pans.
@@ -313,7 +321,7 @@ void main() {
         vec3 cloudColour = mix(deckBase.rgb, deck.rgb, tone) * (1.0 - 0.38 * cs.b);
         c = mix(c, cloudColour, seen * cloud.x);
     }
-    vec3 glow = g.rgb * texel.w + mirroredGlow;
+    vec3 glow = g.rgb * texel.w + mirroredGlow * (1.0 - cover);
     if (mixes.w > 0.0) glow += texture(u_bloom, v_uv).rgb * mixes.w; // (Low has no bloom)
     float alpha = wet ? 1.0 : s.a;
     o_color = vec4(min(c, 1.0) * alpha + glow, alpha);

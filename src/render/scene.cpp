@@ -1270,9 +1270,8 @@ void Scene::embedGround(const FrameParams& p) {
 
 void Scene::embedObjects(const FrameParams& p) {
     if (into_ == nullptr || !shadow_.texture) return;
-    blend_ = cover_;
-    drawEntries(p, false);
     blend_ = SDL_BLENDMODE_BLEND;
+    drawEntries(p, false);
     drawParticles(false);
     batch_.flush();
 }

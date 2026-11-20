@@ -182,9 +182,6 @@ bool Post::init() {
     markBlend_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_ONE,
                                             SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
                                             SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_REV_SUBTRACT);
-    coverBlend_ = SDL_ComposeCustomBlendMode(
-        SDL_BLENDFACTOR_SRC_ALPHA, SDL_BLENDFACTOR_ONE_MINUS_SRC_ALPHA, SDL_BLENDOPERATION_ADD,
-        SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD);
     stampBlend_ = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_ONE,
                                              SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE,
                                              SDL_BLENDFACTOR_ZERO, SDL_BLENDOPERATION_ADD);

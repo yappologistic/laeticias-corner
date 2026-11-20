@@ -217,7 +217,8 @@ public:
     // are opaque (water marks sit at 0.98). For tests: it reads the target back.
     [[nodiscard]] float partialAlpha(SDL_Rect window);
     // The share of it the shader path's final pass takes for water whatever its colour (alpha
-    // 0.962..0.995, final.frag's isWater): 0 on the other looks. For tests: it reads back too.
+    // 0.962..0.998, final.frag's isWater: wholly, or partly under something drawn faintly):
+    // 0 on the other looks. For tests: it reads back too.
     [[nodiscard]] float waterMarked(SDL_Rect window);
     // Everything with a card, and every figure, on screen in the last frame (once each).
     void visibleCards(std::vector<Picked>& out) const;
@@ -304,9 +305,6 @@ public:
     // The home scene's ground through the same decode, with the home's climate and snow; nullopt
     // without the packed pages.
     [[nodiscard]] std::optional<GroundDecode> homeGroundDecode();
-    // How the home scene draws what stands in the world (band B6): over the shader path's water
-    // it must restore alpha 1 however faintly it is drawn (gpu::Post::coverBlend).
-    [[nodiscard]] SDL_BlendMode coverBlend() const;
     [[nodiscard]] gpu::Clouds clouds() const { return clouds_; }
 
 private:

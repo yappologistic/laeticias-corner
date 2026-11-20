@@ -163,7 +163,6 @@ void App::drawScene(const FrameParams& p, SDL_Texture* out) {
     worldView_->setLifeAlpha(alpha_);
     scene_->beginFrameStats();
     scene_->setGroundDecode(worldView_->homeGroundDecode());
-    scene_->setCoverBlend(worldView_->coverBlend());
     worldView_->draw(v, clock_.time(), p.light, frameDt_, static_cast<double>(simTime_), hooks_);
 }
 

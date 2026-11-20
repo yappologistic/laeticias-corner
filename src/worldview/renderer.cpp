@@ -2031,10 +2031,6 @@ std::optional<GroundDecode> WorldView::homeGroundDecode() {
     return d;
 }
 
-SDL_BlendMode WorldView::coverBlend() const {
-    return post_ ? post_->coverBlend() : SDL_BLENDMODE_BLEND;
-}
-
 void WorldView::seasonAt(TilePos p) {
     lookSeason_ = season_;
     if (!decoder_) return;
@@ -2420,7 +2416,7 @@ float WorldView::partialAlpha(SDL_Rect window) {
 }
 
 float WorldView::waterMarked(SDL_Rect window) {
-    return alphaShare(window, 246, 253);
+    return alphaShare(window, 246, 254);
 }
 
 float WorldView::alphaShare(SDL_Rect window, Uint8 lo, Uint8 hi) {
