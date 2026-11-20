@@ -76,7 +76,7 @@ def _fig(m, x, y, z, h, seed):
         rod(m, (x, y, z), (x + 3.2 * math.cos(a), y + 3.2 * math.sin(a), z + h * 0.55), 0.6, "wood_grey", tone=0.1)
     clumps = [(x + 4.0 * math.cos(a), y + 4.0 * math.sin(a), z + h * 0.7 + rng.uniform(-1, 1), 3.4)
               for a in (0.0, 2.1, 4.2)] + [(x, y, z + h * 0.88, 3.6)]
-    leaf_mass(m, clumps, 961 + seed, materials=(("leaf", 0.8), ("grass", 0.2)), under="leaf_dark", cluster=(2.6, 3.4),
+    leaf_mass(m, clumps, 961 + seed, materials=(("leaf", 0.8), ("leaf_light", 0.2)), under="leaf_dark", cluster=(2.6, 3.4),
               level=-0.5)
 
 
