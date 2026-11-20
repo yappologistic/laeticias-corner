@@ -238,7 +238,7 @@ def r_insula_low(v, frame, frames, k):
     for x in (6.0, 18.0, 30.0):
         rod(m, (x, 30.0, 0.0), (x, 30.0, 10.0), 0.4, "wood")
     rod(m, (6.0, 30.0, 10.0), (30.0, 30.0, 10.0), 0.3, "wood")
-    leaf_mass(m, [(12.0, 30.0, 10.5, 3.0), (24.0, 30.0, 10.5, 3.0)], 1208, materials=(("leaf", 0.7), ("grass", 0.3)),
+    leaf_mass(m, [(12.0, 30.0, 10.5, 3.0), (24.0, 30.0, 10.5, 3.0)], 1208, materials=(("leaf", 0.7), ("leaf_light", 0.3)),
               under="leaf_dark", squash=0.6)
     return m
 
