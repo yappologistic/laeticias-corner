@@ -72,6 +72,11 @@ def splice(pages, sprites: dict) -> dict:
         if n is not None:
             r = pages[n]["man"][key]
             alone = users[(n, r["x"], r["y"])] <= set(sprites)
+            box = (slice(r["y"], r["y"] + r["h"]), slice(r["x"], r["x"] + r["w"]))
+            if not alone and (h, w) == (r["h"], r["w"]) and (t.ox, t.oy) == (r["ox"], r["oy"]) \
+                    and np.array_equal(pages[n]["colour"][box], t.rgba) \
+                    and np.array_equal(pages[n]["packed"][box], _words(key, t)[0]):
+                continue    # unchanged: it keeps the rectangle it shares (no band for nothing)
             if alone:   # clear the old rectangle (every key on it is being replaced)
                 pages[n]["colour"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = 0
                 pages[n]["packed"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = 0
@@ -109,14 +114,16 @@ def splice(pages, sprites: dict) -> dict:
         n = where[key]
         r = pages[n]["man"][key]
         pages[n]["colour"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = t.rgba
-        w = datapages.words(key, t)
-        if w is None:
-            pages[n]["raw"].add(key)
-            w = datapages.rgba_word(t.rgba)
-        else:
-            pages[n]["raw"].discard(key)
-        pages[n]["packed"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = datapages.word_rgba(w)
+        words, raw = _words(key, t)
+        (pages[n]["raw"].add if raw else pages[n]["raw"].discard)(key)
+        pages[n]["packed"][r["y"]:r["y"] + r["h"], r["x"]:r["x"] + r["w"]] = words
     return where
+
+
+def _words(key: str, t: Sprite):
+    """A sprite's packed-twin texels and whether they are its raw colour (no ramp words)."""
+    w = datapages.words(key, t)
+    return (datapages.word_rgba(datapages.rgba_word(t.rgba)), True) if w is None else (datapages.word_rgba(w), False)
 
 
 def _old_sprites(png: Path, man: dict, drop: set) -> dict:
