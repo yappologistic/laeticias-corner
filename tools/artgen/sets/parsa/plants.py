@@ -44,7 +44,7 @@ def t_plane(v, frame, frames, k):
     clumps = [(8 + 8 * math.cos(a) * rng.uniform(0.6, 1.0), 8 + 8 * math.sin(a) * rng.uniform(0.6, 1.0),
                40 + rng.uniform(-4, 6), rng.uniform(7.0, 9.0)) for a in np.linspace(0, 2 * math.pi, 6, endpoint=False)]
     clumps.append((8, 8, 50.0, 9.0))
-    leaf_mass(m, clumps, 511 + v, materials=(("leaf", 0.7), ("grass", 0.3)), under="leaf_dark", level=-0.6)
+    leaf_mass(m, clumps, 511 + v, materials=(("leaf", 0.7), ("leaf_light", 0.3)), under="leaf_dark", level=-0.6)
     # The plane's mottled bark: pale patches where the old bark has flaked away.
     X, Y, Z = m.coords()
     bark = (m.mat == MAT["wood_grey"]) & (value_noise(X, Y, Z * 0.6, 1.2, 513 + v) > 0.72)
@@ -61,7 +61,7 @@ def t_poplar(v, frame, frames, k):
     trunk(m, 8, 8, 1.1, h * 0.5, material="wood_grey")
     clumps = [(8 + rng.uniform(-1, 1), 8 + rng.uniform(-1, 1), 14 + t * (h - 20), 4.6 * (1 - abs(t - 0.4)) + 1.6)
               for t in np.linspace(0, 1, 8)]
-    leaf_mass(m, clumps, 521 + v, materials=(("leaf", 0.45), ("grass", 0.55)), under="leaf_dark",
+    leaf_mass(m, clumps, 521 + v, materials=(("leaf", 0.45), ("leaf_light", 0.55)), under="leaf_dark",
               cluster=(2.0, 3.0), squash=1.2, level=-0.2)
     return m
 
@@ -73,7 +73,7 @@ def t_willow(v, frame, frames, k):
     trunk(m, 8, 8, 1.6, 18.0, lean=(0.6, -0.4))
     clumps = [(8 + 7 * math.cos(a), 8 + 7 * math.sin(a), 28 + rng.uniform(-2, 3), 6.0)
               for a in np.linspace(0, 2 * math.pi, 5, endpoint=False)] + [(8, 8, 34, 7.0)]
-    leaf_mass(m, clumps, 531 + v, materials=(("grass", 0.6), ("leaf", 0.4)), under="leaf", level=-0.4)
+    leaf_mass(m, clumps, 531 + v, materials=(("leaf_light", 0.6), ("leaf", 0.4)), under="leaf", level=-0.4)
     for i in range(26):
         a = rng.uniform(0, 2 * math.pi)
         r = rng.uniform(6, 13)
@@ -123,7 +123,7 @@ def t_vine(v, frame, frames, k):
         rod(m, (2, y, 20.0), (14, y, 20.0), 0.35, "wood_light")
     rod(m, (8, 8, 0), (8, 8, 18.0), 0.7, "bark")
     leaf_mass(m, [(4, 8, 20, 4.0), (12, 8, 20, 4.0), (8, 4, 21, 4.0), (8, 12, 20, 4.0)], 571 + v,
-              materials=(("grass", 0.6), ("leaf", 0.4)), under="leaf", squash=0.55, level=-0.3)
+              materials=(("leaf_light", 0.6), ("leaf", 0.4)), under="leaf", squash=0.55, level=-0.3)
     return m
 
 
